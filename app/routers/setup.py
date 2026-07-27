@@ -225,6 +225,15 @@ async def install(req: ModelSelectRequest):
             ok, msg = await installer.download_kokoro_model()
             yield sse(msg, "ok" if ok else "log", 94)
 
+            yield sse("Warming up Kokoro TTS...", "info", 94)
+            from main import warmup_kokoro_tts
+            tts_ready = await warmup_kokoro_tts()
+            yield sse(
+                "Kokoro TTS ready" if tts_ready else "Kokoro TTS warm-up skipped",
+                "ok" if tts_ready else "log",
+                95,
+            )
+
             # ES가 이미 떠 있으면 컨테이너 기동을 건너뛴다(위에서 감지)
             if es_running:
                 yield sse("Using existing Elasticsearch — skipping start", "ok", 99)

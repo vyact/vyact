@@ -77,6 +77,36 @@ setup_logging()
 logger = get_logger(__name__)
 
 
+async def warmup_kokoro_tts() -> bool:
+    """Kokoro와 언어별 음성 파이프라인을 미리 준비한다."""
+    try:
+        logger.info("[startup-status] tts")
+        from routers.tts import KOKORO_DEFAULT_VOICES, KOKORO_LANG_MAP, _get_pipeline
+        import asyncio
+        loop = asyncio.get_running_loop()
+        warmup_texts = {
+            "a": "Hello", "b": "Hello", "e": "Hola", "f": "Bonjour",
+            "h": "नमस्ते", "i": "Ciao", "j": "こんにちは", "p": "Olá", "z": "你好",
+        }
+
+        def _warmup():
+            for lang_code in dict.fromkeys(KOKORO_LANG_MAP.values()):
+                pipeline = _get_pipeline(lang_code)
+                for _, _, _ in pipeline(
+                    warmup_texts[lang_code],
+                    voice=KOKORO_DEFAULT_VOICES[lang_code],
+                    speed=1.0,
+                ):
+                    break
+
+        await loop.run_in_executor(None, _warmup)
+        logger.info("[kokoro] all language TTS pipelines warmed up")
+        return True
+    except Exception as error:
+        logger.info("[kokoro] TTS warm-up skipped: %s", error)
+        return False
+
+
 # ─────────────────────────────
 # LIFESPAN
 # ─────────────────────────────
@@ -254,38 +284,8 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning("[mcp] Connection init failed: %s", e)
 
-    # ── Kokoro TTS warm-up ──
-    try:
-        logger.info("[startup-status] tts")
-        from routers.tts import KOKORO_DEFAULT_VOICES, KOKORO_LANG_MAP, _get_pipeline
-        import asyncio
-        loop = asyncio.get_running_loop()
-        warmup_texts = {
-            "a": "Hello",
-            "b": "Hello",
-            "e": "Hola",
-            "f": "Bonjour",
-            "h": "नमस्ते",
-            "i": "Ciao",
-            "j": "こんにちは",
-            "p": "Olá",
-            "z": "你好",
-        }
-
-        def _warmup():
-            for lang_code in dict.fromkeys(KOKORO_LANG_MAP.values()):
-                pipeline = _get_pipeline(lang_code)
-                # 언어별 파이프라인 생성뿐 아니라 첫 추론까지 완료해 첫 재생 지연을 없앤다.
-                for _, _, _ in pipeline(
-                    warmup_texts[lang_code],
-                    voice=KOKORO_DEFAULT_VOICES[lang_code],
-                    speed=1.0,
-                ):
-                    break
-        await loop.run_in_executor(None, _warmup)
-        logger.info("[kokoro] all language TTS pipelines warmed up")
-    except Exception as e:
-        logger.info("[kokoro] TTS warm-up skipped: %s", e)
+    if not is_initial_setup:
+        await warmup_kokoro_tts()
 
     # ── Whisper STT warm-up ──
     try:

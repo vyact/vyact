@@ -24,4 +24,8 @@ google-auth-oauthlib==1.4.0
 kokoro==0.9.4
 soundfile==0.14.0
 misaki[zh]>=0.9.4
+fugashi>=1.3.0
+jaconv>=0.4.0
+mojimoji>=0.0.13
+unidic>=1.1.0
 pyopenjtalk-plus==0.4.1.post8

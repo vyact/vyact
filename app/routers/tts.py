@@ -51,16 +51,33 @@ def _get_pipeline(lang_code: str):
     if lang_code not in _pipelines:
         try:
             from kokoro import KPipeline
-            logger.info(f"Kokoro pipeline loaded: lang_code={lang_code}")
-            _pipelines[lang_code] = KPipeline(lang_code=lang_code)
-        except ImportError:
+        except ModuleNotFoundError as error:
+            if error.name != "kokoro":
+                logger.error("Kokoro dependency missing: %s", error.name)
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Kokoro dependency missing: {error.name}",
+                ) from error
             raise HTTPException(
                 status_code=503,
                 detail="kokoro 패키지가 설치되어 있지 않습니다. pip install kokoro soundfile",
-            )
-        except Exception as e:
-            logger.error(f"Kokoro pipeline 생성 실패: {e}")
-            raise HTTPException(status_code=500, detail=str(e))
+            ) from error
+        except ImportError as error:
+            logger.error("Kokoro import failed: %s", error)
+            raise HTTPException(status_code=500, detail=f"Kokoro import failed: {error}") from error
+
+        try:
+            logger.info(f"Kokoro pipeline loaded: lang_code={lang_code}")
+            _pipelines[lang_code] = KPipeline(lang_code=lang_code)
+        except ModuleNotFoundError as error:
+            logger.error("Kokoro dependency missing for %s: %s", lang_code, error.name)
+            raise HTTPException(
+                status_code=500,
+                detail=f"Kokoro dependency missing for {lang_code}: {error.name}",
+            ) from error
+        except Exception as error:
+            logger.error("Kokoro pipeline creation failed for %s: %s", lang_code, error)
+            raise HTTPException(status_code=500, detail=str(error)) from error
     return _pipelines[lang_code]
 
 
