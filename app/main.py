@@ -2,7 +2,6 @@
 main.py – FastAPI 앱 생성 + 라우터 등록 + Lifespan
 """
 import os
-os.environ.setdefault("HF_HUB_OFFLINE", "1")  # Kokoro: 로컬 캐시만 사용
 import locale
 import signal
 from contextlib import asynccontextmanager
@@ -14,12 +13,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from config import LOGS_DIR, SETUP_DONE
+from config import KOKORO_CACHE_READY, LOGS_DIR, SETUP_DONE
 from config.models import DEFAULT_MODEL
 from logger import setup_logging, get_logger
 from services.mcp_config import ensure_mcp_config
 
 APP_DIR = Path(__file__).parent
+
+# 최초 설정에서 Kokoro 모델·음성 파일을 모두 받기 전에는 온라인 접근을
+# 허용한다. 다운로드 완료 후에는 캐시만 사용하므로 오프라인에서도 동작한다.
+if KOKORO_CACHE_READY.exists():
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")
 
 SYSTEM_LANGUAGE_FALLBACK = "en"
 SUPPORTED_SYSTEM_LANGUAGES = {"ko", "en", "ja", "zh", "th", "vi", "es", "fr"}

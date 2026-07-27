@@ -12,7 +12,7 @@ from typing import AsyncGenerator
 
 from logger import get_logger
 
-from config import RECOMMENDED_MODELS
+from config import KOKORO_CACHE_READY, RECOMMENDED_MODELS
 
 logger = get_logger(__name__)
 
@@ -47,13 +47,19 @@ class Installer:
         self.install_dir.mkdir(parents=True, exist_ok=True)
         self.log_file.touch(exist_ok=True)
 
-    async def _run(self, cmd: list[str], log: bool = False) -> int:
+    async def _run(
+        self,
+        cmd: list[str],
+        log: bool = False,
+        env: dict[str, str] | None = None,
+    ) -> int:
         """명령 실행"""
         proc = await asyncio.create_subprocess_exec(
             *cmd,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
             cwd=str(self.install_dir),
+            env=env,
         )
         if log:
             with open(self.log_file, "a") as f:
@@ -345,6 +351,10 @@ class Installer:
         """Kokoro TTS 모델 및 전체 voice 파일 사전 다운로드"""
         logger.info("=== Kokoro 모델 다운로드 ===")
 
+        # 이전에 중단된 다운로드가 남긴 완료 표시로 오프라인 모드가 켜지는 것을
+        # 막는다. 모든 파일을 성공적으로 받은 경우에만 아래에서 다시 만든다.
+        KOKORO_CACHE_READY.unlink(missing_ok=True)
+
         if os.name == "nt":
             python_exe = self.venv_dir / "Scripts" / "python.exe"
         else:
@@ -387,10 +397,16 @@ print('kokoro all voices ready')
 """
 
         try:
-            rc = await self._run([str(python_exe), "-c", script], log=True)
+            download_env = {**os.environ, "HF_HUB_OFFLINE": "0"}
+            rc = await self._run(
+                [str(python_exe), "-c", script],
+                log=True,
+                env=download_env,
+            )
             if rc != 0:
                 logger.warning("Kokoro model download failed")
                 return False, "Kokoro model download failed"
+            KOKORO_CACHE_READY.touch()
             return True, "Kokoro model/voices downloaded"
         except Exception as e:
             logger.warning(f"Kokoro model download error: {e}")

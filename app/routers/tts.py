@@ -142,7 +142,12 @@ async def kokoro_synthesize(req: TtsSynthRequest):
 async def kokoro_status():
     """Kokoro 사용 가능 여부 확인"""
     try:
-        import kokoro  # noqa: F401
+        loop = asyncio.get_running_loop()
+        async with _lock:
+            await loop.run_in_executor(None, _get_pipeline, "a")
         return {"available": True}
-    except ImportError:
-        return {"available": False}
+    except HTTPException as error:
+        return {"available": False, "detail": error.detail}
+    except Exception as error:
+        logger.warning("Kokoro availability check failed: %s", error)
+        return {"available": False, "detail": str(error)}

@@ -793,17 +793,9 @@ ipcMain.handle("select-folder", async () => {
 });
 
 ipcMain.handle("screenshot", async () => {
-    const {desktopCapturer} = require("electron");
-    const sources = await desktopCapturer.getSources({
-        types: ["window"],
-        thumbnailSize: {width: 2560, height: 1600},
-    });
-    const win = sources.find(s =>
-        s.name.toLowerCase().includes("vyact") ||
-        s.id === `window:${mainWindow?.id}`
-    ) || sources[0];
-    if (!win) return null;
-    return win.thumbnail.toPNG().toString("base64");
+    if (!mainWindow || mainWindow.isDestroyed()) return null;
+    const image = await mainWindow.webContents.capturePage();
+    return image.toPNG().toString("base64");
 });
 
 const SCREENSHOT_ASPECT_RATIOS = {

@@ -17,6 +17,9 @@ APP_NAME = "vyact"  # 앱 이름 — 디렉토리명 등에 사용
 INSTALL_DIR = Path.home() / f".{APP_NAME}"
 VENV_DIR = INSTALL_DIR / "venv"
 SETUP_DONE = INSTALL_DIR / ".setup_done"
+# Kokoro 모델과 모든 음성 파일의 다운로드가 끝났음을 나타낸다. 이 파일이
+# 있을 때만 앱 실행을 Hugging Face 캐시 전용 모드로 제한한다.
+KOKORO_CACHE_READY = INSTALL_DIR / ".kokoro_cache_ready"
 
 # ─────────────────────────────
 # LOGS
@@ -68,6 +71,7 @@ __all__ = [
     'INSTALL_DIR',
     'VENV_DIR',
     'SETUP_DONE',
+    'KOKORO_CACHE_READY',
     'LOGS_DIR',
     'LOG_FILE',
     'get_log_file',

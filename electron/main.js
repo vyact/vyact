@@ -820,21 +820,11 @@ ipcMain.handle("set-login-item", (_, enable) => {
     return app.getLoginItemSettings().openAtLogin;
 });
 
-// 스크린샷 — desktopCapturer로 현재 윈도우 캡처
+// 스크린샷 — 현재 앱의 웹 콘텐츠만 캡처한다.
 ipcMain.handle("screenshot", async () => {
-    const {desktopCapturer} = require("electron");
-    const sources = await desktopCapturer.getSources({
-        types: ["window"],
-        thumbnailSize: {width: 2560, height: 1600},
-    });
-    // 현재 앱 윈도우 찾기
-    const win = sources.find(s =>
-        s.name.toLowerCase().includes("vyact") ||
-        s.id === `window:${mainWindow?.id}`
-    ) || sources[0];
-
-    if (!win) return null;
-    return win.thumbnail.toPNG().toString("base64");
+    if (!mainWindow || mainWindow.isDestroyed()) return null;
+    const image = await mainWindow.webContents.capturePage();
+    return image.toPNG().toString("base64");
 });
 
 const SCREENSHOT_ASPECT_RATIOS = {

@@ -49,7 +49,7 @@
         "to": "app"
       },
       {
-        "from": "../../frontend/src/i18n/locales",
+        "from": "../frontend/src/i18n/locales",
         "to": "locales"
       }
     ]

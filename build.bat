@@ -40,6 +40,7 @@ echo.
 echo [1/5] 원본 파일 백업...
 
 copy /y "electron\main.js"        "electron\main.js.mac_backup"        >nul
+copy /y "electron\preload.js"     "electron\preload.js.mac_backup"     >nul
 copy /y "electron\package.json"   "electron\package.json.mac_backup"   >nul
 copy /y "app\docker-compose.yml"  "app\docker-compose.yml.mac_backup"  >nul
 
@@ -51,6 +52,9 @@ echo [2/5] 윈도우 전용 파일 적용...
 
 copy /y "win\electron\main.js"        "electron\main.js"        >nul
 if !errorlevel! neq 0 ( echo [FAIL] win\electron\main.js 복사 실패 & call :RESTORE & pause & exit /b 1 )
+
+copy /y "win\electron\preload.js"     "electron\preload.js"     >nul
+if !errorlevel! neq 0 ( echo [FAIL] win\electron\preload.js 복사 실패 & call :RESTORE & pause & exit /b 1 )
 
 copy /y "win\electron\package.json"   "electron\package.json"   >nul
 if !errorlevel! neq 0 ( echo [FAIL] win\electron\package.json 복사 실패 & call :RESTORE & pause & exit /b 1 )
@@ -89,6 +93,7 @@ set CSC_IDENTITY_AUTO_DISCOVERY=false
 if /i "!IS_CLEAN_BUILD!"=="true" if exist "%LOCALAPPDATA%\electron-builder\Cache\winCodeSign" rmdir /s /q "%LOCALAPPDATA%\electron-builder\Cache\winCodeSign"
 call npm run build
 if !errorlevel! neq 0 ( echo [FAIL] Electron build 실패 & cd .. & call :RESTORE & pause & exit /b 1 )
+if not exist "dist\win-unpacked\resources\locales\en\settings.json" ( echo [FAIL] 패키지 번역 리소스 누락: locales\en\settings.json & cd .. & call :RESTORE & pause & exit /b 1 )
 cd ..
 echo [OK] Electron build 완료
 
@@ -118,9 +123,11 @@ exit /b 0
 echo.
 echo [RESTORE] 원본 파일 복원 중...
 if exist "electron\main.js.mac_backup"       ( copy /y "electron\main.js.mac_backup"       "electron\main.js"        >nul )
+if exist "electron\preload.js.mac_backup"    ( copy /y "electron\preload.js.mac_backup"    "electron\preload.js"     >nul )
 if exist "electron\package.json.mac_backup"  ( copy /y "electron\package.json.mac_backup"  "electron\package.json"   >nul )
 if exist "app\docker-compose.yml.mac_backup" ( copy /y "app\docker-compose.yml.mac_backup" "app\docker-compose.yml"  >nul )
 del /q "electron\main.js.mac_backup"        2>nul
+del /q "electron\preload.js.mac_backup"     2>nul
 del /q "electron\package.json.mac_backup"   2>nul
 del /q "app\docker-compose.yml.mac_backup"  2>nul
 if exist "electron\icon.ico" ( del /q "electron\icon.ico" 2>nul )

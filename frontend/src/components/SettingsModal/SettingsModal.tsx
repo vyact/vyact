@@ -97,6 +97,16 @@ const KOKORO_PREFIX_DESC: Record<string, string> = {
     pf: 'brF', pm: 'brM',
 };
 
+const KOKORO_VOICE_LANGUAGES: Record<string, string> = {
+    af: 'en-US', am: 'en-US', bf: 'en-GB', bm: 'en-GB',
+    ef: 'es', em: 'es', ff: 'fr', hf: 'hi', hm: 'hi',
+    if: 'it', im: 'it', jf: 'ja-JP', jm: 'ja-JP',
+    pf: 'pt-BR', pm: 'pt-BR', zf: 'zh-CN', zm: 'zh-CN',
+};
+
+const getKokoroVoiceLanguage = (voice: string) =>
+    KOKORO_VOICE_LANGUAGES[voice.split('_')[0]] ?? 'en-US';
+
 const KOKORO_VOICES: { value: string; name: string; lang: string }[] = [
     {value: 'af_heart', name: 'Heart', lang: '🇺🇸'},
     {value: 'af_alloy', name: 'Alloy', lang: '🇺🇸'},
@@ -584,7 +594,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
                         text: 'Hello. This is a voice preview.',
-                        lang: 'en-US',
+                        lang: getKokoroVoiceLanguage(ttsDraft.kokoroVoice),
                         voice: ttsDraft.kokoroVoice,
                         speed: ttsDraft.rate,
                     }),
