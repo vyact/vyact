@@ -1,6 +1,6 @@
 const {app, BrowserWindow, dialog, ipcMain, session} = require("electron");
 const path = require("path");
-const {spawn, execSync, execFileSync} = require("child_process");
+const {spawn, execSync, execFileSync, spawnSync} = require("child_process");
 const fs = require("fs");
 const os = require("os");
 const http = require("http");
@@ -200,6 +200,18 @@ function showElasticsearchUnavailableAndQuit() {
 }
 
 // ── pyenv + system python 자동 선택 ────────
+function isSupportedPython(pythonBin, env) {
+    try {
+        const result = spawnSync(pythonBin, ["--version"], {encoding: "utf8", env});
+        const versionMatch = `${result.stdout || ""}${result.stderr || ""}`.match(/Python (\d+)\.(\d+)/i);
+        const major = Number(versionMatch?.[1]);
+        const minor = Number(versionMatch?.[2]);
+        return result.status === 0 && (major > 3 || (major === 3 && minor >= 11));
+    } catch {
+        return false;
+    }
+}
+
 function resolvePython() {
     const baseEnv = {
         ...process.env,
@@ -219,13 +231,23 @@ function resolvePython() {
             {shell: "/bin/bash", env: baseEnv}
         ).toString().trim();
 
-        log(`✅ Using pyenv python: ${pyenvPython}`);
-        return pyenvPython;
+        if (isSupportedPython(pyenvPython, baseEnv)) {
+            log(`✅ Using pyenv Python 3.11+: ${pyenvPython}`);
+            return pyenvPython;
+        }
+        log(`⚠️ pyenv Python is below 3.11: ${pyenvPython}`);
 
     } catch (e) {
-        log("⚠️ pyenv not found → using system python3");
+        log("⚠️ pyenv not found → checking system python3");
+    }
+
+    if (isSupportedPython("python3", baseEnv)) {
+        log("✅ Using system Python 3.11+");
         return "python3";
     }
+
+    log("❌ Python 3.11+ not found");
+    return null;
 }
 
 // ── Docker 설치 여부 조용히 확인 (자동 설치/팝업 없음) ────
@@ -400,6 +422,9 @@ function startServer() {
 
         try {
             const pythonBin = resolvePython();
+            if (!pythonBin) {
+                throw new Error("Python 3.11 or later is required");
+            }
             log(`👉 Using python: ${pythonBin}`);
 
             execSync(`"${pythonBin}" -m venv "${VENV_DIR}"`);

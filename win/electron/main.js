@@ -246,23 +246,25 @@ function chocoInstall(packageName) {
 // ── Python 탐색 (Windows) ────────────────────
 function resolvePython() {
     const candidates = [
-        {cmd: "py", args: ["-3.11", "--version"]},
-        {cmd: "py", args: ["-3", "--version"]},
-        {cmd: "C:\\Python311\\python.exe", args: ["--version"]},
-        {cmd: "C:\\Python312\\python.exe", args: ["--version"]},
-        {cmd: "python", args: ["--version"]},
-        {cmd: "python3", args: ["--version"]},
+        // `py -3` selects the newest installed Python 3.x interpreter.
+        // Do not pin this to a specific minor version: Python 3.11+ is supported.
+        {cmd: "py", args: ["-3"]},
+        {cmd: "python", args: []},
+        {cmd: "python3", args: []},
     ];
     for (const {cmd, args} of candidates) {
         try {
-            const r = spawnSync(cmd, args, {encoding: "utf8", env: envWithChoco()});
-            if (r.status === 0) {
-                log(`✅ Python found: ${cmd} ${args[0]}`);
-                return cmd;
+            const result = spawnSync(cmd, [...args, "--version"], {encoding: "utf8", env: envWithChoco()});
+            const versionMatch = `${result.stdout || ""}${result.stderr || ""}`.match(/Python (\d+)\.(\d+)/i);
+            const major = Number(versionMatch?.[1]);
+            const minor = Number(versionMatch?.[2]);
+            if (result.status === 0 && (major > 3 || (major === 3 && minor >= 11))) {
+                log(`✅ Python found: ${cmd} ${args.join(" ")} (${versionMatch[0]})`);
+                return {cmd, args};
             }
         } catch {}
     }
-    log("❌ Python not found");
+    log("❌ Python 3.11+ not found");
     return null;
 }
 
@@ -471,8 +473,8 @@ function startServer() {
     if (needsSetup) {
         log("▸ Creating virtual environment (venv)");
 
-        const pythonBin = resolvePython();
-        if (!pythonBin) {
+        const python = resolvePython();
+        if (!python) {
             log("❌ Python not found — cannot start server");
             const {dialog} = require("electron");
             dialog.showErrorBox("Python Required", "Python is not installed.\nRestart the app to attempt auto-installation.");
@@ -480,9 +482,7 @@ function startServer() {
         }
 
         try {
-            const venvArgs = pythonBin === "py"
-                ? ["py", "-3.11", "-m", "venv", VENV_DIR]
-                : [pythonBin, "-m", "venv", VENV_DIR];
+            const venvArgs = [python.cmd, ...python.args, "-m", "venv", VENV_DIR];
 
             execSync(venvArgs.join(" "), {stdio: "inherit", env: envWithChoco()});
             log("✅ venv created");
