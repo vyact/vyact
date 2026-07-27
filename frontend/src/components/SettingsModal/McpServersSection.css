@@ -1,0 +1,306 @@
+.mcp-section { display: flex; flex-direction: column; gap: 8px; }
+
+.mcp-head { display: flex; align-items: center; justify-content: space-between; }
+.mcp-title { font-size: 16px; font-weight: 600; color: var(--text); }
+.mcp-desc { font-size: 13px; color: var(--muted, #888); margin-bottom: 4px; }
+.mcp-empty { font-size: 14px; color: var(--muted, #888); padding: 8px 0; }
+
+.mcp-add-btn {
+    border: 1px solid var(--border, rgba(255,255,255,0.12));
+    background: transparent; color: var(--text);
+    padding: 4px 10px; border-radius: 6px; font-size: 14px; cursor: pointer;
+}
+.mcp-add-btn:hover { background: rgba(255,255,255,0.05); }
+
+.mcp-list { display: flex; flex-direction: column; gap: 6px; }
+
+.mcp-item {
+    border: 1px solid var(--border, rgba(255,255,255,0.08));
+    border-radius: 8px; overflow: hidden;
+    background: var(--surface-2, rgba(255,255,255,0.03));
+}
+.mcp-item-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; }
+.mcp-item-label { flex: 1; font-size: 15px; color: var(--text); }
+.mcp-item-actions { display: flex; gap: 6px; }
+
+.mcp-icon-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    border: 1px solid var(--border, rgba(255,255,255,0.14));
+    background: transparent; color: var(--muted, #aaa);
+    font-size: 13px; cursor: pointer; padding: 4px 10px; border-radius: 8px;
+    transition: all 0.15s ease;
+}
+.mcp-icon-btn:hover {
+    background: rgba(255,255,255,0.06);
+    color: var(--text); border-color: rgba(255,255,255,0.25);
+}
+.mcp-icon-btn svg { width: 13px; height: 13px; }
+
+/* 삭제 버튼 — 사이드바 휴지통과 동일한 톤 */
+.mcp-danger {
+    color: var(--del-fg-soft);
+    border: 1px solid var(--del-border);
+}
+.mcp-danger:hover {
+    color: var(--del-fg);
+    background: rgba(var(--del-rgb), 0.1);
+    border-color: var(--del-border-hover);
+}
+
+/* iOS 스타일 스위치 */
+.mcp-switch { position: relative; display: inline-block; width: 34px; height: 20px; flex-shrink: 0; }
+.mcp-switch input { opacity: 0; width: 0; height: 0; }
+.mcp-slider {
+    position: absolute; inset: 0; cursor: pointer;
+    background: var(--border, rgba(255,255,255,0.2)); border-radius: 20px;
+    transition: 0.2s;
+}
+.mcp-slider::before {
+    content: ''; position: absolute; height: 16px; width: 16px; left: 2px; bottom: 2px;
+    background: #fff; border-radius: 50%; transition: 0.2s;
+}
+.mcp-switch input:checked + .mcp-slider { background: var(--accent, #d97757); }
+.mcp-switch input:checked + .mcp-slider::before { transform: translateX(14px); }
+
+/* 폼 */
+.mcp-form {
+    display: flex; flex-direction: column; gap: 10px;
+    padding: 10px; border-top: 1px solid var(--border, rgba(255,255,255,0.08));
+}
+.mcp-add-form {
+    border: 1px solid var(--border, rgba(255,255,255,0.12));
+    border-radius: 8px; margin-top: 6px;
+}
+.mcp-field { display: flex; flex-direction: column; gap: 10px; }
+.mcp-field-label { font-size: 13px; color: var(--muted, #999); }
+.mcp-mail-settings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px; row-gap: 10px; align-items: start; }
+.mcp-mail-settings .mcp-field-label { line-height: 1.35; }
+.mcp-mail-settings .mcp-notification-label { display: flex; align-items: center; gap: 6px; }
+.mcp-notification-help { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; width: 17px; height: 17px; flex: 0 0 17px; border: 1px solid currentColor; border-radius: 50%; font-size: 11px; font-weight: 700; line-height: 1; cursor: help; }
+.mcp-notification-help:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mcp-mail-toggle-control { display: flex; align-items: center; height: 100%; }
+.mcp-mail-toggle-control .mcp-switch { width: 56px; height: 28px; }
+.mcp-mail-toggle-control .mcp-slider::before { width: 20px; height: 20px; left: 4px; bottom: 4px; }
+.mcp-mail-toggle-control .mcp-switch input:checked + .mcp-slider::before { transform: translateX(28px); }
+.mcp-input {
+    padding: 7px 10px; border-radius: 6px;
+    border: 1px solid var(--border, rgba(255,255,255,0.12));
+    background: var(--surface, rgba(0,0,0,0.2)); color: var(--text);
+    font-size: 14px; width: 100%; box-sizing: border-box;
+}
+.mcp-textarea { min-height: 80px; resize: vertical; font-family: monospace; }
+.mcp-prompt-textarea { min-height: 140px; resize: vertical; }
+.mcp-prompt-section {
+    margin-top: 4px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border, rgba(255,255,255,0.12));
+}
+
+.mcp-dir-list { display: flex; flex-direction: column; gap: 4px; }
+.mcp-dir-chip {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 5px 8px; border-radius: 6px; background: rgba(255,255,255,0.04);
+    font-size: 14px; font-family: monospace; color: var(--text);
+}
+.mcp-dir-chip button {
+    border: none; background: transparent; color: var(--muted, #999);
+    cursor: pointer; font-size: 15px;
+}
+.mcp-dir-add { display: flex; gap: 6px; align-items: stretch; }
+.mcp-dir-add .mcp-input { flex: 1; min-width: 0; }
+.mcp-dir-add .mcp-btn-primary { flex-shrink: 0; white-space: nowrap; }
+
+.mcp-form-actions { display: flex; justify-content: flex-end; align-items: center; gap: 6px; }
+.mcp-form-actions .mcp-btn-ghost,
+.mcp-form-actions .mcp-btn-primary {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    height: 34px;
+    min-height: 34px;
+    padding: 0 12px;
+    line-height: 1;
+}
+.mcp-btn-ghost,
+.mcp-btn-primary {
+    border: 1px solid var(--border, rgba(255,255,255,0.12));
+    background: transparent;
+    color: var(--text);
+    padding: 6px 12px; border-radius: 6px; font-size: 14px; cursor: pointer;
+    white-space: nowrap;
+}
+.mcp-btn-primary {
+    background: var(--accent, #d97757);
+}
+.mcp-btn-connect {
+    border: none; background: #4285f4; color: #fff;
+    padding: 6px 12px; border-radius: 6px; font-size: 14px; cursor: pointer;
+    white-space: nowrap;
+}
+.mcp-btn-connect:disabled { opacity: 0.5; cursor: default; }
+.mcp-btn-disconnect {
+    border: 1px solid rgba(229, 72, 77, 0.4); background: transparent; color: #e5484d;
+    padding: 6px 12px; border-radius: 6px; font-size: 14px; cursor: pointer;
+    white-space: nowrap;
+}
+.mcp-btn-disconnect:disabled { opacity: 0.5; cursor: default; }
+.mcp-err { font-size: 13px; color: #e5484d; }
+
+/* 삭제 확인 */
+.mcp-confirm {
+    display: flex; flex-direction: column; gap: 8px;
+    padding: 10px; border-top: 1px solid var(--border, rgba(255,255,255,0.08));
+    background: rgba(229, 72, 77, 0.06);
+}
+.mcp-confirm-text { font-size: 14px; color: var(--text); }
+.mcp-btn-danger {
+    border: none; background: var(--del-fg-soft); color: #fff;
+    padding: 6px 12px; border-radius: 6px; font-size: 14px; cursor: pointer;
+}
+.mcp-btn-danger:hover { background: var(--del-fg); }
+/* Google OAuth */
+.google-oauth-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+}
+.google-oauth-ok {
+    color: #66bb6a;
+    font-weight: 600;
+}
+.google-reconnect-notice {
+    margin: 0 12px 10px 48px;
+    color: #f0a36c;
+    font-size: 13px;
+}
+.google-accounts { display: flex; flex-direction: column; gap: 10px; }
+.google-account-card {
+    display: flex; flex-direction: column; gap: 12px;
+    padding: 12px;
+    border: 1px solid var(--border, rgba(255,255,255,0.12));
+    border-radius: 8px;
+    background: var(--surface-2, rgba(255,255,255,0.025));
+}
+.google-account-card.active { border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+.google-account-card-head { display: flex; align-items: center; gap: 10px; }
+.google-account-active {
+    display: flex; align-items: center; gap: 7px; flex: 1;
+    color: var(--text); font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.google-account-active input { accent-color: var(--accent); }
+.google-oauth-idle { color: var(--muted, #888); font-size: 12px; }
+.google-account-card .google-oauth-ok { font-size: 12px; }
+.google-account-actions { display: flex; justify-content: flex-end; }
+.mcp-add-account-btn {
+    width: 100%; padding: 9px 12px;
+    border: 1px dashed var(--border, rgba(255,255,255,0.18));
+    border-radius: 8px; background: transparent; color: var(--text);
+    cursor: pointer; font-size: 13px;
+}
+.mcp-add-account-btn:hover { border-color: var(--accent); background: rgba(217, 119, 87, 0.06); }
+
+/* 파일 업로드 */
+.mcp-file-upload { display: flex; gap: 6px; align-items: center; }
+.mcp-file-btn {
+    flex: 1; text-align: center; padding: 8px 12px;
+    border: 1px dashed var(--border, rgba(255,255,255,0.2));
+    border-radius: 6px; font-size: 13px; color: var(--muted, #aaa);
+    cursor: pointer; transition: all 0.15s ease;
+}
+.mcp-file-btn:hover {
+    border-color: var(--accent, #d97757); color: var(--text);
+    background: rgba(217, 119, 87, 0.06);
+}
+.mcp-file-btn.uploaded {
+    border-style: solid; border-color: #66bb6a; color: #66bb6a;
+}
+.mcp-file-clear {
+    flex-shrink: 0; padding: 6px 8px; font-size: 14px;
+    color: var(--muted, #999);
+}
+
+/* Google Workspace 셋업 가이드 */
+.gw-guide {
+    border: 1px solid var(--border, rgba(255,255,255,0.08));
+    border-radius: 6px;
+    overflow: hidden;
+}
+.gw-guide-toggle {
+    display: flex; align-items: center; gap: 6px;
+    width: 100%; padding: 8px 10px;
+    border: none; background: rgba(255,255,255,0.02);
+    color: var(--text); font-size: 13px; cursor: pointer;
+    text-align: left;
+}
+.gw-guide-toggle:hover { background: rgba(255,255,255,0.05); }
+.gw-guide-arrow {
+    font-size: 10px; transition: transform 0.15s ease;
+    display: inline-block;
+}
+.gw-guide-arrow.open { transform: rotate(90deg); }
+.gw-guide-body {
+    display: flex; flex-direction: column; gap: 8px;
+    padding: 8px 10px 12px;
+    border-top: 1px solid var(--border, rgba(255,255,255,0.06));
+}
+.gw-services {
+    padding: 9px 10px;
+    border-radius: 6px;
+    background: rgba(217, 119, 87, 0.08);
+}
+.gw-services h4 {
+    margin: 0 0 6px;
+    color: var(--text);
+    font-size: 12px;
+}
+.gw-services-list {
+    display: grid;
+    gap: 5px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.gw-services-list li {
+    display: flex;
+    gap: 6px;
+    color: var(--muted, #888);
+    font-size: 12px;
+    line-height: 1.4;
+}
+.gw-services-list strong {
+    flex: 0 0 112px;
+    color: var(--text);
+    font-weight: 600;
+}
+.gw-step {
+    display: flex; gap: 8px; align-items: flex-start;
+}
+.gw-step-num {
+    flex-shrink: 0; width: 20px; height: 20px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%; background: var(--accent, #d97757);
+    color: #fff; font-size: 12px; font-weight: 600;
+    margin-top: 1px;
+}
+.gw-step-content {
+    font-size: 13px; color: var(--text); line-height: 1.5;
+}
+.gw-step-content a {
+    color: var(--accent, #d97757); text-decoration: underline;
+}
+.gw-code {
+    display: block; margin-top: 4px; padding: 5px 8px;
+    border-radius: 4px; background: rgba(0,0,0,0.3);
+    font-family: monospace; font-size: 12px; color: #ccc;
+    word-break: break-all;
+}
+.gw-guide-note {
+    font-size: 12px; color: var(--muted, #888);
+    padding: 6px 8px; border-radius: 4px;
+    background: rgba(255,255,255,0.03);
+    line-height: 1.5;
+}

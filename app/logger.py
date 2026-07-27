@@ -1,0 +1,90 @@
+"""
+logger.py – 앱 전역 로깅 설정 및 logger 팩토리
+
+사용법:
+    from logger import get_logger
+    logger = get_logger(__name__)
+
+로그 파일 (일별 로테이션, ~/.ragagent/logs/):
+    app_YYYYMMDD.log   – 앱 전반 (INFO+)
+    llm_YYYYMMDD.log   – LLM 요청/응답
+    event_YYYYMMDD.log – 이벤트 감사 로그
+"""
+import logging
+import sys
+
+_initialized = False
+
+
+def setup_logging() -> None:
+    """루트 로거 초기화. main.py 최상단에서 1회만 호출."""
+    global _initialized
+    if _initialized:
+        return
+    _initialized = True
+
+    from config import get_log_file
+    log_file = get_log_file("app")
+
+    fmt = logging.Formatter(
+        "[%(asctime)s] %(levelname)s %(name)s: %(message)s",
+        datefmt="%Y-%m-%dT%H:%M:%S",
+    )
+    fmt_uvi = logging.Formatter(
+        "[%(asctime)s] %(levelname)s uvicorn: %(message)s",
+        datefmt="%Y-%m-%dT%H:%M:%S",
+    )
+
+    root = logging.getLogger()
+    root.setLevel(logging.INFO)
+
+    if not any(isinstance(h, logging.FileHandler) for h in root.handlers):
+        fh = logging.FileHandler(log_file, encoding="utf-8")
+        fh.setFormatter(fmt)
+        root.addHandler(fh)
+
+    if not any(
+            isinstance(h, logging.StreamHandler) and not isinstance(h, logging.FileHandler)
+            for h in root.handlers
+    ):
+        sh = logging.StreamHandler(sys.stdout)
+        sh.setFormatter(fmt)
+        root.addHandler(sh)
+
+    # uvicorn 로그 통합
+    for name in ("uvicorn", "uvicorn.access", "uvicorn.error", "fastapi"):
+        lg = logging.getLogger(name)
+        lg.handlers = []
+        lg.propagate = True
+
+    # 헬스체크·알림 폴링 요청은 access 로그가 너무 많이 쌓이므로 제외
+    class _HealthCheckFilter(logging.Filter):
+        _NOISY_PATHS = ("/api/health", "/api/notifications")
+
+        def filter(self, record: logging.LogRecord) -> bool:
+            msg = record.getMessage()
+            return not any(p in msg for p in self._NOISY_PATHS)
+
+    logging.getLogger("uvicorn.access").addFilter(_HealthCheckFilter())
+
+    uve = logging.getLogger("uvicorn.error")
+    uve.propagate = False
+    for h, fmt_ in [
+        (logging.FileHandler(log_file, encoding="utf-8"), fmt_uvi),
+        (logging.StreamHandler(sys.stdout), fmt_uvi),
+    ]:
+        h.setFormatter(fmt_)
+        uve.addHandler(h)
+
+    # elasticsearch 노이즈 억제
+    for name in (
+            "elastic_transport",
+            "elastic_transport.transport",
+            "elastic_transport.node_pool",
+    ):
+        logging.getLogger(name).setLevel(logging.ERROR)
+
+
+def get_logger(name: str) -> logging.Logger:
+    """모듈별 logger 반환."""
+    return logging.getLogger(name)

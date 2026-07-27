@@ -1,0 +1,21 @@
+{
+  "confirm": "确认",
+  "cancel": "取消",
+  "save": "保存",
+  "delete": "删除",
+  "edit": "编辑",
+  "close": "关闭",
+  "loading": "加载中...",
+  "saving": "保存中...",
+  "error": "错误",
+  "success": "成功",
+  "refresh": "刷新",
+  "back": "返回",
+  "next": "下一步",
+  "search": "搜索",
+  "selectAll": "全选",
+  "deselectAll": "取消全选",
+  "none": "无",
+  "notSet": "未设置",
+  "retry": "重试"
+}

@@ -1,0 +1,527 @@
+.msg {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-width: 80%;
+    min-width: 0;
+}
+
+.msg.user {
+    align-self: flex-end;
+    align-items: flex-end;
+    max-width: 90% !important; /* user만 90% */
+}
+
+.msg.bot {
+    align-self: flex-start;
+    align-items: flex-start;
+    min-width: 0;
+    width: 100% !important; /* bot은 100% */
+}
+
+.msg-bubble {
+    padding: 12px 16px;
+    border-radius: var(--r);
+    font-size: 15px;
+    line-height: 1.65;
+    word-break: break-word;
+    max-width: 100%;
+    min-width: 0;
+    overflow-wrap: break-word;
+    font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Segoe UI', sans-serif;
+}
+
+.msg-bubble--empty { display:none; }
+.msg-pasted-preview-list { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:6px; margin-bottom:6px; }
+.msg-pasted-preview { position:relative; display:flex; width:min(260px, 100%); min-height:52px; border:1px solid rgba(255,255,255,.14); border-radius:15px; background:rgba(255,255,255,.045); }
+.msg-pasted-preview__content { display:flex; align-items:center; gap:9px; width:100%; min-width:0; padding:8px 9px; cursor:pointer; }
+.msg-pasted-preview__content:hover { background:transparent; }
+.msg-pasted-preview--active::before { position:absolute; top:8px; bottom:8px; left:-1px; width:3px; border-radius:0 3px 3px 0; background:var(--accent); content:''; }
+.msg-pasted-preview--active .msg-pasted-preview__icon { color:var(--accent); }
+.msg-pasted-preview__icon { display:grid; place-items:center; width:36px; height:36px; flex:0 0 36px; border-radius:10px; background:var(--surface2); color:var(--text-secondary); }
+.msg-pasted-preview__copy { display:flex; flex-direction:column; gap:4px; min-width:0; }
+.msg-pasted-preview__title { overflow:hidden; color:var(--text); font-size:12px; font-weight:600; text-overflow:ellipsis; white-space:nowrap; }
+.msg-pasted-preview__meta { overflow:hidden; color:var(--muted); font-size:10px; text-overflow:ellipsis; white-space:nowrap; }
+
+.msg-bubble ul {
+    padding-left: 24px !important;
+}
+
+.msg-bubble table td,
+.msg-bubble table th {
+    white-space: normal;
+    /* 한글/영문이 글자 하나 폭까지 쪼개지지 않도록. 긴 URL 등 어쩔 수 없는
+       경우에만 강제 줄바꿈(anywhere). 일반 단어는 단어 단위로 유지 → 셀이
+       극단적으로 좁아지는 현상 방지 */
+    overflow-wrap: anywhere;
+    word-break: keep-all;
+    min-width: 0;
+    vertical-align: top;
+}
+
+/* 셀 안의 인라인 코드는 셀 폭을 넘기지 않도록 줄바꿈 허용
+   (기본 인라인 code는 white-space:nowrap 이라 표에서 넘침) */
+.msg-bubble table td code,
+.msg-bubble table th code {
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere;
+    word-break: break-all;
+}
+
+.msg.user .msg-bubble {
+    background: #252525;
+    color: #e8eaf0;
+    border: 1px solid transparent;
+    border-bottom-right-radius: 4px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
+}
+
+.user-attachment-stack {
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    max-width:min(440px, 78vw);
+    gap:6px;
+    margin-bottom:4px;
+}
+
+.user-image-gallery {
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+    gap:6px;
+}
+
+.user-image-card {
+    width:88px;
+    height:72px;
+    padding:0;
+    overflow:hidden;
+    border:1px solid var(--border);
+    border-radius:10px;
+    background:var(--surface2);
+    cursor:zoom-in;
+}
+
+.user-image-card img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.user-file-list {
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+    gap:6px;
+}
+
+.user-file-card {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    gap: 9px;
+    width:min(220px, 72vw);
+    padding:7px 9px;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 9px;
+    background: rgba(255,255,255,.055);
+}
+
+.user-file-card__icon {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    flex: 0 0 28px;
+    border-radius: 7px;
+    background: rgba(255,255,255,.08);
+    color: var(--text-secondary);
+}
+
+.user-file-card__name {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 550;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.user-file-card__meta {
+    margin-left: auto;
+    color: var(--muted);
+    font-size: 10px;
+    white-space: nowrap;
+}
+
+.user-message-text {
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+.user-message-text--with-attachments {
+    display: block;
+    padding-top: 1px;
+}
+
+.msg.bot .msg-bubble {
+    background: var(--bg);
+    color: var(--text);
+    border-bottom-left-radius: 4px;
+    white-space: normal;
+    font-weight: 400;
+    max-width: min(920px, 100%);
+}
+
+.msg.bot .msg-bubble strong,
+.msg.bot .msg-bubble b {
+    font-weight: 600;
+}
+
+.msg.bot .msg-bubble :is(h1, h2, h3, h4) {
+    font-weight: 650 !important;
+}
+
+.msg.bot .msg-bubble li {
+    line-height: 1.65;
+}
+
+.msg-bubble code {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 0.9em;
+    font-family: 'Menlo', 'Consolas', 'Monaco', monospace;
+    color: var(--code-color);
+}
+
+/* 백틱 인라인 코드는 문장 흐름을 해치지 않도록 배지로만 구분한다. */
+.msg-bubble :not(pre) > code {
+    color: var(--text) !important;
+}
+
+.msg-bubble pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+}
+
+.msg-bubble .para-break {
+    /* LLM이 넣는 빈 줄 개수와 무관하게 문단 리듬은 한 가지로 유지한다. */
+    height: 20px;
+}
+
+/* Markdown은 제목/목록 사이와 섹션 사이 모두 빈 줄을 사용한다.
+   빈 줄 자체는 유지하되, 앞뒤 요소에 따라 간격을 달리해 내용의 소속을 선명하게 한다. */
+.msg-bubble :is(h1, h2, h3, h4) + .para-break {
+    height: 0;
+}
+
+.msg-bubble :is(h1, h2, h3, h4):has(+ .para-break + :is(ul, ol)) {
+    margin-bottom: 6px !important;
+}
+
+.msg-bubble :is(h1, h2, h3, h4) + .para-break + :is(ul, ol) {
+    margin-top: 6px !important;
+}
+
+/* 설명 문단에 딸린 목록은 같은 내용 묶음으로 보이게 가깝게 둔다. */
+.msg-bubble .para-break:has(+ :is(ul, ol)) {
+    height: 10px;
+}
+
+.msg-bubble :is(ul, ol) + .para-break {
+    height: 22px;
+}
+
+.msg-bubble :is(ul, ol) + .para-break + :is(h1, h2, h3, h4) {
+    margin-top: 16px !important;
+}
+
+.msg-bubble :is(ul, ol) {
+    margin-bottom: 6px !important;
+}
+
+.msg-bubble li {
+    margin-top: 6px !important;
+    margin-bottom: 6px !important;
+}
+
+.msg-meta {
+    font-size: 11px;
+    color: var(--muted);
+    padding: 0 4px;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.msg-meta.bot {
+    padding: 0 16px;
+}
+
+.msg.bot .msg-meta {
+    justify-content: space-between;
+}
+
+.msg.user .msg-meta {
+    justify-content: flex-end;
+}
+
+.msg-stats {
+    font-size: 10.5px;
+    color: var(--muted);
+    opacity: 0.7;
+    padding: 0 4px;
+    /* 부모 .msg의 gap(4px)을 상쇄해 시간/액션 행 바로 아래에 붙인다.
+       사이드패널 플러그인의 메시지 메타 간격과 동일한 밀도. */
+    margin-top: -2px;
+}
+
+.msg-stats.bot {
+    padding: 0 16px;
+}
+
+.msg.user .msg-stats {
+    text-align: right;
+}
+
+.msg-copy-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    opacity: 0;
+}
+
+.msg:hover .msg-copy-btn {
+    opacity: 1;
+}
+
+.msg-copy-btn:hover {
+    background: var(--surface2);
+    color: var(--text);
+}
+
+.msg-copy-btn:active {
+    transform: scale(0.95);
+}
+
+.msg-speak-btn--active {
+    opacity: 1 !important;
+    color: var(--accent, #6ea8fe) !important;
+}
+
+.sources {
+    margin-top: 8px;
+    margin-left: 16px;
+    padding: 10px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-width: 100%;
+}
+
+.sources-lbl {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 2px;
+}
+
+.src-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    padding: 6px 8px;
+    background: var(--surface);
+    border-radius: 6px;
+    border: 1px solid var(--border);
+}
+
+.src-name {
+    font-size: 10px;
+    color: var(--muted);
+    padding: 2px 6px;
+    background: var(--surface2);
+    border-radius: 4px;
+    flex-shrink: 0;
+    min-width: 76px;
+    width: auto;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.src-item a {
+    color: var(--accent2);
+    text-decoration: none;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.src-item a:hover {
+    text-decoration: underline;
+}
+
+.src-score {
+    font-size: 10px;
+    color: var(--success);
+    flex-shrink: 0;
+}
+
+.src-date {
+    font-size: 12px;
+    color: var(--muted);
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+/* ── 스트리밍 중 미완성 코드/프로젝트 블록 플레이스홀더 ── */
+.msg-stream-pending {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.msg-stream-file {
+    width: 100%;
+    opacity: 0.5;
+    font-size: 12px;
+    margin-top: -4px;
+}
+
+.msg-stream-spinner {
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--accent);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: msg-stream-spin 0.7s linear infinite;
+    flex-shrink: 0;
+}
+
+/* ── 현재 tool 실행 단계: 파일/검색어를 함께 보여줘 작업 맥락을 유지한다. ── */
+.msg-tool-status {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    margin: 12px 0 4px;
+    padding: 11px 13px;
+    max-width: min(640px, 100%);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text-secondary);
+}
+
+.msg-tool-status.completed {
+    border-color: var(--border);
+    background: var(--surface);
+}
+
+.msg-tool-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 20px;
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    background: var(--surface2);
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.msg-tool-copy { display: flex; min-width: 0; flex-direction: column; gap: 3px; }
+.msg-tool-text { font-size: 13px; font-weight: 500; }
+.msg-tool-detail {
+    max-width: min(520px, 70vw);
+    overflow: hidden;
+    color: var(--text-secondary);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    background: var(--surface2);
+    border-radius: 4px;
+    padding: 2px 5px;
+}
+
+@keyframes msg-stream-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* 활동 요약은 응답 본문과 같은 시작선에 두고, 상세 단계만 한 단계 들여쓴다. */
+.msg-activity { margin:10px 0 14px; max-width:min(640px, 100%); color:var(--muted); font-size:13px; }
+.msg-activity-summary { display:flex; align-items:center; gap:7px; padding:3px 0; border:0; background:transparent; color:inherit; font:inherit; cursor:pointer; }
+.msg-activity-summary.no-details { cursor:default; }
+.msg-activity-summary svg:last-child { margin-left:2px; }
+.msg-activity-spinner { animation:msg-stream-spin .8s linear infinite; color:var(--accent); }
+.msg-activity-list { list-style:none; margin:7px 0 0 6px; padding:0 0 0 13px; border-left:1px solid var(--border); display:grid; gap:7px; }
+.msg-activity-list li { position:relative; display:flex; align-items:center; gap:7px; min-width:0; color:var(--text-secondary); }
+.msg-activity-dot { position:absolute; left:-17px; width:7px; height:7px; border-radius:50%; background:var(--muted); }
+.msg-activity-check { position:absolute; left:-20px; padding:1px; border-radius:50%; background:var(--bg); color:var(--muted); }
+.msg-activity-list li.running .msg-activity-dot, .msg-activity-list li.judging .msg-activity-dot { background:var(--accent); box-shadow:0 0 0 3px rgba(var(--accent-rgb), .14); }
+.msg-activity-list code { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px; color:var(--muted); }
+
+/* ── 스트리밍 첫 토큰 대기 중 타이핑 점 (LoadingIndicator .typing과 동일 톤) ── */
+.msg-typing-dots {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    padding: 4px 0;
+}
+
+.msg-typing-dots span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+    animation: msg-typing 1.4s infinite ease-in-out;
+}
+
+.msg-typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.msg-typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes msg-typing {
+    0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); }
+    30% { opacity: 1; transform: scale(1.1); }
+}
+.msg-tool-spinner {
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--border, rgba(255, 255, 255, 0.15));
+    border-top-color: var(--muted);
+    border-radius: 50%;
+    animation: msg-tool-spin 0.7s linear infinite;
+    flex-shrink: 0;
+    align-self: center;
+}
+@keyframes msg-tool-spin {
+    to { transform: rotate(360deg); }
+}

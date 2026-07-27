@@ -1,0 +1,308 @@
+.remember-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.remember-modal {
+    background: var(--modal-bg);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 480px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 헤더 */
+.remember-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+.remember-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: var(--modal-title);
+    font-weight: 600;
+    color: var(--text);
+}
+
+.remember-icon { font-size: 20px; }
+
+.remember-close-x {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: var(--muted);
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.15s;
+}
+
+.remember-close-x:hover {
+    background: var(--border);
+}
+
+/* 본문 */
+.remember-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* 설정 영역 */
+.remember-setup {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.remember-setup-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.remember-setup-label {
+    font-size: var(--modal-sub);
+    color: var(--muted);
+    flex-shrink: 0;
+}
+
+.remember-existing {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.remember-profile-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.remember-profile-text {
+    font-size: var(--modal-text);
+    color: var(--text-secondary, var(--muted));
+    line-height: 1.6;
+    white-space: pre-wrap;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.remember-profile-loading,
+.remember-profile-empty {
+    font-size: var(--modal-sub);
+    color: var(--muted);
+    font-style: italic;
+}
+
+/* 진행 중 */
+.remember-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 80px;
+    justify-content: center;
+}
+
+.remember-status {
+    font-size: var(--modal-text);
+    color: var(--muted);
+}
+
+.remember-bar-wrap {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.remember-bar {
+    height: 100%;
+    background: var(--primary, #c97d4e);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.remember-count {
+    font-size: var(--modal-sub);
+    color: var(--muted);
+}
+
+.remember-cur-title {
+    opacity: 0.6;
+}
+
+.remember-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--primary, #c97d4e);
+    border-radius: 50%;
+    animation: remember-spin 0.8s linear infinite;
+    align-self: center;
+}
+
+@keyframes remember-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* 완료 */
+.remember-done {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.remember-done-msg {
+    font-size: 14px;
+    color: var(--text);
+}
+
+.remember-profile-preview {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* 에러 */
+.remember-error {
+    font-size: 14px;
+    color: var(--del-fg);
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+}
+
+/* 푸터 */
+.remember-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+}
+
+.remember-cancel-btn,
+.remember-close-btn {
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: var(--modal-btn);
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.remember-cancel-btn:hover,
+.remember-close-btn:not(:disabled):hover {
+    background: var(--border);
+}
+
+.remember-close-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.remember-start-btn {
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: none;
+    background: var(--primary, #c97d4e);
+    color: #fff;
+    font-size: var(--modal-btn);
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+.remember-start-btn:hover {
+    opacity: 0.85;
+}
+
+.remember-start-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 편집 버튼 */
+.remember-edit-btn {
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: var(--modal-btn);
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.remember-edit-btn:hover:not(:disabled) {
+    background: var(--border);
+}
+
+.remember-edit-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 편집 모드 */
+.remember-edit-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.remember-edit-textarea {
+    width: 100%;
+    min-height: 280px;
+    max-height: 400px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: var(--modal-text);
+    line-height: 1.6;
+    resize: vertical;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.remember-edit-textarea:focus {
+    outline: none;
+    border-color: var(--primary, #c97d4e);
+}
+
+.remember-edit-count {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: right;
+}

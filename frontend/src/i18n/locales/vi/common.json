@@ -1,0 +1,21 @@
+{
+  "confirm": "OK",
+  "cancel": "Hủy",
+  "save": "Lưu",
+  "delete": "Xóa",
+  "edit": "Sửa",
+  "close": "Đóng",
+  "loading": "Đang tải...",
+  "saving": "Đang lưu...",
+  "error": "Lỗi",
+  "success": "Xong",
+  "refresh": "Làm mới",
+  "back": "Quay lại",
+  "next": "Tiếp",
+  "search": "Tìm",
+  "selectAll": "Chọn hết",
+  "deselectAll": "Bỏ chọn hết",
+  "none": "Không có",
+  "notSet": "Chưa thiết lập",
+  "retry": "Thử lại"
+}

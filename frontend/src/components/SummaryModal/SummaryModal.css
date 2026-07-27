@@ -1,0 +1,131 @@
+.summary-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.summary-modal {
+    background: var(--modal-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    width: 560px;
+    max-width: calc(100vw - 32px);
+    max-height: 75vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.summary-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.summary-modal-title {
+    font-size: var(--modal-title);
+    font-weight: 600;
+    color: var(--text);
+}
+
+.summary-modal-close {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px;
+}
+
+.summary-modal-close:hover {
+    color: var(--text);
+}
+
+.summary-modal-body {
+    padding: 16px 18px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.summary-modal-empty {
+    color: var(--muted);
+    font-size: var(--modal-sub);
+    padding: 12px 0;
+}
+
+.summary-section {
+    margin-bottom: 20px;
+}
+
+.summary-section:last-child {
+    margin-bottom: 0;
+}
+
+.summary-section-label {
+    font-size: 15px;
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin-bottom: 8px;
+}
+
+.summary-section-content {
+    font-size: 15px;
+    color: var(--text);
+    line-height: 1.7;
+    white-space: pre-line;
+    /* 대화 요약이 길어도 이 섹션만 내부 스크롤되게 해서(첨부파일 목록과 동일한 패턴)
+       한 섹션이 모달 전체를 다 차지하지 않게 함 */
+    max-height: 240px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.summary-attachment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    /* 첨부파일이 많아도(예: zip 12개+) 이 목록만 내부 스크롤되게 해서
+       위쪽 "대화 요약" 섹션이 스크롤에 밀려 안 보이지 않게 함 */
+    max-height: 320px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.summary-attachment-item {
+    background: var(--modal-inset);
+    border-radius: 8px;
+    padding: 10px 12px;
+}
+
+.summary-attachment-item-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.summary-attachment-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.summary-attachment-count {
+    font-size: var(--modal-label);
+    color: var(--muted);
+    margin-left: auto;
+}
+
+.summary-attachment-text {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}

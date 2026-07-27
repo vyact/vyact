@@ -1,0 +1,171 @@
+/* ReasoningToggle.css — 추론 on/off 스위치 + 물음표 툴팁 */
+
+.reasoning-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 36px;
+    flex-shrink: 0;
+    color: #b0b0b8;
+    font-size: 12px;
+    font-weight: 600;
+    user-select: none;
+}
+
+.reasoning-toggle.on {
+    color: var(--text);
+}
+
+.reasoning-toggle.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+/* 라벨 + 스위치 (클릭 영역) — 버튼처럼 보이지 않도록 배경/테두리 없음 */
+.reasoning-toggle-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    outline: none;
+    transition: color 0.2s;
+}
+
+.reasoning-toggle-control:hover .reasoning-toggle-label,
+.reasoning-toggle-control:focus-visible .reasoning-toggle-label {
+    color: var(--text);
+}
+
+.reasoning-toggle-label {
+    white-space: nowrap;
+    transition: color 0.2s;
+}
+
+/* 스위치 트랙 */
+.reasoning-toggle-track {
+    position: relative;
+    width: 34px;
+    height: 18px;
+    border-radius: 9px;
+    background: var(--border);
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+
+.reasoning-toggle.on .reasoning-toggle-track {
+    background: var(--accent);
+}
+
+/* 스위치 노브 */
+.reasoning-toggle-knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform 0.2s;
+}
+
+.reasoning-toggle.on .reasoning-toggle-knob {
+    transform: translateX(16px);
+}
+
+/* ── 물음표 + 툴팁 ── */
+.reasoning-help {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #b0b0b8;
+    cursor: help;
+    transition: color 0.2s;
+}
+
+.reasoning-help:hover {
+    color: var(--text);
+}
+
+.reasoning-tooltip {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 0;
+    z-index: 1200;
+    width: 280px;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(4px);
+    transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
+    pointer-events: none;
+    font-weight: 400;
+}
+
+.reasoning-help:hover .reasoning-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* 말풍선 꼬리 */
+.reasoning-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 12px;
+    border: 6px solid transparent;
+    border-top-color: var(--surface);
+}
+
+.reasoning-tooltip-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.reasoning-tooltip-intro {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+.reasoning-tooltip-section {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.reasoning-tooltip-label {
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.reasoning-tooltip-label.on {
+    color: var(--accent);
+}
+
+.reasoning-tooltip-label.off {
+    color: var(--text-secondary);
+}
+
+.reasoning-tooltip-list {
+    margin: 0;
+    padding-left: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.reasoning-tooltip-list li {
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--text-secondary);
+}

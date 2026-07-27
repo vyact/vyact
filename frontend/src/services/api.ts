@@ -1,0 +1,898 @@
+import type {
+    ChatResponse,
+    ConversationDetailResponse,
+    HistoryResponse,
+    StatusResponse,
+    QuickNote,
+    Message,
+    MessageAttachment,
+    ArticleAttachment,
+    McpCatalogEntry,
+    McpServer,
+    InstalledPlugin,
+} from '../types';
+import { assertOk, ApiError } from '../utils/apiError';
+
+const API_BASE = '/api';
+
+interface GoogleMailParticipant {
+    name: string;
+    email: string;
+    isMe: boolean;
+}
+
+interface GoogleMailWorkspaceMessage {
+    id: string;
+    threadId: string;
+    from: string;
+    participants: GoogleMailParticipant[];
+    messageCount: number;
+    subject: string;
+    date: string;
+    receivedAt: string;
+    snippet: string;
+    isUnread: boolean;
+    isStarred: boolean;
+    hasAttachments: boolean;
+    labelIds: string[];
+}
+
+interface GoogleMailLabel {
+    id: string;
+    name: string;
+    type: 'system' | 'user';
+    unreadCount: number;
+}
+
+interface GoogleMailWorkspaceResponse {
+    messages: GoogleMailWorkspaceMessage[];
+    nextPageToken?: string;
+    labels: GoogleMailLabel[];
+}
+
+const pendingGoogleMailWorkspaceRequests = new Map<string, Promise<GoogleMailWorkspaceResponse>>();
+
+interface ScriptPairPayload {
+    id: string;
+    a: string;
+    a_ko: string;
+    b: string;
+    b_ko: string;
+}
+
+interface ScriptPayload {
+    id: string;
+    title: string;
+    language: string;
+    pairs?: ScriptPairPayload[];
+    raw?: string;
+    created_at?: string;
+}
+
+interface ProviderSettings {
+    has_key: boolean;
+    model?: string;
+}
+
+type ProviderType = 'ollama' | 'openai' | 'gemini' | 'claude';
+
+interface ProvidersResponse {
+    providers: Record<string, ProviderSettings>;
+    current_type?: ProviderType;
+}
+
+interface SystemPrompt {
+    id: string;
+    title: string;
+    content: string;
+}
+
+interface SystemPromptsResponse {
+    prompts: SystemPrompt[];
+    selected_id?: string | null;
+}
+
+interface ApiSuccessResponse {
+    ok: boolean;
+}
+
+export const api = {
+    async getSetupStatus(): Promise<{
+        setup_done: boolean;
+        config: {
+            type: string;
+            model: string | null;
+            api_key: string | null;
+            config?: Record<string, unknown>;
+        };
+        ram_gb: number;
+        cpu_cores: string;
+        arch: string;
+        recommended: string;
+        log_path: string;
+    }> {
+        const res = await fetch(`${API_BASE}/setup/status`);
+        return res.json();
+    },
+
+    async installModel(
+        model: string,
+        onProgress?: (msg: string, type: string, progress?: number) => void
+    ): Promise<void> {
+        const res = await fetch(`${API_BASE}/setup/install`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({model}),
+        });
+        if (!onProgress || !res.body) return;
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        while (true) {
+            const {done, value} = await reader.read();
+            if (done) break;
+            for (const line of decoder.decode(value).split('\n')) {
+                if (line.startsWith('data: ')) {
+                    try {
+                        const data = JSON.parse(line.replace('data: ', '').trim());
+                        onProgress(data.message, data.type, data.progress);
+                    } catch (e) {
+                        console.error('SSE parse error:', e);
+                    }
+                }
+            }
+        }
+    },
+
+    async getStatus(): Promise<StatusResponse> {
+        const res = await fetch(`${API_BASE}/status`);
+        return res.json();
+    },
+
+    async getModels(): Promise<{
+        models: string[][];
+        current: string;
+        installed: string[];
+        model_type?: 'chat' | 'image_gen' | 'image_edit';
+    }> {
+        const res = await fetch(`${API_BASE}/models`);
+        return res.json();
+    },
+
+    // ── MCP 서버 설정 ──
+    async getMcpCatalog(): Promise<{ catalog: Record<string, McpCatalogEntry> }> {
+        const res = await fetch(`${API_BASE}/mcp/catalog`);
+        return res.json();
+    },
+
+    async getMcpServers(): Promise<{ servers: McpServer[] }> {
+        const res = await fetch(`${API_BASE}/mcp/servers`);
+        return res.json();
+    },
+
+    async addMcpServer(type: string, config: Record<string, unknown>, enabled = true, prompt = ''): Promise<{ server: McpServer }> {
+        const res = await fetch(`${API_BASE}/mcp/servers`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({type, config, enabled, prompt}),
+        });
+        await assertOk(res, 'MCP 서버 추가 실패');
+        return res.json();
+    },
+
+    async updateMcpServer(id: string, patch: { config?: Record<string, unknown>; enabled?: boolean; prompt?: string }): Promise<{ servers: McpServer[] }> {
+        const res = await fetch(`${API_BASE}/mcp/servers/${id}`, {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(patch),
+        });
+        return res.json();
+    },
+
+    async removeMcpServer(id: string): Promise<{ servers: McpServer[] }> {
+        const res = await fetch(`${API_BASE}/mcp/servers/${id}`, { method: 'DELETE' });
+        return res.json();
+    },
+
+    async getPlugins(): Promise<{ plugins: InstalledPlugin[] }> {
+        const res = await fetch(`${API_BASE}/plugins`);
+        await assertOk(res, '플러그인 목록을 불러오지 못했습니다.');
+        return res.json();
+    },
+
+    async installPlugin(file: File): Promise<{ plugin: InstalledPlugin }> {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch(`${API_BASE}/plugins/install`, {
+            method: 'POST',
+            body: formData,
+        });
+        await assertOk(res, '플러그인 설치에 실패했습니다.');
+        return res.json();
+    },
+
+    async uninstallPlugin(id: string): Promise<{ ok: boolean; plugin: InstalledPlugin }> {
+        const res = await fetch(`${API_BASE}/plugins/${encodeURIComponent(id)}`, {
+            method: 'DELETE',
+        });
+        await assertOk(res, '플러그인 삭제에 실패했습니다.');
+        return res.json();
+    },
+
+    async getGoogleAuthUrl(accountId: string, gauthJson: string | object): Promise<{ auth_url: string }> {
+        const res = await fetch(`${API_BASE}/mcp/google/auth-url`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({account_id: accountId, gauth_json: gauthJson}),
+        });
+        return res.json();
+    },
+
+    async getGoogleAuthStatus(): Promise<{ authenticated: boolean; reconnect_required?: boolean; accounts?: Array<{id: string; email?: string; authenticated: boolean; reconnect_required: boolean}> }> {
+        const res = await fetch(`${API_BASE}/mcp/google/auth-status`);
+        return res.json();
+    },
+
+    async getGoogleAccountAuthStatus(accountId: string): Promise<{authenticated: boolean}> {
+        const res = await fetch(`${API_BASE}/mcp/google/accounts/${encodeURIComponent(accountId)}/auth-status`);
+        return res.json();
+    },
+
+    async activateGoogleAccount(accountId: string): Promise<{ok: boolean; active_account_id: string}> {
+        const res = await fetch(`${API_BASE}/mcp/google/accounts/${encodeURIComponent(accountId)}/activate`, {method: 'POST'});
+        await assertOk(res, 'Google 계정을 전환하지 못했습니다.');
+        return res.json();
+    },
+
+    async disconnectGoogle(accountId: string): Promise<{ ok: boolean }> {
+        const res = await fetch(`${API_BASE}/mcp/google/accounts/${encodeURIComponent(accountId)}/disconnect`, {method: 'POST'});
+        return res.json();
+    },
+
+    async getGoogleMailLabels() { return (await fetch(`${API_BASE}/google-workspace/mail/labels`)).json(); },
+    async createGoogleMailLabel(name: string) {
+        const response = await fetch(`${API_BASE}/google-workspace/mail/labels`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name}),
+        });
+        await assertOk(response, 'Unable to create email label.');
+        return response.json();
+    },
+    async deleteGoogleMailLabel(id: string) {
+        const response = await fetch(`${API_BASE}/google-workspace/mail/labels/${encodeURIComponent(id)}`, {method: 'DELETE'});
+        await assertOk(response, 'Unable to delete email label.');
+        return response.json();
+    },
+    async getGoogleMailWorkspace(label = 'INBOX'): Promise<GoogleMailWorkspaceResponse> {
+        const params = new URLSearchParams({label});
+        const requestKey = params.toString();
+        const pendingRequest = pendingGoogleMailWorkspaceRequests.get(requestKey);
+        if (pendingRequest) return pendingRequest;
+        const request = fetch(`${API_BASE}/google-workspace/mail/workspace?${params}`)
+            .then(async response => {
+                await assertOk(response, 'Unable to load email workspace.');
+                return response.json() as Promise<GoogleMailWorkspaceResponse>;
+            })
+            .finally(() => pendingGoogleMailWorkspaceRequests.delete(requestKey));
+        pendingGoogleMailWorkspaceRequests.set(requestKey, request);
+        return request;
+    },
+    async getGoogleMailMessages(label = 'INBOX', pageToken = '') { const params = new URLSearchParams({label}); if (pageToken) params.set('page_token', pageToken); return (await fetch(`${API_BASE}/google-workspace/mail/messages?${params}`)).json(); },
+    async getGoogleMailMessage(id: string) {
+        const response = await fetch(`${API_BASE}/google-workspace/mail/messages/${encodeURIComponent(id)}`);
+        await assertOk(response, 'Unable to load email.');
+        return response.json();
+    },
+    async getGoogleMailSignature(accountId: string): Promise<{signature_html: string}> {
+        const response = await fetch(`${API_BASE}/google-workspace/accounts/${encodeURIComponent(accountId)}/mail/signature`);
+        await assertOk(response, 'Unable to load email signature.');
+        return response.json();
+    },
+    async saveGoogleMailSignature(accountId: string, signatureHtml: string) {
+        const response = await fetch(`${API_BASE}/google-workspace/accounts/${encodeURIComponent(accountId)}/mail/signature`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({signature_html: signatureHtml}),
+        });
+        await assertOk(response, 'Unable to save email signature.');
+        return response.json();
+    },
+    async getGoogleMailAttachment(messageId: string, attachmentId: string, mimeType: string) {
+        const query = new URLSearchParams({mime_type: mimeType});
+        const response = await fetch(`${API_BASE}/google-workspace/mail/messages/${encodeURIComponent(messageId)}/attachments/${encodeURIComponent(attachmentId)}?${query}`);
+        if (!response.ok) throw new Error('Unable to load email attachment.');
+        return response.blob();
+    },
+    async markGoogleMailMessageRead(id: string) { return (await fetch(`${API_BASE}/google-workspace/mail/messages/${encodeURIComponent(id)}/read`, {method: 'PATCH'})).json(); },
+    async setGoogleMailMessageStarred(id: string, starred: boolean) {
+        const response = await fetch(`${API_BASE}/google-workspace/mail/messages/${encodeURIComponent(id)}/star`, {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({starred}),
+        });
+        await assertOk(response, 'Unable to update email star.');
+        return response.json();
+    },
+    async trashGoogleMailMessages(messageIds: string[]) {
+        const response = await fetch(`${API_BASE}/google-workspace/mail/messages/trash`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({message_ids: messageIds}),
+        });
+        await assertOk(response, 'Unable to delete email.');
+        return response.json();
+    },
+    async permanentlyDeleteGoogleMailMessages(messageIds: string[]) {
+        const response = await fetch(`${API_BASE}/google-workspace/mail/messages/delete`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({message_ids: messageIds}),
+        });
+        await assertOk(response, 'Unable to permanently delete email.');
+        return response.json();
+    },
+    async trashGoogleMailThreads(threadIds: string[]) {
+        const response = await fetch(`${API_BASE}/google-workspace/mail/threads/trash`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({thread_ids: threadIds}),
+        });
+        await assertOk(response, 'Unable to delete email thread.');
+        return response.json();
+    },
+    async permanentlyDeleteGoogleMailThreads(threadIds: string[]) {
+        const response = await fetch(`${API_BASE}/google-workspace/mail/threads/delete`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({thread_ids: threadIds}),
+        });
+        await assertOk(response, 'Unable to permanently delete email thread.');
+        return response.json();
+    },
+    async moveGoogleMailThreads(threadIds: string[], targetLabelId: string, sourceLabelId: string, sourceIsUserLabel: boolean) {
+        const response = await fetch(`${API_BASE}/google-workspace/mail/threads/move`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({thread_ids: threadIds, target_label_id: targetLabelId, source_label_id: sourceLabelId, source_is_user_label: sourceIsUserLabel}),
+        });
+        await assertOk(response, 'Unable to move email.');
+        return response.json();
+    },
+    async applyGoogleMailThreadLabel(threadIds: string[], labelId: string) {
+        const response = await fetch(`${API_BASE}/google-workspace/mail/threads/labels`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({thread_ids: threadIds, label_id: labelId}),
+        });
+        await assertOk(response, 'Unable to apply email label.');
+        return response.json();
+    },
+    async generateGoogleMailBody(data: {
+        mode: 'new' | 'reply' | 'forward';
+        instruction: string;
+        current_message: {to: string[]; cc: string[]; bcc: string[]; subject: string; draft: string};
+        attachments: Array<{name: string; mime_type: string; size: number}>;
+        thread_messages: Array<{from_: string; to: string; cc: string; subject: string; date: string; body: string}>;
+    }) {
+        const response = await fetch(`${API_BASE}/google-workspace/mail/generate`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data),
+        });
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.detail || 'Failed to generate email.');
+        return payload as {body: string};
+    },
+    async sendGoogleMail(data: FormData) {
+        const response = await fetch(`${API_BASE}/google-workspace/mail/send`, {method: 'POST', body: data});
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.detail || 'Failed to send email.');
+        return payload as {ok: boolean; id?: string; threadId?: string};
+    },
+    async getGoogleDriveFiles(folderId = 'root', query = '', pageToken = '', pageSize = 50,
+                              orderBy: 'name' | 'modifiedTime' | 'size' = 'name',
+                              orderDirection: 'asc' | 'desc' = 'asc') {
+        const params = new URLSearchParams({
+            folder_id: folderId,
+            query,
+            page_token: pageToken,
+            page_size: String(pageSize),
+            order_by: orderBy,
+            order_direction: orderDirection,
+        });
+        return (await fetch(`${API_BASE}/google-workspace/drive/files?${params}`)).json();
+    },
+    async uploadGoogleDriveFiles(data: FormData) { return (await fetch(`${API_BASE}/google-workspace/drive/upload`, {method: 'POST', body: data})).json(); },
+    async createGoogleDriveFolder(parentId: string, name: string) { return (await fetch(`${API_BASE}/google-workspace/drive/folders`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({parent_id: parentId, name})})).json(); },
+    async deleteGoogleDriveFile(id: string) { return (await fetch(`${API_BASE}/google-workspace/drive/files/${encodeURIComponent(id)}`, {method: 'DELETE'})).json(); },
+    async batchTrashGoogleDriveFiles(fileIds: string[]) { return (await fetch(`${API_BASE}/google-workspace/drive/files/batch-trash`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({file_ids: fileIds})})).json(); },
+    async checkGoogleDriveDuplicates(folderId: string, names: string[]): Promise<{duplicates: string[]}> { return (await fetch(`${API_BASE}/google-workspace/drive/files/check-duplicates`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({folder_id: folderId, names})})).json(); },
+    async renameGoogleDriveFile(id: string, name: string) { return (await fetch(`${API_BASE}/google-workspace/drive/files/${encodeURIComponent(id)}/rename`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name})})).json(); },
+    async copyGoogleDriveFile(id: string, name: string) { return (await fetch(`${API_BASE}/google-workspace/drive/files/${encodeURIComponent(id)}/copy`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name})})).json(); },
+    async downloadGoogleDriveFile(id: string, signal?: AbortSignal) {
+        const response = await fetch(`${API_BASE}/google-workspace/drive/files/${encodeURIComponent(id)}/download`, {signal});
+        if (!response.ok) throw new Error('파일을 다운로드하지 못했습니다.');
+        const disposition = response.headers.get('Content-Disposition') || '';
+        const encodedFilename = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+        return {
+            blob: await response.blob(),
+            filename: encodedFilename ? decodeURIComponent(encodedFilename) : '',
+        };
+    },
+    async createGoogleDriveDownloadJob(id: string, signal?: AbortSignal) {
+        const response = await fetch(`${API_BASE}/google-workspace/drive/files/${encodeURIComponent(id)}/download-jobs`, {method: 'POST', signal});
+        if (!response.ok) throw new Error('다운로드 작업을 시작하지 못했습니다.');
+        return response.json() as Promise<{jobId: string}>;
+    },
+    async createGoogleDriveBulkDownloadJob(ids: string[], archiveName: string, signal?: AbortSignal) {
+        const response = await fetch(`${API_BASE}/google-workspace/drive/download-jobs`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({file_ids: ids, archive_name: archiveName}),
+            signal,
+        });
+        if (!response.ok) throw new Error('다운로드 작업을 시작하지 못했습니다.');
+        return response.json() as Promise<{jobId: string}>;
+    },
+    async getGoogleDriveDownloadJob(jobId: string, signal?: AbortSignal) {
+        const response = await fetch(`${API_BASE}/google-workspace/drive/download-jobs/${encodeURIComponent(jobId)}`, {signal});
+        if (!response.ok) throw new Error('다운로드 진행 상태를 확인하지 못했습니다.');
+        return response.json() as Promise<{status: 'collecting' | 'compressing' | 'complete' | 'error'; total: number; completed: number; error?: string}>;
+    },
+    async getGoogleDriveDownloadJobFile(jobId: string, signal?: AbortSignal) {
+        const response = await fetch(`${API_BASE}/google-workspace/drive/download-jobs/${encodeURIComponent(jobId)}/file`, {signal});
+        if (!response.ok) throw new Error('압축 파일을 다운로드하지 못했습니다.');
+        const disposition = response.headers.get('Content-Disposition') || '';
+        const encodedFilename = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+        return {
+            blob: await response.blob(),
+            filename: encodedFilename ? decodeURIComponent(encodedFilename) : '',
+        };
+    },
+    async cancelGoogleDriveDownloadJob(jobId: string) {
+        await fetch(`${API_BASE}/google-workspace/drive/download-jobs/${encodeURIComponent(jobId)}`, {method: 'DELETE'});
+    },
+    async getGoogleDrivePermissions(id: string) { return (await fetch(`${API_BASE}/google-workspace/drive/files/${encodeURIComponent(id)}/permissions`)).json(); },
+    async createGoogleDrivePermission(id: string, email: string, role: 'reader' | 'writer') { return (await fetch(`${API_BASE}/google-workspace/drive/files/${encodeURIComponent(id)}/permissions`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({email, role})})).json(); },
+    async updateGoogleDriveGeneralAccess(id: string, role: 'private' | 'reader' | 'writer') { return (await fetch(`${API_BASE}/google-workspace/drive/files/${encodeURIComponent(id)}/general-access`, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({role})})).json(); },
+    async deleteGoogleDrivePermission(id: string, permissionId: string) { return (await fetch(`${API_BASE}/google-workspace/drive/files/${encodeURIComponent(id)}/permissions/${encodeURIComponent(permissionId)}`, {method: 'DELETE'})).json(); },
+
+    // ── Calendar ──
+    async getGoogleCalendarEvents(params: {time_min?: string; time_max?: string; max_results?: number; calendar_id?: string; q?: string} = {}) {
+        const query = new URLSearchParams();
+        if (params.time_min) query.set('time_min', params.time_min);
+        if (params.time_max) query.set('time_max', params.time_max);
+        if (params.max_results) query.set('max_results', String(params.max_results));
+        if (params.calendar_id) query.set('calendar_id', params.calendar_id);
+        if (params.q) query.set('q', params.q);
+        return (await fetch(`${API_BASE}/google-workspace/calendar/events?${query}`)).json();
+    },
+    async createGoogleCalendarEvent(data: {summary: string; start: string; end: string; description?: string; location?: string; calendar_id?: string; timezone?: string; reminders?: {method: 'popup' | 'email'; minutes: number}[]; use_default_reminders?: boolean}) {
+        return (await fetch(`${API_BASE}/google-workspace/calendar/events`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)})).json();
+    },
+    async updateGoogleCalendarEvent(eventId: string, data: {summary?: string; start?: string; end?: string; description?: string; location?: string; calendar_id?: string; timezone?: string; reminders?: {method: 'popup' | 'email'; minutes: number}[]; use_default_reminders?: boolean}) {
+        return (await fetch(`${API_BASE}/google-workspace/calendar/events/${encodeURIComponent(eventId)}`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)})).json();
+    },
+    async deleteGoogleCalendarEvent(eventId: string, calendarId = 'primary') {
+        return (await fetch(`${API_BASE}/google-workspace/calendar/events/${encodeURIComponent(eventId)}?calendar_id=${encodeURIComponent(calendarId)}`, {method: 'DELETE'})).json();
+    },
+    async getGoogleCalendars() { return (await fetch(`${API_BASE}/google-workspace/calendar/calendars`)).json(); },
+
+    async getNotifications(limit = 30, offset = 0) { return (await fetch(`${API_BASE}/notifications?limit=${limit}&offset=${offset}`)).json(); },
+    async createNotification(data: {type: string; source_id: string; title: string; message?: string; occurred_at?: string; update_only?: boolean; account_id?: string; account_email?: string}) { return (await fetch(`${API_BASE}/notifications`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)})).json(); },
+    async markNotificationsRead() { return (await fetch(`${API_BASE}/notifications/read`, {method: 'PATCH'})).json(); },
+
+    async selectModel(
+        type: string,
+        model: string,
+        apiKey?: string,
+        onProgress?: (msg: string, type: string, progress?: number) => void,
+        modelType?: 'chat' | 'image_gen' | 'image_edit'
+    ): Promise<void> {
+        const res = await fetch(`${API_BASE}/models/select`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({type, model, api_key: apiKey, model_type: modelType}),
+        });
+        if (!onProgress || !res.body) return;
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        while (true) {
+            const {done, value} = await reader.read();
+            if (done) break;
+            for (const line of decoder.decode(value).split('\n')) {
+                if (line.startsWith('data: ')) {
+                    try {
+                        const data = JSON.parse(line.replace('data: ', '').trim());
+                        onProgress(data.message, data.type, data.progress);
+                    } catch (e) {
+                        console.error('SSE parse error:', e);
+                    }
+                }
+            }
+        }
+    },
+
+    async chat(
+        question: string,
+        convId: string,
+        messages: Array<Pick<Message, 'role' | 'content' | 'attachments'>>,
+        attachments?: MessageAttachment[],
+        articles?: ArticleAttachment[],
+        systemPromptOverride?: string,
+        voiceMode?: boolean,
+        ragContext?: Array<{ source: string; data: string }>,
+        reasoning: boolean = true
+    ): Promise<ChatResponse> {
+        const res = await fetch(`${API_BASE}/query`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                question,
+                conv_id: convId,
+                messages,
+                attachments,
+                articles: articles ?? [],
+                article_selection_explicit: true,
+                user_timestamp: new Date().toISOString(),
+                reasoning,
+                ...(systemPromptOverride !== undefined && {system_prompt: systemPromptOverride}),
+                ...(voiceMode && {voice_mode: true}),
+                ...(ragContext?.length && {rag_context: ragContext}),
+            }),
+        });
+        return res.json();
+    },
+
+    async resetIndex() {
+        const res = await fetch(`${API_BASE}/index`, {method: 'DELETE'});
+        return res.json();
+    },
+
+    async getHistory(limit = 20, offset = 0, projectId?: string | null): Promise<HistoryResponse> {
+        const projectParam = projectId ? `&project_id=${encodeURIComponent(projectId)}` : '';
+        const res = await fetch(`${API_BASE}/history?limit=${limit}&offset=${offset}${projectParam}`);
+        return res.json();
+    },
+
+    async getConversation(convId: string): Promise<ConversationDetailResponse> {
+        const res = await fetch(`${API_BASE}/history/${convId}`);
+        return res.json();
+    },
+
+    async getConversationSummary(convId: string): Promise<{
+        conv_id: string;
+        conv_summary: string;
+        attachment_summaries: { batch_id: string; attached_at: string; source_name: string; file_count: number; summary: string }[];
+    }> {
+        const res = await fetch(`${API_BASE}/history/${convId}/summary`);
+        return res.json();
+    },
+
+    async deleteConversation(convId: string): Promise<void> {
+        await fetch(`${API_BASE}/history/${convId}`, {method: 'DELETE'});
+    },
+
+    async clearConversationMessages(convId: string): Promise<void> {
+        await fetch(`${API_BASE}/history/${convId}/messages`, {method: 'DELETE'});
+    },
+
+    async deleteAllConversations(): Promise<void> {
+        await fetch(`${API_BASE}/history`, {method: 'DELETE'});
+    },
+
+    async renameConversation(convId: string, title: string): Promise<void> {
+        await fetch(`${API_BASE}/history/${convId}/title`, {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({title})
+        });
+    },
+    async getProjects(): Promise<{projects: import('../types').Project[]}> { return (await fetch(`${API_BASE}/projects`)).json(); },
+    async createProject(name: string, folderPath: string): Promise<import('../types').Project> { return (await fetch(`${API_BASE}/projects`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name, folder_path: folderPath})})).json(); },
+    async updateProject(projectId: string, updates: Partial<Pick<import('../types').Project, 'name' | 'project_prompt'>>): Promise<import('../types').Project> { return (await fetch(`${API_BASE}/projects/${projectId}`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(updates)})).json(); },
+    async deleteProject(projectId: string): Promise<void> { await fetch(`${API_BASE}/projects/${projectId}`, {method: 'DELETE'}); },
+    async setConversationProject(convId: string, projectId: string | null): Promise<void> { await fetch(`${API_BASE}/history/${convId}/project`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({project_id: projectId})}); },
+
+    async getProviders(): Promise<ProvidersResponse> {
+        const res = await fetch(`${API_BASE}/providers`);
+        return res.json();
+    },
+
+    async saveProvider(provider: string, apiKey: string, model: string): Promise<ProvidersResponse> {
+        const res = await fetch(`${API_BASE}/providers/${provider}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({api_key: apiKey, model})
+        });
+        return res.json();
+    },
+
+    async deleteProvider(provider: string): Promise<ApiSuccessResponse> {
+        const res = await fetch(`${API_BASE}/providers/${provider}`, {method: 'DELETE'});
+        return res.json();
+    },
+
+    async selectProvider(provider: string, model?: string): Promise<ProvidersResponse> {
+        const res = await fetch(`${API_BASE}/provider/select`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({provider, model})
+        });
+        return res.json();
+    },
+
+    async getSystemPrompts(): Promise<SystemPromptsResponse> {
+        const res = await fetch(`${API_BASE}/system-prompts`);
+        return res.json();
+    },
+
+    async createSystemPrompt(title: string, content: string): Promise<SystemPrompt> {
+        const res = await fetch(`${API_BASE}/system-prompts`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({title, content})
+        });
+        return res.json();
+    },
+
+    async updateSystemPrompt(id: string, title: string, content: string): Promise<SystemPrompt> {
+        const res = await fetch(`${API_BASE}/system-prompts/${id}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({title, content})
+        });
+        return res.json();
+    },
+
+    async deleteSystemPrompt(id: string): Promise<ApiSuccessResponse> {
+        const res = await fetch(`${API_BASE}/system-prompts/${id}`, {method: 'DELETE'});
+        return res.json();
+    },
+
+    async selectSystemPrompt(promptId: string | null): Promise<ApiSuccessResponse> {
+        const res = await fetch(`${API_BASE}/system-prompts/select`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({prompt_id: promptId})
+        });
+        return res.json();
+    },
+
+    async getCurrentSystemPrompt(): Promise<SystemPrompt | null> {
+        const res = await fetch(`${API_BASE}/system-prompts/current`);
+        return res.json();
+    },
+
+    async generateImage(
+        prompt: string,
+        convId: string,
+        messages: Array<{ role: string; content: string }>,
+        attachments?: MessageAttachment[],
+        onProgress?: (message: string, progress: number) => void,
+        overrideModel?: string,
+    ): Promise<{ conv_id: string; model: string; filenames: string[]; count: number }> {
+        const res = await fetch(`${API_BASE}/generate-image`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                prompt,
+                conv_id: convId,
+                messages,
+                attachments: attachments ?? [],
+                override_model: overrideModel ?? ''
+            }),
+        });
+        await assertOk(res, '이미지 생성 요청 실패');
+        if (!res.body) throw new ApiError('스트림을 받을 수 없습니다.');
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        while (true) {
+            const {done, value} = await reader.read();
+            if (done) break;
+            for (const line of decoder.decode(value).split('\n')) {
+                if (!line.startsWith('data: ')) continue;
+                try {
+                    const data = JSON.parse(line.slice(6).trim());
+                    if (data.type === 'error') throw new Error(data.message);
+                    if (data.type === 'done') return JSON.parse(data.message);
+                    if (data.type === 'info' && onProgress) onProgress(data.message, data.progress ?? 0);
+                } catch (e) {
+                    if (e instanceof Error && e.message !== 'parse error') throw e;
+                }
+            }
+        }
+        throw new Error('이미지 생성 응답이 완료되지 않았습니다.');
+    },
+
+    async getLlmLogging(): Promise<{ llm_logging: boolean }> {
+        const res = await fetch(`${API_BASE}/settings/llm-logging`);
+        return res.json();
+    },
+
+    async setLlmLogging(enabled: boolean): Promise<{ llm_logging: boolean }> {
+        const res = await fetch(`${API_BASE}/settings/llm-logging`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({enabled})
+        });
+        return res.json();
+    },
+
+    async getToolLogging(): Promise<{ tool_logging: boolean }> {
+        const res = await fetch(`${API_BASE}/settings/tool-logging`);
+        return res.json();
+    },
+
+    async setToolLogging(enabled: boolean): Promise<{ tool_logging: boolean }> {
+        const res = await fetch(`${API_BASE}/settings/tool-logging`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({enabled})
+        });
+        return res.json();
+    },
+
+    async getRuntimeSettings(): Promise<Record<string, number>> {
+        const res = await fetch(`${API_BASE}/settings/runtime`);
+        return res.json();
+    },
+
+    async setRuntimeSettings(settings: Record<string, number | null>): Promise<Record<string, number | null>> {
+        const res = await fetch(`${API_BASE}/settings/runtime`, {
+            method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(settings)
+        });
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+    },
+
+    async getTtsSettings(): Promise<{ rate: number; volume: number; enVoiceURI: string }> {
+        const res = await fetch(`${API_BASE}/settings/tts`);
+        return res.json();
+    },
+
+    async setTtsSettings(settings: { rate: number; volume: number; enVoiceURI: string }): Promise<void> {
+        await fetch(`${API_BASE}/settings/tts`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(settings)
+        });
+    },
+
+    async getMcpSettings(): Promise<{
+        kis_app_key: string;
+        kis_app_secret: string;
+        kis_account_no: string
+    }> {
+        const res = await fetch(`${API_BASE}/settings/mcp`);
+        return res.json();
+    },
+
+    async setMcpSettings(settings: {
+        kis_app_key?: string;
+        kis_app_secret?: string;
+        kis_account_no?: string
+    }): Promise<void> {
+        await fetch(`${API_BASE}/settings/mcp`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(settings)
+        });
+    },
+
+    async listScripts(): Promise<{ scripts: ScriptPayload[] }> {
+        const res = await fetch(`${API_BASE}/scripts`);
+        return res.json();
+    },
+
+    async getScript(id: string): Promise<ScriptPayload> {
+        const res = await fetch(`${API_BASE}/scripts/${id}`);
+        return res.json();
+    },
+
+    async createScript(data: { title: string; language: string; pairs: ScriptPairPayload[]; raw: string }): Promise<ScriptPayload> {
+        const res = await fetch(`${API_BASE}/scripts`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        return res.json();
+    },
+
+    async updateScript(id: string, data: Partial<{
+        title: string;
+        language: string;
+        pairs: ScriptPairPayload[];
+        raw: string
+    }>): Promise<ScriptPayload> {
+        const res = await fetch(`${API_BASE}/scripts/${id}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        return res.json();
+    },
+
+    async deleteScript(id: string): Promise<{ ok: boolean }> {
+        const res = await fetch(`${API_BASE}/scripts/${id}`, {method: 'DELETE'});
+        return res.json();
+    },
+
+    // ── 메모 ───────────────────────────────────────────────────────
+    async listMemos(size = 50, from_ = 0) {
+        const res = await fetch(`${API_BASE}/memo?size=${size}&from_=${from_}`);
+        return res.json();
+    },
+    async getMemo(id: string) {
+        const res = await fetch(`${API_BASE}/memo/${id}`);
+        return res.json();
+    },
+    async createMemo(contentHtml: string, title?: string) {
+        const res = await fetch(`${API_BASE}/memo`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({content_html: contentHtml, title}),
+        });
+        return res.json();
+    },
+    async updateMemo(id: string, contentHtml: string, title?: string) {
+        const res = await fetch(`${API_BASE}/memo/${id}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({content_html: contentHtml, title}),
+        });
+        return res.json();
+    },
+    async deleteMemo(id: string) {
+        const res = await fetch(`${API_BASE}/memo/${id}`, {method: 'DELETE'});
+        return res.json();
+    },
+    async uploadMemoAttachment(memoId: string, file: File): Promise<{ filename: string; mime_type: string; url: string }> {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch(`${API_BASE}/memo/${memoId}/attachments`, { method: 'POST', body: formData });
+        if (!res.ok) throw new Error((await res.json().catch(() => null))?.detail || '첨부 파일 업로드에 실패했습니다.');
+        return res.json();
+    },
+    async cleanupMemoAttachments(memoId: string, contentHtml: string): Promise<void> {
+        const res = await fetch(`${API_BASE}/memo/${memoId}/attachments/cleanup`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({content_html: contentHtml}),
+        });
+        if (!res.ok) throw new Error('첨부 파일 정리에 실패했습니다.');
+    },
+
+    // ── 빠른 메모 (todo형) ──
+    async getQuickNotes(): Promise<{ notes: QuickNote[]; total: number }> {
+        const res = await fetch(`${API_BASE}/quicknote`);
+        return res.json();
+    },
+    async createQuickNote(text: string): Promise<QuickNote> {
+        const res = await fetch(`${API_BASE}/quicknote`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({text}),
+        });
+        return res.json();
+    },
+    async updateQuickNote(id: string, text: string): Promise<QuickNote> {
+        const res = await fetch(`${API_BASE}/quicknote/${id}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({text}),
+        });
+        return res.json();
+    },
+    async toggleQuickNoteDone(id: string, done: boolean): Promise<QuickNote> {
+        const res = await fetch(`${API_BASE}/quicknote/${id}/done`, {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({done}),
+        });
+        return res.json();
+    },
+    async deleteQuickNote(id: string): Promise<void> {
+        await fetch(`${API_BASE}/quicknote/${id}`, {method: 'DELETE'});
+    },
+};

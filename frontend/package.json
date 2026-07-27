@@ -1,0 +1,52 @@
+{
+  "name": "vyact",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@tiptap/extension-code-block-lowlight": "^3.27.1",
+    "@tiptap/extension-details": "^3.27.1",
+    "@tiptap/extension-link": "^3.27.1",
+    "@tiptap/extension-placeholder": "^3.27.1",
+    "@tiptap/extension-table": "^3.27.1",
+    "@tiptap/extension-task-item": "^3.27.1",
+    "@tiptap/extension-task-list": "^3.27.1",
+    "@tiptap/extension-text-style": "^3.27.1",
+    "@tiptap/react": "^3.27.1",
+    "@tiptap/starter-kit": "^3.27.1",
+    "docx-preview": "^0.4.0",
+    "highlight.js": "^11.11.1",
+    "i18next": "^26.3.6",
+    "katex": "^0.16.45",
+    "lowlight": "^3.3.0",
+    "lucide-react": "^1.8.0",
+    "marked": "^18.0.5",
+    "pretendard": "1.3.9",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-i18next": "^17.0.10",
+    "react-player": "^3.4.0",
+    "react-select": "^5.8.1",
+    "tiptap-markdown": "^0.9.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@typescript-eslint/eslint-plugin": "^8.58.1",
+    "@typescript-eslint/parser": "^8.58.1",
+    "@vitejs/plugin-react": "^6.0.1",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.4.26",
+    "typescript": "^5.5.4",
+    "vite": "^8.0.8",
+    "vitest": "^4.1.10"
+  }
+}

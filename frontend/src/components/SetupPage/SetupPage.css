@@ -1,0 +1,437 @@
+/* =========================
+    PAGE
+========================= */
+.setup-page {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    position: relative;
+    background: var(--bg);
+}
+
+/* =========================
+    CARD
+========================= */
+.setup-card {
+    width: 100%;
+    max-width: 620px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: min(88vh, 820px);
+    overflow-y: auto;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.2);
+}
+
+.setup-card.installing {
+    max-width: 420px;
+}
+
+.setup-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: -2px 0 12px;
+}
+
+.setup-brand-mark {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    background: var(--surface2);
+}
+
+.setup-brand-mark span {
+    color: var(--text);
+    font-size: 20px;
+    font-weight: 800;
+    font-style: italic;
+    letter-spacing: -2px;
+    transform: translateX(-1px);
+}
+
+.setup-wordmark {
+    color: var(--text);
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.setup-card h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.4px;
+}
+
+.setup-card p.sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin: 4px 0 0;
+    line-height: 1.45;
+}
+
+/* =========================
+    SPEC CHIPS
+========================= */
+.spec-row {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.spec-chip {
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+}
+
+/* =========================
+    SECTION LABEL
+========================= */
+.sec-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-top: 10px;
+}
+
+/* =========================
+    PROVIDER GRID (🔥 FIX)
+========================= */
+.provider-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.provider-item {
+    padding: 10px 11px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    cursor: pointer;
+    transition: 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    text-align: center;
+}
+
+.provider-item:hover {
+    border-color: var(--accent);
+    background: var(--surface2);
+}
+
+.provider-item.selected {
+    border-color: var(--accent);
+    background: #1e1b4b;
+}
+
+.provider-name {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.provider-desc {
+    font-size: 11px;
+    color: var(--muted);
+}
+
+/* =========================
+    INPUT (🔥 FIX 핵심)
+========================= */
+.input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 9px;
+    border: 2px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+    transition: 0.15s;
+}
+
+.input:focus {
+    border-color: var(--accent);
+    background: var(--surface2);
+}
+
+/* =========================
+    MODEL GRID
+========================= */
+.model-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    /* 약 3개 항목이 보이도록 높이 조정 (2~3줄 설명 item 기준). 이상은 내부 스크롤 */
+    min-height: 200px;
+    max-height: 220px;
+    overflow-y: auto;
+    padding-right: 2px;
+    /* flex column 카드 안에서 눌려 사라지지 않도록 축소 방지 */
+    flex-shrink: 0;
+}
+
+.model-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 2px solid var(--border);
+    cursor: pointer;
+    transition: 0.15s;
+    background: var(--bg);
+}
+
+.model-item:hover {
+    border-color: var(--accent);
+    background: var(--surface2);
+}
+
+.model-item.selected {
+    border-color: var(--accent);
+    background: #1e1b4b;
+}
+
+.model-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    border: 2px solid var(--muted);
+    flex-shrink: 0;
+}
+
+.model-item.selected .model-dot {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.model-name {
+    font-size: 13px;
+    font-weight: 600;
+    width: 150px;
+    flex-shrink: 0;
+}
+
+.model-desc {
+    font-size: 11px;
+    color: var(--muted);
+    flex: 1;
+    line-height: 1.4;
+}
+
+/* Elasticsearch 설치 방식 선택 */
+.es-mode-grid {
+    display: flex;
+    gap: 8px;
+}
+.es-mode-item {
+    flex: 1;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 2px solid var(--border);
+    cursor: pointer;
+    transition: 0.15s;
+    background: var(--bg);
+}
+.es-mode-item:hover {
+    border-color: var(--accent);
+    background: var(--surface2);
+}
+.es-mode-item.selected {
+    border-color: var(--accent);
+    background: #1e1b4b;
+}
+.es-mode-item.disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    filter: grayscale(0.6);
+}
+.es-mode-item.disabled:hover {
+    border-color: var(--border);
+    background: var(--bg);
+}
+.es-mode-name {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+.es-mode-desc {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.4;
+}
+
+.model-badge {
+    margin-left: auto;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: #064e3b;
+    color: #6ee7b7;
+}
+
+/* =========================
+    BUTTON
+========================= */
+.btn-install {
+    margin-top: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    width: 100%;
+    box-shadow: none;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.btn-install:hover {
+    opacity: 1;
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--surface2) 80%, var(--accent));
+}
+
+.btn-install:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* =========================
+    PROGRESS
+========================= */
+.progress-wrap {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+    min-height: 0;
+}
+
+.progress-wrap.active {
+    display: flex;
+}
+
+.pbar-bg {
+    height: 6px;
+    background: rgba(150, 158, 196, 0.16);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.pbar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #7c6cff, #9a8dff);
+    border-radius: 999px;
+    box-shadow: 0 0 14px rgba(126, 108, 255, 0.85);
+    transition: width 0.35s;
+}
+
+@media (max-width: 580px) {
+    .setup-page { padding: 14px; }
+    .setup-card { padding: 22px 18px; border-radius: 18px; }
+    .provider-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.progress-log {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 11px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    height: 320px;
+}
+
+/* =========================
+    LOG TYPES
+========================= */
+.linfo {
+    color: var(--accent2);
+}
+
+.lok {
+    color: var(--success);
+}
+
+.llog {
+    color: var(--muted);
+}
+
+.lerror {
+    color: var(--danger);
+}
+
+.global-error-box {
+    position: sticky; /* 스크롤해도 상단 유지 */
+    top: 0;
+    z-index: 50;
+
+    margin-bottom: 12px;
+    padding: 12px 14px;
+
+    background: rgba(255, 59, 48, 0.08);
+    border: 1px solid rgba(255, 59, 48, 0.35);
+    border-radius: 10px;
+
+    backdrop-filter: blur(6px);
+}
+
+.global-error {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    color: #ff3b30;
+    font-weight: 600;
+    font-size: 13px;
+    line-height: 1.4;
+
+    padding: 4px 0;
+}
+
+.global-error + .global-error {
+    border-top: 1px dashed rgba(255, 59, 48, 0.2);
+    margin-top: 6px;
+    padding-top: 6px;
+}
+
+.error-box {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: var(--del-fg);
+    font-size: 12px;
+    font-weight: 600;
+}

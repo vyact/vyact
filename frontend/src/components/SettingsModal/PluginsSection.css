@@ -1,0 +1,236 @@
+.plugins-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.plugins-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.plugins-header > div:first-child {
+    flex: 1;
+}
+
+.plugins-header h4 {
+    margin: 0 0 6px;
+    color: var(--text);
+    font-size: 16px;
+}
+
+.plugins-header p,
+.plugins-card p,
+.plugins-confirm p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.plugins-upload-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid var(--accent);
+    border-radius: 7px;
+    background: var(--accent);
+    color: white;
+    padding: 8px 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.plugins-upload-button:disabled,
+.plugins-delete-button:disabled {
+    cursor: not-allowed;
+    opacity: .55;
+}
+
+.plugins-file-input {
+    display: none;
+}
+
+.plugins-security-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 11px 13px;
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.plugins-security-note svg {
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: var(--accent);
+}
+
+.plugins-list {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.plugins-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.plugins-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
+.plugins-card-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.plugin-settings-fields {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.plugin-settings-field-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 4px;
+    color: var(--text);
+    font-size: 12px;
+}
+
+.plugin-settings-field-header a {
+    color: var(--accent);
+    font-size: 11px;
+    text-decoration: none;
+}
+
+.plugin-settings-field > p {
+    margin-bottom: 8px;
+}
+
+.plugins-card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+    color: var(--text);
+    font-size: 14px;
+}
+
+.plugins-card-title span {
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.plugins-tags {
+    display: flex;
+    gap: 5px;
+    margin-top: 9px;
+}
+
+.plugins-tags span {
+    padding: 3px 7px;
+    border-radius: 10px;
+    background: var(--surface2);
+    color: var(--text-secondary);
+    font-size: 11px;
+}
+
+.plugins-delete-button {
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted);
+    padding: 7px;
+    cursor: pointer;
+}
+
+.plugins-delete-button:hover {
+    background: rgba(239, 68, 68, .1);
+    color: #ef4444;
+}
+
+.plugins-empty {
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    color: var(--muted);
+    font-size: 13px;
+    text-align: center;
+}
+
+.plugins-confirm {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px;
+    border: 1px solid rgba(239, 68, 68, .4);
+    border-radius: 10px;
+    background: rgba(239, 68, 68, .06);
+}
+
+.plugins-confirm > div:first-child {
+    flex: 1;
+}
+
+.plugins-confirm strong {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--text);
+    font-size: 13px;
+}
+
+.plugins-confirm-actions {
+    display: flex;
+    gap: 7px;
+}
+
+.plugins-confirm-actions button {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface2);
+    color: var(--text);
+    padding: 7px 10px;
+    cursor: pointer;
+}
+
+.plugins-confirm-actions button.danger {
+    border-color: #ef4444;
+    background: #ef4444;
+    color: white;
+}
+.plugins-confirm-removal-items {
+    margin: 8px 0 0;
+    padding-left: 20px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.6;
+}

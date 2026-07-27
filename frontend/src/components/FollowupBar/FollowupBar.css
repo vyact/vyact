@@ -1,0 +1,182 @@
+.followup-bar {
+    /* ChatInput(.chat-input-wrap)과 동일한 폭 규칙 */
+    width: 52%;
+    min-width: 480px;
+    align-self: center;
+    margin: 0 auto 2px;
+    box-sizing: border-box;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 10px 14px;
+    animation: followup-in 0.18s ease;
+}
+
+/* 코드뷰 열릴 때 입력창과 동일하게 폭 확장 */
+.chat-area-split .followup-bar {
+    width: 100%;
+    min-width: 0;
+    align-self: stretch;
+}
+
+@keyframes followup-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.followup-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2px 4px 5px;
+}
+
+.followup-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.02em;
+}
+
+.followup-head-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.followup-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+}
+.followup-close:hover {
+    background: var(--surface2);
+    color: var(--text);
+}
+
+.followup-send-selected {
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: opacity 0.15s, filter 0.15s;
+}
+.followup-send-selected:hover:not(:disabled) { filter: brightness(1.08); }
+.followup-send-selected:disabled { opacity: 0.5; cursor: default; }
+
+.followup-list {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.followup-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    background: transparent;
+    border: 1px solid transparent;
+    transition: background 0.12s, border-color 0.12s;
+}
+.followup-item:hover {
+    background: var(--surface2);
+}
+.followup-item.selected {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.followup-check {
+    flex: 0 0 20px;
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    border: 1.5px solid var(--border);
+    color: #fff;
+    font-size: 12px;
+    line-height: 1;
+    background: transparent;
+    transition: background 0.12s, border-color 0.12s;
+}
+.followup-item.selected .followup-check {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.followup-text {
+    flex: 1 1 auto;
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.45;
+    word-break: break-word;
+}
+
+.followup-go {
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-size: 16px;
+    border-radius: 7px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.12s, background 0.12s, color 0.12s;
+}
+.followup-item:hover .followup-go { opacity: 1; }
+.followup-go:hover { background: var(--surface); color: var(--accent); }
+
+.followup-custom {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 5px;
+    padding-top: 6px;
+    border-top: 1px solid var(--border);
+}
+.followup-custom input {
+    flex: 1 1 auto;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-size: 14px;
+    padding: 6px 6px;
+}
+.followup-custom input::placeholder { color: var(--muted); }
+
+.followup-custom-send {
+    flex: 0 0 auto;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: filter 0.15s;
+}
+.followup-custom-send:hover:not(:disabled) { filter: brightness(1.08); }
+.followup-custom-send:disabled { opacity: 0.5; cursor: default; }

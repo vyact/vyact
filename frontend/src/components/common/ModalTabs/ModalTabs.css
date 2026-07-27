@@ -1,0 +1,34 @@
+/* 모달 공통 탭 (underline 스타일 · 설정 모달 기준) */
+.modal-tabs-bar {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.modal-tab {
+    flex: 1;
+    padding: 10px 14px;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: var(--modal-btn);
+    font-weight: 500;
+    transition: all 0.15s;
+    border-bottom: 2px solid transparent;
+}
+
+.modal-tab:hover:not(:disabled) {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.modal-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+}
+
+.modal-tab:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}

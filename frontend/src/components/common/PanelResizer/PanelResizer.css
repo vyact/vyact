@@ -1,0 +1,31 @@
+.panel-resizer {
+    width: 6px;
+    flex-shrink: 0;
+    cursor: col-resize;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 2;
+    /* 넓은 히트 영역 */
+    margin: 0 -3px;
+    padding: 0 3px;
+}
+
+.panel-resizer-line {
+    width: 2px;
+    height: 100%;
+    border-radius: 1px;
+    background: var(--border);
+    transition: background 0.15s, width 0.15s;
+}
+
+.panel-resizer:hover .panel-resizer-line {
+    width: 3px;
+    background: var(--accent);
+}
+
+.panel-resizer--active .panel-resizer-line {
+    width: 3px;
+    background: var(--accent);
+}

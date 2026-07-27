@@ -1,0 +1,394 @@
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { LogEntry } from '../../types';
+import { getRecommendedModelDisplay } from '../../utils/recommendedModels';
+import { syncPendingLanguageAfterSetup } from '../../i18n';
+import EsModeSelector from './EsModeSelector';
+import './SetupPage.css';
+
+interface SetupPageProps {
+    onInstallComplete: () => void;
+}
+
+interface RecommendedModel {
+    id: string;
+    name: string;
+    desc: string;
+    type?: string;
+}
+
+type Provider = 'ollama' | 'openai' | 'gemini' | 'claude';
+
+const DEFAULT_MODELS: Record<Exclude<Provider, 'ollama'>, string> = {
+    openai: 'gpt-4o-mini',
+    gemini: 'gemini-3.1-flash-lite-preview',
+    claude: 'claude-3-5-sonnet',
+};
+
+const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
+    const { t } = useTranslation('setup');
+    const [provider, setProvider] = useState<Provider>('ollama');
+    const [esMode, setEsMode] = useState<'docker' | 'native'>('docker');
+    // null = 확인 중(상태 조회 완료 전). 확인 전에는 선택지를 잠가 "됐다 안 됐다"처럼 보이는 것을 방지.
+    const [dockerAvailable, setDockerAvailable] = useState<boolean | null>(null);
+    const [nativeSupported, setNativeSupported] = useState<boolean | null>(null);
+    const [recommendedModels, setRecommendedModels] = useState<RecommendedModel[]>([]);
+    const [defaultModel, setDefaultModel] = useState<string>('');
+
+    const [selectedModel, setSelectedModel] = useState<string>('');
+    const [customModel, setCustomModel] = useState<string>('');
+    const [apiKey, setApiKey] = useState<string>('');
+
+    const [isInstalling, setIsInstalling] = useState(false);
+    const [progress, setProgress] = useState(0);
+
+    const [logs, setLogs] = useState<LogEntry[]>([]);
+    const [errorLogs, setErrorLogs] = useState<string[]>([]);
+
+    const logRef = useRef<HTMLDivElement>(null);
+
+    const isCloud = provider !== 'ollama';
+
+    // 추천 모델 리스트 로드
+    useEffect(() => {
+        fetch('/api/models/recommended')
+            .then(res => res.json())
+            .then(data => {
+                setRecommendedModels(data.models);
+                setDefaultModel(data.default);
+            })
+            .catch(err => console.error('Failed to load models:', err));
+    }, []);
+
+    // 시스템 상태 조회 — Docker 설치 여부/네이티브 지원 여부에 따라 ES 방식 선택지 제어
+    useEffect(() => {
+        fetch('/api/setup/status')
+            .then(res => res.json())
+            .then(data => {
+                const dockerOk = data.docker_available ?? false;
+                const nativeOk = data.native_supported ?? false;
+                setDockerAvailable(dockerOk);
+                setNativeSupported(nativeOk);
+                // 확인이 끝난 시점에 기본 선택을 확정한다.
+                // Docker 사용 가능하면 docker, 아니면 네이티브(가능할 때)로.
+                setEsMode(dockerOk ? 'docker' : (nativeOk ? 'native' : 'docker'));
+            })
+            .catch(err => {
+                console.error('Failed to load setup status:', err);
+                // 조회 실패 시 선택지를 잠그지 않도록 둘 다 허용으로 처리
+                setDockerAvailable(true);
+                setNativeSupported(true);
+            });
+    }, []);
+
+    // 로그 추가 시 자동 스크롤
+    useEffect(() => {
+        if (logRef.current) {
+            logRef.current.scrollTop = logRef.current.scrollHeight;
+        }
+    }, [logs]);
+
+    useEffect(() => {
+        if (provider === 'ollama') {
+            setSelectedModel(prev => defaultModel || prev || '');
+            setCustomModel('');
+            setApiKey('');
+        } else {
+            setSelectedModel(DEFAULT_MODELS[provider as Exclude<Provider, 'ollama'>]);
+            setCustomModel('');
+        }
+    }, [provider, defaultModel]);
+
+    const addLog = (type: LogEntry['type'], message: string, displayErrorMessage = message) => {
+        if (type === 'log') {
+            // 진행률 로그는 마지막 줄 덮어쓰기
+            setLogs(prev => {
+                const newLogs = [...prev];
+                if (newLogs.length > 0 && newLogs[newLogs.length - 1].type === 'log') {
+                    // 마지막이 log면 덮어쓰기
+                    newLogs[newLogs.length - 1] = { type, message };
+                } else {
+                    // 새로 추가
+                    newLogs.push({ type, message });
+                }
+                return newLogs;
+            });
+        } else {
+            // 다른 타입은 새 줄 추가
+            setLogs(prev => [...prev, { type, message }]);
+        }
+
+        if (type === 'error') {
+            setErrorLogs(prev => [...prev, displayErrorMessage]);
+        }
+    };
+
+    const isInstallDisabled = useMemo(() => {
+        if (isCloud) return !apiKey.trim() || !selectedModel.trim();
+        // Ollama: 모델 미선택 + 커스텀 미입력이면 비활성화
+        return !selectedModel.trim() && !customModel.trim();
+    }, [isCloud, apiKey, selectedModel, customModel]);
+
+    const changeProvider = (next: Provider) => {
+        setProvider(next);
+        setLogs([]);
+        setProgress(0);
+        setIsInstalling(false);
+    };
+
+    const handleInstall = async () => {
+        if (isCloud && isInstallDisabled) {
+            addLog('error', t('apiKeyModelRequired'));
+            return;
+        }
+        setIsInstalling(true);
+        setProgress(0);
+        setLogs([]);
+        setErrorLogs([]); // 🔥 설치 시작 시 초기화
+
+        const payload =
+            provider === 'ollama'
+                ? {
+                    type: 'ollama',
+                    model: customModel || selectedModel,
+                    config: { es_mode: esMode },
+                }
+                : {
+                    type: provider,
+                    model: selectedModel,
+                    api_key: apiKey,
+                    config: { es_mode: esMode },
+                };
+
+        try {
+            const response = await fetch('/api/setup/install', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.body) throw new Error('Stream not supported');
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+
+            let hasError = false;
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (!line.startsWith('data: ')) continue;
+
+                    const raw = line.replace('data: ', '').trim();
+                    if (!raw) continue;
+
+                    const parsed = JSON.parse(raw);
+
+                    if (parsed.progress !== undefined) {
+                        setProgress(parsed.progress);
+                    }
+
+                    if (parsed.message) {
+                        const type = parsed.type;
+
+                        if (type === 'error') {
+                            hasError = true;
+                            const localizedErrorMessage = t('installationFailed');
+                            addLog('error', parsed.message, localizedErrorMessage);
+                            // 진행 로그에는 원문을 유지하고, 사용자 알림은 현재 언어로 표시한다.
+                            alert(localizedErrorMessage);
+                            setIsInstalling(false);
+                            continue;
+                        }
+
+                        if (type === 'done') {
+                            addLog('ok', parsed.message);
+
+                            if (!hasError) {
+                                // setup 라우터가 ES 초기화와 .setup_done 생성을 끝낸 뒤에
+                                // 전송하는 이벤트다. 이 시점에 초기 언어를 바로 저장한다.
+                                await syncPendingLanguageAfterSetup();
+                                onInstallComplete();
+                            }
+
+                            setIsInstalling(false);
+                            return;
+                        }
+
+                        const logType: LogEntry['type'] = (
+                            type === 'info' || type === 'ok' || type === 'log' || type === 'error'
+                        ) ? type : 'log';
+                        addLog(logType, parsed.message);
+                    }
+                }
+            }
+
+            if (hasError) {
+                setIsInstalling(false);
+            }
+
+        } catch (err) {
+            addLog('error', String(err), t('installationFailed'));
+            setIsInstalling(false);
+        }
+    };
+
+    return (
+        <div className="setup-page">
+            <div className={`setup-card ${isInstalling ? 'installing' : ''}`}>
+                <header className="setup-header">
+                    <div className="setup-brand-mark" aria-hidden="true">
+                        <span>V</span>
+                    </div>
+                    <div className="setup-wordmark">VYACT</div>
+                </header>
+
+                {/* 🔥 GLOBAL ERROR (항상 표시) */}
+                {errorLogs.length > 0 && (
+                    <div className="global-error-box">
+                        {errorLogs.map((e, i) => (
+                            <div key={i} className="global-error">
+                                ⚠ {e}
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                <div className="sec-label">{t('provider')}</div>
+
+                <div className="provider-grid">
+                    {(['ollama', 'openai', 'gemini', 'claude'] as const).map(id => ({
+                        id,
+                        name: t(`providers.${id}.name`),
+                        desc: t(`providers.${id}.desc`),
+                    })).map(p => (
+                        <div
+                            key={p.id}
+                            className={`provider-item ${provider === p.id ? 'selected' : ''} ${isInstalling ? 'disabled' : ''}`}
+                            onClick={() => !isInstalling && changeProvider(p.id as Provider)}
+                        >
+                            <div className="provider-name">{p.name}</div>
+                            <div className="provider-desc">{p.desc}</div>
+                        </div>
+                    ))}
+                </div>
+
+                {!isInstalling && (
+                    <>
+                        {provider === 'ollama' && (
+                            <>
+                                <div className="sec-label">{t('ollamaModel')}</div>
+                                <div className="model-grid">
+                                    {[
+                                        // 1. chat 모델 (DEFAULT_MODEL 최상단)
+                                        ...recommendedModels
+                                            .filter(m => (!m.type || m.type === 'chat'))
+                                            .sort((a, b) => a.id === defaultModel ? -1 : b.id === defaultModel ? 1 : 0),
+                                        // 2. 구분자 (sentinel)
+                                        { id: '__divider__', name: '', desc: '', type: '__divider__' },
+                                        // 3. 이미지 모델
+                                        ...recommendedModels.filter(m => m.type === 'image_gen' || m.type === 'image_edit'),
+                                    ].map((model) => {
+                                        if (model.type === '__divider__') {
+                                            return (
+                                                <div key="divider" style={{
+                                                    display: 'flex', alignItems: 'center', gap: '8px',
+                                                    fontSize: '11px', color: 'var(--muted)', margin: '4px 0 2px',
+                                                    flexShrink: 0,
+                                                }}>
+                                                    <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+                                                    🎨 {t('imageGenModel')}
+                                                    <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+                                                </div>
+                                            );
+                                        }
+                                        const displayModel = getRecommendedModelDisplay(model, t);
+                                        return (
+                                            <div
+                                                key={model.id}
+                                                className={`model-item ${selectedModel === model.id ? 'selected' : ''}`}
+                                                onClick={() => setSelectedModel(model.id)}
+                                            >
+                                                <div className="model-name">{displayModel.name}</div>
+                                                <div className="model-desc">{displayModel.desc}</div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                <input
+                                    className="input"
+                                    placeholder={t('customModel')}
+                                    value={customModel}
+                                    onChange={e => setCustomModel(e.target.value)}
+                                />
+                            </>
+                        )}
+
+                        {isCloud && (
+                            <>
+                                <input
+                                    className="input"
+                                    type="password"
+                                    placeholder={t('apiKey')}
+                                    value={apiKey}
+                                    onChange={e => setApiKey(e.target.value)}
+                                />
+
+                                <input
+                                    className="input"
+                                    placeholder={t('model')}
+                                    value={selectedModel}
+                                    onChange={e => setSelectedModel(e.target.value)}
+                                />
+                            </>
+                        )}
+
+                        {/* ES 설치 방식은 프로바이더와 무관하게 항상 표시 (RAG에 ES 필요) */}
+                        <EsModeSelector
+                            esMode={esMode}
+                            onChange={setEsMode}
+                            dockerAvailable={dockerAvailable}
+                            nativeSupported={nativeSupported}
+                        />
+
+                        <button
+                            className="btn-install"
+                            onClick={handleInstall}
+                            disabled={isInstallDisabled || (dockerAvailable === null && nativeSupported === null)}
+                        >
+                            {t('startInstall')}
+                        </button>
+                    </>
+                )}
+
+                {isInstalling && (
+                    <div className="progress-wrap active">
+                        <div className="pbar-bg">
+                            <div
+                                className="pbar-fill"
+                                style={{ width: `${progress}%` }}
+                            />
+                        </div>
+
+                        <div className="progress-log" ref={logRef}>
+                            {logs.map((log, i) => (
+                                <div key={i} className={`log-${log.type}`}>
+                                    {log.message}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+            </div>
+        </div>
+    );
+};
+
+export default SetupPage;

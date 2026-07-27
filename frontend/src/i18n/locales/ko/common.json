@@ -1,0 +1,21 @@
+{
+  "confirm": "확인",
+  "cancel": "취소",
+  "save": "저장",
+  "delete": "삭제",
+  "edit": "편집",
+  "close": "닫기",
+  "loading": "로딩 중...",
+  "saving": "저장 중...",
+  "error": "오류",
+  "success": "성공",
+  "refresh": "새로고침",
+  "back": "돌아가기",
+  "next": "다음",
+  "search": "검색",
+  "selectAll": "전체 선택",
+  "deselectAll": "전체 해제",
+  "none": "없음",
+  "notSet": "설정 안됨",
+  "retry": "재시도"
+}

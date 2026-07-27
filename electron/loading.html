@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8"/>
+  <style>
+    :root{color-scheme:dark;}
+    body{margin:0;min-height:100vh;overflow:hidden;background:#0b0d14;display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#f5f3ff;}
+    body::before,body::after{content:"";position:fixed;border-radius:50%;pointer-events:none;}
+    body::before{width:520px;height:520px;top:-280px;left:-180px;background:radial-gradient(circle,rgba(93,72,255,.20),transparent 67%);}
+    body::after{width:460px;height:460px;right:-190px;bottom:-260px;background:radial-gradient(circle,rgba(28,100,255,.14),transparent 68%);}
+    .splash{position:relative;display:flex;flex-direction:column;align-items:center;gap:18px;}
+    .icon-shell{position:relative;width:100px;height:100px;padding:10px;border-radius:31px;background:linear-gradient(145deg,rgba(133,113,255,.32),rgba(20,23,46,.2));box-shadow:0 22px 54px rgba(0,0,0,.42),inset 0 1px rgba(255,255,255,.18);}
+    .icon-viewport{width:100%;height:100%;overflow:hidden;border-radius:22px;}
+    .icon{width:100%;height:100%;object-fit:cover;display:block;transform:scale(1.15);}
+    .wordmark{margin:2px 0 4px;font-size:25px;font-weight:700;letter-spacing:-.8px;background:linear-gradient(110deg,#fff 10%,#d8d1ff 48%,#a99cff);-webkit-background-clip:text;background-clip:text;color:transparent;}
+    .progress-track{width:188px;height:3px;border-radius:999px;background:rgba(150,158,196,.16);overflow:hidden;position:relative;}
+    .progress-fill{position:absolute;inset:0 auto 0 0;width:44%;border-radius:inherit;background:linear-gradient(90deg,#7c6cff,#9a8dff);box-shadow:0 0 14px rgba(126,108,255,.85);animation:slide 1.45s cubic-bezier(.65,0,.35,1) infinite;}
+    .status-line{min-height:24px;margin:-7px 0 0;display:flex;align-items:center;justify-content:center;gap:8px;color:#bfc5d8;font-size:13px;font-weight:500;letter-spacing:-.1px;line-height:24px;}
+    .status-line:empty{visibility:hidden;}
+    .status-line:not(:empty)::before{content:"";width:6px;height:6px;border-radius:50%;background:#8d7cff;box-shadow:0 0 0 4px rgba(141,124,255,.12),0 0 12px rgba(141,124,255,.72);animation:status-pulse 1.35s ease-in-out infinite;}
+    .log-tail{display:none;width:min(620px,calc(100vw - 48px));height:180px;overflow-y:auto;padding:14px 16px;box-sizing:border-box;border:1px solid rgba(148,163,184,.14);border-radius:12px;background:rgba(7,9,15,.62);color:#99a1b5;font:12px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-line;-webkit-app-region:no-drag;}
+    .log-tail div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    body.first-run .log-tail{display:block;}
+    @keyframes slide{0%{left:-44%;}100%{left:100%;}}
+    @keyframes status-pulse{0%,100%{transform:scale(.82);opacity:.7;}50%{transform:scale(1);opacity:1;}}
+  </style>
+</head>
+<body>
+  <main class="splash" aria-label="Vyact">
+    <div class="icon-shell"><div class="icon-viewport"><img class="icon" src="vyact-icon.png" alt=""/></div></div>
+    <h1 class="wordmark">Vyact</h1>
+    <div class="progress-track" aria-hidden="true"><div class="progress-fill"></div></div>
+    <p class="status-line" id="status-line" aria-live="polite"></p>
+    <div class="log-tail" id="log-tail" aria-live="polite"></div>
+  </main>
+  <script>
+    const isFirstRun = new URLSearchParams(window.location.search).get('firstRun') === '1';
+    const logTail = document.getElementById('log-tail');
+    const statusLine = document.getElementById('status-line');
+    let statusTimer = null;
+    const lines = [];
+    if (isFirstRun) document.body.classList.add('first-run');
+    if (isFirstRun && window.ragAPI?.onLoadingLog) {
+      window.ragAPI.onLoadingLog((message) => {
+        if (!message || /^=+$/.test(message.trim())) return;
+        lines.push(message);
+        logTail.textContent = lines.join('\n');
+        logTail.scrollTop = logTail.scrollHeight;
+      });
+    }
+    if (window.ragAPI?.onLoadingStatus) {
+      window.ragAPI.onLoadingStatus((status) => {
+        if (statusTimer) clearInterval(statusTimer);
+        if (!status || typeof status === 'string') {
+          statusLine.textContent = status || '';
+          return;
+        }
+        const renderStatus = () => {
+          const seconds = Math.floor((Date.now() - status.startedAt) / 1000);
+          statusLine.textContent = (status.template || '').replace('{{seconds}}', String(seconds));
+        };
+        renderStatus();
+        statusTimer = setInterval(renderStatus, 1000);
+      });
+    }
+  </script>
+</body>
+</html>

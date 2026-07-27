@@ -1,0 +1,38 @@
+name: Feature Request
+description: Suggest a new feature or an improvement.
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Context (optional)
+      description: If this request is related to a limitation or use case, please describe it.
+      placeholder: e.g. I need to upload several files at once for a single project.
+    validations:
+      required: false
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Feature request
+      description: Describe the feature or improvement you would like to see.
+      placeholder: e.g. Allow selecting and uploading multiple files at once.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered (optional)
+      description: Describe any workarounds or alternative solutions you have tried.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I have searched for existing issues and did not find a similar request.
+          required: true

@@ -1,0 +1,16 @@
+.notification-center { position: relative; z-index: 1; -webkit-app-region: no-drag; }
+.notification-center-trigger { position: relative; }
+.notification-center-badge { position: absolute; top: 2px; right: 2px; min-width: 12px; height: 12px; padding: 0 2px; border-radius: 6px; background: #e25555; color: #fff; font-size: 8px; line-height: 12px; font-weight: 700; }
+.notification-center-popover { position: fixed; display: flex; flex-direction: column; width: min(390px, calc(100vw - 16px)); background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 10px 30px rgba(0, 0, 0, .35); overflow: hidden; z-index: 30000; -webkit-app-region: no-drag; }
+.notification-center-popover header { padding: 12px 14px; border-bottom: 1px solid var(--border); font-weight: 700; }
+.notification-center-list { min-height: 0; max-height: 500px; overflow: auto; }
+.notification-center-list > p { padding: 16px; margin: 0; color: var(--muted); font-size: 13px; text-align: center; }
+.notification-center-item { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 10px; width: 100%; padding: 12px 14px; border: 0; border-bottom: 1px solid var(--border); background: transparent; color: var(--text); text-align: left; cursor: pointer; }
+.notification-center-item-icon { display: grid; place-items: center; width: 28px; height: 28px; margin-top: 1px; border-radius: 7px; background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
+.notification-center-item-content { display: grid; min-width: 0; gap: 4px; }
+.notification-center-item.unread { background: color-mix(in srgb, var(--accent) 13%, transparent); border-left: 3px solid var(--accent); padding-left: 11px; }
+.notification-center-item.unread strong { font-weight: 750; }
+.notification-center-item:hover { background: var(--surface2); }
+.notification-center-item-content > span, .notification-center-item-content small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+.notification-center-item-content > span { font-size: 13px; }
+.notification-center-item-content small { font-size: 11px; }

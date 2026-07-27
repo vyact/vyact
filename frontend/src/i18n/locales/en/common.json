@@ -1,0 +1,21 @@
+{
+  "confirm": "Confirm",
+  "cancel": "Cancel",
+  "save": "Save",
+  "delete": "Delete",
+  "edit": "Edit",
+  "close": "Close",
+  "loading": "Loading...",
+  "saving": "Saving...",
+  "error": "Error",
+  "success": "Success",
+  "refresh": "Refresh",
+  "back": "Back",
+  "next": "Next",
+  "search": "Search",
+  "selectAll": "Select all",
+  "deselectAll": "Deselect all",
+  "none": "None",
+  "notSet": "Not set",
+  "retry": "Retry"
+}

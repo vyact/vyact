@@ -1,0 +1,72 @@
+{
+  "title": "Configurar Vyact",
+  "installing": "Instalando...",
+  "selectProvider": "Elegir proveedor",
+  "provider": "Proveedor",
+  "ollamaModel": "Modelo Ollama",
+  "customModel": "Modelo personalizado",
+  "apiKey": "API KEY",
+  "model": "MODELO",
+  "startInstall": "Instalar",
+  "apiKeyModelRequired": "Se requieren API KEY y MODELO",
+  "installationFailed": "La instalación falló. Revisa el registro de progreso e inténtalo de nuevo.",
+  "localExec": "Local",
+  "imageGenModel": "Modelo de generación de imágenes",
+  "exportFailed": "Error al exportar",
+  "models": {
+    "flux2Klein": {
+      "name": "FLUX.2 Klein (4B/9B)",
+      "desc": "Modelo de generación y edición de imágenes · se recomiendan 16GB o más de VRAM · admite texto a imagen y edición con imágenes de referencia"
+    },
+    "zImageTurbo": {
+      "name": "Z-Image Turbo (6B)",
+      "desc": "Modelo de generación de imágenes fotorrealistas · se recomiendan 12GB o más de VRAM · optimizado para texto en inglés y chino"
+    },
+    "gemma4E4bMlx": {
+      "name": "Gemma 4 E4B MLX (Effective 4B)",
+      "desc": "Modelo ligero para Apple Silicon (MLX) · admite texto e imágenes · adecuado para razonamiento y programación ligeros"
+    },
+    "gemma4_12bMlx": {
+      "name": "Gemma 4 12B MLX",
+      "desc": "Modelo general para Apple Silicon (MLX) · admite texto e imágenes · adecuado para razonamiento, programación y agentes"
+    },
+    "gemma4_26bMlx": {
+      "name": "Gemma 4 26B A4B MoE MLX",
+      "desc": "Modelo MoE de alto rendimiento para Apple Silicon (MLX) · adecuado para tareas avanzadas"
+    },
+    "lagunaXs21Nvfp4": {
+      "name": "Laguna XS 2.1 NVFP4 MLX",
+      "desc": "Modelo MoE de Poolside para programación con agentes · optimizado para Apple Silicon (MLX) · aproximadamente 19 GB · contexto de 256K · admite entrada de texto · 3B de parámetros activos de un total de 33B · adecuado para razonamiento de largo alcance, programación y tareas de agentes"
+    },
+    "gemma4E4b": {
+      "name": "Gemma 4 E4B (Effective 4B)",
+      "desc": "Compilación estándar y ligera de Ollama · admite texto e imágenes · adecuada para razonamiento y programación ligeros"
+    },
+    "gemma4_12b": {
+      "name": "Gemma 4 12B",
+      "desc": "Compilación estándar de Ollama para uso general · admite texto e imágenes · adecuada para razonamiento, programación y agentes"
+    },
+    "gemma4_26b": {
+      "name": "Gemma 4 26B A4B MoE",
+      "desc": "Compilación MoE de alto rendimiento de Ollama · se recomienda suficiente RAM o VRAM · adecuada para tareas avanzadas"
+    }
+  },
+  "providers": {
+    "ollama": {
+      "name": "Ollama",
+      "desc": "Local"
+    },
+    "openai": {
+      "name": "ChatGPT",
+      "desc": "OpenAI"
+    },
+    "gemini": {
+      "name": "Gemini",
+      "desc": "Google"
+    },
+    "claude": {
+      "name": "Claude",
+      "desc": "Anthropic"
+    }
+  }
+}

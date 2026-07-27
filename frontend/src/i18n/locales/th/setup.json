@@ -1,0 +1,72 @@
+{
+  "title": "ตั้งค่า Vyact",
+  "installing": "กำลังติดตั้ง...",
+  "selectProvider": "เลือกผู้ให้บริการ",
+  "provider": "ผู้ให้บริการ",
+  "ollamaModel": "โมเดล Ollama",
+  "customModel": "โมเดลกำหนดเอง",
+  "apiKey": "API KEY",
+  "model": "MODEL",
+  "startInstall": "เริ่มติดตั้ง",
+  "apiKeyModelRequired": "ต้องระบุ API KEY และ MODEL",
+  "installationFailed": "การติดตั้งล้มเหลว โปรดตรวจสอบบันทึกความคืบหน้าแล้วลองอีกครั้ง",
+  "localExec": "ในเครื่อง",
+  "imageGenModel": "โมเดลสร้างภาพ",
+  "exportFailed": "ส่งออกไม่สำเร็จ",
+  "models": {
+    "flux2Klein": {
+      "name": "FLUX.2 Klein (4B/9B)",
+      "desc": "โมเดลสร้างและแก้ไขภาพ · แนะนำ VRAM 16GB ขึ้นไป · รองรับการสร้างภาพจากข้อความและแก้ไขภาพอ้างอิง"
+    },
+    "zImageTurbo": {
+      "name": "Z-Image Turbo (6B)",
+      "desc": "โมเดลสร้างภาพสมจริง · แนะนำ VRAM 12GB ขึ้นไป · ปรับให้เหมาะกับการแสดงผลข้อความอังกฤษและจีน"
+    },
+    "gemma4E4bMlx": {
+      "name": "Gemma 4 E4B MLX (Effective 4B)",
+      "desc": "โมเดลขนาดเบาสำหรับ Apple Silicon (MLX) · รองรับข้อความและรูปภาพ · เหมาะกับการให้เหตุผลและเขียนโค้ดแบบเบา"
+    },
+    "gemma4_12bMlx": {
+      "name": "Gemma 4 12B MLX",
+      "desc": "โมเดลทั่วไปสำหรับ Apple Silicon (MLX) · รองรับข้อความและรูปภาพ · เหมาะกับการให้เหตุผล เขียนโค้ด และเอเจนต์"
+    },
+    "gemma4_26bMlx": {
+      "name": "Gemma 4 26B A4B MoE MLX",
+      "desc": "โมเดล MoE ประสิทธิภาพสูงสำหรับ Apple Silicon (MLX) · เหมาะกับงานขั้นสูง"
+    },
+    "lagunaXs21Nvfp4": {
+      "name": "Laguna XS 2.1 NVFP4 MLX",
+      "desc": "โมเดล MoE ของ Poolside สำหรับการเขียนโค้ดแบบเอเจนต์ · ปรับแต่งสำหรับ Apple Silicon (MLX) · ประมาณ 19GB · บริบท 256K · รองรับข้อความ · ใช้งานพารามิเตอร์ 3B จากทั้งหมด 33B · เหมาะสำหรับการให้เหตุผลระยะยาว การเขียนโค้ด และงานเอเจนต์"
+    },
+    "gemma4E4b": {
+      "name": "Gemma 4 E4B (Effective 4B)",
+      "desc": "รุ่นมาตรฐาน Ollama ขนาดเบา · รองรับข้อความและรูปภาพ · เหมาะกับการให้เหตุผลและเขียนโค้ดแบบเบา"
+    },
+    "gemma4_12b": {
+      "name": "Gemma 4 12B",
+      "desc": "รุ่นมาตรฐาน Ollama สำหรับงานทั่วไป · รองรับข้อความและรูปภาพ · เหมาะกับการให้เหตุผล เขียนโค้ด และเอเจนต์"
+    },
+    "gemma4_26b": {
+      "name": "Gemma 4 26B A4B MoE",
+      "desc": "รุ่น Ollama MoE ประสิทธิภาพสูง · แนะนำ RAM หรือ VRAM ที่เพียงพอ · เหมาะกับงานขั้นสูง"
+    }
+  },
+  "providers": {
+    "ollama": {
+      "name": "Ollama",
+      "desc": "ในเครื่อง"
+    },
+    "openai": {
+      "name": "ChatGPT",
+      "desc": "OpenAI"
+    },
+    "gemini": {
+      "name": "Gemini",
+      "desc": "Google"
+    },
+    "claude": {
+      "name": "Claude",
+      "desc": "Anthropic"
+    }
+  }
+}

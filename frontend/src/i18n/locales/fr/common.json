@@ -1,0 +1,21 @@
+{
+  "confirm": "Accepter",
+  "cancel": "Annuler",
+  "save": "Enregistrer",
+  "delete": "Supprimer",
+  "edit": "Modifier",
+  "close": "Fermer",
+  "loading": "Chargement...",
+  "saving": "Enregistrement...",
+  "error": "Erreur",
+  "success": "Terminé",
+  "refresh": "Actualiser",
+  "back": "Retour",
+  "next": "Suivant",
+  "search": "Rechercher",
+  "selectAll": "Tout sélectionner",
+  "deselectAll": "Tout désélectionner",
+  "none": "Aucun",
+  "notSet": "Non configuré",
+  "retry": "Réessayer"
+}

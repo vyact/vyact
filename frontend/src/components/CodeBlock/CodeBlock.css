@@ -1,0 +1,92 @@
+.code-block {
+    position: relative;
+    margin: 8px 0;
+    border-radius: 9px;
+    background: #0d1117;
+    border: 1px solid var(--border);
+    overflow: hidden;
+}
+
+.code-block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    background: #161b22;
+    border-bottom: 1px solid var(--border);
+}
+
+.code-lang {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'SF Mono', monospace;
+    text-transform: lowercase;
+}
+
+.copy-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid var(--border);
+    padding: 3px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.copy-btn:hover {
+    color: var(--text);
+    border-color: var(--accent2);
+}
+
+.copy-btn.copied {
+    color: var(--success);
+    border-color: var(--success);
+}
+
+.code-body {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 60vh;
+}
+
+.code-body pre.hljs {
+    margin: 0;
+    padding: 12px 14px;
+    overflow: visible;
+    font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    background: #0d1117;
+    border-radius: 0;
+}
+
+.code-body pre.hljs code {
+    font-family: inherit;
+    font-size: inherit;
+    background: transparent;
+    padding: 0;
+    display: block;
+}
+
+.code-line {
+    display: flex;
+    line-height: 1.6;
+    white-space: pre;
+}
+
+/* 라인번호: pre와 동일한 폰트/사이즈 상속 */
+.line-number {
+    display: inline-block;
+    min-width: 32px;
+    padding-right: 14px;
+    text-align: right;
+    color: rgba(255, 255, 255, 0.25);
+    user-select: none;
+    flex-shrink: 0;
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    margin-right: 14px;
+}

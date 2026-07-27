@@ -1,0 +1,108 @@
+.support-modal-overlay {
+    z-index: 10000;
+}
+
+.support-modal {
+    width: min(380px, 100%);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--modal-bg);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.support-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+.support-modal-header h2 {
+    margin: 0;
+    color: var(--text);
+    font-size: var(--modal-title);
+    font-weight: 600;
+}
+
+.support-modal-header button {
+    display: grid;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    place-items: center;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+}
+
+.support-modal-header button:hover {
+    background: var(--surface2);
+    color: var(--text);
+}
+
+.support-modal-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+}
+
+.support-modal-logo {
+    width: 48px;
+    height: 48px;
+    margin: 2px 0 14px;
+    border-radius: 12px;
+}
+
+.support-modal-message {
+    margin: 0;
+    color: var(--text);
+    font-size: var(--modal-text);
+    line-height: 1.65;
+    text-align: center;
+    white-space: pre-line;
+}
+
+.support-modal-options {
+    display: grid;
+    width: 100%;
+    gap: 8px;
+    margin-top: 18px;
+}
+
+.support-modal-options a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 11px 13px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: var(--modal-text);
+    font-weight: 600;
+    text-decoration: none;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.support-modal-options a:hover {
+    border-color: var(--accent);
+    background: var(--surface2);
+}
+
+.support-modal-options svg {
+    flex-shrink: 0;
+    color: var(--muted);
+}
+
+.support-modal-note {
+    margin: 14px 0 0;
+    color: var(--muted);
+    font-size: var(--modal-label);
+    line-height: 1.5;
+    text-align: center;
+}

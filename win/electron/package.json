@@ -1,0 +1,61 @@
+{
+  "name": "vyact",
+  "version": "1.0.0",
+  "description": "Local AI Agent - Voyage & Act",
+  "main": "main.js",
+  "author": "Alex",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win",
+    "build:nsis": "electron-builder --win nsis"
+  },
+  "build": {
+    "appId": "com.vyact.app",
+    "productName": "Vyact",
+    "asar": true,
+    "win": {
+      "icon": "icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "signingHashAlgorithms": [],
+      "sign": null
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "icon.ico",
+      "uninstallerIcon": "icon.ico",
+      "installerHeaderIcon": "icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Vyact"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "loading.html",
+      "error.html",
+      "vyact-icon.png",
+      "package.json",
+      "node_modules/**"
+    ],
+    "extraResources": [
+      {
+        "from": "../app",
+        "to": "app"
+      },
+      {
+        "from": "../../frontend/src/i18n/locales",
+        "to": "locales"
+      }
+    ]
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.0.0"
+  }
+}

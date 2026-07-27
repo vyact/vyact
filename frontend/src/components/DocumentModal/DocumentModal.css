@@ -1,0 +1,1087 @@
+.dm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.72);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.dm-modal {
+    background: var(--modal-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 640px;
+    height: min(640px, calc(100dvh - 48px));
+    max-height: calc(100dvh - 48px);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+/* 헤더 */
+.dm-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.dm-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--modal-title);
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.01em;
+}
+
+.dm-close {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 20px;
+    line-height: 1;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: background 0.15s, color 0.15s;
+    font-family: inherit;
+}
+.dm-close:hover { background: var(--surface); color: var(--text); }
+
+/* 탭 */
+.dm-tabs {
+    display: flex;
+    padding: 10px 20px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 4px;
+}
+
+.dm-tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    font-size: var(--modal-btn);
+    font-weight: 500;
+    color: var(--muted);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.15s, border-color 0.15s;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: -0.01em;
+}
+.dm-tab:hover { color: var(--text); }
+.dm-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.dm-tab:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+
+/* 모드 설명 */
+.dm-mode-desc {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 20px;
+    font-size: var(--modal-sub);
+    color: var(--text-secondary);
+    line-height: 1.6;
+    background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid var(--border);
+    font-family: inherit;
+}
+
+.dm-mode-badge {
+    flex-shrink: 0;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 1px;
+    font-family: inherit;
+}
+.dm-mode-badge.index { background: rgba(99,102,241,0.18); color: #a5b4fc; }
+.dm-mode-badge.query { background: rgba(204,120,92,0.18); color: var(--accent); }
+
+/* 바디 */
+.dm-body {
+    padding: 16px 20px;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow: hidden;
+}
+
+/* 드롭존 */
+.dm-dropzone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 36px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+}
+.dm-body-index .dm-dropzone {
+    flex: 1;
+    min-height: 0;
+    justify-content: center;
+}
+.dm-dropzone:hover,
+.dm-dropzone.dragging {
+    border-color: var(--accent);
+    background: rgba(204,120,92,0.05);
+}
+
+.dm-overlay.dragging .dm-dropzone {
+    border-color: var(--accent);
+    background: rgba(204,120,92,0.05);
+}
+
+.dm-overlay.dragging .dm-dropzone .dm-dropzone-icon::before {
+    content: '📂';
+}
+
+.dm-dropzone-icon { font-size: 34px; line-height: 1; }
+
+.dm-dropzone-text {
+    font-size: var(--modal-text);
+    font-weight: 500;
+    color: var(--text);
+    font-family: inherit;
+}
+
+.dm-dropzone-hint {
+    font-size: var(--modal-sub);
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.6;
+    font-family: inherit;
+}
+
+/* 파일 선택됨 */
+.dm-file-selected { display: flex; flex-direction: column; gap: 12px; }
+
+.dm-file-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+.dm-file-icon { font-size: 26px; flex-shrink: 0; line-height: 1; }
+
+.dm-file-meta { flex: 1; min-width: 0; }
+
+.dm-file-name {
+    font-size: var(--modal-sub);
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: inherit;
+}
+
+.dm-file-size {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+    min-height: 16px;
+    font-family: inherit;
+}
+
+.dm-file-index-stats {
+    margin-top: 3px;
+    min-height: 16px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+}
+
+.dm-file-index-duration {
+    color: var(--success);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.dm-file-completion {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.dm-index-progress-chunks {
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+.dm-index-progress-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.dm-file-remove {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s;
+}
+.dm-file-remove:hover { background: rgba(255,84,73,0.15); color: var(--danger); }
+
+/* 질의 입력 */
+.dm-question-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.dm-body-query .dm-question-wrap {
+    flex: 1;
+    min-height: 0;
+}
+
+.dm-question-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: var(--modal-sub);
+    font-weight: 500;
+    color: var(--text-secondary);
+    font-family: inherit;
+}
+
+.dm-question-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 14px;
+    font-size: var(--modal-text);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    line-height: 1.55;
+    resize: none;
+    transition: border-color 0.15s;
+}
+.dm-body-query .dm-question-input {
+    flex: 1;
+    min-height: 96px;
+}
+.dm-question-input:focus {
+    border-color: var(--accent);
+}
+.dm-question-input::placeholder {
+    color: var(--muted);
+    font-size: 14px;
+}
+
+/* 상태 메시지 */
+.dm-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-family: inherit;
+    padding: 10px 14px;
+    border-radius: 8px;
+}
+.dm-status.uploading { background: rgba(99,102,241,0.1); color: #a5b4fc; }
+.dm-status.done { background: rgba(44,186,102,0.1); color: var(--success); }
+.dm-status.stopped { background: rgba(245, 158, 11, 0.12); color: #fbbf24; }
+.dm-status.error { background: rgba(255,84,73,0.1); color: var(--danger); }
+.dm-status-elapsed {
+    margin-left: auto;
+    color: currentColor;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.dm-index-progress {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 14px;
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
+.dm-index-progress-header,
+.dm-index-progress-current {
+    display: flex;
+    align-items: center;
+}
+.dm-index-progress-header {
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--accent);
+    font-size: 12px;
+}
+.dm-index-progress-total {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+.dm-index-progress-total span {
+    color: var(--muted);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+}
+.dm-index-progress-current {
+    min-width: 0;
+    gap: 9px;
+}
+.dm-index-progress-current > div:last-child {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 2px;
+}
+.dm-index-progress-current strong {
+    overflow: hidden;
+    color: var(--text);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.dm-index-progress-current span,
+.dm-index-progress-summary {
+    color: var(--muted);
+    font-size: 11px;
+}
+.dm-index-progress-summary {
+    text-align: right;
+    margin-left: auto;
+}
+
+/* 스피너 */
+.dm-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(165,180,252,0.3);
+    border-top-color: #a5b4fc;
+    border-radius: 50%;
+    animation: dm-spin 0.7s linear infinite;
+    flex-shrink: 0;
+}
+.dm-spinner.sm { width: 12px; height: 12px; }
+@keyframes dm-spin { to { transform: rotate(360deg); } }
+
+/* 보조 버튼 */
+.dm-btn-secondary {
+    width: 100%;
+    padding: 10px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: var(--modal-btn);
+    font-family: inherit;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.dm-btn-secondary:hover { background: var(--surface); color: var(--text); border-color: var(--text-secondary); }
+
+/* 푸터 */
+.dm-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.dm-btn-cancel {
+    padding: 9px 18px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: var(--modal-btn);
+    font-family: inherit;
+    transition: background 0.15s, color 0.15s;
+}
+.dm-btn-cancel:hover { background: var(--surface); color: var(--text); }
+.dm-btn-cancel:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.dm-btn-cancel:disabled:hover {
+    background: transparent;
+    color: var(--muted);
+}
+
+.dm-btn-submit {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 20px;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: var(--modal-btn);
+    font-weight: 600;
+    font-family: inherit;
+    transition: opacity 0.15s;
+}
+.dm-btn-submit:hover:not(:disabled) { opacity: 0.88; }
+.dm-btn-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* 드롭존 compact (파일 있을 때) */
+
+/* 파일 목록 */
+.dm-file-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 160px;
+    overflow-y: auto;
+}
+.dm-body-index .dm-file-list {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+}
+
+.dm-file-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+.dm-file-item.is-processing {
+    border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+}
+.dm-file-item.is-done {
+    border-color: color-mix(in srgb, var(--success) 45%, var(--border));
+}
+.dm-file-item.is-error {
+    border-color: color-mix(in srgb, var(--danger) 55%, var(--border));
+}
+.dm-file-item.is-stopped {
+    border-color: color-mix(in srgb, #f59e0b 55%, var(--border));
+}
+
+.dm-file-icon-sm {
+    font-size: 18px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.dm-file-progress-track,
+.dm-index-progress-track {
+    height: 4px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--border);
+}
+.dm-file-progress-track {
+    margin-top: 6px;
+}
+.dm-file-progress-track > span,
+.dm-index-progress-track > span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--accent);
+    transition: width 0.2s ease;
+}
+.dm-index-progress-track {
+    height: 6px;
+}
+
+.dm-file-state {
+    flex: none;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.dm-file-state-pending {
+    background: var(--surface2);
+    color: var(--muted);
+}
+.dm-file-state-processing {
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    color: var(--accent);
+}
+.dm-file-state-done {
+    background: color-mix(in srgb, var(--success) 14%, transparent);
+    color: var(--success);
+}
+.dm-file-state-stopped {
+    background: rgba(245, 158, 11, 0.14);
+    color: #fbbf24;
+}
+.dm-file-state-skipped {
+    background: var(--surface2);
+    color: var(--text-secondary);
+}
+.dm-file-state-error {
+    background: color-mix(in srgb, var(--danger) 14%, transparent);
+    color: var(--danger);
+}
+
+/* 파일 추가 버튼 (파일 목록 상단) */
+.dm-add-more {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: transparent;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: var(--modal-btn);
+    font-family: inherit;
+    cursor: pointer;
+    width: 100%;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.dm-add-more:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(204,120,92,0.05);
+}
+
+/* 질의 옵션 행 (라벨 + 텍스트 범위 드롭다운) */
+.dm-question-options {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.dm-chars-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.dm-chars-label {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: inherit;
+}
+
+.dm-chars-select {
+    min-width: 90px;
+}
+.dm-chars-select .custom-select-trigger {
+    border-radius: 6px;
+    font-size: 12px;
+    padding: 4px 8px;
+}
+
+/* 저장된 문서 검색바 */
+.dm-files-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 20px;
+    margin-bottom: 8px;
+    color: var(--text);
+    font-size: var(--modal-btn);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.dm-files-bulk-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.dm-bulk-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 9px;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    font-size: var(--modal-btn);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+}
+
+.dm-bulk-action-btn:hover {
+    background: var(--surface);
+    color: var(--text);
+}
+
+.dm-bulk-action-btn.danger {
+    color: var(--danger);
+}
+
+.dm-bulk-action-btn.danger:hover {
+    background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+
+.dm-file-search-wrap {
+    display: flex;
+    min-height: 38px;
+    align-items: center;
+    gap: 9px;
+    padding: 0 11px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+    color: var(--muted);
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+.dm-file-search-wrap:focus-within {
+    border-color: var(--accent);
+    background: var(--bg);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.dm-file-search-wrap > svg {
+    flex: none;
+}
+.dm-file-search {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+    padding: 8px 0;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+}
+.dm-file-search::placeholder { color: var(--muted); }
+.dm-file-search-clear {
+    display: grid;
+    width: 28px;
+    height: 28px;
+    flex: none;
+    place-items: center;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+.dm-file-search-clear:hover {
+    background: var(--surface);
+    color: var(--text);
+}
+
+/* 저장된 문서 목록 */
+.dm-saved-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 6px;
+}
+
+.dm-saved-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: color-mix(in srgb, var(--surface) 70%, transparent);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+.dm-saved-item:hover {
+    background: var(--surface);
+    border-color: var(--border);
+}
+
+.dm-file-type-badge {
+    display: grid;
+    width: 38px;
+    height: 30px;
+    flex: none;
+    place-items: center;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--accent) 14%, var(--surface2));
+    color: var(--accent);
+    font-size: 9px;
+    font-weight: 750;
+    letter-spacing: 0.04em;
+}
+
+.dm-saved-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.dm-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 10px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.dm-action-btn:hover {
+    background: var(--surface2);
+    color: var(--text);
+    border-color: var(--text-secondary);
+}
+.dm-action-btn.icon-only {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    flex: none;
+    place-items: center;
+    padding: 0;
+}
+.dm-action-btn.attach.active {
+    border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    color: var(--accent);
+}
+.dm-action-btn.danger { color: var(--danger); border-color: rgba(255,84,73,0.3); }
+.dm-action-btn.danger:hover { background: rgba(255,84,73,0.1); border-color: var(--danger); }
+.dm-action-btn.danger.filled {
+    background: var(--danger);
+    border-color: var(--danger);
+    color: #fff;
+}
+.dm-action-btn.danger.filled:hover { filter: brightness(1.08); }
+.dm-action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.dm-delete-wrap {
+    position: relative;
+}
+
+.dm-delete-popover {
+    position: fixed;
+    z-index: 10000;
+    width: 210px;
+    box-sizing: border-box;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--modal-bg);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.42);
+    animation: dm-popover-in 0.14s ease-out;
+}
+
+.dm-delete-popover::before {
+    position: absolute;
+    right: 18px;
+    width: 8px;
+    height: 8px;
+    content: '';
+    background: var(--modal-bg);
+    transform: rotate(45deg);
+}
+
+.dm-delete-popover.bottom::before {
+    top: -5px;
+    border-top: 1px solid var(--border);
+    border-left: 1px solid var(--border);
+}
+
+.dm-delete-popover.top::before {
+    bottom: -5px;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+}
+
+.dm-delete-popover p {
+    margin: 0 0 10px;
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.dm-delete-popover-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+@keyframes dm-popover-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 청크 상세 */
+.dm-chunk-view {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    flex-direction: column;
+    gap: 12px;
+    overflow: hidden;
+}
+
+.dm-chunk-header {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 10px;
+}
+
+.dm-back-button {
+    display: flex;
+    min-height: 30px;
+    flex: none;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 8px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.dm-back-button:hover {
+    background: var(--surface);
+    color: var(--text);
+}
+
+.dm-chunk-filename {
+    overflow: hidden;
+    min-width: 0;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 650;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dm-count-badge {
+    flex: none;
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: var(--surface2);
+    color: var(--text-secondary);
+    font-size: 10px;
+}
+
+.dm-chunk-layout {
+    display: flex;
+    flex: 1;
+    align-items: stretch;
+    gap: 12px;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.dm-chunk-list {
+    display: flex;
+    width: 210px;
+    flex: none;
+    flex-direction: column;
+    gap: 3px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-right: 6px;
+}
+
+.dm-chunk-item {
+    position: relative;
+    display: grid;
+    width: 100%;
+    flex: none;
+    grid-template-columns: auto 1fr;
+    gap: 2px 7px;
+    padding: 9px 10px 9px 12px;
+    overflow: hidden;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s;
+}
+
+.dm-chunk-item:hover {
+    background: var(--surface);
+}
+
+.dm-chunk-item.selected {
+    border-color: color-mix(in srgb, var(--accent) 28%, transparent);
+    background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+
+.dm-chunk-item.selected::before {
+    position: absolute;
+    inset: 6px auto 6px 0;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--accent);
+    content: '';
+}
+
+.dm-chunk-number {
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.dm-chunk-summary {
+    display: flex;
+    min-width: 0;
+    gap: 4px;
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 10px;
+    white-space: nowrap;
+}
+
+.dm-chunk-preview {
+    grid-column: 1 / -1;
+    overflow: hidden;
+    color: var(--text-secondary);
+    font-size: 10px;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    white-space: normal;
+}
+
+@media (max-width: 620px) {
+    .dm-chunk-list {
+        width: 180px;
+    }
+
+    .dm-files-summary {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+.dm-chunk-content {
+    flex: 1;
+    min-width: 0;
+    overflow-y: auto;
+    padding: 18px 20px;
+    border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--surface) 72%, transparent);
+}
+
+.dm-chunk-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 16px;
+}
+
+.dm-chunk-type-badge,
+.dm-meta-badge {
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-size: 10px;
+}
+
+.dm-chunk-type-badge {
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    color: var(--accent);
+    font-weight: 650;
+}
+
+.dm-meta-badge {
+    background: var(--surface2);
+    color: var(--text-secondary);
+}
+
+.dm-chunk-text {
+    max-width: 72ch;
+    margin: 0;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+    word-break: normal;
+}
+
+.dm-chunk-empty {
+    display: flex;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+/* 빈 상태 */
+.dm-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex: 1;
+    min-height: 0;
+    color: var(--muted);
+    font-size: var(--modal-sub);
+    font-family: inherit;
+}

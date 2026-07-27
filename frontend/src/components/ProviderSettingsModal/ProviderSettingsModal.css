@@ -1,0 +1,92 @@
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-input {
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--text);
+    transition: border-color 0.15s;
+    box-sizing: border-box;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.form-input::placeholder {
+    color: var(--muted);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 24px;
+}
+
+/* btn-save 충돌 방지 — 전용 클래스 사용 */
+.btn-save-provider {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    background: var(--accent);
+    border: none;
+    color: white;
+}
+
+.btn-save-provider:hover {
+    opacity: 0.9;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+/* 타이틀 — 자료등록 모달과 동일 */
+.modal-header h3 {
+    font-size: 16px;
+    margin: 0;
+    color: var(--text);
+}
+
+.provider-close-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: var(--muted);
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.15s;
+}
+
+.provider-close-btn:hover {
+    background: var(--border);
+}

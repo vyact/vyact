@@ -1,0 +1,1638 @@
+.vc-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.vc-modal {
+    background: var(--modal-bg);
+    border-radius: 14px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 86vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+}
+
+/* 헤더 */
+.vc-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.vc-header-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--modal-title);
+    font-weight: 600;
+    color: var(--text);
+}
+
+.vc-close-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: var(--muted);
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: background 0.15s;
+}
+
+.vc-close-btn:hover {
+    background: var(--border);
+}
+
+/* Setup */
+.vc-setup {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.vc-section-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.vc-lang-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.vc-lang-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+}
+
+.vc-lang-btn:hover {
+    border-color: var(--accent);
+    background: rgba(204, 120, 92, 0.06);
+}
+
+.vc-lang-btn.selected {
+    border-color: var(--accent);
+    background: rgba(204, 120, 92, 0.1);
+}
+
+.vc-lang-flag {
+    font-size: 18px;
+}
+
+.vc-lang-label {
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+}
+
+.vc-hint {
+    font-size: var(--modal-sub);
+    color: var(--muted);
+    margin: 0;
+}
+
+.vc-start-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-size: var(--modal-btn);
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+.vc-start-btn:hover {
+    opacity: 0.88;
+}
+
+/* Chatting */
+.vc-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    font-size: var(--modal-sub);
+    color: var(--muted);
+}
+
+.vc-status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--border);
+    flex-shrink: 0;
+    transition: background 0.3s;
+}
+
+.vc-status-dot.listening {
+    background: #22c55e;
+    animation: vc-pulse 1s infinite;
+}
+
+.vc-status-dot.speaking {
+    background: var(--accent);
+    animation: vc-pulse 0.8s infinite;
+}
+
+.vc-status-dot.waiting {
+    background: #fbbf24;
+    animation: vc-pulse 1.2s infinite;
+}
+
+@keyframes vc-pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.5;
+        transform: scale(0.85);
+    }
+}
+
+.vc-interim {
+    padding: 8px 20px;
+    font-size: 13px;
+    color: var(--muted);
+    font-style: italic;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    min-height: 36px;
+}
+
+.vc-chat-log {
+    height: 380px;
+    flex-shrink: 0;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.vc-chat-empty {
+    text-align: center;
+    color: var(--muted);
+    font-size: var(--modal-sub);
+    padding: 20px 0;
+}
+
+.vc-chat-entry {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.vc-chat-entry.user {
+    align-items: flex-end;
+}
+
+.vc-chat-entry.assistant {
+    align-items: flex-start;
+}
+
+.vc-chat-bubble {
+    max-width: 85%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+    word-break: break-word;
+}
+
+.vc-chat-entry.user .vc-chat-bubble {
+    background: #282e3e;
+    color: #e8eaf0;
+    border: 1px solid #3a4357;
+    border-bottom-right-radius: 4px;
+}
+
+.vc-chat-entry.assistant .vc-chat-bubble {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-bottom-left-radius: 4px;
+}
+
+.vc-chat-time {
+    font-size: 12px;
+    color: var(--muted);
+    padding: 0 4px;
+}
+
+/* 푸터 */
+.vc-footer {
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.vc-stop-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 9px;
+    color: var(--del-fg);
+    font-size: var(--modal-btn);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.vc-stop-btn:hover {
+    background: rgba(239, 68, 68, 0.18);
+    border-color: var(--del-fg);
+}
+
+/* ── 탭 ──────────────────────────────────────── */
+.vc-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0;
+}
+
+.vc-tab {
+    flex: 1;
+    padding: 11px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.vc-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+}
+
+.vc-tab:hover:not(.active) {
+    color: var(--text);
+}
+
+/* ── 스크립트 목록 뷰 ─────────────────────────── */
+.sp-list-view {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.sp-prompt-box {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    position: relative;
+}
+
+.sp-prompt-label {
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+}
+
+.sp-prompt-text {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+    word-break: break-all;
+    padding-right: 52px;
+}
+
+.sp-copy-btn {
+    padding: 5px 12px;
+    background: var(--accent);
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.sp-copy-btn:hover {
+    opacity: 0.85;
+}
+
+.sp-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.sp-list-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.sp-new-btn {
+    padding: 6px 12px;
+    background: var(--accent);
+    border: none;
+    border-radius: 7px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+.sp-new-btn:hover {
+    opacity: 0.85;
+}
+
+.sp-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 280px;
+    overflow-y: auto;
+    padding-right: 4px; /* 스크롤바가 item 테두리와 겹치지 않도록 */
+}
+
+.sp-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sp-list::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}
+
+.sp-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sp-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.sp-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--accent);
+}
+
+.sp-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.sp-item-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.sp-item-lang {
+    font-size: 11px;
+    color: var(--muted);
+}
+
+.sp-item-del {
+    background: transparent;
+    border: 1px solid var(--del-border);
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--del-fg-soft);
+    padding: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+}
+
+.sp-item-del:hover {
+    background: var(--del-bg-hover);
+    border-color: var(--del-border-hover);
+    color: var(--del-fg);
+}
+
+.sp-loading, .sp-empty {
+    text-align: center;
+    color: var(--muted);
+    font-size: var(--modal-sub);
+    padding: 32px 0;
+    line-height: 1.7;
+}
+
+/* ── 연습 뷰 ─────────────────────────────────── */
+.sp-practice {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 20px 12px;
+    flex: 1;
+    overflow: hidden;
+}
+
+.sp-practice-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 32px;
+}
+
+.sp-back-btn {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 6px 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border-radius: 7px;
+}
+
+.sp-back-btn:hover { background: rgba(var(--accent-rgb), 0.1); }
+
+.sp-practice-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 200px;
+}
+
+.sp-edit-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--muted);
+    padding: 7px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sp-edit-btn:hover { color: var(--text); background: var(--surface2); }
+
+.sp-practice-actions { display: flex; gap: 8px; }
+
+.sp-progress {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    justify-content: center;
+}
+
+.sp-progress-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.sp-progress-dot.active {
+    background: var(--accent);
+    transform: scale(1.3);
+}
+
+.sp-progress-dot.done {
+    background: rgba(var(--accent-rgb, 255, 120, 50), 0.4);
+}
+
+.sp-progress-label {
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+}
+
+/* 스크립트 카드 */
+.sp-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.sp-card {
+    border-radius: 10px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 90px;
+}
+
+.sp-card-b {
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.sp-card-a {
+    background: rgba(var(--accent-rgb, 255, 120, 50), 0.08);
+    border: 1px solid rgba(var(--accent-rgb, 255, 120, 50), 0.25);
+}
+
+.sp-card-role {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    color: var(--muted);
+    text-transform: uppercase;
+}
+
+.sp-card-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.5;
+}
+
+.sp-card-ko {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.4;
+}
+
+/* STT 결과 */
+.sp-stt-result {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 13px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-weight: 500;
+    margin: 0 12px 2px;
+    height: 32px; /* 고정 높이 - 대화 리스트 흔들림 방지 */
+    flex-shrink: 0;
+}
+
+.sp-stt-result.correct {
+    display: none;
+}
+
+.sp-stt-result.wrong {
+    background: rgba(var(--del-rgb), 0.1);
+    color: var(--del-fg);
+    border: 1px solid rgba(var(--del-rgb), 0.3);
+}
+
+.sp-status-text {
+    text-align: center;
+    font-size: 14px;
+    color: var(--muted);
+    margin-bottom: 8px;
+}
+
+/* 컨트롤 — 본문(대화 리스트) 영역과의 경계를 명확히 구분 */
+.sp-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    padding: 7px 0 0;
+    border-top: 1px solid var(--border);
+    margin-top: 2px;
+}
+
+.sp-nav-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sp-nav-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.sp-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.sp-mic-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+.sp-mic-btn:hover:not(:disabled) {
+    opacity: 0.9;
+    transform: scale(1.04);
+}
+
+.sp-mic-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.sp-mic-btn.listening {
+    background: #ef4444;
+    animation: sp-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes sp-pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+    }
+}
+
+/* ── 스크립트 폼 ──────────────────────────────── */
+.sp-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px 16px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.sp-form-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2px;
+}
+
+.sp-form-heading {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.sp-form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.sp-form-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+}
+
+.sp-form-input, .sp-form-select {
+    padding: 9px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.sp-form-input:focus, .sp-form-select:focus {
+    border-color: var(--accent);
+}
+
+.sp-form-select {
+    cursor: pointer;
+}
+
+.sp-form-textarea {
+    width: 100%;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 12px;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.15s;
+    line-height: 1.5;
+    font-family: monospace;
+    box-sizing: border-box;
+}
+
+.sp-form-textarea:focus {
+    border-color: var(--accent);
+}
+
+.sp-parse-btn {
+    align-self: flex-start;
+    padding: 7px 16px;
+    background: rgba(var(--accent-rgb, 255, 120, 50), 0.15);
+    border: 1px solid var(--accent);
+    border-radius: 7px;
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 4px;
+}
+
+.sp-parse-btn:hover {
+    background: rgba(var(--accent-rgb, 255, 120, 50), 0.25);
+}
+
+.sp-parse-error {
+    font-size: 12px;
+    color: var(--del-fg);
+}
+
+/* 미리보기 */
+.sp-preview {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.sp-preview-label {
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.sp-preview-row {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+}
+
+.sp-preview-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.sp-preview-a, .sp-preview-b {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text);
+}
+
+.sp-preview-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.sp-preview-badge.a {
+    background: rgba(var(--accent-rgb, 255, 120, 50), 0.2);
+    color: var(--accent);
+}
+
+.sp-preview-badge.b {
+    background: rgba(99, 102, 241, 0.2);
+    color: #818cf8;
+}
+
+.sp-preview-ko {
+    font-size: 11px;
+    color: var(--muted);
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.sp-save-btn {
+    padding: 12px;
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+.sp-save-btn:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.sp-save-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ── 스크립트 언어바 ──────────────────────────── */
+.sp-lang-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+}
+
+.sp-lang-badge {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.sp-lang-change-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    padding: 4px 9px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.sp-lang-change-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* 폼 언어 배지 */
+.sp-form-lang-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--muted);
+    align-self: flex-start;
+}
+
+/* ── 액션 버튼 행 ─────────────────────────────── */
+.sp-action-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.sp-paste-btn {
+    padding: 8px 14px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.sp-paste-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--accent);
+}
+
+.sp-add-btn {
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.sp-add-btn.a {
+    background: rgba(var(--accent-rgb, 255, 120, 50), 0.12);
+    border: 1px solid rgba(var(--accent-rgb, 255, 120, 50), 0.4);
+    color: var(--accent);
+}
+
+.sp-add-btn.a:hover {
+    background: rgba(var(--accent-rgb, 255, 120, 50), 0.22);
+}
+
+.sp-add-btn.b {
+    background: rgba(99, 102, 241, 0.12);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    color: #818cf8;
+}
+
+.sp-add-btn.b:hover {
+    background: rgba(99, 102, 241, 0.22);
+}
+
+/* ── 대화 쌍 편집기 ──────────────────────────── */
+.sp-pairs-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.02);
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.sp-pairs-header {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 0 28px 4px 28px;
+    margin-left: 8px;
+}
+
+.sp-pairs-col-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.sp-pairs-col-label.b-col {
+    color: #818cf8;
+}
+
+.sp-pairs-col-label.a-col {
+    color: var(--accent);
+    text-align: right;
+}
+
+.sp-pair-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 6px 4px;
+    border-radius: 7px;
+    transition: background 0.1s;
+    cursor: grab;
+}
+
+.sp-pair-row:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.sp-pair-row:active {
+    cursor: grabbing;
+}
+
+.sp-drag-handle {
+    color: var(--muted);
+    font-size: 14px;
+    padding: 4px 2px;
+    cursor: grab;
+    user-select: none;
+    flex-shrink: 0;
+    line-height: 1;
+    margin-top: 6px;
+}
+
+.sp-pair-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.sp-pair-col-b {
+    border-right: 1px solid var(--border);
+    padding-right: 6px;
+}
+
+.sp-pair-col-a {
+    padding-left: 2px;
+}
+
+.sp-pair-input {
+    width: 100%;
+    padding: 6px 8px;
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.sp-pair-input:focus {
+    border-color: var(--accent);
+}
+
+.sp-pair-input-a:focus {
+    border-color: var(--accent);
+}
+
+.sp-pair-input-b:focus {
+    border-color: #818cf8;
+}
+
+.sp-pair-input-ko {
+    font-size: 11px;
+    color: var(--muted);
+}
+
+.sp-pair-input-ko::placeholder {
+    color: rgba(255, 255, 255, 0.2);
+}
+
+.sp-pair-del {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px 4px;
+    flex-shrink: 0;
+    opacity: 0.5;
+    transition: opacity 0.15s;
+    margin-top: 4px;
+}
+
+.sp-pair-del:hover {
+    opacity: 1;
+    color: var(--del-fg);
+}
+
+/* ── 프롬프트 박스 compact ────────────────────── */
+.sp-prompt-box--compact {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    gap: 8px;
+}
+
+.sp-prompt-box--compact .sp-prompt-label {
+    margin-bottom: 0;
+    font-size: 12px;
+    flex: 1;
+}
+
+.sp-prompt-help {
+    display: inline-flex;
+    vertical-align: middle;
+    align-items: center;
+    justify-content: center;
+    width: 15px;
+    height: 15px;
+    margin-right: 6px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    cursor: help;
+}
+
+.sp-prompt-help:hover,
+.sp-prompt-help:focus-visible {
+    color: var(--accent);
+}
+
+.sp-prompt-help:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 50%;
+}
+
+/* ── 대화 편집 영역 높이 확장 ─────────────────── */
+.sp-pairs-editor {
+    max-height: 420px !important;
+}
+
+/* ── 가로 스크롤 카드 리스트 ──────────────────── */
+.sp-card-list {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 6px 4px 10px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    flex-shrink: 0;
+}
+
+.sp-card-list::-webkit-scrollbar {
+    height: 4px;
+}
+
+.sp-card-list::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 2px;
+}
+
+.sp-card-item {
+    flex-shrink: 0;
+    width: 260px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.02);
+    padding: 12px;
+    scroll-snap-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    opacity: 0.5;
+}
+
+.sp-card-item.active {
+    opacity: 1;
+    border-color: var(--accent);
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 0 0 1px var(--accent);
+}
+
+.sp-card-item-num {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.sp-card-item-b, .sp-card-item-a {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 8px 10px;
+    border-radius: 8px;
+}
+
+.sp-card-item-b {
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.sp-card-item-a {
+    background: rgba(var(--accent-rgb, 255, 120, 50), 0.1);
+    border: 1px solid rgba(var(--accent-rgb, 255, 120, 50), 0.2);
+}
+
+.sp-card-item-role {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.sp-card-item-b .sp-card-item-role {
+    color: #818cf8;
+}
+
+.sp-card-item-a .sp-card-item-role {
+    color: var(--accent);
+}
+
+.sp-card-item-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.4;
+}
+
+.sp-card-item-ko {
+    font-size: 10px;
+    color: var(--muted);
+    line-height: 1.3;
+}
+
+/* sp-stt-result wrong/correct 는 위에서 정의 */
+
+/* ── 채팅형 대화 리스트 ───────────────────────── */
+.sp-chat-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 4px 14px 6px;
+    min-height: 0;
+}
+
+.sp-chat-pair {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    opacity: 0.35;
+    transition: opacity 0.2s;
+    cursor: pointer;
+    margin-bottom: 8px;
+}
+
+.sp-chat-pair.current {
+    opacity: 1;
+}
+
+.sp-chat-pair.past {
+    opacity: 0.6;
+}
+
+.sp-chat-pair.current:hover, .sp-chat-pair.past:hover {
+    opacity: 0.85;
+}
+
+.sp-chat-row {
+    display: flex;
+}
+
+.sp-chat-row-b {
+    justify-content: flex-start;
+}
+
+.sp-chat-row-a {
+    justify-content: flex-end;
+}
+
+.sp-chat-bubble {
+    max-width: 82%;
+    padding: 9px 13px;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    transition: all 0.2s;
+}
+
+.sp-chat-b {
+    background: rgba(99, 102, 241, 0.12);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    border-bottom-left-radius: 4px;
+}
+
+.sp-chat-a {
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid var(--border);
+    border-bottom-right-radius: 4px;
+}
+
+.sp-chat-a.correct {
+    background: rgba(74, 222, 128, 0.12);
+    border-color: rgba(74, 222, 128, 0.35);
+}
+
+.sp-chat-a.wrong {
+    background: var(--del-bg-hover);
+    border-color: rgba(var(--del-rgb), 0.35);
+}
+
+.sp-chat-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.5;
+    text-align: left;
+}
+
+.sp-chat-ko {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.45;
+    text-align: left;
+}
+
+/* ── 역할 전환 바 ─────────────────────────────── */
+.sp-role-bar {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    flex-shrink: 0;
+}
+
+.sp-role-label {
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.sp-role-btn {
+    padding: 7px 15px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.sp-role-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+}
+
+.sp-role-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ── 버블 상태별 스타일 ───────────────────────── */
+/* 현재 내가 말해야 할 버블 - 테두리 강조 */
+.sp-chat-bubble.my-turn {
+    border-width: 2px;
+    border-color: var(--accent);
+}
+
+.sp-chat-b.my-turn {
+    border-color: #818cf8;
+}
+
+/* 전체 재생 시 역할과 무관하게 현재 읽는 문장을 명확히 표시 */
+.sp-chat-bubble.speaking {
+    border-width: 2px;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(var(--accent-rgb), 0.12);
+}
+
+.sp-chat-b.speaking {
+    border-color: #818cf8;
+    box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.12);
+}
+
+/* 녹음/인식 중 - 펄스 애니메이션 */
+.sp-chat-bubble.pulsing {
+    animation: sp-bubble-pulse 1s ease-in-out infinite;
+}
+
+@keyframes sp-bubble-pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(255, 120, 50, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 6px rgba(255, 120, 50, 0);
+    }
+}
+
+.sp-chat-b.pulsing {
+    animation: sp-bubble-pulse-b 1s ease-in-out infinite;
+}
+
+@keyframes sp-bubble-pulse-b {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(129, 140, 248, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 6px rgba(129, 140, 248, 0);
+    }
+}
+
+/* 통과 - 초록 유지 */
+.sp-chat-bubble.passed {
+    background: rgba(74, 222, 128, 0.1);
+    border-color: rgba(74, 222, 128, 0.35);
+}
+
+/* 정답 */
+.sp-chat-bubble.correct {
+    background: rgba(74, 222, 128, 0.15) !important;
+    border-color: rgba(74, 222, 128, 0.5) !important;
+}
+
+/* 오답 */
+.sp-chat-bubble.wrong {
+    background: rgba(var(--del-rgb), 0.15) !important;
+    border-color: var(--del-border-hover) !important;
+}
+
+/* ── 해석 토글 스위치 ─────────────────────────── */
+.sp-ko-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    margin-left: auto;
+}
+
+.sp-ko-label {
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 500;
+}
+
+.sp-ko-switch {
+    width: 40px;
+    height: 22px;
+    border-radius: 11px;
+    background: var(--border);
+    position: relative;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+
+.sp-ko-switch::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    top: 3px;
+    left: 3px;
+    transition: left 0.2s;
+}
+
+.sp-ko-switch.on {
+    background: var(--accent);
+}
+
+.sp-ko-switch.on::after {
+    left: 21px;
+}
+
+/* ── 버블 내 행 (텍스트 + 플레이 버튼) ──────────── */
+.sp-bubble-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: flex-start;
+}
+
+.sp-play-btn {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+    border: none;
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    transition: background 0.15s;
+    padding: 0;
+}
+
+.sp-play-btn:hover {
+    background: rgba(255, 255, 255, 0.28);
+}
+
+/* ── 완료 배너 ───────────────────────────────── */
+.sp-completed-banner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px 16px;
+    margin: 0 16px 4px;
+    background: rgba(74, 222, 128, 0.12);
+    border: 1px solid rgba(74, 222, 128, 0.35);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #4ade80;
+    text-align: center;
+    min-height: 48px;
+    flex-shrink: 0;
+}
+
+.sp-restart-btn {
+    padding: 4px 10px;
+    background: rgba(74, 222, 128, 0.2);
+    border: 1px solid rgba(74, 222, 128, 0.4);
+    border-radius: 6px;
+    color: #4ade80;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.sp-restart-btn:hover {
+    background: rgba(74, 222, 128, 0.35);
+}
+
+/* ── 전체 재생 버튼 ──────────────────────────── */
+.sp-play-all-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border);
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+}
+
+.sp-play-all-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.sp-play-all-btn.playing {
+    background: rgba(var(--accent-rgb, 255, 120, 50), 0.15);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.sp-play-all-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}

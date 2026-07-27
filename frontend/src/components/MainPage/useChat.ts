@@ -1,0 +1,835 @@
+import React from 'react';
+import {useState} from 'react';
+import {useTranslation} from 'react-i18next';
+import {api} from '../../services/api';
+import {generateUUID} from '../../utils/helpers';
+import {toast} from '../common/ToastNotifications/ToastNotifications';
+import type {Message, ArticleAttachment, RagContextItem, ToolActivity} from '../../types';
+import {IMAGE_MODEL_IDS} from './useModels';
+import {streamSSE} from '../../utils/streamClient';
+import {parseFollowups} from '../../utils/markdownUtils';
+import {getReasoningEnabled} from '../../utils/reasoning';
+import {formatApiErrorForUser} from '../../utils/apiError';
+import {isSupportedChatFile} from '../../utils/fileValidation';
+import type {FileAttachment} from '../ChatInput/useAttachments';
+import {findPluginCommand} from '../../plugins/registry';
+
+// MCP tool 이름(서버__tool)을 사용자용 진행 문구로 변환
+function toolLabel(name: string | undefined, t: (key: string, options?: Record<string, unknown>) => string): string {
+    if (!name) return t('toolActivity.working');
+    const tool = name.includes('__') ? name.split('__').slice(1).join('__') : name;
+    const map: Record<string, string> = {
+        read_file: 'readFile', read_text_file: 'readFile', read_multiple_files: 'readFile',
+        write_file: 'writeFile', edit_file: 'editFile', create_directory: 'createDirectory',
+        list_directory: 'listDirectory', list_directory_with_sizes: 'listDirectory', directory_tree: 'directoryTree',
+        move_file: 'moveFile', search_files: 'searchFiles', get_file_info: 'fileInfo',
+        list_allowed_directories: 'allowedDirectories', search_related_context: 'searchContext',
+        // 코드 분석 tool
+        code_list_directory: 'codeListDirectory', code_read_file: 'codeReadFile', code_edit_file: 'codeEditFile',
+        code_create_file: 'codeCreateFile', code_grep_search: 'codeSearch',
+        // GitHub (자주 쓰는 것)
+        search_repositories: 'githubRepositories', get_file_contents: 'githubFile', list_commits: 'githubCommits',
+        search_code: 'githubCode', create_issue: 'githubIssue',
+    };
+    return map[tool] ? t(`toolActivity.${map[tool]}`) : t('toolActivity.runningTool', {tool});
+}
+
+function toolDetail(args?: Record<string, unknown>): string | undefined {
+    if (!args) return undefined;
+    const path = args.path ?? args.file_path ?? args.filename;
+    if (typeof path === 'string' && path) return path;
+    const pattern = args.pattern ?? args.query;
+    return typeof pattern === 'string' && pattern ? pattern : undefined;
+}
+
+function toolGroup(name?: string): ToolActivity['group'] {
+    if (!name) return 'tool';
+    const tool = name.includes('__') ? name.split('__').slice(1).join('__') : name;
+    return tool.startsWith('code_') ? 'code' : 'tool';
+}
+
+function appendCompactActivity(
+    activities: ToolActivity[],
+    status: ToolActivity,
+): ToolActivity[] {
+    const now = Date.now();
+    if (status.phase === 'completed') {
+        let runningIndex = -1;
+        for (let index = activities.length - 1; index >= 0; index -= 1) {
+            if (activities[index].phase === 'running') {
+                runningIndex = index;
+                break;
+            }
+        }
+        if (runningIndex < 0) return activities;
+        return activities.map((activity, index) => index === runningIndex
+            ? {...activity, phase: 'completed', completedAt: now}
+            : activity);
+    }
+
+    let compactActivities = activities;
+    if (status.phase === 'running') {
+        const hasPreviousTask = activities.some(activity => activity.group === 'code' || activity.group === 'tool');
+        const lastActivity = activities[activities.length - 1];
+        if (hasPreviousTask && lastActivity?.phase === 'judging') {
+            compactActivities = activities.slice(0, -1);
+        }
+    }
+
+    const lastActivity = compactActivities[compactActivities.length - 1];
+    if (status.phase === 'judging' && lastActivity?.phase === 'judging') {
+        return compactActivities.map((activity, index) => index === compactActivities.length - 1
+            ? {...activity, ...status}
+            : activity);
+    }
+
+    return [...compactActivities, {
+        ...status,
+        id: `${now}-${compactActivities.length}`,
+        startedAt: now,
+    }];
+}
+
+interface UseChatDeps {
+    currentConvId: string;
+    activeProjectId: string | null;
+    currentConvIdRef: React.MutableRefObject<string>;
+    messagesRef: React.MutableRefObject<Message[]>;
+    selectedModel: string;
+    isImageMode: boolean;
+    pendingArticles: ArticleAttachment[];
+    showVoiceChatModalRef: React.MutableRefObject<boolean>;
+    setConvId: (id: string) => void;
+    addLocalConversation: (convId: string, title: string, projectId?: string | null) => void;
+    setMessagesWithRef: (updater: Message[] | ((prev: Message[]) => Message[])) => void;
+    setMessagesForConversation: (convId: string, updater: Message[] | ((prev: Message[]) => Message[])) => void;
+    getMessagesForConversation: (convId: string) => Message[];
+    setPendingArticles: React.Dispatch<React.SetStateAction<ArticleAttachment[]>>;
+    mapMsg: (msg: any, idx?: number) => Message;
+    loadHistory: () => Promise<void>;
+    newConversation: (setResetTrigger: (fn: (n: number) => number) => void) => void;
+    clearConversation: (setResetTrigger: (fn: (n: number) => number) => void) => Promise<void>;
+    setResetTrigger: React.Dispatch<React.SetStateAction<number>>;
+    setIsDownloading: (v: boolean) => void;
+    setDownloadingModel: (v: string) => void;
+    setDownloadProgress: (v: number) => void;
+    setDownloadMessage: (v: string) => void;
+    openPluginModal: (modalId: string) => void;
+    setShowRememberModal: (ts: string) => void;
+}
+
+interface ConversationRequestState {
+    isLoading: boolean;
+    streamingMessageId: string | null;
+    startedAt: number | null;
+}
+
+export function useChat(deps: UseChatDeps) {
+    const {t} = useTranslation('main');
+    const [requestStates, setRequestStates] = useState<Record<string, ConversationRequestState>>({});
+    const [imageGenProgress, setImageGenProgress] = useState(0);
+    const [imageGenMessage, setImageGenMessage] = useState('');
+    const [lastFailedQuery, setLastFailedQuery] = useState<{ query: string; attachments: any[] } | null>(null);
+    // 현재 토큰 스트리밍 중인 assistant 메시지의 id (없으면 null)
+    const isSendingRef = React.useRef(false);
+    const abortControllerRef = React.useRef<AbortController | null>(null);
+    const [codeFolderPath, setCodeFolderPath] = useState<string>('');
+
+    // zip 첨부 시 대상 파일이 너무 많아 사용자 확인이 필요한 경우의 요청 상태
+    // (모달은 이 상태를 구독하는 컴포넌트 쪽에서 렌더링, 선택 결과는 resolver로 전달)
+    const [zipConfirmRequest, setZipConfirmRequest] = useState<{
+        originalName: string;
+        totalEligible: number;
+        defaultLimit: number;
+    } | null>(null);
+    const zipConfirmResolverRef = React.useRef<((maxFiles: number) => void) | null>(null);
+
+    /** zip_confirm_needed 응답을 받았을 때 사용자 선택을 기다리는 Promise를 반환 */
+    const waitForZipConfirm = (originalName: string, totalEligible: number, defaultLimit: number): Promise<number> => {
+        setZipConfirmRequest({originalName, totalEligible, defaultLimit});
+        return new Promise<number>(resolve => {
+            zipConfirmResolverRef.current = (maxFiles: number) => {
+                setZipConfirmRequest(null);
+                resolve(maxFiles);
+            };
+        });
+    };
+
+    /** ConfirmModal에서 사용자가 선택했을 때 호출 (예: '50개만' → defaultLimit, '전체' → totalEligible) */
+    const resolveZipConfirm = (maxFiles: number) => {
+        zipConfirmResolverRef.current?.(maxFiles);
+        zipConfirmResolverRef.current = null;
+    };
+
+    const {
+        currentConvId, currentConvIdRef, messagesRef, selectedModel, activeProjectId,
+        pendingArticles, showVoiceChatModalRef,
+        setConvId, addLocalConversation, setMessagesWithRef, setMessagesForConversation, getMessagesForConversation, setPendingArticles, mapMsg, loadHistory,
+        clearConversation, setResetTrigger,
+        openPluginModal,
+        setShowRememberModal,
+    } = deps;
+
+    const setConversationRequestState = (
+        convId: string,
+        update: Partial<ConversationRequestState>,
+    ) => {
+        setRequestStates(previous => ({
+            ...previous,
+            [convId]: {
+                isLoading: previous[convId]?.isLoading ?? false,
+                streamingMessageId: previous[convId]?.streamingMessageId ?? null,
+                startedAt: update.isLoading && !previous[convId]?.isLoading
+                    ? Date.now()
+                    : previous[convId]?.startedAt ?? null,
+                ...update,
+            },
+        }));
+    };
+
+    const currentRequestState = requestStates[currentConvId];
+    const isLoading = currentRequestState?.isLoading ?? false;
+    const streamingMessageId = currentRequestState?.streamingMessageId ?? null;
+    const responseStartedAt = currentRequestState?.startedAt ?? null;
+    const activeConversationIds = Object.entries(requestStates)
+        .filter(([, state]) => state.isLoading)
+        .map(([convId]) => convId);
+    const hasActiveRequests = activeConversationIds.length > 0;
+
+    const resetImageGen = () => {
+        setImageGenProgress(0);
+        setImageGenMessage('');
+    };
+
+    // 새 대화방의 conv_id가 처음 확정되는 시점에 호출: state에 반영하는 동시에
+    // 사이드바 목록에도 바로 추가해 loadHistory()의 백엔드 저장 타이밍 레이스를 피한다.
+    const assignNewConvId = (id: string, titleSeed: string) => {
+        setConvId(id);
+        addLocalConversation(id, titleSeed || '새 대화', activeProjectId);
+    };
+
+    const handleSend = async (
+        query: string,
+        images?: File[],
+        fileAttachments?: FileAttachment[],
+        systemPromptOverride?: string,
+        voiceMode?: boolean,
+        extraArticles?: ArticleAttachment[],
+        ragContext?: Array<{ source: string; data: string }>,
+        selectedMcpIds?: string[],
+    ): Promise<boolean> => {
+        const hasContent = query.trim() || (images?.length ?? 0) > 0
+            || (fileAttachments?.length ?? 0) > 0
+            || pendingArticles.length > 0
+            || (extraArticles?.length ?? 0) > 0;
+        if (!hasContent || hasActiveRequests || isSendingRef.current) return false;
+
+        const unsupportedFile = [
+            ...(images ?? []),
+            ...(fileAttachments ?? []).map(attachment => attachment.file),
+        ].find(file => !isSupportedChatFile(file));
+        if (unsupportedFile) {
+            toast.warning(t('documentModal.unsupportedFormat', {name: unsupportedFile.name}));
+            return false;
+        }
+
+        isSendingRef.current = true;
+        try {
+            return await handleSendInner(query, images, fileAttachments, systemPromptOverride, voiceMode, extraArticles, ragContext, selectedMcpIds);
+        } finally {
+            isSendingRef.current = false;
+        }
+    };
+
+    /** returns false when all file uploads failed and request was aborted */
+    const handleSendInner = async (
+        query: string,
+        images?: File[],
+        fileAttachments?: FileAttachment[],
+        systemPromptOverride?: string,
+        voiceMode?: boolean,
+        extraArticles?: ArticleAttachment[],
+        ragContext?: Array<{ source: string; data: string }>,
+        selectedMcpIds?: string[],
+    ): Promise<boolean> => {
+        const requestConvId = currentConvIdRef.current || currentConvId;
+        const articlesSnapshot = extraArticles?.length
+            ? [...extraArticles]
+            : [...pendingArticles];
+        if (extraArticles?.length) {
+            setPendingArticles(extraArticles);
+        }
+
+        // ── 커맨드 처리 ──────────────────────────────────────────────
+        if (query.trim() === '/clear') {
+            clearConversation(setResetTrigger);
+            return true;
+        }
+        const pluginCommand = findPluginCommand(query.trim());
+        if (pluginCommand) {
+            openPluginModal(pluginCommand.modalId);
+            return true;
+        }
+        if (query.trim() === '/remember') {
+            setShowRememberModal(new Date().toISOString());
+            return true;
+        }
+
+        // 새 대화는 응답 생성이나 파일 업로드가 진행되는 동안에도 사이드바에서 즉시
+        // 다시 선택할 수 있어야 한다. 이미 저장된 대화면 중복 추가되지 않는다.
+        addLocalConversation(requestConvId, query.trim() || t('sidebar.newChat'), activeProjectId);
+
+        // ── 파일 업로드 (진행 표시 포함) ─────────────────────────────
+        const totalFiles = (images?.length ?? 0) + (fileAttachments?.length ?? 0);
+        const uploadStreamId = totalFiles > 0 ? `upload-${Date.now()}` : null;
+        if (uploadStreamId) {
+            setMessagesForConversation(requestConvId, prev => [...prev, {
+                id: uploadStreamId,
+                role: 'assistant', content: '', timestamp: new Date().toISOString(),
+                toolStatus: {phase: 'running', label: t('toolActivity.indexing', {done: 0, total: totalFiles})},
+            }]);
+            setConversationRequestState(requestConvId, {streamingMessageId: uploadStreamId, isLoading: true});
+        }
+        let uploadedCount = 0;
+        const updateUploadDetail = (detail: string, label?: string) => {
+            if (uploadStreamId) {
+                setMessagesForConversation(requestConvId, prev => prev.map(m =>
+                    m.id === uploadStreamId
+                        ? {...m, toolStatus: {phase: 'running', label: label ?? t('toolActivity.indexing', {done: uploadedCount, total: totalFiles}), detail}}
+                        : m));
+            }
+        };
+        const markUploadDone = (name: string) => {
+            uploadedCount++;
+            updateUploadDetail(name);
+        };
+        /** XHR 기반 파일 업로드 — progress 이벤트로 업로드 진행률 표시 */
+        const uploadWithProgress = (url: string, formData: FormData, fileName: string): Promise<Response> => {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', url);
+                xhr.upload.addEventListener('progress', e => {
+                    if (e.lengthComputable && e.total > 0) {
+                        const pct = Math.round((e.loaded / e.total) * 100);
+                        updateUploadDetail(fileName, t('toolActivity.uploading', {name: fileName, pct}));
+                    }
+                });
+                xhr.upload.addEventListener('loadend', () => {
+                    updateUploadDetail(fileName, t('toolActivity.parsing', {name: fileName}));
+                });
+                xhr.addEventListener('load', () => {
+                    resolve(new Response(xhr.responseText, {status: xhr.status, statusText: xhr.statusText, headers: new Headers({'Content-Type': xhr.getResponseHeader('Content-Type') || 'application/json'})}));
+                });
+                xhr.addEventListener('error', () => reject(new Error('Network error')));
+                xhr.addEventListener('abort', () => reject(new DOMException('Upload aborted', 'AbortError')));
+                xhr.send(formData);
+            });
+        };
+        const attachments: any[] = [];
+        if (images?.length) {
+            for (let i = 0; i < images.length; i++) {
+                const img = images[i];
+                try {
+                    updateUploadDetail(img.name, t('toolActivity.uploading', {name: img.name, pct: 0}));
+                    const formData = new FormData();
+                    formData.append('file', img);
+                    const response = await uploadWithProgress('http://localhost:8000/api/images/upload', formData, img.name);
+                    const data = await response.json();
+                    if (data.filename) {
+                        attachments.push({type: 'image', filename: data.filename});
+                        markUploadDone(img.name);
+                    }
+                } catch (error) {
+                    console.error('Image upload failed:', error);
+                }
+            }
+        }
+        if (fileAttachments?.length) {
+            for (const fa of fileAttachments) {
+                try {
+                    updateUploadDetail(fa.file.name, t('toolActivity.uploading', {name: fa.file.name, pct: 0}));
+                    const formData = new FormData();
+                    formData.append('file', fa.file);
+                    const response = await uploadWithProgress('http://localhost:8000/api/files/upload', formData, fa.file.name);
+                    if (!response.ok) {
+                        const errData = await response.json().catch(() => null);
+                        const detail = errData?.detail || response.statusText;
+                        toast.error(t('fileUpload.failed', {name: fa.file.name}), detail);
+                        continue;
+                    }
+                    let data = await response.json();
+
+                    // zip 내 대상 파일이 너무 많으면 사용자에게 확인 후, 재업로드 없이 saved_name으로 재처리
+                    if (data.type === 'zip_confirm_needed') {
+                        const maxFiles = await waitForZipConfirm(
+                            data.original_name, data.total_eligible, data.default_limit
+                        );
+                        const confirmParams = new URLSearchParams({
+                            saved_name: data.saved_name,
+                            original_name: data.original_name,
+                            max_files: String(maxFiles),
+                        });
+                        const confirmResponse = await fetch(
+                            `http://localhost:8000/api/files/upload/zip-confirm?${confirmParams}`,
+                            {method: 'POST'}
+                        );
+                        if (!confirmResponse.ok) {
+                            console.error('Zip 처리 실패:', confirmResponse.statusText);
+                            continue;
+                        }
+                        data = await confirmResponse.json();
+                    }
+
+                    attachments.push(data);
+                    markUploadDone(fa.file.name);
+                } catch (error) {
+                    toast.error(t('fileUpload.failed', {name: fa.file.name}), String(error));
+                }
+            }
+        }
+
+        // 모든 파일 업로드 실패 시: 무조건 요청 중단 (입력 상태 복원)
+        if (totalFiles > 0 && attachments.length === 0) {
+            if (uploadStreamId) {
+                setMessagesForConversation(requestConvId, prev => prev.filter(m => m.id !== uploadStreamId));
+                setConversationRequestState(requestConvId, {streamingMessageId: null, isLoading: false});
+            }
+            return false;
+        }
+
+        const userTs = new Date().toISOString();  // 전송 시각 — 화면/서버 동일하게 사용
+        const userMessage: Message = {
+            role: 'user', content: query, timestamp: userTs,
+            attachments: attachments.length > 0 ? attachments : undefined,
+            articleSources: articlesSnapshot.length > 0 ? articlesSnapshot : undefined,
+            ragContext: ragContext?.length ? ragContext : undefined,
+        };
+        // 업로드 진행 표시용 임시 메시지는 히스토리에서 제외
+        const prevMessagesSnapshot = uploadStreamId
+            ? messagesRef.current.filter(m => m.id !== uploadStreamId)
+            : [...messagesRef.current];
+        // 히스토리 전송 시 이전 메시지의 파일/zip attachment content 제거.
+        // 파일은 chat_file_chunks에 인덱싱돼 있으므로, 후속 질문에서 file_id 경로로
+        // 관련 청크만 검색해서 가져온다. 전체 content를 매 요청마다 전송하면
+        // zip 첨부 후 후속 질문에서 수만 토큰이 낭비된다. 이미지(base64)는 유지.
+        const sanitizedHistory = prevMessagesSnapshot.map(msg => {
+            if (!msg.attachments?.length) return msg;
+            const cleanedAtts = msg.attachments
+                .filter((a: any) => a.type === 'image')  // 이미지만 유지, file/zip 제거
+                .map((a: any) => ({type: a.type, filename: a.filename}));
+            return cleanedAtts.length === msg.attachments.length
+                ? msg
+                : {...msg, attachments: cleanedAtts.length > 0 ? cleanedAtts : undefined};
+        });
+        // 업로드 진행 메시지 제거 후 유저 메시지 추가
+        if (uploadStreamId) setConversationRequestState(requestConvId, {streamingMessageId: null});
+        setMessagesForConversation(requestConvId, prev => [
+            ...(uploadStreamId ? prev.filter(m => m.id !== uploadStreamId) : prev),
+            userMessage
+        ]);
+        setConversationRequestState(requestConvId, {isLoading: true});
+
+        try {
+            const isCurrentlyImageMode = IMAGE_MODEL_IDS.includes(selectedModel);
+            if (isCurrentlyImageMode) {
+                resetImageGen();
+                setImageGenMessage('이미지 생성 준비 중...');
+                const response = await api.generateImage(query, requestConvId, sanitizedHistory,
+                    attachments.length > 0 ? attachments : undefined,
+                    (msg, progress) => {
+                        setImageGenMessage(msg);
+                        setImageGenProgress(progress);
+                    });
+                resetImageGen();
+                if (response.conv_id && !requestConvId) assignNewConvId(response.conv_id, query);
+                await loadHistory();
+                const finalConvId = response.conv_id || requestConvId;
+                if (finalConvId) {
+                    const data = await api.getConversation(finalConvId);
+                    setMessagesForConversation(requestConvId, (data.messages || []).map((m, i) => mapMsg(m, i)));
+                } else {
+                    setMessagesForConversation(requestConvId, prev => [...prev, {
+                        role: 'assistant', content: `이미지를 생성했습니다. (${response.count}장)`,
+                        timestamp: new Date().toISOString(), model: response.model,
+                        attachments: response.filenames.map((f: string) => ({type: 'image', filename: f})),
+                        isGeneratedImage: true,
+                    }]);
+                }
+                return true;
+            }
+
+            // ── URL/기사 첨부 채팅은 토큰 스트리밍 경로 ─────────────────
+            // 조건: (기사 첨부 있음) 또는 (질문에 URL 포함), 그리고 voice_mode 아님.
+            // 이 경로는 <action> 실행 파이프라인을 타지 않아 스트리밍 안전.
+            // 이미지 생성 모델/voice가 아니면 전부 스트리밍 (기사·URL·순수 일반채팅 모두 서버가 분기)
+            const canStreamChat = !voiceMode && !isCurrentlyImageMode;
+
+            if (canStreamChat) {
+                abortControllerRef.current = new AbortController();
+
+                const streamId = generateUUID();
+                setMessagesForConversation(requestConvId, prev => [...prev, {
+                    id: streamId, role: 'assistant', content: '', timestamp: new Date().toISOString(),
+                }]);
+                setConversationRequestState(requestConvId, {streamingMessageId: streamId});
+
+                let responseWritingStarted = false;
+                const appendToStreamMsg = (piece: string) => {
+                    if (!responseWritingStarted) {
+                        responseWritingStarted = true;
+                        setToolStatus({phase: 'running', group: 'analysis', label: t('toolActivity.thinking')});
+                    }
+                    setMessagesForConversation(requestConvId, prev => prev.map(m =>
+                        m.id === streamId ? {...m, content: (m.content || '') + piece, toolStatus: undefined} : m));
+                };
+
+                // (onReset 제거됨 — 판정이 비스트리밍이므로 reset 불필요)
+
+                const setToolStatus = (status: ToolActivity | undefined) => {
+                    setMessagesForConversation(requestConvId, prev => prev.map(m =>
+                        m.id === streamId
+                            ? {
+                                ...m,
+                                toolStatus: status,
+                                activityLog: status
+                                    ? appendCompactActivity(m.activityLog || [], status)
+                                    : m.activityLog,
+                            }
+                            : m));
+                };
+
+                try {
+                    let streamModel = '';
+                    let streamSources: any[] = [];
+                    await streamSSE('http://localhost:8000/api/query/stream', {
+                        question: query,
+                        conv_id: requestConvId,
+                        user_timestamp: userTs,
+                        messages: sanitizedHistory,
+                        system_prompt: systemPromptOverride || '',
+                        attachments: attachments.length > 0 ? attachments : [],
+                        articles: articlesSnapshot.length > 0 ? articlesSnapshot : [],
+                        article_selection_explicit: true,
+                        voice_mode: false,
+                        rag_context: ragContext?.length ? ragContext : [],
+                        reasoning: getReasoningEnabled(),
+                        folder_path: codeFolderPath || '',
+                        project_id: deps.activeProjectId || '',
+                        selected_mcp_ids: selectedMcpIds || [],
+                    }, {
+                        onMeta: (data) => {
+                            streamModel = data.model || '';
+                            streamSources = data.sources || [];
+                        },
+                        onToken: (text) => appendToStreamMsg(text),
+                        onTool: (data) => {
+                            if (data.phase === 'judging') {
+                                setToolStatus({phase: 'judging', group: 'analysis', label: t((data.round ?? 0) > 0 ? 'toolActivity.additionalAnalysis' : 'toolActivity.analyzing')});
+                            } else if (data.phase === 'start') {
+                                setToolStatus({phase: 'running', group: toolGroup(data.name), label: toolLabel(data.name, t), detail: toolDetail(data.args)});
+                            } else if (data.phase === 'end') {
+                                setToolStatus({phase: 'completed', label: t('toolActivity.completed'), detail: toolDetail(data.args)});
+                            }
+                        },
+                        onIndexProgress: (data) => {
+                            // 첨부파일 임베딩 인덱싱이 LLM 호출보다 먼저 끝까지 진행되는 동안의
+                            // 진행 표시. 완료(done>=total) 시점에 바로 "생각하는 중"으로 전환한다 —
+                            // 안 그러면 인덱싱 완료 후 실제 토큰/tool 이벤트가 오기 전까지
+                            // "인덱싱 중 N/N" 문구가 그대로 멈춰있는 것처럼 보인다.
+                            const total = data.total ?? 0;
+                            const done = data.done ?? 0;
+                            if (total > 0 && done >= total) {
+                                setToolStatus({phase: 'judging', group: 'analysis', label: t('toolActivity.thinking')});
+                            } else {
+                                setToolStatus({phase: 'running', group: 'tool', label: t('toolActivity.indexing', {done, total}), detail: data.source_name || undefined});
+                            }
+                        },
+                        onDone: (data) => {
+                            setMessagesForConversation(requestConvId, prev => prev.map(message => message.id === streamId
+                                ? {
+                                    ...message,
+                                    activityLog: message.activityLog?.map(activity => activity.phase === 'completed'
+                                        ? activity
+                                        : {...activity, phase: 'completed', completedAt: Date.now()}),
+                                }
+                                : message));
+                            if (data.conv_id && !requestConvId) assignNewConvId(data.conv_id, query);
+                            const esSources: ArticleAttachment[] = (streamSources || [])
+                                .filter((s: any) => s.url && !s.url.startsWith('manual://'))
+                                .map((s: any) => ({
+                                    title: s.title || '',
+                                    url: s.url || '',
+                                    content: s.content || '',
+                                    source: s.source || '',
+                                    indexed_at: s.indexed_at || ''
+                                }));
+                            const mergedSources: ArticleAttachment[] = [
+                                ...articlesSnapshot,
+                                ...esSources.filter(e => !articlesSnapshot.some(a => a.url === e.url)),
+                            ];
+                            // "주입된 데이터" 모달용 — 백엔드 rag_context 저장 규칙과 동일 필터
+                            // (파일명 등 title도 같이 넘겨야 "주입된 데이터" 목록에서 파일별로 구분됨)
+                            // zip/파일 첨부(source: zip:, 첨부:, 첨부파일)는 ragContext에서 제외 —
+                            // chat_file_chunks에 인덱싱돼 있으므로 히스토리에 전체 내용을 반복
+                            // 주입하면 수만 토큰이 낭비된다.
+                            const ragContextItems: RagContextItem[] = (streamSources || [])
+                                .filter((s: any) => {
+                                    if (!s.content) return false;
+                                    if ((s.url || '').startsWith('file://')) return false;
+                                    if (['', null, undefined, 'memo', '붙여넣기'].includes(s.source)) return false;
+                                    const src: string = s.source || '';
+                                    if (src.startsWith('zip:') || src.startsWith('첨부:') || src === '첨부파일') return false;
+                                    return true;
+                                })
+                                .map((s: any) => ({
+                                    source: s.source || s.title || '',
+                                    title: s.title || '',
+                                    data: s.content || ''
+                                }));
+                            const rawAnswer = data.answer ?? '';
+                            const {body: fuBody, followups: fuList} = parseFollowups(rawAnswer);
+                            setMessagesForConversation(requestConvId, prev => prev.map(m => {
+                                if (m.id !== streamId) return m;
+                                // fuBody가 비어있으면 스트리밍으로 쌓인 m.content 사용
+                                const finalContent = (fuBody?.trim() ? fuBody : null)
+                                    || (m.content?.trim() ? m.content : null);
+                                if (!finalContent) {
+                                    return {
+                                        ...m,
+                                        content: '⚠️ 응답을 생성하지 못했습니다. 다시 시도해주세요.',
+                                        isError: true, toolStatus: undefined,
+                                        stats: data.stats || m.stats
+                                    };
+                                }
+                                return {
+                                    ...m, content: finalContent, model: streamModel || m.model,
+                                    timestamp: new Date().toISOString(), toolStatus: undefined,
+                                    followups: fuList.length > 0 ? fuList : undefined,
+                                    articleSources: mergedSources.length > 0 ? mergedSources : undefined,
+                                    ragContext: ragContextItems.length > 0 ? ragContextItems : undefined,
+                                    stats: data.stats || m.stats
+                                };
+                            }));
+                            if (showVoiceChatModalRef.current && data.answer)
+                                window.dispatchEvent(new CustomEvent('voiceChatResponse', {detail: {text: data.answer}}));
+                        },
+                        onError: (msg) => {
+                            setMessagesForConversation(requestConvId, prev => prev.map(m =>
+                                m.id === streamId ? {...m, content: msg, isError: true, toolStatus: undefined} : m));
+                        },
+                    }, abortControllerRef.current.signal);
+                    await loadHistory();
+                } catch (streamErr) {
+                    // 사용자가 직접 중지한 경우 — 에러 아님
+                    if (streamErr instanceof DOMException && streamErr.name === 'AbortError') {
+                        setMessagesForConversation(requestConvId, prev => prev.map(m =>
+                            m.id === streamId && !m.content?.trim()
+                                ? {...m, content: '(중단됨)', isError: false} : m));
+                    } else {
+                        // HTTP 레벨 실패(ApiError)나 네트워크 중단 등 — onError(서버가 보낸 SSE error
+                        // 이벤트)와 별개로, 요청 자체가 실패한 경우. 바깥 catch로 전파시키면 이미 만들어둔
+                        // 빈 스트리밍 말풍선은 그대로 남은 채 에러 말풍선이 하나 더 추가돼 중복으로 보이므로,
+                        // 여기서 같은 말풍선(streamId)에 에러 내용을 채워 넣고 끝낸다.
+                        setMessagesForConversation(requestConvId, prev => prev.map(m =>
+                            m.id === streamId
+                                ? {
+                                    ...m,
+                                    content: formatApiErrorForUser(streamErr),
+                                    isError: true,
+                                    toolStatus: undefined
+                                }
+                                : m));
+                        setLastFailedQuery({query, attachments});
+                    }
+                } finally {
+                    setConversationRequestState(requestConvId, {streamingMessageId: null});
+                    abortControllerRef.current = null;
+                }
+                return true;
+            }
+
+            // ── 일반 채팅 (비스트리밍: action 가능성 있음) ────────────────
+            const response = await api.chat(query, requestConvId, sanitizedHistory,
+                attachments.length > 0 ? attachments : undefined,
+                articlesSnapshot.length > 0 ? articlesSnapshot : undefined,
+                systemPromptOverride, voiceMode,
+                ragContext?.length ? ragContext : undefined,
+                getReasoningEnabled());
+
+            const isNewConv = !requestConvId;
+            if (response.conv_id && isNewConv) {
+                assignNewConvId(response.conv_id, query);
+            }
+
+            const isActionResponse = response.response_type === 'action';
+            const esSources: ArticleAttachment[] = isActionResponse ? [] : (response.sources || [])
+                .filter((s: any) => s.url && !s.url.startsWith('manual://'))
+                .map((s: any) => ({
+                    title: s.title || '',
+                    url: s.url || '',
+                    content: s.content || '',
+                    source: s.source || '',
+                    indexed_at: s.indexed_at || ''
+                }));
+
+            const mergedSources: ArticleAttachment[] = isActionResponse ? [] : [
+                ...articlesSnapshot,
+                ...esSources.filter(e => !articlesSnapshot.some(a => a.url === e.url)),
+            ];
+
+            await loadHistory();
+            const finalConvId = response.conv_id || requestConvId;
+            if (finalConvId) {
+                const data = await api.getConversation(finalConvId);
+                const rawMessages = (data.messages || []).map((m, i) => mapMsg(m, i));
+                if (mergedSources.length > 0 && rawMessages.length > 0) {
+                    const lastIdx = rawMessages.length - 1;
+                    if (rawMessages[lastIdx].role === 'assistant') rawMessages[lastIdx].articleSources = mergedSources;
+                }
+                setMessagesForConversation(requestConvId, rawMessages);
+                if (showVoiceChatModalRef.current) {
+                    const last = [...rawMessages].reverse().find(m => m.role === 'assistant');
+                    if (last) window.dispatchEvent(new CustomEvent('voiceChatResponse', {detail: {text: last.content}}));
+                }
+            } else {
+                const botMessage: Message = {
+                    role: 'assistant', content: response.answer, timestamp: new Date().toISOString(),
+                    model: response.model, articleSources: mergedSources.length > 0 ? mergedSources : undefined,
+                };
+                setMessagesForConversation(requestConvId, prev => [...prev, botMessage]);
+                if (showVoiceChatModalRef.current)
+                    window.dispatchEvent(new CustomEvent('voiceChatResponse', {detail: {text: botMessage.content}}));
+            }
+        } catch (error) {
+            if (error instanceof DOMException && error.name === 'AbortError') {
+                // 사용자 중지 — 에러 표시 안 함
+            } else {
+                setLastFailedQuery({query, attachments});
+                setMessagesForConversation(requestConvId, prev => [...prev, {
+                    role: 'assistant',
+                    content: formatApiErrorForUser(error),
+                    timestamp: new Date().toISOString(),
+                    isError: true
+                }]);
+            }
+        } finally {
+            setConversationRequestState(requestConvId, {isLoading: false, streamingMessageId: null});
+            resetImageGen();
+            abortControllerRef.current = null;
+        }
+        return true;
+    };
+
+    // ── 재전송 (이미 업로드된 attachments 사용) ─────────────────────
+    const handleSendWithAttachments = async (query: string, attachments: any[]) => {
+        const requestConvId = currentConvIdRef.current || currentConvId;
+        setMessagesForConversation(requestConvId, prev => [...prev, {
+            role: 'user',
+            content: query,
+            timestamp: new Date().toISOString(),
+            attachments: attachments.length > 0 ? attachments : undefined
+        }]);
+        setConversationRequestState(requestConvId, {isLoading: true});
+        try {
+            if (IMAGE_MODEL_IDS.includes(selectedModel)) {
+                resetImageGen();
+                setImageGenMessage('이미지 생성 준비 중...');
+                const response = await api.generateImage(query, requestConvId, messagesRef.current,
+                    attachments.length > 0 ? attachments : undefined,
+                    (msg, progress) => {
+                        setImageGenMessage(msg);
+                        setImageGenProgress(progress);
+                    });
+                resetImageGen();
+                if (response.conv_id && !requestConvId) assignNewConvId(response.conv_id, query);
+                await loadHistory();
+                const finalConvId = response.conv_id || requestConvId;
+                if (finalConvId) {
+                    const data = await api.getConversation(finalConvId);
+                    setMessagesForConversation(requestConvId, (data.messages || []).map((m, i) => mapMsg(m, i)));
+                } else {
+                    setMessagesForConversation(requestConvId, prev => [...prev, {
+                        role: 'assistant', content: `이미지를 생성했습니다. (${response.count}장)`,
+                        timestamp: new Date().toISOString(), model: response.model,
+                        attachments: response.filenames.map((f: string) => ({type: 'image', filename: f})),
+                        isGeneratedImage: true,
+                    }]);
+                }
+            } else {
+                const response = await api.chat(query, requestConvId, messagesRef.current, attachments.length > 0 ? attachments : undefined,
+                    undefined, undefined, undefined, undefined, getReasoningEnabled());
+                if (response.conv_id && !requestConvId) assignNewConvId(response.conv_id, query);
+                await loadHistory();
+                const finalConvId = response.conv_id || requestConvId;
+                if (finalConvId) {
+                    const data = await api.getConversation(finalConvId);
+                    setMessagesForConversation(requestConvId, (data.messages || []).map((m, i) => mapMsg(m, i)));
+                } else {
+                    setMessagesForConversation(requestConvId, prev => [...prev, {
+                        role: 'assistant',
+                        content: response.answer,
+                        timestamp: new Date().toISOString(),
+                        model: response.model
+                    }]);
+                }
+            }
+        } catch (error) {
+            if (error instanceof DOMException && error.name === 'AbortError') {
+                // 사용자 중지 — 에러 표시 안 함
+            } else {
+                setLastFailedQuery({query, attachments});
+                setMessagesForConversation(requestConvId, prev => [...prev, {
+                    role: 'assistant',
+                    content: formatApiErrorForUser(error),
+                    timestamp: new Date().toISOString(),
+                    isError: true
+                }]);
+            }
+        } finally {
+            setConversationRequestState(requestConvId, {isLoading: false, streamingMessageId: null});
+        }
+    };
+
+    const handleRetry = () => {
+        if (!lastFailedQuery) return;
+        setMessagesWithRef(prev => {
+            const next = [...prev];
+            if (next.length > 0 && next[next.length - 1].isError) next.pop();
+            if (next.length > 0 && next[next.length - 1].role === 'user') next.pop();
+            return next;
+        });
+        const {query, attachments} = lastFailedQuery;
+        setLastFailedQuery(null);
+        handleSendWithAttachments(query, attachments);
+    };
+
+    const handleStop = () => {
+        // 이 앱은 한 번에 한 요청만 실행한다. 다른 대화를 보고 있어도
+        // 실제 응답 중인 대화를 찾아 그 요청을 중지해야 한다.
+        const requestConvId = activeConversationIds[0] || currentConvIdRef.current || currentConvId;
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+            abortControllerRef.current = null;
+        }
+        // 빈 스트리밍 말풍선 제거, 내용 있으면 유지
+        setMessagesForConversation(requestConvId, prev => {
+            const last = prev[prev.length - 1];
+            if (last?.role === 'assistant' && !last.content?.trim()) return prev.slice(0, -1);
+            return prev;
+        });
+        setConversationRequestState(requestConvId, {isLoading: false, streamingMessageId: null});
+        // 새 대화방이면 사이드바에 즉시 추가 (백엔드 저장 완료 대기 없이)
+        if (requestConvId) {
+            const firstMsg = getMessagesForConversation(requestConvId).find(m => m.role === 'user');
+            addLocalConversation(requestConvId, firstMsg?.content?.slice(0, 30) || '새 대화', activeProjectId);
+        }
+    };
+
+    return {
+        isLoading, responseStartedAt, imageGenProgress, imageGenMessage, lastFailedQuery,
+        handleSend, handleRetry, handleStop, streamingMessageId,
+        activeConversationIds, hasActiveRequests,
+        zipConfirmRequest, resolveZipConfirm,
+        codeFolderPath, setCodeFolderPath,
+    };
+}

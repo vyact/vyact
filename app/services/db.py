@@ -1,0 +1,622 @@
+"""
+db.py – ES 클라이언트 / 인덱스 상수 / 인덱스 초기화
+ES 9.x 최적화
+"""
+import os
+import asyncio
+
+from elasticsearch import AsyncElasticsearch
+from logger import get_logger
+
+logger = get_logger(__name__)
+
+# vyact 전용 ES 포트. 업무용 등 별도 ES(기본 9200/9300)와 충돌하지 않도록
+# 9251/9351 사용. 환경변수로 오버라이드 가능.
+ES_PORT = os.getenv("ES_PORT", "9251")           # HTTP (REST API)
+ES_TRANSPORT_PORT = os.getenv("ES_TRANSPORT_PORT", "9351")  # 노드 간 transport
+KIBANA_PORT = os.getenv("KIBANA_PORT", "5651")   # Kibana (기본 5601 회피)
+ES_URL = os.getenv("ES_URL", f"http://localhost:{ES_PORT}")
+
+INDEX_NAME = "rag_documents"
+DOC_CHUNKS_INDEX = "doc_chunks"   # 파일 업로드 청크 전용 인덱스
+CHAT_FILE_CHUNKS_INDEX = "chat_file_chunks"   # 채팅 첨부(zip/파일) 청크 전용 인덱스 — conv_id 종속, 방 삭제 시 cascade
+HIST_INDEX = "rag_history"
+PROJECTS_INDEX = "projects"
+PROMPTS_INDEX = "system_prompts"
+SETTINGS_INDEX = "system_settings"
+FILES_INDEX = "rag_files"
+MEMO_INDEX = "memo_documents"
+QUICKNOTE_INDEX = "quick_notes"   # 빠른 메모(todo형) — 메모 RAG 검색 대상
+USER_PROFILE_INDEX = "user_profile"
+VOCAB_INDEX = "vocab_words"
+NOTIFICATIONS_INDEX = "notifications"
+
+# 공통 분석기 설정 (nori)
+KOREAN_ANALYSIS = {
+    "tokenizer": {
+        "korean_tokenizer": {
+            "type": "nori_tokenizer",
+            "decompound_mode": "mixed",
+            "discard_punctuation": True,
+        }
+    },
+    "filter": {
+        "korean_pos_filter": {
+            "type": "nori_part_of_speech",
+            "stoptags": [
+                "IC",
+                "MAG", "MAJ", "MM",
+                "SP", "SSC", "SSO", "SC", "SE",
+                "XPN", "XSA", "XSN", "XSV",
+                "UNA", "NA", "VSV",
+            ],
+        }
+    },
+    "analyzer": {
+        "korean": {
+            "type": "custom",
+            "tokenizer": "korean_tokenizer",
+            "filter": ["lowercase", "korean_pos_filter"],
+        }
+    },
+}
+
+
+# ── ES 싱글턴 클라이언트 ──────────────────────────────────────────
+# 요청마다 새 클라이언트 생성 — finally: await es.close() 패턴과 쌍으로 사용
+def get_es() -> AsyncElasticsearch:
+    return AsyncElasticsearch(ES_URL)
+
+
+async def wait_for_es(es, retries=30):
+    for i in range(retries):
+        try:
+            health = await es.cluster.health()
+            status = health.get("status")
+            logger.info("⏳ ES status: %s", status)
+            if status in ("yellow", "green"):
+                return True
+        except Exception as e:
+            logger.info("ES 대기 중... %s", str(e))
+        await asyncio.sleep(1)
+    return False
+
+
+async def ensure_index():
+    """현재 지원하는 ES 인덱스를 생성한다 (ES 9.x 최적화)."""
+    es = get_es()
+    try:
+        if not await wait_for_es(es):
+            raise Exception("Elasticsearch 준비 안됨")
+        logger.info("✅ Connected to ES")
+
+        # ── rag_documents ──────────────────────────────────────────
+        if not await es.indices.exists(index=INDEX_NAME):
+            await es.indices.create(
+                index=INDEX_NAME,
+                settings={
+                    "number_of_shards": 1,
+                    "number_of_replicas": 0,
+                    "analysis": KOREAN_ANALYSIS,
+                },
+                mappings={
+                    "properties": {
+                        "title": {"type": "text", "analyzer": "korean",
+                                  "fields": {"keyword": {"type": "keyword", "ignore_above": 512}}},
+                        "content": {"type": "text", "analyzer": "korean"},
+                        "url": {"type": "keyword"},
+                        "source": {"type": "keyword"},
+                        "indexed_at": {"type": "date"},
+                        "doc_hash": {"type": "keyword"},
+                        "file_id": {"type": "keyword"},
+                        "news_type": {"type": "keyword"},
+                        "original_file": {"type": "keyword"},
+                        "chunk_index": {"type": "integer"},
+                        "total_chunks": {"type": "integer"},
+                        "content_length": {"type": "integer"},
+                        "embedding_model": {"type": "keyword"},
+                        "chunk_type": {"type": "keyword"},
+                        # ES 9.x: bbq_hnsw — 4비트 scalar 양자화 (메모리↓, 정확도 유지)
+                        "embedding": {
+                            "type": "dense_vector",
+                            "dims": 1024,
+                            "index": True,
+                            "similarity": "cosine",
+                            "index_options": {
+                                "type": "bbq_hnsw",
+                                "m": 16,
+                                "ef_construction": 100,
+                            },
+                        },
+                    }
+                },
+            )
+            logger.info("rag_documents 인덱스 생성 완료")
+
+        # ── rag_history ────────────────────────────────────────────
+        if not await es.indices.exists(index=HIST_INDEX):
+            await es.indices.create(
+                index=HIST_INDEX,
+                settings={"number_of_shards": 1, "number_of_replicas": 0},
+                mappings={"properties": {
+                    "conv_id": {"type": "keyword"},
+                    "title": {"type": "text"},
+                    "messages": {"type": "object", "enabled": False},
+                    "created_at": {"type": "date"},
+                    "updated_at": {"type": "date"},
+                }},
+            )
+            logger.info("rag_history 인덱스 생성 완료")
+
+        # ── system_prompts ─────────────────────────────────────────
+        if not await es.indices.exists(index=PROMPTS_INDEX):
+            await es.indices.create(
+                index=PROMPTS_INDEX,
+                settings={"number_of_shards": 1, "number_of_replicas": 0},
+                mappings={"properties": {
+                    "id": {"type": "keyword"},
+                    "title": {"type": "text"},
+                    "content": {"type": "text"},
+                }},
+            )
+            logger.info("system_prompts 인덱스 생성 완료")
+
+        # ── notifications ──────────────────────────────────────────
+        if not await es.indices.exists(index=NOTIFICATIONS_INDEX):
+            await es.indices.create(
+                index=NOTIFICATIONS_INDEX,
+                settings={"number_of_shards": 1, "number_of_replicas": 0},
+                mappings={"properties": {
+                    "type": {"type": "keyword"}, "source_id": {"type": "keyword"},
+                    "account_id": {"type": "keyword"}, "account_email": {"type": "keyword"},
+                    "title": {"type": "text"}, "message": {"type": "text"},
+                    "is_read": {"type": "boolean"}, "created_at": {"type": "date"},
+                    "occurred_at": {"type": "date"},
+                }},
+            )
+            logger.info("notifications 인덱스 생성 완료")
+        else:
+            await es.indices.put_mapping(
+                index=NOTIFICATIONS_INDEX,
+                properties={
+                    "account_id": {"type": "keyword"},
+                    "account_email": {"type": "keyword"},
+                },
+            )
+
+        # ── system_settings ────────────────────────────────────────
+        if not await es.indices.exists(index=SETTINGS_INDEX):
+            await es.indices.create(
+                index=SETTINGS_INDEX,
+                settings={"number_of_shards": 1, "number_of_replicas": 0},
+                mappings={"properties": {
+                    "key": {"type": "keyword"},
+                    "value": {"type": "object", "enabled": False},
+                    "google_granted_scopes": {"type": "keyword"},
+                    "google_account_key": {"type": "keyword"},
+                    "google_account_slot_id": {"type": "keyword"},
+                    "google_access_token_expires_at": {
+                        "type": "date",
+                        "format": "strict_date_optional_time||epoch_millis",
+                    },
+                }},
+            )
+            logger.info("system_settings 인덱스 생성 완료")
+        else:
+            # 기존 설치에도 Google OAuth 권한/만료 메타데이터 필드를 추가한다.
+            await es.indices.put_mapping(
+                index=SETTINGS_INDEX,
+                properties={
+                    "google_granted_scopes": {"type": "keyword"},
+                    "google_account_key": {"type": "keyword"},
+                    "google_account_slot_id": {"type": "keyword"},
+                    "google_access_token_expires_at": {
+                        "type": "date",
+                        "format": "strict_date_optional_time||epoch_millis",
+                    },
+                },
+            )
+
+        # ── doc_chunks ─────────────────────────────────────────────
+        if not await es.indices.exists(index=DOC_CHUNKS_INDEX):
+            await es.indices.create(
+                index=DOC_CHUNKS_INDEX,
+                settings={
+                    "number_of_shards": 1,
+                    "number_of_replicas": 0,
+                    "analysis": KOREAN_ANALYSIS,
+                },
+                mappings={
+                    "properties": {
+                        "title": {"type": "text", "analyzer": "korean",
+                                  "fields": {"keyword": {"type": "keyword", "ignore_above": 512}}},
+                        "content": {"type": "text", "analyzer": "korean"},
+                        "url": {"type": "keyword"},
+                        "source": {"type": "keyword"},
+                        "indexed_at": {"type": "date"},
+                        "doc_hash": {"type": "keyword"},
+                        "file_id": {"type": "keyword"},
+                        "original_file": {"type": "keyword"},
+                        "chunk_index": {"type": "integer"},
+                        "total_chunks": {"type": "integer"},
+                        "content_length": {"type": "integer"},
+                        "embedding_model": {"type": "keyword"},
+                        "chunk_type": {"type": "keyword"},
+                        "heading_path": {"type": "keyword"},   # 소속 heading 경로 배열
+                        "page_number": {"type": "integer"},    # PDF 페이지 번호
+                        "embedding": {
+                            "type": "dense_vector",
+                            "dims": 1024,
+                            "index": True,
+                            "similarity": "cosine",
+                            "index_options": {
+                                "type": "bbq_hnsw",
+                                "m": 16,
+                                "ef_construction": 100,
+                            },
+                        },
+                    }
+                },
+            )
+            logger.info("doc_chunks 인덱스 생성 완료")
+
+        # ── chat_file_chunks ───────────────────────────────────────
+        # 채팅 중 첨부한 zip/파일 청크 전용 (doc_chunks와 분리 — 대화방 종속, 방 삭제 시 cascade 삭제)
+        if not await es.indices.exists(index=CHAT_FILE_CHUNKS_INDEX):
+            await es.indices.create(
+                index=CHAT_FILE_CHUNKS_INDEX,
+                settings={
+                    "number_of_shards": 1,
+                    "number_of_replicas": 0,
+                },
+                mappings={
+                    "properties": {
+                        "conv_id": {"type": "keyword"},       # 방 삭제 시 이 필드로 delete_by_query
+                        "batch_id": {"type": "keyword"},      # 같은 zip/첨부 이벤트 묶음
+                        "file_id": {"type": "keyword"},       # 파일 1개당 고유 ID
+                        "filename": {"type": "keyword"},      # zip 내 상대경로
+                        "source_name": {"type": "keyword"},   # 원본 zip명 또는 첨부명
+                        "content": {"type": "text"},          # 코드라 한국어 analyzer 불필요
+                        "chunk_index": {"type": "integer"},
+                        "total_chunks": {"type": "integer"},
+                        "content_length": {"type": "integer"},
+                        "embedding_model": {"type": "keyword"},
+                        "indexed_at": {"type": "date"},
+                        "embedding": {
+                            "type": "dense_vector",
+                            "dims": 1024,
+                            "index": True,
+                            "similarity": "cosine",
+                            "index_options": {
+                                "type": "bbq_hnsw",
+                                "m": 16,
+                                "ef_construction": 100,
+                            },
+                        },
+                    }
+                },
+            )
+            logger.info("chat_file_chunks 인덱스 생성 완료")
+
+        # ── rag_files ──────────────────────────────────────────────
+        if not await es.indices.exists(index=FILES_INDEX):
+            await es.indices.create(
+                index=FILES_INDEX,
+                settings={"number_of_shards": 1, "number_of_replicas": 0},
+                mappings={"properties": {
+                    "file_id": {"type": "keyword"},
+                    "filename": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
+                    "file_ext": {"type": "keyword"},
+                    "file_size": {"type": "long"},
+                    "chunk_count": {"type": "integer"},
+                    "indexed_at": {"type": "date"},
+                    "original_path": {"type": "keyword"},
+                    "content_hash": {"type": "keyword"},
+                }},
+            )
+            logger.info("rag_files 인덱스 생성 완료")
+
+        # ── memo_documents ─────────────────────────────────────────
+        if not await es.indices.exists(index=MEMO_INDEX):
+            await es.indices.create(
+                index=MEMO_INDEX,
+                settings={
+                    "number_of_shards": 1,
+                    "number_of_replicas": 0,
+                    "analysis": KOREAN_ANALYSIS,
+                },
+                mappings={"properties": {
+                    "id": {"type": "keyword"},
+                    "title": {"type": "text", "analyzer": "korean",
+                              "fields": {"keyword": {"type": "keyword", "ignore_above": 512}}},
+                    "content": {"type": "text", "analyzer": "korean"},
+                    "content_html": {"type": "text", "index": False},
+                    "source": {"type": "keyword"},
+                    "created_at": {"type": "date"},
+                    "updated_at": {"type": "date"},
+                    "indexed_at": {"type": "alias", "path": "updated_at"},
+                    "embedding": {
+                        "type": "dense_vector",
+                        "dims": 1024,
+                        "index": True,
+                        "similarity": "cosine",
+                        "index_options": {
+                            "type": "bbq_hnsw",
+                            "m": 16,
+                            "ef_construction": 100,
+                        },
+                    },
+                }},
+            )
+            logger.info("memo_documents 인덱스 생성 완료")
+        else:
+            memo_mapping = await es.indices.get_mapping(index=MEMO_INDEX)
+            memo_properties = memo_mapping.get(MEMO_INDEX, {}).get("mappings", {}).get("properties", {})
+            if "indexed_at" not in memo_properties:
+                await es.indices.put_mapping(
+                    index=MEMO_INDEX,
+                    body={"properties": {
+                        "indexed_at": {"type": "alias", "path": "updated_at"},
+                    }},
+                )
+                logger.info("memo_documents indexed_at → updated_at alias 추가 완료")
+
+        # ── quick_notes (빠른 메모 / todo형) ─────────────────────────
+        if not await es.indices.exists(index=QUICKNOTE_INDEX):
+            await es.indices.create(
+                index=QUICKNOTE_INDEX,
+                settings={
+                    "number_of_shards": 1,
+                    "number_of_replicas": 0,
+                    "analysis": KOREAN_ANALYSIS,
+                },
+                mappings={"properties": {
+                    "id": {"type": "keyword"},
+                    "text": {"type": "text", "analyzer": "korean"},
+                    "done": {"type": "boolean"},
+                    "created_at": {"type": "date"},
+                    "updated_at": {"type": "date"},
+                    "embedding": {
+                        "type": "dense_vector",
+                        "dims": 1024,
+                        "index": True,
+                        "similarity": "cosine",
+                        "index_options": {
+                            "type": "bbq_hnsw",
+                            "m": 16,
+                            "ef_construction": 100,
+                        },
+                    },
+                }},
+            )
+            logger.info("quick_notes 인덱스 생성 완료")
+        else:
+            # 기존 설치본의 빠른 메모도 이후 생성·수정 시 임베딩을 저장할 수 있게 한다.
+            await es.indices.put_mapping(
+                index=QUICKNOTE_INDEX,
+                body={"properties": {
+                    "embedding": {
+                        "type": "dense_vector",
+                        "dims": 1024,
+                        "index": True,
+                        "similarity": "cosine",
+                        "index_options": {
+                            "type": "bbq_hnsw",
+                            "m": 16,
+                            "ef_construction": 100,
+                        },
+                    },
+                }},
+            )
+
+        # ── user_profile ────────────────────────────────────────────
+        if not await es.indices.exists(index=USER_PROFILE_INDEX):
+            await es.indices.create(index=USER_PROFILE_INDEX, body={
+                "mappings": {
+                    "properties": {
+                        "profile": {"type": "text"},
+                        "last_processed_at": {"type": "date"},
+                        "updated_at": {"type": "date"},
+                    }
+                }
+            })
+            logger.info("user_profile 인덱스 생성 완료")
+
+        # ── vocab_words ───────────────────────────────────────────
+        # 단어 1개 = 문서 1개. 같은 단어를 다시 만나면 sentences 배열에 예문 누적(upsert).
+        if not await es.indices.exists(index=VOCAB_INDEX):
+            await es.indices.create(
+                index=VOCAB_INDEX,
+                settings={"number_of_shards": 1, "number_of_replicas": 0},
+                mappings={"properties": {
+                    "word": {"type": "keyword"},
+                    "word_lower": {"type": "keyword"},
+                    "source_language": {"type": "keyword"},
+                    "meanings": {"type": "keyword"},
+                    "sentences": {
+                        "type": "object",
+                        "properties": {
+                            "meaning": {"type": "text"},
+                            "original_text": {"type": "text"},
+                            "translated_text": {"type": "text"},
+                            "source_language": {"type": "keyword"},
+                            "target_language": {"type": "keyword"},
+                            "source_url": {"type": "keyword"},
+                            "source_title": {"type": "text"},
+                            "added_at": {"type": "date"},
+                        },
+                    },
+                    "first_added_at": {"type": "date"},
+                    "last_added_at": {"type": "date"},
+                }},
+            )
+            logger.info("vocab_words 인덱스 생성 완료")
+        else:
+            # 기존 설치본에도 원문 언어를 keyword로 추가한다.
+            await es.indices.put_mapping(
+                index=VOCAB_INDEX,
+                body={"properties": {
+                    "source_language": {"type": "keyword"},
+                    "sentences": {"properties": {
+                        "original_text": {"type": "text"},
+                        "translated_text": {"type": "text"},
+                        "source_language": {"type": "keyword"},
+                        "target_language": {"type": "keyword"},
+                    }},
+                }},
+            )
+
+    finally:
+        await es.close()
+
+
+async def index_default_system_prompt():
+    from services.prompts import create_prompt, get_prompt_by_id, update_prompt
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    def build_prompt(language_name: str, base_rules: str) -> str:
+        rules = [
+            f"- Respond ONLY in the {language_name} language.",
+            "- NEVER use any other language.",
+            "- Do NOT provide translations.",
+            "- If you use another language, it is a critical error.",
+            f"- Your entire response must be written in {language_name} with no exceptions.",
+            "- Do NOT repeat the same sentence twice."
+        ]
+        if language_name != "Korean":
+            rules.insert(2, "- NEVER use Korean in your response.")
+        important_block = "\n".join(rules)
+        return f"""You are a friendly {language_name} conversation tutor for beginners.
+
+IMPORTANT:
+{important_block}
+
+Rules:
+{base_rules.strip()}
+"""
+
+    def get_base_rules(extra_info=""):
+        info_part = f" {extra_info}" if extra_info else ""
+        return f"""
+1. Use short sentences and common words for beginners{info_part}.
+2. Correct mistakes ONLY in parentheses like (corrected word or sentence) and nowhere else.
+3. If the user's sentence is correct and natural, do NOT use parentheses.
+4. Do NOT repeat the user's sentence or your own sentence.
+5. Ask exactly one simple follow-up question at the end of your response.
+6. Be encouraging and positive.
+7. Keep the total response to a maximum of 2 sentences, including the question.
+8. Do NOT use emojis or emoticons.
+"""
+
+    prompts = [
+        {"id": "default-english-tutor", "title": "영어 초급 회화",
+         "content": build_prompt("English", get_base_rules("(A1-A2 level)"))},
+        {"id": "default-thai-tutor", "title": "태국어 초급 회화", "content": build_prompt("Thai", get_base_rules())},
+        {"id": "default-japanese-tutor", "title": "일본어 초급 회화",
+         "content": build_prompt("Japanese", get_base_rules("(Hiragana/Katakana preferred)"))},
+        {"id": "default-chinese-tutor", "title": "중국어 초급 회화",
+         "content": build_prompt("Chinese", get_base_rules("(Mandarin)"))},
+        {"id": "default-vietnamese-tutor", "title": "베트남어 초급 회화",
+         "content": build_prompt("Vietnamese", get_base_rules())},
+        {"id": "default-spanish-tutor", "title": "스페인어 초급 회화", "content": build_prompt("Spanish", get_base_rules())},
+        {"id": "default-korean-tutor", "title": "한국어 초급 회화", "content": build_prompt("Korean", get_base_rules())},
+    ]
+
+    for prompt in prompts:
+        existing = get_prompt_by_id(prompt["id"])
+        if not existing:
+            await create_prompt(prompt["id"], prompt["title"], prompt["content"])
+            logger.info(f"프롬프트 생성: {prompt['id']}")
+        else:
+            await update_prompt(prompt["id"], prompt["title"], prompt["content"])
+            logger.info(f"프롬프트 업데이트: {prompt['id']}")
+
+    logger.info("다국어 초급 회화 프롬프트 동기화 완료")
+
+
+async def _index_default_translator_prompt():
+    from services.prompts import create_prompt, get_prompt_by_id
+    PROMPT_ID = "default-translator"
+    if not get_prompt_by_id(PROMPT_ID):
+        await create_prompt(PROMPT_ID, "번역가", """당신은 전문 번역가입니다. 사용자가 입력한 텍스트를 정확하고 자연스럽게 번역해주세요.
+
+규칙:
+1. 입력 언어를 자동으로 감지하여 적절한 언어로 번역합니다.
+   - 한국어 입력 → 영어로 번역
+   - 영어 입력 → 한국어로 번역
+   - 일본어 입력 → 한국어로 번역
+   - 기타 언어 → 한국어로 번역
+2. 단순 직역이 아닌 원문의 뉘앙스, 어조, 문화적 맥락을 살려 번역합니다.
+3. 전문 용어나 고유명사는 원문을 괄호에 병기합니다. 예: 인공지능(Artificial Intelligence)
+4. 번역 결과만 출력하고 불필요한 설명은 생략합니다.
+5. 사용자가 특정 언어를 지정하면 그 언어로 번역합니다.""")
+        logger.info("기본 번역가 프롬프트 생성 완료")
+
+
+async def _index_default_summarizer_prompt():
+    from services.prompts import create_prompt, get_prompt_by_id
+    PROMPT_ID = "default-summarizer"
+    if not get_prompt_by_id(PROMPT_ID):
+        await create_prompt(PROMPT_ID, "문서 요약가", """당신은 문서 요약 전문가입니다. 긴 글, 기사, 보고서를 핵심만 간결하게 요약합니다.
+
+요약 원칙:
+1. 원문의 핵심 주제와 중요 정보를 빠짐없이 포함합니다.
+2. 불필요한 수식어, 반복 표현, 부연 설명은 제거합니다.
+3. 원문의 논리적 흐름과 순서를 유지합니다.
+4. 원문에 없는 내용을 추가하거나 의미를 변형하지 않습니다.
+5. 전문 용어는 그대로 유지하되 필요 시 간단히 설명을 덧붙입니다.
+
+출력 형식:
+- 📌 핵심 요약 (3줄 이내)
+- 주요 내용 (bullet point, 5개 이내)
+- 💡 시사점 또는 결론 (있는 경우)
+
+사용자가 요약 길이나 형식을 별도로 요청하면 그에 맞게 조정합니다.""")
+        logger.info("기본 문서 요약가 프롬프트 생성 완료")
+
+
+async def _index_default_coding_prompt():
+    from services.prompts import create_prompt, get_prompt_by_id
+
+    PROMPT_ID = "default-coding"
+
+    if not get_prompt_by_id(PROMPT_ID):
+        await create_prompt(
+            PROMPT_ID,
+            "코딩 전문가",
+            """당신은 실무 중심의 전문 소프트웨어 개발 AI입니다.
+기본 원칙:
+
+1. 정확하고 실행 가능한 코드를 우선적으로 제공합니다.
+2. 기존 프로젝트 구조, 네이밍 규칙, 코딩 스타일을 최대한 유지합니다.
+3. 요청되지 않은 기능 제거 또는 과도한 리팩토링은 하지 않습니다.
+4. 성능, 안정성, 유지보수성을 고려하여 구현합니다.
+5. 존재하지 않는 라이브러리나 API를 임의로 만들지 않습니다.
+
+코드 수정 규칙:
+
+1. 파일이 수정된 경우 반드시 수정된 파일의 전체 내용을 제공합니다.
+2. 일부 코드만 생략하거나 다음과 같은 표현을 사용하지 않습니다:
+
+   * "// existing code..."
+   * "// rest of file remains unchanged"
+   * "... 생략 ..."
+3. 반환된 코드는 바로 복사하여 사용할 수 있는 완전한 형태여야 합니다.
+4. 여러 파일 수정 시 파일 경로를 명확히 구분하여 제공합니다.
+
+응답 형식:
+
+* 필요한 경우 변경 사항을 짧고 명확하게 설명합니다.
+* 코드는 반드시 markdown 코드 블록으로 제공합니다.
+* 코드 블록에는 적절한 언어 타입을 명시합니다.
+* 불확실한 부분은 임의로 가정하지 말고 짧게 가정을 설명합니다.
+
+중요:
+
+* 실용적인 구현을 우선합니다.
+* 요청 범위를 벗어난 변경은 최소화합니다.
+* 가능한 한 안정적으로 동작하는 방향으로 구현합니다.""")
+
+    logger.info("기본 코딩 프롬프트 생성 완료")

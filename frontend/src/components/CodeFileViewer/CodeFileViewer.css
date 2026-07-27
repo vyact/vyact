@@ -1,0 +1,165 @@
+.cfv-list-only {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin: 6px 0;
+    min-width: 0;
+}
+
+.cfv-list-items {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.cfv-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 11px 10px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.cfv-item:hover {
+    background: var(--surface2);
+    border-color: var(--border);
+}
+
+.cfv-item--active {
+    background: var(--surface2);
+    border-color: var(--border);
+}
+
+.cfv-item--active::before {
+    position: absolute;
+    top: 8px;
+    bottom: 8px;
+    left: -1px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--accent);
+    box-shadow: none;
+    content: '';
+}
+
+.cfv-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--muted);
+}
+
+.cfv-item--active .cfv-icon {
+    color: var(--accent);
+    border-color: rgba(var(--accent-rgb),0.52);
+    background: rgba(var(--accent-rgb),0.07);
+}
+
+.cfv-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.cfv-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cfv-type {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 1px;
+    font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+}
+
+.cfv-copy-btn {
+    min-height: 30px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.cfv-copy-btn:hover {
+    color: var(--text);
+    background: var(--surface2);
+    border-color: var(--text-secondary, #b4b4b4);
+}
+
+.cfv-copy-btn--copied {
+    color: #2cba66 !important;
+    border-color: rgba(44, 186, 102, 0.4) !important;
+}
+
+.cfv-dl-btn {
+    min-height: 30px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.cfv-dl-btn:hover {
+    background: var(--surface2);
+    border-color: var(--text-secondary, #b4b4b4);
+}
+
+.cfv-all-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 6px 0 0;
+    padding: 8px 13px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: color 0.12s, border-color 0.12s, background 0.12s;
+}
+
+.cfv-all-btn:hover {
+    color: var(--text);
+    background: var(--surface2);
+    border-color: var(--accent2);
+}
+
+@media (max-width: 560px) {
+    .cfv-list-only { min-width: 0; }
+    .cfv-list-items { padding: 8px; }
+    .cfv-item { gap: 8px; padding: 10px 10px 10px 14px; }
+    .cfv-icon { width: 36px; height: 36px; }
+    .cfv-copy-btn, .cfv-dl-btn { padding: 6px 8px; font-size: 11px; }
+}

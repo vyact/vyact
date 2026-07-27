@@ -1,0 +1,810 @@
+.google-workspace-panel {
+    position: fixed;
+    z-index: 1200;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    min-width: 560px;
+    max-width: calc(100vw - 120px);
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    box-shadow: -16px 0 40px rgba(0, 0, 0, .28);
+    display: flex;
+    flex-direction: column;
+    color: var(--text);
+}
+.google-workspace-panel--embedded { position: relative; top: auto; right: auto; bottom: auto; min-width: 0; max-width: none; flex: 0 0 auto; height: 100%; box-shadow: none; }
+
+.gwp-panel-resizer {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+}
+
+.gwp-header {
+    min-height: 0;
+    height: auto;
+    padding: 9px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+}
+
+.gwp-header button, .gwp-toolbar button, .gwp-nav button, .gwp-tabs button, .gwp-detail button, .gwp-compose button { border: 0; background: transparent; color: var(--text); cursor: pointer; }
+.gwp-header-close { display: flex; width: 28px; height: 28px; flex: 0 0 28px; align-items: center; justify-content: center; padding: 0; border-radius: 6px; color: var(--muted) !important; transition: color .12s, background .12s; }
+.gwp-header-close:hover { background: var(--surface2) !important; color: var(--text) !important; }
+.gwp-account-select { width: 190px; flex: 0 0 190px; margin-right: 10px; }
+.gwp-account-content { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+
+.gwp-tabs { display: flex; align-items: center; gap: 10px; flex: 1; }
+.gwp-tabs button { padding: 6px 10px; color: var(--muted); font-size: 13px; }
+.gwp-tabs .active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+
+.gwp-layout { display: flex; flex: 1; min-height: 0; }
+.gwp-nav { width: 220px; flex: 0 0 220px; padding: 10px; border-right: 1px solid var(--border); overflow: auto; }
+.gwp-nav button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; text-align: left; border-radius: 7px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gwp-nav button svg { flex: 0 0 auto; }
+.gwp-nav button span { overflow: hidden; text-overflow: ellipsis; }
+.gwp-nav button .gwp-label-unread-count { flex: 0 0 auto; margin-left: auto; font-size: 12px; font-weight: 750; }
+.gwp-nav .active { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
+.gwp-compose-controls { display: flex; align-items: center; gap: 7px; margin: 4px 0 12px; }
+.gwp-nav .gwp-compose-controls .gwp-compose-button { width: fit-content; margin: 0; padding: 10px 14px !important; background: var(--accent) !important; color: white !important; font-weight: 700; }
+.gwp-nav .gwp-compose-controls .gwp-signature-settings-button { display: grid; width: 40px; height: 40px; flex: 0 0 40px; place-items: center; padding: 0; border: 1px solid var(--border); border-radius: 9px; background: var(--surface2); color: var(--muted); }
+.gwp-nav .gwp-compose-controls .gwp-signature-settings-button:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface2)); color: var(--accent); }
+.gwp-mail-nav-separator { height: 1px; margin: 7px 8px; background: var(--border); }
+.gwp-more-labels { margin: 4px 0; color: var(--text) !important; }
+.gwp-user-labels { display: grid; gap: 2px; margin-top: 22px; }
+.gwp-label-section-header { display: flex; align-items: center; min-height: 34px; padding: 0 4px 4px 10px; }
+.gwp-label-section-title { flex: 1; color: var(--text); font-size: 12px; font-weight: 700; }
+.gwp-nav .gwp-label-add-button { display: grid; width: 28px; height: 28px; place-items: center; padding: 0; color: var(--muted); }
+.gwp-nav .gwp-label-add-button:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
+.gwp-user-label-row { position: relative; display: flex; align-items: center; }
+.gwp-nav .gwp-user-label-select { padding-right: 38px; }
+.gwp-nav .gwp-label-delete-button { position: absolute; right: 4px; display: grid; width: 28px; height: 28px; place-items: center; padding: 0; color: var(--muted); opacity: .65; }
+.gwp-user-label-row:hover .gwp-label-delete-button, .gwp-label-delete-button:focus-visible { opacity: 1; }
+.gwp-nav .gwp-label-delete-button:hover { background: rgba(225, 116, 92, .12); color: #e1745c; }
+
+.gwp-label-modal-overlay { display: flex; align-items: center; justify-content: center; padding: 20px; }
+.gwp-label-modal { width: min(420px, calc(100vw - 40px)); padding: 20px; border: 1px solid var(--border); border-radius: 13px; background: var(--surface2); box-shadow: 0 18px 50px rgba(0, 0, 0, .35); }
+.gwp-label-modal header, .gwp-label-modal footer { display: flex; align-items: center; justify-content: space-between; }
+.gwp-label-modal h3 { margin: 0; font-size: 18px; }
+.gwp-label-modal header button, .gwp-label-modal footer button { border: 0; background: transparent; color: var(--text); cursor: pointer; }
+.gwp-label-modal header button { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 7px; }
+.gwp-label-modal label { display: grid; gap: 8px; margin: 22px 0; color: var(--text); font-size: 13px; font-weight: 650; }
+.gwp-label-modal input { box-sizing: border-box; width: 100%; height: 40px; padding: 0 11px; border: 1px solid var(--border); border-radius: 7px; outline: none; background: var(--surface); color: var(--text); }
+.gwp-label-modal input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent); }
+.gwp-label-modal footer { justify-content: flex-end; gap: 8px; }
+.gwp-label-modal footer button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 7px; }
+.gwp-label-modal footer .gwp-label-modal-cancel { border: 1px solid var(--border); background: var(--surface) !important; color: var(--text); }
+.gwp-label-modal footer .gwp-label-modal-cancel:hover:not(:disabled) { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); background: color-mix(in srgb, var(--accent) 8%, var(--surface)) !important; }
+.gwp-label-modal button:disabled { cursor: not-allowed; opacity: .45; }
+
+.gwp-content { display: flex; flex: 1; min-width: 0; min-height: 0; flex-direction: column; padding: 0; overflow: hidden; }
+.gwp-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
+.gwp-drive-toolbar-actions { display: flex; align-items: center; gap: 8px; flex: none; }
+.gwp-drive-new-folder, .gwp-drive-upload-trigger { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 34px; padding: 7px 11px !important; border-radius: 7px !important; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.gwp-drive-new-folder { border: 1px solid var(--border) !important; background: var(--surface2) !important; }
+.gwp-drive-new-folder:hover { border-color: var(--accent) !important; color: var(--accent) !important; }
+.gwp-drive-upload-trigger > svg:last-child { margin-left: 1px; }
+.gwp-drive-upload-menu-wrap { position: relative; }
+.gwp-drive-upload-menu { position: absolute; z-index: 24; top: calc(100% + 6px); right: 0; min-width: 168px; padding: 4px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface2); box-shadow: 0 8px 24px rgba(0, 0, 0, .28); }
+.gwp-drive-upload-menu button { display: flex; align-items: center; gap: 9px; width: 100%; padding: 9px 10px; border-radius: 6px; color: var(--text); font-size: 13px; text-align: left; white-space: nowrap; }
+.gwp-drive-upload-menu button:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.gwp-drive-upload-menu button svg { color: var(--muted); }
+.gwp-mail-toolbar { box-sizing: border-box; flex: 0 0 66px; height: 66px; margin: 0; padding: 0 10px; color: var(--muted); font-size: 13px; font-weight: 700; }
+.gwp-mail-toolbar > div { display: flex; align-items: center; gap: 4px; }
+.gwp-select-all { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.gwp-select-all input, .gwp-mail-row > input {
+    appearance: none;
+    inline-size: 16px;
+    block-size: 16px;
+    flex: 0 0 16px;
+    margin: 0;
+    border: 1px solid color-mix(in srgb, var(--muted) 72%, var(--border));
+    border-radius: 3px;
+    background: var(--surface2);
+    cursor: pointer;
+    transition: border-color .15s, background-color .15s, box-shadow .15s;
+}
+.gwp-select-all input:hover:not(:disabled), .gwp-mail-row > input:hover:not(:disabled) {
+    border-color: var(--accent);
+}
+.gwp-select-all input:focus-visible, .gwp-mail-row > input:focus-visible {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+.gwp-select-all input:checked, .gwp-mail-row > input:checked {
+    border-color: var(--accent);
+    background-color: var(--accent);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m3.5 8 3 3 6-6'/%3E%3C/svg%3E");
+}
+.gwp-select-all input:disabled, .gwp-mail-row > input:disabled {
+    cursor: not-allowed;
+    opacity: .55;
+}
+.gwp-trash-selected { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 50% !important; color: var(--muted) !important; }
+.gwp-trash-selected:hover { color: #e1745c !important; background: transparent !important; }
+.gwp-move-selected-wrap { position: relative; }
+.gwp-move-selected { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 50% !important; color: var(--muted) !important; }
+.gwp-move-selected:hover:not(:disabled), .gwp-move-selected[aria-expanded="true"] { background: color-mix(in srgb, var(--accent) 12%, transparent) !important; color: var(--accent) !important; }
+.gwp-label-apply-wrap { position: relative; }
+.gwp-label-apply-button { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 50% !important; color: var(--muted) !important; }
+.gwp-label-apply-button:hover:not(:disabled), .gwp-label-apply-button[aria-expanded="true"] { background: color-mix(in srgb, var(--accent) 12%, transparent) !important; color: var(--accent) !important; }
+.gwp-move-menu, .gwp-label-apply-menu { position: absolute; z-index: 30; top: calc(100% + 7px); right: 0; display: grid; min-width: 210px; max-height: 360px; overflow-y: auto; padding: 6px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface2); box-shadow: 0 12px 30px rgba(0, 0, 0, .32); }
+.gwp-move-menu > strong, .gwp-label-apply-menu > strong { padding: 8px 9px 7px; color: var(--text); font-size: 13px; }
+.gwp-move-menu > button, .gwp-label-apply-menu > button { display: flex; align-items: center; gap: 9px; width: 100%; padding: 9px; border-radius: 7px; color: var(--text); font-size: 13px; text-align: left; white-space: nowrap; }
+.gwp-move-menu > button:hover, .gwp-label-apply-menu > button:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.gwp-move-menu > button svg, .gwp-label-apply-menu > button svg { flex: none; color: var(--muted); }
+.gwp-move-menu > button .gwp-move-label-unread-count { flex: 0 0 auto; margin-left: auto; font-size: 12px; }
+.gwp-label-apply-empty { padding: 10px 9px; color: var(--muted); font-size: 12px; }
+.gwp-refresh { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 50% !important; color: var(--muted) !important; }
+.gwp-refresh:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 12%, transparent) !important; color: var(--text) !important; }
+.gwp-refresh:disabled { cursor: wait; opacity: .75; }
+.gwp-primary { background: var(--accent) !important; color: white !important; border-radius: 7px !important; padding: 7px 11px !important; font-size: 13px; }
+.gwp-primary:disabled { cursor: not-allowed; opacity: .45; }
+.gwp-back { padding: 7px 0; color: var(--muted) !important; }
+
+.gwp-mail-list { display: grid; }
+.gwp-mail-scroll { flex: 1; min-height: 0; overflow: auto; }
+.gwp-mail-empty { display: flex; flex: 1; min-height: 180px; align-items: center; justify-content: center; flex-direction: column; gap: 10px; color: var(--muted); }
+.gwp-mail-empty p { margin: 0; font-size: 13px; font-weight: 650; }
+.gwp-mail-row { display: grid; grid-template-columns: 16px 28px minmax(0, 1fr) auto; align-items: center; gap: 4px; border-bottom: 1px solid var(--border); padding: 0 8px; }
+.gwp-mail-row.no-star { grid-template-columns: 16px minmax(0, 1fr) auto; gap: 12px; }
+.gwp-mail-row:not(.unread) { background: color-mix(in srgb, var(--surface2) 62%, var(--surface)); }
+.gwp-mail-list button { border: 0; border-bottom: 1px solid var(--border); background: transparent; color: var(--text); padding: 12px 4px; text-align: left; display: grid; gap: 4px; cursor: pointer; }
+.gwp-mail-row button { border-bottom: 0; min-width: 0; }
+.gwp-mail-row .gwp-mail-star { display: grid; width: 28px; height: 28px; place-items: center; padding: 0; border-radius: 50%; color: var(--muted); }
+.gwp-mail-row .gwp-mail-star:hover:not(:disabled) { background: color-mix(in srgb, #f5b82e 14%, transparent); color: #f5b82e; }
+.gwp-mail-row .gwp-mail-star.active { color: #f5b82e; }
+.gwp-mail-row .gwp-mail-star.active svg { fill: currentColor; }
+.gwp-mail-row .gwp-mail-star:disabled { cursor: wait; opacity: .6; }
+.gwp-mail-row:hover { background: color-mix(in srgb, var(--surface2) 97%, var(--text)); }
+.gwp-mail-open strong { display: flex; min-width: 0; align-items: center; gap: 7px; }
+.gwp-mail-open .gwp-mail-participants { min-width: 0; }
+.gwp-mail-row .gwp-mail-open .gwp-mail-thread-count {
+    display: inline-grid;
+    flex: 0 0 auto;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--accent) 48%, var(--border));
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 14%, var(--surface2));
+    color: color-mix(in srgb, var(--accent) 78%, var(--text));
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+}
+.gwp-applied-labels { display: inline-flex; min-width: 0; align-items: center; gap: 4px; overflow: hidden; }
+.gwp-applied-label {
+    display: inline-block;
+    max-width: 110px;
+    padding: 2px 6px;
+    border-radius: 5px;
+    background: color-mix(in srgb, var(--muted) 20%, var(--surface2));
+    color: var(--text-secondary);
+    font-size: 10px;
+    font-weight: 650;
+    line-height: 1.35;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.gwp-mail-open .gwp-applied-labels { flex: 0 1 auto; }
+.gwp-mail-subject-line { display: flex; min-width: 0; align-items: center; gap: 6px; }
+.gwp-mail-subject-line > .gwp-applied-labels { flex: 0 1 auto; }
+.gwp-mail-subject { min-width: 0; flex: 1; }
+.gwp-mail-attachment-indicator { flex: 0 0 auto; color: var(--muted); }
+.gwp-mail-list strong, .gwp-mail-list span, .gwp-mail-list small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gwp-mail-list small { color: var(--muted); }
+.gwp-mail-row:not(.unread) button strong, .gwp-mail-row:not(.unread) button span { font-weight: 300; color: var(--text); }
+.gwp-mail-row:not(.unread) time { font-weight: 300; }
+.gwp-mail-row.unread button strong, .gwp-mail-row.unread button span { font-weight: 800; }
+.gwp-mail-row.unread time { font-weight: 700; color: var(--text); }
+.gwp-mail-row time { align-self: start; padding-top: 14px; color: var(--muted); font-size: 11px; white-space: nowrap; }
+.gwp-mail-loading-more { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 14px; color: var(--muted); font-size: 12px; }
+.gwp-mail-skeleton { display: grid; gap: 1px; }
+.gwp-skeleton-row { display: grid; gap: 8px; padding: 13px 10px; border-bottom: 1px solid var(--border); }
+.gwp-skeleton-row span { display: block; height: 12px; width: 46%; border-radius: 4px; background: linear-gradient(90deg, var(--surface2), color-mix(in srgb, var(--muted) 18%, var(--surface2)), var(--surface2)); background-size: 200% 100%; animation: gwp-shimmer 1.2s linear infinite; }
+.gwp-skeleton-row span:nth-child(2) { width: 70%; }
+.gwp-skeleton-row span:nth-child(3) { width: 88%; }
+.gwp-spin { animation: gwp-spin .8s linear infinite; }
+
+@keyframes gwp-spin { to { transform: rotate(360deg); } }
+@keyframes gwp-shimmer { to { background-position: -200% 0; } }
+
+.gwp-detail { min-width: 0; height: 100%; overflow: auto; }
+.gwp-detail--html { position: relative; display: flex; flex-direction: column; overflow: hidden; background: var(--surface); }
+.gwp-detail-toolbar { flex: 0 0 auto; min-height: 46px; margin: 0; padding: 0 14px; border-bottom: 1px solid var(--border); }
+.gwp-back { display: inline-flex; align-items: center; gap: 2px; font-weight: 650; }
+.gwp-detail-actions { display: flex; align-items: center; gap: 6px; }
+.gwp-detail-actions > button { display: inline-flex; align-items: center; gap: 5px; padding: 7px 10px; border-radius: 7px; }
+.gwp-mail-attach-menu-wrap { position: relative; flex: 0 0 auto; }
+.gwp-mail-more-button { display: grid !important; width: 32px; height: 32px; place-items: center; padding: 0 !important; border-radius: 50% !important; color: var(--text-secondary); }
+.gwp-mail-more-button:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 12%, transparent) !important; color: var(--text); }
+.gwp-mail-attach-menu { position: absolute; top: calc(100% + 5px); right: 0; z-index: 30; min-width: 180px; padding: 4px 0; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); box-shadow: 0 6px 20px rgba(0, 0, 0, .25); }
+.gwp-mail-attach-menu--upward { top: auto; bottom: calc(100% + 5px); }
+.gwp-mail-attach-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 14px; border: 0; background: transparent; color: var(--text); font-size: 13px; cursor: pointer; white-space: nowrap; }
+.gwp-mail-attach-menu button:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.gwp-mail-attach-menu button:disabled { cursor: not-allowed; opacity: .45; }
+.gwp-mail-attach-menu button svg { flex-shrink: 0; color: var(--muted); }
+.gwp-mail-attach-menu .gwp-mail-menu-delete { border-top: 1px solid var(--border); color: var(--danger); }
+.gwp-mail-attach-menu .gwp-mail-menu-delete:hover:not(:disabled) { background: color-mix(in srgb, var(--danger) 12%, transparent); }
+.gwp-mail-attach-menu .gwp-mail-menu-delete svg { color: currentColor; }
+.gwp-detail-forward { color: var(--text-secondary) !important; }
+.gwp-detail-forward:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 12%, transparent) !important; color: var(--text) !important; }
+.gwp-detail-delete { color: #e1745c !important; }
+.gwp-detail-delete:hover:not(:disabled) { background: rgba(225, 116, 92, .12) !important; }
+.gwp-detail-actions > button:disabled { cursor: wait; opacity: .6; }
+.gwp-single-message-scroll { display: flex; flex: 1; min-height: 0; flex-direction: column; background: var(--bg); overflow: hidden; }
+.gwp-email-frame--single { display: flex; flex: 1; min-height: 0; }
+.gwp-email-frame--single .gwp-email-html { min-height: 0; }
+.gwp-email-html--fill { height: 100% !important; overflow: auto; }
+.gwp-thread-title { display: flex; flex: 0 0 auto; align-items: center; gap: 9px; padding: 14px 16px; border-bottom: 1px solid var(--border); background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, var(--surface)), var(--surface) 58%); }
+.gwp-thread-title > svg { color: var(--accent); }
+.gwp-thread-title h3 { min-width: 0; flex: 1; margin: 0; color: var(--text); font-size: 17px; line-height: 1.35; overflow: visible; text-overflow: clip; white-space: normal; overflow-wrap: anywhere; }
+.gwp-thread-title > span:not(.gwp-applied-labels) { display: inline-grid; min-width: 24px; height: 24px; place-items: center; padding: 0 6px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); font-size: 12px; font-weight: 750; }
+.gwp-thread-title .gwp-applied-labels { flex: 0 1 auto; }
+.gwp-message-title-line { display: flex; min-width: 0; align-items: center; gap: 7px; }
+.gwp-message-title-line > .gwp-applied-labels { flex: 0 1 auto; }
+.gwp-message-title-line h3 { min-width: 0; flex: 1; }
+.gwp-thread-scroll { flex: 1; min-height: 0; padding: 10px; background: var(--bg); overflow: auto; }
+.gwp-thread-message { position: relative; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); overflow: visible; }
+.gwp-thread-message:has(.gwp-message-sender[open]) { z-index: 6; }
+.gwp-thread-message + .gwp-thread-message { margin-top: 8px; }
+.gwp-thread-message.is-expanded { border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); }
+.gwp-thread-message-summary { display: flex; width: 100%; min-height: 58px; align-items: center; gap: 10px; padding: 10px 12px; background: transparent; color: var(--text); cursor: pointer; text-align: left; }
+.gwp-thread-message-summary:hover { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.gwp-thread-message-index { display: grid; width: 30px; height: 30px; flex: 0 0 30px; place-items: center; border-radius: 50%; background: color-mix(in srgb, var(--accent) 16%, var(--surface2)); color: var(--accent); font-size: 12px; font-weight: 800; }
+.gwp-thread-message-summary-text { display: grid; min-width: 0; flex: 1; gap: 3px; }
+.gwp-thread-message-summary-text strong, .gwp-thread-message-summary-text small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gwp-thread-message-summary-text strong { font-size: 13px; }
+.gwp-thread-message-summary-text small { color: var(--muted); font-size: 12px; font-weight: 400; }
+.gwp-thread-message-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 3px; }
+.gwp-thread-message-actions button { display: grid; width: 30px; height: 30px; place-items: center; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: pointer; }
+.gwp-thread-message-actions button:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--text); }
+.gwp-thread-message-actions button:last-child:hover { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); }
+.gwp-thread-message-actions button:disabled { cursor: not-allowed; opacity: .45; }
+.gwp-thread-message-summary time { flex: 0 0 auto; color: var(--muted); font-size: 11px; }
+.gwp-thread-message-toggle { display: grid; width: 30px; height: 30px; flex: 0 0 30px; place-items: center; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: pointer; }
+.gwp-thread-message-toggle:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--text); }
+.gwp-thread-message-body { padding: 0 10px 10px; }
+.gwp-thread-message-body .gwp-email-html { height: auto; min-height: 120px; overflow: hidden; }
+.gwp-message-header { display: flex; flex: 0 0 auto; gap: 10px; padding: 10px 15px; border-bottom: 1px solid var(--border); background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, var(--surface)), var(--surface) 58%); }
+.gwp-message-icon { display: grid; flex: 0 0 auto; width: 32px; height: 32px; place-items: center; border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border)); border-radius: 9px; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
+.gwp-message-heading { min-width: 0; flex: 1; }
+.gwp-message-heading h3 { margin: 0; color: var(--text); font-size: 16px; line-height: 1.35; overflow: visible; text-overflow: clip; white-space: normal; overflow-wrap: anywhere; }
+.gwp-message-meta { display: flex; flex-wrap: wrap; gap: 5px 16px; margin-top: 6px; color: var(--muted); font-size: 12px; }
+.gwp-message-meta > div { display: grid; gap: 2px; }
+.gwp-message-meta span { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .04em; }
+.gwp-message-meta strong, .gwp-message-meta time { color: var(--text-secondary); font-weight: 500; overflow-wrap: anywhere; }
+.gwp-participants-label { display: inline-flex; align-items: center; gap: 5px; }
+.gwp-participants-label > span { font: inherit; letter-spacing: inherit; }
+.gwp-participants-label > i { color: color-mix(in srgb, var(--accent) 72%, var(--muted)); font-size: 12px; font-style: normal; line-height: 1; }
+.gwp-message-sender { position: relative; }
+.gwp-message-sender-compact { display: flex; min-width: 0; width: fit-content; max-width: 100%; align-items: center; gap: 3px; }
+.gwp-message-sender-compact > strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gwp-message-sender-compact .gwp-message-sender { flex: 0 0 auto; }
+.gwp-message-sender-compact .gwp-message-sender summary { width: 20px; height: 20px; justify-content: center; padding: 0; line-height: 0; vertical-align: middle; }
+.gwp-message-sender summary { display: inline-flex; align-items: center; gap: 3px; width: fit-content; cursor: pointer; list-style: none; user-select: none; }
+.gwp-message-sender summary::-webkit-details-marker { display: none; }
+.gwp-message-sender summary svg { display: block; flex: 0 0 auto; color: var(--muted); transition: transform .15s; }
+.gwp-message-sender[open] summary svg { transform: rotate(180deg); }
+.gwp-recipient-tooltip {
+    position: fixed;
+    z-index: 12;
+    display: grid;
+    width: min(340px, calc(100vw - 16px));
+    max-width: calc(100vw - 16px);
+    box-sizing: border-box;
+    gap: 10px;
+    padding: 11px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface2);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, .4);
+}
+.gwp-recipient-tooltip > div { display: grid; gap: 3px; }
+.gwp-recipient-tooltip > div > span { font-size: 11px; }
+.gwp-recipient-tooltip strong { color: var(--text); font-size: 13px; font-weight: 500; }
+.gwp-recipient-address { display: flex; min-width: 0; align-items: center; gap: 6px; margin: 0 -12px; padding: 3px 12px; border-radius: 5px; cursor: pointer; transition: background 0.15s; }
+.gwp-recipient-address:hover, .gwp-recipient-address:focus-visible { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.gwp-recipient-address-text { display: flex; flex: 1; align-items: center; gap: 0 4px; min-width: 0; white-space: nowrap; }
+.gwp-recipient-address-text > span { min-width: 0; overflow: hidden; color: var(--text); font-size: 12px; font-weight: 500; letter-spacing: normal; text-overflow: ellipsis; }
+.gwp-recipient-address-text > em { padding: 1px 5px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); font-size: 10px; font-style: normal; font-weight: 750; }
+.gwp-recipient-address > small { display: inline-flex; flex-shrink: 0; align-items: center; color: var(--success); }
+.gwp-email-frame { display: flex; flex: 1; min-height: 0; padding: 10px; background: var(--bg); }
+.gwp-email-html { display: block; flex: 1; min-height: 0; width: 100%; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.gwp-email-empty { display: flex; flex: 1; min-height: 120px; width: 100%; align-items: center; justify-content: center; flex-direction: column; gap: 10px; border: 1px solid var(--border); border-radius: 10px; background: #fff; color: #777; text-align: center; }
+.gwp-email-empty svg { color: #aaa; }
+.gwp-email-empty span { font-size: 14px; font-weight: 600; }
+.gwp-mail-attachments { position: absolute; right: 16px; bottom: 16px; left: 16px; z-index: 3; pointer-events: none; }
+.gwp-mail-attachments details { position: relative; width: 100%; pointer-events: none; }
+.gwp-mail-attachments summary { display: flex; align-items: center; width: fit-content; min-width: 44px; height: 38px; justify-content: center; gap: 5px; margin-left: auto; padding: 0 11px; border: 1px solid var(--border); border-radius: 999px; background: color-mix(in srgb, var(--surface2) 94%, transparent); box-shadow: 0 5px 18px rgba(0, 0, 0, .4); color: var(--text-secondary); font-size: 12px; cursor: pointer; list-style: none; user-select: none; pointer-events: auto; backdrop-filter: blur(8px); }
+.gwp-mail-attachments summary::-webkit-details-marker { display: none; }
+.gwp-mail-attachments summary:hover, .gwp-mail-attachments details[open] summary { border-color: color-mix(in srgb, var(--accent) 65%, var(--border)); color: var(--accent); }
+.gwp-mail-attachment-list { display: flex; flex-wrap: wrap; gap: 7px; }
+.gwp-mail-attachments .gwp-mail-attachment-list { position: absolute; right: 0; bottom: calc(100% + 8px); left: 0; z-index: 4; display: grid; grid-template-columns: minmax(0, 1fr); max-height: min(280px, 45vh); padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface2); box-shadow: 0 12px 32px rgba(0, 0, 0, .45); overflow: auto; pointer-events: auto; }
+.gwp-mail-attachment-item { display: flex; flex: 0 0 auto; align-items: stretch; max-width: 100%; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); overflow: hidden; }
+.gwp-mail-attachments .gwp-mail-attachment-item { width: 100%; }
+.gwp-mail-attachments .gwp-mail-attachment-open { flex: 1; }
+.gwp-mail-attachments .gwp-mail-attachment-open span { white-space: normal; overflow-wrap: anywhere; }
+.gwp-mail-attachment-item:hover { border-color: var(--accent); }
+.gwp-mail-attachment-open { display: inline-flex; align-items: center; min-width: 0; gap: 7px; padding: 7px 9px; border: 0; background: transparent; color: var(--text); cursor: pointer; text-align: left; }
+.gwp-mail-attachment-open:hover { color: var(--accent); }
+.gwp-mail-attachment-open:disabled, .gwp-mail-attachment-attach:disabled, .gwp-mail-attachment-download:disabled { cursor: wait; opacity: .65; }
+.gwp-mail-attachment-open span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gwp-mail-attachment-attach, .gwp-mail-attachment-download { display: grid; width: 36px; flex: 0 0 36px; place-items: center; padding: 0 8px; border: 0; border-left: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; }
+.gwp-mail-attachment-attach:hover, .gwp-mail-attachment-download:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.gwp-mail-activity, .gwp-send-feedback { position: absolute; top: 50%; left: 50%; z-index: 12; display: flex; align-items: center; gap: 9px; padding: 13px 17px; border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border)); border-radius: 10px; transform: translate(-50%, -50%); background: color-mix(in srgb, var(--surface2) 92%, #000); box-shadow: 0 14px 34px rgba(0, 0, 0, .52); color: var(--text); font-size: 13px; font-weight: 750; }
+.gwp-attachment-preview-backdrop { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; background: rgba(0, 0, 0, .55); }
+.gwp-attachment-preview { display: flex; width: 80vw; height: 80vh; flex-direction: column; overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: 0 20px 50px rgba(0, 0, 0, .45); }
+.gwp-attachment-preview-close { position: absolute; top: calc(10vh + 12px); right: calc(10vw + 12px); z-index: 10001; display: grid; width: 40px; height: 40px; place-items: center; border: 1px solid rgba(255, 255, 255, .28); border-radius: 9px; background: rgba(20, 20, 20, .86); color: white; cursor: pointer; box-shadow: 0 4px 16px rgba(0, 0, 0, .42); }
+.gwp-attachment-preview-close:hover { background: var(--accent); border-color: var(--accent); }
+.gwp-attachment-preview header { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 12px; border-bottom: 1px solid var(--border); color: var(--text); }
+.gwp-attachment-preview header strong { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.gwp-attachment-preview header button { display: grid; width: 30px; height: 30px; place-items: center; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }
+.gwp-attachment-preview header button:hover { background: var(--surface2); color: var(--text); }
+.gwp-attachment-preview iframe, .gwp-attachment-preview img { flex: 1; min-height: 0; width: 100%; border: 0; background: white; object-fit: contain; }
+.gwp-docx-preview-shell { position: relative; display: flex; flex: 1; min-height: 0; }
+.gwp-docx-preview { flex: 1; min-height: 0; overflow: auto; background: #4a4a4a; }
+.gwp-docx-preview .docx-wrapper { min-height: 100%; padding: 28px; }
+.gwp-docx-preview .docx-wrapper > section.docx { margin: 0 auto 24px; box-shadow: 0 4px 18px rgba(0, 0, 0, .35); }
+.gwp-docx-preview-error { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; background: #4a4a4a; color: white; font-size: 14px; }
+
+.gwp-drive { position: relative; display: flex; flex-direction: column; padding: 16px; overflow: hidden; flex: 1; min-height: 0; }
+.gwp-drive--dragging { outline: 2px solid var(--accent); outline-offset: -2px; }
+.gwp-drive-search { display: flex; min-height: 38px; align-items: center; gap: 9px; margin-bottom: 10px; padding: 0 11px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface2); color: var(--muted); transition: border-color .15s, box-shadow .15s, background .15s; }
+.gwp-drive-search:focus-within { border-color: var(--accent); background: var(--bg); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent); }
+.gwp-drive-search > svg { flex: none; }
+.gwp-drive-search input { width: 100%; min-width: 0; padding: 8px 0; border: 0; outline: 0; background: transparent; color: var(--text); font-size: 13px; }
+.gwp-drive-search input::placeholder { color: var(--muted); }
+.gwp-drive-search button { display: grid; width: 28px; height: 28px; flex: none; place-items: center; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: pointer; }
+.gwp-drive-search button:hover { background: var(--surface); color: var(--text); }
+.gwp-drive-search-caption { display: flex; align-items: center; gap: 5px; margin-left: auto; padding: 4px 10px; border-radius: 6px; background: var(--surface); color: var(--muted); font-size: 12px; }
+.gwp-drive-search-caption svg { flex-shrink: 0; opacity: .6; }
+.gwp-drive-search-caption strong { color: var(--accent); font-weight: 600; }
+.gwp-drive-drop-overlay { position: absolute; z-index: 30; inset: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 2px dashed var(--accent); border-radius: 12px; background: color-mix(in srgb, var(--surface2) 90%, transparent); color: var(--accent); pointer-events: none; }
+.gwp-drive-drop-overlay strong { font-size: 16px; }
+.gwp-drive-drop-overlay span { color: var(--muted); font-size: 12px; }
+.gwp-drive-upload-overlay { position: absolute; z-index: 25; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: color-mix(in srgb, var(--surface2) 92%, transparent); color: var(--text); font-size: 14px; }
+.gwp-drive-upload-overlay strong { font-size: 15px; }
+.gwp-drive-upload-count { color: var(--muted); font-size: 13px; }
+.gwp-drive-upload-spinner-lg { width: 28px; height: 28px; border: 3px solid color-mix(in srgb, var(--accent) 25%, transparent); border-top-color: var(--accent); border-radius: 50%; animation: gwp-spin .8s linear infinite; }
+.gwp-mail-operation-overlay { z-index: 40; backdrop-filter: blur(2px); }
+.gwp-breadcrumb { flex: 1; overflow: hidden; white-space: nowrap; }
+
+/* Drive skeleton loading */
+.gwp-drive-skeleton { display: flex; flex-direction: column; flex: 1; }
+.gwp-drive-skeleton-row { display: grid; grid-template-columns: 24px 1fr 100px 60px; gap: 12px; align-items: center; padding: 14px 12px; border-bottom: 1px solid var(--border); }
+.gwp-drive-skeleton-row span { display: block; border-radius: 4px; background: linear-gradient(90deg, var(--surface2), color-mix(in srgb, var(--muted) 18%, var(--surface2)), var(--surface2)); background-size: 200% 100%; animation: gwp-shimmer 1.2s linear infinite; }
+.gwp-drive-skeleton-icon { width: 24px; height: 24px; border-radius: 4px; }
+.gwp-drive-skeleton-name { height: 12px; }
+.gwp-drive-skeleton-row:nth-child(1) .gwp-drive-skeleton-name { width: 40%; }
+.gwp-drive-skeleton-row:nth-child(2) .gwp-drive-skeleton-name { width: 65%; }
+.gwp-drive-skeleton-row:nth-child(3) .gwp-drive-skeleton-name { width: 50%; }
+.gwp-drive-skeleton-row:nth-child(4) .gwp-drive-skeleton-name { width: 55%; }
+.gwp-drive-skeleton-row:nth-child(5) .gwp-drive-skeleton-name { width: 35%; }
+.gwp-drive-skeleton-date { height: 12px; width: 80%; }
+.gwp-drive-skeleton-size { height: 12px; width: 60%; }
+
+/* Drive empty state */
+.gwp-drive-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 48px 16px; color: var(--muted); flex: 1; }
+.gwp-drive-empty p { margin: 0; font-size: 14px; }
+
+/* Drive table */
+.gwp-drive-table { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+.gwp-drive-thead { display: grid; grid-template-columns: 28px 1fr 120px 80px 60px; align-items: center; height: 36px; padding: 0 12px; border-bottom: 1px solid var(--border); color: var(--muted); font-size: 13px; font-weight: 600; flex-shrink: 0; }
+.gwp-drive-thead button { display: inline-flex; align-items: center; gap: 5px; padding: 2px 0; border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.gwp-drive-thead button:hover { color: var(--text); }
+.gwp-drive-thead button svg { opacity: .7; }
+.gwp-drive-thead .gwp-drive-sort-reset { justify-content: center; width: 24px; height: 24px; padding: 0; border-radius: 5px; color: var(--accent); }
+.gwp-drive-thead .gwp-drive-sort-reset:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
+.gwp-drive-bulk-actions { display: flex; align-items: center; gap: 0; }
+.gwp-drive-bulk-download { display: grid; width: 32px; height: 32px; place-items: center; margin-left: -8px; padding: 0; border-radius: 50% !important; background: transparent !important; color: var(--muted) !important; cursor: pointer; }
+.gwp-drive-bulk-download:hover { background: transparent !important; color: var(--accent) !important; }
+.gwp-drive-rows { flex: 1; min-height: 0; overflow-y: auto; }
+.gwp-drive-loading-more { display: flex; min-height: 48px; align-items: center; justify-content: center; gap: 8px; color: var(--muted); font-size: 12px; }
+.gwp-drive-loading-more svg { animation: gwp-spin .8s linear infinite; }
+.gwp-drive-row { display: grid; grid-template-columns: 28px 1fr 120px 80px 60px; align-items: center; padding: 0 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
+.gwp-drive-row--selected { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.gwp-drive-row:hover { background: color-mix(in srgb, var(--surface2) 97%, var(--text)); }
+.gwp-drive-col-check { display: flex; align-items: center; }
+.gwp-drive-col-check input { appearance: none; inline-size: 16px; block-size: 16px; flex: 0 0 16px; margin: 0; border: 1px solid color-mix(in srgb, var(--muted) 72%, var(--border)); border-radius: 3px; background: var(--surface2); cursor: pointer; transition: border-color .15s, background-color .15s, box-shadow .15s; }
+.gwp-drive-col-check input:hover { border-color: var(--accent); }
+.gwp-drive-col-check input:checked { border-color: var(--accent); background-color: var(--accent); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m3.5 8 3 3 6-6'/%3E%3C/svg%3E"); }
+.gwp-drive-bulk-bar { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--accent); }
+.gwp-drive-row--selected:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.gwp-drive-col-name { min-width: 0; overflow: hidden; padding-right: 12px; }
+.gwp-drive-col-date, .gwp-drive-col-size { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.gwp-drive-col-action { position: relative; display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
+
+/* Drive file button */
+.gwp-drive-file-btn { display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px 0; color: var(--text); text-align: left; min-width: 0; }
+.gwp-drive-file-btn svg { flex-shrink: 0; color: var(--muted); }
+.gwp-drive-file-btn > .gwp-drive-folder-icon { color: var(--accent); }
+.gwp-drive-file-info { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; overflow: hidden; }
+.gwp-drive-file-title { display: flex; width: 100%; min-width: 0; align-items: center; gap: 7px; }
+.gwp-drive-file-name { max-width: 100%; overflow: hidden; padding: 0; border: 0; background: transparent; color: var(--text); font: inherit; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.gwp-drive-file-title .gwp-drive-file-name { flex: 0 1 auto; }
+.gwp-drive-sharing-status { display: inline-grid; width: 19px; height: 19px; flex: 0 0 19px; place-items: center; border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border)); border-radius: 50%; background: color-mix(in srgb, var(--accent) 14%, var(--surface2)); color: var(--accent); box-shadow: inset 0 1px 0 color-mix(in srgb, white 10%, transparent); }
+.gwp-drive-sharing-status + .gwp-drive-sharing-status { margin-left: -4px; }
+.gwp-drive-sharing-status svg { color: currentColor; }
+.gwp-drive-file-path { display: flex; max-width: 100%; align-items: center; overflow: hidden; color: var(--text-secondary, #888); font-size: 12px; line-height: 1.5; white-space: nowrap; }
+.gwp-drive-file-path > svg { margin-right: 3px; color: var(--text-secondary, #888); }
+.gwp-drive-file-path-segment { display: inline-flex; min-width: 0; align-items: center; }
+.gwp-drive-file-path-segment > svg { margin: 0 1px; color: var(--text-secondary, #888); }
+.gwp-drive-file-path-segment button { min-width: 0; overflow: hidden; padding: 0 2px; border: 0; border-radius: 3px; background: transparent; color: inherit; font: inherit; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.gwp-drive-file-path-segment button:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
+
+/* Drive rename inline input */
+.gwp-drive-rename-input { flex: 1; min-width: 0; margin-right: 20px; padding: 3px 6px; border: 1px solid var(--accent); border-radius: 4px; background: var(--bg); color: var(--text); font-size: 13px; outline: none; }
+.gwp-drive-rename-input:disabled { opacity: .5; }
+.gwp-drive-file-action-spinner { flex-shrink: 0; color: var(--accent); animation: gwp-spin .8s linear infinite; }
+.gwp-drive-dialog-button-spinner { flex-shrink: 0; animation: gwp-spin .8s linear infinite; }
+
+/* Drive more button */
+.gwp-drive-download-btn, .gwp-drive-more-btn { display: grid; width: 30px; height: 30px; place-items: center; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }
+.gwp-drive-download-btn:hover, .gwp-drive-more-btn:hover { background: var(--surface); color: var(--text); }
+
+/* Drive context menu */
+.gwp-drive-context-menu { position: absolute; top: 100%; right: 0; z-index: 20; min-width: 160px; padding: 4px 0; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); box-shadow: 0 6px 20px rgba(0, 0, 0, .25); }
+.gwp-drive-context-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 14px; border: 0; background: transparent; color: var(--text); font-size: 13px; cursor: pointer; white-space: nowrap; }
+.gwp-drive-context-menu button:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.gwp-drive-context-menu button svg { flex-shrink: 0; color: var(--muted); }
+.gwp-drive-context-menu .gwp-drive-context-danger { color: #e1745c; }
+.gwp-drive-context-menu .gwp-drive-context-danger svg { color: #e1745c; }
+.gwp-drive-context-menu .gwp-drive-context-danger:hover { background: rgba(225, 116, 92, .12); }
+
+/* Drive share copied feedback */
+.gwp-drive-copied { display: inline-flex; align-items: center; gap: 4px; color: var(--accent); font-size: 12px; white-space: nowrap; animation: gwp-fade-in .2s ease; }
+
+.gwp-drive-modal-overlay { z-index: 1100; padding: 20px; }
+.gwp-drive-dialog { width: min(520px, calc(100vw - 40px)); border: 1px solid var(--border); border-radius: 16px; background: var(--surface2); color: var(--text); box-shadow: 0 18px 60px rgba(0, 0, 0, .35); overflow: hidden; }
+.gwp-drive-dialog > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 22px 24px 16px; }
+.gwp-drive-dialog h2 { margin: 0; font-size: 20px; font-weight: 650; }
+.gwp-drive-dialog header p { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+.gwp-drive-dialog header > button { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: pointer; }
+.gwp-drive-dialog header > button:hover { background: var(--surface); color: var(--text); }
+.gwp-drive-dialog > footer { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px 22px; }
+.gwp-drive-dialog button:disabled { cursor: default; opacity: .5; }
+.gwp-drive-dialog-primary, .gwp-drive-dialog-secondary { padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.gwp-drive-dialog-primary { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid var(--accent); background: var(--accent); color: #fff; }
+.gwp-drive-dialog-secondary { border: 1px solid var(--border); background: transparent; color: var(--text); }
+.gwp-drive-dialog-error { margin: 0; padding: 0 2px; color: #e57373; font-size: 12px; }
+.gwp-drive-name-dialog { width: min(440px, calc(100vw - 40px)); background: var(--modal-bg); }
+.gwp-drive-name-dialog > input { box-sizing: border-box; width: calc(100% - 48px); margin: 4px 24px 2px; padding: 11px 12px; border: 1px solid var(--accent); border-radius: 8px; outline: none; background: var(--bg); color: var(--text); font-size: 14px; }
+.gwp-drive-name-dialog > footer button { width: 128px; }
+.gwp-drive-name-dialog .gwp-drive-dialog-secondary { background: var(--modal-inset); }
+.gwp-drive-share-dialog { position: relative; width: min(640px, calc(100vw - 40px)); max-height: min(760px, calc(100vh - 40px)); overflow-y: auto; background: var(--modal-bg); }
+.gwp-drive-share-loading { position: absolute; inset: 72px 0 0; z-index: 5; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; background: color-mix(in srgb, var(--modal-bg) 92%, transparent); color: var(--muted); font-size: 13px; }
+.gwp-drive-share-loading svg { color: var(--accent); animation: gwp-spin .8s linear infinite; }
+.gwp-drive-invite { display: flex; align-items: center; gap: 8px; margin: 0 24px 20px; padding: 7px 8px 7px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--modal-inset); }
+.gwp-drive-invite > svg { flex: none; color: var(--muted); }
+.gwp-drive-invite input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font-size: 14px; }
+.gwp-drive-invite-role-select { width: 112px; flex: 0 0 112px; }
+.gwp-drive-invite-role-select .custom-select-trigger { min-height: 34px; padding: 7px 10px; border-color: transparent; background: var(--surface); font-size: 13px; font-weight: 550; }
+.gwp-drive-invite-role-select .custom-select-trigger:hover,
+.gwp-drive-invite-role-select .custom-select-trigger.open { border-color: var(--accent); }
+.gwp-drive-invite-role-select .custom-select-dropdown { min-width: 140px; }
+.gwp-drive-invite-role-select .custom-select-item { padding: 10px 12px; font-size: 13px; }
+.gwp-drive-invite button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 64px; padding: 7px 12px; border: 0; border-radius: 7px; background: var(--accent); color: #fff; font-weight: 600; cursor: pointer; }
+.gwp-drive-share-section { padding: 0 24px 20px; }
+.gwp-drive-share-section h3 { margin: 0 0 12px; font-size: 14px; }
+.gwp-drive-share-empty { color: var(--muted); font-size: 13px; }
+.gwp-drive-permission { display: grid; grid-template-columns: 36px 1fr auto 32px; align-items: center; gap: 10px; min-height: 46px; }
+.gwp-drive-avatar { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 50%; overflow: hidden; background: var(--surface); color: var(--muted); font-weight: 600; }
+.gwp-drive-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.gwp-drive-permission strong, .gwp-drive-permission small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gwp-drive-permission strong { font-size: 13px; font-weight: 550; }
+.gwp-drive-permission small, .gwp-drive-general-access small { margin-top: 3px; color: var(--muted); font-size: 12px; }
+.gwp-drive-permission-role { color: var(--muted); font-size: 12px; }
+.gwp-drive-permission > button { display: grid; width: 30px; height: 30px; place-items: center; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }
+.gwp-drive-permission > button:hover { background: color-mix(in srgb, #e05252 12%, transparent); color: #e05252; }
+.gwp-drive-general-access { display: flex; align-items: flex-start; gap: 12px; padding: 14px; border-radius: 10px; background: var(--modal-inset); }
+.gwp-drive-general-access > svg { flex: none; color: var(--accent); }
+.gwp-drive-general-access > div { display: flex; min-width: 0; flex: 1; flex-direction: column; align-items: flex-start; }
+.gwp-drive-share-action-status { display: inline-flex; align-items: center; gap: 5px; margin-top: 7px; color: var(--accent); font-size: 12px; }
+.gwp-drive-share-action-status svg { animation: gwp-spin .8s linear infinite; }
+.gwp-drive-general-role-select { max-width: 320px; }
+.gwp-drive-general-role-select .custom-select-trigger { min-height: 38px; padding: 9px 11px; border-color: var(--border); background: var(--surface2); font-size: 13px; font-weight: 550; }
+.gwp-drive-general-role-select .custom-select-trigger:hover,
+.gwp-drive-general-role-select .custom-select-trigger.open { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 14%, transparent); }
+.gwp-drive-general-role-select .custom-select-dropdown { top: auto; bottom: calc(100% + 4px); min-width: min(320px, calc(100vw - 96px)); }
+.gwp-drive-general-role-select .custom-select-item { padding: 11px 12px; font-size: 13px; }
+.gwp-drive-copy-link { display: inline-flex; align-items: center; gap: 7px; padding: 9px 14px; border: 1px solid var(--accent); border-radius: 8px; background: transparent; color: var(--accent); font-weight: 600; cursor: pointer; }
+.gwp-drive-download-overlay { z-index: 9600; }
+.gwp-drive-download-dialog { width: min(520px, calc(100vw - 40px)); overflow: hidden; border: 1px solid var(--accent); border-radius: 16px; background: var(--surface2); color: var(--text); box-shadow: 0 18px 60px rgba(0, 0, 0, .38); }
+.gwp-drive-download-dialog > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 20px 22px; border-bottom: 1px solid var(--border); }
+.gwp-drive-download-dialog h2 { margin: 0; font-size: 19px; font-weight: 650; }
+.gwp-drive-download-dialog header p { max-width: 420px; margin: 5px 0 0; overflow: hidden; color: var(--muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.gwp-drive-download-dialog header button { display: grid; width: 32px; height: 32px; flex: none; place-items: center; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: pointer; }
+.gwp-drive-download-dialog header button:hover { background: var(--surface); color: var(--text); }
+.gwp-drive-download-state { display: grid; grid-template-columns: 42px 1fr 36px; align-items: center; gap: 12px; min-height: 78px; padding: 16px 22px; }
+.gwp-drive-download-state > svg:first-child { color: var(--accent); }
+.gwp-drive-download-state strong, .gwp-drive-download-state small { display: block; }
+.gwp-drive-download-state strong { font-size: 14px; font-weight: 600; }
+.gwp-drive-download-state small { margin-top: 5px; color: var(--muted); font-size: 12px; }
+.gwp-drive-download-state.is-error { grid-template-columns: 42px 1fr; }
+.gwp-drive-download-state.is-error > svg { color: #e1745c; }
+.gwp-drive-download-spinner { color: var(--accent); animation: gwp-spin 1s linear infinite; }
+.gwp-drive-download-dialog > footer { display: flex; justify-content: flex-end; padding: 0 22px 18px; }
+.gwp-drive-download-dialog > footer button { padding: 8px 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); cursor: pointer; }
+@keyframes gwp-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+.gwp-compose-backdrop { position: absolute; inset: 0; z-index: 10; display: flex; background: var(--surface2); }
+.gwp-compose { box-sizing: border-box; display: flex; width: 100%; height: 100%; min-height: 0; flex-direction: column; gap: 6px; padding: 18px; background: var(--surface2); }
+.gwp-compose header { display: flex; align-items: center; justify-content: space-between; min-height: 34px; }
+.gwp-compose h3 { margin: 0; line-height: 34px; }
+.gwp-compose header > button { display: grid; width: 34px; height: 34px; place-items: center; padding: 0; border-radius: 7px; color: var(--text); font-size: 28px; line-height: 0; }
+.gwp-compose header > button:hover:not(:disabled) { background: var(--surface); }
+.gwp-compose header > button:disabled { cursor: not-allowed; opacity: .45; }
+.gwp-compose input, .gwp-compose textarea { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 7px; padding: 10px; }
+.gwp-compose textarea { flex: 1; min-height: 180px; resize: none; }
+.gwp-compose .email-editor-wrap { flex: 1; min-height: 0; }
+.gwp-recipient-fields { position: relative; z-index: 6; display: grid; border: 1px solid var(--border); border-radius: 7px; background: var(--bg); overflow: visible; }
+.gwp-recipient-field { display: grid; grid-template-columns: 72px minmax(0, 1fr); align-items: stretch; min-height: 42px; }
+.gwp-recipient-field + .gwp-recipient-field { border-top: 1px solid var(--border); }
+.gwp-recipient-label { display: flex; align-items: center; padding: 0 10px; color: var(--muted); font-size: 12px; font-weight: 650; }
+.gwp-recipient-input-shell { position: relative; display: flex; min-width: 0; align-items: center; flex-wrap: wrap; gap: 6px; padding: 5px 8px 5px 0; cursor: text; }
+.gwp-compose .gwp-recipient-input-shell > input { min-width: 140px; flex: 1; padding: 4px 2px; border: 0; outline: 0; background: transparent; box-shadow: none; }
+.gwp-recipient-chip { display: inline-flex; min-width: 0; max-width: 100%; align-items: center; gap: 3px; padding: 4px 4px 4px 9px; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border)); border-radius: 999px; background: color-mix(in srgb, var(--accent) 12%, var(--surface)); color: var(--text); }
+.gwp-recipient-chip > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gwp-recipient-chip button { display: grid; width: 20px; height: 20px; place-items: center; padding: 0; border-radius: 50%; color: var(--muted); font-size: 18px; line-height: 1; }
+.gwp-recipient-chip button:hover { background: color-mix(in srgb, #e1745c 18%, transparent); color: #e1745c; }
+.gwp-recipient-suggestions { position: absolute; top: calc(100% + 6px); right: 8px; left: 0; z-index: 20; display: grid; max-height: 240px; padding: 6px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); box-shadow: 0 12px 30px rgba(0, 0, 0, .42); overflow-y: auto; }
+.gwp-recipient-suggestions button { display: grid; width: 100%; gap: 2px; padding: 8px 10px; border: 0; border-radius: 6px; background: transparent; color: var(--text); text-align: left; cursor: pointer; }
+.gwp-recipient-suggestions button:hover, .gwp-recipient-suggestions button.active { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); }
+.gwp-recipient-suggestions span { overflow: hidden; text-overflow: ellipsis; font-size: 13px; font-weight: 650; white-space: nowrap; }
+.gwp-recipient-suggestions small { overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.gwp-attachment-limit-exceeded { color: #e1745c; font-weight: 700; }
+.gwp-compose-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.gwp-compose-attachment-actions { position: relative; display: flex; min-width: 0; align-items: center; gap: 8px; }
+.gwp-attachment-button { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 6px; padding: 8px 11px; border: 1px solid var(--border) !important; border-radius: 7px !important; background: var(--surface) !important; color: var(--text) !important; font-weight: 600; }
+.gwp-attachment-button:hover:not(:disabled) { border-color: var(--accent) !important; color: var(--accent) !important; }
+.gwp-attachment-button:disabled, .gwp-compose-attachment-row button:disabled { cursor: not-allowed; opacity: .45; }
+.gwp-compose-attachment-summary { position: relative; min-width: 0; }
+.gwp-compose-attachment-summary summary { display: flex; min-height: 36px; align-items: center; gap: 5px; padding: 0 9px; border: 1px solid var(--border); border-radius: 7px; background: var(--bg); color: var(--text-secondary); cursor: pointer; list-style: none; }
+.gwp-compose-attachment-summary summary::-webkit-details-marker { display: none; }
+.gwp-compose-attachment-summary summary:hover, .gwp-compose-attachment-summary[open] summary { border-color: var(--accent); color: var(--accent); }
+.gwp-compose-attachment-summary summary small { color: var(--muted); font-size: 11px; white-space: nowrap; }
+.gwp-compose-attachment-summary summary .gwp-attachment-limit-exceeded { color: #e1745c; }
+.gwp-attachment-summary-chevron { transition: transform .15s; }
+.gwp-compose-attachment-summary:not([open]) .gwp-attachment-summary-chevron { transform: rotate(180deg); }
+.gwp-compose-attachment-popover { position: absolute; bottom: calc(100% + 8px); left: 0; z-index: 5; display: grid; width: min(420px, calc(100vw - 72px)); max-height: min(260px, 38vh); padding: 7px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); box-shadow: 0 12px 30px rgba(0, 0, 0, .42); overflow: auto; }
+.gwp-compose-attachment-row { display: grid; grid-template-columns: minmax(0, 1fr) auto 24px; align-items: center; gap: 8px; padding: 7px 6px; border-radius: 6px; color: var(--text); }
+.gwp-compose-attachment-row:hover { background: var(--surface2); }
+.gwp-compose-attachment-row > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gwp-compose-attachment-row small { color: var(--muted); font-size: 11px; white-space: nowrap; }
+.gwp-compose-attachment-row button { display: grid; width: 24px; height: 24px; place-items: center; padding: 0; border-radius: 50%; color: var(--muted); font-size: 18px; line-height: 1; }
+.gwp-compose-attachment-row button:hover { background: color-mix(in srgb, #e1745c 20%, transparent); color: #e1745c; }
+.gwp-compose .gwp-compose-send { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 96px; min-height: 40px; padding: 9px 20px !important; border: 1px solid var(--accent) !important; border-radius: 8px !important; background: var(--accent) !important; color: white !important; font-size: var(--modal-btn, 14px); font-weight: 600; white-space: nowrap; }
+.gwp-compose .gwp-compose-send:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 88%, #000) !important; }
+.gwp-compose-original { border-top: 1px solid var(--border); margin-top: -1px; border-radius: 0 0 8px 8px; overflow: hidden; background: #fff; }
+.gwp-compose-original iframe { display: block; width: 100%; min-height: 200px; max-height: 400px; border: none; }
+.gwp-compose .gwp-primary:disabled { cursor: not-allowed; opacity: .45; }
+.gwp-compose-send-group { display: flex; align-items: center; gap: 8px; }
+.gwp-compose-cancel { min-height: 40px; padding: 9px 16px !important; border: 1px solid var(--border) !important; border-radius: 8px !important; background: var(--surface) !important; color: var(--text-secondary) !important; font-size: var(--modal-btn, 14px); font-weight: 600; }
+.gwp-compose-cancel:hover:not(:disabled) { border-color: var(--accent) !important; color: var(--accent) !important; }
+.gwp-compose-cancel:disabled { cursor: not-allowed; opacity: .45; }
+.gwp-ai-write-wrap { position: relative; }
+.gwp-ai-write-btn { display: inline-flex; align-items: center; gap: 6px; min-width: 96px; min-height: 40px; padding: 9px 20px; border: 1px solid var(--border) !important; border-radius: 8px !important; background: var(--surface) !important; color: var(--accent) !important; font-size: var(--modal-btn, 14px); font-weight: 600; white-space: nowrap; justify-content: center; }
+.gwp-ai-write-btn:hover { border-color: var(--accent) !important; background: color-mix(in srgb, var(--accent) 12%, transparent) !important; }
+.gwp-ai-write-btn:disabled { opacity: .5; cursor: not-allowed; }
+.gwp-ai-prompt-popover { position: absolute; bottom: calc(100% + 10px); right: 0; z-index: 10; width: min(480px, calc(100vw - 48px)); padding: 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: 0 14px 36px rgba(0, 0, 0, .45); }
+.gwp-ai-prompt-popover textarea { width: 100%; min-height: 156px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font: inherit; font-size: 14px; line-height: 1.55; resize: vertical; outline: none; }
+.gwp-ai-prompt-popover textarea:focus { border-color: var(--accent); }
+.gwp-ai-prompt-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.gwp-ai-prompt-cancel { min-height: 36px; padding: 7px 16px; border: 1px solid var(--border) !important; border-radius: 8px !important; background: var(--surface) !important; color: var(--text-secondary) !important; font-size: var(--modal-btn, 14px); font-weight: 600; }
+.gwp-ai-prompt-cancel:hover:not(:disabled) { border-color: var(--text-secondary) !important; color: var(--text) !important; }
+.gwp-ai-prompt-cancel:disabled { cursor: not-allowed; opacity: .45; }
+.gwp-ai-prompt-generate { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; min-width: 80px; padding: 7px 18px !important; border-radius: 8px !important; font-size: var(--modal-btn, 14px) !important; font-weight: 600; }
+.gwp-signature-settings-overlay { z-index: 9200; }
+.gwp-signature-settings { display: flex; width: min(620px, calc(100vw - 40px)); height: min(540px, calc(100vh - 40px)); min-height: 380px; flex-direction: column; overflow: hidden; border: 1px solid var(--border); border-radius: 14px; background: var(--surface2); box-shadow: 0 22px 60px rgba(0, 0, 0, .5); }
+.gwp-signature-settings > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 18px 20px; border-bottom: 1px solid var(--border); }
+.gwp-signature-settings > header h3 { margin: 0 0 5px; color: var(--text); font-size: 18px; }
+.gwp-signature-settings > header p { margin: 0; color: var(--muted); font-size: 13px; }
+.gwp-signature-settings > header button { display: grid; width: 32px; height: 32px; flex: 0 0 32px; place-items: center; padding: 0; border: 0; border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer; font-size: 26px; line-height: 1; }
+.gwp-signature-settings > header button:hover { background: var(--surface); color: var(--text); }
+.gwp-signature-settings > .email-editor-wrap { flex: 1; min-height: 0; margin: 16px 20px; }
+.gwp-signature-settings > footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 20px 18px; }
+.gwp-signature-settings > footer > div { display: flex; gap: 8px; }
+.gwp-signature-settings > footer button { display: inline-flex; box-sizing: border-box; height: 42px; align-items: center; justify-content: center; padding: 0 17px !important; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 650; }
+.gwp-signature-cancel { border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary); }
+.gwp-signature-cancel:hover { border-color: var(--accent); color: var(--accent); }
+.gwp-signature-save { border: 0; background: var(--accent); color: white; }
+.gwp-signature-template-select { width: min(210px, 44%); }
+.gwp-signature-template-select .custom-select-trigger { box-sizing: border-box; height: 42px; padding: 0 12px; border-radius: 8px; background: var(--surface); font-size: 14px; font-weight: 650; }
+.gwp-signature-template-select .custom-select-dropdown { top: auto; bottom: calc(100% + 5px); background: var(--surface); }
+.gwp-signature-template-select .custom-select-item { min-height: 42px; padding: 8px 10px; }
+.gwp-signature-template-option { display: flex; align-items: center; gap: 9px; }
+.gwp-signature-template-option > i { display: block; width: 24px; height: 18px; border: 1px solid var(--border); border-radius: 4px; background: linear-gradient(90deg, #d9d9d9 0 34%, #cc785c 34% 39%, var(--surface2) 39%); }
+.gwp-signature-template-option > i.is-modern { background: linear-gradient(90deg, #d9d9d9 0 32%, #5b89b8 32% 38%, var(--surface2) 38%); }
+.gwp-signature-template-option > i.is-compact { background: linear-gradient(#cc785c 0 25%, transparent 25% 42%, var(--muted) 42% 49%, transparent 49%); }
+.gwp-signature-template-option > i.is-minimal { background: linear-gradient(var(--muted) 0 8%, transparent 8% 42%, var(--text-secondary) 42% 50%, transparent 50%); }
+.gwp-send-feedback--success { border-color: color-mix(in srgb, var(--success) 55%, var(--border)); color: var(--success); }
+.gwp-send-feedback--error { border-color: color-mix(in srgb, var(--danger) 55%, var(--border)); color: var(--danger); }
+
+/* ── Calendar ────────────────────────────────────────────────────── */
+.gwp-calendar { display: flex; flex-direction: column; flex: 1; min-height: 0; padding: 16px; overflow: hidden; }
+
+.gwp-cal-header { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
+.gwp-cal-nav { display: flex; align-items: center; gap: 3px; }
+.gwp-cal-nav button { display: grid; width: 32px; height: 32px; flex: none; place-items: center; padding: 0; border: 1px solid transparent; border-radius: 9px; background: transparent; color: var(--muted); cursor: pointer; transition: background .15s, border-color .15s, color .15s, transform .15s; }
+.gwp-cal-nav button:hover { border-color: color-mix(in srgb, var(--accent) 24%, transparent); background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); }
+.gwp-cal-nav button:active { transform: scale(.94); }
+.gwp-cal-nav strong { min-width: 132px; color: var(--text); font-size: 15px; font-weight: 750; text-align: center; white-space: nowrap; }
+.gwp-cal-actions { display: flex; align-items: center; gap: 7px; }
+.gwp-cal-today-btn,
+.gwp-cal-refresh-btn,
+.gwp-cal-add-btn { height: 34px; border-radius: 9px; font-size: 12px; font-weight: 700; cursor: pointer; transition: background .15s, border-color .15s, color .15s, box-shadow .15s, transform .15s; }
+.gwp-cal-today-btn { padding: 0 13px; border: 1px solid var(--border); background: color-mix(in srgb, var(--surface2) 72%, transparent); color: var(--text); }
+.gwp-cal-today-btn:hover { border-color: color-mix(in srgb, var(--accent) 55%, transparent); background: color-mix(in srgb, var(--accent) 9%, transparent); color: var(--accent); }
+.gwp-cal-refresh-btn { display: grid; width: 34px; flex: none; place-items: center; padding: 0; border: 1px solid var(--border); background: color-mix(in srgb, var(--surface2) 72%, transparent); color: var(--muted); }
+.gwp-cal-refresh-btn:hover:not(:disabled) { border-color: color-mix(in srgb, var(--accent) 55%, transparent); background: color-mix(in srgb, var(--accent) 9%, transparent); color: var(--accent); }
+.gwp-cal-refresh-btn:disabled { cursor: wait; opacity: .65; }
+.gwp-cal-add-btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 0 13px 0 11px; border: 1px solid var(--accent); background: var(--accent); color: white; box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 24%, transparent); }
+.gwp-cal-add-btn:hover { background: color-mix(in srgb, var(--accent) 88%, white); box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 32%, transparent); transform: translateY(-1px); }
+.gwp-cal-today-btn:active,
+.gwp-cal-refresh-btn:active:not(:disabled),
+.gwp-cal-add-btn:active { transform: translateY(0) scale(.97); }
+.gwp-cal-nav button:focus-visible,
+.gwp-cal-today-btn:focus-visible,
+.gwp-cal-refresh-btn:focus-visible,
+.gwp-cal-add-btn:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 72%, white); outline-offset: 2px; }
+
+@media (max-width: 680px) {
+    .gwp-cal-header { align-items: flex-start; flex-direction: column; }
+    .gwp-cal-actions { align-self: stretch; justify-content: flex-end; }
+}
+
+.gwp-cal-grid { flex: 0 0 auto; }
+.gwp-cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; margin-bottom: 4px; }
+.gwp-cal-weekdays span { text-align: center; font-size: 11px; font-weight: 700; color: var(--muted); padding: 4px 0; }
+.gwp-cal-weekdays .sun { color: #e57373; }
+.gwp-cal-weekdays .sat { color: #5c9ce6; }
+
+.gwp-cal-loading { display: flex; align-items: center; justify-content: center; min-height: 200px; color: var(--accent); }
+
+.gwp-cal-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
+.gwp-cal-day { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0; border: 0; border-radius: 6px; background: transparent; color: var(--text); font-size: 13px; cursor: pointer; }
+.gwp-cal-day:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.gwp-cal-day.other-month { color: var(--muted); opacity: .45; }
+.gwp-cal-day.sun { color: #e57373; }
+.gwp-cal-day.sat { color: #5c9ce6; }
+.gwp-cal-day.other-month.sun, .gwp-cal-day.other-month.sat { opacity: .3; }
+.gwp-cal-day.today > span { display: grid; width: 26px; height: 26px; place-items: center; border-radius: 50%; background: var(--accent); color: white; font-weight: 700; }
+.gwp-cal-day.selected { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.gwp-cal-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); }
+
+.gwp-cal-events { display: flex; flex-direction: column; flex: 1; min-height: 0; margin-top: 12px; border-top: 1px solid var(--border); }
+.gwp-cal-events-header { display: flex; align-items: center; gap: 7px; padding: 10px 0 8px; color: var(--text); font-size: 14px; }
+.gwp-cal-events-header svg { color: var(--accent); }
+.gwp-cal-events-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+.gwp-cal-empty { display: flex; align-items: center; justify-content: center; min-height: 80px; color: var(--muted); font-size: 13px; }
+
+.gwp-cal-event-row { position: relative; display: flex; align-items: center; gap: 8px; margin-bottom: 5px; padding: 11px 10px 11px 14px; border: 1px solid transparent; border-radius: 10px; background: color-mix(in srgb, var(--surface2) 48%, transparent); cursor: pointer; transition: background .15s, border-color .15s; }
+.gwp-cal-event-row::before { position: absolute; top: 12px; bottom: 12px; left: 5px; width: 3px; border-radius: 999px; background: var(--accent); content: ""; }
+.gwp-cal-event-row:hover { border-color: color-mix(in srgb, var(--accent) 42%, var(--border)); background: var(--surface); }
+.gwp-cal-event-row.notification-highlight { animation: gwp-calendar-notification-highlight .6s ease-in-out 4; }
+@keyframes gwp-calendar-notification-highlight {
+    0%, 100% { border-color: transparent; box-shadow: 0 0 0 0 transparent; }
+    50% { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent); background: color-mix(in srgb, var(--accent) 16%, var(--surface2)); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .gwp-cal-event-row.notification-highlight { animation: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent); }
+}
+.gwp-cal-event-info { display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 3px; }
+.gwp-cal-event-title { display: flex; align-items: center; min-width: 0; gap: 8px; }
+.gwp-cal-event-title strong { flex: 1; min-width: 0; font-size: 14px; font-weight: 650; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gwp-cal-event-actions { display: flex; flex: none; align-items: center; gap: 8px; }
+.gwp-cal-event-status { display: inline-flex; align-items: center; gap: 4px; flex: none; padding: 3px 7px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); font-size: 12px; font-weight: 700; line-height: 1.4; }
+.gwp-cal-event-status svg { flex: none; }
+.gwp-cal-event-reminder-indicator { position: relative; display: grid; width: 24px; height: 24px; flex: none; place-items: center; border-radius: 5px; color: var(--muted); cursor: default; }
+.gwp-cal-event-reminder-indicator:hover { color: var(--accent); }
+.gwp-cal-event-reminder-details { position: absolute; top: calc(100% + 6px); right: 0; z-index: 10; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 6px; min-width: max-content; max-width: 220px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); box-shadow: 0 8px 20px rgba(0, 0, 0, .32); color: var(--text-secondary); font-size: 12px; font-weight: 500; line-height: 1.45; opacity: 0; pointer-events: none; visibility: hidden; }
+.gwp-cal-event-reminder-details.is-visible { opacity: 1; visibility: visible; }
+.gwp-cal-event-reminder-details.opens-upward { top: auto; bottom: calc(100% + 6px); }
+.gwp-cal-event-time, .gwp-cal-event-location { display: flex; align-items: center; gap: 4px; color: var(--muted); font-size: 13px; }
+.gwp-cal-event-time svg, .gwp-cal-event-location svg { flex: none; }
+.gwp-cal-event-description { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: flex-start; gap: 5px; max-width: 100%; margin-top: 2px; color: var(--text-secondary); font-size: 13px; line-height: 1.5; }
+.gwp-cal-event-description-preview { display: flex; min-width: 0; align-items: flex-start; gap: 5px; cursor: pointer; }
+.gwp-cal-event-description-preview > svg { flex: none; margin-top: 2px; color: var(--muted); }
+.gwp-cal-event-description-preview > span { display: -webkit-box; overflow: hidden; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.gwp-cal-event-description-toggle { display: grid; width: 28px; height: 28px; place-items: center; margin-top: -5px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }
+.gwp-cal-event-description-toggle:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
+.gwp-cal-event-description.is-expanded .gwp-cal-event-description-toggle svg { transform: rotate(180deg); }
+.gwp-cal-event-description-full { grid-column: 1 / -1; padding: 6px 8px; border-radius: 6px; background: color-mix(in srgb, var(--surface) 72%, transparent); color: var(--text-secondary); white-space: pre-wrap; overflow-wrap: anywhere; }
+.gwp-cal-event-delete { display: grid; width: 28px; height: 28px; flex: none; place-items: center; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; opacity: 0; transition: opacity .15s; }
+.gwp-cal-event-row:hover .gwp-cal-event-delete { opacity: 1; }
+.gwp-cal-event-delete:hover { background: rgba(225, 116, 92, .12); color: #e1745c; }
+.gwp-cal-event-row.past { background: color-mix(in srgb, var(--surface2) 28%, transparent); }
+.gwp-cal-event-row.past::before { background: color-mix(in srgb, var(--muted) 60%, transparent); }
+.gwp-cal-event-row.past:hover { border-color: var(--border); background: color-mix(in srgb, var(--surface2) 65%, transparent); }
+.gwp-cal-event-row.past .gwp-cal-event-title strong { color: var(--text-secondary); }
+.gwp-cal-event-row.past .gwp-cal-event-status { background: color-mix(in srgb, var(--muted) 12%, transparent); color: var(--muted); }
+.gwp-cal-event-row.past .gwp-cal-event-time,
+.gwp-cal-event-row.past .gwp-cal-event-location,
+.gwp-cal-event-row.past .gwp-cal-event-description { color: color-mix(in srgb, var(--muted) 78%, transparent); }
+.gwp-cal-event-row.ongoing { border-color: color-mix(in srgb, var(--success) 30%, var(--border)); background: color-mix(in srgb, var(--success) 5%, var(--surface2)); }
+.gwp-cal-event-row.ongoing::before { background: color-mix(in srgb, var(--success) 84%, var(--surface2)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--success) 10%, transparent); }
+.gwp-cal-event-status.ongoing { background: var(--success); color: white; }
+
+/* Event Form */
+.gwp-cal-form-backdrop { position: absolute; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(0, 0, 0, .45); }
+.gwp-cal-form { display: flex; flex-direction: column; width: min(440px, 100%); max-height: calc(100vh - 48px); border: 1px solid var(--border); border-radius: 14px; background: var(--surface2); box-shadow: 0 18px 50px rgba(0, 0, 0, .4); }
+.gwp-cal-form header { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px 12px; }
+.gwp-cal-form header h3 { margin: 0; font-size: 17px; }
+.gwp-cal-form header button { display: grid; width: 30px; height: 30px; place-items: center; border: 0; border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer; }
+.gwp-cal-form header button:hover { background: var(--surface); color: var(--text); }
+.gwp-cal-form-body { display: grid; gap: 12px; min-height: 0; padding: 0 18px 12px; overflow-y: auto; }
+.gwp-cal-form-body label { display: grid; gap: 5px; }
+.gwp-cal-form-body label > span { font-size: 12px; font-weight: 650; color: var(--text-secondary); }
+.gwp-cal-form-body input, .gwp-cal-form-body textarea { box-sizing: border-box; width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 7px; outline: none; background: var(--surface); color: var(--text); font: inherit; font-size: 13px; color-scheme: dark light; }
+.gwp-cal-form-body input:focus, .gwp-cal-form-body textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent); }
+.gwp-cal-form-body textarea { resize: vertical; min-height: 64px; }
+.gwp-cal-form-body .gwp-cal-description-input { min-height: 160px; }
+.gwp-cal-date-time-field { position: relative; }
+.gwp-cal-date-time-error-tooltip { position: absolute; right: 0; bottom: calc(100% + 8px); z-index: 2; display: flex; align-items: flex-start; gap: 7px; max-width: min(360px, 100%); padding: 8px 10px; border: 1px solid color-mix(in srgb, var(--danger) 24%, transparent); border-radius: 7px; background: color-mix(in srgb, var(--surface2) 96%, var(--danger)); box-shadow: 0 6px 18px rgba(0, 0, 0, .25); color: var(--danger); font-size: 11px; font-weight: 600; line-height: 1.45; }
+.gwp-cal-date-time-error-tooltip::after { position: absolute; right: 18px; top: 100%; width: 8px; height: 8px; border-right: 1px solid color-mix(in srgb, var(--danger) 24%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--danger) 24%, transparent); background: color-mix(in srgb, var(--surface2) 96%, var(--danger)); content: ""; transform: translateY(-5px) rotate(45deg); }
+.gwp-cal-date-time-error-tooltip svg { flex: none; margin-top: 1px; }
+.gwp-cal-reminders { display: grid; gap: 7px; }
+.gwp-cal-reminders-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.gwp-cal-reminders-header > span { color: var(--text-secondary); font-size: 12px; font-weight: 650; }
+.gwp-cal-reminders-header button { display: inline-flex; align-items: center; gap: 5px; padding: 4px 7px; border: 0; border-radius: 6px; background: transparent; color: var(--accent); font: inherit; font-size: 11px; font-weight: 650; cursor: pointer; }
+.gwp-cal-reminders-header button:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.gwp-cal-reminders-header button:disabled { color: var(--muted); cursor: default; opacity: .55; }
+.gwp-cal-reminders > small { color: var(--muted); font-size: 11px; }
+.gwp-cal-reminder-row { position: relative; display: grid; grid-template-columns: minmax(90px, 1fr) 70px minmax(75px, .8fr) 28px; align-items: center; gap: 6px; }
+.gwp-cal-reminder-row input { min-width: 0; height: 34px; padding: 6px 8px; text-align: center; }
+.gwp-cal-reminder-row input[aria-invalid="true"] { border-color: var(--danger); box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger) 14%, transparent); }
+.gwp-cal-reminder-error-tooltip { position: absolute; right: 0; bottom: calc(100% + 8px); z-index: 2; display: flex; align-items: flex-start; gap: 7px; max-width: min(360px, 100%); padding: 8px 10px; border: 1px solid color-mix(in srgb, var(--danger) 24%, transparent); border-radius: 7px; background: color-mix(in srgb, var(--surface2) 96%, var(--danger)); box-shadow: 0 6px 18px rgba(0, 0, 0, .25); color: var(--danger); font-size: 11px; font-weight: 600; line-height: 1.45; }
+.gwp-cal-reminder-error-tooltip::after { position: absolute; right: 34px; top: 100%; width: 8px; height: 8px; border-right: 1px solid color-mix(in srgb, var(--danger) 24%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--danger) 24%, transparent); background: color-mix(in srgb, var(--surface2) 96%, var(--danger)); content: ""; transform: translateY(-5px) rotate(45deg); }
+.gwp-cal-reminder-error-tooltip svg { flex: none; margin-top: 1px; }
+.gwp-cal-reminder-row .custom-select-trigger { min-height: 34px; padding: 6px 8px; border-radius: 7px; background: var(--surface); }
+.gwp-cal-reminder-row .custom-select-item { padding: 7px 9px; }
+.gwp-cal-reminder-remove { display: grid; width: 28px; height: 28px; place-items: center; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }
+.gwp-cal-reminder-remove:hover { background: color-mix(in srgb, var(--danger) 10%, transparent); color: var(--danger); }
+.gwp-date-time-picker { position: relative; }
+.gwp-date-time-trigger { display: flex; align-items: center; justify-content: space-between; box-sizing: border-box; width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); color: var(--text); font: inherit; font-size: 13px; cursor: pointer; }
+.gwp-date-time-trigger:focus, .gwp-date-time-trigger[aria-expanded="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent); outline: none; }
+.gwp-date-time-picker.invalid .gwp-date-time-trigger { border-color: color-mix(in srgb, var(--danger) 68%, var(--border)); background: color-mix(in srgb, var(--danger) 4%, var(--surface)); }
+.gwp-date-time-picker.invalid .gwp-date-time-trigger:focus,
+.gwp-date-time-picker.invalid .gwp-date-time-trigger[aria-expanded="true"] { border-color: var(--danger); box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger) 14%, transparent); }
+.gwp-date-time-trigger svg { flex: none; color: var(--muted); }
+.gwp-date-time-popover { position: absolute; z-index: 30; top: calc(100% + 5px); left: 0; width: min(330px, calc(100vw - 72px)); padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface2); box-shadow: 0 12px 32px rgba(0, 0, 0, .38); }
+.gwp-date-time-popover.portal { position: fixed; z-index: 2147483000; }
+.gwp-date-time-header { display: grid; grid-template-columns: 30px 1fr 30px; align-items: center; margin-bottom: 8px; }
+.gwp-date-time-header strong { text-align: center; font-size: 13px; }
+.gwp-date-time-header button { display: grid; width: 30px; height: 30px; place-items: center; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--text-secondary); cursor: pointer; }
+.gwp-date-time-header button:hover { background: var(--surface); color: var(--text); }
+.gwp-date-time-weekdays, .gwp-date-time-days { display: grid; grid-template-columns: repeat(7, 1fr); }
+.gwp-date-time-weekdays span { padding: 4px 0 6px; color: var(--muted); font-size: 11px; font-weight: 650; text-align: center; }
+.gwp-date-time-days button { aspect-ratio: 1; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--text); font: inherit; font-size: 12px; cursor: pointer; }
+.gwp-date-time-days button:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.gwp-date-time-days button.other-month { color: var(--muted); opacity: .55; }
+.gwp-date-time-days button.today { box-shadow: inset 0 0 0 1px var(--accent); }
+.gwp-date-time-days button.selected { background: var(--accent); color: white; font-weight: 700; opacity: 1; }
+.gwp-date-time-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 9px; padding-top: 9px; border-top: 1px solid var(--border); }
+.gwp-date-time-today { padding: 6px 8px; border: 0; border-radius: 6px; background: transparent; color: var(--accent); font: inherit; font-size: 12px; font-weight: 650; cursor: pointer; }
+.gwp-date-time-today:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.gwp-date-time-selects { display: flex; align-items: center; gap: 4px; }
+.gwp-date-time-select.custom-select-wrap { width: 58px; }
+.gwp-date-time-select .custom-select-trigger { min-height: 30px; padding: 5px 7px; border-radius: 6px; background: var(--surface); }
+.gwp-date-time-select .custom-select-dropdown { min-width: 64px; }
+.gwp-date-time-select .custom-select-item { padding: 7px 9px; }
+.gwp-cal-form footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 18px 16px; }
+.gwp-cal-form-cancel { padding: 8px 14px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); color: var(--text); font-size: 13px; font-weight: 600; cursor: pointer; }
+.gwp-cal-form-cancel:hover { border-color: var(--accent); color: var(--accent); }
+.gwp-cal-form-error { display: flex; align-items: flex-start; gap: 7px; margin-top: 2px; padding: 8px 10px; border: 1px solid color-mix(in srgb, var(--danger) 24%, transparent); border-radius: 7px; background: color-mix(in srgb, var(--danger) 8%, transparent); color: var(--danger); font-size: 11px; font-weight: 600; line-height: 1.45; }
+.gwp-cal-form-error svg { flex: none; margin-top: 1px; }
+
+@media (max-width: 680px) {
+    .google-workspace-panel { width: 100% !important; min-width: 0; max-width: none; }
+    .gwp-panel-resizer { display: none; }
+    .gwp-nav { width: 180px; flex-basis: 180px; }
+    .gwp-content { padding: 12px; }
+}

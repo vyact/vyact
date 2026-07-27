@@ -1,0 +1,276 @@
+/* ── 트리거 ── */
+.model-select-wrap .custom-select-trigger {
+    gap: 8px;
+}
+
+/* 설치 상태 dot */
+.mdot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.mdot.installed {
+    background: #10b981;
+}
+
+.mdot.not-installed {
+    background: #6b7280;
+}
+
+.mname {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ── 드롭다운 목록 ── */
+.model-select-wrap .custom-select-list {
+    max-height: 200px;
+}
+
+/* 아이템 레이아웃 */
+.model-select-wrap .custom-select-item {
+    gap: 8px;
+    padding: 10px 12px;
+}
+
+/* 좌측 선택/dot 아이콘 */
+.dd-left-icon {
+    width: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* 모델명 영역 */
+.dd-model-name {
+    flex: 1;
+    min-width: 0;
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    overflow: hidden;
+}
+
+/* 우측 설치/다운로드 */
+.dd-right-status {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.dd-icon-installed {
+    color: #10b981;
+    display: flex;
+    align-items: center;
+}
+
+.dd-icon-download {
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+}
+
+/* 툴팁 */
+.model-info-icon-wrapper {
+    position: relative;
+    display: inline-flex;
+}
+
+.model-info-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--muted);
+    color: var(--bg);
+    font-size: 10px;
+    font-weight: bold;
+    cursor: help;
+    flex-shrink: 0;
+}
+
+.model-info-icon:hover {
+    background: var(--accent);
+    color: white;
+}
+
+.model-tooltip {
+    position: fixed;
+    margin-left: 20px;
+    padding: 8px 12px;
+    background: #1a1a1a;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: normal;
+    white-space: normal;
+    max-width: 280px;
+    line-height: 1.4;
+    pointer-events: none;
+    z-index: 9999;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* ── 커스텀 모델 입력 (footer) ── */
+.custom-model-input {
+    padding: 10px;
+    border-top: 1px solid var(--border);
+    display: grid;
+    gap: 8px;
+    background: var(--bg);
+}
+
+.custom-model-input input {
+    width: 100%;
+    min-width: 0;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 11px;
+    color: var(--text);
+}
+
+.custom-model-input input::placeholder {
+    color: var(--muted);
+}
+
+.custom-model-input input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.custom-model-actions {
+    display: flex;
+    min-width: 0;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.custom-model-type {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    padding: 3px;
+    gap: 2px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface2);
+}
+
+.custom-model-type button,
+.custom-model-add {
+    border: none;
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 10px;
+    color: var(--muted);
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.15s, color 0.15s;
+}
+
+.custom-model-type button {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.custom-model-type button.active {
+    background: rgba(var(--accent-rgb, 205, 100, 72), 0.2);
+    color: var(--text);
+}
+
+.custom-model-add {
+    background: var(--accent);
+    color: white;
+    flex: 0 0 auto;
+    padding-inline: 12px;
+}
+
+.custom-model-add:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.custom-model-add:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+/* ── Cloud Provider ── */
+.cloud-config {
+    padding: 12px;
+}
+
+.cloud-info {
+    margin-bottom: 10px;
+}
+
+.cloud-provider-name {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.cloud-current-model {
+    font-size: 12px;
+    color: var(--text);
+}
+
+.cloud-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.cloud-settings-btn,
+.cloud-delete-btn {
+    flex: 1;
+    padding: 6px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+.cloud-settings-btn {
+    background: var(--accent);
+    border: none;
+    color: white;
+}
+
+.cloud-delete-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+}
+
+.cloud-settings-btn:hover,
+.cloud-delete-btn:hover {
+    opacity: 0.8;
+}
+
+/* 응답 중 비활성화 */
+.model-select-wrap.disabled .custom-select-trigger {
+    cursor: not-allowed;
+    opacity: 0.5;
+    pointer-events: none;
+}

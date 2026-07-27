@@ -1,0 +1,252 @@
+/* split 컨테이너 */
+.chat-area-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    width: 100%;
+    justify-content: center;
+    position: relative;
+}
+
+.conversation-navigator {
+    position: absolute;
+    top: 50%;
+    left: 24px;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    max-height: 68%;
+    overflow: visible;
+    transform: translateY(-50%);
+}
+
+.conversation-navigator button {
+    position: relative;
+    /* 보이는 바보다 넓은 hover 영역: 바 근처에서도 요약을 바로 확인할 수 있다. */
+    width: 28px;
+    height: 10px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+}
+
+.conversation-navigator-bar {
+    position: absolute;
+    top: 1px;
+    left: 0;
+    width: 8px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.28);
+    transition: width 0.16s ease, background-color 0.16s ease;
+}
+
+.conversation-navigator button:hover .conversation-navigator-bar,
+.conversation-navigator button:focus-visible .conversation-navigator-bar {
+    width: 18px;
+    background: rgba(255, 255, 255, 0.78);
+}
+
+.conversation-navigator button.active .conversation-navigator-bar {
+    background: rgba(255, 255, 255, 0.58);
+}
+
+.conversation-navigator-tooltip {
+    position: absolute;
+    top: 50%;
+    left: 28px;
+    display: flex;
+    width: min(250px, 30vw);
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    background: rgba(43, 43, 43, 0.97);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.45;
+    opacity: 0;
+    pointer-events: none;
+    text-align: left;
+    transform: translateY(-50%) translateX(-4px);
+    transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.conversation-navigator-tooltip strong,
+.conversation-navigator-tooltip span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.conversation-navigator-tooltip strong { font-size: 14px; }
+.conversation-navigator-tooltip span { color: var(--muted); }
+
+.conversation-navigator button:hover .conversation-navigator-tooltip,
+.conversation-navigator button:focus-visible .conversation-navigator-tooltip {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+}
+
+.chat-area-split .conversation-navigator { display: none; }
+
+@media (max-width: 800px) {
+    .conversation-navigator { display: none; }
+}
+
+/* 좌측 컬럼: 채팅 스크롤 + 인풋 */
+.chat-col {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex: 1; /* 100% 전체 너비 → 스크롤바 맨 우측 */
+    min-width: 0;
+}
+
+/* 패널(코드/유튜브) 열릴 때: chat-col 나머지 공간 차지 */
+.chat-area-split .chat-col {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+/* 코드패널 열릴 때 justify-content 리셋 */
+.chat-area-split {
+    justify-content: flex-start;
+}
+
+/* chat-area: 전체 너비 → 스크롤바 맨 우측 */
+.chat-area {
+    background: var(--bg);
+    flex: 1;
+    padding: 18px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    overflow-y: auto;
+    min-width: 0;
+    align-items: center;
+}
+
+/* 콘텐츠 50% 센터 제한 */
+.chat-area-content {
+    width: 52%;
+    min-width: 480px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    flex: 1;
+}
+
+/* 코드뷰 열릴 때: 전체 너비 */
+.chat-area-split .chat-area-content {
+    width: 100%;
+    min-width: 0;
+    /* 우측 패널(코드/유튜브)이 열리면 콘텐츠가 패널에 딱 붙는다.
+       사용자 버블이 패널 경계에 붙지 않도록 우측에 여백을 준다. */
+    padding-right: 12px;
+    box-sizing: border-box;
+}
+
+/* 분할 화면에서는 코드 패널 너비에 따라 남은 채팅 폭을 모두 사용한다.
+   일반 화면의 읽기 폭 제한은 Message.css에 유지한다. */
+.chat-area-split .msg.bot .msg-bubble {
+    max-width: 100%;
+}
+
+/* 버블 max-width */
+.chat-area-content .msg {
+    max-width: 98%;
+}
+
+/* Message는 행 래퍼 안에서 렌더된다. 사용자 버블은 이 래퍼 기준으로
+   우측에 정렬해야 패널을 열어도 오른쪽 여백이 일정하게 유지된다. */
+.chat-message-row {
+    display: flex;
+    min-width: 0;
+}
+
+.chat-message-row--user {
+    justify-content: flex-end;
+}
+
+.response-elapsed-time {
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-left: 16px;
+    padding: 3px 2px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.response-elapsed-time span {
+    font-size: 20px;
+    font-weight: 300;
+    line-height: 1;
+}
+
+/* 웰컴 화면 */
+.welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 12px;
+    text-align: center;
+    color: var(--muted);
+}
+
+.welcome-icon {
+    font-size: 48px;
+    margin-bottom: 8px;
+}
+
+.welcome h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.welcome p {
+    font-size: 14px;
+    line-height: 1.6;
+    max-width: 400px;
+}
+
+.welcome-title {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+    text-align: center;
+    color: var(--text);
+}
+
+.welcome-shortcut-hint {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--muted);
+    opacity: 0.7;
+}
+.plugin-side-panel {
+    display: contents;
+}
+
+.plugin-side-panel--minimized {
+    display: block;
+    position: absolute;
+    inset: auto;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+    pointer-events: none;
+}

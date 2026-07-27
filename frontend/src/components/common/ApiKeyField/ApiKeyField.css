@@ -1,0 +1,51 @@
+.api-key-saved {
+    font-size: var(--modal-text);
+    color: var(--accent);
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+.api-key-row {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.api-key-row .settings-mcp-input-wrap {
+    flex: 1;
+    min-width: 0;
+}
+
+.api-key-save-btn {
+    flex-shrink: 0;
+    padding: 0 16px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: var(--modal-btn);
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter 0.15s, opacity 0.15s;
+    white-space: nowrap;
+}
+
+.api-key-save-btn:hover:not(:disabled) {
+    filter: brightness(1.08);
+}
+
+.api-key-save-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.api-key-msg {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: var(--modal-sub);
+    color: var(--accent);
+}
+
+.api-key-msg.error {
+    color: var(--del-fg);
+}

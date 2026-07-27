@@ -1,0 +1,72 @@
+{
+  "title": "Vyact 初始设置",
+  "installing": "安装中...",
+  "selectProvider": "选择 Provider",
+  "provider": "Provider",
+  "ollamaModel": "Ollama 模型",
+  "customModel": "自定义模型",
+  "apiKey": "API KEY",
+  "model": "MODEL",
+  "startInstall": "开始安装",
+  "apiKeyModelRequired": "API KEY 和 MODEL 为必填项",
+  "installationFailed": "安装失败。请查看进度日志后重试。",
+  "localExec": "本地运行",
+  "imageGenModel": "图像生成模型",
+  "exportFailed": "导出失败",
+  "models": {
+    "flux2Klein": {
+      "name": "FLUX.2 Klein (4B/9B)",
+      "desc": "图像生成与编辑模型 · 建议 16GB 以上显存 · 支持文生图和参考图编辑"
+    },
+    "zImageTurbo": {
+      "name": "Z-Image Turbo (6B)",
+      "desc": "写实图像生成模型 · 建议 12GB 以上显存 · 针对英文和中文文字渲染优化"
+    },
+    "gemma4E4bMlx": {
+      "name": "Gemma 4 E4B MLX (Effective 4B)",
+      "desc": "面向 Apple Silicon (MLX) 的轻量模型 · 支持文本和图像输入 · 适合轻量推理与编程"
+    },
+    "gemma4_12bMlx": {
+      "name": "Gemma 4 12B MLX",
+      "desc": "面向 Apple Silicon (MLX) 的通用模型 · 支持文本和图像输入 · 适合推理、编程和智能体任务"
+    },
+    "gemma4_26bMlx": {
+      "name": "Gemma 4 26B A4B MoE MLX",
+      "desc": "面向 Apple Silicon (MLX) 的高性能 MoE 模型 · 适合高级推理、编程和智能体任务"
+    },
+    "lagunaXs21Nvfp4": {
+      "name": "Laguna XS 2.1 NVFP4 MLX",
+      "desc": "Poolside 面向智能体编程的 MoE 模型 · 针对 Apple Silicon (MLX) 优化 · 约 19GB · 256K 上下文 · 支持文本输入 · 总计 33B 参数中激活 3B · 适合长程推理、编程和智能体任务"
+    },
+    "gemma4E4b": {
+      "name": "Gemma 4 E4B (Effective 4B)",
+      "desc": "标准 Ollama 轻量构建 · 支持文本和图像输入 · 适合轻量推理与编程"
+    },
+    "gemma4_12b": {
+      "name": "Gemma 4 12B",
+      "desc": "标准 Ollama 通用构建 · 支持文本和图像输入 · 适合推理、编程和智能体任务"
+    },
+    "gemma4_26b": {
+      "name": "Gemma 4 26B A4B MoE",
+      "desc": "标准 Ollama 高性能 MoE 构建 · 建议充足的内存或显存 · 适合高级任务"
+    }
+  },
+  "providers": {
+    "ollama": {
+      "name": "Ollama",
+      "desc": "本地运行"
+    },
+    "openai": {
+      "name": "ChatGPT",
+      "desc": "OpenAI"
+    },
+    "gemini": {
+      "name": "Gemini",
+      "desc": "Google"
+    },
+    "claude": {
+      "name": "Claude",
+      "desc": "Anthropic"
+    }
+  }
+}

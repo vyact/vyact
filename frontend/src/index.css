@@ -1,0 +1,127 @@
+@import 'pretendard/dist/web/variable/pretendardvariable.css';
+
+:root {
+  /* Codex 다크 톤 */
+  --bg: #171717;
+  --surface: #212121;
+  --surface2: #2a2a2a;
+  --border: #3a3a3a;
+  --accent: #cc785c;  /* 주황색 계열 */
+  --accent-rgb: 204, 120, 92;
+  --project-active: #d88e73;
+  --project-active-rgb: 216, 142, 115;
+  --accent2: #d88e73;
+  --success: #2cba66;
+  --warn: #f59e0b;
+  --danger: #ff5449;
+  --text: #f5f5f5;
+  --text-secondary: #b8b8b8;
+  --muted: #939393;
+  --code-color: #a2cdff;       /* 인라인 코드 텍스트 색상 */
+  --r: 12px;
+
+  /* ── 모달 공통 색상 (빠른메모/메모 기준으로 통일) ──
+     모든 모달의 배경은 --modal-bg, 모달 내부 요소(입력창/카드/행)는 --modal-inset 을 쓴다.
+     모달 톤을 바꾸려면 이 두 값만 수정하면 전체 모달에 반영된다. */
+  --bg-secondary: #1c1c1c;      /* 빠른메모/메모가 쓰던 값 (하위호환 별칭) */
+  --modal-bg: #1c1c1c;          /* 모달 바깥 컨테이너 배경 */
+  --modal-inset: #262626;       /* 모달 내부 입력창/카드/리스트 행 배경 */
+  --modal-inset-hover: #303030; /* 내부 요소 hover */
+
+  /* ── 삭제/위험 버튼 공통 색상 (사이드바 휴지통 .btn-delete-all 기준) ──
+     --del-rgb 채널값을 두고, 투명도별로 조합해 border/text/bg 를 만든다.
+     삭제 계열 버튼 색을 바꾸려면 --del-rgb 만 수정하면 전체에 반영된다. */
+  --del-rgb: 248, 113, 113;                       /* #f87171 */
+  --del-fg: rgb(var(--del-rgb));                  /* 강조 텍스트/hover */
+  --del-fg-soft: rgba(var(--del-rgb), 0.7);       /* 기본 텍스트 */
+  --del-fg-faint: rgba(var(--del-rgb), 0.5);      /* 약한 아이콘 */
+  --del-border: rgba(var(--del-rgb), 0.25);       /* 기본 테두리 */
+  --del-border-hover: rgba(var(--del-rgb), 0.5);  /* hover 테두리 */
+  --del-bg-hover: rgba(var(--del-rgb), 0.12);     /* hover 배경 */
+
+  /* ── 모달 공통 글자 크기 (메모 모달 기준) ──
+     모든 모달의 제목/본문/버튼/라벨 폰트를 이 값들로 통일한다.
+     모달 타이포를 조정하려면 여기만 수정하면 전체에 반영된다. */
+  --modal-title: 15px;   /* 모달 제목(헤더) */
+  --modal-text: 14px;    /* 본문·input·리스트 항목 기본 텍스트 */
+  --modal-btn: 13px;     /* 버튼 */
+  --modal-sub: 13px;     /* 보조 설명·desc */
+  --modal-label: 11px;   /* 작은 라벨·섹션 헤더 */
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* 모든 포커스/선택 시 outline 제거 */
+*:focus,
+*:focus-visible,
+*:active {
+  outline: none !important;
+}
+
+body {
+  font-family: Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  outline: none !important;
+}
+
+button:focus,
+button:active {
+  outline: none !important;
+}
+
+input,
+textarea,
+select {
+  font-family: inherit;
+  outline: none !important;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none !important;
+}
+
+#root {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    -webkit-app-region: no-drag;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}

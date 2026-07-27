@@ -1,0 +1,308 @@
+/* ── 스킬 관리 섹션 ── */
+.skills-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+    min-height: 0;
+}
+
+.skills-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.skills-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.skills-desc {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.skills-add-btn {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text);
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.skills-add-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.skills-empty {
+    padding: 32px 0;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+/* ── 리스트 ── */
+.skills-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.skills-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-2, rgba(255, 255, 255, 0.03));
+    cursor: pointer;
+    transition: background 0.15s, opacity 0.2s;
+}
+.skills-item:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+.skills-item.disabled {
+    opacity: 0.45;
+}
+
+.skills-item-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.skills-item-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.skills-item-desc {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.skills-item-actions {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.skills-switch {
+    transform: scale(0.85);
+}
+
+/* ── 상세 뷰 / 폼 공통 ── */
+.skills-detail-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.skills-back-btn {
+    padding: 4px 10px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 14px;
+    cursor: pointer;
+}
+.skills-back-btn:hover {
+    color: var(--text);
+}
+
+.skills-detail-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.skills-edit-btn {
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.skills-delete-btn {
+    padding: 5px 12px;
+    border: 1px solid var(--del-border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--del-fg-soft);
+    font-size: 14px;
+    cursor: pointer;
+}
+.skills-edit-btn:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.06);
+}
+.skills-delete-btn:hover {
+    color: var(--del-fg);
+    background: rgba(var(--del-rgb), 0.1);
+    border-color: var(--del-border-hover);
+}
+
+.skills-detail-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.skills-detail-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* 지침 영역이 남은 공간 모두 차지 */
+.skills-detail-section:last-child {
+    flex: 1;
+    min-height: 0;
+}
+
+.skills-detail-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.skills-detail-text {
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+.skills-detail-instructions {
+    padding: 12px 14px;
+    background: var(--surface2);
+    border-radius: 8px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* ── 폼 ── */
+.skills-form-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.skills-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+    min-height: 0;
+}
+
+.skills-form-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.skills-form-hint {
+    font-size: 12px;
+    color: var(--text-secondary, #888);
+    margin-bottom: 4px;
+}
+
+.skills-form-input {
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+}
+.skills-form-input:focus {
+    border-color: var(--accent);
+}
+
+.skills-form-textarea {
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.6;
+    resize: vertical;
+    outline: none;
+    font-family: inherit;
+}
+.skills-form-textarea:focus {
+    border-color: var(--accent);
+}
+.skills-form-textarea--short {
+    min-height: 72px;
+}
+
+/* 지침 textarea가 남은 공간 모두 차지 */
+.skills-form-textarea--tall {
+    flex: 1;
+    min-height: 160px;
+    resize: none;
+}
+
+/* 하단 고정 버튼 — settings-profile-actions 패턴 */
+.skills-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-top: 4px;
+}
+
+.skills-cancel-btn {
+    padding: 8px 20px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text);
+    font-size: 14px;
+    cursor: pointer;
+}
+.skills-cancel-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.skills-save-btn {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 8px;
+    background: var(--text-secondary);
+    color: var(--bg);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+.skills-save-btn:hover {
+    opacity: 0.85;
+}
+.skills-save-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}

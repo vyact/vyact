@@ -1,0 +1,29 @@
+.input-menu-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    flex-shrink: 0;
+}
+
+.input-menu-reasoning {
+    padding: 2px 14px;
+}
+
+.input-menu-reasoning .reasoning-toggle {
+    width: 100%;
+    gap: 10px;
+}
+
+.input-menu-reasoning .reasoning-help {
+    width: 16px;
+    flex-shrink: 0;
+}
+
+.input-menu-reasoning .reasoning-toggle-control {
+    flex: 1;
+}
+
+.input-menu-reasoning .reasoning-toggle-track {
+    margin-left: auto;
+}

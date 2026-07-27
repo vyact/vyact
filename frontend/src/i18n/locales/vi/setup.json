@@ -1,0 +1,72 @@
+{
+  "title": "Thiết lập Vyact",
+  "installing": "Đang cài...",
+  "selectProvider": "Chọn nhà cung cấp",
+  "provider": "Provider",
+  "ollamaModel": "Ollama Model",
+  "customModel": "Custom model",
+  "apiKey": "API KEY",
+  "model": "MODEL",
+  "startInstall": "Bắt đầu",
+  "apiKeyModelRequired": "API KEY and MODEL are required",
+  "installationFailed": "Cài đặt thất bại. Hãy kiểm tra nhật ký tiến trình rồi thử lại.",
+  "localExec": "Local",
+  "imageGenModel": "Image Generation Model",
+  "exportFailed": "Export failed",
+  "models": {
+    "flux2Klein": {
+      "name": "FLUX.2 Klein (4B/9B)",
+      "desc": "Mô hình tạo và chỉnh sửa ảnh · khuyến nghị VRAM từ 16GB · hỗ trợ tạo ảnh từ văn bản và chỉnh sửa ảnh tham chiếu"
+    },
+    "zImageTurbo": {
+      "name": "Z-Image Turbo (6B)",
+      "desc": "Mô hình tạo ảnh chân thực · khuyến nghị VRAM từ 12GB · tối ưu hiển thị chữ tiếng Anh và tiếng Trung"
+    },
+    "gemma4E4bMlx": {
+      "name": "Gemma 4 E4B MLX (Effective 4B)",
+      "desc": "Mô hình nhẹ cho Apple Silicon (MLX) · hỗ trợ văn bản và hình ảnh · phù hợp suy luận và lập trình nhẹ"
+    },
+    "gemma4_12bMlx": {
+      "name": "Gemma 4 12B MLX",
+      "desc": "Mô hình đa dụng cho Apple Silicon (MLX) · hỗ trợ văn bản và hình ảnh · phù hợp suy luận, lập trình và tác vụ agent"
+    },
+    "gemma4_26bMlx": {
+      "name": "Gemma 4 26B A4B MoE MLX",
+      "desc": "Mô hình MoE hiệu năng cao cho Apple Silicon (MLX) · phù hợp tác vụ nâng cao"
+    },
+    "lagunaXs21Nvfp4": {
+      "name": "Laguna XS 2.1 NVFP4 MLX",
+      "desc": "Mô hình MoE của Poolside dành cho lập trình tác nhân · tối ưu cho Apple Silicon (MLX) · khoảng 19GB · ngữ cảnh 256K · hỗ trợ đầu vào văn bản · kích hoạt 3B trên tổng 33B tham số · phù hợp cho suy luận dài hạn, lập trình và tác vụ tác nhân"
+    },
+    "gemma4E4b": {
+      "name": "Gemma 4 E4B (Effective 4B)",
+      "desc": "Bản Ollama tiêu chuẩn, nhẹ · hỗ trợ văn bản và hình ảnh · phù hợp suy luận và lập trình nhẹ"
+    },
+    "gemma4_12b": {
+      "name": "Gemma 4 12B",
+      "desc": "Bản Ollama tiêu chuẩn, đa dụng · hỗ trợ văn bản và hình ảnh · phù hợp suy luận, lập trình và tác vụ agent"
+    },
+    "gemma4_26b": {
+      "name": "Gemma 4 26B A4B MoE",
+      "desc": "Bản Ollama MoE hiệu năng cao · khuyến nghị đủ RAM hoặc VRAM · phù hợp tác vụ nâng cao"
+    }
+  },
+  "providers": {
+    "ollama": {
+      "name": "Ollama",
+      "desc": "Local"
+    },
+    "openai": {
+      "name": "ChatGPT",
+      "desc": "OpenAI"
+    },
+    "gemini": {
+      "name": "Gemini",
+      "desc": "Google"
+    },
+    "claude": {
+      "name": "Claude",
+      "desc": "Anthropic"
+    }
+  }
+}

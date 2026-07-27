@@ -1,0 +1,273 @@
+.qmemo-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.72);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.qmemo-modal {
+    width: 100%;
+    max-width: 640px;
+    max-height: 70vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-secondary, #1e1e1e);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 22px 18px;
+    box-shadow: 0 12px 44px rgba(0, 0, 0, 0.5);
+}
+
+.qmemo-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.qmemo-head strong {
+    font-size: var(--modal-title);
+    font-weight: 700;
+    color: var(--text);
+}
+
+.qmemo-close {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    width: 30px;
+    height: 30px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: background 0.15s, color 0.15s;
+}
+
+.qmemo-close:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.07);
+}
+
+/* 입력 */
+.qmemo-input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.qmemo-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-size: var(--modal-text);
+    outline: none;
+    transition: border-color 0.15s;
+    resize: none;
+    min-height: 44px;
+    max-height: 200px;
+    overflow-y: hidden;
+    line-height: 1.5;
+    font-family: inherit;
+}
+
+.qmemo-input:focus {
+    border-color: var(--accent);
+}
+
+/* 목록 */
+.qmemo-list {
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    height: 46vh;
+    margin: 0 -8px;
+    padding: 0 8px;
+}
+
+.qmemo-empty {
+    text-align: center;
+    color: var(--muted);
+    font-size: var(--modal-sub);
+    padding: 40px 0;
+}
+
+.qmemo-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 10px;
+    border-radius: 8px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.12s;
+}
+
+.qmemo-item:last-child {
+    border-bottom: none;
+}
+
+.qmemo-item:hover {
+    background: rgba(255, 255, 255, 0.035);
+}
+
+.qmemo-item.done .qmemo-text {
+    text-decoration: line-through;
+    color: var(--muted);
+    opacity: 0.55;
+}
+
+/* 완료 체크 버튼 */
+.qmemo-check {
+    width: 21px;
+    height: 21px;
+    flex-shrink: 0;
+    border-radius: 6px;
+    border: 1.8px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.qmemo-check:hover {
+    border-color: var(--accent);
+}
+
+.qmemo-check.checked {
+    background: var(--accent, #e07050);
+    border-color: var(--accent, #e07050);
+}
+
+.qmemo-text {
+    flex: 1;
+    min-width: 0;
+    font-size: var(--modal-text);
+    line-height: 1.4;
+    color: var(--text);
+    word-break: break-word;
+    white-space: pre-wrap;
+    cursor: text;
+}
+
+.qmemo-edit-input {
+    flex: 1;
+    min-width: 0;
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: 7px;
+    padding: 6px 9px;
+    color: var(--text);
+    font-size: var(--modal-text);
+    outline: none;
+    resize: none;
+    min-height: 32px;
+    max-height: 200px;
+    overflow-y: hidden;
+    line-height: 1.4;
+    font-family: inherit;
+}
+
+.qmemo-date {
+    flex-shrink: 0;
+    font-size: var(--modal-label);
+    color: var(--muted);
+    opacity: 0.7;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+}
+
+.qmemo-item:hover .qmemo-date {
+    opacity: 0;
+}
+
+/* 액션 아이콘 */
+.qmemo-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.15s;
+    position: absolute;
+    right: 13px;
+    background: var(--surface2);
+    padding: 2px 4px;
+    border-radius: 8px;
+}
+
+.qmemo-item:hover .qmemo-actions,
+.qmemo-item.editing .qmemo-actions,
+.qmemo-item.deleting .qmemo-actions {
+    opacity: 1;
+}
+
+/* 편집/삭제 중엔 액션을 정상 흐름에 두어 날짜를 침범하지 않게 한다 */
+.qmemo-item.editing .qmemo-actions,
+.qmemo-item.deleting .qmemo-actions {
+    position: static;
+    right: auto;
+}
+
+.qmemo-item.editing .qmemo-date,
+.qmemo-item.deleting .qmemo-date {
+    opacity: 0;
+}
+
+.qmemo-icon-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    transition: all 0.15s;
+}
+
+.qmemo-icon-btn:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.07);
+    border-color: var(--border);
+}
+
+/* 삭제 버튼: 사이드바 전체삭제 버튼과 동일한 색상 스타일 */
+.qmemo-icon-btn.danger {
+    border-color: var(--del-border);
+    color: var(--del-fg-soft);
+}
+
+.qmemo-icon-btn.danger:hover {
+    background: var(--del-bg-hover);
+    border-color: var(--del-border-hover);
+    color: var(--del-fg);
+}
+
+.qmemo-confirm-text {
+    font-size: 12px;
+    color: var(--del-fg);
+    white-space: nowrap;
+}
+
+.qmemo-icon-btn.confirm {
+    border-color: rgba(74, 222, 128, 0.3);
+    color: #4ade80;
+}
+
+.qmemo-icon-btn.confirm:hover {
+    background: rgba(74, 222, 128, 0.12);
+    border-color: rgba(74, 222, 128, 0.55);
+}

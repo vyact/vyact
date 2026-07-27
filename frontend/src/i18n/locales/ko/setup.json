@@ -1,0 +1,72 @@
+{
+  "title": "Vyact 초기 설정",
+  "installing": "설치 중...",
+  "selectProvider": "Provider 선택",
+  "provider": "Provider",
+  "ollamaModel": "Ollama Model",
+  "customModel": "Custom model",
+  "apiKey": "API KEY",
+  "model": "MODEL",
+  "startInstall": "설치 시작",
+  "apiKeyModelRequired": "API KEY와 MODEL은 필수입니다",
+  "installationFailed": "설치에 실패했습니다. 진행 로그를 확인한 후 다시 시도해주세요.",
+  "localExec": "로컬 실행",
+  "imageGenModel": "이미지 생성 모델",
+  "exportFailed": "export 실패",
+  "models": {
+    "flux2Klein": {
+      "name": "FLUX.2 Klein (4B/9B)",
+      "desc": "이미지 생성·편집 모델 · VRAM 16GB 이상 권장 · 텍스트-이미지와 참조 이미지 편집 지원"
+    },
+    "zImageTurbo": {
+      "name": "Z-Image Turbo (6B)",
+      "desc": "실사 이미지 생성 모델 · VRAM 12GB 이상 권장 · 영어·중국어 텍스트 렌더링에 최적화"
+    },
+    "gemma4E4bMlx": {
+      "name": "Gemma 4 E4B MLX (Effective 4B)",
+      "desc": "Apple Silicon(MLX) 최적화 경량 모델 · Text·Image 입력 지원 · 가벼운 추론·코딩 작업에 적합"
+    },
+    "gemma4_12bMlx": {
+      "name": "Gemma 4 12B MLX",
+      "desc": "Apple Silicon(MLX) 최적화 범용 모델 · Text·Image 입력 지원 · 추론·코딩·에이전트 작업에 적합"
+    },
+    "gemma4_26bMlx": {
+      "name": "Gemma 4 26B A4B MoE MLX",
+      "desc": "Apple Silicon(MLX) 최적화 고성능 MoE 모델 · 고급 추론·코딩·에이전트 작업에 적합"
+    },
+    "lagunaXs21Nvfp4": {
+      "name": "Laguna XS 2.1 NVFP4 MLX",
+      "desc": "Poolside의 에이전트 코딩용 MoE 모델 · Apple Silicon(MLX) 최적화 · 약 19GB · 256K 컨텍스트 · Text 입력 지원 · 총 33B 중 3B 활성화 · 장기 추론·코딩·에이전트 작업에 적합"
+    },
+    "gemma4E4b": {
+      "name": "Gemma 4 E4B (Effective 4B)",
+      "desc": "Ollama 일반 빌드 경량 모델 · Text·Image 입력 지원 · 가벼운 추론·코딩 작업에 적합"
+    },
+    "gemma4_12b": {
+      "name": "Gemma 4 12B",
+      "desc": "Ollama 일반 빌드 범용 모델 · Text·Image 입력 지원 · 추론·코딩·에이전트 작업에 적합"
+    },
+    "gemma4_26b": {
+      "name": "Gemma 4 26B A4B MoE",
+      "desc": "Ollama 일반 빌드 고성능 MoE 모델 · 충분한 RAM 또는 VRAM 권장 · 고급 작업에 적합"
+    }
+  },
+  "providers": {
+    "ollama": {
+      "name": "Ollama",
+      "desc": "로컬 실행"
+    },
+    "openai": {
+      "name": "ChatGPT",
+      "desc": "OpenAI"
+    },
+    "gemini": {
+      "name": "Gemini",
+      "desc": "Google"
+    },
+    "claude": {
+      "name": "Claude",
+      "desc": "Anthropic"
+    }
+  }
+}
