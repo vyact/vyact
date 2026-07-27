@@ -130,12 +130,12 @@ Chrome 확장 프로그램으로 외국어 웹페이지를 번역하고, 지금 
 
 ### 처음 실행하기 전 준비
 
-Vyact는 로컬 모델을 중심으로 동작하므로, 처음 앱을 열기 전에 [Ollama](https://ollama.com/download)를 설치하고 **Python 3.11 이상**을 사용할 수 있는지 확인하세요.
+Vyact는 로컬 모델을 중심으로 동작하므로, 처음 앱을 열기 전에 [Ollama](https://ollama.com/download)를 설치하고 **Python 3.11 또는 3.12**를 사용할 수 있는지 확인하세요.
 
 | 플랫폼 | 필수 | 선택 |
 | --- | --- | --- |
-| macOS (Apple Silicon) | Ollama, Python 3.11 이상 | Docker Desktop |
-| Windows | Ollama, Python 3.11 이상 | Docker Desktop |
+| macOS (Apple Silicon) | Ollama, Python 3.11 또는 3.12 | Docker Desktop |
+| Windows | Ollama, Python 3.11 또는 3.12 | Docker Desktop |
 
 Docker Desktop은 선택 사항입니다. 처음 실행하면 Vyact가 나머지 구성을 자동으로 준비합니다.
 

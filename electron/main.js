@@ -206,7 +206,7 @@ function isSupportedPython(pythonBin, env) {
         const versionMatch = `${result.stdout || ""}${result.stderr || ""}`.match(/Python (\d+)\.(\d+)/i);
         const major = Number(versionMatch?.[1]);
         const minor = Number(versionMatch?.[2]);
-        return result.status === 0 && (major > 3 || (major === 3 && minor >= 11));
+        return result.status === 0 && major === 3 && minor >= 11 && minor <= 12;
     } catch {
         return false;
     }
@@ -232,21 +232,24 @@ function resolvePython() {
         ).toString().trim();
 
         if (isSupportedPython(pyenvPython, baseEnv)) {
-            log(`✅ Using pyenv Python 3.11+: ${pyenvPython}`);
+            log(`✅ Using pyenv Python 3.11 or 3.12: ${pyenvPython}`);
             return pyenvPython;
         }
-        log(`⚠️ pyenv Python is below 3.11: ${pyenvPython}`);
+        log(`⚠️ pyenv Python is not 3.11 or 3.12: ${pyenvPython}`);
 
     } catch (e) {
         log("⚠️ pyenv not found → checking system python3");
     }
 
-    if (isSupportedPython("python3", baseEnv)) {
-        log("✅ Using system Python 3.11+");
-        return "python3";
+    const systemCandidates = ["python3.12", "python3.11", "python3"];
+    for (const pythonBin of systemCandidates) {
+        if (isSupportedPython(pythonBin, baseEnv)) {
+            log(`✅ Using system Python 3.11 or 3.12: ${pythonBin}`);
+            return pythonBin;
+        }
     }
 
-    log("❌ Python 3.11+ not found");
+    log("❌ Python 3.11 or 3.12 not found");
     return null;
 }
 
@@ -423,7 +426,7 @@ function startServer() {
         try {
             const pythonBin = resolvePython();
             if (!pythonBin) {
-                throw new Error("Python 3.11 or later is required");
+                throw new Error("Python 3.11 or 3.12 is required");
             }
             log(`👉 Using python: ${pythonBin}`);
 

@@ -244,10 +244,23 @@ function chocoInstall(packageName) {
 }
 
 // ── Python 탐색 (Windows) ────────────────────
+function isSupportedPython(pythonBin, args = [], env = envWithChoco()) {
+    try {
+        const result = spawnSync(pythonBin, [...args, "--version"], {encoding: "utf8", env});
+        const versionMatch = `${result.stdout || ""}${result.stderr || ""}`.match(/Python (\d+)\.(\d+)/i);
+        const major = Number(versionMatch?.[1]);
+        const minor = Number(versionMatch?.[2]);
+        return result.status === 0 && major === 3 && minor >= 11 && minor <= 12;
+    } catch {
+        return false;
+    }
+}
+
 function resolvePython() {
     const candidates = [
-        // `py -3` selects the newest installed Python 3.x interpreter.
-        // Do not pin this to a specific minor version: Python 3.11+ is supported.
+        // Kokoro supports Python 3.11 and 3.12, so prefer those explicitly.
+        {cmd: "py", args: ["-3.12"]},
+        {cmd: "py", args: ["-3.11"]},
         {cmd: "py", args: ["-3"]},
         {cmd: "python", args: []},
         {cmd: "python3", args: []},
@@ -258,13 +271,13 @@ function resolvePython() {
             const versionMatch = `${result.stdout || ""}${result.stderr || ""}`.match(/Python (\d+)\.(\d+)/i);
             const major = Number(versionMatch?.[1]);
             const minor = Number(versionMatch?.[2]);
-            if (result.status === 0 && (major > 3 || (major === 3 && minor >= 11))) {
+            if (result.status === 0 && major === 3 && minor >= 11 && minor <= 12) {
                 log(`✅ Python found: ${cmd} ${args.join(" ")} (${versionMatch[0]})`);
                 return {cmd, args};
             }
         } catch {}
     }
-    log("❌ Python 3.11+ not found");
+    log("❌ Python 3.11 or 3.12 not found");
     return null;
 }
 
@@ -367,7 +380,7 @@ function checkAndInstallPython() {
                 type: "question",
                 buttons: ["Install Python manually", "Later"],
                 title: "Python Required",
-                message: "Failed to auto-install Python.\nPlease install Python 3.11+ from https://www.python.org/downloads/",
+                message: "Failed to auto-install Python.\nPlease install Python 3.11 or 3.12 from https://www.python.org/downloads/",
             });
             if (choice === 0) shell.openExternal("https://www.python.org/downloads/");
             return false;
@@ -386,7 +399,7 @@ function checkAndInstallPython() {
         type: "question",
         buttons: ["Install Python manually", "Later"],
         title: "Python Required",
-        message: "Failed to auto-install Python.\nPlease install Python 3.11+ from https://www.python.org/downloads/",
+        message: "Failed to auto-install Python.\nPlease install Python 3.11 or 3.12 from https://www.python.org/downloads/",
     });
     if (choice === 0) shell.openExternal("https://www.python.org/downloads/");
     return false;

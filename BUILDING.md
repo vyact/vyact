@@ -15,7 +15,7 @@ Intel-based Macs are not currently supported.
 
 - Git
 - Node.js 22 and npm
-- Python 3.11 or later
+- Python 3.11 or 3.12
 - [Ollama](https://ollama.com/download) for local-model features
 - Docker Desktop (optional; Vyact can also use its supported native Elasticsearch setup)
 
