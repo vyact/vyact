@@ -684,7 +684,7 @@
 .gwp-mail-macro-list > div.drag-over { border-color: var(--accent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 42%, transparent); }
 .gwp-mail-macro-list strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .gwp-mail-macro-list span { display: flex; flex: 0 0 auto; gap: 6px; }
-.gwp-mail-macro-list button { padding: 5px 8px; border: 0; border-radius: 5px; background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 12px; }
+.gwp-mail-macro-list button { padding: 5px 8px; border: 0; border-radius: 5px; background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 13px; }
 .gwp-mail-macro-list button:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
 .gwp-mail-macro-list p { margin: 14px 0 0; color: var(--muted); font-size: 13px; }
 .gwp-mail-macros-section.editing { display: flex; flex: 1; min-height: 0; flex-direction: column; }
