@@ -425,6 +425,8 @@
     "responseInProgress": "正在生成回复",
     "projects": "项目",
     "projectFolderPathPrompt": "请输入项目文件夹路径：",
+    "projectEdit": "编辑项目",
+    "projectCreate": {"title": "创建项目", "close": "关闭", "namePlaceholder": "项目名称", "chooseColor": "选择项目颜色", "sourceFolders": "源文件夹", "addFolders": "添加 Vyact 可读取和编辑的文件夹", "removeFolder": "移除 {{path}}", "cancel": "取消", "create": "创建项目", "creating": "创建中…"},
     "deleteAllConfirm": "确定删除所有对话记录？",
     "deleteProject": "删除项目",
     "deleteProjectConfirm": "删除「{{name}}」及其所有关联对话？",

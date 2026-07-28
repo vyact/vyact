@@ -1,0 +1,29 @@
+.project-create-modal { width:min(560px, calc(100vw - 32px)); background:var(--surface); border:1px solid var(--border); border-radius:14px; box-shadow:0 22px 70px rgba(0,0,0,.5); }
+.project-create-modal__header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border); }
+.project-create-modal__header h2 { margin:0; color:var(--text); font-size:var(--modal-title); }
+.project-create-modal__header button { border:0; background:transparent; color:var(--muted); cursor:pointer; padding:5px; border-radius:6px; }
+.project-create-modal__header button:hover { color:var(--text); background:var(--surface2); }
+.project-create-modal__body { padding:20px; }
+.project-name-field { position:relative; display:flex; height:58px; border:1px solid var(--border); border-radius:12px; background:var(--bg); overflow:visible; }
+.project-name-field:focus-within { border-color:var(--accent); box-shadow:0 0 0 3px rgba(var(--accent-rgb), .15); }
+.project-color-button { width:58px; flex:0 0 58px; border:0; border-right:1px solid var(--border); border-radius:12px 0 0 12px; background:transparent; color:var(--project-color); cursor:pointer; display:grid; place-items:center; }
+.project-color-button:hover { background:rgba(255,255,255,.05); }
+.project-name-field input { min-width:0; flex:1; border:0; outline:0; padding:0 16px; background:transparent; color:var(--text); font:inherit; font-size:14px; }
+.project-color-picker { position:absolute; z-index:3; left:0; top:66px; width:346px; display:flex; flex-wrap:wrap; gap:18px; padding:18px; border:1px solid var(--border); border-radius:12px; background:var(--surface); box-shadow:0 12px 32px rgba(0,0,0,.45); }
+.project-color-picker button { width:35px; height:35px; border:2px solid transparent; border-radius:50%; cursor:pointer; }
+.project-color-picker button.selected { outline:2px solid var(--text); outline-offset:3px; }
+.project-source-folders { margin-top:26px; }
+.project-source-folders h3 { margin:0 0 10px; color:var(--text); font-size:14px; font-weight:600; }
+.project-folder-picker { width:100%; min-height:96px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; border:1px dashed var(--border); border-radius:12px; background:rgba(255,255,255,.02); color:var(--muted); cursor:pointer; font:inherit; }
+.project-folder-picker:hover { border-color:var(--accent); color:var(--text); background:rgba(var(--accent-rgb), .06); }
+.project-folder-list { margin:10px 0 0; padding:0; list-style:none; border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+.project-folder-list li { display:flex; align-items:center; gap:10px; padding:9px 10px; border-bottom:1px solid var(--border); color:var(--text-secondary); font-size:13px; }
+.project-folder-list li:last-child { border-bottom:0; }
+.project-folder-list span { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.project-folder-list button { border:0; background:transparent; color:var(--muted); cursor:pointer; padding:3px; display:flex; }
+.project-folder-list button:hover { color:var(--del-fg); }
+.project-create-modal__actions { display:flex; justify-content:flex-end; gap:9px; padding:14px 20px; border-top:1px solid var(--border); }
+.project-create-modal__actions button { border-radius:8px; padding:7px 14px; font:inherit; font-size:14px; font-weight:600; cursor:pointer; }
+.project-create-modal__cancel { border:0; background:transparent; color:var(--muted); }
+.project-create-modal__submit { border:0; background:var(--accent); color:#fff; }
+.project-create-modal__submit:disabled, .project-create-modal__cancel:disabled { opacity:.5; cursor:not-allowed; }

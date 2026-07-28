@@ -11,5 +11,6 @@ interface Window {
         getLoginItem?: () => Promise<boolean>;
         setLoginItem?: (enabled: boolean) => Promise<boolean>;
         selectFolder?: () => Promise<string | null>;
+        selectFolders?: () => Promise<string[]>;
     };
 }

@@ -425,6 +425,8 @@
     "responseInProgress": "応答を生成中",
     "projects": "プロジェクト",
     "projectFolderPathPrompt": "プロジェクトフォルダーのパスを入力してください:",
+    "projectEdit": "プロジェクトを編集",
+    "projectCreate": {"title": "プロジェクトを作成", "close": "閉じる", "namePlaceholder": "プロジェクト名", "chooseColor": "プロジェクトの色を選択", "sourceFolders": "ソースフォルダー", "addFolders": "Vyact が読み取り・編集できるフォルダーを追加", "removeFolder": "{{path}} を削除", "cancel": "キャンセル", "create": "プロジェクトを作成", "creating": "作成中…"},
     "deleteAllConfirm": "すべての会話履歴を削除しますか？",
     "deleteProject": "プロジェクトを削除",
     "deleteProjectConfirm": "「{{name}}」プロジェクトと関連する全ての会話を削除しますか？",

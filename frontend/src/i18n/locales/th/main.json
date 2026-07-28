@@ -424,6 +424,8 @@
     "newChat": "แชตใหม่",
     "projects": "โปรเจกต์",
     "projectFolderPathPrompt": "ป้อนที่อยู่โฟลเดอร์โปรเจกต์:",
+    "projectEdit": "แก้ไขโปรเจกต์",
+    "projectCreate": {"title": "สร้างโปรเจกต์", "close": "ปิด", "namePlaceholder": "ชื่อโปรเจกต์", "chooseColor": "เลือกสีโปรเจกต์", "sourceFolders": "โฟลเดอร์ต้นทาง", "addFolders": "เพิ่มโฟลเดอร์ที่ Vyact อ่านและแก้ไขได้", "removeFolder": "ลบ {{path}}", "cancel": "ยกเลิก", "create": "สร้างโปรเจกต์", "creating": "กำลังสร้าง…"},
     "deleteAllConfirm": "ลบประวัติการสนทนาทั้งหมดหรือไม่?",
     "deleteProject": "ลบโปรเจกต์",
     "deleteProjectConfirm": "ลบ '{{name}}' และการสนทนาทั้งหมดที่เชื่อมโยงอยู่หรือไม่?",

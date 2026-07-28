@@ -589,8 +589,8 @@ export const api = {
         });
     },
     async getProjects(): Promise<{projects: import('../types').Project[]}> { return (await fetch(`${API_BASE}/projects`)).json(); },
-    async createProject(name: string, folderPath: string): Promise<import('../types').Project> { return (await fetch(`${API_BASE}/projects`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name, folder_path: folderPath})})).json(); },
-    async updateProject(projectId: string, updates: Partial<Pick<import('../types').Project, 'name' | 'project_prompt'>>): Promise<import('../types').Project> { return (await fetch(`${API_BASE}/projects/${projectId}`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(updates)})).json(); },
+    async createProject(name: string, folderPaths: string[], color: string): Promise<import('../types').Project> { return (await fetch(`${API_BASE}/projects`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name, folder_paths: folderPaths, color})})).json(); },
+    async updateProject(projectId: string, updates: Partial<Pick<import('../types').Project, 'name' | 'project_prompt' | 'color' | 'folder_paths'>>): Promise<import('../types').Project> { return (await fetch(`${API_BASE}/projects/${projectId}`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(updates)})).json(); },
     async deleteProject(projectId: string): Promise<void> { await fetch(`${API_BASE}/projects/${projectId}`, {method: 'DELETE'}); },
     async setConversationProject(convId: string, projectId: string | null): Promise<void> { await fetch(`${API_BASE}/history/${convId}/project`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({project_id: projectId})}); },
 

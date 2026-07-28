@@ -13,6 +13,7 @@ import './Sidebar.css';
 import ProjectHistoryRow from './ProjectHistoryRow';
 import SidebarOverflowMenu from './SidebarOverflowMenu';
 import ProjectInstructionsModal from './ProjectInstructionsModal';
+import ProjectCreateModal from './ProjectCreateModal';
 
 interface SidebarProps {
     installed: string[];
@@ -239,11 +240,18 @@ const Sidebar: React.FC<SidebarProps> = ({
     const {t} = useTranslation('main');
     const [collapsedInternal] = useState(true);
     const [projects, setProjects] = useState<Project[]>([]);
+    const [isProjectCreateOpen, setIsProjectCreateOpen] = useState(false);
+    const [editingProject, setEditingProject] = useState<Project | null>(null);
     const [projectsExpanded, setProjectsExpanded] = useState(() => localStorage.getItem('sidebar-projects-expanded') !== 'false');
     const [expandedProjectIds, setExpandedProjectIds] = useState<Set<string>>(getStoredExpandedProjectIds);
     const [expandedProjectHistoryIds, setExpandedProjectHistoryIds] = useState<Set<string>>(new Set());
     useEffect(() => { api.getProjects().then(data => setProjects(data.projects || [])).catch(console.error); }, []);
-    const createProject = async () => { const path = await window.ragAPI?.selectFolder?.() || window.prompt(t('sidebar.projectFolderPathPrompt'))?.trim(); if (!path) return; const name = path.split(/[\\/]/).filter(Boolean).pop() || path; const project = await api.createProject(name, path); setProjects(prev => [project, ...prev]); setProjectsExpanded(true); localStorage.setItem('sidebar-projects-expanded', 'true'); setExpandedProjectIds(previous => { const next = new Set(previous); next.add(project.id); storeExpandedProjectIds(next); return next; }); onProjectChange?.(project.id); onNewConversation(); };
+    const createProject = async (name: string, folderPaths: string[], color: string) => { const project = await api.createProject(name, folderPaths, color); setProjects(prev => [project, ...prev]); setProjectsExpanded(true); localStorage.setItem('sidebar-projects-expanded', 'true'); setExpandedProjectIds(previous => { const next = new Set(previous); next.add(project.id); storeExpandedProjectIds(next); return next; }); onProjectChange?.(project.id); onNewConversation(); };
+    const saveProjectDetails = async (name: string, folderPaths: string[], color: string) => {
+        if (!editingProject) return;
+        const updated = await api.updateProject(editingProject.id, {name, folder_paths: folderPaths, color});
+        setProjects(previous => previous.map(project => project.id === updated.id ? updated : project));
+    };
     const toggleProjects = () => setProjectsExpanded(value => { const next = !value; localStorage.setItem('sidebar-projects-expanded', String(next)); return next; });
     const toggleProjectHistory = (projectId: string) => {
         setExpandedProjectIds(previous => {
@@ -449,7 +457,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
                     {/* 히스토리 */}
                     <div className="project-section project-section--history">
-                        <div className="sec-label"><button className="project-collapse-btn" onClick={toggleProjects}>{t('sidebar.projects')} <ChevronDown size={15} className={projectsExpanded ? '' : 'closed'}/></button><button className="project-add-btn" onClick={createProject}><Plus size={16}/></button></div>
+                        <div className="sec-label"><button className="project-collapse-btn" onClick={toggleProjects}>{t('sidebar.projects')} <ChevronDown size={15} className={projectsExpanded ? '' : 'closed'}/></button><button className="project-add-btn" onClick={() => setIsProjectCreateOpen(true)}><Plus size={16}/></button></div>
                         {projectsExpanded && projects.map(project => (
                             <ProjectHistoryRow
                                 key={project.id}
@@ -463,6 +471,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 renameLabel={t('sidebar.rename')}
                                 deleteLabel={t('sidebar.delete')}
                                 projectInstructionsLabel={t('sidebar.projectInstructions.title')}
+                                projectEditLabel={t('sidebar.projectEdit')}
                                 onToggle={() => toggleProjectHistory(project.id)}
                                 onNewConversation={() => { onProjectChange?.(project.id); onNewConversation(); }}
                                 onMenuOpenChange={isOpen => setProjectMenuOpenId(isOpen ? project.id : null)}
@@ -471,6 +480,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 onRenameSubmit={() => saveProjectName(project)}
                                 onRenameCancel={() => setRenamingProjectId(null)}
                                 onEditInstructions={() => { setProjectMenuOpenId(null); setInstructionsProject(project); }}
+                                onEditProject={() => { setProjectMenuOpenId(null); setEditingProject(project); }}
                                 onDelete={() => { setProjectMenuOpenId(null); deleteProject(project); }}
                             >
                                 {conversations.filter(conv => conv.project_id === project.id).slice(0, expandedProjectHistoryIds.has(project.id) ? undefined : PROJECT_HISTORY_PREVIEW_COUNT).map(conv => <div key={conv.conv_id} className={`project-conversation${conv.conv_id === activeConvId ? ' active' : ''}`} ref={menuOpenId === conv.conv_id ? menuRef : null} onClick={() => { onProjectChange?.(project.id); onConversationSelect(conv.conv_id); }}><button className="project-conversation-title">{conv.title}</button>{activeConversationIdSet.has(conv.conv_id) && <span className="conversation-progress" role="status" aria-label={t('sidebar.responseInProgress')} title={t('sidebar.responseInProgress')}><LoaderCircle size={13}/></span>}<button className="hist-menu-btn" onClick={e => { e.stopPropagation(); setMenuOpenId(menuOpenId === conv.conv_id ? null : conv.conv_id); }}>···</button>{menuOpenId === conv.conv_id && <div className="hist-menu-popup project-menu-popup"><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); onShowSummary(conv.conv_id); }}><NotebookText size={13}/>{t('sidebar.summary')}</button><button className="hist-menu-item" onClick={() => { setRenameValue(conv.title); setRenamingId(conv.conv_id); setMenuOpenId(null); }}><Pencil size={13}/>{t('sidebar.rename')}</button><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); exportConversation(conv.conv_id, conv.title, 'md'); }}><FileCode size={13}/>{t('sidebar.exportMarkdown')}</button><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); exportConversation(conv.conv_id, conv.title, 'pdf'); }}><FileText size={13}/>{t('sidebar.exportPdf')}</button><button className="hist-menu-item danger" onClick={() => { setMenuOpenId(null); onConversationDelete(conv.conv_id); }}><Trash2 size={13}/>{t('sidebar.delete')}</button></div>}</div>)}
@@ -479,6 +489,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                         ))}
                     </div>
                     <ProjectInstructionsModal project={instructionsProject} onClose={() => setInstructionsProject(null)} onSave={saveProjectPrompt}/>
+                    {isProjectCreateOpen && <ProjectCreateModal onClose={() => setIsProjectCreateOpen(false)} onSubmit={createProject}/>}
+                    {editingProject && <ProjectCreateModal key={editingProject.id} project={editingProject} onClose={() => setEditingProject(null)} onSubmit={saveProjectDetails}/>}
                     <div className="aside-hist">
                         <div className="hist-header">
                             <div className="hist-actions">

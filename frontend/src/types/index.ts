@@ -162,7 +162,7 @@ export interface Conversation {
     has_summary?: boolean;
 }
 
-export interface Project { id: string; name: string; folder_path?: string; project_prompt?: string; created_at: string; updated_at: string; }
+export interface Project { id: string; name: string; color?: string; folder_paths?: string[]; project_prompt?: string; created_at: string; updated_at: string; }
 
 // API 응답 타입
 export interface ChatResponse {

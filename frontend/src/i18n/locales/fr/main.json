@@ -425,6 +425,8 @@
     "responseInProgress": "Génération de la réponse",
     "projects": "Projets",
     "projectFolderPathPrompt": "Entrez le chemin du dossier du projet :",
+    "projectEdit": "Modifier le projet",
+    "projectCreate": {"title": "Créer un projet", "close": "Fermer", "namePlaceholder": "Nom du projet", "chooseColor": "Choisir la couleur du projet", "sourceFolders": "Dossiers source", "addFolders": "Ajoutez des dossiers que Vyact peut lire et modifier", "removeFolder": "Supprimer {{path}}", "cancel": "Annuler", "create": "Créer le projet", "creating": "Création…"},
     "deleteAllConfirm": "Supprimer tout l'historique des conversations ?",
     "deleteProject": "Supprimer le projet",
     "deleteProjectConfirm": "Supprimer « {{name}} » et toutes les conversations associées ?",

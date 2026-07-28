@@ -71,13 +71,21 @@ async def _resolve_code_folder_path(folder_path: str, project_id: str) -> str:
     if not project_id:
         return ""
 
+    folder_paths = await _get_project_folder_paths(project_id)
+    return folder_paths[0] if folder_paths else ""
+
+
+async def _get_project_folder_paths(project_id: str) -> list[str]:
+    if not project_id:
+        return []
     es = get_es()
     try:
         project = await es.get(index=PROJECTS_INDEX, id=project_id)
-        return str(project.get("_source", {}).get("folder_path", "")).strip()
+        folder_paths = project.get("_source", {}).get("folder_paths", [])
+        return [str(path).strip() for path in folder_paths if str(path).strip()] if isinstance(folder_paths, list) else []
     except Exception as e:
         logger.warning("[query_stream] 프로젝트 폴더 조회 실패(project_id=%s): %s", project_id, e)
-        return ""
+        return []
     finally:
         await es.close()
 
@@ -95,6 +103,22 @@ async def _get_project_prompt(project_id: str) -> str:
         return ""
     finally:
         await es.close()
+
+
+async def _get_project_folder_context(project_id: str) -> str:
+    """선택 프로젝트의 모든 소스 폴더를 LLM 컨텍스트로 제공한다."""
+    if not project_id:
+        return ""
+    try:
+        folder_paths = await _get_project_folder_paths(project_id)
+        if not folder_paths:
+            return ""
+        return "[프로젝트 소스 폴더]\n" + "\n".join(
+            f"- folder_{index}: {path}" for index, path in enumerate(folder_paths, 1)
+        ) + "\n모든 code_* 도구 호출에 작업 대상 folder_id를 반드시 지정해야 한다."
+    except Exception as e:
+        logger.warning("[query_stream] 프로젝트 폴더 조회 실패(project_id=%s): %s", project_id, e)
+        return ""
 
 URL_RE = re.compile(r"https?://[^\s)\]'\"<>,\u0080-\uFFFF]+")
 URL_CONTEXT_ERROR_KEY = "_url_context_error"
@@ -279,6 +303,9 @@ async def query(req: QueryRequest):
     project_prompt = await _get_project_prompt(req.project_id)
     if project_prompt:
         system_prompt = f"{system_prompt}\n\n[프로젝트 지침]\n{project_prompt}" if system_prompt else project_prompt
+    project_folder_context = await _get_project_folder_context(req.project_id)
+    if project_folder_context:
+        system_prompt = f"{system_prompt}\n\n{project_folder_context}" if system_prompt else project_folder_context
 
     # 이미지 생성 모델이면 위임
     if cfg.get("model_type") in ("image_gen", "image_edit") or current_model in IMAGE_MODEL_IDS:
@@ -483,6 +510,9 @@ async def query_stream(req: QueryRequest):
             project_prompt = await _get_project_prompt(req.project_id)
             if project_prompt:
                 system_prompt = f"{system_prompt}\n\n[프로젝트 지침]\n{project_prompt}" if system_prompt else project_prompt
+            project_folder_context = await _get_project_folder_context(req.project_id)
+            if project_folder_context:
+                system_prompt = f"{system_prompt}\n\n{project_folder_context}" if system_prompt else project_folder_context
 
             # 사용자 UI 언어 (확장 클라이언트의 포맷 지시 언어 결정용)
             _ui_language = ""
@@ -607,10 +637,12 @@ async def query_stream(req: QueryRequest):
                     _summary_system_prompt = _summary_base_prompt + build_summary_instruction("", has_file_attachment)
                     _fmt_override = None
 
-                # 코드 분석 폴더 설정: 첨부 폴더가 없으면 선택 프로젝트의 폴더를 사용한다.
+                # 모든 등록 폴더를 ID로 노출한다. 코드 도구는 매 호출마다 folder_id를 요구한다.
                 code_folder_path = await _resolve_code_folder_path(req.folder_path, req.project_id)
                 if code_folder_path:
-                    from services.code_tools import current_code_folder, current_code_question
+                    from services.code_tools import current_code_folder, current_code_folders, current_code_question
+                    folder_paths = [req.folder_path.strip()] if req.folder_path.strip() else await _get_project_folder_paths(req.project_id)
+                    current_code_folders.set({f"folder_{index}": path for index, path in enumerate(folder_paths, 1)})
                     current_code_folder.set(code_folder_path)
                     current_code_question.set(clean_question)
 

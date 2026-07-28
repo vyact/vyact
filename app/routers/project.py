@@ -37,8 +37,15 @@ async def create_project(body: dict):
     name = str(body.get("name", "")).strip()
     if not name:
         raise HTTPException(status_code=400, detail="프로젝트 이름을 입력하세요.")
-    project = {"id": str(uuid.uuid4()), "name": name, "created_at": datetime.now(timezone.utc).isoformat(), "updated_at": datetime.now(timezone.utc).isoformat()}
-    project["folder_path"] = str(body.get("folder_path", ""))
+    folder_paths = body.get("folder_paths", [])
+    if not isinstance(folder_paths, list):
+        raise HTTPException(status_code=400, detail="폴더 목록이 올바르지 않습니다.")
+    project = {
+        "id": str(uuid.uuid4()), "name": name,
+        "color": str(body.get("color", "#f5f5f5")),
+        "folder_paths": list(dict.fromkeys(str(path).strip() for path in folder_paths if str(path).strip())),
+        "created_at": datetime.now(timezone.utc).isoformat(), "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
     es = get_es()
     try:
         await es.index(index=PROJECTS_INDEX, id=project["id"], document=project, refresh=True)
@@ -51,7 +58,12 @@ async def create_project(body: dict):
 async def update_project(project_id: str, body: dict):
     """프로젝트 이름과 프로젝트 지침을 수정한다."""
     from services.db import PROJECTS_INDEX, get_es
-    updates = {key: str(body[key]).strip() for key in ("name", "project_prompt") if key in body}
+    updates = {key: str(body[key]).strip() for key in ("name", "project_prompt", "color") if key in body}
+    if "folder_paths" in body:
+        folder_paths = body["folder_paths"]
+        if not isinstance(folder_paths, list):
+            raise HTTPException(status_code=400, detail="폴더 목록이 올바르지 않습니다.")
+        updates["folder_paths"] = list(dict.fromkeys(str(path).strip() for path in folder_paths if str(path).strip()))
     if "name" in updates and not updates["name"]:
         raise HTTPException(status_code=400, detail="프로젝트 이름을 입력하세요.")
     if not updates:

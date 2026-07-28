@@ -1,4 +1,4 @@
-import type {ReactNode} from 'react';
+import type {CSSProperties, ReactNode} from 'react';
 import {Folder, FolderOpen, MoreHorizontal, Pencil, ScrollText, SquarePen, Trash2} from 'lucide-react';
 import type {Project} from '../../types';
 import SidebarOverflowMenu from './SidebarOverflowMenu';
@@ -14,6 +14,7 @@ interface ProjectHistoryRowProps {
     renameLabel: string;
     deleteLabel: string;
     projectInstructionsLabel: string;
+    projectEditLabel: string;
     onToggle: () => void;
     onNewConversation: () => void;
     onMenuOpenChange: (isOpen: boolean) => void;
@@ -22,6 +23,7 @@ interface ProjectHistoryRowProps {
     onRenameCancel: () => void;
     onRename: () => void;
     onEditInstructions: () => void;
+    onEditProject: () => void;
     onDelete: () => void;
     children: ReactNode;
 }
@@ -37,6 +39,7 @@ const ProjectHistoryRow = ({
     renameLabel,
     deleteLabel,
     projectInstructionsLabel,
+    projectEditLabel,
     onToggle,
     onNewConversation,
     onMenuOpenChange,
@@ -45,6 +48,7 @@ const ProjectHistoryRow = ({
     onRenameSubmit,
     onRenameCancel,
     onEditInstructions,
+    onEditProject,
     onDelete,
     children,
 }: ProjectHistoryRowProps) => {
@@ -52,7 +56,7 @@ const ProjectHistoryRow = ({
 
     return (
         <div>
-            <div className={`project-row${isActive ? ' active' : ''}`} onClick={onToggle}>
+            <div className={`project-row${isActive ? ' active' : ''}`} style={{'--project-color': project.color ?? 'var(--project-active)'} as CSSProperties} onClick={onToggle}>
                 {isRenaming ? (
                     <input
                         className="hist-rename-input"
@@ -68,7 +72,7 @@ const ProjectHistoryRow = ({
                     />
                 ) : (
                     <button className="project-select-btn" aria-expanded={isExpanded}>
-                        <FolderIcon size={15}/>
+                        <FolderIcon size={15} style={{color: project.color ?? 'var(--project-active)'}}/>
                         {project.name}
                     </button>
                 )}
@@ -79,6 +83,7 @@ const ProjectHistoryRow = ({
                         trigger={<MoreHorizontal size={17}/>}
                         className="project-menu-anchor"
                     >
+                        <button className="hist-menu-item" onClick={onEditProject}><SquarePen size={13}/>{projectEditLabel}</button>
                         <button className="hist-menu-item" onClick={onRename}><Pencil size={13}/>{renameLabel}</button>
                         <button className="hist-menu-item" onClick={onEditInstructions}><ScrollText size={13}/>{projectInstructionsLabel}</button>
                         <button className="hist-menu-item danger" onClick={onDelete}><Trash2 size={13}/>{deleteLabel}</button>

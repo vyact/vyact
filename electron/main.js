@@ -808,6 +808,15 @@ ipcMain.handle("select-folder", async () => {
     return result.filePaths[0];
 });
 
+ipcMain.handle("select-folders", async () => {
+    const {dialog} = require("electron");
+    const result = await dialog.showOpenDialog(mainWindow, {
+        properties: ["openDirectory", "multiSelections"],
+        title: "Select folders",
+    });
+    return result.canceled ? [] : result.filePaths;
+});
+
 // ── 부팅 시 자동 시작 설정 ──────────────────────────────────────────────────
 ipcMain.handle("get-login-item", () => {
     return app.getLoginItemSettings().openAtLogin;

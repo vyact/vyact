@@ -425,6 +425,8 @@
     "responseInProgress": "Generando respuesta",
     "projects": "Proyectos",
     "projectFolderPathPrompt": "Introduce la ruta de la carpeta del proyecto:",
+    "projectEdit": "Editar proyecto",
+    "projectCreate": {"title": "Crear proyecto", "close": "Cerrar", "namePlaceholder": "Nombre del proyecto", "chooseColor": "Elegir color del proyecto", "sourceFolders": "Carpetas de origen", "addFolders": "Añade carpetas que Vyact pueda leer y editar", "removeFolder": "Eliminar {{path}}", "cancel": "Cancelar", "create": "Crear proyecto", "creating": "Creando…"},
     "deleteAllConfirm": "¿Borrar todo el historial de conversaciones?",
     "deleteProject": "Eliminar proyecto",
     "deleteProjectConfirm": "¿Eliminar '{{name}}' y todas las conversaciones vinculadas?",

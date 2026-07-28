@@ -69,14 +69,14 @@ async def build_tool_directive(tool_names: list[str]) -> str:
     # 코드 분석 폴더가 설정돼 있으면 코드 도구 사용 지시 추가
     if any(n.startswith("code_") for n in tool_names):
         try:
-            from services.code_tools import current_code_folder
-            folder = current_code_folder.get()
-            if folder:
-                import os
-                folder_name = os.path.basename(folder.rstrip("/"))
+            from services.code_tools import current_code_folders
+            folders = current_code_folders.get()
+            if folders:
+                folder_list = ", ".join(f"{folder_id} ({path})" for folder_id, path in folders.items())
                 directive += (
                     f"\n\n[코드 분석 모드 — 반드시 tool로 직접 수정]\n"
-                    f"사용자가 '{folder_name}' 폴더를 첨부했다. "
+                    f"사용자가 다음 폴더를 등록했다: {folder_list}. "
+                    f"모든 code_* 도구 호출에는 이 목록의 folder_id를 반드시 포함해 작업 대상 폴더를 명시해라. "
                     f"코드 관련 질문이면 code_list_directory, code_read_file, code_grep_search로 "
                     f"코드를 탐색해라. "
                     f"수정 요청이면 반드시 code_edit_file tool을 호출해서 실제 파일을 직접 수정해라. "
@@ -90,7 +90,7 @@ async def build_tool_directive(tool_names: list[str]) -> str:
                     f"수정 뒤에는 code_git_diff로 변경 내용을 확인하고, 가능하면 code_run_check으로 test/lint/typecheck를 실행해라. "
                     f"파일 이동과 삭제는 위험 작업이다. 절대로 즉시 실행하지 말고, 먼저 영향과 대상 경로를 설명한 뒤 "
                     f"사용자에게 정확한 확인 문구(MOVE 원본 -> 대상 또는 DELETE 상대경로)를 다음 메시지로 받으면 실행해라. "
-                    f"path 인자는 항상 폴더 기준 상대경로를 사용해라."
+                    f"path 인자는 항상 지정한 folder_id 기준 상대경로를 사용해라."
                 )
         except Exception:
             pass

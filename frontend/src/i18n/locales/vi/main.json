@@ -425,6 +425,8 @@
     "responseInProgress": "Đang tạo phản hồi",
     "projects": "Dự án",
     "projectFolderPathPrompt": "Nhập đường dẫn thư mục dự án:",
+    "projectEdit": "Chỉnh sửa dự án",
+    "projectCreate": {"title": "Tạo dự án", "close": "Đóng", "namePlaceholder": "Tên dự án", "chooseColor": "Chọn màu dự án", "sourceFolders": "Thư mục nguồn", "addFolders": "Thêm thư mục mà Vyact có thể đọc và chỉnh sửa", "removeFolder": "Xóa {{path}}", "cancel": "Hủy", "create": "Tạo dự án", "creating": "Đang tạo…"},
     "deleteAllConfirm": "Xóa toàn bộ lịch sử hội thoại?",
     "deleteProject": "Xóa dự án",
     "deleteProjectConfirm": "Xóa '{{name}}' và mọi hội thoại liên quan?",

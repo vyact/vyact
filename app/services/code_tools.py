@@ -16,6 +16,8 @@ logger = get_logger(__name__)
 
 # 요청별 폴더 경로
 current_code_folder: ContextVar[str] = ContextVar("current_code_folder", default="")
+# 프로젝트에 등록된 폴더 식별자 → 절대 경로. 모든 코드 도구 호출은 folder_id를 요구한다.
+current_code_folders: ContextVar[dict[str, str]] = ContextVar("current_code_folders", default={})
 # 삭제/이동은 이 요청의 사용자 원문에 명시적인 확인 문구가 있어야만 실행한다.
 current_code_question: ContextVar[str] = ContextVar("current_code_question", default="")
 
@@ -30,6 +32,11 @@ IGNORE_DIRS = {
     "egg-info", ".tox", ".mypy_cache",
 }
 
+FOLDER_ID_PROPERTY = {
+    "type": "string",
+    "description": "작업할 프로젝트 소스 폴더 ID. 시스템 프롬프트의 [프로젝트 소스 폴더] 목록에서 선택해야 한다.",
+}
+
 
 def _safe_path(folder: str, rel: str) -> Path | None:
     """폴더 밖으로 나가지 않도록 경로 검증."""
@@ -38,6 +45,13 @@ def _safe_path(folder: str, rel: str) -> Path | None:
     if not target.is_relative_to(base):
         return None
     return target
+
+
+def _resolve_folder(folder_id: str) -> tuple[str | None, str | None]:
+    folder = current_code_folders.get().get(folder_id)
+    if not folder:
+        return None, f"[오류] 허용되지 않았거나 누락된 folder_id입니다: {folder_id}"
+    return folder, None
 
 
 def _confirmation_received(action: str, *paths: str) -> bool:
@@ -62,10 +76,10 @@ def _run_command(command: list[str], folder: str, timeout: int = 60) -> str:
     return f"{prefix}: {' '.join(command)}\n{output or '(출력 없음)'}"
 
 
-async def _list_directory(path: str = ".", max_depth: int = 3) -> str:
-    folder = current_code_folder.get()
-    if not folder:
-        return "[오류] 코드 폴더가 설정되지 않았습니다."
+async def _list_directory(folder_id: str, path: str = ".", max_depth: int = 3) -> str:
+    folder, error = _resolve_folder(folder_id)
+    if error:
+        return error
 
     target = _safe_path(folder, path)
     if not target or not target.is_dir():
@@ -108,10 +122,10 @@ async def _list_directory(path: str = ".", max_depth: int = 3) -> str:
     return "\n".join(lines[:500])
 
 
-async def _read_file(path: str, offset: int = 0, limit: int = 1200) -> str:
-    folder = current_code_folder.get()
-    if not folder:
-        return "[오류] 코드 폴더가 설정되지 않았습니다."
+async def _read_file(folder_id: str, path: str, offset: int = 0, limit: int = 1200) -> str:
+    folder, error = _resolve_folder(folder_id)
+    if error:
+        return error
 
     target = _safe_path(folder, path)
     if not target or not target.is_file():
@@ -201,10 +215,10 @@ def _try_indent_correction(
     return content, actual_old, corrected_new
 
 
-async def _edit_file(path: str, old_string: str, new_string: str) -> str:
-    folder = current_code_folder.get()
-    if not folder:
-        return "[오류] 코드 폴더가 설정되지 않았습니다."
+async def _edit_file(folder_id: str, path: str, old_string: str, new_string: str) -> str:
+    folder, error = _resolve_folder(folder_id)
+    if error:
+        return error
 
     target = _safe_path(folder, path)
     if not target or not target.is_file():
@@ -255,10 +269,10 @@ async def _edit_file(path: str, old_string: str, new_string: str) -> str:
     return f"✅ {path} 수정 완료 (1곳 변경)"
 
 
-async def _create_file(path: str, content: str) -> str:
-    folder = current_code_folder.get()
-    if not folder:
-        return "[오류] 코드 폴더가 설정되지 않았습니다."
+async def _create_file(folder_id: str, path: str, content: str) -> str:
+    folder, error = _resolve_folder(folder_id)
+    if error:
+        return error
 
     target = _safe_path(folder, path)
     if not target:
@@ -273,10 +287,10 @@ async def _create_file(path: str, content: str) -> str:
     return f"✅ {path} 생성 완료 ({len(content.split(chr(10)))}줄)"
 
 
-async def _grep_search(pattern: str, path: str = ".", include: str = "") -> str:
-    folder = current_code_folder.get()
-    if not folder:
-        return "[오류] 코드 폴더가 설정되지 않았습니다."
+async def _grep_search(folder_id: str, pattern: str, path: str = ".", include: str = "") -> str:
+    folder, error = _resolve_folder(folder_id)
+    if error:
+        return error
 
     target = _safe_path(folder, path)
     if not target or not target.exists():
@@ -321,11 +335,11 @@ async def _grep_search(pattern: str, path: str = ".", include: str = "") -> str:
     return header + "\n" + "\n".join(cleaned)
 
 
-async def _run_project_check(check: str) -> str:
+async def _run_project_check(folder_id: str, check: str) -> str:
     """test/lint/typecheck/build만 허용한다. 임의 shell command는 실행하지 않는다."""
-    folder = current_code_folder.get()
-    if not folder:
-        return "[오류] 코드 폴더가 설정되지 않았습니다."
+    folder, error = _resolve_folder(folder_id)
+    if error:
+        return error
     package_json = Path(folder) / "package.json"
     if not package_json.is_file():
         python_commands = {
@@ -350,27 +364,27 @@ async def _run_project_check(check: str) -> str:
     return _run_command(["npm", "run", script_name], folder)
 
 
-async def _git_status() -> str:
-    folder = current_code_folder.get()
-    if not folder:
-        return "[오류] 코드 폴더가 설정되지 않았습니다."
+async def _git_status(folder_id: str) -> str:
+    folder, error = _resolve_folder(folder_id)
+    if error:
+        return error
     return _run_command(["git", "status", "--short", "--branch"], folder, timeout=15)
 
 
-async def _git_diff(path: str = "") -> str:
-    folder = current_code_folder.get()
-    if not folder:
-        return "[오류] 코드 폴더가 설정되지 않았습니다."
+async def _git_diff(folder_id: str, path: str = "") -> str:
+    folder, error = _resolve_folder(folder_id)
+    if error:
+        return error
     command = ["git", "diff", "--stat", "--", path] if path else ["git", "diff", "--stat"]
     stat = _run_command(command, folder, timeout=15)
     detail_command = ["git", "diff", "--", path] if path else ["git", "diff"]
     return stat + "\n\n" + _run_command(detail_command, folder, timeout=15)
 
 
-async def _move_file(source: str, destination: str) -> str:
-    folder = current_code_folder.get()
-    if not folder:
-        return "[오류] 코드 폴더가 설정되지 않았습니다."
+async def _move_file(folder_id: str, source: str, destination: str) -> str:
+    folder, error = _resolve_folder(folder_id)
+    if error:
+        return error
     if not _confirmation_received("MOVE", source, destination):
         return f"[확인 필요] 파일 이동은 되돌리기 어려울 수 있습니다. 사용자에게 다음 문구를 입력해 달라고 요청하세요: MOVE {source} -> {destination}"
     src, dest = _safe_path(folder, source), _safe_path(folder, destination)
@@ -386,10 +400,10 @@ async def _move_file(source: str, destination: str) -> str:
     return f"✅ 파일 이동 완료: {source} → {destination}"
 
 
-async def _delete_file(path: str) -> str:
-    folder = current_code_folder.get()
-    if not folder:
-        return "[오류] 코드 폴더가 설정되지 않았습니다."
+async def _delete_file(folder_id: str, path: str) -> str:
+    folder, error = _resolve_folder(folder_id)
+    if error:
+        return error
     if not _confirmation_received("DELETE", path):
         return f"[확인 필요] 삭제는 복구할 수 없습니다. 사용자에게 다음 문구를 입력해 달라고 요청하세요: DELETE {path}"
     target = _safe_path(folder, path)
@@ -412,6 +426,7 @@ def register_code_tools():
         parameters={
             "type": "object",
             "properties": {
+                "folder_id": FOLDER_ID_PROPERTY,
                 "path": {
                     "type": "string",
                     "description": "조회할 디렉토리 상대경로 (기본: '.' = 루트)",
@@ -422,7 +437,7 @@ def register_code_tools():
                     "description": "탐색 깊이 (기본: 3)",
                     "default": 3,
                 },
-            },
+            }, "required": ["folder_id"],
         },
         handler=_list_directory,
         server_type="code_tools",
@@ -434,6 +449,7 @@ def register_code_tools():
         parameters={
             "type": "object",
             "properties": {
+                "folder_id": FOLDER_ID_PROPERTY,
                 "path": {
                     "type": "string",
                     "description": "읽을 파일의 상대경로",
@@ -449,7 +465,7 @@ def register_code_tools():
                     "default": 1200,
                 },
             },
-            "required": ["path"],
+            "required": ["folder_id", "path"],
         },
         handler=_read_file,
         server_type="code_tools",
@@ -461,6 +477,7 @@ def register_code_tools():
         parameters={
             "type": "object",
             "properties": {
+                "folder_id": FOLDER_ID_PROPERTY,
                 "path": {
                     "type": "string",
                     "description": "수정할 파일의 상대경로",
@@ -474,7 +491,7 @@ def register_code_tools():
                     "description": "교체할 새 문자열",
                 },
             },
-            "required": ["path", "old_string", "new_string"],
+            "required": ["folder_id", "path", "old_string", "new_string"],
         },
         handler=_edit_file,
         server_type="code_tools",
@@ -486,6 +503,7 @@ def register_code_tools():
         parameters={
             "type": "object",
             "properties": {
+                "folder_id": FOLDER_ID_PROPERTY,
                 "path": {
                     "type": "string",
                     "description": "생성할 파일의 상대경로",
@@ -495,7 +513,7 @@ def register_code_tools():
                     "description": "파일 내용",
                 },
             },
-            "required": ["path", "content"],
+            "required": ["folder_id", "path", "content"],
         },
         handler=_create_file,
         server_type="code_tools",
@@ -507,6 +525,7 @@ def register_code_tools():
         parameters={
             "type": "object",
             "properties": {
+                "folder_id": FOLDER_ID_PROPERTY,
                 "pattern": {
                     "type": "string",
                     "description": "검색할 텍스트 또는 정규식 패턴",
@@ -522,7 +541,7 @@ def register_code_tools():
                     "default": "",
                 },
             },
-            "required": ["pattern"],
+            "required": ["folder_id", "pattern"],
         },
         handler=_grep_search,
         server_type="code_tools",
@@ -531,35 +550,35 @@ def register_code_tools():
     mcp_manager.register_internal_tool(
         name="code_run_check",
         description="프로젝트의 등록된 검사(test, lint, typecheck, build)를 실행한다. 임의 명령 실행은 지원하지 않는다.",
-        parameters={"type": "object", "properties": {"check": {"type": "string", "enum": ["test", "lint", "typecheck", "build"]}}, "required": ["check"]},
+        parameters={"type": "object", "properties": {"folder_id": FOLDER_ID_PROPERTY, "check": {"type": "string", "enum": ["test", "lint", "typecheck", "build"]}}, "required": ["folder_id", "check"]},
         handler=_run_project_check,
         server_type="code_tools",
     )
     mcp_manager.register_internal_tool(
         name="code_git_status",
         description="현재 코드 폴더의 git branch와 변경 파일 상태를 조회한다.",
-        parameters={"type": "object", "properties": {}},
+        parameters={"type": "object", "properties": {"folder_id": FOLDER_ID_PROPERTY}, "required": ["folder_id"]},
         handler=_git_status,
         server_type="code_tools",
     )
     mcp_manager.register_internal_tool(
         name="code_git_diff",
         description="현재 코드 폴더의 git diff를 조회한다. path를 주면 해당 파일만 조회한다.",
-        parameters={"type": "object", "properties": {"path": {"type": "string", "description": "상대 파일 경로(선택)"}}},
+        parameters={"type": "object", "properties": {"folder_id": FOLDER_ID_PROPERTY, "path": {"type": "string", "description": "상대 파일 경로(선택)"}}, "required": ["folder_id"]},
         handler=_git_diff,
         server_type="code_tools",
     )
     mcp_manager.register_internal_tool(
         name="code_move_file",
         description="파일을 이동한다. 사용자 메시지에 정확히 'MOVE 원본 -> 대상' 확인 문구가 있어야 실행된다. 기존 파일 덮어쓰기는 하지 않는다.",
-        parameters={"type": "object", "properties": {"source": {"type": "string"}, "destination": {"type": "string"}}, "required": ["source", "destination"]},
+        parameters={"type": "object", "properties": {"folder_id": FOLDER_ID_PROPERTY, "source": {"type": "string"}, "destination": {"type": "string"}}, "required": ["folder_id", "source", "destination"]},
         handler=_move_file,
         server_type="code_tools",
     )
     mcp_manager.register_internal_tool(
         name="code_delete_file",
         description="파일을 삭제한다. 사용자 메시지에 정확히 'DELETE 상대경로' 확인 문구가 있어야 실행된다.",
-        parameters={"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]},
+        parameters={"type": "object", "properties": {"folder_id": FOLDER_ID_PROPERTY, "path": {"type": "string"}}, "required": ["folder_id", "path"]},
         handler=_delete_file,
         server_type="code_tools",
     )

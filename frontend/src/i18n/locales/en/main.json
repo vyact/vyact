@@ -426,6 +426,8 @@
     "responseInProgress": "Generating response",
     "projects": "Projects",
     "projectFolderPathPrompt": "Enter the project folder path:",
+    "projectEdit": "Edit project",
+    "projectCreate": {"title": "Create project", "close": "Close", "namePlaceholder": "Project name", "chooseColor": "Choose project color", "sourceFolders": "Source folders", "addFolders": "Add folders Vyact can read and edit", "removeFolder": "Remove {{path}}", "cancel": "Cancel", "create": "Create project", "creating": "Creating…"},
     "deleteAllConfirm": "Delete all conversation history?",
     "deleteProject": "Delete project",
     "deleteProjectConfirm": "Delete '{{name}}' and all conversations linked to it?",
