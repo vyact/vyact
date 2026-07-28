@@ -1,8 +1,8 @@
-import {memo, useEffect, useLayoutEffect, useRef, useState} from 'react';
+import {memo, type ReactNode, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {renderAsync as renderDocx} from 'docx-preview';
 import {createPortal} from 'react-dom';
 import {useTranslation} from 'react-i18next';
-import {Archive, CheckCircle2, ChevronDown, ChevronLeft, ChevronUp, CircleAlert, Clock3, Download, FileText, FolderInput, Forward, Inbox, LoaderCircle, Mail, MessageSquarePlus, MoreVertical, Paperclip, PenLine, Plus, RefreshCw, Reply, Send, Settings, ShoppingBag, Sparkles, Star, Tag, Trash2, TriangleAlert, X} from 'lucide-react';
+import {Archive, CheckCircle2, ChevronDown, ChevronLeft, ChevronUp, CircleAlert, Clock3, Download, FileText, FolderInput, Forward, Inbox, LoaderCircle, Mail, MessageSquarePlus, MoreVertical, Paperclip, PenLine, Plus, RefreshCw, Reply, Save, Send, Settings, ShoppingBag, Sparkles, Star, Tag, Trash2, TriangleAlert, X} from 'lucide-react';
 import {api} from '../../services/api';
 import {ApiError} from '../../utils/apiError';
 import {copyToClipboard} from '../../utils/helpers';
@@ -389,7 +389,7 @@ const EmailBody = memo(function EmailBody({mail, fillAvailableSpace = false}: {
     />;
 });
 
-function MailRecipientField({name, label, recipients, suggestions, onChange, invalidEmailMessage, removeLabel}: {
+function MailRecipientField({name, label, recipients, suggestions, onChange, invalidEmailMessage, removeLabel, trailingAction}: {
     name: 'to' | 'cc' | 'bcc';
     label: string;
     recipients: string[];
@@ -397,6 +397,7 @@ function MailRecipientField({name, label, recipients, suggestions, onChange, inv
     onChange: (recipients: string[]) => void;
     invalidEmailMessage: string;
     removeLabel: (email: string) => string;
+    trailingAction?: ReactNode;
 }) {
     const [draft, setDraft] = useState('');
     const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
@@ -479,6 +480,7 @@ function MailRecipientField({name, label, recipients, suggestions, onChange, inv
                     addRecipients(pastedValue);
                 }}
             />
+            {trailingAction}
             {isSuggestionsOpen && filteredSuggestions.length > 0 && <div className="gwp-recipient-suggestions" role="listbox">
                 {filteredSuggestions.map((suggestion, index) => <button
                     key={suggestion.email}
@@ -524,6 +526,8 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
     const [replyTo, setReplyTo] = useState<MailDetail | null>(null);
     const [attachments, setAttachments] = useState<ComposeAttachment[]>([]);
     const [composeFields, setComposeFields] = useState<ComposeFields>({to: [], cc: [], bcc: [], subject: '', body: ''});
+    const [isCcVisible, setIsCcVisible] = useState(false);
+    const [isBccVisible, setIsBccVisible] = useState(false);
     const [recipientSuggestions, setRecipientSuggestions] = useState<RecentMailRecipient[]>([]);
     const [isSending, setIsSending] = useState(false);
     const [isTrashingMails, setIsTrashingMails] = useState(false);
@@ -561,6 +565,8 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
     const [draggedMacroId, setDraggedMacroId] = useState<string | null>(null);
     const [dragOverMacroId, setDragOverMacroId] = useState<string | null>(null);
     const [selectedMacroId, setSelectedMacroId] = useState('');
+    const [isMacroMenuOpen, setIsMacroMenuOpen] = useState(false);
+    const macroMenuRef = useRef<HTMLDivElement>(null);
     const attachmentRef = useRef<HTMLInputElement>(null);
     const composeAttachmentDetailsRef = useRef<HTMLDetailsElement>(null);
     const mailOpenRequestIdRef = useRef(0);
@@ -580,6 +586,14 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
             window.removeEventListener(EMAIL_BODY_INTERACTION_EVENT, closeAttachMenu);
         };
     }, [mailAttachMenuId]);
+    useEffect(() => {
+        if (!isMacroMenuOpen) return;
+        const closeMacroMenu = (event: PointerEvent) => {
+            if (!macroMenuRef.current?.contains(event.target as Node)) setIsMacroMenuOpen(false);
+        };
+        document.addEventListener('pointerdown', closeMacroMenu);
+        return () => document.removeEventListener('pointerdown', closeMacroMenu);
+    }, [isMacroMenuOpen]);
     const [aiGenerating, setAiGenerating] = useState(false);
     const [aiGeneratedText, setAiGeneratedText] = useState<string | null>(null);
     const [originalMailForAi, setOriginalMailForAi] = useState<MailDetail | null>(null);
@@ -716,6 +730,9 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
         setReplyTo(null);
         setAttachments([]);
         setComposeFields({to: [], cc: [], bcc: [], subject: '', body: ''});
+        setIsCcVisible(false);
+        setIsBccVisible(false);
+        setIsMacroMenuOpen(false);
         if (attachmentRef.current) attachmentRef.current.value = '';
         setAiPromptOpen(false);
         setAiPrompt('');
@@ -1037,6 +1054,9 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
         setOriginalMailForAi(null);
         setOriginalHtmlBody('');
         setComposeFields({to: [], cc: [], bcc: [], subject: '', body: addMailSignature('', signatureEnabled ? mailSignature : '')});
+        setIsCcVisible(false);
+        setIsBccVisible(false);
+        setIsMacroMenuOpen(false);
         setCompose(true);
     };
     const openSignatureSettings = () => {
@@ -1187,6 +1207,9 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
             subject: `Re: ${mail.subject.replace(/^re:\s*/i, '') || ''}`,
             body: addMailSignature('', signatureEnabled ? mailSignature : ''),
         });
+        setIsCcVisible(ccEmails.length > 0);
+        setIsBccVisible(false);
+        setIsMacroMenuOpen(false);
         setCompose(true);
     };
     const replyToSelectedMail = () => {
@@ -1205,6 +1228,9 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
             subject: `Fwd: ${mail.subject.replace(/^fwd:\s*/i, '') || ''}`,
             body: addMailSignature('', signatureEnabled ? mailSignature : ''),
         });
+        setIsCcVisible(false);
+        setIsBccVisible(false);
+        setIsMacroMenuOpen(false);
         setCompose(true);
     };
     const forwardSelectedMail = () => {
@@ -1856,7 +1882,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
             loadingValue="delete"
             loadingLabel={t('googleWorkspace.processing')}
         />}
-        {compose && <div className="gwp-compose-backdrop"><form className="gwp-compose" noValidate onSubmit={event => { event.preventDefault(); send(event.currentTarget); }}><header><h3>{replyTo ? t('googleWorkspace.reply') : t('googleWorkspace.compose')}</h3><button type="button" aria-label={t('googleWorkspace.close')} onClick={closeCompose} disabled={aiGenerating || isSending}><X aria-hidden="true" size={24}/></button></header><div className="gwp-recipient-fields"><MailRecipientField name="to" label={t('googleWorkspace.recipient')} recipients={composeFields.to} suggestions={recipientSuggestions} onChange={to => setComposeFields(current => ({...current, to}))} invalidEmailMessage={t('googleWorkspace.invalidEmail')} removeLabel={email => t('googleWorkspace.removeRecipient', {email})}/><MailRecipientField name="cc" label={t('googleWorkspace.cc')} recipients={composeFields.cc} suggestions={recipientSuggestions} onChange={cc => setComposeFields(current => ({...current, cc}))} invalidEmailMessage={t('googleWorkspace.invalidEmail')} removeLabel={email => t('googleWorkspace.removeRecipient', {email})}/><MailRecipientField name="bcc" label={t('googleWorkspace.bcc')} recipients={composeFields.bcc} suggestions={recipientSuggestions} onChange={bcc => setComposeFields(current => ({...current, bcc}))} invalidEmailMessage={t('googleWorkspace.invalidEmail')} removeLabel={email => t('googleWorkspace.removeRecipient', {email})}/></div><input name="subject" value={composeFields.subject} onChange={event => setComposeFields(current => ({...current, subject: event.target.value}))} placeholder={t('googleWorkspace.subject')}/>{replyTo && <input type="hidden" name="reply_to" value={replyTo.id}/>}<EmailEditor ref={emailEditorRef} content={composeFields.body} onChange={body => setComposeFields(current => ({...current, body}))} placeholder={t('googleWorkspace.message')} lockMailSignature originalHtmlSrcDoc={originalHtmlBody ? createEmailDocument(removeDarkModeStyles(originalHtmlBody)) : undefined}/>
+        {compose && <div className="gwp-compose-backdrop"><form className="gwp-compose" noValidate onSubmit={event => { event.preventDefault(); send(event.currentTarget); }}><header><h3>{replyTo ? t('googleWorkspace.reply') : t('googleWorkspace.compose')}</h3><button type="button" aria-label={t('googleWorkspace.close')} onClick={closeCompose} disabled={aiGenerating || isSending}><X aria-hidden="true" size={24}/></button></header><div className="gwp-recipient-fields"><MailRecipientField name="to" label={t('googleWorkspace.recipient')} recipients={composeFields.to} suggestions={recipientSuggestions} onChange={to => setComposeFields(current => ({...current, to}))} invalidEmailMessage={t('googleWorkspace.invalidEmail')} removeLabel={email => t('googleWorkspace.removeRecipient', {email})} trailingAction={<span className="gwp-recipient-actions">{!isCcVisible && <button type="button" onClick={() => setIsCcVisible(true)}>{t('googleWorkspace.cc')}</button>}{!isBccVisible && <button type="button" onClick={() => setIsBccVisible(true)}>{t('googleWorkspace.bcc')}</button>}</span>}/>{isCcVisible && <MailRecipientField name="cc" label={t('googleWorkspace.cc')} recipients={composeFields.cc} suggestions={recipientSuggestions} onChange={cc => setComposeFields(current => ({...current, cc}))} invalidEmailMessage={t('googleWorkspace.invalidEmail')} removeLabel={email => t('googleWorkspace.removeRecipient', {email})}/>} {isBccVisible && <MailRecipientField name="bcc" label={t('googleWorkspace.bcc')} recipients={composeFields.bcc} suggestions={recipientSuggestions} onChange={bcc => setComposeFields(current => ({...current, bcc}))} invalidEmailMessage={t('googleWorkspace.invalidEmail')} removeLabel={email => t('googleWorkspace.removeRecipient', {email})}/>}</div><div className="gwp-compose-subject-row"><input name="subject" value={composeFields.subject} onChange={event => setComposeFields(current => ({...current, subject: event.target.value}))} placeholder={t('googleWorkspace.subject')}/><div className="gwp-compose-macro-menu" ref={macroMenuRef}><button type="button" className="gwp-macro-menu-button" aria-label={t('googleWorkspace.applyMacro')} title={t('googleWorkspace.applyMacro')} aria-expanded={isMacroMenuOpen} onClick={() => setIsMacroMenuOpen(open => !open)}><FileText aria-hidden="true" size={17}/></button>{isMacroMenuOpen && <div className="gwp-macro-menu-popover">{mailMacroOptions.length > 0 && <CustomSelect className="gwp-mail-macro-select" value={selectedMacroId} options={mailMacroOptions} placeholder={t('googleWorkspace.applyMacro')} onChange={value => { applyMailMacro(value); setIsMacroMenuOpen(false); }}/>}<button type="button" className="gwp-save-macro-button" aria-label={t('googleWorkspace.saveMacro')} title={t('googleWorkspace.saveMacro')} onClick={openMacroSaveDialog} disabled={!canSaveCurrentMailBody || isSending}><Save aria-hidden="true" size={17}/></button></div>}</div></div>{replyTo && <input type="hidden" name="reply_to" value={replyTo.id}/>}<EmailEditor ref={emailEditorRef} content={composeFields.body} onChange={body => setComposeFields(current => ({...current, body}))} placeholder={t('googleWorkspace.message')} lockMailSignature originalHtmlSrcDoc={originalHtmlBody ? createEmailDocument(removeDarkModeStyles(originalHtmlBody)) : undefined}/>
 <div className="gwp-compose-macro">{mailMacroOptions.length > 0 && <CustomSelect className="gwp-mail-macro-select" value={selectedMacroId} options={mailMacroOptions} placeholder={t('googleWorkspace.applyMacro')} onChange={applyMailMacro}/>}<button type="button" className="gwp-save-macro-button" onClick={openMacroSaveDialog} disabled={!canSaveCurrentMailBody || isSending}>{t('googleWorkspace.saveMacro')}</button></div><div className="gwp-compose-actions"><div className="gwp-compose-attachment-actions"><button className="gwp-attachment-button" type="button" onClick={() => attachmentRef.current?.click()} disabled={isSending}><Paperclip aria-hidden="true" size={16}/><span>{t('googleWorkspace.attach')}</span></button><input ref={attachmentRef} type="file" multiple hidden disabled={isSending} onChange={event => addAttachments(event.target.files)}/>{attachments.length > 0 && <details ref={composeAttachmentDetailsRef} className="gwp-compose-attachment-summary"><summary aria-label={t('googleWorkspace.attachments', {count: attachments.length})}><Paperclip aria-hidden="true" size={16}/><strong>{attachments.length}</strong><small className={attachmentLimitExceeded ? 'gwp-attachment-limit-exceeded' : ''}>{formatAttachmentSize(attachmentBytes)} / 25 MB</small><ChevronUp className="gwp-attachment-summary-chevron" aria-hidden="true" size={15}/></summary><div className="gwp-compose-attachment-popover">{attachments.map((file, index) => { const name = isForwardedAttachment(file) ? file.filename : file.name; const key = isForwardedAttachment(file) ? `fwd-${file.id}-${index}` : `${file.name}-${file.lastModified}-${index}`; return <div className="gwp-compose-attachment-row" key={key}><span>{name}</span><small>{formatAttachmentSize(file.size)}</small><button type="button" aria-label={t('googleWorkspace.removeAttachment', {name})} onClick={() => removeAttachment(index)} disabled={isSending}>×</button></div>; })}</div></details>}</div><div className="gwp-compose-send-group"><button type="button" className="gwp-compose-cancel" onClick={closeCompose} disabled={aiGenerating || isSending}>{t('googleWorkspace.cancel')}</button><div className="gwp-ai-write-wrap">{aiPromptOpen && <div className="gwp-ai-prompt-popover">{aiGeneratedText && <div className="gwp-ai-generated-preview"><div className="gwp-ai-generated-preview-header"><strong>{t('googleWorkspace.aiGeneratedPreview')}</strong><button type="button" className="gwp-ai-prompt-insert" onClick={insertAiGeneratedBody} disabled={aiGenerating || isSending}>{t('googleWorkspace.aiInsert')}</button></div><pre>{aiGeneratedText}</pre></div>}<textarea value={aiPrompt} onChange={e => setAiPrompt(e.target.value)} placeholder={getAiPlaceholder()} rows={3} disabled={aiGenerating || isSending} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); generateAiBody(); } }}/><div className="gwp-ai-prompt-actions"><button type="button" className="gwp-ai-prompt-cancel" onClick={() => { setAiPromptOpen(false); setAiGeneratedText(null); }} disabled={aiGenerating || isSending}>{t('googleWorkspace.close')}</button><button type="button" className="gwp-primary gwp-ai-prompt-generate" disabled={!aiPrompt.trim() || aiGenerating || isSending} onClick={generateAiBody}>{aiGenerating ? <><LoaderCircle aria-hidden="true" size={14} className="gwp-spin"/>{t('googleWorkspace.aiGenerating')}</> : t('googleWorkspace.aiGenerate')}</button></div></div>}<button type="button" className="gwp-ai-write-btn" onClick={() => { if (!aiPromptOpen && !aiPrompt) { const subject = originalMailForAi?.subject || ''; if (composeMode === 'reply') setAiPrompt(t('googleWorkspace.aiDefaultPromptReply', {subject})); else if (composeMode === 'forward') setAiPrompt(t('googleWorkspace.aiDefaultPromptForward', {subject})); } setAiPromptOpen(o => !o); }} disabled={aiGenerating || isSending}><Sparkles aria-hidden="true" size={15}/><span>{t('googleWorkspace.aiWrite')}</span></button></div><button className="gwp-primary gwp-compose-send" type="submit" disabled={!canSendMail || isSending || aiGenerating}>{isSending ? <LoaderCircle aria-hidden="true" size={16} className="gwp-spin"/> : t('googleWorkspace.send')}</button></div></div></form></div>}
         {isMacroSaveOpen && <ModalOverlay className="gwp-label-modal-overlay" onClose={() => setIsMacroSaveOpen(false)} closeOnBackdrop>
             <form className="gwp-label-modal" onSubmit={event => { event.preventDefault(); void saveCurrentBodyAsMacro(); }}>

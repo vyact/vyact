@@ -545,7 +545,14 @@
 .gwp-compose input, .gwp-compose textarea { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 7px; padding: 10px; }
 .gwp-compose textarea { flex: 1; min-height: 180px; resize: none; }
 .gwp-compose .email-editor-wrap { flex: 1; min-height: 0; }
-.gwp-compose-macro { display: flex; flex: 0 0 auto; align-items: center; gap: 8px; margin-top: 8px; }
+.gwp-compose-macro { display: none; }
+.gwp-compose-subject-row { display: flex; min-width: 0; flex: 0 0 auto; align-items: center; gap: 8px; }
+.gwp-compose-subject-row > input { min-width: 0; flex: 1; }
+.gwp-compose-macro-menu { position: relative; flex: 0 0 auto; }
+.gwp-macro-menu-button { display: inline-grid; width: 36px; height: 36px; place-items: center; padding: 0 !important; border: 1px solid var(--border) !important; border-radius: 7px !important; background: var(--bg) !important; color: var(--text-secondary) !important; }
+.gwp-macro-menu-button:hover, .gwp-macro-menu-button[aria-expanded="true"] { border-color: var(--accent) !important; color: var(--accent) !important; }
+.gwp-macro-menu-popover { position: absolute; top: calc(100% + 7px); right: 0; z-index: 8; display: flex; width: min(300px, calc(100vw - 72px)); align-items: center; gap: 8px; padding: 8px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); box-shadow: 0 12px 30px rgba(0, 0, 0, .35); }
+.gwp-macro-menu-popover .gwp-mail-macro-select { min-width: 0; flex: 1; }
 .gwp-mail-macro-select { width: min(260px, 100%); }
 .gwp-mail-macro-select .custom-select-trigger { min-height: 36px; box-sizing: border-box; border-color: var(--border); border-radius: 7px; background: var(--bg); color: var(--text-secondary); font-size: 13px; font-weight: 600; }
 .gwp-mail-macro-select .custom-select-trigger:hover, .gwp-mail-macro-select .custom-select-trigger.open { border-color: var(--accent); background: var(--bg); color: var(--accent); }
@@ -553,7 +560,7 @@
 .gwp-mail-macro-select .custom-select-dropdown { background: var(--surface); box-shadow: 0 10px 24px rgba(0, 0, 0, .3); }
 .gwp-mail-macro-select .custom-select-item:hover { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); color: var(--accent); }
 .gwp-mail-macro-select .custom-select-item.selected { background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
-.gwp-save-macro-button { min-height: 36px; padding: 7px 12px !important; border: 1px solid var(--border) !important; border-radius: 7px !important; background: var(--bg) !important; color: var(--text-secondary) !important; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.gwp-save-macro-button { display: inline-grid; width: 36px; min-width: 36px; min-height: 36px; place-items: center; padding: 0 !important; border: 1px solid var(--border) !important; border-radius: 7px !important; background: var(--bg) !important; color: var(--text-secondary) !important; font-size: 13px; font-weight: 600; white-space: nowrap; }
 .gwp-save-macro-button:hover:not(:disabled) { border-color: var(--accent) !important; color: var(--accent) !important; }
 .gwp-save-macro-button:disabled { cursor: not-allowed; opacity: .45; }
 .gwp-recipient-fields { position: relative; z-index: 6; display: grid; border: 1px solid var(--border); border-radius: 7px; background: var(--bg); overflow: visible; }
@@ -562,6 +569,11 @@
 .gwp-recipient-label { display: flex; align-items: center; padding: 0 10px; color: var(--muted); font-size: 12px; font-weight: 650; }
 .gwp-recipient-input-shell { position: relative; display: flex; min-width: 0; align-items: center; flex-wrap: wrap; gap: 6px; padding: 5px 8px 5px 0; cursor: text; }
 .gwp-compose .gwp-recipient-input-shell > input { min-width: 140px; flex: 1; padding: 4px 2px; border: 0; outline: 0; background: transparent; box-shadow: none; }
+.gwp-recipient-actions { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 10px; }
+.gwp-recipient-actions button { padding: 3px 0 !important; border: 0 !important; background: transparent !important; color: var(--muted) !important; font-size: 12px; font-weight: 650; white-space: nowrap; }
+.gwp-recipient-actions button:hover { color: var(--accent) !important; }
+.gwp-bcc-toggle { flex: 0 0 auto; padding: 3px 6px !important; border: 0 !important; background: transparent !important; color: var(--muted) !important; font-size: 12px; font-weight: 650; white-space: nowrap; }
+.gwp-bcc-toggle:hover { color: var(--accent) !important; }
 .gwp-recipient-chip { display: inline-flex; min-width: 0; max-width: 100%; align-items: center; gap: 3px; padding: 4px 4px 4px 9px; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border)); border-radius: 999px; background: color-mix(in srgb, var(--accent) 12%, var(--surface)); color: var(--text); }
 .gwp-recipient-chip > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .gwp-recipient-chip button { display: grid; width: 20px; height: 20px; place-items: center; padding: 0; border-radius: 50%; color: var(--muted); font-size: 18px; line-height: 1; }
