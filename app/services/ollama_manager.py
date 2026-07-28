@@ -86,6 +86,22 @@ async def unload_model(model: str) -> bool:
         return False
 
 
+async def unload_embed_model(model: str = "bge-m3") -> bool:
+    """임베딩 전용 모델을 메모리에서 즉시 해제한다."""
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                f"{OLLAMA_URL}/api/embeddings",
+                json={"model": model, "prompt": "", "keep_alive": 0},
+            )
+            response.raise_for_status()
+            logger.info("[Ollama] Embedding model unloaded: %s", model)
+            return True
+    except Exception as error:
+        logger.warning("[Ollama] Embedding model unload failed (%s): %s", model, error)
+        return False
+
+
 async def switch_model(old_model: str | None, new_model: str) -> bool:
     """기존 모델 언로드 후 새 모델 로드."""
     if old_model and old_model != new_model:

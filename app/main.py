@@ -334,13 +334,15 @@ async def lifespan(app: FastAPI):
 
     try:
         from routers.deps import load_config_async
-        from services.ollama_manager import unload_model
+        from services.ollama_manager import unload_embed_model, unload_model
         cfg = await load_config_async()
         if cfg.get("type", "ollama") == "ollama" and cfg.get("model"):
             model = cfg["model"]
             logger.info("Unloading Ollama model: %s", model)
             await unload_model(model)
             logger.info("Ollama model unloaded: %s", model)
+        logger.info("Unloading Ollama embedding model: bge-m3")
+        await unload_embed_model("bge-m3")
     except Exception as e:
         logger.warning("Ollama model unload failed: %s", e)
 
@@ -446,13 +448,15 @@ async def shutdown():
     """Electron 앱 종료 시 호출 - ollama 언로드 후 서버 프로세스 종료"""
     try:
         from routers.deps import load_config_async
-        from services.ollama_manager import unload_model
+        from services.ollama_manager import unload_embed_model, unload_model
         cfg = await load_config_async()
         if cfg.get("type", "ollama") == "ollama" and cfg.get("model"):
             model = cfg["model"]
             logger.info("[shutdown] Unloading Ollama model: %s", model)
             await unload_model(model)
             logger.info("[shutdown] Ollama model unloaded: %s", model)
+        logger.info("[shutdown] Unloading Ollama embedding model: bge-m3")
+        await unload_embed_model("bge-m3")
     except Exception as e:
         logger.error("[shutdown] Unload failed: %s", e)
     finally:
