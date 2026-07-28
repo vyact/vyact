@@ -50,6 +50,16 @@ const ModalOverlay = ({
             role="dialog"
             aria-modal="true"
             onClick={handleClick}
+            onDragEnter={event => event.stopPropagation()}
+            onDragOver={event => {
+                event.preventDefault();
+                event.stopPropagation();
+            }}
+            onDragLeave={event => event.stopPropagation()}
+            onDrop={event => {
+                event.preventDefault();
+                event.stopPropagation();
+            }}
             style={{...style, background: `rgba(0, 0, 0, ${dimOpacity})`, backdropFilter: blur ? `blur(${blur}px)` : 'none'}}
         >
             {children}

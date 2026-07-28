@@ -517,7 +517,9 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
             <button type="button" onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()} title={t('googleWorkspace.editorToolbar.undo')}><Undo2 size={15}/></button>
             <button type="button" onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()} title={t('googleWorkspace.editorToolbar.redo')}><Redo2 size={15}/></button>
         </div>
-        <div className="email-editor-body" ref={editorBodyRef}>
+        <div className="email-editor-body" ref={editorBodyRef} onClick={event => {
+            if (event.target === event.currentTarget) focusBodyEnd();
+        }}>
             <div className="email-editor-content" style={isOriginalExpanded && expandedBodyHeight !== null ? {minHeight: expandedBodyHeight} : undefined} onClick={event => {
                 if (event.target === event.currentTarget || event.target === editor.view.dom) focusBodyEnd();
             }}>

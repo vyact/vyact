@@ -50,8 +50,8 @@
 .gwp-nav button .gwp-label-unread-count { flex: 0 0 auto; margin-left: auto; font-size: 12px; font-weight: 750; }
 .gwp-nav .active { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
 .gwp-compose-controls { display: flex; align-items: center; gap: 7px; margin: 4px 0 12px; }
-.gwp-nav .gwp-compose-controls .gwp-compose-button { width: fit-content; margin: 0; padding: 10px 14px !important; background: var(--accent) !important; color: white !important; font-weight: 700; }
-.gwp-nav .gwp-compose-controls .gwp-signature-settings-button { display: grid; width: 40px; height: 40px; flex: 0 0 40px; place-items: center; padding: 0; border: 1px solid var(--border); border-radius: 9px; background: var(--surface2); color: var(--muted); }
+.gwp-nav .gwp-compose-controls .gwp-compose-button { width: auto; flex: 1; justify-content: center; margin: 0; padding: 10px 14px !important; background: var(--accent) !important; color: white !important; font-weight: 700; }
+.gwp-nav .gwp-compose-controls .gwp-signature-settings-button { display: grid; width: 40px; height: 40px; flex: 0 0 40px; margin-left: auto; place-items: center; padding: 0; border: 1px solid var(--border); border-radius: 9px; background: var(--surface2); color: var(--muted); }
 .gwp-nav .gwp-compose-controls .gwp-signature-settings-button:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface2)); color: var(--accent); }
 .gwp-mail-nav-separator { height: 1px; margin: 7px 8px; background: var(--border); }
 .gwp-more-labels { margin: 4px 0; color: var(--text) !important; }
@@ -545,6 +545,14 @@
 .gwp-compose input, .gwp-compose textarea { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 7px; padding: 10px; }
 .gwp-compose textarea { flex: 1; min-height: 180px; resize: none; }
 .gwp-compose .email-editor-wrap { flex: 1; min-height: 0; }
+.gwp-compose-macro { flex: 0 0 auto; margin-top: 8px; }
+.gwp-mail-macro-select { width: min(260px, 100%); }
+.gwp-mail-macro-select .custom-select-trigger { min-height: 36px; box-sizing: border-box; border-color: var(--border); border-radius: 7px; background: var(--bg); color: var(--text-secondary); font-size: 13px; font-weight: 600; }
+.gwp-mail-macro-select .custom-select-trigger:hover, .gwp-mail-macro-select .custom-select-trigger.open { border-color: var(--accent); background: var(--bg); color: var(--accent); }
+.gwp-mail-macro-select .custom-select-trigger:hover .custom-select-arrow, .gwp-mail-macro-select .custom-select-trigger.open .custom-select-arrow { color: var(--accent); }
+.gwp-mail-macro-select .custom-select-dropdown { background: var(--surface); box-shadow: 0 10px 24px rgba(0, 0, 0, .3); }
+.gwp-mail-macro-select .custom-select-item:hover { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); color: var(--accent); }
+.gwp-mail-macro-select .custom-select-item.selected { background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
 .gwp-recipient-fields { position: relative; z-index: 6; display: grid; border: 1px solid var(--border); border-radius: 7px; background: var(--bg); overflow: visible; }
 .gwp-recipient-field { display: grid; grid-template-columns: 72px minmax(0, 1fr); align-items: stretch; min-height: 42px; }
 .gwp-recipient-field + .gwp-recipient-field { border-top: 1px solid var(--border); }
@@ -613,6 +621,11 @@
 .gwp-signature-settings-nav button { display: flex; width: 100%; align-items: center; gap: 8px; padding: 10px 14px; border: 0; border-radius: 8px; background: transparent; color: var(--text-secondary); font-size: 14px; font-weight: 500; cursor: pointer; }
 .gwp-signature-settings-nav button.active { background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); }
 .gwp-signature-settings-content { flex: 1; min-width: 0; padding: 20px 24px; overflow: auto; }
+.gwp-signature-settings-content[data-section="signature"] .gwp-mail-macros-section { display: none; }
+.gwp-signature-settings-content[data-section="macros"] .gwp-signature-settings-intro,
+.gwp-signature-settings-content[data-section="macros"] .gwp-signature-preview-section { display: none; }
+.gwp-signature-settings-content[data-section="macros"] .gwp-mail-macros-section { margin-top: 0; padding-top: 0; border-top: 0; }
+.gwp-signature-settings-content[data-section="macros"] { display: flex; flex-direction: column; }
 .gwp-signature-settings-intro, .gwp-signature-preview-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
 .gwp-signature-settings-intro h4, .gwp-signature-preview-heading h5 { margin: 0; color: var(--text); font-size: 14px; font-weight: 600; }
 .gwp-signature-settings-intro p, .gwp-signature-preview-heading p { margin: 2px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
@@ -652,6 +665,27 @@
 .gwp-signature-template-select .custom-select-trigger { box-sizing: border-box; height: 42px; padding: 0 12px; border-radius: 8px; background: var(--surface); font-size: 14px; font-weight: 650; }
 .gwp-signature-template-select .custom-select-dropdown { top: auto; bottom: calc(100% + 5px); background: var(--surface); }
 .gwp-signature-template-select .custom-select-item { min-height: 42px; padding: 8px 10px; }
+.gwp-mail-macros-section { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+.gwp-mail-macros-section:not(.editing) { display: flex; flex: 1; min-height: 0; flex-direction: column; }
+.gwp-mail-macros-header { flex: 0 0 auto; }
+.gwp-mail-macro-list { display: grid; flex: 1; min-height: 0; align-content: start; gap: 8px; margin-top: 14px; overflow-y: auto; }
+.gwp-mail-macro-list > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); cursor: grab; }
+.gwp-mail-macro-list > div.dragging { opacity: .45; cursor: grabbing; }
+.gwp-mail-macro-list > div.drag-over { border-color: var(--accent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 42%, transparent); }
+.gwp-mail-macro-list strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gwp-mail-macro-list span { display: flex; flex: 0 0 auto; gap: 6px; }
+.gwp-mail-macro-list button { padding: 5px 8px; border: 0; border-radius: 5px; background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 12px; }
+.gwp-mail-macro-list button:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
+.gwp-mail-macro-list p { margin: 14px 0 0; color: var(--muted); font-size: 13px; }
+.gwp-mail-macros-section.editing { display: flex; flex: 1; min-height: 0; flex-direction: column; }
+.gwp-mail-macro-editor { display: grid; gap: 10px; margin-top: 14px; }
+.gwp-mail-macros-section.editing .gwp-mail-macro-editor { flex: 1; min-height: 0; grid-template-rows: auto minmax(0, 1fr) auto; margin-top: 0; }
+.gwp-mail-macro-editor > input { height: 40px; padding: 0 11px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); color: var(--text); font: inherit; }
+.gwp-mail-macro-editor .email-editor-wrap { height: 220px; }
+.gwp-mail-macros-section.editing .gwp-mail-macro-editor .email-editor-wrap { height: auto; min-height: 0; }
+.gwp-mail-macro-editor footer { display: flex; justify-content: flex-end; gap: 8px; }
+.gwp-mail-macros-section.editing .gwp-mail-macro-editor footer { padding-top: 2px; }
+.gwp-mail-macro-editor footer button { height: 36px; padding: 0 13px !important; border-radius: 7px; cursor: pointer; }
 .gwp-signature-template-option { display: flex; align-items: center; gap: 9px; }
 .gwp-signature-template-option > i { display: block; width: 24px; height: 18px; border: 1px solid var(--border); border-radius: 4px; background: linear-gradient(90deg, #d9d9d9 0 34%, #cc785c 34% 39%, var(--surface2) 39%); }
 .gwp-signature-template-option > i.is-modern { background: linear-gradient(90deg, #d9d9d9 0 32%, #5b89b8 32% 38%, var(--surface2) 38%); }
