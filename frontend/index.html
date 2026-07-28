@@ -5,9 +5,19 @@
     <link rel="icon" type="image/png" href="/vyact-icon.png"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Vyact</title>
+    <style>
+        html, body, #root { margin: 0; width: 100%; height: 100%; background: #171717; }
+        #app-splash { height: 100%; display: grid; place-items: center; color: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        .app-splash__content { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+        .app-splash__mark { display: grid; place-items: center; width: 60px; height: 60px; border: 1px solid #3d3d3d; border-radius: 18px; background: #252525; font-size: 32px; font-weight: 800; }
+        .app-splash__name { font-size: 20px; font-weight: 700; letter-spacing: .16em; }
+        .app-splash__loader { width: 128px; height: 3px; overflow: hidden; border-radius: 99px; background: #303030; }
+        .app-splash__loader::after { content: ""; display: block; width: 45%; height: 100%; border-radius: inherit; background: #7c6cff; animation: app-splash-loading 1.25s ease-in-out infinite; }
+        @keyframes app-splash-loading { from { transform: translateX(-100%); } to { transform: translateX(325%); } }
+    </style>
 </head>
 <body>
-<div id="root"></div>
+<div id="root"><div id="app-splash" role="status" aria-label="Vyact"><div class="app-splash__content"><div class="app-splash__mark">V</div><div class="app-splash__name">VYACT</div><div class="app-splash__loader"></div></div></div></div>
 <script type="module" src="/src/main.tsx"></script>
 </body>
 </html>
