@@ -134,8 +134,8 @@ Vyact is built around local models, so install [Ollama](https://ollama.com/downl
 
 | Platform | Required | Optional |
 | --- | --- | --- |
-| macOS (Apple Silicon) | Ollama, Python 3.11 or 3.12 | Docker Desktop |
-| Windows | Ollama, Python 3.11 or 3.12 | Docker Desktop |
+| macOS (Apple Silicon) | Ollama, Python 3.11 or 3.12, [Homebrew](https://brew.sh/) | Docker Desktop |
+| Windows | Ollama, Python 3.11 or 3.12 | Docker Desktop, [Chocolatey](https://chocolatey.org/) |
 
 > **Windows:** When installing Python 3.11 or 3.12, select **“Add python.exe to PATH”**.
 

@@ -19,6 +19,7 @@ interface ConfirmModalProps {
     loading?: boolean;
     loadingValue?: string;
     loadingLabel?: string;
+    loadingProgress?: number;
 }
 
 /**
@@ -27,7 +28,7 @@ interface ConfirmModalProps {
  */
 const ConfirmModal: React.FC<ConfirmModalProps> = ({
     title, description, options, onSelect, onClose, actionLayout = 'vertical',
-    loading = false, loadingValue, loadingLabel,
+    loading = false, loadingValue, loadingLabel, loadingProgress,
 }) => {
     return (
         <ModalOverlay className="confirm-modal-overlay" onClose={loading ? () => undefined : onClose}
@@ -35,6 +36,11 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
             <div className="confirm-modal" onClick={e => e.stopPropagation()}>
                 <div className="confirm-modal-title">{title}</div>
                 {description && <div className="confirm-modal-desc">{description}</div>}
+                {loading && loadingProgress !== undefined && <div className="confirm-modal-progress">
+                    <div className="confirm-modal-progress-track">
+                        <div className="confirm-modal-progress-value" style={{width: `${loadingProgress}%`}}/>
+                    </div>
+                </div>}
                 <div className={`confirm-modal-actions ${actionLayout}`}>
                     {options.map(opt => {
                         const isLoadingOption = loading && opt.value === loadingValue;

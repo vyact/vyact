@@ -16,6 +16,18 @@ OLLAMA_URL = "http://localhost:11434"
 logger = logging.getLogger(__name__)
 
 
+async def get_loaded_model_names() -> set[str]:
+    """Ollama 메모리에 실제로 유지 중인 모델 이름을 반환한다."""
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(f"{OLLAMA_URL}/api/ps")
+            response.raise_for_status()
+        return {str(model.get("name", "")) for model in response.json().get("models", [])}
+    except Exception as error:
+        logger.warning("[Ollama] loaded model check failed: %s", error)
+        return set()
+
+
 def _get_keep_alive() -> int:
     """런타임 설정에서 ollama_keep_alive 값을 가져온다. 미설정 시 상수 기본값."""
     runtime = get_runtime_settings()

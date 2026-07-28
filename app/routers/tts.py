@@ -5,12 +5,16 @@ Kokoro-82M 기반 로컬 TTS. 지원 언어만 처리하고,
 """
 import io
 import asyncio
+import json
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from logger import get_logger
+from config import INSTALL_DIR, VENV_DIR, get_log_file
+from routers.deps import APP_DIR
+from services.installer import Installer
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -18,6 +22,7 @@ router = APIRouter()
 # ── Kokoro 싱글톤 ──────────────────────────────────
 _pipelines: dict = {}  # lang_code -> KPipeline
 _lock = asyncio.Lock()
+_unidic_install_lock = asyncio.Lock()
 
 # lang_code 매핑 (detectLang 결과 -> Kokoro lang_code)
 KOKORO_LANG_MAP: dict[str, str] = {
@@ -44,6 +49,35 @@ KOKORO_DEFAULT_VOICES: dict[str, str] = {
     "p": "pf_dora",
     "z": "zf_xiaobei",
 }
+
+
+def _unidic_installer() -> Installer:
+    return Installer(INSTALL_DIR, APP_DIR, VENV_DIR, get_log_file("event"))
+
+
+@router.get("/tts/japanese-dictionary/status")
+async def japanese_dictionary_status():
+    return {"installed": await _unidic_installer().is_unidic_dictionary_installed()}
+
+
+@router.post("/tts/japanese-dictionary/install")
+async def install_japanese_dictionary():
+    async def stream_installation():
+        async with _unidic_install_lock:
+            installer = _unidic_installer()
+            installed = False
+            async for progress, message in installer.install_unidic_dictionary_with_progress():
+                installed = progress == 100 and await installer.is_unidic_dictionary_installed()
+                payload = json.dumps({"progress": progress, "message": message, "installed": installed})
+                yield f"data: {payload}\n\n"
+            if not installed:
+                yield f"data: {json.dumps({'progress': 0, 'installed': False, 'error': True})}\n\n"
+
+    return StreamingResponse(
+        stream_installation(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 def _get_pipeline(lang_code: str):

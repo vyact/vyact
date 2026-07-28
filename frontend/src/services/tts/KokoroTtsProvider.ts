@@ -1,6 +1,7 @@
 import type { ITtsProvider } from './ITtsProvider';
 import { WebSpeechTtsProvider } from './WebSpeechTtsProvider';
 import { loadTtsSettings } from './ttsSettings';
+import { ensureJapaneseTtsDictionary, JapaneseTtsDictionaryCancelledError } from './japaneseTtsDictionary';
 
 /**
  * Kokoro TTS Provider
@@ -77,6 +78,7 @@ export class KokoroTtsProvider implements ITtsProvider {
                 try {
                     await this.speakWithKokoro(seg.text, seg.lang, playbackId);
                 } catch (e) {
+                    if (e instanceof JapaneseTtsDictionaryCancelledError) break;
                     console.warn('Kokoro 합성 실패, Web Speech 폴백:', e);
                     await this.speakWithWebSpeech(seg.text, seg.lang, playbackId);
                 }
@@ -120,6 +122,10 @@ export class KokoroTtsProvider implements ITtsProvider {
 
     private async speakWithKokoro(text: string, lang: string, playbackId: number): Promise<void> {
         this.speaking = true;
+        if (lang.startsWith('ja') && !await ensureJapaneseTtsDictionary()) {
+            throw new JapaneseTtsDictionaryCancelledError();
+        }
+        if (playbackId !== this.playbackId) return;
         const settings = loadTtsSettings();
 
         const res = await fetch('/api/tts/kokoro/synthesize', {

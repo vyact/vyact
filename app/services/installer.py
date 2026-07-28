@@ -4,6 +4,7 @@ installer.py - RAG Agent 설치 관리 서비스
 import asyncio
 import os
 import platform
+import re
 import shutil
 import sys
 import traceback
@@ -256,18 +257,24 @@ class Installer:
             return self.venv_dir / "Scripts" / "python.exe"
         return self.venv_dir / "bin" / "python"
 
+    async def is_unidic_dictionary_installed(self) -> bool:
+        python_exe = self._get_venv_python()
+        if not python_exe.exists():
+            return False
+        check_script = (
+            "from pathlib import Path\n"
+            "import unidic\n"
+            "raise SystemExit(not Path(unidic.DICDIR, 'mecabrc').is_file())\n"
+        )
+        return await self._run([str(python_exe), "-c", check_script]) == 0
+
     async def install_unidic_dictionary(self) -> tuple[bool, str]:
         """Kokoro 일본어 G2P에 필요한 UniDic 사전 데이터를 설치한다."""
         python_exe = self._get_venv_python()
         if not python_exe.exists():
             return False, f"venv Python not found ({python_exe})"
 
-        check_script = (
-            "from pathlib import Path\n"
-            "import unidic\n"
-            "raise SystemExit(not Path(unidic.DICDIR, 'mecabrc').is_file())\n"
-        )
-        if await self._run([str(python_exe), "-c", check_script]) == 0:
+        if await self.is_unidic_dictionary_installed():
             logger.info("UniDic dictionary already installed")
             return True, "UniDic dictionary already installed"
 
@@ -276,12 +283,55 @@ class Installer:
             logger.warning("UniDic dictionary installation failed")
             return False, "UniDic dictionary installation failed"
 
-        if await self._run([str(python_exe), "-c", check_script]) != 0:
+        if not await self.is_unidic_dictionary_installed():
             logger.warning("UniDic dictionary was downloaded but is incomplete")
             return False, "UniDic dictionary installation incomplete"
 
         logger.info("UniDic dictionary installed")
         return True, "UniDic dictionary installed"
+
+    async def install_unidic_dictionary_with_progress(self) -> AsyncGenerator[tuple[int, str], None]:
+        """UniDic 다운로드 출력에서 진행률을 추출해 전달한다."""
+        python_exe = self._get_venv_python()
+        if not python_exe.exists():
+            yield 0, f"venv Python not found ({python_exe})"
+            return
+
+        if await self.is_unidic_dictionary_installed():
+            yield 100, "UniDic dictionary already installed"
+            return
+
+        logger.info("=== UniDic dictionary installation started ===")
+        proc = await asyncio.create_subprocess_exec(
+            str(python_exe), "-m", "unidic", "download",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+            cwd=str(self.install_dir),
+        )
+        progress = 0
+        pending = ""
+        with open(self.log_file, "a") as log_file:
+            while chunk := await proc.stdout.read(1024):
+                text = chunk.decode("utf-8", errors="replace")
+                log_file.write(text)
+                pending = (pending + text)[-4096:]
+                percentages = re.findall(r"(?:^|\s)(\d{1,3})%", pending)
+                if percentages:
+                    progress = max(progress, min(int(percentages[-1]), 99))
+                yield progress, text.strip()
+
+        await proc.wait()
+        if proc.returncode != 0:
+            logger.warning("UniDic dictionary installation failed")
+            yield progress, "UniDic dictionary installation failed"
+            return
+        if not await self.is_unidic_dictionary_installed():
+            logger.warning("UniDic dictionary was downloaded but is incomplete")
+            yield progress, "UniDic dictionary installation incomplete"
+            return
+
+        logger.info("UniDic dictionary installed")
+        yield 100, "UniDic dictionary installed"
 
     async def install_playwright(self) -> tuple[bool, str]:
         """Playwright 브라우저 설치"""
@@ -342,8 +392,20 @@ class Installer:
                 return False, "espeak-ng installation failed"
 
         elif system == "Windows":
-            logger.info("Windows: manual espeak-ng install required")
-            return True, "espeak-ng: manual install required on Windows"
+            if shutil.which("choco"):
+                cmd = ["choco", "install", "espeak-ng", "-y", "--no-progress"]
+            elif shutil.which("winget"):
+                cmd = [
+                    "winget", "install", "--id", "eSpeak-NG.eSpeak-NG", "--exact",
+                    "--silent", "--accept-package-agreements", "--accept-source-agreements",
+                ]
+            else:
+                logger.warning("Neither Chocolatey nor winget is available for espeak-ng installation")
+                return False, "espeak-ng installer unavailable"
+
+            if await self._run(cmd, log=True) != 0:
+                logger.warning("espeak-ng installation failed on Windows")
+                return False, "espeak-ng installation failed"
 
         return True, "espeak-ng installed"
 

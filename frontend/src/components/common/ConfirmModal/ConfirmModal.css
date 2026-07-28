@@ -32,6 +32,24 @@
     white-space: pre-line;
 }
 
+.confirm-modal-progress {
+    margin: -4px 0 16px;
+}
+
+.confirm-modal-progress-track {
+    height: 6px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--modal-inset);
+}
+
+.confirm-modal-progress-value {
+    height: 100%;
+    border-radius: inherit;
+    background: var(--accent);
+    transition: width 0.2s ease;
+}
+
 .confirm-modal-actions {
     display: flex;
     flex-direction: column;

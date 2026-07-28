@@ -35,6 +35,12 @@ def start_background_services_after_setup() -> None:
     start_notification_polling()
 
 
+def is_japanese_system_language() -> bool:
+    """Electron이 전달한 시스템 언어를 기준으로 일본어용 초기 리소스를 결정한다."""
+    language = os.environ.get("VYACT_SYSTEM_LANGUAGE", "").lower().split("-", 1)[0]
+    return language == "ja"
+
+
 def clean_ollama_progress_line(raw_output: bytes) -> str:
     """Ollama의 터미널 제어문자를 제거하고 가장 최근 진행 상태만 반환한다."""
     decoded = raw_output.decode("utf-8", errors="replace")
@@ -208,10 +214,13 @@ async def install(req: ModelSelectRequest):
             # 확인·설치하게 되므로, 준비 완료 상태만 사용자에게 알린다.
             yield sse("Python packages ready", "ok", 88)
 
-            yield sse("Installing UniDic dictionary for Japanese TTS...", "info", 88)
-            ok, msg = await installer.install_unidic_dictionary()
-            # 일본어 TTS만 제한되므로 전체 설치는 계속 진행한다.
-            yield sse(msg, "ok" if ok else "log", 89)
+            if is_japanese_system_language():
+                yield sse("Installing UniDic dictionary for Japanese TTS...", "info", 88)
+                ok, msg = await installer.install_unidic_dictionary()
+                # 일본어 TTS만 제한되므로 전체 설치는 계속 진행한다.
+                yield sse(msg, "ok" if ok else "log", 89)
+            else:
+                yield sse("Japanese TTS dictionary will download when first needed", "ok", 89)
 
             yield sse("Installing Playwright browser...", "info", 88)
             ok, msg = await installer.install_playwright()
@@ -256,6 +265,27 @@ async def install(req: ModelSelectRequest):
                 logger.info("[setup] config ES 저장 및 초기 데이터 로드 완료")
             except Exception as e:
                 logger.warning("[setup] 초기화 실패: %s", e)
+
+            # 첫 대화 지연을 막기 위해 다운로드한 모델을 설치 완료 전에 실제 메모리에 올린다.
+            yield sse(f"Loading {model} into memory...", "info", 96)
+            try:
+                from services.ollama_manager import get_loaded_model_names, load_embed_model, load_model
+
+                chat_ready = await load_model(model)
+                embed_ready = await load_embed_model("bge-m3")
+                loaded_models = await get_loaded_model_names()
+                model_loaded = any(name.split(":", 1)[0] == model.split(":", 1)[0] for name in loaded_models)
+                embed_loaded = any(name.split(":", 1)[0] == "bge-m3" for name in loaded_models)
+
+                if chat_ready and model_loaded:
+                    yield sse(f"{model} ready in memory", "ok", 98)
+                else:
+                    yield sse(f"{model} could not stay loaded (memory may be insufficient)", "log", 98)
+                if not (embed_ready and embed_loaded):
+                    yield sse("bge-m3 could not stay loaded (memory may be insufficient)", "log", 98)
+            except Exception as e:
+                logger.warning("[setup] Ollama model warm-up failed: %s", e)
+                yield sse(f"Model warm-up failed: {e}", "log", 98)
 
             await installer.finalize_setup(SETUP_DONE)
             start_background_services_after_setup()

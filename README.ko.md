@@ -134,8 +134,8 @@ Vyact는 로컬 모델을 중심으로 동작하므로, 처음 앱을 열기 전
 
 | 플랫폼 | 필수 | 선택 |
 | --- | --- | --- |
-| macOS (Apple Silicon) | Ollama, Python 3.11 또는 3.12 | Docker Desktop |
-| Windows | Ollama, Python 3.11 또는 3.12 | Docker Desktop |
+| macOS (Apple Silicon) | Ollama, Python 3.11 또는 3.12, [Homebrew](https://brew.sh/) | Docker Desktop |
+| Windows | Ollama, Python 3.11 또는 3.12 | Docker Desktop, [Chocolatey](https://chocolatey.org/) |
 
 > **Windows:** Python 3.11 또는 3.12 설치 시 **“Add python.exe to PATH”** 옵션을 선택하세요.
 

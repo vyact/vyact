@@ -207,7 +207,7 @@ async def lifespan(app: FastAPI):
     if SETUP_DONE.exists():
         try:
             from routers.deps import load_config_async
-            from services.ollama_manager import load_model
+            from services.ollama_manager import get_loaded_model_names, load_model
             cfg = await load_config_async()
             if cfg.get("type", "ollama") == "ollama" and cfg.get("model"):
                 model = cfg["model"]
@@ -215,6 +215,11 @@ async def lifespan(app: FastAPI):
                 ok = await load_model(model)
                 if ok:
                     logger.info("Ollama model loaded: %s", model)
+                    loaded_models = await get_loaded_model_names()
+                    if any(name.split(":", 1)[0] == model.split(":", 1)[0] for name in loaded_models):
+                        logger.info("Ollama model verified in memory: %s", model)
+                    else:
+                        logger.warning("Ollama model was not retained in memory: %s", model)
                     try:
                         from routers.deps import load_ui_language_async
                         from services.llm.warmup import schedule_ollama_prefix_warmup
@@ -228,8 +233,13 @@ async def lifespan(app: FastAPI):
             logger.warning("Ollama model load failed: %s", e)
 
         try:
-            from services.ollama_manager import load_embed_model
-            await load_embed_model("bge-m3")
+            from services.ollama_manager import get_loaded_model_names, load_embed_model
+            embed_ready = await load_embed_model("bge-m3")
+            loaded_models = await get_loaded_model_names()
+            if embed_ready and any(name.split(":", 1)[0] == "bge-m3" for name in loaded_models):
+                logger.info("Embedding model verified in memory: bge-m3")
+            else:
+                logger.warning("Embedding model was not retained in memory: bge-m3")
         except Exception as e:
             logger.warning("Embedding model load failed: %s", e)
 
