@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, Download, X } from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import './ImageViewer.css';
@@ -60,7 +61,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ images, currentIndex, onClose
         }
     };
 
-    return (
+    return createPortal(
         <div
             className="image-viewer"
             onClick={onClose}
@@ -133,7 +134,8 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ images, currentIndex, onClose
                     ))}
                 </div>
             )}
-        </div>
+        </div>,
+        document.body,
     );
 };
 
