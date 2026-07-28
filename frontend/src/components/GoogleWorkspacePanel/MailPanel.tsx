@@ -9,8 +9,6 @@ import {copyToClipboard} from '../../utils/helpers';
 import {isSupportedChatFileName} from '../../utils/fileValidation';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
 import signatureProfileCreative from '../../assets/email-signatures/profile-creative.png?inline';
-import signatureProfileModern from '../../assets/email-signatures/profile-modern.png?inline';
-import signatureProfileExecutive from '../../assets/email-signatures/profile-executive.png?inline';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import ImageViewer from '../ImageViewer/ImageViewer';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
@@ -1059,8 +1057,6 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
         const templates: Record<string, string> = {
             business: `<div data-signature-layout><img src="${signatureProfileCreative}" alt="${name}" width="112" style="width: 112px; height: 112px; object-fit: cover; border-radius: 999px; display: block;"><p><strong><span style="color: #cc785c">${name}</span></strong><br>${role}</p><p>${email}<br>${phone}<br><span style="color: #cc785c">${website}</span></p></div>`,
             compact: `<p><strong>${name}</strong> · ${role}<br>${email} · ${phone}</p>`,
-            modern: `<div data-signature-layout><img src="${signatureProfileModern}" alt="${name}" width="88" style="width: 88px; height: 112px; object-fit: cover; border-radius: 10px; display: block;"><p><strong><span style="color: #5b89b8">${name}</span></strong><br>${role}</p><p>${email}<br>${phone}</p></div>`,
-            executive: `<div data-signature-layout><img src="${signatureProfileExecutive}" alt="${name}" width="96" style="width: 96px; height: 96px; object-fit: cover; border-radius: 50%; display: block;"><p><strong><span style="color: #4c7a61">${name}</span></strong><br>${role}</p><p>${email}<br>${phone}</p></div>`,
             minimal: `<p>${greeting}</p><p><strong>${name}</strong><br>${role}<br>${email}</p>`,
             classic: `<p><strong>${name}</strong><br>${role}<br>${email} · ${phone}<br>${website}</p>`,
         };
@@ -1280,8 +1276,6 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
     ];
     const signatureTemplateOptions = [
         {value: 'business', label: t('googleWorkspace.signatureTemplateBusiness')},
-        {value: 'modern', label: t('googleWorkspace.signatureTemplateModern')},
-        {value: 'executive', label: t('googleWorkspace.signatureTemplateExecutive')},
         {value: 'compact', label: t('googleWorkspace.signatureTemplateCompact')},
         {value: 'minimal', label: t('googleWorkspace.signatureTemplateMinimal')},
         {value: 'classic', label: t('googleWorkspace.signatureTemplateClassic')},

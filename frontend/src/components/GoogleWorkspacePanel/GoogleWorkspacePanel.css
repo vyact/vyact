@@ -625,8 +625,14 @@
 .gwp-signature-edit-button:hover { border-color: var(--accent); color: var(--accent); }
 .gwp-signature-preview { margin-top: 16px; padding: 12px 16px; border: 1px solid var(--border); border-radius: 7px; background: #fff; color: #222; font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.6; overflow: auto; }
 .gwp-signature-preview [data-signature-layout] { display: flow-root; }
-.gwp-signature-preview [data-signature-layout] > [data-signature-image],
-.gwp-signature-preview [data-signature-layout] > [data-memo-image] { float: left; margin: 0 18px 0 0 !important; }
+.gwp-signature-preview [data-signature-layout] > [data-signature-image]:not([data-signature-align]),
+.gwp-signature-preview [data-signature-layout] > [data-memo-image]:not([data-signature-align]),
+.gwp-signature-preview [data-signature-layout] > [data-signature-image][data-signature-align="left"],
+.gwp-signature-preview [data-signature-layout] > [data-memo-image][data-signature-align="left"] { float: left; margin: 0 18px 0 0 !important; }
+.gwp-signature-preview [data-signature-layout] > [data-signature-image][data-signature-align="right"],
+.gwp-signature-preview [data-signature-layout] > [data-memo-image][data-signature-align="right"] { float: right; margin: 0 0 0 18px !important; }
+.gwp-signature-preview [data-signature-layout] > [data-signature-image][data-signature-align="center"],
+.gwp-signature-preview [data-signature-layout] > [data-memo-image][data-signature-align="center"] { float: none; margin: 0 auto 10px !important; }
 .gwp-signature-preview [data-signature-layout] > p { margin: 0 0 .3em; }
 .gwp-signature-preview p { margin: .3em 0; }
 .gwp-signature-preview h1 { margin: .8em 0 .4em; font-size: 1.45em; }

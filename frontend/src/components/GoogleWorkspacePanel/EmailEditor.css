@@ -181,7 +181,10 @@
     line-height: 1.6;
 }
 .email-editor-content .signature-layout { display: flow-root; }
-.email-editor-content .signature-layout > .memo-image-wrapper { float: left; margin: 0 18px 0 0 !important; }
+.email-editor-content .signature-layout > .memo-image-wrapper:not([data-signature-align]),
+.email-editor-content .signature-layout > .memo-image-wrapper[data-signature-align="left"] { float: left; margin: 0 18px 0 0 !important; }
+.email-editor-content .signature-layout > .memo-image-wrapper[data-signature-align="right"] { float: right; margin: 0 0 0 18px !important; }
+.email-editor-content .signature-layout > .memo-image-wrapper[data-signature-align="center"] { float: none; margin: 0 auto 10px !important; }
 .email-editor-content .signature-layout > p { margin: 0 0 .3em; }
 /* MemoImage node styles for email editor */
 .email-editor-content .memo-image-wrapper {

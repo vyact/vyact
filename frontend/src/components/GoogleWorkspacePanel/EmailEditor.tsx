@@ -63,6 +63,16 @@ const SignatureLayout = TiptapNode.create({
 // Reuse the memo's atom node so resizing never competes with the adjacent editable text.
 const SignatureImage = RichTextImage.extend({
     name: 'signatureImage',
+    addAttributes() {
+        return {
+            ...this.parent?.(),
+            alignment: {
+                default: 'left',
+                parseHTML: element => element.getAttribute('data-signature-align') || 'left',
+                renderHTML: attributes => ({'data-signature-align': attributes.alignment === 'left' ? null : attributes.alignment}),
+            },
+        };
+    },
     parseHTML() {
         return [
             {
@@ -73,6 +83,7 @@ const SignatureImage = RichTextImage.extend({
                     alt: element.getAttribute('alt') || '',
                     width: element.getAttribute('width'),
                     imageStyle: element.getAttribute('style'),
+                    alignment: element.getAttribute('data-signature-align') || 'left',
                 }),
             },
             {
@@ -88,6 +99,7 @@ const SignatureImage = RichTextImage.extend({
                         alt: image.getAttribute('alt') || '',
                         width: element.getAttribute('data-width'),
                         imageStyle: image.getAttribute('style'),
+                        alignment: element.getAttribute('data-signature-align') || 'left',
                     } : false;
                 },
             },
@@ -105,13 +117,19 @@ const SignatureImage = RichTextImage.extend({
                         initialHeight: element.getAttribute('data-initial-height'),
                         isExpanded: element.getAttribute('data-expanded') === 'true',
                         imageStyle: image.getAttribute('style'),
+                        alignment: element.getAttribute('data-signature-align') || 'left',
                     } : false;
                 },
             },
         ];
     },
     renderHTML({HTMLAttributes}) {
-        const {src, alt, width, height, initialWidth, initialHeight, isExpanded, imageStyle} = HTMLAttributes;
+        const {src, alt, width, height, initialWidth, initialHeight, isExpanded, imageStyle, alignment = 'left'} = HTMLAttributes;
+        const imageLayoutStyle = alignment === 'right'
+            ? 'display: block; float: right; margin: 0 0 0 18px;'
+            : alignment === 'center'
+                ? 'display: block; float: none; margin: 0 auto 10px;'
+                : 'display: block; float: left; margin: 0 18px 0 0;';
         return ['span', mergeAttributes({
             'data-signature-image': '',
             'data-width': width || null,
@@ -119,10 +137,11 @@ const SignatureImage = RichTextImage.extend({
             'data-initial-width': initialWidth || null,
             'data-initial-height': initialHeight || null,
             'data-expanded': isExpanded ? 'true' : null,
+            'data-signature-align': alignment === 'left' ? null : alignment,
             class: 'memo-image-wrapper',
             // This HTML is sent outside the app, so layout must not depend on
             // the editor stylesheet being available in the recipient's client.
-            style: `display: block; float: left; margin: 0 18px 0 0; max-width: 100%; overflow: hidden; border: 1px solid #e0e0e0; border-radius: 8px;${width ? `width: ${width}px;` : ''}`,
+            style: `${imageLayoutStyle}max-width: 100%; overflow: hidden; border: 1px solid #e0e0e0; border-radius: 8px;${width ? `width: ${width}px;` : ''}`,
         }), ['img', {
             src,
             alt,
