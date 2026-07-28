@@ -109,7 +109,7 @@ export const MemoImage = Node.create({
                 return {
                     dom: wrapper,
                     update(updatedNode) {
-                        if (updatedNode.type.name !== 'memoImage') return false;
+                        if (updatedNode.type !== currentNode.type) return false;
                         render(updatedNode);
                         return true;
                     },
@@ -185,7 +185,7 @@ export const MemoImage = Node.create({
             return {
                 dom: wrapper,
                 update(updatedNode) {
-                    if (updatedNode.type.name !== 'memoImage') return false;
+                    if (updatedNode.type !== currentNode.type) return false;
                     currentNode = updatedNode;
                     render(updatedNode);
                     return true;

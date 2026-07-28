@@ -88,9 +88,45 @@
 .email-editor-wrap.is-signature-locked .email-editor-content .tiptap > [data-mail-signature] {
     margin-top: auto !important;
 }
+/* Reserve a practical writing area before the locked signature. */
+.email-editor-wrap.is-signature-locked .email-editor-content .tiptap > p:first-child:not([data-mail-signature]) {
+    box-sizing: border-box;
+    min-height: 250px;
+}
+/* A collapsed reply and a new message both use the remaining dialog height.
+   When the original mail is expanded, the reply block switches back to normal
+   document flow so the iframe starts below the signature. */
+.gwp-compose .email-editor-wrap:not(.is-original-expanded).is-signature-locked .email-editor-body {
+    display: flex;
+    flex-direction: column;
+}
+.gwp-compose .email-editor-wrap:not(.is-original-expanded).is-signature-locked .email-editor-content {
+    flex: 1;
+    min-height: 0;
+}
+.gwp-compose .email-editor-wrap:not(.is-original-expanded).is-signature-locked .email-editor-content > div,
+.gwp-compose .email-editor-wrap:not(.is-original-expanded).is-signature-locked .email-editor-content .tiptap {
+    min-height: 0;
+}
+/* Expanded replies keep the original email outside of the editable signature
+   block so it cannot overlap the signature. */
+.gwp-compose .email-editor-wrap.has-original-email.is-original-expanded.is-signature-locked .email-editor-content {
+    flex: 0 0 auto;
+    min-height: 300px;
+}
+.gwp-compose .email-editor-wrap.has-original-email.is-original-expanded.is-signature-locked .email-editor-content > div,
+.gwp-compose .email-editor-wrap.has-original-email.is-original-expanded.is-signature-locked .email-editor-content .tiptap {
+    min-height: 276px;
+}
+.gwp-compose .email-editor-wrap.has-original-email.is-signature-locked .email-editor-content .tiptap > [data-mail-signature] {
+    margin-bottom: 40px;
+}
 
 .email-editor-original { border-top: 1px solid #e0e0e0; width: 100%; box-sizing: border-box; }
 .email-editor-original iframe { display: block; width: 100%; min-width: 100%; border: none; overflow: hidden; }
+.email-editor-wrap.has-original-email .email-editor-body { position: relative; }
+.gwp-compose .email-editor-original-expand { position: absolute; left: 16px; z-index: 1; display: grid; width: 48px; min-height: 28px; place-items: center; margin: 0; padding: 0; border: 1px solid #59616b; border-radius: 14px; background: #d9dee4; color: #20252c; cursor: pointer; font-size: 16px; font-weight: 800; letter-spacing: 1px; line-height: 1; }
+.gwp-compose .email-editor-original-expand:hover { border-color: #30363e; background: #c8ced6; color: #101419; }
 
 .email-editor-content .tiptap p.is-editor-empty:first-child::before {
     content: attr(data-placeholder);
@@ -144,11 +180,9 @@
     font-size: 14px;
     line-height: 1.6;
 }
-.gwp-signature-settings .signature-layout { display: flow-root; }
-.gwp-signature-settings .email-editor-content .memo-image-wrapper { margin-right: 8px !important; }
-.gwp-signature-settings .signature-layout > .memo-image-wrapper { float: left; margin-top: 0; margin-bottom: 0; }
-.gwp-signature-settings .signature-layout > p { margin: 0 0 .3em; }
-
+.email-editor-content .signature-layout { display: flow-root; }
+.email-editor-content .signature-layout > .memo-image-wrapper { float: left; margin: 0 18px 0 0 !important; }
+.email-editor-content .signature-layout > p { margin: 0 0 .3em; }
 /* MemoImage node styles for email editor */
 .email-editor-content .memo-image-wrapper {
     display: block; max-width: min(100%, 720px); margin: 12px 0; width: fit-content;

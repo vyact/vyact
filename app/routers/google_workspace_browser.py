@@ -106,7 +106,7 @@ class MailStarRequest(BaseModel):
 
 
 class MailSignatureRequest(BaseModel):
-    signature_html: str = Field(max_length=1_000_000)
+    signature_html: str = Field(max_length=4_000_000)
     enabled: bool = True
 
 

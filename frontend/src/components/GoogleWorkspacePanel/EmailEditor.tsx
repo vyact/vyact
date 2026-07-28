@@ -3,7 +3,7 @@ import {useTranslation} from 'react-i18next';
 import {getMarkRange, mergeAttributes, Node as TiptapNode} from '@tiptap/core';
 import {useEditor, EditorContent, Editor} from '@tiptap/react';
 import {Node as ProseMirrorNode} from '@tiptap/pm/model';
-import {Plugin, TextSelection} from '@tiptap/pm/state';
+import {NodeSelection, Plugin, TextSelection} from '@tiptap/pm/state';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Link from '@tiptap/extension-link';
@@ -20,6 +20,31 @@ import './EmailEditor.css';
 const lowlight = createLowlight(common);
 const COLOR_PRESETS = ['#f5f5f5', '#cc785c', '#d88e73', '#2cba66', '#5b89b8', '#a78bfa', '#f2c94c', '#ef6461'];
 const MAIL_SIGNATURE_STYLE = 'margin-top: 24px; padding-top: 16px; border-top: 1px solid #d9d9d9; font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.6; color: #222222;';
+
+/**
+ * Repairs signatures saved while the editor used a shared memo-image marker.
+ * That version could leave an empty image wrapper before the actual image;
+ * ProseMirror then rendered the wrapper as the thin orange bar seen on edit.
+ */
+const normalizeLegacySignatureHtml = (html: string): string => {
+    if (!html || typeof DOMParser === 'undefined') return html;
+
+    const document = new DOMParser().parseFromString(html, 'text/html');
+    document.querySelectorAll<HTMLElement>('div[data-signature-layout]').forEach(layout => {
+        const imageWrappers = Array.from(layout.querySelectorAll<HTMLElement>('span[data-signature-image], span[data-memo-image]'));
+        imageWrappers.forEach(wrapper => {
+            if (!wrapper.querySelector<HTMLImageElement>('img[src]')) wrapper.remove();
+        });
+
+        const hasImage = Boolean(layout.querySelector('img[src]'));
+        const nextSibling = layout.nextElementSibling;
+        if (!hasImage && nextSibling?.matches('span[data-signature-image], span[data-memo-image]')
+            && nextSibling.querySelector<HTMLImageElement>('img[src]')) {
+            layout.prepend(nextSibling);
+        }
+    });
+    return document.body.innerHTML;
+};
 
 // Keep the photo outside the editable content while allowing the content to flow around it.
 const SignatureLayout = TiptapNode.create({
@@ -42,6 +67,7 @@ const SignatureImage = RichTextImage.extend({
         return [
             {
                 tag: 'div[data-signature-layout] > img',
+                priority: 1_000,
                 getAttrs: element => ({
                     src: element.getAttribute('src'),
                     alt: element.getAttribute('alt') || '',
@@ -50,7 +76,11 @@ const SignatureImage = RichTextImage.extend({
                 }),
             },
             {
-                tag: 'span[data-memo-image]',
+                // Older signatures used the same marker as memo attachments.
+                // Keep reading those only inside a signature layout, then write
+                // the unambiguous marker below from this point forward.
+                tag: 'div[data-signature-layout] > span[data-memo-image]',
+                priority: 1_000,
                 getAttrs: element => {
                     const image = element.querySelector('img');
                     return image ? {
@@ -61,7 +91,48 @@ const SignatureImage = RichTextImage.extend({
                     } : false;
                 },
             },
+            {
+                tag: 'span[data-signature-image]',
+                priority: 1_000,
+                getAttrs: element => {
+                    const image = element.querySelector('img');
+                    return image ? {
+                        src: image.getAttribute('src'),
+                        alt: image.getAttribute('alt') || '',
+                        width: element.getAttribute('data-width'),
+                        height: element.getAttribute('data-height'),
+                        initialWidth: element.getAttribute('data-initial-width'),
+                        initialHeight: element.getAttribute('data-initial-height'),
+                        isExpanded: element.getAttribute('data-expanded') === 'true',
+                        imageStyle: image.getAttribute('style'),
+                    } : false;
+                },
+            },
         ];
+    },
+    renderHTML({HTMLAttributes}) {
+        const {src, alt, width, height, initialWidth, initialHeight, isExpanded, imageStyle} = HTMLAttributes;
+        return ['span', mergeAttributes({
+            'data-signature-image': '',
+            'data-width': width || null,
+            'data-height': height || null,
+            'data-initial-width': initialWidth || null,
+            'data-initial-height': initialHeight || null,
+            'data-expanded': isExpanded ? 'true' : null,
+            class: 'memo-image-wrapper',
+            // This HTML is sent outside the app, so layout must not depend on
+            // the editor stylesheet being available in the recipient's client.
+            style: `display: block; float: left; margin: 0 18px 0 0; max-width: 100%; overflow: hidden; border: 1px solid #e0e0e0; border-radius: 8px;${width ? `width: ${width}px;` : ''}`,
+        }), ['img', {
+            src,
+            alt,
+            width: width || null,
+            height: height || null,
+            loading: 'lazy',
+            // Stored source styles may contain an old width/height. Apply the
+            // node's resized dimensions last so preview and editor agree.
+            style: `display: block;${imageStyle || ''}width: ${height ? 'auto' : '100%'}; max-width: 100%; height: ${height ? `${height}px` : 'auto'};`,
+        }]];
     },
 });
 
@@ -176,10 +247,13 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
     const [isLinkOpen, setIsLinkOpen] = useState(false);
     const [linkUrl, setLinkUrl] = useState('');
     const [linkText, setLinkText] = useState('');
+    const [isOriginalExpanded, setIsOriginalExpanded] = useState(false);
+    const [originalExpandTop, setOriginalExpandTop] = useState<number | null>(null);
     const colorRef = useRef<HTMLDivElement>(null);
     const linkSelectionRef = useRef({from: 0, to: 0, text: ''});
     const imageInputRef = useRef<HTMLInputElement>(null);
     const isComposingRef = useRef(false);
+    const editorBodyRef = useRef<HTMLDivElement>(null);
 
     const editor = useEditor({
         extensions: [
@@ -196,10 +270,13 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
             MemoTextAlign,
             RichTextImage,
             RichTextImageLayout,
-            ...(inlineImages ? [SignatureImage, SignatureLayout] : []),
+            // Compose mode also needs these nodes to retain the saved signature
+            // image. `inlineImages` only controls insertion from the toolbar.
+            SignatureImage,
+            SignatureLayout,
             MailSignature.configure({locked: lockMailSignature}),
         ],
-        content,
+        content: inlineImages ? normalizeLegacySignatureHtml(content) : content,
         autofocus: autoFocus ? 'end' : false,
         onUpdate: ({editor: e}) => {
             // React state updates during IME composition can cancel Korean/Japanese input.
@@ -211,7 +288,7 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
     useImperativeHandle(ref, () => ({
         getHTML: () => editor?.getHTML() || '',
         setContent: (html: string) => {
-            editor?.commands.setContent(html);
+            editor?.commands.setContent(inlineImages ? normalizeLegacySignatureHtml(html) : html);
         },
         focus: () => editor?.commands.focus(),
         editor,
@@ -226,6 +303,46 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
         return () => document.removeEventListener('mousedown', handler);
     }, []);
 
+    useEffect(() => {
+        setIsOriginalExpanded(false);
+    }, [originalHtmlSrcDoc]);
+
+    useEffect(() => {
+        if (!editor || !originalHtmlSrcDoc || isOriginalExpanded) {
+            setOriginalExpandTop(null);
+            return;
+        }
+        const updatePosition = () => {
+            const body = editorBodyRef.current;
+            const signature = editor.view.dom.querySelector<HTMLElement>('[data-mail-signature]');
+            if (!body) return;
+            const bodyBounds = body.getBoundingClientRect();
+            const anchor = signature || editor.view.dom;
+            const visibleNodes = [anchor, ...Array.from(anchor.querySelectorAll<HTMLElement>(
+                'img, p, h1, h2, h3, li, blockquote, pre, [data-signature-layout], [data-signature-image], [data-memo-image]',
+            ))];
+            const visibleBottom = visibleNodes.reduce((bottom, node) => {
+                const bounds = node.getBoundingClientRect();
+                if (bounds.width === 0 || bounds.height === 0) return bottom;
+                const marginBottom = Number.parseFloat(window.getComputedStyle(node).marginBottom) || 0;
+                return Math.max(bottom, bounds.bottom + marginBottom);
+            }, 0) || anchor.getBoundingClientRect().bottom;
+            const preferredTop = visibleBottom - bodyBounds.top + 15;
+            setOriginalExpandTop(Math.min(Math.max(8, preferredTop), Math.max(8, body.clientHeight - 36)));
+        };
+        const frame = requestAnimationFrame(updatePosition);
+        const observer = new ResizeObserver(updatePosition);
+        observer.observe(editor.view.dom);
+        if (editorBodyRef.current) observer.observe(editorBodyRef.current);
+        const images = Array.from(editor.view.dom.querySelectorAll('img'));
+        images.forEach(image => image.addEventListener('load', updatePosition));
+        return () => {
+            cancelAnimationFrame(frame);
+            observer.disconnect();
+            images.forEach(image => image.removeEventListener('load', updatePosition));
+        };
+    }, [editor, isOriginalExpanded, originalHtmlSrcDoc, content]);
+
     const handleImageUpload = useCallback(() => {
         imageInputRef.current?.click();
     }, []);
@@ -236,6 +353,17 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
         const reader = new FileReader();
         reader.onload = () => {
             if (inlineImages) {
+                const {selection} = editor.state;
+                if (selection instanceof NodeSelection && selection.node.type.name === 'signatureImage') {
+                    editor.commands.command(({tr}) => {
+                        tr.setNodeMarkup(selection.from, undefined, {
+                            ...selection.node.attrs,
+                            src: reader.result as string,
+                        });
+                        return true;
+                    });
+                    return;
+                }
                 editor.chain().focus().insertContent({
                     type: 'signatureLayout',
                     content: [
@@ -306,13 +434,19 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
     const focusBodyEnd = useCallback(() => {
         if (!editor) return;
         let signaturePosition: number | null = null;
+        let lastTextPosition: number | null = null;
         editor.state.doc.descendants((node, position) => {
+            if (node.isTextblock && node.textContent.trim()) lastTextPosition = position + node.content.size;
             if (node.type.name !== 'mailSignature') return true;
             signaturePosition = position;
             return false;
         });
         if (signaturePosition !== null) {
             editor.chain().focus().setTextSelection(Math.max(1, signaturePosition - 1)).run();
+            return;
+        }
+        if (lastTextPosition !== null) {
+            editor.chain().focus().setTextSelection(lastTextPosition).run();
             return;
         }
         editor.commands.focus('end');
@@ -322,7 +456,7 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
 
     const Separator = () => <div className="email-editor-separator"/>;
 
-    return <div className={`email-editor-wrap${lockMailSignature ? ' is-signature-locked' : ''}`}>
+    return <div className={`email-editor-wrap${lockMailSignature ? ' is-signature-locked' : ''}${originalHtmlSrcDoc ? ' has-original-email' : ''}${isOriginalExpanded ? ' is-original-expanded' : ''}`}>
         <div className="email-editor-toolbar">
             <button type="button" onClick={() => editor.chain().focus().toggleBold().run()} className={editor.isActive('bold') ? 'active' : ''} title={t('googleWorkspace.editorToolbar.bold')}><strong>B</strong></button>
             <button type="button" onClick={() => editor.chain().focus().toggleItalic().run()} className={editor.isActive('italic') ? 'active' : ''} title={t('googleWorkspace.editorToolbar.italic')}><em>I</em></button>
@@ -362,7 +496,7 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
             <button type="button" onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()} title={t('googleWorkspace.editorToolbar.undo')}><Undo2 size={15}/></button>
             <button type="button" onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()} title={t('googleWorkspace.editorToolbar.redo')}><Redo2 size={15}/></button>
         </div>
-        <div className="email-editor-body">
+        <div className="email-editor-body" ref={editorBodyRef}>
             <div className="email-editor-content" onClick={event => {
                 if (event.target === event.currentTarget || event.target === editor.view.dom) focusBodyEnd();
             }}>
@@ -375,7 +509,7 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
                     }}
                 />
             </div>
-            {originalHtmlSrcDoc && <div className="email-editor-original">
+            {originalHtmlSrcDoc && (isOriginalExpanded ? <div className="email-editor-original">
                 <iframe aria-label={t('googleWorkspace.originalEmail')} sandbox="allow-same-origin" scrolling="no" srcDoc={originalHtmlSrcDoc} onLoad={e => {
                     const iframe = e.currentTarget;
                     try {
@@ -393,7 +527,7 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
                     resize();
                     try { iframe.contentDocument?.querySelectorAll('img').forEach(img => { if (!img.complete) img.addEventListener('load', resize); }); } catch { /* The iframe is not accessible. */ }
                 }}/>
-            </div>}
+            </div> : <button type="button" className="email-editor-original-expand" style={originalExpandTop === null ? undefined : {top: originalExpandTop}} aria-label={t('googleWorkspace.originalEmail')} title={t('googleWorkspace.originalEmail')} onClick={() => setIsOriginalExpanded(true)}>•••</button>)}
         </div>
         {isLinkOpen && <ModalOverlay className="email-editor-link-overlay" onClose={() => setIsLinkOpen(false)} closeOnBackdrop>
             <section className="email-editor-link-dialog">
