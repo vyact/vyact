@@ -419,8 +419,14 @@ function startServer() {
 
     const python = VENV_PYTHON;
 
-    // ── venv 생성 ─────────────────────────
-    if (!fs.existsSync(python)) {
+    // ── venv 및 서버 필수 패키지 준비 ─────────────────────────
+    // 서버는 setup 화면을 제공하기 전부터 FastAPI/uvicorn이 필요하므로,
+    // requirements 설치는 이 단계에서 한 번만 수행한다.
+    const uvicornCheck = path.join(VENV_DIR, "lib", "python3.11", "site-packages", "uvicorn");
+    const hasUvicorn = fs.existsSync(path.join(VENV_DIR, "lib"))
+        ? fs.existsSync(uvicornCheck) || fs.existsSync(path.join(VENV_DIR, "lib", "python3.12", "site-packages", "uvicorn"))
+        : false;
+    if (!fs.existsSync(python) || !hasUvicorn) {
         log("▸ Creating virtual environment (venv)");
 
         try {

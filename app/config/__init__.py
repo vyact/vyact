@@ -2,6 +2,7 @@
 Config Package
 """
 from datetime import datetime
+import os
 from pathlib import Path
 
 from .models import DEFAULT_MODEL, RECOMMENDED_MODELS, IMAGE_MODEL_IDS
@@ -14,7 +15,9 @@ APP_NAME = "vyact"  # 앱 이름 — 디렉토리명 등에 사용
 # ─────────────────────────────
 # PATH
 # ─────────────────────────────
-INSTALL_DIR = Path.home() / f".{APP_NAME}"
+# Electron 부트스트랩과 Python 서버가 동일한 가상환경·데이터·로그를 사용해야 한다.
+# Windows Electron이 사용하는 C:\\.vyact를 설치 경로로 사용한다.
+INSTALL_DIR = Path("C:/.vyact") if os.name == "nt" else Path.home() / f".{APP_NAME}"
 VENV_DIR = INSTALL_DIR / "venv"
 SETUP_DONE = INSTALL_DIR / ".setup_done"
 # Kokoro 모델과 모든 음성 파일의 다운로드가 끝났음을 나타낸다. 이 파일이

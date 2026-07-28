@@ -98,9 +98,10 @@ IMAGE_MODEL_IDS = {
 LLM_TEMPERATURE = 0.2
 
 # Ollama context window
-# 입력(Input) + 출력(Output)을 모두 포함한 전체 컨텍스트 크기
-# Gemma 4 12B/26B MLX : 최대 256K
-LLM_NUM_CTX = 131072
+# 입력(Input) + 출력(Output)을 모두 포함한 전체 컨텍스트 크기.
+# Windows는 일반 Ollama 빌드에서 채팅 모델과 bge-m3를 함께 유지하므로,
+# 메모리 부족을 피하기 위해 더 작은 기본 컨텍스트를 사용한다.
+LLM_NUM_CTX = 65536 if IS_WINDOWS else 131072
 
 # Ollama 최대 출력 토큰
 LLM_NUM_PREDICT = 32768

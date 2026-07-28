@@ -507,6 +507,9 @@ function startServer() {
             if (fs.existsSync(reqPath)) {
                 log("▸ Installing packages from requirements.txt...");
                 execSync(`"${VENV_PYTHON}" -m pip install -r "${reqPath}" --quiet`, {stdio: "inherit"});
+                const crypto = require("crypto");
+                const hash = crypto.createHash("md5").update(fs.readFileSync(reqPath)).digest("hex");
+                fs.writeFileSync(path.join(INSTALL_DIR, ".req_hash"), hash);
                 log("✅ Packages installed");
             } else {
                 execSync(`"${VENV_PYTHON}" -m pip install fastapi uvicorn aiofiles pydantic httpx elasticsearch --quiet`, {stdio: "inherit"});
@@ -514,6 +517,28 @@ function startServer() {
             log("✅ venv setup complete");
         } catch (err) {
             log(`❌ venv creation failed: ${err.message}`);
+        }
+    } else {
+        // 앱 업데이트로 requirements.txt가 바뀐 경우에만 가상환경을 동기화한다.
+        const reqPath = path.join(serverAppDir, "requirements.txt");
+        const reqHashFile = path.join(INSTALL_DIR, ".req_hash");
+
+        if (fs.existsSync(reqPath)) {
+            const crypto = require("crypto");
+            const currentHash = crypto.createHash("md5").update(fs.readFileSync(reqPath)).digest("hex");
+            let savedHash = "";
+            try { savedHash = fs.readFileSync(reqHashFile, "utf-8").trim(); } catch {}
+
+            if (currentHash !== savedHash) {
+                log("▸ requirements.txt changed — syncing packages...");
+                try {
+                    execSync(`"${VENV_PYTHON}" -m pip install -r "${reqPath}" --quiet`, {stdio: "inherit"});
+                    fs.writeFileSync(reqHashFile, currentHash);
+                    log("✅ Package sync complete");
+                } catch (err) {
+                    log(`⚠️ Package sync failed: ${err.message}`);
+                }
+            }
         }
     }
 
@@ -790,6 +815,15 @@ ipcMain.handle("select-folder", async () => {
     });
     if (result.canceled || !result.filePaths.length) return null;
     return result.filePaths[0];
+});
+
+ipcMain.handle("select-folders", async () => {
+    const {dialog} = require("electron");
+    const result = await dialog.showOpenDialog(mainWindow, {
+        properties: ["openDirectory", "multiSelections"],
+        title: "Select folders",
+    });
+    return result.canceled ? [] : result.filePaths;
 });
 
 ipcMain.handle("screenshot", async () => {

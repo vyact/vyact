@@ -203,10 +203,10 @@ async def install(req: ModelSelectRequest):
 
             yield sse("Using installed app files", "ok", 78)
 
-            yield sse("Installing Python packages...", "info", 80)
-            ok, msg = await installer.install_python_packages()
-            if not ok: yield sse(msg, "error", 0); return
-            yield sse(msg, "ok", 88)
+            # Electron이 서버를 시작하기 전에 requirements.txt를 가상환경에 설치한다.
+            # 여기서 다시 pip을 실행하면 macOS와 Windows 모두 동일한 패키지를 두 번
+            # 확인·설치하게 되므로, 준비 완료 상태만 사용자에게 알린다.
+            yield sse("Python packages ready", "ok", 88)
 
             yield sse("Installing UniDic dictionary for Japanese TTS...", "info", 88)
             ok, msg = await installer.install_unidic_dictionary()

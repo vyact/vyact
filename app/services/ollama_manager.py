@@ -9,7 +9,7 @@ import logging
 
 import httpx
 
-from config.models import LLM_NUM_CTX, BGE_NUM_CTX, OLLAMA_KEEP_ALIVE
+from config.models import OLLAMA_KEEP_ALIVE
 from services.runtime_settings import get_runtime_settings
 
 OLLAMA_URL = "http://localhost:11434"
@@ -42,12 +42,13 @@ async def load_embed_model(model: str = "bge-m3") -> bool:
 async def load_model(model: str) -> bool:
     """모델을 메모리에 로드. 런타임 설정의 keep_alive 값 적용."""
     keep_alive = _get_keep_alive()
+    runtime = get_runtime_settings()
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
             resp = await client.post(
                 f"{OLLAMA_URL}/api/generate",
                 json={"model": model, "prompt": "", "keep_alive": keep_alive,
-                      "options": {"num_ctx": LLM_NUM_CTX, "num_predict": BGE_NUM_CTX}},
+                      "options": {"num_ctx": runtime["llm_num_ctx"], "num_predict": 0}},
             )
             resp.raise_for_status()
             logger.info(f"[Ollama] Model loaded: {model}")
