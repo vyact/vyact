@@ -81,16 +81,25 @@ async def warmup_kokoro_tts() -> bool:
     """Kokoro와 언어별 음성 파이프라인을 미리 준비한다."""
     try:
         logger.info("[startup-status] tts")
-        from routers.tts import KOKORO_DEFAULT_VOICES, KOKORO_LANG_MAP, _get_pipeline
+        from routers.tts import (
+            KOKORO_DEFAULT_VOICES,
+            KOKORO_LANG_MAP,
+            _get_pipeline,
+            _unidic_installer,
+        )
         import asyncio
         loop = asyncio.get_running_loop()
         warmup_texts = {
             "a": "Hello", "b": "Hello", "e": "Hola", "f": "Bonjour",
             "h": "नमस्ते", "i": "Ciao", "j": "こんにちは", "p": "Olá", "z": "你好",
         }
+        language_codes = list(dict.fromkeys(KOKORO_LANG_MAP.values()))
+        if not await _unidic_installer().is_unidic_dictionary_installed():
+            language_codes.remove("j")
+            logger.info("[kokoro] Japanese TTS warm-up deferred until UniDic is installed")
 
         def _warmup():
-            for lang_code in dict.fromkeys(KOKORO_LANG_MAP.values()):
+            for lang_code in language_codes:
                 pipeline = _get_pipeline(lang_code)
                 for _, _, _ in pipeline(
                     warmup_texts[lang_code],
