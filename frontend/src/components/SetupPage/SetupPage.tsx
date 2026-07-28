@@ -46,6 +46,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
     const [errorLogs, setErrorLogs] = useState<string[]>([]);
 
     const logRef = useRef<HTMLDivElement>(null);
+    const shouldFollowLogTailRef = useRef(true);
 
     const isCloud = provider !== 'ollama';
 
@@ -81,12 +82,18 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
             });
     }, []);
 
-    // 로그 추가 시 자동 스크롤
+    // 사용자가 이전 로그를 읽는 동안에는 자동 스크롤을 멈춘다.
     useEffect(() => {
-        if (logRef.current) {
+        if (logRef.current && shouldFollowLogTailRef.current) {
             logRef.current.scrollTop = logRef.current.scrollHeight;
         }
     }, [logs]);
+
+    const handleLogScroll = () => {
+        const element = logRef.current;
+        if (!element) return;
+        shouldFollowLogTailRef.current = element.scrollHeight - element.scrollTop - element.clientHeight < 8;
+    };
 
     useEffect(() => {
         if (provider === 'ollama') {
@@ -376,7 +383,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                             />
                         </div>
 
-                        <div className="progress-log" ref={logRef}>
+                        <div className="progress-log" ref={logRef} onScroll={handleLogScroll}>
                             {logs.map((log, i) => (
                                 <div key={i} className={`log-${log.type}`}>
                                     {log.message}

@@ -404,7 +404,41 @@ function checkAllDependencies() {
 }
 
 // ── 서버 시작 ─────────────────────────────
-function startServer() {
+function runCommand(command, args, options = {}) {
+    const {onOutput, ...spawnOptions} = options;
+    return new Promise((resolve, reject) => {
+        const child = spawn(command, args, {stdio: ["ignore", "pipe", "pipe"], ...spawnOptions});
+        let output = "";
+        const captureOutput = data => {
+            const text = data.toString();
+            output += text;
+            onOutput?.(text);
+        };
+        child.stdout.on("data", captureOutput);
+        child.stderr.on("data", captureOutput);
+        child.on("error", reject);
+        child.on("close", code => code === 0 ? resolve(output) : reject(new Error(output || `Command failed (${code})`)));
+    });
+}
+
+function createRequirementsProgressReporter(requirementsPath) {
+    const packageNames = fs.readFileSync(requirementsPath, "utf8")
+        .split(/\r?\n/)
+        .map(line => line.trim().replace(/\s+#.*$/, ""))
+        .filter(line => line && !line.startsWith("#") && !line.startsWith("-"))
+        .map(line => line.match(/^([A-Za-z0-9][A-Za-z0-9_.-]*)/)?.[1])
+        .filter(Boolean);
+    let currentPackage = "";
+    return output => {
+        const packageName = packageNames.find(name => new RegExp(`(?:Collecting|Requirement already satisfied:|Using cached)\\s+${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "i").test(output));
+        if (packageName && packageName !== currentPackage) {
+            currentPackage = packageName;
+            sendLoadingStatus(getStartupTranslation().pythonPackageDownloading.replace("{{package}}", packageName));
+        }
+    };
+}
+
+async function startServer() {
     log("▸ Starting server process");
 
     if (!fs.existsSync(INSTALL_DIR)) fs.mkdirSync(INSTALL_DIR, {recursive: true});
@@ -439,15 +473,16 @@ function startServer() {
             execSync(`"${pythonBin}" -m venv "${VENV_DIR}"`);
 
             log("▸ Installing packages from requirements.txt...");
+            sendLoadingStatus(getStartupTranslation().pythonPackagesInstalling);
 
             // 1. pip 자체 업그레이드 (권장)
-            execSync(`"${python}" -m pip install --upgrade pip --quiet`);
+            await runCommand(python, ["-m", "pip", "install", "--upgrade", "pip", "--quiet"]);
 
             // 2. requirements.txt 경로 설정
             const reqPath = path.join(serverAppDir, "requirements.txt");
 
             if (fs.existsSync(reqPath)) {
-                execSync(`"${python}" -m pip install -r "${reqPath}" --quiet`);
+                await runCommand(python, ["-m", "pip", "install", "-r", reqPath], {onOutput: createRequirementsProgressReporter(reqPath)});
                 // 해시 저장 (이후 변경 감지용)
                 const crypto = require("crypto");
                 const hash = crypto.createHash("md5").update(fs.readFileSync(reqPath)).digest("hex");
@@ -455,7 +490,7 @@ function startServer() {
                 log("✅ requirements.txt installed");
             } else {
                 log("⚠️ requirements.txt not found — installing base packages");
-                execSync(`"${python}" -m pip install fastapi uvicorn aiofiles pydantic httpx elasticsearch playwright bs4 --quiet`);
+                await runCommand(python, ["-m", "pip", "install", "fastapi", "uvicorn", "aiofiles", "pydantic", "httpx", "elasticsearch", "playwright", "bs4", "--quiet"]);
             }
 
             log("✅ venv setup complete");
@@ -477,7 +512,8 @@ function startServer() {
             if (currentHash !== savedHash) {
                 log("▸ requirements.txt changed — syncing packages...");
                 try {
-                    execSync(`"${python}" -m pip install -r "${reqPath}" --quiet`);
+                    sendLoadingStatus(getStartupTranslation().pythonPackagesInstalling);
+                    await runCommand(python, ["-m", "pip", "install", "-r", reqPath], {onOutput: createRequirementsProgressReporter(reqPath)});
                     fs.writeFileSync(reqHashFile, currentHash);
                     log("✅ Package sync complete");
                 } catch (err) {
@@ -767,7 +803,7 @@ if (hasSingleInstanceLock) app.whenReady().then(() => {
                 return;
             }
 
-            startServer();
+            await startServer();
             waitForServerAndLoad();
         }, 100);
     }), startupDelayMs);

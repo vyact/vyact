@@ -22,6 +22,8 @@
     "preparingModels": "Preparando los modelos de IA…",
     "preparingTts": "Preparando las funciones de voz…",
     "preparingStt": "Preparando el reconocimiento de voz…",
+    "pythonPackagesInstalling": "Instalando paquetes de Python. Puede tardar entre 5 y 10 minutos según tu red y equipo. Mantén la aplicación abierta.",
+    "pythonPackageDownloading": "Descargando paquete de Python… {{package}}",
     "llmLog": "Logs LLM",
     "llmLogDesc": "Guarda preguntas y respuestas.",
     "toolLog": "Logs de tools",

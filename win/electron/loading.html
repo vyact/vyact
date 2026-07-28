@@ -39,13 +39,16 @@
     const statusLine = document.getElementById('status-line');
     let statusTimer = null;
     const lines = [];
+    const isNearLogBottom = () => logTail.scrollHeight - logTail.scrollTop - logTail.clientHeight < 8;
+    let followLogTail = true;
+    logTail.addEventListener('scroll', () => { followLogTail = isNearLogBottom(); });
     if (isFirstRun) document.body.classList.add('first-run');
     if (isFirstRun && window.ragAPI?.onLoadingLog) {
       window.ragAPI.onLoadingLog((message) => {
         if (!message || /^=+$/.test(message.trim())) return;
         lines.push(message);
         logTail.textContent = lines.join('\n');
-        logTail.scrollTop = logTail.scrollHeight;
+        if (followLogTail) logTail.scrollTop = logTail.scrollHeight;
       });
     }
     if (window.ragAPI?.onLoadingStatus) {

@@ -22,6 +22,8 @@
     "preparingModels": "Đang chuẩn bị các mô hình AI…",
     "preparingTts": "Đang chuẩn bị các tính năng giọng nói…",
     "preparingStt": "Đang chuẩn bị nhận dạng giọng nói…",
+    "pythonPackagesInstalling": "Đang cài đặt các gói Python. Có thể mất 5–10 phút tùy thuộc vào mạng và máy tính của bạn. Vui lòng giữ ứng dụng mở.",
+    "pythonPackageDownloading": "Đang tải gói Python… {{package}}",
     "llmLog": "Lưu log LLM",
     "llmLogDesc": "Lưu câu hỏi và trả lời",
     "toolLog": "Log Tool",

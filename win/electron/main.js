@@ -217,6 +217,7 @@ function installChoco() {
         execSync(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${psCmd}"`, {
             stdio: "inherit",
             timeout: 120_000,
+            windowsHide: true,
         });
         log("✅ Chocolatey installed");
         return true;
@@ -234,6 +235,7 @@ function chocoInstall(packageName) {
             stdio: "inherit",
             env: envWithChoco(),
             timeout: 300_000,
+            windowsHide: true,
         });
         log(`✅ ${packageName} installed`);
         return true;
@@ -468,7 +470,41 @@ function checkAllDependencies() {
 }
 
 // ── 서버 시작 ─────────────────────────────────
-function startServer() {
+function runCommand(command, args, options = {}) {
+    const {onOutput, ...spawnOptions} = options;
+    return new Promise((resolve, reject) => {
+        const child = spawn(command, args, {stdio: ["ignore", "pipe", "pipe"], windowsHide: true, ...spawnOptions});
+        let output = "";
+        const captureOutput = data => {
+            const text = data.toString();
+            output += text;
+            onOutput?.(text);
+        };
+        child.stdout.on("data", captureOutput);
+        child.stderr.on("data", captureOutput);
+        child.on("error", reject);
+        child.on("close", code => code === 0 ? resolve(output) : reject(new Error(output || `Command failed (${code})`)));
+    });
+}
+
+function createRequirementsProgressReporter(requirementsPath) {
+    const packageNames = fs.readFileSync(requirementsPath, "utf8")
+        .split(/\r?\n/)
+        .map(line => line.trim().replace(/\s+#.*$/, ""))
+        .filter(line => line && !line.startsWith("#") && !line.startsWith("-"))
+        .map(line => line.match(/^([A-Za-z0-9][A-Za-z0-9_.-]*)/)?.[1])
+        .filter(Boolean);
+    let currentPackage = "";
+    return output => {
+        const packageName = packageNames.find(name => new RegExp(`(?:Collecting|Requirement already satisfied:|Using cached)\\s+${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "i").test(output));
+        if (packageName && packageName !== currentPackage) {
+            currentPackage = packageName;
+            sendLoadingStatus(getStartupTranslation().pythonPackageDownloading.replace("{{package}}", packageName));
+        }
+    };
+}
+
+async function startServer() {
     log("▸ Starting server process");
 
     if (!fs.existsSync(INSTALL_DIR)) fs.mkdirSync(INSTALL_DIR, {recursive: true});
@@ -497,22 +533,23 @@ function startServer() {
         try {
             const venvArgs = [python.cmd, ...python.args, "-m", "venv", VENV_DIR];
 
-            execSync(venvArgs.join(" "), {stdio: "inherit", env: envWithChoco()});
+            execSync(venvArgs.join(" "), {stdio: "inherit", env: envWithChoco(), windowsHide: true});
             log("✅ venv created");
 
             log("▸ Upgrading pip...");
-            execSync(`"${VENV_PYTHON}" -m pip install --upgrade pip --quiet`, {stdio: "inherit"});
+            await runCommand(VENV_PYTHON, ["-m", "pip", "install", "--upgrade", "pip", "--quiet"]);
 
             const reqPath = path.join(serverAppDir, "requirements.txt");
             if (fs.existsSync(reqPath)) {
                 log("▸ Installing packages from requirements.txt...");
-                execSync(`"${VENV_PYTHON}" -m pip install -r "${reqPath}" --quiet`, {stdio: "inherit"});
+                sendLoadingStatus(getStartupTranslation().pythonPackagesInstalling);
+                await runCommand(VENV_PYTHON, ["-m", "pip", "install", "-r", reqPath], {onOutput: createRequirementsProgressReporter(reqPath)});
                 const crypto = require("crypto");
                 const hash = crypto.createHash("md5").update(fs.readFileSync(reqPath)).digest("hex");
                 fs.writeFileSync(path.join(INSTALL_DIR, ".req_hash"), hash);
                 log("✅ Packages installed");
             } else {
-                execSync(`"${VENV_PYTHON}" -m pip install fastapi uvicorn aiofiles pydantic httpx elasticsearch --quiet`, {stdio: "inherit"});
+                await runCommand(VENV_PYTHON, ["-m", "pip", "install", "fastapi", "uvicorn", "aiofiles", "pydantic", "httpx", "elasticsearch", "--quiet"]);
             }
             log("✅ venv setup complete");
         } catch (err) {
@@ -532,7 +569,8 @@ function startServer() {
             if (currentHash !== savedHash) {
                 log("▸ requirements.txt changed — syncing packages...");
                 try {
-                    execSync(`"${VENV_PYTHON}" -m pip install -r "${reqPath}" --quiet`, {stdio: "inherit"});
+                    sendLoadingStatus(getStartupTranslation().pythonPackagesInstalling);
+                    await runCommand(VENV_PYTHON, ["-m", "pip", "install", "-r", reqPath], {onOutput: createRequirementsProgressReporter(reqPath)});
                     fs.writeFileSync(reqHashFile, currentHash);
                     log("✅ Package sync complete");
                 } catch (err) {
@@ -560,6 +598,7 @@ function startServer() {
         cwd: serverAppDir,
         env,
         stdio: ["ignore", "pipe", "pipe"],
+        windowsHide: true,
     });
 
     // 파이썬 서버는 이미 자체 FileHandler로 같은 로그 파일에 직접 기록한다.
@@ -762,7 +801,7 @@ if (hasSingleInstanceLock) app.whenReady().then(() => {
                 showElasticsearchUnavailableAndQuit();
                 return;
             }
-            startServer();
+            await startServer();
             waitForServerAndLoad();
         }, 100);
     }), startupDelayMs);
