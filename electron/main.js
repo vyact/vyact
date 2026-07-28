@@ -30,6 +30,13 @@ let mainWindow = null;
 let initialSetupView = null;
 let serverProc = null;
 
+function resizeInitialSetupView() {
+    if (!mainWindow || mainWindow.isDestroyed() || !initialSetupView || initialSetupView.webContents.isDestroyed()) return;
+
+    const {width, height} = mainWindow.getContentBounds();
+    initialSetupView.setBounds({x: 0, y: 0, width, height});
+}
+
 const hasSingleInstanceLock = app.requestSingleInstanceLock();
 if (!hasSingleInstanceLock) {
     app.quit();
@@ -807,13 +814,20 @@ async function preloadInitialSetupWindow() {
 
     // Attach only after React has painted SetupPage.  This keeps the progress
     // screen visible right up to the first fully rendered setup frame.
-    const {width, height} = mainWindow.getContentBounds();
     initialSetupView = setupView;
     mainWindow.setBrowserView(setupView);
-    setupView.setBounds({x: 0, y: 0, width, height});
-    setupView.setAutoResize({width: true, height: true});
-    mainWindow.on("enter-full-screen", () => setupView.webContents.send("window-fullscreen-change", true));
-    mainWindow.on("leave-full-screen", () => setupView.webContents.send("window-fullscreen-change", false));
+    resizeInitialSetupView();
+    // BrowserView auto-resize can briefly collapse during unmaximize on macOS.
+    // Keep its bounds in sync explicitly so loading.html cannot become visible.
+    mainWindow.on("resize", resizeInitialSetupView);
+    mainWindow.on("enter-full-screen", () => {
+        resizeInitialSetupView();
+        setupView.webContents.send("window-fullscreen-change", true);
+    });
+    mainWindow.on("leave-full-screen", () => {
+        resizeInitialSetupView();
+        setupView.webContents.send("window-fullscreen-change", false);
+    });
 }
 
 // ── 앱 생명주기 ───────────────────────────

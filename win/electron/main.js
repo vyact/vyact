@@ -33,6 +33,13 @@ let mainWindow = null;
 let initialSetupView = null;
 let serverProc = null;
 
+function resizeInitialSetupView() {
+    if (!mainWindow || mainWindow.isDestroyed() || !initialSetupView || initialSetupView.webContents.isDestroyed()) return;
+
+    const {width, height} = mainWindow.getContentBounds();
+    initialSetupView.setBounds({x: 0, y: 0, width, height});
+}
+
 const hasSingleInstanceLock = app.requestSingleInstanceLock();
 if (!hasSingleInstanceLock) {
     app.quit();
@@ -811,11 +818,12 @@ async function preloadInitialSetupWindow() {
 
     if (!mainWindow || mainWindow.isDestroyed()) return;
 
-    const {width, height} = mainWindow.getContentBounds();
     initialSetupView = setupView;
     mainWindow.setBrowserView(setupView);
-    setupView.setBounds({x: 0, y: 0, width, height});
-    setupView.setAutoResize({width: true, height: true});
+    resizeInitialSetupView();
+    // Explicit resizing prevents the child view from collapsing while the
+    // aspect-ratio command unmaximizes and resizes the native window.
+    mainWindow.on("resize", resizeInitialSetupView);
     mainWindow.on("maximize", () => setupView.webContents.send("window-maximize-change", true));
     mainWindow.on("unmaximize", () => setupView.webContents.send("window-maximize-change", false));
 }

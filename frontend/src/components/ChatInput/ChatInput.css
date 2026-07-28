@@ -202,12 +202,20 @@
     flex-shrink: 0;
 }
 
+/* The generic composer button colour is muted; the primary send action must
+   retain a high-contrast icon instead. */
+.chat-btn-row .send-btn {
+    color: #fff;
+}
+
 .send-btn:hover:not(:disabled) {
     opacity: 0.88;
 }
 
 .send-btn:disabled {
-    opacity: 0.4;
+    background: var(--surface2);
+    color: var(--muted);
+    opacity: 1;
     cursor: not-allowed;
 }
 

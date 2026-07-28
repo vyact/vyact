@@ -538,9 +538,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                 ) : (
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                          strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <circle cx="12" cy="12" r="10"/>
-                                        <line x1="12" y1="16" x2="12" y2="9"/>
-                                        <polyline points="8 12 12 7 16 12"/>
+                                        <line x1="12" y1="18" x2="12" y2="5"/>
+                                        <polyline points="6 11 12 5 18 11"/>
                                     </svg>
                                 )}
                             </button>
