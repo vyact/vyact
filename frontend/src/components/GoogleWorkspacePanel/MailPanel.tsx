@@ -547,7 +547,9 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
     const [attachmentPreview, setAttachmentPreview] = useState<{filename: string; mimeType: string; url?: string; docx?: Blob} | null>(null);
     const [sendFeedback, setSendFeedback] = useState<'success' | 'error' | null>(null);
     const [mailSignature, setMailSignature] = useState('');
+    const [signatureEnabled, setSignatureEnabled] = useState(true);
     const [signatureSettingsOpen, setSignatureSettingsOpen] = useState(false);
+    const [signatureEditing, setSignatureEditing] = useState(false);
     const [signatureDraft, setSignatureDraft] = useState('');
     const [selectedSignatureTemplate, setSelectedSignatureTemplate] = useState('');
     const attachmentRef = useRef<HTMLInputElement>(null);
@@ -580,11 +582,18 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
         let cancelled = false;
         setRecipientSuggestions(getRecentMailRecipients(accountId));
         setMailSignature('');
+        setSignatureEnabled(true);
         if (accountId) {
             void api.getGoogleMailSignature(accountId).then(result => {
-                if (!cancelled) setMailSignature(result.signature_html || '');
+                if (!cancelled) {
+                    setMailSignature(result.signature_html || '');
+                    setSignatureEnabled(result.enabled);
+                }
             }).catch(() => {
-                if (!cancelled) setMailSignature('');
+                if (!cancelled) {
+                    setMailSignature('');
+                    setSignatureEnabled(true);
+                }
             });
         }
         return () => { cancelled = true; };
@@ -735,7 +744,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
             const generated = result.body.trim();
             if (emailEditorRef.current) {
                 const htmlContent = `<p>${escapeHtml(generated).split('\n\n').join('</p><p>').split('\n').join('<br>')}</p>`;
-                emailEditorRef.current.setContent(addMailSignature(htmlContent, mailSignature));
+                emailEditorRef.current.setContent(addMailSignature(htmlContent, signatureEnabled ? mailSignature : ''));
             } else {
                 setComposeFields(current => {
                     const body = current.body;
@@ -1019,13 +1028,24 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
         setComposeMode('new');
         setOriginalMailForAi(null);
         setOriginalHtmlBody('');
-        setComposeFields({to: [], cc: [], bcc: [], subject: '', body: addMailSignature('', mailSignature)});
+        setComposeFields({to: [], cc: [], bcc: [], subject: '', body: addMailSignature('', signatureEnabled ? mailSignature : '')});
         setCompose(true);
     };
     const openSignatureSettings = () => {
         setSignatureDraft(mailSignature);
         setSelectedSignatureTemplate('');
+        setSignatureEditing(false);
         setSignatureSettingsOpen(true);
+    };
+    const toggleMailSignature = async () => {
+        const enabled = !signatureEnabled;
+        setSignatureEnabled(enabled);
+        if (!accountId) return;
+        try {
+            await api.saveGoogleMailSignature(accountId, mailSignature, enabled);
+        } catch {
+            setSignatureEnabled(!enabled);
+        }
     };
     const applySignatureTemplate = (templateId: string) => {
         setSelectedSignatureTemplate(templateId);
@@ -1053,9 +1073,9 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
         const editorHtml = signatureEditorRef.current?.getHTML() || signatureDraft;
         const normalizedSignature = editorHtml.replace(/<p><\/p>/g, '').trim() ? editorHtml : '';
         if (!accountId) return;
-        await api.saveGoogleMailSignature(accountId, normalizedSignature);
+        await api.saveGoogleMailSignature(accountId, normalizedSignature, signatureEnabled);
         setMailSignature(normalizedSignature);
-        setSignatureSettingsOpen(false);
+        setSignatureEditing(false);
     };
     const buildQuotedHtml = (mail: MailDetail): string => {
         const date = new Date(mail.date);
@@ -1095,7 +1115,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
             cc: ccEmails,
             bcc: [],
             subject: `Re: ${mail.subject.replace(/^re:\s*/i, '') || ''}`,
-            body: addMailSignature('', mailSignature),
+            body: addMailSignature('', signatureEnabled ? mailSignature : ''),
         });
         setCompose(true);
     };
@@ -1113,7 +1133,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
             cc: [],
             bcc: [],
             subject: `Fwd: ${mail.subject.replace(/^fwd:\s*/i, '') || ''}`,
-            body: addMailSignature('', mailSignature),
+            body: addMailSignature('', signatureEnabled ? mailSignature : ''),
         });
         setCompose(true);
     };
@@ -1769,26 +1789,18 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
         {compose && <div className="gwp-compose-backdrop"><form className="gwp-compose" noValidate onSubmit={event => { event.preventDefault(); send(event.currentTarget); }}><header><h3>{replyTo ? t('googleWorkspace.reply') : t('googleWorkspace.compose')}</h3><button type="button" aria-label={t('googleWorkspace.close')} onClick={closeCompose} disabled={aiGenerating || isSending}><X aria-hidden="true" size={24}/></button></header><div className="gwp-recipient-fields"><MailRecipientField name="to" label={t('googleWorkspace.recipient')} recipients={composeFields.to} suggestions={recipientSuggestions} onChange={to => setComposeFields(current => ({...current, to}))} invalidEmailMessage={t('googleWorkspace.invalidEmail')} removeLabel={email => t('googleWorkspace.removeRecipient', {email})}/><MailRecipientField name="cc" label={t('googleWorkspace.cc')} recipients={composeFields.cc} suggestions={recipientSuggestions} onChange={cc => setComposeFields(current => ({...current, cc}))} invalidEmailMessage={t('googleWorkspace.invalidEmail')} removeLabel={email => t('googleWorkspace.removeRecipient', {email})}/><MailRecipientField name="bcc" label={t('googleWorkspace.bcc')} recipients={composeFields.bcc} suggestions={recipientSuggestions} onChange={bcc => setComposeFields(current => ({...current, bcc}))} invalidEmailMessage={t('googleWorkspace.invalidEmail')} removeLabel={email => t('googleWorkspace.removeRecipient', {email})}/></div><input name="subject" value={composeFields.subject} onChange={event => setComposeFields(current => ({...current, subject: event.target.value}))} placeholder={t('googleWorkspace.subject')}/>{replyTo && <input type="hidden" name="reply_to" value={replyTo.id}/>}<EmailEditor ref={emailEditorRef} content={composeFields.body} onChange={body => setComposeFields(current => ({...current, body}))} placeholder={t('googleWorkspace.message')} lockMailSignature originalHtmlSrcDoc={originalHtmlBody ? createEmailDocument(removeDarkModeStyles(originalHtmlBody)) : undefined}/>
 <div className="gwp-compose-actions"><div className="gwp-compose-attachment-actions"><button className="gwp-attachment-button" type="button" onClick={() => attachmentRef.current?.click()} disabled={isSending}><Paperclip aria-hidden="true" size={16}/><span>{t('googleWorkspace.attach')}</span></button><input ref={attachmentRef} type="file" multiple hidden disabled={isSending} onChange={event => addAttachments(event.target.files)}/>{attachments.length > 0 && <details ref={composeAttachmentDetailsRef} className="gwp-compose-attachment-summary"><summary aria-label={t('googleWorkspace.attachments', {count: attachments.length})}><Paperclip aria-hidden="true" size={16}/><strong>{attachments.length}</strong><small className={attachmentLimitExceeded ? 'gwp-attachment-limit-exceeded' : ''}>{formatAttachmentSize(attachmentBytes)} / 25 MB</small><ChevronUp className="gwp-attachment-summary-chevron" aria-hidden="true" size={15}/></summary><div className="gwp-compose-attachment-popover">{attachments.map((file, index) => { const name = isForwardedAttachment(file) ? file.filename : file.name; const key = isForwardedAttachment(file) ? `fwd-${file.id}-${index}` : `${file.name}-${file.lastModified}-${index}`; return <div className="gwp-compose-attachment-row" key={key}><span>{name}</span><small>{formatAttachmentSize(file.size)}</small><button type="button" aria-label={t('googleWorkspace.removeAttachment', {name})} onClick={() => removeAttachment(index)} disabled={isSending}>×</button></div>; })}</div></details>}</div><div className="gwp-compose-send-group"><button type="button" className="gwp-compose-cancel" onClick={closeCompose} disabled={aiGenerating || isSending}>{t('googleWorkspace.cancel')}</button><div className="gwp-ai-write-wrap">{aiPromptOpen && <div className="gwp-ai-prompt-popover"><textarea value={aiPrompt} onChange={e => setAiPrompt(e.target.value)} placeholder={getAiPlaceholder()} rows={3} disabled={aiGenerating || isSending} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); generateAiBody(); } }}/><div className="gwp-ai-prompt-actions"><button type="button" className="gwp-ai-prompt-cancel" onClick={() => setAiPromptOpen(false)} disabled={aiGenerating || isSending}>{t('googleWorkspace.close')}</button><button type="button" className="gwp-primary gwp-ai-prompt-generate" disabled={!aiPrompt.trim() || aiGenerating || isSending} onClick={generateAiBody}>{aiGenerating ? <><LoaderCircle aria-hidden="true" size={14} className="gwp-spin"/>{t('googleWorkspace.aiGenerating')}</> : t('googleWorkspace.aiGenerate')}</button></div></div>}<button type="button" className="gwp-ai-write-btn" onClick={() => { if (!aiPromptOpen && !aiPrompt) { const subject = originalMailForAi?.subject || ''; if (composeMode === 'reply') setAiPrompt(t('googleWorkspace.aiDefaultPromptReply', {subject})); else if (composeMode === 'forward') setAiPrompt(t('googleWorkspace.aiDefaultPromptForward', {subject})); } setAiPromptOpen(o => !o); }} disabled={aiGenerating || isSending}><Sparkles aria-hidden="true" size={15}/><span>{t('googleWorkspace.aiWrite')}</span></button></div><button className="gwp-primary gwp-compose-send" type="submit" disabled={!canSendMail || isSending || aiGenerating}>{isSending ? <LoaderCircle aria-hidden="true" size={16} className="gwp-spin"/> : t('googleWorkspace.send')}</button></div></div></form></div>}
         {signatureSettingsOpen && <ModalOverlay className="gwp-signature-settings-overlay" onClose={() => setSignatureSettingsOpen(false)}>
-            <section className="gwp-signature-settings">
-                <header>
-                    <div><h3>{t('googleWorkspace.signatureSettings')}</h3><p>{t('googleWorkspace.signatureDescription')}</p></div>
-                    <button type="button" aria-label={t('googleWorkspace.close')} onClick={() => setSignatureSettingsOpen(false)}>×</button>
-                </header>
-                <EmailEditor ref={signatureEditorRef} content={signatureDraft} onChange={setSignatureDraft} placeholder={t('googleWorkspace.signaturePlaceholder')} inlineImages/>
-                <footer>
-                    <CustomSelect
-                        className="gwp-signature-template-select"
-                        value={selectedSignatureTemplate}
-                        options={signatureTemplateOptions}
-                        placeholder={t('googleWorkspace.selectSignatureTemplate')}
-                        onChange={applySignatureTemplate}
-                        renderOption={option => <span className="gwp-signature-template-option"><i className={`is-${option.value}`} aria-hidden="true"/><span>{option.label}</span></span>}
-                    />
-                    <div>
-                        <button type="button" className="gwp-signature-cancel" onClick={() => setSignatureSettingsOpen(false)}>{t('googleWorkspace.cancel')}</button>
-                        <button type="button" className="gwp-primary gwp-signature-save" onClick={() => void saveMailSignature()}>{t('googleWorkspace.saveSignature')}</button>
+            <section className="gwp-signature-settings" onClick={event => event.stopPropagation()}>
+                <header><h3>{t('googleWorkspace.settings')}</h3><button type="button" aria-label={t('googleWorkspace.close')} onClick={() => setSignatureSettingsOpen(false)}>×</button></header>
+                <div className="gwp-signature-settings-layout">
+                    <nav className="gwp-signature-settings-nav"><button className="active" type="button"><PenLine aria-hidden="true" size={18}/><span>{t('googleWorkspace.signature')}</span></button></nav>
+                    <div className="gwp-signature-settings-content">
+                        <div className="gwp-signature-settings-intro"><div><h4>{t('googleWorkspace.signature')}</h4><p>{t('googleWorkspace.signatureDescription')}</p></div><button type="button" className={`gwp-signature-switch${signatureEnabled ? ' active' : ''}`} role="switch" aria-checked={signatureEnabled} aria-label={t('googleWorkspace.enableSignature')} onClick={() => void toggleMailSignature()}><span/></button></div>
+                        <div className="gwp-signature-preview-section">
+                            <div className="gwp-signature-preview-heading"><div><h5>{t('googleWorkspace.signaturePreview')}</h5><p>{t('googleWorkspace.signaturePreviewDescription')}</p></div>{!signatureEditing && <button type="button" className="gwp-signature-edit-button" onClick={() => setSignatureEditing(true)}>{t('googleWorkspace.edit')}</button>}</div>
+                            {signatureEditing ? <div className="gwp-signature-editor"><EmailEditor ref={signatureEditorRef} content={signatureDraft} onChange={setSignatureDraft} placeholder={t('googleWorkspace.signaturePlaceholder')} inlineImages/><footer><CustomSelect className="gwp-signature-template-select" value={selectedSignatureTemplate} options={signatureTemplateOptions} placeholder={t('googleWorkspace.selectSignatureTemplate')} onChange={applySignatureTemplate} renderOption={option => <span className="gwp-signature-template-option"><i className={`is-${option.value}`} aria-hidden="true"/><span>{option.label}</span></span>}/><div><button type="button" className="gwp-signature-cancel" onClick={() => { setSignatureDraft(mailSignature); setSignatureEditing(false); }}>{t('googleWorkspace.cancel')}</button><button type="button" className="gwp-primary gwp-signature-save" onClick={() => void saveMailSignature()}>{t('googleWorkspace.saveSignature')}</button></div></footer></div> : <div className={`gwp-signature-preview${mailSignature ? '' : ' empty'}`} dangerouslySetInnerHTML={{__html: mailSignature || t('googleWorkspace.signaturePreviewEmpty')}}/>}
+                        </div>
                     </div>
-                </footer>
+                </div>
             </section>
         </ModalOverlay>}
         {sendFeedback && <div className={`gwp-send-feedback gwp-send-feedback--${sendFeedback}`} role="status">{sendFeedback === 'success' ? <CheckCircle2 aria-hidden="true" size={18}/> : <CircleAlert aria-hidden="true" size={18}/>}<span>{t(sendFeedback === 'success' ? 'googleWorkspace.mailSent' : 'googleWorkspace.mailSendFailed')}</span></div>}

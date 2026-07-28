@@ -107,6 +107,7 @@ class MailStarRequest(BaseModel):
 
 class MailSignatureRequest(BaseModel):
     signature_html: str = Field(max_length=1_000_000)
+    enabled: bool = True
 
 
 class MailLabelCreateRequest(BaseModel):
@@ -132,9 +133,14 @@ async def get_mail_signature(account_id: str):
     es = get_es()
     try:
         if not await es.exists(index=SETTINGS_INDEX, id=document_id):
-            return {"signature_html": ""}
+            return {"signature_html": "", "enabled": True}
         result = await es.get(index=SETTINGS_INDEX, id=document_id)
-        return {"signature_html": result["_source"].get("value", {}).get("signature_html", "")}
+        signature = result["_source"].get("value", {})
+        return {
+            "signature_html": signature.get("signature_html", ""),
+            # Existing signatures retain their current behavior after this setting is introduced.
+            "enabled": signature.get("enabled", True),
+        }
     finally:
         await es.close()
 
@@ -147,7 +153,7 @@ async def save_mail_signature(account_id: str, request: MailSignatureRequest):
         await es.index(
             index=SETTINGS_INDEX,
             id=document_id,
-            document={"key": document_id, "value": {"signature_html": request.signature_html}},
+            document={"key": document_id, "value": {"signature_html": request.signature_html, "enabled": request.enabled}},
             refresh=True,
         )
     finally:

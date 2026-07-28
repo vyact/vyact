@@ -283,16 +283,16 @@ export const api = {
         await assertOk(response, 'Unable to load email.');
         return response.json();
     },
-    async getGoogleMailSignature(accountId: string): Promise<{signature_html: string}> {
+    async getGoogleMailSignature(accountId: string): Promise<{signature_html: string; enabled: boolean}> {
         const response = await fetch(`${API_BASE}/google-workspace/accounts/${encodeURIComponent(accountId)}/mail/signature`);
         await assertOk(response, 'Unable to load email signature.');
         return response.json();
     },
-    async saveGoogleMailSignature(accountId: string, signatureHtml: string) {
+    async saveGoogleMailSignature(accountId: string, signatureHtml: string, enabled = true) {
         const response = await fetch(`${API_BASE}/google-workspace/accounts/${encodeURIComponent(accountId)}/mail/signature`, {
             method: 'PUT',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({signature_html: signatureHtml}),
+            body: JSON.stringify({signature_html: signatureHtml, enabled}),
         });
         await assertOk(response, 'Unable to save email signature.');
         return response.json();

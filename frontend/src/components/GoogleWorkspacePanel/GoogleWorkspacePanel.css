@@ -603,16 +603,38 @@
 .gwp-ai-prompt-cancel:disabled { cursor: not-allowed; opacity: .45; }
 .gwp-ai-prompt-generate { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; min-width: 80px; padding: 7px 18px !important; border-radius: 8px !important; font-size: var(--modal-btn, 14px) !important; font-weight: 600; }
 .gwp-signature-settings-overlay { z-index: 9200; }
-.gwp-signature-settings { display: flex; width: min(620px, calc(100vw - 40px)); height: min(540px, calc(100vh - 40px)); min-height: 380px; flex-direction: column; overflow: hidden; border: 1px solid var(--border); border-radius: 14px; background: var(--surface2); box-shadow: 0 22px 60px rgba(0, 0, 0, .5); }
-.gwp-signature-settings > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 18px 20px; border-bottom: 1px solid var(--border); }
-.gwp-signature-settings > header h3 { margin: 0 0 5px; color: var(--text); font-size: 18px; }
-.gwp-signature-settings > header p { margin: 0; color: var(--muted); font-size: 13px; }
+.gwp-signature-settings { display: flex; width: min(920px, calc(100vw - 40px)); height: min(620px, calc(100vh - 40px)); min-height: 440px; flex-direction: column; overflow: hidden; border: 1px solid var(--border); border-radius: 14px; background: var(--surface2); box-shadow: 0 22px 60px rgba(0, 0, 0, .5); }
+.gwp-signature-settings > header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+.gwp-signature-settings > header h3 { margin: 0; color: var(--text); font-size: var(--modal-title); }
 .gwp-signature-settings > header button { display: grid; width: 32px; height: 32px; flex: 0 0 32px; place-items: center; padding: 0; border: 0; border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer; font-size: 26px; line-height: 1; }
 .gwp-signature-settings > header button:hover { background: var(--surface); color: var(--text); }
-.gwp-signature-settings > .email-editor-wrap { flex: 1; min-height: 0; margin: 16px 20px; }
-.gwp-signature-settings > footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 20px 18px; }
-.gwp-signature-settings > footer > div { display: flex; gap: 8px; }
-.gwp-signature-settings > footer button { display: inline-flex; box-sizing: border-box; height: 42px; align-items: center; justify-content: center; padding: 0 17px !important; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 650; }
+.gwp-signature-settings-layout { display: flex; flex: 1; min-height: 0; }
+.gwp-signature-settings-nav { width: 200px; flex: 0 0 200px; padding: 12px 8px; border-right: 1px solid var(--border); }
+.gwp-signature-settings-nav button { display: flex; width: 100%; align-items: center; gap: 8px; padding: 10px 14px; border: 0; border-radius: 8px; background: transparent; color: var(--text-secondary); font-size: 14px; font-weight: 500; cursor: pointer; }
+.gwp-signature-settings-nav button.active { background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); }
+.gwp-signature-settings-content { flex: 1; min-width: 0; padding: 20px 24px; overflow: auto; }
+.gwp-signature-settings-intro, .gwp-signature-preview-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.gwp-signature-settings-intro h4, .gwp-signature-preview-heading h5 { margin: 0; color: var(--text); font-size: 14px; font-weight: 600; }
+.gwp-signature-settings-intro p, .gwp-signature-preview-heading p { margin: 2px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.gwp-signature-switch { position: relative; width: 46px; height: 26px; flex: 0 0 46px; padding: 0; border: 0; border-radius: 999px; background: var(--border); cursor: pointer; transition: background .15s; }
+.gwp-signature-switch.active { background: var(--accent); }
+.gwp-signature-switch span { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: white; transition: transform .15s; }
+.gwp-signature-switch.active span { transform: translateX(20px); }
+.gwp-signature-preview-section { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
+.gwp-signature-edit-button { min-height: 34px; padding: 0 13px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); color: var(--text); cursor: pointer; font-size: 13px; font-weight: 650; }
+.gwp-signature-edit-button:hover { border-color: var(--accent); color: var(--accent); }
+.gwp-signature-preview { margin-top: 16px; padding: 12px 16px; border: 1px solid var(--border); border-radius: 7px; background: #fff; color: #222; font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.6; overflow: auto; }
+.gwp-signature-preview p { margin: .3em 0; }
+.gwp-signature-preview h1 { margin: .8em 0 .4em; font-size: 1.45em; }
+.gwp-signature-preview h2 { margin: .7em 0 .3em; font-size: 1.23em; }
+.gwp-signature-preview h3 { margin: .7em 0 .35em; font-size: 1.15em; }
+.gwp-signature-preview ul, .gwp-signature-preview ol { margin: .3em 0; padding-left: 1.4em; }
+.gwp-signature-preview.empty { display: grid; place-items: center; color: #999; font-size: 13px; }
+.gwp-signature-editor { margin-top: 16px; }
+.gwp-signature-editor .email-editor-wrap { height: 300px; }
+.gwp-signature-editor footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; }
+.gwp-signature-editor footer > div { display: flex; gap: 8px; }
+.gwp-signature-editor footer button { display: inline-flex; box-sizing: border-box; height: 42px; align-items: center; justify-content: center; padding: 0 17px !important; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 650; }
 .gwp-signature-cancel { border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary); }
 .gwp-signature-cancel:hover { border-color: var(--accent); color: var(--accent); }
 .gwp-signature-save { border: 0; background: var(--accent); color: white; }
@@ -625,6 +647,7 @@
 .gwp-signature-template-option > i.is-modern { background: linear-gradient(90deg, #d9d9d9 0 32%, #5b89b8 32% 38%, var(--surface2) 38%); }
 .gwp-signature-template-option > i.is-compact { background: linear-gradient(#cc785c 0 25%, transparent 25% 42%, var(--muted) 42% 49%, transparent 49%); }
 .gwp-signature-template-option > i.is-minimal { background: linear-gradient(var(--muted) 0 8%, transparent 8% 42%, var(--text-secondary) 42% 50%, transparent 50%); }
+@media (max-width: 640px) { .gwp-signature-settings { width: calc(100vw - 24px); height: min(650px, calc(100vh - 24px)); } .gwp-signature-settings-nav { width: 54px; flex-basis: 54px; padding: 12px 6px; } .gwp-signature-settings-nav button { justify-content: center; padding: 11px; } .gwp-signature-settings-nav button span { display: none; } .gwp-signature-settings-content { padding: 22px 18px; } .gwp-signature-editor footer { align-items: stretch; flex-direction: column; } .gwp-signature-template-select { width: 100%; } }
 .gwp-send-feedback--success { border-color: color-mix(in srgb, var(--success) 55%, var(--border)); color: var(--success); }
 .gwp-send-feedback--error { border-color: color-mix(in srgb, var(--danger) 55%, var(--border)); color: var(--danger); }
 
