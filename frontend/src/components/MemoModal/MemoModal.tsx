@@ -148,6 +148,13 @@ const MemoEditor: React.FC<{
         }
     }, [editor, initialHtml]);
 
+    const insertDetailsAndFocus = useCallback(() => {
+        if (!editor) return;
+        // setDetails는 선택 영역을 새 detailsSummary로 옮긴다. 에디터에도 다시 포커스를 주어
+        // 바로 접기/펼치기 제목을 입력할 수 있게 한다.
+        (editor.chain() as any).focus().setDetails().run();
+    }, [editor]);
+
     const triggerUndo = useCallback(() => {
         if (editor?.can().undo()) editor.commands.undo();
     }, [editor]);
@@ -503,8 +510,14 @@ const MemoEditor: React.FC<{
         if (savedPos !== -1) {
             editor.chain().focus().deleteRange({ from: savedPos, to: savedPos + 1 }).run();
         }
-        setTimeout(() => slashItems[idx].action(editor), 10);
-    }, [editor, slashItems]);
+        setTimeout(() => {
+            if (idx === 7) {
+                insertDetailsAndFocus();
+                return;
+            }
+            slashItems[idx].action(editor);
+        }, 10);
+    }, [editor, insertDetailsAndFocus, slashItems]);
 
     // window 레벨에서 키 이벤트 처리 (Tiptap 버블링 이슈 우회)
     useEffect(() => {
@@ -555,7 +568,9 @@ const MemoEditor: React.FC<{
                 }
                 setSelectedTablePosition(null);
             }
-            if (e.key === 'Enter' && editor) {
+            // 한글·일본어 IME에서 조합을 확정하는 Enter는 실제 줄바꿈 Enter와 별도 이벤트다.
+            // 조합 확정 단계에서 내용을 열면 다음 Enter가 빈 줄을 추가하므로 무시한다.
+            if (e.key === 'Enter' && editor && !e.isComposing && e.keyCode !== 229 && !editor.view.composing) {
                 const {$head} = editor.state.selection;
                 if ($head.parent.type.name === 'detailsSummary') {
                     const detailsPosition = $head.before() - 1;
@@ -696,7 +711,7 @@ const MemoEditor: React.FC<{
                         </div>
                     )}
                 </div>
-                <button onClick={() => (editor?.commands as any).setDetails()}
+                <button onClick={insertDetailsAndFocus}
                         className={editor?.isActive('details') ? 'active' : ''} title={t('memoModal.toolbar.toggleDetails')}>▶</button>
                 <button onClick={() => (editor?.chain() as any)?.focus().insertTable({rows: 3, cols: 3, withHeaderRow: true}).run()}
                         title={t('memoModal.toolbar.addTable')} aria-label={t('memoModal.toolbar.addTable')}><Table2 size={17} aria-hidden="true" /></button>
