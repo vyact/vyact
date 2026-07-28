@@ -248,6 +248,7 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
     const [linkUrl, setLinkUrl] = useState('');
     const [linkText, setLinkText] = useState('');
     const [isOriginalExpanded, setIsOriginalExpanded] = useState(false);
+    const [expandedBodyHeight, setExpandedBodyHeight] = useState<number | null>(null);
     const [originalExpandTop, setOriginalExpandTop] = useState<number | null>(null);
     const colorRef = useRef<HTMLDivElement>(null);
     const linkSelectionRef = useRef({from: 0, to: 0, text: ''});
@@ -305,6 +306,7 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
 
     useEffect(() => {
         setIsOriginalExpanded(false);
+        setExpandedBodyHeight(null);
     }, [originalHtmlSrcDoc]);
 
     useEffect(() => {
@@ -318,9 +320,9 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
             if (!body) return;
             const bodyBounds = body.getBoundingClientRect();
             const anchor = signature || editor.view.dom;
-            const visibleNodes = [anchor, ...Array.from(anchor.querySelectorAll<HTMLElement>(
-                'img, p, h1, h2, h3, li, blockquote, pre, [data-signature-layout], [data-signature-image], [data-memo-image]',
-            ))];
+            const visibleNodes = Array.from(anchor.querySelectorAll<HTMLElement>(
+                'img, p, h1, h2, h3, li, blockquote, pre',
+            )).filter(node => node.tagName === 'IMG' || Boolean(node.textContent?.trim()));
             const visibleBottom = visibleNodes.reduce((bottom, node) => {
                 const bounds = node.getBoundingClientRect();
                 if (bounds.width === 0 || bounds.height === 0) return bottom;
@@ -328,7 +330,7 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
                 return Math.max(bottom, bounds.bottom + marginBottom);
             }, 0) || anchor.getBoundingClientRect().bottom;
             const preferredTop = visibleBottom - bodyBounds.top + 15;
-            setOriginalExpandTop(Math.min(Math.max(8, preferredTop), Math.max(8, body.clientHeight - 36)));
+            setOriginalExpandTop(Math.max(8, preferredTop));
         };
         const frame = requestAnimationFrame(updatePosition);
         const observer = new ResizeObserver(updatePosition);
@@ -497,7 +499,7 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
             <button type="button" onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()} title={t('googleWorkspace.editorToolbar.redo')}><Redo2 size={15}/></button>
         </div>
         <div className="email-editor-body" ref={editorBodyRef}>
-            <div className="email-editor-content" onClick={event => {
+            <div className="email-editor-content" style={isOriginalExpanded && expandedBodyHeight !== null ? {minHeight: expandedBodyHeight} : undefined} onClick={event => {
                 if (event.target === event.currentTarget || event.target === editor.view.dom) focusBodyEnd();
             }}>
                 <EditorContent
@@ -527,7 +529,10 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
                     resize();
                     try { iframe.contentDocument?.querySelectorAll('img').forEach(img => { if (!img.complete) img.addEventListener('load', resize); }); } catch { /* The iframe is not accessible. */ }
                 }}/>
-            </div> : <button type="button" className="email-editor-original-expand" style={originalExpandTop === null ? undefined : {top: originalExpandTop}} aria-label={t('googleWorkspace.originalEmail')} title={t('googleWorkspace.originalEmail')} onClick={() => setIsOriginalExpanded(true)}>•••</button>)}
+            </div> : <button type="button" className="email-editor-original-expand" style={originalExpandTop === null ? undefined : {top: originalExpandTop}} aria-label={t('googleWorkspace.originalEmail')} title={t('googleWorkspace.originalEmail')} onClick={() => {
+                setExpandedBodyHeight(editorBodyRef.current?.clientHeight ?? null);
+                setIsOriginalExpanded(true);
+            }}>•••</button>)}
         </div>
         {isLinkOpen && <ModalOverlay className="email-editor-link-overlay" onClose={() => setIsLinkOpen(false)} closeOnBackdrop>
             <section className="email-editor-link-dialog">

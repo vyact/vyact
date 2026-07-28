@@ -88,9 +88,9 @@
 .email-editor-wrap.is-signature-locked .email-editor-content .tiptap > [data-mail-signature] {
     margin-top: auto !important;
 }
-/* Reserve a practical writing area before the locked signature. */
-.email-editor-wrap.is-signature-locked .email-editor-content .tiptap > p:first-child:not([data-mail-signature]) {
-    box-sizing: border-box;
+/* Reserve space on the editor itself, never on the first paragraph.  A
+   paragraph-level min-height would create a large gap after pressing Enter. */
+.email-editor-wrap.is-signature-locked .email-editor-content {
     min-height: 250px;
 }
 /* A collapsed reply and a new message both use the remaining dialog height.
