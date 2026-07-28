@@ -19,6 +19,7 @@ import './EmailEditor.css';
 
 const lowlight = createLowlight(common);
 const COLOR_PRESETS = ['#f5f5f5', '#cc785c', '#d88e73', '#2cba66', '#5b89b8', '#a78bfa', '#f2c94c', '#ef6461'];
+const EMAIL_EDITOR_VERTICAL_PADDING = 24;
 const MAIL_SIGNATURE_STYLE = 'margin-top: 24px; padding-top: 16px; border-top: 1px solid #d9d9d9; font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.6; color: #222222;';
 
 /**
@@ -268,6 +269,7 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
     const [linkText, setLinkText] = useState('');
     const [isOriginalExpanded, setIsOriginalExpanded] = useState(false);
     const [expandedBodyHeight, setExpandedBodyHeight] = useState<number | null>(null);
+    const [originalExpandedOffset, setOriginalExpandedOffset] = useState(0);
     const [originalExpandTop, setOriginalExpandTop] = useState<number | null>(null);
     const colorRef = useRef<HTMLDivElement>(null);
     const linkSelectionRef = useRef({from: 0, to: 0, text: ''});
@@ -324,8 +326,22 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
     }, []);
 
     useEffect(() => {
-        setIsOriginalExpanded(false);
-        setExpandedBodyHeight(null);
+        if (!originalHtmlSrcDoc) {
+            setIsOriginalExpanded(false);
+            setExpandedBodyHeight(null);
+            setOriginalExpandedOffset(0);
+            return;
+        }
+
+        // Measure the collapsed editor first so opening the original email does
+        // not reduce the available writing area to the expanded-state minimum.
+        const frame = requestAnimationFrame(() => {
+            const bodyHeight = editorBodyRef.current?.clientHeight ?? null;
+            setExpandedBodyHeight(bodyHeight === null ? null : Math.max(0, bodyHeight - EMAIL_EDITOR_VERTICAL_PADDING));
+            setOriginalExpandedOffset(0);
+            setIsOriginalExpanded(true);
+        });
+        return () => cancelAnimationFrame(frame);
     }, [originalHtmlSrcDoc]);
 
     useEffect(() => {
@@ -348,18 +364,20 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
                 const marginBottom = Number.parseFloat(window.getComputedStyle(node).marginBottom) || 0;
                 return Math.max(bottom, bounds.bottom + marginBottom);
             }, 0) || anchor.getBoundingClientRect().bottom;
-            const preferredTop = visibleBottom - bodyBounds.top + 15;
+            const preferredTop = visibleBottom - bodyBounds.top + body.scrollTop + 6;
             setOriginalExpandTop(Math.max(8, preferredTop));
         };
         const frame = requestAnimationFrame(updatePosition);
         const observer = new ResizeObserver(updatePosition);
         observer.observe(editor.view.dom);
         if (editorBodyRef.current) observer.observe(editorBodyRef.current);
+        editorBodyRef.current?.addEventListener('scroll', updatePosition, {passive: true});
         const images = Array.from(editor.view.dom.querySelectorAll('img'));
         images.forEach(image => image.addEventListener('load', updatePosition));
         return () => {
             cancelAnimationFrame(frame);
             observer.disconnect();
+            editorBodyRef.current?.removeEventListener('scroll', updatePosition);
             images.forEach(image => image.removeEventListener('load', updatePosition));
         };
     }, [editor, isOriginalExpanded, originalHtmlSrcDoc, content]);
@@ -532,7 +550,7 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
                     }}
                 />
             </div>
-            {originalHtmlSrcDoc && (isOriginalExpanded ? <div className="email-editor-original">
+            {originalHtmlSrcDoc && (isOriginalExpanded ? <div className="email-editor-original" style={originalExpandedOffset ? {marginTop: originalExpandedOffset} : undefined}>
                 <iframe aria-label={t('googleWorkspace.originalEmail')} sandbox="allow-same-origin" scrolling="no" srcDoc={originalHtmlSrcDoc} onLoad={e => {
                     const iframe = e.currentTarget;
                     try {
@@ -551,7 +569,12 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
                     try { iframe.contentDocument?.querySelectorAll('img').forEach(img => { if (!img.complete) img.addEventListener('load', resize); }); } catch { /* The iframe is not accessible. */ }
                 }}/>
             </div> : <button type="button" className="email-editor-original-expand" style={originalExpandTop === null ? undefined : {top: originalExpandTop}} aria-label={t('googleWorkspace.originalEmail')} title={t('googleWorkspace.originalEmail')} onClick={() => {
-                setExpandedBodyHeight(editorBodyRef.current?.clientHeight ?? null);
+                const collapsedBodyHeight = editorBodyRef.current?.clientHeight ?? null;
+                // Preserve the existing editable area so its auto-positioned
+                // signature remains fixed, then pull only the original-email
+                // block up to the collapsed ellipsis position.
+                setExpandedBodyHeight(collapsedBodyHeight === null ? null : Math.max(0, collapsedBodyHeight - EMAIL_EDITOR_VERTICAL_PADDING));
+                setOriginalExpandedOffset(originalExpandTop === null || collapsedBodyHeight === null ? 0 : originalExpandTop - collapsedBodyHeight);
                 setIsOriginalExpanded(true);
             }}>•••</button>)}
         </div>

@@ -99,7 +99,10 @@
 .gwp-compose .email-editor-wrap:not(.is-original-expanded).is-signature-locked .email-editor-body {
     display: flex;
     flex-direction: column;
+    margin-bottom: 10px;
 }
+.gwp-compose .email-editor-wrap.is-signature-locked { background: #fff; }
+.gwp-compose .email-editor-wrap.is-signature-locked .email-editor-toolbar { background: var(--bg); }
 .gwp-compose .email-editor-wrap:not(.is-original-expanded).is-signature-locked .email-editor-content {
     box-sizing: border-box;
     flex: 1;
@@ -116,10 +119,9 @@
     margin-top: auto !important;
     margin-bottom: 0 !important;
 }
-/* Tiptap appends an empty paragraph after an isolating signature node. The
-   signature is locked in compose mode, so that paragraph cannot be used for
-   editing and must not reserve space below the signature. */
-.gwp-compose .email-editor-wrap.is-signature-locked .email-editor-content .tiptap > [data-mail-signature] + p:has(> br.ProseMirror-trailingBreak:only-child) {
+/* Only suppress Tiptap's placeholder paragraph created next to a signature
+   layout. Other trailing breaks remain editable document content. */
+.gwp-compose .email-editor-wrap.is-signature-locked .email-editor-content [data-mail-signature] > [data-signature-layout] + p:has(> br.ProseMirror-trailingBreak:only-child) {
     display: none;
 }
 /* Expanded replies keep the original email outside of the editable signature
@@ -132,7 +134,7 @@
 .gwp-compose .email-editor-wrap.has-original-email.is-original-expanded.is-signature-locked .email-editor-content .tiptap {
     min-height: 276px;
 }
-.gwp-compose .email-editor-wrap.has-original-email.is-signature-locked .email-editor-content .tiptap > [data-mail-signature] {
+.gwp-compose .email-editor-wrap.has-original-email:not(.is-original-expanded).is-signature-locked .email-editor-content .tiptap > [data-mail-signature] {
     margin-bottom: 40px;
 }
 
