@@ -1,4 +1,4 @@
-const {app, BrowserWindow, dialog, ipcMain, session, shell} = require("electron");
+const {app, BrowserView, BrowserWindow, dialog, ipcMain, session, shell} = require("electron");
 const path = require("path");
 const {spawn, execSync, execFileSync, spawnSync} = require("child_process");
 const fs = require("fs");
@@ -28,6 +28,9 @@ const CHOCO_BIN = "C:\\ProgramData\\chocolatey\\bin";
 const CHOCO_EXE = path.join(CHOCO_BIN, "choco.exe");
 
 let mainWindow = null;
+// Keep loading.html alive beneath the prepared setup view to avoid a native
+// window replacement flash on the first-install transition.
+let initialSetupView = null;
 let serverProc = null;
 
 const hasSingleInstanceLock = app.requestSingleInstanceLock();
@@ -755,9 +758,66 @@ async function loadServerApp() {
         log(`⚠️ Failed to clear HTTP cache: ${error.message}`);
     }
 
-    if (!mainWindow.isDestroyed()) {
-        await mainWindow.loadURL(`http://localhost:${SERVER_PORT}`);
+    if (mainWindow.isDestroyed()) return;
+
+    if (!fs.existsSync(path.join(INSTALL_DIR, ".setup_done"))) {
+        await preloadInitialSetupWindow();
+        return;
     }
+
+    await mainWindow.loadURL(`http://localhost:${SERVER_PORT}`);
+}
+
+function waitForRendererReady(browserWindow) {
+    return new Promise(resolve => {
+        const handler = (event) => {
+            if (event.sender !== browserWindow.webContents) return;
+            ipcMain.removeListener("app-ready", handler);
+            resolve();
+        };
+        ipcMain.on("app-ready", handler);
+    });
+}
+
+async function preloadInitialSetupWindow() {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+
+    const setupView = new BrowserView({
+        webPreferences: {
+            preload: path.join(__dirname, "preload.js"),
+            contextIsolation: true,
+            nodeIntegration: false,
+            webSecurity: false,
+            allowRunningInsecureContent: true,
+            experimentalFeatures: true,
+            spellcheck: false,
+        },
+    });
+    setupView.webContents.setBackgroundThrottling(false);
+    setupView.webContents.setWindowOpenHandler(({url}) => {
+        if (url.startsWith("http://") || url.startsWith("https://")) shell.openExternal(url);
+        return {action: "deny"};
+    });
+    setupView.webContents.on("will-navigate", (event, url) => {
+        if (!url.startsWith("http://localhost") && !url.startsWith("http://127.0.0.1")) {
+            event.preventDefault();
+            shell.openExternal(url);
+        }
+    });
+
+    const rendererReady = waitForRendererReady(setupView);
+    await setupView.webContents.loadURL(`http://localhost:${SERVER_PORT}?initialSetup=1`);
+    await rendererReady;
+
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+
+    const {width, height} = mainWindow.getContentBounds();
+    initialSetupView = setupView;
+    mainWindow.setBrowserView(setupView);
+    setupView.setBounds({x: 0, y: 0, width, height});
+    setupView.setAutoResize({width: true, height: true});
+    mainWindow.on("maximize", () => setupView.webContents.send("window-maximize-change", true));
+    mainWindow.on("unmaximize", () => setupView.webContents.send("window-maximize-change", false));
 }
 
 // ── 앱 생명주기 ──────────────────────────────
@@ -867,7 +927,8 @@ ipcMain.handle("select-folders", async () => {
 
 ipcMain.handle("screenshot", async () => {
     if (!mainWindow || mainWindow.isDestroyed()) return null;
-    const image = await mainWindow.webContents.capturePage();
+    const contents = initialSetupView?.webContents || mainWindow.webContents;
+    const image = await contents.capturePage();
     return image.toPNG().toString("base64");
 });
 

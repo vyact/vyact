@@ -11,7 +11,10 @@ import './App.css';
 
 const App: React.FC = () => {
     const {t} = useTranslation('settings');
-    const [isSetupComplete, setIsSetupComplete] = useState<boolean | undefined>(undefined);
+    const isInitialSetupLaunch = new URLSearchParams(window.location.search).get('initialSetup') === '1';
+    const [isSetupComplete, setIsSetupComplete] = useState<boolean | undefined>(() => (
+        isInitialSetupLaunch ? false : undefined
+    ));
     const [dictionaryRequest, setDictionaryRequest] = useState<{resolve: (installed: boolean) => void} | null>(null);
     const [isInstallingDictionary, setIsInstallingDictionary] = useState(false);
     const [dictionaryProgress, setDictionaryProgress] = useState(0);
@@ -21,6 +24,15 @@ const App: React.FC = () => {
         fetchTtsSettings().catch(() => {});
         void ttsService.preload();
     }, []);
+
+    useEffect(() => {
+        if (!isInitialSetupLaunch || isSetupComplete === undefined) return;
+
+        // The initial setup page is prepared in an unattached BrowserView.
+        // requestAnimationFrame is paused there, so notify after React commits
+        // the SetupPage tree instead of waiting for a browser frame.
+        window.ragAPI?.notifyAppReady?.();
+    }, [isInitialSetupLaunch, isSetupComplete]);
 
     useEffect(() => {
         const handleRequest = (event: Event) => setDictionaryRequest((event as CustomEvent<{resolve: (installed: boolean) => void}>).detail);

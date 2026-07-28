@@ -1,4 +1,4 @@
-const {app, BrowserWindow, dialog, ipcMain, session} = require("electron");
+const {app, BrowserView, BrowserWindow, dialog, ipcMain, session} = require("electron");
 const path = require("path");
 const {spawn, execSync, execFileSync, spawnSync} = require("child_process");
 const fs = require("fs");
@@ -25,6 +25,9 @@ const AUTO_START_DELAY_SECONDS = 15;
 const MAC_AUTO_START_LABEL = "com.vyact.app";
 
 let mainWindow = null;
+// The initial setup app is rendered in a child view.  Keeping loading.html in
+// the window underneath avoids a native-window teardown/recreate flash.
+let initialSetupView = null;
 let serverProc = null;
 
 const hasSingleInstanceLock = app.requestSingleInstanceLock();
@@ -749,9 +752,68 @@ async function loadServerApp() {
         log(`⚠️ Failed to clear HTTP cache: ${error.message}`);
     }
 
-    if (!mainWindow.isDestroyed()) {
-        await mainWindow.loadURL(`http://localhost:${SERVER_PORT}`);
+    if (mainWindow.isDestroyed()) return;
+
+    if (!fs.existsSync(path.join(INSTALL_DIR, ".setup_done"))) {
+        await preloadInitialSetupWindow();
+        return;
     }
+
+    await mainWindow.loadURL(`http://localhost:${SERVER_PORT}`);
+}
+
+function waitForRendererReady(browserWindow) {
+    return new Promise(resolve => {
+        const handler = (event) => {
+            if (event.sender !== browserWindow.webContents) return;
+            ipcMain.removeListener("app-ready", handler);
+            resolve();
+        };
+        ipcMain.on("app-ready", handler);
+    });
+}
+
+async function preloadInitialSetupWindow() {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+
+    const setupView = new BrowserView({
+        webPreferences: {
+            preload: path.join(__dirname, "preload.js"),
+            contextIsolation: true,
+            nodeIntegration: false,
+            webSecurity: false,
+            allowRunningInsecureContent: true,
+            experimentalFeatures: true,
+            spellcheck: false,
+        },
+    });
+    setupView.webContents.setBackgroundThrottling(false);
+    setupView.webContents.setWindowOpenHandler(({url}) => {
+        if (url.startsWith("http://") || url.startsWith("https://")) require("electron").shell.openExternal(url);
+        return {action: "deny"};
+    });
+    setupView.webContents.on("will-navigate", (event, url) => {
+        if (!url.startsWith("http://localhost") && !url.startsWith("http://127.0.0.1")) {
+            event.preventDefault();
+            require("electron").shell.openExternal(url);
+        }
+    });
+
+    const rendererReady = waitForRendererReady(setupView);
+    await setupView.webContents.loadURL(`http://localhost:${SERVER_PORT}?initialSetup=1`);
+    await rendererReady;
+
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+
+    // Attach only after React has painted SetupPage.  This keeps the progress
+    // screen visible right up to the first fully rendered setup frame.
+    const {width, height} = mainWindow.getContentBounds();
+    initialSetupView = setupView;
+    mainWindow.setBrowserView(setupView);
+    setupView.setBounds({x: 0, y: 0, width, height});
+    setupView.setAutoResize({width: true, height: true});
+    mainWindow.on("enter-full-screen", () => setupView.webContents.send("window-fullscreen-change", true));
+    mainWindow.on("leave-full-screen", () => setupView.webContents.send("window-fullscreen-change", false));
 }
 
 // ── 앱 생명주기 ───────────────────────────
@@ -874,7 +936,8 @@ ipcMain.handle("set-login-item", (_, enable) => {
 // 스크린샷 — 현재 앱의 웹 콘텐츠만 캡처한다.
 ipcMain.handle("screenshot", async () => {
     if (!mainWindow || mainWindow.isDestroyed()) return null;
-    const image = await mainWindow.webContents.capturePage();
+    const contents = initialSetupView?.webContents || mainWindow.webContents;
+    const image = await contents.capturePage();
     return image.toPNG().toString("base64");
 });
 
