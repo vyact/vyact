@@ -15,6 +15,7 @@ from .config import (
 from .helpers import load_images_b64, history_for_ollama
 from .tools import build_tool_directive
 from services.runtime_settings import get_runtime_settings
+from .context_window import select_context_window
 
 
 async def build_ollama_payload(
@@ -83,17 +84,18 @@ async def build_ollama_payload(
     if images_b64:
         user_msg["images"] = images_b64
 
+    messages = [
+        {"role": "system", "content": system_message},
+        *history_for_ollama(history_messages, valid_slice),
+        user_msg,
+    ]
     body = {
         "model": model,
         "stream": True,
         "keep_alive": runtime["ollama_keep_alive"],
-        "messages": [
-            {"role": "system", "content": system_message},
-            *history_for_ollama(history_messages, valid_slice),
-            user_msg,
-        ],
+        "messages": messages,
         "options": {
-            "num_ctx": runtime["llm_num_ctx"],
+            "num_ctx": select_context_window(messages, runtime["llm_num_ctx"], runtime["history_chars_per_token"], runtime["llm_num_predict"]),
             "num_predict": runtime["llm_num_predict"],
             "temperature": runtime["llm_temperature"],
             **({"top_k": runtime["top_k"]} if runtime["top_k"] else {}),

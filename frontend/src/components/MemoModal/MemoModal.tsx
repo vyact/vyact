@@ -15,7 +15,7 @@ import { Details, DetailsSummary, DetailsContent } from '@tiptap/extension-detai
 import { Table, TableRow, TableHeader, TableCell } from '@tiptap/extension-table';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
-import { AlignCenter, AlignLeft, AlignRight, FileText, ImagePlus, Link as LinkIcon, Paperclip, Pencil, Search, Table2, Trash2, X } from 'lucide-react';
+import { AlignCenter, AlignLeft, AlignRight, FileText, ImagePlus, Link as LinkIcon, LoaderCircle, Paperclip, Pencil, Search, Table2, Trash2, X } from 'lucide-react';
 
 import { api } from '../../services/api';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
@@ -738,7 +738,14 @@ const MemoEditor: React.FC<{
                 selectDetailsByBorder(event);
                 selectAttachment(event);
             }} onClickCapture={selectAttachment} onKeyDownCapture={handleAttachmentKeyDown} />
-            {uploadCount > 0 && <div className="memo-attachment-uploading" role="status">{t('memoModal.uploading')}</div>}
+            {uploadCount > 0 && (
+                <div className="memo-attachment-upload-overlay" role="status" aria-live="polite">
+                    <div className="memo-attachment-upload-dialog">
+                        <LoaderCircle className="memo-attachment-upload-spinner" aria-hidden="true" size={28} />
+                        <span>{t('memoModal.uploading')}</span>
+                    </div>
+                </div>
+            )}
             {uploadError && <div className="memo-attachment-error" role="alert">{uploadError}</div>}
             {tableContextMenu && (
                 <div className="memo-table-context-menu" style={{left: tableContextMenu.x, top: tableContextMenu.y}} onMouseDown={event => event.preventDefault()}>

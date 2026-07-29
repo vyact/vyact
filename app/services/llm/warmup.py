@@ -4,6 +4,7 @@ import asyncio
 import httpx
 
 from prompts import build_system_message
+from config.models import LLM_INITIAL_NUM_CTX
 from services.runtime_settings import get_runtime_settings
 
 from .config import OLLAMA_URL, logger
@@ -30,7 +31,7 @@ async def _warm_ollama_chat_prefix(model: str, language: str, warmup_key: str) -
                 {"role": "user", "content": ""},
             ],
             "options": {
-                "num_ctx": runtime["llm_num_ctx"],
+                "num_ctx": LLM_INITIAL_NUM_CTX,
                 "num_predict": 0,
                 "temperature": runtime["llm_temperature"],
                 **({"top_k": runtime["top_k"]} if runtime["top_k"] else {}),

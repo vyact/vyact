@@ -24,6 +24,7 @@ from .helpers import (
 )
 from .errors import http_err_msg, openai_err, gemini_err, claude_err
 from .ollama import build_ollama_payload, resolve_tool_calls
+from .context_window import select_context_window
 from .providers import openai_stream, gemini_stream, claude_stream
 from .prepare import prepare_request
 from services.runtime_settings import get_runtime_settings
@@ -511,7 +512,7 @@ async def query_llm(
                 ollama_messages = [{"role": "system", "content": system_message},
                                    *history_for_ollama(history_messages, valid_slice), user_msg]
                 ollama_options = {
-                    "num_ctx": runtime["llm_num_ctx"],
+                    "num_ctx": select_context_window(ollama_messages, runtime["llm_num_ctx"], runtime["history_chars_per_token"], num_predict),
                     "num_predict": num_predict,
                     "temperature": runtime["llm_temperature"]
                 }

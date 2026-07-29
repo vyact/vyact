@@ -437,7 +437,38 @@
     color: #ff8f8f;
     font-size: 12px;
 }
-.memo-attachment-uploading { padding: 6px 20px; color: var(--accent, #e07050); font-size: 12px; }
+.memo-attachment-upload-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: grid;
+    place-items: center;
+    background: rgba(0, 0, 0, 0.28);
+    cursor: wait;
+}
+
+.memo-attachment-upload-dialog {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 22px;
+    border: 1px solid color-mix(in srgb, var(--accent, #e07050) 45%, var(--border, rgba(255, 255, 255, 0.18)));
+    border-radius: 12px;
+    background: var(--bg-secondary, #1e1e1e);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.42);
+    color: var(--text, #fff);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.memo-attachment-upload-spinner {
+    color: var(--accent, #e07050);
+    animation: memo-attachment-spin 0.9s linear infinite;
+}
+
+@keyframes memo-attachment-spin {
+    to { transform: rotate(360deg); }
+}
 
 .tiptap h1 { font-size: 1.45em; font-weight: 700; margin: 0.8em 0 0.4em; }
 .tiptap h2 { font-size: 1.23em; font-weight: 700; margin: 0.7em 0 0.3em; }

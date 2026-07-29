@@ -16,6 +16,7 @@ from config import (
     DEFAULT_MODEL, INSTALL_DIR, LOGS_DIR, RECOMMENDED_MODELS,
     IMAGE_MODEL_IDS, SETUP_DONE, VENV_DIR, get_log_file,
 )
+from config.models import LLM_INITIAL_NUM_CTX, LLM_MAX_NUM_CTX
 from routers.deps import APP_DIR, load_config_async, save_config_async, sse, write_log
 from logger import get_logger
 from services.installer import is_docker_available, Installer
@@ -49,7 +50,7 @@ def clean_ollama_progress_line(raw_output: bytes) -> str:
     return lines[-1] if lines else ""
 
 RUNTIME_SETTING_LIMITS = {
-    "llm_temperature": (0, 1), "llm_num_ctx": (1024, 262144), "llm_num_predict": (1, 131072),
+    "llm_temperature": (0, 1), "llm_num_ctx": (LLM_INITIAL_NUM_CTX, LLM_MAX_NUM_CTX), "llm_num_predict": (1, 131072),
     "llm_max_tokens": (1, 32768), "top_k": (0, 100), "top_p": (0, 1),
     "history_token_budget": (0, 131072), "history_chars_per_token": (0.1, 10),
     "ollama_keep_alive": (-1, None), "bge_num_ctx": (1, 8192),

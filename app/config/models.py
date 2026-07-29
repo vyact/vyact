@@ -101,7 +101,11 @@ LLM_TEMPERATURE = 0.2
 # 입력(Input) + 출력(Output)을 모두 포함한 전체 컨텍스트 크기.
 # Windows는 일반 Ollama 빌드에서 채팅 모델과 bge-m3를 함께 유지하므로,
 # 메모리 부족을 피하기 위해 더 작은 기본 컨텍스트를 사용한다.
-LLM_NUM_CTX = 65536 if IS_WINDOWS else 131072
+# 모델은 작은 KV cache로 빠르게 준비하고, 요청별 context는 아래 최대값까지
+# 32K 단위에서 2배씩 확장한다.
+LLM_INITIAL_NUM_CTX = 32768
+LLM_MAX_NUM_CTX = 65536 if IS_WINDOWS else 131072
+LLM_NUM_CTX = LLM_MAX_NUM_CTX
 
 # Ollama 최대 출력 토큰
 LLM_NUM_PREDICT = 32768

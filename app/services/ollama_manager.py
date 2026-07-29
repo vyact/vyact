@@ -9,7 +9,7 @@ import logging
 
 import httpx
 
-from config.models import OLLAMA_KEEP_ALIVE
+from config.models import LLM_INITIAL_NUM_CTX, OLLAMA_KEEP_ALIVE
 from services.runtime_settings import get_runtime_settings
 
 OLLAMA_URL = "http://localhost:11434"
@@ -62,7 +62,7 @@ async def load_model(model: str) -> bool:
             resp = await client.post(
                 f"{OLLAMA_URL}/api/generate",
                 json={"model": model, "prompt": "", "keep_alive": keep_alive,
-                      "options": {"num_ctx": runtime["llm_num_ctx"], "num_predict": 0}},
+                      "options": {"num_ctx": LLM_INITIAL_NUM_CTX, "num_predict": 0}},
             )
             resp.raise_for_status()
             logger.info(f"[Ollama] Model loaded: {model}")
