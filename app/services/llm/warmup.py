@@ -14,7 +14,7 @@ _warmup_tasks: set[asyncio.Task] = set()
 
 
 async def warm_ollama_chat_prefix(model: str, language: str) -> bool:
-    """Evaluate the default system prompt once so Ollama can retain its prefix cache."""
+    """Complete a one-token request so Ollama retains the system-prompt prefix cache."""
     try:
         runtime = get_runtime_settings()
         system_message = build_system_message(
@@ -26,13 +26,15 @@ async def warm_ollama_chat_prefix(model: str, language: str) -> bool:
             "model": model,
             "stream": False,
             "keep_alive": runtime["ollama_keep_alive"],
-            "messages": [
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": ""},
-            ],
+                "messages": [
+                    {"role": "system", "content": system_message},
+                    {"role": "user", "content": "."},
+                ],
             "options": {
                 "num_ctx": LLM_INITIAL_NUM_CTX,
-                "num_predict": 0,
+                # num_predict=0 only loads/evaluates on some Ollama backends;
+                # completing one generated token commits the prefix KV cache.
+                "num_predict": 1,
                 "temperature": runtime["llm_temperature"],
                 **({"top_k": runtime["top_k"]} if runtime["top_k"] else {}),
                 **({"top_p": runtime["top_p"]} if runtime["top_p"] else {}),
