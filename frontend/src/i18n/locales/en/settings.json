@@ -199,7 +199,9 @@
       "memo_documents": "Memo and note data",
       "quick_notes": "Quick notes (TODO) data",
       "user_profile": "User profile information",
-      "vocab_words": "Vocabulary and learning word data"
+      "vocab_words": "Vocabulary and learning word data",
+      "knowledge_collections": "Knowledge collection definitions that group documents, memos, and email to limit RAG context",
+      "knowledge_email_threads": "Email threads attached to knowledge collections, including inline image references in message bodies"
     }
   },
   "api": {},

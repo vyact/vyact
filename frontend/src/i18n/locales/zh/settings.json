@@ -178,7 +178,9 @@
       "memo_documents": "备忘录和笔记数据",
       "quick_notes": "快捷备忘（TODO）数据",
       "user_profile": "用户资料信息",
-      "vocab_words": "词汇本和学习词汇数据"
+      "vocab_words": "词汇本和学习词汇数据",
+      "knowledge_collections": "将文档、备忘和邮件组合以限制 RAG 上下文范围的知识集合定义",
+      "knowledge_email_threads": "附加到知识集合的邮件线程及正文内嵌图片引用"
     }
   },
   "api": {},

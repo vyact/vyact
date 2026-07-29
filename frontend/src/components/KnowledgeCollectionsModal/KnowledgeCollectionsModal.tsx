@@ -27,7 +27,7 @@ const KnowledgeCollectionsModal = ({isOpen, collections, onClose, onCreate, onUp
     const [description, setDescription] = useState('');
     const [instruction, setInstruction] = useState('');
     const [browsing, setBrowsing] = useState<KnowledgeCollection | null>(null);
-    const [resolvedItems, setResolvedItems] = useState<Array<{source_type: 'document' | 'memo' | 'email_thread'; source_id: string; title: string; summary: string; updated_at: string; chunk_count?: number; content_html?: string; content?: string; messages?: Array<{id: string; from: string; to: string; cc?: string; date: string; subject: string; body: string}>; message_count?: number}>>([]);
+    const [resolvedItems, setResolvedItems] = useState<Array<{source_type: 'document' | 'memo' | 'email_thread'; source_id: string; title: string; summary: string; updated_at: string; chunk_count?: number; content_html?: string; content?: string; messages?: Array<{id: string; from: string; to: string; cc?: string; date: string; subject: string; body: string; html_body?: string}>; message_count?: number}>>([]);
     const [selectedItemId, setSelectedItemId] = useState('');
 
     useEffect(() => { if (!isOpen) { setEditing(null); setBrowsing(null); } }, [isOpen]);
@@ -126,7 +126,7 @@ const DocumentSourcePreview = ({sourceId}: {sourceId: string}) => {
     return <div className="knowledge-collection-document-preview"><nav>{chunks.map(item => <button key={item.chunk_index} className={item.chunk_index === selectedChunkIndex ? 'selected' : ''} onClick={() => setSelectedChunkIndex(item.chunk_index)}>#{item.chunk_index + 1} {item.content.slice(0, 80)}</button>)}</nav><article className={chunk ? '' : 'empty'}>{chunk?.content || t('knowledgeCollectionSources.selectItem')}</article></div>;
 };
 
-const EmailThreadPreview = ({item}: {item: {title: string; content?: string; messages?: Array<{id: string; from: string; to: string; cc?: string; date: string; subject: string; body: string}>}}) => {
+const EmailThreadPreview = ({item}: {item: {title: string; content?: string; messages?: Array<{id: string; from: string; to: string; cc?: string; date: string; subject: string; body: string; html_body?: string}>}}) => {
     const {t} = useTranslation('main');
     if (!item.messages?.length) return <pre className="knowledge-collection-email-content">{item.content}</pre>;
     return <div className="knowledge-collection-email-thread">
@@ -140,9 +140,17 @@ const EmailThreadPreview = ({item}: {item: {title: string; content?: string; mes
                 {message.cc && <div><dt>{t('googleWorkspace.cc')}</dt><dd>{message.cc}</dd></div>}
                 {message.subject && <div><dt>{t('googleWorkspace.subject')}</dt><dd>{message.subject}</dd></div>}
             </dl>
-            <div className="knowledge-collection-email-body">{message.body}</div>
+            {message.html_body ? <EmailHtmlBody html={message.html_body}/> : <div className="knowledge-collection-email-body">{message.body}</div>}
         </article>)}
     </div>;
+};
+
+const EmailHtmlBody = ({html}: {html: string}) => {
+    const resize = (iframe: HTMLIFrameElement) => {
+        const document = iframe.contentDocument;
+        if (document) iframe.style.height = `${Math.max(document.documentElement.scrollHeight, document.body.scrollHeight)}px`;
+    };
+    return <iframe className="knowledge-collection-email-html" sandbox="allow-popups allow-same-origin" scrolling="no" srcDoc={`<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src http: https: data: blob:; style-src 'unsafe-inline';"><base target="_blank"><style>html,body{margin:0;max-width:100%;background:#fff;color:#1f1f1f}body{padding:14px;box-sizing:border-box;overflow-wrap:anywhere;font-family:Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:12px;line-height:1.65}img{max-width:100%!important;height:auto!important}table{max-width:100%!important}</style></head><body>${html}</body></html>`} onLoad={event => { resize(event.currentTarget); event.currentTarget.contentDocument?.querySelectorAll('img').forEach(image => image.addEventListener('load', () => resize(event.currentTarget), {once: true})); }}/>
 };
 
 export default KnowledgeCollectionsModal;

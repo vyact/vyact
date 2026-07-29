@@ -17,7 +17,7 @@ from .config import (
     log_llm_call, log_llm_interaction, log_tool_names, logger,
 )
 from .helpers import (
-    load_images_b64, mime_type,
+    image_attachment_path, load_images_b64, mime_type,
     history_for_openai, history_for_gemini, history_for_claude,
 )
 from .tools import (
@@ -174,7 +174,7 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
     parts: list = [{"text": user_prompt}]
     for att in attachments:
         if att.get("type") == "image":
-            path = IMAGES_DIR / att["filename"]
+            path = image_attachment_path(att)
             if path.exists():
                 parts.append({"inline_data": {"mime_type": mime_type(att["filename"]),
                                               "data": base64.b64encode(path.read_bytes()).decode()}})
@@ -278,7 +278,7 @@ async def claude_stream(client, model, api_key, system_message, user_prompt,
     blocks: list = [{"type": "text", "text": user_prompt}]
     for att in attachments:
         if att.get("type") == "image":
-            path = IMAGES_DIR / att["filename"]
+            path = image_attachment_path(att)
             if path.exists():
                 blocks.append({"type": "image", "source": {
                     "type": "base64", "media_type": mime_type(att["filename"]),

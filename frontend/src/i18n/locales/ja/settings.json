@@ -178,7 +178,9 @@
       "memo_documents": "メモ・ノートデータ",
       "quick_notes": "クイックメモ（TODO）データ",
       "user_profile": "ユーザープロフィール情報",
-      "vocab_words": "単語帳・学習語彙データ"
+      "vocab_words": "単語帳・学習語彙データ",
+      "knowledge_collections": "文書・メモ・メールをまとめてRAGのコンテキスト範囲を限定するナレッジコレクション定義",
+      "knowledge_email_threads": "ナレッジコレクションに添付したメールスレッドと本文内インライン画像の参照"
     }
   },
   "api": {},

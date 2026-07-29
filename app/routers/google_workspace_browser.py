@@ -5,6 +5,7 @@ import hashlib
 import logging
 import re
 import secrets
+import shutil
 import zipfile
 from datetime import datetime as _dt
 from io import BytesIO
@@ -16,7 +17,7 @@ from email.mime.text import MIMEText
 from email.utils import getaddresses
 from typing import Annotated, Literal
 from urllib.parse import quote
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response
@@ -39,6 +40,7 @@ from services.google_workspace.gmail import (
 from services.llm import query_llm
 from services.db import EMAIL_THREADS_INDEX, SETTINGS_INDEX, get_es
 from services.indexer import get_embedding
+from config import INSTALL_DIR
 
 router = APIRouter()
 MAIL_PAGE_SIZE = 30
@@ -66,6 +68,8 @@ DRIVE_DOWNLOAD_JOBS: dict[str, dict] = {}
 DRIVE_FOLDER_PATH_MAX_DEPTH = 100
 GMAIL_BATCH_SIZE = 50
 logger = logging.getLogger(__name__)
+KNOWLEDGE_MAIL_IMAGES_DIR = INSTALL_DIR / "uploads" / "knowledge_mail_images"
+INLINE_IMAGE_DATA_URL_PATTERN = re.compile(r"data:(image/[a-zA-Z0-9.+-]+);base64,([A-Za-z0-9+/=_-]+)")
 
 
 class DriveBulkTrashRequest(BaseModel):
@@ -587,6 +591,31 @@ def _replace_inline_image_sources(html_body: str, payload: dict, service, messag
     return html_body
 
 
+def _persist_knowledge_inline_images(source_id: str, html_body: str) -> tuple[str, list[dict[str, str]]]:
+    """CID 이미지가 data URL로 변환된 메일 HTML을 로컬 파일 참조로 바꾼다."""
+    image_dir = KNOWLEDGE_MAIL_IMAGES_DIR / source_id
+    image_dir.mkdir(parents=True, exist_ok=True)
+    images: list[dict[str, str]] = []
+
+    def replace_image(match: re.Match[str]) -> str:
+        mime_type, encoded_data = match.groups()
+        try:
+            raw_data = base64.b64decode(encoded_data + "=" * (-len(encoded_data) % 4))
+        except ValueError:
+            return match.group(0)
+        extension = {"image/jpeg": ".jpg", "image/png": ".png", "image/gif": ".gif", "image/webp": ".webp", "image/svg+xml": ".svg"}.get(mime_type, ".img")
+        filename = f"{hashlib.sha256(raw_data).hexdigest()}{extension}"
+        file_path = image_dir / filename
+        if not file_path.exists():
+            file_path.write_bytes(raw_data)
+        image = {"filename": filename, "mime_type": mime_type, "path": str(file_path)}
+        if image not in images:
+            images.append(image)
+        return f"/api/google-workspace/mail/knowledge-images/{source_id}/{filename}"
+
+    return INLINE_IMAGE_DATA_URL_PATTERN.sub(replace_image, html_body), images
+
+
 def _message_attachments(payload: dict) -> list[dict[str, str | int]]:
     attachments = []
     for part in _walk_message_parts(payload):
@@ -929,6 +958,10 @@ async def index_mail_thread_for_knowledge(thread_id: str, request: MailKnowledge
     messages = [message for message in thread.get("messages", []) if GMAIL_TRASH_LABEL_ID not in message.get("labelIds", [])]
     if not messages:
         raise HTTPException(status_code=404, detail="Mail thread has no available messages.")
+    source_id = hashlib.sha256(f"{request.account_id}:{thread_id}".encode("utf-8")).hexdigest()
+    image_dir = KNOWLEDGE_MAIL_IMAGES_DIR / source_id
+    if image_dir.exists():
+        shutil.rmtree(image_dir)
     details = [_thread_message_detail(message, service) for message in messages]
     # 스레드의 표시 제목은 가장 최근 답변의 Re:/Fwd: 제목이 아니라 원본 메일 제목을 쓴다.
     subject = next((detail.get("subject", "") for detail in details if detail.get("subject")), "")
@@ -941,26 +974,24 @@ async def index_mail_thread_for_knowledge(thread_id: str, request: MailKnowledge
         )).strip()
         for index, detail in enumerate(details, start=1)
     ).strip()
-    source_id = hashlib.sha256(f"{request.account_id}:{thread_id}".encode("utf-8")).hexdigest()
     embedding = await get_embedding(f"{subject}\n{content}")
     attachment_metadata = [
         {"message_id": detail["id"], **attachment}
         for detail in details for attachment in detail.get("attachments", [])
     ]
-    thread_messages = [
-        {
-            "id": detail["id"],
-            "from": detail.get("from", ""),
-            "to": detail.get("to", ""),
-            "cc": detail.get("cc", ""),
-            "date": detail.get("date", ""),
-            "subject": detail.get("subject", ""),
-            "body": detail.get("body", ""),
-        }
-        for detail in details
-    ]
+    thread_messages = []
+    inline_images = []
+    for detail in details:
+        html_body, message_images = _persist_knowledge_inline_images(source_id, detail.get("htmlBody", ""))
+        thread_messages.append({
+            "id": detail["id"], "from": detail.get("from", ""), "to": detail.get("to", ""),
+            "cc": detail.get("cc", ""), "date": detail.get("date", ""),
+            "subject": detail.get("subject", ""), "body": detail.get("body", ""), "html_body": html_body,
+            "inline_images": message_images,
+        })
+        inline_images.extend(image for image in message_images if image not in inline_images)
     document = {"account_id": request.account_id, "thread_id": thread_id, "subject": subject,
-                "content": content, "messages": thread_messages, "message_count": len(details), "attachments": attachment_metadata,
+                "content": content, "messages": thread_messages, "inline_images": inline_images, "message_count": len(details), "attachments": attachment_metadata,
                 "indexed_at": _dt.utcnow().isoformat()}
     if embedding:
         document["embedding"] = embedding
@@ -970,6 +1001,17 @@ async def index_mail_thread_for_knowledge(thread_id: str, request: MailKnowledge
     finally:
         await es.close()
     return {"source_id": source_id, "thread_id": thread_id, "message_count": len(details), "updated": True}
+
+
+@router.get("/google-workspace/mail/knowledge-images/{source_id}/{filename}")
+async def get_knowledge_mail_inline_image(source_id: str, filename: str):
+    if not re.fullmatch(r"[a-f0-9]{64}", source_id):
+        raise HTTPException(status_code=404, detail="Image not found.")
+    safe_filename = Path(filename).name
+    image_path = KNOWLEDGE_MAIL_IMAGES_DIR / source_id / safe_filename
+    if safe_filename != filename or not image_path.is_file():
+        raise HTTPException(status_code=404, detail="Image not found.")
+    return Response(content=image_path.read_bytes(), media_type={".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".gif": "image/gif", ".webp": "image/webp", ".svg": "image/svg+xml"}.get(image_path.suffix.lower(), "application/octet-stream"))
 
 
 @router.get("/google-workspace/mail/messages/{message_id}/attachments/{attachment_id}")

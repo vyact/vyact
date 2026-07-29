@@ -4,6 +4,7 @@ services/llm/helpers.py — 메시지 조립 보조 함수
 이미지 base64 로딩, mime 판별, RAG context 주입, provider별 히스토리 변환.
 """
 import base64
+from pathlib import Path
 
 from .config import IMAGES_DIR
 from services.runtime_settings import get_runtime_settings
@@ -55,11 +56,15 @@ def select_history_by_budget(
     return selected
 
 
+def image_attachment_path(attachment: dict) -> Path:
+    return Path(attachment["path"]) if attachment.get("path") else IMAGES_DIR / attachment["filename"]
+
+
 def load_images_b64(attachments: list) -> list[str]:
     result = []
     for att in attachments:
         if att.get("type") == "image":
-            path = IMAGES_DIR / att["filename"]
+            path = image_attachment_path(att)
             if path.exists():
                 result.append(base64.b64encode(path.read_bytes()).decode("utf-8"))
     return result

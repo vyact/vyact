@@ -178,7 +178,9 @@
       "memo_documents": "Dữ liệu ghi chú và memo",
       "quick_notes": "Dữ liệu ghi chú nhanh (TODO)",
       "user_profile": "Thông tin hồ sơ người dùng",
-      "vocab_words": "Dữ liệu từ vựng và từ học tập"
+      "vocab_words": "Dữ liệu từ vựng và từ học tập",
+      "knowledge_collections": "Định nghĩa bộ sưu tập kiến thức nhóm tài liệu, ghi chú và email để giới hạn ngữ cảnh RAG",
+      "knowledge_email_threads": "Các luồng email đính kèm bộ sưu tập kiến thức, gồm tham chiếu ảnh nội tuyến trong nội dung"
     }
   },
   "api": {},

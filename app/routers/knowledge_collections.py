@@ -1,5 +1,6 @@
 """지식 컬렉션 CRUD — 문서·메모를 복제하지 않고 ID로만 묶는다."""
 import uuid
+import shutil
 from datetime import datetime, timezone
 
 from elasticsearch import NotFoundError
@@ -7,8 +8,28 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from services.db import EMAIL_THREADS_INDEX, FILES_INDEX, KNOWLEDGE_COLLECTIONS_INDEX, MEMO_INDEX, get_es
+from config import INSTALL_DIR
 
 router = APIRouter()
+KNOWLEDGE_MAIL_IMAGES_DIR = INSTALL_DIR / "uploads" / "knowledge_mail_images"
+
+
+async def _delete_orphaned_email_thread(es, source_id: str) -> None:
+    collections = await es.search(index=KNOWLEDGE_COLLECTIONS_INDEX, size=200, _source=["items"])
+    is_referenced = any(
+        item.get("source_type") == "email_thread" and item.get("source_id") == source_id
+        for hit in collections["hits"]["hits"]
+        for item in hit["_source"].get("items", [])
+    )
+    if is_referenced:
+        return
+    try:
+        await es.delete(index=EMAIL_THREADS_INDEX, id=source_id, refresh=True)
+    except NotFoundError:
+        pass
+    image_dir = KNOWLEDGE_MAIL_IMAGES_DIR / source_id
+    if image_dir.is_dir():
+        shutil.rmtree(image_dir)
 
 
 class KnowledgeCollectionItem(BaseModel):
@@ -84,11 +105,24 @@ async def create_knowledge_collection(body: KnowledgeCollectionBody):
 async def update_knowledge_collection(collection_id: str, body: KnowledgeCollectionBody):
     es = get_es()
     try:
+        existing = await es.get(index=KNOWLEDGE_COLLECTIONS_INDEX, id=collection_id)
         items = _normalized_items(body.items)
         await _validate_members(es, items)
         document = {"name": body.name.strip(), "description": body.description.strip(), "instruction": body.instruction.strip(),
                     "items": items, "updated_at": datetime.now(timezone.utc).isoformat()}
         await es.update(index=KNOWLEDGE_COLLECTIONS_INDEX, id=collection_id, doc=document, refresh=True)
+        previous_email_ids = {
+            item.get("source_id")
+            for item in existing["_source"].get("items", [])
+            if item.get("source_type") == "email_thread" and item.get("source_id")
+        }
+        current_email_ids = {
+            item["source_id"]
+            for item in items
+            if item["source_type"] == "email_thread"
+        }
+        for source_id in previous_email_ids - current_email_ids:
+            await _delete_orphaned_email_thread(es, source_id)
         result = await es.get(index=KNOWLEDGE_COLLECTIONS_INDEX, id=collection_id)
         return {**result["_source"], "id": result["_id"]}
     except NotFoundError:
@@ -131,7 +165,7 @@ async def get_knowledge_collection_items(collection_id: str):
 
 @router.delete("/knowledge-collections/{collection_id}/items/{source_type}/{source_id}")
 async def remove_knowledge_collection_item(collection_id: str, source_type: str, source_id: str):
-    """컬렉션의 참조만 제거한다. 원본 소스 인덱스는 삭제하지 않는다."""
+    """컬렉션의 참조를 제거한다. 고아가 된 메일 인덱스와 이미지는 함께 정리한다."""
     es = get_es()
     try:
         collection = await es.get(index=KNOWLEDGE_COLLECTIONS_INDEX, id=collection_id)
@@ -139,6 +173,8 @@ async def remove_knowledge_collection_item(collection_id: str, source_type: str,
         remaining_items = [item for item in items if not (item.get("source_type") == source_type and item.get("source_id") == source_id)]
         if len(remaining_items) != len(items):
             await es.update(index=KNOWLEDGE_COLLECTIONS_INDEX, id=collection_id, doc={"items": remaining_items, "updated_at": datetime.now(timezone.utc).isoformat()}, refresh=True)
+            if source_type == "email_thread":
+                await _delete_orphaned_email_thread(es, source_id)
         return {"ok": True, "items": remaining_items}
     except NotFoundError:
         raise HTTPException(status_code=404, detail="지식 컬렉션을 찾을 수 없습니다.")
@@ -150,7 +186,15 @@ async def remove_knowledge_collection_item(collection_id: str, source_type: str,
 async def delete_knowledge_collection(collection_id: str):
     es = get_es()
     try:
+        collection = await es.get(index=KNOWLEDGE_COLLECTIONS_INDEX, id=collection_id)
+        email_thread_ids = [
+            item.get("source_id", "")
+            for item in collection["_source"].get("items", [])
+            if item.get("source_type") == "email_thread"
+        ]
         await es.delete(index=KNOWLEDGE_COLLECTIONS_INDEX, id=collection_id, refresh=True)
+        for source_id in email_thread_ids:
+            await _delete_orphaned_email_thread(es, source_id)
         return {"ok": True}
     except NotFoundError:
         raise HTTPException(status_code=404, detail="지식 컬렉션을 찾을 수 없습니다.")

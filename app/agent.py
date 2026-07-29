@@ -9,6 +9,7 @@ app/services/
   prompts.py  – System Prompt CRUD + 캐시
 """
 import asyncio
+from pathlib import Path
 from typing import Any
 
 from services.request_context import current_user_question
@@ -33,6 +34,32 @@ from services.prompts import (
 from logger import get_logger
 
 logger = get_logger(__name__)
+
+
+def _knowledge_inline_image_attachments(docs: list[dict], limit: int = 3) -> list[dict]:
+    images: list[dict] = []
+    seen_paths: set[str] = set()
+
+    def add_images(image_list: list[dict]) -> bool:
+        for image in reversed(image_list):
+            path = image.get("path", "")
+            if not path or path in seen_paths or not Path(path).is_file():
+                continue
+            images.append({"type": "image", "filename": image.get("filename", "image"), "path": path})
+            seen_paths.add(path)
+            if len(images) >= limit:
+                return True
+        return False
+
+    for document in docs:
+        messages = document.get("messages", [])
+        if messages:
+            for message in reversed(messages):
+                if add_images(message.get("inline_images", [])):
+                    return images
+        elif add_images(document.get("inline_images", [])):
+            return images
+    return images
 
 
 async def _gather_rag_only(question: str) -> list[dict]:
@@ -129,7 +156,7 @@ async def rag_query(
         _, collection_instruction = await knowledge_collection_search(knowledge_collection_id, question, size=1)
         if collection_instruction:
             system_prompt = f"{system_prompt}\n\n[지식 컬렉션 지침]\n{collection_instruction}" if system_prompt else collection_instruction
-    answer = await query_llm(question, docs, system_prompt, attachments, conversation_history,
+    answer = await query_llm(question, docs, system_prompt, [*attachments, *_knowledge_inline_image_attachments(docs)], conversation_history,
                              reasoning=reasoning, conversation_summary=conversation_summary, call_reason=call_reason)
     return {
         "answer": answer.strip(),
@@ -245,7 +272,7 @@ async def rag_query_stream(
         system_prompt = f"{system_prompt}\n\n[지식 컬렉션 지침]\n{collection_instruction}" if system_prompt else collection_instruction
 
     async for ev in chat_stream_with_tools(
-            question, docs, system_prompt, attachments, conversation_history,
+            question, docs, system_prompt, [*attachments, *_knowledge_inline_image_attachments(docs)], conversation_history,
             reasoning=reasoning,
             format_instruction_override=format_instruction_override,
             conversation_summary=conversation_summary,

@@ -15,7 +15,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from config import INSTALL_DIR
-from services.db import get_es
+from services.db import EMAIL_THREADS_INDEX, get_es
 from services.google_workspace.auth import revoke_all_tokens
 from logger import get_logger
 
@@ -24,6 +24,7 @@ router = APIRouter()
 
 DOCS_DIR = INSTALL_DIR / "documents"
 MEMO_ATTACHMENTS_DIR = INSTALL_DIR / "uploads" / "memo_attachments"
+KNOWLEDGE_MAIL_IMAGES_DIR = INSTALL_DIR / "uploads" / "knowledge_mail_images"
 _EXCLUDE_PREFIXES = (".kibana", ".security", ".monitoring", ".watches", ".triggered_watches", ".geoip")
 _SETTINGS_EXCLUDE = {
     "index.creation_date", "index.uuid", "index.version",
@@ -198,7 +199,7 @@ class ExportRequest(BaseModel):
     include_files: bool = True  # 원본 문서 파일 포함 여부
 
 
-async def _read_backup(file: UploadFile) -> tuple[dict, dict[str, bytes], dict[str, bytes]]:
+async def _read_backup(file: UploadFile) -> tuple[dict, dict[str, bytes], dict[str, bytes], dict[str, bytes]]:
     """업로드한 JSON/ZIP 백업을 읽어 백업 데이터와 원본 파일을 반환한다."""
     filename = file.filename or ""
     if not (filename.endswith(".json") or filename.endswith(".zip")):
@@ -207,6 +208,7 @@ async def _read_backup(file: UploadFile) -> tuple[dict, dict[str, bytes], dict[s
     raw = await file.read()
     doc_files: dict[str, bytes] = {}
     memo_files: dict[str, bytes] = {}
+    knowledge_mail_image_files: dict[str, bytes] = {}
     if filename.endswith(".zip"):
         try:
             with zipfile.ZipFile(io.BytesIO(raw)) as zf:
@@ -221,6 +223,11 @@ async def _read_backup(file: UploadFile) -> tuple[dict, dict[str, bytes], dict[s
                         relative_path = Path(relative_name)
                         if not relative_path.is_absolute() and ".." not in relative_path.parts:
                             memo_files[relative_name] = zf.read(name)
+                    if name.startswith("knowledge_mail_images/") and not name.endswith("/"):
+                        relative_name = name.removeprefix("knowledge_mail_images/")
+                        relative_path = Path(relative_name)
+                        if not relative_path.is_absolute() and ".." not in relative_path.parts:
+                            knowledge_mail_image_files[relative_name] = zf.read(name)
         except HTTPException:
             raise
         except Exception:
@@ -233,13 +240,13 @@ async def _read_backup(file: UploadFile) -> tuple[dict, dict[str, bytes], dict[s
 
     if "indices" not in backup:
         raise HTTPException(400, "올바른 Vyact 백업 파일이 아닙니다.")
-    return backup, doc_files, memo_files
+    return backup, doc_files, memo_files, knowledge_mail_image_files
 
 
 @router.post("/backup/preview")
 async def preview_backup(file: UploadFile = File(...)):
     """복원 전에 백업에 포함된 인덱스와 원본 파일을 확인한다."""
-    backup, doc_files, memo_files = await _read_backup(file)
+    backup, doc_files, memo_files, knowledge_mail_image_files = await _read_backup(file)
     indices = []
     for name, payload in backup["indices"].items():
         docs = payload if isinstance(payload, list) else payload.get("docs", [])
@@ -256,7 +263,7 @@ async def preview_backup(file: UploadFile = File(...)):
     ]
     return {
         "indices": indices,
-        "file_count": len(doc_files) + len(memo_files),
+        "file_count": len(doc_files) + len(memo_files) + len(knowledge_mail_image_files),
         "plugins": plugins,
     }
 
@@ -293,7 +300,12 @@ async def export_backup(req: ExportRequest = None):
         json_bytes = json.dumps(backup, ensure_ascii=False, indent=2).encode("utf-8")
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-        if include_files and (DOCS_DIR.exists() or MEMO_ATTACHMENTS_DIR.exists()):
+        include_knowledge_mail_images = EMAIL_THREADS_INDEX in index_names
+        if include_files and (
+            DOCS_DIR.exists()
+            or MEMO_ATTACHMENTS_DIR.exists()
+            or (include_knowledge_mail_images and KNOWLEDGE_MAIL_IMAGES_DIR.exists())
+        ):
             # ZIP으로 패키징
             zip_buf = io.BytesIO()
             with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
@@ -308,6 +320,11 @@ async def export_backup(req: ExportRequest = None):
                         if f.is_file():
                             zf.write(f, f"memo_attachments/{f.relative_to(MEMO_ATTACHMENTS_DIR)}")
                             logger.info("[backup] 메모 첨부 포함: %s", f.name)
+                if include_knowledge_mail_images and KNOWLEDGE_MAIL_IMAGES_DIR.exists():
+                    for f in KNOWLEDGE_MAIL_IMAGES_DIR.rglob("*"):
+                        if f.is_file():
+                            zf.write(f, f"knowledge_mail_images/{f.relative_to(KNOWLEDGE_MAIL_IMAGES_DIR)}")
+                            logger.info("[backup] 지식 메일 이미지 포함: %s", f.name)
             zip_buf.seek(0)
             filename = f"vyact_backup_{ts}.zip"
             return StreamingResponse(
@@ -333,7 +350,7 @@ async def import_backup(
     restore_files: bool = Form(True),
 ):
     """JSON 또는 ZIP 백업 → ES 복원 + 원본 파일 복구"""
-    backup, doc_files, memo_files = await _read_backup(file)
+    backup, doc_files, memo_files, knowledge_mail_image_files = await _read_backup(file)
     backup_plugins = [
         plugin for plugin in backup.get("plugins", [])
         if isinstance(plugin, dict)
@@ -380,6 +397,15 @@ async def import_backup(
             dest.write_bytes(fbytes)
             files_restored += 1
             logger.info("[restore] 메모 첨부 복원: %s", relative_name)
+    if restore_files and EMAIL_THREADS_INDEX in backup["indices"] and knowledge_mail_image_files:
+        for relative_name, fbytes in knowledge_mail_image_files.items():
+            dest = KNOWLEDGE_MAIL_IMAGES_DIR / relative_name
+            if dest.exists():
+                files_skipped += 1
+                continue
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_bytes(fbytes)
+            files_restored += 1
 
     # ES 복원
     es = get_es()

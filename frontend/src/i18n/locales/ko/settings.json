@@ -199,7 +199,9 @@
       "memo_documents": "메모 · 노트 데이터",
       "quick_notes": "빠른 메모(TODO) 데이터",
       "user_profile": "사용자 프로필 정보",
-      "vocab_words": "단어장 · 학습 어휘 데이터"
+      "vocab_words": "단어장 · 학습 어휘 데이터",
+      "knowledge_collections": "문서·메모·메일을 묶어 RAG 범위를 제한하는 지식 컬렉션 정의",
+      "knowledge_email_threads": "지식 컬렉션에 첨부한 메일 스레드와 본문 인라인 이미지 참조"
     }
   },
   "api": {},

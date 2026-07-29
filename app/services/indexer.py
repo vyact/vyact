@@ -299,7 +299,7 @@ async def knowledge_collection_search(collection_id: str, query: str, size: int 
                 body["knn"] = {"field": "embedding", "query_vector": embedding, "k": size, "num_candidates": max(size * 10, 50), "filter": {"terms": {"id": memo_ids}}}
             searches.append(es.search(index=MEMO_INDEX, body=body))
         if email_thread_ids:
-            body = {"size": size, "_source": ["subject", "content", "indexed_at", "thread_id"],
+            body = {"size": size, "_source": ["subject", "content", "indexed_at", "thread_id", "inline_images"],
                     "query": {"bool": {"filter": [{"terms": {"_id": email_thread_ids}}], "should": [{"match": {"subject": {"query": query, "boost": 3}}}, {"match": {"content": {"query": query}}}], "minimum_should_match": 0}}}
             if embedding:
                 body["knn"] = {"field": "embedding", "query_vector": embedding, "k": size, "num_candidates": max(size * 10, 50), "filter": {"terms": {"_id": email_thread_ids}}}
@@ -318,6 +318,7 @@ async def knowledge_collection_search(collection_id: str, query: str, size: int 
                                 "source": item.get("source", "email_thread" if is_email_thread else "memo" if is_memo else ""),
                                 "indexed_at": item.get("updated_at", item.get("indexed_at", "")),
                                 "score": round(hit.get("_score") or 0, 3),
+                                **({"inline_images": item.get("inline_images", [])} if is_email_thread else {}),
                                 **({"memo_id": item.get("id", hit["_id"])} if is_memo else {})})
         results.sort(key=lambda item: item["score"], reverse=True)
         return results[:size], str(source.get("instruction", "")).strip()

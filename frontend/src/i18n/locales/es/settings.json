@@ -178,7 +178,9 @@
       "memo_documents": "Datos de memos y notas",
       "quick_notes": "Datos de notas rápidas (TODO)",
       "user_profile": "Información del perfil de usuario",
-      "vocab_words": "Datos de vocabulario y palabras de aprendizaje"
+      "vocab_words": "Datos de vocabulario y palabras de aprendizaje",
+      "knowledge_collections": "Definiciones de colecciones de conocimiento que agrupan documentos, notas y correo para limitar el contexto de RAG",
+      "knowledge_email_threads": "Hilos de correo adjuntos a colecciones de conocimiento, incluidas referencias a imágenes incrustadas en el mensaje"
     }
   },
   "api": {},
