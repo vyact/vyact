@@ -23,6 +23,7 @@ CHUNK_TYPE_PREFIX = {
     "table":     "[표]",
     "code":      "[코드]",
     "heading":   "[제목]",
+    "caption":   "[캡션]",
     "paragraph": "",
 }
 
