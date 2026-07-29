@@ -1188,7 +1188,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
                                                         <div className="dm-file-size">{formatSize(f.file_size)} · {t('documentModal.chunkCount', {count: f.chunk_count})} · {formatDate(f.indexed_at)}</div>
                                                     </div>
                                                     <div className="dm-saved-actions" onClick={e => e.stopPropagation()}>
-                                                        <KnowledgeCollectionAttachSelect source={{source_type: 'document', source_id: f.file_id}}/>
+                                                        <KnowledgeCollectionAttachSelect source={{source_type: 'document', source_id: f.file_id}} onCreateCollection={onClose}/>
                                                         <button
                                                             type="button"
                                                             className={`dm-action-btn icon-only attach${attachedDocumentIds.includes(f.file_id) ? ' active' : ''}`}

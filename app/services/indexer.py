@@ -299,8 +299,8 @@ async def knowledge_collection_search(collection_id: str, query: str, size: int 
                 body["knn"] = {"field": "embedding", "query_vector": embedding, "k": size, "num_candidates": max(size * 10, 50), "filter": {"terms": {"id": memo_ids}}}
             searches.append(es.search(index=MEMO_INDEX, body=body))
         if email_thread_ids:
-            body = {"size": size, "_source": ["subject", "content", "indexed_at", "thread_id", "inline_images"],
-                    "query": {"bool": {"filter": [{"terms": {"_id": email_thread_ids}}], "should": [{"match": {"subject": {"query": query, "boost": 3}}}, {"match": {"content": {"query": query}}}], "minimum_should_match": 0}}}
+            body = {"size": size, "_source": ["subject", "rag_content", "indexed_at", "thread_id", "inline_images"],
+                    "query": {"bool": {"filter": [{"terms": {"_id": email_thread_ids}}], "should": [{"match": {"subject": {"query": query, "boost": 3}}}, {"match": {"rag_content": {"query": query}}}], "minimum_should_match": 0}}}
             if embedding:
                 body["knn"] = {"field": "embedding", "query_vector": embedding, "k": size, "num_candidates": max(size * 10, 50), "filter": {"terms": {"_id": email_thread_ids}}}
             searches.append(es.search(index=EMAIL_THREADS_INDEX, body=body))
@@ -313,7 +313,7 @@ async def knowledge_collection_search(collection_id: str, query: str, size: int 
                 item = hit["_source"]
                 is_memo = item.get("source") == "memo"
                 is_email_thread = "thread_id" in item
-                results.append({"title": item.get("title", item.get("subject", "")), "content": item.get("content", ""),
+                results.append({"title": item.get("title", item.get("subject", "")), "content": item.get("rag_content", ""),
                                 "url": f"memo://{item.get('id', hit['_id'])}" if is_memo else (f"email-thread://{hit['_id']}" if is_email_thread else item.get("url", "")),
                                 "source": item.get("source", "email_thread" if is_email_thread else "memo" if is_memo else ""),
                                 "indexed_at": item.get("updated_at", item.get("indexed_at", "")),

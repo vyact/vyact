@@ -32,6 +32,7 @@ import TitleBar from '../TitleBar/TitleBar';
 import './MainPage.css';
 import {usePluginExtensions} from '../../plugins/usePluginExtensions';
 import {onGoogleWorkspaceStatusChanged} from '../../utils/mcpEvents';
+import {OPEN_KNOWLEDGE_COLLECTIONS_MODAL_EVENT} from '../../constants/ui';
 
 interface MainPageProps {
     onModelChange?: (model: string) => void;
@@ -402,6 +403,13 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
         onOpenQuickMemo: () => {
             closeAllModals();
             setShowQuickMemoModal(true);
+        },
+        onOpenKnowledgeCollections: () => {
+            closeAllModals();
+            window.dispatchEvent(new Event(OPEN_KNOWLEDGE_COLLECTIONS_MODAL_EVENT));
+        },
+        onOpenChatSummary: () => {
+            if (conv.currentConvId) setSummaryConvId(conv.currentConvId);
         },
         onCloseAll: () => closeAllModals(),
     }, showMemoModal);

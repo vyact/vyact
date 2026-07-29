@@ -391,8 +391,10 @@ async def ensure_index():
                 settings={"number_of_shards": 1, "number_of_replicas": 0, "analysis": KOREAN_ANALYSIS},
                 mappings={"properties": {
                     "account_id": {"type": "keyword"}, "thread_id": {"type": "keyword"},
-                    "subject": {"type": "text", "analyzer": "korean"}, "content": {"type": "text", "analyzer": "korean"},
+                    "subject": {"type": "text", "analyzer": "korean"}, "rag_content": {"type": "text", "analyzer": "korean"},
                     "message_count": {"type": "integer"}, "indexed_at": {"type": "date"},
+                    "display_messages": {"type": "object", "enabled": False},
+                    "inline_images": {"type": "object", "enabled": False},
                     "attachments": {"type": "object", "enabled": False},
                     "embedding": {"type": "dense_vector", "dims": 1024, "index": True, "similarity": "cosine", "index_options": {"type": "bbq_hnsw", "m": 16, "ef_construction": 100}},
                 }},

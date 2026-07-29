@@ -10,6 +10,8 @@ interface KeyboardHandlers {
     onNewConversation: () => void;
     onOpenMemo: () => void;
     onOpenQuickMemo: () => void;
+    onOpenKnowledgeCollections: () => void;
+    onOpenChatSummary: () => void;
     onCloseAll: () => void;
 }
 
@@ -56,6 +58,12 @@ export function useGlobalKeyboard(handlers: KeyboardHandlers, isMemoOpen = false
             } else if (meta && e.shiftKey && (e.key === 'N' || e.key === 'n')) {
                 e.preventDefault();
                 handlers.onOpenMemo();
+            } else if (meta && e.shiftKey && (e.key === 'L' || e.key === 'l')) {
+                e.preventDefault();
+                handlers.onOpenKnowledgeCollections();
+            } else if (meta && e.shiftKey && (e.key === 'J' || e.key === 'j')) {
+                e.preventDefault();
+                handlers.onOpenChatSummary();
             } else if (meta && e.shiftKey && (e.key === ',' || e.key === '<')) {
                 e.preventDefault();
                 handlers.onOpenSettings();

@@ -1024,7 +1024,7 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
                                         <button className="memo-icon-btn" disabled={isEditing} onClick={(e) => { e.stopPropagation(); if (!isEditing) void handleEdit(memo.id); }} title={t('memoModal.edit')} aria-label={t('memoModal.edit')}>
                                             <Pencil aria-hidden="true" />
                                         </button>
-                                        <KnowledgeCollectionAttachSelect source={{source_type: 'memo', source_id: memo.id}}/>
+                                        <KnowledgeCollectionAttachSelect source={{source_type: 'memo', source_id: memo.id}} onCreateCollection={onClose}/>
                                         <button className="memo-icon-btn memo-icon-btn-danger" disabled={isEditing} onClick={(e) => { if (!isEditing) handleDelete(memo.id, memo.title, e); }} title={t('memoModal.delete')} aria-label={t('memoModal.delete')}>
                                             <Trash2 aria-hidden="true" />
                                         </button>

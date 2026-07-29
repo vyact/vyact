@@ -28,6 +28,7 @@ interface CustomSelectProps {
     onClear?: () => void;
     clearLabel?: string;
     footer?: React.ReactNode;
+    emptyState?: React.ReactNode;
     ariaLabel?: string;
     portal?: boolean;
     onOpen?: () => void;
@@ -52,6 +53,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                                                        onClear,
                                                        clearLabel = 'Clear selection',
                                                        footer,
+                                                       emptyState,
                                                        ariaLabel,
                                                        portal = false,
                                                        onOpen,
@@ -188,9 +190,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                         </div>
                     ))
                 ) : (
-                    <div className="custom-select-empty">
-                        {search ? '검색 결과 없음' : '항목 없음'}
-                    </div>
+                    emptyState || <div className="custom-select-empty">{search ? '검색 결과 없음' : '항목 없음'}</div>
                 )}
             </div>
 

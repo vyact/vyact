@@ -181,7 +181,9 @@ async def get_knowledge_collection_items(collection_id: str):
             elif source_type == "memo":
                 resolved_items.append({"source_type": source_type, "source_id": source_id, "title": source.get("title", ""), "summary": source.get("content", "")[:300], "updated_at": source.get("updated_at", ""), "content_html": source.get("content_html", "")})
             else:
-                resolved_items.append({"source_type": source_type, "source_id": source_id, "title": source.get("subject", ""), "summary": source.get("content", "")[:300], "updated_at": source.get("indexed_at", ""), "content": source.get("content", ""), "messages": source.get("messages", []), "message_count": source.get("message_count", 0)})
+                rag_content = source.get("rag_content", "")
+                display_messages = source.get("display_messages", [])
+                resolved_items.append({"source_type": source_type, "source_id": source_id, "title": source.get("subject", ""), "summary": rag_content[:300], "updated_at": source.get("indexed_at", ""), "content": rag_content, "messages": display_messages, "message_count": source.get("message_count", 0)})
         return {"items": resolved_items}
     except NotFoundError:
         raise HTTPException(status_code=404, detail="지식 컬렉션을 찾을 수 없습니다.")

@@ -17,7 +17,7 @@ import McpMentionMenu, {MentionMcpServer} from './McpMentionMenu';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import type {SelectOption} from '../CustomSelect/CustomSelect';
 import CommandModal from './CommandModal';
-import {KNOWLEDGE_COLLECTIONS_UPDATED_EVENT, TEXTAREA_MAX_HEIGHT} from '../../constants/ui';
+import {KNOWLEDGE_COLLECTIONS_UPDATED_EVENT, OPEN_KNOWLEDGE_COLLECTIONS_MODAL_EVENT, TEXTAREA_MAX_HEIGHT} from '../../constants/ui';
 import {getGoogleWorkspaceStatus} from '../../services/googleWorkspaceStatus';
 import type {GoogleCalendarSelection} from '../../types/googleWorkspace';
 
@@ -118,6 +118,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
         const refresh = () => void refreshKnowledgeCollections();
         window.addEventListener(KNOWLEDGE_COLLECTIONS_UPDATED_EVENT, refresh);
         return () => window.removeEventListener(KNOWLEDGE_COLLECTIONS_UPDATED_EVENT, refresh);
+    }, []);
+    useEffect(() => {
+        const openCollectionManager = () => setShowKnowledgeCollectionsModal(true);
+        window.addEventListener(OPEN_KNOWLEDGE_COLLECTIONS_MODAL_EVENT, openCollectionManager);
+        return () => window.removeEventListener(OPEN_KNOWLEDGE_COLLECTIONS_MODAL_EVENT, openCollectionManager);
     }, []);
     useEffect(() => {
         if (showKnowledgeCollectionsModal) void refreshKnowledgeCollections();
@@ -496,7 +501,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
                             <CustomSelect
                                 className="chat-system-prompt-select"
-                                options={[{value: '', label: t('knowledgeCollections.none')}, ...knowledgeCollections.map(collection => ({value: collection.id, label: collection.name}))]}
+                                options={knowledgeCollections.map(collection => ({value: collection.id, label: collection.name}))}
                                 value={selectedKnowledgeCollectionId}
                                 onChange={setSelectedKnowledgeCollectionId}
                                 placeholder={t('knowledgeCollections.select')}
@@ -595,7 +600,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 isOpen={showKnowledgeCollectionsModal}
                 collections={knowledgeCollections}
                 onClose={() => setShowKnowledgeCollectionsModal(false)}
-                onCreate={async data => { const created = await api.createKnowledgeCollection(data); setKnowledgeCollections(items => [created, ...items]); setSelectedKnowledgeCollectionId(created.id); }}
+                onCreate={async data => { const created = await api.createKnowledgeCollection(data); setKnowledgeCollections(items => [created, ...items]); }}
                 onUpdate={async (id, data) => { const updated = await api.updateKnowledgeCollection(id, data); setKnowledgeCollections(items => items.map(item => item.id === id ? updated : item)); }}
                 onDelete={async id => { await api.deleteKnowledgeCollection(id); setKnowledgeCollections(items => items.filter(item => item.id !== id)); setSelectedKnowledgeCollectionId(current => current === id ? '' : current); }}
                 onReorder={async collectionIds => { await api.reorderKnowledgeCollections(collectionIds); setKnowledgeCollections(items => collectionIds.map(id => items.find(item => item.id === id)).filter((item): item is KnowledgeCollection => Boolean(item))); }}

@@ -997,7 +997,7 @@ async def index_mail_thread_for_knowledge(thread_id: str, request: MailKnowledge
         details = [_thread_message_detail(message, service) for message in messages]
     # 스레드의 표시 제목은 가장 최근 답변의 Re:/Fwd: 제목이 아니라 원본 메일 제목을 쓴다.
     subject = next((detail.get("subject", "") for detail in details if detail.get("subject")), "")
-    content = "\n\n".join(
+    rag_content = "\n\n".join(
         "\n".join((
             f"[메일 스레드 메시지 {index}/{len(details)} — 오래된 순]",
             f"From: {detail.get('from', '')}", f"To: {detail.get('to', '')}",
@@ -1006,16 +1006,16 @@ async def index_mail_thread_for_knowledge(thread_id: str, request: MailKnowledge
         )).strip()
         for index, detail in enumerate(details, start=1)
     ).strip()
-    embedding = await get_embedding(f"{subject}\n{content}")
+    embedding = await get_embedding(f"{subject}\n{rag_content}")
     attachment_metadata = [
         {"message_id": detail["id"], **attachment}
         for detail in details for attachment in detail.get("attachments", [])
     ]
-    thread_messages = []
+    display_messages = []
     inline_images = []
     for detail in details:
         html_body, message_images = _persist_knowledge_inline_images(source_id, detail.get("htmlBody", ""))
-        thread_messages.append({
+        display_messages.append({
             "id": detail["id"], "from": detail.get("from", ""), "to": detail.get("to", ""),
             "cc": detail.get("cc", ""), "date": detail.get("date", ""),
             "subject": detail.get("subject", ""), "body": detail.get("body", ""), "html_body": html_body,
@@ -1023,7 +1023,7 @@ async def index_mail_thread_for_knowledge(thread_id: str, request: MailKnowledge
         })
         inline_images.extend(image for image in message_images if image not in inline_images)
     document = {"account_id": request.account_id, "thread_id": thread_id, "subject": subject,
-                "content": content, "messages": thread_messages, "inline_images": inline_images, "message_count": len(details), "attachments": attachment_metadata,
+                "rag_content": rag_content, "display_messages": display_messages, "inline_images": inline_images, "message_count": len(details), "attachments": attachment_metadata,
                 "indexed_at": _dt.utcnow().isoformat()}
     if embedding:
         document["embedding"] = embedding
