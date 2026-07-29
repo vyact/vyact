@@ -151,7 +151,7 @@ Docker Desktop은 선택 사항입니다. 처음 실행하면 Vyact가 나머지
 
 ### Chrome 확장 프로그램 사용하기
 
-1. Chrome Web Store 승인 후 이곳에 설치 링크를 제공합니다.
+1. [Chrome 웹 스토어에서 Vyact를 설치합니다](https://chromewebstore.google.com/detail/vyact/opfbakfhoojmdkbbhcglolkpgmenjbib).
 2. Vyact 데스크톱 앱을 실행합니다.
 3. Chrome 툴바에 Vyact를 고정하고, 원하는 페이지에서 사이드 패널을 엽니다.
 

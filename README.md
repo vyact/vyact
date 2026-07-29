@@ -151,7 +151,7 @@ Docker Desktop is optional. On first launch, Vyact prepares everything else auto
 
 ### Use the Chrome extension
 
-1. The Chrome Web Store listing will be linked here after approval.
+1. Install [Vyact from the Chrome Web Store](https://chromewebstore.google.com/detail/vyact/opfbakfhoojmdkbbhcglolkpgmenjbib).
 2. Start the Vyact desktop app.
 3. Pin Vyact to the Chrome toolbar and open its side panel on any page.
 
