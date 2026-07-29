@@ -12,9 +12,10 @@ import './App.css';
 const App: React.FC = () => {
     const {t} = useTranslation('settings');
     const isInitialSetupLaunch = new URLSearchParams(window.location.search).get('initialSetup') === '1';
-    const [isSetupComplete, setIsSetupComplete] = useState<boolean | undefined>(() => (
-        isInitialSetupLaunch ? false : undefined
-    ));
+    // `initialSetup=1` BrowserView is retained after setup. On a renderer
+    // refresh, do not assume setup is incomplete or the wizard flashes before
+    // the restored setup status is fetched.
+    const [isSetupComplete, setIsSetupComplete] = useState<boolean | undefined>(undefined);
     const [dictionaryRequest, setDictionaryRequest] = useState<{resolve: (installed: boolean) => void} | null>(null);
     const [isInstallingDictionary, setIsInstallingDictionary] = useState(false);
     const [dictionaryProgress, setDictionaryProgress] = useState(0);
