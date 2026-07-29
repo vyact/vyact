@@ -145,6 +145,10 @@ class MailLabelCreateRequest(BaseModel):
     name: str = Field(min_length=1, max_length=225)
 
 
+class MailLabelUpdateRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=225)
+
+
 async def _mail_signature_document_id(account_id: str) -> str:
     status = await get_auth_status()
     account = next(
@@ -876,6 +880,21 @@ async def delete_mail_label(label_id: str):
     service = await _build_service("gmail", "v1")
     service.users().labels().delete(userId="me", id=label_id).execute()
     return {"ok": True}
+
+
+@router.patch("/google-workspace/mail/labels/{label_id}")
+async def update_mail_label(label_id: str, request: MailLabelUpdateRequest):
+    await _require_connection()
+    label_name = request.name.strip()
+    if not label_name:
+        raise HTTPException(status_code=400, detail="Label name is required")
+    service = await _build_service("gmail", "v1")
+    label = service.users().labels().patch(
+        userId="me",
+        id=label_id,
+        body={"name": label_name},
+    ).execute()
+    return {"ok": True, "label": label}
 
 
 @router.get("/google-workspace/mail/messages")

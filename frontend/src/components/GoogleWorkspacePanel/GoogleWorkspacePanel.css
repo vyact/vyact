@@ -62,9 +62,15 @@
 .gwp-nav .gwp-label-add-button:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
 .gwp-user-label-row { position: relative; display: flex; align-items: center; }
 .gwp-nav .gwp-user-label-select { padding-right: 38px; }
-.gwp-nav .gwp-label-delete-button { position: absolute; right: 4px; display: grid; width: 28px; height: 28px; place-items: center; padding: 0; color: var(--muted); opacity: .65; }
-.gwp-user-label-row:hover .gwp-label-delete-button, .gwp-label-delete-button:focus-visible { opacity: 1; }
-.gwp-nav .gwp-label-delete-button:hover { background: rgba(225, 116, 92, .12); color: #e1745c; }
+.gwp-label-menu { position: absolute; right: 4px; }
+.gwp-nav .gwp-label-menu-button { display: grid; width: 28px; height: 28px; place-items: center; padding: 0; color: var(--muted); opacity: .65; }
+.gwp-user-label-row:hover .gwp-label-menu-button, .gwp-label-menu-button:focus-visible, .gwp-label-menu-button[aria-expanded="true"] { opacity: 1; }
+.gwp-nav .gwp-label-menu-button:hover, .gwp-label-menu-button[aria-expanded="true"] { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
+.gwp-label-menu-popover { position: absolute; z-index: 8; top: calc(100% + 4px); right: 0; min-width: 138px; padding: 5px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface2); box-shadow: 0 10px 28px rgba(0, 0, 0, .3); }
+.gwp-label-menu-popover button { display: flex; width: 100%; align-items: center; gap: 8px; padding: 8px 9px; border: 0; border-radius: 6px; background: transparent; color: var(--text); font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+.gwp-label-menu-popover button:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.gwp-label-menu-popover button.danger { color: #e1745c; }
+.gwp-label-menu-popover button.danger:hover { background: rgba(225, 116, 92, .12); }
 
 .gwp-label-modal-overlay { display: flex; align-items: center; justify-content: center; padding: 20px; }
 .gwp-label-modal { width: min(420px, calc(100vw - 40px)); padding: 20px; border: 1px solid var(--border); border-radius: 13px; background: var(--surface2); box-shadow: 0 18px 50px rgba(0, 0, 0, .35); }

@@ -263,6 +263,15 @@ export const api = {
         await assertOk(response, 'Unable to delete email label.');
         return response.json();
     },
+    async updateGoogleMailLabel(id: string, name: string) {
+        const response = await fetch(`${API_BASE}/google-workspace/mail/labels/${encodeURIComponent(id)}`, {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name}),
+        });
+        await assertOk(response, 'Unable to rename email label.');
+        return response.json();
+    },
     async getGoogleMailWorkspace(label = 'INBOX'): Promise<GoogleMailWorkspaceResponse> {
         const params = new URLSearchParams({label});
         const requestKey = params.toString();

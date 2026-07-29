@@ -2,7 +2,7 @@ import {memo, type ReactNode, useEffect, useLayoutEffect, useRef, useState} from
 import {renderAsync as renderDocx} from 'docx-preview';
 import {createPortal} from 'react-dom';
 import {useTranslation} from 'react-i18next';
-import {Archive, CheckCircle2, ChevronDown, ChevronLeft, ChevronUp, CircleAlert, Clock3, Download, FileText, FolderInput, Forward, Inbox, LoaderCircle, Mail, MessageSquarePlus, MoreVertical, Paperclip, PenLine, Plus, RefreshCw, Reply, Save, Send, Settings, ShoppingBag, Sparkles, Star, Tag, Trash2, TriangleAlert, X} from 'lucide-react';
+import {Archive, CheckCircle2, ChevronDown, ChevronLeft, ChevronUp, CircleAlert, Clock3, Download, FileText, FolderInput, Forward, Inbox, LoaderCircle, Mail, MessageSquarePlus, MoreVertical, Paperclip, Pencil, PenLine, Plus, RefreshCw, Reply, Save, Send, Settings, ShoppingBag, Sparkles, Star, Tag, Trash2, TriangleAlert, X} from 'lucide-react';
 import {api} from '../../services/api';
 import {ApiError} from '../../utils/apiError';
 import {copyToClipboard} from '../../utils/helpers';
@@ -515,6 +515,10 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
     const [isCreatingLabel, setIsCreatingLabel] = useState(false);
     const [labelToDelete, setLabelToDelete] = useState<MailLabel | null>(null);
     const [isDeletingLabel, setIsDeletingLabel] = useState(false);
+    const [labelMenuId, setLabelMenuId] = useState<string | null>(null);
+    const [labelToRename, setLabelToRename] = useState<MailLabel | null>(null);
+    const [renamedLabelName, setRenamedLabelName] = useState('');
+    const [isRenamingLabel, setIsRenamingLabel] = useState(false);
     const [mails, setMails] = useState<MailItem[]>([]);
     const [selectedMailIds, setSelectedMailIds] = useState<Set<string>>(new Set());
     const [nextMailPageToken, setNextMailPageToken] = useState<string | null>(null);
@@ -578,6 +582,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
     const [selectedMacroId, setSelectedMacroId] = useState('');
     const [isMacroMenuOpen, setIsMacroMenuOpen] = useState(false);
     const macroMenuRef = useRef<HTMLDivElement>(null);
+    const labelMenuRef = useRef<HTMLDivElement>(null);
     const attachmentRef = useRef<HTMLInputElement>(null);
     const composeAttachmentDetailsRef = useRef<HTMLDetailsElement>(null);
     const mailOpenRequestIdRef = useRef(0);
@@ -604,6 +609,14 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
         document.addEventListener('pointerdown', closeMacroMenu);
         return () => document.removeEventListener('pointerdown', closeMacroMenu);
     }, [isMacroMenuOpen]);
+    useEffect(() => {
+        if (!labelMenuId) return;
+        const closeLabelMenu = (event: PointerEvent) => {
+            if (!labelMenuRef.current?.contains(event.target as Node)) setLabelMenuId(null);
+        };
+        document.addEventListener('pointerdown', closeLabelMenu);
+        return () => document.removeEventListener('pointerdown', closeLabelMenu);
+    }, [labelMenuId]);
     const [aiGenerating, setAiGenerating] = useState(false);
     const [aiGeneratedText, setAiGeneratedText] = useState<string | null>(null);
     const [originalMailForAi, setOriginalMailForAi] = useState<MailDetail | null>(null);
@@ -669,6 +682,24 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
             await loadMailLabels();
         } finally {
             setIsDeletingLabel(false);
+        }
+    };
+    const openLabelRename = (item: MailLabel) => {
+        setLabelMenuId(null);
+        setLabelToRename(item);
+        setRenamedLabelName(item.name);
+    };
+    const renameMailLabel = async () => {
+        const name = renamedLabelName.trim();
+        if (!labelToRename || !name || isRenamingLabel) return;
+        setIsRenamingLabel(true);
+        try {
+            await api.updateGoogleMailLabel(labelToRename.id, name);
+            setLabels(current => current.map(item => item.id === labelToRename.id ? {...item, name} : item));
+            setLabelToRename(null);
+            await loadMailLabels();
+        } finally {
+            setIsRenamingLabel(false);
         }
     };
 
@@ -1896,7 +1927,13 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
                     </div>
                     {userLabels.map(item => <div className="gwp-user-label-row" key={item.id}>
                         <button className={`gwp-user-label-select${label === item.id ? ' active' : ''}`} onClick={() => selectLabel(item.id)}><Tag aria-hidden="true" size={18}/><span>{item.name}</span>{item.unreadCount > 0 && <strong className="gwp-label-unread-count" aria-label={String(item.unreadCount)}>{item.unreadCount}</strong>}</button>
-                        <button className="gwp-label-delete-button" aria-label={t('googleWorkspace.deleteLabel', {name: item.name})} onClick={() => setLabelToDelete(item)}><Trash2 aria-hidden="true" size={15}/></button>
+                        <div className="gwp-label-menu" ref={labelMenuId === item.id ? labelMenuRef : undefined}>
+                            <button className="gwp-label-menu-button" aria-label={t('googleWorkspace.labelActions', {name: item.name})} aria-expanded={labelMenuId === item.id} onClick={() => setLabelMenuId(current => current === item.id ? null : item.id)}><MoreVertical aria-hidden="true" size={17}/></button>
+                            {labelMenuId === item.id && <div className="gwp-label-menu-popover" role="menu">
+                                <button role="menuitem" onClick={() => openLabelRename(item)}><Pencil aria-hidden="true" size={15}/>{t('googleWorkspace.renameLabel')}</button>
+                                <button className="danger" role="menuitem" onClick={() => { setLabelMenuId(null); setLabelToDelete(item); }}><Trash2 aria-hidden="true" size={15}/>{t('googleWorkspace.delete')}</button>
+                            </div>}
+                        </div>
                     </div>)}
                 </div>
             </nav>
@@ -1909,6 +1946,13 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
                 <header><h3>{t('googleWorkspace.newLabel')}</h3><button type="button" aria-label={t('googleWorkspace.close')} onClick={() => setIsLabelCreateOpen(false)} disabled={isCreatingLabel}><X aria-hidden="true" size={20}/></button></header>
                 <label><span>{t('googleWorkspace.newLabelName')}</span><input autoFocus value={newLabelName} onChange={event => setNewLabelName(event.target.value)} maxLength={225} disabled={isCreatingLabel}/></label>
                 <footer><button type="button" className="gwp-label-modal-cancel" onClick={() => setIsLabelCreateOpen(false)} disabled={isCreatingLabel}>{t('googleWorkspace.cancel')}</button><button type="submit" className="gwp-primary" disabled={!newLabelName.trim() || isCreatingLabel}>{isCreatingLabel ? <LoaderCircle aria-hidden="true" size={16} className="gwp-spin"/> : null}{t('googleWorkspace.create')}</button></footer>
+            </form>
+        </ModalOverlay>}
+        {labelToRename && <ModalOverlay className="gwp-label-modal-overlay" onClose={() => { if (!isRenamingLabel) setLabelToRename(null); }} closeOnBackdrop={!isRenamingLabel}>
+            <form className="gwp-label-modal" aria-busy={isRenamingLabel} onSubmit={event => { event.preventDefault(); void renameMailLabel(); }}>
+                <header><h3>{t('googleWorkspace.renameLabel')}</h3><button type="button" aria-label={t('googleWorkspace.close')} onClick={() => setLabelToRename(null)} disabled={isRenamingLabel}><X aria-hidden="true" size={20}/></button></header>
+                <label><span>{t('googleWorkspace.labelName')}</span><input autoFocus value={renamedLabelName} onChange={event => setRenamedLabelName(event.target.value)} maxLength={225} disabled={isRenamingLabel}/></label>
+                <footer><button type="button" className="gwp-label-modal-cancel" onClick={() => setLabelToRename(null)} disabled={isRenamingLabel}>{t('googleWorkspace.cancel')}</button><button type="submit" className="gwp-primary" disabled={!renamedLabelName.trim() || isRenamingLabel}>{isRenamingLabel ? <LoaderCircle aria-hidden="true" size={16} className="gwp-spin"/> : null}{t('googleWorkspace.saveLabel')}</button></footer>
             </form>
         </ModalOverlay>}
         {labelToDelete && <ConfirmModal
