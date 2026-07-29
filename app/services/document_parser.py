@@ -5,7 +5,7 @@ chunk_type: paragraph | table | code | heading
 """
 import re
 from pathlib import Path
-from typing import NamedTuple
+from typing import Iterable, NamedTuple
 
 from logger import get_logger
 from services.runtime_settings import get_runtime_settings
@@ -28,9 +28,86 @@ class Chunk(NamedTuple):
     page_number: int | None = None  # PDF 페이지 번호 (1-based)
 
 
+def _split_lines_with_context(lines: Iterable[str], *, context_lines: list[str], chunk_type: str,
+                              heading_path: list[str] | None = None, page_number: int | None = None) -> list[Chunk]:
+    """행 경계를 지키며 모든 구조화 청크에 최대 길이를 적용한다."""
+    chunk_size, _ = _chunk_settings()
+    context = [line for line in context_lines if line.strip()]
+    prefix_length = len("\n".join(context)) + (1 if context else 0)
+    output: list[Chunk] = []
+    current: list[str] = []
+    current_length = prefix_length
+
+    def emit() -> None:
+        if current:
+            output.append(Chunk(text="\n".join([*context, *current]).strip(), chunk_type=chunk_type,
+                                heading_path=list(heading_path or []), page_number=page_number))
+            current.clear()
+
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        if current and current_length + len(line) + 1 > chunk_size:
+            emit()
+            current_length = prefix_length
+        if not current and prefix_length + len(line) > chunk_size:
+            available = max(1, chunk_size - prefix_length)
+            for part in split_chunks(line, chunk_size=available, overlap=0):
+                output.append(Chunk(text="\n".join([*context, part]).strip(), chunk_type=chunk_type,
+                                    heading_path=list(heading_path or []), page_number=page_number))
+            continue
+        current.append(line)
+        current_length += len(line) + 1
+    emit()
+    return output
+
+
+def _table_chunks(rows: list[str], *, context_lines: list[str] | None = None,
+                  heading_path: list[str] | None = None, page_number: int | None = None) -> list[Chunk]:
+    """표는 행 경계에서 분할하고 제목·헤더를 모든 분할 청크에 반복한다."""
+    if not rows:
+        return []
+    return _split_lines_with_context(rows[1:] or [rows[0]], context_lines=[*(context_lines or []), rows[0]],
+                                     chunk_type="table", heading_path=heading_path, page_number=page_number)
+
+
 # ─────────────────────────────
 # 파서들 (텍스트만 반환 — 내부용)
 # ─────────────────────────────
+
+def _extract_pdf_body_text(page, table_bboxes: list[tuple]) -> str:
+    """표를 제외한 PDF 본문을 읽기 순서대로 추출한다.
+
+    중앙 여백이 뚜렷한 페이지는 좌측 열 전체 후 우측 열 전체를 읽는다. 단일 열
+    문서나 넓은 표제/초록이 있는 페이지는 기존의 위→아래 추출을 유지한다.
+    """
+    try:
+        body_page = page.filter(
+            lambda obj: obj["object_type"] == "char" and not any(
+                bbox[0] <= obj["x0"] <= bbox[2] and bbox[1] <= obj["top"] <= bbox[3]
+                for bbox in table_bboxes
+            )
+        ) if table_bboxes else page
+        words = body_page.extract_words()
+        if not words:
+            return ""
+
+        page_midpoint = page.width / 2
+        left_words = [word for word in words if word["x1"] < page.width * 0.48]
+        right_words = [word for word in words if word["x0"] > page.width * 0.52]
+        center_words = [word for word in words if page.width * 0.45 <= (word["x0"] + word["x1"]) / 2 <= page.width * 0.55]
+        has_two_columns = (
+            len(left_words) >= 30 and len(right_words) >= 30
+            and len(center_words) * 12 < min(len(left_words), len(right_words))
+        )
+        if has_two_columns:
+            left_text = body_page.crop((0, 0, page_midpoint, page.height)).extract_text() or ""
+            right_text = body_page.crop((page_midpoint, 0, page.width, page.height)).extract_text() or ""
+            return "\n".join(part for part in (left_text, right_text) if part.strip())
+        return body_page.extract_text() or ""
+    except Exception:
+        return page.extract_text() or ""
 
 def _parse_pdf_chunks(path: Path) -> list[Chunk]:
     """pdfplumber로 표/텍스트/코드/제목 구분 청크 생성"""
@@ -44,6 +121,7 @@ def _parse_pdf_chunks(path: Path) -> list[Chunk]:
 
     chunks: list[Chunk] = []
     current_headings: list[str] = []  # 현재 heading 경로 스택
+    previous_table_header: list[str] = []
 
     with pdfplumber.open(path) as pdf:
         for page_num, page in enumerate(pdf.pages, start=1):
@@ -57,29 +135,22 @@ def _parse_pdf_chunks(path: Path) -> list[Chunk]:
                     cells = [str(c).strip() if c else "" for c in row]
                     if any(cells):
                         rows.append(" | ".join(cells))
-                if rows:
-                    chunks.append(Chunk(
-                        text="\n".join(rows),
-                        chunk_type="table",
-                        heading_path=list(current_headings),
-                        page_number=page_num,
-                    ))
+                column_count = len(rows[0].split(" | ")) if rows else 0
+                first_row_has_value = bool(re.search(r"\d", rows[0])) if rows else False
+                is_continuation = (
+                    previous_table_header and column_count == len(previous_table_header)
+                    and first_row_has_value
+                )
+                if is_continuation:
+                    chunks.extend(_split_lines_with_context(rows, context_lines=previous_table_header,
+                                                            chunk_type="table", heading_path=current_headings,
+                                                            page_number=page_num))
+                else:
+                    chunks.extend(_table_chunks(rows, heading_path=current_headings, page_number=page_num))
+                    previous_table_header = rows[0].split(" | ")
 
-            # 2) 표 영역 제외한 텍스트 추출
-            if table_bboxes:
-                try:
-                    page_text = page.filter(
-                        lambda obj: obj["object_type"] == "char" and
-                                    not any(
-                                        bbox[0] <= obj["x0"] <= bbox[2] and
-                                        bbox[1] <= obj["top"] <= bbox[3]
-                                        for bbox in table_bboxes
-                                    )
-                    ).extract_text()
-                except Exception:
-                    page_text = page.extract_text()
-            else:
-                page_text = page.extract_text()
+            # 2) 표 영역을 제외하고 단일/다단 레이아웃에 맞춰 본문을 추출
+            page_text = _extract_pdf_body_text(page, table_bboxes)
 
             if not page_text:
                 continue
@@ -194,7 +265,12 @@ def _text_to_chunks(text: str) -> list[Chunk]:
 
 
 def _parse_docx_chunks(path: Path) -> list[Chunk]:
+    """DOCX의 문단·표 순서와 병합 셀을 보존해 청킹한다."""
     from docx import Document
+    from docx.oxml.table import CT_Tbl
+    from docx.oxml.text.paragraph import CT_P
+    from docx.table import Table
+    from docx.text.paragraph import Paragraph
     doc = Document(str(path))
     chunks: list[Chunk] = []
     para_buf: list[str] = []
@@ -209,18 +285,42 @@ def _parse_docx_chunks(path: Path) -> list[Chunk]:
                 chunks.append(Chunk(text=c, chunk_type="paragraph", heading_path=list(heading_stack)))
         para_buf.clear()
 
-    for para in doc.paragraphs:
+    def append_table(table: Table) -> None:
+        rows = []
+        for row in table.rows:
+            seen_cells = set()
+            values = []
+            for cell in row.cells:
+                cell_id = id(cell._tc)
+                if cell_id in seen_cells:
+                    continue
+                seen_cells.add(cell_id)
+                if cell.text.strip():
+                    values.append(cell.text.strip())
+            if values:
+                rows.append(" | ".join(values))
+        chunks.extend(_table_chunks(rows, heading_path=heading_stack))
+
+    for child in doc.element.body.iterchildren():
+        if isinstance(child, CT_Tbl):
+            flush_para()
+            append_table(Table(child, doc))
+            continue
+        if not isinstance(child, CT_P):
+            continue
+        para = Paragraph(child, doc)
         t = para.text.strip()
         if not t:
             continue
-        style = para.style.name.lower() if para.style else ""
-        is_heading = style in HEADING_STYLES or para.style.name.startswith("Heading")
+        style_name = para.style.name if para.style else ""
+        style = style_name.lower()
+        is_heading = style in HEADING_STYLES or style.startswith("heading")
         if is_heading:
             flush_para()
             # 레벨 파악 (Heading 1 → 레벨 1)
             level = 1
             try:
-                level = int(para.style.name.split()[-1])
+                level = int(style_name.split()[-1])
             except (ValueError, IndexError):
                 pass
             # 상위 레벨 이후 항목 제거하고 현재 추가
@@ -230,16 +330,6 @@ def _parse_docx_chunks(path: Path) -> list[Chunk]:
             para_buf.append(t)
 
     flush_para()
-
-    # 표
-    for table in doc.tables:
-        rows = []
-        for row in table.rows:
-            row_text = " | ".join(c.text.strip() for c in row.cells if c.text.strip())
-            if row_text:
-                rows.append(row_text)
-        if rows:
-            chunks.append(Chunk(text="\n".join(rows), chunk_type="table", heading_path=list(heading_stack)))
 
     return chunks
 
@@ -292,15 +382,15 @@ def _parse_xlsx_chunks(path: Path) -> list["Chunk"]:
     TABLE_ROW_LIMIT = 80  # 청크당 최대 행 수
 
     import openpyxl
-    wb = openpyxl.load_workbook(str(path), read_only=True, data_only=True)
+    wb = openpyxl.load_workbook(str(path), read_only=False, data_only=False)
     chunks: list[Chunk] = []
 
     for sheet in wb.worksheets:
         rows: list[str] = []
-        for row in sheet.iter_rows(values_only=True):
-            cells = [str(c).strip() for c in row if c is not None and str(c).strip()]
+        for row_index, row in enumerate(sheet.iter_rows(), start=1):
+            cells = [str(cell.value).strip() for cell in row if cell.value is not None and str(cell.value).strip()]
             if cells:
-                rows.append(" | ".join(cells))
+                rows.append(f"[행: {row_index}] " + " | ".join(cells))
 
         if not rows:
             continue
@@ -373,6 +463,23 @@ def _parse_pptx(path: Path) -> str:
         if slide_texts:
             parts.append(f"[슬라이드 {i}]\n" + "\n".join(slide_texts))
     return "\n\n".join(parts)
+
+
+def _parse_pptx_chunks(path: Path) -> list[Chunk]:
+    """슬라이드 경계를 넘지 않고 제목을 분할 청크의 문맥으로 유지한다."""
+    from pptx import Presentation
+
+    presentation = Presentation(str(path))
+    chunks: list[Chunk] = []
+    for slide_number, slide in enumerate(presentation.slides, start=1):
+        shapes = sorted((shape for shape in slide.shapes if shape.has_text_frame), key=lambda shape: (shape.top, shape.left))
+        lines = [paragraph.text.strip() for shape in shapes for paragraph in shape.text_frame.paragraphs if paragraph.text.strip()]
+        if not lines:
+            continue
+        title = lines[0]
+        chunks.extend(_split_lines_with_context(lines[1:] or [title], context_lines=[f"[슬라이드 {slide_number}]", title],
+                                                chunk_type="paragraph", heading_path=[title], page_number=slide_number))
+    return chunks
 
 
 def _parse_txt(path: Path) -> str:
@@ -483,6 +590,11 @@ def _parse_md_chunks(path: Path) -> list["Chunk"]:
         code_buf.clear()
 
     for line in text.split("\n"):
+        # Markdown 수평선은 문서 구조를 나누는 표식일 뿐 검색 대상이 아니다.
+        if re.fullmatch(r"\s{0,3}([-*_])(?:\s*\1){2,}\s*", line):
+            flush_para()
+            flush_table()
+            continue
         if line.strip().startswith("```"):
             if in_code_block:
                 flush_code()
@@ -565,6 +677,14 @@ def split_chunks(text: str, chunk_size: int | None = None, overlap: int | None =
 
     for sent in sentences:
         sent_len = len(sent)
+        if sent_len > chunk_size:
+            if current:
+                chunks.append(" ".join(current))
+                current, current_len = [], 0
+            # 문장 내부에 자연스러운 경계가 없을 때만 최후 수단으로 길이를 강제한다.
+            for start in range(0, sent_len, chunk_size):
+                chunks.append(sent[start:start + chunk_size].strip())
+            continue
         if current_len + sent_len > chunk_size and current:
             chunk_text = " ".join(current)
             chunks.append(chunk_text)
@@ -611,6 +731,7 @@ CHUNK_PARSERS = {
     ".html": _parse_html_chunks,
     ".htm":  _parse_html_chunks,
     ".md":   _parse_md_chunks,
+    ".pptx": _parse_pptx_chunks,
 }
 
 
@@ -641,13 +762,22 @@ def parse_file_to_typed_chunks(path: Path) -> list[Chunk]:
     if ext in CHUNK_PARSERS:
         try:
             chunks = CHUNK_PARSERS[ext](path)
-            # chunk_size 초과 청크 분할
+            # 모든 블록 유형에 최대 길이를 적용하고 메타데이터를 보존한다.
             result: list[Chunk] = []
             chunk_size, _ = _chunk_settings()
             for chunk in chunks:
-                if len(chunk.text) > chunk_size and chunk.chunk_type == "paragraph":
-                    for sub in split_chunks(chunk.text):
-                        result.append(Chunk(text=sub, chunk_type="paragraph"))
+                if len(chunk.text) > chunk_size:
+                    if chunk.chunk_type == "table":
+                        rows = [line for line in chunk.text.splitlines() if line.strip()]
+                        context_lines = []
+                        if rows and rows[0].startswith("[시트:"):
+                            context_lines.append(rows.pop(0))
+                        result.extend(_table_chunks(rows, context_lines=context_lines, heading_path=chunk.heading_path, page_number=chunk.page_number))
+                    elif chunk.chunk_type == "code":
+                        result.extend(_split_lines_with_context(chunk.text.splitlines(), context_lines=[], chunk_type="code", heading_path=chunk.heading_path, page_number=chunk.page_number))
+                    else:
+                        for sub in split_chunks(chunk.text):
+                            result.append(Chunk(text=sub, chunk_type=chunk.chunk_type, heading_path=chunk.heading_path, page_number=chunk.page_number))
                 else:
                     result.append(chunk)
             logger.info("typed 청크 분할: %s → %d개", path.name, len(result))
