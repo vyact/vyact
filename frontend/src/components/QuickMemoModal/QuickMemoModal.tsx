@@ -207,7 +207,7 @@ const QuickMemoModal: React.FC<QuickMemoModalProps> = ({onClose}) => {
                                     ) : (
                                         <>
                                             {deletingId !== n.id && (
-                                                <button className="qmemo-icon-btn" onClick={() => startEdit(n)} title={t('quickMemoModal.edit')}>
+                                                <button className="qmemo-icon-btn" onClick={() => startEdit(n)} aria-label={t('quickMemoModal.edit')}>
                                                     <Pencil size={15}/>
                                                 </button>
                                             )}
@@ -222,7 +222,7 @@ const QuickMemoModal: React.FC<QuickMemoModalProps> = ({onClose}) => {
                                                     </button>
                                                 </>
                                             ) : (
-                                                <button className="qmemo-icon-btn danger" onClick={() => setDeletingId(n.id)} title={t('quickMemoModal.delete')}>
+                                                <button className="qmemo-icon-btn danger" onClick={() => setDeletingId(n.id)} aria-label={t('quickMemoModal.delete')}>
                                                     <Trash2 size={15}/>
                                                 </button>
                                             )}

@@ -12,7 +12,10 @@ function getOllamaDownloadProgress(message: string): number | undefined {
     const lastMatch = matches[matches.length - 1]?.[1];
     if (!lastMatch) return undefined;
 
-    return Math.min(Number(lastMatch), 100);
+    // Ollama는 개별 레이어 전송이 끝나면 100%를 출력하지만, 이후에도
+    // 검증·압축 해제·매니페스트 반영을 수행한다. pull 프로세스가 종료된 뒤에만
+    // 메모리 로드 단계(100%)로 전환되므로 중간 상태는 99%로 유지한다.
+    return Math.min(Number(lastMatch), 99);
 }
 
 export function useModels(

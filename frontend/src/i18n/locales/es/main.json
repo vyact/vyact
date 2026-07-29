@@ -476,7 +476,7 @@
     "confirmDescription": "¿Quieres descargarlo ahora? Puede tardar unos minutos.",
     "downloadAction": "Descargar",
     "downloading": "Descargando modelo...",
-    "loadingIntoMemory": "Cargando el modelo en memoria..."
+    "loadingIntoMemory": "Cargando el modelo en memoria... ({{seconds}} s)"
   },
   "shortcutModal": {
     "title": "Atajos",

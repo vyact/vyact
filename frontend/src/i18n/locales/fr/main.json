@@ -476,7 +476,7 @@
     "confirmDescription": "Voulez-vous le télécharger maintenant ? Cela peut prendre quelques minutes.",
     "downloadAction": "Télécharger",
     "downloading": "Téléchargement du modèle...",
-    "loadingIntoMemory": "Chargement du modèle en mémoire..."
+    "loadingIntoMemory": "Chargement du modèle en mémoire... ({{seconds}} s)"
   },
   "shortcutModal": {
     "title": "Raccourcis",

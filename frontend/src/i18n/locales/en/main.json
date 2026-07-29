@@ -476,7 +476,7 @@
     "confirmDescription": "Would you like to download it now? This may take a few minutes.",
     "downloadAction": "Download",
     "downloading": "Downloading model...",
-    "loadingIntoMemory": "Loading model into memory..."
+    "loadingIntoMemory": "Loading model into memory... ({{seconds}}s)"
   },
   "shortcutModal": {
     "title": "Shortcuts",

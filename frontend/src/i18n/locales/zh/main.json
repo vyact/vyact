@@ -476,7 +476,7 @@
     "confirmDescription": "现在下载吗？这可能需要几分钟。",
     "downloadAction": "下载",
     "downloading": "正在下载模型...",
-    "loadingIntoMemory": "正在将模型加载到内存中..."
+    "loadingIntoMemory": "正在将模型加载到内存中...（{{seconds}} 秒）"
   },
   "shortcutModal": {
     "title": "快捷键",

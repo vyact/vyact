@@ -9,9 +9,9 @@ DELETE /api/quicknote/{id}     → 삭제
 
 빠른 메모는 메모 하나당 임베딩 하나를 저장하여 일반 메모 RAG 검색에 함께 사용한다.
 """
+import asyncio
 import uuid
 from datetime import datetime, timezone
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -30,6 +30,34 @@ class QuickNoteBody(BaseModel):
 
 class QuickNoteDoneBody(BaseModel):
     done: bool
+
+
+async def _update_quicknote_embedding(note_id: str, text: str) -> None:
+    """검색용 임베딩을 비동기로 갱신한다.
+
+    텍스트가 다시 수정된 경우에는 이전 요청이 최신 임베딩을 덮어쓰지 않도록 한다.
+    """
+    try:
+        embedding = await get_embedding(text)
+        if not embedding:
+            return
+
+        es = get_es()
+        try:
+            await es.update(
+                index=QUICKNOTE_INDEX,
+                id=note_id,
+                script={
+                    "source": "if (ctx._source.text == params.text) { ctx._source.embedding = params.embedding; }",
+                    "lang": "painless",
+                    "params": {"text": text, "embedding": embedding},
+                },
+            )
+        finally:
+            await es.close()
+    except Exception as error:
+        # 빠른 메모 저장은 검색 인덱싱 실패와 독립적으로 성공해야 한다.
+        logger.warning("빠른 메모 임베딩 갱신 실패: %s", error)
 
 
 @router.get("/quicknote")
@@ -68,10 +96,8 @@ async def create_quicknote(body: QuickNoteBody):
             "created_at": now,
             "updated_at": now,
         }
-        embedding = await get_embedding(text)
-        if embedding:
-            doc["embedding"] = embedding
         await es.index(index=QUICKNOTE_INDEX, id=note_id, document=doc, refresh=True)
+        asyncio.create_task(_update_quicknote_embedding(note_id, text))
         return doc
     finally:
         await es.close()
@@ -85,14 +111,12 @@ async def update_quicknote(note_id: str, body: QuickNoteBody):
     es = get_es()
     try:
         now = datetime.now(timezone.utc).isoformat()
-        embedding = await get_embedding(text)
         doc = {"text": text, "updated_at": now}
-        if embedding:
-            doc["embedding"] = embedding
         await es.update(
             index=QUICKNOTE_INDEX, id=note_id,
             doc=doc, refresh=True,
         )
+        asyncio.create_task(_update_quicknote_embedding(note_id, text))
         return {"id": note_id, "text": text, "updated_at": now}
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))

@@ -476,7 +476,7 @@
     "confirmDescription": "지금 다운로드하시겠습니까? (수 분 소요)",
     "downloadAction": "다운로드",
     "downloading": "모델 다운로드 중...",
-    "loadingIntoMemory": "모델 메모리 로드 중..."
+    "loadingIntoMemory": "모델 메모리 로드 중... ({{seconds}}초)"
   },
   "shortcutModal": {
     "title": "단축키",

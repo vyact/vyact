@@ -397,6 +397,7 @@ class Installer:
             elif shutil.which("winget"):
                 cmd = [
                     "winget", "install", "--id", "eSpeak-NG.eSpeak-NG", "--exact",
+                    "--source", "winget",
                     "--silent", "--accept-package-agreements", "--accept-source-agreements",
                 ]
             else:

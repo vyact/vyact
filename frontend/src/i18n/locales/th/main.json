@@ -476,7 +476,7 @@
     "confirmDescription": "ต้องการดาวน์โหลดตอนนี้หรือไม่? อาจใช้เวลาสักครู่",
     "downloadAction": "ดาวน์โหลด",
     "downloading": "กำลังดาวน์โหลดโมเดล...",
-    "loadingIntoMemory": "กำลังโหลดโมเดลเข้าสู่หน่วยความจำ..."
+    "loadingIntoMemory": "กำลังโหลดโมเดลเข้าสู่หน่วยความจำ... ({{seconds}} วินาที)"
   },
   "shortcutModal": {
     "title": "คีย์ลัด",

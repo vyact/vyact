@@ -38,7 +38,9 @@ def _get_keep_alive() -> int:
 async def load_embed_model(model: str = "bge-m3") -> bool:
     """임베딩 모델 메모리 유지 (임베딩은 항상 무기한)"""
     try:
-        async with httpx.AsyncClient(timeout=60.0) as client:
+        # 대형 모델의 첫 로드는 디스크에서 RAM/VRAM으로 가중치를 옮기느라
+        # 1분을 넘길 수 있다. 다운로드 완료 직후의 정상 로드를 실패로 처리하지 않는다.
+        async with httpx.AsyncClient(timeout=httpx.Timeout(300.0, connect=10.0)) as client:
             resp = await client.post(
                 f"{OLLAMA_URL}/api/embeddings",
                 json={"model": model, "prompt": "warmup", "keep_alive": -1},

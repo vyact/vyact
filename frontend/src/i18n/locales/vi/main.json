@@ -476,7 +476,7 @@
     "confirmDescription": "Bạn có muốn tải xuống ngay bây giờ không? Quá trình có thể mất vài phút.",
     "downloadAction": "Tải xuống",
     "downloading": "Đang tải mô hình...",
-    "loadingIntoMemory": "Đang nạp mô hình vào bộ nhớ..."
+    "loadingIntoMemory": "Đang nạp mô hình vào bộ nhớ... ({{seconds}} giây)"
   },
   "shortcutModal": {
     "title": "Phím tắt",
