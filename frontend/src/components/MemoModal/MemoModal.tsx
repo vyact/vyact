@@ -10,7 +10,7 @@ import { createLowlight, common } from 'lowlight';
 import { MarkdownPaste } from './MarkdownPaste';
 import { MemoTextAlign } from './MemoTextAlign';
 import {MemoAttachment} from './MemoAttachmentNodes';
-import {RICH_TEXT_IMAGE_INITIAL_HEIGHT, RichTextImage, RichTextImageLayout} from '../common/RichTextImage/RichTextImage';
+import {RICH_TEXT_IMAGE_INITIAL_HEIGHT, RichTextImage} from '../common/RichTextImage/RichTextImage';
 import { Details, DetailsSummary, DetailsContent } from '@tiptap/extension-details';
 import { Table, TableRow, TableHeader, TableCell } from '@tiptap/extension-table';
 import TaskList from '@tiptap/extension-task-list';
@@ -100,7 +100,6 @@ const MemoEditor: React.FC<{
             TaskList,
             TaskItem.configure({ nested: true }),
             RichTextImage,
-            RichTextImageLayout,
             MemoAttachment,
         ],
         content: '',
@@ -197,23 +196,18 @@ const MemoEditor: React.FC<{
         try {
             const targetMemoId = memoId || await onEnsureMemoId();
             const attachment = await api.uploadMemoAttachment(targetMemoId, file);
-            // 첨부 노드가 선택된 상태여도 선택 영역을 교체하지 않고, 항상 뒤에 추가한다.
+            // 메일 작성 에디터와 같이 이미지를 원자형 노드로 직접 추가한다.
+            // 컨테이너로 감싸면 선택된 이미지의 Backspace/Delete 처리가 브라우저별로 달라질 수 있다.
             const insertPosition = editor.state.selection.to;
             editor.chain().focus().insertContentAt(insertPosition, isImage
                 ? {
-                    type: 'memoImageLayout',
-                    content: [
-                        {
-                            type: 'memoImage',
-                            attrs: {
-                                src: attachment.url,
-                                alt: attachment.filename,
-                                height: RICH_TEXT_IMAGE_INITIAL_HEIGHT,
-                                initialHeight: RICH_TEXT_IMAGE_INITIAL_HEIGHT,
-                            },
-                        },
-                        {type: 'paragraph'},
-                    ],
+                    type: 'memoImage',
+                    attrs: {
+                        src: attachment.url,
+                        alt: attachment.filename,
+                        height: RICH_TEXT_IMAGE_INITIAL_HEIGHT,
+                        initialHeight: RICH_TEXT_IMAGE_INITIAL_HEIGHT,
+                    },
                 }
                 : { type: 'memoAttachment', attrs: { href: attachment.url, filename: attachment.filename, mimeType: attachment.mime_type } }
             ).run();
@@ -439,6 +433,8 @@ const MemoEditor: React.FC<{
 
     const handleAttachmentKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
         if (!editor) return;
+        if (event.key !== 'Backspace' && event.key !== 'Delete') return;
+
         const selectionNode = window.getSelection()?.anchorNode;
         const selectionElement = selectionNode instanceof HTMLElement
             ? selectionNode
@@ -447,7 +443,6 @@ const MemoEditor: React.FC<{
         if (!attachment || !editor.view.dom.contains(attachment)) return;
 
         event.preventDefault();
-        if (event.key !== 'Backspace' && event.key !== 'Delete') return;
 
         const from = editor.view.posAtDOM(attachment, 0);
         const to = editor.view.posAtDOM(attachment, attachment.childNodes.length);
@@ -737,7 +732,9 @@ const MemoEditor: React.FC<{
                 selectTableByBorder(event);
                 selectDetailsByBorder(event);
                 selectAttachment(event);
-            }} onClickCapture={selectAttachment} onKeyDownCapture={handleAttachmentKeyDown} />
+            }} onClickCapture={event => {
+                selectAttachment(event);
+            }} onKeyDownCapture={handleAttachmentKeyDown} />
             {uploadCount > 0 && (
                 <div className="memo-attachment-upload-overlay" role="status" aria-live="polite">
                     <div className="memo-attachment-upload-dialog">
@@ -1109,7 +1106,6 @@ export const MemoViewer: React.FC<{ memoId: string; onEdit?: () => void }> = ({ 
             TaskItem.configure({ nested: true }),
             Link.configure({ HTMLAttributes: { target: '_blank', rel: 'noopener noreferrer' } }),
             RichTextImage,
-            RichTextImageLayout,
             MemoAttachment,
         ],
         content: '',

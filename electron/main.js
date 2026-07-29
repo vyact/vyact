@@ -839,11 +839,26 @@ app.commandLine.appendSwitch("use-fake-ui-for-media-stream");  // 권한 팝업 
 app.commandLine.appendSwitch("enable-speech-input");
 app.commandLine.appendSwitch("enable-web-speech-api");
 
-app.on("second-instance", () => {
+function restoreAndFocusMainWindow() {
     if (!mainWindow || mainWindow.isDestroyed()) return;
     if (mainWindow.isMinimized()) mainWindow.restore();
     mainWindow.show();
     mainWindow.focus();
+    // The initial setup BrowserView remains the active renderer after setup
+    // completes. Explicitly focus it as well so Cmd+Tab immediately accepts
+    // in-app keyboard shortcuts instead of only activating the native window.
+    const contents = initialSetupView?.webContents || mainWindow.webContents;
+    if (!contents.isDestroyed()) contents.focus();
+}
+
+app.on("second-instance", () => {
+    restoreAndFocusMainWindow();
+});
+
+// Cmd+Tab activates an already running macOS app without triggering
+// `second-instance`. Restore both the window and its active web contents.
+app.on("activate", () => {
+    restoreAndFocusMainWindow();
 });
 
 if (hasSingleInstanceLock) app.whenReady().then(() => {

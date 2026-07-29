@@ -837,11 +837,25 @@ app.commandLine.appendSwitch("use-fake-ui-for-media-stream");
 app.commandLine.appendSwitch("enable-speech-input");
 app.commandLine.appendSwitch("enable-web-speech-api");
 
-app.on("second-instance", () => {
+function restoreAndFocusMainWindow() {
     if (!mainWindow || mainWindow.isDestroyed()) return;
     if (mainWindow.isMinimized()) mainWindow.restore();
     mainWindow.show();
     mainWindow.focus();
+    const contents = initialSetupView?.webContents || mainWindow.webContents;
+    if (!contents.isDestroyed()) contents.focus();
+}
+
+app.on("second-instance", () => {
+    restoreAndFocusMainWindow();
+});
+
+// Alt+Tab activates an existing Windows app without triggering
+// `second-instance`, so restore focus for the active renderer explicitly.
+app.on("browser-window-focus", (_event, focusedWindow) => {
+    if (focusedWindow !== mainWindow || !mainWindow || mainWindow.isDestroyed()) return;
+    const contents = initialSetupView?.webContents || mainWindow.webContents;
+    if (!contents.isDestroyed()) contents.focus();
 });
 
 if (hasSingleInstanceLock) app.whenReady().then(() => {

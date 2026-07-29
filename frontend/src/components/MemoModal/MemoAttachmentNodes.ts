@@ -72,6 +72,19 @@ export const MemoImage = Node.create({
             style: `display: block; width: ${height ? 'auto' : '100%'}; max-width: 100%; height: ${height ? `${height}px` : 'auto'};${imageStyle || ''}`,
         }]];
     },
+    addKeyboardShortcuts() {
+        const removeSelectedImage = () => {
+            const {selection, tr} = this.editor.state;
+            if (!(selection instanceof NodeSelection) || selection.node.type.name !== 'memoImage') return false;
+
+            tr.delete(selection.from, selection.to);
+            tr.setSelection(TextSelection.near(tr.doc.resolve(Math.min(selection.from, tr.doc.content.size))));
+            this.editor.view.dispatch(tr);
+            return true;
+        };
+
+        return {Backspace: removeSelectedImage, Delete: removeSelectedImage};
+    },
     addNodeView() {
         return ({ node, getPos, editor }) => {
             let currentNode = node;
@@ -277,6 +290,19 @@ export const MemoAttachment = Node.create({
             download: filename,
             title: mimeType || filename,
         }), `📎 ${filename}`];
+    },
+    addKeyboardShortcuts() {
+        const removeSelectedAttachment = () => {
+            const { selection, tr } = this.editor.state;
+            if (!(selection instanceof NodeSelection) || selection.node.type.name !== 'memoAttachment') return false;
+
+            tr.delete(selection.from, selection.to);
+            tr.setSelection(TextSelection.near(tr.doc.resolve(Math.min(selection.from, tr.doc.content.size))));
+            this.editor.view.dispatch(tr);
+            return true;
+        };
+
+        return { Backspace: removeSelectedAttachment, Delete: removeSelectedAttachment };
     },
     addNodeView() {
         return ({ node, editor }) => {
