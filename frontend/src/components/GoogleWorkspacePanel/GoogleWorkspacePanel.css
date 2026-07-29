@@ -482,6 +482,20 @@
 .gwp-drive-dialog-primary { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid var(--accent); background: var(--accent); color: #fff; }
 .gwp-drive-dialog-secondary { border: 1px solid var(--border); background: transparent; color: var(--text); }
 .gwp-drive-dialog-error { margin: 0; padding: 0 2px; color: #e57373; font-size: 12px; }
+.gwp-drive-move-dialog { width: min(520px, calc(100vw - 40px)); background: var(--modal-bg); }
+.gwp-drive-folder-tree { min-height: 250px; max-height: min(430px, calc(100vh - 270px)); margin: 0 24px; overflow: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--modal-inset); }
+.gwp-drive-folder-tree-row { display: flex; min-height: 38px; align-items: center; padding-right: 8px; }
+.gwp-drive-folder-tree-row.is-selected { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.gwp-drive-folder-tree-expand, .gwp-drive-folder-tree-root-spacer { display: grid; width: 28px; height: 28px; flex: 0 0 28px; place-items: center; padding: 0; border: 0; background: transparent; color: var(--muted); }
+.gwp-drive-folder-tree-expand { border-radius: 5px; cursor: pointer; }
+.gwp-drive-folder-tree-expand:hover { background: var(--surface); color: var(--text); }
+.gwp-drive-folder-tree-row.is-expanded .gwp-drive-folder-tree-expand svg { transform: rotate(90deg); }
+.gwp-drive-folder-tree-expand svg { transition: transform .15s ease; }
+.gwp-drive-folder-tree-expand svg.gwp-drive-dialog-button-spinner { transform: none; }
+.gwp-drive-folder-tree-select { display: flex; min-width: 0; flex: 1; align-items: center; gap: 8px; padding: 7px 6px; border: 0; background: transparent; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.gwp-drive-folder-tree-select:hover { color: var(--accent); }
+.gwp-drive-folder-tree-select svg { flex: none; color: var(--accent); }
+.gwp-drive-folder-tree-select span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .gwp-drive-name-dialog { width: min(440px, calc(100vw - 40px)); background: var(--modal-bg); }
 .gwp-drive-name-dialog > input { box-sizing: border-box; width: calc(100% - 48px); margin: 4px 24px 2px; padding: 11px 12px; border: 1px solid var(--accent); border-radius: 8px; outline: none; background: var(--bg); color: var(--text); font-size: 14px; }
 .gwp-drive-name-dialog > footer button { width: 128px; }

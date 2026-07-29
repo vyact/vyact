@@ -77,6 +77,11 @@ class DriveBulkTrashRequest(BaseModel):
     file_ids: list[str]
 
 
+class DriveBulkMoveRequest(BaseModel):
+    file_ids: list[str] = Field(min_length=1)
+    target_folder_id: str = Field(min_length=1)
+
+
 class DriveBulkDownloadRequest(BaseModel):
     file_ids: list[str]
     archive_name: str = "google-drive-download"
@@ -1387,6 +1392,21 @@ async def create_drive_folder(body: DriveFolderRequest):
     ).execute()
 
 
+@router.get("/google-workspace/drive/folders")
+async def list_drive_folders(parent_id: str = "root"):
+    """Return the immediate child folders for the lazy-loaded move destination tree."""
+    await _require_connection()
+    service = await _build_service("drive", "v3")
+    response = service.files().list(
+        q=(f"'{parent_id}' in parents and mimeType = '{DRIVE_FOLDER_MIME_TYPE}' "
+           "and trashed = false"),
+        orderBy="name_natural",
+        pageSize=1000,
+        fields="files(id,name)",
+    ).execute()
+    return {"folders": response.get("files", [])}
+
+
 @router.delete("/google-workspace/drive/files/{file_id}")
 async def delete_drive_file(file_id: str):
     await _require_connection()
@@ -1415,6 +1435,42 @@ async def batch_trash_drive_files(request: DriveBulkTrashRequest):
         batch.execute()
 
     return {"ok": True, "trashed": len(file_ids)}
+
+
+@router.post("/google-workspace/drive/files/batch-move")
+async def batch_move_drive_files(request: DriveBulkMoveRequest):
+    await _require_connection()
+    file_ids = list(dict.fromkeys(request.file_ids))
+    service = await _build_service("drive", "v3")
+    target_id = request.target_folder_id
+    target = service.files().get(fileId=target_id, fields="id,mimeType,parents").execute()
+    if target.get("mimeType") != DRIVE_FOLDER_MIME_TYPE:
+        raise HTTPException(422, "Target must be a folder.")
+
+    sources = [service.files().get(fileId=file_id, fields="id,mimeType,parents").execute() for file_id in file_ids]
+    selected_ids = set(file_ids)
+    ancestor_id = target_id
+    # A folder cannot be moved into itself or any of its descendants.
+    while ancestor_id and ancestor_id != "root":
+        if ancestor_id in selected_ids:
+            raise HTTPException(422, "A folder cannot be moved into itself or one of its descendants.")
+        ancestor = service.files().get(fileId=ancestor_id, fields="parents").execute()
+        parents = ancestor.get("parents", [])
+        ancestor_id = parents[0] if parents else ""
+
+    moved_ids = []
+    for source in sources:
+        parents = source.get("parents", [])
+        if target_id in parents:
+            continue
+        service.files().update(
+            fileId=source["id"],
+            addParents=target_id,
+            removeParents=",".join(parents),
+            fields="id",
+        ).execute()
+        moved_ids.append(source["id"])
+    return {"ok": True, "moved_ids": moved_ids}
 
 
 @router.post("/google-workspace/drive/files/check-duplicates")

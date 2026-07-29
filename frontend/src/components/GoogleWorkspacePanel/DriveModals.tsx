@@ -1,6 +1,7 @@
 import {useEffect, useState} from 'react';
+import type {ReactNode} from 'react';
 import {useTranslation} from 'react-i18next';
-import {Archive, Check, Copy, FileDown, Link2, LoaderCircle, Trash2, UserPlus, X} from 'lucide-react';
+import {Archive, Check, ChevronRight, Copy, FileDown, FolderIcon, Link2, LoaderCircle, Trash2, UserPlus, X} from 'lucide-react';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import {api} from '../../services/api';
@@ -100,6 +101,99 @@ export function DriveFileNameModal({title, initialValue, confirmLabel, errorMess
                 </button>
             </footer>
         </form>
+    </ModalOverlay>;
+}
+
+type DriveFolder = {id: string; name: string};
+
+type MoveDestinationModalProps = {
+    selectedCount: number;
+    onClose: () => void;
+    onConfirm: (folderId: string) => Promise<void>;
+};
+
+export function DriveMoveDestinationModal({selectedCount, onClose, onConfirm}: MoveDestinationModalProps) {
+    const {t} = useTranslation('main');
+    const [childrenByParent, setChildrenByParent] = useState<Record<string, DriveFolder[]>>({});
+    const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set(['root']));
+    const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set(['root']));
+    const [selectedFolderId, setSelectedFolderId] = useState('');
+    const [error, setError] = useState('');
+    const [saving, setSaving] = useState(false);
+
+    const loadChildren = async (folderId: string) => {
+        if (childrenByParent[folderId]) return;
+        setLoadingIds(current => new Set(current).add(folderId));
+        try {
+            const result = await api.getGoogleDriveFolders(folderId);
+            setChildrenByParent(current => ({...current, [folderId]: result.folders}));
+        } catch {
+            setError(t('googleWorkspace.loadFoldersFailed'));
+        } finally {
+            setLoadingIds(current => {
+                const next = new Set(current);
+                next.delete(folderId);
+                return next;
+            });
+        }
+    };
+
+    useEffect(() => { void loadChildren('root'); }, []);
+
+    const toggleFolder = (folderId: string) => {
+        setError('');
+        setExpandedIds(current => {
+            const next = new Set(current);
+            if (next.has(folderId)) next.delete(folderId);
+            else {
+                next.add(folderId);
+                void loadChildren(folderId);
+            }
+            return next;
+        });
+    };
+    const submit = async () => {
+        if (!selectedFolderId || saving) return;
+        setSaving(true);
+        setError('');
+        try {
+            await onConfirm(selectedFolderId);
+            onClose();
+        } catch {
+            setError(t('googleWorkspace.moveFailed'));
+            setSaving(false);
+        }
+    };
+    const renderFolders = (parentId: string, depth: number): ReactNode => (childrenByParent[parentId] || []).map(folder => {
+        const expanded = expandedIds.has(folder.id);
+        const loading = loadingIds.has(folder.id);
+        return <div key={folder.id}>
+            <div className={`gwp-drive-folder-tree-row${selectedFolderId === folder.id ? ' is-selected' : ''}${expanded ? ' is-expanded' : ''}`}
+                 style={{paddingLeft: `${12 + depth * 18}px`}}>
+                <button type="button" className="gwp-drive-folder-tree-expand" onClick={() => toggleFolder(folder.id)}
+                        aria-label={expanded ? t('googleWorkspace.collapseFolder') : t('googleWorkspace.expandFolder')}>
+                    {loading ? <LoaderCircle className="gwp-drive-dialog-button-spinner" aria-hidden="true" size={15}/> : <ChevronRight aria-hidden="true" size={15}/>}
+                </button>
+                <button type="button" className="gwp-drive-folder-tree-select" onClick={() => { setSelectedFolderId(folder.id); setError(''); }}>
+                    <FolderIcon aria-hidden="true" size={17}/><span>{folder.name}</span>
+                </button>
+            </div>
+            {expanded && renderFolders(folder.id, depth + 1)}
+        </div>;
+    });
+
+    return <ModalOverlay className="gwp-drive-modal-overlay" onClose={() => !saving && onClose()} closeOnBackdrop={!saving}>
+        <section className="gwp-drive-dialog gwp-drive-move-dialog" onClick={event => event.stopPropagation()}>
+            <header><div><h2>{t('googleWorkspace.moveSelected')}</h2><p>{t('googleWorkspace.moveSelectedDescription', {count: selectedCount})}</p></div><button type="button" onClick={onClose} disabled={saving} aria-label={t('googleWorkspace.close')}><X size={20}/></button></header>
+            <div className="gwp-drive-folder-tree" role="tree">
+                <div className={`gwp-drive-folder-tree-row${selectedFolderId === 'root' ? ' is-selected' : ''}`}>
+                    <span className="gwp-drive-folder-tree-root-spacer"/><button type="button" className="gwp-drive-folder-tree-select" onClick={() => { setSelectedFolderId('root'); setError(''); }}><FolderIcon aria-hidden="true" size={17}/><span>{t('googleWorkspace.myDrive')}</span></button>
+                </div>
+                {renderFolders('root', 1)}
+            </div>
+            {error && <p className="gwp-drive-dialog-error">{error}</p>}
+            <footer><button type="button" className="gwp-drive-dialog-secondary" onClick={onClose} disabled={saving}>{t('googleWorkspace.cancel')}</button><button type="button" className="gwp-drive-dialog-primary" onClick={() => void submit()} disabled={!selectedFolderId || saving}>{saving && <LoaderCircle className="gwp-drive-dialog-button-spinner" aria-hidden="true" size={16}/>} {saving ? t('googleWorkspace.processing') : t('googleWorkspace.move')}</button></footer>
+        </section>
     </ModalOverlay>;
 }
 

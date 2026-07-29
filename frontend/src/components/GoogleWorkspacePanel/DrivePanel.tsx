@@ -14,6 +14,7 @@ import {
     FileText,
     FileUp,
     FolderIcon,
+    FolderInput,
     FolderPlus,
     FolderUp,
     Link2,
@@ -29,7 +30,7 @@ import {
 } from 'lucide-react';
 import {api} from '../../services/api';
 import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
-import {DriveDownloadStatusModal, DriveFileNameModal, DriveShareModal} from './DriveModals';
+import {DriveDownloadStatusModal, DriveFileNameModal, DriveMoveDestinationModal, DriveShareModal} from './DriveModals';
 import {getDriveDropContents, getDriveInputContents, type DriveDropContents} from './driveDrop';
 
 type DrivePanelProps = {
@@ -145,6 +146,8 @@ export default function DrivePanel({onAttachToChat, onIndexDocument}: DrivePanel
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [isBulkTrashing, setIsBulkTrashing] = useState(false);
     const [showBulkTrashConfirm, setShowBulkTrashConfirm] = useState(false);
+    const [showMoveDestination, setShowMoveDestination] = useState(false);
+    const [isBulkMoving, setIsBulkMoving] = useState(false);
     const [duplicateModal, setDuplicateModal] = useState<{
         duplicateNames: string[];
         contents: DriveDropContents;
@@ -560,6 +563,18 @@ export default function DrivePanel({onAttachToChat, onIndexDocument}: DrivePanel
             setIsBulkTrashing(false);
         }
     };
+    const bulkMove = async (targetFolderId: string) => {
+        if (isBulkMoving) return;
+        setIsBulkMoving(true);
+        try {
+            const result = await api.batchMoveGoogleDriveFiles([...selectedIds], targetFolderId);
+            const movedIds = new Set(result.moved_ids);
+            setFiles(current => current.filter(file => !movedIds.has(file.id)));
+            setSelectedIds(new Set());
+        } finally {
+            setIsBulkMoving(false);
+        }
+    };
     const bulkDownload = async () => {
         if (!selectedIds.size || downloadingFile) return;
         const controller = new AbortController();
@@ -677,6 +692,11 @@ export default function DrivePanel({onAttachToChat, onIndexDocument}: DrivePanel
                                         aria-label={t('googleWorkspace.download')}
                                         onClick={() => void bulkDownload()}>
                                     <Download aria-hidden="true" size={17}/>
+                                </button>
+                                <button type="button" className="gwp-drive-bulk-download"
+                                        aria-label={t('googleWorkspace.move')}
+                                        onClick={() => setShowMoveDestination(true)}>
+                                    <FolderInput aria-hidden="true" size={17}/>
                                 </button>
                             </span>
                         </span>
@@ -821,6 +841,9 @@ export default function DrivePanel({onAttachToChat, onIndexDocument}: DrivePanel
                                                  confirmLabel={t('googleWorkspace.create')}
                                                  errorMessage={t('googleWorkspace.createFolderFailed')}
                                                  onClose={() => setIsCreatingFolder(false)} onConfirm={createFolder}/>}
+        {showMoveDestination && <DriveMoveDestinationModal selectedCount={selectedIds.size}
+                                                            onClose={() => setShowMoveDestination(false)}
+                                                            onConfirm={bulkMove}/>}
         {downloadingFile && <DriveDownloadStatusModal fileName={downloadingFile.name}
                                                       isFolder={downloadingFile.mimeType === FOLDER_MIME}
                                                       completedCount={downloadProgress?.completed}

@@ -416,6 +416,17 @@ export const api = {
     async createGoogleDriveFolder(parentId: string, name: string) { return (await fetch(`${API_BASE}/google-workspace/drive/folders`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({parent_id: parentId, name})})).json(); },
     async deleteGoogleDriveFile(id: string) { return (await fetch(`${API_BASE}/google-workspace/drive/files/${encodeURIComponent(id)}`, {method: 'DELETE'})).json(); },
     async batchTrashGoogleDriveFiles(fileIds: string[]) { return (await fetch(`${API_BASE}/google-workspace/drive/files/batch-trash`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({file_ids: fileIds})})).json(); },
+    async batchMoveGoogleDriveFiles(fileIds: string[], targetFolderId: string) {
+        const response = await fetch(`${API_BASE}/google-workspace/drive/files/batch-move`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({file_ids: fileIds, target_folder_id: targetFolderId})});
+        if (!response.ok) throw new Error('Unable to move Google Drive files.');
+        return response.json() as Promise<{ok: boolean; moved_ids: string[]}>;
+    },
+    async getGoogleDriveFolders(parentId = 'root') {
+        const params = new URLSearchParams({parent_id: parentId});
+        const response = await fetch(`${API_BASE}/google-workspace/drive/folders?${params}`);
+        if (!response.ok) throw new Error('Unable to load Google Drive folders.');
+        return response.json() as Promise<{folders: {id: string; name: string}[]}>;
+    },
     async checkGoogleDriveDuplicates(folderId: string, names: string[]): Promise<{duplicates: string[]}> { return (await fetch(`${API_BASE}/google-workspace/drive/files/check-duplicates`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({folder_id: folderId, names})})).json(); },
     async renameGoogleDriveFile(id: string, name: string) { return (await fetch(`${API_BASE}/google-workspace/drive/files/${encodeURIComponent(id)}/rename`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name})})).json(); },
     async copyGoogleDriveFile(id: string, name: string) { return (await fetch(`${API_BASE}/google-workspace/drive/files/${encodeURIComponent(id)}/copy`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name})})).json(); },
