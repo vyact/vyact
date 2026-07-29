@@ -16,10 +16,12 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from elasticsearch import NotFoundError
 
 from config import INSTALL_DIR
 from logger import get_logger
-from services.db import MEMO_INDEX, get_es
+from services.db import MEMO_INDEX, find_document_index, get_es, get_language_index
+from services.language_detection import detect_language
 from services.indexer import get_embedding
 from services.knowledge_collection_references import remove_source_references_from_collections
 from bs4 import BeautifulSoup
@@ -125,6 +127,7 @@ async def create_memo(body: MemoBody):
         now = datetime.now(timezone.utc).isoformat()
         text = _html_to_text(body.content_html)
         title = body.title or _html_to_title(body.content_html)
+        language = detect_language(f"{title}\n{text}")
         embedding = await get_embedding(f"{title}\n{text}")
 
         doc = {
@@ -135,11 +138,13 @@ async def create_memo(body: MemoBody):
             "source": "memo",
             "created_at": now,
             "updated_at": now,
+            "indexed_at": now,
+            "content_language": language,
         }
         if embedding:
             doc["embedding"] = embedding
 
-        await es.index(index=MEMO_INDEX, id=memo_id, document=doc, refresh=True)
+        await es.index(index=get_language_index("memo_documents", language), id=memo_id, document=doc, refresh=True)
         return {"id": memo_id, "title": title, "created_at": now}
     finally:
         await es.close()
@@ -152,7 +157,10 @@ async def create_memo(body: MemoBody):
 async def get_memo(memo_id: str):
     es = get_es()
     try:
-        res = await es.get(index=MEMO_INDEX, id=memo_id)
+        index = await find_document_index(es, MEMO_INDEX, memo_id)
+        if not index:
+            raise NotFoundError(message="not found", meta=None, body=None)
+        res = await es.get(index=index, id=memo_id)
         return {**res["_source"], "_id": res["_id"]}
     except Exception:
         raise HTTPException(status_code=404, detail="메모를 찾을 수 없습니다.")
@@ -166,7 +174,7 @@ async def upload_memo_attachment(memo_id: str, file: UploadFile = File(...)):
     attachment_dir = _attachment_dir(memo_id)
     es = get_es()
     try:
-        if not await es.exists(index=MEMO_INDEX, id=memo_id):
+        if not await find_document_index(es, MEMO_INDEX, memo_id):
             raise HTTPException(status_code=404, detail="메모를 찾을 수 없습니다.")
     finally:
         await es.close()
@@ -215,6 +223,7 @@ async def update_memo(memo_id: str, body: MemoBody):
         now = datetime.now(timezone.utc).isoformat()
         text = _html_to_text(body.content_html)
         title = body.title or _html_to_title(body.content_html)
+        language = detect_language(f"{title}\n{text}")
         embedding = await get_embedding(f"{title}\n{text}")
 
         doc = {
@@ -222,11 +231,22 @@ async def update_memo(memo_id: str, body: MemoBody):
             "content": text,
             "content_html": body.content_html,
             "updated_at": now,
+            "indexed_at": now,
+            "content_language": language,
         }
         if embedding:
             doc["embedding"] = embedding
 
-        await es.update(index=MEMO_INDEX, id=memo_id, doc=doc, refresh=True)
+        old_index = await find_document_index(es, MEMO_INDEX, memo_id)
+        if not old_index:
+            raise NotFoundError(message="not found", meta=None, body=None)
+        new_index = get_language_index("memo_documents", language)
+        if old_index == new_index:
+            await es.update(index=old_index, id=memo_id, doc=doc, refresh=True)
+        else:
+            existing = await es.get(index=old_index, id=memo_id)
+            await es.delete(index=old_index, id=memo_id)
+            await es.index(index=new_index, id=memo_id, document={**existing["_source"], **doc}, refresh=True)
         _cleanup_unreferenced_attachments(memo_id, body.content_html)
         return {"id": memo_id, "title": title, "updated_at": now}
     except Exception as e:
@@ -242,7 +262,10 @@ async def update_memo(memo_id: str, body: MemoBody):
 async def delete_memo(memo_id: str):
     es = get_es()
     try:
-        await es.delete(index=MEMO_INDEX, id=memo_id, refresh=True)
+        index = await find_document_index(es, MEMO_INDEX, memo_id)
+        if not index:
+            raise NotFoundError(message="not found", meta=None, body=None)
+        await es.delete(index=index, id=memo_id, refresh=True)
         collections_updated = await remove_source_references_from_collections(es, "memo", [memo_id])
         shutil.rmtree(_attachment_dir(memo_id), ignore_errors=True)
         return {"deleted": memo_id, "collections_updated": collections_updated}

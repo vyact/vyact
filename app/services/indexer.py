@@ -10,7 +10,8 @@ from elasticsearch import NotFoundError
 from elasticsearch.helpers import async_bulk
 
 from services.runtime_settings import get_runtime_settings
-from services.db import DOC_CHUNKS_INDEX, EMAIL_THREADS_INDEX, INDEX_NAME, KNOWLEDGE_COLLECTIONS_INDEX, MEMO_INDEX, QUICKNOTE_INDEX, get_es
+from services.db import DOC_CHUNKS_INDEX, EMAIL_THREADS_INDEX, INDEX_NAME, KNOWLEDGE_COLLECTIONS_INDEX, MEMO_INDEX, QUICKNOTE_INDEX, get_es, get_language_index
+from services.language_detection import detect_language
 from logger import get_logger
 
 logger = get_logger(__name__)
@@ -89,8 +90,8 @@ async def index_documents(docs: list[dict]) -> dict:
     try:
         # mget 일괄 중복 체크 (N번 GET → 1번)
         all_hashes = [hashlib.md5(doc["url"].encode()).hexdigest() for doc in docs]
-        mget_res = await es.mget(index=INDEX_NAME, body={"ids": all_hashes})
-        existing_ids = {item["_id"] for item in mget_res["docs"] if item.get("found")}
+        existing_res = await es.search(index=INDEX_NAME, size=len(all_hashes), query={"ids": {"values": all_hashes}}, _source=False)
+        existing_ids = {item["_id"] for item in existing_res["hits"]["hits"]}
         to_index = []
         for doc, doc_hash in zip(docs, all_hashes):
             if doc_hash in existing_ids:
@@ -107,14 +108,19 @@ async def index_documents(docs: list[dict]) -> dict:
         actions = []
         for (doc_hash, doc), embedding in zip(to_index, embeddings):
             indexed_at = doc.get("pub_date") or datetime.now().isoformat()
+            language = detect_language(f"{doc['title']}\n{doc['content']}")
             action = {
-                "_index": INDEX_NAME,
+                "_index": get_language_index("rag_documents", language),
                 "_id": doc_hash,
+                "id": doc_hash,
                 "title": doc["title"],
                 "content": doc["content"],
                 "url": doc["url"],
                 "source": doc["source"],
                 "indexed_at": indexed_at,
+                "created_at": indexed_at,
+                "updated_at": indexed_at,
+                "content_language": language,
                 "doc_hash": doc_hash,
                 "news_type": doc.get("news_type") or None,
                 "content_length": len(doc["content"]),
@@ -160,6 +166,26 @@ def _rerank(hits: list[dict], size: int, preserve_order: bool = False) -> list[d
     return results[:size]
 
 
+def _rrf_hits(bm25_hits: list[dict], knn_hits: list[dict], size: int, rrf_k: int = 60) -> list[dict]:
+    """Merge independently searched lexical and vector candidates without score-scale bias."""
+    scores: dict[tuple[str, str], float] = {}
+    hits_by_key: dict[tuple[str, str], dict] = {}
+    for hits in (bm25_hits, knn_hits):
+        for rank, hit in enumerate(hits, start=1):
+            key = (hit["_index"], hit["_id"])
+            scores[key] = scores.get(key, 0.0) + 1 / (rrf_k + rank)
+            hits_by_key[key] = hit
+    return [hits_by_key[key] for key in sorted(scores, key=scores.get, reverse=True)[:size]]
+
+
+def _memo_bm25_query(query: str) -> dict:
+    return {"bool": {"should": [
+        {"match_phrase": {"title": {"query": query, "boost": 5}}},
+        {"match": {"title": {"query": query, "boost": 3, "minimum_should_match": "30%"}}},
+        {"match": {"content": {"query": query, "minimum_should_match": "30%"}}},
+    ], "minimum_should_match": 1}}
+
+
 async def rag_search(query: str, size: int = 5) -> list[dict]:
     """RAG 전용 검색 — BM25 + kNN 별도 실행 후 RRF 직접 계산"""
     query = (query or "").strip()
@@ -167,6 +193,8 @@ async def rag_search(query: str, size: int = 5) -> list[dict]:
         return []
 
     es = get_es()
+    query_language = detect_language(query)
+    bm25_indices = [get_language_index("rag_documents", query_language), get_language_index("memo_documents", query_language)]
     BM25_POOL = 20   # BM25 후보 수
     KNN_POOL  = 20   # kNN 후보 수
     RERANK_K  = max(size * 2, 10)  # reranker에 넘길 후보 (최소 10)
@@ -222,7 +250,7 @@ async def rag_search(query: str, size: int = 5) -> list[dict]:
             }
             import asyncio as _asyncio
             bm25_res, knn_res = await _asyncio.gather(
-                es.search(index=[INDEX_NAME, MEMO_INDEX], body=bm25_body),
+                es.search(index=bm25_indices, body=bm25_body),
                 es.search(index=[INDEX_NAME, MEMO_INDEX], body=knn_body),
             )
             bm25_hits = bm25_res["hits"]["hits"]
@@ -249,7 +277,7 @@ async def rag_search(query: str, size: int = 5) -> list[dict]:
         else:
             logger.warning("[rag_search] BM25 fallback 진입")
             bm25_res = await es.search(
-                index=[INDEX_NAME, MEMO_INDEX],
+                index=bm25_indices,
                 body={**bm25_body, "min_score": 1.0},
             )
             candidates = _rerank(bm25_res["hits"]["hits"], RERANK_K)
@@ -285,43 +313,49 @@ async def knowledge_collection_search(collection_id: str, query: str, size: int 
             return [], str(source.get("instruction", "")).strip()
 
         embedding = await get_embedding(query, is_query=True)
+        query_language = detect_language(query)
         searches = []
         if document_ids:
             body = {"size": size, "_source": ["title", "content", "url", "source", "indexed_at", "file_id", "chunk_type", "heading_path", "page_number"],
                     "query": {"bool": {"filter": [{"terms": {"file_id": document_ids}}], "should": [{"match": {"title": {"query": query, "boost": 3}}}, {"match": {"content": {"query": query}}}], "minimum_should_match": 0}}}
+            searches.append(es.search(index=get_language_index("doc_chunks", query_language), body=body))
             if embedding:
-                body["knn"] = {"field": "embedding", "query_vector": embedding, "k": size, "num_candidates": max(size * 10, 50), "filter": {"terms": {"file_id": document_ids}}}
-            searches.append(es.search(index=DOC_CHUNKS_INDEX, body=body))
+                searches.append(es.search(index=DOC_CHUNKS_INDEX, body={"size": size, "_source": body["_source"], "knn": {"field": "embedding", "query_vector": embedding, "k": size, "num_candidates": max(size * 10, 50), "filter": {"terms": {"file_id": document_ids}}}}))
         if memo_ids:
             body = {"size": size, "_source": ["id", "title", "content", "source", "updated_at"],
                     "query": {"bool": {"filter": [{"terms": {"id": memo_ids}}], "should": [{"match": {"title": {"query": query, "boost": 3}}}, {"match": {"content": {"query": query}}}], "minimum_should_match": 0}}}
+            searches.append(es.search(index=get_language_index("memo_documents", query_language), body=body))
             if embedding:
-                body["knn"] = {"field": "embedding", "query_vector": embedding, "k": size, "num_candidates": max(size * 10, 50), "filter": {"terms": {"id": memo_ids}}}
-            searches.append(es.search(index=MEMO_INDEX, body=body))
+                searches.append(es.search(index=MEMO_INDEX, body={"size": size, "_source": body["_source"], "knn": {"field": "embedding", "query_vector": embedding, "k": size, "num_candidates": max(size * 10, 50), "filter": {"terms": {"id": memo_ids}}}}))
         if email_thread_ids:
-            body = {"size": size, "_source": ["subject", "rag_content", "indexed_at", "thread_id", "inline_images"],
-                    "query": {"bool": {"filter": [{"terms": {"_id": email_thread_ids}}], "should": [{"match": {"subject": {"query": query, "boost": 3}}}, {"match": {"rag_content": {"query": query}}}], "minimum_should_match": 0}}}
+            body = {"size": size, "_source": ["title", "content", "indexed_at", "thread_id", "inline_images"],
+                    "query": {"bool": {"filter": [{"terms": {"_id": email_thread_ids}}], "should": [{"match": {"title": {"query": query, "boost": 3}}}, {"match": {"content": {"query": query}}}], "minimum_should_match": 0}}}
+            searches.append(es.search(index=get_language_index("knowledge_email_threads", query_language), body=body))
             if embedding:
-                body["knn"] = {"field": "embedding", "query_vector": embedding, "k": size, "num_candidates": max(size * 10, 50), "filter": {"terms": {"_id": email_thread_ids}}}
-            searches.append(es.search(index=EMAIL_THREADS_INDEX, body=body))
+                searches.append(es.search(index=EMAIL_THREADS_INDEX, body={"size": size, "_source": body["_source"], "knn": {"field": "embedding", "query_vector": embedding, "k": size, "num_candidates": max(size * 10, 50), "filter": {"terms": {"_id": email_thread_ids}}}}))
 
         import asyncio as _asyncio
         responses = await _asyncio.gather(*searches)
+        merged_hits = _rrf_hits(
+            [hit for response in responses[::2] for hit in response["hits"]["hits"]] if embedding else [hit for response in responses for hit in response["hits"]["hits"]],
+            [hit for response in responses[1::2] for hit in response["hits"]["hits"]] if embedding else [],
+            size * 3,
+        )
         results = []
-        for response in responses:
-            for hit in response["hits"]["hits"]:
-                item = hit["_source"]
-                is_memo = item.get("source") == "memo"
-                is_email_thread = "thread_id" in item
-                content = item.get("rag_content", "") if is_email_thread else item.get("content", "")
-                results.append({"title": item.get("title", item.get("subject", "")), "content": content,
-                                "url": f"memo://{item.get('id', hit['_id'])}" if is_memo else (f"email-thread://{hit['_id']}" if is_email_thread else item.get("url", "")),
-                                "source": item.get("source", "email_thread" if is_email_thread else "memo" if is_memo else ""),
-                                "indexed_at": item.get("updated_at", item.get("indexed_at", "")),
-                                "score": round(hit.get("_score") or 0, 3),
-                                **({"inline_images": item.get("inline_images", [])} if is_email_thread else {}),
-                                **({"memo_id": item.get("id", hit["_id"])} if is_memo else {})})
-        results.sort(key=lambda item: item["score"], reverse=True)
+        for hit in merged_hits:
+            item = hit["_source"]
+            is_memo = item.get("source") == "memo"
+            is_email_thread = "thread_id" in item
+            content = item.get("content", "")
+            results.append({"title": item.get("title", ""), "content": content,
+                            "url": f"memo://{item.get('id', hit['_id'])}" if is_memo else (f"email-thread://{hit['_id']}" if is_email_thread else item.get("url", "")),
+                            "source": item.get("source", "email_thread" if is_email_thread else "memo" if is_memo else ""),
+                            "indexed_at": item.get("updated_at", item.get("indexed_at", "")),
+                            "score": round(hit.get("_score") or 0, 3),
+                            **({"inline_images": item.get("inline_images", [])} if is_email_thread else {}),
+                            **({"memo_id": item.get("id", hit["_id"])} if is_memo else {})})
+        if not embedding:
+            results.sort(key=lambda item: item["score"], reverse=True)
         selected_results = results[:size]
         selected_sources = [
             f"{item.get('source') or 'document'}:{item.get('title') or '(untitled)'}"
@@ -375,52 +409,26 @@ async def memo_search(query: str, size: int = 3) -> list[dict]:
     try:
         embedding = await get_embedding(q, is_query=True)
 
+        language = detect_language(q)
+        source_fields = ["title", "content", "id", "source", "updated_at"]
+        bm25_res = await es.search(
+            index=get_language_index("memo_documents", language), size=size * 4,
+            _source=source_fields, query=_memo_bm25_query(q),
+        )
+        bm25_hits = bm25_res["hits"]["hits"]
         if embedding:
-            res = await es.search(
-                index=MEMO_INDEX,
-                size=size,
-                min_score=15,
-                _source=["title", "content", "id", "source", "updated_at"],
-                knn={
-                    "field": "embedding",
-                    "query_vector": embedding,
-                    "k": size * 4,
-                    "num_candidates": size * 20,
-                },
-                query={
-                    "bool": {
-                        "should": [
-                            {"match_phrase": {"title": {"query": q, "boost": 5}}},
-                            {"match": {"title": {"query": q, "boost": 3, "minimum_should_match": "30%"}}},
-                            {"match": {"content": {"query": q, "minimum_should_match": "30%"}}},
-                        ],
-                        "minimum_should_match": 1,
-                    }
-                },
+            knn_res = await es.search(
+                index=MEMO_INDEX, size=size * 4, _source=source_fields,
+                knn={"field": "embedding", "query_vector": embedding, "k": size * 4, "num_candidates": size * 20},
             )
+            hits = _rrf_hits(bm25_hits, knn_res["hits"]["hits"], size * 2)
         else:
-            # 임베딩 실패 시 BM25 fallback
             logger.warning("[memo_search] 임베딩 실패, BM25 fallback")
-            res = await es.search(
-                index=MEMO_INDEX,
-                size=size,
-                min_score=15,
-                _source=["title", "content", "id", "source", "updated_at"],
-                query={
-                    "bool": {
-                        "should": [
-                            {"match_phrase": {"title": {"query": q, "boost": 5}}},
-                            {"match": {"title": {"query": q, "boost": 3, "minimum_should_match": "30%"}}},
-                            {"match": {"content": {"query": q, "minimum_should_match": "30%"}}},
-                        ],
-                        "minimum_should_match": 1,
-                    }
-                },
-            )
+            hits = bm25_hits
 
         quicknote_result = await quicknote_search(q, size=size, embedding=embedding)
-        hits_info = [(h["_source"].get("title",""), round(h["_score"] or 0, 3)) for h in res["hits"]["hits"]]
-        logger.info("[memo_search] query=%r hits=%d scores=%s", q, len(res["hits"]["hits"]), hits_info)
+        hits_info = [(h["_source"].get("title", ""), round(h.get("_score") or 0, 3)) for h in hits]
+        logger.info("[memo_search] query=%r hits=%d scores=%s", q, len(hits), hits_info)
         memo_results = [
             {
                 "title": h["_source"]["title"],
@@ -431,7 +439,7 @@ async def memo_search(query: str, size: int = 3) -> list[dict]:
                 "score": round(h["_score"] or 0, 3),
                 "memo_id": h["_source"].get("id", h["_id"]),
             }
-            for h in res["hits"]["hits"]
+            for h in hits[:size]
         ]
         return memo_results + quicknote_result
     except Exception as e:
@@ -445,37 +453,34 @@ async def quicknote_search(query: str, size: int = 3, embedding: list[float] | N
     """빠른 메모를 일반 메모 검색과 같은 임베딩/BM25 방식으로 조회한다."""
     es = get_es()
     try:
+        language = detect_language(query)
+        source_fields = ["id", "title", "content", "done", "updated_at"]
+        bm25_res = await es.search(
+            index=get_language_index("quick_notes", language), size=size * 4,
+            _source=source_fields,
+            query={"match": {"content": {"query": query, "minimum_should_match": "30%"}}},
+        )
         if embedding:
-            res = await es.search(
-                index=QUICKNOTE_INDEX,
-                size=size,
-                _source=["id", "text", "done", "updated_at"],
-                knn={
-                    "field": "embedding", "query_vector": embedding,
-                    "k": size * 4, "num_candidates": size * 20,
-                },
-                query={"match": {"text": {"query": query, "minimum_should_match": "30%"}}},
+            knn_res = await es.search(
+                index=QUICKNOTE_INDEX, size=size * 4, _source=source_fields,
+                knn={"field": "embedding", "query_vector": embedding, "k": size * 4, "num_candidates": size * 20},
             )
+            hits = _rrf_hits(bm25_res["hits"]["hits"], knn_res["hits"]["hits"], size)
         else:
             logger.warning("[quicknote_search] 임베딩 실패, BM25 fallback")
-            res = await es.search(
-                index=QUICKNOTE_INDEX,
-                size=size,
-                _source=["id", "text", "done", "updated_at"],
-                query={"match": {"text": {"query": query, "minimum_should_match": "30%"}}},
-            )
+            hits = bm25_res["hits"]["hits"][:size]
 
         return [
             {
                 "title": "빠른 메모" + (" (완료)" if h["_source"].get("done") else ""),
-                "content": h["_source"]["text"],
+                "content": h["_source"]["content"],
                 "url": f"quicknote://{h['_source'].get('id', h['_id'])}",
                 "source": "quicknote",
                 "indexed_at": h["_source"].get("updated_at", ""),
                 "score": round(h.get("_score") or 0, 3),
                 "quicknote_id": h["_source"].get("id", h["_id"]),
             }
-            for h in res["hits"]["hits"]
+            for h in hits
         ]
     except Exception as e:
         logger.warning("[quicknote_search] 실패: %s", e)

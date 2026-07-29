@@ -37,7 +37,7 @@ def _run_in_background(coro) -> None:
     task = asyncio.create_task(coro)
     _background_tasks.add(task)
     task.add_done_callback(_background_tasks.discard)
-from services.db import INDEX_NAME, DOC_CHUNKS_INDEX, HIST_INDEX, PROJECTS_INDEX
+from services.db import INDEX_NAME, DOC_CHUNKS_INDEX, HIST_INDEX, PROJECTS_INDEX, LANGUAGES, get_language_index
 from services.indexer import get_embedding, get_es as get_es_client
 from services.plugin_manager import has_plugin_url_resolvers, resolve_plugin_url
 from routers.images import ImageGenerateRequest, generate_image
@@ -452,7 +452,7 @@ async def get_article_by_url(url: str):
 async def delete_index():
     es = get_es()
     try:
-        await es.indices.delete(index="rag_documents", ignore_unavailable=True)
+        await es.indices.delete(index=[get_language_index("rag_documents", language) for language in LANGUAGES], ignore_unavailable=True)
         await ensure_index()
         return {"message": "인덱스 초기화 완료"}
     finally:

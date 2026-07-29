@@ -15,7 +15,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from config import INSTALL_DIR
-from services.db import EMAIL_THREADS_INDEX, get_es
+from services.db import LANGUAGES, get_es, get_language_index
 from services.google_workspace.auth import revoke_all_tokens
 from logger import get_logger
 
@@ -34,6 +34,8 @@ _MCP_SETTINGS_DOC_ID = "mcp"
 _GOOGLE_TOKEN_DOC_PREFIX = "google_workspace_token"
 _PLUGIN_SETTINGS_DOC_ID = "plugins"
 _PLUGIN_RESTORE_STATE_DOC_ID = "plugin_restore_state"
+
+EMAIL_THREAD_INDICES = {get_language_index("knowledge_email_threads", language) for language in LANGUAGES}
 
 
 async def _preserve_google_workspace_on_restore(backup: dict) -> bool:
@@ -300,7 +302,7 @@ async def export_backup(req: ExportRequest = None):
         json_bytes = json.dumps(backup, ensure_ascii=False, indent=2).encode("utf-8")
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-        include_knowledge_mail_images = EMAIL_THREADS_INDEX in index_names
+        include_knowledge_mail_images = bool(EMAIL_THREAD_INDICES.intersection(index_names))
         if include_files and (
             DOCS_DIR.exists()
             or MEMO_ATTACHMENTS_DIR.exists()
@@ -397,7 +399,7 @@ async def import_backup(
             dest.write_bytes(fbytes)
             files_restored += 1
             logger.info("[restore] 메모 첨부 복원: %s", relative_name)
-    if restore_files and EMAIL_THREADS_INDEX in backup["indices"] and knowledge_mail_image_files:
+    if restore_files and EMAIL_THREAD_INDICES.intersection(backup["indices"]) and knowledge_mail_image_files:
         for relative_name, fbytes in knowledge_mail_image_files.items():
             dest = KNOWLEDGE_MAIL_IMAGES_DIR / relative_name
             if dest.exists():

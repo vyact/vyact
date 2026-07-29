@@ -7,7 +7,7 @@ from elasticsearch import NotFoundError
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from services.db import EMAIL_THREADS_INDEX, FILES_INDEX, KNOWLEDGE_COLLECTIONS_INDEX, MEMO_INDEX, get_es
+from services.db import EMAIL_THREADS_INDEX, FILES_INDEX, KNOWLEDGE_COLLECTIONS_INDEX, MEMO_INDEX, find_document_index, get_es
 from config import INSTALL_DIR
 
 router = APIRouter()
@@ -24,7 +24,9 @@ async def _delete_orphaned_email_thread(es, source_id: str) -> None:
     if is_referenced:
         return
     try:
-        await es.delete(index=EMAIL_THREADS_INDEX, id=source_id, refresh=True)
+        index = await find_document_index(es, EMAIL_THREADS_INDEX, source_id)
+        if index:
+            await es.delete(index=index, id=source_id, refresh=True)
     except NotFoundError:
         pass
     image_dir = KNOWLEDGE_MAIL_IMAGES_DIR / source_id
@@ -67,13 +69,15 @@ async def _validate_members(es, items: list[dict]) -> None:
         if missing:
             raise HTTPException(status_code=400, detail="존재하지 않는 문서가 포함되어 있습니다.")
     if memo_ids:
-        found = await es.mget(index=MEMO_INDEX, ids=memo_ids)
-        missing = [item_id for item_id, item in zip(memo_ids, found["docs"]) if not item.get("found")]
+        found = await es.search(index=MEMO_INDEX, size=len(memo_ids), query={"ids": {"values": memo_ids}}, _source=False)
+        found_ids = {hit["_id"] for hit in found["hits"]["hits"]}
+        missing = [item_id for item_id in memo_ids if item_id not in found_ids]
         if missing:
             raise HTTPException(status_code=400, detail="존재하지 않는 메모가 포함되어 있습니다.")
     if email_thread_ids:
-        found = await es.mget(index=EMAIL_THREADS_INDEX, ids=email_thread_ids)
-        missing = [item_id for item_id, item in zip(email_thread_ids, found["docs"]) if not item.get("found")]
+        found = await es.search(index=EMAIL_THREADS_INDEX, size=len(email_thread_ids), query={"ids": {"values": email_thread_ids}}, _source=False)
+        found_ids = {hit["_id"] for hit in found["hits"]["hits"]}
+        missing = [item_id for item_id in email_thread_ids if item_id not in found_ids]
         if missing:
             raise HTTPException(status_code=400, detail="존재하지 않는 이메일 스레드가 포함되어 있습니다.")
 
@@ -172,7 +176,10 @@ async def get_knowledge_collection_items(collection_id: str):
             if not index_name or not source_id:
                 continue
             try:
-                result = await es.get(index=index_name, id=source_id)
+                resolved_index = index_name if source_type == "document" else await find_document_index(es, index_name, source_id)
+                if not resolved_index:
+                    continue
+                result = await es.get(index=resolved_index, id=source_id)
             except NotFoundError:
                 continue
             source = result["_source"]
@@ -181,9 +188,9 @@ async def get_knowledge_collection_items(collection_id: str):
             elif source_type == "memo":
                 resolved_items.append({"source_type": source_type, "source_id": source_id, "title": source.get("title", ""), "summary": source.get("content", "")[:300], "updated_at": source.get("updated_at", ""), "content_html": source.get("content_html", "")})
             else:
-                rag_content = source.get("rag_content", "")
+                content = source.get("content", "")
                 display_messages = source.get("display_messages", [])
-                resolved_items.append({"source_type": source_type, "source_id": source_id, "title": source.get("subject", ""), "summary": rag_content[:300], "updated_at": source.get("indexed_at", ""), "content": rag_content, "messages": display_messages, "message_count": source.get("message_count", 0)})
+                resolved_items.append({"source_type": source_type, "source_id": source_id, "title": source.get("title", ""), "summary": content[:300], "updated_at": source.get("updated_at", source.get("indexed_at", "")), "content": content, "messages": display_messages, "message_count": source.get("message_count", 0)})
         return {"items": resolved_items}
     except NotFoundError:
         raise HTTPException(status_code=404, detail="지식 컬렉션을 찾을 수 없습니다.")

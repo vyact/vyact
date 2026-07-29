@@ -26,7 +26,8 @@ from logger import get_logger
 from services.document_parser import Chunk, parse_file, parse_file_to_chunks, parse_file_to_typed_chunks
 from services.indexer import get_embedding
 from elasticsearch.helpers import async_bulk
-from services.db import INDEX_NAME, DOC_CHUNKS_INDEX, FILES_INDEX, get_es
+from services.db import INDEX_NAME, DOC_CHUNKS_INDEX, FILES_INDEX, get_es, get_language_index
+from services.language_detection import detect_language
 from services.knowledge_collection_references import remove_source_references_from_collections
 
 logger = get_logger(__name__)
@@ -201,15 +202,20 @@ async def _index_saved_document(
             for offset, (typed_chunk, embedding) in enumerate(zip(batch_chunks, batch_embeddings)):
                 index = start + offset
                 chunk = typed_chunk.text
+                content_language = detect_language(chunk)
                 doc_id = hashlib.md5(f"{file_id}::{index}".encode()).hexdigest()
                 doc = {
-                    "_index": DOC_CHUNKS_INDEX,
+                    "_index": get_language_index("doc_chunks", content_language),
                     "_id": doc_id,
+                    "id": doc_id,
                     "title": f"{filename} [{index + 1}/{total_chunks}]",
                     "content": chunk,
                     "url": f"file://{file_id}::chunk{index}",
                     "source": f"문서({ext.upper().lstrip('.')})",
                     "indexed_at": indexed_at,
+                    "created_at": indexed_at,
+                    "updated_at": indexed_at,
+                    "content_language": content_language,
                     "doc_hash": doc_id,
                     "file_id": file_id,
                     "original_file": filename,

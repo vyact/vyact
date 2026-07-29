@@ -17,7 +17,8 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from logger import get_logger
-from services.db import QUICKNOTE_INDEX, get_es
+from services.db import QUICKNOTE_INDEX, find_document_index, get_es, get_language_index
+from services.language_detection import detect_language
 from services.indexer import get_embedding
 
 logger = get_logger(__name__)
@@ -44,13 +45,16 @@ async def _update_quicknote_embedding(note_id: str, text: str) -> None:
 
         es = get_es()
         try:
+            index = await find_document_index(es, QUICKNOTE_INDEX, note_id)
+            if not index:
+                return
             await es.update(
-                index=QUICKNOTE_INDEX,
+                index=index,
                 id=note_id,
                 script={
-                    "source": "if (ctx._source.text == params.text) { ctx._source.embedding = params.embedding; }",
+                    "source": "if (ctx._source.content == params.content) { ctx._source.embedding = params.embedding; }",
                     "lang": "painless",
-                    "params": {"text": text, "embedding": embedding},
+                    "params": {"content": text, "embedding": embedding},
                 },
             )
         finally:
@@ -72,9 +76,9 @@ async def list_quicknotes(size: int = 200):
                 {"done": {"order": "asc"}},          # false(미완료)가 먼저
                 {"created_at": {"order": "desc"}},   # 그 안에서 생성 최신순
             ],
-            _source=["id", "text", "done", "created_at", "updated_at"],
+            _source=["id", "title", "content", "done", "created_at", "updated_at"],
         )
-        notes = [{**h["_source"]} for h in res["hits"]["hits"]]
+        notes = [{**h["_source"], "text": h["_source"].get("content", "")} for h in res["hits"]["hits"]]
         return {"notes": notes, "total": res["hits"]["total"]["value"]}
     finally:
         await es.close()
@@ -89,16 +93,21 @@ async def create_quicknote(body: QuickNoteBody):
     try:
         note_id = str(uuid.uuid4())
         now = datetime.now(timezone.utc).isoformat()
+        language = detect_language(text)
         doc = {
             "id": note_id,
-            "text": text,
+            "title": "",
+            "content": text,
+            "source": "quicknote",
             "done": False,
             "created_at": now,
             "updated_at": now,
+            "indexed_at": now,
+            "content_language": language,
         }
-        await es.index(index=QUICKNOTE_INDEX, id=note_id, document=doc, refresh=True)
+        await es.index(index=get_language_index("quick_notes", language), id=note_id, document=doc, refresh=True)
         asyncio.create_task(_update_quicknote_embedding(note_id, text))
-        return doc
+        return {**doc, "text": text}
     finally:
         await es.close()
 
@@ -111,11 +120,18 @@ async def update_quicknote(note_id: str, body: QuickNoteBody):
     es = get_es()
     try:
         now = datetime.now(timezone.utc).isoformat()
-        doc = {"text": text, "updated_at": now}
-        await es.update(
-            index=QUICKNOTE_INDEX, id=note_id,
-            doc=doc, refresh=True,
-        )
+        old_index = await find_document_index(es, QUICKNOTE_INDEX, note_id)
+        if not old_index:
+            raise HTTPException(status_code=404, detail="메모를 찾을 수 없습니다.")
+        language = detect_language(text)
+        new_index = get_language_index("quick_notes", language)
+        doc = {"content": text, "updated_at": now, "indexed_at": now, "content_language": language}
+        if old_index == new_index:
+            await es.update(index=old_index, id=note_id, doc=doc, refresh=True)
+        else:
+            existing = await es.get(index=old_index, id=note_id)
+            await es.delete(index=old_index, id=note_id)
+            await es.index(index=new_index, id=note_id, document={**existing["_source"], **doc}, refresh=True)
         asyncio.create_task(_update_quicknote_embedding(note_id, text))
         return {"id": note_id, "text": text, "updated_at": now}
     except Exception as e:
@@ -129,9 +145,12 @@ async def toggle_done(note_id: str, body: QuickNoteDoneBody):
     es = get_es()
     try:
         now = datetime.now(timezone.utc).isoformat()
+        index = await find_document_index(es, QUICKNOTE_INDEX, note_id)
+        if not index:
+            raise HTTPException(status_code=404, detail="메모를 찾을 수 없습니다.")
         await es.update(
-            index=QUICKNOTE_INDEX, id=note_id,
-            doc={"done": body.done, "updated_at": now}, refresh=True,
+            index=index, id=note_id,
+            doc={"done": body.done, "updated_at": now, "indexed_at": now}, refresh=True,
         )
         return {"id": note_id, "done": body.done, "updated_at": now}
     except Exception as e:
@@ -144,7 +163,10 @@ async def toggle_done(note_id: str, body: QuickNoteDoneBody):
 async def delete_quicknote(note_id: str):
     es = get_es()
     try:
-        await es.delete(index=QUICKNOTE_INDEX, id=note_id, refresh=True)
+        index = await find_document_index(es, QUICKNOTE_INDEX, note_id)
+        if not index:
+            raise HTTPException(status_code=404, detail="메모를 찾을 수 없습니다.")
+        await es.delete(index=index, id=note_id, refresh=True)
         return {"deleted": note_id}
     except Exception:
         raise HTTPException(status_code=404, detail="메모를 찾을 수 없습니다.")

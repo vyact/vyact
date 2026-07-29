@@ -17,18 +17,19 @@ ES_TRANSPORT_PORT = os.getenv("ES_TRANSPORT_PORT", "9351")  # 노드 간 transpo
 KIBANA_PORT = os.getenv("KIBANA_PORT", "5651")   # Kibana (기본 5601 회피)
 ES_URL = os.getenv("ES_URL", f"http://localhost:{ES_PORT}")
 
-INDEX_NAME = "rag_documents"
-DOC_CHUNKS_INDEX = "doc_chunks"   # 파일 업로드 청크 전용 인덱스
+LANGUAGES = ("ko", "en", "ja", "zh", "th", "vi", "es", "fr", "und")
+INDEX_NAME = "rag_documents_all"
+DOC_CHUNKS_INDEX = "doc_chunks_all"   # 파일 업로드 청크 전용 read alias
 CHAT_FILE_CHUNKS_INDEX = "chat_file_chunks"   # 채팅 첨부(zip/파일) 청크 전용 인덱스 — conv_id 종속, 방 삭제 시 cascade
 HIST_INDEX = "rag_history"
 PROJECTS_INDEX = "projects"
 PROMPTS_INDEX = "system_prompts"
 SETTINGS_INDEX = "system_settings"
 FILES_INDEX = "rag_files"
-MEMO_INDEX = "memo_documents"
-QUICKNOTE_INDEX = "quick_notes"   # 빠른 메모(todo형) — 메모 RAG 검색 대상
+MEMO_INDEX = "memo_documents_all"
+QUICKNOTE_INDEX = "quick_notes_all"   # 빠른 메모(todo형) — 메모 RAG 검색 대상
 KNOWLEDGE_COLLECTIONS_INDEX = "knowledge_collections"
-EMAIL_THREADS_INDEX = "knowledge_email_threads"
+EMAIL_THREADS_INDEX = "knowledge_email_threads_all"
 USER_PROFILE_INDEX = "user_profile"
 VOCAB_INDEX = "vocab_words"
 NOTIFICATIONS_INDEX = "notifications"
@@ -63,6 +64,61 @@ KOREAN_ANALYSIS = {
     },
 }
 
+LANGUAGE_ANALYSIS = {
+    "ko": (KOREAN_ANALYSIS, "korean"), "ja": ({}, "kuromoji"), "zh": ({}, "smartcn"),
+    "th": ({}, "thai"), "en": ({}, "english"), "fr": ({}, "french"), "es": ({}, "spanish"),
+    "vi": ({"analyzer": {"unicode": {"type": "custom", "tokenizer": "standard", "char_filter": ["icu_normalizer"], "filter": ["lowercase", "icu_folding"]}}}, "unicode"),
+    "und": ({"analyzer": {"unicode": {"type": "custom", "tokenizer": "standard", "char_filter": ["icu_normalizer"], "filter": ["lowercase", "icu_folding"]}}}, "unicode"),
+}
+INDEX_FAMILIES = ("rag_documents", "doc_chunks", "memo_documents", "quick_notes", "knowledge_email_threads")
+
+def get_language_index(index_family: str, language: str) -> str:
+    if index_family not in INDEX_FAMILIES:
+        raise ValueError(f"Unknown language index family: {index_family}")
+    return f"{index_family}_{language if language in LANGUAGES else 'und'}"
+
+async def find_document_index(es, alias: str, document_id: str) -> str | None:
+    """Resolve an ID through a multi-index read alias before single-document writes."""
+    response = await es.search(index=alias, size=1, query={"ids": {"values": [document_id]}}, _source=False)
+    hits = response.get("hits", {}).get("hits", [])
+    return hits[0]["_index"] if hits else None
+
+def _vector_mapping():
+    return {"type": "dense_vector", "dims": 1024, "index": True, "similarity": "cosine", "index_options": {"type": "bbq_hnsw", "m": 16, "ef_construction": 100}}
+
+def _language_mapping(family: str, analyzer: str) -> dict:
+    text = lambda **extra: {"type": "text", "analyzer": analyzer, **extra}
+    common = {
+        "id": {"type": "keyword"},
+        "title": text(fields={"keyword": {"type": "keyword", "ignore_above": 512}}),
+        "content": text(),
+        "source": {"type": "keyword"},
+        "content_language": {"type": "keyword"},
+        "created_at": {"type": "date"},
+        "updated_at": {"type": "date"},
+        "indexed_at": {"type": "date"},
+        "embedding": _vector_mapping(),
+    }
+    if family == "rag_documents":
+        return {**common, "url":{"type":"keyword"}, "doc_hash":{"type":"keyword"}, "file_id":{"type":"keyword"}, "news_type":{"type":"keyword"}, "original_file":{"type":"keyword"}, "chunk_index":{"type":"integer"}, "total_chunks":{"type":"integer"}, "content_length":{"type":"integer"}, "embedding_model":{"type":"keyword"}, "chunk_type":{"type":"keyword"}}
+    if family == "doc_chunks":
+        return {**common, "url":{"type":"keyword"}, "doc_hash":{"type":"keyword"}, "file_id":{"type":"keyword"}, "original_file":{"type":"keyword"}, "chunk_index":{"type":"integer"}, "total_chunks":{"type":"integer"}, "content_length":{"type":"integer"}, "embedding_model":{"type":"keyword"}, "chunk_type":{"type":"keyword"}, "heading_path":{"type":"keyword"}, "page_number":{"type":"integer"}}
+    if family == "memo_documents":
+        return {**common, "content_html": {"type": "text", "index": False}}
+    if family == "quick_notes":
+        return {**common, "done": {"type": "boolean"}}
+    return {**common, "account_id":{"type":"keyword"}, "thread_id":{"type":"keyword"}, "message_count":{"type":"integer"}, "display_messages":{"type":"object", "enabled":False}, "inline_images":{"type":"object", "enabled":False}, "attachments":{"type":"object", "enabled":False}}
+
+async def ensure_language_indices(es) -> None:
+    for family in INDEX_FAMILIES:
+        alias = f"{family}_all"
+        for language in LANGUAGES:
+            index = get_language_index(family, language)
+            if not await es.indices.exists(index=index):
+                analysis, analyzer = LANGUAGE_ANALYSIS[language]
+                await es.indices.create(index=index, settings={"number_of_shards": 1, "number_of_replicas": 0, "analysis": analysis}, mappings={"properties": _language_mapping(family, analyzer)})
+            await es.indices.update_aliases(actions=[{"add": {"index": index, "alias": alias}}])
+
 
 # ── ES 싱글턴 클라이언트 ──────────────────────────────────────────
 # 요청마다 새 클라이언트 생성 — finally: await es.close() 패턴과 쌍으로 사용
@@ -91,49 +147,7 @@ async def ensure_index():
         if not await wait_for_es(es):
             raise Exception("Elasticsearch 준비 안됨")
         logger.info("✅ Connected to ES")
-
-        # ── rag_documents ──────────────────────────────────────────
-        if not await es.indices.exists(index=INDEX_NAME):
-            await es.indices.create(
-                index=INDEX_NAME,
-                settings={
-                    "number_of_shards": 1,
-                    "number_of_replicas": 0,
-                    "analysis": KOREAN_ANALYSIS,
-                },
-                mappings={
-                    "properties": {
-                        "title": {"type": "text", "analyzer": "korean",
-                                  "fields": {"keyword": {"type": "keyword", "ignore_above": 512}}},
-                        "content": {"type": "text", "analyzer": "korean"},
-                        "url": {"type": "keyword"},
-                        "source": {"type": "keyword"},
-                        "indexed_at": {"type": "date"},
-                        "doc_hash": {"type": "keyword"},
-                        "file_id": {"type": "keyword"},
-                        "news_type": {"type": "keyword"},
-                        "original_file": {"type": "keyword"},
-                        "chunk_index": {"type": "integer"},
-                        "total_chunks": {"type": "integer"},
-                        "content_length": {"type": "integer"},
-                        "embedding_model": {"type": "keyword"},
-                        "chunk_type": {"type": "keyword"},
-                        # ES 9.x: bbq_hnsw — 4비트 scalar 양자화 (메모리↓, 정확도 유지)
-                        "embedding": {
-                            "type": "dense_vector",
-                            "dims": 1024,
-                            "index": True,
-                            "similarity": "cosine",
-                            "index_options": {
-                                "type": "bbq_hnsw",
-                                "m": 16,
-                                "ef_construction": 100,
-                            },
-                        },
-                    }
-                },
-            )
-            logger.info("rag_documents 인덱스 생성 완료")
+        await ensure_language_indices(es)
 
         # ── rag_history ────────────────────────────────────────────
         if not await es.indices.exists(index=HIST_INDEX):
@@ -219,49 +233,6 @@ async def ensure_index():
                 },
             )
 
-        # ── doc_chunks ─────────────────────────────────────────────
-        if not await es.indices.exists(index=DOC_CHUNKS_INDEX):
-            await es.indices.create(
-                index=DOC_CHUNKS_INDEX,
-                settings={
-                    "number_of_shards": 1,
-                    "number_of_replicas": 0,
-                    "analysis": KOREAN_ANALYSIS,
-                },
-                mappings={
-                    "properties": {
-                        "title": {"type": "text", "analyzer": "korean",
-                                  "fields": {"keyword": {"type": "keyword", "ignore_above": 512}}},
-                        "content": {"type": "text", "analyzer": "korean"},
-                        "url": {"type": "keyword"},
-                        "source": {"type": "keyword"},
-                        "indexed_at": {"type": "date"},
-                        "doc_hash": {"type": "keyword"},
-                        "file_id": {"type": "keyword"},
-                        "original_file": {"type": "keyword"},
-                        "chunk_index": {"type": "integer"},
-                        "total_chunks": {"type": "integer"},
-                        "content_length": {"type": "integer"},
-                        "embedding_model": {"type": "keyword"},
-                        "chunk_type": {"type": "keyword"},
-                        "heading_path": {"type": "keyword"},   # 소속 heading 경로 배열
-                        "page_number": {"type": "integer"},    # PDF 페이지 번호
-                        "embedding": {
-                            "type": "dense_vector",
-                            "dims": 1024,
-                            "index": True,
-                            "similarity": "cosine",
-                            "index_options": {
-                                "type": "bbq_hnsw",
-                                "m": 16,
-                                "ef_construction": 100,
-                            },
-                        },
-                    }
-                },
-            )
-            logger.info("doc_chunks 인덱스 생성 완료")
-
         # ── chat_file_chunks ───────────────────────────────────────
         # 채팅 중 첨부한 zip/파일 청크 전용 (doc_chunks와 분리 — 대화방 종속, 방 삭제 시 cascade 삭제)
         if not await es.indices.exists(index=CHAT_FILE_CHUNKS_INDEX):
@@ -318,51 +289,6 @@ async def ensure_index():
             )
             logger.info("rag_files 인덱스 생성 완료")
 
-        # ── memo_documents ─────────────────────────────────────────
-        if not await es.indices.exists(index=MEMO_INDEX):
-            await es.indices.create(
-                index=MEMO_INDEX,
-                settings={
-                    "number_of_shards": 1,
-                    "number_of_replicas": 0,
-                    "analysis": KOREAN_ANALYSIS,
-                },
-                mappings={"properties": {
-                    "id": {"type": "keyword"},
-                    "title": {"type": "text", "analyzer": "korean",
-                              "fields": {"keyword": {"type": "keyword", "ignore_above": 512}}},
-                    "content": {"type": "text", "analyzer": "korean"},
-                    "content_html": {"type": "text", "index": False},
-                    "source": {"type": "keyword"},
-                    "created_at": {"type": "date"},
-                    "updated_at": {"type": "date"},
-                    "indexed_at": {"type": "alias", "path": "updated_at"},
-                    "embedding": {
-                        "type": "dense_vector",
-                        "dims": 1024,
-                        "index": True,
-                        "similarity": "cosine",
-                        "index_options": {
-                            "type": "bbq_hnsw",
-                            "m": 16,
-                            "ef_construction": 100,
-                        },
-                    },
-                }},
-            )
-            logger.info("memo_documents 인덱스 생성 완료")
-        else:
-            memo_mapping = await es.indices.get_mapping(index=MEMO_INDEX)
-            memo_properties = memo_mapping.get(MEMO_INDEX, {}).get("mappings", {}).get("properties", {})
-            if "indexed_at" not in memo_properties:
-                await es.indices.put_mapping(
-                    index=MEMO_INDEX,
-                    body={"properties": {
-                        "indexed_at": {"type": "alias", "path": "updated_at"},
-                    }},
-                )
-                logger.info("memo_documents indexed_at → updated_at alias 추가 완료")
-
         # ── knowledge_collections ──────────────────────────────────
         if not await es.indices.exists(index=KNOWLEDGE_COLLECTIONS_INDEX):
             await es.indices.create(
@@ -383,71 +309,6 @@ async def ensure_index():
                 }},
             )
             logger.info("knowledge_collections 인덱스 생성 완료")
-
-        # ── knowledge_email_threads ────────────────────────────────
-        if not await es.indices.exists(index=EMAIL_THREADS_INDEX):
-            await es.indices.create(
-                index=EMAIL_THREADS_INDEX,
-                settings={"number_of_shards": 1, "number_of_replicas": 0, "analysis": KOREAN_ANALYSIS},
-                mappings={"properties": {
-                    "account_id": {"type": "keyword"}, "thread_id": {"type": "keyword"},
-                    "subject": {"type": "text", "analyzer": "korean"}, "rag_content": {"type": "text", "analyzer": "korean"},
-                    "message_count": {"type": "integer"}, "indexed_at": {"type": "date"},
-                    "display_messages": {"type": "object", "enabled": False},
-                    "inline_images": {"type": "object", "enabled": False},
-                    "attachments": {"type": "object", "enabled": False},
-                    "embedding": {"type": "dense_vector", "dims": 1024, "index": True, "similarity": "cosine", "index_options": {"type": "bbq_hnsw", "m": 16, "ef_construction": 100}},
-                }},
-            )
-            logger.info("knowledge_email_threads 인덱스 생성 완료")
-
-        # ── quick_notes (빠른 메모 / todo형) ─────────────────────────
-        if not await es.indices.exists(index=QUICKNOTE_INDEX):
-            await es.indices.create(
-                index=QUICKNOTE_INDEX,
-                settings={
-                    "number_of_shards": 1,
-                    "number_of_replicas": 0,
-                    "analysis": KOREAN_ANALYSIS,
-                },
-                mappings={"properties": {
-                    "id": {"type": "keyword"},
-                    "text": {"type": "text", "analyzer": "korean"},
-                    "done": {"type": "boolean"},
-                    "created_at": {"type": "date"},
-                    "updated_at": {"type": "date"},
-                    "embedding": {
-                        "type": "dense_vector",
-                        "dims": 1024,
-                        "index": True,
-                        "similarity": "cosine",
-                        "index_options": {
-                            "type": "bbq_hnsw",
-                            "m": 16,
-                            "ef_construction": 100,
-                        },
-                    },
-                }},
-            )
-            logger.info("quick_notes 인덱스 생성 완료")
-        else:
-            # 기존 설치본의 빠른 메모도 이후 생성·수정 시 임베딩을 저장할 수 있게 한다.
-            await es.indices.put_mapping(
-                index=QUICKNOTE_INDEX,
-                body={"properties": {
-                    "embedding": {
-                        "type": "dense_vector",
-                        "dims": 1024,
-                        "index": True,
-                        "similarity": "cosine",
-                        "index_options": {
-                            "type": "bbq_hnsw",
-                            "m": 16,
-                            "ef_construction": 100,
-                        },
-                    },
-                }},
-            )
 
         # ── user_profile ────────────────────────────────────────────
         if not await es.indices.exists(index=USER_PROFILE_INDEX):

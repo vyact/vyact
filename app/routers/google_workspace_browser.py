@@ -38,7 +38,8 @@ from services.google_workspace.gmail import (
     list_mail_threads_sync,
 )
 from services.llm import query_llm
-from services.db import EMAIL_THREADS_INDEX, SETTINGS_INDEX, get_es
+from services.db import EMAIL_THREADS_INDEX, SETTINGS_INDEX, find_document_index, get_es, get_language_index
+from services.language_detection import detect_language
 from services.indexer import get_embedding
 from config import INSTALL_DIR
 
@@ -997,7 +998,7 @@ async def index_mail_thread_for_knowledge(thread_id: str, request: MailKnowledge
         details = [_thread_message_detail(message, service) for message in messages]
     # 스레드의 표시 제목은 가장 최근 답변의 Re:/Fwd: 제목이 아니라 원본 메일 제목을 쓴다.
     subject = next((detail.get("subject", "") for detail in details if detail.get("subject")), "")
-    rag_content = "\n\n".join(
+    content = "\n\n".join(
         "\n".join((
             f"[메일 스레드 메시지 {index}/{len(details)} — 오래된 순]",
             f"From: {detail.get('from', '')}", f"To: {detail.get('to', '')}",
@@ -1006,7 +1007,7 @@ async def index_mail_thread_for_knowledge(thread_id: str, request: MailKnowledge
         )).strip()
         for index, detail in enumerate(details, start=1)
     ).strip()
-    embedding = await get_embedding(f"{subject}\n{rag_content}")
+    embedding = await get_embedding(f"{subject}\n{content}")
     attachment_metadata = [
         {"message_id": detail["id"], **attachment}
         for detail in details for attachment in detail.get("attachments", [])
@@ -1022,14 +1023,21 @@ async def index_mail_thread_for_knowledge(thread_id: str, request: MailKnowledge
             "inline_images": message_images,
         })
         inline_images.extend(image for image in message_images if image not in inline_images)
-    document = {"account_id": request.account_id, "thread_id": thread_id, "subject": subject,
-                "rag_content": rag_content, "display_messages": display_messages, "inline_images": inline_images, "message_count": len(details), "attachments": attachment_metadata,
-                "indexed_at": _dt.utcnow().isoformat()}
+    indexed_at = _dt.utcnow().isoformat()
+    document = {"id": source_id, "account_id": request.account_id, "thread_id": thread_id, "title": subject,
+                "content": content, "source": "email_thread", "display_messages": display_messages, "inline_images": inline_images, "message_count": len(details), "attachments": attachment_metadata,
+                "indexed_at": indexed_at, "created_at": indexed_at, "updated_at": indexed_at}
     if embedding:
         document["embedding"] = embedding
     es = get_es()
     try:
-        await es.index(index=EMAIL_THREADS_INDEX, id=source_id, document=document, refresh=True)
+        language = detect_language(f"{subject}\n{content}")
+        document["content_language"] = language
+        target_index = get_language_index("knowledge_email_threads", language)
+        old_index = await find_document_index(es, EMAIL_THREADS_INDEX, source_id)
+        if old_index and old_index != target_index:
+            await es.delete(index=old_index, id=source_id)
+        await es.index(index=target_index, id=source_id, document=document, refresh=True)
     finally:
         await es.close()
     return {"source_id": source_id, "thread_id": thread_id, "message_count": len(details), "updated": True}
