@@ -109,8 +109,8 @@ const KnowledgeCollectionsModal = ({isOpen, collections, onClose, onCreate, onUp
                 <div className="system-editor-heading"><FilePlus2 size={17}/><span>{editing === 'new' ? t('knowledgeCollections.create') : t('knowledgeCollections.edit')}</span></div>
                 <label>{t('knowledgeCollections.name')}<input className="system-editor-title" autoFocus value={name} onChange={event => setName(event.target.value)} placeholder={t('knowledgeCollections.namePlaceholder')}/></label>
                 <label>{t('knowledgeCollections.description')}<input className="system-editor-title" value={description} onChange={event => setDescription(event.target.value)} placeholder={t('knowledgeCollections.descriptionPlaceholder')}/></label>
-                <label>{t('knowledgeCollections.instruction')}<textarea className="system-editor-content" value={instruction} onChange={event => setInstruction(event.target.value)} placeholder={t('knowledgeCollections.instructionPlaceholder')} rows={6}/></label>
-                <div className="system-editor-actions knowledge-collections-editor-actions"><button className="system-cancel" onClick={() => setEditing(null)}>{t('knowledgeCollections.cancel')}</button><button className="system-save" onClick={() => void save()}>{t('knowledgeCollections.save')}</button></div>
+                <label className="knowledge-collections-instruction-field">{t('knowledgeCollections.instruction')}<textarea className="system-editor-content" value={instruction} onChange={event => setInstruction(event.target.value)} placeholder={t('knowledgeCollections.instructionPlaceholder')} rows={6}/></label>
+                <div className="system-editor-actions knowledge-collections-editor-actions"><button className="system-cancel" onClick={() => setEditing(null)}>{t('knowledgeCollections.cancel')}</button><button className="system-save" onClick={() => void save()} disabled={!name.trim()}>{t('knowledgeCollections.save')}</button></div>
             </div></div>}
         </div>
     </ModalOverlay>;

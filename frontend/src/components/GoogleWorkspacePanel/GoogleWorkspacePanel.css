@@ -226,7 +226,7 @@
 .gwp-mail-more-button { display: grid !important; width: 32px; height: 32px; place-items: center; padding: 0 !important; border-radius: 50% !important; color: var(--text-secondary); }
 .gwp-mail-more-button:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 12%, transparent) !important; color: var(--text); }
 .gwp-mail-attach-menu { position: absolute; top: calc(100% + 5px); right: 0; z-index: 30; min-width: 180px; padding: 4px 0; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); box-shadow: 0 6px 20px rgba(0, 0, 0, .25); }
-.gwp-mail-attach-menu--portal { position: fixed; right: auto; width: max-content; min-width: 0; z-index: 2147483000; }
+.gwp-mail-attach-menu--portal { position: fixed; left: auto; width: max-content; min-width: 0; z-index: 2147483000; }
 .gwp-mail-attach-menu--upward { top: auto; bottom: calc(100% + 5px); }
 .gwp-mail-attach-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 14px; border: 0; background: transparent; color: var(--text); font-size: 13px; cursor: pointer; white-space: nowrap; }
 .gwp-mail-attach-menu button:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 12%, transparent); }

@@ -881,5 +881,5 @@
   },
   "knowledgeCollections": {"eyebrow":"지식 라이브러리","savedTitle":"저장된 컬렉션","none":"전체 지식","select":"지식 컬렉션","search":"컬렉션 검색...","title":"지식 컬렉션","subtitle":"문서와 메모를 묶어 RAG 문맥 범위를 제한합니다.","close":"닫기","empty":"아직 지식 컬렉션이 없습니다.","noDescription":"설명 없음","sources":"문서 {{documents}} · 메모 {{memos}}","edit":"편집","delete":"삭제","create":"컬렉션 만들기","name":"이름","namePlaceholder":"예: Apollo 출시","description":"설명","descriptionPlaceholder":"이 컬렉션의 용도는 무엇인가요?","instruction":"컬렉션 지침","instructionPlaceholder":"이 컬렉션으로 답변할 때 적용할 선택 지침입니다.","save":"저장","cancel":"취소"}
 ,
-  "knowledgeCollectionSources": {"attachSources":"자료 첨부","attachedCount":"{{count}}개 첨부됨","loadingSources":"자료를 불러오는 중...","noSources":"첨부할 자료가 없습니다.","untitledMemo":"제목 없는 메모","noSubject":"제목 없음","back":"목록으로","removeItem":"컬렉션에서 제거","selectItem":"왼쪽에서 자료를 선택하세요","document":"문서","memo":"메모","email_thread":"메일"}
+  "knowledgeCollectionSources": {"attachSources":"자료 첨부","attachedCount":"{{count}}개 첨부됨","loadingSources":"자료를 불러오는 중...","addingEmail":"지식 컬렉션에 추가 중…","noSources":"첨부할 자료가 없습니다.","untitledMemo":"제목 없는 메모","noSubject":"제목 없음","back":"목록으로","removeItem":"컬렉션에서 제거","selectItem":"왼쪽에서 자료를 선택하세요","document":"문서","memo":"메모","email_thread":"메일"}
 }
