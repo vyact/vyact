@@ -185,6 +185,33 @@
     gap: 2px;
 }
 
+.memo-item-actions .knowledge-collection-attach-select {
+    height: 22px;
+}
+
+.memo-item-actions .custom-select-wrap.align-right.knowledge-collection-attach-select .custom-select-trigger {
+    width: 22px;
+    height: 22px;
+    min-height: 22px;
+    padding: 4px;
+    border: 0;
+    border-radius: 3px;
+    background: none;
+    opacity: 0.72;
+}
+
+.memo-item-actions .custom-select-wrap.align-right.knowledge-collection-attach-select .custom-select-trigger svg {
+    width: 14px;
+    height: 14px;
+}
+
+.memo-item-actions .custom-select-wrap.align-right.knowledge-collection-attach-select .custom-select-trigger:hover {
+    background: none;
+    border: 0;
+    color: var(--accent);
+    opacity: 1;
+}
+
 /* 메인 */
 .memo-main {
     flex: 1;

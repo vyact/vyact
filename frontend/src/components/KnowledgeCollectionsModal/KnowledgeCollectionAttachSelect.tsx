@@ -3,6 +3,7 @@ import {BookOpen, Check, Plus} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import type {KnowledgeCollection, KnowledgeCollectionItem} from '../../types';
 import {api} from '../../services/api';
+import {KNOWLEDGE_COLLECTIONS_UPDATED_EVENT} from '../../constants/ui';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import './KnowledgeCollectionAttachSelect.css';
 
@@ -28,6 +29,7 @@ const KnowledgeCollectionAttachSelect = ({source, prepareSource}: Props) => {
                 const updated = await api.updateKnowledgeCollection(collection.id, {...collection, items: [...collection.items, item]});
                 setCollections(items => items.map(candidate => candidate.id === updated.id ? updated : candidate));
             }
+            window.dispatchEvent(new Event(KNOWLEDGE_COLLECTIONS_UPDATED_EVENT));
         } finally { setBusy(false); }
     };
     return <CustomSelect className="knowledge-collection-attach-select" options={collections.map(collection => ({value: collection.id, label: collection.name}))} value="" onChange={value => void attach(value)} disabled={busy} alignRight placeholder={t('knowledgeCollectionSources.attachSources')} ariaLabel={t('knowledgeCollections.title')} onOpen={() => void loadCollections()} renderTrigger={() => <BookOpen size={18}/>} renderOption={option => { const collection = collections.find(item => item.id === option.value)!; const attached = collection.items.some(item => item.source_type === source.source_type && item.source_id === source.source_id); return <><span className="custom-select-item-label">{collection.name}</span>{attached ? <Check className="knowledge-collection-attach-check" size={16}/> : <Plus size={16}/>}</>; }}/>

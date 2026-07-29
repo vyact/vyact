@@ -1057,7 +1057,7 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
     );
 };
 
-const MemoViewer: React.FC<{ memoId: string; onEdit: () => void }> = ({ memoId }) => {
+export const MemoViewer: React.FC<{ memoId: string; onEdit?: () => void }> = ({ memoId }) => {
     const { t } = useTranslation('main');
     const [initialHtml, setInitialHtml] = React.useState<string | null>(null);
     const [viewerIndex, setViewerIndex] = React.useState<number | null>(null);

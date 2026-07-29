@@ -543,7 +543,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
     const [isAttachingToChat, setIsAttachingToChat] = useState(false);
     const [mailChatAttachLabel, setMailChatAttachLabel] = useState('');
     const [mailAttachMenuId, setMailAttachMenuId] = useState<string | null>(null);
-    const [mailAttachMenuOpensUpward, setMailAttachMenuOpensUpward] = useState(false);
+    const [mailAttachMenuPosition, setMailAttachMenuPosition] = useState<{left: number; top: number}>({left: 0, top: 0});
     const [mailAttachmentOperation, setMailAttachmentOperation] = useState<{
         key: string;
         action: 'preview' | 'download';
@@ -587,7 +587,6 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
         if (!mailAttachMenuId) return;
         const closeAttachMenu = () => {
             setMailAttachMenuId(null);
-            setMailAttachMenuOpensUpward(false);
         };
         document.addEventListener('click', closeAttachMenu);
         window.addEventListener(EMAIL_BODY_INTERACTION_EVENT, closeAttachMenu);
@@ -1652,20 +1651,23 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
                 event.stopPropagation();
                 if (isOpen) {
                     setMailAttachMenuId(null);
-                    setMailAttachMenuOpensUpward(false);
                     return;
                 }
                 const menuItemCount = (onAttachFilesToChat ? 2 : 0) + (onDelete ? 1 : 0);
                 const estimatedMenuHeight = 16 + menuItemCount * 44;
                 const triggerRect = event.currentTarget.getBoundingClientRect();
-                setMailAttachMenuOpensUpward(window.innerHeight - triggerRect.bottom < estimatedMenuHeight + 8);
+                const opensUpward = window.innerHeight - triggerRect.bottom < estimatedMenuHeight + 8;
+                setMailAttachMenuPosition({
+                    left: Math.max(8, triggerRect.right - 180),
+                    top: opensUpward ? Math.max(8, triggerRect.top - estimatedMenuHeight - 5) : triggerRect.bottom + 5,
+                });
                 setMailAttachMenuId(menuId);
             }} disabled={isAttachingToChat} aria-label={t('googleWorkspace.attachmentOptions')}>
                 {isAttachingToChat && isOpen
                     ? <LoaderCircle aria-hidden="true" size={17} className="gwp-spin"/>
                     : <MoreVertical aria-hidden="true" size={18}/>}
             </button>
-            {isOpen && <div className={`gwp-mail-attach-menu${mailAttachMenuOpensUpward ? ' gwp-mail-attach-menu--upward' : ''}`} onClick={event => event.stopPropagation()}>
+            {isOpen && createPortal(<div className="gwp-mail-attach-menu gwp-mail-attach-menu--portal" style={mailAttachMenuPosition} onClick={event => event.stopPropagation()}>
                 {onAttachFilesToChat && <>
                     <button onClick={() => void attachMailToChat(mail, true)} disabled={isAttachingToChat}>
                         <MessageSquarePlus aria-hidden="true" size={16}/><span>{t('googleWorkspace.attachMailWithContent')}</span>
@@ -1676,12 +1678,11 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
                 </>}
                 {onDelete && <button className="gwp-mail-menu-delete" onClick={() => {
                     setMailAttachMenuId(null);
-                    setMailAttachMenuOpensUpward(false);
                     onDelete();
                 }} disabled={isMailActionBusy}>
                     <Trash2 aria-hidden="true" size={16}/><span>{t('googleWorkspace.delete')}</span>
                 </button>}
-            </div>}
+            </div>, document.body)}
         </div>;
     };
     const MailOperationOverlay = () => {
@@ -1751,8 +1752,8 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
                     <div className="gwp-detail-actions">
                         <MailChatAttachMenu mail={selected} menuId="whole-thread"/>
                         <KnowledgeCollectionAttachSelect source={{source_type: 'email_thread', source_id: selectedKnowledgeSourceId || selected.threadId || selected.id}} prepareSource={async () => ({source_type: 'email_thread', source_id: (await api.indexGoogleMailThreadForKnowledge(selected.threadId || selected.id, accountId)).source_id})}/>
-                        <button className="gwp-detail-delete" onClick={() => void trashSelectedThread()} disabled={isMailActionBusy}>{isTrashingMails ? <LoaderCircle aria-hidden="true" size={16} className="gwp-spin"/> : <Trash2 aria-hidden="true" size={16}/>}<span>{t('googleWorkspace.delete')}</span></button>
-                        <button className="gwp-detail-forward" onClick={forwardSelectedMail} disabled={isMailActionBusy}><Forward aria-hidden="true" size={16}/><span>{t('googleWorkspace.forward')}</span></button>
+                        <button className="gwp-detail-delete" aria-label={t('googleWorkspace.delete')} onClick={() => void trashSelectedThread()} disabled={isMailActionBusy}>{isTrashingMails ? <LoaderCircle aria-hidden="true" size={16} className="gwp-spin"/> : <Trash2 aria-hidden="true" size={16}/>}</button>
+                        <button className="gwp-detail-forward" title={t('googleWorkspace.forward')} aria-label={t('googleWorkspace.forward')} onClick={forwardSelectedMail} disabled={isMailActionBusy}><Forward aria-hidden="true" size={16}/></button>
                         <button className="gwp-primary" onClick={replyToSelectedMail}>{t('googleWorkspace.reply')}</button>
                     </div>
                 </div>
@@ -1785,8 +1786,8 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
                 <div className="gwp-detail-actions">
                     <MailChatAttachMenu mail={selected} menuId="whole-thread"/>
                     <KnowledgeCollectionAttachSelect source={{source_type: 'email_thread', source_id: selectedKnowledgeSourceId || selected.threadId || selected.id}} prepareSource={async () => ({source_type: 'email_thread', source_id: (await api.indexGoogleMailThreadForKnowledge(selected.threadId || selected.id, accountId)).source_id})}/>
-                    <button className="gwp-detail-delete" onClick={() => void trashSelectedThread()} disabled={isMailActionBusy}>{isTrashingMails ? <LoaderCircle aria-hidden="true" size={16} className="gwp-spin"/> : <Trash2 aria-hidden="true" size={16}/>}<span>{t('googleWorkspace.delete')}</span></button>
-                    <button className="gwp-detail-forward" onClick={forwardSelectedMail} disabled={isMailActionBusy}><Forward aria-hidden="true" size={16}/><span>{t('googleWorkspace.forward')}</span></button>
+                    <button className="gwp-detail-delete" aria-label={t('googleWorkspace.delete')} onClick={() => void trashSelectedThread()} disabled={isMailActionBusy}>{isTrashingMails ? <LoaderCircle aria-hidden="true" size={16} className="gwp-spin"/> : <Trash2 aria-hidden="true" size={16}/>}</button>
+                    <button className="gwp-detail-forward" title={t('googleWorkspace.forward')} aria-label={t('googleWorkspace.forward')} onClick={forwardSelectedMail} disabled={isMailActionBusy}><Forward aria-hidden="true" size={16}/></button>
                     <button className="gwp-primary" onClick={replyToSelectedMail}>{t('googleWorkspace.reply')}</button>
                 </div>
             </div>

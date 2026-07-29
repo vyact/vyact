@@ -137,9 +137,8 @@ async def remove_knowledge_collection_item(collection_id: str, source_type: str,
         collection = await es.get(index=KNOWLEDGE_COLLECTIONS_INDEX, id=collection_id)
         items = collection["_source"].get("items", [])
         remaining_items = [item for item in items if not (item.get("source_type") == source_type and item.get("source_id") == source_id)]
-        if len(remaining_items) == len(items):
-            raise HTTPException(status_code=404, detail="컬렉션 항목을 찾을 수 없습니다.")
-        await es.update(index=KNOWLEDGE_COLLECTIONS_INDEX, id=collection_id, doc={"items": remaining_items, "updated_at": datetime.now(timezone.utc).isoformat()}, refresh=True)
+        if len(remaining_items) != len(items):
+            await es.update(index=KNOWLEDGE_COLLECTIONS_INDEX, id=collection_id, doc={"items": remaining_items, "updated_at": datetime.now(timezone.utc).isoformat()}, refresh=True)
         return {"ok": True, "items": remaining_items}
     except NotFoundError:
         raise HTTPException(status_code=404, detail="지식 컬렉션을 찾을 수 없습니다.")

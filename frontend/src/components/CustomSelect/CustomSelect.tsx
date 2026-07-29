@@ -70,16 +70,25 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
         : options;
 
     useEffect(() => {
-        const handler = (e: MouseEvent) => {
+        const handler = (e: PointerEvent) => {
             const target = e.target as Node;
             if (wrapRef.current && !wrapRef.current.contains(target) && !dropdownRef.current?.contains(target)) {
                 setOpen(false);
                 setSearch('');
             }
         };
-        if (open) document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
+        if (open) document.addEventListener('pointerdown', handler, true);
+        return () => document.removeEventListener('pointerdown', handler, true);
     }, [open]);
+
+    useEffect(() => {
+        const closeForEmbeddedContent = () => {
+            setOpen(false);
+            setSearch('');
+        };
+        window.addEventListener('vyact:email-body-interaction', closeForEmbeddedContent);
+        return () => window.removeEventListener('vyact:email-body-interaction', closeForEmbeddedContent);
+    }, []);
 
     useEffect(() => {
         if (open && searchable && searchRef.current) {
@@ -161,7 +170,10 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                         <div
                             key={opt.value}
                             className={`custom-select-item${opt.value === value ? ' selected' : ''}`}
-                            onClick={() => handleSelect(opt.value)}
+                            onClick={event => {
+                                event.stopPropagation();
+                                handleSelect(opt.value);
+                            }}
                         >
                             {renderOption ? (
                                 renderOption(opt, opt.value === value)
@@ -194,10 +206,13 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
             <button
                 className={`custom-select-trigger${open ? ' open' : ''}${showClearButton ? ' has-clear' : ''}`}
                 aria-label={ariaLabel}
-                onClick={() => !disabled && setOpen(current => {
-                    if (!current) onOpen?.();
-                    return !current;
-                })}
+                onClick={event => {
+                    event.stopPropagation();
+                    if (!disabled) setOpen(current => {
+                        if (!current) onOpen?.();
+                        return !current;
+                    });
+                }}
                 style={triggerStyle}
                 type="button"
             >

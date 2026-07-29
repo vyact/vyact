@@ -17,7 +17,7 @@ import McpMentionMenu, {MentionMcpServer} from './McpMentionMenu';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import type {SelectOption} from '../CustomSelect/CustomSelect';
 import CommandModal from './CommandModal';
-import {TEXTAREA_MAX_HEIGHT} from '../../constants/ui';
+import {KNOWLEDGE_COLLECTIONS_UPDATED_EVENT, TEXTAREA_MAX_HEIGHT} from '../../constants/ui';
 import {getGoogleWorkspaceStatus} from '../../services/googleWorkspaceStatus';
 import type {GoogleCalendarSelection} from '../../types/googleWorkspace';
 
@@ -114,6 +114,14 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
     const refreshKnowledgeCollections = () => api.getKnowledgeCollections().then(result => setKnowledgeCollections(result.collections || [])).catch(() => setKnowledgeCollections([]));
     useEffect(() => { void refreshKnowledgeCollections(); }, []);
+    useEffect(() => {
+        const refresh = () => void refreshKnowledgeCollections();
+        window.addEventListener(KNOWLEDGE_COLLECTIONS_UPDATED_EVENT, refresh);
+        return () => window.removeEventListener(KNOWLEDGE_COLLECTIONS_UPDATED_EVENT, refresh);
+    }, []);
+    useEffect(() => {
+        if (showKnowledgeCollectionsModal) void refreshKnowledgeCollections();
+    }, [showKnowledgeCollectionsModal]);
 
     useEffect(() => {
         const openNotificationItem = (event: Event) => {

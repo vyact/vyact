@@ -930,7 +930,8 @@ async def index_mail_thread_for_knowledge(thread_id: str, request: MailKnowledge
     if not messages:
         raise HTTPException(status_code=404, detail="Mail thread has no available messages.")
     details = [_thread_message_detail(message, service) for message in messages]
-    subject = next((detail.get("subject", "") for detail in reversed(details) if detail.get("subject")), "")
+    # 스레드의 표시 제목은 가장 최근 답변의 Re:/Fwd: 제목이 아니라 원본 메일 제목을 쓴다.
+    subject = next((detail.get("subject", "") for detail in details if detail.get("subject")), "")
     content = "\n\n".join(
         "\n".join((
             f"[메일 스레드 메시지 {index}/{len(details)} — 오래된 순]",
