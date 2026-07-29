@@ -19,6 +19,7 @@ interface SystemPromptModalProps {
     onCreate: (title: string, content: string) => Promise<void>;
     onUpdate: (id: string, title: string, content: string) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
+    onReorder: (promptIds: string[]) => Promise<void>;
 }
 
 const SystemPromptModal: React.FC<SystemPromptModalProps> = ({
@@ -28,11 +29,14 @@ const SystemPromptModal: React.FC<SystemPromptModalProps> = ({
     onCreate,
     onUpdate,
     onDelete,
+    onReorder,
 }) => {
     const {t} = useTranslation('main');
     const [editingId, setEditingId] = useState<string | null>(null);
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
+    const [draggedPromptId, setDraggedPromptId] = useState<string | null>(null);
+    const [dragOverPromptId, setDragOverPromptId] = useState<string | null>(null);
     const templates = getSystemPromptTemplates(t);
 
     // ESC 키로 닫기
@@ -99,6 +103,22 @@ const SystemPromptModal: React.FC<SystemPromptModalProps> = ({
         await onCreate(template.title, template.content);
     };
 
+    const handleReorder = async (targetPromptId: string) => {
+        if (!draggedPromptId || draggedPromptId === targetPromptId) return;
+        const sourceIndex = prompts.findIndex(prompt => prompt.id === draggedPromptId);
+        const targetIndex = prompts.findIndex(prompt => prompt.id === targetPromptId);
+        if (sourceIndex < 0 || targetIndex < 0) return;
+        const reorderedPrompts = [...prompts];
+        const [movedPrompt] = reorderedPrompts.splice(sourceIndex, 1);
+        reorderedPrompts.splice(targetIndex, 0, movedPrompt);
+        try {
+            await onReorder(reorderedPrompts.map(prompt => prompt.id));
+        } finally {
+            setDraggedPromptId(null);
+            setDragOverPromptId(null);
+        }
+    };
+
     return (
         <ModalOverlay className="system-prompt-overlay" onClose={onClose} closeOnBackdrop>
             <div className="system-prompt-modal" onClick={(e) => e.stopPropagation()}>
@@ -134,7 +154,7 @@ const SystemPromptModal: React.FC<SystemPromptModalProps> = ({
                                     <div className="system-prompt-empty">{t('systemPromptModal.empty')}</div>
                                 ) : (
                                     prompts.map((prompt) => (
-                                        <div key={prompt.id} className="system-prompt-item">
+                                        <div key={prompt.id} draggable onDragStart={() => setDraggedPromptId(prompt.id)} onDragOver={event => { event.preventDefault(); if (prompt.id !== draggedPromptId) setDragOverPromptId(prompt.id); }} onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragOverPromptId(current => current === prompt.id ? null : current); }} onDrop={() => void handleReorder(prompt.id)} onDragEnd={() => { setDraggedPromptId(null); setDragOverPromptId(null); }} className={`system-prompt-item system-prompt-draggable${draggedPromptId === prompt.id ? ' dragging' : ''}${dragOverPromptId === prompt.id ? ' drag-over' : ''}`}>
                                             <button className="system-prompt-info" onClick={() => handleEdit(prompt)}>
                                                 <span className="system-prompt-item-title">{prompt.title}</span>
                                                 <span className="system-prompt-preview">{prompt.content}</span>

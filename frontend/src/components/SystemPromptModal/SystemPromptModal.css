@@ -266,6 +266,9 @@
 .system-prompt-empty { padding: 20px; border: 1px dashed var(--border); border-radius: 10px; color: var(--muted); font-size: 13px; text-align: center; }
 .system-prompt-item { display: flex; align-items: center; gap: 6px; padding: 8px 9px 8px 13px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; }
 .system-prompt-item:hover { border-color: rgba(var(--accent-rgb), .6); }
+.system-prompt-draggable { cursor: grab; }
+.system-prompt-draggable.dragging { opacity: .45; cursor: grabbing; }
+.system-prompt-draggable.drag-over { border-color: var(--accent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 42%, transparent); }
 .system-prompt-info { min-width: 0; flex: 1; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; }
 .system-prompt-item-title, .system-prompt-preview { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .system-prompt-item-title { color: var(--text); font-size: 13px; font-weight: 700; }

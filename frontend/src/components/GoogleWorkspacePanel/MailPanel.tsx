@@ -541,7 +541,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
     const [isOpeningMail, setIsOpeningMail] = useState(false);
     const [isRefreshingSentReply, setIsRefreshingSentReply] = useState(false);
     const [isAttachingToChat, setIsAttachingToChat] = useState(false);
-    const [isSyncingKnowledgeCollection, setIsSyncingKnowledgeCollection] = useState(false);
+    const [knowledgeCollectionAction, setKnowledgeCollectionAction] = useState<'add' | 'remove' | null>(null);
     const [mailChatAttachLabel, setMailChatAttachLabel] = useState('');
     const [mailAttachMenuId, setMailAttachMenuId] = useState<string | null>(null);
     const [mailAttachMenuPosition, setMailAttachMenuPosition] = useState<{right: number; top: number}>({right: 0, top: 0});
@@ -1567,6 +1567,35 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
             messageId: message.id,
         })));
     };
+    const getKnowledgeThreadSnapshot = (mail: MailDetail) => {
+        const messages = mail.threadMessages?.length ? mail.threadMessages : [{
+            id: mail.id,
+            from: mail.from,
+            to: mail.to.map(address => address.email).join(', '),
+            cc: mail.cc.map(address => address.email).join(', '),
+            subject: mail.subject,
+            date: mail.date,
+            body: mail.body,
+            htmlBody: mail.htmlBody,
+            attachments: mail.attachments,
+        }];
+        return messages.map(message => ({
+            id: message.id,
+            from_: message.from,
+            to: message.to,
+            cc: message.cc,
+            date: message.date,
+            subject: message.subject,
+            body: message.body,
+            html_body: message.htmlBody || '',
+            attachments: (message.attachments || []).map(attachment => ({
+                id: attachment.id,
+                filename: attachment.filename,
+                mime_type: attachment.mimeType,
+                size: attachment.size,
+            })),
+        }));
+    };
     const attachMailToChat = async (mail: MailDetail, includeContent: boolean) => {
         if (!onAttachFilesToChat || isAttachingToChat) return;
         const allAttachments = getMailAttachments(mail);
@@ -1752,7 +1781,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
                     </button>
                     <div className="gwp-detail-actions">
                         <MailChatAttachMenu mail={selected} menuId="whole-thread"/>
-                        <KnowledgeCollectionAttachSelect source={{source_type: 'email_thread', source_id: selectedKnowledgeSourceId || selected.threadId || selected.id}} prepareSource={async () => ({source_type: 'email_thread', source_id: (await api.indexGoogleMailThreadForKnowledge(selected.threadId || selected.id, accountId)).source_id})} onOpen={() => setMailAttachMenuId(null)} onBusyChange={setIsSyncingKnowledgeCollection}/>
+                        <KnowledgeCollectionAttachSelect source={{source_type: 'email_thread', source_id: selectedKnowledgeSourceId || selected.threadId || selected.id}} prepareSource={async () => ({source_type: 'email_thread', source_id: (await api.indexGoogleMailThreadForKnowledge(selected.threadId || selected.id, accountId, getKnowledgeThreadSnapshot(selected))).source_id})} onOpen={() => setMailAttachMenuId(null)} onActionChange={setKnowledgeCollectionAction}/>
                         <button className="gwp-detail-delete" aria-label={t('googleWorkspace.delete')} onClick={() => void trashSelectedThread()} disabled={isMailActionBusy}>{isTrashingMails ? <LoaderCircle aria-hidden="true" size={16} className="gwp-spin"/> : <Trash2 aria-hidden="true" size={16}/>}</button>
                         <button className="gwp-detail-forward" title={t('googleWorkspace.forward')} aria-label={t('googleWorkspace.forward')} onClick={forwardSelectedMail} disabled={isMailActionBusy}><Forward aria-hidden="true" size={16}/></button>
                         <button className="gwp-primary" onClick={replyToSelectedMail}>{t('googleWorkspace.reply')}</button>
@@ -1786,7 +1815,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
                 </button>
                 <div className="gwp-detail-actions">
                     <MailChatAttachMenu mail={selected} menuId="whole-thread"/>
-                    <KnowledgeCollectionAttachSelect source={{source_type: 'email_thread', source_id: selectedKnowledgeSourceId || selected.threadId || selected.id}} prepareSource={async () => ({source_type: 'email_thread', source_id: (await api.indexGoogleMailThreadForKnowledge(selected.threadId || selected.id, accountId)).source_id})} onOpen={() => setMailAttachMenuId(null)} onBusyChange={setIsSyncingKnowledgeCollection}/>
+                    <KnowledgeCollectionAttachSelect source={{source_type: 'email_thread', source_id: selectedKnowledgeSourceId || selected.threadId || selected.id}} prepareSource={async () => ({source_type: 'email_thread', source_id: (await api.indexGoogleMailThreadForKnowledge(selected.threadId || selected.id, accountId, getKnowledgeThreadSnapshot(selected))).source_id})} onOpen={() => setMailAttachMenuId(null)} onActionChange={setKnowledgeCollectionAction}/>
                     <button className="gwp-detail-delete" aria-label={t('googleWorkspace.delete')} onClick={() => void trashSelectedThread()} disabled={isMailActionBusy}>{isTrashingMails ? <LoaderCircle aria-hidden="true" size={16} className="gwp-spin"/> : <Trash2 aria-hidden="true" size={16}/>}</button>
                     <button className="gwp-detail-forward" title={t('googleWorkspace.forward')} aria-label={t('googleWorkspace.forward')} onClick={forwardSelectedMail} disabled={isMailActionBusy}><Forward aria-hidden="true" size={16}/></button>
                     <button className="gwp-primary" onClick={replyToSelectedMail}>{t('googleWorkspace.reply')}</button>
@@ -1940,7 +1969,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
             actionLayout="horizontal"
         />}
         {sendFeedback && <div className={`gwp-send-feedback gwp-send-feedback--${sendFeedback}`} role="status">{sendFeedback === 'success' ? <CheckCircle2 aria-hidden="true" size={18}/> : <CircleAlert aria-hidden="true" size={18}/>}<span>{t(sendFeedback === 'success' ? 'googleWorkspace.mailSent' : 'googleWorkspace.mailSendFailed')}</span></div>}
-        {(isOpeningMail || isRefreshingSentReply || isTrashingMails || isSyncingKnowledgeCollection) && <div className="gwp-mail-activity" role="status"><LoaderCircle aria-hidden="true" size={18} className="gwp-spin"/><span>{isSyncingKnowledgeCollection ? t('knowledgeCollectionSources.addingEmail') : isOpeningMail ? t('googleWorkspace.loadingMail') : isRefreshingSentReply ? t('googleWorkspace.loadingSentReply') : t('googleWorkspace.deletingSelectedMail')}</span></div>}
+        {(isOpeningMail || isRefreshingSentReply || isTrashingMails || knowledgeCollectionAction) && <div className="gwp-mail-activity" role="status"><LoaderCircle aria-hidden="true" size={18} className="gwp-spin"/><span>{knowledgeCollectionAction === 'add' ? t('knowledgeCollectionSources.addingEmail') : knowledgeCollectionAction === 'remove' ? t('knowledgeCollectionSources.removingEmail') : isOpeningMail ? t('googleWorkspace.loadingMail') : isRefreshingSentReply ? t('googleWorkspace.loadingSentReply') : t('googleWorkspace.deletingSelectedMail')}</span></div>}
         {attachmentPreview?.mimeType.startsWith('image/') && attachmentPreview.url && createPortal(
             <ImageViewer images={[{src: attachmentPreview.url, alt: attachmentPreview.filename}]} currentIndex={0} onClose={closeAttachmentPreview} onIndexChange={() => {}}/>,
             document.body,

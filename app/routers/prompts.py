@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from agent import (
     get_prompts_list, get_prompt_by_id,
-    create_prompt, update_prompt, delete_prompt,
+    create_prompt, update_prompt, delete_prompt, reorder_prompts,
 )
 from routers.deps import (
     load_config_async, save_config_async,
@@ -27,6 +27,10 @@ class SystemPromptRequest(BaseModel):
 
 class SelectPromptRequest(BaseModel):
     prompt_id: str | None
+
+
+class ReorderPromptsRequest(BaseModel):
+    prompt_ids: list[str]
 
 
 class UiLanguageRequest(BaseModel):
@@ -70,6 +74,13 @@ async def create_system_prompt(req: SystemPromptRequest):
     prompt_id = str(uuid.uuid4())[:8]
     prompt = await create_prompt(prompt_id, req.title, req.content)
     return {"ok": True, "prompt": prompt}
+
+
+@router.put("/system-prompts/order")
+async def reorder_system_prompts(req: ReorderPromptsRequest):
+    if not await reorder_prompts(req.prompt_ids):
+        raise HTTPException(400, "저장된 프롬프트 목록이 일치하지 않습니다.")
+    return {"ok": True}
 
 
 @router.put("/system-prompts/{prompt_id}")

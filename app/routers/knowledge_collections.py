@@ -44,6 +44,10 @@ class KnowledgeCollectionBody(BaseModel):
     items: list[KnowledgeCollectionItem] = Field(default_factory=list)
 
 
+class KnowledgeCollectionOrderBody(BaseModel):
+    collection_ids: list[str] = Field(min_length=1, max_length=200)
+
+
 def _normalized_items(items: list[KnowledgeCollectionItem]) -> list[dict]:
     unique_items: dict[tuple[str, str], dict] = {}
     for item in items:
@@ -78,7 +82,7 @@ async def _validate_members(es, items: list[dict]) -> None:
 async def list_knowledge_collections():
     es = get_es()
     try:
-        response = await es.search(index=KNOWLEDGE_COLLECTIONS_INDEX, size=200, sort=[{"updated_at": {"order": "desc"}}])
+        response = await es.search(index=KNOWLEDGE_COLLECTIONS_INDEX, size=200, sort=[{"sort_order": {"order": "asc", "missing": "_last"}}, {"updated_at": {"order": "desc"}}])
         return {"collections": [{**hit["_source"], "id": hit["_id"]} for hit in response["hits"]["hits"]]}
     finally:
         await es.close()
@@ -92,11 +96,33 @@ async def create_knowledge_collection(body: KnowledgeCollectionBody):
         await _validate_members(es, items)
         now = datetime.now(timezone.utc).isoformat()
         collection_id = str(uuid.uuid4())
+        existing_collections = await es.search(index=KNOWLEDGE_COLLECTIONS_INDEX, size=1, sort=[{"sort_order": {"order": "asc", "missing": "_last"}}], _source=["sort_order"])
+        first_collection = existing_collections["hits"]["hits"]
+        sort_order = first_collection[0]["_source"].get("sort_order", 0) - 1 if first_collection else 0
         document = {"id": collection_id, "name": body.name.strip(), "description": body.description.strip(),
                     "instruction": body.instruction.strip(), "items": items,
-                    "created_at": now, "updated_at": now}
+                    "created_at": now, "updated_at": now, "sort_order": sort_order}
         await es.index(index=KNOWLEDGE_COLLECTIONS_INDEX, id=collection_id, document=document, refresh=True)
         return document
+    finally:
+        await es.close()
+
+
+@router.put("/knowledge-collections/order")
+async def reorder_knowledge_collections(body: KnowledgeCollectionOrderBody):
+    es = get_es()
+    try:
+        collection_ids = body.collection_ids
+        if len(collection_ids) != len(set(collection_ids)):
+            raise HTTPException(status_code=400, detail="중복된 지식 컬렉션 ID가 포함되어 있습니다.")
+        response = await es.mget(index=KNOWLEDGE_COLLECTIONS_INDEX, ids=collection_ids)
+        if any(not collection.get("found") for collection in response["docs"]):
+            raise HTTPException(status_code=404, detail="지식 컬렉션을 찾을 수 없습니다.")
+        operations = []
+        for index, collection_id in enumerate(collection_ids):
+            operations.extend([{"update": {"_index": KNOWLEDGE_COLLECTIONS_INDEX, "_id": collection_id}}, {"doc": {"sort_order": index}}])
+        await es.bulk(operations=operations, refresh=True)
+        return {"ok": True}
     finally:
         await es.close()
 

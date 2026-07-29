@@ -33,7 +33,7 @@ async def load_prompts_cache():
 
 
 def get_prompts_list() -> list[dict]:
-    return list(PROMPTS_CACHE.values())
+    return sorted(PROMPTS_CACHE.values(), key=lambda prompt: prompt.get("sort_order", 0))
 
 
 def get_prompt_by_id(prompt_id: str) -> dict | None:
@@ -41,7 +41,8 @@ def get_prompt_by_id(prompt_id: str) -> dict | None:
 
 
 async def create_prompt(prompt_id: str, title: str, content: str) -> dict:
-    prompt = {"id": prompt_id, "title": title, "content": content}
+    first_sort_order = min((prompt.get("sort_order", 0) for prompt in PROMPTS_CACHE.values()), default=0)
+    prompt = {"id": prompt_id, "title": title, "content": content, "sort_order": first_sort_order - 1 if PROMPTS_CACHE else 0}
     es = get_es()
     try:
         await es.index(index=PROMPTS_INDEX, id=prompt_id, body=prompt, refresh=True)
@@ -54,7 +55,7 @@ async def create_prompt(prompt_id: str, title: str, content: str) -> dict:
 async def update_prompt(prompt_id: str, title: str, content: str) -> dict | None:
     if prompt_id not in PROMPTS_CACHE:
         return None
-    prompt = {"id": prompt_id, "title": title, "content": content}
+    prompt = {"id": prompt_id, "title": title, "content": content, "sort_order": PROMPTS_CACHE[prompt_id].get("sort_order", 0)}
     es = get_es()
     try:
         await es.index(index=PROMPTS_INDEX, id=prompt_id, body=prompt, refresh=True)
@@ -69,5 +70,21 @@ async def delete_prompt(prompt_id: str):
     try:
         await es.delete(index=PROMPTS_INDEX, id=prompt_id, ignore=[404], refresh=True)
         PROMPTS_CACHE.pop(prompt_id, None)
+    finally:
+        await es.close()
+
+
+async def reorder_prompts(prompt_ids: list[str]) -> bool:
+    if len(prompt_ids) != len(PROMPTS_CACHE) or set(prompt_ids) != set(PROMPTS_CACHE):
+        return False
+    es = get_es()
+    try:
+        operations = []
+        for index, prompt_id in enumerate(prompt_ids):
+            operations.extend([{"update": {"_index": PROMPTS_INDEX, "_id": prompt_id}}, {"doc": {"sort_order": index}}])
+        await es.bulk(operations=operations, refresh=True)
+        for index, prompt_id in enumerate(prompt_ids):
+            PROMPTS_CACHE[prompt_id]["sort_order"] = index
+        return True
     finally:
         await es.close()

@@ -153,6 +153,11 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
         await loadSystemPrompts();
     };
 
+    const reorderSystemPrompts = async (promptIds: string[]) => {
+        await api.reorderSystemPrompts(promptIds);
+        await loadSystemPrompts();
+    };
+
     const handlePdfEdit = useCallback((params: any) => {
         setPdfEditParams(params);
         setShowPdfModal(true);
@@ -575,6 +580,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                             onCreate={createSystemPrompt}
                             onUpdate={updateSystemPrompt}
                             onDelete={deleteSystemPrompt}
+                            onReorder={reorderSystemPrompts}
                         />
                         {pluginExtensions.modals.map(modal => (
                             <React.Fragment key={modal.id}>

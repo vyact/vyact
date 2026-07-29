@@ -880,5 +880,5 @@
   },
   "knowledgeCollections": {"none":"全部知识","select":"知识集合","search":"搜索集合...","title":"知识集合","subtitle":"将文档和笔记分组以限制 RAG 上下文。","close":"关闭","empty":"尚无知识集合。","noDescription":"无说明","sources":"文档 {{documents}} · 笔记 {{memos}}","edit":"编辑","delete":"删除","create":"创建集合","name":"名称","namePlaceholder":"例如：Apollo 发布","description":"说明","descriptionPlaceholder":"此集合用于什么？","instruction":"集合指令","instructionPlaceholder":"使用此集合回答时的可选指导。","save":"保存","cancel":"取消"}
 ,
-  "knowledgeCollectionSources": {"attachSources":"附加资料","attachedCount":"已附加 {{count}} 项","loadingSources":"正在加载资料...","addingEmail":"正在添加到知识集合…","noSources":"没有可附加的资料。","untitledMemo":"无标题笔记","noSubject":"无主题","back":"返回列表","removeItem":"从集合中移除","selectItem":"请从左侧选择资料。","document":"文档","memo":"笔记","email_thread":"邮件"}
+  "knowledgeCollectionSources": {"attachSources":"附加资料","attachedCount":"已附加 {{count}} 项","loadingSources":"正在加载资料...","addingEmail":"正在添加到知识集合…","removingEmail":"正在从知识集合中移除…","noSources":"没有可附加的资料。","untitledMemo":"无标题笔记","noSubject":"无主题","back":"返回列表","removeItem":"从集合中移除","selectItem":"请从左侧选择资料。","document":"文档","memo":"笔记","email_thread":"邮件"}
 }

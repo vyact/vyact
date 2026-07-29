@@ -283,7 +283,7 @@ export const api = {
         await assertOk(response, 'Unable to load email.');
         return response.json();
     },
-    async indexGoogleMailThreadForKnowledge(threadId: string, accountId: string) { return (await fetch(`${API_BASE}/google-workspace/mail/threads/${encodeURIComponent(threadId)}/knowledge-index`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({account_id: accountId})})).json() as Promise<{source_id: string; thread_id: string; message_count: number; updated: boolean}>; },
+    async indexGoogleMailThreadForKnowledge(threadId: string, accountId: string, threadMessages?: Array<{id: string; from_: string; to: string; cc: string; date: string; subject: string; body: string; html_body: string; attachments: Array<{id: string; filename: string; mime_type: string; size: number}>}>) { return (await fetch(`${API_BASE}/google-workspace/mail/threads/${encodeURIComponent(threadId)}/knowledge-index`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({account_id: accountId, thread_messages: threadMessages || []})})).json() as Promise<{source_id: string; thread_id: string; message_count: number; updated: boolean}>; },
     async getGoogleMailSignature(accountId: string): Promise<{signature_html: string; enabled: boolean; macros: Array<{id: string; title: string; content_html: string}>}> {
         const response = await fetch(`${API_BASE}/google-workspace/accounts/${encodeURIComponent(accountId)}/mail/signature`);
         await assertOk(response, 'Unable to load email signature.');
@@ -598,6 +598,7 @@ export const api = {
     async createKnowledgeCollection(data: Omit<import('../types').KnowledgeCollection, 'id' | 'created_at' | 'updated_at'>): Promise<import('../types').KnowledgeCollection> { return (await fetch(`${API_BASE}/knowledge-collections`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)})).json(); },
     async updateKnowledgeCollection(id: string, data: Omit<import('../types').KnowledgeCollection, 'id' | 'created_at' | 'updated_at'>): Promise<import('../types').KnowledgeCollection> { return (await fetch(`${API_BASE}/knowledge-collections/${encodeURIComponent(id)}`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)})).json(); },
     async deleteKnowledgeCollection(id: string): Promise<void> { await fetch(`${API_BASE}/knowledge-collections/${encodeURIComponent(id)}`, {method: 'DELETE'}); },
+    async reorderKnowledgeCollections(collectionIds: string[]): Promise<void> { await fetch(`${API_BASE}/knowledge-collections/order`, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({collection_ids: collectionIds})}); },
     async getKnowledgeCollectionItems(id: string) { return (await fetch(`${API_BASE}/knowledge-collections/${encodeURIComponent(id)}/items`)).json() as Promise<{items: Array<{source_type: 'document' | 'memo' | 'email_thread'; source_id: string; title: string; summary: string; updated_at: string; chunk_count?: number; content_html?: string; content?: string; messages?: Array<{id: string; from: string; to: string; cc?: string; date: string; subject: string; body: string; html_body?: string}>; message_count?: number}>}>; },
     async removeKnowledgeCollectionItem(collectionId: string, sourceType: string, sourceId: string) { return (await fetch(`${API_BASE}/knowledge-collections/${encodeURIComponent(collectionId)}/items/${encodeURIComponent(sourceType)}/${encodeURIComponent(sourceId)}`, {method: 'DELETE'})).json() as Promise<{ok: boolean; items: import('../types').KnowledgeCollectionItem[]}>; },
 
@@ -654,6 +655,11 @@ export const api = {
 
     async deleteSystemPrompt(id: string): Promise<ApiSuccessResponse> {
         const res = await fetch(`${API_BASE}/system-prompts/${id}`, {method: 'DELETE'});
+        return res.json();
+    },
+
+    async reorderSystemPrompts(promptIds: string[]): Promise<ApiSuccessResponse> {
+        const res = await fetch(`${API_BASE}/system-prompts/order`, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({prompt_ids: promptIds})});
         return res.json();
     },
 

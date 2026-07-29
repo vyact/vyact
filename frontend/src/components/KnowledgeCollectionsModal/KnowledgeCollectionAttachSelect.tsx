@@ -7,9 +7,9 @@ import {KNOWLEDGE_COLLECTIONS_UPDATED_EVENT} from '../../constants/ui';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import './KnowledgeCollectionAttachSelect.css';
 
-type Props = {source: KnowledgeCollectionItem; prepareSource?: () => Promise<KnowledgeCollectionItem>; onOpen?: () => void; onBusyChange?: (busy: boolean) => void};
+type Props = {source: KnowledgeCollectionItem; prepareSource?: () => Promise<KnowledgeCollectionItem>; onOpen?: () => void; onActionChange?: (action: 'add' | 'remove' | null) => void};
 
-const KnowledgeCollectionAttachSelect = ({source, prepareSource, onOpen, onBusyChange}: Props) => {
+const KnowledgeCollectionAttachSelect = ({source, prepareSource, onOpen, onActionChange}: Props) => {
     const {t} = useTranslation('main');
     const [collections, setCollections] = useState<KnowledgeCollection[]>([]);
     const [busy, setBusy] = useState(false);
@@ -18,22 +18,22 @@ const KnowledgeCollectionAttachSelect = ({source, prepareSource, onOpen, onBusyC
     const attach = async (collectionId: string) => {
         const collection = collections.find(item => item.id === collectionId);
         if (!collection || busy) return;
+        const attached = collection.items.some(candidate => candidate.source_type === source.source_type && candidate.source_id === source.source_id);
         setBusy(true);
-        onBusyChange?.(true);
+        onActionChange?.(attached ? 'remove' : 'add');
         try {
-            const item = prepareSource ? await prepareSource() : source;
-            const attached = collection.items.some(candidate => candidate.source_type === item.source_type && candidate.source_id === item.source_id);
             if (attached) {
-                const result = await api.removeKnowledgeCollectionItem(collection.id, item.source_type, item.source_id);
+                const result = await api.removeKnowledgeCollectionItem(collection.id, source.source_type, source.source_id);
                 setCollections(items => items.map(candidate => candidate.id === collection.id ? {...candidate, items: result.items} : candidate));
             } else {
+                const item = prepareSource ? await prepareSource() : source;
                 const updated = await api.updateKnowledgeCollection(collection.id, {...collection, items: [...collection.items, item]});
                 setCollections(items => items.map(candidate => candidate.id === updated.id ? updated : candidate));
             }
             window.dispatchEvent(new Event(KNOWLEDGE_COLLECTIONS_UPDATED_EVENT));
         } finally {
             setBusy(false);
-            onBusyChange?.(false);
+            onActionChange?.(null);
         }
     };
     return <CustomSelect className="knowledge-collection-attach-select" options={collections.map(collection => ({value: collection.id, label: collection.name}))} value="" onChange={value => void attach(value)} disabled={busy} alignRight placeholder={t('knowledgeCollectionSources.attachSources')} ariaLabel={t('knowledgeCollections.title')} onOpen={() => { onOpen?.(); void loadCollections(); }} renderTrigger={() => <BookOpen size={18}/>} renderOption={option => { const collection = collections.find(item => item.id === option.value)!; const attached = collection.items.some(item => item.source_type === source.source_type && item.source_id === source.source_id); return <><span className="custom-select-item-label">{collection.name}</span>{attached ? <Check className="knowledge-collection-attach-check" size={16}/> : <Plus size={16}/>}</>; }}/>

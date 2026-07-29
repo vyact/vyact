@@ -112,6 +112,26 @@ class MailStarRequest(BaseModel):
 
 class MailKnowledgeIndexRequest(BaseModel):
     account_id: str = Field(min_length=1)
+    thread_messages: list["MailKnowledgeThreadMessage"] = Field(default_factory=list, max_length=100)
+
+
+class MailKnowledgeAttachment(BaseModel):
+    id: str = ""
+    filename: str = ""
+    mime_type: str = ""
+    size: int = 0
+
+
+class MailKnowledgeThreadMessage(BaseModel):
+    id: str = Field(min_length=1)
+    from_: str = ""
+    to: str = ""
+    cc: str = ""
+    date: str = ""
+    subject: str = ""
+    body: str = ""
+    html_body: str = ""
+    attachments: list[MailKnowledgeAttachment] = Field(default_factory=list)
 
 
 class MailSignatureRequest(BaseModel):
@@ -946,23 +966,35 @@ async def index_mail_thread_for_knowledge(thread_id: str, request: MailKnowledge
 
     동일 계정·스레드는 결정적 ID를 사용해 어느 컬렉션에서 추가해도 한 ES 문서만 갱신된다.
     """
-    await _require_connection()
-    service = await _build_service("gmail", "v1", account_id=request.account_id)
-    try:
-        thread = service.users().threads().get(userId="me", id=thread_id, format="full").execute()
-    except HttpError as error:
-        if error.resp.status == 404:
-            raise HTTPException(status_code=404, detail="Mail thread not found.") from None
-        raise
-
-    messages = [message for message in thread.get("messages", []) if GMAIL_TRASH_LABEL_ID not in message.get("labelIds", [])]
-    if not messages:
-        raise HTTPException(status_code=404, detail="Mail thread has no available messages.")
     source_id = hashlib.sha256(f"{request.account_id}:{thread_id}".encode("utf-8")).hexdigest()
     image_dir = KNOWLEDGE_MAIL_IMAGES_DIR / source_id
     if image_dir.exists():
         shutil.rmtree(image_dir)
-    details = [_thread_message_detail(message, service) for message in messages]
+    if request.thread_messages:
+        details = [{
+            "id": message.id,
+            "from": message.from_,
+            "to": message.to,
+            "cc": message.cc,
+            "date": message.date,
+            "subject": message.subject,
+            "body": message.body,
+            "htmlBody": message.html_body,
+            "attachments": [attachment.model_dump() for attachment in message.attachments],
+        } for message in request.thread_messages]
+    else:
+        await _require_connection()
+        service = await _build_service("gmail", "v1", account_id=request.account_id)
+        try:
+            thread = service.users().threads().get(userId="me", id=thread_id, format="full").execute()
+        except HttpError as error:
+            if error.resp.status == 404:
+                raise HTTPException(status_code=404, detail="Mail thread not found.") from None
+            raise
+        messages = [message for message in thread.get("messages", []) if GMAIL_TRASH_LABEL_ID not in message.get("labelIds", [])]
+        if not messages:
+            raise HTTPException(status_code=404, detail="Mail thread has no available messages.")
+        details = [_thread_message_detail(message, service) for message in messages]
     # 스레드의 표시 제목은 가장 최근 답변의 Re:/Fwd: 제목이 아니라 원본 메일 제목을 쓴다.
     subject = next((detail.get("subject", "") for detail in details if detail.get("subject")), "")
     content = "\n\n".join(

@@ -598,6 +598,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 onCreate={async data => { const created = await api.createKnowledgeCollection(data); setKnowledgeCollections(items => [created, ...items]); setSelectedKnowledgeCollectionId(created.id); }}
                 onUpdate={async (id, data) => { const updated = await api.updateKnowledgeCollection(id, data); setKnowledgeCollections(items => items.map(item => item.id === id ? updated : item)); }}
                 onDelete={async id => { await api.deleteKnowledgeCollection(id); setKnowledgeCollections(items => items.filter(item => item.id !== id)); setSelectedKnowledgeCollectionId(current => current === id ? '' : current); }}
+                onReorder={async collectionIds => { await api.reorderKnowledgeCollections(collectionIds); setKnowledgeCollections(items => collectionIds.map(id => items.find(item => item.id === id)).filter((item): item is KnowledgeCollection => Boolean(item))); }}
             />
 
             {/* 이미지 미리보기 */}

@@ -29,7 +29,7 @@ from services.history import (
 )
 from services.prompts import (
     load_prompts_cache, get_prompts_list, get_prompt_by_id,
-    create_prompt, update_prompt, delete_prompt,
+    create_prompt, update_prompt, delete_prompt, reorder_prompts,
 )
 from logger import get_logger
 
