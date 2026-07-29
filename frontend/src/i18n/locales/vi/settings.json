@@ -25,6 +25,7 @@
     "preparingStt": "Đang chuẩn bị nhận dạng giọng nói…",
     "pythonPackagesInstalling": "Đang cài đặt các gói Python. Có thể mất 5–10 phút tùy thuộc vào mạng và máy tính của bạn. Vui lòng giữ ứng dụng mở.",
     "pythonPackageDownloading": "Đang tải gói Python… {{package}}",
+    "waitingForServer": "Đang chờ máy chủ sẵn sàng…",
     "japaneseTtsDictionaryTitle": "Tải từ điển giọng nói tiếng Nhật",
     "japaneseTtsDictionaryDescription": "Giọng nói tiếng Nhật cần từ điển phát âm khoảng 1 GB. Tải ngay bây giờ?",
     "japaneseTtsDictionaryDownload": "Tải xuống",

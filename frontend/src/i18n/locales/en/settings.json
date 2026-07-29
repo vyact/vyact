@@ -46,6 +46,7 @@
     "preparingStt": "Preparing speech recognition…",
     "pythonPackagesInstalling": "Installing Python packages. This may take 5–10 minutes depending on your network and computer. Please keep the app open.",
     "pythonPackageDownloading": "Downloading Python package… {{package}}",
+    "waitingForServer": "Waiting for the server to be ready…",
     "japaneseTtsDictionaryTitle": "Download Japanese voice dictionary",
     "japaneseTtsDictionaryDescription": "Japanese voice playback requires a pronunciation dictionary of about 1 GB. Download it now?",
     "japaneseTtsDictionaryDownload": "Download",

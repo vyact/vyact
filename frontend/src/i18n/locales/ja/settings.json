@@ -25,6 +25,7 @@
     "preparingStt": "音声認識を準備しています…",
     "pythonPackagesInstalling": "Python パッケージをインストールしています。ネットワークやコンピュータの性能により 5〜10 分ほどかかる場合があります。アプリを閉じないでください。",
     "pythonPackageDownloading": "Python パッケージをダウンロードしています… {{package}}",
+    "waitingForServer": "サーバーの準備を待っています…",
     "japaneseTtsDictionaryTitle": "日本語音声辞書をダウンロード",
     "japaneseTtsDictionaryDescription": "日本語音声には約 1GB の発音辞書が必要です。今すぐダウンロードしますか？",
     "japaneseTtsDictionaryDownload": "ダウンロード",

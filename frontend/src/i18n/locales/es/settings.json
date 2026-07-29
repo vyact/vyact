@@ -25,6 +25,7 @@
     "preparingStt": "Preparando el reconocimiento de voz…",
     "pythonPackagesInstalling": "Instalando paquetes de Python. Puede tardar entre 5 y 10 minutos según tu red y equipo. Mantén la aplicación abierta.",
     "pythonPackageDownloading": "Descargando paquete de Python… {{package}}",
+    "waitingForServer": "Esperando a que el servidor esté listo…",
     "japaneseTtsDictionaryTitle": "Descargar diccionario de voz japonés",
     "japaneseTtsDictionaryDescription": "La voz japonesa requiere un diccionario de pronunciación de aproximadamente 1 GB. ¿Descargar ahora?",
     "japaneseTtsDictionaryDownload": "Descargar",

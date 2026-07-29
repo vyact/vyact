@@ -25,6 +25,7 @@
     "preparingStt": "กำลังเตรียมการรู้จำเสียง…",
     "pythonPackagesInstalling": "กำลังติดตั้งแพ็กเกจ Python อาจใช้เวลา 5–10 นาที ขึ้นอยู่กับเครือข่ายและประสิทธิภาพคอมพิวเตอร์ โปรดอย่าปิดแอป",
     "pythonPackageDownloading": "กำลังดาวน์โหลดแพ็กเกจ Python… {{package}}",
+    "waitingForServer": "กำลังรอให้เซิร์ฟเวอร์พร้อม…",
     "japaneseTtsDictionaryTitle": "ดาวน์โหลดพจนานุกรมเสียงภาษาญี่ปุ่น",
     "japaneseTtsDictionaryDescription": "เสียงภาษาญี่ปุ่นต้องใช้พจนานุกรมการออกเสียงขนาดประมาณ 1GB ดาวน์โหลดตอนนี้หรือไม่?",
     "japaneseTtsDictionaryDownload": "ดาวน์โหลด",

@@ -602,6 +602,7 @@ async function startServer() {
 
     const finalPython = fs.existsSync(VENV_PYTHON) ? VENV_PYTHON : "python";
     log(`🚀 Starting server: ${finalPython}`);
+    sendLoadingStatus(getStartupTranslation().waitingForServer);
 
     serverProc = spawn(finalPython, ["-u", "main.py"], {
         cwd: serverAppDir,

@@ -553,6 +553,7 @@ async function startServer() {
 
     const finalPython = fs.existsSync(python) ? python : "python3";
     log(`🚀 Starting server: ${finalPython}`);
+    sendLoadingStatus(getStartupTranslation().waitingForServer);
 
     serverProc = spawn(finalPython, ["-u", "main.py"], {
         cwd: serverAppDir,
