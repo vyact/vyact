@@ -27,6 +27,7 @@ SETTINGS_INDEX = "system_settings"
 FILES_INDEX = "rag_files"
 MEMO_INDEX = "memo_documents"
 QUICKNOTE_INDEX = "quick_notes"   # 빠른 메모(todo형) — 메모 RAG 검색 대상
+KNOWLEDGE_COLLECTIONS_INDEX = "knowledge_collections"
 USER_PROFILE_INDEX = "user_profile"
 VOCAB_INDEX = "vocab_words"
 NOTIFICATIONS_INDEX = "notifications"
@@ -360,6 +361,26 @@ async def ensure_index():
                     }},
                 )
                 logger.info("memo_documents indexed_at → updated_at alias 추가 완료")
+
+        # ── knowledge_collections ──────────────────────────────────
+        if not await es.indices.exists(index=KNOWLEDGE_COLLECTIONS_INDEX):
+            await es.indices.create(
+                index=KNOWLEDGE_COLLECTIONS_INDEX,
+                settings={"number_of_shards": 1, "number_of_replicas": 0},
+                mappings={"properties": {
+                    "id": {"type": "keyword"},
+                    "name": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
+                    "description": {"type": "text"},
+                    "instruction": {"type": "text"},
+                    "items": {"type": "nested", "properties": {
+                        "source_type": {"type": "keyword"},
+                        "source_id": {"type": "keyword"},
+                    }},
+                    "created_at": {"type": "date"},
+                    "updated_at": {"type": "date"},
+                }},
+            )
+            logger.info("knowledge_collections 인덱스 생성 완료")
 
         # ── quick_notes (빠른 메모 / todo형) ─────────────────────────
         if not await es.indices.exists(index=QUICKNOTE_INDEX):

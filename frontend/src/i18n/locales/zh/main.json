@@ -877,5 +877,6 @@
     "zipAttachment": "ZIP 附件: {{name}}",
     "document": "文档 ({{type}})",
     "pastedText": "粘贴文本"
-  }
+  },
+  "knowledgeCollections": {"none":"全部知识","select":"知识集合","search":"搜索集合...","title":"知识集合","subtitle":"将文档和笔记分组以限制 RAG 上下文。","close":"关闭","empty":"尚无知识集合。","noDescription":"无说明","sources":"文档 {{documents}} · 笔记 {{memos}}","edit":"编辑","delete":"删除","create":"创建集合","name":"名称","namePlaceholder":"例如：Apollo 发布","description":"说明","descriptionPlaceholder":"此集合用于什么？","instruction":"集合指令","instructionPlaceholder":"使用此集合回答时的可选指导。","save":"保存","cancel":"取消"}
 }

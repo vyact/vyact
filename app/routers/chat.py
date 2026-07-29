@@ -179,6 +179,7 @@ class QueryRequest(BaseModel):
     reasoning: bool = False  # True면 추론(gemma thinking) 켬. 프론트/확장 로컬 스위치로 제어. 기본 off
     folder_path: str = ""  # 코드 분석용 폴더 경로 (프론트에서 선택)
     project_id: str = ""
+    knowledge_collection_id: str = ""  # 선택한 지식 컬렉션의 자료만 RAG 검색
     minimal_prompt: bool = False  # True면 앱 전용 기본 프롬프트(FORMAT_INSTRUCTION, conv_summary 태그 지시) 제외.
     selected_mcp_ids: list[str] = []  # @로 선택한 MCP들은 enabled 여부와 무관하게 이번 요청에만 사용.
     # 크롬 확장처럼 프로젝트 블록/followups/SummaryModal UI가 없는 경량 클라이언트용.
@@ -374,7 +375,7 @@ async def query(req: QueryRequest):
         elif url_docs:
             rag_result = await rag_query(req.question, system_prompt, image_attachments, req.messages,
                                          reasoning=req.reasoning, conv_id=conv_id, conversation_summary=conversation_summary,
-                                         call_reason="chat:url_context")
+                                         call_reason="chat:url_context", knowledge_collection_id=req.knowledge_collection_id)
             combined_docs = file_context_docs + url_docs + rag_result.get("sources", [])
             raw_answer = await query_llm(
                 req.question, combined_docs, system_prompt,
@@ -392,7 +393,7 @@ async def query(req: QueryRequest):
             result = await rag_query(req.question, _summary_system_prompt, image_attachments, req.messages,
                                      extra_context=file_context_docs, skip_rag=_has_file_att,
                                      reasoning=req.reasoning, conv_id=conv_id, conversation_summary=conversation_summary,
-                                     call_reason="chat:general")
+                                     call_reason="chat:general", knowledge_collection_id=req.knowledge_collection_id)
 
     # 8) 요약 태그 추출 + 히스토리 저장
     from services.conv_summary import extract_summary_tags, save_conv_summary, append_attachment_summary
@@ -656,6 +657,7 @@ async def query_stream(req: QueryRequest):
                         conversation_summary=conversation_summary,
                         format_instruction_override=_fmt_override,
                         call_reason="chat:general_stream",
+                        knowledge_collection_id=req.knowledge_collection_id,
                 ):
                     if ev["type"] == "token":
                         emitted += ev["text"]

@@ -877,5 +877,6 @@
     "zipAttachment": "Pièce jointe ZIP : {{name}}",
     "document": "Document ({{type}})",
     "pastedText": "Texte collé"
-  }
+  },
+  "knowledgeCollections": {"none":"Toutes les connaissances","select":"Collection de connaissances","search":"Rechercher des collections...","title":"Collections de connaissances","subtitle":"Regroupez les documents et notes pour limiter le contexte RAG.","close":"Fermer","empty":"Aucune collection de connaissances.","noDescription":"Aucune description","sources":"Documents {{documents}} · Notes {{memos}}","edit":"Modifier","delete":"Supprimer","create":"Créer une collection","name":"Nom","namePlaceholder":"Ex. : lancement Apollo","description":"Description","descriptionPlaceholder":"À quoi sert cette collection ?","instruction":"Instruction de collection","instructionPlaceholder":"Conseil facultatif pour les réponses utilisant cette collection.","save":"Enregistrer","cancel":"Annuler"}
 }

@@ -1,6 +1,7 @@
 import React, {KeyboardEvent, useEffect, useRef, useState} from 'react';
 import ImageViewer from '../ImageViewer/ImageViewer';
-import type {ArticleAttachment} from '../../types';
+import type {ArticleAttachment, KnowledgeCollection} from '../../types';
+import {api} from '../../services/api';
 import {useCodePanel} from '../../contexts/CodePanelContext';
 import {Settings, WandSparkles, X} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
@@ -24,9 +25,10 @@ import './ChatInput.css';
 import {usePanelManager} from '../../contexts/PanelManagerContext';
 import {findPluginCommand, openPluginModal} from '../../plugins/registry';
 import {usePluginExtensions} from '../../plugins/usePluginExtensions';
+import KnowledgeCollectionsModal from '../KnowledgeCollectionsModal/KnowledgeCollectionsModal';
 
 interface ChatInputProps {
-    onSend: (message: string, images?: File[], fileAttachments?: FileAttachment[], selectedMcpIds?: string[]) => void | Promise<boolean>;
+    onSend: (message: string, images?: File[], fileAttachments?: FileAttachment[], selectedMcpIds?: string[], knowledgeCollectionId?: string) => void | Promise<boolean>;
     onStop?: () => void;
     disabled?: boolean;        // 전송 버튼만 막음 (입력은 허용)
     isImageMode?: boolean;
@@ -106,6 +108,12 @@ const ChatInput: React.FC<ChatInputProps> = ({
     const [mcpMentionQuery, setMcpMentionQuery] = useState<string | null>(null);
     const [mcpMentionIndex, setMcpMentionIndex] = useState(0);
     const [visibleMcpServers, setVisibleMcpServers] = useState<MentionMcpServer[]>([]);
+    const [knowledgeCollections, setKnowledgeCollections] = useState<KnowledgeCollection[]>([]);
+    const [selectedKnowledgeCollectionId, setSelectedKnowledgeCollectionId] = useState('');
+    const [showKnowledgeCollectionsModal, setShowKnowledgeCollectionsModal] = useState(false);
+
+    const refreshKnowledgeCollections = () => api.getKnowledgeCollections().then(result => setKnowledgeCollections(result.collections || [])).catch(() => setKnowledgeCollections([]));
+    useEffect(() => { void refreshKnowledgeCollections(); }, []);
 
     useEffect(() => {
         const openNotificationItem = (event: Event) => {
@@ -285,7 +293,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
             attach.clearAll();
             slash.clearSuggestions();
             if (textareaRef.current) textareaRef.current.style.height = 'auto';
-            const result = onSend(fullMessage, prevImages, prevFiles, selectedMcps.map(server => server.id));
+            const result = onSend(fullMessage, prevImages, prevFiles, selectedMcps.map(server => server.id), selectedKnowledgeCollectionId || undefined);
             if (result instanceof Promise) {
                 const sent = await result;
                 if (sent === false) {
@@ -480,6 +488,20 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
                             <CustomSelect
                                 className="chat-system-prompt-select"
+                                options={[{value: '', label: t('knowledgeCollections.none')}, ...knowledgeCollections.map(collection => ({value: collection.id, label: collection.name}))]}
+                                value={selectedKnowledgeCollectionId}
+                                onChange={setSelectedKnowledgeCollectionId}
+                                placeholder={t('knowledgeCollections.select')}
+                                searchable
+                                searchPlaceholder={t('knowledgeCollections.search')}
+                                clearable
+                                onClear={() => setSelectedKnowledgeCollectionId('')}
+                                searchAction={<button type="button" className="custom-select-search-action" aria-label={t('knowledgeCollections.title')} onClick={() => setShowKnowledgeCollectionsModal(true)}><Settings size={15}/></button>}
+                                renderTrigger={(selectedLabel, open) => <><span className="custom-select-trigger-label">{selectedLabel}</span><span className={`custom-select-arrow${open ? ' open' : ''}`}>▼</span></>}
+                            />
+
+                            <CustomSelect
+                                className="chat-system-prompt-select"
                                 options={[
                                     {value: '', label: t('sidebar.promptDefault')},
                                     ...systemPrompts.map((prompt): SelectOption => ({value: prompt.id, label: prompt.title})),
@@ -560,6 +582,15 @@ const ChatInput: React.FC<ChatInputProps> = ({
             {showCommandModal && (
                 <CommandModal onClose={() => setShowCommandModal(false)} onSelect={insertCommand}/>
             )}
+
+            <KnowledgeCollectionsModal
+                isOpen={showKnowledgeCollectionsModal}
+                collections={knowledgeCollections}
+                onClose={() => setShowKnowledgeCollectionsModal(false)}
+                onCreate={async data => { const created = await api.createKnowledgeCollection(data); setKnowledgeCollections(items => [created, ...items]); setSelectedKnowledgeCollectionId(created.id); }}
+                onUpdate={async (id, data) => { const updated = await api.updateKnowledgeCollection(id, data); setKnowledgeCollections(items => items.map(item => item.id === id ? updated : item)); }}
+                onDelete={async id => { await api.deleteKnowledgeCollection(id); setKnowledgeCollections(items => items.filter(item => item.id !== id)); setSelectedKnowledgeCollectionId(current => current === id ? '' : current); }}
+            />
 
             {/* 이미지 미리보기 */}
             {previewIndex !== null && attach.images[previewIndex] && (

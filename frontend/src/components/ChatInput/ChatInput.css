@@ -359,8 +359,9 @@
 }
 
 .chat-system-prompt-select {
-    width: min(190px, 30vw);
-    min-width: 112px;
+    flex: 1 1 0;
+    min-width: 88px;
+    max-width: min(190px, 30vw);
 }
 
 .chat-system-prompt-select .custom-select-trigger {

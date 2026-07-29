@@ -593,6 +593,10 @@ export const api = {
     async updateProject(projectId: string, updates: Partial<Pick<import('../types').Project, 'name' | 'project_prompt' | 'color' | 'folder_paths'>>): Promise<import('../types').Project> { return (await fetch(`${API_BASE}/projects/${projectId}`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(updates)})).json(); },
     async deleteProject(projectId: string): Promise<void> { await fetch(`${API_BASE}/projects/${projectId}`, {method: 'DELETE'}); },
     async setConversationProject(convId: string, projectId: string | null): Promise<void> { await fetch(`${API_BASE}/history/${convId}/project`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({project_id: projectId})}); },
+    async getKnowledgeCollections(): Promise<{collections: import('../types').KnowledgeCollection[]}> { return (await fetch(`${API_BASE}/knowledge-collections`)).json(); },
+    async createKnowledgeCollection(data: Omit<import('../types').KnowledgeCollection, 'id' | 'created_at' | 'updated_at'>): Promise<import('../types').KnowledgeCollection> { return (await fetch(`${API_BASE}/knowledge-collections`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)})).json(); },
+    async updateKnowledgeCollection(id: string, data: Omit<import('../types').KnowledgeCollection, 'id' | 'created_at' | 'updated_at'>): Promise<import('../types').KnowledgeCollection> { return (await fetch(`${API_BASE}/knowledge-collections/${encodeURIComponent(id)}`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)})).json(); },
+    async deleteKnowledgeCollection(id: string): Promise<void> { await fetch(`${API_BASE}/knowledge-collections/${encodeURIComponent(id)}`, {method: 'DELETE'}); },
 
     async getProviders(): Promise<ProvidersResponse> {
         const res = await fetch(`${API_BASE}/providers`);

@@ -20,7 +20,7 @@ from services.db import (
     _index_default_summarizer_prompt,
     _index_default_coding_prompt,
 )
-from services.indexer import index_documents, rag_search, memo_search, get_index_stats
+from services.indexer import index_documents, rag_search, memo_search, get_index_stats, knowledge_collection_search
 from services.llm import query_llm, chat_stream_with_tools, collect_llm_stream, get_model_name, get_provider_config
 from services.history import (
     save_conversation, create_conversation_stub, list_conversations,
@@ -58,7 +58,7 @@ async def _gather_rag_only(question: str) -> list[dict]:
     return rag_docs
 
 
-async def _gather_docs(question: str, extra_context: list, skip_rag: bool = False, conv_id: str = "") -> list[dict]:
+async def _gather_docs(question: str, extra_context: list, skip_rag: bool = False, conv_id: str = "", knowledge_collection_id: str = "") -> list[dict]:
     """RAG(ES 문서) + 메모 + 첨부파일(conv_id 스코프) 검색 결과를 모아 docs로 반환.
 
     RAG/메모/첨부파일 검색은 (tool 판정과 무관하게) 프롬프트 context로 선주입한다.
@@ -75,6 +75,10 @@ async def _gather_docs(question: str, extra_context: list, skip_rag: bool = Fals
     """
     if skip_rag:
         return list(extra_context)
+
+    if knowledge_collection_id:
+        collection_docs, _ = await knowledge_collection_search(knowledge_collection_id, question, size=8)
+        return list(extra_context) + collection_docs
 
     from services.chat_file_index import has_chat_files, search_chat_files
 
@@ -116,10 +120,15 @@ async def rag_query(
         conv_id: str = "",
         conversation_summary: str = "",
         call_reason: str = "chat",
+        knowledge_collection_id: str = "",
 ) -> dict[str, Any]:
     """RAG 쿼리 실행 및 응답 (논스트리밍)."""
     current_user_question.set(question)
-    docs = await _gather_docs(question, extra_context, skip_rag=skip_rag, conv_id=conv_id)
+    docs = await _gather_docs(question, extra_context, skip_rag=skip_rag, conv_id=conv_id, knowledge_collection_id=knowledge_collection_id)
+    if knowledge_collection_id:
+        _, collection_instruction = await knowledge_collection_search(knowledge_collection_id, question, size=1)
+        if collection_instruction:
+            system_prompt = f"{system_prompt}\n\n[지식 컬렉션 지침]\n{collection_instruction}" if system_prompt else collection_instruction
     answer = await query_llm(question, docs, system_prompt, attachments, conversation_history,
                              reasoning=reasoning, conversation_summary=conversation_summary, call_reason=call_reason)
     return {
@@ -142,6 +151,7 @@ async def rag_query_stream(
         conversation_summary: str = "",
         format_instruction_override: str | None = None,
         call_reason: str = "chat",
+        knowledge_collection_id: str = "",
 ):
     """일반 채팅 스트리밍. tool 진행 + 최종 답변 토큰을 이벤트로 흘린다.
 
@@ -171,7 +181,12 @@ async def rag_query_stream(
     current_user_question.set(question)
     is_ollama = provider_config.get("type") == "ollama"
 
-    if skip_rag:
+    collection_instruction = ""
+    collection_docs: list[dict] = []
+    if knowledge_collection_id:
+        collection_docs, collection_instruction = await knowledge_collection_search(knowledge_collection_id, question, size=8)
+        docs = list(extra_context) + collection_docs
+    elif skip_rag:
         docs = list(extra_context)
     elif is_ollama:
         docs = list(extra_context)  # 메모/RAG/첨부파일은 tool 판정 이후로 미룸
@@ -196,6 +211,8 @@ async def rag_query_stream(
             return []
 
     async def _post_tool_docs(tool_got_sources: bool) -> list[dict]:
+        if knowledge_collection_id:
+            return collection_docs
         if tool_got_sources:
             # tool이 이미 최신 뉴스를 가져왔으므로 메모+첨부파일만 보충
             memo_result, chat_file_result = await asyncio.gather(
@@ -223,6 +240,9 @@ async def rag_query_stream(
         post_docs.clear()
         post_docs.extend(docs_found)
         return docs_found
+
+    if collection_instruction:
+        system_prompt = f"{system_prompt}\n\n[지식 컬렉션 지침]\n{collection_instruction}" if system_prompt else collection_instruction
 
     async for ev in chat_stream_with_tools(
             question, docs, system_prompt, attachments, conversation_history,

@@ -877,5 +877,6 @@
     "zipAttachment": "ZIP 添付: {{name}}",
     "document": "文書 ({{type}})",
     "pastedText": "貼り付けテキスト"
-  }
+  },
+  "knowledgeCollections": {"none":"すべての知識","select":"知識コレクション","search":"コレクションを検索...","title":"知識コレクション","subtitle":"ドキュメントとメモをまとめて RAG の範囲を絞ります。","close":"閉じる","empty":"知識コレクションはまだありません。","noDescription":"説明なし","sources":"ドキュメント {{documents}} · メモ {{memos}}","edit":"編集","delete":"削除","create":"コレクションを作成","name":"名前","namePlaceholder":"例: Apollo リリース","description":"説明","descriptionPlaceholder":"このコレクションの用途","instruction":"コレクション指示","instructionPlaceholder":"このコレクションを使う回答への任意の指示","save":"保存","cancel":"キャンセル"}
 }

@@ -217,6 +217,7 @@ export function useChat(deps: UseChatDeps) {
         extraArticles?: ArticleAttachment[],
         ragContext?: Array<{ source: string; data: string }>,
         selectedMcpIds?: string[],
+        knowledgeCollectionId?: string,
     ): Promise<boolean> => {
         const hasContent = query.trim() || (images?.length ?? 0) > 0
             || (fileAttachments?.length ?? 0) > 0
@@ -235,7 +236,7 @@ export function useChat(deps: UseChatDeps) {
 
         isSendingRef.current = true;
         try {
-            return await handleSendInner(query, images, fileAttachments, systemPromptOverride, voiceMode, extraArticles, ragContext, selectedMcpIds);
+            return await handleSendInner(query, images, fileAttachments, systemPromptOverride, voiceMode, extraArticles, ragContext, selectedMcpIds, knowledgeCollectionId);
         } finally {
             isSendingRef.current = false;
         }
@@ -251,6 +252,7 @@ export function useChat(deps: UseChatDeps) {
         extraArticles?: ArticleAttachment[],
         ragContext?: Array<{ source: string; data: string }>,
         selectedMcpIds?: string[],
+        knowledgeCollectionId?: string,
     ): Promise<boolean> => {
         const requestConvId = currentConvIdRef.current || currentConvId;
         const articlesSnapshot = extraArticles?.length
@@ -516,6 +518,7 @@ export function useChat(deps: UseChatDeps) {
                         folder_path: codeFolderPath || '',
                         project_id: deps.activeProjectId || '',
                         selected_mcp_ids: selectedMcpIds || [],
+                        knowledge_collection_id: knowledgeCollectionId || '',
                     }, {
                         onMeta: (data) => {
                             streamModel = data.model || '';

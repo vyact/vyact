@@ -877,5 +877,6 @@
     "zipAttachment": "Tệp đính kèm ZIP: {{name}}",
     "document": "Tài liệu ({{type}})",
     "pastedText": "Văn bản đã dán"
-  }
+  },
+  "knowledgeCollections": {"none":"Tất cả kiến thức","select":"Bộ sưu tập kiến thức","search":"Tìm bộ sưu tập...","title":"Bộ sưu tập kiến thức","subtitle":"Nhóm tài liệu và ghi chú để giới hạn ngữ cảnh RAG.","close":"Đóng","empty":"Chưa có bộ sưu tập kiến thức.","noDescription":"Không có mô tả","sources":"Tài liệu {{documents}} · Ghi chú {{memos}}","edit":"Chỉnh sửa","delete":"Xóa","create":"Tạo bộ sưu tập","name":"Tên","namePlaceholder":"Ví dụ: Ra mắt Apollo","description":"Mô tả","descriptionPlaceholder":"Bộ sưu tập này dùng để làm gì?","instruction":"Hướng dẫn bộ sưu tập","instructionPlaceholder":"Hướng dẫn tùy chọn cho câu trả lời dùng bộ sưu tập này.","save":"Lưu","cancel":"Hủy"}
 }

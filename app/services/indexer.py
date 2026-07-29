@@ -10,7 +10,7 @@ from elasticsearch import NotFoundError
 from elasticsearch.helpers import async_bulk
 
 from services.runtime_settings import get_runtime_settings
-from services.db import INDEX_NAME, MEMO_INDEX, QUICKNOTE_INDEX, get_es
+from services.db import DOC_CHUNKS_INDEX, INDEX_NAME, KNOWLEDGE_COLLECTIONS_INDEX, MEMO_INDEX, QUICKNOTE_INDEX, get_es
 from logger import get_logger
 
 logger = get_logger(__name__)
@@ -262,6 +262,60 @@ async def rag_search(query: str, size: int = 5) -> list[dict]:
     except Exception as e:
         logger.error("[rag_search] 예외: %s", e)
         return []
+    finally:
+        await es.close()
+
+
+async def knowledge_collection_search(collection_id: str, query: str, size: int = 5) -> tuple[list[dict], str]:
+    """컬렉션에 연결된 문서 청크와 메모만 검색한다.
+
+    컬렉션은 원문을 복제하지 않으므로 이 검색은 기존 인덱스의 file_id/id만 필터링한다.
+    """
+    if not collection_id or not query.strip():
+        return [], ""
+    es = get_es()
+    try:
+        collection = await es.get(index=KNOWLEDGE_COLLECTIONS_INDEX, id=collection_id)
+        source = collection["_source"]
+        items = source.get("items", [])
+        document_ids = [item["source_id"] for item in items if item.get("source_type") == "document"]
+        memo_ids = [item["source_id"] for item in items if item.get("source_type") == "memo"]
+        if not document_ids and not memo_ids:
+            return [], str(source.get("instruction", "")).strip()
+
+        embedding = await get_embedding(query, is_query=True)
+        searches = []
+        if document_ids:
+            body = {"size": size, "_source": ["title", "content", "url", "source", "indexed_at", "file_id", "chunk_type", "heading_path", "page_number"],
+                    "query": {"bool": {"filter": [{"terms": {"file_id": document_ids}}], "should": [{"match": {"title": {"query": query, "boost": 3}}}, {"match": {"content": {"query": query}}}], "minimum_should_match": 0}}}
+            if embedding:
+                body["knn"] = {"field": "embedding", "query_vector": embedding, "k": size, "num_candidates": max(size * 10, 50), "filter": {"terms": {"file_id": document_ids}}}
+            searches.append(es.search(index=DOC_CHUNKS_INDEX, body=body))
+        if memo_ids:
+            body = {"size": size, "_source": ["id", "title", "content", "source", "updated_at"],
+                    "query": {"bool": {"filter": [{"terms": {"id": memo_ids}}], "should": [{"match": {"title": {"query": query, "boost": 3}}}, {"match": {"content": {"query": query}}}], "minimum_should_match": 0}}}
+            if embedding:
+                body["knn"] = {"field": "embedding", "query_vector": embedding, "k": size, "num_candidates": max(size * 10, 50), "filter": {"terms": {"id": memo_ids}}}
+            searches.append(es.search(index=MEMO_INDEX, body=body))
+
+        import asyncio as _asyncio
+        responses = await _asyncio.gather(*searches)
+        results = []
+        for response in responses:
+            for hit in response["hits"]["hits"]:
+                item = hit["_source"]
+                is_memo = item.get("source") == "memo"
+                results.append({"title": item.get("title", ""), "content": item.get("content", ""),
+                                "url": f"memo://{item.get('id', hit['_id'])}" if is_memo else item.get("url", ""),
+                                "source": item.get("source", "memo" if is_memo else ""),
+                                "indexed_at": item.get("updated_at", item.get("indexed_at", "")),
+                                "score": round(hit.get("_score") or 0, 3),
+                                **({"memo_id": item.get("id", hit["_id"])} if is_memo else {})})
+        results.sort(key=lambda item: item["score"], reverse=True)
+        return results[:size], str(source.get("instruction", "")).strip()
+    except Exception as error:
+        logger.warning("[knowledge_collection_search] failed (%s): %s", collection_id, error)
+        return [], ""
     finally:
         await es.close()
 
