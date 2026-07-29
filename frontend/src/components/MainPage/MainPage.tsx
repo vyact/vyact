@@ -379,10 +379,6 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
             closeAllModals();
             if (next) setShowShortcutModal(true);
         },
-        onOpenVoiceChat: () => {
-            closeAllModals();
-            setVoiceChatModal(true);
-        },
         onOpenDocument: () => {
             closeAllModals();
             setShowDocumentModal(true);

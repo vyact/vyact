@@ -4,7 +4,6 @@ interface KeyboardHandlers {
     onToggleSidebar: () => void;
     onToggleCommandPalette: () => void;
     onToggleShortcuts: () => void;
-    onOpenVoiceChat: () => void;
     onOpenDocument: () => void;
     onOpenSettings: () => void;
     onNewConversation: () => void;
@@ -34,7 +33,7 @@ export function useGlobalKeyboard(handlers: KeyboardHandlers, isMemoOpen = false
             }
             const meta = e.metaKey || e.ctrlKey;
 
-            if (meta && e.key === 'b') {
+            if (meta && e.shiftKey && (e.key === 'S' || e.key === 's')) {
                 e.preventDefault();
                 handlers.onToggleSidebar();
             } else if (meta && e.key === 'k') {
@@ -46,9 +45,6 @@ export function useGlobalKeyboard(handlers: KeyboardHandlers, isMemoOpen = false
             } else if (meta && e.key === '/') {
                 e.preventDefault();
                 handlers.onToggleShortcuts();
-            } else if (meta && e.shiftKey && (e.key === 'V' || e.key === 'v')) {
-                e.preventDefault();
-                handlers.onOpenVoiceChat();
             } else if (meta && e.shiftKey && (e.key === 'D' || e.key === 'd')) {
                 e.preventDefault();
                 handlers.onOpenDocument();

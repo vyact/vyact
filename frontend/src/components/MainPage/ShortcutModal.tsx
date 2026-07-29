@@ -8,22 +8,18 @@ interface ShortcutModalProps {
 const ShortcutModal: React.FC<ShortcutModalProps> = ({onClose}) => {
     const {t} = useTranslation('main');
     const SHORTCUTS = [
-        {keys: ['Cmd', 'B'], desc: t('shortcutModal.toggleSidebar')},
         {keys: ['Cmd', 'K'], desc: t('shortcutModal.quickLaunch')},
         {keys: ['Cmd', '1'], desc: t('shortcutModal.newChat')},
         {keys: ['Cmd', '/'], desc: t('shortcutModal.showShortcuts')},
-        {keys: ['Cmd', 'Shift', 'V'], desc: t('shortcutModal.voiceMode')},
-        {keys: ['Cmd', 'Shift', 'D'], desc: t('shortcutModal.documents')},
         {keys: ['Cmd', 'Shift', 'G'], desc: t('shortcutModal.googleWorkspace')},
         {keys: ['Cmd', 'Shift', 'M'], desc: t('shortcutModal.quickMemo')},
         {keys: ['Cmd', 'Shift', 'N'], desc: t('shortcutModal.memo')},
-        {keys: ['Cmd', 'Shift', 'A'], desc: t('shortcutModal.notifications')},
+        {keys: ['Cmd', 'Shift', 'D'], desc: t('shortcutModal.documents')},
         {keys: ['Cmd', 'Shift', 'L'], desc: t('knowledgeCollections.title')},
+        {keys: ['Cmd', 'Shift', 'A'], desc: t('shortcutModal.notifications')},
         {keys: ['Cmd', 'Shift', 'J'], desc: t('shortcutModal.chatSummary')},
+        {keys: ['Cmd', 'Shift', 'S'], desc: t('shortcutModal.toggleSidebar')},
         {keys: ['Cmd', 'Shift', ','], desc: t('shortcutModal.openSettings')},
-        {keys: ['Enter'], desc: t('shortcutModal.sendMessage')},
-        {keys: ['Shift', 'Enter'], desc: t('shortcutModal.newLine')},
-        {keys: ['Esc'], desc: t('shortcutModal.closeModal')},
     ];
     return (
     <div
