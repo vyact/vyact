@@ -313,7 +313,8 @@ async def knowledge_collection_search(collection_id: str, query: str, size: int 
                 item = hit["_source"]
                 is_memo = item.get("source") == "memo"
                 is_email_thread = "thread_id" in item
-                results.append({"title": item.get("title", item.get("subject", "")), "content": item.get("rag_content", ""),
+                content = item.get("rag_content", "") if is_email_thread else item.get("content", "")
+                results.append({"title": item.get("title", item.get("subject", "")), "content": content,
                                 "url": f"memo://{item.get('id', hit['_id'])}" if is_memo else (f"email-thread://{hit['_id']}" if is_email_thread else item.get("url", "")),
                                 "source": item.get("source", "email_thread" if is_email_thread else "memo" if is_memo else ""),
                                 "indexed_at": item.get("updated_at", item.get("indexed_at", "")),
