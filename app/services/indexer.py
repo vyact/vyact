@@ -10,7 +10,7 @@ from elasticsearch import NotFoundError
 from elasticsearch.helpers import async_bulk
 
 from services.runtime_settings import get_runtime_settings
-from services.db import DOC_CHUNKS_INDEX, INDEX_NAME, KNOWLEDGE_COLLECTIONS_INDEX, MEMO_INDEX, QUICKNOTE_INDEX, get_es
+from services.db import DOC_CHUNKS_INDEX, EMAIL_THREADS_INDEX, INDEX_NAME, KNOWLEDGE_COLLECTIONS_INDEX, MEMO_INDEX, QUICKNOTE_INDEX, get_es
 from logger import get_logger
 
 logger = get_logger(__name__)
@@ -280,7 +280,8 @@ async def knowledge_collection_search(collection_id: str, query: str, size: int 
         items = source.get("items", [])
         document_ids = [item["source_id"] for item in items if item.get("source_type") == "document"]
         memo_ids = [item["source_id"] for item in items if item.get("source_type") == "memo"]
-        if not document_ids and not memo_ids:
+        email_thread_ids = [item["source_id"] for item in items if item.get("source_type") == "email_thread"]
+        if not document_ids and not memo_ids and not email_thread_ids:
             return [], str(source.get("instruction", "")).strip()
 
         embedding = await get_embedding(query, is_query=True)
@@ -297,6 +298,12 @@ async def knowledge_collection_search(collection_id: str, query: str, size: int 
             if embedding:
                 body["knn"] = {"field": "embedding", "query_vector": embedding, "k": size, "num_candidates": max(size * 10, 50), "filter": {"terms": {"id": memo_ids}}}
             searches.append(es.search(index=MEMO_INDEX, body=body))
+        if email_thread_ids:
+            body = {"size": size, "_source": ["subject", "content", "indexed_at", "thread_id"],
+                    "query": {"bool": {"filter": [{"terms": {"_id": email_thread_ids}}], "should": [{"match": {"subject": {"query": query, "boost": 3}}}, {"match": {"content": {"query": query}}}], "minimum_should_match": 0}}}
+            if embedding:
+                body["knn"] = {"field": "embedding", "query_vector": embedding, "k": size, "num_candidates": max(size * 10, 50), "filter": {"terms": {"_id": email_thread_ids}}}
+            searches.append(es.search(index=EMAIL_THREADS_INDEX, body=body))
 
         import asyncio as _asyncio
         responses = await _asyncio.gather(*searches)
@@ -305,9 +312,10 @@ async def knowledge_collection_search(collection_id: str, query: str, size: int 
             for hit in response["hits"]["hits"]:
                 item = hit["_source"]
                 is_memo = item.get("source") == "memo"
-                results.append({"title": item.get("title", ""), "content": item.get("content", ""),
-                                "url": f"memo://{item.get('id', hit['_id'])}" if is_memo else item.get("url", ""),
-                                "source": item.get("source", "memo" if is_memo else ""),
+                is_email_thread = "thread_id" in item
+                results.append({"title": item.get("title", item.get("subject", "")), "content": item.get("content", ""),
+                                "url": f"memo://{item.get('id', hit['_id'])}" if is_memo else (f"email-thread://{hit['_id']}" if is_email_thread else item.get("url", "")),
+                                "source": item.get("source", "email_thread" if is_email_thread else "memo" if is_memo else ""),
                                 "indexed_at": item.get("updated_at", item.get("indexed_at", "")),
                                 "score": round(hit.get("_score") or 0, 3),
                                 **({"memo_id": item.get("id", hit["_id"])} if is_memo else {})})

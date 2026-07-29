@@ -1,0 +1,159 @@
+"""지식 컬렉션 CRUD — 문서·메모를 복제하지 않고 ID로만 묶는다."""
+import uuid
+from datetime import datetime, timezone
+
+from elasticsearch import NotFoundError
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
+
+from services.db import EMAIL_THREADS_INDEX, FILES_INDEX, KNOWLEDGE_COLLECTIONS_INDEX, MEMO_INDEX, get_es
+
+router = APIRouter()
+
+
+class KnowledgeCollectionItem(BaseModel):
+    source_type: str = Field(pattern="^(document|memo|email_thread)$")
+    source_id: str = Field(min_length=1, max_length=512)
+
+
+class KnowledgeCollectionBody(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    description: str = Field(default="", max_length=500)
+    instruction: str = Field(default="", max_length=4000)
+    items: list[KnowledgeCollectionItem] = Field(default_factory=list)
+
+
+def _normalized_items(items: list[KnowledgeCollectionItem]) -> list[dict]:
+    unique_items: dict[tuple[str, str], dict] = {}
+    for item in items:
+        source_id = item.source_id.strip()
+        if source_id:
+            unique_items[(item.source_type, source_id)] = {"source_type": item.source_type, "source_id": source_id}
+    return list(unique_items.values())
+
+
+async def _validate_members(es, items: list[dict]) -> None:
+    document_ids = [item["source_id"] for item in items if item["source_type"] == "document"]
+    memo_ids = [item["source_id"] for item in items if item["source_type"] == "memo"]
+    email_thread_ids = [item["source_id"] for item in items if item["source_type"] == "email_thread"]
+    if document_ids:
+        found = await es.mget(index=FILES_INDEX, ids=document_ids)
+        missing = [item_id for item_id, item in zip(document_ids, found["docs"]) if not item.get("found")]
+        if missing:
+            raise HTTPException(status_code=400, detail="존재하지 않는 문서가 포함되어 있습니다.")
+    if memo_ids:
+        found = await es.mget(index=MEMO_INDEX, ids=memo_ids)
+        missing = [item_id for item_id, item in zip(memo_ids, found["docs"]) if not item.get("found")]
+        if missing:
+            raise HTTPException(status_code=400, detail="존재하지 않는 메모가 포함되어 있습니다.")
+    if email_thread_ids:
+        found = await es.mget(index=EMAIL_THREADS_INDEX, ids=email_thread_ids)
+        missing = [item_id for item_id, item in zip(email_thread_ids, found["docs"]) if not item.get("found")]
+        if missing:
+            raise HTTPException(status_code=400, detail="존재하지 않는 이메일 스레드가 포함되어 있습니다.")
+
+
+@router.get("/knowledge-collections")
+async def list_knowledge_collections():
+    es = get_es()
+    try:
+        response = await es.search(index=KNOWLEDGE_COLLECTIONS_INDEX, size=200, sort=[{"updated_at": {"order": "desc"}}])
+        return {"collections": [{**hit["_source"], "id": hit["_id"]} for hit in response["hits"]["hits"]]}
+    finally:
+        await es.close()
+
+
+@router.post("/knowledge-collections")
+async def create_knowledge_collection(body: KnowledgeCollectionBody):
+    es = get_es()
+    try:
+        items = _normalized_items(body.items)
+        await _validate_members(es, items)
+        now = datetime.now(timezone.utc).isoformat()
+        collection_id = str(uuid.uuid4())
+        document = {"id": collection_id, "name": body.name.strip(), "description": body.description.strip(),
+                    "instruction": body.instruction.strip(), "items": items,
+                    "created_at": now, "updated_at": now}
+        await es.index(index=KNOWLEDGE_COLLECTIONS_INDEX, id=collection_id, document=document, refresh=True)
+        return document
+    finally:
+        await es.close()
+
+
+@router.patch("/knowledge-collections/{collection_id}")
+async def update_knowledge_collection(collection_id: str, body: KnowledgeCollectionBody):
+    es = get_es()
+    try:
+        items = _normalized_items(body.items)
+        await _validate_members(es, items)
+        document = {"name": body.name.strip(), "description": body.description.strip(), "instruction": body.instruction.strip(),
+                    "items": items, "updated_at": datetime.now(timezone.utc).isoformat()}
+        await es.update(index=KNOWLEDGE_COLLECTIONS_INDEX, id=collection_id, doc=document, refresh=True)
+        result = await es.get(index=KNOWLEDGE_COLLECTIONS_INDEX, id=collection_id)
+        return {**result["_source"], "id": result["_id"]}
+    except NotFoundError:
+        raise HTTPException(status_code=404, detail="지식 컬렉션을 찾을 수 없습니다.")
+    finally:
+        await es.close()
+
+
+@router.get("/knowledge-collections/{collection_id}/items")
+async def get_knowledge_collection_items(collection_id: str):
+    """컬렉션 항목을 실제 소스 메타데이터와 함께 반환한다."""
+    es = get_es()
+    try:
+        collection = await es.get(index=KNOWLEDGE_COLLECTIONS_INDEX, id=collection_id)
+        items = collection["_source"].get("items", [])
+        index_by_type = {"document": FILES_INDEX, "memo": MEMO_INDEX, "email_thread": EMAIL_THREADS_INDEX}
+        resolved_items = []
+        for item in items:
+            source_type, source_id = item.get("source_type"), item.get("source_id")
+            index_name = index_by_type.get(source_type)
+            if not index_name or not source_id:
+                continue
+            try:
+                result = await es.get(index=index_name, id=source_id)
+            except NotFoundError:
+                continue
+            source = result["_source"]
+            if source_type == "document":
+                resolved_items.append({"source_type": source_type, "source_id": source_id, "title": source.get("filename", ""), "summary": source.get("file_ext", ""), "updated_at": source.get("indexed_at", ""), "chunk_count": source.get("chunk_count", 0)})
+            elif source_type == "memo":
+                resolved_items.append({"source_type": source_type, "source_id": source_id, "title": source.get("title", ""), "summary": source.get("content", "")[:300], "updated_at": source.get("updated_at", ""), "content_html": source.get("content_html", "")})
+            else:
+                resolved_items.append({"source_type": source_type, "source_id": source_id, "title": source.get("subject", ""), "summary": source.get("content", "")[:300], "updated_at": source.get("indexed_at", ""), "content": source.get("content", ""), "message_count": source.get("message_count", 0)})
+        return {"items": resolved_items}
+    except NotFoundError:
+        raise HTTPException(status_code=404, detail="지식 컬렉션을 찾을 수 없습니다.")
+    finally:
+        await es.close()
+
+
+@router.delete("/knowledge-collections/{collection_id}/items/{source_type}/{source_id}")
+async def remove_knowledge_collection_item(collection_id: str, source_type: str, source_id: str):
+    """컬렉션의 참조만 제거한다. 원본 소스 인덱스는 삭제하지 않는다."""
+    es = get_es()
+    try:
+        collection = await es.get(index=KNOWLEDGE_COLLECTIONS_INDEX, id=collection_id)
+        items = collection["_source"].get("items", [])
+        remaining_items = [item for item in items if not (item.get("source_type") == source_type and item.get("source_id") == source_id)]
+        if len(remaining_items) == len(items):
+            raise HTTPException(status_code=404, detail="컬렉션 항목을 찾을 수 없습니다.")
+        await es.update(index=KNOWLEDGE_COLLECTIONS_INDEX, id=collection_id, doc={"items": remaining_items, "updated_at": datetime.now(timezone.utc).isoformat()}, refresh=True)
+        return {"ok": True, "items": remaining_items}
+    except NotFoundError:
+        raise HTTPException(status_code=404, detail="지식 컬렉션을 찾을 수 없습니다.")
+    finally:
+        await es.close()
+
+
+@router.delete("/knowledge-collections/{collection_id}")
+async def delete_knowledge_collection(collection_id: str):
+    es = get_es()
+    try:
+        await es.delete(index=KNOWLEDGE_COLLECTIONS_INDEX, id=collection_id, refresh=True)
+        return {"ok": True}
+    except NotFoundError:
+        raise HTTPException(status_code=404, detail="지식 컬렉션을 찾을 수 없습니다.")
+    finally:
+        await es.close()

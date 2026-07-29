@@ -28,6 +28,7 @@ FILES_INDEX = "rag_files"
 MEMO_INDEX = "memo_documents"
 QUICKNOTE_INDEX = "quick_notes"   # 빠른 메모(todo형) — 메모 RAG 검색 대상
 KNOWLEDGE_COLLECTIONS_INDEX = "knowledge_collections"
+EMAIL_THREADS_INDEX = "knowledge_email_threads"
 USER_PROFILE_INDEX = "user_profile"
 VOCAB_INDEX = "vocab_words"
 NOTIFICATIONS_INDEX = "notifications"
@@ -381,6 +382,21 @@ async def ensure_index():
                 }},
             )
             logger.info("knowledge_collections 인덱스 생성 완료")
+
+        # ── knowledge_email_threads ────────────────────────────────
+        if not await es.indices.exists(index=EMAIL_THREADS_INDEX):
+            await es.indices.create(
+                index=EMAIL_THREADS_INDEX,
+                settings={"number_of_shards": 1, "number_of_replicas": 0, "analysis": KOREAN_ANALYSIS},
+                mappings={"properties": {
+                    "account_id": {"type": "keyword"}, "thread_id": {"type": "keyword"},
+                    "subject": {"type": "text", "analyzer": "korean"}, "content": {"type": "text", "analyzer": "korean"},
+                    "message_count": {"type": "integer"}, "indexed_at": {"type": "date"},
+                    "attachments": {"type": "object", "enabled": False},
+                    "embedding": {"type": "dense_vector", "dims": 1024, "index": True, "similarity": "cosine", "index_options": {"type": "bbq_hnsw", "m": 16, "ef_construction": 100}},
+                }},
+            )
+            logger.info("knowledge_email_threads 인덱스 생성 완료")
 
         # ── quick_notes (빠른 메모 / todo형) ─────────────────────────
         if not await es.indices.exists(index=QUICKNOTE_INDEX):

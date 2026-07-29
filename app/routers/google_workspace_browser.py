@@ -37,7 +37,8 @@ from services.google_workspace.gmail import (
     list_mail_threads_sync,
 )
 from services.llm import query_llm
-from services.db import SETTINGS_INDEX, get_es
+from services.db import EMAIL_THREADS_INDEX, SETTINGS_INDEX, get_es
+from services.indexer import get_embedding
 
 router = APIRouter()
 MAIL_PAGE_SIZE = 30
@@ -103,6 +104,10 @@ class MailBulkApplyLabelRequest(BaseModel):
 
 class MailStarRequest(BaseModel):
     starred: bool
+
+
+class MailKnowledgeIndexRequest(BaseModel):
+    account_id: str = Field(min_length=1)
 
 
 class MailSignatureRequest(BaseModel):
@@ -904,6 +909,54 @@ async def get_mail_message(message_id: str):
         "attachments": _message_attachments(message.get("payload", {})),
         "threadMessages": thread_messages,
     }
+
+
+@router.post("/google-workspace/mail/threads/{thread_id}/knowledge-index")
+async def index_mail_thread_for_knowledge(thread_id: str, request: MailKnowledgeIndexRequest):
+    """메일 스레드를 하나의 지식 문서로 upsert한다.
+
+    동일 계정·스레드는 결정적 ID를 사용해 어느 컬렉션에서 추가해도 한 ES 문서만 갱신된다.
+    """
+    await _require_connection()
+    service = await _build_service("gmail", "v1", account_id=request.account_id)
+    try:
+        thread = service.users().threads().get(userId="me", id=thread_id, format="full").execute()
+    except HttpError as error:
+        if error.resp.status == 404:
+            raise HTTPException(status_code=404, detail="Mail thread not found.") from None
+        raise
+
+    messages = [message for message in thread.get("messages", []) if GMAIL_TRASH_LABEL_ID not in message.get("labelIds", [])]
+    if not messages:
+        raise HTTPException(status_code=404, detail="Mail thread has no available messages.")
+    details = [_thread_message_detail(message, service) for message in messages]
+    subject = next((detail.get("subject", "") for detail in reversed(details) if detail.get("subject")), "")
+    content = "\n\n".join(
+        "\n".join((
+            f"[메일 스레드 메시지 {index}/{len(details)} — 오래된 순]",
+            f"From: {detail.get('from', '')}", f"To: {detail.get('to', '')}",
+            f"Cc: {detail.get('cc', '')}" if detail.get("cc") else "", f"Date: {detail.get('date', '')}",
+            f"Subject: {detail.get('subject', '')}", "", detail.get("body", ""),
+        )).strip()
+        for index, detail in enumerate(details, start=1)
+    ).strip()
+    source_id = hashlib.sha256(f"{request.account_id}:{thread_id}".encode("utf-8")).hexdigest()
+    embedding = await get_embedding(f"{subject}\n{content}")
+    attachment_metadata = [
+        {"message_id": detail["id"], **attachment}
+        for detail in details for attachment in detail.get("attachments", [])
+    ]
+    document = {"account_id": request.account_id, "thread_id": thread_id, "subject": subject,
+                "content": content, "message_count": len(details), "attachments": attachment_metadata,
+                "indexed_at": _dt.utcnow().isoformat()}
+    if embedding:
+        document["embedding"] = embedding
+    es = get_es()
+    try:
+        await es.index(index=EMAIL_THREADS_INDEX, id=source_id, document=document, refresh=True)
+    finally:
+        await es.close()
+    return {"source_id": source_id, "thread_id": thread_id, "message_count": len(details), "updated": True}
 
 
 @router.get("/google-workspace/mail/messages/{message_id}/attachments/{attachment_id}")

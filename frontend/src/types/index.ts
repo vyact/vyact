@@ -163,7 +163,7 @@ export interface Conversation {
 }
 
 export interface Project { id: string; name: string; color?: string; folder_paths?: string[]; project_prompt?: string; created_at: string; updated_at: string; }
-export interface KnowledgeCollectionItem { source_type: 'document' | 'memo'; source_id: string; }
+export interface KnowledgeCollectionItem { source_type: 'document' | 'memo' | 'email_thread'; source_id: string; }
 export interface KnowledgeCollection { id: string; name: string; description?: string; instruction?: string; items: KnowledgeCollectionItem[]; created_at: string; updated_at: string; }
 
 // API 응답 타입
