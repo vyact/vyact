@@ -203,14 +203,17 @@ async def search_file_id_chunks(question: str, articles: list) -> tuple[list[dic
 
 # ── 히스토리 저장용 메시지 빌드 ──────────────────────────────────────────
 
-def build_rag_context(sources: list[dict], *, exclude_file_urls: bool = True) -> list[dict]:
-    """sources에서 히스토리 저장용 rag_context 리스트 생성."""
+def build_injected_context(sources: list[dict]) -> list[dict]:
+    """이번 응답에 주입한 비메모 소스를 검증용으로 저장한다.
+
+    이 데이터는 UI의 "주입된 데이터" 모달 전용이다. 대화 이력에 다시 주입하지
+    않으므로, 문서 청크를 저장해도 다음 턴의 토큰을 불필요하게 점유하지 않는다.
+    """
     return [
         {"source": s.get("source", s.get("title", "")), "title": s.get("title", ""), "data": s.get("content", "")}
         for s in sources
         if s.get("content")
-        and (not exclude_file_urls or not s.get("url", "").startswith("file://"))
-        and s.get("source") not in ("", None, "memo", "붙여넣기")
+        and s.get("source") not in ("", None, "memo", "quicknote", "붙여넣기")
     ]
 
 
@@ -218,7 +221,6 @@ def build_user_message(
     original_question: str, user_ts: str,
     attachments: list | None = None,
     articles: list | None = None,
-    rag_ctx: list | None = None,
 ) -> dict:
     """히스토리 저장용 user 메시지 빌드."""
     msg: dict = {"role": "user", "content": original_question, "timestamp": user_ts}
@@ -230,15 +232,13 @@ def build_user_message(
              "indexed_at": a.get("indexed_at", ""), "file_id": a.get("file_id")}
             for a in articles
         ]
-    if rag_ctx:
-        msg["rag_context"] = rag_ctx
     return msg
 
 
 def build_assistant_message(
     answer: str, model: str,
     article_sources: list | None = None,
-    rag_ctx: list | None = None,
+    injected_context: list | None = None,
     stats: dict | None = None,
 ) -> dict:
     """히스토리 저장용 assistant 메시지 빌드."""
@@ -250,8 +250,8 @@ def build_assistant_message(
              "indexed_at": s.get("indexed_at", "")}
             for s in article_sources
         ]
-    if rag_ctx:
-        msg["rag_context"] = rag_ctx
+    if injected_context:
+        msg["injected_context"] = injected_context
     if stats:
         msg["stats"] = stats
     return msg

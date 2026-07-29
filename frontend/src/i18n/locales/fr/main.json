@@ -286,6 +286,7 @@
     "signatureTemplateBusiness": "Profile business",
     "signatureTemplateCompact": "Compact",
     "signatureTemplateMinimal": "Minimal greeting",
+    "signatureTemplateClassic": "Texte classique",
     "signatureTemplateName": "Alex Kim",
     "signatureTemplateRole": "Brand Designer | VYACT Studio",
     "signatureTemplateEmail": "Email: alex@example.com",
@@ -426,7 +427,18 @@
     "projects": "Projets",
     "projectFolderPathPrompt": "Entrez le chemin du dossier du projet :",
     "projectEdit": "Modifier le projet",
-    "projectCreate": {"title": "Créer un projet", "close": "Fermer", "namePlaceholder": "Nom du projet", "chooseColor": "Choisir la couleur du projet", "sourceFolders": "Dossiers source", "addFolders": "Ajoutez des dossiers que Vyact peut lire et modifier", "removeFolder": "Supprimer {{path}}", "cancel": "Annuler", "create": "Créer le projet", "creating": "Création…"},
+    "projectCreate": {
+      "title": "Créer un projet",
+      "close": "Fermer",
+      "namePlaceholder": "Nom du projet",
+      "chooseColor": "Choisir la couleur du projet",
+      "sourceFolders": "Dossiers source",
+      "addFolders": "Ajoutez des dossiers que Vyact peut lire et modifier",
+      "removeFolder": "Supprimer {{path}}",
+      "cancel": "Annuler",
+      "create": "Créer le projet",
+      "creating": "Création…"
+    },
     "deleteAllConfirm": "Supprimer tout l'historique des conversations ?",
     "deleteProject": "Supprimer le projet",
     "deleteProjectConfirm": "Supprimer « {{name}} » et toutes les conversations associées ?",
@@ -567,7 +579,9 @@
     "indexingStopped": "Indexation arrêtée — {{done}} terminés · {{stopped}} arrêtés",
     "stopIndexing": "Arrêter l’indexation",
     "stopRequested": "Arrêt demandé",
-    "indexStates": { "stopped": "Arrêté" },
+    "indexStates": {
+      "stopped": "Arrêté"
+    },
     "error": "Une erreur s'est produite.",
     "deleteError": "Une erreur s'est produite lors de la suppression.",
     "uploadMore": "Téléverser un autre fichier",
@@ -622,6 +636,7 @@
       "pending": "Queued",
       "processing": "Processing",
       "done": "Done",
+      "stopped": "Arrêté",
       "skipped": "Duplicate",
       "error": "Failed"
     }
@@ -877,7 +892,46 @@
     "document": "Document ({{type}})",
     "pastedText": "Texte collé"
   },
-  "knowledgeCollections": {"none":"Toutes les connaissances","select":"Collection de connaissances","search":"Rechercher des collections...","title":"Collections de connaissances","subtitle":"Regroupez les documents et notes pour limiter le contexte RAG.","close":"Fermer","empty":"Aucune collection de connaissances.","noDescription":"Aucune description","sources":"Documents {{documents}} · Notes {{memos}}","edit":"Modifier","delete":"Supprimer","deleteConfirmTitle":"Supprimer la collection « {{name}} » ?","deleteConfirmDescription":"Les sources associées seront retirées de la collection.","create":"Créer une collection","name":"Nom","namePlaceholder":"Ex. : lancement Apollo","description":"Description","descriptionPlaceholder":"À quoi sert cette collection ?","instruction":"Instruction de collection","instructionPlaceholder":"Conseil facultatif pour les réponses utilisant cette collection.","save":"Enregistrer","cancel":"Annuler"}
-,
-  "knowledgeCollectionSources": {"attachSources":"Joindre des sources","attachedCount":"{{count}} sources jointes","loadingSources":"Chargement des sources...","addingEmail":"Ajout à la collection de connaissances…","removingEmail":"Retrait de la collection de connaissances…","noSources":"Aucune source à joindre.","untitledMemo":"Note sans titre","noSubject":"Sans objet","back":"Retour à la liste","removeItem":"Retirer de la collection","selectItem":"Sélectionnez une source à gauche.","document":"Document","memo":"Note","email_thread":"E-mail"}
+  "knowledgeCollections": {
+    "eyebrow": "Bibliothèque de connaissances",
+    "savedTitle": "Collections enregistrées",
+    "none": "Toutes les connaissances",
+    "select": "Collection de connaissances",
+    "search": "Rechercher des collections...",
+    "title": "Collections de connaissances",
+    "subtitle": "Regroupez les documents et notes pour limiter le contexte RAG.",
+    "close": "Fermer",
+    "empty": "Aucune collection de connaissances.",
+    "noDescription": "Aucune description",
+    "sources": "Documents {{documents}} · Notes {{memos}}",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "deleteConfirmTitle": "Supprimer la collection « {{name}} » ?",
+    "deleteConfirmDescription": "Les sources associées seront retirées de la collection.",
+    "create": "Créer une collection",
+    "name": "Nom",
+    "namePlaceholder": "Ex. : lancement Apollo",
+    "description": "Description",
+    "descriptionPlaceholder": "À quoi sert cette collection ?",
+    "instruction": "Instruction de collection",
+    "instructionPlaceholder": "Conseil facultatif pour les réponses utilisant cette collection.",
+    "save": "Enregistrer",
+    "cancel": "Annuler"
+  },
+  "knowledgeCollectionSources": {
+    "attachSources": "Joindre des sources",
+    "attachedCount": "{{count}} sources jointes",
+    "loadingSources": "Chargement des sources...",
+    "addingEmail": "Ajout à la collection de connaissances…",
+    "removingEmail": "Retrait de la collection de connaissances…",
+    "noSources": "Aucune source à joindre.",
+    "untitledMemo": "Note sans titre",
+    "noSubject": "Sans objet",
+    "back": "Retour à la liste",
+    "removeItem": "Retirer de la collection",
+    "selectItem": "Sélectionnez une source à gauche.",
+    "document": "Document",
+    "memo": "Note",
+    "email_thread": "E-mail"
+  }
 }

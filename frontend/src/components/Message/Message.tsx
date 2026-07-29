@@ -79,7 +79,7 @@ const StreamingTextGroup: React.FC<{
 const Message: React.FC<MessageProps> = ({
                                              role, content, timestamp, sources, model, attachments,
                                              isError, onRetry, isGeneratedImage, articleSources,
-                                             pdfFile, pdfParams, onPdfEdit, ragContext, onShowRagContext, onOpenMemo,
+                                             pdfFile, pdfParams, onPdfEdit, injectedContext, onShowInjectedContext, onOpenMemo,
                                              isStreaming = false, toolStatus, activityLog, stats,
                                          }) => {
     const {t} = useTranslation('main');
@@ -679,7 +679,7 @@ const Message: React.FC<MessageProps> = ({
                 );
             })()}
 
-            {role === 'assistant' && ragContext && ragContext.length > 0 && (
+            {role === 'assistant' && injectedContext && injectedContext.length > 0 && (
                 <div style={{
                     marginTop: '6px', marginLeft: '16px',
                     padding: '6px 12px',
@@ -689,7 +689,7 @@ const Message: React.FC<MessageProps> = ({
                     display: 'inline-flex',
                 }}>
                     <button
-                        onClick={() => onShowRagContext?.(ragContext)}
+                        onClick={() => onShowInjectedContext?.(injectedContext)}
                         style={{
                             display: 'inline-flex', alignItems: 'center', gap: '6px',
                             background: 'none', border: 'none',
@@ -702,7 +702,7 @@ const Message: React.FC<MessageProps> = ({
                             <circle cx="11" cy="11" r="8"/>
                             <line x1="21" y1="21" x2="16.65" y2="16.65"/>
                         </svg>
-                        {t('message.injectedData', {count: ragContext.length})}
+                        {t('message.injectedData', {count: injectedContext.length})}
                     </button>
                 </div>
             )}

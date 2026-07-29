@@ -123,7 +123,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
     }, []);
     const followupComposedRef = useRef('');
     const [showPdfModal, setShowPdfModal] = useState(false);
-    const [ragContextModal, setRagContextModal] = useState<Array<{ source: string; data: string }> | null>(null);
+    const [injectedContextModal, setInjectedContextModal] = useState<Array<{ source: string; title?: string; data: string }> | null>(null);
     const [showMemoModal, setShowMemoModal] = useState(false);
     const [showQuickMemoModal, setShowQuickMemoModal] = useState(false);
     const [memoInitialId, setMemoInitialId] = useState<string | undefined>(undefined);
@@ -164,8 +164,8 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
         setShowPdfModal(true);
     }, []);
 
-    const handleShowRagContext = useCallback((ctx: Array<{ source: string; data: string }>) => {
-        setRagContextModal(ctx);
+    const handleShowInjectedContext = useCallback((ctx: Array<{ source: string; title?: string; data: string }>) => {
+        setInjectedContextModal(ctx);
     }, []);
 
     const handleOpenMemo = useCallback((memoId: string) => {
@@ -502,7 +502,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                                 loadingMessage=""
                                 convId={conv.currentConvId}
                                 onPdfEdit={handlePdfEdit}
-                                onShowRagContext={handleShowRagContext}
+                                onShowInjectedContext={handleShowInjectedContext}
                                 onOpenMemo={handleOpenMemo}
                                 googleWorkspaceOpen={googleWorkspaceOpen}
                                 selectedGoogleMailId={selectedGoogleMailId}
@@ -529,7 +529,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                                         // FollowupBar에서 선택/입력된 내용이 있으면 메인 입력 앞에 합침
                                         const prefix = followupComposedRef.current?.trim();
                                         const combined = prefix ? `${prefix}\n${message}` : message;
-                                        const sent = await chat.handleSend(combined, images, files, undefined, undefined, undefined, undefined, selectedMcpIds, knowledgeCollectionId);
+                                        const sent = await chat.handleSend(combined, images, files, undefined, undefined, undefined, selectedMcpIds, knowledgeCollectionId);
                                         if (sent !== false) followupComposedRef.current = '';
                                         return sent;
                                     }}
@@ -762,10 +762,10 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                         )}
 
 
-                        {ragContextModal && (
+                        {injectedContextModal && (
                             <RagContextModal
-                                items={ragContextModal}
-                                onClose={() => setRagContextModal(null)}
+                                items={injectedContextModal}
+                                onClose={() => setInjectedContextModal(null)}
                             />
                         )}
 

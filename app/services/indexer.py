@@ -322,7 +322,19 @@ async def knowledge_collection_search(collection_id: str, query: str, size: int 
                                 **({"inline_images": item.get("inline_images", [])} if is_email_thread else {}),
                                 **({"memo_id": item.get("id", hit["_id"])} if is_memo else {})})
         results.sort(key=lambda item: item["score"], reverse=True)
-        return results[:size], str(source.get("instruction", "")).strip()
+        selected_results = results[:size]
+        selected_sources = [
+            f"{item.get('source') or 'document'}:{item.get('title') or '(untitled)'}"
+            for item in selected_results
+        ]
+        logger.info(
+            "[knowledge_collection_search] collection=%s query=%r hits=%d sources=%s",
+            collection_id,
+            query,
+            len(selected_results),
+            selected_sources,
+        )
+        return selected_results, str(source.get("instruction", "")).strip()
     except Exception as error:
         logger.warning("[knowledge_collection_search] failed (%s): %s", collection_id, error)
         return [], ""

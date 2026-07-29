@@ -15,8 +15,8 @@ export interface MessageProps {
     pdfFile?: string;
     pdfParams?: Message['pdfParams'];
     onPdfEdit?: (params: NonNullable<Message['pdfParams']>) => void;
-    ragContext?: Array<{ source: string; data: string }>;
-    onShowRagContext?: (ctx: Array<{ source: string; data: string }>) => void;
+    injectedContext?: Array<{ source: string; title?: string; data: string }>;
+    onShowInjectedContext?: (ctx: Array<{ source: string; title?: string; data: string }>) => void;
     onOpenMemo?: (memoId: string) => void;
     isStreaming?: boolean;
     toolStatus?: ToolActivity;

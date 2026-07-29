@@ -286,6 +286,7 @@
     "signatureTemplateBusiness": "Profile business",
     "signatureTemplateCompact": "Compact",
     "signatureTemplateMinimal": "Minimal greeting",
+    "signatureTemplateClassic": "クラシックテキスト",
     "signatureTemplateName": "Alex Kim",
     "signatureTemplateRole": "Brand Designer | VYACT Studio",
     "signatureTemplateEmail": "Email: alex@example.com",
@@ -426,7 +427,18 @@
     "projects": "プロジェクト",
     "projectFolderPathPrompt": "プロジェクトフォルダーのパスを入力してください:",
     "projectEdit": "プロジェクトを編集",
-    "projectCreate": {"title": "プロジェクトを作成", "close": "閉じる", "namePlaceholder": "プロジェクト名", "chooseColor": "プロジェクトの色を選択", "sourceFolders": "ソースフォルダー", "addFolders": "Vyact が読み取り・編集できるフォルダーを追加", "removeFolder": "{{path}} を削除", "cancel": "キャンセル", "create": "プロジェクトを作成", "creating": "作成中…"},
+    "projectCreate": {
+      "title": "プロジェクトを作成",
+      "close": "閉じる",
+      "namePlaceholder": "プロジェクト名",
+      "chooseColor": "プロジェクトの色を選択",
+      "sourceFolders": "ソースフォルダー",
+      "addFolders": "Vyact が読み取り・編集できるフォルダーを追加",
+      "removeFolder": "{{path}} を削除",
+      "cancel": "キャンセル",
+      "create": "プロジェクトを作成",
+      "creating": "作成中…"
+    },
     "deleteAllConfirm": "すべての会話履歴を削除しますか？",
     "deleteProject": "プロジェクトを削除",
     "deleteProjectConfirm": "「{{name}}」プロジェクトと関連する全ての会話を削除しますか？",
@@ -567,7 +579,9 @@
     "indexingStopped": "インデックス作成を停止しました — {{done}}件完了・{{stopped}}件停止済み",
     "stopIndexing": "インデックス作成を停止",
     "stopRequested": "停止をリクエストしました",
-    "indexStates": { "stopped": "停止済み" },
+    "indexStates": {
+      "stopped": "停止済み"
+    },
     "error": "エラーが発生しました。",
     "deleteError": "削除中にエラーが発生しました。",
     "uploadMore": "別のファイルをアップロード",
@@ -622,6 +636,7 @@
       "pending": "Queued",
       "processing": "Processing",
       "done": "Done",
+      "stopped": "停止",
       "skipped": "Duplicate",
       "error": "Failed"
     }
@@ -877,7 +892,46 @@
     "document": "文書 ({{type}})",
     "pastedText": "貼り付けテキスト"
   },
-  "knowledgeCollections": {"none":"すべての知識","select":"知識コレクション","search":"コレクションを検索...","title":"知識コレクション","subtitle":"ドキュメントとメモをまとめて RAG の範囲を絞ります。","close":"閉じる","empty":"知識コレクションはまだありません。","noDescription":"説明なし","sources":"ドキュメント {{documents}} · メモ {{memos}}","edit":"編集","delete":"削除","deleteConfirmTitle":"「{{name}}」コレクションを削除しますか？","deleteConfirmDescription":"コレクションから関連資料が削除されます。","create":"コレクションを作成","name":"名前","namePlaceholder":"例: Apollo リリース","description":"説明","descriptionPlaceholder":"このコレクションの用途","instruction":"コレクション指示","instructionPlaceholder":"このコレクションを使う回答への任意の指示","save":"保存","cancel":"キャンセル"}
-,
-  "knowledgeCollectionSources": {"attachSources":"資料を添付","attachedCount":"{{count}}件を添付","loadingSources":"資料を読み込み中...","addingEmail":"ナレッジコレクションに追加中…","removingEmail":"ナレッジコレクションから削除中…","noSources":"添付できる資料がありません。","untitledMemo":"無題のメモ","noSubject":"件名なし","back":"一覧へ","removeItem":"コレクションから削除","selectItem":"左から資料を選択してください。","document":"文書","memo":"メモ","email_thread":"メール"}
+  "knowledgeCollections": {
+    "eyebrow": "ナレッジライブラリ",
+    "savedTitle": "保存済みコレクション",
+    "none": "すべての知識",
+    "select": "知識コレクション",
+    "search": "コレクションを検索...",
+    "title": "知識コレクション",
+    "subtitle": "ドキュメントとメモをまとめて RAG の範囲を絞ります。",
+    "close": "閉じる",
+    "empty": "知識コレクションはまだありません。",
+    "noDescription": "説明なし",
+    "sources": "ドキュメント {{documents}} · メモ {{memos}}",
+    "edit": "編集",
+    "delete": "削除",
+    "deleteConfirmTitle": "「{{name}}」コレクションを削除しますか？",
+    "deleteConfirmDescription": "コレクションから関連資料が削除されます。",
+    "create": "コレクションを作成",
+    "name": "名前",
+    "namePlaceholder": "例: Apollo リリース",
+    "description": "説明",
+    "descriptionPlaceholder": "このコレクションの用途",
+    "instruction": "コレクション指示",
+    "instructionPlaceholder": "このコレクションを使う回答への任意の指示",
+    "save": "保存",
+    "cancel": "キャンセル"
+  },
+  "knowledgeCollectionSources": {
+    "attachSources": "資料を添付",
+    "attachedCount": "{{count}}件を添付",
+    "loadingSources": "資料を読み込み中...",
+    "addingEmail": "ナレッジコレクションに追加中…",
+    "removingEmail": "ナレッジコレクションから削除中…",
+    "noSources": "添付できる資料がありません。",
+    "untitledMemo": "無題のメモ",
+    "noSubject": "件名なし",
+    "back": "一覧へ",
+    "removeItem": "コレクションから削除",
+    "selectItem": "左から資料を選択してください。",
+    "document": "文書",
+    "memo": "メモ",
+    "email_thread": "メール"
+  }
 }

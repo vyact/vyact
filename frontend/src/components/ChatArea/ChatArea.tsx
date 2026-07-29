@@ -102,7 +102,7 @@ interface ChatAreaProps {
     imageGenMessage?: string;
     loadingMessage?: string;
     onPdfEdit?: (params: NonNullable<MessageType['pdfParams']>) => void;
-    onShowRagContext?: (ctx: Array<{ source: string; data: string }>) => void;
+    onShowInjectedContext?: (ctx: Array<{ source: string; title?: string; data: string }>) => void;
     onOpenMemo?: (memoId: string) => void;
     convId?: string;
     children?: React.ReactNode;
@@ -134,7 +134,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                                                imageGenMessage = '',
                                                loadingMessage = '',
                                                onPdfEdit,
-                                               onShowRagContext,
+                                               onShowInjectedContext,
                                                onOpenMemo,
                                                convId,
                                                children,
@@ -502,8 +502,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                                 isGeneratedImage={msg.isGeneratedImage}
                                 articleSources={msg.articleSources}
                                 pdfFile={msg.pdfFile}
-                                ragContext={msg.ragContext}
-                                onShowRagContext={onShowRagContext}
+                                injectedContext={msg.injectedContext}
+                                onShowInjectedContext={onShowInjectedContext}
                                 onOpenMemo={onOpenMemo}
                                 pdfParams={msg.pdfParams}
                                 onPdfEdit={onPdfEdit}

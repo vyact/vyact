@@ -10,7 +10,8 @@ type StoredConversationMessage = Message & {
     pdf_file?: string;
     pdf_params?: Message['pdfParams'];
     article_sources?: ArticleAttachment[];
-    rag_context?: Message['ragContext'];
+    injected_context?: Message['injectedContext'];
+    rag_context?: Message['injectedContext']; // 이전 대화 레코드 호환용
     tool_calls?: unknown;
 };
 
@@ -84,7 +85,7 @@ export function useConversation() {
     // snake_case → camelCase 변환
     const mapMsg = (msg: StoredConversationMessage, idx?: number): Message => {
         const storedArticleSources = msg.article_sources;
-        const storedRagContext = msg.rag_context;
+        const storedInjectedContext = msg.injected_context || msg.rag_context;
         // assistant 저장 content 말미의 <followups> 블록을 분리
         let content = msg.content;
         let followups: string[] | undefined = msg.followups;
@@ -112,7 +113,9 @@ export function useConversation() {
                     file_id: source.file_id || undefined,
                 }))
                 : msg.articleSources,
-            ragContext: storedRagContext && storedRagContext.length > 0 ? storedRagContext : msg.ragContext,
+            injectedContext: storedInjectedContext && storedInjectedContext.length > 0
+                ? storedInjectedContext
+                : msg.injectedContext,
         };
     };
 

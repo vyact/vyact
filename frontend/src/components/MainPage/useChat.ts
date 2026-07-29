@@ -4,7 +4,7 @@ import {useTranslation} from 'react-i18next';
 import {api} from '../../services/api';
 import {generateUUID} from '../../utils/helpers';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
-import type {Message, ArticleAttachment, RagContextItem, ToolActivity} from '../../types';
+import type {Message, ArticleAttachment, InjectedContextItem, ToolActivity} from '../../types';
 import {IMAGE_MODEL_IDS} from './useModels';
 import {streamSSE} from '../../utils/streamClient';
 import {parseFollowups} from '../../utils/markdownUtils';
@@ -215,7 +215,6 @@ export function useChat(deps: UseChatDeps) {
         systemPromptOverride?: string,
         voiceMode?: boolean,
         extraArticles?: ArticleAttachment[],
-        ragContext?: Array<{ source: string; data: string }>,
         selectedMcpIds?: string[],
         knowledgeCollectionId?: string,
     ): Promise<boolean> => {
@@ -236,7 +235,7 @@ export function useChat(deps: UseChatDeps) {
 
         isSendingRef.current = true;
         try {
-            return await handleSendInner(query, images, fileAttachments, systemPromptOverride, voiceMode, extraArticles, ragContext, selectedMcpIds, knowledgeCollectionId);
+            return await handleSendInner(query, images, fileAttachments, systemPromptOverride, voiceMode, extraArticles, selectedMcpIds, knowledgeCollectionId);
         } finally {
             isSendingRef.current = false;
         }
@@ -250,7 +249,6 @@ export function useChat(deps: UseChatDeps) {
         systemPromptOverride?: string,
         voiceMode?: boolean,
         extraArticles?: ArticleAttachment[],
-        ragContext?: Array<{ source: string; data: string }>,
         selectedMcpIds?: string[],
         knowledgeCollectionId?: string,
     ): Promise<boolean> => {
@@ -404,7 +402,6 @@ export function useChat(deps: UseChatDeps) {
             role: 'user', content: query, timestamp: userTs,
             attachments: attachments.length > 0 ? attachments : undefined,
             articleSources: articlesSnapshot.length > 0 ? articlesSnapshot : undefined,
-            ragContext: ragContext?.length ? ragContext : undefined,
         };
         // 업로드 진행 표시용 임시 메시지는 히스토리에서 제외
         const prevMessagesSnapshot = uploadStreamId
@@ -513,7 +510,6 @@ export function useChat(deps: UseChatDeps) {
                         articles: articlesSnapshot.length > 0 ? articlesSnapshot : [],
                         article_selection_explicit: true,
                         voice_mode: false,
-                        rag_context: ragContext?.length ? ragContext : [],
                         reasoning: getReasoningEnabled(),
                         folder_path: codeFolderPath || '',
                         project_id: deps.activeProjectId || '',
@@ -570,19 +566,12 @@ export function useChat(deps: UseChatDeps) {
                                 ...articlesSnapshot,
                                 ...esSources.filter(e => !articlesSnapshot.some(a => a.url === e.url)),
                             ];
-                            // "주입된 데이터" 모달용 — 백엔드 rag_context 저장 규칙과 동일 필터
-                            // (파일명 등 title도 같이 넘겨야 "주입된 데이터" 목록에서 파일별로 구분됨)
-                            // zip/파일 첨부(source: zip:, 첨부:, 첨부파일)는 ragContext에서 제외 —
-                            // chat_file_chunks에 인덱싱돼 있으므로 히스토리에 전체 내용을 반복
-                            // 주입하면 수만 토큰이 낭비된다.
-                            const ragContextItems: RagContextItem[] = (streamSources || [])
+                            // "주입된 데이터" 모달용 — 이번 응답에 전달한 비메모 소스를 모두 보관한다.
+                            // 이 목록은 검증 UI 전용이며, 다음 턴의 대화 이력에 재주입되지 않는다.
+                            const injectedContextItems: InjectedContextItem[] = (streamSources || [])
                                 .filter((s: any) => {
                                     if (!s.content) return false;
-                                    if ((s.url || '').startsWith('file://')) return false;
-                                    if (['', null, undefined, 'memo', '붙여넣기'].includes(s.source)) return false;
-                                    const src: string = s.source || '';
-                                    if (src.startsWith('zip:') || src.startsWith('첨부:') || src === '첨부파일') return false;
-                                    return true;
+                                    return !['', null, undefined, 'memo', 'quicknote', '붙여넣기'].includes(s.source);
                                 })
                                 .map((s: any) => ({
                                     source: s.source || s.title || '',
@@ -609,7 +598,7 @@ export function useChat(deps: UseChatDeps) {
                                     timestamp: new Date().toISOString(), toolStatus: undefined,
                                     followups: fuList.length > 0 ? fuList : undefined,
                                     articleSources: mergedSources.length > 0 ? mergedSources : undefined,
-                                    ragContext: ragContextItems.length > 0 ? ragContextItems : undefined,
+                                    injectedContext: injectedContextItems.length > 0 ? injectedContextItems : undefined,
                                     stats: data.stats || m.stats
                                 };
                             }));
@@ -656,7 +645,6 @@ export function useChat(deps: UseChatDeps) {
                 attachments.length > 0 ? attachments : undefined,
                 articlesSnapshot.length > 0 ? articlesSnapshot : undefined,
                 systemPromptOverride, voiceMode,
-                ragContext?.length ? ragContext : undefined,
                 getReasoningEnabled());
 
             const isNewConv = !requestConvId;
@@ -679,15 +667,28 @@ export function useChat(deps: UseChatDeps) {
                 ...articlesSnapshot,
                 ...esSources.filter(e => !articlesSnapshot.some(a => a.url === e.url)),
             ];
+            const injectedContextItems: InjectedContextItem[] = isActionResponse ? [] : (response.sources || [])
+                .filter((source: any) => source.content
+                    && !['', null, undefined, 'memo', 'quicknote', '붙여넣기'].includes(source.source))
+                .map((source: any) => ({
+                    source: source.source || source.title || '',
+                    title: source.title || '',
+                    data: source.content,
+                }));
 
             await loadHistory();
             const finalConvId = response.conv_id || requestConvId;
             if (finalConvId) {
                 const data = await api.getConversation(finalConvId);
                 const rawMessages = (data.messages || []).map((m, i) => mapMsg(m, i));
-                if (mergedSources.length > 0 && rawMessages.length > 0) {
+                if (rawMessages.length > 0) {
                     const lastIdx = rawMessages.length - 1;
-                    if (rawMessages[lastIdx].role === 'assistant') rawMessages[lastIdx].articleSources = mergedSources;
+                    if (rawMessages[lastIdx].role === 'assistant') {
+                        rawMessages[lastIdx].articleSources = mergedSources.length > 0 ? mergedSources : undefined;
+                        rawMessages[lastIdx].injectedContext = injectedContextItems.length > 0
+                            ? injectedContextItems
+                            : rawMessages[lastIdx].injectedContext;
+                    }
                 }
                 setMessagesForConversation(requestConvId, rawMessages);
                 if (showVoiceChatModalRef.current) {
@@ -698,6 +699,7 @@ export function useChat(deps: UseChatDeps) {
                 const botMessage: Message = {
                     role: 'assistant', content: response.answer, timestamp: new Date().toISOString(),
                     model: response.model, articleSources: mergedSources.length > 0 ? mergedSources : undefined,
+                    injectedContext: injectedContextItems.length > 0 ? injectedContextItems : undefined,
                 };
                 setMessagesForConversation(requestConvId, prev => [...prev, botMessage]);
                 if (showVoiceChatModalRef.current)
@@ -760,7 +762,7 @@ export function useChat(deps: UseChatDeps) {
                 }
             } else {
                 const response = await api.chat(query, requestConvId, messagesRef.current, attachments.length > 0 ? attachments : undefined,
-                    undefined, undefined, undefined, undefined, getReasoningEnabled());
+                    undefined, undefined, undefined, getReasoningEnabled());
                 if (response.conv_id && !requestConvId) assignNewConvId(response.conv_id, query);
                 await loadHistory();
                 const finalConvId = response.conv_id || requestConvId;

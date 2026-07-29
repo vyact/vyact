@@ -24,7 +24,7 @@ from routers.deps import load_config_async
 from routers.chat_helpers import (
     extract_paste_context, load_system_prompt, build_attachment_filename_hint,
     resolve_selected_articles, search_file_id_chunks,
-    build_rag_context, build_user_message, build_assistant_message,
+    build_injected_context, build_user_message, build_assistant_message,
     filter_article_sources,
 )
 
@@ -175,7 +175,6 @@ class QueryRequest(BaseModel):
     voice_mode: bool = False  # 음성 대화 모드 (format_instruction 제거)
     user_timestamp: str = ""  # 전송 시점 timestamp (프론트에서 전달)
     no_history: bool = False  # True면 히스토리 저장 안 함
-    rag_context: list = []  # API 조회 데이터 (히스토리 전달용)
     reasoning: bool = False  # True면 추론(gemma thinking) 켬. 프론트/확장 로컬 스위치로 제어. 기본 off
     folder_path: str = ""  # 코드 분석용 폴더 경로 (프론트에서 선택)
     project_id: str = ""
@@ -402,10 +401,10 @@ async def query(req: QueryRequest):
 
     user_ts = req.user_timestamp or datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     result_sources = result.get("sources", [])
-    rag_ctx = build_rag_context(result_sources)
-    user_message = build_user_message(original_question, user_ts, req.attachments, articles, rag_ctx)
+    injected_context = build_injected_context(result_sources)
+    user_message = build_user_message(original_question, user_ts, req.attachments, articles)
     article_sources = filter_article_sources(result_sources)
-    assistant_msg = build_assistant_message(result["answer"], result.get("model", ""), article_sources, rag_ctx)
+    assistant_msg = build_assistant_message(result["answer"], result.get("model", ""), article_sources, injected_context)
 
     messages = req.messages + [user_message, assistant_msg]
     result["conv_id"] = conv_id
@@ -703,11 +702,11 @@ async def query_stream(req: QueryRequest):
                 from services.conv_summary import extract_summary_tags, save_conv_summary, append_attachment_summary
                 answer, _conv_summary, _project_summary = extract_summary_tags(answer)
 
-                rag_ctx = build_rag_context(gen_sources)
-                user_message = build_user_message(original_question, user_ts, req.attachments, rag_ctx=rag_ctx)
+                injected_context = build_injected_context(gen_sources)
+                user_message = build_user_message(original_question, user_ts, req.attachments)
                 # "참고" 표시용 — url이 있는 소스만
                 article_sources = [s for s in gen_sources if s.get("url") and s.get("source") != "붙여넣기"]
-                assistant_msg = build_assistant_message(answer, gen_model, article_sources, rag_ctx, gen_stats)
+                assistant_msg = build_assistant_message(answer, gen_model, article_sources, injected_context, gen_stats)
 
                 # 여기까진 전부 순수 계산(빠름). ES 저장(save_conversation의 refresh=True 등)과
                 # 첨부파일 임베딩 인덱싱은 실제 I/O라 느릴 수 있는데, 통계/텍스트는 이미 다 준비됐으니
@@ -780,10 +779,10 @@ async def query_stream(req: QueryRequest):
             answer = "".join(parts).strip()
 
             # ── 히스토리 저장 (공통 헬퍼 사용) ──
-            rag_ctx = build_rag_context(context_docs)
-            user_message = build_user_message(original_question, user_ts, req.attachments, articles, rag_ctx)
+            injected_context = build_injected_context(context_docs)
+            user_message = build_user_message(original_question, user_ts, req.attachments, articles)
             article_sources = filter_article_sources(context_docs)
-            assistant_msg = build_assistant_message(answer, model, article_sources, rag_ctx, stats)
+            assistant_msg = build_assistant_message(answer, model, article_sources, injected_context, stats)
 
             if not req.no_history:
                 try:

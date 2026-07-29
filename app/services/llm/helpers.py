@@ -75,28 +75,6 @@ def mime_type(filename: str) -> str:
     return f"image/{ext}" if ext in ("jpeg", "jpg", "png", "gif", "webp") else "image/jpeg"
 
 
-def inject_rag_context(content: str, rag_context: list) -> str:
-    """rag_context를 user 메시지 content에 조용히 주입
-
-    zip 파일 출처(source가 'zip:'으로 시작)는 주입 제외.
-    zip 내용은 ES에 인덱싱돼 있으므로 file_id 경로로 검색하면 되고,
-    히스토리 재주입 시 통째로 꽂으면 후속 질문마다 수만 토큰이 낭비된다.
-    """
-    if not rag_context:
-        return content
-    parts = [
-        f"[{r['source']}]\n{r['data']}"
-        for r in rag_context
-        if r.get("data")
-           and not (r.get("source", "")).startswith("zip:")
-           and not (r.get("source", "")).startswith("첨부:")
-           and r.get("source") != "첨부파일"
-    ]
-    if not parts:
-        return content
-    return content + "\n\n[참고 데이터]\n" + "\n\n".join(parts)
-
-
 def history_for_ollama(history_messages: list, valid_history: list) -> list:
     """Ollama용 history: user 메시지에 이미지 포함"""
     result = []
@@ -117,7 +95,6 @@ def history_for_ollama(history_messages: list, valid_history: list) -> list:
             imgs = load_images_b64(atts)
             if imgs:
                 entry["images"] = imgs
-            entry["content"] = inject_rag_context(entry["content"], valid_history[hi].get("rag_context", []))
         if msg["role"] == "user":
             hi += 1
         result.append(entry)
@@ -139,8 +116,7 @@ def history_for_openai(history_messages: list, valid_history: list) -> list:
         if msg["role"] == "user" and hi < len(valid_history):
             atts = valid_history[hi].get("attachments", [])
             imgs = load_images_b64(atts)
-            rag = valid_history[hi].get("rag_context", [])
-            text = inject_rag_context(msg["content"], rag)
+            text = msg["content"]
             if imgs:
                 content: list = [{"type": "text", "text": text}]
                 for b64 in imgs:
@@ -173,8 +149,7 @@ def history_for_gemini(history_messages: list, valid_history: list) -> list:
         role = "user" if msg["role"] == "user" else "model"
         if msg["role"] == "user" and hi < len(valid_history):
             atts = valid_history[hi].get("attachments", [])
-            rag = valid_history[hi].get("rag_context", [])
-            parts: list = [{"text": inject_rag_context(msg["content"], rag)}]
+            parts: list = [{"text": msg["content"]}]
             for att in atts:
                 if att.get("type") == "image":
                     path = IMAGES_DIR / att["filename"]
@@ -218,8 +193,7 @@ def history_for_claude(history_messages: list, valid_history: list) -> list:
                                            "source": {"type": "base64",
                                                       "media_type": mime_type(att["filename"]),
                                                       "data": base64.b64encode(path.read_bytes()).decode()}})
-            rag = valid_history[hi].get("rag_context", [])
-            text = inject_rag_context(msg["content"], rag)
+            text = msg["content"]
             if img_blocks:
                 content: list = [{"type": "text", "text": text}] + img_blocks
                 result.append({"role": "user", "content": content})

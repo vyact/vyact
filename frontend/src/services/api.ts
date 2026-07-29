@@ -522,7 +522,6 @@ export const api = {
         articles?: ArticleAttachment[],
         systemPromptOverride?: string,
         voiceMode?: boolean,
-        ragContext?: Array<{ source: string; data: string }>,
         reasoning: boolean = true
     ): Promise<ChatResponse> {
         const res = await fetch(`${API_BASE}/query`, {
@@ -539,7 +538,6 @@ export const api = {
                 reasoning,
                 ...(systemPromptOverride !== undefined && {system_prompt: systemPromptOverride}),
                 ...(voiceMode && {voice_mode: true}),
-                ...(ragContext?.length && {rag_context: ragContext}),
             }),
         });
         return res.json();

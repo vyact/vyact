@@ -76,7 +76,7 @@ export interface InstalledPlugin {
     settings?: PluginSettingsDefinition;
 }
 
-export interface RagContextItem {
+export interface InjectedContextItem {
     source: string;
     title?: string;
     data: string;
@@ -120,7 +120,7 @@ export interface Message {
     isGeneratedImage?: boolean;
     articleSources?: ArticleAttachment[];  // 기사 기반 질의 시 참고 기사
     pdfFile?: string;
-    ragContext?: RagContextItem[];  // API 조회 데이터 (히스토리 전달용)
+    injectedContext?: InjectedContextItem[];  // 이번 응답의 LLM 주입 데이터 (검증용)
     stats?: MessageStats;  // 토큰수/처리시간 통계 (ollama만 해당, 응답(assistant) 메시지에 저장)
     pdfParams?: {
         prompt: string;

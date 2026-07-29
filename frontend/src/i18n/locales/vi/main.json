@@ -286,6 +286,7 @@
     "signatureTemplateBusiness": "Profile business",
     "signatureTemplateCompact": "Compact",
     "signatureTemplateMinimal": "Minimal greeting",
+    "signatureTemplateClassic": "Văn bản cổ điển",
     "signatureTemplateName": "Alex Kim",
     "signatureTemplateRole": "Brand Designer | VYACT Studio",
     "signatureTemplateEmail": "Email: alex@example.com",
@@ -426,7 +427,18 @@
     "projects": "Dự án",
     "projectFolderPathPrompt": "Nhập đường dẫn thư mục dự án:",
     "projectEdit": "Chỉnh sửa dự án",
-    "projectCreate": {"title": "Tạo dự án", "close": "Đóng", "namePlaceholder": "Tên dự án", "chooseColor": "Chọn màu dự án", "sourceFolders": "Thư mục nguồn", "addFolders": "Thêm thư mục mà Vyact có thể đọc và chỉnh sửa", "removeFolder": "Xóa {{path}}", "cancel": "Hủy", "create": "Tạo dự án", "creating": "Đang tạo…"},
+    "projectCreate": {
+      "title": "Tạo dự án",
+      "close": "Đóng",
+      "namePlaceholder": "Tên dự án",
+      "chooseColor": "Chọn màu dự án",
+      "sourceFolders": "Thư mục nguồn",
+      "addFolders": "Thêm thư mục mà Vyact có thể đọc và chỉnh sửa",
+      "removeFolder": "Xóa {{path}}",
+      "cancel": "Hủy",
+      "create": "Tạo dự án",
+      "creating": "Đang tạo…"
+    },
     "deleteAllConfirm": "Xóa toàn bộ lịch sử hội thoại?",
     "deleteProject": "Xóa dự án",
     "deleteProjectConfirm": "Xóa '{{name}}' và mọi hội thoại liên quan?",
@@ -567,7 +579,9 @@
     "indexingStopped": "Đã dừng lập chỉ mục — hoàn tất {{done}} · đã dừng {{stopped}}",
     "stopIndexing": "Dừng lập chỉ mục",
     "stopRequested": "Đã yêu cầu dừng",
-    "indexStates": { "stopped": "Đã dừng" },
+    "indexStates": {
+      "stopped": "Đã dừng"
+    },
     "error": "Đã xảy ra lỗi.",
     "deleteError": "Đã xảy ra lỗi khi xóa.",
     "uploadMore": "Tải thêm tệp",
@@ -622,6 +636,7 @@
       "pending": "Queued",
       "processing": "Processing",
       "done": "Done",
+      "stopped": "Đã dừng",
       "skipped": "Duplicate",
       "error": "Failed"
     }
@@ -877,7 +892,46 @@
     "document": "Tài liệu ({{type}})",
     "pastedText": "Văn bản đã dán"
   },
-  "knowledgeCollections": {"none":"Tất cả kiến thức","select":"Bộ sưu tập kiến thức","search":"Tìm bộ sưu tập...","title":"Bộ sưu tập kiến thức","subtitle":"Nhóm tài liệu và ghi chú để giới hạn ngữ cảnh RAG.","close":"Đóng","empty":"Chưa có bộ sưu tập kiến thức.","noDescription":"Không có mô tả","sources":"Tài liệu {{documents}} · Ghi chú {{memos}}","edit":"Chỉnh sửa","delete":"Xóa","deleteConfirmTitle":"Xóa bộ sưu tập “{{name}}”?","deleteConfirmDescription":"Các nguồn được liên kết sẽ bị gỡ khỏi bộ sưu tập.","create":"Tạo bộ sưu tập","name":"Tên","namePlaceholder":"Ví dụ: Ra mắt Apollo","description":"Mô tả","descriptionPlaceholder":"Bộ sưu tập này dùng để làm gì?","instruction":"Hướng dẫn bộ sưu tập","instructionPlaceholder":"Hướng dẫn tùy chọn cho câu trả lời dùng bộ sưu tập này.","save":"Lưu","cancel":"Hủy"}
-,
-  "knowledgeCollectionSources": {"attachSources":"Đính kèm nguồn","attachedCount":"Đã đính kèm {{count}} nguồn","loadingSources":"Đang tải nguồn...","addingEmail":"Đang thêm vào bộ sưu tập kiến thức…","removingEmail":"Đang xóa khỏi bộ sưu tập kiến thức…","noSources":"Không có nguồn để đính kèm.","untitledMemo":"Ghi chú chưa đặt tên","noSubject":"Không có chủ đề","back":"Quay lại danh sách","removeItem":"Xóa khỏi bộ sưu tập","selectItem":"Chọn nguồn ở bên trái.","document":"Tài liệu","memo":"Ghi chú","email_thread":"Email"}
+  "knowledgeCollections": {
+    "eyebrow": "Thư viện kiến thức",
+    "savedTitle": "Bộ sưu tập đã lưu",
+    "none": "Tất cả kiến thức",
+    "select": "Bộ sưu tập kiến thức",
+    "search": "Tìm bộ sưu tập...",
+    "title": "Bộ sưu tập kiến thức",
+    "subtitle": "Nhóm tài liệu và ghi chú để giới hạn ngữ cảnh RAG.",
+    "close": "Đóng",
+    "empty": "Chưa có bộ sưu tập kiến thức.",
+    "noDescription": "Không có mô tả",
+    "sources": "Tài liệu {{documents}} · Ghi chú {{memos}}",
+    "edit": "Chỉnh sửa",
+    "delete": "Xóa",
+    "deleteConfirmTitle": "Xóa bộ sưu tập “{{name}}”?",
+    "deleteConfirmDescription": "Các nguồn được liên kết sẽ bị gỡ khỏi bộ sưu tập.",
+    "create": "Tạo bộ sưu tập",
+    "name": "Tên",
+    "namePlaceholder": "Ví dụ: Ra mắt Apollo",
+    "description": "Mô tả",
+    "descriptionPlaceholder": "Bộ sưu tập này dùng để làm gì?",
+    "instruction": "Hướng dẫn bộ sưu tập",
+    "instructionPlaceholder": "Hướng dẫn tùy chọn cho câu trả lời dùng bộ sưu tập này.",
+    "save": "Lưu",
+    "cancel": "Hủy"
+  },
+  "knowledgeCollectionSources": {
+    "attachSources": "Đính kèm nguồn",
+    "attachedCount": "Đã đính kèm {{count}} nguồn",
+    "loadingSources": "Đang tải nguồn...",
+    "addingEmail": "Đang thêm vào bộ sưu tập kiến thức…",
+    "removingEmail": "Đang xóa khỏi bộ sưu tập kiến thức…",
+    "noSources": "Không có nguồn để đính kèm.",
+    "untitledMemo": "Ghi chú chưa đặt tên",
+    "noSubject": "Không có chủ đề",
+    "back": "Quay lại danh sách",
+    "removeItem": "Xóa khỏi bộ sưu tập",
+    "selectItem": "Chọn nguồn ở bên trái.",
+    "document": "Tài liệu",
+    "memo": "Ghi chú",
+    "email_thread": "Email"
+  }
 }

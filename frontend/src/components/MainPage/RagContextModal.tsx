@@ -6,14 +6,14 @@ import { renderMarkdown } from '../../utils/markdownUtils';
 import { cleanNewsText } from '../../utils/helpers';
 import { getLocalizedSourceLabel } from '../../utils/sourceLabels';
 
-interface RagContextItem {
+interface InjectedContextItem {
     source: string;
     title?: string;
     data: string;
 }
 
 interface RagContextModalProps {
-    items: RagContextItem[];
+    items: InjectedContextItem[];
     onClose: () => void;
 }
 
