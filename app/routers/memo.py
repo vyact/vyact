@@ -21,6 +21,7 @@ from config import INSTALL_DIR
 from logger import get_logger
 from services.db import MEMO_INDEX, get_es
 from services.indexer import get_embedding
+from services.knowledge_collection_references import remove_source_references_from_collections
 from bs4 import BeautifulSoup
 
 logger = get_logger(__name__)
@@ -242,8 +243,9 @@ async def delete_memo(memo_id: str):
     es = get_es()
     try:
         await es.delete(index=MEMO_INDEX, id=memo_id, refresh=True)
+        collections_updated = await remove_source_references_from_collections(es, "memo", [memo_id])
         shutil.rmtree(_attachment_dir(memo_id), ignore_errors=True)
-        return {"deleted": memo_id}
+        return {"deleted": memo_id, "collections_updated": collections_updated}
     except Exception:
         raise HTTPException(status_code=404, detail="메모를 찾을 수 없습니다.")
     finally:

@@ -27,6 +27,7 @@ from services.document_parser import Chunk, parse_file, parse_file_to_chunks, pa
 from services.indexer import get_embedding
 from elasticsearch.helpers import async_bulk
 from services.db import INDEX_NAME, DOC_CHUNKS_INDEX, FILES_INDEX, get_es
+from services.knowledge_collection_references import remove_source_references_from_collections
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -439,6 +440,7 @@ async def delete_all_files():
             index=FILES_INDEX,
             body={"size": MAX_SAVED_FILES, "_source": ["original_path"]},
         )
+        file_ids = [hit["_id"] for hit in res["hits"]["hits"]]
         deleted_originals = 0
         for hit in res["hits"]["hits"]:
             original_path = hit["_source"].get("original_path")
@@ -456,10 +458,12 @@ async def delete_all_files():
             body={"query": {"match_all": {}}},
             refresh=True,
         )
+        collections_updated = await remove_source_references_from_collections(es, "document", file_ids)
         return {
             "files_deleted": files_result.get("deleted", 0),
             "originals_deleted": deleted_originals,
             "chunks_deleted": chunks_result.get("deleted", 0),
+            "collections_updated": collections_updated,
         }
     finally:
         await es.close()
@@ -524,11 +528,13 @@ async def delete_file(file_id: str):
 
         # 3. rag_files 메타 삭제
         await es.delete(index=FILES_INDEX, id=file_id, refresh=True)
+        collections_updated = await remove_source_references_from_collections(es, "document", [file_id])
 
         return {
             "deleted": filename,
             "file_id": file_id,
             "chunks_deleted": deleted_chunks,
+            "collections_updated": collections_updated,
         }
     finally:
         await es.close()
