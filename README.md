@@ -130,14 +130,14 @@ Download the installer for **Apple Silicon Macs (M1 or later)** or **Windows** f
 
 ### Before your first launch
 
-Vyact is built around local models, so install [Ollama](https://ollama.com/download) and make sure **Python 3.11 or 3.12** is available before opening the app for the first time.
+Vyact is built around local models, so install [Ollama](https://ollama.com/download) and make sure **Python 3.12** is available before opening the app for the first time.
 
 | Platform | Required | Optional |
 | --- | --- | --- |
-| macOS (Apple Silicon) | Ollama, Python 3.11 or 3.12, [Homebrew](https://brew.sh/) | Docker Desktop |
-| Windows | Ollama, Python 3.11 or 3.12 | Docker Desktop, [Chocolatey](https://chocolatey.org/) |
+| macOS (Apple Silicon) | Ollama, Python 3.12, [Homebrew](https://brew.sh/) | Docker Desktop |
+| Windows | Ollama, Python 3.12 | Docker Desktop, [Chocolatey](https://chocolatey.org/) |
 
-> **Windows:** When installing Python 3.11 or 3.12, select **“Add python.exe to PATH”**.
+> **Windows:** When installing Python 3.12, select **“Add python.exe to PATH”**.
 
 Docker Desktop is optional. On first launch, Vyact prepares everything else automatically.
 

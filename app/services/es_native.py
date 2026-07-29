@@ -249,23 +249,24 @@ async def install_native_es() -> AsyncGenerator[tuple, None]:
         yield (0, f"설정 실패: {e}", "error")
         return
 
-    # nori 한국어 분석기 설치 (인덱스가 nori 사용)
-    logger.info("한국어 분석기(nori) 설치 중...")
-    yield (72, "한국어 분석기(nori) 설치 중...", "info")
+    # 다국어 RAG 분석 플러그인 설치. 영어·프랑스어·스페인어·태국어는 ES 내장 analyzer다.
+    analysis_plugins = ("analysis-nori", "analysis-kuromoji", "analysis-smartcn", "analysis-icu")
+    logger.info("다국어 분석기 설치 중: %s", ", ".join(analysis_plugins))
+    yield (72, "다국어 검색 분석기 설치 중...", "info")
     try:
         plugin = _es_plugin_binary()
         if platform.system() != "Windows":
             os.chmod(plugin, 0o755)
         proc = await asyncio.create_subprocess_exec(
-            str(plugin), "install", "--batch", "analysis-nori",
+            str(plugin), "install", "--batch", *analysis_plugins,
             stdout=asyncio.subprocess.DEVNULL,
             stderr=asyncio.subprocess.DEVNULL,
         )
         await proc.wait()
         # 이미 설치돼 있으면 non-zero 나올 수 있으나 치명적 아님
     except Exception as e:
-        logger.error(f"nori 설치 경고: {e}")
-        yield (72, f"nori 설치 경고: {e}", "info")
+        logger.error(f"분석기 설치 경고: {e}")
+        yield (72, f"분석기 설치 경고: {e}", "info")
 
     # 부팅 자동시작 등록
     logger.info("부팅 시 자동 시작 등록 중...")

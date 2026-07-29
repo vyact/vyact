@@ -262,7 +262,7 @@ function isSupportedPython(pythonBin, args = [], env = envWithChoco()) {
         const versionMatch = `${result.stdout || ""}${result.stderr || ""}`.match(/Python (\d+)\.(\d+)/i);
         const major = Number(versionMatch?.[1]);
         const minor = Number(versionMatch?.[2]);
-        return result.status === 0 && major === 3 && minor >= 11 && minor <= 12;
+        return result.status === 0 && major === 3 && minor === 12;
     } catch {
         return false;
     }
@@ -270,9 +270,8 @@ function isSupportedPython(pythonBin, args = [], env = envWithChoco()) {
 
 function resolvePython() {
     const candidates = [
-        // Kokoro supports Python 3.11 and 3.12, so prefer those explicitly.
+        // Lingua 2.2.0 requires Python 3.12 or newer.
         {cmd: "py", args: ["-3.12"]},
-        {cmd: "py", args: ["-3.11"]},
         {cmd: "py", args: ["-3"]},
         {cmd: "python", args: []},
         {cmd: "python3", args: []},
@@ -289,7 +288,7 @@ function resolvePython() {
             }
         } catch {}
     }
-    log("❌ Python 3.11 or 3.12 not found");
+    log("❌ Python 3.12 not found");
     return null;
 }
 
@@ -392,16 +391,16 @@ function checkAndInstallPython() {
                 type: "question",
                 buttons: ["Install Python manually", "Later"],
                 title: "Python Required",
-                message: "Failed to auto-install Python.\nPlease install Python 3.11 or 3.12 from https://www.python.org/downloads/",
+        message: "Failed to auto-install Python.\nPlease install Python 3.12 from https://www.python.org/downloads/",
             });
             if (choice === 0) shell.openExternal("https://www.python.org/downloads/");
             return false;
         }
     }
 
-    if (chocoInstall("python311")) {
-        log("✅ Python 3.11 installed (choco)");
-        process.env.PATH = `C:\\Python311;C:\\Python311\\Scripts;${process.env.PATH}`;
+    if (chocoInstall("python312")) {
+        log("✅ Python 3.12 installed (choco)");
+        process.env.PATH = `C:\\Python312;C:\\Python312\\Scripts;${process.env.PATH}`;
         return true;
     }
 
@@ -411,7 +410,7 @@ function checkAndInstallPython() {
         type: "question",
         buttons: ["Install Python manually", "Later"],
         title: "Python Required",
-        message: "Failed to auto-install Python.\nPlease install Python 3.11 or 3.12 from https://www.python.org/downloads/",
+                message: "Failed to auto-install Python.\nPlease install Python 3.12 from https://www.python.org/downloads/",
     });
     if (choice === 0) shell.openExternal("https://www.python.org/downloads/");
     return false;

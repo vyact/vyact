@@ -216,7 +216,7 @@ function isSupportedPython(pythonBin, env) {
         const versionMatch = `${result.stdout || ""}${result.stderr || ""}`.match(/Python (\d+)\.(\d+)/i);
         const major = Number(versionMatch?.[1]);
         const minor = Number(versionMatch?.[2]);
-        return result.status === 0 && major === 3 && minor >= 11 && minor <= 12;
+        return result.status === 0 && major === 3 && minor === 12;
     } catch {
         return false;
     }
@@ -242,24 +242,24 @@ function resolvePython() {
         ).toString().trim();
 
         if (isSupportedPython(pyenvPython, baseEnv)) {
-            log(`✅ Using pyenv Python 3.11 or 3.12: ${pyenvPython}`);
+            log(`✅ Using pyenv Python 3.12: ${pyenvPython}`);
             return pyenvPython;
         }
-        log(`⚠️ pyenv Python is not 3.11 or 3.12: ${pyenvPython}`);
+        log(`⚠️ pyenv Python is not 3.12: ${pyenvPython}`);
 
     } catch (e) {
         log("⚠️ pyenv not found → checking system python3");
     }
 
-    const systemCandidates = ["python3.12", "python3.11", "python3"];
+    const systemCandidates = ["python3.12", "python3"];
     for (const pythonBin of systemCandidates) {
         if (isSupportedPython(pythonBin, baseEnv)) {
-            log(`✅ Using system Python 3.11 or 3.12: ${pythonBin}`);
+            log(`✅ Using system Python 3.12: ${pythonBin}`);
             return pythonBin;
         }
     }
 
-    log("❌ Python 3.11 or 3.12 not found");
+    log("❌ Python 3.12 not found");
     return null;
 }
 
@@ -466,17 +466,15 @@ async function startServer() {
     // ── venv 및 서버 필수 패키지 준비 ─────────────────────────
     // 서버는 setup 화면을 제공하기 전부터 FastAPI/uvicorn이 필요하므로,
     // requirements 설치는 이 단계에서 한 번만 수행한다.
-    const uvicornCheck = path.join(VENV_DIR, "lib", "python3.11", "site-packages", "uvicorn");
-    const hasUvicorn = fs.existsSync(path.join(VENV_DIR, "lib"))
-        ? fs.existsSync(uvicornCheck) || fs.existsSync(path.join(VENV_DIR, "lib", "python3.12", "site-packages", "uvicorn"))
-        : false;
+    const uvicornCheck = path.join(VENV_DIR, "lib", "python3.12", "site-packages", "uvicorn");
+    const hasUvicorn = fs.existsSync(uvicornCheck);
     if (!fs.existsSync(python) || !hasUvicorn) {
         log("▸ Creating virtual environment (venv)");
 
         try {
             const pythonBin = resolvePython();
             if (!pythonBin) {
-                throw new Error("Python 3.11 or 3.12 is required");
+                throw new Error("Python 3.12 is required");
             }
             log(`👉 Using python: ${pythonBin}`);
 
