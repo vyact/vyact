@@ -379,6 +379,7 @@ async def ensure_index():
                     }},
                     "created_at": {"type": "date"},
                     "updated_at": {"type": "date"},
+                    "sort_order": {"type": "integer"},
                 }},
             )
             logger.info("knowledge_collections 인덱스 생성 완료")
