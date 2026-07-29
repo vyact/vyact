@@ -947,8 +947,20 @@ async def index_mail_thread_for_knowledge(thread_id: str, request: MailKnowledge
         {"message_id": detail["id"], **attachment}
         for detail in details for attachment in detail.get("attachments", [])
     ]
+    thread_messages = [
+        {
+            "id": detail["id"],
+            "from": detail.get("from", ""),
+            "to": detail.get("to", ""),
+            "cc": detail.get("cc", ""),
+            "date": detail.get("date", ""),
+            "subject": detail.get("subject", ""),
+            "body": detail.get("body", ""),
+        }
+        for detail in details
+    ]
     document = {"account_id": request.account_id, "thread_id": thread_id, "subject": subject,
-                "content": content, "message_count": len(details), "attachments": attachment_metadata,
+                "content": content, "messages": thread_messages, "message_count": len(details), "attachments": attachment_metadata,
                 "indexed_at": _dt.utcnow().isoformat()}
     if embedding:
         document["embedding"] = embedding
