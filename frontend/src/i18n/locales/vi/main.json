@@ -842,6 +842,7 @@
     "fileInfo": "Đang kiểm tra thông tin tệp",
     "allowedDirectories": "Đang kiểm tra thư mục được phép truy cập",
     "searchContext": "Đang tìm ngữ cảnh liên quan",
+    "searchKnowledgeCollection": "Đang tìm nguồn liên quan trong bộ sưu tập",
     "economyData": "Đang tra cứu dữ liệu kinh tế",
     "weatherData": "Đang tra cứu thời tiết",
     "tourData": "Đang tra cứu thông tin du lịch",

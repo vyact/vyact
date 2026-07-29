@@ -842,6 +842,7 @@
     "fileInfo": "正在检查文件信息",
     "allowedDirectories": "正在检查可访问文件夹",
     "searchContext": "正在查找相关内容",
+    "searchKnowledgeCollection": "正在集合中查找相关资料",
     "economyData": "正在查询经济数据",
     "weatherData": "正在查询天气",
     "tourData": "正在查询旅游信息",

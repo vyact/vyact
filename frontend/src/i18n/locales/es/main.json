@@ -842,6 +842,7 @@
     "fileInfo": "Comprobando información del archivo",
     "allowedDirectories": "Comprobando carpetas accesibles",
     "searchContext": "Buscando contexto relacionado",
+    "searchKnowledgeCollection": "Buscando fuentes relacionadas en la colección",
     "economyData": "Consultando datos económicos",
     "weatherData": "Consultando el clima",
     "tourData": "Consultando información de viajes",

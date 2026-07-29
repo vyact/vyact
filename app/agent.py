@@ -211,7 +211,9 @@ async def rag_query_stream(
     collection_instruction = ""
     collection_docs: list[dict] = []
     if knowledge_collection_id:
+        yield {"type": "tool", "phase": "start", "name": "search_knowledge_collection"}
         collection_docs, collection_instruction = await knowledge_collection_search(knowledge_collection_id, question, size=8)
+        yield {"type": "tool", "phase": "end", "name": "search_knowledge_collection"}
         docs = list(extra_context) + collection_docs
     elif skip_rag:
         docs = list(extra_context)
@@ -276,7 +278,9 @@ async def rag_query_stream(
             reasoning=reasoning,
             format_instruction_override=format_instruction_override,
             conversation_summary=conversation_summary,
-            post_tool_docs=_post_tool_docs if (is_ollama and not skip_rag) else None,
+            # 컬렉션은 위에서 검색한 결과를 첫 프롬프트에 이미 넣었으므로,
+            # 지연 RAG 보충을 다시 실행하면 같은 문서가 중복 주입된다.
+            post_tool_docs=_post_tool_docs if (is_ollama and not skip_rag and not knowledge_collection_id) else None,
             call_reason=call_reason,
     ):
         if ev.get("type") == "token":

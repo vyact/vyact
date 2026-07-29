@@ -839,6 +839,7 @@
     "fileInfo": "Checking file information",
     "allowedDirectories": "Checking accessible folders",
     "searchContext": "Finding related context",
+    "searchKnowledgeCollection": "Finding related sources in the collection",
     "economyData": "Looking up economic data",
     "weatherData": "Looking up weather",
     "tourData": "Looking up travel information",

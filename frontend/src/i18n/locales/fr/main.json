@@ -842,6 +842,7 @@
     "fileInfo": "Vérification des informations du fichier",
     "allowedDirectories": "Vérification des dossiers accessibles",
     "searchContext": "Recherche de contexte associé",
+    "searchKnowledgeCollection": "Recherche de sources associées dans la collection",
     "economyData": "Consultation des données économiques",
     "weatherData": "Consultation de la météo",
     "tourData": "Consultation des informations de voyage",

@@ -839,6 +839,7 @@
     "fileInfo": "파일 정보를 확인하고 있어요",
     "allowedDirectories": "접근 가능한 폴더를 확인하고 있어요",
     "searchContext": "관련 내용을 찾고 있어요",
+    "searchKnowledgeCollection": "컬렉션에서 관련 자료를 찾고 있어요",
     "economyData": "경제지표를 조회하고 있어요",
     "weatherData": "날씨 정보를 조회하고 있어요",
     "tourData": "관광 정보를 조회하고 있어요",

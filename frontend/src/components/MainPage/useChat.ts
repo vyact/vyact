@@ -24,6 +24,7 @@ function toolLabel(name: string | undefined, t: (key: string, options?: Record<s
         list_directory: 'listDirectory', list_directory_with_sizes: 'listDirectory', directory_tree: 'directoryTree',
         move_file: 'moveFile', search_files: 'searchFiles', get_file_info: 'fileInfo',
         list_allowed_directories: 'allowedDirectories', search_related_context: 'searchContext',
+        search_knowledge_collection: 'searchKnowledgeCollection',
         // 코드 분석 tool
         code_list_directory: 'codeListDirectory', code_read_file: 'codeReadFile', code_edit_file: 'codeEditFile',
         code_create_file: 'codeCreateFile', code_grep_search: 'codeSearch',

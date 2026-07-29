@@ -8,6 +8,7 @@ export function getLocalizedSourceLabel(source: string | undefined, t: TFunction
         return t('message.webPage');
     }
     if (normalizedSource === 'memo' || normalizedSource === '메모') return t('message.memo');
+    if (normalizedSource === 'email_thread') return t('knowledgeCollectionSources.email_thread');
     if (normalizedSource === 'manual') return t('message.manual');
     if (normalizedSource === '링크') return t('message.link');
     if (normalizedSource === '첨부파일') return t('message.attachment');

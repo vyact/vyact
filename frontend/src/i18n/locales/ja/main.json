@@ -842,6 +842,7 @@
     "fileInfo": "ファイル情報を確認中",
     "allowedDirectories": "アクセス可能なフォルダーを確認中",
     "searchContext": "関連情報を検索中",
+    "searchKnowledgeCollection": "コレクション内の関連資料を探しています",
     "economyData": "経済データを取得中",
     "weatherData": "天気情報を取得中",
     "tourData": "観光情報を取得中",
