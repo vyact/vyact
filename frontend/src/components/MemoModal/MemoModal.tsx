@@ -799,6 +799,7 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
     const [loading, setLoading] = useState(true);
     const editingIdRef = React.useRef<string | null>(null);
     const draftMemoIdRef = React.useRef<string | null>(null);
+    const draftMemoCreationRef = React.useRef<Promise<string> | null>(null);
 
     const memoNeedle = searchQuery.trim().normalize('NFC').toLowerCase();
     const filteredMemos = memoNeedle
@@ -851,6 +852,7 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
         setEditingId(null);
         editingIdRef.current = null;
         draftMemoIdRef.current = null;
+        draftMemoCreationRef.current = null;
         setEditingHtml('');
         setSelectedId(null);
         setTimeout(() => setIsEditing(true), 0);
@@ -862,6 +864,7 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
         setEditingId(id);
         editingIdRef.current = id;
         draftMemoIdRef.current = null;
+        draftMemoCreationRef.current = null;
         setEditingHtml(memo.content_html || '');
         setSelectedId(id);
         setTimeout(() => setIsEditing(true), 0);
@@ -869,15 +872,17 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
 
     const handleSave = async (html: string) => {
         if (!html || html === '<p></p>') return;
-        if (editingId) {
-            await api.updateMemo(editingId, html);
-            setSelectedId(editingId);
+        const targetMemoId = editingIdRef.current;
+        if (targetMemoId) {
+            await api.updateMemo(targetMemoId, html);
+            setSelectedId(targetMemoId);
         } else {
             const res = await api.createMemo(html);
             if (res?.id) setSelectedId(res.id);
         }
         editingIdRef.current = null;
         draftMemoIdRef.current = null;
+        draftMemoCreationRef.current = null;
         setEditingId(null);
         setIsEditing(false);
         await loadMemos(false);
@@ -885,13 +890,23 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
 
     const ensureMemoId = useCallback(async () => {
         if (editingIdRef.current) return editingIdRef.current;
-        const result = await api.createMemo('<p></p>');
-        if (!result?.id) throw new Error('메모를 준비하지 못했습니다.');
-        editingIdRef.current = result.id;
-        draftMemoIdRef.current = result.id;
-        setEditingId(result.id);
-        setSelectedId(result.id);
-        return result.id;
+        if (!draftMemoCreationRef.current) {
+            draftMemoCreationRef.current = (async () => {
+                const result = await api.createMemo('<p></p>');
+                if (!result?.id) throw new Error('메모를 준비하지 못했습니다.');
+                editingIdRef.current = result.id;
+                draftMemoIdRef.current = result.id;
+                setEditingId(result.id);
+                setSelectedId(result.id);
+                return result.id;
+            })();
+        }
+        try {
+            return await draftMemoCreationRef.current;
+        } catch (error) {
+            draftMemoCreationRef.current = null;
+            throw error;
+        }
     }, []);
 
     const handleCancelEdit = useCallback(async () => {
@@ -901,6 +916,7 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
             if (selectedId === draftMemoId) setSelectedId(null);
             draftMemoIdRef.current = null;
             editingIdRef.current = null;
+            draftMemoCreationRef.current = null;
         } else if (editingIdRef.current) {
             await api.cleanupMemoAttachments(editingIdRef.current, editingHtml);
         }
