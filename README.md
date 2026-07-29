@@ -46,7 +46,7 @@ Ask questions with PDFs and documents attached, then trace answers back to their
 
 ### Turn documents into a knowledge base
 
-Upload and index your documents once. During a normal chat, Vyact retrieves the passages most relevant to your question and adds them to the model's context automatically—so answers are grounded in your knowledge base without manually attaching the same files every time. Inspect the retrieved sources when you need to verify an answer.
+Upload and index your documents once. During a normal chat, Vyact retrieves the passages most relevant to your question and adds them to the model's context automatically—so answers are grounded in your knowledge base without manually attaching the same files every time. Create knowledge collections to group related documents, memos, and indexed email threads, then select a collection in chat when you want RAG to stay within that specific context. Inspect the retrieved sources when you need to verify an answer.
 
 <p align="center">
   <img src="assets/readme/feature-document-rag.png" alt="Vyact document management and RAG knowledge base" width="100%" />
@@ -81,7 +81,7 @@ Translate foreign-language pages and turn what you are already reading into lang
 | | Capability | Why it matters |
 | --- | --- | --- |
 | 💬 | AI chat with streaming responses | Keep conversations fast and useful, whether you use a local or hosted model. |
-| 📚 | File attachments and RAG | Ask questions over PDFs, Office documents, and an indexed knowledge base with relevant context. |
+| 📚 | File attachments, knowledge collections, and RAG | Group documents, memos, and indexed email threads into focused collections, then ask questions with the right context. |
 | 🔎 | Source-aware answers | Review the passages and documents that informed an answer. |
 | 📝 | Rich-text memos | Organize ideas and plans in structured notes that RAG can retrieve during a conversation. |
 | 🗂️ | Google Workspace integration | Connect multiple accounts, switch between them, and work with Gmail, Drive, and Calendar alongside your AI conversation. |
@@ -93,7 +93,7 @@ Translate foreign-language pages and turn what you are already reading into lang
 ### Work without constantly rebuilding context
 
 - **Projects and conversation history** — Group chats by project, give a project its own working instructions, rename or export conversations, and return to the exact thread when work resumes.
-- **Files that stay useful** — Attach a file for one conversation or index it as long-term knowledge. Inspect chunks, manage saved files, and remove data you no longer need.
+- **Files that stay useful** — Attach a file for one conversation or index it as long-term knowledge. Group documents, memos, and indexed email threads into knowledge collections to narrow RAG to the context for the task at hand. Inspect chunks, manage saved files, and remove data you no longer need.
 - **Notes that do not disappear into chat** — Keep rich-text memos, quick todos, and decisions in an organized workspace. They remain available to RAG when they matter again.
 - **Control over the AI** — Choose local Ollama, OpenAI, Gemini, or Claude; tune context, output, sampling, embedding, chunking, and model keep-alive settings for your machine and work style.
 
@@ -144,7 +144,7 @@ Docker Desktop is optional. On first launch, Vyact prepares everything else auto
 ### Your first five minutes
 
 1. Launch Vyact and choose a provider and model. Start with Ollama for a local-first setup.
-2. Drop in a document or open **Document management** to index files you will use repeatedly.
+2. Drop in a document or open **Document management** to index files you will use repeatedly. Create a knowledge collection when you want to limit RAG to a particular set of documents, memos, or email threads.
 3. Ask a question in chat and inspect the retrieved context when accuracy matters.
 4. Optionally connect Google Workspace or install the Chrome extension to bring live work into the same flow.
 5. Create a memo, project, or reusable skill once you find a workflow you repeat.
