@@ -231,11 +231,12 @@ async def lifespan(app: FastAPI):
                         logger.warning("Ollama model was not retained in memory: %s", model)
                     try:
                         from routers.deps import load_ui_language_async
-                        from services.llm.warmup import schedule_ollama_prefix_warmup
+                        from services.llm.warmup import warm_ollama_chat_prefix
 
                         ui_language = await load_ui_language_async() or ""
-                        if schedule_ollama_prefix_warmup(model, ui_language):
-                            logger.info("[llm_warmup] Scheduled after model load")
+                        logger.info("[startup-status] llm_warmup")
+                        if await warm_ollama_chat_prefix(model, ui_language):
+                            logger.info("[llm_warmup] Completed before main screen entry")
                     except Exception as e:
                         logger.debug("[llm_warmup] Scheduling skipped: %s", e)
         except Exception as e:

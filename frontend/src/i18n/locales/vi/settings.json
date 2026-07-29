@@ -20,6 +20,7 @@
     "elasticsearchChecking": "Đang kiểm tra kết nối Elasticsearch…",
     "elasticsearchWaiting": "Đang kiểm tra kết nối Elasticsearch… ({{seconds}} giây)",
     "preparingModels": "Đang chuẩn bị các mô hình AI…",
+    "warmingUpChat": "Đang khởi động trò chuyện…",
     "preparingTts": "Đang chuẩn bị các tính năng giọng nói…",
     "preparingStt": "Đang chuẩn bị nhận dạng giọng nói…",
     "pythonPackagesInstalling": "Đang cài đặt các gói Python. Có thể mất 5–10 phút tùy thuộc vào mạng và máy tính của bạn. Vui lòng giữ ứng dụng mở.",

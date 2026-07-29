@@ -20,6 +20,7 @@
     "elasticsearchChecking": "Vérification de la connexion Elasticsearch…",
     "elasticsearchWaiting": "Vérification de la connexion Elasticsearch… ({{seconds}} s)",
     "preparingModels": "Préparation des modèles d’IA…",
+    "warmingUpChat": "Préparation du chat…",
     "preparingTts": "Préparation des fonctions vocales…",
     "preparingStt": "Préparation de la reconnaissance vocale…",
     "pythonPackagesInstalling": "Installation des paquets Python. Cela peut prendre 5 à 10 minutes selon votre réseau et votre ordinateur. Gardez l’application ouverte.",

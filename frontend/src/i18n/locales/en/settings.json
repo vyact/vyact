@@ -41,6 +41,7 @@
     "elasticsearchChecking": "Checking the Elasticsearch connection…",
     "elasticsearchWaiting": "Checking the Elasticsearch connection… ({{seconds}}s)",
     "preparingModels": "Preparing AI models…",
+    "warmingUpChat": "Warming up chat…",
     "preparingTts": "Preparing voice features…",
     "preparingStt": "Preparing speech recognition…",
     "pythonPackagesInstalling": "Installing Python packages. This may take 5–10 minutes depending on your network and computer. Please keep the app open.",

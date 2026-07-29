@@ -20,6 +20,7 @@
     "elasticsearchChecking": "กำลังตรวจสอบการเชื่อมต่อ Elasticsearch…",
     "elasticsearchWaiting": "กำลังตรวจสอบการเชื่อมต่อ Elasticsearch… ({{seconds}} วินาที)",
     "preparingModels": "กำลังเตรียมโมเดล AI…",
+    "warmingUpChat": "กำลังเตรียมแชต…",
     "preparingTts": "กำลังเตรียมฟีเจอร์เสียง…",
     "preparingStt": "กำลังเตรียมการรู้จำเสียง…",
     "pythonPackagesInstalling": "กำลังติดตั้งแพ็กเกจ Python อาจใช้เวลา 5–10 นาที ขึ้นอยู่กับเครือข่ายและประสิทธิภาพคอมพิวเตอร์ โปรดอย่าปิดแอป",

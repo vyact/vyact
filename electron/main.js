@@ -573,6 +573,8 @@ async function startServer() {
             sendLoadingLog(line);
             if (line.includes("[startup-status] models")) {
                 sendLoadingStatus(getStartupTranslation().preparingModels);
+            } else if (line.includes("[startup-status] llm_warmup")) {
+                sendLoadingStatus(getStartupTranslation().warmingUpChat);
             } else if (line.includes("[startup-status] tts")) {
                 sendLoadingStatus(getStartupTranslation().preparingTts);
             } else if (line.includes("[startup-status] stt")) {

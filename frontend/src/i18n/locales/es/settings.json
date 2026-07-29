@@ -20,6 +20,7 @@
     "elasticsearchChecking": "Comprobando la conexión con Elasticsearch…",
     "elasticsearchWaiting": "Comprobando la conexión con Elasticsearch… ({{seconds}} s)",
     "preparingModels": "Preparando los modelos de IA…",
+    "warmingUpChat": "Preparando el chat…",
     "preparingTts": "Preparando las funciones de voz…",
     "preparingStt": "Preparando el reconocimiento de voz…",
     "pythonPackagesInstalling": "Instalando paquetes de Python. Puede tardar entre 5 y 10 minutos según tu red y equipo. Mantén la aplicación abierta.",

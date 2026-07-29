@@ -13,7 +13,7 @@ _warmup_keys: set[str] = set()
 _warmup_tasks: set[asyncio.Task] = set()
 
 
-async def _warm_ollama_chat_prefix(model: str, language: str, warmup_key: str) -> None:
+async def warm_ollama_chat_prefix(model: str, language: str) -> bool:
     """Evaluate the default system prompt once so Ollama can retain its prefix cache."""
     try:
         runtime = get_runtime_settings()
@@ -43,9 +43,10 @@ async def _warm_ollama_chat_prefix(model: str, language: str, warmup_key: str) -
             response = await client.post(f"{OLLAMA_URL}/api/chat", json=payload)
             response.raise_for_status()
         logger.info("[llm_warmup] Ollama chat prefix warmed (model=%s, language=%s)", model, language or "default")
+        return True
     except Exception as e:
-        _warmup_keys.discard(warmup_key)
         logger.debug("[llm_warmup] skipped: %s", e)
+        return False
 
 
 def schedule_ollama_prefix_warmup(model: str, language: str) -> bool:
@@ -55,7 +56,11 @@ def schedule_ollama_prefix_warmup(model: str, language: str) -> bool:
         return False
 
     _warmup_keys.add(warmup_key)
-    task = asyncio.create_task(_warm_ollama_chat_prefix(model, language, warmup_key))
+    task = asyncio.create_task(warm_ollama_chat_prefix(model, language))
     _warmup_tasks.add(task)
-    task.add_done_callback(_warmup_tasks.discard)
+    def complete(completed_task: asyncio.Task) -> None:
+        _warmup_tasks.discard(completed_task)
+        if completed_task.cancelled() or not completed_task.result():
+            _warmup_keys.discard(warmup_key)
+    task.add_done_callback(complete)
     return True

@@ -20,6 +20,7 @@
     "elasticsearchChecking": "正在检查 Elasticsearch 连接…",
     "elasticsearchWaiting": "正在检查 Elasticsearch 连接… ({{seconds}} 秒)",
     "preparingModels": "正在准备 AI 模型…",
+    "warmingUpChat": "正在预热聊天…",
     "preparingTts": "正在准备语音功能…",
     "preparingStt": "正在准备语音识别…",
     "pythonPackagesInstalling": "正在安装 Python 软件包。根据网络和电脑性能，可能需要 5–10 分钟。请保持应用打开。",

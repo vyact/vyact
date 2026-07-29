@@ -280,6 +280,15 @@ async def install(req: ModelSelectRequest):
 
                 if chat_ready and model_loaded:
                     yield sse(f"{model} ready in memory", "ok", 98)
+                    try:
+                        from routers.deps import load_ui_language_async
+                        from services.llm.warmup import warm_ollama_chat_prefix
+
+                        yield sse("Warming up chat…", "info", 99)
+                        if await warm_ollama_chat_prefix(model, await load_ui_language_async() or ""):
+                            logger.info("[setup] Ollama chat prefix warm-up completed")
+                    except Exception as warmup_error:
+                        logger.debug("[setup] Ollama chat prefix warm-up skipped: %s", warmup_error)
                 else:
                     yield sse(f"{model} could not stay loaded (memory may be insufficient)", "log", 98)
                 if not (embed_ready and embed_loaded):
