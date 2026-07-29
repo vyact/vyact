@@ -501,20 +501,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
                             <CustomSelect
                                 className="chat-system-prompt-select"
-                                options={knowledgeCollections.map(collection => ({value: collection.id, label: collection.name}))}
-                                value={selectedKnowledgeCollectionId}
-                                onChange={setSelectedKnowledgeCollectionId}
-                                placeholder={t('knowledgeCollections.select')}
-                                searchable
-                                searchPlaceholder={t('knowledgeCollections.search')}
-                                clearable
-                                onClear={() => setSelectedKnowledgeCollectionId('')}
-                                searchAction={<button type="button" className="custom-select-search-action" aria-label={t('knowledgeCollections.title')} onClick={() => setShowKnowledgeCollectionsModal(true)}><Settings size={15}/></button>}
-                                renderTrigger={(selectedLabel, open) => <><span className="custom-select-trigger-label">{selectedLabel}</span><span className={`custom-select-arrow${open ? ' open' : ''}`}>▼</span></>}
-                            />
-
-                            <CustomSelect
-                                className="chat-system-prompt-select"
                                 options={[
                                     {value: '', label: t('sidebar.promptDefault')},
                                     ...systemPrompts.map((prompt): SelectOption => ({value: prompt.id, label: prompt.title})),
@@ -542,6 +528,20 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                         <span className={`custom-select-arrow${open ? ' open' : ''}`}>▼</span>
                                     </>
                                 )}
+                            />
+
+                            <CustomSelect
+                                className="chat-system-prompt-select"
+                                options={knowledgeCollections.map(collection => ({value: collection.id, label: collection.name}))}
+                                value={selectedKnowledgeCollectionId}
+                                onChange={setSelectedKnowledgeCollectionId}
+                                placeholder={t('knowledgeCollections.select')}
+                                searchable
+                                searchPlaceholder={t('knowledgeCollections.search')}
+                                clearable
+                                onClear={() => setSelectedKnowledgeCollectionId('')}
+                                searchAction={<button type="button" className="custom-select-search-action" aria-label={t('knowledgeCollections.title')} onClick={() => setShowKnowledgeCollectionsModal(true)}><Settings size={15}/></button>}
+                                renderTrigger={(selectedLabel, open) => <><span className="custom-select-trigger-label">{selectedLabel}</span><span className={`custom-select-arrow${open ? ' open' : ''}`}>▼</span></>}
                             />
                         </div>
 

@@ -529,6 +529,9 @@ export function useChat(deps: UseChatDeps) {
                                 setToolStatus({phase: 'running', group: toolGroup(data.name), label: toolLabel(data.name, t), detail: toolDetail(data.args)});
                             } else if (data.phase === 'end') {
                                 setToolStatus({phase: 'completed', label: t('toolActivity.completed'), detail: toolDetail(data.args)});
+                                // 검색/도구 단계가 끝난 뒤 첫 토큰이 오기까지는 프롬프트 평가가 진행된다.
+                                // 완료된 작업명(예: 컬렉션 검색)을 계속 표시하지 않고 응답 준비 상태로 전환한다.
+                                setToolStatus({phase: 'judging', group: 'analysis', label: t('toolActivity.thinking')});
                             }
                         },
                         onIndexProgress: (data) => {
