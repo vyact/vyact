@@ -880,4 +880,6 @@
     "pastedText": "Pasted text"
   },
   "knowledgeCollections": {"eyebrow":"Knowledge library","savedTitle":"Saved collections","none":"All knowledge","select":"Knowledge collection","search":"Search collections...","title":"Knowledge collections","subtitle":"Group documents and notes to limit RAG context.","close":"Close","empty":"No knowledge collections yet.","noDescription":"No description","sources":"Documents {{documents}} · Memos {{memos}}","edit":"Edit","delete":"Delete","create":"Create collection","name":"Name","namePlaceholder":"e.g. Apollo launch","description":"Description","descriptionPlaceholder":"What is this collection for?","instruction":"Collection instruction","instructionPlaceholder":"Optional guidance for answers using this collection.","save":"Save","cancel":"Cancel"}
+,
+  "knowledgeCollectionSources": {"attachSources":"Attach sources","attachedCount":"{{count}} attached","loadingSources":"Loading sources...","noSources":"No sources to attach.","untitledMemo":"Untitled memo","noSubject":"No subject","back":"Back to list","removeItem":"Remove from collection","selectItem":"Select a source from the left.","document":"Document","memo":"Memo","email_thread":"Email"}
 }

@@ -16,6 +16,9 @@ interface Props {
     onDelete: (id: string) => Promise<void>;
 }
 
+type CollectionSourceType = KnowledgeCollection['items'][number]['source_type'];
+const sourceLabel = (t: (key: string, options?: Record<string, unknown>) => string, type: CollectionSourceType) => t(`knowledgeCollectionSources.${type}`);
+
 const KnowledgeCollectionsModal = ({isOpen, collections, onClose, onCreate, onUpdate, onDelete}: Props) => {
     const {t} = useTranslation('main');
     const [editing, setEditing] = useState<KnowledgeCollection | 'new' | null>(null);
@@ -26,8 +29,46 @@ const KnowledgeCollectionsModal = ({isOpen, collections, onClose, onCreate, onUp
     const [resolvedItems, setResolvedItems] = useState<Array<{source_type: 'document' | 'memo' | 'email_thread'; source_id: string; title: string; summary: string; updated_at: string; chunk_count?: number; content_html?: string; content?: string; message_count?: number}>>([]);
     const [selectedItemId, setSelectedItemId] = useState('');
 
-    useEffect(() => { if (!isOpen) setEditing(null); }, [isOpen]);
-    useEffect(() => { if (!browsing) return; api.getKnowledgeCollectionItems(browsing.id).then(result => { setResolvedItems(result.items); setSelectedItemId(result.items[0]?.source_id || ''); }).catch(() => setResolvedItems([])); }, [browsing]);
+    useEffect(() => { if (!isOpen) { setEditing(null); setBrowsing(null); } }, [isOpen]);
+    useEffect(() => {
+        if (!isOpen || !browsing) return;
+        const handleEscape = (event: KeyboardEvent) => {
+            if (event.key !== 'Escape') return;
+            event.preventDefault();
+            event.stopPropagation();
+            setBrowsing(null);
+        };
+        document.addEventListener('keydown', handleEscape, true);
+        return () => document.removeEventListener('keydown', handleEscape, true);
+    }, [isOpen, browsing]);
+    useEffect(() => {
+        if (!browsing) return;
+        const loadItems = async () => {
+            try {
+                const result = await api.getKnowledgeCollectionItems(browsing.id);
+                const items = result.items || [];
+                if (items.length || browsing.items.length === 0) {
+                    setResolvedItems(items);
+                    setSelectedItemId(items[0]?.source_id || '');
+                    return;
+                }
+                const [filesResult, memosResult] = await Promise.all([
+                    fetch('/api/document/files').then(response => response.json()).catch(() => ({files: []})),
+                    api.listMemos(200).catch(() => ({memos: []})),
+                ]);
+                const files = new Map((filesResult.files || []).map((file: {file_id: string; filename: string; indexed_at?: string; chunk_count?: number}) => [file.file_id, file]));
+                const memos = new Map((memosResult.memos || []).map((memo: {id: string; title?: string; content?: string; updated_at?: string}) => [memo.id, memo]));
+                const fallbackItems = browsing.items.map(item => {
+                    const file = item.source_type === 'document' ? files.get(item.source_id) : undefined;
+                    const memo = item.source_type === 'memo' ? memos.get(item.source_id) : undefined;
+                    return {source_type: item.source_type, source_id: item.source_id, title: file?.filename || memo?.title || item.source_id, summary: memo?.content || '', updated_at: file?.indexed_at || memo?.updated_at || '', chunk_count: file?.chunk_count};
+                });
+                setResolvedItems(fallbackItems);
+                setSelectedItemId(fallbackItems[0]?.source_id || '');
+            } catch { setResolvedItems([]); }
+        };
+        void loadItems();
+    }, [browsing]);
     if (!isOpen) return null;
 
     const begin = (collection: KnowledgeCollection | 'new') => {
@@ -50,13 +91,14 @@ const KnowledgeCollectionsModal = ({isOpen, collections, onClose, onCreate, onUp
         setSelectedItemId(current => current === item.source_id ? '' : current);
     };
 
-    return <ModalOverlay className="system-prompt-overlay" onClose={onClose} closeOnBackdrop closeOnEscape={!editing}>
+
+    return <ModalOverlay className="system-prompt-overlay" onClose={onClose} closeOnBackdrop closeOnEscape={!editing && !browsing}>
         <div className="system-prompt-modal knowledge-collections-modal" onClick={event => event.stopPropagation()}>
-            <div className="system-prompt-header"><div><div className="system-prompt-eyebrow">{t('knowledgeCollections.title')}</div><h2>{t('knowledgeCollections.title')}</h2><p>{t('knowledgeCollections.subtitle')}</p></div><button className="system-prompt-close" onClick={() => editing ? setEditing(null) : onClose()} aria-label={t('knowledgeCollections.close')}><X size={22}/></button></div>
-            {browsing ? <div className="knowledge-collection-browser"><header className="knowledge-collection-browser-header"><button onClick={() => setBrowsing(null)}><ArrowLeft size={17}/>{t('knowledgeCollections.back')}</button><strong>{browsing.name}</strong></header><div className="knowledge-collection-browser-body"><aside>{resolvedItems.map(item => <button key={item.source_id} className={selectedItemId === item.source_id ? 'selected' : ''} onClick={() => setSelectedItemId(item.source_id)}>{item.source_type === 'document' ? <FileText size={16}/> : item.source_type === 'memo' ? <StickyNote size={16}/> : <Mail size={16}/>}<span><b>{item.title}</b><small>{t(`knowledgeCollections.type.${item.source_type}`)}</small></span><button aria-label={t('knowledgeCollections.removeItem')} onClick={event => { event.stopPropagation(); void removeItem(item); }}><Trash2 size={15}/></button></button>)}</aside><section>{selectedItem ? <><div className="knowledge-collection-source-heading"><span>{t(`knowledgeCollections.type.${selectedItem.source_type}`)}</span><h3>{selectedItem.title}</h3></div>{selectedItem.source_type === 'memo' ? <div className="knowledge-collection-memo-content" dangerouslySetInnerHTML={{__html: selectedItem.content_html || ''}}/> : selectedItem.source_type === 'email_thread' ? <pre className="knowledge-collection-email-content">{selectedItem.content}</pre> : <DocumentSourcePreview sourceId={selectedItem.source_id}/>}</> : <div className="knowledge-collection-browser-empty">{t('knowledgeCollections.selectItem')}</div>}</section></div></div> : !editing ? <div className="system-prompt-body knowledge-collections-list-view">
+            <div className="system-prompt-header"><div><div className="system-prompt-eyebrow">{t('knowledgeCollections.title')}</div><h2>{t('knowledgeCollections.title')}</h2><p>{t('knowledgeCollections.subtitle')}</p></div><button className="system-prompt-close" onClick={() => editing ? setEditing(null) : browsing ? setBrowsing(null) : onClose()} aria-label={t('knowledgeCollections.close')}><X size={22}/></button></div>
+            {browsing ? <div className="knowledge-collection-browser"><header className="knowledge-collection-browser-header"><button onClick={() => setBrowsing(null)}><ArrowLeft size={17}/>{t('knowledgeCollectionSources.back')}</button><strong>{browsing.name}</strong></header><div className="knowledge-collection-browser-body"><aside>{resolvedItems.map(item => <div key={`${item.source_type}:${item.source_id}`} className={`knowledge-collection-browser-item${selectedItemId === item.source_id ? ' selected' : ''}`}><button className="knowledge-collection-browser-item-select" onClick={() => setSelectedItemId(item.source_id)}>{item.source_type === 'document' ? <FileText size={16}/> : item.source_type === 'memo' ? <StickyNote size={16}/> : <Mail size={16}/>}<span><b>{item.title}</b><small className={item.source_type === 'document' && item.chunk_count !== undefined ? 'knowledge-collection-source-meta' : ''}>{sourceLabel(t, item.source_type)}{item.source_type === 'document' && item.chunk_count !== undefined && <em className="knowledge-collection-chunk-count">{t('documentModal.chunkCount', {count: item.chunk_count})}</em>}</small></span></button><button className="knowledge-collection-browser-item-remove" aria-label={t('knowledgeCollectionSources.removeItem')} onClick={() => void removeItem(item)}><Trash2 size={15}/></button></div>)}</aside><section className={selectedItem?.source_type === 'document' ? 'knowledge-collection-browser-document-section' : ''}>{selectedItem ? <>{selectedItem.source_type !== 'document' && <div className="knowledge-collection-source-heading"><span>{sourceLabel(t, selectedItem.source_type)}</span><h3>{selectedItem.title}</h3></div>}{selectedItem.source_type === 'memo' ? <div className="knowledge-collection-memo-content" dangerouslySetInnerHTML={{__html: selectedItem.content_html || ''}}/> : selectedItem.source_type === 'email_thread' ? <pre className="knowledge-collection-email-content">{selectedItem.content}</pre> : <DocumentSourcePreview sourceId={selectedItem.source_id}/>}</> : <div className="knowledge-collection-browser-empty">{t('knowledgeCollectionSources.selectItem')}</div>}</section></div></div> : !editing ? <div className="system-prompt-body knowledge-collections-list-view">
                 <section className="system-saved-section"><div className="knowledge-collections-list-header"><div className="system-section-heading"><BookOpen size={18}/><span>{t('knowledgeCollections.title')}</span></div><button className="knowledge-collections-create-button" onClick={() => begin('new')}><FilePlus2 size={18}/>{t('knowledgeCollections.create')}</button></div>
                 <div className="system-prompt-list">
-                    {collections.length === 0 ? <div className="system-prompt-empty">{t('knowledgeCollections.empty')}</div> : collections.map(collection => { const documentCount = collection.items.filter(item => item.source_type === 'document').length; const memoCount = collection.items.filter(item => item.source_type === 'memo').length; return <div className="system-prompt-item" key={collection.id}><button className="system-prompt-info" onClick={() => setBrowsing(collection)}><span className="system-prompt-item-title">{collection.name}</span><span className="system-prompt-preview">{collection.description || t('knowledgeCollections.noDescription')} · {t('knowledgeCollections.sources', {documents: documentCount, memos: memoCount})}</span></button><button className="system-prompt-edit" aria-label={t('knowledgeCollections.edit')} onClick={() => begin(collection)}><Pencil size={16}/></button><button className="system-prompt-delete" aria-label={t('knowledgeCollections.delete')} onClick={() => void onDelete(collection.id)}><Trash2 size={16}/></button></div>; })}
+                    {collections.length === 0 ? <div className="system-prompt-empty">{t('knowledgeCollections.empty')}</div> : collections.map(collection => { const documentCount = collection.items.filter(item => item.source_type === 'document').length; const memoCount = collection.items.filter(item => item.source_type === 'memo').length; const emailCount = collection.items.filter(item => item.source_type === 'email_thread').length; return <div className="system-prompt-item" key={collection.id}><button className="system-prompt-info" onClick={() => setBrowsing(collection)}><span className="system-prompt-item-title">{collection.name}</span><span className="system-prompt-preview">{collection.description || t('knowledgeCollections.noDescription')} · {sourceLabel(t, 'document')} {documentCount} · {sourceLabel(t, 'memo')} {memoCount} · {sourceLabel(t, 'email_thread')} {emailCount}</span></button><button className="system-prompt-edit" aria-label={t('knowledgeCollections.edit')} onClick={() => begin(collection)}><Pencil size={16}/></button><button className="system-prompt-delete" aria-label={t('knowledgeCollections.delete')} onClick={() => void onDelete(collection.id)}><Trash2 size={16}/></button></div>; })}
                 </div></section>
             </div> : <div className="system-prompt-body knowledge-collections-edit-view"><div className="system-prompt-editor knowledge-collections-editor">
                 <div className="system-editor-heading"><FilePlus2 size={17}/><span>{editing === 'new' ? t('knowledgeCollections.create') : t('knowledgeCollections.edit')}</span></div>
@@ -69,13 +111,14 @@ const KnowledgeCollectionsModal = ({isOpen, collections, onClose, onCreate, onUp
     </ModalOverlay>;
 };
 
+
 const DocumentSourcePreview = ({sourceId}: {sourceId: string}) => {
     const {t} = useTranslation('main');
     const [chunks, setChunks] = useState<Array<{chunk_index: number; content: string}>>([]);
     const [selectedChunkIndex, setSelectedChunkIndex] = useState<number | null>(null);
-    useEffect(() => { fetch(`/api/document/files/${encodeURIComponent(sourceId)}/chunks`).then(response => response.json()).then(result => { setChunks(result.chunks || []); setSelectedChunkIndex(result.chunks?.[0]?.chunk_index ?? null); }).catch(() => setChunks([])); }, [sourceId]);
+    useEffect(() => { fetch(`/api/document/files/${encodeURIComponent(sourceId)}/chunks`).then(response => response.json()).then(result => { setChunks(result.chunks || []); setSelectedChunkIndex(null); }).catch(() => setChunks([])); }, [sourceId]);
     const chunk = chunks.find(item => item.chunk_index === selectedChunkIndex);
-    return <div className="knowledge-collection-document-preview"><nav>{chunks.map(item => <button key={item.chunk_index} className={item.chunk_index === selectedChunkIndex ? 'selected' : ''} onClick={() => setSelectedChunkIndex(item.chunk_index)}>#{item.chunk_index + 1} {item.content.slice(0, 80)}</button>)}</nav><article>{chunk?.content || t('knowledgeCollections.selectItem')}</article></div>;
+    return <div className="knowledge-collection-document-preview"><nav>{chunks.map(item => <button key={item.chunk_index} className={item.chunk_index === selectedChunkIndex ? 'selected' : ''} onClick={() => setSelectedChunkIndex(item.chunk_index)}>#{item.chunk_index + 1} {item.content.slice(0, 80)}</button>)}</nav><article className={chunk ? '' : 'empty'}>{chunk?.content || t('knowledgeCollectionSources.selectItem')}</article></div>;
 };
 
 export default KnowledgeCollectionsModal;

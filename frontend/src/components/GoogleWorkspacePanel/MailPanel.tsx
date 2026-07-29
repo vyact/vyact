@@ -13,6 +13,7 @@ import CustomSelect from '../CustomSelect/CustomSelect';
 import ImageViewer from '../ImageViewer/ImageViewer';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
+import KnowledgeCollectionAttachSelect from '../KnowledgeCollectionsModal/KnowledgeCollectionAttachSelect';
 import EmailEditor, {type EmailEditorHandle} from './EmailEditor';
 
 type MailParticipant = MailAddress & {isMe: boolean};
@@ -520,6 +521,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
     const [mailLoading, setMailLoading] = useState(false);
     const [loadingMoreMails, setLoadingMoreMails] = useState(false);
     const [selected, setSelected] = useState<MailDetail | null>(null);
+    const [selectedKnowledgeSourceId, setSelectedKnowledgeSourceId] = useState('');
     const [expandedThreadMessageIds, setExpandedThreadMessageIds] = useState<Set<string>>(new Set());
     const [compose, setCompose] = useState(false);
     const [composeMode, setComposeMode] = useState<'new' | 'reply' | 'forward'>('new');
@@ -548,6 +550,14 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
         filename: string;
     } | null>(null);
     const [attachmentPreview, setAttachmentPreview] = useState<{filename: string; mimeType: string; url?: string; docx?: Blob} | null>(null);
+
+    useEffect(() => {
+        const threadId = selected?.threadId || selected?.id;
+        if (!threadId || !accountId || !globalThis.crypto?.subtle) { setSelectedKnowledgeSourceId(''); return; }
+        void globalThis.crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${accountId}:${threadId}`)).then(buffer => {
+            setSelectedKnowledgeSourceId(Array.from(new Uint8Array(buffer)).map(byte => byte.toString(16).padStart(2, '0')).join(''));
+        });
+    }, [accountId, selected?.id, selected?.threadId]);
     const [sendFeedback, setSendFeedback] = useState<'success' | 'error' | null>(null);
     const [mailSignature, setMailSignature] = useState('');
     const [signatureEnabled, setSignatureEnabled] = useState(true);
@@ -1740,6 +1750,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
                     </button>
                     <div className="gwp-detail-actions">
                         <MailChatAttachMenu mail={selected} menuId="whole-thread"/>
+                        <KnowledgeCollectionAttachSelect source={{source_type: 'email_thread', source_id: selectedKnowledgeSourceId || selected.threadId || selected.id}} prepareSource={async () => ({source_type: 'email_thread', source_id: (await api.indexGoogleMailThreadForKnowledge(selected.threadId || selected.id, accountId)).source_id})}/>
                         <button className="gwp-detail-delete" onClick={() => void trashSelectedThread()} disabled={isMailActionBusy}>{isTrashingMails ? <LoaderCircle aria-hidden="true" size={16} className="gwp-spin"/> : <Trash2 aria-hidden="true" size={16}/>}<span>{t('googleWorkspace.delete')}</span></button>
                         <button className="gwp-detail-forward" onClick={forwardSelectedMail} disabled={isMailActionBusy}><Forward aria-hidden="true" size={16}/><span>{t('googleWorkspace.forward')}</span></button>
                         <button className="gwp-primary" onClick={replyToSelectedMail}>{t('googleWorkspace.reply')}</button>
@@ -1773,6 +1784,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
                 </button>
                 <div className="gwp-detail-actions">
                     <MailChatAttachMenu mail={selected} menuId="whole-thread"/>
+                    <KnowledgeCollectionAttachSelect source={{source_type: 'email_thread', source_id: selectedKnowledgeSourceId || selected.threadId || selected.id}} prepareSource={async () => ({source_type: 'email_thread', source_id: (await api.indexGoogleMailThreadForKnowledge(selected.threadId || selected.id, accountId)).source_id})}/>
                     <button className="gwp-detail-delete" onClick={() => void trashSelectedThread()} disabled={isMailActionBusy}>{isTrashingMails ? <LoaderCircle aria-hidden="true" size={16} className="gwp-spin"/> : <Trash2 aria-hidden="true" size={16}/>}<span>{t('googleWorkspace.delete')}</span></button>
                     <button className="gwp-detail-forward" onClick={forwardSelectedMail} disabled={isMailActionBusy}><Forward aria-hidden="true" size={16}/><span>{t('googleWorkspace.forward')}</span></button>
                     <button className="gwp-primary" onClick={replyToSelectedMail}>{t('googleWorkspace.reply')}</button>

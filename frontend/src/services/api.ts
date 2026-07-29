@@ -599,7 +599,7 @@ export const api = {
     async updateKnowledgeCollection(id: string, data: Omit<import('../types').KnowledgeCollection, 'id' | 'created_at' | 'updated_at'>): Promise<import('../types').KnowledgeCollection> { return (await fetch(`${API_BASE}/knowledge-collections/${encodeURIComponent(id)}`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)})).json(); },
     async deleteKnowledgeCollection(id: string): Promise<void> { await fetch(`${API_BASE}/knowledge-collections/${encodeURIComponent(id)}`, {method: 'DELETE'}); },
     async getKnowledgeCollectionItems(id: string) { return (await fetch(`${API_BASE}/knowledge-collections/${encodeURIComponent(id)}/items`)).json() as Promise<{items: Array<{source_type: 'document' | 'memo' | 'email_thread'; source_id: string; title: string; summary: string; updated_at: string; chunk_count?: number; content_html?: string; content?: string; message_count?: number}>}>; },
-    async removeKnowledgeCollectionItem(collectionId: string, sourceType: string, sourceId: string) { await fetch(`${API_BASE}/knowledge-collections/${encodeURIComponent(collectionId)}/items/${encodeURIComponent(sourceType)}/${encodeURIComponent(sourceId)}`, {method: 'DELETE'}); },
+    async removeKnowledgeCollectionItem(collectionId: string, sourceType: string, sourceId: string) { return (await fetch(`${API_BASE}/knowledge-collections/${encodeURIComponent(collectionId)}/items/${encodeURIComponent(sourceType)}/${encodeURIComponent(sourceId)}`, {method: 'DELETE'})).json() as Promise<{ok: boolean; items: import('../types').KnowledgeCollectionItem[]}>; },
 
     async getProviders(): Promise<ProvidersResponse> {
         const res = await fetch(`${API_BASE}/providers`);

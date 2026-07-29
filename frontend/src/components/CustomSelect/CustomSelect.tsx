@@ -30,6 +30,7 @@ interface CustomSelectProps {
     footer?: React.ReactNode;
     ariaLabel?: string;
     portal?: boolean;
+    onOpen?: () => void;
 }
 
 const CustomSelect: React.FC<CustomSelectProps> = ({
@@ -53,6 +54,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                                                        footer,
                                                        ariaLabel,
                                                        portal = false,
+                                                       onOpen,
                                                    }) => {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
@@ -192,7 +194,10 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
             <button
                 className={`custom-select-trigger${open ? ' open' : ''}${showClearButton ? ' has-clear' : ''}`}
                 aria-label={ariaLabel}
-                onClick={() => !disabled && setOpen(v => !v)}
+                onClick={() => !disabled && setOpen(current => {
+                    if (!current) onOpen?.();
+                    return !current;
+                })}
                 style={triggerStyle}
                 type="button"
             >
