@@ -646,6 +646,7 @@ def _parse_md_chunks(path: Path) -> list["Chunk"]:
 
     code_buf: list[str] = []
     table_buf: list[str] = []
+    html_buf: list[str] = []
     para_buf: list[str] = []
     in_code_block = False
     heading_stack: list[str] = []  # 인덱스 = 레벨-1
@@ -669,6 +670,26 @@ def _parse_md_chunks(path: Path) -> list["Chunk"]:
             chunks.append(Chunk(text=t, chunk_type="code", heading_path=list(heading_stack)))
         code_buf.clear()
 
+    def flush_html():
+        if not html_buf:
+            return
+        from bs4 import BeautifulSoup
+
+        soup = BeautifulSoup("\n".join(html_buf), "html.parser")
+        for table in soup.find_all("table"):
+            rows = []
+            for tr in table.find_all("tr"):
+                cells = [cell.get_text(" ", strip=True) for cell in tr.find_all(["th", "td"])]
+                if any(cells):
+                    rows.append(" | ".join(cells))
+            chunks.extend(_table_chunks(rows, heading_path=heading_stack))
+            table.decompose()
+        text = soup.get_text(" ", strip=True)
+        if text:
+            for chunk in split_chunks(text):
+                chunks.append(Chunk(text=chunk, chunk_type="paragraph", heading_path=list(heading_stack)))
+        html_buf.clear()
+
     for line in text.split("\n"):
         # Markdown 수평선은 문서 구조를 나누는 표식일 뿐 검색 대상이 아니다.
         if re.fullmatch(r"\s{0,3}([-*_])(?:\s*\1){2,}\s*", line):
@@ -687,6 +708,22 @@ def _parse_md_chunks(path: Path) -> list["Chunk"]:
 
         if in_code_block:
             code_buf.append(line)
+            continue
+
+        is_html_block = bool(re.match(
+            r"\s*</?(?:section|article|div|table|thead|tbody|tfoot|tr|td|th|p|h[1-6]|ul|ol|li)\b",
+            line,
+            re.IGNORECASE,
+        ))
+        if html_buf:
+            html_buf.append(line)
+            if not line.strip():
+                flush_html()
+            continue
+        if is_html_block:
+            flush_para()
+            flush_table()
+            html_buf.append(line)
             continue
 
         if line.strip().startswith("|"):
@@ -717,6 +754,7 @@ def _parse_md_chunks(path: Path) -> list["Chunk"]:
 
     if in_code_block:
         flush_code()
+    flush_html()
     flush_table()
     flush_para()
 
