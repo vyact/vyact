@@ -102,12 +102,14 @@ Translate foreign-language pages and turn what you are already reading into lang
 - **Gmail** — Search and read mail, work with labels, attach an email and its files to chat, compose replies with AI, manage signatures, and send from the connected account.
 - **Google Drive** — Browse, search, upload, download, rename, copy, share, and attach Drive files directly to a conversation or knowledge base.
 - **Google Calendar** — View, create, update, and remove events without switching away from your current task.
-- **MCP and reusable skills** — Add filesystem access, GitHub, Google Workspace, or a custom local/remote MCP server. Create reusable skills so recurring work gets the right instructions automatically.
+- **Built-in Google Workspace connection** — In **Settings > MCP and AI tools**, add Google Workspace, upload the OAuth credentials JSON, and connect your account. Vyact's built-in tools call Gmail, Drive, and Calendar Google APIs directly with OAuth permissions; no separate external MCP server process sits in the request path. OAuth tokens are not included in exported backups.
+- **MCP and reusable skills** — Add filesystem access, GitHub, or a custom local/remote MCP server. Create reusable skills so recurring work gets the right instructions automatically.
 
 ### Keep ownership of your workspace
 
 - **Local-first by default** — Vyact is designed around Ollama and local embedding so your core working context can stay on your machine.
 - **Choose your provider** — Use local models for private everyday work, or connect OpenAI, Gemini, and Claude when you want their capabilities.
+- **Know when data leaves your machine** — When Gmail or Drive content is used as AI chat context, it may be sent to the selected AI provider. With a local model such as Ollama, that chat context is not sent to an external AI provider.
 - **Back up what matters** — Export and restore conversations, documents, files, memos, prompts, settings, projects, and vocabulary. Backups can also be saved to Google Drive.
 - **Open source** — Vyact is released under AGPL-3.0. You can inspect, adapt, and contribute to the workspace you rely on.
 
