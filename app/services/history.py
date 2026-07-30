@@ -8,6 +8,35 @@ from elasticsearch import NotFoundError
 from services.db import HIST_INDEX, get_es
 
 
+def _message_identity(message: dict) -> tuple[str, str, str]:
+    """저장된 대화에서 동일 메시지를 식별하는 안정적인 키."""
+    return (
+        str(message.get("role", "")),
+        str(message.get("timestamp", "")),
+        str(message.get("content", "")),
+    )
+
+
+def _preserve_stored_attachments(messages: list[dict], existing_messages: list[dict]) -> list[dict]:
+    """LLM 전송용으로 축약된 이전 이력에도 화면용 첨부 메타데이터를 복원한다."""
+    stored_attachments = {
+        _message_identity(message): message["attachments"]
+        for message in existing_messages
+        if message.get("attachments")
+    }
+    return [
+        {
+            **message,
+            **(
+                {"attachments": stored_attachments[_message_identity(message)]}
+                if not message.get("attachments") and _message_identity(message) in stored_attachments
+                else {}
+            ),
+        }
+        for message in messages
+    ]
+
+
 async def create_conversation_stub(conv_id: str, title: str, project_id: str | None = None) -> None:
     """새 대화방 첫 응답 시, 무거운 메시지 저장(save_conversation)을 백그라운드로 미루기 전에
     사이드바 목록(GET /api/history)에서 바로 조회 가능하도록 최소 필드만 담아 먼저 색인한다.
@@ -46,6 +75,7 @@ async def save_conversation(conv_id: str, messages: list[dict], title: str = "",
         attachment_summaries = None
         existing_project_id = None
         existing_title = None
+        existing_messages: list[dict] = []
         try:
             existing = await es.get(index=HIST_INDEX, id=conv_id)
             created_at = existing["_source"]["created_at"]
@@ -53,8 +83,10 @@ async def save_conversation(conv_id: str, messages: list[dict], title: str = "",
             conv_summary = existing["_source"].get("conv_summary")
             attachment_summaries = existing["_source"].get("attachment_summaries")
             existing_project_id = existing["_source"].get("project_id")
+            existing_messages = existing["_source"].get("messages", [])
         except NotFoundError:
             pass
+        messages = _preserve_stored_attachments(messages, existing_messages)
         # title 우선순위: 명시적 전달 > 기존 제목(사용자 rename 포함) > 자동 생성
         if not title:
             if existing_title:

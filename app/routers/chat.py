@@ -704,8 +704,8 @@ async def query_stream(req: QueryRequest):
                 assistant_msg = build_assistant_message(answer, gen_model, article_sources, injected_context, gen_stats)
 
                 # 여기까진 전부 순수 계산(빠름). ES 저장(save_conversation의 refresh=True 등)과
-                # 첨부파일 임베딩 인덱싱은 실제 I/O라 느릴 수 있는데, 통계/텍스트는 이미 다 준비됐으니
-                # 사용자를 기다리게 하지 말고 done을 먼저 보낸 뒤 백그라운드로 저장한다.
+                # 첨부파일 임베딩 인덱싱은 실제 I/O라 응답을 막지는 않는다. 단, 브라우저가 done을
+                # 받은 직후 새로고침해도 저장 코루틴이 취소되지 않도록 background task는 done 전에 등록한다.
                 # 다만 "새 대화방"인 경우엔, 사이드바 목록(GET /api/history)이 done 직후 바로 조회해도
                 # 방이 보이도록 최소 필드짜리 문서만 먼저 동기로 만들어둔다(가벼워서 지연 거의 없음).
                 # 주의: 프론트가 새 대화 시작 시 client-side로 conv_id(UUID)를 미리 생성해서 보내므로
@@ -726,9 +726,6 @@ async def query_stream(req: QueryRequest):
                         except Exception as e:
                             logger.warning("[query_stream] 대화방 stub 생성 실패: %s", e)
 
-                yield _sse("done", {"conv_id": conv_id, "answer": answer, "stats": gen_stats})
-                _saved = True
-
                 if not req.no_history:
                     async def _save_history_bg():
                         try:
@@ -746,6 +743,9 @@ async def query_stream(req: QueryRequest):
                             logger.warning("[query_stream] 히스토리 저장 실패(일반채팅, 백그라운드): %s", e)
 
                     _run_in_background(_save_history_bg())
+
+                yield _sse("done", {"conv_id": conv_id, "answer": answer, "stats": gen_stats})
+                _saved = True
                 return
 
             # ── 실제 토큰 스트리밍 (경로 A·B: 문서/URL context 기반, tool 미사용) ──
