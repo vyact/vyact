@@ -644,6 +644,10 @@ function createWindow() {
     });
     mainWindow.maximize();
 
+    // Cmd+Tab can focus an already-visible window without leaving the active
+    // BrowserView focused. Restore its renderer after native focus completes.
+    mainWindow.on("focus", focusActiveWebContents);
+
     // 전체화면 상태 변경 → 렌더러 알림
     mainWindow.on("enter-full-screen", () => mainWindow?.webContents.send("window-fullscreen-change", true));
     mainWindow.on("leave-full-screen", () => mainWindow?.webContents.send("window-fullscreen-change", false));
@@ -844,11 +848,24 @@ function restoreAndFocusMainWindow() {
     if (mainWindow.isMinimized()) mainWindow.restore();
     mainWindow.show();
     mainWindow.focus();
+    focusActiveWebContents();
+}
+
+function focusActiveWebContents() {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
     // The initial setup BrowserView remains the active renderer after setup
     // completes. Explicitly focus it as well so Cmd+Tab immediately accepts
     // in-app keyboard shortcuts instead of only activating the native window.
     const contents = initialSetupView?.webContents || mainWindow.webContents;
-    if (!contents.isDestroyed()) contents.focus();
+    if (contents.isDestroyed()) return;
+
+    // On macOS, `activate` can run before the native window has focus. Defer
+    // this so Cmd+Tab restores renderer keyboard events without a mouse click.
+    setImmediate(() => {
+        if (!contents.isDestroyed() && mainWindow && !mainWindow.isDestroyed() && mainWindow.isFocused()) {
+            contents.focus();
+        }
+    });
 }
 
 app.on("second-instance", () => {
