@@ -187,17 +187,20 @@ def _memo_bm25_query(query: str) -> dict:
 
 
 async def rag_search(query: str, size: int = 5) -> list[dict]:
-    """RAG 전용 검색 — BM25 + kNN 별도 실행 후 RRF 직접 계산"""
+    """일반 RAG 문서 후보 검색 — BM25 + kNN 결과를 RRF로 합친다.
+
+    메모와 빠른메모 후보는 memo_search에서 별도로 모은 뒤, agent의 단일
+    reranker 단계에서 일반 RAG 후보와 함께 평가한다.
+    """
     query = (query or "").strip()
     if not query:
         return []
 
     es = get_es()
     query_language = detect_language(query)
-    bm25_indices = [get_language_index("rag_documents", query_language), get_language_index("memo_documents", query_language)]
+    bm25_indices = [get_language_index("rag_documents", query_language)]
     BM25_POOL = 20   # BM25 후보 수
     KNN_POOL  = 20   # kNN 후보 수
-    RERANK_K  = max(size * 2, 10)  # reranker에 넘길 후보 (최소 10)
     RRF_K = 60        # RRF 표준 상수
     _source = ["title", "content", "url", "source", "indexed_at", "id", "updated_at"]
 
@@ -251,7 +254,7 @@ async def rag_search(query: str, size: int = 5) -> list[dict]:
             import asyncio as _asyncio
             bm25_res, knn_res = await _asyncio.gather(
                 es.search(index=bm25_indices, body=bm25_body),
-                es.search(index=[INDEX_NAME, MEMO_INDEX], body=knn_body),
+                es.search(index=[INDEX_NAME], body=knn_body),
             )
             bm25_hits = bm25_res["hits"]["hits"]
             knn_hits  = knn_res["hits"]["hits"]
@@ -273,18 +276,15 @@ async def rag_search(query: str, size: int = 5) -> list[dict]:
                         sorted_keys[:5], [round(rrf_scores[key], 4) for key in sorted_keys[:5]])
 
             merged_hits = [all_hits[doc_key] for doc_key in sorted_keys if doc_key in all_hits]
-            candidates = _rerank(merged_hits, RERANK_K, preserve_order=True)
+            candidates = _rerank(merged_hits, size, preserve_order=True)
         else:
             logger.warning("[rag_search] BM25 fallback 진입")
             bm25_res = await es.search(
                 index=bm25_indices,
                 body={**bm25_body, "min_score": 1.0},
             )
-            candidates = _rerank(bm25_res["hits"]["hits"], RERANK_K)
+            candidates = _rerank(bm25_res["hits"]["hits"], size)
 
-        from reranker import rerank as _rerank_model, is_available
-        if is_available() and candidates:
-            return await _rerank_model(query, candidates, top_k=size)
         return candidates[:size]
 
     except Exception as e:
@@ -293,6 +293,185 @@ async def rag_search(query: str, size: int = 5) -> list[dict]:
     finally:
         await es.close()
 
+
+def _context_search_query(query: str) -> str:
+    """메모 검색의 기존 긴 질문 축약 규칙을 공유한다."""
+    normalized_query = query.strip()
+    if len(normalized_query) <= 100:
+        return normalized_query
+    for separator in ["\n", ". ", "? ", "! "]:
+        index = normalized_query.find(separator)
+        if 0 < index <= 150:
+            return normalized_query[:index]
+    return normalized_query[:100]
+
+
+def _msearch_hits(response: dict, response_index: int, source_name: str) -> list[dict]:
+    """_msearch의 부분 실패를 다른 출처 검색과 분리해 처리한다."""
+    responses = response.get("responses", [])
+    if response_index >= len(responses):
+        logger.warning("[related_context_search] %s 응답 누락", source_name)
+        return []
+    result = responses[response_index]
+    if result.get("error"):
+        logger.warning("[related_context_search] %s 검색 실패: %s", source_name, result["error"])
+        return []
+    return result.get("hits", {}).get("hits", [])
+
+
+async def search_related_context_candidates(
+        query: str,
+        rag_size: int = 10,
+        memo_size: int = 10,
+) -> list[dict]:
+    """일반 RAG·메모·빠른메모 후보를 임베딩 1회와 ES _msearch 1회로 조회한다.
+
+    각 출처의 BM25·kNN 검색식은 기존과 동일하게 유지한다. 검색 결과의 병합과
+    최종 관련도 판단은 호출부의 단일 reranker 단계에서 수행한다.
+    """
+    if not query or not query.strip():
+        return []
+
+    rag_query = query.strip()
+    memo_query = _context_search_query(query)
+    rag_language = detect_language(rag_query)
+    memo_language = detect_language(memo_query)
+    rag_bm25_pool = 20
+    rag_knn_pool = 20
+    memo_pool = memo_size * 4
+    rag_source_fields = ["title", "content", "url", "source", "indexed_at", "id", "updated_at"]
+    memo_source_fields = ["title", "content", "id", "source", "updated_at"]
+    quicknote_source_fields = ["id", "title", "content", "done", "updated_at"]
+
+    rag_bm25_body = {
+        "size": rag_bm25_pool,
+        "_source": rag_source_fields,
+        "query": {
+            "function_score": {
+                "query": {
+                    "bool": {
+                        "should": [
+                            {"match_phrase": {"title": {"query": rag_query, "boost": 5, "slop": 1}}},
+                            {"match": {"title": {"query": rag_query, "boost": 3, "minimum_should_match": "60%"}}},
+                            {"match": {"content": {"query": rag_query, "minimum_should_match": "60%"}}},
+                        ],
+                        "minimum_should_match": 1,
+                    }
+                },
+                "functions": [{
+                    "gauss": {
+                        "indexed_at": {"origin": "now", "scale": "7d", "decay": 0.5, "offset": "1d"},
+                    },
+                    "weight": 2,
+                }],
+                "score_mode": "multiply",
+                "boost_mode": "multiply",
+            }
+        },
+    }
+    memo_bm25_body = {"size": memo_pool, "_source": memo_source_fields, "query": _memo_bm25_query(memo_query)}
+    quicknote_bm25_body = {
+        "size": memo_pool,
+        "_source": quicknote_source_fields,
+        "query": {"match": {"content": {"query": memo_query, "minimum_should_match": "30%"}}},
+    }
+
+    es = get_es()
+    try:
+        embedding = await get_embedding(rag_query, is_query=True)
+        rag_bm25_search_body = rag_bm25_body if embedding else {**rag_bm25_body, "min_score": 1.0}
+        searches: list[dict] = [
+            {"index": get_language_index("rag_documents", rag_language)}, rag_bm25_search_body,
+            {"index": get_language_index("memo_documents", memo_language)}, memo_bm25_body,
+            {"index": get_language_index("quick_notes", memo_language)}, quicknote_bm25_body,
+        ]
+        response_positions = {"rag_bm25": 0, "memo_bm25": 1, "quicknote_bm25": 2}
+        if embedding:
+            rag_knn_body = {
+                "size": rag_knn_pool,
+                "_source": rag_source_fields,
+                "knn": {"field": "embedding", "query_vector": embedding, "k": rag_knn_pool, "num_candidates": rag_knn_pool * 5},
+            }
+            memo_knn_body = {
+                "size": memo_pool,
+                "_source": memo_source_fields,
+                "knn": {"field": "embedding", "query_vector": embedding, "k": memo_pool, "num_candidates": memo_size * 20},
+            }
+            quicknote_knn_body = {
+                "size": memo_pool,
+                "_source": quicknote_source_fields,
+                "knn": {"field": "embedding", "query_vector": embedding, "k": memo_pool, "num_candidates": memo_size * 20},
+            }
+            searches.extend([
+                {"index": INDEX_NAME}, rag_knn_body,
+                {"index": MEMO_INDEX}, memo_knn_body,
+                {"index": QUICKNOTE_INDEX}, quicknote_knn_body,
+            ])
+            response_positions.update({"rag_knn": 3, "memo_knn": 4, "quicknote_knn": 5})
+        else:
+            logger.warning("[related_context_search] 임베딩 실패, BM25 fallback")
+
+        response = await es.msearch(searches=searches)
+
+        rag_bm25_hits = _msearch_hits(response, response_positions["rag_bm25"], "일반 RAG BM25")
+        memo_bm25_hits = _msearch_hits(response, response_positions["memo_bm25"], "메모 BM25")
+        quicknote_bm25_hits = _msearch_hits(response, response_positions["quicknote_bm25"], "빠른메모 BM25")
+        if embedding:
+            rag_hits = _rerank(
+                _rrf_hits(rag_bm25_hits, _msearch_hits(response, response_positions["rag_knn"], "일반 RAG kNN"), rag_size),
+                rag_size,
+                preserve_order=True,
+            )
+            memo_hits = _rrf_hits(
+                memo_bm25_hits,
+                _msearch_hits(response, response_positions["memo_knn"], "메모 kNN"),
+                memo_size * 2,
+            )
+            quicknote_hits = _rrf_hits(
+                quicknote_bm25_hits,
+                _msearch_hits(response, response_positions["quicknote_knn"], "빠른메모 kNN"),
+                memo_size,
+            )
+        else:
+            rag_hits = _rerank(rag_bm25_hits, rag_size)
+            memo_hits = memo_bm25_hits
+            quicknote_hits = quicknote_bm25_hits[:memo_size]
+
+        rag_results = rag_hits
+        memo_results = [
+            {
+                "title": hit["_source"]["title"],
+                "content": hit["_source"]["content"],
+                "url": f"memo://{hit['_source'].get('id', hit['_id'])}",
+                "source": "memo",
+                "indexed_at": hit["_source"].get("updated_at", ""),
+                "score": round(hit.get("_score") or 0, 3),
+                "memo_id": hit["_source"].get("id", hit["_id"]),
+            }
+            for hit in memo_hits[:memo_size]
+        ]
+        quicknote_results = [
+            {
+                "title": "빠른 메모" + (" (완료)" if hit["_source"].get("done") else ""),
+                "content": hit["_source"]["content"],
+                "url": f"quicknote://{hit['_source'].get('id', hit['_id'])}",
+                "source": "quicknote",
+                "indexed_at": hit["_source"].get("updated_at", ""),
+                "score": round(hit.get("_score") or 0, 3),
+                "quicknote_id": hit["_source"].get("id", hit["_id"]),
+            }
+            for hit in quicknote_hits[:memo_size]
+        ]
+        logger.info(
+            "[related_context_search] query=%r candidates: rag=%d memo=%d quicknote=%d",
+            rag_query, len(rag_results), len(memo_results), len(quicknote_results),
+        )
+        return rag_results + memo_results + quicknote_results
+    except Exception as error:
+        logger.warning("[related_context_search] 실패: %s", error)
+        return []
+    finally:
+        await es.close()
 
 async def knowledge_collection_search(collection_id: str, query: str, size: int = 5) -> tuple[list[dict], str]:
     """컬렉션에 연결된 문서 청크와 메모만 검색한다.

@@ -21,7 +21,13 @@ from services.db import (
     _index_default_summarizer_prompt,
     _index_default_coding_prompt,
 )
-from services.indexer import index_documents, rag_search, memo_search, get_index_stats, knowledge_collection_search
+from services.indexer import (
+    get_index_stats,
+    index_documents,
+    knowledge_collection_search,
+    memo_search,
+    search_related_context_candidates,
+)
 from services.llm import query_llm, chat_stream_with_tools, collect_llm_stream, get_model_name, get_provider_config
 from services.history import (
     save_conversation, create_conversation_stub, list_conversations,
@@ -32,8 +38,13 @@ from services.prompts import (
     create_prompt, update_prompt, delete_prompt, reorder_prompts,
 )
 from logger import get_logger
+from reranker import is_available as is_reranker_available, rerank
 
 logger = get_logger(__name__)
+
+RERANK_SCORE_THRESHOLD = 0.35
+RELATED_CONTEXT_CANDIDATE_SIZE = 10
+RELATED_CONTEXT_RESULT_SIZE = 8
 
 
 def _knowledge_inline_image_attachments(docs: list[dict], limit: int = 3) -> list[dict]:
@@ -62,27 +73,46 @@ def _knowledge_inline_image_attachments(docs: list[dict], limit: int = 3) -> lis
     return images
 
 
-async def _gather_rag_only(question: str) -> list[dict]:
-    """ES(RAG) 뉴스 검색 + 관련도 필터만 수행 (메모/extra_context 제외).
+async def _rerank_related_context(question: str, candidates: list[dict]) -> list[dict]:
+    """일반 RAG·메모·빠른메모 후보를 하나의 관련도 기준으로 선별한다."""
+    unique_candidates: list[dict] = []
+    seen_keys: set[str] = set()
+    for candidate in candidates:
+        key = candidate.get("url") or f"{candidate.get('source', '')}:{candidate.get('title', '')}"
+        if key in seen_keys:
+            continue
+        seen_keys.add(key)
+        unique_candidates.append(candidate)
 
-    rag_query_stream에서 "tool을 안 썼을 때만" 지연 호출하는 폴백용으로 분리했다.
-    """
-    RAG_SCORE_THRESHOLD = 0.35
+    if not unique_candidates or not is_reranker_available():
+        return unique_candidates
+
+    ranked_candidates = await rerank(question, unique_candidates, top_k=RELATED_CONTEXT_RESULT_SIZE)
+    relevant_candidates = [
+        candidate for candidate in ranked_candidates
+        if candidate.get("rerank_score") is None
+        or candidate["rerank_score"] >= RERANK_SCORE_THRESHOLD
+    ]
+    if len(ranked_candidates) != len(relevant_candidates):
+        logger.info(
+            "[rag_query] 관련도 필터: 일반 RAG/메모/빠른메모 %d개 → %d개 (임계값 %.2f)",
+            len(ranked_candidates), len(relevant_candidates), RERANK_SCORE_THRESHOLD,
+        )
+    return relevant_candidates
+
+
+async def _gather_related_context(question: str) -> list[dict]:
+    """일반 RAG·메모·빠른메모 후보를 병렬 조회한 뒤 통합 재랭킹한다."""
     try:
-        rag_docs = await rag_search(question, size=5)
+        candidates = await search_related_context_candidates(
+            question,
+            rag_size=RELATED_CONTEXT_CANDIDATE_SIZE,
+            memo_size=RELATED_CONTEXT_CANDIDATE_SIZE,
+        )
     except Exception as e:
-        logger.warning("[rag_query] RAG 검색 실패: %s", e)
+        logger.warning("[rag_query] 관련 컨텍스트 검색 실패: %s", e)
         return []
-    if not isinstance(rag_docs, list):
-        return []
-
-    before = len(rag_docs)
-    rag_docs = [d for d in rag_docs
-                if d.get("rerank_score") is None or d["rerank_score"] >= RAG_SCORE_THRESHOLD]
-    if before != len(rag_docs):
-        logger.info("[rag_query] 관련도 필터: RAG %d개 → %d개 (임계값 %.2f)",
-                    before, len(rag_docs), RAG_SCORE_THRESHOLD)
-    return rag_docs
+    return await _rerank_related_context(question, candidates)
 
 
 async def _gather_docs(question: str, extra_context: list, skip_rag: bool = False, conv_id: str = "", knowledge_collection_id: str = "") -> list[dict]:
@@ -121,19 +151,15 @@ async def _gather_docs(question: str, extra_context: list, skip_rag: bool = Fals
             logger.warning("[rag_query] 첨부파일 검색 실패: %s", e)
             return []
 
-    rag_docs, memo_result, chat_file_docs = await asyncio.gather(
-        _gather_rag_only(question),
-        memo_search(question, size=3),
+    related_context_docs, chat_file_docs = await asyncio.gather(
+        _gather_related_context(question),
         _gather_chat_files(),
         return_exceptions=True,
     )
-    rag_docs = rag_docs if isinstance(rag_docs, list) else []
-    memo_docs = memo_result if isinstance(memo_result, list) else []
+    related_context_docs = related_context_docs if isinstance(related_context_docs, list) else []
     chat_file_docs = chat_file_docs if isinstance(chat_file_docs, list) else []
-    if isinstance(memo_result, Exception):
-        logger.warning("[rag_query] 메모 검색 실패: %s", memo_result)
 
-    return extra_context + rag_docs + memo_docs + chat_file_docs
+    return extra_context + related_context_docs + chat_file_docs
 
 
 async def rag_query(
@@ -245,25 +271,22 @@ async def rag_query_stream(
         if tool_got_sources:
             # tool이 이미 최신 뉴스를 가져왔으므로 메모+첨부파일만 보충
             memo_result, chat_file_result = await asyncio.gather(
-                memo_search(question, size=3), _gather_chat_files_for_stream(),
+                memo_search(question, size=RELATED_CONTEXT_CANDIDATE_SIZE), _gather_chat_files_for_stream(),
                 return_exceptions=True,
             )
             memo_docs = memo_result if isinstance(memo_result, list) else []
             chat_file_docs = chat_file_result if isinstance(chat_file_result, list) else []
-            docs_found = memo_docs + chat_file_docs
+            docs_found = await _rerank_related_context(question, memo_docs) + chat_file_docs
         else:
             # tool을 안 썼거나 실패 — 메모 + 뉴스 RAG + 첨부파일을 병렬로 조회
-            memo_result, rag_result, chat_file_result = await asyncio.gather(
-                memo_search(question, size=3), _gather_rag_only(question),
+            related_context_result, chat_file_result = await asyncio.gather(
+                _gather_related_context(question),
                 _gather_chat_files_for_stream(),
                 return_exceptions=True,
             )
-            memo_docs = memo_result if isinstance(memo_result, list) else []
-            rag_docs = rag_result if isinstance(rag_result, list) else []
+            related_context_docs = related_context_result if isinstance(related_context_result, list) else []
             chat_file_docs = chat_file_result if isinstance(chat_file_result, list) else []
-            if isinstance(memo_result, Exception):
-                logger.warning("[rag_query] 메모 검색 실패: %s", memo_result)
-            docs_found = memo_docs + rag_docs + chat_file_docs
+            docs_found = related_context_docs + chat_file_docs
         # reset(늦은 tool 호출) 시 재호출될 수 있으므로 extend가 아니라 교체 —
         # 마지막 호출 결과만 유효하다 (중복 누적 방지)
         post_docs.clear()
