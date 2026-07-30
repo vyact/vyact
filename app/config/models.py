@@ -9,7 +9,7 @@ IS_MLX_SUPPORTED = (
         and platform.machine().lower() in {"arm64", "aarch64"}
 )
 IS_WINDOWS = platform.system() == "Windows"
-DEFAULT_MODEL = "gemma4:12b-mlx" if IS_MLX_SUPPORTED else "gemma4:e2b"
+DEFAULT_MODEL = "gemma4:e2b-mlx" if IS_MLX_SUPPORTED else "gemma4:e2b"
 
 # 모델 타입 상수
 MODEL_TYPE_CHAT = "chat"  # 일반 대화
@@ -57,6 +57,12 @@ WINDOWS_CHAT_MODELS = [
 ]
 
 MLX_CHAT_MODELS = [
+    {
+        "id": "gemma4:e2b-mlx",
+        "name": "Gemma 4 E2B MLX (Effective 2B)",
+        "type": MODEL_TYPE_CHAT,
+        "desc": "Google DeepMind의 초경량 엣지용 모델 · Apple Silicon(MLX) 최적화 · 약 6.5GB · 128K 컨텍스트 · Text·Image 입력 지원 · 빠른 추론·번역·일반 대화·경량 에이전트 작업에 적합"
+    },
     {
         "id": "gemma4:e4b-mlx",
         "name": "Gemma 4 E4B MLX (Effective 4B)",
