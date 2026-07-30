@@ -111,6 +111,19 @@ def _rrf_hits(bm25_hits: list[dict], knn_hits: list[dict], size: int, rrf_k: int
     return [hits_by_key[key] for key in sorted(scores, key=scores.get, reverse=True)[:size]]
 
 
+def _retrieval_origins(selected_hits: list[dict], bm25_hits: list[dict], knn_hits: list[dict]) -> list[tuple[str, str]]:
+    """Return diagnostic-only origin labels without changing search result payloads."""
+    bm25_keys = {(hit["_index"], hit["_id"]) for hit in bm25_hits}
+    knn_keys = {(hit["_index"], hit["_id"]) for hit in knn_hits}
+    origins: list[tuple[str, str]] = []
+    for hit in selected_hits:
+        key = (hit["_index"], hit["_id"])
+        origin = "hybrid" if key in bm25_keys and key in knn_keys else "bm25" if key in bm25_keys else "vector"
+        title = hit.get("_source", {}).get("title") or hit.get("_source", {}).get("content", "")[:40]
+        origins.append((title, origin))
+    return origins
+
+
 def _memo_bm25_query(query: str) -> dict:
     return {"bool": {"should": [
         {"match_phrase": {"title": {"query": query, "boost": 5}}},
@@ -350,22 +363,26 @@ async def search_related_context_candidates(
         memo_bm25_hits = _msearch_hits(response, response_positions["memo_bm25"], "메모 BM25")
         quicknote_bm25_hits = _msearch_hits(response, response_positions["quicknote_bm25"], "빠른메모 BM25")
         if embedding:
+            rag_knn_hits = _msearch_hits(response, response_positions["rag_knn"], "일반 RAG kNN")
+            memo_knn_hits = _msearch_hits(response, response_positions["memo_knn"], "메모 kNN")
+            quicknote_knn_hits = _msearch_hits(response, response_positions["quicknote_knn"], "빠른메모 kNN")
             rag_hits = _rerank(
-                _rrf_hits(rag_bm25_hits, _msearch_hits(response, response_positions["rag_knn"], "일반 RAG kNN"), rag_size),
+                _rrf_hits(rag_bm25_hits, rag_knn_hits, rag_size),
                 rag_size,
                 preserve_order=True,
             )
             memo_hits = _rrf_hits(
                 memo_bm25_hits,
-                _msearch_hits(response, response_positions["memo_knn"], "메모 kNN"),
+                memo_knn_hits,
                 memo_size * 2,
             )
             quicknote_hits = _rrf_hits(
                 quicknote_bm25_hits,
-                _msearch_hits(response, response_positions["quicknote_knn"], "빠른메모 kNN"),
+                quicknote_knn_hits,
                 memo_size,
             )
         else:
+            rag_knn_hits = memo_knn_hits = quicknote_knn_hits = []
             rag_hits = _rerank(rag_bm25_hits, rag_size)
             memo_hits = memo_bm25_hits
             quicknote_hits = quicknote_bm25_hits[:memo_size]
@@ -396,8 +413,11 @@ async def search_related_context_candidates(
             for hit in quicknote_hits[:memo_size]
         ]
         logger.info(
-            "[related_context_search] query=%r candidates: rag=%d memo=%d quicknote=%d",
+            "[related_context_search] query=%r candidates: rag=%d memo=%d quicknote=%d origins: rag=%s memo=%s quicknote=%s",
             rag_query, len(rag_results), len(memo_results), len(quicknote_results),
+            _retrieval_origins(rag_hits, rag_bm25_hits, rag_knn_hits),
+            _retrieval_origins(memo_hits, memo_bm25_hits, memo_knn_hits),
+            _retrieval_origins(quicknote_hits, quicknote_bm25_hits, quicknote_knn_hits),
         )
         return rag_results + memo_results + quicknote_results
     except Exception as error:

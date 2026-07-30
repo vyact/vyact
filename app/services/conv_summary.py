@@ -97,7 +97,14 @@ def extract_summary_tags(answer: str) -> tuple[str, str | None, str | None]:
         project_summary = m.group(1).strip()
         answer = PROJECT_SUMMARY_TAG_RE.sub("", answer)
 
-    return answer.strip(), conv_summary, project_summary
+    clean_answer = answer.strip()
+    # 일부 소형 모델은 답변 본문 없이 내부 요약 태그만 출력한다. 태그를 무조건
+    # 제거하면 SSE에는 토큰이 있었어도 최종 answer가 빈 문자열이 되어 UI가 빈
+    # 메시지를 표시한다. 이 경우 요약 내용을 사용자 응답으로 보존한다.
+    if not clean_answer and conv_summary:
+        clean_answer = conv_summary
+
+    return clean_answer, conv_summary, project_summary
 
 
 async def get_prior_conv_summary(conv_id: str) -> str:
