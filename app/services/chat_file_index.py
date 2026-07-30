@@ -29,6 +29,7 @@ from pathlib import Path
 from elasticsearch.helpers import async_bulk
 
 from logger import get_logger
+from config.embeddings import EMBEDDING_MODEL_ID
 from services.db import CHAT_FILE_CHUNKS_INDEX, get_es
 from services.document_parser import PARSERS
 from services.indexer import get_embedding, EmbeddingContextExceeded
@@ -150,7 +151,7 @@ async def index_chat_files_progress(
         else:
             # 코드/설정/md: 웬만하면 파일 하나 = 청크 하나로 통째로 넣는다(함수/블록이
             # 중간에 잘리면 의미가 깨지므로). 글자 수로 미리 추정해서 자르지 않고,
-            # 일단 통째로 시도해보고 — 정말 bge-m3 컨텍스트를 초과해서 Ollama가
+            # 일단 통째로 시도해보고 — 실제 임베딩 컨텍스트를 초과하는 경우에만
             # 거부하는 경우에만(EmbeddingContextExceeded) 그때 슬라이딩 윈도우로 분할 재시도.
             whole_text = f"{header}\n\n{content}"
             try:
@@ -191,7 +192,7 @@ async def index_chat_files_progress(
                 "chunk_index": i,
                 "total_chunks": len(chunks),
                 "content_length": len(chunk),
-                "embedding_model": "bge-m3",
+                "embedding_model": EMBEDDING_MODEL_ID,
                 # 코드/설정 파일은 "whole_file"(통째로 1개 청크), 문서류(PDF/docx/txt/md 등)는
                 # "sliding_window_char"(1500자 단위 슬라이딩 윈도우) — services/indexer.py 쪽 문서
                 # 인덱싱의 구조 인식 청킹(chunk_type/page_number)과는 또 다른 이 파이프라인 고유 필드.

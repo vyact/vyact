@@ -2,86 +2,19 @@
 indexer.py – ES 문서 인덱싱 / 검색 / 통계
 """
 import hashlib
-import os
-import httpx
 from datetime import datetime, timezone
 
 from elasticsearch import NotFoundError
 from elasticsearch.helpers import async_bulk
 
-from services.runtime_settings import get_runtime_settings
+from config.embeddings import EMBEDDING_MODEL_ID
+from services.embedding_runtime import EmbeddingContextExceeded, get_embedding
 from services.db import DOC_CHUNKS_INDEX, EMAIL_THREADS_INDEX, INDEX_NAME, KNOWLEDGE_COLLECTIONS_INDEX, MEMO_INDEX, QUICKNOTE_INDEX, get_es, get_language_index
 from services.language_detection import detect_language
 from logger import get_logger
 
 logger = get_logger(__name__)
 
-OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
-
-# httpx 싱글턴 — 임베딩 호출마다 새 연결 방지
-_http_client: httpx.AsyncClient | None = None
-
-def _get_http_client() -> httpx.AsyncClient:
-    global _http_client
-    if _http_client is None or _http_client.is_closed:
-        _http_client = httpx.AsyncClient(
-            timeout=httpx.Timeout(180.0, connect=15.0, pool=180.0),
-            limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
-        )
-    return _http_client
-
-
-_BGE_QUERY_PREFIX = "Represent this sentence for searching relevant passages: "
-
-
-class EmbeddingContextExceeded(Exception):
-    """bge-m3 컨텍스트 한도를 초과해서 Ollama가 임베딩을 거부했을 때.
-    호출부(chat_file_index.py)가 이걸 잡아서 "그때만" 분할 재시도하는 데 쓴다 —
-    미리 글자 수로 어림짐작해서 자르지 않고, 실제 API가 거부할 때만 대응한다."""
-    pass
-
-
-async def get_embedding(text: str, is_query: bool = False, raise_on_context_exceeded: bool = False) -> list[float] | None:
-    """BGE-M3 임베딩 생성.
-
-    입력 길이를 미리 추정해서 자르지 않는다 — bge-m3의 실제 토큰 한도(모델마다,
-    설정마다 다를 수 있음)를 문자 수만으로 정확히 예측할 수 없기 때문에, 그냥
-    있는 그대로 보내보고 Ollama가 "컨텍스트 초과"로 거부하면 대응한다.
-
-    raise_on_context_exceeded=True 인 경우에만 EmbeddingContextExceeded를 던진다
-    (예: chat_file_index.py가 "그때만 분할 재시도"하려는 경우). 기본값(False)은 기존과
-    동일하게 그 경우도 로그만 남기고 None을 반환한다 — get_embedding을 이미 쓰고 있는
-    다른 호출부(문서/메모 인덱싱, RAG 검색 등)가 이 새 예외 때문에 갑자기 처리 안 된
-    예외로 죽지 않도록 하기 위한 안전한 기본값이다.
-    """
-    prompt = _BGE_QUERY_PREFIX + text if is_query else text
-    settings = get_runtime_settings()
-
-    try:
-        client = _get_http_client()
-        resp = await client.post(
-            f"{OLLAMA_URL}/api/embed",
-            json={
-                "model": "bge-m3",
-                "input": prompt,
-                "keep_alive": settings["ollama_keep_alive"],
-                "options": {"num_ctx": settings["bge_num_ctx"]},
-            },
-        )
-        if not resp.is_success:
-            body_text = resp.text
-            if raise_on_context_exceeded and "context length" in body_text.lower():
-                # 호출부가 분할 재시도할 수 있게 구분되는 예외로 던진다 (일반 실패와 다르게 처리).
-                logger.info("임베딩 컨텍스트 초과 (입력 %d자) — 분할 재시도 필요: %s", len(prompt), body_text[:200])
-                raise EmbeddingContextExceeded(body_text)
-            logger.warning("임베딩 실패: HTTP %s | body: %s", resp.status_code, body_text)
-            return None
-        return resp.json()["embeddings"][0]
-    except EmbeddingContextExceeded:
-        raise
-    except Exception as e:
-        logger.exception("임베딩 실패: %s", e)
-        return None
 
 async def index_documents(docs: list[dict]) -> dict:
     import asyncio as _asyncio
@@ -124,7 +57,7 @@ async def index_documents(docs: list[dict]) -> dict:
                 "doc_hash": doc_hash,
                 "news_type": doc.get("news_type") or None,
                 "content_length": len(doc["content"]),
-                "embedding_model": "bge-m3",
+                "embedding_model": EMBEDDING_MODEL_ID,
             }
             if embedding:
                 action["embedding"] = embedding

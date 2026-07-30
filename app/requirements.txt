@@ -18,6 +18,8 @@ python-docx==1.2.0
 openpyxl==3.1.5
 Pillow==12.3.0
 sentence-transformers==5.6.1
+huggingface-hub==1.26.0
+llama-cpp-python==0.3.34
 mcp>=1.27,<2
 google-api-python-client==2.198.0
 google-auth>=2.56.2

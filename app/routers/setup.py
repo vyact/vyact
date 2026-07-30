@@ -192,17 +192,6 @@ async def install(req: ModelSelectRequest):
                 yield sse(str(e), "error", 0);
                 return
 
-            yield sse("Downloading embedding model (bge-m3)...", "info", 67)
-            try:
-                from services.ollama_manager import ensure_embed_model
-                ok = await ensure_embed_model("bge-m3")
-                if ok:
-                    yield sse("bge-m3 ready", "ok", 72)
-                else:
-                    yield sse("bge-m3 download failed (will retry later)", "log", 72)
-            except Exception as e:
-                yield sse(f"bge-m3 error: {e}", "log", 72)
-
             yield sse("Creating Python virtual environment...", "info", 74)
             ok, msg = await installer.setup_venv()
             if not ok: yield sse(msg, "error", 0); return
@@ -214,6 +203,14 @@ async def install(req: ModelSelectRequest):
             # 여기서 다시 pip을 실행하면 macOS와 Windows 모두 동일한 패키지를 두 번
             # 확인·설치하게 되므로, 준비 완료 상태만 사용자에게 알린다.
             yield sse("Python packages ready", "ok", 88)
+
+            yield sse("Preparing Vyact embedding model...", "info", 88)
+            try:
+                from services.embedding_runtime import prepare_embedding_model
+                await prepare_embedding_model()
+                yield sse("Vyact embedding model ready", "ok", 89)
+            except Exception as e:
+                yield sse(f"Vyact embedding model download failed: {e}", "log", 89)
 
             if is_japanese_system_language():
                 yield sse("Installing UniDic dictionary for Japanese TTS...", "info", 88)
@@ -271,13 +268,11 @@ async def install(req: ModelSelectRequest):
             # 채팅 모델이 남도록 bge-m3를 먼저 예열하고 채팅 모델을 마지막에 올린다.
             yield sse(f"Loading {model} into memory...", "info", 96)
             try:
-                from services.ollama_manager import get_loaded_model_names, load_embed_model, load_model
+                from services.ollama_manager import get_loaded_model_names, load_model
 
-                embed_ready = await load_embed_model("bge-m3")
                 chat_ready = await load_model(model)
                 loaded_models = await get_loaded_model_names()
                 model_loaded = any(name.split(":", 1)[0] == model.split(":", 1)[0] for name in loaded_models)
-                embed_loaded = any(name.split(":", 1)[0] == "bge-m3" for name in loaded_models)
 
                 if chat_ready and model_loaded:
                     yield sse(f"{model} ready in memory", "ok", 98)
@@ -292,8 +287,6 @@ async def install(req: ModelSelectRequest):
                         logger.debug("[setup] Ollama chat prefix warm-up skipped: %s", warmup_error)
                 else:
                     yield sse(f"{model} could not stay loaded (memory may be insufficient)", "log", 98)
-                if not (embed_ready and embed_loaded):
-                    yield sse("bge-m3 could not stay loaded (memory may be insufficient)", "log", 98)
             except Exception as e:
                 logger.warning("[setup] Ollama model warm-up failed: %s", e)
                 yield sse(f"Model warm-up failed: {e}", "log", 98)

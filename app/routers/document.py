@@ -222,7 +222,7 @@ async def _index_saved_document(
                     "chunk_index": index,
                     "total_chunks": total_chunks,
                     "content_length": len(chunk),
-                    "embedding_model": "bge-m3",
+                    "embedding_model": "ggml-org/bge-m3-Q8_0-GGUF",
                     "chunk_type": typed_chunk.chunk_type,
                     "heading_path": typed_chunk.heading_path or [],
                     "page_number": typed_chunk.page_number,

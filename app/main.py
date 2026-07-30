@@ -214,19 +214,6 @@ async def lifespan(app: FastAPI):
             logger.warning("Elasticsearch unavailable — RAG features disabled")
 
     if SETUP_DONE.exists():
-        # 메모리가 부족해 하나의 모델만 상주할 수 있으면, 앱을 연 직후 바로
-        # 사용하는 채팅 모델이 남도록 bge-m3를 먼저 예열한다.
-        try:
-            from services.ollama_manager import get_loaded_model_names, load_embed_model
-            embed_ready = await load_embed_model("bge-m3")
-            loaded_models = await get_loaded_model_names()
-            if embed_ready and any(name.split(":", 1)[0] == "bge-m3" for name in loaded_models):
-                logger.info("Embedding model verified in memory: bge-m3")
-            else:
-                logger.warning("Embedding model was not retained in memory: bge-m3")
-        except Exception as e:
-            logger.warning("Embedding model load failed: %s", e)
-
         try:
             from routers.deps import load_config_async
             from services.ollama_manager import get_loaded_model_names, load_model
@@ -346,15 +333,13 @@ async def lifespan(app: FastAPI):
 
     try:
         from routers.deps import load_config_async
-        from services.ollama_manager import unload_embed_model, unload_model
+        from services.ollama_manager import unload_model
         cfg = await load_config_async()
         if cfg.get("type", "ollama") == "ollama" and cfg.get("model"):
             model = cfg["model"]
             logger.info("Unloading Ollama model: %s", model)
             await unload_model(model)
             logger.info("Ollama model unloaded: %s", model)
-        logger.info("Unloading Ollama embedding model: bge-m3")
-        await unload_embed_model("bge-m3")
     except Exception as e:
         logger.warning("Ollama model unload failed: %s", e)
 
@@ -462,15 +447,13 @@ async def shutdown():
     """Electron 앱 종료 시 호출 - ollama 언로드 후 서버 프로세스 종료"""
     try:
         from routers.deps import load_config_async
-        from services.ollama_manager import unload_embed_model, unload_model
+        from services.ollama_manager import unload_model
         cfg = await load_config_async()
         if cfg.get("type", "ollama") == "ollama" and cfg.get("model"):
             model = cfg["model"]
             logger.info("[shutdown] Unloading Ollama model: %s", model)
             await unload_model(model)
             logger.info("[shutdown] Ollama model unloaded: %s", model)
-        logger.info("[shutdown] Unloading Ollama embedding model: bge-m3")
-        await unload_embed_model("bge-m3")
     except Exception as e:
         logger.error("[shutdown] Unload failed: %s", e)
     finally:
