@@ -214,6 +214,19 @@ async def lifespan(app: FastAPI):
             logger.warning("Elasticsearch unavailable — RAG features disabled")
 
     if SETUP_DONE.exists():
+        # 메모리가 부족해 하나의 모델만 상주할 수 있으면, 앱을 연 직후 바로
+        # 사용하는 채팅 모델이 남도록 bge-m3를 먼저 예열한다.
+        try:
+            from services.ollama_manager import get_loaded_model_names, load_embed_model
+            embed_ready = await load_embed_model("bge-m3")
+            loaded_models = await get_loaded_model_names()
+            if embed_ready and any(name.split(":", 1)[0] == "bge-m3" for name in loaded_models):
+                logger.info("Embedding model verified in memory: bge-m3")
+            else:
+                logger.warning("Embedding model was not retained in memory: bge-m3")
+        except Exception as e:
+            logger.warning("Embedding model load failed: %s", e)
+
         try:
             from routers.deps import load_config_async
             from services.ollama_manager import get_loaded_model_names, load_model
@@ -241,17 +254,6 @@ async def lifespan(app: FastAPI):
                         logger.debug("[llm_warmup] Scheduling skipped: %s", e)
         except Exception as e:
             logger.warning("Ollama model load failed: %s", e)
-
-        try:
-            from services.ollama_manager import get_loaded_model_names, load_embed_model
-            embed_ready = await load_embed_model("bge-m3")
-            loaded_models = await get_loaded_model_names()
-            if embed_ready and any(name.split(":", 1)[0] == "bge-m3" for name in loaded_models):
-                logger.info("Embedding model verified in memory: bge-m3")
-            else:
-                logger.warning("Embedding model was not retained in memory: bge-m3")
-        except Exception as e:
-            logger.warning("Embedding model load failed: %s", e)
 
     # Whisper 모델 사전 로드 (첫 STT 요청 지연 방지)
     try:

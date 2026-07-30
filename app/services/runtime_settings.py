@@ -1,6 +1,6 @@
 """ES에 저장되는 모델/문서 처리 설정의 런타임 캐시."""
 from config.models import (
-    BGE_NUM_CTX, HISTORY_CHARS_PER_TOKEN, HISTORY_TOKEN_BUDGET,
+    BGE_NUM_CTX, HISTORY_CHARS_PER_TOKEN, HISTORY_TOKEN_BUDGET, LLM_INITIAL_NUM_CTX,
     LLM_MAX_NUM_CTX, LLM_MAX_TOKENS, LLM_NUM_CTX, LLM_NUM_PREDICT, LLM_TEMPERATURE,
     OLLAMA_KEEP_ALIVE, TOP_K, TOP_P,
 )
@@ -32,7 +32,7 @@ def apply_runtime_settings(values: dict | None) -> dict:
                     try:
                         cast_type = type(default) if default is not None else float
                         parsed = cast_type(val)
-                        _settings[key] = min(max(parsed, 32768), LLM_MAX_NUM_CTX) if key == "llm_num_ctx" else parsed
+                        _settings[key] = min(max(parsed, LLM_INITIAL_NUM_CTX), LLM_MAX_NUM_CTX) if key == "llm_num_ctx" else parsed
                     except (TypeError, ValueError):
                         pass
     return get_runtime_settings()

@@ -267,13 +267,14 @@ async def install(req: ModelSelectRequest):
             except Exception as e:
                 logger.warning("[setup] 초기화 실패: %s", e)
 
-            # 첫 대화 지연을 막기 위해 다운로드한 모델을 설치 완료 전에 실제 메모리에 올린다.
+            # 메모리가 부족해 하나의 모델만 상주할 수 있으면, 설치 직후 바로 사용하는
+            # 채팅 모델이 남도록 bge-m3를 먼저 예열하고 채팅 모델을 마지막에 올린다.
             yield sse(f"Loading {model} into memory...", "info", 96)
             try:
                 from services.ollama_manager import get_loaded_model_names, load_embed_model, load_model
 
-                chat_ready = await load_model(model)
                 embed_ready = await load_embed_model("bge-m3")
+                chat_ready = await load_model(model)
                 loaded_models = await get_loaded_model_names()
                 model_loaded = any(name.split(":", 1)[0] == model.split(":", 1)[0] for name in loaded_models)
                 embed_loaded = any(name.split(":", 1)[0] == "bge-m3" for name in loaded_models)
