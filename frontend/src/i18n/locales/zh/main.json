@@ -132,6 +132,8 @@
     "aiInsert": "插入",
     "aiGenerating": "生成中…",
     "quotedHeader": "{{date}}, {{sender}} 写道:",
+    "showQuotedReply": "显示上一封邮件",
+    "hideQuotedReply": "隐藏上一封邮件",
     "originalEmail": "原始邮件",
     "selectMail": "选择邮件",
     "selected": "已选择 {{count}} 项",

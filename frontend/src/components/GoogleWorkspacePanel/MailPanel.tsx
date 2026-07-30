@@ -1,4 +1,4 @@
-import {memo, type ReactNode, useEffect, useLayoutEffect, useRef, useState} from 'react';
+import {memo, type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {renderAsync as renderDocx} from 'docx-preview';
 import {createPortal} from 'react-dom';
 import {useTranslation} from 'react-i18next';
@@ -313,6 +313,60 @@ const getPlainTextFromHtml = (html: string) => {
 
 const createEmailDocument = (body: string) => `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src http: https: data: blob: cid:; style-src 'unsafe-inline';"><base target="_blank"><meta name="viewport" content="width=device-width, initial-scale=1"><style>:root { color-scheme: light !important; } html, body { min-height: 100%; max-width: 100%; margin: 0; overflow-x: hidden; background: #fff; } body { box-sizing: border-box; padding: 24px; overflow-wrap: anywhere; word-break: break-word; font-family: Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; font-size: 14px; line-height: 1.5; } body * { box-sizing: border-box; max-width: 100%; } pre { white-space: pre-wrap; overflow-wrap: anywhere; } table { max-width: 100% !important; } td, th { overflow-wrap: normal; word-break: normal; } img { max-width: 100% !important; height: auto !important; }</style></head><body>${body}</body></html>`;
 
+type QuotedReplyLabels = {show: string; hide: string};
+
+const isLegacyQuotedReply = (blockquote: HTMLElement) => {
+    const header = blockquote.previousElementSibling as HTMLElement | null;
+    if (!header || header.tagName !== 'DIV') return false;
+    const headerStyle = header.getAttribute('style')?.replace(/\s/g, '').toLowerCase() || '';
+    return headerStyle.includes('color:#888') && headerStyle.includes('font-size:13px');
+};
+
+const addQuotedReplyToggles = (document: Document, labels: QuotedReplyLabels, onToggle: () => void) => {
+    const quotedReplies = Array.from(document.querySelectorAll<HTMLElement>('[data-vyact-quoted-reply]'));
+    document.querySelectorAll<HTMLElement>('blockquote').forEach(blockquote => {
+        if (blockquote.closest('[data-vyact-quoted-reply]') || !isLegacyQuotedReply(blockquote)) return;
+        const header = blockquote.previousElementSibling!;
+        const wrapper = document.createElement('section');
+        wrapper.setAttribute('data-vyact-quoted-reply', '');
+        header.before(wrapper);
+        wrapper.append(header, blockquote);
+        quotedReplies.push(wrapper);
+    });
+    if (!quotedReplies.length) return;
+
+    if (!document.getElementById('vyact-quoted-reply-style')) {
+        const style = document.createElement('style');
+        style.id = 'vyact-quoted-reply-style';
+        style.textContent = '.vyact-quoted-reply-toggle{display:inline-flex;align-items:center;margin:12px 0 8px;padding:5px 10px;border:1px solid #b6b6b6;border-radius:14px;background:#f5f5f5;color:#424242;cursor:pointer;font:600 12px/1.25 Arial,sans-serif}.vyact-quoted-reply-toggle:hover{background:#e9e9e9}.vyact-quoted-reply-content[hidden]{display:none!important}';
+        document.head.append(style);
+    }
+
+    quotedReplies.forEach((quotedReply, index) => {
+        if (quotedReply.dataset.vyactToggleReady) return;
+        quotedReply.dataset.vyactToggleReady = 'true';
+        const content = document.createElement('div');
+        content.className = 'vyact-quoted-reply-content';
+        content.id = `vyact-quoted-reply-${index}`;
+        while (quotedReply.firstChild) content.append(quotedReply.firstChild);
+        content.hidden = true;
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'vyact-quoted-reply-toggle';
+        button.setAttribute('aria-controls', content.id);
+        button.setAttribute('aria-expanded', 'false');
+        button.textContent = labels.show;
+        button.addEventListener('click', () => {
+            content.hidden = !content.hidden;
+            button.setAttribute('aria-expanded', String(!content.hidden));
+            button.textContent = content.hidden ? labels.show : labels.hide;
+            requestAnimationFrame(onToggle);
+        });
+        quotedReply.append(button, content);
+    });
+};
+
 function DocxAttachmentPreview({file, label}: {file: Blob; label: string}) {
     const {t} = useTranslation('main');
     const containerRef = useRef<HTMLDivElement>(null);
@@ -358,6 +412,34 @@ const EmailBody = memo(function EmailBody({mail, fillAvailableSpace = false}: {
     fillAvailableSpace?: boolean;
 }) {
     const {t} = useTranslation('main');
+    const iframeRef = useRef<HTMLIFrameElement>(null);
+    const resizeToContent = useCallback(() => {
+        const iframe = iframeRef.current;
+        if (!iframe || fillAvailableSpace) return;
+        const document = iframe.contentDocument;
+        if (!document) return;
+        // The document uses a minimum height of 100%. If we measure it while
+        // the iframe still has its expanded height, that height becomes the
+        // next measurement and leaves blank space after a quoted reply closes.
+        iframe.style.height = '0px';
+        iframe.style.height = `${Math.max(document.body.scrollHeight, document.body.offsetHeight)}px`;
+    }, [fillAvailableSpace]);
+
+    useEffect(() => {
+        const iframe = iframeRef.current;
+        const container = iframe?.parentElement;
+        if (!iframe || !container || fillAvailableSpace) return;
+        let previousWidth = Math.round(container.getBoundingClientRect().width);
+        const observer = new ResizeObserver(entries => {
+            const width = Math.round(entries[0]?.contentRect.width || 0);
+            if (width === previousWidth) return;
+            previousWidth = width;
+            window.requestAnimationFrame(resizeToContent);
+        });
+        observer.observe(container);
+        return () => observer.disconnect();
+    }, [fillAvailableSpace, mail.body, mail.htmlBody, resizeToContent]);
+
     if (!hasVisibleEmailContent(mail)) {
         return <div className="gwp-email-empty" role="status">
             <Mail aria-hidden="true" size={28}/>
@@ -365,6 +447,7 @@ const EmailBody = memo(function EmailBody({mail, fillAvailableSpace = false}: {
         </div>;
     }
     return <iframe
+        ref={iframeRef}
         aria-label={t('googleWorkspace.emailContent')}
         className={`gwp-email-html${fillAvailableSpace ? ' gwp-email-html--fill' : ''}`}
         sandbox="allow-popups allow-same-origin"
@@ -372,12 +455,11 @@ const EmailBody = memo(function EmailBody({mail, fillAvailableSpace = false}: {
         srcDoc={createEmailDocument(removeDarkModeStyles(mail.htmlBody || `<pre>${escapeHtml(mail.body)}</pre>`))}
         onLoad={event => {
             const iframe = event.currentTarget;
-            const resizeToContent = () => {
-                if (fillAvailableSpace) return;
-                const document = iframe.contentDocument;
-                if (!document) return;
-                iframe.style.height = `${Math.max(document.documentElement.scrollHeight, document.body.scrollHeight)}px`;
-            };
+            const document = iframe.contentDocument;
+            if (document) addQuotedReplyToggles(document, {
+                show: t('googleWorkspace.showQuotedReply'),
+                hide: t('googleWorkspace.hideQuotedReply'),
+            }, resizeToContent);
             resizeToContent();
             iframe.contentDocument?.querySelectorAll('img').forEach(image => {
                 if (!image.complete) image.addEventListener('load', resizeToContent, {once: true});
@@ -1213,7 +1295,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
         const formatted = date.toLocaleString(i18n.resolvedLanguage || i18n.language, {year: 'numeric', month: 'long', day: 'numeric', weekday: 'short', hour: 'numeric', minute: '2-digit'});
         const header = `<div style="color:#888;font-size:13px;margin-bottom:8px;">${escapeHtml(t('googleWorkspace.quotedHeader', {date: formatted, sender: mail.from}))}</div>`;
         const content = mail.htmlBody || `<pre style="white-space:pre-wrap;">${escapeHtml(mail.body)}</pre>`;
-        return `${header}<blockquote style="margin:0 0 0 8px;padding:0 0 0 12px;border-left:3px solid #ccc;">${content}</blockquote>`;
+        return `<section data-vyact-quoted-reply>${header}<blockquote style="margin:0 0 0 8px;padding:0 0 0 12px;border-left:3px solid #ccc;">${content}</blockquote></section>`;
     };
     const buildForwardHtml = (mail: MailDetail): string => {
         const date = new Date(mail.date);

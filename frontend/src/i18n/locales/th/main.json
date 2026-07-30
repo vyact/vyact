@@ -132,6 +132,8 @@
     "aiInsert": "แทรก",
     "aiGenerating": "กำลังสร้าง…",
     "quotedHeader": "เมื่อ {{date}}, {{sender}} เขียน:",
+    "showQuotedReply": "แสดงอีเมลก่อนหน้า",
+    "hideQuotedReply": "ซ่อนอีเมลก่อนหน้า",
     "originalEmail": "อีเมลต้นฉบับ",
     "selectMail": "เลือกอีเมล",
     "selected": "เลือกแล้ว {{count}} รายการ",

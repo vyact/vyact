@@ -132,6 +132,8 @@
     "aiInsert": "挿入",
     "aiGenerating": "生成中…",
     "quotedHeader": "{{date}}、{{sender}}さんが書きました:",
+    "showQuotedReply": "以前のメールを表示",
+    "hideQuotedReply": "以前のメールを非表示",
     "originalEmail": "元のメール",
     "selectMail": "メールを選択",
     "selected": "{{count}}件選択中",

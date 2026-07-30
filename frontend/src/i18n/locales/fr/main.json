@@ -132,6 +132,8 @@
     "aiInsert": "Insérer",
     "aiGenerating": "Génération…",
     "quotedHeader": "Le {{date}}, {{sender}} a écrit :",
+    "showQuotedReply": "Afficher le message précédent",
+    "hideQuotedReply": "Masquer le message précédent",
     "originalEmail": "E-mail original",
     "selectMail": "Sélectionner un e-mail",
     "selected": "{{count}} sélectionnés",

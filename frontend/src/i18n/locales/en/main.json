@@ -203,6 +203,8 @@
     "aiInsert": "Insert",
     "aiGenerating": "Generating…",
     "quotedHeader": "On {{date}}, {{sender}} wrote:",
+    "showQuotedReply": "Show previous message",
+    "hideQuotedReply": "Hide previous message",
     "originalEmail": "Original email",
     "emptyFolder": "This folder is empty.",
     "fileName": "Name",

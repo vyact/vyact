@@ -132,6 +132,8 @@
     "aiInsert": "Chèn",
     "aiGenerating": "Đang tạo…",
     "quotedHeader": "Vào {{date}}, {{sender}} đã viết:",
+    "showQuotedReply": "Hiện email trước đó",
+    "hideQuotedReply": "Ẩn email trước đó",
     "originalEmail": "Email gốc",
     "selectMail": "Chọn email",
     "selected": "Đã chọn {{count}} mục",

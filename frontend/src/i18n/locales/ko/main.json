@@ -203,6 +203,8 @@
     "aiInsert": "삽입",
     "aiGenerating": "생성 중…",
     "quotedHeader": "{{date}}, {{sender}}님이 작성:",
+    "showQuotedReply": "이전 메일 열기",
+    "hideQuotedReply": "이전 메일 닫기",
     "originalEmail": "원본 메일",
     "emptyFolder": "폴더가 비어 있습니다.",
     "fileName": "이름",
