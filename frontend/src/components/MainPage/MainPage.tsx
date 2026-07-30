@@ -201,6 +201,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
     };
     useEffect(() => onGoogleWorkspaceStatusChanged(closeGoogleWorkspacePanel), [closeGoogleWorkspacePanel]);
     const [showShortcutModal, setShowShortcutModal] = useState(false);
+    const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
     const [showSupportModal, setShowSupportModal] = useState(false);
     const [openSettingsExternal, setOpenSettingsExternal] = useState(false);
     const [openSettingsTab, setOpenSettingsTab] = useState<string | undefined>(undefined);
@@ -334,6 +335,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
         setOpenSettingsExternal(false);
         setShowMemoModal(false);
         setShowQuickMemoModal(false);
+        setNotificationCenterOpen(false);
     };
 
     const toggleSidebar = useCallback(() => {
@@ -407,6 +409,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
         onOpenChatSummary: () => {
             if (conv.currentConvId) setSummaryConvId(conv.currentConvId);
         },
+        onToggleNotifications: () => setNotificationCenterOpen(open => !open),
         onCloseAll: () => closeAllModals(),
     }, showMemoModal);
 
@@ -426,6 +429,8 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                         onScreenshot={handleScreenshot}
                         onSidebarHoverEnter={handleSidebarHoverEnter}
                         onSidebarHoverLeave={handleSidebarHoverLeave}
+                        notificationCenterOpen={notificationCenterOpen}
+                        onNotificationCenterOpenChange={setNotificationCenterOpen}
                     />
                     <div
                         className="main-page"

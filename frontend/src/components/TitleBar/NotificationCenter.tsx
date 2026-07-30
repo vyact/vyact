@@ -100,10 +100,14 @@ function resolveNotificationGoogleAccountId(
     return matchedAccount?.id || null;
 }
 
-export default function NotificationCenter() {
+interface NotificationCenterProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+}
+
+export default function NotificationCenter({open, onOpenChange}: NotificationCenterProps) {
     const {t, i18n} = useTranslation('main');
     const [persistedNotificationState] = useState(loadKnownNotificationIds);
-    const [open, setOpen] = useState(false);
     const [items, setItems] = useState<NotificationItem[]>([]);
     const [total, setTotal] = useState(0);
     const [unread, setUnread] = useState(0);
@@ -168,12 +172,12 @@ export default function NotificationCenter() {
             const clickedCenter = centerRef.current?.contains(target);
             const clickedPopover = popoverRef.current?.contains(target);
             if (!clickedCenter && !clickedPopover) {
-                setOpen(false);
+                onOpenChange(false);
             }
         };
         document.addEventListener('mousedown', closeOnOutsideClick);
         return () => document.removeEventListener('mousedown', closeOnOutsideClick);
-    }, [open]);
+    }, [open, onOpenChange]);
 
     const updatePopoverPosition = useCallback(() => {
         const triggerRect = triggerRef.current?.getBoundingClientRect();
@@ -197,16 +201,20 @@ export default function NotificationCenter() {
         };
     }, [open, updatePopoverPosition]);
 
-    const toggle = useCallback(async () => {
-        const next = !open;
-        setOpen(next);
-        if (next) {
+    useEffect(() => {
+        if (!open) return;
+        const openNotificationCenter = async () => {
             setUnread(0);
             await load(0, false);
             await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
             await api.markNotificationsRead();
-        }
-    }, [open, loading]);
+        };
+        void openNotificationCenter();
+    }, [open]);
+
+    const toggle = useCallback(() => {
+        onOpenChange(!open);
+    }, [onOpenChange, open]);
 
     const selectNotification = useCallback(async (item: NotificationItem) => {
         if (item.account_id && (item.type === 'google_mail' || item.type === 'google_calendar')) {
@@ -219,7 +227,7 @@ export default function NotificationCenter() {
                     t('notificationCenter.googleAccountUnavailableTitle'),
                     t('notificationCenter.googleAccountUnavailableMessage'),
                 );
-                setOpen(false);
+                onOpenChange(false);
                 return;
             }
             try {
@@ -229,7 +237,7 @@ export default function NotificationCenter() {
                     t('notificationCenter.googleAccountUnavailableTitle'),
                     t('notificationCenter.googleAccountUnavailableMessage'),
                 );
-                setOpen(false);
+                onOpenChange(false);
                 return;
             }
             window.dispatchEvent(new CustomEvent('vyact:google-account-changed', {
@@ -253,29 +261,20 @@ export default function NotificationCenter() {
                 }));
             }
         }
-        setOpen(false);
-    }, []);
+        onOpenChange(false);
+    }, [onOpenChange]);
 
     useEffect(() => {
-        const handleKeyboard = (event: KeyboardEvent) => {
-            const metaKey = event.metaKey || event.ctrlKey;
-            if (!event.repeat && metaKey && event.shiftKey && event.key.toLowerCase() === 'a') {
-                event.preventDefault();
-                event.stopImmediatePropagation();
-                void toggle();
-                return;
-            }
-            if (!open) return;
-
-            if (event.key === 'Escape') {
-                event.preventDefault();
-                event.stopImmediatePropagation();
-                setOpen(false);
-            }
+        if (!open) return;
+        const closeOnEscape = (event: KeyboardEvent) => {
+            if (event.key !== 'Escape') return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            onOpenChange(false);
         };
-        window.addEventListener('keydown', handleKeyboard, true);
-        return () => window.removeEventListener('keydown', handleKeyboard, true);
-    }, [open, toggle]);
+        window.addEventListener('keydown', closeOnEscape, true);
+        return () => window.removeEventListener('keydown', closeOnEscape, true);
+    }, [open, onOpenChange]);
 
     const popover = <div className="notification-center-popover" ref={popoverRef} style={popoverPosition}>
             <header>{t('notificationCenter.title')}</header>

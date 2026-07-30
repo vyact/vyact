@@ -11,12 +11,14 @@ interface TitleBarProps {
     onScreenshot: () => void;
     onSidebarHoverEnter?: () => void;
     onSidebarHoverLeave?: () => void;
+    notificationCenterOpen: boolean;
+    onNotificationCenterOpenChange: (open: boolean) => void;
 }
 
 const isMac = navigator.platform.toUpperCase().includes('MAC');
 const SCREENSHOT_ASPECT_RATIOS = ['16:9', '4:3', '1:1'] as const;
 
-const TitleBar: React.FC<TitleBarProps> = ({sidebarCollapsed, onToggleSidebar, onScreenshot, onSidebarHoverEnter, onSidebarHoverLeave}) => {
+const TitleBar: React.FC<TitleBarProps> = ({sidebarCollapsed, onToggleSidebar, onScreenshot, onSidebarHoverEnter, onSidebarHoverLeave, notificationCenterOpen, onNotificationCenterOpenChange}) => {
     const {t} = useTranslation('main');
     const [maximized, setMaximized] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -81,7 +83,7 @@ const TitleBar: React.FC<TitleBarProps> = ({sidebarCollapsed, onToggleSidebar, o
                 <button className="titlebar-btn" onClick={onScreenshot} aria-label={t('screenshot.captureCurrent')}>
                     <Camera size={15} />
                 </button>
-                <NotificationCenter/>
+                <NotificationCenter open={notificationCenterOpen} onOpenChange={onNotificationCenterOpenChange}/>
             </div>
 
             {/* 오른쪽: Windows 창 컨트롤 */}

@@ -11,6 +11,7 @@ interface KeyboardHandlers {
     onOpenQuickMemo: () => void;
     onOpenKnowledgeCollections: () => void;
     onOpenChatSummary: () => void;
+    onToggleNotifications: () => void;
     onCloseAll: () => void;
 }
 
@@ -60,6 +61,9 @@ export function useGlobalKeyboard(handlers: KeyboardHandlers, isMemoOpen = false
             } else if (meta && e.shiftKey && (e.key === 'J' || e.key === 'j')) {
                 e.preventDefault();
                 handlers.onOpenChatSummary();
+            } else if (meta && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+                e.preventDefault();
+                handlers.onToggleNotifications();
             } else if (meta && e.shiftKey && (e.key === ',' || e.key === '<')) {
                 e.preventDefault();
                 handlers.onOpenSettings();
