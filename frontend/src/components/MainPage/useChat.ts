@@ -521,7 +521,9 @@ export function useChat(deps: UseChatDeps) {
                             streamModel = data.model || '';
                             streamSources = data.sources || [];
                         },
-                        onToken: (text) => appendToStreamMsg(text),
+                        onToken: (text) => appendToStreamMsg(
+                            text === '__VYACT_EMPTY_RESPONSE__' ? t('emptyResponse') : text
+                        ),
                         onTool: (data) => {
                             if (data.phase === 'judging') {
                                 setToolStatus({phase: 'judging', group: 'analysis', label: t((data.round ?? 0) > 0 ? 'toolActivity.additionalAnalysis' : 'toolActivity.analyzing')});

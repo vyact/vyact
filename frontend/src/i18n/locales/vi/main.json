@@ -1,4 +1,5 @@
 {
+  "emptyResponse": "Không có nội dung trả lời được tạo. Vui lòng thử lại.",
   "greeting": {
     "morning": "Chào buổi sáng",
     "afternoon": "Chào buổi chiều",

@@ -388,6 +388,11 @@ async def chat_stream_with_tools(
                                 "total_duration": chunk.get("total_duration"),
                             }
                             break
+        if not collected and not stopped:
+            logger.warning("[chat_stream_with_tools] Ollama completed without response content")
+            message = "__VYACT_EMPTY_RESPONSE__"
+            collected.append(message)
+            yield {"type": "token", "text": message}
         # 재생성 호출 stats에 tool 루프 합산 정보 병합
         if stats and tool_loop_stats:
             regen_total = stats.get("total_duration") or 0

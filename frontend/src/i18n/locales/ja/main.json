@@ -1,4 +1,5 @@
 {
+  "emptyResponse": "回答本文が生成されませんでした。もう一度お試しください。",
   "greeting": {
     "morning": "おはようございます",
     "afternoon": "こんにちは",

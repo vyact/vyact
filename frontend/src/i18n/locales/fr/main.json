@@ -1,4 +1,5 @@
 {
+  "emptyResponse": "Aucun contenu de réponse n’a été généré. Réessayez.",
   "greeting": {
     "morning": "Bonjour",
     "afternoon": "Bon après-midi",

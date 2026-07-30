@@ -1,4 +1,5 @@
 {
+  "emptyResponse": "未生成回答内容，请重试。",
   "greeting": {
     "morning": "早上好",
     "afternoon": "下午好",
