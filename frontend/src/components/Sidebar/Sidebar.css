@@ -369,6 +369,7 @@
 
 .hist-item,
 .project-conversation {
+    position: relative;
     padding: 6px 8px;
     background: transparent;
     border-radius: 7px;
@@ -402,6 +403,9 @@
 .hist-title,
 .project-conversation-title {
     flex: 1;
+    min-width: 0;
+    box-sizing: border-box;
+    padding-right: 36px;
     font-size: 13px;
     color: var(--text-secondary);
     overflow: hidden;
@@ -416,9 +420,15 @@
 }
 
 .conversation-progress {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    width: 26px;
+    height: 26px;
     flex-shrink: 0;
     color: var(--accent);
 }
@@ -448,6 +458,19 @@
 .hist-item:hover .hist-menu-btn,
 .project-conversation:hover .hist-menu-btn {
     opacity: 1;
+}
+
+.hist-item > .sidebar-overflow-menu,
+.project-conversation > .hist-menu-btn {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+}
+
+.hist-item:has(.conversation-progress) > .sidebar-overflow-menu,
+.project-conversation:has(.conversation-progress) > .hist-menu-btn {
+    display: none;
 }
 
 .hist-menu-btn:hover {
