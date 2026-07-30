@@ -54,11 +54,10 @@ def build_system_message(
     dynamic_context.append(f"오늘 날짜: {today_str}")
 
     # 사용자 UI 언어가 없거나 미지원이면 시스템 기본 언어인 영어를 사용한다.
-    # 한국어는 기본 포맷 지시와 동일하므로 별도 지시를 생략한다.
+    # 기본 포맷의 작성 언어만으로는 문서 원문이나 스킬 지침의 언어를 이기지
+    # 못할 수 있으므로, 한국어를 포함한 모든 UI 언어를 명시적으로 지시한다.
     normalized_language = normalize_language_code(user_language)
-    if normalized_language != "ko":
-        lang_label = get_language_label(normalized_language)
-        dynamic_context.append(f"사용자 언어: {lang_label}. 반드시 {lang_label}로 답변하세요.")
+    lang_label = get_language_label(normalized_language)
 
     # user_profile 주입 (voice mode 제외: format_instruction_override == "" 이면 스킵)
     if user_profile and format_instruction_override != "":
@@ -76,5 +75,13 @@ def build_system_message(
     # cache 재사용 범위를 넓히고, 현재 질문에 가까운 지시로 모델의 준수도도 높인다.
     if skill_context and format_instruction_override != "":
         dynamic_context.append(f"[스킬 지침]\n{skill_context}")
+
+    # 질문과 가장 가까운 스킬 지침 뒤에 언어 규칙을 둬, 영어 원문을 요약하는
+    # 경우에도 UI 언어로 결과를 생성하게 한다.
+    dynamic_context.append(
+        f"[응답 언어]\n사용자 UI 언어는 {lang_label}입니다. "
+        f"사용자가 다른 언어를 명시적으로 요청하지 않는 한, 반드시 {lang_label}로 답변하세요. "
+        f"제목과 섹션명도 {lang_label}로 작성하세요."
+    )
 
     return "\n\n".join([message, *dynamic_context])
