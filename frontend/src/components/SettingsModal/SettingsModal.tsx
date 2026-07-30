@@ -62,8 +62,8 @@ const toRuntimeInputValues = (settings: RuntimeSettings): Record<string, string>
 );
 const RUNTIME_SETTING_SECTIONS = [
     {key: 'llm', fields: ['llm_temperature', 'llm_num_ctx', 'llm_num_predict', 'llm_max_tokens', 'top_k', 'top_p']},
-    {key: 'history', fields: ['history_token_budget', 'history_chars_per_token']},
     {key: 'ollama', fields: ['ollama_keep_alive', 'bge_num_ctx']},
+    {key: 'history', fields: ['history_token_budget', 'history_chars_per_token']},
     {key: 'chunking', fields: ['document_chunk_size', 'document_chunk_overlap']},
 ] as const;
 const RUNTIME_FIELD_CONSTRAINTS: Record<string, {min: number; max?: number; step: number}> = {
