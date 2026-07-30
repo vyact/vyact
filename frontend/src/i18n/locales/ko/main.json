@@ -96,6 +96,7 @@
     "refresh": "메일 목록 새로고침",
     "emailContent": "이메일 본문",
     "noEmailContent": "본문 내용이 없습니다.",
+    "attachMailBodyOnly": "본문",
     "attachMailWithContent": "본문 + 첨부",
     "attachMailFilesOnly": "첨부파일만",
     "attachmentOptions": "첨부 옵션",

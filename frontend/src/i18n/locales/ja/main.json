@@ -61,6 +61,7 @@
     "refresh": "メール一覧を更新",
     "emailContent": "メール本文",
     "noEmailContent": "メール本文はありません。",
+    "attachMailBodyOnly": "本文",
     "attachMailWithContent": "本文 + ファイル",
     "attachMailFilesOnly": "ファイルのみ",
     "attachmentOptions": "添付オプション",

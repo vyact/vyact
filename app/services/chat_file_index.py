@@ -32,7 +32,7 @@ from logger import get_logger
 from config.embeddings import EMBEDDING_MODEL_ID
 from services.db import CHAT_FILE_CHUNKS_INDEX, get_es
 from services.document_parser import PARSERS
-from services.indexer import get_embedding, EmbeddingContextExceeded
+from services.indexer import EmbeddingContextExceeded, get_embedding, get_embeddings
 
 logger = get_logger(__name__)
 
@@ -143,7 +143,7 @@ async def index_chat_files_progress(
             chunk_method = "sliding_window_char"
             embed_texts = [f"{header}\n\n{c}" for c in chunks]
             try:
-                embeddings = await asyncio.gather(*[get_embedding(t) for t in embed_texts])
+                embeddings = await get_embeddings(embed_texts)
             except Exception as e:
                 logger.warning("[chat_file_index] 임베딩 생성 실패 [%s]: %s", filename, e)
                 yield {"type": "progress", "done": idx, "total": total, "filename": filename}
@@ -164,7 +164,7 @@ async def index_chat_files_progress(
                 chunks = _split_into_chunks(content)
                 embed_texts = [f"{header}\n\n{c}" for c in chunks]
                 try:
-                    embeddings = await asyncio.gather(*[get_embedding(t) for t in embed_texts])
+                    embeddings = await get_embeddings(embed_texts)
                 except Exception as e:
                     logger.warning("[chat_file_index] 분할 재시도 후에도 임베딩 실패 [%s]: %s", filename, e)
                     yield {"type": "progress", "done": idx, "total": total, "filename": filename}

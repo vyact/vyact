@@ -96,6 +96,7 @@
     "refresh": "Refresh mail list",
     "emailContent": "Email content",
     "noEmailContent": "This email has no body content.",
+    "attachMailBodyOnly": "Content",
     "attachMailWithContent": "Content + files",
     "attachMailFilesOnly": "Files only",
     "attachmentOptions": "Attachment options",

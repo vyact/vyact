@@ -311,7 +311,7 @@ const getPlainTextFromHtml = (html: string) => {
     return document.body.textContent?.trim() || '';
 };
 
-const createEmailDocument = (body: string) => `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src http: https: data: blob: cid:; style-src 'unsafe-inline';"><base target="_blank"><meta name="viewport" content="width=device-width, initial-scale=1"><style>:root { color-scheme: light !important; } html, body { min-height: 100%; max-width: 100%; margin: 0; overflow: hidden; background: #fff; } body { box-sizing: border-box; padding: 24px; overflow-wrap: anywhere; word-break: break-word; font-family: Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; font-size: 14px; line-height: 1.5; } body * { box-sizing: border-box; max-width: 100%; } pre { white-space: pre-wrap; overflow-wrap: anywhere; } table { max-width: 100% !important; } td, th { overflow-wrap: normal; word-break: normal; } img { max-width: 100% !important; height: auto !important; }</style></head><body>${body}</body></html>`;
+const createEmailDocument = (body: string, scrollable = false) => `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src http: https: data: blob: cid:; style-src 'unsafe-inline';"><base target="_blank"><meta name="viewport" content="width=device-width, initial-scale=1"><style>:root { color-scheme: light !important; } html, body { min-height: 100%; max-width: 100%; margin: 0; overflow-x: hidden; overflow-y: ${scrollable ? 'auto' : 'hidden'}; background: #fff; } body { box-sizing: border-box; padding: 24px; overflow-wrap: anywhere; word-break: break-word; font-family: Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; font-size: 14px; line-height: 1.5; } body * { box-sizing: border-box; max-width: 100%; } pre { white-space: pre-wrap; overflow-wrap: anywhere; } table { max-width: 100% !important; } td, th { overflow-wrap: normal; word-break: normal; } img { max-width: 100% !important; height: auto !important; }</style></head><body>${body}</body></html>`;
 
 type QuotedReplyLabels = {show: string; hide: string};
 
@@ -452,7 +452,7 @@ const EmailBody = memo(function EmailBody({mail, fillAvailableSpace = false}: {
         className={`gwp-email-html${fillAvailableSpace ? ' gwp-email-html--fill' : ''}`}
         sandbox="allow-popups allow-same-origin"
         scrolling={fillAvailableSpace ? 'auto' : 'no'}
-        srcDoc={createEmailDocument(removeDarkModeStyles(mail.htmlBody || `<pre>${escapeHtml(mail.body)}</pre>`))}
+        srcDoc={createEmailDocument(removeDarkModeStyles(mail.htmlBody || `<pre>${escapeHtml(mail.body)}</pre>`), fillAvailableSpace)}
         onLoad={event => {
             const iframe = event.currentTarget;
             const document = iframe.contentDocument;
@@ -1709,7 +1709,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
             })),
         }));
     };
-    const attachMailToChat = async (mail: MailDetail, includeContent: boolean) => {
+    const attachMailToChat = async (mail: MailDetail, attachmentScope: 'body' | 'files' | 'bodyAndFiles') => {
         if (!onAttachFilesToChat || isAttachingToChat) return;
         const allAttachments = getMailAttachments(mail);
         const supportedAttachments = allAttachments.filter(isSupportedChatMailAttachment);
@@ -1722,14 +1722,14 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
             : mail.subject || t('googleWorkspace.noSubject'));
         setIsAttachingToChat(true);
         try {
-            const downloadedFiles = await Promise.all(supportedAttachments.map(async attachment => {
+            const downloadedFiles = attachmentScope === 'body' ? [] : await Promise.all(supportedAttachments.map(async attachment => {
                 const blob = await api.getGoogleMailAttachment(attachment.messageId, attachment.id, attachment.mimeType);
                 return new File([blob], attachment.filename, {
                     type: getAttachmentPreviewMimeType(attachment) || attachment.mimeType,
                 });
             }));
             const files = [...downloadedFiles];
-            if (includeContent) {
+            if (attachmentScope !== 'files') {
                 const messages = mail.threadMessages?.length ? mail.threadMessages : [{
                     id: mail.id,
                     from: mail.from,
@@ -1768,7 +1768,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
                 return;
             }
             await onAttachFilesToChat(files);
-            if (supportedAttachments.length < allAttachments.length) {
+            if (attachmentScope !== 'body' && supportedAttachments.length < allAttachments.length) {
                 toast.warning(t('googleWorkspace.unsupportedMailAttachmentsSkipped', {
                     count: allAttachments.length - supportedAttachments.length,
                 }));
@@ -1796,7 +1796,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
                     setMailAttachMenuId(null);
                     return;
                 }
-                const menuItemCount = (onAttachFilesToChat ? 2 : 0) + (onDelete ? 1 : 0);
+                const menuItemCount = (onAttachFilesToChat ? 3 : 0) + (onDelete ? 1 : 0);
                 const estimatedMenuHeight = 16 + menuItemCount * 44;
                 const triggerRect = event.currentTarget.getBoundingClientRect();
                 const opensUpward = window.innerHeight - triggerRect.bottom < estimatedMenuHeight + 8;
@@ -1812,11 +1812,14 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
             </button>
             {isOpen && createPortal(<div className="gwp-mail-attach-menu gwp-mail-attach-menu--portal" style={mailAttachMenuPosition} onClick={event => event.stopPropagation()}>
                 {onAttachFilesToChat && <>
-                    <button onClick={() => void attachMailToChat(mail, true)} disabled={isAttachingToChat}>
-                        <MessageSquarePlus aria-hidden="true" size={16}/><span>{t('googleWorkspace.attachMailWithContent')}</span>
+                    <button onClick={() => void attachMailToChat(mail, 'body')} disabled={isAttachingToChat}>
+                        <MessageSquarePlus aria-hidden="true" size={16}/><span>{t('googleWorkspace.attachMailBodyOnly')}</span>
                     </button>
-                    <button onClick={() => void attachMailToChat(mail, false)} disabled={isAttachingToChat || !hasSupportedAttachment}>
+                    <button onClick={() => void attachMailToChat(mail, 'files')} disabled={isAttachingToChat || !hasSupportedAttachment}>
                         <MessageSquarePlus aria-hidden="true" size={16}/><span>{t('googleWorkspace.attachMailFilesOnly')}</span>
+                    </button>
+                    <button onClick={() => void attachMailToChat(mail, 'bodyAndFiles')} disabled={isAttachingToChat}>
+                        <MessageSquarePlus aria-hidden="true" size={16}/><span>{t('googleWorkspace.attachMailWithContent')}</span>
                     </button>
                 </>}
                 {onDelete && <button className="gwp-mail-menu-delete" onClick={() => {

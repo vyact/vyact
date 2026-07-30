@@ -61,6 +61,7 @@
     "refresh": "Làm mới danh sách thư",
     "emailContent": "Nội dung thư",
     "noEmailContent": "Email này không có nội dung.",
+    "attachMailBodyOnly": "Nội dung",
     "attachMailWithContent": "Nội dung + tệp",
     "attachMailFilesOnly": "Chỉ tệp",
     "attachmentOptions": "Tùy chọn tệp đính kèm",

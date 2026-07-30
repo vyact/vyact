@@ -8,7 +8,7 @@ from elasticsearch import NotFoundError
 from elasticsearch.helpers import async_bulk
 
 from config.embeddings import EMBEDDING_MODEL_ID
-from services.embedding_runtime import EmbeddingContextExceeded, get_embedding
+from services.embedding_runtime import EmbeddingContextExceeded, get_embedding, get_embeddings
 from services.db import DOC_CHUNKS_INDEX, EMAIL_THREADS_INDEX, INDEX_NAME, KNOWLEDGE_COLLECTIONS_INDEX, MEMO_INDEX, QUICKNOTE_INDEX, get_es, get_language_index
 from services.language_detection import detect_language
 from logger import get_logger
@@ -17,7 +17,6 @@ logger = get_logger(__name__)
 
 
 async def index_documents(docs: list[dict]) -> dict:
-    import asyncio as _asyncio
     es = get_es()
     indexed = skipped = 0
     try:
@@ -36,7 +35,7 @@ async def index_documents(docs: list[dict]) -> dict:
             return {"indexed": 0, "skipped": skipped}
 
         embed_texts = [f"{doc['title']}\n{doc['content']}" for _, doc in to_index]
-        embeddings = await _asyncio.gather(*[get_embedding(t) for t in embed_texts])
+        embeddings = await get_embeddings(embed_texts)
 
         actions = []
         for (doc_hash, doc), embedding in zip(to_index, embeddings):

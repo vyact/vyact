@@ -61,6 +61,7 @@
     "refresh": "Actualiser la liste des e-mails",
     "emailContent": "Contenu de l’e-mail",
     "noEmailContent": "Cet e-mail ne contient aucun contenu.",
+    "attachMailBodyOnly": "Contenu",
     "attachMailWithContent": "Contenu + fichiers",
     "attachMailFilesOnly": "Fichiers uniquement",
     "attachmentOptions": "Options des pièces jointes",

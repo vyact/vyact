@@ -96,6 +96,7 @@
     "refresh": "Actualizar lista de correo",
     "emailContent": "Contenido del correo",
     "noEmailContent": "Este correo no tiene contenido en el cuerpo.",
+    "attachMailBodyOnly": "Contenido",
     "attachMailWithContent": "Contenido + archivos",
     "attachMailFilesOnly": "Solo archivos",
     "attachmentOptions": "Opciones de adjuntos",

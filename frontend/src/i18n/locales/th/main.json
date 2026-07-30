@@ -61,6 +61,7 @@
     "refresh": "รีเฟรชรายการอีเมล",
     "emailContent": "เนื้อหาอีเมล",
     "noEmailContent": "อีเมลนี้ไม่มีเนื้อหา",
+    "attachMailBodyOnly": "เนื้อหา",
     "attachMailWithContent": "เนื้อหา + ไฟล์",
     "attachMailFilesOnly": "เฉพาะไฟล์",
     "attachmentOptions": "ตัวเลือกไฟล์แนบ",

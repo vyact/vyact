@@ -61,6 +61,7 @@
     "refresh": "刷新邮件列表",
     "emailContent": "邮件内容",
     "noEmailContent": "此邮件没有正文内容。",
+    "attachMailBodyOnly": "正文",
     "attachMailWithContent": "正文 + 文件",
     "attachMailFilesOnly": "仅文件",
     "attachmentOptions": "附件选项",
