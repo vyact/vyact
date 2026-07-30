@@ -4,6 +4,7 @@ services/llm/helpers.py — 메시지 조립 보조 함수
 이미지 base64 로딩, mime 판별, RAG context 주입, provider별 히스토리 변환.
 """
 import base64
+import json
 from pathlib import Path
 
 from .config import IMAGES_DIR
@@ -105,13 +106,30 @@ def history_for_openai(history_messages: list, valid_history: list) -> list:
     """OpenAI용 history: user 메시지에 image_url content blocks 포함"""
     result = []
     hi = 0
-    for msg in history_messages:
-        # tool 관련 메시지는 그대로 전달
+    pending_tool_calls: list[tuple[str, str]] = []
+    for message_index, msg in enumerate(history_messages):
+        # 저장 히스토리는 provider-agnostic {name, args} 형식이므로 OpenAI의
+        # function/id/tool_call_id 형식으로 복원해야 한다.
         if msg["role"] == "tool":
-            result.append(msg)
+            name = msg.get("name", "")
+            match_index = next((i for i, (_, call_name) in enumerate(pending_tool_calls)
+                                if call_name == name), None)
+            if match_index is None:
+                continue
+            call_id, _ = pending_tool_calls.pop(match_index)
+            result.append({"role": "tool", "tool_call_id": call_id, "content": msg["content"]})
             continue
         if msg["role"] == "assistant" and msg.get("tool_calls"):
-            result.append(msg)
+            tool_calls = []
+            for index, call in enumerate(msg["tool_calls"]):
+                call_id = f"hist_tool_{message_index}_{index}"
+                name = call.get("name", "")
+                tool_calls.append({"id": call_id, "type": "function", "function": {
+                    "name": name,
+                    "arguments": json.dumps(call.get("args", {}), ensure_ascii=False),
+                }})
+                pending_tool_calls.append((call_id, name))
+            result.append({"role": "assistant", "content": msg.get("content", ""), "tool_calls": tool_calls})
             continue
         if msg["role"] == "user" and hi < len(valid_history):
             atts = valid_history[hi].get("attachments", [])
@@ -167,20 +185,30 @@ def history_for_claude(history_messages: list, valid_history: list) -> list:
     """Claude용 history: user 메시지에 image blocks 포함"""
     result = []
     hi = 0
-    for msg in history_messages:
+    pending_tool_uses: list[tuple[str, str]] = []
+    for message_index, msg in enumerate(history_messages):
         # tool 관련 메시지는 Claude 형식으로 변환
         if msg["role"] == "assistant" and msg.get("tool_calls"):
             content_blocks = []
             if msg.get("content"):
                 content_blocks.append({"type": "text", "text": msg["content"]})
             for i, tc in enumerate(msg["tool_calls"]):
-                content_blocks.append({"type": "tool_use", "id": f"hist_{i}",
-                                       "name": tc["name"], "input": tc.get("args", {})})
+                tool_use_id = f"hist_tool_{message_index}_{i}"
+                name = tc["name"]
+                content_blocks.append({"type": "tool_use", "id": tool_use_id,
+                                       "name": name, "input": tc.get("args", {})})
+                pending_tool_uses.append((tool_use_id, name))
             result.append({"role": "assistant", "content": content_blocks})
             continue
         if msg["role"] == "tool":
+            name = msg.get("name", "")
+            match_index = next((i for i, (_, tool_name) in enumerate(pending_tool_uses)
+                                if tool_name == name), None)
+            if match_index is None:
+                continue
+            tool_use_id, _ = pending_tool_uses.pop(match_index)
             result.append({"role": "user", "content": [{"type": "tool_result",
-                           "tool_use_id": f"hist_{0}", "content": msg["content"]}]})
+                           "tool_use_id": tool_use_id, "content": msg["content"]}]})
             continue
         if msg["role"] == "user" and hi < len(valid_history):
             atts = valid_history[hi].get("attachments", [])

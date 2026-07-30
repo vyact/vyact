@@ -420,10 +420,20 @@ async def select_model(req: ModelSelectRequest):
                 recommended_model["type"] if recommended_model else "chat"
             )
         else:
+            if req.type not in ("openai", "gemini", "claude"):
+                yield sse("지원하지 않는 provider", "error", 0)
+                return
+            if not req.api_key:
+                yield sse(f"{req.type.upper()} API KEY 필요", "error", 0)
+                return
             config["type"] = req.type
             config["model"] = req.model
-            if req.api_key:
-                config["api_key"] = req.api_key
+            # 초기 설정에서도 Provider 설정 화면과 같은 구조를 사용한다.
+            # 그렇지 않으면 설정 완료 직후 Sidebar에서 해당 Provider를 찾지 못한다.
+            config[f"{req.type}_config"] = {
+                "api_key": req.api_key,
+                "model": req.model,
+            }
         await save_config_async(config)
 
         if req.type == "ollama":
@@ -461,9 +471,6 @@ async def select_model(req: ModelSelectRequest):
             await switch_model(prev_model, model)
             yield sse("Ollama 설정 완료", "ok", 100)
         elif req.type in ("openai", "gemini", "claude"):
-            if not req.api_key:
-                yield sse(f"{req.type.upper()} API KEY 필요", "error", 0);
-                return
             yield sse(f"{req.type} 설정 완료", "ok", 100)
         else:
             yield sse("지원하지 않는 provider", "error", 0);
@@ -501,7 +508,11 @@ async def save_provider(provider: str, req: ProviderConfigRequest):
         raise HTTPException(400, "지원하지 않는 provider")
     try:
         config = await load_config_async()
-        config[f"{provider}_config"] = {"api_key": req.api_key, "model": req.model}
+        existing = config.get(f"{provider}_config", {})
+        api_key = req.api_key.strip() or existing.get("api_key", "")
+        if not api_key:
+            raise HTTPException(400, "API Key가 필요합니다.")
+        config[f"{provider}_config"] = {"api_key": api_key, "model": req.model.strip()}
         await save_config_async(config)
         return {"ok": True}
     except Exception as e:
@@ -527,8 +538,10 @@ async def select_provider(req: ProviderSelectRequest):
             config["ollama_config"]["model"] = req.model
         config["model"] = config["ollama_config"]["model"]
     else:
+        if req.provider not in ("openai", "gemini", "claude"):
+            raise HTTPException(400, "지원하지 않는 provider")
         key = f"{req.provider}_config"
-        if key not in config:
+        if not config.get(key, {}).get("api_key"):
             raise HTTPException(400, f"{req.provider} 설정이 없습니다. 먼저 API Key를 등록하세요.")
         config["type"] = req.provider
         if req.model:

@@ -602,6 +602,7 @@ async def query_llm(
                 return text.strip()
 
             elif provider_type == "openai":
+                temperature = runtime["llm_temperature"]
                 images_b64 = load_images_b64(attachments)
                 if images_b64:
                     content: list = [{"type": "text", "text": user_prompt}]
@@ -610,7 +611,7 @@ async def query_llm(
                     user_msg = {"role": "user", "content": content}
                 else:
                     user_msg = {"role": "user", "content": user_prompt}
-                body: dict = {"model": model, "temperature": LLM_TEMPERATURE,
+                body: dict = {"model": model, "temperature": temperature,
                               "messages": [{"role": "system", "content": system_message},
                                            *history_for_openai(history_messages, valid_slice), user_msg]}
                 try:
@@ -626,6 +627,7 @@ async def query_llm(
                     return openai_err(e, log_entry)
 
             elif provider_type == "gemini":
+                temperature = runtime["llm_temperature"]
                 parts: list = [{"text": user_prompt}]
                 for att in attachments:
                     if att.get("type") == "image":
@@ -640,7 +642,7 @@ async def query_llm(
                         json={"systemInstruction": {"parts": [{"text": system_message}]},
                               "contents": [*history_for_gemini(history_messages, valid_slice),
                                            {"role": "user", "parts": parts}],
-                              "generationConfig": {"temperature": LLM_TEMPERATURE}})
+                              "generationConfig": {"temperature": temperature}})
                     resp.raise_for_status()
                     result = resp.json()
                     log_entry["response"] = result
@@ -649,6 +651,8 @@ async def query_llm(
                     return gemini_err(e, log_entry)
 
             elif provider_type == "claude":
+                temperature = runtime["llm_temperature"]
+                max_tokens = runtime["llm_max_tokens"]
                 blocks: list = [{"type": "text", "text": user_prompt}]
                 for att in attachments:
                     if att.get("type") == "image":
@@ -663,7 +667,7 @@ async def query_llm(
                     resp = await client.post(
                         "https://api.anthropic.com/v1/messages",
                         headers={"x-api-key": api_key, "anthropic-version": "2023-06-01"},
-                        json={"model": model, "max_tokens": LLM_MAX_TOKENS, "temperature": LLM_TEMPERATURE,
+                        json={"model": model, "max_tokens": max_tokens, "temperature": temperature,
                               "system": system_message,
                               "messages": [*history_for_claude(history_messages, valid_slice),
                                            {"role": "user", "content": blocks}]})

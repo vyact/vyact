@@ -62,7 +62,7 @@ const ProviderSettingsModal: React.FC<ProviderSettingsModalProps> = ({
     };
 
     const handleSave = async () => {
-        if (!apiKey.trim() || !model.trim()) {
+        if ((!hasExisting && !apiKey.trim()) || !model.trim()) {
             toast.warning('API Key와 Model을 모두 입력하세요');
             return;
         }
