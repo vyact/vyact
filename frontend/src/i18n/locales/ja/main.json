@@ -892,6 +892,7 @@
     "count": "{{count}}件",
     "inputTokens": "入力トークン",
     "inputProcessing": "入力処理",
+    "modelLoading": "モデル読み込み",
     "outputTokens": "出力トークン",
     "generationTime": "生成時間",
     "llmTotal": "LLM 合計時間",

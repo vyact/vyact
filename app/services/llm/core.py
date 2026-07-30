@@ -334,6 +334,7 @@ async def chat_stream_with_tools(
                         # Ollama가 마지막 청크에 붙여주는 토큰수/처리시간 통계
                         # (prompt_eval_*: 입력 토큰/시간, eval_*: 생성 토큰/시간, total_duration: 전체 소요시간, 단위 ns)
                         stats = {
+                            "load_duration": chunk.get("load_duration"),
                             "prompt_eval_count": chunk.get("prompt_eval_count"),
                             "prompt_eval_duration": chunk.get("prompt_eval_duration"),
                             "eval_count": chunk.get("eval_count"),
@@ -381,6 +382,7 @@ async def chat_stream_with_tools(
                             yield {"type": "token", "text": piece}
                         if chunk.get("done"):
                             stats = {
+                                "load_duration": chunk.get("load_duration"),
                                 "prompt_eval_count": chunk.get("prompt_eval_count"),
                                 "prompt_eval_duration": chunk.get("prompt_eval_duration"),
                                 "eval_count": chunk.get("eval_count"),
@@ -566,6 +568,7 @@ async def query_llm(
                 result = resp.json()
                 log_entry["response"] = result
                 # prompt_eval_count : 모델이 입력으로 받은 토큰 수
+                # load_duration : 모델 로드 시간(ns)
                 # prompt_eval_duration : 입력 토큰 처리 시간(ns)
                 # eval_count : 모델이 생성한 출력 토큰 수
                 # eval_duration : 출력 토큰 생성 시간(ns)
@@ -586,6 +589,7 @@ async def query_llm(
                         result.get("prompt_eval_count") is not None
                         or result.get("eval_count") is not None):
                     regen_stats = {
+                        "load_duration": result.get("load_duration"),
                         "prompt_eval_count": result.get("prompt_eval_count"),
                         "prompt_eval_duration": result.get("prompt_eval_duration"),
                         "eval_count": result.get("eval_count"),

@@ -889,6 +889,7 @@
     "count": "{{count}}개",
     "inputTokens": "입력 토큰",
     "inputProcessing": "입력 처리",
+    "modelLoading": "모델 로드",
     "outputTokens": "출력 토큰",
     "generationTime": "생성 시간",
     "llmTotal": "LLM 총소요",

@@ -22,6 +22,7 @@ export interface MessageProps {
     toolStatus?: ToolActivity;
     activityLog?: ToolActivity[];
     stats?: {
+        load_duration?: number | null;
         prompt_eval_count?: number | null;
         prompt_eval_duration?: number | null;
         eval_count?: number | null;

@@ -892,6 +892,7 @@
     "count": "{{count}} รายการ",
     "inputTokens": "โทเค็นขาเข้า",
     "inputProcessing": "ประมวลผลขาเข้า",
+    "modelLoading": "กำลังโหลดโมเดล",
     "outputTokens": "โทเค็นขาออก",
     "generationTime": "เวลาในการสร้าง",
     "llmTotal": "เวลารวม LLM",

@@ -889,6 +889,7 @@
     "count": "{{count}}",
     "inputTokens": "Input tokens",
     "inputProcessing": "Input processing",
+    "modelLoading": "Model loading",
     "outputTokens": "Output tokens",
     "generationTime": "Generation time",
     "llmTotal": "LLM total",

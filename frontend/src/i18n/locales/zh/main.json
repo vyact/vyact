@@ -892,6 +892,7 @@
     "count": "{{count}}项",
     "inputTokens": "输入词元",
     "inputProcessing": "输入处理",
+    "modelLoading": "模型加载",
     "outputTokens": "输出词元",
     "generationTime": "生成时间",
     "llmTotal": "LLM 总耗时",

@@ -84,6 +84,7 @@ export interface InjectedContextItem {
 
 // Ollama 응답의 토큰수/처리시간 통계 (단위: eval_count류는 토큰 개수, duration류는 나노초)
 export interface MessageStats {
+    load_duration?: number | null;
     prompt_eval_count?: number | null;
     prompt_eval_duration?: number | null;
     eval_count?: number | null;

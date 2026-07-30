@@ -892,6 +892,7 @@
     "count": "{{count}} mục",
     "inputTokens": "Token đầu vào",
     "inputProcessing": "Xử lý đầu vào",
+    "modelLoading": "Tải mô hình",
     "outputTokens": "Token đầu ra",
     "generationTime": "Thời gian tạo",
     "llmTotal": "Tổng thời gian LLM",

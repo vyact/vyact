@@ -137,6 +137,7 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
         if data.get("prompt_eval_count") is None and data.get("eval_count") is None:
             return None
         return {
+            "load_duration": data.get("load_duration"),
             "prompt_eval_count": data.get("prompt_eval_count"),
             "prompt_eval_duration": data.get("prompt_eval_duration"),
             "eval_count": data.get("eval_count"),
@@ -185,6 +186,7 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
     # ── 멀티라운드 stats 합산용 ──
     import time as _time
     _acc_stats = {
+        "load_duration": 0,
         "prompt_eval_count": 0, "prompt_eval_duration": 0,
         "eval_count": 0, "eval_duration": 0,
         "total_duration": 0,  # LLM 호출 시간 합산
@@ -197,7 +199,7 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
         if not round_stats:
             return
         _acc_stats["llm_rounds"] += 1
-        for k in ("prompt_eval_count", "prompt_eval_duration", "eval_count", "eval_duration", "total_duration"):
+        for k in ("load_duration", "prompt_eval_count", "prompt_eval_duration", "eval_count", "eval_duration", "total_duration"):
             v = round_stats.get(k)
             if v is not None:
                 _acc_stats[k] += v

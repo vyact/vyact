@@ -904,6 +904,7 @@ const Message: React.FC<MessageProps> = ({
 
                 const line1 = formatStats([
                     [t('message.outputTokens'), stats.eval_count],
+                    [t('message.modelLoading'), formatNs(stats.load_duration)],
                     [t('message.generationTime'), formatNs(stats.eval_duration)],
                     [t('message.llmTotal'), formatNs(llmTotal)],
                 ]);
