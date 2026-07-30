@@ -22,7 +22,7 @@ from config import IMAGE_MODEL_IDS
 from prompts import VOICE_MODE_SUFFIX, FORMAT_INSTRUCTION, EXTENSION_FORMAT_INSTRUCTION, get_extension_format_instruction
 from routers.deps import load_config_async
 from routers.chat_helpers import (
-    extract_paste_context, load_system_prompt, build_attachment_filename_hint,
+    extract_paste_context, load_system_prompt,
     resolve_selected_articles, search_file_id_chunks,
     build_injected_context, build_user_message, build_assistant_message,
     filter_article_sources,
@@ -526,11 +526,6 @@ async def query_stream(req: QueryRequest):
             # 3) 첨부파일 분류
             file_context_docs = _file_attachments_to_context(req.attachments) + paste_context
             image_attachments = [a for a in req.attachments if a.get("type") == "image"]
-
-            # 4) 일반 첨부 파일명 힌트 (질문에 덧붙임)
-            _att_hint = build_attachment_filename_hint(req.attachments)
-            if _att_hint:
-                clean_question = clean_question + _att_hint
 
             # conv_id를 여기서 미리 확정한다.
             conv_id = req.conv_id or str(uuid.uuid4())

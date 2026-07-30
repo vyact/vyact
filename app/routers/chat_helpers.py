@@ -77,24 +77,6 @@ def separate_attachments(attachments: list, paste_context: list[dict],
 
 
 
-# ── 일반 첨부 파일명 힌트 (질문에 덧붙임) ────────────────────────────────
-
-def build_attachment_filename_hint(attachments: list) -> str:
-    """분석용 첨부 파일(file/image)의 saved_name을 모아 질문 뒤에 붙일 힌트 생성."""
-    filenames = []
-    for att in attachments:
-        sn = att.get("saved_name") or att.get("filename") or ""
-        if sn and att.get("type") in ("file", "image"):
-            filenames.append(sn)
-    if not filenames:
-        return ""
-    return (
-        "\n[첨부파일: " + ", ".join(filenames) + "] "
-        "이메일 첨부 요청이면 reply_email/send_email/create_email_draft의 attachments에, "
-        "드라이브 업로드 요청이면 upload_drive_file의 attachments에 위 파일명을 그대로 전달하세요."
-    )
-
-
 # ── 이전 assistant의 article_sources에서 file_id 승계 ────────────────────
 
 def inherit_articles_from_history(articles: list, messages: list) -> list:
