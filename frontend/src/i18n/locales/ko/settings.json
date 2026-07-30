@@ -110,7 +110,7 @@
       },
       "llm_num_ctx": {
         "label": "Ollama Context Window",
-        "help": "입력과 출력을 합친 전체 컨텍스트 크기입니다. 모델 지원 한도를 넘기지 마세요."
+        "help": "입력과 출력을 합친 전체 컨텍스트의 최대 크기입니다. 모델 지원 한도를 넘기지 마세요."
       },
       "llm_num_predict": {
         "label": "Ollama Max Output Tokens",

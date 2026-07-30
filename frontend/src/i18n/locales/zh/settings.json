@@ -88,7 +88,7 @@
       },
       "llm_num_ctx": {
         "label": "Ollama Context Window",
-        "help": "输入和输出的总上下文大小。"
+        "help": "输入和输出的总上下文最大大小。请勿超过模型支持的上限。"
       },
       "llm_num_predict": {
         "label": "Ollama Max Output Tokens",

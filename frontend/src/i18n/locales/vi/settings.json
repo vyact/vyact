@@ -88,7 +88,7 @@
       },
       "llm_num_ctx": {
         "label": "Ollama Context Window",
-        "help": "Tổng ngữ cảnh"
+        "help": "Kích thước ngữ cảnh tổng tối đa cho đầu vào và đầu ra. Không vượt quá giới hạn mà mô hình hỗ trợ."
       },
       "llm_num_predict": {
         "label": "Ollama Max Output Tokens",

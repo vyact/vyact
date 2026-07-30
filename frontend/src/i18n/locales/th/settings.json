@@ -88,7 +88,7 @@
       },
       "llm_num_ctx": {
         "label": "Ollama Context Window",
-        "help": "ขนาดบริบทรวม"
+        "help": "ขนาดบริบทรวมสูงสุดของอินพุตและเอาต์พุต อย่าเกินขีดจำกัดที่โมเดลรองรับ"
       },
       "llm_num_predict": {
         "label": "Ollama Max Output Tokens",

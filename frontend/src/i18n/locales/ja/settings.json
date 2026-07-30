@@ -88,7 +88,7 @@
       },
       "llm_num_ctx": {
         "label": "Ollama Context Window",
-        "help": "入力と出力を含むコンテキストサイズです。"
+        "help": "入力と出力を含むコンテキストの最大サイズです。モデルの対応上限を超えないでください。"
       },
       "llm_num_predict": {
         "label": "Ollama Max Output Tokens",

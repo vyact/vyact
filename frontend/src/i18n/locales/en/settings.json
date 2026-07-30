@@ -109,7 +109,7 @@
       },
       "llm_num_ctx": {
         "label": "Ollama Context Window",
-        "help": "Total input and output context size."
+        "help": "Maximum total context size for input and output. Do not exceed the model's supported limit."
       },
       "llm_num_predict": {
         "label": "Ollama Max Output Tokens",

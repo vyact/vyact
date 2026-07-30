@@ -88,7 +88,7 @@
       },
       "llm_num_ctx": {
         "label": "Ollama Context Window",
-        "help": "Contexto total"
+        "help": "Tamaño máximo del contexto total de entrada y salida. No exceda el límite compatible con el modelo."
       },
       "llm_num_predict": {
         "label": "Ollama Max Output Tokens",
