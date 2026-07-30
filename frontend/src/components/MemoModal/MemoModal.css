@@ -102,7 +102,7 @@
     padding: 8px 0;
 }
 
-.memo-loading, .memo-empty {
+.memo-empty {
     font-size: 14px;
     color: var(--muted);
     text-align: center;
@@ -462,6 +462,35 @@
 }
 
 .memo-attachment-upload-spinner {
+    color: var(--accent, #e07050);
+    animation: memo-attachment-spin 0.9s linear infinite;
+}
+
+.memo-loading-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 90;
+    display: grid;
+    place-items: center;
+    background: rgba(0, 0, 0, 0.28);
+    cursor: wait;
+}
+
+.memo-loading-dialog {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 22px;
+    border: 1px solid color-mix(in srgb, var(--accent, #e07050) 45%, var(--border, rgba(255, 255, 255, 0.18)));
+    border-radius: 12px;
+    background: var(--bg-secondary, #1e1e1e);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.42);
+    color: var(--text, #fff);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.memo-loading-spinner {
     color: var(--accent, #e07050);
     animation: memo-attachment-spin 0.9s linear infinite;
 }

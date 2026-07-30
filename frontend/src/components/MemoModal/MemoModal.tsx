@@ -24,6 +24,7 @@ import ImageViewer from '../ImageViewer/ImageViewer';
 import './MemoModal.css';
 
 const lowlight = createLowlight(common);
+const saveShortcutModifier = navigator.platform.toUpperCase().includes('MAC') ? 'Cmd' : 'Ctrl';
 
 interface Memo {
     id: string;
@@ -223,8 +224,15 @@ const MemoEditor: React.FC<{
         event.target.value = '';
         if (files.length === 0) return;
         void (async () => {
-            const memoId = await onEnsureMemoId();
-            for (const file of files) await uploadAttachment(file, isImage, memoId);
+            // 새 메모는 첨부 전에 서버 초안을 만들어야 한다. 이 준비 시간도 업로드 진행
+            // 표시 범위에 포함해 첫 이미지 선택 직후부터 오버레이가 보이게 한다.
+            setUploadCount(count => count + 1);
+            try {
+                const memoId = await onEnsureMemoId();
+                for (const file of files) await uploadAttachment(file, isImage, memoId);
+            } finally {
+                setUploadCount(count => Math.max(0, count - 1));
+            }
         })();
     }, [onEnsureMemoId, uploadAttachment]);
 
@@ -756,7 +764,7 @@ const MemoEditor: React.FC<{
                 </div>
             )}
             <div className="memo-editor-footer">
-                <span className="memo-hint">{t('memoModal.saveShortcut')}</span>
+                <span className="memo-hint">{t('memoModal.saveShortcut', { shortcut: `${saveShortcutModifier}+S` })}</span>
                 <div style={{ display: 'flex', gap: '8px' }}>
                     <button className="memo-btn-cancel" onClick={onCancel} disabled={isSaving}>{t('memoModal.cancel')}</button>
                     <button className="memo-btn-save" onClick={triggerSave} disabled={isSaving}>
@@ -794,6 +802,7 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
     const [editingHtml, setEditingHtml] = useState('');
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(true);
+    const memoLoadSequenceRef = React.useRef(0);
     const editingIdRef = React.useRef<string | null>(null);
     const draftMemoIdRef = React.useRef<string | null>(null);
     const draftMemoCreationRef = React.useRef<Promise<string> | null>(null);
@@ -807,14 +816,21 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
         : memos;
 
     const loadMemos = useCallback(async (showLoading = true) => {
+        const requestSequence = ++memoLoadSequenceRef.current;
         if (showLoading) setLoading(true);
         try {
             const res = await api.listMemos();
-            setMemos(res.memos || []);
+            if (requestSequence === memoLoadSequenceRef.current) {
+                setMemos(res.memos || []);
+            }
         } catch {
-            setMemos([]);
+            if (requestSequence === memoLoadSequenceRef.current) {
+                setMemos([]);
+            }
         } finally {
-            if (showLoading) setLoading(false);
+            if (showLoading && requestSequence === memoLoadSequenceRef.current) {
+                setLoading(false);
+            }
         }
     }, []);
 
@@ -956,6 +972,14 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
     return (
         <ModalOverlay className="memo-modal-overlay">
             <div className="memo-modal" style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
+                {loading && (
+                    <div className="memo-loading-overlay" role="status" aria-live="polite">
+                        <div className="memo-loading-dialog">
+                            <LoaderCircle className="memo-loading-spinner" aria-hidden="true" size={28} />
+                            <span>{t('memoModal.loading')}</span>
+                        </div>
+                    </div>
+                )}
                 {deleteConfirm && (
                     <div style={{
                         position: 'absolute', inset: 0, zIndex: 100,
@@ -1021,7 +1045,6 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
                                 </button>
                             )}
                         </div>
-                        {loading && <div className="memo-loading">{t('memoModal.loading')}</div>}
                         {!loading && filteredMemos.length === 0 && (
                             <div className="memo-empty">{searchQuery ? t('memoModal.noSearchResults') : t('memoModal.empty')}</div>
                         )}
@@ -1041,11 +1064,11 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
                                 <div className="memo-item-meta">
                                     <span>{formatDate(memo.updated_at)}</span>
                                     <div className="memo-item-actions">
-                                        <button className="memo-icon-btn" disabled={isEditing} onClick={(e) => { e.stopPropagation(); if (!isEditing) void handleEdit(memo.id); }} title={t('memoModal.edit')} aria-label={t('memoModal.edit')}>
+                                        <button className="memo-icon-btn" disabled={isEditing} onClick={(e) => { e.stopPropagation(); if (!isEditing) void handleEdit(memo.id); }} aria-label={t('memoModal.edit')}>
                                             <Pencil aria-hidden="true" />
                                         </button>
                                         <KnowledgeCollectionAttachSelect source={{source_type: 'memo', source_id: memo.id}} onCreateCollection={onClose}/>
-                                        <button className="memo-icon-btn memo-icon-btn-danger" disabled={isEditing} onClick={(e) => { if (!isEditing) handleDelete(memo.id, memo.title, e); }} title={t('memoModal.delete')} aria-label={t('memoModal.delete')}>
+                                        <button className="memo-icon-btn memo-icon-btn-danger" disabled={isEditing} onClick={(e) => { if (!isEditing) handleDelete(memo.id, memo.title, e); }} aria-label={t('memoModal.delete')}>
                                             <Trash2 aria-hidden="true" />
                                         </button>
                                     </div>

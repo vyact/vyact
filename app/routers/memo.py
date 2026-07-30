@@ -245,7 +245,9 @@ async def update_memo(memo_id: str, body: MemoBody):
             await es.update(index=old_index, id=memo_id, doc=doc, refresh=True)
         else:
             existing = await es.get(index=old_index, id=memo_id)
-            await es.delete(index=old_index, id=memo_id)
+            # 새 언어 인덱스에 저장한 직후 목록을 다시 읽으므로, 이전 인덱스의 초안도
+            # 즉시 검색 결과에서 제거해야 동일 메모가 잠시 두 번 보이지 않는다.
+            await es.delete(index=old_index, id=memo_id, refresh=True)
             await es.index(index=new_index, id=memo_id, document={**existing["_source"], **doc}, refresh=True)
         _cleanup_unreferenced_attachments(memo_id, body.content_html)
         return {"id": memo_id, "title": title, "updated_at": now}

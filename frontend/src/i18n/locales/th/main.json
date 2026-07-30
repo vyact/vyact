@@ -362,7 +362,7 @@
     "save": "บันทึก",
     "saving": "กำลังบันทึก...",
     "uploading": "กำลังอัปโหลดไฟล์แนบ...",
-    "saveShortcut": "Cmd+S เพื่อบันทึก",
+    "saveShortcut": "{{shortcut}} เพื่อบันทึก",
     "editorPlaceholder": "พิมพ์ / เพื่อเลือกบล็อก...",
     "copy": "คัดลอก",
     "copied": "คัดลอกแล้ว!",

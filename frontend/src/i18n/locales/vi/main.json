@@ -362,7 +362,7 @@
     "save": "Lưu",
     "saving": "Đang lưu...",
     "uploading": "Đang tải tệp đính kèm lên...",
-    "saveShortcut": "Cmd+S để lưu",
+    "saveShortcut": "{{shortcut}} để lưu",
     "editorPlaceholder": "Nhập / để chọn khối...",
     "copy": "Sao chép",
     "copied": "Đã sao chép!",

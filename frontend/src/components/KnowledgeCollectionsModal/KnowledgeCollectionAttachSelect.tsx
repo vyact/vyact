@@ -9,11 +9,28 @@ import './KnowledgeCollectionAttachSelect.css';
 
 type Props = {source: KnowledgeCollectionItem; prepareSource?: () => Promise<KnowledgeCollectionItem>; onOpen?: () => void; onActionChange?: (action: 'add' | 'remove' | null) => void; onCreateCollection?: () => void};
 
+let cachedCollections: KnowledgeCollection[] | null = null;
+let collectionsRequest: Promise<KnowledgeCollection[]> | null = null;
+
+const fetchCollections = (refresh = false): Promise<KnowledgeCollection[]> => {
+    if (!refresh && cachedCollections) return Promise.resolve(cachedCollections);
+    if (collectionsRequest) return collectionsRequest;
+
+    collectionsRequest = api.getKnowledgeCollections()
+        .then(result => {
+            cachedCollections = result.collections || [];
+            return cachedCollections;
+        })
+        .catch(() => [])
+        .finally(() => { collectionsRequest = null; });
+    return collectionsRequest;
+};
+
 const KnowledgeCollectionAttachSelect = ({source, prepareSource, onOpen, onActionChange, onCreateCollection}: Props) => {
     const {t} = useTranslation('main');
     const [collections, setCollections] = useState<KnowledgeCollection[]>([]);
     const [busy, setBusy] = useState(false);
-    const loadCollections = () => api.getKnowledgeCollections().then(result => setCollections(result.collections || [])).catch(() => setCollections([]));
+    const loadCollections = (refresh = false) => fetchCollections(refresh).then(setCollections);
     useEffect(() => { void loadCollections(); }, []);
     const attach = async (collectionId: string) => {
         const collection = collections.find(item => item.id === collectionId);
@@ -40,7 +57,7 @@ const KnowledgeCollectionAttachSelect = ({source, prepareSource, onOpen, onActio
         onCreateCollection?.();
         window.dispatchEvent(new Event(OPEN_KNOWLEDGE_COLLECTIONS_MODAL_EVENT));
     };
-    return <CustomSelect className="knowledge-collection-attach-select" options={collections.map(collection => ({value: collection.id, label: collection.name}))} value="" onChange={value => void attach(value)} disabled={busy} alignRight placeholder={t('knowledgeCollectionSources.attachSources')} ariaLabel={t('knowledgeCollections.title')} onOpen={() => { onOpen?.(); void loadCollections(); }} emptyState={<button type="button" className="knowledge-collection-create-action" onClick={openCollectionManager}><Plus size={16}/>{t('knowledgeCollections.create')}</button>} renderTrigger={() => <BookOpen size={18}/>} renderOption={option => { const collection = collections.find(item => item.id === option.value)!; const attached = collection.items.some(item => item.source_type === source.source_type && item.source_id === source.source_id); return <><span className="custom-select-item-label">{collection.name}</span>{attached ? <Check className="knowledge-collection-attach-check" size={16}/> : <Plus size={16}/>}</>; }}/>
+    return <CustomSelect className="knowledge-collection-attach-select" options={collections.map(collection => ({value: collection.id, label: collection.name}))} value="" onChange={value => void attach(value)} disabled={busy} alignRight placeholder={t('knowledgeCollectionSources.attachSources')} ariaLabel={t('knowledgeCollections.title')} onOpen={() => { onOpen?.(); void loadCollections(true); }} emptyState={<button type="button" className="knowledge-collection-create-action" onClick={openCollectionManager}><Plus size={16}/>{t('knowledgeCollections.create')}</button>} renderTrigger={() => <BookOpen size={18}/>} renderOption={option => { const collection = collections.find(item => item.id === option.value)!; const attached = collection.items.some(item => item.source_type === source.source_type && item.source_id === source.source_id); return <><span className="custom-select-item-label">{collection.name}</span>{attached ? <Check className="knowledge-collection-attach-check" size={16}/> : <Plus size={16}/>}</>; }}/>
 };
 
 export default KnowledgeCollectionAttachSelect;

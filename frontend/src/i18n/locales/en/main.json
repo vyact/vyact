@@ -362,7 +362,7 @@
     "save": "Save",
     "saving": "Saving...",
     "uploading": "Uploading attachment...",
-    "saveShortcut": "Cmd+S to save",
+    "saveShortcut": "{{shortcut}} to save",
     "editorPlaceholder": "Type / to choose a block...",
     "copy": "Copy",
     "copied": "Copied!",

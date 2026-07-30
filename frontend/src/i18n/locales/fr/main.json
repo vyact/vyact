@@ -362,7 +362,7 @@
     "save": "Enregistrer",
     "saving": "Enregistrement...",
     "uploading": "Téléversement de la pièce jointe...",
-    "saveShortcut": "Cmd+S pour enregistrer",
+    "saveShortcut": "{{shortcut}} pour enregistrer",
     "editorPlaceholder": "Tapez / pour choisir un bloc...",
     "copy": "Copier",
     "copied": "Copié !",

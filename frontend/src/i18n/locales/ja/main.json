@@ -362,7 +362,7 @@
     "save": "保存",
     "saving": "保存中...",
     "uploading": "添付ファイルをアップロード中...",
-    "saveShortcut": "Cmd+S で保存",
+    "saveShortcut": "{{shortcut}} で保存",
     "editorPlaceholder": "/ を入力してブロックを選択...",
     "copy": "コピー",
     "copied": "コピーしました！",
