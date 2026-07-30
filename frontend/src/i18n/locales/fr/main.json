@@ -877,6 +877,7 @@
     "codeGenerating": "⌨️ Écriture du code…"
   },
   "message": {
+    "modelNoResponse": "Le modèle d’IA sélectionné n’a pas pu générer de réponse. Veuillez réessayer.",
     "followupTitle": "Poursuivre la conversation",
     "followupSendSelected": "Envoyer {{count}}",
     "followupCustomPlaceholder": "Ou écrire une réponse…",

@@ -877,6 +877,7 @@
     "codeGenerating": "⌨️ Đang viết mã…"
   },
   "message": {
+    "modelNoResponse": "Mô hình AI đã chọn không thể tạo phản hồi. Vui lòng thử lại.",
     "followupTitle": "Hỏi tiếp",
     "followupSendSelected": "Gửi {{count}} mục",
     "followupCustomPlaceholder": "Hoặc nhập phản hồi trực tiếp…",

@@ -877,6 +877,7 @@
     "codeGenerating": "⌨️ กำลังเขียนโค้ด…"
   },
   "message": {
+    "modelNoResponse": "โมเดล AI ที่เลือกไม่สามารถสร้างคำตอบได้ โปรดลองอีกครั้ง",
     "followupTitle": "ถามต่อ",
     "followupSendSelected": "ส่ง {{count}} รายการ",
     "followupCustomPlaceholder": "หรือตอบกลับโดยตรง…",

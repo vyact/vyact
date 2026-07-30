@@ -874,6 +874,7 @@
     "codeGenerating": "⌨️ 코드 작성 중…"
   },
   "message": {
+    "modelNoResponse": "선택한 AI 모델이 응답을 생성하지 못했습니다. 다시 시도해주세요.",
     "followupTitle": "이어서 물어보기",
     "followupSendSelected": "{{count}}개 전송",
     "followupCustomPlaceholder": "또는 직접 답장…",

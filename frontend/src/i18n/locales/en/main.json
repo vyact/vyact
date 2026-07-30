@@ -874,6 +874,7 @@
     "codeGenerating": "⌨️ Writing code…"
   },
   "message": {
+    "modelNoResponse": "The selected AI model could not generate a response. Please try again.",
     "followupTitle": "Continue the conversation",
     "followupSendSelected": "Send {{count}}",
     "followupCustomPlaceholder": "Or type a reply…",

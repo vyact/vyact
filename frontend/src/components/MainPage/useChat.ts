@@ -584,22 +584,25 @@ export function useChat(deps: UseChatDeps) {
                                 }));
                             const rawAnswer = data.answer ?? '';
                             const {body: fuBody, followups: fuList} = parseFollowups(rawAnswer);
+                            const followupsOnly = !fuBody?.trim() && fuList.length > 0;
                             setMessagesForConversation(requestConvId, prev => prev.map(m => {
                                 if (m.id !== streamId) return m;
-                                // fuBody가 비어있으면 스트리밍으로 쌓인 m.content 사용
-                                const finalContent = (fuBody?.trim() ? fuBody : null)
-                                    || (m.content?.trim() ? m.content : null);
+                                // follow-up 블록만 생성된 경우에는 스트리밍 원문을 본문으로
+                                // 되돌리지 않는다. 모델의 빈 본문을 안내하되 후속 질문은 유지한다.
+                                const finalContent = followupsOnly
+                                    ? t('message.modelNoResponse')
+                                    : (fuBody?.trim() ? fuBody : null) || (m.content?.trim() ? m.content : null);
                                 if (!finalContent) {
                                     return {
                                         ...m,
-                                        content: '⚠️ 응답을 생성하지 못했습니다. 다시 시도해주세요.',
+                                        content: t('message.modelNoResponse'),
                                         isError: true, toolStatus: undefined,
                                         stats: data.stats || m.stats
                                     };
                                 }
                                 return {
                                     ...m, content: finalContent, model: streamModel || m.model,
-                                    timestamp: new Date().toISOString(), toolStatus: undefined,
+                                    timestamp: new Date().toISOString(), isError: followupsOnly, toolStatus: undefined,
                                     followups: fuList.length > 0 ? fuList : undefined,
                                     articleSources: mergedSources.length > 0 ? mergedSources : undefined,
                                     injectedContext: injectedContextItems.length > 0 ? injectedContextItems : undefined,

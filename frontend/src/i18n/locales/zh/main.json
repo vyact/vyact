@@ -877,6 +877,7 @@
     "codeGenerating": "⌨️ 正在编写代码…"
   },
   "message": {
+    "modelNoResponse": "所选 AI 模型未能生成响应。请重试。",
     "followupTitle": "继续提问",
     "followupSendSelected": "发送 {{count}} 项",
     "followupCustomPlaceholder": "或直接回复…",
