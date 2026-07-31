@@ -604,6 +604,7 @@
     "chunkCount": "{{count}}チャンク",
     "savedFileCount": "保存済み文書 {{count}}件",
     "downloadAll": "すべてダウンロード",
+    "openWebPage": "ウェブページを開く",
     "deleteAll": "すべて削除",
     "confirmDeleteAll": "保存済み文書をすべて削除しますか？",
     "confirmDeleteAllDescription": "{{count}}件の文書と関連するすべてのチャンクが完全に削除されます。",

@@ -604,6 +604,7 @@
     "chunkCount": "{{count}} đoạn",
     "savedFileCount": "{{count}} tài liệu đã lưu",
     "downloadAll": "Tải xuống tất cả",
+    "openWebPage": "Mở trang web",
     "deleteAll": "Xóa tất cả",
     "confirmDeleteAll": "Xóa tất cả tài liệu đã lưu?",
     "confirmDeleteAllDescription": "{{count}} tài liệu và tất cả các đoạn liên quan sẽ bị xóa vĩnh viễn.",

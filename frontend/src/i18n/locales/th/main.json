@@ -604,6 +604,7 @@
     "chunkCount": "{{count}} ส่วน",
     "savedFileCount": "เอกสารที่บันทึกไว้ {{count}} รายการ",
     "downloadAll": "ดาวน์โหลดทั้งหมด",
+    "openWebPage": "เปิดหน้าเว็บ",
     "deleteAll": "ลบทั้งหมด",
     "confirmDeleteAll": "ลบเอกสารที่บันทึกไว้ทั้งหมดหรือไม่?",
     "confirmDeleteAllDescription": "เอกสาร {{count}} รายการและส่วนข้อมูลที่เกี่ยวข้องทั้งหมดจะถูกลบอย่างถาวร",

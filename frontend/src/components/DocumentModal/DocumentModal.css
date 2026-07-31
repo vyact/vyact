@@ -617,10 +617,12 @@
 .dm-files-summary {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0 12px;
     gap: 12px;
     min-height: 20px;
-    margin-bottom: 8px;
+    margin-bottom: 0;
     color: var(--text);
     font-size: var(--modal-btn);
     font-weight: 600;
@@ -630,7 +632,7 @@
 .dm-files-bulk-actions {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
 }
 
 .dm-bulk-action-btn {
@@ -648,17 +650,38 @@
     white-space: nowrap;
 }
 
-.dm-bulk-action-btn:hover {
-    background: var(--surface);
-    color: var(--text);
+.dm-bulk-action-btn.icon-only {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--muted);
 }
 
-.dm-bulk-action-btn.danger {
-    color: var(--danger);
+.dm-bulk-action-btn.icon-only:hover:not(:disabled) {
+    background: transparent;
+    color: var(--accent);
 }
 
-.dm-bulk-action-btn.danger:hover {
-    background: color-mix(in srgb, var(--danger) 10%, transparent);
+.dm-bulk-action-btn.icon-only.danger {
+    color: var(--muted);
+}
+
+.dm-bulk-action-btn.icon-only.danger:hover:not(:disabled) {
+    background: transparent;
+    color: #e1745c;
+}
+
+.dm-bulk-action-btn:disabled,
+.dm-bulk-action-btn:disabled:hover {
+    background: transparent;
+    color: var(--muted);
+    cursor: not-allowed;
+    opacity: 0.45;
 }
 
 .dm-file-search-wrap {
@@ -723,6 +746,7 @@
     min-height: 0;
     overflow-y: auto;
     padding-right: 6px;
+    margin-top: -8px;
 }
 
 .dm-saved-item {
@@ -742,8 +766,29 @@
     border-color: var(--border);
 }
 .dm-item-select, .dm-select-all { display: grid; place-items: center; flex: none; }
-.dm-item-select input, .dm-select-all input { appearance: none; width: 18px; height: 18px; border: 2px solid var(--muted); border-radius: 4px; background: transparent; cursor: pointer; }
-.dm-item-select input:checked, .dm-select-all input:checked { border-color: var(--accent); background: var(--accent); box-shadow: inset 0 0 0 3px var(--surface); }
+.dm-item-select input, .dm-select-all input {
+    appearance: none;
+    margin: 0;
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--muted);
+    border-radius: 4px;
+    background-color: transparent;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 11px;
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+.dm-item-select input:checked, .dm-select-all input:checked {
+    border-color: var(--accent);
+    background-color: var(--accent);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m3 8 3 3 7-7' fill='none' stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.3'/%3E%3C/svg%3E");
+}
+.dm-item-select input:focus-visible, .dm-select-all input:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--accent) 65%, white);
+    outline-offset: 2px;
+}
 .dm-selected-count { color: var(--accent); font-weight: 700; font-size: 13px; }
 
 .dm-file-type-badge {

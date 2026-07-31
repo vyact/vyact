@@ -1153,30 +1153,30 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
                                     )}
                                 </div>
                                 <div className="dm-files-summary">
-                                    <span>{t('documentModal.savedFileCount', {count: savedFiles.length})}</span>
                                     {savedFiles.length > 0 && (
                                         <div className="dm-files-bulk-actions">
                                             <label className="dm-select-all" aria-label={t('documentModal.downloadAll')}>
                                                 <input type="checkbox" checked={selectedFileIds.size === savedFiles.length} onChange={() => setSelectedFileIds(selectedFileIds.size === savedFiles.length ? new Set() : new Set(savedFiles.map(file => file.file_id)))}/>
                                             </label>
-                                            {selectedFileIds.size > 0 && <span className="dm-selected-count">{t('googleWorkspace.selectedCount', {count: selectedFileIds.size})}</span>}
                                             <button type="button" className="dm-bulk-action-btn icon-only" aria-label={t('documentModal.download')} onClick={handleSelectedDownload} disabled={!savedFiles.some(file => selectedFileIds.has(file.file_id) && file.source_type !== 'web')}>
-                                                <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                                                     <polyline points="7 10 12 15 17 10"/>
                                                     <line x1="12" y1="15" x2="12" y2="3"/>
                                                 </svg>
                                             </button>
                                             <button type="button" className="dm-bulk-action-btn icon-only danger" aria-label={t('documentModal.delete')} onClick={handleSelectedDelete} disabled={selectedFileIds.size === 0}>
-                                                <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                     <polyline points="3 6 5 6 21 6"/>
                                                     <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
                                                     <path d="M10 11v6M14 11v6"/>
                                                     <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
                                                 </svg>
                                             </button>
+                                            {selectedFileIds.size > 0 && <span className="dm-selected-count">{t('googleWorkspace.selectedCount', {count: selectedFileIds.size})}</span>}
                                         </div>
                                     )}
+                                    <span>{t('documentModal.savedFileCount', {count: savedFiles.length})}</span>
                                 </div>
                                 {filesLoading ? (
                                     <div className="dm-status uploading">
@@ -1235,15 +1235,23 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
                                                         <button
                                                             type="button"
                                                             className="dm-action-btn icon-only"
-                                                            aria-label={t(f.source_type === 'web' ? 'documentModal.download' : 'documentModal.download')}
+                                                            aria-label={t(f.source_type === 'web' ? 'documentModal.openWebPage' : 'documentModal.download')}
                                                             onClick={() => f.source_type === 'web' ? openWebSource(f.url) : handleDownload(f.file_id, f.filename)}
                                                             disabled={f.source_type === 'web' ? !f.url : !f.has_original}
                                                         >
-                                                            <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                                                <polyline points="7 10 12 15 17 10"/>
-                                                                <line x1="12" y1="15" x2="12" y2="3"/>
-                                                            </svg>
+                                                            {f.source_type === 'web' ? (
+                                                                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                    <path d="M14 3h7v7"/>
+                                                                    <path d="m21 3-9 9"/>
+                                                                    <path d="M19 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6"/>
+                                                                </svg>
+                                                            ) : (
+                                                                <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                                                    <polyline points="7 10 12 15 17 10"/>
+                                                                    <line x1="12" y1="15" x2="12" y2="3"/>
+                                                                </svg>
+                                                            )}
                                                         </button>
                                                         <div className="dm-delete-wrap" data-delete-popover={f.file_id}>
                                                             <button

@@ -395,8 +395,8 @@
 .gwp-drive-thead button svg { opacity: .7; }
 .gwp-drive-thead .gwp-drive-sort-reset { justify-content: center; width: 24px; height: 24px; padding: 0; border-radius: 5px; color: var(--accent); }
 .gwp-drive-thead .gwp-drive-sort-reset:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
-.gwp-drive-bulk-actions { display: flex; align-items: center; gap: 0; }
-.gwp-drive-bulk-download { display: grid; width: 32px; height: 32px; place-items: center; margin-left: -8px; padding: 0; border-radius: 50% !important; background: transparent !important; color: var(--muted) !important; cursor: pointer; }
+.gwp-drive-bulk-actions { display: flex; align-items: center; gap: 4px; }
+.gwp-drive-bulk-download { display: grid; width: 32px; height: 32px; place-items: center; margin: 0; padding: 0; border-radius: 50% !important; background: transparent !important; color: var(--muted) !important; cursor: pointer; }
 .gwp-drive-bulk-download:hover { background: transparent !important; color: var(--accent) !important; }
 .gwp-drive-rows { flex: 1; min-height: 0; overflow-y: auto; }
 .gwp-drive-loading-more { display: flex; min-height: 48px; align-items: center; justify-content: center; gap: 8px; color: var(--muted); font-size: 12px; }

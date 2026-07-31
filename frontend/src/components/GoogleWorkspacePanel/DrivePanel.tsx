@@ -685,9 +685,6 @@ export default function DrivePanel({onAttachToChat, onIndexDocument}: DrivePanel
                         ? <span className="gwp-drive-col-name gwp-drive-bulk-bar">
                             <span>{t('googleWorkspace.selectedCount', {count: selectedIds.size})}</span>
                             <span className="gwp-drive-bulk-actions">
-                                <button type="button" className="gwp-trash-selected" onClick={() => setShowBulkTrashConfirm(true)}>
-                                    <Trash2 aria-hidden="true" size={16}/>
-                                </button>
                                 <button type="button" className="gwp-drive-bulk-download"
                                         aria-label={t('googleWorkspace.download')}
                                         onClick={() => void bulkDownload()}>
@@ -697,6 +694,9 @@ export default function DrivePanel({onAttachToChat, onIndexDocument}: DrivePanel
                                         aria-label={t('googleWorkspace.move')}
                                         onClick={() => setShowMoveDestination(true)}>
                                     <FolderInput aria-hidden="true" size={17}/>
+                                </button>
+                                <button type="button" className="gwp-trash-selected" onClick={() => setShowBulkTrashConfirm(true)}>
+                                    <Trash2 aria-hidden="true" size={16}/>
                                 </button>
                             </span>
                         </span>

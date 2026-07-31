@@ -604,6 +604,7 @@
     "chunkCount": "{{count}}个分块",
     "savedFileCount": "已保存文档 {{count}} 个",
     "downloadAll": "全部下载",
+    "openWebPage": "打开网页",
     "deleteAll": "全部删除",
     "confirmDeleteAll": "删除所有已保存的文档？",
     "confirmDeleteAllDescription": "将永久删除 {{count}} 个文档及其所有关联分块。",

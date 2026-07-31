@@ -604,6 +604,7 @@
     "chunkCount": "{{count}} parties",
     "savedFileCount": "{{count}} documents enregistrés",
     "downloadAll": "Tout télécharger",
+    "openWebPage": "Ouvrir la page web",
     "deleteAll": "Tout supprimer",
     "confirmDeleteAll": "Supprimer tous les documents enregistrés ?",
     "confirmDeleteAllDescription": "{{count}} documents et tous les segments associés seront définitivement supprimés.",

@@ -621,6 +621,7 @@
     "chunkCount": "{{count}} chunks",
     "savedFileCount": "{{count}} saved files",
     "downloadAll": "Download all",
+    "openWebPage": "Open web page",
     "deleteAll": "Delete all",
     "confirmDeleteAll": "Delete all saved documents?",
     "confirmDeleteAllDescription": "{{count}} documents and all associated chunks will be permanently deleted.",

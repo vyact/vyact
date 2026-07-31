@@ -604,6 +604,7 @@
     "chunkCount": "{{count}} partes",
     "savedFileCount": "{{count}} documentos guardados",
     "downloadAll": "Descargar todo",
+    "openWebPage": "Abrir página web",
     "deleteAll": "Eliminar todo",
     "confirmDeleteAll": "¿Eliminar todos los documentos guardados?",
     "confirmDeleteAllDescription": "Se eliminarán permanentemente {{count}} documentos y todos sus fragmentos asociados.",

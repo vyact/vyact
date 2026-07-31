@@ -15,8 +15,10 @@ from services.db import WEB_DOCUMENTS_INDEX, WEB_DOC_CHUNKS_INDEX, get_es, get_l
 from services.embedding_runtime import get_embeddings
 from services.knowledge_collection_references import remove_source_references_from_collections
 from services.language_detection import detect_language
+from logger import get_logger
 
 router = APIRouter()
+logger = get_logger(__name__)
 
 MAX_WEB_CONTENT_CHARS = 30_000
 WEB_CHUNK_SIZE = 2_400
@@ -137,7 +139,11 @@ async def _index_document(request: WebDocumentIndexRequest, emit) -> dict:
         }, refresh=True)
         return {"web_document_id": document_id, "title": title, "url": url, "chunk_count": indexed, "updated": existing}
     finally:
-        await es.close()
+        try:
+            await es.close()
+        except Exception as error:
+            # 저장과 인덱싱이 완료된 뒤 연결 종료가 실패해도 결과를 실패로 바꾸지 않는다.
+            logger.warning("웹 문서 인덱싱 후 ES 연결 종료 실패: %s", error)
 
 
 @router.post("/web-documents/index-progress")
@@ -162,7 +168,8 @@ async def index_web_document_progress(request: WebDocumentIndexRequest):
             yield json.dumps({"type": "result", **result}, ensure_ascii=False) + "\n"
         except HTTPException as error:
             yield json.dumps({"type": "error", "message": error.detail}, ensure_ascii=False) + "\n"
-        except Exception:
+        except Exception as error:
+            logger.exception("웹 문서 인덱싱 실패: %s", error)
             yield json.dumps({"type": "error", "message": "웹 문서 저장에 실패했습니다."}, ensure_ascii=False) + "\n"
 
     return StreamingResponse(event_stream(), media_type="application/x-ndjson", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
