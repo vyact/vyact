@@ -177,6 +177,8 @@
       "system_prompts": "カスタムシステムプロンプト",
       "system_settings": "アプリ設定（モデル、APIキー、ランタイム設定など）",
       "rag_files": "アップロード・インデックスされたファイルのメタデータ",
+      "web_documents": "Chrome拡張機能から保存したウェブ文書のメタデータと整理済み本文",
+      "web_doc_chunks": "保存したウェブ文書のベクトルチャンク",
       "memo_documents": "メモ・ノートデータ",
       "quick_notes": "クイックメモ（TODO）データ",
       "user_profile": "ユーザープロフィール情報",

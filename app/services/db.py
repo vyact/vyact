@@ -303,7 +303,7 @@ async def ensure_index():
                     "id": {"type": "keyword"},
                     "url": {"type": "keyword"},
                     "title": {"type": "text", "fields": {"keyword": {"type": "keyword", "ignore_above": 512}}},
-                    "content": {"type": "text", "index": false},
+                    "content": {"type": "text", "index": False},
                     "domain": {"type": "keyword"},
                     "published_at": {"type": "date"},
                     "saved_at": {"type": "date"},

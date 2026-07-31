@@ -377,17 +377,17 @@ async def list_files():
                 "has_original": has_original,
             })
         web_res = await es.search(index=WEB_DOCUMENTS_INDEX, body={
-            "size": 200,
-            "sort": [{"updated_at": {"order": "desc"}}],
-            "_source": ["id", "title", "url", "domain", "chunk_count", "updated_at", "saved_at"],
+                "size": 200,
+                "sort": [{"updated_at": {"order": "desc"}}],
+                "_source": ["id", "title", "url", "domain", "chunk_count", "updated_at", "saved_at"],
         })
         for hit in web_res["hits"]["hits"]:
             source = hit["_source"]
             files.append({
-                "file_id": hit["_id"], "filename": source.get("title", source.get("url", "")),
-                "file_ext": "web", "file_size": 0, "chunk_count": source.get("chunk_count", 0),
-                "indexed_at": source.get("updated_at", source.get("saved_at", "")), "has_original": False,
-                "source_type": "web", "url": source.get("url", ""), "domain": source.get("domain", ""),
+                    "file_id": hit["_id"], "filename": source.get("title", source.get("url", "")),
+                    "file_ext": "web", "file_size": 0, "chunk_count": source.get("chunk_count", 0),
+                    "indexed_at": source.get("updated_at", source.get("saved_at", "")), "has_original": False,
+                    "source_type": "web", "url": source.get("url", ""), "domain": source.get("domain", ""),
             })
         files.sort(key=lambda item: item.get("indexed_at", ""), reverse=True)
         return {"files": files}

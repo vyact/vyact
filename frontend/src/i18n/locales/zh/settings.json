@@ -177,6 +177,8 @@
       "system_prompts": "自定义系统提示词",
       "system_settings": "应用设置（模型、API密钥、运行时设置等）",
       "rag_files": "已上传和索引文件的元数据",
+      "web_documents": "从 Chrome 扩展保存的网页文档元数据和整理后的全文",
+      "web_doc_chunks": "已保存网页文档的向量分块",
       "memo_documents": "备忘录和笔记数据",
       "quick_notes": "快捷备忘（TODO）数据",
       "user_profile": "用户资料信息",

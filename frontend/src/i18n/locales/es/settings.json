@@ -177,6 +177,8 @@
       "system_prompts": "Prompts de sistema personalizados",
       "system_settings": "Configuración de la app (modelo, API keys, configuración de runtime, etc.)",
       "rag_files": "Metadatos de archivos subidos e indexados",
+      "web_documents": "Metadatos y texto completo depurado de páginas web guardadas desde la extensión de Chrome",
+      "web_doc_chunks": "Fragmentos vectoriales de páginas web guardadas",
       "memo_documents": "Datos de memos y notas",
       "quick_notes": "Datos de notas rápidas (TODO)",
       "user_profile": "Información del perfil de usuario",

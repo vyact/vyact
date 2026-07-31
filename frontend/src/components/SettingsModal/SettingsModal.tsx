@@ -159,7 +159,8 @@ const KOKORO_VOICES: { value: string; name: string; lang: string }[] = [
 const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTab}) => {
     const {t, i18n} = useTranslation('settings');
     const getBackupIndexHelp = (indexName: string) => {
-        const summary = t(`backup.indexHelp.${indexName}`, {
+        const baseIndexName = indexName.replace(/_(ko|en|ja|zh|th|vi|es|fr|und)$/, '');
+        const summary = t(`backup.indexHelp.${baseIndexName}`, {
             defaultValue: t('backup.indexHelpDefault', {name: indexName}),
         });
         const restoreBehavior = t(

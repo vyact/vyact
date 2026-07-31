@@ -177,6 +177,8 @@
       "system_prompts": "Prompt hệ thống tùy chỉnh",
       "system_settings": "Cài đặt ứng dụng (model, API key, cài đặt runtime, v.v.)",
       "rag_files": "Siêu dữ liệu của tệp đã tải lên và lập chỉ mục",
+      "web_documents": "Siêu dữ liệu và toàn văn đã được làm sạch của trang web lưu từ tiện ích Chrome",
+      "web_doc_chunks": "Các đoạn vector của trang web đã lưu",
       "memo_documents": "Dữ liệu ghi chú và memo",
       "quick_notes": "Dữ liệu ghi chú nhanh (TODO)",
       "user_profile": "Thông tin hồ sơ người dùng",

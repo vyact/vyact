@@ -198,6 +198,8 @@
       "system_prompts": "Custom system prompts",
       "system_settings": "App settings (model, API keys, runtime settings, etc.)",
       "rag_files": "Metadata for uploaded and indexed files",
+      "web_documents": "Metadata and cleaned full text for web pages saved from the Chrome extension",
+      "web_doc_chunks": "Vector chunks from saved web pages",
       "memo_documents": "Memo and note data",
       "quick_notes": "Quick notes (TODO) data",
       "user_profile": "User profile information",
