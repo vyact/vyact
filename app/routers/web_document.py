@@ -58,7 +58,22 @@ def _chunks(content: str) -> list[str]:
         chunks.append(normalized[start:end].strip())
         if end >= len(normalized):
             break
-        start = max(end - WEB_CHUNK_OVERLAP, start + 1)
+        overlap_target = max(end - WEB_CHUNK_OVERLAP, start + 1)
+        # 고정 문자 수 오버랩은 다음 청크를 단어 한가운데서 시작시킬 수 있다.
+        # 목표 지점 직전의 가장 가까운 문장·문단 경계로 되돌려 문맥을 온전히 유지한다.
+        boundary_search_start = max(start + 1, overlap_target - WEB_CHUNK_OVERLAP)
+        paragraph_boundary = normalized.rfind("\n\n", boundary_search_start, overlap_target)
+        sentence_boundary = max(
+            normalized.rfind(". ", boundary_search_start, overlap_target),
+            normalized.rfind("? ", boundary_search_start, overlap_target),
+            normalized.rfind("! ", boundary_search_start, overlap_target),
+        )
+        if paragraph_boundary >= sentence_boundary and paragraph_boundary >= boundary_search_start:
+            start = paragraph_boundary + 2
+        elif sentence_boundary >= boundary_search_start:
+            start = sentence_boundary + 2
+        else:
+            start = overlap_target
     return [chunk for chunk in chunks if chunk]
 
 
