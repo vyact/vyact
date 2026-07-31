@@ -632,7 +632,7 @@
 .dm-files-bulk-actions {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 2px;
 }
 
 .dm-bulk-action-btn {
