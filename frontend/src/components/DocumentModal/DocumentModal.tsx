@@ -179,6 +179,8 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
     const [deletingAll, setDeletingAll] = useState(false);
     const [fileSearch, setFileSearch] = useState('');
     const [selectedFileIds, setSelectedFileIds] = useState<Set<string>>(new Set());
+    const [downloadLabel, setDownloadLabel] = useState<string | null>(null);
+    const downloadControllerRef = useRef<AbortController | null>(null);
 
     // 청크 뷰어
     const [chunkViewFile, setChunkViewFile] = useState<SavedFile | null>(null);
@@ -212,6 +214,9 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
         setDeletingAll(false);
         setFileSearch('');
         setSelectedFileIds(new Set());
+        downloadControllerRef.current?.abort();
+        downloadControllerRef.current = null;
+        setDownloadLabel(null);
         setChunkViewFile(null);
         setChunks([]);
         setChunksLoading(false);
@@ -628,11 +633,43 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
         ])));
     };
 
-    const handleDownload = (file_id: string, filename: string) => {
-        const a = document.createElement('a');
-        a.href = `/api/document/files/${encodeURIComponent(file_id)}`;
-        a.download = filename;
-        a.click();
+    const downloadFile = async (url: string, options: RequestInit, filename: string, label: string) => {
+        if (downloadControllerRef.current) return;
+
+        const controller = new AbortController();
+        downloadControllerRef.current = controller;
+        setDownloadLabel(label);
+        try {
+            const response = await fetch(url, {...options, signal: controller.signal});
+            if (!response.ok) throw new Error(t('documentModal.error'));
+
+            const downloadUrl = URL.createObjectURL(await response.blob());
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+        } catch (error: unknown) {
+            if (error instanceof DOMException && error.name === 'AbortError') return;
+            const message = error instanceof Error && error.message ? error.message : t('documentModal.error');
+            toast.error(message);
+        } finally {
+            if (downloadControllerRef.current === controller) {
+                downloadControllerRef.current = null;
+                setDownloadLabel(null);
+            }
+        }
+    };
+
+    const handleDownload = (fileId: string, filename: string) => {
+        void downloadFile(
+            `/api/document/files/${encodeURIComponent(fileId)}`,
+            {method: 'GET'},
+            filename,
+            filename,
+        );
     };
 
     const toSavedDocumentAttachment = (file: SavedFile): ArticleAttachment => ({
@@ -651,10 +688,21 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
         return next;
     });
 
-    const handleSelectedDownload = () => {
-        savedFiles
+    const handleSelectedDownload = async () => {
+        const fileIds = savedFiles
             .filter(file => selectedFileIds.has(file.file_id) && file.source_type !== 'web')
-            .forEach(file => handleDownload(file.file_id, file.filename));
+            .map(file => file.file_id);
+        if (fileIds.length === 0) return;
+
+        void downloadFile(
+            '/api/document/files/download', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({file_ids: fileIds}),
+            },
+            `saved-documents-${new Date().toISOString().slice(0, 10).replaceAll('-', '')}.zip`,
+            t('documentModal.savedFileCount', {count: fileIds.length}),
+        );
     };
 
     const handleSelectedDelete = () => {
@@ -1158,7 +1206,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
                                             <label className="dm-select-all" aria-label={t('documentModal.downloadAll')}>
                                                 <input type="checkbox" checked={selectedFileIds.size === savedFiles.length} onChange={() => setSelectedFileIds(selectedFileIds.size === savedFiles.length ? new Set() : new Set(savedFiles.map(file => file.file_id)))}/>
                                             </label>
-                                            <button type="button" className="dm-bulk-action-btn icon-only" aria-label={t('documentModal.download')} onClick={handleSelectedDownload} disabled={!savedFiles.some(file => selectedFileIds.has(file.file_id) && file.source_type !== 'web')}>
+                                            <button type="button" className="dm-bulk-action-btn icon-only" aria-label={t('documentModal.download')} onClick={handleSelectedDownload} disabled={!!downloadLabel || !savedFiles.some(file => selectedFileIds.has(file.file_id) && file.source_type !== 'web')}>
                                                 <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                                                     <polyline points="7 10 12 15 17 10"/>
@@ -1237,7 +1285,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
                                                             className="dm-action-btn icon-only"
                                                             aria-label={t(f.source_type === 'web' ? 'documentModal.openWebPage' : 'documentModal.download')}
                                                             onClick={() => f.source_type === 'web' ? openWebSource(f.url) : handleDownload(f.file_id, f.filename)}
-                                                            disabled={f.source_type === 'web' ? !f.url : !f.has_original}
+                                                            disabled={!!downloadLabel || (f.source_type === 'web' ? !f.url : !f.has_original)}
                                                         >
                                                             {f.source_type === 'web' ? (
                                                                 <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1360,6 +1408,14 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
                             else setConfirmDeleteAll(false);
                         }}
                     />
+                )}
+                {downloadLabel && (
+                    <div className="dm-download-overlay" role="status" aria-live="polite">
+                        <span className="dm-download-spinner" aria-hidden="true"/>
+                        <strong>{t('googleWorkspace.preparingDownload')}</strong>
+                        <span>{t('googleWorkspace.downloadingFile')}</span>
+                        <small>{downloadLabel}</small>
+                    </div>
                 )}
             </div>
         </ModalOverlay>

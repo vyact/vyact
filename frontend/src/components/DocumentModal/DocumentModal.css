@@ -10,6 +10,7 @@
 }
 
 .dm-modal {
+    position: relative;
     background: var(--modal-bg);
     border: 1px solid var(--border);
     border-radius: 16px;
@@ -23,6 +24,25 @@
     overflow: hidden;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
+
+.dm-download-overlay {
+    position: absolute;
+    z-index: 30;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: color-mix(in srgb, var(--modal-bg) 92%, transparent);
+    backdrop-filter: blur(2px);
+    color: var(--text);
+    text-align: center;
+}
+.dm-download-overlay strong { font-size: 15px; }
+.dm-download-overlay > span:not(.dm-download-spinner) { color: var(--muted); font-size: 13px; }
+.dm-download-overlay small { max-width: min(440px, calc(100% - 48px)); overflow: hidden; color: var(--muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.dm-download-spinner { width: 30px; height: 30px; border: 3px solid color-mix(in srgb, var(--accent) 28%, transparent); border-top-color: var(--accent); border-radius: 50%; animation: dm-spin .8s linear infinite; }
 
 /* 헤더 */
 .dm-header {

@@ -20,6 +20,7 @@ from typing import Awaitable, Callable
 
 from fastapi import APIRouter, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse, StreamingResponse
+from pydantic import BaseModel, Field
 
 from config import INSTALL_DIR
 from logger import get_logger
@@ -40,6 +41,10 @@ ALLOWED_EXTENSIONS = {".pdf", ".docx", ".xlsx", ".pptx", ".txt", ".html", ".htm"
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
 MAX_SAVED_FILES = 1000
 DOCUMENT_EMBED_BATCH_SIZE = 4
+
+
+class SelectedDocumentsDownloadRequest(BaseModel):
+    file_ids: list[str] = Field(min_length=1, max_length=MAX_SAVED_FILES)
 
 
 def _validate(file: UploadFile):
@@ -416,16 +421,17 @@ async def list_files():
         await es.close()
 
 
-@router.get("/document/files/download-all")
-async def download_all_files():
-    """보관 중인 원본 문서를 ZIP 파일 하나로 다운로드한다."""
+async def _download_documents_as_zip(file_ids: list[str] | None = None) -> StreamingResponse:
+    """지정된 원본 문서를 ZIP 파일 하나로 반환한다. None이면 모든 문서를 포함한다."""
     es = get_es()
     try:
+        query = {"match_all": {}} if file_ids is None else {"ids": {"values": file_ids}}
         res = await es.search(
             index=FILES_INDEX,
             body={
                 "size": MAX_SAVED_FILES,
                 "sort": [{"indexed_at": {"order": "desc"}}],
+                "query": query,
                 "_source": ["filename", "original_path"],
             },
         )
@@ -470,6 +476,19 @@ async def download_all_files():
             "Access-Control-Expose-Headers": "Content-Disposition",
         },
     )
+
+
+@router.get("/document/files/download-all")
+async def download_all_files():
+    """보관 중인 원본 문서를 ZIP 파일 하나로 다운로드한다."""
+    return await _download_documents_as_zip()
+
+
+@router.post("/document/files/download")
+async def download_selected_files(request: SelectedDocumentsDownloadRequest):
+    """선택된 원본 문서를 ZIP 파일 하나로 다운로드한다. 웹 문서는 포함하지 않는다."""
+    unique_file_ids = list(dict.fromkeys(request.file_ids))
+    return await _download_documents_as_zip(unique_file_ids)
 
 
 @router.delete("/document/files")
