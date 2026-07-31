@@ -607,6 +607,8 @@
     "deleteAll": "ลบทั้งหมด",
     "confirmDeleteAll": "ลบเอกสารที่บันทึกไว้ทั้งหมดหรือไม่?",
     "confirmDeleteAllDescription": "เอกสาร {{count}} รายการและส่วนข้อมูลที่เกี่ยวข้องทั้งหมดจะถูกลบอย่างถาวร",
+    "confirmDeleteSelected": "ลบเอกสารที่เลือกหรือไม่?",
+    "confirmDeleteSelectedDescription": "เอกสารที่เลือก {{count}} รายการและส่วนข้อมูลที่เกี่ยวข้องทั้งหมดจะถูกลบอย่างถาวร",
     "deletingAll": "กำลังลบ...",
     "deleteAllError": "เกิดข้อผิดพลาดขณะลบเอกสารทั้งหมด",
     "chunkTypes": {

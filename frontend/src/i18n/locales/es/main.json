@@ -607,6 +607,8 @@
     "deleteAll": "Eliminar todo",
     "confirmDeleteAll": "¿Eliminar todos los documentos guardados?",
     "confirmDeleteAllDescription": "Se eliminarán permanentemente {{count}} documentos y todos sus fragmentos asociados.",
+    "confirmDeleteSelected": "¿Eliminar los documentos seleccionados?",
+    "confirmDeleteSelectedDescription": "Se eliminarán permanentemente {{count}} documentos seleccionados y todos sus fragmentos asociados.",
     "deletingAll": "Eliminando...",
     "deleteAllError": "Se produjo un error al eliminar todos los documentos.",
     "chunkTypes": {

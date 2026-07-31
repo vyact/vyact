@@ -211,6 +211,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
         setConfirmDeleteAll(false);
         setDeletingAll(false);
         setFileSearch('');
+        setSelectedFileIds(new Set());
         setChunkViewFile(null);
         setChunks([]);
         setChunksLoading(false);
@@ -272,8 +273,10 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
             const res = await fetch('/api/document/files');
             const data = await res.json();
             setSavedFiles(data.files || []);
+            setSelectedFileIds(new Set());
         } catch {
             setSavedFiles([]);
+            setSelectedFileIds(new Set());
         } finally {
             setFilesLoading(false);
         }
@@ -654,17 +657,15 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
             .forEach(file => handleDownload(file.file_id, file.filename));
     };
 
-    const handleSelectedDelete = async () => {
-        const selected = savedFiles.filter(file => selectedFileIds.has(file.file_id));
-        for (const file of selected) await handleDelete(file);
-        setSelectedFileIds(new Set());
+    const handleSelectedDelete = () => {
+        if (selectedFileIds.size > 0) setConfirmDeleteAll(true);
     };
 
     const handleDelete = async (file: SavedFile) => {
         setDeletingFile(file.file_id);
         try {
             const res = await fetch(`/api/document/files/${encodeURIComponent(file.file_id)}`, {method: 'DELETE'});
-            if (!res.ok) throw new Error('삭제 실패');
+            if (!res.ok) throw new Error(t('documentModal.deleteError'));
             setSavedFiles(prev => prev.filter(savedFile => savedFile.file_id !== file.file_id));
             onDetachSavedDocuments?.([file.file_id]);
         } catch (error: unknown) {
@@ -698,13 +699,21 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
     };
 
     const handleDeleteAll = async () => {
+        const selectedFiles = savedFiles.filter(file => selectedFileIds.has(file.file_id));
+        if (selectedFiles.length === 0) {
+            setConfirmDeleteAll(false);
+            return;
+        }
         setDeletingAll(true);
         try {
-            const response = await fetch('/api/document/files', {method: 'DELETE'});
-            if (!response.ok) throw new Error(t('documentModal.deleteAllError'));
-            onDetachSavedDocuments?.(savedFiles.map(file => file.file_id));
-            setSavedFiles([]);
-            setFileSearch('');
+            const responses = await Promise.all(selectedFiles.map(file =>
+                fetch(`/api/document/files/${encodeURIComponent(file.file_id)}`, {method: 'DELETE'}),
+            ));
+            if (responses.some(response => !response.ok)) throw new Error(t('documentModal.deleteAllError'));
+            const deletedIds = selectedFiles.map(file => file.file_id);
+            onDetachSavedDocuments?.(deletedIds);
+            setSavedFiles(previous => previous.filter(file => !selectedFileIds.has(file.file_id)));
+            setSelectedFileIds(new Set());
             setConfirmDeleteAll(false);
         } catch (error) {
             toast.error(error instanceof Error ? error.message : t('documentModal.deleteAllError'));
@@ -1116,32 +1125,6 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
                             </div>
                         ) : (
                             <>
-                                <div className="dm-files-summary">
-                                    <span>{t('documentModal.savedFileCount', {count: savedFiles.length})}</span>
-                                    {savedFiles.length > 0 && (
-                                        <div className="dm-files-bulk-actions">
-                                            <label className="dm-select-all" aria-label={t('documentModal.downloadAll')}>
-                                                <input type="checkbox" checked={selectedFileIds.size === savedFiles.length} onChange={() => setSelectedFileIds(selectedFileIds.size === savedFiles.length ? new Set() : new Set(savedFiles.map(file => file.file_id)))}/>
-                                            </label>
-                                            {selectedFileIds.size > 0 && <span className="dm-selected-count">{t('googleWorkspace.selectedCount', {count: selectedFileIds.size})}</span>}
-                                            <button type="button" className="dm-bulk-action-btn icon-only" aria-label={t('documentModal.download')} onClick={handleSelectedDownload} disabled={!savedFiles.some(file => selectedFileIds.has(file.file_id) && file.source_type !== 'web')}>
-                                                <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                                    <polyline points="7 10 12 15 17 10"/>
-                                                    <line x1="12" y1="15" x2="12" y2="3"/>
-                                                </svg>
-                                            </button>
-                                            <button type="button" className="dm-bulk-action-btn icon-only danger" aria-label={t('documentModal.delete')} onClick={handleSelectedDelete} disabled={selectedFileIds.size === 0}>
-                                                <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                    <polyline points="3 6 5 6 21 6"/>
-                                                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                                                    <path d="M10 11v6M14 11v6"/>
-                                                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
                                 {/* 검색바 */}
                                 <div className="dm-file-search-wrap">
                                     <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1167,6 +1150,32 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
                                                 <line x1="6" y1="6" x2="18" y2="18"/>
                                             </svg>
                                         </button>
+                                    )}
+                                </div>
+                                <div className="dm-files-summary">
+                                    <span>{t('documentModal.savedFileCount', {count: savedFiles.length})}</span>
+                                    {savedFiles.length > 0 && (
+                                        <div className="dm-files-bulk-actions">
+                                            <label className="dm-select-all" aria-label={t('documentModal.downloadAll')}>
+                                                <input type="checkbox" checked={selectedFileIds.size === savedFiles.length} onChange={() => setSelectedFileIds(selectedFileIds.size === savedFiles.length ? new Set() : new Set(savedFiles.map(file => file.file_id)))}/>
+                                            </label>
+                                            {selectedFileIds.size > 0 && <span className="dm-selected-count">{t('googleWorkspace.selectedCount', {count: selectedFileIds.size})}</span>}
+                                            <button type="button" className="dm-bulk-action-btn icon-only" aria-label={t('documentModal.download')} onClick={handleSelectedDownload} disabled={!savedFiles.some(file => selectedFileIds.has(file.file_id) && file.source_type !== 'web')}>
+                                                <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                                    <polyline points="7 10 12 15 17 10"/>
+                                                    <line x1="12" y1="15" x2="12" y2="3"/>
+                                                </svg>
+                                            </button>
+                                            <button type="button" className="dm-bulk-action-btn icon-only danger" aria-label={t('documentModal.delete')} onClick={handleSelectedDelete} disabled={selectedFileIds.size === 0}>
+                                                <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <polyline points="3 6 5 6 21 6"/>
+                                                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                                                    <path d="M10 11v6M14 11v6"/>
+                                                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                                                </svg>
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
                                 {filesLoading ? (
@@ -1327,11 +1336,11 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
                 )}
                 {confirmDeleteAll && (
                     <ConfirmModal
-                        title={t('documentModal.confirmDeleteAll')}
-                        description={t('documentModal.confirmDeleteAllDescription', {count: savedFiles.length})}
+                        title={t('documentModal.confirmDeleteSelected')}
+                        description={t('documentModal.confirmDeleteSelectedDescription', {count: selectedFileIds.size})}
                         options={[
                             {label: t('documentModal.cancel'), value: 'cancel'},
-                            {label: t('documentModal.deleteAll'), value: 'delete', variant: 'danger'},
+                            {label: t('documentModal.delete'), value: 'delete', variant: 'danger'},
                         ]}
                         actionLayout="horizontal"
                         loading={deletingAll}

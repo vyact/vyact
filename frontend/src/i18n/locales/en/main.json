@@ -624,6 +624,8 @@
     "deleteAll": "Delete all",
     "confirmDeleteAll": "Delete all saved documents?",
     "confirmDeleteAllDescription": "{{count}} documents and all associated chunks will be permanently deleted.",
+    "confirmDeleteSelected": "Delete selected documents?",
+    "confirmDeleteSelectedDescription": "{{count}} selected documents and all associated chunks will be permanently deleted.",
     "deletingAll": "Deleting...",
     "deleteAllError": "An error occurred while deleting all documents.",
     "chunkTypes": {

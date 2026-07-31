@@ -607,6 +607,8 @@
     "deleteAll": "Tout supprimer",
     "confirmDeleteAll": "Supprimer tous les documents enregistrés ?",
     "confirmDeleteAllDescription": "{{count}} documents et tous les segments associés seront définitivement supprimés.",
+    "confirmDeleteSelected": "Supprimer les documents sélectionnés ?",
+    "confirmDeleteSelectedDescription": "{{count}} documents sélectionnés et tous les segments associés seront définitivement supprimés définitivement.",
     "deletingAll": "Suppression...",
     "deleteAllError": "Une erreur est survenue lors de la suppression de tous les documents.",
     "chunkTypes": {

@@ -607,6 +607,8 @@
     "deleteAll": "Xóa tất cả",
     "confirmDeleteAll": "Xóa tất cả tài liệu đã lưu?",
     "confirmDeleteAllDescription": "{{count}} tài liệu và tất cả các đoạn liên quan sẽ bị xóa vĩnh viễn.",
+    "confirmDeleteSelected": "Xóa các tài liệu đã chọn?",
+    "confirmDeleteSelectedDescription": "{{count}} tài liệu đã chọn và tất cả các đoạn liên quan sẽ bị xóa vĩnh viễn.",
     "deletingAll": "Đang xóa...",
     "deleteAllError": "Đã xảy ra lỗi khi xóa tất cả tài liệu.",
     "chunkTypes": {

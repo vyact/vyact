@@ -617,7 +617,7 @@
 .dm-files-summary {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     gap: 12px;
     min-height: 20px;
     margin-bottom: 8px;

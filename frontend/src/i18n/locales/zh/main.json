@@ -607,6 +607,8 @@
     "deleteAll": "全部删除",
     "confirmDeleteAll": "删除所有已保存的文档？",
     "confirmDeleteAllDescription": "将永久删除 {{count}} 个文档及其所有关联分块。",
+    "confirmDeleteSelected": "删除所选文档？",
+    "confirmDeleteSelectedDescription": "将永久删除所选的 {{count}} 个文档及其所有关联分块。",
     "deletingAll": "正在删除...",
     "deleteAllError": "删除所有文档时发生错误。",
     "chunkTypes": {

@@ -607,6 +607,8 @@
     "deleteAll": "すべて削除",
     "confirmDeleteAll": "保存済み文書をすべて削除しますか？",
     "confirmDeleteAllDescription": "{{count}}件の文書と関連するすべてのチャンクが完全に削除されます。",
+    "confirmDeleteSelected": "選択した文書を削除しますか？",
+    "confirmDeleteSelectedDescription": "選択した{{count}}件の文書と関連するすべてのチャンクが完全に削除されます。",
     "deletingAll": "削除中...",
     "deleteAllError": "すべての文書の削除中にエラーが発生しました。",
     "chunkTypes": {
