@@ -26,7 +26,7 @@ from logger import get_logger
 from services.document_parser import Chunk, parse_file, parse_file_to_chunks, parse_file_to_typed_chunks
 from services.indexer import get_embedding
 from elasticsearch.helpers import async_bulk
-from services.db import INDEX_NAME, DOC_CHUNKS_INDEX, FILES_INDEX, WEB_DOCUMENTS_INDEX, get_es, get_language_index
+from services.db import INDEX_NAME, DOC_CHUNKS_INDEX, FILES_INDEX, WEB_DOCUMENTS_INDEX, WEB_DOC_CHUNKS_INDEX, get_es, get_language_index
 from services.language_detection import detect_language
 from services.knowledge_collection_references import remove_source_references_from_collections
 
@@ -569,17 +569,27 @@ async def delete_file(file_id: str):
 
 @router.get("/document/files/{file_id}/chunks")
 async def get_file_chunks(file_id: str):
-    """file_id에 해당하는 청크 목록 조회"""
-    from services.db import DOC_CHUNKS_INDEX
+    """파일 또는 웹 문서 ID에 해당하는 청크 목록 조회"""
     es = get_es()
     try:
-        res = await es.search(
+        source_fields = ["chunk_index", "total_chunks", "content", "chunk_type", "heading_path", "page_number", "content_length"]
+        web_res = await es.search(
+            index=WEB_DOC_CHUNKS_INDEX,
+            body={
+                "query": {"term": {"web_document_id": file_id}},
+                "sort": [{"chunk_index": {"order": "asc"}}],
+                "size": 500,
+                "_source": source_fields,
+            }
+        )
+        is_web_document = bool(web_res["hits"]["hits"])
+        res = web_res if is_web_document else await es.search(
             index=DOC_CHUNKS_INDEX,
             body={
                 "query": {"term": {"file_id": file_id}},
                 "sort": [{"chunk_index": {"order": "asc"}}],
                 "size": 500,
-                "_source": ["chunk_index", "total_chunks", "content", "chunk_type", "heading_path", "page_number", "content_length"],
+                "_source": source_fields,
             }
         )
         chunks = [
@@ -593,6 +603,6 @@ async def get_file_chunks(file_id: str):
             }
             for i, h in enumerate(res["hits"]["hits"])
         ]
-        return {"file_id": file_id, "chunks": chunks, "total": len(chunks)}
+        return {"file_id": file_id, "source_type": "web" if is_web_document else "document", "chunks": chunks, "total": len(chunks)}
     finally:
         await es.close()

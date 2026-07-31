@@ -80,7 +80,7 @@ async def _index_document(request: WebDocumentIndexRequest, emit) -> dict:
     await emit("chunking", 20, {"total_chunks": len(chunks)})
     es = get_es()
     try:
-        existing = await es.exists(index=WEB_DOCUMENTS_INDEX, id=document_id)
+        existing = bool(await es.exists(index=WEB_DOCUMENTS_INDEX, id=document_id))
         if existing:
             await emit("replacing", 25, None)
             await es.delete_by_query(
@@ -185,7 +185,8 @@ async def analyze_web_document(request: WebDocumentAnalyzeRequest):
         answer = await query_llm(
             instruction,
             [{"title": request.title or request.url, "content": request.content, "url": request.url, "source": "web"}],
-            format_instruction_override="", use_tools=False, reasoning=False, call_reason="web_document:analyze",
+            format_instruction_override="", use_tools=False, reasoning=False, inject_user_profile=False,
+            include_skills=False, call_reason="web_document:analyze",
         )
         match = re.search(r"\{[\s\S]*\}", answer)
         payload = json.loads(match.group(0) if match else answer)

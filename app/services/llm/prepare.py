@@ -11,7 +11,7 @@ from .config import logger
 async def prepare_request(
         question, context_docs, system_prompt, attachments,
         conversation_history, format_instruction_override, inject_user_profile,
-        provider_type, model="", conversation_summary: str = "",
+        provider_type, model="", conversation_summary: str = "", include_skills: bool = True,
 ):
     """(api_key, system_message, user_prompt, history_messages, valid_slice) 반환.
 
@@ -47,15 +47,16 @@ async def prepare_request(
         except Exception as e:
             logger.warning("user_profile 조회 실패 (무시): %s", e)
     skill_context = ""
-    try:
-        from routers.skills import match_skills
-        matched = await match_skills(question)
-        if matched:
-            skill_context = "\n\n".join(
-                f"[{s['name']}]\n{s['instructions']}" for s in matched
-            )
-    except Exception as e:
-        logger.debug("스킬 매칭 실패 (무시): %s", e)
+    if include_skills:
+        try:
+            from routers.skills import match_skills
+            matched = await match_skills(question)
+            if matched:
+                skill_context = "\n\n".join(
+                    f"[{s['name']}]\n{s['instructions']}" for s in matched
+                )
+        except Exception as e:
+            logger.debug("스킬 매칭 실패 (무시): %s", e)
     # 사용자 UI 언어 로드
     user_language = ""
     try:

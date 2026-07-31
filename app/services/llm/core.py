@@ -471,6 +471,7 @@ async def query_llm(
         reasoning: bool = True,
         call_reason: str = "unspecified",
         stats_out: dict | None = None,
+        include_skills: bool = True,
 ) -> str:
     """논스트리밍 단발 응답 (모든 provider).
 
@@ -504,7 +505,7 @@ async def query_llm(
     (api_key, system_message, user_prompt, history_messages, valid_slice) = await prepare_request(
         question, context_docs, system_prompt, attachments,
         conversation_history, format_instruction_override, inject_user_profile,
-        provider_type, model, conversation_summary,
+        provider_type, model, conversation_summary, include_skills,
     )
     log_entry["system_message"] = system_message
     log_entry["user_prompt"] = user_prompt
