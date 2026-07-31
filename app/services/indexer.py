@@ -369,8 +369,11 @@ async def search_related_context_candidates(
             web_knn_hits = _msearch_hits(response, response_positions["web_knn"], "웹 문서 kNN")
             memo_knn_hits = _msearch_hits(response, response_positions["memo_knn"], "메모 kNN")
             quicknote_knn_hits = _msearch_hits(response, response_positions["quicknote_knn"], "빠른메모 kNN")
+            rag_candidate_hits = _rrf_hits(
+                rag_bm25_hits + web_bm25_hits, rag_knn_hits + web_knn_hits, rag_size,
+            )
             rag_hits = _rerank(
-                _rrf_hits(rag_bm25_hits + web_bm25_hits, rag_knn_hits + web_knn_hits, rag_size),
+                rag_candidate_hits,
                 rag_size,
                 preserve_order=True,
             )
@@ -386,7 +389,8 @@ async def search_related_context_candidates(
             )
         else:
             rag_knn_hits = web_knn_hits = memo_knn_hits = quicknote_knn_hits = []
-            rag_hits = _rerank(rag_bm25_hits + web_bm25_hits, rag_size)
+            rag_candidate_hits = rag_bm25_hits + web_bm25_hits
+            rag_hits = _rerank(rag_candidate_hits, rag_size)
             memo_hits = memo_bm25_hits
             quicknote_hits = quicknote_bm25_hits[:memo_size]
 
@@ -418,8 +422,8 @@ async def search_related_context_candidates(
         logger.info(
             "[related_context_search] query=%r candidates: rag=%d memo=%d quicknote=%d origins: rag=%s web=%s memo=%s quicknote=%s",
             rag_query, len(rag_results), len(memo_results), len(quicknote_results),
-            _retrieval_origins(rag_hits, rag_bm25_hits, rag_knn_hits),
-            _retrieval_origins(rag_hits, web_bm25_hits, web_knn_hits),
+            _retrieval_origins(rag_candidate_hits, rag_bm25_hits, rag_knn_hits),
+            _retrieval_origins(rag_candidate_hits, web_bm25_hits, web_knn_hits),
             _retrieval_origins(memo_hits, memo_bm25_hits, memo_knn_hits),
             _retrieval_origins(quicknote_hits, quicknote_bm25_hits, quicknote_knn_hits),
         )

@@ -127,6 +127,11 @@ const Message: React.FC<MessageProps> = ({
         () => attachments?.filter(a => a.type !== 'image') ?? [],
         [attachments]
     );
+    const savedDocumentAttachments = useMemo(
+        () => articleSources?.filter(article => article.url?.startsWith('manual://') || article.url?.startsWith('file://')) ?? [],
+        [articleSources]
+    );
+    const hasUserAttachments = imageAttachments.length > 0 || fileAttachments.length > 0 || savedDocumentAttachments.length > 0;
     const viewerImages = useMemo(
         () => imageAttachments.map(a => ({
             src: `http://localhost:8000/api/images/${a.filename}`,
@@ -243,7 +248,7 @@ const Message: React.FC<MessageProps> = ({
                     ))}
                 </div>
             )}
-            {role === 'user' && attachments && attachments.length > 0 && (
+            {role === 'user' && hasUserAttachments && (
                 <div className="user-attachment-stack">
                     {imageAttachments.length > 0 && (
                         <div className="user-image-gallery">
@@ -284,37 +289,29 @@ const Message: React.FC<MessageProps> = ({
                             ))}
                         </div>
                     )}
+                    {savedDocumentAttachments.length > 0 && (
+                        <div className="user-file-list">
+                            {savedDocumentAttachments.map((article, idx) => (
+                                <div className="user-file-card" key={`${article.file_id || article.url}-${idx}`}>
+                                    <span className="user-file-card__icon" aria-hidden="true">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                             stroke="currentColor" strokeWidth="1.8">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                            <polyline points="14 2 14 8 20 8"/>
+                                        </svg>
+                                    </span>
+                                    <span className="user-file-card__name">{article.title}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
             <div className={`msg-bubble${isUserBubbleEmpty ? ' msg-bubble--empty' : ''}`}>
                 {role === 'user' ? (
                     <>
-                        {/* 문서 첨부 태그 — manual:// 또는 file:// URL인 article 표시 */}
-                        {articleSources && articleSources.some(a => a.url?.startsWith('manual://') || a.url?.startsWith('file://')) && (
-                            <div style={{display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px'}}>
-                                {articleSources.filter(a => a.url?.startsWith('manual://') || a.url?.startsWith('file://')).map((art, idx) => (
-                                    <div key={idx} style={{
-                                        display: 'flex', alignItems: 'center', gap: '5px',
-                                        padding: '3px 10px', borderRadius: '20px',
-                                        background: 'rgba(255,255,255,0.1)',
-                                        border: '1px solid rgba(255,255,255,0.15)',
-                                        fontSize: '12px', color: 'rgba(255,255,255,0.75)',
-                                        maxWidth: '220px',
-                                    }}>
-                                        <span style={{flexShrink: 0}}>📎</span>
-                                        <span style={{
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis',
-                                            whiteSpace: 'nowrap'
-                                        }}>
-                                            {art.title}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
                         <span
-                            className={attachments?.length ? 'user-message-text user-message-text--with-attachments' : 'user-message-text'}
+                            className={hasUserAttachments ? 'user-message-text user-message-text--with-attachments' : 'user-message-text'}
                             dangerouslySetInnerHTML={{__html: linkify(nl2br(escapeHtml(contentWithoutPaste)))}}
                         />
                     </>
