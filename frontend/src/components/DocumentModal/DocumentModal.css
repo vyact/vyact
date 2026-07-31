@@ -639,9 +639,9 @@
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    padding: 0 12px;
-    gap: 12px;
-    min-height: 20px;
+    padding: 2px 8px;
+    gap: 16px;
+    min-height: 36px;
     margin-bottom: 0;
     color: var(--text);
     font-size: var(--modal-btn);
@@ -652,7 +652,11 @@
 .dm-files-bulk-actions {
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 4px;
+    padding: 2px;
+    border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--surface2) 62%, transparent);
 }
 
 .dm-bulk-action-btn {
@@ -676,14 +680,15 @@
     height: 32px;
     place-items: center;
     padding: 0;
-    border: 0;
-    border-radius: 50%;
+    border: 1px solid transparent;
+    border-radius: 8px;
     background: transparent;
     color: var(--muted);
 }
 
 .dm-bulk-action-btn.icon-only:hover:not(:disabled) {
-    background: transparent;
+    border-color: color-mix(in srgb, var(--accent) 36%, var(--border));
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
     color: var(--accent);
 }
 
@@ -692,8 +697,9 @@
 }
 
 .dm-bulk-action-btn.icon-only.danger:hover:not(:disabled) {
-    background: transparent;
-    color: #e1745c;
+    border-color: color-mix(in srgb, var(--danger) 36%, var(--border));
+    background: color-mix(in srgb, var(--danger) 10%, transparent);
+    color: var(--danger);
 }
 
 .dm-bulk-action-btn:disabled,
@@ -761,36 +767,37 @@
 .dm-saved-list {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
     flex: 1;
     min-height: 0;
     overflow-y: auto;
     padding-right: 6px;
-    margin-top: -8px;
+    margin-top: 0;
 }
 
 .dm-saved-item {
     position: relative;
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    background: color-mix(in srgb, var(--surface) 70%, transparent);
-    border: 1px solid transparent;
-    border-radius: 8px;
+    gap: 12px;
+    min-height: 70px;
+    padding: 12px 14px;
+    background: color-mix(in srgb, var(--surface) 74%, transparent);
+    border: 1px solid color-mix(in srgb, var(--border) 52%, transparent);
+    border-radius: 12px;
     cursor: pointer;
     transition: background 0.15s, border-color 0.15s;
 }
 .dm-saved-item:hover {
-    background: var(--surface);
-    border-color: var(--border);
+    background: color-mix(in srgb, var(--surface2) 82%, var(--surface));
+    border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
 }
-.dm-item-select, .dm-select-all { display: grid; place-items: center; flex: none; }
+.dm-item-select, .dm-select-all { display: grid; width: 32px; height: 32px; place-items: center; flex: none; }
 .dm-item-select input, .dm-select-all input {
     appearance: none;
     margin: 0;
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
     border: 1px solid var(--muted);
     border-radius: 4px;
     background-color: transparent;
@@ -809,7 +816,7 @@
     outline: 2px solid color-mix(in srgb, var(--accent) 65%, white);
     outline-offset: 2px;
 }
-.dm-selected-count { color: var(--accent); font-weight: 700; font-size: 13px; }
+.dm-selected-count { padding: 0 5px 0 2px; color: var(--accent); font-weight: 700; font-size: 13px; }
 
 .dm-file-type-badge {
     display: grid;
@@ -828,20 +835,25 @@
 .dm-saved-actions {
     display: flex;
     align-items: center;
-    gap: 0;
+    gap: 4px;
+    margin-left: 8px;
+    padding: 2px;
+    border: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--surface2) 56%, transparent);
     flex-shrink: 0;
 }
 
 .dm-saved-actions .dm-action-btn {
     border: 1px solid transparent;
-    border-radius: 6px;
+    border-radius: 8px;
     background: transparent;
 }
 
 .dm-saved-actions .dm-action-btn:hover:not(:disabled) {
-    border-color: var(--text-secondary);
-    background: var(--surface2);
-    color: var(--text);
+    border-color: color-mix(in srgb, var(--accent) 36%, var(--border));
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    color: var(--accent);
 }
 
 .dm-saved-actions .dm-action-btn.danger {
@@ -850,9 +862,9 @@
 }
 
 .dm-saved-actions .dm-action-btn.danger:hover:not(:disabled) {
-    border-color: var(--text-secondary);
-    background: var(--surface2);
-    color: var(--text);
+    border-color: color-mix(in srgb, var(--danger) 36%, var(--border));
+    background: color-mix(in srgb, var(--danger) 10%, transparent);
+    color: var(--danger);
 }
 
 .dm-action-btn {
@@ -882,6 +894,18 @@
     flex: none;
     place-items: center;
     padding: 0;
+}
+.dm-saved-actions .knowledge-collection-attach-select,
+.dm-saved-actions .knowledge-collection-attach-trigger {
+    height: 32px;
+}
+.dm-saved-actions .knowledge-collection-attach-trigger {
+    border-radius: 8px;
+}
+.dm-saved-actions .knowledge-collection-attach-trigger:hover {
+    border-color: color-mix(in srgb, var(--accent) 36%, var(--border));
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    color: var(--accent);
 }
 .dm-action-btn.attach.active {
     border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
