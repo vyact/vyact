@@ -20,12 +20,14 @@ ES_URL = os.getenv("ES_URL", f"http://localhost:{ES_PORT}")
 LANGUAGES = ("ko", "en", "ja", "zh", "th", "vi", "es", "fr", "und")
 INDEX_NAME = "rag_documents_all"
 DOC_CHUNKS_INDEX = "doc_chunks_all"   # 파일 업로드 청크 전용 read alias
+WEB_DOC_CHUNKS_INDEX = "web_doc_chunks_all"  # 저장한 웹 문서 청크 전용 read alias
 CHAT_FILE_CHUNKS_INDEX = "chat_file_chunks"   # 채팅 첨부(zip/파일) 청크 전용 인덱스 — conv_id 종속, 방 삭제 시 cascade
 HIST_INDEX = "rag_history"
 PROJECTS_INDEX = "projects"
 PROMPTS_INDEX = "system_prompts"
 SETTINGS_INDEX = "system_settings"
 FILES_INDEX = "rag_files"
+WEB_DOCUMENTS_INDEX = "web_documents"
 MEMO_INDEX = "memo_documents_all"
 QUICKNOTE_INDEX = "quick_notes_all"   # 빠른 메모(todo형) — 메모 RAG 검색 대상
 KNOWLEDGE_COLLECTIONS_INDEX = "knowledge_collections"
@@ -70,7 +72,7 @@ LANGUAGE_ANALYSIS = {
     "vi": ({"analyzer": {"unicode": {"type": "custom", "tokenizer": "standard", "char_filter": ["icu_normalizer"], "filter": ["lowercase", "icu_folding"]}}}, "unicode"),
     "und": ({"analyzer": {"unicode": {"type": "custom", "tokenizer": "standard", "char_filter": ["icu_normalizer"], "filter": ["lowercase", "icu_folding"]}}}, "unicode"),
 }
-INDEX_FAMILIES = ("rag_documents", "doc_chunks", "memo_documents", "quick_notes", "knowledge_email_threads")
+INDEX_FAMILIES = ("rag_documents", "doc_chunks", "web_doc_chunks", "memo_documents", "quick_notes", "knowledge_email_threads")
 
 def get_language_index(index_family: str, language: str) -> str:
     if index_family not in INDEX_FAMILIES:
@@ -103,6 +105,8 @@ def _language_mapping(family: str, analyzer: str) -> dict:
         return {**common, "url":{"type":"keyword"}, "doc_hash":{"type":"keyword"}, "file_id":{"type":"keyword"}, "news_type":{"type":"keyword"}, "original_file":{"type":"keyword"}, "chunk_index":{"type":"integer"}, "total_chunks":{"type":"integer"}, "content_length":{"type":"integer"}, "embedding_model":{"type":"keyword"}, "chunk_type":{"type":"keyword"}}
     if family == "doc_chunks":
         return {**common, "url":{"type":"keyword"}, "doc_hash":{"type":"keyword"}, "file_id":{"type":"keyword"}, "original_file":{"type":"keyword"}, "chunk_index":{"type":"integer"}, "total_chunks":{"type":"integer"}, "content_length":{"type":"integer"}, "embedding_model":{"type":"keyword"}, "chunk_type":{"type":"keyword"}, "heading_path":{"type":"keyword"}, "page_number":{"type":"integer"}}
+    if family == "web_doc_chunks":
+        return {**common, "url":{"type":"keyword"}, "web_document_id":{"type":"keyword"}, "chunk_index":{"type":"integer"}, "total_chunks":{"type":"integer"}, "content_length":{"type":"integer"}, "embedding_model":{"type":"keyword"}}
     if family == "memo_documents":
         return {**common, "content_html": {"type": "text", "index": False}}
     if family == "quick_notes":
@@ -288,6 +292,27 @@ async def ensure_index():
                 }},
             )
             logger.info("rag_files 인덱스 생성 완료")
+
+        # ── web_documents ─────────────────────────────────────────
+        # 파일 메타데이터(rag_files)와 분리해 URL 기반 갱신과 원문 열기를 안전하게 지원한다.
+        if not await es.indices.exists(index=WEB_DOCUMENTS_INDEX):
+            await es.indices.create(
+                index=WEB_DOCUMENTS_INDEX,
+                settings={"number_of_shards": 1, "number_of_replicas": 0},
+                mappings={"properties": {
+                    "id": {"type": "keyword"},
+                    "url": {"type": "keyword"},
+                    "title": {"type": "text", "fields": {"keyword": {"type": "keyword", "ignore_above": 512}}},
+                    "content": {"type": "text", "index": false},
+                    "domain": {"type": "keyword"},
+                    "published_at": {"type": "date"},
+                    "saved_at": {"type": "date"},
+                    "updated_at": {"type": "date"},
+                    "chunk_count": {"type": "integer"},
+                    "source_type": {"type": "keyword"},
+                }},
+            )
+            logger.info("web_documents 인덱스 생성 완료")
 
         # ── knowledge_collections ──────────────────────────────────
         if not await es.indices.exists(index=KNOWLEDGE_COLLECTIONS_INDEX):

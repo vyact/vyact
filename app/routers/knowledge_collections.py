@@ -7,7 +7,7 @@ from elasticsearch import NotFoundError
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from services.db import EMAIL_THREADS_INDEX, FILES_INDEX, KNOWLEDGE_COLLECTIONS_INDEX, MEMO_INDEX, find_document_index, get_es
+from services.db import EMAIL_THREADS_INDEX, FILES_INDEX, KNOWLEDGE_COLLECTIONS_INDEX, MEMO_INDEX, WEB_DOCUMENTS_INDEX, find_document_index, get_es
 from config import INSTALL_DIR
 
 router = APIRouter()
@@ -35,7 +35,7 @@ async def _delete_orphaned_email_thread(es, source_id: str) -> None:
 
 
 class KnowledgeCollectionItem(BaseModel):
-    source_type: str = Field(pattern="^(document|memo|email_thread)$")
+    source_type: str = Field(pattern="^(document|memo|email_thread|web)$")
     source_id: str = Field(min_length=1, max_length=512)
 
 
@@ -63,6 +63,7 @@ async def _validate_members(es, items: list[dict]) -> None:
     document_ids = [item["source_id"] for item in items if item["source_type"] == "document"]
     memo_ids = [item["source_id"] for item in items if item["source_type"] == "memo"]
     email_thread_ids = [item["source_id"] for item in items if item["source_type"] == "email_thread"]
+    web_document_ids = [item["source_id"] for item in items if item["source_type"] == "web"]
     if document_ids:
         found = await es.mget(index=FILES_INDEX, ids=document_ids)
         missing = [item_id for item_id, item in zip(document_ids, found["docs"]) if not item.get("found")]
@@ -80,6 +81,11 @@ async def _validate_members(es, items: list[dict]) -> None:
         missing = [item_id for item_id in email_thread_ids if item_id not in found_ids]
         if missing:
             raise HTTPException(status_code=400, detail="존재하지 않는 이메일 스레드가 포함되어 있습니다.")
+    if web_document_ids:
+        found = await es.mget(index=WEB_DOCUMENTS_INDEX, ids=web_document_ids)
+        missing = [item_id for item_id, item in zip(web_document_ids, found["docs"]) if not item.get("found")]
+        if missing:
+            raise HTTPException(status_code=400, detail="존재하지 않는 웹 문서가 포함되어 있습니다.")
 
 
 @router.get("/knowledge-collections")
@@ -168,7 +174,7 @@ async def get_knowledge_collection_items(collection_id: str):
     try:
         collection = await es.get(index=KNOWLEDGE_COLLECTIONS_INDEX, id=collection_id)
         items = collection["_source"].get("items", [])
-        index_by_type = {"document": FILES_INDEX, "memo": MEMO_INDEX, "email_thread": EMAIL_THREADS_INDEX}
+        index_by_type = {"document": FILES_INDEX, "memo": MEMO_INDEX, "email_thread": EMAIL_THREADS_INDEX, "web": WEB_DOCUMENTS_INDEX}
         resolved_items = []
         for item in items:
             source_type, source_id = item.get("source_type"), item.get("source_id")
@@ -187,6 +193,8 @@ async def get_knowledge_collection_items(collection_id: str):
                 resolved_items.append({"source_type": source_type, "source_id": source_id, "title": source.get("filename", ""), "summary": source.get("file_ext", ""), "updated_at": source.get("indexed_at", ""), "chunk_count": source.get("chunk_count", 0)})
             elif source_type == "memo":
                 resolved_items.append({"source_type": source_type, "source_id": source_id, "title": source.get("title", ""), "summary": source.get("content", "")[:300], "updated_at": source.get("updated_at", ""), "content_html": source.get("content_html", "")})
+            elif source_type == "web":
+                resolved_items.append({"source_type": source_type, "source_id": source_id, "title": source.get("title", ""), "summary": source.get("domain", source.get("url", "")), "updated_at": source.get("updated_at", ""), "chunk_count": source.get("chunk_count", 0), "url": source.get("url", "")})
             else:
                 content = source.get("content", "")
                 display_messages = source.get("display_messages", [])

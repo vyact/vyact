@@ -26,7 +26,7 @@ from logger import get_logger
 from services.document_parser import Chunk, parse_file, parse_file_to_chunks, parse_file_to_typed_chunks
 from services.indexer import get_embedding
 from elasticsearch.helpers import async_bulk
-from services.db import INDEX_NAME, DOC_CHUNKS_INDEX, FILES_INDEX, get_es, get_language_index
+from services.db import INDEX_NAME, DOC_CHUNKS_INDEX, FILES_INDEX, WEB_DOCUMENTS_INDEX, get_es, get_language_index
 from services.language_detection import detect_language
 from services.knowledge_collection_references import remove_source_references_from_collections
 
@@ -376,6 +376,20 @@ async def list_files():
                 "indexed_at": s.get("indexed_at", ""),
                 "has_original": has_original,
             })
+        web_res = await es.search(index=WEB_DOCUMENTS_INDEX, body={
+            "size": 200,
+            "sort": [{"updated_at": {"order": "desc"}}],
+            "_source": ["id", "title", "url", "domain", "chunk_count", "updated_at", "saved_at"],
+        })
+        for hit in web_res["hits"]["hits"]:
+            source = hit["_source"]
+            files.append({
+                "file_id": hit["_id"], "filename": source.get("title", source.get("url", "")),
+                "file_ext": "web", "file_size": 0, "chunk_count": source.get("chunk_count", 0),
+                "indexed_at": source.get("updated_at", source.get("saved_at", "")), "has_original": False,
+                "source_type": "web", "url": source.get("url", ""), "domain": source.get("domain", ""),
+            })
+        files.sort(key=lambda item: item.get("indexed_at", ""), reverse=True)
         return {"files": files}
     finally:
         await es.close()
@@ -512,7 +526,15 @@ async def delete_file(file_id: str):
         try:
             doc = await es.get(index=FILES_INDEX, id=file_id)
         except Exception:
-            raise HTTPException(status_code=404, detail="파일 정보를 찾을 수 없습니다.")
+            try:
+                web_doc = await es.get(index=WEB_DOCUMENTS_INDEX, id=file_id)
+            except Exception:
+                raise HTTPException(status_code=404, detail="문서 정보를 찾을 수 없습니다.")
+            from services.db import WEB_DOC_CHUNKS_INDEX
+            deleted = await es.delete_by_query(index=WEB_DOC_CHUNKS_INDEX, query={"term": {"web_document_id": file_id}}, refresh=True)
+            await es.delete(index=WEB_DOCUMENTS_INDEX, id=file_id, refresh=True)
+            collections_updated = await remove_source_references_from_collections(es, "web", [file_id])
+            return {"deleted": web_doc["_source"].get("title", file_id), "file_id": file_id, "chunks_deleted": deleted.get("deleted", 0), "collections_updated": collections_updated}
 
         src = doc["_source"]
         filename = src.get("filename", file_id)

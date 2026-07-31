@@ -741,6 +741,10 @@
     background: var(--surface);
     border-color: var(--border);
 }
+.dm-item-select, .dm-select-all { display: grid; place-items: center; flex: none; }
+.dm-item-select input, .dm-select-all input { appearance: none; width: 18px; height: 18px; border: 2px solid var(--muted); border-radius: 4px; background: transparent; cursor: pointer; }
+.dm-item-select input:checked, .dm-select-all input:checked { border-color: var(--accent); background: var(--accent); box-shadow: inset 0 0 0 3px var(--surface); }
+.dm-selected-count { color: var(--accent); font-weight: 700; font-size: 13px; }
 
 .dm-file-type-badge {
     display: grid;

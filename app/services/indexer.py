@@ -9,7 +9,7 @@ from elasticsearch.helpers import async_bulk
 
 from config.embeddings import EMBEDDING_MODEL_ID
 from services.embedding_runtime import EmbeddingContextExceeded, get_embedding, get_embeddings
-from services.db import DOC_CHUNKS_INDEX, EMAIL_THREADS_INDEX, INDEX_NAME, KNOWLEDGE_COLLECTIONS_INDEX, MEMO_INDEX, QUICKNOTE_INDEX, get_es, get_language_index
+from services.db import DOC_CHUNKS_INDEX, EMAIL_THREADS_INDEX, INDEX_NAME, KNOWLEDGE_COLLECTIONS_INDEX, MEMO_INDEX, QUICKNOTE_INDEX, WEB_DOC_CHUNKS_INDEX, get_es, get_language_index
 from services.language_detection import detect_language
 from logger import get_logger
 
@@ -284,7 +284,7 @@ async def search_related_context_candidates(
     rag_bm25_pool = 20
     rag_knn_pool = 20
     memo_pool = memo_size * 4
-    rag_source_fields = ["title", "content", "url", "source", "indexed_at", "id", "updated_at"]
+    rag_source_fields = ["title", "content", "url", "source", "indexed_at", "id", "updated_at", "web_document_id", "chunk_index", "total_chunks"]
     memo_source_fields = ["title", "content", "id", "source", "updated_at"]
     quicknote_source_fields = ["id", "title", "content", "done", "updated_at"]
 
@@ -327,10 +327,11 @@ async def search_related_context_candidates(
         rag_bm25_search_body = rag_bm25_body if embedding else {**rag_bm25_body, "min_score": 1.0}
         searches: list[dict] = [
             {"index": get_language_index("rag_documents", rag_language)}, rag_bm25_search_body,
+            {"index": get_language_index("web_doc_chunks", rag_language)}, rag_bm25_search_body,
             {"index": get_language_index("memo_documents", memo_language)}, memo_bm25_body,
             {"index": get_language_index("quick_notes", memo_language)}, quicknote_bm25_body,
         ]
-        response_positions = {"rag_bm25": 0, "memo_bm25": 1, "quicknote_bm25": 2}
+        response_positions = {"rag_bm25": 0, "web_bm25": 1, "memo_bm25": 2, "quicknote_bm25": 3}
         if embedding:
             rag_knn_body = {
                 "size": rag_knn_pool,
@@ -349,24 +350,27 @@ async def search_related_context_candidates(
             }
             searches.extend([
                 {"index": INDEX_NAME}, rag_knn_body,
+                {"index": WEB_DOC_CHUNKS_INDEX}, rag_knn_body,
                 {"index": MEMO_INDEX}, memo_knn_body,
                 {"index": QUICKNOTE_INDEX}, quicknote_knn_body,
             ])
-            response_positions.update({"rag_knn": 3, "memo_knn": 4, "quicknote_knn": 5})
+            response_positions.update({"rag_knn": 4, "web_knn": 5, "memo_knn": 6, "quicknote_knn": 7})
         else:
             logger.warning("[related_context_search] 임베딩 실패, BM25 fallback")
 
         response = await es.msearch(searches=searches)
 
         rag_bm25_hits = _msearch_hits(response, response_positions["rag_bm25"], "일반 RAG BM25")
+        web_bm25_hits = _msearch_hits(response, response_positions["web_bm25"], "웹 문서 BM25")
         memo_bm25_hits = _msearch_hits(response, response_positions["memo_bm25"], "메모 BM25")
         quicknote_bm25_hits = _msearch_hits(response, response_positions["quicknote_bm25"], "빠른메모 BM25")
         if embedding:
             rag_knn_hits = _msearch_hits(response, response_positions["rag_knn"], "일반 RAG kNN")
+            web_knn_hits = _msearch_hits(response, response_positions["web_knn"], "웹 문서 kNN")
             memo_knn_hits = _msearch_hits(response, response_positions["memo_knn"], "메모 kNN")
             quicknote_knn_hits = _msearch_hits(response, response_positions["quicknote_knn"], "빠른메모 kNN")
             rag_hits = _rerank(
-                _rrf_hits(rag_bm25_hits, rag_knn_hits, rag_size),
+                _rrf_hits(rag_bm25_hits + web_bm25_hits, rag_knn_hits + web_knn_hits, rag_size),
                 rag_size,
                 preserve_order=True,
             )
@@ -381,8 +385,8 @@ async def search_related_context_candidates(
                 memo_size,
             )
         else:
-            rag_knn_hits = memo_knn_hits = quicknote_knn_hits = []
-            rag_hits = _rerank(rag_bm25_hits, rag_size)
+            rag_knn_hits = web_knn_hits = memo_knn_hits = quicknote_knn_hits = []
+            rag_hits = _rerank(rag_bm25_hits + web_bm25_hits, rag_size)
             memo_hits = memo_bm25_hits
             quicknote_hits = quicknote_bm25_hits[:memo_size]
 
@@ -412,9 +416,10 @@ async def search_related_context_candidates(
             for hit in quicknote_hits[:memo_size]
         ]
         logger.info(
-            "[related_context_search] query=%r candidates: rag=%d memo=%d quicknote=%d origins: rag=%s memo=%s quicknote=%s",
+            "[related_context_search] query=%r candidates: rag=%d memo=%d quicknote=%d origins: rag=%s web=%s memo=%s quicknote=%s",
             rag_query, len(rag_results), len(memo_results), len(quicknote_results),
             _retrieval_origins(rag_hits, rag_bm25_hits, rag_knn_hits),
+            _retrieval_origins(rag_hits, web_bm25_hits, web_knn_hits),
             _retrieval_origins(memo_hits, memo_bm25_hits, memo_knn_hits),
             _retrieval_origins(quicknote_hits, quicknote_bm25_hits, quicknote_knn_hits),
         )
@@ -440,7 +445,8 @@ async def knowledge_collection_search(collection_id: str, query: str, size: int 
         document_ids = [item["source_id"] for item in items if item.get("source_type") == "document"]
         memo_ids = [item["source_id"] for item in items if item.get("source_type") == "memo"]
         email_thread_ids = [item["source_id"] for item in items if item.get("source_type") == "email_thread"]
-        if not document_ids and not memo_ids and not email_thread_ids:
+        web_document_ids = [item["source_id"] for item in items if item.get("source_type") == "web"]
+        if not document_ids and not memo_ids and not email_thread_ids and not web_document_ids:
             return [], str(source.get("instruction", "")).strip()
 
         embedding = await get_embedding(query, is_query=True)
@@ -458,6 +464,12 @@ async def knowledge_collection_search(collection_id: str, query: str, size: int 
             searches.append(es.search(index=get_language_index("memo_documents", query_language), body=body))
             if embedding:
                 searches.append(es.search(index=MEMO_INDEX, body={"size": size, "_source": body["_source"], "knn": {"field": "embedding", "query_vector": embedding, "k": size, "num_candidates": max(size * 10, 50), "filter": {"terms": {"id": memo_ids}}}}))
+        if web_document_ids:
+            body = {"size": size, "_source": ["title", "content", "url", "source", "indexed_at", "web_document_id", "chunk_index", "total_chunks"],
+                    "query": {"bool": {"filter": [{"terms": {"web_document_id": web_document_ids}}], "should": [{"match": {"title": {"query": query, "boost": 3}}}, {"match": {"content": {"query": query}}}], "minimum_should_match": 0}}}
+            searches.append(es.search(index=get_language_index("web_doc_chunks", query_language), body=body))
+            if embedding:
+                searches.append(es.search(index=WEB_DOC_CHUNKS_INDEX, body={"size": size, "_source": body["_source"], "knn": {"field": "embedding", "query_vector": embedding, "k": size, "num_candidates": max(size * 10, 50), "filter": {"terms": {"web_document_id": web_document_ids}}}}))
         if email_thread_ids:
             body = {"size": size, "_source": ["title", "content", "indexed_at", "thread_id", "inline_images"],
                     "query": {"bool": {"filter": [{"terms": {"_id": email_thread_ids}}], "should": [{"match": {"title": {"query": query, "boost": 3}}}, {"match": {"content": {"query": query}}}], "minimum_should_match": 0}}}

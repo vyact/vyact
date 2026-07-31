@@ -55,6 +55,9 @@ interface SavedFile {
     chunk_count: number;
     indexed_at: string;
     has_original: boolean;
+    source_type?: 'document' | 'web';
+    url?: string;
+    domain?: string;
 }
 
 interface Chunk {
@@ -175,6 +178,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
     const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
     const [deletingAll, setDeletingAll] = useState(false);
     const [fileSearch, setFileSearch] = useState('');
+    const [selectedFileIds, setSelectedFileIds] = useState<Set<string>>(new Set());
 
     // 청크 뷰어
     const [chunkViewFile, setChunkViewFile] = useState<SavedFile | null>(null);
@@ -635,13 +639,25 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
         source: `문서(${file.file_ext.toUpperCase()})`,
         indexed_at: file.indexed_at,
         file_id: file.file_id,
+        source_type: file.source_type || 'document',
     });
 
-    const handleDownloadAll = () => {
-        const anchor = document.createElement('a');
-        anchor.href = '/api/document/files/download-all';
-        anchor.download = 'saved-documents.zip';
-        anchor.click();
+    const toggleSelectedFile = (fileId: string) => setSelectedFileIds(previous => {
+        const next = new Set(previous);
+        next.has(fileId) ? next.delete(fileId) : next.add(fileId);
+        return next;
+    });
+
+    const handleSelectedDownload = () => {
+        savedFiles
+            .filter(file => selectedFileIds.has(file.file_id) && file.source_type !== 'web')
+            .forEach(file => handleDownload(file.file_id, file.filename));
+    };
+
+    const handleSelectedDelete = async () => {
+        const selected = savedFiles.filter(file => selectedFileIds.has(file.file_id));
+        for (const file of selected) await handleDelete(file);
+        setSelectedFileIds(new Set());
     };
 
     const handleDelete = async (file: SavedFile) => {
@@ -659,6 +675,10 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
             setConfirmDelete(null);
             setDeletePopoverPosition(null);
         }
+    };
+
+    const openWebSource = (url?: string) => {
+        if (url) window.open(url, '_blank', 'noopener,noreferrer');
     };
 
     const openDeletePopover = (fileId: string, trigger: HTMLButtonElement) => {
@@ -1100,22 +1120,24 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
                                     <span>{t('documentModal.savedFileCount', {count: savedFiles.length})}</span>
                                     {savedFiles.length > 0 && (
                                         <div className="dm-files-bulk-actions">
-                                            <button type="button" className="dm-bulk-action-btn" onClick={handleDownloadAll}>
+                                            <label className="dm-select-all" aria-label={t('documentModal.downloadAll')}>
+                                                <input type="checkbox" checked={selectedFileIds.size === savedFiles.length} onChange={() => setSelectedFileIds(selectedFileIds.size === savedFiles.length ? new Set() : new Set(savedFiles.map(file => file.file_id)))}/>
+                                            </label>
+                                            {selectedFileIds.size > 0 && <span className="dm-selected-count">{t('googleWorkspace.selectedCount', {count: selectedFileIds.size})}</span>}
+                                            <button type="button" className="dm-bulk-action-btn icon-only" aria-label={t('documentModal.download')} onClick={handleSelectedDownload} disabled={!savedFiles.some(file => selectedFileIds.has(file.file_id) && file.source_type !== 'web')}>
                                                 <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                                                     <polyline points="7 10 12 15 17 10"/>
                                                     <line x1="12" y1="15" x2="12" y2="3"/>
                                                 </svg>
-                                                {t('documentModal.downloadAll')}
                                             </button>
-                                            <button type="button" className="dm-bulk-action-btn danger" onClick={() => setConfirmDeleteAll(true)}>
+                                            <button type="button" className="dm-bulk-action-btn icon-only danger" aria-label={t('documentModal.delete')} onClick={handleSelectedDelete} disabled={selectedFileIds.size === 0}>
                                                 <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                     <polyline points="3 6 5 6 21 6"/>
                                                     <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
                                                     <path d="M10 11v6M14 11v6"/>
                                                     <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
                                                 </svg>
-                                                {t('documentModal.deleteAll')}
                                             </button>
                                         </div>
                                     )}
@@ -1182,7 +1204,8 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
                                                     className="dm-saved-item"
                                                     onClick={() => loadChunks(f)}
                                                 >
-                                                    <span className="dm-file-type-badge">{getExt(f.filename).toUpperCase() || getIcon(f.filename)}</span>
+                                                    <label className="dm-item-select" onClick={event => event.stopPropagation()}><input type="checkbox" checked={selectedFileIds.has(f.file_id)} onChange={() => toggleSelectedFile(f.file_id)}/></label>
+                                                    <span className="dm-file-type-badge">{(f.source_type === 'web' ? 'WEB' : getExt(f.filename).toUpperCase()) || getIcon(f.filename)}</span>
                                                     <div className="dm-file-meta">
                                                         <div className="dm-file-name">{f.filename}</div>
                                                         <div className="dm-file-size">{formatSize(f.file_size)} · {t('documentModal.chunkCount', {count: f.chunk_count})} · {formatDate(f.indexed_at)}</div>
@@ -1203,9 +1226,9 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
                                                         <button
                                                             type="button"
                                                             className="dm-action-btn icon-only"
-                                                            aria-label={t('documentModal.download')}
-                                                            onClick={() => handleDownload(f.file_id, f.filename)}
-                                                            disabled={!f.has_original}
+                                                            aria-label={t(f.source_type === 'web' ? 'documentModal.download' : 'documentModal.download')}
+                                                            onClick={() => f.source_type === 'web' ? openWebSource(f.url) : handleDownload(f.file_id, f.filename)}
+                                                            disabled={f.source_type === 'web' ? !f.url : !f.has_original}
                                                         >
                                                             <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>

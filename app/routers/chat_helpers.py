@@ -7,8 +7,8 @@ query/query_stream 안에서 "어떤 흐름으로 동작하는지" 한눈에 보
 import re
 from datetime import datetime, timezone
 
-from services.db import DOC_CHUNKS_INDEX
-from services.indexer import get_embedding, get_es as get_es_client
+from services.db import DOC_CHUNKS_INDEX, WEB_DOCUMENTS_INDEX, WEB_DOC_CHUNKS_INDEX
+from services.indexer import get_es as get_es_client
 from routers.deps import load_config_async
 from agent import get_prompt_by_id
 from logger import get_logger
@@ -101,6 +101,7 @@ def inherit_articles_from_history(articles: list, messages: list) -> list:
                         "source": src.get("source", ""),
                         "indexed_at": src.get("indexed_at", ""),
                         "file_id": fid,
+                        "source_type": src.get("source_type", "document"),
                         "content": f"[인덱싱된 문서, {fid}]",
                     })
             break
@@ -117,11 +118,31 @@ def resolve_selected_articles(
     return list(articles) if selection_explicit else inherit_articles_from_history(articles, messages)
 
 
-# ── file_id 기반 청크 RAG 검색 ──────────────────────────────────────────
+# ── 저장 문서 원문 컨텍스트 ─────────────────────────────────────────────
+
+SAVED_DOCUMENT_CONTEXT_MAX_CHARS = 30_000
+DIRECT_DOCUMENT_TOTAL_MAX_CHARS = 30_000
+
+
+def limit_direct_document_contexts(docs: list[dict]) -> list[dict]:
+    """명시적으로 첨부한 문서 원문이 컨텍스트를 무한히 점유하지 않게 제한한다."""
+    document_indexes = [index for index, doc in enumerate(docs) if doc.get("direct_document")]
+    if not document_indexes:
+        return docs
+    per_document_limit = max(1, DIRECT_DOCUMENT_TOTAL_MAX_CHARS // len(document_indexes))
+    limited = list(docs)
+    for index in document_indexes:
+        document = dict(limited[index])
+        document["content"] = document.get("content", "")[:per_document_limit]
+        limited[index] = document
+    return limited
 
 async def search_file_id_chunks(question: str, articles: list) -> tuple[list[dict], list[dict]]:
-    """articles를 direct_articles / file_id_articles로 분류하고,
-    file_id가 있는 문서는 ES에서 청크 검색.
+    """articles를 direct_articles / 저장 문서 참조로 분류한다.
+
+    저장된 문서를 사용자가 명시적으로 채팅에 첨부한 경우에는, 새 파일 첨부와
+    동일하게 원문(최대 30,000자)을 이번 질문의 직접 컨텍스트로 제공한다.
+    영구 인덱스의 청크를 순서대로 합칠 뿐 대화 전용 청크를 다시 저장하지 않는다.
 
     Returns:
         (direct_article_docs, file_chunks)
@@ -145,42 +166,49 @@ async def search_file_id_chunks(question: str, articles: list) -> tuple[list[dic
         for a in direct_articles
     ]
 
-    file_chunks: list[dict] = []
+    saved_document_docs: list[dict] = []
     if file_id_articles:
-        file_ids = [a["file_id"] for a in file_id_articles]
         es_client = get_es_client()
         try:
-            embedding = await get_embedding(question)
-            search_body = {
-                "size": 30,
-                "_source": ["title", "content", "url", "source", "indexed_at", "file_id",
-                            "chunk_type", "heading_path", "page_number"],
-                "query": {"terms": {"file_id": file_ids}},
-            }
-            if embedding:
-                search_body["knn"] = {
-                    "field": "embedding", "query_vector": embedding, "k": 30,
-                    "num_candidates": 150, "filter": {"terms": {"file_id": file_ids}}, "boost": 2.0,
-                }
-            res = await es_client.search(index=DOC_CHUNKS_INDEX, body=search_body)
-            file_chunks = [
-                {
-                    "title": h["_source"]["title"], "content": h["_source"]["content"],
-                    "url": h["_source"]["url"], "source": h["_source"]["source"],
-                    "indexed_at": h["_source"].get("indexed_at", ""),
-                    "chunk_type": h["_source"].get("chunk_type", "paragraph"),
-                    "heading_path": h["_source"].get("heading_path") or [],
-                    "page_number": h["_source"].get("page_number"),
-                    "score": round(h.get("_score") or 0, 3),
-                }
-                for h in res["hits"]["hits"]
-            ]
+            for article in file_id_articles:
+                document_id = article["file_id"]
+                source_type = article.get("source_type", "document")
+                if source_type == "web":
+                    web_document = await es_client.get(index=WEB_DOCUMENTS_INDEX, id=document_id)
+                    source = web_document["_source"]
+                    content = source.get("content", "").strip()
+                    if content:
+                        saved_document_docs.append({
+                            "title": source.get("title", article.get("title", "")),
+                            "content": content[:SAVED_DOCUMENT_CONTEXT_MAX_CHARS], "url": source.get("url", article.get("url", "")),
+                        "source": "web", "score": 1.0, "indexed_at": source.get("updated_at", ""),
+                            "file_id": document_id, "source_type": "web", "direct_document": True,
+                        })
+                    continue
+                index = WEB_DOC_CHUNKS_INDEX if source_type == "web" else DOC_CHUNKS_INDEX
+                id_field = "web_document_id" if source_type == "web" else "file_id"
+                response = await es_client.search(index=index, body={
+                    "size": 500,
+                    "query": {"term": {id_field: document_id}},
+                    "sort": [{"chunk_index": {"order": "asc"}}],
+                    "_source": ["content", "url", "source", "indexed_at"],
+                })
+                chunks = response["hits"]["hits"]
+                content = "\n\n".join(hit["_source"].get("content", "") for hit in chunks).strip()
+                if content:
+                    first = chunks[0]["_source"]
+                    saved_document_docs.append({
+                        "title": article.get("title", ""), "content": content[:SAVED_DOCUMENT_CONTEXT_MAX_CHARS],
+                        "url": first.get("url", article.get("url", "")), "source": first.get("source", article.get("source", "")),
+                        "score": 1.0, "indexed_at": first.get("indexed_at", article.get("indexed_at", "")),
+                        "file_id": document_id, "source_type": source_type, "direct_document": True,
+                    })
         except Exception as e:
-            logger.warning("file_id 청크 검색 실패: %s", e)
+            logger.warning("저장 문서 원문 조회 실패: %s", e)
         finally:
             await es_client.close()
 
-    return direct_docs, file_chunks
+    return direct_docs + saved_document_docs, []
 
 
 # ── 히스토리 저장용 메시지 빌드 ──────────────────────────────────────────
@@ -211,7 +239,7 @@ def build_user_message(
     if articles:
         msg["article_sources"] = [
             {"title": a.get("title", ""), "url": a.get("url", ""), "source": a.get("source", ""),
-             "indexed_at": a.get("indexed_at", ""), "file_id": a.get("file_id")}
+             "indexed_at": a.get("indexed_at", ""), "file_id": a.get("file_id"), "source_type": a.get("source_type", "document")}
             for a in articles
         ]
     return msg
@@ -229,7 +257,7 @@ def build_assistant_message(
     if article_sources:
         msg["article_sources"] = [
             {"title": s.get("title", ""), "url": s.get("url", ""), "source": s.get("source", ""),
-             "indexed_at": s.get("indexed_at", "")}
+             "indexed_at": s.get("indexed_at", ""), "file_id": s.get("file_id"), "source_type": s.get("source_type", "document")}
             for s in article_sources
         ]
     if injected_context:

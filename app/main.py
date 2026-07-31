@@ -395,6 +395,7 @@ from routers.stt import router as stt_router
 from routers.scripts import router as scripts_router
 from routers.pdf import router as pdf_router
 from routers.document import router as document_router
+from routers.web_document import router as web_document_router
 from routers.memo import router as memo_router
 from routers.quicknote import router as quicknote_router
 from routers.project import router as project_router
@@ -419,6 +420,7 @@ app.include_router(stt_router, prefix="/api")
 app.include_router(scripts_router, prefix="/api")
 app.include_router(pdf_router, prefix="/api")
 app.include_router(document_router, prefix="/api")
+app.include_router(web_document_router, prefix="/api")
 app.include_router(memo_router, prefix="/api")
 app.include_router(quicknote_router, prefix="/api")
 app.include_router(project_router, prefix="/api")

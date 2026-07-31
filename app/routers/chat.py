@@ -26,6 +26,7 @@ from routers.chat_helpers import (
     resolve_selected_articles, search_file_id_chunks,
     build_injected_context, build_user_message, build_assistant_message,
     filter_article_sources,
+    limit_direct_document_contexts,
 )
 
 # create_task로 띄운 백그라운드 저장 작업(히스토리/인덱싱/요약)이 참조를 잃고 GC돼서
@@ -199,6 +200,7 @@ def _file_attachments_to_context(attachments: list) -> list[dict]:
                         "url": "",
                         "score": 1.0,
                         "indexed_at": "",
+                        "direct_document": True,
                     })
         elif att.get("type") == "file":
             if att.get("content", "").strip():
@@ -209,6 +211,7 @@ def _file_attachments_to_context(attachments: list) -> list[dict]:
                     "url": "",
                     "score": 1.0,
                     "indexed_at": "",
+                    "direct_document": True,
                 })
     return docs
 
@@ -341,7 +344,7 @@ async def query(req: QueryRequest):
         # 기사/문서 첨부
         direct_docs, file_chunks = await search_file_id_chunks(req.question, articles)
         context_docs = direct_docs + file_chunks
-        raw_answer = await query_llm(req.question, file_context_docs + context_docs, system_prompt, image_attachments,
+        raw_answer = await query_llm(req.question, limit_direct_document_contexts(file_context_docs + context_docs), system_prompt, image_attachments,
                                      req.messages,
                                      format_instruction_override="" if req.voice_mode else None,
                                      conversation_summary=conversation_summary,
@@ -568,7 +571,7 @@ async def query_stream(req: QueryRequest):
                 # ══ 경로 (A): 기사/문서 첨부 ══
                 direct_docs, file_chunks = await search_file_id_chunks(clean_question, articles)
                 context_docs = direct_docs + file_chunks
-                docs_for_llm = file_context_docs + context_docs
+                docs_for_llm = limit_direct_document_contexts(file_context_docs + context_docs)
                 can_stream = True
 
             elif not is_image_model and not req.voice_mode and urls:
@@ -644,7 +647,7 @@ async def query_stream(req: QueryRequest):
                 _tool_messages: list[dict] = []  # tool call/result 메시지 수집
                 async for ev in rag_query_stream(
                         clean_question, _summary_system_prompt, image_attachments, req.messages,
-                        extra_context=file_context_docs,
+                        extra_context=limit_direct_document_contexts(file_context_docs),
                         skip_rag=has_file_attachment,
                         reasoning=req.reasoning,
                         conv_id=conv_id,

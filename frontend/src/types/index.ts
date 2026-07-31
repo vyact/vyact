@@ -28,6 +28,7 @@ export interface ArticleAttachment {
     source: string;
     indexed_at?: string;
     file_id?: string;  // 인덱싱된 문서 참조용
+    source_type?: 'document' | 'web';
 }
 
 export interface McpCatalogField {
