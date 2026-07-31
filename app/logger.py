@@ -12,8 +12,19 @@ logger.py – 앱 전역 로깅 설정 및 logger 팩토리
 """
 import logging
 import sys
+import unicodedata
 
 _initialized = False
+
+
+class _UnicodeNormalizationFilter(logging.Filter):
+    """Normalize log messages so macOS filenames render as complete Hangul."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        message = record.getMessage()
+        record.msg = unicodedata.normalize("NFC", message)
+        record.args = ()
+        return True
 
 
 def setup_logging() -> None:
@@ -41,6 +52,7 @@ def setup_logging() -> None:
     if not any(isinstance(h, logging.FileHandler) for h in root.handlers):
         fh = logging.FileHandler(log_file, encoding="utf-8")
         fh.setFormatter(fmt)
+        fh.addFilter(_UnicodeNormalizationFilter())
         root.addHandler(fh)
 
     if not any(
@@ -49,6 +61,7 @@ def setup_logging() -> None:
     ):
         sh = logging.StreamHandler(sys.stdout)
         sh.setFormatter(fmt)
+        sh.addFilter(_UnicodeNormalizationFilter())
         root.addHandler(sh)
 
     # uvicorn 로그 통합
@@ -74,6 +87,7 @@ def setup_logging() -> None:
         (logging.StreamHandler(sys.stdout), fmt_uvi),
     ]:
         h.setFormatter(fmt_)
+        h.addFilter(_UnicodeNormalizationFilter())
         uve.addHandler(h)
 
     # elasticsearch 노이즈 억제
