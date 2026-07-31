@@ -653,6 +653,7 @@
     display: flex;
     align-items: center;
     gap: 4px;
+    margin-left: 4px;
     padding: 2px;
     border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
     border-radius: 10px;
