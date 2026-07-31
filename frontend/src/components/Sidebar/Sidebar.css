@@ -461,7 +461,7 @@
 }
 
 .hist-item > .sidebar-overflow-menu,
-.project-conversation > .hist-menu-btn {
+.project-conversation > .sidebar-overflow-menu {
     position: absolute;
     top: 50%;
     right: 8px;
@@ -469,7 +469,7 @@
 }
 
 .hist-item:has(.conversation-progress) > .sidebar-overflow-menu,
-.project-conversation:has(.conversation-progress) > .hist-menu-btn {
+.project-conversation:has(.conversation-progress) > .sidebar-overflow-menu {
     display: none;
 }
 
@@ -479,15 +479,11 @@
 }
 
 .hist-menu-popup {
-    position: absolute;
-    right: 0;
-    top: calc(100% + 4px);
     background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 4px;
     min-width: 150px;
-    z-index: 100;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 

@@ -6,6 +6,7 @@ import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
 import {MemoViewer} from '../MemoModal/MemoModal';
 import type {KnowledgeCollection} from '../../types';
 import {api} from '../../services/api';
+import {updateCachedKnowledgeCollections} from '../../services/knowledgeCollectionsCache';
 import '../SystemPromptModal/SystemPromptModal.css';
 import './KnowledgeCollectionsModal.css';
 
@@ -97,7 +98,8 @@ const KnowledgeCollectionsModal = ({isOpen, collections, onClose, onCreate, onUp
     const selectedItem = resolvedItems.find(item => item.source_id === selectedItemId);
     const removeItem = async (item: typeof resolvedItems[number]) => {
         if (!browsing) return;
-        await api.removeKnowledgeCollectionItem(browsing.id, item.source_type, item.source_id);
+        const result = await api.removeKnowledgeCollectionItem(browsing.id, item.source_type, item.source_id);
+        updateCachedKnowledgeCollections(collections => collections.map(collection => collection.id === browsing.id ? {...collection, items: result.items} : collection));
         setResolvedItems(items => items.filter(candidate => candidate.source_id !== item.source_id));
         setSelectedItemId(current => current === item.source_id ? '' : current);
     };

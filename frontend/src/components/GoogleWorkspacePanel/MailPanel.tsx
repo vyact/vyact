@@ -1,4 +1,4 @@
-import {memo, type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
+import {memo, type CSSProperties, type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {renderAsync as renderDocx} from 'docx-preview';
 import {createPortal} from 'react-dom';
 import {useTranslation} from 'react-i18next';
@@ -13,6 +13,8 @@ import CustomSelect from '../CustomSelect/CustomSelect';
 import ImageViewer from '../ImageViewer/ImageViewer';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
+import ActionMenu from '../common/ActionMenu/ActionMenu';
+import AttachmentItem from '../common/AttachmentItem/AttachmentItem';
 import KnowledgeCollectionAttachSelect from '../KnowledgeCollectionsModal/KnowledgeCollectionAttachSelect';
 import EmailEditor, {type EmailEditorHandle} from './EmailEditor';
 
@@ -245,6 +247,13 @@ const removeDarkModeStyles = (html: string) => html.replace(
 
 const extractInlineImages = async (html: string) => {
     const document = new DOMParser().parseFromString(html, 'text/html');
+    // Gmail collapses `<p></p>` to zero height. Preserve intentional blank
+    // paragraphs from the editor with a non-breaking space before sending.
+    document.querySelectorAll<HTMLParagraphElement>('p').forEach(paragraph => {
+        const isEmpty = !paragraph.textContent?.trim();
+        const onlyBreak = paragraph.childElementCount === 1 && paragraph.firstElementChild?.tagName === 'BR';
+        if (isEmpty && (paragraph.childElementCount === 0 || onlyBreak)) paragraph.innerHTML = '&nbsp;';
+    });
     document.querySelectorAll<HTMLElement>('[data-mail-signature]').forEach(signature => {
         signature.style.fontFamily = 'Arial, Helvetica, sans-serif';
         signature.style.fontSize = '14px';
@@ -630,7 +639,6 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
     const [knowledgeCollectionAction, setKnowledgeCollectionAction] = useState<'add' | 'remove' | null>(null);
     const [mailChatAttachLabel, setMailChatAttachLabel] = useState('');
     const [mailAttachMenuId, setMailAttachMenuId] = useState<string | null>(null);
-    const [mailAttachMenuPosition, setMailAttachMenuPosition] = useState<{right: number; top: number}>({right: 0, top: 0});
     const [mailAttachmentOperation, setMailAttachmentOperation] = useState<{
         key: string;
         action: 'preview' | 'download';
@@ -672,17 +680,10 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
     const [aiPrompt, setAiPrompt] = useState('');
 
     useEffect(() => {
-        if (!mailAttachMenuId) return;
-        const closeAttachMenu = () => {
-            setMailAttachMenuId(null);
-        };
-        document.addEventListener('click', closeAttachMenu);
+        const closeAttachMenu = () => setMailAttachMenuId(null);
         window.addEventListener(EMAIL_BODY_INTERACTION_EVENT, closeAttachMenu);
-        return () => {
-            document.removeEventListener('click', closeAttachMenu);
-            window.removeEventListener(EMAIL_BODY_INTERACTION_EVENT, closeAttachMenu);
-        };
-    }, [mailAttachMenuId]);
+        return () => window.removeEventListener(EMAIL_BODY_INTERACTION_EVENT, closeAttachMenu);
+    }, []);
     useEffect(() => {
         if (!isMacroMenuOpen) return;
         const closeMacroMenu = (event: PointerEvent) => {
@@ -825,7 +826,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
         const requestId = ++mailOpenRequestIdRef.current;
         if (showActivity) setIsOpeningMail(true);
         try {
-            const message = await api.getGoogleMailMessage(id);
+            const message = await api.getGoogleMailMessage(id, label);
             if (requestId !== mailOpenRequestIdRef.current) return;
             setSelected(message);
             const messageRecipients = [
@@ -1439,16 +1440,8 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
                 setMailAttachmentOperation(null);
             }
         };
-        return <div className="gwp-mail-attachment-item">
-            <button className="gwp-mail-attachment-open" disabled={Boolean(mailAttachmentOperation)} onClick={() => {
-                void runAttachmentOperation(isPreviewable ? 'preview' : 'download');
-            }}>
-                {isPreparingPreview
-                    ? <LoaderCircle aria-hidden="true" size={18} className="gwp-spin"/>
-                    : <FileText aria-hidden="true" size={18}/>}
-                <span>{attachment.filename}</span>
-            </button>
-            {isAttachableToChat && <button className="gwp-mail-attachment-attach"
+        return <AttachmentItem className="gwp-mail-attachment-item" name={attachment.filename} openLabel={attachment.filename} disabled={Boolean(mailAttachmentOperation)} onOpen={() => { void runAttachmentOperation(isPreviewable ? 'preview' : 'download'); }} leadingIcon={isPreparingPreview ? <LoaderCircle aria-hidden="true" size={18} className="gwp-spin"/> : <FileText aria-hidden="true" size={18}/>} actions={<>
+            {isAttachableToChat && <button type="button" className="gwp-mail-attachment-attach"
                     disabled={Boolean(mailAttachmentOperation) || isAttachingToChat}
                     aria-label={t('googleWorkspace.attachToChat')}
                     onClick={() => void attachMailAttachmentToChat(attachment, messageId)}>
@@ -1456,14 +1449,14 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
                     ? <LoaderCircle aria-hidden="true" size={16} className="gwp-spin"/>
                     : <MessageSquarePlus aria-hidden="true" size={16}/>}
             </button>}
-            <button className="gwp-mail-attachment-download" disabled={Boolean(mailAttachmentOperation)}
+            <button type="button" className="gwp-mail-attachment-download" disabled={Boolean(mailAttachmentOperation)}
                     aria-label={t('googleWorkspace.attachmentDownload', {name: attachment.filename})}
                     onClick={() => void runAttachmentOperation('download')}>
                 {isPreparingDownload
                     ? <LoaderCircle aria-hidden="true" size={16} className="gwp-spin"/>
                     : <Download aria-hidden="true" size={16}/>}
             </button>
-        </div>;
+        </>}/>;
     };
 
     const labelsById = new Map(labels.map(item => [item.id, item]));
@@ -1641,35 +1634,45 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
             ? <div className="gwp-message-sender-compact"><strong>{mail.from}</strong>{details}</div>
             : details;
     };
-    const MailAttachments = ({attachments: messageAttachments, messageId}: {attachments: MailAttachment[]; messageId: string}) => {
-        const detailsRef = useRef<HTMLDetailsElement>(null);
-        useEffect(() => {
-            const closeWhenClickingOutside = (event: Event) => {
-                const details = detailsRef.current;
-                const target = event.target;
-                if (details?.open && (!(target instanceof Node) || !details.contains(target))) {
-                    details.removeAttribute('open');
-                }
+    const MailAttachments = ({attachments, floatingInThread = false}: {attachments: Array<{attachment: MailAttachment; messageId: string}>; floatingInThread?: boolean}) => {
+        const [isOpen, setIsOpen] = useState(false);
+        const attachmentRef = useRef<HTMLElement>(null);
+        const [floatingStyle, setFloatingStyle] = useState<CSSProperties>();
+        useLayoutEffect(() => {
+            if (!floatingInThread) {
+                setFloatingStyle(undefined);
+                return;
+            }
+            const updatePosition = () => {
+                const threadMessage = attachmentRef.current?.closest<HTMLElement>('.gwp-thread-message');
+                if (!threadMessage) return;
+                const rect = threadMessage.getBoundingClientRect();
+                const buttonHeight = attachmentRef.current?.getBoundingClientRect().height || 38;
+                const top = Math.max(rect.top + 12, Math.min(window.innerHeight - buttonHeight - 16, rect.bottom - buttonHeight - 16));
+                setFloatingStyle({position: 'fixed', top, right: Math.max(16, window.innerWidth - rect.right + 16), bottom: 'auto', left: 'auto'});
             };
-            document.addEventListener('pointerdown', closeWhenClickingOutside);
-            window.addEventListener(EMAIL_BODY_INTERACTION_EVENT, closeWhenClickingOutside);
+            updatePosition();
+            const threadMessage = attachmentRef.current?.closest<HTMLElement>('.gwp-thread-message');
+            const resizeObserver = threadMessage ? new ResizeObserver(updatePosition) : null;
+            if (threadMessage) resizeObserver?.observe(threadMessage);
+            const animationFrameId = window.requestAnimationFrame(updatePosition);
+            window.addEventListener('resize', updatePosition);
+            window.addEventListener('scroll', updatePosition, true);
             return () => {
-                document.removeEventListener('pointerdown', closeWhenClickingOutside);
-                window.removeEventListener(EMAIL_BODY_INTERACTION_EVENT, closeWhenClickingOutside);
+                resizeObserver?.disconnect();
+                window.cancelAnimationFrame(animationFrameId);
+                window.removeEventListener('resize', updatePosition);
+                window.removeEventListener('scroll', updatePosition, true);
             };
+        }, [floatingInThread]);
+        useEffect(() => {
+            const close = () => setIsOpen(false);
+            window.addEventListener(EMAIL_BODY_INTERACTION_EVENT, close);
+            return () => window.removeEventListener(EMAIL_BODY_INTERACTION_EVENT, close);
         }, []);
-        const close = () => detailsRef.current?.removeAttribute('open');
+        const close = () => setIsOpen(false);
 
-        return <section className="gwp-mail-attachments">
-            <details ref={detailsRef}>
-                <summary aria-label={t('googleWorkspace.attachments', {count: messageAttachments.length})}>
-                    <Paperclip aria-hidden="true" size={16}/><strong>{messageAttachments.length}</strong>
-                </summary>
-                <div className="gwp-mail-attachment-list">
-                    {messageAttachments.map(attachment => <MailAttachmentItem key={attachment.id} attachment={attachment} messageId={messageId} onSelect={close}/>)}
-                </div>
-            </details>
-        </section>;
+        return <section ref={attachmentRef} className="gwp-mail-attachments" style={floatingStyle}><ActionMenu isOpen={isOpen} onOpenChange={setIsOpen} preferredSide="top" ariaLabel={t('googleWorkspace.attachments', {count: attachments.length})} triggerClassName="gwp-mail-attachments-trigger" menuClassName="gwp-mail-attachment-list" trigger={<><Paperclip aria-hidden="true" size={16}/><strong>{attachments.length}</strong></>}>{attachments.map(({attachment, messageId}) => <MailAttachmentItem key={`${messageId}:${attachment.id}`} attachment={attachment} messageId={messageId} onSelect={close}/>)}</ActionMenu></section>;
     };
     const getMailAttachments = (mail: MailDetail) => {
         const messages = mail.threadMessages?.length
@@ -1789,28 +1792,9 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
         if (!onAttachFilesToChat && !onDelete) return null;
         const hasSupportedAttachment = getMailAttachments(mail).some(isSupportedChatMailAttachment);
         const isOpen = mailAttachMenuId === menuId;
-        return <div className="gwp-mail-attach-menu-wrap" onPointerDown={event => event.stopPropagation()}>
-            <button className="gwp-mail-more-button" onClick={event => {
-                event.stopPropagation();
-                if (isOpen) {
-                    setMailAttachMenuId(null);
-                    return;
-                }
-                const menuItemCount = (onAttachFilesToChat ? 3 : 0) + (onDelete ? 1 : 0);
-                const estimatedMenuHeight = 16 + menuItemCount * 44;
-                const triggerRect = event.currentTarget.getBoundingClientRect();
-                const opensUpward = window.innerHeight - triggerRect.bottom < estimatedMenuHeight + 8;
-                setMailAttachMenuPosition({
-                    right: Math.max(8, window.innerWidth - triggerRect.right),
-                    top: opensUpward ? Math.max(8, triggerRect.top - estimatedMenuHeight - 5) : triggerRect.bottom + 5,
-                });
-                setMailAttachMenuId(menuId);
-            }} disabled={isAttachingToChat} aria-label={t('googleWorkspace.attachmentOptions')}>
-                {isAttachingToChat && isOpen
+        return <ActionMenu isOpen={isOpen} onOpenChange={open => setMailAttachMenuId(open ? menuId : null)} triggerClassName="gwp-mail-more-button" menuClassName="gwp-mail-attach-menu" disabled={isAttachingToChat} ariaLabel={t('googleWorkspace.attachmentOptions')} trigger={isAttachingToChat && isOpen
                     ? <LoaderCircle aria-hidden="true" size={17} className="gwp-spin"/>
-                    : <MoreVertical aria-hidden="true" size={18}/>}
-            </button>
-            {isOpen && createPortal(<div className="gwp-mail-attach-menu gwp-mail-attach-menu--portal" style={mailAttachMenuPosition} onClick={event => event.stopPropagation()}>
+                    : <MoreVertical aria-hidden="true" size={18}/>}>
                 {onAttachFilesToChat && <>
                     <button onClick={() => void attachMailToChat(mail, 'body')} disabled={isAttachingToChat}>
                         <MessageSquarePlus aria-hidden="true" size={16}/><span>{t('googleWorkspace.attachMailBodyOnly')}</span>
@@ -1828,8 +1812,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
                 }} disabled={isMailActionBusy}>
                     <Trash2 aria-hidden="true" size={16}/><span>{t('googleWorkspace.delete')}</span>
                 </button>}
-            </div>, document.body)}
-        </div>;
+        </ActionMenu>;
     };
     const MailOperationOverlay = () => {
         const label = mailAttachmentOperation?.filename || mailChatAttachLabel;
@@ -1919,7 +1902,9 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
                     </header>
                     <div className="gwp-email-frame gwp-email-frame--single"><EmailBody mail={message} fillAvailableSpace/></div>
                 </div>
-                {messageDetail.attachments.length > 0 && <MailAttachments attachments={messageDetail.attachments} messageId={message.id}/>}
+                {messageDetail.attachments.length > 0 && (
+                    <MailAttachments attachments={messageDetail.attachments.map(attachment => ({attachment, messageId: message.id}))}/>
+                )}
             </section>;
         }
 
@@ -1985,7 +1970,9 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
                         </div>
                         {expanded && <>
                             <div className="gwp-thread-message-body"><EmailBody mail={message}/></div>
-                            {messageDetail.attachments.length > 0 && <MailAttachments attachments={messageDetail.attachments} messageId={message.id}/>}
+                            {messageDetail.attachments.length > 0 && (
+                                <MailAttachments attachments={messageDetail.attachments.map(attachment => ({attachment, messageId: message.id}))} floatingInThread/>
+                            )}
                         </>}
                     </article>;
                 })}

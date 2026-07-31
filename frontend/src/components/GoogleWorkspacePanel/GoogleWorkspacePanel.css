@@ -231,9 +231,7 @@
 .gwp-mail-attach-menu-wrap { position: relative; flex: 0 0 auto; }
 .gwp-mail-more-button { display: grid !important; width: 32px; height: 32px; place-items: center; padding: 0 !important; border-radius: 50% !important; color: var(--text-secondary); }
 .gwp-mail-more-button:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 12%, transparent) !important; color: var(--text); }
-.gwp-mail-attach-menu { position: absolute; top: calc(100% + 5px); right: 0; z-index: 30; min-width: 180px; padding: 4px 0; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); box-shadow: 0 6px 20px rgba(0, 0, 0, .25); }
-.gwp-mail-attach-menu--portal { position: fixed; left: auto; width: max-content; min-width: 0; z-index: 2147483000; }
-.gwp-mail-attach-menu--upward { top: auto; bottom: calc(100% + 5px); }
+.gwp-mail-attach-menu { min-width: 180px; padding: 4px 0; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); box-shadow: 0 6px 20px rgba(0, 0, 0, .25); }
 .gwp-mail-attach-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 14px; border: 0; background: transparent; color: var(--text); font-size: 13px; cursor: pointer; white-space: nowrap; }
 .gwp-mail-attach-menu button:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .gwp-mail-attach-menu button:disabled { cursor: not-allowed; opacity: .45; }
@@ -328,22 +326,9 @@
 .gwp-email-empty { display: flex; flex: 1; min-height: 120px; width: 100%; align-items: center; justify-content: center; flex-direction: column; gap: 10px; border: 1px solid var(--border); border-radius: 10px; background: #fff; color: #777; text-align: center; }
 .gwp-email-empty svg { color: #aaa; }
 .gwp-email-empty span { font-size: 14px; font-weight: 600; }
-.gwp-mail-attachments { position: absolute; right: 16px; bottom: 16px; left: 16px; z-index: 3; pointer-events: none; }
-.gwp-mail-attachments details { position: relative; width: 100%; pointer-events: none; }
-.gwp-mail-attachments summary { display: flex; align-items: center; width: fit-content; min-width: 44px; height: 38px; justify-content: center; gap: 5px; margin-left: auto; padding: 0 11px; border: 1px solid var(--border); border-radius: 999px; background: color-mix(in srgb, var(--surface2) 94%, transparent); box-shadow: 0 5px 18px rgba(0, 0, 0, .4); color: var(--text-secondary); font-size: 12px; cursor: pointer; list-style: none; user-select: none; pointer-events: auto; backdrop-filter: blur(8px); }
-.gwp-mail-attachments summary::-webkit-details-marker { display: none; }
-.gwp-mail-attachments summary:hover, .gwp-mail-attachments details[open] summary { border-color: color-mix(in srgb, var(--accent) 65%, var(--border)); color: var(--accent); }
-.gwp-mail-attachment-list { display: flex; flex-wrap: wrap; gap: 7px; }
-.gwp-mail-attachments .gwp-mail-attachment-list { position: absolute; right: 0; bottom: calc(100% + 8px); left: 0; z-index: 4; display: grid; grid-template-columns: minmax(0, 1fr); max-height: min(280px, 45vh); padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface2); box-shadow: 0 12px 32px rgba(0, 0, 0, .45); overflow: auto; pointer-events: auto; }
-.gwp-mail-attachment-item { display: flex; flex: 0 0 auto; align-items: stretch; max-width: 100%; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); overflow: hidden; }
-.gwp-mail-attachments .gwp-mail-attachment-item { width: 100%; }
-.gwp-mail-attachments .gwp-mail-attachment-open { flex: 1; }
-.gwp-mail-attachments .gwp-mail-attachment-open span { white-space: normal; overflow-wrap: anywhere; }
-.gwp-mail-attachment-item:hover { border-color: var(--accent); }
-.gwp-mail-attachment-open { display: inline-flex; align-items: center; min-width: 0; gap: 7px; padding: 7px 9px; border: 0; background: transparent; color: var(--text); cursor: pointer; text-align: left; }
-.gwp-mail-attachment-open:hover { color: var(--accent); }
-.gwp-mail-attachment-open:disabled, .gwp-mail-attachment-attach:disabled, .gwp-mail-attachment-download:disabled { cursor: wait; opacity: .65; }
-.gwp-mail-attachment-open span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gwp-mail-attachments { position: absolute; right: 16px; bottom: 16px; left: 16px; z-index: 3; pointer-events: none; }.gwp-mail-attachments .action-menu{width:fit-content;margin-left:auto;pointer-events:auto}.gwp-mail-attachments-trigger{display:flex;align-items:center;width:fit-content;min-width:44px;height:38px;justify-content:center;gap:5px;padding:0 11px;border:1px solid var(--border)!important;border-radius:999px;background:#252525!important;box-shadow:0 5px 18px rgba(0,0,0,.4);color:var(--text-secondary)!important;font-size:12px;cursor:pointer;user-select:none;backdrop-filter:blur(8px)}.gwp-mail-attachments-trigger:hover,.gwp-mail-attachments-trigger[aria-expanded="true"]{border-color:color-mix(in srgb,var(--accent) 65%,var(--border))!important;color:var(--accent)!important}
+.gwp-mail-attachment-list { position:fixed;display:flex;width:max-content;max-width:calc(100vw - 32px);max-height:min(280px,45vh);flex-direction:column;align-items:stretch;gap:7px;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);box-shadow:0 12px 32px rgba(0,0,0,.45);overflow:auto;pointer-events:auto; }.gwp-mail-attachment-list .attachment-item{width:100%;max-width:none}.gwp-mail-attachment-list .attachment-item-open{flex:1}
+.gwp-mail-attachment-attach:disabled, .gwp-mail-attachment-download:disabled { cursor: wait; opacity: .65; }
 .gwp-mail-attachment-attach, .gwp-mail-attachment-download { display: grid; width: 36px; flex: 0 0 36px; place-items: center; padding: 0 8px; border: 0; border-left: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; }
 .gwp-mail-attachment-attach:hover, .gwp-mail-attachment-download:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
 .gwp-mail-activity, .gwp-send-feedback { position: absolute; top: 50%; left: 50%; z-index: 12; display: flex; align-items: center; gap: 9px; padding: 13px 17px; border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border)); border-radius: 10px; transform: translate(-50%, -50%); background: color-mix(in srgb, var(--surface2) 92%, #000); box-shadow: 0 14px 34px rgba(0, 0, 0, .52); color: var(--text); font-size: 13px; font-weight: 750; }
@@ -589,8 +574,8 @@
 .gwp-recipient-field + .gwp-recipient-field { border-top: 1px solid var(--border); }
 .gwp-recipient-label { display: flex; align-items: center; padding: 0 10px; color: var(--muted); font-size: 12px; font-weight: 650; }
 .gwp-recipient-input-shell { position: relative; display: flex; min-width: 0; align-items: center; flex-wrap: wrap; gap: 6px; padding: 5px 8px 5px 0; cursor: text; }
-.gwp-compose .gwp-recipient-input-shell > input { min-width: 140px; flex: 1; padding: 4px 2px; border: 0; outline: 0; background: transparent; box-shadow: none; }
-.gwp-recipient-actions { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 10px; }
+.gwp-compose .gwp-recipient-input-shell > input { min-width: 80px; flex: 1 1 140px; padding: 4px 2px; border: 0; outline: 0; background: transparent; box-shadow: none; }
+.gwp-recipient-actions { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 10px; margin-left: auto; }
 .gwp-recipient-actions button { padding: 3px 0 !important; border: 0 !important; background: transparent !important; color: var(--muted) !important; font-size: 12px; font-weight: 650; white-space: nowrap; }
 .gwp-recipient-actions button:hover { color: var(--accent) !important; }
 .gwp-bcc-toggle { flex: 0 0 auto; padding: 3px 6px !important; border: 0 !important; background: transparent !important; color: var(--muted) !important; font-size: 12px; font-weight: 650; white-space: nowrap; }

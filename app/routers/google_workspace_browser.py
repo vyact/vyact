@@ -932,7 +932,7 @@ async def load_mail_workspace(label: str = "INBOX", query: str = ""):
 
 
 @router.get("/google-workspace/mail/messages/{message_id}")
-async def get_mail_message(message_id: str):
+async def get_mail_message(message_id: str, label: str = "INBOX"):
     await _require_connection()
     service = await _build_service("gmail", "v1")
     try:
@@ -958,7 +958,11 @@ async def get_mail_message(message_id: str):
             thread_messages = [
                 _thread_message_detail(thread_message, service)
                 for thread_message in thread.get("messages", [])
-                if GMAIL_TRASH_LABEL_ID not in thread_message.get("labelIds", [])
+                if (
+                    GMAIL_TRASH_LABEL_ID in thread_message.get("labelIds", [])
+                    if label == GMAIL_TRASH_LABEL_ID
+                    else GMAIL_TRASH_LABEL_ID not in thread_message.get("labelIds", [])
+                )
             ]
         except HttpError:
             thread_messages = []

@@ -276,7 +276,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     const [renamingProjectId, setRenamingProjectId] = useState<string | null>(null);
     const [projectRenameValue, setProjectRenameValue] = useState('');
     const [instructionsProject, setInstructionsProject] = useState<Project | null>(null);
-    const menuRef = useRef<HTMLDivElement>(null);
     const loadMoreRef = useRef<HTMLDivElement>(null);
     const [loadingMore, setLoadingMore] = useState(false);
     const activeConversationIdSet = new Set(activeConversationIds);
@@ -318,16 +317,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     const [currentProvider, setCurrentProvider] = useState<'ollama' | 'openai' | 'gemini' | 'claude'>('ollama');
 
 
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                setMenuOpenId(null);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
     useEffect(() => {
         loadCurrentProvider();
@@ -483,7 +472,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 onEditProject={() => { setProjectMenuOpenId(null); setEditingProject(project); }}
                                 onDelete={() => { setProjectMenuOpenId(null); deleteProject(project); }}
                             >
-                                {conversations.filter(conv => conv.project_id === project.id).slice(0, expandedProjectHistoryIds.has(project.id) ? undefined : PROJECT_HISTORY_PREVIEW_COUNT).map(conv => <div key={conv.conv_id} className={`project-conversation${conv.conv_id === activeConvId ? ' active' : ''}`} ref={menuOpenId === conv.conv_id ? menuRef : null} onClick={() => { onProjectChange?.(project.id); onConversationSelect(conv.conv_id); }}><button className="project-conversation-title">{conv.title}</button>{activeConversationIdSet.has(conv.conv_id) && <span className="conversation-progress" role="status" aria-label={t('sidebar.responseInProgress')} title={t('sidebar.responseInProgress')}><LoaderCircle size={13}/></span>}<button className="hist-menu-btn" onClick={e => { e.stopPropagation(); setMenuOpenId(menuOpenId === conv.conv_id ? null : conv.conv_id); }}>···</button>{menuOpenId === conv.conv_id && <div className="hist-menu-popup project-menu-popup"><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); onShowSummary(conv.conv_id); }}><NotebookText size={13}/>{t('sidebar.summary')}</button><button className="hist-menu-item" onClick={() => { setRenameValue(conv.title); setRenamingId(conv.conv_id); setMenuOpenId(null); }}><Pencil size={13}/>{t('sidebar.rename')}</button><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); exportConversation(conv.conv_id, conv.title, 'md'); }}><FileCode size={13}/>{t('sidebar.exportMarkdown')}</button><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); exportConversation(conv.conv_id, conv.title, 'pdf'); }}><FileText size={13}/>{t('sidebar.exportPdf')}</button><button className="hist-menu-item danger" onClick={() => { setMenuOpenId(null); onConversationDelete(conv.conv_id); }}><Trash2 size={13}/>{t('sidebar.delete')}</button></div>}</div>)}
+                                {conversations.filter(conv => conv.project_id === project.id).slice(0, expandedProjectHistoryIds.has(project.id) ? undefined : PROJECT_HISTORY_PREVIEW_COUNT).map(conv => <div key={conv.conv_id} className={`project-conversation${conv.conv_id === activeConvId ? ' active' : ''}`} onClick={() => { onProjectChange?.(project.id); onConversationSelect(conv.conv_id); }}><button className="project-conversation-title">{conv.title}</button>{activeConversationIdSet.has(conv.conv_id) && <span className="conversation-progress" role="status" aria-label={t('sidebar.responseInProgress')} title={t('sidebar.responseInProgress')}><LoaderCircle size={13}/></span>}<SidebarOverflowMenu isOpen={menuOpenId === conv.conv_id} onOpenChange={isOpen => setMenuOpenId(isOpen ? conv.conv_id : null)} trigger="···"><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); onShowSummary(conv.conv_id); }}><NotebookText size={13}/>{t('sidebar.summary')}</button><button className="hist-menu-item" onClick={() => { setRenameValue(conv.title); setRenamingId(conv.conv_id); setMenuOpenId(null); }}><Pencil size={13}/>{t('sidebar.rename')}</button><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); exportConversation(conv.conv_id, conv.title, 'md'); }}><FileCode size={13}/>{t('sidebar.exportMarkdown')}</button><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); exportConversation(conv.conv_id, conv.title, 'pdf'); }}><FileText size={13}/>{t('sidebar.exportPdf')}</button><button className="hist-menu-item danger" onClick={() => { setMenuOpenId(null); onConversationDelete(conv.conv_id); }}><Trash2 size={13}/>{t('sidebar.delete')}</button></SidebarOverflowMenu></div>)}
                                 {!expandedProjectHistoryIds.has(project.id) && conversations.filter(conv => conv.project_id === project.id).length > PROJECT_HISTORY_PREVIEW_COUNT && <button className="project-history-more" onClick={() => setExpandedProjectHistoryIds(previous => new Set(previous).add(project.id))}>{t('googleWorkspace.more')}</button>}
                             </ProjectHistoryRow>
                         ))}

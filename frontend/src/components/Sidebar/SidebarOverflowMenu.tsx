@@ -1,5 +1,5 @@
-import {useEffect, useRef} from 'react';
 import type {ReactNode} from 'react';
+import ActionMenu from '../common/ActionMenu/ActionMenu';
 
 interface SidebarOverflowMenuProps {
     isOpen: boolean;
@@ -20,33 +20,7 @@ const SidebarOverflowMenu = ({
     disabled = false,
     className = '',
 }: SidebarOverflowMenuProps) => {
-    const menuRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        if (!isOpen) return;
-        const handleClickOutside = (event: MouseEvent) => {
-            if (!menuRef.current?.contains(event.target as Node)) onOpenChange(false);
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isOpen, onOpenChange]);
-
-    return (
-        <div className={`sidebar-overflow-menu${className ? ` ${className}` : ''}`} ref={menuRef}>
-            <button
-                className="hist-menu-btn"
-                title={title}
-                disabled={disabled}
-                onClick={event => {
-                    event.stopPropagation();
-                    onOpenChange(!isOpen);
-                }}
-            >
-                {trigger}
-            </button>
-            {isOpen && <div className="hist-menu-popup" onClick={event => event.stopPropagation()}>{children}</div>}
-        </div>
-    );
+    return <ActionMenu isOpen={isOpen} onOpenChange={onOpenChange} trigger={trigger} title={title} disabled={disabled} className={`sidebar-overflow-menu${className ? ` ${className}` : ''}`} triggerClassName="hist-menu-btn" menuClassName="hist-menu-popup">{children}</ActionMenu>;
 };
 
 export default SidebarOverflowMenu;

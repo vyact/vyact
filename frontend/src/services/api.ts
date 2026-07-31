@@ -287,8 +287,8 @@ export const api = {
         return request;
     },
     async getGoogleMailMessages(label = 'INBOX', pageToken = '') { const params = new URLSearchParams({label}); if (pageToken) params.set('page_token', pageToken); return (await fetch(`${API_BASE}/google-workspace/mail/messages?${params}`)).json(); },
-    async getGoogleMailMessage(id: string) {
-        const response = await fetch(`${API_BASE}/google-workspace/mail/messages/${encodeURIComponent(id)}`);
+    async getGoogleMailMessage(id: string, label = 'INBOX') {
+        const response = await fetch(`${API_BASE}/google-workspace/mail/messages/${encodeURIComponent(id)}?${new URLSearchParams({label})}`);
         await assertOk(response, 'Unable to load email.');
         return response.json();
     },

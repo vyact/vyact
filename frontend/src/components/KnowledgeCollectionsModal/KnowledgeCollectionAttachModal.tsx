@@ -3,6 +3,7 @@ import {Check, Plus, X} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import type {KnowledgeCollection, KnowledgeCollectionItem} from '../../types';
 import {api} from '../../services/api';
+import {getCachedKnowledgeCollections, updateCachedKnowledgeCollections} from '../../services/knowledgeCollectionsCache';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import '../SystemPromptModal/SystemPromptModal.css';
 import './KnowledgeCollectionAttachModal.css';
@@ -16,17 +17,20 @@ type Props = {
 
 const KnowledgeCollectionAttachModal = ({isOpen, source, onClose, prepareSource}: Props) => {
     const {t} = useTranslation('main');
-    const [collections, setCollections] = useState<KnowledgeCollection[]>([]);
+    const [collections, setCollections] = useState<KnowledgeCollection[]>(getCachedKnowledgeCollections);
     const [busyId, setBusyId] = useState('');
-    useEffect(() => { if (isOpen) void api.getKnowledgeCollections().then(result => setCollections(result.collections || [])).catch(() => setCollections([])); }, [isOpen]);
+    useEffect(() => { if (isOpen) setCollections(getCachedKnowledgeCollections()); }, [isOpen]);
     if (!isOpen) return null;
     const attach = async (collection: KnowledgeCollection) => {
         setBusyId(collection.id);
         try {
             const prepared = prepareSource ? await prepareSource() : source;
             const exists = collection.items.some(item => item.source_type === prepared.source_type && item.source_id === prepared.source_id);
-            if (!exists) await api.updateKnowledgeCollection(collection.id, {...collection, items: [...collection.items, prepared]});
-            setCollections(items => items.map(item => item.id === collection.id ? {...item, items: exists ? item.items : [...item.items, prepared]} : item));
+            if (!exists) {
+                const updated = await api.updateKnowledgeCollection(collection.id, {...collection, items: [...collection.items, prepared]});
+                updateCachedKnowledgeCollections(items => items.map(item => item.id === updated.id ? updated : item));
+                setCollections(getCachedKnowledgeCollections());
+            }
         } finally { setBusyId(''); }
     };
     return <ModalOverlay className="system-prompt-overlay" onClose={onClose} closeOnBackdrop>

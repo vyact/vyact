@@ -1,37 +1,20 @@
-import {useEffect, useState} from 'react';
+import {useState} from 'react';
 import {BookOpen, Check, Plus} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import type {KnowledgeCollection, KnowledgeCollectionItem} from '../../types';
 import {api} from '../../services/api';
-import {KNOWLEDGE_COLLECTIONS_UPDATED_EVENT, OPEN_KNOWLEDGE_COLLECTIONS_MODAL_EVENT} from '../../constants/ui';
-import CustomSelect from '../CustomSelect/CustomSelect';
+import {getCachedKnowledgeCollections, updateCachedKnowledgeCollections} from '../../services/knowledgeCollectionsCache';
+import {OPEN_KNOWLEDGE_COLLECTIONS_MODAL_EVENT} from '../../constants/ui';
+import ActionMenu from '../common/ActionMenu/ActionMenu';
 import './KnowledgeCollectionAttachSelect.css';
 
 type Props = {source: KnowledgeCollectionItem; prepareSource?: () => Promise<KnowledgeCollectionItem>; onOpen?: () => void; onActionChange?: (action: 'add' | 'remove' | null) => void; onCreateCollection?: () => void};
 
-let cachedCollections: KnowledgeCollection[] | null = null;
-let collectionsRequest: Promise<KnowledgeCollection[]> | null = null;
-
-const fetchCollections = (refresh = false): Promise<KnowledgeCollection[]> => {
-    if (!refresh && cachedCollections) return Promise.resolve(cachedCollections);
-    if (collectionsRequest) return collectionsRequest;
-
-    collectionsRequest = api.getKnowledgeCollections()
-        .then(result => {
-            cachedCollections = result.collections || [];
-            return cachedCollections;
-        })
-        .catch(() => [])
-        .finally(() => { collectionsRequest = null; });
-    return collectionsRequest;
-};
-
 const KnowledgeCollectionAttachSelect = ({source, prepareSource, onOpen, onActionChange, onCreateCollection}: Props) => {
     const {t} = useTranslation('main');
-    const [collections, setCollections] = useState<KnowledgeCollection[]>([]);
+    const [collections, setCollections] = useState<KnowledgeCollection[]>(getCachedKnowledgeCollections);
     const [busy, setBusy] = useState(false);
-    const loadCollections = (refresh = false) => fetchCollections(refresh).then(setCollections);
-    useEffect(() => { void loadCollections(); }, []);
+    const [isOpen, setIsOpen] = useState(false);
     const attach = async (collectionId: string) => {
         const collection = collections.find(item => item.id === collectionId);
         if (!collection || busy) return;
@@ -41,13 +24,14 @@ const KnowledgeCollectionAttachSelect = ({source, prepareSource, onOpen, onActio
         try {
             if (attached) {
                 const result = await api.removeKnowledgeCollectionItem(collection.id, source.source_type, source.source_id);
-                setCollections(items => items.map(candidate => candidate.id === collection.id ? {...candidate, items: result.items} : candidate));
+                updateCachedKnowledgeCollections(items => items.map(candidate => candidate.id === collection.id ? {...candidate, items: result.items} : candidate));
             } else {
                 const item = prepareSource ? await prepareSource() : source;
                 const updated = await api.updateKnowledgeCollection(collection.id, {...collection, items: [...collection.items, item]});
-                setCollections(items => items.map(candidate => candidate.id === updated.id ? updated : candidate));
+                updateCachedKnowledgeCollections(items => items.map(candidate => candidate.id === updated.id ? updated : candidate));
             }
-            window.dispatchEvent(new Event(KNOWLEDGE_COLLECTIONS_UPDATED_EVENT));
+            setCollections(getCachedKnowledgeCollections());
+            setIsOpen(false);
         } finally {
             setBusy(false);
             onActionChange?.(null);
@@ -57,7 +41,7 @@ const KnowledgeCollectionAttachSelect = ({source, prepareSource, onOpen, onActio
         onCreateCollection?.();
         window.dispatchEvent(new Event(OPEN_KNOWLEDGE_COLLECTIONS_MODAL_EVENT));
     };
-    return <CustomSelect className="knowledge-collection-attach-select" options={collections.map(collection => ({value: collection.id, label: collection.name}))} value="" onChange={value => void attach(value)} disabled={busy} alignRight placeholder={t('knowledgeCollectionSources.attachSources')} ariaLabel={t('knowledgeCollections.title')} onOpen={() => { onOpen?.(); void loadCollections(true); }} emptyState={<button type="button" className="knowledge-collection-create-action" onClick={openCollectionManager}><Plus size={16}/>{t('knowledgeCollections.create')}</button>} renderTrigger={() => <BookOpen size={18}/>} renderOption={option => { const collection = collections.find(item => item.id === option.value)!; const attached = collection.items.some(item => item.source_type === source.source_type && item.source_id === source.source_id); return <><span className="custom-select-item-label">{collection.name}</span>{attached ? <Check className="knowledge-collection-attach-check" size={16}/> : <Plus size={16}/>}</>; }}/>
+    return <ActionMenu className="knowledge-collection-attach-select" isOpen={isOpen} onOpenChange={open => { setIsOpen(open); if (open) { onOpen?.(); setCollections(getCachedKnowledgeCollections()); } }} disabled={busy} ariaLabel={t('knowledgeCollections.title')} triggerClassName="knowledge-collection-attach-trigger" menuClassName="knowledge-collection-attach-menu" trigger={<BookOpen size={18}/>}>{collections.length ? collections.map(collection => { const attached = collection.items.some(item => item.source_type === source.source_type && item.source_id === source.source_id); return <button type="button" key={collection.id} className="knowledge-collection-attach-option" onClick={() => void attach(collection.id)}><span>{collection.name}</span>{attached ? <Check className="knowledge-collection-attach-check" size={16}/> : <Plus size={16}/>}</button>; }) : <button type="button" className="knowledge-collection-create-action" onClick={openCollectionManager}><Plus size={16}/>{t('knowledgeCollections.create')}</button>}</ActionMenu>
 };
 
 export default KnowledgeCollectionAttachSelect;

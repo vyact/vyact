@@ -19,6 +19,7 @@ import type {SelectOption} from '../CustomSelect/CustomSelect';
 import CommandModal from './CommandModal';
 import {KNOWLEDGE_COLLECTIONS_UPDATED_EVENT, OPEN_KNOWLEDGE_COLLECTIONS_MODAL_EVENT, TEXTAREA_MAX_HEIGHT} from '../../constants/ui';
 import {getGoogleWorkspaceStatus} from '../../services/googleWorkspaceStatus';
+import {getCachedKnowledgeCollections, updateCachedKnowledgeCollections} from '../../services/knowledgeCollectionsCache';
 import type {GoogleCalendarSelection} from '../../types/googleWorkspace';
 
 import './ChatInput.css';
@@ -108,14 +109,12 @@ const ChatInput: React.FC<ChatInputProps> = ({
     const [mcpMentionQuery, setMcpMentionQuery] = useState<string | null>(null);
     const [mcpMentionIndex, setMcpMentionIndex] = useState(0);
     const [visibleMcpServers, setVisibleMcpServers] = useState<MentionMcpServer[]>([]);
-    const [knowledgeCollections, setKnowledgeCollections] = useState<KnowledgeCollection[]>([]);
+    const [knowledgeCollections, setKnowledgeCollections] = useState<KnowledgeCollection[]>(getCachedKnowledgeCollections);
     const [selectedKnowledgeCollectionId, setSelectedKnowledgeCollectionId] = useState('');
     const [showKnowledgeCollectionsModal, setShowKnowledgeCollectionsModal] = useState(false);
 
-    const refreshKnowledgeCollections = () => api.getKnowledgeCollections().then(result => setKnowledgeCollections(result.collections || [])).catch(() => setKnowledgeCollections([]));
-    useEffect(() => { void refreshKnowledgeCollections(); }, []);
     useEffect(() => {
-        const refresh = () => void refreshKnowledgeCollections();
+        const refresh = () => setKnowledgeCollections(getCachedKnowledgeCollections());
         window.addEventListener(KNOWLEDGE_COLLECTIONS_UPDATED_EVENT, refresh);
         return () => window.removeEventListener(KNOWLEDGE_COLLECTIONS_UPDATED_EVENT, refresh);
     }, []);
@@ -124,10 +123,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
         window.addEventListener(OPEN_KNOWLEDGE_COLLECTIONS_MODAL_EVENT, openCollectionManager);
         return () => window.removeEventListener(OPEN_KNOWLEDGE_COLLECTIONS_MODAL_EVENT, openCollectionManager);
     }, []);
-    useEffect(() => {
-        if (showKnowledgeCollectionsModal) void refreshKnowledgeCollections();
-    }, [showKnowledgeCollectionsModal]);
-
     useEffect(() => {
         const openNotificationItem = (event: Event) => {
             const detail = (event as CustomEvent).detail;
@@ -600,10 +595,10 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 isOpen={showKnowledgeCollectionsModal}
                 collections={knowledgeCollections}
                 onClose={() => setShowKnowledgeCollectionsModal(false)}
-                onCreate={async data => { const created = await api.createKnowledgeCollection(data); setKnowledgeCollections(items => [created, ...items]); }}
-                onUpdate={async (id, data) => { const updated = await api.updateKnowledgeCollection(id, data); setKnowledgeCollections(items => items.map(item => item.id === id ? updated : item)); }}
-                onDelete={async id => { await api.deleteKnowledgeCollection(id); setKnowledgeCollections(items => items.filter(item => item.id !== id)); setSelectedKnowledgeCollectionId(current => current === id ? '' : current); }}
-                onReorder={async collectionIds => { await api.reorderKnowledgeCollections(collectionIds); setKnowledgeCollections(items => collectionIds.map(id => items.find(item => item.id === id)).filter((item): item is KnowledgeCollection => Boolean(item))); }}
+                onCreate={async data => { const created = await api.createKnowledgeCollection(data); updateCachedKnowledgeCollections(items => [created, ...items]); }}
+                onUpdate={async (id, data) => { const updated = await api.updateKnowledgeCollection(id, data); updateCachedKnowledgeCollections(items => items.map(item => item.id === id ? updated : item)); }}
+                onDelete={async id => { await api.deleteKnowledgeCollection(id); updateCachedKnowledgeCollections(items => items.filter(item => item.id !== id)); setSelectedKnowledgeCollectionId(current => current === id ? '' : current); }}
+                onReorder={async collectionIds => { await api.reorderKnowledgeCollections(collectionIds); updateCachedKnowledgeCollections(items => collectionIds.map(id => items.find(item => item.id === id)).filter((item): item is KnowledgeCollection => Boolean(item))); }}
             />
 
             {/* 이미지 미리보기 */}
