@@ -812,6 +812,29 @@
     flex-shrink: 0;
 }
 
+.dm-saved-actions .dm-action-btn {
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+}
+
+.dm-saved-actions .dm-action-btn:hover:not(:disabled) {
+    border-color: var(--text-secondary);
+    background: var(--surface2);
+    color: var(--text);
+}
+
+.dm-saved-actions .dm-action-btn.danger {
+    border-color: transparent;
+    color: var(--muted);
+}
+
+.dm-saved-actions .dm-action-btn.danger:hover:not(:disabled) {
+    border-color: var(--text-secondary);
+    background: var(--surface2);
+    color: var(--text);
+}
+
 .dm-action-btn {
     display: flex;
     align-items: center;

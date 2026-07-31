@@ -28,6 +28,7 @@ PROMPTS_INDEX = "system_prompts"
 SETTINGS_INDEX = "system_settings"
 FILES_INDEX = "rag_files"
 WEB_DOCUMENTS_INDEX = "web_documents"
+DOCUMENT_ORIGINALS_INDEX = "document_originals"
 MEMO_INDEX = "memo_documents_all"
 QUICKNOTE_INDEX = "quick_notes_all"   # 빠른 메모(todo형) — 메모 RAG 검색 대상
 KNOWLEDGE_COLLECTIONS_INDEX = "knowledge_collections"
@@ -292,6 +293,27 @@ async def ensure_index():
                 }},
             )
             logger.info("rag_files 인덱스 생성 완료")
+
+        # ── document_originals ─────────────────────────────────────
+        # 언어별 청크는 검색(RAG) 전용이며, 사용자가 문서를 채팅에 직접 첨부할 때는
+        # 이 인덱스의 정규화된 전체 텍스트를 사용한다. 원본 바이너리 파일과도 분리한다.
+        if not await es.indices.exists(index=DOCUMENT_ORIGINALS_INDEX):
+            await es.indices.create(
+                index=DOCUMENT_ORIGINALS_INDEX,
+                settings={"number_of_shards": 1, "number_of_replicas": 0},
+                mappings={"properties": {
+                    "document_id": {"type": "keyword"},
+                    "source_type": {"type": "keyword"},
+                    "title": {"type": "text", "fields": {"keyword": {"type": "keyword", "ignore_above": 512}}},
+                    "content": {"type": "text", "index": False},
+                    "url": {"type": "keyword"},
+                    "file_ext": {"type": "keyword"},
+                    "content_length": {"type": "integer"},
+                    "created_at": {"type": "date"},
+                    "updated_at": {"type": "date"},
+                }},
+            )
+            logger.info("document_originals 인덱스 생성 완료")
 
         # ── web_documents ─────────────────────────────────────────
         # 파일 메타데이터(rag_files)와 분리해 URL 기반 갱신과 원문 열기를 안전하게 지원한다.

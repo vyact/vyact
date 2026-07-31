@@ -26,7 +26,7 @@ from logger import get_logger
 from services.document_parser import Chunk, parse_file, parse_file_to_chunks, parse_file_to_typed_chunks
 from services.indexer import get_embedding
 from elasticsearch.helpers import async_bulk
-from services.db import INDEX_NAME, DOC_CHUNKS_INDEX, FILES_INDEX, WEB_DOCUMENTS_INDEX, WEB_DOC_CHUNKS_INDEX, get_es, get_language_index
+from services.db import DOCUMENT_ORIGINALS_INDEX, INDEX_NAME, DOC_CHUNKS_INDEX, FILES_INDEX, WEB_DOCUMENTS_INDEX, WEB_DOC_CHUNKS_INDEX, get_es, get_language_index
 from services.language_detection import detect_language
 from services.knowledge_collection_references import remove_source_references_from_collections
 
@@ -159,6 +159,11 @@ async def _index_saved_document(
     if not typed_chunks:
         raise HTTPException(status_code=422, detail="문서에서 텍스트를 추출할 수 없습니다.")
     await progress("chunking", 30, {"chunks": len(typed_chunks)})
+    # 채팅 직접 첨부용 원문은 검색 청크를 다시 합치지 않는다. 표 헤더/섹션 문맥이
+    # 청크마다 반복될 수 있기 때문에, 파서가 추출한 전체 텍스트를 별도로 보관한다.
+    original_text = (await asyncio.to_thread(parse_file, tmp)).strip()
+    if not original_text:
+        raise HTTPException(status_code=422, detail="문서에서 텍스트를 추출할 수 없습니다.")
 
     ext = Path(filename).suffix.lower()
     dest = DOCS_DIR / f"{file_id}{ext}"
@@ -258,6 +263,22 @@ async def _index_saved_document(
                 "indexed_at": indexed_at,
                 "original_path": str(dest),
                 "content_hash": content_hash,
+            },
+            refresh=True,
+        )
+        await es.index(
+            index=DOCUMENT_ORIGINALS_INDEX,
+            id=file_id,
+            document={
+                "document_id": file_id,
+                "source_type": "document",
+                "title": filename,
+                "content": original_text,
+                "url": f"file://{file_id}",
+                "file_ext": ext.lstrip("."),
+                "content_length": len(original_text),
+                "created_at": indexed_at,
+                "updated_at": indexed_at,
             },
             refresh=True,
         )
@@ -533,6 +554,8 @@ async def delete_file(file_id: str):
             from services.db import WEB_DOC_CHUNKS_INDEX
             deleted = await es.delete_by_query(index=WEB_DOC_CHUNKS_INDEX, query={"term": {"web_document_id": file_id}}, refresh=True)
             await es.delete(index=WEB_DOCUMENTS_INDEX, id=file_id, refresh=True)
+            if bool(await es.exists(index=DOCUMENT_ORIGINALS_INDEX, id=file_id)):
+                await es.delete(index=DOCUMENT_ORIGINALS_INDEX, id=file_id, refresh=True)
             collections_updated = await remove_source_references_from_collections(es, "web", [file_id])
             return {"deleted": web_doc["_source"].get("title", file_id), "file_id": file_id, "chunks_deleted": deleted.get("deleted", 0), "collections_updated": collections_updated}
 
@@ -556,6 +579,8 @@ async def delete_file(file_id: str):
 
         # 3. rag_files 메타 삭제
         await es.delete(index=FILES_INDEX, id=file_id, refresh=True)
+        if bool(await es.exists(index=DOCUMENT_ORIGINALS_INDEX, id=file_id)):
+            await es.delete(index=DOCUMENT_ORIGINALS_INDEX, id=file_id, refresh=True)
         collections_updated = await remove_source_references_from_collections(es, "document", [file_id])
 
         return {

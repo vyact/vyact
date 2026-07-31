@@ -11,7 +11,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from services.db import WEB_DOCUMENTS_INDEX, WEB_DOC_CHUNKS_INDEX, get_es, get_language_index
+from services.db import DOCUMENT_ORIGINALS_INDEX, WEB_DOCUMENTS_INDEX, WEB_DOC_CHUNKS_INDEX, get_es, get_language_index
 from services.embedding_runtime import get_embeddings
 from services.knowledge_collection_references import remove_source_references_from_collections
 from services.language_detection import detect_language
@@ -137,6 +137,12 @@ async def _index_document(request: WebDocumentIndexRequest, emit) -> dict:
             "saved_at": existing_source.get("saved_at", now), "updated_at": now,
             "chunk_count": indexed, "source_type": "web",
         }, refresh=True)
+        await es.index(index=DOCUMENT_ORIGINALS_INDEX, id=document_id, document={
+            "document_id": document_id, "source_type": "web", "title": title,
+            "content": content, "url": url, "file_ext": "web",
+            "content_length": len(content),
+            "created_at": existing_source.get("saved_at", now), "updated_at": now,
+        }, refresh=True)
         return {"web_document_id": document_id, "title": title, "url": url, "chunk_count": indexed, "updated": existing}
     finally:
         try:
@@ -220,6 +226,8 @@ async def delete_web_document(document_id: str):
             raise HTTPException(status_code=404, detail="웹 문서를 찾을 수 없습니다.")
         deleted = await es.delete_by_query(index=WEB_DOC_CHUNKS_INDEX, query={"term": {"web_document_id": document_id}}, refresh=True)
         await es.delete(index=WEB_DOCUMENTS_INDEX, id=document_id, refresh=True)
+        if bool(await es.exists(index=DOCUMENT_ORIGINALS_INDEX, id=document_id)):
+            await es.delete(index=DOCUMENT_ORIGINALS_INDEX, id=document_id, refresh=True)
         collections_updated = await remove_source_references_from_collections(es, "web", [document_id])
         return {"deleted": document["_source"].get("title", document_id), "chunks_deleted": deleted.get("deleted", 0), "collections_updated": collections_updated}
     finally:
