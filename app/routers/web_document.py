@@ -24,6 +24,16 @@ MAX_WEB_CONTENT_CHARS = 30_000
 WEB_CHUNK_SIZE = 2_400
 WEB_CHUNK_OVERLAP = 250
 EMBED_BATCH_SIZE = 4
+WEB_DOCUMENT_OUTPUT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "title": {"type": "string"},
+        "content": {"type": "string"},
+        "published_at": {"type": ["string", "null"]},
+    },
+    "required": ["title", "content", "published_at"],
+    "additionalProperties": False,
+}
 
 
 class WebDocumentIndexRequest(BaseModel):
@@ -201,13 +211,19 @@ async def analyze_web_document(request: WebDocumentAnalyzeRequest):
     """LLM으로 페이지 노이즈를 제거하고 저장용 메타데이터를 정규화한다."""
     from services.llm.core import query_llm
 
-    instruction = """Extract one web document from the supplied page text. Remove navigation, cookie notices, advertisements, related links and repeated boilerplate. Return JSON only with title, content, published_at. published_at must be an ISO-8601 date or null. Do not invent a publication date. Keep the article/document body faithful to the source."""
+    fallback = {
+        "title": request.title.strip() or request.url,
+        "content": request.content.strip()[:MAX_WEB_CONTENT_CHARS],
+        "published_at": None,
+    }
+    instruction = """Extract one web document from the supplied page text. Remove navigation, cookie notices, advertisements, related links and repeated boilerplate. Return only an object with title, content, and published_at. published_at must be an ISO-8601 date or null. Do not invent a publication date. Keep the article/document body faithful to the source."""
     try:
         answer = await query_llm(
             instruction,
             [{"title": request.title or request.url, "content": request.content, "url": request.url, "source": "web"}],
             format_instruction_override="", use_tools=False, reasoning=False, inject_user_profile=False,
             include_skills=False, call_reason="web_document:analyze",
+            structured_output_schema=WEB_DOCUMENT_OUTPUT_SCHEMA,
         )
         match = re.search(r"\{[\s\S]*\}", answer)
         payload = json.loads(match.group(0) if match else answer)
@@ -218,7 +234,8 @@ async def analyze_web_document(request: WebDocumentAnalyzeRequest):
             published_at = None
         return {"title": title, "content": content, "published_at": published_at}
     except Exception as error:
-        raise HTTPException(status_code=502, detail="웹 문서 분석에 실패했습니다.") from error
+        logger.warning("웹 문서 AI 정제 실패. 원문으로 저장합니다: %s", error)
+        return fallback
 
 
 @router.get("/web-documents")

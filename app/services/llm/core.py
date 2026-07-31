@@ -472,6 +472,7 @@ async def query_llm(
         call_reason: str = "unspecified",
         stats_out: dict | None = None,
         include_skills: bool = True,
+        structured_output_schema: dict | None = None,
 ) -> str:
     """논스트리밍 단발 응답 (모든 provider).
 
@@ -483,6 +484,9 @@ async def query_llm(
 
     reasoning=False 이면 Ollama(gemma)의 thinking(추론) 단계를 끈다(think:false).
     번역은 항상 reasoning=False 로 호출한다.
+
+    structured_output_schema를 지정하면 Ollama의 ``format`` 요청 필드에 JSON
+    Schema를 전달한다. 다른 provider는 기존 프롬프트 기반 동작을 유지한다.
     """
     request_id = str(uuid.uuid4())
     log_entry = {
@@ -556,6 +560,8 @@ async def query_llm(
                                      "messages": ollama_messages,
                                      "options": ollama_options,
                                      "keep_alive": OLLAMA_KEEP_ALIVE}
+                if structured_output_schema is not None:
+                    ollama_body["format"] = structured_output_schema
                 if not reasoning:
                     ollama_body["think"] = False
                 log_llm_call(call_reason, "ollama", model, streaming=False, reasoning=reasoning)
