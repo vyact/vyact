@@ -33,6 +33,7 @@ export interface PdfParticle {
     source: string;
     indexed_at: string;
     file_id?: string | null;
+    content?: string;
 }
 
 export interface PdfParams {
@@ -85,7 +86,7 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
     const [language, setLanguage] = useState(
         initialParams?.language || i18n.language.split('-')[0],
     );
-    const [selectedStyle, setSelectedStyle] = useState(initialParams?.style || 'dark');
+    const [selectedStyle, setSelectedStyle] = useState(initialParams?.style || 'white');
     const [outputFormat, setOutputFormat] = useState<PresentationOutputFormat>(initialParams?.output_format || 'pdf');
     const [styleTooltip, setStyleTooltip] = useState<string | null>(null);
 
@@ -114,7 +115,6 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
     const [isLoadingDoc, setIsLoadingDoc] = useState(false);
     const [selectedDocs, setSelectedDocs] = useState<Map<string, DocFile>>(new Map());
     const docLoaded = useRef(false);
-    const [isSourceDropActive, setIsSourceDropActive] = useState(false);
     const [isIndexingSource, setIsIndexingSource] = useState(false);
     const [sourceUploadProgress, setSourceUploadProgress] = useState<{completed: number; total: number} | null>(null);
     const [uploadedDocumentIds, setUploadedDocumentIds] = useState<Set<string>>(new Set());
@@ -176,6 +176,25 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
             }).catch(() => {});
         }
 
+        // 프레젠테이션 전용 첨부는 인덱스에 저장하지 않으므로, 저장된 원문 텍스트로 복원한다.
+        const attachmentArticles = savedArticles.filter(a => a.url.startsWith('attachment://') && a.content);
+        if (attachmentArticles.length > 0) {
+            const restoredAttachments = new Map<string, DocFile>();
+            attachmentArticles.forEach((article, index) => {
+                const fileId = article.file_id || article.url.replace('attachment://', '') || `restored-attachment-${index}`;
+                restoredAttachments.set(fileId, {
+                    file_id: fileId,
+                    filename: article.title,
+                    file_ext: article.source.match(/\(([^)]+)\)/)?.[1]?.toLowerCase() || '',
+                    chunk_count: 0,
+                    indexed_at: article.indexed_at,
+                    content: article.content,
+                });
+            });
+            setSelectedDocs(current => new Map([...current, ...restoredAttachments]));
+            setUploadedDocumentIds(current => new Set([...current, ...restoredAttachments.keys()]));
+        }
+
         // ── 이미지 복원 ──
         if (initialParams.image_filenames?.length) {
             (async () => {
@@ -230,7 +249,9 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
         e.stopPropagation();
         dragCountRef.current = 0;
         setIsDragging(false);
-        addImages(Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/')));
+        const files = Array.from(e.dataTransfer.files);
+        addImages(files.filter(file => file.type.startsWith('image/')));
+        void addPresentationDocuments(files);
     };
     const addImages = (files: File[]) => setImages(prev => [...prev, ...files].slice(0, maxImages));
 
@@ -405,11 +426,21 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
                     try {
                         const data = JSON.parse(line.slice(6).trim());
                         if (data.type === 'progress') {
-                            const p = JSON.parse(data.message);
+                            const p = JSON.parse(data.message) as {
+                                step: number;
+                                total: number;
+                                msg?: string;
+                                message_key?: string;
+                                message_params?: Record<string, string | number>;
+                            };
                             setProgress(data.progress);
                             setProgressStep(p.step);
                             setProgressTotal(p.total);
-                            setProgressMsg(p.msg);
+                            const messageParams = {...p.message_params};
+                            if (typeof messageParams.outputFormat === 'string') {
+                                messageParams.outputFormat = t(`pdfModal.outputFormats.${messageParams.outputFormat}`);
+                            }
+                            setProgressMsg(p.message_key ? t(`pdfModal.progress.${p.message_key}`, messageParams) : p.msg || '');
                         } else if (data.type === 'done') {
                             const p = JSON.parse(data.message);
                             filename = p.filename;
@@ -467,7 +498,7 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
                     <div className="pdf-drag-overlay">
                         <div className="pdf-drag-hint">
                             <Upload size={28} strokeWidth={1.5} aria-hidden/>
-                            {t('pdfModal.dropImages')}
+                            {t('pdfModal.dropFiles')}
                         </div>
                     </div>
                 )}
@@ -705,16 +736,7 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
                     </div>
 
                     {/* ── 선택된 소스 목록 ── */}
-                    <div className={`pdf-bottom-right${isSourceDropActive ? ' pdf-source-drop-active' : ''}`}
-                         onDragEnter={event => { event.preventDefault(); event.stopPropagation(); setIsSourceDropActive(true); }}
-                         onDragOver={event => { event.preventDefault(); event.stopPropagation(); }}
-                         onDragLeave={event => { event.preventDefault(); event.stopPropagation(); setIsSourceDropActive(false); }}
-                         onDrop={event => {
-                             event.preventDefault();
-                             event.stopPropagation();
-                             setIsSourceDropActive(false);
-                             void addPresentationDocuments(Array.from(event.dataTransfer.files));
-                         }}>
+                    <div className="pdf-bottom-right">
                         <div className="pdf-selected-sources-header">
                             {t('pdfModal.selectedSources')}
                             <button className="pdf-selected-sources-add" type="button"

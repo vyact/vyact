@@ -897,8 +897,13 @@ async def _html_to_pptx(html_path: Path, output_path: Path) -> None:
         await asyncio.to_thread(presentation.save, str(output_path))
 
 
-def _sse_step(step: int, total: int, msg: str, pct: int) -> str:
-    return sse(json.dumps({"step": step, "total": total, "msg": msg}), "progress", pct)
+def _sse_step(step: int, total: int, message_key: str, pct: int, **message_params: int | str) -> str:
+    return sse(json.dumps({
+        "step": step,
+        "total": total,
+        "message_key": message_key,
+        "message_params": message_params,
+    }), "progress", pct)
 
 
 @router.post("/pdf/generate")
@@ -915,14 +920,14 @@ async def generate_pdf(req: PdfGenerateRequest):
 
         try:
             # ── Step 1: 소스 준비 ──
-            yield _sse_step(1, STEPS, f"소스 준비 중... (기사 {n_articles}개, 이미지 {n_imgs}장)", 5)
+            yield _sse_step(1, STEPS, "sourcePreparation", 5, articleCount=n_articles, imageCount=n_imgs)
             logger.info("[pdf] step1 소스 준비")
 
             # ── Step 2: 문서 컨텍스트 구성 ──
-            yield _sse_step(2, STEPS, "문서 내용을 분석하고 프레젠테이션 컨텍스트를 구성 중...", 12)
+            yield _sse_step(2, STEPS, "contextPreparation", 12)
 
             # ── Step 3: AI 스토리·콘텐츠 생성 ──
-            yield _sse_step(3, STEPS, f"AI가 {page_label} 발표 흐름과 슬라이드 콘텐츠를 설계 중...", 20)
+            yield _sse_step(3, STEPS, "slideDesignAuto" if req.page_count_auto else "slideDesign", 20, pageCount=req.page_count)
             logger.info("[pdf] step3 LLM 호출 시작")
 
             try:
@@ -941,10 +946,10 @@ async def generate_pdf(req: PdfGenerateRequest):
             logger.info("[pdf] step3 LLM 완료 — %d페이지 확정", n_pages)
 
             # ── Step 4: 슬라이드 구성 확인 ──
-            yield _sse_step(4, STEPS, f"{n_pages}개 슬라이드의 구성과 레이아웃을 확인 중...", 55)
+            yield _sse_step(4, STEPS, "layoutCheck", 55, slideCount=n_pages)
 
             # ── Step 5: HTML 렌더링 ──
-            yield _sse_step(5, STEPS, f"{n_pages}페이지 HTML을 렌더링 중...", 64)
+            yield _sse_step(5, STEPS, "htmlRendering", 64, pageCount=n_pages)
             logger.info("[pdf] step5 HTML 렌더링 시작")
 
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -958,7 +963,7 @@ async def generate_pdf(req: PdfGenerateRequest):
             # ── Step 6: 선택한 출력 형식으로 렌더링 ──
             output_format = "pptx" if req.output_format == "pptx" else "pdf"
             format_label = "PPTX" if output_format == "pptx" else "PDF"
-            yield _sse_step(6, STEPS, f"{format_label}를 렌더링 중... ({n_pages}페이지)", 76)
+            yield _sse_step(6, STEPS, "outputRendering", 76, outputFormat=output_format, pageCount=n_pages)
             logger.info("[pdf] step6 %s 변환 시작", format_label)
 
             temp_output_path = FILES_DIR / f"pdf_tmp_{uid}.{output_format}"
@@ -969,7 +974,7 @@ async def generate_pdf(req: PdfGenerateRequest):
             logger.info("[pdf] step6 %s 변환 완료", format_label)
 
             # ── Step 7: 저장 및 마무리 ──
-            yield _sse_step(7, STEPS, "파일 저장과 대화 기록을 마무리 중...", 92)
+            yield _sse_step(7, STEPS, "saving", 92)
             logger.info("[pdf] step7 저장 시작")
 
             # 이미지 영구 저장 (재편집용)
@@ -1025,6 +1030,9 @@ async def generate_pdf(req: PdfGenerateRequest):
                         "source": a.get("source", ""),
                         "indexed_at": a.get("indexed_at", ""),
                         "file_id": a.get("file_id"),
+                        # 인덱스에 저장하지 않는 프레젠테이션 첨부는 재편집 시에도
+                        # 동일한 원문 컨텍스트를 사용할 수 있도록 함께 보관한다.
+                        "content": a.get("content", "") if a.get("url", "").startswith("attachment://") else "",
                     }
                     for a in req.articles
                 ],

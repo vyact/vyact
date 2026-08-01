@@ -130,6 +130,7 @@ export interface Message {
         page_count_auto?: boolean;
         language: string;
         style: string;
+        output_format?: 'pdf' | 'pptx';
         article_urls?: string[];
         image_filenames?: string[];
     };  // PDF 생성 시 파일명

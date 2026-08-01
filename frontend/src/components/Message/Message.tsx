@@ -726,7 +726,11 @@ const Message: React.FC<MessageProps> = ({
                             </svg>
                         </div>
                         <div>
-                            <div style={{fontSize: '13px', fontWeight: 600, color: 'var(--text)'}}>PDF 파일 준비됨</div>
+                            <div style={{fontSize: '13px', fontWeight: 600, color: 'var(--text)'}}>
+                                {t('pdfModal.fileReady', {
+                                    format: pdfParams?.output_format?.toUpperCase() || (pdfFile.toLowerCase().endsWith('.pptx') ? 'PPTX' : 'PDF'),
+                                })}
+                            </div>
                             <div style={{fontSize: '11px', color: 'var(--muted)', marginTop: '1px'}}>{pdfFile}</div>
                         </div>
                     </div>
@@ -749,7 +753,7 @@ const Message: React.FC<MessageProps> = ({
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                                 </svg>
-                                수정
+                                {t('pdfModal.edit')}
                             </button>
                         )}
                         <button
@@ -782,7 +786,7 @@ const Message: React.FC<MessageProps> = ({
                                 <polyline points="7 10 12 15 17 10"/>
                                 <line x1="12" y1="15" x2="12" y2="3"/>
                             </svg>
-                            다운로드
+                            {t('pdfModal.download')}
                         </button>
                     </div>
                 </div>
