@@ -1,8 +1,45 @@
 """In-app notification history backed by Elasticsearch."""
+import asyncio
+from collections.abc import AsyncIterator
 from datetime import datetime, timezone
 
 from elasticsearch import ConflictError, NotFoundError
 from services.db import NOTIFICATIONS_INDEX, get_es
+
+
+NOTIFICATION_EVENT_QUEUE_SIZE = 1
+
+_notification_change_subscribers: set[asyncio.Queue[None]] = set()
+
+
+def publish_notification_change() -> None:
+    """Notify connected clients that the notification snapshot changed."""
+    for subscriber in tuple(_notification_change_subscribers):
+        if subscriber.full():
+            continue
+        subscriber.put_nowait(None)
+
+
+async def subscribe_notification_events(
+    heartbeat_seconds: float,
+) -> AsyncIterator[bool]:
+    """Yield whether a notification changed, including periodic heartbeats."""
+    subscriber: asyncio.Queue[None] = asyncio.Queue(
+        maxsize=NOTIFICATION_EVENT_QUEUE_SIZE,
+    )
+    _notification_change_subscribers.add(subscriber)
+    try:
+        while True:
+            try:
+                await asyncio.wait_for(
+                    subscriber.get(),
+                    timeout=heartbeat_seconds,
+                )
+                yield True
+            except TimeoutError:
+                yield False
+    finally:
+        _notification_change_subscribers.discard(subscriber)
 
 
 async def has_notification_type(notification_type: str, account_id: str = "") -> bool:
@@ -36,6 +73,7 @@ async def create_notification(
         if update_only:
             if occurred_at:
                 await es.update(index=NOTIFICATIONS_INDEX, id=notification_id, doc={"occurred_at": occurred_at}, refresh=True)
+                publish_notification_change()
             return False
         document = {
             "type": notification_type, "source_id": source_id, "title": title, "message": message,
@@ -48,10 +86,12 @@ async def create_notification(
         if occurred_at:
             document["occurred_at"] = occurred_at
         await es.index(index=NOTIFICATIONS_INDEX, id=notification_id, op_type="create", document=document, refresh=True)
+        publish_notification_change()
         return True
     except ConflictError:
         if occurred_at:
             await es.update(index=NOTIFICATIONS_INDEX, id=notification_id, doc={"occurred_at": occurred_at}, refresh=True)
+            publish_notification_change()
         return False
     except NotFoundError:
         return False
@@ -75,5 +115,6 @@ async def mark_all_notifications_read() -> None:
     es = get_es()
     try:
         await es.update_by_query(index=NOTIFICATIONS_INDEX, query={"term": {"is_read": False}}, script={"source": "ctx._source.is_read = true", "lang": "painless"}, refresh=True)
+        publish_notification_change()
     finally:
         await es.close()

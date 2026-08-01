@@ -1,8 +1,16 @@
 from fastapi import APIRouter
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from services.notifications import create_notification, list_notifications, mark_all_notifications_read
+from services.notifications import (
+    create_notification,
+    list_notifications,
+    mark_all_notifications_read,
+    subscribe_notification_events,
+)
 
 router = APIRouter()
+
+NOTIFICATION_STREAM_HEARTBEAT_SECONDS = 15
 
 
 class NotificationCreateRequest(BaseModel):
@@ -19,6 +27,27 @@ class NotificationCreateRequest(BaseModel):
 @router.get("/notifications")
 async def get_notifications(limit: int = 30, offset: int = 0):
     return await list_notifications(limit, offset)
+
+
+@router.get("/notifications/stream")
+async def stream_notification_changes():
+    async def event_stream():
+        async for changed in subscribe_notification_events(
+            NOTIFICATION_STREAM_HEARTBEAT_SECONDS,
+        ):
+            if changed:
+                yield "event: changed\ndata: {}\n\n"
+            else:
+                yield ": heartbeat\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.post("/notifications")

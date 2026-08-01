@@ -24,7 +24,7 @@ const PAGE_SIZE = 30;
 const POPOVER_GAP = 6;
 const VIEWPORT_MARGIN = 8;
 const MAX_POPOVER_HEIGHT = 560;
-const NOTIFICATION_POLL_INTERVAL_MS = 5_000;
+const NOTIFICATION_STREAM_URL = '/api/notifications/stream';
 const KNOWN_NOTIFICATION_IDS_STORAGE_KEY = 'vyact:known-notification-ids';
 const MAX_PERSISTED_NOTIFICATION_IDS = 500;
 
@@ -114,6 +114,7 @@ export default function NotificationCenter({open, onOpenChange}: NotificationCen
     const [loading, setLoading] = useState(false);
     const [popoverPosition, setPopoverPosition] = useState({top: 0, right: VIEWPORT_MARGIN, maxHeight: MAX_POPOVER_HEIGHT});
     const loadingRef = useRef(false);
+    const pendingRefreshRef = useRef(false);
     const knownNotificationIdsRef = useRef(persistedNotificationState.ids);
     const notificationsInitializedRef = useRef(persistedNotificationState.initialized);
     const centerRef = useRef<HTMLDivElement>(null);
@@ -122,7 +123,10 @@ export default function NotificationCenter({open, onOpenChange}: NotificationCen
     const listRef = useRef<HTMLDivElement>(null);
 
     const load = async (offset = 0, updateUnreadCount = true) => {
-        if (loadingRef.current) return;
+        if (loadingRef.current) {
+            if (offset === 0) pendingRefreshRef.current = true;
+            return;
+        }
         loadingRef.current = true;
         setLoading(true);
         try {
@@ -151,16 +155,22 @@ export default function NotificationCenter({open, onOpenChange}: NotificationCen
         } finally {
             loadingRef.current = false;
             setLoading(false);
+            if (pendingRefreshRef.current) {
+                pendingRefreshRef.current = false;
+                void load();
+            }
         }
     };
 
     useEffect(() => {
         void load();
         const refresh = () => void load();
-        const intervalId = window.setInterval(refresh, NOTIFICATION_POLL_INTERVAL_MS);
+        const notificationEvents = new EventSource(NOTIFICATION_STREAM_URL);
+        notificationEvents.addEventListener('changed', refresh);
         window.addEventListener('vyact:notifications-changed', refresh);
         return () => {
-            window.clearInterval(intervalId);
+            notificationEvents.removeEventListener('changed', refresh);
+            notificationEvents.close();
             window.removeEventListener('vyact:notifications-changed', refresh);
         };
     }, []);
