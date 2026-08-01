@@ -6,15 +6,8 @@ import {emitGoogleWorkspaceStatusChanged, emitMcpServersChanged} from '../../uti
 import CustomSelect from '../CustomSelect/CustomSelect';
 import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
 import {Tooltip} from '../common/Tooltip/Tooltip';
+import McpFieldInput, {type McpField as Field} from './McpFieldInput';
 import './McpServersSection.css';
-
-interface Field {
-    key: string;
-    label: string;
-    type: 'text' | 'secret' | 'dir_list' | 'lines' | 'env' | 'select' | 'file_json' | 'toggle';
-    required?: boolean;
-    options?: { value: string; label: string }[];
-}
 
 interface CatalogEntry {
     label: string;
@@ -473,7 +466,7 @@ function GoogleAccountsEditor({value, onChange, onPersist, onCredentialUpload, o
     const notificationField: Field = {key: 'mail_notifications', label: '알림 받기', type: 'toggle'};
 
     return <div className="google-accounts">
-        <FieldInput field={oauthField} value={value.gauth_json}
+        <McpFieldInput field={oauthField} value={value.gauth_json}
                     onChange={gauth_json => {
                         const nextValue = {...value, gauth_json};
                         onChange(nextValue);
@@ -617,7 +610,7 @@ function ServerForm({
                         mailMode={values[field.key]} notificationsEnabled={Boolean(values[notificationField.key])}
                         onMailModeChange={(v) => setV(field.key, v)} onNotificationsChange={(v) => setV(notificationField.key, v)}/>;
                 }
-                return <FieldInput key={field.key} field={field} value={values[field.key]} onChange={(v) => setV(field.key, v)}/>;
+                return <McpFieldInput key={field.key} field={field} value={values[field.key]} onChange={(v) => setV(field.key, v)}/>;
             })}
             <div className={`mcp-field${isGoogle ? ' mcp-prompt-section' : ''}`}>
                 <label className="mcp-field-label">{t('mcp.promptLabel')}</label>
@@ -715,7 +708,7 @@ function AddServerForm({catalog, servers, err, onErr, onAdd, onCancel}: {
                         mailMode={values[field.key]} notificationsEnabled={Boolean(values[notificationField.key])}
                         onMailModeChange={(v) => setV(field.key, v)} onNotificationsChange={(v) => setV(notificationField.key, v)}/>;
                 }
-                return <FieldInput key={field.key} field={field} value={values[field.key]} onChange={(v) => setV(field.key, v)}/>;
+                return <McpFieldInput key={field.key} field={field} value={values[field.key]} onChange={(v) => setV(field.key, v)}/>;
             })}
             <div className={`mcp-field${isGoogle ? ' mcp-prompt-section' : ''}`}>
                 <label className="mcp-field-label">{t('mcp.promptLabel')}</label>
@@ -777,200 +770,6 @@ function GoogleMailSettingsFields({mailModeField, notificationField, mailMode, n
             </label>
         </div>
     </div>;
-}
-
-function FieldInput({field, value, onChange}: {
-    field: Field;
-    value: any;
-    onChange: (v: any) => void;
-}) {
-    const {t} = useTranslation('settings');
-
-    if (field.type === 'dir_list') {
-        const dirs: string[] = Array.isArray(value) ? value : [];
-        const [draft, setDraft] = useState('');
-        return (
-            <div className="mcp-field">
-                <label className="mcp-field-label">{t(`mcpCatalog.fields.${field.key}`, {defaultValue: field.label})}</label>
-                <div className="mcp-dir-list">
-                    {dirs.map((d, i) => (
-                        <div key={i} className="mcp-dir-chip">
-                            <span>{d}</span>
-                            <button onClick={() => onChange(dirs.filter((_, j) => j !== i))}>✕</button>
-                        </div>
-                    ))}
-                </div>
-                <div className="mcp-dir-add">
-                    <input className="mcp-input" value={draft} onChange={e => setDraft(e.target.value)}
-                           placeholder="/Users/alex/work"
-                           onKeyDown={e => {
-                               if (e.key === 'Enter' && draft.trim()) {
-                                   onChange([...dirs, draft.trim()]);
-                                   setDraft('');
-                               }
-                           }}/>
-                    <button className="mcp-btn-primary" onClick={() => {
-                        if (draft.trim()) {
-                            onChange([...dirs, draft.trim()]);
-                            setDraft('');
-                        }
-                    }}>{t('mcp.add')}
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
-    if (field.type === 'lines') {
-        return <LinesInput field={field} value={value} onChange={onChange}/>;
-    }
-
-    if (field.type === 'env') {
-        return <EnvInput field={field} value={value} onChange={onChange}/>;
-    }
-
-    if (field.type === 'select' && field.options) {
-        return (
-            <div className="mcp-field">
-                <label className="mcp-field-label">{t(`mcpCatalog.fields.${field.key}`, {defaultValue: field.label})}</label>
-                <CustomSelect
-                    options={field.options.map(o => ({value: o.value, label: t(`mcpCatalog.options.${o.value}`, {defaultValue: o.label})}))}
-                    value={value || field.options[0]?.value || ''}
-                    onChange={onChange}
-                />
-            </div>
-        );
-    }
-
-    if (field.type === 'toggle') {
-        return (
-            <div className="mcp-field mcp-toggle-field">
-                <label className="mcp-field-label" htmlFor={`mcp-field-${field.key}`}>
-                    {t(`mcpCatalog.fields.${field.key}`, {defaultValue: field.label})}
-                </label>
-                <label className="mcp-switch">
-                    <input id={`mcp-field-${field.key}`} type="checkbox" checked={Boolean(value)}
-                           onChange={event => onChange(event.target.checked)}/>
-                    <span className="mcp-slider"/>
-                </label>
-            </div>
-        );
-    }
-
-    if (field.type === 'file_json') {
-        const hasValue = !!value;
-        const fileRef = useRef<HTMLInputElement>(null);
-        return (
-            <div className="mcp-field">
-                <label className="mcp-field-label">{t(`mcpCatalog.fields.${field.key}`, {defaultValue: field.label})}</label>
-                <div className="mcp-file-upload">
-                    <input ref={fileRef} type="file" accept=".json,application/json"
-                           style={{display: 'none'}}
-                           onChange={e => {
-                               const file = e.target.files?.[0];
-                               if (!file) return;
-                               const reader = new FileReader();
-                               reader.onload = () => {
-                                   try {
-                                       const parsed = JSON.parse(reader.result as string);
-                                       onChange(JSON.stringify(parsed));
-                                   } catch {
-                                       onChange(null);
-                                   }
-                               };
-                               reader.readAsText(file);
-                               e.target.value = '';
-                           }}/>
-                    <button className={`mcp-btn-ghost mcp-file-btn ${hasValue ? 'uploaded' : ''}`}
-                            onClick={() => fileRef.current?.click()}>
-                        {hasValue ? t('mcp.uploaded') : t('mcp.selectJsonFile')}
-                    </button>
-                    {hasValue && (
-                        <button className="mcp-btn-ghost mcp-file-clear"
-                                onClick={() => onChange(null)}>✕</button>
-                    )}
-                </div>
-            </div>
-        );
-    }
-
-    // text / secret
-    return (
-        <div className="mcp-field">
-            <label className="mcp-field-label">{t(`mcpCatalog.fields.${field.key}`, {defaultValue: field.label})}</label>
-            <input className="mcp-input" type={field.type === 'secret' ? 'password' : 'text'}
-                   value={value || ''} onChange={e => onChange(e.target.value)}
-                   placeholder={field.type === 'secret' ? '••••••••' : ''}/>
-        </div>
-    );
-}
-
-function LinesInput({field, value, onChange}: {
-    field: Field;
-    value: any;
-    onChange: (v: any) => void;
-}) {
-    const {t} = useTranslation('settings');
-    const initial = Array.isArray(value) ? value.join('\n') : (value || '');
-    const [text, setText] = useState<string>(initial);
-
-    useEffect(() => {
-        setText(Array.isArray(value) ? value.join('\n') : (value || ''));
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [field.key]);
-
-    return (
-        <div className="mcp-field">
-            <label className="mcp-field-label">{t(`mcpCatalog.fields.${field.key}`, {defaultValue: field.label})}</label>
-            <textarea
-                className="mcp-input mcp-textarea"
-                value={text}
-                onChange={e => {
-                    const raw = e.target.value;
-                    setText(raw);
-                    onChange(raw.split('\n').filter(Boolean));
-                }}
-            />
-        </div>
-    );
-}
-
-function EnvInput({field, value, onChange}: {
-    field: Field;
-    value: any;
-    onChange: (v: any) => void;
-}) {
-    const {t} = useTranslation('settings');
-    const toText = (obj: any) =>
-        obj && typeof obj === 'object'
-            ? Object.entries(obj).map(([k, v]) => `${k}=${v}`).join('\n')
-            : '';
-    const [text, setText] = useState<string>(toText(value));
-
-    useEffect(() => {
-        setText(toText(value));
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [field.key]);
-
-    return (
-        <div className="mcp-field">
-            <label className="mcp-field-label">{t(`mcpCatalog.fields.${field.key}`, {defaultValue: field.label})}</label>
-            <textarea
-                className="mcp-input mcp-textarea"
-                value={text}
-                onChange={e => {
-                    const raw = e.target.value;
-                    setText(raw);
-                    const env: Record<string, string> = {};
-                    raw.split('\n').forEach(line => {
-                        const idx = line.indexOf('=');
-                        if (idx > 0) env[line.slice(0, idx).trim()] = line.slice(idx + 1).trim();
-                    });
-                    onChange(env);
-                }}
-            />
-        </div>
-    );
 }
 
 // ── Google Workspace 셋업 가이드 ──────────────────────────────────────

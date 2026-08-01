@@ -1,6 +1,4 @@
-import React, {useEffect, useState} from 'react';
-import SetupPage from './components/SetupPage';
-import MainPage from './components/MainPage';
+import React, {lazy, Suspense, useEffect, useState} from 'react';
 import ToastContainer from './components/common/ToastNotifications/ToastNotifications';
 import {api} from './services/api';
 import {fetchTtsSettings} from './services/tts/ttsSettings';
@@ -8,6 +6,9 @@ import {ttsService} from './services/tts/ttsService';
 import ConfirmModal from './components/common/ConfirmModal/ConfirmModal';
 import {useTranslation} from 'react-i18next';
 import './App.css';
+
+const SetupPage = lazy(() => import('./components/SetupPage'));
+const MainPage = lazy(() => import('./components/MainPage'));
 
 const App: React.FC = () => {
     const {t} = useTranslation('settings');
@@ -98,11 +99,13 @@ const App: React.FC = () => {
 
     return (
         <div className="app">
-            {isSetupComplete ? (
-                <MainPage onModelChange={() => {}}/>
-            ) : (
-                <SetupPage onInstallComplete={() => setIsSetupComplete(true)}/>
-            )}
+            <Suspense fallback={null}>
+                {isSetupComplete ? (
+                    <MainPage onModelChange={() => {}}/>
+                ) : (
+                    <SetupPage onInstallComplete={() => setIsSetupComplete(true)}/>
+                )}
+            </Suspense>
             <ToastContainer/>
             {dictionaryRequest && <ConfirmModal
                 title={t('general.japaneseTtsDictionaryTitle')}

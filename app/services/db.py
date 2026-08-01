@@ -126,9 +126,37 @@ async def ensure_language_indices(es) -> None:
 
 
 # ── ES 싱글턴 클라이언트 ──────────────────────────────────────────
-# 요청마다 새 클라이언트 생성 — finally: await es.close() 패턴과 쌍으로 사용
-def get_es() -> AsyncElasticsearch:
-    return AsyncElasticsearch(ES_URL)
+_shared_es_client: AsyncElasticsearch | None = None
+
+
+class SharedElasticsearchClient:
+    """기존 try/finally 호출 계약을 유지하면서 연결 풀을 공유하는 경량 프록시."""
+
+    def __init__(self, client: AsyncElasticsearch):
+        self._client = client
+
+    def __getattr__(self, name):
+        return getattr(self._client, name)
+
+    async def close(self) -> None:
+        # 기존 호출부의 `await es.close()`는 요청 단위 lease 반환으로 취급한다.
+        # 실제 공유 transport는 애플리케이션 종료 시 close_shared_es()가 닫는다.
+        return None
+
+
+def get_es() -> SharedElasticsearchClient:
+    global _shared_es_client
+    if _shared_es_client is None:
+        _shared_es_client = AsyncElasticsearch(ES_URL)
+    return SharedElasticsearchClient(_shared_es_client)
+
+
+async def close_shared_es() -> None:
+    global _shared_es_client
+    client = _shared_es_client
+    _shared_es_client = None
+    if client is not None:
+        await client.close()
 
 
 async def wait_for_es(es, retries=30):

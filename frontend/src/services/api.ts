@@ -15,6 +15,12 @@ import { assertOk, ApiError } from '../utils/apiError';
 
 const API_BASE = '/api';
 
+/** Ensure every API call follows the same HTTP error contract. */
+const fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    const response = await globalThis.fetch(input, init);
+    return assertOk(response);
+};
+
 interface GoogleMailParticipant {
     name: string;
     email: string;

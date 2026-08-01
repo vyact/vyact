@@ -36,6 +36,7 @@ INITIAL_SETUP_MESSAGES = {
         "th": "ยังไม่ได้ติดตั้ง Elasticsearch — ระบบจะเตรียมให้ระหว่างการตั้งค่าเริ่มต้น",
         "vi": "Elasticsearch chưa được cài đặt — sẽ được thiết lập trong quá trình cấu hình ban đầu.",
         "es": "Elasticsearch aún no está instalado; se configurará durante la configuración inicial.",
+        "fr": "Elasticsearch n’est pas encore installé ; il sera préparé lors de la configuration initiale.",
     },
     "rag_available_after_setup": {
         "ko": "초기 설정을 완료하면 RAG 기능을 사용할 수 있습니다.",
@@ -45,6 +46,7 @@ INITIAL_SETUP_MESSAGES = {
         "th": "ทำการตั้งค่าเริ่มต้นให้เสร็จเพื่อใช้ฟีเจอร์ RAG",
         "vi": "Hoàn tất cấu hình ban đầu để sử dụng các tính năng RAG.",
         "es": "Complete la configuración inicial para habilitar las funciones RAG.",
+        "fr": "Terminez la configuration initiale pour activer les fonctionnalités RAG.",
     },
 }
 
@@ -242,16 +244,6 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.warning("Ollama model load failed: %s", e)
 
-    # Whisper 모델 사전 로드 (첫 STT 요청 지연 방지)
-    try:
-        from routers.stt import _get_model
-        import asyncio
-        loop = asyncio.get_running_loop()
-        await loop.run_in_executor(None, _get_model)
-        logger.info("Whisper model preloaded")
-    except Exception as e:
-        logger.warning("Whisper model preload failed: %s", e)
-
     # MCP 서버 연결 (filesystem 등) — 실패해도 앱은 정상 동작
     try:
         from services.mcp_client import mcp_manager
@@ -343,6 +335,12 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning("Ollama model unload failed: %s", e)
 
+    try:
+        from services.db import close_shared_es
+        await close_shared_es()
+    except Exception as e:
+        logger.warning("Elasticsearch shutdown cleanup failed: %s", e)
+
 
 # ─────────────────────────────
 # APP
@@ -360,10 +358,12 @@ app.add_middleware(
 
 @app.middleware("http")
 async def prevent_static_asset_caching(request: Request, call_next):
-    """앱 업데이트 뒤에도 항상 현재 번들의 CSS/JS를 사용한다."""
+    """HTML은 갱신하고 콘텐츠 해시가 붙은 정적 자산은 장기 캐시한다."""
     response = await call_next(request)
-    if request.url.path == "/" or request.url.path.startswith("/assets/"):
+    if request.url.path == "/":
         response.headers["Cache-Control"] = "no-store, max-age=0, must-revalidate"
+    elif request.url.path.startswith("/assets/"):
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
     return response
 
 
