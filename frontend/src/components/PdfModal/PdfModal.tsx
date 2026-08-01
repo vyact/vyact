@@ -178,7 +178,12 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
                 const fileIds = new Set(docArticles.map(a => a.file_id!));
                 const map = new Map<string, DocFile>();
                 allDocs.filter(d => fileIds.has(d.file_id)).forEach(d => map.set(d.file_id, d));
-                if (map.size > 0) setSelectedDocs(map);
+                // The direct-attachment restoration below can finish before
+                // this request. Merge instead of replacing so the later
+                // library response cannot erase already-restored attachments.
+                if (map.size > 0) {
+                    setSelectedDocs(current => new Map([...current, ...map]));
+                }
             }).catch(() => {});
         }
 
