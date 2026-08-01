@@ -103,7 +103,10 @@ def _render_cover(slide, page: dict, page_number: int, total: int, palette: dict
     background = palette.get("slide_bg", "#ffffff")
     _add_shape(slide, MSO_AUTO_SHAPE_TYPE.RECTANGLE, 0, 0, 13.333, 7.5, background)
     _add_shape(slide, MSO_AUTO_SHAPE_TYPE.RECTANGLE, 0, 0, .12, 7.5, palette.get("cover_side_bar", palette["accent"]))
-    _add_shape(slide, MSO_AUTO_SHAPE_TYPE.OVAL, 10.35, -.95, 4.0, 4.0, palette.get("cover_deco", palette["accent2"]))
+    # Keep decorative geometry inside the slide canvas. PowerPoint does not
+    # clip off-canvas shapes consistently and QA tools correctly flag them as
+    # overflow.
+    _add_shape(slide, MSO_AUTO_SHAPE_TYPE.OVAL, 10.55, 0, 2.78, 2.78, palette.get("cover_deco", palette["accent2"]))
     color = palette.get("cover_text", palette.get("title_color", "#111111"))
     sub_color = palette.get("title_color", "#555555") if palette.get("cover_text_sub", "").startswith("rgba") else palette.get("cover_text_sub", "#555555")
     align = PP_ALIGN.CENTER if closing else PP_ALIGN.LEFT

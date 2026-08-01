@@ -183,7 +183,10 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
         }
 
         // 프레젠테이션 전용 첨부는 인덱스에 저장하지 않으므로, 저장된 원문 텍스트로 복원한다.
-        const attachmentArticles = savedArticles.filter(a => a.url.startsWith('attachment://') && a.content);
+        // Always restore the attachment row. Older saved presentations may not
+        // contain embedded text, but hiding the source entirely makes the edit
+        // screen look as if the user never attached it.
+        const attachmentArticles = savedArticles.filter(a => a.url.startsWith('attachment://'));
         if (attachmentArticles.length > 0) {
             const restoredAttachments = new Map<string, DocFile>();
             attachmentArticles.forEach((article, index) => {
@@ -779,7 +782,7 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
                             )}
                             {selectedLibraryDocumentCount > 0 && (
                                 <span className="pdf-source-summary-badge pdf-source-summary-badge--document">
-                                    {t('pdfModal.document')} {selectedLibraryDocumentCount}
+                                    {t('pdfModal.documentShort')} {selectedLibraryDocumentCount}
                                     <button onClick={() => {
                                         setSelectedDocs(current => new Map(Array.from(current).filter(([fileId]) => uploadedDocumentIds.has(fileId))));
                                     }}>×</button>

@@ -823,6 +823,7 @@
     "style": "样式",
     "memo": "备忘录",
     "document": "文档",
+    "documentShort": "文档",
     "noSearchResults": "没有搜索结果",
     "memoSearch": "搜索备忘录...",
     "fileSearch": "搜索文件名...",

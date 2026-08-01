@@ -820,6 +820,7 @@
     "style": "스타일",
     "memo": "메모",
     "document": "문서",
+    "documentShort": "문서",
     "noSearchResults": "검색 결과 없음",
     "memoSearch": "메모 검색...",
     "fileSearch": "파일명 검색...",

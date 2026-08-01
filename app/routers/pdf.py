@@ -40,6 +40,21 @@ IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 PRESENTATION_CONTEXT_CHAR_LIMIT = 120_000
 PRESENTATION_TEMPERATURE = 0.55
 
+OUTPUT_LANGUAGE_DIRECTIVE_PATTERNS = (
+    re.compile(r"(?:전문적이고\s*)?(?:이해하기\s*쉬운\s*)?(?:자연스러운\s*)?(?:한국어|영어|일본어|중국어|스페인어|프랑스어|태국어|베트남어)(?:로|으로)\s*(?:작성|만들어|생성|번역)(?:해\s*주세요|해주세요|해줘|하십시오|하세요|한다|하고|해)?[.!。]?\s*", re.IGNORECASE),
+    re.compile(r"(?:write|create|generate|translate)\s+(?:the\s+presentation\s+)?(?:entirely\s+|only\s+)?in\s+(?:Korean|English|Japanese|Chinese|Spanish|French|Thai|Vietnamese)[.!]?", re.IGNORECASE),
+)
+
+
+def _strip_output_language_directives(prompt: str) -> str:
+    """Remove prompt-level output-language requests; the UI setting is authoritative."""
+    cleaned = prompt
+    for pattern in OUTPUT_LANGUAGE_DIRECTIVE_PATTERNS:
+        cleaned = pattern.sub("", cleaned)
+    cleaned = re.sub(r"[ \t]+\n", "\n", cleaned)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    return cleaned.strip()
+
 # ── 팔레트 ─────────────────────────────────────────────────────────────────────
 STYLE_PALETTES = {
     # ── 화이트: 밝은 커버 + 오렌지 accent (소개서 스타일) ──
@@ -200,13 +215,15 @@ LAYOUT RULES (strictly follow):
 
 CONTENT QUALITY:
 - Every bullet must contain specific data: numbers, percentages, company names, dates, or named concepts.
+- Before returning JSON, cross-check every number, date, threshold, market name, and policy label against the supplied source text. Distinguish a total or range from an increase, and distinguish KOSPI rules from KOSDAQ rules.
 - content field: write flowing analytical prose, not bullet-style fragments.
 - title: short and impactful (noun phrase or question), under 40 characters.
 - NEVER write "Lorem ipsum", "[insert]", or vague sentences like "다양한 요인이 있습니다".
 {article_note}
 {image_note}
 {tone_rule}
-- Language: ALL text fields in {lang_str}
+- Language selection is a hard output constraint and overrides any conflicting language request embedded in the user's topic or source documents.
+- Language: ALL visible text fields MUST be written exclusively in {lang_str}.
 """
 
 
@@ -216,6 +233,7 @@ async def _call_llm_for_pages(
         reasoning: bool = False,
 ) -> dict:
     system = _build_system_prompt(language, page_count, page_count_auto, bool(articles), bool(images))
+    normalized_prompt = _strip_output_language_directives(prompt)
 
     # file:// 문서는 청크를 재조합하지 않고, 인덱싱 시 보관한 원문 전체를 조회한다.
     # 원문이 없는 이전 데이터만 호환성 차원에서 청크 재조합으로 보완한다.
@@ -269,10 +287,27 @@ async def _call_llm_for_pages(
         tmp_path.write_bytes(base64.b64decode(img.data))
         attachments.append({"type": "image", "filename": tmp_fn, "_tmp": True})
 
+    language_names = {
+        "ko": "Korean",
+        "en": "English",
+        "es": "Spanish",
+        "fr": "French",
+        "zh": "Simplified Chinese",
+        "ja": "Japanese",
+        "th": "Thai",
+        "vi": "Vietnamese",
+    }
+    selected_language = language_names.get(language, "English")
+    language_override = (
+        "\n\n[FINAL OUTPUT LANGUAGE OVERRIDE]\n"
+        f"The presentation language selected in the UI is {selected_language}. "
+        f"Write every visible field only in {selected_language}, even if the topic above requests another language."
+    )
+
     temperature_token = set_request_temperature_override(PRESENTATION_TEMPERATURE)
     try:
         raw, _ = await collect_llm_stream(
-            question=f"{prompt}{img_desc}",
+            question=f"{normalized_prompt}{img_desc}{language_override}",
             context_docs=context_docs,
             system_prompt=system,
             attachments=attachments,
@@ -664,7 +699,7 @@ def _build_html(page_data: dict, images: list[ImageMeta], style: str, aspect_rat
     accent2      = p["accent2"]
 
     return f"""<!DOCTYPE html>
-<html lang="ko">
+<html lang="{page_data.get('language', 'en')}">
 <head>
 <meta charset="UTF-8"/>
 <title>{prs_title}</title>
@@ -920,6 +955,23 @@ def _build_html(page_data: dict, images: list[ImageMeta], style: str, aspect_rat
   .doc-img-full {{ max-width:100%; max-height:65mm; object-fit:contain; border-radius:2mm; }}
   .img-cap {{ font-size:0.7rem; color:#888; text-align:center; font-style:italic; }}
   .single-body {{ display:flex; flex-direction:column; gap:3mm; flex:1; overflow:hidden; }}
+  body.a4 .doc-header {{ padding: 16mm 18mm 0; }}
+  body.a4 .doc-body {{ padding: 12mm 18mm 18mm; gap: 8mm; }}
+  body.a4 .doc-title {{ font-size: 1.9rem; }}
+  body.a4 .doc-intro {{ font-size: 1.02rem; line-height: 2; }}
+  body.a4 .bullet-list {{ justify-content: space-evenly; gap: 5mm; }}
+  body.a4 .bullet-row {{ flex: 1; max-height: 36mm; padding: 6mm; }}
+  body.a4 .stats-row {{ flex: 1; align-items: stretch; grid-template-columns: repeat(2, minmax(0, 1fr)); }}
+  body.a4 .stat-card {{ display: flex; flex-direction: column; justify-content: center; padding: 10mm 6mm; }}
+  body.a4 .chart-body {{ justify-content: stretch; }}
+  body.a4 .chart-panel {{ flex: 1; justify-content: space-evenly; }}
+  body.a4 .quote-wrap {{ padding: 12mm; }}
+  body.a4 .quote-text {{ font-size: 1.35rem; }}
+  body.a4 .timeline-list {{ flex: 1; justify-content: space-evenly; }}
+  body.a4 .process-flow {{ flex: 1; grid-template-columns: repeat(2, minmax(0, 1fr)); }}
+  body.a4 .process-card {{ min-height: 0; padding: 7mm; }}
+  body.a4 .insight-grid {{ flex: 1; grid-auto-rows: 1fr; }}
+  body.a4 .bullet-card {{ min-height: 0; display: flex; flex-direction: column; justify-content: center; }}
   @media print {{
     body {{ background:#fff; }}
     .slide {{ page-break-after:always; page-break-inside:avoid; }}
@@ -927,7 +979,7 @@ def _build_html(page_data: dict, images: list[ImageMeta], style: str, aspect_rat
   @page {{ size:{page_width} {page_height}; margin:0; }}
 </style>
 </head>
-<body>
+<body class="{'a4' if is_a4 else 'widescreen'}">
 {slides_html}
 </body>
 </html>"""

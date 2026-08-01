@@ -823,6 +823,7 @@
     "style": "スタイル",
     "memo": "メモ",
     "document": "文書",
+    "documentShort": "文書",
     "noSearchResults": "検索結果なし",
     "memoSearch": "メモを検索...",
     "fileSearch": "ファイル名を検索...",

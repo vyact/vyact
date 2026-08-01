@@ -51,10 +51,23 @@ def _choose_layout(page: dict, index: int, total: int) -> str:
 
     if _numeric_stat_count(page) >= 3:
         return "data_chart" if index % 2 == 0 else "stats"
-    if page.get("quote"):
+    # Some smaller/local models populate ``quote`` even when they selected a
+    # timeline, comparison, or content layout.  Treat quote as authoritative
+    # only when the model explicitly requested a quote page; otherwise a
+    # stray quote collapses a varied deck into repeated quotation panels.
+    if requested == "quote" and page.get("quote"):
         return "quote"
     if has_image:
         return "image_focus" if page.get("image_position") == "full" else "two_column"
+    # Preserve the model's explicit semantic choice when the required data is
+    # present. Inference below is a fallback for generic/invalid layout output,
+    # not a reason to turn a requested comparison into a process diagram.
+    if requested == "timeline" and len(bullets) >= 3:
+        return "timeline"
+    if requested == "comparison" and len(bullets) >= 4:
+        return "comparison"
+    if requested == "process" and len(bullets) >= 3:
+        return "process"
     if len(bullets) >= 3 and SEQUENCE_MARKERS.search(text):
         return "timeline"
     if len(bullets) >= 4 and COMPARISON_MARKERS.search(text):
