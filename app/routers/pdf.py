@@ -6,7 +6,6 @@ import asyncio
 import base64
 import json
 import re
-import tempfile
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -14,8 +13,6 @@ from pathlib import Path
 from fastapi import APIRouter
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
-from pptx import Presentation
-from pptx.util import Inches
 
 from agent import query_llm, collect_llm_stream, save_conversation, get_model_name
 from routers.deps import INSTALL_DIR, sse, load_config_async
@@ -24,6 +21,8 @@ from services.runtime_settings import (
     reset_request_temperature_override,
     set_request_temperature_override,
 )
+from services.presentation_pptx import build_pptx
+from services.presentation_design import prepare_presentation
 from logger import get_logger
 
 logger = get_logger(__name__)
@@ -100,6 +99,7 @@ class PdfGenerateRequest(BaseModel):
     language: str = "ko"
     style: str = "white"
     output_format: str = "pdf"
+    aspect_ratio: str = "auto"
     articles: list = []
     images: list[ImageMeta] = []
     conv_id: str = ""
@@ -165,7 +165,7 @@ JSON structure:
   "pages": [
     {{
       "index": 0,
-      "layout": "cover|content|two_column|stats|quote|timeline|spotlight|card_grid|image_focus|closing",
+      "layout": "cover|content|two_column|stats|data_chart|quote|timeline|process|comparison|spotlight|card_grid|image_focus|closing",
       "title": "page title (concise, under 40 chars)",
       "subtitle": "supporting subtitle or null",
       "content": "2-4 sentence intro paragraph — always fill this for content layout",
@@ -185,8 +185,11 @@ LAYOUT RULES (strictly follow):
 - cover   → title (main heading) + subtitle + content (2-3 sentences overview). bullets = tech/keyword tags (3-6 short words/phrases, no sentences).
 - closing → LAST PAGE ONLY. layout MUST be "closing". title = conclusion heading. subtitle = one-line theme. content = 2-3 sentence concluding paragraph. bullets = null (NEVER add bullets). stats = null. This page uses a special full-page design — do NOT use content/stats layout for the last page.
 - stats   → stats MUST have 3-4 items with real numbers. content = brief intro. bullets = null.
+- data_chart → stats MUST have 3-4 comparable numeric items. Use when relative magnitude or change is the key message.
 - quote   → quote MUST NOT be null. content = analysis/context paragraph. bullets = null.
 - timeline → use 3-6 bullets as a chronological sequence, each beginning with a date, phase, or clear order marker. content = a short framing paragraph.
+- process → use 3-5 bullets as ordered actions or implementation stages. Each item must describe a concrete action.
+- comparison → use 4-6 bullets organized as two contrasting groups. Prefix items consistently (for example "현재:"/"목표:" or "장점:"/"위험:").
 - spotlight → use one decisive insight or conclusion in content, with 2-4 supporting bullets. Assign an image when one strengthens the message.
 - card_grid → use 4-6 independent bullets that can be read as distinct themes, actions, risks, or opportunities. content = a concise setup paragraph.
 - image_focus → use only when an attached image can carry the page visually. Assign image_position "full" and write a short, impactful content paragraph plus up to 3 bullets.
@@ -342,6 +345,8 @@ def _render_page_html(page: dict, img_map: dict, palette: dict, total: int) -> s
     caption  = page.get("image_caption") or ""
     page_num = page.get("index", 0) + 1
     has_img  = img_idx is not None and img_idx in img_map
+    section_label = page.get("section_label", "PRESENTATION")
+    visual_variant = page.get("visual_variant", 0)
 
     p       = palette
     accent  = p["accent"]
@@ -410,11 +415,35 @@ def _render_page_html(page: dict, img_map: dict, palette: dict, total: int) -> s
   {"<div class='stat-desc'>" + s["desc"] + "</div>" if s.get("desc") else ""}
 </div>"""
         return f"""
-<div class="slide doc-slide">
-  {_doc_header(page_num, total, title, accent, accent2)}
+<div class="slide doc-slide stats-slide variant-{visual_variant}">
+  {_doc_header(page_num, total, title, accent, accent2, section_label)}
   <div class="doc-body">
     {"<p class='doc-intro'>" + content + "</p>" if content else ""}
     <div class="stats-row">{cards}</div>
+  </div>
+</div>"""
+
+    # ── DATA CHART ──
+    if layout == "data_chart" and stats:
+        numeric_values = []
+        for stat in stats[:4]:
+            match = re.search(r"[-+]?\d[\d,.]*", str(stat.get("value", "")))
+            numeric_values.append(abs(float(match.group(0).replace(",", ""))) if match else 0)
+        max_value = max(numeric_values) if numeric_values else 1
+        bars = ""
+        for index, stat in enumerate(stats[:4]):
+            width = max(8, numeric_values[index] / max_value * 100) if max_value else 8
+            bars += f'''<div class="chart-row">
+  <div class="chart-meta"><strong>{stat.get("label", "")}</strong><span style="color:{accent};">{stat.get("value", "")}</span></div>
+  <div class="chart-track"><div class="chart-bar" style="width:{width:.1f}%;background:{accent if index % 2 == 0 else accent2};"></div></div>
+  <p>{stat.get("desc", "")}</p>
+</div>'''
+        return f"""
+<div class="slide doc-slide variant-{visual_variant}">
+  {_doc_header(page_num, total, title, accent, accent2, section_label)}
+  <div class="doc-body chart-body">
+    {"<p class='doc-intro'>" + content + "</p>" if content else ""}
+    <div class="chart-panel">{bars}</div>
   </div>
 </div>"""
 
@@ -422,7 +451,7 @@ def _render_page_html(page: dict, img_map: dict, palette: dict, total: int) -> s
     if layout == "quote":
         return f"""
 <div class="slide doc-slide">
-  {_doc_header(page_num, total, title, accent, accent2)}
+  {_doc_header(page_num, total, title, accent, accent2, section_label)}
   <div class="doc-body">
     <div class="quote-wrap" style="border-left:4px solid {accent};">
       <div class="quote-mark" style="color:{accent};">"</div>
@@ -455,10 +484,45 @@ def _render_page_html(page: dict, img_map: dict, palette: dict, total: int) -> s
         )
         return f"""
 <div class="slide doc-slide timeline-slide">
-  {_doc_header(page_num, total, title, accent, accent2)}
+  {_doc_header(page_num, total, title, accent, accent2, section_label)}
   <div class="doc-body">
     {"<p class='doc-intro timeline-intro'>" + content + "</p>" if content else ""}
     <div class="timeline-list">{steps}</div>
+  </div>
+</div>"""
+
+    # ── PROCESS ──
+    if layout == "process" and bullets:
+        steps = "".join(
+            f'''<div class="process-card">
+  <span class="process-index" style="color:{accent};">STEP {index + 1:02d}</span>
+  <div class="process-node" style="background:{accent};">{index + 1}</div>
+  <p>{bullet}</p>
+</div>'''
+            for index, bullet in enumerate(bullets[:5])
+        )
+        return f"""
+<div class="slide doc-slide variant-{visual_variant}">
+  {_doc_header(page_num, total, title, accent, accent2, section_label)}
+  <div class="doc-body">
+    {"<p class='doc-intro'>" + content + "</p>" if content else ""}
+    <div class="process-flow">{steps}</div>
+  </div>
+</div>"""
+
+    # ── COMPARISON ──
+    if layout == "comparison" and bullets:
+        midpoint = (len(bullets) + 1) // 2
+        def _comparison_column(items: list, label: str, color: str) -> str:
+            rows = "".join(f'<div class="comparison-item"><span style="color:{color};">◆</span><p>{item}</p></div>' for item in items)
+            return f'<div class="comparison-column"><h3 style="color:{color};">{label}</h3>{rows}</div>'
+        columns = _comparison_column(bullets[:midpoint], "A", accent) + _comparison_column(bullets[midpoint:], "B", accent2)
+        return f"""
+<div class="slide doc-slide variant-{visual_variant}">
+  {_doc_header(page_num, total, title, accent, accent2, section_label)}
+  <div class="doc-body">
+    {"<p class='doc-intro'>" + content + "</p>" if content else ""}
+    <div class="comparison-grid">{columns}</div>
   </div>
 </div>"""
 
@@ -467,7 +531,7 @@ def _render_page_html(page: dict, img_map: dict, palette: dict, total: int) -> s
         image_html = f'<img src="{img_uri}" class="spotlight-image" alt="{caption}"/>' if has_img else ""
         return f"""
 <div class="slide doc-slide spotlight-slide">
-  {_doc_header(page_num, total, title, accent, accent2)}
+  {_doc_header(page_num, total, title, accent, accent2, section_label)}
   <div class="doc-body spotlight-body">
     <div class="spotlight-main" style="border-color:{accent};">
       <span class="spotlight-label" style="color:{accent};">✦</span>
@@ -482,7 +546,7 @@ def _render_page_html(page: dict, img_map: dict, palette: dict, total: int) -> s
     if layout == "card_grid" and bullets:
         return f"""
 <div class="slide doc-slide card-grid-slide">
-  {_doc_header(page_num, total, title, accent, accent2)}
+  {_doc_header(page_num, total, title, accent, accent2, section_label)}
   <div class="doc-body">
     {"<p class='doc-intro'>" + content + "</p>" if content else ""}
     <div class="insight-grid">{_bullet_cards()}</div>
@@ -533,15 +597,16 @@ def _render_page_html(page: dict, img_map: dict, palette: dict, total: int) -> s
 
     return f"""
 <div class="slide doc-slide">
-  {_doc_header(page_num, total, title, accent, accent2)}
+  {_doc_header(page_num, total, title, accent, accent2, section_label)}
   <div class="doc-body">
     {cols}
   </div>
 </div>"""
 
 
-def _doc_header(page_num: int, total: int, title: str, accent: str, accent2: str) -> str:
+def _doc_header(page_num: int, total: int, title: str, accent: str, accent2: str, section_label: str = "PRESENTATION") -> str:
     return f'''<div class="doc-header">
+  <div class="doc-kicker" style="color:{accent};">{section_label}</div>
   <div class="doc-header-left">
     <div class="doc-page-badge" style="color:{accent};border-color:{accent};">{page_num:02d} / {total:02d}</div>
     <h2 class="doc-title">{title}</h2>
@@ -571,18 +636,18 @@ def _ensure_visual_rhythm(pages: list[dict]) -> None:
         remaining[-1]["layout"] = "card_grid"
 
 
-def _build_html(page_data: dict, images: list[ImageMeta], style: str) -> str:
+def _build_html(page_data: dict, images: list[ImageMeta], style: str, aspect_ratio: str = "widescreen") -> str:
     palette   = STYLE_PALETTES.get(style, STYLE_PALETTES["white"])
     img_map   = {img.index: img for img in images}
+    page_data = prepare_presentation(page_data)
     pages     = page_data.get("pages", [])
     total     = len(pages)
     prs_title = page_data.get("presentation_title", "Presentation")
-
-    # 첫 페이지 → cover, 마지막 페이지 → closing 강제
-    if pages:
-        pages[0]["layout"] = "cover"
-        pages[-1]["layout"] = "closing"
-        _ensure_visual_rhythm(pages)
+    is_a4 = aspect_ratio == "a4"
+    page_width = "210mm" if is_a4 else "338.66mm"
+    page_height = "297mm" if is_a4 else "190.5mm"
+    content_max_width = "168mm" if is_a4 else "285mm"
+    title_max_width = "160mm" if is_a4 else "275mm"
 
     slides_html = "\n".join(_render_page_html(p, img_map, palette, total) for p in pages)
 
@@ -623,13 +688,13 @@ def _build_html(page_data: dict, images: list[ImageMeta], style: str) -> str:
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
     background: var(--slide-bg);
-    width: 210mm;
+    width: {page_width};
     margin: 0;
     padding: 0;
   }}
   .slide {{
-    width: 210mm;
-    min-height: 297mm;
+    width: {page_width};
+    height: {page_height};
     position: relative;
     page-break-after: always;
     page-break-inside: avoid;
@@ -641,9 +706,9 @@ def _build_html(page_data: dict, images: list[ImageMeta], style: str) -> str:
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    padding: 0 20mm 18%;
+    padding: 0 28mm 15%;
     position: relative;
-    min-height: 297mm;
+    height: {page_height};
   }}
   .cover-side-bar {{
     position: absolute; left:0; top:0;
@@ -660,7 +725,7 @@ def _build_html(page_data: dict, images: list[ImageMeta], style: str) -> str:
   .cover-inner {{
     position: relative; z-index: 2;
     display: flex; flex-direction: column;
-    gap: 5mm; max-width: 168mm;
+    gap: 5mm; max-width: {content_max_width};
   }}
   .closing-slide {{
     justify-content: center;
@@ -675,7 +740,7 @@ def _build_html(page_data: dict, images: list[ImageMeta], style: str) -> str:
     line-height: 1.15;
     word-break: keep-all; overflow-wrap: break-word;
     text-shadow: 0 2px 20px rgba(0,0,0,0.2);
-    max-width: 160mm;
+    max-width: {title_max_width};
   }}
   .cover-subtitle {{
     font-size: 1rem; font-weight: 400;
@@ -683,7 +748,7 @@ def _build_html(page_data: dict, images: list[ImageMeta], style: str) -> str:
   }}
   .cover-desc {{
     font-size: 0.83rem; line-height: 1.8;
-    word-break: keep-all; max-width: 200mm;
+    word-break: keep-all; max-width: {content_max_width};
   }}
   .cover-tags {{
     display: flex; flex-wrap: wrap; gap: 2mm; margin-top: 2mm;
@@ -706,13 +771,14 @@ def _build_html(page_data: dict, images: list[ImageMeta], style: str) -> str:
   /* ── DOC SLIDE ── */
   .doc-slide {{
     display: flex; flex-direction: column;
-    background: var(--slide-bg); min-height: 297mm;
+    background: var(--slide-bg); height: {page_height};
     padding: 0 0 10mm 0;
   }}
   .doc-header {{
     flex-shrink: 0;
     padding: 12mm 16mm 0;
   }}
+  .doc-kicker {{ font-size:.58rem; font-weight:800; letter-spacing:.18em; margin-bottom:2mm; }}
   .doc-header-left {{
     display: flex; align-items: center; gap: 4mm; margin-bottom: 2mm;
   }}
@@ -784,6 +850,15 @@ def _build_html(page_data: dict, images: list[ImageMeta], style: str) -> str:
   .stat-desc {{
     font-size: 0.7rem; color: var(--muted-color); line-height: 1.5; word-break: keep-all;
   }}
+  /* ── DATA CHART ── */
+  .chart-body {{ justify-content:center; }}
+  .chart-panel {{ display:flex; flex-direction:column; gap:5mm; padding:7mm; background:var(--card-bg); border:1px solid var(--border-color); border-radius:4mm; }}
+  .chart-row {{ display:grid; grid-template-columns:1fr; gap:1.5mm; }}
+  .chart-meta {{ display:flex; justify-content:space-between; align-items:end; font-size:.85rem; color:var(--title-color); }}
+  .chart-meta span {{ font-size:1.15rem; font-weight:900; }}
+  .chart-track {{ height:4mm; background:var(--card-bg2); border-radius:10mm; overflow:hidden; }}
+  .chart-bar {{ height:100%; border-radius:10mm; }}
+  .chart-row p {{ font-size:.65rem; color:var(--muted-color); }}
   /* ── QUOTE ── */
   .quote-wrap {{
     flex: 1; padding: 5mm 6mm; border-radius: 2mm;
@@ -802,7 +877,7 @@ def _build_html(page_data: dict, images: list[ImageMeta], style: str) -> str:
     font-size: 0.8rem; color: var(--body-color); line-height: 1.7; word-break: keep-all;
   }}
   /* ── TIMELINE ── */
-  .timeline-intro {{ max-width: 155mm; }}
+  .timeline-intro {{ max-width: {content_max_width}; }}
   .timeline-list {{ position:relative; display:flex; flex-direction:column; gap:0; margin:2mm 0 0 4mm; padding:0 0 0 9mm; }}
   .timeline-list::before {{ content:''; position:absolute; left:2.7mm; top:4mm; bottom:4mm; width:1px; background:var(--border-color); }}
   .timeline-step {{ position:relative; padding:0 0 5mm; min-height:19mm; }}
@@ -811,6 +886,17 @@ def _build_html(page_data: dict, images: list[ImageMeta], style: str) -> str:
   .timeline-content {{ display:flex; align-items:flex-start; gap:4mm; padding:3.5mm 5mm; background:var(--card-bg); border:1px solid var(--border-color); border-radius:2.5mm; }}
   .timeline-number {{ min-width:8mm; font-size:.74rem; font-weight:900; letter-spacing:.08em; }}
   .timeline-content p {{ font-size:.91rem; line-height:1.6; color:var(--body-color); word-break:keep-all; }}
+  /* ── PROCESS / COMPARISON ── */
+  .process-flow {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(28mm,1fr)); gap:4mm; align-items:stretch; margin-top:5mm; }}
+  .process-card {{ position:relative; min-height:72mm; padding:8mm 5mm 5mm; background:var(--card-bg); border:1px solid var(--border-color); border-radius:4mm; }}
+  .process-index {{ display:block; font-size:.6rem; font-weight:900; letter-spacing:.12em; margin-bottom:5mm; }}
+  .process-node {{ width:10mm; height:10mm; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:900; margin-bottom:6mm; }}
+  .process-card p {{ font-size:.82rem; line-height:1.65; color:var(--body-color); word-break:keep-all; }}
+  .comparison-grid {{ display:grid; grid-template-columns:1fr 1fr; gap:6mm; flex:1; }}
+  .comparison-column {{ padding:7mm; background:var(--card-bg); border:1px solid var(--border-color); border-radius:4mm; }}
+  .comparison-column h3 {{ font-size:1.2rem; margin-bottom:6mm; border-bottom:1px solid var(--border-color); padding-bottom:3mm; }}
+  .comparison-item {{ display:flex; gap:3mm; padding:3.5mm 0; border-bottom:1px solid var(--border-color); }}
+  .comparison-item p {{ font-size:.82rem; line-height:1.55; color:var(--body-color); }}
   /* ── SPOTLIGHT ── */
   .spotlight-body {{ justify-content:center; gap:6mm; }}
   .spotlight-main {{ border-left:4px solid; padding:5mm 7mm 5mm 8mm; background:var(--card-bg2); border-radius:0 3mm 3mm 0; }}
@@ -829,7 +915,7 @@ def _build_html(page_data: dict, images: list[ImageMeta], style: str) -> str:
   .two-col {{ display: flex; gap: 5mm; flex: 1; overflow: hidden; }}
   .text-panel {{ flex: 1; display: flex; flex-direction: column; gap: 2.5mm; overflow: hidden; }}
   .img-panel {{ flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2mm; }}
-  .doc-img {{ max-width:100%; max-height:110mm; object-fit:contain; border-radius:2mm; box-shadow:0 3px 16px rgba(0,0,0,0.1); }}
+  .doc-img {{ max-width:100%; max-height:105mm; object-fit:contain; border-radius:2mm; box-shadow:0 3px 16px rgba(0,0,0,0.1); }}
   .full-img-wrap {{ width:100%; display:flex; justify-content:center; margin-bottom:3mm; flex-shrink:0; }}
   .doc-img-full {{ max-width:100%; max-height:65mm; object-fit:contain; border-radius:2mm; }}
   .img-cap {{ font-size:0.7rem; color:#888; text-align:center; font-style:italic; }}
@@ -838,7 +924,7 @@ def _build_html(page_data: dict, images: list[ImageMeta], style: str) -> str:
     body {{ background:#fff; }}
     .slide {{ page-break-after:always; page-break-inside:avoid; }}
   }}
-  @page {{ size:A4 portrait; margin:0; }}
+  @page {{ size:{page_width} {page_height}; margin:0; }}
 </style>
 </head>
 <body>
@@ -847,7 +933,7 @@ def _build_html(page_data: dict, images: list[ImageMeta], style: str) -> str:
 </html>"""
 
 
-async def _html_to_pdf(html_path: Path, output_path: Path):
+async def _html_to_pdf(html_path: Path, output_path: Path, aspect_ratio: str = "widescreen"):
     """Playwright로 HTML → PDF 변환"""
     from playwright.async_api import async_playwright
 
@@ -857,44 +943,15 @@ async def _html_to_pdf(html_path: Path, output_path: Path):
         await page.goto(f"file://{html_path}", wait_until="networkidle", timeout=30000)
         # 폰트 로딩 대기
         await page.wait_for_timeout(1500)
+        is_a4 = aspect_ratio == "a4"
         await page.pdf(
             path=str(output_path),
-            format="A4",
+            width="210mm" if is_a4 else "338.66mm",
+            height="297mm" if is_a4 else "190.5mm",
             print_background=True,
             margin={"top": "0", "right": "0", "bottom": "0", "left": "0"},
         )
         await browser.close()
-
-
-async def _html_to_pptx(html_path: Path, output_path: Path) -> None:
-    """Render each HTML slide to a PNG and package the rendered slides as a PPTX.
-
-    Rendering preserves the same layouts, typography, and theme as the PDF output.
-    """
-    from playwright.async_api import async_playwright
-
-    with tempfile.TemporaryDirectory(prefix="vyact_pptx_") as temp_dir:
-        image_paths: list[Path] = []
-        async with async_playwright() as pw:
-            browser = await pw.chromium.launch(args=["--no-sandbox", "--disable-setuid-sandbox"])
-            page = await browser.new_page(viewport={"width": 1240, "height": 1754}, device_scale_factor=1)
-            await page.goto(f"file://{html_path}", wait_until="networkidle", timeout=30000)
-            await page.wait_for_timeout(1000)
-            slides = page.locator(".slide")
-            for index in range(await slides.count()):
-                image_path = Path(temp_dir) / f"slide_{index + 1}.png"
-                await slides.nth(index).screenshot(path=str(image_path))
-                image_paths.append(image_path)
-            await browser.close()
-
-        presentation = Presentation()
-        presentation.slide_width = Inches(8.27)
-        presentation.slide_height = Inches(11.69)
-        blank_layout = presentation.slide_layouts[6]
-        for image_path in image_paths:
-            slide = presentation.slides.add_slide(blank_layout)
-            slide.shapes.add_picture(str(image_path), 0, 0, width=presentation.slide_width, height=presentation.slide_height)
-        await asyncio.to_thread(presentation.save, str(output_path))
 
 
 def _sse_step(step: int, total: int, message_key: str, pct: int, **message_params: int | str) -> str:
@@ -943,6 +1000,7 @@ async def generate_pdf(req: PdfGenerateRequest):
                 return
 
             n_pages = len(page_data.get("pages", []))
+            page_data["language"] = req.language
             logger.info("[pdf] step3 LLM 완료 — %d페이지 확정", n_pages)
 
             # ── Step 4: 슬라이드 구성 확인 ──
@@ -955,22 +1013,27 @@ async def generate_pdf(req: PdfGenerateRequest):
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             uid = str(uuid.uuid4())[:6]
 
-            html_content = _build_html(page_data, req.images, req.style)
+            output_format = "pptx" if req.output_format == "pptx" else "pdf"
+            aspect_ratio = req.aspect_ratio if req.aspect_ratio in {"widescreen", "a4"} else ("a4" if output_format == "pdf" else "widescreen")
+            if output_format == "pptx":
+                aspect_ratio = "widescreen"
+            html_content = _build_html(page_data, req.images, req.style, aspect_ratio)
             html_path = FILES_DIR / f"pdf_tmp_{uid}.html"
             html_path.write_text(html_content, encoding="utf-8")
             logger.info("[pdf] step5 HTML 완료 (%d bytes)", len(html_content))
 
             # ── Step 6: 선택한 출력 형식으로 렌더링 ──
-            output_format = "pptx" if req.output_format == "pptx" else "pdf"
             format_label = "PPTX" if output_format == "pptx" else "PDF"
             yield _sse_step(6, STEPS, "outputRendering", 76, outputFormat=output_format, pageCount=n_pages)
             logger.info("[pdf] step6 %s 변환 시작", format_label)
 
             temp_output_path = FILES_DIR / f"pdf_tmp_{uid}.{output_format}"
             if output_format == "pptx":
-                await _html_to_pptx(html_path, temp_output_path)
+                palette = STYLE_PALETTES.get(req.style, STYLE_PALETTES["white"])
+                prepared_page_data = prepare_presentation(page_data)
+                await asyncio.to_thread(build_pptx, prepared_page_data, req.images, palette, temp_output_path)
             else:
-                await _html_to_pdf(html_path, temp_output_path)
+                await _html_to_pdf(html_path, temp_output_path, aspect_ratio)
             logger.info("[pdf] step6 %s 변환 완료", format_label)
 
             # ── Step 7: 저장 및 마무리 ──
@@ -1023,6 +1086,7 @@ async def generate_pdf(req: PdfGenerateRequest):
                 "language": req.language,
                 "style": req.style,
                 "output_format": output_format,
+                "aspect_ratio": req.aspect_ratio,
                 "articles": [
                     {
                         "url": a.get("url", ""),

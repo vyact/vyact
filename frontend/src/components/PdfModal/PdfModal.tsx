@@ -43,6 +43,7 @@ export interface PdfParams {
     language: string;
     style: string;
     output_format?: 'pdf' | 'pptx';
+    aspect_ratio?: 'auto' | 'widescreen' | 'a4';
     articles?: PdfParticle[];
     image_filenames?: string[];
 }
@@ -62,6 +63,8 @@ const STYLES = [
 ];
 type SourceTab = 'memo' | 'doc';
 type PresentationOutputFormat = 'pdf' | 'pptx';
+type PresentationAspectRatio = 'widescreen' | 'a4';
+type PresentationOutputOption = 'pdf_a4' | 'pdf_widescreen' | 'pptx';
 const PRESENTATION_DOCUMENT_EXTENSIONS = new Set(['pdf', 'docx', 'xlsx', 'pptx', 'txt', 'html', 'htm', 'md']);
 
 const SelectionIcon: React.FC<{selected: boolean}> = ({selected}) =>
@@ -88,6 +91,9 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
     );
     const [selectedStyle, setSelectedStyle] = useState(initialParams?.style || 'white');
     const [outputFormat, setOutputFormat] = useState<PresentationOutputFormat>(initialParams?.output_format || 'pdf');
+    const [aspectRatio, setAspectRatio] = useState<PresentationAspectRatio>(
+        initialParams?.aspect_ratio === 'widescreen' || initialParams?.output_format === 'pptx' ? 'widescreen' : 'a4',
+    );
     const [styleTooltip, setStyleTooltip] = useState<string | null>(null);
 
     // 이미지
@@ -372,6 +378,19 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
     ];
 
     const totalSelected = selectedMemoList.length + selectedDocList.length;
+    const selectedOutputOption: PresentationOutputOption = outputFormat === 'pptx'
+        ? 'pptx'
+        : aspectRatio === 'widescreen' ? 'pdf_widescreen' : 'pdf_a4';
+
+    const selectOutputOption = (option: PresentationOutputOption) => {
+        if (option === 'pptx') {
+            setOutputFormat('pptx');
+            setAspectRatio('widescreen');
+            return;
+        }
+        setOutputFormat('pdf');
+        setAspectRatio(option === 'pdf_a4' ? 'a4' : 'widescreen');
+    };
 
     // ── 생성 ─────────────────────────────────────────────────────────────────
     const handleGenerate = async () => {
@@ -402,6 +421,7 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
                     language,
                     style: selectedStyle,
                     output_format: outputFormat,
+                    aspect_ratio: aspectRatio,
                     articles: buildArticles(),
                     images: imageMeta,
                     conv_id: convId,
@@ -538,17 +558,26 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
                             <div className="pdf-setting-group">
                                 <div className="pdf-label">{t('pdfModal.outputFormat')}</div>
                                 <div className="pdf-output-format-options" role="radiogroup" aria-label={t('pdfModal.outputFormat')}>
-                                    {(['pdf', 'pptx'] as PresentationOutputFormat[]).map(format => (
+                                    {(['pdf_a4', 'pdf_widescreen', 'pptx'] as PresentationOutputOption[]).map(option => (
                                         <button
-                                            key={format}
+                                            key={option}
                                             type="button"
                                             role="radio"
-                                            aria-checked={outputFormat === format}
-                                            className={`pdf-output-format-option${outputFormat === format ? ' active' : ''}`}
-                                            onClick={() => setOutputFormat(format)}
+                                            aria-checked={selectedOutputOption === option}
+                                            className={`pdf-output-format-option${selectedOutputOption === option ? ' active' : ''}`}
+                                            onClick={() => selectOutputOption(option)}
                                             disabled={isGenerating}
                                         >
-                                            {t(`pdfModal.outputFormats.${format}`)}
+                                            {option === 'pptx' ? (
+                                                <span className="pdf-output-format-main">{t('pdfModal.outputFormats.pptx')}</span>
+                                            ) : (
+                                                <>
+                                                    <span className="pdf-output-format-main">{t('pdfModal.outputFormats.pdf')}</span>
+                                                    <span className="pdf-output-format-sub">
+                                                        {t(`pdfModal.outputSizes.${option === 'pdf_a4' ? 'a4' : 'widescreen'}`)}
+                                                    </span>
+                                                </>
+                                            )}
                                         </button>
                                     ))}
                                 </div>

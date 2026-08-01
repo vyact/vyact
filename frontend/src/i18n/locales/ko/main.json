@@ -804,6 +804,12 @@
       "pdf": "PDF",
       "pptx": "PPTX"
     },
+    "outputOptions": {
+      "pdf_a4": "PDF · A4",
+      "pdf_widescreen": "PDF · 16:9",
+      "pptx": "PPTX"
+    },
+    "outputSizes": {"a4": "A4", "widescreen": "16:9"},
     "autoPages": "AI 자동",
     "pages": "{{count}}페이지",
     "korean": "한국어",

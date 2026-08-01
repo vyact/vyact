@@ -131,6 +131,7 @@ export interface Message {
         language: string;
         style: string;
         output_format?: 'pdf' | 'pptx';
+        aspect_ratio?: 'auto' | 'widescreen' | 'a4';
         article_urls?: string[];
         image_filenames?: string[];
     };  // PDF 생성 시 파일명
