@@ -891,6 +891,12 @@
     "description": "Chọn khi nào thay đổi của công cụ AI cần phê duyệt.",
     "requestTitle": "Cần phê duyệt thực thi",
     "toolRequest": "{{tool}} yêu cầu thực hiện thay đổi.",
+    "argumentLabels": {
+      "folder_id": "Thư mục", "path": "Đường dẫn", "file_path": "Đường dẫn tệp", "filename": "Tên tệp",
+      "source": "Nguồn", "destination": "Đích", "working_directory": "Thư mục làm việc",
+      "task": "Tác vụ", "check": "Kiểm tra", "pattern": "Mẫu tìm kiếm", "query": "Từ khóa",
+      "old_string": "Nội dung hiện tại", "new_string": "Nội dung mới", "patch": "Bản vá thay đổi", "content": "Nội dung tệp"
+    },
     "approve": "Phê duyệt",
     "reject": "Từ chối",
     "scope": "Áp dụng cho",
@@ -919,6 +925,7 @@
     "working": "Đang xử lý…",
     "waitingApproval": "Đang chờ phê duyệt thực thi",
     "approvalRejected": "Người dùng đã từ chối thực thi",
+    "approvalRejectedPreparingResponse": "Đã từ chối phê duyệt · Đang chuẩn bị câu trả lời",
     "elapsed": "Đang xử lý {{seconds}} giây",
     "elapsedShort": "{{seconds}} giây",
     "elapsedMinutesSeconds": "{{minutes}} phút {{seconds}} giây",

@@ -891,6 +891,12 @@
     "description": "Elige cuándo los cambios de las herramientas de IA requieren aprobación.",
     "requestTitle": "Se requiere aprobación",
     "toolRequest": "{{tool}} solicitó realizar un cambio.",
+    "argumentLabels": {
+      "folder_id": "Carpeta", "path": "Ruta", "file_path": "Ruta del archivo", "filename": "Nombre del archivo",
+      "source": "Origen", "destination": "Destino", "working_directory": "Carpeta de trabajo",
+      "task": "Tarea", "check": "Comprobación", "pattern": "Patrón de búsqueda", "query": "Búsqueda",
+      "old_string": "Contenido actual", "new_string": "Contenido nuevo", "patch": "Parche de cambios", "content": "Contenido del archivo"
+    },
     "approve": "Aprobar",
     "reject": "Rechazar",
     "scope": "Aplicar a",
@@ -919,6 +925,7 @@
     "working": "Trabajando…",
     "waitingApproval": "Esperando aprobación de ejecución",
     "approvalRejected": "Ejecución rechazada por el usuario",
+    "approvalRejectedPreparingResponse": "Aprobación rechazada · Preparando la respuesta",
     "elapsed": "Trabajando durante {{seconds}} s",
     "elapsedShort": "{{seconds}} s",
     "elapsedMinutesSeconds": "{{minutes}} min {{seconds}} s",

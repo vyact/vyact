@@ -516,6 +516,7 @@ export function useChat(deps: UseChatDeps) {
                                 setToolStatus({phase: 'running', name: data.name, group: toolGroup(data.name), label: t('toolActivity.waitingApproval'), detail: toolDetail(data.args)});
                             } else if (data.phase === 'approval_rejected') {
                                 setToolStatus({phase: 'completed', outcome: 'rejected', name: data.name, group: toolGroup(data.name), label: t('toolActivity.approvalRejected'), detail: toolDetail(data.args)});
+                                setToolStatus({phase: 'judging', group: 'analysis', label: t('toolActivity.approvalRejectedPreparingResponse')});
                             } else if (data.phase === 'judging') {
                                 setToolStatus({phase: 'judging', group: 'analysis', label: t((data.round ?? 0) > 0 ? 'toolActivity.additionalAnalysis' : 'toolActivity.analyzing')});
                             } else if (data.phase === 'start') {

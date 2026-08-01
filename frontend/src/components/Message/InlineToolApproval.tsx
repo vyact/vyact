@@ -17,6 +17,29 @@ interface InlineToolApprovalProps {
     conversationId?: string;
 }
 
+const MULTILINE_ARGUMENT_KEYS = new Set(['content', 'patch', 'old_string', 'new_string']);
+const ARGUMENT_PRIORITY = [
+    'folder_id', 'path', 'file_path', 'filename', 'source', 'destination',
+    'working_directory', 'task', 'check', 'pattern', 'query',
+    'old_string', 'new_string', 'patch', 'content',
+];
+
+function formatArgumentValue(value: unknown): string {
+    if (typeof value === 'string') return value || '—';
+    if (value === null || value === undefined) return '—';
+    if (typeof value === 'object') return JSON.stringify(value, null, 2);
+    return String(value);
+}
+
+function orderedArguments(args: Record<string, unknown>): Array<[string, unknown]> {
+    const priorityByKey = new Map(ARGUMENT_PRIORITY.map((key, index) => [key, index]));
+    return Object.entries(args).sort(([leftKey], [rightKey]) => {
+        const leftPriority = priorityByKey.get(leftKey) ?? ARGUMENT_PRIORITY.length;
+        const rightPriority = priorityByKey.get(rightKey) ?? ARGUMENT_PRIORITY.length;
+        return leftPriority - rightPriority;
+    });
+}
+
 const InlineToolApproval = ({conversationId}: InlineToolApprovalProps) => {
     const {t} = useTranslation('main');
     const [requests, setRequests] = useState<ApprovalRequest[]>([]);
@@ -49,7 +72,19 @@ const InlineToolApproval = ({conversationId}: InlineToolApprovalProps) => {
             <div className="inline-tool-approval-card__content">
                 <strong>{t('approval.requestTitle')}</strong>
                 <span>{t('approval.toolRequest', {tool: request.name})}</span>
-                <code>{JSON.stringify(request.args)}</code>
+                <dl className="inline-tool-approval-card__arguments">
+                    {orderedArguments(request.args).map(([key, value]) => {
+                        const formattedValue = formatArgumentValue(value);
+                        const multiline = MULTILINE_ARGUMENT_KEYS.has(key) || formattedValue.includes('\n');
+                        return <div className={multiline ? 'multiline' : ''} key={key}>
+                            <dt>{t(`approval.argumentLabels.${key}`, {defaultValue: key})}</dt>
+                            <dd>{multiline
+                                ? <pre>{formattedValue}</pre>
+                                : <code>{formattedValue}</code>}
+                            </dd>
+                        </div>;
+                    })}
+                </dl>
             </div>
             <div className="inline-tool-approval-card__actions">
                 <button type="button" onClick={() => resolve(request, false)}>

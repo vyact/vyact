@@ -891,6 +891,12 @@
     "description": "AIツールの変更を承認する基準を選択します。",
     "requestTitle": "実行の承認が必要です",
     "toolRequest": "{{tool}} が変更を要求しました。",
+    "argumentLabels": {
+      "folder_id": "フォルダー", "path": "パス", "file_path": "ファイルパス", "filename": "ファイル名",
+      "source": "移動元", "destination": "移動先", "working_directory": "作業フォルダー",
+      "task": "タスク", "check": "チェック", "pattern": "検索パターン", "query": "検索語",
+      "old_string": "現在の内容", "new_string": "新しい内容", "patch": "変更パッチ", "content": "ファイル内容"
+    },
     "approve": "承認",
     "reject": "拒否",
     "scope": "適用範囲",
@@ -919,6 +925,7 @@
     "working": "処理中…",
     "waitingApproval": "実行の承認を待っています",
     "approvalRejected": "ユーザーが実行を拒否しました",
+    "approvalRejectedPreparingResponse": "承認を拒否しました · 回答を準備しています",
     "elapsed": "{{seconds}}秒間処理中",
     "elapsedShort": "{{seconds}}秒",
     "elapsedMinutesSeconds": "{{minutes}}分 {{seconds}}秒",

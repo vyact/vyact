@@ -888,6 +888,12 @@
     "description": "AI 도구의 변경 작업 실행 기준을 선택하세요.",
     "requestTitle": "실행 승인 필요",
     "toolRequest": "{{tool}} 도구가 변경 작업을 요청했습니다.",
+    "argumentLabels": {
+      "folder_id": "폴더", "path": "경로", "file_path": "파일 경로", "filename": "파일명",
+      "source": "원본", "destination": "대상", "working_directory": "작업 폴더",
+      "task": "작업", "check": "검사", "pattern": "검색 패턴", "query": "검색어",
+      "old_string": "기존 내용", "new_string": "새 내용", "patch": "변경 패치", "content": "파일 내용"
+    },
     "approve": "승인",
     "reject": "거부",
     "scope": "적용 범위",
@@ -916,6 +922,7 @@
     "working": "작업 처리 중…",
     "waitingApproval": "실행 승인을 기다리고 있어요",
     "approvalRejected": "사용자가 실행을 거부했어요",
+    "approvalRejectedPreparingResponse": "승인을 거부했어요 · 답변을 정리하고 있어요",
     "elapsed": "{{seconds}}초 동안 작업",
     "elapsedShort": "{{seconds}}초",
     "elapsedMinutesSeconds": "{{minutes}}분 {{seconds}}초",

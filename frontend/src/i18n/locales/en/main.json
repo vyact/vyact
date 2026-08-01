@@ -888,6 +888,12 @@
     "description": "Choose when AI tool changes require approval.",
     "requestTitle": "Execution approval required",
     "toolRequest": "{{tool}} requested a change.",
+    "argumentLabels": {
+      "folder_id": "Folder", "path": "Path", "file_path": "File path", "filename": "Filename",
+      "source": "Source", "destination": "Destination", "working_directory": "Working folder",
+      "task": "Task", "check": "Check", "pattern": "Search pattern", "query": "Query",
+      "old_string": "Current content", "new_string": "New content", "patch": "Change patch", "content": "File content"
+    },
     "approve": "Approve",
     "reject": "Reject",
     "scope": "Apply to",
@@ -916,6 +922,7 @@
     "working": "Working…",
     "waitingApproval": "Waiting for execution approval",
     "approvalRejected": "Execution rejected by user",
+    "approvalRejectedPreparingResponse": "Approval rejected · Preparing the response",
     "elapsed": "Working for {{seconds}}s",
     "elapsedShort": "{{seconds}}s",
     "elapsedMinutesSeconds": "{{minutes}}m {{seconds}}s",

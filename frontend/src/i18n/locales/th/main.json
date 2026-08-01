@@ -891,6 +891,12 @@
     "description": "เลือกว่าจะต้องอนุมัติการเปลี่ยนแปลงจากเครื่องมือ AI เมื่อใด",
     "requestTitle": "ต้องอนุมัติการดำเนินการ",
     "toolRequest": "{{tool}} ขอทำการเปลี่ยนแปลง",
+    "argumentLabels": {
+      "folder_id": "โฟลเดอร์", "path": "พาธ", "file_path": "พาธไฟล์", "filename": "ชื่อไฟล์",
+      "source": "ต้นทาง", "destination": "ปลายทาง", "working_directory": "โฟลเดอร์ทำงาน",
+      "task": "งาน", "check": "การตรวจสอบ", "pattern": "รูปแบบการค้นหา", "query": "คำค้นหา",
+      "old_string": "เนื้อหาปัจจุบัน", "new_string": "เนื้อหาใหม่", "patch": "แพตช์การเปลี่ยนแปลง", "content": "เนื้อหาไฟล์"
+    },
     "approve": "อนุมัติ",
     "reject": "ปฏิเสธ",
     "scope": "นำไปใช้กับ",
@@ -919,6 +925,7 @@
     "working": "กำลังทำงาน…",
     "waitingApproval": "กำลังรอการอนุมัติ",
     "approvalRejected": "ผู้ใช้ปฏิเสธการดำเนินการ",
+    "approvalRejectedPreparingResponse": "ปฏิเสธการอนุมัติแล้ว · กำลังเตรียมคำตอบ",
     "elapsed": "ทำงานมา {{seconds}} วินาที",
     "elapsedShort": "{{seconds}} วินาที",
     "elapsedMinutesSeconds": "{{minutes}} นาที {{seconds}} วินาที",

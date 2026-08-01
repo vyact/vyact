@@ -891,6 +891,12 @@
     "description": "Choisissez quand les modifications des outils d’IA nécessitent une approbation.",
     "requestTitle": "Approbation requise",
     "toolRequest": "{{tool}} demande une modification.",
+    "argumentLabels": {
+      "folder_id": "Dossier", "path": "Chemin", "file_path": "Chemin du fichier", "filename": "Nom du fichier",
+      "source": "Source", "destination": "Destination", "working_directory": "Dossier de travail",
+      "task": "Tâche", "check": "Vérification", "pattern": "Motif de recherche", "query": "Recherche",
+      "old_string": "Contenu actuel", "new_string": "Nouveau contenu", "patch": "Correctif", "content": "Contenu du fichier"
+    },
     "approve": "Approuver",
     "reject": "Refuser",
     "scope": "Appliquer à",
@@ -919,6 +925,7 @@
     "working": "En cours…",
     "waitingApproval": "En attente d’approbation",
     "approvalRejected": "Exécution refusée par l’utilisateur",
+    "approvalRejectedPreparingResponse": "Approbation refusée · Préparation de la réponse",
     "elapsed": "En cours depuis {{seconds}} s",
     "elapsedShort": "{{seconds}} s",
     "elapsedMinutesSeconds": "{{minutes}} min {{seconds}} s",

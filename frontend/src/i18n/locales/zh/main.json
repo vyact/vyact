@@ -891,6 +891,12 @@
     "description": "选择 AI 工具执行更改时的审批规则。",
     "requestTitle": "需要执行审批",
     "toolRequest": "{{tool}} 请求执行更改。",
+    "argumentLabels": {
+      "folder_id": "文件夹", "path": "路径", "file_path": "文件路径", "filename": "文件名",
+      "source": "源位置", "destination": "目标位置", "working_directory": "工作文件夹",
+      "task": "任务", "check": "检查", "pattern": "搜索模式", "query": "搜索词",
+      "old_string": "现有内容", "new_string": "新内容", "patch": "更改补丁", "content": "文件内容"
+    },
     "approve": "批准",
     "reject": "拒绝",
     "scope": "应用范围",
@@ -919,6 +925,7 @@
     "working": "正在处理…",
     "waitingApproval": "正在等待执行审批",
     "approvalRejected": "用户已拒绝执行",
+    "approvalRejectedPreparingResponse": "已拒绝审批 · 正在整理回复",
     "elapsed": "已处理 {{seconds}} 秒",
     "elapsedShort": "{{seconds}} 秒",
     "elapsedMinutesSeconds": "{{minutes}} 分 {{seconds}} 秒",
