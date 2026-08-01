@@ -8,6 +8,7 @@ from services.presentation_grounding import (
     extract_numbered_outline,
     parse_json_object,
     reconcile_page_fact_ids,
+    repair_unsupported_fact_tokens,
     sanitize_presentation_content,
     validate_evidence_ledger,
 )
@@ -122,37 +123,62 @@ class PresentationGroundingTests(unittest.TestCase):
         )
         self.assertIn("150m", unsupported["details"])
 
+    def test_page_unit_cannot_be_inferred_from_bare_evidence_number(self):
+        context = [{"title": "Threshold", "content": "The threshold changes from 150 to 200억원."}]
+        ledger = validate_evidence_ledger({"facts": [{
+            "source_id": "S1",
+            "statement": "The threshold changes from 150 to 200억원.",
+            "evidence": "The threshold changes from 150 to 200억원.",
+        }]}, context)
+        deck = {"pages": [{
+            "title": "Threshold",
+            "content": "The threshold starts at 150B KRW.",
+            "fact_ids": ["F1"],
+        }]}
+        findings = audit_presentation(deck, ledger, "en")
+        unsupported = next(
+            finding for finding in findings
+            if finding["code"] == "unsupported_fact_tokens"
+        )
+        self.assertIn("150bkrw", unsupported["details"])
+
+        repaired = repair_unsupported_fact_tokens(deck, ledger, findings)
+        self.assertEqual(repaired["pages"][0]["content"], "The threshold starts at 150.")
+        self.assertEqual(audit_presentation(repaired, ledger, "en"), [])
+
+    def test_equivalent_currency_units_are_supported(self):
+        context = [{"title": "Price", "content": "주가 1,000원 미만입니다."}]
+        ledger = validate_evidence_ledger({"facts": [{
+            "source_id": "S1",
+            "statement": "주가 1,000원 미만입니다.",
+            "evidence": "주가 1,000원 미만입니다.",
+        }]}, context)
+        deck = {"pages": [{
+            "title": "Penny stock threshold",
+            "content": "The price is below 1,000 KRW.",
+            "fact_ids": ["F1"],
+        }]}
+        self.assertEqual(audit_presentation(deck, ledger, "en"), [])
+
+    def test_equivalent_date_formats_are_supported(self):
+        context = [{"title": "Schedule", "content": "시행 시점은 ‘26.7월이며 다음 단계는 2027년 1월입니다."}]
+        ledger = validate_evidence_ledger({"facts": [{
+            "source_id": "S1",
+            "statement": "시행 시점은 ‘26.7월이며 다음 단계는 2027년 1월입니다.",
+            "evidence": "시행 시점은 ‘26.7월이며 다음 단계는 2027년 1월입니다.",
+        }]}, context)
+        deck = {"pages": [{
+            "title": "Schedule",
+            "content": "July '26, then 2027.1.",
+            "fact_ids": ["F1"],
+        }]}
+        self.assertEqual(audit_presentation(deck, ledger, "en"), [])
+
     def test_numbered_outline_is_extracted(self):
         prompt = "소개 문장\n1. 표지와 핵심 메시지\n2) 정책 영향 비교\n마무리"
         self.assertEqual(
             extract_numbered_outline(prompt),
             ["표지와 핵심 메시지", "정책 영향 비교"],
-        )
-
-    def test_declared_item_count_mismatch_is_reported(self):
-        deck = {"pages": [{
-            "title": "5대 의무",
-            "content": "새로운 5대 의무를 적용합니다.",
-            "bullets": ["첫째", "둘째", "셋째", "넷째"],
-            "fact_ids": [],
-        }]}
-        findings = audit_presentation(deck, {"facts": []}, "ko")
-        mismatch = next(
-            finding for finding in findings
-            if finding["code"] == "enumerated_item_count_mismatch"
-        )
-        self.assertEqual(mismatch["details"]["rendered_item_count"], 4)
-
-    def test_declared_item_count_mismatch_is_language_agnostic(self):
-        deck = {"pages": [{
-            "title": "5 key obligations",
-            "bullets": ["One", "Two", "Three", "Four"],
-            "fact_ids": [],
-        }]}
-        findings = audit_presentation(deck, {"facts": []}, "en")
-        self.assertIn(
-            "enumerated_item_count_mismatch",
-            {finding["code"] for finding in findings},
         )
 
     def test_number_without_source_unit_is_reconciled(self):

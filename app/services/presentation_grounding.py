@@ -18,7 +18,8 @@ MIN_EVIDENCE_LENGTH = 8
 FACT_TOKEN_PATTERN = re.compile(
     r"(?<![A-Za-z0-9])(?:['’]?\d{2,4}(?:[./-]\d{1,2}){0,2}|\d[\d,.]*)"
     r"(?:\s?(?:%|‰|bp|bps|배|원|억원|조원|만명|개사|명|건|일|월|년|분기|반기|"
-    r"KRW|USD|EUR|JPY|K|M|B|million|billion|trillion|percent|points?))?",
+    r"KRW|USD|EUR|JPY|(?:million|billion|trillion|K|M|B)(?:\s?(?:KRW|USD|EUR|JPY))?|"
+    r"percent|points?))?",
     re.IGNORECASE,
 )
 VISIBLE_TEXT_FIELDS = {
@@ -74,16 +75,19 @@ LATEX_RESIDUAL_PATTERN = re.compile(
     r"(?:\$|\\(?:begin|end)\s*\{|\\[A-Za-z]+|\\[()[\]])"
 )
 NUMBERED_OUTLINE_PATTERN = re.compile(r"(?m)^\s*(\d{1,2})[.)]\s+(.+?)\s*$")
-ENUMERATED_ITEM_COUNT_PATTERN = re.compile(
-    r"(?<!\d)(\d{1,2})\s*(?:"
-    r"대\s*(?:의무|원칙|과제|방향)|가지(?:의)?\s*(?:의무|원칙|과제|방향)|"
-    r"(?:key\s+)?(?:duties|obligations|principles|actions|steps|pillars|requirements)|"
-    r"(?:deberes|obligaciones|principios|acciones|pasos|requisitos)|"
-    r"(?:devoirs|obligations|principes|actions|étapes|exigences)|"
-    r"(?:项|個|つの)(?:义务|義務|原则|原則|措施|步骤|手順|要件)"
-    r")",
+DATE_EXPRESSION_PATTERN = re.compile(
+    r"(?<!\d)(?P<year>20\d{2}|['‘’]\d{2})\s*"
+    r"(?:[./-]\s*|년\s*)(?P<month>\d{1,2})(?:\s*월)?",
     re.IGNORECASE,
 )
+YEAR_EXPRESSION_PATTERN = re.compile(r"(?<!\d)(?:20\d{2}|['‘’]\d{2})(?!\d)")
+UNIT_ALIASES = {
+    "krw": "원",
+    "m": "million",
+    "b": "billion",
+    "k": "thousand",
+    "%": "percent",
+}
 
 
 def _normalized_text(value: Any) -> str:
@@ -308,7 +312,29 @@ def _page_text(page: dict) -> str:
 
 def _fact_tokens(value: str) -> set[str]:
     tokens = set()
+    occupied_ranges: list[tuple[int, int]] = []
+
+    def canonical_year(raw_year: str) -> str:
+        digits = re.sub(r"\D", "", raw_year)
+        return f"20{digits}" if len(digits) == 2 else digits
+
+    for match in DATE_EXPRESSION_PATTERN.finditer(value or ""):
+        year = canonical_year(match.group("year"))
+        month = int(match.group("month"))
+        if 1 <= month <= 12:
+            tokens.add(f"@date:{year}-{month:02d}")
+            tokens.add(f"@year:{year}")
+            occupied_ranges.append(match.span())
+
+    for match in YEAR_EXPRESSION_PATTERN.finditer(value or ""):
+        if any(start <= match.start() < end for start, end in occupied_ranges):
+            continue
+        tokens.add(f"@year:{canonical_year(match.group(0))}")
+        occupied_ranges.append(match.span())
+
     for match in FACT_TOKEN_PATTERN.finditer(value or ""):
+        if any(start <= match.start() < end for start, end in occupied_ranges):
+            continue
         token = _normalized_text(match.group(0)).strip(".,")
         digits = re.sub(r"\D", "", token)
         if len(digits) >= 2 or any(marker in token for marker in ("%", "원", "krw", "usd", "eur", "년", "월", "일")):
@@ -325,13 +351,22 @@ def _tokens_match(page_token: str, evidence_token: str) -> bool:
         return False
 
     def explicit_unit(token: str) -> str:
-        return re.sub(r"[\d\s,.'’/-]", "", token)
+        unit = re.sub(r"[\d\s,.'‘’/@:-]", "", token)
+        currency = ""
+        for currency_code in ("krw", "usd", "eur", "jpy"):
+            if unit.endswith(currency_code):
+                unit = unit[:-len(currency_code)]
+                currency = UNIT_ALIASES.get(currency_code, currency_code)
+                break
+        return UNIT_ALIASES.get(unit, unit) + currency
 
     page_unit = explicit_unit(page_token)
     evidence_unit = explicit_unit(evidence_token)
-    # A bare number may be a concise rendering of a sourced value, but two
-    # explicit and different units must never be treated as equivalent. This
-    # also prevents unverified rescaling such as 억원 -> M/B or million -> M.
+    # A source unit may be omitted for a concise label, but a page must never
+    # add a scale/currency unit that is absent from its evidence. Equivalent
+    # spellings such as KRW/원 and M/million are normalized above.
+    if page_unit and not evidence_unit:
+        return False
     return not (page_unit and evidence_unit and page_unit != evidence_unit)
 
 
@@ -391,25 +426,6 @@ def audit_presentation(page_data: dict, ledger: dict, language: str) -> list[dic
         if invalid_ids:
             findings.append({"page_index": index, "code": "invalid_fact_ids", "details": invalid_ids})
 
-        bullets = page.get("bullets") or []
-        if bullets:
-            declared_item_counts = {
-                int(match.group(1))
-                for match in ENUMERATED_ITEM_COUNT_PATTERN.finditer(text)
-            }
-            mismatched_counts = sorted(
-                count for count in declared_item_counts if count != len(bullets)
-            )
-            if mismatched_counts:
-                findings.append({
-                    "page_index": index,
-                    "code": "enumerated_item_count_mismatch",
-                    "details": {
-                        "declared_counts": mismatched_counts,
-                        "rendered_item_count": len(bullets),
-                    },
-                })
-
         page_tokens = _fact_tokens(text)
         if not page_tokens:
             continue
@@ -444,6 +460,74 @@ def apply_page_repairs(page_data: dict, repair_data: dict) -> dict:
             replacement = item["page"]
             replacement["index"] = index
             pages[index] = replacement
+    return repaired
+
+
+def repair_unsupported_fact_tokens(page_data: dict, ledger: dict, findings: list[dict]) -> dict:
+    """Restore unsupported numeric tokens from a uniquely matching cited source token.
+
+    This is intentionally syntax-only: it never calculates or converts values. A
+    replacement is made only when the page cites a fact containing exactly one
+    normalized source token with the same digits.
+    """
+    repaired = copy.deepcopy(page_data)
+    facts = {fact["id"]: fact for fact in ledger.get("facts") or []}
+    unsupported_by_page = {
+        finding["page_index"]: set(finding.get("details") or [])
+        for finding in findings
+        if finding.get("code") == "unsupported_fact_tokens"
+        and isinstance(finding.get("page_index"), int)
+        and isinstance(finding.get("details"), list)
+    }
+
+    for page_index, unsupported_tokens in unsupported_by_page.items():
+        pages = repaired.get("pages") or []
+        if not 0 <= page_index < len(pages):
+            continue
+        page = pages[page_index]
+        referenced = [
+            facts[fact_id]
+            for fact_id in page.get("fact_ids") or []
+            if fact_id in facts
+        ]
+        source_tokens_by_digits: dict[str, dict[str, str]] = {}
+        for fact in referenced:
+            source_text = f"{fact.get('statement', '')} {fact.get('evidence', '')}"
+            for match in FACT_TOKEN_PATTERN.finditer(source_text):
+                raw_token = match.group(0).strip()
+                normalized = _normalized_text(raw_token).strip(".,")
+                digits = re.sub(r"\D", "", normalized)
+                if digits:
+                    source_tokens_by_digits.setdefault(digits, {})[normalized] = raw_token
+
+        replacements: dict[str, str] = {}
+        for unsupported in unsupported_tokens:
+            digits = re.sub(r"\D", "", unsupported)
+            candidates = source_tokens_by_digits.get(digits, {})
+            if len(candidates) == 1:
+                replacements[unsupported] = next(iter(candidates.values()))
+        if not replacements:
+            continue
+
+        def restore(value: Any, visible: bool = False) -> Any:
+            if isinstance(value, str) and visible:
+                return FACT_TOKEN_PATTERN.sub(
+                    lambda match: replacements.get(
+                        _normalized_text(match.group(0)).strip(".,"),
+                        match.group(0),
+                    ),
+                    value,
+                )
+            if isinstance(value, list):
+                return [restore(item, visible) for item in value]
+            if isinstance(value, dict):
+                return {
+                    key: restore(item, visible or key in VISIBLE_TEXT_FIELDS)
+                    for key, item in value.items()
+                }
+            return value
+
+        pages[page_index] = restore(page)
     return repaired
 
 

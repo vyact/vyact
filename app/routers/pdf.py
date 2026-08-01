@@ -31,6 +31,7 @@ from services.presentation_grounding import (
     fact_ledger_prompt_payload,
     parse_json_object,
     reconcile_page_fact_ids,
+    repair_unsupported_fact_tokens,
     sanitize_presentation_content,
     validate_evidence_ledger,
 )
@@ -475,6 +476,24 @@ Repair rules:
         )
         repaired = reconcile_page_fact_ids(apply_page_repairs(repaired, retry_data), ledger)
         remaining_findings = audit_presentation(repaired, ledger, language)
+        if remaining_findings:
+            deterministically_repaired = repair_unsupported_fact_tokens(
+                repaired,
+                ledger,
+                remaining_findings,
+            )
+            deterministic_remaining_findings = audit_presentation(
+                deterministically_repaired,
+                ledger,
+                language,
+            )
+            if len(deterministic_remaining_findings) < len(remaining_findings):
+                logger.info(
+                    "[pdf] 원문 숫자 표기 복원으로 감사 오류 %d개를 추가 해결했습니다",
+                    len(remaining_findings) - len(deterministic_remaining_findings),
+                )
+                repaired = deterministically_repaired
+                remaining_findings = deterministic_remaining_findings
         if remaining_findings:
             # A small local model can repeatedly miss a mechanical audit item even after a
             # focused retry. Keep the best repaired deck instead of failing the entire export;
