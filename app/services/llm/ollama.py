@@ -28,6 +28,8 @@ async def build_ollama_payload(
         inject_user_profile: bool,
         conversation_summary: str = "",
         reasoning: bool = True,
+        include_skills: bool = True,
+        isolated_system_prompt: bool = False,
 ) -> tuple[str, dict]:
     """Ollama 스트리밍/논스트리밍 공용 — model 이름과 /api/chat 요청 body를 조립.
 
@@ -57,15 +59,16 @@ async def build_ollama_payload(
         except Exception as e:
             logger.warning("user_profile 조회 실패 (무시): %s", e)
     skill_context = ""
-    try:
-        from routers.skills import match_skills
-        matched = await match_skills(question)
-        if matched:
-            skill_context = "\n\n".join(
-                f"[{s['name']}]\n{s['instructions']}" for s in matched
-            )
-    except Exception as e:
-        logger.debug("스킬 매칭 실패 (무시): %s", e)
+    if include_skills:
+        try:
+            from routers.skills import match_skills
+            matched = await match_skills(question)
+            if matched:
+                skill_context = "\n\n".join(
+                    f"[{s['name']}]\n{s['instructions']}" for s in matched
+                )
+        except Exception as e:
+            logger.debug("스킬 매칭 실패 (무시): %s", e)
     # 사용자 UI 언어 로드
     user_language = ""
     try:
@@ -75,7 +78,7 @@ async def build_ollama_payload(
         pass
     system_message = build_system_message(
         system_prompt, format_instruction_override, user_profile, skill_context, conversation_summary,
-        user_language=user_language,
+        user_language=user_language, isolated=isolated_system_prompt,
     )
     user_prompt = build_user_prompt(question, context_docs, attachments, model)
 

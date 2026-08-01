@@ -1,10 +1,12 @@
 import unittest
 
+from prompts import build_system_message
 from services.presentation_grounding import (
     add_source_notes,
     apply_page_repairs,
     audit_presentation,
     parse_json_object,
+    reconcile_page_fact_ids,
     sanitize_presentation_content,
     validate_evidence_ledger,
 )
@@ -38,6 +40,18 @@ class PresentationGroundingTests(unittest.TestCase):
 
     def test_markdown_json_is_parsed(self):
         self.assertEqual(parse_json_object('```json\n{"facts": []}\n```'), {"facts": []})
+
+    def test_isolated_system_prompt_has_no_global_context(self):
+        message = build_system_message(
+            "presentation contract",
+            None,
+            user_profile="profile that must not leak",
+            skill_context="skill that must not leak",
+            conversation_summary="summary that must not leak",
+            user_language="ko",
+            isolated=True,
+        )
+        self.assertEqual(message, "presentation contract")
 
     def test_json_with_model_preamble_is_parsed(self):
         self.assertEqual(
@@ -87,6 +101,22 @@ class PresentationGroundingTests(unittest.TestCase):
         ]}
         findings = audit_presentation(deck, self.ledger, "en")
         self.assertIn("unsupported_fact_tokens", {finding["code"] for finding in findings})
+
+    def test_number_without_source_unit_is_reconciled(self):
+        context = [{"title": "Scope memo", "content": "The program covers approximately 220 companies."}]
+        ledger = validate_evidence_ledger({"facts": [{
+            "source_id": "S1",
+            "statement": "The program covers approximately 220 companies.",
+            "evidence": "approximately 220 companies",
+        }]}, context)
+        deck = {"pages": [
+            {"title": "Cover", "fact_ids": []},
+            {"title": "Scope", "content": "Maximum scope: 220", "fact_ids": []},
+            {"title": "Close", "fact_ids": []},
+        ]}
+        prepared = reconcile_page_fact_ids(deck, ledger)
+        self.assertEqual(prepared["pages"][1]["fact_ids"], ["F1"])
+        self.assertEqual(audit_presentation(prepared, ledger, "en"), [])
 
     def test_language_mismatch_is_reported(self):
         deck = {"pages": [

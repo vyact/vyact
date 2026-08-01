@@ -29,6 +29,7 @@ from services.presentation_grounding import (
     audit_presentation,
     fact_ledger_prompt_payload,
     parse_json_object,
+    reconcile_page_fact_ids,
     sanitize_presentation_content,
     validate_evidence_ledger,
 )
@@ -315,6 +316,10 @@ Available sources:
             format_instruction_override="",
             reasoning=reasoning,
             call_reason="presentation_fact_extraction",
+            include_skills=False,
+            inject_user_profile=False,
+            use_tools=False,
+            isolated_system_prompt=True,
         )
     finally:
         reset_request_temperature_override(temperature_token)
@@ -344,6 +349,10 @@ async def _parse_or_repair_llm_json(raw: str, reasoning: bool, call_reason: str)
             format_instruction_override="",
             reasoning=reasoning,
             call_reason=call_reason,
+            include_skills=False,
+            inject_user_profile=False,
+            use_tools=False,
+            isolated_system_prompt=True,
         )
     finally:
         reset_request_temperature_override(temperature_token)
@@ -356,6 +365,7 @@ async def _audit_and_repair_presentation(
     """Use the verified evidence ledger to repair unsupported or distorted pages."""
     if not ledger.get("facts"):
         return page_data
+    page_data = reconcile_page_fact_ids(page_data, ledger)
     deterministic_findings = audit_presentation(page_data, ledger, language)
     system = """You are the final evidence auditor for a presentation.
 Return ONLY a JSON object: {"repaired_pages":[{"index":0,"page":{...complete page object...}}]}.
@@ -394,6 +404,10 @@ Repair rules:
             format_instruction_override="",
             reasoning=reasoning,
             call_reason="presentation_fact_audit",
+            include_skills=False,
+            inject_user_profile=False,
+            use_tools=False,
+            isolated_system_prompt=True,
         )
     finally:
         reset_request_temperature_override(temperature_token)
@@ -402,7 +416,7 @@ Repair rules:
     except (json.JSONDecodeError, ValueError) as repair_error:
         logger.error("[pdf] 감사 결과 JSON 복구 실패, 검증된 초안을 유지합니다: %s", repair_error)
         return page_data
-    repaired = apply_page_repairs(page_data, repair_data)
+    repaired = reconcile_page_fact_ids(apply_page_repairs(page_data, repair_data), ledger)
     remaining_findings = audit_presentation(repaired, ledger, language)
     if remaining_findings:
         logger.warning("[pdf] 1차 감사 후 %d개 오류가 남아 2차 감사를 실행합니다: %s", len(remaining_findings), remaining_findings)
@@ -427,13 +441,17 @@ Repair rules:
                 format_instruction_override="",
                 reasoning=reasoning,
                 call_reason="presentation_fact_audit_retry",
+                include_skills=False,
+                inject_user_profile=False,
+                use_tools=False,
+                isolated_system_prompt=True,
             )
         finally:
             reset_request_temperature_override(temperature_token)
         retry_data = await _parse_or_repair_llm_json(
             retry_raw, reasoning, "presentation_fact_audit_retry_json_repair"
         )
-        repaired = apply_page_repairs(repaired, retry_data)
+        repaired = reconcile_page_fact_ids(apply_page_repairs(repaired, retry_data), ledger)
         remaining_findings = audit_presentation(repaired, ledger, language)
         if remaining_findings:
             raise ValueError(f"Presentation evidence audit failed: {remaining_findings}")
@@ -503,6 +521,10 @@ async def _call_llm_for_pages(
             format_instruction_override="",
             reasoning=reasoning,  # 프론트 추론 스위치 값 반영
             call_reason="presentation_generation",
+            include_skills=False,
+            inject_user_profile=False,
+            use_tools=False,
+            isolated_system_prompt=True,
         )
     finally:
         reset_request_temperature_override(temperature_token)

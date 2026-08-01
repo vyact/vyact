@@ -12,6 +12,7 @@ async def prepare_request(
         question, context_docs, system_prompt, attachments,
         conversation_history, format_instruction_override, inject_user_profile,
         provider_type, model="", conversation_summary: str = "", include_skills: bool = True,
+        isolated_system_prompt: bool = False,
 ):
     """(api_key, system_message, user_prompt, history_messages, valid_slice) 반환.
 
@@ -66,7 +67,7 @@ async def prepare_request(
         pass
     system_message = build_system_message(
         system_prompt, format_instruction_override, user_profile, skill_context, conversation_summary,
-        user_language=user_language,
+        user_language=user_language, isolated=isolated_system_prompt,
     )
     user_prompt = build_user_prompt(question, context_docs, attachments, model)
     return api_key, system_message, user_prompt, history_messages, valid_slice

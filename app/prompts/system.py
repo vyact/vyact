@@ -16,7 +16,8 @@ def build_system_message(
         user_profile: str = "",
         skill_context: str = "",
         conversation_summary: str = "",
-        user_language: str = "",
+    user_language: str = "",
+    isolated: bool = False,
 ) -> str:
     """
     시스템 메시지를 조합하여 반환합니다.
@@ -32,6 +33,9 @@ def build_system_message(
     작은 모델일수록 프롬프트 앞쪽보다 그 위치를 더 강하게 따르기 때문에,
     중간에 묻혀 무시되지 않도록 그쪽 한 곳에서만 처리한다.)
     """
+    if isolated:
+        return system_prompt
+
     if format_instruction_override is not None:
         if format_instruction_override == "":
             # voice mode: system_prompt만, format 규칙 없음

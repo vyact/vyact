@@ -300,6 +300,41 @@ def _fact_tokens(value: str) -> set[str]:
     return tokens
 
 
+def _tokens_match(page_token: str, evidence_token: str) -> bool:
+    if page_token == evidence_token:
+        return True
+    page_digits = re.sub(r"\D", "", page_token)
+    evidence_digits = re.sub(r"\D", "", evidence_token)
+    return bool(page_digits and page_digits == evidence_digits)
+
+
+def reconcile_page_fact_ids(page_data: dict, ledger: dict) -> dict:
+    """Attach an omitted fact ID when a page anchor uniquely matches ledger evidence."""
+    prepared = copy.deepcopy(page_data)
+    fact_tokens = {
+        fact["id"]: _fact_tokens(f"{fact.get('statement', '')} {fact.get('evidence', '')}")
+        for fact in ledger.get("facts") or []
+    }
+    for page in prepared.get("pages") or []:
+        selected = [str(value) for value in page.get("fact_ids") or []]
+        for page_token in _fact_tokens(_page_text(page)):
+            already_supported = any(
+                _tokens_match(page_token, evidence_token)
+                for fact_id in selected
+                for evidence_token in fact_tokens.get(fact_id, set())
+            )
+            if already_supported:
+                continue
+            candidates = [
+                fact_id for fact_id, evidence_tokens in fact_tokens.items()
+                if any(_tokens_match(page_token, evidence_token) for evidence_token in evidence_tokens)
+            ]
+            if len(candidates) == 1 and candidates[0] not in selected:
+                selected.append(candidates[0])
+        page["fact_ids"] = selected
+    return prepared
+
+
 def _language_mismatch(text: str, language: str) -> bool:
     letters = [char for char in text if char.isalpha()]
     if len(letters) < 20:
@@ -338,7 +373,10 @@ def audit_presentation(page_data: dict, ledger: dict, language: str) -> list[dic
             continue
         evidence_blob = " ".join(f"{fact['statement']} {fact['evidence']}" for fact in referenced)
         evidence_tokens = _fact_tokens(evidence_blob)
-        unsupported = sorted(page_tokens - evidence_tokens)
+        unsupported = sorted(
+            page_token for page_token in page_tokens
+            if not any(_tokens_match(page_token, evidence_token) for evidence_token in evidence_tokens)
+        )
         if unsupported:
             findings.append({"page_index": index, "code": "unsupported_fact_tokens", "details": unsupported})
 

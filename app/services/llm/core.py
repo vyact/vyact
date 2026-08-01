@@ -47,6 +47,8 @@ async def chat_stream_with_tools(
         reasoning: bool = True,
         post_tool_docs=None,
         call_reason: str = "unspecified",
+        include_skills: bool = True,
+        isolated_system_prompt: bool = False,
 ):
     """MCP tool 처리 + 최종 답변 토큰 스트리밍 (모든 provider 지원).
 
@@ -84,7 +86,7 @@ async def chat_stream_with_tools(
             (api_key, sys_msg, usr_msg, history_messages, valid_slice) = await prepare_request(
                 question, context_docs, system_prompt, attachments,
                 conversation_history, format_instruction_override, inject_user_profile,
-                provider_type, model, conversation_summary,
+                provider_type, model, conversation_summary, include_skills, isolated_system_prompt,
             )
             log_entry["system_message"] = sys_msg
             log_entry["user_prompt"] = usr_msg
@@ -168,6 +170,7 @@ async def chat_stream_with_tools(
     model, body = await build_ollama_payload(
         question, context_docs, system_prompt, attachments, conversation_history,
         format_instruction_override, inject_user_profile, conversation_summary, reasoning=reasoning,
+        include_skills=include_skills, isolated_system_prompt=isolated_system_prompt,
     )
 
     if use_tools:
@@ -430,6 +433,8 @@ async def collect_llm_stream(
         use_tools: bool = True,
         reasoning: bool = True,
         call_reason: str = "unspecified",
+        include_skills: bool = True,
+        isolated_system_prompt: bool = False,
 ) -> tuple[str, dict | None]:
     """chat_stream_with_tools를 내부적으로 소비하여 (answer, stats)를 반환.
 
@@ -445,7 +450,8 @@ async def collect_llm_stream(
             attachments=attachments, conversation_history=conversation_history,
             timeout=timeout, format_instruction_override=format_instruction_override,
             inject_user_profile=inject_user_profile, conversation_summary=conversation_summary, use_tools=use_tools,
-            reasoning=reasoning, call_reason=call_reason,
+            reasoning=reasoning, call_reason=call_reason, include_skills=include_skills,
+            isolated_system_prompt=isolated_system_prompt,
     ):
         if ev.get("type") == "token":
             parts.append(ev.get("text", ""))
