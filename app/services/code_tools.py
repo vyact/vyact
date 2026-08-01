@@ -394,7 +394,7 @@ async def _edit_file(folder_id: str, path: str, old_string: str, new_string: str
     return f"✅ {path} 수정 완료 (1곳 변경)"
 
 
-async def _create_file(folder_id: str, path: str, content: str) -> str:
+async def _create_file(folder_id: str, path: str, content: str = "") -> str:
     folder, error = _resolve_folder(folder_id)
     if error:
         return error
@@ -795,7 +795,10 @@ def register_code_tools():
 
     mcp_manager.register_internal_tool(
         name="code_create_file",
-        description="코드 폴더 내에 새 파일을 생성한다. 중간 디렉토리는 자동으로 생성된다.",
+        description=(
+            "코드 폴더 내에 새 파일을 생성한다. 중간 디렉토리는 자동으로 생성된다. "
+            "사용자가 파일 내용 없이 생성만 요청한 경우 content를 생략하면 빈 파일을 생성한다."
+        ),
         parameters={
             "type": "object",
             "properties": {
@@ -806,10 +809,11 @@ def register_code_tools():
                 },
                 "content": {
                     "type": "string",
-                    "description": "파일 내용",
+                    "description": "파일 내용. 생략하면 빈 파일을 생성한다.",
+                    "default": "",
                 },
             },
-            "required": ["folder_id", "path", "content"],
+            "required": ["folder_id", "path"],
         },
         handler=_create_file,
         server_type="code_tools",
