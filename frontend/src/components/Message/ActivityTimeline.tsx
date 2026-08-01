@@ -1,45 +1,58 @@
-import {useEffect, useState} from 'react';
-import {ChevronDown, ChevronRight, CircleCheck, LoaderCircle} from 'lucide-react';
+import {useState} from 'react';
+import {ChevronDown, ChevronRight, CircleCheck} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import type {ToolActivity} from '../../types';
+import {getToolActivityLabel} from '../../utils/toolActivity';
 
 interface ActivityTimelineProps {
     activities: ToolActivity[];
-    isStreaming: boolean;
+    executionDurationNs?: number | null;
 }
 
-const ActivityTimeline = ({activities, isStreaming}: ActivityTimelineProps) => {
+const ActivityTimeline = ({activities, executionDurationNs}: ActivityTimelineProps) => {
     const {t} = useTranslation('main');
-    const [isExpanded, setIsExpanded] = useState(true);
-    useEffect(() => {
-        if (!isStreaming) setIsExpanded(false);
-    }, [isStreaming]);
-    if (!activities.length) return null;
-    const latest = activities[activities.length - 1];
-    const elapsedSeconds = Math.max(1, Math.round(((latest.completedAt ?? Date.now()) - (activities[0].startedAt ?? Date.now())) / 1000));
-    const hasCodeActivity = activities.some(activity => activity.group === 'code');
-    const hasDetails = activities.length > 1;
-    const taskCount = Math.max(1, activities.filter(activity => activity.group === 'code' || activity.group === 'tool').length);
-    const summary = isStreaming
-        ? hasCodeActivity ? t('toolActivity.codeAnalysis') : latest.label
-        : t('toolActivity.completedSummary', {count: taskCount, seconds: elapsedSeconds});
+    const [isExpanded, setIsExpanded] = useState(false);
+    const taskActivities = activities.filter(activity => activity.group === 'code' || activity.group === 'tool');
+    if (!taskActivities.length) return null;
+    const measuredDurationMs = taskActivities.reduce((total, activity) => (
+        total + Math.max(0, (activity.completedAt ?? Date.now()) - (activity.startedAt ?? Date.now()))
+    ), 0);
+    const executionDurationMs = executionDurationNs && executionDurationNs > 0
+        ? executionDurationNs / 1_000_000
+        : measuredDurationMs;
+    const elapsedSeconds = Math.max(1, Math.round(executionDurationMs / 1000));
+    const taskCount = taskActivities.length;
+    const summary = t('toolActivity.completedSummary', {count: taskCount, seconds: elapsedSeconds});
+    const formatActivitySeconds = (activity: ToolActivity): string | null => {
+        if (activity.startedAt == null || activity.completedAt == null) return null;
+        const durationSeconds = Math.max(0, activity.completedAt - activity.startedAt) / 1000;
+        return durationSeconds < 10 ? durationSeconds.toFixed(1) : String(Math.round(durationSeconds));
+    };
 
     return (
-        <section className={`msg-activity${isExpanded ? ' expanded' : ''}`} aria-live="polite">
-            <button className={`msg-activity-summary${hasDetails ? '' : ' no-details'}`}
-                    onClick={() => hasDetails && setIsExpanded(value => !value)}>
-                {isStreaming ? <LoaderCircle size={14} className="msg-activity-spinner"/> : <CircleCheck size={14}/>}
+        <section className={`msg-activity completed${isExpanded ? ' expanded' : ''}`}>
+            <button className="msg-activity-summary"
+                    onClick={() => setIsExpanded(value => !value)}>
+                <CircleCheck size={14}/>
                 <span>{summary}</span>
-                {hasDetails && (isExpanded ? <ChevronDown size={14}/> : <ChevronRight size={14}/>)}
+                {isExpanded ? <ChevronDown size={14}/> : <ChevronRight size={14}/>}
             </button>
-            {isExpanded && hasDetails && <ol className="msg-activity-list">
-                {activities.map((activity, index) => <li key={activity.id ?? index} className={activity.phase}>
-                    {activity.phase === 'completed'
-                        ? <CircleCheck className="msg-activity-check" size={12}/>
-                        : <span className="msg-activity-dot"/>}
-                    <span>{activity.label}</span>
-                    {activity.detail && <code>{activity.detail}</code>}
-                </li>)}
+            {isExpanded && <ol className="msg-activity-list">
+                {taskActivities.map((activity, index) => {
+                    const activitySeconds = formatActivitySeconds(activity);
+                    return <li key={activity.id ?? index} className={activity.phase}>
+                        {activity.phase === 'completed'
+                            ? <CircleCheck className="msg-activity-check" size={12}/>
+                            : <span className="msg-activity-dot"/>}
+                        <span>{activity.name ? getToolActivityLabel(activity.name, t) : activity.label}</span>
+                        {activity.detail && <code>{activity.detail}</code>}
+                        {activitySeconds != null && (
+                            <span className="msg-activity-duration">
+                                {t('toolActivity.elapsed', {seconds: activitySeconds})}
+                            </span>
+                        )}
+                    </li>;
+                })}
             </ol>}
         </section>
     );

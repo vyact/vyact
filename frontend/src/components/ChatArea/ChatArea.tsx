@@ -118,7 +118,6 @@ interface ChatAreaProps {
     onDetachAllVideos?: () => void;
     onQueryWithVideo?: (articles: ArticleAttachment[], question: string) => void;
     streamingMessageId?: string | null;  // 현재 토큰 스트리밍 중인 assistant 메시지 id
-    responseStartedAt?: number | null;
     onFollowupSubmit?: (message: string) => void;  // follow-up 선택/입력 전송
     onFollowupDismiss?: (messageId: string) => void;  // follow-up 닫기
     /** FollowupBar의 현재 선택+입력 상태를 외부에서 읽을 수 있도록 ref 전달 */
@@ -150,15 +149,11 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                                                onDetachAllVideos,
                                                onQueryWithVideo,
                                                streamingMessageId = null,
-                                               responseStartedAt = null,
                                                onFollowupSubmit,
                                                onFollowupDismiss,
                                            followupComposedRef,
                                        }) => {
-    const {t} = useTranslation('main');
     const chatRef = useRef<HTMLDivElement>(null);
-    const responseInProgress = isLoading || Boolean(streamingMessageId);
-    const [elapsedSeconds, setElapsedSeconds] = useState(0);
     const [activeTurnIndex, setActiveTurnIndex] = useState(0);
     const conversationTurns = useMemo(() => buildConversationTurns(messages), [messages]);
     const googlePanelWasActiveRef = useRef(false);
@@ -185,23 +180,6 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     const {panel, closePanel, openPanel: openCodePanel} = useCodePanel();
     const panels = usePanelManager();
     const {sidePanels} = usePluginExtensions();
-
-    useEffect(() => {
-        if (!responseInProgress) {
-            setElapsedSeconds(0);
-            return;
-        }
-        const startedAt = responseStartedAt ?? Date.now();
-
-        const updateElapsedSeconds = () => {
-            setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
-        };
-        updateElapsedSeconds();
-        const timerId = window.setInterval(() => {
-            updateElapsedSeconds();
-        }, 1000);
-        return () => window.clearInterval(timerId);
-    }, [responseInProgress, responseStartedAt]);
 
     useEffect(() => {
         const container = chatRef.current;
@@ -525,11 +503,6 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                             />
                         )}
 
-                        {responseInProgress && imageGenProgress === 0 && !imageGenMessage && (
-                            <div className="response-elapsed-time" aria-live="polite">
-                                {t('toolActivity.elapsed', {seconds: elapsedSeconds})}
-                            </div>
-                        )}
                     </div>
                 </div>
 

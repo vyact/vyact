@@ -720,11 +720,14 @@ async def query_stream(req: QueryRequest):
                         _tool_name = ev.get("name", "")
                         if _phase in {"start", "approval_required"} and _tool_name:
                             _activity_log.append({
-                                "phase": "running", "label": _tool_name,
+                                "phase": "running", "name": _tool_name, "label": _tool_name,
+                                "group": "code" if _tool_name.split("__")[-1].startswith("code_") else "tool",
                                 "detail": json.dumps(ev.get("args", {}), ensure_ascii=False),
                                 "startedAt": int(datetime.now(timezone.utc).timestamp() * 1000),
                             })
-                        elif _phase in {"end", "approval_rejected"} and _activity_log:
+                        elif _phase == "approval_rejected" and _activity_log:
+                            _activity_log.pop()
+                        elif _phase == "end" and _activity_log:
                             _activity_log[-1]["phase"] = "completed"
                             _activity_log[-1]["completedAt"] = int(datetime.now(timezone.utc).timestamp() * 1000)
                         # tool call/result 메시지 수집 (히스토리 저장용)

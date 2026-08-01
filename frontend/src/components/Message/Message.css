@@ -433,14 +433,15 @@
 /* ── 현재 tool 실행 단계: 파일/검색어를 함께 보여줘 작업 맥락을 유지한다. ── */
 .msg-tool-status {
     display: flex;
-    align-items: flex-start;
-    gap: 9px;
-    margin: 12px 0 4px;
-    padding: 11px 13px;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0 4px;
+    padding: 7px 10px;
     max-width: min(640px, 100%);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    background: var(--surface);
+    width: fit-content;
+    border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 5%, transparent);
     color: var(--text-secondary);
 }
 
@@ -461,9 +462,10 @@
     font-size: 13px;
     font-weight: 700;
 }
+.msg-tool-icon.completed { color:var(--muted); background:transparent; }
 
-.msg-tool-copy { display: flex; min-width: 0; flex-direction: column; gap: 3px; }
-.msg-tool-text { font-size: 13px; font-weight: 500; }
+.msg-tool-copy { display: flex; min-width: 0; align-items:center; gap: 7px; }
+.msg-tool-text { font-size: 12px; font-weight: 500; }
 .msg-tool-detail {
     max-width: min(520px, 70vw);
     overflow: hidden;
@@ -472,7 +474,7 @@
     font-size: 11px;
     text-overflow: ellipsis;
     white-space: nowrap;
-    background: var(--surface2);
+    background: color-mix(in srgb, var(--surface2) 75%, transparent);
     border-radius: 4px;
     padding: 2px 5px;
 }
@@ -481,10 +483,10 @@
     to { transform: rotate(360deg); }
 }
 
-/* 활동 요약은 응답 본문과 같은 시작선에 두고, 상세 단계만 한 단계 들여쓴다. */
-.msg-activity { margin:10px 0 14px; max-width:min(640px, 100%); color:var(--muted); font-size:13px; }
+/* 실행 중에는 본문 위치에, 완료 후에는 메시지 하단 통계 아래에 표시한다. */
+.msg-activity { max-width:min(640px, 100%); color:var(--muted); font-size:13px; }
+.msg-activity.completed { margin:4px 16px 0; max-width:min(640px, calc(100% - 32px)); font-size:10.5px; opacity:.7; }
 .msg-activity-summary { display:flex; align-items:center; gap:7px; padding:3px 0; border:0; background:transparent; color:inherit; font:inherit; cursor:pointer; }
-.msg-activity-summary.no-details { cursor:default; }
 .msg-activity-summary svg:last-child { margin-left:2px; }
 .msg-activity-spinner { animation:msg-stream-spin .8s linear infinite; color:var(--accent); }
 .msg-activity-list { list-style:none; margin:7px 0 0 6px; padding:0 0 0 13px; border-left:1px solid var(--border); display:grid; gap:7px; }
@@ -493,6 +495,7 @@
 .msg-activity-check { position:absolute; left:-20px; padding:1px; border-radius:50%; background:var(--bg); color:var(--muted); }
 .msg-activity-list li.running .msg-activity-dot, .msg-activity-list li.judging .msg-activity-dot { background:var(--accent); box-shadow:0 0 0 3px rgba(var(--accent-rgb), .14); }
 .msg-activity-list code { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px; color:var(--muted); }
+.msg-activity-duration { margin-left:auto; flex-shrink:0; color:var(--muted); font-size:10.5px; }
 
 /* ── 스트리밍 첫 토큰 대기 중 타이핑 점 (LoadingIndicator .typing과 동일 톤) ── */
 .msg-typing-dots {

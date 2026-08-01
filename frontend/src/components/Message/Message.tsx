@@ -408,20 +408,20 @@ const Message: React.FC<MessageProps> = ({
                                 ))}
                             </div>
                         )}
-                        {/* 스트리밍 시작 직후 첫 토큰 오기 전: 로딩 점 표시 (tool 진행 중이 아닐 때) */}
-                        {isStreaming && !content.trim() && !toolStatus && (
-                            <div className="msg-typing-dots" aria-label="응답 생성 중">
-                                <span/><span/><span/>
-                            </div>
-                        )}
-                        {activityLog?.length ? <ActivityTimeline activities={activityLog} isStreaming={isStreaming}/> : isStreaming && !content.trim() && toolStatus && (
-                            <div className={`msg-tool-status ${toolStatus.phase}`} aria-live="polite" aria-label={t('toolActivity.ariaLabel')}>
-                                <span className="msg-tool-spinner"/>
-                                <span className="msg-tool-icon" aria-hidden="true">{toolStatus.phase === 'completed' ? '✓' : '⌘'}</span>
+                        {/* 첫 토큰 전에는 현재 판정/도구 상태를, 상태 이벤트 전에는 로딩 점을 표시한다. */}
+                        {isStreaming && !content.trim() && toolStatus ? (
+                            <div className={`msg-tool-status ${toolStatus.phase} ${toolStatus.group ?? 'analysis'}`} aria-live="polite" aria-label={t('toolActivity.ariaLabel')}>
+                                {toolStatus.phase === 'completed'
+                                    ? <span className="msg-tool-icon completed" aria-hidden="true">✓</span>
+                                    : <span className="msg-tool-spinner"/>}
                                 <span className="msg-tool-copy">
                                     <span className="msg-tool-text">{toolStatus.label}</span>
                                     {toolStatus.detail && <code className="msg-tool-detail">{toolStatus.detail}</code>}
                                 </span>
+                            </div>
+                        ) : isStreaming && !content.trim() && (
+                            <div className="msg-typing-dots" aria-label={t('toolActivity.thinking')}>
+                                <span/><span/><span/>
                             </div>
                         )}
                         {renderGroups.map((group, idx) => {
@@ -897,11 +897,8 @@ const Message: React.FC<MessageProps> = ({
                     if (!line) return null;
                     return <div className={`msg-stats user`}>{line}</div>;
                 }
-                // assistant: LLM 총소요 + 전체 총소요 + tool 정보
-                const hasToolStats = (stats.tool_call_count ?? 0) > 0;
+                // assistant: 모델 응답 생성 통계. tool 통계는 바로 아래 활동 요약에서 제공한다.
                 const llmTotal = stats.llm_total_duration || stats.total_duration;
-                const toolDur = stats.tool_duration || 0;
-                const grandTotal = (llmTotal || 0) + toolDur;
 
                 const line1 = formatStats([
                     [t('message.outputTokens'), stats.eval_count],
@@ -909,22 +906,15 @@ const Message: React.FC<MessageProps> = ({
                     [t('message.generationTime'), formatNs(stats.eval_duration)],
                     [t('message.llmTotal'), formatNs(llmTotal)],
                 ]);
-                const line2 = hasToolStats
-                    ? formatStats([
-                        [t('message.toolCalls'), t('message.count', {count: stats.tool_call_count})],
-                        [t('message.toolTime'), formatNs(toolDur)],
-                        [t('message.totalTime'), formatNs(grandTotal)],
-                    ])
-                    : null;
-
-                if (!line1 && !line2) return null;
-                return (
-                    <div className={`msg-stats bot`}>
-                        {line1}
-                        {line2 && <><br/>{line2}</>}
-                    </div>
-                );
+                return line1 ? <div className="msg-stats bot">{line1}</div> : null;
             })()}
+
+            {role === 'assistant' && !isStreaming && activityLog?.length ? (
+                <ActivityTimeline
+                    activities={activityLog}
+                    executionDurationNs={stats?.tool_duration}
+                />
+            ) : null}
 
             {viewerIndex !== null && viewerImages.length > 0 && (
                 <ImageViewer

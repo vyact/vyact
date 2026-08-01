@@ -926,6 +926,7 @@
     "completed": "Paso completado",
     "codeAnalysis": "Analizando el código",
     "completedSummary": "{{count}} tareas completadas · {{seconds}} s",
+    "stopped": "Se detuvo la generación de la respuesta.",
     "runningTool": "Ejecutando {{tool}}",
     "indexing": "Indexando archivos adjuntos · {{done}}/{{total}}",
     "uploading": "Subiendo {{name}} · {{pct}}%",

@@ -100,7 +100,9 @@ export interface MessageStats {
 /** 실행 중인 MCP/code tool의 사용자 표시용 상태. */
 export interface ToolActivity {
     id?: string;
+    name?: string;
     phase: 'judging' | 'running' | 'completed';
+    outcome?: 'success' | 'rejected';
     group?: 'analysis' | 'code' | 'tool';
     label: string;
     detail?: string;

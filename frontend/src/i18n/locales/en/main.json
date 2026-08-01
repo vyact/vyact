@@ -923,6 +923,7 @@
     "completed": "Step completed",
     "codeAnalysis": "Analyzing the codebase",
     "completedSummary": "{{count}} tasks completed · {{seconds}}s",
+    "stopped": "Response generation stopped.",
     "runningTool": "Running {{tool}}",
     "indexing": "Indexing attachments · {{done}}/{{total}}",
     "uploading": "Uploading {{name}} · {{pct}}%",

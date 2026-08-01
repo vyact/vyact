@@ -14,32 +14,9 @@ import {isSupportedChatFile} from '../../utils/fileValidation';
 import type {FileAttachment} from '../ChatInput/useAttachments';
 import {findPluginCommand} from '../../plugins/registry';
 import {resolveApprovalMode} from '../../services/approvalPolicy';
+import {getToolActivityLabel} from '../../utils/toolActivity';
 
 // MCP tool 이름(서버__tool)을 사용자용 진행 문구로 변환
-function toolLabel(name: string | undefined, t: (key: string, options?: Record<string, unknown>) => string): string {
-    if (!name) return t('toolActivity.working');
-    const tool = name.includes('__') ? name.split('__').slice(1).join('__') : name;
-    const map: Record<string, string> = {
-        read_file: 'readFile', read_text_file: 'readFile', read_multiple_files: 'readFile',
-        write_file: 'writeFile', edit_file: 'editFile', create_directory: 'createDirectory',
-        list_directory: 'listDirectory', list_directory_with_sizes: 'listDirectory', directory_tree: 'directoryTree',
-        move_file: 'moveFile', search_files: 'searchFiles', get_file_info: 'fileInfo',
-        list_allowed_directories: 'allowedDirectories', search_related_context: 'searchContext',
-        search_knowledge_collection: 'searchKnowledgeCollection',
-        // 코드 분석 tool
-        code_list_directory: 'codeListDirectory', code_read_file: 'codeReadFile', code_edit_file: 'codeEditFile',
-        code_read_files: 'codeReadFiles', code_find_files: 'codeFindFiles',
-        code_create_file: 'codeCreateFile', code_grep_search: 'codeSearch', code_apply_patch: 'codeApplyPatch',
-        code_list_tasks: 'codeListTasks', code_run_task: 'codeRunTask', code_run_check: 'codeRunCheck',
-        code_git_status: 'codeGitStatus', code_git_diff: 'codeGitDiff',
-        code_move_file: 'codeMoveFile', code_delete_file: 'codeDeleteFile',
-        // GitHub (자주 쓰는 것)
-        search_repositories: 'githubRepositories', get_file_contents: 'githubFile', list_commits: 'githubCommits',
-        search_code: 'githubCode', create_issue: 'githubIssue',
-    };
-    return map[tool] ? t(`toolActivity.${map[tool]}`) : t('toolActivity.runningTool', {tool});
-}
-
 function toolDetail(args?: Record<string, unknown>): string | undefined {
     if (!args) return undefined;
     const path = args.path ?? args.file_path ?? args.filename;
@@ -68,6 +45,9 @@ function appendCompactActivity(
             }
         }
         if (runningIndex < 0) return activities;
+        if (status.outcome === 'rejected') {
+            return activities.filter((_, index) => index !== runningIndex);
+        }
         return activities.map((activity, index) => index === runningIndex
             ? {...activity, phase: 'completed', completedAt: now}
             : activity);
@@ -533,13 +513,13 @@ export function useChat(deps: UseChatDeps) {
                         onTool: (data) => {
                             if (data.phase === 'approval_required') {
                                 window.dispatchEvent(new CustomEvent('vyact:tool-approval-required', {detail: data}));
-                                setToolStatus({phase: 'running', group: toolGroup(data.name), label: t('toolActivity.waitingApproval'), detail: toolDetail(data.args)});
+                                setToolStatus({phase: 'running', name: data.name, group: toolGroup(data.name), label: t('toolActivity.waitingApproval'), detail: toolDetail(data.args)});
                             } else if (data.phase === 'approval_rejected') {
-                                setToolStatus({phase: 'completed', group: toolGroup(data.name), label: t('toolActivity.approvalRejected'), detail: toolDetail(data.args)});
+                                setToolStatus({phase: 'completed', outcome: 'rejected', name: data.name, group: toolGroup(data.name), label: t('toolActivity.approvalRejected'), detail: toolDetail(data.args)});
                             } else if (data.phase === 'judging') {
                                 setToolStatus({phase: 'judging', group: 'analysis', label: t((data.round ?? 0) > 0 ? 'toolActivity.additionalAnalysis' : 'toolActivity.analyzing')});
                             } else if (data.phase === 'start') {
-                                setToolStatus({phase: 'running', group: toolGroup(data.name), label: toolLabel(data.name, t), detail: toolDetail(data.args)});
+                                setToolStatus({phase: 'running', name: data.name, group: toolGroup(data.name), label: getToolActivityLabel(data.name, t), detail: toolDetail(data.args)});
                             } else if (data.phase === 'end') {
                                 setToolStatus({phase: 'completed', label: t('toolActivity.completed'), detail: toolDetail(data.args)});
                                 // 검색/도구 단계가 끝난 뒤 첫 토큰이 오기까지는 프롬프트 평가가 진행된다.
@@ -636,7 +616,16 @@ export function useChat(deps: UseChatDeps) {
                     if (streamErr instanceof DOMException && streamErr.name === 'AbortError') {
                         setMessagesForConversation(requestConvId, prev => prev.map(m =>
                             m.id === streamId && !m.content?.trim()
-                                ? {...m, content: '(중단됨)', isError: false} : m));
+                                ? {
+                                    ...m,
+                                    content: t('toolActivity.stopped'),
+                                    isError: false,
+                                    toolStatus: undefined,
+                                    activityLog: m.activityLog?.map(activity => activity.phase === 'completed'
+                                        ? activity
+                                        : {...activity, phase: 'completed', completedAt: Date.now()}),
+                                }
+                                : m));
                     } else {
                         // HTTP 레벨 실패(ApiError)나 네트워크 중단 등 — onError(서버가 보낸 SSE error
                         // 이벤트)와 별개로, 요청 자체가 실패한 경우. 바깥 catch로 전파시키면 이미 만들어둔

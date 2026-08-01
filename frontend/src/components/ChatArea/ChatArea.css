@@ -174,24 +174,6 @@
     justify-content: flex-end;
 }
 
-.response-elapsed-time {
-    align-self: flex-start;
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    margin-left: 16px;
-    padding: 3px 2px;
-    color: var(--muted);
-    font-size: 13px;
-    font-weight: 500;
-}
-
-.response-elapsed-time span {
-    font-size: 20px;
-    font-weight: 300;
-    line-height: 1;
-}
-
 /* 웰컴 화면 */
 .welcome {
     display: flex;
