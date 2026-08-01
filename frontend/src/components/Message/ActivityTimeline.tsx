@@ -20,13 +20,17 @@ const ActivityTimeline = ({activities, executionDurationNs}: ActivityTimelinePro
     const executionDurationMs = executionDurationNs && executionDurationNs > 0
         ? executionDurationNs / 1_000_000
         : measuredDurationMs;
-    const elapsedSeconds = Math.max(1, Math.round(executionDurationMs / 1000));
+    const formatDurationSeconds = (durationMs: number): string => {
+        if (durationMs < 100) return '<0.1';
+        const durationSeconds = durationMs / 1000;
+        return durationSeconds < 10 ? durationSeconds.toFixed(1) : String(Math.round(durationSeconds));
+    };
+    const elapsedSeconds = formatDurationSeconds(executionDurationMs);
     const taskCount = taskActivities.length;
     const summary = t('toolActivity.completedSummary', {count: taskCount, seconds: elapsedSeconds});
     const formatActivitySeconds = (activity: ToolActivity): string | null => {
         if (activity.startedAt == null || activity.completedAt == null) return null;
-        const durationSeconds = Math.max(0, activity.completedAt - activity.startedAt) / 1000;
-        return durationSeconds < 10 ? durationSeconds.toFixed(1) : String(Math.round(durationSeconds));
+        return formatDurationSeconds(Math.max(0, activity.completedAt - activity.startedAt));
     };
 
     return (

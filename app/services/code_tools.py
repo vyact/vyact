@@ -8,8 +8,9 @@ import fnmatch
 import json
 import os
 import re
+import shutil
 import subprocess
-import tempfile
+import sys
 import time
 from contextvars import ContextVar
 from pathlib import Path
@@ -141,8 +142,20 @@ def _confirmation_received(action: str, *paths: str) -> bool:
 
 def _run_command(command: list[str], folder: str, timeout: int = 60) -> str:
     """고정된 명령 배열만 실행하고 출력 길이를 제한한다."""
+    executable = shutil.which(command[0])
+    if not executable:
+        return f"[오류] 실행 명령을 찾을 수 없습니다: {command[0]}"
+    resolved_command = [executable, *command[1:]]
     try:
-        result = subprocess.run(command, capture_output=True, text=True, timeout=timeout, cwd=folder)
+        result = subprocess.run(
+            resolved_command,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=timeout,
+            cwd=folder,
+        )
     except subprocess.TimeoutExpired:
         return f"[오류] 검사 시간 초과 ({timeout}초)"
     except FileNotFoundError:
@@ -427,20 +440,33 @@ async def _apply_patch(folder_id: str, patch: str) -> str:
             if not target.is_relative_to(base):
                 return f"[오류] 등록 폴더 밖의 경로는 수정할 수 없습니다: {candidate}"
 
-    temporary_path = ""
+    git_executable = shutil.which("git")
+    if not git_executable:
+        return "[오류] patch 적용에 필요한 Git 실행 파일을 찾을 수 없습니다."
+    check_command = [git_executable, "apply", "--check", "--recount", "--whitespace=nowarn", "-p0", "-"]
+    apply_command = [git_executable, "apply", "--recount", "--whitespace=nowarn", "-p0", "-"]
     try:
-        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", suffix=".patch", delete=False) as temporary:
-            temporary.write(patch)
-            temporary_path = temporary.name
         dry_run = subprocess.run(
-            ["patch", "--batch", "--forward", "--dry-run", "-p0", "-i", temporary_path],
-            capture_output=True, text=True, timeout=30, cwd=str(base),
+            check_command,
+            input=patch,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=30,
+            cwd=str(base),
         )
         if dry_run.returncode != 0:
             return f"[오류] patch 사전 검증 실패:\n{(dry_run.stdout + dry_run.stderr).strip()[:12_000]}"
         applied = subprocess.run(
-            ["patch", "--batch", "--forward", "-p0", "-i", temporary_path],
-            capture_output=True, text=True, timeout=30, cwd=str(base),
+            apply_command,
+            input=patch,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=30,
+            cwd=str(base),
         )
         output = (applied.stdout + applied.stderr).strip()
         if applied.returncode != 0:
@@ -449,12 +475,6 @@ async def _apply_patch(folder_id: str, patch: str) -> str:
         return f"✅ patch 적용 완료\n{output[:12_000]}"
     except (OSError, subprocess.TimeoutExpired) as exc:
         return f"[오류] patch 실행 실패: {exc}"
-    finally:
-        if temporary_path:
-            try:
-                Path(temporary_path).unlink(missing_ok=True)
-            except OSError:
-                pass
 
 
 async def _grep_search(folder_id: str, pattern: str, path: str = ".", include: str = "") -> str:
@@ -466,43 +486,53 @@ async def _grep_search(folder_id: str, pattern: str, path: str = ".", include: s
     if not target or not target.exists():
         return f"[오류] 경로를 찾을 수 없습니다: {path}"
 
-    cmd = ["grep", "-rn", "--color=never"]
-
-    # 무시 디렉토리
-    for d in IGNORE_DIRS:
-        cmd.extend(["--exclude-dir", d])
-
-    if include:
-        cmd.extend(["--include", include])
-
-    cmd.extend([pattern, str(target)])
-
     try:
-        result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=10,
-            cwd=str(Path(folder).resolve()),
-        )
-        output = result.stdout.strip()
-    except subprocess.TimeoutExpired:
-        return "[오류] 검색 시간 초과 (10초)"
-    except Exception as e:
-        return f"[오류] 검색 실패: {e}"
+        search_pattern = re.compile(pattern)
+    except re.error as exc:
+        return f"[오류] 잘못된 검색 정규식입니다: {exc}"
 
-    if not output:
+    base = Path(folder).resolve()
+    search_targets: list[Path] = []
+    if target.is_file():
+        search_targets.append(target)
+    elif target.is_dir():
+        for root, directory_names, file_names in os.walk(target):
+            directory_names[:] = sorted(name for name in directory_names if name not in IGNORE_DIRS)
+            root_path = Path(root)
+            for file_name in sorted(file_names):
+                file_path = root_path / file_name
+                relative_path = file_path.relative_to(base).as_posix()
+                if include and not (
+                    fnmatch.fnmatch(file_name, include) or fnmatch.fnmatch(relative_path, include)
+                ):
+                    continue
+                search_targets.append(file_path)
+
+    matches: list[str] = []
+    total_matches = 0
+    for file_path in search_targets:
+        try:
+            if file_path.stat().st_size > MAX_READ_BYTES * 10:
+                continue
+            content = file_path.read_text(encoding="utf-8", errors="replace")
+        except (OSError, UnicodeError):
+            continue
+        relative_path = file_path.relative_to(base).as_posix()
+        for line_number, line in enumerate(content.splitlines(), 1):
+            if not search_pattern.search(line):
+                continue
+            total_matches += 1
+            if len(matches) < MAX_GREP_RESULTS:
+                matches.append(f"{relative_path}:{line_number}:{line}")
+
+    if not matches:
         return f"'{pattern}' 검색 결과 없음"
 
-    lines = output.split("\n")
-    # 경로를 상대경로로 변환
-    base = str(Path(folder).resolve())
-    cleaned = []
-    for line in lines[:MAX_GREP_RESULTS]:
-        cleaned.append(line.replace(base + "/", ""))
-
-    header = f"'{pattern}' 검색 결과 ({len(lines)}건"
-    if len(lines) > MAX_GREP_RESULTS:
+    header = f"'{pattern}' 검색 결과 ({total_matches}건"
+    if total_matches > MAX_GREP_RESULTS:
         header += f", 상위 {MAX_GREP_RESULTS}건 표시"
     header += ")"
-    return header + "\n" + "\n".join(cleaned)
+    return header + "\n" + "\n".join(matches)
 
 
 def _discover_project_tasks(folder: str) -> list[dict[str, str]]:
@@ -569,10 +599,10 @@ async def _run_task(folder_id: str, working_directory: str, task: str) -> str:
         return "[오류] 등록된 프로젝트 설정에서 해당 작업을 찾을 수 없습니다. code_list_tasks로 실행 가능한 작업을 먼저 확인하세요."
     if task.startswith("python:"):
         commands = {
-            "python:test": ["pytest"],
-            "python:lint": ["ruff", "check", "."],
-            "python:typecheck": ["mypy", "."],
-            "python:compile": ["python", "-m", "compileall", "-q", "."],
+            "python:test": [sys.executable, "-m", "pytest"],
+            "python:lint": [sys.executable, "-m", "ruff", "check", "."],
+            "python:typecheck": [sys.executable, "-m", "mypy", "."],
+            "python:compile": [sys.executable, "-m", "compileall", "-q", "."],
         }
         command = commands[task]
     else:
@@ -798,7 +828,7 @@ def register_code_tools():
 
     mcp_manager.register_internal_tool(
         name="code_grep_search",
-        description="코드 폴더 내에서 텍스트/정규식 패턴을 검색한다 (grep). 파일명과 줄번호가 표시된다.",
+        description="코드 폴더 내에서 텍스트/정규식 패턴을 재귀 검색한다. 파일명과 줄번호가 표시된다.",
         parameters={
             "type": "object",
             "properties": {
