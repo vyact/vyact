@@ -55,8 +55,21 @@ function appendCompactActivity(
 
     let compactActivities = activities;
     if (status.phase === 'running') {
-        const hasPreviousTask = activities.some(activity => activity.group === 'code' || activity.group === 'tool');
         const lastActivity = activities[activities.length - 1];
+        if (lastActivity?.phase === 'running'
+            && lastActivity.awaitingApproval
+            && lastActivity.name === status.name) {
+            return activities.map((activity, index) => index === activities.length - 1
+                ? {
+                    ...activity,
+                    ...status,
+                    awaitingApproval: false,
+                    id: activity.id,
+                    startedAt: now,
+                }
+                : activity);
+        }
+        const hasPreviousTask = activities.some(activity => activity.group === 'code' || activity.group === 'tool');
         if (hasPreviousTask && lastActivity?.phase === 'judging') {
             compactActivities = activities.slice(0, -1);
         }
@@ -513,7 +526,7 @@ export function useChat(deps: UseChatDeps) {
                         onTool: (data) => {
                             if (data.phase === 'approval_required') {
                                 window.dispatchEvent(new CustomEvent('vyact:tool-approval-required', {detail: data}));
-                                setToolStatus({phase: 'running', name: data.name, group: toolGroup(data.name), label: t('toolActivity.waitingApproval'), detail: toolDetail(data.args)});
+                                setToolStatus({phase: 'running', name: data.name, group: toolGroup(data.name), label: t('toolActivity.waitingApproval'), detail: toolDetail(data.args), awaitingApproval: true});
                             } else if (data.phase === 'approval_rejected') {
                                 setToolStatus({phase: 'completed', outcome: 'rejected', name: data.name, group: toolGroup(data.name), label: t('toolActivity.approvalRejected'), detail: toolDetail(data.args)});
                                 setToolStatus({phase: 'judging', group: 'analysis', label: t('toolActivity.approvalRejectedPreparingResponse')});
