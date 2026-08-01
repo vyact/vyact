@@ -73,6 +73,17 @@ LATEX_OPERATOR_NAMES = {
 LATEX_RESIDUAL_PATTERN = re.compile(
     r"(?:\$|\\(?:begin|end)\s*\{|\\[A-Za-z]+|\\[()[\]])"
 )
+NUMBERED_OUTLINE_PATTERN = re.compile(r"(?m)^\s*(\d{1,2})[.)]\s+(.+?)\s*$")
+ENUMERATED_ITEM_COUNT_PATTERN = re.compile(
+    r"(?<!\d)(\d{1,2})\s*(?:"
+    r"대\s*(?:의무|원칙|과제|방향)|가지(?:의)?\s*(?:의무|원칙|과제|방향)|"
+    r"(?:key\s+)?(?:duties|obligations|principles|actions|steps|pillars|requirements)|"
+    r"(?:deberes|obligaciones|principios|acciones|pasos|requisitos)|"
+    r"(?:devoirs|obligations|principes|actions|étapes|exigences)|"
+    r"(?:项|個|つの)(?:义务|義務|原则|原則|措施|步骤|手順|要件)"
+    r")",
+    re.IGNORECASE,
+)
 
 
 def _normalized_text(value: Any) -> str:
@@ -145,6 +156,11 @@ def validate_evidence_ledger(raw_ledger: dict, context_docs: list[dict]) -> dict
 def fact_ledger_prompt_payload(ledger: dict) -> str:
     """Compact, deterministic serialization for a downstream model prompt."""
     return json.dumps(ledger, ensure_ascii=False, separators=(",", ":"))
+
+
+def extract_numbered_outline(prompt: str) -> list[str]:
+    """Extract an explicit user-authored numbered presentation outline."""
+    return [match.group(2).strip() for match in NUMBERED_OUTLINE_PATTERN.finditer(prompt or "")]
 
 
 def _consume_latex_group(text: str, start: int) -> tuple[str, int]:
@@ -363,6 +379,25 @@ def audit_presentation(page_data: dict, ledger: dict, language: str) -> list[dic
         invalid_ids = [fact_id for fact_id in requested_ids if fact_id not in facts]
         if invalid_ids:
             findings.append({"page_index": index, "code": "invalid_fact_ids", "details": invalid_ids})
+
+        bullets = page.get("bullets") or []
+        if bullets:
+            declared_item_counts = {
+                int(match.group(1))
+                for match in ENUMERATED_ITEM_COUNT_PATTERN.finditer(text)
+            }
+            mismatched_counts = sorted(
+                count for count in declared_item_counts if count != len(bullets)
+            )
+            if mismatched_counts:
+                findings.append({
+                    "page_index": index,
+                    "code": "enumerated_item_count_mismatch",
+                    "details": {
+                        "declared_counts": mismatched_counts,
+                        "rendered_item_count": len(bullets),
+                    },
+                })
 
         page_tokens = _fact_tokens(text)
         if not page_tokens:

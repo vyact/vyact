@@ -27,6 +27,7 @@ from services.presentation_grounding import (
     add_source_notes,
     apply_page_repairs,
     audit_presentation,
+    extract_numbered_outline,
     fact_ledger_prompt_payload,
     parse_json_object,
     reconcile_page_fact_ids,
@@ -48,7 +49,11 @@ IMAGES_DIR = _INSTALL_DIR / "uploads" / "images"
 IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 
 PRESENTATION_CONTEXT_CHAR_LIMIT = 120_000
-PRESENTATION_TEMPERATURE = 0.55
+# Grounded presentations benefit more from stable claim selection than from
+# lexical variation. Source-free ideation can retain more variety. Layout
+# diversity itself is handled deterministically by ``prepare_presentation``.
+GROUNDED_PRESENTATION_TEMPERATURE = 0.30
+CREATIVE_PRESENTATION_TEMPERATURE = 0.55
 
 OUTPUT_LANGUAGE_DIRECTIVE_PATTERNS = (
     re.compile(r"(?:전문적이고\s*)?(?:이해하기\s*쉬운\s*)?(?:자연스러운\s*)?(?:한국어|영어|일본어|중국어|스페인어|프랑스어|태국어|베트남어)(?:로|으로)\s*(?:작성|만들어|생성|번역)(?:해\s*주세요|해주세요|해줘|하십시오|하세요|한다|하고|해)?[.!。]?\s*", re.IGNORECASE),
@@ -367,6 +372,7 @@ async def _audit_and_repair_presentation(
         return page_data
     page_data = reconcile_page_fact_ids(page_data, ledger)
     deterministic_findings = audit_presentation(page_data, ledger, language)
+    requested_outline = extract_numbered_outline(prompt)
     system = """You are the final evidence auditor for a presentation.
 Return ONLY a JSON object: {"repaired_pages":[{"index":0,"page":{...complete page object...}}]}.
 
@@ -378,6 +384,8 @@ Audit every page, but return only pages that need correction. A page needs corre
 - uses the wrong output language;
 - confuses a total with an increase, a rank with a value, or an example with a rule.
 - fails the requested narrative job or duplicates another page instead of covering a requested section.
+- omits, merges away, or substitutes an item from requested_outline. Every numbered outline item
+  must be recognizably covered, in order, even when the deck uses the minimum possible page count.
 
 Repair rules:
 - Use only the verified ledger evidence. Preserve numeric expressions and units verbatim.
@@ -389,6 +397,7 @@ Repair rules:
 - If no page needs repair, return {"repaired_pages":[]}."""
     audit_payload = {
         "user_request": _strip_output_language_directives(prompt),
+        "requested_outline": requested_outline,
         "requested_language": language,
         "deterministic_findings": deterministic_findings,
         "verified_fact_ledger": ledger,
@@ -432,6 +441,7 @@ Repair rules:
         ]
         retry_payload = {
             "requested_language": language,
+            "requested_outline": requested_outline,
             "remaining_errors_that_must_be_fixed": remaining_findings,
             "verified_fact_ledger": ledger,
             "pages_to_repair": pages_to_repair,
@@ -528,11 +538,28 @@ async def _call_llm_for_pages(
             "Use only these facts for concrete claims. Copy numeric expressions and units exactly from evidence. "
             "Attach the supporting IDs to each page in fact_ids."
         )
+    requested_outline = extract_numbered_outline(normalized_prompt)
+    outline_instruction = ""
+    if requested_outline:
+        outline_instruction = (
+            "\n\n[REQUIRED OUTLINE — DO NOT OMIT OR SUBSTITUTE]\n"
+            + "\n".join(f"{index}. {section}" for index, section in enumerate(requested_outline, 1))
+            + "\nEvery item above must be recognizably covered in this exact order. "
+              "Use at least one page per item unless the item explicitly combines cover and message."
+        )
 
-    temperature_token = set_request_temperature_override(PRESENTATION_TEMPERATURE)
+    generation_temperature = (
+        GROUNDED_PRESENTATION_TEMPERATURE
+        if fact_ledger.get("facts")
+        else CREATIVE_PRESENTATION_TEMPERATURE
+    )
+    temperature_token = set_request_temperature_override(generation_temperature)
     try:
         raw, _ = await collect_llm_stream(
-            question=f"{normalized_prompt}{img_desc}{grounding_instruction}{language_override}",
+            question=(
+                f"{normalized_prompt}{img_desc}{grounding_instruction}"
+                f"{outline_instruction}{language_override}"
+            ),
             context_docs=context_docs,
             system_prompt=system,
             attachments=attachments,
@@ -665,7 +692,7 @@ def _render_page_html(page: dict, img_map: dict, palette: dict, total: int) -> s
   {_doc_header(page_num, total, title, accent, accent2, section_label)}
   <div class="doc-body">
     {"<p class='doc-intro'>" + content + "</p>" if content else ""}
-    <div class="stats-row">{cards}</div>
+    <div class="stats-row count-{min(len(stats), 4)}">{cards}</div>
   </div>
 </div>"""
 
@@ -1168,12 +1195,14 @@ def _build_html(page_data: dict, images: list[ImageMeta], style: str, aspect_rat
   .single-body {{ display:flex; flex-direction:column; gap:3mm; flex:1; overflow:hidden; }}
   body.a4 .doc-header {{ padding: 16mm 18mm 0; }}
   body.a4 .doc-body {{ padding: 12mm 18mm 18mm; gap: 8mm; }}
+  body.a4 .doc-body:not(.chart-body):not(.spotlight-body) {{ justify-content: center; }}
   body.a4 .doc-title {{ font-size: 1.9rem; }}
   body.a4 .doc-intro {{ font-size: 1.02rem; line-height: 2; }}
-  body.a4 .bullet-list {{ justify-content: space-evenly; gap: 5mm; }}
-  body.a4 .bullet-row {{ flex: 1; max-height: 36mm; padding: 6mm; }}
-  body.a4 .stats-row {{ flex: 1; align-items: stretch; grid-template-columns: repeat(2, minmax(0, 1fr)); }}
-  body.a4 .stat-card {{ display: flex; flex-direction: column; justify-content: center; padding: 10mm 6mm; }}
+  body.a4 .bullet-list {{ flex: none; justify-content: center; gap: 5mm; }}
+  body.a4 .bullet-row {{ min-height: 22mm; max-height: 36mm; padding: 6mm; }}
+  body.a4 .stats-row {{ flex: none; align-items: stretch; grid-template-columns: repeat(2, minmax(0, 1fr)); }}
+  body.a4 .stats-row.count-3 {{ grid-template-columns: repeat(3, minmax(0, 1fr)); }}
+  body.a4 .stat-card {{ min-height: 58mm; display: flex; flex-direction: column; justify-content: center; padding: 8mm 5mm; }}
   body.a4 .chart-body {{ justify-content: stretch; }}
   body.a4 .chart-panel {{ flex: 1; justify-content: space-evenly; }}
   body.a4 .quote-wrap {{ padding: 12mm; }}
@@ -1306,6 +1335,7 @@ async def generate_pdf(req: PdfGenerateRequest):
             aspect_ratio = req.aspect_ratio if req.aspect_ratio in {"widescreen", "a4"} else ("a4" if output_format == "pdf" else "widescreen")
             if output_format == "pptx":
                 aspect_ratio = "widescreen"
+            page_data = prepare_presentation(page_data)
             html_content = _build_html(page_data, req.images, req.style, aspect_ratio)
             html_path = FILES_DIR / f"pdf_tmp_{uid}.html"
             html_path.write_text(html_content, encoding="utf-8")
@@ -1319,8 +1349,7 @@ async def generate_pdf(req: PdfGenerateRequest):
             temp_output_path = FILES_DIR / f"pdf_tmp_{uid}.{output_format}"
             if output_format == "pptx":
                 palette = STYLE_PALETTES.get(req.style, STYLE_PALETTES["white"])
-                prepared_page_data = prepare_presentation(page_data)
-                await asyncio.to_thread(build_pptx, prepared_page_data, req.images, palette, temp_output_path)
+                await asyncio.to_thread(build_pptx, page_data, req.images, palette, temp_output_path)
             else:
                 await _html_to_pdf(html_path, temp_output_path, aspect_ratio)
             logger.info("[pdf] step8 %s 변환 완료", format_label)

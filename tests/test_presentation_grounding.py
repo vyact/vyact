@@ -5,6 +5,7 @@ from services.presentation_grounding import (
     add_source_notes,
     apply_page_repairs,
     audit_presentation,
+    extract_numbered_outline,
     parse_json_object,
     reconcile_page_fact_ids,
     sanitize_presentation_content,
@@ -101,6 +102,39 @@ class PresentationGroundingTests(unittest.TestCase):
         ]}
         findings = audit_presentation(deck, self.ledger, "en")
         self.assertIn("unsupported_fact_tokens", {finding["code"] for finding in findings})
+
+    def test_numbered_outline_is_extracted(self):
+        prompt = "소개 문장\n1. 표지와 핵심 메시지\n2) 정책 영향 비교\n마무리"
+        self.assertEqual(
+            extract_numbered_outline(prompt),
+            ["표지와 핵심 메시지", "정책 영향 비교"],
+        )
+
+    def test_declared_item_count_mismatch_is_reported(self):
+        deck = {"pages": [{
+            "title": "5대 의무",
+            "content": "새로운 5대 의무를 적용합니다.",
+            "bullets": ["첫째", "둘째", "셋째", "넷째"],
+            "fact_ids": [],
+        }]}
+        findings = audit_presentation(deck, {"facts": []}, "ko")
+        mismatch = next(
+            finding for finding in findings
+            if finding["code"] == "enumerated_item_count_mismatch"
+        )
+        self.assertEqual(mismatch["details"]["rendered_item_count"], 4)
+
+    def test_declared_item_count_mismatch_is_language_agnostic(self):
+        deck = {"pages": [{
+            "title": "5 key obligations",
+            "bullets": ["One", "Two", "Three", "Four"],
+            "fact_ids": [],
+        }]}
+        findings = audit_presentation(deck, {"facts": []}, "en")
+        self.assertIn(
+            "enumerated_item_count_mismatch",
+            {finding["code"] for finding in findings},
+        )
 
     def test_number_without_source_unit_is_reconciled(self):
         context = [{"title": "Scope memo", "content": "The program covers approximately 220 companies."}]
