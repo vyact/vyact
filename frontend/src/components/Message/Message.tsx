@@ -414,7 +414,7 @@ const Message: React.FC<MessageProps> = ({
                                 <span/><span/><span/>
                             </div>
                         )}
-                        {isStreaming && !content.trim() && activityLog?.length ? <ActivityTimeline activities={activityLog} isStreaming={isStreaming}/> : isStreaming && !content.trim() && toolStatus && (
+                        {activityLog?.length ? <ActivityTimeline activities={activityLog} isStreaming={isStreaming}/> : isStreaming && !content.trim() && toolStatus && (
                             <div className={`msg-tool-status ${toolStatus.phase}`} aria-live="polite" aria-label={t('toolActivity.ariaLabel')}>
                                 <span className="msg-tool-spinner"/>
                                 <span className="msg-tool-icon" aria-hidden="true">{toolStatus.phase === 'completed' ? '✓' : '⌘'}</span>

@@ -867,9 +867,12 @@
   "fileUpload": {
     "failed": "{{name}} 업로드 실패"
   },
+  "approval": {"title":"승인 방식","description":"AI 도구의 변경 작업 실행 기준을 선택하세요.","requestTitle":"실행 승인 필요","toolRequest":"{{tool}} 도구가 변경 작업을 요청했습니다.","approve":"승인","reject":"거부","scope":"적용 범위","scopes":{"conversation":"이 대화","project":"이 프로젝트","global":"전체 기본값"},"modes":{"always_confirm":{"title":"변경 시 항상 확인","description":"읽기를 제외한 모든 변경 작업을 확인합니다."},"risky_only":{"title":"위험한 작업만 확인","description":"외부 전송과 삭제 등 중요한 작업만 확인합니다."},"trusted":{"title":"신뢰 모드","description":"대부분 자동 실행하며 파괴적 작업은 계속 확인합니다."}}},
   "toolActivity": {
     "ariaLabel": "도구 작업 진행 상황",
     "working": "작업 처리 중…",
+    "waitingApproval": "실행 승인을 기다리고 있어요",
+    "approvalRejected": "사용자가 실행을 거부했어요",
     "elapsed": "{{seconds}}초 동안 작업",
     "analyzing": "요청을 분석하고 있어요",
     "additionalAnalysis": "다음 작업을 확인하고 있어요",

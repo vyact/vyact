@@ -11,7 +11,7 @@ export interface StreamHandlers {
     onToken?: (text: string) => void;
     /** 판정 스트림이 서두를 relay한 뒤 tool 호출로 전환된 케이스 — 표시 중인 답변 초기화 */
     onReset?: () => void;
-    onTool?: (data: { phase?: string; name?: string; args?: Record<string, unknown>; round?: number; result?: string }) => void;
+    onTool?: (data: { phase?: string; name?: string; args?: Record<string, unknown>; round?: number; result?: string; approval_id?: string; risk?: string; conversation_id?: string; project_id?: string }) => void;
     onIndexProgress?: (data: { source_name?: string; done?: number; total?: number }) => void;
     onDone?: (data: { conv_id?: string; answer?: string; stats?: Record<string, number | null> }) => void;
     onError?: (message: string) => void;

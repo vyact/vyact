@@ -27,6 +27,7 @@ import {usePanelManager} from '../../contexts/PanelManagerContext';
 import {findPluginCommand, openPluginModal} from '../../plugins/registry';
 import {usePluginExtensions} from '../../plugins/usePluginExtensions';
 import KnowledgeCollectionsModal from '../KnowledgeCollectionsModal/KnowledgeCollectionsModal';
+import ApprovalControl from './ApprovalControl';
 
 interface ChatInputProps {
     onSend: (message: string, images?: File[], fileAttachments?: FileAttachment[], selectedMcpIds?: string[], knowledgeCollectionId?: string) => void | Promise<boolean>;
@@ -59,6 +60,7 @@ interface ChatInputProps {
     activePromptTitle?: string | null;
     selectedPromptId?: string | null;
     onOpenSystemPromptSettings?: () => void;
+    currentConversationId?: string;
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({
@@ -92,6 +94,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                                  activePromptTitle,
                                                  selectedPromptId = null,
                                                  onOpenSystemPromptSettings,
+                                                 currentConversationId = '',
                                              }) => {
     const {t} = useTranslation('main');
     const {panel: codePanel} = useCodePanel();
@@ -493,6 +496,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
                             />
 
                             <McpMenu/>
+
+                            <ApprovalControl conversationId={currentConversationId}/>
 
                             <CustomSelect
                                 className="chat-system-prompt-select"

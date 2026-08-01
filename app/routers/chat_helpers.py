@@ -309,6 +309,7 @@ def build_assistant_message(
     article_sources: list | None = None,
     injected_context: list | None = None,
     stats: dict | None = None,
+    activity_log: list[dict] | None = None,
 ) -> dict:
     """히스토리 저장용 assistant 메시지 빌드."""
     now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
@@ -323,6 +324,8 @@ def build_assistant_message(
         msg["injected_context"] = injected_context
     if stats:
         msg["stats"] = stats
+    if activity_log:
+        msg["activityLog"] = activity_log
     return msg
 
 

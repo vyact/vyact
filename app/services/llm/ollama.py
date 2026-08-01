@@ -15,6 +15,7 @@ from .config import (
 from .helpers import load_images_b64, history_for_ollama
 from .tools import build_tool_directive
 from services.runtime_settings import get_runtime_settings
+from services.tool_approval import await_tool_approval
 from .context_window import select_context_window
 
 
@@ -291,6 +292,12 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
                     break
 
                 logger.info("[tool_calls] tool 호출: %s args=%s", name, args)
+                approved = await await_tool_approval(name, args, _emit)
+                if not approved:
+                    result_text = "[사용자 거부] 사용자가 이 tool 실행을 승인하지 않았습니다. 실행하지 말고 다른 안전한 방법을 사용하거나 거부 사실을 설명하세요."
+                    await _emit({"phase": "approval_rejected", "name": name, "args": args, "result": result_text})
+                    work.append({"role": "tool", "content": result_text, "name": name})
+                    continue
                 await _emit({"phase": "start", "name": name, "args": args})
                 _t0 = _time.monotonic_ns()
                 result_text = await mcp_manager.call_tool(name, args)

@@ -867,9 +867,12 @@
   "fileUpload": {
     "failed": "Failed to upload {{name}}"
   },
+  "approval": {"title":"Approval mode","description":"Choose when AI tool changes require approval.","requestTitle":"Execution approval required","toolRequest":"{{tool}} requested a change.","approve":"Approve","reject":"Reject","scope":"Apply to","scopes":{"conversation":"This chat","project":"This project","global":"Global default"},"modes":{"always_confirm":{"title":"Always confirm changes","description":"Confirm every change except read-only operations."},"risky_only":{"title":"Confirm risky actions","description":"Confirm important actions such as external sends and deletion."},"trusted":{"title":"Trusted mode","description":"Run most actions automatically but still confirm destructive ones."}}},
   "toolActivity": {
     "ariaLabel": "Tool activity",
     "working": "Working…",
+    "waitingApproval": "Waiting for execution approval",
+    "approvalRejected": "Execution rejected by user",
     "elapsed": "Working for {{seconds}}s",
     "analyzing": "Analyzing your request",
     "additionalAnalysis": "Planning the next step",

@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import {ChevronDown, ChevronRight, CircleCheck, LoaderCircle} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import type {ToolActivity} from '../../types';
@@ -11,7 +11,10 @@ interface ActivityTimelineProps {
 const ActivityTimeline = ({activities, isStreaming}: ActivityTimelineProps) => {
     const {t} = useTranslation('main');
     const [isExpanded, setIsExpanded] = useState(true);
-    if (!isStreaming || !activities.length) return null;
+    useEffect(() => {
+        if (!isStreaming) setIsExpanded(false);
+    }, [isStreaming]);
+    if (!activities.length) return null;
     const latest = activities[activities.length - 1];
     const elapsedSeconds = Math.max(1, Math.round(((latest.completedAt ?? Date.now()) - (activities[0].startedAt ?? Date.now())) / 1000));
     const hasCodeActivity = activities.some(activity => activity.group === 'code');

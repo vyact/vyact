@@ -13,6 +13,7 @@ import {formatApiErrorForUser} from '../../utils/apiError';
 import {isSupportedChatFile} from '../../utils/fileValidation';
 import type {FileAttachment} from '../ChatInput/useAttachments';
 import {findPluginCommand} from '../../plugins/registry';
+import {resolveApprovalMode} from '../../services/approvalPolicy';
 
 // MCP tool 이름(서버__tool)을 사용자용 진행 문구로 변환
 function toolLabel(name: string | undefined, t: (key: string, options?: Record<string, unknown>) => string): string {
@@ -520,6 +521,7 @@ export function useChat(deps: UseChatDeps) {
                         project_id: deps.activeProjectId || '',
                         selected_mcp_ids: selectedMcpIds || [],
                         knowledge_collection_id: knowledgeCollectionId || '',
+                        approval_mode: resolveApprovalMode(),
                     }, {
                         onMeta: (data) => {
                             streamModel = data.model || '';
@@ -529,7 +531,12 @@ export function useChat(deps: UseChatDeps) {
                             text === '__VYACT_EMPTY_RESPONSE__' ? t('emptyResponse') : text
                         ),
                         onTool: (data) => {
-                            if (data.phase === 'judging') {
+                            if (data.phase === 'approval_required') {
+                                window.dispatchEvent(new CustomEvent('vyact:tool-approval-required', {detail: data}));
+                                setToolStatus({phase: 'running', group: toolGroup(data.name), label: t('toolActivity.waitingApproval'), detail: toolDetail(data.args)});
+                            } else if (data.phase === 'approval_rejected') {
+                                setToolStatus({phase: 'completed', group: toolGroup(data.name), label: t('toolActivity.approvalRejected'), detail: toolDetail(data.args)});
+                            } else if (data.phase === 'judging') {
                                 setToolStatus({phase: 'judging', group: 'analysis', label: t((data.round ?? 0) > 0 ? 'toolActivity.additionalAnalysis' : 'toolActivity.analyzing')});
                             } else if (data.phase === 'start') {
                                 setToolStatus({phase: 'running', group: toolGroup(data.name), label: toolLabel(data.name, t), detail: toolDetail(data.args)});

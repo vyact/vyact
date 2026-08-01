@@ -24,6 +24,7 @@ from .tools import (
     build_tool_directive, to_openai_tools, to_gemini_tools, to_claude_tools,
 )
 from services.runtime_settings import get_runtime_settings
+from services.tool_approval import await_tool_approval
 
 
 async def _get_unified_tools(use_tools: bool):
@@ -114,6 +115,12 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
                     args = json.loads(raw_args) if isinstance(raw_args, str) else raw_args
                 except json.JSONDecodeError:
                     args = {}
+                approved = await await_tool_approval(name, args, lambda event: _emit(on_event, event))
+                if not approved:
+                    result_text = "[사용자 거부] 사용자가 이 tool 실행을 승인하지 않았습니다."
+                    await _emit(on_event, {"phase": "approval_rejected", "name": name, "args": args, "result": result_text})
+                    messages.append({"role": "tool", "tool_call_id": tc.get("id", ""), "content": result_text})
+                    continue
                 await _emit(on_event, {"phase": "start", "name": name, "args": args})
                 result_text = await mcp_manager.call_tool(name, args)
                 tool_sources = mcp_manager.drain_tool_sources()
@@ -217,6 +224,12 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
             for fc in fcalls:
                 name = fc.get("name", "")
                 args = fc.get("args", {}) or {}
+                approved = await await_tool_approval(name, args, lambda event: _emit(on_event, event))
+                if not approved:
+                    result_text = "[사용자 거부] 사용자가 이 tool 실행을 승인하지 않았습니다."
+                    await _emit(on_event, {"phase": "approval_rejected", "name": name, "args": args, "result": result_text})
+                    resp_parts.append({"functionResponse": {"name": name, "response": {"result": result_text}}})
+                    continue
                 await _emit(on_event, {"phase": "start", "name": name, "args": args})
                 result_text = await mcp_manager.call_tool(name, args)
                 tool_sources = mcp_manager.drain_tool_sources()
@@ -317,6 +330,12 @@ async def claude_stream(client, model, api_key, system_message, user_prompt,
             for tu in tool_uses:
                 name = tu.get("name", "")
                 args = tu.get("input", {}) or {}
+                approved = await await_tool_approval(name, args, lambda event: _emit(on_event, event))
+                if not approved:
+                    result_text = "[사용자 거부] 사용자가 이 tool 실행을 승인하지 않았습니다."
+                    await _emit(on_event, {"phase": "approval_rejected", "name": name, "args": args, "result": result_text})
+                    result_blocks.append({"type": "tool_result", "tool_use_id": tu.get("id", ""), "content": result_text})
+                    continue
                 await _emit(on_event, {"phase": "start", "name": name, "args": args})
                 result_text = await mcp_manager.call_tool(name, args)
                 tool_sources = mcp_manager.drain_tool_sources()

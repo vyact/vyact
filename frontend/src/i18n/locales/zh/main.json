@@ -857,9 +857,12 @@
   "fileUpload": {
     "failed": "{{name}} 上传失败"
   },
+  "approval": {"title":"审批模式","description":"选择 AI 工具执行更改时的审批规则。","requestTitle":"需要执行审批","toolRequest":"{{tool}} 请求执行更改。","approve":"批准","reject":"拒绝","scope":"应用范围","scopes":{"conversation":"此对话","project":"此项目","global":"全局默认"},"modes":{"always_confirm":{"title":"始终确认更改","description":"除只读操作外，确认所有更改。"},"risky_only":{"title":"仅确认危险操作","description":"确认外部发送和删除等重要操作。"},"trusted":{"title":"信任模式","description":"自动执行大多数操作，但仍确认破坏性操作。"}}},
   "toolActivity": {
     "ariaLabel": "工具执行进度",
     "working": "正在处理…",
+    "waitingApproval": "正在等待执行审批",
+    "approvalRejected": "用户已拒绝执行",
     "elapsed": "已处理 {{seconds}} 秒",
     "analyzing": "正在分析请求",
     "additionalAnalysis": "正在规划下一步",

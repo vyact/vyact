@@ -870,9 +870,12 @@
   "fileUpload": {
     "failed": "Error al subir {{name}}"
   },
+  "approval": {"title":"Modo de aprobación","description":"Elige cuándo los cambios de las herramientas de IA requieren aprobación.","requestTitle":"Se requiere aprobación","toolRequest":"{{tool}} solicitó realizar un cambio.","approve":"Aprobar","reject":"Rechazar","scope":"Aplicar a","scopes":{"conversation":"Este chat","project":"Este proyecto","global":"Valor global"},"modes":{"always_confirm":{"title":"Confirmar siempre los cambios","description":"Confirma todos los cambios excepto las operaciones de lectura."},"risky_only":{"title":"Confirmar acciones riesgosas","description":"Confirma envíos externos y eliminaciones."},"trusted":{"title":"Modo de confianza","description":"Ejecuta casi todo automáticamente, pero confirma acciones destructivas."}}},
   "toolActivity": {
     "ariaLabel": "Actividad de herramientas",
     "working": "Trabajando…",
+    "waitingApproval": "Esperando aprobación de ejecución",
+    "approvalRejected": "Ejecución rechazada por el usuario",
     "elapsed": "Trabajando durante {{seconds}} s",
     "analyzing": "Analizando tu solicitud",
     "additionalAnalysis": "Planificando el siguiente paso",

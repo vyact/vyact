@@ -857,9 +857,12 @@
   "fileUpload": {
     "failed": "Tải lên {{name}} thất bại"
   },
+  "approval": {"title":"Chế độ phê duyệt","description":"Chọn khi nào thay đổi của công cụ AI cần phê duyệt.","requestTitle":"Cần phê duyệt thực thi","toolRequest":"{{tool}} yêu cầu thực hiện thay đổi.","approve":"Phê duyệt","reject":"Từ chối","scope":"Áp dụng cho","scopes":{"conversation":"Cuộc trò chuyện này","project":"Dự án này","global":"Mặc định toàn cục"},"modes":{"always_confirm":{"title":"Luôn xác nhận thay đổi","description":"Xác nhận mọi thay đổi trừ thao tác chỉ đọc."},"risky_only":{"title":"Chỉ xác nhận thao tác rủi ro","description":"Xác nhận gửi ra ngoài và xóa dữ liệu."},"trusted":{"title":"Chế độ tin cậy","description":"Tự động chạy phần lớn thao tác nhưng vẫn xác nhận thao tác phá hủy."}}},
   "toolActivity": {
     "ariaLabel": "Hoạt động công cụ",
     "working": "Đang xử lý…",
+    "waitingApproval": "Đang chờ phê duyệt thực thi",
+    "approvalRejected": "Người dùng đã từ chối thực thi",
     "elapsed": "Đang xử lý {{seconds}} giây",
     "analyzing": "Đang phân tích yêu cầu của bạn",
     "additionalAnalysis": "Đang lên kế hoạch bước tiếp theo",

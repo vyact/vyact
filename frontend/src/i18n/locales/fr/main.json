@@ -870,9 +870,12 @@
   "fileUpload": {
     "failed": "Échec du téléchargement de {{name}}"
   },
+  "approval": {"title":"Mode d’approbation","description":"Choisissez quand les modifications des outils d’IA nécessitent une approbation.","requestTitle":"Approbation requise","toolRequest":"{{tool}} demande une modification.","approve":"Approuver","reject":"Refuser","scope":"Appliquer à","scopes":{"conversation":"Cette discussion","project":"Ce projet","global":"Valeur globale"},"modes":{"always_confirm":{"title":"Toujours confirmer les modifications","description":"Confirme toutes les modifications sauf les lectures."},"risky_only":{"title":"Confirmer les actions risquées","description":"Confirme les envois externes et les suppressions."},"trusted":{"title":"Mode de confiance","description":"Exécute presque tout automatiquement, mais confirme les actions destructives."}}},
   "toolActivity": {
     "ariaLabel": "Activité des outils",
     "working": "En cours…",
+    "waitingApproval": "En attente d’approbation",
+    "approvalRejected": "Exécution refusée par l’utilisateur",
     "elapsed": "En cours depuis {{seconds}} s",
     "analyzing": "Analyse de votre demande",
     "additionalAnalysis": "Planification de l'étape suivante",

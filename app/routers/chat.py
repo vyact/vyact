@@ -41,6 +41,7 @@ def _run_in_background(coro) -> None:
 from services.db import INDEX_NAME, DOC_CHUNKS_INDEX, HIST_INDEX, PROJECTS_INDEX, LANGUAGES, get_language_index
 from services.indexer import get_embedding, get_es as get_es_client
 from services.plugin_manager import has_plugin_url_resolvers, resolve_plugin_url
+from services.tool_approval import ApprovalContext, current_approval_context, resolve_tool_approval
 from routers.images import ImageGenerateRequest, generate_image
 from logger import get_logger
 
@@ -192,8 +193,16 @@ class QueryRequest(BaseModel):
     knowledge_collection_id: str = ""  # 선택한 지식 컬렉션의 자료만 RAG 검색
     minimal_prompt: bool = False  # True면 앱 전용 기본 프롬프트(FORMAT_INSTRUCTION, conv_summary 태그 지시) 제외.
     selected_mcp_ids: list[str] = []  # @로 선택한 MCP들은 enabled 여부와 무관하게 이번 요청에만 사용.
+    approval_mode: str = "risky_only"
     # 크롬 확장처럼 프로젝트 블록/followups/SummaryModal UI가 없는 경량 클라이언트용.
     # 날짜/사용자 프로필/참고 문서/MCP tool directive는 그대로 유지된다.
+
+
+@router.post("/tool-approvals/{approval_id}")
+async def resolve_pending_tool_approval(approval_id: str, body: dict):
+    if not resolve_tool_approval(approval_id, bool(body.get("approved"))):
+        raise HTTPException(status_code=404, detail="Approval request is no longer active.")
+    return {"ok": True}
 
 
 def _file_attachments_to_context(attachments: list) -> list[dict]:
@@ -524,8 +533,13 @@ async def query_stream(req: QueryRequest):
 
     async def stream():
         mcp_scope_token = None
+        approval_context_token = None
         _saved = False
         try:
+            approval_context_token = current_approval_context.set(ApprovalContext(
+                mode=req.approval_mode, conversation_id=req.conv_id, project_id=req.project_id,
+                interactive=True,
+            ))
             if req.selected_mcp_ids:
                 from services.mcp_client import mcp_manager
                 mcp_scope_token = await mcp_manager.enable_request_scope(req.selected_mcp_ids)
@@ -680,6 +694,7 @@ async def query_stream(req: QueryRequest):
                     current_code_question.set(clean_question)
 
                 _tool_messages: list[dict] = []  # tool call/result 메시지 수집
+                _activity_log: list[dict] = []
                 async for ev in rag_query_stream(
                         clean_question, _summary_system_prompt, image_attachments, req.messages,
                         extra_context=limit_direct_document_contexts(file_context_docs),
@@ -698,8 +713,20 @@ async def query_stream(req: QueryRequest):
                         # relay된 서두를 프론트에서 지우도록 지시 (뒤늦은 tool 호출 케이스)
                         emitted = ""
                         _tool_messages.clear()
+                        _activity_log.clear()
                         yield _sse("reset", {})
                     elif ev["type"] == "tool":
+                        _phase = ev.get("phase")
+                        _tool_name = ev.get("name", "")
+                        if _phase in {"start", "approval_required"} and _tool_name:
+                            _activity_log.append({
+                                "phase": "running", "label": _tool_name,
+                                "detail": json.dumps(ev.get("args", {}), ensure_ascii=False),
+                                "startedAt": int(datetime.now(timezone.utc).timestamp() * 1000),
+                            })
+                        elif _phase in {"end", "approval_rejected"} and _activity_log:
+                            _activity_log[-1]["phase"] = "completed"
+                            _activity_log[-1]["completedAt"] = int(datetime.now(timezone.utc).timestamp() * 1000)
                         # tool call/result 메시지 수집 (히스토리 저장용)
                         if ev.get("phase") == "start" and ev.get("name"):
                             _tool_messages.append({
@@ -741,7 +768,9 @@ async def query_stream(req: QueryRequest):
                 user_message = build_user_message(original_question, user_ts, req.attachments)
                 # "참고" 표시용 — url이 있는 소스만
                 article_sources = [s for s in gen_sources if s.get("url") and s.get("source") != "붙여넣기"]
-                assistant_msg = build_assistant_message(answer, gen_model, article_sources, injected_context, gen_stats)
+                assistant_msg = build_assistant_message(
+                    answer, gen_model, article_sources, injected_context, gen_stats, _activity_log,
+                )
 
                 # 여기까진 전부 순수 계산(빠름). ES 저장(save_conversation의 refresh=True 등)과
                 # 첨부파일 임베딩 인덱싱은 실제 I/O라 응답을 막지는 않는다. 단, 브라우저가 done을
@@ -844,6 +873,8 @@ async def query_stream(req: QueryRequest):
         except (asyncio.CancelledError, GeneratorExit):
             logger.info("[query_stream] 클라이언트 연결 종료 — 스트림 중단")
         finally:
+            if approval_context_token is not None:
+                current_approval_context.reset(approval_context_token)
             if mcp_scope_token is not None:
                 from services.mcp_client import mcp_manager
                 from services.mcp_config import build_servers_config
