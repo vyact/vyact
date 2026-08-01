@@ -224,6 +224,7 @@ async def rag_query_stream(
     tool 판정 전에 먼저(병렬로) 조회한다.
 
     ollama 경로에서는 tool 판정이 끝난 뒤에야 메모/RAG/첨부파일을 조회한다:
+    - code_* 도구가 성공했으면 → 프로젝트 파일이 직접 근거이므로 일반 RAG·메모 후속 검색 생략
     - tool이 sources를 가져왔으면(예: 네이버 뉴스 검색 성공) → 메모+첨부파일만 조회
       (메모/첨부파일은 사용자 개인 데이터라 tool 성공 여부와 무관하게 항상 필요하지만, 뉴스 RAG는
       tool이 이미 최신 걸 가져왔으니 굳이 오래된 인덱스를 또 볼 필요가 없다)
@@ -265,9 +266,20 @@ async def rag_query_stream(
             logger.warning("[rag_query] 첨부파일 검색 실패: %s", e)
             return []
 
-    async def _post_tool_docs(tool_got_sources: bool) -> list[dict]:
+    async def _post_tool_docs(tool_got_sources: bool, completed_tool_names: set[str]) -> list[dict]:
         if knowledge_collection_id:
             return collection_docs
+        completed_tool_ids = {
+            name.split("__")[-1]
+            for name in completed_tool_names
+        }
+        if any(name.startswith("code_") for name in completed_tool_ids):
+            logger.info(
+                "[rag_query] 코드 도구 완료 — 일반 RAG·메모 후속 검색 생략: %s",
+                sorted(completed_tool_names),
+            )
+            post_docs.clear()
+            return []
         if tool_got_sources:
             # tool이 이미 최신 뉴스를 가져왔으므로 메모+첨부파일만 보충
             memo_result, chat_file_result = await asyncio.gather(

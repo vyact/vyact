@@ -60,7 +60,8 @@ async def chat_stream_with_tools(
     provider별로 tool 루프(function-calling) 후 최종 답변을 SSE로 스트리밍한다.
     use_tools=False 이면 tool 판정을 건너뛴다(선택 문서 기반 질의 등).
 
-    post_tool_docs: async (tool_got_sources: bool) -> list[dict]  (ollama 전용, 선택)
+    post_tool_docs: async (tool_got_sources: bool, completed_tool_names: set[str]) -> list[dict]
+        (ollama 전용, 선택)
         tool 판정 라운드가 끝나면 항상 한 번 호출된다. 인자로 "tool이 sources를
         가져왔는지"를 넘겨주므로, 호출부에서 다음처럼 알아서 판단하면 된다:
           - tool_got_sources=True  → 메모처럼 tool과 무관하게 항상 필요한 것만 조회
@@ -177,10 +178,15 @@ async def chat_stream_with_tools(
         _queue: "asyncio.Queue[dict]" = asyncio.Queue()
         _DONE = {"__done__": True}
         _collected_tool_sources: list = []
+        _completed_tool_names: set[str] = set()
 
         async def _on_tool_event(ev: dict):
-            if ev.get("phase") == "end" and ev.get("sources"):
-                _collected_tool_sources.extend(ev["sources"])
+            if ev.get("phase") == "end":
+                tool_result = str(ev.get("result") or "")
+                if ev.get("name") and not tool_result.startswith("[오류]"):
+                    _completed_tool_names.add(ev["name"])
+                if ev.get("sources"):
+                    _collected_tool_sources.extend(ev["sources"])
             await _queue.put({"type": "tool", **ev})
 
         async def _run_loop():
@@ -221,7 +227,10 @@ async def chat_stream_with_tools(
         # post_tool_docs 호출 (메모/RAG 지연조회)
         if post_tool_docs is not None:
             try:
-                extra_docs = await post_tool_docs(bool(_collected_tool_sources)) or []
+                extra_docs = await post_tool_docs(
+                    bool(_collected_tool_sources),
+                    set(_completed_tool_names),
+                ) or []
             except Exception as e:
                 logger.warning("[chat_stream_with_tools] post_tool_docs 실패: %s", e)
                 extra_docs = []
