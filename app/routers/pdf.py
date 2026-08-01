@@ -23,6 +23,14 @@ from services.runtime_settings import (
 )
 from services.presentation_pptx import build_pptx
 from services.presentation_design import prepare_presentation
+from services.presentation_grounding import (
+    add_source_notes,
+    apply_page_repairs,
+    audit_presentation,
+    fact_ledger_prompt_payload,
+    parse_json_object,
+    validate_evidence_ledger,
+)
 from logger import get_logger
 
 logger = get_logger(__name__)
@@ -145,7 +153,7 @@ def _build_system_prompt(lang: str, page_count: int, page_count_auto: bool,
     article_note = """
 - CRITICALLY IMPORTANT: Base content HEAVILY on the provided articles/documents.
 - Extract specific facts, numbers, dates, names, and expert quotes. Never use generic filler.
-- Every page must reference at least one concrete data point from the source material.""" if has_articles else ""
+- Except for purely structural cover/closing text, every page must reference source-backed facts.""" if has_articles else ""
 
     image_note = """
 - Analyze each image carefully. Assign image_index only when page content directly relates to the image.
@@ -190,6 +198,7 @@ JSON structure:
       "image_index": integer or null,
       "image_position": "right|left|full" or null,
       "image_caption": "descriptive caption" or null,
+      "fact_ids": ["F1", "F2"],
       "speaker_notes": "1-2 sentence presenter note"
     }}
   ]
@@ -214,8 +223,11 @@ LAYOUT RULES (strictly follow):
 - Aim for: 1 cover + 1-2 stats + 1 quote/timeline + 1 spotlight/card_grid + 1-3 content/two_column/image_focus + 1 closing.
 
 CONTENT QUALITY:
-- Every bullet must contain specific data: numbers, percentages, company names, dates, or named concepts.
-- Before returning JSON, cross-check every number, date, threshold, market name, and policy label against the supplied source text. Distinguish a total or range from an increase, and distinguish KOSPI rules from KOSDAQ rules.
+- Every factual bullet must contain a source-backed number, date, entity, named concept, or exact status. Do not invent a number merely to make a bullet look specific.
+- Use only facts present in the VERIFIED FACT LEDGER. Put the supporting fact IDs in fact_ids for every factual page.
+- Preserve numeric expressions and units exactly as written in ledger evidence. Do not translate, rescale, convert, or reinterpret units.
+- Before returning JSON, cross-check every number, date, threshold, entity, scope, exception, and status against the supplied evidence. Distinguish totals from changes, examples from rules, and proposals from effective requirements.
+- Do not infer readiness, progress, causes, consequences, dependencies, success criteria, performance data, or next steps unless the ledger explicitly supports them.
 - content field: write flowing analytical prose, not bullet-style fragments.
 - title: short and impactful (noun phrase or question), under 40 characters.
 - NEVER write "Lorem ipsum", "[insert]", or vague sentences like "다양한 요인이 있습니다".
@@ -227,20 +239,12 @@ CONTENT QUALITY:
 """
 
 
-async def _call_llm_for_pages(
-        prompt: str, articles: list, images: list[ImageMeta],
-        page_count: int, page_count_auto: bool, language: str,
-        reasoning: bool = False,
-) -> dict:
-    system = _build_system_prompt(language, page_count, page_count_auto, bool(articles), bool(images))
-    normalized_prompt = _strip_output_language_directives(prompt)
-
-    # file:// 문서는 청크를 재조합하지 않고, 인덱싱 시 보관한 원문 전체를 조회한다.
-    # 원문이 없는 이전 데이터만 호환성 차원에서 청크 재조합으로 보완한다.
+async def _prepare_presentation_context(articles: list) -> list[dict]:
+    """Resolve saved documents and direct attachments into bounded source text."""
     enriched_articles = []
-    for a in articles:
-        url = a.get("url", "")
-        if url.startswith("file://") and not "::" in url:
+    for article in articles:
+        url = article.get("url", "")
+        if url.startswith("file://") and "::" not in url:
             file_id = url.replace("file://", "")
             try:
                 es = get_es()
@@ -248,29 +252,173 @@ async def _call_llm_for_pages(
                     original = await es.get(index=DOCUMENT_ORIGINALS_INDEX, id=file_id)
                     full_content = original.get("_source", {}).get("content", "")
                 except Exception:
-                    res = await es.search(
+                    response = await es.search(
                         index=DOC_CHUNKS_INDEX,
                         body={"query": {"term": {"file_id": file_id}}, "sort": [{"chunk_index": "asc"}], "size": 50},
-                        _source=["content", "chunk_index"]
+                        _source=["content", "chunk_index"],
                     )
-                    chunks = [h["_source"].get("content", "") for h in res["hits"]["hits"]]
-                    full_content = "\n\n".join(chunks) if chunks else a.get("content", "")
-                    enriched_articles.append({**a, "content": full_content})
-                else:
-                    enriched_articles.append({**a, "content": full_content or a.get("content", "")})
+                    chunks = [hit["_source"].get("content", "") for hit in response["hits"]["hits"]]
+                    full_content = "\n\n".join(chunks) if chunks else article.get("content", "")
                 finally:
                     await es.close()
+                enriched_articles.append({**article, "content": full_content or article.get("content", "")})
             except Exception:
-                enriched_articles.append(a)
+                enriched_articles.append(article)
         else:
-            enriched_articles.append(a)
+            enriched_articles.append(article)
 
     content_char_limit = PRESENTATION_CONTEXT_CHAR_LIMIT // max(len(enriched_articles), 1)
-    context_docs = [
-        {"title": a.get("title", ""), "content": a.get("content", "")[:content_char_limit],
-         "source": a.get("source", ""), "url": a.get("url", ""), "score": 1.0}
-        for a in enriched_articles
+    return [
+        {
+            "title": article.get("title", ""),
+            "content": article.get("content", "")[:content_char_limit],
+            "source": article.get("source", ""),
+            "url": article.get("url", ""),
+            "score": 1.0,
+        }
+        for article in enriched_articles
+        if article.get("content")
     ]
+
+
+async def _extract_verified_fact_ledger(
+    prompt: str, context_docs: list[dict], reasoning: bool,
+) -> dict:
+    """Extract claims, then discard every claim without a verbatim source excerpt."""
+    if not context_docs:
+        return {"facts": []}
+    source_catalog = "\n".join(
+        f"S{index + 1}: {document.get('title', '')}" for index, document in enumerate(context_docs)
+    )
+    system = f"""You are a source-grounding analyst. Build a reusable evidence ledger for a presentation.
+Return ONLY one JSON object with this shape:
+{{"facts":[{{"source_id":"S1","statement":"one atomic factual claim","evidence":"short verbatim excerpt copied exactly from that source"}}]}}
+
+Rules:
+- Extract up to 60 decision-relevant facts needed for the user's requested presentation.
+- Keep dates, numbers, units, entities, scope, exceptions, and status (proposal/approval/effective date) together.
+- One fact per item. Never calculate, convert, summarize a number, or merge facts from different sources.
+- evidence must be a verbatim continuous excerpt from the named source, not a paraphrase.
+- Exclude opinions or conclusions that have no direct textual support.
+
+Available sources:
+{source_catalog}"""
+    temperature_token = set_request_temperature_override(0.1)
+    try:
+        raw, _ = await collect_llm_stream(
+            question=_strip_output_language_directives(prompt),
+            context_docs=context_docs,
+            system_prompt=system,
+            attachments=[],
+            timeout=300.0,
+            format_instruction_override="",
+            reasoning=reasoning,
+            call_reason="presentation_fact_extraction",
+        )
+    finally:
+        reset_request_temperature_override(temperature_token)
+    parsed = await _parse_or_repair_llm_json(raw, reasoning, "presentation_fact_extraction_json_repair")
+    return validate_evidence_ledger(parsed, context_docs)
+
+
+async def _parse_or_repair_llm_json(raw: str, reasoning: bool, call_reason: str) -> dict:
+    """Parse model JSON and make one bounded syntax-only repair attempt if needed."""
+    try:
+        return parse_json_object(raw)
+    except (json.JSONDecodeError, ValueError) as parse_error:
+        logger.warning("[pdf] JSON 형식 오류, 자동 복구 시도: %s", parse_error)
+
+    temperature_token = set_request_temperature_override(0.0)
+    try:
+        repaired_raw, _ = await collect_llm_stream(
+            question=raw,
+            context_docs=[],
+            system_prompt=(
+                "Repair the JSON syntax in the supplied text. Preserve all keys and values exactly; "
+                "only add, remove, or escape punctuation required for valid JSON. "
+                "Return exactly one JSON object with no Markdown fence or explanation."
+            ),
+            attachments=[],
+            timeout=180.0,
+            format_instruction_override="",
+            reasoning=reasoning,
+            call_reason=call_reason,
+        )
+    finally:
+        reset_request_temperature_override(temperature_token)
+    return parse_json_object(repaired_raw)
+
+
+async def _audit_and_repair_presentation(
+    page_data: dict, ledger: dict, language: str, prompt: str, reasoning: bool,
+) -> dict:
+    """Use the verified evidence ledger to repair unsupported or distorted pages."""
+    if not ledger.get("facts"):
+        return page_data
+    deterministic_findings = audit_presentation(page_data, ledger, language)
+    system = """You are the final evidence auditor for a presentation.
+Return ONLY a JSON object: {"repaired_pages":[{"index":0,"page":{...complete page object...}}]}.
+
+Audit every page, but return only pages that need correction. A page needs correction when it:
+- contradicts or overstates ledger evidence;
+- changes a number, unit, date, entity, scope, exception, or proposal/effective status;
+- introduces a factual claim unsupported by its fact_ids;
+- infers readiness, progress, causes, consequences, dependencies, success criteria, performance data, or next steps absent from the ledger;
+- uses the wrong output language;
+- confuses a total with an increase, a rank with a value, or an example with a rule.
+- fails the requested narrative job or duplicates another page instead of covering a requested section.
+
+Repair rules:
+- Use only the verified ledger evidence. Preserve numeric expressions and units verbatim.
+- Keep the intended narrative job and layout when possible.
+- Write all visible text in the requested language, while retaining source-form numeric expressions.
+- Include valid fact_ids for every factual statement.
+- Keep the same page index. Return a complete replacement page object, not a patch.
+- If no page needs repair, return {"repaired_pages":[]}."""
+    audit_payload = {
+        "user_request": _strip_output_language_directives(prompt),
+        "requested_language": language,
+        "deterministic_findings": deterministic_findings,
+        "verified_fact_ledger": ledger,
+        "draft": page_data,
+    }
+    temperature_token = set_request_temperature_override(0.1)
+    try:
+        raw, _ = await collect_llm_stream(
+            question=json.dumps(audit_payload, ensure_ascii=False),
+            context_docs=[],
+            system_prompt=system,
+            attachments=[],
+            timeout=300.0,
+            format_instruction_override="",
+            reasoning=reasoning,
+            call_reason="presentation_fact_audit",
+        )
+    finally:
+        reset_request_temperature_override(temperature_token)
+    try:
+        repair_data = await _parse_or_repair_llm_json(raw, reasoning, "presentation_fact_audit_json_repair")
+    except (json.JSONDecodeError, ValueError) as repair_error:
+        logger.error("[pdf] 감사 결과 JSON 복구 실패, 검증된 초안을 유지합니다: %s", repair_error)
+        return page_data
+    repaired = apply_page_repairs(page_data, repair_data)
+    remaining_findings = audit_presentation(repaired, ledger, language)
+    if remaining_findings:
+        logger.warning("[pdf] presentation QA completed with %d remaining findings: %s", len(remaining_findings), remaining_findings)
+    return repaired
+
+
+async def _call_llm_for_pages(
+        prompt: str, articles: list, images: list[ImageMeta],
+        page_count: int, page_count_auto: bool, language: str,
+        context_docs: list[dict] | None = None,
+        fact_ledger: dict | None = None,
+        reasoning: bool = False,
+) -> dict:
+    system = _build_system_prompt(language, page_count, page_count_auto, bool(articles), bool(images))
+    normalized_prompt = _strip_output_language_directives(prompt)
+    context_docs = context_docs if context_docs is not None else await _prepare_presentation_context(articles)
+    fact_ledger = fact_ledger or {"facts": []}
 
     img_desc = ""
     if images:
@@ -303,11 +451,19 @@ async def _call_llm_for_pages(
         f"The presentation language selected in the UI is {selected_language}. "
         f"Write every visible field only in {selected_language}, even if the topic above requests another language."
     )
+    grounding_instruction = ""
+    if fact_ledger.get("facts"):
+        grounding_instruction = (
+            "\n\n[VERIFIED FACT LEDGER — AUTHORITATIVE]\n"
+            f"{fact_ledger_prompt_payload(fact_ledger)}\n"
+            "Use only these facts for concrete claims. Copy numeric expressions and units exactly from evidence. "
+            "Attach the supporting IDs to each page in fact_ids."
+        )
 
     temperature_token = set_request_temperature_override(PRESENTATION_TEMPERATURE)
     try:
         raw, _ = await collect_llm_stream(
-            question=f"{normalized_prompt}{img_desc}{language_override}",
+            question=f"{normalized_prompt}{img_desc}{grounding_instruction}{language_override}",
             context_docs=context_docs,
             system_prompt=system,
             attachments=attachments,
@@ -325,29 +481,11 @@ async def _call_llm_for_pages(
                 except Exception:
                     pass
 
-    raw = raw.strip()
-
-    # 마크다운 코드 펜스 제거 (```json ... ``` 또는 ``` ... ```)
-    if raw.startswith("```"):
-        lines = raw.splitlines()
-        if lines[0].startswith("```"):
-            lines = lines[1:]
-        if lines and lines[-1].strip() == "```":
-            lines = lines[:-1]
-        raw = "\n".join(lines).strip()
-
-    # 직접 파싱 시도
     try:
-        return json.loads(raw)
-    except json.JSONDecodeError as e:
-        # 에러 위치 전후 컨텍스트 로깅 (디버깅용)
-        pos = e.pos
-        snippet = raw[max(0, pos - 100):pos + 100]
-        logger.error(
-            "[pdf] JSON 파싱 실패: %s | pos=%d | 에러 주변:\n---\n%s\n---",
-            e.msg, pos, snippet,
-        )
-        raise ValueError(f"LLM JSON 파싱 실패 — {e.msg} (line {e.lineno} col {e.colno})\n주변 텍스트: {snippet}")
+        return await _parse_or_repair_llm_json(raw, reasoning, "presentation_generation_json_repair")
+    except (json.JSONDecodeError, ValueError) as error:
+        logger.error("[pdf] JSON 파싱 실패: %s | 응답 시작: %s", error, raw[:300])
+        raise ValueError(f"LLM JSON 파싱 실패: {error}") from error
 
 
 # ── HTML 슬라이드 렌더러 ─────────────────────────────────────────────────────────
@@ -1017,7 +1155,7 @@ def _sse_step(step: int, total: int, message_key: str, pct: int, **message_param
 
 @router.post("/pdf/generate")
 async def generate_pdf(req: PdfGenerateRequest):
-    STEPS = 7
+    STEPS = 9
 
     async def event_stream():
         html_path = None
@@ -1035,17 +1173,42 @@ async def generate_pdf(req: PdfGenerateRequest):
             # ── Step 2: 문서 컨텍스트 구성 ──
             yield _sse_step(2, STEPS, "contextPreparation", 12)
 
-            # ── Step 3: AI 스토리·콘텐츠 생성 ──
-            yield _sse_step(3, STEPS, "slideDesignAuto" if req.page_count_auto else "slideDesign", 20, pageCount=req.page_count)
-            logger.info("[pdf] step3 LLM 호출 시작")
-
             try:
+                context_docs = await _prepare_presentation_context(req.articles)
+
+                # ── Step 3: 원문에서 검증 가능한 사실 추출 ──
+                yield _sse_step(3, STEPS, "factExtraction", 20)
+                fact_ledger = await _extract_verified_fact_ledger(
+                    prompt=req.prompt,
+                    context_docs=context_docs,
+                    reasoning=req.reasoning,
+                )
+                if context_docs and not fact_ledger.get("facts"):
+                    raise ValueError("No source-backed facts could be verified from the attached documents")
+                logger.info("[pdf] 검증된 근거 원장 — %d개 사실", len(fact_ledger.get("facts", [])))
+
+                # ── Step 4: AI 스토리·콘텐츠 생성 ──
+                yield _sse_step(4, STEPS, "slideDesignAuto" if req.page_count_auto else "slideDesign", 34, pageCount=req.page_count)
                 page_data = await _call_llm_for_pages(
                     prompt=req.prompt, articles=req.articles, images=req.images,
                     page_count=req.page_count, page_count_auto=req.page_count_auto,
                     language=req.language,
+                    context_docs=context_docs,
+                    fact_ledger=fact_ledger,
                     reasoning=req.reasoning,
                 )
+                page_data["language"] = req.language
+
+                # ── Step 5: 수치·날짜·범위·언어 감사 및 보정 ──
+                yield _sse_step(5, STEPS, "factAudit", 50)
+                page_data = await _audit_and_repair_presentation(
+                    page_data=page_data,
+                    ledger=fact_ledger,
+                    language=req.language,
+                    prompt=req.prompt,
+                    reasoning=req.reasoning,
+                )
+                page_data = add_source_notes(page_data, fact_ledger, req.language)
             except Exception as llm_err:
                 logger.error("[pdf] step3 LLM/JSON 파싱 실패: %s", llm_err, exc_info=True)
                 yield sse(json.dumps({"error": f"슬라이드 구조 생성 실패: {llm_err}"}), "error")
@@ -1055,12 +1218,12 @@ async def generate_pdf(req: PdfGenerateRequest):
             page_data["language"] = req.language
             logger.info("[pdf] step3 LLM 완료 — %d페이지 확정", n_pages)
 
-            # ── Step 4: 슬라이드 구성 확인 ──
-            yield _sse_step(4, STEPS, "layoutCheck", 55, slideCount=n_pages)
+            # ── Step 6: 슬라이드 구성 확인 ──
+            yield _sse_step(6, STEPS, "layoutCheck", 62, slideCount=n_pages)
 
-            # ── Step 5: HTML 렌더링 ──
-            yield _sse_step(5, STEPS, "htmlRendering", 64, pageCount=n_pages)
-            logger.info("[pdf] step5 HTML 렌더링 시작")
+            # ── Step 7: HTML 렌더링 ──
+            yield _sse_step(7, STEPS, "htmlRendering", 70, pageCount=n_pages)
+            logger.info("[pdf] step7 HTML 렌더링 시작")
 
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             uid = str(uuid.uuid4())[:6]
@@ -1072,12 +1235,12 @@ async def generate_pdf(req: PdfGenerateRequest):
             html_content = _build_html(page_data, req.images, req.style, aspect_ratio)
             html_path = FILES_DIR / f"pdf_tmp_{uid}.html"
             html_path.write_text(html_content, encoding="utf-8")
-            logger.info("[pdf] step5 HTML 완료 (%d bytes)", len(html_content))
+            logger.info("[pdf] step7 HTML 완료 (%d bytes)", len(html_content))
 
-            # ── Step 6: 선택한 출력 형식으로 렌더링 ──
+            # ── Step 8: 선택한 출력 형식으로 렌더링 ──
             format_label = "PPTX" if output_format == "pptx" else "PDF"
-            yield _sse_step(6, STEPS, "outputRendering", 76, outputFormat=output_format, pageCount=n_pages)
-            logger.info("[pdf] step6 %s 변환 시작", format_label)
+            yield _sse_step(8, STEPS, "outputRendering", 80, outputFormat=output_format, pageCount=n_pages)
+            logger.info("[pdf] step8 %s 변환 시작", format_label)
 
             temp_output_path = FILES_DIR / f"pdf_tmp_{uid}.{output_format}"
             if output_format == "pptx":
@@ -1086,11 +1249,11 @@ async def generate_pdf(req: PdfGenerateRequest):
                 await asyncio.to_thread(build_pptx, prepared_page_data, req.images, palette, temp_output_path)
             else:
                 await _html_to_pdf(html_path, temp_output_path, aspect_ratio)
-            logger.info("[pdf] step6 %s 변환 완료", format_label)
+            logger.info("[pdf] step8 %s 변환 완료", format_label)
 
-            # ── Step 7: 저장 및 마무리 ──
-            yield _sse_step(7, STEPS, "saving", 92)
-            logger.info("[pdf] step7 저장 시작")
+            # ── Step 9: 저장 및 마무리 ──
+            yield _sse_step(9, STEPS, "saving", 92)
+            logger.info("[pdf] step9 저장 시작")
 
             # 이미지 영구 저장 (재편집용)
             saved_image_filenames = []
@@ -1104,10 +1267,9 @@ async def generate_pdf(req: PdfGenerateRequest):
             prs_title = page_data.get("presentation_title", req.prompt[:30])
 
             # 제목 기반 파일명 (특수문자 제거, 공백→언더스코어, 최대 40자)
-            import re as _re
             _bad_chars = r'[\/*?:<>|]'
-            safe_title = _re.sub(_bad_chars, '', prs_title)
-            safe_title = _re.sub(r'\s+', '_', safe_title.strip())[:40].rstrip('_')
+            safe_title = re.sub(_bad_chars, '', prs_title)
+            safe_title = re.sub(r'\s+', '_', safe_title.strip())[:40].rstrip('_')
             filename = f"{safe_title}_{timestamp}.{output_format}"
             output_path = FILES_DIR / filename
             temp_output_path.rename(output_path)

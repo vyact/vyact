@@ -842,7 +842,7 @@
     "step": "ขั้นตอน {{current}}/{{total}}",
     "generatingElapsed": "ผ่านไป {{seconds}} วินาที",
     "fileReady": "ไฟล์ {{format}} พร้อมแล้ว", "edit": "แก้ไข", "download": "ดาวน์โหลด",
-    "progress": {"sourcePreparation": "กำลังเตรียมแหล่งข้อมูล... (บทความ {{articleCount}} รายการ, รูปภาพ {{imageCount}} รูป)", "contextPreparation": "กำลังวิเคราะห์เอกสารและสร้างบริบทสำหรับงานนำเสนอ...", "slideDesignAuto": "AI กำลังออกแบบลำดับการนำเสนอและเนื้อหาสไลด์ด้วยจำนวนหน้าอัตโนมัติ...", "slideDesign": "AI กำลังออกแบบลำดับการนำเสนอและเนื้อหาสำหรับ {{pageCount}} สไลด์...", "layoutCheck": "กำลังตรวจสอบโครงสร้างและเค้าโครงของ {{slideCount}} สไลด์...", "htmlRendering": "กำลังเรนเดอร์ HTML {{pageCount}} หน้า...", "outputRendering": "กำลังเรนเดอร์ {{outputFormat}}... ({{pageCount}} หน้า)", "saving": "กำลังบันทึกไฟล์และสรุปประวัติการสนทนา..."},
+    "progress": {"sourcePreparation": "กำลังเตรียมแหล่งข้อมูล... (บทความ {{articleCount}} รายการ, รูปภาพ {{imageCount}} รูป)", "contextPreparation": "กำลังวิเคราะห์เอกสารและสร้างบริบทสำหรับงานนำเสนอ...", "factExtraction": "กำลังดึงข้อเท็จจริงและหลักฐานที่ตรวจสอบได้จากเอกสารต้นฉบับ...", "slideDesignAuto": "AI กำลังออกแบบลำดับการนำเสนอและเนื้อหาสไลด์ด้วยจำนวนหน้าอัตโนมัติ...", "slideDesign": "AI กำลังออกแบบลำดับการนำเสนอและเนื้อหาสำหรับ {{pageCount}} สไลด์...", "factAudit": "กำลังตรวจสอบและแก้ไขตัวเลข วันที่ ขอบเขต และภาษาผลลัพธ์...", "layoutCheck": "กำลังตรวจสอบโครงสร้างและเค้าโครงของ {{slideCount}} สไลด์...", "htmlRendering": "กำลังเรนเดอร์ HTML {{pageCount}} หน้า...", "outputRendering": "กำลังเรนเดอร์ {{outputFormat}}... ({{pageCount}} หน้า)", "saving": "กำลังบันทึกไฟล์และสรุปประวัติการสนทนา..."},
     "sourceCount": "{{count}} แหล่ง",
     "imageCount": "{{count}} รูป",
     "cancel": "ยกเลิก",

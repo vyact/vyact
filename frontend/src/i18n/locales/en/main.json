@@ -844,8 +844,10 @@
     "progress": {
       "sourcePreparation": "Preparing sources... ({{articleCount}} articles, {{imageCount}} images)",
       "contextPreparation": "Analyzing documents and building the presentation context...",
+      "factExtraction": "Extracting verifiable facts and evidence from the source documents...",
       "slideDesignAuto": "AI is designing the presentation flow and slide content with an automatic page count...",
       "slideDesign": "AI is designing the presentation flow and content for {{pageCount}} slides...",
+      "factAudit": "Auditing and correcting numbers, dates, scope, and output language...",
       "layoutCheck": "Checking the structure and layout of {{slideCount}} slides...",
       "htmlRendering": "Rendering {{pageCount}} HTML pages...",
       "outputRendering": "Rendering {{outputFormat}}... ({{pageCount}} pages)",

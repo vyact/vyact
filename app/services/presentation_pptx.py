@@ -71,15 +71,15 @@ def _add_header(slide, page: dict, page_number: int, total: int, palette: dict) 
               size=7.5, color=accent, bold=True)
     _add_text(slide, f"{page_number:02d} / {total:02d}", .65, .52, 1.05, .32,
               size=9, color=accent, bold=True, valign=MSO_ANCHOR.MIDDLE)
-    _add_text(slide, page.get("title", ""), 1.65, .40, 10.85, .55,
-              size=25, color=palette.get("title_color", "#111111"), bold=True)
+    _add_text(slide, page.get("title", ""), 1.65, .36, 10.85, .72,
+              size=35, color=palette.get("title_color", "#111111"), bold=True)
     _add_shape(slide, MSO_AUTO_SHAPE_TYPE.RECTANGLE, .65, 1.10, 12.0, .035, accent)
 
 
 def _add_intro(slide, text: str, y: float, palette: dict, x: float = .72, width: float = 11.9) -> float:
     if not text:
         return y
-    _add_text(slide, text, x, y, width, .72, size=14, color=palette.get("body_color", "#374151"))
+    _add_text(slide, text, x, y, width, .78, size=16, color=palette.get("body_color", "#374151"))
     return y + .82
 
 
@@ -96,7 +96,7 @@ def _add_numbered_cards(slide, bullets: list, y: float, palette: dict, *, x=.72,
         _add_text(slide, str(index + 1), x + .18, top + (height - .32) / 2, .32, .32,
                   size=9, color="#ffffff", bold=True, align=PP_ALIGN.CENTER, valign=MSO_ANCHOR.MIDDLE)
         _add_text(slide, bullet, x + .65, top + .08, width - .82, height - .12,
-                  size=12.5, color=palette.get("body_color", "#374151"), valign=MSO_ANCHOR.MIDDLE)
+                  size=16, color=palette.get("body_color", "#374151"), valign=MSO_ANCHOR.MIDDLE)
 
 
 def _render_cover(slide, page: dict, page_number: int, total: int, palette: dict, closing: bool = False) -> None:
@@ -114,14 +114,14 @@ def _render_cover(slide, page: dict, page_number: int, total: int, palette: dict
     title_y = 2.35 if closing else 2.15
     if closing:
         _add_text(slide, "✦", 6.25, 1.45, .8, .6, size=24, color=palette["accent"], bold=True, align=PP_ALIGN.CENTER)
-    _add_text(slide, page.get("title", ""), x, title_y, width, 1.25, size=34 if closing else 38,
+    _add_text(slide, page.get("title", ""), x, title_y, width, 1.55, size=44 if closing else 50,
               color=color, bold=True, align=align, valign=MSO_ANCHOR.MIDDLE)
     subtitle = page.get("subtitle") or ""
     content = page.get("content") or ""
     if subtitle:
-        _add_text(slide, subtitle, x, title_y + 1.28, width, .45, size=16, color=sub_color, align=align)
+        _add_text(slide, subtitle, x, title_y + 1.58, width, .55, size=24, color=sub_color, align=align)
     if content:
-        _add_text(slide, content, x, title_y + 1.85, width, .85, size=13, color=sub_color, align=align)
+        _add_text(slide, content, x, title_y + 2.20, width, 1.0, size=16, color=sub_color, align=align)
     if not closing:
         for index, tag in enumerate((page.get("bullets") or [])[:5]):
             tag_x = 1.05 + index * 1.65
@@ -144,9 +144,9 @@ def _render_stats(slide, page: dict, palette: dict) -> None:
         _add_text(slide, stat.get("value", ""), x + .15, y + .75, card_width - .3, .8,
                   size=27, color=palette["accent"], bold=True, align=PP_ALIGN.CENTER)
         _add_text(slide, stat.get("label", ""), x + .15, y + 1.62, card_width - .3, .45,
-                  size=13, color=palette.get("title_color", "#111111"), bold=True, align=PP_ALIGN.CENTER)
+                  size=16, color=palette.get("title_color", "#111111"), bold=True, align=PP_ALIGN.CENTER)
         _add_text(slide, stat.get("desc", ""), x + .22, y + 2.18, card_width - .44, 1.05,
-                  size=10.5, color=palette.get("muted_color", "#6b7280"), align=PP_ALIGN.CENTER)
+                  size=14, color=palette.get("muted_color", "#6b7280"), align=PP_ALIGN.CENTER)
 
 
 def _numeric_value(value: str) -> float:
@@ -163,7 +163,7 @@ def _render_data_chart(slide, page: dict, palette: dict) -> None:
                palette.get("card_bg", "#f9fafb"), palette.get("border_color", "#e5e7eb"))
     for index, stat in enumerate(stats):
         top = y + .48 + index * .91
-        _add_text(slide, stat.get("label", ""), 1.05, top, 2.15, .28, size=10.5,
+        _add_text(slide, stat.get("label", ""), 1.05, top, 2.15, .32, size=14,
                   color=palette.get("title_color", "#111111"), bold=True)
         track_width = 6.8
         _add_shape(slide, MSO_AUTO_SHAPE_TYPE.ROUNDED_RECTANGLE, 3.25, top + .02, track_width, .24,
@@ -173,7 +173,7 @@ def _render_data_chart(slide, page: dict, palette: dict) -> None:
         _add_shape(slide, MSO_AUTO_SHAPE_TYPE.ROUNDED_RECTANGLE, 3.25, top + .02, bar_width, .24, bar_color)
         _add_text(slide, stat.get("value", ""), 10.25, top - .06, 1.55, .34, size=14,
                   color=bar_color, bold=True, align=PP_ALIGN.RIGHT)
-        _add_text(slide, stat.get("desc", ""), 3.25, top + .34, 8.55, .25, size=8.5,
+        _add_text(slide, stat.get("desc", ""), 3.25, top + .34, 8.55, .32, size=12,
                   color=palette.get("muted_color", "#6b7280"))
 
 
@@ -184,7 +184,7 @@ def _render_quote(slide, page: dict, palette: dict) -> None:
     _add_text(slide, "“", 1.65, 1.72, .65, .65, size=40, color=palette["accent"], bold=True)
     _add_text(slide, page.get("quote") or "", 2.15, 2.25, 9.0, 1.65, size=23,
               color=palette.get("title_color", "#111111"), bold=True, align=PP_ALIGN.CENTER, valign=MSO_ANCHOR.MIDDLE)
-    _add_text(slide, page.get("content") or "", 2.2, 4.35, 8.9, .85, size=12,
+    _add_text(slide, page.get("content") or "", 2.2, 4.35, 8.9, .95, size=16,
               color=palette.get("body_color", "#374151"), align=PP_ALIGN.CENTER)
 
 
@@ -207,7 +207,7 @@ def _render_grid(slide, page: dict, palette: dict, spotlight: bool = False) -> N
         _add_shape(slide, MSO_AUTO_SHAPE_TYPE.ROUNDED_RECTANGLE, x, top, card_width, .98,
                    palette.get("card_bg", "#f9fafb"), palette.get("border_color", "#e5e7eb"))
         _add_text(slide, f"{index + 1:02d}", x + .18, top + .14, .5, .25, size=9, color=palette["accent"], bold=True)
-        _add_text(slide, bullet, x + .75, top + .12, 4.82, .72, size=11.5,
+        _add_text(slide, bullet, x + .75, top + .10, 4.82, .76, size=15,
                   color=palette.get("body_color", "#374151"), valign=MSO_ANCHOR.MIDDLE)
 
 
@@ -222,7 +222,7 @@ def _render_timeline(slide, page: dict, palette: dict) -> None:
         _add_text(slide, f"{index + 1:02d}", 1.35, top + .10, .45, .35, size=10, color=palette["accent"], bold=True)
         _add_shape(slide, MSO_AUTO_SHAPE_TYPE.ROUNDED_RECTANGLE, 1.85, top, 10.3, .58,
                    palette.get("card_bg", "#f9fafb"), palette.get("border_color", "#e5e7eb"))
-        _add_text(slide, bullet, 2.08, top + .08, 9.75, .4, size=11.5, color=palette.get("body_color", "#374151"), valign=MSO_ANCHOR.MIDDLE)
+        _add_text(slide, bullet, 2.08, top + .05, 9.75, .46, size=15, color=palette.get("body_color", "#374151"), valign=MSO_ANCHOR.MIDDLE)
 
 
 def _render_process(slide, page: dict, palette: dict) -> None:
@@ -240,7 +240,7 @@ def _render_process(slide, page: dict, palette: dict) -> None:
         _add_shape(slide, MSO_AUTO_SHAPE_TYPE.OVAL, x + .2, y + 1.05, .52, .52, palette["accent"])
         _add_text(slide, str(index + 1), x + .2, y + 1.05, .52, .52, size=12, color="#ffffff",
                   bold=True, align=PP_ALIGN.CENTER, valign=MSO_ANCHOR.MIDDLE)
-        _add_text(slide, bullet, x + .2, y + 1.85, width - .4, 1.45, size=11,
+        _add_text(slide, bullet, x + .2, y + 1.85, width - .4, 1.45, size=14,
                   color=palette.get("body_color", "#374151"))
 
 
@@ -259,7 +259,7 @@ def _render_comparison(slide, page: dict, palette: dict) -> None:
         for index, bullet in enumerate(items):
             top = y + 1.25 + index * .82
             _add_text(slide, "◆", x + .32, top, .25, .25, size=8, color=color)
-            _add_text(slide, bullet, x + .7, top - .03, 4.7, .58, size=10.5,
+            _add_text(slide, bullet, x + .7, top - .03, 4.7, .62, size=14,
                       color=palette.get("body_color", "#374151"), valign=MSO_ANCHOR.MIDDLE)
 
 

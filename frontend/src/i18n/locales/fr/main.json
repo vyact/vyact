@@ -847,8 +847,10 @@
     "progress": {
       "sourcePreparation": "Préparation des sources... ({{articleCount}} articles, {{imageCount}} images)",
       "contextPreparation": "Analyse des documents et préparation du contexte de présentation...",
+      "factExtraction": "Extraction des faits vérifiables et de leurs preuves dans les documents sources...",
       "slideDesignAuto": "L'IA conçoit le déroulé et le contenu des diapositives avec un nombre de pages automatique...",
       "slideDesign": "L'IA conçoit le déroulé et le contenu de {{pageCount}} diapositives...",
+      "factAudit": "Vérification et correction des chiffres, dates, périmètres et de la langue de sortie...",
       "layoutCheck": "Vérification de la structure et de la mise en page de {{slideCount}} diapositives...",
       "htmlRendering": "Rendu de {{pageCount}} pages HTML...",
       "outputRendering": "Rendu du {{outputFormat}}... ({{pageCount}} pages)",

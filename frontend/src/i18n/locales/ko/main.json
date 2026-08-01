@@ -844,8 +844,10 @@
     "progress": {
       "sourcePreparation": "소스 준비 중... (기사 {{articleCount}}개, 이미지 {{imageCount}}장)",
       "contextPreparation": "문서 내용을 분석하고 프레젠테이션 컨텍스트를 구성 중...",
+      "factExtraction": "원문에서 검증 가능한 사실과 근거를 추출 중...",
       "slideDesignAuto": "AI가 자동 페이지 수로 발표 흐름과 슬라이드 콘텐츠를 설계 중...",
       "slideDesign": "AI가 {{pageCount}}페이지 발표 흐름과 슬라이드 콘텐츠를 설계 중...",
+      "factAudit": "수치, 날짜, 범위와 출력 언어를 검증하고 보정 중...",
       "layoutCheck": "{{slideCount}}개 슬라이드의 구성과 레이아웃을 확인 중...",
       "htmlRendering": "{{pageCount}}페이지 HTML을 렌더링 중...",
       "outputRendering": "{{outputFormat}}를 렌더링 중... ({{pageCount}}페이지)",

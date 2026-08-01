@@ -842,7 +842,7 @@
     "step": "步骤 {{current}}/{{total}}",
     "generatingElapsed": "已用 {{seconds}} 秒",
     "fileReady": "{{format}} 文件已准备好", "edit": "编辑", "download": "下载",
-    "progress": {"sourcePreparation": "正在准备素材...（{{articleCount}} 篇文章，{{imageCount}} 张图片）", "contextPreparation": "正在分析文档并构建演示文稿上下文...", "slideDesignAuto": "AI 正在以自动页数设计演示流程和幻灯片内容...", "slideDesign": "AI 正在设计 {{pageCount}} 页演示流程和幻灯片内容...", "layoutCheck": "正在检查 {{slideCount}} 张幻灯片的结构和布局...", "htmlRendering": "正在渲染 {{pageCount}} 页 HTML...", "outputRendering": "正在渲染 {{outputFormat}}...（{{pageCount}} 页）", "saving": "正在保存文件并完成对话记录..."},
+    "progress": {"sourcePreparation": "正在准备素材...（{{articleCount}} 篇文章，{{imageCount}} 张图片）", "contextPreparation": "正在分析文档并构建演示文稿上下文...", "factExtraction": "正在从原始文档中提取可验证的事实和依据...", "slideDesignAuto": "AI 正在以自动页数设计演示流程和幻灯片内容...", "slideDesign": "AI 正在设计 {{pageCount}} 页演示流程和幻灯片内容...", "factAudit": "正在核查并修正数字、日期、范围和输出语言...", "layoutCheck": "正在检查 {{slideCount}} 张幻灯片的结构和布局...", "htmlRendering": "正在渲染 {{pageCount}} 页 HTML...", "outputRendering": "正在渲染 {{outputFormat}}...（{{pageCount}} 页）", "saving": "正在保存文件并完成对话记录..."},
     "sourceCount": "{{count}} 个来源",
     "imageCount": "{{count}} 张图片",
     "cancel": "取消",
