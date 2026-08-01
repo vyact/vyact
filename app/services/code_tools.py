@@ -4,9 +4,13 @@ services/code_tools.py — 코드 분석 tool (폴더 첨부 시 활성화)
 사용자가 채팅에 폴더를 첨부하면, LLM이 해당 폴더 내 파일을 탐색·읽기·수정·검색할 수 있도록
 내부 tool을 등록한다. 폴더 경로는 요청별 ContextVar로 관리된다.
 """
+import fnmatch
+import json
 import os
 import re
 import subprocess
+import tempfile
+import time
 from contextvars import ContextVar
 from pathlib import Path
 
@@ -24,6 +28,15 @@ current_code_question: ContextVar[str] = ContextVar("current_code_question", def
 # 읽기 제한
 MAX_READ_BYTES = 100_000  # 100KB
 MAX_GREP_RESULTS = 50
+MAX_FIND_RESULTS = 300
+MAX_MULTI_READ_FILES = 10
+MAX_PATCH_BYTES = 100_000
+MAX_TASK_CONFIG_DEPTH = 4
+PROJECT_MANIFEST_MAX_DEPTH = 3
+PROJECT_MANIFEST_MAX_ENTRIES = 300
+PROJECT_MANIFEST_MAX_CHARS = 12_000
+PROJECT_MANIFEST_CACHE_TTL_SECONDS = 30
+_project_manifest_cache: dict[tuple[str, ...], tuple[float, str]] = {}
 
 # 무시할 디렉토리
 IGNORE_DIRS = {
@@ -31,6 +44,71 @@ IGNORE_DIRS = {
     ".next", ".nuxt", ".cache", ".idea", ".vscode", "coverage", ".pytest_cache",
     "egg-info", ".tox", ".mypy_cache",
 }
+
+
+def build_project_manifest(folder_paths: list[str]) -> str:
+    """Build a bounded, language-independent source tree for project context."""
+    resolved_paths = tuple(str(Path(path).resolve()) for path in folder_paths if str(path).strip())
+    if not resolved_paths:
+        return ""
+
+    cached = _project_manifest_cache.get(resolved_paths)
+    now = time.monotonic()
+    if cached and now - cached[0] < PROJECT_MANIFEST_CACHE_TTL_SECONDS:
+        return cached[1]
+
+    lines: list[str] = []
+    entry_count = 0
+    truncated = False
+
+    def walk(directory: Path, root_directory: Path, depth: int, prefix: str) -> None:
+        nonlocal entry_count, truncated
+        if depth > PROJECT_MANIFEST_MAX_DEPTH or truncated:
+            return
+        try:
+            entries = sorted(directory.iterdir(), key=lambda entry: (not entry.is_dir(), entry.name.casefold()))
+        except (OSError, PermissionError):
+            return
+        for entry in entries:
+            if entry_count >= PROJECT_MANIFEST_MAX_ENTRIES:
+                truncated = True
+                return
+            try:
+                is_directory = entry.is_dir()
+            except OSError:
+                continue
+            if is_directory and entry.name in IGNORE_DIRS:
+                continue
+            if entry.name == ".git":
+                continue
+            line = f"{prefix}{entry.name}{'/' if is_directory else ''}"
+            if sum(len(item) + 1 for item in lines) + len(line) > PROJECT_MANIFEST_MAX_CHARS:
+                truncated = True
+                return
+            lines.append(line)
+            entry_count += 1
+            if is_directory:
+                try:
+                    stays_in_root = not entry.is_symlink() and entry.resolve().is_relative_to(root_directory)
+                except OSError:
+                    stays_in_root = False
+                if stays_in_root:
+                    walk(entry, root_directory, depth + 1, prefix + "  ")
+
+    for index, path in enumerate(resolved_paths, 1):
+        root = Path(path)
+        lines.append(f"folder_{index}/")
+        if root.is_dir():
+            resolved_root = root.resolve()
+            walk(resolved_root, resolved_root, 1, "  ")
+        else:
+            lines.append("  (unavailable)")
+
+    if truncated:
+        lines.append("... (manifest truncated)")
+    manifest = "\n".join(lines)
+    _project_manifest_cache[resolved_paths] = (now, manifest)
+    return manifest
 
 FOLDER_ID_PROPERTY = {
     "type": "string",
@@ -145,6 +223,40 @@ async def _read_file(folder_id: str, path: str, offset: int = 0, limit: int = 12
     numbered = [f"{i + offset + 1:4d} | {line}" for i, line in enumerate(selected)]
     header = f"파일: {path} (전체 {total}줄, {offset + 1}~{offset + len(selected)}줄 표시)"
     return header + "\n" + "\n".join(numbered)
+
+
+async def _read_files(folder_id: str, paths: list[str], limit_per_file: int = 500) -> str:
+    if not isinstance(paths, list) or not paths:
+        return "[오류] 읽을 파일 경로가 필요합니다."
+    if len(paths) > MAX_MULTI_READ_FILES:
+        return f"[오류] 한 번에 최대 {MAX_MULTI_READ_FILES}개 파일을 읽을 수 있습니다."
+    outputs = []
+    for path in paths:
+        output = await _read_file(folder_id, str(path), 0, limit_per_file)
+        outputs.append(output)
+    combined = "\n\n---\n\n".join(outputs)
+    return combined[:50_000] + ("\n...(출력 생략)" if len(combined) > 50_000 else "")
+
+
+async def _find_files(folder_id: str, pattern: str = "*", path: str = ".") -> str:
+    folder, error = _resolve_folder(folder_id)
+    if error:
+        return error
+    target = _safe_path(folder, path)
+    if not target or not target.is_dir():
+        return f"[오류] 디렉토리를 찾을 수 없습니다: {path}"
+    base = Path(folder).resolve()
+    matches: list[str] = []
+    for root, directory_names, file_names in os.walk(target):
+        directory_names[:] = sorted(name for name in directory_names if name not in IGNORE_DIRS)
+        root_path = Path(root)
+        for file_name in sorted(file_names):
+            relative_path = (root_path / file_name).relative_to(base).as_posix()
+            if fnmatch.fnmatch(file_name, pattern) or fnmatch.fnmatch(relative_path, pattern):
+                matches.append(relative_path)
+                if len(matches) >= MAX_FIND_RESULTS:
+                    return "\n".join(matches) + f"\n... (상위 {MAX_FIND_RESULTS}개만 표시)"
+    return "\n".join(matches) if matches else f"'{pattern}' 파일 검색 결과 없음"
 
 
 def _try_indent_correction(
@@ -277,6 +389,8 @@ async def _create_file(folder_id: str, path: str, content: str) -> str:
     target = _safe_path(folder, path)
     if not target:
         return f"[오류] 잘못된 경로: {path}"
+    if target.exists():
+        return f"[오류] 파일이 이미 존재합니다. 기존 파일은 code_edit_file 또는 code_apply_patch로 수정하세요: {path}"
 
     try:
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -284,7 +398,63 @@ async def _create_file(folder_id: str, path: str, content: str) -> str:
     except Exception as e:
         return f"[오류] 파일 생성 실패: {e}"
 
+    _project_manifest_cache.clear()
     return f"✅ {path} 생성 완료 ({len(content.split(chr(10)))}줄)"
+
+
+async def _apply_patch(folder_id: str, patch: str) -> str:
+    """Apply a validated unified diff atomically enough to avoid partial patch failures."""
+    folder, error = _resolve_folder(folder_id)
+    if error:
+        return error
+    if not patch.strip() or len(patch.encode("utf-8")) > MAX_PATCH_BYTES:
+        return f"[오류] patch는 비어 있을 수 없고 최대 {MAX_PATCH_BYTES}바이트여야 합니다."
+
+    base = Path(folder).resolve()
+    old_paths = re.findall(r"^---\s+([^\t\n ]+)", patch, re.MULTILINE)
+    new_paths = re.findall(r"^\+\+\+\s+([^\t\n ]+)", patch, re.MULTILINE)
+    if not new_paths or len(old_paths) != len(new_paths):
+        return "[오류] 올바른 unified diff 헤더(---/+++)가 필요합니다."
+    for old_path, new_path in zip(old_paths, new_paths):
+        if new_path == "/dev/null":
+            return "[오류] patch를 통한 파일 삭제는 지원하지 않습니다. code_delete_file을 사용하세요."
+        for candidate in (old_path, new_path):
+            if candidate == "/dev/null":
+                continue
+            if candidate.startswith(("/", "a/", "b/")) or ".." in Path(candidate).parts:
+                return "[오류] patch 경로는 a/ 또는 b/ 접두사 없는 등록 폴더 기준 상대경로여야 합니다."
+            target = (base / candidate).resolve()
+            if not target.is_relative_to(base):
+                return f"[오류] 등록 폴더 밖의 경로는 수정할 수 없습니다: {candidate}"
+
+    temporary_path = ""
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", suffix=".patch", delete=False) as temporary:
+            temporary.write(patch)
+            temporary_path = temporary.name
+        dry_run = subprocess.run(
+            ["patch", "--batch", "--forward", "--dry-run", "-p0", "-i", temporary_path],
+            capture_output=True, text=True, timeout=30, cwd=str(base),
+        )
+        if dry_run.returncode != 0:
+            return f"[오류] patch 사전 검증 실패:\n{(dry_run.stdout + dry_run.stderr).strip()[:12_000]}"
+        applied = subprocess.run(
+            ["patch", "--batch", "--forward", "-p0", "-i", temporary_path],
+            capture_output=True, text=True, timeout=30, cwd=str(base),
+        )
+        output = (applied.stdout + applied.stderr).strip()
+        if applied.returncode != 0:
+            return f"[오류] patch 적용 실패:\n{output[:12_000]}"
+        _project_manifest_cache.clear()
+        return f"✅ patch 적용 완료\n{output[:12_000]}"
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return f"[오류] patch 실행 실패: {exc}"
+    finally:
+        if temporary_path:
+            try:
+                Path(temporary_path).unlink(missing_ok=True)
+            except OSError:
+                pass
 
 
 async def _grep_search(folder_id: str, pattern: str, path: str = ".", include: str = "") -> str:
@@ -335,24 +505,94 @@ async def _grep_search(folder_id: str, pattern: str, path: str = ".", include: s
     return header + "\n" + "\n".join(cleaned)
 
 
-async def _run_project_check(folder_id: str, check: str) -> str:
-    """test/lint/typecheck/build만 허용한다. 임의 shell command는 실행하지 않는다."""
+def _discover_project_tasks(folder: str) -> list[dict[str, str]]:
+    base = Path(folder).resolve()
+    tasks: list[dict[str, str]] = []
+    for root, directory_names, file_names in os.walk(base):
+        root_path = Path(root)
+        try:
+            depth = len(root_path.relative_to(base).parts)
+        except ValueError:
+            continue
+        if depth >= MAX_TASK_CONFIG_DEPTH:
+            directory_names[:] = []
+        else:
+            directory_names[:] = sorted(name for name in directory_names if name not in IGNORE_DIRS)
+        working_directory = root_path.relative_to(base).as_posix() or "."
+        if "package.json" in file_names:
+            try:
+                scripts = json.loads((root_path / "package.json").read_text(encoding="utf-8")).get("scripts", {})
+            except (OSError, json.JSONDecodeError):
+                scripts = {}
+            if isinstance(scripts, dict):
+                tasks.extend({
+                    "working_directory": working_directory,
+                    "task": str(name),
+                    "command": f"npm run {name}",
+                } for name in sorted(scripts))
+        has_python_config = "pyproject.toml" in file_names or "pytest.ini" in file_names
+        if has_python_config:
+            tasks.append({"working_directory": working_directory, "task": "python:test", "command": "pytest"})
+            if "pyproject.toml" in file_names:
+                tasks.extend([
+                    {"working_directory": working_directory, "task": "python:lint", "command": "ruff check ."},
+                    {"working_directory": working_directory, "task": "python:typecheck", "command": "mypy ."},
+                    {"working_directory": working_directory, "task": "python:compile", "command": "python -m compileall -q ."},
+                ])
+    return tasks
+
+
+async def _list_tasks(folder_id: str) -> str:
     folder, error = _resolve_folder(folder_id)
     if error:
         return error
-    package_json = Path(folder) / "package.json"
-    if not package_json.is_file():
-        python_commands = {
-            "test": ["pytest"],
-            "lint": ["ruff", "check", "."],
-            "typecheck": ["mypy", "."],
+    tasks = _discover_project_tasks(folder)
+    if not tasks:
+        return "실행 가능한 프로젝트 작업을 찾지 못했습니다."
+    return "\n".join(
+        f"- working_directory={task['working_directory']} | task={task['task']} | {task['command']}"
+        for task in tasks
+    )
+
+
+async def _run_task(folder_id: str, working_directory: str, task: str) -> str:
+    folder, error = _resolve_folder(folder_id)
+    if error:
+        return error
+    target = _safe_path(folder, working_directory)
+    if not target or not target.is_dir():
+        return f"[오류] 작업 디렉토리를 찾을 수 없습니다: {working_directory}"
+    normalized_directory = target.relative_to(Path(folder).resolve()).as_posix() or "."
+    discovered = _discover_project_tasks(folder)
+    selected = next((item for item in discovered if item["working_directory"] == normalized_directory and item["task"] == task), None)
+    if not selected:
+        return "[오류] 등록된 프로젝트 설정에서 해당 작업을 찾을 수 없습니다. code_list_tasks로 실행 가능한 작업을 먼저 확인하세요."
+    if task.startswith("python:"):
+        commands = {
+            "python:test": ["pytest"],
+            "python:lint": ["ruff", "check", "."],
+            "python:typecheck": ["mypy", "."],
+            "python:compile": ["python", "-m", "compileall", "-q", "."],
         }
-        command = python_commands.get(check)
-        if command and ((Path(folder) / "pyproject.toml").is_file() or (Path(folder) / "pytest.ini").is_file()):
-            return _run_command(command, folder)
-        return "[오류] 검사 설정을 찾을 수 없습니다. package.json script 또는 pyproject.toml/pytest.ini가 필요합니다."
+        command = commands[task]
+    else:
+        command = ["npm", "run", task]
+    return _run_command(command, str(target), timeout=120)
+
+
+async def _run_project_check(folder_id: str, check: str, working_directory: str = ".") -> str:
+    """Run a conventional check only when declared by the project configuration."""
+    folder, error = _resolve_folder(folder_id)
+    if error:
+        return error
+    target = _safe_path(folder, working_directory)
+    if not target or not target.is_dir():
+        return f"[오류] 작업 디렉토리를 찾을 수 없습니다: {working_directory}"
+    package_json = target / "package.json"
+    if not package_json.is_file():
+        python_task = f"python:{'compile' if check == 'build' else check}"
+        return await _run_task(folder_id, working_directory, python_task)
     try:
-        import json
         scripts = json.loads(package_json.read_text(encoding="utf-8")).get("scripts", {})
     except Exception as e:
         return f"[오류] package.json을 읽을 수 없습니다: {e}"
@@ -361,7 +601,7 @@ async def _run_project_check(folder_id: str, check: str) -> str:
         return "[오류] check은 test, lint, typecheck, build 중 하나여야 합니다."
     if script_name not in scripts:
         return f"[오류] package.json에 '{script_name}' script가 없습니다."
-    return _run_command(["npm", "run", script_name], folder)
+    return await _run_task(folder_id, working_directory, script_name)
 
 
 async def _git_status(folder_id: str) -> str:
@@ -397,6 +637,7 @@ async def _move_file(folder_id: str, source: str, destination: str) -> str:
         src.rename(dest)
     except Exception as e:
         return f"[오류] 파일 이동 실패: {e}"
+    _project_manifest_cache.clear()
     return f"✅ 파일 이동 완료: {source} → {destination}"
 
 
@@ -413,6 +654,7 @@ async def _delete_file(folder_id: str, path: str) -> str:
         target.unlink()
     except Exception as e:
         return f"[오류] 파일 삭제 실패: {e}"
+    _project_manifest_cache.clear()
     return f"✅ 파일 삭제 완료: {path}"
 
 
@@ -472,6 +714,30 @@ def register_code_tools():
     )
 
     mcp_manager.register_internal_tool(
+        name="code_read_files",
+        description="여러 코드 파일을 한 번에 읽는다. 서로 관련된 파일을 함께 분석할 때 사용한다.",
+        parameters={"type": "object", "properties": {
+            "folder_id": FOLDER_ID_PROPERTY,
+            "paths": {"type": "array", "items": {"type": "string"}, "maxItems": MAX_MULTI_READ_FILES},
+            "limit_per_file": {"type": "integer", "default": 500, "minimum": 1, "maximum": 1200},
+        }, "required": ["folder_id", "paths"]},
+        handler=_read_files,
+        server_type="code_tools",
+    )
+
+    mcp_manager.register_internal_tool(
+        name="code_find_files",
+        description="파일명 또는 등록 폴더 기준 상대경로 glob으로 파일을 찾는다. 예: '*.tsx', 'frontend/src/**/*.ts'.",
+        parameters={"type": "object", "properties": {
+            "folder_id": FOLDER_ID_PROPERTY,
+            "pattern": {"type": "string", "description": "파일명 또는 상대경로 glob"},
+            "path": {"type": "string", "default": ".", "description": "검색 시작 디렉토리"},
+        }, "required": ["folder_id", "pattern"]},
+        handler=_find_files,
+        server_type="code_tools",
+    )
+
+    mcp_manager.register_internal_tool(
         name="code_edit_file",
         description="코드 폴더 내 파일을 수정한다. old_string을 찾아 new_string으로 교체한다. old_string은 파일 내에 정확히 1곳만 존재해야 한다.",
         parameters={
@@ -520,6 +786,17 @@ def register_code_tools():
     )
 
     mcp_manager.register_internal_tool(
+        name="code_apply_patch",
+        description="a/·b/ 접두사 없는 unified diff를 사전 검증한 뒤 여러 파일에 적용한다. 파일 삭제는 지원하지 않는다.",
+        parameters={"type": "object", "properties": {
+            "folder_id": FOLDER_ID_PROPERTY,
+            "patch": {"type": "string", "description": "등록 폴더 기준 상대경로를 사용하는 unified diff"},
+        }, "required": ["folder_id", "patch"]},
+        handler=_apply_patch,
+        server_type="code_tools",
+    )
+
+    mcp_manager.register_internal_tool(
         name="code_grep_search",
         description="코드 폴더 내에서 텍스트/정규식 패턴을 검색한다 (grep). 파일명과 줄번호가 표시된다.",
         parameters={
@@ -549,9 +826,27 @@ def register_code_tools():
 
     mcp_manager.register_internal_tool(
         name="code_run_check",
-        description="프로젝트의 등록된 검사(test, lint, typecheck, build)를 실행한다. 임의 명령 실행은 지원하지 않는다.",
-        parameters={"type": "object", "properties": {"folder_id": FOLDER_ID_PROPERTY, "check": {"type": "string", "enum": ["test", "lint", "typecheck", "build"]}}, "required": ["folder_id", "check"]},
+        description="지정한 하위 프로젝트에서 등록된 검사(test, lint, typecheck, build)를 실행한다. 임의 명령 실행은 지원하지 않는다.",
+        parameters={"type": "object", "properties": {"folder_id": FOLDER_ID_PROPERTY, "check": {"type": "string", "enum": ["test", "lint", "typecheck", "build"]}, "working_directory": {"type": "string", "default": ".", "description": "등록 폴더 내부의 상대 작업 디렉토리"}}, "required": ["folder_id", "check"]},
         handler=_run_project_check,
+        server_type="code_tools",
+    )
+    mcp_manager.register_internal_tool(
+        name="code_list_tasks",
+        description="등록 폴더와 하위 프로젝트의 package.json·pyproject.toml을 찾아 안전하게 실행 가능한 작업을 나열한다.",
+        parameters={"type": "object", "properties": {"folder_id": FOLDER_ID_PROPERTY}, "required": ["folder_id"]},
+        handler=_list_tasks,
+        server_type="code_tools",
+    )
+    mcp_manager.register_internal_tool(
+        name="code_run_task",
+        description="code_list_tasks가 발견한 package script 또는 Python 검사 작업만 해당 하위 프로젝트에서 실행한다.",
+        parameters={"type": "object", "properties": {
+            "folder_id": FOLDER_ID_PROPERTY,
+            "working_directory": {"type": "string", "description": "code_list_tasks 결과의 상대 작업 디렉토리"},
+            "task": {"type": "string", "description": "code_list_tasks 결과의 task 값"},
+        }, "required": ["folder_id", "working_directory", "task"]},
+        handler=_run_task,
         server_type="code_tools",
     )
     mcp_manager.register_internal_tool(
@@ -583,4 +878,4 @@ def register_code_tools():
         server_type="code_tools",
     )
 
-    logger.info("[code_tools] 10 code analysis tools registered")
+    logger.info("[code_tools] 15 code analysis tools registered")

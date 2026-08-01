@@ -107,16 +107,26 @@ async def _get_project_prompt(project_id: str) -> str:
 
 
 async def _get_project_folder_context(project_id: str) -> str:
-    """선택 프로젝트의 모든 소스 폴더를 LLM 컨텍스트로 제공한다."""
+    """선택 프로젝트의 소스 폴더와 제한된 파일 구조를 LLM 컨텍스트로 제공한다."""
     if not project_id:
         return ""
     try:
         folder_paths = await _get_project_folder_paths(project_id)
         if not folder_paths:
             return ""
-        return "[프로젝트 소스 폴더]\n" + "\n".join(
+        from services.code_tools import build_project_manifest
+        manifest = await asyncio.to_thread(build_project_manifest, folder_paths)
+        folder_context = "[프로젝트 소스 폴더]\n" + "\n".join(
             f"- folder_{index}: {path}" for index, path in enumerate(folder_paths, 1)
-        ) + "\n모든 code_* 도구 호출에 작업 대상 folder_id를 반드시 지정해야 한다."
+        )
+        if manifest:
+            folder_context += (
+                "\n\n[프로젝트 파일 구조 — 자동 생성 manifest]\n"
+                + manifest
+                + "\n이 manifest는 경로 구조만 보여준다. 파일 내용이 필요한 경우 code_read_file 또는 "
+                  "code_grep_search를 사용해 확인해야 한다."
+            )
+        return folder_context + "\n모든 code_* 도구 호출에 작업 대상 folder_id를 반드시 지정해야 한다."
     except Exception as e:
         logger.warning("[query_stream] 프로젝트 폴더 조회 실패(project_id=%s): %s", project_id, e)
         return ""

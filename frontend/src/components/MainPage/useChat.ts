@@ -27,7 +27,11 @@ function toolLabel(name: string | undefined, t: (key: string, options?: Record<s
         search_knowledge_collection: 'searchKnowledgeCollection',
         // 코드 분석 tool
         code_list_directory: 'codeListDirectory', code_read_file: 'codeReadFile', code_edit_file: 'codeEditFile',
-        code_create_file: 'codeCreateFile', code_grep_search: 'codeSearch',
+        code_read_files: 'codeReadFiles', code_find_files: 'codeFindFiles',
+        code_create_file: 'codeCreateFile', code_grep_search: 'codeSearch', code_apply_patch: 'codeApplyPatch',
+        code_list_tasks: 'codeListTasks', code_run_task: 'codeRunTask', code_run_check: 'codeRunCheck',
+        code_git_status: 'codeGitStatus', code_git_diff: 'codeGitDiff',
+        code_move_file: 'codeMoveFile', code_delete_file: 'codeDeleteFile',
         // GitHub (자주 쓰는 것)
         search_repositories: 'githubRepositories', get_file_contents: 'githubFile', list_commits: 'githubCommits',
         search_code: 'githubCode', create_issue: 'githubIssue',

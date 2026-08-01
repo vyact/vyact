@@ -279,6 +279,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     const [instructionsProject, setInstructionsProject] = useState<Project | null>(null);
     const [memoryProject, setMemoryProject] = useState<Project | null>(null);
     const loadMoreRef = useRef<HTMLDivElement>(null);
+    const previousActiveConversationIdsRef = useRef<Set<string>>(new Set(activeConversationIds));
+    const completedConversationIdsPendingRef = useRef<Set<string>>(new Set());
     const [loadingMore, setLoadingMore] = useState(false);
     const activeConversationIdSet = new Set(activeConversationIds);
     const saveProjectName = async (project: Project) => {
@@ -292,6 +294,36 @@ const Sidebar: React.FC<SidebarProps> = ({
         const updated = await api.updateProject(project.id, {project_prompt: projectPrompt});
         setProjects(prev => prev.map(item => item.id === project.id ? updated : item));
     };
+
+    // 프로젝트 채팅의 응답이 끝났을 때 사용자가 접어둔 프로젝트라도 다시 펼쳐
+    // 새 응답이 도착한 채팅방을 사이드바에서 바로 확인할 수 있게 한다.
+    useEffect(() => {
+        const previousActiveIds = previousActiveConversationIdsRef.current;
+        const currentActiveIds = new Set(activeConversationIds);
+        previousActiveIds.forEach(conversationId => {
+            if (!currentActiveIds.has(conversationId)) {
+                completedConversationIdsPendingRef.current.add(conversationId);
+            }
+        });
+        const completedProjectIds = new Set<string>();
+        conversations.forEach(conversation => {
+            if (!completedConversationIdsPendingRef.current.has(conversation.conv_id)) return;
+            completedConversationIdsPendingRef.current.delete(conversation.conv_id);
+            if (conversation.project_id) completedProjectIds.add(conversation.project_id);
+        });
+
+        previousActiveConversationIdsRef.current = currentActiveIds;
+        if (completedProjectIds.size === 0) return;
+
+        setProjectsExpanded(true);
+        localStorage.setItem('sidebar-projects-expanded', 'true');
+        setExpandedProjectIds(previous => {
+            const next = new Set(previous);
+            completedProjectIds.forEach(projectId => next.add(projectId));
+            storeExpandedProjectIds(next);
+            return next;
+        });
+    }, [activeConversationIds, conversations]);
 
     // 무한 스크롤: sentinel이 보이면 다음 페이지 자동 로드
     const hasMore = conversations.length < historyTotal;
