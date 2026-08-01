@@ -462,7 +462,20 @@
     "exportMarkdown": "MDを保存",
     "exportPdf": "PDFを保存",
     "delete": "削除",
-    "projectMemory": {"title":"プロジェクトメモリ","close":"閉じる","loading":"読み込み中…","summary":"プロジェクト状況","noSummary":"プロジェクト概要はまだありません。","decisions":"決定事項","actionItems":"タスク","noItems":"抽出された項目はまだありません。","markCompleted":"完了にする","markActive":"進行中に戻す","delete":"項目を削除","localNote":"選択中のAIモデルが会話から自動抽出します。"},
+    "projectMemory": {
+      "title": "プロジェクトメモリ",
+      "close": "閉じる",
+      "loading": "読み込み中…",
+      "summary": "プロジェクト状況",
+      "noSummary": "プロジェクト概要はまだありません。",
+      "decisions": "決定事項",
+      "actionItems": "タスク",
+      "noItems": "抽出された項目はまだありません。",
+      "markCompleted": "完了にする",
+      "markActive": "進行中に戻す",
+      "delete": "項目を削除",
+      "localNote": "選択中のAIモデルが会話から自動抽出します。"
+    },
     "projectInstructions": {
       "title": "プロジェクト指示",
       "close": "閉じる",
@@ -813,7 +826,10 @@
       "pdf_widescreen": "PDF · 16:9",
       "pptx": "PPTX"
     },
-    "outputSizes": {"a4": "A4", "widescreen": "16:9"},
+    "outputSizes": {
+      "a4": "A4",
+      "widescreen": "16:9"
+    },
     "autoPages": "AI自動",
     "pages": "{{count}}ページ",
     "korean": "韓国語",
@@ -870,7 +886,34 @@
   "fileUpload": {
     "failed": "{{name}} のアップロードに失敗しました"
   },
-  "approval": {"title":"承認モード","description":"AIツールの変更を承認する基準を選択します。","requestTitle":"実行の承認が必要です","toolRequest":"{{tool}} が変更を要求しました。","approve":"承認","reject":"拒否","scope":"適用範囲","scopes":{"conversation":"このチャット","project":"このプロジェクト","global":"全体の既定値"},"modes":{"always_confirm":{"title":"変更を常に確認","description":"読み取り以外のすべての変更を確認します。"},"risky_only":{"title":"危険な操作のみ確認","description":"外部送信や削除など重要な操作を確認します。"},"trusted":{"title":"信頼モード","description":"ほとんどを自動実行し、破壊的操作は確認します。"}}},
+  "approval": {
+    "title": "承認モード",
+    "description": "AIツールの変更を承認する基準を選択します。",
+    "requestTitle": "実行の承認が必要です",
+    "toolRequest": "{{tool}} が変更を要求しました。",
+    "approve": "承認",
+    "reject": "拒否",
+    "scope": "適用範囲",
+    "scopes": {
+      "conversation": "このチャット",
+      "project": "このプロジェクト",
+      "global": "全体の既定値"
+    },
+    "modes": {
+      "always_confirm": {
+        "title": "変更を常に確認",
+        "description": "読み取り以外のすべての変更を確認します。"
+      },
+      "risky_only": {
+        "title": "危険な操作のみ確認",
+        "description": "外部送信や削除など重要な操作を確認します。"
+      },
+      "trusted": {
+        "title": "信頼モード",
+        "description": "ほとんどを自動実行し、破壊的操作は確認します。"
+      }
+    }
+  },
   "toolActivity": {
     "ariaLabel": "ツールの進行状況",
     "working": "処理中…",

@@ -461,7 +461,20 @@
     "exportMarkdown": "บันทึกเป็น MD",
     "exportPdf": "บันทึกเป็น PDF",
     "delete": "ลบ",
-    "projectMemory": {"title":"หน่วยความจำโปรเจกต์","close":"ปิด","loading":"กำลังโหลด…","summary":"สถานะโปรเจกต์","noSummary":"ยังไม่มีสรุปโปรเจกต์","decisions":"การตัดสินใจ","actionItems":"สิ่งที่ต้องทำ","noItems":"ยังไม่มีรายการที่แยกออกมา","markCompleted":"ทำเครื่องหมายว่าเสร็จแล้ว","markActive":"ทำเครื่องหมายว่ากำลังดำเนินการ","delete":"ลบรายการ","localNote":"โมเดล AI ที่เลือกจะแยกข้อมูลจากบทสนทนาโดยอัตโนมัติ"},
+    "projectMemory": {
+      "title": "หน่วยความจำโปรเจกต์",
+      "close": "ปิด",
+      "loading": "กำลังโหลด…",
+      "summary": "สถานะโปรเจกต์",
+      "noSummary": "ยังไม่มีสรุปโปรเจกต์",
+      "decisions": "การตัดสินใจ",
+      "actionItems": "สิ่งที่ต้องทำ",
+      "noItems": "ยังไม่มีรายการที่แยกออกมา",
+      "markCompleted": "ทำเครื่องหมายว่าเสร็จแล้ว",
+      "markActive": "ทำเครื่องหมายว่ากำลังดำเนินการ",
+      "delete": "ลบรายการ",
+      "localNote": "โมเดล AI ที่เลือกจะแยกข้อมูลจากบทสนทนาโดยอัตโนมัติ"
+    },
     "projectInstructions": {
       "title": "คำแนะนำโปรเจกต์",
       "close": "ปิด",
@@ -813,7 +826,10 @@
       "pdf_widescreen": "PDF · 16:9",
       "pptx": "PPTX"
     },
-    "outputSizes": {"a4": "A4", "widescreen": "16:9"},
+    "outputSizes": {
+      "a4": "A4",
+      "widescreen": "16:9"
+    },
     "autoPages": "AI อัตโนมัติ",
     "pages": "{{count}} หน้า",
     "korean": "เกาหลี",
@@ -842,8 +858,21 @@
     "uploadProgress": "เสร็จแล้ว {{completed}}/{{total}}",
     "step": "ขั้นตอน {{current}}/{{total}}",
     "generatingElapsed": "ผ่านไป {{seconds}} วินาที",
-    "fileReady": "ไฟล์ {{format}} พร้อมแล้ว", "edit": "แก้ไข", "download": "ดาวน์โหลด",
-    "progress": {"sourcePreparation": "กำลังเตรียมแหล่งข้อมูล... (บทความ {{articleCount}} รายการ, รูปภาพ {{imageCount}} รูป)", "contextPreparation": "กำลังวิเคราะห์เอกสารและสร้างบริบทสำหรับงานนำเสนอ...", "factExtraction": "กำลังดึงข้อเท็จจริงและหลักฐานที่ตรวจสอบได้จากเอกสารต้นฉบับ...", "slideDesignAuto": "AI กำลังออกแบบลำดับการนำเสนอและเนื้อหาสไลด์ด้วยจำนวนหน้าอัตโนมัติ...", "slideDesign": "AI กำลังออกแบบลำดับการนำเสนอและเนื้อหาสำหรับ {{pageCount}} สไลด์...", "factAudit": "กำลังตรวจสอบและแก้ไขตัวเลข วันที่ ขอบเขต และภาษาผลลัพธ์...", "layoutCheck": "กำลังตรวจสอบโครงสร้างและเค้าโครงของ {{slideCount}} สไลด์...", "htmlRendering": "กำลังเรนเดอร์ HTML {{pageCount}} หน้า...", "outputRendering": "กำลังเรนเดอร์ {{outputFormat}}... ({{pageCount}} หน้า)", "saving": "กำลังบันทึกไฟล์และสรุปประวัติการสนทนา..."},
+    "fileReady": "ไฟล์ {{format}} พร้อมแล้ว",
+    "edit": "แก้ไข",
+    "download": "ดาวน์โหลด",
+    "progress": {
+      "sourcePreparation": "กำลังเตรียมแหล่งข้อมูล... (บทความ {{articleCount}} รายการ, รูปภาพ {{imageCount}} รูป)",
+      "contextPreparation": "กำลังวิเคราะห์เอกสารและสร้างบริบทสำหรับงานนำเสนอ...",
+      "factExtraction": "กำลังดึงข้อเท็จจริงและหลักฐานที่ตรวจสอบได้จากเอกสารต้นฉบับ...",
+      "slideDesignAuto": "AI กำลังออกแบบลำดับการนำเสนอและเนื้อหาสไลด์ด้วยจำนวนหน้าอัตโนมัติ...",
+      "slideDesign": "AI กำลังออกแบบลำดับการนำเสนอและเนื้อหาสำหรับ {{pageCount}} สไลด์...",
+      "factAudit": "กำลังตรวจสอบและแก้ไขตัวเลข วันที่ ขอบเขต และภาษาผลลัพธ์...",
+      "layoutCheck": "กำลังตรวจสอบโครงสร้างและเค้าโครงของ {{slideCount}} สไลด์...",
+      "htmlRendering": "กำลังเรนเดอร์ HTML {{pageCount}} หน้า...",
+      "outputRendering": "กำลังเรนเดอร์ {{outputFormat}}... ({{pageCount}} หน้า)",
+      "saving": "กำลังบันทึกไฟล์และสรุปประวัติการสนทนา..."
+    },
     "sourceCount": "{{count}} แหล่ง",
     "imageCount": "{{count}} รูป",
     "cancel": "ยกเลิก",
@@ -857,7 +886,34 @@
   "fileUpload": {
     "failed": "อัปโหลด {{name}} ล้มเหลว"
   },
-  "approval": {"title":"โหมดการอนุมัติ","description":"เลือกว่าจะต้องอนุมัติการเปลี่ยนแปลงจากเครื่องมือ AI เมื่อใด","requestTitle":"ต้องอนุมัติการดำเนินการ","toolRequest":"{{tool}} ขอทำการเปลี่ยนแปลง","approve":"อนุมัติ","reject":"ปฏิเสธ","scope":"นำไปใช้กับ","scopes":{"conversation":"แชทนี้","project":"โปรเจกต์นี้","global":"ค่าเริ่มต้นทั้งหมด"},"modes":{"always_confirm":{"title":"ยืนยันทุกการเปลี่ยนแปลง","description":"ยืนยันทุกการเปลี่ยนแปลงยกเว้นการอ่าน"},"risky_only":{"title":"ยืนยันเฉพาะงานที่เสี่ยง","description":"ยืนยันการส่งภายนอกและการลบ"},"trusted":{"title":"โหมดเชื่อถือ","description":"ทำงานส่วนใหญ่อัตโนมัติแต่ยังยืนยันงานที่ทำลายข้อมูล"}}},
+  "approval": {
+    "title": "โหมดการอนุมัติ",
+    "description": "เลือกว่าจะต้องอนุมัติการเปลี่ยนแปลงจากเครื่องมือ AI เมื่อใด",
+    "requestTitle": "ต้องอนุมัติการดำเนินการ",
+    "toolRequest": "{{tool}} ขอทำการเปลี่ยนแปลง",
+    "approve": "อนุมัติ",
+    "reject": "ปฏิเสธ",
+    "scope": "นำไปใช้กับ",
+    "scopes": {
+      "conversation": "แชทนี้",
+      "project": "โปรเจกต์นี้",
+      "global": "ค่าเริ่มต้นทั้งหมด"
+    },
+    "modes": {
+      "always_confirm": {
+        "title": "ยืนยันทุกการเปลี่ยนแปลง",
+        "description": "ยืนยันทุกการเปลี่ยนแปลงยกเว้นการอ่าน"
+      },
+      "risky_only": {
+        "title": "ยืนยันเฉพาะงานที่เสี่ยง",
+        "description": "ยืนยันการส่งภายนอกและการลบ"
+      },
+      "trusted": {
+        "title": "โหมดเชื่อถือ",
+        "description": "ทำงานส่วนใหญ่อัตโนมัติแต่ยังยืนยันงานที่ทำลายข้อมูล"
+      }
+    }
+  },
   "toolActivity": {
     "ariaLabel": "กิจกรรมของเครื่องมือ",
     "working": "กำลังทำงาน…",

@@ -462,7 +462,20 @@
     "exportMarkdown": "Lưu MD",
     "exportPdf": "Lưu PDF",
     "delete": "Xóa",
-    "projectMemory": {"title":"Bộ nhớ dự án","close":"Đóng","loading":"Đang tải…","summary":"Trạng thái dự án","noSummary":"Chưa có bản tóm tắt dự án.","decisions":"Quyết định","actionItems":"Việc cần làm","noItems":"Chưa có mục nào được trích xuất.","markCompleted":"Đánh dấu hoàn thành","markActive":"Đánh dấu đang thực hiện","delete":"Xóa mục","localNote":"Mô hình AI đã chọn tự động trích xuất từ hội thoại."},
+    "projectMemory": {
+      "title": "Bộ nhớ dự án",
+      "close": "Đóng",
+      "loading": "Đang tải…",
+      "summary": "Trạng thái dự án",
+      "noSummary": "Chưa có bản tóm tắt dự án.",
+      "decisions": "Quyết định",
+      "actionItems": "Việc cần làm",
+      "noItems": "Chưa có mục nào được trích xuất.",
+      "markCompleted": "Đánh dấu hoàn thành",
+      "markActive": "Đánh dấu đang thực hiện",
+      "delete": "Xóa mục",
+      "localNote": "Mô hình AI đã chọn tự động trích xuất từ hội thoại."
+    },
     "projectInstructions": {
       "title": "Hướng dẫn dự án",
       "close": "Đóng",
@@ -813,7 +826,10 @@
       "pdf_widescreen": "PDF · 16:9",
       "pptx": "PPTX"
     },
-    "outputSizes": {"a4": "A4", "widescreen": "16:9"},
+    "outputSizes": {
+      "a4": "A4",
+      "widescreen": "16:9"
+    },
     "autoPages": "AI tự chọn",
     "pages": "{{count}} trang",
     "korean": "Hàn",
@@ -842,8 +858,21 @@
     "uploadProgress": "Đã hoàn tất {{completed}}/{{total}}",
     "step": "Step {{current}}/{{total}}",
     "generatingElapsed": "Đã qua {{seconds}} giây",
-    "fileReady": "Tệp {{format}} đã sẵn sàng", "edit": "Chỉnh sửa", "download": "Tải xuống",
-    "progress": {"sourcePreparation": "Đang chuẩn bị nguồn... ({{articleCount}} bài viết, {{imageCount}} hình ảnh)", "contextPreparation": "Đang phân tích tài liệu và xây dựng ngữ cảnh bản trình bày...", "factExtraction": "Đang trích xuất các sự kiện và bằng chứng có thể kiểm chứng từ tài liệu gốc...", "slideDesignAuto": "AI đang thiết kế luồng trình bày và nội dung trang chiếu với số trang tự động...", "slideDesign": "AI đang thiết kế luồng trình bày và nội dung cho {{pageCount}} trang chiếu...", "factAudit": "Đang kiểm tra và sửa số liệu, ngày tháng, phạm vi và ngôn ngữ đầu ra...", "layoutCheck": "Đang kiểm tra cấu trúc và bố cục của {{slideCount}} trang chiếu...", "htmlRendering": "Đang kết xuất {{pageCount}} trang HTML...", "outputRendering": "Đang kết xuất {{outputFormat}}... ({{pageCount}} trang)", "saving": "Đang lưu tệp và hoàn tất lịch sử trò chuyện..."},
+    "fileReady": "Tệp {{format}} đã sẵn sàng",
+    "edit": "Chỉnh sửa",
+    "download": "Tải xuống",
+    "progress": {
+      "sourcePreparation": "Đang chuẩn bị nguồn... ({{articleCount}} bài viết, {{imageCount}} hình ảnh)",
+      "contextPreparation": "Đang phân tích tài liệu và xây dựng ngữ cảnh bản trình bày...",
+      "factExtraction": "Đang trích xuất các sự kiện và bằng chứng có thể kiểm chứng từ tài liệu gốc...",
+      "slideDesignAuto": "AI đang thiết kế luồng trình bày và nội dung trang chiếu với số trang tự động...",
+      "slideDesign": "AI đang thiết kế luồng trình bày và nội dung cho {{pageCount}} trang chiếu...",
+      "factAudit": "Đang kiểm tra và sửa số liệu, ngày tháng, phạm vi và ngôn ngữ đầu ra...",
+      "layoutCheck": "Đang kiểm tra cấu trúc và bố cục của {{slideCount}} trang chiếu...",
+      "htmlRendering": "Đang kết xuất {{pageCount}} trang HTML...",
+      "outputRendering": "Đang kết xuất {{outputFormat}}... ({{pageCount}} trang)",
+      "saving": "Đang lưu tệp và hoàn tất lịch sử trò chuyện..."
+    },
     "sourceCount": "{{count}} nguồn",
     "imageCount": "{{count}} ảnh",
     "cancel": "Hủy",
@@ -857,7 +886,34 @@
   "fileUpload": {
     "failed": "Tải lên {{name}} thất bại"
   },
-  "approval": {"title":"Chế độ phê duyệt","description":"Chọn khi nào thay đổi của công cụ AI cần phê duyệt.","requestTitle":"Cần phê duyệt thực thi","toolRequest":"{{tool}} yêu cầu thực hiện thay đổi.","approve":"Phê duyệt","reject":"Từ chối","scope":"Áp dụng cho","scopes":{"conversation":"Cuộc trò chuyện này","project":"Dự án này","global":"Mặc định toàn cục"},"modes":{"always_confirm":{"title":"Luôn xác nhận thay đổi","description":"Xác nhận mọi thay đổi trừ thao tác chỉ đọc."},"risky_only":{"title":"Chỉ xác nhận thao tác rủi ro","description":"Xác nhận gửi ra ngoài và xóa dữ liệu."},"trusted":{"title":"Chế độ tin cậy","description":"Tự động chạy phần lớn thao tác nhưng vẫn xác nhận thao tác phá hủy."}}},
+  "approval": {
+    "title": "Chế độ phê duyệt",
+    "description": "Chọn khi nào thay đổi của công cụ AI cần phê duyệt.",
+    "requestTitle": "Cần phê duyệt thực thi",
+    "toolRequest": "{{tool}} yêu cầu thực hiện thay đổi.",
+    "approve": "Phê duyệt",
+    "reject": "Từ chối",
+    "scope": "Áp dụng cho",
+    "scopes": {
+      "conversation": "Cuộc trò chuyện này",
+      "project": "Dự án này",
+      "global": "Mặc định toàn cục"
+    },
+    "modes": {
+      "always_confirm": {
+        "title": "Luôn xác nhận thay đổi",
+        "description": "Xác nhận mọi thay đổi trừ thao tác chỉ đọc."
+      },
+      "risky_only": {
+        "title": "Chỉ xác nhận thao tác rủi ro",
+        "description": "Xác nhận gửi ra ngoài và xóa dữ liệu."
+      },
+      "trusted": {
+        "title": "Chế độ tin cậy",
+        "description": "Tự động chạy phần lớn thao tác nhưng vẫn xác nhận thao tác phá hủy."
+      }
+    }
+  },
   "toolActivity": {
     "ariaLabel": "Hoạt động công cụ",
     "working": "Đang xử lý…",

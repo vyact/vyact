@@ -462,7 +462,20 @@
     "exportMarkdown": "Enregistrer en MD",
     "exportPdf": "Enregistrer en PDF",
     "delete": "Supprimer",
-    "projectMemory": {"title":"Mémoire du projet","close":"Fermer","loading":"Chargement…","summary":"État du projet","noSummary":"Aucun résumé de projet pour le moment.","decisions":"Décisions","actionItems":"Tâches","noItems":"Aucun élément extrait pour le moment.","markCompleted":"Marquer comme terminé","markActive":"Marquer comme actif","delete":"Supprimer l’élément","localNote":"Le modèle d’IA sélectionné extrait automatiquement ces éléments des conversations."},
+    "projectMemory": {
+      "title": "Mémoire du projet",
+      "close": "Fermer",
+      "loading": "Chargement…",
+      "summary": "État du projet",
+      "noSummary": "Aucun résumé de projet pour le moment.",
+      "decisions": "Décisions",
+      "actionItems": "Tâches",
+      "noItems": "Aucun élément extrait pour le moment.",
+      "markCompleted": "Marquer comme terminé",
+      "markActive": "Marquer comme actif",
+      "delete": "Supprimer l’élément",
+      "localNote": "Le modèle d’IA sélectionné extrait automatiquement ces éléments des conversations."
+    },
     "projectInstructions": {
       "title": "Instructions du projet",
       "close": "Fermer",
@@ -813,7 +826,10 @@
       "pdf_widescreen": "PDF · 16:9",
       "pptx": "PPTX"
     },
-    "outputSizes": {"a4": "A4", "widescreen": "16:9"},
+    "outputSizes": {
+      "a4": "A4",
+      "widescreen": "16:9"
+    },
     "autoPages": "IA automatique",
     "pages": "{{count}} pages",
     "korean": "Coréen",
@@ -870,7 +886,34 @@
   "fileUpload": {
     "failed": "Échec du téléchargement de {{name}}"
   },
-  "approval": {"title":"Mode d’approbation","description":"Choisissez quand les modifications des outils d’IA nécessitent une approbation.","requestTitle":"Approbation requise","toolRequest":"{{tool}} demande une modification.","approve":"Approuver","reject":"Refuser","scope":"Appliquer à","scopes":{"conversation":"Cette discussion","project":"Ce projet","global":"Valeur globale"},"modes":{"always_confirm":{"title":"Toujours confirmer les modifications","description":"Confirme toutes les modifications sauf les lectures."},"risky_only":{"title":"Confirmer les actions risquées","description":"Confirme les envois externes et les suppressions."},"trusted":{"title":"Mode de confiance","description":"Exécute presque tout automatiquement, mais confirme les actions destructives."}}},
+  "approval": {
+    "title": "Mode d’approbation",
+    "description": "Choisissez quand les modifications des outils d’IA nécessitent une approbation.",
+    "requestTitle": "Approbation requise",
+    "toolRequest": "{{tool}} demande une modification.",
+    "approve": "Approuver",
+    "reject": "Refuser",
+    "scope": "Appliquer à",
+    "scopes": {
+      "conversation": "Cette discussion",
+      "project": "Ce projet",
+      "global": "Valeur globale"
+    },
+    "modes": {
+      "always_confirm": {
+        "title": "Toujours confirmer les modifications",
+        "description": "Confirme toutes les modifications sauf les lectures."
+      },
+      "risky_only": {
+        "title": "Confirmer les actions risquées",
+        "description": "Confirme les envois externes et les suppressions."
+      },
+      "trusted": {
+        "title": "Mode de confiance",
+        "description": "Exécute presque tout automatiquement, mais confirme les actions destructives."
+      }
+    }
+  },
   "toolActivity": {
     "ariaLabel": "Activité des outils",
     "working": "En cours…",

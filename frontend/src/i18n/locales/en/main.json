@@ -462,7 +462,20 @@
     "exportMarkdown": "Save MD",
     "exportPdf": "Save PDF",
     "delete": "Delete",
-    "projectMemory": {"title":"Project memory","close":"Close","loading":"Loading…","summary":"Project status","noSummary":"No project summary has been collected yet.","decisions":"Decisions","actionItems":"Action items","noItems":"No items have been extracted yet.","markCompleted":"Mark completed","markActive":"Mark active","delete":"Delete item","localNote":"The selected AI model extracts these from conversations automatically."},
+    "projectMemory": {
+      "title": "Project memory",
+      "close": "Close",
+      "loading": "Loading…",
+      "summary": "Project status",
+      "noSummary": "No project summary has been collected yet.",
+      "decisions": "Decisions",
+      "actionItems": "Action items",
+      "noItems": "No items have been extracted yet.",
+      "markCompleted": "Mark completed",
+      "markActive": "Mark active",
+      "delete": "Delete item",
+      "localNote": "The selected AI model extracts these from conversations automatically."
+    },
     "projectInstructions": {
       "title": "Project instructions",
       "close": "Close",
@@ -810,7 +823,10 @@
       "pdf_widescreen": "PDF · 16:9",
       "pptx": "PPTX"
     },
-    "outputSizes": {"a4": "A4", "widescreen": "16:9"},
+    "outputSizes": {
+      "a4": "A4",
+      "widescreen": "16:9"
+    },
     "autoPages": "AI Auto",
     "pages": "{{count}} pages",
     "korean": "Korean",
@@ -867,7 +883,34 @@
   "fileUpload": {
     "failed": "Failed to upload {{name}}"
   },
-  "approval": {"title":"Approval mode","description":"Choose when AI tool changes require approval.","requestTitle":"Execution approval required","toolRequest":"{{tool}} requested a change.","approve":"Approve","reject":"Reject","scope":"Apply to","scopes":{"conversation":"This chat","project":"This project","global":"Global default"},"modes":{"always_confirm":{"title":"Always confirm changes","description":"Confirm every change except read-only operations."},"risky_only":{"title":"Confirm risky actions","description":"Confirm important actions such as external sends and deletion."},"trusted":{"title":"Trusted mode","description":"Run most actions automatically but still confirm destructive ones."}}},
+  "approval": {
+    "title": "Approval mode",
+    "description": "Choose when AI tool changes require approval.",
+    "requestTitle": "Execution approval required",
+    "toolRequest": "{{tool}} requested a change.",
+    "approve": "Approve",
+    "reject": "Reject",
+    "scope": "Apply to",
+    "scopes": {
+      "conversation": "This chat",
+      "project": "This project",
+      "global": "Global default"
+    },
+    "modes": {
+      "always_confirm": {
+        "title": "Always confirm changes",
+        "description": "Confirm every change except read-only operations."
+      },
+      "risky_only": {
+        "title": "Confirm risky actions",
+        "description": "Confirm important actions such as external sends and deletion."
+      },
+      "trusted": {
+        "title": "Trusted mode",
+        "description": "Run most actions automatically but still confirm destructive ones."
+      }
+    }
+  },
   "toolActivity": {
     "ariaLabel": "Tool activity",
     "working": "Working…",
