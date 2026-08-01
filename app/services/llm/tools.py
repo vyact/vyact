@@ -12,6 +12,17 @@ mcp_manager.get_ollama_tools()가 반환하는 통일 형식
 from .config import logger
 
 
+def build_approval_rejection_instruction(tool_name: str) -> str:
+    """Force the final response to reflect an explicit user rejection accurately."""
+    return (
+        "\n\n[최우선 — 사용자 승인 거부 결과]\n"
+        f"사용자가 '{tool_name}' 도구 실행을 명시적으로 거부했다. "
+        "해당 도구는 실행되지 않았고 요청한 변경도 발생하지 않았다. "
+        "최종 답변에서는 사용자가 승인을 거부하여 작업을 수행하지 않았다고 명확히 안내해라. "
+        "절대로 작업이 성공했거나 처리되었다고 말하지 말고, 같은 도구를 다시 호출하지 마라."
+    )
+
+
 async def build_tool_directive(tool_names: list[str]) -> str:
     """작은/일반 모델이 tool을 확실히 호출하도록 유도하는 system 지시문.
 

@@ -577,7 +577,6 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                                     selectedPromptId={selectedPromptId}
                                     onOpenSystemPromptSettings={() => setShowSystemPromptModal(true)}
                                     activePromptTitle={selectedPromptId ? (systemPrompts.find(p => p.id === selectedPromptId)?.title ?? null) : null}
-                                    currentConversationId={conv.currentConvId}
                                 />
                             </ChatArea>
                         </div>

@@ -60,7 +60,6 @@ interface ChatInputProps {
     activePromptTitle?: string | null;
     selectedPromptId?: string | null;
     onOpenSystemPromptSettings?: () => void;
-    currentConversationId?: string;
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({
@@ -94,7 +93,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                                  activePromptTitle,
                                                  selectedPromptId = null,
                                                  onOpenSystemPromptSettings,
-                                                 currentConversationId = '',
                                              }) => {
     const {t} = useTranslation('main');
     const {panel: codePanel} = useCodePanel();
@@ -497,7 +495,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
                             <McpMenu/>
 
-                            <ApprovalControl conversationId={currentConversationId}/>
+                            <ApprovalControl/>
 
                             <CustomSelect
                                 className="chat-system-prompt-select"

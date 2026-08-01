@@ -14,13 +14,3 @@
 .approval-control__tooltip { position:absolute; z-index:2; bottom:calc(100% + 8px); left:0; width:230px; padding:9px 11px; border:1px solid color-mix(in srgb, var(--accent) 25%, var(--border)); border-radius:9px; background:color-mix(in srgb, var(--surface) 94%, #fff 6%); box-shadow:0 10px 28px rgba(0,0,0,.4); color:var(--text); font-size:11px; font-weight:400; line-height:1.45; opacity:0; pointer-events:none; transform:translateY(4px); transition:opacity .14s ease,transform .14s ease; }
 .approval-control__tooltip::after { content:""; position:absolute; top:100%; left:9px; border:6px solid transparent; border-top-color:color-mix(in srgb, var(--surface) 94%, #fff 6%); }
 .approval-control__help:hover .approval-control__tooltip,.approval-control__help:focus-visible .approval-control__tooltip { opacity:1; transform:translateY(0); }
-.tool-approval-cards { position:absolute; z-index:35; bottom:calc(100% + 12px); left:0; display:grid; width:min(620px, calc(100vw - 32px)); gap:7px; }
-.tool-approval-card { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:10px; padding:11px 12px; border:1px solid color-mix(in srgb, var(--accent) 55%, var(--border)); border-radius:11px; background:color-mix(in srgb, var(--accent) 7%, var(--bg)); }
-.tool-approval-card__icon { color:var(--accent); }
-.tool-approval-card__content { display:grid; min-width:0; gap:3px; }
-.tool-approval-card__content strong { color:var(--text); font-size:12px; }
-.tool-approval-card__content span,.tool-approval-card__content code { overflow:hidden; color:var(--muted); font-size:10px; text-overflow:ellipsis; white-space:nowrap; }
-.tool-approval-card__actions { display:flex; gap:5px; }
-.tool-approval-card__actions button { display:flex; align-items:center; gap:4px; padding:6px 8px; border:1px solid var(--border); border-radius:7px; background:var(--surface2); color:var(--text); font-size:11px; cursor:pointer; }
-.tool-approval-card__actions button.approve { border-color:var(--accent); background:var(--accent); color:#fff; }
-@media (max-width:760px) { .tool-approval-card { grid-template-columns:auto 1fr; } .tool-approval-card__actions { grid-column:1/-1; justify-content:flex-end; } }

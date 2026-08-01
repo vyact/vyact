@@ -488,6 +488,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                                 pdfParams={msg.pdfParams}
                                 onPdfEdit={onPdfEdit}
                                 isStreaming={!!streamingMessageId && (msg.id === streamingMessageId)}
+                                conversationId={convId}
                                 requestStartedAt={msg.id === streamingMessageId ? responseStartedAt : null}
                                 toolStatus={msg.toolStatus}
                                 activityLog={msg.activityLog}

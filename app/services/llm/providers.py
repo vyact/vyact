@@ -21,7 +21,8 @@ from .helpers import (
     history_for_openai, history_for_gemini, history_for_claude,
 )
 from .tools import (
-    build_tool_directive, to_openai_tools, to_gemini_tools, to_claude_tools,
+    build_approval_rejection_instruction, build_tool_directive,
+    to_openai_tools, to_gemini_tools, to_claude_tools,
 )
 from services.runtime_settings import get_runtime_settings
 from services.tool_approval import await_tool_approval
@@ -87,6 +88,7 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
     base_url = "https://api.openai.com/v1/chat/completions"
 
     # ── tool 루프 (비스트리밍) ──
+    approval_rejected = False
     if unified:
         oa_tools = to_openai_tools(unified)
         for _round in range(TOOL_CALL_MAX_ROUNDS):
@@ -115,11 +117,19 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
                     args = json.loads(raw_args) if isinstance(raw_args, str) else raw_args
                 except json.JSONDecodeError:
                     args = {}
+                if approval_rejected:
+                    messages.append({
+                        "role": "tool", "tool_call_id": tc.get("id", ""),
+                        "content": "[취소] 같은 응답의 앞선 도구 실행을 사용자가 거부하여 실행하지 않았습니다.",
+                    })
+                    continue
                 approved = await await_tool_approval(name, args, lambda event: _emit(on_event, event))
                 if not approved:
                     result_text = "[사용자 거부] 사용자가 이 tool 실행을 승인하지 않았습니다."
                     await _emit(on_event, {"phase": "approval_rejected", "name": name, "args": args, "result": result_text})
                     messages.append({"role": "tool", "tool_call_id": tc.get("id", ""), "content": result_text})
+                    messages[0]["content"] += build_approval_rejection_instruction(name)
+                    approval_rejected = True
                     continue
                 await _emit(on_event, {"phase": "start", "name": name, "args": args})
                 result_text = await mcp_manager.call_tool(name, args)
@@ -127,6 +137,8 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
                 await _emit(on_event, {"phase": "end", "name": name, "args": args, "result": result_text, "sources": tool_sources})
                 messages.append({"role": "tool", "tool_call_id": tc.get("id", ""),
                                  "content": result_text})
+            if approval_rejected:
+                break
 
     # ── 최종 답변 스트리밍 ──
     body = {"model": model, "temperature": temperature, "stream": True, "messages": messages}
@@ -196,6 +208,7 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
     gen_cfg = {"temperature": temperature}
 
     # ── tool 루프 (비스트리밍) ──
+    approval_rejected = False
     if unified:
         gm_tools = to_gemini_tools(unified)
         for _round in range(TOOL_CALL_MAX_ROUNDS):
@@ -224,11 +237,19 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
             for fc in fcalls:
                 name = fc.get("name", "")
                 args = fc.get("args", {}) or {}
+                if approval_rejected:
+                    resp_parts.append({"functionResponse": {
+                        "name": name,
+                        "response": {"result": "[취소] 같은 응답의 앞선 도구 실행을 사용자가 거부하여 실행하지 않았습니다."},
+                    }})
+                    continue
                 approved = await await_tool_approval(name, args, lambda event: _emit(on_event, event))
                 if not approved:
                     result_text = "[사용자 거부] 사용자가 이 tool 실행을 승인하지 않았습니다."
                     await _emit(on_event, {"phase": "approval_rejected", "name": name, "args": args, "result": result_text})
                     resp_parts.append({"functionResponse": {"name": name, "response": {"result": result_text}}})
+                    sys_text += build_approval_rejection_instruction(name)
+                    approval_rejected = True
                     continue
                 await _emit(on_event, {"phase": "start", "name": name, "args": args})
                 result_text = await mcp_manager.call_tool(name, args)
@@ -237,6 +258,8 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
                 resp_parts.append({"functionResponse": {
                     "name": name, "response": {"result": result_text}}})
             contents.append({"role": "user", "parts": resp_parts})
+            if approval_rejected:
+                break
 
     # ── 최종 답변 스트리밍 ──
     body = {
@@ -244,7 +267,7 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
         "contents": contents,
         "generationConfig": gen_cfg,
     }
-    if unified:
+    if unified and not approval_rejected:
         body["tools"] = to_gemini_tools(unified)
     log_llm_call(call_reason, "gemini", model, streaming=True, reasoning=reasoning)
     async with client.stream("POST", stream_url, json=body) as resp:
@@ -309,6 +332,7 @@ async def claude_stream(client, model, api_key, system_message, user_prompt,
     base_url = "https://api.anthropic.com/v1/messages"
 
     # ── tool 루프 (비스트리밍) ──
+    approval_rejected = False
     if unified:
         cl_tools = to_claude_tools(unified)
         for _round in range(TOOL_CALL_MAX_ROUNDS):
@@ -330,11 +354,19 @@ async def claude_stream(client, model, api_key, system_message, user_prompt,
             for tu in tool_uses:
                 name = tu.get("name", "")
                 args = tu.get("input", {}) or {}
+                if approval_rejected:
+                    result_blocks.append({
+                        "type": "tool_result", "tool_use_id": tu.get("id", ""),
+                        "content": "[취소] 같은 응답의 앞선 도구 실행을 사용자가 거부하여 실행하지 않았습니다.",
+                    })
+                    continue
                 approved = await await_tool_approval(name, args, lambda event: _emit(on_event, event))
                 if not approved:
                     result_text = "[사용자 거부] 사용자가 이 tool 실행을 승인하지 않았습니다."
                     await _emit(on_event, {"phase": "approval_rejected", "name": name, "args": args, "result": result_text})
                     result_blocks.append({"type": "tool_result", "tool_use_id": tu.get("id", ""), "content": result_text})
+                    system_text += build_approval_rejection_instruction(name)
+                    approval_rejected = True
                     continue
                 await _emit(on_event, {"phase": "start", "name": name, "args": args})
                 result_text = await mcp_manager.call_tool(name, args)
@@ -344,11 +376,13 @@ async def claude_stream(client, model, api_key, system_message, user_prompt,
                                       "tool_use_id": tu.get("id", ""),
                                       "content": result_text})
             messages.append({"role": "user", "content": result_blocks})
+            if approval_rejected:
+                break
 
     # ── 최종 답변 스트리밍 ──
     body = {"model": model, "max_tokens": max_tokens, "temperature": temperature,
             "system": system_text, "stream": True, "messages": messages}
-    if unified:
+    if unified and not approval_rejected:
         body["tools"] = to_claude_tools(unified)
     log_llm_call(call_reason, "claude", model, streaming=True, reasoning=reasoning)
     async with client.stream("POST", base_url, headers=headers, json=body) as resp:

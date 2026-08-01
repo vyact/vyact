@@ -8,6 +8,7 @@ import CodeBlock from '../CodeBlock';
 import CodeFileViewer from '../CodeFileViewer/CodeFileViewer';
 import ImageViewer from '../ImageViewer/ImageViewer';
 import ActivityTimeline from './ActivityTimeline';
+import InlineToolApproval from './InlineToolApproval';
 import {useCodePanel} from '../../contexts/CodePanelContext';
 import './Message.css';
 import {ttsService} from '../../services/tts/ttsService';
@@ -80,7 +81,7 @@ const Message: React.FC<MessageProps> = ({
                                              role, content, timestamp, sources, model, attachments,
                                              isError, onRetry, isGeneratedImage, articleSources,
                                              pdfFile, pdfParams, onPdfEdit, injectedContext, onShowInjectedContext, onOpenMemo,
-                                             isStreaming = false, requestStartedAt, toolStatus, activityLog, stats,
+                                             isStreaming = false, conversationId, requestStartedAt, toolStatus, activityLog, stats,
                                          }) => {
     const {t} = useTranslation('main');
     const {panel} = useCodePanel();
@@ -453,6 +454,9 @@ const Message: React.FC<MessageProps> = ({
                                 <span>{t('toolActivity.preparingResponse')}</span>
                                 <span className="msg-request-elapsed">{requestElapsedLabel}</span>
                             </div>
+                        )}
+                        {isStreaming && !content.trim() && (
+                            <InlineToolApproval conversationId={conversationId}/>
                         )}
                         {renderGroups.map((group, idx) => {
                             if (group.type === 'project') {
