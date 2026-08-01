@@ -1,5 +1,5 @@
 import type {CSSProperties, ReactNode} from 'react';
-import {Folder, FolderOpen, MoreHorizontal, Pencil, ScrollText, SquarePen, Trash2} from 'lucide-react';
+import {BookOpen, Folder, FolderOpen, MoreHorizontal, Pencil, ScrollText, SquarePen, Trash2} from 'lucide-react';
 import type {Project} from '../../types';
 import SidebarOverflowMenu from './SidebarOverflowMenu';
 
@@ -15,6 +15,7 @@ interface ProjectHistoryRowProps {
     deleteLabel: string;
     projectInstructionsLabel: string;
     projectEditLabel: string;
+    projectMemoryLabel: string;
     onToggle: () => void;
     onNewConversation: () => void;
     onMenuOpenChange: (isOpen: boolean) => void;
@@ -23,6 +24,7 @@ interface ProjectHistoryRowProps {
     onRenameCancel: () => void;
     onRename: () => void;
     onEditInstructions: () => void;
+    onOpenMemory: () => void;
     onEditProject: () => void;
     onDelete: () => void;
     children: ReactNode;
@@ -40,6 +42,7 @@ const ProjectHistoryRow = ({
     deleteLabel,
     projectInstructionsLabel,
     projectEditLabel,
+    projectMemoryLabel,
     onToggle,
     onNewConversation,
     onMenuOpenChange,
@@ -48,6 +51,7 @@ const ProjectHistoryRow = ({
     onRenameSubmit,
     onRenameCancel,
     onEditInstructions,
+    onOpenMemory,
     onEditProject,
     onDelete,
     children,
@@ -86,6 +90,7 @@ const ProjectHistoryRow = ({
                         <button className="hist-menu-item" onClick={onEditProject}><SquarePen size={13}/>{projectEditLabel}</button>
                         <button className="hist-menu-item" onClick={onRename}><Pencil size={13}/>{renameLabel}</button>
                         <button className="hist-menu-item" onClick={onEditInstructions}><ScrollText size={13}/>{projectInstructionsLabel}</button>
+                        <button className="hist-menu-item" onClick={onOpenMemory}><BookOpen size={13}/>{projectMemoryLabel}</button>
                         <button className="hist-menu-item danger" onClick={onDelete}><Trash2 size={13}/>{deleteLabel}</button>
                     </SidebarOverflowMenu>
                     <button

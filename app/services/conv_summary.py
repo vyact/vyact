@@ -20,7 +20,9 @@ CONV_SUMMARY_TAG_RE = re.compile(r"<conv_summary>([\s\S]*?)</conv_summary>", re.
 PROJECT_SUMMARY_TAG_RE = re.compile(r"<project_summary>([\s\S]*?)</project_summary>", re.IGNORECASE)
 
 
-def build_summary_instruction(prior_conv_summary: str, request_project_summary: bool) -> str:
+def build_summary_instruction(
+        prior_conv_summary: str, request_project_summary: bool, project_memory: dict | None = None,
+) -> str:
     """system_prompt에 덧붙일 숨김 태그 생성 지시문. 사용자에게 안 보이는 내부 지시라
     followups처럼 답변 맨 끝에 태그로만 출력하게 한다.
 
@@ -68,6 +70,9 @@ def build_summary_instruction(prior_conv_summary: str, request_project_summary: 
             "나중에 이 요약만 보고도 프로젝트 구조를 파악할 수 있는 게 더 중요합니다."
             "</project_summary>\n"
         )
+    if project_memory is not None:
+        from services.project_memory import build_project_memory_instruction
+        parts.append(build_project_memory_instruction(project_memory))
     parts.append(
         "이 태그들은 화면에 표시되지 않고 내부 저장용이므로, 답변 본문에서 태그 내용을 다시 언급하거나 "
         "사용자에게 \"요약을 남겼다\"는 식으로 말하지 마세요.\n"

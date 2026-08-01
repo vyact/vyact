@@ -15,7 +15,68 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from services.project_memory import (
+    PROJECT_MEMORY_ITEM_TYPES, PROJECT_MEMORY_STATUSES, empty_project_memory, get_project_memory,
+)
+
 router = APIRouter()
+
+
+@router.get("/projects/{project_id}/memory")
+async def read_project_memory(project_id: str):
+    return await get_project_memory(project_id)
+
+
+@router.patch("/projects/{project_id}/memory/{item_type}/{item_id}")
+async def update_project_memory_item(project_id: str, item_type: str, item_id: str, body: dict):
+    from services.db import PROJECTS_INDEX, get_es
+    key = PROJECT_MEMORY_ITEM_TYPES.get(item_type)
+    if not key:
+        raise HTTPException(status_code=400, detail="Unsupported project memory item type.")
+    es = get_es()
+    try:
+        result = await es.get(index=PROJECTS_INDEX, id=project_id)
+        memory = {**empty_project_memory(), **(result.get("_source", {}).get("memory") or {})}
+        item = next((entry for entry in memory[key] if entry.get("id") == item_id), None)
+        if not item:
+            raise HTTPException(status_code=404, detail="Project memory item not found.")
+        if "text" in body:
+            text = str(body["text"]).strip()
+            if not text:
+                raise HTTPException(status_code=400, detail="Text is required.")
+            item["text"] = text
+        if "status" in body:
+            status = str(body["status"])
+            if status not in PROJECT_MEMORY_STATUSES:
+                raise HTTPException(status_code=400, detail="Unsupported status.")
+            item["status"] = status
+        item["updated_at"] = datetime.now(timezone.utc).isoformat()
+        memory["updated_at"] = item["updated_at"]
+        await es.update(index=PROJECTS_INDEX, id=project_id, doc={"memory": memory}, refresh=True)
+        return memory
+    finally:
+        await es.close()
+
+
+@router.delete("/projects/{project_id}/memory/{item_type}/{item_id}")
+async def delete_project_memory_item(project_id: str, item_type: str, item_id: str):
+    from services.db import PROJECTS_INDEX, get_es
+    key = PROJECT_MEMORY_ITEM_TYPES.get(item_type)
+    if not key:
+        raise HTTPException(status_code=400, detail="Unsupported project memory item type.")
+    es = get_es()
+    try:
+        result = await es.get(index=PROJECTS_INDEX, id=project_id)
+        memory = {**empty_project_memory(), **(result.get("_source", {}).get("memory") or {})}
+        items = memory.get(key, [])
+        memory[key] = [item for item in items if item.get("id") != item_id]
+        if len(items) == len(memory[key]):
+            raise HTTPException(status_code=404, detail="Project memory item not found.")
+        memory["updated_at"] = datetime.now(timezone.utc).isoformat()
+        await es.update(index=PROJECTS_INDEX, id=project_id, doc={"memory": memory}, refresh=True)
+        return memory
+    finally:
+        await es.close()
 
 
 @router.get("/projects")

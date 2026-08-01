@@ -167,6 +167,8 @@ export interface Conversation {
 }
 
 export interface Project { id: string; name: string; color?: string; folder_paths?: string[]; project_prompt?: string; created_at: string; updated_at: string; }
+export interface ProjectMemoryItem { id: string; text: string; status: 'active' | 'completed'; owner?: string; due_date?: string; source_conv_id?: string; created_at: string; updated_at: string; }
+export interface ProjectMemory { summary: string; decisions: ProjectMemoryItem[]; action_items: ProjectMemoryItem[]; updated_at: string; }
 export interface KnowledgeCollectionItem { source_type: 'document' | 'memo' | 'email_thread'; source_id: string; }
 export interface KnowledgeCollection { id: string; name: string; description?: string; instruction?: string; items: KnowledgeCollectionItem[]; created_at: string; updated_at: string; sort_order?: number; }
 

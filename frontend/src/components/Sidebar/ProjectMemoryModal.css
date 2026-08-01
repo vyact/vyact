@@ -1,0 +1,17 @@
+.project-memory-modal { width:min(640px, calc(100vw - 32px)); max-height:min(760px, calc(100vh - 32px)); overflow:hidden; background:var(--surface); border:1px solid var(--border); border-radius:14px; box-shadow:0 22px 70px rgba(0,0,0,.5); }
+.project-memory-modal__header { display:flex; align-items:flex-start; justify-content:space-between; padding:20px 22px 16px; border-bottom:1px solid var(--border); }
+.project-memory-modal__eyebrow { display:flex; align-items:center; gap:6px; color:var(--accent); font-size:12px; font-weight:600; }
+.project-memory-modal h2 { margin:6px 0 0; color:var(--text); font-size:18px; }
+.project-memory-modal__close, .project-memory-modal__status, .project-memory-modal__delete { border:0; background:transparent; color:var(--muted); cursor:pointer; padding:5px; border-radius:6px; }
+.project-memory-modal__close:hover, .project-memory-modal__delete:hover { color:var(--text); background:var(--surface2); }
+.project-memory-modal__body { max-height:calc(100vh - 135px); overflow:auto; padding:20px 22px; }
+.project-memory-modal section + section { margin-top:22px; }
+.project-memory-modal h3 { margin:0 0 9px; color:var(--text); font-size:13px; }
+.project-memory-modal__summary { margin:0; padding:12px 14px; border:1px solid var(--border); border-radius:9px; background:var(--bg); color:var(--text-secondary); line-height:1.55; white-space:pre-wrap; }
+.project-memory-modal__list { display:grid; gap:7px; }
+.project-memory-modal__item { display:grid; grid-template-columns:auto minmax(0, 1fr) auto; align-items:start; gap:8px; padding:10px 9px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text); }
+.project-memory-modal__item.completed span { color:var(--muted); text-decoration:line-through; }
+.project-memory-modal__item small { display:block; margin-top:4px; color:var(--muted); font-size:11px; }
+.project-memory-modal__status { color:var(--accent); }
+.project-memory-modal__empty, .project-memory-modal__note { margin:0; color:var(--muted); font-size:13px; }
+.project-memory-modal__note { margin-top:20px; padding-top:14px; border-top:1px solid var(--border); font-size:11px; }

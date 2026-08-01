@@ -462,6 +462,7 @@
     "exportMarkdown": "Enregistrer en MD",
     "exportPdf": "Enregistrer en PDF",
     "delete": "Supprimer",
+    "projectMemory": {"title":"Mémoire du projet","close":"Fermer","loading":"Chargement…","summary":"État du projet","noSummary":"Aucun résumé de projet pour le moment.","decisions":"Décisions","actionItems":"Tâches","noItems":"Aucun élément extrait pour le moment.","markCompleted":"Marquer comme terminé","markActive":"Marquer comme actif","delete":"Supprimer l’élément","localNote":"Le modèle d’IA sélectionné extrait automatiquement ces éléments des conversations, sans connexion MCP ni Google Workspace."},
     "projectInstructions": {
       "title": "Instructions du projet",
       "close": "Fermer",

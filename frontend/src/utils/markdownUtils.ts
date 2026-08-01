@@ -176,7 +176,7 @@ export const splitStreamSafe = (buffer: string): StreamSafeResult => {
     // -1) 내부 요약 숨김 태그(<conv_summary>, <project_summary>): 백엔드가 저장 전용으로 쓰는
     //     태그라 스트리밍 중에도 절대 화면에 보이면 안 됨. followups와 마찬가지로 항상 응답
     //     맨 끝(followups보다도 앞)에 오므로, 열리는 순간부터 그 이후는 전부 잘라낸다.
-    const csIdx = buffer.search(/<conv_summary\b|<project_summary\b/i);
+    const csIdx = buffer.search(/<conv_summary\b|<project_summary\b|<project_memory\b/i);
     if (csIdx !== -1) {
         const head = buffer.slice(0, csIdx);
         const headResult = splitStreamSafe(head);
@@ -311,6 +311,7 @@ export const parseFollowups = (text: string): FollowupsResult => {
         t.replace(new RegExp(`<${tag}\\s*>[\\s\\S]*?(?:<\\/${tag}\\s*>|$)`, 'i'), '').trimEnd();
     text = stripHiddenTag(text, 'conv_summary');
     text = stripHiddenTag(text, 'project_summary');
+    text = stripHiddenTag(text, 'project_memory');
 
     // 닫힘 태그가 있으면 그 안을, 없으면(스트림 잘림 등) 여는 태그 이후 끝까지를 대상으로.
     const openRe = /<followups\s*>/i;

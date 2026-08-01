@@ -462,6 +462,7 @@
     "exportMarkdown": "保存 MD",
     "exportPdf": "保存 PDF",
     "delete": "删除",
+    "projectMemory": {"title":"项目记忆","close":"关闭","loading":"加载中…","summary":"项目状态","noSummary":"尚未积累项目摘要。","decisions":"决策","actionItems":"待办事项","noItems":"尚未提取任何项目。","markCompleted":"标记为已完成","markActive":"恢复为进行中","delete":"删除项目","localNote":"由当前选择的AI模型从对话中自动提取，无需MCP或Google Workspace连接。"},
     "projectInstructions": {
       "title": "项目说明",
       "close": "关闭",

@@ -462,6 +462,7 @@
     "exportMarkdown": "Lưu MD",
     "exportPdf": "Lưu PDF",
     "delete": "Xóa",
+    "projectMemory": {"title":"Bộ nhớ dự án","close":"Đóng","loading":"Đang tải…","summary":"Trạng thái dự án","noSummary":"Chưa có bản tóm tắt dự án.","decisions":"Quyết định","actionItems":"Việc cần làm","noItems":"Chưa có mục nào được trích xuất.","markCompleted":"Đánh dấu hoàn thành","markActive":"Đánh dấu đang thực hiện","delete":"Xóa mục","localNote":"Mô hình AI đã chọn tự động trích xuất từ hội thoại, không cần kết nối MCP hoặc Google Workspace."},
     "projectInstructions": {
       "title": "Hướng dẫn dự án",
       "close": "Đóng",

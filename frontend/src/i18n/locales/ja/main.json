@@ -462,6 +462,7 @@
     "exportMarkdown": "MDを保存",
     "exportPdf": "PDFを保存",
     "delete": "削除",
+    "projectMemory": {"title":"プロジェクトメモリ","close":"閉じる","loading":"読み込み中…","summary":"プロジェクト状況","noSummary":"プロジェクト概要はまだありません。","decisions":"決定事項","actionItems":"タスク","noItems":"抽出された項目はまだありません。","markCompleted":"完了にする","markActive":"進行中に戻す","delete":"項目を削除","localNote":"選択中のAIモデルが会話から自動抽出します。MCPやGoogle Workspace接続は不要です。"},
     "projectInstructions": {
       "title": "プロジェクト指示",
       "close": "閉じる",

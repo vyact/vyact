@@ -461,6 +461,7 @@
     "exportMarkdown": "บันทึกเป็น MD",
     "exportPdf": "บันทึกเป็น PDF",
     "delete": "ลบ",
+    "projectMemory": {"title":"หน่วยความจำโปรเจกต์","close":"ปิด","loading":"กำลังโหลด…","summary":"สถานะโปรเจกต์","noSummary":"ยังไม่มีสรุปโปรเจกต์","decisions":"การตัดสินใจ","actionItems":"สิ่งที่ต้องทำ","noItems":"ยังไม่มีรายการที่แยกออกมา","markCompleted":"ทำเครื่องหมายว่าเสร็จแล้ว","markActive":"ทำเครื่องหมายว่ากำลังดำเนินการ","delete":"ลบรายการ","localNote":"โมเดล AI ที่เลือกจะแยกข้อมูลจากบทสนทนาโดยอัตโนมัติ ไม่ต้องเชื่อมต่อ MCP หรือ Google Workspace"},
     "projectInstructions": {
       "title": "คำแนะนำโปรเจกต์",
       "close": "ปิด",

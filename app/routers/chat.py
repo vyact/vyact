@@ -306,6 +306,11 @@ async def query(req: QueryRequest):
     project_prompt = await _get_project_prompt(req.project_id)
     if project_prompt:
         system_prompt = f"{system_prompt}\n\n[프로젝트 지침]\n{project_prompt}" if system_prompt else project_prompt
+    from services.project_memory import get_project_memory, project_memory_prompt_view
+    project_memory = await get_project_memory(req.project_id) if req.project_id else None
+    if project_memory and any(project_memory.get(key) for key in ("summary", "decisions", "action_items")):
+        memory_context = json.dumps(project_memory_prompt_view(project_memory), ensure_ascii=False)
+        system_prompt = f"{system_prompt}\n\n[프로젝트 메모리]\n{memory_context}" if system_prompt else f"[프로젝트 메모리]\n{memory_context}"
     project_folder_context = await _get_project_folder_context(req.project_id)
     if project_folder_context:
         system_prompt = f"{system_prompt}\n\n{project_folder_context}" if system_prompt else project_folder_context
@@ -342,9 +347,13 @@ async def query(req: QueryRequest):
     # 7) LLM 호출 분기
     if articles:
         # 기사/문서 첨부
+        from services.conv_summary import build_summary_instruction
+        response_system_prompt = (system_prompt if system_prompt else FORMAT_INSTRUCTION) + build_summary_instruction(
+            "", False, project_memory,
+        )
         direct_docs, file_chunks = await search_file_id_chunks(req.question, articles)
         context_docs = direct_docs + file_chunks
-        raw_answer = await query_llm(req.question, limit_direct_document_contexts(file_context_docs + context_docs), system_prompt, image_attachments,
+        raw_answer = await query_llm(req.question, limit_direct_document_contexts(file_context_docs + context_docs), response_system_prompt, image_attachments,
                                      req.messages,
                                      format_instruction_override="" if req.voice_mode else None,
                                      conversation_summary=conversation_summary,
@@ -375,12 +384,16 @@ async def query(req: QueryRequest):
         if url_error_answer:
             result = {"answer": url_error_answer, "sources": [], "model": await get_model_name()}
         elif url_docs:
-            rag_result = await rag_query(req.question, system_prompt, image_attachments, req.messages,
+            from services.conv_summary import build_summary_instruction
+            response_system_prompt = (system_prompt if system_prompt else FORMAT_INSTRUCTION) + build_summary_instruction(
+                "", False, project_memory,
+            )
+            rag_result = await rag_query(req.question, response_system_prompt, image_attachments, req.messages,
                                          reasoning=req.reasoning, conv_id=conv_id, conversation_summary=conversation_summary,
                                          call_reason="chat:url_context", knowledge_collection_id=req.knowledge_collection_id)
             combined_docs = file_context_docs + url_docs + rag_result.get("sources", [])
             raw_answer = await query_llm(
-                req.question, combined_docs, system_prompt,
+                req.question, combined_docs, response_system_prompt,
                 image_attachments, req.messages,
                 format_instruction_override=None,
                 conversation_summary=conversation_summary,
@@ -391,7 +404,9 @@ async def query(req: QueryRequest):
             _has_file_att = any(a.get("type") in ("file", "zip") for a in req.attachments)
             from services.conv_summary import build_summary_instruction
             _summary_base_prompt = system_prompt if system_prompt else FORMAT_INSTRUCTION
-            _summary_system_prompt = _summary_base_prompt + build_summary_instruction("", _has_file_att)
+            _summary_system_prompt = _summary_base_prompt + build_summary_instruction(
+                "", _has_file_att, project_memory,
+            )
             result = await rag_query(req.question, _summary_system_prompt, image_attachments, req.messages,
                                      extra_context=file_context_docs, skip_rag=_has_file_att,
                                      reasoning=req.reasoning, conv_id=conv_id, conversation_summary=conversation_summary,
@@ -399,7 +414,9 @@ async def query(req: QueryRequest):
 
     # 8) 요약 태그 추출 + 히스토리 저장
     from services.conv_summary import extract_summary_tags, save_conv_summary, append_attachment_summary
-    _clean_answer, _conv_summary, _project_summary = extract_summary_tags(result.get("answer", ""))
+    from services.project_memory import extract_project_memory_tag, merge_project_memory
+    result["answer"], _project_memory = extract_project_memory_tag(result.get("answer", ""))
+    _clean_answer, _conv_summary, _project_summary = extract_summary_tags(result["answer"])
     result["answer"] = _clean_answer
 
     user_ts = req.user_timestamp or datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
@@ -417,6 +434,7 @@ async def query(req: QueryRequest):
             await save_conversation(conv_id, messages)
             if _conv_summary:
                 await save_conv_summary(conv_id, _conv_summary)
+            await merge_project_memory(req.project_id, conv_id, _project_memory)
             for _batch in _chat_file_batches:
                 await append_attachment_summary(
                     conv_id, _project_summary, _batch["source_name"], _batch["file_count"], _batch["batch_id"],
@@ -513,6 +531,11 @@ async def query_stream(req: QueryRequest):
             project_prompt = await _get_project_prompt(req.project_id)
             if project_prompt:
                 system_prompt = f"{system_prompt}\n\n[프로젝트 지침]\n{project_prompt}" if system_prompt else project_prompt
+            from services.project_memory import get_project_memory, project_memory_prompt_view
+            project_memory = await get_project_memory(req.project_id) if req.project_id else None
+            if project_memory and any(project_memory.get(key) for key in ("summary", "decisions", "action_items")):
+                memory_context = json.dumps(project_memory_prompt_view(project_memory), ensure_ascii=False)
+                system_prompt = f"{system_prompt}\n\n[프로젝트 메모리]\n{memory_context}" if system_prompt else f"[프로젝트 메모리]\n{memory_context}"
             project_folder_context = await _get_project_folder_context(req.project_id)
             if project_folder_context:
                 system_prompt = f"{system_prompt}\n\n{project_folder_context}" if system_prompt else project_folder_context
@@ -632,7 +655,9 @@ async def query_stream(req: QueryRequest):
                 else:
                     from services.conv_summary import build_summary_instruction
                     _summary_base_prompt = system_prompt if system_prompt else FORMAT_INSTRUCTION
-                    _summary_system_prompt = _summary_base_prompt + build_summary_instruction("", has_file_attachment)
+                    _summary_system_prompt = _summary_base_prompt + build_summary_instruction(
+                        "", has_file_attachment, project_memory,
+                    )
                     _fmt_override = None
 
                 # 모든 등록 폴더를 ID로 노출한다. 코드 도구는 매 호출마다 folder_id를 요구한다.
@@ -698,6 +723,8 @@ async def query_stream(req: QueryRequest):
                 # 답변에서 <conv_summary>/<project_summary> 숨김 태그 추출 후 제거 (사용자에겐 안 보임).
                 # 정규식 처리라 빠르므로 done 이벤트 전에 해도 지연 없음 — done에 실릴 answer는 이 clean 버전이어야 함.
                 from services.conv_summary import extract_summary_tags, save_conv_summary, append_attachment_summary
+                from services.project_memory import extract_project_memory_tag, merge_project_memory
+                answer, _project_memory = extract_project_memory_tag(answer)
                 answer, _conv_summary, _project_summary = extract_summary_tags(answer)
 
                 injected_context = build_injected_context(gen_sources)
@@ -736,6 +763,7 @@ async def query_stream(req: QueryRequest):
                             # save_conversation 완료 후에 요약 필드 병합 저장
                             if _conv_summary:
                                 await save_conv_summary(conv_id, _conv_summary)
+                            await merge_project_memory(req.project_id, conv_id, _project_memory)
                             # project_summary(LLM 요약)가 없어도 배치 메타정보는 항상 남긴다 (요약은 폴백 문구)
                             # (인덱싱 자체는 이미 함수 앞부분에서 LLM 호출과 병렬로 시작됨 — 여기서 다시 트리거하지 않는다)
                             for _batch in _early_chat_file_batches:
@@ -756,9 +784,15 @@ async def query_stream(req: QueryRequest):
 
             parts: list[str] = []
             stats: dict | None = None
+            selected_docs_system_prompt = system_prompt
+            if not req.voice_mode and not req.minimal_prompt:
+                from services.conv_summary import build_summary_instruction
+                selected_docs_system_prompt = (system_prompt if system_prompt else FORMAT_INSTRUCTION) + build_summary_instruction(
+                    "", False, project_memory,
+                )
             # 선택된 문서/기사/URL 기반 질의 — 답은 이 context 안에서 나오므로 tool 판정 불필요
             async for ev in chat_stream_with_tools(
-                    clean_question, docs_for_llm, system_prompt, image_attachments, req.messages,
+                    clean_question, docs_for_llm, selected_docs_system_prompt, image_attachments, req.messages,
                     format_instruction_override="" if req.voice_mode
                     else (get_extension_format_instruction(_ui_language) if req.minimal_prompt else None),
                     conversation_summary=conversation_summary,
@@ -775,6 +809,10 @@ async def query_stream(req: QueryRequest):
                     stats = {k: v for k, v in ev.items() if k != "type"}
 
             answer = "".join(parts).strip()
+            from services.conv_summary import extract_summary_tags, save_conv_summary
+            from services.project_memory import extract_project_memory_tag, merge_project_memory
+            answer, _project_memory = extract_project_memory_tag(answer)
+            answer, _conv_summary, _ = extract_summary_tags(answer)
 
             # ── 히스토리 저장 (공통 헬퍼 사용) ──
             injected_context = build_injected_context(context_docs)
@@ -785,6 +823,9 @@ async def query_stream(req: QueryRequest):
             if not req.no_history:
                 try:
                     await save_conversation(conv_id, req.messages + [user_message, assistant_msg], project_id=req.project_id or None)
+                    if _conv_summary:
+                        await save_conv_summary(conv_id, _conv_summary)
+                    await merge_project_memory(req.project_id, conv_id, _project_memory)
                 except Exception as e:
                     logger.warning("[query_stream] 히스토리 저장 실패: %s", e)
             _saved = True

@@ -14,6 +14,7 @@ import ProjectHistoryRow from './ProjectHistoryRow';
 import SidebarOverflowMenu from './SidebarOverflowMenu';
 import ProjectInstructionsModal from './ProjectInstructionsModal';
 import ProjectCreateModal from './ProjectCreateModal';
+import ProjectMemoryModal from './ProjectMemoryModal';
 
 interface SidebarProps {
     installed: string[];
@@ -276,6 +277,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     const [renamingProjectId, setRenamingProjectId] = useState<string | null>(null);
     const [projectRenameValue, setProjectRenameValue] = useState('');
     const [instructionsProject, setInstructionsProject] = useState<Project | null>(null);
+    const [memoryProject, setMemoryProject] = useState<Project | null>(null);
     const loadMoreRef = useRef<HTMLDivElement>(null);
     const [loadingMore, setLoadingMore] = useState(false);
     const activeConversationIdSet = new Set(activeConversationIds);
@@ -461,6 +463,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 deleteLabel={t('sidebar.delete')}
                                 projectInstructionsLabel={t('sidebar.projectInstructions.title')}
                                 projectEditLabel={t('sidebar.projectEdit')}
+                                projectMemoryLabel={t('sidebar.projectMemory.title')}
                                 onToggle={() => toggleProjectHistory(project.id)}
                                 onNewConversation={() => { onProjectChange?.(project.id); onNewConversation(); }}
                                 onMenuOpenChange={isOpen => setProjectMenuOpenId(isOpen ? project.id : null)}
@@ -469,6 +472,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 onRenameSubmit={() => saveProjectName(project)}
                                 onRenameCancel={() => setRenamingProjectId(null)}
                                 onEditInstructions={() => { setProjectMenuOpenId(null); setInstructionsProject(project); }}
+                                onOpenMemory={() => { setProjectMenuOpenId(null); setMemoryProject(project); }}
                                 onEditProject={() => { setProjectMenuOpenId(null); setEditingProject(project); }}
                                 onDelete={() => { setProjectMenuOpenId(null); deleteProject(project); }}
                             >
@@ -478,6 +482,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         ))}
                     </div>
                     <ProjectInstructionsModal project={instructionsProject} onClose={() => setInstructionsProject(null)} onSave={saveProjectPrompt}/>
+                    <ProjectMemoryModal project={memoryProject} onClose={() => setMemoryProject(null)}/>
                     {isProjectCreateOpen && <ProjectCreateModal onClose={() => setIsProjectCreateOpen(false)} onSubmit={createProject}/>}
                     {editingProject && <ProjectCreateModal key={editingProject.id} project={editingProject} onClose={() => setEditingProject(null)} onSubmit={saveProjectDetails}/>}
                     <div className="aside-hist">

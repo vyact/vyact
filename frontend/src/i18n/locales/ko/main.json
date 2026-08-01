@@ -462,6 +462,7 @@
     "exportMarkdown": "MD 저장",
     "exportPdf": "PDF 저장",
     "delete": "삭제",
+    "projectMemory": {"title":"프로젝트 메모리","close":"닫기","loading":"불러오는 중…","summary":"프로젝트 현황","noSummary":"아직 축적된 프로젝트 요약이 없습니다.","decisions":"결정 사항","actionItems":"할 일","noItems":"아직 추출된 항목이 없습니다.","markCompleted":"완료로 표시","markActive":"진행 중으로 되돌리기","delete":"항목 삭제","localNote":"현재 선택한 AI 모델이 대화에서 자동 추출하며, MCP 또는 Google Workspace 연결 없이 동작합니다."},
     "projectInstructions": {
       "title": "프로젝트 지침",
       "close": "닫기",
