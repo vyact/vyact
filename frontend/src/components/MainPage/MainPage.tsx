@@ -499,6 +499,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                                 messages={conv.messages}
                                 isLoading={chat.isLoading}
                                 streamingMessageId={chat.streamingMessageId}
+                                responseStartedAt={chat.responseStartedAt}
                                 isEmpty={conv.messages.length === 0}
                                 onRetry={handleRetry}
                                 imageGenProgress={chat.imageGenProgress}

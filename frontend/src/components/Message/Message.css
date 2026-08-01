@@ -505,6 +505,23 @@
     padding: 4px 0;
 }
 
+.msg-response-preparing {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 6px 0;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.msg-request-elapsed {
+    flex-shrink: 0;
+    color: var(--muted);
+    font-size: 10.5px;
+    font-variant-numeric: tabular-nums;
+    opacity: .75;
+}
+
 .msg-typing-dots span {
     width: 6px;
     height: 6px;

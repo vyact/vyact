@@ -118,6 +118,7 @@ interface ChatAreaProps {
     onDetachAllVideos?: () => void;
     onQueryWithVideo?: (articles: ArticleAttachment[], question: string) => void;
     streamingMessageId?: string | null;  // 현재 토큰 스트리밍 중인 assistant 메시지 id
+    responseStartedAt?: number | null;
     onFollowupSubmit?: (message: string) => void;  // follow-up 선택/입력 전송
     onFollowupDismiss?: (messageId: string) => void;  // follow-up 닫기
     /** FollowupBar의 현재 선택+입력 상태를 외부에서 읽을 수 있도록 ref 전달 */
@@ -149,6 +150,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                                                onDetachAllVideos,
                                                onQueryWithVideo,
                                                streamingMessageId = null,
+                                               responseStartedAt = null,
                                                onFollowupSubmit,
                                                onFollowupDismiss,
                                            followupComposedRef,
@@ -486,6 +488,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                                 pdfParams={msg.pdfParams}
                                 onPdfEdit={onPdfEdit}
                                 isStreaming={!!streamingMessageId && (msg.id === streamingMessageId)}
+                                requestStartedAt={msg.id === streamingMessageId ? responseStartedAt : null}
                                 toolStatus={msg.toolStatus}
                                 activityLog={msg.activityLog}
                                 stats={msg.role === 'user' ? messages[idx + 1]?.stats : msg.stats}

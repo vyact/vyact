@@ -19,6 +19,7 @@ export interface MessageProps {
     onShowInjectedContext?: (ctx: Array<{ source: string; title?: string; data: string }>) => void;
     onOpenMemo?: (memoId: string) => void;
     isStreaming?: boolean;
+    requestStartedAt?: number | null;
     toolStatus?: ToolActivity;
     activityLog?: ToolActivity[];
     stats?: {

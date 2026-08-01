@@ -80,7 +80,7 @@ const Message: React.FC<MessageProps> = ({
                                              role, content, timestamp, sources, model, attachments,
                                              isError, onRetry, isGeneratedImage, articleSources,
                                              pdfFile, pdfParams, onPdfEdit, injectedContext, onShowInjectedContext, onOpenMemo,
-                                             isStreaming = false, toolStatus, activityLog, stats,
+                                             isStreaming = false, requestStartedAt, toolStatus, activityLog, stats,
                                          }) => {
     const {t} = useTranslation('main');
     const {panel} = useCodePanel();
@@ -112,7 +112,27 @@ const Message: React.FC<MessageProps> = ({
     );
     const [copied, setCopied] = React.useState(false);
     const [speaking, setSpeaking] = React.useState(false);
+    const [requestElapsedSeconds, setRequestElapsedSeconds] = React.useState(0);
     const speakingRef = useRef(false);
+    React.useEffect(() => {
+        if (!isStreaming) {
+            setRequestElapsedSeconds(0);
+            return;
+        }
+        const startedAt = requestStartedAt ?? Date.now();
+        const updateElapsedSeconds = () => {
+            setRequestElapsedSeconds(Math.max(0, Math.floor((Date.now() - startedAt) / 1000)));
+        };
+        updateElapsedSeconds();
+        const timerId = window.setInterval(updateElapsedSeconds, 1000);
+        return () => window.clearInterval(timerId);
+    }, [isStreaming, requestStartedAt]);
+    const requestElapsedLabel = requestElapsedSeconds < 60
+        ? t('toolActivity.elapsedShort', {seconds: requestElapsedSeconds})
+        : t('toolActivity.elapsedMinutesSeconds', {
+            minutes: Math.floor(requestElapsedSeconds / 60),
+            seconds: requestElapsedSeconds % 60,
+        });
     const [viewerIndex, setViewerIndex] = React.useState<number | null>(null);
     const [tableImgViewer, setTableImgViewer] = React.useState<{
         images: { src: string; alt: string }[];
@@ -418,10 +438,13 @@ const Message: React.FC<MessageProps> = ({
                                     <span className="msg-tool-text">{toolStatus.label}</span>
                                     {toolStatus.detail && <code className="msg-tool-detail">{toolStatus.detail}</code>}
                                 </span>
+                                <span className="msg-request-elapsed">{requestElapsedLabel}</span>
                             </div>
                         ) : isStreaming && !content.trim() && (
-                            <div className="msg-typing-dots" aria-label={t('toolActivity.thinking')}>
-                                <span/><span/><span/>
+                            <div className="msg-response-preparing" role="status" aria-live="polite">
+                                <span className="msg-tool-spinner" aria-hidden="true"/>
+                                <span>{t('toolActivity.preparingResponse')}</span>
+                                <span className="msg-request-elapsed">{requestElapsedLabel}</span>
                             </div>
                         )}
                         {renderGroups.map((group, idx) => {
