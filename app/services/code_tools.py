@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import sys
 import time
+from collections import Counter
 from contextvars import ContextVar
 from pathlib import Path
 
@@ -47,13 +48,46 @@ IGNORE_DIRS = {
 }
 
 
+def build_code_folder_map(folder_paths: list[str]) -> dict[str, str]:
+    """Map project folders to stable, human-readable and collision-free IDs."""
+    normalized_paths = [str(path).strip() for path in folder_paths if str(path).strip()]
+    folder_names = [Path(path).name or "root" for path in normalized_paths]
+    name_counts = Counter(folder_names)
+    reserved_unique_names = {
+        name for name, count in name_counts.items() if count == 1
+    }
+    used_ids: set[str] = set()
+    duplicate_indexes: dict[str, int] = {}
+    folders: dict[str, str] = {}
+
+    for folder_name, path in zip(folder_names, normalized_paths):
+        if name_counts[folder_name] == 1:
+            folder_id = folder_name
+        else:
+            next_index = duplicate_indexes.get(folder_name, 0) + 1
+            folder_id = f"{folder_name}_{next_index}"
+            while folder_id in reserved_unique_names or folder_id in used_ids:
+                next_index += 1
+                folder_id = f"{folder_name}_{next_index}"
+            duplicate_indexes[folder_name] = next_index
+        used_ids.add(folder_id)
+        folders[folder_id] = path
+
+    return folders
+
+
 def build_project_manifest(folder_paths: list[str]) -> str:
     """Build a bounded, language-independent source tree for project context."""
-    resolved_paths = tuple(str(Path(path).resolve()) for path in folder_paths if str(path).strip())
-    if not resolved_paths:
+    folders = build_code_folder_map(folder_paths)
+    if not folders:
         return ""
+    resolved_folders = tuple(
+        (folder_id, str(Path(path).resolve()))
+        for folder_id, path in folders.items()
+    )
 
-    cached = _project_manifest_cache.get(resolved_paths)
+    cache_key = tuple(f"{folder_id}\0{path}" for folder_id, path in resolved_folders)
+    cached = _project_manifest_cache.get(cache_key)
     now = time.monotonic()
     if cached and now - cached[0] < PROJECT_MANIFEST_CACHE_TTL_SECONDS:
         return cached[1]
@@ -96,9 +130,9 @@ def build_project_manifest(folder_paths: list[str]) -> str:
                 if stays_in_root:
                     walk(entry, root_directory, depth + 1, prefix + "  ")
 
-    for index, path in enumerate(resolved_paths, 1):
+    for folder_id, path in resolved_folders:
         root = Path(path)
-        lines.append(f"folder_{index}/")
+        lines.append(f"{folder_id}/")
         if root.is_dir():
             resolved_root = root.resolve()
             walk(resolved_root, resolved_root, 1, "  ")
@@ -108,7 +142,7 @@ def build_project_manifest(folder_paths: list[str]) -> str:
     if truncated:
         lines.append("... (manifest truncated)")
     manifest = "\n".join(lines)
-    _project_manifest_cache[resolved_paths] = (now, manifest)
+    _project_manifest_cache[cache_key] = (now, manifest)
     return manifest
 
 FOLDER_ID_PROPERTY = {

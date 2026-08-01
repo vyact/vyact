@@ -66,15 +66,14 @@ def _new_conversation_title(conv_summary: str | None, fallback_question: str) ->
     return title[:36] + ("..." if len(title) > 36 else "")
 
 
-async def _resolve_code_folder_path(folder_path: str, project_id: str) -> str:
+async def _get_request_folder_paths(folder_path: str, project_id: str) -> list[str]:
     """명시적으로 첨부한 폴더를 우선하고, 없으면 선택 프로젝트의 폴더를 사용한다."""
     if folder_path.strip():
-        return folder_path.strip()
+        return [folder_path.strip()]
     if not project_id:
-        return ""
+        return []
 
-    folder_paths = await _get_project_folder_paths(project_id)
-    return folder_paths[0] if folder_paths else ""
+    return await _get_project_folder_paths(project_id)
 
 
 async def _get_project_folder_paths(project_id: str) -> list[str]:
@@ -107,18 +106,16 @@ async def _get_project_prompt(project_id: str) -> str:
         await es.close()
 
 
-async def _get_project_folder_context(project_id: str) -> str:
-    """선택 프로젝트의 소스 폴더와 제한된 파일 구조를 LLM 컨텍스트로 제공한다."""
-    if not project_id:
+async def _build_project_folder_context(folder_paths: list[str]) -> str:
+    """요청의 소스 폴더와 제한된 파일 구조를 LLM 컨텍스트로 제공한다."""
+    if not folder_paths:
         return ""
     try:
-        folder_paths = await _get_project_folder_paths(project_id)
-        if not folder_paths:
-            return ""
-        from services.code_tools import build_project_manifest
+        from services.code_tools import build_code_folder_map, build_project_manifest
+        folders = build_code_folder_map(folder_paths)
         manifest = await asyncio.to_thread(build_project_manifest, folder_paths)
         folder_context = "[프로젝트 소스 폴더]\n" + "\n".join(
-            f"- folder_{index}: {path}" for index, path in enumerate(folder_paths, 1)
+            f"- {folder_id}: {path}" for folder_id, path in folders.items()
         )
         if manifest:
             folder_context += (
@@ -129,7 +126,7 @@ async def _get_project_folder_context(project_id: str) -> str:
             )
         return folder_context + "\n모든 code_* 도구 호출에 작업 대상 folder_id를 반드시 지정해야 한다."
     except Exception as e:
-        logger.warning("[query_stream] 프로젝트 폴더 조회 실패(project_id=%s): %s", project_id, e)
+        logger.warning("[query_stream] 프로젝트 폴더 컨텍스트 생성 실패: %s", e)
         return ""
 
 URL_RE = re.compile(r"https?://[^\s)\]'\"<>,\u0080-\uFFFF]+")
@@ -330,7 +327,8 @@ async def query(req: QueryRequest):
     if project_memory and any(project_memory.get(key) for key in ("summary", "decisions", "action_items")):
         memory_context = json.dumps(project_memory_prompt_view(project_memory), ensure_ascii=False)
         system_prompt = f"{system_prompt}\n\n[프로젝트 메모리]\n{memory_context}" if system_prompt else f"[프로젝트 메모리]\n{memory_context}"
-    project_folder_context = await _get_project_folder_context(req.project_id)
+    request_folder_paths = await _get_request_folder_paths(req.folder_path, req.project_id)
+    project_folder_context = await _build_project_folder_context(request_folder_paths)
     if project_folder_context:
         system_prompt = f"{system_prompt}\n\n{project_folder_context}" if system_prompt else project_folder_context
 
@@ -560,7 +558,8 @@ async def query_stream(req: QueryRequest):
             if project_memory and any(project_memory.get(key) for key in ("summary", "decisions", "action_items")):
                 memory_context = json.dumps(project_memory_prompt_view(project_memory), ensure_ascii=False)
                 system_prompt = f"{system_prompt}\n\n[프로젝트 메모리]\n{memory_context}" if system_prompt else f"[프로젝트 메모리]\n{memory_context}"
-            project_folder_context = await _get_project_folder_context(req.project_id)
+            request_folder_paths = await _get_request_folder_paths(req.folder_path, req.project_id)
+            project_folder_context = await _build_project_folder_context(request_folder_paths)
             if project_folder_context:
                 system_prompt = f"{system_prompt}\n\n{project_folder_context}" if system_prompt else project_folder_context
 
@@ -685,12 +684,15 @@ async def query_stream(req: QueryRequest):
                     _fmt_override = None
 
                 # 모든 등록 폴더를 ID로 노출한다. 코드 도구는 매 호출마다 folder_id를 요구한다.
-                code_folder_path = await _resolve_code_folder_path(req.folder_path, req.project_id)
-                if code_folder_path:
-                    from services.code_tools import current_code_folder, current_code_folders, current_code_question
-                    folder_paths = [req.folder_path.strip()] if req.folder_path.strip() else await _get_project_folder_paths(req.project_id)
-                    current_code_folders.set({f"folder_{index}": path for index, path in enumerate(folder_paths, 1)})
-                    current_code_folder.set(code_folder_path)
+                if request_folder_paths:
+                    from services.code_tools import (
+                        build_code_folder_map,
+                        current_code_folder,
+                        current_code_folders,
+                        current_code_question,
+                    )
+                    current_code_folders.set(build_code_folder_map(request_folder_paths))
+                    current_code_folder.set(request_folder_paths[0])
                     current_code_question.set(clean_question)
 
                 _tool_messages: list[dict] = []  # tool call/result 메시지 수집
