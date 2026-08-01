@@ -454,7 +454,9 @@
       "create": "Create project",
       "creating": "Creating…"
     },
-    "deleteAllConfirm": "Delete all conversation history?",
+    "deleteAllConfirm": "Delete all conversation history not linked to a project?",
+    "deleteProjectHistory": "Delete history",
+    "deleteProjectHistoryConfirm": "Delete all conversation history for '{{name}}'? The project will be kept.",
     "deleteProject": "Delete project",
     "deleteProjectConfirm": "Delete '{{name}}' and all conversations linked to it?",
     "summary": "View summary",

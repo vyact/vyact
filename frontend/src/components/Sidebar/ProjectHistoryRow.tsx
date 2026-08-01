@@ -13,6 +13,7 @@ interface ProjectHistoryRowProps {
     newChatLabel: string;
     renameLabel: string;
     deleteLabel: string;
+    deleteHistoryLabel: string;
     projectInstructionsLabel: string;
     projectEditLabel: string;
     projectMemoryLabel: string;
@@ -27,6 +28,7 @@ interface ProjectHistoryRowProps {
     onOpenMemory: () => void;
     onEditProject: () => void;
     onDelete: () => void;
+    onDeleteHistory: () => void;
     children: ReactNode;
 }
 
@@ -40,6 +42,7 @@ const ProjectHistoryRow = ({
     newChatLabel,
     renameLabel,
     deleteLabel,
+    deleteHistoryLabel,
     projectInstructionsLabel,
     projectEditLabel,
     projectMemoryLabel,
@@ -54,6 +57,7 @@ const ProjectHistoryRow = ({
     onOpenMemory,
     onEditProject,
     onDelete,
+    onDeleteHistory,
     children,
 }: ProjectHistoryRowProps) => {
     const FolderIcon = isExpanded ? FolderOpen : Folder;
@@ -91,6 +95,7 @@ const ProjectHistoryRow = ({
                         <button className="hist-menu-item" onClick={onRename}><Pencil size={13}/>{renameLabel}</button>
                         <button className="hist-menu-item" onClick={onEditInstructions}><ScrollText size={13}/>{projectInstructionsLabel}</button>
                         <button className="hist-menu-item" onClick={onOpenMemory}><BookOpen size={13}/>{projectMemoryLabel}</button>
+                        <button className="hist-menu-item danger" onClick={onDeleteHistory}><Trash2 size={13}/>{deleteHistoryLabel}</button>
                         <button className="hist-menu-item danger" onClick={onDelete}><Trash2 size={13}/>{deleteLabel}</button>
                     </SidebarOverflowMenu>
                     <button

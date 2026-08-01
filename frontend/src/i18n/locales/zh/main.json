@@ -454,7 +454,9 @@
       "create": "创建项目",
       "creating": "创建中…"
     },
-    "deleteAllConfirm": "确定删除所有对话记录？",
+    "deleteAllConfirm": "确定删除所有未关联项目的对话记录？",
+    "deleteProjectHistory": "删除历史记录",
+    "deleteProjectHistoryConfirm": "删除“{{name}}”项目的所有对话记录？项目将被保留。",
     "deleteProject": "删除项目",
     "deleteProjectConfirm": "删除「{{name}}」及其所有关联对话？",
     "summary": "查看摘要",

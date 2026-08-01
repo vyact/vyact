@@ -267,6 +267,18 @@ const Sidebar: React.FC<SidebarProps> = ({
         });
     };
     const deleteProject = async (project: Project) => { if (!confirm(t('sidebar.deleteProjectConfirm', {name: project.name}))) return; await api.deleteProject(project.id); setProjects(prev => prev.filter(item => item.id !== project.id)); setExpandedProjectIds(previous => { const next = new Set(previous); next.delete(project.id); storeExpandedProjectIds(next); return next; }); setExpandedProjectHistoryIds(previous => { const next = new Set(previous); next.delete(project.id); return next; }); if (activeProjectId === project.id) onProjectChange?.(null); };
+    const deleteProjectHistory = async (project: Project) => {
+        if (!confirm(t('sidebar.deleteProjectHistoryConfirm', {name: project.name}))) return;
+        const deletesActiveConversation = conversations.some(conversation =>
+            conversation.conv_id === activeConvId && conversation.project_id === project.id,
+        );
+        await api.deleteProjectHistory(project.id);
+        await onConversationRename();
+        if (deletesActiveConversation) {
+            onProjectChange?.(project.id);
+            onNewConversation();
+        }
+    };
     const collapsed = collapsedProp !== undefined ? collapsedProp : collapsedInternal;
 
     const [isProviderSettingsOpen, setIsProviderSettingsOpen] = useState(false);
@@ -493,6 +505,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 newChatLabel={t('sidebar.newChat')}
                                 renameLabel={t('sidebar.rename')}
                                 deleteLabel={t('sidebar.delete')}
+                                deleteHistoryLabel={t('sidebar.deleteProjectHistory')}
                                 projectInstructionsLabel={t('sidebar.projectInstructions.title')}
                                 projectEditLabel={t('sidebar.projectEdit')}
                                 projectMemoryLabel={t('sidebar.projectMemory.title')}
@@ -507,6 +520,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 onOpenMemory={() => { setProjectMenuOpenId(null); setMemoryProject(project); }}
                                 onEditProject={() => { setProjectMenuOpenId(null); setEditingProject(project); }}
                                 onDelete={() => { setProjectMenuOpenId(null); deleteProject(project); }}
+                                onDeleteHistory={() => { setProjectMenuOpenId(null); deleteProjectHistory(project); }}
                             >
                                 {conversations.filter(conv => conv.project_id === project.id).slice(0, expandedProjectHistoryIds.has(project.id) ? undefined : PROJECT_HISTORY_PREVIEW_COUNT).map(conv => <div key={conv.conv_id} className={`project-conversation${conv.conv_id === activeConvId ? ' active' : ''}`} onClick={() => { onProjectChange?.(project.id); onConversationSelect(conv.conv_id); }}><button className="project-conversation-title">{conv.title}</button>{activeConversationIdSet.has(conv.conv_id) && <span className="conversation-progress" role="status" aria-label={t('sidebar.responseInProgress')} title={t('sidebar.responseInProgress')}><LoaderCircle size={13}/></span>}<SidebarOverflowMenu isOpen={menuOpenId === conv.conv_id} onOpenChange={isOpen => setMenuOpenId(isOpen ? conv.conv_id : null)} trigger="···"><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); onShowSummary(conv.conv_id); }}><NotebookText size={13}/>{t('sidebar.summary')}</button><button className="hist-menu-item" onClick={() => { setRenameValue(conv.title); setRenamingId(conv.conv_id); setMenuOpenId(null); }}><Pencil size={13}/>{t('sidebar.rename')}</button><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); exportConversation(conv.conv_id, conv.title, 'md'); }}><FileCode size={13}/>{t('sidebar.exportMarkdown')}</button><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); exportConversation(conv.conv_id, conv.title, 'pdf'); }}><FileText size={13}/>{t('sidebar.exportPdf')}</button><button className="hist-menu-item danger" onClick={() => { setMenuOpenId(null); onConversationDelete(conv.conv_id); }}><Trash2 size={13}/>{t('sidebar.delete')}</button></SidebarOverflowMenu></div>)}
                                 {!expandedProjectHistoryIds.has(project.id) && conversations.filter(conv => conv.project_id === project.id).length > PROJECT_HISTORY_PREVIEW_COUNT && <button className="project-history-more" onClick={() => setExpandedProjectHistoryIds(previous => new Set(previous).add(project.id))}>{t('googleWorkspace.more')}</button>}
@@ -520,7 +534,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <div className="aside-hist">
                         <div className="hist-header">
                             <div className="hist-actions">
-                                {conversations.length > 0 && (
+                                {conversations.some(conversation => !conversation.project_id) && (
                                     <button
                                         className="btn-delete-all"
                                         onClick={() => {

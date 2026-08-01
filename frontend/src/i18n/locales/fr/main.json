@@ -454,7 +454,9 @@
       "create": "Créer le projet",
       "creating": "Création…"
     },
-    "deleteAllConfirm": "Supprimer tout l'historique des conversations ?",
+    "deleteAllConfirm": "Supprimer tout l'historique des conversations non liées à un projet ?",
+    "deleteProjectHistory": "Supprimer l'historique",
+    "deleteProjectHistoryConfirm": "Supprimer tout l'historique des conversations de « {{name}} » ? Le projet sera conservé.",
     "deleteProject": "Supprimer le projet",
     "deleteProjectConfirm": "Supprimer « {{name}} » et toutes les conversations associées ?",
     "summary": "Voir le résumé",

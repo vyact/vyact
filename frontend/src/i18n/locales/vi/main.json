@@ -454,7 +454,9 @@
       "create": "Tạo dự án",
       "creating": "Đang tạo…"
     },
-    "deleteAllConfirm": "Xóa toàn bộ lịch sử hội thoại?",
+    "deleteAllConfirm": "Xóa toàn bộ lịch sử hội thoại không thuộc dự án?",
+    "deleteProjectHistory": "Xóa lịch sử",
+    "deleteProjectHistoryConfirm": "Xóa toàn bộ lịch sử hội thoại của '{{name}}'? Dự án sẽ được giữ lại.",
     "deleteProject": "Xóa dự án",
     "deleteProjectConfirm": "Xóa '{{name}}' và mọi hội thoại liên quan?",
     "summary": "Xem tóm tắt",

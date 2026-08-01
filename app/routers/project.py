@@ -15,6 +15,8 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from services.db import PROJECTS_INDEX, get_es
+from services.history import delete_project_conversations
 from services.project_memory import (
     PROJECT_MEMORY_ITEM_TYPES, PROJECT_MEMORY_STATUSES, empty_project_memory, get_project_memory,
 )
@@ -141,14 +143,19 @@ async def update_project(project_id: str, body: dict):
 
 @router.delete("/projects/{project_id}")
 async def delete_project(project_id: str):
-    from services.db import HIST_INDEX, PROJECTS_INDEX, get_es
+    await delete_project_conversations(project_id)
     es = get_es()
     try:
-        await es.delete_by_query(index=HIST_INDEX, body={"query": {"term": {"project_id.keyword": project_id}}}, refresh=True)
         await es.delete(index=PROJECTS_INDEX, id=project_id, ignore=[404], refresh=True)
         return {"ok": True}
     finally:
         await es.close()
+
+
+@router.delete("/projects/{project_id}/history")
+async def delete_project_history(project_id: str):
+    await delete_project_conversations(project_id)
+    return {"ok": True}
 
 
 class ProjectFile(BaseModel):

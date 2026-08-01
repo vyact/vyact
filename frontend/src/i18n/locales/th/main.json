@@ -453,7 +453,9 @@
       "create": "สร้างโปรเจกต์",
       "creating": "กำลังสร้าง…"
     },
-    "deleteAllConfirm": "ลบประวัติการสนทนาทั้งหมดหรือไม่?",
+    "deleteAllConfirm": "ลบประวัติการสนทนาทั้งหมดที่ไม่ได้อยู่ในโปรเจกต์หรือไม่?",
+    "deleteProjectHistory": "ลบประวัติ",
+    "deleteProjectHistoryConfirm": "ลบประวัติการสนทนาทั้งหมดของ '{{name}}' หรือไม่? โปรเจกต์จะยังคงอยู่",
     "deleteProject": "ลบโปรเจกต์",
     "deleteProjectConfirm": "ลบ '{{name}}' และการสนทนาทั้งหมดที่เชื่อมโยงอยู่หรือไม่?",
     "summary": "ดูสรุป",

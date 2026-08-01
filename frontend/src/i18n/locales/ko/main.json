@@ -454,7 +454,9 @@
       "create": "프로젝트 만들기",
       "creating": "만드는 중…"
     },
-    "deleteAllConfirm": "모든 대화 기록을 삭제할까요?",
+    "deleteAllConfirm": "프로젝트에 속하지 않은 모든 대화 기록을 삭제할까요?",
+    "deleteProjectHistory": "히스토리 삭제",
+    "deleteProjectHistoryConfirm": "'{{name}}' 프로젝트의 모든 대화 기록을 삭제할까요? 프로젝트는 유지됩니다.",
     "deleteProject": "프로젝트 삭제",
     "deleteProjectConfirm": "'{{name}}' 프로젝트와 연결된 모든 대화를 삭제할까요?",
     "summary": "요약 보기",

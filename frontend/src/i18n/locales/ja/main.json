@@ -454,7 +454,9 @@
       "create": "プロジェクトを作成",
       "creating": "作成中…"
     },
-    "deleteAllConfirm": "すべての会話履歴を削除しますか？",
+    "deleteAllConfirm": "プロジェクトに属していないすべての会話履歴を削除しますか？",
+    "deleteProjectHistory": "履歴を削除",
+    "deleteProjectHistoryConfirm": "「{{name}}」プロジェクトのすべての会話履歴を削除しますか？プロジェクトは保持されます。",
     "deleteProject": "プロジェクトを削除",
     "deleteProjectConfirm": "「{{name}}」プロジェクトと関連する全ての会話を削除しますか？",
     "summary": "要約を表示",

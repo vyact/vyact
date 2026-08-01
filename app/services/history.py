@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 from elasticsearch import NotFoundError
 
-from services.db import HIST_INDEX, get_es
+from services.db import CHAT_FILE_CHUNKS_INDEX, HIST_INDEX, get_es
 
 
 def _message_identity(message: dict) -> tuple[str, str, str]:
@@ -278,36 +278,49 @@ async def set_conversation_project(conv_id: str, project_id: str | None):
         await es.close()
 
 
-async def delete_all_conversations():
+async def _delete_conversations_by_query(query: dict) -> None:
+    """주어진 범위의 대화와 대화에 종속된 파일/검색 청크를 함께 삭제한다."""
     es = get_es()
     try:
-        # 모든 대화의 PDF 파일 먼저 삭제
+        conversation_ids: list[str] = []
         try:
             res = await es.search(index=HIST_INDEX, body={
-                "query": {"match_all": {}},
-                "size": 1000,
+                "query": query,
+                "size": 10_000,
                 "_source": ["messages"],
             })
             for hit in res["hits"]["hits"]:
+                conversation_ids.append(hit["_id"])
                 _delete_conv_files(hit["_source"].get("messages", []))
         except Exception:
             pass
 
-        # 채팅 첨부 청크 인덱스도 전부 비움 (대화 전체 삭제이므로 conv_id 필터 불필요)
-        try:
-            from services.db import CHAT_FILE_CHUNKS_INDEX
-            await es.delete_by_query(
-                index=CHAT_FILE_CHUNKS_INDEX,
-                body={"query": {"match_all": {}}},
-                refresh=True,
-            )
-        except Exception:
-            pass
+        if conversation_ids:
+            try:
+                await es.delete_by_query(
+                    index=CHAT_FILE_CHUNKS_INDEX,
+                    body={"query": {"terms": {"conv_id.keyword": conversation_ids}}},
+                    refresh=True,
+                )
+            except Exception:
+                pass
 
         await es.delete_by_query(
             index=HIST_INDEX,
-            body={"query": {"match_all": {}}},
+            body={"query": query},
             refresh=True,
         )
     finally:
         await es.close()
+
+
+async def delete_all_conversations():
+    """프로젝트에 속하지 않은 일반 대화만 모두 삭제한다."""
+    await _delete_conversations_by_query({
+        "bool": {"must_not": {"exists": {"field": "project_id"}}},
+    })
+
+
+async def delete_project_conversations(project_id: str):
+    """프로젝트는 유지하고 해당 프로젝트에 속한 대화만 모두 삭제한다."""
+    await _delete_conversations_by_query({"term": {"project_id.keyword": project_id}})
