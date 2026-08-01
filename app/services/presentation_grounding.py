@@ -18,7 +18,7 @@ MIN_EVIDENCE_LENGTH = 8
 FACT_TOKEN_PATTERN = re.compile(
     r"(?<![A-Za-z0-9])(?:['’]?\d{2,4}(?:[./-]\d{1,2}){0,2}|\d[\d,.]*)"
     r"(?:\s?(?:%|‰|bp|bps|배|원|억원|조원|만명|개사|명|건|일|월|년|분기|반기|"
-    r"KRW|USD|EUR|JPY|million|billion|trillion|percent|points?))?",
+    r"KRW|USD|EUR|JPY|K|M|B|million|billion|trillion|percent|points?))?",
     re.IGNORECASE,
 )
 VISIBLE_TEXT_FIELDS = {
@@ -321,7 +321,18 @@ def _tokens_match(page_token: str, evidence_token: str) -> bool:
         return True
     page_digits = re.sub(r"\D", "", page_token)
     evidence_digits = re.sub(r"\D", "", evidence_token)
-    return bool(page_digits and page_digits == evidence_digits)
+    if not page_digits or page_digits != evidence_digits:
+        return False
+
+    def explicit_unit(token: str) -> str:
+        return re.sub(r"[\d\s,.'’/-]", "", token)
+
+    page_unit = explicit_unit(page_token)
+    evidence_unit = explicit_unit(evidence_token)
+    # A bare number may be a concise rendering of a sourced value, but two
+    # explicit and different units must never be treated as equivalent. This
+    # also prevents unverified rescaling such as 억원 -> M/B or million -> M.
+    return not (page_unit and evidence_unit and page_unit != evidence_unit)
 
 
 def reconcile_page_fact_ids(page_data: dict, ledger: dict) -> dict:

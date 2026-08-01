@@ -18,6 +18,11 @@ from services.presentation_design import prepare_presentation
 SLIDE_WIDTH = Inches(13.333)
 SLIDE_HEIGHT = Inches(7.5)
 FONT_FAMILY = "Noto Sans KR"
+HEADER_TITLE_MAX_SIZE = 35
+HEADER_TITLE_MEDIUM_SIZE = 30
+HEADER_TITLE_LONG_SIZE = 25
+HEADER_TITLE_MEDIUM_LENGTH = 34
+HEADER_TITLE_LONG_LENGTH = 45
 
 
 def _rgb(value: str, fallback: str = "#000000") -> RGBColor:
@@ -67,12 +72,20 @@ def _add_image(slide, image, x: float, y: float, width: float, height: float):
 
 def _add_header(slide, page: dict, page_number: int, total: int, palette: dict) -> None:
     accent = palette["accent"]
+    title = str(page.get("title") or "")
+    if len(title) > HEADER_TITLE_LONG_LENGTH:
+        title_size = HEADER_TITLE_LONG_SIZE
+    elif len(title) > HEADER_TITLE_MEDIUM_LENGTH:
+        title_size = HEADER_TITLE_MEDIUM_SIZE
+    else:
+        title_size = HEADER_TITLE_MAX_SIZE
     _add_text(slide, page.get("section_label", "PRESENTATION"), .68, .18, 2.4, .22,
               size=7.5, color=accent, bold=True)
     _add_text(slide, f"{page_number:02d} / {total:02d}", .65, .52, 1.05, .32,
               size=9, color=accent, bold=True, valign=MSO_ANCHOR.MIDDLE)
-    _add_text(slide, page.get("title", ""), 1.65, .36, 10.85, .72,
-              size=35, color=palette.get("title_color", "#111111"), bold=True)
+    _add_text(slide, title, 1.65, .36, 10.85, .62,
+              size=title_size, color=palette.get("title_color", "#111111"), bold=True,
+              valign=MSO_ANCHOR.MIDDLE)
     _add_shape(slide, MSO_AUTO_SHAPE_TYPE.RECTANGLE, .65, 1.10, 12.0, .035, accent)
 
 
@@ -119,9 +132,9 @@ def _render_cover(slide, page: dict, page_number: int, total: int, palette: dict
     subtitle = page.get("subtitle") or ""
     content = page.get("content") or ""
     if subtitle:
-        _add_text(slide, subtitle, x, title_y + 1.58, width, .55, size=24, color=sub_color, align=align)
+        _add_text(slide, subtitle, x, title_y + 1.58, width, .82, size=22, color=sub_color, align=align)
     if content:
-        _add_text(slide, content, x, title_y + 2.20, width, 1.0, size=16, color=sub_color, align=align)
+        _add_text(slide, content, x, title_y + 2.48, width, .82, size=15, color=sub_color, align=align)
     if not closing:
         for index, tag in enumerate((page.get("bullets") or [])[:5]):
             tag_x = 1.05 + index * 1.65

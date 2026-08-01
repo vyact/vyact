@@ -103,6 +103,25 @@ class PresentationGroundingTests(unittest.TestCase):
         findings = audit_presentation(deck, self.ledger, "en")
         self.assertIn("unsupported_fact_tokens", {finding["code"] for finding in findings})
 
+    def test_same_digits_with_different_explicit_units_are_rejected(self):
+        context = [{"title": "Budget", "content": "기준은 150억원입니다."}]
+        ledger = validate_evidence_ledger({"facts": [{
+            "source_id": "S1",
+            "statement": "기준은 150억원입니다.",
+            "evidence": "기준은 150억원입니다.",
+        }]}, context)
+        deck = {"pages": [{
+            "title": "Threshold",
+            "content": "The threshold is KRW 150M.",
+            "fact_ids": ["F1"],
+        }]}
+        findings = audit_presentation(deck, ledger, "en")
+        unsupported = next(
+            finding for finding in findings
+            if finding["code"] == "unsupported_fact_tokens"
+        )
+        self.assertIn("150m", unsupported["details"])
+
     def test_numbered_outline_is_extracted(self):
         prompt = "소개 문장\n1. 표지와 핵심 메시지\n2) 정책 영향 비교\n마무리"
         self.assertEqual(
