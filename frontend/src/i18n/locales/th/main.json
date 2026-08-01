@@ -802,7 +802,10 @@
     "promptPlaceholder": "เช่น วิเคราะห์ผลประกอบการและแนวโน้ม",
     "pageSettings": "ตั้งค่าหน้า",
     "outputFormat": "รูปแบบผลลัพธ์",
-    "outputFormats": {"pdf": "PDF", "pptx": "PPTX"},
+    "outputFormats": {
+      "pdf": "PDF",
+      "pptx": "PPTX"
+    },
     "autoPages": "AI อัตโนมัติ",
     "pages": "{{count}} หน้า",
     "korean": "เกาหลี",

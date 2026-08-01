@@ -802,7 +802,10 @@
     "promptPlaceholder": "Ví dụ: Phân tích kết quả và triển vọng",
     "pageSettings": "Trang",
     "outputFormat": "Định dạng đầu ra",
-    "outputFormats": {"pdf": "PDF", "pptx": "PPTX"},
+    "outputFormats": {
+      "pdf": "PDF",
+      "pptx": "PPTX"
+    },
     "autoPages": "AI tự chọn",
     "pages": "{{count}} trang",
     "korean": "Hàn",

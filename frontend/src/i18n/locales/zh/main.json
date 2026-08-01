@@ -802,7 +802,10 @@
     "promptPlaceholder": "例如）三星电子 2025 年业绩分析及未来展望\n为投资者演示文稿进行专业撰写",
     "pageSettings": "页面设置",
     "outputFormat": "输出格式",
-    "outputFormats": {"pdf": "PDF", "pptx": "PPTX"},
+    "outputFormats": {
+      "pdf": "PDF",
+      "pptx": "PPTX"
+    },
     "autoPages": "AI 自动",
     "pages": "{{count}} 页",
     "korean": "韩语",

@@ -802,7 +802,10 @@
     "promptPlaceholder": "例）サムスン電子の2025年業績分析と今後の見通し\n投資家向けに専門的に作成",
     "pageSettings": "ページ設定",
     "outputFormat": "出力形式",
-    "outputFormats": {"pdf": "PDF", "pptx": "PPTX"},
+    "outputFormats": {
+      "pdf": "PDF",
+      "pptx": "PPTX"
+    },
     "autoPages": "AI自動",
     "pages": "{{count}}ページ",
     "korean": "韓国語",

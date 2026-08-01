@@ -799,7 +799,10 @@
     "promptPlaceholder": "e.g.) Samsung Electronics 2025 earnings analysis and outlook\nWrite professionally for an investor presentation",
     "pageSettings": "Page settings",
     "outputFormat": "Output format",
-    "outputFormats": {"pdf": "PDF", "pptx": "PPTX"},
+    "outputFormats": {
+      "pdf": "PDF",
+      "pptx": "PPTX"
+    },
     "autoPages": "AI Auto",
     "pages": "{{count}} pages",
     "korean": "Korean",

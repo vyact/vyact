@@ -799,7 +799,10 @@
     "promptPlaceholder": "예) 삼성전자 2025년 실적 분석 및 향후 전망\n투자자 대상 발표용으로 전문적으로 작성해줘",
     "pageSettings": "페이지 설정",
     "outputFormat": "출력 형식",
-    "outputFormats": {"pdf": "PDF", "pptx": "PPTX"},
+    "outputFormats": {
+      "pdf": "PDF",
+      "pptx": "PPTX"
+    },
     "autoPages": "AI 자동",
     "pages": "{{count}}페이지",
     "korean": "한국어",

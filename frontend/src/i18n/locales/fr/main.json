@@ -802,7 +802,10 @@
     "promptPlaceholder": "Ex. : Analyse des résultats et prévisions",
     "pageSettings": "Pages",
     "outputFormat": "Format de sortie",
-    "outputFormats": {"pdf": "PDF", "pptx": "PPTX"},
+    "outputFormats": {
+      "pdf": "PDF",
+      "pptx": "PPTX"
+    },
     "autoPages": "IA automatique",
     "pages": "{{count}} pages",
     "korean": "Coréen",
