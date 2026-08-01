@@ -16,7 +16,7 @@ from .helpers import load_images_b64, history_for_ollama
 from .tools import build_approval_rejection_instruction, build_tool_directive
 from services.runtime_settings import get_runtime_settings
 from services.tool_approval import await_tool_approval, get_tool_rejection_response
-from .context_window import select_context_window
+from .context_window import select_context_allocation
 
 
 async def build_ollama_payload(
@@ -97,14 +97,18 @@ async def build_ollama_payload(
         *history_for_ollama(history_messages, valid_slice),
         user_msg,
     ]
+    context_window, output_limit = select_context_allocation(
+        messages, runtime["llm_num_ctx"], runtime["history_chars_per_token"],
+        runtime["llm_num_predict"],
+    )
     body = {
         "model": model,
         "stream": True,
         "keep_alive": runtime["ollama_keep_alive"],
         "messages": messages,
         "options": {
-            "num_ctx": select_context_window(messages, runtime["llm_num_ctx"], runtime["history_chars_per_token"], runtime["llm_num_predict"]),
-            "num_predict": runtime["llm_num_predict"],
+            "num_ctx": context_window,
+            "num_predict": output_limit,
             "temperature": runtime["llm_temperature"],
             **({"top_k": runtime["top_k"]} if runtime["top_k"] else {}),
             **({"top_p": runtime["top_p"]} if runtime["top_p"] else {})

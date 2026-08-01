@@ -24,7 +24,7 @@ from .helpers import (
 )
 from .errors import http_err_msg, openai_err, gemini_err, claude_err
 from .ollama import build_ollama_payload, resolve_tool_calls
-from .context_window import select_context_window
+from .context_window import select_context_allocation
 from .providers import openai_stream, gemini_stream, claude_stream
 from .prepare import prepare_request
 from services.runtime_settings import get_runtime_settings
@@ -538,9 +538,13 @@ async def query_llm(
                     user_msg["images"] = images_b64
                 ollama_messages = [{"role": "system", "content": system_message},
                                    *history_for_ollama(history_messages, valid_slice), user_msg]
+                context_window, output_limit = select_context_allocation(
+                    ollama_messages, runtime["llm_num_ctx"],
+                    runtime["history_chars_per_token"], num_predict,
+                )
                 ollama_options = {
-                    "num_ctx": select_context_window(ollama_messages, runtime["llm_num_ctx"], runtime["history_chars_per_token"], num_predict),
-                    "num_predict": num_predict,
+                    "num_ctx": context_window,
+                    "num_predict": output_limit,
                     "temperature": runtime["llm_temperature"]
                 }
                 if top_k is not None:
