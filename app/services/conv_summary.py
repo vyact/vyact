@@ -19,6 +19,55 @@ logger = get_logger(__name__)
 CONV_SUMMARY_TAG_RE = re.compile(r"<conv_summary>([\s\S]*?)</conv_summary>", re.IGNORECASE)
 PROJECT_SUMMARY_TAG_RE = re.compile(r"<project_summary>([\s\S]*?)</project_summary>", re.IGNORECASE)
 
+HIDDEN_STREAM_TAG_PREFIXES = (
+    "<conv_summary",
+    "<project_summary",
+    "<project_memory",
+)
+
+
+class HiddenMetadataStreamFilter:
+    """Keep trailing internal metadata tags out of the user-visible token stream."""
+
+    def __init__(self) -> None:
+        self._pending = ""
+        self._hidden = False
+
+    def feed(self, text: str) -> str:
+        if self._hidden or not text:
+            return ""
+
+        combined = self._pending + text
+        lowered = combined.lower()
+        tag_indexes = [
+            index for prefix in HIDDEN_STREAM_TAG_PREFIXES
+            if (index := lowered.find(prefix)) >= 0
+        ]
+        if tag_indexes:
+            self._hidden = True
+            self._pending = ""
+            return combined[:min(tag_indexes)]
+
+        retained_length = 0
+        for length in range(1, min(len(combined), max(map(len, HIDDEN_STREAM_TAG_PREFIXES))) + 1):
+            suffix = lowered[-length:]
+            if any(prefix.startswith(suffix) for prefix in HIDDEN_STREAM_TAG_PREFIXES):
+                retained_length = length
+
+        if retained_length:
+            visible = combined[:-retained_length]
+            self._pending = combined[-retained_length:]
+            return visible
+
+        self._pending = ""
+        return combined
+
+    def finish(self) -> str:
+        if self._hidden:
+            return ""
+        pending, self._pending = self._pending, ""
+        return pending
+
 
 def build_summary_instruction(
         prior_conv_summary: str, request_project_summary: bool, project_memory: dict | None = None,

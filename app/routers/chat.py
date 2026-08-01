@@ -695,6 +695,8 @@ async def query_stream(req: QueryRequest):
                     current_code_folder.set(request_folder_paths[0])
                     current_code_question.set(clean_question)
 
+                from services.conv_summary import HiddenMetadataStreamFilter
+                metadata_stream_filter = HiddenMetadataStreamFilter()
                 _tool_messages: list[dict] = []  # tool call/result 메시지 수집
                 _activity_log: list[dict] = []
                 async for ev in rag_query_stream(
@@ -710,10 +712,13 @@ async def query_stream(req: QueryRequest):
                 ):
                     if ev["type"] == "token":
                         emitted += ev["text"]
-                        yield _sse("token", {"text": ev["text"]})
+                        visible_text = metadata_stream_filter.feed(ev["text"])
+                        if visible_text:
+                            yield _sse("token", {"text": visible_text})
                     elif ev["type"] == "reset":
                         # relay된 서두를 프론트에서 지우도록 지시 (뒤늦은 tool 호출 케이스)
                         emitted = ""
+                        metadata_stream_filter = HiddenMetadataStreamFilter()
                         _tool_messages.clear()
                         _activity_log.clear()
                         yield _sse("reset", {})
@@ -755,6 +760,10 @@ async def query_stream(req: QueryRequest):
                         yield _sse("tool", {"phase": "end", "name": "search_related_context"})
                     elif ev["type"] == "final":
                         final_result = ev["result"]
+
+                trailing_visible_text = metadata_stream_filter.finish()
+                if trailing_visible_text:
+                    yield _sse("token", {"text": trailing_visible_text})
 
                 answer = final_result.get("answer", emitted).strip()
                 gen_sources = final_result.get("sources", []) or []
@@ -826,6 +835,8 @@ async def query_stream(req: QueryRequest):
             # ── 실제 토큰 스트리밍 (경로 A·B: 문서/URL context 기반, tool 미사용) ──
             yield _sse("meta", {"model": model, "sources": context_docs})
 
+            from services.conv_summary import HiddenMetadataStreamFilter
+            metadata_stream_filter = HiddenMetadataStreamFilter()
             parts: list[str] = []
             stats: dict | None = None
             selected_docs_system_prompt = system_prompt
@@ -845,12 +856,19 @@ async def query_stream(req: QueryRequest):
                     call_reason="chat:selected_docs",
             ):
                 if ev.get("type") == "token":
-                    parts.append(ev.get("text", ""))
-                    yield _sse("token", {"text": ev.get("text", "")})
+                    token_text = ev.get("text", "")
+                    parts.append(token_text)
+                    visible_text = metadata_stream_filter.feed(token_text)
+                    if visible_text:
+                        yield _sse("token", {"text": visible_text})
                 elif ev.get("type") == "tool":
                     yield _sse("tool", ev)
                 elif ev.get("type") == "stats":
                     stats = {k: v for k, v in ev.items() if k != "type"}
+
+            trailing_visible_text = metadata_stream_filter.finish()
+            if trailing_visible_text:
+                yield _sse("token", {"text": trailing_visible_text})
 
             answer = "".join(parts).strip()
             from services.conv_summary import extract_summary_tags, save_conv_summary
