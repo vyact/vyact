@@ -22,7 +22,7 @@ router = APIRouter(prefix="/api/skills", tags=["skills"])
 
 SKILLS_INDEX = "skills"
 
-MATCH_THRESHOLD = 0.75   # top1 최소 cosine similarity
+MATCH_THRESHOLD = 0.85   # top1 최소 cosine similarity
 MATCH_GAP = 0.02         # top1-top2 차이가 이 이하면 둘 다 반환
 
 
