@@ -15,7 +15,7 @@ from .config import (
 from .helpers import load_images_b64, history_for_ollama
 from .tools import build_approval_rejection_instruction, build_tool_directive
 from services.runtime_settings import get_runtime_settings
-from services.tool_approval import await_tool_approval
+from services.tool_approval import await_tool_approval, get_tool_rejection_response
 from .context_window import select_context_window
 
 
@@ -231,6 +231,7 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
     _last_successful_call: tuple[str, str] | None = None  # 직전 성공 호출과 결과
     _MAX_SAME_FAIL = 2   # 같은 호출이 2회 실패하면 중단
     _MAX_SAME_CALL = 3   # 같은 호출이 3회 이상이면 중단 (성공 포함)
+    rejection_answer: str | None = None
 
     runtime = get_runtime_settings()
     decision_options = {**options, "num_predict": runtime["llm_num_predict"]}
@@ -323,6 +324,7 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
                         "role": "system",
                         "content": build_approval_rejection_instruction(name).strip(),
                     })
+                    rejection_answer = await get_tool_rejection_response(name)
                     _should_break = True
                     break
                 await _emit({"phase": "start", "name": name, "args": args})
@@ -358,8 +360,15 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
 
             if _should_break:
                 # 조기 중단 — 현재 문맥으로 최종 응답 생성
-                logger.info("[tool_calls] 연속 실패로 조기 중단 — 현재 문맥으로 응답")
-                return _result(work, stats=_build_merged_stats(None))
+                logger.info(
+                    "[tool_calls] %s — 현재 문맥으로 응답",
+                    "사용자 승인 거부로 종료" if rejection_answer else "반복/연속 실패로 조기 중단",
+                )
+                return _result(
+                    work,
+                    direct_answer=rejection_answer,
+                    stats=_build_merged_stats(None),
+                )
 
             if hit_single_shot:
                 logger.info("[tool_calls] single_shot tool 호출 완료 — 재판정 없이 종료")

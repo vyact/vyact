@@ -47,9 +47,31 @@ current_approval_context: ContextVar[ApprovalContext] = ContextVar(
 )
 _pending_approvals: dict[str, PendingApproval] = {}
 
+_REJECTION_RESPONSES = {
+    "ko": "`{tool}` 실행 승인이 거부되어 요청한 작업을 수행하지 않았습니다.",
+    "en": "Execution of `{tool}` was rejected, so the requested action was not performed.",
+    "ja": "`{tool}` の実行承認が拒否されたため、要求された操作は実行されませんでした。",
+    "zh": "`{tool}` 的执行审批已被拒绝，因此未执行请求的操作。",
+    "es": "Se rechazó la ejecución de `{tool}`, por lo que no se realizó la acción solicitada.",
+    "fr": "L’exécution de `{tool}` a été refusée ; l’action demandée n’a donc pas été effectuée.",
+    "vi": "Việc thực thi `{tool}` đã bị từ chối nên thao tác được yêu cầu không được thực hiện.",
+    "th": "การอนุมัติให้เรียกใช้ `{tool}` ถูกปฏิเสธ จึงไม่ได้ดำเนินการตามที่ร้องขอ",
+}
+
 
 def _base_tool_name(tool_name: str) -> str:
     return tool_name.split("__", 1)[-1]
+
+
+async def get_tool_rejection_response(tool_name: str) -> str:
+    """Return a deterministic, localized final response for a rejected tool call."""
+    try:
+        from routers.deps import load_ui_language_async
+        language = (await load_ui_language_async() or "ko").split("-", 1)[0].lower()
+    except Exception:
+        language = "ko"
+    template = _REJECTION_RESPONSES.get(language, _REJECTION_RESPONSES["en"])
+    return template.format(tool=_base_tool_name(tool_name))
 
 
 def get_tool_risk(tool_name: str) -> str:

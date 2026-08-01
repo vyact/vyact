@@ -46,7 +46,7 @@ export async function streamSSE(
     let buffer = '';
 
     // SSE 프레임은 빈 줄(\n\n)로 구분된다. 프레임 하나를 event/data로 파싱.
-    const dispatchFrame = (frame: string) => {
+    const dispatchFrame = (frame: string): string => {
         let event = 'message';
         const dataLines: string[] = [];
         for (const line of frame.split('\n')) {
@@ -56,12 +56,12 @@ export async function streamSSE(
                 dataLines.push(line.slice(5).trim());
             }
         }
-        if (!dataLines.length) return;
+        if (!dataLines.length) return event;
         let payload: any;
         try {
             payload = JSON.parse(dataLines.join('\n'));
         } catch {
-            return;
+            return event;
         }
         switch (event) {
             case 'meta':  handlers.onMeta?.(payload); break;
@@ -72,7 +72,12 @@ export async function streamSSE(
             case 'done':  handlers.onDone?.(payload); break;
             case 'error': handlers.onError?.(payload.message || '스트리밍 오류'); break;
         }
+        return event;
     };
+
+    const waitForPaint = () => new Promise<void>(resolve => {
+        requestAnimationFrame(() => resolve());
+    });
 
     while (true) {
         const { done, value } = await reader.read();
@@ -84,7 +89,13 @@ export async function streamSSE(
         while ((sepIdx = buffer.indexOf('\n\n')) !== -1) {
             const frame = buffer.slice(0, sepIdx);
             buffer = buffer.slice(sepIdx + 2);
-            if (frame.trim()) dispatchFrame(frame);
+            if (frame.trim()) {
+                const event = dispatchFrame(frame);
+                // 한 네트워크 청크에 여러 token 프레임이 함께 도착하면 React가 상태
+                // 업데이트를 한 번에 배치한다. 다음 token도 이미 버퍼에 있을 때만 한
+                // 프레임 양보하여 실제 스트리밍이 화면에 점진적으로 보이게 한다.
+                if (event === 'token' && buffer.includes('\n\n')) await waitForPaint();
+            }
         }
     }
     // 마지막 잔여 프레임 처리
