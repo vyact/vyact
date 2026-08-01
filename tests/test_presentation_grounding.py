@@ -5,6 +5,7 @@ from services.presentation_grounding import (
     apply_page_repairs,
     audit_presentation,
     parse_json_object,
+    sanitize_presentation_content,
     validate_evidence_ledger,
 )
 
@@ -43,6 +44,37 @@ class PresentationGroundingTests(unittest.TestCase):
             parse_json_object('Here is the requested JSON:\n{"facts": []}\nDone.'),
             {"facts": []},
         )
+
+    def test_visible_latex_and_fact_markers_are_sanitized(self):
+        deck = {
+            "presentation_title": "Roadmap $\\to$ Action",
+            "pages": [{
+                "title": "KRW 15B $\\to$ KRW 20B [F8, F30]",
+                "stats": [{"value": "15 -> 10", "label": "Threshold"}],
+                "speaker_notes": "Keep $\\to$ in the source quotation.",
+            }],
+        }
+        prepared = sanitize_presentation_content(deck)
+        self.assertEqual(prepared["presentation_title"], "Roadmap → Action")
+        self.assertEqual(prepared["pages"][0]["title"], "KRW 15B → KRW 20B")
+        self.assertEqual(prepared["pages"][0]["stats"][0]["value"], "15 → 10")
+        self.assertIn("$\\to$", prepared["pages"][0]["speaker_notes"])
+
+    def test_complex_latex_is_converted_without_raw_tokens(self):
+        deck = {
+            "pages": [{
+                "title": r"$\frac{\alpha + x^{2}}{\sqrt[3]{y_1}} \approx 10$",
+                "content": r"\textbf{Result}: \begin{matrix}a & b \\ c & d\end{matrix}",
+            }],
+        }
+        prepared = sanitize_presentation_content(deck)
+        visible = prepared["pages"][0]["title"] + prepared["pages"][0]["content"]
+        self.assertIn("α", visible)
+        self.assertIn("3√", visible)
+        self.assertIn("≈", visible)
+        self.assertNotIn("\\", visible)
+        self.assertNotIn("$", visible)
+        self.assertNotIn("{", visible)
 
     def test_only_verbatim_evidence_is_verified(self):
         self.assertEqual([fact["id"] for fact in self.ledger["facts"]], ["F1", "F2"])

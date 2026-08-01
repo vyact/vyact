@@ -21,6 +21,58 @@ FACT_TOKEN_PATTERN = re.compile(
     r"KRW|USD|EUR|JPY|million|billion|trillion|percent|points?))?",
     re.IGNORECASE,
 )
+VISIBLE_TEXT_FIELDS = {
+    "presentation_title", "title", "subtitle", "content", "quote",
+    "bullets", "stats", "label", "value", "desc", "image_caption",
+}
+FACT_ID_MARKER_PATTERN = re.compile(r"\s*\[(?:F\d+)(?:\s*,\s*F\d+)*\]\s*", re.IGNORECASE)
+LATEX_SYMBOLS = {
+    r"\rightarrow": "→",
+    r"\to": "→",
+    r"\leq": "≤",
+    r"\le": "≤",
+    r"\geq": "≥",
+    r"\ge": "≥",
+    r"\pm": "±",
+    r"\times": "×",
+    r"\div": "÷",
+    r"\neq": "≠",
+    r"\approx": "≈",
+    r"\infty": "∞",
+    r"\sum": "Σ",
+    r"\prod": "Π",
+    r"\int": "∫",
+    r"\in": "∈",
+    r"\notin": "∉",
+    r"\subset": "⊂",
+    r"\supset": "⊃",
+    r"\cup": "∪",
+    r"\cap": "∩",
+}
+LATEX_NAMED_SYMBOLS = {token[1:]: symbol for token, symbol in LATEX_SYMBOLS.items()}
+LATEX_NAMED_SYMBOLS.update({
+    "alpha": "α", "beta": "β", "gamma": "γ", "delta": "δ", "epsilon": "ε",
+    "zeta": "ζ", "eta": "η", "theta": "θ", "iota": "ι", "kappa": "κ",
+    "lambda": "λ", "mu": "μ", "nu": "ν", "xi": "ξ", "pi": "π", "rho": "ρ",
+    "sigma": "σ", "tau": "τ", "upsilon": "υ", "phi": "φ", "chi": "χ",
+    "psi": "ψ", "omega": "ω", "Gamma": "Γ", "Delta": "Δ", "Theta": "Θ",
+    "Lambda": "Λ", "Xi": "Ξ", "Pi": "Π", "Sigma": "Σ", "Phi": "Φ",
+    "Psi": "Ψ", "Omega": "Ω", "cdot": "·", "ldots": "…", "degree": "°",
+})
+LATEX_TEXT_COMMANDS = {
+    "text", "textrm", "textsf", "texttt", "textbf", "textit", "mathrm", "mathbf",
+    "mathsf", "mathtt", "mathit", "operatorname", "overline", "underline", "boxed",
+}
+LATEX_IGNORED_COMMANDS = {
+    "left", "right", "big", "Big", "bigg", "Bigg", "displaystyle", "scriptstyle",
+    "quad", "qquad", "hspace", "vspace", "phantom",
+}
+LATEX_OPERATOR_NAMES = {
+    "sin", "cos", "tan", "log", "ln", "exp", "lim", "min", "max", "argmin", "argmax",
+}
+LATEX_RESIDUAL_PATTERN = re.compile(
+    r"(?:\$|\\(?:begin|end)\s*\{|\\[A-Za-z]+|\\[()[\]])"
+)
 
 
 def _normalized_text(value: Any) -> str:
@@ -93,6 +145,141 @@ def validate_evidence_ledger(raw_ledger: dict, context_docs: list[dict]) -> dict
 def fact_ledger_prompt_payload(ledger: dict) -> str:
     """Compact, deterministic serialization for a downstream model prompt."""
     return json.dumps(ledger, ensure_ascii=False, separators=(",", ":"))
+
+
+def _consume_latex_group(text: str, start: int) -> tuple[str, int]:
+    if start >= len(text) or text[start] != "{":
+        return "", start
+    depth = 1
+    position = start + 1
+    while position < len(text) and depth:
+        if text[position] == "{":
+            depth += 1
+        elif text[position] == "}":
+            depth -= 1
+        position += 1
+    return text[start + 1:position - 1] if depth == 0 else text[start + 1:], position
+
+
+def _latex_to_plain_text(value: str) -> str:
+    """Convert arbitrary LaTeX-ish model output to safe, readable plain text."""
+    result: list[str] = []
+    position = 0
+    while position < len(value):
+        character = value[position]
+        if character == "$":
+            position += 1
+            continue
+        if character in "^_":
+            marker = character
+            position += 1
+            if position < len(value) and value[position] == "{":
+                group, position = _consume_latex_group(value, position)
+                result.append(f"{marker}({_latex_to_plain_text(group)})")
+            elif position < len(value):
+                result.append(f"{marker}({value[position]})")
+                position += 1
+            continue
+        if character == "{":
+            group, position = _consume_latex_group(value, position)
+            result.append(_latex_to_plain_text(group))
+            continue
+        if character == "}":
+            position += 1
+            continue
+        if character != "\\":
+            result.append("; " if character == "&" else character)
+            position += 1
+            continue
+
+        position += 1
+        if position >= len(value):
+            break
+        if value[position] in "()[]$":
+            position += 1
+            continue
+        if value[position] == "\\":
+            result.append("; ")
+            position += 1
+            continue
+        command_start = position
+        while position < len(value) and value[position].isalpha():
+            position += 1
+        command = value[command_start:position]
+        if not command:
+            result.append(value[position])
+            position += 1
+            continue
+        if command in {"begin", "end"} and position < len(value) and value[position] == "{":
+            _, position = _consume_latex_group(value, position)
+            continue
+        if command == "frac" and position < len(value) and value[position] == "{":
+            numerator, position = _consume_latex_group(value, position)
+            if position < len(value) and value[position] == "{":
+                denominator, position = _consume_latex_group(value, position)
+                result.append(f"({_latex_to_plain_text(numerator)})/({_latex_to_plain_text(denominator)})")
+            else:
+                result.append(_latex_to_plain_text(numerator))
+            continue
+        if command == "sqrt":
+            if position < len(value) and value[position] == "[":
+                closing = value.find("]", position + 1)
+                degree = value[position + 1:closing] if closing >= 0 else ""
+                position = closing + 1 if closing >= 0 else position
+            else:
+                degree = ""
+            if position < len(value) and value[position] == "{":
+                radicand, position = _consume_latex_group(value, position)
+                root = "√" if not degree or degree == "2" else f"{degree}√"
+                result.append(f"{root}({_latex_to_plain_text(radicand)})")
+            continue
+        if command in LATEX_TEXT_COMMANDS and position < len(value) and value[position] == "{":
+            group, position = _consume_latex_group(value, position)
+            result.append(_latex_to_plain_text(group))
+            continue
+        if command in LATEX_IGNORED_COMMANDS:
+            if position < len(value) and value[position] == "{":
+                _, position = _consume_latex_group(value, position)
+            continue
+        if command in LATEX_OPERATOR_NAMES:
+            result.append(command)
+            continue
+        if command in LATEX_NAMED_SYMBOLS:
+            result.append(LATEX_NAMED_SYMBOLS[command])
+            continue
+        if position < len(value) and value[position] == "{":
+            group, position = _consume_latex_group(value, position)
+            result.append(_latex_to_plain_text(group))
+    return "".join(result)
+
+
+def _sanitize_visible_text(value: str) -> str:
+    text = FACT_ID_MARKER_PATTERN.sub(" ", value)
+    text = _latex_to_plain_text(text)
+    text = re.sub(r"\s*(?:-{1,2}>|⇒)\s*", " → ", text)
+    text = re.sub(r"[ \t]{2,}", " ", text).strip()
+    if LATEX_RESIDUAL_PATTERN.search(text):
+        raise ValueError(f"Unsupported LaTeX remained in visible presentation text: {text}")
+    return text
+
+
+def sanitize_presentation_content(page_data: dict) -> dict:
+    """Remove model-only markers and normalize common visible math notation."""
+    prepared = copy.deepcopy(page_data)
+
+    def sanitize(value: Any, visible: bool = False) -> Any:
+        if isinstance(value, str):
+            return _sanitize_visible_text(value) if visible else value
+        if isinstance(value, list):
+            return [sanitize(item, visible) for item in value]
+        if isinstance(value, dict):
+            return {
+                key: sanitize(item, visible or key in VISIBLE_TEXT_FIELDS)
+                for key, item in value.items()
+            }
+        return value
+
+    return sanitize(prepared)
 
 
 def _page_text(page: dict) -> str:

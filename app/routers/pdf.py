@@ -29,6 +29,7 @@ from services.presentation_grounding import (
     audit_presentation,
     fact_ledger_prompt_payload,
     parse_json_object,
+    sanitize_presentation_content,
     validate_evidence_ledger,
 )
 from logger import get_logger
@@ -404,7 +405,38 @@ Repair rules:
     repaired = apply_page_repairs(page_data, repair_data)
     remaining_findings = audit_presentation(repaired, ledger, language)
     if remaining_findings:
-        logger.warning("[pdf] presentation QA completed with %d remaining findings: %s", len(remaining_findings), remaining_findings)
+        logger.warning("[pdf] 1차 감사 후 %d개 오류가 남아 2차 감사를 실행합니다: %s", len(remaining_findings), remaining_findings)
+        retry_payload = {
+            "requested_language": language,
+            "remaining_errors_that_must_be_fixed": remaining_findings,
+            "verified_fact_ledger": ledger,
+            "pages_to_repair": repaired,
+        }
+        temperature_token = set_request_temperature_override(0.0)
+        try:
+            retry_raw, _ = await collect_llm_stream(
+                question=json.dumps(retry_payload, ensure_ascii=False),
+                context_docs=[],
+                system_prompt=(
+                    "Return only {\"repaired_pages\":[{\"index\":0,\"page\":{...}}]}. "
+                    "Every listed remaining error must be fixed. Use only ledger facts and copy every "
+                    "number, date, and unit exactly from evidence. Remove unsupported claims rather than inferring."
+                ),
+                attachments=[],
+                timeout=300.0,
+                format_instruction_override="",
+                reasoning=reasoning,
+                call_reason="presentation_fact_audit_retry",
+            )
+        finally:
+            reset_request_temperature_override(temperature_token)
+        retry_data = await _parse_or_repair_llm_json(
+            retry_raw, reasoning, "presentation_fact_audit_retry_json_repair"
+        )
+        repaired = apply_page_repairs(repaired, retry_data)
+        remaining_findings = audit_presentation(repaired, ledger, language)
+        if remaining_findings:
+            raise ValueError(f"Presentation evidence audit failed: {remaining_findings}")
     return repaired
 
 
@@ -1208,6 +1240,7 @@ async def generate_pdf(req: PdfGenerateRequest):
                     prompt=req.prompt,
                     reasoning=req.reasoning,
                 )
+                page_data = sanitize_presentation_content(page_data)
                 page_data = add_source_notes(page_data, fact_ledger, req.language)
             except Exception as llm_err:
                 logger.error("[pdf] step3 LLM/JSON 파싱 실패: %s", llm_err, exc_info=True)
