@@ -217,10 +217,43 @@ export function useConversation() {
     };
 
     const deleteAllConversations = async (setResetTrigger: (fn: (n: number) => number) => void) => {
+        const currentConversation = conversations.find(conversation => conversation.conv_id === currentConvIdRef.current);
+        const shouldPreserveCurrentConversation = Boolean(
+            currentConversation?.project_id || (!currentConversation && activeProjectId),
+        );
+        const projectConversationIds = new Set(
+            conversations
+                .filter(conversation => conversation.project_id)
+                .map(conversation => conversation.conv_id),
+        );
         await api.deleteAllConversations();
-        optimisticConversationIdsRef.current.clear();
+        optimisticConversationIdsRef.current.forEach(conversationId => {
+            if (!projectConversationIds.has(conversationId)) {
+                optimisticConversationIdsRef.current.delete(conversationId);
+            }
+        });
         await loadHistory();
-        newConversation(setResetTrigger);
+        if (!shouldPreserveCurrentConversation) newConversation(setResetTrigger);
+    };
+
+    const deleteProjectConversations = async (
+        projectId: string,
+        setResetTrigger: (fn: (n: number) => number) => void,
+    ) => {
+        const deletedConversations = conversations.filter(conversation => conversation.project_id === projectId);
+        const deletedConversationIds = new Set(deletedConversations.map(conversation => conversation.conv_id));
+        const deletesCurrentConversation = deletedConversationIds.has(currentConvIdRef.current);
+
+        await api.deleteProjectHistory(projectId);
+        deletedConversationIds.forEach(conversationId => {
+            optimisticConversationIdsRef.current.delete(conversationId);
+            messagesByConversationRef.current.delete(conversationId);
+        });
+        setConversations(previous => previous.filter(conversation => conversation.project_id !== projectId));
+        setHistoryTotal(previous => Math.max(0, previous - deletedConversations.length));
+        await loadHistory();
+
+        if (deletesCurrentConversation) newConversation(setResetTrigger);
     };
 
     return {
@@ -230,6 +263,6 @@ export function useConversation() {
         setConvId, addLocalConversation, setMessagesWithRef, setMessagesForConversation, getMessagesForConversation, mapMsg,
         loadHistory, loadMoreHistory, historyTotal,
         newConversation, clearConversation, loadConversation,
-        deleteConversation, deleteAllConversations,
+        deleteConversation, deleteAllConversations, deleteProjectConversations,
     };
 }

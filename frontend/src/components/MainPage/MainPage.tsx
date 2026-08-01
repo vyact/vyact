@@ -473,6 +473,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                             )}
                             onConversationDelete={convId => conv.deleteConversation(convId, conv.currentConvId, setResetTrigger)}
                             onDeleteAllConversations={() => conv.deleteAllConversations(setResetTrigger)}
+                            onDeleteProjectConversations={projectId => conv.deleteProjectConversations(projectId, setResetTrigger)}
                             onConversationRename={conv.loadHistory}
                             onNewConversation={() => {
                                 startNewConversation();

@@ -34,6 +34,7 @@ interface SidebarProps {
     onShowSummary?: (convId: string) => void;
     onNewConversation: () => void;
     onDeleteAllConversations: () => void;
+    onDeleteProjectConversations: (projectId: string) => Promise<void> | void;
     collapsed?: boolean;
     hoverOpen?: boolean;
     onHoverEnter?: () => void;
@@ -226,7 +227,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                                              onBeforeModelContextChange,
                                              conversations, activeConvId, activeConversationIds = [], onConversationSelect, onConversationDelete,
                                              historyTotal = 0, onLoadMoreHistory,
-                                             onDeleteAllConversations, onConversationRename, onNewConversation,
+                                             onDeleteAllConversations, onDeleteProjectConversations,
+                                             onConversationRename, onNewConversation,
                                              onShowSummary = () => {},
                                              collapsed: collapsedProp,
                                              hoverOpen: hoverOpenProp,
@@ -269,15 +271,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     const deleteProject = async (project: Project) => { if (!confirm(t('sidebar.deleteProjectConfirm', {name: project.name}))) return; await api.deleteProject(project.id); setProjects(prev => prev.filter(item => item.id !== project.id)); setExpandedProjectIds(previous => { const next = new Set(previous); next.delete(project.id); storeExpandedProjectIds(next); return next; }); setExpandedProjectHistoryIds(previous => { const next = new Set(previous); next.delete(project.id); return next; }); if (activeProjectId === project.id) onProjectChange?.(null); };
     const deleteProjectHistory = async (project: Project) => {
         if (!confirm(t('sidebar.deleteProjectHistoryConfirm', {name: project.name}))) return;
-        const deletesActiveConversation = conversations.some(conversation =>
-            conversation.conv_id === activeConvId && conversation.project_id === project.id,
-        );
-        await api.deleteProjectHistory(project.id);
-        await onConversationRename();
-        if (deletesActiveConversation) {
-            onProjectChange?.(project.id);
-            onNewConversation();
-        }
+        await onDeleteProjectConversations(project.id);
     };
     const collapsed = collapsedProp !== undefined ? collapsedProp : collapsedInternal;
 
