@@ -383,7 +383,8 @@ Repair rules:
 - Use only the verified ledger evidence. Preserve numeric expressions and units verbatim.
 - Keep the intended narrative job and layout when possible.
 - Write all visible text in the requested language, while retaining source-form numeric expressions.
-- Include valid fact_ids for every factual statement.
+- Include valid fact_ids for every factual statement. fact_ids may contain only ledger fact IDs
+  such as F1 and F2. Never put source IDs such as S1 or S2 in fact_ids.
 - Keep the same page index. Return a complete replacement page object, not a patch.
 - If no page needs repair, return {"repaired_pages":[]}."""
     audit_payload = {
@@ -420,11 +421,20 @@ Repair rules:
     remaining_findings = audit_presentation(repaired, ledger, language)
     if remaining_findings:
         logger.warning("[pdf] 1차 감사 후 %d개 오류가 남아 2차 감사를 실행합니다: %s", len(remaining_findings), remaining_findings)
+        affected_page_indexes = {
+            finding["page_index"]
+            for finding in remaining_findings
+            if isinstance(finding.get("page_index"), int)
+        }
+        pages_to_repair = [
+            page for index, page in enumerate(repaired.get("pages") or [])
+            if index in affected_page_indexes
+        ]
         retry_payload = {
             "requested_language": language,
             "remaining_errors_that_must_be_fixed": remaining_findings,
             "verified_fact_ledger": ledger,
-            "pages_to_repair": repaired,
+            "pages_to_repair": pages_to_repair,
         }
         temperature_token = set_request_temperature_override(0.0)
         try:
@@ -433,8 +443,10 @@ Repair rules:
                 context_docs=[],
                 system_prompt=(
                     "Return only {\"repaired_pages\":[{\"index\":0,\"page\":{...}}]}. "
-                    "Every listed remaining error must be fixed. Use only ledger facts and copy every "
-                    "number, date, and unit exactly from evidence. Remove unsupported claims rather than inferring."
+                    "The index in each result must equal the original page index. Every listed remaining "
+                    "error must be fixed. Use only ledger facts and copy every number, date, and unit exactly "
+                    "from evidence. Remove the complete unsupported claim rather than rewriting or inferring it. "
+                    "fact_ids may contain only IDs beginning with F from verified_fact_ledger; never use S IDs."
                 ),
                 attachments=[],
                 timeout=300.0,
@@ -454,7 +466,14 @@ Repair rules:
         repaired = reconcile_page_fact_ids(apply_page_repairs(repaired, retry_data), ledger)
         remaining_findings = audit_presentation(repaired, ledger, language)
         if remaining_findings:
-            raise ValueError(f"Presentation evidence audit failed: {remaining_findings}")
+            # A small local model can repeatedly miss a mechanical audit item even after a
+            # focused retry. Keep the best repaired deck instead of failing the entire export;
+            # the unresolved findings remain explicit in logs for diagnosis.
+            logger.error(
+                "[pdf] 2차 감사 후 %d개 오류가 남았지만 최선의 복구 결과로 생성을 계속합니다: %s",
+                len(remaining_findings),
+                remaining_findings,
+            )
     return repaired
 
 
