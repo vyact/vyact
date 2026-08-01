@@ -271,7 +271,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
             onOpenQuickMemo?.();
             return;
         }
-        if (cmd === '/pdf') {
+        if (cmd === '/presentation' || cmd === '/pdf') {
             onOpenPdfModal?.();
             return;
         }

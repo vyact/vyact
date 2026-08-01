@@ -16,6 +16,11 @@ from pydantic import BaseModel
 
 from agent import query_llm, collect_llm_stream, save_conversation, get_model_name
 from routers.deps import INSTALL_DIR, sse, load_config_async
+from services.db import DOCUMENT_ORIGINALS_INDEX, DOC_CHUNKS_INDEX, get_es
+from services.runtime_settings import (
+    reset_request_temperature_override,
+    set_request_temperature_override,
+)
 from logger import get_logger
 
 logger = get_logger(__name__)
@@ -29,6 +34,9 @@ from config import INSTALL_DIR as _INSTALL_DIR
 
 IMAGES_DIR = _INSTALL_DIR / "uploads" / "images"
 IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+
+PRESENTATION_CONTEXT_CHAR_LIMIT = 120_000
+PRESENTATION_TEMPERATURE = 0.55
 
 # ── 팔레트 ─────────────────────────────────────────────────────────────────────
 STYLE_PALETTES = {
@@ -98,7 +106,17 @@ class PdfGenerateRequest(BaseModel):
 # ── LLM 슬라이드 구조 생성 ──────────────────────────────────────────────────────
 def _build_system_prompt(lang: str, page_count: int, page_count_auto: bool,
                          has_articles: bool, has_images: bool) -> str:
-    lang_str = "Korean" if lang == "ko" else "English"
+    language_names = {
+        "ko": "Korean",
+        "en": "English",
+        "es": "Spanish",
+        "fr": "French",
+        "zh": "Simplified Chinese",
+        "ja": "Japanese",
+        "th": "Thai",
+        "vi": "Vietnamese",
+    }
+    lang_str = language_names.get(lang, "English")
 
     if page_count_auto:
         slide_rule = "Determine the optimal number of pages based on content complexity. Minimum 6, maximum 15. ALWAYS make the first page 'cover' layout and the LAST page 'closing' layout — no exceptions."
@@ -122,10 +140,15 @@ def _build_system_prompt(lang: str, page_count: int, page_count_auto: bool,
   ✓ Correct: "매출은 전년 대비 23% 증가했습니다.", "핵심 성장 동력은 AI 반도체입니다."
 - Bullets: concise noun-phrase or short sentence (under 20 words). Include specific numbers/names.
 - Use professional Korean business writing. No informal endings."""
-    else:
+    elif lang == "en":
         tone_rule = """
 - Use clear, professional English. Complete sentences for content. Concise noun phrases for bullets.
 - Include specific numbers, names, and data points."""
+    else:
+        tone_rule = f"""
+- Write every visible text field exclusively in natural, professional {lang_str}.
+- Use complete sentences for content and concise, readable phrases for bullets.
+- Include specific numbers, names, and data points without mixing in English except proper nouns or standard abbreviations."""
 
     return f"""You are an expert presentation designer and analyst. Create a highly professional, content-rich PDF document.
 
@@ -138,7 +161,7 @@ JSON structure:
   "pages": [
     {{
       "index": 0,
-      "layout": "cover|content|two_column|stats|quote|closing",
+      "layout": "cover|content|two_column|stats|quote|timeline|spotlight|card_grid|image_focus|closing",
       "title": "page title (concise, under 40 chars)",
       "subtitle": "supporting subtitle or null",
       "content": "2-4 sentence intro paragraph — always fill this for content layout",
@@ -159,10 +182,14 @@ LAYOUT RULES (strictly follow):
 - closing → LAST PAGE ONLY. layout MUST be "closing". title = conclusion heading. subtitle = one-line theme. content = 2-3 sentence concluding paragraph. bullets = null (NEVER add bullets). stats = null. This page uses a special full-page design — do NOT use content/stats layout for the last page.
 - stats   → stats MUST have 3-4 items with real numbers. content = brief intro. bullets = null.
 - quote   → quote MUST NOT be null. content = analysis/context paragraph. bullets = null.
+- timeline → use 3-6 bullets as a chronological sequence, each beginning with a date, phase, or clear order marker. content = a short framing paragraph.
+- spotlight → use one decisive insight or conclusion in content, with 2-4 supporting bullets. Assign an image when one strengthens the message.
+- card_grid → use 4-6 independent bullets that can be read as distinct themes, actions, risks, or opportunities. content = a concise setup paragraph.
+- image_focus → use only when an attached image can carry the page visually. Assign image_position "full" and write a short, impactful content paragraph plus up to 3 bullets.
 - content → ALWAYS fill BOTH content (intro paragraph, 2-3 sentences) AND bullets (4-6 items, each under 20 words with specific data). NEVER leave both null.
 - two_column → same as content but image is shown alongside text.
-- Vary layouts naturally: do NOT repeat the same layout more than 2 times in a row.
-- Aim for: 1 cover + 1-2 stats + 1 quote + 2-4 content/two_column + 1 closing.
+- Vary layouts naturally: do NOT repeat the same layout more than 2 times in a row. Do not default to content layout; make the visual rhythm feel intentionally designed.
+- Aim for: 1 cover + 1-2 stats + 1 quote/timeline + 1 spotlight/card_grid + 1-3 content/two_column/image_focus + 1 closing.
 
 CONTENT QUALITY:
 - Every bullet must contain specific data: numbers, percentages, company names, dates, or named concepts.
@@ -183,16 +210,19 @@ async def _call_llm_for_pages(
 ) -> dict:
     system = _build_system_prompt(language, page_count, page_count_auto, bool(articles), bool(images))
 
-    # file:// 문서는 ES doc_chunks에서 실제 내용 조회
+    # file:// 문서는 청크를 재조합하지 않고, 인덱싱 시 보관한 원문 전체를 조회한다.
+    # 원문이 없는 이전 데이터만 호환성 차원에서 청크 재조합으로 보완한다.
     enriched_articles = []
     for a in articles:
         url = a.get("url", "")
         if url.startswith("file://") and not "::" in url:
             file_id = url.replace("file://", "")
             try:
-                from services.db import get_es, DOC_CHUNKS_INDEX
                 es = get_es()
                 try:
+                    original = await es.get(index=DOCUMENT_ORIGINALS_INDEX, id=file_id)
+                    full_content = original.get("_source", {}).get("content", "")
+                except Exception:
                     res = await es.search(
                         index=DOC_CHUNKS_INDEX,
                         body={"query": {"term": {"file_id": file_id}}, "sort": [{"chunk_index": "asc"}], "size": 50},
@@ -201,6 +231,8 @@ async def _call_llm_for_pages(
                     chunks = [h["_source"].get("content", "") for h in res["hits"]["hits"]]
                     full_content = "\n\n".join(chunks) if chunks else a.get("content", "")
                     enriched_articles.append({**a, "content": full_content})
+                else:
+                    enriched_articles.append({**a, "content": full_content or a.get("content", "")})
                 finally:
                     await es.close()
             except Exception:
@@ -208,8 +240,9 @@ async def _call_llm_for_pages(
         else:
             enriched_articles.append(a)
 
+    content_char_limit = PRESENTATION_CONTEXT_CHAR_LIMIT // max(len(enriched_articles), 1)
     context_docs = [
-        {"title": a.get("title", ""), "content": a.get("content", ""),
+        {"title": a.get("title", ""), "content": a.get("content", "")[:content_char_limit],
          "source": a.get("source", ""), "url": a.get("url", ""), "score": 1.0}
         for a in enriched_articles
     ]
@@ -229,6 +262,7 @@ async def _call_llm_for_pages(
         tmp_path.write_bytes(base64.b64decode(img.data))
         attachments.append({"type": "image", "filename": tmp_fn, "_tmp": True})
 
+    temperature_token = set_request_temperature_override(PRESENTATION_TEMPERATURE)
     try:
         raw, _ = await collect_llm_stream(
             question=f"{prompt}{img_desc}",
@@ -238,9 +272,10 @@ async def _call_llm_for_pages(
             timeout=300.0,
             format_instruction_override="",
             reasoning=reasoning,  # 프론트 추론 스위치 값 반영
-            call_reason="pdf_generation",
+            call_reason="presentation_generation",
         )
     finally:
+        reset_request_temperature_override(temperature_token)
         for att in attachments:
             if att.get("_tmp"):
                 try:
@@ -393,6 +428,63 @@ def _render_page_html(page: dict, img_map: dict, palette: dict, total: int) -> s
   </div>
 </div>"""
 
+    def _bullet_cards(card_class: str = "") -> str:
+        return "".join(
+            f'''<div class="{card_class} bullet-card">
+  <span class="bullet-card-index" style="color:{accent};">{index + 1:02d}</span>
+  <p>{bullet}</p>
+</div>'''
+            for index, bullet in enumerate(bullets)
+        )
+
+    # ── TIMELINE ──
+    if layout == "timeline" and bullets:
+        steps = "".join(
+            f'''<div class="timeline-step">
+  <div class="timeline-dot" style="background:{accent};"></div>
+  <div class="timeline-content">
+    <span class="timeline-number" style="color:{accent};">{index + 1:02d}</span>
+    <p>{bullet}</p>
+  </div>
+</div>'''
+            for index, bullet in enumerate(bullets)
+        )
+        return f"""
+<div class="slide doc-slide timeline-slide">
+  {_doc_header(page_num, total, title, accent, accent2)}
+  <div class="doc-body">
+    {"<p class='doc-intro timeline-intro'>" + content + "</p>" if content else ""}
+    <div class="timeline-list">{steps}</div>
+  </div>
+</div>"""
+
+    # ── SPOTLIGHT ──
+    if layout == "spotlight":
+        image_html = f'<img src="{img_uri}" class="spotlight-image" alt="{caption}"/>' if has_img else ""
+        return f"""
+<div class="slide doc-slide spotlight-slide">
+  {_doc_header(page_num, total, title, accent, accent2)}
+  <div class="doc-body spotlight-body">
+    <div class="spotlight-main" style="border-color:{accent};">
+      <span class="spotlight-label" style="color:{accent};">✦</span>
+      <p>{content or subtitle}</p>
+    </div>
+    {image_html}
+    {"<div class='spotlight-support'>" + _bullet_cards() + "</div>" if bullets else ""}
+  </div>
+</div>"""
+
+    # ── CARD GRID ──
+    if layout == "card_grid" and bullets:
+        return f"""
+<div class="slide doc-slide card-grid-slide">
+  {_doc_header(page_num, total, title, accent, accent2)}
+  <div class="doc-body">
+    {"<p class='doc-intro'>" + content + "</p>" if content else ""}
+    <div class="insight-grid">{_bullet_cards()}</div>
+  </div>
+</div>"""
+
     # ── CONTENT / TWO_COLUMN / IMAGE_FOCUS ──
     # accent 밝기에 따라 번호 텍스트 색상 결정 (앰버 계열은 다크 텍스트)
     _accent_hex = accent.lstrip('#')
@@ -454,6 +546,27 @@ def _doc_header(page_num: int, total: int, title: str, accent: str, accent2: str
 </div>'''
 
 
+def _ensure_visual_rhythm(pages: list[dict]) -> None:
+    """LLM 출력이 단조로운 경우, 불릿 기반 페이지에 안전한 정보 레이아웃을 부여한다."""
+    if len(pages) < 5:
+        return
+
+    existing_layouts = {page.get("layout") for page in pages}
+    candidates = [
+        page for page in pages[1:-1]
+        if page.get("bullets") and page.get("layout") in {"content", "two_column"}
+    ]
+    if not candidates:
+        return
+
+    if "timeline" not in existing_layouts:
+        candidates[len(candidates) // 2]["layout"] = "timeline"
+
+    remaining = [page for page in candidates if page.get("layout") in {"content", "two_column"}]
+    if "card_grid" not in existing_layouts and remaining:
+        remaining[-1]["layout"] = "card_grid"
+
+
 def _build_html(page_data: dict, images: list[ImageMeta], style: str) -> str:
     palette   = STYLE_PALETTES.get(style, STYLE_PALETTES["white"])
     img_map   = {img.index: img for img in images}
@@ -465,6 +578,7 @@ def _build_html(page_data: dict, images: list[ImageMeta], style: str) -> str:
     if pages:
         pages[0]["layout"] = "cover"
         pages[-1]["layout"] = "closing"
+        _ensure_visual_rhythm(pages)
 
     slides_html = "\n".join(_render_page_html(p, img_map, palette, total) for p in pages)
 
@@ -683,6 +797,30 @@ def _build_html(page_data: dict, images: list[ImageMeta], style: str) -> str:
   .quote-source {{
     font-size: 0.8rem; color: var(--body-color); line-height: 1.7; word-break: keep-all;
   }}
+  /* ── TIMELINE ── */
+  .timeline-intro {{ max-width: 155mm; }}
+  .timeline-list {{ position:relative; display:flex; flex-direction:column; gap:0; margin:2mm 0 0 4mm; padding:0 0 0 9mm; }}
+  .timeline-list::before {{ content:''; position:absolute; left:2.7mm; top:4mm; bottom:4mm; width:1px; background:var(--border-color); }}
+  .timeline-step {{ position:relative; padding:0 0 5mm; min-height:19mm; }}
+  .timeline-step:last-child {{ padding-bottom:0; }}
+  .timeline-dot {{ position:absolute; left:-7.4mm; top:3.2mm; width:5mm; height:5mm; border:2px solid var(--slide-bg); border-radius:50%; box-shadow:0 0 0 1px var(--border-color); }}
+  .timeline-content {{ display:flex; align-items:flex-start; gap:4mm; padding:3.5mm 5mm; background:var(--card-bg); border:1px solid var(--border-color); border-radius:2.5mm; }}
+  .timeline-number {{ min-width:8mm; font-size:.74rem; font-weight:900; letter-spacing:.08em; }}
+  .timeline-content p {{ font-size:.91rem; line-height:1.6; color:var(--body-color); word-break:keep-all; }}
+  /* ── SPOTLIGHT ── */
+  .spotlight-body {{ justify-content:center; gap:6mm; }}
+  .spotlight-main {{ border-left:4px solid; padding:5mm 7mm 5mm 8mm; background:var(--card-bg2); border-radius:0 3mm 3mm 0; }}
+  .spotlight-label {{ display:block; font-size:1.1rem; line-height:1; margin-bottom:3mm; }}
+  .spotlight-main p {{ font-size:1.35rem; font-weight:750; line-height:1.55; color:var(--title-color); word-break:keep-all; }}
+  .spotlight-image {{ width:100%; max-height:65mm; object-fit:cover; border-radius:3mm; }}
+  .spotlight-support {{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:3mm; }}
+  /* ── CARD GRID ── */
+  .insight-grid {{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:4mm; align-content:start; }}
+  .bullet-card {{ min-height:31mm; padding:5mm; background:var(--card-bg); border:1px solid var(--border-color); border-radius:3mm; }}
+  .bullet-card-index {{ display:block; font-size:.72rem; font-weight:900; letter-spacing:.09em; margin-bottom:4mm; }}
+  .bullet-card p {{ font-size:.9rem; line-height:1.65; color:var(--body-color); word-break:keep-all; }}
+  .spotlight-support .bullet-card {{ min-height:0; padding:3.5mm 4mm; }}
+  .spotlight-support .bullet-card-index {{ display:none; }}
   /* ── TWO-COL ── */
   .two-col {{ display: flex; gap: 5mm; flex: 1; overflow: hidden; }}
   .text-panel {{ flex: 1; display: flex; flex-direction: column; gap: 2.5mm; overflow: hidden; }}
@@ -730,7 +868,7 @@ def _sse_step(step: int, total: int, msg: str, pct: int) -> str:
 
 @router.post("/pdf/generate")
 async def generate_pdf(req: PdfGenerateRequest):
-    STEPS = 5
+    STEPS = 7
 
     async def event_stream():
         html_path = None
@@ -745,9 +883,12 @@ async def generate_pdf(req: PdfGenerateRequest):
             yield _sse_step(1, STEPS, f"소스 준비 중... (기사 {n_articles}개, 이미지 {n_imgs}장)", 5)
             logger.info("[pdf] step1 소스 준비")
 
-            # ── Step 2: LLM 슬라이드 구조 생성 ──
-            yield _sse_step(2, STEPS, f"AI가 {page_label} 슬라이드 구조 생성 중... (시간이 걸릴 수 있습니다)", 15)
-            logger.info("[pdf] step2 LLM 호출 시작")
+            # ── Step 2: 문서 컨텍스트 구성 ──
+            yield _sse_step(2, STEPS, "문서 내용을 분석하고 프레젠테이션 컨텍스트를 구성 중...", 12)
+
+            # ── Step 3: AI 스토리·콘텐츠 생성 ──
+            yield _sse_step(3, STEPS, f"AI가 {page_label} 발표 흐름과 슬라이드 콘텐츠를 설계 중...", 20)
+            logger.info("[pdf] step3 LLM 호출 시작")
 
             try:
                 page_data = await _call_llm_for_pages(
@@ -757,16 +898,19 @@ async def generate_pdf(req: PdfGenerateRequest):
                     reasoning=req.reasoning,
                 )
             except Exception as llm_err:
-                logger.error("[pdf] step2 LLM/JSON 파싱 실패: %s", llm_err, exc_info=True)
+                logger.error("[pdf] step3 LLM/JSON 파싱 실패: %s", llm_err, exc_info=True)
                 yield sse(json.dumps({"error": f"슬라이드 구조 생성 실패: {llm_err}"}), "error")
                 return
 
             n_pages = len(page_data.get("pages", []))
-            logger.info("[pdf] step2 LLM 완료 — %d페이지 확정", n_pages)
+            logger.info("[pdf] step3 LLM 완료 — %d페이지 확정", n_pages)
 
-            # ── Step 3: HTML 렌더링 ──
-            yield _sse_step(3, STEPS, f"{n_pages}페이지 HTML 렌더링 중...", 62)
-            logger.info("[pdf] step3 HTML 렌더링 시작")
+            # ── Step 4: 슬라이드 구성 확인 ──
+            yield _sse_step(4, STEPS, f"{n_pages}개 슬라이드의 구성과 레이아웃을 확인 중...", 55)
+
+            # ── Step 5: HTML 렌더링 ──
+            yield _sse_step(5, STEPS, f"{n_pages}페이지 HTML을 렌더링 중...", 64)
+            logger.info("[pdf] step5 HTML 렌더링 시작")
 
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             uid = str(uuid.uuid4())[:6]
@@ -774,19 +918,19 @@ async def generate_pdf(req: PdfGenerateRequest):
             html_content = _build_html(page_data, req.images, req.style)
             html_path = FILES_DIR / f"pdf_tmp_{uid}.html"
             html_path.write_text(html_content, encoding="utf-8")
-            logger.info("[pdf] step3 HTML 완료 (%d bytes)", len(html_content))
+            logger.info("[pdf] step5 HTML 완료 (%d bytes)", len(html_content))
 
-            # ── Step 4: Playwright PDF 변환 ──
-            yield _sse_step(4, STEPS, f"Playwright로 PDF 변환 중... ({n_pages}페이지)", 72)
-            logger.info("[pdf] step4 Playwright PDF 변환 시작")
+            # ── Step 6: Playwright PDF 변환 ──
+            yield _sse_step(6, STEPS, f"PDF를 렌더링 중... ({n_pages}페이지)", 76)
+            logger.info("[pdf] step6 Playwright PDF 변환 시작")
 
             tmp_pdf_path = FILES_DIR / f"pdf_tmp_{uid}.pdf"
             await _html_to_pdf(html_path, tmp_pdf_path)
-            logger.info("[pdf] step4 PDF 변환 완료")
+            logger.info("[pdf] step6 PDF 변환 완료")
 
-            # ── Step 5: 저장 및 마무리 ──
-            yield _sse_step(5, STEPS, "대화 저장 및 마무리 중...", 90)
-            logger.info("[pdf] step5 저장 시작")
+            # ── Step 7: 저장 및 마무리 ──
+            yield _sse_step(7, STEPS, "파일 저장과 대화 기록을 마무리 중...", 92)
+            logger.info("[pdf] step7 저장 시작")
 
             # 이미지 영구 저장 (재편집용)
             saved_image_filenames = []

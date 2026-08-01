@@ -1,4 +1,5 @@
 """ES에 저장되는 모델/문서 처리 설정의 런타임 캐시."""
+from contextvars import ContextVar
 from config.models import (
     BGE_NUM_CTX, HISTORY_CHARS_PER_TOKEN, HISTORY_TOKEN_BUDGET, LLM_INITIAL_NUM_CTX,
     LLM_MAX_NUM_CTX, LLM_MAX_TOKENS, LLM_NUM_CTX, LLM_NUM_PREDICT, LLM_TEMPERATURE,
@@ -15,10 +16,26 @@ DEFAULT_RUNTIME_SETTINGS = {
     "document_chunk_size": 1200, "document_chunk_overlap": 150,
 }
 _settings = dict(DEFAULT_RUNTIME_SETTINGS)
+_request_temperature_override: ContextVar[float | None] = ContextVar(
+    "request_temperature_override", default=None
+)
 
 
 def get_runtime_settings() -> dict:
-    return dict(_settings)
+    settings = dict(_settings)
+    temperature = _request_temperature_override.get()
+    if temperature is not None:
+        settings["llm_temperature"] = temperature
+    return settings
+
+
+def set_request_temperature_override(temperature: float):
+    """현재 비동기 요청에만 적용할 LLM 온도 오버라이드 토큰을 반환한다."""
+    return _request_temperature_override.set(temperature)
+
+
+def reset_request_temperature_override(token) -> None:
+    _request_temperature_override.reset(token)
 
 
 def apply_runtime_settings(values: dict | None) -> dict:

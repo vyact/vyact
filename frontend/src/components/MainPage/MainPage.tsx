@@ -688,7 +688,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                                     conv.setMessagesWithRef(prev => [...prev,
                                         {
                                             role: 'user',
-                                            content: `/pdf ${prompt || ''}`.trim(),
+                                            content: `/presentation ${prompt || ''}`.trim(),
                                             timestamp: userTs
                                         },
                                         {

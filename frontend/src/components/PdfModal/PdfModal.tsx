@@ -1,6 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {Check, FileText, Heart, ImagePlus, Plus, Upload, X, XCircle} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
+import {SUPPORTED_LANGUAGES} from '../../i18n';
 import {api} from '../../services/api';
 import ImageViewer from '../ImageViewer/ImageViewer';
 import CustomSelect from '../CustomSelect/CustomSelect';
@@ -23,6 +24,7 @@ interface DocFile {
     file_ext: string;
     chunk_count: number;
     indexed_at?: string;
+    content?: string;
 }
 
 export interface PdfParticle {
@@ -39,6 +41,7 @@ export interface PdfParams {
     page_count_auto?: boolean;
     language: string;
     style: string;
+    output_format?: 'pdf' | 'pptx';
     articles?: PdfParticle[];
     image_filenames?: string[];
 }
@@ -57,6 +60,8 @@ const STYLES = [
     {id: 'dark', icon: Heart},
 ];
 type SourceTab = 'memo' | 'doc';
+type PresentationOutputFormat = 'pdf' | 'pptx';
+const PRESENTATION_DOCUMENT_EXTENSIONS = new Set(['pdf', 'docx', 'xlsx', 'pptx', 'txt', 'html', 'htm', 'md']);
 
 const SelectionIcon: React.FC<{selected: boolean}> = ({selected}) =>
     selected ? <Check size={11} strokeWidth={2.5} aria-hidden/> : <Plus size={11} strokeWidth={2.2} aria-hidden/>;
@@ -77,8 +82,11 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
     const [prompt, setPrompt] = useState(initialParams?.prompt || '');
     const [pageCount, setPageCount] = useState(initialParams?.page_count || 8);
     const [pageCountAuto, setPageCountAuto] = useState(initialParams?.page_count_auto ?? true);
-    const [language, setLanguage] = useState(initialParams?.language || 'ko');
+    const [language, setLanguage] = useState(
+        initialParams?.language || i18n.language.split('-')[0],
+    );
     const [selectedStyle, setSelectedStyle] = useState(initialParams?.style || 'dark');
+    const [outputFormat, setOutputFormat] = useState<PresentationOutputFormat>(initialParams?.output_format || 'pdf');
     const [styleTooltip, setStyleTooltip] = useState<string | null>(null);
 
     // 이미지
@@ -86,6 +94,7 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
     const [viewerIndex, setViewerIndex] = useState<number | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const documentInputRef = useRef<HTMLInputElement>(null);
     const dragCountRef = useRef(0);
     const maxImages = pageCountAuto ? 20 : pageCount;
 
@@ -105,14 +114,19 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
     const [isLoadingDoc, setIsLoadingDoc] = useState(false);
     const [selectedDocs, setSelectedDocs] = useState<Map<string, DocFile>>(new Map());
     const docLoaded = useRef(false);
+    const [isSourceDropActive, setIsSourceDropActive] = useState(false);
+    const [isIndexingSource, setIsIndexingSource] = useState(false);
+    const [sourceUploadProgress, setSourceUploadProgress] = useState<{completed: number; total: number} | null>(null);
+    const [uploadedDocumentIds, setUploadedDocumentIds] = useState<Set<string>>(new Set());
 
     // 생성 진행
     const [isGenerating, setIsGenerating] = useState(false);
     const abortRef = useRef<AbortController | null>(null);
     const [progress, setProgress] = useState(0);
     const [progressStep, setProgressStep] = useState(0);
-    const [progressTotal, setProgressTotal] = useState(6);
+    const [progressTotal, setProgressTotal] = useState(7);
     const [progressMsg, setProgressMsg] = useState('');
+    const [progressElapsedSeconds, setProgressElapsedSeconds] = useState(0);
 
     // 생성 중 ESC 키 차단
     useEffect(() => {
@@ -121,6 +135,17 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
         };
         document.addEventListener('keydown', handler, true);
         return () => document.removeEventListener('keydown', handler, true);
+    }, [isGenerating]);
+    useEffect(() => {
+        if (!isGenerating) {
+            setProgressElapsedSeconds(0);
+            return;
+        }
+        const startedAt = Date.now();
+        const timer = window.setInterval(() => {
+            setProgressElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
+        }, 1000);
+        return () => window.clearInterval(timer);
     }, [isGenerating]);
     useEffect(() => {
         if (!initialParams) return;
@@ -244,6 +269,12 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
 
     // ── 문서 선택 ────────────────────────────────────────────────────────────
     const toggleDoc = (d: DocFile) => setSelectedDocs(prev => {
+        // 문서 탭에서 선택한 항목은, 같은 파일이 이전에 업로드됐더라도 항상 저장 문서로 취급한다.
+        setUploadedDocumentIds(current => {
+            const next = new Set(current);
+            next.delete(d.file_id);
+            return next;
+        });
         const n = new Map(prev);
         if (n.has(d.file_id)) {
             n.delete(d.file_id);
@@ -256,9 +287,49 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
         ? docs.filter(d => d.filename.normalize('NFC').toLowerCase().includes(docKeyword.normalize('NFC').toLowerCase()))
         : docs;
 
+    const addPresentationDocuments = async (files: File[]) => {
+        const supportedFiles = files.filter(file => {
+            const extension = file.name.split('.').pop()?.toLowerCase() || '';
+            return PRESENTATION_DOCUMENT_EXTENSIONS.has(extension);
+        });
+        if (!supportedFiles.length || isIndexingSource) return;
+
+        setIsIndexingSource(true);
+        try {
+            for (const [index, file] of supportedFiles.entries()) {
+                setSourceUploadProgress({completed: index, total: supportedFiles.length});
+                const formData = new FormData();
+                formData.append('file', file);
+                // 프레젠테이션 전용 첨부는 검색 인덱스에 넣지 않고, 원문만 이번 요청에 사용한다.
+                const response = await fetch('/api/document/parse', {method: 'POST', body: formData});
+                if (!response.ok) throw new Error(await response.text());
+                const parsed = await response.json() as {filename?: string; content: string};
+
+                const document: DocFile = {
+                    file_id: `presentation-${crypto.randomUUID()}`,
+                    filename: parsed.filename || file.name,
+                    file_ext: file.name.split('.').pop() || '',
+                    chunk_count: 0,
+                    indexed_at: new Date().toISOString(),
+                    content: parsed.content,
+                };
+                setSelectedDocs(current => new Map(current).set(document.file_id, document));
+                setUploadedDocumentIds(current => new Set(current).add(document.file_id));
+                setSourceUploadProgress({completed: index + 1, total: supportedFiles.length});
+            }
+        } catch (error) {
+            console.error('프레젠테이션 소스 문서 업로드 실패', error);
+        } finally {
+            setIsIndexingSource(false);
+            setSourceUploadProgress(null);
+        }
+    };
+
     // ── 선택 목록 합산 ───────────────────────────────────────────────────────
     const selectedMemoList = Array.from(selectedMemos.values());
     const selectedDocList = Array.from(selectedDocs.values());
+    const selectedAttachmentCount = selectedDocList.filter(document => uploadedDocumentIds.has(document.file_id)).length;
+    const selectedLibraryDocumentCount = selectedDocList.length - selectedAttachmentCount;
 
     // 메모/문서를 articles 형태로 변환해서 백엔드에 전달
     const buildArticles = () => [
@@ -271,9 +342,9 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
         })),
         ...selectedDocList.map(d => ({
             title: d.filename,
-            url: `file://${d.file_id}`,
-            content: `[인덱싱된 문서, ${d.file_id}]`,
-            source: `문서(${d.file_ext.toUpperCase()})`,
+            url: uploadedDocumentIds.has(d.file_id) ? `attachment://${d.file_id}` : `file://${d.file_id}`,
+            content: uploadedDocumentIds.has(d.file_id) ? d.content || '' : `[인덱싱된 문서, ${d.file_id}]`,
+            source: uploadedDocumentIds.has(d.file_id) ? `첨부(${d.file_ext.toUpperCase()})` : `문서(${d.file_ext.toUpperCase()})`,
             indexed_at: d.indexed_at || '',
             file_id: d.file_id
         })),
@@ -309,6 +380,7 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
                     page_count_auto: pageCountAuto,
                     language,
                     style: selectedStyle,
+                    output_format: outputFormat,
                     articles: buildArticles(),
                     images: imageMeta,
                     conv_id: convId,
@@ -383,6 +455,14 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
                  onClick={e => e.stopPropagation()}
                  onDragEnter={onDragEnter} onDragLeave={onDragLeave} onDragOver={onDragOver} onDrop={onDrop}>
 
+                {sourceUploadProgress && (
+                    <div className="pdf-source-upload-overlay" role="status" aria-live="polite">
+                        <span className="pdf-source-upload-spinner" aria-hidden/>
+                        <strong>{t('pdfModal.uploadingAttachments')}</strong>
+                        <span>{t('pdfModal.uploadProgress', sourceUploadProgress)}</span>
+                    </div>
+                )}
+
                 {isDragging && (
                     <div className="pdf-drag-overlay">
                         <div className="pdf-drag-hint">
@@ -419,53 +499,93 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
                                       placeholder={t('pdfModal.promptPlaceholder')}
                                       value={prompt} onChange={e => setPrompt(e.target.value)} disabled={isGenerating}/>
                         </div>
-                        <div className="pdf-section">
-                            <div className="pdf-label">{t('pdfModal.pageSettings')}</div>
-                            <div className="pdf-options-row">
-                                <CustomSelect
-                                    options={[
-                                        {value: 'auto', label: t('pdfModal.autoPages')},
-                                        ...[5, 8, 10, 12, 15].map(value => ({value: String(value), label: t('pdfModal.pages', {count: value})})),
-                                    ]}
-                                    value={pageCountAuto ? 'auto' : String(pageCount)}
-                                    onChange={v => {
-                                        if (v === 'auto') {
-                                            setPageCountAuto(true);
-                                        } else {
-                                            setPageCountAuto(false);
-                                            setPageCount(Number(v));
-                                        }
-                                    }}
-                                    disabled={isGenerating}
-                                    className="pdf-dropdown"
-                                    triggerStyle={{background: 'var(--surface)'}}
-                                    dropdownBackground="var(--surface)"
-                                />
-                                <CustomSelect
-                                    options={[
-                                        {value: 'ko', label: `🇰🇷 ${t('pdfModal.korean')}`},
-                                        {value: 'en', label: '🇺🇸 English'},
-                                    ]}
-                                    value={language}
-                                    onChange={setLanguage}
-                                    disabled={isGenerating}
-                                    className="pdf-dropdown"
-                                    triggerStyle={{background: 'var(--surface)'}}
-                                    dropdownBackground="var(--surface)"
-                                />
-                            </div>
-                        </div>
                     </div>
 
                     <div className="pdf-top-right">
+                        <div className="pdf-presentation-settings">
+                            <div className="pdf-format-style-row">
+                            <div className="pdf-setting-group">
+                                <div className="pdf-label">{t('pdfModal.outputFormat')}</div>
+                                <div className="pdf-output-format-options" role="radiogroup" aria-label={t('pdfModal.outputFormat')}>
+                                    {(['pdf', 'pptx'] as PresentationOutputFormat[]).map(format => (
+                                        <button
+                                            key={format}
+                                            type="button"
+                                            role="radio"
+                                            aria-checked={outputFormat === format}
+                                            className={`pdf-output-format-option${outputFormat === format ? ' active' : ''}`}
+                                            onClick={() => setOutputFormat(format)}
+                                            disabled={isGenerating}
+                                        >
+                                            {t(`pdfModal.outputFormats.${format}`)}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="pdf-style-row">
+                                <div className="pdf-label">{t('pdfModal.style')}</div>
+                                <div className="pdf-style-icons">
+                                    {STYLES.map(s => {
+                                        const StyleIcon = s.icon;
+                                        return (
+                                        <div key={s.id} className="pdf-style-icon-wrap">
+                                            <button className={`pdf-style-icon${selectedStyle === s.id ? ' active' : ''}`}
+                                                    onClick={() => !isGenerating && setSelectedStyle(s.id)}
+                                                    onMouseEnter={() => setStyleTooltip(s.id)}
+                                                    onMouseLeave={() => setStyleTooltip(null)}><StyleIcon size={20} color={s.id === 'white' ? '#f5f5f5' : 'var(--muted)'} fill={s.id === 'white' ? '#f5f5f5' : 'currentColor'} strokeWidth={1.8} aria-hidden/></button>
+                                            {styleTooltip === s.id && <div className="pdf-style-tooltip">{t(`pdfModal.styles.${s.id}`)}</div>}
+                                        </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                            </div>
+                            <div className="pdf-setting-group">
+                                <div className="pdf-label">{t('pdfModal.pageSettings')}</div>
+                                <div className="pdf-options-row">
+                                    <CustomSelect
+                                        options={[
+                                            {value: 'auto', label: t('pdfModal.autoPages')},
+                                            ...[5, 8, 10, 12, 15].map(value => ({value: String(value), label: t('pdfModal.pages', {count: value})})),
+                                        ]}
+                                        value={pageCountAuto ? 'auto' : String(pageCount)}
+                                        onChange={v => {
+                                            if (v === 'auto') {
+                                                setPageCountAuto(true);
+                                            } else {
+                                                setPageCountAuto(false);
+                                                setPageCount(Number(v));
+                                            }
+                                        }}
+                                        disabled={isGenerating}
+                                        className="pdf-dropdown"
+                                        triggerStyle={{background: 'var(--surface)'}}
+                                        dropdownBackground="var(--surface)"
+                                    />
+                                    <CustomSelect
+                                        options={[
+                                            ...SUPPORTED_LANGUAGES.map(({value, label}) => ({
+                                                value,
+                                                label,
+                                            })),
+                                        ]}
+                                        value={language}
+                                        onChange={setLanguage}
+                                        disabled={isGenerating}
+                                        className="pdf-dropdown"
+                                        triggerStyle={{background: 'var(--surface)'}}
+                                        dropdownBackground="var(--surface)"
+                                    />
+                                </div>
+                            </div>
+                        </div>
                         <div className="pdf-img-row">
                             <div className="pdf-label">{t('pdfModal.imageAttachment')}<span
                                 className="pdf-img-limit">{t('pdfModal.imageLimit', {count: images.length, max: maxImages})}</span>{!isGenerating &&
                                 <span className="pdf-paste-hint">{t('pdfModal.pasteHint')}</span>}</div>
                             <div className="pdf-img-strip-wrap">
                                 <button className={`pdf-add-btn${images.length >= maxImages ? ' disabled' : ''}`}
-                                        onClick={() => images.length < maxImages && fileInputRef.current?.click()}
-                                        title={t('pdfModal.addImage')}>
+                                        onClick={() => images.length < maxImages && fileInputRef.current?.click()}>
                                     <ImagePlus size={16} aria-hidden/>
                                 </button>
                                 <div className="pdf-img-scroll">
@@ -485,23 +605,6 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
                                        addImages(Array.from(e.target.files || []).filter(f => f.type.startsWith('image/')));
                                        if (fileInputRef.current) fileInputRef.current.value = '';
                                    }}/>
-                        </div>
-                        <div className="pdf-style-row">
-                            <div className="pdf-label">{t('pdfModal.style')}</div>
-                            <div className="pdf-style-icons">
-                                {STYLES.map(s => {
-                                    const StyleIcon = s.icon;
-                                    return (
-                                    <div key={s.id} className="pdf-style-icon-wrap">
-                                        <button className={`pdf-style-icon${selectedStyle === s.id ? ' active' : ''}`}
-                                                onClick={() => !isGenerating && setSelectedStyle(s.id)}
-                                                onMouseEnter={() => setStyleTooltip(s.id)}
-                                                onMouseLeave={() => setStyleTooltip(null)}><StyleIcon size={20} color={s.id === 'white' ? '#f5f5f5' : 'var(--muted)'} fill={s.id === 'white' ? '#f5f5f5' : 'currentColor'} strokeWidth={1.8} aria-hidden/></button>
-                                        {styleTooltip === s.id && <div className="pdf-style-tooltip">{t(`pdfModal.styles.${s.id}`)}</div>}
-                                    </div>
-                                    );
-                                })}
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -547,8 +650,11 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
                                                 </div>
                                                 <div className="pdf-article-info">
                                                     <div className="pdf-article-title">{m.title || t('pdfModal.untitled')}</div>
-                                                    <div
-                                                        className="pdf-article-meta">{t('pdfModal.memo')}{m.updated_at && ` · ${new Date(m.updated_at).toLocaleDateString(i18n.language)}`}</div>
+                                                    {m.updated_at && (
+                                                        <div className="pdf-article-meta">
+                                                            {new Date(m.updated_at).toLocaleDateString(i18n.language)}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         );
@@ -582,10 +688,10 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
                                                 </div>
                                                 <div className="pdf-doc-ext-badge"
                                                      style={{background: extColor(d.file_ext)}}>{ext}</div>
-                                                <div className="pdf-article-info">
+                                                    <div className="pdf-article-info">
                                                     <div className="pdf-article-title">{d.filename}</div>
                                                     <div
-                                                        className="pdf-article-meta">{t('pdfModal.chunks', {count: d.chunk_count})}{d.indexed_at && ` · ${new Date(d.indexed_at).toLocaleDateString(i18n.language)}`}</div>
+                                                        className="pdf-article-meta">{d.indexed_at && new Date(d.indexed_at).toLocaleDateString(i18n.language)}</div>
                                                 </div>
                                             </div>
                                         );
@@ -599,60 +705,41 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
                     </div>
 
                     {/* ── 선택된 소스 목록 ── */}
-                    <div className="pdf-bottom-right">
-                        <div className="pdf-label" style={{
-                            marginBottom: '8px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            flexWrap: 'wrap'
-                        }}>
+                    <div className={`pdf-bottom-right${isSourceDropActive ? ' pdf-source-drop-active' : ''}`}
+                         onDragEnter={event => { event.preventDefault(); event.stopPropagation(); setIsSourceDropActive(true); }}
+                         onDragOver={event => { event.preventDefault(); event.stopPropagation(); }}
+                         onDragLeave={event => { event.preventDefault(); event.stopPropagation(); setIsSourceDropActive(false); }}
+                         onDrop={event => {
+                             event.preventDefault();
+                             event.stopPropagation();
+                             setIsSourceDropActive(false);
+                             void addPresentationDocuments(Array.from(event.dataTransfer.files));
+                         }}>
+                        <div className="pdf-selected-sources-header">
                             {t('pdfModal.selectedSources')}
+                            <button className="pdf-selected-sources-add" type="button"
+                                    onClick={() => documentInputRef.current?.click()}
+                                    disabled={isIndexingSource}><Plus size={14} aria-hidden/></button>
                             {selectedMemoList.length > 0 && (
-                                <span style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '3px',
-                                    background: 'rgba(139,92,246,0.15)',
-                                    color: '#8b5cf6',
-                                    borderRadius: '10px',
-                                    padding: '1px 7px',
-                                    fontSize: '11px',
-                                    fontWeight: 600
-                                }}>
+                                <span className="pdf-source-summary-badge pdf-source-summary-badge--memo">
                                     {t('pdfModal.memo')} {selectedMemoList.length}
-                                    <button onClick={() => setSelectedMemos(new Map())} style={{
-                                        background: 'none',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        color: '#8b5cf6',
-                                        padding: '0 0 0 2px',
-                                        lineHeight: 1,
-                                        fontSize: '12px'
+                                    <button onClick={() => setSelectedMemos(new Map())}>×</button>
+                                </span>
+                            )}
+                            {selectedLibraryDocumentCount > 0 && (
+                                <span className="pdf-source-summary-badge pdf-source-summary-badge--document">
+                                    {t('pdfModal.document')} {selectedLibraryDocumentCount}
+                                    <button onClick={() => {
+                                        setSelectedDocs(current => new Map(Array.from(current).filter(([fileId]) => uploadedDocumentIds.has(fileId))));
                                     }}>×</button>
                                 </span>
                             )}
-                            {selectedDocList.length > 0 && (
-                                <span style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '3px',
-                                    background: 'rgba(34,197,94,0.15)',
-                                    color: '#22c55e',
-                                    borderRadius: '10px',
-                                    padding: '1px 7px',
-                                    fontSize: '11px',
-                                    fontWeight: 600
-                                }}>
-                                    {t('pdfModal.document')} {selectedDocList.length}
-                                    <button onClick={() => setSelectedDocs(new Map())} style={{
-                                        background: 'none',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        color: '#22c55e',
-                                        padding: '0 0 0 2px',
-                                        lineHeight: 1,
-                                        fontSize: '12px'
+                            {selectedAttachmentCount > 0 && (
+                                <span className="pdf-source-summary-badge pdf-source-summary-badge--attachment">
+                                    {t('pdfModal.attachment')} {selectedAttachmentCount}
+                                    <button onClick={() => {
+                                        setSelectedDocs(current => new Map(Array.from(current).filter(([fileId]) => !uploadedDocumentIds.has(fileId))));
+                                        setUploadedDocumentIds(new Set());
                                     }}>×</button>
                                 </span>
                             )}
@@ -661,31 +748,27 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
                             {totalSelected > 0 ? (
                                 <>
                                     {selectedMemoList.map((m, i) => (
-                                        <div key={m.id} className="pdf-selected-item">
+                                        <div key={m.id} className="pdf-selected-item pdf-selected-item--memo">
                                             <span
                                                 className="pdf-selected-num">{i + 1}</span>
-                                            <div className="pdf-source-type-tag"
-                                                 style={{background: 'rgba(139,92,246,0.12)', color: '#8b5cf6'}}>{t('pdfModal.memo')}
+                                            <div className="pdf-source-type-tag pdf-source-type-tag--memo">{t('pdfModal.memo')}
                                             </div>
                                             <div className="pdf-article-info">
                                                 <div className="pdf-article-title">{m.title || t('pdfModal.untitled')}</div>
-                                                <div className="pdf-article-meta">{t('pdfModal.memo')}</div>
                                             </div>
                                             <button className="pdf-selected-del" onClick={() => toggleMemo(m)}><XCircle
                                                 size={18}/></button>
                                         </div>
                                     ))}
                                     {selectedDocList.map((d, i) => (
-                                        <div key={d.file_id} className="pdf-selected-item">
+                                        <div key={d.file_id} className={`pdf-selected-item${uploadedDocumentIds.has(d.file_id) ? ' pdf-selected-item--attachment' : ' pdf-selected-item--document'}`}>
                                             <span
                                                 className="pdf-selected-num">{selectedMemoList.length + i + 1}</span>
-                                            <div className="pdf-source-type-tag" style={{
-                                                background: `${extColor(d.file_ext)}1a`,
-                                                color: extColor(d.file_ext)
-                                            }}>{d.file_ext.replace('.', '').toUpperCase()}</div>
+                                            <div className={`pdf-source-type-tag${uploadedDocumentIds.has(d.file_id) ? ' pdf-source-type-tag--attachment' : ' pdf-source-type-tag--document'}`}>
+                                                {uploadedDocumentIds.has(d.file_id) ? t('pdfModal.attachment') : d.file_ext.replace('.', '').toUpperCase()}
+                                            </div>
                                             <div className="pdf-article-info">
                                                 <div className="pdf-article-title">{d.filename}</div>
-                                                <div className="pdf-article-meta">{d.chunk_count}청크</div>
                                             </div>
                                             <button className="pdf-selected-del" onClick={() => toggleDoc(d)}><XCircle
                                                 size={18}/></button>
@@ -693,9 +776,27 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
                                     ))}
                                 </>
                             ) : (
-                                <div className="pdf-article-empty">{t('pdfModal.selectSources')}</div>
+                                <button className="pdf-source-upload-zone"
+                                        type="button"
+                                        onClick={() => documentInputRef.current?.click()}
+                                        disabled={isIndexingSource}>
+                                    {isIndexingSource ? t('pdfModal.loading') : t('pdfModal.presentationSourceDropHint')}
+                                </button>
                             )}
                         </div>
+                        {totalSelected > 0 && (
+                            <button className="pdf-source-upload-trigger" type="button"
+                                    onClick={() => documentInputRef.current?.click()}
+                                    disabled={isIndexingSource}>
+                                {isIndexingSource ? t('pdfModal.loading') : t('pdfModal.presentationSourceDropHint')}
+                            </button>
+                        )}
+                        <input ref={documentInputRef} type="file" multiple accept=".pdf,.docx,.xlsx,.pptx,.txt,.html,.htm,.md"
+                               style={{display: 'none'}}
+                               onChange={event => {
+                                   void addPresentationDocuments(Array.from(event.target.files || []));
+                                   if (documentInputRef.current) documentInputRef.current.value = '';
+                               }}/>
                     </div>
                 </div>
 
@@ -708,7 +809,9 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
                                     <span className="pdf-progress-step">{t('pdfModal.step', {current: progressStep, total: progressTotal})}</span>
                                     <span className="pdf-progress-pct">{progress}%</span>
                                 </div>
-                                <div className="pdf-progress-msg">{progressMsg}</div>
+                                <div className="pdf-progress-msg">
+                                    {progressMsg} · {t('pdfModal.generatingElapsed', {seconds: progressElapsedSeconds})}
+                                </div>
                                 <div className="pdf-progress-bar-wrap">
                                     <div className="pdf-progress-bar" style={{width: `${progress}%`}}/>
                                 </div>

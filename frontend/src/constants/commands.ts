@@ -12,10 +12,10 @@ export interface Command {
 
 export const COMMANDS: Command[] = [
     {
-        cmd: '/pdf',
-        usage: '/pdf',
-        desc: '프롬프트·기사·이미지를 선택해 AI가 고품질 PDF 문서를 자동 생성합니다.',
-        example: '/pdf',
+        cmd: '/presentation',
+        usage: '/presentation',
+        desc: '프롬프트·기사·이미지를 선택해 AI 프레젠테이션을 생성합니다.',
+        example: '/presentation',
         icon: FileText,
     },
     {
