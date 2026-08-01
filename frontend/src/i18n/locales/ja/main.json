@@ -929,6 +929,7 @@
     "completed": "ステップが完了しました",
     "codeAnalysis": "コードベースを分析しています",
     "completedSummary": "{{count}}件の作業が完了 · {{seconds}}秒",
+    "inProgressSummary": "{{count}}件の作業 · {{status}}",
     "stopped": "応答の生成を停止しました。",
     "runningTool": "{{tool}} を実行中",
     "indexing": "添付ファイルをインデックス中 · {{done}}/{{total}}",

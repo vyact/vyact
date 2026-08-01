@@ -88,7 +88,11 @@ def history_for_ollama(history_messages: list, valid_history: list) -> list:
             result.append({"role": "assistant", "content": msg.get("content", ""), "tool_calls": ollama_tcs})
             continue
         if msg["role"] == "tool":
-            result.append({"role": "tool", "content": msg["content"]})
+            result.append({
+                "role": "tool",
+                "tool_name": msg.get("tool_name") or msg.get("name", ""),
+                "content": msg["content"],
+            })
             continue
         entry: dict = {"role": msg["role"], "content": msg["content"]}
         if msg["role"] == "user" and hi < len(valid_history):

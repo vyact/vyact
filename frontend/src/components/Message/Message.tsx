@@ -429,7 +429,14 @@ const Message: React.FC<MessageProps> = ({
                             </div>
                         )}
                         {/* 첫 토큰 전에는 현재 판정/도구 상태를, 상태 이벤트 전에는 로딩 점을 표시한다. */}
-                        {isStreaming && !content.trim() && toolStatus ? (
+                        {isStreaming && !content.trim() && activityLog?.some(activity => activity.group === 'code' || activity.group === 'tool') ? (
+                            <ActivityTimeline
+                                activities={activityLog}
+                                isStreaming
+                                currentStatus={toolStatus}
+                                requestElapsedLabel={requestElapsedLabel}
+                            />
+                        ) : isStreaming && !content.trim() && toolStatus ? (
                             <div className={`msg-tool-status ${toolStatus.phase} ${toolStatus.group ?? 'analysis'}`} aria-live="polite" aria-label={t('toolActivity.ariaLabel')}>
                                 {toolStatus.phase === 'completed'
                                     ? <span className="msg-tool-icon completed" aria-hidden="true">✓</span>

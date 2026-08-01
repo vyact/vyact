@@ -929,6 +929,7 @@
     "completed": "ขั้นตอนเสร็จสิ้น",
     "codeAnalysis": "กำลังวิเคราะห์โค้ดเบส",
     "completedSummary": "เสร็จสิ้น {{count}} งาน · {{seconds}} วินาที",
+    "inProgressSummary": "{{count}} งาน · {{status}}",
     "stopped": "หยุดการสร้างคำตอบแล้ว",
     "runningTool": "กำลังรัน {{tool}}",
     "indexing": "กำลังบันทึกดัชนีไฟล์แนบ · {{done}}/{{total}}",

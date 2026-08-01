@@ -485,10 +485,11 @@
 
 /* 실행 중에는 본문 위치에, 완료 후에는 메시지 하단 통계 아래에 표시한다. */
 .msg-activity { max-width:min(640px, 100%); color:var(--muted); font-size:13px; }
+.msg-activity.streaming { margin:8px 0 4px; padding:7px 10px; width:fit-content; border:1px solid color-mix(in srgb, var(--accent) 18%, var(--border)); border-radius:14px; background:color-mix(in srgb, var(--accent) 5%, transparent); color:var(--text-secondary); }
 .msg-activity.completed { margin:4px 16px 0; max-width:min(640px, calc(100% - 32px)); font-size:10.5px; opacity:.7; }
 .msg-activity-summary { display:flex; align-items:center; gap:7px; padding:3px 0; border:0; background:transparent; color:inherit; font:inherit; cursor:pointer; }
 .msg-activity-summary svg:last-child { margin-left:2px; }
-.msg-activity-spinner { animation:msg-stream-spin .8s linear infinite; color:var(--accent); }
+.msg-activity-spinner { width:14px; height:14px; flex:0 0 14px; border:2px solid color-mix(in srgb, var(--muted) 35%, transparent); border-top-color:var(--accent); border-radius:50%; animation:msg-stream-spin .8s linear infinite; }
 .msg-activity-list { list-style:none; margin:7px 0 0 6px; padding:0 0 0 13px; border-left:1px solid var(--border); display:grid; gap:7px; }
 .msg-activity-list li { position:relative; display:flex; align-items:center; gap:7px; min-width:0; color:var(--text-secondary); }
 .msg-activity-dot { position:absolute; left:-17px; width:7px; height:7px; border-radius:50%; background:var(--muted); }

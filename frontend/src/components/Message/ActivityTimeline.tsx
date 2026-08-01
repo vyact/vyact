@@ -7,9 +7,18 @@ import {getToolActivityLabel} from '../../utils/toolActivity';
 interface ActivityTimelineProps {
     activities: ToolActivity[];
     executionDurationNs?: number | null;
+    isStreaming?: boolean;
+    currentStatus?: ToolActivity;
+    requestElapsedLabel?: string;
 }
 
-const ActivityTimeline = ({activities, executionDurationNs}: ActivityTimelineProps) => {
+const ActivityTimeline = ({
+    activities,
+    executionDurationNs,
+    isStreaming = false,
+    currentStatus,
+    requestElapsedLabel,
+}: ActivityTimelineProps) => {
     const {t} = useTranslation('main');
     const [isExpanded, setIsExpanded] = useState(false);
     const taskActivities = activities.filter(activity => activity.group === 'code' || activity.group === 'tool');
@@ -27,18 +36,26 @@ const ActivityTimeline = ({activities, executionDurationNs}: ActivityTimelinePro
     };
     const elapsedSeconds = formatDurationSeconds(executionDurationMs);
     const taskCount = taskActivities.length;
-    const summary = t('toolActivity.completedSummary', {count: taskCount, seconds: elapsedSeconds});
+    const summary = isStreaming
+        ? t('toolActivity.inProgressSummary', {
+            count: taskCount,
+            status: currentStatus?.label ?? t('toolActivity.working'),
+        })
+        : t('toolActivity.completedSummary', {count: taskCount, seconds: elapsedSeconds});
     const formatActivitySeconds = (activity: ToolActivity): string | null => {
         if (activity.startedAt == null || activity.completedAt == null) return null;
         return formatDurationSeconds(Math.max(0, activity.completedAt - activity.startedAt));
     };
 
     return (
-        <section className={`msg-activity completed${isExpanded ? ' expanded' : ''}`}>
+        <section className={`msg-activity ${isStreaming ? 'streaming' : 'completed'}${isExpanded ? ' expanded' : ''}`}>
             <button className="msg-activity-summary"
                     onClick={() => setIsExpanded(value => !value)}>
-                <CircleCheck size={14}/>
+                {isStreaming ? <span className="msg-activity-spinner"/> : <CircleCheck size={14}/>}
                 <span>{summary}</span>
+                {isStreaming && requestElapsedLabel && (
+                    <span className="msg-request-elapsed">{requestElapsedLabel}</span>
+                )}
                 {isExpanded ? <ChevronDown size={14}/> : <ChevronRight size={14}/>}
             </button>
             {isExpanded && <ol className="msg-activity-list">

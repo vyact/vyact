@@ -46,7 +46,11 @@ async def build_ollama_payload(
     history_messages = []
     for m in valid_slice:
         if m["role"] == "tool":
-            history_messages.append({"role": "tool", "name": m.get("name", ""), "content": m["content"]})
+            history_messages.append({
+                "role": "tool",
+                "name": m.get("tool_name") or m.get("name", ""),
+                "content": m["content"],
+            })
         elif m["role"] == "assistant" and m.get("tool_calls"):
             history_messages.append({"role": "assistant", "content": m.get("content", ""), "tool_calls": m["tool_calls"]})
         else:
@@ -224,6 +228,7 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
     # ── 연속 실패/중복 호출 감지 ──
     _fail_tracker: dict[str, int] = {}  # "tool_name:args_hash" → 연속 실패 횟수
     _call_count: dict[str, int] = {}    # 동일 호출 총 횟수 (성공 포함)
+    _last_successful_call: tuple[str, str] | None = None  # 직전 성공 호출과 결과
     _MAX_SAME_FAIL = 2   # 같은 호출이 2회 실패하면 중단
     _MAX_SAME_CALL = 3   # 같은 호출이 3회 이상이면 중단 (성공 포함)
 
@@ -279,24 +284,41 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
                 name = fn.get("name", "")
                 args = fn.get("arguments", {}) or {}
                 # 동일 호출 중복 감지
-                _call_key = f"{name}:{hashlib.md5(str(args).encode()).hexdigest()[:8]}"
+                canonical_args = json.dumps(args, ensure_ascii=False, sort_keys=True, default=str)
+                _call_key = f"{name}:{hashlib.md5(canonical_args.encode()).hexdigest()[:8]}"
                 _call_count[_call_key] = _call_count.get(_call_key, 0) + 1
+                if _last_successful_call and _last_successful_call[0] == _call_key:
+                    logger.info("[tool_calls] 동일 호출 결과 재사용 — 실행 생략: %s args=%s", name, args)
+                    work.append({
+                        "role": "tool",
+                        "tool_name": name,
+                        "content": _last_successful_call[1]
+                                   + "\n\n[안내] 동일한 인자의 이전 실행 결과를 재사용했습니다. "
+                                     "같은 호출을 반복하지 말고 다음 단계로 진행하세요.",
+                    })
+                    if _call_count[_call_key] >= _MAX_SAME_CALL:
+                        logger.warning("[tool_calls] 동일 호출 %d회 요청 — 현재 결과로 종료: %s", _call_count[_call_key], name)
+                        _should_break = True
+                        break
+                    continue
                 if _call_count[_call_key] > _MAX_SAME_CALL:
                     logger.warning("[tool_calls] 동일 호출 %d회 반복 — 스킵: %s", _call_count[_call_key], name)
                     work.append({
-                        "role": "tool", "name": name,
+                        "role": "tool", "tool_name": name,
                         "content": f"[중단] 같은 tool 호출이 {_call_count[_call_key]}회 반복되었습니다. "
                                    f"이전 결과를 활용하세요. 더 이상 같은 호출을 하지 마세요.",
                     })
                     _should_break = True
                     break
 
+                # 다른 호출이 하나라도 끼면 이후 동일 인자 호출은 재검증/재읽기일 수 있다.
+                _last_successful_call = None
                 logger.info("[tool_calls] tool 호출: %s args=%s", name, args)
                 approved = await await_tool_approval(name, args, _emit)
                 if not approved:
                     result_text = "[사용자 거부] 사용자가 이 tool 실행을 승인하지 않았습니다. 실행하지 말고 다른 안전한 방법을 사용하거나 거부 사실을 설명하세요."
                     await _emit({"phase": "approval_rejected", "name": name, "args": args, "result": result_text})
-                    work.append({"role": "tool", "content": result_text, "name": name})
+                    work.append({"role": "tool", "content": result_text, "tool_name": name})
                     continue
                 await _emit({"phase": "start", "name": name, "args": args})
                 _t0 = _time.monotonic_ns()
@@ -305,7 +327,7 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
                 _acc_stats["tool_call_count"] += 1
                 tool_sources = mcp_manager.drain_tool_sources()
                 await _emit({"phase": "end", "name": name, "args": args, "result": result_text, "sources": tool_sources})
-                work.append({"role": "tool", "content": result_text, "name": name})
+                work.append({"role": "tool", "content": result_text, "tool_name": name})
                 if mcp_manager.is_single_shot(name):
                     hit_single_shot = True
 
@@ -319,7 +341,7 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
                             _fail_tracker[_call_key], name,
                         )
                         work.append({
-                            "role": "tool", "name": name,
+                            "role": "tool", "tool_name": name,
                             "content": f"[중단] 같은 tool 호출이 {_fail_tracker[_call_key]}회 연속 실패했습니다. "
                                        f"더 이상 재시도하지 말고 사용자에게 실패 원인을 설명하세요.",
                         })
@@ -327,6 +349,7 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
                         break
                 else:
                     _fail_tracker.pop(_call_key, None)
+                    _last_successful_call = (_call_key, result_text)
 
             if _should_break:
                 # 조기 중단 — 현재 문맥으로 최종 응답 생성

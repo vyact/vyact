@@ -929,6 +929,7 @@
     "completed": "步骤已完成",
     "codeAnalysis": "正在分析代码库",
     "completedSummary": "已完成 {{count}} 项任务 · {{seconds}} 秒",
+    "inProgressSummary": "{{count}} 项任务 · {{status}}",
     "stopped": "已停止生成回复。",
     "runningTool": "正在运行 {{tool}}",
     "indexing": "正在索引附件 · {{done}}/{{total}}",

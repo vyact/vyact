@@ -929,6 +929,7 @@
     "completed": "Bước hoàn tất",
     "codeAnalysis": "Đang phân tích mã nguồn",
     "completedSummary": "Đã hoàn thành {{count}} tác vụ · {{seconds}} giây",
+    "inProgressSummary": "{{count}} tác vụ · {{status}}",
     "stopped": "Đã dừng tạo phản hồi.",
     "runningTool": "Đang chạy {{tool}}",
     "indexing": "Đang lập chỉ mục tệp đính kèm · {{done}}/{{total}}",

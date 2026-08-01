@@ -255,9 +255,9 @@ async def chat_stream_with_tools(
         "provider": "ollama", "model": model,
         "system_message": _sys_msg, "user_prompt": _usr_msg,
         "docs_count": len(context_docs),
-        "tools_used": [_m.get("name") for _m in _tool_msgs] or None,
+        "tools_used": [_m.get("tool_name") or _m.get("name") for _m in _tool_msgs] or None,
         "tool_results": [
-                            {"name": _m.get("name"), "content": _m.get("content", "")}
+                            {"name": _m.get("tool_name") or _m.get("name"), "content": _m.get("content", "")}
                             for _m in _tool_msgs
                         ] or None,
         "origin_response": None, "response": None, "error": None,

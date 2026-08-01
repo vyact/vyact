@@ -926,6 +926,7 @@
     "completed": "작업을 완료했어요",
     "codeAnalysis": "코드베이스를 분석하고 있어요",
     "completedSummary": "{{count}}개 작업 완료 · {{seconds}}초",
+    "inProgressSummary": "{{count}}개 작업 · {{status}}",
     "stopped": "응답 생성을 중단했어요.",
     "runningTool": "{{tool}} 실행 중",
     "indexing": "첨부파일 인덱싱 중 · {{done}}/{{total}}",
