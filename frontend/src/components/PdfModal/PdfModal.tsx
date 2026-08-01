@@ -784,13 +784,6 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
                                 </button>
                             )}
                         </div>
-                        {totalSelected > 0 && (
-                            <button className="pdf-source-upload-trigger" type="button"
-                                    onClick={() => documentInputRef.current?.click()}
-                                    disabled={isIndexingSource}>
-                                {isIndexingSource ? t('pdfModal.loading') : t('pdfModal.presentationSourceDropHint')}
-                            </button>
-                        )}
                         <input ref={documentInputRef} type="file" multiple accept=".pdf,.docx,.xlsx,.pptx,.txt,.html,.htm,.md"
                                style={{display: 'none'}}
                                onChange={event => {

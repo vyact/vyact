@@ -6,6 +6,7 @@ import asyncio
 import base64
 import json
 import re
+import tempfile
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -13,6 +14,8 @@ from pathlib import Path
 from fastapi import APIRouter
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
+from pptx import Presentation
+from pptx.util import Inches
 
 from agent import query_llm, collect_llm_stream, save_conversation, get_model_name
 from routers.deps import INSTALL_DIR, sse, load_config_async
@@ -96,6 +99,7 @@ class PdfGenerateRequest(BaseModel):
     page_count_auto: bool = True
     language: str = "ko"
     style: str = "white"
+    output_format: str = "pdf"
     articles: list = []
     images: list[ImageMeta] = []
     conv_id: str = ""
@@ -862,6 +866,37 @@ async def _html_to_pdf(html_path: Path, output_path: Path):
         await browser.close()
 
 
+async def _html_to_pptx(html_path: Path, output_path: Path) -> None:
+    """Render each HTML slide to a PNG and package the rendered slides as a PPTX.
+
+    Rendering preserves the same layouts, typography, and theme as the PDF output.
+    """
+    from playwright.async_api import async_playwright
+
+    with tempfile.TemporaryDirectory(prefix="vyact_pptx_") as temp_dir:
+        image_paths: list[Path] = []
+        async with async_playwright() as pw:
+            browser = await pw.chromium.launch(args=["--no-sandbox", "--disable-setuid-sandbox"])
+            page = await browser.new_page(viewport={"width": 1240, "height": 1754}, device_scale_factor=1)
+            await page.goto(f"file://{html_path}", wait_until="networkidle", timeout=30000)
+            await page.wait_for_timeout(1000)
+            slides = page.locator(".slide")
+            for index in range(await slides.count()):
+                image_path = Path(temp_dir) / f"slide_{index + 1}.png"
+                await slides.nth(index).screenshot(path=str(image_path))
+                image_paths.append(image_path)
+            await browser.close()
+
+        presentation = Presentation()
+        presentation.slide_width = Inches(8.27)
+        presentation.slide_height = Inches(11.69)
+        blank_layout = presentation.slide_layouts[6]
+        for image_path in image_paths:
+            slide = presentation.slides.add_slide(blank_layout)
+            slide.shapes.add_picture(str(image_path), 0, 0, width=presentation.slide_width, height=presentation.slide_height)
+        await asyncio.to_thread(presentation.save, str(output_path))
+
+
 def _sse_step(step: int, total: int, msg: str, pct: int) -> str:
     return sse(json.dumps({"step": step, "total": total, "msg": msg}), "progress", pct)
 
@@ -920,13 +955,18 @@ async def generate_pdf(req: PdfGenerateRequest):
             html_path.write_text(html_content, encoding="utf-8")
             logger.info("[pdf] step5 HTML 완료 (%d bytes)", len(html_content))
 
-            # ── Step 6: Playwright PDF 변환 ──
-            yield _sse_step(6, STEPS, f"PDF를 렌더링 중... ({n_pages}페이지)", 76)
-            logger.info("[pdf] step6 Playwright PDF 변환 시작")
+            # ── Step 6: 선택한 출력 형식으로 렌더링 ──
+            output_format = "pptx" if req.output_format == "pptx" else "pdf"
+            format_label = "PPTX" if output_format == "pptx" else "PDF"
+            yield _sse_step(6, STEPS, f"{format_label}를 렌더링 중... ({n_pages}페이지)", 76)
+            logger.info("[pdf] step6 %s 변환 시작", format_label)
 
-            tmp_pdf_path = FILES_DIR / f"pdf_tmp_{uid}.pdf"
-            await _html_to_pdf(html_path, tmp_pdf_path)
-            logger.info("[pdf] step6 PDF 변환 완료")
+            temp_output_path = FILES_DIR / f"pdf_tmp_{uid}.{output_format}"
+            if output_format == "pptx":
+                await _html_to_pptx(html_path, temp_output_path)
+            else:
+                await _html_to_pdf(html_path, temp_output_path)
+            logger.info("[pdf] step6 %s 변환 완료", format_label)
 
             # ── Step 7: 저장 및 마무리 ──
             yield _sse_step(7, STEPS, "파일 저장과 대화 기록을 마무리 중...", 92)
@@ -948,9 +988,9 @@ async def generate_pdf(req: PdfGenerateRequest):
             _bad_chars = r'[\/*?:<>|]'
             safe_title = _re.sub(_bad_chars, '', prs_title)
             safe_title = _re.sub(r'\s+', '_', safe_title.strip())[:40].rstrip('_')
-            filename = f"{safe_title}_{timestamp}.pdf"
+            filename = f"{safe_title}_{timestamp}.{output_format}"
             output_path = FILES_DIR / filename
-            tmp_pdf_path.rename(output_path)
+            temp_output_path.rename(output_path)
 
             style_name = STYLE_PALETTES.get(req.style, {}).get("name", req.style)
 
@@ -965,7 +1005,7 @@ async def generate_pdf(req: PdfGenerateRequest):
             source_str = " · ".join(source_parts) if source_parts else "소스 없음"
 
             answer_text = (
-                    f"📄 **{prs_title}** PDF가 생성되었습니다.\n\n"
+                    f"📄 **{prs_title}** {format_label}가 생성되었습니다.\n\n"
                     f"{n_pages}페이지 · 스타일: {style_name} · "
                     f"{source_str} · 이미지 {len(req.images)}장 활용"
                     + (" · 자동 페이지 수 선택" if req.page_count_auto else "")
@@ -977,6 +1017,7 @@ async def generate_pdf(req: PdfGenerateRequest):
                 "page_count_auto": req.page_count_auto,
                 "language": req.language,
                 "style": req.style,
+                "output_format": output_format,
                 "articles": [
                     {
                         "url": a.get("url", ""),
@@ -992,7 +1033,7 @@ async def generate_pdf(req: PdfGenerateRequest):
 
             now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
             await save_conversation(conv_id, req.messages + [
-                {"role": "user", "content": f"/pdf {req.prompt}", "timestamp": user_ts},
+                {"role": "user", "content": f"/presentation {req.prompt}", "timestamp": user_ts},
                 {
                     "role": "assistant",
                     "content": answer_text,
@@ -1032,8 +1073,9 @@ async def download_pdf(filename: str):
     if not filepath.exists():
         from fastapi import HTTPException
         raise HTTPException(404, "파일을 찾을 수 없습니다")
+    media_type = "application/vnd.openxmlformats-officedocument.presentationml.presentation" if safe_name.endswith(".pptx") else "application/pdf"
     return FileResponse(
         str(filepath),
-        media_type="application/pdf",
+        media_type=media_type,
         filename=safe_name,
     )
