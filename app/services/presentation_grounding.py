@@ -16,7 +16,7 @@ from typing import Any
 MAX_VERIFIED_FACTS = 80
 MIN_EVIDENCE_LENGTH = 8
 FACT_TOKEN_PATTERN = re.compile(
-    r"(?<![A-Za-z0-9])(?:['’]?\d{2,4}(?:[./-]\d{1,2}){0,2}|\d[\d,.]*)"
+    r"(?<![A-Za-z0-9])(?:['’]?\d{2,4}(?:[./-]\d{1,2}){0,2}|\d+(?:\s*[:/]\s*\d+)|\d[\d,.]*)"
     r"(?:\s?(?:%|‰|bp|bps|배|원|억원|조원|만명|개사|명|건|일|월|년|분기|반기|"
     r"KRW|USD|EUR|JPY|(?:million|billion|trillion|K|M|B)(?:\s?(?:KRW|USD|EUR|JPY))?|"
     r"percent|points?))?",
@@ -77,7 +77,8 @@ LATEX_RESIDUAL_PATTERN = re.compile(
 NUMBERED_OUTLINE_PATTERN = re.compile(r"(?m)^\s*(\d{1,2})[.)]\s+(.+?)\s*$")
 DATE_EXPRESSION_PATTERN = re.compile(
     r"(?<!\d)(?P<year>20\d{2}|['‘’]\d{2})\s*"
-    r"(?:[./-]\s*|년\s*)(?P<month>\d{1,2})(?:\s*월)?",
+    r"(?:[./-]\s*|년\s*)(?P<month>\d{1,2})"
+    r"(?:(?:\s*[./-]\s*|\s*월\s*)(?P<day>\d{1,2})(?:\s*일)?|\s*월)?",
     re.IGNORECASE,
 )
 YEAR_EXPRESSION_PATTERN = re.compile(r"(?<!\d)(?:20\d{2}|['‘’]\d{2})(?!\d)")
@@ -322,7 +323,11 @@ def _fact_tokens(value: str) -> set[str]:
         year = canonical_year(match.group("year"))
         month = int(match.group("month"))
         if 1 <= month <= 12:
-            tokens.add(f"@date:{year}-{month:02d}")
+            day_text = match.group("day")
+            if day_text and 1 <= int(day_text) <= 31:
+                tokens.add(f"@date:{year}-{month:02d}-{int(day_text):02d}")
+            else:
+                tokens.add(f"@date:{year}-{month:02d}")
             tokens.add(f"@year:{year}")
             occupied_ranges.append(match.span())
 
@@ -529,6 +534,67 @@ def repair_unsupported_fact_tokens(page_data: dict, ledger: dict, findings: list
 
         pages[page_index] = restore(page)
     return repaired
+
+
+def suppress_unsupported_fact_claims(
+    page_data: dict,
+    findings: list[dict],
+) -> dict:
+    """Remove unresolved numeric claims without guessing a replacement.
+
+    Model retries can keep converting or rescaling a value even when instructed
+    not to. This final fallback is domain-agnostic: unsupported list/stat items
+    are removed, unsupported prose sentences are removed, and unsupported title
+    tokens are stripped. It never calculates, translates, or inserts a fact.
+    """
+    prepared = copy.deepcopy(page_data)
+    unsupported_by_page = {
+        finding["page_index"]: set(finding.get("details") or [])
+        for finding in findings
+        if finding.get("code") == "unsupported_fact_tokens"
+        and isinstance(finding.get("page_index"), int)
+        and isinstance(finding.get("details"), list)
+    }
+
+    def contains_unsupported(value: Any, unsupported: set[str]) -> bool:
+        return bool(_fact_tokens(str(value or "")) & unsupported)
+
+    def remove_unsupported_sentences(value: str, unsupported: set[str]) -> str:
+        parts = re.split(r"(?<=[.!?。！？])\s+|\n+", value or "")
+        kept = [part for part in parts if part and not contains_unsupported(part, unsupported)]
+        return " ".join(kept).strip()
+
+    def strip_unsupported_tokens(value: str, unsupported: set[str]) -> str:
+        stripped = FACT_TOKEN_PATTERN.sub(
+            lambda match: "" if _fact_tokens(match.group(0)) & unsupported else match.group(0),
+            value or "",
+        )
+        stripped = re.sub(r"\s+([,.;:!?])", r"\1", stripped)
+        stripped = re.sub(r"\s{2,}", " ", stripped)
+        return stripped.strip(" -–—:;,.")
+
+    pages = prepared.get("pages") or []
+    for page_index, unsupported in unsupported_by_page.items():
+        if not 0 <= page_index < len(pages):
+            continue
+        page = pages[page_index]
+        for field in ("content", "quote", "subtitle"):
+            if isinstance(page.get(field), str):
+                page[field] = remove_unsupported_sentences(page[field], unsupported)
+        if isinstance(page.get("title"), str):
+            page["title"] = strip_unsupported_tokens(page["title"], unsupported)
+        page["bullets"] = [
+            item for item in page.get("bullets") or []
+            if not contains_unsupported(item, unsupported)
+        ] or None
+        page["stats"] = [
+            stat for stat in page.get("stats") or []
+            if not any(
+                contains_unsupported(stat.get(field), unsupported)
+                for field in ("value", "label", "desc")
+            )
+        ] or None
+    return prepared
 
 
 def add_source_notes(page_data: dict, ledger: dict, language: str = "en") -> dict:

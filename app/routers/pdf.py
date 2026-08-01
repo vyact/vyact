@@ -33,6 +33,7 @@ from services.presentation_grounding import (
     reconcile_page_fact_ids,
     repair_unsupported_fact_tokens,
     sanitize_presentation_content,
+    suppress_unsupported_fact_claims,
     validate_evidence_ledger,
 )
 from logger import get_logger
@@ -494,6 +495,19 @@ Repair rules:
                 )
                 repaired = deterministically_repaired
                 remaining_findings = deterministic_remaining_findings
+        if any(
+            finding.get("code") == "unsupported_fact_tokens"
+            for finding in remaining_findings
+        ):
+            safely_repaired = suppress_unsupported_fact_claims(repaired, remaining_findings)
+            safe_remaining_findings = audit_presentation(safely_repaired, ledger, language)
+            if len(safe_remaining_findings) < len(remaining_findings):
+                logger.warning(
+                    "[pdf] 근거 없는 숫자 주장을 제거해 감사 오류 %d개를 추가 해결했습니다",
+                    len(remaining_findings) - len(safe_remaining_findings),
+                )
+                repaired = safely_repaired
+                remaining_findings = safe_remaining_findings
         if remaining_findings:
             # A small local model can repeatedly miss a mechanical audit item even after a
             # focused retry. Keep the best repaired deck instead of failing the entire export;

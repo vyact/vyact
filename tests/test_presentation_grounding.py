@@ -10,6 +10,7 @@ from services.presentation_grounding import (
     reconcile_page_fact_ids,
     repair_unsupported_fact_tokens,
     sanitize_presentation_content,
+    suppress_unsupported_fact_claims,
     validate_evidence_ledger,
 )
 
@@ -173,6 +174,82 @@ class PresentationGroundingTests(unittest.TestCase):
             "fact_ids": ["F1"],
         }]}
         self.assertEqual(audit_presentation(deck, ledger, "en"), [])
+
+    def test_full_date_does_not_match_month_only_claim(self):
+        context = [{"title": "Schedule", "content": "The launch is scheduled for March 2027."}]
+        ledger = validate_evidence_ledger({"facts": [{
+            "source_id": "S1",
+            "statement": "The launch is scheduled for March 2027.",
+            "evidence": "The launch is scheduled for March 2027.",
+        }]}, context)
+        deck = {"pages": [{
+            "title": "Schedule",
+            "content": "The launch is scheduled for 2027-03-15.",
+            "fact_ids": ["F1"],
+        }]}
+        findings = audit_presentation(deck, ledger, "en")
+        unsupported = next(item for item in findings if item["code"] == "unsupported_fact_tokens")
+        self.assertIn("@date:2027-03-15", unsupported["details"])
+
+    def test_korean_full_date_matches_numeric_full_date(self):
+        context = [{"title": "Schedule", "content": "시행일은 2027년 3월 15일입니다."}]
+        ledger = validate_evidence_ledger({"facts": [{
+            "source_id": "S1",
+            "statement": "시행일은 2027년 3월 15일입니다.",
+            "evidence": "시행일은 2027년 3월 15일입니다.",
+        }]}, context)
+        deck = {"pages": [{
+            "title": "Schedule",
+            "content": "Effective date: 2027-03-15.",
+            "fact_ids": ["F1"],
+        }]}
+        self.assertEqual(audit_presentation(deck, ledger, "en"), [])
+
+    def test_fraction_and_ratio_are_audited(self):
+        context = [{"title": "Vote", "content": "Approval requires 1/4 of all votes."}]
+        ledger = validate_evidence_ledger({"facts": [{
+            "source_id": "S1",
+            "statement": "Approval requires 1/4 of all votes.",
+            "evidence": "Approval requires 1/4 of all votes.",
+        }]}, context)
+        deck = {"pages": [{
+            "title": "Vote",
+            "content": "Approval requires 1/3 of all votes.",
+            "fact_ids": ["F1"],
+        }]}
+        findings = audit_presentation(deck, ledger, "en")
+        unsupported = next(item for item in findings if item["code"] == "unsupported_fact_tokens")
+        self.assertIn("1/3", unsupported["details"])
+
+    def test_unrepairable_numeric_claim_is_safely_removed(self):
+        deck = {"pages": [{
+            "title": "Budget: USD 15B",
+            "content": "The approved budget is USD 15B. Delivery remains on schedule.",
+            "bullets": ["Budget: USD 15B", "Team structure"],
+            "stats": [{"value": "USD 15B", "label": "Budget", "desc": "Approved"}],
+            "fact_ids": ["F1"],
+        }]}
+        findings = [{
+            "page_index": 0,
+            "code": "unsupported_fact_tokens",
+            "details": ["15b"],
+        }]
+        repaired = suppress_unsupported_fact_claims(deck, findings)
+        page = repaired["pages"][0]
+        self.assertEqual(page["title"], "Budget: USD")
+        self.assertEqual(page["content"], "Delivery remains on schedule.")
+        self.assertEqual(page["bullets"], ["Team structure"])
+        self.assertIsNone(page["stats"])
+
+    def test_unsupported_full_date_is_removed_from_title(self):
+        deck = {"pages": [{"title": "Launch — 2027-03-15", "fact_ids": ["F1"]}]}
+        findings = [{
+            "page_index": 0,
+            "code": "unsupported_fact_tokens",
+            "details": ["@date:2027-03-15"],
+        }]
+        repaired = suppress_unsupported_fact_claims(deck, findings)
+        self.assertEqual(repaired["pages"][0]["title"], "Launch")
 
     def test_numbered_outline_is_extracted(self):
         prompt = "소개 문장\n1. 표지와 핵심 메시지\n2) 정책 영향 비교\n마무리"
