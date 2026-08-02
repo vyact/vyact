@@ -22,7 +22,7 @@ from config import IMAGE_MODEL_IDS
 from prompts import VOICE_MODE_SUFFIX, FORMAT_INSTRUCTION, EXTENSION_FORMAT_INSTRUCTION, get_extension_format_instruction
 from routers.deps import load_config_async
 from routers.chat_helpers import (
-    extract_paste_context, load_system_prompt,
+    load_system_prompt, unwrap_pasted_text,
     resolve_selected_articles, search_file_id_chunks,
     build_injected_context, build_user_message, build_assistant_message,
     filter_article_sources,
@@ -312,9 +312,9 @@ async def query(req: QueryRequest):
     if not req.question.strip() and not req.attachments:
         raise HTTPException(400, "질문 또는 이미지를 입력하세요.")
 
-    # 1) 붙여넣기 마커 추출
+    # 1) 붙여넣기 UI 마커 제거 (본문은 사용자 질문으로 유지)
     original_question = req.question
-    clean_question, paste_context = extract_paste_context(req.question)
+    clean_question = unwrap_pasted_text(req.question)
     req = req.model_copy(update={"question": clean_question})
 
     # 2) 설정/시스템 프롬프트 로드
@@ -344,7 +344,7 @@ async def query(req: QueryRequest):
 
     # 3) 첨부파일 분류 (분석용 context / 이미지)
     file_context_docs, image_attachments = (
-        _file_attachments_to_context(req.attachments) + paste_context,
+        _file_attachments_to_context(req.attachments),
         [a for a in req.attachments if a.get("type") == "image"],
     )
 
@@ -544,9 +544,9 @@ async def query_stream(req: QueryRequest):
             # user 발화 시각을 요청 도착 시점으로 고정 (프론트가 전송 시각을 주면 우선 사용)
             user_ts = req.user_timestamp or datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
-            # 1) 붙여넣기 마커 추출
+            # 1) 붙여넣기 UI 마커 제거 (본문은 사용자 질문으로 유지)
             original_question = req.question
-            clean_question, paste_context = extract_paste_context(req.question)
+            clean_question = unwrap_pasted_text(req.question)
 
             # 2) 설정/시스템 프롬프트 로드
             cfg, current_model, system_prompt = await load_system_prompt(req.system_prompt)
@@ -573,7 +573,7 @@ async def query_stream(req: QueryRequest):
                     pass
 
             # 3) 첨부파일 분류
-            file_context_docs = _file_attachments_to_context(req.attachments) + paste_context
+            file_context_docs = _file_attachments_to_context(req.attachments)
             image_attachments = [a for a in req.attachments if a.get("type") == "image"]
 
             # conv_id를 여기서 미리 확정한다.

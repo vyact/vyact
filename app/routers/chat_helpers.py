@@ -23,26 +23,14 @@ logger = get_logger(__name__)
 PASTE_PATTERN = re.compile(r'«PASTE:(.*?)»\n([\s\S]*?)«/PASTE»')
 
 
-def extract_paste_context(question: str) -> tuple[str, list[dict]]:
-    """질문에서 «PASTE:...» 마커를 추출하여 context_docs 리스트로 변환.
-
-    Returns:
-        (clean_question, paste_context_docs)
-    """
-    matches = PASTE_PATTERN.findall(question)
-    paste_docs = [
-        {
-            "title": label or "붙여넣기",
-            "content": content,
-            "source": "붙여넣기",
-            "url": "",
-            "score": 1.0,
-            "indexed_at": "",
-        }
-        for label, content in matches
+def unwrap_pasted_text(question: str) -> str:
+    """붙여넣은 본문을 화면의 칩 순서대로 먼저 두고 직접 입력한 문장을 뒤에 둔다."""
+    pasted_contents = [
+        match.group(2).replace('«\\/PASTE»', '«/PASTE»').strip()
+        for match in PASTE_PATTERN.finditer(question)
     ]
-    clean = PASTE_PATTERN.sub('', question).strip()
-    return clean, paste_docs
+    typed_content = PASTE_PATTERN.sub('', question).strip()
+    return '\n\n'.join(part for part in [*pasted_contents, typed_content] if part)
 
 
 # ── 시스템 프롬프트 로드 ──────────────────────────────────────────────────
@@ -63,21 +51,6 @@ async def load_system_prompt(explicit_prompt: str) -> tuple[dict, str, str]:
             if prompt:
                 system_prompt = prompt["content"]
     return cfg, current_model, system_prompt
-
-
-# ── 첨부파일 분류 ──────────────────────────────────────────────────────────
-
-def separate_attachments(attachments: list, paste_context: list[dict],
-                         file_attachments_to_context_fn) -> tuple[list[dict], list[dict]]:
-    """첨부파일을 file_context_docs(분석용)와 image_attachments(비전용)로 분리.
-
-    Returns:
-        (file_context_docs, image_attachments)
-    """
-    file_context_docs = file_attachments_to_context_fn(attachments) + paste_context
-    image_attachments = [a for a in attachments if a.get("type") == "image"]
-    return file_context_docs, image_attachments
-
 
 
 # ── 이전 assistant의 article_sources에서 file_id 승계 ────────────────────

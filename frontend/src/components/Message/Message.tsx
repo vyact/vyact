@@ -2,7 +2,7 @@ import React, {useMemo, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Braces} from 'lucide-react';
 import 'katex/dist/katex.min.css';
-import {escapeHtml, nl2br} from '../../utils/helpers';
+import {escapeHtml, nl2br, unwrapPastedText} from '../../utils/helpers';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
 import CodeBlock from '../CodeBlock';
 import CodeFileViewer from '../CodeFileViewer/CodeFileViewer';
@@ -184,7 +184,8 @@ const Message: React.FC<MessageProps> = ({
             document.execCommand('copy');
             document.body.removeChild(el);
         };
-        copyText(content);
+        const clipboardContent = role === 'user' ? unwrapPastedText(content) : content;
+        copyText(clipboardContent);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };

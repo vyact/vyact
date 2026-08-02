@@ -10,6 +10,16 @@ export function nl2br(text: string): string {
   return text.replace(/\n/g, '<br>');
 }
 
+/** UI 표시용 PASTE 마커를 제거하고 붙여넣은 원문만 유지한다. */
+export function unwrapPastedText(text: string): string {
+  const pastePattern = /«PASTE:.*?»\n([\s\S]*?)«\/PASTE»/g;
+  const pastedContents = Array.from(text.matchAll(pastePattern), match => (
+    match[1].replaceAll('«\\/PASTE»', '«/PASTE»').trim()
+  ));
+  const typedContent = text.replace(pastePattern, '').trim();
+  return [...pastedContents, typedContent].filter(Boolean).join('\n\n');
+}
+
 export function generateUUID(): string {
   if (crypto.randomUUID) {
     return crypto.randomUUID();
