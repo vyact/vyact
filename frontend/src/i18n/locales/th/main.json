@@ -438,6 +438,7 @@
     "promptLabel": "พรอมป์ต: {{title}}",
     "noPrompt": "ไม่มีพรอมป์ต",
     "newChat": "แชตใหม่",
+    "refreshHistory": "รีเฟรชประวัติการสนทนา",
     "projects": "โปรเจกต์",
     "projectFolderPathPrompt": "ป้อนที่อยู่โฟลเดอร์โปรเจกต์:",
     "projectEdit": "แก้ไขโปรเจกต์",

@@ -255,9 +255,6 @@ export function useChat(deps: UseChatDeps) {
         const articlesSnapshot = extraArticles?.length
             ? [...extraArticles]
             : [...pendingArticles];
-        if (extraArticles?.length) {
-            setPendingArticles(extraArticles);
-        }
 
         // ── 커맨드 처리 ──────────────────────────────────────────────
         if (query.trim() === '/clear') {
@@ -396,6 +393,10 @@ export function useChat(deps: UseChatDeps) {
             return false;
         }
 
+        // 메일·Drive 문서·기사·영상 등 선택 자료는 이번 요청에서만 소비한다.
+        // 대화 화면의 출처 기록은 userMessage/articleSources에 남지만 다음 요청에는 자동 재주입하지 않는다.
+        if (articlesSnapshot.length > 0) setPendingArticles([]);
+
         const userTs = new Date().toISOString();  // 전송 시각 — 화면/서버 동일하게 사용
         const userMessage: Message = {
             role: 'user', content: query, timestamp: userTs,
@@ -406,18 +407,11 @@ export function useChat(deps: UseChatDeps) {
         const prevMessagesSnapshot = uploadStreamId
             ? messagesRef.current.filter(m => m.id !== uploadStreamId)
             : [...messagesRef.current];
-        // 히스토리 전송 시 이전 메시지의 파일/zip attachment content 제거.
-        // 파일은 chat_file_chunks에 인덱싱돼 있으므로, 후속 질문에서 file_id 경로로
-        // 관련 청크만 검색해서 가져온다. 전체 content를 매 요청마다 전송하면
-        // zip 첨부 후 후속 질문에서 수만 토큰이 낭비된다. 이미지(base64)는 유지.
+        // 이전 메시지의 첨부는 화면 기록으로만 유지하고 다음 요청에는 다시 보내지 않는다.
+        // 파일·ZIP은 별도의 chat_file_chunks 대화방 검색을 통해 관련 청크만 조회된다.
         const sanitizedHistory = prevMessagesSnapshot.map(msg => {
             if (!msg.attachments?.length) return msg;
-            const cleanedAtts = msg.attachments
-                .filter((a: any) => a.type === 'image')  // 이미지만 유지, file/zip 제거
-                .map((a: any) => ({type: a.type, filename: a.filename}));
-            return cleanedAtts.length === msg.attachments.length
-                ? msg
-                : {...msg, attachments: cleanedAtts.length > 0 ? cleanedAtts : undefined};
+            return {...msg, attachments: undefined};
         });
         // 업로드 진행 메시지 제거 후 유저 메시지 추가
         if (uploadStreamId) setConversationRequestState(requestConvId, {streamingMessageId: null});

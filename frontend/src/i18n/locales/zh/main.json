@@ -438,6 +438,7 @@
     "promptLabel": "提示词: {{title}}",
     "noPrompt": "无提示词",
     "newChat": "新对话",
+    "refreshHistory": "刷新对话历史",
     "responseInProgress": "正在生成回复",
     "projects": "项目",
     "projectFolderPathPrompt": "请输入项目文件夹路径：",

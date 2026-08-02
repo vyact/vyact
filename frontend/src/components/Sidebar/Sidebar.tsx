@@ -1,6 +1,6 @@
 import React, {useEffect, useState, useRef} from 'react';
 import {useTranslation} from 'react-i18next';
-import {Pencil, Trash2, FileText, FileCode, NotebookText, Plus, ChevronDown, SquarePen, LoaderCircle} from 'lucide-react';
+import {Pencil, Trash2, FileText, FileCode, NotebookText, Plus, ChevronDown, SquarePen, LoaderCircle, RefreshCw} from 'lucide-react';
 import {renderMarkdown} from '../../utils/markdownUtils';
 import ModelSelector from '../ModelSelector';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
@@ -25,6 +25,7 @@ interface SidebarProps {
     conversations: Conversation[];
     historyTotal?: number;
     onLoadMoreHistory?: () => void;
+    onRefreshHistory: () => Promise<void> | void;
     activeConvId: string;
     activeConversationIds?: string[];
     onConversationSelect: (convId: string) => void;
@@ -226,7 +227,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                              installed, selectedModel, onModelChange, onProviderChange,
                                              onBeforeModelContextChange,
                                              conversations, activeConvId, activeConversationIds = [], onConversationSelect, onConversationDelete,
-                                             historyTotal = 0, onLoadMoreHistory,
+                                             historyTotal = 0, onLoadMoreHistory, onRefreshHistory,
                                              onDeleteAllConversations, onDeleteProjectConversations,
                                              onConversationRename, onNewConversation,
                                              onShowSummary = () => {},
@@ -288,7 +289,17 @@ const Sidebar: React.FC<SidebarProps> = ({
     const previousActiveConversationIdsRef = useRef<Set<string>>(new Set(activeConversationIds));
     const completedConversationIdsPendingRef = useRef<Set<string>>(new Set());
     const [loadingMore, setLoadingMore] = useState(false);
+    const [isRefreshingHistory, setIsRefreshingHistory] = useState(false);
     const activeConversationIdSet = new Set(activeConversationIds);
+    const refreshHistory = async () => {
+        if (isRefreshingHistory) return;
+        setIsRefreshingHistory(true);
+        try {
+            await onRefreshHistory();
+        } finally {
+            setIsRefreshingHistory(false);
+        }
+    };
     const saveProjectName = async (project: Project) => {
         const name = projectRenameValue.trim();
         setRenamingProjectId(null);
@@ -543,6 +554,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                                         </svg>
                                     </button>
                                 )}
+                                <button
+                                    className="btn-refresh-history"
+                                    onClick={() => void refreshHistory()}
+                                    disabled={isRefreshingHistory}
+                                    aria-label={t('sidebar.refreshHistory')}
+                                >
+                                    <RefreshCw size={15}/>
+                                </button>
                                 <button className="btn-new" onClick={() => { onProjectChange?.(null); onNewConversation(); }}>
                                     <SquarePen size={17}/>
                                     {t('sidebar.newChat')}

@@ -438,6 +438,7 @@
     "promptLabel": "プロンプト: {{title}}",
     "noPrompt": "プロンプトなし",
     "newChat": "新規チャット",
+    "refreshHistory": "会話履歴を更新",
     "responseInProgress": "応答を生成中",
     "projects": "プロジェクト",
     "projectFolderPathPrompt": "プロジェクトフォルダーのパスを入力してください:",

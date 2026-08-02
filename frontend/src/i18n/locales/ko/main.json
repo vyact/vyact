@@ -438,6 +438,7 @@
     "promptLabel": "프롬프트: {{title}}",
     "noPrompt": "프롬프트 없음",
     "newChat": "새 대화",
+    "refreshHistory": "대화 히스토리 새로고침",
     "responseInProgress": "응답 생성 중",
     "projects": "프로젝트",
     "projectFolderPathPrompt": "프로젝트 폴더 경로를 입력하세요:",

@@ -438,6 +438,7 @@
     "promptLabel": "Prompt: {{title}}",
     "noPrompt": "No prompt",
     "newChat": "New Chat",
+    "refreshHistory": "Refresh conversation history",
     "responseInProgress": "Generating response",
     "projects": "Projects",
     "projectFolderPathPrompt": "Enter the project folder path:",

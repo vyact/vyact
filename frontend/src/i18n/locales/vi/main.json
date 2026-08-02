@@ -438,6 +438,7 @@
     "promptLabel": "Prompt: {{title}}",
     "noPrompt": "Không có prompt",
     "newChat": "Chat mới",
+    "refreshHistory": "Làm mới lịch sử trò chuyện",
     "responseInProgress": "Đang tạo phản hồi",
     "projects": "Dự án",
     "projectFolderPathPrompt": "Nhập đường dẫn thư mục dự án:",

@@ -464,6 +464,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                             conversations={conv.conversations}
                             historyTotal={conv.historyTotal}
                             onLoadMoreHistory={conv.loadMoreHistory}
+                            onRefreshHistory={conv.loadHistory}
                             activeConvId={conv.currentConvId}
                             activeConversationIds={chat.activeConversationIds}
                             onConversationSelect={convId => conv.loadConversation(
