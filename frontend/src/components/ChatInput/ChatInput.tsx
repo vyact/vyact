@@ -498,7 +498,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                             <ApprovalControl/>
 
                             <CustomSelect
-                                className="chat-system-prompt-select"
+                                className={`chat-system-prompt-select${selectedPromptId ? ' is-selected' : ''}`}
                                 options={[
                                     {value: '', label: t('sidebar.promptDefault')},
                                     ...systemPrompts.map((prompt): SelectOption => ({value: prompt.id, label: prompt.title})),
@@ -529,7 +529,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                             />
 
                             <CustomSelect
-                                className="chat-system-prompt-select"
+                                className={`chat-system-prompt-select${selectedKnowledgeCollectionId ? ' is-selected' : ''}`}
                                 options={knowledgeCollections.map(collection => ({value: collection.id, label: collection.name}))}
                                 value={selectedKnowledgeCollectionId}
                                 onChange={setSelectedKnowledgeCollectionId}
