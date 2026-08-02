@@ -372,7 +372,7 @@
 
 .chat-system-prompt-select.is-selected .custom-select-trigger {
     border-color: color-mix(in srgb, var(--accent) 65%, var(--border));
-    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    background: transparent;
     color: var(--accent);
     font-weight: 600;
 }
@@ -385,7 +385,7 @@
 .chat-system-prompt-select.is-selected .custom-select-trigger:hover,
 .chat-system-prompt-select.is-selected .custom-select-trigger.open {
     border-color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 20%, transparent);
+    background: transparent;
 }
 
 .chat-system-prompt-select .custom-select-trigger-label {
