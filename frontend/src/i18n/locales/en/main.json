@@ -986,6 +986,7 @@
   },
   "message": {
     "modelNoResponse": "The selected AI model could not generate a response. Please try again.",
+    "outputTruncated": "The response was cut off because it reached the maximum output length. Ask the model to continue.",
     "followupTitle": "Continue the conversation",
     "followupSendSelected": "Send {{count}}",
     "followupCustomPlaceholder": "Or type a reply…",

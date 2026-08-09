@@ -607,7 +607,8 @@ export function useChat(deps: UseChatDeps) {
                                     followups: fuList.length > 0 ? fuList : undefined,
                                     articleSources: mergedSources.length > 0 ? mergedSources : undefined,
                                     injectedContext: injectedContextItems.length > 0 ? injectedContextItems : undefined,
-                                    stats: data.stats || m.stats
+                                    stats: data.stats || m.stats,
+                                    truncated: data.truncated || undefined
                                 };
                             }));
                             if (showVoiceChatModalRef.current && data.answer)

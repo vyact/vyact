@@ -989,6 +989,7 @@
   },
   "message": {
     "modelNoResponse": "選択したAIモデルは応答を生成できませんでした。もう一度お試しください。",
+    "outputTruncated": "最大出力長に達したため、回答が途中で切れました。続きを回答するよう依頼してください。",
     "followupTitle": "続けて質問",
     "followupSendSelected": "{{count}}件を送信",
     "followupCustomPlaceholder": "または直接返信…",

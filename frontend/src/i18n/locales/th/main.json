@@ -989,6 +989,7 @@
   },
   "message": {
     "modelNoResponse": "โมเดล AI ที่เลือกไม่สามารถสร้างคำตอบได้ โปรดลองอีกครั้ง",
+    "outputTruncated": "คำตอบถูกตัดเนื่องจากถึงความยาวเอาต์พุตสูงสุด โปรดขอให้โมเดลตอบต่อ",
     "followupTitle": "ถามต่อ",
     "followupSendSelected": "ส่ง {{count}} รายการ",
     "followupCustomPlaceholder": "หรือตอบกลับโดยตรง…",

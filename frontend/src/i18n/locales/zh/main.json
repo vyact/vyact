@@ -989,6 +989,7 @@
   },
   "message": {
     "modelNoResponse": "所选 AI 模型未能生成响应。请重试。",
+    "outputTruncated": "回答因达到最大输出长度而被截断。请让模型继续回答。",
     "followupTitle": "继续提问",
     "followupSendSelected": "发送 {{count}} 项",
     "followupCustomPlaceholder": "或直接回复…",

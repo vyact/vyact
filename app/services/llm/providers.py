@@ -165,7 +165,11 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
                     usage["completion_tokens"] = u.get("completion_tokens")
             choices = chunk.get("choices") or []
             if choices:
-                piece = choices[0].get("delta", {}).get("content")
+                choice = choices[0]
+                finish_reason = choice.get("finish_reason")
+                if usage is not None and finish_reason:
+                    usage["finish_reason"] = finish_reason
+                piece = choice.get("delta", {}).get("content")
                 if piece:
                     yield piece
 

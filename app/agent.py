@@ -251,6 +251,7 @@ async def rag_query_stream(
 
     parts: list[str] = []
     stats: dict | None = None
+    finish_reason: str | None = None
     tool_sources: list[dict] = []
     post_docs: list[dict] = []
 
@@ -333,6 +334,8 @@ async def rag_query_stream(
             yield ev
         elif ev.get("type") == "stats":
             stats = {k: v for k, v in ev.items() if k != "type"}
+        elif ev.get("type") == "finish":
+            finish_reason = ev.get("reason")
         elif ev.get("type") == "rag_fallback":
             # 메모/뉴스RAG/첨부파일 자동조회 결과 — UI 진행 표시용으로 그대로 통과
             yield ev
@@ -354,4 +357,5 @@ async def rag_query_stream(
         "sources": all_sources,
         "model": await get_model_name(),
         "stats": stats,
+        "truncated": finish_reason == "length",
     }}

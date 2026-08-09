@@ -82,6 +82,7 @@ const Message: React.FC<MessageProps> = ({
                                              isError, onRetry, isGeneratedImage, articleSources,
                                              pdfFile, pdfParams, onPdfEdit, injectedContext, onShowInjectedContext, onOpenMemo,
                                              isStreaming = false, conversationId, requestStartedAt, toolStatus, activityLog, stats,
+                                             truncated,
                                          }) => {
     const {t} = useTranslation('main');
     const {panel} = useCodePanel();
@@ -943,6 +944,12 @@ const Message: React.FC<MessageProps> = ({
                 ]);
                 return line1 ? <div className="msg-stats bot">{line1}</div> : null;
             })()}
+
+            {role === 'assistant' && !isStreaming && truncated && (
+                <div className="msg-truncation-notice" role="status">
+                    {t('message.outputTruncated')}
+                </div>
+            )}
 
             {role === 'assistant' && !isStreaming && activityLog?.length ? (
                 <ActivityTimeline

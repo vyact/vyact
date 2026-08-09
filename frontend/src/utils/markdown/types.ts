@@ -23,6 +23,7 @@ export interface MessageProps {
     requestStartedAt?: number | null;
     toolStatus?: ToolActivity;
     activityLog?: ToolActivity[];
+    truncated?: boolean;
     stats?: {
         load_duration?: number | null;
         prompt_eval_count?: number | null;

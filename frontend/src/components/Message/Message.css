@@ -292,6 +292,17 @@
     text-align: right;
 }
 
+.msg-truncation-notice {
+    margin: 4px 16px 0;
+    padding: 8px 10px;
+    border: 1px solid color-mix(in srgb, var(--warning, #d97706) 35%, transparent);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--warning, #d97706) 10%, transparent);
+    color: var(--text-secondary, var(--muted));
+    font-size: 12px;
+    line-height: 1.45;
+}
+
 .msg-copy-btn {
     background: none;
     border: none;

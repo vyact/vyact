@@ -989,6 +989,7 @@
   },
   "message": {
     "modelNoResponse": "Le modèle d’IA sélectionné n’a pas pu générer de réponse. Veuillez réessayer.",
+    "outputTruncated": "La réponse a été interrompue après avoir atteint la longueur maximale. Demandez au modèle de continuer.",
     "followupTitle": "Poursuivre la conversation",
     "followupSendSelected": "Envoyer {{count}}",
     "followupCustomPlaceholder": "Ou écrire une réponse…",

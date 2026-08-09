@@ -769,6 +769,7 @@ async def query_stream(req: QueryRequest):
                 gen_sources = final_result.get("sources", []) or []
                 gen_model = final_result.get("model", model)
                 gen_stats = final_result.get("stats")
+                response_truncated = bool(final_result.get("truncated"))
                 yield _sse("meta", {"model": gen_model, "sources": gen_sources})
 
                 # 답변에서 <conv_summary>/<project_summary> 숨김 태그 추출 후 제거 (사용자에겐 안 보임).
@@ -784,6 +785,7 @@ async def query_stream(req: QueryRequest):
                 article_sources = [s for s in gen_sources if s.get("url") and s.get("source") != "붙여넣기"]
                 assistant_msg = build_assistant_message(
                     answer, gen_model, article_sources, injected_context, gen_stats, _activity_log,
+                    truncated=response_truncated,
                 )
 
                 # 여기까진 전부 순수 계산(빠름). ES 저장(save_conversation의 refresh=True 등)과
@@ -828,7 +830,8 @@ async def query_stream(req: QueryRequest):
 
                     _run_in_background(_save_history_bg())
 
-                yield _sse("done", {"conv_id": conv_id, "answer": answer, "stats": gen_stats})
+                yield _sse("done", {"conv_id": conv_id, "answer": answer, "stats": gen_stats,
+                                    "truncated": response_truncated})
                 _saved = True
                 return
 
@@ -839,6 +842,7 @@ async def query_stream(req: QueryRequest):
             metadata_stream_filter = HiddenMetadataStreamFilter()
             parts: list[str] = []
             stats: dict | None = None
+            finish_reason: str | None = None
             selected_docs_system_prompt = system_prompt
             if not req.voice_mode and not req.minimal_prompt:
                 from services.conv_summary import build_summary_instruction
@@ -865,6 +869,8 @@ async def query_stream(req: QueryRequest):
                     yield _sse("tool", ev)
                 elif ev.get("type") == "stats":
                     stats = {k: v for k, v in ev.items() if k != "type"}
+                elif ev.get("type") == "finish":
+                    finish_reason = ev.get("reason")
 
             trailing_visible_text = metadata_stream_filter.finish()
             if trailing_visible_text:
@@ -880,7 +886,10 @@ async def query_stream(req: QueryRequest):
             injected_context = build_injected_context(context_docs)
             user_message = build_user_message(original_question, user_ts, req.attachments, articles)
             article_sources = filter_article_sources(context_docs)
-            assistant_msg = build_assistant_message(answer, model, article_sources, injected_context, stats)
+            response_truncated = finish_reason == "length"
+            assistant_msg = build_assistant_message(
+                answer, model, article_sources, injected_context, stats, truncated=response_truncated,
+            )
 
             if not req.no_history:
                 try:
@@ -892,7 +901,8 @@ async def query_stream(req: QueryRequest):
                     logger.warning("[query_stream] 히스토리 저장 실패: %s", e)
             _saved = True
 
-            yield _sse("done", {"conv_id": conv_id, "answer": answer, "stats": stats})
+            yield _sse("done", {"conv_id": conv_id, "answer": answer, "stats": stats,
+                                "truncated": response_truncated})
         except (asyncio.CancelledError, GeneratorExit):
             logger.info("[query_stream] 클라이언트 연결 종료 — 스트림 중단")
         finally:

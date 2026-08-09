@@ -493,6 +493,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                                 toolStatus={msg.toolStatus}
                                 activityLog={msg.activityLog}
                                 stats={msg.role === 'user' ? messages[idx + 1]?.stats : msg.stats}
+                                truncated={msg.truncated}
                             />
                             </div>
                         ))}

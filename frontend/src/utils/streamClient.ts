@@ -13,7 +13,7 @@ export interface StreamHandlers {
     onReset?: () => void;
     onTool?: (data: { phase?: string; name?: string; args?: Record<string, unknown>; round?: number; result?: string; approval_id?: string; risk?: string; conversation_id?: string; project_id?: string }) => void;
     onIndexProgress?: (data: { source_name?: string; done?: number; total?: number }) => void;
-    onDone?: (data: { conv_id?: string; answer?: string; stats?: Record<string, number | null> }) => void;
+    onDone?: (data: { conv_id?: string; answer?: string; stats?: Record<string, number | null>; truncated?: boolean }) => void;
     onError?: (message: string) => void;
 }
 

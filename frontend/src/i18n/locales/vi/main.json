@@ -989,6 +989,7 @@
   },
   "message": {
     "modelNoResponse": "Mô hình AI đã chọn không thể tạo phản hồi. Vui lòng thử lại.",
+    "outputTruncated": "Phản hồi đã bị cắt do đạt độ dài đầu ra tối đa. Hãy yêu cầu mô hình tiếp tục.",
     "followupTitle": "Hỏi tiếp",
     "followupSendSelected": "Gửi {{count}} mục",
     "followupCustomPlaceholder": "Hoặc nhập phản hồi trực tiếp…",

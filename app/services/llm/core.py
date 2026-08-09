@@ -150,6 +150,8 @@ async def chat_stream_with_tools(
                 }
                 log_entry["stats"] = stats
                 yield {"type": "stats", **stats}
+            if usage.get("finish_reason"):
+                yield {"type": "finish", "reason": usage["finish_reason"]}
         except httpx.HTTPStatusError as e:
             msg = http_err_msg(e, _PROVIDER_LABEL.get(provider_type, provider_type))
             log_entry["error"] = msg
