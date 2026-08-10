@@ -27,24 +27,24 @@ services:
       timeout: 10s
       retries: 10
 
-  kibana:
-    image: docker.elastic.co/kibana/kibana:9.4.2
-    container_name: vyact-kibana
-    environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-      - xpack.security.enabled=false
-      - server.name=vyact-kibana
-    ports:
-      - "127.0.0.1:5651:5601"
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
-    restart: always
-    healthcheck:
-      test: [ "CMD-SHELL", "curl -s http://localhost:5601/api/status | grep -q 'available'" ]
-      interval: 20s
-      timeout: 10s
-      retries: 10
+#  kibana:
+#    image: docker.elastic.co/kibana/kibana:9.4.2
+#    container_name: vyact-kibana
+#    environment:
+#      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+#      - xpack.security.enabled=false
+#      - server.name=vyact-kibana
+#    ports:
+#      - "127.0.0.1:5651:5601"
+#    depends_on:
+#      elasticsearch:
+#        condition: service_healthy
+#    restart: always
+#    healthcheck:
+#      test: [ "CMD-SHELL", "curl -s http://localhost:5601/api/status | grep -q 'available'" ]
+#      interval: 20s
+#      timeout: 10s
+#      retries: 10
 
 volumes:
   rag_es_data:
