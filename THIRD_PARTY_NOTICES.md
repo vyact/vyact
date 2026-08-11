@@ -16,6 +16,13 @@ When distributing a binary release, the project maintainer should preserve any t
 
 This public source distribution may include assets that are identified in their original source or package metadata. Their original copyright notices and licenses apply.
 
+### CPython and python-build-standalone
+
+Vyact desktop distributions include CPython 3.12 produced by the
+`astral-sh/python-build-standalone` project. CPython is distributed under the
+Python Software Foundation License. The standalone archive's dependency license
+notices are shipped inside the packaged `resources/python` directory.
+
 ### Pretendard
 
 The frontend uses Pretendard, distributed under the SIL Open Font License, Version 1.1.

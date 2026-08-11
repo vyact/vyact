@@ -78,6 +78,12 @@ if !errorlevel! neq 0 ( echo [FAIL] Frontend build 실패 & cd .. & call :RESTOR
 cd ..
 echo [OK] Frontend build 완료
 
+echo.
+echo [3.5/5] Bundled Python 3.12 runtime...
+powershell -NoProfile -ExecutionPolicy Bypass -File "scripts\prepare_python_runtime.ps1"
+if !errorlevel! neq 0 ( echo [FAIL] Python runtime 준비 실패 & call :RESTORE & pause & exit /b 1 )
+echo [OK] Python runtime 준비 완료
+
 :: ── 4. Electron 빌드 ──────────────────────────
 echo.
 echo [4/5] Electron build...

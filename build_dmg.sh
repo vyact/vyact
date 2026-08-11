@@ -121,12 +121,17 @@ else
   warn "AppIcon.iconset and icon.icns not found – electron-builder may use its default icon"
 fi
 
-# ── 6. Electron 빌드 ───────────────────────────
+# ── 6. Python 런타임 준비 ──────────────────────
+step "Preparing bundled Python 3.12 runtime"
+"$ROOT_DIR/scripts/prepare_python_runtime.sh" macos
+ok "Python runtime ready"
+
+# ── 7. Electron 빌드 ───────────────────────────
 step "Building DMG (arm64)"
 
 npm run build
 
-# ── 7. 결과물 정리 ────────────────────────────
+# ── 8. 결과물 정리 ────────────────────────────
 step "Collecting artifacts"
 
 mkdir -p "$DIST_DIR"

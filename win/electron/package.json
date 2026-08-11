@@ -45,6 +45,10 @@
     ],
     "extraResources": [
       {
+        "from": "python-runtime/python",
+        "to": "python"
+      },
+      {
         "from": "../app",
         "to": "app"
       },

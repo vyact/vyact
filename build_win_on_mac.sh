@@ -79,6 +79,7 @@ echo "[OK] Frontend build 완료"
 # ── 4. Electron 빌드 (--win 크로스 컴파일) ────
 echo ""
 echo "[4/5] Electron build (Windows target)..."
+./scripts/prepare_python_runtime.sh windows
 cd electron
 rm -rf dist
 if $IS_CLEAN_BUILD; then

@@ -16,6 +16,9 @@ const APP_RES = app.isPackaged
 const I18N_LOCALES_DIR = app.isPackaged
     ? path.join(process.resourcesPath, "locales")
     : path.join(__dirname, "..", "..", "frontend", "src", "i18n", "locales");
+const BUNDLED_PYTHON = app.isPackaged
+    ? path.join(process.resourcesPath, "python", "python.exe")
+    : process.env.VYACT_PYTHON || "python";
 
 const LOGS_DIR = path.join(INSTALL_DIR, "logs");
 const SERVER_PORT = 8000;
@@ -269,26 +272,11 @@ function isSupportedPython(pythonBin, args = [], env = envWithChoco()) {
 }
 
 function resolvePython() {
-    const candidates = [
-        // Lingua 2.2.0 requires Python 3.12 or newer.
-        {cmd: "py", args: ["-3.12"]},
-        {cmd: "py", args: ["-3"]},
-        {cmd: "python", args: []},
-        {cmd: "python3", args: []},
-    ];
-    for (const {cmd, args} of candidates) {
-        try {
-            const result = spawnSync(cmd, [...args, "--version"], {encoding: "utf8", env: envWithChoco()});
-            const versionMatch = `${result.stdout || ""}${result.stderr || ""}`.match(/Python (\d+)\.(\d+)/i);
-            const major = Number(versionMatch?.[1]);
-            const minor = Number(versionMatch?.[2]);
-            if (result.status === 0 && major === 3 && minor >= 11 && minor <= 12) {
-                log(`✅ Python found: ${cmd} ${args.join(" ")} (${versionMatch[0]})`);
-                return {cmd, args};
-            }
-        } catch {}
+    if (isSupportedPython(BUNDLED_PYTHON, [], envWithChoco())) {
+        log(`✅ Using bundled Python 3.12: ${BUNDLED_PYTHON}`);
+        return {cmd: BUNDLED_PYTHON, args: []};
     }
-    log("❌ Python 3.12 not found");
+    log(`❌ Bundled Python 3.12 not found: ${BUNDLED_PYTHON}`);
     return null;
 }
 
@@ -371,51 +359,6 @@ function checkAndInstallOllama() {
     return false;
 }
 
-// ── Python 확인 / Chocolatey로 자동 설치 ────
-function checkAndInstallPython() {
-    log("▸ Checking Python installation...");
-
-    if (resolvePython()) {
-        log("✅ Python already installed");
-        return true;
-    }
-
-    log("⚠️ Python not installed — attempting auto-install via Chocolatey");
-
-    if (!isChocoInstalled()) {
-        log("▸ Chocolatey not found — installing first");
-        if (!installChoco()) {
-            log("⚠️ Chocolatey installation failed — manual Python install required");
-            const {dialog} = require("electron");
-            const choice = dialog.showMessageBoxSync({
-                type: "question",
-                buttons: ["Install Python manually", "Later"],
-                title: "Python Required",
-        message: "Failed to auto-install Python.\nPlease install Python 3.12 from https://www.python.org/downloads/",
-            });
-            if (choice === 0) shell.openExternal("https://www.python.org/downloads/");
-            return false;
-        }
-    }
-
-    if (chocoInstall("python312")) {
-        log("✅ Python 3.12 installed (choco)");
-        process.env.PATH = `C:\\Python312;C:\\Python312\\Scripts;${process.env.PATH}`;
-        return true;
-    }
-
-    log("❌ Python auto-install failed");
-    const {dialog} = require("electron");
-    const choice = dialog.showMessageBoxSync({
-        type: "question",
-        buttons: ["Install Python manually", "Later"],
-        title: "Python Required",
-                message: "Failed to auto-install Python.\nPlease install Python 3.12 from https://www.python.org/downloads/",
-    });
-    if (choice === 0) shell.openExternal("https://www.python.org/downloads/");
-    return false;
-}
-
 // ── Elasticsearch 확인/시작 (Docker) ─────────
 function checkAndStartElasticsearch() {
     log("▸ Checking Elasticsearch...");
@@ -451,9 +394,9 @@ function checkAllDependencies() {
     log("Checking dependencies");
     log("========================================");
 
-    const pythonOk = checkAndInstallPython();
+    const pythonOk = Boolean(resolvePython());
     if (!pythonOk) {
-        log("❌ Python not found — exiting");
+        log("❌ Bundled Python runtime not found — exiting");
         return false;
     }
 
@@ -533,16 +476,14 @@ async function startServer() {
 
         const python = resolvePython();
         if (!python) {
-            log("❌ Python not found — cannot start server");
-            const {dialog} = require("electron");
-            dialog.showErrorBox("Python Required", "Python is not installed.\nRestart the app to attempt auto-installation.");
+            log("❌ Bundled Python runtime not found — cannot start server");
             return;
         }
 
         try {
-            const venvArgs = [python.cmd, ...python.args, "-m", "venv", VENV_DIR];
+            const venvArgs = [...python.args, "-m", "venv", VENV_DIR];
 
-            execSync(venvArgs.join(" "), {stdio: "inherit", env: envWithChoco(), windowsHide: true});
+            execFileSync(python.cmd, venvArgs, {stdio: "inherit", env: envWithChoco(), windowsHide: true});
             log("✅ venv created");
 
             log("▸ Upgrading pip...");
@@ -600,7 +541,9 @@ async function startServer() {
         VYACT_SYSTEM_LANGUAGE: app.getLocale(),
     };
 
-    const finalPython = fs.existsSync(VENV_PYTHON) ? VENV_PYTHON : "python";
+    const resolvedPython = resolvePython();
+    const finalPython = fs.existsSync(VENV_PYTHON) ? VENV_PYTHON : resolvedPython?.cmd;
+    if (!finalPython) throw new Error("Bundled Python 3.12 runtime is missing");
     log(`🚀 Starting server: ${finalPython}`);
     sendLoadingStatus(getStartupTranslation().waitingForServer);
 

@@ -15,7 +15,7 @@ Intel-based Macs are not currently supported.
 
 - Git
 - Node.js 22 and npm
-- Python 3.12
+- Python 3.12 (backend development only; release builds download and bundle it automatically)
 - [Ollama](https://ollama.com/download) for local-model features
 - Docker Desktop (optional; Vyact can also use its supported native Elasticsearch setup)
 
@@ -36,7 +36,7 @@ Run the following from the repository root on an Apple Silicon Mac:
 ./build_dmg.sh
 ```
 
-The script offers a choice between a normal or clean build, builds the frontend, packages the Electron app, and writes the DMG to `dist/`.
+The script offers a choice between a normal or clean build, downloads the pinned standalone Python 3.12 runtime, builds the frontend, packages the Electron app, and writes the DMG to `dist/`.
 
 ## Build for Windows
 
@@ -46,7 +46,7 @@ Run the following from the repository root in Command Prompt on Windows:
 build.bat
 ```
 
-The script builds the frontend, packages the Windows Electron app, and writes the installer to `dist/`.
+The script downloads the pinned standalone Python 3.12 runtime, builds the frontend, packages the Windows Electron app, and writes the installer to `dist/`.
 
 ## Build Windows from macOS
 

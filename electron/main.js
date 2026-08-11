@@ -17,6 +17,9 @@ const APP_RES = app.isPackaged
 const I18N_LOCALES_DIR = app.isPackaged
     ? path.join(process.resourcesPath, "locales")
     : path.join(__dirname, "..", "frontend", "src", "i18n", "locales");
+const BUNDLED_PYTHON = app.isPackaged
+    ? path.join(process.resourcesPath, "python", "bin", "python3")
+    : process.env.VYACT_PYTHON || "python3";
 
 const LOGS_DIR = path.join(INSTALL_DIR, "logs");
 const SERVER_PORT = 8000;
@@ -209,10 +212,10 @@ function showElasticsearchUnavailableAndQuit() {
     app.exit(1);
 }
 
-// ── pyenv + system python 자동 선택 ────────
-function isSupportedPython(pythonBin, env) {
+// 배포 앱은 자체 Python을 사용한다. 개발 실행에서만 VYACT_PYTHON 또는 python3를 쓴다.
+function isSupportedPython(pythonBin) {
     try {
-        const result = spawnSync(pythonBin, ["--version"], {encoding: "utf8", env});
+        const result = spawnSync(pythonBin, ["--version"], {encoding: "utf8"});
         const versionMatch = `${result.stdout || ""}${result.stderr || ""}`.match(/Python (\d+)\.(\d+)/i);
         const major = Number(versionMatch?.[1]);
         const minor = Number(versionMatch?.[2]);
@@ -223,43 +226,11 @@ function isSupportedPython(pythonBin, env) {
 }
 
 function resolvePython() {
-    const baseEnv = {
-        ...process.env,
-        PYENV_ROOT: `${process.env.HOME}/.pyenv`,
-        PATH: `${process.env.HOME}/.pyenv/shims:${process.env.HOME}/.pyenv/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:${process.env.PATH || ""}`,
-    };
-
-    try {
-        const pyenvInit = `
-            export PYENV_ROOT="$HOME/.pyenv";
-            export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH";
-            eval "$(pyenv init -)";
-        `;
-
-        const pyenvPython = execSync(
-            `${pyenvInit} pyenv which python3`,
-            {shell: "/bin/bash", env: baseEnv}
-        ).toString().trim();
-
-        if (isSupportedPython(pyenvPython, baseEnv)) {
-            log(`✅ Using pyenv Python 3.12: ${pyenvPython}`);
-            return pyenvPython;
-        }
-        log(`⚠️ pyenv Python is not 3.12: ${pyenvPython}`);
-
-    } catch (e) {
-        log("⚠️ pyenv not found → checking system python3");
+    if (isSupportedPython(BUNDLED_PYTHON)) {
+        log(`✅ Using bundled Python 3.12: ${BUNDLED_PYTHON}`);
+        return BUNDLED_PYTHON;
     }
-
-    const systemCandidates = ["python3.12", "python3"];
-    for (const pythonBin of systemCandidates) {
-        if (isSupportedPython(pythonBin, baseEnv)) {
-            log(`✅ Using system Python 3.12: ${pythonBin}`);
-            return pythonBin;
-        }
-    }
-
-    log("❌ Python 3.12 not found");
+    log(`❌ Bundled Python 3.12 not found: ${BUNDLED_PYTHON}`);
     return null;
 }
 
@@ -551,7 +522,8 @@ async function startServer() {
         VYACT_SYSTEM_LANGUAGE: app.getLocale(),
     };
 
-    const finalPython = fs.existsSync(python) ? python : "python3";
+    const finalPython = fs.existsSync(python) ? python : resolvePython();
+    if (!finalPython) throw new Error("Bundled Python 3.12 runtime is missing");
     log(`🚀 Starting server: ${finalPython}`);
     sendLoadingStatus(getStartupTranslation().waitingForServer);
 
