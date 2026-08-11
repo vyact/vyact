@@ -132,7 +132,7 @@ async def search_candidates(question: str, size: int = QUERY_CANDIDATE_SIZE) -> 
             content = "\n".join(part for part in metadata if part)
             detail = str(source.get("content_text") or "").strip()
             if detail:
-                content = f"{content}\n{detail[:1200]}" if content else detail[:1200]
+                content = f"{content}\n\n{detail[:1200]}" if content else detail[:1200]
             candidates.append({
                 "id": source.get("external_id", hit.get("_id", "")),
                 "title": source.get("title", ""),
@@ -254,10 +254,16 @@ async def _fetch_dataset(
 
 
 def _build_document(list_item: dict, detail: dict, conditions: dict, fetched_at: str) -> dict:
-    text_parts = [
-        list_item.get("서비스명"), list_item.get("서비스목적요약"), list_item.get("지원대상"),
-        list_item.get("선정기준"), list_item.get("지원내용"), list_item.get("신청방법"),
-        detail.get("서비스목적"), detail.get("구비서류"), detail.get("문의처"),
+    text_sections = [
+        ("서비스명", list_item.get("서비스명")),
+        ("서비스 목적 요약", list_item.get("서비스목적요약")),
+        ("지원 대상", list_item.get("지원대상")),
+        ("선정 기준", list_item.get("선정기준")),
+        ("지원 내용", list_item.get("지원내용")),
+        ("신청 방법", list_item.get("신청방법")),
+        ("서비스 목적", detail.get("서비스목적")),
+        ("구비 서류", detail.get("구비서류")),
+        ("문의처", detail.get("문의처")),
     ]
     condition_labels = [
         value for key, value in conditions.items()
@@ -271,7 +277,17 @@ def _build_document(list_item: dict, detail: dict, conditions: dict, fetched_at:
         "lifecycle_status": "active",
         "missing_sync_count": 0,
         "title": list_item.get("서비스명", ""),
-        "content_text": "\n".join(str(value) for value in [*text_parts, *condition_labels] if value),
+        "content_text": "\n\n".join([
+            *(
+                f"{label}\n{str(value).strip()}"
+                for label, value in text_sections
+                if value
+            ),
+            *(
+                f"지원 조건\n{str(value).strip()}"
+                for value in condition_labels
+            ),
+        ]),
         "support_type": list_item.get("지원유형", ""),
         "target": list_item.get("지원대상", ""),
         "category": list_item.get("서비스분야", ""),

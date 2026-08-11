@@ -54,6 +54,15 @@ function looksLikeCode(text: string): boolean {
     return hits >= 3;
 }
 
+function formatPublicDataText(text: string): string {
+    return text
+        .replace(/\r\n?/g, '\n')
+        .replace(/[ \t]+/g, ' ')
+        .replace(/ *\n */g, '\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+}
+
 const RagContextModal: React.FC<RagContextModalProps> = ({ items, onClose }) => {
     const { t } = useTranslation('main');
     const [activeIdx, setActiveIdx] = React.useState(0);
@@ -90,7 +99,12 @@ const RagContextModal: React.FC<RagContextModalProps> = ({ items, onClose }) => 
     // 코드/마크다운은 raw 그대로, 일반 기사/텍스트는 cleanNewsText로 단락 정리
     // \n 이스케이프만 먼저 실제 줄바꿈으로 복원 (ES 저장 시 이스케이프된 경우 대비)
     const rawData = (activeItem?.data ?? '').replace(/\\n/g, '\n');
-    const content = (isCode || isMarkdown) ? rawData : cleanNewsText(rawData);
+    const isPublicData = activeItem?.source === 'Government24';
+    const content = (isCode || isMarkdown)
+        ? rawData
+        : isPublicData
+            ? formatPublicDataText(rawData)
+            : cleanNewsText(rawData);
 
     return (
         <div
@@ -248,6 +262,14 @@ const RagContextModal: React.FC<RagContextModalProps> = ({ items, onClose }) => 
                                         style={{ background: 'none', padding: 0 }}
                                     />
                                 </pre>
+                            </div>
+                        ) : isPublicData ? (
+                            <div style={{fontSize: '14px', color: 'var(--text)', lineHeight: '1.75', opacity: 0.88}}>
+                                {content.split(/\n{2,}/).filter(Boolean).map((paragraph, index) => (
+                                    <p key={index} style={{whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: index ? '14px 0 0' : 0}}>
+                                        {paragraph}
+                                    </p>
+                                ))}
                             </div>
                         ) : (
                             <pre style={{

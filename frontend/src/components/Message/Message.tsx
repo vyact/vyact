@@ -700,8 +700,10 @@ const Message: React.FC<MessageProps> = ({
                             <div key={idx} className="src-item">
                                 <span className="src-name">{getLocalizedSourceLabel(art.source, t)}</span>
                                 {art.application_deadline ? (
-                                    <span className="src-date src-deadline" title={art.application_deadline}>
-                                        {t('message.applicationDeadline')} {art.application_deadline}
+                                    <span className="src-date src-deadline" data-tooltip={art.application_deadline}>
+                                        <span className="src-deadline-text">
+                                            {t('message.applicationDeadline')} {art.application_deadline}
+                                        </span>
                                     </span>
                                 ) : art.source !== 'Government24' && art.indexed_at && (
                                     <span className="src-date">{(() => {
