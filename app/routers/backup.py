@@ -17,6 +17,7 @@ from pydantic import BaseModel
 from config import INSTALL_DIR
 from services.db import LANGUAGES, get_es, get_language_index
 from services.google_workspace.auth import revoke_all_tokens
+from services.prompts import load_prompts_cache
 from logger import get_logger
 
 logger = get_logger(__name__)
@@ -472,6 +473,13 @@ async def import_backup(
 
     finally:
         await es.close()
+
+    if "system_prompts" in backup["indices"]:
+        try:
+            await load_prompts_cache()
+            logger.info("[restore] 시스템 프롬프트 캐시 재동기화 완료")
+        except Exception as e:
+            logger.warning("[restore] 시스템 프롬프트 캐시 재동기화 실패: %s", e)
 
     plugin_reconciliation = []
     if backup_plugins:
