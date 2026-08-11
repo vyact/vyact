@@ -14,6 +14,7 @@ INDEX_NAME = "external_data_kr_gov24"
 SYNC_STATUS_DOC_ID = "external_data_sync_kr_gov24"
 API_BASE_URL = "https://api.odcloud.kr/api/gov24/v3"
 PAGE_SIZE = 100
+BULK_CHUNK_SIZE = 100
 INACTIVE_AFTER_MISSING_SYNCS = 3
 
 ENDPOINTS = {
@@ -37,7 +38,9 @@ async def _save_sync_status(status: dict) -> None:
             index=SETTINGS_INDEX,
             id=SYNC_STATUS_DOC_ID,
             document={"key": SYNC_STATUS_DOC_ID, "value": status},
-            refresh=True,
+            # GET은 실시간 조회를 지원하므로 진행률 저장마다 인덱스 refresh를
+            # 강제하지 않는다. 채팅/RAG 검색과의 ES 자원 경쟁을 줄이기 위함이다.
+            refresh=False,
         )
     finally:
         await es.close()
@@ -184,13 +187,21 @@ async def _mark_missing_documents(active_ids: set[str], fetched_at: str) -> tupl
                 },
             })
         if actions:
-            await async_bulk(es, actions, refresh=True, raise_on_error=False)
+            await async_bulk(
+                es,
+                actions,
+                chunk_size=BULK_CHUNK_SIZE,
+                refresh=False,
+                raise_on_error=False,
+            )
     finally:
         await es.close()
     return possibly_removed, inactive
 
 
 async def synchronize(service_key: str) -> None:
+    # 이 락은 정부24 동기화의 중복 실행만 막는다. 채팅, RAG, 다른 외부 데이터
+    # 동기화와 공유하지 않으므로 사용자 작업을 차단하지 않는다.
     async with _sync_lock:
         started_at = _utc_now()
         status = {
@@ -244,7 +255,8 @@ async def synchronize(service_key: str) -> None:
                     indexed_count, indexing_errors = await async_bulk(
                         es,
                         documents,
-                        refresh=True,
+                        chunk_size=BULK_CHUNK_SIZE,
+                        refresh=False,
                         raise_on_error=False,
                     )
                     if indexing_errors:
@@ -256,6 +268,12 @@ async def synchronize(service_key: str) -> None:
             finally:
                 await es.close()
             possibly_removed, inactive = await _mark_missing_documents(active_ids, fetched_at)
+            es = get_es()
+            try:
+                # 모든 작은 bulk가 끝난 뒤 한 번만 refresh한다.
+                await es.indices.refresh(index=INDEX_NAME)
+            finally:
+                await es.close()
             await _save_sync_status({
                 "status": "completed",
                 "stage": "completed",
