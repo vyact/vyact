@@ -32,6 +32,7 @@ interface CustomSelectProps {
     ariaLabel?: string;
     portal?: boolean;
     onOpen?: () => void;
+    header?: React.ReactNode;
 }
 
 const CustomSelect: React.FC<CustomSelectProps> = ({
@@ -57,6 +58,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                                                        ariaLabel,
                                                        portal = false,
                                                        onOpen,
+                                                       header,
                                                    }) => {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
@@ -145,6 +147,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                 ...(dropdownBackground ? {background: dropdownBackground} : {}),
             }}
         >
+            {header}
             {searchable && (
                 <div className="custom-select-search">
                     <input

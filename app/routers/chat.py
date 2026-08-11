@@ -44,10 +44,47 @@ from services.plugin_manager import has_plugin_url_resolvers, resolve_plugin_url
 from services.tool_approval import ApprovalContext, current_approval_context, resolve_tool_approval
 from routers.images import ImageGenerateRequest, generate_image
 from logger import get_logger
+from services.external_data.gov24 import SOURCE_ID as GOV24_SOURCE_ID, search_candidates as search_gov24_candidates
 
 logger = get_logger(__name__)
 
 router = APIRouter()
+
+EXTERNAL_DATA_INSTRUCTION = """
+[External public-data guidance]
+The attached Government24 records are search candidates, not confirmed recommendations.
+Apply hard eligibility constraints before writing the answer. A record with an explicit conflict in
+residence, age, household type, income, housing, employment, or another mandatory condition must
+not appear under eligible, likely, recommended, or currently available benefits. Do not ask follow-up
+questions about a record that is already disqualified by a known hard constraint.
+
+Use these result groups strictly:
+1. Eligible now: every stated mandatory condition matches and the application is currently open.
+2. Needs confirmation: no stated condition conflicts, but a mandatory fact or schedule is unknown.
+3. Excluded: a stated condition conflicts or the deadline has passed.
+If group 1 is empty, say clearly that no benefit can currently be confirmed. Keep excluded records
+brief or omit them unless explaining why a seemingly relevant result was rejected. A missing required
+condition such as childbirth, disability, emergency housing risk, or employment is never a positive
+match; it belongs in needs confirmation only when no known fact conflicts.
+
+Never invent missing eligibility conditions, and cite the underlying record when making a factual
+claim. An active lifecycle status only means the record is still present in the source API; it does
+not prove applications are currently open. Compare explicit application deadlines with today's date,
+exclude expired records from currently available benefits, and mark unclear or recurring schedules
+as needing confirmation. Answer in the user's language.
+""".strip()
+
+
+async def _get_selected_external_context(question: str, resource_ids: list[str]) -> tuple[list[dict], str]:
+    selected_ids = set(resource_ids)
+    if GOV24_SOURCE_ID not in selected_ids:
+        return [], ""
+    try:
+        candidates = await search_gov24_candidates(question)
+        return candidates, EXTERNAL_DATA_INSTRUCTION
+    except Exception as exc:
+        logger.warning("[external_data] Government24 candidate search failed: %s", exc)
+        return [], EXTERNAL_DATA_INSTRUCTION
 
 
 def _new_conversation_title(conv_summary: str | None, fallback_question: str) -> str:
@@ -188,6 +225,7 @@ class QueryRequest(BaseModel):
     folder_path: str = ""  # 코드 분석용 폴더 경로 (프론트에서 선택)
     project_id: str = ""
     knowledge_collection_id: str = ""  # 선택한 지식 컬렉션의 자료만 RAG 검색
+    external_resource_ids: list[str] = []  # 사용자가 명시적으로 선택한 외부 데이터만 별도 검색
     minimal_prompt: bool = False  # True면 앱 전용 기본 프롬프트(FORMAT_INSTRUCTION, conv_summary 태그 지시) 제외.
     selected_mcp_ids: list[str] = []  # @로 선택한 MCP들은 enabled 여부와 무관하게 이번 요청에만 사용.
     approval_mode: str = "risky_only"
@@ -383,6 +421,10 @@ async def query(req: QueryRequest):
                                      reasoning=req.reasoning, call_reason="chat:voice_mode")
         result = {"answer": raw_answer, "sources": [], "model": await get_model_name()}
     else:
+        external_docs, external_instruction = await _get_selected_external_context(
+            req.question, req.external_resource_ids,
+        )
+        external_selected = GOV24_SOURCE_ID in req.external_resource_ids
         # URL 크롤링
         all_urls = [u.rstrip('.') for u in URL_RE.findall(req.question)]
         urls = _should_crawl_urls(req.question, all_urls) if has_plugin_url_resolvers() else []
@@ -405,7 +447,11 @@ async def query(req: QueryRequest):
             response_system_prompt = (system_prompt if system_prompt else FORMAT_INSTRUCTION) + build_summary_instruction(
                 "", False, project_memory,
             )
+            if external_instruction:
+                response_system_prompt = f"{response_system_prompt}\n\n{external_instruction}"
             rag_result = await rag_query(req.question, response_system_prompt, image_attachments, req.messages,
+                                         extra_context=external_docs,
+                                         skip_rag=external_selected and not req.knowledge_collection_id,
                                          reasoning=req.reasoning, conv_id=conv_id, conversation_summary=conversation_summary,
                                          call_reason="chat:url_context", knowledge_collection_id=req.knowledge_collection_id)
             combined_docs = file_context_docs + url_docs + rag_result.get("sources", [])
@@ -424,8 +470,11 @@ async def query(req: QueryRequest):
             _summary_system_prompt = _summary_base_prompt + build_summary_instruction(
                 "", _has_file_att, project_memory,
             )
+            if external_instruction:
+                _summary_system_prompt = f"{_summary_system_prompt}\n\n{external_instruction}"
             result = await rag_query(req.question, _summary_system_prompt, image_attachments, req.messages,
-                                     extra_context=file_context_docs, skip_rag=_has_file_att,
+                                     extra_context=file_context_docs + external_docs,
+                                     skip_rag=_has_file_att or (external_selected and not req.knowledge_collection_id),
                                      reasoning=req.reasoning, conv_id=conv_id, conversation_summary=conversation_summary,
                                      call_reason="chat:general", knowledge_collection_id=req.knowledge_collection_id)
 
@@ -667,6 +716,10 @@ async def query_stream(req: QueryRequest):
                 has_file_attachment = any(
                     a.get("type") in ("file", "zip") for a in req.attachments
                 )
+                external_selected = GOV24_SOURCE_ID in req.external_resource_ids
+                external_docs, external_instruction = await _get_selected_external_context(
+                    clean_question, req.external_resource_ids,
+                )
 
                 # 대화 요약 태그 생성 지시 — 이 스트리밍 호출에만 덧붙인다.
                 # minimal_prompt(크롬 확장)면 요약 태그 지시를 통째로 생략하고
@@ -682,6 +735,8 @@ async def query_stream(req: QueryRequest):
                         "", has_file_attachment, project_memory,
                     )
                     _fmt_override = None
+                if external_instruction:
+                    _summary_system_prompt = f"{_summary_system_prompt}\n\n{external_instruction}"
 
                 # 모든 등록 폴더를 ID로 노출한다. 코드 도구는 매 호출마다 folder_id를 요구한다.
                 if request_folder_paths:
@@ -701,8 +756,8 @@ async def query_stream(req: QueryRequest):
                 _activity_log: list[dict] = []
                 async for ev in rag_query_stream(
                         clean_question, _summary_system_prompt, image_attachments, req.messages,
-                        extra_context=limit_direct_document_contexts(file_context_docs),
-                        skip_rag=has_file_attachment,
+                        extra_context=limit_direct_document_contexts(file_context_docs) + external_docs,
+                        skip_rag=has_file_attachment or (external_selected and not req.knowledge_collection_id),
                         reasoning=req.reasoning,
                         conv_id=conv_id,
                         conversation_summary=conversation_summary,

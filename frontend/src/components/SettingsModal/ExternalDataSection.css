@@ -367,6 +367,17 @@
     font-size: 11px;
 }
 
+.external-data-sync-progress-label > span:first-child {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.external-data-sync-progress-label strong {
+    color: var(--accent);
+    font-size: 11px;
+}
+
 .external-data-sync-progress-track {
     height: 4px;
     overflow: hidden;

@@ -17,6 +17,7 @@ type StoredConversationMessage = Message & {
 
 export function useConversation() {
     const [conversations, setConversations] = useState<Conversation[]>([]);
+    const [favoriteConversations, setFavoriteConversations] = useState<Conversation[]>([]);
     // 응답 저장이 끝나기 전의 새 대화는 서버 히스토리 재조회 결과에 아직 없을 수 있다.
     // 이 ID들을 별도로 기억해 두면 다른 대화를 열어 목록을 재조회해도 항목이 사라지지 않는다.
     const optimisticConversationIdsRef = React.useRef<Set<string>>(new Set());
@@ -110,6 +111,7 @@ export function useConversation() {
                     content: source.content || '',
                     source: source.source || '',
                     indexed_at: source.indexed_at || '',
+                    application_deadline: source.application_deadline || '',
                     file_id: source.file_id || undefined,
                 }))
                 : msg.articleSources,
@@ -125,6 +127,7 @@ export function useConversation() {
             const keep = Math.max(HISTORY_PAGE, conversations.length);
             const data = await api.getHistory(keep, 0);
             const serverConversations = data.conversations || [];
+            setFavoriteConversations(data.favorite_conversations || []);
             const serverConversationIds = new Set(serverConversations.map(conversation => conversation.conv_id));
             for (const convId of optimisticConversationIdsRef.current) {
                 if (serverConversationIds.has(convId)) optimisticConversationIdsRef.current.delete(convId);
@@ -147,6 +150,7 @@ export function useConversation() {
     const loadMoreHistory = async () => {
         try {
             const data = await api.getHistory(HISTORY_PAGE, conversations.length);
+            setFavoriteConversations(data.favorite_conversations || []);
             const more = data.conversations || [];
             setConversations(prev => {
                 const seen = new Set(prev.map(c => c.conv_id));
@@ -207,11 +211,28 @@ export function useConversation() {
         try {
             optimisticConversationIdsRef.current.delete(convId);
             setConversations(prev => prev.filter(conv => conv.conv_id !== convId));
+            setFavoriteConversations(prev => prev.filter(conv => conv.conv_id !== convId));
             setHistoryTotal(prev => Math.max(0, prev - 1));
             await api.deleteConversation(convId);
             if (convId === currentConvId) newConversation(setResetTrigger);
         } catch (error) {
             console.error('Failed to delete conversation:', error);
+            await loadHistory();
+        }
+    };
+
+    const setConversationFavorite = async (conversation: Conversation, isFavorite: boolean) => {
+        const updatedConversation = {...conversation, is_favorite: isFavorite};
+        setConversations(previous => previous.map(item =>
+            item.conv_id === conversation.conv_id ? updatedConversation : item
+        ));
+        setFavoriteConversations(previous => isFavorite
+            ? [updatedConversation, ...previous.filter(item => item.conv_id !== conversation.conv_id)]
+            : previous.filter(item => item.conv_id !== conversation.conv_id));
+        try {
+            await api.setConversationFavorite(conversation.conv_id, isFavorite);
+        } catch (error) {
+            console.error('Failed to update favorite conversation:', error);
             await loadHistory();
         }
     };
@@ -257,12 +278,12 @@ export function useConversation() {
     };
 
     return {
-        conversations, currentConvId, currentConvIdRef, activeProjectId, setActiveProjectId,
+        conversations, favoriteConversations, currentConvId, currentConvIdRef, activeProjectId, setActiveProjectId,
         messages, messagesRef,
         pendingArticles, setPendingArticles,
         setConvId, addLocalConversation, setMessagesWithRef, setMessagesForConversation, getMessagesForConversation, mapMsg,
         loadHistory, loadMoreHistory, historyTotal,
         newConversation, clearConversation, loadConversation,
-        deleteConversation, deleteAllConversations, deleteProjectConversations,
+        deleteConversation, deleteAllConversations, deleteProjectConversations, setConversationFavorite,
     };
 }

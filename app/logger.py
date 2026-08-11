@@ -27,6 +27,15 @@ class _UnicodeNormalizationFilter(logging.Filter):
         return True
 
 
+class _PdfMinerFontBBoxFilter(logging.Filter):
+    """Hide a harmless warning emitted for PDFs with an omitted FontBBox."""
+
+    MESSAGE_PREFIX = "Could not get FontBBox from font descriptor because None"
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        return not record.getMessage().startswith(self.MESSAGE_PREFIX)
+
+
 def setup_logging() -> None:
     """루트 로거 초기화. main.py 최상단에서 1회만 호출."""
     global _initialized
@@ -79,6 +88,11 @@ def setup_logging() -> None:
             return not any(p in msg for p in self._NOISY_PATHS)
 
     logging.getLogger("uvicorn.access").addFilter(_HealthCheckFilter())
+
+    # Google Docs/Skia PDF 일부는 선택 항목인 FontBBox를 생략한다. pdfminer는
+    # 텍스트를 정상 추출하면서도 같은 무해한 경고를 폰트마다 반복하므로 이
+    # 메시지만 제외하고, pdfminer의 다른 경고는 그대로 유지한다.
+    logging.getLogger("pdfminer.pdffont").addFilter(_PdfMinerFontBBoxFilter())
 
     uve = logging.getLogger("uvicorn.error")
     uve.propagate = False

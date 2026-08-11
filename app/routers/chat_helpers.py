@@ -291,7 +291,8 @@ def build_assistant_message(
     if article_sources:
         msg["article_sources"] = [
             {"title": s.get("title", ""), "url": s.get("url", ""), "source": s.get("source", ""),
-             "indexed_at": s.get("indexed_at", ""), "file_id": s.get("file_id"), "source_type": s.get("source_type", "document")}
+             "indexed_at": s.get("indexed_at", ""), "application_deadline": s.get("application_deadline", ""),
+             "file_id": s.get("file_id"), "source_type": s.get("source_type", "document")}
             for s in article_sources
         ]
     if injected_context:

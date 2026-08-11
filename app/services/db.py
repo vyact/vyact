@@ -193,6 +193,7 @@ async def ensure_index():
                     "messages": {"type": "object", "enabled": False},
                     "created_at": {"type": "date"},
                     "updated_at": {"type": "date"},
+                    "is_favorite": {"type": "boolean"},
                 }},
             )
             logger.info("rag_history 인덱스 생성 완료")

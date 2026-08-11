@@ -399,6 +399,33 @@
     width: 320px;
     max-width: calc(100vw - 32px);
 }
+
+.knowledge-source-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 6px;
+    border-bottom: 1px solid var(--border);
+}
+
+.knowledge-source-tabs button {
+    padding: 7px 8px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.knowledge-source-tabs button:hover {
+    color: var(--text);
+}
+
+.knowledge-source-tabs button.active {
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    color: var(--accent);
+}
 .mcp-mention-menu{position:absolute;bottom:100%;left:0;right:0;margin-bottom:8px;overflow:hidden;border:1px solid var(--border);border-radius:18px;background:var(--surface);box-shadow:0 16px 42px rgba(0,0,0,.38);z-index:110}.mcp-mention-list{max-height:min(360px,50vh);overflow-y:auto}
 .slash-command-menu{position:absolute;bottom:100%;left:0;right:0;margin-bottom:8px;overflow:hidden;border:1px solid var(--border);border-radius:18px;background:var(--surface);box-shadow:0 16px 42px rgba(0,0,0,.38);z-index:100}.slash-command-header{padding:12px 16px;border-bottom:1px solid var(--border);color:var(--muted);font-size:12px;font-weight:700}.slash-command-list{max-height:min(360px,50vh);overflow-y:auto}.slash-command-item{display:block;width:100%;padding:13px 16px;border:0;background:transparent;color:var(--text);text-align:left;cursor:pointer}.slash-command-item:hover,.slash-command-item.active{background:color-mix(in srgb,var(--accent) 12%,transparent)}.slash-command-name,.mcp-mention-copy strong{font-size:15px;font-weight:600}.slash-command-name{color:var(--accent)}.slash-command-description,.mcp-mention-copy small{margin-top:3px;color:var(--muted);font-size:12px}
 .mcp-mention-header{display:flex;align-items:center;gap:8px;padding:12px 16px;color:var(--muted);font-size:12px;font-weight:700;border-bottom:1px solid var(--border)}.mcp-mention-header small{margin-left:auto;font-size:11px;font-weight:400}

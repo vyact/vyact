@@ -409,6 +409,12 @@
     flex-shrink: 0;
     white-space: nowrap;
 }
+
+.src-deadline {
+    max-width: min(320px, 34vw);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 /* ── 스트리밍 중 미완성 코드/프로젝트 블록 플레이스홀더 ── */
 .msg-stream-pending {
     display: flex;

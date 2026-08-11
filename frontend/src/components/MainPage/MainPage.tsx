@@ -462,6 +462,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                             onProviderChange={models.refreshModels}
                             onBeforeModelContextChange={stopActiveResponseBeforeModelContextChange}
                             conversations={conv.conversations}
+                            favoriteConversations={conv.favoriteConversations}
                             historyTotal={conv.historyTotal}
                             onLoadMoreHistory={conv.loadMoreHistory}
                             onRefreshHistory={conv.loadHistory}
@@ -476,6 +477,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                             onDeleteAllConversations={() => conv.deleteAllConversations(setResetTrigger)}
                             onDeleteProjectConversations={projectId => conv.deleteProjectConversations(projectId, setResetTrigger)}
                             onConversationRename={conv.loadHistory}
+                            onConversationFavoriteChange={conv.setConversationFavorite}
                             onNewConversation={() => {
                                 startNewConversation();
                             }}
@@ -532,11 +534,11 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                                 followupComposedRef={followupComposedRef}
                             >
                                 <ChatInput
-                                    onSend={async (message, images, files, selectedMcpIds, knowledgeCollectionId) => {
+                                    onSend={async (message, images, files, selectedMcpIds, knowledgeCollectionId, externalResourceIds) => {
                                         // FollowupBar에서 선택/입력된 내용이 있으면 메인 입력 앞에 합침
                                         const prefix = followupComposedRef.current?.trim();
                                         const combined = prefix ? `${prefix}\n${message}` : message;
-                                        const sent = await chat.handleSend(combined, images, files, undefined, undefined, undefined, selectedMcpIds, knowledgeCollectionId);
+                                        const sent = await chat.handleSend(combined, images, files, undefined, undefined, undefined, selectedMcpIds, knowledgeCollectionId, externalResourceIds);
                                         if (sent !== false) followupComposedRef.current = '';
                                         return sent;
                                     }}

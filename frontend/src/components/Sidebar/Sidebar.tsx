@@ -1,6 +1,6 @@
 import React, {useEffect, useState, useRef} from 'react';
 import {useTranslation} from 'react-i18next';
-import {Pencil, Trash2, FileText, FileCode, NotebookText, Plus, ChevronDown, SquarePen, LoaderCircle, RefreshCw} from 'lucide-react';
+import {Pencil, Trash2, FileText, FileCode, NotebookText, Plus, ChevronDown, SquarePen, LoaderCircle, RefreshCw, Pin, PinOff} from 'lucide-react';
 import {renderMarkdown} from '../../utils/markdownUtils';
 import ModelSelector from '../ModelSelector';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
@@ -25,6 +25,7 @@ interface SidebarProps {
     onProviderChange: () => Promise<void>;
     onBeforeModelContextChange?: () => void;
     conversations: Conversation[];
+    favoriteConversations?: Conversation[];
     historyTotal?: number;
     onLoadMoreHistory?: () => void;
     onRefreshHistory: () => Promise<void> | void;
@@ -33,6 +34,7 @@ interface SidebarProps {
     onConversationSelect: (convId: string) => void;
     onConversationDelete: (convId: string) => void;
     onConversationRename: () => void;
+    onConversationFavoriteChange: (conversation: Conversation, isFavorite: boolean) => void | Promise<void>;
     /** @deprecated 대화 요약은 자동 갱신되며 UI에서 노출하지 않는다. */
     onShowSummary?: (convId: string) => void;
     onNewConversation: () => void;
@@ -228,10 +230,10 @@ blockquote{border-left:3px solid var(--accent);padding:8px 14px;margin:10px 0;co
 const Sidebar: React.FC<SidebarProps> = ({
                                              installed, selectedModel, onModelChange, onProviderChange,
                                              onBeforeModelContextChange,
-                                             conversations, activeConvId, activeConversationIds = [], onConversationSelect, onConversationDelete,
+                                             conversations, favoriteConversations = [], activeConvId, activeConversationIds = [], onConversationSelect, onConversationDelete,
                                              historyTotal = 0, onLoadMoreHistory, onRefreshHistory,
                                              onDeleteAllConversations, onDeleteProjectConversations,
-                                             onConversationRename, onNewConversation,
+                                             onConversationRename, onConversationFavoriteChange, onNewConversation,
                                              onShowSummary = () => {},
                                              collapsed: collapsedProp,
                                              hoverOpen: hoverOpenProp,
@@ -293,6 +295,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     const [loadingMore, setLoadingMore] = useState(false);
     const [isRefreshingHistory, setIsRefreshingHistory] = useState(false);
     const activeConversationIdSet = new Set(activeConversationIds);
+    const favoriteConversationIdSet = new Set(favoriteConversations.map(conversation => conversation.conv_id));
     const refreshHistory = async () => {
         if (isRefreshingHistory) return;
         setIsRefreshingHistory(true);
@@ -533,6 +536,94 @@ const Sidebar: React.FC<SidebarProps> = ({
 
                     </div>
 
+                    {favoriteConversations.length > 0 && (
+                        <section className="favorite-conversations" aria-label={t('sidebar.favoriteConversations')}>
+                            <div className="sec-label">{t('sidebar.favoriteConversations')}</div>
+                            {favoriteConversations.map(conversation => (
+                                <div
+                                    key={conversation.conv_id}
+                                    className={`favorite-conversation${conversation.conv_id === activeConvId ? ' active' : ''}`}
+                                    onClick={() => {
+                                        onProjectChange?.(conversation.project_id || null);
+                                        onConversationSelect(conversation.conv_id);
+                                    }}
+                                >
+                                    {renamingId === conversation.conv_id ? (
+                                        <input
+                                            className="hist-rename-input"
+                                            autoFocus
+                                            value={renameValue}
+                                            onChange={event => setRenameValue(event.target.value)}
+                                            onClick={event => event.stopPropagation()}
+                                            onKeyDown={event => {
+                                                if (event.key === 'Enter') event.currentTarget.blur();
+                                                if (event.key === 'Escape') setRenamingId(null);
+                                            }}
+                                            onBlur={async () => {
+                                                if (renameValue.trim()) {
+                                                    await api.renameConversation(conversation.conv_id, renameValue);
+                                                    onConversationRename();
+                                                }
+                                                setRenamingId(null);
+                                            }}
+                                        />
+                                    ) : (
+                                        <span className="favorite-conversation-title">{conversation.title}</span>
+                                    )}
+                                    {activeConversationIdSet.has(conversation.conv_id) && (
+                                        <span className="conversation-progress" role="status"
+                                              aria-label={t('sidebar.responseInProgress')}
+                                              title={t('sidebar.responseInProgress')}>
+                                            <LoaderCircle size={13}/>
+                                        </span>
+                                    )}
+                                    {!activeConversationIdSet.has(conversation.conv_id) && renamingId !== conversation.conv_id && (
+                                        <>
+                                        <button className="conversation-favorite-btn" type="button"
+                                                aria-label={t('sidebar.removeFavorite')}
+                                                onClick={event => {
+                                                    event.stopPropagation();
+                                                    void onConversationFavoriteChange(conversation, false);
+                                                }}><PinOff size={14}/></button>
+                                        <SidebarOverflowMenu
+                                            isOpen={menuOpenId === `favorite:${conversation.conv_id}`}
+                                            onOpenChange={isOpen => setMenuOpenId(isOpen ? `favorite:${conversation.conv_id}` : null)}
+                                            trigger="···"
+                                        >
+                                            <button className="hist-menu-item" onClick={event => {
+                                                event.stopPropagation();
+                                                setMenuOpenId(null);
+                                                onShowSummary(conversation.conv_id);
+                                            }}><NotebookText size={13}/>{t('sidebar.summary')}</button>
+                                            <button className="hist-menu-item" onClick={event => {
+                                                event.stopPropagation();
+                                                setRenameValue(conversation.title);
+                                                setRenamingId(conversation.conv_id);
+                                                setMenuOpenId(null);
+                                            }}><Pencil size={13}/>{t('sidebar.rename')}</button>
+                                            <button className="hist-menu-item" onClick={event => {
+                                                event.stopPropagation();
+                                                setMenuOpenId(null);
+                                                exportConversation(conversation.conv_id, conversation.title, 'md');
+                                            }}><FileCode size={13}/>{t('sidebar.exportMarkdown')}</button>
+                                            <button className="hist-menu-item" onClick={event => {
+                                                event.stopPropagation();
+                                                setMenuOpenId(null);
+                                                exportConversation(conversation.conv_id, conversation.title, 'pdf');
+                                            }}><FileText size={13}/>{t('sidebar.exportPdf')}</button>
+                                            <button className="hist-menu-item danger" onClick={event => {
+                                                event.stopPropagation();
+                                                setMenuOpenId(null);
+                                                onConversationDelete(conversation.conv_id);
+                                            }}><Trash2 size={13}/>{t('sidebar.delete')}</button>
+                                        </SidebarOverflowMenu>
+                                        </>
+                                    )}
+                                </div>
+                            ))}
+                        </section>
+                    )}
+
                     {/* 히스토리 */}
                     <div className="project-section project-section--history">
                         <div className="sec-label"><button className="project-collapse-btn" onClick={toggleProjects}>{t('sidebar.projects')} <ChevronDown size={15} className={projectsExpanded ? '' : 'closed'}/></button><button className="project-add-btn" onClick={() => setIsProjectCreateOpen(true)}><Plus size={16}/></button></div>
@@ -565,8 +656,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 onDelete={() => { setProjectMenuOpenId(null); deleteProject(project); }}
                                 onDeleteHistory={() => { setProjectMenuOpenId(null); deleteProjectHistory(project); }}
                             >
-                                {conversations.filter(conv => conv.project_id === project.id).slice(0, expandedProjectHistoryIds.has(project.id) ? undefined : PROJECT_HISTORY_PREVIEW_COUNT).map(conv => <div key={conv.conv_id} className={`project-conversation${conv.conv_id === activeConvId ? ' active' : ''}`} onClick={() => { onProjectChange?.(project.id); onConversationSelect(conv.conv_id); }}><button className="project-conversation-title">{conv.title}</button>{activeConversationIdSet.has(conv.conv_id) && <span className="conversation-progress" role="status" aria-label={t('sidebar.responseInProgress')} title={t('sidebar.responseInProgress')}><LoaderCircle size={13}/></span>}<SidebarOverflowMenu isOpen={menuOpenId === conv.conv_id} onOpenChange={isOpen => setMenuOpenId(isOpen ? conv.conv_id : null)} trigger="···"><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); onShowSummary(conv.conv_id); }}><NotebookText size={13}/>{t('sidebar.summary')}</button><button className="hist-menu-item" onClick={() => { setRenameValue(conv.title); setRenamingId(conv.conv_id); setMenuOpenId(null); }}><Pencil size={13}/>{t('sidebar.rename')}</button><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); exportConversation(conv.conv_id, conv.title, 'md'); }}><FileCode size={13}/>{t('sidebar.exportMarkdown')}</button><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); exportConversation(conv.conv_id, conv.title, 'pdf'); }}><FileText size={13}/>{t('sidebar.exportPdf')}</button><button className="hist-menu-item danger" onClick={() => { setMenuOpenId(null); onConversationDelete(conv.conv_id); }}><Trash2 size={13}/>{t('sidebar.delete')}</button></SidebarOverflowMenu></div>)}
-                                {!expandedProjectHistoryIds.has(project.id) && conversations.filter(conv => conv.project_id === project.id).length > PROJECT_HISTORY_PREVIEW_COUNT && <button className="project-history-more" onClick={() => setExpandedProjectHistoryIds(previous => new Set(previous).add(project.id))}>{t('googleWorkspace.more')}</button>}
+                                {conversations.filter(conv => conv.project_id === project.id && !favoriteConversationIdSet.has(conv.conv_id)).slice(0, expandedProjectHistoryIds.has(project.id) ? undefined : PROJECT_HISTORY_PREVIEW_COUNT).map(conv => <div key={conv.conv_id} className={`project-conversation${conv.conv_id === activeConvId ? ' active' : ''}`} onClick={() => { onProjectChange?.(project.id); onConversationSelect(conv.conv_id); }}><button className="project-conversation-title">{conv.title}</button>{activeConversationIdSet.has(conv.conv_id) && <span className="conversation-progress" role="status" aria-label={t('sidebar.responseInProgress')} title={t('sidebar.responseInProgress')}><LoaderCircle size={13}/></span>}<button className="conversation-favorite-btn" type="button" aria-label={t('sidebar.addFavorite')} onClick={event => { event.stopPropagation(); void onConversationFavoriteChange(conv, true); }}><Pin size={14}/></button><SidebarOverflowMenu isOpen={menuOpenId === conv.conv_id} onOpenChange={isOpen => setMenuOpenId(isOpen ? conv.conv_id : null)} trigger="···"><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); onShowSummary(conv.conv_id); }}><NotebookText size={13}/>{t('sidebar.summary')}</button><button className="hist-menu-item" onClick={() => { setRenameValue(conv.title); setRenamingId(conv.conv_id); setMenuOpenId(null); }}><Pencil size={13}/>{t('sidebar.rename')}</button><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); exportConversation(conv.conv_id, conv.title, 'md'); }}><FileCode size={13}/>{t('sidebar.exportMarkdown')}</button><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); exportConversation(conv.conv_id, conv.title, 'pdf'); }}><FileText size={13}/>{t('sidebar.exportPdf')}</button><button className="hist-menu-item danger" onClick={() => { setMenuOpenId(null); onConversationDelete(conv.conv_id); }}><Trash2 size={13}/>{t('sidebar.delete')}</button></SidebarOverflowMenu></div>)}
+                                {!expandedProjectHistoryIds.has(project.id) && conversations.filter(conv => conv.project_id === project.id && !favoriteConversationIdSet.has(conv.conv_id)).length > PROJECT_HISTORY_PREVIEW_COUNT && <button className="project-history-more" onClick={() => setExpandedProjectHistoryIds(previous => new Set(previous).add(project.id))}>{t('googleWorkspace.more')}</button>}
                             </ProjectHistoryRow>
                         ))}
                     </div>
@@ -624,7 +715,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
                                 </div>
                             ) : (
-                                conversations.filter(conv => !conv.project_id).map(conv => (
+                                conversations.filter(conv => !conv.project_id && !favoriteConversationIdSet.has(conv.conv_id)).map(conv => (
                                     <div
                                         key={conv.conv_id}
                                         className={`hist-item${conv.conv_id === activeConvId ? ' active' : ''}`}
@@ -660,6 +751,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                                             </span>
                                         )}
                                         {renamingId !== conv.conv_id && (
+                                            <>
+                                            <button className="conversation-favorite-btn" type="button"
+                                                    aria-label={t('sidebar.addFavorite')}
+                                                    onClick={event => {
+                                                        event.stopPropagation();
+                                                        void onConversationFavoriteChange(conv, true);
+                                                    }}><Pin size={14}/></button>
                                             <SidebarOverflowMenu
                                                 isOpen={menuOpenId === conv.conv_id}
                                                 onOpenChange={isOpen => setMenuOpenId(isOpen ? conv.conv_id : null)}
@@ -702,6 +800,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                                             <Trash2 size={13}/> {t('sidebar.delete')}
                                                         </button>
                                             </SidebarOverflowMenu>
+                                            </>
                                         )}
                                     </div>
                                 ))

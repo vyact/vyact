@@ -55,6 +55,7 @@ async def create_conversation_stub(conv_id: str, title: str, project_id: str | N
                 "messages": [],
                 "created_at": now,
                 "updated_at": now,
+                "is_favorite": False,
                 **({"project_id": project_id} if project_id else {}),
             },
             refresh=True,
@@ -74,6 +75,7 @@ async def save_conversation(conv_id: str, messages: list[dict], title: str = "",
         conv_summary = None
         attachment_summaries = None
         existing_project_id = None
+        existing_is_favorite = False
         existing_title = None
         existing_messages: list[dict] = []
         try:
@@ -83,6 +85,7 @@ async def save_conversation(conv_id: str, messages: list[dict], title: str = "",
             conv_summary = existing["_source"].get("conv_summary")
             attachment_summaries = existing["_source"].get("attachment_summaries")
             existing_project_id = existing["_source"].get("project_id")
+            existing_is_favorite = bool(existing["_source"].get("is_favorite"))
             existing_messages = existing["_source"].get("messages", [])
         except NotFoundError:
             pass
@@ -100,6 +103,7 @@ async def save_conversation(conv_id: str, messages: list[dict], title: str = "",
             "messages": messages,
             "created_at": created_at,
             "updated_at": now,
+            "is_favorite": existing_is_favorite,
         }
         if conv_summary is not None:
             document["conv_summary"] = conv_summary
@@ -135,7 +139,7 @@ async def list_conversations(
             "from": offset,
             "size": size,
             "track_total_hits": True,
-            "_source": ["conv_id", "title", "updated_at", "created_at", "project_id", "conv_summary"],
+            "_source": ["conv_id", "title", "updated_at", "created_at", "project_id", "conv_summary", "is_favorite"],
         })
         total_raw = res["hits"].get("total", 0)
         total = total_raw.get("value", 0) if isinstance(total_raw, dict) else total_raw
@@ -145,12 +149,54 @@ async def list_conversations(
                 "title": h["_source"]["title"],
                 "updated_at": h["_source"]["updated_at"],
                 "project_id": h["_source"].get("project_id"),
+                "is_favorite": bool(h["_source"].get("is_favorite")),
                 "has_summary": bool(h["_source"].get("conv_summary")),
             } for h in res["hits"]["hits"]],
             "total": total,
         }
     except Exception:
         return {"conversations": [], "total": 0}
+    finally:
+        await es.close()
+
+
+async def list_favorite_conversations() -> list[dict]:
+    es = get_es()
+    try:
+        result = await es.search(
+            index=HIST_INDEX,
+            size=100,
+            query={"term": {"is_favorite": True}},
+            sort=[{"updated_at": {"order": "desc"}}],
+            source_includes=[
+                "conv_id", "title", "updated_at", "created_at", "project_id",
+                "conv_summary", "is_favorite",
+            ],
+        )
+        return [{
+            "conv_id": hit["_source"]["conv_id"],
+            "title": hit["_source"]["title"],
+            "updated_at": hit["_source"].get("updated_at"),
+            "created_at": hit["_source"].get("created_at"),
+            "project_id": hit["_source"].get("project_id"),
+            "is_favorite": True,
+            "has_summary": bool(hit["_source"].get("conv_summary")),
+        } for hit in result["hits"]["hits"]]
+    except Exception:
+        return []
+    finally:
+        await es.close()
+
+
+async def set_conversation_favorite(conv_id: str, is_favorite: bool) -> None:
+    es = get_es()
+    try:
+        await es.update(
+            index=HIST_INDEX,
+            id=conv_id,
+            doc={"is_favorite": is_favorite},
+            refresh=True,
+        )
     finally:
         await es.close()
 

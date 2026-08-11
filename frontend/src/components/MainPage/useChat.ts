@@ -216,6 +216,7 @@ export function useChat(deps: UseChatDeps) {
         extraArticles?: ArticleAttachment[],
         selectedMcpIds?: string[],
         knowledgeCollectionId?: string,
+        externalResourceIds?: string[],
     ): Promise<boolean> => {
         const hasContent = query.trim() || (images?.length ?? 0) > 0
             || (fileAttachments?.length ?? 0) > 0
@@ -234,7 +235,7 @@ export function useChat(deps: UseChatDeps) {
 
         isSendingRef.current = true;
         try {
-            return await handleSendInner(query, images, fileAttachments, systemPromptOverride, voiceMode, extraArticles, selectedMcpIds, knowledgeCollectionId);
+            return await handleSendInner(query, images, fileAttachments, systemPromptOverride, voiceMode, extraArticles, selectedMcpIds, knowledgeCollectionId, externalResourceIds);
         } finally {
             isSendingRef.current = false;
         }
@@ -250,6 +251,7 @@ export function useChat(deps: UseChatDeps) {
         extraArticles?: ArticleAttachment[],
         selectedMcpIds?: string[],
         knowledgeCollectionId?: string,
+        externalResourceIds?: string[],
     ): Promise<boolean> => {
         const requestConvId = currentConvIdRef.current || currentConvId;
         const articlesSnapshot = extraArticles?.length
@@ -508,6 +510,7 @@ export function useChat(deps: UseChatDeps) {
                         project_id: deps.activeProjectId || '',
                         selected_mcp_ids: selectedMcpIds || [],
                         knowledge_collection_id: knowledgeCollectionId || '',
+                        external_resource_ids: externalResourceIds || [],
                         approval_mode: resolveApprovalMode(),
                     }, {
                         onMeta: (data) => {
@@ -565,7 +568,8 @@ export function useChat(deps: UseChatDeps) {
                                     url: s.url || '',
                                     content: s.content || '',
                                     source: s.source || '',
-                                    indexed_at: s.indexed_at || ''
+                                    indexed_at: s.indexed_at || '',
+                                    application_deadline: s.application_deadline || '',
                                 }));
                             const mergedSources: ArticleAttachment[] = [
                                 ...articlesSnapshot,
@@ -678,7 +682,8 @@ export function useChat(deps: UseChatDeps) {
                     url: s.url || '',
                     content: s.content || '',
                     source: s.source || '',
-                    indexed_at: s.indexed_at || ''
+                    indexed_at: s.indexed_at || '',
+                    application_deadline: s.application_deadline || '',
                 }));
 
             const mergedSources: ArticleAttachment[] = isActionResponse ? [] : [

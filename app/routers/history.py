@@ -4,6 +4,7 @@ routers/history.py – 대화 히스토리
 from fastapi import APIRouter, HTTPException
 
 from agent import list_conversations, get_conversation, delete_conversation, rename_conversation
+from services.history import list_favorite_conversations, set_conversation_favorite
 
 router = APIRouter()
 
@@ -14,10 +15,12 @@ async def get_history(
     exclude_project: bool = False,
 ):
     # {conversations, total} 반환 — 프론트가 20씩 페이징 조회한다.
-    return await list_conversations(
+    result = await list_conversations(
         size=limit, offset=offset, project_id=project_id,
         exclude_project=exclude_project,
     )
+    result["favorite_conversations"] = await list_favorite_conversations()
+    return result
 
 
 @router.get("/history/{conv_id}")
@@ -83,4 +86,10 @@ async def rename_one(conv_id: str, body: dict):
 async def set_project(conv_id: str, body: dict):
     from services.history import set_conversation_project
     await set_conversation_project(conv_id, body.get("project_id") or None)
+    return {"ok": True}
+
+
+@router.patch("/history/{conv_id}/favorite")
+async def set_favorite(conv_id: str, body: dict):
+    await set_conversation_favorite(conv_id, bool(body.get("is_favorite")))
     return {"ok": True}

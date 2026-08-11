@@ -1,7 +1,9 @@
 """Synchronize Government24 public-benefit data into Elasticsearch."""
 
 import asyncio
-from datetime import datetime, timezone
+import calendar
+import re
+from datetime import date, datetime, timezone
 from urllib.parse import unquote
 
 import httpx
@@ -16,6 +18,7 @@ API_BASE_URL = "https://api.odcloud.kr/api/gov24/v3"
 PAGE_SIZE = 100
 BULK_CHUNK_SIZE = 100
 INACTIVE_AFTER_MISSING_SYNCS = 3
+QUERY_CANDIDATE_SIZE = 40
 
 ENDPOINTS = {
     "list": "serviceList",
@@ -25,6 +28,127 @@ ENDPOINTS = {
 
 _sync_tasks: set[asyncio.Task] = set()
 _sync_lock = asyncio.Lock()
+
+ALWAYS_OPEN_DEADLINE_KEYWORDS = ("상시", "수시")
+RECURRING_DEADLINE_KEYWORDS = ("매년", "분기별", "반기별")
+
+
+def _parse_date_fragment(fragment: str, default_year: int | None = None) -> date | None:
+    normalized = re.sub(r"\([^)]*\)", " ", fragment)
+    korean_match = re.search(
+        r"(?:(20\d{2})\s*년\s*)?(\d{1,2})\s*월(?:\s*(\d{1,2})\s*일)?",
+        normalized,
+    )
+    dotted_match = re.search(
+        r"(?:(20\d{2})\s*[./-]\s*)?(\d{1,2})\s*[./-](?:\s*(\d{1,2}))?",
+        normalized,
+    )
+    match = korean_match or dotted_match
+    if not match:
+        return None
+    year = int(match.group(1) or default_year or 0)
+    month = int(match.group(2))
+    day_text = match.group(3)
+    if not year or not 1 <= month <= 12:
+        return None
+    day = int(day_text) if day_text else calendar.monthrange(year, month)[1]
+    try:
+        return date(year, month, day)
+    except ValueError:
+        return None
+
+
+def normalize_application_deadline(value: object) -> tuple[str, str | None]:
+    """Return deadline kind and an ISO end date when the source text is explicit."""
+    deadline = str(value or "").strip()
+    if not deadline:
+        return "unknown", None
+    if any(keyword in deadline for keyword in ALWAYS_OPEN_DEADLINE_KEYWORDS):
+        return "always_open", None
+    if any(keyword in deadline for keyword in RECURRING_DEADLINE_KEYWORDS):
+        return "recurring", None
+
+    explicit_year = re.search(r"20\d{2}", deadline)
+    default_year = int(explicit_year.group()) if explicit_year else None
+    range_parts = re.split(r"\s*[~∼～]\s*|\s+부터\s+", deadline)
+    end_fragment = range_parts[-1]
+    parsed_end = _parse_date_fragment(end_fragment, default_year)
+    if not parsed_end and ("까지" in deadline or len(range_parts) == 1):
+        parsed_end = _parse_date_fragment(deadline, default_year)
+    return ("dated", parsed_end.isoformat()) if parsed_end else ("unknown", None)
+
+
+async def search_candidates(question: str, size: int = QUERY_CANDIDATE_SIZE) -> list[dict]:
+    """Return active Government24 candidates for an explicitly selected chat source."""
+    es = get_es()
+    try:
+        if not await es.indices.exists(index=INDEX_NAME):
+            return []
+        result = await es.search(
+            index=INDEX_NAME,
+            size=size,
+            query={
+                "bool": {
+                    "filter": [
+                        {"term": {"lifecycle_status": "active"}},
+                        {"bool": {
+                            "should": [
+                                {"bool": {"must_not": {"exists": {"field": "application_end_date"}}}},
+                                {"range": {"application_end_date": {"gte": date.today().isoformat()}}},
+                            ],
+                            "minimum_should_match": 1,
+                        }},
+                    ],
+                    "must": [{
+                        "multi_match": {
+                            "query": question,
+                            "fields": [
+                                "title^5", "target^4", "category^3", "user_type^3",
+                                "support_type^2", "agency^2", "content_text",
+                            ],
+                            "type": "best_fields",
+                            "operator": "or",
+                            "minimum_should_match": "25%",
+                        },
+                    }],
+                },
+            },
+            source_includes=[
+                "external_id", "title", "content_text", "target", "category",
+                "support_type", "agency", "application_deadline", "source_url",
+                "application_end_date", "deadline_kind", "source_modified_at",
+            ],
+        )
+        candidates = []
+        for hit in result.get("hits", {}).get("hits", []):
+            source = hit.get("_source", {})
+            metadata = [
+                f"지원대상: {source.get('target')}" if source.get("target") else "",
+                f"분야: {source.get('category')}" if source.get("category") else "",
+                f"지원유형: {source.get('support_type')}" if source.get("support_type") else "",
+                f"소관기관: {source.get('agency')}" if source.get("agency") else "",
+                f"신청기한: {source.get('application_deadline')}" if source.get("application_deadline") else "",
+            ]
+            content = "\n".join(part for part in metadata if part)
+            detail = str(source.get("content_text") or "").strip()
+            if detail:
+                content = f"{content}\n{detail[:1200]}" if content else detail[:1200]
+            candidates.append({
+                "id": source.get("external_id", hit.get("_id", "")),
+                "title": source.get("title", ""),
+                "content": content,
+                "url": source.get("source_url", ""),
+                "source": "Government24",
+                "source_modified_at": source.get("source_modified_at", ""),
+                "application_deadline": source.get("application_deadline", ""),
+                "application_end_date": source.get("application_end_date"),
+                "deadline_kind": source.get("deadline_kind", "unknown"),
+                "score": hit.get("_score", 0),
+                "external_resource_id": SOURCE_ID,
+            })
+        return candidates
+    finally:
+        await es.close()
 
 
 def _utc_now() -> str:
@@ -79,6 +203,8 @@ async def _ensure_index() -> None:
                 "user_type": {"type": "keyword"},
                 "agency": {"type": "keyword"},
                 "application_deadline": {"type": "text"},
+                "application_end_date": {"type": "date", "format": "strict_date"},
+                "deadline_kind": {"type": "keyword"},
                 "source_url": {"type": "keyword", "index": False},
                 "source_modified_at": {"type": "keyword"},
                 "fetched_at": {"type": "date"},
@@ -137,6 +263,8 @@ def _build_document(list_item: dict, detail: dict, conditions: dict, fetched_at:
         value for key, value in conditions.items()
         if key.startswith("JA") and value not in (None, "", 0, "0")
     ]
+    application_deadline = detail.get("신청기한") or list_item.get("신청기한", "")
+    deadline_kind, application_end_date = normalize_application_deadline(application_deadline)
     return {
         "source_id": SOURCE_ID,
         "external_id": str(list_item["서비스ID"]),
@@ -149,7 +277,9 @@ def _build_document(list_item: dict, detail: dict, conditions: dict, fetched_at:
         "category": list_item.get("서비스분야", ""),
         "user_type": list_item.get("사용자구분", ""),
         "agency": list_item.get("소관기관명", ""),
-        "application_deadline": detail.get("신청기한") or list_item.get("신청기한", ""),
+        "application_deadline": application_deadline,
+        "application_end_date": application_end_date,
+        "deadline_kind": deadline_kind,
         "source_url": detail.get("온라인신청사이트URL") or list_item.get("상세조회URL", ""),
         "source_modified_at": detail.get("수정일시") or list_item.get("수정일시", ""),
         "fetched_at": fetched_at,
@@ -204,13 +334,15 @@ async def synchronize(service_key: str) -> None:
     # 동기화와 공유하지 않으므로 사용자 작업을 차단하지 않는다.
     async with _sync_lock:
         started_at = _utc_now()
+        previous_status = await get_sync_status()
         status = {
             "status": "running",
             "stage": "list",
             "current": 0,
             "total": 0,
             "started_at": started_at,
-            "last_successful_sync_at": (await get_sync_status()).get("last_successful_sync_at"),
+            "document_count": previous_status.get("document_count", 0),
+            "last_successful_sync_at": previous_status.get("last_successful_sync_at"),
         }
         await _save_sync_status(status)
         try:

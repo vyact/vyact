@@ -633,6 +633,14 @@ export const api = {
             body: JSON.stringify({title})
         });
     },
+    async setConversationFavorite(convId: string, isFavorite: boolean): Promise<void> {
+        const response = await fetch(`${API_BASE}/history/${convId}/favorite`, {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({is_favorite: isFavorite}),
+        });
+        await assertOk(response, 'Unable to update favorite conversation.');
+    },
     async getProjects(): Promise<{projects: import('../types').Project[]}> { return (await fetch(`${API_BASE}/projects`)).json(); },
     async createProject(name: string, folderPaths: string[], color: string): Promise<import('../types').Project> { return (await fetch(`${API_BASE}/projects`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name, folder_paths: folderPaths, color})})).json(); },
     async updateProject(projectId: string, updates: Partial<Pick<import('../types').Project, 'name' | 'project_prompt' | 'color' | 'folder_paths'>>): Promise<import('../types').Project> { return (await fetch(`${API_BASE}/projects/${projectId}`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(updates)})).json(); },

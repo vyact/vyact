@@ -699,7 +699,11 @@ const Message: React.FC<MessageProps> = ({
                         {newsSources.map((art, idx) => (
                             <div key={idx} className="src-item">
                                 <span className="src-name">{getLocalizedSourceLabel(art.source, t)}</span>
-                                {art.indexed_at && (
+                                {art.application_deadline ? (
+                                    <span className="src-date src-deadline" title={art.application_deadline}>
+                                        {t('message.applicationDeadline')} {art.application_deadline}
+                                    </span>
+                                ) : art.source !== 'Government24' && art.indexed_at && (
                                     <span className="src-date">{(() => {
                                         const d = new Date(art.indexed_at);
                                         return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;

@@ -26,6 +26,13 @@ const DATA_SOURCES = [
 
 type Gov24SyncStatus = Awaited<ReturnType<typeof api.getGov24SyncStatus>>;
 
+const GOV24_SYNC_STAGE_NUMBERS: Record<string, number> = {
+    list: 1,
+    detail: 2,
+    conditions: 3,
+    completed: 3,
+};
+
 const ExternalDataSection: React.FC = () => {
     const {t, i18n} = useTranslation('settings');
     const [country, setCountry] = useState('KR');
@@ -215,7 +222,10 @@ const ExternalDataSection: React.FC = () => {
                                                         {gov24SyncStatus.status === 'running' && (
                                                             <div className="external-data-sync-progress">
                                                                 <div className="external-data-sync-progress-label">
-                                                                    <span>{t(`externalData.syncStages.${gov24SyncStatus.stage || 'list'}`)}</span>
+                                                                    <span>
+                                                                        <strong>{GOV24_SYNC_STAGE_NUMBERS[gov24SyncStatus.stage || 'list']}/3</strong>
+                                                                        {t(`externalData.syncStages.${gov24SyncStatus.stage || 'list'}`)}
+                                                                    </span>
                                                                     <span>{gov24SyncStatus.current || 0} / {gov24SyncStatus.total || '?'}</span>
                                                                 </div>
                                                                 <div className="external-data-sync-progress-track">

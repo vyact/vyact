@@ -27,6 +27,7 @@ export interface ArticleAttachment {
     content: string;
     source: string;
     indexed_at?: string;
+    application_deadline?: string;
     file_id?: string;  // 인덱싱된 문서 참조용
     source_type?: 'document' | 'web';
 }
@@ -156,6 +157,7 @@ export interface ChatSource {
     url?: string;
     source?: string;
     indexed_at?: string;
+    application_deadline?: string;
     file_id?: string | null;
     score?: number | string;
 }
@@ -167,6 +169,7 @@ export interface Conversation {
     created_at?: string;
     updated_at?: string;
     project_id?: string;
+    is_favorite?: boolean;
     has_summary?: boolean;
 }
 
@@ -187,6 +190,7 @@ export interface ChatResponse {
 
 export interface HistoryResponse {
     conversations: Conversation[];
+    favorite_conversations?: Conversation[];
     total?: number;
 }
 

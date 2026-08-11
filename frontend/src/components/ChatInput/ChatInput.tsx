@@ -30,7 +30,7 @@ import KnowledgeCollectionsModal from '../KnowledgeCollectionsModal/KnowledgeCol
 import ApprovalControl from './ApprovalControl';
 
 interface ChatInputProps {
-    onSend: (message: string, images?: File[], fileAttachments?: FileAttachment[], selectedMcpIds?: string[], knowledgeCollectionId?: string) => void | Promise<boolean>;
+    onSend: (message: string, images?: File[], fileAttachments?: FileAttachment[], selectedMcpIds?: string[], knowledgeCollectionId?: string, externalResourceIds?: string[]) => void | Promise<boolean>;
     onStop?: () => void;
     disabled?: boolean;        // 전송 버튼만 막음 (입력은 허용)
     isImageMode?: boolean;
@@ -94,7 +94,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                                  selectedPromptId = null,
                                                  onOpenSystemPromptSettings,
                                              }) => {
-    const {t} = useTranslation('main');
+    const {t, i18n} = useTranslation('main');
     const {panel: codePanel} = useCodePanel();
     const panels = usePanelManager();
     const {sidePanels} = usePluginExtensions();
@@ -112,6 +112,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
     const [visibleMcpServers, setVisibleMcpServers] = useState<MentionMcpServer[]>([]);
     const [knowledgeCollections, setKnowledgeCollections] = useState<KnowledgeCollection[]>(getCachedKnowledgeCollections);
     const [selectedKnowledgeCollectionId, setSelectedKnowledgeCollectionId] = useState('');
+    const [knowledgeSourceTab, setKnowledgeSourceTab] = useState<'collections' | 'external'>('collections');
+    const [selectedExternalResourceIds, setSelectedExternalResourceIds] = useState<string[]>([]);
+    const [gov24DocumentCount, setGov24DocumentCount] = useState(0);
     const [showKnowledgeCollectionsModal, setShowKnowledgeCollectionsModal] = useState(false);
 
     useEffect(() => {
@@ -119,6 +122,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
         window.addEventListener(KNOWLEDGE_COLLECTIONS_UPDATED_EVENT, refresh);
         return () => window.removeEventListener(KNOWLEDGE_COLLECTIONS_UPDATED_EVENT, refresh);
     }, []);
+    const refreshExternalResources = () => {
+        void api.getGov24SyncStatus().then(status => {
+            setGov24DocumentCount(status.document_count || 0);
+        }).catch(() => setGov24DocumentCount(0));
+    };
     useEffect(() => {
         const openCollectionManager = () => setShowKnowledgeCollectionsModal(true);
         window.addEventListener(OPEN_KNOWLEDGE_COLLECTIONS_MODAL_EVENT, openCollectionManager);
@@ -302,7 +310,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
             attach.clearAll();
             slash.clearSuggestions();
             if (textareaRef.current) textareaRef.current.style.height = 'auto';
-            const result = onSend(fullMessage, prevImages, prevFiles, selectedMcps.map(server => server.id), selectedKnowledgeCollectionId || undefined);
+            const result = onSend(fullMessage, prevImages, prevFiles, selectedMcps.map(server => server.id), selectedKnowledgeCollectionId || undefined, selectedExternalResourceIds);
             if (result instanceof Promise) {
                 const sent = await result;
                 if (sent === false) {
@@ -499,13 +507,10 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
                             <CustomSelect
                                 className={`chat-system-prompt-select${selectedPromptId ? ' is-selected' : ''}`}
-                                options={[
-                                    {value: '', label: t('sidebar.promptDefault')},
-                                    ...systemPrompts.map((prompt): SelectOption => ({value: prompt.id, label: prompt.title})),
-                                ]}
+                                options={systemPrompts.map((prompt): SelectOption => ({value: prompt.id, label: prompt.title}))}
                                 value={selectedPromptId ?? ''}
                                 onChange={promptId => onSystemPromptSelect?.(promptId || null)}
-                                placeholder={t('sidebar.promptDefault')}
+                                placeholder={t('sidebar.promptSelect')}
                                 searchable
                                 searchPlaceholder={t('sidebar.promptSearch')}
                                 clearable
@@ -522,24 +527,70 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                 }
                                 renderTrigger={(selectedLabel, open) => (
                                     <>
-                                        <span className="custom-select-trigger-label">{activePromptTitle || selectedLabel}</span>
+                                        <span className="custom-select-trigger-label">
+                                            {activePromptTitle || selectedLabel || t('sidebar.promptSelect')}
+                                        </span>
                                         <span className={`custom-select-arrow${open ? ' open' : ''}`}>▼</span>
                                     </>
                                 )}
                             />
 
                             <CustomSelect
-                                className={`chat-system-prompt-select${selectedKnowledgeCollectionId ? ' is-selected' : ''}`}
-                                options={knowledgeCollections.map(collection => ({value: collection.id, label: collection.name}))}
-                                value={selectedKnowledgeCollectionId}
-                                onChange={setSelectedKnowledgeCollectionId}
-                                placeholder={t('knowledgeCollections.select')}
+                                className={`chat-system-prompt-select knowledge-source-select${selectedKnowledgeCollectionId || selectedExternalResourceIds.length ? ' is-selected' : ''}`}
+                                options={knowledgeSourceTab === 'collections'
+                                    ? knowledgeCollections.map(collection => ({value: collection.id, label: collection.name}))
+                                    : gov24DocumentCount > 0
+                                        ? [{
+                                            value: 'kr.gov24',
+                                            label: t('knowledgeSources.gov24', {
+                                                count: new Intl.NumberFormat(i18n.resolvedLanguage || i18n.language).format(gov24DocumentCount),
+                                            }),
+                                        }]
+                                        : []}
+                                value={knowledgeSourceTab === 'collections'
+                                    ? selectedKnowledgeCollectionId
+                                    : selectedExternalResourceIds[0] || ''}
+                                onChange={value => {
+                                    if (knowledgeSourceTab === 'collections') {
+                                        setSelectedKnowledgeCollectionId(value);
+                                        return;
+                                    }
+                                    setSelectedExternalResourceIds(current => current.includes(value) ? [] : [value]);
+                                }}
+                                placeholder={t('knowledgeSources.select')}
                                 searchable
-                                searchPlaceholder={t('knowledgeCollections.search')}
+                                searchPlaceholder={t(knowledgeSourceTab === 'collections' ? 'knowledgeCollections.search' : 'knowledgeSources.searchExternal')}
                                 clearable
-                                onClear={() => setSelectedKnowledgeCollectionId('')}
-                                searchAction={<button type="button" className="custom-select-search-action" aria-label={t('knowledgeCollections.title')} onClick={() => setShowKnowledgeCollectionsModal(true)}><Settings size={15}/></button>}
-                                renderTrigger={(selectedLabel, open) => <><span className="custom-select-trigger-label">{selectedLabel}</span><span className={`custom-select-arrow${open ? ' open' : ''}`}>▼</span></>}
+                                onClear={() => {
+                                    setSelectedKnowledgeCollectionId('');
+                                    setSelectedExternalResourceIds([]);
+                                }}
+                                onOpen={refreshExternalResources}
+                                searchAction={<button type="button" className="custom-select-search-action"
+                                    aria-label={t(knowledgeSourceTab === 'collections' ? 'knowledgeCollections.title' : 'knowledgeSources.externalSettings')}
+                                    onClick={() => {
+                                        if (knowledgeSourceTab === 'collections') setShowKnowledgeCollectionsModal(true);
+                                        else window.dispatchEvent(new CustomEvent('vyact:open-settings', {detail: {tab: 'externalData'}}));
+                                    }}><Settings size={15}/></button>}
+                                header={<div className="knowledge-source-tabs">
+                                    <button type="button" className={knowledgeSourceTab === 'collections' ? 'active' : ''}
+                                        onClick={event => { event.stopPropagation(); setKnowledgeSourceTab('collections'); }}>
+                                        {t('knowledgeSources.collections')}
+                                    </button>
+                                    <button type="button" className={knowledgeSourceTab === 'external' ? 'active' : ''}
+                                        onClick={event => { event.stopPropagation(); setKnowledgeSourceTab('external'); refreshExternalResources(); }}>
+                                        {t('knowledgeSources.external')}
+                                    </button>
+                                </div>}
+                                emptyState={<div className="custom-select-empty">{t(knowledgeSourceTab === 'collections' ? 'knowledgeCollections.empty' : 'knowledgeSources.noExternalData')}</div>}
+                                renderTrigger={(_, open) => {
+                                    const collection = knowledgeCollections.find(item => item.id === selectedKnowledgeCollectionId);
+                                    const sourceCount = (collection ? 1 : 0) + selectedExternalResourceIds.length;
+                                    const label = sourceCount > 1
+                                        ? t('knowledgeSources.selectedCount', {count: sourceCount})
+                                        : collection?.name || (selectedExternalResourceIds.length ? t('knowledgeSources.gov24Short') : t('knowledgeSources.select'));
+                                    return <><span className="custom-select-trigger-label">{label}</span><span className={`custom-select-arrow${open ? ' open' : ''}`}>▼</span></>;
+                                }}
                             />
                         </div>
 
