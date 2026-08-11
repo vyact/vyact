@@ -132,14 +132,14 @@ Download the installer for **Apple Silicon Macs (M1 or later)** or **Windows** f
 
 ### Before your first launch
 
-Vyact includes its own Python 3.12 runtime. For local-model features, install [Ollama](https://ollama.com/download) before opening the app for the first time.
+Vyact includes its own Python 3.12 runtime, so hosted providers and remote custom LLM endpoints do not require Ollama. Install [Ollama](https://ollama.com/download) only when you want to use the local Ollama provider or connect a custom LLM to a local Ollama server.
 
 | Platform | Required | Optional |
 | --- | --- | --- |
-| macOS (Apple Silicon) | Ollama, [Homebrew](https://brew.sh/) | Docker Desktop |
-| Windows | Ollama | Docker Desktop, [Chocolatey](https://chocolatey.org/) |
+| macOS (Apple Silicon) | None | [Ollama](https://ollama.com/download) for local models, [Homebrew](https://brew.sh/) for optional local dependencies, Docker Desktop for containerized Elasticsearch |
+| Windows | None | [Ollama](https://ollama.com/download) for local models, Docker Desktop for containerized Elasticsearch, [Chocolatey](https://chocolatey.org/) for optional local dependencies |
 
-Docker Desktop is optional. On first launch, Vyact prepares everything else automatically.
+Docker Desktop is optional because Vyact also offers native Elasticsearch installation on supported systems. On first launch, Vyact prepares the components required by the selected configuration.
 
 ### Your first five minutes
 

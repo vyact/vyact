@@ -132,14 +132,14 @@ Chrome 확장 프로그램으로 외국어 웹페이지를 번역하고, 지금 
 
 ### 처음 실행하기 전 준비
 
-Vyact에는 Python 3.12 런타임이 포함되어 있어 Python을 별도로 설치할 필요가 없습니다. 로컬 모델 기능을 사용하려면 처음 앱을 열기 전에 [Ollama](https://ollama.com/download)를 설치하세요.
+Vyact에는 Python 3.12 런타임이 포함되어 있어 호스팅 Provider나 원격 커스텀 LLM을 사용할 때 Ollama가 필요하지 않습니다. 로컬 Ollama Provider를 사용하거나 커스텀 LLM을 로컬 Ollama 서버에 연결할 때만 [Ollama](https://ollama.com/download)를 설치하세요.
 
 | 플랫폼 | 필수 | 선택 |
 | --- | --- | --- |
-| macOS (Apple Silicon) | Ollama, [Homebrew](https://brew.sh/) | Docker Desktop |
-| Windows | Ollama | Docker Desktop, [Chocolatey](https://chocolatey.org/) |
+| macOS (Apple Silicon) | 없음 | 로컬 모델용 [Ollama](https://ollama.com/download), 선택적 로컬 의존성 설치용 [Homebrew](https://brew.sh/), 컨테이너형 Elasticsearch용 Docker Desktop |
+| Windows | 없음 | 로컬 모델용 [Ollama](https://ollama.com/download), 컨테이너형 Elasticsearch용 Docker Desktop, 선택적 로컬 의존성 설치용 [Chocolatey](https://chocolatey.org/) |
 
-Docker Desktop은 선택 사항입니다. 처음 실행하면 Vyact가 나머지 구성을 자동으로 준비합니다.
+지원되는 환경에서는 Elasticsearch를 설치형으로 구성할 수도 있으므로 Docker Desktop은 선택 사항입니다. 처음 실행하면 Vyact가 선택한 구성에 필요한 요소를 자동으로 준비합니다.
 
 ### 처음 5분, 이렇게 시작하세요
 
