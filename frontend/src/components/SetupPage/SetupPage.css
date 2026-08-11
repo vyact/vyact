@@ -120,7 +120,7 @@
 ========================= */
 .provider-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 8px;
 }
 
@@ -157,6 +157,38 @@
     font-size: 11px;
     color: var(--muted);
 }
+
+.setup-connection-panel {
+    display: grid;
+    gap: 13px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--surface2) 58%, var(--bg));
+}
+
+.setup-connection-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.setup-connection-heading > div { display: grid; gap: 4px; min-width: 0; }
+.setup-connection-heading strong { color: var(--text); font-size: 14px; }
+.setup-connection-heading span { color: var(--muted); font-size: 11px; line-height: 1.45; }
+.setup-protocol-badge { flex: 0 0 auto; padding: 4px 8px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg); color: var(--text-secondary) !important; font-size: 10px !important; font-weight: 650; }
+.setup-field-row { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 10px; }
+.setup-field { display: grid; gap: 7px; min-width: 0; }
+.setup-field > span { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 10px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; }
+.setup-field > span small { padding: 2px 6px; border-radius: 999px; background: var(--surface2); color: var(--muted); font-size: 9px; letter-spacing: 0; text-transform: none; }
+.setup-connection-panel .input { box-sizing: border-box; border-width: 1px; }
+.setup-model-preview { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
+.setup-model-dot { width: 9px; height: 9px; flex: 0 0 auto; border-radius: 50%; background: var(--success, #20c997); box-shadow: 0 0 0 3px color-mix(in srgb, var(--success, #20c997) 14%, transparent); }
+.setup-model-preview > div { display: grid; gap: 2px; min-width: 0; }
+.setup-model-preview small { color: var(--muted); font-size: 9px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; }
+.setup-model-preview strong { overflow: hidden; color: var(--text); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.setup-custom-headers { display: grid; gap: 7px; }
+.setup-custom-headers-heading { display: flex; align-items: center; justify-content: space-between; color: var(--muted); font-size: 10px; font-weight: 650; text-transform: uppercase; }
+.setup-custom-headers-heading button { border: 0; background: transparent; color: var(--accent); cursor: pointer; font-size: 10px; font-weight: 650; }
+.setup-custom-header-row { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr) 30px; gap: 7px; }
+.setup-custom-header-row .input { min-width: 0; }
+.setup-custom-header-row > button { border: 0; border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer; font-size: 18px; }
+.setup-custom-header-row > button:hover { background: rgba(255, 80, 80, .1); color: var(--del-fg, #ff7474); }
 
 /* =========================
     INPUT (🔥 FIX 핵심)
@@ -356,6 +388,9 @@
     .setup-page { padding: 14px; }
     .setup-card { padding: 22px 18px; border-radius: 18px; }
     .provider-grid { grid-template-columns: repeat(2, 1fr); }
+    .setup-field-row { grid-template-columns: 1fr; }
+    .setup-connection-heading { align-items: stretch; flex-direction: column; }
+    .setup-protocol-badge { align-self: flex-start; }
 }
 
 .progress-log {

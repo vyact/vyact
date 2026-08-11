@@ -7,6 +7,12 @@
   "customModel": "Modelo personalizado",
   "apiKey": "API KEY",
   "model": "MODELO",
+  "modelId": "Model ID",
+  "modelIdPlaceholder": "ID exacto del modelo usado por la API",
+  "selectedModel": "Modelo seleccionado",
+  "modelNotSet": "Introduce un Model ID",
+  "cloudConnection": {"title":"Conexión API oficial","description":"Configura la API Key y el modelo que se llamará."},
+  "customConnection": {"title":"Conexión LLM personalizada","description":"Conecta un servidor API compatible con OpenAI.","name":"Nombre de conexión","namePlaceholder":"Ej.: LLM de empresa","baseUrl":"Base URL","optional":"Opcional","required":"Introduce nombre, Base URL y Model ID."},
   "startInstall": "Instalar",
   "apiKeyModelRequired": "Se requieren API KEY y MODELO",
   "installationFailed": "La instalación falló. Revisa el registro de progreso e inténtalo de nuevo.",
@@ -67,6 +73,7 @@
     "claude": {
       "name": "Claude",
       "desc": "Anthropic"
-    }
+    },
+    "custom": {"name":"Personalizado","desc":"Conexión directa"}
   }
 }

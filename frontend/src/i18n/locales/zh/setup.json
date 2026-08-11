@@ -7,6 +7,12 @@
   "customModel": "自定义模型",
   "apiKey": "API KEY",
   "model": "MODEL",
+  "modelId": "Model ID",
+  "modelIdPlaceholder": "API 使用的准确模型 ID",
+  "selectedModel": "已选模型",
+  "modelNotSet": "请输入 Model ID",
+  "cloudConnection": {"title":"官方 API 连接","description":"配置 API Key 和调用的模型。"},
+  "customConnection": {"title":"自定义 LLM 连接","description":"连接 OpenAI 兼容 API 服务器。","name":"连接名称","namePlaceholder":"例如：公司 LLM","baseUrl":"Base URL","optional":"可选","required":"请输入连接名称、Base URL 和 Model ID。"},
   "startInstall": "开始安装",
   "apiKeyModelRequired": "API KEY 和 MODEL 为必填项",
   "installationFailed": "安装失败。请查看进度日志后重试。",
@@ -67,6 +73,7 @@
     "claude": {
       "name": "Claude",
       "desc": "Anthropic"
-    }
+    },
+    "custom": {"name":"自定义","desc":"直接连接"}
   }
 }

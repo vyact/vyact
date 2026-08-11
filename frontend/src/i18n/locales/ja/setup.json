@@ -7,6 +7,12 @@
   "customModel": "カスタムモデル",
   "apiKey": "API KEY",
   "model": "MODEL",
+  "modelId": "Model ID",
+  "modelIdPlaceholder": "APIで使用する正確なモデルID",
+  "selectedModel": "選択中のモデル",
+  "modelNotSet": "Model IDを入力してください",
+  "cloudConnection": {"title":"公式API接続","description":"API Keyと呼び出すモデルを設定します。"},
+  "customConnection": {"title":"カスタムLLM接続","description":"OpenAI互換APIサーバーに接続します。","name":"接続名","namePlaceholder":"例：社内LLM","baseUrl":"Base URL","optional":"任意","required":"接続名、Base URL、Model IDを入力してください。"},
   "startInstall": "インストール開始",
   "apiKeyModelRequired": "API KEYとMODELは必須です",
   "installationFailed": "インストールに失敗しました。進行ログを確認してから、もう一度お試しください。",
@@ -67,6 +73,7 @@
     "claude": {
       "name": "Claude",
       "desc": "Anthropic"
-    }
+    },
+    "custom": {"name":"カスタム","desc":"直接接続"}
   }
 }

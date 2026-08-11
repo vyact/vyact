@@ -5,8 +5,10 @@ import {renderMarkdown} from '../../utils/markdownUtils';
 import ModelSelector from '../ModelSelector';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
 import ProviderSettingsModal from '../ProviderSettingsModal/ProviderSettingsModal';
+import CustomProviderModal from '../CustomProviderModal/CustomProviderModal';
 import SettingsModal from '../SettingsModal/SettingsModal';
 import {api} from '../../services/api';
+import type {CustomProviderSettings} from '../../services/api';
 import type {Conversation, Project} from '../../types';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import './Sidebar.css';
@@ -365,7 +367,9 @@ const Sidebar: React.FC<SidebarProps> = ({
         setIsSettingsOpenInternal(v);
         if (!v) onSettingsClosed?.();
     };
-    const [currentProvider, setCurrentProvider] = useState<'ollama' | 'openai' | 'gemini' | 'claude'>('ollama');
+    const [currentProvider, setCurrentProvider] = useState<string>('ollama');
+    const [customProviders, setCustomProviders] = useState<CustomProviderSettings[]>([]);
+    const [customProviderEditor, setCustomProviderEditor] = useState<CustomProviderSettings | 'new' | null>(null);
 
 
 
@@ -377,12 +381,17 @@ const Sidebar: React.FC<SidebarProps> = ({
         try {
             const data = await api.getProviders();
             setCurrentProvider(data.current_type || 'ollama');
+            setCustomProviders(data.custom_providers || []);
         } catch {
             // The provider selector remains usable with its default value.
         }
     };
 
-    const handleProviderChange = async (provider: 'ollama' | 'openai' | 'gemini' | 'claude') => {
+    const handleProviderChange = async (provider: string) => {
+        if (provider === '__add_custom__') {
+            setCustomProviderEditor('new');
+            return;
+        }
         if (provider === currentProvider) return;
         const prev = currentProvider;
         try {
@@ -390,6 +399,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                 onBeforeModelContextChange?.();
                 await api.selectProvider('ollama');
                 setCurrentProvider('ollama');
+                await loadCurrentProvider();
+                await onProviderChange();
+            } else if (provider.startsWith('custom:')) {
+                onBeforeModelContextChange?.();
+                await api.selectProvider(provider);
+                setCurrentProvider(provider);
                 await loadCurrentProvider();
                 await onProviderChange();
             } else {
@@ -410,16 +425,20 @@ const Sidebar: React.FC<SidebarProps> = ({
         }
     };
 
-    const handleProviderDelete = async (provider: 'openai' | 'gemini' | 'claude') => {
-        if (!confirm(`${provider.toUpperCase()} 설정을 삭제하시겠습니까?`)) return;
+    const handleProviderDelete = async (provider: string) => {
+        if (!provider.startsWith('custom:')) return;
+        const customProvider = customProviders.find(item => `custom:${item.id}` === provider);
+        if (!customProvider) return;
+        const label = customProvider.name;
+        if (!confirm(t('customProvider.deleteConfirm', {name: label}))) return;
         try {
-            await api.deleteProvider(provider);
+            await api.deleteCustomProvider(customProvider.id);
             await api.selectProvider('ollama');
             setCurrentProvider('ollama');
             await loadCurrentProvider();
             await onProviderChange();
         } catch (e) {
-            toast.error('삭제 실패', String(e));
+            toast.error(t('providerSettings.deleteFailed'), String(e));
         }
     };
 
@@ -443,8 +462,15 @@ const Sidebar: React.FC<SidebarProps> = ({
                 {/* expanded: 설정 아이콘 */}
                 {!visualCollapsed && (
                     <div className="sidebar-header-actions">
-                        <div className="header-provider-wrap"><CustomSelect options={(['ollama', 'openai', 'gemini', 'claude'] as const).map(provider => ({value: provider, label: PROVIDER_LABELS[provider]}))} value={currentProvider} onChange={provider => handleProviderChange(provider as 'ollama' | 'openai' | 'gemini' | 'claude')} className="header-provider-select" /></div>
-                        <button className="sidebar-header-settings" onClick={() => setIsSettingsOpen(true)}>
+                        <div className="header-provider-wrap"><CustomSelect options={[
+                            ...(['ollama', 'openai', 'gemini', 'claude'] as const).map(provider => ({value: provider, label: PROVIDER_LABELS[provider]})),
+                            ...customProviders.map(provider => ({value: `custom:${provider.id}`, label: provider.name})),
+                            {value: '__add_custom__', label: t('customProvider.addConnection')},
+                        ]} value={currentProvider} onChange={handleProviderChange} className="header-provider-select" /></div>
+                        <button className="sidebar-header-settings" onClick={() => {
+                            if (currentProvider.startsWith('custom:') || currentProvider === 'ollama') setIsSettingsOpen(true);
+                            else setIsProviderSettingsOpen(true);
+                        }} aria-label={t('modelSelector.settingsManage')}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                              strokeWidth="2">
                             <circle cx="12" cy="12" r="3"/>
@@ -477,19 +503,31 @@ const Sidebar: React.FC<SidebarProps> = ({
                                         <span className="provider-btn-label">{PROVIDER_LABELS[p]}</span>
                                     </button>
                                 ))}
+                                {customProviders.map(connection => {
+                                    const value = `custom:${connection.id}`;
+                                    return <button key={connection.id} className={`provider-select-btn${currentProvider === value ? ' active' : ''}`} onClick={() => handleProviderChange(value)} title={connection.name}>
+                                        <span className="provider-btn-icon"><Plus size={16}/></span><span className="provider-btn-label">{connection.name}</span>
+                                    </button>;
+                                })}
+                                <button className="provider-select-btn" onClick={() => setCustomProviderEditor('new')} title={t('customProvider.addConnection')}>
+                                    <span className="provider-btn-icon"><Plus size={16}/></span><span className="provider-btn-label">{t('customProvider.add')}</span>
+                                </button>
                             </div>
                         </div>
 
                         {/* 모델 */}
-                        <div className="sidebar-section">
+                        <div className="sidebar-section sidebar-model-section">
                             <div className="sec-label">{t('sidebar.model')}</div>
                             <ModelSelector
                                 installed={installed}
                                 selectedModel={selectedModel}
                                 currentProvider={currentProvider}
                                 onModelChange={async (m, d, modelType) => await onModelChange(m, d, modelType)}
-                                onProviderSettingsOpen={() => setIsProviderSettingsOpen(true)}
-                                onProviderDelete={handleProviderDelete}
+                                onProviderSettingsOpen={() => {
+                                    const connection = customProviders.find(item => `custom:${item.id}` === currentProvider);
+                                    if (connection) setCustomProviderEditor(connection);
+                                    else setIsProviderSettingsOpen(true);
+                                }}
                             />
                         </div>
 
@@ -682,7 +720,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             {isProviderSettingsOpen && (
                 <ProviderSettingsModal
                     isOpen={isProviderSettingsOpen}
-                    provider={(window as any).__pendingProvider || currentProvider}
+                    provider={((window as any).__pendingProvider || currentProvider) as 'openai' | 'gemini' | 'claude'}
                     onClose={() => {
                         setIsProviderSettingsOpen(false);
                         (window as any).__pendingProvider = undefined;
@@ -698,6 +736,20 @@ const Sidebar: React.FC<SidebarProps> = ({
                     }}
                 />
             )}
+            {customProviderEditor && <CustomProviderModal
+                connection={customProviderEditor === 'new' ? undefined : customProviderEditor}
+                onClose={() => setCustomProviderEditor(null)}
+                onDelete={customProviderEditor === 'new' ? undefined : async selectionType => {
+                    await handleProviderDelete(selectionType);
+                    setCustomProviderEditor(null);
+                }}
+                onSave={async selectionType => {
+                    if (selectionType !== currentProvider) onBeforeModelContextChange?.();
+                    setCurrentProvider(selectionType);
+                    await loadCurrentProvider();
+                    await onProviderChange();
+                }}
+            />}
         </aside>
             <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)}
                            initialTab={openSettingsTab}/>

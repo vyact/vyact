@@ -14,7 +14,7 @@ import json
 
 from .config import (
     IMAGES_DIR, LLM_TEMPERATURE, LLM_MAX_TOKENS, TOOL_CALL_MAX_ROUNDS,
-    log_llm_call, log_llm_interaction, log_tool_names, logger,
+    build_provider_headers, get_provider_config, log_llm_call, log_llm_interaction, log_tool_names, logger,
 )
 from .helpers import (
     image_attachment_path, load_images_b64, mime_type,
@@ -84,8 +84,14 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
     messages = [{"role": "system", "content": sys_content},
                 *history_for_openai(history_messages, valid_slice), user_msg]
 
-    headers = {"Authorization": f"Bearer {api_key}"}
-    base_url = "https://api.openai.com/v1/chat/completions"
+    headers = build_provider_headers(await get_provider_config())
+    provider_config = await get_provider_config()
+    configured_base_url = provider_config.get("base_url")
+    base_url = (
+        f"{configured_base_url.rstrip('/')}/chat/completions"
+        if configured_base_url
+        else "https://api.openai.com/v1/chat/completions"
+    )
 
     # ── tool 루프 (비스트리밍) ──
     approval_rejected = False

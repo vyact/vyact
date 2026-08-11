@@ -2,6 +2,8 @@
 routers/setup.py – 설치 / 모델 / Provider / 상태
 """
 import asyncio
+import uuid
+from urllib.parse import urlparse
 import math
 import os
 import platform
@@ -9,7 +11,7 @@ import re
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from agent import get_index_stats
 from config import (
@@ -78,6 +80,64 @@ class ProviderSelectRequest(BaseModel):
     model: str | None = None
 
 
+class CustomProviderHeaderRequest(BaseModel):
+    name: str
+    value: str = ""
+
+
+class CustomProviderRequest(BaseModel):
+    name: str
+    base_url: str
+    api_key: str = ""
+    model: str
+    protocol: str = "openai-compatible"
+    headers: list[CustomProviderHeaderRequest] = Field(default_factory=list)
+
+
+BLOCKED_CUSTOM_HEADER_NAMES = {"host", "content-length", "transfer-encoding", "connection"}
+
+
+def _normalize_custom_headers(
+        headers: list[CustomProviderHeaderRequest], existing_headers: list[dict] | None = None,
+) -> list[dict]:
+    existing_by_name = {
+        str(item.get("name", "")).lower(): str(item.get("value", ""))
+        for item in (existing_headers or [])
+    }
+    normalized_headers = []
+    seen_names = set()
+    for header in headers:
+        name = header.name.strip()
+        lower_name = name.lower()
+        if not name and not header.value.strip():
+            continue
+        if not re.fullmatch(r"[!#$%&'*+.^_`|~0-9A-Za-z-]+", name):
+            raise HTTPException(400, f"유효하지 않은 Header 이름입니다: {name}")
+        if lower_name in BLOCKED_CUSTOM_HEADER_NAMES:
+            raise HTTPException(400, f"직접 설정할 수 없는 Header입니다: {name}")
+        if lower_name in seen_names:
+            raise HTTPException(400, f"중복된 Header입니다: {name}")
+        value = header.value.strip() or existing_by_name.get(lower_name, "")
+        if not value:
+            raise HTTPException(400, f"Header 값이 필요합니다: {name}")
+        seen_names.add(lower_name)
+        normalized_headers.append({"name": name, "value": value})
+    return normalized_headers
+
+
+def _normalize_custom_provider_base_url(base_url: str) -> str:
+    normalized = base_url.strip().rstrip("/")
+    parsed = urlparse(normalized)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        raise HTTPException(400, "Base URL은 http 또는 https URL이어야 합니다.")
+    if parsed.username or parsed.password or parsed.query or parsed.fragment:
+        raise HTTPException(400, "Base URL에는 인증 정보, query 또는 fragment를 포함할 수 없습니다.")
+    suffix = "/chat/completions"
+    if normalized.endswith(suffix):
+        normalized = normalized[:-len(suffix)]
+    return normalized.rstrip("/")
+
+
 # ── 상태 ──────────────────────────────────────
 @router.get("/status")
 async def status():
@@ -135,7 +195,62 @@ async def install(req: ModelSelectRequest):
             return False
 
     async def stream():
-        cfg = {"type": req.type, "model": req.model, "api_key": req.api_key, "config": req.config or {}}
+        request_config = req.config or {}
+        persisted_setup_config = {"es_mode": request_config.get("es_mode", "docker")}
+        if req.type == "ollama":
+            cfg = {
+                "type": "ollama",
+                "model": req.model,
+                "model_type": req.model_type or "chat",
+                "ollama_config": {"model": req.model},
+                "config": persisted_setup_config,
+            }
+        elif req.type == "custom":
+            connection_name = str(request_config.get("name", "")).strip()
+            try:
+                base_url = _normalize_custom_provider_base_url(str(request_config.get("base_url", "")))
+                custom_headers = _normalize_custom_headers([
+                    CustomProviderHeaderRequest.model_validate(item)
+                    for item in request_config.get("headers", [])
+                ])
+            except HTTPException as error:
+                yield sse(str(error.detail), "error", 0)
+                return
+            except Exception:
+                yield sse("Header 설정 형식이 올바르지 않습니다.", "error", 0)
+                return
+            model = (req.model or "").strip()
+            if not connection_name or not model:
+                yield sse("이름, Base URL, Model ID가 필요합니다.", "error", 0)
+                return
+            connection_id = uuid.uuid4().hex
+            cfg = {
+                "type": f"custom:{connection_id}",
+                "model": model,
+                "custom_providers": [{
+                    "id": connection_id,
+                    "name": connection_name,
+                    "protocol": "openai-compatible",
+                    "base_url": base_url,
+                    "api_key": (req.api_key or "").strip(),
+                    "model": model,
+                    "headers": custom_headers,
+                }],
+                "config": persisted_setup_config,
+            }
+        elif req.type in ("openai", "gemini", "claude"):
+            if not req.api_key or not req.model:
+                yield sse("API Key와 Model ID가 필요합니다.", "error", 0)
+                return
+            cfg = {
+                "type": req.type,
+                "model": req.model,
+                f"{req.type}_config": {"api_key": req.api_key, "model": req.model},
+                "config": persisted_setup_config,
+            }
+        else:
+            yield sse("지원하지 않는 provider", "error", 0)
+            return
 
         if req.type == "ollama":
             installer = Installer(INSTALL_DIR, APP_DIR, VENV_DIR, get_log_file("event"))
@@ -297,8 +412,7 @@ async def install(req: ModelSelectRequest):
         else:
             installer = Installer(INSTALL_DIR, APP_DIR, VENV_DIR, get_log_file("event"))
 
-            yield sse("Validating API Key...", "info", 10)
-            await save_config_async(cfg)
+            yield sse("Preparing LLM connection...", "info", 10)
 
             # ── ES 설치 (클라우드도 ES 필수) ──
             es_mode = (req.config or {}).get("es_mode", "docker")
@@ -340,8 +454,9 @@ async def install(req: ModelSelectRequest):
                 await ensure_index()
                 await ensure_skills_index()
                 await ensure_mcp_config()
+                await save_config_async(cfg)
                 await load_prompts_cache()
-                logger.info("[setup] Cloud setup ES init complete")
+                logger.info("[setup] LLM connection config saved after ES initialization")
             except Exception as e:
                 logger.warning("[setup] Cloud setup init failed: %s", e)
 
@@ -492,7 +607,84 @@ async def get_providers():
         "current_type": config.get("type", "ollama"),
         "current_model": config.get("model"),
         "providers": providers,
+        "custom_providers": [
+            {
+                "id": item.get("id"),
+                "name": item.get("name"),
+                "protocol": "openai-compatible",
+                "base_url": item.get("base_url"),
+                "model": item.get("model"),
+                "has_key": bool(item.get("api_key")),
+                "headers": [
+                    {"name": header.get("name"), "has_value": bool(header.get("value"))}
+                    for header in item.get("headers", [])
+                ],
+            }
+            for item in config.get("custom_providers", [])
+        ],
     }
+
+
+@router.post("/providers/custom")
+async def create_custom_provider(req: CustomProviderRequest):
+    name = req.name.strip()
+    model = req.model.strip()
+    if not name or not model:
+        raise HTTPException(400, "이름과 Model ID가 필요합니다.")
+    if req.protocol != "openai-compatible":
+        raise HTTPException(400, "지원하지 않는 API 형식입니다.")
+    config = await load_config_async()
+    connection = {
+        "id": uuid.uuid4().hex,
+        "name": name,
+        "protocol": "openai-compatible",
+        "base_url": _normalize_custom_provider_base_url(req.base_url),
+        "api_key": req.api_key.strip(),
+        "model": model,
+        "headers": _normalize_custom_headers(req.headers),
+    }
+    config.setdefault("custom_providers", []).append(connection)
+    await save_config_async(config)
+    return {"ok": True, "id": connection["id"]}
+
+
+@router.put("/providers/custom/{connection_id}")
+async def update_custom_provider(connection_id: str, req: CustomProviderRequest):
+    config = await load_config_async()
+    connection = next((item for item in config.get("custom_providers", []) if item.get("id") == connection_id), None)
+    if connection is None:
+        raise HTTPException(404, "사용자 연결을 찾을 수 없습니다.")
+    name = req.name.strip()
+    model = req.model.strip()
+    if not name or not model:
+        raise HTTPException(400, "이름과 Model ID가 필요합니다.")
+    if req.protocol != "openai-compatible":
+        raise HTTPException(400, "지원하지 않는 API 형식입니다.")
+    connection.update({
+        "name": name,
+        "base_url": _normalize_custom_provider_base_url(req.base_url),
+        "model": model,
+        "headers": _normalize_custom_headers(req.headers, connection.get("headers")),
+    })
+    if req.api_key.strip():
+        connection["api_key"] = req.api_key.strip()
+    await save_config_async(config)
+    return {"ok": True}
+
+
+@router.delete("/providers/custom/{connection_id}")
+async def delete_custom_provider(connection_id: str):
+    config = await load_config_async()
+    before = config.get("custom_providers", [])
+    remaining = [item for item in before if item.get("id") != connection_id]
+    if len(remaining) == len(before):
+        raise HTTPException(404, "사용자 연결을 찾을 수 없습니다.")
+    config["custom_providers"] = remaining
+    if config.get("type") == f"custom:{connection_id}":
+        config["type"] = "ollama"
+        config["model"] = config.get("ollama_config", {}).get("model", DEFAULT_MODEL)
+    await save_config_async(config)
+    return {"ok": True}
 
 
 @router.post("/providers/{provider}")
@@ -531,17 +723,30 @@ async def select_provider(req: ProviderSelectRequest):
             config["ollama_config"]["model"] = req.model
         config["model"] = config["ollama_config"]["model"]
     else:
-        if req.provider not in ("openai", "gemini", "claude"):
+        if req.provider.startswith("custom:"):
+            connection_id = req.provider.removeprefix("custom:")
+            connection = next(
+                (item for item in config.get("custom_providers", []) if item.get("id") == connection_id),
+                None,
+            )
+            if connection is None:
+                raise HTTPException(404, "사용자 연결을 찾을 수 없습니다.")
+            config["type"] = req.provider
+            if req.model:
+                connection["model"] = req.model
+            config["model"] = connection["model"]
+        elif req.provider not in ("openai", "gemini", "claude"):
             raise HTTPException(400, "지원하지 않는 provider")
-        key = f"{req.provider}_config"
-        if not config.get(key, {}).get("api_key"):
-            raise HTTPException(400, f"{req.provider} 설정이 없습니다. 먼저 API Key를 등록하세요.")
-        config["type"] = req.provider
-        if req.model:
-            config[key]["model"] = req.model
-            config["model"] = req.model
         else:
-            config["model"] = config[key]["model"]
+            key = f"{req.provider}_config"
+            if not config.get(key, {}).get("api_key"):
+                raise HTTPException(400, f"{req.provider} 설정이 없습니다. 먼저 API Key를 등록하세요.")
+            config["type"] = req.provider
+            if req.model:
+                config[key]["model"] = req.model
+                config["model"] = req.model
+            else:
+                config["model"] = config[key]["model"]
     await save_config_async(config)
     return {"ok": True, "config": config}
 

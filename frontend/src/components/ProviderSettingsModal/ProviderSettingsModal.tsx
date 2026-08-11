@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from 'react';
+import {useTranslation} from 'react-i18next';
 import {api} from '../../services/api';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
@@ -23,6 +24,7 @@ const ProviderSettingsModal: React.FC<ProviderSettingsModalProps> = ({
                                                                          onClose,
                                                                          onSave,
                                                                      }) => {
+    const {t} = useTranslation(['settings', 'main']);
     const [apiKey, setApiKey] = useState('');
     const [model, setModel] = useState('');
     const [hasExisting, setHasExisting] = useState(false);
@@ -63,7 +65,7 @@ const ProviderSettingsModal: React.FC<ProviderSettingsModalProps> = ({
 
     const handleSave = async () => {
         if ((!hasExisting && !apiKey.trim()) || !model.trim()) {
-            toast.warning('API Key와 Model을 모두 입력하세요');
+            toast.warning(t('main:providerSettings.required'));
             return;
         }
 
@@ -75,7 +77,7 @@ const ProviderSettingsModal: React.FC<ProviderSettingsModalProps> = ({
             onSave();
             onClose();
         } catch (error) {
-            toast.error('저장 실패', String(error));
+            toast.error(t('main:providerSettings.saveFailed'), String(error));
         }
     };
 
@@ -83,26 +85,27 @@ const ProviderSettingsModal: React.FC<ProviderSettingsModalProps> = ({
 
     return (
         <ModalOverlay className="modal-overlay" onClose={onClose} closeOnBackdrop>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content provider-modal-content" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
-                    <h3>{PROVIDER_DEFAULTS[provider].name} 설정</h3>
-                    <button className="provider-close-btn" onClick={onClose}>×</button>
+                    <h3>{t('main:providerSettings.title', {provider: PROVIDER_DEFAULTS[provider].name})}</h3>
+                    <button className="provider-close-btn" onClick={onClose} aria-label={t('main:customProvider.close')}>×</button>
                 </div>
 
-                <div className="modal-body">
+                <div className="modal-body provider-modal-body">
                     <div className="form-group">
-                        <label>API Key</label>
+                        <label>{t('apiKeyField.label')}</label>
+                        {hasExisting && !apiKey && <div className="provider-key-saved">{t('apiKeyField.saved', {preview: '••••••••'})}</div>}
                         <input
                             type="password"
                             className="form-input"
-                            placeholder={hasExisting ? '새 API Key (변경 시만 입력)' : 'API Key 입력'}
+                            placeholder={hasExisting ? t('apiKeyField.changePlaceholder') : t('apiKeyField.defaultPlaceholder')}
                             value={apiKey}
                             onChange={(e) => setApiKey(e.target.value)}
                         />
                     </div>
 
                     <div className="form-group">
-                        <label>Model</label>
+                        <label>{t('main:providerSettings.model')}</label>
                         <input
                             type="text"
                             className="form-input"
@@ -114,7 +117,7 @@ const ProviderSettingsModal: React.FC<ProviderSettingsModalProps> = ({
 
                     <div className="modal-actions">
                         <button className="btn-save-provider" onClick={handleSave}>
-                            저장
+                            {t('main:providerSettings.save')}
                         </button>
                     </div>
                 </div>

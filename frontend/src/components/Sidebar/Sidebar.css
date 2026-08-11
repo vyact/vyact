@@ -133,9 +133,12 @@
 .header-provider-select { width: 100%; }
 .header-provider-select .custom-select-trigger { height: 34px; box-sizing: border-box; font-size: 12px; padding: 8px 10px; }
 .aside-top > .sidebar-section:first-of-type { display: none; }
+.aside-top > .sidebar-section > .model-select-wrap { width: auto; margin-inline: -4px; }
+.sidebar-model-section { gap: 2px; }
+.sidebar-model-section > .sec-label { margin-bottom: 0; }
 
 .project-section { display: flex; flex-direction: column; gap: 4px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
-.project-section--history { margin: 2px 14px 0; padding: 6px 0; border-bottom: 0; flex-shrink: 0; gap: 2px; }
+.project-section--history { margin: 2px 10px 0 14px; padding: 6px 0; border-bottom: 0; flex-shrink: 0; gap: 2px; }
 .project-section--history > .sec-label { margin-bottom: 0; }
 .project-section .sec-label { display: flex; align-items: center; justify-content: space-between; }
 .project-add-btn { border: 0; background: transparent; color: var(--muted); cursor: pointer; padding: 2px; display: flex; }
@@ -182,7 +185,7 @@
     flex-direction: column;
     overflow: hidden;
     border-top: 0;
-    padding: 8px 14px;
+    padding: 8px 10px 8px 14px;
 }
 
 .hist-header {

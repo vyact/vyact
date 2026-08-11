@@ -17,16 +17,16 @@ interface RecommendedModel {
     type?: string;
 }
 
-type Provider = 'ollama' | 'openai' | 'gemini' | 'claude';
+type Provider = 'ollama' | 'openai' | 'gemini' | 'claude' | 'custom';
 
-const DEFAULT_MODELS: Record<Exclude<Provider, 'ollama'>, string> = {
+const DEFAULT_MODELS: Record<Exclude<Provider, 'ollama' | 'custom'>, string> = {
     openai: 'gpt-4o-mini',
     gemini: 'gemini-3.1-flash-lite-preview',
     claude: 'claude-3-5-sonnet',
 };
 
 const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
-    const { t } = useTranslation('setup');
+    const { t } = useTranslation(['setup', 'main']);
     const [provider, setProvider] = useState<Provider>('ollama');
     const [esMode, setEsMode] = useState<'docker' | 'native'>('docker');
     // null = 확인 중(상태 조회 완료 전). 확인 전에는 선택지를 잠가 "됐다 안 됐다"처럼 보이는 것을 방지.
@@ -38,6 +38,9 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
     const [selectedModel, setSelectedModel] = useState<string>('');
     const [customModel, setCustomModel] = useState<string>('');
     const [apiKey, setApiKey] = useState<string>('');
+    const [connectionName, setConnectionName] = useState<string>('');
+    const [baseUrl, setBaseUrl] = useState<string>('');
+    const [customHeaders, setCustomHeaders] = useState<Array<{id: string; name: string; value: string}>>([]);
 
     const [isInstalling, setIsInstalling] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -100,8 +103,15 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
             setSelectedModel(prev => defaultModel || prev || '');
             setCustomModel('');
             setApiKey('');
+        } else if (provider === 'custom') {
+            setSelectedModel('');
+            setCustomModel('');
+            setApiKey('');
+            setConnectionName('');
+            setBaseUrl('');
+            setCustomHeaders([]);
         } else {
-            setSelectedModel(DEFAULT_MODELS[provider as Exclude<Provider, 'ollama'>]);
+            setSelectedModel(DEFAULT_MODELS[provider]);
             setCustomModel('');
         }
     }, [provider, defaultModel]);
@@ -131,10 +141,12 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
     };
 
     const isInstallDisabled = useMemo(() => {
+        if (provider === 'custom') return !connectionName.trim() || !baseUrl.trim() || !selectedModel.trim()
+            || customHeaders.some(header => !header.name.trim() || !header.value.trim());
         if (isCloud) return !apiKey.trim() || !selectedModel.trim();
         // Ollama: 모델 미선택 + 커스텀 미입력이면 비활성화
         return !selectedModel.trim() && !customModel.trim();
-    }, [isCloud, apiKey, selectedModel, customModel]);
+    }, [provider, isCloud, apiKey, selectedModel, customModel, connectionName, baseUrl, customHeaders]);
 
     const changeProvider = (next: Provider) => {
         setProvider(next);
@@ -145,7 +157,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
 
     const handleInstall = async () => {
         if (isCloud && isInstallDisabled) {
-            addLog('error', t('apiKeyModelRequired'));
+            addLog('error', provider === 'custom' ? t('customConnection.required') : t('apiKeyModelRequired'));
             return;
         }
         setIsInstalling(true);
@@ -160,7 +172,14 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                     model: customModel || selectedModel,
                     config: { es_mode: esMode },
                 }
-                : {
+                : provider === 'custom'
+                    ? {
+                        type: 'custom',
+                        model: selectedModel,
+                        api_key: apiKey,
+                        config: {es_mode: esMode, name: connectionName, base_url: baseUrl, headers: customHeaders.map(({name, value}) => ({name, value}))},
+                    }
+                    : {
                     type: provider,
                     model: selectedModel,
                     api_key: apiKey,
@@ -269,7 +288,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                 <div className="sec-label">{t('provider')}</div>
 
                 <div className="provider-grid">
-                    {(['ollama', 'openai', 'gemini', 'claude'] as const).map(id => ({
+                    {(['ollama', 'openai', 'gemini', 'claude', 'custom'] as const).map(id => ({
                         id,
                         name: t(`providers.${id}.name`),
                         desc: t(`providers.${id}.desc`),
@@ -337,24 +356,27 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                             </>
                         )}
 
-                        {isCloud && (
-                            <>
-                                <input
-                                    className="input"
-                                    type="password"
-                                    placeholder={t('apiKey')}
-                                    value={apiKey}
-                                    onChange={e => setApiKey(e.target.value)}
-                                />
-
-                                <input
-                                    className="input"
-                                    placeholder={t('model')}
-                                    value={selectedModel}
-                                    onChange={e => setSelectedModel(e.target.value)}
-                                />
-                            </>
-                        )}
+                        {isCloud && <section className="setup-connection-panel">
+                            <div className="setup-connection-heading">
+                                <div><strong>{provider === 'custom' ? t('customConnection.title') : t('cloudConnection.title')}</strong><span>{provider === 'custom' ? t('customConnection.description') : t('cloudConnection.description')}</span></div>
+                                <span className="setup-protocol-badge">{provider === 'custom' ? 'OpenAI Compatible' : t(`providers.${provider}.name`)}</span>
+                            </div>
+                            {provider === 'custom' && <div className="setup-field-row">
+                                <label className="setup-field"><span>{t('customConnection.name')}</span><input className="input" placeholder={t('customConnection.namePlaceholder')} value={connectionName} onChange={e => setConnectionName(e.target.value)}/></label>
+                                <label className="setup-field"><span>{t('customConnection.baseUrl')}</span><input className="input" placeholder="http://localhost:11434/v1" value={baseUrl} onChange={e => setBaseUrl(e.target.value)}/></label>
+                            </div>}
+                            <label className="setup-field"><span>{t('apiKey')}{provider === 'custom' && <small>{t('customConnection.optional')}</small>}</span><input className="input" type="password" placeholder={t('apiKey')} value={apiKey} onChange={e => setApiKey(e.target.value)}/></label>
+                            <label className="setup-field"><span>{t('modelId')}</span><input className="input" placeholder={t('modelIdPlaceholder')} value={selectedModel} onChange={e => setSelectedModel(e.target.value)}/></label>
+                            <div className="setup-model-preview"><span className="setup-model-dot"/><div><small>{t('selectedModel')}</small><strong>{selectedModel || t('modelNotSet')}</strong></div></div>
+                            {provider === 'custom' && <div className="setup-custom-headers">
+                                <div className="setup-custom-headers-heading"><span>{t('main:customProvider.headers')}</span><button type="button" onClick={() => setCustomHeaders(current => [...current, {id: `setup-${Date.now()}-${current.length}`, name: '', value: ''}])}>+ {t('main:customProvider.addHeader')}</button></div>
+                                {customHeaders.map(header => <div className="setup-custom-header-row" key={header.id}>
+                                    <input className="input" value={header.name} onChange={event => setCustomHeaders(current => current.map(item => item.id === header.id ? {...item, name: event.target.value} : item))} placeholder="X-API-Key"/>
+                                    <input className="input" type="password" value={header.value} onChange={event => setCustomHeaders(current => current.map(item => item.id === header.id ? {...item, value: event.target.value} : item))} placeholder={t('main:customProvider.headerValuePlaceholder')}/>
+                                    <button type="button" onClick={() => setCustomHeaders(current => current.filter(item => item.id !== header.id))} aria-label={t('main:customProvider.removeHeader')}>×</button>
+                                </div>)}
+                            </div>}
+                        </section>}
 
                         {/* ES 설치 방식은 프로바이더와 무관하게 항상 표시 (RAG에 ES 필요) */}
                         <EsModeSelector

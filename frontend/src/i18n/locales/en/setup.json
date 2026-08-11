@@ -7,6 +7,12 @@
   "customModel": "Custom model",
   "apiKey": "API KEY",
   "model": "MODEL",
+  "modelId": "Model ID",
+  "modelIdPlaceholder": "Exact model ID used by the API",
+  "selectedModel": "Selected model",
+  "modelNotSet": "Enter a Model ID",
+  "cloudConnection": {"title":"Official API connection","description":"Configure the API Key and model to call."},
+  "customConnection": {"title":"Custom LLM connection","description":"Connect an OpenAI-compatible API server.","name":"Connection name","namePlaceholder":"e.g. Company LLM","baseUrl":"Base URL","optional":"Optional","required":"Enter a connection name, Base URL, and Model ID."},
   "startInstall": "Start Install",
   "apiKeyModelRequired": "API KEY and MODEL are required",
   "installationFailed": "Installation failed. Check the progress log and try again.",
@@ -67,6 +73,7 @@
     "claude": {
       "name": "Claude",
       "desc": "Anthropic"
-    }
+    },
+    "custom": {"name":"Custom","desc":"Your endpoint"}
   }
 }

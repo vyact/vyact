@@ -16,7 +16,7 @@ from prompts import build_system_message, build_user_prompt
 from .config import (
     OLLAMA_URL, IMAGES_DIR, LLM_NUM_CTX, LLM_NUM_PREDICT, LLM_TEMPERATURE, LLM_MAX_TOKENS, TOP_K, TOP_P,
     OLLAMA_KEEP_ALIVE,
-    get_provider_config, log_llm_call, log_llm_interaction, logger,
+    build_provider_headers, get_provider_config, log_llm_call, log_llm_interaction, logger,
 )
 from .helpers import (
     load_images_b64, mime_type,
@@ -70,6 +70,7 @@ async def chat_stream_with_tools(
     """
     provider_config = await get_provider_config()
     provider_type = provider_config["type"]
+    provider_label = provider_config.get("connection_name", provider_type)
 
     # ── 비-Ollama provider (openai / gemini / claude) ──
     if provider_type != "ollama":
@@ -79,7 +80,7 @@ async def chat_stream_with_tools(
         log_entry = {
             "request_id": str(uuid.uuid4()),
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "provider": provider_type, "model": model,
+            "provider": provider_label, "model": model,
             "docs_count": len(context_docs),
             "streaming": True, "response": None, "error": None,
         }
@@ -119,14 +120,20 @@ async def chat_stream_with_tools(
                 # 그 사이 on_event가 큐에 tool 이벤트를 넣는다.
                 # 큐와 토큰을 함께 흘리기 위해, 토큰 소비 태스크를 돌리며 큐를 먼저 비운다.
                 async def _pump_tokens():
-                    async for piece in gen:
-                        await _queue.put({"type": "token", "text": piece})
-                    await _queue.put({"__done__": True})
+                    try:
+                        async for piece in gen:
+                            await _queue.put({"type": "token", "text": piece})
+                    except Exception as error:
+                        await _queue.put({"__error__": error})
+                    finally:
+                        await _queue.put({"__done__": True})
 
                 pump = asyncio.create_task(_pump_tokens())
                 try:
                     while True:
                         ev = await _queue.get()
+                        if ev.get("__error__") is not None:
+                            raise ev["__error__"]
                         if ev.get("__done__"):
                             break
                         if ev.get("type") == "token":
@@ -520,7 +527,7 @@ async def query_llm(
     num_predict = runtime["llm_num_predict"] if num_predict is None else num_predict
     provider_type = provider_config["type"]
     model = provider_config["model"]
-    log_entry["provider"] = provider_type
+    log_entry["provider"] = provider_config.get("connection_name", provider_type)
     log_entry["model"] = model
 
     (api_key, system_message, user_prompt, history_messages, valid_slice) = await prepare_request(
@@ -653,8 +660,11 @@ async def query_llm(
                                            *history_for_openai(history_messages, valid_slice), user_msg]}
                 try:
                     log_llm_call(call_reason, "openai", model, streaming=False, reasoning=reasoning)
-                    resp = await client.post("https://api.openai.com/v1/chat/completions",
-                                             headers={"Authorization": f"Bearer {api_key}"},
+                    configured_base_url = provider_config.get("base_url")
+                    openai_url = (f"{configured_base_url.rstrip('/')}/chat/completions"
+                                  if configured_base_url else "https://api.openai.com/v1/chat/completions")
+                    resp = await client.post(openai_url,
+                                             headers=build_provider_headers(provider_config),
                                              json=body)
                     resp.raise_for_status()
                     result = resp.json()

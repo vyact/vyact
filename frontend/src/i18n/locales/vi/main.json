@@ -1061,5 +1061,7 @@
     "document": "Tài liệu",
     "memo": "Ghi chú",
     "email_thread": "Email"
-  }
+  },
+  "providerSettings":{"title":"Cài đặt {{provider}}","required":"Nhập cả API Key và Model.","save":"Lưu","saveFailed":"Lưu thất bại","deleteFailed":"Xóa thất bại","model":"Model"},
+  "customProvider": {"addConnection":"+ Thêm kết nối LLM","add":"Thêm","addTitle":"Thêm kết nối LLM","editTitle":"Sửa kết nối LLM","subtitle":"Kết nối máy chủ API và mô hình cần dùng.","close":"Đóng","cancel":"Hủy","name":"Tên kết nối","namePlaceholder":"Ví dụ: LLM công ty","protocol":"Định dạng API","protocolDocs":"Tài liệu định dạng API","connectionSection":"Thông tin kết nối","connectionSectionDesc":"Cấu hình máy chủ API và mô hình.","baseUrl":"Base URL","apiKey":"API Key","optional":"Tùy chọn","apiKeyExisting":"API Key mới (chỉ nhập khi thay đổi)","apiKeyOptional":"API Key (tùy chọn)","modelId":"Model ID","modelPlaceholder":"Ví dụ: qwen3:8b","hint":"Kết nối máy chủ triển khai API /chat/completions tương thích OpenAI.","headers":"Header bổ sung","headersDesc":"Thêm HTTP Header cho cổng hoặc xác thực tùy chỉnh.","addHeader":"Thêm Header","noHeaders":"Thêm Header khi máy chủ yêu cầu","headerName":"Nhãn Header","headerValue":"Giá trị Header","headerValuePlaceholder":"Nhập giá trị Header","headerValueExisting":"Giá trị mới (chỉ khi thay đổi)","removeHeader":"Xóa Header","showHeaderValue":"Hiện giá trị Header","hideHeaderValue":"Ẩn giá trị Header","showApiKey":"Hiện API Key","hideApiKey":"Ẩn API Key","headerValidation":"Nhập nhãn và giá trị cho mọi Header.","validation":"Nhập tên, Base URL và Model ID.","save":"Lưu và chọn","saving":"Đang lưu…","saveFailed":"Không thể lưu kết nối","deleteConfirm":"Xóa kết nối {{name}}?"}
 }

@@ -29,8 +29,25 @@ __all__ = [
     "OLLAMA_URL", "IMAGES_DIR",
     "DEFAULT_MODEL", "LLM_TEMPERATURE", "LLM_NUM_CTX", "LLM_NUM_PREDICT", "LLM_MAX_TOKENS", "TOP_K", "TOP_P",
     "OLLAMA_KEEP_ALIVE", "LLM_STOP_TOKENS", "TOOL_CALL_MAX_ROUNDS",
-    "get_provider_config", "get_model_name", "log_llm_call", "log_tool_names", "log_llm_interaction", "logger",
+    "get_provider_config", "get_model_name", "build_provider_headers",
+    "log_llm_call", "log_tool_names", "log_llm_interaction", "logger",
 ]
+
+
+def build_provider_headers(provider_config: dict) -> dict[str, str]:
+    headers: dict[str, str] = {}
+    api_key = provider_config.get("api_key")
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    for header in provider_config.get("headers") or []:
+        name = str(header.get("name", "")).strip()
+        value = str(header.get("value", "")).strip()
+        if name and value:
+            for existing_name in list(headers):
+                if existing_name.lower() == name.lower():
+                    headers.pop(existing_name)
+            headers[name] = value
+    return headers
 
 
 async def get_provider_config() -> dict:
@@ -39,10 +56,30 @@ async def get_provider_config() -> dict:
         from routers.deps import load_config_async
         config = await load_config_async()
         if config:
+            selected_type = config.get("type", "ollama")
+            if selected_type.startswith("custom:"):
+                connection_id = selected_type.removeprefix("custom:")
+                connection = next(
+                    (item for item in config.get("custom_providers", []) if item.get("id") == connection_id),
+                    None,
+                )
+                if connection:
+                    return {
+                        "type": "openai",
+                        "selection_type": selected_type,
+                        "connection_name": connection.get("name", selected_type),
+                        "model": connection.get("model", DEFAULT_MODEL),
+                        "api_key": connection.get("api_key"),
+                        "base_url": connection.get("base_url"),
+                        "headers": connection.get("headers", []),
+                    }
+            provider_config = config.get(f"{selected_type}_config", {})
             return {
-                "type": config.get("type", "ollama"),
+                "type": selected_type,
+                "selection_type": selected_type,
                 "model": config.get("model", DEFAULT_MODEL),
-                "api_key": config.get("api_key"),
+                "api_key": provider_config.get("api_key") or config.get("api_key"),
+                "base_url": None,
             }
     except Exception as e:
         logger.warning("[llm] get_provider_config 실패: %s", e)

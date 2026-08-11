@@ -1058,5 +1058,7 @@
     "document": "문서",
     "memo": "메모",
     "email_thread": "메일"
-  }
+  },
+  "providerSettings":{"title":"{{provider}} 설정","required":"API Key와 Model을 모두 입력하세요","save":"저장","saveFailed":"저장 실패","deleteFailed":"삭제 실패","model":"Model"},
+  "customProvider": {"addConnection":"+ LLM 연결 추가","add":"추가","addTitle":"LLM 연결 추가","editTitle":"LLM 연결 편집","subtitle":"사용할 API 서버와 모델을 연결합니다.","close":"닫기","cancel":"취소","name":"연결 이름","namePlaceholder":"예: 사내 LLM","protocol":"API 형식","protocolDocs":"API 형식 문서","connectionSection":"연결 정보","connectionSectionDesc":"API 서버 주소와 호출할 모델을 설정하세요.","baseUrl":"Base URL","apiKey":"API Key","optional":"선택","apiKeyExisting":"새 API Key (변경 시만 입력)","apiKeyOptional":"API Key (선택)","modelId":"Model ID","modelPlaceholder":"예: qwen3:8b","hint":"OpenAI-compatible /chat/completions API를 사용하는 서버를 연결합니다.","headers":"추가 Header","headersDesc":"게이트웨이 인증 등에 필요한 HTTP Header를 추가합니다.","addHeader":"Header 추가","noHeaders":"필요한 경우 Header를 추가하세요","headerName":"Header 라벨","headerValue":"Header 값","headerValuePlaceholder":"Header 값 입력","headerValueExisting":"새 값 (변경 시만 입력)","removeHeader":"Header 삭제","showHeaderValue":"Header 값 표시","hideHeaderValue":"Header 값 숨기기","showApiKey":"API Key 표시","hideApiKey":"API Key 숨기기","headerValidation":"각 Header의 라벨과 값을 모두 입력하세요.","validation":"이름, Base URL, Model ID를 모두 입력하세요.","save":"저장 및 선택","saving":"저장 중…","saveFailed":"연결 저장 실패","deleteConfirm":"{{name}} 연결을 삭제하시겠습니까?"}
 }

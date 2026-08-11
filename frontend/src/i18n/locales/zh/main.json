@@ -1061,5 +1061,7 @@
     "document": "文档",
     "memo": "笔记",
     "email_thread": "邮件"
-  }
+  },
+  "providerSettings":{"title":"{{provider}} 设置","required":"请输入 API Key 和 Model。","save":"保存","saveFailed":"保存失败","deleteFailed":"删除失败","model":"Model"},
+  "customProvider": {"addConnection":"+ 添加 LLM 连接","add":"添加","addTitle":"添加 LLM 连接","editTitle":"编辑 LLM 连接","subtitle":"连接要使用的 API 服务器和模型。","close":"关闭","cancel":"取消","name":"连接名称","namePlaceholder":"例如：公司 LLM","protocol":"API 格式","protocolDocs":"API 格式文档","connectionSection":"连接信息","connectionSectionDesc":"配置 API 服务器和模型。","baseUrl":"Base URL","apiKey":"API Key","optional":"可选","apiKeyExisting":"新 API Key（仅更改时填写）","apiKeyOptional":"API Key（可选）","modelId":"Model ID","modelPlaceholder":"例如：qwen3:8b","hint":"连接实现 OpenAI 兼容 /chat/completions API 的服务器。","headers":"附加 Header","headersDesc":"添加网关认证等所需的 HTTP Header。","addHeader":"添加 Header","noHeaders":"服务器需要时添加 Header","headerName":"Header 标签","headerValue":"Header 值","headerValuePlaceholder":"输入 Header 值","headerValueExisting":"新值（仅更改时填写）","removeHeader":"删除 Header","showHeaderValue":"显示 Header 值","hideHeaderValue":"隐藏 Header 值","showApiKey":"显示 API Key","hideApiKey":"隐藏 API Key","headerValidation":"请填写每个 Header 的标签和值。","validation":"请输入名称、Base URL 和 Model ID。","save":"保存并选择","saving":"正在保存…","saveFailed":"保存连接失败","deleteConfirm":"要删除 {{name}} 连接吗？"}
 }

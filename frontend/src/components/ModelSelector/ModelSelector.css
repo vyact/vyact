@@ -1,6 +1,8 @@
 /* ── 트리거 ── */
 .model-select-wrap .custom-select-trigger {
     gap: 8px;
+    height: 34px;
+    box-sizing: border-box;
 }
 
 /* 설치 상태 dot */
@@ -215,58 +217,19 @@
 
 /* ── Cloud Provider ── */
 .cloud-config {
-    padding: 12px;
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+    padding: 2px 0;
 }
 
-.cloud-info {
-    margin-bottom: 10px;
-}
-
-.cloud-provider-name {
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-bottom: 4px;
-}
-
-.cloud-current-model {
-    font-size: 12px;
-    color: var(--text);
-}
-
-.cloud-actions {
-    display: flex;
-    gap: 6px;
-}
-
-.cloud-settings-btn,
-.cloud-delete-btn {
-    flex: 1;
-    padding: 6px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity 0.15s;
-}
-
-.cloud-settings-btn {
-    background: var(--accent);
-    border: none;
-    color: white;
-}
-
-.cloud-delete-btn {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text);
-}
-
-.cloud-settings-btn:hover,
-.cloud-delete-btn:hover {
-    opacity: 0.8;
-}
+.cloud-model-row { display: grid; grid-template-columns: minmax(0, 1fr) 34px; gap: 6px; min-width: 0; }
+.cloud-model-display { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; height: 34px; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg); color: var(--text); font-size: 12px; font-weight: 650; }
+.cloud-model-display > span:nth-child(2) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cloud-model-status { width: 6px; height: 6px; flex: 0 0 auto; border-radius: 50%; background: var(--success, #20c997); }
+.cloud-model-settings { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid var(--border); border-radius: 9px; background: var(--surface2); color: var(--muted); cursor: pointer; transition: border-color .15s, color .15s, background .15s; }
+.cloud-model-settings:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--surface2)); color: var(--accent); }
+.cloud-model-settings:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent); outline-offset: 2px; }
 
 /* 응답 중 비활성화 */
 .model-select-wrap.disabled .custom-select-trigger {

@@ -1061,5 +1061,7 @@
     "document": "เอกสาร",
     "memo": "บันทึก",
     "email_thread": "อีเมล"
-  }
+  },
+  "providerSettings":{"title":"การตั้งค่า {{provider}}","required":"กรอกทั้ง API Key และ Model","save":"บันทึก","saveFailed":"บันทึกล้มเหลว","deleteFailed":"ลบไม่สำเร็จ","model":"Model"},
+  "customProvider": {"addConnection":"+ เพิ่มการเชื่อมต่อ LLM","add":"เพิ่ม","addTitle":"เพิ่มการเชื่อมต่อ LLM","editTitle":"แก้ไขการเชื่อมต่อ LLM","subtitle":"เชื่อมต่อเซิร์ฟเวอร์ API และโมเดลที่ต้องการใช้","close":"ปิด","cancel":"ยกเลิก","name":"ชื่อการเชื่อมต่อ","namePlaceholder":"เช่น LLM ของบริษัท","protocol":"รูปแบบ API","protocolDocs":"เอกสารรูปแบบ API","connectionSection":"ข้อมูลการเชื่อมต่อ","connectionSectionDesc":"ตั้งค่าเซิร์ฟเวอร์ API และโมเดล","baseUrl":"Base URL","apiKey":"API Key","optional":"ไม่บังคับ","apiKeyExisting":"API Key ใหม่ (กรอกเมื่อต้องการเปลี่ยน)","apiKeyOptional":"API Key (ไม่บังคับ)","modelId":"Model ID","modelPlaceholder":"เช่น qwen3:8b","hint":"เชื่อมต่อเซิร์ฟเวอร์ที่ใช้ OpenAI-compatible /chat/completions API","headers":"Header เพิ่มเติม","headersDesc":"เพิ่ม HTTP Header สำหรับเกตเวย์หรือการยืนยันตัวตน","addHeader":"เพิ่ม Header","noHeaders":"เพิ่ม Header เมื่อเซิร์ฟเวอร์ต้องการ","headerName":"ป้าย Header","headerValue":"ค่า Header","headerValuePlaceholder":"กรอกค่า Header","headerValueExisting":"ค่าใหม่ (กรอกเมื่อต้องการเปลี่ยน)","removeHeader":"ลบ Header","showHeaderValue":"แสดงค่า Header","hideHeaderValue":"ซ่อนค่า Header","showApiKey":"แสดง API Key","hideApiKey":"ซ่อน API Key","headerValidation":"กรอกป้ายและค่าของ Header ทุกแถว","validation":"กรอกชื่อ Base URL และ Model ID","save":"บันทึกและเลือก","saving":"กำลังบันทึก…","saveFailed":"บันทึกการเชื่อมต่อล้มเหลว","deleteConfirm":"ลบการเชื่อมต่อ {{name}} หรือไม่?"}
 }

@@ -80,10 +80,30 @@ interface ProviderSettings {
     model?: string;
 }
 
-type ProviderType = 'ollama' | 'openai' | 'gemini' | 'claude';
+export interface CustomProviderSettings {
+    id: string;
+    name: string;
+    protocol: 'openai-compatible';
+    base_url: string;
+    model: string;
+    has_key: boolean;
+    headers: Array<{name: string; has_value: boolean}>;
+}
+
+export interface CustomProviderPayload {
+    name: string;
+    protocol: 'openai-compatible';
+    base_url: string;
+    api_key: string;
+    model: string;
+    headers: Array<{name: string; value: string}>;
+}
+
+type ProviderType = 'ollama' | 'openai' | 'gemini' | 'claude' | `custom:${string}`;
 
 interface ProvidersResponse {
     providers: Record<string, ProviderSettings>;
+    custom_providers: CustomProviderSettings[];
     current_type?: ProviderType;
 }
 
@@ -647,6 +667,24 @@ export const api = {
 
     async deleteProvider(provider: string): Promise<ApiSuccessResponse> {
         const res = await fetch(`${API_BASE}/providers/${provider}`, {method: 'DELETE'});
+        return res.json();
+    },
+
+    async createCustomProvider(data: CustomProviderPayload): Promise<{ok: boolean; id: string}> {
+        const res = await fetch(`${API_BASE}/providers/custom`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
+        await assertOk(res, 'Unable to create LLM connection.');
+        return res.json();
+    },
+
+    async updateCustomProvider(id: string, data: CustomProviderPayload): Promise<ApiSuccessResponse> {
+        const res = await fetch(`${API_BASE}/providers/custom/${encodeURIComponent(id)}`, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
+        await assertOk(res, 'Unable to update LLM connection.');
+        return res.json();
+    },
+
+    async deleteCustomProvider(id: string): Promise<ApiSuccessResponse> {
+        const res = await fetch(`${API_BASE}/providers/custom/${encodeURIComponent(id)}`, {method: 'DELETE'});
+        await assertOk(res, 'Unable to delete LLM connection.');
         return res.json();
     },
 

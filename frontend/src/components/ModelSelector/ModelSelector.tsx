@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from 'react';
+import {Pencil} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import type {SelectOption} from '../CustomSelect/CustomSelect';
@@ -8,10 +9,9 @@ import './ModelSelector.css';
 interface ModelSelectorProps {
     installed: string[];
     selectedModel: string;
-    currentProvider: 'ollama' | 'openai' | 'gemini' | 'claude';
+    currentProvider: string;
     onModelChange: (model: string, needsDownload: boolean, modelType?: ModelType) => void;
     onProviderSettingsOpen: () => void;
-    onProviderDelete: (provider: 'openai' | 'gemini' | 'claude') => void;
 }
 
 interface RecommendedModel {
@@ -29,7 +29,6 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                                                          currentProvider,
                                                          onModelChange,
                                                          onProviderSettingsOpen,
-                                                         onProviderDelete,
                                                      }) => {
     const {t} = useTranslation('main');
     const [recommendedModels, setRecommendedModels] = useState<RecommendedModel[]>([]);
@@ -208,17 +207,12 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
         return (
             <div className="model-select-wrap">
                 <div className="cloud-config">
-                    <div className="cloud-info">
-                        <div className="cloud-provider-name">{currentProvider.toUpperCase()}</div>
-                        <div className="cloud-current-model">{selectedModel || t('modelSelector.noModel')}</div>
-                    </div>
-                    <div className="cloud-actions">
-                        <button className="cloud-settings-btn" onClick={onProviderSettingsOpen}>{t('modelSelector.settingsManage')}</button>
-                        <button
-                            className="cloud-delete-btn"
-                            onClick={() => onProviderDelete(currentProvider as 'openai' | 'gemini' | 'claude')}
-                        >{t('modelSelector.delete')}
-                        </button>
+                    <div className="cloud-model-row">
+                        <div className="cloud-model-display">
+                            <span className="cloud-model-status" aria-hidden="true"/>
+                            <span>{selectedModel || t('modelSelector.noModel')}</span>
+                        </div>
+                        <button className="cloud-model-settings" type="button" onClick={onProviderSettingsOpen} aria-label={t('modelSelector.settingsManage')}><Pencil size={16}/></button>
                     </div>
                 </div>
             </div>

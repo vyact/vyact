@@ -7,6 +7,12 @@
   "customModel": "Custom model",
   "apiKey": "API KEY",
   "model": "MODEL",
+  "modelId": "Model ID",
+  "modelIdPlaceholder": "API에서 사용하는 정확한 모델 ID",
+  "selectedModel": "선택된 모델",
+  "modelNotSet": "Model ID를 입력하세요",
+  "cloudConnection": {"title":"공식 API 연결","description":"API Key와 호출할 모델을 설정합니다."},
+  "customConnection": {"title":"사용자 LLM 연결","description":"OpenAI-compatible API 서버를 연결합니다.","name":"연결 이름","namePlaceholder":"예: 사내 LLM","baseUrl":"Base URL","optional":"선택","required":"연결 이름, Base URL, Model ID를 모두 입력하세요."},
   "startInstall": "설치 시작",
   "apiKeyModelRequired": "API KEY와 MODEL은 필수입니다",
   "installationFailed": "설치에 실패했습니다. 진행 로그를 확인한 후 다시 시도해주세요.",
@@ -67,6 +73,7 @@
     "claude": {
       "name": "Claude",
       "desc": "Anthropic"
-    }
+    },
+    "custom": {"name":"Custom","desc":"직접 연결"}
   }
 }

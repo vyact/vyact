@@ -23,9 +23,8 @@ async def prepare_request(
     api_key = None
     if provider_type != "ollama":
         try:
-            from routers.deps import load_config_async
-            cfg = await load_config_async()
-            api_key = cfg.get(f"{provider_type}_config", {}).get("api_key") or cfg.get("api_key")
+            from .config import get_provider_config
+            api_key = (await get_provider_config()).get("api_key")
         except Exception:
             pass
 
