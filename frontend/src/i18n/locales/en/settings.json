@@ -5,9 +5,21 @@
     "runtime": "Model settings",
     "backup": "Backup / Restore",
     "api": "Integrations",
+    "externalData": "External data",
     "plugins": "Plugins",
     "skills": "Skills",
     "profile": "AI Profile Analysis"
+  },
+  "externalData": {
+    "countryKr": "South Korea",
+    "serviceKey": "Public Data Portal service key", "serviceKeyPlaceholder": "Enter the general authentication key", "serviceKeySavedPlaceholder": "Enter a new key to replace the saved key", "showServiceKey": "Show service key", "hideServiceKey": "Hide service key", "saveServiceKey": "Save key", "saving": "Saving…", "serviceKeyConfigured": "A service key is saved.", "serviceKeySaved": "Service key saved.", "serviceKeySaveFailed": "Could not save the service key.",
+    "syncData": "Stored data", "lastUpdated": "Last updated: {{date}}", "documentCount": "{{count}} stored", "neverSynced": "Never", "fetchData": "Fetch data", "updateData": "Update data", "syncing": "Fetching…", "syncStartFailed": "Could not start fetching data.", "syncFailed": "Could not fetch data. Check the service key and API permission.", "syncStages": {"list": "Fetching service list", "detail": "Fetching details", "conditions": "Fetching eligibility conditions", "completed": "Saved"},
+    "title": "External data", "description": "Connect public data sources by country and manage searchable data in Vyact.", "country": "Country/region", "localNote": "Imported data is stored in local Elasticsearch. APIs are called only when updating data.", "sourceCount": "{{count}} data sources", "guide": "Connection guide", "guideTitle": "Prepare API access", "openApplicationPage": "Open application page", "status": {"applicationRequired": "Application required", "planned": "Planned"}, "kr": {"title": "South Korean public data"},
+    "sources": {
+      "gov24": {"name": "Government24 · Public benefits", "description": "Search welfare, housing, education, and employment benefits from public institutions.", "steps": {"1": "Sign in to or create an account at the Public Data Portal.", "2": "Select Apply for Use on the API page.", "3": "Choose a personal or project service key and submit.", "4": "After approval, find the service key in My Page."}, "note": "Development and production accounts are automatically approved and free."},
+      "youthCenter": {"name": "Youth Center", "description": "Search South Korean youth policies and youth spaces.", "steps": {"1": "Sign in to or create a Youth Center account.", "2": "Apply for an Open API key from My Page.", "3": "Wait for administrator approval.", "4": "Copy the issued authentication key."}, "note": "Keys are issued after administrator review."},
+      "bizInfo": {"name": "BizInfo", "description": "Search support programs and events for startups and small businesses.", "steps": {"1": "Open the BizInfo API guide.", "2": "Apply to use the support-program API.", "3": "Enter and submit the requested information.", "4": "Copy the issued service key."}, "note": "Support-program and event APIs may require separate applications."}
+    }
   },
   "plugins": {
     "title": "Plugin management",

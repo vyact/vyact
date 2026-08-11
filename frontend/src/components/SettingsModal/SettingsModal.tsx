@@ -12,6 +12,7 @@ import '../RememberModal/RememberModal.css';
 import McpServersSection from './McpServersSection';
 import SkillsSection from './SkillsSection';
 import PluginsSection from './PluginsSection';
+import ExternalDataSection from './ExternalDataSection';
 import {refreshSkills} from '../../services/skills';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import {refreshGoogleWorkspaceStatus} from '../../services/googleWorkspaceStatus';
@@ -52,7 +53,7 @@ interface SettingsModalProps {
     initialTab?: string;
 }
 
-type Tab = 'backup' | 'general' | 'runtime' | 'api' | 'plugins' | 'skills' | 'profile';
+type Tab = 'backup' | 'general' | 'runtime' | 'api' | 'externalData' | 'plugins' | 'skills' | 'profile';
 
 type RuntimeSettings = Record<string, number | null>;
 const DEFAULT_SETTINGS_TAB: Tab = 'general';
@@ -782,6 +783,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                             {key: 'runtime' as Tab, icon: '🧠', label: t('tabs.runtime')},
                             {key: 'backup' as Tab, icon: '💾', label: t('tabs.backup')},
                             {key: 'api' as Tab, icon: '🔑', label: t('tabs.api')},
+                            {key: 'externalData' as Tab, icon: '🌐', label: t('tabs.externalData')},
                             {key: 'skills' as Tab, icon: '🧩', label: t('tabs.skills')},
                             ...(isPluginTabVisible
                                 ? [{key: 'plugins' as Tab, icon: '🔌', label: t('tabs.plugins')}]
@@ -1317,6 +1319,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                 <div className="settings-general-section">
                                     <McpServersSection/>
                                 </div>
+                            </div>
+                        )}
+
+                        {tab === 'externalData' && (
+                            <div className="settings-general">
+                                <ExternalDataSection/>
                             </div>
                         )}
 

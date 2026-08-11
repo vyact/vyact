@@ -5,9 +5,21 @@
     "runtime": "Modèles",
     "backup": "Sauvegarde",
     "api": "Connexions",
+    "externalData": "Données externes",
     "skills": "Compétences",
     "profile": "Profil IA",
     "plugins": "Plugins"
+  },
+  "externalData": {
+    "countryKr": "Corée du Sud",
+    "serviceKey": "Clé de service du portail des données publiques", "serviceKeyPlaceholder": "Saisissez la clé d’authentification générale", "serviceKeySavedPlaceholder": "Saisissez une nouvelle clé pour remplacer celle enregistrée", "showServiceKey": "Afficher la clé", "hideServiceKey": "Masquer la clé", "saveServiceKey": "Enregistrer la clé", "saving": "Enregistrement…", "serviceKeyConfigured": "Une clé de service est enregistrée.", "serviceKeySaved": "Clé de service enregistrée.", "serviceKeySaveFailed": "Impossible d’enregistrer la clé.",
+    "syncData": "Données enregistrées", "lastUpdated": "Dernière mise à jour : {{date}}", "documentCount": "{{count}} enregistrées", "neverSynced": "Jamais", "fetchData": "Récupérer les données", "updateData": "Mettre à jour", "syncing": "Récupération…", "syncStartFailed": "Impossible de démarrer la récupération.", "syncFailed": "Impossible de récupérer les données. Vérifiez la clé et l’autorisation API.", "syncStages": {"list": "Récupération de la liste", "detail": "Récupération des détails", "conditions": "Récupération des conditions", "completed": "Enregistré"},
+    "title": "Données externes", "description": "Connectez des sources de données publiques par pays et gérez les données consultables dans Vyact.", "country": "Pays/région", "localNote": "Les données importées sont stockées dans Elasticsearch local. Les API ne sont appelées que lors des mises à jour.", "sourceCount": "{{count}} sources de données", "guide": "Guide de connexion", "guideTitle": "Préparer l’accès à l’API", "openApplicationPage": "Ouvrir la page de demande", "status": {"applicationRequired": "Demande requise", "planned": "Prévu"}, "kr": {"title": "Données publiques sud-coréennes"},
+    "sources": {
+      "gov24": {"name": "Government24 · Aides publiques", "description": "Recherchez les aides sociales, au logement, à l’éducation et à l’emploi des organismes publics.", "steps": {"1": "Connectez-vous ou inscrivez-vous au portail des données publiques.", "2": "Sélectionnez la demande d’utilisation sur la page de l’API.", "3": "Choisissez une clé personnelle ou de projet et envoyez la demande.", "4": "Après approbation, consultez la clé dans votre espace."}, "note": "Les comptes de développement et de production sont approuvés automatiquement et gratuitement."},
+      "youthCenter": {"name": "Youth Center", "description": "Recherchez les politiques et espaces pour la jeunesse en Corée du Sud.", "steps": {"1": "Connectez-vous ou créez un compte.", "2": "Demandez une clé Open API dans votre espace.", "3": "Attendez l’approbation de l’administrateur.", "4": "Consultez la clé délivrée."}, "note": "Les clés sont délivrées après examen."},
+      "bizInfo": {"name": "BizInfo", "description": "Recherchez des programmes et événements pour les start-up et petites entreprises.", "steps": {"1": "Ouvrez le guide de l’API.", "2": "Demandez l’accès à l’API des programmes d’aide.", "3": "Saisissez et envoyez les informations.", "4": "Consultez la clé de service délivrée."}, "note": "Les API des programmes et événements peuvent nécessiter des demandes distinctes."}
+    }
   },
   "general": {
     "language": "Langue",

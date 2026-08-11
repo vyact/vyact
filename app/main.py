@@ -409,6 +409,7 @@ from routers.skills import router as skills_router
 from routers.notifications import router as notifications_router
 from routers.plugins import router as plugins_router
 from routers.knowledge_collections import router as knowledge_collections_router
+from routers.external_data import router as external_data_router
 
 app.include_router(setup_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
@@ -434,6 +435,7 @@ app.include_router(skills_router)
 app.include_router(notifications_router, prefix="/api")
 app.include_router(plugins_router, prefix="/api")
 app.include_router(knowledge_collections_router, prefix="/api")
+app.include_router(external_data_router, prefix="/api")
 from services.plugin_manager import plugin_api_dispatcher
 app.mount("/api/plugin-api", plugin_api_dispatcher)
 

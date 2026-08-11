@@ -5,9 +5,21 @@
     "runtime": "モデル設定",
     "backup": "バックアップ / 復元",
     "api": "連携設定",
+    "externalData": "外部データ",
     "skills": "スキル",
     "profile": "AIプロフィール分析",
     "plugins": "Plugins"
+  },
+  "externalData": {
+    "countryKr": "韓国",
+    "serviceKey": "公共データポータルのサービスキー", "serviceKeyPlaceholder": "一般認証キーを入力", "serviceKeySavedPlaceholder": "保存済みキーを変更するには新しいキーを入力", "showServiceKey": "キーを表示", "hideServiceKey": "キーを隠す", "saveServiceKey": "キーを保存", "saving": "保存中…", "serviceKeyConfigured": "サービスキーは保存済みです。", "serviceKeySaved": "サービスキーを保存しました。", "serviceKeySaveFailed": "サービスキーを保存できませんでした。",
+    "syncData": "保存データ", "lastUpdated": "最終更新：{{date}}", "documentCount": "{{count}}件保存", "neverSynced": "未実行", "fetchData": "データを取得", "updateData": "データを更新", "syncing": "取得中…", "syncStartFailed": "データ取得を開始できませんでした。", "syncFailed": "データを取得できませんでした。キーとAPI権限を確認してください。", "syncStages": {"list": "サービス一覧を取得中", "detail": "詳細情報を取得中", "conditions": "支援条件を取得中", "completed": "保存完了"},
+    "title": "外部データ", "description": "国別の公共データソースを接続し、Vyactで検索するデータを管理します。", "country": "国・地域", "localNote": "取得したデータはローカルのElasticsearchに保存され、APIは更新時のみ呼び出されます。", "sourceCount": "{{count}}件のデータソース", "guide": "接続方法", "guideTitle": "API利用の準備", "openApplicationPage": "利用申請ページを開く", "status": {"applicationRequired": "利用申請が必要", "planned": "連携予定"}, "kr": {"title": "韓国の公共データ"},
+    "sources": {
+      "gov24": {"name": "政府24・公共サービス（給付）", "description": "公共機関の福祉・住宅・教育・雇用支援を検索します。", "steps": {"1": "公共データポータルにログインまたは登録します。", "2": "APIページで利用申請を選択します。", "3": "個人またはプロジェクトキーを選んで申請します。", "4": "承認後、マイページでキーを確認します。"}, "note": "開発・運用アカウントとも自動承認で無料です。"},
+      "youthCenter": {"name": "オン統青年", "description": "韓国の青年政策と青年スペースを検索します。", "steps": {"1": "サイトにログインまたは登録します。", "2": "マイページでOpen APIキーを申請します。", "3": "担当者の承認を待ちます。", "4": "発行されたキーを確認します。"}, "note": "キーは審査後に発行されます。"},
+      "bizInfo": {"name": "企業広場", "description": "創業者・小規模事業者向け支援事業とイベントを検索します。", "steps": {"1": "API案内ページを開きます。", "2": "支援事業APIの利用を申請します。", "3": "必要情報を入力して登録します。", "4": "発行されたサービスキーを確認します。"}, "note": "支援事業とイベントAPIは個別申請が必要な場合があります。"}
+    }
   },
   "general": {
     "language": "言語",

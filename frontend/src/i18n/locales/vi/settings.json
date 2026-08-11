@@ -5,9 +5,21 @@
     "runtime": "Mô hình",
     "backup": "Sao lưu",
     "api": "Kết nối",
+    "externalData": "Dữ liệu ngoài",
     "skills": "Kỹ năng",
     "profile": "Hồ sơ AI",
     "plugins": "Plugins"
+  },
+  "externalData": {
+    "countryKr": "Hàn Quốc",
+    "serviceKey": "Khóa dịch vụ Cổng Dữ liệu Công", "serviceKeyPlaceholder": "Nhập khóa xác thực chung", "serviceKeySavedPlaceholder": "Nhập khóa mới để thay khóa đã lưu", "showServiceKey": "Hiện khóa", "hideServiceKey": "Ẩn khóa", "saveServiceKey": "Lưu khóa", "saving": "Đang lưu…", "serviceKeyConfigured": "Đã lưu khóa dịch vụ.", "serviceKeySaved": "Đã lưu khóa dịch vụ.", "serviceKeySaveFailed": "Không thể lưu khóa dịch vụ.",
+    "syncData": "Dữ liệu đã lưu", "lastUpdated": "Cập nhật cuối: {{date}}", "documentCount": "Đã lưu {{count}} mục", "neverSynced": "Chưa có", "fetchData": "Lấy dữ liệu", "updateData": "Cập nhật dữ liệu", "syncing": "Đang lấy…", "syncStartFailed": "Không thể bắt đầu lấy dữ liệu.", "syncFailed": "Không thể lấy dữ liệu. Hãy kiểm tra khóa và quyền API.", "syncStages": {"list": "Đang lấy danh sách", "detail": "Đang lấy chi tiết", "conditions": "Đang lấy điều kiện", "completed": "Đã lưu"},
+    "title": "Dữ liệu ngoài", "description": "Kết nối nguồn dữ liệu công theo quốc gia và quản lý dữ liệu có thể tìm kiếm trong Vyact.", "country": "Quốc gia/khu vực", "localNote": "Dữ liệu nhập được lưu trong Elasticsearch cục bộ. API chỉ được gọi khi cập nhật.", "sourceCount": "{{count}} nguồn dữ liệu", "guide": "Cách kết nối", "guideTitle": "Chuẩn bị quyền API", "openApplicationPage": "Mở trang đăng ký", "status": {"applicationRequired": "Cần đăng ký", "planned": "Sắp hỗ trợ"}, "kr": {"title": "Dữ liệu công Hàn Quốc"},
+    "sources": {
+      "gov24": {"name": "Government24 · Phúc lợi công", "description": "Tìm phúc lợi, nhà ở, giáo dục và việc làm từ các cơ quan công.", "steps": {"1": "Đăng nhập hoặc đăng ký Cổng Dữ liệu Công.", "2": "Chọn đăng ký sử dụng trên trang API.", "3": "Chọn khóa cá nhân hoặc dự án và gửi.", "4": "Sau khi duyệt, xem khóa trong My Page."}, "note": "Tài khoản phát triển và vận hành được tự động duyệt và miễn phí."},
+      "youthCenter": {"name": "Youth Center", "description": "Tìm chính sách và không gian thanh niên tại Hàn Quốc.", "steps": {"1": "Đăng nhập hoặc tạo tài khoản.", "2": "Đăng ký khóa Open API trong My Page.", "3": "Chờ quản trị viên phê duyệt.", "4": "Xem khóa đã được cấp."}, "note": "Khóa được cấp sau khi xét duyệt."},
+      "bizInfo": {"name": "BizInfo", "description": "Tìm chương trình hỗ trợ và sự kiện cho doanh nghiệp khởi nghiệp và nhỏ.", "steps": {"1": "Mở hướng dẫn API.", "2": "Đăng ký API chương trình hỗ trợ.", "3": "Điền và gửi thông tin.", "4": "Xem khóa dịch vụ đã cấp."}, "note": "API chương trình và sự kiện có thể cần đăng ký riêng."}
+    }
   },
   "general": {
     "language": "Ngôn ngữ",

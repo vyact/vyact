@@ -826,6 +826,47 @@ export const api = {
         return res.json();
     },
 
+    async getExternalDataConnections(): Promise<{
+        connections: Record<string, {has_service_key: boolean}>;
+    }> {
+        const res = await fetch(`${API_BASE}/external-data/connections`);
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+    },
+
+    async saveExternalDataConnection(sourceId: string, serviceKey: string): Promise<{
+        source_id: string;
+        has_service_key: boolean;
+    }> {
+        const res = await fetch(`${API_BASE}/external-data/connections/${encodeURIComponent(sourceId)}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({service_key: serviceKey}),
+        });
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+    },
+
+    async getGov24SyncStatus(): Promise<{
+        status: 'idle' | 'running' | 'completed' | 'failed';
+        stage?: 'list' | 'detail' | 'conditions' | 'completed';
+        current?: number;
+        total?: number;
+        document_count?: number;
+        last_successful_sync_at?: string | null;
+        error?: string;
+    }> {
+        const res = await fetch(`${API_BASE}/external-data/sources/kr.gov24/sync`);
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+    },
+
+    async startGov24Sync(): Promise<{status: string}> {
+        const res = await fetch(`${API_BASE}/external-data/sources/kr.gov24/sync`, {method: 'POST'});
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+    },
+
     async getTtsSettings(): Promise<{ rate: number; volume: number; enVoiceURI: string }> {
         const res = await fetch(`${API_BASE}/settings/tts`);
         return res.json();
