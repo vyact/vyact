@@ -19,7 +19,7 @@
 
 ---
 
-## Your work already has context. Your AI should too.
+## Models may change. Your context should remain.
 
 Most AI chats begin with the same tedious ritual: find a file, copy an email, explain the background again, and hope the answer has not lost the plot. Vyact keeps the useful parts of your work together so you can ask better questions with less setup.
 
