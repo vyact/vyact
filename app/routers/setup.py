@@ -194,6 +194,61 @@ async def install(req: ModelSelectRequest):
         except Exception:
             return False
 
+    async def _prepare_common_runtime(installer: Installer):
+        """Prepare runtime resources used independently of the selected LLM provider."""
+        yield "Creating Python virtual environment...", "info", 74, True
+        ok, msg = await installer.setup_venv()
+        if not ok:
+            yield msg, "error", 0, False
+            return
+        yield msg, "ok", 76, True
+
+        yield "Using installed app files", "ok", 78, True
+        # Electron installs requirements before starting the server, so running pip
+        # again here would duplicate the same package installation work.
+        yield "Python packages ready", "ok", 88, True
+
+        yield "Preparing Vyact embedding model...", "info", 88, True
+        try:
+            from services.embedding_runtime import prepare_embedding_model
+            await prepare_embedding_model()
+            yield "Vyact embedding model ready", "ok", 89, True
+        except Exception as error:
+            yield f"Vyact embedding model download failed: {error}", "log", 89, True
+
+        if is_japanese_system_language():
+            yield "Installing UniDic dictionary for Japanese TTS...", "info", 88, True
+            ok, msg = await installer.install_unidic_dictionary()
+            yield msg, "ok" if ok else "log", 89, True
+        else:
+            yield "Japanese TTS dictionary will download when first needed", "ok", 89, True
+
+        yield "Installing Playwright browser...", "info", 89, True
+        ok, msg = await installer.install_playwright()
+        yield msg, "ok", 91, True
+
+        yield "Installing espeak-ng (Kokoro TTS)...", "info", 92, True
+        ok, msg = await installer.install_espeak()
+        yield msg, "ok" if ok else "log", 93, True
+
+        yield "Downloading Kokoro TTS model...", "info", 93, True
+        ok, msg = await installer.download_kokoro_model()
+        yield msg, "ok" if ok else "log", 94, True
+
+        yield "Warming up Kokoro TTS...", "info", 94, True
+        from main import warmup_kokoro_tts
+        tts_ready = await warmup_kokoro_tts()
+        yield (
+            "Kokoro TTS ready" if tts_ready else "Kokoro TTS warm-up skipped",
+            "ok" if tts_ready else "log",
+            95,
+            True,
+        )
+
+    async def _stream_common_runtime(installer: Installer):
+        async for message, level, progress, should_continue in _prepare_common_runtime(installer):
+            yield sse(message, level, progress), should_continue
+
     async def stream():
         request_config = req.config or {}
         persisted_setup_config = {"es_mode": request_config.get("es_mode", "docker")}
@@ -311,54 +366,10 @@ async def install(req: ModelSelectRequest):
                 yield sse(str(e), "error", 0);
                 return
 
-            yield sse("Creating Python virtual environment...", "info", 74)
-            ok, msg = await installer.setup_venv()
-            if not ok: yield sse(msg, "error", 0); return
-            yield sse(msg, "ok", 76)
-
-            yield sse("Using installed app files", "ok", 78)
-
-            # Electron이 서버를 시작하기 전에 requirements.txt를 가상환경에 설치한다.
-            # 여기서 다시 pip을 실행하면 macOS와 Windows 모두 동일한 패키지를 두 번
-            # 확인·설치하게 되므로, 준비 완료 상태만 사용자에게 알린다.
-            yield sse("Python packages ready", "ok", 88)
-
-            yield sse("Preparing Vyact embedding model...", "info", 88)
-            try:
-                from services.embedding_runtime import prepare_embedding_model
-                await prepare_embedding_model()
-                yield sse("Vyact embedding model ready", "ok", 89)
-            except Exception as e:
-                yield sse(f"Vyact embedding model download failed: {e}", "log", 89)
-
-            if is_japanese_system_language():
-                yield sse("Installing UniDic dictionary for Japanese TTS...", "info", 88)
-                ok, msg = await installer.install_unidic_dictionary()
-                # 일본어 TTS만 제한되므로 전체 설치는 계속 진행한다.
-                yield sse(msg, "ok" if ok else "log", 89)
-            else:
-                yield sse("Japanese TTS dictionary will download when first needed", "ok", 89)
-
-            yield sse("Installing Playwright browser...", "info", 88)
-            ok, msg = await installer.install_playwright()
-            yield sse(msg, "ok", 91)
-
-            yield sse("Installing espeak-ng (Kokoro TTS)...", "info", 92)
-            ok, msg = await installer.install_espeak()
-            yield sse(msg, "ok" if ok else "log", 93)
-
-            yield sse("Downloading Kokoro TTS model...", "info", 93)
-            ok, msg = await installer.download_kokoro_model()
-            yield sse(msg, "ok" if ok else "log", 94)
-
-            yield sse("Warming up Kokoro TTS...", "info", 94)
-            from main import warmup_kokoro_tts
-            tts_ready = await warmup_kokoro_tts()
-            yield sse(
-                "Kokoro TTS ready" if tts_ready else "Kokoro TTS warm-up skipped",
-                "ok" if tts_ready else "log",
-                95,
-            )
+            async for event, should_continue in _stream_common_runtime(installer):
+                yield event
+                if not should_continue:
+                    return
 
             # ES가 이미 떠 있으면 컨테이너 기동을 건너뛴다(위에서 감지)
             if es_running:
@@ -450,6 +461,11 @@ async def install(req: ModelSelectRequest):
                 yield sse("Starting Elasticsearch...", "info", 50)
                 ok, msg = await installer.start_elasticsearch()
                 yield sse(msg, "ok", 70)
+
+            async for event, should_continue in _stream_common_runtime(installer):
+                yield event
+                if not should_continue:
+                    return
 
             # ES 인덱스 초기화
             try:
