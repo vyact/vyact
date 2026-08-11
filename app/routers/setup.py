@@ -207,6 +207,10 @@ async def install(req: ModelSelectRequest):
             }
         elif req.type == "custom":
             connection_name = str(request_config.get("name", "")).strip()
+            protocol = str(request_config.get("protocol", "openai-compatible")).strip()
+            if protocol != "openai-compatible":
+                yield sse("지원하지 않는 API 형식입니다.", "error", 0)
+                return
             try:
                 base_url = _normalize_custom_provider_base_url(str(request_config.get("base_url", "")))
                 custom_headers = _normalize_custom_headers([
@@ -230,7 +234,7 @@ async def install(req: ModelSelectRequest):
                 "custom_providers": [{
                     "id": connection_id,
                     "name": connection_name,
-                    "protocol": "openai-compatible",
+                    "protocol": protocol,
                     "base_url": base_url,
                     "api_key": (req.api_key or "").strip(),
                     "model": model,

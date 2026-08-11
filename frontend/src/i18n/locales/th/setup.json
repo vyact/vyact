@@ -2,16 +2,14 @@
   "title": "ตั้งค่า Vyact",
   "installing": "กำลังติดตั้ง...",
   "selectProvider": "เลือกผู้ให้บริการ",
-  "provider": "ผู้ให้บริการ",
+  "provider": "ผู้ให้บริการ LLM",
   "ollamaModel": "โมเดล Ollama",
-  "customModel": "โมเดลกำหนดเอง",
+  "customModel": "เช่น gemma4:e2b-mlx",
   "apiKey": "API KEY",
   "model": "MODEL",
   "modelId": "Model ID",
   "modelIdPlaceholder": "รหัสโมเดลที่ API ใช้",
-  "selectedModel": "โมเดลที่เลือก",
-  "modelNotSet": "ป้อน Model ID",
-  "cloudConnection": {"title":"การเชื่อมต่อ API ทางการ","description":"ตั้งค่า API Key และโมเดลที่จะเรียกใช้"},
+  "cloudConnection": {"title":"การเชื่อมต่อ API ทางการ"},
   "customConnection": {"title":"การเชื่อมต่อ LLM กำหนดเอง","description":"เชื่อมต่อเซิร์ฟเวอร์ API ที่เข้ากันได้กับ OpenAI","name":"ชื่อการเชื่อมต่อ","namePlaceholder":"เช่น LLM ของบริษัท","baseUrl":"Base URL","optional":"ไม่บังคับ","required":"กรอกชื่อการเชื่อมต่อ Base URL และ Model ID"},
   "startInstall": "เริ่มติดตั้ง",
   "apiKeyModelRequired": "ต้องระบุ API KEY และ MODEL",
@@ -63,7 +61,7 @@
       "desc": "ในเครื่อง"
     },
     "openai": {
-      "name": "ChatGPT",
+      "name": "OpenAI",
       "desc": "OpenAI"
     },
     "gemini": {
@@ -74,6 +72,6 @@
       "name": "Claude",
       "desc": "Anthropic"
     },
-    "custom": {"name":"กำหนดเอง","desc":"เชื่อมต่อโดยตรง"}
+    "custom": {"name":"LLM กำหนดเอง","desc":"เชื่อมต่อโดยตรง"}
   }
 }

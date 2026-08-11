@@ -2,16 +2,14 @@
   "title": "Vyact Initial Setup",
   "installing": "Installing...",
   "selectProvider": "Select Provider",
-  "provider": "Provider",
+  "provider": "LLM Provider",
   "ollamaModel": "Ollama Model",
-  "customModel": "Custom model",
+  "customModel": "e.g. gemma4:e2b-mlx",
   "apiKey": "API KEY",
   "model": "MODEL",
   "modelId": "Model ID",
   "modelIdPlaceholder": "Exact model ID used by the API",
-  "selectedModel": "Selected model",
-  "modelNotSet": "Enter a Model ID",
-  "cloudConnection": {"title":"Official API connection","description":"Configure the API Key and model to call."},
+  "cloudConnection": {"title":"Official API connection"},
   "customConnection": {"title":"Custom LLM connection","description":"Connect an OpenAI-compatible API server.","name":"Connection name","namePlaceholder":"e.g. Company LLM","baseUrl":"Base URL","optional":"Optional","required":"Enter a connection name, Base URL, and Model ID."},
   "startInstall": "Start Install",
   "apiKeyModelRequired": "API KEY and MODEL are required",
@@ -63,7 +61,7 @@
       "desc": "Local"
     },
     "openai": {
-      "name": "ChatGPT",
+      "name": "OpenAI",
       "desc": "OpenAI"
     },
     "gemini": {
@@ -74,6 +72,6 @@
       "name": "Claude",
       "desc": "Anthropic"
     },
-    "custom": {"name":"Custom","desc":"Your endpoint"}
+    "custom": {"name":"Custom LLM","desc":"Your endpoint"}
   }
 }

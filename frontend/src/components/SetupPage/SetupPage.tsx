@@ -1,9 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {Eye, EyeOff, ExternalLink, Plus} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { LogEntry } from '../../types';
 import { getRecommendedModelDisplay } from '../../utils/recommendedModels';
 import { syncPendingLanguageAfterSetup } from '../../i18n';
 import EsModeSelector from './EsModeSelector';
+import CustomSelect from '../CustomSelect/CustomSelect';
+import {CUSTOM_PROTOCOL_OPTIONS, OPENAI_COMPATIBLE_DOCS_URL} from '../../constants/customProviders';
 import './SetupPage.css';
 
 interface SetupPageProps {
@@ -18,6 +21,7 @@ interface RecommendedModel {
 }
 
 type Provider = 'ollama' | 'openai' | 'gemini' | 'claude' | 'custom';
+type CustomProtocol = 'openai-compatible';
 
 const DEFAULT_MODELS: Record<Exclude<Provider, 'ollama' | 'custom'>, string> = {
     openai: 'gpt-4o-mini',
@@ -38,9 +42,18 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
     const [selectedModel, setSelectedModel] = useState<string>('');
     const [customModel, setCustomModel] = useState<string>('');
     const [apiKey, setApiKey] = useState<string>('');
+    const [isApiKeyVisible, setIsApiKeyVisible] = useState(false);
     const [connectionName, setConnectionName] = useState<string>('');
     const [baseUrl, setBaseUrl] = useState<string>('');
-    const [customHeaders, setCustomHeaders] = useState<Array<{id: string; name: string; value: string}>>([]);
+    const [customProtocol, setCustomProtocol] = useState<CustomProtocol>('openai-compatible');
+    const [customHeaders, setCustomHeaders] = useState<Array<{id: string; name: string; value: string; isValueVisible: boolean}>>([]);
+
+    const addCustomHeader = () => {
+        setCustomHeaders(current => [
+            ...current,
+            {id: `setup-${Date.now()}-${current.length}`, name: '', value: '', isValueVisible: false},
+        ]);
+    };
 
     const [isInstalling, setIsInstalling] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -177,7 +190,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                         type: 'custom',
                         model: selectedModel,
                         api_key: apiKey,
-                        config: {es_mode: esMode, name: connectionName, base_url: baseUrl, headers: customHeaders.map(({name, value}) => ({name, value}))},
+                        config: {es_mode: esMode, name: connectionName, protocol: customProtocol, base_url: baseUrl, headers: customHeaders.map(({name, value}) => ({name, value}))},
                     }
                     : {
                     type: provider,
@@ -295,8 +308,9 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                     })).map(p => (
                         <div
                             key={p.id}
-                            className={`provider-item ${provider === p.id ? 'selected' : ''} ${isInstalling ? 'disabled' : ''}`}
+                            className={`provider-item ${provider === p.id ? 'selected' : ''} ${isInstalling && provider !== p.id ? 'disabled' : ''}`}
                             onClick={() => !isInstalling && changeProvider(p.id as Provider)}
+                            aria-disabled={isInstalling}
                         >
                             <div className="provider-name">{p.name}</div>
                             <div className="provider-desc">{p.desc}</div>
@@ -348,7 +362,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                                 </div>
 
                                 <input
-                                    className="input"
+                                    className="input setup-custom-model-input"
                                     placeholder={t('customModel')}
                                     value={customModel}
                                     onChange={e => setCustomModel(e.target.value)}
@@ -356,23 +370,26 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                             </>
                         )}
 
-                        {isCloud && <section className="setup-connection-panel">
+                        {isCloud && <section className={`setup-connection-panel${provider === 'custom' ? ' setup-custom-connection-panel' : ''}`}>
                             <div className="setup-connection-heading">
-                                <div><strong>{provider === 'custom' ? t('customConnection.title') : t('cloudConnection.title')}</strong><span>{provider === 'custom' ? t('customConnection.description') : t('cloudConnection.description')}</span></div>
-                                <span className="setup-protocol-badge">{provider === 'custom' ? 'OpenAI Compatible' : t(`providers.${provider}.name`)}</span>
+                                <div><strong>{provider === 'custom' ? t('customConnection.title') : t('cloudConnection.title')}</strong></div>
+                                {provider !== 'custom' && <span className="setup-protocol-badge">{t(`providers.${provider}.name`)}</span>}
                             </div>
                             {provider === 'custom' && <div className="setup-field-row">
                                 <label className="setup-field"><span>{t('customConnection.name')}</span><input className="input" placeholder={t('customConnection.namePlaceholder')} value={connectionName} onChange={e => setConnectionName(e.target.value)}/></label>
-                                <label className="setup-field"><span>{t('customConnection.baseUrl')}</span><input className="input" placeholder="http://localhost:11434/v1" value={baseUrl} onChange={e => setBaseUrl(e.target.value)}/></label>
+                                <label className="setup-field"><span>{t('main:customProvider.protocol')}</span><CustomSelect className="setup-protocol-select" options={CUSTOM_PROTOCOL_OPTIONS} value={customProtocol} onChange={value => setCustomProtocol(value as CustomProtocol)} ariaLabel={t('main:customProvider.protocol')}/></label>
                             </div>}
-                            <label className="setup-field"><span>{t('apiKey')}{provider === 'custom' && <small>{t('customConnection.optional')}</small>}</span><input className="input" type="password" placeholder={t('apiKey')} value={apiKey} onChange={e => setApiKey(e.target.value)}/></label>
-                            <label className="setup-field"><span>{t('modelId')}</span><input className="input" placeholder={t('modelIdPlaceholder')} value={selectedModel} onChange={e => setSelectedModel(e.target.value)}/></label>
-                            <div className="setup-model-preview"><span className="setup-model-dot"/><div><small>{t('selectedModel')}</small><strong>{selectedModel || t('modelNotSet')}</strong></div></div>
+                            {provider === 'custom' && <div className="setup-protocol-help"><span>{t('main:customProvider.hint')}</span><a href={OPENAI_COMPATIBLE_DOCS_URL} target="_blank" rel="noreferrer">{t('main:customProvider.protocolDocs')}<ExternalLink size={13}/></a></div>}
+                            {provider === 'custom' && <label className="setup-field"><span>{t('customConnection.baseUrl')}</span><input className="input" placeholder="http://localhost:11434/v1" value={baseUrl} onChange={e => setBaseUrl(e.target.value)}/></label>}
+                            <div className={provider === 'custom' ? 'setup-field-row' : 'setup-cloud-fields'}>
+                                <label className="setup-field"><span>{t('apiKey')}{provider === 'custom' && <small>{t('customConnection.optional')}</small>}</span><div className="setup-secret-field"><input className="input" type={isApiKeyVisible ? 'text' : 'password'} placeholder={t('apiKey')} value={apiKey} onChange={e => setApiKey(e.target.value)}/><button type="button" onClick={() => setIsApiKeyVisible(current => !current)} aria-label={t(isApiKeyVisible ? 'main:customProvider.hideApiKey' : 'main:customProvider.showApiKey')}>{isApiKeyVisible ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div></label>
+                                <label className="setup-field"><span>{t('modelId')}</span><input className="input" placeholder={t('modelIdPlaceholder')} value={selectedModel} onChange={e => setSelectedModel(e.target.value)}/></label>
+                            </div>
                             {provider === 'custom' && <div className="setup-custom-headers">
-                                <div className="setup-custom-headers-heading"><span>{t('main:customProvider.headers')}</span><button type="button" onClick={() => setCustomHeaders(current => [...current, {id: `setup-${Date.now()}-${current.length}`, name: '', value: ''}])}>+ {t('main:customProvider.addHeader')}</button></div>
-                                {customHeaders.map(header => <div className="setup-custom-header-row" key={header.id}>
+                                <div className="setup-custom-headers-heading"><span>{t('main:customProvider.headers')}</span><button type="button" onClick={addCustomHeader}>+ {t('main:customProvider.addHeader')}</button></div>
+                                {customHeaders.length === 0 ? <button type="button" className="setup-custom-headers-empty" onClick={addCustomHeader}><Plus size={18}/><span>{t('main:customProvider.noHeaders')}</span></button> : customHeaders.map(header => <div className="setup-custom-header-row" key={header.id}>
                                     <input className="input" value={header.name} onChange={event => setCustomHeaders(current => current.map(item => item.id === header.id ? {...item, name: event.target.value} : item))} placeholder="X-API-Key"/>
-                                    <input className="input" type="password" value={header.value} onChange={event => setCustomHeaders(current => current.map(item => item.id === header.id ? {...item, value: event.target.value} : item))} placeholder={t('main:customProvider.headerValuePlaceholder')}/>
+                                    <div className="setup-secret-field"><input className="input" type={header.isValueVisible ? 'text' : 'password'} value={header.value} onChange={event => setCustomHeaders(current => current.map(item => item.id === header.id ? {...item, value: event.target.value} : item))} placeholder={t('main:customProvider.headerValuePlaceholder')}/><button type="button" onClick={() => setCustomHeaders(current => current.map(item => item.id === header.id ? {...item, isValueVisible: !item.isValueVisible} : item))} aria-label={t(header.isValueVisible ? 'main:customProvider.hideHeaderValue' : 'main:customProvider.showHeaderValue')}>{header.isValueVisible ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div>
                                     <button type="button" onClick={() => setCustomHeaders(current => current.filter(item => item.id !== header.id))} aria-label={t('main:customProvider.removeHeader')}>×</button>
                                 </div>)}
                             </div>}

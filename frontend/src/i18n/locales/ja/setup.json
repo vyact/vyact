@@ -2,16 +2,14 @@
   "title": "Vyact 初期設定",
   "installing": "インストール中...",
   "selectProvider": "プロバイダー選択",
-  "provider": "プロバイダー",
+  "provider": "LLMプロバイダー",
   "ollamaModel": "Ollama モデル",
-  "customModel": "カスタムモデル",
+  "customModel": "例: gemma4:e2b-mlx",
   "apiKey": "API KEY",
   "model": "MODEL",
   "modelId": "Model ID",
   "modelIdPlaceholder": "APIで使用する正確なモデルID",
-  "selectedModel": "選択中のモデル",
-  "modelNotSet": "Model IDを入力してください",
-  "cloudConnection": {"title":"公式API接続","description":"API Keyと呼び出すモデルを設定します。"},
+  "cloudConnection": {"title":"公式API接続"},
   "customConnection": {"title":"カスタムLLM接続","description":"OpenAI互換APIサーバーに接続します。","name":"接続名","namePlaceholder":"例：社内LLM","baseUrl":"Base URL","optional":"任意","required":"接続名、Base URL、Model IDを入力してください。"},
   "startInstall": "インストール開始",
   "apiKeyModelRequired": "API KEYとMODELは必須です",
@@ -63,7 +61,7 @@
       "desc": "ローカル実行"
     },
     "openai": {
-      "name": "ChatGPT",
+      "name": "OpenAI",
       "desc": "OpenAI"
     },
     "gemini": {
@@ -74,6 +72,6 @@
       "name": "Claude",
       "desc": "Anthropic"
     },
-    "custom": {"name":"カスタム","desc":"直接接続"}
+    "custom": {"name":"カスタム LLM","desc":"直接接続"}
   }
 }

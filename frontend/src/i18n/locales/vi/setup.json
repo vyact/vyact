@@ -2,16 +2,14 @@
   "title": "Thiết lập Vyact",
   "installing": "Đang cài...",
   "selectProvider": "Chọn nhà cung cấp",
-  "provider": "Provider",
+  "provider": "Nhà cung cấp LLM",
   "ollamaModel": "Ollama Model",
-  "customModel": "Custom model",
+  "customModel": "Ví dụ: gemma4:e2b-mlx",
   "apiKey": "API KEY",
   "model": "MODEL",
   "modelId": "Model ID",
   "modelIdPlaceholder": "ID mô hình chính xác dùng bởi API",
-  "selectedModel": "Mô hình đã chọn",
-  "modelNotSet": "Nhập Model ID",
-  "cloudConnection": {"title":"Kết nối API chính thức","description":"Cấu hình API Key và mô hình cần gọi."},
+  "cloudConnection": {"title":"Kết nối API chính thức"},
   "customConnection": {"title":"Kết nối LLM tùy chỉnh","description":"Kết nối máy chủ API tương thích OpenAI.","name":"Tên kết nối","namePlaceholder":"Ví dụ: LLM công ty","baseUrl":"Base URL","optional":"Tùy chọn","required":"Nhập tên kết nối, Base URL và Model ID."},
   "startInstall": "Bắt đầu",
   "apiKeyModelRequired": "API KEY and MODEL are required",
@@ -63,7 +61,7 @@
       "desc": "Local"
     },
     "openai": {
-      "name": "ChatGPT",
+      "name": "OpenAI",
       "desc": "OpenAI"
     },
     "gemini": {
@@ -74,6 +72,6 @@
       "name": "Claude",
       "desc": "Anthropic"
     },
-    "custom": {"name":"Tùy chỉnh","desc":"Kết nối trực tiếp"}
+    "custom": {"name":"LLM tùy chỉnh","desc":"Kết nối trực tiếp"}
   }
 }

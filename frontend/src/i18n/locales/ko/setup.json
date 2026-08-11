@@ -4,14 +4,12 @@
   "selectProvider": "Provider 선택",
   "provider": "Provider",
   "ollamaModel": "Ollama Model",
-  "customModel": "Custom model",
+  "customModel": "예) gemma4:e2b-mlx",
   "apiKey": "API KEY",
   "model": "MODEL",
   "modelId": "Model ID",
   "modelIdPlaceholder": "API에서 사용하는 정확한 모델 ID",
-  "selectedModel": "선택된 모델",
-  "modelNotSet": "Model ID를 입력하세요",
-  "cloudConnection": {"title":"공식 API 연결","description":"API Key와 호출할 모델을 설정합니다."},
+  "cloudConnection": {"title":"공식 API 연결"},
   "customConnection": {"title":"사용자 LLM 연결","description":"OpenAI-compatible API 서버를 연결합니다.","name":"연결 이름","namePlaceholder":"예: 사내 LLM","baseUrl":"Base URL","optional":"선택","required":"연결 이름, Base URL, Model ID를 모두 입력하세요."},
   "startInstall": "설치 시작",
   "apiKeyModelRequired": "API KEY와 MODEL은 필수입니다",
@@ -63,7 +61,7 @@
       "desc": "로컬 실행"
     },
     "openai": {
-      "name": "ChatGPT",
+      "name": "OpenAI",
       "desc": "OpenAI"
     },
     "gemini": {
@@ -74,6 +72,6 @@
       "name": "Claude",
       "desc": "Anthropic"
     },
-    "custom": {"name":"Custom","desc":"직접 연결"}
+    "custom": {"name":"커스텀 LLM","desc":"직접 연결"}
   }
 }
