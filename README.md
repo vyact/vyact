@@ -25,7 +25,7 @@ Most AI chats begin with the same tedious ritual: find a file, copy an email, ex
 
 It brings AI chat, document intelligence, notes, and the tools you already use into one focused workspace. Attach a document, inspect the source behind an answer, turn a note into searchable knowledge, or carry the same context into Gmail, Drive, Calendar, and Chrome.
 
-Built around local LLMs through Ollama, Vyact helps you keep your conversations, documents, and working context in your own environment. Use a local model as a practical workspace—not just another chatbot tab—and connect hosted providers when a task calls for them.
+Built around local LLMs through Ollama, Vyact helps you keep your conversations, documents, and working context in your own environment. Use a local model as a practical workspace—not just another chatbot tab—and connect hosted providers or your own OpenAI-compatible LLM endpoint when a task calls for them.
 
 <div align="center">
 
@@ -95,7 +95,7 @@ Translate foreign-language pages and turn what you are already reading into lang
 - **Projects and conversation history** — Group chats by project, give a project its own working instructions, rename or export conversations, and return to the exact thread when work resumes.
 - **Files that stay useful** — Attach a file for one conversation or index it as long-term knowledge. Group documents, memos, and indexed email threads into knowledge collections to narrow RAG to the context for the task at hand. Inspect chunks, manage saved files, and remove data you no longer need.
 - **Notes that do not disappear into chat** — Keep rich-text memos, quick todos, and decisions in an organized workspace. They remain available to RAG when they matter again.
-- **Control over the AI** — Choose local Ollama, OpenAI, Gemini, or Claude; tune context, output, sampling, embedding, chunking, and model keep-alive settings for your machine and work style.
+- **Control over the AI** — Choose local Ollama, OpenAI, Gemini, Claude, or a custom OpenAI-compatible LLM; tune context, output, sampling, embedding, chunking, and model keep-alive settings for your machine and work style.
 
 ### Connect work, then act on it
 
@@ -108,9 +108,9 @@ Translate foreign-language pages and turn what you are already reading into lang
 ### Keep ownership of your workspace
 
 - **Local-first by default** — Vyact is designed around Ollama and local embedding so your core working context can stay on your machine.
-- **Choose your provider** — Use local models for private everyday work, or connect OpenAI, Gemini, and Claude when you want their capabilities.
+- **Choose your provider** — Use local models for private everyday work, connect OpenAI, Gemini, or Claude, or add an OpenAI-compatible endpoint operated by your organization or another service.
 - **Know when data leaves your machine** — When Gmail or Drive content is used as AI chat context, it may be sent to the selected AI provider. With a local model such as Ollama, that chat context is not sent to an external AI provider.
-- **Back up what matters** — Export and restore conversations, documents, files, memos, prompts, settings, projects, and vocabulary. Backups can also be saved to Google Drive.
+- **Back up what matters** — Export and restore conversations, documents, files, memos, prompts, settings, provider connections, projects, and vocabulary. Backups can also be saved to Google Drive.
 - **Open source** — Vyact is released under AGPL-3.0. You can inspect, adapt, and contribute to the workspace you rely on.
 
 ## A few ways to start today
@@ -143,11 +143,35 @@ Docker Desktop is optional. On first launch, Vyact prepares everything else auto
 
 ### Your first five minutes
 
-1. Launch Vyact and choose a provider and model. Start with Ollama for a local-first setup.
+1. Launch Vyact and choose a provider and model. Start with Ollama for a local-first setup, or add a custom LLM endpoint if you already operate one.
 2. Drop in a document or open **Document management** to index files you will use repeatedly. Create a knowledge collection when you want to limit RAG to a particular set of documents, memos, or email threads.
 3. Ask a question in chat and inspect the retrieved context when accuracy matters.
 4. Optionally connect Google Workspace or install the Chrome extension to bring live work into the same flow.
 5. Create a memo, project, or reusable skill once you find a workflow you repeat.
+
+### Connect a custom LLM provider
+
+Vyact can connect to an API server that implements the OpenAI-compatible `/chat/completions` API. During initial setup, select **Custom LLM**. After installation, you can add or edit connections from the provider controls in the sidebar.
+
+Configure the connection with:
+
+- **Connection name** — A label shown in Vyact.
+- **Base URL** — The API root without `/chat/completions`, such as `http://localhost:11434/v1`.
+- **API key** — Optional for local servers; required when your endpoint uses bearer authentication.
+- **Model ID** — The exact model identifier expected by the API.
+- **Additional headers** — Optional headers for gateways or organization-specific authentication.
+
+For example, an existing local Ollama server can be connected with:
+
+```text
+Connection name: Local Ollama
+Base URL: http://localhost:11434/v1
+API key: (leave blank)
+Model ID: gemma4:e2b-mlx
+Additional headers: (none)
+```
+
+Custom connection settings are included in Vyact backup and restore. Streaming, tool calling, and image input depend on the capabilities and OpenAI compatibility of the connected server and model.
 
 ### Use the Chrome extension
 
