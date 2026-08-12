@@ -4,6 +4,13 @@ import type { TFunction } from 'i18next';
 export function getLocalizedSourceLabel(source: string | undefined, t: TFunction): string {
     const normalizedSource = source?.trim() ?? '';
 
+    // External-data source names are stable backend identifiers. Translate them
+    // only at the presentation boundary so filtering and source-type checks keep
+    // using the same value regardless of the interface language.
+    if (normalizedSource.toLowerCase() === 'government24') {
+        return t('knowledgeSources.gov24Short');
+    }
+
     if (!normalizedSource || normalizedSource === '웹페이지' || normalizedSource === 'Web page') {
         return t('message.webPage');
     }

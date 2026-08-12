@@ -88,7 +88,7 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose}) => {
             <div className="gov24-browser-modal" aria-labelledby="gov24-browser-title">
                 <header className="gov24-browser-header">
                     <div>
-                        <span className="gov24-browser-eyebrow">Government24</span>
+                        <span className="gov24-browser-eyebrow">{t('externalData.sources.gov24.name')}</span>
                         <h2 id="gov24-browser-title">{t('externalData.browser.title')}</h2>
                     </div>
                     <button type="button" onClick={onClose} aria-label={t('externalData.browser.close')}><X size={20}/></button>
