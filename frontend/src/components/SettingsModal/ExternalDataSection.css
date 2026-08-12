@@ -320,20 +320,22 @@
     gap: 16px;
 }
 
-.external-data-sync-row > div {
+.external-data-sync-info {
     display: flex;
+    min-width: 0;
+    flex: 1;
     flex-wrap: wrap;
     align-items: center;
     gap: 5px 10px;
 }
 
-.external-data-sync-row strong {
+.external-data-sync-info strong {
     width: 100%;
     color: var(--text);
     font-size: 12px;
 }
 
-.external-data-sync-row span {
+.external-data-sync-info span {
     color: var(--muted);
     font-size: 11px;
 }
@@ -350,6 +352,49 @@
     cursor: pointer;
 }
 
+.external-data-sync-actions {
+    display: flex;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 7px;
+}
+
+.external-data-sync-actions button {
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+    height: 34px;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.external-data-sync-actions button.is-secondary {
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+}
+
+.external-data-sync-actions button.is-secondary:hover {
+    border-color: color-mix(in srgb, var(--accent) 48%, var(--border));
+    color: var(--accent);
+}
+
+.external-data-sync-actions .external-data-sync-refresh {
+    width: 34px;
+    height: 34px;
+    justify-content: center;
+    padding: 0;
+}
+
+.external-data-sync-refresh .is-spinning {
+    animation: external-data-spin .8s linear infinite;
+}
+
+@keyframes external-data-spin {
+    to { transform: rotate(360deg); }
+}
+
 .external-data-sync-row button:disabled {
     cursor: wait;
     opacity: 0.55;
@@ -361,7 +406,9 @@
 
 .external-data-sync-progress-label {
     display: flex;
+    align-items: center;
     justify-content: space-between;
+    gap: 12px;
     margin-bottom: 5px;
     color: var(--text-secondary);
     font-size: 11px;
@@ -370,12 +417,32 @@
 .external-data-sync-progress-label > span:first-child {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    min-width: 0;
+    gap: 8px;
 }
 
-.external-data-sync-progress-label strong {
+.external-data-sync-stage {
+    flex-shrink: 0;
+    padding: 2px 7px;
+    border: 1px solid color-mix(in srgb, var(--accent) 38%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
     color: var(--accent);
-    font-size: 11px;
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.4;
+}
+
+.external-data-sync-stage-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.external-data-sync-count {
+    flex-shrink: 0;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
 }
 
 .external-data-sync-progress-track {
@@ -397,6 +464,52 @@
     margin: 8px 0 0;
     color: var(--danger, #e36b6b);
     font-size: 11px;
+}
+
+.external-data-auto-sync {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+}
+
+.external-data-auto-sync-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.external-data-auto-sync-header > div {
+    display: grid;
+    gap: 3px;
+}
+
+.external-data-auto-sync-header strong {
+    color: var(--text);
+    font-size: 12px;
+}
+
+.external-data-auto-sync-header span:not(.settings-switch-slider) {
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.external-data-auto-sync-interval {
+    display: grid;
+    grid-template-columns: minmax(90px, 1fr) minmax(150px, 180px);
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--surface2) 70%, transparent);
+}
+
+.external-data-auto-sync-interval label {
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 600;
 }
 
 .external-data-guide-note {
@@ -422,5 +535,9 @@
 
     .external-data-guide {
         padding-left: 16px;
+    }
+
+    .external-data-auto-sync-interval {
+        grid-template-columns: 1fr;
     }
 }

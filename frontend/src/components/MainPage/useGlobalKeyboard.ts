@@ -68,6 +68,9 @@ export function useGlobalKeyboard(handlers: KeyboardHandlers, isMemoOpen = false
                 e.preventDefault();
                 handlers.onOpenSettings();
             } else if (e.key === 'Escape') {
+                // 모달이 열려 있으면 각 모달의 최상위 ESC 핸들러가 닫기 순서를
+                // 관리한다. 여기서 onCloseAll을 호출하면 중첩 모달과 부모가 함께 닫힌다.
+                if (document.querySelector('.app-modal-overlay')) return;
                 handlers.onCloseAll();
             }
         };

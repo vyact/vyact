@@ -6,6 +6,7 @@ import {fetchTtsSettings, updateTtsCache, DEFAULT_TTS_SETTINGS} from '../../serv
 import type {TtsSettings} from '../../services/tts/ttsSettings';
 import {changeLanguage, SUPPORTED_LANGUAGES} from '../../i18n';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
+import {getTopmostModalOverlay} from '../common/ModalOverlay/modalStack';
 import {Tooltip} from '../common/Tooltip/Tooltip';
 import './SettingsModal.css';
 import '../RememberModal/RememberModal.css';
@@ -394,6 +395,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
         if (!isOpen) return;
         const h = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
+                const topmostOverlay = getTopmostModalOverlay();
+                // 설정 위에 자식 모달이 열려 있으면 해당 모달이 ESC를 처리한다.
+                if (!topmostOverlay?.classList.contains('settings-overlay')) return;
                 e.preventDefault();
                 // 복원 선택 중에는 ESC로 부모 설정창까지 닫히지 않도록 한다.
                 if (backupPreview) {

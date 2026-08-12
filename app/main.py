@@ -16,6 +16,10 @@ from fastapi.staticfiles import StaticFiles
 from config import KOKORO_CACHE_READY, LOGS_DIR, SETUP_DONE
 from config.models import DEFAULT_MODEL
 from logger import setup_logging, get_logger
+from services.external_data.scheduler import (
+    start_external_data_scheduler,
+    stop_external_data_scheduler,
+)
 from services.mcp_config import ensure_mcp_config
 
 APP_DIR = Path(__file__).parent
@@ -301,8 +305,14 @@ async def lifespan(app: FastAPI):
     if es_available and SETUP_DONE.exists():
         from services.notification_polling import start_notification_polling
         start_notification_polling()
+        start_external_data_scheduler()
 
     yield
+
+    try:
+        await stop_external_data_scheduler()
+    except Exception as e:
+        logger.warning("[external-data] Scheduler shutdown cleanup failed: %s", e)
 
     try:
         from services.notification_polling import stop_notification_polling

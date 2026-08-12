@@ -1,0 +1,158 @@
+import React, {useEffect, useRef, useState} from 'react';
+import {CalendarClock, ExternalLink, FileText, Landmark, Search, Tag, Users, X} from 'lucide-react';
+import {useTranslation} from 'react-i18next';
+import {api} from '../../services/api';
+import type {Gov24Document} from '../../services/api';
+import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
+import './Gov24DataModal.css';
+
+interface Gov24DataModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+}
+
+const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose}) => {
+    const {t, i18n} = useTranslation('settings');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedQuery, setDebouncedQuery] = useState('');
+    const [documents, setDocuments] = useState<Gov24Document[]>([]);
+    const [selectedId, setSelectedId] = useState('');
+    const [total, setTotal] = useState(0);
+    const [nextCursor, setNextCursor] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [error, setError] = useState(false);
+    const requestIdRef = useRef(0);
+
+    useEffect(() => {
+        const timeoutId = window.setTimeout(() => setDebouncedQuery(searchQuery), 250);
+        return () => window.clearTimeout(timeoutId);
+    }, [searchQuery]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const requestId = ++requestIdRef.current;
+        queueMicrotask(() => {
+            if (requestId !== requestIdRef.current) return;
+            setLoading(true);
+            setError(false);
+            void api.getGov24Documents(debouncedQuery).then(result => {
+                if (requestId !== requestIdRef.current) return;
+                setDocuments(result.items);
+                setTotal(result.total);
+                setNextCursor(result.next_cursor);
+                setSelectedId(result.items[0]?.id || '');
+            }).catch(() => {
+                if (requestId === requestIdRef.current) setError(true);
+            }).finally(() => {
+                if (requestId === requestIdRef.current) setLoading(false);
+            });
+        });
+        return () => {
+            if (requestId === requestIdRef.current) requestIdRef.current += 1;
+        };
+    }, [debouncedQuery, isOpen]);
+
+    if (!isOpen) return null;
+
+    const selectedDocument = documents.find(document => document.id === selectedId) || documents[0];
+    const numberFormatter = new Intl.NumberFormat(i18n.resolvedLanguage || i18n.language);
+    const formatModifiedAt = (value: string) => {
+        if (!value) return t('externalData.browser.unknownDate');
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) return value;
+        return new Intl.DateTimeFormat(i18n.resolvedLanguage || i18n.language, {dateStyle: 'medium'}).format(parsed);
+    };
+    const loadMore = async () => {
+        if (!nextCursor || loadingMore) return;
+        setLoadingMore(true);
+        try {
+            const result = await api.getGov24Documents(debouncedQuery, nextCursor);
+            setDocuments(current => [...current, ...result.items]);
+            setNextCursor(result.next_cursor);
+        } catch {
+            setError(true);
+        } finally {
+            setLoadingMore(false);
+        }
+    };
+    const renderSection = (title: string, value: string) => value ? (
+        <section className="gov24-browser-detail-section">
+            <h3>{title}</h3>
+            <p>{value}</p>
+        </section>
+    ) : null;
+
+    return (
+        <ModalOverlay className="gov24-browser-overlay" onClose={onClose} closeOnBackdrop={false} blur={3}>
+            <div className="gov24-browser-modal" aria-labelledby="gov24-browser-title">
+                <header className="gov24-browser-header">
+                    <div>
+                        <span className="gov24-browser-eyebrow">Government24</span>
+                        <h2 id="gov24-browser-title">{t('externalData.browser.title')}</h2>
+                    </div>
+                    <button type="button" onClick={onClose} aria-label={t('externalData.browser.close')}><X size={20}/></button>
+                </header>
+                <div className="gov24-browser-toolbar">
+                    <label className="gov24-browser-search">
+                        <Search size={17}/>
+                        <input value={searchQuery} onChange={event => setSearchQuery(event.target.value)} placeholder={t('externalData.browser.searchPlaceholder')} autoFocus/>
+                        {searchQuery && <button type="button" onClick={() => setSearchQuery('')} aria-label={t('externalData.browser.clearSearch')}><X size={15}/></button>}
+                    </label>
+                    <span>{t('externalData.browser.resultCount', {count: numberFormatter.format(total)})}</span>
+                </div>
+                <div className="gov24-browser-body">
+                    <aside className="gov24-browser-list" onScroll={event => {
+                        const element = event.currentTarget;
+                        if (element.scrollHeight - element.scrollTop - element.clientHeight < 160) void loadMore();
+                    }}>
+                        {loading ? <div className="gov24-browser-state">{t('externalData.browser.loading')}</div>
+                            : error && !documents.length ? <div className="gov24-browser-state is-error">{t('externalData.browser.loadFailed')}</div>
+                                : !documents.length ? <div className="gov24-browser-state">{t('externalData.browser.empty')}</div>
+                                    : documents.map(document => (
+                                        <button type="button" key={document.id} className={document.id === selectedDocument?.id ? 'is-selected' : ''} onClick={() => setSelectedId(document.id)}>
+                                            <strong>{document.title}</strong>
+                                            <span>{document.agency || t('externalData.browser.unknownAgency')}</span>
+                                            <time>{formatModifiedAt(document.source_modified_at)}</time>
+                                        </button>
+                                    ))}
+                        {loadingMore && <div className="gov24-browser-loading-more">{t('externalData.browser.loadingMore')}</div>}
+                    </aside>
+                    <main className="gov24-browser-detail">
+                        {selectedDocument ? <>
+                            <div className="gov24-browser-detail-hero">
+                                <div className="gov24-browser-detail-title-row">
+                                    <div className="gov24-browser-detail-badges">
+                                        {selectedDocument.category && <span><Tag size={13}/>{selectedDocument.category}</span>}
+                                        {selectedDocument.support_type && <span>{selectedDocument.support_type}</span>}
+                                    </div>
+                                    <h2>{selectedDocument.title}</h2>
+                                </div>
+                                {selectedDocument.summary && <p>{selectedDocument.summary}</p>}
+                                <div className="gov24-browser-meta">
+                                    {selectedDocument.agency && <span><Landmark size={15}/>{selectedDocument.agency}</span>}
+                                    <span><CalendarClock size={15}/>{t('externalData.browser.modifiedAt', {date: formatModifiedAt(selectedDocument.source_modified_at)})}</span>
+                                </div>
+                            </div>
+                            <div className="gov24-browser-detail-scroll">
+                                {(selectedDocument.target || selectedDocument.user_type) && <div className="gov24-browser-info-card">
+                                    <Users size={19}/><div><strong>{t('externalData.browser.target')}</strong><p>{[selectedDocument.target, selectedDocument.user_type].filter(Boolean).join(' · ')}</p></div>
+                                </div>}
+                                {selectedDocument.application_deadline && <div className="gov24-browser-info-card"><CalendarClock size={19}/><div><strong>{t('externalData.browser.deadline')}</strong><p>{selectedDocument.application_deadline}</p></div></div>}
+                                {renderSection(t('externalData.browser.purpose'), selectedDocument.purpose)}
+                                {renderSection(t('externalData.browser.content'), selectedDocument.content)}
+                                {renderSection(t('externalData.browser.selectionCriteria'), selectedDocument.selection_criteria)}
+                                {renderSection(t('externalData.browser.applicationMethod'), selectedDocument.application_method)}
+                                {renderSection(t('externalData.browser.requiredDocuments'), selectedDocument.required_documents)}
+                                {renderSection(t('externalData.browser.contact'), selectedDocument.contact)}
+                                {selectedDocument.source_url && <a className="gov24-browser-source-link" href={selectedDocument.source_url} target="_blank" rel="noreferrer"><FileText size={17}/>{t('externalData.browser.openSource')}<ExternalLink size={14}/></a>}
+                            </div>
+                        </> : <div className="gov24-browser-detail-empty"><FileText size={32}/><p>{t('externalData.browser.selectDocument')}</p></div>}
+                    </main>
+                </div>
+            </div>
+        </ModalOverlay>
+    );
+};
+
+export default Gov24DataModal;

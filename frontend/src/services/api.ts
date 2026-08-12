@@ -122,6 +122,42 @@ interface ApiSuccessResponse {
     ok: boolean;
 }
 
+export interface Gov24SyncStatusResponse {
+    status: 'idle' | 'running' | 'completed' | 'failed';
+    stage?: 'list' | 'detail' | 'conditions' | 'completed';
+    current?: number;
+    total?: number;
+    document_count?: number;
+    last_successful_sync_at?: string | null;
+    error?: string;
+}
+
+export interface Gov24Document {
+    id: string;
+    title: string;
+    agency: string;
+    target: string;
+    category: string;
+    user_type: string;
+    support_type: string;
+    application_deadline: string;
+    source_url: string;
+    source_modified_at: string;
+    summary: string;
+    purpose: string;
+    content: string;
+    selection_criteria: string;
+    application_method: string;
+    required_documents: string;
+    contact: string;
+}
+
+export interface Gov24DocumentsResponse {
+    items: Gov24Document[];
+    total: number;
+    next_cursor: string | null;
+}
+
 export const api = {
     async getSetupStatus(): Promise<{
         setup_done: boolean;
@@ -855,22 +891,46 @@ export const api = {
         return res.json();
     },
 
-    async getGov24SyncStatus(): Promise<{
-        status: 'idle' | 'running' | 'completed' | 'failed';
-        stage?: 'list' | 'detail' | 'conditions' | 'completed';
-        current?: number;
-        total?: number;
-        document_count?: number;
-        last_successful_sync_at?: string | null;
-        error?: string;
-    }> {
+    async getGov24SyncStatus(): Promise<Gov24SyncStatusResponse> {
         const res = await fetch(`${API_BASE}/external-data/sources/kr.gov24/sync`);
         if (!res.ok) throw new Error(await res.text());
         return res.json();
     },
 
-    async startGov24Sync(): Promise<{status: string}> {
+    async startGov24Sync(): Promise<{
+        status: 'started' | 'already_running';
+        sync_status?: Gov24SyncStatusResponse;
+    }> {
         const res = await fetch(`${API_BASE}/external-data/sources/kr.gov24/sync`, {method: 'POST'});
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+    },
+
+    async getGov24Documents(query = '', cursor?: string): Promise<Gov24DocumentsResponse> {
+        const params = new URLSearchParams();
+        if (query.trim()) params.set('query', query.trim());
+        if (cursor) params.set('cursor', cursor);
+        const suffix = params.size ? `?${params.toString()}` : '';
+        const res = await fetch(`${API_BASE}/external-data/sources/kr.gov24/documents${suffix}`);
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+    },
+
+    async getGov24SyncSchedule(): Promise<{enabled: boolean; interval_hours: number}> {
+        const res = await fetch(`${API_BASE}/external-data/sources/kr.gov24/schedule`);
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+    },
+
+    async saveGov24SyncSchedule(enabled: boolean, intervalHours: number): Promise<{
+        enabled: boolean;
+        interval_hours: number;
+    }> {
+        const res = await fetch(`${API_BASE}/external-data/sources/kr.gov24/schedule`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({enabled, interval_hours: intervalHours}),
+        });
         if (!res.ok) throw new Error(await res.text());
         return res.json();
     },

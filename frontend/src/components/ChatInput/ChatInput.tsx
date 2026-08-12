@@ -3,7 +3,7 @@ import ImageViewer from '../ImageViewer/ImageViewer';
 import type {ArticleAttachment, KnowledgeCollection} from '../../types';
 import {api} from '../../services/api';
 import {useCodePanel} from '../../contexts/CodePanelContext';
-import {Settings, WandSparkles, X} from 'lucide-react';
+import {Database, Settings, WandSparkles, X} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 
 import {useAttachments} from './useAttachments';
@@ -28,6 +28,7 @@ import {findPluginCommand, openPluginModal} from '../../plugins/registry';
 import {usePluginExtensions} from '../../plugins/usePluginExtensions';
 import KnowledgeCollectionsModal from '../KnowledgeCollectionsModal/KnowledgeCollectionsModal';
 import ApprovalControl from './ApprovalControl';
+import Gov24DataModal from '../Gov24DataModal';
 
 interface ChatInputProps {
     onSend: (message: string, images?: File[], fileAttachments?: FileAttachment[], selectedMcpIds?: string[], knowledgeCollectionId?: string, externalResourceIds?: string[]) => void | Promise<boolean>;
@@ -116,6 +117,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
     const [selectedExternalResourceIds, setSelectedExternalResourceIds] = useState<string[]>([]);
     const [gov24DocumentCount, setGov24DocumentCount] = useState(0);
     const [showKnowledgeCollectionsModal, setShowKnowledgeCollectionsModal] = useState(false);
+    const [showGov24DataModal, setShowGov24DataModal] = useState(false);
 
     useEffect(() => {
         const refresh = () => setKnowledgeCollections(getCachedKnowledgeCollections());
@@ -583,6 +585,14 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                     </button>
                                 </div>}
                                 emptyState={<div className="custom-select-empty">{t(knowledgeSourceTab === 'collections' ? 'knowledgeCollections.empty' : 'knowledgeSources.noExternalData')}</div>}
+                                renderOption={knowledgeSourceTab === 'external' ? (option, isSelected) => <>
+                                    <span className="custom-select-item-label">{option.label}</span>
+                                    <button type="button" className="knowledge-source-view-button" aria-label={t('knowledgeSources.externalSettings')} onClick={event => {
+                                        event.stopPropagation();
+                                        setShowGov24DataModal(true);
+                                    }}><Database size={15}/></button>
+                                    {isSelected && <span className="custom-select-check">✓</span>}
+                                </> : undefined}
                                 renderTrigger={(_, open) => {
                                     const collection = knowledgeCollections.find(item => item.id === selectedKnowledgeCollectionId);
                                     const sourceCount = (collection ? 1 : 0) + selectedExternalResourceIds.length;
@@ -654,6 +664,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 onDelete={async id => { await api.deleteKnowledgeCollection(id); updateCachedKnowledgeCollections(items => items.filter(item => item.id !== id)); setSelectedKnowledgeCollectionId(current => current === id ? '' : current); }}
                 onReorder={async collectionIds => { await api.reorderKnowledgeCollections(collectionIds); updateCachedKnowledgeCollections(items => collectionIds.map(id => items.find(item => item.id === id)).filter((item): item is KnowledgeCollection => Boolean(item))); }}
             />
+            <Gov24DataModal isOpen={showGov24DataModal} onClose={() => setShowGov24DataModal(false)}/>
 
             {/* 이미지 미리보기 */}
             {previewIndex !== null && attach.images[previewIndex] && (

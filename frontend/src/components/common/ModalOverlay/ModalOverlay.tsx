@@ -1,5 +1,6 @@
-import {useEffect} from 'react';
+import {useEffect, useRef} from 'react';
 import type {HTMLAttributes, ReactNode} from 'react';
+import {getTopmostModalOverlay} from './modalStack';
 import './ModalOverlay.css';
 
 interface ModalOverlayProps extends HTMLAttributes<HTMLDivElement> {
@@ -27,11 +28,17 @@ const ModalOverlay = ({
     style,
     ...props
 }: ModalOverlayProps) => {
+    const overlayRef = useRef<HTMLDivElement>(null);
+
     useEffect(() => {
         if (!onClose || !closeOnEscape) return;
 
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') onClose();
+            if (event.key !== 'Escape') return;
+            if (getTopmostModalOverlay() !== overlayRef.current) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            onClose();
         };
 
         window.addEventListener('keydown', handleKeyDown);
@@ -45,6 +52,7 @@ const ModalOverlay = ({
 
     return (
         <div
+            ref={overlayRef}
             {...props}
             className={`app-modal-overlay ${className}`.trim()}
             role="dialog"

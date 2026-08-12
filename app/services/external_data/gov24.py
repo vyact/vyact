@@ -19,6 +19,7 @@ PAGE_SIZE = 100
 BULK_CHUNK_SIZE = 100
 INACTIVE_AFTER_MISSING_SYNCS = 3
 QUERY_CANDIDATE_SIZE = 40
+BROWSE_PAGE_SIZE = 40
 
 ENDPOINTS = {
     "list": "serviceList",
@@ -147,6 +148,80 @@ async def search_candidates(question: str, size: int = QUERY_CANDIDATE_SIZE) -> 
                 "external_resource_id": SOURCE_ID,
             })
         return candidates
+    finally:
+        await es.close()
+
+
+async def browse_documents(query: str = "", search_after: list | None = None) -> dict:
+    """Return a stable, cursor-paginated view ordered by source modification time."""
+    es = get_es()
+    try:
+        if not await es.indices.exists(index=INDEX_NAME):
+            return {"items": [], "total": 0, "next_cursor": None}
+        search_query: dict = {"term": {"lifecycle_status": "active"}}
+        if query.strip():
+            search_query = {
+                "bool": {
+                    "filter": [{"term": {"lifecycle_status": "active"}}],
+                    "must": [{
+                        "multi_match": {
+                            "query": query.strip(),
+                            "fields": ["title^4", "agency^2", "target", "content_text"],
+                            "type": "best_fields",
+                        },
+                    }],
+                },
+            }
+        request: dict = {
+            "index": INDEX_NAME,
+            "size": BROWSE_PAGE_SIZE,
+            "track_total_hits": True,
+            "query": search_query,
+            "sort": [
+                {"source_modified_at": {"order": "desc", "missing": "_last"}},
+                {"external_id": {"order": "asc"}},
+            ],
+            "source_includes": [
+                "external_id", "title", "agency", "target", "category", "user_type",
+                "support_type", "application_deadline", "source_url", "source_modified_at",
+                "content_text", "raw",
+            ],
+        }
+        if search_after:
+            request["search_after"] = search_after
+        result = await es.search(**request)
+        hits = result.get("hits", {}).get("hits", [])
+        total_value = result.get("hits", {}).get("total", {}).get("value", 0)
+        items = []
+        for hit in hits:
+            source = hit.get("_source", {})
+            raw = source.get("raw") or {}
+            list_item = raw.get("list") or {}
+            detail = raw.get("detail") or {}
+            items.append({
+                "id": source.get("external_id", hit.get("_id", "")),
+                "title": source.get("title", ""),
+                "agency": source.get("agency", ""),
+                "target": source.get("target", ""),
+                "category": source.get("category", ""),
+                "user_type": source.get("user_type", ""),
+                "support_type": source.get("support_type", ""),
+                "application_deadline": source.get("application_deadline", ""),
+                "source_url": source.get("source_url", ""),
+                "source_modified_at": source.get("source_modified_at", ""),
+                "summary": list_item.get("서비스목적요약", ""),
+                "purpose": detail.get("서비스목적", ""),
+                "content": list_item.get("지원내용", ""),
+                "selection_criteria": list_item.get("선정기준", ""),
+                "application_method": list_item.get("신청방법", ""),
+                "required_documents": detail.get("구비서류", ""),
+                "contact": detail.get("문의처", ""),
+            })
+        return {
+            "items": items,
+            "total": total_value,
+            "next_cursor": hits[-1].get("sort") if len(hits) == BROWSE_PAGE_SIZE else None,
+        }
     finally:
         await es.close()
 
