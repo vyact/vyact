@@ -7,7 +7,6 @@ import platform
 import re
 import shutil
 import sys
-import traceback
 from pathlib import Path
 from typing import AsyncGenerator
 
@@ -73,6 +72,8 @@ class Installer:
 
     async def check_docker(self) -> tuple[bool, str]:
         """Docker 확인"""
+        if shutil.which("docker") is None:
+            return False, "Docker is not installed"
         ok = await self._run(["docker", "info"]) == 0
         if not ok:
             await asyncio.create_subprocess_exec("open", "-a", "Docker")
@@ -99,6 +100,8 @@ class Installer:
         system = platform.system()
 
         if system == "Darwin":
+            if shutil.which("brew") is None:
+                return False, "Homebrew is required to install Ollama"
             if await self._run(["brew", "install", "ollama"], log=True) != 0:
                 return False, "Ollama installation failed"
 
@@ -363,7 +366,9 @@ class Installer:
         logger.info(f"Command: {' '.join(cmd)}")
 
         try:
-            await self._run(cmd, log=True)
+            if await self._run(cmd, log=True) != 0:
+                logger.warning("Playwright installation failed")
+                return False, "Playwright installation failed"
             logger.info("Playwright installed")
             return True, "Playwright installed"
 
@@ -382,6 +387,9 @@ class Installer:
         system = platform.system()
 
         if system == "Darwin":
+            if shutil.which("brew") is None:
+                logger.warning("Homebrew unavailable — espeak-ng installation deferred")
+                return False, "Homebrew is required to install espeak-ng"
             if await self._run(["brew", "install", "espeak-ng"], log=True) != 0:
                 logger.warning("espeak-ng installation failed (some TTS features limited)")
                 return False, "espeak-ng installation failed"
@@ -449,12 +457,17 @@ VOICES = [
 p = KPipeline(lang_code='a')
 print('model loaded')
 
+failed = []
 for v in VOICES:
     try:
         hf_hub_download('hexgrad/Kokoro-82M', f'voices/{v}.pt')
         print(f'voice ok: {v}')
     except Exception as e:
-        print(f'voice skip: {v} ({e})')
+        failed.append(v)
+        print(f'voice failed: {v} ({e})')
+
+if failed:
+    raise RuntimeError(f'voice downloads failed: {", ".join(failed)}')
 
 print('kokoro all voices ready')
 """
@@ -478,11 +491,13 @@ print('kokoro all voices ready')
     async def start_elasticsearch(self) -> tuple[bool, str]:
         compose_file = self.app_dir / "docker-compose.yml"
 
-        await self._run(
+        if await self._run(
             ["docker", "compose", "-f", str(compose_file), "up", "-d", "--build"],
             log=True
-        )
+        ) != 0:
+            return False, "Elasticsearch start failed"
 
+        ready = False
         for _ in range(20):
             await asyncio.sleep(3)
             from services.db import ES_URL
@@ -493,22 +508,9 @@ print('kokoro all voices ready')
             )
             await chk.wait()
             if chk.returncode == 0:
+                ready = True
                 break
 
+        if not ready:
+            return False, "Elasticsearch did not become ready"
         return True, "Elasticsearch ready"
-
-    async def finalize_setup(self, setup_done_file: Path):
-        """설치 완료 처리"""
-        setup_done_file.touch()
-
-        try:
-            app_path = str(self.app_dir)
-            if app_path not in sys.path:
-                sys.path.insert(0, app_path)
-            from agent import ensure_index
-            await ensure_index()
-        except Exception as e:
-            with open(self.log_file, "a") as f:
-                f.write("\n[ERROR] finalize_setup - ensure_index 실패\n")
-                f.write(str(e) + "\n")
-                f.write(traceback.format_exc() + "\n")

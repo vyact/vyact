@@ -18,7 +18,7 @@ _whisper_model = None
 _whisper_lock = None
 
 
-def _get_model():
+def _get_model(force_download: bool = False):
     global _whisper_model
     if _whisper_model is None:
         try:
@@ -27,8 +27,20 @@ def _get_model():
             # small model: speed/accuracy balance, ~500MB
             from huggingface_hub import try_to_load_from_cache
             _cached = try_to_load_from_cache("Systran/faster-whisper-small", "config.json")
-            _use_local = _cached is not None
-            _whisper_model = WhisperModel("small", device="cpu", compute_type="int8", local_files_only=_use_local)
+            if _cached is not None:
+                try:
+                    _whisper_model = WhisperModel(
+                        "small", device="cpu", compute_type="int8", local_files_only=True,
+                    )
+                except Exception:
+                    if not force_download:
+                        raise
+                    logger.info("Whisper cache is incomplete — resuming download")
+                    _whisper_model = None
+            if _whisper_model is None:
+                _whisper_model = WhisperModel(
+                    "small", device="cpu", compute_type="int8", local_files_only=False,
+                )
             logger.info("Whisper model loaded")
         except Exception as e:
             logger.error("Whisper model load failed: %s", e)

@@ -273,51 +273,6 @@ function isDockerRunning() {
     }
 }
 
-// ── Ollama 설치 확인 및 자동 설치 ──────────
-function checkAndInstallOllama() {
-    log("▸ Checking Ollama installation...");
-
-    // PATH에 Homebrew 경로 추가
-    const env = {
-        ...process.env,
-        PATH: [
-            "/usr/local/bin",
-            "/opt/homebrew/bin",
-            "/usr/bin",
-            "/bin",
-            process.env.PATH || ""
-        ].join(":")
-    };
-
-    try {
-        execSync("ollama --version", {stdio: "pipe", env});
-        log("✅ Ollama installed");
-        return true;
-    } catch (e) {
-        log("❌ Ollama not installed — auto-installing...");
-
-        try {
-            log("▸ Running brew install ollama...");
-            execSync("brew install ollama", {stdio: "inherit", env});
-            log("✅ Ollama installed successfully");
-            return true;
-        } catch (installErr) {
-            log(`❌ Ollama auto-install failed: ${installErr.message}`);
-            log("💡 Manual install: https://ollama.ai/download");
-
-            const {dialog} = require("electron");
-            dialog.showMessageBox({
-                type: "warning",
-                title: "Ollama Installation Failed",
-                message: "Failed to auto-install Ollama.",
-                detail: "Only cloud models (OpenAI, Gemini, Claude) will be available.\n\nTo use local models, install manually from https://ollama.ai/download",
-                buttons: ["OK"]
-            });
-            return false;
-        }
-    }
-}
-
 // ── Elasticsearch 설치 확인 및 자동 실행 ───
 function checkAndStartElasticsearch() {
     log("▸ Checking Elasticsearch...");
@@ -366,11 +321,6 @@ function checkAllDependencies() {
     const dockerOk = isDockerRunning();
     if (!dockerOk) {
         log("ℹ️ Docker not available — Elasticsearch will be configured in setup wizard");
-    }
-
-    const ollamaOk = checkAndInstallOllama();
-    if (!ollamaOk) {
-        log("⚠️ Continuing without Ollama (cloud models only)");
     }
 
     if (dockerOk) {
@@ -428,8 +378,7 @@ async function startServer() {
     // INSTALL_DIR에만 두므로, 설치 번들을 매번 복사하거나 수정할 필요가 없다.
     const serverAppDir = APP_RES;
     if (!fs.existsSync(path.join(serverAppDir, "main.py"))) {
-        log(`❌ Server app resource not found: ${serverAppDir}`);
-        return;
+        throw new Error(`Server app resource not found: ${serverAppDir}`);
     }
 
     const python = VENV_PYTHON;
@@ -476,6 +425,7 @@ async function startServer() {
 
         } catch (err) {
             log(`❌ venv creation or package install failed: ${err.message}`);
+            throw err;
         }
     } else {
         // ── venv 존재 시 requirements.txt 변경 감지 → 패키지 동기화 ──
@@ -496,7 +446,8 @@ async function startServer() {
                     fs.writeFileSync(reqHashFile, currentHash);
                     log("✅ Package sync complete");
                 } catch (err) {
-                    log(`⚠️ Package sync failed: ${err.message}`);
+                    log(`❌ Package sync failed: ${err.message}`);
+                    throw err;
                 }
             }
         }
@@ -884,8 +835,21 @@ if (hasSingleInstanceLock) app.whenReady().then(() => {
                 return;
             }
 
-            await startServer();
-            waitForServerAndLoad();
+            try {
+                await startServer();
+                waitForServerAndLoad();
+            } catch (error) {
+                log(`❌ Server startup failed: ${error.message}`);
+                const errorPath = path.join(__dirname, "error.html");
+                if (mainWindow && !mainWindow.isDestroyed() && fs.existsSync(errorPath)) {
+                    mainWindow.loadFile(errorPath, {
+                        query: {
+                            title: "Server Startup Failed",
+                            msg: `${error.message}\n\nPlease check the logs and restart the app.`,
+                        },
+                    });
+                }
+            }
         }, 100);
     }), startupDelayMs);
 });

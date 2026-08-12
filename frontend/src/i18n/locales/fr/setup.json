@@ -14,6 +14,7 @@
   "startInstall": "Installer",
   "apiKeyModelRequired": "API KEY et MODÈLE sont requis",
   "installationFailed": "L'installation a échoué. Consultez le journal de progression, puis réessayez.",
+  "homebrewRequired": "Homebrew est requis pour installer Ollama automatiquement. Installez Homebrew, puis réessayez.",
   "localExec": "Local",
   "imageGenModel": "Modèle de génération d'images",
   "exportFailed": "Échec de l'exportation",

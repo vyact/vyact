@@ -14,6 +14,7 @@
   "startInstall": "インストール開始",
   "apiKeyModelRequired": "API KEYとMODELは必須です",
   "installationFailed": "インストールに失敗しました。進行ログを確認してから、もう一度お試しください。",
+  "homebrewRequired": "Ollamaを自動インストールするにはHomebrewが必要です。Homebrewをインストールしてから、もう一度お試しください。",
   "localExec": "ローカル実行",
   "imageGenModel": "画像生成モデル",
   "exportFailed": "エクスポート失敗",

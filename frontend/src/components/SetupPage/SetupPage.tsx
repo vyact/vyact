@@ -206,19 +206,22 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                 body: JSON.stringify(payload),
             });
 
+            if (!response.ok) throw new Error(`Installation request failed (${response.status})`);
             if (!response.body) throw new Error('Stream not supported');
 
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
 
             let hasError = false;
+            let pendingChunk = '';
 
             while (true) {
                 const { value, done } = await reader.read();
                 if (done) break;
 
-                const chunk = decoder.decode(value);
-                const lines = chunk.split('\n');
+                pendingChunk += decoder.decode(value, {stream: true});
+                const lines = pendingChunk.split('\n');
+                pendingChunk = lines.pop() ?? '';
 
                 for (const line of lines) {
                     if (!line.startsWith('data: ')) continue;
@@ -234,15 +237,20 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
 
                     if (parsed.message) {
                         const type = parsed.type;
+                        const localizedMessage = parsed.i18nKey
+                            ? t(parsed.i18nKey, parsed.i18nParams ?? {})
+                            : parsed.message;
 
                         if (type === 'error') {
                             hasError = true;
-                            const localizedErrorMessage = t('installationFailed');
-                            addLog('error', parsed.message, localizedErrorMessage);
-                            // 진행 로그에는 원문을 유지하고, 사용자 알림은 현재 언어로 표시한다.
-                            alert(localizedErrorMessage);
+                            const alertMessage = parsed.i18nKey
+                                ? localizedMessage
+                                : t('installationFailed');
+                            addLog('error', localizedMessage, alertMessage);
+                            alert(alertMessage);
+                            await reader.cancel();
                             setIsInstalling(false);
-                            continue;
+                            return;
                         }
 
                         if (type === 'done') {
@@ -267,9 +275,10 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                 }
             }
 
-            if (hasError) {
-                setIsInstalling(false);
+            if (!hasError) {
+                throw new Error('Installation stream ended before completion');
             }
+            setIsInstalling(false);
 
         } catch (err) {
             addLog('error', String(err), t('installationFailed'));

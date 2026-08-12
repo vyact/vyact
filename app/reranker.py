@@ -14,7 +14,7 @@ _executor = ThreadPoolExecutor(max_workers=2)
 MODEL_NAME = "BAAI/bge-reranker-v2-m3"
 
 
-def load_reranker():
+def load_reranker(force_download: bool = False):
     """서버 시작 시 호출 — 모델 로드 (블로킹)"""
     global _reranker
     try:
@@ -26,19 +26,33 @@ def load_reranker():
         import os
         from huggingface_hub import try_to_load_from_cache
         cached = try_to_load_from_cache(MODEL_NAME, "config.json")
-        use_local = cached is not None
-        _reranker = CrossEncoder(
-            MODEL_NAME,
-            device=device,
-            max_length=512,
-            local_files_only=use_local,
-        )
-        if use_local:
-            logger.info("[reranker] Loaded from local cache")
+        if cached is not None:
+            try:
+                _reranker = CrossEncoder(
+                    MODEL_NAME,
+                    device=device,
+                    max_length=512,
+                    local_files_only=True,
+                )
+                logger.info("[reranker] Loaded from local cache")
+            except Exception:
+                if not force_download:
+                    raise
+                logger.info("[reranker] Local cache is incomplete — resuming download")
+                _reranker = None
+        if _reranker is None:
+            _reranker = CrossEncoder(
+                MODEL_NAME,
+                device=device,
+                max_length=512,
+                local_files_only=False,
+            )
         logger.info("[reranker] Model loaded")
+        return True
     except Exception as e:
         logger.warning("[reranker] 모델 로딩 실패 (리랭킹 비활성화): %s", e)
         _reranker = None
+        return False
 
 
 def is_available() -> bool:

@@ -143,23 +143,17 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning("Failed to create log directory: %s", e)
 
-    # Playwright Chromium 설치 확인
-    try:
-        import subprocess, sys
-        from playwright.sync_api import sync_playwright
-        with sync_playwright() as p:
-            p.chromium.executable_path  # 존재 여부만 확인
-        logger.info("[playwright] Chromium ready")
-    except Exception:
-        logger.info("[playwright] Chromium not found — installing...")
+    # 최초 설정에서는 Provider 선택 후 설치 진행 화면에서 준비한다.
+    if not is_initial_setup:
         try:
-            subprocess.run(
-                [sys.executable, "-m", "playwright", "install", "chromium"],
-                check=True, capture_output=True
-            )
-            logger.info("[playwright] Chromium installed")
+            from playwright.sync_api import sync_playwright
+            with sync_playwright() as p:
+                chromium_path = Path(p.chromium.executable_path)
+                if not chromium_path.is_file():
+                    raise FileNotFoundError(chromium_path)
+            logger.info("[playwright] Chromium ready")
         except Exception as e:
-            logger.warning("[playwright] Chromium install failed: %s", e)
+            logger.warning("[playwright] Chromium unavailable: %s", e)
 
     es_available = False
     try:
@@ -175,16 +169,20 @@ async def lifespan(app: FastAPI):
         else:
             logger.warning("Elasticsearch connection failed: %s", e)
 
-    # Elasticsearch 연결 확인 뒤, 인덱스·언어 모델 초기화가 이어짐을 로딩 화면에 알린다.
-    logger.info("[startup-status] models")
+    # 최초 설정 전에는 모델 준비를 Provider 선택 후 설치 화면에서 수행한다.
+    if not is_initial_setup:
+        logger.info("[startup-status] models")
 
-    # 리랭커 모델 로드 (백그라운드, 실패해도 서버 정상 동작)
-    import asyncio as _asyncio
-    from concurrent.futures import ThreadPoolExecutor as _TPE
-    def _load():
-        from reranker import load_reranker
-        load_reranker()
-    _asyncio.get_event_loop().run_in_executor(_TPE(max_workers=1), _load)
+    # 최초 설정 중 모델 다운로드는 Provider 선택 후 설치 단계에서 수행한다.
+    if not is_initial_setup:
+        import asyncio as _asyncio
+        from concurrent.futures import ThreadPoolExecutor as _TPE
+
+        def _load():
+            from reranker import load_reranker
+            load_reranker()
+
+        _asyncio.get_event_loop().run_in_executor(_TPE(max_workers=1), _load)
 
     if es_available:
         try:
@@ -289,15 +287,16 @@ async def lifespan(app: FastAPI):
         await warmup_kokoro_tts()
 
     # ── Whisper STT warm-up ──
-    try:
-        logger.info("[startup-status] stt")
-        from routers.stt import _get_model
-        import asyncio
-        loop = asyncio.get_running_loop()
-        await loop.run_in_executor(None, _get_model)
-        logger.info("[whisper] STT warm-up done")
-    except Exception as e:
-        logger.info("[whisper] STT warm-up skipped: %s", e)
+    if not is_initial_setup:
+        try:
+            logger.info("[startup-status] stt")
+            from routers.stt import _get_model
+            import asyncio
+            loop = asyncio.get_running_loop()
+            await loop.run_in_executor(None, _get_model)
+            logger.info("[whisper] STT warm-up done")
+        except Exception as e:
+            logger.info("[whisper] STT warm-up skipped: %s", e)
 
     if es_available and SETUP_DONE.exists():
         from services.notification_polling import start_notification_polling

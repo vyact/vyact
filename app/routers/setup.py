@@ -8,6 +8,7 @@ import math
 import os
 import platform
 import re
+import shutil
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
@@ -206,25 +207,51 @@ async def install(req: ModelSelectRequest):
         yield "Using installed app files", "ok", 78, True
         # Electron installs requirements before starting the server, so running pip
         # again here would duplicate the same package installation work.
-        yield "Python packages ready", "ok", 88, True
+        yield "Python packages ready", "ok", 78, True
 
-        yield "Preparing Vyact embedding model...", "info", 88, True
+        yield "Preparing Vyact embedding model...", "info", 78, True
         try:
             from services.embedding_runtime import prepare_embedding_model
             await prepare_embedding_model()
-            yield "Vyact embedding model ready", "ok", 89, True
+            yield "Vyact embedding model ready", "ok", 81, True
         except Exception as error:
-            yield f"Vyact embedding model download failed: {error}", "log", 89, True
+            yield f"Vyact embedding model download failed: {error}", "error", 0, False
+            return
+
+        yield "Preparing reranker model...", "info", 81, True
+        try:
+            from reranker import load_reranker
+            if not await asyncio.to_thread(load_reranker, True):
+                raise RuntimeError("Reranker model is unavailable")
+            yield "Reranker model ready", "ok", 84, True
+        except Exception as error:
+            yield f"Reranker model download failed: {error}", "error", 0, False
+            return
+
+        yield "Preparing speech recognition model...", "info", 84, True
+        try:
+            from routers.stt import _get_model
+            await asyncio.to_thread(_get_model, True)
+            yield "Speech recognition model ready", "ok", 87, True
+        except Exception as error:
+            yield f"Speech recognition model download failed: {error}", "error", 0, False
+            return
 
         if is_japanese_system_language():
-            yield "Installing UniDic dictionary for Japanese TTS...", "info", 88, True
+            yield "Installing UniDic dictionary for Japanese TTS...", "info", 87, True
             ok, msg = await installer.install_unidic_dictionary()
-            yield msg, "ok" if ok else "log", 89, True
+            if not ok:
+                yield msg, "error", 0, False
+                return
+            yield msg, "ok", 88, True
         else:
-            yield "Japanese TTS dictionary will download when first needed", "ok", 89, True
+            yield "Japanese TTS dictionary will download when first needed", "ok", 88, True
 
         yield "Installing Playwright browser...", "info", 89, True
         ok, msg = await installer.install_playwright()
+        if not ok:
+            yield msg, "error", 0, False
+            return
         yield msg, "ok", 91, True
 
         yield "Installing espeak-ng (Kokoro TTS)...", "info", 92, True
@@ -233,7 +260,10 @@ async def install(req: ModelSelectRequest):
 
         yield "Downloading Kokoro TTS model...", "info", 93, True
         ok, msg = await installer.download_kokoro_model()
-        yield msg, "ok" if ok else "log", 94, True
+        if not ok:
+            yield msg, "error", 0, False
+            return
+        yield msg, "ok", 94, True
 
         yield "Warming up Kokoro TTS...", "info", 94, True
         from main import warmup_kokoro_tts
@@ -348,12 +378,23 @@ async def install(req: ModelSelectRequest):
                 yield sse(msg, "ok", 15)
 
             yield sse("Checking Ollama...", "info", 18)
+            if shutil.which("ollama") is None and shutil.which("brew") is None:
+                yield sse(
+                    "Homebrew is required to install Ollama",
+                    "error",
+                    0,
+                    i18n_key="homebrewRequired",
+                )
+                return
             ok, msg = await installer.install_ollama()
             if not ok: yield sse(msg, "error", 0); return
             yield sse(msg, "ok", 25)
 
             yield sse("Checking Ollama server...", "info", 27)
             ok, msg = await installer.start_ollama_server()
+            if not ok:
+                yield sse(msg, "error", 0)
+                return
             yield sse(msg, "ok", 30)
 
             yield sse(f"Downloading {model}...", "info", 33)
@@ -377,6 +418,9 @@ async def install(req: ModelSelectRequest):
             else:
                 yield sse("Starting Elasticsearch...", "info", 95)
                 ok, msg = await installer.start_elasticsearch()
+                if not ok:
+                    yield sse(msg, "error", 0)
+                    return
                 yield sse(msg, "ok", 99)
 
             # ES 인덱스 초기화 후 config 저장
@@ -392,7 +436,9 @@ async def install(req: ModelSelectRequest):
                 await load_prompts_cache()
                 logger.info("[setup] config ES 저장 및 초기 데이터 로드 완료")
             except Exception as e:
-                logger.warning("[setup] 초기화 실패: %s", e)
+                logger.exception("[setup] 초기화 실패")
+                yield sse(f"Setup initialization failed: {e}", "error", 0)
+                return
 
             # 메모리가 부족해 하나의 모델만 상주할 수 있으면, 설치 직후 바로 사용하는
             # 채팅 모델이 남도록 bge-m3를 먼저 예열하고 채팅 모델을 마지막에 올린다.
@@ -421,7 +467,7 @@ async def install(req: ModelSelectRequest):
                 logger.warning("[setup] Ollama model warm-up failed: %s", e)
                 yield sse(f"Model warm-up failed: {e}", "log", 98)
 
-            await installer.finalize_setup(SETUP_DONE)
+            SETUP_DONE.touch()
             start_background_services_after_setup()
             yield sse("Installation complete!", "done", 100)
         else:
@@ -460,6 +506,9 @@ async def install(req: ModelSelectRequest):
             if not es_running:
                 yield sse("Starting Elasticsearch...", "info", 50)
                 ok, msg = await installer.start_elasticsearch()
+                if not ok:
+                    yield sse(msg, "error", 0)
+                    return
                 yield sse(msg, "ok", 70)
 
             async for event, should_continue in _stream_common_runtime(installer):
@@ -478,7 +527,9 @@ async def install(req: ModelSelectRequest):
                 await load_prompts_cache()
                 logger.info("[setup] LLM connection config saved after ES initialization")
             except Exception as e:
-                logger.warning("[setup] Cloud setup init failed: %s", e)
+                logger.exception("[setup] Cloud setup init failed")
+                yield sse(f"Setup initialization failed: {e}", "error", 0)
+                return
 
             SETUP_DONE.touch()
             start_background_services_after_setup()

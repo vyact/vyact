@@ -19,6 +19,7 @@ Docker가 보안정책(EDR·가상화 차단 등)에 막히는 환경을 위한 
 import asyncio
 import os
 import platform
+import shutil
 import sys
 import tarfile
 import zipfile
@@ -38,6 +39,7 @@ ES_HOME = INSTALL_DIR / f"elasticsearch-{ES_VERSION}"
 ES_DATA = INSTALL_DIR / "data"
 ES_LOGS = INSTALL_DIR / "logs"
 DOWNLOAD_DIR = INSTALL_DIR / "es_download"
+ES_INSTALL_COMPLETE = ES_HOME / ".vyact_install_complete"
 
 
 def detect_platform() -> str | None:
@@ -210,7 +212,7 @@ async def install_native_es() -> AsyncGenerator[tuple, None]:
 
     # 이미 설치돼 있으면 다운로드/해제 스킵하고 실행만
     filename, kind = ES_ARTIFACTS[plat]
-    if _es_binary().exists():
+    if _es_binary().exists() and ES_INSTALL_COMPLETE.exists():
         logger.info("기존 설치 감지됨 — 다운로드를 건너뜁니다.")
         yield (60, "기존 설치 감지됨 — 다운로드를 건너뜁니다.", "ok")
     else:
@@ -228,7 +230,13 @@ async def install_native_es() -> AsyncGenerator[tuple, None]:
         logger.info("압축 해제 중...")
         yield (58, "압축 해제 중...", "info")
         try:
+            # 중단된 압축 해제 결과는 완전한 설치로 간주하지 않는다.
+            if ES_HOME.exists():
+                shutil.rmtree(ES_HOME)
             await asyncio.get_event_loop().run_in_executor(None, _extract, archive, kind)
+            if not _es_binary().exists():
+                raise RuntimeError("Elasticsearch binary is missing after extraction")
+            ES_INSTALL_COMPLETE.touch()
         except Exception as e:
             logger.error(f"압축 해제 실패: {e}")
             yield (0, f"압축 해제 실패: {e}", "error")
@@ -295,5 +303,5 @@ async def install_native_es() -> AsyncGenerator[tuple, None]:
         if await _already_running():
             yield (100, f"Elasticsearch 준비 완료 (포트 {ES_PORT})", "ok")
             return
-    logger.info("기동 확인 시간 초과 — 잠시 후 자동으로 연결될 수 있습니다.")
-    yield (95, "기동 확인 시간 초과 — 잠시 후 자동으로 연결될 수 있습니다.", "info")
+    logger.error("Elasticsearch 기동 확인 시간 초과")
+    yield (0, "Elasticsearch 기동 확인 시간이 초과되었습니다.", "error")
