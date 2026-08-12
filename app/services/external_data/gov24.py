@@ -9,6 +9,7 @@ from urllib.parse import unquote
 import httpx
 from elasticsearch.helpers import async_bulk, async_scan
 
+from reranker import is_available as is_reranker_available, rerank
 from services.db import SETTINGS_INDEX, get_es
 
 SOURCE_ID = "kr.gov24"
@@ -18,7 +19,9 @@ API_BASE_URL = "https://api.odcloud.kr/api/gov24/v3"
 PAGE_SIZE = 100
 BULK_CHUNK_SIZE = 100
 INACTIVE_AFTER_MISSING_SYNCS = 3
-QUERY_CANDIDATE_SIZE = 12
+QUERY_CANDIDATE_SIZE = 8
+QUERY_RERANK_CANDIDATE_SIZE = 50
+QUERY_RERANK_SCORE_THRESHOLD = 0.35
 BROWSE_PAGE_SIZE = 40
 
 ENDPOINTS = {
@@ -32,21 +35,6 @@ _sync_lock = asyncio.Lock()
 
 ALWAYS_OPEN_DEADLINE_KEYWORDS = ("상시", "수시")
 RECURRING_DEADLINE_KEYWORDS = ("매년", "분기별", "반기별")
-
-SEARCH_REQUEST_SUFFIXES = (
-    "찾아줘", "찾아 줘", "검색해줘", "검색해 줘", "알려줘", "알려 줘",
-    "확인해줘", "확인해 줘", "추천해줘", "추천해 줘",
-)
-SEARCH_NOISE_TERMS = {
-    "정부24", "외부데이터", "외부", "데이터", "문서", "검색", "결과",
-    "지원서비스", "서비스", "지원", "정보", "내용", "원문", "링크",
-    "대상", "문의처", "신청", "필요", "여부", "추측하지", "그대로",
-    "알려줘", "찾아줘", "검색해줘", "확인해줘", "추천해줘",
-}
-REGION_PATTERN = re.compile(
-    r"[가-힣]{2,}(?:특별자치도|특별자치시|광역시|특별시|도)(?:\s+[가-힣]{1,}(?:시|군|구))?"
-)
-
 
 def _parse_date_fragment(fragment: str, default_year: int | None = None) -> date | None:
     normalized = re.sub(r"\([^)]*\)", " ", fragment)
@@ -93,48 +81,8 @@ def normalize_application_deadline(value: object) -> tuple[str, str | None]:
     return ("dated", parsed_end.isoformat()) if parsed_end else ("unknown", None)
 
 
-def extract_search_intent(question: str) -> tuple[str, list[str]]:
-    """Extract stable lexical search terms without asking an LLM to emit ES DSL."""
-    normalized = re.sub(r"\s+", " ", question).strip()
-    regions = list(dict.fromkeys(match.group(0) for match in REGION_PATTERN.finditer(normalized)))
-
-    # Requested output fields usually follow the first sentence and harm retrieval.
-    subject = re.split(r"[.!?。]|\n", normalized, maxsplit=1)[0]
-    for suffix in SEARCH_REQUEST_SUFFIXES:
-        subject = subject.replace(suffix, " ")
-    for region in regions:
-        subject = subject.replace(region, " ")
-
-    tokens: list[str] = []
-    for raw_token in re.findall(r"[가-힣A-Za-z0-9]+", subject):
-        token = re.sub(r"(?:에서|으로|에게|에는|에서의|의|을|를|은|는|이|가)$", "", raw_token)
-        if len(token) < 2 or token in SEARCH_NOISE_TERMS:
-            continue
-        tokens.append(token)
-
-    # Preserve order while removing duplicates. Long domain terms are much more
-    # discriminative than generic request vocabulary.
-    core_terms = list(dict.fromkeys(tokens))
-    return " ".join(core_terms), regions
-
-
-def _candidate_query(core_query: str, regions: list[str], strict: bool) -> dict:
-    core_clauses = [
-        {"match_phrase": {"title": {"query": core_query, "boost": 12}}},
-        {"multi_match": {
-            "query": core_query,
-            "fields": ["title^7", "target^4", "category^3", "user_type^3", "content_text"],
-            "type": "best_fields",
-            "operator": "and" if strict else "or",
-            **({} if strict else {"minimum_should_match": "50%"}),
-        }},
-    ]
-    region_clauses: list[dict] = []
-    for region in regions:
-        region_clauses.append({
-            "wildcard": {"agency": {"value": f"*{region}*", "boost": 5, "case_insensitive": True}},
-        })
-
+def _candidate_query(question: str) -> dict:
+    """Build a source-agnostic lexical recall query; semantic precision comes later."""
     return {
         "bool": {
             "filter": [
@@ -147,8 +95,18 @@ def _candidate_query(core_query: str, regions: list[str], strict: bool) -> dict:
                     "minimum_should_match": 1,
                 }},
             ],
-            "must": [{"bool": {"should": core_clauses, "minimum_should_match": 1}}],
-            "should": region_clauses,
+            "must": [{
+                "multi_match": {
+                    "query": question,
+                    "fields": [
+                        "title^6", "target^4", "agency^3", "category^2",
+                        "user_type^2", "support_type^2", "content_text",
+                    ],
+                    "type": "best_fields",
+                    "operator": "or",
+                    "minimum_should_match": "20%",
+                },
+            }],
         },
     }
 
@@ -159,21 +117,19 @@ async def search_candidates(question: str, size: int = QUERY_CANDIDATE_SIZE) -> 
     try:
         if not await es.indices.exists(index=INDEX_NAME):
             return []
-        core_query, regions = extract_search_intent(question)
-        if not core_query:
+        normalized_question = re.sub(r"\s+", " ", question).strip()
+        if not normalized_question:
             return []
-        search_options = {
-            "index": INDEX_NAME,
-            "size": size,
-            "source_includes": [
+        result = await es.search(
+            index=INDEX_NAME,
+            size=QUERY_RERANK_CANDIDATE_SIZE,
+            query=_candidate_query(normalized_question),
+            source_includes=[
                 "external_id", "title", "content_text", "target", "category",
                 "support_type", "agency", "application_deadline", "source_url",
                 "application_end_date", "deadline_kind", "source_modified_at",
             ],
-        }
-        result = await es.search(**search_options, query=_candidate_query(core_query, regions, strict=True))
-        if not result.get("hits", {}).get("hits", []):
-            result = await es.search(**search_options, query=_candidate_query(core_query, regions, strict=False))
+        )
         candidates = []
         for hit in result.get("hits", {}).get("hits", []):
             source = hit.get("_source", {})
@@ -201,7 +157,13 @@ async def search_candidates(question: str, size: int = QUERY_CANDIDATE_SIZE) -> 
                 "score": hit.get("_score", 0),
                 "external_resource_id": SOURCE_ID,
             })
-        return candidates
+        if not is_reranker_available():
+            return candidates[:size]
+        ranked = await rerank(normalized_question, candidates, top_k=size)
+        return [
+            candidate for candidate in ranked
+            if candidate.get("rerank_score", 0) >= QUERY_RERANK_SCORE_THRESHOLD
+        ]
     finally:
         await es.close()
 
