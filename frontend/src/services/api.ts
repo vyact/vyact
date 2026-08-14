@@ -132,6 +132,12 @@ export interface Gov24SyncStatusResponse {
     error?: string;
 }
 
+export interface ExternalDataSyncEvent {
+    status: 'running' | 'completed' | 'failed';
+    sources: Record<string, Gov24SyncStatusResponse>;
+    error?: string;
+}
+
 export interface Gov24Document {
     id: string;
     title: string;
@@ -142,7 +148,11 @@ export interface Gov24Document {
     support_type: string;
     application_deadline: string;
     source_url: string;
+    application_url?: string;
     source_modified_at: string;
+    created_at?: string;
+    view_count?: number | null;
+    attachments?: Array<{name: string; url: string}>;
     summary: string;
     purpose: string;
     content: string;
@@ -871,7 +881,7 @@ export const api = {
     },
 
     async getExternalDataConnections(): Promise<{
-        connections: Record<string, {has_service_key: boolean}>;
+        connections: Record<string, {has_service_key: boolean; enabled: boolean}>;
     }> {
         const res = await fetch(`${API_BASE}/external-data/connections`);
         if (!res.ok) throw new Error(await res.text());
@@ -891,6 +901,19 @@ export const api = {
         return res.json();
     },
 
+    async saveExternalDataSourceEnabled(sourceId: string, enabled: boolean): Promise<{
+        source_id: string;
+        enabled: boolean;
+    }> {
+        const res = await fetch(`${API_BASE}/external-data/sources/${encodeURIComponent(sourceId)}/enabled`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({enabled}),
+        });
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+    },
+
     async getGov24SyncStatus(): Promise<Gov24SyncStatusResponse> {
         const res = await fetch(`${API_BASE}/external-data/sources/kr.gov24/sync`);
         if (!res.ok) throw new Error(await res.text());
@@ -898,12 +921,66 @@ export const api = {
     },
 
     async startGov24Sync(): Promise<{
-        status: 'started' | 'already_running';
+        status: string;
         sync_status?: Gov24SyncStatusResponse;
     }> {
-        const res = await fetch(`${API_BASE}/external-data/sources/kr.gov24/sync`, {method: 'POST'});
+        const res = await fetch(`${API_BASE}/external-data/sources/kr.gov24/sync?wait=true`, {method: 'POST'});
         if (!res.ok) throw new Error(await res.text());
         return res.json();
+    },
+
+    async streamGov24Sync(onStatus: (status: Gov24SyncStatusResponse) => void): Promise<Gov24SyncStatusResponse> {
+        const res = await fetch(`${API_BASE}/external-data/sources/kr.gov24/sync/events`, {
+            method: 'POST',
+            headers: {'Accept': 'text/event-stream'},
+        });
+        if (!res.ok) throw new Error(await res.text());
+        if (!res.body) throw new Error('Synchronization stream is unavailable.');
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let latestStatus: Gov24SyncStatusResponse = {status: 'running'};
+        while (true) {
+            const {done, value} = await reader.read();
+            buffer += decoder.decode(value || new Uint8Array(), {stream: !done});
+            const messages = buffer.split('\n\n');
+            buffer = messages.pop() || '';
+            for (const message of messages) {
+                const dataLine = message.split('\n').find(line => line.startsWith('data: '));
+                if (!dataLine) continue;
+                latestStatus = JSON.parse(dataLine.slice(6)) as Gov24SyncStatusResponse;
+                onStatus(latestStatus);
+            }
+            if (done) break;
+        }
+        return latestStatus;
+    },
+
+    async streamAllExternalDataSync(onStatus: (status: ExternalDataSyncEvent) => void): Promise<ExternalDataSyncEvent> {
+        const res = await fetch(`${API_BASE}/external-data/sync/events`, {
+            method: 'POST',
+            headers: {'Accept': 'text/event-stream'},
+        });
+        if (!res.ok) throw new Error(await res.text());
+        if (!res.body) throw new Error('Synchronization stream is unavailable.');
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let latestStatus: ExternalDataSyncEvent = {status: 'running', sources: {}};
+        while (true) {
+            const {done, value} = await reader.read();
+            buffer += decoder.decode(value || new Uint8Array(), {stream: !done});
+            const messages = buffer.split('\n\n');
+            buffer = messages.pop() || '';
+            for (const message of messages) {
+                const dataLine = message.split('\n').find(line => line.startsWith('data: '));
+                if (!dataLine) continue;
+                latestStatus = JSON.parse(dataLine.slice(6)) as ExternalDataSyncEvent;
+                onStatus(latestStatus);
+            }
+            if (done) break;
+        }
+        return latestStatus;
     },
 
     async getGov24Documents(query = '', cursor?: string): Promise<Gov24DocumentsResponse> {
@@ -912,6 +989,31 @@ export const api = {
         if (cursor) params.set('cursor', cursor);
         const suffix = params.size ? `?${params.toString()}` : '';
         const res = await fetch(`${API_BASE}/external-data/sources/kr.gov24/documents${suffix}`);
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+    },
+
+    async getExternalSourceSyncStatus(sourceId: string): Promise<Gov24SyncStatusResponse> {
+        const res = await fetch(`${API_BASE}/external-data/sources/${encodeURIComponent(sourceId)}/sync`);
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+    },
+
+    async startExternalSourceSync(sourceId: string): Promise<{
+        status: string;
+        sync_status?: Gov24SyncStatusResponse;
+    }> {
+        const res = await fetch(`${API_BASE}/external-data/sources/${encodeURIComponent(sourceId)}/sync?wait=true`, {method: 'POST'});
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+    },
+
+    async getExternalSourceDocuments(sourceId: string, query = '', cursor?: string): Promise<Gov24DocumentsResponse> {
+        const params = new URLSearchParams();
+        if (query.trim()) params.set('query', query.trim());
+        if (cursor) params.set('cursor', cursor);
+        const suffix = params.size ? `?${params.toString()}` : '';
+        const res = await fetch(`${API_BASE}/external-data/sources/${encodeURIComponent(sourceId)}/documents${suffix}`);
         if (!res.ok) throw new Error(await res.text());
         return res.json();
     },

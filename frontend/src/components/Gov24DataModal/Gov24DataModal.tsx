@@ -9,9 +9,11 @@ import './Gov24DataModal.css';
 interface Gov24DataModalProps {
     isOpen: boolean;
     onClose: () => void;
+    sourceId?: string;
+    sourceNameKey?: string;
 }
 
-const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose}) => {
+const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose, sourceId = 'kr.gov24', sourceNameKey = 'gov24'}) => {
     const {t, i18n} = useTranslation('settings');
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -36,7 +38,7 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose}) => {
             if (requestId !== requestIdRef.current) return;
             setLoading(true);
             setError(false);
-            void api.getGov24Documents(debouncedQuery).then(result => {
+            void api.getExternalSourceDocuments(sourceId, debouncedQuery).then(result => {
                 if (requestId !== requestIdRef.current) return;
                 setDocuments(result.items);
                 setTotal(result.total);
@@ -51,7 +53,7 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose}) => {
         return () => {
             if (requestId === requestIdRef.current) requestIdRef.current += 1;
         };
-    }, [debouncedQuery, isOpen]);
+    }, [debouncedQuery, isOpen, sourceId]);
 
     if (!isOpen) return null;
 
@@ -67,7 +69,7 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose}) => {
         if (!nextCursor || loadingMore) return;
         setLoadingMore(true);
         try {
-            const result = await api.getGov24Documents(debouncedQuery, nextCursor);
+            const result = await api.getExternalSourceDocuments(sourceId, debouncedQuery, nextCursor);
             setDocuments(current => [...current, ...result.items]);
             setNextCursor(result.next_cursor);
         } catch {
@@ -87,10 +89,7 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose}) => {
         <ModalOverlay className="gov24-browser-overlay" onClose={onClose} closeOnBackdrop={false} blur={3}>
             <div className="gov24-browser-modal" aria-labelledby="gov24-browser-title">
                 <header className="gov24-browser-header">
-                    <div>
-                        <span className="gov24-browser-eyebrow">{t('externalData.sources.gov24.name')}</span>
-                        <h2 id="gov24-browser-title">{t('externalData.browser.title')}</h2>
-                    </div>
+                    <h2 id="gov24-browser-title">{t(`externalData.sources.${sourceNameKey}.name`)}</h2>
                     <button type="button" onClick={onClose} aria-label={t('externalData.browser.close')}><X size={20}/></button>
                 </header>
                 <div className="gov24-browser-toolbar">
@@ -112,8 +111,10 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose}) => {
                                     : documents.map(document => (
                                         <button type="button" key={document.id} className={document.id === selectedDocument?.id ? 'is-selected' : ''} onClick={() => setSelectedId(document.id)}>
                                             <strong>{document.title}</strong>
-                                            <span>{document.agency || t('externalData.browser.unknownAgency')}</span>
-                                            <time>{formatModifiedAt(document.source_modified_at)}</time>
+                                            <span className="gov24-browser-list-meta">
+                                                <time>{formatModifiedAt(document.source_modified_at)}</time>
+                                                <span>{document.agency || t('externalData.browser.unknownAgency')}</span>
+                                            </span>
                                         </button>
                                     ))}
                         {loadingMore && <div className="gov24-browser-loading-more">{t('externalData.browser.loadingMore')}</div>}
@@ -127,12 +128,12 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose}) => {
                                         {selectedDocument.support_type && <span>{selectedDocument.support_type}</span>}
                                     </div>
                                     <h2>{selectedDocument.title}</h2>
+                                    <div className="gov24-browser-meta">
+                                        {selectedDocument.agency && <span><Landmark size={15}/>{selectedDocument.agency}</span>}
+                                        <span><CalendarClock size={15}/>{formatModifiedAt(selectedDocument.source_modified_at)}</span>
+                                    </div>
                                 </div>
                                 {selectedDocument.summary && <p>{selectedDocument.summary}</p>}
-                                <div className="gov24-browser-meta">
-                                    {selectedDocument.agency && <span><Landmark size={15}/>{selectedDocument.agency}</span>}
-                                    <span><CalendarClock size={15}/>{t('externalData.browser.modifiedAt', {date: formatModifiedAt(selectedDocument.source_modified_at)})}</span>
-                                </div>
                             </div>
                             <div className="gov24-browser-detail-scroll">
                                 {(selectedDocument.target || selectedDocument.user_type) && <div className="gov24-browser-info-card">
@@ -144,8 +145,12 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose}) => {
                                 {renderSection(t('externalData.browser.selectionCriteria'), selectedDocument.selection_criteria)}
                                 {renderSection(t('externalData.browser.applicationMethod'), selectedDocument.application_method)}
                                 {renderSection(t('externalData.browser.requiredDocuments'), selectedDocument.required_documents)}
+                                {!!selectedDocument.attachments?.length && <section className="gov24-browser-detail-section">
+                                    <h3>{t('externalData.browser.requiredDocuments')}</h3>
+                                    <div className="gov24-browser-attachments">{selectedDocument.attachments.map(attachment => <a key={`${attachment.name}-${attachment.url}`} href={attachment.url} target="_blank" rel="noreferrer"><FileText size={15}/><span>{attachment.name}</span><ExternalLink size={12}/></a>)}</div>
+                                </section>}
                                 {renderSection(t('externalData.browser.contact'), selectedDocument.contact)}
-                                {selectedDocument.source_url && <a className="gov24-browser-source-link" href={selectedDocument.source_url} target="_blank" rel="noreferrer"><FileText size={17}/>{t('externalData.browser.openSource')}<ExternalLink size={14}/></a>}
+                                {selectedDocument.source_url && <a className="gov24-browser-source-link" href={selectedDocument.source_url} target="_blank" rel="noreferrer"><FileText size={17}/>{t('externalData.openSourcePage')}<ExternalLink size={14}/></a>}
                             </div>
                         </> : <div className="gov24-browser-detail-empty"><FileText size={32}/><p>{t('externalData.browser.selectDocument')}</p></div>}
                     </main>

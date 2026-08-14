@@ -8,343 +8,172 @@ import Gov24DataModal from '../Gov24DataModal';
 import './ExternalDataSection.css';
 
 const DATA_SOURCES = [
-    {
-        id: 'gov24',
-        applicationUrl: 'https://www.data.go.kr/data/15113968/openapi.do',
-        available: true,
-    },
-    {
-        id: 'youthCenter',
-        applicationUrl: 'https://www.youthcenter.go.kr/cmnFooter/openapiIntro/oaiGuide',
-        available: false,
-    },
-    {
-        id: 'bizInfo',
-        applicationUrl: 'https://www.bizinfo.go.kr/apiList.do',
-        available: false,
-    },
+    {id: 'gov24', sourceId: 'kr.gov24', url: 'https://www.data.go.kr/data/15113968/openapi.do'},
+    {id: 'bizSupport', sourceId: 'kr.biz_support', url: 'https://www.data.go.kr/data/15157820/openapi.do'},
+    {id: 'kStartup', sourceId: 'kr.k_startup', url: 'https://www.data.go.kr/data/15125364/openapi.do'},
+    {id: 'welfare', sourceId: 'kr.welfare', url: 'https://www.data.go.kr/data/15090532/openapi.do'},
+    {id: 'contentSupport', sourceId: 'kr.content_support', url: 'https://www.data.go.kr/data/15134251/openapi.do'},
+    {id: 'scholarship', sourceId: 'kr.scholarship', url: 'https://www.data.go.kr/data/15159544/fileData.do'},
 ] as const;
 
 type Gov24SyncStatus = Awaited<ReturnType<typeof api.getGov24SyncStatus>>;
-
-const GOV24_SYNC_STAGE_NUMBERS: Record<string, number> = {
-    list: 1,
-    detail: 2,
-    conditions: 3,
-    completed: 3,
-};
-
-const GOV24_SYNC_INTERVAL_HOURS = [1, 3, 6, 12, 24] as const;
+const SYNC_INTERVAL_HOURS = [1, 3, 6, 12, 24] as const;
 
 const ExternalDataSection: React.FC = () => {
     const {t, i18n} = useTranslation('settings');
     const [country, setCountry] = useState('KR');
-    const [expandedSourceId, setExpandedSourceId] = useState<string | null>('gov24');
-    const [gov24ServiceKey, setGov24ServiceKey] = useState('');
-    const [hasGov24ServiceKey, setHasGov24ServiceKey] = useState(false);
-    const [showGov24ServiceKey, setShowGov24ServiceKey] = useState(false);
-    const [savingGov24ServiceKey, setSavingGov24ServiceKey] = useState(false);
-    const [gov24SyncStatus, setGov24SyncStatus] = useState<Gov24SyncStatus>({status: 'idle'});
-    const [gov24AutoSyncEnabled, setGov24AutoSyncEnabled] = useState(false);
-    const [gov24AutoSyncIntervalHours, setGov24AutoSyncIntervalHours] = useState(24);
-    const [savingGov24Schedule, setSavingGov24Schedule] = useState(false);
-    const [showGov24DataModal, setShowGov24DataModal] = useState(false);
-    const countryOptions = [{value: 'KR', label: `🇰🇷 ${t('externalData.countryKr')}`}];
-    const syncIntervalOptions = GOV24_SYNC_INTERVAL_HOURS.map(hours => ({
-        value: String(hours),
-        label: t('externalData.autoSyncIntervalOption', {count: hours}),
-    }));
+    const [serviceKey, setServiceKey] = useState('');
+    const [hasServiceKey, setHasServiceKey] = useState(false);
+    const [showServiceKey, setShowServiceKey] = useState(false);
+    const [savingKey, setSavingKey] = useState(false);
+    const [enabledSources, setEnabledSources] = useState<Record<string, boolean>>({});
+    const [savingSourceId, setSavingSourceId] = useState<string | null>(null);
+    const [syncStatus, setSyncStatus] = useState<Gov24SyncStatus>({status: 'idle'});
+    const [bizSupportSyncStatus, setBizSupportSyncStatus] = useState<Gov24SyncStatus>({status: 'idle'});
+    const [isAllSyncing, setIsAllSyncing] = useState(false);
+    const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
+    const [autoSyncIntervalHours, setAutoSyncIntervalHours] = useState(24);
+    const [savingSchedule, setSavingSchedule] = useState(false);
+    const [showDataModal, setShowDataModal] = useState(false);
+    const [browseSource, setBrowseSource] = useState<{sourceId: string; sourceNameKey: string}>({sourceId: 'kr.gov24', sourceNameKey: 'gov24'});
 
     useEffect(() => {
-        api.getExternalDataConnections()
-            .then(({connections}) => setHasGov24ServiceKey(Boolean(connections['kr.gov24']?.has_service_key)))
-            .catch(() => undefined);
-        api.getGov24SyncStatus().then(setGov24SyncStatus).catch(() => undefined);
+        api.getExternalDataConnections().then(({connections}) => {
+            setHasServiceKey(Boolean(connections['kr.gov24']?.has_service_key));
+            setEnabledSources(Object.fromEntries(DATA_SOURCES.map(source => [
+                source.sourceId,
+                connections[source.sourceId]?.enabled ?? source.sourceId === 'kr.gov24',
+            ])));
+        }).catch(() => undefined);
+        api.getGov24SyncStatus().then(setSyncStatus).catch(() => undefined);
+        api.getExternalSourceSyncStatus('kr.biz_support').then(setBizSupportSyncStatus).catch(() => undefined);
         api.getGov24SyncSchedule().then(schedule => {
-            setGov24AutoSyncEnabled(schedule.enabled);
-            setGov24AutoSyncIntervalHours(schedule.interval_hours);
+            setAutoSyncEnabled(schedule.enabled);
+            setAutoSyncIntervalHours(schedule.interval_hours);
         }).catch(() => undefined);
     }, []);
 
-    useEffect(() => {
-        if (gov24SyncStatus.status !== 'running' && !gov24AutoSyncEnabled) return;
-        const intervalId = window.setInterval(() => {
-            api.getGov24SyncStatus().then(setGov24SyncStatus).catch(() => undefined);
-        }, gov24SyncStatus.status === 'running' ? 1500 : 5000);
-        return () => window.clearInterval(intervalId);
-    }, [gov24AutoSyncEnabled, gov24SyncStatus.status]);
-
-    const saveGov24ServiceKey = async () => {
-        if (!gov24ServiceKey.trim()) return;
-        setSavingGov24ServiceKey(true);
+    const saveServiceKey = async () => {
+        if (!serviceKey.trim()) return;
+        setSavingKey(true);
         try {
-            await api.saveExternalDataConnection('kr.gov24', gov24ServiceKey);
-            setGov24ServiceKey('');
-            setHasGov24ServiceKey(true);
+            await api.saveExternalDataConnection('kr.gov24', serviceKey);
+            setServiceKey('');
+            setHasServiceKey(true);
             toast.success(t('externalData.serviceKeySaved'));
-        } catch {
-            toast.error(t('externalData.serviceKeySaveFailed'));
-        } finally {
-            setSavingGov24ServiceKey(false);
-        }
+        } catch { toast.error(t('externalData.serviceKeySaveFailed')); }
+        finally { setSavingKey(false); }
     };
 
-    const startGov24Sync = async () => {
+    const toggleSource = async (sourceId: string, enabled: boolean) => {
+        const previous = enabledSources[sourceId] ?? false;
+        setEnabledSources(current => ({...current, [sourceId]: enabled}));
+        setSavingSourceId(sourceId);
         try {
-            const result = await api.startGov24Sync();
-            if (result.status === 'already_running' && result.sync_status) {
-                setGov24SyncStatus(result.sync_status);
-                return;
-            }
-            setGov24SyncStatus(current => ({
-                ...current,
-                status: 'running',
-                stage: 'list',
-                current: 0,
-                total: 0,
-            }));
+            await api.saveExternalDataSourceEnabled(sourceId, enabled);
         } catch {
+            setEnabledSources(current => ({...current, [sourceId]: previous}));
+            toast.error(t('externalData.sourceToggleFailed'));
+        } finally { setSavingSourceId(null); }
+    };
+
+    const startSync = async () => {
+        setSyncStatus(current => ({...current, status: 'running', stage: 'list', current: 0, total: 0}));
+        try {
+            const finalStatus = await api.streamGov24Sync(setSyncStatus);
+            setSyncStatus(finalStatus);
+        } catch {
+            setSyncStatus(current => ({...current, status: 'failed'}));
             toast.error(t('externalData.syncStartFailed'));
         }
     };
 
-    const saveGov24Schedule = async (enabled: boolean, intervalHours: number) => {
-        const previousEnabled = gov24AutoSyncEnabled;
-        const previousIntervalHours = gov24AutoSyncIntervalHours;
-        setGov24AutoSyncEnabled(enabled);
-        setGov24AutoSyncIntervalHours(intervalHours);
-        setSavingGov24Schedule(true);
+    const startBizSupportSync = async () => {
+        setBizSupportSyncStatus(current => ({...current, status: 'running', stage: 'list', current: 0, total: 0}));
         try {
-            await api.saveGov24SyncSchedule(enabled, intervalHours);
+            const result = await api.startExternalSourceSync('kr.biz_support');
+            if (result.sync_status) return setBizSupportSyncStatus(result.sync_status);
         } catch {
-            setGov24AutoSyncEnabled(previousEnabled);
-            setGov24AutoSyncIntervalHours(previousIntervalHours);
-            toast.error(t('externalData.autoSyncSaveFailed'));
-        } finally {
-            setSavingGov24Schedule(false);
+            setBizSupportSyncStatus(current => ({...current, status: 'failed'}));
+            toast.error(t('externalData.syncStartFailed'));
         }
     };
 
-    const syncProgress = gov24SyncStatus.total
-        ? Math.min(100, Math.round(((gov24SyncStatus.current || 0) / gov24SyncStatus.total) * 100))
-        : 0;
-    const numberFormatter = new Intl.NumberFormat(i18n.resolvedLanguage || i18n.language);
-    const formattedDocumentCount = numberFormatter.format(gov24SyncStatus.document_count || 0);
-    const formattedSyncCurrent = numberFormatter.format(gov24SyncStatus.current || 0);
-    const formattedSyncTotal = gov24SyncStatus.total
-        ? numberFormatter.format(gov24SyncStatus.total)
-        : '?';
-    const lastSyncLabel = gov24SyncStatus.last_successful_sync_at
-        ? new Intl.DateTimeFormat(i18n.language, {dateStyle: 'medium', timeStyle: 'short'}).format(
-            new Date(gov24SyncStatus.last_successful_sync_at),
-        )
+    const startAllSync = async () => {
+        setIsAllSyncing(true);
+        if (enabledSources['kr.gov24']) setSyncStatus(current => ({...current, status: 'running', stage: 'list', current: 0, total: 0}));
+        if (enabledSources['kr.biz_support']) setBizSupportSyncStatus(current => ({...current, status: 'running', stage: 'list', current: 0, total: 0}));
+        try {
+            await api.streamAllExternalDataSync(event => {
+                if (event.sources['kr.gov24']) setSyncStatus(event.sources['kr.gov24']);
+                if (event.sources['kr.biz_support']) setBizSupportSyncStatus(event.sources['kr.biz_support']);
+            });
+        } catch {
+            toast.error(t('externalData.syncStartFailed'));
+        } finally {
+            setIsAllSyncing(false);
+        }
+    };
+
+    const saveSchedule = async (enabled: boolean, intervalHours: number) => {
+        const previous = [autoSyncEnabled, autoSyncIntervalHours] as const;
+        setAutoSyncEnabled(enabled);
+        setAutoSyncIntervalHours(intervalHours);
+        setSavingSchedule(true);
+        try { await api.saveGov24SyncSchedule(enabled, intervalHours); }
+        catch {
+            setAutoSyncEnabled(previous[0]); setAutoSyncIntervalHours(previous[1]);
+            toast.error(t('externalData.autoSyncSaveFailed'));
+        } finally { setSavingSchedule(false); }
+    };
+
+    const formatter = new Intl.NumberFormat(i18n.resolvedLanguage || i18n.language);
+    const lastSync = syncStatus.last_successful_sync_at
+        ? new Intl.DateTimeFormat(i18n.language, {dateStyle: 'medium', timeStyle: 'short'}).format(new Date(syncStatus.last_successful_sync_at))
         : t('externalData.neverSynced');
+    const supportedEnabledSources = DATA_SOURCES.filter(source => (source.id === 'gov24' || source.id === 'bizSupport') && enabledSources[source.sourceId]);
+    const intervalOptions = SYNC_INTERVAL_HOURS.map(hours => ({value: String(hours), label: t('externalData.autoSyncIntervalOption', {count: hours})}));
+    const countryOptions = [{value: 'KR', label: `🇰🇷 ${t('externalData.countryKr')}`}];
 
-    return (
-        <section className="external-data-section">
-            <header className="external-data-heading">
-                <div>
-                    <h4>{t('externalData.title')}</h4>
-                    <p>{t('externalData.description')}</p>
-                </div>
-                <div className="external-data-country-select">
-                    <label>{t('externalData.country')}</label>
-                    <CustomSelect
-                        options={countryOptions}
-                        value={country}
-                        onChange={setCountry}
-                        triggerStyle={{width: '100%'}}
-                    />
-                </div>
-            </header>
-
-            <div className="external-data-local-note">
-                <span aria-hidden="true">🛡️</span>
-                <span>{t('externalData.localNote')}</span>
+    return <section className="external-data-section">
+        <header className="external-data-heading">
+            <h4>{t('externalData.title')}</h4>
+            <div className="external-data-country-select"><label>{t('externalData.country')}</label><CustomSelect options={countryOptions} value={country} onChange={setCountry} triggerStyle={{width: '100%'}}/></div>
+        </header>
+        <div className="external-data-setup-card">
+            <div className="external-data-guide-header"><h6>{t('externalData.guideTitle')}</h6><a href="https://www.data.go.kr/" target="_blank" rel="noreferrer">{t('externalData.openPortal')}<ExternalLink size={13}/></a></div>
+            <ol>{[1, 2, 3, 4].map(step => <li key={step}>{t(`externalData.setupSteps.${step}`)}</li>)}</ol>
+            <div className="external-data-key-form">
+                <div className="external-data-key-label-row"><label htmlFor="public-data-service-key">{t('externalData.serviceKey')}</label>{hasServiceKey && <span className="external-data-key-saved">✓ {t('externalData.serviceKeyConfigured')}</span>}</div>
+                <div className="external-data-key-input-row"><div className="external-data-key-input-wrap"><input id="public-data-service-key" type={showServiceKey ? 'text' : 'password'} value={serviceKey} placeholder={hasServiceKey ? t('externalData.serviceKeySavedPlaceholder') : t('externalData.serviceKeyPlaceholder')} autoComplete="off" onChange={event => setServiceKey(event.target.value)}/><button type="button" onClick={() => setShowServiceKey(value => !value)} aria-label={t(showServiceKey ? 'externalData.hideServiceKey' : 'externalData.showServiceKey')}>{showServiceKey ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div><button type="button" className="external-data-save-key" disabled={!serviceKey.trim() || savingKey} onClick={saveServiceKey}>{savingKey ? t('externalData.saving') : t('externalData.saveServiceKey')}</button></div>
             </div>
-
-            {country === 'KR' && (
-                <div className="external-data-source-list">
-                    <div className="external-data-section-title">
-                        <span>{t('externalData.kr.title')}</span>
-                        <span>{t('externalData.sourceCount', {count: DATA_SOURCES.length})}</span>
-                    </div>
-
-                    {DATA_SOURCES.map(source => {
-                        const isExpanded = expandedSourceId === source.id;
-                        return (
-                            <article className="external-data-source-card" key={source.id}>
-                                <div className="external-data-source-summary">
-                                    <div className="external-data-source-copy">
-                                        <div className="external-data-source-title-row">
-                                            <h5>{t(`externalData.sources.${source.id}.name`)}</h5>
-                                            <span className={`external-data-status${source.available ? '' : ' is-planned'}`}>
-                                                {t(source.available ? 'externalData.status.applicationRequired' : 'externalData.status.planned')}
-                                            </span>
-                                        </div>
-                                        <p>{t(`externalData.sources.${source.id}.description`)}</p>
-                                    </div>
-                                </div>
-                                <button
-                                    type="button"
-                                    className="external-data-guide-toggle"
-                                    aria-expanded={isExpanded}
-                                    onClick={() => setExpandedSourceId(isExpanded ? null : source.id)}
-                                >
-                                    <span className={`external-data-guide-arrow${isExpanded ? ' is-open' : ''}`} aria-hidden="true">▶</span>
-                                    <span>{t('externalData.guide')}</span>
-                                </button>
-
-                                <div className={`external-data-guide-collapse${isExpanded ? ' is-open' : ''}`}>
-                                    <div className="external-data-guide">
-                                        <div className="external-data-guide-header">
-                                            <h6>{t('externalData.guideTitle')}</h6>
-                                            <a href={source.applicationUrl} target="_blank" rel="noreferrer">
-                                                {t('externalData.openApplicationPage')}
-                                                <ExternalLink size={13}/>
-                                            </a>
-                                        </div>
-                                        <ol>
-                                            <li>{t(`externalData.sources.${source.id}.steps.1`)}</li>
-                                            <li>{t(`externalData.sources.${source.id}.steps.2`)}</li>
-                                            <li>{t(`externalData.sources.${source.id}.steps.3`)}</li>
-                                            <li>{t(`externalData.sources.${source.id}.steps.4`)}</li>
-                                        </ol>
-                                        {source.id === 'gov24' && (
-                                            <div className="external-data-key-form">
-                                                <div className="external-data-key-label-row">
-                                                    <label htmlFor="gov24-service-key">{t('externalData.serviceKey')}</label>
-                                                    {hasGov24ServiceKey && (
-                                                        <span className="external-data-key-saved">✓ {t('externalData.serviceKeyConfigured')}</span>
-                                                    )}
-                                                </div>
-                                                <div className="external-data-key-input-row">
-                                                    <div className="external-data-key-input-wrap">
-                                                        <input
-                                                            id="gov24-service-key"
-                                                            type={showGov24ServiceKey ? 'text' : 'password'}
-                                                            value={gov24ServiceKey}
-                                                            placeholder={hasGov24ServiceKey
-                                                                ? t('externalData.serviceKeySavedPlaceholder')
-                                                                : t('externalData.serviceKeyPlaceholder')}
-                                                            autoComplete="off"
-                                                            onChange={event => setGov24ServiceKey(event.target.value)}
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setShowGov24ServiceKey(value => !value)}
-                                                            aria-label={t(showGov24ServiceKey ? 'externalData.hideServiceKey' : 'externalData.showServiceKey')}
-                                                        >
-                                                            {showGov24ServiceKey ? <EyeOff size={16}/> : <Eye size={16}/>}
-                                                        </button>
-                                                    </div>
-                                                    <button
-                                                        type="button"
-                                                        className="external-data-save-key"
-                                                        disabled={!gov24ServiceKey.trim() || savingGov24ServiceKey}
-                                                        onClick={saveGov24ServiceKey}
-                                                    >
-                                                        {savingGov24ServiceKey ? t('externalData.saving') : t('externalData.saveServiceKey')}
-                                                    </button>
-                                                </div>
-                                                {hasGov24ServiceKey && (
-                                                    <div className="external-data-sync-panel">
-                                                        <div className="external-data-sync-row">
-                                                            <div className="external-data-sync-info">
-                                                                <strong>{t('externalData.syncData')}</strong>
-                                                                <span>{t('externalData.lastUpdated', {date: lastSyncLabel})}</span>
-                                                                <span>{t('externalData.documentCount', {count: formattedDocumentCount})}</span>
-                                                            </div>
-                                                            <div className="external-data-sync-actions">
-                                                                {(gov24SyncStatus.document_count || 0) > 0 && <button type="button" className="is-secondary" onClick={() => setShowGov24DataModal(true)}>
-                                                                    <Database size={14}/>{t('externalData.browser.open')}
-                                                                </button>}
-                                                                <button
-                                                                    type="button"
-                                                                    className="external-data-sync-refresh"
-                                                                    onClick={startGov24Sync}
-                                                                    disabled={gov24SyncStatus.status === 'running'}
-                                                                    aria-label={t(gov24SyncStatus.status === 'running' ? 'externalData.syncing' : 'externalData.updateData')}
-                                                                    title={t(gov24SyncStatus.status === 'running' ? 'externalData.syncing' : 'externalData.updateData')}
-                                                                >
-                                                                    <RefreshCw className={gov24SyncStatus.status === 'running' ? 'is-spinning' : ''} size={16}/>
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                        {gov24SyncStatus.status === 'running' && (
-                                                            <div className="external-data-sync-progress">
-                                                                <div className="external-data-sync-progress-label">
-                                                                    <span>
-                                                                        <strong className="external-data-sync-stage">
-                                                                            {GOV24_SYNC_STAGE_NUMBERS[gov24SyncStatus.stage || 'list']} / 3
-                                                                        </strong>
-                                                                        <span className="external-data-sync-stage-label">
-                                                                            {t(`externalData.syncStages.${gov24SyncStatus.stage || 'list'}`)}
-                                                                        </span>
-                                                                    </span>
-                                                                    <span className="external-data-sync-count">
-                                                                        {formattedSyncCurrent} / {formattedSyncTotal}
-                                                                    </span>
-                                                                </div>
-                                                                <div className="external-data-sync-progress-track">
-                                                                    <span style={{width: `${syncProgress}%`}}/>
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                        {gov24SyncStatus.status === 'failed' && (
-                                                            <p className="external-data-sync-error">{t('externalData.syncFailed')}</p>
-                                                        )}
-                                                        <div className="external-data-auto-sync">
-                                                            <div className="external-data-auto-sync-header">
-                                                                <div>
-                                                                    <strong>{t('externalData.autoSync')}</strong>
-                                                                    <span>{t('externalData.autoSyncDescription')}</span>
-                                                                </div>
-                                                                <label className="settings-switch">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        checked={gov24AutoSyncEnabled}
-                                                                        disabled={savingGov24Schedule}
-                                                                        onChange={event => void saveGov24Schedule(
-                                                                            event.target.checked,
-                                                                            gov24AutoSyncIntervalHours,
-                                                                        )}
-                                                                    />
-                                                                    <span className="settings-switch-slider"/>
-                                                                </label>
-                                                            </div>
-                                                            {gov24AutoSyncEnabled && (
-                                                                <div className="external-data-auto-sync-interval">
-                                                                    <label>{t('externalData.autoSyncInterval')}</label>
-                                                                    <CustomSelect
-                                                                        options={syncIntervalOptions}
-                                                                        value={String(gov24AutoSyncIntervalHours)}
-                                                                        disabled={savingGov24Schedule}
-                                                                        ariaLabel={t('externalData.autoSyncInterval')}
-                                                                        onChange={value => void saveGov24Schedule(true, Number(value))}
-                                                                        triggerStyle={{width: '100%'}}
-                                                                        portal
-                                                                    />
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-                                        {source.id !== 'gov24' && (
-                                            <p className="external-data-guide-note">{t(`externalData.sources.${source.id}.note`)}</p>
-                                        )}
-                                    </div>
-                                </div>
-                            </article>
-                        );
-                    })}
-                </div>
-            )}
-            <Gov24DataModal isOpen={showGov24DataModal} onClose={() => setShowGov24DataModal(false)}/>
-        </section>
-    );
+            {hasServiceKey && <div className="external-data-sync-panel">
+                <div className="external-data-sync-row"><div className="external-data-sync-info"><strong>{t('externalData.syncAllData')}</strong><span className="external-data-sync-description">{t('externalData.syncAllDescription', {count: supportedEnabledSources.length})}</span><div className="external-data-sync-meta"><span>{t('externalData.lastUpdated', {date: lastSync})}</span><span>{t('externalData.documentCount', {count: formatter.format((syncStatus.document_count || 0) + (bizSupportSyncStatus.document_count || 0))})}</span></div></div><div className="external-data-sync-actions"><button type="button" className="external-data-sync-refresh" onClick={() => void startAllSync()} disabled={isAllSyncing || supportedEnabledSources.length === 0} aria-label={t('externalData.updateAllData')} title={t('externalData.updateAllData')}><RefreshCw className={isAllSyncing ? 'is-spinning' : ''} size={16}/></button></div></div>
+                {isAllSyncing && <div className="external-data-overall-progress">{supportedEnabledSources.map(source => {
+                    const status = source.id === 'gov24' ? syncStatus : bizSupportSyncStatus;
+                    const current = status.current || 0;
+                    const total = status.total || 0;
+                    const percent = total ? Math.min(100, Math.round((current / total) * 100)) : 0;
+                    const stageKey = source.id === 'gov24' ? (status.stage || 'list') : (status.status === 'completed' ? 'completed' : 'announcements');
+                    const statusLabel = status.status === 'failed' ? t('externalData.syncFailed') : t(`externalData.syncStages.${stageKey}`);
+                    return <div className={`external-data-service-progress is-${status.status}`} key={source.sourceId}><div className="external-data-service-progress-header"><strong>{t(`externalData.sources.${source.id}.name`)}</strong><span>{statusLabel}</span><span className="external-data-sync-count">{formatter.format(current)} / {total ? formatter.format(total) : '?'}</span></div><div className="external-data-sync-progress-track"><span style={{width: `${percent}%`}}/></div></div>;
+                })}</div>}
+                <div className="external-data-auto-sync"><div className="external-data-auto-sync-header"><div><strong>{t('externalData.autoSync')}</strong><span>{t('externalData.autoSyncDescription')}</span></div><label className="settings-switch"><input type="checkbox" checked={autoSyncEnabled} disabled={savingSchedule} onChange={event => void saveSchedule(event.target.checked, autoSyncIntervalHours)}/><span className="settings-switch-slider"/></label></div>{autoSyncEnabled && <div className="external-data-auto-sync-interval"><label>{t('externalData.autoSyncInterval')}</label><CustomSelect options={intervalOptions} value={String(autoSyncIntervalHours)} disabled={savingSchedule} ariaLabel={t('externalData.autoSyncInterval')} onChange={value => void saveSchedule(true, Number(value))} triggerStyle={{width: '100%'}} portal/></div>}</div>
+            </div>}
+        </div>
+        {country === 'KR' && <div className="external-data-source-list"><div className="external-data-section-title"><span>{t('externalData.kr.title')}</span><span>{t('externalData.sourceCount', {count: DATA_SOURCES.length})}</span></div>
+            {DATA_SOURCES.map(source => {
+                const sourceStatus = source.id === 'bizSupport' ? bizSupportSyncStatus : syncStatus;
+                const hasCollector = source.id === 'gov24' || source.id === 'bizSupport';
+                const canBrowse = hasCollector && sourceStatus.status !== 'running' && (sourceStatus.document_count || 0) > 0;
+                const canSync = hasCollector && Boolean(enabledSources[source.sourceId]);
+                const sourceLastSync = sourceStatus.last_successful_sync_at ? new Intl.DateTimeFormat(i18n.language, {dateStyle: 'medium', timeStyle: 'short'}).format(new Date(sourceStatus.last_successful_sync_at)) : t('externalData.neverSynced');
+                const startSourceSync = source.id === 'bizSupport' ? startBizSupportSync : startSync;
+                return <article className="external-data-source-card" key={source.id}><div className="external-data-source-summary"><div className="external-data-source-main"><div className="external-data-source-copy"><div className="external-data-source-title-row"><a className="external-data-source-link" href={source.url} target="_blank" rel="noreferrer" aria-label={t('externalData.openSourcePage')}><h5>{t(`externalData.sources.${source.id}.name`)}</h5><ExternalLink size={14}/></a></div><p>{t(`externalData.sources.${source.id}.description`)}</p></div><label className="settings-switch"><input type="checkbox" checked={enabledSources[source.sourceId] ?? false} disabled={savingSourceId === source.sourceId} onChange={event => void toggleSource(source.sourceId, event.target.checked)}/><span className="settings-switch-slider"/></label></div><div className="external-data-source-controls"><div className="external-data-source-state"><strong>{t('externalData.sourceData')}</strong>{hasCollector ? <span>{t('externalData.sourceDataSummary', {count: formatter.format(sourceStatus.document_count || 0), date: sourceLastSync})}</span> : <span>{t('externalData.collectorUnavailable')}</span>}</div><div className="external-data-source-actions"><button type="button" className="external-data-source-browse" disabled={!canBrowse} title={!canBrowse ? t('externalData.browseUnavailable') : undefined} onClick={() => { if (canBrowse) { setBrowseSource({sourceId: source.sourceId, sourceNameKey: source.id}); setShowDataModal(true); } }}><Database size={14}/>{t('externalData.browser.open')}</button><button type="button" className="external-data-source-refresh" disabled={!canSync || sourceStatus.status === 'running'} aria-label={t('externalData.updateSourceData')} title={canSync ? t('externalData.updateSourceData') : t('externalData.collectorUnavailable')} onClick={() => canSync && void startSourceSync()}><RefreshCw className={sourceStatus.status === 'running' ? 'is-spinning' : ''} size={15}/></button></div></div></div></article>;
+            })}
+        </div>}
+        <Gov24DataModal isOpen={showDataModal} onClose={() => setShowDataModal(false)} sourceId={browseSource.sourceId} sourceNameKey={browseSource.sourceNameKey}/>
+    </section>;
 };
 
 export default ExternalDataSection;

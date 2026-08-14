@@ -4,6 +4,10 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 
 from logger import get_logger
+from services.external_data.biz_support import (
+    get_sync_status as get_biz_support_sync_status,
+    start_synchronization as start_biz_support_synchronization,
+)
 from services.external_data.gov24 import get_sync_status, start_synchronization
 from services.external_data.settings import load_external_data_connections
 
@@ -33,13 +37,20 @@ def is_sync_due(last_successful_sync_at: str | None, interval_hours: int, now: d
 
 async def _run_due_synchronizations() -> None:
     connections = await load_external_data_connections()
-    gov24 = connections.get("kr.gov24") or {}
-    if not gov24.get("service_key") or not gov24.get("auto_sync_enabled", False):
-        return
-    interval_hours = gov24.get("auto_sync_interval_hours", DEFAULT_INTERVAL_HOURS)
+    shared_service_key = (connections.get("kr.gov24") or {}).get("service_key", "")
+    schedule_config = connections.get("kr.gov24") or {}
+    auto_sync_enabled = schedule_config.get("auto_sync_enabled", False)
+    interval_hours = schedule_config.get("auto_sync_interval_hours", DEFAULT_INTERVAL_HOURS)
+    gov24 = schedule_config
+    if (
+        not shared_service_key
+        or not gov24.get("enabled", True)
+        or not auto_sync_enabled
+    ):
+        gov24 = None
     if interval_hours not in ALLOWED_INTERVAL_HOURS:
         interval_hours = DEFAULT_INTERVAL_HOURS
-    status = await get_sync_status()
+    status = await get_sync_status() if gov24 else {}
     # 실패 시 매분 API를 재호출하지 않고 선택한 주기만큼 기다린다. 이전 앱
     # 실행이 수집 도중 종료돼 status가 running으로 남은 경우에는 메모리 락이
     # 비어 있으므로 마지막 성공 시각을 기준으로 다시 시작할 수 있다.
@@ -48,9 +59,17 @@ async def _run_due_synchronizations() -> None:
         if status.get("status") == "failed"
         else status.get("last_successful_sync_at")
     )
-    if is_sync_due(reference_time, interval_hours):
-        if start_synchronization(gov24["service_key"]):
+    if gov24 and is_sync_due(reference_time, interval_hours):
+        if start_synchronization(shared_service_key):
             logger.info("[external-data] scheduled Government24 sync started (%sh)", interval_hours)
+
+    biz_support = connections.get("kr.biz_support") or {}
+    if shared_service_key and biz_support.get("enabled", False) and auto_sync_enabled:
+        biz_status = await get_biz_support_sync_status()
+        biz_reference_time = biz_status.get("failed_at") if biz_status.get("status") == "failed" else biz_status.get("last_successful_sync_at")
+        if is_sync_due(biz_reference_time, interval_hours):
+            if start_biz_support_synchronization(shared_service_key):
+                logger.info("[external-data] scheduled BizInfo support sync started (%sh)", interval_hours)
 
 
 async def _run_scheduler() -> None:

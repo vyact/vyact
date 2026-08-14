@@ -1,10 +1,17 @@
 """External public-data connection settings API."""
 
+import asyncio
 import json
 
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from services.external_data.biz_support import (
+    browse_documents as browse_biz_support_documents,
+    get_sync_status as get_biz_support_sync_status,
+    start_synchronization as start_biz_support_synchronization,
+)
 from services.external_data.gov24 import browse_documents, get_sync_status, start_synchronization
 from services.external_data.scheduler import (
     ALLOWED_INTERVAL_HOURS,
@@ -18,11 +25,22 @@ from services.external_data.settings import (
 
 router = APIRouter()
 
-SUPPORTED_SOURCE_IDS = {"kr.gov24"}
+SUPPORTED_SOURCE_IDS = {
+    "kr.gov24",
+    "kr.biz_support",
+    "kr.k_startup",
+    "kr.welfare",
+    "kr.content_support",
+    "kr.scholarship",
+}
 
 
 class ExternalDataConnectionRequest(BaseModel):
     service_key: str
+
+
+class ExternalDataSourceStateRequest(BaseModel):
+    enabled: bool
 
 
 class ExternalDataScheduleRequest(BaseModel):
@@ -30,12 +48,75 @@ class ExternalDataScheduleRequest(BaseModel):
     interval_hours: int
 
 
+async def _wait_for_synchronization(get_status_callback) -> dict:
+    for _ in range(3600):
+        await asyncio.sleep(0.25)
+        status = await get_status_callback()
+        if status.get("status") != "running":
+            return {"status": status.get("status", "completed"), "sync_status": status}
+    raise HTTPException(504, "External data synchronization timed out.")
+
+
+@router.post("/external-data/sync/events")
+async def stream_all_external_data_sync():
+    connections = await load_external_data_connections()
+    service_key = (connections.get("kr.gov24") or {}).get("service_key", "")
+    if not service_key:
+        raise HTTPException(400, "A service key is required.")
+    enabled_sources = []
+    if (connections.get("kr.gov24") or {}).get("enabled", True):
+        enabled_sources.append("kr.gov24")
+    if (connections.get("kr.biz_support") or {}).get("enabled", False):
+        enabled_sources.append("kr.biz_support")
+    if not enabled_sources:
+        raise HTTPException(400, "No synchronized external data source is enabled.")
+
+    async def event_stream():
+        if "kr.gov24" in enabled_sources:
+            start_synchronization(service_key)
+        if "kr.biz_support" in enabled_sources:
+            start_biz_support_synchronization(service_key)
+        previous_payload = ""
+        for _ in range(3600):
+            await asyncio.sleep(0.25)
+            statuses = {}
+            if "kr.gov24" in enabled_sources:
+                statuses["kr.gov24"] = await get_sync_status()
+            if "kr.biz_support" in enabled_sources:
+                statuses["kr.biz_support"] = await get_biz_support_sync_status()
+            source_states = [status.get("status") for status in statuses.values()]
+            all_finished = bool(source_states) and all(
+                state in {"completed", "failed"} for state in source_states
+            )
+            overall_status = "running"
+            if all_finished:
+                overall_status = "failed" if "failed" in source_states else "completed"
+            event = {"status": overall_status, "sources": statuses}
+            payload = json.dumps(event, ensure_ascii=False)
+            if payload != previous_payload:
+                yield f"data: {payload}\n\n"
+                previous_payload = payload
+            if all_finished:
+                return
+        timeout_event = {"status": "failed", "error": "External data synchronization timed out."}
+        yield f"data: {json.dumps(timeout_event)}\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
 @router.get("/external-data/connections")
 async def get_external_data_connections():
     connections = await load_external_data_connections()
     return {
         "connections": {
-            source_id: {"has_service_key": bool(config.get("service_key"))}
+            source_id: {
+                "has_service_key": bool(config.get("service_key")),
+                "enabled": bool(config.get("enabled", source_id == "kr.gov24")),
+            }
             for source_id, config in connections.items()
             if source_id in SUPPORTED_SOURCE_IDS and isinstance(config, dict)
         }
@@ -57,6 +138,23 @@ async def save_external_data_connection(
     connections[source_id] = {**(connections.get(source_id) or {}), "service_key": service_key}
     await save_external_data_connections(connections)
     return {"source_id": source_id, "has_service_key": True}
+
+
+@router.put("/external-data/sources/{source_id}/enabled")
+async def save_external_data_source_state(
+    source_id: str,
+    request: ExternalDataSourceStateRequest,
+):
+    if source_id not in SUPPORTED_SOURCE_IDS:
+        raise HTTPException(404, "Unsupported external data source.")
+    connections = await load_external_data_connections()
+    connections[source_id] = {
+        **(connections.get(source_id) or {}),
+        "enabled": request.enabled,
+    }
+    await save_external_data_connections(connections)
+    request_external_data_schedule_check()
+    return {"source_id": source_id, "enabled": request.enabled}
 
 
 @router.get("/external-data/sources/kr.gov24/sync")
@@ -116,13 +214,21 @@ async def save_gov24_schedule(request: ExternalDataScheduleRequest):
 
 
 @router.post("/external-data/sources/kr.gov24/sync")
-async def start_gov24_sync():
+async def start_gov24_sync(wait: bool = Query(default=False)):
     connections = await load_external_data_connections()
-    service_key = (connections.get("kr.gov24") or {}).get("service_key", "")
+    config = connections.get("kr.gov24") or {}
+    if not config.get("enabled", True):
+        raise HTTPException(400, "The external data source is disabled.")
+    service_key = config.get("service_key", "")
     if not service_key:
         raise HTTPException(400, "A service key is required.")
     if start_synchronization(service_key):
+        if wait:
+            return await _wait_for_synchronization(get_sync_status)
         return {"status": "started"}
+
+    if wait:
+        return await _wait_for_synchronization(get_sync_status)
 
     current_status = await get_sync_status()
     if current_status.get("status") != "running":
@@ -135,4 +241,81 @@ async def start_gov24_sync():
             "current": 0,
             "total": 0,
         }
+    return {"status": "already_running", "sync_status": current_status}
+
+
+@router.post("/external-data/sources/kr.gov24/sync/events")
+async def stream_gov24_sync():
+    connections = await load_external_data_connections()
+    config = connections.get("kr.gov24") or {}
+    if not config.get("enabled", True):
+        raise HTTPException(400, "The external data source is disabled.")
+    service_key = config.get("service_key", "")
+    if not service_key:
+        raise HTTPException(400, "A service key is required.")
+
+    async def event_stream():
+        start_synchronization(service_key)
+        previous_payload = ""
+        for _ in range(3600):
+            await asyncio.sleep(0.25)
+            status = await get_sync_status()
+            payload = json.dumps(status, ensure_ascii=False)
+            if payload != previous_payload:
+                yield f"data: {payload}\n\n"
+                previous_payload = payload
+            if status.get("status") in {"completed", "failed"}:
+                return
+        timeout_status = {"status": "failed", "error": "Government24 synchronization timed out."}
+        yield f"data: {json.dumps(timeout_status)}\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+@router.get("/external-data/sources/kr.biz_support/sync")
+async def get_biz_support_sync():
+    return await get_biz_support_sync_status()
+
+
+@router.get("/external-data/sources/kr.biz_support/documents")
+async def browse_biz_support_data(
+    query: str = Query(default="", max_length=200),
+    cursor: str | None = Query(default=None, max_length=1000),
+):
+    search_after = None
+    if cursor:
+        try:
+            search_after = json.loads(cursor)
+            if not isinstance(search_after, list):
+                raise ValueError
+        except (json.JSONDecodeError, ValueError):
+            raise HTTPException(400, "Invalid pagination cursor.") from None
+    result = await browse_biz_support_documents(query, search_after)
+    if result["next_cursor"] is not None:
+        result["next_cursor"] = json.dumps(result["next_cursor"], ensure_ascii=False)
+    return result
+
+
+@router.post("/external-data/sources/kr.biz_support/sync")
+async def start_biz_support_sync(wait: bool = Query(default=False)):
+    connections = await load_external_data_connections()
+    config = connections.get("kr.biz_support") or {}
+    if not config.get("enabled", False):
+        raise HTTPException(400, "The external data source is disabled.")
+    service_key = (connections.get("kr.gov24") or {}).get("service_key", "")
+    if not service_key:
+        raise HTTPException(400, "A service key is required.")
+    if start_biz_support_synchronization(service_key):
+        if wait:
+            return await _wait_for_synchronization(get_biz_support_sync_status)
+        return {"status": "started"}
+    if wait:
+        return await _wait_for_synchronization(get_biz_support_sync_status)
+    current_status = await get_biz_support_sync_status()
+    if current_status.get("status") != "running":
+        current_status = {**current_status, "status": "running", "stage": "list", "current": 0, "total": 0}
     return {"status": "already_running", "sync_status": current_status}
