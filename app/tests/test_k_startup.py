@@ -5,7 +5,7 @@ from services.external_data.k_startup import (
 )
 
 
-def test_parses_k_startup_response_shape():
+def test_parses_swagger_k_startup_response_shape():
     items, total = _items_and_total({
         "currentCount": 1,
         "data": {"data": [{"pbanc_sn": "A1", "biz_pbanc_nm": "창업 지원"}]},
@@ -14,6 +14,20 @@ def test_parses_k_startup_response_shape():
 
     assert total == 17
     assert items[0]["pbanc_sn"] == "A1"
+
+
+def test_parses_actual_k_startup_response_shape():
+    items, total = _items_and_total({
+        "currentCount": 1,
+        "data": [{"pbanc_sn": 178906, "biz_pbanc_nm": "창업 지원"}],
+        "matchCount": 29789,
+        "page": 1,
+        "perPage": 1000,
+        "totalCount": 29789,
+    })
+
+    assert total == 29789
+    assert items[0]["pbanc_sn"] == 178906
 
 
 def test_normalizes_k_startup_announcement():
@@ -30,6 +44,7 @@ def test_normalizes_k_startup_announcement():
         "biz_prch_dprt_nm": "창업지원실",
         "prch_cnpl_no": "1357",
         "aply_mthd_onli_rcpt_istc": "K-Startup 온라인 신청",
+        "aply_mthd_eml_rcpt_istc": "startup@example.com",
         "detl_pg_url": "https://example.com/detail",
         "biz_aply_url": "https://example.com/apply",
     }, "2026-08-14T00:00:00+00:00")
@@ -38,7 +53,7 @@ def test_normalizes_k_startup_announcement():
     assert document["title"] == "예비창업패키지"
     assert document["target"] == "예비창업자"
     assert document["application_end_date"] == "2026-08-31"
-    assert document["application_method"] == "K-Startup 온라인 신청"
+    assert document["application_method"] == "K-Startup 온라인 신청\nstartup@example.com"
     assert document["application_url"] == "https://example.com/apply"
     assert document["summary"] == "사업화 자금을 지원합니다."
 

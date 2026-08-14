@@ -53,7 +53,12 @@ def _items_and_total(payload: dict) -> tuple[list[dict], int]:
     if error:
         raise ValueError(error.get("returnAuthMsg") or error.get("errMsg") or "K-Startup API 인증에 실패했습니다.")
     data = payload.get("data", {})
-    items = data.get("data", []) if isinstance(data, dict) else []
+    if isinstance(data, list):
+        items = data
+    elif isinstance(data, dict):
+        items = data.get("data", [])
+    else:
+        items = []
     if isinstance(items, dict):
         items = [items]
     if not isinstance(items, list):
@@ -102,6 +107,7 @@ def _announcement_document(item: dict, fetched_at: str) -> dict:
     deadline_kind, application_end_date = normalize_application_deadline(application_deadline)
     application_methods = [
         _value(item, "aply_mthd_onli_rcpt_istc"),
+        _value(item, "aply_mthd_eml_rcpt_istc"),
         _value(item, "aply_mthd_vst_rcpt_istc"),
         _value(item, "aply_mthd_pssr_rcpt_istc"),
         _value(item, "aply_mthd_fax_rcpt_istc"),
