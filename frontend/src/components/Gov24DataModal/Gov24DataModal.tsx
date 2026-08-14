@@ -25,6 +25,7 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose, sourceI
     const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState(false);
     const requestIdRef = useRef(0);
+    const detailScrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const timeoutId = window.setTimeout(() => setDebouncedQuery(searchQuery), 250);
@@ -54,6 +55,10 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose, sourceI
             if (requestId === requestIdRef.current) requestIdRef.current += 1;
         };
     }, [debouncedQuery, isOpen, sourceId]);
+
+    useEffect(() => {
+        if (detailScrollRef.current) detailScrollRef.current.scrollTop = 0;
+    }, [selectedId]);
 
     if (!isOpen) return null;
 
@@ -149,7 +154,7 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose, sourceI
                                 </div>
                                 {sourceId !== 'kr.biz_support' && selectedDocument.summary && <p>{selectedDocument.summary}</p>}
                             </div>
-                            <div className="gov24-browser-detail-scroll">
+                            <div ref={detailScrollRef} className="gov24-browser-detail-scroll">
                                 {(selectedDocument.target || selectedDocument.user_type) && <div className="gov24-browser-info-card">
                                     <Users size={19}/><div><strong>{t('externalData.browser.target')}</strong><p>{[selectedDocument.target, selectedDocument.user_type].filter(Boolean).join(' · ')}</p></div>
                                 </div>}
