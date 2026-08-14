@@ -17,7 +17,9 @@ const DATA_SOURCES = [
 ] as const;
 
 type Gov24SyncStatus = Awaited<ReturnType<typeof api.getGov24SyncStatus>>;
+const GOV24_SYNC_STAGE_NUMBERS: Record<string, number> = {list: 1, detail: 2, conditions: 3, completed: 3};
 const SYNC_INTERVAL_HOURS = [1, 3, 6, 12, 24] as const;
+const UNAVAILABLE_SOURCE_STATUS: Gov24SyncStatus = {status: 'idle'};
 
 const ExternalDataSection: React.FC = () => {
     const {t, i18n} = useTranslation('settings');
@@ -163,13 +165,26 @@ const ExternalDataSection: React.FC = () => {
         </div>
         {country === 'KR' && <div className="external-data-source-list"><div className="external-data-section-title"><span>{t('externalData.kr.title')}</span><span>{t('externalData.sourceCount', {count: DATA_SOURCES.length})}</span></div>
             {DATA_SOURCES.map(source => {
-                const sourceStatus = source.id === 'bizSupport' ? bizSupportSyncStatus : syncStatus;
+                const sourceStatus = source.id === 'gov24'
+                    ? syncStatus
+                    : source.id === 'bizSupport'
+                        ? bizSupportSyncStatus
+                        : UNAVAILABLE_SOURCE_STATUS;
                 const hasCollector = source.id === 'gov24' || source.id === 'bizSupport';
                 const canBrowse = hasCollector && sourceStatus.status !== 'running' && (sourceStatus.document_count || 0) > 0;
                 const canSync = hasCollector && Boolean(enabledSources[source.sourceId]);
                 const sourceLastSync = sourceStatus.last_successful_sync_at ? new Intl.DateTimeFormat(i18n.language, {dateStyle: 'medium', timeStyle: 'short'}).format(new Date(sourceStatus.last_successful_sync_at)) : t('externalData.neverSynced');
                 const startSourceSync = source.id === 'bizSupport' ? startBizSupportSync : startSync;
-                return <article className="external-data-source-card" key={source.id}><div className="external-data-source-summary"><div className="external-data-source-main"><div className="external-data-source-copy"><div className="external-data-source-title-row"><a className="external-data-source-link" href={source.url} target="_blank" rel="noreferrer" aria-label={t('externalData.openSourcePage')}><h5>{t(`externalData.sources.${source.id}.name`)}</h5><ExternalLink size={14}/></a></div><p>{t(`externalData.sources.${source.id}.description`)}</p></div><label className="settings-switch"><input type="checkbox" checked={enabledSources[source.sourceId] ?? false} disabled={savingSourceId === source.sourceId} onChange={event => void toggleSource(source.sourceId, event.target.checked)}/><span className="settings-switch-slider"/></label></div><div className="external-data-source-controls"><div className="external-data-source-state"><strong>{t('externalData.sourceData')}</strong>{hasCollector ? <span>{t('externalData.sourceDataSummary', {count: formatter.format(sourceStatus.document_count || 0), date: sourceLastSync})}</span> : <span>{t('externalData.collectorUnavailable')}</span>}</div><div className="external-data-source-actions"><button type="button" className="external-data-source-browse" disabled={!canBrowse} title={!canBrowse ? t('externalData.browseUnavailable') : undefined} onClick={() => { if (canBrowse) { setBrowseSource({sourceId: source.sourceId, sourceNameKey: source.id}); setShowDataModal(true); } }}><Database size={14}/>{t('externalData.browser.open')}</button><button type="button" className="external-data-source-refresh" disabled={!canSync || sourceStatus.status === 'running'} aria-label={t('externalData.updateSourceData')} title={canSync ? t('externalData.updateSourceData') : t('externalData.collectorUnavailable')} onClick={() => canSync && void startSourceSync()}><RefreshCw className={sourceStatus.status === 'running' ? 'is-spinning' : ''} size={15}/></button></div></div></div></article>;
+                const gov24Progress = sourceStatus.total
+                    ? Math.min(100, Math.round(((sourceStatus.current || 0) / sourceStatus.total) * 100))
+                    : 0;
+                return <article className="external-data-source-card" key={source.id}>
+                    <div className="external-data-source-summary">
+                        <div className="external-data-source-main"><div className="external-data-source-copy"><div className="external-data-source-title-row"><a className="external-data-source-link" href={source.url} target="_blank" rel="noreferrer" aria-label={t('externalData.openSourcePage')}><h5>{t(`externalData.sources.${source.id}.name`)}</h5><ExternalLink size={14}/></a></div><p>{t(`externalData.sources.${source.id}.description`)}</p></div><label className="settings-switch"><input type="checkbox" checked={enabledSources[source.sourceId] ?? false} disabled={savingSourceId === source.sourceId} onChange={event => void toggleSource(source.sourceId, event.target.checked)}/><span className="settings-switch-slider"/></label></div>
+                        <div className="external-data-source-controls"><div className="external-data-source-state"><strong>{t('externalData.sourceData')}</strong>{hasCollector ? <span>{t('externalData.sourceDataSummary', {count: formatter.format(sourceStatus.document_count || 0), date: sourceLastSync})}</span> : <span>{t('externalData.collectorUnavailable')}</span>}</div><div className="external-data-source-actions"><button type="button" className="external-data-source-browse" disabled={!canBrowse} title={!canBrowse ? t('externalData.browseUnavailable') : undefined} onClick={() => { if (canBrowse) { setBrowseSource({sourceId: source.sourceId, sourceNameKey: source.id}); setShowDataModal(true); } }}><Database size={14}/>{t('externalData.browser.open')}</button><button type="button" className="external-data-source-refresh" disabled={!canSync || sourceStatus.status === 'running'} aria-label={t('externalData.updateSourceData')} title={canSync ? t('externalData.updateSourceData') : t('externalData.collectorUnavailable')} onClick={() => canSync && void startSourceSync()}><RefreshCw className={sourceStatus.status === 'running' ? 'is-spinning' : ''} size={15}/></button></div></div>
+                        {source.id === 'gov24' && sourceStatus.status === 'running' && <div className="external-data-sync-progress external-data-source-sync-progress"><div className="external-data-sync-progress-label"><span><strong className="external-data-sync-stage">{GOV24_SYNC_STAGE_NUMBERS[sourceStatus.stage || 'list']} / 3</strong><span className="external-data-sync-stage-label">{t(`externalData.syncStages.${sourceStatus.stage || 'list'}`)}</span></span><span className="external-data-sync-count">{formatter.format(sourceStatus.current || 0)} / {sourceStatus.total ? formatter.format(sourceStatus.total) : '?'}</span></div><div className="external-data-sync-progress-track"><span style={{width: `${gov24Progress}%`}}/></div></div>}
+                    </div>
+                </article>;
             })}
         </div>}
         <Gov24DataModal key={showDataModal ? browseSource.sourceId : 'closed'} isOpen={showDataModal} onClose={() => setShowDataModal(false)} sourceId={browseSource.sourceId} sourceNameKey={browseSource.sourceNameKey}/>
