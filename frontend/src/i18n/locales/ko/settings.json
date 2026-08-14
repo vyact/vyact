@@ -33,7 +33,7 @@
     "syncing": "가져오는 중…",
     "syncStartFailed": "데이터 가져오기를 시작하지 못했습니다.",
     "syncFailed": "데이터를 가져오지 못했습니다. 서비스키와 API 권한을 확인해 주세요.",
-    "syncStages": {"list": "공공서비스 목록 가져오는 중", "detail": "상세정보 가져오는 중", "conditions": "지원조건 가져오는 중", "announcements": "지원사업 공고 가져오는 중", "completed": "저장 완료"},
+    "syncStages": {"list": "공공서비스 목록 가져오는 중", "detail": "상세정보 가져오는 중", "conditions": "지원조건 가져오는 중", "announcements": "지원사업 공고 가져오는 중", "startupAnnouncements": "창업 지원사업 공고 가져오는 중", "startupBusinesses": "창업 지원사업 소개 가져오는 중", "indexing": "검색 데이터 저장 중", "completed": "저장 완료"},
     "title": "외부 데이터",
     "description": "국가별 공공 데이터 소스를 연결하고 Vyact에서 검색할 데이터를 관리합니다.",
     "country": "국가/지역",

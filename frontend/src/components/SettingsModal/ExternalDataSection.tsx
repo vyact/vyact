@@ -18,6 +18,7 @@ const DATA_SOURCES = [
 
 type Gov24SyncStatus = Awaited<ReturnType<typeof api.getGov24SyncStatus>>;
 const GOV24_SYNC_STAGE_NUMBERS: Record<string, number> = {list: 1, detail: 2, conditions: 3, completed: 3};
+const K_STARTUP_SYNC_STAGE_NUMBERS: Record<string, number> = {startupAnnouncements: 1, startupBusinesses: 2, indexing: 3, completed: 3};
 const SYNC_INTERVAL_HOURS = [1, 3, 6, 12, 24] as const;
 const UNAVAILABLE_SOURCE_STATUS: Gov24SyncStatus = {status: 'idle'};
 
@@ -32,6 +33,7 @@ const ExternalDataSection: React.FC = () => {
     const [savingSourceId, setSavingSourceId] = useState<string | null>(null);
     const [syncStatus, setSyncStatus] = useState<Gov24SyncStatus>({status: 'idle'});
     const [bizSupportSyncStatus, setBizSupportSyncStatus] = useState<Gov24SyncStatus>({status: 'idle'});
+    const [kStartupSyncStatus, setKStartupSyncStatus] = useState<Gov24SyncStatus>({status: 'idle'});
     const [isAllSyncing, setIsAllSyncing] = useState(false);
     const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
     const [autoSyncIntervalHours, setAutoSyncIntervalHours] = useState(24);
@@ -49,6 +51,7 @@ const ExternalDataSection: React.FC = () => {
         }).catch(() => undefined);
         api.getGov24SyncStatus().then(setSyncStatus).catch(() => undefined);
         api.getExternalSourceSyncStatus('kr.biz_support').then(setBizSupportSyncStatus).catch(() => undefined);
+        api.getExternalSourceSyncStatus('kr.k_startup').then(setKStartupSyncStatus).catch(() => undefined);
         api.getGov24SyncSchedule().then(schedule => {
             setAutoSyncEnabled(schedule.enabled);
             setAutoSyncIntervalHours(schedule.interval_hours);
@@ -101,14 +104,27 @@ const ExternalDataSection: React.FC = () => {
         }
     };
 
+    const startKStartupSync = async () => {
+        setKStartupSyncStatus(current => ({...current, status: 'running', stage: 'startupAnnouncements', current: 0, total: 0}));
+        try {
+            const finalStatus = await api.streamExternalSourceSync('kr.k_startup', setKStartupSyncStatus);
+            setKStartupSyncStatus(finalStatus);
+        } catch {
+            setKStartupSyncStatus(current => ({...current, status: 'failed'}));
+            toast.error(t('externalData.syncStartFailed'));
+        }
+    };
+
     const startAllSync = async () => {
         setIsAllSyncing(true);
         if (enabledSources['kr.gov24']) setSyncStatus(current => ({...current, status: 'running', stage: 'list', current: 0, total: 0}));
         if (enabledSources['kr.biz_support']) setBizSupportSyncStatus(current => ({...current, status: 'running', stage: 'list', current: 0, total: 0}));
+        if (enabledSources['kr.k_startup']) setKStartupSyncStatus(current => ({...current, status: 'running', stage: 'startupAnnouncements', current: 0, total: 0}));
         try {
             await api.streamAllExternalDataSync(event => {
                 if (event.sources['kr.gov24']) setSyncStatus(event.sources['kr.gov24']);
                 if (event.sources['kr.biz_support']) setBizSupportSyncStatus(event.sources['kr.biz_support']);
+                if (event.sources['kr.k_startup']) setKStartupSyncStatus(event.sources['kr.k_startup']);
             });
         } catch {
             toast.error(t('externalData.syncStartFailed'));
@@ -133,7 +149,7 @@ const ExternalDataSection: React.FC = () => {
     const lastSync = syncStatus.last_successful_sync_at
         ? new Intl.DateTimeFormat(i18n.language, {dateStyle: 'medium', timeStyle: 'short'}).format(new Date(syncStatus.last_successful_sync_at))
         : t('externalData.neverSynced');
-    const supportedEnabledSources = DATA_SOURCES.filter(source => (source.id === 'gov24' || source.id === 'bizSupport') && enabledSources[source.sourceId]);
+    const supportedEnabledSources = DATA_SOURCES.filter(source => (source.id === 'gov24' || source.id === 'bizSupport' || source.id === 'kStartup') && enabledSources[source.sourceId]);
     const intervalOptions = SYNC_INTERVAL_HOURS.map(hours => ({value: String(hours), label: t('externalData.autoSyncIntervalOption', {count: hours})}));
     const countryOptions = [{value: 'KR', label: `🇰🇷 ${t('externalData.countryKr')}`}];
 
@@ -150,13 +166,13 @@ const ExternalDataSection: React.FC = () => {
                 <div className="external-data-key-input-row"><div className="external-data-key-input-wrap"><input id="public-data-service-key" type={showServiceKey ? 'text' : 'password'} value={serviceKey} placeholder={hasServiceKey ? t('externalData.serviceKeySavedPlaceholder') : t('externalData.serviceKeyPlaceholder')} autoComplete="off" onChange={event => setServiceKey(event.target.value)}/><button type="button" onClick={() => setShowServiceKey(value => !value)} aria-label={t(showServiceKey ? 'externalData.hideServiceKey' : 'externalData.showServiceKey')}>{showServiceKey ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div><button type="button" className="external-data-save-key" disabled={!serviceKey.trim() || savingKey} onClick={saveServiceKey}>{savingKey ? t('externalData.saving') : t('externalData.saveServiceKey')}</button></div>
             </div>
             {hasServiceKey && <div className="external-data-sync-panel">
-                <div className="external-data-sync-row"><div className="external-data-sync-info"><strong>{t('externalData.syncAllData')}</strong><span className="external-data-sync-description">{t('externalData.syncAllDescription', {count: supportedEnabledSources.length})}</span><div className="external-data-sync-meta"><span>{t('externalData.lastUpdated', {date: lastSync})}</span><span>{t('externalData.documentCount', {count: formatter.format((syncStatus.document_count || 0) + (bizSupportSyncStatus.document_count || 0))})}</span></div></div><div className="external-data-sync-actions"><button type="button" className="external-data-sync-refresh" onClick={() => void startAllSync()} disabled={isAllSyncing || supportedEnabledSources.length === 0} aria-label={t('externalData.updateAllData')} title={t('externalData.updateAllData')}><RefreshCw className={isAllSyncing ? 'is-spinning' : ''} size={16}/></button></div></div>
+                <div className="external-data-sync-row"><div className="external-data-sync-info"><strong>{t('externalData.syncAllData')}</strong><span className="external-data-sync-description">{t('externalData.syncAllDescription', {count: supportedEnabledSources.length})}</span><div className="external-data-sync-meta"><span>{t('externalData.lastUpdated', {date: lastSync})}</span><span>{t('externalData.documentCount', {count: formatter.format((syncStatus.document_count || 0) + (bizSupportSyncStatus.document_count || 0) + (kStartupSyncStatus.document_count || 0))})}</span></div></div><div className="external-data-sync-actions"><button type="button" className="external-data-sync-refresh" onClick={() => void startAllSync()} disabled={isAllSyncing || supportedEnabledSources.length === 0} aria-label={t('externalData.updateAllData')} title={t('externalData.updateAllData')}><RefreshCw className={isAllSyncing ? 'is-spinning' : ''} size={16}/></button></div></div>
                 {isAllSyncing && <div className="external-data-overall-progress">{supportedEnabledSources.map(source => {
-                    const status = source.id === 'gov24' ? syncStatus : bizSupportSyncStatus;
+                    const status = source.id === 'gov24' ? syncStatus : source.id === 'bizSupport' ? bizSupportSyncStatus : kStartupSyncStatus;
                     const current = status.current || 0;
                     const total = status.total || 0;
                     const percent = total ? Math.min(100, Math.round((current / total) * 100)) : 0;
-                    const stageKey = source.id === 'gov24' ? (status.stage || 'list') : (status.status === 'completed' ? 'completed' : 'announcements');
+                    const stageKey = source.id === 'gov24' ? (status.stage || 'list') : source.id === 'kStartup' ? (status.stage || 'startupAnnouncements') : (status.status === 'completed' ? 'completed' : 'announcements');
                     const statusLabel = status.status === 'failed' ? t('externalData.syncFailed') : t(`externalData.syncStages.${stageKey}`);
                     return <div className={`external-data-service-progress is-${status.status}`} key={source.sourceId}><div className="external-data-service-progress-header"><strong>{t(`externalData.sources.${source.id}.name`)}</strong><span>{statusLabel}</span><span className="external-data-sync-count">{formatter.format(current)} / {total ? formatter.format(total) : '?'}</span></div><div className="external-data-sync-progress-track"><span style={{width: `${percent}%`}}/></div></div>;
                 })}</div>}
@@ -169,20 +185,22 @@ const ExternalDataSection: React.FC = () => {
                     ? syncStatus
                     : source.id === 'bizSupport'
                         ? bizSupportSyncStatus
-                        : UNAVAILABLE_SOURCE_STATUS;
-                const hasCollector = source.id === 'gov24' || source.id === 'bizSupport';
+                        : source.id === 'kStartup'
+                            ? kStartupSyncStatus
+                            : UNAVAILABLE_SOURCE_STATUS;
+                const hasCollector = source.id === 'gov24' || source.id === 'bizSupport' || source.id === 'kStartup';
                 const canBrowse = hasCollector && sourceStatus.status !== 'running' && (sourceStatus.document_count || 0) > 0;
                 const canSync = hasCollector && Boolean(enabledSources[source.sourceId]);
                 const sourceLastSync = sourceStatus.last_successful_sync_at ? new Intl.DateTimeFormat(i18n.language, {dateStyle: 'medium', timeStyle: 'short'}).format(new Date(sourceStatus.last_successful_sync_at)) : t('externalData.neverSynced');
-                const startSourceSync = source.id === 'bizSupport' ? startBizSupportSync : startSync;
-                const gov24Progress = sourceStatus.total
+                const startSourceSync = source.id === 'bizSupport' ? startBizSupportSync : source.id === 'kStartup' ? startKStartupSync : startSync;
+                const sourceProgress = sourceStatus.total
                     ? Math.min(100, Math.round(((sourceStatus.current || 0) / sourceStatus.total) * 100))
                     : 0;
                 return <article className="external-data-source-card" key={source.id}>
                     <div className="external-data-source-summary">
                         <div className="external-data-source-main"><div className="external-data-source-copy"><div className="external-data-source-title-row"><a className="external-data-source-link" href={source.url} target="_blank" rel="noreferrer" aria-label={t('externalData.openSourcePage')}><h5>{t(`externalData.sources.${source.id}.name`)}</h5><ExternalLink size={14}/></a></div><p>{t(`externalData.sources.${source.id}.description`)}</p></div><label className="settings-switch"><input type="checkbox" checked={enabledSources[source.sourceId] ?? false} disabled={savingSourceId === source.sourceId} onChange={event => void toggleSource(source.sourceId, event.target.checked)}/><span className="settings-switch-slider"/></label></div>
                         <div className="external-data-source-controls"><div className="external-data-source-state"><strong>{t('externalData.sourceData')}</strong>{hasCollector ? <span>{t('externalData.sourceDataSummary', {count: formatter.format(sourceStatus.document_count || 0), date: sourceLastSync})}</span> : <span>{t('externalData.collectorUnavailable')}</span>}</div><div className="external-data-source-actions"><button type="button" className="external-data-source-browse" disabled={!canBrowse} title={!canBrowse ? t('externalData.browseUnavailable') : undefined} onClick={() => { if (canBrowse) { setBrowseSource({sourceId: source.sourceId, sourceNameKey: source.id}); setShowDataModal(true); } }}><Database size={14}/>{t('externalData.browser.open')}</button><button type="button" className="external-data-source-refresh" disabled={!canSync || sourceStatus.status === 'running'} aria-label={t('externalData.updateSourceData')} title={canSync ? t('externalData.updateSourceData') : t('externalData.collectorUnavailable')} onClick={() => canSync && void startSourceSync()}><RefreshCw className={sourceStatus.status === 'running' ? 'is-spinning' : ''} size={15}/></button></div></div>
-                        {source.id === 'gov24' && sourceStatus.status === 'running' && <div className="external-data-sync-progress external-data-source-sync-progress"><div className="external-data-sync-progress-label"><span><strong className="external-data-sync-stage">{GOV24_SYNC_STAGE_NUMBERS[sourceStatus.stage || 'list']} / 3</strong><span className="external-data-sync-stage-label">{t(`externalData.syncStages.${sourceStatus.stage || 'list'}`)}</span></span><span className="external-data-sync-count">{formatter.format(sourceStatus.current || 0)} / {sourceStatus.total ? formatter.format(sourceStatus.total) : '?'}</span></div><div className="external-data-sync-progress-track"><span style={{width: `${gov24Progress}%`}}/></div></div>}
+                        {(source.id === 'gov24' || source.id === 'kStartup') && sourceStatus.status === 'running' && <div className="external-data-sync-progress external-data-source-sync-progress"><div className="external-data-sync-progress-label"><span><strong className="external-data-sync-stage">{(source.id === 'gov24' ? GOV24_SYNC_STAGE_NUMBERS : K_STARTUP_SYNC_STAGE_NUMBERS)[sourceStatus.stage || (source.id === 'gov24' ? 'list' : 'startupAnnouncements')]} / 3</strong><span className="external-data-sync-stage-label">{t(`externalData.syncStages.${sourceStatus.stage || (source.id === 'gov24' ? 'list' : 'startupAnnouncements')}`)}</span></span><span className="external-data-sync-count">{formatter.format(sourceStatus.current || 0)} / {sourceStatus.total ? formatter.format(sourceStatus.total) : '?'}</span></div><div className="external-data-sync-progress-track"><span style={{width: `${sourceProgress}%`}}/></div></div>}
                     </div>
                 </article>;
             })}

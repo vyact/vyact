@@ -46,6 +46,7 @@ from routers.images import ImageGenerateRequest, generate_image
 from logger import get_logger
 from services.external_data.biz_support import SOURCE_ID as BIZ_SUPPORT_SOURCE_ID, search_candidates as search_biz_support_candidates
 from services.external_data.gov24 import SOURCE_ID as GOV24_SOURCE_ID, search_candidates as search_gov24_candidates
+from services.external_data.k_startup import SOURCE_ID as K_STARTUP_SOURCE_ID, search_candidates as search_k_startup_candidates
 
 logger = get_logger(__name__)
 
@@ -78,7 +79,7 @@ as needing confirmation. Answer in the user's language.
 
 async def _get_selected_external_context(question: str, resource_ids: list[str]) -> tuple[list[dict], str]:
     selected_ids = set(resource_ids)
-    if not selected_ids.intersection({GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID}):
+    if not selected_ids.intersection({GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID}):
         return [], ""
     candidates = []
     if GOV24_SOURCE_ID in selected_ids:
@@ -91,6 +92,11 @@ async def _get_selected_external_context(question: str, resource_ids: list[str])
             candidates.extend(await search_biz_support_candidates(question))
         except Exception as exc:
             logger.warning("[external_data] BizInfo candidate search failed: %s", exc)
+    if K_STARTUP_SOURCE_ID in selected_ids:
+        try:
+            candidates.extend(await search_k_startup_candidates(question))
+        except Exception as exc:
+            logger.warning("[external_data] K-Startup candidate search failed: %s", exc)
     return candidates, EXTERNAL_DATA_INSTRUCTION
 
 
@@ -431,7 +437,7 @@ async def query(req: QueryRequest):
         external_docs, external_instruction = await _get_selected_external_context(
             req.question, req.external_resource_ids,
         )
-        external_selected = bool({GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID}.intersection(req.external_resource_ids))
+        external_selected = bool({GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID}.intersection(req.external_resource_ids))
         # URL 크롤링
         all_urls = [u.rstrip('.') for u in URL_RE.findall(req.question)]
         urls = _should_crawl_urls(req.question, all_urls) if has_plugin_url_resolvers() else []
@@ -723,7 +729,7 @@ async def query_stream(req: QueryRequest):
                 has_file_attachment = any(
                     a.get("type") in ("file", "zip") for a in req.attachments
                 )
-                external_selected = bool({GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID}.intersection(req.external_resource_ids))
+                external_selected = bool({GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID}.intersection(req.external_resource_ids))
                 external_docs, external_instruction = await _get_selected_external_context(
                     clean_question, req.external_resource_ids,
                 )

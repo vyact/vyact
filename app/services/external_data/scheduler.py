@@ -9,6 +9,10 @@ from services.external_data.biz_support import (
     start_synchronization as start_biz_support_synchronization,
 )
 from services.external_data.gov24 import get_sync_status, start_synchronization
+from services.external_data.k_startup import (
+    get_sync_status as get_k_startup_sync_status,
+    start_synchronization as start_k_startup_synchronization,
+)
 from services.external_data.settings import load_external_data_connections
 
 logger = get_logger(__name__)
@@ -70,6 +74,14 @@ async def _run_due_synchronizations() -> None:
         if is_sync_due(biz_reference_time, interval_hours):
             if start_biz_support_synchronization(shared_service_key):
                 logger.info("[external-data] scheduled BizInfo support sync started (%sh)", interval_hours)
+
+    k_startup = connections.get("kr.k_startup") or {}
+    if shared_service_key and k_startup.get("enabled", False) and auto_sync_enabled:
+        k_startup_status = await get_k_startup_sync_status()
+        k_startup_reference_time = k_startup_status.get("failed_at") if k_startup_status.get("status") == "failed" else k_startup_status.get("last_successful_sync_at")
+        if is_sync_due(k_startup_reference_time, interval_hours):
+            if start_k_startup_synchronization(shared_service_key):
+                logger.info("[external-data] scheduled K-Startup sync started (%sh)", interval_hours)
 
 
 async def _run_scheduler() -> None:

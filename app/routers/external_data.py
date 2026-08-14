@@ -13,6 +13,11 @@ from services.external_data.biz_support import (
     start_synchronization as start_biz_support_synchronization,
 )
 from services.external_data.gov24 import browse_documents, get_sync_status, start_synchronization
+from services.external_data.k_startup import (
+    browse_documents as browse_k_startup_documents,
+    get_sync_status as get_k_startup_sync_status,
+    start_synchronization as start_k_startup_synchronization,
+)
 from services.external_data.scheduler import (
     ALLOWED_INTERVAL_HOURS,
     DEFAULT_INTERVAL_HOURS,
@@ -68,6 +73,8 @@ async def stream_all_external_data_sync():
         enabled_sources.append("kr.gov24")
     if (connections.get("kr.biz_support") or {}).get("enabled", False):
         enabled_sources.append("kr.biz_support")
+    if (connections.get("kr.k_startup") or {}).get("enabled", False):
+        enabled_sources.append("kr.k_startup")
     if not enabled_sources:
         raise HTTPException(400, "No synchronized external data source is enabled.")
 
@@ -76,6 +83,8 @@ async def stream_all_external_data_sync():
             start_synchronization(service_key)
         if "kr.biz_support" in enabled_sources:
             start_biz_support_synchronization(service_key)
+        if "kr.k_startup" in enabled_sources:
+            start_k_startup_synchronization(service_key)
         previous_payload = ""
         for _ in range(3600):
             await asyncio.sleep(0.25)
@@ -84,6 +93,8 @@ async def stream_all_external_data_sync():
                 statuses["kr.gov24"] = await get_sync_status()
             if "kr.biz_support" in enabled_sources:
                 statuses["kr.biz_support"] = await get_biz_support_sync_status()
+            if "kr.k_startup" in enabled_sources:
+                statuses["kr.k_startup"] = await get_k_startup_sync_status()
             source_states = [status.get("status") for status in statuses.values()]
             all_finished = bool(source_states) and all(
                 state in {"completed", "failed"} for state in source_states
@@ -319,3 +330,80 @@ async def start_biz_support_sync(wait: bool = Query(default=False)):
     if current_status.get("status") != "running":
         current_status = {**current_status, "status": "running", "stage": "list", "current": 0, "total": 0}
     return {"status": "already_running", "sync_status": current_status}
+
+
+@router.get("/external-data/sources/kr.k_startup/sync")
+async def get_k_startup_sync():
+    return await get_k_startup_sync_status()
+
+
+@router.get("/external-data/sources/kr.k_startup/documents")
+async def browse_k_startup_data(
+    query: str = Query(default="", max_length=200),
+    cursor: str | None = Query(default=None, max_length=1000),
+):
+    search_after = None
+    if cursor:
+        try:
+            search_after = json.loads(cursor)
+            if not isinstance(search_after, list):
+                raise ValueError
+        except (json.JSONDecodeError, ValueError):
+            raise HTTPException(400, "Invalid pagination cursor.") from None
+    result = await browse_k_startup_documents(query, search_after)
+    if result["next_cursor"] is not None:
+        result["next_cursor"] = json.dumps(result["next_cursor"], ensure_ascii=False)
+    return result
+
+
+@router.post("/external-data/sources/kr.k_startup/sync")
+async def start_k_startup_sync(wait: bool = Query(default=False)):
+    connections = await load_external_data_connections()
+    config = connections.get("kr.k_startup") or {}
+    if not config.get("enabled", False):
+        raise HTTPException(400, "The external data source is disabled.")
+    service_key = (connections.get("kr.gov24") or {}).get("service_key", "")
+    if not service_key:
+        raise HTTPException(400, "A service key is required.")
+    if start_k_startup_synchronization(service_key):
+        if wait:
+            return await _wait_for_synchronization(get_k_startup_sync_status)
+        return {"status": "started"}
+    if wait:
+        return await _wait_for_synchronization(get_k_startup_sync_status)
+    current_status = await get_k_startup_sync_status()
+    if current_status.get("status") != "running":
+        current_status = {**current_status, "status": "running", "stage": "startupAnnouncements", "current": 0, "total": 0}
+    return {"status": "already_running", "sync_status": current_status}
+
+
+@router.post("/external-data/sources/kr.k_startup/sync/events")
+async def stream_k_startup_sync():
+    connections = await load_external_data_connections()
+    config = connections.get("kr.k_startup") or {}
+    if not config.get("enabled", False):
+        raise HTTPException(400, "The external data source is disabled.")
+    service_key = (connections.get("kr.gov24") or {}).get("service_key", "")
+    if not service_key:
+        raise HTTPException(400, "A service key is required.")
+
+    async def event_stream():
+        start_k_startup_synchronization(service_key)
+        previous_payload = ""
+        for _ in range(3600):
+            await asyncio.sleep(0.25)
+            status = await get_k_startup_sync_status()
+            payload = json.dumps(status, ensure_ascii=False)
+            if payload != previous_payload:
+                yield f"data: {payload}\n\n"
+                previous_payload = payload
+            if status.get("status") in {"completed", "failed"}:
+                return
+        timeout_status = {"status": "failed", "error": "K-Startup synchronization timed out."}
+        yield f"data: {json.dumps(timeout_status)}\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )

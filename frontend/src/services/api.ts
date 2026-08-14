@@ -124,7 +124,7 @@ interface ApiSuccessResponse {
 
 export interface Gov24SyncStatusResponse {
     status: 'idle' | 'running' | 'completed' | 'failed';
-    stage?: 'list' | 'detail' | 'conditions' | 'completed';
+    stage?: 'list' | 'detail' | 'conditions' | 'announcements' | 'startupAnnouncements' | 'startupBusinesses' | 'indexing' | 'completed';
     current?: number;
     total?: number;
     document_count?: number;
@@ -137,6 +137,32 @@ export interface ExternalDataSyncEvent {
     sources: Record<string, Gov24SyncStatusResponse>;
     error?: string;
 }
+
+const streamSyncStatus = async (
+    url: string,
+    onStatus: (status: Gov24SyncStatusResponse) => void,
+): Promise<Gov24SyncStatusResponse> => {
+    const res = await fetch(url, {method: 'POST', headers: {'Accept': 'text/event-stream'}});
+    if (!res.ok) throw new Error(await res.text());
+    if (!res.body) throw new Error('Synchronization stream is unavailable.');
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let latestStatus: Gov24SyncStatusResponse = {status: 'running'};
+    while (true) {
+        const {done, value} = await reader.read();
+        buffer += decoder.decode(value || new Uint8Array(), {stream: !done});
+        const messages = buffer.split('\n\n');
+        buffer = messages.pop() || '';
+        for (const message of messages) {
+            const dataLine = message.split('\n').find(line => line.startsWith('data: '));
+            if (!dataLine) continue;
+            latestStatus = JSON.parse(dataLine.slice(6)) as Gov24SyncStatusResponse;
+            onStatus(latestStatus);
+        }
+        if (done) return latestStatus;
+    }
+};
 
 export interface Gov24Document {
     id: string;
@@ -930,30 +956,7 @@ export const api = {
     },
 
     async streamGov24Sync(onStatus: (status: Gov24SyncStatusResponse) => void): Promise<Gov24SyncStatusResponse> {
-        const res = await fetch(`${API_BASE}/external-data/sources/kr.gov24/sync/events`, {
-            method: 'POST',
-            headers: {'Accept': 'text/event-stream'},
-        });
-        if (!res.ok) throw new Error(await res.text());
-        if (!res.body) throw new Error('Synchronization stream is unavailable.');
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-        let latestStatus: Gov24SyncStatusResponse = {status: 'running'};
-        while (true) {
-            const {done, value} = await reader.read();
-            buffer += decoder.decode(value || new Uint8Array(), {stream: !done});
-            const messages = buffer.split('\n\n');
-            buffer = messages.pop() || '';
-            for (const message of messages) {
-                const dataLine = message.split('\n').find(line => line.startsWith('data: '));
-                if (!dataLine) continue;
-                latestStatus = JSON.parse(dataLine.slice(6)) as Gov24SyncStatusResponse;
-                onStatus(latestStatus);
-            }
-            if (done) break;
-        }
-        return latestStatus;
+        return streamSyncStatus(`${API_BASE}/external-data/sources/kr.gov24/sync/events`, onStatus);
     },
 
     async streamAllExternalDataSync(onStatus: (status: ExternalDataSyncEvent) => void): Promise<ExternalDataSyncEvent> {
@@ -1006,6 +1009,10 @@ export const api = {
         const res = await fetch(`${API_BASE}/external-data/sources/${encodeURIComponent(sourceId)}/sync?wait=true`, {method: 'POST'});
         if (!res.ok) throw new Error(await res.text());
         return res.json();
+    },
+
+    async streamExternalSourceSync(sourceId: string, onStatus: (status: Gov24SyncStatusResponse) => void): Promise<Gov24SyncStatusResponse> {
+        return streamSyncStatus(`${API_BASE}/external-data/sources/${encodeURIComponent(sourceId)}/sync/events`, onStatus);
     },
 
     async getExternalSourceDocuments(sourceId: string, query = '', cursor?: string): Promise<Gov24DocumentsResponse> {
