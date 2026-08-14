@@ -133,7 +133,7 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose, sourceI
                                         <span><CalendarClock size={15}/>{formatModifiedAt(selectedDocument.source_modified_at)}</span>
                                     </div>
                                 </div>
-                                {selectedDocument.summary && <p>{selectedDocument.summary}</p>}
+                                {sourceId !== 'kr.biz_support' && selectedDocument.summary && <p>{selectedDocument.summary}</p>}
                             </div>
                             <div className="gov24-browser-detail-scroll">
                                 {(selectedDocument.target || selectedDocument.user_type) && <div className="gov24-browser-info-card">

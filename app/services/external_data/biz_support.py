@@ -285,9 +285,30 @@ async def browse_documents(query: str = "", search_after: list | None = None) ->
         if not await es.indices.exists(index=INDEX_NAME):
             return {"items": [], "total": 0, "next_cursor": None}
         search_query: dict = {"match_all": {}}
+        sort: list[dict | str] = [
+            {"source_modified_at": {"order": "desc", "missing": "_last"}},
+            {"external_id": "asc"},
+        ]
         if query.strip():
-            search_query = {"multi_match": {"query": query.strip(), "fields": ["title^4", "agency^2", "target", "category", "content_text"]}}
-        request: dict = {"index": INDEX_NAME, "size": BROWSE_PAGE_SIZE, "track_total_hits": True, "query": search_query, "sort": [{"source_modified_at": {"order": "desc", "missing": "_last"}}, {"external_id": "asc"}]}
+            search_query = {
+                "bool": {
+                    "should": [
+                        {"match_phrase": {"title": {"query": query.strip(), "boost": 20}}},
+                        {"multi_match": {
+                            "query": query.strip(),
+                            "fields": ["title^6", "agency^2", "target^2", "category^2", "content_text"],
+                            "operator": "and",
+                        }},
+                    ],
+                    "minimum_should_match": 1,
+                },
+            }
+            sort = [
+                {"_score": "desc"},
+                {"source_modified_at": {"order": "desc", "missing": "_last"}},
+                {"external_id": "asc"},
+            ]
+        request: dict = {"index": INDEX_NAME, "size": BROWSE_PAGE_SIZE, "track_total_hits": True, "query": search_query, "sort": sort}
         if search_after:
             request["search_after"] = search_after
         result = await es.search(**request)

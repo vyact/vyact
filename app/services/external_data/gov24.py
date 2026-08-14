@@ -169,34 +169,43 @@ async def search_candidates(question: str, size: int = QUERY_CANDIDATE_SIZE) -> 
 
 
 async def browse_documents(query: str = "", search_after: list | None = None) -> dict:
-    """Return a stable, cursor-paginated view ordered by source modification time."""
+    """Return cursor-paginated documents ordered by relevance or modification time."""
     es = get_es()
     try:
         if not await es.indices.exists(index=INDEX_NAME):
             return {"items": [], "total": 0, "next_cursor": None}
         search_query: dict = {"term": {"lifecycle_status": "active"}}
+        sort: list[dict] = [
+            {"source_modified_at": {"order": "desc", "missing": "_last"}},
+            {"external_id": {"order": "asc"}},
+        ]
         if query.strip():
             search_query = {
                 "bool": {
                     "filter": [{"term": {"lifecycle_status": "active"}}],
-                    "must": [{
-                        "multi_match": {
+                    "should": [
+                        {"match_phrase": {"title": {"query": query.strip(), "boost": 20}}},
+                        {"multi_match": {
                             "query": query.strip(),
-                            "fields": ["title^4", "agency^2", "target", "content_text"],
+                            "fields": ["title^6", "agency^2", "target^2", "content_text"],
                             "type": "best_fields",
-                        },
-                    }],
+                            "operator": "and",
+                        }},
+                    ],
+                    "minimum_should_match": 1,
                 },
             }
+            sort = [
+                {"_score": {"order": "desc"}},
+                {"source_modified_at": {"order": "desc", "missing": "_last"}},
+                {"external_id": {"order": "asc"}},
+            ]
         request: dict = {
             "index": INDEX_NAME,
             "size": BROWSE_PAGE_SIZE,
             "track_total_hits": True,
             "query": search_query,
-            "sort": [
-                {"source_modified_at": {"order": "desc", "missing": "_last"}},
-                {"external_id": {"order": "asc"}},
-            ],
+            "sort": sort,
             "source_includes": [
                 "external_id", "title", "agency", "target", "category", "user_type",
                 "support_type", "application_deadline", "source_url", "source_modified_at",
