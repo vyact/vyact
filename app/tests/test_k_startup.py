@@ -58,6 +58,17 @@ def test_normalizes_k_startup_announcement():
     assert document["summary"] == "사업화 자금을 지원합니다."
 
 
+def test_decodes_html_entities_in_k_startup_fields():
+    document = _announcement_document({
+        "pbanc_sn": "A2",
+        "biz_pbanc_nm": "기술개발(R&amp;D) 지원 &#40;추가&#41;",
+        "supt_biz_clsfc": "기술개발(R&amp;D)",
+    }, "2026-08-14T00:00:00+00:00")
+
+    assert document["title"] == "기술개발(R&D) 지원 (추가)"
+    assert document["category"] == "기술개발(R&D)"
+
+
 def test_normalizes_k_startup_business_information():
     document = _business_document({
         "biz_yr": 2026,

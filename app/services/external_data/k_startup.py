@@ -33,7 +33,7 @@ def _utc_now() -> str:
 
 def _value(item: dict, key: str) -> str:
     value = item.get(key)
-    return "" if value in (None, "") else str(value).strip()
+    return "" if value in (None, "") else html.unescape(str(value)).strip()
 
 
 def _plain_text(value: str) -> str:
