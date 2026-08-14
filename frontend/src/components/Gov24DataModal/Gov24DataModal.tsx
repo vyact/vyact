@@ -95,7 +95,21 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose, sourceI
                 <div className="gov24-browser-toolbar">
                     <label className="gov24-browser-search">
                         <Search size={17}/>
-                        <input value={searchQuery} onChange={event => setSearchQuery(event.target.value)} placeholder={t('externalData.browser.searchPlaceholder')} autoFocus/>
+                        <input
+                            value={searchQuery}
+                            onChange={event => setSearchQuery(event.target.value)}
+                            onKeyDown={event => {
+                                if (event.key !== 'Escape') return;
+                                event.preventDefault();
+                                event.stopPropagation();
+                                event.nativeEvent.stopImmediatePropagation();
+                                // 현재 keydown 전파가 완전히 끝난 뒤 자식 모달을 제거해야
+                                // 같은 Escape가 부모 설정 모달의 닫기로 이어지지 않는다.
+                                window.setTimeout(onClose, 0);
+                            }}
+                            placeholder={t('externalData.browser.searchPlaceholder')}
+                            autoFocus
+                        />
                         {searchQuery && <button type="button" onClick={() => setSearchQuery('')} aria-label={t('externalData.browser.clearSearch')}><X size={15}/></button>}
                     </label>
                     <span>{t('externalData.browser.resultCount', {count: numberFormatter.format(total)})}</span>

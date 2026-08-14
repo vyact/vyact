@@ -395,6 +395,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
         if (!isOpen) return;
         const h = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
+                const eventOverlay = e.target instanceof Element
+                    ? e.target.closest('.app-modal-overlay')
+                    : null;
+                if (eventOverlay && !eventOverlay.classList.contains('settings-overlay')) return;
+                // 설정 내부의 데이터 보기 등 자식 모달이 열려 있으면 자식만 ESC를 처리한다.
+                if (document.querySelector('.settings-overlay .app-modal-overlay')) return;
                 const topmostOverlay = getTopmostModalOverlay();
                 // 설정 위에 자식 모달이 열려 있으면 해당 모달이 ESC를 처리한다.
                 if (!topmostOverlay?.classList.contains('settings-overlay')) return;
