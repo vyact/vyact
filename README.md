@@ -7,8 +7,6 @@
 
   **Turn your files, notes, email, and everyday tools into useful AI context—without leaving your workflow.**
 
-  [한국어](README.ko.md) · **English**
-
   [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-7c3aed.svg?style=flat-square)](LICENSE)
   [![Built with FastAPI](https://img.shields.io/badge/backend-FastAPI-009688.svg?style=flat-square)](https://fastapi.tiangolo.com/)
   [![Built with React](https://img.shields.io/badge/frontend-React-61dafb.svg?style=flat-square)](frontend)
