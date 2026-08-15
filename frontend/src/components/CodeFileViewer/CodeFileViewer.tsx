@@ -6,6 +6,9 @@ export interface CodeFile {
     name: string;
     lang: string;
     code: string;
+    mode?: 'code' | 'diff';
+    additions?: number;
+    deletions?: number;
 }
 
 interface CodeFileViewerProps {

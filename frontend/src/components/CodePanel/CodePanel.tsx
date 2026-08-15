@@ -50,6 +50,7 @@ const CodePanel: React.FC<{ style?: React.CSSProperties }> = ({ style }) => {
 
     const lines = useMemo(() => {
         if (!activeFile) return [];
+        if (activeFile.mode === 'diff') return activeFile.code.trimEnd().split('\n');
         return highlightCode(activeFile.code, activeFile.lang);
     }, [activeFile]);
 
@@ -97,7 +98,10 @@ const CodePanel: React.FC<{ style?: React.CSSProperties }> = ({ style }) => {
                     <span className={`cp-file-icon cp-file-icon--${fileAccent}`} aria-hidden="true">&lt;/&gt;</span>
                     <div className="cp-file-details">
                         <span className="cp-title">{activeFile.name}</span>
-                        <span className="cp-meta">{extLabel} <i /> {lineCount} lines</span>
+                        <span className="cp-meta">
+                            {activeFile.mode === 'diff' ? 'DIFF' : extLabel} <i />
+                            {activeFile.mode === 'diff' ? <><b>+{activeFile.additions ?? 0}</b><em>-{activeFile.deletions ?? 0}</em></> : `${lineCount} lines`}
+                        </span>
                     </div>
                 </div>
                 <div className="cp-actions">
@@ -170,12 +174,14 @@ const CodePanel: React.FC<{ style?: React.CSSProperties }> = ({ style }) => {
 
             {/* 코드 영역 */}
             <div className="cp-code">
-                <pre className="cp-pre hljs">
+                <pre className={`cp-pre hljs${activeFile.mode === 'diff' ? ' cp-pre--diff' : ''}`}>
                     <code>
                         {lines.map((line, i) => (
-                            <span key={i} className="cp-line">
+                            <span key={i} className={`cp-line${activeFile.mode === 'diff' ? line.startsWith('+') && !line.startsWith('+++') ? ' cp-line--added' : line.startsWith('-') && !line.startsWith('---') ? ' cp-line--deleted' : line.startsWith('@@') ? ' cp-line--hunk' : line.startsWith('+++') || line.startsWith('---') ? ' cp-line--file' : '' : ''}`}>
                                 <span className="cp-lineno" aria-hidden="true">{i + 1}</span>
-                                <span dangerouslySetInnerHTML={{ __html: line || ' ' }} />
+                                {activeFile.mode === 'diff'
+                                    ? <span>{line || ' '}</span>
+                                    : <span dangerouslySetInnerHTML={{ __html: line || ' ' }} />}
                             </span>
                         ))}
                     </code>
