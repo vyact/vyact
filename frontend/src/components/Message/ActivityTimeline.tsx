@@ -1,8 +1,8 @@
 import {useState} from 'react';
-import {ChevronDown, ChevronRight, CircleCheck} from 'lucide-react';
+import {ChevronDown, ChevronRight, CircleCheck, CircleX} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import type {ToolActivity} from '../../types';
-import {getToolActivityDisplayLabel} from '../../utils/toolActivity';
+import {getStoredToolActivityDetail, getToolActivityDisplayLabel} from '../../utils/toolActivity';
 
 interface ActivityTimelineProps {
     activities: ToolActivity[];
@@ -61,12 +61,19 @@ const ActivityTimeline = ({
             {isExpanded && <ol className="msg-activity-list">
                 {taskActivities.map((activity, index) => {
                     const activitySeconds = formatActivitySeconds(activity);
+                    const displayDetail = getStoredToolActivityDetail(activity.detail);
                     return <li key={activity.id ?? index} className={activity.phase}>
-                        {activity.phase === 'completed'
+                        {activity.outcome === 'failed'
+                            ? <CircleX className="msg-activity-failed" size={12}/>
+                            : activity.phase === 'completed'
                             ? <CircleCheck className="msg-activity-check" size={12}/>
                             : <span className="msg-activity-dot"/>}
-                        <span>{getToolActivityDisplayLabel(activity.name, activity.label, t)}</span>
-                        {activity.detail && <code>{activity.detail}</code>}
+                        <span className="msg-activity-content">
+                            <span className="msg-activity-label">
+                                {getToolActivityDisplayLabel(activity.name, activity.label, t, activity.phase, activity.outcome)}
+                            </span>
+                            {displayDetail && <code>{displayDetail}</code>}
+                        </span>
                         {activitySeconds != null && (
                             <span className="msg-activity-duration">
                                 {t('toolActivity.elapsed', {seconds: activitySeconds})}

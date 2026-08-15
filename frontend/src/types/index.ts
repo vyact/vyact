@@ -103,7 +103,7 @@ export interface ToolActivity {
     id?: string;
     name?: string;
     phase: 'judging' | 'running' | 'completed';
-    outcome?: 'success' | 'rejected';
+    outcome?: 'success' | 'rejected' | 'failed';
     awaitingApproval?: boolean;
     group?: 'analysis' | 'code' | 'tool';
     label: string;

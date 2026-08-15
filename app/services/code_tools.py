@@ -555,6 +555,8 @@ async def _edit_file(folder_id: str, path: str, old_string: str, new_string: str
         return msg
 
     new_content = content.replace(old_string, new_string, 1)
+    if new_content == content:
+        return "[오류] 변경 전후 내용이 동일하여 파일을 수정하지 않았습니다."
     _record_file_before_change(folder_id, path)
     try:
         target.write_text(new_content, encoding="utf-8")

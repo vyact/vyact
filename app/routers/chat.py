@@ -674,6 +674,19 @@ def _sse(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
 
 
+def _tool_activity_detail(arguments: dict) -> str | None:
+    """Keep persisted activity details concise and avoid exposing raw tool arguments."""
+    paths = arguments.get("paths")
+    if isinstance(paths, list):
+        visible_paths = [str(path) for path in paths[:3]]
+        hidden_count = len(paths) - len(visible_paths)
+        return f"{', '.join(visible_paths)}{f' +{hidden_count}' if hidden_count > 0 else ''}" or None
+    path = arguments.get("path") or arguments.get("file_path") or arguments.get("filename")
+    pattern = arguments.get("pattern") or arguments.get("query")
+    details = [str(value) for value in (path, pattern) if value]
+    return " · ".join(details) or None
+
+
 @router.post("/query/stream")
 async def query_stream(req: QueryRequest):
     """채팅 토큰 SSE 스트리밍 엔드포인트.
@@ -938,13 +951,17 @@ async def query_stream(req: QueryRequest):
                             _activity_log.append({
                                 "phase": "running", "name": _tool_name, "label": _tool_name,
                                 "group": "code" if _tool_name.split("__")[-1].startswith("code_") else "tool",
-                                "detail": json.dumps(ev.get("args", {}), ensure_ascii=False),
+                                "detail": _tool_activity_detail(ev.get("args", {})),
                                 "startedAt": int(datetime.now(timezone.utc).timestamp() * 1000),
                             })
                         elif _phase == "approval_rejected" and _activity_log:
                             _activity_log.pop()
                         elif _phase == "end" and _activity_log:
                             _activity_log[-1]["phase"] = "completed"
+                            _result = ev.get("result")
+                            _activity_log[-1]["outcome"] = (
+                                "failed" if isinstance(_result, str) and _result.startswith("[오류]") else "success"
+                            )
                             _activity_log[-1]["completedAt"] = int(datetime.now(timezone.utc).timestamp() * 1000)
                         # tool call/result 메시지 수집 (히스토리 저장용)
                         if ev.get("phase") == "start" and ev.get("name"):

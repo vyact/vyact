@@ -36,6 +36,10 @@ describe('tool activity presentation', () => {
             subject: '분기 보고서',
             body: '표시되면 안 되는 이메일 본문',
         })).toBe('분기 보고서');
+        expect(getToolActivityDetail({
+            path: 'app/services/code_tools.py',
+            old_string: 'MAX_UNDO_REGISTRY_ENTRIES = 100',
+        })).toBe('app/services/code_tools.py');
     });
 
     it('summarizes files affected by a multi-file patch', () => {

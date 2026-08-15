@@ -95,9 +95,6 @@ export function getToolActivityDetail(args?: Record<string, unknown>): string | 
             : path);
     }
     if (typeof pattern === 'string' && pattern) details.push(pattern);
-    const editSnippet = compactSnippet(args.old_string);
-    if (editSnippet) details.push(editSnippet);
-
     const check = args.check ?? args.task;
     if (typeof check === 'string' && check) {
         const workingDirectory = typeof args.working_directory === 'string'
@@ -113,6 +110,16 @@ export function getToolActivityDetail(args?: Record<string, unknown>): string | 
         if (summarySnippet) details.push(summarySnippet);
     }
     return details.length ? details.join(' · ') : undefined;
+}
+
+export function getStoredToolActivityDetail(detail?: string): string | undefined {
+    if (!detail?.trim().startsWith('{')) return detail;
+    try {
+        const args = JSON.parse(detail) as Record<string, unknown>;
+        return getToolActivityDetail(args);
+    } catch {
+        return detail;
+    }
 }
 
 export function getToolActivityLabel(
@@ -163,6 +170,21 @@ export function getToolActivityDisplayLabel(
     name: string | undefined,
     label: string,
     t: ToolActivityTranslator,
+    phase?: 'judging' | 'running' | 'completed',
+    outcome?: 'success' | 'rejected' | 'failed',
 ): string {
+    if (outcome === 'failed') return t('toolActivity.failed');
+    if (phase === 'completed') {
+        const tool = name ? splitToolName(name).tool : '';
+        if (['code_read_file', 'code_read_files'].includes(tool)) return t('toolActivity.readCompleted');
+        if (['code_grep_search', 'code_find_files', 'code_list_directory'].includes(tool)) return t('toolActivity.searchCompleted');
+        if (['code_edit_file', 'code_apply_patch', 'code_create_file', 'code_move_file', 'code_delete_file'].includes(tool)) {
+            return t('toolActivity.editCompleted');
+        }
+        if (['code_run_check', 'code_run_task', 'code_list_tasks', 'code_git_status', 'code_git_diff'].includes(tool)) {
+            return t('toolActivity.checkCompleted');
+        }
+        return t('toolActivity.completed');
+    }
     return label && label !== name ? label : getToolActivityLabel(name, t);
 }

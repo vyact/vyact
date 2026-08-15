@@ -539,10 +539,14 @@
 .msg-activity-spinner { width:14px; height:14px; flex:0 0 14px; border:2px solid color-mix(in srgb, var(--muted) 35%, transparent); border-top-color:var(--accent); border-radius:50%; animation:msg-stream-spin .8s linear infinite; }
 .msg-activity-list { list-style:none; margin:7px 0 0 6px; padding:0 0 0 13px; border-left:1px solid var(--border); display:grid; gap:7px; }
 .msg-activity-list li { position:relative; display:flex; align-items:center; gap:7px; min-width:0; color:var(--text-secondary); }
+.msg-activity-content { display:flex; align-items:center; gap:7px; min-width:0; flex:1; }
+.msg-activity-label { flex-shrink:0; white-space:nowrap; }
 .msg-activity-dot { position:absolute; left:-17px; width:7px; height:7px; border-radius:50%; background:var(--muted); }
 .msg-activity-check { position:absolute; left:-20px; padding:1px; border-radius:50%; background:var(--bg); color:var(--muted); }
+.msg-activity-failed { position:absolute; left:-20px; padding:1px; border-radius:50%; background:var(--bg); color:var(--danger); }
+.msg-activity-list li:has(.msg-activity-failed) { color:var(--danger); }
 .msg-activity-list li.running .msg-activity-dot, .msg-activity-list li.judging .msg-activity-dot { background:var(--accent); box-shadow:0 0 0 3px rgba(var(--accent-rgb), .14); }
-.msg-activity-list code { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px; color:var(--muted); }
+.msg-activity-list code { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px; color:var(--muted); }
 .msg-activity-duration { margin-left:auto; flex-shrink:0; color:var(--muted); font-size:10.5px; }
 
 .code-changes-card { box-sizing:border-box; width:calc(100% - 32px); max-width:none; margin:12px 16px 4px; overflow:visible; border:1px solid var(--border); border-radius:14px; background:var(--surface); }
