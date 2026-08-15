@@ -892,6 +892,11 @@ async def query_stream(req: QueryRequest):
                 metadata_stream_filter = HiddenMetadataStreamFilter()
                 _tool_messages: list[dict] = []  # tool call/result 메시지 수집
                 _activity_log: list[dict] = []
+                project_tool_first = bool(request_folder_paths)
+                logger.info(
+                    "[query_stream] RAG routing: project_tool_first=%s folder_count=%d",
+                    project_tool_first, len(request_folder_paths),
+                )
                 async for ev in rag_query_stream(
                         clean_question, _summary_system_prompt, image_attachments, req.messages,
                         extra_context=limit_direct_document_contexts(file_context_docs + external_docs),
@@ -903,6 +908,7 @@ async def query_stream(req: QueryRequest):
                         call_reason="chat:general_stream",
                         knowledge_collection_ids=knowledge_collection_ids,
                         inject_user_profile=inject_user_profile,
+                        project_tool_first=project_tool_first,
                 ):
                     if ev["type"] == "token":
                         emitted += ev["text"]
