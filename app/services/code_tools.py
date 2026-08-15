@@ -946,7 +946,12 @@ def register_code_tools():
 
     mcp_manager.register_internal_tool(
         name="code_edit_file",
-        description="코드 폴더 내 파일을 수정한다. old_string을 찾아 new_string으로 교체한다. old_string은 파일 내에 정확히 1곳만 존재해야 한다.",
+        description=(
+            "한 파일의 한두 줄처럼 짧고 고유한 문자열을 수정한다. old_string을 찾아 new_string으로 "
+            "교체하며, old_string은 공백과 들여쓰기를 포함해 파일 내 정확히 1곳과 일치해야 한다. "
+            "함수·클래스 단위, 여러 블록 또는 여러 파일 변경에는 code_apply_patch를 사용한다. "
+            "문자열 불일치로 실패하면 같은 호출을 반복하지 말고 파일을 다시 읽은 뒤 code_apply_patch로 전환한다."
+        ),
         parameters={
             "type": "object",
             "properties": {
@@ -998,7 +1003,12 @@ def register_code_tools():
 
     mcp_manager.register_internal_tool(
         name="code_apply_patch",
-        description="a/·b/ 접두사 없는 unified diff를 사전 검증한 뒤 여러 파일에 적용한다. 파일 삭제는 지원하지 않는다.",
+        description=(
+            "함수·클래스 단위, 여러 코드 블록 또는 여러 파일의 변경을 unified diff로 적용한다. "
+            "a/·b/ 접두사 없는 상대경로를 사용하며, 실제 수정 전에 전체 patch를 사전 검증한다. "
+            "code_edit_file이 문자열 불일치나 들여쓰기로 실패한 경우 대상 구간을 다시 읽고 이 도구로 전환한다. "
+            "파일 삭제는 지원하지 않는다."
+        ),
         parameters={"type": "object", "properties": {
             "folder_id": FOLDER_ID_PROPERTY,
             "patch": {"type": "string", "description": "등록 폴더 기준 상대경로를 사용하는 unified diff"},
