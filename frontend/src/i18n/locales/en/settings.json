@@ -196,6 +196,8 @@
     "exportLocal": "Local download",
     "exportDrive": "Google Drive",
     "exportingDrive": "Uploading to Drive...",
+    "exportingLocalDetail": "Creating the backup file and preparing the local download. Please keep this window open.",
+    "exportingDriveDetail": "Creating the backup file and uploading it to Google Drive. Please keep this window open.",
     "exportDriveSuccess": "Uploaded to vyact folder on Google Drive\nFile: {{name}}",
     "exportDriveFailed": "Google Drive upload failed: {{error}}",
     "exporting": "Exporting...",

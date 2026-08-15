@@ -478,10 +478,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
             const now = new Date(), pad = (n: number) => String(n).padStart(2, '0');
             const ts = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
             const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
+            const downloadUrl = URL.createObjectURL(blob);
+            a.href = downloadUrl;
             // 파일 포함이면 zip, 아니면 json
             a.download = includeFiles ? `vyact_backup_${ts}.zip` : `vyact_backup_${ts}.json`;
             a.click();
+            URL.revokeObjectURL(downloadUrl);
         } catch (e) {
             toast.error(t('backup.exportFailed', {error: String(e)}));
         } finally {
@@ -824,6 +826,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                     <h3>{t('title')}</h3>
                     <button className="settings-close-btn" onClick={handleClose}>×</button>
                 </div>
+
+                {isBackupExporting && (
+                    <div className="backup-progress-overlay" role="status" aria-live="polite" aria-busy="true">
+                        <div className="backup-progress-card">
+                            <span className="backup-progress-spinner" aria-hidden="true"/>
+                            <strong>{exportingDrive ? t('backup.exportingDrive') : t('backup.exporting')}</strong>
+                            <p>{exportingDrive ? t('backup.exportingDriveDetail') : t('backup.exportingLocalDetail')}</p>
+                            <div className="backup-progress-track" aria-hidden="true"><span/></div>
+                        </div>
+                    </div>
+                )}
 
                 <div className="settings-layout" aria-busy={isBackupExporting}>
 

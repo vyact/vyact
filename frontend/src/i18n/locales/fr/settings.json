@@ -169,6 +169,8 @@
     "exportLocal": "Télécharger",
     "exportDrive": "Google Drive",
     "exportingDrive": "Téléversement vers Drive...",
+    "exportingLocalDetail": "Création de la sauvegarde et préparation du téléchargement local. Ne fermez pas cette fenêtre.",
+    "exportingDriveDetail": "Création de la sauvegarde et téléversement vers Google Drive. Ne fermez pas cette fenêtre.",
     "exportDriveSuccess": "Téléversé dans le dossier vyact sur Google Drive\nFichier : {{name}}",
     "exportDriveFailed": "Échec du téléversement vers Google Drive : {{error}}",
     "exporting": "Exportation...",

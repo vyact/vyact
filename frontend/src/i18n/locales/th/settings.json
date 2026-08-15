@@ -169,6 +169,8 @@
     "exportLocal": "ดาวน์โหลดในเครื่อง",
     "exportDrive": "Google Drive",
     "exportingDrive": "กำลังอัปโหลดไปยัง Drive...",
+    "exportingLocalDetail": "กำลังสร้างไฟล์สำรองและเตรียมดาวน์โหลดลงเครื่อง โปรดอย่าปิดหน้าต่างนี้",
+    "exportingDriveDetail": "กำลังสร้างไฟล์สำรองและอัปโหลดไปยัง Google Drive โปรดอย่าปิดหน้าต่างนี้",
     "exportDriveSuccess": "อัปโหลดไปยังโฟลเดอร์ vyact บน Google Drive แล้ว\nไฟล์: {{name}}",
     "exportDriveFailed": "การอัปโหลดไปยัง Google Drive ล้มเหลว: {{error}}",
     "exporting": "กำลังส่งออก...",

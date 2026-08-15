@@ -169,6 +169,8 @@
     "exportLocal": "Tải xuống cục bộ",
     "exportDrive": "Google Drive",
     "exportingDrive": "Đang tải lên Drive...",
+    "exportingLocalDetail": "Đang tạo tệp sao lưu và chuẩn bị tải xuống máy. Vui lòng không đóng cửa sổ này.",
+    "exportingDriveDetail": "Đang tạo tệp sao lưu và tải lên Google Drive. Vui lòng không đóng cửa sổ này.",
     "exportDriveSuccess": "Đã tải lên thư mục vyact trên Google Drive\nTệp: {{name}}",
     "exportDriveFailed": "Tải lên Google Drive thất bại: {{error}}",
     "exporting": "Đang xuất...",

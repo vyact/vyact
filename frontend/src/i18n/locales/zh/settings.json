@@ -169,6 +169,8 @@
     "exportLocal": "本地下载",
     "exportDrive": "Google Drive",
     "exportingDrive": "正在上传到Drive...",
+    "exportingLocalDetail": "正在创建备份文件并准备本地下载，请勿关闭此窗口。",
+    "exportingDriveDetail": "正在创建备份文件并上传到 Google Drive，请勿关闭此窗口。",
     "exportDriveSuccess": "已上传到Google Drive的vyact文件夹\n文件: {{name}}",
     "exportDriveFailed": "Google Drive上传失败: {{error}}",
     "exporting": "导出中...",

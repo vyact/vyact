@@ -226,6 +226,8 @@
     "exportLocal": "로컬 다운로드",
     "exportDrive": "Google Drive",
     "exportingDrive": "Drive 업로드 중...",
+    "exportingLocalDetail": "백업 파일을 생성하고 로컬 다운로드를 준비하고 있습니다. 창을 닫지 마세요.",
+    "exportingDriveDetail": "백업 파일을 생성하고 Google Drive에 업로드하고 있습니다. 창을 닫지 마세요.",
     "exportDriveSuccess": "Google Drive의 vyact 폴더에 업로드 완료\n파일: {{name}}",
     "exportDriveFailed": "Google Drive 업로드 실패: {{error}}",
     "exporting": "내보내는 중...",

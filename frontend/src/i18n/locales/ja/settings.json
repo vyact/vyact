@@ -169,6 +169,8 @@
     "exportLocal": "ローカルダウンロード",
     "exportDrive": "Google Drive",
     "exportingDrive": "Driveにアップロード中...",
+    "exportingLocalDetail": "バックアップファイルを作成し、ローカルダウンロードを準備しています。この画面を閉じないでください。",
+    "exportingDriveDetail": "バックアップファイルを作成し、Google Driveにアップロードしています。この画面を閉じないでください。",
     "exportDriveSuccess": "Google Driveのvyactフォルダにアップロードしました\nファイル: {{name}}",
     "exportDriveFailed": "Google Driveへのアップロードに失敗しました: {{error}}",
     "exporting": "エクスポート中...",

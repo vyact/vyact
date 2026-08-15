@@ -9,6 +9,7 @@
 }
 
 .settings-modal {
+    position: relative;
     background: var(--modal-bg);
     border-radius: 12px;
     width: 90%;
@@ -19,6 +20,43 @@
     flex-direction: column;
     max-height: 80vh;
     height: 80vh;
+}
+
+.backup-progress-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: rgba(8, 8, 10, .72);
+    backdrop-filter: blur(3px);
+}
+
+.backup-progress-card {
+    display: flex;
+    align-items: center;
+    width: min(360px, 100%);
+    flex-direction: column;
+    padding: 28px 30px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--modal-bg);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .45);
+    text-align: center;
+}
+
+.backup-progress-card strong { margin-top: 14px; color: var(--text); font-size: 16px; }
+.backup-progress-card p { margin: 8px 0 18px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.backup-progress-spinner { width: 30px; height: 30px; border: 3px solid var(--surface2); border-top-color: var(--accent); border-radius: 50%; animation: backup-progress-spin .8s linear infinite; }
+.backup-progress-track { width: 100%; height: 5px; overflow: hidden; border-radius: 999px; background: var(--surface2); }
+.backup-progress-track span { display: block; width: 42%; height: 100%; border-radius: inherit; background: var(--accent); animation: backup-progress-slide 1.2s ease-in-out infinite; }
+
+@keyframes backup-progress-spin { to { transform: rotate(360deg); } }
+@keyframes backup-progress-slide { 0% { transform: translateX(-110%); } 50% { transform: translateX(140%); } 100% { transform: translateX(350%); } }
+
+@media (prefers-reduced-motion: reduce) {
+    .backup-progress-spinner, .backup-progress-track span { animation-duration: 2.4s; }
 }
 
 /* ── 사이드바 + 콘텐츠 가로 레이아웃 ── */
