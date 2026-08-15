@@ -1,4 +1,5 @@
 from services.conv_summary import HiddenMetadataStreamFilter, build_summary_instruction, extract_summary_tags
+from services.project_memory import extract_project_memory_tag
 
 
 def test_hides_conv_summary_when_tag_is_split_across_chunks():
@@ -48,3 +49,12 @@ def test_first_turn_requests_and_extracts_conversation_title():
 def test_followup_turn_does_not_request_a_new_title():
     instruction = build_summary_instruction("기존 요약", False)
     assert "<conv_title>" not in instruction
+
+
+def test_malformed_project_memory_opening_is_removed():
+    answer = '완료했습니다.\n<project_memory={"summary":"내부"}</project_memory>'
+
+    clean_answer, memory = extract_project_memory_tag(answer)
+
+    assert clean_answer == "완료했습니다."
+    assert memory == {"summary": "내부"}

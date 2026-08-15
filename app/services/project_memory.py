@@ -14,7 +14,12 @@ from services.db import PROJECTS_INDEX, get_es
 
 logger = get_logger(__name__)
 
-PROJECT_MEMORY_TAG_RE = re.compile(r"<project_memory>([\s\S]*?)</project_memory>", re.IGNORECASE)
+# Small local models sometimes replace the opening ``>`` with ``=``.
+# Treat that variant as internal metadata too so it never leaks into chat.
+PROJECT_MEMORY_TAG_RE = re.compile(
+    r"<project_memory\s*(?:>|=)\s*([\s\S]*?)</project_memory\s*>",
+    re.IGNORECASE,
+)
 PROJECT_MEMORY_ITEM_TYPES = {"decision": "decisions", "action_item": "action_items"}
 PROJECT_MEMORY_STATUSES = {"active", "completed"}
 PROJECT_MEMORY_PROMPT_ITEM_LIMIT = 50

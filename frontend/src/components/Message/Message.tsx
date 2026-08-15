@@ -39,6 +39,13 @@ function formatStats(pairs: Array<[string, number | string | null | undefined]>)
         .join(' · ');
 }
 
+function stripHiddenMetadata(text: string): string {
+    const hiddenTag = '(conv_title|conv_summary|project_summary|project_memory)';
+    const completeTags = new RegExp(`<${hiddenTag}\\s*(?:>|=)[\\s\\S]*?<\\/\\1\\s*>`, 'gi');
+    const trailingTag = new RegExp(`<${hiddenTag}\\b[\\s\\S]*$`, 'i');
+    return text.replace(completeTags, '').replace(trailingTag, '').trimEnd();
+}
+
 // ── 스트리밍 중 텍스트 그룹을 단락 단위로 분리 렌더링 ──────────────────
 // 완성된 단락(\n\n으로 구분)은 별도 <span>으로 렌더하여 innerHTML이 동일하면
 // React가 DOM을 건드리지 않으므로 selection이 유지된다.
@@ -88,18 +95,22 @@ const Message: React.FC<MessageProps> = ({
                                          }) => {
     const {t} = useTranslation('main');
     const {panel} = useCodePanel();
+    const visibleContent = useMemo(
+        () => role === 'assistant' ? stripHiddenMetadata(content) : content,
+        [role, content],
+    );
     const [pastedViewerId] = useState(() => `message-paste-${Math.random().toString(36).slice(2)}`);
     // 스트리밍 중에는 아직 닫히지 않은 코드/프로젝트 블록을 잘라내고(safe만 렌더),
     // 미완성 블록은 플레이스홀더로 대체한다. 스트림이 끝나면(isStreaming=false)
     // content 전체를 그대로 파싱하므로 완성 렌더와 동일하다.
     const {safe: streamSafeContent, pending: streamPending} = useMemo(
         () => (role === 'assistant' && isStreaming)
-            ? splitStreamSafe(content)
+            ? splitStreamSafe(visibleContent)
             // 완료 후에는 followups 블록을 본문에서 제거한 뒤 렌더한다
             // (버블 아래 별도 UI로 표시되므로 본문에 노출되면 안 됨)
-            : {safe: role === 'assistant' ? parseFollowups(content).body : content,
+            : {safe: role === 'assistant' ? parseFollowups(visibleContent).body : visibleContent,
                 pending: null as null | 'code' | 'project' | 'table' | 'followups' | 'summary'},
-        [role, isStreaming, content]
+        [role, isStreaming, visibleContent]
     );
     const normalizedContent = streamSafeContent;
     // "프로젝트 생성 중..." 표시에 현재 작성 중인 파일명을 같이 보여주기 위해,
@@ -184,7 +195,7 @@ const Message: React.FC<MessageProps> = ({
             document.execCommand('copy');
             document.body.removeChild(el);
         };
-        const clipboardContent = role === 'user' ? unwrapPastedText(content) : content;
+        const clipboardContent = role === 'user' ? unwrapPastedText(content) : visibleContent;
         copyText(clipboardContent);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
@@ -198,7 +209,7 @@ const Message: React.FC<MessageProps> = ({
         } else {
             // 상태 업데이트 전에 다시 클릭해도 중복 재생 요청이 생기지 않도록 즉시 잠근다.
             speakingRef.current = true;
-            ttsService.speak(content);
+            ttsService.speak(visibleContent);
             setSpeaking(true);
             const timer = setInterval(() => {
                 if (!ttsService.isSpeaking()) {

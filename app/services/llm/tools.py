@@ -129,6 +129,16 @@ async def build_tool_directive(tool_names: list[str]) -> str:
     except Exception as _pe:
         logger.debug("[tools] MCP 프롬프트 재주입 실패: %s", _pe)
 
+    if any(n.startswith("code_") for n in tool_names):
+        directive += (
+            "\n\n[최종 확인 — 프로젝트 작업의 실행 여부]"
+            "\n사용자의 요청 의미가 파일 생성·수정·삭제 또는 코드 변경이라면 답변 문장을 작성하기 전에 "
+            "반드시 적절한 code_* 변경 도구를 호출해야 한다. 이는 단어 일치가 아니라 요청의 실제 목적을 "
+            "기준으로 판단한다. 변경 도구의 성공 결과가 없으면 파일을 만들었거나 수정했다고 절대 말하지 "
+            "말고, 실행하지 못했다고 정확히 답하라. 여러 파일 요청은 요청된 모든 파일에 대해 도구 결과를 "
+            "확인한 뒤에만 완료라고 답하라."
+        )
+
     return directive
 
 
