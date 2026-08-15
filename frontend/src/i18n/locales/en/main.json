@@ -943,6 +943,8 @@
     "inProgressSummary": "{{count}} tasks · {{status}}",
     "stopped": "Response generation stopped.",
     "runningTool": "Running {{tool}}",
+    "serviceAction": "{{service}} · {{action}}",
+    "actions": {"searching":"Searching","listing":"Checking the list","reading":"Reading","checking":"Checking status","creating":"Creating","uploadingAction":"Uploading","updating":"Updating","moving":"Moving","downloadingAction":"Downloading","sending":"Sending","replying":"Replying","deleting":"Deleting","clearing":"Clearing"},
     "indexing": "Indexing attachments · {{done}}/{{total}}",
     "uploading": "Uploading {{name}} · {{pct}}%",
     "parsing": "Parsing {{name}}…",

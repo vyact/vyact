@@ -1,0 +1,46 @@
+import {describe, expect, it} from 'vitest';
+import {getToolActivityDetail, getToolActivityLabel} from './toolActivity';
+
+const translations: Record<string, string> = {
+    'toolActivity.actions.searching': '검색하고 있어요',
+    'toolActivity.actions.creating': '새 항목을 만들고 있어요',
+    'toolActivity.actions.sending': '전송하고 있어요',
+    'toolActivity.serviceAction': '{{service}} · {{action}}',
+};
+
+const translate = (key: string, options?: Record<string, unknown>): string => {
+    const template = translations[key] ?? key;
+    return Object.entries(options ?? {}).reduce(
+        (result, [name, value]) => result.replace(`{{${name}}}`, String(value)),
+        template,
+    );
+};
+
+describe('tool activity presentation', () => {
+    it('shows the service and localized action for Google Workspace tools', () => {
+        expect(getToolActivityLabel('send_email', translate))
+            .toBe('Gmail · 전송하고 있어요');
+        expect(getToolActivityLabel('create_calendar_event', translate))
+            .toBe('Google Calendar · 새 항목을 만들고 있어요');
+        expect(getToolActivityLabel('search_files', translate))
+            .toBe('Google Drive · 검색하고 있어요');
+    });
+
+    it('keeps the MCP server visible for unknown external tools', () => {
+        expect(getToolActivityLabel('notion__search_pages', translate))
+            .toBe('notion · 검색하고 있어요');
+    });
+
+    it('shows safe identifying details without exposing message content', () => {
+        expect(getToolActivityDetail({
+            subject: '분기 보고서',
+            body: '표시되면 안 되는 이메일 본문',
+        })).toBe('분기 보고서');
+    });
+
+    it('summarizes files affected by a multi-file patch', () => {
+        expect(getToolActivityDetail({
+            patch: '*** Update File: app/a.py\n*** Update File: app/b.py',
+        })).toBe('app/a.py, app/b.py');
+    });
+});

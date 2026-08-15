@@ -946,6 +946,8 @@
     "inProgressSummary": "{{count}}件の作業 · {{status}}",
     "stopped": "応答の生成を停止しました。",
     "runningTool": "{{tool}} を実行中",
+    "serviceAction": "{{service}} · {{action}}",
+    "actions": {"searching":"検索中","listing":"一覧を確認中","reading":"内容を確認中","checking":"状態を確認中","creating":"作成中","uploadingAction":"アップロード中","updating":"更新中","moving":"移動中","downloadingAction":"ダウンロード中","sending":"送信中","replying":"返信中","deleting":"削除中","clearing":"内容を消去中"},
     "indexing": "添付ファイルをインデックス中 · {{done}}/{{total}}",
     "uploading": "{{name}} アップロード中 · {{pct}}%",
     "parsing": "{{name}} を解析中…",

@@ -21,8 +21,9 @@ IMAGES_DIR = INSTALL_DIR / "uploads" / "images"
 # 답변에서 잘라내야 하는 모델 특수 토큰 (스트리밍/재사용 공통)
 LLM_STOP_TOKENS = ("<|endoftext|>", "<|im_start|>", "<|im_end|>")
 
-# 도구 호출 판단 루프의 최대 횟수. 제공자별 동작을 동일하게 유지한다.
-TOOL_CALL_MAX_ROUNDS = 10
+# 여러 파일 수정과 후속 검증까지 완료할 수 있도록 충분한 도구 호출 라운드를 제공한다.
+# 동일 호출·연속 실패는 provider별 반복 방지 로직에서 이 한도보다 먼저 중단한다.
+TOOL_CALL_MAX_ROUNDS = 30
 
 # 상수 재노출 (다른 llm 하위 모듈에서 import해 사용)
 __all__ = [

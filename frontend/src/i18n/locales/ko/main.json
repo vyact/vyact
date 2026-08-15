@@ -943,6 +943,8 @@
     "inProgressSummary": "{{count}}개 작업 · {{status}}",
     "stopped": "응답 생성을 중단했어요.",
     "runningTool": "{{tool}} 실행 중",
+    "serviceAction": "{{service}} · {{action}}",
+    "actions": {"searching":"검색하고 있어요","listing":"목록을 확인하고 있어요","reading":"내용을 확인하고 있어요","checking":"상태를 확인하고 있어요","creating":"새 항목을 만들고 있어요","uploadingAction":"업로드하고 있어요","updating":"내용을 수정하고 있어요","moving":"이동하고 있어요","downloadingAction":"다운로드하고 있어요","sending":"전송하고 있어요","replying":"답장하고 있어요","deleting":"삭제하고 있어요","clearing":"내용을 비우고 있어요"},
     "indexing": "첨부파일 인덱싱 중 · {{done}}/{{total}}",
     "uploading": "{{name}} 업로드 중 · {{pct}}%",
     "parsing": "{{name}} 파싱 중…",

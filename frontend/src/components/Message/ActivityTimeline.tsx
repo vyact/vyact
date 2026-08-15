@@ -2,7 +2,7 @@ import {useState} from 'react';
 import {ChevronDown, ChevronRight, CircleCheck} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import type {ToolActivity} from '../../types';
-import {getToolActivityLabel} from '../../utils/toolActivity';
+import {getToolActivityDisplayLabel} from '../../utils/toolActivity';
 
 interface ActivityTimelineProps {
     activities: ToolActivity[];
@@ -65,7 +65,7 @@ const ActivityTimeline = ({
                         {activity.phase === 'completed'
                             ? <CircleCheck className="msg-activity-check" size={12}/>
                             : <span className="msg-activity-dot"/>}
-                        <span>{activity.name ? getToolActivityLabel(activity.name, t) : activity.label}</span>
+                        <span>{getToolActivityDisplayLabel(activity.name, activity.label, t)}</span>
                         {activity.detail && <code>{activity.detail}</code>}
                         {activitySeconds != null && (
                             <span className="msg-activity-duration">

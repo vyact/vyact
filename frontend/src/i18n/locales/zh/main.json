@@ -946,6 +946,8 @@
     "inProgressSummary": "{{count}} 项任务 · {{status}}",
     "stopped": "已停止生成回复。",
     "runningTool": "正在运行 {{tool}}",
+    "serviceAction": "{{service}} · {{action}}",
+    "actions": {"searching":"正在搜索","listing":"正在查看列表","reading":"正在读取内容","checking":"正在检查状态","creating":"正在创建","uploadingAction":"正在上传","updating":"正在更新","moving":"正在移动","downloadingAction":"正在下载","sending":"正在发送","replying":"正在回复","deleting":"正在删除","clearing":"正在清空内容"},
     "indexing": "正在索引附件 · {{done}}/{{total}}",
     "uploading": "正在上传 {{name}} · {{pct}}%",
     "parsing": "正在解析 {{name}}…",

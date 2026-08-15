@@ -946,6 +946,8 @@
     "inProgressSummary": "{{count}} tác vụ · {{status}}",
     "stopped": "Đã dừng tạo phản hồi.",
     "runningTool": "Đang chạy {{tool}}",
+    "serviceAction": "{{service}} · {{action}}",
+    "actions": {"searching":"Đang tìm kiếm","listing":"Đang kiểm tra danh sách","reading":"Đang đọc nội dung","checking":"Đang kiểm tra trạng thái","creating":"Đang tạo","uploadingAction":"Đang tải lên","updating":"Đang cập nhật","moving":"Đang di chuyển","downloadingAction":"Đang tải xuống","sending":"Đang gửi","replying":"Đang trả lời","deleting":"Đang xóa","clearing":"Đang xóa nội dung"},
     "indexing": "Đang lập chỉ mục tệp đính kèm · {{done}}/{{total}}",
     "uploading": "Đang tải lên {{name}} · {{pct}}%",
     "parsing": "Đang phân tích {{name}}…",

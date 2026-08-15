@@ -946,6 +946,8 @@
     "inProgressSummary": "{{count}} tareas · {{status}}",
     "stopped": "Se detuvo la generación de la respuesta.",
     "runningTool": "Ejecutando {{tool}}",
+    "serviceAction": "{{service}} · {{action}}",
+    "actions": {"searching":"Buscando","listing":"Consultando la lista","reading":"Leyendo","checking":"Comprobando el estado","creating":"Creando","uploadingAction":"Subiendo","updating":"Actualizando","moving":"Moviendo","downloadingAction":"Descargando","sending":"Enviando","replying":"Respondiendo","deleting":"Eliminando","clearing":"Vaciando contenido"},
     "indexing": "Indexando archivos adjuntos · {{done}}/{{total}}",
     "uploading": "Subiendo {{name}} · {{pct}}%",
     "parsing": "Analizando {{name}}…",

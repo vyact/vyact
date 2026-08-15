@@ -946,6 +946,8 @@
     "inProgressSummary": "{{count}} tâches · {{status}}",
     "stopped": "La génération de la réponse a été arrêtée.",
     "runningTool": "Exécution de {{tool}}",
+    "serviceAction": "{{service}} · {{action}}",
+    "actions": {"searching":"Recherche en cours","listing":"Consultation de la liste","reading":"Lecture en cours","checking":"Vérification de l’état","creating":"Création en cours","uploadingAction":"Importation en cours","updating":"Mise à jour en cours","moving":"Déplacement en cours","downloadingAction":"Téléchargement en cours","sending":"Envoi en cours","replying":"Réponse en cours","deleting":"Suppression en cours","clearing":"Effacement en cours"},
     "indexing": "Indexation des pièces jointes · {{done}}/{{total}}",
     "uploading": "Téléchargement de {{name}} · {{pct}}%",
     "parsing": "Analyse de {{name}}…",

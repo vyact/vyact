@@ -15,18 +15,9 @@ import type {FileAttachment} from '../ChatInput/useAttachments';
 import type {ExternalDocumentSelection} from '../../services/externalDocumentSelections';
 import {findPluginCommand} from '../../plugins/registry';
 import {resolveApprovalMode} from '../../services/approvalPolicy';
-import {getToolActivityLabel} from '../../utils/toolActivity';
+import {getToolActivityDetail, getToolActivityLabel} from '../../utils/toolActivity';
 
 const STREAM_RENDER_INTERVAL_MS = 32;
-
-// MCP tool 이름(서버__tool)을 사용자용 진행 문구로 변환
-function toolDetail(args?: Record<string, unknown>): string | undefined {
-    if (!args) return undefined;
-    const path = args.path ?? args.file_path ?? args.filename;
-    if (typeof path === 'string' && path) return path;
-    const pattern = args.pattern ?? args.query;
-    return typeof pattern === 'string' && pattern ? pattern : undefined;
-}
 
 function toolGroup(name?: string): ToolActivity['group'] {
     if (!name) return 'tool';
@@ -543,16 +534,16 @@ export function useChat(deps: UseChatDeps) {
                         onTool: (data) => {
                             if (data.phase === 'approval_required') {
                                 window.dispatchEvent(new CustomEvent('vyact:tool-approval-required', {detail: data}));
-                                setToolStatus({phase: 'running', name: data.name, group: toolGroup(data.name), label: t('toolActivity.waitingApproval'), detail: toolDetail(data.args), awaitingApproval: true});
+                                setToolStatus({phase: 'running', name: data.name, group: toolGroup(data.name), label: t('toolActivity.waitingApproval'), detail: getToolActivityDetail(data.args), awaitingApproval: true});
                             } else if (data.phase === 'approval_rejected') {
-                                setToolStatus({phase: 'completed', outcome: 'rejected', name: data.name, group: toolGroup(data.name), label: t('toolActivity.approvalRejected'), detail: toolDetail(data.args)});
+                                setToolStatus({phase: 'completed', outcome: 'rejected', name: data.name, group: toolGroup(data.name), label: t('toolActivity.approvalRejected'), detail: getToolActivityDetail(data.args)});
                                 setToolStatus({phase: 'judging', group: 'analysis', label: t('toolActivity.approvalRejectedPreparingResponse')});
                             } else if (data.phase === 'judging') {
                                 setToolStatus({phase: 'judging', group: 'analysis', label: t((data.round ?? 0) > 0 ? 'toolActivity.additionalAnalysis' : 'toolActivity.analyzing')});
                             } else if (data.phase === 'start') {
-                                setToolStatus({phase: 'running', name: data.name, group: toolGroup(data.name), label: getToolActivityLabel(data.name, t), detail: toolDetail(data.args)});
+                                setToolStatus({phase: 'running', name: data.name, group: toolGroup(data.name), label: getToolActivityLabel(data.name, t), detail: getToolActivityDetail(data.args)});
                             } else if (data.phase === 'end') {
-                                setToolStatus({phase: 'completed', label: t('toolActivity.completed'), detail: toolDetail(data.args)});
+                                setToolStatus({phase: 'completed', label: t('toolActivity.completed'), detail: getToolActivityDetail(data.args)});
                                 // 검색/도구 단계가 끝난 뒤 첫 토큰이 오기까지는 프롬프트 평가가 진행된다.
                                 // 완료된 작업명(예: 컬렉션 검색)을 계속 표시하지 않고 응답 준비 상태로 전환한다.
                                 setToolStatus({phase: 'judging', group: 'analysis', label: t('toolActivity.thinking')});
