@@ -215,30 +215,43 @@ def finalize_code_change_tracking() -> dict | None:
             "additions": additions, "deletions": deletions, "diff": "\n".join(diff_lines),
         })
         undo_files.append({
-            "folder": folder, "path": relative_path, "before": before_bytes, "after": after_bytes,
+            "folder_id": folder_id, "folder": folder, "path": relative_path,
+            "before": before_bytes, "after": after_bytes,
         })
     if not files:
         return None
     undo_token = uuid.uuid4().hex
-    _code_change_undo_registry[undo_token] = {"files": undo_files}
+    _code_change_undo_registry[undo_token] = {"files": undo_files, "undone_files": []}
     while len(_code_change_undo_registry) > MAX_UNDO_REGISTRY_ENTRIES:
         _code_change_undo_registry.pop(next(iter(_code_change_undo_registry)))
     return {"files": files, "additions": total_additions, "deletions": total_deletions, "undoToken": undo_token}
 
 
-def undo_code_changes(undo_token: str) -> dict:
-    """Undo only when every file still matches this transaction's post-change state."""
+def undo_code_changes(
+        undo_token: str, folder_id: str | None = None, relative_path: str | None = None,
+) -> dict:
+    """Undo a whole transaction or one file if its post-change state still matches."""
     transaction = _code_change_undo_registry.get(undo_token)
     if not transaction:
         return {"ok": False, "reason": "not_found"}
-    for item in transaction["files"]:
+    if (folder_id is None) != (relative_path is None):
+        return {"ok": False, "reason": "invalid_target"}
+    selected_files = transaction["files"]
+    if folder_id is not None and relative_path is not None:
+        selected_files = [
+            item for item in transaction["files"]
+            if item["folder_id"] == folder_id and item["path"] == relative_path
+        ]
+        if not selected_files:
+            return {"ok": False, "reason": "not_found"}
+    for item in selected_files:
         target = _safe_path(item["folder"], item["path"])
         if not target:
             return {"ok": False, "reason": "conflict", "path": item["path"]}
         current = target.read_bytes() if target.is_file() else None
         if current != item["after"]:
             return {"ok": False, "reason": "conflict", "path": item["path"]}
-    for item in transaction["files"]:
+    for item in selected_files:
         target = _safe_path(item["folder"], item["path"])
         before = item["before"]
         if before is None:
@@ -247,9 +260,30 @@ def undo_code_changes(undo_token: str) -> dict:
         elif target:
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(before)
-    _code_change_undo_registry.pop(undo_token, None)
+    selected_ids = {id(item) for item in selected_files}
+    transaction.setdefault("undone_files", []).extend({
+        "folderId": item["folder_id"], "path": item["path"]
+    } for item in selected_files)
+    transaction["files"] = [item for item in transaction["files"] if id(item) not in selected_ids]
+    complete = not transaction["files"]
     _project_manifest_cache.clear()
-    return {"ok": True}
+    return {
+        "ok": True,
+        "complete": complete,
+        "files": [{"folderId": item["folder_id"], "path": item["path"]} for item in selected_files],
+    }
+
+
+def get_code_changes_undo_status(undo_token: str) -> dict:
+    """Return persisted in-process undo state for history cards."""
+    transaction = _code_change_undo_registry.get(undo_token)
+    if not transaction:
+        return {"available": False, "complete": False, "undoneFiles": []}
+    return {
+        "available": bool(transaction["files"]),
+        "complete": not transaction["files"],
+        "undoneFiles": list(transaction.get("undone_files", [])),
+    }
 
 
 def _safe_path(folder: str, rel: str) -> Path | None:

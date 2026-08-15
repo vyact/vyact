@@ -1154,16 +1154,24 @@ async def query_stream(req: QueryRequest):
 
 class UndoCodeChangesRequest(BaseModel):
     undo_token: str
+    folder_id: str | None = None
+    path: str | None = None
 
 
 @router.post("/code-changes/undo")
 async def undo_code_change_transaction(req: UndoCodeChangesRequest):
     from services.code_tools import undo_code_changes
-    result = undo_code_changes(req.undo_token)
+    result = undo_code_changes(req.undo_token, req.folder_id, req.path)
     if not result.get("ok"):
-        status_code = 409 if result.get("reason") == "conflict" else 404
+        status_code = 409 if result.get("reason") == "conflict" else 400 if result.get("reason") == "invalid_target" else 404
         raise HTTPException(status_code=status_code, detail=result)
     return result
+
+
+@router.get("/code-changes/undo/{undo_token}/status")
+async def code_change_undo_status(undo_token: str):
+    from services.code_tools import get_code_changes_undo_status
+    return get_code_changes_undo_status(undo_token)
 
 
 # ── 번역 전용 엔드포인트 (RAG/도구 호출 없이 LLM 1회만 호출) ──────────────────
