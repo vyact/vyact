@@ -490,7 +490,10 @@ def _try_indent_correction(
 
     indent_diff = actual_indent - old_indent
     if indent_diff == 0:
-        return None  # 들여쓰기 차이 없음 — 다른 이유로 매칭 실패
+        # 바깥 줄의 들여쓰기는 같지만 내부 줄의 공백만 다른 경우다.
+        # stripped 비교로 유일한 블록임을 이미 확인했으므로 실제 원본 블록을
+        # 교체 대상으로 사용하고 모델이 요청한 새 블록은 그대로 적용한다.
+        return content, actual_old, new_string
 
     # new_string의 각 줄에 들여쓰기 차이를 적용
     new_lines = new_string.split("\n")

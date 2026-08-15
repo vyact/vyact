@@ -76,6 +76,21 @@ def _compact_tool_results(messages: list[dict]) -> list[dict]:
     return compacted
 
 
+def _failure_call_key(name: str, args: dict, exact_call_key: str) -> str:
+    """Group retries that target the same edit even when replacement text changes."""
+    if name != "code_edit_file":
+        return exact_call_key
+    old_string = str(args.get("old_string", ""))
+    first_content_line = next((line.strip() for line in old_string.splitlines() if line.strip()), "")
+    target = {
+        "folder_id": args.get("folder_id"),
+        "path": args.get("path"),
+        "old_anchor": " ".join(first_content_line.split()),
+    }
+    canonical_target = json.dumps(target, ensure_ascii=False, sort_keys=True, default=str)
+    return f"{name}:{hashlib.md5(canonical_target.encode()).hexdigest()[:8]}"
+
+
 async def build_ollama_payload(
         question: str,
         context_docs: list[dict],
@@ -409,6 +424,7 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
                 # 동일 호출 중복 감지
                 canonical_args = json.dumps(args, ensure_ascii=False, sort_keys=True, default=str)
                 _call_key = f"{name}:{hashlib.md5(canonical_args.encode()).hexdigest()[:8]}"
+                _fail_key = _failure_call_key(name, args, _call_key)
                 _call_count[_call_key] = _call_count.get(_call_key, 0) + 1
                 if _last_successful_call and _last_successful_call[0] == _call_key:
                     logger.info("[tool_calls] 동일 호출 결과 재사용 — 실행 생략: %s args=%s", name, args)
@@ -463,21 +479,21 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
                 # 연속 실패 감지 — tool 결과가 에러이면 카운트
                 is_error = result_text.startswith("[오류]")
                 if is_error:
-                    _fail_tracker[_call_key] = _fail_tracker.get(_call_key, 0) + 1
-                    if _fail_tracker[_call_key] >= _MAX_SAME_FAIL:
+                    _fail_tracker[_fail_key] = _fail_tracker.get(_fail_key, 0) + 1
+                    if _fail_tracker[_fail_key] >= _MAX_SAME_FAIL:
                         logger.warning(
                             "[tool_calls] 같은 호출 %d회 연속 실패 — 조기 중단: %s",
-                            _fail_tracker[_call_key], name,
+                            _fail_tracker[_fail_key], name,
                         )
                         work.append({
                             "role": "tool", "tool_name": name,
-                            "content": f"[중단] 같은 tool 호출이 {_fail_tracker[_call_key]}회 연속 실패했습니다. "
+                            "content": f"[중단] 같은 tool 호출이 {_fail_tracker[_fail_key]}회 연속 실패했습니다. "
                                        f"더 이상 재시도하지 말고 사용자에게 실패 원인을 설명하세요.",
                         })
                         _should_break = True
                         break
                 else:
-                    _fail_tracker.pop(_call_key, None)
+                    _fail_tracker.pop(_fail_key, None)
                     _last_successful_call = (_call_key, result_text)
 
             if _should_break:

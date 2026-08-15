@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, patch
 
 from services.llm.ollama import (
     _compact_tool_results,
+    _failure_call_key,
     _tool_decision_num_predict,
     resolve_tool_calls,
 )
@@ -48,6 +49,20 @@ class OllamaToolRoundTests(unittest.IsolatedAsyncioTestCase):
         compacted = _compact_tool_results([{"role": "tool", "content": content}])
         self.assertLess(len(compacted[0]["content"]), len(content))
         self.assertIn("tool result shortened", compacted[0]["content"])
+
+    def test_edit_failures_ignore_replacement_whitespace_changes(self):
+        base_args = {
+            "folder_id": "vyact",
+            "path": "app/services/code_tools.py",
+            "old_string": "IGNORE_DIRS = {\nitems\n}",
+        }
+        first_key = _failure_call_key(
+            "code_edit_file", {**base_args, "new_string": "    items"}, "exact-1",
+        )
+        second_key = _failure_call_key(
+            "code_edit_file", {**base_args, "new_string": "       items"}, "exact-2",
+        )
+        self.assertEqual(first_key, second_key)
 
     async def test_blocking_judgment_completes_with_wait_logger_enabled(self):
         tool = {"type": "function", "function": {
