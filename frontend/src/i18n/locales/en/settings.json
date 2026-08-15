@@ -27,7 +27,7 @@
       "bizInfo": {"name": "BizInfo", "description": "Search support programs and events for startups and small businesses.", "steps": {"1": "Open the BizInfo API guide.", "2": "Apply to use the support-program API.", "3": "Enter and submit the requested information.", "4": "Copy the issued service key."}, "note": "Support-program and event APIs may require separate applications."},
       "bizSupport": {"name": "SME and small-business support", "description": "Use current funding, voucher, sales, and employment support announcements from BizInfo."},
       "kStartup": {"name": "Startup grants", "description": "Use startup commercialization grants and support announcements from K-Startup."},
-      "welfare": {"name": "Personal welfare benefits", "description": "Use central-government social security benefits and welfare services from Bokjiro."},
+      "welfare": {"name": "Personal welfare benefits", "description": "Use central-government social security benefits and welfare services from Bokjiro."}
     }
   },
   "plugins": {

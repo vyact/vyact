@@ -21,7 +21,7 @@
     "browseUnavailable": "データ収集の連携後に利用できます。",
     "syncAllData": "全データを更新", "syncAllDescription": "ONの{{count}}件のソースをまとめて更新します。", "updateAllData": "有効なソースをすべて更新", "sourceData": "ソースデータ", "sourceDataSummary": "{{count}}件・{{date}}", "updateSourceData": "このソースを更新", "collectorUnavailable": "データ収集連携を準備中",
     "sources": {
-      "bizSupport": {"name": "中小企業・小規模事業者支援", "description": "BizInfoの資金・バウチャー・販路・雇用支援公募を適用します。"}, "kStartup": {"name": "創業予定者・スタートアップ助成金", "description": "K-Startupの事業化資金と支援公募を適用します。"}, "welfare": {"name": "個人福祉給付", "description": "中央省庁の社会保障給付と福祉サービスを適用します。"}, "contentSupport": {"name": "コンテンツ企業・クリエイター支援", "description": "KOCCAの制作・事業化支援公募を適用します。"}, "scholarship": {"name": "奨学金・学資支援", "description": "国家奨学金と学生ローン支援情報を適用します。"},
+      "bizSupport": {"name": "中小企業・小規模事業者支援", "description": "BizInfoの資金・バウチャー・販路・雇用支援公募を適用します。"}, "kStartup": {"name": "創業予定者・スタートアップ助成金", "description": "K-Startupの事業化資金と支援公募を適用します。"}, "welfare": {"name": "個人福祉給付", "description": "中央省庁の社会保障給付と福祉サービスを適用します。"},
       "gov24": {"name": "政府24・公共サービス（給付）", "description": "公共機関の福祉・住宅・教育・雇用支援を検索します。", "steps": {"1": "公共データポータルにログインまたは登録します。", "2": "APIページで利用申請を選択します。", "3": "個人またはプロジェクトキーを選んで申請します。", "4": "承認後、マイページでキーを確認します。"}, "note": "開発・運用アカウントとも自動承認で無料です。"},
       "youthCenter": {"name": "オン統青年", "description": "韓国の青年政策と青年スペースを検索します。", "steps": {"1": "サイトにログインまたは登録します。", "2": "マイページでOpen APIキーを申請します。", "3": "担当者の承認を待ちます。", "4": "発行されたキーを確認します。"}, "note": "キーは審査後に発行されます。"},
       "bizInfo": {"name": "企業広場", "description": "創業者・小規模事業者向け支援事業とイベントを検索します。", "steps": {"1": "API案内ページを開きます。", "2": "支援事業APIの利用を申請します。", "3": "必要情報を入力して登録します。", "4": "発行されたサービスキーを確認します。"}, "note": "支援事業とイベントAPIは個別申請が必要な場合があります。"}
