@@ -144,20 +144,29 @@ const CodeChangesCard = ({changes}: {changes: CodeChanges}) => {
                     onPointerEnter={() => showPreview(previewKey)}
                     onFocus={() => showPreview(previewKey, true)}
                 >
-                <div className={`code-change-file-row${activePreviewKey === previewKey ? ' active' : ''}`}>
-                    <button
-                        className="code-change-file-open"
-                        type="button"
-                        onClick={() => openPanel([toReviewFile(file)], 0, `${reviewViewerId}:${previewKey}`)}
-                    >
-                        <span>{file.path}</span>
-                    </button>
+                <div
+                    className={`code-change-file-row${activePreviewKey === previewKey ? ' active' : ''}`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => openPanel([toReviewFile(file)], 0, `${reviewViewerId}:${previewKey}`)}
+                    onKeyDown={event => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            openPanel([toReviewFile(file)], 0, `${reviewViewerId}:${previewKey}`);
+                        }
+                    }}
+                >
+                    <span className="code-change-file-path">{file.path}</span>
                     <div className="code-change-file-actions">
                         <span className="code-change-count"><b>+{file.additions}</b> <i>-{file.deletions}</i></span>
                         {changes.undoToken && (fileUndone || undoAvailable !== false) && <button
                             className="code-change-file-undo"
                             type="button"
-                            onClick={() => undo(file)}
+                            onClick={event => {
+                                event.stopPropagation();
+                                undo(file);
+                            }}
+                            onKeyDown={event => event.stopPropagation()}
                             disabled={fileUndone || undoing || Boolean(undoingFileKey)}
                         >
                             <RotateCcw size={14}/>

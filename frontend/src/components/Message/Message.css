@@ -562,11 +562,10 @@
 .code-changes-header button:disabled { cursor:default; opacity:.55; }
 .code-changes-header .code-changes-review { border:1px solid var(--border); background:var(--surface2); color:var(--text-secondary); }
 .code-change-file { position:relative; }
-.code-change-file-row { display:flex; width:100%; align-items:center; justify-content:space-between; gap:18px; min-height:42px; padding:0 12px 0 18px; background:transparent; color:var(--text-secondary); font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px; transition:background .12s ease, color .12s ease; }
+.code-change-file-row { display:flex; width:100%; align-items:center; justify-content:space-between; gap:18px; min-height:42px; padding:0 12px 0 18px; background:transparent; color:var(--text-secondary); cursor:pointer; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px; transition:background .12s ease, color .12s ease; }
 .code-change-file-row:hover, .code-change-file-row.active { background:var(--surface2); color:var(--text); }
-.code-change-file-open { min-width:0; padding:0; flex:1; border:0; outline:0; background:transparent; color:inherit; cursor:pointer; font:inherit; text-align:left; }
-.code-change-file-open > span { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.code-change-file-open:focus-visible { text-decoration:underline; text-underline-offset:3px; }
+.code-change-file-row:focus-visible { outline:2px solid var(--accent); outline-offset:-2px; }
+.code-change-file-path { min-width:0; overflow:hidden; flex:1; text-overflow:ellipsis; white-space:nowrap; }
 .code-change-file-actions { display:flex; align-items:center; gap:8px; flex-shrink:0; }
 .code-change-file-undo { display:flex; width:26px; height:26px; align-items:center; justify-content:center; padding:0; border:0; border-radius:6px; background:transparent; color:var(--muted); cursor:pointer; opacity:0; transition:opacity .12s ease, background .12s ease, color .12s ease; }
 .code-change-file-row:hover .code-change-file-undo, .code-change-file-undo:focus-visible { opacity:1; }
