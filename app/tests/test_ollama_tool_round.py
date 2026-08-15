@@ -1,7 +1,16 @@
 import unittest
 from unittest.mock import AsyncMock, patch
 
-from services.llm.ollama import resolve_tool_calls
+from services.llm.ollama import (
+    _compact_tool_results,
+    _tool_decision_num_predict,
+    resolve_tool_calls,
+)
+from services.llm.config import (
+    TOOL_CALL_DECISION_NUM_PREDICT,
+    TOOL_CALL_MUTATION_NUM_PREDICT,
+    TOOL_CALL_RETRY_RESULT_CHARS,
+)
 
 
 class _Response:
@@ -26,6 +35,20 @@ class _Client:
 
 
 class OllamaToolRoundTests(unittest.IsolatedAsyncioTestCase):
+    def test_code_read_allows_a_larger_follow_up_patch(self):
+        messages = [
+            {"role": "assistant", "tool_calls": [{"function": {"name": "code_read_file"}}]},
+            {"role": "tool", "content": "source"},
+        ]
+        self.assertEqual(_tool_decision_num_predict([]), TOOL_CALL_DECISION_NUM_PREDICT)
+        self.assertEqual(_tool_decision_num_predict(messages), TOOL_CALL_MUTATION_NUM_PREDICT)
+
+    def test_timeout_retry_compacts_large_tool_results(self):
+        content = "a" * (TOOL_CALL_RETRY_RESULT_CHARS + 100)
+        compacted = _compact_tool_results([{"role": "tool", "content": content}])
+        self.assertLess(len(compacted[0]["content"]), len(content))
+        self.assertIn("tool result shortened", compacted[0]["content"])
+
     async def test_blocking_judgment_completes_with_wait_logger_enabled(self):
         tool = {"type": "function", "function": {
             "name": "code_create_file", "description": "create", "parameters": {},

@@ -11,6 +11,8 @@ from prompts import build_system_message, build_user_prompt
 from .config import (
     OLLAMA_URL, LLM_NUM_CTX, LLM_NUM_PREDICT, LLM_TEMPERATURE, TOP_K, TOP_P, OLLAMA_KEEP_ALIVE,
     LLM_STOP_TOKENS, TOOL_CALL_MAX_ROUNDS,
+    TOOL_CALL_DECISION_NUM_PREDICT, TOOL_CALL_MUTATION_NUM_PREDICT,
+    TOOL_CALL_ROUND_TIMEOUT_SECONDS, TOOL_CALL_RETRY_RESULT_CHARS,
     get_provider_config, log_llm_call, log_tool_names, logger,
 )
 from .helpers import load_images_b64, history_for_ollama
@@ -18,6 +20,60 @@ from .tools import build_approval_rejection_instruction, build_tool_directive
 from services.runtime_settings import get_runtime_settings
 from services.tool_approval import await_tool_approval, get_tool_rejection_response
 from .context_window import select_context_allocation
+
+
+_CODE_CONTEXT_TOOL_NAMES = {
+    "code_list_directory", "code_read_file", "code_read_files",
+    "code_find_files", "code_grep_search",
+}
+_CODE_MUTATION_TOOL_NAMES = {
+    "code_edit_file", "code_apply_patch", "code_create_file",
+    "code_move_file", "code_delete_file",
+}
+
+
+def _last_tool_call(messages: list[dict]) -> tuple[str, bool]:
+    for message_index in range(len(messages) - 1, -1, -1):
+        message = messages[message_index]
+        if message.get("role") != "assistant" or not message.get("tool_calls"):
+            continue
+        function = message["tool_calls"][-1].get("function", {}) or {}
+        name = function.get("name", "")
+        following_messages = messages[message_index + 1:]
+        failed = any(
+            item.get("role") == "tool" and str(item.get("content", "")).startswith("[오류]")
+            for item in following_messages
+        )
+        return name, failed
+    return "", False
+
+
+def _tool_decision_num_predict(messages: list[dict]) -> int:
+    last_tool_name, last_tool_failed = _last_tool_call(messages)
+    if last_tool_name in _CODE_CONTEXT_TOOL_NAMES:
+        return TOOL_CALL_MUTATION_NUM_PREDICT
+    if last_tool_failed and last_tool_name in _CODE_MUTATION_TOOL_NAMES:
+        return TOOL_CALL_MUTATION_NUM_PREDICT
+    return TOOL_CALL_DECISION_NUM_PREDICT
+
+
+def _compact_tool_results(messages: list[dict]) -> list[dict]:
+    compacted: list[dict] = []
+    half_limit = TOOL_CALL_RETRY_RESULT_CHARS // 2
+    for message in messages:
+        content = message.get("content")
+        if message.get("role") != "tool" or not isinstance(content, str) or len(content) <= TOOL_CALL_RETRY_RESULT_CHARS:
+            compacted.append(message)
+            continue
+        compacted.append({
+            **message,
+            "content": (
+                content[:half_limit]
+                + "\n\n[tool result shortened after timeout; use a targeted read for omitted lines]\n\n"
+                + content[-half_limit:]
+            ),
+        })
+    return compacted
 
 
 async def build_ollama_payload(
@@ -266,20 +322,53 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
     rejection_answer: str | None = None
 
     runtime = get_runtime_settings()
-    decision_options = {**options, "num_predict": runtime["llm_num_predict"]}
     async with httpx.AsyncClient(timeout=timeout) as client:
         for _round in range(max_rounds):
             logger.info("[tool_calls] 판정 라운드 시작: round=%d/%d", _round + 1, max_rounds)
             await _emit({"phase": "judging", "round": _round})
+            decision_options = {
+                **options,
+                "num_predict": _tool_decision_num_predict(work),
+            }
             body = {"model": model, "messages": work,
                     "tools": tools, "options": decision_options, "keep_alive": runtime["ollama_keep_alive"]}
             if not reasoning:
                 body["think"] = False
             try:
-                round_result = await _run_round_blocking(client, body)
+                round_result = await asyncio.wait_for(
+                    _run_round_blocking(client, body),
+                    timeout=min(timeout, TOOL_CALL_ROUND_TIMEOUT_SECONDS),
+                )
+            except asyncio.TimeoutError:
+                logger.warning(
+                    "[tool_calls] 판정 라운드 timeout(%ds), 축약 문맥으로 1회 재시도: round=%d",
+                    TOOL_CALL_ROUND_TIMEOUT_SECONDS, _round + 1,
+                )
+                retry_body = {**body, "messages": _compact_tool_results(work)}
+                try:
+                    round_result = await asyncio.wait_for(
+                        _run_round_blocking(client, retry_body),
+                        timeout=min(timeout, TOOL_CALL_ROUND_TIMEOUT_SECONDS),
+                    )
+                except asyncio.TimeoutError:
+                    logger.error(
+                        "[tool_calls] 축약 문맥 재시도도 timeout(%ds): round=%d",
+                        TOOL_CALL_ROUND_TIMEOUT_SECONDS, _round + 1,
+                    )
+                    timeout_instruction = {
+                        "role": "system",
+                        "content": (
+                            "The tool-decision request timed out twice. Do not claim that pending work was completed. "
+                            "Explain that execution stopped because the local model did not return the next tool call in time."
+                        ),
+                    }
+                    return _result([*work, timeout_instruction], stats=_build_merged_stats(None))
+                except Exception as retry_error:
+                    logger.warning("[tool_calls] 축약 문맥 재시도 실패: %s", retry_error)
+                    return _result(work)
             except Exception as e:
                 logger.warning("[tool_calls] 호출 실패, tool 없이 진행: %s", e)
-                return _result(messages)
+                return _result(work)
 
             tool_calls = round_result["tool_calls"]
             content = round_result["content"]

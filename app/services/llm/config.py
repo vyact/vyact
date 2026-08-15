@@ -24,12 +24,18 @@ LLM_STOP_TOKENS = ("<|endoftext|>", "<|im_start|>", "<|im_end|>")
 # 여러 파일 수정과 후속 검증까지 완료할 수 있도록 충분한 도구 호출 라운드를 제공한다.
 # 동일 호출·연속 실패는 provider별 반복 방지 로직에서 이 한도보다 먼저 중단한다.
 TOOL_CALL_MAX_ROUNDS = 30
+TOOL_CALL_DECISION_NUM_PREDICT = 2048
+TOOL_CALL_MUTATION_NUM_PREDICT = 8192
+TOOL_CALL_ROUND_TIMEOUT_SECONDS = 120
+TOOL_CALL_RETRY_RESULT_CHARS = 8000
 
 # 상수 재노출 (다른 llm 하위 모듈에서 import해 사용)
 __all__ = [
     "OLLAMA_URL", "IMAGES_DIR",
     "DEFAULT_MODEL", "LLM_TEMPERATURE", "LLM_NUM_CTX", "LLM_NUM_PREDICT", "LLM_MAX_TOKENS", "TOP_K", "TOP_P",
     "OLLAMA_KEEP_ALIVE", "LLM_STOP_TOKENS", "TOOL_CALL_MAX_ROUNDS",
+    "TOOL_CALL_DECISION_NUM_PREDICT", "TOOL_CALL_MUTATION_NUM_PREDICT",
+    "TOOL_CALL_ROUND_TIMEOUT_SECONDS", "TOOL_CALL_RETRY_RESULT_CHARS",
     "get_provider_config", "get_model_name", "build_provider_headers",
     "log_llm_call", "log_tool_names", "log_llm_interaction", "logger",
 ]
