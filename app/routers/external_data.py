@@ -30,6 +30,20 @@ from services.external_data.housing import (
     get_sync_status as get_housing_sync_status,
     start_synchronization as start_housing_synchronization,
 )
+from services.external_data.lh_lease_complex import (
+    DAILY_REQUEST_LIMIT as LH_COMPLEX_REQUEST_LIMIT,
+    SYNC_STATUS_DOC_ID as LH_COMPLEX_STATUS_ID,
+    browse_documents as browse_lh_complex_documents,
+    get_sync_status as get_lh_complex_sync_status,
+    start_synchronization as start_lh_complex_synchronization,
+)
+from services.external_data.lh_lease_notice import (
+    DAILY_REQUEST_LIMIT as LH_NOTICE_REQUEST_LIMIT,
+    SYNC_STATUS_DOC_ID as LH_NOTICE_STATUS_ID,
+    browse_documents as browse_lh_notice_documents,
+    get_sync_status as get_lh_notice_sync_status,
+    start_synchronization as start_lh_notice_synchronization,
+)
 from services.external_data.k_startup import (
     DAILY_REQUEST_LIMIT as K_STARTUP_REQUEST_LIMIT,
     SYNC_STATUS_DOC_ID as K_STARTUP_STATUS_ID,
@@ -65,6 +79,8 @@ SUPPORTED_SOURCE_IDS = {
     "kr.k_startup",
     "kr.welfare",
     "kr.housing",
+    "kr.lh_lease_complex",
+    "kr.lh_lease_notice",
 }
 SOURCE_STATUS_DOCUMENTS = {
     "kr.gov24": (GOV24_STATUS_ID, GOV24_REQUEST_LIMIT),
@@ -72,6 +88,13 @@ SOURCE_STATUS_DOCUMENTS = {
     "kr.k_startup": (K_STARTUP_STATUS_ID, K_STARTUP_REQUEST_LIMIT),
     "kr.welfare": (WELFARE_STATUS_ID, WELFARE_REQUEST_LIMIT),
     "kr.housing": (HOUSING_STATUS_ID, HOUSING_REQUEST_LIMIT),
+    "kr.lh_lease_complex": (LH_COMPLEX_STATUS_ID, LH_COMPLEX_REQUEST_LIMIT),
+    "kr.lh_lease_notice": (LH_NOTICE_STATUS_ID, LH_NOTICE_REQUEST_LIMIT),
+}
+
+LH_SOURCE_HANDLERS = {
+    "kr.lh_lease_complex": (get_lh_complex_sync_status, start_lh_complex_synchronization, browse_lh_complex_documents, "lhLeaseComplex"),
+    "kr.lh_lease_notice": (get_lh_notice_sync_status, start_lh_notice_synchronization, browse_lh_notice_documents, "lhLeaseNotice"),
 }
 
 
@@ -176,6 +199,9 @@ async def stream_all_external_data_sync():
         enabled_sources.append("kr.welfare")
     if (connections.get("kr.housing") or {}).get("enabled", False):
         enabled_sources.append("kr.housing")
+    for source_id in LH_SOURCE_HANDLERS:
+        if (connections.get(source_id) or {}).get("enabled", False):
+            enabled_sources.append(source_id)
     if not enabled_sources:
         raise HTTPException(400, "No synchronized external data source is enabled.")
 
@@ -192,6 +218,9 @@ async def stream_all_external_data_sync():
             started_any = start_welfare_synchronization(service_key) or started_any
         if "kr.housing" in enabled_sources:
             started_any = start_housing_synchronization(service_key) or started_any
+        for source_id, (_, start_callback, _, _) in LH_SOURCE_HANDLERS.items():
+            if source_id in enabled_sources:
+                started_any = start_callback(service_key) or started_any
         if started_any:
             await wait_for_status_change(initial_versions, timeout_seconds=2.0)
         previous_payload = ""
@@ -728,3 +757,76 @@ async def stream_housing_sync():
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@router.get("/external-data/sources/{source_id:path}/sync")
+async def get_lh_source_sync(source_id: str):
+    handler = LH_SOURCE_HANDLERS.get(source_id)
+    if not handler:
+        raise HTTPException(404, "External data source not found.")
+    return await handler[0]()
+
+
+@router.get("/external-data/sources/{source_id:path}/documents")
+async def browse_lh_source_data(
+    source_id: str,
+    query: str = Query(default="", max_length=200),
+    cursor: str | None = Query(default=None, max_length=1000),
+):
+    handler = LH_SOURCE_HANDLERS.get(source_id)
+    if not handler:
+        raise HTTPException(404, "External data source not found.")
+    search_after = None
+    if cursor:
+        try:
+            search_after = json.loads(cursor)
+            if not isinstance(search_after, list):
+                raise ValueError
+        except (json.JSONDecodeError, ValueError):
+            raise HTTPException(400, "Invalid pagination cursor.") from None
+    result = await handler[2](query, search_after)
+    if result["next_cursor"] is not None:
+        result["next_cursor"] = json.dumps(result["next_cursor"], ensure_ascii=False)
+    return result
+
+
+@router.post("/external-data/sources/{source_id:path}/sync")
+async def start_lh_source_sync(source_id: str, wait: bool = Query(default=False)):
+    handler = LH_SOURCE_HANDLERS.get(source_id)
+    if not handler:
+        raise HTTPException(404, "External data source not found.")
+    connections = await load_external_data_connections()
+    if not (connections.get(source_id) or {}).get("enabled", False):
+        raise HTTPException(400, "The external data source is disabled.")
+    service_key = (connections.get("kr.gov24") or {}).get("service_key", "")
+    if not service_key:
+        raise HTTPException(400, "A service key is required.")
+    get_status_callback, start_callback, _, stage = handler
+    if start_callback(service_key):
+        return await _wait_for_synchronization(get_status_callback) if wait else {"status": "started"}
+    if wait:
+        return await _wait_for_synchronization(get_status_callback)
+    current_status = await get_status_callback()
+    if current_status.get("status") != "running":
+        current_status = {**current_status, "status": "running", "stage": stage, "current": 0, "total": 0}
+    return {"status": "already_running", "sync_status": current_status}
+
+
+@router.post("/external-data/sources/{source_id:path}/sync/events")
+async def stream_lh_source_sync(source_id: str):
+    handler = LH_SOURCE_HANDLERS.get(source_id)
+    if not handler:
+        raise HTTPException(404, "External data source not found.")
+    connections = await load_external_data_connections()
+    if not (connections.get(source_id) or {}).get("enabled", False):
+        raise HTTPException(400, "The external data source is disabled.")
+    service_key = (connections.get("kr.gov24") or {}).get("service_key", "")
+    if not service_key:
+        raise HTTPException(400, "A service key is required.")
+    get_status_callback, start_callback, _, _ = handler
+
+    async def event_stream():
+        async for event in _single_source_status_stream(source_id, lambda: start_callback(service_key), get_status_callback):
+            yield event
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})

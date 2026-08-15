@@ -47,6 +47,8 @@ from logger import get_logger
 from services.external_data.biz_support import SOURCE_ID as BIZ_SUPPORT_SOURCE_ID, search_candidates as search_biz_support_candidates
 from services.external_data.gov24 import SOURCE_ID as GOV24_SOURCE_ID, search_candidates as search_gov24_candidates
 from services.external_data.housing import SOURCE_ID as HOUSING_SOURCE_ID, search_candidates as search_housing_candidates
+from services.external_data.lh_lease_complex import SOURCE_ID as LH_COMPLEX_SOURCE_ID, search_candidates as search_lh_complex_candidates
+from services.external_data.lh_lease_notice import SOURCE_ID as LH_NOTICE_SOURCE_ID, search_candidates as search_lh_notice_candidates
 from services.external_data.k_startup import SOURCE_ID as K_STARTUP_SOURCE_ID, search_candidates as search_k_startup_candidates
 from services.external_data.welfare import SOURCE_ID as WELFARE_SOURCE_ID, search_candidates as search_welfare_candidates
 
@@ -81,7 +83,7 @@ as needing confirmation. Answer in the user's language.
 
 async def _get_selected_external_context(question: str, resource_ids: list[str]) -> tuple[list[dict], str]:
     selected_ids = set(resource_ids)
-    if not selected_ids.intersection({GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, WELFARE_SOURCE_ID, HOUSING_SOURCE_ID}):
+    if not selected_ids.intersection({GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, WELFARE_SOURCE_ID, HOUSING_SOURCE_ID, LH_COMPLEX_SOURCE_ID, LH_NOTICE_SOURCE_ID}):
         return [], ""
     searches = []
     if GOV24_SOURCE_ID in selected_ids:
@@ -94,6 +96,10 @@ async def _get_selected_external_context(question: str, resource_ids: list[str])
         searches.append(("welfare", search_welfare_candidates(question)))
     if HOUSING_SOURCE_ID in selected_ids:
         searches.append(("housing", search_housing_candidates(question)))
+    if LH_COMPLEX_SOURCE_ID in selected_ids:
+        searches.append(("LH lease complex", search_lh_complex_candidates(question)))
+    if LH_NOTICE_SOURCE_ID in selected_ids:
+        searches.append(("LH notice", search_lh_notice_candidates(question)))
     results = await asyncio.gather(*(search for _, search in searches), return_exceptions=True)
     candidates = []
     for (source_name, _), result in zip(searches, results):

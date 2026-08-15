@@ -23,7 +23,7 @@
     "browseUnavailable": "连接数据采集后可用。",
     "syncAllData": "更新全部数据", "syncAllDescription": "一次更新{{count}}个已开启的数据源。", "updateAllData": "更新所有已开启的数据源", "sourceData": "数据源数据", "sourceDataSummary": "{{count}}条 · {{date}}", "updateSourceData": "更新此数据源", "collectorUnavailable": "数据采集连接准备中",
     "sources": {
-      "bizSupport": {"name": "中小企业与小微企业扶持", "description": "应用BizInfo的资金、代金券、销售和就业扶持公告。"}, "kStartup": {"name": "创业补助", "description": "应用K-Startup的创业资金和扶持公告。"}, "welfare": {"name": "个人福利待遇", "description": "应用中央政府社会保障待遇和福利服务。"}, "housing": {"name": "公共住房招募公告", "description": "应用MyHome最新的公共租赁和出售住房公告。"},
+      "bizSupport": {"name": "中小企业与小微企业扶持", "description": "应用BizInfo的资金、代金券、销售和就业扶持公告。"}, "kStartup": {"name": "创业补助", "description": "应用K-Startup的创业资金和扶持公告。"}, "welfare": {"name": "个人福利待遇", "description": "应用中央政府社会保障待遇和福利服务。"}, "housing": {"name": "公共住房招募公告", "description": "应用MyHome最新的公共租赁和出售住房公告。"}, "lhLeaseComplex": {"name": "LH租赁住宅小区", "description": "按地区比较押金、月租、面积和户数。"}, "lhLeaseNotice": {"name": "LH出售和租赁公告", "description": "使用LH当前的出售、租赁和住房福利招募公告。"},
       "gov24": {"name": "政府24·公共服务（福利）", "description": "搜索公共机构提供的福利、住房、教育和就业支持。", "steps": {"1": "登录或注册公共数据门户。", "2": "在API页面选择使用申请。", "3": "选择个人或项目服务密钥并提交。", "4": "获批后在个人页面查看密钥。"}, "note": "开发和生产账户均自动批准且免费。"},
       "youthCenter": {"name": "青年中心", "description": "搜索韩国青年政策和青年空间。", "steps": {"1": "登录或注册青年中心。", "2": "在个人页面申请Open API密钥。", "3": "等待管理员批准。", "4": "查看已签发的密钥。"}, "note": "密钥经管理员审核后签发。"},
       "bizInfo": {"name": "企业信息", "description": "搜索面向初创企业和小企业的扶持项目与活动。", "steps": {"1": "打开API指南页面。", "2": "申请使用扶持项目API。", "3": "填写并提交申请信息。", "4": "查看已签发的服务密钥。"}, "note": "扶持项目与活动API可能需要分别申请。"}

@@ -36,6 +36,8 @@ const EXTERNAL_DATA_SOURCES = [
     {id: 'kr.k_startup', nameKey: 'kStartup', hasCollector: true},
     {id: 'kr.welfare', nameKey: 'welfare', hasCollector: true},
     {id: 'kr.housing', nameKey: 'housing', hasCollector: true},
+    {id: 'kr.lh_lease_complex', nameKey: 'lhLeaseComplex', hasCollector: true},
+    {id: 'kr.lh_lease_notice', nameKey: 'lhLeaseNotice', hasCollector: true},
 ] as const;
 
 type ExternalDataSource = (typeof EXTERNAL_DATA_SOURCES)[number];

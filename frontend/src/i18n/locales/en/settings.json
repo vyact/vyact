@@ -30,7 +30,9 @@
       "bizSupport": {"name": "SME and small-business support", "description": "Use current funding, voucher, sales, and employment support announcements from BizInfo."},
       "kStartup": {"name": "Startup grants", "description": "Use startup commercialization grants and support announcements from K-Startup."},
       "welfare": {"name": "Personal welfare benefits", "description": "Use central-government social security benefits and welfare services from Bokjiro."},
-      "housing": {"name": "Public housing notices", "description": "Use current public rental and public sale recruitment notices from MyHome."}
+      "housing": {"name": "Public housing notices", "description": "Use current public rental and public sale recruitment notices from MyHome."},
+      "lhLeaseComplex": {"name": "LH rental housing complexes", "description": "Compare deposits, monthly rents, areas, and unit counts for LH rental complexes by region."},
+      "lhLeaseNotice": {"name": "LH sale and rental notices", "description": "Use current LH sale, rental, and housing-welfare recruitment notices."}
     }
   },
   "plugins": {

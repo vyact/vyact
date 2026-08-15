@@ -18,6 +18,14 @@ from services.external_data.housing import (
     get_sync_status as get_housing_sync_status,
     start_synchronization as start_housing_synchronization,
 )
+from services.external_data.lh_lease_complex import (
+    get_sync_status as get_lh_complex_sync_status,
+    start_synchronization as start_lh_complex_synchronization,
+)
+from services.external_data.lh_lease_notice import (
+    get_sync_status as get_lh_notice_sync_status,
+    start_synchronization as start_lh_notice_synchronization,
+)
 from services.external_data.k_startup import (
     get_sync_status as get_k_startup_sync_status,
     start_synchronization as start_k_startup_synchronization,
@@ -116,6 +124,18 @@ async def _run_due_synchronizations() -> None:
         if is_sync_due(housing_reference_time, interval_hours):
             if start_housing_synchronization(shared_service_key):
                 logger.info("[external-data] scheduled housing sync started (%sh)", interval_hours)
+
+    lh_sources = (
+        ("kr.lh_lease_complex", get_lh_complex_sync_status, start_lh_complex_synchronization),
+        ("kr.lh_lease_notice", get_lh_notice_sync_status, start_lh_notice_synchronization),
+    )
+    for source_id, get_status_callback, start_callback in lh_sources:
+        source_config = connections.get(source_id) or {}
+        if shared_service_key and source_config.get("enabled", False) and auto_sync_enabled:
+            source_status = await get_status_callback()
+            reference = source_status.get("failed_at") if source_status.get("status") == "failed" else source_status.get("last_successful_sync_at")
+            if is_sync_due(reference, interval_hours) and start_callback(shared_service_key):
+                logger.info("[external-data] scheduled %s sync started (%sh)", source_id, interval_hours)
 
 
 async def _run_scheduler() -> None:

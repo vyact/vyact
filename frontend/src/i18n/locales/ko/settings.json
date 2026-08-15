@@ -60,7 +60,9 @@
       "bizSupport": {"name": "중소기업·소상공인 지원사업", "description": "기업마당의 최신 정책자금·바우처·판로·고용 지원사업 공고를 적용합니다."},
       "kStartup": {"name": "예비창업자·스타트업 지원금", "description": "K-Startup의 창업 사업화 자금과 지원사업 공고를 적용합니다."},
       "welfare": {"name": "개인 복지급여", "description": "복지로의 중앙부처 사회보장 급여와 복지서비스를 적용합니다."},
-      "housing": {"name": "공공주택 모집공고", "description": "마이홈포털의 최신 공공임대·공공분양 모집공고를 적용합니다."}
+      "housing": {"name": "공공주택 모집공고", "description": "마이홈포털의 최신 공공임대·공공분양 모집공고를 적용합니다."},
+      "lhLeaseComplex": {"name": "LH 임대주택단지", "description": "지역별 LH 임대단지의 보증금·월임대료·면적·세대수를 비교합니다."},
+      "lhLeaseNotice": {"name": "LH 분양·임대공고", "description": "LH의 현재 분양·임대·주거복지 모집공고를 적용합니다."}
     }
   },
   "plugins": {
