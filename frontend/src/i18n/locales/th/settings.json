@@ -11,6 +11,9 @@
     "plugins": "Plugins"
   },
   "externalData": {
+    "savePromptShort": "บันทึกคำแนะนำ",
+    "promptDescriptionSimple": "กฎตรวจสอบคุณสมบัติและกำหนดเวลาพื้นฐานจะใช้เสมอ โปรดเพิ่มเฉพาะคำแนะนำที่จำเป็น",
+    "addSelectedDocument": "เพิ่ม", "removeSelectedDocument": "นำออก",
     "browser": {"title": "ดูข้อมูล Government24", "open": "ดูข้อมูล", "close": "ปิด", "searchPlaceholder": "ค้นหาบริการ หน่วยงาน หรือกลุ่มเป้าหมาย…", "clearSearch": "ล้างการค้นหา", "resultCount": "{{count}} รายการ", "loading": "กำลังโหลด…", "loadingMore": "กำลังโหลดเพิ่ม…", "loadFailed": "โหลดข้อมูลไม่ได้", "empty": "ไม่พบผลลัพธ์", "unknownDate": "ยังไม่กำหนดวัน", "unknownAgency": "ไม่ทราบหน่วยงาน", "modifiedAt": "แก้ไข {{date}}", "deadlineAt": "ปิดรับ {{date}}", "businessYearAt": "ปีโครงการ {{year}}", "target": "กลุ่มเป้าหมาย", "deadline": "กำหนดสมัคร", "purpose": "วัตถุประสงค์", "content": "รายละเอียดการสนับสนุน", "selectionCriteria": "เกณฑ์คัดเลือก", "applicationMethod": "วิธีสมัคร", "requiredDocuments": "เอกสาร", "contact": "ติดต่อ", "openSource": "เปิดต้นฉบับ Government24", "selectDocument": "เลือกข้อมูลจากรายการด้านซ้าย"},
     "autoSync": "อัปเดตอัตโนมัติ", "autoSyncDescription": "อัปเดตข้อมูลเบื้องหลังตามช่วงเวลาที่เลือกขณะเปิดแอป", "autoSyncInterval": "ช่วงเวลาอัปเดต", "autoSyncIntervalOption": "ทุก {{count}} ชั่วโมง", "autoSyncSaveFailed": "บันทึกการตั้งค่าอัปเดตอัตโนมัติไม่ได้",
     "requestUsage": "คำขอ API วันนี้ {{used}} / {{limit}}", "requestLimitExceeded": "แหล่งข้อมูลนี้ใช้โควตาคำขอ API วันนี้ครบแล้ว โปรดลองหลังรีเซ็ตหรือเพิ่มทราฟฟิกการใช้งานจริง",

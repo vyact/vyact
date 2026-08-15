@@ -129,10 +129,6 @@ class ExternalDataPromptRequest(BaseModel):
     instruction: str
 
 
-class ExternalDataEligibilityProfileRequest(BaseModel):
-    profile: str
-
-
 @router.get("/external-data/documents")
 async def browse_all_external_data(
     query: str = Query(default="", max_length=200),
@@ -391,7 +387,6 @@ async def get_external_data_bootstrap():
         },
         "prompt": {
             "instruction": str(config.get("custom_instruction") or ""),
-            "eligibility_profile": str(config.get("eligibility_profile") or ""),
         },
     }
 
@@ -519,18 +514,6 @@ async def save_external_data_prompt(request: ExternalDataPromptRequest):
     connections["kr.gov24"] = {**config, "custom_instruction": instruction}
     await save_external_data_connections(connections)
     return {"instruction": instruction}
-
-
-@router.put("/external-data/eligibility-profile")
-async def save_external_data_eligibility_profile(request: ExternalDataEligibilityProfileRequest):
-    profile = request.profile.strip()
-    if len(profile) > 4_000:
-        raise HTTPException(400, "External data eligibility profile is too long.")
-    connections = await load_external_data_connections()
-    config = connections.get("kr.gov24") or {}
-    connections["kr.gov24"] = {**config, "eligibility_profile": profile}
-    await save_external_data_connections(connections)
-    return {"profile": profile}
 
 
 @router.post("/external-data/sources/kr.gov24/sync")

@@ -3,14 +3,31 @@ import type { TFunction } from 'i18next';
 /** Converts internal source-type values into the current interface language. */
 export function getLocalizedSourceLabel(source: string | undefined, t: TFunction): string {
     const normalizedSource = source?.trim() ?? '';
+    const normalizedExternalSource = normalizedSource.toLowerCase();
+    const externalSourceNameKeys: Record<string, string> = {
+        'kr.gov24': 'gov24',
+        'government24': 'gov24',
+        'kr.biz_support': 'bizSupport',
+        'bizinfo': 'bizSupport',
+        'kr.k_startup': 'kStartup',
+        'k-startup': 'kStartup',
+        'kr.welfare': 'welfare',
+        'welfare': 'welfare',
+        'kr.housing': 'housing',
+        'housing': 'housing',
+        'kr.lh_lease_complex': 'lhLeaseComplex',
+        'lh lease complex': 'lhLeaseComplex',
+        'kr.lh_lease_notice': 'lhLeaseNotice',
+        'lh notice': 'lhLeaseNotice',
+    };
+    const externalSourceNameKey = externalSourceNameKeys[normalizedExternalSource];
+    if (externalSourceNameKey) {
+        return t(`externalData.sources.${externalSourceNameKey}.name`, {ns: 'settings'});
+    }
 
     // External-data source names are stable backend identifiers. Translate them
     // only at the presentation boundary so filtering and source-type checks keep
     // using the same value regardless of the interface language.
-    if (normalizedSource.toLowerCase() === 'government24') {
-        return t('knowledgeSources.gov24Short');
-    }
-
     if (!normalizedSource || normalizedSource === '웹페이지' || normalizedSource === 'Web page') {
         return t('message.webPage');
     }

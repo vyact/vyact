@@ -11,6 +11,9 @@
     "plugins": "Plugins"
   },
   "externalData": {
+    "savePromptShort": "Lưu hướng dẫn",
+    "promptDescriptionSimple": "Các kiểm tra mặc định về điều kiện và thời hạn luôn được áp dụng. Chỉ thêm hướng dẫn bổ sung cần thiết.",
+    "addSelectedDocument": "Thêm", "removeSelectedDocument": "Xóa",
     "browser": {"title": "Xem dữ liệu Government24", "open": "Xem dữ liệu", "close": "Đóng", "searchPlaceholder": "Tìm dịch vụ, cơ quan hoặc đối tượng…", "clearSearch": "Xóa tìm kiếm", "resultCount": "{{count}} mục", "loading": "Đang tải…", "loadingMore": "Đang tải thêm…", "loadFailed": "Không thể tải dữ liệu.", "empty": "Không có kết quả.", "unknownDate": "Lịch chưa xác định", "unknownAgency": "Không rõ cơ quan", "modifiedAt": "Sửa {{date}}", "deadlineAt": "Hạn {{date}}", "businessYearAt": "Năm chương trình {{year}}", "target": "Đối tượng", "deadline": "Hạn đăng ký", "purpose": "Mục đích", "content": "Nội dung hỗ trợ", "selectionCriteria": "Tiêu chí", "applicationMethod": "Cách đăng ký", "requiredDocuments": "Hồ sơ", "contact": "Liên hệ", "openSource": "Mở nguồn Government24", "selectDocument": "Chọn dữ liệu từ danh sách bên trái."},
     "autoSync": "Tự động cập nhật", "autoSyncDescription": "Cập nhật dữ liệu trong nền theo khoảng đã chọn khi ứng dụng đang chạy.", "autoSyncInterval": "Khoảng cập nhật", "autoSyncIntervalOption": "Mỗi {{count}} giờ", "autoSyncSaveFailed": "Không thể lưu cài đặt tự động cập nhật.",
     "requestUsage": "Yêu cầu API hôm nay: {{used}} / {{limit}}", "requestLimitExceeded": "Nguồn dữ liệu này đã hết hạn mức yêu cầu API hôm nay. Hãy thử lại sau khi đặt lại hoặc tăng lưu lượng sản xuất.",

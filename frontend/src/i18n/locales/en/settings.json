@@ -11,6 +11,9 @@
     "profile": "AI Profile Analysis"
   },
   "externalData": {
+    "savePromptShort": "Save instructions",
+    "promptDescriptionSimple": "The default eligibility and deadline checks always apply. Add only any extra instructions you need.",
+    "addSelectedDocument": "Add", "removeSelectedDocument": "Remove",
     "browser": {"title": "Browse Government24 data", "open": "Browse data", "close": "Close", "searchPlaceholder": "Search services, agencies, or eligibility…", "clearSearch": "Clear search", "resultCount": "{{count}} items", "loading": "Loading data…", "loadingMore": "Loading more…", "loadFailed": "Could not load data.", "empty": "No results found.", "unknownDate": "Schedule TBD", "unknownAgency": "Unknown agency", "modifiedAt": "Modified {{date}}", "deadlineAt": "Closes {{date}}", "businessYearAt": "Program year {{year}}", "target": "Eligibility", "deadline": "Application deadline", "purpose": "Purpose", "content": "Benefits", "selectionCriteria": "Selection criteria", "applicationMethod": "How to apply", "requiredDocuments": "Required documents", "contact": "Contact", "openSource": "Open Government24 source", "selectDocument": "Select an item from the list."},
     "autoSync": "Automatic updates", "autoSyncDescription": "Updates data in the background at the selected interval while the app is running.", "autoSyncInterval": "Update interval", "autoSyncIntervalOption": "Every {{count}} hours", "autoSyncSaveFailed": "Could not save automatic update settings.",
     "requestUsage": "API requests today: {{used}} / {{limit}}", "requestLimitExceeded": "This data source has reached today's API request limit. Try again after the reset or increase production traffic.",

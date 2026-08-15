@@ -52,6 +52,7 @@ from services.external_data.lh_lease_notice import SOURCE_ID as LH_NOTICE_SOURCE
 from services.external_data.k_startup import SOURCE_ID as K_STARTUP_SOURCE_ID, search_candidates as search_k_startup_candidates
 from services.external_data.welfare import SOURCE_ID as WELFARE_SOURCE_ID, search_candidates as search_welfare_candidates
 from services.external_data.settings import load_external_data_connections
+from services.external_data.selected_documents import load_selected_external_documents
 from services.user_profile import get_response_style_instruction
 
 logger = get_logger(__name__)
@@ -96,9 +97,10 @@ async def _with_response_style(system_prompt: str) -> str:
     return f"{system_prompt}\n\n{style_context}" if system_prompt else style_context
 
 
-async def _get_selected_external_context(question: str, resource_ids: list[str]) -> tuple[list[dict], str, bool]:
+async def _get_selected_external_context(question: str, resource_ids: list[str], document_selections: list[dict] | None = None) -> tuple[list[dict], str, bool]:
     selected_ids = set(resource_ids)
-    if not selected_ids.intersection({GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, WELFARE_SOURCE_ID, HOUSING_SOURCE_ID, LH_COMPLEX_SOURCE_ID, LH_NOTICE_SOURCE_ID}):
+    document_selections = document_selections or []
+    if not selected_ids.intersection({GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, WELFARE_SOURCE_ID, HOUSING_SOURCE_ID, LH_COMPLEX_SOURCE_ID, LH_NOTICE_SOURCE_ID}) and not document_selections:
         return [], "", True
     searches = []
     if GOV24_SOURCE_ID in selected_ids:
@@ -115,26 +117,23 @@ async def _get_selected_external_context(question: str, resource_ids: list[str])
         searches.append(("LH lease complex", search_lh_complex_candidates(question)))
     if LH_NOTICE_SOURCE_ID in selected_ids:
         searches.append(("LH notice", search_lh_notice_candidates(question)))
-    settings_result, *results = await asyncio.gather(
+    settings_result, selected_documents_result, *results = await asyncio.gather(
         load_external_data_connections(),
+        load_selected_external_documents(document_selections),
         *(search for _, search in searches),
         return_exceptions=True,
     )
-    candidates = []
+    candidates = selected_documents_result if isinstance(selected_documents_result, list) else []
     for (source_name, _), result in zip(searches, results):
         if isinstance(result, Exception):
             logger.warning("[external_data] %s candidate search failed: %s", source_name, result)
             continue
         candidates.extend(result)
     custom_instruction = ""
-    eligibility_profile = ""
     if isinstance(settings_result, dict):
         external_config = settings_result.get("kr.gov24") or {}
         custom_instruction = str(external_config.get("custom_instruction") or "").strip()
-        eligibility_profile = str(external_config.get("eligibility_profile") or "").strip()
     instruction = EXTERNAL_DATA_INSTRUCTION
-    if eligibility_profile:
-        instruction = f"{instruction}\n\n[External-data eligibility profile]\n{eligibility_profile}"
     if custom_instruction:
         instruction = (
             f"{instruction}\n\n[User-configured external-data preferences]\n"
@@ -286,6 +285,7 @@ class QueryRequest(BaseModel):
     knowledge_collection_id: str = ""  # 이전 클라이언트 호환용 단일 컬렉션
     knowledge_collection_ids: list[str] = []  # 선택한 여러 지식 컬렉션의 자료를 함께 검색
     external_resource_ids: list[str] = []  # 사용자가 명시적으로 선택한 외부 데이터만 별도 검색
+    external_document_selections: list[dict] = []  # 모달에서 명시적으로 첨부한 외부 데이터 원문
     minimal_prompt: bool = False  # True면 앱 전용 기본 프롬프트(FORMAT_INSTRUCTION, conv_summary 태그 지시) 제외.
     selected_mcp_ids: list[str] = []  # @로 선택한 MCP들은 enabled 여부와 무관하게 이번 요청에만 사용.
     approval_mode: str = "risky_only"
@@ -492,9 +492,9 @@ async def query(req: QueryRequest):
     else:
         knowledge_collection_ids = _selected_knowledge_collection_ids(req)
         external_docs, external_instruction, inject_user_profile = await _get_selected_external_context(
-            req.question, req.external_resource_ids,
+            req.question, req.external_resource_ids, req.external_document_selections,
         )
-        external_selected = bool({GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, WELFARE_SOURCE_ID, HOUSING_SOURCE_ID, LH_COMPLEX_SOURCE_ID, LH_NOTICE_SOURCE_ID}.intersection(req.external_resource_ids))
+        external_selected = bool(req.external_document_selections or {GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, WELFARE_SOURCE_ID, HOUSING_SOURCE_ID, LH_COMPLEX_SOURCE_ID, LH_NOTICE_SOURCE_ID}.intersection(req.external_resource_ids))
         # URL 크롤링
         all_urls = [u.rstrip('.') for u in URL_RE.findall(req.question)]
         urls = _should_crawl_urls(req.question, all_urls) if has_plugin_url_resolvers() else []
@@ -765,12 +765,12 @@ async def query_stream(req: QueryRequest):
                     # 그대로 남으므로, 컨텍스트 없이 일반 채팅 경로로 LLM에 전달된다.
                     knowledge_collection_ids = _selected_knowledge_collection_ids(req)
                     external_docs, external_instruction, inject_user_profile = await _get_selected_external_context(
-                        clean_question, req.external_resource_ids,
+                        clean_question, req.external_resource_ids, req.external_document_selections,
                     )
                     url_system_prompt = system_prompt
                     if external_instruction:
                         url_system_prompt = f"{url_system_prompt}\n\n{external_instruction}"
-                    external_selected = bool({GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, WELFARE_SOURCE_ID, HOUSING_SOURCE_ID, LH_COMPLEX_SOURCE_ID, LH_NOTICE_SOURCE_ID}.intersection(req.external_resource_ids))
+                    external_selected = bool(req.external_document_selections or {GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, WELFARE_SOURCE_ID, HOUSING_SOURCE_ID, LH_COMPLEX_SOURCE_ID, LH_NOTICE_SOURCE_ID}.intersection(req.external_resource_ids))
                     rag_result = await rag_query(clean_question, url_system_prompt, image_attachments, req.messages,
                                                  extra_context=external_docs,
                                                  skip_rag=external_selected and not knowledge_collection_ids,
@@ -805,10 +805,10 @@ async def query_stream(req: QueryRequest):
                 has_file_attachment = any(
                     a.get("type") in ("file", "zip") for a in req.attachments
                 )
-                external_selected = bool({GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, WELFARE_SOURCE_ID, HOUSING_SOURCE_ID, LH_COMPLEX_SOURCE_ID, LH_NOTICE_SOURCE_ID}.intersection(req.external_resource_ids))
+                external_selected = bool(req.external_document_selections or {GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, WELFARE_SOURCE_ID, HOUSING_SOURCE_ID, LH_COMPLEX_SOURCE_ID, LH_NOTICE_SOURCE_ID}.intersection(req.external_resource_ids))
                 knowledge_collection_ids = _selected_knowledge_collection_ids(req)
                 external_docs, external_instruction, inject_user_profile = await _get_selected_external_context(
-                    clean_question, req.external_resource_ids,
+                    clean_question, req.external_resource_ids, req.external_document_selections,
                 )
 
                 # 대화 요약 태그 생성 지시 — 이 스트리밍 호출에만 덧붙인다.

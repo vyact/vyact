@@ -1,8 +1,9 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {CalendarClock, ExternalLink, FileText, Landmark, Search, Tag, Users, X} from 'lucide-react';
+import {CalendarClock, Check, ExternalLink, FileText, Landmark, Plus, Search, Tag, Users, X} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {api} from '../../services/api';
 import type {Gov24Document} from '../../services/api';
+import type {ExternalDocumentSelection} from '../../services/externalDocumentSelections';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import './Gov24DataModal.css';
 
@@ -12,6 +13,8 @@ interface Gov24DataModalProps {
     sourceId?: string;
     sourceNameKey?: string;
     sources?: ReadonlyArray<{id: string; nameKey: string}>;
+    selectedDocuments?: ExternalDocumentSelection[];
+    onToggleDocument?: (document: ExternalDocumentSelection) => void;
 }
 
 type BrowserDocument = Gov24Document & {
@@ -22,7 +25,7 @@ type BrowserDocument = Gov24Document & {
 
 const ALL_EXTERNAL_CURSOR_KEY = 'all';
 
-const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose, sourceId = 'kr.gov24', sourceNameKey = 'gov24', sources}) => {
+const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose, sourceId = 'kr.gov24', sourceNameKey = 'gov24', sources, selectedDocuments = [], onToggleDocument}) => {
     const {t, i18n} = useTranslation('settings');
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -101,7 +104,16 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose, sourceI
 
     if (!isOpen) return null;
 
+    const isSelectedDocument = (document: BrowserDocument) => selectedDocuments.some(selection =>
+        selection.source_id === document.browserSourceId && selection.document_id === document.id,
+    );
+    const toggleDocument = (document: BrowserDocument) => onToggleDocument?.({
+        source_id: document.browserSourceId,
+        document_id: document.id,
+        title: document.title,
+    });
     const selectedDocument = documents.find(document => document.browserKey === selectedId) || documents[0];
+    const isDocumentAttached = selectedDocument ? isSelectedDocument(selectedDocument) : false;
     const detailBadges = selectedDocument
         ? [selectedDocument.category, selectedDocument.support_type]
             .map(value => value?.trim())
@@ -208,13 +220,19 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose, sourceI
                                 : !documents.length ? <div className="gov24-browser-state">{t('externalData.browser.empty')}</div>
                                     : documents.map(document => {
                                         const documentDate = getDocumentDate(document);
-                                        return <button type="button" key={document.browserKey} className={document.browserKey === selectedDocument?.browserKey ? 'is-selected' : ''} onClick={() => setSelectedId(document.browserKey)}>
-                                            <strong>{document.title}</strong>
-                                            <span className="gov24-browser-list-meta">
-                                                <time className={`gov24-browser-date is-${documentDate.kind}`}>{documentDate.label}</time>
-                                                <span>{isAllSources ? t(`externalData.sources.${document.browserSourceNameKey}.name`) : document.agency || t('externalData.browser.unknownAgency')}</span>
-                                            </span>
-                                        </button>;
+                                        const isAttached = isSelectedDocument(document);
+                                        return <div key={document.browserKey} className={`gov24-browser-list-row${document.browserKey === selectedDocument?.browserKey ? ' is-selected' : ''}`}>
+                                            <button type="button" className="gov24-browser-list-select" onClick={() => setSelectedId(document.browserKey)}>
+                                                <strong>{document.title}</strong>
+                                                <span className="gov24-browser-list-meta">
+                                                    <time className={`gov24-browser-date is-${documentDate.kind}`}>{documentDate.label}</time>
+                                                    <span>{isAllSources ? t(`externalData.sources.${document.browserSourceNameKey}.name`) : document.agency || t('externalData.browser.unknownAgency')}</span>
+                                                </span>
+                                            </button>
+                                            {onToggleDocument && <button type="button" className={`gov24-browser-list-attach${isAttached ? ' is-attached' : ''}`} onClick={() => toggleDocument(document)}>
+                                                {isAttached ? t('externalData.removeSelectedDocument') : t('externalData.addSelectedDocument')}
+                                            </button>}
+                                        </div>;
                                     })}
                         {loadingMore && <div className="gov24-browser-loading-more">{t('externalData.browser.loadingMore')}</div>}
                     </aside>
@@ -222,16 +240,26 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose, sourceI
                         {selectedDocument ? <>
                             <div className="gov24-browser-detail-hero">
                                 <div className="gov24-browser-detail-title-row">
-                                    <div className="gov24-browser-detail-badges">
-                                        {detailBadges.map((badge, index) => <span key={badge}>{index === 0 && <Tag size={13}/>} {badge}</span>)}
+                                    <div className="gov24-browser-detail-copy">
+                                        <div className="gov24-browser-detail-heading">
+                                            <div className="gov24-browser-detail-badges">
+                                                {detailBadges.map((badge, index) => <span key={badge}>{index === 0 && <Tag size={13}/>} {badge}</span>)}
+                                            </div>
+                                            <h2>{selectedDocument.title}</h2>
+                                        </div>
+                                        {selectedDocument.browserSourceId !== 'kr.biz_support' && selectedDocument.browserSourceId !== 'kr.k_startup' && selectedDocument.summary && <p>{selectedDocument.summary}</p>}
                                     </div>
-                                    <h2>{selectedDocument.title}</h2>
-                                    <div className="gov24-browser-meta">
-                                        {selectedDocument.agency && <span><Landmark size={15}/>{selectedDocument.agency}</span>}
-                                        <span className={`gov24-browser-date is-${getDocumentDate(selectedDocument).kind}`}><CalendarClock size={15}/>{getDocumentDate(selectedDocument).label}</span>
+                                    <div className="gov24-browser-side-meta">
+                                        {selectedDocument.agency && <span className="gov24-browser-agency"><Landmark size={15}/>{selectedDocument.agency}</span>}
+                                        <div className="gov24-browser-side-actions">
+                                            <span className={`gov24-browser-date is-${getDocumentDate(selectedDocument).kind}`}><CalendarClock size={15}/>{getDocumentDate(selectedDocument).label}</span>
+                                            {onToggleDocument && <button type="button" className={`gov24-browser-attach${isDocumentAttached ? ' is-attached' : ''}`} onClick={() => toggleDocument(selectedDocument)}>
+                                                {isDocumentAttached ? <Check size={15}/> : <Plus size={15}/>} 
+                                                {t(isDocumentAttached ? 'externalData.removeSelectedDocument' : 'externalData.addSelectedDocument')}
+                                            </button>}
+                                        </div>
                                     </div>
                                 </div>
-                                {selectedDocument.browserSourceId !== 'kr.biz_support' && selectedDocument.browserSourceId !== 'kr.k_startup' && selectedDocument.summary && <p>{selectedDocument.summary}</p>}
                             </div>
                             <div ref={detailScrollRef} className="gov24-browser-detail-scroll">
                                 {(selectedDocument.target || selectedDocument.user_type) && <div className="gov24-browser-info-card">

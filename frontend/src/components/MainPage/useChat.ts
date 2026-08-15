@@ -12,6 +12,7 @@ import {getReasoningEnabled} from '../../utils/reasoning';
 import {formatApiErrorForUser} from '../../utils/apiError';
 import {isSupportedChatFile} from '../../utils/fileValidation';
 import type {FileAttachment} from '../ChatInput/useAttachments';
+import type {ExternalDocumentSelection} from '../../services/externalDocumentSelections';
 import {findPluginCommand} from '../../plugins/registry';
 import {resolveApprovalMode} from '../../services/approvalPolicy';
 import {getToolActivityLabel} from '../../utils/toolActivity';
@@ -217,6 +218,7 @@ export function useChat(deps: UseChatDeps) {
         selectedMcpIds?: string[],
         knowledgeCollectionIds?: string[],
         externalResourceIds?: string[],
+        externalDocumentSelections?: ExternalDocumentSelection[],
     ): Promise<boolean> => {
         const hasContent = query.trim() || (images?.length ?? 0) > 0
             || (fileAttachments?.length ?? 0) > 0
@@ -235,7 +237,7 @@ export function useChat(deps: UseChatDeps) {
 
         isSendingRef.current = true;
         try {
-            return await handleSendInner(query, images, fileAttachments, systemPromptOverride, voiceMode, extraArticles, selectedMcpIds, knowledgeCollectionIds, externalResourceIds);
+            return await handleSendInner(query, images, fileAttachments, systemPromptOverride, voiceMode, extraArticles, selectedMcpIds, knowledgeCollectionIds, externalResourceIds, externalDocumentSelections);
         } finally {
             isSendingRef.current = false;
         }
@@ -252,6 +254,7 @@ export function useChat(deps: UseChatDeps) {
         selectedMcpIds?: string[],
         knowledgeCollectionIds?: string[],
         externalResourceIds?: string[],
+        externalDocumentSelections?: ExternalDocumentSelection[],
     ): Promise<boolean> => {
         const requestConvId = currentConvIdRef.current || currentConvId;
         const articlesSnapshot = extraArticles?.length
@@ -511,6 +514,7 @@ export function useChat(deps: UseChatDeps) {
                         selected_mcp_ids: selectedMcpIds || [],
                         knowledge_collection_ids: knowledgeCollectionIds || [],
                         external_resource_ids: externalResourceIds || [],
+                        external_document_selections: externalDocumentSelections || [],
                         approval_mode: resolveApprovalMode(),
                     }, {
                         onMeta: (data) => {

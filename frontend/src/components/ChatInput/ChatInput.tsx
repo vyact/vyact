@@ -3,7 +3,7 @@ import ImageViewer from '../ImageViewer/ImageViewer';
 import type {ArticleAttachment, KnowledgeCollection} from '../../types';
 import {api} from '../../services/api';
 import {useCodePanel} from '../../contexts/CodePanelContext';
-import {Check, Database, Settings, WandSparkles, X} from 'lucide-react';
+import {Check, Database, FileText, Settings, WandSparkles, X} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 
 import {useAttachments} from './useAttachments';
@@ -29,6 +29,13 @@ import {usePluginExtensions} from '../../plugins/usePluginExtensions';
 import KnowledgeCollectionsModal from '../KnowledgeCollectionsModal/KnowledgeCollectionsModal';
 import ApprovalControl from './ApprovalControl';
 import Gov24DataModal from '../Gov24DataModal';
+import {
+    EXTERNAL_DOCUMENT_SELECTIONS_UPDATED_EVENT,
+    getExternalDocumentSelections,
+    toggleExternalDocumentSelection,
+    updateExternalDocumentSelections,
+} from '../../services/externalDocumentSelections';
+import type {ExternalDocumentSelection} from '../../services/externalDocumentSelections';
 
 const EXTERNAL_DATA_SOURCES = [
     {id: 'kr.gov24', nameKey: 'gov24', hasCollector: true},
@@ -43,7 +50,7 @@ const EXTERNAL_DATA_SOURCES = [
 type ExternalDataSource = (typeof EXTERNAL_DATA_SOURCES)[number];
 
 interface ChatInputProps {
-    onSend: (message: string, images?: File[], fileAttachments?: FileAttachment[], selectedMcpIds?: string[], knowledgeCollectionIds?: string[], externalResourceIds?: string[]) => void | Promise<boolean>;
+    onSend: (message: string, images?: File[], fileAttachments?: FileAttachment[], selectedMcpIds?: string[], knowledgeCollectionIds?: string[], externalResourceIds?: string[], externalDocumentSelections?: ExternalDocumentSelection[]) => void | Promise<boolean>;
     onStop?: () => void;
     disabled?: boolean;        // 전송 버튼만 막음 (입력은 허용)
     isImageMode?: boolean;
@@ -127,6 +134,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
     const [selectedKnowledgeCollectionIds, setSelectedKnowledgeCollectionIds] = useState<string[]>([]);
     const [knowledgeSourceTab, setKnowledgeSourceTab] = useState<'collections' | 'external'>('collections');
     const [selectedExternalResourceIds, setSelectedExternalResourceIds] = useState<string[]>([]);
+    const [selectedExternalDocuments, setSelectedExternalDocuments] = useState<ExternalDocumentSelection[]>(getExternalDocumentSelections);
     const [enabledExternalSources, setEnabledExternalSources] = useState<ExternalDataSource[]>([]);
     const [externalDocumentCounts, setExternalDocumentCounts] = useState<Record<string, number>>({});
     const [showKnowledgeCollectionsModal, setShowKnowledgeCollectionsModal] = useState(false);
@@ -138,6 +146,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
         const refresh = () => setKnowledgeCollections(getCachedKnowledgeCollections());
         window.addEventListener(KNOWLEDGE_COLLECTIONS_UPDATED_EVENT, refresh);
         return () => window.removeEventListener(KNOWLEDGE_COLLECTIONS_UPDATED_EVENT, refresh);
+    }, []);
+    useEffect(() => {
+        const refresh = () => setSelectedExternalDocuments(getExternalDocumentSelections());
+        window.addEventListener(EXTERNAL_DOCUMENT_SELECTIONS_UPDATED_EVENT, refresh);
+        return () => window.removeEventListener(EXTERNAL_DOCUMENT_SELECTIONS_UPDATED_EVENT, refresh);
     }, []);
     const refreshExternalResources = () => {
         void api.getExternalDataBootstrap().then(({connections, statuses}) => {
@@ -337,7 +350,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
             attach.clearAll();
             slash.clearSuggestions();
             if (textareaRef.current) textareaRef.current.style.height = 'auto';
-            const result = onSend(fullMessage, prevImages, prevFiles, selectedMcps.map(server => server.id), selectedKnowledgeCollectionIds, selectedExternalResourceIds);
+            const result = onSend(fullMessage, prevImages, prevFiles, selectedMcps.map(server => server.id), selectedKnowledgeCollectionIds, selectedExternalResourceIds, selectedExternalDocuments);
             if (result instanceof Promise) {
                 const sent = await result;
                 if (sent === false) {
@@ -458,7 +471,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                     />
 
                     {/* textarea 행 */}
-                    {(selectedMcps.length > 0 || selectedKnowledgeCollectionIds.length > 0 || selectedExternalResourceIds.length > 0) && <div className="selected-mcp-chips">
+                    {(selectedMcps.length > 0 || selectedKnowledgeCollectionIds.length > 0 || selectedExternalResourceIds.length > 0 || selectedExternalDocuments.length > 0) && <div className="selected-mcp-chips">
                         {selectedKnowledgeCollectionIds.map(collectionId => {
                             const collection = knowledgeCollections.find(item => item.id === collectionId);
                             return collection ? <div className="selected-mcp-chip knowledge-source-chip is-collection" key={collection.id}>
@@ -473,6 +486,10 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                 <button type="button" aria-label={t('mcpMenu.removeSelected')} onClick={() => setSelectedExternalResourceIds(current => current.filter(id => id !== sourceId))}><X size={10}/></button>
                             </div> : null;
                         })}
+                        {selectedExternalDocuments.map(document => <div className="selected-mcp-chip knowledge-source-chip is-external" key={`${document.source_id}:${document.document_id}`}>
+                            <span className="selected-mcp-chip-icon"><FileText size={11}/></span><span>{document.title}</span>
+                            <button type="button" aria-label={t('mcpMenu.removeSelected')} onClick={() => updateExternalDocumentSelections(current => current.filter(item => item.source_id !== document.source_id || item.document_id !== document.document_id))}><X size={10}/></button>
+                        </div>)}
                         {selectedMcps.map(server => {
                             const customName = typeof server.config?.name === 'string' ? server.config.name : server.type;
                             return <div className="selected-mcp-chip" key={server.id}>
@@ -755,6 +772,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 sourceNameKey={browseExternalSource.nameKey}
                 sources={browseAllExternalSources ? enabledExternalSources
                     .map(source => ({id: source.id, nameKey: source.nameKey})) : undefined}
+                selectedDocuments={selectedExternalDocuments}
+                onToggleDocument={toggleExternalDocumentSelection}
             />
 
             {/* 이미지 미리보기 */}

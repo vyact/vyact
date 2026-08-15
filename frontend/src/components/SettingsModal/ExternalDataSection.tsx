@@ -5,6 +5,12 @@ import {api} from '../../services/api';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import Gov24DataModal from '../Gov24DataModal';
+import {
+    EXTERNAL_DOCUMENT_SELECTIONS_UPDATED_EVENT,
+    getExternalDocumentSelections,
+    toggleExternalDocumentSelection,
+} from '../../services/externalDocumentSelections';
+import type {ExternalDocumentSelection} from '../../services/externalDocumentSelections';
 import './ExternalDataSection.css';
 
 const DATA_SOURCES = [
@@ -50,14 +56,12 @@ const ExternalDataSection: React.FC = () => {
     const [savingSchedule, setSavingSchedule] = useState(false);
     const [autoDeleteExpiredEnabled, setAutoDeleteExpiredEnabled] = useState(false);
     const [savingCleanup, setSavingCleanup] = useState(false);
-    const [eligibilityProfile, setEligibilityProfile] = useState('');
-    const [savedEligibilityProfile, setSavedEligibilityProfile] = useState('');
-    const [savingEligibilityProfile, setSavingEligibilityProfile] = useState(false);
     const [customInstruction, setCustomInstruction] = useState('');
     const [savedCustomInstruction, setSavedCustomInstruction] = useState('');
     const [savingPrompt, setSavingPrompt] = useState(false);
     const [showDataModal, setShowDataModal] = useState(false);
     const [browseSource, setBrowseSource] = useState<{sourceId: string; sourceNameKey: string}>({sourceId: 'kr.gov24', sourceNameKey: 'gov24'});
+    const [selectedExternalDocuments, setSelectedExternalDocuments] = useState<ExternalDocumentSelection[]>(getExternalDocumentSelections);
 
     useEffect(() => {
         api.getExternalDataBootstrap().then(({connections, statuses, schedule, cleanup, prompt}) => {
@@ -76,11 +80,15 @@ const ExternalDataSection: React.FC = () => {
             setAutoSyncEnabled(schedule.enabled);
             setAutoSyncIntervalHours(schedule.interval_hours);
             setAutoDeleteExpiredEnabled(cleanup.enabled);
-            setEligibilityProfile(prompt?.eligibility_profile || '');
-            setSavedEligibilityProfile(prompt?.eligibility_profile || '');
             setCustomInstruction(prompt?.instruction || '');
             setSavedCustomInstruction(prompt?.instruction || '');
         }).catch(() => undefined);
+    }, []);
+
+    useEffect(() => {
+        const refresh = () => setSelectedExternalDocuments(getExternalDocumentSelections());
+        window.addEventListener(EXTERNAL_DOCUMENT_SELECTIONS_UPDATED_EVENT, refresh);
+        return () => window.removeEventListener(EXTERNAL_DOCUMENT_SELECTIONS_UPDATED_EVENT, refresh);
     }, []);
 
     const saveServiceKey = async () => {
@@ -272,20 +280,6 @@ const ExternalDataSection: React.FC = () => {
         }
     };
 
-    const saveEligibilityProfile = async () => {
-        setSavingEligibilityProfile(true);
-        try {
-            const result = await api.saveExternalDataEligibilityProfile(eligibilityProfile);
-            setEligibilityProfile(result.profile);
-            setSavedEligibilityProfile(result.profile);
-            toast.success(t('externalData.eligibilityProfileSaved'));
-        } catch {
-            toast.error(t('externalData.eligibilityProfileSaveFailed'));
-        } finally {
-            setSavingEligibilityProfile(false);
-        }
-    };
-
     const formatter = new Intl.NumberFormat(i18n.resolvedLanguage || i18n.language);
     const lastSync = syncStatus.last_successful_sync_at
         ? new Intl.DateTimeFormat(i18n.language, {dateStyle: 'medium', timeStyle: 'short'}).format(new Date(syncStatus.last_successful_sync_at))
@@ -307,14 +301,8 @@ const ExternalDataSection: React.FC = () => {
                 <div className="external-data-key-input-row"><div className="external-data-key-input-wrap"><input id="public-data-service-key" type={showServiceKey ? 'text' : 'password'} value={serviceKey} placeholder={hasServiceKey ? t('externalData.serviceKeySavedPlaceholder') : t('externalData.serviceKeyPlaceholder')} autoComplete="off" onChange={event => setServiceKey(event.target.value)}/><button type="button" onClick={() => setShowServiceKey(value => !value)} aria-label={t(showServiceKey ? 'externalData.hideServiceKey' : 'externalData.showServiceKey')}>{showServiceKey ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div><button type="button" className="external-data-save-key" disabled={!serviceKey.trim() || savingKey} onClick={saveServiceKey}>{savingKey ? t('externalData.saving') : t('externalData.saveServiceKey')}</button></div>
             </div>
             <div className="external-data-prompt-form">
-                <div className="external-data-prompt-heading"><div><strong>{t('externalData.eligibilityProfileTitle')}</strong><p>{t('externalData.eligibilityProfileDescription')}</p></div><span>{eligibilityProfile.length} / 4,000</span></div>
-                <textarea value={eligibilityProfile} maxLength={4000} placeholder={t('externalData.eligibilityProfilePlaceholder')} onChange={event => setEligibilityProfile(event.target.value)}/>
-                <div className="external-data-prompt-actions"><button type="button" className="external-data-save-key" disabled={savingEligibilityProfile || eligibilityProfile === savedEligibilityProfile} onClick={() => void saveEligibilityProfile()}>{savingEligibilityProfile ? t('externalData.saving') : t('externalData.saveEligibilityProfile')}</button></div>
-            </div>
-            <div className="external-data-prompt-form">
-                <div className="external-data-prompt-heading"><div><strong>{t('externalData.promptTitle')}</strong><p>{t('externalData.promptDescription')}</p></div><span>{customInstruction.length} / 4,000</span></div>
+                <div className="external-data-prompt-heading"><div><strong>{t('externalData.promptTitle')}</strong><p>{t('externalData.promptDescriptionSimple')}</p></div><div className="external-data-prompt-heading-actions"><span>{customInstruction.length} / 4,000</span><button type="button" className="external-data-save-key" disabled={savingPrompt || customInstruction === savedCustomInstruction} onClick={() => void saveCustomInstruction()}>{savingPrompt ? t('externalData.saving') : t('externalData.savePromptShort')}</button></div></div>
                 <textarea value={customInstruction} maxLength={4000} placeholder={t('externalData.promptPlaceholder')} onChange={event => setCustomInstruction(event.target.value)}/>
-                <div className="external-data-prompt-actions"><button type="button" className="external-data-save-key" disabled={savingPrompt || customInstruction === savedCustomInstruction} onClick={() => void saveCustomInstruction()}>{savingPrompt ? t('externalData.saving') : t('externalData.savePrompt')}</button></div>
             </div>
             {hasServiceKey && <div className="external-data-sync-panel">
                 <div className="external-data-sync-row"><div className="external-data-sync-info"><strong>{t('externalData.syncAllData')}</strong><span className="external-data-sync-description">{t('externalData.syncAllDescription', {count: supportedEnabledSources.length})}</span><div className="external-data-sync-meta"><span>{t('externalData.lastUpdated', {date: lastSync})}</span><span>{t('externalData.documentCount', {count: formatter.format((syncStatus.document_count || 0) + (bizSupportSyncStatus.document_count || 0) + (kStartupSyncStatus.document_count || 0) + (welfareSyncStatus.document_count || 0) + (housingSyncStatus.document_count || 0) + (lhComplexSyncStatus.document_count || 0) + (lhNoticeSyncStatus.document_count || 0))})}</span></div></div><div className="external-data-sync-actions"><button type="button" className="external-data-sync-refresh" onClick={() => void startAllSync()} disabled={isAllSyncing || supportedEnabledSources.length === 0} aria-label={t('externalData.updateAllData')}><RefreshCw className={isAllSyncing ? 'is-spinning' : ''} size={16}/></button></div></div>
@@ -370,7 +358,7 @@ const ExternalDataSection: React.FC = () => {
                 </article>;
             })}
         </div>}
-        <Gov24DataModal key={showDataModal ? browseSource.sourceId : 'closed'} isOpen={showDataModal} onClose={() => setShowDataModal(false)} sourceId={browseSource.sourceId} sourceNameKey={browseSource.sourceNameKey}/>
+        <Gov24DataModal key={showDataModal ? browseSource.sourceId : 'closed'} isOpen={showDataModal} onClose={() => setShowDataModal(false)} sourceId={browseSource.sourceId} sourceNameKey={browseSource.sourceNameKey} selectedDocuments={selectedExternalDocuments} onToggleDocument={toggleExternalDocumentSelection}/>
     </section>;
 };
 

@@ -11,6 +11,9 @@
     "plugins": "Plugins"
   },
   "externalData": {
+    "savePromptShort": "Guardar instrucciones",
+    "promptDescriptionSimple": "Las comprobaciones predeterminadas de requisitos y plazos siempre se aplican. Añade solo las instrucciones adicionales necesarias.",
+    "addSelectedDocument": "Añadir", "removeSelectedDocument": "Quitar",
     "browser": {"title": "Ver datos de Government24", "open": "Ver datos", "close": "Cerrar", "searchPlaceholder": "Buscar servicios, organismos o destinatarios…", "clearSearch": "Borrar búsqueda", "resultCount": "{{count}} elementos", "loading": "Cargando datos…", "loadingMore": "Cargando más…", "loadFailed": "No se pudieron cargar los datos.", "empty": "No hay resultados.", "unknownDate": "Fecha por confirmar", "unknownAgency": "Organismo desconocido", "modifiedAt": "Modificado {{date}}", "deadlineAt": "Cierra {{date}}", "businessYearAt": "Año del programa {{year}}", "target": "Destinatarios", "deadline": "Plazo", "purpose": "Objetivo", "content": "Contenido de la ayuda", "selectionCriteria": "Criterios", "applicationMethod": "Cómo solicitar", "requiredDocuments": "Documentos", "contact": "Contacto", "openSource": "Abrir fuente", "selectDocument": "Selecciona un elemento de la lista."},
     "autoSync": "Actualizaciones automáticas", "autoSyncDescription": "Actualiza los datos en segundo plano al intervalo seleccionado mientras la aplicación está abierta.", "autoSyncInterval": "Intervalo de actualización", "autoSyncIntervalOption": "Cada {{count}} horas", "autoSyncSaveFailed": "No se pudo guardar la configuración de actualización automática.",
     "requestUsage": "Solicitudes API de hoy: {{used}} / {{limit}}", "requestLimitExceeded": "Este origen alcanzó el límite diario de solicitudes API. Inténtalo tras el reinicio o aumenta el tráfico de producción.",

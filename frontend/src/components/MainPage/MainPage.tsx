@@ -534,11 +534,11 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                                 followupComposedRef={followupComposedRef}
                             >
                                 <ChatInput
-                                    onSend={async (message, images, files, selectedMcpIds, knowledgeCollectionIds, externalResourceIds) => {
+                                    onSend={async (message, images, files, selectedMcpIds, knowledgeCollectionIds, externalResourceIds, externalDocumentSelections) => {
                                         // FollowupBar에서 선택/입력된 내용이 있으면 메인 입력 앞에 합침
                                         const prefix = followupComposedRef.current?.trim();
                                         const combined = prefix ? `${prefix}\n${message}` : message;
-                                        const sent = await chat.handleSend(combined, images, files, undefined, undefined, undefined, selectedMcpIds, knowledgeCollectionIds, externalResourceIds);
+                                        const sent = await chat.handleSend(combined, images, files, undefined, undefined, undefined, selectedMcpIds, knowledgeCollectionIds, externalResourceIds, externalDocumentSelections);
                                         if (sent !== false) followupComposedRef.current = '';
                                         return sent;
                                     }}
