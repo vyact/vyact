@@ -11,6 +11,9 @@ from elasticsearch.helpers import async_bulk, async_scan
 
 from reranker import is_available as is_reranker_available, rerank
 from services.db import SETTINGS_INDEX, get_es
+from services.external_data.quota import DailyRequestQuota
+from services.external_data.retention import is_storable_by_deadline
+from services.external_data.status_events import notify_status_changed
 
 SOURCE_ID = "kr.gov24"
 INDEX_NAME = "external_data_kr_gov24"
@@ -23,6 +26,7 @@ QUERY_CANDIDATE_SIZE = 8
 QUERY_RERANK_CANDIDATE_SIZE = 50
 QUERY_RERANK_SCORE_THRESHOLD = 0.35
 BROWSE_PAGE_SIZE = 40
+DAILY_REQUEST_LIMIT = 10_000
 
 ENDPOINTS = {
     "list": "serviceList",
@@ -269,6 +273,7 @@ async def _save_sync_status(status: dict) -> None:
         )
     finally:
         await es.close()
+    await notify_status_changed(SOURCE_ID)
 
 
 async def get_sync_status() -> dict:
@@ -276,9 +281,11 @@ async def get_sync_status() -> dict:
     try:
         result = await es.get(index=SETTINGS_INDEX, id=SYNC_STATUS_DOC_ID, ignore=[404])
         if not result.get("found"):
-            return {"status": "idle", "document_count": 0}
+            return {"status": "idle", "document_count": 0, "request_count": 0, "request_limit": DAILY_REQUEST_LIMIT}
         status = result["_source"].get("value", {})
-        return status if isinstance(status, dict) else {"status": "idle", "document_count": 0}
+        if not isinstance(status, dict):
+            return {"status": "idle", "document_count": 0, "request_count": 0, "request_limit": DAILY_REQUEST_LIMIT}
+        return {**status, **DailyRequestQuota.from_status(status, DAILY_REQUEST_LIMIT).status_fields()}
     finally:
         await es.close()
 
@@ -327,10 +334,14 @@ async def _fetch_dataset(
     endpoint: str,
     service_key: str,
     progress_callback,
+    request_quota: DailyRequestQuota,
 ) -> list[dict]:
     records: list[dict] = []
     page = 1
     while True:
+        if request_quota.exhausted:
+            return records
+        request_quota.consume()
         response = await client.get(
             f"{API_BASE_URL}/{endpoint}",
             params={
@@ -452,6 +463,7 @@ async def synchronize(service_key: str) -> None:
     async with _sync_lock:
         started_at = _utc_now()
         previous_status = await get_sync_status()
+        request_quota = DailyRequestQuota.from_status(previous_status, DAILY_REQUEST_LIMIT)
         status = {
             "status": "running",
             "stage": "list",
@@ -460,20 +472,25 @@ async def synchronize(service_key: str) -> None:
             "started_at": started_at,
             "document_count": previous_status.get("document_count", 0),
             "last_successful_sync_at": previous_status.get("last_successful_sync_at"),
+            **request_quota.status_fields(),
         }
         await _save_sync_status(status)
         try:
             async with httpx.AsyncClient(timeout=httpx.Timeout(60.0, connect=10.0)) as client:
-                datasets: dict[str, list[dict]] = {}
+                datasets: dict[str, list[dict]] = {stage: [] for stage in ENDPOINTS}
                 for stage, endpoint in ENDPOINTS.items():
+                    if request_quota.exhausted:
+                        break
                     status.update({"stage": stage, "current": 0, "total": 0})
                     await _save_sync_status(status)
 
                     async def update_progress(current: int, total: int) -> None:
-                        status.update({"current": current, "total": total})
+                        status.update({"current": current, "total": total, **request_quota.status_fields()})
                         await _save_sync_status(status)
 
-                    datasets[stage] = await _fetch_dataset(client, endpoint, service_key, update_progress)
+                    datasets[stage] = await _fetch_dataset(client, endpoint, service_key, update_progress, request_quota)
+
+            quota_exhausted = request_quota.exhausted
 
             await _ensure_index()
             fetched_at = _utc_now()
@@ -485,17 +502,20 @@ async def synchronize(service_key: str) -> None:
                 external_id = str(item.get("서비스ID", ""))
                 if not external_id:
                     continue
+                document = _build_document(
+                    item,
+                    details.get(external_id, {}),
+                    conditions.get(external_id, {}),
+                    fetched_at,
+                )
+                if not is_storable_by_deadline(document):
+                    continue
                 active_ids.add(external_id)
                 documents.append({
                     "_op_type": "index",
                     "_index": INDEX_NAME,
                     "_id": external_id,
-                    "_source": _build_document(
-                        item,
-                        details.get(external_id, {}),
-                        conditions.get(external_id, {}),
-                        fetched_at,
-                    ),
+                    "_source": document,
                 })
 
             es = get_es()
@@ -516,24 +536,28 @@ async def synchronize(service_key: str) -> None:
                         raise RuntimeError("정부24 데이터 일부가 Elasticsearch에 저장되지 않았습니다.")
             finally:
                 await es.close()
-            possibly_removed, inactive = await _mark_missing_documents(active_ids, fetched_at)
+            possibly_removed, inactive = (0, 0) if quota_exhausted else await _mark_missing_documents(active_ids, fetched_at)
             es = get_es()
             try:
                 # 모든 작은 bulk가 끝난 뒤 한 번만 refresh한다.
                 await es.indices.refresh(index=INDEX_NAME)
+                stored_document_count = int((await es.count(index=INDEX_NAME)).get("count", len(documents)))
             finally:
                 await es.close()
             await _save_sync_status({
-                "status": "completed",
+                "status": "failed" if quota_exhausted else "completed",
                 "stage": "completed",
                 "current": len(documents),
                 "total": len(documents),
-                "document_count": len(documents),
+                "document_count": stored_document_count,
                 "possibly_removed_count": possibly_removed,
                 "inactive_count": inactive,
                 "started_at": started_at,
                 "completed_at": fetched_at,
-                "last_successful_sync_at": fetched_at,
+                "last_successful_sync_at": previous_status.get("last_successful_sync_at") if quota_exhausted else fetched_at,
+                "error_code": "request_limit_exceeded" if quota_exhausted else None,
+                "partial_document_count": len(documents) if quota_exhausted else 0,
+                **request_quota.status_fields(),
             })
         except Exception as error:
             await _save_sync_status({
@@ -541,6 +565,8 @@ async def synchronize(service_key: str) -> None:
                 "status": "failed",
                 "failed_at": _utc_now(),
                 "error": str(error),
+                "error_code": getattr(error, "error_code", "sync_failed"),
+                **request_quota.status_fields(),
             })
 
 

@@ -13,6 +13,9 @@
   "externalData": {
     "browser": {"title": "정부24 데이터 보기", "open": "데이터 보기", "close": "닫기", "searchPlaceholder": "서비스명, 기관, 대상 검색…", "clearSearch": "검색어 지우기", "resultCount": "{{count}}건", "loading": "데이터를 불러오는 중…", "loadingMore": "다음 데이터를 불러오는 중…", "loadFailed": "데이터를 불러오지 못했습니다.", "empty": "검색 결과가 없습니다.", "unknownDate": "일정 미정", "unknownAgency": "기관 정보 없음", "modifiedAt": "수정 {{date}}", "deadlineAt": "마감 {{date}}", "businessYearAt": "사업연도 {{year}}년", "target": "지원 대상", "deadline": "신청기한", "purpose": "서비스 목적", "content": "지원 내용", "selectionCriteria": "선정 기준", "applicationMethod": "신청 방법", "requiredDocuments": "구비 서류", "contact": "문의처", "openSource": "정부24 원문 보기", "selectDocument": "왼쪽 목록에서 데이터를 선택해 주세요."},
     "autoSync": "자동 업데이트", "autoSyncDescription": "앱이 실행 중일 때 설정한 주기로 데이터를 백그라운드에서 업데이트합니다.", "autoSyncInterval": "업데이트 주기", "autoSyncIntervalOption": "{{count}}시간마다", "autoSyncSaveFailed": "자동 업데이트 설정을 저장하지 못했습니다.",
+    "requestUsage": "오늘 API 호출 {{used}} / {{limit}}회",
+    "requestLimitExceeded": "이 데이터 소스의 오늘 API 호출 한도를 모두 사용했습니다. 한도가 초기화된 후 다시 시도하거나 운영계정 트래픽을 증액해 주세요.",
+    "autoDeleteExpired": "마감 데이터 자동 삭제", "autoDeleteExpiredDescription": "마감일이 확인되는 데이터만 한국시간 자정 이후 삭제합니다. 앱 시작 시 누락된 정리도 백그라운드에서 실행합니다.", "autoDeleteSaveFailed": "자동 삭제 설정을 저장하지 못했습니다.",
     "countryKr": "대한민국",
     "serviceKey": "공공데이터포털 서비스키",
     "serviceKeyPlaceholder": "일반 인증키를 입력하세요",
@@ -33,8 +36,9 @@
     "syncing": "가져오는 중…",
     "syncStartFailed": "데이터 가져오기를 시작하지 못했습니다.",
     "syncFailed": "데이터를 가져오지 못했습니다. 서비스키와 API 권한을 확인해 주세요.",
-    "syncStages": {"list": "공공서비스 목록 가져오는 중", "detail": "상세정보 가져오는 중", "conditions": "지원조건 가져오는 중", "announcements": "지원사업 공고 가져오는 중", "startupAnnouncements": "창업 지원사업 공고 가져오는 중", "startupBusinesses": "창업 지원사업 소개 가져오는 중", "welfareList": "복지서비스 목록 가져오는 중", "welfareDetail": "복지서비스 상세정보 가져오는 중", "indexing": "검색 데이터 저장 중", "completed": "저장 완료"},
+    "syncStages": {"list": "공공서비스 목록 가져오는 중", "detail": "상세정보 가져오는 중", "conditions": "지원조건 가져오는 중", "announcements": "지원사업 공고 가져오는 중", "startupAnnouncements": "창업 지원사업 공고 가져오는 중", "startupBusinesses": "창업 지원사업 소개 가져오는 중", "welfareList": "복지서비스 목록 가져오는 중", "welfareDetail": "복지서비스 상세정보 가져오는 중", "housingRental": "공공임대 모집공고 가져오는 중", "housingSale": "공공분양 모집공고 가져오는 중", "indexing": "검색 데이터 저장 중", "completed": "저장 완료"},
     "welfare": {"trafficNotice": "개발계정은 일일 100회까지만 호출할 수 있습니다. 전체 상세정보를 동기화하려면 공공데이터포털에서 운영계정 트래픽 증액을 신청해 주세요.", "requestLimitExceeded": "복지서비스 API의 일일 요청 한도를 초과했습니다. 운영계정 트래픽을 증액하거나 한도가 초기화된 후 다시 시도해 주세요.", "syncFailed": "복지서비스 데이터를 가져오지 못했습니다. 서비스키와 해당 API 활용 권한을 확인해 주세요."},
+    "housing": {"trafficNotice": "최신 12개월 공고를 조회하며, 일일 1,000회 제한을 넘지 않도록 동기화당 최대 {{count}}회까지만 호출합니다.", "requestUsage": "API 호출 {{used}} / {{limit}}회", "syncFailed": "공공주택 모집공고를 가져오지 못했습니다. 서비스키, API 활용 권한 또는 호출 한도를 확인해 주세요."},
     "title": "외부 데이터",
     "description": "국가별 공공 데이터 소스를 연결하고 Vyact에서 검색할 데이터를 관리합니다.",
     "country": "국가/지역",
@@ -50,12 +54,13 @@
     "browseUnavailable": "데이터 수집 연동 후 사용할 수 있습니다.",
     "syncAllData": "전체 데이터 업데이트", "syncAllDescription": "ON 상태인 {{count}}개 소스를 한 번에 업데이트합니다.", "updateAllData": "활성 소스 전체 업데이트", "sourceData": "소스 데이터", "sourceDataSummary": "{{count}}건 · {{date}}", "updateSourceData": "이 소스만 업데이트", "collectorUnavailable": "데이터 수집 연동 준비 중",
     "sources": {
-      "gov24": {"name": "정부24 · 공공서비스(혜택)", "description": "정부 부처, 지방자치단체 및 공공기관의 복지·주거·교육·고용 혜택을 검색합니다.", "steps": {"1": "공공데이터포털에 로그인하거나 회원가입합니다.", "2": "활용신청 페이지에서 ‘활용신청’을 선택합니다.", "3": "개인 또는 프로젝트 서비스키를 선택하고 신청을 완료합니다.", "4": "승인 후 마이페이지에서 서비스키를 확인합니다."}},
+      "gov24": {"name": "정부24 · 공공서비스(혜택)", "description": "정부 부처, 지방자치단체 및 공공기관의 복지·주거·교육·고용 혜택을 검색합니다.", "steps": {"1": "공공데이터포털에 로그인하거나 회원가입합니다.", "2": "활용신청 페이지에서 ‘활용신청’을 선택합니다.", "3": "개인 또는 프로젝트 서비스키를 선택하고 신청을 완료합니다.", "4": "승인 후 마이페이지에서 서비스키를 확인합니다."}, "note": "개발계정과 운영계정 모두 자동 승인되며 무료입니다."},
       "youthCenter": {"name": "온통청년", "description": "대한민국 청년정책과 청년공간 정보를 검색합니다.", "steps": {"1": "온통청년에 로그인하거나 회원가입합니다.", "2": "마이페이지에서 Open API 인증키 발급을 신청합니다.", "3": "담당자 승인 완료를 기다립니다.", "4": "발급된 인증키를 확인합니다."}, "note": "인증키는 담당자 심사 후 발급됩니다."},
       "bizInfo": {"name": "기업마당", "description": "창업자, 소상공인 및 중소기업 대상 지원사업과 행사 정보를 검색합니다.", "steps": {"1": "기업마당 API 안내 페이지를 엽니다.", "2": "지원사업정보 API의 사용신청을 선택합니다.", "3": "신청 정보를 입력하고 등록합니다.", "4": "발급된 서비스 인증키를 확인합니다."}, "note": "지원사업 및 행사정보 API는 각각 신청이 필요할 수 있습니다."},
       "bizSupport": {"name": "중소기업·소상공인 지원사업", "description": "기업마당의 최신 정책자금·바우처·판로·고용 지원사업 공고를 적용합니다."},
       "kStartup": {"name": "예비창업자·스타트업 지원금", "description": "K-Startup의 창업 사업화 자금과 지원사업 공고를 적용합니다."},
-      "welfare": {"name": "개인 복지급여", "description": "복지로의 중앙부처 사회보장 급여와 복지서비스를 적용합니다."}
+      "welfare": {"name": "개인 복지급여", "description": "복지로의 중앙부처 사회보장 급여와 복지서비스를 적용합니다."},
+      "housing": {"name": "공공주택 모집공고", "description": "마이홈포털의 최신 공공임대·공공분양 모집공고를 적용합니다."}
     }
   },
   "plugins": {

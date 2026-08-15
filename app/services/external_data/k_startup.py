@@ -12,6 +12,9 @@ from elasticsearch.helpers import async_bulk
 
 from services.db import SETTINGS_INDEX, get_es
 from services.external_data.gov24 import normalize_application_deadline
+from services.external_data.quota import DailyRequestQuota
+from services.external_data.retention import is_storable_by_deadline
+from services.external_data.status_events import notify_status_changed
 
 SOURCE_ID = "kr.k_startup"
 INDEX_NAME = "external_data_kr_k_startup"
@@ -22,6 +25,7 @@ BUSINESSES_ENDPOINT = "getBusinessInformation01"
 PAGE_SIZE = 1000
 BULK_CHUNK_SIZE = 100
 BROWSE_PAGE_SIZE = 40
+DAILY_REQUEST_LIMIT = 10_000
 
 _sync_tasks: set[asyncio.Task] = set()
 _sync_lock = asyncio.Lock()
@@ -68,13 +72,22 @@ def _items_and_total(payload: dict) -> tuple[list[dict], int]:
     return records, int(total or 0)
 
 
-async def _fetch_endpoint(service_key: str, endpoint: str, stage: str, progress_callback) -> list[dict]:
+async def _fetch_endpoint(
+    service_key: str,
+    endpoint: str,
+    stage: str,
+    progress_callback,
+    request_quota: DailyRequestQuota,
+) -> list[dict]:
     records: list[dict] = []
     page = 1
     total = 0
     normalized_key = unquote(service_key.strip()) if "%" in service_key else service_key.strip()
     async with httpx.AsyncClient(timeout=httpx.Timeout(60.0, connect=10.0)) as client:
         while True:
+            if request_quota.exhausted:
+                return records
+            request_quota.consume()
             response = await client.get(
                 f"{API_BASE_URL}/{endpoint}",
                 params={
@@ -224,6 +237,7 @@ async def _save_sync_status(status: dict) -> None:
         await es.index(index=SETTINGS_INDEX, id=SYNC_STATUS_DOC_ID, document={"key": SYNC_STATUS_DOC_ID, "value": status}, refresh=False)
     finally:
         await es.close()
+    await notify_status_changed(SOURCE_ID)
 
 
 async def get_sync_status() -> dict:
@@ -231,9 +245,11 @@ async def get_sync_status() -> dict:
     try:
         result = await es.get(index=SETTINGS_INDEX, id=SYNC_STATUS_DOC_ID, ignore=[404])
         if not result.get("found"):
-            return {"status": "idle", "document_count": 0}
+            return {"status": "idle", "document_count": 0, "request_count": 0, "request_limit": DAILY_REQUEST_LIMIT}
         value = result["_source"].get("value", {})
-        return value if isinstance(value, dict) else {"status": "idle", "document_count": 0}
+        if not isinstance(value, dict):
+            return {"status": "idle", "document_count": 0, "request_count": 0, "request_limit": DAILY_REQUEST_LIMIT}
+        return {**value, **DailyRequestQuota.from_status(value, DAILY_REQUEST_LIMIT).status_fields()}
     finally:
         await es.close()
 
@@ -242,19 +258,22 @@ async def synchronize(service_key: str) -> None:
     async with _sync_lock:
         started_at = _utc_now()
         previous = await get_sync_status()
+        request_quota = DailyRequestQuota.from_status(previous, DAILY_REQUEST_LIMIT)
         status = {
             "status": "running", "stage": "startupAnnouncements", "current": 0, "total": 0,
             "started_at": started_at, "document_count": previous.get("document_count", 0),
             "last_successful_sync_at": previous.get("last_successful_sync_at"),
+            **request_quota.status_fields(),
         }
         await _save_sync_status(status)
         try:
             async def update_progress(stage: str, current: int, total: int) -> None:
-                status.update({"stage": stage, "current": current, "total": total})
+                status.update({"stage": stage, "current": current, "total": total, **request_quota.status_fields()})
                 await _save_sync_status(status)
 
-            announcements = await _fetch_endpoint(service_key, ANNOUNCEMENTS_ENDPOINT, "startupAnnouncements", update_progress)
-            businesses = await _fetch_endpoint(service_key, BUSINESSES_ENDPOINT, "startupBusinesses", update_progress)
+            announcements = await _fetch_endpoint(service_key, ANNOUNCEMENTS_ENDPOINT, "startupAnnouncements", update_progress, request_quota)
+            businesses = [] if request_quota.exhausted else await _fetch_endpoint(service_key, BUSINESSES_ENDPOINT, "startupBusinesses", update_progress, request_quota)
+            quota_exhausted = request_quota.exhausted
             if not announcements and not businesses:
                 raise ValueError("K-Startup API가 지원사업 데이터를 반환하지 않아 기존 데이터를 유지합니다.")
             await _ensure_index()
@@ -263,7 +282,10 @@ async def synchronize(service_key: str) -> None:
                 *(_announcement_document(item, fetched_at) for item in announcements),
                 *(_business_document(item, fetched_at) for item in businesses),
             ]
-            documents = [document for document in documents if document["external_id"] and document["title"]]
+            documents = [
+                document for document in documents
+                if document["external_id"] and document["title"] and is_storable_by_deadline(document)
+            ]
             status.update({"stage": "indexing", "current": 0, "total": len(documents)})
             await _save_sync_status(status)
             actions = [
@@ -281,17 +303,25 @@ async def synchronize(service_key: str) -> None:
                     indexed += chunk_indexed
                     status.update({"current": indexed})
                     await _save_sync_status(status)
-                await es.delete_by_query(index=INDEX_NAME, query={"range": {"fetched_at": {"lt": fetched_at}}}, conflicts="proceed", refresh=False)
+                if not quota_exhausted:
+                    await es.delete_by_query(index=INDEX_NAME, query={"range": {"fetched_at": {"lt": fetched_at}}}, conflicts="proceed", refresh=False)
                 await es.indices.refresh(index=INDEX_NAME)
+                stored_document_count = int((await es.count(index=INDEX_NAME)).get("count", len(documents)))
             finally:
                 await es.close()
             await _save_sync_status({
-                "status": "completed", "stage": "completed", "current": len(documents), "total": len(documents),
-                "document_count": len(documents), "started_at": started_at, "completed_at": fetched_at,
-                "last_successful_sync_at": fetched_at,
+                "status": "failed" if quota_exhausted else "completed", "stage": "completed", "current": len(documents), "total": len(documents),
+                "document_count": stored_document_count, "started_at": started_at, "completed_at": fetched_at,
+                "last_successful_sync_at": previous.get("last_successful_sync_at") if quota_exhausted else fetched_at,
+                "error_code": "request_limit_exceeded" if quota_exhausted else None,
+                "partial_document_count": len(documents) if quota_exhausted else 0,
+                **request_quota.status_fields(),
             })
         except Exception as error:
-            await _save_sync_status({**status, "status": "failed", "failed_at": _utc_now(), "error": str(error)})
+            await _save_sync_status({
+                **status, "status": "failed", "failed_at": _utc_now(), "error": str(error),
+                "error_code": getattr(error, "error_code", "sync_failed"), **request_quota.status_fields(),
+            })
 
 
 def start_synchronization(service_key: str) -> bool:

@@ -35,6 +35,7 @@ const EXTERNAL_DATA_SOURCES = [
     {id: 'kr.biz_support', nameKey: 'bizSupport', hasCollector: true},
     {id: 'kr.k_startup', nameKey: 'kStartup', hasCollector: true},
     {id: 'kr.welfare', nameKey: 'welfare', hasCollector: true},
+    {id: 'kr.housing', nameKey: 'housing', hasCollector: true},
 ] as const;
 
 type ExternalDataSource = (typeof EXTERNAL_DATA_SOURCES)[number];
@@ -642,7 +643,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                         <div style={{display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0, marginLeft: '8px'}}>
                             {!isImageMode && (
                                 <button className="voice-chat-btn" onClick={onOpenVoiceChat}
-                                        title="음성 모드 사용">
+                                        title={t('voiceMode')}>
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                          strokeWidth="2">
                                         <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>

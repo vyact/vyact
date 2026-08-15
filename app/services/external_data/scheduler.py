@@ -4,11 +4,20 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 
 from logger import get_logger
+from services.external_data.cleanup import (
+    is_cleanup_due,
+    is_cleanup_running,
+    start_expired_document_cleanup,
+)
 from services.external_data.biz_support import (
     get_sync_status as get_biz_support_sync_status,
     start_synchronization as start_biz_support_synchronization,
 )
 from services.external_data.gov24 import get_sync_status, start_synchronization
+from services.external_data.housing import (
+    get_sync_status as get_housing_sync_status,
+    start_synchronization as start_housing_synchronization,
+)
 from services.external_data.k_startup import (
     get_sync_status as get_k_startup_sync_status,
     start_synchronization as start_k_startup_synchronization,
@@ -47,6 +56,11 @@ async def _run_due_synchronizations() -> None:
     connections = await load_external_data_connections()
     shared_service_key = (connections.get("kr.gov24") or {}).get("service_key", "")
     schedule_config = connections.get("kr.gov24") or {}
+    if schedule_config.get("auto_delete_expired_enabled", False) and await is_cleanup_due():
+        if start_expired_document_cleanup():
+            logger.info("[external-data] expired document cleanup started")
+    if is_cleanup_running():
+        return
     auto_sync_enabled = schedule_config.get("auto_sync_enabled", False)
     interval_hours = schedule_config.get("auto_sync_interval_hours", DEFAULT_INTERVAL_HOURS)
     gov24 = schedule_config
@@ -94,6 +108,14 @@ async def _run_due_synchronizations() -> None:
         if is_sync_due(welfare_reference_time, interval_hours):
             if start_welfare_synchronization(shared_service_key):
                 logger.info("[external-data] scheduled welfare sync started (%sh)", interval_hours)
+
+    housing = connections.get("kr.housing") or {}
+    if shared_service_key and housing.get("enabled", False) and auto_sync_enabled:
+        housing_status = await get_housing_sync_status()
+        housing_reference_time = housing_status.get("failed_at") if housing_status.get("status") == "failed" else housing_status.get("last_successful_sync_at")
+        if is_sync_due(housing_reference_time, interval_hours):
+            if start_housing_synchronization(shared_service_key):
+                logger.info("[external-data] scheduled housing sync started (%sh)", interval_hours)
 
 
 async def _run_scheduler() -> None:

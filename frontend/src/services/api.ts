@@ -124,13 +124,15 @@ interface ApiSuccessResponse {
 
 export interface Gov24SyncStatusResponse {
     status: 'idle' | 'running' | 'completed' | 'failed';
-    stage?: 'list' | 'detail' | 'conditions' | 'announcements' | 'startupAnnouncements' | 'startupBusinesses' | 'welfareList' | 'welfareDetail' | 'indexing' | 'completed';
+    stage?: 'list' | 'detail' | 'conditions' | 'announcements' | 'startupAnnouncements' | 'startupBusinesses' | 'welfareList' | 'welfareDetail' | 'housingRental' | 'housingSale' | 'indexing' | 'completed';
     current?: number;
     total?: number;
     document_count?: number;
     last_successful_sync_at?: string | null;
     error?: string;
-    error_code?: 'request_limit_exceeded' | 'api_error' | 'sync_failed';
+    error_code?: 'request_limit_exceeded' | 'sync_request_budget_exceeded' | 'api_error' | 'sync_failed';
+    request_count?: number;
+    request_limit?: number;
 }
 
 export interface ExternalDataSyncEvent {
@@ -175,7 +177,7 @@ export interface Gov24Document {
     support_type: string;
     application_deadline: string;
     application_end_date?: string | null;
-    record_type?: 'announcement' | 'business' | '';
+    record_type?: 'announcement' | 'business' | 'rental' | 'sale' | '';
     source_url: string;
     application_url?: string;
     source_modified_at: string;
@@ -1005,6 +1007,17 @@ export const api = {
         return res.json();
     },
 
+    async getExternalDataBootstrap(): Promise<{
+        connections: Record<string, {has_service_key: boolean; enabled: boolean}>;
+        statuses: Record<string, Gov24SyncStatusResponse>;
+        schedule: {enabled: boolean; interval_hours: number};
+        cleanup: {enabled: boolean; cleanup_status: {status: string; cleanup_date?: string; deleted_count?: number}};
+    }> {
+        const res = await fetch(`${API_BASE}/external-data/bootstrap`);
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+    },
+
     async startExternalSourceSync(sourceId: string): Promise<{
         status: string;
         sync_status?: Gov24SyncStatusResponse;
@@ -1044,6 +1057,22 @@ export const api = {
             body: JSON.stringify({enabled, interval_hours: intervalHours}),
         });
         if (!res.ok) throw new Error(await res.text());
+        return res.json();
+    },
+
+    async getExternalDataCleanup(): Promise<{enabled: boolean; cleanup_status: {status: string; cleanup_date?: string; deleted_count?: number}}> {
+        const res = await fetch(`${API_BASE}/external-data/cleanup`);
+        if (!res.ok) throw new Error(`Failed to load external data cleanup settings: ${res.status}`);
+        return res.json();
+    },
+
+    async saveExternalDataCleanup(enabled: boolean): Promise<{enabled: boolean}> {
+        const res = await fetch(`${API_BASE}/external-data/cleanup`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({enabled}),
+        });
+        if (!res.ok) throw new Error(`Failed to save external data cleanup settings: ${res.status}`);
         return res.json();
     },
 

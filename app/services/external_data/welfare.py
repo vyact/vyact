@@ -5,12 +5,16 @@ import html
 import re
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
+from time import monotonic
 from urllib.parse import unquote
 
 import httpx
 from elasticsearch.helpers import async_bulk
 
 from services.db import SETTINGS_INDEX, get_es
+from services.external_data.quota import DailyRequestQuota
+from services.external_data.retention import is_storable_by_deadline
+from services.external_data.status_events import notify_status_changed
 
 SOURCE_ID = "kr.welfare"
 INDEX_NAME = "external_data_kr_welfare"
@@ -22,6 +26,7 @@ PAGE_SIZE = 500
 BULK_CHUNK_SIZE = 100
 BROWSE_PAGE_SIZE = 40
 DETAIL_CONCURRENCY = 5
+DAILY_REQUEST_LIMIT = 100
 
 _sync_tasks: set[asyncio.Task] = set()
 _sync_lock = asyncio.Lock()
@@ -96,10 +101,13 @@ def _parse_detail_response(content: str) -> dict:
     return _element_to_data(detail)
 
 
-async def _fetch_list(client: httpx.AsyncClient, service_key: str, progress_callback) -> list[dict]:
+async def _fetch_list(client: httpx.AsyncClient, service_key: str, progress_callback, request_quota: DailyRequestQuota) -> list[dict]:
     records: list[dict] = []
     page = 1
     while True:
+        if request_quota.exhausted:
+            return records
+        request_quota.consume()
         response = await client.get(
             f"{API_BASE_URL}/{LIST_ENDPOINT}",
             params={
@@ -111,7 +119,13 @@ async def _fetch_list(client: httpx.AsyncClient, service_key: str, progress_call
             },
         )
         response.raise_for_status()
-        page_records, total = _parse_list_response(response.text)
+        try:
+            page_records, total = _parse_list_response(response.text)
+        except WelfareApiError as error:
+            if error.error_code != "request_limit_exceeded":
+                raise
+            request_quota.used = request_quota.limit
+            return records
         records.extend(page_records)
         await progress_callback(len(records), total)
         if not page_records or len(records) >= total:
@@ -120,7 +134,7 @@ async def _fetch_list(client: httpx.AsyncClient, service_key: str, progress_call
     return records
 
 
-async def _fetch_details(client: httpx.AsyncClient, service_key: str, records: list[dict], progress_callback) -> dict[str, dict]:
+async def _fetch_details(client: httpx.AsyncClient, service_key: str, records: list[dict], progress_callback, request_quota: DailyRequestQuota) -> dict[str, dict]:
     semaphore = asyncio.Semaphore(DETAIL_CONCURRENCY)
     details: dict[str, dict] = {}
     completed = 0
@@ -132,6 +146,9 @@ async def _fetch_details(client: httpx.AsyncClient, service_key: str, records: l
         if not service_id:
             return
         async with semaphore:
+            if request_quota.exhausted:
+                return
+            request_quota.consume()
             response = await client.get(
                 f"{API_BASE_URL}/{DETAIL_ENDPOINT}",
                 params={
@@ -141,7 +158,13 @@ async def _fetch_details(client: httpx.AsyncClient, service_key: str, records: l
                 },
             )
             response.raise_for_status()
-            details[service_id] = _parse_detail_response(response.text)
+            try:
+                details[service_id] = _parse_detail_response(response.text)
+            except WelfareApiError as error:
+                if error.error_code != "request_limit_exceeded":
+                    raise
+                request_quota.used = request_quota.limit
+                return
         async with progress_lock:
             completed += 1
             await progress_callback(completed, len(records))
@@ -246,6 +269,7 @@ async def _save_sync_status(status: dict) -> None:
         await es.index(index=SETTINGS_INDEX, id=SYNC_STATUS_DOC_ID, document={"key": SYNC_STATUS_DOC_ID, "value": status}, refresh=False)
     finally:
         await es.close()
+    await notify_status_changed(SOURCE_ID)
 
 
 async def get_sync_status() -> dict:
@@ -253,9 +277,11 @@ async def get_sync_status() -> dict:
     try:
         result = await es.get(index=SETTINGS_INDEX, id=SYNC_STATUS_DOC_ID, ignore=[404])
         if not result.get("found"):
-            return {"status": "idle", "document_count": 0}
+            return {"status": "idle", "document_count": 0, "request_count": 0, "request_limit": DAILY_REQUEST_LIMIT}
         value = result["_source"].get("value", {})
-        return value if isinstance(value, dict) else {"status": "idle", "document_count": 0}
+        if not isinstance(value, dict):
+            return {"status": "idle", "document_count": 0, "request_count": 0, "request_limit": DAILY_REQUEST_LIMIT}
+        return {**value, **DailyRequestQuota.from_status(value, DAILY_REQUEST_LIMIT).status_fields()}
     finally:
         await es.close()
 
@@ -264,25 +290,37 @@ async def synchronize(service_key: str) -> None:
     async with _sync_lock:
         started_at = _utc_now()
         previous = await get_sync_status()
-        status = {"status": "running", "stage": "welfareList", "current": 0, "total": 0, "started_at": started_at, "document_count": previous.get("document_count", 0), "last_successful_sync_at": previous.get("last_successful_sync_at")}
+        request_quota = DailyRequestQuota.from_status(previous, DAILY_REQUEST_LIMIT)
+        status = {"status": "running", "stage": "welfareList", "current": 0, "total": 0, "started_at": started_at, "document_count": previous.get("document_count", 0), "last_successful_sync_at": previous.get("last_successful_sync_at"), **request_quota.status_fields()}
         await _save_sync_status(status)
         try:
+            last_progress_saved_at = 0.0
+
             async def update_progress(current: int, total: int) -> None:
-                status.update({"current": current, "total": total})
+                nonlocal last_progress_saved_at
+                status.update({"current": current, "total": total, **request_quota.status_fields()})
+                current_time = monotonic()
+                if current < total and current_time - last_progress_saved_at < 0.5:
+                    return
+                last_progress_saved_at = current_time
                 await _save_sync_status(status)
 
             async with httpx.AsyncClient(timeout=httpx.Timeout(60.0, connect=10.0)) as client:
-                records = await _fetch_list(client, service_key, update_progress)
+                records = await _fetch_list(client, service_key, update_progress, request_quota)
                 if not records:
                     raise ValueError("복지로 API가 복지서비스 목록을 반환하지 않아 기존 데이터를 유지합니다.")
                 status.update({"stage": "welfareDetail", "current": 0, "total": len(records)})
                 await _save_sync_status(status)
-                details = await _fetch_details(client, service_key, records, update_progress)
+                details = await _fetch_details(client, service_key, records, update_progress, request_quota)
 
+            quota_exhausted = request_quota.exhausted
             await _ensure_index()
             fetched_at = _utc_now()
             documents = [_build_document(item, details.get(str(item.get("servId") or ""), {}), fetched_at) for item in records]
-            documents = [document for document in documents if document["external_id"] and document["title"]]
+            documents = [
+                document for document in documents
+                if document["external_id"] and document["title"] and is_storable_by_deadline(document)
+            ]
             status.update({"stage": "indexing", "current": 0, "total": len(documents)})
             await _save_sync_status(status)
             actions = [{"_op_type": "index", "_index": INDEX_NAME, "_id": document["external_id"], "_source": document} for document in documents]
@@ -297,11 +335,13 @@ async def synchronize(service_key: str) -> None:
                     indexed += chunk_indexed
                     status.update({"current": indexed})
                     await _save_sync_status(status)
-                await es.delete_by_query(index=INDEX_NAME, query={"range": {"fetched_at": {"lt": fetched_at}}}, conflicts="proceed", refresh=False)
+                if not quota_exhausted:
+                    await es.delete_by_query(index=INDEX_NAME, query={"range": {"fetched_at": {"lt": fetched_at}}}, conflicts="proceed", refresh=False)
                 await es.indices.refresh(index=INDEX_NAME)
+                stored_document_count = int((await es.count(index=INDEX_NAME)).get("count", len(documents)))
             finally:
                 await es.close()
-            await _save_sync_status({"status": "completed", "stage": "completed", "current": len(documents), "total": len(documents), "document_count": len(documents), "started_at": started_at, "completed_at": fetched_at, "last_successful_sync_at": fetched_at})
+            await _save_sync_status({"status": "failed" if quota_exhausted else "completed", "stage": "completed", "current": len(documents), "total": len(documents), "document_count": stored_document_count, "started_at": started_at, "completed_at": fetched_at, "last_successful_sync_at": previous.get("last_successful_sync_at") if quota_exhausted else fetched_at, "error_code": "request_limit_exceeded" if quota_exhausted else None, "partial_document_count": len(documents) if quota_exhausted else 0, **request_quota.status_fields()})
         except Exception as error:
             await _save_sync_status({
                 **status,
@@ -309,6 +349,7 @@ async def synchronize(service_key: str) -> None:
                 "failed_at": _utc_now(),
                 "error": str(error),
                 "error_code": getattr(error, "error_code", "sync_failed"),
+                **request_quota.status_fields(),
             })
 
 

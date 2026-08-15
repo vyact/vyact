@@ -91,17 +91,49 @@
 }
 
 .external-data-source-card {
+    --source-color: var(--accent);
+    position: relative;
     overflow: hidden;
     border: 1px solid var(--border);
-    border-radius: 10px;
-    background: var(--card-bg, rgba(255, 255, 255, 0.02));
+    border-radius: 12px;
+    background: linear-gradient(110deg, color-mix(in srgb, var(--source-color) 5%, transparent), var(--card-bg, rgba(255, 255, 255, 0.02)) 38%);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, .08);
+    transition: border-color .18s ease, box-shadow .18s ease;
 }
+
+.external-data-source-card::before {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background: color-mix(in srgb, var(--source-color) 38%, var(--border));
+    content: '';
+    transition: background .18s ease;
+}
+
+.external-data-source-card.is-enabled {
+    border-color: color-mix(in srgb, var(--source-color) 32%, var(--border));
+    box-shadow: 0 6px 22px color-mix(in srgb, var(--source-color) 9%, transparent);
+}
+
+.external-data-source-card.is-enabled::before {
+    background: var(--source-color);
+}
+
+.external-data-source-card:hover {
+    border-color: color-mix(in srgb, var(--source-color) 45%, var(--border));
+}
+
+.external-data-source-card.source-gov24 { --source-color: #5f8cff; }
+.external-data-source-card.source-bizSupport { --source-color: #49b58a; }
+.external-data-source-card.source-kStartup { --source-color: #a879ef; }
+.external-data-source-card.source-welfare { --source-color: #ed8b62; }
+.external-data-source-card.source-housing { --source-color: #4aaec7; }
 
 .external-data-source-summary {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    padding: 15px;
+    padding: 17px 18px 17px 20px;
 }
 
 .external-data-source-main {
@@ -212,6 +244,21 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 8px;
+}
+
+.external-data-source-quota {
+    display: inline-flex;
+    align-items: center;
+    min-height: 23px;
+    padding: 2px 8px;
+    border: 1px solid color-mix(in srgb, var(--source-color) 30%, var(--border));
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--source-color) 9%, transparent);
+    color: color-mix(in srgb, var(--source-color) 72%, var(--text));
+    font-size: 11px;
+    font-weight: 650;
+    line-height: 1.3;
+    white-space: nowrap;
 }
 
 .external-data-source-title-row h5 {
@@ -664,14 +711,11 @@
     font-size: 11px;
 }
 
-.external-data-source-notice {
-    margin: 10px 0 0;
-    padding: 9px 11px;
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--accent) 9%, transparent);
-    color: var(--text-secondary);
-    font-size: 11px;
-    line-height: 1.45;
+.external-data-sync-request-count {
+    margin: 7px 0 0;
+    color: var(--text-tertiary);
+    font-size: 10px;
+    text-align: right;
 }
 
 .external-data-auto-sync {
