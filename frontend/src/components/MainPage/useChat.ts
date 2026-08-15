@@ -117,12 +117,24 @@ interface ConversationRequestState {
     startedAt: number | null;
 }
 
+interface FailedRequest {
+    query: string;
+    attachments: any[];
+    systemPromptOverride?: string;
+    voiceMode?: boolean;
+    extraArticles?: ArticleAttachment[];
+    selectedMcpIds?: string[];
+    knowledgeCollectionIds?: string[];
+    externalResourceIds?: string[];
+    externalDocumentSelections?: ExternalDocumentSelection[];
+}
+
 export function useChat(deps: UseChatDeps) {
     const {t} = useTranslation('main');
     const [requestStates, setRequestStates] = useState<Record<string, ConversationRequestState>>({});
     const [imageGenProgress, setImageGenProgress] = useState(0);
     const [imageGenMessage, setImageGenMessage] = useState('');
-    const [lastFailedQuery, setLastFailedQuery] = useState<{ query: string; attachments: any[] } | null>(null);
+    const [lastFailedQuery, setLastFailedQuery] = useState<FailedRequest | null>(null);
     // 현재 토큰 스트리밍 중인 assistant 메시지의 id (없으면 null)
     const isSendingRef = React.useRef(false);
     const abortControllerRef = React.useRef<AbortController | null>(null);
@@ -248,6 +260,7 @@ export function useChat(deps: UseChatDeps) {
         knowledgeCollectionIds?: string[],
         externalResourceIds?: string[],
         externalDocumentSelections?: ExternalDocumentSelection[],
+        uploadedAttachments: any[] = [],
     ): Promise<boolean> => {
         const requestConvId = currentConvIdRef.current || currentConvId;
         const articlesSnapshot = extraArticles?.length
@@ -319,7 +332,7 @@ export function useChat(deps: UseChatDeps) {
                 xhr.send(formData);
             });
         };
-        const attachments: any[] = [];
+        const attachments: any[] = [...uploadedAttachments];
         if (images?.length) {
             for (let i = 0; i < images.length; i++) {
                 const img = images[i];
@@ -394,6 +407,18 @@ export function useChat(deps: UseChatDeps) {
         // 메일·Drive 문서·기사·영상 등 선택 자료는 이번 요청에서만 소비한다.
         // 대화 화면의 출처 기록은 userMessage/articleSources에 남지만 다음 요청에는 자동 재주입하지 않는다.
         if (articlesSnapshot.length > 0) setPendingArticles([]);
+
+        const failedRequest: FailedRequest = {
+            query,
+            attachments,
+            systemPromptOverride,
+            voiceMode,
+            extraArticles: articlesSnapshot,
+            selectedMcpIds,
+            knowledgeCollectionIds,
+            externalResourceIds,
+            externalDocumentSelections,
+        };
 
         const userTs = new Date().toISOString();  // 전송 시각 — 화면/서버 동일하게 사용
         const userMessage: Message = {
@@ -681,7 +706,7 @@ export function useChat(deps: UseChatDeps) {
                                     toolStatus: undefined
                                 }
                                 : m));
-                        setLastFailedQuery({query, attachments});
+                        setLastFailedQuery(failedRequest);
                     }
                 } finally {
                     flushStreamText();
@@ -754,7 +779,7 @@ export function useChat(deps: UseChatDeps) {
             if (error instanceof DOMException && error.name === 'AbortError') {
                 // 사용자 중지 — 에러 표시 안 함
             } else {
-                setLastFailedQuery({query, attachments});
+                setLastFailedQuery(failedRequest);
                 setMessagesForConversation(requestConvId, prev => [...prev, {
                     role: 'assistant',
                     content: formatApiErrorForUser(error),
@@ -770,83 +795,34 @@ export function useChat(deps: UseChatDeps) {
         return true;
     };
 
-    // ── 재전송 (이미 업로드된 attachments 사용) ─────────────────────
-    const handleSendWithAttachments = async (query: string, attachments: any[]) => {
-        const requestConvId = currentConvIdRef.current || currentConvId;
-        setMessagesForConversation(requestConvId, prev => [...prev, {
-            role: 'user',
-            content: query,
-            timestamp: new Date().toISOString(),
-            attachments: attachments.length > 0 ? attachments : undefined
-        }]);
-        setConversationRequestState(requestConvId, {isLoading: true});
-        try {
-            if (IMAGE_MODEL_IDS.includes(selectedModel)) {
-                resetImageGen();
-                setImageGenMessage('이미지 생성 준비 중...');
-                const response = await api.generateImage(query, requestConvId, messagesRef.current,
-                    attachments.length > 0 ? attachments : undefined,
-                    (msg, progress) => {
-                        setImageGenMessage(msg);
-                        setImageGenProgress(progress);
-                    });
-                resetImageGen();
-                if (response.conv_id && !requestConvId) assignNewConvId(response.conv_id, query);
-                const finalConvId = response.conv_id || requestConvId;
-                if (finalConvId) completeLocalConversation(finalConvId, query, activeProjectId);
-                const assistantMessage = response.assistant_message
-                    ? mapMsg(response.assistant_message)
-                    : {
-                        role: 'assistant', content: `이미지를 생성했습니다. (${response.count}장)`,
-                        timestamp: new Date().toISOString(), model: response.model,
-                        attachments: response.filenames.map((f: string) => ({type: 'image', filename: f})),
-                        isGeneratedImage: true,
-                    } as Message;
-                setMessagesForConversation(requestConvId, prev => [...prev, assistantMessage]);
-            } else {
-                const response = await api.chat(query, requestConvId, messagesRef.current, attachments.length > 0 ? attachments : undefined,
-                    undefined, undefined, undefined, getReasoningEnabled());
-                if (response.conv_id && !requestConvId) assignNewConvId(response.conv_id, query);
-                const finalConvId = response.conv_id || requestConvId;
-                if (finalConvId) completeLocalConversation(finalConvId, query, activeProjectId);
-                const assistantMessage = response.assistant_message
-                    ? mapMsg(response.assistant_message)
-                    : {
-                        role: 'assistant',
-                        content: response.answer,
-                        timestamp: new Date().toISOString(),
-                        model: response.model
-                    } as Message;
-                setMessagesForConversation(requestConvId, prev => [...prev, assistantMessage]);
-            }
-        } catch (error) {
-            if (error instanceof DOMException && error.name === 'AbortError') {
-                // 사용자 중지 — 에러 표시 안 함
-            } else {
-                setLastFailedQuery({query, attachments});
-                setMessagesForConversation(requestConvId, prev => [...prev, {
-                    role: 'assistant',
-                    content: formatApiErrorForUser(error),
-                    timestamp: new Date().toISOString(),
-                    isError: true
-                }]);
-            }
-        } finally {
-            setConversationRequestState(requestConvId, {isLoading: false, streamingMessageId: null});
-        }
-    };
-
-    const handleRetry = () => {
-        if (!lastFailedQuery) return;
+    const handleRetry = async () => {
+        if (!lastFailedQuery || isSendingRef.current || hasActiveRequests) return;
+        const failedRequest = lastFailedQuery;
         setMessagesWithRef(prev => {
             const next = [...prev];
             if (next.length > 0 && next[next.length - 1].isError) next.pop();
             if (next.length > 0 && next[next.length - 1].role === 'user') next.pop();
             return next;
         });
-        const {query, attachments} = lastFailedQuery;
         setLastFailedQuery(null);
-        handleSendWithAttachments(query, attachments);
+        isSendingRef.current = true;
+        try {
+            await handleSendInner(
+                failedRequest.query,
+                undefined,
+                undefined,
+                failedRequest.systemPromptOverride,
+                failedRequest.voiceMode,
+                failedRequest.extraArticles,
+                failedRequest.selectedMcpIds,
+                failedRequest.knowledgeCollectionIds,
+                failedRequest.externalResourceIds,
+                failedRequest.externalDocumentSelections,
+                failedRequest.attachments,
+            );
+        } finally {
+            isSendingRef.current = false;
+        }
     };
 
     const handleStop = () => {
