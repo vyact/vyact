@@ -38,6 +38,14 @@ class WelfareApiError(ValueError):
         self.error_code = error_code
 
 
+def _raise_for_status(response: httpx.Response) -> None:
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as error:
+        error_code = "request_limit_exceeded" if response.status_code == 429 else "api_error"
+        raise WelfareApiError("복지서비스 API 호출에 실패했습니다.", error_code) from error
+
+
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -118,7 +126,7 @@ async def _fetch_list(client: httpx.AsyncClient, service_key: str, progress_call
                 "srchKeyCode": "003",
             },
         )
-        response.raise_for_status()
+        _raise_for_status(response)
         try:
             page_records, total = _parse_list_response(response.text)
         except WelfareApiError as error:
@@ -157,7 +165,7 @@ async def _fetch_details(client: httpx.AsyncClient, service_key: str, records: l
                     "servId": service_id,
                 },
             )
-            response.raise_for_status()
+            _raise_for_status(response)
             try:
                 details[service_id] = _parse_detail_response(response.text)
             except WelfareApiError as error:
