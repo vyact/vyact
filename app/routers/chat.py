@@ -52,7 +52,8 @@ from services.external_data.lh_lease_notice import SOURCE_ID as LH_NOTICE_SOURCE
 from services.external_data.k_startup import SOURCE_ID as K_STARTUP_SOURCE_ID, search_candidates as search_k_startup_candidates
 from services.external_data.welfare import SOURCE_ID as WELFARE_SOURCE_ID, search_candidates as search_welfare_candidates
 from services.external_data.settings import load_external_data_connections
-from services.external_data.selected_documents import load_selected_external_documents
+from services.external_data.selected_documents import load_selected_external_documents, merge_external_context_documents
+from services.external_data.messages import get_all_searches_failed_message
 from services.user_profile import get_response_style_instruction
 
 logger = get_logger(__name__)
@@ -97,11 +98,11 @@ async def _with_response_style(system_prompt: str) -> str:
     return f"{system_prompt}\n\n{style_context}" if system_prompt else style_context
 
 
-async def _get_selected_external_context(question: str, resource_ids: list[str], document_selections: list[dict] | None = None) -> tuple[list[dict], str, bool]:
+async def _get_selected_external_context(question: str, resource_ids: list[str], document_selections: list[dict] | None = None) -> tuple[list[dict], str, bool, dict]:
     selected_ids = set(resource_ids)
     document_selections = document_selections or []
     if not selected_ids.intersection({GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, WELFARE_SOURCE_ID, HOUSING_SOURCE_ID, LH_COMPLEX_SOURCE_ID, LH_NOTICE_SOURCE_ID}) and not document_selections:
-        return [], "", True
+        return [], "", True, {"failed_sources": [], "all_failed": False, "no_results": False}
     searches = []
     if GOV24_SOURCE_ID in selected_ids:
         searches.append(("Government24", search_gov24_candidates(question)))
@@ -123,12 +124,16 @@ async def _get_selected_external_context(question: str, resource_ids: list[str],
         *(search for _, search in searches),
         return_exceptions=True,
     )
-    candidates = selected_documents_result if isinstance(selected_documents_result, list) else []
+    selected_candidates = selected_documents_result if isinstance(selected_documents_result, list) else []
+    searched_candidates: list[dict] = []
+    failed_sources: list[str] = []
     for (source_name, _), result in zip(searches, results):
         if isinstance(result, Exception):
             logger.warning("[external_data] %s candidate search failed: %s", source_name, result)
+            failed_sources.append(source_name)
             continue
-        candidates.extend(result)
+        searched_candidates.extend(result)
+    candidates = merge_external_context_documents(selected_candidates, searched_candidates)
     custom_instruction = ""
     if isinstance(settings_result, dict):
         external_config = settings_result.get("kr.gov24") or {}
@@ -140,9 +145,33 @@ async def _get_selected_external_context(question: str, resource_ids: list[str],
             "Apply these preferences only when they do not conflict with the mandatory eligibility, "
             f"deadline, and source-grounding rules above.\n{custom_instruction}"
         )
+    all_failed = bool(searches) and len(failed_sources) == len(searches) and not selected_candidates
+    no_results = bool(searches or document_selections) and not candidates and not all_failed
+    if failed_sources and not all_failed:
+        instruction = (
+            f"{instruction}\n\n[External-data retrieval status]\n"
+            "The following selected sources could not be searched because of a technical error: "
+            f"{', '.join(failed_sources)}. Answer using only the successfully retrieved records and "
+            "briefly disclose which sources were unavailable in the user's language."
+        )
+    if no_results:
+        instruction = (
+            f"{instruction}\n\n[External-data retrieval status]\n"
+            "The selected external-data search completed successfully but returned no matching records. "
+            "State this clearly in the user's language and do not invent recommendations."
+        )
     # A saved external-data instruction replaces the general AI profile. Without one,
     # preserve the normal profile as a useful fallback alongside the fixed safety rules.
-    return candidates, instruction, not bool(custom_instruction)
+    return candidates, instruction, not bool(custom_instruction), {
+        "failed_sources": failed_sources,
+        "all_failed": all_failed,
+        "no_results": no_results,
+    }
+
+
+async def _external_search_failure_answer() -> str:
+    from routers.deps import load_ui_language_async
+    return get_all_searches_failed_message(await load_ui_language_async())
 
 
 def _new_conversation_title(conv_summary: str | None, fallback_question: str) -> str:
@@ -469,19 +498,35 @@ async def query(req: QueryRequest):
     )
 
     # 7) LLM 호출 분기
-    if articles:
+    knowledge_collection_ids = _selected_knowledge_collection_ids(req)
+    external_docs: list[dict] = []
+    external_instruction = ""
+    inject_user_profile = True
+    external_status = {"failed_sources": [], "all_failed": False, "no_results": False}
+    if not req.voice_mode:
+        external_docs, external_instruction, inject_user_profile, external_status = await _get_selected_external_context(
+            req.question, req.external_resource_ids, req.external_document_selections,
+        )
+    external_selected = bool(req.external_document_selections or {GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, WELFARE_SOURCE_ID, HOUSING_SOURCE_ID, LH_COMPLEX_SOURCE_ID, LH_NOTICE_SOURCE_ID}.intersection(req.external_resource_ids))
+
+    if external_status["all_failed"]:
+        result = {"answer": await _external_search_failure_answer(), "sources": [], "model": await get_model_name()}
+    elif articles:
         # 기사/문서 첨부
         from services.conv_summary import build_summary_instruction
         response_system_prompt = (system_prompt if system_prompt else FORMAT_INSTRUCTION) + build_summary_instruction(
             "", False, project_memory,
         )
+        if external_instruction:
+            response_system_prompt = f"{response_system_prompt}\n\n{external_instruction}"
         direct_docs, file_chunks = await search_file_id_chunks(req.question, articles)
-        context_docs = direct_docs + file_chunks
-        raw_answer = await query_llm(req.question, limit_direct_document_contexts(file_context_docs + context_docs), response_system_prompt, image_attachments,
+        context_docs = limit_direct_document_contexts(file_context_docs + direct_docs + file_chunks + external_docs)
+        raw_answer = await query_llm(req.question, context_docs, response_system_prompt, image_attachments,
                                      req.messages,
                                      format_instruction_override="" if req.voice_mode else None,
                                      conversation_summary=conversation_summary,
-                                     reasoning=req.reasoning, call_reason="chat:article_attachment")
+                                     reasoning=req.reasoning, call_reason="chat:article_attachment",
+                                     inject_user_profile=inject_user_profile)
         result = {"answer": raw_answer, "sources": context_docs, "model": await get_model_name()}
     elif req.voice_mode:
         raw_answer = await query_llm(req.question, file_context_docs, system_prompt, image_attachments, req.messages,
@@ -490,11 +535,6 @@ async def query(req: QueryRequest):
                                      reasoning=req.reasoning, call_reason="chat:voice_mode")
         result = {"answer": raw_answer, "sources": [], "model": await get_model_name()}
     else:
-        knowledge_collection_ids = _selected_knowledge_collection_ids(req)
-        external_docs, external_instruction, inject_user_profile = await _get_selected_external_context(
-            req.question, req.external_resource_ids, req.external_document_selections,
-        )
-        external_selected = bool(req.external_document_selections or {GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, WELFARE_SOURCE_ID, HOUSING_SOURCE_ID, LH_COMPLEX_SOURCE_ID, LH_NOTICE_SOURCE_ID}.intersection(req.external_resource_ids))
         # URL 크롤링
         all_urls = [u.rstrip('.') for u in URL_RE.findall(req.question)]
         urls = _should_crawl_urls(req.question, all_urls) if has_plugin_url_resolvers() else []
@@ -520,12 +560,12 @@ async def query(req: QueryRequest):
             if external_instruction:
                 response_system_prompt = f"{response_system_prompt}\n\n{external_instruction}"
             rag_result = await rag_query(req.question, response_system_prompt, image_attachments, req.messages,
-                                         extra_context=external_docs,
+                                         extra_context=limit_direct_document_contexts(external_docs),
                                          skip_rag=external_selected and not knowledge_collection_ids,
                                          reasoning=req.reasoning, conv_id=conv_id, conversation_summary=conversation_summary,
                                          call_reason="chat:url_context", knowledge_collection_ids=knowledge_collection_ids,
                                          inject_user_profile=inject_user_profile)
-            combined_docs = file_context_docs + url_docs + rag_result.get("sources", [])
+            combined_docs = limit_direct_document_contexts(file_context_docs + url_docs + rag_result.get("sources", []))
             raw_answer = await query_llm(
                 req.question, combined_docs, response_system_prompt,
                 image_attachments, req.messages,
@@ -545,7 +585,7 @@ async def query(req: QueryRequest):
             if external_instruction:
                 _summary_system_prompt = f"{_summary_system_prompt}\n\n{external_instruction}"
             result = await rag_query(req.question, _summary_system_prompt, image_attachments, req.messages,
-                                     extra_context=file_context_docs + external_docs,
+                                     extra_context=limit_direct_document_contexts(file_context_docs + external_docs),
                                      skip_rag=_has_file_att or (external_selected and not knowledge_collection_ids),
                                      reasoning=req.reasoning, conv_id=conv_id, conversation_summary=conversation_summary,
                                      call_reason="chat:general", knowledge_collection_ids=knowledge_collection_ids,
@@ -737,12 +777,28 @@ async def query_stream(req: QueryRequest):
 
             config = await load_config_async()
             is_image_model = config.get("model_type") in ("image_gen", "image_edit") or model in IMAGE_MODEL_IDS
+            knowledge_collection_ids = _selected_knowledge_collection_ids(req)
+            external_selected = bool(req.external_document_selections or {GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, WELFARE_SOURCE_ID, HOUSING_SOURCE_ID, LH_COMPLEX_SOURCE_ID, LH_NOTICE_SOURCE_ID}.intersection(req.external_resource_ids))
+            external_docs: list[dict] = []
+            external_instruction = ""
+            external_status = {"failed_sources": [], "all_failed": False, "no_results": False}
+            if not is_image_model and not req.voice_mode:
+                external_docs, external_instruction, inject_user_profile, external_status = await _get_selected_external_context(
+                    clean_question, req.external_resource_ids, req.external_document_selections,
+                )
+            if external_status["all_failed"]:
+                error_message = await _external_search_failure_answer()
+                yield _sse("meta", {"model": model, "sources": []})
+                yield _sse("token", {"text": error_message})
+                yield _sse("done", {"conv_id": req.conv_id or "", "answer": error_message})
+                return
 
             if not is_image_model and not req.voice_mode and articles:
                 # ══ 경로 (A): 기사/문서 첨부 ══
                 direct_docs, file_chunks = await search_file_id_chunks(clean_question, articles)
-                context_docs = direct_docs + file_chunks
-                docs_for_llm = limit_direct_document_contexts(file_context_docs + context_docs)
+                context_docs = file_context_docs + direct_docs + file_chunks + external_docs
+                docs_for_llm = limit_direct_document_contexts(context_docs)
+                selected_external_instruction = external_instruction
                 can_stream = True
 
             elif not is_image_model and not req.voice_mode and urls:
@@ -763,23 +819,18 @@ async def query_stream(req: QueryRequest):
                 if url_docs:
                     # URL 컨텍스트를 얻은 경우에만 본문을 추가한다. 실패한 URL은 원문 질문에
                     # 그대로 남으므로, 컨텍스트 없이 일반 채팅 경로로 LLM에 전달된다.
-                    knowledge_collection_ids = _selected_knowledge_collection_ids(req)
-                    external_docs, external_instruction, inject_user_profile = await _get_selected_external_context(
-                        clean_question, req.external_resource_ids, req.external_document_selections,
-                    )
                     url_system_prompt = system_prompt
                     if external_instruction:
                         url_system_prompt = f"{url_system_prompt}\n\n{external_instruction}"
-                    external_selected = bool(req.external_document_selections or {GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, WELFARE_SOURCE_ID, HOUSING_SOURCE_ID, LH_COMPLEX_SOURCE_ID, LH_NOTICE_SOURCE_ID}.intersection(req.external_resource_ids))
                     rag_result = await rag_query(clean_question, url_system_prompt, image_attachments, req.messages,
-                                                 extra_context=external_docs,
+                                                 extra_context=limit_direct_document_contexts(external_docs),
                                                  skip_rag=external_selected and not knowledge_collection_ids,
                                                  reasoning=req.reasoning, conv_id=conv_id, conversation_summary=conversation_summary,
                                                  call_reason="chat:url_context_stream",
                                                  knowledge_collection_ids=knowledge_collection_ids,
                                                  inject_user_profile=inject_user_profile)
                     context_docs = file_context_docs + url_docs + rag_result.get("sources", [])
-                    docs_for_llm = context_docs
+                    docs_for_llm = limit_direct_document_contexts(context_docs)
                     selected_external_instruction = external_instruction
                     can_stream = True
 
@@ -805,12 +856,6 @@ async def query_stream(req: QueryRequest):
                 has_file_attachment = any(
                     a.get("type") in ("file", "zip") for a in req.attachments
                 )
-                external_selected = bool(req.external_document_selections or {GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, WELFARE_SOURCE_ID, HOUSING_SOURCE_ID, LH_COMPLEX_SOURCE_ID, LH_NOTICE_SOURCE_ID}.intersection(req.external_resource_ids))
-                knowledge_collection_ids = _selected_knowledge_collection_ids(req)
-                external_docs, external_instruction, inject_user_profile = await _get_selected_external_context(
-                    clean_question, req.external_resource_ids, req.external_document_selections,
-                )
-
                 # 대화 요약 태그 생성 지시 — 이 스트리밍 호출에만 덧붙인다.
                 # minimal_prompt(크롬 확장)면 요약 태그 지시를 통째로 생략하고
                 # FORMAT_INSTRUCTION 대신 EXTENSION_FORMAT_INSTRUCTION을 쓴다
@@ -846,7 +891,7 @@ async def query_stream(req: QueryRequest):
                 _activity_log: list[dict] = []
                 async for ev in rag_query_stream(
                         clean_question, _summary_system_prompt, image_attachments, req.messages,
-                        extra_context=limit_direct_document_contexts(file_context_docs) + external_docs,
+                        extra_context=limit_direct_document_contexts(file_context_docs + external_docs),
                         skip_rag=has_file_attachment or (external_selected and not knowledge_collection_ids),
                         reasoning=req.reasoning,
                         conv_id=conv_id,

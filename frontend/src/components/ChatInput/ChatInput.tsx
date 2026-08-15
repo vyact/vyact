@@ -471,19 +471,12 @@ const ChatInput: React.FC<ChatInputProps> = ({
                     />
 
                     {/* textarea 행 */}
-                    {(selectedMcps.length > 0 || selectedKnowledgeCollectionIds.length > 0 || selectedExternalResourceIds.length > 0 || selectedExternalDocuments.length > 0) && <div className="selected-mcp-chips">
+                    {(selectedMcps.length > 0 || selectedKnowledgeCollectionIds.length > 0 || selectedExternalDocuments.length > 0) && <div className="selected-mcp-chips">
                         {selectedKnowledgeCollectionIds.map(collectionId => {
                             const collection = knowledgeCollections.find(item => item.id === collectionId);
                             return collection ? <div className="selected-mcp-chip knowledge-source-chip is-collection" key={collection.id}>
                                 <span className="selected-mcp-chip-icon">K</span><span>{collection.name}</span>
                                 <button type="button" aria-label={t('mcpMenu.removeSelected')} onClick={() => setSelectedKnowledgeCollectionIds(current => current.filter(id => id !== collectionId))}><X size={10}/></button>
-                            </div> : null;
-                        })}
-                        {selectedExternalResourceIds.map(sourceId => {
-                            const source = EXTERNAL_DATA_SOURCES.find(item => item.id === sourceId);
-                            return source ? <div className="selected-mcp-chip knowledge-source-chip is-external" key={sourceId}>
-                                <span className="selected-mcp-chip-icon"><Database size={11}/></span><span>{t(`externalData.sources.${source.nameKey}.name`, {ns: 'settings'})}</span>
-                                <button type="button" aria-label={t('mcpMenu.removeSelected')} onClick={() => setSelectedExternalResourceIds(current => current.filter(id => id !== sourceId))}><X size={10}/></button>
                             </div> : null;
                         })}
                         {selectedExternalDocuments.map(document => <div className="selected-mcp-chip knowledge-source-chip is-external" key={`${document.source_id}:${document.document_id}`}>
@@ -595,6 +588,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
                             <CustomSelect
                                 className={`chat-system-prompt-select knowledge-source-select${selectedKnowledgeCollectionIds.length || selectedExternalResourceIds.length ? ' is-selected' : ''}`}
+                                dropdownClassName="knowledge-source-dropdown"
                                 options={knowledgeSourceTab === 'collections'
                                     ? knowledgeCollections.map(collection => ({value: collection.id, label: collection.name}))
                                     : enabledExternalSources.map(source => {
@@ -648,7 +642,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                         aria-label={t('knowledgeSources.externalSettings')}
                                         onClick={() => window.dispatchEvent(new CustomEvent('vyact:open-settings', {detail: {tab: 'externalData'}}))}><Settings size={15}/></button>
                                 </>}
-                                header={<><div className="knowledge-source-tabs">
+                                header={<div className="knowledge-source-tabs">
                                     <button type="button" className={knowledgeSourceTab === 'collections' ? 'active' : ''}
                                         onClick={event => { event.stopPropagation(); setKnowledgeSourceTab('collections'); }}>
                                         {t('knowledgeSources.collections')}
@@ -657,7 +651,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                         onClick={event => { event.stopPropagation(); setKnowledgeSourceTab('external'); refreshExternalResources(); }}>
                                         {t('knowledgeSources.external')}
                                     </button>
-                                </div><div className="knowledge-source-bulk-actions">
+                                </div>}
+                                afterSearch={<div className="knowledge-source-bulk-actions">
                                     <button type="button" onClick={event => {
                                         event.stopPropagation();
                                         if (knowledgeSourceTab === 'collections') {
@@ -673,7 +668,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                         if (knowledgeSourceTab === 'collections') setSelectedKnowledgeCollectionIds([]);
                                         else setSelectedExternalResourceIds([]);
                                     }}>{t('deselectAll', {ns: 'common'})}</button>
-                                </div></>}
+                                </div>}
                                 emptyState={<div className="custom-select-empty">{t(knowledgeSourceTab === 'collections' ? 'knowledgeCollections.empty' : 'knowledgeSources.noExternalData')}</div>}
                                 renderOption={knowledgeSourceTab === 'external' ? (option, isSelected) => <>
                                     <span className="custom-select-item-label">{option.label}</span>

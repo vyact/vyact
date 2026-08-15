@@ -1,4 +1,9 @@
-from routers.chat_helpers import build_assistant_message, unwrap_pasted_text
+from routers.chat_helpers import (
+    DIRECT_DOCUMENT_TOTAL_MAX_CHARS,
+    build_assistant_message,
+    limit_direct_document_contexts,
+    unwrap_pasted_text,
+)
 
 
 def test_unwrap_pasted_text_keeps_pasted_content_as_question():
@@ -39,3 +44,14 @@ def test_build_assistant_message_omits_truncation_when_complete():
     message = build_assistant_message("complete answer", "gpt-test")
 
     assert "truncated" not in message
+
+
+def test_direct_document_limit_is_shared_across_all_direct_documents():
+    documents = [
+        {"content": "a" * DIRECT_DOCUMENT_TOTAL_MAX_CHARS, "direct_document": True},
+        {"content": "b" * DIRECT_DOCUMENT_TOTAL_MAX_CHARS, "direct_document": True},
+    ]
+
+    limited = limit_direct_document_contexts(documents)
+
+    assert sum(len(document["content"]) for document in limited) == DIRECT_DOCUMENT_TOTAL_MAX_CHARS

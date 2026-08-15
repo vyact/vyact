@@ -37,6 +37,7 @@ interface CustomSelectProps {
     portal?: boolean;
     onOpen?: () => void;
     header?: React.ReactNode;
+    afterSearch?: React.ReactNode;
     closeOnSelect?: boolean;
 }
 
@@ -66,6 +67,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                                                        portal = false,
                                                        onOpen,
                                                        header,
+                                                       afterSearch,
                                                        closeOnSelect = true,
                                                    }) => {
     const [open, setOpen] = useState(false);
@@ -184,6 +186,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                     )}
                 </div>
             )}
+            {afterSearch}
 
             <div className="custom-select-list">
                 {filtered.length > 0 ? (

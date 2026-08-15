@@ -47,9 +47,11 @@ async def _load_source_documents(source_id: str, document_ids: list[str]) -> lis
             if source.get(field) not in (None, "", [], {})
         }
         documents.append({
+            "id": source.get("external_id") or document.get("_id", ""),
             "title": source.get("title") or "External data",
             "content": json.dumps(full_content, ensure_ascii=False, default=str),
             "source": source_id,
+            "external_resource_id": source_id,
             "url": source.get("source_url", ""),
             "score": 1.0,
             "indexed_at": source.get("source_modified_at", ""),
@@ -72,3 +74,22 @@ async def load_selected_external_documents(selections: list[dict]) -> list[dict]
         for source_id, document_ids in grouped.items()
     ), return_exceptions=True)
     return [document for result in results if isinstance(result, list) for document in result]
+
+
+def merge_external_context_documents(
+        selected_documents: list[dict],
+        search_results: list[dict],
+) -> list[dict]:
+    """직접 선택 문서를 우선하면서 서비스 검색 결과의 동일 문서를 제거한다."""
+    merged: list[dict] = []
+    seen: set[tuple[str, str]] = set()
+    for document in [*selected_documents, *search_results]:
+        source_id = str(document.get("external_resource_id") or document.get("source") or "")
+        document_id = str(document.get("id") or "")
+        fallback = str(document.get("url") or document.get("title") or "")
+        identity = (source_id, document_id or fallback)
+        if not identity[1] or identity in seen:
+            continue
+        seen.add(identity)
+        merged.append(document)
+    return merged

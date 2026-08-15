@@ -483,29 +483,37 @@
 .knowledge-source-bulk-actions {
     display: flex;
     justify-content: flex-end;
-    gap: 2px;
-    padding: 7px 10px 8px;
+    gap: 14px;
+    padding: 0 13px 9px;
     border-bottom: 1px solid var(--border);
 }
 
 .knowledge-source-bulk-actions button {
-    padding: 5px 8px;
+    padding: 2px 0;
     border: 0;
-    border-radius: 6px;
     background: transparent;
-    color: var(--muted);
-    font-size: 11px;
+    color: color-mix(in srgb, var(--text) 78%, var(--muted));
+    font-size: 12px;
+    font-weight: 650;
     cursor: pointer;
+    transition: color .15s;
+}
+
+.knowledge-source-bulk-actions button:first-child {
+    color: var(--accent);
 }
 
 .knowledge-source-bulk-actions button:hover:not(:disabled) {
-    background: var(--surface);
-    color: var(--text);
+    color: var(--accent);
 }
 
 .knowledge-source-bulk-actions button:disabled {
     cursor: default;
-    opacity: .4;
+    opacity: .42;
+}
+
+.knowledge-source-dropdown .custom-select-search {
+    border-bottom: 0;
 }
 .mcp-mention-menu{position:absolute;bottom:100%;left:0;right:0;margin-bottom:8px;overflow:hidden;border:1px solid var(--border);border-radius:18px;background:var(--surface);box-shadow:0 16px 42px rgba(0,0,0,.38);z-index:110}.mcp-mention-list{max-height:min(360px,50vh);overflow-y:auto}
 .slash-command-menu{position:absolute;bottom:100%;left:0;right:0;margin-bottom:8px;overflow:hidden;border:1px solid var(--border);border-radius:18px;background:var(--surface);box-shadow:0 16px 42px rgba(0,0,0,.38);z-index:100}.slash-command-header{padding:12px 16px;border-bottom:1px solid var(--border);color:var(--muted);font-size:12px;font-weight:700}.slash-command-list{max-height:min(360px,50vh);overflow-y:auto}.slash-command-item{display:block;width:100%;padding:13px 16px;border:0;background:transparent;color:var(--text);text-align:left;cursor:pointer}.slash-command-item:hover,.slash-command-item.active{background:color-mix(in srgb,var(--accent) 12%,transparent)}.slash-command-name,.mcp-mention-copy strong{font-size:15px;font-weight:600}.slash-command-name{color:var(--accent)}.slash-command-description,.mcp-mention-copy small{margin-top:3px;color:var(--muted);font-size:12px}
