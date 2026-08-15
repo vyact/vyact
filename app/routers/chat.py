@@ -51,6 +51,7 @@ from services.external_data.lh_lease_complex import SOURCE_ID as LH_COMPLEX_SOUR
 from services.external_data.lh_lease_notice import SOURCE_ID as LH_NOTICE_SOURCE_ID, search_candidates as search_lh_notice_candidates
 from services.external_data.k_startup import SOURCE_ID as K_STARTUP_SOURCE_ID, search_candidates as search_k_startup_candidates
 from services.external_data.welfare import SOURCE_ID as WELFARE_SOURCE_ID, search_candidates as search_welfare_candidates
+from services.external_data.settings import load_external_data_connections
 
 logger = get_logger(__name__)
 
@@ -100,14 +101,28 @@ async def _get_selected_external_context(question: str, resource_ids: list[str])
         searches.append(("LH lease complex", search_lh_complex_candidates(question)))
     if LH_NOTICE_SOURCE_ID in selected_ids:
         searches.append(("LH notice", search_lh_notice_candidates(question)))
-    results = await asyncio.gather(*(search for _, search in searches), return_exceptions=True)
+    settings_result, *results = await asyncio.gather(
+        load_external_data_connections(),
+        *(search for _, search in searches),
+        return_exceptions=True,
+    )
     candidates = []
     for (source_name, _), result in zip(searches, results):
         if isinstance(result, Exception):
             logger.warning("[external_data] %s candidate search failed: %s", source_name, result)
             continue
         candidates.extend(result)
-    return candidates, EXTERNAL_DATA_INSTRUCTION
+    custom_instruction = ""
+    if isinstance(settings_result, dict):
+        custom_instruction = str((settings_result.get("kr.gov24") or {}).get("custom_instruction") or "").strip()
+    instruction = EXTERNAL_DATA_INSTRUCTION
+    if custom_instruction:
+        instruction = (
+            f"{instruction}\n\n[User-configured external-data preferences]\n"
+            "Apply these preferences only when they do not conflict with the mandatory eligibility, "
+            f"deadline, and source-grounding rules above.\n{custom_instruction}"
+        )
+    return candidates, instruction
 
 
 def _new_conversation_title(conv_summary: str | None, fallback_question: str) -> str:
@@ -247,13 +262,21 @@ class QueryRequest(BaseModel):
     reasoning: bool = False  # True면 추론(gemma thinking) 켬. 프론트/확장 로컬 스위치로 제어. 기본 off
     folder_path: str = ""  # 코드 분석용 폴더 경로 (프론트에서 선택)
     project_id: str = ""
-    knowledge_collection_id: str = ""  # 선택한 지식 컬렉션의 자료만 RAG 검색
+    knowledge_collection_id: str = ""  # 이전 클라이언트 호환용 단일 컬렉션
+    knowledge_collection_ids: list[str] = []  # 선택한 여러 지식 컬렉션의 자료를 함께 검색
     external_resource_ids: list[str] = []  # 사용자가 명시적으로 선택한 외부 데이터만 별도 검색
     minimal_prompt: bool = False  # True면 앱 전용 기본 프롬프트(FORMAT_INSTRUCTION, conv_summary 태그 지시) 제외.
     selected_mcp_ids: list[str] = []  # @로 선택한 MCP들은 enabled 여부와 무관하게 이번 요청에만 사용.
     approval_mode: str = "risky_only"
     # 크롬 확장처럼 프로젝트 블록/followups/SummaryModal UI가 없는 경량 클라이언트용.
     # 날짜/사용자 프로필/참고 문서/MCP tool directive는 그대로 유지된다.
+
+
+def _selected_knowledge_collection_ids(request: QueryRequest) -> list[str]:
+    return list(dict.fromkeys([
+        *request.knowledge_collection_ids,
+        *([request.knowledge_collection_id] if request.knowledge_collection_id else []),
+    ]))
 
 
 @router.post("/tool-approvals/{approval_id}")
@@ -444,10 +467,11 @@ async def query(req: QueryRequest):
                                      reasoning=req.reasoning, call_reason="chat:voice_mode")
         result = {"answer": raw_answer, "sources": [], "model": await get_model_name()}
     else:
+        knowledge_collection_ids = _selected_knowledge_collection_ids(req)
         external_docs, external_instruction = await _get_selected_external_context(
             req.question, req.external_resource_ids,
         )
-        external_selected = bool({GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, WELFARE_SOURCE_ID, HOUSING_SOURCE_ID}.intersection(req.external_resource_ids))
+        external_selected = bool({GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, WELFARE_SOURCE_ID, HOUSING_SOURCE_ID, LH_COMPLEX_SOURCE_ID, LH_NOTICE_SOURCE_ID}.intersection(req.external_resource_ids))
         # URL 크롤링
         all_urls = [u.rstrip('.') for u in URL_RE.findall(req.question)]
         urls = _should_crawl_urls(req.question, all_urls) if has_plugin_url_resolvers() else []
@@ -474,9 +498,9 @@ async def query(req: QueryRequest):
                 response_system_prompt = f"{response_system_prompt}\n\n{external_instruction}"
             rag_result = await rag_query(req.question, response_system_prompt, image_attachments, req.messages,
                                          extra_context=external_docs,
-                                         skip_rag=external_selected and not req.knowledge_collection_id,
+                                         skip_rag=external_selected and not knowledge_collection_ids,
                                          reasoning=req.reasoning, conv_id=conv_id, conversation_summary=conversation_summary,
-                                         call_reason="chat:url_context", knowledge_collection_id=req.knowledge_collection_id)
+                                         call_reason="chat:url_context", knowledge_collection_ids=knowledge_collection_ids)
             combined_docs = file_context_docs + url_docs + rag_result.get("sources", [])
             raw_answer = await query_llm(
                 req.question, combined_docs, response_system_prompt,
@@ -497,9 +521,9 @@ async def query(req: QueryRequest):
                 _summary_system_prompt = f"{_summary_system_prompt}\n\n{external_instruction}"
             result = await rag_query(req.question, _summary_system_prompt, image_attachments, req.messages,
                                      extra_context=file_context_docs + external_docs,
-                                     skip_rag=_has_file_att or (external_selected and not req.knowledge_collection_id),
+                                     skip_rag=_has_file_att or (external_selected and not knowledge_collection_ids),
                                      reasoning=req.reasoning, conv_id=conv_id, conversation_summary=conversation_summary,
-                                     call_reason="chat:general", knowledge_collection_id=req.knowledge_collection_id)
+                                     call_reason="chat:general", knowledge_collection_ids=knowledge_collection_ids)
 
     # 8) 요약 태그 추출 + 히스토리 저장
     from services.conv_summary import extract_summary_tags, save_conv_summary, append_attachment_summary
@@ -710,9 +734,20 @@ async def query_stream(req: QueryRequest):
                 if url_docs:
                     # URL 컨텍스트를 얻은 경우에만 본문을 추가한다. 실패한 URL은 원문 질문에
                     # 그대로 남으므로, 컨텍스트 없이 일반 채팅 경로로 LLM에 전달된다.
-                    rag_result = await rag_query(clean_question, system_prompt, image_attachments, req.messages,
+                    knowledge_collection_ids = _selected_knowledge_collection_ids(req)
+                    external_docs, external_instruction = await _get_selected_external_context(
+                        clean_question, req.external_resource_ids,
+                    )
+                    url_system_prompt = system_prompt
+                    if external_instruction:
+                        url_system_prompt = f"{url_system_prompt}\n\n{external_instruction}"
+                    external_selected = bool({GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, WELFARE_SOURCE_ID, HOUSING_SOURCE_ID, LH_COMPLEX_SOURCE_ID, LH_NOTICE_SOURCE_ID}.intersection(req.external_resource_ids))
+                    rag_result = await rag_query(clean_question, url_system_prompt, image_attachments, req.messages,
+                                                 extra_context=external_docs,
+                                                 skip_rag=external_selected and not knowledge_collection_ids,
                                                  reasoning=req.reasoning, conv_id=conv_id, conversation_summary=conversation_summary,
-                                                 call_reason="chat:url_context_stream")
+                                                 call_reason="chat:url_context_stream",
+                                                 knowledge_collection_ids=knowledge_collection_ids)
                     context_docs = file_context_docs + url_docs + rag_result.get("sources", [])
                     docs_for_llm = context_docs
                     can_stream = True
@@ -739,7 +774,8 @@ async def query_stream(req: QueryRequest):
                 has_file_attachment = any(
                     a.get("type") in ("file", "zip") for a in req.attachments
                 )
-                external_selected = bool({GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, WELFARE_SOURCE_ID, HOUSING_SOURCE_ID}.intersection(req.external_resource_ids))
+                external_selected = bool({GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, WELFARE_SOURCE_ID, HOUSING_SOURCE_ID, LH_COMPLEX_SOURCE_ID, LH_NOTICE_SOURCE_ID}.intersection(req.external_resource_ids))
+                knowledge_collection_ids = _selected_knowledge_collection_ids(req)
                 external_docs, external_instruction = await _get_selected_external_context(
                     clean_question, req.external_resource_ids,
                 )
@@ -780,13 +816,13 @@ async def query_stream(req: QueryRequest):
                 async for ev in rag_query_stream(
                         clean_question, _summary_system_prompt, image_attachments, req.messages,
                         extra_context=limit_direct_document_contexts(file_context_docs) + external_docs,
-                        skip_rag=has_file_attachment or (external_selected and not req.knowledge_collection_id),
+                        skip_rag=has_file_attachment or (external_selected and not knowledge_collection_ids),
                         reasoning=req.reasoning,
                         conv_id=conv_id,
                         conversation_summary=conversation_summary,
                         format_instruction_override=_fmt_override,
                         call_reason="chat:general_stream",
-                        knowledge_collection_id=req.knowledge_collection_id,
+                        knowledge_collection_ids=knowledge_collection_ids,
                 ):
                     if ev["type"] == "token":
                         emitted += ev["text"]

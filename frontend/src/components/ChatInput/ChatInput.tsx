@@ -43,7 +43,7 @@ const EXTERNAL_DATA_SOURCES = [
 type ExternalDataSource = (typeof EXTERNAL_DATA_SOURCES)[number];
 
 interface ChatInputProps {
-    onSend: (message: string, images?: File[], fileAttachments?: FileAttachment[], selectedMcpIds?: string[], knowledgeCollectionId?: string, externalResourceIds?: string[]) => void | Promise<boolean>;
+    onSend: (message: string, images?: File[], fileAttachments?: FileAttachment[], selectedMcpIds?: string[], knowledgeCollectionIds?: string[], externalResourceIds?: string[]) => void | Promise<boolean>;
     onStop?: () => void;
     disabled?: boolean;        // 전송 버튼만 막음 (입력은 허용)
     isImageMode?: boolean;
@@ -124,7 +124,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
     const [mcpMentionIndex, setMcpMentionIndex] = useState(0);
     const [visibleMcpServers, setVisibleMcpServers] = useState<MentionMcpServer[]>([]);
     const [knowledgeCollections, setKnowledgeCollections] = useState<KnowledgeCollection[]>(getCachedKnowledgeCollections);
-    const [selectedKnowledgeCollectionId, setSelectedKnowledgeCollectionId] = useState('');
+    const [selectedKnowledgeCollectionIds, setSelectedKnowledgeCollectionIds] = useState<string[]>([]);
     const [knowledgeSourceTab, setKnowledgeSourceTab] = useState<'collections' | 'external'>('collections');
     const [selectedExternalResourceIds, setSelectedExternalResourceIds] = useState<string[]>([]);
     const [enabledExternalSources, setEnabledExternalSources] = useState<ExternalDataSource[]>([]);
@@ -341,7 +341,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
             attach.clearAll();
             slash.clearSuggestions();
             if (textareaRef.current) textareaRef.current.style.height = 'auto';
-            const result = onSend(fullMessage, prevImages, prevFiles, selectedMcps.map(server => server.id), selectedKnowledgeCollectionId || undefined, selectedExternalResourceIds);
+            const result = onSend(fullMessage, prevImages, prevFiles, selectedMcps.map(server => server.id), selectedKnowledgeCollectionIds, selectedExternalResourceIds);
             if (result instanceof Promise) {
                 const sent = await result;
                 if (sent === false) {
@@ -462,7 +462,21 @@ const ChatInput: React.FC<ChatInputProps> = ({
                     />
 
                     {/* textarea 행 */}
-                    {selectedMcps.length > 0 && <div className="selected-mcp-chips">
+                    {(selectedMcps.length > 0 || selectedKnowledgeCollectionIds.length > 0 || selectedExternalResourceIds.length > 0) && <div className="selected-mcp-chips">
+                        {selectedKnowledgeCollectionIds.map(collectionId => {
+                            const collection = knowledgeCollections.find(item => item.id === collectionId);
+                            return collection ? <div className="selected-mcp-chip knowledge-source-chip is-collection" key={collection.id}>
+                                <span className="selected-mcp-chip-icon">K</span><span>{collection.name}</span>
+                                <button type="button" aria-label={t('mcpMenu.removeSelected')} onClick={() => setSelectedKnowledgeCollectionIds(current => current.filter(id => id !== collectionId))}><X size={10}/></button>
+                            </div> : null;
+                        })}
+                        {selectedExternalResourceIds.map(sourceId => {
+                            const source = EXTERNAL_DATA_SOURCES.find(item => item.id === sourceId);
+                            return source ? <div className="selected-mcp-chip knowledge-source-chip is-external" key={sourceId}>
+                                <span className="selected-mcp-chip-icon"><Database size={11}/></span><span>{t(`externalData.sources.${source.nameKey}.name`, {ns: 'settings'})}</span>
+                                <button type="button" aria-label={t('mcpMenu.removeSelected')} onClick={() => setSelectedExternalResourceIds(current => current.filter(id => id !== sourceId))}><X size={10}/></button>
+                            </div> : null;
+                        })}
                         {selectedMcps.map(server => {
                             const customName = typeof server.config?.name === 'string' ? server.config.name : server.type;
                             return <div className="selected-mcp-chip" key={server.id}>
@@ -567,7 +581,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                             />
 
                             <CustomSelect
-                                className={`chat-system-prompt-select knowledge-source-select${selectedKnowledgeCollectionId || selectedExternalResourceIds.length ? ' is-selected' : ''}`}
+                                className={`chat-system-prompt-select knowledge-source-select${selectedKnowledgeCollectionIds.length || selectedExternalResourceIds.length ? ' is-selected' : ''}`}
                                 options={knowledgeSourceTab === 'collections'
                                     ? knowledgeCollections.map(collection => ({value: collection.id, label: collection.name}))
                                     : enabledExternalSources.map(source => {
@@ -575,28 +589,36 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                         const documentCount = externalDocumentCounts[source.id];
                                         return {
                                             value: source.id,
+                                            disabled: Boolean(source.hasCollector && documentCount !== undefined && documentCount <= 0),
                                             label: source.hasCollector && documentCount !== undefined
                                                 ? `${name} (${t('knowledgeSources.documentCount', {count: new Intl.NumberFormat(i18n.resolvedLanguage || i18n.language).format(documentCount)})})`
                                                 : name,
                                         };
                                     })}
                                 value={knowledgeSourceTab === 'collections'
-                                    ? selectedKnowledgeCollectionId
+                                    ? selectedKnowledgeCollectionIds[0] || ''
                                     : selectedExternalResourceIds[0] || ''}
+                                selectedValues={knowledgeSourceTab === 'collections' ? selectedKnowledgeCollectionIds : selectedExternalResourceIds}
+                                closeOnSelect={false}
                                 onChange={value => {
                                     if (knowledgeSourceTab === 'collections') {
-                                        setSelectedKnowledgeCollectionId(value);
+                                        setSelectedKnowledgeCollectionIds(current => current.includes(value)
+                                            ? current.filter(id => id !== value)
+                                            : [...current, value]);
                                         return;
                                     }
-                                    setSelectedExternalResourceIds(current => current.includes(value) ? [] : [value]);
+                                    if ((externalDocumentCounts[value] || 0) <= 0) return;
+                                    setSelectedExternalResourceIds(current => current.includes(value)
+                                        ? current.filter(id => id !== value)
+                                        : [...current, value]);
                                 }}
                                 placeholder={t('knowledgeSources.select')}
                                 searchable
                                 searchPlaceholder={t(knowledgeSourceTab === 'collections' ? 'knowledgeCollections.search' : 'knowledgeSources.searchExternal')}
                                 clearable
                                 onClear={() => {
-                                    setSelectedKnowledgeCollectionId('');
-                                    setSelectedExternalResourceIds([]);
+                                    if (knowledgeSourceTab === 'collections') setSelectedKnowledgeCollectionIds([]);
+                                    else setSelectedExternalResourceIds([]);
                                 }}
                                 onOpen={refreshExternalResources}
                                 searchAction={<button type="button" className="custom-select-search-action"
@@ -605,7 +627,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                         if (knowledgeSourceTab === 'collections') setShowKnowledgeCollectionsModal(true);
                                         else window.dispatchEvent(new CustomEvent('vyact:open-settings', {detail: {tab: 'externalData'}}));
                                     }}><Settings size={15}/></button>}
-                                header={<div className="knowledge-source-tabs">
+                                header={<><div className="knowledge-source-tabs">
                                     <button type="button" className={knowledgeSourceTab === 'collections' ? 'active' : ''}
                                         onClick={event => { event.stopPropagation(); setKnowledgeSourceTab('collections'); }}>
                                         {t('knowledgeSources.collections')}
@@ -614,7 +636,23 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                         onClick={event => { event.stopPropagation(); setKnowledgeSourceTab('external'); refreshExternalResources(); }}>
                                         {t('knowledgeSources.external')}
                                     </button>
-                                </div>}
+                                </div><div className="knowledge-source-bulk-actions">
+                                    <button type="button" onClick={event => {
+                                        event.stopPropagation();
+                                        if (knowledgeSourceTab === 'collections') {
+                                            setSelectedKnowledgeCollectionIds(knowledgeCollections.map(collection => collection.id));
+                                        } else {
+                                            setSelectedExternalResourceIds(enabledExternalSources
+                                                .filter(source => (externalDocumentCounts[source.id] || 0) > 0)
+                                                .map(source => source.id));
+                                        }
+                                    }}>{t('selectAll', {ns: 'common'})}</button>
+                                    <button type="button" disabled={knowledgeSourceTab === 'collections' ? !selectedKnowledgeCollectionIds.length : !selectedExternalResourceIds.length} onClick={event => {
+                                        event.stopPropagation();
+                                        if (knowledgeSourceTab === 'collections') setSelectedKnowledgeCollectionIds([]);
+                                        else setSelectedExternalResourceIds([]);
+                                    }}>{t('deselectAll', {ns: 'common'})}</button>
+                                </div></>}
                                 emptyState={<div className="custom-select-empty">{t(knowledgeSourceTab === 'collections' ? 'knowledgeCollections.empty' : 'knowledgeSources.noExternalData')}</div>}
                                 renderOption={knowledgeSourceTab === 'external' ? (option, isSelected) => <>
                                     <span className="custom-select-item-label">{option.label}</span>
@@ -630,11 +668,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                     {isSelected && <span className="custom-select-check">✓</span>}
                                 </> : undefined}
                                 renderTrigger={(_, open) => {
-                                    const collection = knowledgeCollections.find(item => item.id === selectedKnowledgeCollectionId);
-                                    const sourceCount = (collection ? 1 : 0) + selectedExternalResourceIds.length;
+                                    const selectedCollections = knowledgeCollections.filter(item => selectedKnowledgeCollectionIds.includes(item.id));
+                                    const sourceCount = selectedCollections.length + selectedExternalResourceIds.length;
                                     const label = sourceCount > 1
                                         ? t('knowledgeSources.selectedCount', {count: sourceCount})
-                                        : collection?.name || (selectedExternalResourceIds.length
+                                        : selectedCollections[0]?.name || (selectedExternalResourceIds.length
                                             ? t(`externalData.sources.${EXTERNAL_DATA_SOURCES.find(source => source.id === selectedExternalResourceIds[0])?.nameKey || 'gov24'}.name`, {ns: 'settings'})
                                             : t('knowledgeSources.select'));
                                     return <><span className="custom-select-trigger-label">{label}</span><span className={`custom-select-arrow${open ? ' open' : ''}`}>▼</span></>;
@@ -699,7 +737,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 onClose={() => setShowKnowledgeCollectionsModal(false)}
                 onCreate={async data => { const created = await api.createKnowledgeCollection(data); updateCachedKnowledgeCollections(items => [created, ...items]); }}
                 onUpdate={async (id, data) => { const updated = await api.updateKnowledgeCollection(id, data); updateCachedKnowledgeCollections(items => items.map(item => item.id === id ? updated : item)); }}
-                onDelete={async id => { await api.deleteKnowledgeCollection(id); updateCachedKnowledgeCollections(items => items.filter(item => item.id !== id)); setSelectedKnowledgeCollectionId(current => current === id ? '' : current); }}
+                onDelete={async id => { await api.deleteKnowledgeCollection(id); updateCachedKnowledgeCollections(items => items.filter(item => item.id !== id)); setSelectedKnowledgeCollectionIds(current => current.filter(collectionId => collectionId !== id)); }}
                 onReorder={async collectionIds => { await api.reorderKnowledgeCollections(collectionIds); updateCachedKnowledgeCollections(items => collectionIds.map(id => items.find(item => item.id === id)).filter((item): item is KnowledgeCollection => Boolean(item))); }}
             />
             <Gov24DataModal isOpen={showGov24DataModal} onClose={() => setShowGov24DataModal(false)} sourceId={browseExternalSource.id} sourceNameKey={browseExternalSource.nameKey}/>

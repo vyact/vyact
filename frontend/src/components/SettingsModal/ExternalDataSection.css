@@ -509,6 +509,55 @@
     border-top: 1px solid var(--border);
 }
 
+.external-data-prompt-form {
+    display: grid;
+    gap: 10px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+}
+
+.external-data-prompt-heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.external-data-prompt-heading p {
+    margin: 5px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.external-data-prompt-heading > span {
+    flex-shrink: 0;
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.external-data-prompt-form textarea {
+    min-height: 110px;
+    resize: vertical;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface2);
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.external-data-prompt-form textarea:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+.external-data-prompt-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
 .external-data-sync-row {
     display: flex;
     align-items: center;

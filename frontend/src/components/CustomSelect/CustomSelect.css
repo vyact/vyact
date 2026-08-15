@@ -201,6 +201,15 @@
     background: rgba(var(--accent-rgb, 205, 100, 72), 0.1);
 }
 
+.custom-select-item.disabled {
+    cursor: not-allowed;
+    opacity: .45;
+}
+
+.custom-select-item.disabled:hover {
+    background: transparent;
+}
+
 .custom-select-item-label {
     flex: 1;
     overflow: hidden;

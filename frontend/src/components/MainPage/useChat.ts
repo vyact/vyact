@@ -215,7 +215,7 @@ export function useChat(deps: UseChatDeps) {
         voiceMode?: boolean,
         extraArticles?: ArticleAttachment[],
         selectedMcpIds?: string[],
-        knowledgeCollectionId?: string,
+        knowledgeCollectionIds?: string[],
         externalResourceIds?: string[],
     ): Promise<boolean> => {
         const hasContent = query.trim() || (images?.length ?? 0) > 0
@@ -235,7 +235,7 @@ export function useChat(deps: UseChatDeps) {
 
         isSendingRef.current = true;
         try {
-            return await handleSendInner(query, images, fileAttachments, systemPromptOverride, voiceMode, extraArticles, selectedMcpIds, knowledgeCollectionId, externalResourceIds);
+            return await handleSendInner(query, images, fileAttachments, systemPromptOverride, voiceMode, extraArticles, selectedMcpIds, knowledgeCollectionIds, externalResourceIds);
         } finally {
             isSendingRef.current = false;
         }
@@ -250,7 +250,7 @@ export function useChat(deps: UseChatDeps) {
         voiceMode?: boolean,
         extraArticles?: ArticleAttachment[],
         selectedMcpIds?: string[],
-        knowledgeCollectionId?: string,
+        knowledgeCollectionIds?: string[],
         externalResourceIds?: string[],
     ): Promise<boolean> => {
         const requestConvId = currentConvIdRef.current || currentConvId;
@@ -509,7 +509,7 @@ export function useChat(deps: UseChatDeps) {
                         folder_path: codeFolderPath || '',
                         project_id: deps.activeProjectId || '',
                         selected_mcp_ids: selectedMcpIds || [],
-                        knowledge_collection_id: knowledgeCollectionId || '',
+                        knowledge_collection_ids: knowledgeCollectionIds || [],
                         external_resource_ids: externalResourceIds || [],
                         approval_mode: resolveApprovalMode(),
                     }, {

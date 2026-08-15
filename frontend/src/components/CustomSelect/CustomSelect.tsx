@@ -6,11 +6,13 @@ import './CustomSelect.css';
 export interface SelectOption {
     value: string;
     label: string;
+    disabled?: boolean;
 }
 
 interface CustomSelectProps {
     options: SelectOption[];
     value: string;
+    selectedValues?: string[];
     onChange: (value: string) => void;
     placeholder?: string;
     searchable?: boolean;
@@ -33,11 +35,13 @@ interface CustomSelectProps {
     portal?: boolean;
     onOpen?: () => void;
     header?: React.ReactNode;
+    closeOnSelect?: boolean;
 }
 
 const CustomSelect: React.FC<CustomSelectProps> = ({
                                                        options,
                                                        value,
+                                                       selectedValues,
                                                        onChange,
                                                        placeholder = '선택',
                                                        searchable = false,
@@ -59,6 +63,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                                                        portal = false,
                                                        onOpen,
                                                        header,
+                                                       closeOnSelect = true,
                                                    }) => {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
@@ -68,7 +73,10 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
     const dropdownRef = useRef<HTMLDivElement>(null);
     const searchRef = useRef<HTMLInputElement>(null);
     const selectedLabel = options.find(o => o.value === value)?.label ?? '';
-    const showClearButton = clearable && Boolean(onClear) && Boolean(value);
+    const isSelected = (optionValue: string) => selectedValues
+        ? selectedValues.includes(optionValue)
+        : optionValue === value;
+    const showClearButton = clearable && Boolean(onClear) && Boolean(selectedValues?.length || value);
     const filtered = searchable && search
         ? options.filter(o => o.label.toLowerCase().includes(search.toLowerCase()))
         : options;
@@ -134,8 +142,10 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
 
     const handleSelect = (optValue: string) => {
         onChange(optValue);
-        setOpen(false);
-        setSearch('');
+        if (closeOnSelect) {
+            setOpen(false);
+            setSearch('');
+        }
     };
 
     const dropdown = open ? (
@@ -174,18 +184,20 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                     filtered.map(opt => (
                         <div
                             key={opt.value}
-                            className={`custom-select-item${opt.value === value ? ' selected' : ''}`}
+                            className={`custom-select-item${isSelected(opt.value) ? ' selected' : ''}${opt.disabled ? ' disabled' : ''}`}
+                            aria-disabled={opt.disabled || undefined}
                             onClick={event => {
                                 event.stopPropagation();
+                                if (opt.disabled) return;
                                 handleSelect(opt.value);
                             }}
                         >
                             {renderOption ? (
-                                renderOption(opt, opt.value === value)
+                                renderOption(opt, isSelected(opt.value))
                             ) : (
                                 <>
                                     <span className="custom-select-item-label">{opt.label}</span>
-                                    {opt.value === value && (
+                                    {isSelected(opt.value) && (
                                         <span className="custom-select-check">✓</span>
                                     )}
                                 </>

@@ -115,6 +115,10 @@ class ExternalDataCleanupRequest(BaseModel):
     enabled: bool
 
 
+class ExternalDataPromptRequest(BaseModel):
+    instruction: str
+
+
 def _normalized_sync_status(status: dict, request_limit: int) -> dict:
     return {
         "status": "idle",
@@ -319,6 +323,7 @@ async def get_external_data_bootstrap():
             "enabled": bool(config.get("auto_delete_expired_enabled", False)),
             "cleanup_status": cleanup_status,
         },
+        "prompt": {"instruction": str(config.get("custom_instruction") or "")},
     }
 
 
@@ -433,6 +438,18 @@ async def save_external_data_cleanup(request: ExternalDataCleanupRequest):
     await save_external_data_connections(connections)
     request_external_data_schedule_check()
     return {"enabled": request.enabled, "cleanup_status": await get_cleanup_status()}
+
+
+@router.put("/external-data/prompt")
+async def save_external_data_prompt(request: ExternalDataPromptRequest):
+    instruction = request.instruction.strip()
+    if len(instruction) > 4_000:
+        raise HTTPException(400, "External data instruction is too long.")
+    connections = await load_external_data_connections()
+    config = connections.get("kr.gov24") or {}
+    connections["kr.gov24"] = {**config, "custom_instruction": instruction}
+    await save_external_data_connections(connections)
+    return {"instruction": instruction}
 
 
 @router.post("/external-data/sources/kr.gov24/sync")

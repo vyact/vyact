@@ -115,7 +115,43 @@ async def _gather_related_context(question: str) -> list[dict]:
     return await _rerank_related_context(question, candidates)
 
 
-async def _gather_docs(question: str, extra_context: list, skip_rag: bool = False, conv_id: str = "", knowledge_collection_id: str = "") -> list[dict]:
+async def _search_knowledge_collections(collection_ids: list[str], question: str) -> tuple[list[dict], str]:
+    """여러 컬렉션을 병렬 검색하고 특정 컬렉션이 결과를 독점하지 않게 합친다."""
+    unique_ids = list(dict.fromkeys(collection_id for collection_id in collection_ids if collection_id))
+    if not unique_ids:
+        return [], ""
+    results = await asyncio.gather(
+        *(knowledge_collection_search(collection_id, question, size=8) for collection_id in unique_ids),
+        return_exceptions=True,
+    )
+    document_groups: list[list[dict]] = []
+    instructions: list[str] = []
+    for collection_id, result in zip(unique_ids, results):
+        if isinstance(result, Exception):
+            logger.warning("[knowledge_collection_search] collection=%s failed: %s", collection_id, result)
+            continue
+        documents, instruction = result
+        document_groups.append(documents)
+        if instruction and instruction not in instructions:
+            instructions.append(instruction)
+    merged_documents: list[dict] = []
+    seen_documents: set[str] = set()
+    for position in range(max((len(group) for group in document_groups), default=0)):
+        for group in document_groups:
+            if position >= len(group):
+                continue
+            document = group[position]
+            identity = str(document.get("id") or document.get("url") or document.get("title") or document)
+            if identity in seen_documents:
+                continue
+            seen_documents.add(identity)
+            merged_documents.append(document)
+            if len(merged_documents) >= 20:
+                return merged_documents, "\n\n".join(instructions)
+    return merged_documents, "\n\n".join(instructions)
+
+
+async def _gather_docs(question: str, extra_context: list, skip_rag: bool = False, conv_id: str = "", knowledge_collection_ids: list[str] | None = None) -> list[dict]:
     """RAG(ES 문서) + 메모 + 첨부파일(conv_id 스코프) 검색 결과를 모아 docs로 반환.
 
     RAG/메모/첨부파일 검색은 (tool 판정과 무관하게) 프롬프트 context로 선주입한다.
@@ -133,8 +169,8 @@ async def _gather_docs(question: str, extra_context: list, skip_rag: bool = Fals
     if skip_rag:
         return list(extra_context)
 
-    if knowledge_collection_id:
-        collection_docs, _ = await knowledge_collection_search(knowledge_collection_id, question, size=8)
+    if knowledge_collection_ids:
+        collection_docs, _ = await _search_knowledge_collections(knowledge_collection_ids, question)
         return list(extra_context) + collection_docs
 
     from services.chat_file_index import has_chat_files, search_chat_files
@@ -173,15 +209,18 @@ async def rag_query(
         conv_id: str = "",
         conversation_summary: str = "",
         call_reason: str = "chat",
-        knowledge_collection_id: str = "",
+        knowledge_collection_ids: list[str] | None = None,
 ) -> dict[str, Any]:
     """RAG 쿼리 실행 및 응답 (논스트리밍)."""
     current_user_question.set(question)
-    docs = await _gather_docs(question, extra_context, skip_rag=skip_rag, conv_id=conv_id, knowledge_collection_id=knowledge_collection_id)
-    if knowledge_collection_id:
-        _, collection_instruction = await knowledge_collection_search(knowledge_collection_id, question, size=1)
+    collection_instruction = ""
+    if knowledge_collection_ids:
+        collection_docs, collection_instruction = await _search_knowledge_collections(knowledge_collection_ids, question)
+        docs = list(extra_context) + collection_docs
         if collection_instruction:
             system_prompt = f"{system_prompt}\n\n[지식 컬렉션 지침]\n{collection_instruction}" if system_prompt else collection_instruction
+    else:
+        docs = await _gather_docs(question, extra_context, skip_rag=skip_rag, conv_id=conv_id)
     answer = await query_llm(question, docs, system_prompt, [*attachments, *_knowledge_inline_image_attachments(docs)], conversation_history,
                              reasoning=reasoning, conversation_summary=conversation_summary, call_reason=call_reason)
     return {
@@ -204,7 +243,7 @@ async def rag_query_stream(
         conversation_summary: str = "",
         format_instruction_override: str | None = None,
         call_reason: str = "chat",
-        knowledge_collection_id: str = "",
+        knowledge_collection_ids: list[str] | None = None,
 ):
     """일반 채팅 스트리밍. tool 진행 + 최종 답변 토큰을 이벤트로 흘린다.
 
@@ -237,9 +276,9 @@ async def rag_query_stream(
 
     collection_instruction = ""
     collection_docs: list[dict] = []
-    if knowledge_collection_id:
+    if knowledge_collection_ids:
         yield {"type": "tool", "phase": "start", "name": "search_knowledge_collection"}
-        collection_docs, collection_instruction = await knowledge_collection_search(knowledge_collection_id, question, size=8)
+        collection_docs, collection_instruction = await _search_knowledge_collections(knowledge_collection_ids, question)
         yield {"type": "tool", "phase": "end", "name": "search_knowledge_collection"}
         docs = list(extra_context) + collection_docs
     elif skip_rag:
@@ -268,7 +307,7 @@ async def rag_query_stream(
             return []
 
     async def _post_tool_docs(tool_got_sources: bool, completed_tool_names: set[str]) -> list[dict]:
-        if knowledge_collection_id:
+        if knowledge_collection_ids:
             return collection_docs
         completed_tool_ids = {
             name.split("__")[-1]
@@ -316,7 +355,7 @@ async def rag_query_stream(
             conversation_summary=conversation_summary,
             # 컬렉션은 위에서 검색한 결과를 첫 프롬프트에 이미 넣었으므로,
             # 지연 RAG 보충을 다시 실행하면 같은 문서가 중복 주입된다.
-            post_tool_docs=_post_tool_docs if (is_ollama and not skip_rag and not knowledge_collection_id) else None,
+            post_tool_docs=_post_tool_docs if (is_ollama and not skip_rag and not knowledge_collection_ids) else None,
             call_reason=call_reason,
     ):
         if ev.get("type") == "token":

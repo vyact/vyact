@@ -50,11 +50,14 @@ const ExternalDataSection: React.FC = () => {
     const [savingSchedule, setSavingSchedule] = useState(false);
     const [autoDeleteExpiredEnabled, setAutoDeleteExpiredEnabled] = useState(false);
     const [savingCleanup, setSavingCleanup] = useState(false);
+    const [customInstruction, setCustomInstruction] = useState('');
+    const [savedCustomInstruction, setSavedCustomInstruction] = useState('');
+    const [savingPrompt, setSavingPrompt] = useState(false);
     const [showDataModal, setShowDataModal] = useState(false);
     const [browseSource, setBrowseSource] = useState<{sourceId: string; sourceNameKey: string}>({sourceId: 'kr.gov24', sourceNameKey: 'gov24'});
 
     useEffect(() => {
-        api.getExternalDataBootstrap().then(({connections, statuses, schedule, cleanup}) => {
+        api.getExternalDataBootstrap().then(({connections, statuses, schedule, cleanup, prompt}) => {
             setHasServiceKey(Boolean(connections['kr.gov24']?.has_service_key));
             setEnabledSources(Object.fromEntries(DATA_SOURCES.map(source => [
                 source.sourceId,
@@ -70,6 +73,8 @@ const ExternalDataSection: React.FC = () => {
             setAutoSyncEnabled(schedule.enabled);
             setAutoSyncIntervalHours(schedule.interval_hours);
             setAutoDeleteExpiredEnabled(cleanup.enabled);
+            setCustomInstruction(prompt?.instruction || '');
+            setSavedCustomInstruction(prompt?.instruction || '');
         }).catch(() => undefined);
     }, []);
 
@@ -248,6 +253,20 @@ const ExternalDataSection: React.FC = () => {
         } finally { setSavingCleanup(false); }
     };
 
+    const saveCustomInstruction = async () => {
+        setSavingPrompt(true);
+        try {
+            const result = await api.saveExternalDataPrompt(customInstruction);
+            setCustomInstruction(result.instruction);
+            setSavedCustomInstruction(result.instruction);
+            toast.success(t('externalData.promptSaved'));
+        } catch {
+            toast.error(t('externalData.promptSaveFailed'));
+        } finally {
+            setSavingPrompt(false);
+        }
+    };
+
     const formatter = new Intl.NumberFormat(i18n.resolvedLanguage || i18n.language);
     const lastSync = syncStatus.last_successful_sync_at
         ? new Intl.DateTimeFormat(i18n.language, {dateStyle: 'medium', timeStyle: 'short'}).format(new Date(syncStatus.last_successful_sync_at))
@@ -267,6 +286,11 @@ const ExternalDataSection: React.FC = () => {
             <div className="external-data-key-form">
                 <div className="external-data-key-label-row"><label htmlFor="public-data-service-key">{t('externalData.serviceKey')}</label>{hasServiceKey && <span className="external-data-key-saved">✓ {t('externalData.serviceKeyConfigured')}</span>}</div>
                 <div className="external-data-key-input-row"><div className="external-data-key-input-wrap"><input id="public-data-service-key" type={showServiceKey ? 'text' : 'password'} value={serviceKey} placeholder={hasServiceKey ? t('externalData.serviceKeySavedPlaceholder') : t('externalData.serviceKeyPlaceholder')} autoComplete="off" onChange={event => setServiceKey(event.target.value)}/><button type="button" onClick={() => setShowServiceKey(value => !value)} aria-label={t(showServiceKey ? 'externalData.hideServiceKey' : 'externalData.showServiceKey')}>{showServiceKey ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div><button type="button" className="external-data-save-key" disabled={!serviceKey.trim() || savingKey} onClick={saveServiceKey}>{savingKey ? t('externalData.saving') : t('externalData.saveServiceKey')}</button></div>
+            </div>
+            <div className="external-data-prompt-form">
+                <div className="external-data-prompt-heading"><div><strong>{t('externalData.promptTitle')}</strong><p>{t('externalData.promptDescription')}</p></div><span>{customInstruction.length} / 4,000</span></div>
+                <textarea value={customInstruction} maxLength={4000} placeholder={t('externalData.promptPlaceholder')} onChange={event => setCustomInstruction(event.target.value)}/>
+                <div className="external-data-prompt-actions"><button type="button" className="external-data-save-key" disabled={savingPrompt || customInstruction === savedCustomInstruction} onClick={() => void saveCustomInstruction()}>{savingPrompt ? t('externalData.saving') : t('externalData.savePrompt')}</button></div>
             </div>
             {hasServiceKey && <div className="external-data-sync-panel">
                 <div className="external-data-sync-row"><div className="external-data-sync-info"><strong>{t('externalData.syncAllData')}</strong><span className="external-data-sync-description">{t('externalData.syncAllDescription', {count: supportedEnabledSources.length})}</span><div className="external-data-sync-meta"><span>{t('externalData.lastUpdated', {date: lastSync})}</span><span>{t('externalData.documentCount', {count: formatter.format((syncStatus.document_count || 0) + (bizSupportSyncStatus.document_count || 0) + (kStartupSyncStatus.document_count || 0) + (welfareSyncStatus.document_count || 0) + (housingSyncStatus.document_count || 0) + (lhComplexSyncStatus.document_count || 0) + (lhNoticeSyncStatus.document_count || 0))})}</span></div></div><div className="external-data-sync-actions"><button type="button" className="external-data-sync-refresh" onClick={() => void startAllSync()} disabled={isAllSyncing || supportedEnabledSources.length === 0} aria-label={t('externalData.updateAllData')}><RefreshCw className={isAllSyncing ? 'is-spinning' : ''} size={16}/></button></div></div>
