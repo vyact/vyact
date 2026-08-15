@@ -3,7 +3,7 @@ import ImageViewer from '../ImageViewer/ImageViewer';
 import type {ArticleAttachment, KnowledgeCollection} from '../../types';
 import {api} from '../../services/api';
 import {useCodePanel} from '../../contexts/CodePanelContext';
-import {Database, Settings, WandSparkles, X} from 'lucide-react';
+import {Check, Database, Settings, WandSparkles, X} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 
 import {useAttachments} from './useAttachments';
@@ -132,6 +132,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
     const [showKnowledgeCollectionsModal, setShowKnowledgeCollectionsModal] = useState(false);
     const [showGov24DataModal, setShowGov24DataModal] = useState(false);
     const [browseExternalSource, setBrowseExternalSource] = useState<ExternalDataSource>(EXTERNAL_DATA_SOURCES[0]);
+    const [browseAllExternalSources, setBrowseAllExternalSources] = useState(false);
 
     useEffect(() => {
         const refresh = () => setKnowledgeCollections(getCachedKnowledgeCollections());
@@ -139,20 +140,15 @@ const ChatInput: React.FC<ChatInputProps> = ({
         return () => window.removeEventListener(KNOWLEDGE_COLLECTIONS_UPDATED_EVENT, refresh);
     }, []);
     const refreshExternalResources = () => {
-        void api.getExternalDataConnections().then(async ({connections}) => {
+        void api.getExternalDataBootstrap().then(({connections, statuses}) => {
             const enabledSources = EXTERNAL_DATA_SOURCES.filter(source =>
                 connections[source.id]?.enabled ?? source.id === 'kr.gov24',
             );
             setEnabledExternalSources(enabledSources);
-            const collectorSources = enabledSources.filter(source => source.hasCollector);
-            const statuses = await Promise.all(collectorSources.map(async source => {
-                try {
-                    return [source.id, (await api.getExternalSourceSyncStatus(source.id)).document_count || 0] as const;
-                } catch {
-                    return [source.id, 0] as const;
-                }
-            }));
-            setExternalDocumentCounts(Object.fromEntries(statuses));
+            setExternalDocumentCounts(Object.fromEntries(enabledSources.map(source => [
+                source.id,
+                statuses[source.id]?.document_count || 0,
+            ])));
         }).catch(() => {
             setEnabledExternalSources([]);
             setExternalDocumentCounts({});
@@ -621,12 +617,20 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                     setSelectedExternalResourceIds([]);
                                 }}
                                 onOpen={refreshExternalResources}
-                                searchAction={<button type="button" className="custom-select-search-action"
-                                    aria-label={t(knowledgeSourceTab === 'collections' ? 'knowledgeCollections.title' : 'knowledgeSources.externalSettings')}
-                                    onClick={() => {
-                                        if (knowledgeSourceTab === 'collections') setShowKnowledgeCollectionsModal(true);
-                                        else window.dispatchEvent(new CustomEvent('vyact:open-settings', {detail: {tab: 'externalData'}}));
-                                    }}><Settings size={15}/></button>}
+                                searchAction={knowledgeSourceTab === 'collections' ? <button type="button" className="custom-select-search-action"
+                                    aria-label={t('knowledgeCollections.title')}
+                                    onClick={() => setShowKnowledgeCollectionsModal(true)}><Settings size={15}/></button> : <>
+                                    <button type="button" className="custom-select-search-action"
+                                        aria-label={t('externalData.browser.open', {ns: 'settings'})}
+                                        onClick={event => {
+                                            event.stopPropagation();
+                                            setBrowseAllExternalSources(true);
+                                            setShowGov24DataModal(true);
+                                        }}><Database size={15}/></button>
+                                    <button type="button" className="custom-select-search-action"
+                                        aria-label={t('knowledgeSources.externalSettings')}
+                                        onClick={() => window.dispatchEvent(new CustomEvent('vyact:open-settings', {detail: {tab: 'externalData'}}))}><Settings size={15}/></button>
+                                </>}
                                 header={<><div className="knowledge-source-tabs">
                                     <button type="button" className={knowledgeSourceTab === 'collections' ? 'active' : ''}
                                         onClick={event => { event.stopPropagation(); setKnowledgeSourceTab('collections'); }}>
@@ -656,16 +660,19 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                 emptyState={<div className="custom-select-empty">{t(knowledgeSourceTab === 'collections' ? 'knowledgeCollections.empty' : 'knowledgeSources.noExternalData')}</div>}
                                 renderOption={knowledgeSourceTab === 'external' ? (option, isSelected) => <>
                                     <span className="custom-select-item-label">{option.label}</span>
+                                    {isSelected && <span className="custom-select-check" aria-hidden="true">
+                                        <Check size={16} strokeWidth={2.5}/>
+                                    </span>}
                                     {(() => {
                                         const source = EXTERNAL_DATA_SOURCES.find(item => item.id === option.value);
                                         const canBrowse = Boolean(source?.hasCollector && externalDocumentCounts[option.value] > 0);
                                         return canBrowse && source ? <button type="button" className="knowledge-source-view-button" aria-label={t('knowledgeSources.externalSettings')} onClick={event => {
                                             event.stopPropagation();
+                                            setBrowseAllExternalSources(false);
                                             setBrowseExternalSource(source);
                                             setShowGov24DataModal(true);
                                         }}><Database size={15}/></button> : null;
                                     })()}
-                                    {isSelected && <span className="custom-select-check">✓</span>}
                                 </> : undefined}
                                 renderTrigger={(_, open) => {
                                     const selectedCollections = knowledgeCollections.filter(item => selectedKnowledgeCollectionIds.includes(item.id));
@@ -740,7 +747,15 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 onDelete={async id => { await api.deleteKnowledgeCollection(id); updateCachedKnowledgeCollections(items => items.filter(item => item.id !== id)); setSelectedKnowledgeCollectionIds(current => current.filter(collectionId => collectionId !== id)); }}
                 onReorder={async collectionIds => { await api.reorderKnowledgeCollections(collectionIds); updateCachedKnowledgeCollections(items => collectionIds.map(id => items.find(item => item.id === id)).filter((item): item is KnowledgeCollection => Boolean(item))); }}
             />
-            <Gov24DataModal isOpen={showGov24DataModal} onClose={() => setShowGov24DataModal(false)} sourceId={browseExternalSource.id} sourceNameKey={browseExternalSource.nameKey}/>
+            <Gov24DataModal
+                key={showGov24DataModal ? (browseAllExternalSources ? 'all' : browseExternalSource.id) : 'closed'}
+                isOpen={showGov24DataModal}
+                onClose={() => setShowGov24DataModal(false)}
+                sourceId={browseExternalSource.id}
+                sourceNameKey={browseExternalSource.nameKey}
+                sources={browseAllExternalSources ? enabledExternalSources
+                    .map(source => ({id: source.id, nameKey: source.nameKey})) : undefined}
+            />
 
             {/* 이미지 미리보기 */}
             {previewIndex !== null && attach.images[previewIndex] && (

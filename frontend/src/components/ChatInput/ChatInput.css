@@ -524,13 +524,18 @@
 }
 .knowledge-source-chip.is-external .selected-mcp-chip-icon { background: #c86445; }
 
+.knowledge-source-select .custom-select-item-label {
+    flex: 1;
+    min-width: 0;
+}
+
 .knowledge-source-view-button {
     display: grid;
     width: 28px;
     height: 28px;
     flex: 0 0 28px;
     place-items: center;
-    margin-left: auto;
+    margin-left: 2px;
     padding: 0;
     border: 1px solid var(--border);
     border-radius: 7px;

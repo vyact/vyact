@@ -97,6 +97,16 @@ LH_SOURCE_HANDLERS = {
     "kr.lh_lease_notice": (get_lh_notice_sync_status, start_lh_notice_synchronization, browse_lh_notice_documents, "lhLeaseNotice"),
 }
 
+BROWSE_SOURCE_HANDLERS = {
+    "kr.gov24": browse_documents,
+    "kr.biz_support": browse_biz_support_documents,
+    "kr.k_startup": browse_k_startup_documents,
+    "kr.welfare": browse_welfare_documents,
+    "kr.housing": browse_housing_documents,
+    "kr.lh_lease_complex": browse_lh_complex_documents,
+    "kr.lh_lease_notice": browse_lh_notice_documents,
+}
+
 
 class ExternalDataConnectionRequest(BaseModel):
     service_key: str
@@ -121,6 +131,58 @@ class ExternalDataPromptRequest(BaseModel):
 
 class ExternalDataEligibilityProfileRequest(BaseModel):
     profile: str
+
+
+@router.get("/external-data/documents")
+async def browse_all_external_data(
+    query: str = Query(default="", max_length=200),
+    cursor: str | None = Query(default=None, max_length=8000),
+):
+    cursors: dict[str, list] = {}
+    if cursor:
+        try:
+            decoded_cursor = json.loads(cursor)
+            if not isinstance(decoded_cursor, dict) or any(
+                source_id not in BROWSE_SOURCE_HANDLERS or not isinstance(value, list)
+                for source_id, value in decoded_cursor.items()
+            ):
+                raise ValueError
+            cursors = decoded_cursor
+        except (json.JSONDecodeError, ValueError):
+            raise HTTPException(400, "Invalid pagination cursor.") from None
+
+    connections = await load_external_data_connections()
+    enabled_source_ids = [
+        source_id
+        for source_id in BROWSE_SOURCE_HANDLERS
+        if (connections.get(source_id) or {}).get("enabled", source_id == "kr.gov24")
+        and (cursor is None or source_id in cursors)
+    ]
+    results = await asyncio.gather(*(
+        BROWSE_SOURCE_HANDLERS[source_id](query, cursors.get(source_id))
+        for source_id in enabled_source_ids
+    ), return_exceptions=True)
+
+    items = []
+    total = 0
+    next_cursors = {}
+    successful_results = 0
+    for source_id, result in zip(enabled_source_ids, results, strict=True):
+        if isinstance(result, BaseException):
+            continue
+        successful_results += 1
+        total += int(result.get("total", 0))
+        items.extend({**item, "source_id": source_id} for item in result.get("items", []))
+        if result.get("next_cursor") is not None:
+            next_cursors[source_id] = result["next_cursor"]
+
+    if enabled_source_ids and not successful_results:
+        raise HTTPException(503, "External data could not be loaded.")
+    return {
+        "items": items,
+        "total": total,
+        "next_cursor": json.dumps(next_cursors, ensure_ascii=False) if next_cursors else None,
+    }
 
 
 def _normalized_sync_status(status: dict, request_limit: int) -> dict:

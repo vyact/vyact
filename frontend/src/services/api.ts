@@ -199,6 +199,10 @@ export interface Gov24DocumentsResponse {
     next_cursor: string | null;
 }
 
+export interface AllExternalDocumentsResponse extends Omit<Gov24DocumentsResponse, 'items'> {
+    items: Array<Gov24Document & {source_id: string}>;
+}
+
 export const api = {
     async getSetupStatus(): Promise<{
         setup_done: boolean;
@@ -1038,6 +1042,16 @@ export const api = {
         if (cursor) params.set('cursor', cursor);
         const suffix = params.size ? `?${params.toString()}` : '';
         const res = await fetch(`${API_BASE}/external-data/sources/${encodeURIComponent(sourceId)}/documents${suffix}`);
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+    },
+
+    async getAllExternalDocuments(query = '', cursor?: string): Promise<AllExternalDocumentsResponse> {
+        const params = new URLSearchParams();
+        if (query.trim()) params.set('query', query.trim());
+        if (cursor) params.set('cursor', cursor);
+        const suffix = params.size ? `?${params.toString()}` : '';
+        const res = await fetch(`${API_BASE}/external-data/documents${suffix}`);
         if (!res.ok) throw new Error(await res.text());
         return res.json();
     },
