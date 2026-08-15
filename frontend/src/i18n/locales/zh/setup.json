@@ -35,21 +35,21 @@
       "name": "Gemma 4 12B MLX",
       "desc": "面向 Apple Silicon (MLX) 的通用模型 · 支持文本和图像输入 · 适合推理、编程和智能体任务"
     },
-    "gemma4_26bMlx": {
-      "name": "Gemma 4 26B A4B MoE MLX",
-      "desc": "面向 Apple Silicon (MLX) 的高性能 MoE 模型 · 适合高级推理、编程和智能体任务"
+    "qwen35_2bMlx": {
+      "name": "Qwen 3.5 2B MLX",
+      "desc": "面向 Apple Silicon (MLX) 的超轻量多模态模型 · 约 3.1GB · 256K 上下文 · 支持文本和图像输入"
     },
-    "lagunaXs21Nvfp4": {
-      "name": "Laguna XS 2.1 NVFP4 MLX",
-      "desc": "Poolside 面向智能体编程的 MoE 模型 · 针对 Apple Silicon (MLX) 优化 · 约 19GB · 256K 上下文 · 支持文本输入 · 总计 33B 参数中激活 3B · 适合长程推理、编程和智能体任务"
+    "qwen35_4bMlx": {
+      "name": "Qwen 3.5 4B MLX",
+      "desc": "面向 Apple Silicon (MLX) 的轻量多模态模型 · 约 4.0GB · 256K 上下文 · 支持文本和图像输入"
     },
-    "gemma4E4b": {
-      "name": "Gemma 4 E4B (Effective 4B)",
-      "desc": "标准 Ollama 轻量构建 · 支持文本和图像输入 · 适合轻量推理与编程"
+    "qwen35_2b": {
+      "name": "Qwen 3.5 2B",
+      "desc": "面向 Windows 的超轻量多模态 Ollama 模型 · 约 2.7GB · 256K 上下文 · 支持文本和图像输入"
     },
-    "gemma4_12b": {
-      "name": "Gemma 4 12B",
-      "desc": "标准 Ollama 通用构建 · 支持文本和图像输入 · 适合推理、编程和智能体任务"
+    "qwen35_4b": {
+      "name": "Qwen 3.5 4B",
+      "desc": "面向 Windows 的轻量多模态 Ollama 模型 · 约 3.4GB · 256K 上下文 · 支持文本和图像输入"
     },
     "gemma4_26b": {
       "name": "Gemma 4 26B A4B MoE",

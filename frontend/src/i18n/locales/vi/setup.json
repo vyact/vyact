@@ -35,21 +35,21 @@
       "name": "Gemma 4 12B MLX",
       "desc": "Mô hình đa dụng cho Apple Silicon (MLX) · hỗ trợ văn bản và hình ảnh · phù hợp suy luận, lập trình và tác vụ agent"
     },
-    "gemma4_26bMlx": {
-      "name": "Gemma 4 26B A4B MoE MLX",
-      "desc": "Mô hình MoE hiệu năng cao cho Apple Silicon (MLX) · phù hợp tác vụ nâng cao"
+    "qwen35_2bMlx": {
+      "name": "Qwen 3.5 2B MLX",
+      "desc": "Mô hình đa phương thức siêu nhẹ cho Apple Silicon (MLX) · khoảng 3,1GB · ngữ cảnh 256K · hỗ trợ văn bản và hình ảnh"
     },
-    "lagunaXs21Nvfp4": {
-      "name": "Laguna XS 2.1 NVFP4 MLX",
-      "desc": "Mô hình MoE của Poolside dành cho lập trình tác nhân · tối ưu cho Apple Silicon (MLX) · khoảng 19GB · ngữ cảnh 256K · hỗ trợ đầu vào văn bản · kích hoạt 3B trên tổng 33B tham số · phù hợp cho suy luận dài hạn, lập trình và tác vụ tác nhân"
+    "qwen35_4bMlx": {
+      "name": "Qwen 3.5 4B MLX",
+      "desc": "Mô hình đa phương thức nhẹ cho Apple Silicon (MLX) · khoảng 4,0GB · ngữ cảnh 256K · hỗ trợ văn bản và hình ảnh"
     },
-    "gemma4E4b": {
-      "name": "Gemma 4 E4B (Effective 4B)",
-      "desc": "Bản Ollama tiêu chuẩn, nhẹ · hỗ trợ văn bản và hình ảnh · phù hợp suy luận và lập trình nhẹ"
+    "qwen35_2b": {
+      "name": "Qwen 3.5 2B",
+      "desc": "Mô hình Ollama đa phương thức siêu nhẹ cho Windows · khoảng 2,7GB · ngữ cảnh 256K · hỗ trợ văn bản và hình ảnh"
     },
-    "gemma4_12b": {
-      "name": "Gemma 4 12B",
-      "desc": "Bản Ollama tiêu chuẩn, đa dụng · hỗ trợ văn bản và hình ảnh · phù hợp suy luận, lập trình và tác vụ agent"
+    "qwen35_4b": {
+      "name": "Qwen 3.5 4B",
+      "desc": "Mô hình Ollama đa phương thức nhẹ cho Windows · khoảng 3,4GB · ngữ cảnh 256K · hỗ trợ văn bản và hình ảnh"
     },
     "gemma4_26b": {
       "name": "Gemma 4 26B A4B MoE",

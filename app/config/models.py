@@ -45,16 +45,16 @@ WINDOWS_CHAT_MODELS = [
         "desc": "Google DeepMind의 초경량 모델 · Windows용 Ollama 일반 빌드 · Text·Image 입력 지원 · 빠른 추론·간단한 코딩·멀티모달 작업에 적합"
     },
     {
-        "id": "gemma4:e4b",
-        "name": "Gemma 4 E4B (Effective 4B)",
+        "id": "qwen3.5:2b",
+        "name": "Qwen 3.5 2B",
         "type": MODEL_TYPE_CHAT,
-        "desc": "Google DeepMind의 경량 모델 · Windows용 Ollama 일반 빌드 · Text·Image 입력 지원 · 가벼운 추론·코딩·멀티모달 작업에 적합"
+        "desc": "Alibaba의 초경량 멀티모달 모델 · Windows용 Ollama 일반 빌드 · 약 2.7GB · 256K 컨텍스트 · Text·Image 입력 지원 · 빠른 추론·일반 대화·경량 에이전트 작업에 적합"
     },
     {
-        "id": "gemma4:12b",
-        "name": "Gemma 4 12B",
+        "id": "qwen3.5:4b",
+        "name": "Qwen 3.5 4B",
         "type": MODEL_TYPE_CHAT,
-        "desc": "Google DeepMind의 범용 모델 · Windows용 Ollama 일반 빌드 · Text·Image 입력 지원 · 추론·코딩·에이전트 작업에 적합"
+        "desc": "Alibaba의 경량 멀티모달 모델 · Windows용 Ollama 일반 빌드 · 약 3.4GB · 256K 컨텍스트 · Text·Image 입력 지원 · 추론·코딩·에이전트 작업에 적합"
     },
 ]
 
@@ -78,23 +78,23 @@ MLX_CHAT_MODELS = [
         "desc": "Google DeepMind의 워크스테이션용 모델 · Apple Silicon(MLX) 최적화 · 약 7.7GB · 256K 컨텍스트 · Text·Image 입력 지원 · 추론·코딩·에이전트 작업에 적합"
     },
     {
-        "id": "gemma4:26b-mlx",
-        "name": "Gemma 4 26B A4B MoE MLX",
+        "id": "qwen3.5:2b-mlx",
+        "name": "Qwen 3.5 2B MLX",
         "type": MODEL_TYPE_CHAT,
-        "desc": "Google DeepMind의 워크스테이션용 MoE 모델 · Apple Silicon(MLX) 최적화 · 약 18GB · 256K 컨텍스트 · Text·Image 입력 지원 · 128개 Expert 중 8개 활성화 · 고급 추론·코딩·에이전트 작업에 적합"
+        "desc": "Alibaba의 초경량 멀티모달 모델 · Apple Silicon(MLX) 최적화 · 약 3.1GB · 256K 컨텍스트 · Text·Image 입력 지원 · 빠른 추론·일반 대화·경량 에이전트 작업에 적합"
     },
     {
-        "id": "laguna-xs-2.1:nvfp4",
-        "name": "Laguna XS 2.1 NVFP4 MLX",
+        "id": "qwen3.5:4b-mlx",
+        "name": "Qwen 3.5 4B MLX",
         "type": MODEL_TYPE_CHAT,
-        "desc": "Poolside의 에이전트 코딩용 MoE 모델 · Apple Silicon(MLX) 최적화 · 약 19GB · 256K 컨텍스트 · Text 입력 지원 · 총 33B 중 3B 활성화 · 장기 추론·코딩·에이전트 작업에 적합"
+        "desc": "Alibaba의 경량 멀티모달 모델 · Apple Silicon(MLX) 최적화 · 약 4.0GB · 256K 컨텍스트 · Text·Image 입력 지원 · 추론·코딩·에이전트 작업에 적합"
     },
 ]
 
 RECOMMENDED_MODELS.extend(MLX_CHAT_MODELS if IS_MLX_SUPPORTED else WINDOWS_CHAT_MODELS)
 
-# 이미지 생성 관련 모델 id 집합 (빠른 조회용)
-IMAGE_MODEL_IDS = set() if IS_WINDOWS else {model["id"] for model in IMAGE_MODELS}
+# Windows와 macOS에서는 이미지 생성 모델을 지원하지 않는다.
+IMAGE_MODEL_IDS = set() if IS_WINDOWS or IS_MACOS else {model["id"] for model in IMAGE_MODELS}
 
 # =========================
 # LLM(Chat) 설정
