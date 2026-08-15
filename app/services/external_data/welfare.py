@@ -347,7 +347,7 @@ async def synchronize(service_key: str) -> None:
                 **status,
                 "status": "failed",
                 "failed_at": _utc_now(),
-                "error": str(error),
+                "error": getattr(error, "error_code", "sync_failed"),
                 "error_code": getattr(error, "error_code", "sync_failed"),
                 **request_quota.status_fields(),
             })

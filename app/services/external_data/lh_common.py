@@ -201,7 +201,7 @@ class LhSource:
                     await es.close()
                 await self.save_status({"status": "failed" if quota_limited else "completed", "stage": "completed", "current": len(documents), "total": len(documents), "document_count": stored_count, "started_at": started_at, "completed_at": fetched_at, "last_successful_sync_at": previous.get("last_successful_sync_at") if quota_limited else fetched_at, "error_code": "request_limit_exceeded" if quota_limited else None, "partial_document_count": len(documents) if quota_limited else 0, **quota.status_fields()})
             except Exception as error:
-                await self.save_status({**status, "status": "failed", "failed_at": utc_now(), "error": str(error), "error_code": getattr(error, "error_code", "sync_failed"), **quota.status_fields()})
+                await self.save_status({**status, "status": "failed", "failed_at": utc_now(), "error": getattr(error, "error_code", "sync_failed"), "error_code": getattr(error, "error_code", "sync_failed"), **quota.status_fields()})
 
     def start(self, service_key: str) -> bool:
         if self.lock.locked() or any(not task.done() for task in self.tasks):

@@ -182,12 +182,14 @@ async def browse_all_external_data(
 
 
 def _normalized_sync_status(status: dict, request_limit: int) -> dict:
-    return {
+    normalized = {
         "status": "idle",
         "document_count": 0,
         **status,
         **DailyRequestQuota.from_status(status, request_limit).status_fields(),
     }
+    normalized.pop("error", None)
+    return normalized
 
 
 async def _load_source_statuses(source_ids: list[str]) -> dict[str, dict]:
@@ -223,7 +225,9 @@ async def _wait_for_synchronization(get_status_callback) -> dict:
         await asyncio.sleep(1.0)
         status = await get_status_callback()
         if status.get("status") != "running":
-            return {"status": status.get("status", "completed"), "sync_status": status}
+            public_status = {**status}
+            public_status.pop("error", None)
+            return {"status": status.get("status", "completed"), "sync_status": public_status}
     raise HTTPException(504, "External data synchronization timed out.")
 
 
@@ -236,7 +240,9 @@ async def _single_source_status_stream(source_id: str, start_callback, get_statu
     for _ in range(240):
         versions = status_versions([source_id])
         status = await get_status_callback()
-        payload = json.dumps(status, ensure_ascii=False)
+        public_status = {**status}
+        public_status.pop("error", None)
+        payload = json.dumps(public_status, ensure_ascii=False)
         if payload != previous_payload:
             yield f"data: {payload}\n\n"
             previous_payload = payload

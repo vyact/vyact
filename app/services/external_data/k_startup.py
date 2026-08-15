@@ -319,7 +319,7 @@ async def synchronize(service_key: str) -> None:
             })
         except Exception as error:
             await _save_sync_status({
-                **status, "status": "failed", "failed_at": _utc_now(), "error": str(error),
+                **status, "status": "failed", "failed_at": _utc_now(), "error": getattr(error, "error_code", "sync_failed"),
                 "error_code": getattr(error, "error_code", "sync_failed"), **request_quota.status_fields(),
             })
 

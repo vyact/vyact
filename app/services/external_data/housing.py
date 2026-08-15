@@ -318,7 +318,7 @@ async def synchronize(service_key: str) -> None:
                 await es.close()
             await _save_sync_status({"status": "failed" if quota_exhausted else "completed", "stage": "completed", "current": len(documents), "total": len(documents), "document_count": stored_document_count, "started_at": started_at, "completed_at": fetched_at, "last_successful_sync_at": previous.get("last_successful_sync_at") if quota_exhausted else fetched_at, "error_code": "request_limit_exceeded" if quota_exhausted else None, "partial_document_count": len(documents) if quota_exhausted else 0, **request_quota.status_fields()})
         except Exception as error:
-            await _save_sync_status({**status, "status": "failed", "failed_at": _utc_now(), "error": str(error), "error_code": getattr(error, "error_code", "sync_failed"), **request_quota.status_fields()})
+            await _save_sync_status({**status, "status": "failed", "failed_at": _utc_now(), "error": getattr(error, "error_code", "sync_failed"), "error_code": getattr(error, "error_code", "sync_failed"), **request_quota.status_fields()})
 
 
 def start_synchronization(service_key: str) -> bool:
