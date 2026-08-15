@@ -174,13 +174,18 @@ async def _external_search_failure_answer() -> str:
     return get_all_searches_failed_message(await load_ui_language_async())
 
 
-def _new_conversation_title(conv_summary: str | None, fallback_question: str) -> str:
+def _new_conversation_title(
+        conv_title: str | None, conv_summary: str | None, fallback_question: str,
+) -> str:
     """새 대화의 사이드바 제목을 이미 생성된 대화 요약에서 만든다.
 
     요약은 최종 응답에 함께 생성되어 이 시점에 별도 LLM 호출 없이 사용할 수 있다.
     태그가 누락되거나 빈 경우에는 기존처럼 첫 질문을 제목으로 사용한다.
     """
-    fallback = re.sub(r"\s+", " ", fallback_question).strip()
+    fallback = re.sub(r"\s+", " ", unwrap_pasted_text(fallback_question)).strip()
+    generated_title = re.sub(r"\s+", " ", conv_title or "").strip().strip(".。!? ")
+    if generated_title:
+        return generated_title[:36] + ("..." if len(generated_title) > 36 else "")
     summary = re.sub(r"\s+", " ", conv_summary or "").strip()
     if not summary:
         return fallback[:30] + ("..." if len(fallback) > 30 else "")
@@ -595,7 +600,7 @@ async def query(req: QueryRequest):
     from services.conv_summary import extract_summary_tags, save_conv_summary, append_attachment_summary
     from services.project_memory import extract_project_memory_tag, merge_project_memory
     result["answer"], _project_memory = extract_project_memory_tag(result.get("answer", ""))
-    _clean_answer, _conv_summary, _project_summary = extract_summary_tags(result["answer"])
+    _clean_answer, _conv_summary, _project_summary, _conv_title = extract_summary_tags(result["answer"])
     result["answer"] = _clean_answer
 
     user_ts = req.user_timestamp or datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
@@ -608,10 +613,14 @@ async def query(req: QueryRequest):
 
     messages = req.messages + [user_message, assistant_msg]
     result["conv_id"] = conv_id
+    generated_conversation_title = _new_conversation_title(_conv_title, _conv_summary, original_question)
+    result["conversation_title"] = generated_conversation_title if not req.messages else None
 
     if not req.no_history:
         try:
-            await save_conversation(conv_id, messages)
+            await save_conversation(
+                conv_id, messages, title=generated_conversation_title, project_id=req.project_id or None,
+            )
             if _conv_summary:
                 await save_conv_summary(conv_id, _conv_summary)
             await merge_project_memory(req.project_id, conv_id, _project_memory)
@@ -977,7 +986,8 @@ async def query_stream(req: QueryRequest):
                 from services.conv_summary import extract_summary_tags, save_conv_summary, append_attachment_summary
                 from services.project_memory import extract_project_memory_tag, merge_project_memory
                 answer, _project_memory = extract_project_memory_tag(answer)
-                answer, _conv_summary, _project_summary = extract_summary_tags(answer)
+                answer, _conv_summary, _project_summary, _conv_title = extract_summary_tags(answer)
+                conversation_title = _new_conversation_title(_conv_title, _conv_summary, original_question)
 
                 injected_context = build_injected_context(gen_sources)
                 from services.code_tools import finalize_code_change_tracking
@@ -1008,7 +1018,7 @@ async def query_stream(req: QueryRequest):
                         try:
                             await create_conversation_stub(
                                 conv_id,
-                                _new_conversation_title(_conv_summary, original_question),
+                                conversation_title,
                                 req.project_id or None,
                             )
                         except Exception as e:
@@ -1034,7 +1044,8 @@ async def query_stream(req: QueryRequest):
                     _run_in_background(_save_history_bg())
 
                 yield _sse("done", {"conv_id": conv_id, "answer": answer, "stats": gen_stats,
-                                    "truncated": response_truncated, "code_changes": code_changes})
+                                    "truncated": response_truncated, "code_changes": code_changes,
+                                    "conversation_title": conversation_title if not req.messages else None})
                 _saved = True
                 return
 
@@ -1086,7 +1097,8 @@ async def query_stream(req: QueryRequest):
             from services.conv_summary import extract_summary_tags, save_conv_summary
             from services.project_memory import extract_project_memory_tag, merge_project_memory
             answer, _project_memory = extract_project_memory_tag(answer)
-            answer, _conv_summary, _ = extract_summary_tags(answer)
+            answer, _conv_summary, _, _conv_title = extract_summary_tags(answer)
+            conversation_title = _new_conversation_title(_conv_title, _conv_summary, original_question)
 
             # ── 히스토리 저장 (공통 헬퍼 사용) ──
             injected_context = build_injected_context(context_docs)
@@ -1099,7 +1111,10 @@ async def query_stream(req: QueryRequest):
 
             if not req.no_history:
                 try:
-                    await save_conversation(conv_id, req.messages + [user_message, assistant_msg], project_id=req.project_id or None)
+                    await save_conversation(
+                        conv_id, req.messages + [user_message, assistant_msg],
+                        title=conversation_title, project_id=req.project_id or None,
+                    )
                     if _conv_summary:
                         await save_conv_summary(conv_id, _conv_summary)
                     await merge_project_memory(req.project_id, conv_id, _project_memory)
@@ -1108,7 +1123,8 @@ async def query_stream(req: QueryRequest):
             _saved = True
 
             yield _sse("done", {"conv_id": conv_id, "answer": answer, "stats": stats,
-                                "truncated": response_truncated})
+                                "truncated": response_truncated,
+                                "conversation_title": conversation_title if not req.messages else None})
         except (asyncio.CancelledError, GeneratorExit):
             logger.info("[query_stream] 클라이언트 연결 종료 — 스트림 중단")
         finally:

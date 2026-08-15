@@ -16,10 +16,12 @@ from logger import get_logger
 
 logger = get_logger(__name__)
 
+CONV_TITLE_TAG_RE = re.compile(r"<conv_title>([\s\S]*?)</conv_title>", re.IGNORECASE)
 CONV_SUMMARY_TAG_RE = re.compile(r"<conv_summary>([\s\S]*?)</conv_summary>", re.IGNORECASE)
 PROJECT_SUMMARY_TAG_RE = re.compile(r"<project_summary>([\s\S]*?)</project_summary>", re.IGNORECASE)
 
 HIDDEN_STREAM_TAG_PREFIXES = (
+    "<conv_title",
     "<conv_summary",
     "<project_summary",
     "<project_memory",
@@ -103,6 +105,12 @@ def build_summary_instruction(
         "짧게 쓰는 것이 오히려 올바른 실행입니다).\n"
         "<conv_summary>...</conv_summary>\n"
     ]
+    if not prior_conv_summary:
+        parts.append(
+            "이번이 첫 응답이므로 <conv_summary> 바로 앞에 사이드바용 짧은 대화 제목도 반드시 "
+            "출력하세요. 사용자의 원문을 복사하지 말고 핵심 주제를 20자 안팎으로 자연스럽게 요약하며, "
+            "PASTE 같은 UI 마커를 포함하지 마세요:\n<conv_title>짧은 대화 제목</conv_title>\n"
+        )
     if prior_conv_summary:
         parts.append(
             f"직전까지의 요약은 다음과 같습니다. 이걸 기반으로 이번 턴 내용을 반영해 갱신하세요 "
@@ -133,13 +141,19 @@ def build_summary_instruction(
     return "".join(parts)
 
 
-def extract_summary_tags(answer: str) -> tuple[str, str | None, str | None]:
+def extract_summary_tags(answer: str) -> tuple[str, str | None, str | None, str | None]:
     """답변 텍스트에서 <conv_summary>/<project_summary> 태그를 추출하고, 제거된 본문을 반환.
 
-    반환값: (clean_answer, conv_summary | None, project_summary | None)
+    반환값: (clean_answer, conv_summary | None, project_summary | None, conv_title | None)
     """
     conv_summary = None
     project_summary = None
+    conv_title = None
+
+    title_match = CONV_TITLE_TAG_RE.search(answer)
+    if title_match:
+        conv_title = re.sub(r"\s+", " ", title_match.group(1)).strip()[:60] or None
+        answer = CONV_TITLE_TAG_RE.sub("", answer)
 
     m = CONV_SUMMARY_TAG_RE.search(answer)
     if m:
@@ -158,7 +172,7 @@ def extract_summary_tags(answer: str) -> tuple[str, str | None, str | None]:
     if not clean_answer and conv_summary:
         clean_answer = conv_summary
 
-    return clean_answer, conv_summary, project_summary
+    return clean_answer, conv_summary, project_summary, conv_title
 
 
 async def get_prior_conv_summary(conv_id: str) -> str:

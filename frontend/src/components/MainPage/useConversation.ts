@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import React from 'react';
 import { api } from '../../services/api';
-import { generateUUID } from '../../utils/helpers';
+import { generateUUID, unwrapPastedText } from '../../utils/helpers';
 import { parseFollowups } from '../../utils/markdownUtils';
 import type { Conversation, Message, ArticleAttachment } from '../../types';
 
@@ -33,6 +33,14 @@ export function useConversation() {
     const messagesByConversationRef = React.useRef<Map<string, Message[]>>(new Map());
     const historyRequestRef = React.useRef<Promise<void> | null>(null);
     const [pendingArticles, setPendingArticles] = useState<ArticleAttachment[]>([]);
+    const normalizeConversationTitle = (title: string): string => {
+        const normalized = unwrapPastedText(title).replace(/\s+/g, ' ').trim();
+        return normalized || '새 대화';
+    };
+    const normalizeConversation = (conversation: Conversation): Conversation => ({
+        ...conversation,
+        title: normalizeConversationTitle(conversation.title),
+    });
 
     const setConvId = (id: string) => {
         currentConvIdRef.current = id;
@@ -50,7 +58,7 @@ export function useConversation() {
             const now = new Date().toISOString();
             return [{
                 conv_id: convId,
-                title: title.slice(0, 50),
+                title: normalizeConversationTitle(title).slice(0, 50),
                 created_at: now,
                 updated_at: now,
                 project_id: projectId || undefined,
@@ -59,7 +67,9 @@ export function useConversation() {
         setHistoryTotal(prev => prev + 1);
     };
 
-    const completeLocalConversation = (convId: string, title: string, projectId: string | null = null) => {
+    const completeLocalConversation = (
+        convId: string, title: string, projectId: string | null = null, replaceTitle = false,
+    ) => {
         const wasKnown = conversations.some(conversation => conversation.conv_id === convId)
             || optimisticConversationIdsRef.current.has(convId);
         if (!wasKnown) {
@@ -69,11 +79,12 @@ export function useConversation() {
         const updatedAt = new Date().toISOString();
         setConversations(previous => {
             const existing = previous.find(conversation => conversation.conv_id === convId);
+            const normalizedTitle = normalizeConversationTitle(title).slice(0, 50);
             const updated = existing
-                ? {...existing, updated_at: updatedAt}
+                ? {...existing, ...(replaceTitle ? {title: normalizedTitle} : {}), updated_at: updatedAt}
                 : {
                     conv_id: convId,
-                    title: title.slice(0, 50),
+                    title: normalizedTitle,
                     created_at: updatedAt,
                     updated_at: updatedAt,
                     project_id: projectId || undefined,
@@ -83,7 +94,12 @@ export function useConversation() {
         setFavoriteConversations(previous => {
             const existing = previous.find(conversation => conversation.conv_id === convId);
             if (!existing) return previous;
-            return [{...existing, updated_at: updatedAt}, ...previous.filter(conversation => conversation.conv_id !== convId)];
+            const normalizedTitle = normalizeConversationTitle(title).slice(0, 50);
+            return [{
+                ...existing,
+                ...(replaceTitle ? {title: normalizedTitle} : {}),
+                updated_at: updatedAt,
+            }, ...previous.filter(conversation => conversation.conv_id !== convId)];
         });
     };
 
@@ -157,8 +173,8 @@ export function useConversation() {
             try {
                 const keep = Math.max(HISTORY_PAGE, conversations.length);
                 const data = await api.getHistory(keep, 0);
-                const serverConversations = data.conversations || [];
-                setFavoriteConversations(data.favorite_conversations || []);
+                const serverConversations = (data.conversations || []).map(normalizeConversation);
+                setFavoriteConversations((data.favorite_conversations || []).map(normalizeConversation));
                 const serverConversationIds = new Set(serverConversations.map(conversation => conversation.conv_id));
                 for (const convId of optimisticConversationIdsRef.current) {
                     if (serverConversationIds.has(convId)) optimisticConversationIdsRef.current.delete(convId);
@@ -187,7 +203,7 @@ export function useConversation() {
     const loadMoreHistory = async () => {
         try {
             const data = await api.getHistory(HISTORY_PAGE, conversations.length, null, false);
-            const more = data.conversations || [];
+            const more = (data.conversations || []).map(normalizeConversation);
             setConversations(prev => {
                 const seen = new Set(prev.map(c => c.conv_id));
                 return [...prev, ...more.filter(c => !seen.has(c.conv_id))];

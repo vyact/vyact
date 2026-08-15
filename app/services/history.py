@@ -2,6 +2,7 @@
 history.py – 대화 히스토리 CRUD
 """
 from datetime import datetime, timezone
+import re
 
 from elasticsearch import NotFoundError
 
@@ -90,13 +91,16 @@ async def save_conversation(conv_id: str, messages: list[dict], title: str = "",
         except NotFoundError:
             pass
         messages = _preserve_stored_attachments(messages, existing_messages)
-        # title 우선순위: 명시적 전달 > 기존 제목(사용자 rename 포함) > 자동 생성
-        if not title:
-            if existing_title:
-                title = existing_title
-            else:
-                first = next((m["content"] for m in messages if m["role"] == "user"), "대화")
-                title = first[:30] + ("..." if len(first) > 30 else "")
+        # 기존 제목에는 사용자 rename도 포함되므로 절대 자동 제목으로 덮어쓰지 않는다.
+        if existing_title:
+            title = existing_title
+        elif not title:
+            first = next((m["content"] for m in messages if m["role"] == "user"), "대화")
+            pasted = re.findall(r"«PASTE:.*?»\n([\s\S]*?)«/PASTE»", first)
+            typed = re.sub(r"«PASTE:.*?»\n[\s\S]*?«/PASTE»", "", first).strip()
+            clean_first = "\n\n".join([part.strip() for part in pasted if part.strip()] + ([typed] if typed else []))
+            clean_first = re.sub(r"\s+", " ", clean_first or "대화").strip()
+            title = clean_first[:30] + ("..." if len(clean_first) > 30 else "")
         document = {
             "conv_id": conv_id,
             "title": title,

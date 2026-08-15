@@ -204,6 +204,7 @@ export interface ChatResponse {
     conv_id?: string;
     response_type?: 'action' | 'simple';
     assistant_message?: Message;
+    conversation_title?: string;
 }
 
 export interface HistoryResponse {

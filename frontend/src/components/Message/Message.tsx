@@ -789,6 +789,10 @@ const Message: React.FC<MessageProps> = ({
                 </div>
             )}
 
+            {role === 'assistant' && !isStreaming && codeChanges?.files.length ? (
+                <CodeChangesCard changes={codeChanges}/>
+            ) : null}
+
             {/* 스트리밍 첫 토큰 전(빈 버블)에는 시간/복사 메타를 숨긴다 — ...만 표시 */}
             {!(isStreaming && role === 'assistant') && (
                 <div className={`msg-meta ${role === 'user' ? 'user' : 'bot'}`}>
@@ -888,10 +892,6 @@ const Message: React.FC<MessageProps> = ({
                     activities={activityLog}
                     executionDurationNs={stats?.tool_duration}
                 />
-            ) : null}
-
-            {role === 'assistant' && !isStreaming && codeChanges?.files.length ? (
-                <CodeChangesCard changes={codeChanges}/>
             ) : null}
 
             {viewerIndex !== null && viewerImages.length > 0 && (

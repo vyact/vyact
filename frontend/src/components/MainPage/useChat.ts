@@ -103,7 +103,7 @@ interface UseChatDeps {
     showVoiceChatModalRef: React.MutableRefObject<boolean>;
     setConvId: (id: string) => void;
     addLocalConversation: (convId: string, title: string, projectId?: string | null) => void;
-    completeLocalConversation: (convId: string, title: string, projectId?: string | null) => void;
+    completeLocalConversation: (convId: string, title: string, projectId?: string | null, replaceTitle?: boolean) => void;
     setMessagesWithRef: (updater: Message[] | ((prev: Message[]) => Message[])) => void;
     setMessagesForConversation: (convId: string, updater: Message[] | ((prev: Message[]) => Message[])) => void;
     getMessagesForConversation: (convId: string) => Message[];
@@ -582,7 +582,12 @@ export function useChat(deps: UseChatDeps) {
                                 }
                                 : message));
                             if (data.conv_id && !requestConvId) assignNewConvId(data.conv_id, query);
-                            completeLocalConversation(data.conv_id || requestConvId, query, activeProjectId);
+                            completeLocalConversation(
+                                data.conv_id || requestConvId,
+                                data.conversation_title || query,
+                                activeProjectId,
+                                Boolean(data.conversation_title),
+                            );
                             const esSources: ArticleAttachment[] = (streamSources || [])
                                 .filter((s: any) => s.url && !s.url.startsWith('manual://'))
                                 .map((s: any) => ({
@@ -725,7 +730,10 @@ export function useChat(deps: UseChatDeps) {
                 }));
 
             const finalConvId = response.conv_id || requestConvId;
-            if (finalConvId) completeLocalConversation(finalConvId, query, activeProjectId);
+            if (finalConvId) completeLocalConversation(
+                finalConvId, response.conversation_title || query, activeProjectId,
+                Boolean(response.conversation_title),
+            );
             const storedAssistantMessage = response.assistant_message
                 ? mapMsg(response.assistant_message)
                 : null;
