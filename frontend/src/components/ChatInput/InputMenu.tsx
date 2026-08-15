@@ -19,6 +19,7 @@ const GOOGLE_STATUS_UNAVAILABLE: GoogleWorkspaceStatus = {
     enabled: false,
     connected: false,
     accounts: [],
+    mcpServers: [],
 };
 const CHAT_FILE_INPUT_ID = 'chat-file-input';
 

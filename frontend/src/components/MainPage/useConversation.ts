@@ -31,6 +31,7 @@ export function useConversation() {
     // 대화 전환 중에도 백그라운드 스트리밍 결과가 다른 대화 화면에 섞이지 않도록
     // 메시지를 conversationId별로 보관한다.
     const messagesByConversationRef = React.useRef<Map<string, Message[]>>(new Map());
+    const historyRequestRef = React.useRef<Promise<void> | null>(null);
     const [pendingArticles, setPendingArticles] = useState<ArticleAttachment[]>([]);
 
     const setConvId = (id: string) => {
@@ -122,28 +123,36 @@ export function useConversation() {
     };
 
     // 첫 페이지(최신 20개)만 조회. 이후 삭제/생성 시에도 현재 로드된 개수를 유지해 재조회.
-    const loadHistory = async () => {
-        try {
-            const keep = Math.max(HISTORY_PAGE, conversations.length);
-            const data = await api.getHistory(keep, 0);
-            const serverConversations = data.conversations || [];
-            setFavoriteConversations(data.favorite_conversations || []);
-            const serverConversationIds = new Set(serverConversations.map(conversation => conversation.conv_id));
-            for (const convId of optimisticConversationIdsRef.current) {
-                if (serverConversationIds.has(convId)) optimisticConversationIdsRef.current.delete(convId);
+    const loadHistory = () => {
+        if (historyRequestRef.current) return historyRequestRef.current;
+        const request = (async () => {
+            try {
+                const keep = Math.max(HISTORY_PAGE, conversations.length);
+                const data = await api.getHistory(keep, 0);
+                const serverConversations = data.conversations || [];
+                setFavoriteConversations(data.favorite_conversations || []);
+                const serverConversationIds = new Set(serverConversations.map(conversation => conversation.conv_id));
+                for (const convId of optimisticConversationIdsRef.current) {
+                    if (serverConversationIds.has(convId)) optimisticConversationIdsRef.current.delete(convId);
+                }
+                setConversations(previous => {
+                    const pendingConversations = previous.filter(conversation =>
+                        optimisticConversationIdsRef.current.has(conversation.conv_id)
+                        && !serverConversationIds.has(conversation.conv_id),
+                    );
+                    return [...pendingConversations, ...serverConversations];
+                });
+                const serverTotal = data.total ?? serverConversations.length;
+                setHistoryTotal(serverTotal + optimisticConversationIdsRef.current.size);
+            } catch (error) {
+                console.error('Failed to load history:', error);
             }
-            setConversations(previous => {
-                const pendingConversations = previous.filter(conversation =>
-                    optimisticConversationIdsRef.current.has(conversation.conv_id)
-                    && !serverConversationIds.has(conversation.conv_id),
-                );
-                return [...pendingConversations, ...serverConversations];
-            });
-            const serverTotal = data.total ?? serverConversations.length;
-            setHistoryTotal(serverTotal + optimisticConversationIdsRef.current.size);
-        } catch (error) {
-            console.error('Failed to load history:', error);
-        }
+        })();
+        historyRequestRef.current = request;
+        void request.finally(() => {
+            if (historyRequestRef.current === request) historyRequestRef.current = null;
+        });
+        return request;
     };
 
     // 더보기: 다음 20개를 이어서 조회해 append.

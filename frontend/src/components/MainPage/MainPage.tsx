@@ -314,15 +314,13 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
     // ── 초기화 ───────────────────────────────────────────────────────
     useEffect(() => {
         (async () => {
-            await models.refreshModels();
-            await conv.loadHistory();
+            await Promise.all([
+                models.refreshModels(),
+                conv.loadHistory(),
+            ]);
             conv.newConversation(setResetTrigger);
         })();
     }, []);
-
-    useEffect(() => {
-        conv.loadHistory();
-    }, [conv.activeProjectId]);
 
     // ── 전역 단축키 ──────────────────────────────────────────────────
     const closeAllModals = () => {

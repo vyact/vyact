@@ -1,6 +1,8 @@
 """
 routers/history.py – 대화 히스토리
 """
+import asyncio
+
 from fastapi import APIRouter, HTTPException
 
 from agent import list_conversations, get_conversation, delete_conversation, rename_conversation
@@ -15,11 +17,14 @@ async def get_history(
     exclude_project: bool = False,
 ):
     # {conversations, total} 반환 — 프론트가 20씩 페이징 조회한다.
-    result = await list_conversations(
-        size=limit, offset=offset, project_id=project_id,
-        exclude_project=exclude_project,
+    result, favorite_conversations = await asyncio.gather(
+        list_conversations(
+            size=limit, offset=offset, project_id=project_id,
+            exclude_project=exclude_project,
+        ),
+        list_favorite_conversations(),
     )
-    result["favorite_conversations"] = await list_favorite_conversations()
+    result["favorite_conversations"] = favorite_conversations
     return result
 
 

@@ -2,7 +2,9 @@ import React, {useEffect, useRef, useState, useCallback} from 'react';
 import {useTranslation} from 'react-i18next';
 import {api} from '../../services/api';
 import {
+    getGoogleWorkspaceStatus,
     refreshGoogleWorkspaceStatus,
+    updateGoogleWorkspaceServerStatus,
 } from '../../services/googleWorkspaceStatus';
 import {emitMcpServersChanged, onMcpServersChanged} from '../../utils/mcpEvents';
 import type {McpCatalogEntry, McpServer} from '../../types';
@@ -54,18 +56,23 @@ const McpMenu: React.FC<McpMenuProps> = ({disabled = false}) => {
         const refreshBadge = (fresh?: McpServer[]) => {
             if (fresh) {
                 setServers(fresh);
+                const googleStatus = updateGoogleWorkspaceServerStatus(fresh);
+                setGoogleConnected(Boolean(googleStatus.connected));
+                return;
             }
-            Promise.all([
-                api.getMcpServers(),
-                refreshGoogleWorkspaceStatus().catch(() => ({connected: false})),
-            ])
-                .then(([serverResult, googleStatus]) => {
-                    setServers(serverResult.servers || []);
+            refreshGoogleWorkspaceStatus()
+                .then(googleStatus => {
+                    setServers(googleStatus.mcpServers);
                     setGoogleConnected(Boolean(googleStatus.connected));
                 })
                 .catch(() => {/* noop */});
         };
-        refreshBadge();
+        getGoogleWorkspaceStatus()
+            .then(googleStatus => {
+                setServers(googleStatus.mcpServers);
+                setGoogleConnected(Boolean(googleStatus.connected));
+            })
+            .catch(() => {/* noop */});
         const unsubscribeMcp = onMcpServersChanged(refreshBadge);
         const refreshGoogleStatus = (event: Event) => {
             const status = (event as CustomEvent).detail?.status;

@@ -164,6 +164,8 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
             const memoIds = memoArticles.map(a => a.url.replace('memo://', ''));
             api.listMemos(100).then(r => {
                 const allMemos: Memo[] = r.memos || [];
+                setMemos(allMemos);
+                memoLoaded.current = true;
                 const map = new Map<string, Memo>();
                 allMemos.filter(m => memoIds.includes(m.id)).forEach(m => map.set(m.id, m));
                 if (map.size > 0) setSelectedMemos(map);
@@ -175,6 +177,8 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
         if (docArticles.length > 0) {
             fetch('/api/document/files').then(r => r.json()).then(r => {
                 const allDocs: DocFile[] = r.files || [];
+                setDocs(allDocs);
+                docLoaded.current = true;
                 const fileIds = new Set(docArticles.map(a => a.file_id!));
                 const map = new Map<string, DocFile>();
                 allDocs.filter(d => fileIds.has(d.file_id)).forEach(d => map.set(d.file_id, d));

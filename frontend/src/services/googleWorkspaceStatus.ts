@@ -7,6 +7,7 @@ export type GoogleWorkspaceStatus = {
     connected: boolean;
     config?: Record<string, unknown>;
     accounts: Array<{id: string; email?: string; authenticated: boolean; reconnect_required: boolean}>;
+    mcpServers: McpServer[];
 };
 
 export const getConfiguredGoogleWorkspaceAccountIds = (config?: Record<string, unknown>): string[] => {
@@ -35,6 +36,7 @@ async function loadStatus(requestVersion: number): Promise<GoogleWorkspaceStatus
         connected: Boolean(auth.authenticated || accounts.some(account => account.authenticated)),
         config: server?.config,
         accounts,
+        mcpServers: servers.servers || [],
     };
     if (requestVersion !== statusRequestVersion) return cachedStatus || status;
     cachedStatus = status;
@@ -89,6 +91,7 @@ export function updateGoogleWorkspaceServerStatus(servers: McpServer[]): GoogleW
         accounts: (cachedStatus?.accounts || []).filter(account =>
             getConfiguredGoogleWorkspaceAccountIds(server?.config).includes(account.id),
         ),
+        mcpServers: servers,
     };
     return cachedStatus;
 }
@@ -101,6 +104,7 @@ export function updateGoogleWorkspaceConnectionStatus(connected: boolean): Googl
         connected,
         config: cachedStatus?.config,
         accounts: cachedStatus?.accounts || [],
+        mcpServers: cachedStatus?.mcpServers || [],
     };
     return cachedStatus;
 }
