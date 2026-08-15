@@ -206,8 +206,10 @@ async def chat_stream_with_tools(
                     reasoning=reasoning,
                 )
             except Exception as e:
-                logger.warning("[chat_stream_with_tools] tool 루프 실패, 무시하고 진행: %s", e)
-                return {"messages": body["messages"], "direct_answer": None, "stats": None}
+                # 도구가 필요한 요청에서 일반 답변으로 폴백하면 모델이 실행하지 않은 작업을
+                # 성공했다고 서술할 수 있다. 실패를 상위 스트림으로 전파해 명시적 오류로 끝낸다.
+                logger.exception("[chat_stream_with_tools] tool 루프 실패 — 응답 생성 중단: %s", e)
+                raise
             finally:
                 await _queue.put(_DONE)
 

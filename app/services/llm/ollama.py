@@ -1,6 +1,7 @@
 """
 services/llm/ollama.py — Ollama 요청 조립 + MCP tool 왕복 루프
 """
+import asyncio
 import hashlib
 import json
 
