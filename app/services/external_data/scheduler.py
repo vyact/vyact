@@ -13,6 +13,10 @@ from services.external_data.k_startup import (
     get_sync_status as get_k_startup_sync_status,
     start_synchronization as start_k_startup_synchronization,
 )
+from services.external_data.welfare import (
+    get_sync_status as get_welfare_sync_status,
+    start_synchronization as start_welfare_synchronization,
+)
 from services.external_data.settings import load_external_data_connections
 
 logger = get_logger(__name__)
@@ -82,6 +86,14 @@ async def _run_due_synchronizations() -> None:
         if is_sync_due(k_startup_reference_time, interval_hours):
             if start_k_startup_synchronization(shared_service_key):
                 logger.info("[external-data] scheduled K-Startup sync started (%sh)", interval_hours)
+
+    welfare = connections.get("kr.welfare") or {}
+    if shared_service_key and welfare.get("enabled", False) and auto_sync_enabled:
+        welfare_status = await get_welfare_sync_status()
+        welfare_reference_time = welfare_status.get("failed_at") if welfare_status.get("status") == "failed" else welfare_status.get("last_successful_sync_at")
+        if is_sync_due(welfare_reference_time, interval_hours):
+            if start_welfare_synchronization(shared_service_key):
+                logger.info("[external-data] scheduled welfare sync started (%sh)", interval_hours)
 
 
 async def _run_scheduler() -> None:

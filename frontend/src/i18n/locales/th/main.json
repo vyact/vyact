@@ -1051,7 +1051,7 @@
     "save": "บันทึก",
     "cancel": "ยกเลิก"
   },
-  "knowledgeSources": {"select":"เลือกแหล่งค้นหา","collections":"คอลเลกชัน","external":"ข้อมูลภายนอก","searchExternal":"ค้นหาข้อมูลภายนอก...","externalSettings":"ตั้งค่าข้อมูลภายนอก","noExternalData":"ไม่มีข้อมูลภายนอกที่ซิงค์แล้ว","gov24":"Government24 · สิทธิประโยชน์ ({{count}})","gov24Short":"Government24 · สิทธิประโยชน์","selectedCount":"แหล่งความรู้ {{count}} แห่ง"},
+  "knowledgeSources": {"select":"เลือกแหล่งค้นหา","collections":"คอลเลกชัน","external":"ข้อมูลภายนอก","searchExternal":"ค้นหาข้อมูลภายนอก...","externalSettings":"ตั้งค่าข้อมูลภายนอก","noExternalData":"ไม่มีข้อมูลภายนอกที่เปิดใช้งาน","documentCount":"{{count}} รายการ","gov24":"Government24 · สิทธิประโยชน์ ({{count}})","gov24Short":"Government24 · สิทธิประโยชน์","selectedCount":"แหล่งความรู้ {{count}} แห่ง"},
   "knowledgeCollectionSources": {
     "attachSources": "แนบแหล่งข้อมูล",
     "attachedCount": "แนบแล้ว {{count}} รายการ",

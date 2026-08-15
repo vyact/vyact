@@ -1048,7 +1048,7 @@
     "save": "Save",
     "cancel": "Cancel"
   },
-  "knowledgeSources": {"select":"Select search source","collections":"Collections","external":"External data","searchExternal":"Search external data...","externalSettings":"External data settings","noExternalData":"No synchronized external data.","gov24":"Government24 · Public benefits ({{count}})","gov24Short":"Government24 · Public benefits","selectedCount":"{{count}} knowledge sources"},
+  "knowledgeSources": {"select":"Select search source","collections":"Collections","external":"External data","searchExternal":"Search external data...","externalSettings":"External data settings","noExternalData":"No enabled external data.","documentCount":"{{count}} items","gov24":"Government24 · Public benefits ({{count}})","gov24Short":"Government24 · Public benefits","selectedCount":"{{count}} knowledge sources"},
   "knowledgeCollectionSources": {
     "attachSources": "Attach sources",
     "attachedCount": "{{count}} attached",

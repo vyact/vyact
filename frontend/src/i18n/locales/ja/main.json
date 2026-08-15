@@ -1051,7 +1051,7 @@
     "save": "保存",
     "cancel": "キャンセル"
   },
-  "knowledgeSources": {"select":"検索ソースを選択","collections":"知識コレクション","external":"外部データ","searchExternal":"外部データを検索...","externalSettings":"外部データ設定","noExternalData":"同期済みの外部データがありません。","gov24":"政府24・公共サービス（{{count}}件）","gov24Short":"政府24・公共サービス","selectedCount":"知識ソース {{count}}件"},
+  "knowledgeSources": {"select":"検索ソースを選択","collections":"知識コレクション","external":"外部データ","searchExternal":"外部データを検索...","externalSettings":"外部データ設定","noExternalData":"有効な外部データがありません。","documentCount":"{{count}}件","gov24":"政府24・公共サービス（{{count}}件）","gov24Short":"政府24・公共サービス","selectedCount":"知識ソース {{count}}件"},
   "knowledgeCollectionSources": {
     "attachSources": "資料を添付",
     "attachedCount": "{{count}}件を添付",

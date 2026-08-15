@@ -1051,7 +1051,7 @@
     "save": "保存",
     "cancel": "取消"
   },
-  "knowledgeSources": {"select":"选择搜索来源","collections":"知识集合","external":"外部数据","searchExternal":"搜索外部数据...","externalSettings":"外部数据设置","noExternalData":"没有已同步的外部数据。","gov24":"政府24·公共服务（{{count}}条）","gov24Short":"政府24 · 公共服务","selectedCount":"{{count}}个知识源"},
+  "knowledgeSources": {"select":"选择搜索来源","collections":"知识集合","external":"外部数据","searchExternal":"搜索外部数据...","externalSettings":"外部数据设置","noExternalData":"没有已启用的外部数据。","documentCount":"{{count}}条","gov24":"政府24·公共服务（{{count}}条）","gov24Short":"政府24 · 公共服务","selectedCount":"{{count}}个知识源"},
   "knowledgeCollectionSources": {
     "attachSources": "附加资料",
     "attachedCount": "已附加 {{count}} 项",

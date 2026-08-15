@@ -1051,7 +1051,7 @@
     "save": "Lưu",
     "cancel": "Hủy"
   },
-  "knowledgeSources": {"select":"Chọn nguồn tìm kiếm","collections":"Bộ sưu tập","external":"Dữ liệu ngoài","searchExternal":"Tìm dữ liệu ngoài...","externalSettings":"Cài đặt dữ liệu ngoài","noExternalData":"Không có dữ liệu ngoài đã đồng bộ.","gov24":"Government24 · Phúc lợi công ({{count}})","gov24Short":"Government24 · Phúc lợi công","selectedCount":"{{count}} nguồn kiến thức"},
+  "knowledgeSources": {"select":"Chọn nguồn tìm kiếm","collections":"Bộ sưu tập","external":"Dữ liệu ngoài","searchExternal":"Tìm dữ liệu ngoài...","externalSettings":"Cài đặt dữ liệu ngoài","noExternalData":"Không có dữ liệu ngoài nào được bật.","documentCount":"{{count}} mục","gov24":"Government24 · Phúc lợi công ({{count}})","gov24Short":"Government24 · Phúc lợi công","selectedCount":"{{count}} nguồn kiến thức"},
   "knowledgeCollectionSources": {
     "attachSources": "Đính kèm nguồn",
     "attachedCount": "Đã đính kèm {{count}} nguồn",

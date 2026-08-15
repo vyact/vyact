@@ -1051,7 +1051,7 @@
     "save": "Enregistrer",
     "cancel": "Annuler"
   },
-  "knowledgeSources": {"select":"Choisir une source de recherche","collections":"Collections","external":"Données externes","searchExternal":"Rechercher des données externes...","externalSettings":"Paramètres des données externes","noExternalData":"Aucune donnée externe synchronisée.","gov24":"Government24 · Aides publiques ({{count}})","gov24Short":"Government24 · Aides publiques","selectedCount":"{{count}} sources"},
+  "knowledgeSources": {"select":"Choisir une source de recherche","collections":"Collections","external":"Données externes","searchExternal":"Rechercher des données externes...","externalSettings":"Paramètres des données externes","noExternalData":"Aucune donnée externe activée.","documentCount":"{{count}} éléments","gov24":"Government24 · Aides publiques ({{count}})","gov24Short":"Government24 · Aides publiques","selectedCount":"{{count}} sources"},
   "knowledgeCollectionSources": {
     "attachSources": "Joindre des sources",
     "attachedCount": "{{count}} sources jointes",

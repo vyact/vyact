@@ -124,12 +124,13 @@ interface ApiSuccessResponse {
 
 export interface Gov24SyncStatusResponse {
     status: 'idle' | 'running' | 'completed' | 'failed';
-    stage?: 'list' | 'detail' | 'conditions' | 'announcements' | 'startupAnnouncements' | 'startupBusinesses' | 'indexing' | 'completed';
+    stage?: 'list' | 'detail' | 'conditions' | 'announcements' | 'startupAnnouncements' | 'startupBusinesses' | 'welfareList' | 'welfareDetail' | 'indexing' | 'completed';
     current?: number;
     total?: number;
     document_count?: number;
     last_successful_sync_at?: string | null;
     error?: string;
+    error_code?: 'request_limit_exceeded' | 'api_error' | 'sync_failed';
 }
 
 export interface ExternalDataSyncEvent {

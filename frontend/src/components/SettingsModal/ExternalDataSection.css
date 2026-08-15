@@ -664,6 +664,16 @@
     font-size: 11px;
 }
 
+.external-data-source-notice {
+    margin: 10px 0 0;
+    padding: 9px 11px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--accent) 9%, transparent);
+    color: var(--text-secondary);
+    font-size: 11px;
+    line-height: 1.45;
+}
+
 .external-data-auto-sync {
     margin-top: 14px;
     padding-top: 14px;

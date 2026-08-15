@@ -1054,7 +1054,8 @@
     "external": "외부 데이터",
     "searchExternal": "외부 데이터 검색...",
     "externalSettings": "외부 데이터 설정",
-    "noExternalData": "동기화된 외부 데이터가 없습니다.",
+    "noExternalData": "활성화된 외부 데이터가 없습니다.",
+    "documentCount": "{{count}}건",
     "gov24": "정부24 · 공공서비스 ({{count}}건)",
     "gov24Short": "정부24 · 공공서비스",
     "selectedCount": "지식 소스 {{count}}"

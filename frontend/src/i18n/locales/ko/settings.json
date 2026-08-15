@@ -33,7 +33,8 @@
     "syncing": "가져오는 중…",
     "syncStartFailed": "데이터 가져오기를 시작하지 못했습니다.",
     "syncFailed": "데이터를 가져오지 못했습니다. 서비스키와 API 권한을 확인해 주세요.",
-    "syncStages": {"list": "공공서비스 목록 가져오는 중", "detail": "상세정보 가져오는 중", "conditions": "지원조건 가져오는 중", "announcements": "지원사업 공고 가져오는 중", "startupAnnouncements": "창업 지원사업 공고 가져오는 중", "startupBusinesses": "창업 지원사업 소개 가져오는 중", "indexing": "검색 데이터 저장 중", "completed": "저장 완료"},
+    "syncStages": {"list": "공공서비스 목록 가져오는 중", "detail": "상세정보 가져오는 중", "conditions": "지원조건 가져오는 중", "announcements": "지원사업 공고 가져오는 중", "startupAnnouncements": "창업 지원사업 공고 가져오는 중", "startupBusinesses": "창업 지원사업 소개 가져오는 중", "welfareList": "복지서비스 목록 가져오는 중", "welfareDetail": "복지서비스 상세정보 가져오는 중", "indexing": "검색 데이터 저장 중", "completed": "저장 완료"},
+    "welfare": {"trafficNotice": "개발계정은 일일 100회까지만 호출할 수 있습니다. 전체 상세정보를 동기화하려면 공공데이터포털에서 운영계정 트래픽 증액을 신청해 주세요.", "requestLimitExceeded": "복지서비스 API의 일일 요청 한도를 초과했습니다. 운영계정 트래픽을 증액하거나 한도가 초기화된 후 다시 시도해 주세요.", "syncFailed": "복지서비스 데이터를 가져오지 못했습니다. 서비스키와 해당 API 활용 권한을 확인해 주세요."},
     "title": "외부 데이터",
     "description": "국가별 공공 데이터 소스를 연결하고 Vyact에서 검색할 데이터를 관리합니다.",
     "country": "국가/지역",
@@ -55,8 +56,6 @@
       "bizSupport": {"name": "중소기업·소상공인 지원사업", "description": "기업마당의 최신 정책자금·바우처·판로·고용 지원사업 공고를 적용합니다."},
       "kStartup": {"name": "예비창업자·스타트업 지원금", "description": "K-Startup의 창업 사업화 자금과 지원사업 공고를 적용합니다."},
       "welfare": {"name": "개인 복지급여", "description": "복지로의 중앙부처 사회보장 급여와 복지서비스를 적용합니다."},
-      "contentSupport": {"name": "콘텐츠 기업·창작자 지원사업", "description": "한국콘텐츠진흥원의 제작·사업화 지원사업 공고를 적용합니다."},
-      "scholarship": {"name": "장학금·학자금 지원", "description": "한국장학재단의 국가장학금과 학자금대출 지원 정보를 적용합니다."}
     }
   },
   "plugins": {

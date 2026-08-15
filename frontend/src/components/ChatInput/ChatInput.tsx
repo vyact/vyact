@@ -30,6 +30,15 @@ import KnowledgeCollectionsModal from '../KnowledgeCollectionsModal/KnowledgeCol
 import ApprovalControl from './ApprovalControl';
 import Gov24DataModal from '../Gov24DataModal';
 
+const EXTERNAL_DATA_SOURCES = [
+    {id: 'kr.gov24', nameKey: 'gov24', hasCollector: true},
+    {id: 'kr.biz_support', nameKey: 'bizSupport', hasCollector: true},
+    {id: 'kr.k_startup', nameKey: 'kStartup', hasCollector: true},
+    {id: 'kr.welfare', nameKey: 'welfare', hasCollector: true},
+] as const;
+
+type ExternalDataSource = (typeof EXTERNAL_DATA_SOURCES)[number];
+
 interface ChatInputProps {
     onSend: (message: string, images?: File[], fileAttachments?: FileAttachment[], selectedMcpIds?: string[], knowledgeCollectionId?: string, externalResourceIds?: string[]) => void | Promise<boolean>;
     onStop?: () => void;
@@ -95,7 +104,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                                  selectedPromptId = null,
                                                  onOpenSystemPromptSettings,
                                              }) => {
-    const {t, i18n} = useTranslation('main');
+    const {t, i18n} = useTranslation(['main', 'settings']);
     const {panel: codePanel} = useCodePanel();
     const panels = usePanelManager();
     const {sidePanels} = usePluginExtensions();
@@ -115,9 +124,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
     const [selectedKnowledgeCollectionId, setSelectedKnowledgeCollectionId] = useState('');
     const [knowledgeSourceTab, setKnowledgeSourceTab] = useState<'collections' | 'external'>('collections');
     const [selectedExternalResourceIds, setSelectedExternalResourceIds] = useState<string[]>([]);
-    const [gov24DocumentCount, setGov24DocumentCount] = useState(0);
+    const [enabledExternalSources, setEnabledExternalSources] = useState<ExternalDataSource[]>([]);
+    const [externalDocumentCounts, setExternalDocumentCounts] = useState<Record<string, number>>({});
     const [showKnowledgeCollectionsModal, setShowKnowledgeCollectionsModal] = useState(false);
     const [showGov24DataModal, setShowGov24DataModal] = useState(false);
+    const [browseExternalSource, setBrowseExternalSource] = useState<ExternalDataSource>(EXTERNAL_DATA_SOURCES[0]);
 
     useEffect(() => {
         const refresh = () => setKnowledgeCollections(getCachedKnowledgeCollections());
@@ -125,9 +136,24 @@ const ChatInput: React.FC<ChatInputProps> = ({
         return () => window.removeEventListener(KNOWLEDGE_COLLECTIONS_UPDATED_EVENT, refresh);
     }, []);
     const refreshExternalResources = () => {
-        void api.getGov24SyncStatus().then(status => {
-            setGov24DocumentCount(status.document_count || 0);
-        }).catch(() => setGov24DocumentCount(0));
+        void api.getExternalDataConnections().then(async ({connections}) => {
+            const enabledSources = EXTERNAL_DATA_SOURCES.filter(source =>
+                connections[source.id]?.enabled ?? source.id === 'kr.gov24',
+            );
+            setEnabledExternalSources(enabledSources);
+            const collectorSources = enabledSources.filter(source => source.hasCollector);
+            const statuses = await Promise.all(collectorSources.map(async source => {
+                try {
+                    return [source.id, (await api.getExternalSourceSyncStatus(source.id)).document_count || 0] as const;
+                } catch {
+                    return [source.id, 0] as const;
+                }
+            }));
+            setExternalDocumentCounts(Object.fromEntries(statuses));
+        }).catch(() => {
+            setEnabledExternalSources([]);
+            setExternalDocumentCounts({});
+        });
     };
     useEffect(() => {
         const openCollectionManager = () => setShowKnowledgeCollectionsModal(true);
@@ -541,14 +567,16 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                 className={`chat-system-prompt-select knowledge-source-select${selectedKnowledgeCollectionId || selectedExternalResourceIds.length ? ' is-selected' : ''}`}
                                 options={knowledgeSourceTab === 'collections'
                                     ? knowledgeCollections.map(collection => ({value: collection.id, label: collection.name}))
-                                    : gov24DocumentCount > 0
-                                        ? [{
-                                            value: 'kr.gov24',
-                                            label: t('knowledgeSources.gov24', {
-                                                count: new Intl.NumberFormat(i18n.resolvedLanguage || i18n.language).format(gov24DocumentCount),
-                                            }),
-                                        }]
-                                        : []}
+                                    : enabledExternalSources.map(source => {
+                                        const name = t(`externalData.sources.${source.nameKey}.name`, {ns: 'settings'});
+                                        const documentCount = externalDocumentCounts[source.id];
+                                        return {
+                                            value: source.id,
+                                            label: source.hasCollector && documentCount !== undefined
+                                                ? `${name} (${t('knowledgeSources.documentCount', {count: new Intl.NumberFormat(i18n.resolvedLanguage || i18n.language).format(documentCount)})})`
+                                                : name,
+                                        };
+                                    })}
                                 value={knowledgeSourceTab === 'collections'
                                     ? selectedKnowledgeCollectionId
                                     : selectedExternalResourceIds[0] || ''}
@@ -587,10 +615,15 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                 emptyState={<div className="custom-select-empty">{t(knowledgeSourceTab === 'collections' ? 'knowledgeCollections.empty' : 'knowledgeSources.noExternalData')}</div>}
                                 renderOption={knowledgeSourceTab === 'external' ? (option, isSelected) => <>
                                     <span className="custom-select-item-label">{option.label}</span>
-                                    <button type="button" className="knowledge-source-view-button" aria-label={t('knowledgeSources.externalSettings')} onClick={event => {
-                                        event.stopPropagation();
-                                        setShowGov24DataModal(true);
-                                    }}><Database size={15}/></button>
+                                    {(() => {
+                                        const source = EXTERNAL_DATA_SOURCES.find(item => item.id === option.value);
+                                        const canBrowse = Boolean(source?.hasCollector && externalDocumentCounts[option.value] > 0);
+                                        return canBrowse && source ? <button type="button" className="knowledge-source-view-button" aria-label={t('knowledgeSources.externalSettings')} onClick={event => {
+                                            event.stopPropagation();
+                                            setBrowseExternalSource(source);
+                                            setShowGov24DataModal(true);
+                                        }}><Database size={15}/></button> : null;
+                                    })()}
                                     {isSelected && <span className="custom-select-check">✓</span>}
                                 </> : undefined}
                                 renderTrigger={(_, open) => {
@@ -598,7 +631,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                     const sourceCount = (collection ? 1 : 0) + selectedExternalResourceIds.length;
                                     const label = sourceCount > 1
                                         ? t('knowledgeSources.selectedCount', {count: sourceCount})
-                                        : collection?.name || (selectedExternalResourceIds.length ? t('knowledgeSources.gov24Short') : t('knowledgeSources.select'));
+                                        : collection?.name || (selectedExternalResourceIds.length
+                                            ? t(`externalData.sources.${EXTERNAL_DATA_SOURCES.find(source => source.id === selectedExternalResourceIds[0])?.nameKey || 'gov24'}.name`, {ns: 'settings'})
+                                            : t('knowledgeSources.select'));
                                     return <><span className="custom-select-trigger-label">{label}</span><span className={`custom-select-arrow${open ? ' open' : ''}`}>▼</span></>;
                                 }}
                             />
@@ -664,7 +699,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 onDelete={async id => { await api.deleteKnowledgeCollection(id); updateCachedKnowledgeCollections(items => items.filter(item => item.id !== id)); setSelectedKnowledgeCollectionId(current => current === id ? '' : current); }}
                 onReorder={async collectionIds => { await api.reorderKnowledgeCollections(collectionIds); updateCachedKnowledgeCollections(items => collectionIds.map(id => items.find(item => item.id === id)).filter((item): item is KnowledgeCollection => Boolean(item))); }}
             />
-            <Gov24DataModal isOpen={showGov24DataModal} onClose={() => setShowGov24DataModal(false)}/>
+            <Gov24DataModal isOpen={showGov24DataModal} onClose={() => setShowGov24DataModal(false)} sourceId={browseExternalSource.id} sourceNameKey={browseExternalSource.nameKey}/>
 
             {/* 이미지 미리보기 */}
             {previewIndex !== null && attach.images[previewIndex] && (

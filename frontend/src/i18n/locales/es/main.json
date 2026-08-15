@@ -1051,7 +1051,7 @@
     "save": "Guardar",
     "cancel": "Cancelar"
   },
-  "knowledgeSources": {"select":"Seleccionar fuente de búsqueda","collections":"Colecciones","external":"Datos externos","searchExternal":"Buscar datos externos...","externalSettings":"Ajustes de datos externos","noExternalData":"No hay datos externos sincronizados.","gov24":"Government24 · Beneficios públicos ({{count}})","gov24Short":"Government24 · Beneficios públicos","selectedCount":"{{count}} fuentes"},
+  "knowledgeSources": {"select":"Seleccionar fuente de búsqueda","collections":"Colecciones","external":"Datos externos","searchExternal":"Buscar datos externos...","externalSettings":"Ajustes de datos externos","noExternalData":"No hay datos externos habilitados.","documentCount":"{{count}} elementos","gov24":"Government24 · Beneficios públicos ({{count}})","gov24Short":"Government24 · Beneficios públicos","selectedCount":"{{count}} fuentes"},
   "knowledgeCollectionSources": {
     "attachSources": "Adjuntar fuentes",
     "attachedCount": "{{count}} adjuntas",
