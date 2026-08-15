@@ -443,6 +443,11 @@
     background: color-mix(in srgb, var(--surface) 82%, transparent);
 }
 
+.chat-system-prompt-select .custom-select-item.selected,
+.chat-system-prompt-select .custom-select-item.selected:hover {
+    background: rgba(var(--accent-rgb, 205, 100, 72), .1);
+}
+
 .knowledge-source-tabs {
     display: grid;
     grid-template-columns: 1fr 1fr;
