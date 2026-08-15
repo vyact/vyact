@@ -332,11 +332,14 @@ class MCPManager:
         selected_server_ids = _request_server_ids.get()
         selected_server_types = _request_server_types.get()
         enabled_types: set[str] = set()
+        enabled_server_ids: set[str] = set()
         try:
             from services.mcp_config import list_servers
             for s in await list_servers():
                 if s.get("enabled") or (selected_server_ids and s.get("id") in selected_server_ids):
                     enabled_types.add(s.get("type"))
+                    if s.get("id"):
+                        enabled_server_ids.add(s["id"])
         except Exception as e:
             # 예전엔 조회 실패 시 "내부 tool 전체 노출"로 fail-open 했는데, 그러면 사용자가
             # MCP를 전부 꺼도 이 예외 한 번으로 모든 내부 tool이 다시 노출되어 불필요한
@@ -358,7 +361,10 @@ class MCPManager:
             srv = worker.server
             if srv is None:
                 continue
-            if selected_server_ids and worker.cfg.get("_server_id") not in selected_server_ids:
+            worker_server_id = worker.cfg.get("_server_id")
+            # 연결 해제는 background task라 OFF 직후 기존 worker가 잠시 남을 수 있다.
+            # 실제 LLM 노출 시점에는 영속 설정을 다시 확인해 fail-closed로 차단한다.
+            if worker_server_id not in enabled_server_ids:
                 continue
             for t in srv.tools:
                 schema = getattr(t, "inputSchema", None) or {"type": "object", "properties": {}}
@@ -387,6 +393,12 @@ class MCPManager:
                     "parameters": spec["parameters"],
                 },
             })
+        exposed_names = [tool["function"]["name"] for tool in out]
+        logger.info(
+            "[mcp] LLM tool exposure: count=%d enabled_types=%s selected_ids=%s tools=%s",
+            len(out), sorted(value for value in enabled_types if value),
+            sorted(selected_server_ids) if selected_server_ids else [], exposed_names,
+        )
         return out
 
     def has_tools(self) -> bool:

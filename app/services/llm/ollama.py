@@ -184,9 +184,36 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
     async def _run_round_blocking(client: httpx.AsyncClient, body: dict) -> dict:
         """비스트리밍 판정 라운드."""
         body = {**body, "stream": False}
-        resp = await client.post(
-            f"{OLLAMA_URL}/api/chat",
-            headers={"Content-Type": "application/json"}, json=body,
+        started_at = _time.monotonic()
+        tool_count = len(body.get("tools") or [])
+        logger.info(
+            "[tool_calls] Ollama 판정 요청 시작: model=%s messages=%d tools=%d",
+            body.get("model"), len(body.get("messages") or []), tool_count,
+        )
+
+        async def _log_waiting() -> None:
+            while True:
+                await asyncio.sleep(10)
+                logger.info(
+                    "[tool_calls] Ollama 판정 응답 대기 중: elapsed=%.1fs model=%s tools=%d",
+                    _time.monotonic() - started_at, body.get("model"), tool_count,
+                )
+
+        waiting_log_task = asyncio.create_task(_log_waiting())
+        try:
+            resp = await client.post(
+                f"{OLLAMA_URL}/api/chat",
+                headers={"Content-Type": "application/json"}, json=body,
+            )
+        finally:
+            waiting_log_task.cancel()
+            try:
+                await waiting_log_task
+            except asyncio.CancelledError:
+                pass
+        logger.info(
+            "[tool_calls] Ollama 판정 응답 완료: elapsed=%.1fs status=%d",
+            _time.monotonic() - started_at, resp.status_code,
         )
         resp.raise_for_status()
         data = resp.json()
@@ -241,6 +268,7 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
     decision_options = {**options, "num_predict": runtime["llm_num_predict"]}
     async with httpx.AsyncClient(timeout=timeout) as client:
         for _round in range(max_rounds):
+            logger.info("[tool_calls] 판정 라운드 시작: round=%d/%d", _round + 1, max_rounds)
             await _emit({"phase": "judging", "round": _round})
             body = {"model": model, "messages": work,
                     "tools": tools, "options": decision_options, "keep_alive": runtime["ollama_keep_alive"]}
