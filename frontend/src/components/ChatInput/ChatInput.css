@@ -398,19 +398,66 @@
     bottom: calc(100% + 6px);
     width: 320px;
     max-width: calc(100vw - 32px);
+    border-color: color-mix(in srgb, var(--border) 86%, var(--text));
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--surface2) 96%, var(--bg));
+    box-shadow: 0 18px 48px rgba(0, 0, 0, .38), 0 2px 8px rgba(0, 0, 0, .18);
+}
+
+.chat-system-prompt-select .custom-select-search {
+    gap: 8px;
+    padding: 10px;
+    background: transparent;
+}
+
+.chat-system-prompt-select .custom-select-search-field {
+    min-height: 38px;
+    padding: 0 12px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--surface) 58%, transparent);
+}
+
+.chat-system-prompt-select .custom-select-search-action {
+    width: 38px;
+    height: 38px;
+    flex-basis: 38px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--surface) 58%, transparent);
+}
+
+.chat-system-prompt-select .custom-select-list {
+    padding: 5px;
+}
+
+.knowledge-source-select .custom-select-list {
+    min-height: 220px;
+}
+
+.chat-system-prompt-select .custom-select-item {
+    min-height: 38px;
+    padding: 9px 11px;
+    border-radius: 9px;
+}
+
+.chat-system-prompt-select .custom-select-item:hover {
+    background: color-mix(in srgb, var(--surface) 82%, transparent);
 }
 
 .knowledge-source-tabs {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    padding: 6px;
-    border-bottom: 1px solid var(--border);
+    gap: 4px;
+    margin: 10px 10px 0;
+    padding: 4px;
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--bg) 42%, transparent);
 }
 
 .knowledge-source-tabs button {
-    padding: 7px 8px;
+    padding: 8px;
     border: 0;
-    border-radius: 6px;
+    border-radius: 8px;
     background: transparent;
     color: var(--muted);
     font-size: 12px;
@@ -423,20 +470,21 @@
 }
 
 .knowledge-source-tabs button.active {
-    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    background: color-mix(in srgb, var(--accent) 16%, var(--surface));
     color: var(--accent);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .18);
 }
 
 .knowledge-source-bulk-actions {
     display: flex;
     justify-content: flex-end;
-    gap: 6px;
-    padding: 6px 10px;
+    gap: 2px;
+    padding: 7px 10px 8px;
     border-bottom: 1px solid var(--border);
 }
 
 .knowledge-source-bulk-actions button {
-    padding: 3px 7px;
+    padding: 5px 8px;
     border: 0;
     border-radius: 6px;
     background: transparent;

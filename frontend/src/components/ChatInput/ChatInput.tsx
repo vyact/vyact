@@ -554,7 +554,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                 className={`chat-system-prompt-select${selectedPromptId ? ' is-selected' : ''}`}
                                 options={systemPrompts.map((prompt): SelectOption => ({value: prompt.id, label: prompt.title}))}
                                 value={selectedPromptId ?? ''}
-                                onChange={promptId => onSystemPromptSelect?.(promptId || null)}
+                                onChange={promptId => onSystemPromptSelect?.(promptId === selectedPromptId ? null : promptId || null)}
                                 placeholder={t('sidebar.promptSelect')}
                                 searchable
                                 searchPlaceholder={t('sidebar.promptSearch')}
@@ -617,8 +617,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                 searchPlaceholder={t(knowledgeSourceTab === 'collections' ? 'knowledgeCollections.search' : 'knowledgeSources.searchExternal')}
                                 clearable
                                 onClear={() => {
-                                    if (knowledgeSourceTab === 'collections') setSelectedKnowledgeCollectionIds([]);
-                                    else setSelectedExternalResourceIds([]);
+                                    setSelectedKnowledgeCollectionIds([]);
+                                    setSelectedExternalResourceIds([]);
                                 }}
                                 onOpen={refreshExternalResources}
                                 searchAction={<button type="button" className="custom-select-search-action"

@@ -6,8 +6,10 @@
 .approval-control__popover { position:absolute; z-index:40; bottom:calc(100% + 10px); left:0; width:min(310px, calc(100vw - 32px)); padding:8px; border:1px solid var(--border); border-radius:14px; background:var(--surface); box-shadow:0 18px 50px rgba(0,0,0,.45); }
 .approval-control__modes { display:grid; gap:3px; }
 .approval-control__mode { display:grid; grid-template-columns:30px minmax(0,1fr); align-items:center; border-radius:9px; }
-.approval-control__mode:has(>button:hover),.approval-control__mode:has(>button.selected) { background:var(--surface2); }
+.approval-control__mode:has(>button:hover) { background:var(--surface2); }
+.approval-control__mode:has(>button.selected) { background:color-mix(in srgb, var(--accent) 10%, transparent); }
 .approval-control__mode>button { display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; padding:11px 10px 11px 4px; border:0; background:transparent; color:var(--text); text-align:left; cursor:pointer; }
+.approval-control__mode>button.selected svg { color:var(--accent); }
 .approval-control__mode strong { font-size:13px; }
 .approval-control__help { position:relative; display:grid; place-items:center; width:30px; height:34px; color:var(--muted); outline:none; cursor:help; }
 .approval-control__help:hover,.approval-control__help:focus-visible { color:var(--accent); }

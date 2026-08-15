@@ -125,22 +125,40 @@
 .custom-select-search {
     padding: 8px;
     border-bottom: 1px solid var(--border);
-    background: var(--bg);
+    background: inherit;
     display: flex;
     align-items: center;
     gap: 6px;
 }
 
-.custom-select-search input {
+.custom-select-search-field {
     flex: 1;
     min-width: 0;
-    padding: 5px 9px;
-    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 10px;
+    background: color-mix(in srgb, var(--surface) 72%, transparent);
     border: 1px solid var(--border);
     border-radius: 6px;
+    transition: border-color .15s, background .15s, box-shadow .15s;
+}
+
+.custom-select-search input {
+    width: 100%;
+    min-width: 0;
+    padding: 7px 0;
+    background: transparent;
+    border: 0;
     color: var(--text);
     font-size: 12px;
     outline: none;
+}
+
+.custom-select-search-icon {
+    flex: 0 0 auto;
+    color: var(--muted);
+    opacity: .8;
 }
 
 .custom-select-search-action {
@@ -166,8 +184,14 @@
     color: var(--text);
 }
 
-.custom-select-search input:focus {
+.custom-select-search-field:focus-within {
     border-color: var(--accent);
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.custom-select-search-field:focus-within .custom-select-search-icon {
+    color: var(--accent);
 }
 
 .custom-select-search input::placeholder {

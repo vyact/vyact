@@ -31,6 +31,7 @@ const ApprovalControl = () => {
     const selectMode = (nextMode: ApprovalMode) => {
         saveApprovalMode(nextMode);
         setMode(nextMode);
+        setOpen(false);
     };
     const ShieldIcon = mode === 'trusted' ? ShieldAlert : mode === 'risky_only' ? ShieldCheck : Shield;
 

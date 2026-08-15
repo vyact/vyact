@@ -1,6 +1,6 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {createPortal} from 'react-dom';
-import {X} from 'lucide-react';
+import {Search, X} from 'lucide-react';
 import './CustomSelect.css';
 
 export interface SelectOption {
@@ -163,14 +163,17 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
             {header}
             {searchable && (
                 <div className="custom-select-search">
-                    <input
-                        ref={searchRef}
-                        type="text"
-                        placeholder={searchPlaceholder}
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        onClick={e => e.stopPropagation()}
-                    />
+                    <div className="custom-select-search-field">
+                        <Search className="custom-select-search-icon" size={15} aria-hidden="true"/>
+                        <input
+                            ref={searchRef}
+                            type="text"
+                            placeholder={searchPlaceholder}
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            onClick={e => e.stopPropagation()}
+                        />
+                    </div>
                     {searchAction && (
                         <span className="custom-select-search-action-slot" onClick={() => {
                             setOpen(false);
