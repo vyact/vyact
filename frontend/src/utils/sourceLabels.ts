@@ -11,8 +11,6 @@ export function getLocalizedSourceLabel(source: string | undefined, t: TFunction
         'bizinfo': 'bizSupport',
         'kr.k_startup': 'kStartup',
         'k-startup': 'kStartup',
-        'kr.welfare': 'welfare',
-        'welfare': 'welfare',
         'kr.housing': 'housing',
         'housing': 'housing',
         'kr.lh_lease_complex': 'lhLeaseComplex',

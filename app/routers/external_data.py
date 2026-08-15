@@ -51,13 +51,6 @@ from services.external_data.k_startup import (
     get_sync_status as get_k_startup_sync_status,
     start_synchronization as start_k_startup_synchronization,
 )
-from services.external_data.welfare import (
-    DAILY_REQUEST_LIMIT as WELFARE_REQUEST_LIMIT,
-    SYNC_STATUS_DOC_ID as WELFARE_STATUS_ID,
-    browse_documents as browse_welfare_documents,
-    get_sync_status as get_welfare_sync_status,
-    start_synchronization as start_welfare_synchronization,
-)
 from services.external_data.scheduler import (
     ALLOWED_INTERVAL_HOURS,
     DEFAULT_INTERVAL_HOURS,
@@ -77,7 +70,6 @@ SUPPORTED_SOURCE_IDS = {
     "kr.gov24",
     "kr.biz_support",
     "kr.k_startup",
-    "kr.welfare",
     "kr.housing",
     "kr.lh_lease_complex",
     "kr.lh_lease_notice",
@@ -86,7 +78,6 @@ SOURCE_STATUS_DOCUMENTS = {
     "kr.gov24": (GOV24_STATUS_ID, GOV24_REQUEST_LIMIT),
     "kr.biz_support": (BIZ_SUPPORT_STATUS_ID, BIZ_SUPPORT_REQUEST_LIMIT),
     "kr.k_startup": (K_STARTUP_STATUS_ID, K_STARTUP_REQUEST_LIMIT),
-    "kr.welfare": (WELFARE_STATUS_ID, WELFARE_REQUEST_LIMIT),
     "kr.housing": (HOUSING_STATUS_ID, HOUSING_REQUEST_LIMIT),
     "kr.lh_lease_complex": (LH_COMPLEX_STATUS_ID, LH_COMPLEX_REQUEST_LIMIT),
     "kr.lh_lease_notice": (LH_NOTICE_STATUS_ID, LH_NOTICE_REQUEST_LIMIT),
@@ -101,7 +92,6 @@ BROWSE_SOURCE_HANDLERS = {
     "kr.gov24": browse_documents,
     "kr.biz_support": browse_biz_support_documents,
     "kr.k_startup": browse_k_startup_documents,
-    "kr.welfare": browse_welfare_documents,
     "kr.housing": browse_housing_documents,
     "kr.lh_lease_complex": browse_lh_complex_documents,
     "kr.lh_lease_notice": browse_lh_notice_documents,
@@ -267,8 +257,6 @@ async def stream_all_external_data_sync():
         enabled_sources.append("kr.biz_support")
     if (connections.get("kr.k_startup") or {}).get("enabled", False):
         enabled_sources.append("kr.k_startup")
-    if (connections.get("kr.welfare") or {}).get("enabled", False):
-        enabled_sources.append("kr.welfare")
     if (connections.get("kr.housing") or {}).get("enabled", False):
         enabled_sources.append("kr.housing")
     for source_id in LH_SOURCE_HANDLERS:
@@ -286,8 +274,6 @@ async def stream_all_external_data_sync():
             started_any = start_biz_support_synchronization(service_key) or started_any
         if "kr.k_startup" in enabled_sources:
             started_any = start_k_startup_synchronization(service_key) or started_any
-        if "kr.welfare" in enabled_sources:
-            started_any = start_welfare_synchronization(service_key) or started_any
         if "kr.housing" in enabled_sources:
             started_any = start_housing_synchronization(service_key) or started_any
         for source_id, (_, start_callback, _, _) in LH_SOURCE_HANDLERS.items():
@@ -700,74 +686,6 @@ async def stream_k_startup_sync():
     async def event_stream():
         async for event in _single_source_status_stream(
             "kr.k_startup", lambda: start_k_startup_synchronization(service_key), get_k_startup_sync_status
-        ):
-            yield event
-
-    return StreamingResponse(
-        event_stream(),
-        media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
-    )
-
-
-@router.get("/external-data/sources/kr.welfare/sync")
-async def get_welfare_sync():
-    return await get_welfare_sync_status()
-
-
-@router.get("/external-data/sources/kr.welfare/documents")
-async def browse_welfare_data(
-    query: str = Query(default="", max_length=200),
-    cursor: str | None = Query(default=None, max_length=1000),
-):
-    search_after = None
-    if cursor:
-        try:
-            search_after = json.loads(cursor)
-            if not isinstance(search_after, list):
-                raise ValueError
-        except (json.JSONDecodeError, ValueError):
-            raise HTTPException(400, "Invalid pagination cursor.") from None
-    result = await browse_welfare_documents(query, search_after)
-    if result["next_cursor"] is not None:
-        result["next_cursor"] = json.dumps(result["next_cursor"], ensure_ascii=False)
-    return result
-
-
-@router.post("/external-data/sources/kr.welfare/sync")
-async def start_welfare_sync(wait: bool = Query(default=False)):
-    connections = await load_external_data_connections()
-    config = connections.get("kr.welfare") or {}
-    if not config.get("enabled", False):
-        raise HTTPException(400, "The external data source is disabled.")
-    service_key = (connections.get("kr.gov24") or {}).get("service_key", "")
-    if not service_key:
-        raise HTTPException(400, "A service key is required.")
-    if start_welfare_synchronization(service_key):
-        if wait:
-            return await _wait_for_synchronization(get_welfare_sync_status)
-        return {"status": "started"}
-    if wait:
-        return await _wait_for_synchronization(get_welfare_sync_status)
-    current_status = await get_welfare_sync_status()
-    if current_status.get("status") != "running":
-        current_status = {**current_status, "status": "running", "stage": "welfareList", "current": 0, "total": 0}
-    return {"status": "already_running", "sync_status": current_status}
-
-
-@router.post("/external-data/sources/kr.welfare/sync/events")
-async def stream_welfare_sync():
-    connections = await load_external_data_connections()
-    config = connections.get("kr.welfare") or {}
-    if not config.get("enabled", False):
-        raise HTTPException(400, "The external data source is disabled.")
-    service_key = (connections.get("kr.gov24") or {}).get("service_key", "")
-    if not service_key:
-        raise HTTPException(400, "A service key is required.")
-
-    async def event_stream():
-        async for event in _single_source_status_stream(
-            "kr.welfare", lambda: start_welfare_synchronization(service_key), get_welfare_sync_status
         ):
             yield event
 

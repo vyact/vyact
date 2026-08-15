@@ -12,7 +12,6 @@ from services.external_data.lh_lease_complex import INDEX_NAME as LH_COMPLEX_IND
 from services.external_data.lh_lease_notice import INDEX_NAME as LH_NOTICE_INDEX, SYNC_STATUS_DOC_ID as LH_NOTICE_STATUS_ID
 from services.external_data.k_startup import INDEX_NAME as K_STARTUP_INDEX, SYNC_STATUS_DOC_ID as K_STARTUP_STATUS_ID
 from services.external_data.quota import KOREA_TIMEZONE
-from services.external_data.welfare import INDEX_NAME as WELFARE_INDEX, SYNC_STATUS_DOC_ID as WELFARE_STATUS_ID
 
 logger = get_logger(__name__)
 
@@ -21,7 +20,6 @@ EXTERNAL_DATA_INDEXES = (
     GOV24_INDEX,
     BIZ_SUPPORT_INDEX,
     K_STARTUP_INDEX,
-    WELFARE_INDEX,
     HOUSING_INDEX,
     LH_COMPLEX_INDEX,
     LH_NOTICE_INDEX,
@@ -30,7 +28,6 @@ SYNC_STATUS_IDS = {
     GOV24_INDEX: GOV24_STATUS_ID,
     BIZ_SUPPORT_INDEX: BIZ_SUPPORT_STATUS_ID,
     K_STARTUP_INDEX: K_STARTUP_STATUS_ID,
-    WELFARE_INDEX: WELFARE_STATUS_ID,
     HOUSING_INDEX: HOUSING_STATUS_ID,
     LH_COMPLEX_INDEX: LH_COMPLEX_STATUS_ID,
     LH_NOTICE_INDEX: LH_NOTICE_STATUS_ID,

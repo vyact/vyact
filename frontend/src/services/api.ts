@@ -145,7 +145,7 @@ interface ApiSuccessResponse {
 
 export interface Gov24SyncStatusResponse {
     status: 'idle' | 'running' | 'completed' | 'failed';
-    stage?: 'list' | 'detail' | 'conditions' | 'announcements' | 'startupAnnouncements' | 'startupBusinesses' | 'welfareList' | 'welfareDetail' | 'housingRental' | 'housingSale' | 'lhLeaseComplex' | 'lhLeaseNotice' | 'indexing' | 'completed';
+    stage?: 'list' | 'detail' | 'conditions' | 'announcements' | 'startupAnnouncements' | 'startupBusinesses' | 'housingRental' | 'housingSale' | 'lhLeaseComplex' | 'lhLeaseNotice' | 'indexing' | 'completed';
     current?: number;
     total?: number;
     document_count?: number;

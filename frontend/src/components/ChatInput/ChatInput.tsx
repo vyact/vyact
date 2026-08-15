@@ -41,7 +41,6 @@ const EXTERNAL_DATA_SOURCES = [
     {id: 'kr.gov24', nameKey: 'gov24', hasCollector: true},
     {id: 'kr.biz_support', nameKey: 'bizSupport', hasCollector: true},
     {id: 'kr.k_startup', nameKey: 'kStartup', hasCollector: true},
-    {id: 'kr.welfare', nameKey: 'welfare', hasCollector: true},
     {id: 'kr.housing', nameKey: 'housing', hasCollector: true},
     {id: 'kr.lh_lease_complex', nameKey: 'lhLeaseComplex', hasCollector: true},
     {id: 'kr.lh_lease_notice', nameKey: 'lhLeaseNotice', hasCollector: true},

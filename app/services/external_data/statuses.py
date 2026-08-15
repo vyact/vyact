@@ -8,13 +8,11 @@ from services.external_data.k_startup import DAILY_REQUEST_LIMIT as STARTUP_LIMI
 from services.external_data.lh_lease_complex import DAILY_REQUEST_LIMIT as LH_COMPLEX_LIMIT, SYNC_STATUS_DOC_ID as LH_COMPLEX_STATUS_ID
 from services.external_data.lh_lease_notice import DAILY_REQUEST_LIMIT as LH_NOTICE_LIMIT, SYNC_STATUS_DOC_ID as LH_NOTICE_STATUS_ID
 from services.external_data.quota import DailyRequestQuota
-from services.external_data.welfare import DAILY_REQUEST_LIMIT as WELFARE_LIMIT, SYNC_STATUS_DOC_ID as WELFARE_STATUS_ID
 
 SOURCE_STATUS_DOCUMENTS = {
     "kr.gov24": (GOV24_STATUS_ID, GOV24_LIMIT),
     "kr.biz_support": (BIZ_STATUS_ID, BIZ_LIMIT),
     "kr.k_startup": (STARTUP_STATUS_ID, STARTUP_LIMIT),
-    "kr.welfare": (WELFARE_STATUS_ID, WELFARE_LIMIT),
     "kr.housing": (HOUSING_STATUS_ID, HOUSING_LIMIT),
     "kr.lh_lease_complex": (LH_COMPLEX_STATUS_ID, LH_COMPLEX_LIMIT),
     "kr.lh_lease_notice": (LH_NOTICE_STATUS_ID, LH_NOTICE_LIMIT),

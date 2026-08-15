@@ -50,7 +50,6 @@ from services.external_data.housing import SOURCE_ID as HOUSING_SOURCE_ID, searc
 from services.external_data.lh_lease_complex import SOURCE_ID as LH_COMPLEX_SOURCE_ID, search_candidates as search_lh_complex_candidates
 from services.external_data.lh_lease_notice import SOURCE_ID as LH_NOTICE_SOURCE_ID, search_candidates as search_lh_notice_candidates
 from services.external_data.k_startup import SOURCE_ID as K_STARTUP_SOURCE_ID, search_candidates as search_k_startup_candidates
-from services.external_data.welfare import SOURCE_ID as WELFARE_SOURCE_ID, search_candidates as search_welfare_candidates
 from services.external_data.settings import load_external_data_connections
 from services.external_data.selected_documents import load_selected_external_documents, merge_external_context_documents
 from services.external_data.messages import get_all_searches_failed_message
@@ -101,7 +100,7 @@ async def _with_response_style(system_prompt: str) -> str:
 async def _get_selected_external_context(question: str, resource_ids: list[str], document_selections: list[dict] | None = None) -> tuple[list[dict], str, bool, dict]:
     selected_ids = set(resource_ids)
     document_selections = document_selections or []
-    if not selected_ids.intersection({GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, WELFARE_SOURCE_ID, HOUSING_SOURCE_ID, LH_COMPLEX_SOURCE_ID, LH_NOTICE_SOURCE_ID}) and not document_selections:
+    if not selected_ids.intersection({GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, HOUSING_SOURCE_ID, LH_COMPLEX_SOURCE_ID, LH_NOTICE_SOURCE_ID}) and not document_selections:
         return [], "", True, {"failed_sources": [], "all_failed": False, "no_results": False}
     searches = []
     if GOV24_SOURCE_ID in selected_ids:
@@ -110,8 +109,6 @@ async def _get_selected_external_context(question: str, resource_ids: list[str],
         searches.append(("BizInfo", search_biz_support_candidates(question)))
     if K_STARTUP_SOURCE_ID in selected_ids:
         searches.append(("K-Startup", search_k_startup_candidates(question)))
-    if WELFARE_SOURCE_ID in selected_ids:
-        searches.append(("welfare", search_welfare_candidates(question)))
     if HOUSING_SOURCE_ID in selected_ids:
         searches.append(("housing", search_housing_candidates(question)))
     if LH_COMPLEX_SOURCE_ID in selected_ids:
@@ -512,7 +509,7 @@ async def query(req: QueryRequest):
         external_docs, external_instruction, inject_user_profile, external_status = await _get_selected_external_context(
             req.question, req.external_resource_ids, req.external_document_selections,
         )
-    external_selected = bool(req.external_document_selections or {GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, WELFARE_SOURCE_ID, HOUSING_SOURCE_ID, LH_COMPLEX_SOURCE_ID, LH_NOTICE_SOURCE_ID}.intersection(req.external_resource_ids))
+    external_selected = bool(req.external_document_selections or {GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, HOUSING_SOURCE_ID, LH_COMPLEX_SOURCE_ID, LH_NOTICE_SOURCE_ID}.intersection(req.external_resource_ids))
 
     if external_status["all_failed"]:
         result = {"answer": await _external_search_failure_answer(), "sources": [], "model": await get_model_name()}
@@ -801,7 +798,7 @@ async def query_stream(req: QueryRequest):
             config = await load_config_async()
             is_image_model = config.get("model_type") in ("image_gen", "image_edit") or model in IMAGE_MODEL_IDS
             knowledge_collection_ids = _selected_knowledge_collection_ids(req)
-            external_selected = bool(req.external_document_selections or {GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, WELFARE_SOURCE_ID, HOUSING_SOURCE_ID, LH_COMPLEX_SOURCE_ID, LH_NOTICE_SOURCE_ID}.intersection(req.external_resource_ids))
+            external_selected = bool(req.external_document_selections or {GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, HOUSING_SOURCE_ID, LH_COMPLEX_SOURCE_ID, LH_NOTICE_SOURCE_ID}.intersection(req.external_resource_ids))
             external_docs: list[dict] = []
             external_instruction = ""
             external_status = {"failed_sources": [], "all_failed": False, "no_results": False}

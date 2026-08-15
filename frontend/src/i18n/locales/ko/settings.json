@@ -39,8 +39,7 @@
     "syncing": "가져오는 중…",
     "syncStartFailed": "데이터 가져오기를 시작하지 못했습니다.",
     "syncFailed": "데이터를 가져오지 못했습니다. 서비스키와 API 권한을 확인해 주세요.",
-    "syncStages": {"list": "공공서비스 목록 가져오는 중", "detail": "상세정보 가져오는 중", "conditions": "지원조건 가져오는 중", "announcements": "지원사업 공고 가져오는 중", "startupAnnouncements": "창업 지원사업 공고 가져오는 중", "startupBusinesses": "창업 지원사업 소개 가져오는 중", "welfareList": "복지서비스 목록 가져오는 중", "welfareDetail": "복지서비스 상세정보 가져오는 중", "housingRental": "공공임대 모집공고 가져오는 중", "housingSale": "공공분양 모집공고 가져오는 중", "indexing": "검색 데이터 저장 중", "completed": "저장 완료"},
-    "welfare": {"trafficNotice": "개발계정은 일일 100회까지만 호출할 수 있습니다. 전체 상세정보를 동기화하려면 공공데이터포털에서 운영계정 트래픽 증액을 신청해 주세요.", "requestLimitExceeded": "복지서비스 API의 일일 요청 한도를 초과했습니다. 운영계정 트래픽을 증액하거나 한도가 초기화된 후 다시 시도해 주세요.", "syncFailed": "복지서비스 데이터를 가져오지 못했습니다. 서비스키와 해당 API 활용 권한을 확인해 주세요."},
+    "syncStages": {"list": "공공서비스 목록 가져오는 중", "detail": "상세정보 가져오는 중", "conditions": "지원조건 가져오는 중", "announcements": "지원사업 공고 가져오는 중", "startupAnnouncements": "창업 지원사업 공고 가져오는 중", "startupBusinesses": "창업 지원사업 소개 가져오는 중", "housingRental": "공공임대 모집공고 가져오는 중", "housingSale": "공공분양 모집공고 가져오는 중", "indexing": "검색 데이터 저장 중", "completed": "저장 완료"},
     "housing": {"trafficNotice": "최신 12개월 공고를 조회하며, 일일 1,000회 제한을 넘지 않도록 동기화당 최대 {{count}}회까지만 호출합니다.", "requestUsage": "API 호출 {{used}} / {{limit}}회", "syncFailed": "공공주택 모집공고를 가져오지 못했습니다. 서비스키, API 활용 권한 또는 호출 한도를 확인해 주세요."},
     "title": "외부 데이터",
     "description": "국가별 공공 데이터 소스를 연결하고 Vyact에서 검색할 데이터를 관리합니다.",
@@ -64,7 +63,6 @@
       "bizInfo": {"name": "기업마당", "description": "창업자, 소상공인 및 중소기업 대상 지원사업과 행사 정보를 검색합니다.", "steps": {"1": "기업마당 API 안내 페이지를 엽니다.", "2": "지원사업정보 API의 사용신청을 선택합니다.", "3": "신청 정보를 입력하고 등록합니다.", "4": "발급된 서비스 인증키를 확인합니다."}, "note": "지원사업 및 행사정보 API는 각각 신청이 필요할 수 있습니다."},
       "bizSupport": {"name": "중소기업·소상공인 지원사업", "description": "기업마당의 최신 정책자금·바우처·판로·고용 지원사업 공고를 적용합니다."},
       "kStartup": {"name": "예비창업자·스타트업 지원금", "description": "K-Startup의 창업 사업화 자금과 지원사업 공고를 적용합니다."},
-      "welfare": {"name": "개인 복지급여", "description": "복지로의 중앙부처 사회보장 급여와 복지서비스를 적용합니다."},
       "housing": {"name": "공공주택 모집공고", "description": "마이홈포털의 최신 공공임대·공공분양 모집공고를 적용합니다."},
       "lhLeaseComplex": {"name": "LH 임대주택단지", "description": "지역별 LH 임대단지의 보증금·월임대료·면적·세대수를 비교합니다."},
       "lhLeaseNotice": {"name": "LH 분양·임대공고", "description": "LH의 현재 분양·임대·주거복지 모집공고를 적용합니다."}

@@ -10,13 +10,11 @@ from services.external_data.housing import INDEX_NAME as HOUSING_INDEX
 from services.external_data.k_startup import INDEX_NAME as K_STARTUP_INDEX
 from services.external_data.lh_lease_complex import INDEX_NAME as LH_COMPLEX_INDEX
 from services.external_data.lh_lease_notice import INDEX_NAME as LH_NOTICE_INDEX
-from services.external_data.welfare import INDEX_NAME as WELFARE_INDEX
 
 SOURCE_INDEXES = {
     "kr.gov24": GOV24_INDEX,
     "kr.biz_support": BIZ_SUPPORT_INDEX,
     "kr.k_startup": K_STARTUP_INDEX,
-    "kr.welfare": WELFARE_INDEX,
     "kr.housing": HOUSING_INDEX,
     "kr.lh_lease_complex": LH_COMPLEX_INDEX,
     "kr.lh_lease_notice": LH_NOTICE_INDEX,

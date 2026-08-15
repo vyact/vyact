@@ -25,9 +25,6 @@ from services.external_data.lh_lease_notice import (
 from services.external_data.k_startup import (
     start_synchronization as start_k_startup_synchronization,
 )
-from services.external_data.welfare import (
-    start_synchronization as start_welfare_synchronization,
-)
 from services.external_data.settings import load_external_data_connections
 from services.external_data.statuses import load_sync_statuses
 
@@ -75,7 +72,6 @@ async def _run_due_synchronizations() -> None:
         "kr.gov24": (start_synchronization, "Government24"),
         "kr.biz_support": (start_biz_support_synchronization, "BizInfo support"),
         "kr.k_startup": (start_k_startup_synchronization, "K-Startup"),
-        "kr.welfare": (start_welfare_synchronization, "welfare"),
         "kr.housing": (start_housing_synchronization, "housing"),
         "kr.lh_lease_complex": (start_lh_complex_synchronization, "kr.lh_lease_complex"),
         "kr.lh_lease_notice": (start_lh_notice_synchronization, "kr.lh_lease_notice"),
