@@ -1015,6 +1015,8 @@
     "applicationDeadline": "申請期間",
     "injectedData": "注入データ ({{count}})",
     "injectedDataTitle": "注入データ",
+    "externalData": "外部データ ({{count}})",
+    "externalDataTitle": "外部データ",
     "count": "{{count}}件",
     "inputTokens": "入力トークン",
     "inputProcessing": "入力処理",

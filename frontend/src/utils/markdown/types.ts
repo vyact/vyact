@@ -15,8 +15,8 @@ export interface MessageProps {
     pdfFile?: string;
     pdfParams?: Message['pdfParams'];
     onPdfEdit?: (params: NonNullable<Message['pdfParams']>) => void;
-    injectedContext?: Array<{ source: string; title?: string; data: string }>;
-    onShowInjectedContext?: (ctx: Array<{ source: string; title?: string; data: string }>) => void;
+    injectedContext?: Array<{ source: string; title?: string; data: string; context_origin?: 'external_data' }>;
+    onShowInjectedContext?: (ctx: Array<{ source: string; title?: string; data: string; context_origin?: 'external_data' }>, kind?: 'injected' | 'external') => void;
     onOpenMemo?: (memoId: string) => void;
     isStreaming?: boolean;
     conversationId?: string;

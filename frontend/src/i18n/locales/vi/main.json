@@ -1015,6 +1015,8 @@
     "applicationDeadline": "Thời hạn đăng ký",
     "injectedData": "Dữ liệu đã chèn ({{count}})",
     "injectedDataTitle": "Dữ liệu đã chèn",
+    "externalData": "Dữ liệu bên ngoài ({{count}})",
+    "externalDataTitle": "Dữ liệu bên ngoài",
     "count": "{{count}} mục",
     "inputTokens": "Token đầu vào",
     "inputProcessing": "Xử lý đầu vào",

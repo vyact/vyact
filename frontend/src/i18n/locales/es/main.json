@@ -1015,6 +1015,8 @@
     "applicationDeadline": "Plazo de solicitud",
     "injectedData": "Datos inyectados ({{count}})",
     "injectedDataTitle": "Datos inyectados",
+    "externalData": "Datos externos ({{count}})",
+    "externalDataTitle": "Datos externos",
     "count": "{{count}}",
     "inputTokens": "Tokens de entrada",
     "inputProcessing": "Procesamiento de entrada",

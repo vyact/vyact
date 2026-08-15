@@ -1012,6 +1012,8 @@
     "applicationDeadline": "신청기한",
     "injectedData": "주입된 데이터 ({{count}})",
     "injectedDataTitle": "주입된 데이터",
+    "externalData": "외부 데이터 ({{count}})",
+    "externalDataTitle": "외부 데이터",
     "count": "{{count}}개",
     "inputTokens": "입력 토큰",
     "inputProcessing": "입력 처리",

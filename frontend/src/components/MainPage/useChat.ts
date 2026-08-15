@@ -636,7 +636,8 @@ export function useChat(deps: UseChatDeps) {
                                 .map((s: any) => ({
                                     source: s.source || s.title || '',
                                     title: s.title || '',
-                                    data: s.content || ''
+                                    data: s.content || '',
+                                    context_origin: s.context_origin,
                                 }));
                             const rawAnswer = data.answer ?? '';
                             const {body: fuBody, followups: fuList} = parseFollowups(rawAnswer);
@@ -751,6 +752,7 @@ export function useChat(deps: UseChatDeps) {
                     source: source.source || source.title || '',
                     title: source.title || '',
                     data: source.content,
+                    context_origin: source.context_origin,
                 }));
 
             const finalConvId = response.conv_id || requestConvId;

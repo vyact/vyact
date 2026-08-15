@@ -709,33 +709,32 @@ const Message: React.FC<MessageProps> = ({
                 );
             })()}
 
-            {role === 'assistant' && injectedContext && injectedContext.length > 0 && (
-                <div style={{
-                    marginTop: '6px', marginLeft: '16px',
-                    padding: '6px 12px',
-                    borderRadius: '8px',
-                    background: 'rgba(255, 160, 80, 0.07)',
-                    border: '1px solid rgba(255, 160, 80, 0.25)',
-                    display: 'inline-flex',
-                }}>
-                    <button
-                        onClick={() => onShowInjectedContext?.(injectedContext)}
-                        style={{
-                            display: 'inline-flex', alignItems: 'center', gap: '6px',
-                            background: 'none', border: 'none',
-                            padding: 0, fontSize: '12px',
-                            color: 'rgba(255, 160, 80, 0.9)', cursor: 'pointer',
-                        }}
+            {role === 'assistant' && injectedContext && injectedContext.length > 0 && (() => {
+                const injectedItems = injectedContext.filter(item => item.context_origin !== 'external_data');
+                const externalItems = injectedContext.filter(item => item.context_origin === 'external_data');
+                return <div className="message-context-actions">
+                    {injectedItems.length > 0 && <button
+                        className="message-context-action"
+                        onClick={() => onShowInjectedContext?.(injectedItems, 'injected')}
                     >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                              strokeWidth="2">
                             <circle cx="11" cy="11" r="8"/>
                             <line x1="21" y1="21" x2="16.65" y2="16.65"/>
                         </svg>
-                        {t('message.injectedData', {count: injectedContext.length})}
-                    </button>
-                </div>
-            )}
+                        {t('message.injectedData', {count: injectedItems.length})}
+                    </button>}
+                    {externalItems.length > 0 && <button
+                        className="message-context-action message-context-action--external"
+                        onClick={() => onShowInjectedContext?.(externalItems, 'external')}
+                    >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>
+                        </svg>
+                        {t('message.externalData', {count: externalItems.length})}
+                    </button>}
+                </div>;
+            })()}
 
             {pdfFile && (
                 <div className="message-export-file">

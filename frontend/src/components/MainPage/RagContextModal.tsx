@@ -11,11 +11,13 @@ interface InjectedContextItem {
     source: string;
     title?: string;
     data: string;
+    context_origin?: 'external_data';
 }
 
 interface RagContextModalProps {
     items: InjectedContextItem[];
     onClose: () => void;
+    kind?: 'injected' | 'external';
 }
 
 // source/title 문자열에서 언어를 추론 (파일명 확장자 or zip:xxx/yyy.js 패턴)
@@ -64,7 +66,7 @@ function formatPublicDataText(text: string): string {
         .trim();
 }
 
-const RagContextModal: React.FC<RagContextModalProps> = ({ items, onClose }) => {
+const RagContextModal: React.FC<RagContextModalProps> = ({ items, onClose, kind = 'injected' }) => {
     const { t } = useTranslation('main');
     const [activeIdx, setActiveIdx] = React.useState(0);
 
@@ -122,7 +124,7 @@ const RagContextModal: React.FC<RagContextModalProps> = ({ items, onClose }) => 
                             <line x1="21" y1="21" x2="16.65" y2="16.65"/>
                         </svg>
                         <span className="rag-context-title">
-                            {t('message.injectedDataTitle')}
+                            {t(kind === 'external' ? 'message.externalDataTitle' : 'message.injectedDataTitle')}
                         </span>
                         <span className="rag-context-count">{t('message.count', { count: items.length })}</span>
                     </div>

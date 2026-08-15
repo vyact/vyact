@@ -131,6 +131,9 @@ async def _get_selected_external_context(question: str, resource_ids: list[str],
             continue
         searched_candidates.extend(result)
     candidates = merge_external_context_documents(selected_candidates, searched_candidates)
+    # Keep the origin through response persistence so the client can present
+    # explicitly selected external data separately from ordinary RAG context.
+    candidates = [{**candidate, "context_origin": "external_data"} for candidate in candidates]
     custom_instruction = ""
     if isinstance(settings_result, dict):
         external_config = settings_result.get("kr.gov24") or {}

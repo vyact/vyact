@@ -10,6 +10,7 @@ import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
 import {api} from '../../services/api';
 import type {GoogleCalendarSelection} from '../../types/googleWorkspace';
 import type {DriveFile} from '../GoogleWorkspacePanel/DrivePanel';
+import type {Message} from '../../types';
 
 import {useModels} from './useModels';
 import {useConversation} from './useConversation';
@@ -123,7 +124,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
     }, []);
     const followupComposedRef = useRef('');
     const [showPdfModal, setShowPdfModal] = useState(false);
-    const [injectedContextModal, setInjectedContextModal] = useState<Array<{ source: string; title?: string; data: string }> | null>(null);
+    const [injectedContextModal, setInjectedContextModal] = useState<{items: Message['injectedContext']; kind: 'injected' | 'external'} | null>(null);
     const [showMemoModal, setShowMemoModal] = useState(false);
     const [showQuickMemoModal, setShowQuickMemoModal] = useState(false);
     const [memoInitialId, setMemoInitialId] = useState<string | undefined>(undefined);
@@ -164,8 +165,8 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
         setShowPdfModal(true);
     }, []);
 
-    const handleShowInjectedContext = useCallback((ctx: Array<{ source: string; title?: string; data: string }>) => {
-        setInjectedContextModal(ctx);
+    const handleShowInjectedContext = useCallback((items: NonNullable<Message['injectedContext']>, kind: 'injected' | 'external' = 'injected') => {
+        setInjectedContextModal({items, kind});
     }, []);
 
     const handleOpenMemo = useCallback((memoId: string) => {
@@ -787,7 +788,8 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                         {injectedContextModal && (
                             <React.Suspense fallback={null}>
                                 <RagContextModal
-                                    items={injectedContextModal}
+                                    items={injectedContextModal.items || []}
+                                    kind={injectedContextModal.kind}
                                     onClose={() => setInjectedContextModal(null)}
                                 />
                             </React.Suspense>

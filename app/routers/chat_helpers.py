@@ -252,7 +252,12 @@ def build_injected_context(sources: list[dict]) -> list[dict]:
     않으므로, 문서 청크를 저장해도 다음 턴의 토큰을 불필요하게 점유하지 않는다.
     """
     return [
-        {"source": s.get("source", s.get("title", "")), "title": s.get("title", ""), "data": s.get("content", "")}
+        {
+            "source": s.get("source", s.get("title", "")),
+            "title": s.get("title", ""),
+            "data": s.get("content", ""),
+            **({"context_origin": s["context_origin"]} if s.get("context_origin") else {}),
+        }
         for s in sources
         if s.get("content")
         and s.get("source") not in ("", None, "memo", "quicknote", "붙여넣기")

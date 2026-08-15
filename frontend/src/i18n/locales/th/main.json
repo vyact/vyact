@@ -1015,6 +1015,8 @@
     "applicationDeadline": "ระยะเวลาสมัคร",
     "injectedData": "ข้อมูลที่ป้อน ({{count}})",
     "injectedDataTitle": "ข้อมูลที่ป้อน",
+    "externalData": "ข้อมูลภายนอก ({{count}})",
+    "externalDataTitle": "ข้อมูลภายนอก",
     "count": "{{count}} รายการ",
     "inputTokens": "โทเค็นขาเข้า",
     "inputProcessing": "ประมวลผลขาเข้า",

@@ -1,9 +1,26 @@
 from routers.chat_helpers import (
+    build_injected_context,
     DIRECT_DOCUMENT_TOTAL_MAX_CHARS,
     build_assistant_message,
     limit_direct_document_contexts,
     unwrap_pasted_text,
 )
+
+
+def test_build_injected_context_preserves_external_data_origin():
+    context = build_injected_context([{
+        "source": "BizInfo",
+        "title": "지원 사업",
+        "content": "사업 내용",
+        "context_origin": "external_data",
+    }])
+
+    assert context == [{
+        "source": "BizInfo",
+        "title": "지원 사업",
+        "data": "사업 내용",
+        "context_origin": "external_data",
+    }]
 
 
 def test_unwrap_pasted_text_keeps_pasted_content_as_question():

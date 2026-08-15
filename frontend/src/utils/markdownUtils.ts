@@ -589,24 +589,14 @@ export const renderMarkdown = (text: string): string => {
 
     const flushTable = () => {
         const isShopTable = tableHeaders.includes('제품명') || tableHeaders.includes('이미지');
-        // 쇼핑 테이블: 콘텐츠 폭(가로 스크롤 허용). 일반 테이블: 고정 레이아웃으로
-        // 컬럼 폭을 강제 배분해 긴 코드/URL 셀이 표를 넘치게 하지 않는다.
+        // 쇼핑 테이블과 다열 일반 테이블은 최소 폭을 확보한 뒤 가로 스크롤한다.
+        // 컬럼 수가 많을 때 모든 열을 컨테이너 안에 억지로 압축하면 마지막 헤더가
+        // 글자 단위로 갈라지면서 헤더 행 전체가 비정상적으로 높아진다.
+        const minimumTableWidth = Math.max(560, tableHeaders.length * 140);
         const tableStyle = isShopTable
             ? 'width:max-content; min-width:100%; table-layout:auto;'
-            : 'width:100%; table-layout:fixed;';
-        // 일반 테이블은 첫 두 컬럼을 좁게 고정하고 마지막(설명) 컬럼이 나머지를 차지.
-        let colgroup = '';
-        if (!isShopTable && tableHeaders.length >= 2) {
-            const n = tableHeaders.length;
-            const cols: string[] = [];
-            for (let c = 0; c < n; c++) {
-                // 마지막 컬럼은 나머지 폭을 자동으로 차지(비워둠), 앞 컬럼들은 비율 고정
-                if (c === n - 1) cols.push('<col/>');
-                else cols.push(`<col style="width:${n === 2 ? 30 : n === 3 ? 22 : 18}%;"/>`);
-            }
-            colgroup = `<colgroup>${cols.join('')}</colgroup>`;
-        }
-        result.push(`<div style="overflow-x:auto; margin:16px 0; border-radius:8px; max-width:100%;"><table style="${tableStyle} border-collapse:collapse; background:var(--surface); border:none;">${colgroup}<tbody>${tableRows.join('')}</tbody></table></div>`);
+            : `width:100%; min-width:${minimumTableWidth}px; table-layout:fixed;`;
+        result.push(`<div class="markdown-table-scroll"><table style="${tableStyle} border-collapse:collapse; background:var(--surface); border:none;"><tbody>${tableRows.join('')}</tbody></table></div>`);
         tableRows = [];
         tableHeaders = [];
         tableAligns = [];
@@ -683,7 +673,10 @@ export const renderMarkdown = (text: string): string => {
                 // 구분선에서 파싱한 정렬이 있으면 우선. 없으면 헤더=center, 본문=left 기본.
                 const parsedAlign = tableAligns[ci];
                 const align = parsedAlign || (isHeader ? 'center' : 'left');
-                const baseStyle = `border:1px solid var(--border); padding:10px; background:${isHeader ? 'var(--surface2)' : 'transparent'}; text-align:${align}; font-size:14px; vertical-align:top; word-break:break-word; overflow-wrap:break-word;`;
+                const wrappingStyle = isHeader
+                    ? 'word-break:keep-all; overflow-wrap:normal;'
+                    : 'word-break:keep-all; overflow-wrap:anywhere;';
+                const baseStyle = `border:1px solid var(--border); padding:10px; background:${isHeader ? 'var(--surface2)' : 'transparent'}; text-align:${align}; font-size:14px; vertical-align:top; ${wrappingStyle}`;
                 let cellContent = cell;
                 if (!isHeader && colName === '리뷰수') {
                     const nums = cell.trim().replace(/[^0-9,]/g, '');

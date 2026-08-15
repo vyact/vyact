@@ -47,6 +47,18 @@
     padding-left: 24px !important;
 }
 
+.markdown-table-scroll {
+    max-width: 100%;
+    margin: 16px 0;
+    overflow-x: auto;
+    border-radius: 8px;
+}
+
+.markdown-table-scroll table th {
+    height: auto;
+    line-height: 1.45;
+}
+
 .msg-bubble table td,
 .msg-bubble table th {
     white-space: normal;
@@ -639,6 +651,10 @@
     to { transform: rotate(360deg); }
 }
 .generated-image-item { margin-bottom: 10px; }
+.message-context-actions { display:inline-flex; flex-wrap:wrap; gap:7px; margin-top:6px; margin-left:16px; }
+.message-context-action { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border:1px solid rgba(255,160,80,.25); border-radius:8px; background:rgba(255,160,80,.07); color:rgba(255,160,80,.9); cursor:pointer; font-size:12px; }
+.message-context-action:hover { background:rgba(255,160,80,.13); border-color:rgba(255,160,80,.42); }
+.message-context-action--external { border-color:color-mix(in srgb, var(--accent, #e07050) 42%, transparent); background:color-mix(in srgb, var(--accent, #e07050) 11%, transparent); }
 .generated-image-preview { display: block; max-width: 320px; max-height: 240px; border: 1px solid rgba(139, 92, 246, .3); border-radius: 10px; cursor: zoom-in; object-fit: cover; transition: opacity .2s; }
 .generated-image-preview:hover, .message-image-attachment:hover { opacity: .85; }
 .generated-image-download { display: inline-flex; align-items: center; gap: 5px; margin-top: 7px; padding: 5px 12px; border: 1px solid rgba(139, 92, 246, .3); border-radius: 7px; background: rgba(139, 92, 246, .1); color: #a78bfa; cursor: pointer; font-size: 12px; font-weight: 500; transition: background .15s; }

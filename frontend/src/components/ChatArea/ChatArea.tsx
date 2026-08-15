@@ -103,7 +103,7 @@ interface ChatAreaProps {
     imageGenMessage?: string;
     loadingMessage?: string;
     onPdfEdit?: (params: NonNullable<MessageType['pdfParams']>) => void;
-    onShowInjectedContext?: (ctx: Array<{ source: string; title?: string; data: string }>) => void;
+    onShowInjectedContext?: (ctx: NonNullable<MessageType['injectedContext']>, kind?: 'injected' | 'external') => void;
     onOpenMemo?: (memoId: string) => void;
     convId?: string;
     children?: React.ReactNode;

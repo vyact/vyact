@@ -1015,6 +1015,8 @@
     "applicationDeadline": "Période de candidature",
     "injectedData": "Données injectées ({{count}})",
     "injectedDataTitle": "Données injectées",
+    "externalData": "Données externes ({{count}})",
+    "externalDataTitle": "Données externes",
     "count": "{{count}}",
     "inputTokens": "Tokens d'entrée",
     "inputProcessing": "Traitement d'entrée",

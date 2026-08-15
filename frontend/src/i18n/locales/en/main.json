@@ -1012,6 +1012,8 @@
     "applicationDeadline": "Application period",
     "injectedData": "Injected data ({{count}})",
     "injectedDataTitle": "Injected data",
+    "externalData": "External data ({{count}})",
+    "externalDataTitle": "External data",
     "count": "{{count}}",
     "inputTokens": "Input tokens",
     "inputProcessing": "Input processing",

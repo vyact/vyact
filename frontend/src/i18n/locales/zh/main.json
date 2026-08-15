@@ -1015,6 +1015,8 @@
     "applicationDeadline": "申请期限",
     "injectedData": "注入数据 ({{count}})",
     "injectedDataTitle": "注入数据",
+    "externalData": "外部数据 ({{count}})",
+    "externalDataTitle": "外部数据",
     "count": "{{count}}项",
     "inputTokens": "输入词元",
     "inputProcessing": "输入处理",
