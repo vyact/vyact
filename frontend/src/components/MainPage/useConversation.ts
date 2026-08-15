@@ -22,6 +22,7 @@ export function useConversation() {
     // 이 ID들을 별도로 기억해 두면 다른 대화를 열어 목록을 재조회해도 항목이 사라지지 않는다.
     const optimisticConversationIdsRef = React.useRef<Set<string>>(new Set());
     const [historyTotal, setHistoryTotal] = useState<number>(0);
+    const [initialHistoryLoaded, setInitialHistoryLoaded] = useState(false);
     const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
     const HISTORY_PAGE = 20;
     const [currentConvId, setCurrentConvId] = useState<string>('');
@@ -190,6 +191,8 @@ export function useConversation() {
                 setHistoryTotal(serverTotal + optimisticConversationIdsRef.current.size);
             } catch (error) {
                 console.error('Failed to load history:', error);
+            } finally {
+                setInitialHistoryLoaded(true);
             }
         })();
         historyRequestRef.current = request;
@@ -334,7 +337,7 @@ export function useConversation() {
         messages, messagesRef,
         pendingArticles, setPendingArticles,
         setConvId, addLocalConversation, completeLocalConversation, setMessagesWithRef, setMessagesForConversation, getMessagesForConversation, mapMsg,
-        loadHistory, loadMoreHistory, historyTotal,
+        loadHistory, loadMoreHistory, historyTotal, initialHistoryLoaded,
         newConversation, clearConversation, loadConversation,
         deleteConversation, deleteAllConversations, deleteProjectConversations, setConversationFavorite,
     };

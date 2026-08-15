@@ -28,6 +28,7 @@ interface SidebarProps {
     conversations: Conversation[];
     favoriteConversations?: Conversation[];
     historyTotal?: number;
+    initialHistoryLoaded?: boolean;
     onLoadMoreHistory?: () => void;
     onRefreshHistory: () => Promise<void> | void;
     activeConvId: string;
@@ -233,6 +234,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                              onBeforeModelContextChange,
                                              conversations, favoriteConversations = [], activeConvId, activeConversationIds = [], onConversationSelect, onConversationDelete,
                                              historyTotal = 0, onLoadMoreHistory, onRefreshHistory,
+                                             initialHistoryLoaded = false,
                                              onDeleteAllConversations, onDeleteProjectConversations,
                                              onConversationRename, onConversationFavoriteChange, onNewConversation,
                                              onShowSummary = () => {},
@@ -249,12 +251,25 @@ const Sidebar: React.FC<SidebarProps> = ({
     const {t} = useTranslation('main');
     const [collapsedInternal] = useState(true);
     const [projects, setProjects] = useState<Project[]>([]);
+    const [projectsLoaded, setProjectsLoaded] = useState(false);
+    const projectsRequestRef = useRef<Promise<void> | null>(null);
     const [isProjectCreateOpen, setIsProjectCreateOpen] = useState(false);
     const [editingProject, setEditingProject] = useState<Project | null>(null);
     const [projectsExpanded, setProjectsExpanded] = useState(() => localStorage.getItem('sidebar-projects-expanded') !== 'false');
     const [expandedProjectIds, setExpandedProjectIds] = useState<Set<string>>(getStoredExpandedProjectIds);
     const [expandedProjectHistoryIds, setExpandedProjectHistoryIds] = useState<Set<string>>(new Set());
-    useEffect(() => { api.getProjects().then(data => setProjects(data.projects || [])).catch(console.error); }, []);
+    useEffect(() => {
+        if (!projectsRequestRef.current) {
+            const request = api.getProjects()
+                .then(data => setProjects(data.projects || []))
+                .catch(console.error)
+                .finally(() => {
+                    setProjectsLoaded(true);
+                    if (projectsRequestRef.current === request) projectsRequestRef.current = null;
+                });
+            projectsRequestRef.current = request;
+        }
+    }, []);
     const createProject = async (name: string, folderPaths: string[], color: string) => { const project = await api.createProject(name, folderPaths, color); setProjects(prev => [project, ...prev]); setProjectsExpanded(true); localStorage.setItem('sidebar-projects-expanded', 'true'); setExpandedProjectIds(previous => { const next = new Set(previous); next.add(project.id); storeExpandedProjectIds(next); return next; }); onProjectChange?.(project.id); onNewConversation(); };
     const saveProjectDetails = async (name: string, folderPaths: string[], color: string) => {
         if (!editingProject) return;
@@ -448,6 +463,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
     const showOverlay = collapsed && !!hoverOpenProp;
     const visualCollapsed = collapsed && !showOverlay;
+    const sidebarHistoryReady = initialHistoryLoaded && projectsLoaded;
 
     return (
         <>
@@ -537,6 +553,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
                     </div>
 
+                    {sidebarHistoryReady && <>
                     {favoriteConversations.length > 0 && (
                         <section className="favorite-conversations" aria-label={t('sidebar.favoriteConversations')}>
                             <div className="sec-label">{t('sidebar.favoriteConversations')}</div>
@@ -813,6 +830,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                             )}
                         </div>
                     </div>
+                    </>}
                 </>
             )}
 
