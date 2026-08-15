@@ -251,12 +251,22 @@ def build_injected_context(sources: list[dict]) -> list[dict]:
     이 데이터는 UI의 "주입된 데이터" 모달 전용이다. 대화 이력에 다시 주입하지
     않으므로, 문서 청크를 저장해도 다음 턴의 토큰을 불필요하게 점유하지 않는다.
     """
+    external_document_keys = (
+        "id", "external_resource_id", "url", "source_modified_at",
+        "application_deadline", "application_end_date", "deadline_kind",
+        "agency", "target", "category", "user_type", "support_type",
+        "summary", "purpose", "selection_criteria", "application_method",
+        "required_documents", "contact", "attachments", "record_type",
+        "application_url", "created_at", "view_count",
+    )
     return [
         {
             "source": s.get("source", s.get("title", "")),
             "title": s.get("title", ""),
             "data": s.get("content", ""),
             **({"context_origin": s["context_origin"]} if s.get("context_origin") else {}),
+            **({"external_document": {key: s.get(key) for key in external_document_keys}}
+               if s.get("context_origin") == "external_data" else {}),
         }
         for s in sources
         if s.get("content")

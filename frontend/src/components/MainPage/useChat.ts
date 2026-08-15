@@ -638,6 +638,7 @@ export function useChat(deps: UseChatDeps) {
                                     title: s.title || '',
                                     data: s.content || '',
                                     context_origin: s.context_origin,
+                                    external_document: s.external_document || (s.context_origin === 'external_data' ? s : undefined),
                                 }));
                             const rawAnswer = data.answer ?? '';
                             const {body: fuBody, followups: fuList} = parseFollowups(rawAnswer);
@@ -753,6 +754,7 @@ export function useChat(deps: UseChatDeps) {
                     title: source.title || '',
                     data: source.content,
                     context_origin: source.context_origin,
+                    external_document: source.external_document || (source.context_origin === 'external_data' ? source : undefined),
                 }));
 
             const finalConvId = response.conv_id || requestConvId;

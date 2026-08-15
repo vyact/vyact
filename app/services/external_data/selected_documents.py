@@ -24,7 +24,8 @@ CONTEXT_FIELDS = (
     "title", "agency", "target", "category", "user_type", "support_type", "summary",
     "purpose", "content", "content_text", "selection_criteria", "application_method",
     "required_documents", "contact", "application_deadline", "application_end_date",
-    "source_modified_at", "source_url", "raw",
+    "source_modified_at", "source_url", "application_url", "record_type", "created_at",
+    "view_count", "attachments", "raw",
 )
 
 

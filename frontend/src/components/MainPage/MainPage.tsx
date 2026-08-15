@@ -11,6 +11,7 @@ import {api} from '../../services/api';
 import type {GoogleCalendarSelection} from '../../types/googleWorkspace';
 import type {DriveFile} from '../GoogleWorkspacePanel/DrivePanel';
 import type {Message} from '../../types';
+import type {Gov24Document} from '../../services/api';
 
 import {useModels} from './useModels';
 import {useConversation} from './useConversation';
@@ -39,7 +40,140 @@ const CommandPalette = React.lazy(() => import('./CommandPalette'));
 const ShortcutModal = React.lazy(() => import('./ShortcutModal'));
 const SupportModal = React.lazy(() => import('../common/SupportModal/SupportModal'));
 const RagContextModal = React.lazy(() => import('./RagContextModal'));
+const Gov24DataModal = React.lazy(() => import('../Gov24DataModal'));
 const DownloadModal = React.lazy(() => import('./DownloadModal'));
+
+const EXTERNAL_SOURCE_NAMES: Record<string, string> = {
+    Government24: 'gov24',
+    BizInfo: 'bizSupport',
+    'K-Startup': 'kStartup',
+    MyHome: 'housing',
+    LH: 'lhLeaseNotice',
+    'kr.gov24': 'gov24',
+    'kr.biz_support': 'bizSupport',
+    'kr.k_startup': 'kStartup',
+    'kr.housing': 'housing',
+    'kr.lh_lease_complex': 'lhLeaseComplex',
+    'kr.lh_lease_notice': 'lhLeaseNotice',
+};
+
+const EXTERNAL_SOURCE_IDS: Record<string, string> = {
+    Government24: 'kr.gov24',
+    BizInfo: 'kr.biz_support',
+    'K-Startup': 'kr.k_startup',
+    MyHome: 'kr.housing',
+    LH: 'kr.lh_lease_notice',
+};
+
+const EXTERNAL_SECTION_LABELS = [
+    '공고명', '사업명', '소관기관', '주관기관', '수행기관', '사업개요', '공고내용',
+    '사업소개', '분야', '지원분야', '지원대상', '대상', '신청기간', '접수기간',
+    '신청기한', '신청방법', '선정기준', '필요서류', '문의처', '지원내용',
+    '지원지역', '사업연도',
+] as const;
+
+const parseExternalDataRecord = (data: string): Record<string, unknown> => {
+    try {
+        const parsed = JSON.parse(data);
+        return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+            ? parsed as Record<string, unknown>
+            : {};
+    } catch {
+        return {};
+    }
+};
+
+const parseExternalDataSections = (data: string): Record<string, string> => {
+    const record = parseExternalDataRecord(data);
+    if (Object.keys(record).length) {
+        return {
+            공고명: String(record.title || ''),
+            소관기관: String(record.agency || ''),
+            사업개요: String(record.summary || record.purpose || ''),
+            분야: String(record.category || ''),
+            지원지역: String(record.support_region || ''),
+            지원대상: String(record.target || record.user_type || ''),
+            신청기간: String(record.application_deadline || ''),
+            신청방법: String(record.application_method || ''),
+            선정기준: String(record.selection_criteria || ''),
+            필요서류: String(record.required_documents || ''),
+            문의처: String(record.contact || ''),
+            지원내용: String(record.content || record.content_text || ''),
+            사업연도: String(record.source_modified_at || ''),
+        };
+    }
+    const labels = new Set<string>(EXTERNAL_SECTION_LABELS);
+    const lines = data.replace(/\r\n?/g, '\n').split('\n');
+    const sections: Record<string, string> = {};
+    let activeLabel = '';
+    for (const rawLine of lines) {
+        const line = rawLine.trim();
+        if (labels.has(line)) {
+            activeLabel = line;
+            sections[activeLabel] = '';
+            continue;
+        }
+        if (!activeLabel || !line) continue;
+        sections[activeLabel] = sections[activeLabel]
+            ? `${sections[activeLabel]}\n${line}`
+            : line;
+    }
+    return sections;
+};
+
+const firstSection = (sections: Record<string, string>, ...labels: string[]) =>
+    labels.map(label => sections[label]).find(Boolean) || '';
+
+const extractApplicationEndDate = (deadline: string): string | null => {
+    const dates = [...deadline.matchAll(/(20\d{2})[.\-/년]\s*(\d{1,2})[.\-/월]\s*(\d{1,2})/g)];
+    const lastDate = dates[dates.length - 1];
+    if (!lastDate) return null;
+    const [, year, month, day] = lastDate;
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+};
+
+const getExternalModalDocuments = (items: NonNullable<Message['injectedContext']>) => items.map((item, index) => {
+    const metadata = item.external_document || {};
+    const dataRecord = parseExternalDataRecord(item.data);
+    const sections = parseExternalDataSections(item.data);
+    const sourceId = String(metadata.external_resource_id || EXTERNAL_SOURCE_IDS[item.source] || `external-${item.source}`);
+    const sourceNameKey = EXTERNAL_SOURCE_NAMES[sourceId] || EXTERNAL_SOURCE_NAMES[item.source] || 'gov24';
+    const rawValue = (key: string) => metadata[key] ?? dataRecord[key];
+    const value = (key: string) => String(rawValue(key) || '');
+    const applicationDeadline = value('application_deadline') || firstSection(sections, '신청기간', '접수기간', '신청기한');
+    const recordType = value('record_type') || (sourceId === 'kr.k_startup'
+        ? (firstSection(sections, '사업연도') ? 'business' : 'announcement')
+        : '');
+    return {
+        sourceId,
+        sourceNameKey,
+        document: {
+            id: value('id') || `${sourceId}-${index}`,
+            title: item.title || item.source,
+            agency: value('agency') || firstSection(sections, '소관기관', '주관기관', '수행기관'),
+            target: value('target') || firstSection(sections, '지원대상', '대상'),
+            category: value('category') || firstSection(sections, '분야', '지원분야'),
+            user_type: value('user_type'),
+            support_type: value('support_type') || firstSection(sections, '지원지역'),
+            application_deadline: applicationDeadline,
+            application_end_date: value('application_end_date') || extractApplicationEndDate(applicationDeadline),
+            source_url: value('url') || value('source_url'),
+            application_url: value('application_url'),
+            source_modified_at: value('source_modified_at') || firstSection(sections, '사업연도'),
+            record_type: recordType as Gov24Document['record_type'],
+            created_at: value('created_at'),
+            view_count: typeof rawValue('view_count') === 'number' ? rawValue('view_count') as number : null,
+            summary: value('summary') || firstSection(sections, '사업개요', '사업소개'),
+            purpose: value('purpose'),
+            content: value('content_text') || value('content') || item.data,
+            selection_criteria: value('selection_criteria') || firstSection(sections, '선정기준'),
+            application_method: value('application_method') || firstSection(sections, '신청방법'),
+            required_documents: value('required_documents') || firstSection(sections, '필요서류'),
+            contact: value('contact') || firstSection(sections, '문의처'),
+            attachments: Array.isArray(rawValue('attachments')) ? rawValue('attachments') as Gov24Document['attachments'] : [],
+        } satisfies Gov24Document,
+    };
+});
 
 function getStoredSidebarCollapsed(): boolean {
     try {
@@ -787,11 +921,18 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
 
                         {injectedContextModal && (
                             <React.Suspense fallback={null}>
-                                <RagContextModal
-                                    items={injectedContextModal.items || []}
-                                    kind={injectedContextModal.kind}
-                                    onClose={() => setInjectedContextModal(null)}
-                                />
+                                {injectedContextModal.kind === 'external' ? (
+                                    <Gov24DataModal
+                                        isOpen
+                                        providedDocuments={getExternalModalDocuments(injectedContextModal.items || [])}
+                                        onClose={() => setInjectedContextModal(null)}
+                                    />
+                                ) : (
+                                    <RagContextModal
+                                        items={injectedContextModal.items || []}
+                                        onClose={() => setInjectedContextModal(null)}
+                                    />
+                                )}
                             </React.Suspense>
                         )}
 

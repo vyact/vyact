@@ -12,6 +12,7 @@ interface InjectedContextItem {
     title?: string;
     data: string;
     context_origin?: 'external_data';
+    external_document?: Record<string, unknown>;
 }
 
 interface RagContextModalProps {

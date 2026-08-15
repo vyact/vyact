@@ -130,6 +130,25 @@ async def _get_selected_external_context(question: str, resource_ids: list[str],
             failed_sources.append(source_name)
             continue
         searched_candidates.extend(result)
+    # Candidate search results are intentionally compact for the LLM. Re-load the
+    # matching records once so response inspection can render the same complete
+    # detail view (attachments, source URL, record type, etc.) as the data browser.
+    if searched_candidates:
+        hydrated_candidates = await load_selected_external_documents([{
+            "source_id": candidate.get("external_resource_id"),
+            "document_id": candidate.get("id"),
+        } for candidate in searched_candidates])
+        hydrated_by_identity = {
+            (item.get("external_resource_id"), item.get("id")): item
+            for item in hydrated_candidates
+        }
+        searched_candidates = [
+            hydrated_by_identity.get(
+                (candidate.get("external_resource_id"), candidate.get("id")),
+                candidate,
+            )
+            for candidate in searched_candidates
+        ]
     candidates = merge_external_context_documents(selected_candidates, searched_candidates)
     # Keep the origin through response persistence so the client can present
     # explicitly selected external data separately from ordinary RAG context.

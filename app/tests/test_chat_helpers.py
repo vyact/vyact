@@ -20,6 +20,17 @@ def test_build_injected_context_preserves_external_data_origin():
         "title": "지원 사업",
         "data": "사업 내용",
         "context_origin": "external_data",
+        "external_document": {
+            "id": None, "external_resource_id": None, "url": None,
+            "source_modified_at": None, "application_deadline": None,
+            "application_end_date": None, "deadline_kind": None,
+            "agency": None, "target": None, "category": None,
+            "user_type": None, "support_type": None, "summary": None,
+            "purpose": None, "selection_criteria": None,
+            "application_method": None, "required_documents": None,
+            "contact": None, "attachments": None, "record_type": None,
+            "application_url": None, "created_at": None, "view_count": None,
+        },
     }]
 
 

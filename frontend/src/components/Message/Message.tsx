@@ -712,6 +712,20 @@ const Message: React.FC<MessageProps> = ({
             {role === 'assistant' && injectedContext && injectedContext.length > 0 && (() => {
                 const injectedItems = injectedContext.filter(item => item.context_origin !== 'external_data');
                 const externalItems = injectedContext.filter(item => item.context_origin === 'external_data');
+                const externalItemsWithSourceLinks = externalItems.map(item => {
+                    const matchingArticle = articleSources?.find(article =>
+                        article.title?.trim() === item.title?.trim()
+                        && (!item.source || !article.source || article.source === item.source),
+                    );
+                    if (!matchingArticle?.url || item.external_document?.url) return item;
+                    return {
+                        ...item,
+                        external_document: {
+                            ...item.external_document,
+                            url: matchingArticle.url,
+                        },
+                    };
+                });
                 return <div className="message-context-actions">
                     {injectedItems.length > 0 && <button
                         className="message-context-action"
@@ -726,7 +740,7 @@ const Message: React.FC<MessageProps> = ({
                     </button>}
                     {externalItems.length > 0 && <button
                         className="message-context-action message-context-action--external"
-                        onClick={() => onShowInjectedContext?.(externalItems, 'external')}
+                        onClick={() => onShowInjectedContext?.(externalItemsWithSourceLinks, 'external')}
                     >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>

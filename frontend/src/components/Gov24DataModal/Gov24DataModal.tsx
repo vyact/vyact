@@ -15,6 +15,11 @@ interface Gov24DataModalProps {
     sources?: ReadonlyArray<{id: string; nameKey: string}>;
     selectedDocuments?: ExternalDocumentSelection[];
     onToggleDocument?: (document: ExternalDocumentSelection) => void;
+    providedDocuments?: ReadonlyArray<{
+        document: Gov24Document;
+        sourceId: string;
+        sourceNameKey: string;
+    }>;
 }
 
 type BrowserDocument = Gov24Document & {
@@ -23,9 +28,11 @@ type BrowserDocument = Gov24Document & {
     browserSourceNameKey: string;
 };
 
+const isDisplayCategory = (value: string | undefined) => Boolean(value && !/^[a-z][a-z0-9_]*_tab\d+$/i.test(value));
+
 const ALL_EXTERNAL_CURSOR_KEY = 'all';
 
-const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose, sourceId = 'kr.gov24', sourceNameKey = 'gov24', sources, selectedDocuments = [], onToggleDocument}) => {
+const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose, sourceId = 'kr.gov24', sourceNameKey = 'gov24', sources, selectedDocuments = [], onToggleDocument, providedDocuments}) => {
     const {t, i18n} = useTranslation('settings');
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -41,6 +48,7 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose, sourceI
     const sourceConfigs = sources?.length ? sources : [{id: sourceId, nameKey: sourceNameKey}];
     const sourceConfigKey = sourceConfigs.map(source => `${source.id}:${source.nameKey}`).join('|');
     const isAllSources = Boolean(sources?.length);
+    const isProvidedData = Boolean(providedDocuments);
     const attachSource = (items: Gov24Document[], source: {id: string; nameKey: string}): BrowserDocument[] => items.map(document => ({
         ...document,
         browserKey: `${source.id}:${document.id}`,
@@ -67,6 +75,26 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose, sourceI
         const requestId = ++requestIdRef.current;
         queueMicrotask(() => {
             if (requestId !== requestIdRef.current) return;
+            if (providedDocuments) {
+                const normalizedQuery = debouncedQuery.trim().toLocaleLowerCase();
+                const provided = providedDocuments
+                    .filter(({document}) => !normalizedQuery || [document.title, document.agency, document.target, document.content]
+                        .some(value => value?.toLocaleLowerCase().includes(normalizedQuery)))
+                    .map(({document, sourceId: documentSourceId, sourceNameKey: documentSourceNameKey}) => ({
+                        ...document,
+                        browserKey: `${documentSourceId}:${document.id}`,
+                        browserSourceId: documentSourceId,
+                        browserSourceNameKey: documentSourceNameKey,
+                    }));
+                setDocuments(provided);
+                setTotal(provided.length);
+                setNextCursors({});
+                setSelectedId(current => provided.some(document => document.browserKey === current)
+                    ? current : provided[0]?.browserKey || '');
+                setLoading(false);
+                setError(false);
+                return;
+            }
             setLoading(true);
             setError(false);
             const source = sourceConfigs[0];
@@ -96,7 +124,7 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose, sourceI
         return () => {
             if (requestId === requestIdRef.current) requestIdRef.current += 1;
         };
-    }, [debouncedQuery, isOpen, sourceConfigKey]);
+    }, [debouncedQuery, isOpen, sourceConfigKey, providedDocuments]);
 
     useEffect(() => {
         if (detailScrollRef.current) detailScrollRef.current.scrollTop = 0;
@@ -115,7 +143,7 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose, sourceI
     const selectedDocument = documents.find(document => document.browserKey === selectedId) || documents[0];
     const isDocumentAttached = selectedDocument ? isSelectedDocument(selectedDocument) : false;
     const detailBadges = selectedDocument
-        ? [selectedDocument.category, selectedDocument.support_type]
+        ? [isDisplayCategory(selectedDocument.category) ? selectedDocument.category : '', selectedDocument.support_type]
             .map(value => value?.trim())
             .filter((value, index, values): value is string => Boolean(value) && values.indexOf(value) === index)
         : [];
@@ -138,6 +166,7 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose, sourceI
         return {kind: 'unknown', label: t('externalData.browser.unknownDate')};
     };
     const loadMore = async () => {
+        if (isProvidedData) return;
         if (isAllSources) {
             const cursor = nextCursors[ALL_EXTERNAL_CURSOR_KEY];
             if (!cursor || loadingMore) return;
@@ -185,10 +214,10 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose, sourceI
         <ModalOverlay className="gov24-browser-overlay" onClose={onClose} closeOnBackdrop={false} blur={3}>
             <div className="gov24-browser-modal" aria-labelledby="gov24-browser-title">
                 <header className="gov24-browser-header">
-                    <h2 id="gov24-browser-title">{isAllSources ? t('externalData.title') : t(`externalData.sources.${sourceNameKey}.name`)}</h2>
+                    <h2 id="gov24-browser-title">{isAllSources || isProvidedData ? t('externalData.title') : t(`externalData.sources.${sourceNameKey}.name`)}</h2>
                     <button type="button" onClick={onClose} aria-label={t('externalData.browser.close')}><X size={20}/></button>
                 </header>
-                <div className="gov24-browser-toolbar">
+                {!isProvidedData && <div className="gov24-browser-toolbar">
                     <label className="gov24-browser-search">
                         <Search size={17}/>
                         <input
@@ -209,9 +238,10 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose, sourceI
                         {searchQuery && <button type="button" onClick={() => setSearchQuery('')} aria-label={t('externalData.browser.clearSearch')}><X size={15}/></button>}
                     </label>
                     <span>{t('externalData.browser.resultCount', {count: numberFormatter.format(total)})}</span>
-                </div>
+                </div>}
                 <div className="gov24-browser-body">
                     <aside className="gov24-browser-list" onScroll={event => {
+                        if (isProvidedData) return;
                         const element = event.currentTarget;
                         if (element.scrollHeight - element.scrollTop - element.clientHeight < 160) void loadMore();
                     }}>
@@ -226,7 +256,7 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose, sourceI
                                                 <strong>{document.title}</strong>
                                                 <span className="gov24-browser-list-meta">
                                                     <time className={`gov24-browser-date is-${documentDate.kind}`}>{documentDate.label}</time>
-                                                    <span>{isAllSources ? t(`externalData.sources.${document.browserSourceNameKey}.name`) : document.agency || t('externalData.browser.unknownAgency')}</span>
+                                                    <span>{isAllSources || isProvidedData ? t(`externalData.sources.${document.browserSourceNameKey}.name`) : document.agency || t('externalData.browser.unknownAgency')}</span>
                                                 </span>
                                             </button>
                                             {onToggleDocument && <button type="button" className={`gov24-browser-list-attach${isAttached ? ' is-attached' : ''}`} onClick={() => toggleDocument(document)}>
@@ -234,7 +264,7 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose, sourceI
                                             </button>}
                                         </div>;
                                     })}
-                        {loadingMore && <div className="gov24-browser-loading-more">{t('externalData.browser.loadingMore')}</div>}
+                        {!isProvidedData && loadingMore && <div className="gov24-browser-loading-more">{t('externalData.browser.loadingMore')}</div>}
                     </aside>
                     <main className="gov24-browser-detail">
                         {selectedDocument ? <>

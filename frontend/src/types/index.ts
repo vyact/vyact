@@ -83,6 +83,7 @@ export interface InjectedContextItem {
     title?: string;
     data: string;
     context_origin?: 'external_data';
+    external_document?: Record<string, unknown>;
 }
 
 // Ollama 응답의 토큰수/처리시간 통계 (단위: eval_count류는 토큰 개수, duration류는 나노초)
