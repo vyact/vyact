@@ -82,10 +82,10 @@ as needing confirmation. Answer in the user's language.
 """.strip()
 
 
-async def _get_selected_external_context(question: str, resource_ids: list[str]) -> tuple[list[dict], str]:
+async def _get_selected_external_context(question: str, resource_ids: list[str]) -> tuple[list[dict], str, bool]:
     selected_ids = set(resource_ids)
     if not selected_ids.intersection({GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, WELFARE_SOURCE_ID, HOUSING_SOURCE_ID, LH_COMPLEX_SOURCE_ID, LH_NOTICE_SOURCE_ID}):
-        return [], ""
+        return [], "", True
     searches = []
     if GOV24_SOURCE_ID in selected_ids:
         searches.append(("Government24", search_gov24_candidates(question)))
@@ -113,16 +113,23 @@ async def _get_selected_external_context(question: str, resource_ids: list[str])
             continue
         candidates.extend(result)
     custom_instruction = ""
+    eligibility_profile = ""
     if isinstance(settings_result, dict):
-        custom_instruction = str((settings_result.get("kr.gov24") or {}).get("custom_instruction") or "").strip()
+        external_config = settings_result.get("kr.gov24") or {}
+        custom_instruction = str(external_config.get("custom_instruction") or "").strip()
+        eligibility_profile = str(external_config.get("eligibility_profile") or "").strip()
     instruction = EXTERNAL_DATA_INSTRUCTION
+    if eligibility_profile:
+        instruction = f"{instruction}\n\n[External-data eligibility profile]\n{eligibility_profile}"
     if custom_instruction:
         instruction = (
             f"{instruction}\n\n[User-configured external-data preferences]\n"
             "Apply these preferences only when they do not conflict with the mandatory eligibility, "
             f"deadline, and source-grounding rules above.\n{custom_instruction}"
         )
-    return candidates, instruction
+    # A saved external-data instruction replaces the general AI profile. Without one,
+    # preserve the normal profile as a useful fallback alongside the fixed safety rules.
+    return candidates, instruction, not bool(custom_instruction)
 
 
 def _new_conversation_title(conv_summary: str | None, fallback_question: str) -> str:
@@ -468,7 +475,7 @@ async def query(req: QueryRequest):
         result = {"answer": raw_answer, "sources": [], "model": await get_model_name()}
     else:
         knowledge_collection_ids = _selected_knowledge_collection_ids(req)
-        external_docs, external_instruction = await _get_selected_external_context(
+        external_docs, external_instruction, inject_user_profile = await _get_selected_external_context(
             req.question, req.external_resource_ids,
         )
         external_selected = bool({GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, WELFARE_SOURCE_ID, HOUSING_SOURCE_ID, LH_COMPLEX_SOURCE_ID, LH_NOTICE_SOURCE_ID}.intersection(req.external_resource_ids))
@@ -500,7 +507,8 @@ async def query(req: QueryRequest):
                                          extra_context=external_docs,
                                          skip_rag=external_selected and not knowledge_collection_ids,
                                          reasoning=req.reasoning, conv_id=conv_id, conversation_summary=conversation_summary,
-                                         call_reason="chat:url_context", knowledge_collection_ids=knowledge_collection_ids)
+                                         call_reason="chat:url_context", knowledge_collection_ids=knowledge_collection_ids,
+                                         inject_user_profile=inject_user_profile)
             combined_docs = file_context_docs + url_docs + rag_result.get("sources", [])
             raw_answer = await query_llm(
                 req.question, combined_docs, response_system_prompt,
@@ -508,6 +516,7 @@ async def query(req: QueryRequest):
                 format_instruction_override=None,
                 conversation_summary=conversation_summary,
                 reasoning=req.reasoning, call_reason="chat:url_context",
+                inject_user_profile=inject_user_profile,
             )
             result = {"answer": raw_answer, "sources": combined_docs, "model": await get_model_name()}
         else:
@@ -523,7 +532,8 @@ async def query(req: QueryRequest):
                                      extra_context=file_context_docs + external_docs,
                                      skip_rag=_has_file_att or (external_selected and not knowledge_collection_ids),
                                      reasoning=req.reasoning, conv_id=conv_id, conversation_summary=conversation_summary,
-                                     call_reason="chat:general", knowledge_collection_ids=knowledge_collection_ids)
+                                     call_reason="chat:general", knowledge_collection_ids=knowledge_collection_ids,
+                                     inject_user_profile=inject_user_profile)
 
     # 8) 요약 태그 추출 + 히스토리 저장
     from services.conv_summary import extract_summary_tags, save_conv_summary, append_attachment_summary
@@ -705,6 +715,8 @@ async def query_stream(req: QueryRequest):
 
             context_docs: list[dict] = []
             can_stream = False  # True면 아래 "실제 토큰 스트리밍"으로, False면 (C)/(D) 처리
+            selected_external_instruction = ""
+            inject_user_profile = True
 
             config = await load_config_async()
             is_image_model = config.get("model_type") in ("image_gen", "image_edit") or model in IMAGE_MODEL_IDS
@@ -735,7 +747,7 @@ async def query_stream(req: QueryRequest):
                     # URL 컨텍스트를 얻은 경우에만 본문을 추가한다. 실패한 URL은 원문 질문에
                     # 그대로 남으므로, 컨텍스트 없이 일반 채팅 경로로 LLM에 전달된다.
                     knowledge_collection_ids = _selected_knowledge_collection_ids(req)
-                    external_docs, external_instruction = await _get_selected_external_context(
+                    external_docs, external_instruction, inject_user_profile = await _get_selected_external_context(
                         clean_question, req.external_resource_ids,
                     )
                     url_system_prompt = system_prompt
@@ -747,9 +759,11 @@ async def query_stream(req: QueryRequest):
                                                  skip_rag=external_selected and not knowledge_collection_ids,
                                                  reasoning=req.reasoning, conv_id=conv_id, conversation_summary=conversation_summary,
                                                  call_reason="chat:url_context_stream",
-                                                 knowledge_collection_ids=knowledge_collection_ids)
+                                                 knowledge_collection_ids=knowledge_collection_ids,
+                                                 inject_user_profile=inject_user_profile)
                     context_docs = file_context_docs + url_docs + rag_result.get("sources", [])
                     docs_for_llm = context_docs
+                    selected_external_instruction = external_instruction
                     can_stream = True
 
             if not can_stream:
@@ -776,7 +790,7 @@ async def query_stream(req: QueryRequest):
                 )
                 external_selected = bool({GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, WELFARE_SOURCE_ID, HOUSING_SOURCE_ID, LH_COMPLEX_SOURCE_ID, LH_NOTICE_SOURCE_ID}.intersection(req.external_resource_ids))
                 knowledge_collection_ids = _selected_knowledge_collection_ids(req)
-                external_docs, external_instruction = await _get_selected_external_context(
+                external_docs, external_instruction, inject_user_profile = await _get_selected_external_context(
                     clean_question, req.external_resource_ids,
                 )
 
@@ -823,6 +837,7 @@ async def query_stream(req: QueryRequest):
                         format_instruction_override=_fmt_override,
                         call_reason="chat:general_stream",
                         knowledge_collection_ids=knowledge_collection_ids,
+                        inject_user_profile=inject_user_profile,
                 ):
                     if ev["type"] == "token":
                         emitted += ev["text"]
@@ -963,6 +978,8 @@ async def query_stream(req: QueryRequest):
                 selected_docs_system_prompt = (system_prompt if system_prompt else FORMAT_INSTRUCTION) + build_summary_instruction(
                     "", False, project_memory,
                 )
+            if selected_external_instruction:
+                selected_docs_system_prompt = f"{selected_docs_system_prompt}\n\n{selected_external_instruction}"
             # 선택된 문서/기사/URL 기반 질의 — 답은 이 context 안에서 나오므로 tool 판정 불필요
             async for ev in chat_stream_with_tools(
                     clean_question, docs_for_llm, selected_docs_system_prompt, image_attachments, req.messages,
@@ -972,6 +989,7 @@ async def query_stream(req: QueryRequest):
                     use_tools=False,
                     reasoning=req.reasoning,
                     call_reason="chat:selected_docs",
+                    inject_user_profile=inject_user_profile,
             ):
                 if ev.get("type") == "token":
                     token_text = ev.get("text", "")

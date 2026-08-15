@@ -50,6 +50,9 @@ const ExternalDataSection: React.FC = () => {
     const [savingSchedule, setSavingSchedule] = useState(false);
     const [autoDeleteExpiredEnabled, setAutoDeleteExpiredEnabled] = useState(false);
     const [savingCleanup, setSavingCleanup] = useState(false);
+    const [eligibilityProfile, setEligibilityProfile] = useState('');
+    const [savedEligibilityProfile, setSavedEligibilityProfile] = useState('');
+    const [savingEligibilityProfile, setSavingEligibilityProfile] = useState(false);
     const [customInstruction, setCustomInstruction] = useState('');
     const [savedCustomInstruction, setSavedCustomInstruction] = useState('');
     const [savingPrompt, setSavingPrompt] = useState(false);
@@ -73,6 +76,8 @@ const ExternalDataSection: React.FC = () => {
             setAutoSyncEnabled(schedule.enabled);
             setAutoSyncIntervalHours(schedule.interval_hours);
             setAutoDeleteExpiredEnabled(cleanup.enabled);
+            setEligibilityProfile(prompt?.eligibility_profile || '');
+            setSavedEligibilityProfile(prompt?.eligibility_profile || '');
             setCustomInstruction(prompt?.instruction || '');
             setSavedCustomInstruction(prompt?.instruction || '');
         }).catch(() => undefined);
@@ -267,6 +272,20 @@ const ExternalDataSection: React.FC = () => {
         }
     };
 
+    const saveEligibilityProfile = async () => {
+        setSavingEligibilityProfile(true);
+        try {
+            const result = await api.saveExternalDataEligibilityProfile(eligibilityProfile);
+            setEligibilityProfile(result.profile);
+            setSavedEligibilityProfile(result.profile);
+            toast.success(t('externalData.eligibilityProfileSaved'));
+        } catch {
+            toast.error(t('externalData.eligibilityProfileSaveFailed'));
+        } finally {
+            setSavingEligibilityProfile(false);
+        }
+    };
+
     const formatter = new Intl.NumberFormat(i18n.resolvedLanguage || i18n.language);
     const lastSync = syncStatus.last_successful_sync_at
         ? new Intl.DateTimeFormat(i18n.language, {dateStyle: 'medium', timeStyle: 'short'}).format(new Date(syncStatus.last_successful_sync_at))
@@ -286,6 +305,11 @@ const ExternalDataSection: React.FC = () => {
             <div className="external-data-key-form">
                 <div className="external-data-key-label-row"><label htmlFor="public-data-service-key">{t('externalData.serviceKey')}</label>{hasServiceKey && <span className="external-data-key-saved">✓ {t('externalData.serviceKeyConfigured')}</span>}</div>
                 <div className="external-data-key-input-row"><div className="external-data-key-input-wrap"><input id="public-data-service-key" type={showServiceKey ? 'text' : 'password'} value={serviceKey} placeholder={hasServiceKey ? t('externalData.serviceKeySavedPlaceholder') : t('externalData.serviceKeyPlaceholder')} autoComplete="off" onChange={event => setServiceKey(event.target.value)}/><button type="button" onClick={() => setShowServiceKey(value => !value)} aria-label={t(showServiceKey ? 'externalData.hideServiceKey' : 'externalData.showServiceKey')}>{showServiceKey ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div><button type="button" className="external-data-save-key" disabled={!serviceKey.trim() || savingKey} onClick={saveServiceKey}>{savingKey ? t('externalData.saving') : t('externalData.saveServiceKey')}</button></div>
+            </div>
+            <div className="external-data-prompt-form">
+                <div className="external-data-prompt-heading"><div><strong>{t('externalData.eligibilityProfileTitle')}</strong><p>{t('externalData.eligibilityProfileDescription')}</p></div><span>{eligibilityProfile.length} / 4,000</span></div>
+                <textarea value={eligibilityProfile} maxLength={4000} placeholder={t('externalData.eligibilityProfilePlaceholder')} onChange={event => setEligibilityProfile(event.target.value)}/>
+                <div className="external-data-prompt-actions"><button type="button" className="external-data-save-key" disabled={savingEligibilityProfile || eligibilityProfile === savedEligibilityProfile} onClick={() => void saveEligibilityProfile()}>{savingEligibilityProfile ? t('externalData.saving') : t('externalData.saveEligibilityProfile')}</button></div>
             </div>
             <div className="external-data-prompt-form">
                 <div className="external-data-prompt-heading"><div><strong>{t('externalData.promptTitle')}</strong><p>{t('externalData.promptDescription')}</p></div><span>{customInstruction.length} / 4,000</span></div>

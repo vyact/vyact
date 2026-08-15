@@ -1012,7 +1012,7 @@ export const api = {
         statuses: Record<string, Gov24SyncStatusResponse>;
         schedule: {enabled: boolean; interval_hours: number};
         cleanup: {enabled: boolean; cleanup_status: {status: string; cleanup_date?: string; deleted_count?: number}};
-        prompt: {instruction: string};
+        prompt: {instruction: string; eligibility_profile: string};
     }> {
         const res = await fetch(`${API_BASE}/external-data/bootstrap`);
         if (!res.ok) throw new Error(await res.text());
@@ -1084,6 +1084,16 @@ export const api = {
             body: JSON.stringify({instruction}),
         });
         if (!res.ok) throw new Error(`Failed to save external data prompt: ${res.status}`);
+        return res.json();
+    },
+
+    async saveExternalDataEligibilityProfile(profile: string): Promise<{profile: string}> {
+        const res = await fetch(`${API_BASE}/external-data/eligibility-profile`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({profile}),
+        });
+        if (!res.ok) throw new Error(`Failed to save external data eligibility profile: ${res.status}`);
         return res.json();
     },
 

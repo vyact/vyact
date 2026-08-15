@@ -4,7 +4,7 @@ routers/remember.py – /remember SSE 스트리밍
 import json
 from datetime import datetime, timezone
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
@@ -12,6 +12,7 @@ from agent import get_model_name
 from logger import get_logger
 from prompts.language import get_language_label
 from services.history import save_conversation
+from services.user_profile import DEFAULT_RESPONSE_STYLE, RESPONSE_STYLE_INSTRUCTIONS
 
 logger = get_logger(__name__)
 
@@ -31,13 +32,19 @@ async def get_user_profile_api():
     from services.user_profile import get_user_profile
     profile = await get_user_profile()
     if not profile:
-        return {"profile": None}
-    return {"profile": profile.get("profile"), "nickname": profile.get("nickname", ""), "updated_at": profile.get("updated_at")}
+        return {"profile": None, "nickname": "", "response_style": DEFAULT_RESPONSE_STYLE}
+    return {
+        "profile": profile.get("profile"),
+        "nickname": profile.get("nickname", ""),
+        "response_style": profile.get("response_style", DEFAULT_RESPONSE_STYLE),
+        "updated_at": profile.get("updated_at"),
+    }
 
 
 class ProfileUpdateRequest(BaseModel):
     profile: str | None = None
     nickname: str | None = None
+    response_style: str | None = None
 
 
 @router.put("/user-profile")
@@ -53,6 +60,11 @@ async def update_user_profile_api(req: ProfileUpdateRequest):
         doc["profile"] = req.profile.strip()
     if req.nickname is not None:
         doc["nickname"] = req.nickname.strip()
+    if req.response_style is not None:
+        response_style = req.response_style.strip()
+        if response_style != DEFAULT_RESPONSE_STYLE and response_style not in RESPONSE_STYLE_INSTRUCTIONS:
+            raise HTTPException(400, "Unsupported response style.")
+        doc["response_style"] = response_style
     es = get_es()
     try:
         await es.update(
@@ -86,6 +98,8 @@ async def remember(req: RememberRequest):
             yield sse("status", {"message": "프로필 조회 중..."})
             existing = await get_user_profile()
             existing_profile = existing.get("profile", "") if existing else ""
+            existing_nickname = existing.get("nickname", "") if existing else ""
+            existing_response_style = existing.get("response_style", DEFAULT_RESPONSE_STYLE) if existing else DEFAULT_RESPONSE_STYLE
             last_processed_at = existing.get("last_processed_at") if existing else None
             logger.info("[remember] last_processed_at=%s", last_processed_at)
 
@@ -184,6 +198,8 @@ async def remember(req: RememberRequest):
                     id="default",
                     document={
                         "profile": updated_profile,
+                        "nickname": existing_nickname,
+                        "response_style": existing_response_style,
                         "last_processed_at": now,
                         "updated_at": now,
                     },

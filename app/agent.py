@@ -210,6 +210,7 @@ async def rag_query(
         conversation_summary: str = "",
         call_reason: str = "chat",
         knowledge_collection_ids: list[str] | None = None,
+        inject_user_profile: bool = True,
 ) -> dict[str, Any]:
     """RAG 쿼리 실행 및 응답 (논스트리밍)."""
     current_user_question.set(question)
@@ -222,7 +223,8 @@ async def rag_query(
     else:
         docs = await _gather_docs(question, extra_context, skip_rag=skip_rag, conv_id=conv_id)
     answer = await query_llm(question, docs, system_prompt, [*attachments, *_knowledge_inline_image_attachments(docs)], conversation_history,
-                             reasoning=reasoning, conversation_summary=conversation_summary, call_reason=call_reason)
+                             reasoning=reasoning, conversation_summary=conversation_summary, call_reason=call_reason,
+                             inject_user_profile=inject_user_profile)
     return {
         "answer": answer.strip(),
         "response_type": "simple",
@@ -244,6 +246,7 @@ async def rag_query_stream(
         format_instruction_override: str | None = None,
         call_reason: str = "chat",
         knowledge_collection_ids: list[str] | None = None,
+        inject_user_profile: bool = True,
 ):
     """일반 채팅 스트리밍. tool 진행 + 최종 답변 토큰을 이벤트로 흘린다.
 
@@ -357,6 +360,7 @@ async def rag_query_stream(
             # 지연 RAG 보충을 다시 실행하면 같은 문서가 중복 주입된다.
             post_tool_docs=_post_tool_docs if (is_ollama and not skip_rag and not knowledge_collection_ids) else None,
             call_reason=call_reason,
+            inject_user_profile=inject_user_profile,
     ):
         if ev.get("type") == "token":
             parts.append(ev.get("text", ""))

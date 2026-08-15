@@ -22,6 +22,13 @@ logger = get_logger(__name__)
 USER_PROFILE_INDEX = "user_profile"
 USER_PROFILE_ID = "default"
 MAX_PROFILE_LENGTH = 2000  # 최대 프로필 텍스트 길이
+DEFAULT_RESPONSE_STYLE = "default"
+RESPONSE_STYLE_INSTRUCTIONS = {
+    "royal_court": (
+        "사용자를 왕으로 높여 예를 갖춘 신하가 보고하듯 답하라. 사용자를 '전하'로 호칭하되, "
+        "과도한 아첨이나 장황한 고어체는 피하고 답변의 정확성, 명료성, 간결함을 유지하라."
+    ),
+}
 
 
 async def ensure_user_profile_index():
@@ -34,6 +41,7 @@ async def ensure_user_profile_index():
                     "properties": {
                         "profile": {"type": "text"},
                         "nickname": {"type": "keyword"},
+                        "response_style": {"type": "keyword"},
                         "last_processed_at": {"type": "date"},
                         "updated_at": {"type": "date"},
                     }
@@ -60,11 +68,15 @@ async def get_user_profile() -> dict | None:
 
 
 async def get_profile_text() -> str:
-    """system prompt 주입용 프로필 텍스트만 반환"""
+    """시스템 프롬프트에 주입할 사용자 정보와 선택된 응답 말투를 반환한다."""
     profile = await get_user_profile()
-    if profile and profile.get("profile"):
-        return profile["profile"]
-    return ""
+    if not profile:
+        return ""
+    profile_text = str(profile.get("profile") or "").strip()
+    style_instruction = RESPONSE_STYLE_INSTRUCTIONS.get(str(profile.get("response_style") or ""), "")
+    if profile_text and style_instruction:
+        return f"{profile_text}\n\n[응답 말투]\n{style_instruction}"
+    return profile_text or style_instruction
 
 
 async def get_nickname() -> str:
@@ -132,6 +144,7 @@ async def run_remember(current_conv_id: str = "") -> str:
     # 기존 프로필 조회
     existing = await get_user_profile()
     existing_profile = existing.get("profile", "") if existing else ""
+    existing_response_style = existing.get("response_style", DEFAULT_RESPONSE_STYLE) if existing else DEFAULT_RESPONSE_STYLE
     last_processed_at = existing.get("last_processed_at") if existing else None
 
     # 미처리 대화 조회
@@ -201,6 +214,7 @@ async def run_remember(current_conv_id: str = "") -> str:
             document={
                 "profile": updated_profile,
                 "nickname": nickname,
+                "response_style": existing_response_style,
                 "last_processed_at": now,
                 "updated_at": now,
             },

@@ -313,6 +313,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
     const [profileMaxLength, setProfileMaxLength] = useState('500');
     const [existingProfile, setExistingProfile] = useState<string | null>(null);
     const [existingNickname, setExistingNickname] = useState('');
+    const [profileResponseStyle, setProfileResponseStyle] = useState('default');
+    const [profileStyleSaving, setProfileStyleSaving] = useState(false);
     const [nicknameEdit, setNicknameEdit] = useState('');
     const [profileLoading, setProfileLoading] = useState(true);
     const [profileMode, setProfileMode] = useState<'view' | 'edit' | 'analyze'>('view');
@@ -377,10 +379,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                 .then(data => {
                     setExistingProfile(data?.profile || null);
                     setExistingNickname(data?.nickname || '');
+                    setProfileResponseStyle(data?.response_style || 'default');
                 })
                 .catch(() => {
                     setExistingProfile(null);
                     setExistingNickname('');
+                    setProfileResponseStyle('default');
                 })
                 .finally(() => setProfileLoading(false));
 
@@ -694,6 +698,26 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
         }
     };
 
+    const handleProfileResponseStyleChange = async (responseStyle: string) => {
+        const previousStyle = profileResponseStyle;
+        setProfileResponseStyle(responseStyle);
+        setProfileStyleSaving(true);
+        try {
+            const response = await fetch('/api/user-profile', {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({response_style: responseStyle}),
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            toast.success(t('profile.responseStyleSaved'));
+        } catch {
+            setProfileResponseStyle(previousStyle);
+            toast.error(t('profile.responseStyleSaveFailed'));
+        } finally {
+            setProfileStyleSaving(false);
+        }
+    };
+
     const profileStartAnalyze = () => {
         setProfileMode('analyze');
         setProfileState({
@@ -766,6 +790,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
         {value: '1000', label: '1000'},
         {value: '2000', label: `2000 (${t('profile.default')})`},
         {value: '3000', label: `3000 (${t('profile.detailed')})`},
+    ];
+    const PROFILE_RESPONSE_STYLE_OPTIONS = [
+        {value: 'default', label: t('profile.responseStyleDefault')},
+        {value: 'royal_court', label: t('profile.responseStyleRoyalCourt')},
     ];
 
     const LANGUAGE_OPTIONS = SUPPORTED_LANGUAGES.map(l => ({value: l.value, label: l.label}));
@@ -1363,6 +1391,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                                 value={profileMaxLength}
                                                 onChange={handleProfileMaxLengthChange}
                                                 triggerStyle={{fontSize: '13px', padding: '5px 10px'}}
+                                            />
+                                        </div>
+                                        <div className="remember-setup-row">
+                                            <span className="remember-setup-label">{t('profile.responseStyle')}</span>
+                                            <CustomSelect
+                                                options={PROFILE_RESPONSE_STYLE_OPTIONS}
+                                                value={profileResponseStyle}
+                                                disabled={profileStyleSaving}
+                                                onChange={value => void handleProfileResponseStyleChange(value)}
+                                                triggerStyle={{fontSize: '13px', padding: '5px 10px', minWidth: '180px'}}
                                             />
                                         </div>
                                     </div>

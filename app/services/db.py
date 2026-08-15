@@ -392,6 +392,7 @@ async def ensure_index():
                 "mappings": {
                     "properties": {
                         "profile": {"type": "text"},
+                        "response_style": {"type": "keyword"},
                         "last_processed_at": {"type": "date"},
                         "updated_at": {"type": "date"},
                     }
