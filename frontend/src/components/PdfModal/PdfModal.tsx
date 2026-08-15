@@ -8,6 +8,7 @@ import CustomSelect from '../CustomSelect/CustomSelect';
 import { getReasoningEnabled } from '../../utils/reasoning';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import type {Message} from '../../types';
+import {getDocumentFiles} from '../../services/documentFiles';
 import './PdfModal.css';
 
 // ── 타입 ────────────────────────────────────────────────────────────────────
@@ -175,8 +176,8 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
         // ── 문서 복원: file_id 직접 사용 ──
         const docArticles = savedArticles.filter(a => a.url.startsWith('file://') && a.file_id);
         if (docArticles.length > 0) {
-            fetch('/api/document/files').then(r => r.json()).then(r => {
-                const allDocs: DocFile[] = r.files || [];
+            getDocumentFiles().then(result => {
+                const allDocs: DocFile[] = result;
                 setDocs(allDocs);
                 docLoaded.current = true;
                 const fileIds = new Set(docArticles.map(a => a.file_id!));
@@ -242,7 +243,7 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
         if (activeTab === 'doc' && !docLoaded.current) {
             docLoaded.current = true;
             setIsLoadingDoc(true);
-            fetch('/api/document/files').then(r => r.json()).then(r => setDocs(r.files || [])).catch(() => {
+            getDocumentFiles().then(files => setDocs(files)).catch(() => {
             }).finally(() => setIsLoadingDoc(false));
         }
     }, [activeTab]);

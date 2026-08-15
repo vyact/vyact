@@ -1,48 +1,23 @@
 import i18n from 'i18next';
 import {initReactI18next} from 'react-i18next';
 
-import koCommon from './locales/ko/common.json';
-import koSetup from './locales/ko/setup.json';
-import koSettings from './locales/ko/settings.json';
-import koMain from './locales/ko/main.json';
-
-import enCommon from './locales/en/common.json';
-import enSetup from './locales/en/setup.json';
-import enSettings from './locales/en/settings.json';
-import enMain from './locales/en/main.json';
-
-import jaCommon from './locales/ja/common.json';
-import jaSetup from './locales/ja/setup.json';
-import jaSettings from './locales/ja/settings.json';
-import jaMain from './locales/ja/main.json';
-
-import zhCommon from './locales/zh/common.json';
-import zhSetup from './locales/zh/setup.json';
-import zhSettings from './locales/zh/settings.json';
-import zhMain from './locales/zh/main.json';
-
-import thCommon from './locales/th/common.json';
-import thSetup from './locales/th/setup.json';
-import thSettings from './locales/th/settings.json';
-import thMain from './locales/th/main.json';
-
-import viCommon from './locales/vi/common.json';
-import viSetup from './locales/vi/setup.json';
-import viSettings from './locales/vi/settings.json';
-import viMain from './locales/vi/main.json';
-
-import esCommon from './locales/es/common.json';
-import esSetup from './locales/es/setup.json';
-import esSettings from './locales/es/settings.json';
-import esMain from './locales/es/main.json';
-
-import frCommon from './locales/fr/common.json';
-import frSetup from './locales/fr/setup.json';
-import frSettings from './locales/fr/settings.json';
-import frMain from './locales/fr/main.json';
-
 const SUPPORTED_LANGUAGE_CODES = ['ko', 'en', 'ja', 'zh', 'th', 'vi', 'es', 'fr'];
 const LEGACY_LANGUAGE_STORAGE_KEY = 'vyact-language';
+const TRANSLATION_NAMESPACES = ['common', 'setup', 'settings', 'main'] as const;
+type TranslationNamespace = typeof TRANSLATION_NAMESPACES[number];
+type TranslationResources = Record<TranslationNamespace, Record<string, unknown>>;
+
+const LANGUAGE_RESOURCE_LOADERS: Record<string, () => Promise<TranslationResources>> = Object.fromEntries(
+    SUPPORTED_LANGUAGE_CODES.map(language => [language, async () => {
+        const [common, setup, settings, main] = await Promise.all([
+            import(`./locales/${language}/common.json`),
+            import(`./locales/${language}/setup.json`),
+            import(`./locales/${language}/settings.json`),
+            import(`./locales/${language}/main.json`),
+        ]);
+        return {common: common.default, setup: setup.default, settings: settings.default, main: main.default};
+    }]),
+);
 
 function detectLanguage(): string {
     const legacyLanguage = localStorage.getItem(LEGACY_LANGUAGE_STORAGE_KEY);
@@ -51,30 +26,17 @@ function detectLanguage(): string {
     return SUPPORTED_LANGUAGE_CODES.includes(systemLanguage) ? systemLanguage : 'en';
 }
 
-i18n.use(initReactI18next).init({
-    resources: {
-        ko: {common: koCommon, setup: koSetup, settings: koSettings, main: koMain},
-        en: {common: enCommon, setup: enSetup, settings: enSettings, main: enMain},
-        ja: {common: jaCommon, setup: jaSetup, settings: jaSettings, main: jaMain},
-        zh: {common: zhCommon, setup: zhSetup, settings: zhSettings, main: zhMain},
-        th: {common: thCommon, setup: thSetup, settings: thSettings, main: thMain},
-        vi: {common: viCommon, setup: viSetup, settings: viSettings, main: viMain},
-        es: {common: esCommon, setup: esSetup, settings: esSettings, main: esMain},
-        fr: {common: frCommon, setup: frSetup, settings: frSettings, main: frMain},
-    },
-    lng: detectLanguage(),
-    fallbackLng: 'en',
-    defaultNS: 'common',
-    ns: ['common', 'setup', 'settings', 'main'],
-    interpolation: {escapeValue: false},
-});
+async function loadLanguageResources(language: string): Promise<void> {
+    if (i18n.hasResourceBundle(language, 'common')) return;
+    const resources = await LANGUAGE_RESOURCE_LOADERS[language]();
+    TRANSLATION_NAMESPACES.forEach(namespace => {
+        i18n.addResourceBundle(language, namespace, resources[namespace], true, true);
+    });
+}
 
 const applyDocumentLanguage = (language: string) => {
     document.documentElement.lang = language.split('-')[0];
 };
-
-applyDocumentLanguage(i18n.language);
-i18n.on('languageChanged', applyDocumentLanguage);
 
 async function saveLanguageToServer(language: string): Promise<boolean> {
     try {
@@ -93,10 +55,9 @@ async function saveLanguageToServer(language: string): Promise<boolean> {
 
 export const changeLanguage = (lang: string) => {
     const language = lang.split('-')[0];
-    i18n.changeLanguage(language);
     // ES가 준비되지 않은 초기 설치에서도 선택값을 잃지 않도록 먼저 보관한다.
     localStorage.setItem(LEGACY_LANGUAGE_STORAGE_KEY, language);
-    void saveLanguageToServer(language).then((saved) => {
+    void loadLanguageResources(language).then(() => i18n.changeLanguage(language)).then(() => saveLanguageToServer(language)).then(saved => {
         if (saved) localStorage.removeItem(LEGACY_LANGUAGE_STORAGE_KEY);
     });
 };
@@ -125,6 +86,7 @@ async function syncLanguageFromServer() {
         if (!response.ok) return;
         const {language} = await response.json();
         if (SUPPORTED_LANGUAGE_CODES.includes(language)) {
+            await loadLanguageResources(language);
             await i18n.changeLanguage(language);
             localStorage.removeItem(LEGACY_LANGUAGE_STORAGE_KEY);
             return;
@@ -136,7 +98,26 @@ async function syncLanguageFromServer() {
     }
 }
 
-void syncLanguageFromServer();
+async function initializeI18n(): Promise<void> {
+    const initialLanguage = detectLanguage();
+    await i18n.use(initReactI18next).init({
+        lng: initialLanguage,
+        fallbackLng: 'en',
+        defaultNS: 'common',
+        ns: [...TRANSLATION_NAMESPACES],
+        interpolation: {escapeValue: false},
+    });
+    await Promise.all([
+        loadLanguageResources(initialLanguage),
+        initialLanguage === 'en' ? Promise.resolve() : loadLanguageResources('en'),
+    ]);
+    await i18n.changeLanguage(initialLanguage);
+    applyDocumentLanguage(i18n.language);
+    i18n.on('languageChanged', applyDocumentLanguage);
+    void syncLanguageFromServer();
+}
+
+export const i18nInitialization = initializeI18n();
 
 export const SUPPORTED_LANGUAGES = [
     {value: 'ko', label: '한국어'},

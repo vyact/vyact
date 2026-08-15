@@ -66,14 +66,7 @@ const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({
                         src={URL.createObjectURL(img)}
                         alt={`preview-${idx}`}
                         onClick={() => onImageClick(idx)}
-                        style={{
-                            width: '72px', height: '72px', objectFit: 'cover',
-                            borderRadius: '8px',
-                            border: '1px solid var(--border)',
-                            cursor: 'zoom-in', transition: 'opacity 0.2s', display: 'block',
-                        }}
-                        onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
-                        onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+                        className="image-attachment-preview__image"
                     />
                     <button className="attachment-remove-btn attachment-remove-btn--image" onClick={() => onRemoveImage(idx)} aria-label={t('sidebar.delete')}>
                         <X size={10}/>

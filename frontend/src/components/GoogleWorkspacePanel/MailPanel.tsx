@@ -1,5 +1,4 @@
 import {memo, type CSSProperties, type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
-import {renderAsync as renderDocx} from 'docx-preview';
 import {createPortal} from 'react-dom';
 import {useTranslation} from 'react-i18next';
 import {Archive, CheckCircle2, ChevronDown, ChevronLeft, ChevronUp, CircleAlert, Clock3, Download, FileText, FolderInput, Forward, Inbox, LoaderCircle, Mail, MessageSquarePlus, MoreVertical, Paperclip, Pencil, PenLine, Plus, RefreshCw, Reply, Save, Send, Settings, ShoppingBag, Sparkles, Star, Tag, Trash2, TriangleAlert, X} from 'lucide-react';
@@ -8,7 +7,7 @@ import {ApiError} from '../../utils/apiError';
 import {copyToClipboard} from '../../utils/helpers';
 import {isSupportedChatFileName} from '../../utils/fileValidation';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
-import signatureProfileCreative from '../../assets/email-signatures/profile-creative.png?inline';
+import signatureProfileCreative from '../../assets/email-signatures/profile-creative.png';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import ImageViewer from '../ImageViewer/ImageViewer';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
@@ -16,7 +15,7 @@ import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
 import ActionMenu from '../common/ActionMenu/ActionMenu';
 import AttachmentItem from '../common/AttachmentItem/AttachmentItem';
 import KnowledgeCollectionAttachSelect from '../KnowledgeCollectionsModal/KnowledgeCollectionAttachSelect';
-import EmailEditor, {type EmailEditorHandle} from './EmailEditor';
+import EmailEditor, {type EmailEditorHandle} from './LazyEmailEditor';
 
 type MailParticipant = MailAddress & {isMe: boolean};
 type MailItem = {id: string; threadId?: string; labelIds?: string[]; from: string; participants?: MailParticipant[]; messageCount?: number; subject: string; date: string; snippet: string; isUnread: boolean; isStarred: boolean; hasAttachments?: boolean};
@@ -389,6 +388,7 @@ function DocxAttachmentPreview({file, label}: {file: Blob; label: string}) {
             setRenderFailed(false);
             container.replaceChildren();
             try {
+                const {renderAsync: renderDocx} = await import('docx-preview');
                 await renderDocx(file, container, container, {
                     inWrapper: true,
                     ignoreWidth: false,

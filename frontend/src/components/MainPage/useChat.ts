@@ -17,6 +17,8 @@ import {findPluginCommand} from '../../plugins/registry';
 import {resolveApprovalMode} from '../../services/approvalPolicy';
 import {getToolActivityLabel} from '../../utils/toolActivity';
 
+const STREAM_RENDER_INTERVAL_MS = 32;
+
 // MCP tool 이름(서버__tool)을 사용자용 진행 문구로 변환
 function toolDetail(args?: Record<string, unknown>): string | undefined {
     if (!args) return undefined;
@@ -101,12 +103,12 @@ interface UseChatDeps {
     showVoiceChatModalRef: React.MutableRefObject<boolean>;
     setConvId: (id: string) => void;
     addLocalConversation: (convId: string, title: string, projectId?: string | null) => void;
+    completeLocalConversation: (convId: string, title: string, projectId?: string | null) => void;
     setMessagesWithRef: (updater: Message[] | ((prev: Message[]) => Message[])) => void;
     setMessagesForConversation: (convId: string, updater: Message[] | ((prev: Message[]) => Message[])) => void;
     getMessagesForConversation: (convId: string) => Message[];
     setPendingArticles: React.Dispatch<React.SetStateAction<ArticleAttachment[]>>;
     mapMsg: (msg: any, idx?: number) => Message;
-    loadHistory: () => Promise<void>;
     newConversation: (setResetTrigger: (fn: (n: number) => number) => void) => void;
     clearConversation: (setResetTrigger: (fn: (n: number) => number) => void) => Promise<void>;
     setResetTrigger: React.Dispatch<React.SetStateAction<number>>;
@@ -164,7 +166,7 @@ export function useChat(deps: UseChatDeps) {
     const {
         currentConvId, currentConvIdRef, messagesRef, selectedModel, activeProjectId,
         pendingArticles, showVoiceChatModalRef,
-        setConvId, addLocalConversation, setMessagesWithRef, setMessagesForConversation, getMessagesForConversation, setPendingArticles, mapMsg, loadHistory,
+        setConvId, addLocalConversation, completeLocalConversation, setMessagesWithRef, setMessagesForConversation, getMessagesForConversation, setPendingArticles, mapMsg,
         clearConversation, setResetTrigger,
         openPluginModal,
         setShowRememberModal,
@@ -202,7 +204,7 @@ export function useChat(deps: UseChatDeps) {
     };
 
     // 새 대화방의 conv_id가 처음 확정되는 시점에 호출: state에 반영하는 동시에
-    // 사이드바 목록에도 바로 추가해 loadHistory()의 백엔드 저장 타이밍 레이스를 피한다.
+    // 사이드바 목록에도 바로 추가해 백엔드 저장 타이밍 레이스를 피한다.
     const assignNewConvId = (id: string, titleSeed: string) => {
         setConvId(id);
         addLocalConversation(id, titleSeed || '새 대화', activeProjectId);
@@ -439,19 +441,17 @@ export function useChat(deps: UseChatDeps) {
                     });
                 resetImageGen();
                 if (response.conv_id && !requestConvId) assignNewConvId(response.conv_id, query);
-                await loadHistory();
                 const finalConvId = response.conv_id || requestConvId;
-                if (finalConvId) {
-                    const data = await api.getConversation(finalConvId);
-                    setMessagesForConversation(requestConvId, (data.messages || []).map((m, i) => mapMsg(m, i)));
-                } else {
-                    setMessagesForConversation(requestConvId, prev => [...prev, {
+                if (finalConvId) completeLocalConversation(finalConvId, query, activeProjectId);
+                const assistantMessage = response.assistant_message
+                    ? mapMsg(response.assistant_message)
+                    : {
                         role: 'assistant', content: `이미지를 생성했습니다. (${response.count}장)`,
                         timestamp: new Date().toISOString(), model: response.model,
                         attachments: response.filenames.map((f: string) => ({type: 'image', filename: f})),
                         isGeneratedImage: true,
-                    }]);
-                }
+                    } as Message;
+                setMessagesForConversation(requestConvId, prev => [...prev, assistantMessage]);
                 return true;
             }
 
@@ -471,18 +471,34 @@ export function useChat(deps: UseChatDeps) {
                 setConversationRequestState(requestConvId, {streamingMessageId: streamId});
 
                 let responseWritingStarted = false;
+                let pendingStreamText = '';
+                let streamRenderTimer: number | null = null;
+                const flushStreamText = () => {
+                    if (streamRenderTimer !== null) {
+                        window.clearTimeout(streamRenderTimer);
+                        streamRenderTimer = null;
+                    }
+                    if (!pendingStreamText) return;
+                    const text = pendingStreamText;
+                    pendingStreamText = '';
+                    setMessagesForConversation(requestConvId, prev => prev.map(m =>
+                        m.id === streamId ? {...m, content: (m.content || '') + text, toolStatus: undefined} : m));
+                };
                 const appendToStreamMsg = (piece: string) => {
                     if (!responseWritingStarted) {
                         responseWritingStarted = true;
                         setToolStatus({phase: 'running', group: 'analysis', label: t('toolActivity.thinking')});
                     }
-                    setMessagesForConversation(requestConvId, prev => prev.map(m =>
-                        m.id === streamId ? {...m, content: (m.content || '') + piece, toolStatus: undefined} : m));
+                    pendingStreamText += piece;
+                    if (streamRenderTimer === null) {
+                        streamRenderTimer = window.setTimeout(flushStreamText, STREAM_RENDER_INTERVAL_MS);
+                    }
                 };
 
                 // (onReset 제거됨 — 판정이 비스트리밍이므로 reset 불필요)
 
                 const setToolStatus = (status: ToolActivity | undefined) => {
+                    flushStreamText();
                     setMessagesForConversation(requestConvId, prev => prev.map(m =>
                         m.id === streamId
                             ? {
@@ -556,6 +572,7 @@ export function useChat(deps: UseChatDeps) {
                             }
                         },
                         onDone: (data) => {
+                            flushStreamText();
                             setMessagesForConversation(requestConvId, prev => prev.map(message => message.id === streamId
                                 ? {
                                     ...message,
@@ -565,6 +582,7 @@ export function useChat(deps: UseChatDeps) {
                                 }
                                 : message));
                             if (data.conv_id && !requestConvId) assignNewConvId(data.conv_id, query);
+                            completeLocalConversation(data.conv_id || requestConvId, query, activeProjectId);
                             const esSources: ArticleAttachment[] = (streamSources || [])
                                 .filter((s: any) => s.url && !s.url.startsWith('manual://'))
                                 .map((s: any) => ({
@@ -623,12 +641,13 @@ export function useChat(deps: UseChatDeps) {
                                 window.dispatchEvent(new CustomEvent('voiceChatResponse', {detail: {text: data.answer}}));
                         },
                         onError: (msg) => {
+                            flushStreamText();
                             setMessagesForConversation(requestConvId, prev => prev.map(m =>
                                 m.id === streamId ? {...m, content: msg, isError: true, toolStatus: undefined} : m));
                         },
                     }, abortControllerRef.current.signal);
-                    await loadHistory();
                 } catch (streamErr) {
+                    flushStreamText();
                     // 사용자가 직접 중지한 경우 — 에러 아님
                     if (streamErr instanceof DOMException && streamErr.name === 'AbortError') {
                         setMessagesForConversation(requestConvId, prev => prev.map(m =>
@@ -660,6 +679,7 @@ export function useChat(deps: UseChatDeps) {
                         setLastFailedQuery({query, attachments});
                     }
                 } finally {
+                    flushStreamText();
                     setConversationRequestState(requestConvId, {streamingMessageId: null});
                     abortControllerRef.current = null;
                 }
@@ -703,35 +723,25 @@ export function useChat(deps: UseChatDeps) {
                     data: source.content,
                 }));
 
-            await loadHistory();
             const finalConvId = response.conv_id || requestConvId;
-            if (finalConvId) {
-                const data = await api.getConversation(finalConvId);
-                const rawMessages = (data.messages || []).map((m, i) => mapMsg(m, i));
-                if (rawMessages.length > 0) {
-                    const lastIdx = rawMessages.length - 1;
-                    if (rawMessages[lastIdx].role === 'assistant') {
-                        rawMessages[lastIdx].articleSources = mergedSources.length > 0 ? mergedSources : undefined;
-                        rawMessages[lastIdx].injectedContext = injectedContextItems.length > 0
-                            ? injectedContextItems
-                            : rawMessages[lastIdx].injectedContext;
-                    }
-                }
-                setMessagesForConversation(requestConvId, rawMessages);
-                if (showVoiceChatModalRef.current) {
-                    const last = [...rawMessages].reverse().find(m => m.role === 'assistant');
-                    if (last) window.dispatchEvent(new CustomEvent('voiceChatResponse', {detail: {text: last.content}}));
-                }
-            } else {
-                const botMessage: Message = {
-                    role: 'assistant', content: response.answer, timestamp: new Date().toISOString(),
-                    model: response.model, articleSources: mergedSources.length > 0 ? mergedSources : undefined,
-                    injectedContext: injectedContextItems.length > 0 ? injectedContextItems : undefined,
-                };
-                setMessagesForConversation(requestConvId, prev => [...prev, botMessage]);
-                if (showVoiceChatModalRef.current)
-                    window.dispatchEvent(new CustomEvent('voiceChatResponse', {detail: {text: botMessage.content}}));
-            }
+            if (finalConvId) completeLocalConversation(finalConvId, query, activeProjectId);
+            const storedAssistantMessage = response.assistant_message
+                ? mapMsg(response.assistant_message)
+                : null;
+            const botMessage: Message = {
+                ...storedAssistantMessage,
+                role: 'assistant',
+                content: response.answer,
+          model: response.model || storedAssistantMessage?.model,
+          articleSources: mergedSources.length > 0 ? mergedSources : storedAssistantMessage?.articleSources,
+                injectedContext: injectedContextItems.length > 0
+                    ? injectedContextItems
+                    : storedAssistantMessage?.injectedContext,
+                timestamp: storedAssistantMessage?.timestamp || new Date().toISOString(),
+            };
+            setMessagesForConversation(requestConvId, prev => [...prev, botMessage]);
+            if (showVoiceChatModalRef.current)
+                window.dispatchEvent(new CustomEvent('voiceChatResponse', {detail: {text: botMessage.content}}));
         } catch (error) {
             if (error instanceof DOMException && error.name === 'AbortError') {
                 // 사용자 중지 — 에러 표시 안 함
@@ -774,36 +784,32 @@ export function useChat(deps: UseChatDeps) {
                     });
                 resetImageGen();
                 if (response.conv_id && !requestConvId) assignNewConvId(response.conv_id, query);
-                await loadHistory();
                 const finalConvId = response.conv_id || requestConvId;
-                if (finalConvId) {
-                    const data = await api.getConversation(finalConvId);
-                    setMessagesForConversation(requestConvId, (data.messages || []).map((m, i) => mapMsg(m, i)));
-                } else {
-                    setMessagesForConversation(requestConvId, prev => [...prev, {
+                if (finalConvId) completeLocalConversation(finalConvId, query, activeProjectId);
+                const assistantMessage = response.assistant_message
+                    ? mapMsg(response.assistant_message)
+                    : {
                         role: 'assistant', content: `이미지를 생성했습니다. (${response.count}장)`,
                         timestamp: new Date().toISOString(), model: response.model,
                         attachments: response.filenames.map((f: string) => ({type: 'image', filename: f})),
                         isGeneratedImage: true,
-                    }]);
-                }
+                    } as Message;
+                setMessagesForConversation(requestConvId, prev => [...prev, assistantMessage]);
             } else {
                 const response = await api.chat(query, requestConvId, messagesRef.current, attachments.length > 0 ? attachments : undefined,
                     undefined, undefined, undefined, getReasoningEnabled());
                 if (response.conv_id && !requestConvId) assignNewConvId(response.conv_id, query);
-                await loadHistory();
                 const finalConvId = response.conv_id || requestConvId;
-                if (finalConvId) {
-                    const data = await api.getConversation(finalConvId);
-                    setMessagesForConversation(requestConvId, (data.messages || []).map((m, i) => mapMsg(m, i)));
-                } else {
-                    setMessagesForConversation(requestConvId, prev => [...prev, {
+                if (finalConvId) completeLocalConversation(finalConvId, query, activeProjectId);
+                const assistantMessage = response.assistant_message
+                    ? mapMsg(response.assistant_message)
+                    : {
                         role: 'assistant',
                         content: response.answer,
                         timestamp: new Date().toISOString(),
                         model: response.model
-                    }]);
-                }
+                    } as Message;
+                setMessagesForConversation(requestConvId, prev => [...prev, assistantMessage]);
             }
         } catch (error) {
             if (error instanceof DOMException && error.name === 'AbortError') {

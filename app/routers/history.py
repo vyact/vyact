@@ -3,7 +3,7 @@ routers/history.py – 대화 히스토리
 """
 import asyncio
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
 from agent import list_conversations, get_conversation, delete_conversation, rename_conversation
 from services.history import list_favorite_conversations, set_conversation_favorite
@@ -15,16 +15,21 @@ router = APIRouter()
 async def get_history(
     limit: int = 20, offset: int = 0, project_id: str | None = None,
     exclude_project: bool = False,
+    include_favorites: bool = Query(default=True),
 ):
     # {conversations, total} 반환 — 프론트가 20씩 페이징 조회한다.
-    result, favorite_conversations = await asyncio.gather(
-        list_conversations(
-            size=limit, offset=offset, project_id=project_id,
-            exclude_project=exclude_project,
-        ),
-        list_favorite_conversations(),
+    history_request = list_conversations(
+        size=limit, offset=offset, project_id=project_id,
+        exclude_project=exclude_project,
     )
-    result["favorite_conversations"] = favorite_conversations
+    if include_favorites:
+        result, favorite_conversations = await asyncio.gather(
+            history_request,
+            list_favorite_conversations(),
+        )
+        result["favorite_conversations"] = favorite_conversations
+    else:
+        result = await history_request
     return result
 
 

@@ -59,6 +59,34 @@ export function useConversation() {
         setHistoryTotal(prev => prev + 1);
     };
 
+    const completeLocalConversation = (convId: string, title: string, projectId: string | null = null) => {
+        const wasKnown = conversations.some(conversation => conversation.conv_id === convId)
+            || optimisticConversationIdsRef.current.has(convId);
+        if (!wasKnown) {
+            optimisticConversationIdsRef.current.add(convId);
+            setHistoryTotal(previous => previous + 1);
+        }
+        const updatedAt = new Date().toISOString();
+        setConversations(previous => {
+            const existing = previous.find(conversation => conversation.conv_id === convId);
+            const updated = existing
+                ? {...existing, updated_at: updatedAt}
+                : {
+                    conv_id: convId,
+                    title: title.slice(0, 50),
+                    created_at: updatedAt,
+                    updated_at: updatedAt,
+                    project_id: projectId || undefined,
+                };
+            return [updated, ...previous.filter(conversation => conversation.conv_id !== convId)];
+        });
+        setFavoriteConversations(previous => {
+            const existing = previous.find(conversation => conversation.conv_id === convId);
+            if (!existing) return previous;
+            return [{...existing, updated_at: updatedAt}, ...previous.filter(conversation => conversation.conv_id !== convId)];
+        });
+    };
+
     const setMessagesWithRef = (updater: Message[] | ((prev: Message[]) => Message[])) => {
         const convId = currentConvIdRef.current;
         setMessagesForConversation(convId, updater);
@@ -158,8 +186,7 @@ export function useConversation() {
     // 더보기: 다음 20개를 이어서 조회해 append.
     const loadMoreHistory = async () => {
         try {
-            const data = await api.getHistory(HISTORY_PAGE, conversations.length);
-            setFavoriteConversations(data.favorite_conversations || []);
+            const data = await api.getHistory(HISTORY_PAGE, conversations.length, null, false);
             const more = data.conversations || [];
             setConversations(prev => {
                 const seen = new Set(prev.map(c => c.conv_id));
@@ -290,7 +317,7 @@ export function useConversation() {
         conversations, favoriteConversations, currentConvId, currentConvIdRef, activeProjectId, setActiveProjectId,
         messages, messagesRef,
         pendingArticles, setPendingArticles,
-        setConvId, addLocalConversation, setMessagesWithRef, setMessagesForConversation, getMessagesForConversation, mapMsg,
+        setConvId, addLocalConversation, completeLocalConversation, setMessagesWithRef, setMessagesForConversation, getMessagesForConversation, mapMsg,
         loadHistory, loadMoreHistory, historyTotal,
         newConversation, clearConversation, loadConversation,
         deleteConversation, deleteAllConversations, deleteProjectConversations, setConversationFavorite,

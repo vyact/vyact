@@ -7,6 +7,7 @@ import {toast} from '../common/ToastNotifications/ToastNotifications';
 import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import KnowledgeCollectionAttachSelect from '../KnowledgeCollectionsModal/KnowledgeCollectionAttachSelect';
+import {getDocumentFiles, invalidateDocumentFiles, removeCachedDocumentFiles} from '../../services/documentFiles';
 import './DocumentModal.css';
 
 interface DocumentModalProps {
@@ -275,9 +276,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
     const loadSavedFiles = useCallback(async () => {
         setFilesLoading(true);
         try {
-            const res = await fetch('/api/document/files');
-            const data = await res.json();
-            setSavedFiles(data.files || []);
+            setSavedFiles(await getDocumentFiles());
             setSelectedFileIds(new Set());
         } catch {
             setSavedFiles([]);
@@ -496,6 +495,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
         if (files.length === 0) return;
         if (tab === 'query' && !question.trim()) { questionRef.current?.focus(); return; }
         setStatus('uploading');
+        invalidateDocumentFiles();
         setMessage('');
         setIsStopRequested(false);
         stopRequestedRef.current = false;
@@ -715,6 +715,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
             const res = await fetch(`/api/document/files/${encodeURIComponent(file.file_id)}`, {method: 'DELETE'});
             if (!res.ok) throw new Error(t('documentModal.deleteError'));
             setSavedFiles(prev => prev.filter(savedFile => savedFile.file_id !== file.file_id));
+            removeCachedDocumentFiles([file.file_id]);
             onDetachSavedDocuments?.([file.file_id]);
         } catch (error: unknown) {
             const message = error instanceof Error && error.message ? error.message : t('documentModal.deleteError');
@@ -759,6 +760,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
             ));
             if (responses.some(response => !response.ok)) throw new Error(t('documentModal.deleteAllError'));
             const deletedIds = selectedFiles.map(file => file.file_id);
+            removeCachedDocumentFiles(deletedIds);
             onDetachSavedDocuments?.(deletedIds);
             setSavedFiles(previous => previous.filter(file => !selectedFileIds.has(file.file_id)));
             setSelectedFileIds(new Set());

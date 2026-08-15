@@ -1,0 +1,24 @@
+.rag-context-overlay { position: fixed; inset: 0; z-index: 9000; display: flex; align-items: flex-start; justify-content: center; padding: 80px 0 40px; overflow-y: auto; background: rgba(0, 0, 0, .6); }
+.rag-context-modal { display: flex; flex-direction: column; width: 680px; max-width: 90vw; max-height: 80vh; overflow: hidden; border: 1px solid rgba(255, 255, 255, .12); border-radius: 14px; background: var(--bg-secondary, #1e1e1e); box-shadow: 0 24px 60px rgba(0, 0, 0, .5); }
+.rag-context-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid rgba(255, 255, 255, .08); }
+.rag-context-header-title { display: flex; align-items: center; gap: 8px; }
+.rag-context-title { color: var(--text); font-size: 14px; font-weight: 600; }
+.rag-context-count { padding: 1px 8px; border-radius: 10px; background: rgba(255, 255, 255, .07); color: var(--muted); font-size: 11px; }
+.rag-context-close { padding: 2px 6px; border: 0; border-radius: 4px; background: none; color: var(--muted); cursor: pointer; font-size: 18px; line-height: 1; }
+.rag-context-layout { display: flex; flex: 1; overflow: hidden; }
+.rag-context-tabs { width: 160px; flex-shrink: 0; padding: 8px 0; overflow-y: auto; border-right: 1px solid rgba(255, 255, 255, .08); }
+.rag-context-tab { width: 100%; padding: 8px 14px; border: 0; border-left: 2px solid transparent; background: none; color: var(--muted); cursor: pointer; font-size: 14px; text-align: left; transition: all .15s; }
+.rag-context-tab.active { border-left-color: var(--accent, #e07050); background: rgba(255, 255, 255, .08); color: var(--text); }
+.rag-context-content { flex: 1; padding: 16px 20px; overflow-y: auto; }
+.rag-context-item-title { margin-bottom: 4px; color: var(--accent, #e07050); font-size: 14px; font-weight: 600; }
+.rag-context-source { margin-bottom: 10px; color: var(--muted); font-size: 12px; }
+.rag-context-markdown { color: var(--text); font-size: 14px; line-height: 1.7; opacity: .9; }
+.rag-context-code-block { overflow: hidden; border: 1px solid rgba(255, 255, 255, .08); border-radius: 8px; }
+.rag-context-code-language { padding: 4px 12px; border-bottom: 1px solid rgba(255, 255, 255, .08); background: rgba(255, 255, 255, .06); color: var(--muted); font: 11px monospace; }
+.rag-context-code { margin: 0; padding: 14px 16px; overflow-x: hidden; border-radius: 8px; background: transparent; font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; }
+.rag-context-code.has-language { border-radius: 0 0 8px 8px; }
+.rag-context-code-content { padding: 0; background: none; }
+.rag-context-public-data { color: var(--text); font-size: 14px; line-height: 1.75; opacity: .88; }
+.rag-context-public-data p { margin: 0; white-space: pre-wrap; word-break: break-word; }
+.rag-context-public-data p + p { margin-top: 14px; }
+.rag-context-plain-text { margin: 0; color: var(--text); font: 14px/1.7 inherit; white-space: pre-wrap; word-break: break-word; opacity: .85; }

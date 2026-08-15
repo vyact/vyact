@@ -187,20 +187,24 @@ async def generate_image(req: ImageGenerateRequest):
         if req.attachments:
             user_msg["attachments"] = req.attachments
 
-        await save_conversation(conv_id, req.messages + [
-            user_msg,
-            {
-                "role": "assistant",
-                "content": f"이미지를 생성했습니다. ({len(saved_filenames)}장)",
-                "timestamp": now, "model": use_model,
-                "attachments": [{"type": "image", "filename": f} for f in saved_filenames],
-                "is_generated_image": True,
-            },
-        ])
+        assistant_msg = {
+            "role": "assistant",
+            "content": f"이미지를 생성했습니다. ({len(saved_filenames)}장)",
+            "timestamp": now, "model": use_model,
+            "attachments": [{"type": "image", "filename": f} for f in saved_filenames],
+            "is_generated_image": True,
+        }
+        await save_conversation(conv_id, req.messages + [user_msg, assistant_msg])
 
         yield sse(
             json.dumps(
-                {"conv_id": conv_id, "model": use_model, "filenames": saved_filenames, "count": len(saved_filenames)},
+                {
+                    "conv_id": conv_id,
+                    "model": use_model,
+                    "filenames": saved_filenames,
+                    "count": len(saved_filenames),
+                    "assistant_message": assistant_msg,
+                },
                 ensure_ascii=False),
             "done", 100,
         )

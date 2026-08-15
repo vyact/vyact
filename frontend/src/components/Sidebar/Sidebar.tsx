@@ -4,9 +4,6 @@ import {Pencil, Trash2, FileText, FileCode, NotebookText, Plus, ChevronDown, Squ
 import {renderMarkdown} from '../../utils/markdownUtils';
 import ModelSelector from '../ModelSelector';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
-import ProviderSettingsModal from '../ProviderSettingsModal/ProviderSettingsModal';
-import CustomProviderModal from '../CustomProviderModal/CustomProviderModal';
-import SettingsModal from '../SettingsModal/SettingsModal';
 import {api} from '../../services/api';
 import type {CustomProviderSettings} from '../../services/api';
 import type {Conversation, Project} from '../../types';
@@ -17,6 +14,10 @@ import SidebarOverflowMenu from './SidebarOverflowMenu';
 import ProjectInstructionsModal from './ProjectInstructionsModal';
 import ProjectCreateModal from './ProjectCreateModal';
 import ProjectMemoryModal from './ProjectMemoryModal';
+
+const ProviderSettingsModal = React.lazy(() => import('../ProviderSettingsModal/ProviderSettingsModal'));
+const CustomProviderModal = React.lazy(() => import('../CustomProviderModal/CustomProviderModal'));
+const SettingsModal = React.lazy(() => import('../SettingsModal/SettingsModal'));
 
 interface SidebarProps {
     installed: string[];
@@ -817,7 +818,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
             {/* 모달 */}
             {isProviderSettingsOpen && (
-                <ProviderSettingsModal
+                <React.Suspense fallback={null}><ProviderSettingsModal
                     isOpen={isProviderSettingsOpen}
                     provider={((window as any).__pendingProvider || currentProvider) as 'openai' | 'gemini' | 'claude'}
                     onClose={() => {
@@ -833,9 +834,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                         await onProviderChange();
                         setIsProviderSettingsOpen(false);
                     }}
-                />
+                /></React.Suspense>
             )}
-            {customProviderEditor && <CustomProviderModal
+            {customProviderEditor && <React.Suspense fallback={null}><CustomProviderModal
                 connection={customProviderEditor === 'new' ? undefined : customProviderEditor}
                 onClose={() => setCustomProviderEditor(null)}
                 onDelete={customProviderEditor === 'new' ? undefined : async selectionType => {
@@ -848,10 +849,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                     await loadCurrentProvider();
                     await onProviderChange();
                 }}
-            />}
+            /></React.Suspense>}
         </aside>
-            <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)}
-                           initialTab={openSettingsTab}/>
+            {isSettingsOpen && <React.Suspense fallback={null}>
+                <SettingsModal isOpen onClose={() => setIsSettingsOpen(false)} initialTab={openSettingsTab}/>
+            </React.Suspense>}
         </>
     );
 };

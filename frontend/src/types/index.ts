@@ -186,6 +186,7 @@ export interface ChatResponse {
     model?: string;
     conv_id?: string;
     response_type?: 'action' | 'simple';
+    assistant_message?: Message;
 }
 
 export interface HistoryResponse {

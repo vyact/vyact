@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import hljs from 'highlight.js';
+import hljs from '../../utils/syntaxHighlighter';
 import 'highlight.js/styles/github-dark.css';
 import { renderMarkdown } from '../../utils/markdownUtils';
 import { cleanNewsText } from '../../utils/helpers';
 import { getLocalizedSourceLabel } from '../../utils/sourceLabels';
+import './RagContextModal.css';
 
 interface InjectedContextItem {
     source: string;
@@ -107,71 +108,33 @@ const RagContextModal: React.FC<RagContextModalProps> = ({ items, onClose }) => 
             : cleanNewsText(rawData);
 
     return (
-        <div
-            style={{
-                position: 'fixed', inset: 0, zIndex: 9000,
-                background: 'rgba(0,0,0,0.6)',
-                display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
-                paddingTop: '80px', paddingBottom: '40px', overflowY: 'auto',
-            }}
-        >
+        <div className="rag-context-overlay">
             <div
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                style={{
-                    width: '680px', maxWidth: '90vw', maxHeight: '80vh',
-                    background: 'var(--bg-secondary, #1e1e1e)',
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    borderRadius: '14px', display: 'flex', flexDirection: 'column',
-                    overflow: 'hidden', boxShadow: '0 24px 60px rgba(0,0,0,0.5)',
-                }}
+                className="rag-context-modal"
             >
                 {/* 헤더 */}
-                <div style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.08)',
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div className="rag-context-header">
+                    <div className="rag-context-header-title">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                              stroke="var(--accent, #e07050)" strokeWidth="2">
                             <circle cx="11" cy="11" r="8"/>
                             <line x1="21" y1="21" x2="16.65" y2="16.65"/>
                         </svg>
-                        <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>
+                        <span className="rag-context-title">
                             {t('message.injectedDataTitle')}
                         </span>
-                        <span style={{
-                            fontSize: '11px', color: 'var(--muted)',
-                            background: 'rgba(255,255,255,0.07)',
-                            borderRadius: '10px', padding: '1px 8px',
-                        }}>{t('message.count', { count: items.length })}</span>
+                        <span className="rag-context-count">{t('message.count', { count: items.length })}</span>
                     </div>
-                    <button onClick={onClose} style={{
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        color: 'var(--muted)', fontSize: '18px', lineHeight: 1,
-                        padding: '2px 6px', borderRadius: '4px',
-                    }}>×</button>
+                    <button className="rag-context-close" onClick={onClose}>×</button>
                 </div>
 
-                <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+                <div className="rag-context-layout">
                     {/* 탭 사이드바 */}
                     {items.length > 1 && (
-                        <div style={{
-                            width: '160px', flexShrink: 0,
-                            borderRight: '1px solid rgba(255,255,255,0.08)',
-                            overflowY: 'auto', padding: '8px 0',
-                        }}>
+                        <div className="rag-context-tabs">
                             {items.map((item, idx) => (
-                                <button key={idx} onClick={() => setActiveIdx(idx)} style={{
-                                    width: '100%', textAlign: 'left',
-                                    padding: '8px 14px', border: 'none', cursor: 'pointer',
-                                    background: activeIdx === idx
-                                        ? 'rgba(255,255,255,0.08)' : 'none',
-                                    borderLeft: activeIdx === idx
-                                        ? '2px solid var(--accent, #e07050)' : '2px solid transparent',
-                                    fontSize: '14px', color: activeIdx === idx
-                                        ? 'var(--text)' : 'var(--muted)',
-                                    transition: 'all 0.15s',
-                                }}>
+                                <button key={idx} onClick={() => setActiveIdx(idx)} className={`rag-context-tab${activeIdx === idx ? ' active' : ''}`}>
                                     {item.title || item.source}
                                 </button>
                             ))}
@@ -179,17 +142,12 @@ const RagContextModal: React.FC<RagContextModalProps> = ({ items, onClose }) => 
                     )}
 
                     {/* 내용 */}
-                    <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
-                        <div style={{
-                            fontSize: '14px', fontWeight: 600,
-                            color: 'var(--accent, #e07050)', marginBottom: '4px',
-                        }}>
+                    <div className="rag-context-content">
+                        <div className="rag-context-item-title">
                             {activeItem?.title || activeItem?.source}
                         </div>
                         {activeItem?.title && (
-                            <div style={{
-                                fontSize: '12px', color: 'var(--muted)', marginBottom: '10px',
-                            }}>
+                            <div className="rag-context-source">
                                 {t('message.source')}: {getLocalizedSourceLabel(activeItem?.source, t)}
                             </div>
                         )}
@@ -222,62 +180,36 @@ const RagContextModal: React.FC<RagContextModalProps> = ({ items, onClose }) => 
                             const mdHtml = renderMarkdown(preprocessed).replace(/XCODEBLOCK(\d+)X/g, (_, i) => codePlaceholders[Number(i)] ?? '');
                             return (
                                 <div
-                                    className="markdown-body"
-                                    style={{ fontSize: '14px', lineHeight: '1.7', color: 'var(--text)', opacity: 0.9 }}
+                                    className="markdown-body rag-context-markdown"
                                     dangerouslySetInnerHTML={{ __html: mdHtml }}
                                 />
                             );
                         })() : isCode ? (
-                            <div style={{
-                                borderRadius: '8px',
-                                border: '1px solid rgba(255,255,255,0.08)',
-                                overflow: 'hidden',
-                            }}>
+                            <div className="rag-context-code-block">
                                 {lang && (
-                                    <div style={{
-                                        padding: '4px 12px',
-                                        background: 'rgba(255,255,255,0.06)',
-                                        borderBottom: '1px solid rgba(255,255,255,0.08)',
-                                        fontSize: '11px', color: 'var(--muted)',
-                                        fontFamily: 'monospace',
-                                    }}>
+                                    <div className="rag-context-code-language">
                                         {lang}
                                     </div>
                                 )}
                                 <pre
-                                    className="hljs"
-                                    style={{
-                                        margin: 0, padding: '14px 16px',
-                                        /* 가로 스크롤 대신 줄바꿈 — 뷰어 용도라 reformat이 더 읽기 편함 */
-                                        overflowX: 'hidden',
-                                        whiteSpace: 'pre-wrap',
-                                        wordBreak: 'break-all',
-                                        fontSize: '13px', lineHeight: '1.6',
-                                        borderRadius: lang ? '0 0 8px 8px' : '8px',
-                                        background: 'transparent',
-                                    }}
+                                    className={`hljs rag-context-code${lang ? ' has-language' : ''}`}
                                 >
                                     <code
                                         dangerouslySetInnerHTML={{ __html: highlightedHtml }}
-                                        style={{ background: 'none', padding: 0 }}
+                                        className="rag-context-code-content"
                                     />
                                 </pre>
                             </div>
                         ) : isPublicData ? (
-                            <div style={{fontSize: '14px', color: 'var(--text)', lineHeight: '1.75', opacity: 0.88}}>
+                            <div className="rag-context-public-data">
                                 {content.split(/\n{2,}/).filter(Boolean).map((paragraph, index) => (
-                                    <p key={index} style={{whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: index ? '14px 0 0' : 0}}>
+                                    <p key={index}>
                                         {paragraph}
                                     </p>
                                 ))}
                             </div>
                         ) : (
-                            <pre style={{
-                                fontSize: '14px', color: 'var(--text)',
-                                lineHeight: '1.7', whiteSpace: 'pre-wrap',
-                                wordBreak: 'break-word', margin: 0,
-                                opacity: 0.85, fontFamily: 'inherit',
-                            }}>
+                            <pre className="rag-context-plain-text">
                                 {content}
                             </pre>
                         )}

@@ -2,8 +2,6 @@ import React, {useRef, useEffect, useCallback, useMemo, useState} from 'react';
 import Message from '../Message';
 import LoadingIndicator from '../LoadingIndicator';
 import FollowupBar from '../FollowupBar/FollowupBar';
-import CodePanel from '../CodePanel/CodePanel';
-import GoogleWorkspacePanel from '../GoogleWorkspacePanel/GoogleWorkspacePanel';
 import type {DriveFile} from '../GoogleWorkspacePanel/DrivePanel';
 import type {GoogleCalendarSelection} from '../../types/googleWorkspace';
 import {useCodePanel} from '../../contexts/CodePanelContext';
@@ -11,8 +9,12 @@ import {usePanelManager} from '../../contexts/PanelManagerContext';
 import {usePluginExtensions} from '../../plugins/usePluginExtensions';
 import type {Message as MessageType} from '../../types';
 import type {ArticleAttachment} from '../../types';
+import {getUserProfile, onUserProfileUpdated} from '../../services/userProfile';
 import PanelResizer, {getSavedPanelWidth, savePanelWidth} from '../common/PanelResizer/PanelResizer';
 import {useTranslation} from 'react-i18next';
+
+const CodePanel = React.lazy(() => import('../CodePanel/CodePanel'));
+const GoogleWorkspacePanel = React.lazy(() => import('../GoogleWorkspacePanel/GoogleWorkspacePanel'));
 import './ChatArea.css';
 
 const WORKSPACE_PANEL_WIDTH_KEY = 'vyact-google-workspace-embedded-panel-width';
@@ -51,32 +53,31 @@ const summarizeTurnText = (content: string, maxLength: number): string => {
     return normalized.length > maxLength ? `${normalized.slice(0, maxLength)}…` : normalized;
 };
 
-const buildConversationTurns = (messages: MessageType[]): ConversationTurn[] => messages.reduce<ConversationTurn[]>(
-    (turns, message, messageIndex) => {
-        if (message.role !== 'user') return turns;
-        const answer = messages.slice(messageIndex + 1).find(next => next.role === 'assistant');
+const buildConversationTurns = (messages: MessageType[]): ConversationTurn[] => {
+    const turns: ConversationTurn[] = [];
+    let nextAssistantIndex = 0;
+    messages.forEach((message, messageIndex) => {
+        if (message.role !== 'user') return;
+        nextAssistantIndex = Math.max(nextAssistantIndex, messageIndex + 1);
+        while (nextAssistantIndex < messages.length && messages[nextAssistantIndex].role !== 'assistant') {
+            nextAssistantIndex += 1;
+        }
         turns.push({
             messageIndex,
             question: summarizeTurnText(message.content, 70),
-            answer: summarizeTurnText(answer?.content || '', 130),
+            answer: summarizeTurnText(messages[nextAssistantIndex]?.content || '', 130),
         });
-        return turns;
-    },
-    [],
-);
+    });
+    return turns;
+};
 
 const WelcomeGreeting: React.FC = () => {
     const {t} = useTranslation('main');
     const [nickname, setNickname] = useState('');
 
     useEffect(() => {
-        fetch('/api/user-profile')
-            .then(r => r.json())
-            .then(d => {
-                if (d.nickname) setNickname(d.nickname);
-            })
-            .catch(() => {
-            });
+        void getUserProfile().then(profile => setNickname(profile.nickname)).catch(() => {});
+        return onUserProfileUpdated(profile => setNickname(profile.nickname));
     }, []);
 
     const greeting = getGreeting(t);
@@ -530,7 +531,11 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             {panels.activePanel && (
                 <PanelResizer onWidthChange={googleWorkspaceOpen ? handleWorkspacePanelResize : handlePanelResize} onReset={googleWorkspaceOpen ? resetWorkspacePanelWidth : undefined}/>
             )}
-            {panels.activePanel === 'code' && panel && <CodePanel style={{width: `${panelWidth}%`}}/>}
+            {panels.activePanel === 'code' && panel && (
+                <React.Suspense fallback={null}>
+                    <CodePanel style={{width: `${panelWidth}%`}}/>
+                </React.Suspense>
+            )}
             {sidePanels
                 .filter(item => item.id === panels.activePanel || panels.minimizedPanels.includes(item.id))
                 .map(item => (
@@ -549,12 +554,16 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                         })}
                     </div>
                 ))}
-            {panels.activePanel === 'google-workspace' && googleWorkspaceOpen && <GoogleWorkspacePanel embedded selectedMessageId={selectedGoogleMailId}
-                selectedCalendarEvent={selectedGoogleCalendarEvent}
-                onClose={onGoogleWorkspaceClose || (() => {})} style={{width: `${workspacePanelWidth}%`}}
-                onAttachDriveFileToChat={onAttachDriveFileToChat}
-                onAttachMailFilesToChat={onAttachMailFilesToChat}
-                onIndexDriveDocument={onIndexDriveDocument}/>}
+            {panels.activePanel === 'google-workspace' && googleWorkspaceOpen && (
+                <React.Suspense fallback={null}>
+                    <GoogleWorkspacePanel embedded selectedMessageId={selectedGoogleMailId}
+                        selectedCalendarEvent={selectedGoogleCalendarEvent}
+                        onClose={onGoogleWorkspaceClose || (() => {})} style={{width: `${workspacePanelWidth}%`}}
+                        onAttachDriveFileToChat={onAttachDriveFileToChat}
+                        onAttachMailFilesToChat={onAttachMailFilesToChat}
+                        onIndexDriveDocument={onIndexDriveDocument}/>
+                </React.Suspense>
+            )}
         </div>
     );
 };

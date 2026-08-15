@@ -1,19 +1,20 @@
-import {useCallback, useEffect, useState} from 'react';
+import {lazy, Suspense, useCallback, useEffect, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {api} from '../../services/api';
 import PanelResizer from '../common/PanelResizer/PanelResizer';
 import CustomSelect from '../CustomSelect/CustomSelect';
-import MailPanel from './MailPanel';
-import DrivePanel from './DrivePanel';
 import type {DriveFile} from './DrivePanel';
-import CalendarPanel from './CalendarPanel';
 import type {GoogleCalendarSelection} from '../../types/googleWorkspace';
+import {getGoogleWorkspaceStatus, refreshGoogleWorkspaceStatus} from '../../services/googleWorkspaceStatus';
 import './GoogleWorkspacePanel.css';
 
 const PANEL_WIDTH_STORAGE_KEY = 'vyact-google-workspace-panel-width';
 const DEFAULT_PANEL_WIDTH = 860;
 const MIN_PANEL_WIDTH = 560;
 const VIEWPORT_GUTTER = 120;
+const MailPanel = lazy(() => import('./MailPanel'));
+const DrivePanel = lazy(() => import('./DrivePanel'));
+const CalendarPanel = lazy(() => import('./CalendarPanel'));
 
 const clampPanelWidth = (width: number) => Math.max(MIN_PANEL_WIDTH, Math.min(window.innerWidth - VIEWPORT_GUTTER, width));
 
@@ -44,13 +45,12 @@ export default function GoogleWorkspacePanel({onClose, selectedMessageId, select
     const [accounts, setAccounts] = useState<Array<{id: string; email?: string}>>([]);
     const [activeAccountId, setActiveAccountId] = useState('');
 
-    const loadAccounts = useCallback(async () => {
-        const [serversResult, authStatus] = await Promise.all([
-            api.getMcpServers(),
-            api.getGoogleAuthStatus(),
-        ]);
-        const server = (serversResult.servers || []).find(item => item.type === 'google_workspace');
-        const connectedAccounts = (authStatus.accounts || []).filter(account => account.authenticated);
+    const loadAccounts = useCallback(async (forceRefresh = false) => {
+        const workspaceStatus = await (forceRefresh
+            ? refreshGoogleWorkspaceStatus()
+            : getGoogleWorkspaceStatus());
+        const connectedAccounts = workspaceStatus.accounts.filter(account => account.authenticated);
+        const server = workspaceStatus.mcpServers.find(item => item.type === 'google_workspace');
         const configuredActiveAccountId = typeof server?.config?.active_account_id === 'string'
             ? server.config.active_account_id
             : '';
@@ -73,13 +73,13 @@ export default function GoogleWorkspacePanel({onClose, selectedMessageId, select
         const handleAccountChanged = (event: Event) => {
             const accountId = (event as CustomEvent).detail?.accountId;
             if (accountId) setActiveAccountId(accountId);
-            void loadAccounts();
         };
+        const handleWorkspaceStatusChanged = () => void loadAccounts(true);
         window.addEventListener('vyact:google-account-changed', handleAccountChanged);
-        window.addEventListener('vyact:google-workspace-status-changed', handleAccountChanged);
+        window.addEventListener('vyact:google-workspace-status-changed', handleWorkspaceStatusChanged);
         return () => {
             window.removeEventListener('vyact:google-account-changed', handleAccountChanged);
-            window.removeEventListener('vyact:google-workspace-status-changed', handleAccountChanged);
+            window.removeEventListener('vyact:google-workspace-status-changed', handleWorkspaceStatusChanged);
         };
     }, [loadAccounts]);
 
@@ -139,14 +139,16 @@ export default function GoogleWorkspacePanel({onClose, selectedMessageId, select
             </button>
         </header>
         <div key={activeAccountId} className="gwp-account-content">
-        {tab === 'mail' ? <MailPanel accountId={activeAccountId} selectedMessageId={selectedMessageId} onAttachFilesToChat={onAttachMailFilesToChat}/> : tab === 'drive' ? <DrivePanel onAttachToChat={onAttachDriveFileToChat} onIndexDocument={onIndexDriveDocument}/> : (
-            <CalendarPanel
-                selectedEvent={pendingCalendarEvent}
-                onSelectedEventHandled={requestId => {
-                    setPendingCalendarEvent(current => current?.requestId === requestId ? null : current);
-                }}
-            />
-        )}
+        <Suspense fallback={null}>
+            {tab === 'mail' ? <MailPanel accountId={activeAccountId} selectedMessageId={selectedMessageId} onAttachFilesToChat={onAttachMailFilesToChat}/> : tab === 'drive' ? <DrivePanel onAttachToChat={onAttachDriveFileToChat} onIndexDocument={onIndexDriveDocument}/> : (
+                <CalendarPanel
+                    selectedEvent={pendingCalendarEvent}
+                    onSelectedEventHandled={requestId => {
+                        setPendingCalendarEvent(current => current?.requestId === requestId ? null : current);
+                    }}
+                />
+            )}
+        </Suspense>
         </div>
     </aside>;
 }

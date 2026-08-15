@@ -3,9 +3,6 @@ import {useTranslation} from 'react-i18next';
 import Sidebar from '../Sidebar';
 import ChatArea from '../ChatArea';
 import ChatInput from '../ChatInput';
-import PdfModal from '../PdfModal/PdfModal';
-import DocumentModal from '../DocumentModal/DocumentModal';
-import VoiceChatModal from '../VoiceChatModal/VoiceChatModal';
 import {CodePanelProvider} from '../../contexts/CodePanelContext';
 import {PanelManagerProvider} from '../../contexts/PanelManagerContext';
 import {PluginPanelCoordinator, PluginProviders} from '../../plugins/PluginRuntimeHost';
@@ -18,16 +15,6 @@ import {useModels} from './useModels';
 import {useConversation} from './useConversation';
 import {useChat} from './useChat';
 import {useGlobalKeyboard} from './useGlobalKeyboard';
-import CommandPalette from './CommandPalette';
-import ShortcutModal from './ShortcutModal';
-import SupportModal from '../common/SupportModal/SupportModal';
-import RagContextModal from './RagContextModal';
-import MemoModal from '../MemoModal/MemoModal';
-import QuickMemoModal from '../QuickMemoModal/QuickMemoModal';
-import DownloadModal from './DownloadModal';
-import SummaryModal from '../SummaryModal/SummaryModal';
-import SystemPromptModal from '../SystemPromptModal/SystemPromptModal';
-
 import TitleBar from '../TitleBar/TitleBar';
 import './MainPage.css';
 import {usePluginExtensions} from '../../plugins/usePluginExtensions';
@@ -39,6 +26,19 @@ interface MainPageProps {
 }
 
 const SIDEBAR_COLLAPSED_STORAGE_KEY = 'vyact-sidebar-collapsed';
+
+const PdfModal = React.lazy(() => import('../PdfModal/PdfModal'));
+const DocumentModal = React.lazy(() => import('../DocumentModal/DocumentModal'));
+const VoiceChatModal = React.lazy(() => import('../VoiceChatModal/VoiceChatModal'));
+const MemoModal = React.lazy(() => import('../MemoModal/MemoModal'));
+const QuickMemoModal = React.lazy(() => import('../QuickMemoModal/QuickMemoModal'));
+const SummaryModal = React.lazy(() => import('../SummaryModal/SummaryModal'));
+const SystemPromptModal = React.lazy(() => import('../SystemPromptModal/SystemPromptModal'));
+const CommandPalette = React.lazy(() => import('./CommandPalette'));
+const ShortcutModal = React.lazy(() => import('./ShortcutModal'));
+const SupportModal = React.lazy(() => import('../common/SupportModal/SupportModal'));
+const RagContextModal = React.lazy(() => import('./RagContextModal'));
+const DownloadModal = React.lazy(() => import('./DownloadModal'));
 
 function getStoredSidebarCollapsed(): boolean {
     try {
@@ -250,12 +250,12 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
         showVoiceChatModalRef,
         setConvId: conv.setConvId,
         addLocalConversation: conv.addLocalConversation,
+        completeLocalConversation: conv.completeLocalConversation,
         setMessagesWithRef: conv.setMessagesWithRef,
         setMessagesForConversation: conv.setMessagesForConversation,
         getMessagesForConversation: conv.getMessagesForConversation,
         setPendingArticles: conv.setPendingArticles,
         mapMsg: conv.mapMsg,
-        loadHistory: conv.loadHistory,
         newConversation: conv.newConversation,
         clearConversation: conv.clearConversation,
         setResetTrigger,
@@ -584,15 +584,17 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                         </div>
 
                         {/* ── Modals ─────────────────────────────────────────────── */}
-                        <SystemPromptModal
-                            isOpen={showSystemPromptModal}
-                            prompts={systemPrompts}
-                            onClose={() => setShowSystemPromptModal(false)}
-                            onCreate={createSystemPrompt}
-                            onUpdate={updateSystemPrompt}
-                            onDelete={deleteSystemPrompt}
-                            onReorder={reorderSystemPrompts}
-                        />
+                        {showSystemPromptModal && <React.Suspense fallback={null}>
+                            <SystemPromptModal
+                                isOpen
+                                prompts={systemPrompts}
+                                onClose={() => setShowSystemPromptModal(false)}
+                                onCreate={createSystemPrompt}
+                                onUpdate={updateSystemPrompt}
+                                onDelete={deleteSystemPrompt}
+                                onReorder={reorderSystemPrompts}
+                            />
+                        </React.Suspense>}
                         {pluginExtensions.modals.map(modal => (
                             <React.Fragment key={modal.id}>
                                 {modal.render({
@@ -648,12 +650,14 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                         ))}
 
                         {models.isDownloading && (
-                            <DownloadModal
-                                modelName={models.downloadingModel}
-                                progress={models.downloadProgress}
-                                message={models.downloadMessage}
-                                isLoadingIntoMemory={models.isModelLoadingIntoMemory}
-                            />
+                            <React.Suspense fallback={null}>
+                                <DownloadModal
+                                    modelName={models.downloadingModel}
+                                    progress={models.downloadProgress}
+                                    message={models.downloadMessage}
+                                    isLoadingIntoMemory={models.isModelLoadingIntoMemory}
+                                />
+                            </React.Suspense>
                         )}
 
                         {pendingModelDownload && (
@@ -670,13 +674,15 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                             />
                         )}
 
-                        <VoiceChatModal
-                            isOpen={showVoiceChatModal}
-                            onClose={() => setVoiceChatModal(false)}
-                            onSend={(msg, systemPrompt, voiceMode) => chat.handleSend(msg, undefined, undefined, systemPrompt, voiceMode)}
-                        />
+                        {showVoiceChatModal && <React.Suspense fallback={null}>
+                            <VoiceChatModal
+                                isOpen
+                                onClose={() => setVoiceChatModal(false)}
+                                onSend={(msg, systemPrompt, voiceMode) => chat.handleSend(msg, undefined, undefined, systemPrompt, voiceMode)}
+                            />
+                        </React.Suspense>}
 
-                        {showPdfModal && (
+                        {showPdfModal && <React.Suspense fallback={null}>
                             <PdfModal
                                 onClose={() => {
                                     setShowPdfModal(false);
@@ -705,10 +711,11 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                                     conv.loadHistory();
                                 }}
                             />
-                        )}
+                        </React.Suspense>}
 
-                        <DocumentModal
-                            isOpen={showDocumentModal}
+                        {showDocumentModal && <React.Suspense fallback={null}>
+                            <DocumentModal
+                            isOpen
                             onClose={() => setShowDocumentModal(false)}
                             externalDropFiles={documentModalDropFiles}
                             onExternalDropHandled={() => setDocumentModalDropFiles([])}
@@ -732,7 +739,8 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                                     });
                                 }
                             }}
-                        />
+                            />
+                        </React.Suspense>}
 
                         {chat.zipConfirmRequest && (
                             <ConfirmModal
@@ -755,29 +763,38 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
 
                         {/* ── Command Palette ─────────────────────────────────────── */}
                         {showMemoModal && (
-                            <MemoModal onClose={() => {
-                                setShowMemoModal(false);
-                                setMemoInitialId(undefined);
-                            }} initialMemoId={memoInitialId}/>
+                            <React.Suspense fallback={null}>
+                                <MemoModal onClose={() => {
+                                    setShowMemoModal(false);
+                                    setMemoInitialId(undefined);
+                                }} initialMemoId={memoInitialId}/>
+                            </React.Suspense>
                         )}
                         {showQuickMemoModal && (
-                            <QuickMemoModal onClose={() => setShowQuickMemoModal(false)}/>
+                            <React.Suspense fallback={null}>
+                                <QuickMemoModal onClose={() => setShowQuickMemoModal(false)}/>
+                            </React.Suspense>
                         )}
 
                         {summaryConvId && (
-                            <SummaryModal convId={summaryConvId} onClose={() => setSummaryConvId(null)}/>
+                            <React.Suspense fallback={null}>
+                                <SummaryModal convId={summaryConvId} onClose={() => setSummaryConvId(null)}/>
+                            </React.Suspense>
                         )}
 
 
                         {injectedContextModal && (
-                            <RagContextModal
-                                items={injectedContextModal}
-                                onClose={() => setInjectedContextModal(null)}
-                            />
+                            <React.Suspense fallback={null}>
+                                <RagContextModal
+                                    items={injectedContextModal}
+                                    onClose={() => setInjectedContextModal(null)}
+                                />
+                            </React.Suspense>
                         )}
 
                         {showCommandPalette && (
-                            <CommandPalette
+                            <React.Suspense fallback={null}>
+                                <CommandPalette
                                 query={cmdPaletteQuery}
                                 onQueryChange={setCmdPaletteQuery}
                                 onClose={() => setShowCommandPalette(false)}
@@ -805,15 +822,20 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                                     setOpenSettingsExternal(true);
                                 }}
                                 onOpenVoiceChat={() => setVoiceChatModal(true)}
-                            />
+                                />
+                            </React.Suspense>
                         )}
 
                         {/* ── Shortcut Modal ──────────────────────────────────────── */}
                         {showShortcutModal && (
-                            <ShortcutModal onClose={() => setShowShortcutModal(false)}/>
+                            <React.Suspense fallback={null}>
+                                <ShortcutModal onClose={() => setShowShortcutModal(false)}/>
+                            </React.Suspense>
                         )}
                         {showSupportModal && (
-                            <SupportModal onClose={() => setShowSupportModal(false)}/>
+                            <React.Suspense fallback={null}>
+                                <SupportModal onClose={() => setShowSupportModal(false)}/>
+                            </React.Suspense>
                         )}
                     </div>
                 </div>

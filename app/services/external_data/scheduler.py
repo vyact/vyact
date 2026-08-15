@@ -10,31 +10,26 @@ from services.external_data.cleanup import (
     start_expired_document_cleanup,
 )
 from services.external_data.biz_support import (
-    get_sync_status as get_biz_support_sync_status,
     start_synchronization as start_biz_support_synchronization,
 )
-from services.external_data.gov24 import get_sync_status, start_synchronization
+from services.external_data.gov24 import start_synchronization
 from services.external_data.housing import (
-    get_sync_status as get_housing_sync_status,
     start_synchronization as start_housing_synchronization,
 )
 from services.external_data.lh_lease_complex import (
-    get_sync_status as get_lh_complex_sync_status,
     start_synchronization as start_lh_complex_synchronization,
 )
 from services.external_data.lh_lease_notice import (
-    get_sync_status as get_lh_notice_sync_status,
     start_synchronization as start_lh_notice_synchronization,
 )
 from services.external_data.k_startup import (
-    get_sync_status as get_k_startup_sync_status,
     start_synchronization as start_k_startup_synchronization,
 )
 from services.external_data.welfare import (
-    get_sync_status as get_welfare_sync_status,
     start_synchronization as start_welfare_synchronization,
 )
 from services.external_data.settings import load_external_data_connections
+from services.external_data.statuses import load_sync_statuses
 
 logger = get_logger(__name__)
 
@@ -71,71 +66,36 @@ async def _run_due_synchronizations() -> None:
         return
     auto_sync_enabled = schedule_config.get("auto_sync_enabled", False)
     interval_hours = schedule_config.get("auto_sync_interval_hours", DEFAULT_INTERVAL_HOURS)
-    gov24 = schedule_config
-    if (
-        not shared_service_key
-        or not gov24.get("enabled", True)
-        or not auto_sync_enabled
-    ):
-        gov24 = None
     if interval_hours not in ALLOWED_INTERVAL_HOURS:
         interval_hours = DEFAULT_INTERVAL_HOURS
-    status = await get_sync_status() if gov24 else {}
-    # 실패 시 매분 API를 재호출하지 않고 선택한 주기만큼 기다린다. 이전 앱
-    # 실행이 수집 도중 종료돼 status가 running으로 남은 경우에는 메모리 락이
-    # 비어 있으므로 마지막 성공 시각을 기준으로 다시 시작할 수 있다.
-    reference_time = (
-        status.get("failed_at")
-        if status.get("status") == "failed"
-        else status.get("last_successful_sync_at")
-    )
-    if gov24 and is_sync_due(reference_time, interval_hours):
-        if start_synchronization(shared_service_key):
-            logger.info("[external-data] scheduled Government24 sync started (%sh)", interval_hours)
+    if not shared_service_key or not auto_sync_enabled:
+        return
 
-    biz_support = connections.get("kr.biz_support") or {}
-    if shared_service_key and biz_support.get("enabled", False) and auto_sync_enabled:
-        biz_status = await get_biz_support_sync_status()
-        biz_reference_time = biz_status.get("failed_at") if biz_status.get("status") == "failed" else biz_status.get("last_successful_sync_at")
-        if is_sync_due(biz_reference_time, interval_hours):
-            if start_biz_support_synchronization(shared_service_key):
-                logger.info("[external-data] scheduled BizInfo support sync started (%sh)", interval_hours)
-
-    k_startup = connections.get("kr.k_startup") or {}
-    if shared_service_key and k_startup.get("enabled", False) and auto_sync_enabled:
-        k_startup_status = await get_k_startup_sync_status()
-        k_startup_reference_time = k_startup_status.get("failed_at") if k_startup_status.get("status") == "failed" else k_startup_status.get("last_successful_sync_at")
-        if is_sync_due(k_startup_reference_time, interval_hours):
-            if start_k_startup_synchronization(shared_service_key):
-                logger.info("[external-data] scheduled K-Startup sync started (%sh)", interval_hours)
-
-    welfare = connections.get("kr.welfare") or {}
-    if shared_service_key and welfare.get("enabled", False) and auto_sync_enabled:
-        welfare_status = await get_welfare_sync_status()
-        welfare_reference_time = welfare_status.get("failed_at") if welfare_status.get("status") == "failed" else welfare_status.get("last_successful_sync_at")
-        if is_sync_due(welfare_reference_time, interval_hours):
-            if start_welfare_synchronization(shared_service_key):
-                logger.info("[external-data] scheduled welfare sync started (%sh)", interval_hours)
-
-    housing = connections.get("kr.housing") or {}
-    if shared_service_key and housing.get("enabled", False) and auto_sync_enabled:
-        housing_status = await get_housing_sync_status()
-        housing_reference_time = housing_status.get("failed_at") if housing_status.get("status") == "failed" else housing_status.get("last_successful_sync_at")
-        if is_sync_due(housing_reference_time, interval_hours):
-            if start_housing_synchronization(shared_service_key):
-                logger.info("[external-data] scheduled housing sync started (%sh)", interval_hours)
-
-    lh_sources = (
-        ("kr.lh_lease_complex", get_lh_complex_sync_status, start_lh_complex_synchronization),
-        ("kr.lh_lease_notice", get_lh_notice_sync_status, start_lh_notice_synchronization),
-    )
-    for source_id, get_status_callback, start_callback in lh_sources:
-        source_config = connections.get(source_id) or {}
-        if shared_service_key and source_config.get("enabled", False) and auto_sync_enabled:
-            source_status = await get_status_callback()
-            reference = source_status.get("failed_at") if source_status.get("status") == "failed" else source_status.get("last_successful_sync_at")
-            if is_sync_due(reference, interval_hours) and start_callback(shared_service_key):
-                logger.info("[external-data] scheduled %s sync started (%sh)", source_id, interval_hours)
+    source_handlers = {
+        "kr.gov24": (start_synchronization, "Government24"),
+        "kr.biz_support": (start_biz_support_synchronization, "BizInfo support"),
+        "kr.k_startup": (start_k_startup_synchronization, "K-Startup"),
+        "kr.welfare": (start_welfare_synchronization, "welfare"),
+        "kr.housing": (start_housing_synchronization, "housing"),
+        "kr.lh_lease_complex": (start_lh_complex_synchronization, "kr.lh_lease_complex"),
+        "kr.lh_lease_notice": (start_lh_notice_synchronization, "kr.lh_lease_notice"),
+    }
+    enabled_source_ids = [
+        source_id
+        for source_id in source_handlers
+        if (connections.get(source_id) or {}).get("enabled", source_id == "kr.gov24")
+    ]
+    statuses = await load_sync_statuses(enabled_source_ids)
+    for source_id in enabled_source_ids:
+        status = statuses.get(source_id, {})
+        reference_time = (
+            status.get("failed_at")
+            if status.get("status") == "failed"
+            else status.get("last_successful_sync_at")
+        )
+        start_callback, source_label = source_handlers[source_id]
+        if is_sync_due(reference_time, interval_hours) and start_callback(shared_service_key):
+            logger.info("[external-data] scheduled %s sync started (%sh)", source_label, interval_hours)
 
 
 async def _run_scheduler() -> None:

@@ -598,3 +598,24 @@
 @keyframes msg-tool-spin {
     to { transform: rotate(360deg); }
 }
+.generated-image-item { margin-bottom: 10px; }
+.generated-image-preview { display: block; max-width: 320px; max-height: 240px; border: 1px solid rgba(139, 92, 246, .3); border-radius: 10px; cursor: zoom-in; object-fit: cover; transition: opacity .2s; }
+.generated-image-preview:hover, .message-image-attachment:hover { opacity: .85; }
+.generated-image-download { display: inline-flex; align-items: center; gap: 5px; margin-top: 7px; padding: 5px 12px; border: 1px solid rgba(139, 92, 246, .3); border-radius: 7px; background: rgba(139, 92, 246, .1); color: #a78bfa; cursor: pointer; font-size: 12px; font-weight: 500; transition: background .15s; }
+.generated-image-download:hover { background: rgba(139, 92, 246, .2); }
+.generated-image-caption { color: var(--muted); font-size: 12px; }
+.message-image-attachments { margin-bottom: 14px; }
+.message-image-attachment { display: block; max-width: 100%; margin-bottom: 8px; border: 1px solid var(--border); border-radius: 10px; cursor: zoom-in; transition: opacity .2s; }
+.message-export-file { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding: 12px 14px; border: 1px solid rgba(99, 102, 241, .3); border-radius: 10px; background: rgba(99, 102, 241, .08); }
+.message-export-file-info { display: flex; align-items: center; gap: 9px; }
+.message-export-file-icon { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; flex-shrink: 0; border-radius: 8px; background: linear-gradient(135deg, #6366f1, #818cf8); }
+.message-export-file-title { color: var(--text); font-size: 13px; font-weight: 600; }
+.message-export-file-name { margin-top: 1px; color: var(--muted); font-size: 11px; }
+.message-export-file-actions { display: flex; flex-shrink: 0; gap: 7px; }
+.message-export-edit, .message-export-download { display: inline-flex; align-items: center; border-radius: 8px; cursor: pointer; }
+.message-export-edit { gap: 5px; padding: 7px 12px; border: 1px solid rgba(99, 102, 241, .35); background: rgba(99, 102, 241, .1); color: #6366f1; font-size: 12px; font-weight: 500; transition: all .15s; }
+.message-export-edit:hover { background: rgba(99, 102, 241, .18); }
+.message-export-download { gap: 6px; padding: 7px 14px; border: 0; background: linear-gradient(135deg, #6366f1, #818cf8); color: #fff; font-size: 13px; font-weight: 600; transition: opacity .15s; }
+.message-export-download:hover { opacity: .85; }
+.message-retry { display: flex; align-items: center; gap: 6px; margin-top: 10px; padding: 7px 14px; border: 1px solid rgba(239, 68, 68, .5); border-radius: 8px; background: rgba(239, 68, 68, .2); color: #fff; cursor: pointer; font-size: 13px; font-weight: 500; transition: background .2s; }
+.message-retry:hover { background: rgba(239, 68, 68, .35); }

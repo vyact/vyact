@@ -1,3 +1,5 @@
+import {getKokoroAvailability} from '../../services/tts/kokoroStatus';
+
 // ── 공통 상수 ─────────────────────────────────────────────
 // 음성 대화일때 선택된 시스템 프롬프트가 있으면 그것을 적용하고 없으면 아래의 값을 사용함.
 export const VOICE_SYSTEM_PROMPTS: Record<string, string> = {
@@ -211,19 +213,10 @@ export function pickVoice(lang: string, voices: SpeechSynthesisVoice[], enVoiceU
 
 const KOKORO_SUPPORTED_PREFIXES = new Set(['en', 'es', 'fr', 'hi', 'it', 'ja', 'pt', 'zh']);
 
-let _kokoroAvailable: boolean | null = null;
 let _kokoroAudioCtx: AudioContext | null = null;
 
 export async function isKokoroAvailable(): Promise<boolean> {
-    if (_kokoroAvailable !== null) return _kokoroAvailable;
-    try {
-        const res = await fetch('/api/tts/kokoro/status');
-        const data = await res.json();
-        _kokoroAvailable = data.available === true;
-    } catch {
-        _kokoroAvailable = false;
-    }
-    return _kokoroAvailable;
+    return getKokoroAvailability();
 }
 
 /**

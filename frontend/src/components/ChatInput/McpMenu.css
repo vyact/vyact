@@ -1,0 +1,20 @@
+.mcp-menu { position: relative; flex-shrink: 0; }
+.mcp-menu-trigger { display: flex; align-items: center; height: 30px; flex-shrink: 0; gap: 5px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; color: #b0b0b8; cursor: pointer; font-size: 12px; font-weight: 600; transition: background .2s; }
+.mcp-menu-trigger:hover { background: var(--surface2); }
+.mcp-menu-trigger:disabled { cursor: not-allowed; }
+.mcp-menu-trigger.active { color: var(--accent); }
+.mcp-menu-count { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; line-height: 1; }
+.mcp-menu-popover { position: absolute; bottom: 45px; left: 0; z-index: 1000; display: flex; min-width: 240px; max-width: 320px; max-height: 50vh; flex-direction: column; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); box-shadow: 0 4px 16px rgba(0, 0, 0, .35); }
+.mcp-menu-header { flex-shrink: 0; padding: 10px 14px 8px; border-bottom: 1px solid var(--border); color: var(--muted); font-size: 12px; font-weight: 600; }
+.mcp-menu-list { flex: 1; overflow-y: auto; }
+.mcp-menu-empty { padding: 14px; color: var(--muted); font-size: 13px; }
+.mcp-menu-server { display: flex; align-items: center; gap: 10px; padding: 11px 14px; cursor: pointer; transition: background .15s; }
+.mcp-menu-server:hover { background: rgba(255, 255, 255, .05); }
+.mcp-menu-server.busy { cursor: wait; }
+.mcp-menu-server-info { min-width: 0; flex: 1; }
+.mcp-menu-server-name { overflow: hidden; color: var(--text); font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.mcp-menu-switch { position: relative; width: 38px; height: 22px; flex-shrink: 0; border-radius: 11px; background: var(--surface2); transition: background .2s; }
+.mcp-menu-switch.enabled { background: var(--accent); }
+.mcp-menu-switch.busy { opacity: .6; }
+.mcp-menu-switch-knob { position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .3); transition: left .2s; }
+.mcp-menu-switch.enabled .mcp-menu-switch-knob { left: 18px; }

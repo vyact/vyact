@@ -572,3 +572,5 @@
     background: color-mix(in srgb, var(--accent) 16%, var(--surface2));
     color: var(--accent);
 }
+.image-attachment-preview__image { display: block; width: 72px; height: 72px; border: 1px solid var(--border); border-radius: 8px; cursor: zoom-in; object-fit: cover; transition: opacity .2s; }
+.image-attachment-preview__image:hover { opacity: .8; }

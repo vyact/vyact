@@ -17,6 +17,8 @@ import ExternalDataSection from './ExternalDataSection';
 import {refreshSkills} from '../../services/skills';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import {refreshGoogleWorkspaceStatus} from '../../services/googleWorkspaceStatus';
+import {getUserProfile, updateUserProfile} from '../../services/userProfile';
+import {getKokoroAvailability} from '../../services/tts/kokoroStatus';
 
 interface IndexStat {
     index: string;
@@ -366,16 +368,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
             window.speechSynthesis?.addEventListener('voiceschanged', loadVoices);
 
             // Kokoro 사용 가능 여부 확인
-            fetch('/api/tts/kokoro/status')
-                .then(r => r.json())
-                .then(d => setKokoroAvailable(d.available === true))
-                .catch(() => setKokoroAvailable(false));
+            void getKokoroAvailability().then(setKokoroAvailable);
 
             // 프로필 로드
             setProfileLoading(true);
             setProfileMode('view');
-            fetch('/api/user-profile')
-                .then(r => r.ok ? r.json() : null)
+            getUserProfile()
                 .then(data => {
                     setExistingProfile(data?.profile || null);
                     setExistingNickname(data?.nickname || '');
@@ -681,16 +679,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
     const profileHandleSave = async () => {
         setProfileSaving(true);
         try {
-            const res = await fetch('/api/user-profile', {
-                method: 'PUT',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({profile: profileEditText, nickname: nicknameEdit}),
-            });
-            if (res.ok) {
-                setExistingProfile(profileEditText);
-                setExistingNickname(nicknameEdit);
-                setProfileMode('view');
-            }
+            await updateUserProfile({profile: profileEditText, nickname: nicknameEdit});
+            setExistingProfile(profileEditText);
+            setExistingNickname(nicknameEdit);
+            setProfileMode('view');
         } catch (e) {
             console.error(e);
         } finally {
@@ -703,12 +695,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
         setProfileResponseStyle(responseStyle);
         setProfileStyleSaving(true);
         try {
-            const response = await fetch('/api/user-profile', {
-                method: 'PUT',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({response_style: responseStyle}),
-            });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            await updateUserProfile({response_style: responseStyle});
             toast.success(t('profile.responseStyleSaved'));
         } catch {
             setProfileResponseStyle(previousStyle);
@@ -788,15 +775,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
         if (!profileState.profile || !profileState.analysisCursor) return;
         setProfileSaving(true);
         try {
-            const response = await fetch('/api/user-profile', {
-                method: 'PUT',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    profile: profileState.profile,
-                    analysis_cursor: profileState.analysisCursor,
-                }),
+            await updateUserProfile({
+                profile: profileState.profile,
+                analysis_cursor: profileState.analysisCursor,
             });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
             setExistingProfile(profileState.profile);
             setProfileMode('view');
             toast.success(t('profile.analysisApplied'));

@@ -1,5 +1,5 @@
 import React, {useState, useMemo} from 'react';
-import hljs from 'highlight.js';
+import hljs from '../../utils/syntaxHighlighter';
 import 'highlight.js/styles/github-dark.css';
 import {copyToClipboard} from '../../utils/helpers';
 import './CodeBlock.css';

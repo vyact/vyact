@@ -604,6 +604,7 @@ async def query(req: QueryRequest):
     user_message = build_user_message(original_question, user_ts, req.attachments, articles)
     article_sources = filter_article_sources(result_sources)
     assistant_msg = build_assistant_message(result["answer"], result.get("model", ""), article_sources, injected_context)
+    result["assistant_message"] = assistant_msg
 
     messages = req.messages + [user_message, assistant_msg]
     result["conv_id"] = conv_id

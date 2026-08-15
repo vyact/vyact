@@ -117,23 +117,20 @@ const Message: React.FC<MessageProps> = ({
     const [requestElapsedSeconds, setRequestElapsedSeconds] = React.useState(0);
     const speakingRef = useRef(false);
     React.useEffect(() => {
-        if (!isStreaming) {
-            setRequestElapsedSeconds(0);
-            return;
-        }
+        if (!isStreaming) return;
         const startedAt = requestStartedAt ?? Date.now();
         const updateElapsedSeconds = () => {
             setRequestElapsedSeconds(Math.max(0, Math.floor((Date.now() - startedAt) / 1000)));
         };
-        updateElapsedSeconds();
         const timerId = window.setInterval(updateElapsedSeconds, 1000);
         return () => window.clearInterval(timerId);
     }, [isStreaming, requestStartedAt]);
-    const requestElapsedLabel = requestElapsedSeconds < 60
-        ? t('toolActivity.elapsedShort', {seconds: requestElapsedSeconds})
+    const displayedRequestElapsedSeconds = isStreaming ? requestElapsedSeconds : 0;
+    const requestElapsedLabel = displayedRequestElapsedSeconds < 60
+        ? t('toolActivity.elapsedShort', {seconds: displayedRequestElapsedSeconds})
         : t('toolActivity.elapsedMinutesSeconds', {
-            minutes: Math.floor(requestElapsedSeconds / 60),
-            seconds: requestElapsedSeconds % 60,
+            minutes: Math.floor(displayedRequestElapsedSeconds / 60),
+            seconds: displayedRequestElapsedSeconds % 60,
         });
     const [viewerIndex, setViewerIndex] = React.useState<number | null>(null);
     const [tableImgViewer, setTableImgViewer] = React.useState<{
@@ -342,23 +339,12 @@ const Message: React.FC<MessageProps> = ({
                     <div>
                         {attachments.map((att, idx) => (
                             att.type === 'image' && (
-                                <div key={idx} style={{marginBottom: '10px'}}>
+                                <div className="generated-image-item" key={idx}>
                                     <img
                                         src={`http://localhost:8000/api/images/${att.filename}`}
                                         alt={`generated-${idx}`}
                                         onClick={() => setViewerIndex(idx)}
-                                        style={{
-                                            maxWidth: '320px',
-                                            maxHeight: '240px',
-                                            objectFit: 'cover',
-                                            borderRadius: '10px',
-                                            cursor: 'zoom-in',
-                                            display: 'block',
-                                            transition: 'opacity 0.2s',
-                                            border: '1px solid rgba(139,92,246,0.3)'
-                                        }}
-                                        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.85'}
-                                        onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                                        className="generated-image-preview"
                                     />
                                     <button
                                         onClick={async () => {
@@ -375,23 +361,7 @@ const Message: React.FC<MessageProps> = ({
                                                 console.error('다운로드 실패', e);
                                             }
                                         }}
-                                        style={{
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: '5px',
-                                            marginTop: '7px',
-                                            padding: '5px 12px',
-                                            fontSize: '12px',
-                                            fontWeight: 500,
-                                            color: '#a78bfa',
-                                            background: 'rgba(139,92,246,0.1)',
-                                            border: '1px solid rgba(139,92,246,0.3)',
-                                            borderRadius: '7px',
-                                            cursor: 'pointer',
-                                            transition: 'background 0.15s'
-                                        }}
-                                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(139,92,246,0.2)'}
-                                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(139,92,246,0.1)'}
+                                        className="generated-image-download"
                                     >
                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
                                              stroke="currentColor" strokeWidth="2">
@@ -404,28 +374,19 @@ const Message: React.FC<MessageProps> = ({
                                 </div>
                             )
                         ))}
-                        <span style={{fontSize: '12px', color: 'var(--muted)'}}>🎨 {content}</span>
+                        <span className="generated-image-caption">🎨 {content}</span>
                     </div>
                 ) : (
                     <>
                         {!isGeneratedImage && attachments && attachments.length > 0 && (
-                            <div style={{marginBottom: '14px'}}>
+                            <div className="message-image-attachments">
                                 {attachments.map((att, idx) => (
                                     att.type === 'image' && (
                                         <img key={idx}
                                              src={`http://localhost:8000/api/images/${att.filename}`}
                                              alt={`chart-${idx}`}
                                              onClick={() => setViewerIndex(idx)}
-                                             style={{
-                                                 maxWidth: '100%',
-                                                 borderRadius: '10px',
-                                                 border: '1px solid var(--border)',
-                                                 cursor: 'zoom-in',
-                                                 display: 'block',
-                                                 marginBottom: '8px'
-                                             }}
-                                             onMouseEnter={(e) => e.currentTarget.style.opacity = '0.85'}
-                                             onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                                             className="message-image-attachment"
                                         />
                                     )
                                 ))}
@@ -747,19 +708,9 @@ const Message: React.FC<MessageProps> = ({
             )}
 
             {pdfFile && (
-                <div style={{
-                    marginTop: '12px', padding: '12px 14px',
-                    background: 'rgba(99,102,241,0.08)',
-                    border: '1px solid rgba(99,102,241,0.3)',
-                    borderRadius: '10px', display: 'flex',
-                    alignItems: 'center', justifyContent: 'space-between', gap: '10px'
-                }}>
-                    <div style={{display: 'flex', alignItems: 'center', gap: '9px'}}>
-                        <div style={{
-                            width: '32px', height: '32px', borderRadius: '8px',
-                            background: 'linear-gradient(135deg,#6366f1,#818cf8)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
-                        }}>
+                <div className="message-export-file">
+                    <div className="message-export-file-info">
+                        <div className="message-export-file-icon">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                                 <polyline points="14 2 14 8 20 8"/>
@@ -768,27 +719,19 @@ const Message: React.FC<MessageProps> = ({
                             </svg>
                         </div>
                         <div>
-                            <div style={{fontSize: '13px', fontWeight: 600, color: 'var(--text)'}}>
+                            <div className="message-export-file-title">
                                 {t('pdfModal.fileReady', {
                                     format: pdfParams?.output_format?.toUpperCase() || (pdfFile.toLowerCase().endsWith('.pptx') ? 'PPTX' : 'PDF'),
                                 })}
                             </div>
-                            <div style={{fontSize: '11px', color: 'var(--muted)', marginTop: '1px'}}>{pdfFile}</div>
+                            <div className="message-export-file-name">{pdfFile}</div>
                         </div>
                     </div>
-                    <div style={{display: 'flex', gap: '7px', flexShrink: 0}}>
+                    <div className="message-export-file-actions">
                         {pdfParams && onPdfEdit && (
                             <button
                                 onClick={() => onPdfEdit(pdfParams)}
-                                style={{
-                                    display: 'inline-flex', alignItems: 'center', gap: '5px',
-                                    padding: '7px 12px', fontSize: '12px', fontWeight: 500,
-                                    color: '#6366f1', background: 'rgba(99,102,241,0.1)',
-                                    border: '1px solid rgba(99,102,241,0.35)',
-                                    borderRadius: '8px', cursor: 'pointer', transition: 'all 0.15s'
-                                }}
-                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(99,102,241,0.18)'}
-                                onMouseLeave={e => e.currentTarget.style.background = 'rgba(99,102,241,0.1)'}
+                                className="message-export-edit"
                             >
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                      strokeWidth="2">
@@ -813,14 +756,7 @@ const Message: React.FC<MessageProps> = ({
                                     console.error('PDF 다운로드 실패', e);
                                 }
                             }}
-                            style={{
-                                display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                padding: '7px 14px', fontSize: '13px', fontWeight: 600,
-                                color: '#fff', background: 'linear-gradient(135deg,#6366f1,#818cf8)',
-                                border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'opacity 0.15s'
-                            }}
-                            onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
-                            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                            className="message-export-download"
                         >
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                  strokeWidth="2.5">
@@ -837,23 +773,7 @@ const Message: React.FC<MessageProps> = ({
             {isError && onRetry && (
                 <button
                     onClick={onRetry}
-                    style={{
-                        marginTop: '10px',
-                        padding: '7px 14px',
-                        fontSize: '13px',
-                        fontWeight: '500',
-                        color: 'white',
-                        background: 'rgba(239,68,68,0.2)',
-                        border: '1px solid rgba(239,68,68,0.5)',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        transition: 'background 0.2s'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239,68,68,0.35)'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(239,68,68,0.2)'}
+                    className="message-retry"
                 >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <polyline points="1 4 1 10 7 10"/>
@@ -976,4 +896,4 @@ const Message: React.FC<MessageProps> = ({
     );
 };
 
-export default Message;
+export default React.memo(Message);

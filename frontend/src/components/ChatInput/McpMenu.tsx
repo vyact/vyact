@@ -8,6 +8,7 @@ import {
 } from '../../services/googleWorkspaceStatus';
 import {emitMcpServersChanged, onMcpServersChanged} from '../../utils/mcpEvents';
 import type {McpCatalogEntry, McpServer} from '../../types';
+import './McpMenu.css';
 
 interface McpMenuProps {
     disabled?: boolean;
@@ -131,19 +132,11 @@ const McpMenu: React.FC<McpMenuProps> = ({disabled = false}) => {
     const enabledCount = visibleServers.filter(server => server.enabled).length;
 
     return (
-        <div ref={menuRef} style={{position: 'relative', flexShrink: 0}}>
+        <div className="mcp-menu" ref={menuRef}>
             <button
+                className={`mcp-menu-trigger${enabledCount > 0 ? ' active' : ''}`}
                 onClick={() => setOpen(v => !v)}
                 disabled={disabled}
-                style={{
-                    height: '30px', padding: '0 10px', background: 'transparent',
-                    border: 'none', borderRadius: '10px', cursor: disabled ? 'not-allowed' : 'pointer',
-                    color: enabledCount > 0 ? 'var(--accent)' : '#b0b0b8',
-                    display: 'flex', alignItems: 'center', gap: '5px',
-                    transition: 'background 0.2s', flexShrink: 0, fontSize: '12px', fontWeight: 600,
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--surface2)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <rect x="3" y="3" width="7" height="7" rx="1"/>
@@ -153,39 +146,23 @@ const McpMenu: React.FC<McpMenuProps> = ({disabled = false}) => {
                 </svg>
                 <span>MCP</span>
                 {enabledCount > 0 && (
-                    <span style={{
-                        fontSize: '11px', fontWeight: 700, minWidth: '16px', height: '16px',
-                        padding: '0 4px', borderRadius: '8px', background: 'var(--accent)',
-                        color: '#fff', display: 'inline-flex', alignItems: 'center',
-                        justifyContent: 'center', lineHeight: 1,
-                    }}>{enabledCount}</span>
+                    <span className="mcp-menu-count">{enabledCount}</span>
                 )}
             </button>
 
             {open && (
-                <div style={{
-                    position: 'absolute', bottom: '45px', left: '0',
-                    background: 'var(--surface)', border: '1px solid var(--border)',
-                    borderRadius: '10px', boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
-                    minWidth: '240px', maxWidth: '320px', maxHeight: '50vh',
-                    display: 'flex', flexDirection: 'column',
-                    zIndex: 1000,
-                }}>
-                    <div style={{
-                        padding: '10px 14px 8px', fontSize: '12px', fontWeight: 600,
-                        color: 'var(--muted)', borderBottom: '1px solid var(--border)',
-                        flexShrink: 0,
-                    }}>
+                <div className="mcp-menu-popover">
+                    <div className="mcp-menu-header">
                         {t('mcpMenu.title')}
                     </div>
 
-                    <div style={{overflowY: 'auto', flex: 1}}>
+                    <div className="mcp-menu-list">
                         {loading && visibleServers.length === 0 && (
-                            <div style={{padding: '14px', fontSize: '13px', color: 'var(--muted)'}}>{t('mcpMenu.loading')}</div>
+                            <div className="mcp-menu-empty">{t('mcpMenu.loading')}</div>
                         )}
 
                         {!loading && visibleServers.length === 0 && (
-                            <div style={{padding: '14px', fontSize: '13px', color: 'var(--muted)'}}>
+                            <div className="mcp-menu-empty">
                                 {t('mcpMenu.empty')}<br/>{t('mcpMenu.emptyHint')}
                             </div>
                         )}
@@ -194,35 +171,15 @@ const McpMenu: React.FC<McpMenuProps> = ({disabled = false}) => {
                             <div
                                 key={srv.id}
                                 onClick={() => toggle(srv)}
-                                style={{
-                                    padding: '11px 14px', display: 'flex', alignItems: 'center',
-                                    gap: '10px', cursor: busyId ? 'wait' : 'pointer',
-                                    transition: 'background 0.15s',
-                                }}
-                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                className={`mcp-menu-server${busyId ? ' busy' : ''}`}
                             >
-                                <div style={{flex: 1, minWidth: 0}}>
-                                    <div style={{
-                                        fontSize: '13px', fontWeight: 600, color: 'var(--text)',
-                                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                                    }}>{serverName(srv)}</div>
+                                <div className="mcp-menu-server-info">
+                                    <div className="mcp-menu-server-name">{serverName(srv)}</div>
                                 </div>
 
                                 {/* switch */}
-                                <div style={{
-                                    width: '38px', height: '22px', borderRadius: '11px',
-                                    background: srv.enabled ? 'var(--accent)' : 'var(--surface2)',
-                                    position: 'relative', transition: 'background 0.2s',
-                                    flexShrink: 0, opacity: busyId === srv.id ? 0.6 : 1,
-                                }}>
-                                    <div style={{
-                                        position: 'absolute', top: '2px',
-                                        left: srv.enabled ? '18px' : '2px',
-                                        width: '18px', height: '18px', borderRadius: '50%',
-                                        background: '#fff', transition: 'left 0.2s',
-                                        boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-                                    }}/>
+                                <div className={`mcp-menu-switch${srv.enabled ? ' enabled' : ''}${busyId === srv.id ? ' busy' : ''}`}>
+                                    <div className="mcp-menu-switch-knob"/>
                                 </div>
                             </div>
                         ))}

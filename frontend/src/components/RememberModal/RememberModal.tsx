@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import './RememberModal.css';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
+import {getUserProfile, updateUserProfile} from '../../services/userProfile';
 
 interface RememberModalProps {
     onClose: () => void;
@@ -45,8 +46,7 @@ const RememberModal: React.FC<RememberModalProps> = ({onClose, onDone }) => {
 
     // 기존 프로필 조회
     useEffect(() => {
-        fetch('/api/user-profile')
-            .then(r => r.ok ? r.json() : null)
+        getUserProfile()
             .then(data => {
                 setExistingProfile(data?.profile || null);
             })
@@ -64,16 +64,10 @@ const RememberModal: React.FC<RememberModalProps> = ({onClose, onDone }) => {
     const handleSave = async () => {
         setSaving(true);
         try {
-            const res = await fetch('/api/user-profile', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ profile: editText }),
-            });
-            if (res.ok) {
-                setExistingProfile(editText);
-                setMode('view');
-                onDone(editText, '프로필이 저장되었습니다.');
-            }
+            await updateUserProfile({profile: editText});
+            setExistingProfile(editText);
+            setMode('view');
+            onDone(editText, '프로필이 저장되었습니다.');
         } catch (e) {
             console.error(e);
         } finally {

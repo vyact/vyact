@@ -250,7 +250,7 @@ export interface EmailEditorHandle {
     editor: Editor | null;
 }
 
-interface EmailEditorProps {
+export interface EmailEditorProps {
     content: string;
     onChange: (html: string) => void;
     placeholder?: string;

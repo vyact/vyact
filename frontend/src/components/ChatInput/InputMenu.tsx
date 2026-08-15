@@ -94,22 +94,13 @@ const InputMenu: React.FC<InputMenuProps> = ({
         disabled?: boolean,
         inputId?: string,
     ) => {
-        const itemStyle: React.CSSProperties = {
-            width: '100%', padding: '11px 14px', background: 'transparent',
-            border: 'none', color: disabled ? 'var(--muted)' : 'var(--text)', textAlign: 'left',
-            cursor: disabled ? 'not-allowed' : 'pointer', fontSize: '13px',
-            display: 'flex', alignItems: 'center', gap: '10px',
-            transition: 'background 0.15s', opacity: disabled ? 0.4 : 1,
-        };
         const contents = <><span className="input-menu-icon">{icon}</span>{label}</>;
 
         if (inputId && !disabled) {
             return <label
                 htmlFor={inputId}
-                style={itemStyle}
+                className="input-menu-item"
                 onClick={() => setOpen(false)}
-                onMouseEnter={event => { event.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
-                onMouseLeave={event => { event.currentTarget.style.background = 'transparent'; }}
             >
                 {contents}
             </label>;
@@ -123,30 +114,19 @@ const InputMenu: React.FC<InputMenuProps> = ({
                 }
             }}
             disabled={disabled}
-            style={itemStyle}
-            onMouseEnter={e => {
-                if (!disabled) e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-            }}
-            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            className="input-menu-item"
         >
             {contents}
         </button>
     };
 
-    const divider = <div style={{height: '1px', background: 'var(--border)', margin: '0 10px'}}/>;
+    const divider = <div className="input-menu-divider"/>;
 
     return (
-        <div ref={menuRef} style={{position: 'relative', flexShrink: 0}}>
+        <div className="input-menu" ref={menuRef}>
             <button
+                className="input-menu-trigger"
                 onClick={() => setOpen(v => !v)}
-                style={{
-                    width: '30px', height: '30px', background: 'transparent',
-                    border: 'none', borderRadius: '10px', cursor: 'pointer',
-                    color: '#b0b0b8', display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', transition: 'background 0.2s', flexShrink: 0,
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--surface2)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="12" y1="5" x2="12" y2="19"/>
@@ -162,16 +142,11 @@ const InputMenu: React.FC<InputMenuProps> = ({
                 accept={CHAT_FILE_ACCEPT}
                 multiple
                 onChange={onFileSelect}
-                style={{display: 'none'}}
+                className="input-menu-file-input"
             />
 
             {open && (
-                <div style={{
-                    position: 'absolute', bottom: '45px', left: '0',
-                    background: 'var(--surface)', border: '1px solid var(--border)',
-                    borderRadius: '10px', boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
-                    minWidth: '180px', zIndex: 1000, overflow: 'visible',
-                }}>
+                <div className="input-menu-popover">
                     {menuItem(
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                              strokeWidth="2">
@@ -188,11 +163,8 @@ const InputMenu: React.FC<InputMenuProps> = ({
                         {divider}
                         {menuItem(
                             google.connected
-                                ? <span style={{color: '#62b5f6', fontWeight: 800}}>G</span>
-                                : <span title={t('inputMenu.googleConnectionRequired')} style={{
-                                    width: '18px', height: '18px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                    border: '1px solid #f2c14e', borderRadius: '50%', color: '#f2c14e', fontSize: '12px', fontWeight: 800,
-                                }}>!</span>,
+                                ? <span className="input-menu-google-icon">G</span>
+                                : <span className="input-menu-google-warning" title={t('inputMenu.googleConnectionRequired')}>!</span>,
                             <span>{t('inputMenu.googleWorkspace')}</span>,
                             () => {
                                 if (google.connected) { onOpenGoogleWorkspace(); return; }

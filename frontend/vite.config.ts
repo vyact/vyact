@@ -19,16 +19,6 @@ export default defineConfig({
   build: {
     outDir: '../app/static', // 👈 빌드 결과물이 저장될 위치
     emptyOutDir: true,       // 👈 빌드할 때마다 기존 폴더를 비우고 새로 생성
-    rolldownOptions: {
-      output: {
-        codeSplitting: {
-          groups: [
-            {name: 'editor', test: /node_modules\/(?:@tiptap|tiptap-markdown|prosemirror)/},
-            {name: 'document-viewers', test: /node_modules\/(?:docx-preview|katex|marked|highlight\.js|lowlight)/},
-          ],
-        },
-      },
-    },
   },
   server: {
     proxy: {

@@ -7,6 +7,7 @@ import {MemoViewer} from '../MemoModal/MemoModal';
 import type {KnowledgeCollection} from '../../types';
 import {api} from '../../services/api';
 import {updateCachedKnowledgeCollections} from '../../services/knowledgeCollectionsCache';
+import {getDocumentFiles} from '../../services/documentFiles';
 import '../SystemPromptModal/SystemPromptModal.css';
 import './KnowledgeCollectionsModal.css';
 
@@ -61,7 +62,7 @@ const KnowledgeCollectionsModal = ({isOpen, collections, onClose, onCreate, onUp
                     return;
                 }
                 const [filesResult, memosResult] = await Promise.all([
-                    fetch('/api/document/files').then(response => response.json()).catch(() => ({files: []})),
+                    getDocumentFiles().then(files => ({files})).catch(() => ({files: []})),
                     api.listMemos(200).catch(() => ({memos: []})),
                 ]);
                 const files = new Map<string, {file_id: string; filename: string; indexed_at?: string; chunk_count?: number}>(

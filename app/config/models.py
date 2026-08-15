@@ -9,6 +9,7 @@ IS_MLX_SUPPORTED = (
         and platform.machine().lower() in {"arm64", "aarch64"}
 )
 IS_WINDOWS = platform.system() == "Windows"
+IS_MACOS = platform.system() == "Darwin"
 DEFAULT_MODEL = "gemma4:e2b-mlx" if IS_MLX_SUPPORTED else "gemma4:e2b"
 
 # 모델 타입 상수
@@ -32,8 +33,9 @@ IMAGE_MODELS = [
     },
 ]
 
-# Windows에서는 이미지 모델을 기본 목록에 포함하지 않는다.
-RECOMMENDED_MODELS = [] if IS_WINDOWS else list(IMAGE_MODELS)
+# Windows와 macOS에서는 이미지 모델을 기본 추천 목록에 포함하지 않는다.
+# macOS는 직접 설치한 이미지 모델의 실행 지원은 유지한다.
+RECOMMENDED_MODELS = [] if IS_WINDOWS or IS_MACOS else list(IMAGE_MODELS)
 
 WINDOWS_CHAT_MODELS = [
     {
@@ -92,10 +94,7 @@ MLX_CHAT_MODELS = [
 RECOMMENDED_MODELS.extend(MLX_CHAT_MODELS if IS_MLX_SUPPORTED else WINDOWS_CHAT_MODELS)
 
 # 이미지 생성 관련 모델 id 집합 (빠른 조회용)
-IMAGE_MODEL_IDS = {
-    m["id"] for m in RECOMMENDED_MODELS
-    if m["type"] in (MODEL_TYPE_IMAGE_GEN, MODEL_TYPE_IMAGE_EDIT)
-}
+IMAGE_MODEL_IDS = set() if IS_WINDOWS else {model["id"] for model in IMAGE_MODELS}
 
 # =========================
 # LLM(Chat) 설정

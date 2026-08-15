@@ -14,6 +14,27 @@ import type {
 import { assertOk, ApiError } from '../utils/apiError';
 
 const API_BASE = '/api';
+const EXTERNAL_DATA_BOOTSTRAP_CACHE_MS = 10_000;
+
+type ExternalDataBootstrapResponse = {
+    connections: Record<string, {has_service_key: boolean; enabled: boolean}>;
+    statuses: Record<string, Gov24SyncStatusResponse>;
+    schedule: {enabled: boolean; interval_hours: number};
+    cleanup: {enabled: boolean; cleanup_status: {status: string; cleanup_date?: string; deleted_count?: number}};
+    prompt: {instruction: string};
+};
+
+let mcpCatalogRequest: Promise<{catalog: Record<string, McpCatalogEntry>}> | null = null;
+let externalDataBootstrapCache: ExternalDataBootstrapResponse | null = null;
+let externalDataBootstrapCachedAt = 0;
+let externalDataBootstrapRequest: Promise<ExternalDataBootstrapResponse> | null = null;
+let externalDataBootstrapVersion = 0;
+
+const invalidateExternalDataBootstrap = () => {
+    externalDataBootstrapVersion += 1;
+    externalDataBootstrapCache = null;
+    externalDataBootstrapCachedAt = 0;
+};
 
 /** Ensure every API call follows the same HTTP error contract. */
 const fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
@@ -267,8 +288,15 @@ export const api = {
 
     // ── MCP 서버 설정 ──
     async getMcpCatalog(): Promise<{ catalog: Record<string, McpCatalogEntry> }> {
-        const res = await fetch(`${API_BASE}/mcp/catalog`);
-        return res.json();
+        if (!mcpCatalogRequest) {
+            mcpCatalogRequest = fetch(`${API_BASE}/mcp/catalog`)
+                .then(res => res.json())
+                .catch(error => {
+                    mcpCatalogRequest = null;
+                    throw error;
+                });
+        }
+        return mcpCatalogRequest;
     },
 
     async getMcpServers(): Promise<{ servers: McpServer[] }> {
@@ -675,9 +703,9 @@ export const api = {
         return res.json();
     },
 
-    async getHistory(limit = 20, offset = 0, projectId?: string | null): Promise<HistoryResponse> {
+    async getHistory(limit = 20, offset = 0, projectId?: string | null, includeFavorites = true): Promise<HistoryResponse> {
         const projectParam = projectId ? `&project_id=${encodeURIComponent(projectId)}` : '';
-        const res = await fetch(`${API_BASE}/history?limit=${limit}&offset=${offset}${projectParam}`);
+        const res = await fetch(`${API_BASE}/history?limit=${limit}&offset=${offset}&include_favorites=${includeFavorites}${projectParam}`);
         return res.json();
     },
 
@@ -840,7 +868,7 @@ export const api = {
         attachments?: MessageAttachment[],
         onProgress?: (message: string, progress: number) => void,
         overrideModel?: string,
-    ): Promise<{ conv_id: string; model: string; filenames: string[]; count: number }> {
+    ): Promise<{ conv_id: string; model: string; filenames: string[]; count: number; assistant_message?: Message }> {
         const res = await fetch(`${API_BASE}/generate-image`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -933,7 +961,9 @@ export const api = {
             body: JSON.stringify({service_key: serviceKey}),
         });
         if (!res.ok) throw new Error(await res.text());
-        return res.json();
+        const result = await res.json();
+        invalidateExternalDataBootstrap();
+        return result;
     },
 
     async saveExternalDataSourceEnabled(sourceId: string, enabled: boolean): Promise<{
@@ -946,7 +976,9 @@ export const api = {
             body: JSON.stringify({enabled}),
         });
         if (!res.ok) throw new Error(await res.text());
-        return res.json();
+        const result = await res.json();
+        invalidateExternalDataBootstrap();
+        return result;
     },
 
     async getGov24SyncStatus(): Promise<Gov24SyncStatusResponse> {
@@ -1011,16 +1043,26 @@ export const api = {
         return res.json();
     },
 
-    async getExternalDataBootstrap(): Promise<{
-        connections: Record<string, {has_service_key: boolean; enabled: boolean}>;
-        statuses: Record<string, Gov24SyncStatusResponse>;
-        schedule: {enabled: boolean; interval_hours: number};
-        cleanup: {enabled: boolean; cleanup_status: {status: string; cleanup_date?: string; deleted_count?: number}};
-        prompt: {instruction: string};
-    }> {
-        const res = await fetch(`${API_BASE}/external-data/bootstrap`);
-        if (!res.ok) throw new Error(await res.text());
-        return res.json();
+    async getExternalDataBootstrap(): Promise<ExternalDataBootstrapResponse> {
+        if (externalDataBootstrapCache
+            && Date.now() - externalDataBootstrapCachedAt < EXTERNAL_DATA_BOOTSTRAP_CACHE_MS) {
+            return externalDataBootstrapCache;
+        }
+        if (externalDataBootstrapRequest) return externalDataBootstrapRequest;
+        const requestVersion = externalDataBootstrapVersion;
+        externalDataBootstrapRequest = fetch(`${API_BASE}/external-data/bootstrap`)
+            .then(res => res.json() as Promise<ExternalDataBootstrapResponse>)
+            .then(result => {
+                if (requestVersion === externalDataBootstrapVersion) {
+                    externalDataBootstrapCache = result;
+                    externalDataBootstrapCachedAt = Date.now();
+                }
+                return result;
+            })
+            .finally(() => {
+                externalDataBootstrapRequest = null;
+            });
+        return externalDataBootstrapRequest;
     },
 
     async startExternalSourceSync(sourceId: string): Promise<{

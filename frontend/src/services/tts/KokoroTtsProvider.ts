@@ -2,6 +2,7 @@ import type { ITtsProvider } from './ITtsProvider';
 import { WebSpeechTtsProvider } from './WebSpeechTtsProvider';
 import { loadTtsSettings } from './ttsSettings';
 import { ensureJapaneseTtsDictionary, JapaneseTtsDictionaryCancelledError } from './japaneseTtsDictionary';
+import {getKokoroAvailability} from './kokoroStatus';
 
 /**
  * Kokoro TTS Provider
@@ -111,13 +112,7 @@ export class KokoroTtsProvider implements ITtsProvider {
     // ── Private ──────────────────────────────────
 
     private async checkKokoroAvailability(): Promise<void> {
-        try {
-            const res = await fetch('/api/tts/kokoro/status');
-            const data = await res.json();
-            this.kokoroAvailable = data.available === true;
-        } catch {
-            this.kokoroAvailable = false;
-        }
+        this.kokoroAvailable = await getKokoroAvailability();
     }
 
     private async speakWithKokoro(text: string, lang: string, playbackId: number): Promise<void> {
