@@ -1,6 +1,6 @@
 import React, {useMemo, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {Braces} from 'lucide-react';
+import {Braces, CircleAlert, RotateCcw} from 'lucide-react';
 import 'katex/dist/katex.min.css';
 import {escapeHtml, nl2br, unwrapPastedText} from '../../utils/helpers';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
@@ -234,6 +234,9 @@ const Message: React.FC<MessageProps> = ({
     const isUserBubbleEmpty = role === 'user'
         && !contentWithoutPaste.trim()
         && !articleSources?.length;
+    const errorDetail = isError
+        ? content.replace(/^오류\s*:\s*/i, '').replace(/^error\s*:\s*/i, '').trim()
+        : '';
 
     return (
         <div className={`msg ${role === 'user' ? 'user' : 'bot'}`}>
@@ -337,6 +340,20 @@ const Message: React.FC<MessageProps> = ({
                             dangerouslySetInnerHTML={{__html: linkify(nl2br(escapeHtml(contentWithoutPaste)))}}
                         />
                     </>
+                ) : isError ? (
+                    <div className="message-error-card" role="alert">
+                        <span className="message-error-icon" aria-hidden="true"><CircleAlert size={18}/></span>
+                        <div className="message-error-copy">
+                            <strong>{t('message.requestFailed')}</strong>
+                            <span>{errorDetail || t('message.unknownError')}</span>
+                        </div>
+                        {onRetry && (
+                            <button type="button" onClick={onRetry} className="message-retry">
+                                <RotateCcw size={14}/>
+                                {t('message.retry')}
+                            </button>
+                        )}
+                    </div>
                 ) : isGeneratedImage && attachments && attachments.length > 0 ? (
                     <div>
                         {attachments.map((att, idx) => (
@@ -770,19 +787,6 @@ const Message: React.FC<MessageProps> = ({
                         </button>
                     </div>
                 </div>
-            )}
-
-            {isError && onRetry && (
-                <button
-                    onClick={onRetry}
-                    className="message-retry"
-                >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="1 4 1 10 7 10"/>
-                        <path d="M3.51 15a9 9 0 1 0 .49-3.5"/>
-                    </svg>
-                    다시 전송
-                </button>
             )}
 
             {/* 스트리밍 첫 토큰 전(빈 버블)에는 시간/복사 메타를 숨긴다 — ...만 표시 */}

@@ -640,5 +640,12 @@
 .message-export-edit:hover { background: rgba(99, 102, 241, .18); }
 .message-export-download { gap: 6px; padding: 7px 14px; border: 0; background: linear-gradient(135deg, #6366f1, #818cf8); color: #fff; font-size: 13px; font-weight: 600; transition: opacity .15s; }
 .message-export-download:hover { opacity: .85; }
-.message-retry { display: flex; align-items: center; gap: 6px; margin-top: 10px; padding: 7px 14px; border: 1px solid rgba(239, 68, 68, .5); border-radius: 8px; background: rgba(239, 68, 68, .2); color: #fff; cursor: pointer; font-size: 13px; font-weight: 500; transition: background .2s; }
-.message-retry:hover { background: rgba(239, 68, 68, .35); }
+.message-error-card { display:grid; grid-template-columns:auto minmax(0, 1fr) auto; align-items:center; gap:12px; width:min(620px, calc(100vw - 72px)); padding:13px 14px; border:1px solid color-mix(in srgb, #ef4444 32%, var(--border)); border-radius:12px; background:color-mix(in srgb, #ef4444 7%, var(--surface)); box-shadow:inset 0 1px 0 rgba(255,255,255,.025); }
+.message-error-icon { display:grid; place-items:center; width:34px; height:34px; border-radius:10px; background:color-mix(in srgb, #ef4444 13%, transparent); color:#f87171; }
+.message-error-copy { display:flex; flex-direction:column; gap:2px; min-width:0; line-height:1.4; }
+.message-error-copy strong { color:var(--text); font-size:13px; font-weight:600; }
+.message-error-copy span { overflow:hidden; color:var(--text-secondary); font-size:12px; text-overflow:ellipsis; white-space:nowrap; }
+.message-retry { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:34px; padding:0 12px; border:1px solid color-mix(in srgb, #ef4444 38%, var(--border)); border-radius:9px; background:color-mix(in srgb, #ef4444 10%, var(--surface2)); color:#fca5a5; cursor:pointer; font-size:12px; font-weight:550; white-space:nowrap; transition:border-color .15s ease, background .15s ease, color .15s ease; }
+.message-retry:hover { border-color:color-mix(in srgb, #ef4444 58%, var(--border)); background:color-mix(in srgb, #ef4444 17%, var(--surface2)); color:#fff; }
+.message-retry:focus-visible { outline:2px solid color-mix(in srgb, #ef4444 55%, transparent); outline-offset:2px; }
+@media (max-width:640px) { .message-error-card { grid-template-columns:auto minmax(0, 1fr); } .message-retry { grid-column:2; justify-self:start; } }

@@ -992,6 +992,7 @@
     "codeGenerating": "⌨️ Écriture du code…"
   },
   "message": {
+    "requestFailed": "Impossible de terminer la requête", "unknownError": "Une erreur inconnue s’est produite.", "retry": "Réessayer",
     "codeChangesTitle": "{{count}} fichiers modifiés", "codeChangesUndo": "Annuler", "codeChangesUndoing": "Annulation…", "codeChangesUndone": "Modifications annulées", "codeChangesUndoFailed": "Impossible d’annuler les modifications.", "codeChangesUndoConflict": "Le fichier a été modifié depuis et ne peut pas être annulé en toute sécurité.", "codeChangesMore": "Afficher {{count}} fichiers de plus", "codeChangesCollapse": "Réduire", "codeChangesPreview": "Modifications de {{path}}",
     "modelNoResponse": "Le modèle d’IA sélectionné n’a pas pu générer de réponse. Veuillez réessayer.",
     "outputTruncated": "La réponse a été interrompue après avoir atteint la longueur maximale. Demandez au modèle de continuer.",
