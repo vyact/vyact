@@ -12,7 +12,15 @@ from agent import get_model_name
 from logger import get_logger
 from prompts.language import get_language_label
 from services.history import save_conversation
-from services.user_profile import DEFAULT_RESPONSE_STYLE, RESPONSE_STYLE_INSTRUCTIONS
+from services.db import get_es
+from services.user_profile import (
+    DEFAULT_RESPONSE_STYLE,
+    RESPONSE_STYLE_INSTRUCTIONS,
+    get_unprocessed_profile_conversations,
+    get_user_profile,
+    USER_PROFILE_INDEX,
+    USER_PROFILE_ID,
+)
 
 logger = get_logger(__name__)
 
@@ -29,7 +37,6 @@ class RememberRequest(BaseModel):
 @router.get("/user-profile")
 async def get_user_profile_api():
     """현재 저장된 user_profile 조회"""
-    from services.user_profile import get_user_profile
     profile = await get_user_profile()
     if not profile:
         return {"profile": None, "nickname": "", "response_style": DEFAULT_RESPONSE_STYLE}
@@ -50,10 +57,6 @@ class ProfileUpdateRequest(BaseModel):
 @router.put("/user-profile")
 async def update_user_profile_api(req: ProfileUpdateRequest):
     """프로필 직접 편집 저장 (last_processed_at 보존)"""
-    from services.user_profile import USER_PROFILE_INDEX, USER_PROFILE_ID
-    from services.db import get_es
-    from datetime import datetime, timezone
-
     now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     doc: dict = {"updated_at": now}
     if req.profile is not None:
@@ -86,9 +89,6 @@ def sse(event: str, data: dict) -> str:
 async def remember(req: RememberRequest):
     async def stream():
         import re as _re
-        from services.user_profile import get_user_profile, USER_PROFILE_INDEX
-        from services.db import HIST_INDEX, get_es
-        from elasticsearch import NotFoundError
         from services.llm import query_llm, collect_llm_stream
         max_len = max(500, min(req.max_length, 5000))
         profile_language = get_language_label(req.language)
@@ -103,26 +103,11 @@ async def remember(req: RememberRequest):
             last_processed_at = existing.get("last_processed_at") if existing else None
             logger.info("[remember] last_processed_at=%s", last_processed_at)
 
-            # 2. 미처리 대화 목록 조회
+            # 2. 미처리 일반 대화 목록 조회 (프로젝트 대화 제외)
             yield sse("status", {"message": "미처리 대화 조회 중..."})
-            es = get_es()
-            try:
-                if last_processed_at:
-                    query = {"range": {"updated_at": {"gt": last_processed_at}}}
-                else:
-                    query = {"match_all": {}}
-
-                res = await es.search(index=HIST_INDEX, body={
-                    "query": query,
-                    "sort": [{"updated_at": {"order": "asc"}}],
-                    "size": 200,
-                    "_source": ["conv_id", "title", "messages", "updated_at"],
-                })
-                conversations = [h["_source"] for h in res["hits"]["hits"]]
-                logger.info("[remember] 조회된 대화방 %d개: %s", len(conversations),
-                            [(c.get("conv_id","")[:8], c.get("updated_at","")) for c in conversations])
-            finally:
-                await es.close()
+            conversations = await get_unprocessed_profile_conversations(last_processed_at)
+            logger.info("[remember] 조회된 일반 대화방 %d개: %s", len(conversations),
+                        [(c.get("conv_id", "")[:8], c.get("updated_at", "")) for c in conversations])
 
             total = len(conversations)
             if total == 0:

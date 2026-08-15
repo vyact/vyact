@@ -24,6 +24,12 @@ USER_PROFILE_ID = "default"
 MAX_PROFILE_LENGTH = 2000  # 최대 프로필 텍스트 길이
 DEFAULT_RESPONSE_STYLE = "default"
 RESPONSE_STYLE_INSTRUCTIONS = {
+    "professional": "정제되고 정확한 전문적인 말투로 답하라. 핵심 용어를 명확히 쓰고 불필요한 수식은 피하라.",
+    "friendly": "따뜻하고 친근한 말투로 답하라. 자연스럽게 대화하되 정보의 정확성은 유지하라.",
+    "candid": "직설적이고 솔직하게 답하되 무례하지 않게 건설적인 제안과 근거를 함께 제시하라.",
+    "quirky": "유쾌하고 상상력 있는 표현을 적절히 사용하되 핵심 정보와 정확성을 흐리지 마라.",
+    "efficient": "간결하고 꾸밈없이 답하라. 결론과 실행 항목을 먼저 제시하고 중복 설명을 피하라.",
+    "cynical": "약간 비꼬면서 비판적인 말투를 사용할 수 있으나, 사용자를 조롱하거나 정확성을 해치지 마라.",
     "royal_court": (
         "사용자를 왕으로 높여 예를 갖춘 신하가 보고하듯 답하라. 사용자를 '전하'로 호칭하되, "
         "과도한 아첨이나 장황한 고어체는 피하고 답변의 정확성, 명료성, 간결함을 유지하라."
@@ -68,15 +74,17 @@ async def get_user_profile() -> dict | None:
 
 
 async def get_profile_text() -> str:
-    """시스템 프롬프트에 주입할 사용자 정보와 선택된 응답 말투를 반환한다."""
+    """시스템 프롬프트에 주입할 사용자 정보만 반환한다."""
+    profile = await get_user_profile()
+    return str(profile.get("profile") or "").strip() if profile else ""
+
+
+async def get_response_style_instruction() -> str:
+    """사용자 프로필 본문과 독립적으로 모든 채팅에 적용할 말투 지침을 반환한다."""
     profile = await get_user_profile()
     if not profile:
         return ""
-    profile_text = str(profile.get("profile") or "").strip()
-    style_instruction = RESPONSE_STYLE_INSTRUCTIONS.get(str(profile.get("response_style") or ""), "")
-    if profile_text and style_instruction:
-        return f"{profile_text}\n\n[응답 말투]\n{style_instruction}"
-    return profile_text or style_instruction
+    return RESPONSE_STYLE_INSTRUCTIONS.get(str(profile.get("response_style") or ""), "")
 
 
 async def get_nickname() -> str:
@@ -87,22 +95,25 @@ async def get_nickname() -> str:
     return ""
 
 
-async def _get_unprocessed_conversations(last_processed_at: str | None) -> list[dict]:
-    """last_processed_at 이후 업데이트된 대화방 조회"""
+async def get_unprocessed_profile_conversations(last_processed_at: str | None) -> list[dict]:
+    """마지막 분석 이후 변경된 일반 대화만 조회한다. 프로젝트 대화는 제외한다."""
     es = get_es()
     try:
+        filters = []
         if last_processed_at:
-            query = {
-                "range": {"updated_at": {"gt": last_processed_at}}
+            filters.append({"range": {"updated_at": {"gt": last_processed_at}}})
+        query = {
+            "bool": {
+                "filter": filters,
+                "must_not": [{"exists": {"field": "project_id"}}],
             }
-        else:
-            query = {"match_all": {}}
+        }
 
         res = await es.search(index=HIST_INDEX, body={
             "query": query,
             "sort": [{"updated_at": {"order": "asc"}}],
             "size": 200,
-            "_source": ["conv_id", "messages", "updated_at"],
+            "_source": ["conv_id", "title", "messages", "updated_at"],
         })
         return [h["_source"] for h in res["hits"]["hits"]]
     except Exception as e:
@@ -148,7 +159,7 @@ async def run_remember(current_conv_id: str = "") -> str:
     last_processed_at = existing.get("last_processed_at") if existing else None
 
     # 미처리 대화 조회
-    conversations = await _get_unprocessed_conversations(last_processed_at)
+    conversations = await get_unprocessed_profile_conversations(last_processed_at)
 
     # 현재 대화방은 /remember 메시지 포함되어 있을 수 있으므로 제외
     if current_conv_id:

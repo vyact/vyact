@@ -1183,6 +1183,76 @@
 .settings-tooltip:hover .settings-tooltip-content, .settings-tooltip:focus .settings-tooltip-content { visibility: visible; opacity: 1; }
 
 /* ── AI 프로필 탭 ── */
+.settings-profile-preferences-card {
+    display: grid;
+    gap: 0;
+    padding: 6px 16px;
+    margin-bottom: 18px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+}
+
+.settings-profile-preferences-card .remember-setup-row {
+    min-height: 66px;
+    padding: 10px 0;
+}
+
+.settings-profile-preferences-card .remember-setup-row + .remember-setup-row {
+    border-top: 1px solid var(--border);
+}
+
+.settings-profile-preference-copy {
+    flex: 1;
+    min-width: 260px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.settings-profile-preference-copy small {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.4;
+}
+
+@media (min-width: 761px) {
+    .settings-profile-preference-copy small {
+        white-space: nowrap;
+    }
+}
+
+.settings-profile-preferences-card .settings-profile-style-select {
+    width: min(42%, 380px);
+}
+
+.settings-profile-preferences-card .settings-profile-length-select {
+    width: min(42%, 380px);
+}
+
+.settings-profile-style-dropdown .custom-select-list {
+    max-height: 390px;
+}
+
+.settings-profile-style-dropdown .custom-select-item {
+    min-height: 54px;
+    padding: 9px 14px;
+}
+
+@media (max-width: 760px) {
+    .settings-profile-preferences-card .remember-setup-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+    .settings-profile-preferences-card .custom-select-wrap {
+        width: 100%;
+    }
+}
+
 .settings-profile-label {
     font-size: 14px;
     color: var(--muted);

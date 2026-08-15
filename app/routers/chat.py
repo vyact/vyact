@@ -52,6 +52,7 @@ from services.external_data.lh_lease_notice import SOURCE_ID as LH_NOTICE_SOURCE
 from services.external_data.k_startup import SOURCE_ID as K_STARTUP_SOURCE_ID, search_candidates as search_k_startup_candidates
 from services.external_data.welfare import SOURCE_ID as WELFARE_SOURCE_ID, search_candidates as search_welfare_candidates
 from services.external_data.settings import load_external_data_connections
+from services.user_profile import get_response_style_instruction
 
 logger = get_logger(__name__)
 
@@ -80,6 +81,19 @@ not prove applications are currently open. Compare explicit application deadline
 exclude expired records from currently available benefits, and mark unclear or recurring schedules
 as needing confirmation. Answer in the user's language.
 """.strip()
+
+
+async def _with_response_style(system_prompt: str) -> str:
+    """AI 프로필 포함 여부와 무관하게 채팅 응답 말투를 적용한다."""
+    try:
+        style_instruction = await get_response_style_instruction()
+    except Exception as exc:
+        logger.warning("[chat] response style load failed: %s", exc)
+        return system_prompt
+    if not style_instruction:
+        return system_prompt
+    style_context = f"[응답 스타일 및 말투]\n{style_instruction}"
+    return f"{system_prompt}\n\n{style_context}" if system_prompt else style_context
 
 
 async def _get_selected_external_context(question: str, resource_ids: list[str]) -> tuple[list[dict], str, bool]:
@@ -430,6 +444,8 @@ async def query(req: QueryRequest):
             messages=req.messages, attachments=req.attachments,
         ))
 
+    system_prompt = await _with_response_style(system_prompt)
+
     if req.voice_mode and system_prompt:
         system_prompt += VOICE_MODE_SUFFIX
 
@@ -668,6 +684,7 @@ async def query_stream(req: QueryRequest):
             project_folder_context = await _build_project_folder_context(request_folder_paths)
             if project_folder_context:
                 system_prompt = f"{system_prompt}\n\n{project_folder_context}" if system_prompt else project_folder_context
+            system_prompt = await _with_response_style(system_prompt)
 
             # 사용자 UI 언어 (확장 클라이언트의 포맷 지시 언어 결정용)
             _ui_language = ""

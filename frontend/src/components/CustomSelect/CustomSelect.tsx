@@ -6,6 +6,7 @@ import './CustomSelect.css';
 export interface SelectOption {
     value: string;
     label: string;
+    description?: string;
     disabled?: boolean;
 }
 
@@ -22,6 +23,7 @@ interface CustomSelectProps {
     triggerStyle?: React.CSSProperties;
     className?: string;
     dropdownBackground?: string;  // 드롭다운 배경색 (기본: var(--surface2))
+    dropdownClassName?: string;
     // 커스텀 렌더러
     renderTrigger?: (selectedLabel: string, open: boolean) => React.ReactNode;
     renderOption?: (opt: SelectOption, isSelected: boolean) => React.ReactNode;
@@ -51,6 +53,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                                                        triggerStyle,
                                                        className = '',
                                                        dropdownBackground,
+                                                       dropdownClassName = '',
                                                        renderTrigger,
                                                        renderOption,
                                                        searchAction,
@@ -151,7 +154,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
     const dropdown = open ? (
         <div
             ref={dropdownRef}
-            className={`custom-select-dropdown ${dropdownPlacement === 'up' ? 'drop-up' : 'drop-down'}${portal ? ' portal' : ''}`}
+            className={`custom-select-dropdown ${dropdownPlacement === 'up' ? 'drop-up' : 'drop-down'}${portal ? ' portal' : ''}${dropdownClassName ? ` ${dropdownClassName}` : ''}`}
             style={{
                 ...portalPosition,
                 ...(dropdownBackground ? {background: dropdownBackground} : {}),
@@ -196,7 +199,10 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                                 renderOption(opt, isSelected(opt.value))
                             ) : (
                                 <>
-                                    <span className="custom-select-item-label">{opt.label}</span>
+                                    <span className="custom-select-item-copy">
+                                        <span className="custom-select-item-label">{opt.label}</span>
+                                        {opt.description && <span className="custom-select-item-description">{opt.description}</span>}
+                                    </span>
                                     {isSelected(opt.value) && (
                                         <span className="custom-select-check">✓</span>
                                     )}

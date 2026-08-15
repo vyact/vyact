@@ -211,10 +211,25 @@
 }
 
 .custom-select-item-label {
-    flex: 1;
+    display: block;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.custom-select-item-copy {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.custom-select-item-description {
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.35;
+    white-space: normal;
 }
 
 .custom-select-check {

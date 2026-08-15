@@ -792,8 +792,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
         {value: '3000', label: `3000 (${t('profile.detailed')})`},
     ];
     const PROFILE_RESPONSE_STYLE_OPTIONS = [
-        {value: 'default', label: t('profile.responseStyleDefault')},
-        {value: 'royal_court', label: t('profile.responseStyleRoyalCourt')},
+        {value: 'default', label: t('profile.responseStyleDefault'), description: t('profile.responseStyleDefaultDescription')},
+        {value: 'professional', label: t('profile.responseStyleProfessional'), description: t('profile.responseStyleProfessionalDescription')},
+        {value: 'friendly', label: t('profile.responseStyleFriendly'), description: t('profile.responseStyleFriendlyDescription')},
+        {value: 'candid', label: t('profile.responseStyleCandid'), description: t('profile.responseStyleCandidDescription')},
+        {value: 'quirky', label: t('profile.responseStyleQuirky'), description: t('profile.responseStyleQuirkyDescription')},
+        {value: 'efficient', label: t('profile.responseStyleEfficient'), description: t('profile.responseStyleEfficientDescription')},
+        {value: 'cynical', label: t('profile.responseStyleCynical'), description: t('profile.responseStyleCynicalDescription')},
+        {value: 'royal_court', label: t('profile.responseStyleRoyalCourt'), description: t('profile.responseStyleRoyalCourtDescription')},
     ];
 
     const LANGUAGE_OPTIONS = SUPPORTED_LANGUAGES.map(l => ({value: l.value, label: l.label}));
@@ -1383,24 +1389,28 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                             <div className="settings-general">
                                 {/* 최대 글자 수 — 보기/편집 공통 */}
                                 {(profileMode === 'view' || profileMode === 'edit') && (
-                                    <div className="settings-general-section">
+                                    <div className="settings-general-section settings-profile-preferences-card">
                                         <div className="remember-setup-row">
-                                            <span className="remember-setup-label">{t('profile.maxLength')}</span>
-                                            <CustomSelect
-                                                options={PROFILE_MAX_LENGTH_OPTIONS}
-                                                value={profileMaxLength}
-                                                onChange={handleProfileMaxLengthChange}
-                                                triggerStyle={{fontSize: '13px', padding: '5px 10px'}}
-                                            />
-                                        </div>
-                                        <div className="remember-setup-row">
-                                            <span className="remember-setup-label">{t('profile.responseStyle')}</span>
+                                            <span className="settings-profile-preference-copy"><span>{t('profile.responseStyle')}</span><small>{t('profile.responseStyleDescription')}</small></span>
                                             <CustomSelect
                                                 options={PROFILE_RESPONSE_STYLE_OPTIONS}
                                                 value={profileResponseStyle}
                                                 disabled={profileStyleSaving}
                                                 onChange={value => void handleProfileResponseStyleChange(value)}
-                                                triggerStyle={{fontSize: '13px', padding: '5px 10px', minWidth: '180px'}}
+                                                className="settings-profile-style-select"
+                                                dropdownClassName="settings-profile-style-dropdown"
+                                                portal
+                                                triggerStyle={{fontSize: '13px', padding: '8px 10px'}}
+                                            />
+                                        </div>
+                                        <div className="remember-setup-row">
+                                            <span className="settings-profile-preference-copy"><span>{t('profile.maxLength')}</span><small>{t('profile.maxLengthDescription')}</small></span>
+                                            <CustomSelect
+                                                options={PROFILE_MAX_LENGTH_OPTIONS}
+                                                value={profileMaxLength}
+                                                onChange={handleProfileMaxLengthChange}
+                                                className="settings-profile-length-select"
+                                                triggerStyle={{fontSize: '13px', padding: '8px 10px'}}
                                             />
                                         </div>
                                     </div>
