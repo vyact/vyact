@@ -237,6 +237,11 @@
     "analysisComplete": "{{count}}件の会話を処理しました",
     "noNewConversations": "新しく処理する会話はありません。",
     "updatedProfile": "更新されたプロフィール",
+    "analyzedProfile": "分析プロフィールのプレビュー",
+    "applyAnalysis": "プロフィールに反映",
+    "discardAnalysis": "キャンセル",
+    "analysisApplied": "分析結果をプロフィールに反映しました。",
+    "analysisApplyFailed": "分析結果を反映できませんでした。",
     "concise": "簡潔",
     "default": "デフォルト",
     "detailed": "詳細"

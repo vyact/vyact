@@ -304,6 +304,11 @@
     "analysisComplete": "{{count}}개 대화방 처리 완료",
     "noNewConversations": "새로 처리할 대화가 없습니다.",
     "updatedProfile": "업데이트된 프로필",
+    "analyzedProfile": "분석된 프로필 미리보기",
+    "applyAnalysis": "프로필에 반영",
+    "discardAnalysis": "취소",
+    "analysisApplied": "분석 결과를 프로필에 반영했습니다.",
+    "analysisApplyFailed": "분석 결과를 반영하지 못했습니다.",
     "concise": "간결",
     "default": "기본",
     "detailed": "상세"

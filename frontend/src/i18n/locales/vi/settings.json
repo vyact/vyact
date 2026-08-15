@@ -237,6 +237,11 @@
     "analysisComplete": "Đã xử lý {{count}} hội thoại",
     "noNewConversations": "Không có hội thoại mới để xử lý.",
     "updatedProfile": "Hồ sơ đã cập nhật",
+    "analyzedProfile": "Xem trước hồ sơ đã phân tích",
+    "applyAnalysis": "Áp dụng vào hồ sơ",
+    "discardAnalysis": "Hủy",
+    "analysisApplied": "Đã áp dụng kết quả phân tích vào hồ sơ.",
+    "analysisApplyFailed": "Không thể áp dụng kết quả phân tích.",
     "concise": "Ngắn gọn",
     "default": "Mặc định",
     "detailed": "Chi tiết"

@@ -274,6 +274,11 @@
     "analysisComplete": "Processed {{count}} conversations",
     "noNewConversations": "There are no new conversations to process.",
     "updatedProfile": "Updated profile",
+    "analyzedProfile": "Analyzed profile preview",
+    "applyAnalysis": "Apply to profile",
+    "discardAnalysis": "Cancel",
+    "analysisApplied": "Analysis applied to your profile.",
+    "analysisApplyFailed": "Could not apply the analysis.",
     "concise": "Concise",
     "default": "Default",
     "detailed": "Detailed"

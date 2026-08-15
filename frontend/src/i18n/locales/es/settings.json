@@ -237,6 +237,11 @@
     "analysisComplete": "{{count}} conversaciones procesadas",
     "noNewConversations": "No hay nuevas conversaciones para procesar.",
     "updatedProfile": "Perfil actualizado",
+    "analyzedProfile": "Vista previa del perfil analizado",
+    "applyAnalysis": "Aplicar al perfil",
+    "discardAnalysis": "Cancelar",
+    "analysisApplied": "Análisis aplicado al perfil.",
+    "analysisApplyFailed": "No se pudo aplicar el análisis.",
     "concise": "Conciso",
     "default": "Predeterminado",
     "detailed": "Detallado"

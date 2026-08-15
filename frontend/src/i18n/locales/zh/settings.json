@@ -237,6 +237,11 @@
     "analysisComplete": "已处理 {{count}} 个对话",
     "noNewConversations": "没有新的对话需要处理。",
     "updatedProfile": "更新后的个人资料",
+    "analyzedProfile": "分析资料预览",
+    "applyAnalysis": "应用到资料",
+    "discardAnalysis": "取消",
+    "analysisApplied": "分析结果已应用到资料。",
+    "analysisApplyFailed": "无法应用分析结果。",
     "concise": "简洁",
     "default": "默认",
     "detailed": "详细"

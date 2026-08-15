@@ -237,6 +237,11 @@
     "analysisComplete": "ประมวลผลบทสนทนาแล้ว {{count}} รายการ",
     "noNewConversations": "ไม่มีบทสนทนาใหม่ให้ประมวลผล",
     "updatedProfile": "อัปเดตโปรไฟล์แล้ว",
+    "analyzedProfile": "ตัวอย่างโปรไฟล์ที่วิเคราะห์",
+    "applyAnalysis": "นำไปใช้กับโปรไฟล์",
+    "discardAnalysis": "ยกเลิก",
+    "analysisApplied": "นำผลวิเคราะห์ไปใช้กับโปรไฟล์แล้ว",
+    "analysisApplyFailed": "ไม่สามารถนำผลวิเคราะห์ไปใช้ได้",
     "concise": "กระชับ",
     "default": "ค่าเริ่มต้น",
     "detailed": "ละเอียด"

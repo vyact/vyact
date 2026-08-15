@@ -8,10 +8,8 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from agent import get_model_name
 from logger import get_logger
 from prompts.language import get_language_label
-from services.history import save_conversation
 from services.db import get_es
 from services.user_profile import (
     DEFAULT_RESPONSE_STYLE,
@@ -52,6 +50,7 @@ class ProfileUpdateRequest(BaseModel):
     profile: str | None = None
     nickname: str | None = None
     response_style: str | None = None
+    analysis_cursor: datetime | None = None
 
 
 @router.put("/user-profile")
@@ -68,6 +67,8 @@ async def update_user_profile_api(req: ProfileUpdateRequest):
         if response_style != DEFAULT_RESPONSE_STYLE and response_style not in RESPONSE_STYLE_INSTRUCTIONS:
             raise HTTPException(400, "Unsupported response style.")
         doc["response_style"] = response_style
+    if req.analysis_cursor is not None:
+        doc["last_processed_at"] = req.analysis_cursor.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
     es = get_es()
     try:
         await es.update(
@@ -98,8 +99,6 @@ async def remember(req: RememberRequest):
             yield sse("status", {"message": "프로필 조회 중..."})
             existing = await get_user_profile()
             existing_profile = existing.get("profile", "") if existing else ""
-            existing_nickname = existing.get("nickname", "") if existing else ""
-            existing_response_style = existing.get("response_style", DEFAULT_RESPONSE_STYLE) if existing else DEFAULT_RESPONSE_STYLE
             last_processed_at = existing.get("last_processed_at") if existing else None
             logger.info("[remember] last_processed_at=%s", last_processed_at)
 
@@ -173,61 +172,17 @@ async def remember(req: RememberRequest):
             )
             updated_profile = updated_profile.strip()[:max_len]
 
-            # 5. ES 저장
-            yield sse("status", {"message": "프로필 저장 중..."})
-            now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-            es = get_es()
-            try:
-                await es.index(
-                    index=USER_PROFILE_INDEX,
-                    id="default",
-                    document={
-                        "profile": updated_profile,
-                        "nickname": existing_nickname,
-                        "response_style": existing_response_style,
-                        "last_processed_at": now,
-                        "updated_at": now,
-                    },
-                    refresh=True,
-                )
-            finally:
-                await es.close()
-
-            logger.info("user_profile 업데이트 완료 (대화 %d개 처리)", total)
-
-            # 6. 히스토리 저장 (last_processed_at 설정 전에 먼저 저장)
-            conv_id = req.conv_id
-            if conv_id:
-                user_ts = req.user_timestamp or now
-                result_text = f"✅ 프로필 업데이트 완료 ({total}개 대화방 처리)\n\n{updated_profile}"
-                from services.history import get_conversation
-                existing_conv = await get_conversation(conv_id)
-                existing_messages = existing_conv.get("messages", []) if existing_conv else []
-                # updated_at을 now(remember 시작 시간)으로 고정
-                # → last_processed_at(after_save)이 항상 이보다 늦도록 보장
-                await save_conversation(conv_id, existing_messages + [
-                    {"role": "user", "content": "/remember", "timestamp": user_ts},
-                    {"role": "assistant", "content": result_text, "timestamp": now,
-                     "model": await get_model_name()},
-                ])
-
-            # 7. last_processed_at을 히스토리 저장 이후 시간으로 업데이트
-            # → 다음 /remember 시 방금 저장한 /remember 대화방이 다시 처리되지 않도록
-            after_save = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-            es = get_es()
-            try:
-                await es.update(
-                    index=USER_PROFILE_INDEX,
-                    id="default",
-                    body={"doc": {"last_processed_at": after_save}},
-                )
-            finally:
-                await es.close()
-
+            # 분석 결과는 미리보기로만 반환한다. 사용자가 반영할 때 PUT /user-profile이
+            # 프로필과 분석 기준 시점을 함께 저장한다.
+            analysis_cursor = max(
+                (str(conversation.get("updated_at") or "") for conversation in conversations),
+                default="",
+            )
             yield sse("done", {
                 "profile": updated_profile,
                 "message": f"{total}개 대화방 처리 완료",
                 "processed": total,
+                "analysis_cursor": analysis_cursor,
             })
 
         except Exception as e:

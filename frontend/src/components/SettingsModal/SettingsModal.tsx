@@ -321,7 +321,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
     const [profileEditText, setProfileEditText] = useState('');
     const [profileSaving, setProfileSaving] = useState(false);
     const [profileState, setProfileState] = useState({
-        status: '', current: 0, total: 0, currentTitle: '', done: false, error: '', profile: '',
+        status: '', current: 0, total: 0, currentTitle: '', done: false, error: '', profile: '', analysisCursor: '',
     });
     const profileAbortRef = useRef<(() => void) | null>(null);
     useEffect(() => {
@@ -727,7 +727,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
             currentTitle: '',
             done: false,
             error: '',
-            profile: ''
+            profile: '',
+            analysisCursor: ''
         });
         let cancelled = false;
         const run = async () => {
@@ -769,10 +770,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                     ? t('profile.analysisComplete', {count: data.processed})
                                     : t('profile.noNewConversations'),
                                 profile: data.profile,
+                                analysisCursor: data.analysis_cursor || '',
                                 current: data.processed,
                                 total: data.processed
                             }));
-                            setExistingProfile(data.profile);
                         } else if (event === 'error') setProfileState(s => ({...s, error: data.message}));
                     }
                 }
@@ -781,6 +782,29 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
             }
         };
         run();
+    };
+
+    const applyAnalyzedProfile = async () => {
+        if (!profileState.profile || !profileState.analysisCursor) return;
+        setProfileSaving(true);
+        try {
+            const response = await fetch('/api/user-profile', {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    profile: profileState.profile,
+                    analysis_cursor: profileState.analysisCursor,
+                }),
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            setExistingProfile(profileState.profile);
+            setProfileMode('view');
+            toast.success(t('profile.analysisApplied'));
+        } catch {
+            toast.error(t('profile.analysisApplyFailed'));
+        } finally {
+            setProfileSaving(false);
+        }
     };
 
     const profilePercent = profileState.total > 0 ? Math.round((profileState.current / profileState.total) * 100) : 0;
@@ -1537,14 +1561,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                             {profileState.profile && (
                                                 <div className="remember-profile-preview" style={{marginTop: '14px'}}>
                                                     <div
-                                                        className="settings-profile-label">{t('profile.updatedProfile')}</div>
+                                                        className="settings-profile-label">{t('profile.analyzedProfile')}</div>
                                                     <div className="remember-profile-text">{profileState.profile}</div>
                                                 </div>
                                             )}
                                         </div>
                                         <div className="settings-profile-actions">
                                             <button className="remember-cancel-btn"
-                                                    onClick={() => setProfileMode('view')}>{t('common:back')}</button>
+                                                    onClick={() => setProfileMode('view')}>{t('profile.discardAnalysis')}</button>
+                                            {profileState.current > 0 && <button className="remember-start-btn"
+                                                    disabled={profileSaving || !profileState.analysisCursor}
+                                                    onClick={() => void applyAnalyzedProfile()}>
+                                                {profileSaving ? t('common:saving') : t('profile.applyAnalysis')}
+                                            </button>}
                                         </div>
                                     </>
                                 )}

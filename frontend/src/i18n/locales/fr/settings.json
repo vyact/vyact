@@ -237,6 +237,11 @@
     "analysisComplete": "{{count}} conversations traitées",
     "noNewConversations": "Aucune nouvelle conversation à traiter.",
     "updatedProfile": "Profil mis à jour",
+    "analyzedProfile": "Aperçu du profil analysé",
+    "applyAnalysis": "Appliquer au profil",
+    "discardAnalysis": "Annuler",
+    "analysisApplied": "Analyse appliquée au profil.",
+    "analysisApplyFailed": "Impossible d’appliquer l’analyse.",
     "concise": "Concis",
     "default": "Par défaut",
     "detailed": "Détaillé"
