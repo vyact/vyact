@@ -552,3 +552,15 @@
     background: color-mix(in srgb, var(--accent) 10%, transparent);
     color: var(--accent);
 }
+
+.knowledge-source-select .custom-select-item.selected .knowledge-source-view-button {
+    border-color: color-mix(in srgb, var(--accent) 48%, var(--border));
+    background: color-mix(in srgb, var(--surface2) 64%, transparent);
+    color: color-mix(in srgb, var(--text) 82%, var(--accent));
+}
+
+.knowledge-source-select .custom-select-item.selected .knowledge-source-view-button:hover {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 16%, var(--surface2));
+    color: var(--accent);
+}
