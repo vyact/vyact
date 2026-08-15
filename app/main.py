@@ -4,6 +4,7 @@ main.py – FastAPI 앱 생성 + 라우터 등록 + Lifespan
 import os
 import locale
 import signal
+import warnings
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -23,6 +24,33 @@ from services.external_data.scheduler import (
 from services.mcp_config import ensure_mcp_config
 
 APP_DIR = Path(__file__).parent
+
+# 아래 경고는 현재 사용하는 외부 라이브러리 내부 구현에서 발생하며 앱이
+# 제어할 수 없다. 메시지와 발생 모듈을 함께 제한해 애플리케이션 경고는
+# 그대로 노출한다.
+warnings.filterwarnings(
+    "ignore",
+    message=r"dropout option adds dropout.*num_layers greater than 1.*",
+    category=UserWarning,
+    module=r"torch\.nn\.modules\.rnn",
+)
+warnings.filterwarnings(
+    "ignore",
+    message=r"`torch\.nn\.utils\.weight_norm` is deprecated.*",
+    category=FutureWarning,
+    module=r"torch\.nn\.utils\.weight_norm",
+)
+warnings.filterwarnings(
+    "ignore",
+    message=r"invalid escape sequence.*",
+    category=SyntaxWarning,
+)
+warnings.filterwarnings(
+    "ignore",
+    message=r"pkg_resources is deprecated as an API.*",
+    category=UserWarning,
+    module=r"jieba\._compat",
+)
 
 # 최초 설정에서 Kokoro 모델·음성 파일을 모두 받기 전에는 온라인 접근을
 # 허용한다. 다운로드 완료 후에는 캐시만 사용하므로 오프라인에서도 동작한다.
@@ -150,8 +178,8 @@ async def lifespan(app: FastAPI):
     # 최초 설정에서는 Provider 선택 후 설치 진행 화면에서 준비한다.
     if not is_initial_setup:
         try:
-            from playwright.sync_api import sync_playwright
-            with sync_playwright() as p:
+            from playwright.async_api import async_playwright
+            async with async_playwright() as p:
                 chromium_path = Path(p.chromium.executable_path)
                 if not chromium_path.is_file():
                     raise FileNotFoundError(chromium_path)

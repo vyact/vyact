@@ -454,7 +454,7 @@ VOICES = [
     'pf_dora','pm_alex','pm_santa',
 ]
 
-p = KPipeline(lang_code='a')
+p = KPipeline(lang_code='a', repo_id='hexgrad/Kokoro-82M')
 print('model loaded')
 
 failed = []

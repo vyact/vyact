@@ -6,6 +6,29 @@ Kokoro-82M 기반 로컬 TTS. 지원 언어만 처리하고,
 import io
 import asyncio
 import json
+import logging
+import warnings
+
+warnings.filterwarnings("ignore", message=r"invalid escape sequence.*", category=SyntaxWarning)
+warnings.filterwarnings(
+    "ignore",
+    message=r"pkg_resources is deprecated as an API.*",
+    category=UserWarning,
+)
+warnings.filterwarnings(
+    "ignore",
+    message=r"dropout option adds dropout.*num_layers greater than 1.*",
+    category=UserWarning,
+    module=r"torch\.nn\.modules\.rnn",
+)
+warnings.filterwarnings(
+    "ignore",
+    message=r"`torch\.nn\.utils\.weight_norm` is deprecated.*",
+    category=FutureWarning,
+    module=r"torch\.nn\.utils\.weight_norm",
+)
+
+import jieba
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
@@ -18,6 +41,8 @@ from services.installer import Installer
 
 logger = get_logger(__name__)
 router = APIRouter()
+KOKORO_REPOSITORY_ID = "hexgrad/Kokoro-82M"
+jieba.setLogLevel(logging.WARNING)
 
 # ── Kokoro 싱글톤 ──────────────────────────────────
 _pipelines: dict = {}  # lang_code -> KPipeline
@@ -102,7 +127,10 @@ def _get_pipeline(lang_code: str):
 
         try:
             logger.info(f"Kokoro pipeline loaded: lang_code={lang_code}")
-            _pipelines[lang_code] = KPipeline(lang_code=lang_code)
+            _pipelines[lang_code] = KPipeline(
+                lang_code=lang_code,
+                repo_id=KOKORO_REPOSITORY_ID,
+            )
         except ModuleNotFoundError as error:
             logger.error("Kokoro dependency missing for %s: %s", lang_code, error.name)
             raise HTTPException(
