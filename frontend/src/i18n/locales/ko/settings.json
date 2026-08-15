@@ -11,7 +11,7 @@
     "profile": "AI 프로필 분석"
   },
   "externalData": {
-    "browser": {"title": "정부24 데이터 보기", "open": "데이터 보기", "close": "닫기", "searchPlaceholder": "서비스명, 기관, 대상 검색…", "clearSearch": "검색어 지우기", "resultCount": "{{count}}건", "loading": "데이터를 불러오는 중…", "loadingMore": "다음 데이터를 불러오는 중…", "loadFailed": "데이터를 불러오지 못했습니다.", "empty": "검색 결과가 없습니다.", "unknownDate": "수정일 없음", "unknownAgency": "기관 정보 없음", "modifiedAt": "수정 {{date}}", "target": "지원 대상", "deadline": "신청기한", "purpose": "서비스 목적", "content": "지원 내용", "selectionCriteria": "선정 기준", "applicationMethod": "신청 방법", "requiredDocuments": "구비 서류", "contact": "문의처", "openSource": "정부24 원문 보기", "selectDocument": "왼쪽 목록에서 데이터를 선택해 주세요."},
+    "browser": {"title": "정부24 데이터 보기", "open": "데이터 보기", "close": "닫기", "searchPlaceholder": "서비스명, 기관, 대상 검색…", "clearSearch": "검색어 지우기", "resultCount": "{{count}}건", "loading": "데이터를 불러오는 중…", "loadingMore": "다음 데이터를 불러오는 중…", "loadFailed": "데이터를 불러오지 못했습니다.", "empty": "검색 결과가 없습니다.", "unknownDate": "일정 미정", "unknownAgency": "기관 정보 없음", "modifiedAt": "수정 {{date}}", "deadlineAt": "마감 {{date}}", "businessYearAt": "사업연도 {{year}}년", "target": "지원 대상", "deadline": "신청기한", "purpose": "서비스 목적", "content": "지원 내용", "selectionCriteria": "선정 기준", "applicationMethod": "신청 방법", "requiredDocuments": "구비 서류", "contact": "문의처", "openSource": "정부24 원문 보기", "selectDocument": "왼쪽 목록에서 데이터를 선택해 주세요."},
     "autoSync": "자동 업데이트", "autoSyncDescription": "앱이 실행 중일 때 설정한 주기로 데이터를 백그라운드에서 업데이트합니다.", "autoSyncInterval": "업데이트 주기", "autoSyncIntervalOption": "{{count}}시간마다", "autoSyncSaveFailed": "자동 업데이트 설정을 저장하지 못했습니다.",
     "countryKr": "대한민국",
     "serviceKey": "공공데이터포털 서비스키",

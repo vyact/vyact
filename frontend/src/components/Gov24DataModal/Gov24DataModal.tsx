@@ -64,11 +64,22 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose, sourceI
 
     const selectedDocument = documents.find(document => document.id === selectedId) || documents[0];
     const numberFormatter = new Intl.NumberFormat(i18n.resolvedLanguage || i18n.language);
-    const formatModifiedAt = (value: string) => {
-        if (!value) return t('externalData.browser.unknownDate');
+    const formatDate = (value: string) => {
         const parsed = new Date(value);
         if (Number.isNaN(parsed.getTime())) return value;
         return new Intl.DateTimeFormat(i18n.resolvedLanguage || i18n.language, {dateStyle: 'medium'}).format(parsed);
+    };
+    const getDocumentDate = (document: Gov24Document) => {
+        if (document.application_end_date) {
+            return {kind: 'deadline', label: t('externalData.browser.deadlineAt', {date: formatDate(document.application_end_date)})};
+        }
+        if (sourceId === 'kr.k_startup' && document.record_type === 'business' && document.source_modified_at) {
+            return {kind: 'year', label: t('externalData.browser.businessYearAt', {year: document.source_modified_at})};
+        }
+        if (document.source_modified_at) {
+            return {kind: 'modified', label: t('externalData.browser.modifiedAt', {date: formatDate(document.source_modified_at)})};
+        }
+        return {kind: 'unknown', label: t('externalData.browser.unknownDate')};
     };
     const loadMore = async () => {
         if (!nextCursor || loadingMore) return;
@@ -127,15 +138,16 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose, sourceI
                         {loading ? <div className="gov24-browser-state">{t('externalData.browser.loading')}</div>
                             : error && !documents.length ? <div className="gov24-browser-state is-error">{t('externalData.browser.loadFailed')}</div>
                                 : !documents.length ? <div className="gov24-browser-state">{t('externalData.browser.empty')}</div>
-                                    : documents.map(document => (
-                                        <button type="button" key={document.id} className={document.id === selectedDocument?.id ? 'is-selected' : ''} onClick={() => setSelectedId(document.id)}>
+                                    : documents.map(document => {
+                                        const documentDate = getDocumentDate(document);
+                                        return <button type="button" key={document.id} className={document.id === selectedDocument?.id ? 'is-selected' : ''} onClick={() => setSelectedId(document.id)}>
                                             <strong>{document.title}</strong>
                                             <span className="gov24-browser-list-meta">
-                                                <time>{formatModifiedAt(document.source_modified_at)}</time>
+                                                <time className={`gov24-browser-date is-${documentDate.kind}`}>{documentDate.label}</time>
                                                 <span>{document.agency || t('externalData.browser.unknownAgency')}</span>
                                             </span>
-                                        </button>
-                                    ))}
+                                        </button>;
+                                    })}
                         {loadingMore && <div className="gov24-browser-loading-more">{t('externalData.browser.loadingMore')}</div>}
                     </aside>
                     <main className="gov24-browser-detail">
@@ -149,7 +161,7 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose, sourceI
                                     <h2>{selectedDocument.title}</h2>
                                     <div className="gov24-browser-meta">
                                         {selectedDocument.agency && <span><Landmark size={15}/>{selectedDocument.agency}</span>}
-                                        <span><CalendarClock size={15}/>{formatModifiedAt(selectedDocument.source_modified_at)}</span>
+                                        <span className={`gov24-browser-date is-${getDocumentDate(selectedDocument).kind}`}><CalendarClock size={15}/>{getDocumentDate(selectedDocument).label}</span>
                                     </div>
                                 </div>
                                 {sourceId !== 'kr.biz_support' && sourceId !== 'kr.k_startup' && selectedDocument.summary && <p>{selectedDocument.summary}</p>}

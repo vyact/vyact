@@ -208,7 +208,7 @@ async def browse_documents(query: str = "", search_after: list | None = None) ->
             "sort": sort,
             "source_includes": [
                 "external_id", "title", "agency", "target", "category", "user_type",
-                "support_type", "application_deadline", "source_url", "source_modified_at",
+                "support_type", "application_deadline", "application_end_date", "source_url", "source_modified_at",
                 "content_text", "raw",
             ],
         }
@@ -232,6 +232,7 @@ async def browse_documents(query: str = "", search_after: list | None = None) ->
                 "user_type": source.get("user_type", ""),
                 "support_type": source.get("support_type", ""),
                 "application_deadline": source.get("application_deadline", ""),
+                "application_end_date": source.get("application_end_date"),
                 "source_url": source.get("source_url", ""),
                 "source_modified_at": source.get("source_modified_at", ""),
                 "summary": list_item.get("서비스목적요약", ""),

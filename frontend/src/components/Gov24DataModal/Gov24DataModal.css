@@ -21,7 +21,10 @@
 .gov24-browser-list > button > span { overflow:hidden; color:var(--muted); font-size:11px; text-overflow:ellipsis; white-space:nowrap; }
 .gov24-browser-list-meta { display:flex; min-width:0; align-items:center; gap:8px; }
 .gov24-browser-list-meta > span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.gov24-browser-list-meta time { flex:0 0 auto; color:var(--text-secondary); font-size:11px; font-variant-numeric:tabular-nums; }
+.gov24-browser-list-meta time { flex:0 0 auto; font-size:10px; font-variant-numeric:tabular-nums; }
+.gov24-browser-date { display:inline-flex; align-items:center; gap:5px; padding:3px 7px; border:1px solid var(--border); border-radius:999px; background:color-mix(in srgb,var(--surface2) 74%,transparent); color:var(--text-secondary); white-space:nowrap; }
+.gov24-browser-date.is-deadline { border-color:color-mix(in srgb,var(--accent) 25%,var(--border)); background:color-mix(in srgb,var(--accent) 8%,transparent); color:var(--accent); }
+.gov24-browser-date.is-year { color:var(--muted); }
 .gov24-browser-list-meta > span::before { content:'·'; margin-right:8px; color:var(--muted); }
 .gov24-browser-state,.gov24-browser-loading-more { display:grid; min-height:120px; place-items:center; padding:20px; color:var(--muted); font-size:12px; text-align:center; }
 .gov24-browser-state.is-error { color:var(--danger,#e36b6b); }
@@ -35,6 +38,7 @@
 .gov24-browser-detail-hero > p { max-width:760px; margin:6px 0 0; color:var(--text-secondary); font-size:14px; line-height:1.55; }
 .gov24-browser-meta { display:flex; flex:0 0 auto; flex-wrap:wrap; gap:7px 12px; margin-left:auto; color:var(--muted); font-size:12px; }
 .gov24-browser-meta span { display:inline-flex; align-items:center; gap:6px; }
+.gov24-browser-meta .gov24-browser-date { padding:4px 8px; }
 .gov24-browser-detail-scroll { overflow:auto; padding:16px 30px 26px; scrollbar-width:thin; }
 .gov24-browser-info-card { display:flex; align-items:flex-start; gap:11px; margin-bottom:10px; padding:13px 15px; border:1px solid var(--border); border-radius:11px; background:color-mix(in srgb,var(--surface2) 66%,transparent); color:var(--accent); }
 .gov24-browser-info-card div { min-width:0; }

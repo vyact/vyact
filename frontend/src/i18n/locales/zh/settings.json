@@ -11,7 +11,7 @@
     "plugins": "Plugins"
   },
   "externalData": {
-    "browser": {"title": "查看政府24数据", "open": "查看数据", "close": "关闭", "searchPlaceholder": "搜索服务、机构或对象…", "clearSearch": "清除搜索", "resultCount": "{{count}}条", "loading": "正在加载…", "loadingMore": "正在加载更多…", "loadFailed": "无法加载数据。", "empty": "没有搜索结果。", "unknownDate": "无修改日期", "unknownAgency": "无机构信息", "modifiedAt": "修改于{{date}}", "target": "支持对象", "deadline": "申请期限", "purpose": "服务目的", "content": "支持内容", "selectionCriteria": "选择标准", "applicationMethod": "申请方式", "requiredDocuments": "所需材料", "contact": "联系方式", "openSource": "查看政府24原文", "selectDocument": "请从左侧列表选择数据。"},
+    "browser": {"title": "查看政府24数据", "open": "查看数据", "close": "关闭", "searchPlaceholder": "搜索服务、机构或对象…", "clearSearch": "清除搜索", "resultCount": "{{count}}条", "loading": "正在加载…", "loadingMore": "正在加载更多…", "loadFailed": "无法加载数据。", "empty": "没有搜索结果。", "unknownDate": "日程待定", "unknownAgency": "无机构信息", "modifiedAt": "修改于{{date}}", "deadlineAt": "截止 {{date}}", "businessYearAt": "项目年度 {{year}}年", "target": "支持对象", "deadline": "申请期限", "purpose": "服务目的", "content": "支持内容", "selectionCriteria": "选择标准", "applicationMethod": "申请方式", "requiredDocuments": "所需材料", "contact": "联系方式", "openSource": "查看政府24原文", "selectDocument": "请从左侧列表选择数据。"},
     "autoSync": "自动更新", "autoSyncDescription": "应用运行时按所选间隔在后台更新数据。", "autoSyncInterval": "更新间隔", "autoSyncIntervalOption": "每{{count}}小时", "autoSyncSaveFailed": "无法保存自动更新设置。",
     "countryKr": "韩国",
     "serviceKey": "公共数据门户服务密钥", "serviceKeyPlaceholder": "输入通用认证密钥", "serviceKeySavedPlaceholder": "输入新密钥以替换已保存密钥", "showServiceKey": "显示密钥", "hideServiceKey": "隐藏密钥", "saveServiceKey": "保存密钥", "saving": "正在保存…", "serviceKeyConfigured": "服务密钥已保存。", "serviceKeySaved": "服务密钥已保存。", "serviceKeySaveFailed": "无法保存服务密钥。",

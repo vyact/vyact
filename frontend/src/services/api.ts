@@ -173,6 +173,8 @@ export interface Gov24Document {
     user_type: string;
     support_type: string;
     application_deadline: string;
+    application_end_date?: string | null;
+    record_type?: 'announcement' | 'business' | '';
     source_url: string;
     application_url?: string;
     source_modified_at: string;
