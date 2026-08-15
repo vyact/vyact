@@ -493,6 +493,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                                 requestStartedAt={msg.id === streamingMessageId ? responseStartedAt : null}
                                 toolStatus={msg.toolStatus}
                                 activityLog={msg.activityLog}
+                                codeChanges={msg.codeChanges}
                                 stats={msg.role === 'user' ? messages[idx + 1]?.stats : msg.stats}
                                 truncated={msg.truncated}
                             />

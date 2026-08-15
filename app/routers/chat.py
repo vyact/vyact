@@ -885,6 +885,8 @@ async def query_stream(req: QueryRequest):
                     current_code_folders.set(build_code_folder_map(request_folder_paths))
                     current_code_folder.set(request_folder_paths[0])
                     current_code_question.set(clean_question)
+                    from services.code_tools import begin_code_change_tracking
+                    begin_code_change_tracking()
 
                 from services.conv_summary import HiddenMetadataStreamFilter
                 metadata_stream_filter = HiddenMetadataStreamFilter()
@@ -972,11 +974,14 @@ async def query_stream(req: QueryRequest):
                 answer, _conv_summary, _project_summary = extract_summary_tags(answer)
 
                 injected_context = build_injected_context(gen_sources)
+                from services.code_tools import finalize_code_change_tracking
+                code_changes = finalize_code_change_tracking()
                 user_message = build_user_message(original_question, user_ts, req.attachments)
                 # "참고" 표시용 — url이 있는 소스만
                 article_sources = [s for s in gen_sources if s.get("url") and s.get("source") != "붙여넣기"]
                 assistant_msg = build_assistant_message(
                     answer, gen_model, article_sources, injected_context, gen_stats, _activity_log,
+                    code_changes=code_changes,
                     truncated=response_truncated,
                 )
 
@@ -1023,7 +1028,7 @@ async def query_stream(req: QueryRequest):
                     _run_in_background(_save_history_bg())
 
                 yield _sse("done", {"conv_id": conv_id, "answer": answer, "stats": gen_stats,
-                                    "truncated": response_truncated})
+                                    "truncated": response_truncated, "code_changes": code_changes})
                 _saved = True
                 return
 
@@ -1123,6 +1128,20 @@ async def query_stream(req: QueryRequest):
                     logger.warning("[query_stream] 중단 시 저장 실패: %s", e)
 
     return StreamingResponse(stream(), media_type="text/event-stream")
+
+
+class UndoCodeChangesRequest(BaseModel):
+    undo_token: str
+
+
+@router.post("/code-changes/undo")
+async def undo_code_change_transaction(req: UndoCodeChangesRequest):
+    from services.code_tools import undo_code_changes
+    result = undo_code_changes(req.undo_token)
+    if not result.get("ok"):
+        status_code = 409 if result.get("reason") == "conflict" else 404
+        raise HTTPException(status_code=status_code, detail=result)
+    return result
 
 
 # ── 번역 전용 엔드포인트 (RAG/도구 호출 없이 LLM 1회만 호출) ──────────────────

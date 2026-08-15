@@ -992,6 +992,7 @@
     "codeGenerating": "⌨️ 正在编写代码…"
   },
   "message": {
+    "codeChangesTitle": "已编辑 {{count}} 个文件", "codeChangesUndo": "撤销", "codeChangesUndoing": "正在撤销…", "codeChangesUndone": "已撤销更改", "codeChangesUndoFailed": "无法撤销更改。", "codeChangesUndoConflict": "文件此后已被修改，无法安全撤销。", "codeChangesMore": "再显示 {{count}} 个文件", "codeChangesCollapse": "收起", "codeChangesPreview": "{{path}} 的更改预览",
     "modelNoResponse": "所选 AI 模型未能生成响应。请重试。",
     "outputTruncated": "回答因达到最大输出长度而被截断。请让模型继续回答。",
     "followupTitle": "继续提问",

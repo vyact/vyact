@@ -992,6 +992,7 @@
     "codeGenerating": "⌨️ Escribiendo código…"
   },
   "message": {
+    "codeChangesTitle": "Se editaron {{count}} archivos", "codeChangesUndo": "Deshacer", "codeChangesUndoing": "Deshaciendo…", "codeChangesUndone": "Cambios deshechos", "codeChangesUndoFailed": "No se pudieron deshacer los cambios.", "codeChangesUndoConflict": "El archivo se modificó después y no se puede deshacer con seguridad.", "codeChangesMore": "Mostrar {{count}} archivos más", "codeChangesCollapse": "Contraer", "codeChangesPreview": "Cambios en {{path}}",
     "modelNoResponse": "El modelo de IA seleccionado no pudo generar una respuesta. Inténtalo de nuevo.",
     "outputTruncated": "La respuesta se cortó al alcanzar la longitud máxima de salida. Pide al modelo que continúe.",
     "followupTitle": "Continuar la conversación",

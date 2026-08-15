@@ -1,4 +1,4 @@
-import type {ArticleAttachment, Message, Source, ToolActivity} from '../../types';
+import type {ArticleAttachment, CodeChanges, Message, Source, ToolActivity} from '../../types';
 import type {CodeFile} from '../../components/CodeFileViewer/CodeFileViewer';
 
 export interface MessageProps {
@@ -23,6 +23,7 @@ export interface MessageProps {
     requestStartedAt?: number | null;
     toolStatus?: ToolActivity;
     activityLog?: ToolActivity[];
+    codeChanges?: CodeChanges;
     truncated?: boolean;
     stats?: {
         load_duration?: number | null;

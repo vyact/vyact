@@ -200,6 +200,7 @@ async def backup_stats():
 class ExportRequest(BaseModel):
     indices: Optional[list[str]] = None
     include_files: bool = True  # 원본 문서 파일 포함 여부
+    account_id: Optional[str] = None
 
 
 async def _read_backup(file: UploadFile) -> tuple[dict, dict[str, bytes], dict[str, bytes], dict[str, bytes]]:
@@ -614,7 +615,7 @@ async def export_backup_to_drive(req: ExportRequest = None):
     except ImportError:
         raise HTTPException(500, "googleapiclient 패키지가 설치되어 있지 않습니다.")
 
-    service = await _build_service("drive", "v3")
+    service = await _build_service("drive", "v3", account_id=req.account_id if req else None)
 
     # vyact 폴더 찾기 또는 생성
     query = "name = 'vyact' and mimeType = 'application/vnd.google-apps.folder' and trashed = false"

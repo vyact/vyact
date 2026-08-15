@@ -545,6 +545,29 @@
 .msg-activity-list code { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px; color:var(--muted); }
 .msg-activity-duration { margin-left:auto; flex-shrink:0; color:var(--muted); font-size:10.5px; }
 
+.code-changes-card { margin:12px 16px 4px; max-width:min(760px, calc(100% - 32px)); overflow:visible; border:1px solid var(--border); border-radius:14px; background:var(--surface); }
+.code-changes-card.undone { opacity:.68; }
+.code-changes-header { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:16px 18px; border-bottom:1px solid var(--border); }
+.code-changes-header > div { display:flex; align-items:baseline; gap:12px; min-width:0; }
+.code-changes-header strong { color:var(--text); font-size:14px; }
+.code-changes-total, .code-change-count { flex-shrink:0; font-size:13px; font-style:normal; font-variant-numeric:tabular-nums; }
+.code-changes-total b, .code-change-count b { color:var(--success); font-weight:500; }
+.code-changes-total i, .code-change-count i { color:#ef4444; font-style:normal; }
+.code-changes-header button { display:inline-flex; align-items:center; gap:6px; padding:7px 10px; border:0; border-radius:7px; background:transparent; color:var(--text-secondary); cursor:pointer; font-size:12px; }
+.code-changes-header button:hover:not(:disabled) { background:var(--surface2); color:var(--text); }
+.code-changes-header button:disabled { cursor:default; opacity:.55; }
+.code-change-file { position:relative; }
+.code-change-file-row { display:flex; align-items:center; justify-content:space-between; gap:18px; min-height:46px; padding:0 18px; color:var(--text-secondary); font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:13px; }
+.code-change-file-row > span:first-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.code-change-preview { position:absolute; right:16px; bottom:36px; z-index:30; display:none; width:min(720px, calc(100vw - 80px)); max-height:min(560px, 70vh); margin:0; overflow:auto; border:1px solid var(--border); border-radius:12px; background:#151515; box-shadow:0 18px 50px rgba(0,0,0,.5); color:#aaa; font:12px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.code-change-file:hover .code-change-preview, .code-change-file:focus-within .code-change-preview { display:block; }
+.code-change-preview code { display:block; min-width:max-content; padding:0 14px; white-space:pre; }
+.code-change-preview code.added { background:rgba(34,197,94,.17); color:#7ee2a8; }
+.code-change-preview code.deleted { background:rgba(239,68,68,.15); color:#ff9b9b; }
+.code-changes-more { display:flex; align-items:center; gap:6px; width:100%; padding:12px 18px; border:0; border-top:1px solid var(--border); border-radius:0 0 14px 14px; background:var(--surface2); color:var(--text-secondary); cursor:pointer; font-size:12px; }
+.code-changes-more svg { transition:transform .15s ease; }
+.code-changes-more svg.expanded { transform:rotate(180deg); }
+
 /* ── 스트리밍 첫 토큰 대기 중 타이핑 점 (LoadingIndicator .typing과 동일 톤) ── */
 .msg-typing-dots {
     display: flex;

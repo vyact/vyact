@@ -9,6 +9,7 @@ import CodeFileViewer from '../CodeFileViewer/CodeFileViewer';
 import ImageViewer from '../ImageViewer/ImageViewer';
 import ActivityTimeline from './ActivityTimeline';
 import InlineToolApproval from './InlineToolApproval';
+import CodeChangesCard from './CodeChangesCard';
 import {useCodePanel} from '../../contexts/CodePanelContext';
 import './Message.css';
 import {ttsService} from '../../services/tts/ttsService';
@@ -83,6 +84,7 @@ const Message: React.FC<MessageProps> = ({
                                              pdfFile, pdfParams, onPdfEdit, injectedContext, onShowInjectedContext, onOpenMemo,
                                              isStreaming = false, conversationId, requestStartedAt, toolStatus, activityLog, stats,
                                              truncated,
+                                             codeChanges,
                                          }) => {
     const {t} = useTranslation('main');
     const {panel} = useCodePanel();
@@ -882,6 +884,10 @@ const Message: React.FC<MessageProps> = ({
                     activities={activityLog}
                     executionDurationNs={stats?.tool_duration}
                 />
+            ) : null}
+
+            {role === 'assistant' && !isStreaming && codeChanges?.files.length ? (
+                <CodeChangesCard changes={codeChanges}/>
             ) : null}
 
             {viewerIndex !== null && viewerImages.length > 0 && (

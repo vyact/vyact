@@ -989,6 +989,7 @@
     "codeGenerating": "⌨️ 코드 작성 중…"
   },
   "message": {
+    "codeChangesTitle": "파일 {{count}}개를 편집했습니다", "codeChangesUndo": "실행 취소", "codeChangesUndoing": "취소 중…", "codeChangesUndone": "변경을 취소했습니다", "codeChangesUndoFailed": "변경을 취소할 수 없습니다.", "codeChangesUndoConflict": "이후에 파일이 다시 수정되어 안전하게 취소할 수 없습니다.", "codeChangesMore": "{{count}}개 파일 더 보기", "codeChangesCollapse": "접기", "codeChangesPreview": "{{path}} 변경 미리보기",
     "modelNoResponse": "선택한 AI 모델이 응답을 생성하지 못했습니다. 다시 시도해주세요.",
     "outputTruncated": "최대 출력 길이에 도달하여 답변이 중간에 잘렸습니다. 계속해서 답변해 달라고 요청해 주세요.",
     "followupTitle": "이어서 물어보기",

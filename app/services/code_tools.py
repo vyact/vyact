@@ -5,6 +5,7 @@ services/code_tools.py — 코드 분석 tool (폴더 첨부 시 활성화)
 내부 tool을 등록한다. 폴더 경로는 요청별 ContextVar로 관리된다.
 """
 import fnmatch
+import difflib
 import json
 import os
 import re
@@ -12,6 +13,7 @@ import shutil
 import subprocess
 import sys
 import time
+import uuid
 from collections import Counter
 from contextvars import ContextVar
 from pathlib import Path
@@ -26,6 +28,11 @@ current_code_folder: ContextVar[str] = ContextVar("current_code_folder", default
 current_code_folders: ContextVar[dict[str, str]] = ContextVar("current_code_folders", default={})
 # 삭제/이동은 이 요청의 사용자 원문에 명시적인 확인 문구가 있어야만 실행한다.
 current_code_question: ContextVar[str] = ContextVar("current_code_question", default="")
+current_code_change_snapshots: ContextVar[dict[tuple[str, str], bytes | None] | None] = ContextVar(
+    "current_code_change_snapshots", default=None
+)
+_code_change_undo_registry: dict[str, dict] = {}
+MAX_UNDO_REGISTRY_ENTRIES = 100
 
 # 읽기 제한
 MAX_READ_BYTES = 100_000  # 100KB
@@ -149,6 +156,100 @@ FOLDER_ID_PROPERTY = {
     "type": "string",
     "description": "작업할 프로젝트 소스 폴더 ID. 시스템 프롬프트의 [프로젝트 소스 폴더] 목록에서 선택해야 한다.",
 }
+
+
+def begin_code_change_tracking() -> None:
+    """Start a request-local transaction log for code mutation tools."""
+    current_code_change_snapshots.set({})
+
+
+def _record_file_before_change(folder_id: str, relative_path: str) -> None:
+    snapshots = current_code_change_snapshots.get()
+    folder = current_code_folders.get().get(folder_id)
+    if snapshots is None or not folder:
+        return
+    target = _safe_path(folder, relative_path)
+    key = (folder_id, relative_path)
+    if not target or key in snapshots:
+        return
+    try:
+        snapshots[key] = target.read_bytes() if target.is_file() else None
+    except OSError:
+        return
+
+
+def finalize_code_change_tracking() -> dict | None:
+    """Create the UI summary and a guarded, server-side undo transaction."""
+    snapshots = current_code_change_snapshots.get()
+    if not snapshots:
+        return None
+    files: list[dict] = []
+    undo_files: list[dict] = []
+    total_additions = 0
+    total_deletions = 0
+    folders = current_code_folders.get()
+    for (folder_id, relative_path), before_bytes in snapshots.items():
+        folder = folders.get(folder_id)
+        target = _safe_path(folder, relative_path) if folder else None
+        if not target:
+            continue
+        try:
+            after_bytes = target.read_bytes() if target.is_file() else None
+        except OSError:
+            after_bytes = None
+        if before_bytes == after_bytes:
+            continue
+        before_text = (before_bytes or b"").decode("utf-8", errors="replace")
+        after_text = (after_bytes or b"").decode("utf-8", errors="replace")
+        diff_lines = list(difflib.unified_diff(
+            before_text.splitlines(), after_text.splitlines(),
+            fromfile=relative_path, tofile=relative_path, lineterm="",
+        ))
+        additions = sum(1 for line in diff_lines if line.startswith("+") and not line.startswith("+++"))
+        deletions = sum(1 for line in diff_lines if line.startswith("-") and not line.startswith("---"))
+        total_additions += additions
+        total_deletions += deletions
+        files.append({
+            "folderId": folder_id, "path": relative_path,
+            "status": "added" if before_bytes is None else "deleted" if after_bytes is None else "modified",
+            "additions": additions, "deletions": deletions, "diff": "\n".join(diff_lines),
+        })
+        undo_files.append({
+            "folder": folder, "path": relative_path, "before": before_bytes, "after": after_bytes,
+        })
+    if not files:
+        return None
+    undo_token = uuid.uuid4().hex
+    _code_change_undo_registry[undo_token] = {"files": undo_files}
+    while len(_code_change_undo_registry) > MAX_UNDO_REGISTRY_ENTRIES:
+        _code_change_undo_registry.pop(next(iter(_code_change_undo_registry)))
+    return {"files": files, "additions": total_additions, "deletions": total_deletions, "undoToken": undo_token}
+
+
+def undo_code_changes(undo_token: str) -> dict:
+    """Undo only when every file still matches this transaction's post-change state."""
+    transaction = _code_change_undo_registry.get(undo_token)
+    if not transaction:
+        return {"ok": False, "reason": "not_found"}
+    for item in transaction["files"]:
+        target = _safe_path(item["folder"], item["path"])
+        if not target:
+            return {"ok": False, "reason": "conflict", "path": item["path"]}
+        current = target.read_bytes() if target.is_file() else None
+        if current != item["after"]:
+            return {"ok": False, "reason": "conflict", "path": item["path"]}
+    for item in transaction["files"]:
+        target = _safe_path(item["folder"], item["path"])
+        before = item["before"]
+        if before is None:
+            if target and target.is_file():
+                target.unlink()
+        elif target:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(before)
+    _code_change_undo_registry.pop(undo_token, None)
+    _project_manifest_cache.clear()
+    return {"ok": True}
 
 
 def _safe_path(folder: str, rel: str) -> Path | None:
@@ -420,6 +521,7 @@ async def _edit_file(folder_id: str, path: str, old_string: str, new_string: str
         return msg
 
     new_content = content.replace(old_string, new_string, 1)
+    _record_file_before_change(folder_id, path)
     try:
         target.write_text(new_content, encoding="utf-8")
     except Exception as e:
@@ -439,6 +541,7 @@ async def _create_file(folder_id: str, path: str, content: str = "") -> str:
     if target.exists():
         return f"[오류] 파일이 이미 존재합니다. 기존 파일은 code_edit_file 또는 code_apply_patch로 수정하세요: {path}"
 
+    _record_file_before_change(folder_id, path)
     try:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(content, encoding="utf-8")
@@ -473,6 +576,9 @@ async def _apply_patch(folder_id: str, patch: str) -> str:
             target = (base / candidate).resolve()
             if not target.is_relative_to(base):
                 return f"[오류] 등록 폴더 밖의 경로는 수정할 수 없습니다: {candidate}"
+
+    for relative_path in dict.fromkeys(path for path in old_paths + new_paths if path != "/dev/null"):
+        _record_file_before_change(folder_id, relative_path)
 
     git_executable = shutil.which("git")
     if not git_executable:
@@ -696,6 +802,8 @@ async def _move_file(folder_id: str, source: str, destination: str) -> str:
         return "[오류] 원본 파일을 찾을 수 없거나 허용되지 않은 경로입니다."
     if dest.exists():
         return "[오류] 대상 파일이 이미 존재합니다. 덮어쓰지는 지원하지 않습니다."
+    _record_file_before_change(folder_id, source)
+    _record_file_before_change(folder_id, destination)
     try:
         dest.parent.mkdir(parents=True, exist_ok=True)
         src.rename(dest)
@@ -714,6 +822,7 @@ async def _delete_file(folder_id: str, path: str) -> str:
     target = _safe_path(folder, path)
     if not target or not target.is_file():
         return "[오류] 파일을 찾을 수 없거나 허용되지 않은 경로입니다."
+    _record_file_before_change(folder_id, path)
     try:
         target.unlink()
     except Exception as e:

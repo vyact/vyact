@@ -228,6 +228,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
     const [previewLoading, setPreviewLoading] = useState(false);
     const [googleDriveAvailable, setGoogleDriveAvailable] = useState(false);
     const [exportingDrive, setExportingDrive] = useState(false);
+    const [driveBackupAccounts, setDriveBackupAccounts] = useState<Array<{id: string; email?: string}>>([]);
+    const [activeDriveBackupAccountId, setActiveDriveBackupAccountId] = useState('');
+    const [showDriveAccountSelection, setShowDriveAccountSelection] = useState(false);
+    const [selectedDriveBackupAccountId, setSelectedDriveBackupAccountId] = useState('');
 
     // 일반 설정 탭
     const [llmLogging, setLlmLogging] = useState(false);
@@ -407,6 +411,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                 // 설정 위에 자식 모달이 열려 있으면 해당 모달이 ESC를 처리한다.
                 if (!topmostOverlay?.classList.contains('settings-overlay')) return;
                 e.preventDefault();
+                if (showDriveAccountSelection) {
+                    e.stopImmediatePropagation();
+                    setShowDriveAccountSelection(false);
+                    return;
+                }
                 // 복원 선택 중에는 ESC로 부모 설정창까지 닫히지 않도록 한다.
                 if (backupPreview) {
                     e.stopImmediatePropagation();
@@ -418,13 +427,23 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
         // capture 단계에서 처리해야 다른 전역 ESC 핸들러보다 먼저 차단할 수 있다.
         window.addEventListener('keydown', h, true);
         return () => window.removeEventListener('keydown', h, true);
-    }, [isOpen, handleClose, backupPreview]);
+    }, [isOpen, handleClose, backupPreview, showDriveAccountSelection]);
 
     // 백업 탭 진입 시 Google Drive 사용 가능 여부를 최신 상태로 확인
     useEffect(() => {
         if (isOpen && tab === 'backup') {
             refreshGoogleWorkspaceStatus().then(status => {
                 setGoogleDriveAvailable(status.connected);
+                const connectedAccounts = status.accounts.filter(account => account.authenticated);
+                const configuredAccountId = typeof status.config?.active_account_id === 'string'
+                    ? status.config.active_account_id
+                    : '';
+                const activeAccountId = connectedAccounts.some(account => account.id === configuredAccountId)
+                    ? configuredAccountId
+                    : connectedAccounts[0]?.id || '';
+                setDriveBackupAccounts(connectedAccounts);
+                setActiveDriveBackupAccountId(activeAccountId);
+                setSelectedDriveBackupAccountId(activeAccountId);
             }).catch(() => setGoogleDriveAvailable(false));
         }
     }, [isOpen, tab]);
@@ -491,18 +510,29 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
         }
     };
 
-    const handleExportToDrive = async () => {
+    const handleExportToDrive = async (accountId?: string) => {
         if (isBackupExporting) return;
         if (!selectedIndices.length) {
             toast.warning(t('backup.selectIndicesAlert'));
             return;
         }
+        if (!accountId && driveBackupAccounts.length > 1) {
+            setSelectedDriveBackupAccountId(activeDriveBackupAccountId || driveBackupAccounts[0].id);
+            setShowDriveAccountSelection(true);
+            return;
+        }
+        const targetAccountId = accountId || driveBackupAccounts[0]?.id || activeDriveBackupAccountId;
+        setShowDriveAccountSelection(false);
         setExportingDrive(true);
         try {
             const res = await fetch('/api/backup/export-to-drive', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({indices: selectedIndices, include_files: includeFiles})
+                body: JSON.stringify({
+                    indices: selectedIndices,
+                    include_files: includeFiles,
+                    account_id: targetAccountId || undefined,
+                })
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.detail || 'Upload failed');
@@ -838,6 +868,30 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                     </div>
                 )}
 
+                {showDriveAccountSelection && !isBackupExporting && (
+                    <div className="drive-backup-account-overlay" role="presentation">
+                        <section className="drive-backup-account-modal" role="dialog" aria-modal="true" aria-labelledby="drive-backup-account-title">
+                            <h4 id="drive-backup-account-title">{t('backup.chooseDriveAccount')}</h4>
+                            <p>{t('backup.chooseDriveAccountDescription')}</p>
+                            <div className="drive-backup-account-list">
+                                {driveBackupAccounts.map(account => (
+                                    <label key={account.id} className={selectedDriveBackupAccountId === account.id ? 'selected' : ''}>
+                                        <input type="radio" name="drive-backup-account" value={account.id}
+                                               checked={selectedDriveBackupAccountId === account.id}
+                                               onChange={() => setSelectedDriveBackupAccountId(account.id)}/>
+                                        <span><strong>{account.email || account.id}</strong>{account.id === activeDriveBackupAccountId && <small>{t('backup.currentAccount')}</small>}</span>
+                                    </label>
+                                ))}
+                            </div>
+                            <div className="drive-backup-account-actions">
+                                <button type="button" onClick={() => setShowDriveAccountSelection(false)}>{t('common:cancel')}</button>
+                                <button type="button" className="primary" disabled={!selectedDriveBackupAccountId}
+                                        onClick={() => void handleExportToDrive(selectedDriveBackupAccountId)}>{t('backup.continueBackup')}</button>
+                            </div>
+                        </section>
+                    </div>
+                )}
+
                 <div className="settings-layout" aria-busy={isBackupExporting}>
 
                     <nav className="settings-sidebar">
@@ -947,7 +1001,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                                 </svg>
                                                 {exporting ? t('backup.exporting') : t('backup.exportLocal')}
                                             </button>
-                                            <button className="settings-btn-export settings-btn-export--drive" onClick={handleExportToDrive}
+                                            <button className="settings-btn-export settings-btn-export--drive" onClick={() => void handleExportToDrive()}
                                                     disabled={isBackupExporting || statsLoading || !selectedIndices.length}>
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                                                      stroke="currentColor" strokeWidth="2">

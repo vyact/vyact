@@ -634,7 +634,8 @@ export function useChat(deps: UseChatDeps) {
                                     articleSources: mergedSources.length > 0 ? mergedSources : undefined,
                                     injectedContext: injectedContextItems.length > 0 ? injectedContextItems : undefined,
                                     stats: data.stats || m.stats,
-                                    truncated: data.truncated || undefined
+                                    truncated: data.truncated || undefined,
+                                    codeChanges: data.code_changes || m.codeChanges,
                                 };
                             }));
                             if (showVoiceChatModalRef.current && data.answer)

@@ -112,6 +112,22 @@ export interface ToolActivity {
     completedAt?: number;
 }
 
+export interface CodeChangeFile {
+    folderId: string;
+    path: string;
+    status: 'added' | 'modified' | 'deleted';
+    additions: number;
+    deletions: number;
+    diff: string;
+}
+
+export interface CodeChanges {
+    files: CodeChangeFile[];
+    additions: number;
+    deletions: number;
+    undoToken?: string;
+}
+
 export interface Message {
     id?: string;
     role: 'user' | 'assistant';
@@ -129,6 +145,7 @@ export interface Message {
     injectedContext?: InjectedContextItem[];  // 이번 응답의 LLM 주입 데이터 (검증용)
     stats?: MessageStats;  // 토큰수/처리시간 통계 (ollama만 해당, 응답(assistant) 메시지에 저장)
     truncated?: boolean;  // 모델 출력 한도에 도달하여 응답이 잘렸는지 여부
+    codeChanges?: CodeChanges;
     pdfParams?: {
         prompt: string;
         page_count: number;

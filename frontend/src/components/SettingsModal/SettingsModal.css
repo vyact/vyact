@@ -52,6 +52,22 @@
 .backup-progress-track { width: 100%; height: 5px; overflow: hidden; border-radius: 999px; background: var(--surface2); }
 .backup-progress-track span { display: block; width: 42%; height: 100%; border-radius: inherit; background: var(--accent); animation: backup-progress-slide 1.2s ease-in-out infinite; }
 
+.drive-backup-account-overlay { position: absolute; inset: 0; z-index: 19; display: grid; place-items: center; padding: 24px; background: rgba(8, 8, 10, .72); backdrop-filter: blur(3px); }
+.drive-backup-account-modal { width: min(420px, 100%); padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--modal-bg); box-shadow: 0 20px 60px rgba(0, 0, 0, .45); }
+.drive-backup-account-modal h4 { margin: 0; color: var(--text); font-size: 18px; }
+.drive-backup-account-modal > p { margin: 8px 0 18px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.drive-backup-account-list { display: grid; gap: 8px; }
+.drive-backup-account-list label { display: flex; align-items: center; gap: 11px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 9px; background: var(--modal-inset); cursor: pointer; transition: border-color .15s, background .15s; }
+.drive-backup-account-list label:hover, .drive-backup-account-list label.selected { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, var(--modal-inset)); }
+.drive-backup-account-list input { accent-color: var(--accent); }
+.drive-backup-account-list span { display: flex; min-width: 0; flex: 1; align-items: center; justify-content: space-between; gap: 12px; }
+.drive-backup-account-list strong { overflow: hidden; color: var(--text); font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+.drive-backup-account-list small { flex-shrink: 0; padding: 2px 7px; border-radius: 999px; background: var(--surface2); color: var(--muted); font-size: 11px; }
+.drive-backup-account-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+.drive-backup-account-actions button { min-width: 90px; padding: 9px 14px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--text); cursor: pointer; font-weight: 600; }
+.drive-backup-account-actions button.primary { border-color: var(--accent); background: var(--accent); color: #fff; }
+.drive-backup-account-actions button:disabled { cursor: not-allowed; opacity: .5; }
+
 @keyframes backup-progress-spin { to { transform: rotate(360deg); } }
 @keyframes backup-progress-slide { 0% { transform: translateX(-110%); } 50% { transform: translateX(140%); } 100% { transform: translateX(350%); } }
 

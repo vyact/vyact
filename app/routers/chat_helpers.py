@@ -283,6 +283,7 @@ def build_assistant_message(
     injected_context: list | None = None,
     stats: dict | None = None,
     activity_log: list[dict] | None = None,
+    code_changes: dict | None = None,
     truncated: bool = False,
 ) -> dict:
     """히스토리 저장용 assistant 메시지 빌드."""
@@ -301,6 +302,8 @@ def build_assistant_message(
         msg["stats"] = stats
     if activity_log:
         msg["activityLog"] = activity_log
+    if code_changes:
+        msg["codeChanges"] = code_changes
     if truncated:
         msg["truncated"] = True
     return msg
