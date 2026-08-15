@@ -262,12 +262,16 @@ async def synchronize(service_key: str) -> None:
                 if not document["external_id"] or not document["title"] or not is_storable_by_deadline(document):
                     continue
                 documents.append({"_op_type": "index", "_index": INDEX_NAME, "_id": document["external_id"], "_source": document})
+            status.update({"stage": "indexing", "current": 0, "total": len(documents)})
+            await _save_sync_status(status)
             es = get_es()
             try:
                 if documents:
                     indexed, errors = await async_bulk(es, documents, chunk_size=BULK_CHUNK_SIZE, refresh=False, raise_on_error=False)
                     if errors or indexed != len(documents):
                         raise RuntimeError("기업마당 데이터 일부를 저장하지 못했습니다.")
+                    status["current"] = indexed
+                    await _save_sync_status(status)
                 if not quota_exhausted:
                     await es.delete_by_query(
                         index=INDEX_NAME,

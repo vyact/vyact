@@ -63,6 +63,11 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose, sourceI
     if (!isOpen) return null;
 
     const selectedDocument = documents.find(document => document.id === selectedId) || documents[0];
+    const detailBadges = selectedDocument
+        ? [selectedDocument.category, selectedDocument.support_type]
+            .map(value => value?.trim())
+            .filter((value, index, values): value is string => Boolean(value) && values.indexOf(value) === index)
+        : [];
     const numberFormatter = new Intl.NumberFormat(i18n.resolvedLanguage || i18n.language);
     const formatDate = (value: string) => {
         const parsed = new Date(value);
@@ -155,8 +160,7 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose, sourceI
                             <div className="gov24-browser-detail-hero">
                                 <div className="gov24-browser-detail-title-row">
                                     <div className="gov24-browser-detail-badges">
-                                        {selectedDocument.category && <span><Tag size={13}/>{selectedDocument.category}</span>}
-                                        {selectedDocument.support_type && <span>{selectedDocument.support_type}</span>}
+                                        {detailBadges.map((badge, index) => <span key={badge}>{index === 0 && <Tag size={13}/>} {badge}</span>)}
                                     </div>
                                     <h2>{selectedDocument.title}</h2>
                                     <div className="gov24-browser-meta">
