@@ -994,6 +994,7 @@
   "message": {
     "requestFailed": "リクエストを完了できませんでした", "unknownError": "不明なエラーが発生しました。", "retry": "再送信",
     "codeChangesReview": "レビュー",
+    "codeReviewFileList": "変更ファイル一覧", "codeReviewSearchFiles": "ファイルパスを検索", "codeReviewPreviousFile": "前のファイル", "codeReviewNextFile": "次のファイル", "codeReviewNoFiles": "一致するファイルがありません",
     "codeChangesTitle": "{{count}}個のファイルを編集しました", "codeChangesUndo": "元に戻す", "codeChangesUndoing": "元に戻しています…", "codeChangesUndone": "変更を元に戻しました", "codeChangesUndoFailed": "変更を元に戻せませんでした。", "codeChangesUndoConflict": "その後ファイルが変更されたため、安全に元に戻せません。", "codeChangesMore": "他{{count}}ファイルを表示", "codeChangesCollapse": "折りたたむ", "codeChangesPreview": "{{path}}の変更プレビュー",
     "modelNoResponse": "選択したAIモデルは応答を生成できませんでした。もう一度お試しください。",
     "outputTruncated": "最大出力長に達したため、回答が途中で切れました。続きを回答するよう依頼してください。",

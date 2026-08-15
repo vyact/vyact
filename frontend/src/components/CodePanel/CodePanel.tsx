@@ -1,4 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {ChevronDown, ChevronLeft, ChevronRight, Search} from 'lucide-react';
+import {useTranslation} from 'react-i18next';
 import hljs from '../../utils/syntaxHighlighter';
 import 'highlight.js/styles/github-dark.css';
 import { useCodePanel } from '../../contexts/CodePanelContext';
@@ -43,16 +45,48 @@ function downloadFile(file: CodeFile) {
 }
 
 const CodePanel: React.FC<{ style?: React.CSSProperties }> = ({ style }) => {
+    const {t} = useTranslation('main');
     const { panel, setActiveIdx, closePanel } = useCodePanel();
     const [copiedPanel, setCopiedPanel] = useState<typeof panel>(null);
+    const [fileMenuOpen, setFileMenuOpen] = useState(false);
+    const [fileQuery, setFileQuery] = useState('');
+    const fileNavRef = useRef<HTMLDivElement>(null);
 
     const activeFile = panel ? panel.files[panel.activeIdx] : null;
+    const filteredFiles = useMemo(() => {
+        if (!panel) return [];
+        const normalizedQuery = fileQuery.trim().toLocaleLowerCase();
+        return panel.files
+            .map((file, index) => ({file, index}))
+            .filter(({file}) => !normalizedQuery || file.name.toLocaleLowerCase().includes(normalizedQuery));
+    }, [panel, fileQuery]);
 
     const lines = useMemo(() => {
         if (!activeFile) return [];
         if (activeFile.mode === 'diff') return activeFile.code.trimEnd().split('\n');
         return highlightCode(activeFile.code, activeFile.lang);
     }, [activeFile]);
+
+    useEffect(() => {
+        setFileMenuOpen(false);
+        setFileQuery('');
+    }, [panel?.viewerId]);
+
+    useEffect(() => {
+        if (!fileMenuOpen) return;
+        const closeOnOutsideClick = (event: PointerEvent) => {
+            if (!fileNavRef.current?.contains(event.target as Node)) setFileMenuOpen(false);
+        };
+        const closeOnEscape = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') setFileMenuOpen(false);
+        };
+        document.addEventListener('pointerdown', closeOnOutsideClick);
+        document.addEventListener('keydown', closeOnEscape);
+        return () => {
+            document.removeEventListener('pointerdown', closeOnOutsideClick);
+            document.removeEventListener('keydown', closeOnEscape);
+        };
+    }, [fileMenuOpen]);
 
     if (!panel || !activeFile) return null;
 
@@ -156,19 +190,58 @@ const CodePanel: React.FC<{ style?: React.CSSProperties }> = ({ style }) => {
                 </div>
             </div>
 
-            {/* 파일 탭 (2개 이상일 때) */}
+            {/* 긴 경로와 많은 파일에 동일하게 대응하는 파일 탐색기 */}
             {panel.files.length > 1 && (
-                <div className="cp-tabs">
-                    {panel.files.map((f, i) => (
-                        <button
-                            key={i}
-                            className={`cp-tab${panel.activeIdx === i ? ' cp-tab--active' : ''}`}
-                            onClick={() => setActiveIdx(i)}
-                        >
-                            <span className="cp-tab-name">{f.name}</span>
-                            <span className="cp-tab-ext">{EXT_LABEL[f.lang.toLowerCase()] ?? f.lang.toUpperCase()}</span>
+                <div className="cp-file-nav" ref={fileNavRef}>
+                    <button
+                        className="cp-file-selector"
+                        type="button"
+                        onClick={() => setFileMenuOpen(open => !open)}
+                        aria-expanded={fileMenuOpen}
+                        aria-label={t('message.codeReviewFileList')}
+                    >
+                        <span className="cp-file-selector-name">{activeFile.name}</span>
+                        <span className="cp-file-position">{panel.activeIdx + 1} / {panel.files.length}</span>
+                        <ChevronDown className={fileMenuOpen ? 'open' : ''} size={15}/>
+                    </button>
+                    <div className="cp-file-nav-actions">
+                        <button type="button" onClick={() => setActiveIdx(panel.activeIdx - 1)} disabled={panel.activeIdx === 0} aria-label={t('message.codeReviewPreviousFile')}>
+                            <ChevronLeft size={16}/>
                         </button>
-                    ))}
+                        <button type="button" onClick={() => setActiveIdx(panel.activeIdx + 1)} disabled={panel.activeIdx === panel.files.length - 1} aria-label={t('message.codeReviewNextFile')}>
+                            <ChevronRight size={16}/>
+                        </button>
+                    </div>
+                    {fileMenuOpen && <div className="cp-file-menu">
+                        <label className="cp-file-search">
+                            <Search size={14}/>
+                            <input
+                                autoFocus
+                                value={fileQuery}
+                                onChange={event => setFileQuery(event.target.value)}
+                                placeholder={t('message.codeReviewSearchFiles')}
+                            />
+                        </label>
+                        <div className="cp-file-menu-list">
+                            {filteredFiles.map(({file, index}) => <button
+                                type="button"
+                                key={`${file.name}:${index}`}
+                                className={panel.activeIdx === index ? 'active' : ''}
+                                onClick={() => {
+                                    setActiveIdx(index);
+                                    setFileMenuOpen(false);
+                                    setFileQuery('');
+                                }}
+                            >
+                                <span className="cp-file-menu-main">
+                                    <strong>{file.name}</strong>
+                                    <small>{EXT_LABEL[file.lang.toLowerCase()] ?? file.lang.toUpperCase()}</small>
+                                </span>
+                                {file.mode === 'diff' && <span className="cp-file-menu-change"><b>+{file.additions ?? 0}</b><em>-{file.deletions ?? 0}</em></span>}
+                            </button>)}
+                            {!filteredFiles.length && <div className="cp-file-menu-empty">{t('message.codeReviewNoFiles')}</div>}
+                        </div>
+                    </div>}
                 </div>
             )}
 

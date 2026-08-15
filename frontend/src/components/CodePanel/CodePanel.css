@@ -113,30 +113,31 @@
 
 .cp-close:hover { color: var(--text); background: var(--surface2); }
 
-.cp-tabs { display: flex; flex-shrink: 0; overflow-x: auto; background: var(--surface); border-bottom: 1px solid var(--border); }
-.cp-tabs::-webkit-scrollbar { height: 3px; }
-.cp-tabs::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-
-.cp-tab {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding: 7px 14px;
-    border: none;
-    border-bottom: 2px solid transparent;
-    background: transparent;
-    color: rgba(255,255,255,0.4);
-    cursor: pointer;
-    font-size: 12px;
-    white-space: nowrap;
-    transition: color 0.12s, border-color 0.12s;
-}
-
-.cp-tab:hover { color: rgba(255,255,255,0.7); }
-.cp-tab--active { background: rgba(var(--accent-rgb),0.1); color: var(--text) !important; border-bottom-color: var(--accent); }
-.cp-tab-name { font-family: 'SF Mono', 'Monaco', 'Consolas', monospace; }
-.cp-tab-ext { color: rgba(255,255,255,0.25); font-size: 10px; }
-.cp-tab--active .cp-tab-ext { color: rgba(255,255,255,0.4); }
+.cp-file-nav { position:relative; display:flex; min-height:42px; align-items:center; gap:8px; padding:6px 12px; flex-shrink:0; border-bottom:1px solid var(--border); background:var(--surface); }
+.cp-file-selector { display:flex; min-width:0; height:30px; align-items:center; gap:8px; padding:0 10px; flex:1; border:1px solid var(--border); border-radius:7px; background:rgba(255,255,255,.025); color:var(--text-secondary); cursor:pointer; }
+.cp-file-selector:hover { border-color:var(--accent2); background:var(--surface2); color:var(--text); }
+.cp-file-selector-name { min-width:0; overflow:hidden; flex:1; font-family:'SF Mono','Monaco','Consolas',monospace; font-size:11px; text-align:left; text-overflow:ellipsis; white-space:nowrap; }
+.cp-file-position { flex-shrink:0; color:var(--muted); font-size:10px; font-variant-numeric:tabular-nums; }
+.cp-file-selector svg { flex-shrink:0; transition:transform .15s ease; }
+.cp-file-selector svg.open { transform:rotate(180deg); }
+.cp-file-nav-actions { display:flex; flex-shrink:0; gap:3px; }
+.cp-file-nav-actions button { display:flex; width:30px; height:30px; align-items:center; justify-content:center; padding:0; border:1px solid var(--border); border-radius:7px; background:transparent; color:var(--muted); cursor:pointer; }
+.cp-file-nav-actions button:hover:not(:disabled) { background:var(--surface2); color:var(--text); }
+.cp-file-nav-actions button:disabled { cursor:default; opacity:.3; }
+.cp-file-menu { position:absolute; top:calc(100% + 4px); right:12px; left:12px; z-index:80; overflow:hidden; border:1px solid var(--border); border-radius:10px; background:var(--surface); box-shadow:0 18px 48px rgba(0,0,0,.48); }
+.cp-file-search { display:flex; height:38px; align-items:center; gap:8px; padding:0 11px; border-bottom:1px solid var(--border); color:var(--muted); }
+.cp-file-search input { min-width:0; flex:1; border:0; outline:0; background:transparent; color:var(--text); font-size:12px; }
+.cp-file-search input::placeholder { color:var(--muted); }
+.cp-file-menu-list { max-height:min(320px, 45vh); overflow-y:auto; padding:5px; }
+.cp-file-menu-list > button { display:flex; width:100%; align-items:center; justify-content:space-between; gap:12px; padding:8px 9px; border:0; border-radius:7px; background:transparent; color:var(--text-secondary); cursor:pointer; text-align:left; }
+.cp-file-menu-list > button:hover, .cp-file-menu-list > button.active { background:var(--surface2); color:var(--text); }
+.cp-file-menu-main { display:flex; min-width:0; flex-direction:column; gap:3px; }
+.cp-file-menu-main strong { overflow:hidden; font-family:'SF Mono','Monaco','Consolas',monospace; font-size:11px; font-weight:500; text-overflow:ellipsis; white-space:nowrap; }
+.cp-file-menu-main small { color:var(--muted); font-size:9px; }
+.cp-file-menu-change { display:flex; flex-shrink:0; gap:5px; font-family:'SF Mono','Monaco','Consolas',monospace; font-size:10px; }
+.cp-file-menu-change b { color:var(--success); font-weight:500; }
+.cp-file-menu-change em { color:#ef7b7b; font-style:normal; }
+.cp-file-menu-empty { padding:18px 10px; color:var(--muted); font-size:11px; text-align:center; }
 
 .cp-code {
     display: flex;
