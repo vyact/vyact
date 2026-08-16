@@ -37,8 +37,8 @@ async def chat_stream_with_tools(
         question: str,
         context_docs: list[dict],
         system_prompt: str = "",
-        attachments: list = [],
-        conversation_history: list = [],
+        attachments: list | None = None,
+        conversation_history: list | None = None,
         timeout: float = 900.0,
         format_instruction_override: str | None = None,
         inject_user_profile: bool = True,
@@ -68,6 +68,8 @@ async def chat_stream_with_tools(
           - tool_got_sources=False → 메모 + ES(RAG) 뉴스를 병행 조회해서 보충
         (tool을 안 썼거나, 썼는데도 결과가 없을 때 모두 False로 들어온다.)
     """
+    attachments = attachments or []
+    conversation_history = conversation_history or []
     provider_config = await get_provider_config()
     provider_type = provider_config["type"]
     provider_label = provider_config.get("connection_name", provider_type)
@@ -444,8 +446,8 @@ async def collect_llm_stream(
         question: str,
         context_docs: list[dict],
         system_prompt: str = "",
-        attachments: list = [],
-        conversation_history: list = [],
+        attachments: list | None = None,
+        conversation_history: list | None = None,
         timeout: float = 900.0,
         format_instruction_override: str | None = None,
         inject_user_profile: bool = True,
@@ -484,8 +486,8 @@ async def query_llm(
         question: str,
         context_docs: list[dict],
         system_prompt: str = "",
-        attachments: list = [],
-        conversation_history: list = [],
+        attachments: list | None = None,
+        conversation_history: list | None = None,
         timeout: float = 900.0,
         format_instruction_override: str | None = None,
         inject_user_profile: bool = True,
@@ -514,6 +516,8 @@ async def query_llm(
     structured_output_schema를 지정하면 Ollama의 ``format`` 요청 필드에 JSON
     Schema를 전달한다. 다른 provider는 기존 프롬프트 기반 동작을 유지한다.
     """
+    attachments = attachments or []
+    conversation_history = conversation_history or []
     request_id = str(uuid.uuid4())
     log_entry = {
         "request_id": request_id,

@@ -1,0 +1,15 @@
+# Lightweight dependencies required to import and run app/tests in CI.
+# Keep shared package versions aligned with requirements.txt.
+aiofiles==25.1.0
+beautifulsoup4==4.15.0
+elasticsearch==9.4.1
+fastapi==0.140.0
+httpx==0.28.1
+lingua-language-detector==2.2.0
+mcp>=1.27,<2
+Pillow==12.3.0
+pydantic==2.13.4
+pypdfium2==5.13.0
+python-multipart==0.0.32
+pytest==9.1.1
+pytest-asyncio==1.4.0

@@ -70,6 +70,18 @@ npm run build
 
 Use `npm run lint` and `npm test` to run the available frontend checks.
 
+## Run the backend unit tests
+
+Backend tests use Python 3.12 and a lightweight dependency set that excludes
+local model runtimes:
+
+```bash
+python3.12 -m venv .venv-test
+source .venv-test/bin/activate
+python -m pip install -r app/requirements-test.txt
+PYTHONPATH=app python -m pytest app/tests -q
+```
+
 ## Run the backend during development
 
 Create a virtual environment and install the backend dependencies:

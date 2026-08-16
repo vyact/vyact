@@ -132,12 +132,12 @@ async def save_ui_language_async(language: str) -> bool:
         return False
 
 
-def write_log(event: str, extra: dict = {}):
+def write_log(event: str, extra: dict | None = None):
     try:
         entry = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "event": event,
-            **extra,
+            **(extra or {}),
         }
         with open(get_log_file("event"), "a", encoding="utf-8") as f:
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")

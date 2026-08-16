@@ -253,9 +253,9 @@ async def _gather_docs(question: str, extra_context: list, skip_rag: bool = Fals
 async def rag_query(
         question: str,
         system_prompt: str = "",
-        attachments: list = [],
-        conversation_history: list = [],
-        extra_context: list = [],
+        attachments: list | None = None,
+        conversation_history: list | None = None,
+        extra_context: list | None = None,
         skip_rag: bool = False,
         reasoning: bool = True,
         conv_id: str = "",
@@ -265,6 +265,9 @@ async def rag_query(
         inject_user_profile: bool = True,
 ) -> dict[str, Any]:
     """RAG 쿼리 실행 및 응답 (논스트리밍)."""
+    attachments = attachments or []
+    conversation_history = conversation_history or []
+    extra_context = extra_context or []
     current_user_question.set(question)
     collection_instruction = ""
     if knowledge_collection_ids:
@@ -288,9 +291,9 @@ async def rag_query(
 async def rag_query_stream(
         question: str,
         system_prompt: str = "",
-        attachments: list = [],
-        conversation_history: list = [],
-        extra_context: list = [],
+        attachments: list | None = None,
+        conversation_history: list | None = None,
+        extra_context: list | None = None,
         skip_rag: bool = False,
         reasoning: bool = True,
         conv_id: str = "",
@@ -327,6 +330,9 @@ async def rag_query_stream(
     - tool을 안 썼거나 결과가 없었으면 → 메모 + 뉴스 RAG + 첨부파일을 원래처럼 asyncio.gather로
       동시에 조회해서 보충한다.
     """
+    attachments = attachments or []
+    conversation_history = conversation_history or []
+    extra_context = extra_context or []
     provider_config = await get_provider_config()
     current_user_question.set(question)
     is_ollama = provider_config.get("type") == "ollama"
