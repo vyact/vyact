@@ -1,4 +1,5 @@
 import React, {FormEvent, useEffect, useRef, useState} from 'react';
+import {createPortal} from 'react-dom';
 import {ArrowLeft, ArrowRight, Globe2, PanelRight, PictureInPicture2, RefreshCw, X} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {usePanelManager} from '../../contexts/PanelManagerContext';
@@ -203,7 +204,7 @@ const BrowserPanel: React.FC<{style?: React.CSSProperties}> = ({style}) => {
     };
 
     if (!isVisible) return null;
-    return <aside ref={panelRef}
+    const browserPanel = <aside ref={panelRef}
         className={`browser-panel browser-panel--${mode}${isDragging ? ' is-dragging' : ''}`}
         style={mode === 'docked' ? style : {left: floatingPosition.x, top: floatingPosition.y}}
         aria-label={t('browser.title')}>
@@ -227,6 +228,7 @@ const BrowserPanel: React.FC<{style?: React.CSSProperties}> = ({style}) => {
             {floatingSize.width} × {floatingSize.height}
         </footer>}
     </aside>;
+    return mode === 'floating' ? createPortal(browserPanel, document.body) : browserPanel;
 };
 
 export default BrowserPanel;
