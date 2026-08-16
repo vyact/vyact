@@ -584,6 +584,40 @@ function createRequirementsProgressReporter(requirementsPath) {
     };
 }
 
+async function stopExistingServerBeforeDesktopStart() {
+    try {
+        const response = await fetch(`http://127.0.0.1:${SERVER_PORT}/api/setup/status`, {
+            signal: AbortSignal.timeout(1200),
+        });
+        if (!response.ok) return;
+    } catch {
+        return;
+    }
+
+    // A backend launched directly from an IDE does not inherit the Electron
+    // browser-control token, so it cannot expose browser_* tools. The desktop
+    // app must own the backend process and start it with the bridge environment.
+    log(`⚠️ Existing Vyact server detected on port ${SERVER_PORT}; restarting it with the desktop browser bridge`);
+    try {
+        await fetch(`http://127.0.0.1:${SERVER_PORT}/api/shutdown`, {
+            method: "POST",
+            signal: AbortSignal.timeout(5000),
+        });
+    } catch {}
+
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+        await new Promise(resolve => setTimeout(resolve, 250));
+        try {
+            await fetch(`http://127.0.0.1:${SERVER_PORT}/api/setup/status`, {
+                signal: AbortSignal.timeout(300),
+            });
+        } catch {
+            return;
+        }
+    }
+    throw new Error(`Existing Vyact server on port ${SERVER_PORT} did not stop`);
+}
+
 async function startServer() {
     log("▸ Starting server process");
 
@@ -960,6 +994,7 @@ if (hasSingleInstanceLock) app.whenReady().then(() => {
                 return;
             }
             await startBrowserControlServer();
+            await stopExistingServerBeforeDesktopStart();
             await startServer();
             waitForServerAndLoad();
         }, 100);
