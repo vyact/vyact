@@ -279,7 +279,7 @@ def _classify_text_lines_with_context(
     para_buf: list[str] = []
 
     CODE_PATTERNS = re.compile(
-        r"^(def |class |import |from |public |private |protected |function |const |let |var |return |if |for |while |{|}|#include|package |@)"
+        r"^(def |class |public |private |protected |function |const |let |var |{|}|#include|package |@)"
     )
     CAPTION_PATTERN = re.compile(
         r"^(?:fig(?:ure)?\.?|table)\s*\d+(?:\||[.:]\s+|\s+)",
@@ -295,11 +295,14 @@ def _classify_text_lines_with_context(
     def flush_para():
         t = " ".join(para_buf).strip()
         if t:
-            chunks.append(Chunk(
-                text=t, chunk_type="paragraph",
-                heading_path=list(heading_stack),
-                page_number=page_num,
-            ))
+            chunks.extend(
+                Chunk(
+                    text=part, chunk_type="paragraph",
+                    heading_path=list(heading_stack),
+                    page_number=page_num,
+                )
+                for part in split_chunks(t)
+            )
         para_buf.clear()
 
     def flush_code():
@@ -331,8 +334,8 @@ def _classify_text_lines_with_context(
                 flush_code()
             elif caption_buf:
                 flush_caption()
-            elif para_buf:
-                flush_para()
+            # PDF line spacing frequently appears as an empty line. Keep prose
+            # together until a structural boundary or the end of the page.
             continue
 
         if caption_buf:

@@ -290,7 +290,7 @@ async def search_related_context_candidates(
     rag_bm25_pool = 20
     rag_knn_pool = 20
     memo_pool = memo_size * 4
-    rag_source_fields = ["title", "content", "url", "source", "indexed_at", "id", "updated_at", "web_document_id", "chunk_index", "total_chunks"]
+    rag_source_fields = ["title", "content", "url", "source", "indexed_at", "id", "updated_at", "web_document_id", "file_id", "chunk_index", "total_chunks", "chunk_type", "heading_path", "page_number"]
     memo_source_fields = ["title", "content", "id", "source", "updated_at"]
     quicknote_source_fields = ["id", "title", "content", "done", "updated_at"]
 
@@ -320,10 +320,11 @@ async def search_related_context_candidates(
         searches: list[dict] = [
             {"index": _language_search_indices("rag_documents", rag_language)}, rag_bm25_search_body,
             {"index": _language_search_indices("web_doc_chunks", rag_language)}, rag_bm25_search_body,
+            {"index": _language_search_indices("doc_chunks", rag_language)}, rag_bm25_search_body,
             {"index": _language_search_indices("memo_documents", memo_language)}, memo_bm25_body,
             {"index": _language_search_indices("quick_notes", memo_language)}, quicknote_bm25_body,
         ]
-        response_positions = {"rag_bm25": 0, "web_bm25": 1, "memo_bm25": 2, "quicknote_bm25": 3}
+        response_positions = {"rag_bm25": 0, "web_bm25": 1, "doc_bm25": 2, "memo_bm25": 3, "quicknote_bm25": 4}
         if embedding:
             rag_knn_body = {
                 "size": rag_knn_pool,
@@ -343,10 +344,11 @@ async def search_related_context_candidates(
             searches.extend([
                 {"index": INDEX_NAME}, rag_knn_body,
                 {"index": WEB_DOC_CHUNKS_INDEX}, rag_knn_body,
+                {"index": DOC_CHUNKS_INDEX}, rag_knn_body,
                 {"index": MEMO_INDEX}, memo_knn_body,
                 {"index": QUICKNOTE_INDEX}, quicknote_knn_body,
             ])
-            response_positions.update({"rag_knn": 4, "web_knn": 5, "memo_knn": 6, "quicknote_knn": 7})
+            response_positions.update({"rag_knn": 5, "web_knn": 6, "doc_knn": 7, "memo_knn": 8, "quicknote_knn": 9})
         else:
             logger.warning("[related_context_search] 임베딩 실패, BM25 fallback")
 
@@ -354,15 +356,19 @@ async def search_related_context_candidates(
 
         rag_bm25_hits = _msearch_hits(response, response_positions["rag_bm25"], "일반 RAG BM25")
         web_bm25_hits = _msearch_hits(response, response_positions["web_bm25"], "웹 문서 BM25")
+        doc_bm25_hits = _msearch_hits(response, response_positions["doc_bm25"], "저장 문서 BM25")
         memo_bm25_hits = _msearch_hits(response, response_positions["memo_bm25"], "메모 BM25")
         quicknote_bm25_hits = _msearch_hits(response, response_positions["quicknote_bm25"], "빠른메모 BM25")
         if embedding:
             rag_knn_hits = _msearch_hits(response, response_positions["rag_knn"], "일반 RAG kNN")
             web_knn_hits = _msearch_hits(response, response_positions["web_knn"], "웹 문서 kNN")
+            doc_knn_hits = _msearch_hits(response, response_positions["doc_knn"], "저장 문서 kNN")
             memo_knn_hits = _msearch_hits(response, response_positions["memo_knn"], "메모 kNN")
             quicknote_knn_hits = _msearch_hits(response, response_positions["quicknote_knn"], "빠른메모 kNN")
             rag_candidate_hits = _rrf_hits(
-                rag_bm25_hits + web_bm25_hits, rag_knn_hits + web_knn_hits, rag_size * 2,
+                rag_bm25_hits + web_bm25_hits + doc_bm25_hits,
+                rag_knn_hits + web_knn_hits + doc_knn_hits,
+                rag_size * 2,
             )
             rag_hits = _rerank(
                 rag_candidate_hits,
@@ -380,8 +386,8 @@ async def search_related_context_candidates(
                 memo_size,
             )
         else:
-            rag_knn_hits = web_knn_hits = memo_knn_hits = quicknote_knn_hits = []
-            rag_candidate_hits = rag_bm25_hits + web_bm25_hits
+            rag_knn_hits = web_knn_hits = doc_knn_hits = memo_knn_hits = quicknote_knn_hits = []
+            rag_candidate_hits = rag_bm25_hits + web_bm25_hits + doc_bm25_hits
             rag_hits = _rerank(rag_candidate_hits, rag_size * 2)
             memo_hits = memo_bm25_hits
             quicknote_hits = quicknote_bm25_hits[:memo_size]
@@ -412,10 +418,11 @@ async def search_related_context_candidates(
             for hit in quicknote_hits[:memo_size]
         ]
         logger.info(
-            "[related_context_search] query=%r candidates: rag=%d memo=%d quicknote=%d origins: rag=%s web=%s memo=%s quicknote=%s",
+            "[related_context_search] query=%r candidates: rag=%d memo=%d quicknote=%d origins: rag=%s web=%s doc=%s memo=%s quicknote=%s",
             rag_query, len(rag_results), len(memo_results), len(quicknote_results),
             _retrieval_origins(rag_candidate_hits, rag_bm25_hits, rag_knn_hits),
             _retrieval_origins(rag_candidate_hits, web_bm25_hits, web_knn_hits),
+            _retrieval_origins(rag_candidate_hits, doc_bm25_hits, doc_knn_hits),
             _retrieval_origins(memo_hits, memo_bm25_hits, memo_knn_hits),
             _retrieval_origins(quicknote_hits, quicknote_bm25_hits, quicknote_knn_hits),
         )
