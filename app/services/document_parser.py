@@ -214,17 +214,18 @@ def _extract_pdf_body_text(page, table_bboxes: list[tuple], repeated_margin_word
     except Exception:
         return page.extract_text() or ""
 
-def _parse_pdf_chunks(path: Path) -> list[Chunk]:
-    """pdfplumber로 표/텍스트/코드/제목 구분 청크 생성"""
+def _parse_pdf_content(path: Path) -> tuple[list[Chunk], str]:
+    """한 번 연 PDF에서 typed 청크와 원문 텍스트를 함께 추출한다."""
     try:
         import pdfplumber
     except ImportError:
         import pypdf
         reader = pypdf.PdfReader(str(path))
         text = "\n\n".join(p.extract_text() or "" for p in reader.pages)
-        return _text_to_chunks(text)
+        return _text_to_chunks(text), text
 
     chunks: list[Chunk] = []
+    original_pages: list[str] = []
     current_headings: list[str] = []  # 현재 heading 경로 스택
 
     with pdfplumber.open(path) as pdf:
@@ -240,9 +241,14 @@ def _parse_pdf_chunks(path: Path) -> list[Chunk]:
         repeated_margin_words = {word for word, count in margin_counts.items() if count >= 2}
 
         for page_num, page in enumerate(pdf.pages, start=1):
-            # 1) 표 추출
-            tables = page.extract_tables()
-            table_bboxes = [t.bbox for t in page.find_tables()] if hasattr(page, "find_tables") else []
+            original_page_text = page.extract_text() or ""
+            if original_page_text.strip():
+                original_pages.append(original_page_text.strip())
+
+            # 표 탐지는 한 번만 수행하고 같은 결과에서 셀과 bbox를 함께 사용한다.
+            found_tables = page.find_tables() if hasattr(page, "find_tables") else []
+            tables = [table.extract() for table in found_tables]
+            table_bboxes = [table.bbox for table in found_tables]
 
             for table in tables:
                 rows = []
@@ -262,7 +268,12 @@ def _parse_pdf_chunks(path: Path) -> list[Chunk]:
             for raw_chunk in _classify_text_lines_with_context(page_text, current_headings, page_num):
                 chunks.append(raw_chunk)
 
-    return chunks
+    return chunks, "\n\n".join(original_pages)
+
+
+def _parse_pdf_chunks(path: Path) -> list[Chunk]:
+    """pdfplumber로 표/텍스트/코드/제목 구분 청크 생성"""
+    return _parse_pdf_content(path)[0]
 
 
 def _classify_text_lines_with_context(
@@ -465,19 +476,7 @@ def _parse_docx_chunks(path: Path) -> list[Chunk]:
 
 
 def _parse_pdf(path: Path) -> str:
-    try:
-        import pdfplumber
-        texts = []
-        with pdfplumber.open(path) as pdf:
-            for page in pdf.pages:
-                t = page.extract_text()
-                if t:
-                    texts.append(t.strip())
-        return "\n\n".join(texts)
-    except ImportError:
-        import pypdf
-        reader = pypdf.PdfReader(str(path))
-        return "\n\n".join(p.extract_text() or "" for p in reader.pages)
+    return _parse_pdf_content(path)[1]
 
 
 def _parse_docx(path: Path) -> str:
@@ -880,35 +879,52 @@ def parse_file_to_chunks(path: Path) -> list[str]:
     return [c.text for c in chunks]
 
 
+def _normalize_typed_chunks(path: Path, chunks: list[Chunk]) -> list[Chunk]:
+    """모든 typed 블록에 최대 길이를 적용하면서 구조 메타데이터를 보존한다."""
+    result: list[Chunk] = []
+    chunk_size, _ = _chunk_settings()
+    for chunk in chunks:
+        if len(chunk.text) > chunk_size:
+            if chunk.chunk_type == "table":
+                rows = [line for line in chunk.text.splitlines() if line.strip()]
+                context_lines = []
+                if rows and rows[0].startswith("[시트:"):
+                    context_lines.append(rows.pop(0))
+                result.extend(_table_chunks(rows, context_lines=context_lines, heading_path=chunk.heading_path, page_number=chunk.page_number))
+            elif chunk.chunk_type == "code":
+                result.extend(_split_lines_with_context(chunk.text.splitlines(), context_lines=[], chunk_type="code", heading_path=chunk.heading_path, page_number=chunk.page_number))
+            else:
+                for sub in split_chunks(chunk.text):
+                    result.append(Chunk(text=sub, chunk_type=chunk.chunk_type, heading_path=chunk.heading_path, page_number=chunk.page_number))
+        else:
+            result.append(chunk)
+    logger.info("typed 청크 분할: %s → %d개", path.name, len(result))
+    return result
+
+
 def parse_file_to_typed_chunks(path: Path) -> list[Chunk]:
     """파일 파싱 → (text, chunk_type) 청크 리스트 반환"""
     ext = path.suffix.lower()
     if ext in CHUNK_PARSERS:
         try:
-            chunks = CHUNK_PARSERS[ext](path)
-            # 모든 블록 유형에 최대 길이를 적용하고 메타데이터를 보존한다.
-            result: list[Chunk] = []
-            chunk_size, _ = _chunk_settings()
-            for chunk in chunks:
-                if len(chunk.text) > chunk_size:
-                    if chunk.chunk_type == "table":
-                        rows = [line for line in chunk.text.splitlines() if line.strip()]
-                        context_lines = []
-                        if rows and rows[0].startswith("[시트:"):
-                            context_lines.append(rows.pop(0))
-                        result.extend(_table_chunks(rows, context_lines=context_lines, heading_path=chunk.heading_path, page_number=chunk.page_number))
-                    elif chunk.chunk_type == "code":
-                        result.extend(_split_lines_with_context(chunk.text.splitlines(), context_lines=[], chunk_type="code", heading_path=chunk.heading_path, page_number=chunk.page_number))
-                    else:
-                        for sub in split_chunks(chunk.text):
-                            result.append(Chunk(text=sub, chunk_type=chunk.chunk_type, heading_path=chunk.heading_path, page_number=chunk.page_number))
-                else:
-                    result.append(chunk)
-            logger.info("typed 청크 분할: %s → %d개", path.name, len(result))
-            return result
+            return _normalize_typed_chunks(path, CHUNK_PARSERS[ext](path))
         except Exception as e:
             logger.warning("typed 파싱 실패, fallback: %s", e)
 
     # fallback: 일반 텍스트 파싱
     text = parse_file(path)
     return _text_to_chunks(text)
+
+
+def parse_file_for_indexing(path: Path) -> tuple[list[Chunk], str]:
+    """인덱싱용 typed 청크와 원문을 중복 파싱 없이 가능한 범위에서 함께 반환한다."""
+    ext = path.suffix.lower()
+    if ext == ".pdf":
+        chunks, original_text = _parse_pdf_content(path)
+        return _normalize_typed_chunks(path, chunks), original_text
+
+    typed_chunks = parse_file_to_typed_chunks(path)
+    # 기존 XLSX 원문 함수도 typed 청크를 다시 생성한 뒤 같은 방식으로 합쳤다.
+    if ext == ".xlsx":
+        return typed_chunks, "\n\n".join(chunk.text for chunk in typed_chunks)
+    return typed_chunks, parse_file(path)

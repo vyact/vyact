@@ -24,8 +24,8 @@ from pydantic import BaseModel, Field
 
 from config import INSTALL_DIR
 from logger import get_logger
-from services.document_parser import Chunk, parse_file, parse_file_to_chunks, parse_file_to_typed_chunks
-from services.indexer import get_embedding
+from services.document_parser import Chunk, parse_file, parse_file_for_indexing, parse_file_to_chunks
+from services.embedding_runtime import get_embeddings
 from elasticsearch.helpers import async_bulk
 from services.db import DOCUMENT_ORIGINALS_INDEX, INDEX_NAME, DOC_CHUNKS_INDEX, FILES_INDEX, WEB_DOCUMENTS_INDEX, WEB_DOC_CHUNKS_INDEX, get_es, get_language_index
 from services.language_detection import detect_language
@@ -160,13 +160,13 @@ async def _index_saved_document(
         await es.close()
 
     await progress("chunking", 15, None)
-    typed_chunks = await asyncio.to_thread(parse_file_to_typed_chunks, tmp)
+    typed_chunks, original_text = await asyncio.to_thread(parse_file_for_indexing, tmp)
     if not typed_chunks:
         raise HTTPException(status_code=422, detail="문서에서 텍스트를 추출할 수 없습니다.")
     await progress("chunking", 30, {"chunks": len(typed_chunks)})
     # 채팅 직접 첨부용 원문은 검색 청크를 다시 합치지 않는다. 표 헤더/섹션 문맥이
     # 청크마다 반복될 수 있기 때문에, 파서가 추출한 전체 텍스트를 별도로 보관한다.
-    original_text = (await asyncio.to_thread(parse_file, tmp)).strip()
+    original_text = original_text.strip()
     if not original_text:
         raise HTTPException(status_code=422, detail="문서에서 텍스트를 추출할 수 없습니다.")
 
@@ -195,8 +195,8 @@ async def _index_saved_document(
         embedded_chunks = 0
         for start in range(0, total_chunks, DOCUMENT_EMBED_BATCH_SIZE):
             batch_chunks = typed_chunks[start:start + DOCUMENT_EMBED_BATCH_SIZE]
-            batch_embeddings = await asyncio.gather(*[
-                get_embedding(_embed_text(chunk))
+            batch_embeddings = await get_embeddings([
+                _embed_text(chunk)
                 for chunk in batch_chunks
             ])
             embedded_chunks += sum(embedding is not None for embedding in batch_embeddings)
