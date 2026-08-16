@@ -25,6 +25,7 @@
   },
   "inputMenu": {
     "addFiles": "이미지 및 파일 추가",
+    "browser": "브라우저 열기",
     "addFilesDisabled": "텍스트 전용 이미지 생성 모델은 이미지 첨부를 지원하지 않습니다",
     "documents": "문서 관리",
     "memo": "메모",
@@ -35,6 +36,7 @@
     "googleConnectionRequired": "Google Workspace MCP 연결이 필요합니다. 클릭하여 연결하세요.",
     "supportVyact": "Vyact 후원하기"
   },
+  "browser": {"title": "브라우저", "back": "뒤로", "forward": "앞으로", "reload": "새로고침", "close": "닫기", "float": "플로팅 보기로 전환", "dock": "우측 사이드바에 고정", "address": "주소 또는 검색어", "addressPlaceholder": "주소 또는 검색어 입력"},
   "supportModal": {
     "title": "Vyact 후원하기",
     "message": "Vyact가 도움이 되었나요?\n여러분의 후원은 지속적인 개발과 더 나은 기능을 만드는 데 큰 힘이 됩니다.",

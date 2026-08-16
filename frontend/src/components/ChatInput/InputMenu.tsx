@@ -13,6 +13,7 @@ import ReasoningToggle from '../common/ReasoningToggle/ReasoningToggle';
 import './InputMenu.css';
 import {usePluginExtensions} from '../../plugins/usePluginExtensions';
 import {openPluginModal, openPluginPanel} from '../../plugins/registry';
+import {usePanelManager} from '../../contexts/PanelManagerContext';
 
 const GOOGLE_STATUS_UNAVAILABLE: GoogleWorkspaceStatus = {
     registered: false,
@@ -49,6 +50,7 @@ const InputMenu: React.FC<InputMenuProps> = ({
                                                  onOpenGoogleWorkspace,
                                              }) => {
     const {t} = useTranslation('main');
+    const panels = usePanelManager();
     const {inputMenu: pluginMenuItems} = usePluginExtensions();
     const [open, setOpen] = React.useState(false);
     const [google, setGoogle] = React.useState<GoogleWorkspaceStatus>(GOOGLE_STATUS_UNAVAILABLE);
@@ -159,6 +161,21 @@ const InputMenu: React.FC<InputMenuProps> = ({
                         modelType === 'image_gen',
                         CHAT_FILE_INPUT_ID,
                     )}
+                    {window.ragAPI?.browserOpen && <>
+                    {divider}
+                    {menuItem(
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="2" y1="12" x2="22" y2="12"/>
+                            <path d="M12 2a15.3 15.3 0 0 1 0 20M12 2a15.3 15.3 0 0 0 0 20"/>
+                        </svg>,
+                        t('inputMenu.browser'),
+                        () => {
+                            panels.open('browser');
+                            void window.ragAPI?.browserOpen?.();
+                        },
+                    )}
+                    </>}
                     {google.registered && <>
                         {divider}
                         {menuItem(

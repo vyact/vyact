@@ -405,6 +405,14 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
         },
     });
 
+    useEffect(() => {
+        const stopActiveChatRequest = () => {
+            if (chat.hasActiveRequests) chat.handleStop();
+        };
+        window.addEventListener('vyact:stop-active-chat-request', stopActiveChatRequest);
+        return () => window.removeEventListener('vyact:stop-active-chat-request', stopActiveChatRequest);
+    }, [chat.hasActiveRequests, chat.handleStop]);
+
     // 일부 provider는 tool 판정 단계에서 isLoading state 전환보다 toolStatus가 먼저 렌더된다.
     // 새 대화 전환은 세 상태 중 하나라도 남아 있으면 차단한다.
     const isChatBusy = chat.hasActiveRequests

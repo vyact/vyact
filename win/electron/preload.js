@@ -12,6 +12,18 @@ contextBridge.exposeInMainWorld("ragAPI", {
     setLoginItem: (enable) => ipcRenderer.invoke("set-login-item", enable),
     selectFolder: () => ipcRenderer.invoke("select-folder"),
     selectFolders: () => ipcRenderer.invoke("select-folders"),
+    browserOpen: (url) => ipcRenderer.invoke("browser-open", url),
+    browserClose: () => ipcRenderer.invoke("browser-close"),
+    browserNavigate: (url) => ipcRenderer.invoke("browser-navigate", url),
+    browserBack: () => ipcRenderer.invoke("browser-back"),
+    browserForward: () => ipcRenderer.invoke("browser-forward"),
+    browserReload: () => ipcRenderer.invoke("browser-reload"),
+    browserSetBounds: (bounds) => ipcRenderer.invoke("browser-set-bounds", bounds),
+    onBrowserState: (callback) => {
+        const handler = (_event, state) => callback(state);
+        ipcRenderer.on("browser-state", handler);
+        return () => ipcRenderer.removeListener("browser-state", handler);
+    },
     notifyAppReady: () => ipcRenderer.send("app-ready"),
     // loading.html 전용 — 메인 프로세스(main.js)의 log()가 보내는 진행 상황 문자열을 구독.
     // (loading.html은 contextIsolation:true라 ipcRenderer를 직접 못 쓰므로 이 브릿지를 통해서만 받는다)

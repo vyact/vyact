@@ -25,6 +25,7 @@
   },
   "inputMenu": {
     "addFiles": "Añadir imágenes y archivos",
+    "browser": "Abrir navegador",
     "addFilesDisabled": "Este modelo no admite adjuntos",
     "documents": "Gestor de documentos",
     "memo": "Nota",
@@ -35,6 +36,7 @@
     "googleConnectionRequired": "Se requiere una conexión MCP de Google Workspace. Haz clic para conectarte.",
     "supportVyact": "Apoyar a Vyact"
   },
+  "browser": {"title": "Navegador", "back": "Atrás", "forward": "Adelante", "reload": "Recargar", "close": "Cerrar", "float": "Cambiar a vista flotante", "dock": "Acoplar a la barra lateral derecha", "address": "Dirección o búsqueda", "addressPlaceholder": "Introduce una dirección o búsqueda"},
   "supportModal": {
     "title": "Apoyar a Vyact",
     "message": "¿Vyact te ha resultado útil?\nTu apoyo nos ayuda a seguir desarrollando y creando mejores funciones.",

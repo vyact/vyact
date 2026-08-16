@@ -6,6 +6,7 @@
   "author": "Alex",
   "scripts": {
     "start": "electron .",
+    "start:dev": "VYACT_RENDERER_URL=http://localhost:5173 electron .",
     "build": "electron-builder --mac",
     "build:dmg": "electron-builder --mac dmg"
   },

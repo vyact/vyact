@@ -16,10 +16,13 @@ READ_ONLY_TOOLS = {
     "check_free_busy", "get_calendar_event", "search_files", "get_drive_file",
     "read_document_content", "list_drive_folder_items", "get_google_doc",
     "get_google_sheet", "get_google_slides", "get_google_form", "get_form_responses",
+    "browser_search", "browser_open", "browser_read", "browser_inspect",
+    "browser_scroll", "browser_wait", "browser_back", "browser_status", "browser_close",
 }
 SENSITIVE_TOOLS = {
     "send_email", "reply_email", "create_calendar_event", "update_calendar_event",
     "upload_drive_file", "download_drive_file", "move_drive_file",
+    "browser_click", "browser_type",
 }
 DESTRUCTIVE_TOOLS = {
     "code_move_file", "code_delete_file", "trash_email", "batch_trash_emails",

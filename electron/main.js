@@ -1,9 +1,10 @@
-const {app, BrowserView, BrowserWindow, dialog, ipcMain, session} = require("electron");
+const {app, BrowserView, BrowserWindow, WebContentsView, dialog, ipcMain, session} = require("electron");
 const path = require("path");
 const {spawn, execSync, execFileSync, spawnSync} = require("child_process");
 const fs = require("fs");
 const os = require("os");
 const http = require("http");
+const crypto = require("crypto");
 
 // ── 기본 경로 ─────────────────────────────
 const HOME = os.homedir();
@@ -31,7 +32,186 @@ let mainWindow = null;
 // The initial setup app is rendered in a child view.  Keeping loading.html in
 // the window underneath avoids a native-window teardown/recreate flash.
 let initialSetupView = null;
+let floatingBrowserView = null;
+let floatingBrowserOpen = false;
+let floatingBrowserBounds = {x: 640, y: 120, width: 540, height: 620, toolbarHeight: 52, footerHeight: 0};
 let serverProc = null;
+
+const BROWSER_PARTITION = "persist:vyact-browser";
+const DEFAULT_BROWSER_URL = "https://www.google.com";
+const DEV_RENDERER_URL = app.isPackaged ? "" : (process.env.VYACT_RENDERER_URL || "").replace(/\/$/, "");
+const BROWSER_CONTROL_TOKEN = crypto.randomBytes(32).toString("hex");
+let browserControlPort = 0;
+let browserControlServer = null;
+
+function normalizeBrowserUrl(rawUrl) {
+    const value = String(rawUrl || "").trim();
+    if (!value) return DEFAULT_BROWSER_URL;
+    if (/^https?:\/\//i.test(value)) return value;
+    if (/^[\w.-]+\.[a-z]{2,}(?:[/:?#]|$)/i.test(value)) return `https://${value}`;
+    return `https://www.google.com/search?q=${encodeURIComponent(value)}`;
+}
+
+function getRendererUrl(query = "") {
+    const baseUrl = DEV_RENDERER_URL || `http://localhost:${SERVER_PORT}`;
+    return `${baseUrl}${query}`;
+}
+
+function getFloatingBrowserState() {
+    const contents = floatingBrowserView?.webContents;
+    return {
+        open: floatingBrowserOpen,
+        url: contents && !contents.isDestroyed() ? contents.getURL() : "",
+        title: contents && !contents.isDestroyed() ? contents.getTitle() : "",
+        loading: contents && !contents.isDestroyed() ? contents.isLoading() : false,
+        canGoBack: contents && !contents.isDestroyed() ? contents.canGoBack() : false,
+        canGoForward: contents && !contents.isDestroyed() ? contents.canGoForward() : false,
+    };
+}
+
+function emitFloatingBrowserState() {
+    const renderer = initialSetupView?.webContents && !initialSetupView.webContents.isDestroyed()
+        ? initialSetupView.webContents : mainWindow?.webContents;
+    if (renderer && !renderer.isDestroyed()) renderer.send("browser-state", getFloatingBrowserState());
+}
+
+function applyFloatingBrowserBounds() {
+    if (!floatingBrowserView || !floatingBrowserOpen || !mainWindow || mainWindow.isDestroyed()) return;
+    const content = mainWindow.getContentBounds();
+    const width = Math.max(320, Math.min(Math.round(floatingBrowserBounds.width - 6), content.width));
+    const height = Math.max(220, Math.min(Math.round(floatingBrowserBounds.height - floatingBrowserBounds.toolbarHeight - (floatingBrowserBounds.footerHeight || 0) - 6), content.height));
+    const x = Math.max(0, Math.min(Math.round(floatingBrowserBounds.x), content.width - width));
+    const y = Math.max(0, Math.min(Math.round(floatingBrowserBounds.y + floatingBrowserBounds.toolbarHeight), content.height - height));
+    floatingBrowserView.setBounds({x, y, width, height});
+}
+
+function ensureFloatingBrowserView() {
+    if (floatingBrowserView && !floatingBrowserView.webContents.isDestroyed()) return floatingBrowserView;
+    floatingBrowserView = new WebContentsView({webPreferences: {
+        partition: BROWSER_PARTITION, contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: false,
+    }});
+    const contents = floatingBrowserView.webContents;
+    contents.setWindowOpenHandler(({url}) => {
+        void contents.loadURL(normalizeBrowserUrl(url));
+        return {action: "deny"};
+    });
+    for (const eventName of ["did-start-loading", "did-stop-loading", "did-navigate", "did-navigate-in-page", "page-title-updated"]) {
+        contents.on(eventName, emitFloatingBrowserState);
+    }
+    contents.on("did-fail-load", emitFloatingBrowserState);
+    return floatingBrowserView;
+}
+
+async function openFloatingBrowser(url) {
+    if (!mainWindow || mainWindow.isDestroyed()) return getFloatingBrowserState();
+    const view = ensureFloatingBrowserView();
+    if (!floatingBrowserOpen) {
+        mainWindow.contentView.addChildView(view);
+        floatingBrowserOpen = true;
+        applyFloatingBrowserBounds();
+    }
+    const targetUrl = normalizeBrowserUrl(url || view.webContents.getURL());
+    if (!view.webContents.getURL() || url) await view.webContents.loadURL(targetUrl);
+    emitFloatingBrowserState();
+    return getFloatingBrowserState();
+}
+
+function closeFloatingBrowser() {
+    if (floatingBrowserView && floatingBrowserOpen && mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.contentView.removeChildView(floatingBrowserView);
+    }
+    floatingBrowserOpen = false;
+    emitFloatingBrowserState();
+    return getFloatingBrowserState();
+}
+
+async function executeFloatingBrowserCommand(command, args = {}) {
+    if (command === "open") return openFloatingBrowser(args.url);
+    if (command === "close") return closeFloatingBrowser();
+    if (command === "back") {
+        const contents = floatingBrowserView?.webContents;
+        if (contents && !contents.isDestroyed() && contents.canGoBack()) contents.goBack();
+        return getFloatingBrowserState();
+    }
+    const view = ensureFloatingBrowserView();
+    await openFloatingBrowser();
+    const contents = view.webContents;
+    if (command === "navigate") {
+        await contents.loadURL(normalizeBrowserUrl(args.url));
+        return getFloatingBrowserState();
+    }
+    if (command === "status") return getFloatingBrowserState();
+    if (command === "read") {
+        return contents.executeJavaScript(`(() => {
+            const hidden = element => !element || !element.isConnected || element.closest('[aria-hidden="true"]') || !element.getClientRects().length;
+            const root = document.querySelector('main, article, [role="main"]') || document.body;
+            const text = (root?.innerText || '').replace(/\\n{3,}/g, '\\n\\n').trim().slice(0, 20000);
+            const links = Array.from(document.querySelectorAll('a[href]')).filter(a => !hidden(a)).slice(0, 100).map(a => ({text: (a.innerText || a.getAttribute('aria-label') || '').trim().slice(0, 200), url: a.href}));
+            return {url: location.href, title: document.title, text, links};
+        })()`);
+    }
+    if (command === "inspect") {
+        return contents.executeJavaScript(`(() => {
+            let index = 0;
+            const selector = 'a[href],button,input,textarea,select,[role="button"],[role="link"]';
+            const elements = Array.from(document.querySelectorAll(selector)).filter(el => el.isConnected && el.getClientRects().length && !el.disabled).slice(0, 150);
+            return elements.map(el => {
+                const id = 'vyact-' + (++index);
+                el.setAttribute('data-vyact-browser-id', id);
+                return {id, tag: el.tagName.toLowerCase(), role: el.getAttribute('role') || '', name: (el.getAttribute('aria-label') || el.innerText || el.getAttribute('placeholder') || el.getAttribute('name') || '').trim().slice(0, 200), type: el.getAttribute('type') || '', href: el.href || ''};
+            });
+        })()`);
+    }
+    if (command === "click") {
+        const elementId = JSON.stringify(String(args.element_id || ""));
+        return contents.executeJavaScript(`(() => { const el = document.querySelector('[data-vyact-browser-id="' + CSS.escape(${elementId}) + '"]'); if (!el) return {ok:false,error:'element_not_found'}; el.scrollIntoView({block:'center'}); el.click(); return {ok:true}; })()`);
+    }
+    if (command === "type") {
+        const elementId = JSON.stringify(String(args.element_id || ""));
+        const value = JSON.stringify(String(args.text || ""));
+        return contents.executeJavaScript(`(() => { const el = document.querySelector('[data-vyact-browser-id="' + CSS.escape(${elementId}) + '"]'); if (!el) return {ok:false,error:'element_not_found'}; if (el.type === 'password') return {ok:false,error:'password_input_blocked'}; el.focus(); const setter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(el), 'value')?.set; if (setter) setter.call(el, ${value}); else el.value = ${value}; el.dispatchEvent(new Event('input',{bubbles:true})); el.dispatchEvent(new Event('change',{bubbles:true})); return {ok:true}; })()`);
+    }
+    if (command === "scroll") {
+        const amount = Math.max(-4000, Math.min(4000, Number(args.amount || 700)));
+        return contents.executeJavaScript(`(() => { window.scrollBy({top:${amount},behavior:'smooth'}); return {ok:true,scrollY:window.scrollY}; })()`);
+    }
+    if (command === "screenshot") {
+        const image = await contents.capturePage();
+        return {url: contents.getURL(), image_base64: image.toPNG().toString("base64")};
+    }
+    throw new Error(`Unknown browser command: ${command}`);
+}
+
+function startBrowserControlServer() {
+    if (browserControlServer) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+        browserControlServer = http.createServer((request, response) => {
+            if (request.method !== "POST" || request.url !== "/command" || request.headers.authorization !== `Bearer ${BROWSER_CONTROL_TOKEN}`) {
+                response.writeHead(403, {"Content-Type": "application/json"});
+                response.end(JSON.stringify({ok: false, error: "forbidden"}));
+                return;
+            }
+            let body = "";
+            request.on("data", chunk => { if (body.length < 1024 * 1024) body += chunk; });
+            request.on("end", async () => {
+                try {
+                    const payload = JSON.parse(body || "{}");
+                    const result = await executeFloatingBrowserCommand(payload.command, payload.args || {});
+                    response.writeHead(200, {"Content-Type": "application/json"});
+                    response.end(JSON.stringify({ok: true, result}));
+                } catch (error) {
+                    response.writeHead(500, {"Content-Type": "application/json"});
+                    response.end(JSON.stringify({ok: false, error: error.message}));
+                }
+            });
+        });
+        browserControlServer.once("error", reject);
+        browserControlServer.listen(0, "127.0.0.1", () => {
+            browserControlPort = browserControlServer.address().port;
+            resolve();
+        });
+    });
+}
 
 function resizeInitialSetupView() {
     if (!mainWindow || mainWindow.isDestroyed() || !initialSetupView || initialSetupView.webContents.isDestroyed()) return;
@@ -471,6 +651,8 @@ async function startServer() {
         // 설치된 앱 번들은 읽기 전용일 수 있으므로 __pycache__를 만들지 않는다.
         PYTHONDONTWRITEBYTECODE: "1",
         VYACT_SYSTEM_LANGUAGE: app.getLocale(),
+        VYACT_BROWSER_CONTROL_URL: `http://127.0.0.1:${browserControlPort}`,
+        VYACT_BROWSER_CONTROL_TOKEN: BROWSER_CONTROL_TOKEN,
     };
 
     const finalPython = fs.existsSync(python) ? python : resolvePython();
@@ -570,6 +752,7 @@ function createWindow() {
     // Cmd+Tab can focus an already-visible window without leaving the active
     // BrowserView focused. Restore its renderer after native focus completes.
     mainWindow.on("focus", focusActiveWebContents);
+    mainWindow.on("resize", applyFloatingBrowserBounds);
 
     // 전체화면 상태 변경 → 렌더러 알림
     mainWindow.on("enter-full-screen", () => mainWindow?.webContents.send("window-fullscreen-change", true));
@@ -694,7 +877,7 @@ async function loadServerApp() {
         return;
     }
 
-    await mainWindow.loadURL(`http://localhost:${SERVER_PORT}`);
+    await mainWindow.loadURL(getRendererUrl());
 }
 
 function waitForRendererReady(browserWindow) {
@@ -735,7 +918,7 @@ async function preloadInitialSetupWindow() {
     });
 
     const rendererReady = waitForRendererReady(setupView);
-    await setupView.webContents.loadURL(`http://localhost:${SERVER_PORT}?initialSetup=1`);
+    await setupView.webContents.loadURL(getRendererUrl("?initialSetup=1"));
     await rendererReady;
 
     if (!mainWindow || mainWindow.isDestroyed()) return;
@@ -836,6 +1019,7 @@ if (hasSingleInstanceLock) app.whenReady().then(() => {
             }
 
             try {
+                await startBrowserControlServer();
                 await startServer();
                 waitForServerAndLoad();
             } catch (error) {
@@ -883,6 +1067,34 @@ app.on("before-quit", async (e) => {
 });
 
 ipcMain.handle("get-log-path", () => getLogFile());
+ipcMain.handle("browser-open", (_event, url) => openFloatingBrowser(url));
+ipcMain.handle("browser-close", () => closeFloatingBrowser());
+ipcMain.handle("browser-navigate", async (_event, url) => {
+    const view = ensureFloatingBrowserView();
+    await openFloatingBrowser();
+    await view.webContents.loadURL(normalizeBrowserUrl(url));
+    return getFloatingBrowserState();
+});
+ipcMain.handle("browser-back", () => {
+    const contents = floatingBrowserView?.webContents;
+    if (contents && !contents.isDestroyed() && contents.canGoBack()) contents.goBack();
+    return getFloatingBrowserState();
+});
+ipcMain.handle("browser-forward", () => {
+    const contents = floatingBrowserView?.webContents;
+    if (contents && !contents.isDestroyed() && contents.canGoForward()) contents.goForward();
+    return getFloatingBrowserState();
+});
+ipcMain.handle("browser-reload", () => {
+    const contents = floatingBrowserView?.webContents;
+    if (contents && !contents.isDestroyed()) contents.reload();
+    return getFloatingBrowserState();
+});
+ipcMain.handle("browser-set-bounds", (_event, bounds) => {
+    if (bounds && typeof bounds === "object") floatingBrowserBounds = {...floatingBrowserBounds, ...bounds};
+    applyFloatingBrowserBounds();
+    return getFloatingBrowserState();
+});
 
 // ── 폴더 선택 다이얼로그 ──
 ipcMain.handle("select-folder", async () => {

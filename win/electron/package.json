@@ -6,6 +6,7 @@
   "author": "Alex",
   "scripts": {
     "start": "electron .",
+    "start:dev": "set VYACT_RENDERER_URL=http://localhost:5173&& electron .",
     "build": "electron-builder --win",
     "build:nsis": "electron-builder --win nsis"
   },

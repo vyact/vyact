@@ -21,13 +21,17 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ images, currentIndex, onClose
     const total = images.length;
 
     useEffect(() => {
+        window.dispatchEvent(new CustomEvent('vyact:native-overlay-open'));
         const handleKey = (e: globalThis.KeyboardEvent) => {
             if (e.key === 'Escape') { e.stopPropagation(); onClose(); }
             if (e.key === 'ArrowLeft' && total > 1) onIndexChange((currentIndex - 1 + total) % total);
             if (e.key === 'ArrowRight' && total > 1) onIndexChange((currentIndex + 1) % total);
         };
         window.addEventListener('keydown', handleKey, true); // capture: true → 전역 핸들러보다 먼저 실행
-        return () => window.removeEventListener('keydown', handleKey, true);
+        return () => {
+            window.removeEventListener('keydown', handleKey, true);
+            window.dispatchEvent(new CustomEvent('vyact:native-overlay-close'));
+        };
     }, [currentIndex, total, onClose, onIndexChange]);
 
     const current = images[currentIndex];

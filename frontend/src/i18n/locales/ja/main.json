@@ -25,6 +25,7 @@
   },
   "inputMenu": {
     "addFiles": "画像・ファイル追加",
+    "browser": "ブラウザを開く",
     "addFilesDisabled": "テキスト専用の画像生成モデルは画像添付に対応していません",
     "documents": "ドキュメント管理",
     "memo": "メモ",
@@ -35,6 +36,7 @@
     "googleConnectionRequired": "Google Workspace MCP 接続が必要です。クリックして接続してください。",
     "supportVyact": "Vyactを支援する"
   },
+  "browser": {"title": "ブラウザ", "back": "戻る", "forward": "進む", "reload": "再読み込み", "close": "閉じる", "float": "フローティング表示に切り替え", "dock": "右サイドバーに固定", "address": "アドレスまたは検索", "addressPlaceholder": "アドレスまたは検索語を入力"},
   "supportModal": {
     "title": "Vyactを支援する",
     "message": "Vyactはお役に立っていますか？\n皆さまのご支援が、継続的な開発とより良い機能づくりにつながります。",

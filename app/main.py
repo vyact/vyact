@@ -300,6 +300,11 @@ async def lifespan(app: FastAPI):
             register_code_tools()
         except Exception as e:
             logger.warning("[mcp] Code analysis tool registration failed: %s", e)
+        try:
+            from services.browser_tools import register_browser_tools
+            register_browser_tools()
+        except Exception as e:
+            logger.warning("[mcp] Browser tool registration failed: %s", e)
         await mcp_manager.connect_all(await build_servers_config())
         # Google Workspace 인증 상태 확인
         try:

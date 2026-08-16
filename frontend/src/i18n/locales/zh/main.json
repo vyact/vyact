@@ -25,6 +25,7 @@
   },
   "inputMenu": {
     "addFiles": "添加图片和文件",
+    "browser": "打开浏览器",
     "addFilesDisabled": "纯文本图片生成模型不支持图片附件",
     "documents": "文档管理",
     "memo": "备忘录",
@@ -35,6 +36,7 @@
     "googleConnectionRequired": "需要连接 Google Workspace MCP。点击进行连接。",
     "supportVyact": "支持 Vyact"
   },
+  "browser": {"title": "浏览器", "back": "后退", "forward": "前进", "reload": "刷新", "close": "关闭", "float": "切换为浮动视图", "dock": "固定到右侧边栏", "address": "地址或搜索", "addressPlaceholder": "输入地址或搜索内容"},
   "supportModal": {
     "title": "支持 Vyact",
     "message": "Vyact 对您有帮助吗？\n您的支持将帮助我们持续开发并打造更好的功能。",

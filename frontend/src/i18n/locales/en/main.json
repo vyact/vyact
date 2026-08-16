@@ -25,6 +25,7 @@
   },
   "inputMenu": {
     "addFiles": "Add Images & Files",
+    "browser": "Open Browser",
     "addFilesDisabled": "Text-only image generation models do not support image attachments",
     "documents": "Document Manager",
     "memo": "Memo",
@@ -35,6 +36,7 @@
     "googleConnectionRequired": "A Google Workspace MCP connection is required. Click to connect.",
     "supportVyact": "Support Vyact"
   },
+  "browser": {"title": "Browser", "back": "Back", "forward": "Forward", "reload": "Reload", "close": "Close", "float": "Switch to floating view", "dock": "Dock in right sidebar", "address": "Address or search", "addressPlaceholder": "Enter an address or search"},
   "supportModal": {
     "title": "Support Vyact",
     "message": "Has Vyact been helpful?\nYour support helps us continue development and build better features.",

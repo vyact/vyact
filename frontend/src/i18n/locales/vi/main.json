@@ -25,6 +25,7 @@
   },
   "inputMenu": {
     "addFiles": "Thêm ảnh và tệp",
+    "browser": "Mở trình duyệt",
     "addFilesDisabled": "Mô hình này không hỗ trợ tệp đính kèm",
     "documents": "Quản lý tài liệu",
     "memo": "Ghi chú",
@@ -35,6 +36,7 @@
     "googleConnectionRequired": "Cần kết nối Google Workspace MCP. Nhấp để kết nối.",
     "supportVyact": "Ủng hộ Vyact"
   },
+  "browser": {"title": "Trình duyệt", "back": "Quay lại", "forward": "Tiếp", "reload": "Tải lại", "close": "Đóng", "float": "Chuyển sang chế độ nổi", "dock": "Gắn vào thanh bên phải", "address": "Địa chỉ hoặc tìm kiếm", "addressPlaceholder": "Nhập địa chỉ hoặc nội dung tìm kiếm"},
   "supportModal": {
     "title": "Ủng hộ Vyact",
     "message": "Vyact có hữu ích với bạn không?\nSự ủng hộ của bạn giúp chúng tôi tiếp tục phát triển và xây dựng các tính năng tốt hơn.",

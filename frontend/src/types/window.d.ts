@@ -12,6 +12,32 @@ interface Window {
         setLoginItem?: (enabled: boolean) => Promise<boolean>;
         selectFolder?: () => Promise<string | null>;
         selectFolders?: () => Promise<string[]>;
+        browserOpen?: (url?: string) => Promise<BrowserViewState>;
+        browserClose?: () => Promise<BrowserViewState>;
+        browserNavigate?: (url: string) => Promise<BrowserViewState>;
+        browserBack?: () => Promise<BrowserViewState>;
+        browserForward?: () => Promise<BrowserViewState>;
+        browserReload?: () => Promise<BrowserViewState>;
+        browserSetBounds?: (bounds: BrowserViewBounds) => Promise<BrowserViewState>;
+        onBrowserState?: (callback: (state: BrowserViewState) => void) => () => void;
         notifyAppReady?: () => void;
     };
+}
+
+interface BrowserViewBounds {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    toolbarHeight: number;
+    footerHeight?: number;
+}
+
+interface BrowserViewState {
+    open: boolean;
+    url: string;
+    title: string;
+    loading: boolean;
+    canGoBack: boolean;
+    canGoForward: boolean;
 }

@@ -1,0 +1,64 @@
+.browser-panel {
+    min-width: 320px;
+    overflow: hidden;
+    box-sizing: border-box;
+    background: var(--bg, #111318);
+}
+.browser-panel--docked {
+    height: 100%;
+    flex: 0 0 auto;
+    border-left: 1px solid var(--border);
+}
+.browser-panel--floating {
+    position: fixed;
+    z-index: 900;
+    top: 76px;
+    right: 24px;
+    width: min(560px, calc(100vw - 48px));
+    height: min(640px, calc(100vh - 108px));
+    min-height: 320px;
+    resize: both;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .42);
+}
+.floating-browser-toolbar {
+    box-sizing: border-box;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px;
+    background: var(--panel, #1a1d24);
+    border-bottom: 1px solid var(--border);
+    user-select: none;
+}
+.floating-browser-toolbar button, .floating-browser-brand {
+    width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;
+    flex: 0 0 auto; border: 0; border-radius: 8px; color: var(--text-secondary, #b8bbc5); background: transparent;
+}
+.floating-browser-toolbar button:hover:not(:disabled) { background: rgba(255, 255, 255, .08); color: var(--text-primary, #fff); }
+.floating-browser-toolbar button:disabled { opacity: .35; }
+.floating-browser-toolbar button.is-loading svg { animation: spin .8s linear infinite; }
+.floating-browser-toolbar form { flex: 1; min-width: 0; }
+.floating-browser-toolbar input {
+    box-sizing: border-box; width: 100%; height: 32px; padding: 0 12px; border: 1px solid var(--border);
+    border-radius: 9px; outline: none; color: var(--text-primary, #fff); background: rgba(0, 0, 0, .2); user-select: text;
+}
+.floating-browser-toolbar input:focus { border-color: var(--accent); }
+.floating-browser-surface { height: calc(100% - 52px); background: #fff; }
+.browser-panel--floating .floating-browser-surface { height: calc(100% - 76px); }
+.browser-floating-size {
+    box-sizing: border-box;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 20px 0 8px;
+    color: var(--muted);
+    background: var(--panel, #1a1d24);
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+}

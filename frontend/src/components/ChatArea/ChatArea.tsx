@@ -12,6 +12,7 @@ import type {ArticleAttachment} from '../../types';
 import {getUserProfile, onUserProfileUpdated} from '../../services/userProfile';
 import PanelResizer, {getSavedPanelWidth, savePanelWidth} from '../common/PanelResizer/PanelResizer';
 import {useTranslation} from 'react-i18next';
+import BrowserPanel from '../BrowserPanel/BrowserPanel';
 
 const CodePanel = React.lazy(() => import('../CodePanel/CodePanel'));
 const GoogleWorkspacePanel = React.lazy(() => import('../GoogleWorkspacePanel/GoogleWorkspacePanel'));
@@ -537,6 +538,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                     <CodePanel style={{width: `${panelWidth}%`}}/>
                 </React.Suspense>
             )}
+            <BrowserPanel style={{width: `${panelWidth}%`}}/>
             {sidePanels
                 .filter(item => item.id === panels.activePanel || panels.minimizedPanels.includes(item.id))
                 .map(item => (
