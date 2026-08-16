@@ -10,6 +10,7 @@ from elasticsearch.helpers import async_bulk
 
 from services.db import SETTINGS_INDEX, get_es
 from services.external_data.quota import DailyRequestQuota
+from services.external_data.search import build_browser_search_query, build_candidate_search_query
 from services.external_data.retention import is_storable_by_deadline
 from services.external_data.status_events import notify_status_changed
 
@@ -338,7 +339,7 @@ async def browse_documents(query: str = "", search_after: list | None = None) ->
         search_query: dict = {"term": {"lifecycle_status": "active"}}
         sort: list[dict] = [{"source_modified_at": {"order": "desc", "missing": "_last"}}, {"external_id": {"order": "asc"}}]
         if query.strip():
-            search_query = {"bool": {"filter": [{"term": {"lifecycle_status": "active"}}], "must": [{"multi_match": {"query": query.strip(), "fields": ["title^6", "agency^2", "target^4", "category^2", "support_type^3", "content_text"], "operator": "and"}}]}}
+            search_query = build_browser_search_query(query, filters=[{"term": {"lifecycle_status": "active"}}])
             sort = [{"_score": {"order": "desc"}}, {"source_modified_at": {"order": "desc", "missing": "_last"}}, {"external_id": {"order": "asc"}}]
         request: dict = {"index": INDEX_NAME, "size": BROWSE_PAGE_SIZE, "track_total_hits": True, "query": search_query, "sort": sort}
         if search_after:
@@ -361,10 +362,10 @@ async def search_candidates(question: str, size: int = 8) -> list[dict]:
         if not await es.indices.exists(index=INDEX_NAME) or not question.strip():
             return []
         today = datetime.now(timezone.utc).date().isoformat()
-        result = await es.search(index=INDEX_NAME, size=size, query={"bool": {
-            "filter": [{"term": {"lifecycle_status": "active"}}, {"bool": {"should": [{"bool": {"must_not": {"exists": {"field": "application_end_date"}}}}, {"range": {"application_end_date": {"gte": today}}}], "minimum_should_match": 1}}],
-            "must": [{"multi_match": {"query": question.strip(), "fields": ["title^6", "target^4", "agency^3", "category^2", "support_type^3", "content_text"], "operator": "or", "minimum_should_match": "20%"}}],
-        }})
+        filters = [{"term": {"lifecycle_status": "active"}}, {"bool": {"should": [{"bool": {"must_not": {"exists": {"field": "application_end_date"}}}}, {"range": {"application_end_date": {"gte": today}}}], "minimum_should_match": 1}}]
+        result = await es.search(index=INDEX_NAME, size=size, query=build_candidate_search_query(
+            question, ["title^6", "target^4", "agency^3", "category^2", "support_type^3", "content_text"], filters,
+        ))
         return [{"id": source.get("external_id", hit.get("_id", "")), "title": source.get("title", ""), "content": source.get("content_text", "")[:1800], "url": source.get("source_url", ""), "source": "MyHome", "source_modified_at": source.get("source_modified_at", ""), "application_deadline": source.get("application_deadline", ""), "application_end_date": source.get("application_end_date"), "deadline_kind": source.get("deadline_kind", "unknown"), "score": hit.get("_score", 0), "external_resource_id": SOURCE_ID} for hit in result.get("hits", {}).get("hits", []) for source in [hit.get("_source", {})]]
     finally:
         await es.close()

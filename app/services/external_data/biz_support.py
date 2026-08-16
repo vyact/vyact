@@ -13,6 +13,7 @@ from elasticsearch.helpers import async_bulk
 from services.db import SETTINGS_INDEX, get_es
 from services.external_data.gov24 import normalize_application_deadline
 from services.external_data.quota import DailyRequestQuota
+from services.external_data.search import build_browser_search_query, build_candidate_search_query
 from services.external_data.retention import is_storable_by_deadline
 from services.external_data.status_events import notify_status_changed
 
@@ -308,19 +309,7 @@ async def browse_documents(query: str = "", search_after: list | None = None) ->
             {"external_id": "asc"},
         ]
         if query.strip():
-            search_query = {
-                "bool": {
-                    "should": [
-                        {"match_phrase": {"title": {"query": query.strip(), "boost": 20}}},
-                        {"multi_match": {
-                            "query": query.strip(),
-                            "fields": ["title^6", "agency^2", "target^2", "category^2", "content_text"],
-                            "operator": "and",
-                        }},
-                    ],
-                    "minimum_should_match": 1,
-                },
-            }
+            search_query = build_browser_search_query(query)
             sort = [
                 {"_score": "desc"},
                 {"source_modified_at": {"order": "desc", "missing": "_last"}},
@@ -347,13 +336,13 @@ async def search_candidates(question: str, size: int = 8) -> list[dict]:
     try:
         if not await es.indices.exists(index=INDEX_NAME) or not question.strip():
             return []
-        result = await es.search(index=INDEX_NAME, size=size, query={"bool": {
-            "filter": [{"bool": {"should": [
+        filters = [{"bool": {"should": [
                 {"bool": {"must_not": {"exists": {"field": "application_end_date"}}}},
                 {"range": {"application_end_date": {"gte": datetime.now().date().isoformat()}}},
-            ], "minimum_should_match": 1}}],
-            "must": [{"multi_match": {"query": question.strip(), "fields": ["title^6", "target^4", "agency^3", "category^2", "hashtags^2", "content_text"], "operator": "or", "minimum_should_match": "20%"}}],
-        }})
+            ], "minimum_should_match": 1}}]
+        result = await es.search(index=INDEX_NAME, size=size, query=build_candidate_search_query(
+            question, ["title^6", "target^4", "agency^3", "category^2", "hashtags^2", "content_text"], filters,
+        ))
         candidates = []
         for hit in result.get("hits", {}).get("hits", []):
             source = hit.get("_source", {})

@@ -83,3 +83,27 @@ def test_direct_document_limit_is_shared_across_all_direct_documents():
     limited = limit_direct_document_contexts(documents)
 
     assert sum(len(document["content"]) for document in limited) == DIRECT_DOCUMENT_TOTAL_MAX_CHARS
+
+
+def test_direct_document_limit_redistributes_unused_short_document_budget():
+    documents = [
+        {"content": "a" * 30, "direct_document": True},
+        {"content": "b" * DIRECT_DOCUMENT_TOTAL_MAX_CHARS, "direct_document": True},
+    ]
+
+    limited = limit_direct_document_contexts(documents)
+
+    assert len(limited[0]["content"]) == 30
+    assert len(limited[1]["content"]) == DIRECT_DOCUMENT_TOTAL_MAX_CHARS - 30
+
+
+def test_direct_document_limit_redistributes_multiple_short_documents():
+    documents = [
+        {"content": "a" * 30, "direct_document": True},
+        {"content": "b" * 10_000, "direct_document": True},
+        {"content": "c" * DIRECT_DOCUMENT_TOTAL_MAX_CHARS, "direct_document": True},
+    ]
+
+    limited = limit_direct_document_contexts(documents)
+
+    assert [len(document["content"]) for document in limited] == [30, 10_000, 19_970]

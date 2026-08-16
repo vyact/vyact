@@ -12,6 +12,7 @@ from elasticsearch.helpers import async_bulk, async_scan
 from reranker import is_available as is_reranker_available, rerank
 from services.db import SETTINGS_INDEX, get_es
 from services.external_data.quota import DailyRequestQuota
+from services.external_data.search import build_browser_search_query, build_candidate_search_query
 from services.external_data.retention import is_storable_by_deadline
 from services.external_data.status_events import notify_status_changed
 
@@ -87,32 +88,23 @@ def normalize_application_deadline(value: object) -> tuple[str, str | None]:
 
 def _candidate_query(question: str) -> dict:
     """Build a source-agnostic lexical recall query; semantic precision comes later."""
-    return {
-        "bool": {
-            "filter": [
-                {"term": {"lifecycle_status": "active"}},
-                {"bool": {
-                    "should": [
-                        {"bool": {"must_not": {"exists": {"field": "application_end_date"}}}},
-                        {"range": {"application_end_date": {"gte": date.today().isoformat()}}},
-                    ],
-                    "minimum_should_match": 1,
-                }},
-            ],
-            "must": [{
-                "multi_match": {
-                    "query": question,
-                    "fields": [
-                        "title^6", "target^4", "agency^3", "category^2",
-                        "user_type^2", "support_type^2", "content_text",
-                    ],
-                    "type": "best_fields",
-                    "operator": "or",
-                    "minimum_should_match": "20%",
-                },
-            }],
-        },
-    }
+    return build_candidate_search_query(
+        question,
+        fields=[
+            "title^6", "target^4", "agency^3", "category^2",
+            "user_type^2", "support_type^2", "content_text",
+        ],
+        filters=[
+            {"term": {"lifecycle_status": "active"}},
+            {"bool": {
+                "should": [
+                    {"bool": {"must_not": {"exists": {"field": "application_end_date"}}}},
+                    {"range": {"application_end_date": {"gte": date.today().isoformat()}}},
+                ],
+                "minimum_should_match": 1,
+            }},
+        ],
+    )
 
 
 async def search_candidates(question: str, size: int = QUERY_CANDIDATE_SIZE) -> list[dict]:
@@ -184,21 +176,10 @@ async def browse_documents(query: str = "", search_after: list | None = None) ->
             {"external_id": {"order": "asc"}},
         ]
         if query.strip():
-            search_query = {
-                "bool": {
-                    "filter": [{"term": {"lifecycle_status": "active"}}],
-                    "should": [
-                        {"match_phrase": {"title": {"query": query.strip(), "boost": 20}}},
-                        {"multi_match": {
-                            "query": query.strip(),
-                            "fields": ["title^6", "agency^2", "target^2", "content_text"],
-                            "type": "best_fields",
-                            "operator": "and",
-                        }},
-                    ],
-                    "minimum_should_match": 1,
-                },
-            }
+            search_query = build_browser_search_query(
+                query,
+                filters=[{"term": {"lifecycle_status": "active"}}],
+            )
             sort = [
                 {"_score": {"order": "desc"}},
                 {"source_modified_at": {"order": "desc", "missing": "_last"}},

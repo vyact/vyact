@@ -105,11 +105,33 @@ def limit_direct_document_contexts(docs: list[dict]) -> list[dict]:
     document_indexes = [index for index, doc in enumerate(docs) if doc.get("direct_document")]
     if not document_indexes:
         return docs
-    per_document_limit = max(1, DIRECT_DOCUMENT_TOTAL_MAX_CHARS // len(document_indexes))
+
+    # 짧은 문서에서 남은 몫을 긴 문서에 재분배한다. 각 라운드에서 남은
+    # 문서에 예산을 균등하게 제안하고, 그보다 짧은 문서를 먼저 확정하는
+    # 방식이라 문서 순서와 관계없이 같은 길이 조합에는 같은 몫이 배정된다.
+    remaining_budget = DIRECT_DOCUMENT_TOTAL_MAX_CHARS
+    remaining_indexes = set(document_indexes)
+    content_limits: dict[int, int] = {}
+    while remaining_indexes:
+        fair_share = remaining_budget // len(remaining_indexes)
+        completed_indexes = {
+            index for index in remaining_indexes
+            if len(str(docs[index].get("content", ""))) <= fair_share
+        }
+        if not completed_indexes:
+            for index in remaining_indexes:
+                content_limits[index] = fair_share
+            break
+        for index in completed_indexes:
+            content_length = len(str(docs[index].get("content", "")))
+            content_limits[index] = content_length
+            remaining_budget -= content_length
+        remaining_indexes -= completed_indexes
+
     limited = list(docs)
     for index in document_indexes:
         document = dict(limited[index])
-        document["content"] = document.get("content", "")[:per_document_limit]
+        document["content"] = str(document.get("content", ""))[:content_limits[index]]
         limited[index] = document
     return limited
 
