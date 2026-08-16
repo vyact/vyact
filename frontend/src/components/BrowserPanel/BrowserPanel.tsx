@@ -56,6 +56,14 @@ const BrowserPanel: React.FC<{style?: React.CSSProperties}> = ({style}) => {
             footerHeight: modeRef.current === 'floating' ? FLOATING_FOOTER_HEIGHT : 0,
         });
     };
+    const closeBrowser = () => {
+        // 진행 중인 LLM 브라우저 작업도 일반 채팅 중지 버튼과 같은 경로로 취소한다.
+        window.dispatchEvent(new CustomEvent('vyact:stop-active-chat-request'));
+        void window.ragAPI?.browserClose?.();
+        stateRef.current = {...stateRef.current, open: false};
+        setState(current => ({...current, open: false}));
+        panels.close(BROWSER_PANEL_ID);
+    };
 
     useEffect(() => {
         const unregister = panels.register({id: BROWSER_PANEL_ID});
@@ -69,9 +77,13 @@ const BrowserPanel: React.FC<{style?: React.CSSProperties}> = ({style}) => {
         const openBrowserShortcut = (event: KeyboardEvent) => {
             if (event.altKey || !event.shiftKey || (!event.metaKey && !event.ctrlKey) || event.key.toLowerCase() !== 'b') return;
             event.preventDefault();
+            if (stateRef.current.open) {
+                closeBrowser();
+                return;
+            }
             setMode('docked');
             panels.open(BROWSER_PANEL_ID);
-            if (!stateRef.current.open) void window.ragAPI?.browserOpen?.();
+            void window.ragAPI?.browserOpen?.();
         };
         window.addEventListener('keydown', openBrowserShortcut);
         return () => window.removeEventListener('keydown', openBrowserShortcut);
@@ -164,14 +176,6 @@ const BrowserPanel: React.FC<{style?: React.CSSProperties}> = ({style}) => {
         panels.open(BROWSER_PANEL_ID);
         requestAnimationFrame(syncBounds);
     };
-    const close = () => {
-        // 진행 중인 LLM 브라우저 작업도 일반 채팅 중지 버튼과 같은 경로로 취소한다.
-        window.dispatchEvent(new CustomEvent('vyact:stop-active-chat-request'));
-        void window.ragAPI?.browserClose?.();
-        stateRef.current = {...stateRef.current, open: false};
-        setState(current => ({...current, open: false}));
-        if (panels.activePanel === BROWSER_PANEL_ID) panels.close(BROWSER_PANEL_ID);
-    };
     const startDragging = (event: React.PointerEvent<HTMLDivElement>) => {
         if (mode !== 'floating' || event.button !== 0 || (event.target as HTMLElement).closest('button, input, form')) return;
         const rect = panelRef.current?.getBoundingClientRect();
@@ -216,7 +220,7 @@ const BrowserPanel: React.FC<{style?: React.CSSProperties}> = ({style}) => {
             {mode === 'docked'
                 ? <button type="button" title={t('browser.float')} onClick={floatBrowser}><PictureInPicture2 size={17}/></button>
                 : <button type="button" title={t('browser.dock')} onClick={dockBrowser}><PanelRight size={17}/></button>}
-            <button type="button" title={t('browser.close')} onClick={close}><X size={18}/></button>
+            <button type="button" title={t('browser.close')} onClick={closeBrowser}><X size={18}/></button>
         </div>
         <div className="floating-browser-surface" aria-hidden="true"/>
         {mode === 'floating' && <footer className="browser-floating-size" aria-live="polite">
