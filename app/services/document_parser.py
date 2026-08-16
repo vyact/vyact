@@ -8,6 +8,8 @@ from collections import Counter
 from pathlib import Path
 from typing import Iterable, NamedTuple
 
+import pypdfium2 as pdfium
+
 from logger import get_logger
 from services.runtime_settings import get_runtime_settings
 
@@ -15,6 +17,7 @@ logger = get_logger(__name__)
 
 CHUNK_SIZE = 1200
 CHUNK_OVERLAP = 150
+PDF_VECTOR_PATH_FAST_FALLBACK_THRESHOLD = 20_000
 
 
 def _chunk_settings() -> tuple[int, int]:
@@ -155,20 +158,30 @@ def _words_to_pdf_text(words: list[dict]) -> str:
     return "\n".join(output)
 
 
-def _extract_pdf_body_text(page, table_bboxes: list[tuple], repeated_margin_words: set[str] | None = None) -> str:
+def _extract_pdf_body_text(
+    page,
+    table_bboxes: list[tuple],
+    repeated_margin_words: set[str] | None = None,
+    page_words: list[dict] | None = None,
+) -> str:
     """표를 제외한 PDF 본문을 읽기 순서대로 추출한다.
 
     중앙 여백이 뚜렷한 페이지는 좌측 열 전체 후 우측 열 전체를 읽는다. 단일 열
     문서나 넓은 표제/초록이 있는 페이지는 기존의 위→아래 추출을 유지한다.
     """
     try:
-        body_page = page.filter(
-            lambda obj: obj["object_type"] == "char" and not any(
-                bbox[0] <= obj["x0"] <= bbox[2] and bbox[1] <= obj["top"] <= bbox[3]
-                for bbox in table_bboxes
-            )
-        ) if table_bboxes else page
-        words = body_page.extract_words()
+        words = page_words if page_words is not None else page.extract_words()
+        if table_bboxes:
+            words = [
+                word for word in words
+                if not any(
+                    word["x0"] < bbox[2]
+                    and word["x1"] > bbox[0]
+                    and word["top"] < bbox[3]
+                    and word["bottom"] > bbox[1]
+                    for bbox in table_bboxes
+                )
+            ]
         if repeated_margin_words:
             margin_height = min(40, page.height * 0.08)
             words = [
@@ -228,20 +241,53 @@ def _parse_pdf_content(path: Path) -> tuple[list[Chunk], str]:
     original_pages: list[str] = []
     current_headings: list[str] = []  # 현재 heading 경로 스택
 
+    pdfium_document = pdfium.PdfDocument(path)
+    complex_page_text: dict[int, str] = {}
+    try:
+        for page_index in range(len(pdfium_document)):
+            pdfium_page = pdfium_document[page_index]
+            path_count = sum(1 for obj in pdfium_page.get_objects() if obj.type == 2)
+            if path_count >= PDF_VECTOR_PATH_FAST_FALLBACK_THRESHOLD:
+                text_page = pdfium_page.get_textpage()
+                try:
+                    complex_page_text[page_index] = text_page.get_text_range()
+                finally:
+                    text_page.close()
+            pdfium_page.close()
+    finally:
+        pdfium_document.close()
+
     with pdfplumber.open(path) as pdf:
         margin_counts: Counter[str] = Counter()
-        for page in pdf.pages:
+        page_words_list: list[list[dict] | None] = []
+        for page_index, page in enumerate(pdf.pages):
+            if page_index in complex_page_text:
+                page_words_list.append(None)
+                continue
+            page_words = page.extract_words()
+            page_words_list.append(page_words)
             margin_height = min(40, page.height * 0.08)
             page_margin_words = {
                 re.sub(r"\W+", "", word["text"]).lower()
-                for word in page.extract_words()
+                for word in page_words
                 if word["top"] <= margin_height or word["bottom"] >= page.height - margin_height
             }
             margin_counts.update(word for word in page_margin_words if len(word) >= 3)
         repeated_margin_words = {word for word, count in margin_counts.items() if count >= 2}
 
-        for page_num, page in enumerate(pdf.pages, start=1):
-            original_page_text = page.extract_text() or ""
+        for page_num, (page, page_words) in enumerate(zip(pdf.pages, page_words_list), start=1):
+            if page_words is None:
+                page_text = complex_page_text[page_num - 1]
+                if page_text.strip():
+                    original_pages.append(page_text.strip())
+                    chunks.extend(
+                        _classify_text_lines_with_context(page_text, current_headings, page_num)
+                    )
+                continue
+
+            # 복잡한 벡터 페이지에서 extract_text로 다시 해석하지 않고, 검색 본문과
+            # 동일한 좌표 단어를 원문에도 재사용한다.
+            original_page_text = _words_to_pdf_text(page_words)
             if original_page_text.strip():
                 original_pages.append(original_page_text.strip())
 
@@ -259,7 +305,12 @@ def _parse_pdf_content(path: Path) -> tuple[list[Chunk], str]:
                 chunks.extend(_table_chunks(rows, heading_path=current_headings, page_number=page_num))
 
             # 2) 표 영역을 제외하고 단일/다단 레이아웃에 맞춰 본문을 추출
-            page_text = _extract_pdf_body_text(page, table_bboxes, repeated_margin_words)
+            page_text = _extract_pdf_body_text(
+                page,
+                table_bboxes,
+                repeated_margin_words,
+                page_words=page_words,
+            )
 
             if not page_text:
                 continue
