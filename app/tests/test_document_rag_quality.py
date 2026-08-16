@@ -3,7 +3,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from services import document_parser
-from services.document_parser import Chunk, _classify_text_lines_with_context
+from services.document_parser import Chunk, _classify_text_lines_with_context, _consolidate_short_chunks
 from services.indexer import _rerank
 
 
@@ -66,6 +66,35 @@ class PdfChunkingQualityTests(unittest.TestCase):
 
         parse_file.assert_not_called()
         self.assertEqual(original, chunks[0].text)
+
+    def test_short_page_number_chunk_is_removed(self):
+        chunks = _consolidate_short_chunks([
+            Chunk("20", "paragraph", [], 20),
+            Chunk("A sufficiently long paragraph that contains searchable document content.", "paragraph", [], 21),
+        ], 1200)
+
+        self.assertEqual(len(chunks), 1)
+        self.assertNotIn("20", chunks[0].text)
+
+    def test_short_heading_is_merged_into_following_paragraph(self):
+        chunks = _consolidate_short_chunks([
+            Chunk("H Additional Results", "heading", [], 65),
+            Chunk("The robustness analysis compares estimates across several event windows.", "paragraph", [], 65),
+        ], 1200)
+
+        self.assertEqual(len(chunks), 1)
+        self.assertEqual(chunks[0].chunk_type, "paragraph")
+        self.assertTrue(chunks[0].text.startswith("H Additional Results\n"))
+
+    def test_short_table_header_is_merged_only_with_same_page_table(self):
+        chunks = _consolidate_short_chunks([
+            Chunk("원칙 | 설명", "table", [], 8),
+            Chunk("투명성 | AI 의사결정 과정을 설명할 수 있어야 한다.", "table", [], 8),
+        ], 1200)
+
+        self.assertEqual(len(chunks), 1)
+        self.assertIn("원칙 | 설명", chunks[0].text)
+        self.assertIn("투명성", chunks[0].text)
 
 
 if __name__ == "__main__":

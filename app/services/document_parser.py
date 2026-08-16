@@ -17,6 +17,7 @@ logger = get_logger(__name__)
 
 CHUNK_SIZE = 1200
 CHUNK_OVERLAP = 150
+MIN_STANDALONE_CHUNK_LENGTH = 30
 PDF_VECTOR_PATH_FAST_FALLBACK_THRESHOLD = 20_000
 
 
@@ -949,8 +950,59 @@ def _normalize_typed_chunks(path: Path, chunks: list[Chunk]) -> list[Chunk]:
                     result.append(Chunk(text=sub, chunk_type=chunk.chunk_type, heading_path=chunk.heading_path, page_number=chunk.page_number))
         else:
             result.append(chunk)
-    logger.info("typed 청크 분할: %s → %d개", path.name, len(result))
-    return result
+    consolidated = _consolidate_short_chunks(result, chunk_size)
+    logger.info("typed 청크 분할: %s → %d개", path.name, len(consolidated))
+    return consolidated
+
+
+def _consolidate_short_chunks(chunks: list[Chunk], chunk_size: int) -> list[Chunk]:
+    """검색 가치가 낮은 짧은 청크를 제거하거나 같은 페이지의 이웃에 병합한다."""
+    pending = list(chunks)
+    output: list[Chunk] = []
+
+    def can_merge(left: Chunk, right: Chunk) -> bool:
+        return left.page_number == right.page_number and len(left.text) + len(right.text) + 1 <= chunk_size
+
+    def merged(target: Chunk, addition: Chunk, prepend: bool) -> Chunk:
+        parts = (addition.text, target.text) if prepend else (target.text, addition.text)
+        return Chunk(
+            text="\n".join(part.strip() for part in parts if part.strip()),
+            chunk_type=target.chunk_type,
+            heading_path=target.heading_path,
+            page_number=target.page_number,
+        )
+
+    for index, chunk in enumerate(pending):
+        text = chunk.text.strip()
+        if not text:
+            continue
+        chunk = chunk._replace(text=text)
+        if len(text) >= MIN_STANDALONE_CHUNK_LENGTH:
+            output.append(chunk)
+            continue
+
+        # 페이지 번호처럼 문자 없이 숫자·기호만 있는 독립 문단은 검색 가치가 없다.
+        if chunk.chunk_type == "paragraph" and not any(character.isalpha() for character in text):
+            continue
+
+        previous = output[-1] if output else None
+        next_chunk = pending[index + 1] if index + 1 < len(pending) else None
+        previous_type_matches = previous is not None and (
+            previous.chunk_type == chunk.chunk_type or chunk.chunk_type in {"heading", "caption"}
+        )
+        next_type_matches = next_chunk is not None and (
+            next_chunk.chunk_type == chunk.chunk_type or chunk.chunk_type in {"heading", "caption"}
+        )
+
+        # 제목과 캡션은 뒤따르는 본문/표의 검색 문맥으로 사용하는 편이 자연스럽다.
+        if next_type_matches and next_chunk is not None and can_merge(chunk, next_chunk):
+            pending[index + 1] = merged(next_chunk, chunk, prepend=True)
+        elif previous_type_matches and previous is not None and can_merge(previous, chunk):
+            output[-1] = merged(previous, chunk, prepend=False)
+        else:
+            output.append(chunk)
+
+    return output
 
 
 def parse_file_to_typed_chunks(path: Path) -> list[Chunk]:

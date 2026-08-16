@@ -10,16 +10,18 @@ from services.db import close_shared_es
 
 REPORT_PATH = Path(__file__).parents[1] / "tests" / "fixtures" / "rag_eval" / "document_report.json"
 CASES = [
-    ("국방 AI 전략에서 제안하는 신뢰 기반 책임있는 AI 프레임워크는 무엇인가?", "2e752225-5499-4e31-a2d3-a9fa1f56cab7"),
-    ("자율살상무기체계 LAWS 국제 논의에서 인간 책임은 어떻게 다뤄지는가?", "2e752225-5499-4e31-a2d3-a9fa1f56cab7"),
-    ("기업이 책임있는 AI를 위해 라이프사이클 단계별로 해야 할 활동은?", "f2205f69-aacd-4a58-adbb-7f13a3c4c595"),
-    ("이루다 챗봇과 아마존 채용 AI 사례가 보여주는 윤리 문제는?", "f2205f69-aacd-4a58-adbb-7f13a3c4c595"),
-    ("How do institutional investors affect multi-class share structures and valuation discounts?", "4a4b74ba-e05c-4505-b800-083df5410b39"),
-    ("What are the merits and costs of differential voting rights and dual-class shares?", "4a4b74ba-e05c-4505-b800-083df5410b39"),
-    ("How does stock overvaluation influence green patenting among Korean listed firms?", "dbe27698-e9a7-41a1-941e-9db701a4b6ee"),
-    ("Does equity financing or a catering mechanism explain green patent filings?", "dbe27698-e9a7-41a1-941e-9db701a4b6ee"),
-    ("What drives return asymmetry in Counter-Strike 2 skins: starting price or rarity tier?", "46c85fee-b4d9-417d-8218-cb0b9b6ec5c9"),
-    ("What legal ownership and tail risks arise when investing in CS2 virtual items?", "46c85fee-b4d9-417d-8218-cb0b9b6ec5c9"),
+    ("국방 AI 전략에서 제안하는 신뢰 기반 책임있는 AI 프레임워크는 무엇인가?", "2387b886-4228-49de-85bb-bef3af102e61"),
+    ("자율살상무기체계 LAWS 국제 논의에서 인간 책임은 어떻게 다뤄지는가?", "2387b886-4228-49de-85bb-bef3af102e61"),
+    ("기업이 책임있는 AI를 위해 라이프사이클 단계별로 해야 할 활동은?", "94de2237-0d2d-414d-a49b-6ca796b872f8"),
+    ("이루다 챗봇과 아마존 채용 AI 사례가 보여주는 윤리 문제는?", "94de2237-0d2d-414d-a49b-6ca796b872f8"),
+    ("How do institutional investors affect multi-class share structures and valuation discounts?", "f2b4a287-6877-4e86-b867-fa743e5d90a6"),
+    ("What are the merits and costs of differential voting rights and dual-class shares?", "f2b4a287-6877-4e86-b867-fa743e5d90a6"),
+    ("How does stock overvaluation influence green patenting among Korean listed firms?", "ab2f973c-fb12-4f51-a712-0dfc17ca9b57"),
+    ("Does equity financing or a catering mechanism explain green patent filings?", "ab2f973c-fb12-4f51-a712-0dfc17ca9b57"),
+    ("What drives return asymmetry in Counter-Strike 2 skins: starting price or rarity tier?", "5136bd4a-9c61-4df7-93cf-c50aa5f03ba9"),
+    ("What legal ownership and tail risks arise when investing in CS2 virtual items?", "5136bd4a-9c61-4df7-93cf-c50aa5f03ba9"),
+    ("How does relative firm size determine bargaining power in patent transactions?", "05bb3dac-5387-4c22-bea7-be0b302b3149"),
+    ("Why can large buyers' bargaining power reduce smaller firms' incentives to innovate?", "05bb3dac-5387-4c22-bea7-be0b302b3149"),
 ]
 
 
