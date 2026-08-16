@@ -1,4 +1,4 @@
-const {app, BrowserView, BrowserWindow, WebContentsView, dialog, ipcMain, session} = require("electron");
+const {app, BrowserView, BrowserWindow, WebContentsView, dialog, ipcMain, session, shell} = require("electron");
 const path = require("path");
 const {spawn, execSync, execFileSync, spawnSync} = require("child_process");
 const fs = require("fs");
@@ -1102,6 +1102,20 @@ app.on("before-quit", async (e) => {
 });
 
 ipcMain.handle("get-log-path", () => getLogFile());
+ipcMain.handle("open-external", async (_event, rawUrl) => {
+    const url = String(rawUrl || "").trim();
+    let parsed;
+    try {
+        parsed = new URL(url);
+    } catch {
+        throw new Error("Invalid external URL");
+    }
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+        throw new Error("Only HTTP/HTTPS external URLs are allowed");
+    }
+    await shell.openExternal(url);
+    return true;
+});
 ipcMain.handle("browser-open", (_event, url) => openFloatingBrowser(url));
 ipcMain.handle("browser-close", () => closeFloatingBrowser());
 ipcMain.handle("browser-navigate", async (_event, url) => {

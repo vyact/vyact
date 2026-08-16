@@ -570,6 +570,9 @@ export function useChat(deps: UseChatDeps) {
                                 setToolStatus({phase: 'running', name: data.name, group: toolGroup(data.name), label: getToolActivityLabel(data.name, t), detail: getToolActivityDetail(data.args)});
                             } else if (data.phase === 'end') {
                                 const failed = typeof data.result === 'string' && data.result.startsWith('[오류]');
+                                if (failed && data.result.includes('VYACT_BROWSER_EXTENSION_REQUIRED')) {
+                                    window.dispatchEvent(new CustomEvent('vyact:browser-extension-required'));
+                                }
                                 setToolStatus({
                                     phase: 'completed',
                                     outcome: failed ? 'failed' : 'success',

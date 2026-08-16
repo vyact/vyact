@@ -22,6 +22,7 @@ from services.external_data.scheduler import (
     stop_external_data_scheduler,
 )
 from services.mcp_config import ensure_mcp_config
+from routers.browser_extension import router as browser_extension_router
 
 APP_DIR = Path(__file__).parent
 
@@ -483,6 +484,7 @@ app.mount("/api/plugin-api", plugin_api_dispatcher)
 
 from routers.tts import router as tts_router
 app.include_router(tts_router, prefix="/api")
+app.include_router(browser_extension_router, prefix="/api")
 
 
 # ─────────────────────────────

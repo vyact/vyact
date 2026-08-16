@@ -1,5 +1,6 @@
 interface Window {
     ragAPI?: {
+        openExternal?: (url: string) => Promise<void>;
         copyToClipboard?: (text: string) => void;
         minimize?: () => void;
         maximize?: () => void;

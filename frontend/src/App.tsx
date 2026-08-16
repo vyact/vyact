@@ -9,6 +9,7 @@ import './App.css';
 
 const SetupPage = lazy(() => import('./components/SetupPage'));
 const MainPage = lazy(() => import('./components/MainPage'));
+const CHROME_EXTENSION_STORE_URL = 'https://chromewebstore.google.com/detail/vyact/opfbakfhoojmdkbbhcglolkpgmenjbib';
 
 const App: React.FC = () => {
     const {t} = useTranslation('settings');
@@ -20,6 +21,7 @@ const App: React.FC = () => {
     const [dictionaryRequest, setDictionaryRequest] = useState<{resolve: (installed: boolean) => void} | null>(null);
     const [isInstallingDictionary, setIsInstallingDictionary] = useState(false);
     const [dictionaryProgress, setDictionaryProgress] = useState(0);
+    const [showBrowserExtensionPrompt, setShowBrowserExtensionPrompt] = useState(false);
 
     useEffect(() => {
         checkStatus();
@@ -41,6 +43,23 @@ const App: React.FC = () => {
         window.addEventListener('vyact:japanese-tts-dictionary-required', handleRequest);
         return () => window.removeEventListener('vyact:japanese-tts-dictionary-required', handleRequest);
     }, []);
+
+    useEffect(() => {
+        const showInstallPrompt = () => setShowBrowserExtensionPrompt(true);
+        window.addEventListener('vyact:browser-extension-required', showInstallPrompt);
+        return () => window.removeEventListener('vyact:browser-extension-required', showInstallPrompt);
+    }, []);
+
+    const handleBrowserExtensionChoice = async (choice: string) => {
+        setShowBrowserExtensionPrompt(false);
+        if (choice !== 'install') return;
+        try {
+            if (!window.ragAPI?.openExternal) throw new Error('External link bridge unavailable');
+            await window.ragAPI.openExternal(CHROME_EXTENSION_STORE_URL);
+        } catch {
+            window.open(CHROME_EXTENSION_STORE_URL, '_blank', 'noopener,noreferrer');
+        }
+    };
 
     const handleDictionaryChoice = async (choice: string) => {
         if (!dictionaryRequest) return;
@@ -121,6 +140,17 @@ const App: React.FC = () => {
                 actionLayout="horizontal"
                 onSelect={choice => void handleDictionaryChoice(choice)}
                 onClose={() => void handleDictionaryChoice('cancel')}
+            />}
+            {showBrowserExtensionPrompt && <ConfirmModal
+                title={t('general.browserExtensionRequiredTitle')}
+                description={t('general.browserExtensionRequiredDescription')}
+                options={[
+                    {value: 'cancel', label: t('general.browserExtensionCancel')},
+                    {value: 'install', label: t('general.browserExtensionInstall')},
+                ]}
+                actionLayout="horizontal"
+                onSelect={choice => void handleBrowserExtensionChoice(choice)}
+                onClose={() => setShowBrowserExtensionPrompt(false)}
             />}
         </div>
     );

@@ -8,6 +8,8 @@ from urllib.parse import quote_plus, urlparse
 import httpx
 
 from logger import get_logger
+from services.code_tools import current_code_folders
+from services.extension_browser import extension_browser
 
 
 logger = get_logger(__name__)
@@ -22,11 +24,20 @@ def _validate_public_url(url: str) -> str:
     value = (url or "").strip()
     if not value:
         raise ValueError("URL is required")
+    project_browser = bool(current_code_folders.get())
     if "://" not in value:
+        if project_browser and (
+            value.startswith("localhost:")
+            or value.startswith("127.0.0.1:")
+            or value.startswith("[::1]:")
+        ):
+            return f"http://{value}"
         return value
     parsed = urlparse(value)
     if parsed.scheme not in {"http", "https"} or not parsed.hostname:
-        raise ValueError("Only public HTTP/HTTPS URLs are allowed")
+        raise ValueError("Only HTTP/HTTPS URLs are allowed")
+    if project_browser:
+        return value
     hostname = parsed.hostname.lower()
     if hostname == "localhost" or hostname.endswith(".localhost"):
         raise ValueError("Local network addresses are blocked")
@@ -40,8 +51,12 @@ def _validate_public_url(url: str) -> str:
 
 
 async def _command(command: str, **args):
+    # A selected project keeps the embedded Electron browser for local app
+    # testing. Ordinary chat controls the user's real Chrome tab via extension.
+    if not current_code_folders.get():
+        return await extension_browser.execute(command, **args)
     if not BROWSER_CONTROL_URL or not BROWSER_CONTROL_TOKEN:
-        raise RuntimeError("The browser tool is available only in the Vyact desktop app")
+        raise RuntimeError("The embedded test browser is available only in the Vyact desktop app")
     async with httpx.AsyncClient(timeout=BROWSER_COMMAND_TIMEOUT_SECONDS) as client:
         response = await client.post(
             f"{BROWSER_CONTROL_URL}/command",
@@ -157,10 +172,6 @@ async def _browser_close() -> str:
 
 
 def register_browser_tools() -> bool:
-    if not BROWSER_CONTROL_URL or not BROWSER_CONTROL_TOKEN:
-        logger.info("[browser_tools] Electron control bridge unavailable; tools not registered")
-        return False
-
     from services.mcp_client import mcp_manager
 
     object_schema = {"type": "object", "properties": {}}
