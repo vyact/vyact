@@ -74,22 +74,6 @@ const BrowserPanel: React.FC<{style?: React.CSSProperties}> = ({style}) => {
         };
     }, [panels.register]);
 
-    useEffect(() => {
-        const openBrowserShortcut = (event: KeyboardEvent) => {
-            if (event.altKey || !event.shiftKey || (!event.metaKey && !event.ctrlKey) || event.key.toLowerCase() !== 'b') return;
-            event.preventDefault();
-            if (stateRef.current.open) {
-                closeBrowser();
-                return;
-            }
-            setMode('docked');
-            panels.open(BROWSER_PANEL_ID);
-            void window.ragAPI?.browserOpen?.();
-        };
-        window.addEventListener('keydown', openBrowserShortcut);
-        return () => window.removeEventListener('keydown', openBrowserShortcut);
-    }, [panels.open]);
-
     useEffect(() => window.ragAPI?.onBrowserState?.(nextState => {
         const wasOpen = stateRef.current.open;
         stateRef.current = nextState;
