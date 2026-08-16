@@ -900,6 +900,7 @@
     "description": "เลือกว่าจะต้องอนุมัติการเปลี่ยนแปลงจากเครื่องมือ AI เมื่อใด",
     "requestTitle": "ต้องอนุมัติการดำเนินการ",
     "browserUserActionTitle": "ต้องดำเนินการในเบราว์เซอร์", "browserUserActions": {"captcha":"โปรดทำ CAPTCHA ในเบราว์เซอร์ให้เสร็จ","login":"โปรดเข้าสู่ระบบในเบราว์เซอร์ให้เสร็จ","two_factor":"โปรดยืนยันตัวตนแบบสองขั้นตอนในเบราว์เซอร์ให้เสร็จ","consent":"โปรดยืนยันความยินยอมที่จำเป็นในเบราว์เซอร์","other":"โปรดดำเนินการที่ร้องขอในเบราว์เซอร์ให้เสร็จ"}, "continueBrowserTask": "เสร็จแล้ว ดำเนินการต่อ", "stopBrowserTask": "หยุดงาน",
+    "browserQuestionTitle": "ต้องการตัวเลือกของคุณ", "browserQuestionPlaceholder": "ป้อนคำตอบ", "submitBrowserAnswer": "ตอบและดำเนินการต่อ",
     "toolRequest": "{{tool}} ขอทำการเปลี่ยนแปลง",
     "argumentLabels": {
       "folder_id": "โฟลเดอร์", "path": "พาธ", "file_path": "พาธไฟล์", "filename": "ชื่อไฟล์",

@@ -900,6 +900,7 @@
     "description": "Chọn khi nào thay đổi của công cụ AI cần phê duyệt.",
     "requestTitle": "Cần phê duyệt thực thi",
     "browserUserActionTitle": "Cần thao tác trong trình duyệt", "browserUserActions": {"captcha":"Hoàn tất CAPTCHA trực tiếp trong trình duyệt.","login":"Hoàn tất đăng nhập trong trình duyệt.","two_factor":"Hoàn tất xác thực hai yếu tố trong trình duyệt.","consent":"Hoàn tất bước đồng ý cần thiết trong trình duyệt.","other":"Hoàn tất thao tác được yêu cầu trong trình duyệt."}, "continueBrowserTask": "Xong, tiếp tục", "stopBrowserTask": "Dừng tác vụ",
+    "browserQuestionTitle": "Cần lựa chọn của bạn", "browserQuestionPlaceholder": "Nhập câu trả lời", "submitBrowserAnswer": "Trả lời và tiếp tục",
     "toolRequest": "{{tool}} yêu cầu thực hiện thay đổi.",
     "argumentLabels": {
       "folder_id": "Thư mục", "path": "Đường dẫn", "file_path": "Đường dẫn tệp", "filename": "Tên tệp",

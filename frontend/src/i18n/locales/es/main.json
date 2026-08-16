@@ -900,6 +900,7 @@
     "description": "Elige cuándo los cambios de las herramientas de IA requieren aprobación.",
     "requestTitle": "Se requiere aprobación",
     "browserUserActionTitle": "Se requiere una acción en el navegador", "browserUserActions": {"captcha":"Completa el CAPTCHA directamente en el navegador.","login":"Completa el inicio de sesión en el navegador.","two_factor":"Completa la autenticación de dos factores en el navegador.","consent":"Completa el consentimiento requerido en el navegador.","other":"Completa la acción solicitada en el navegador."}, "continueBrowserTask": "Listo, continuar", "stopBrowserTask": "Detener tarea",
+    "browserQuestionTitle": "Se necesita tu elección", "browserQuestionPlaceholder": "Escribe tu respuesta", "submitBrowserAnswer": "Responder y continuar",
     "toolRequest": "{{tool}} solicitó realizar un cambio.",
     "argumentLabels": {
       "folder_id": "Carpeta", "path": "Ruta", "file_path": "Ruta del archivo", "filename": "Nombre del archivo",

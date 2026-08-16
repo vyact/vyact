@@ -900,6 +900,7 @@
     "description": "AIツールの変更を承認する基準を選択します。",
     "requestTitle": "実行の承認が必要です",
     "browserUserActionTitle": "ブラウザでの操作が必要です", "browserUserActions": {"captcha":"ブラウザでCAPTCHAを完了してください。","login":"ブラウザでログインを完了してください。","two_factor":"ブラウザで二要素認証を完了してください。","consent":"ブラウザで必要な同意を完了してください。","other":"ブラウザで要求された操作を完了してください。"}, "continueBrowserTask": "完了して続行", "stopBrowserTask": "タスクを中止",
+    "browserQuestionTitle": "選択が必要です", "browserQuestionPlaceholder": "回答を入力してください", "submitBrowserAnswer": "回答して続行",
     "toolRequest": "{{tool}} が変更を要求しました。",
     "argumentLabels": {
       "folder_id": "フォルダー", "path": "パス", "file_path": "ファイルパス", "filename": "ファイル名",

@@ -189,6 +189,20 @@ async def _browser_wait_for_user(action: str, instructions: str = "") -> dict:
     }
 
 
+async def _browser_ask_user(question: str, options: list[str] | None = None, _user_response: str = "") -> str:
+    return _as_text({
+        "question": question,
+        "options": options or [],
+        "user_response": _user_response,
+        "resume_original_task": True,
+        "task_completed": False,
+        "instruction": (
+            "This is an intermediate user answer. Continue the original browser task now. "
+            "Do not produce a final response until the requested browser action has been executed and verified."
+        ),
+    })
+
+
 async def _browser_close() -> str:
     return _as_text(await _command("close"))
 
@@ -220,7 +234,8 @@ def register_browser_tools() -> bool:
         ("browser_back", "Navigate the visible browser back one page.", object_schema, _browser_back),
         ("browser_status", "Return the visible browser's current URL, title, loading state, and navigation state.", object_schema, _browser_status),
         ("browser_wait_for_user", "Pause the current tool loop when the visible page requires a CAPTCHA, sign-in, two-factor authentication, consent, or another action only the user can complete. Tell the user what to do, wait for their explicit Continue signal, then read the current page and continue the original task. Never ask the user to send passwords or verification codes in chat.", {"type": "object", "properties": {"action": {"type": "string", "enum": ["captcha", "login", "two_factor", "consent", "other"], "description": "Type of action the user must complete"}, "instructions": {"type": "string", "description": "Short, non-secret instruction shown to the user"}}, "required": ["action", "instructions"]}, _browser_wait_for_user),
-        ("browser_close", "Close the floating browser panel without clearing its persistent login session.", object_schema, _browser_close),
+        ("browser_ask_user", "Pause the current browser task for exactly one required non-secret decision, then continue the original task with the answer in the same tool loop. Ask separate questions for separate fields such as size and color. This result is never task completion: after receiving it, resume browser actions and verify the requested outcome before answering.", {"type": "object", "properties": {"question": {"type": "string", "description": "One concise question for one decision, shown above the locked chat input"}, "options": {"type": "array", "items": {"type": "string"}, "description": "Choices for this single decision only; omit to show a text field"}}, "required": ["question"]}, _browser_ask_user),
+        ("browser_close", "Close the current Vyact browser task tab only when the user explicitly asks to close it. Never call this automatically after completing a task.", object_schema, _browser_close),
     ]
     for name, description, parameters, handler in definitions:
         mcp_manager.register_internal_tool(name=name, description=description, parameters=parameters, handler=handler)

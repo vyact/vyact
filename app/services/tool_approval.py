@@ -22,8 +22,8 @@ READ_ONLY_TOOLS = {
 SENSITIVE_TOOLS = {
     "send_email", "reply_email", "create_calendar_event", "update_calendar_event",
     "upload_drive_file", "download_drive_file", "move_drive_file",
-    "browser_click", "browser_type",
     "browser_wait_for_user",
+    "browser_ask_user",
 }
 DESTRUCTIVE_TOOLS = {
     "code_move_file", "code_delete_file", "trash_email", "batch_trash_emails",
@@ -85,7 +85,7 @@ async def get_tool_rejection_response(tool_name: str) -> str:
     except Exception:
         language = "ko"
     responses = (_BROWSER_USER_ACTION_STOPPED_RESPONSES
-                 if _base_tool_name(tool_name) == "browser_wait_for_user"
+                 if _base_tool_name(tool_name) in {"browser_wait_for_user", "browser_ask_user"}
                  else _REJECTION_RESPONSES)
     template = responses.get(language, responses["en"])
     return template.format(tool=_base_tool_name(tool_name))
@@ -105,7 +105,7 @@ def get_tool_risk(tool_name: str) -> str:
 
 
 def requires_approval(tool_name: str, mode: str) -> bool:
-    if _base_tool_name(tool_name) == "browser_wait_for_user":
+    if _base_tool_name(tool_name) in {"browser_wait_for_user", "browser_ask_user"}:
         return True
     risk = get_tool_risk(tool_name)
     normalized_mode = mode if mode in APPROVAL_MODES else "risky_only"
@@ -129,7 +129,7 @@ async def await_tool_approval(tool_name: str, arguments: dict, emit: ApprovalEmi
         "conversation_id": context.conversation_id, "project_id": context.project_id,
     })
     try:
-        timeout_seconds = 900 if _base_tool_name(tool_name) == "browser_wait_for_user" else 300
+        timeout_seconds = 900 if _base_tool_name(tool_name) in {"browser_wait_for_user", "browser_ask_user"} else 300
         return await asyncio.wait_for(future, timeout=timeout_seconds)
     except asyncio.TimeoutError:
         return False
@@ -137,9 +137,11 @@ async def await_tool_approval(tool_name: str, arguments: dict, emit: ApprovalEmi
         _pending_approvals.pop(approval_id, None)
 
 
-def resolve_tool_approval(approval_id: str, approved: bool) -> bool:
+def resolve_tool_approval(approval_id: str, approved: bool, response: str = "") -> bool:
     pending = _pending_approvals.get(approval_id)
     if not pending or pending.future.done():
         return False
+    if approved and _base_tool_name(pending.tool_name) == "browser_ask_user":
+        pending.arguments["_user_response"] = response.strip()
     pending.future.set_result(approved)
     return True

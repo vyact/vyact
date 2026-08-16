@@ -900,6 +900,7 @@
     "description": "Choisissez quand les modifications des outils d’IA nécessitent une approbation.",
     "requestTitle": "Approbation requise",
     "browserUserActionTitle": "Action requise dans le navigateur", "browserUserActions": {"captcha":"Effectuez le CAPTCHA directement dans le navigateur.","login":"Terminez la connexion dans le navigateur.","two_factor":"Terminez l’authentification à deux facteurs dans le navigateur.","consent":"Effectuez le consentement requis dans le navigateur.","other":"Effectuez l’action demandée dans le navigateur."}, "continueBrowserTask": "Terminé, continuer", "stopBrowserTask": "Arrêter la tâche",
+    "browserQuestionTitle": "Votre choix est nécessaire", "browserQuestionPlaceholder": "Saisissez votre réponse", "submitBrowserAnswer": "Répondre et continuer",
     "toolRequest": "{{tool}} demande une modification.",
     "argumentLabels": {
       "folder_id": "Dossier", "path": "Chemin", "file_path": "Chemin du fichier", "filename": "Nom du fichier",

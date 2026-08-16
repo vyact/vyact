@@ -900,6 +900,7 @@
     "description": "选择 AI 工具执行更改时的审批规则。",
     "requestTitle": "需要执行审批",
     "browserUserActionTitle": "需要在浏览器中操作", "browserUserActions": {"captcha":"请直接在浏览器中完成 CAPTCHA。","login":"请在浏览器中完成登录。","two_factor":"请在浏览器中完成双重验证。","consent":"请在浏览器中完成所需的同意操作。","other":"请在浏览器中完成请求的操作。"}, "continueBrowserTask": "完成并继续", "stopBrowserTask": "停止任务",
+    "browserQuestionTitle": "需要您的选择", "browserQuestionPlaceholder": "请输入回答", "submitBrowserAnswer": "回答并继续",
     "toolRequest": "{{tool}} 请求执行更改。",
     "argumentLabels": {
       "folder_id": "文件夹", "path": "路径", "file_path": "文件路径", "filename": "文件名",

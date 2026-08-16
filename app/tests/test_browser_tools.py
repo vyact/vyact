@@ -3,7 +3,7 @@ import importlib
 import pytest
 
 from services import browser_tools
-from services.tool_approval import get_tool_risk
+from services.tool_approval import get_tool_risk, requires_approval
 
 
 def test_browser_url_rejects_local_and_private_addresses() -> None:
@@ -42,9 +42,17 @@ def test_browser_tool_risk_classification() -> None:
     assert get_tool_risk("browser_read") == "read"
     assert get_tool_risk("browser_read_urls") == "read"
     assert get_tool_risk("browser_search") == "read"
-    assert get_tool_risk("browser_click") == "sensitive"
-    assert get_tool_risk("browser_type") == "sensitive"
+    assert get_tool_risk("browser_click") == "write"
+    assert get_tool_risk("browser_type") == "write"
     assert get_tool_risk("browser_wait_for_user") == "sensitive"
+
+
+def test_risky_only_allows_routine_browser_interactions() -> None:
+    assert requires_approval("browser_click", "risky_only") is False
+    assert requires_approval("browser_type", "risky_only") is False
+    assert requires_approval("browser_click", "always_confirm") is True
+    assert requires_approval("browser_type", "always_confirm") is True
+    assert requires_approval("browser_ask_user", "trusted") is True
 
 
 def test_browser_tools_register_for_extension_or_electron(monkeypatch) -> None:

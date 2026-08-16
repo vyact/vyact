@@ -897,6 +897,7 @@
     "description": "AI 도구의 변경 작업 실행 기준을 선택하세요.",
     "requestTitle": "실행 승인 필요",
     "browserUserActionTitle": "브라우저에서 사용자 작업이 필요해요", "browserUserActions": {"captcha":"CAPTCHA를 직접 완료해 주세요.","login":"브라우저에서 로그인을 완료해 주세요.","two_factor":"브라우저에서 2단계 인증을 완료해 주세요.","consent":"브라우저에서 필요한 동의를 완료해 주세요.","other":"브라우저에서 요청된 작업을 완료해 주세요."}, "continueBrowserTask": "완료하고 계속", "stopBrowserTask": "작업 중단",
+    "browserQuestionTitle": "선택이 필요해요", "browserQuestionPlaceholder": "답변을 입력하세요", "submitBrowserAnswer": "답변하고 계속",
     "toolRequest": "{{tool}} 도구가 변경 작업을 요청했습니다.",
     "argumentLabels": {
       "folder_id": "폴더", "path": "경로", "file_path": "파일 경로", "filename": "파일명",

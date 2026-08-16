@@ -897,6 +897,7 @@
     "description": "Choose when AI tool changes require approval.",
     "requestTitle": "Execution approval required",
     "browserUserActionTitle": "Action required in the browser", "browserUserActions": {"captcha":"Complete the CAPTCHA directly in the browser.","login":"Complete sign-in in the browser.","two_factor":"Complete two-factor authentication in the browser.","consent":"Complete the required consent in the browser.","other":"Complete the requested action in the browser."}, "continueBrowserTask": "Done, continue", "stopBrowserTask": "Stop task",
+    "browserQuestionTitle": "Your choice is needed", "browserQuestionPlaceholder": "Enter your answer", "submitBrowserAnswer": "Answer and continue",
     "toolRequest": "{{tool}} requested a change.",
     "argumentLabels": {
       "folder_id": "Folder", "path": "Path", "file_path": "File path", "filename": "Filename",
