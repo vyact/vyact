@@ -45,6 +45,8 @@ logger = get_logger(__name__)
 RERANK_SCORE_THRESHOLD = 0.35
 RELATED_CONTEXT_CANDIDATE_SIZE = 10
 RELATED_CONTEXT_RESULT_SIZE = 8
+RELATED_CONTEXT_RERANK_SIZE = 20
+MAX_CHUNKS_PER_DOCUMENT = 2
 
 
 def _knowledge_inline_image_attachments(docs: list[dict], limit: int = 3) -> list[dict]:
@@ -73,26 +75,72 @@ def _knowledge_inline_image_attachments(docs: list[dict], limit: int = 3) -> lis
     return images
 
 
+def _retrieval_candidate_key(candidate: dict) -> str:
+    """청크는 보존하되 동일 검색 결과만 제거하는 안정적인 식별자를 만든다."""
+    chunk_index = candidate.get("chunk_index")
+    for identifier_name in ("web_document_id", "file_id", "memo_id", "quicknote_id", "id"):
+        identifier = candidate.get(identifier_name)
+        if identifier:
+            return f"{identifier_name}:{identifier}:chunk:{chunk_index}"
+    return f"{candidate.get('source', '')}:{candidate.get('url', '')}:{candidate.get('title', '')}:chunk:{chunk_index}"
+
+
+def _retrieval_parent_key(candidate: dict) -> str | None:
+    """여러 청크를 가질 수 있는 원문 식별자를 반환한다."""
+    for identifier_name in ("web_document_id", "file_id"):
+        identifier = candidate.get(identifier_name)
+        if identifier:
+            return f"{identifier_name}:{identifier}"
+    return None
+
+
+def _select_diverse_candidates(candidates: list[dict], limit: int) -> list[dict]:
+    selected: list[dict] = []
+    chunks_per_document: dict[str, int] = {}
+    for candidate in candidates:
+        parent_key = _retrieval_parent_key(candidate)
+        if parent_key and chunks_per_document.get(parent_key, 0) >= MAX_CHUNKS_PER_DOCUMENT:
+            continue
+        selected.append(candidate)
+        if parent_key:
+            chunks_per_document[parent_key] = chunks_per_document.get(parent_key, 0) + 1
+        if len(selected) >= limit:
+            break
+    return selected
+
+
 async def _rerank_related_context(question: str, candidates: list[dict]) -> list[dict]:
     """일반 RAG·메모·빠른메모 후보를 하나의 관련도 기준으로 선별한다."""
     unique_candidates: list[dict] = []
     seen_keys: set[str] = set()
     for candidate in candidates:
-        key = candidate.get("url") or f"{candidate.get('source', '')}:{candidate.get('title', '')}"
+        key = _retrieval_candidate_key(candidate)
         if key in seen_keys:
             continue
         seen_keys.add(key)
         unique_candidates.append(candidate)
 
-    if not unique_candidates or not is_reranker_available():
-        return unique_candidates
+    if not unique_candidates:
+        return []
+    if not is_reranker_available():
+        logger.warning(
+            "[rag_query] reranker unavailable; limiting retrieval fallback to %d candidates",
+            RELATED_CONTEXT_RESULT_SIZE,
+        )
+        return _select_diverse_candidates(unique_candidates, RELATED_CONTEXT_RESULT_SIZE)
 
-    ranked_candidates = await rerank(question, unique_candidates, top_k=RELATED_CONTEXT_RESULT_SIZE)
-    relevant_candidates = [
-        candidate for candidate in ranked_candidates
-        if candidate.get("rerank_score") is None
-        or candidate["rerank_score"] >= RERANK_SCORE_THRESHOLD
-    ]
+    ranked_candidates = await rerank(
+        question,
+        unique_candidates,
+        top_k=min(RELATED_CONTEXT_RERANK_SIZE, len(unique_candidates)),
+    )
+    relevant_candidates = _select_diverse_candidates(
+        [
+            candidate for candidate in ranked_candidates
+            if candidate.get("rerank_score") is None or candidate["rerank_score"] >= RERANK_SCORE_THRESHOLD
+        ],
+        RELATED_CONTEXT_RESULT_SIZE,
+    )
     if len(ranked_candidates) != len(relevant_candidates):
         logger.info(
             "[rag_query] 관련도 필터: 일반 RAG/메모/빠른메모 %d개 → %d개 (임계값 %.2f)",
@@ -141,14 +189,14 @@ async def _search_knowledge_collections(collection_ids: list[str], question: str
             if position >= len(group):
                 continue
             document = group[position]
-            identity = str(document.get("id") or document.get("url") or document.get("title") or document)
+            identity = _retrieval_candidate_key(document)
             if identity in seen_documents:
                 continue
             seen_documents.add(identity)
             merged_documents.append(document)
             if len(merged_documents) >= 20:
-                return merged_documents, "\n\n".join(instructions)
-    return merged_documents, "\n\n".join(instructions)
+                return await _rerank_related_context(question, merged_documents), "\n\n".join(instructions)
+    return await _rerank_related_context(question, merged_documents), "\n\n".join(instructions)
 
 
 async def _gather_docs(question: str, extra_context: list, skip_rag: bool = False, conv_id: str = "", knowledge_collection_ids: list[str] | None = None) -> list[dict]:
@@ -195,7 +243,11 @@ async def _gather_docs(question: str, extra_context: list, skip_rag: bool = Fals
     related_context_docs = related_context_docs if isinstance(related_context_docs, list) else []
     chat_file_docs = chat_file_docs if isinstance(chat_file_docs, list) else []
 
-    return extra_context + related_context_docs + chat_file_docs
+    selected_context_docs = await _rerank_related_context(
+        question,
+        related_context_docs + chat_file_docs,
+    )
+    return extra_context + selected_context_docs
 
 
 async def rag_query(
@@ -333,7 +385,7 @@ async def rag_query_stream(
             )
             memo_docs = memo_result if isinstance(memo_result, list) else []
             chat_file_docs = chat_file_result if isinstance(chat_file_result, list) else []
-            docs_found = await _rerank_related_context(question, memo_docs) + chat_file_docs
+            docs_found = await _rerank_related_context(question, memo_docs + chat_file_docs)
         else:
             # tool을 안 썼거나 실패 — 메모 + 뉴스 RAG + 첨부파일을 병렬로 조회
             related_context_result, chat_file_result = await asyncio.gather(
@@ -343,7 +395,7 @@ async def rag_query_stream(
             )
             related_context_docs = related_context_result if isinstance(related_context_result, list) else []
             chat_file_docs = chat_file_result if isinstance(chat_file_result, list) else []
-            docs_found = related_context_docs + chat_file_docs
+            docs_found = await _rerank_related_context(question, related_context_docs + chat_file_docs)
         # reset(늦은 tool 호출) 시 재호출될 수 있으므로 extend가 아니라 교체 —
         # 마지막 호출 결과만 유효하다 (중복 누적 방지)
         post_docs.clear()

@@ -89,6 +89,10 @@ def _rerank(hits: list[dict], size: int, preserve_order: bool = False) -> list[d
             "source": source,
             "indexed_at": h["_source"].get("indexed_at", h["_source"].get("updated_at", "")),
             "score": adjusted_score,
+            "chunk_index": h["_source"].get("chunk_index"),
+            "web_document_id": h["_source"].get("web_document_id"),
+            "file_id": h["_source"].get("file_id"),
+            "heading_path": h["_source"].get("heading_path") or [],
             **({"memo_id": h["_source"].get("id", h["_id"])} if source == "memo" else {}),
         }
         results.append(result)
@@ -131,6 +135,27 @@ def _memo_bm25_query(query: str) -> dict:
     ], "minimum_should_match": 1}}
 
 
+def _language_search_indices(index_family: str, language: str) -> str | list[str]:
+    """감지 언어 검색에 언어 불명 고유명사·약어 인덱스를 함께 포함한다."""
+    language_index = get_language_index(index_family, language)
+    unknown_index = get_language_index(index_family, "und")
+    return language_index if language == "und" else [language_index, unknown_index]
+
+
+def _filtered_lexical_query(filter_field: str, identifiers: list[str], query: str) -> dict:
+    """컬렉션 범위 안에서도 실제 lexical 근거가 있는 항목만 반환한다."""
+    return {
+        "bool": {
+            "filter": [{"terms": {filter_field: identifiers}}],
+            "should": [
+                {"match": {"title": {"query": query, "boost": 3}}},
+                {"match": {"content": {"query": query}}},
+            ],
+            "minimum_should_match": 1,
+        }
+    }
+
+
 async def rag_search(query: str, size: int = 5) -> list[dict]:
     """일반 RAG 문서 후보 검색 — BM25 + kNN 결과를 RRF로 합친다.
 
@@ -143,7 +168,7 @@ async def rag_search(query: str, size: int = 5) -> list[dict]:
 
     es = get_es()
     query_language = detect_language(query)
-    bm25_indices = [get_language_index("rag_documents", query_language)]
+    bm25_indices = _language_search_indices("rag_documents", query_language)
     BM25_POOL = 20   # BM25 후보 수
     KNN_POOL  = 20   # kNN 후보 수
     RRF_K = 60        # RRF 표준 상수
@@ -152,33 +177,14 @@ async def rag_search(query: str, size: int = 5) -> list[dict]:
     bm25_body = {
         "size": BM25_POOL,
         "_source": _source,
-        "query": {
-            "function_score": {
-                "query": {
-                    "bool": {
-                        "should": [
-                            {"match_phrase": {"title": {"query": query, "boost": 5, "slop": 1}}},
-                            {"match": {"title": {"query": query, "boost": 3, "minimum_should_match": "60%"}}},
-                            {"match": {"content": {"query": query, "minimum_should_match": "60%"}}},
-                        ],
-                        "minimum_should_match": 1,
-                    }
-                },
-                "functions": [{
-                    "gauss": {
-                        "indexed_at": {
-                            "origin": "now",
-                            "scale": "7d",
-                            "decay": 0.5,
-                            "offset": "1d",
-                        }
-                    },
-                    "weight": 2,
-                }],
-                "score_mode": "multiply",
-                "boost_mode": "multiply",
-            }
-        },
+        "query": {"bool": {
+            "should": [
+                {"match_phrase": {"title": {"query": query, "boost": 5, "slop": 1}}},
+                {"match": {"title": {"query": query, "boost": 3, "minimum_should_match": "60%"}}},
+                {"match": {"content": {"query": query, "minimum_should_match": "60%"}}},
+            ],
+            "minimum_should_match": 1,
+        }},
     }
 
     try:
@@ -291,28 +297,14 @@ async def search_related_context_candidates(
     rag_bm25_body = {
         "size": rag_bm25_pool,
         "_source": rag_source_fields,
-        "query": {
-            "function_score": {
-                "query": {
-                    "bool": {
-                        "should": [
-                            {"match_phrase": {"title": {"query": rag_query, "boost": 5, "slop": 1}}},
-                            {"match": {"title": {"query": rag_query, "boost": 3, "minimum_should_match": "60%"}}},
-                            {"match": {"content": {"query": rag_query, "minimum_should_match": "60%"}}},
-                        ],
-                        "minimum_should_match": 1,
-                    }
-                },
-                "functions": [{
-                    "gauss": {
-                        "indexed_at": {"origin": "now", "scale": "7d", "decay": 0.5, "offset": "1d"},
-                    },
-                    "weight": 2,
-                }],
-                "score_mode": "multiply",
-                "boost_mode": "multiply",
-            }
-        },
+        "query": {"bool": {
+            "should": [
+                {"match_phrase": {"title": {"query": rag_query, "boost": 5, "slop": 1}}},
+                {"match": {"title": {"query": rag_query, "boost": 3, "minimum_should_match": "60%"}}},
+                {"match": {"content": {"query": rag_query, "minimum_should_match": "60%"}}},
+            ],
+            "minimum_should_match": 1,
+        }},
     }
     memo_bm25_body = {"size": memo_pool, "_source": memo_source_fields, "query": _memo_bm25_query(memo_query)}
     quicknote_bm25_body = {
@@ -326,10 +318,10 @@ async def search_related_context_candidates(
         embedding = await get_embedding(rag_query, is_query=True)
         rag_bm25_search_body = rag_bm25_body if embedding else {**rag_bm25_body, "min_score": 1.0}
         searches: list[dict] = [
-            {"index": get_language_index("rag_documents", rag_language)}, rag_bm25_search_body,
-            {"index": get_language_index("web_doc_chunks", rag_language)}, rag_bm25_search_body,
-            {"index": get_language_index("memo_documents", memo_language)}, memo_bm25_body,
-            {"index": get_language_index("quick_notes", memo_language)}, quicknote_bm25_body,
+            {"index": _language_search_indices("rag_documents", rag_language)}, rag_bm25_search_body,
+            {"index": _language_search_indices("web_doc_chunks", rag_language)}, rag_bm25_search_body,
+            {"index": _language_search_indices("memo_documents", memo_language)}, memo_bm25_body,
+            {"index": _language_search_indices("quick_notes", memo_language)}, quicknote_bm25_body,
         ]
         response_positions = {"rag_bm25": 0, "web_bm25": 1, "memo_bm25": 2, "quicknote_bm25": 3}
         if embedding:
@@ -370,11 +362,11 @@ async def search_related_context_candidates(
             memo_knn_hits = _msearch_hits(response, response_positions["memo_knn"], "메모 kNN")
             quicknote_knn_hits = _msearch_hits(response, response_positions["quicknote_knn"], "빠른메모 kNN")
             rag_candidate_hits = _rrf_hits(
-                rag_bm25_hits + web_bm25_hits, rag_knn_hits + web_knn_hits, rag_size,
+                rag_bm25_hits + web_bm25_hits, rag_knn_hits + web_knn_hits, rag_size * 2,
             )
             rag_hits = _rerank(
                 rag_candidate_hits,
-                rag_size,
+                rag_size * 2,
                 preserve_order=True,
             )
             memo_hits = _rrf_hits(
@@ -390,7 +382,7 @@ async def search_related_context_candidates(
         else:
             rag_knn_hits = web_knn_hits = memo_knn_hits = quicknote_knn_hits = []
             rag_candidate_hits = rag_bm25_hits + web_bm25_hits
-            rag_hits = _rerank(rag_candidate_hits, rag_size)
+            rag_hits = _rerank(rag_candidate_hits, rag_size * 2)
             memo_hits = memo_bm25_hits
             quicknote_hits = quicknote_bm25_hits[:memo_size]
 
@@ -458,26 +450,26 @@ async def knowledge_collection_search(collection_id: str, query: str, size: int 
         searches = []
         if document_ids:
             body = {"size": size, "_source": ["title", "content", "url", "source", "indexed_at", "file_id", "chunk_type", "heading_path", "page_number"],
-                    "query": {"bool": {"filter": [{"terms": {"file_id": document_ids}}], "should": [{"match": {"title": {"query": query, "boost": 3}}}, {"match": {"content": {"query": query}}}], "minimum_should_match": 0}}}
-            searches.append(es.search(index=get_language_index("doc_chunks", query_language), body=body))
+                    "query": _filtered_lexical_query("file_id", document_ids, query)}
+            searches.append(es.search(index=_language_search_indices("doc_chunks", query_language), body=body))
             if embedding:
                 searches.append(es.search(index=DOC_CHUNKS_INDEX, body={"size": size, "_source": body["_source"], "knn": {"field": "embedding", "query_vector": embedding, "k": size, "num_candidates": max(size * 10, 50), "filter": {"terms": {"file_id": document_ids}}}}))
         if memo_ids:
             body = {"size": size, "_source": ["id", "title", "content", "source", "updated_at"],
-                    "query": {"bool": {"filter": [{"terms": {"id": memo_ids}}], "should": [{"match": {"title": {"query": query, "boost": 3}}}, {"match": {"content": {"query": query}}}], "minimum_should_match": 0}}}
-            searches.append(es.search(index=get_language_index("memo_documents", query_language), body=body))
+                    "query": _filtered_lexical_query("id", memo_ids, query)}
+            searches.append(es.search(index=_language_search_indices("memo_documents", query_language), body=body))
             if embedding:
                 searches.append(es.search(index=MEMO_INDEX, body={"size": size, "_source": body["_source"], "knn": {"field": "embedding", "query_vector": embedding, "k": size, "num_candidates": max(size * 10, 50), "filter": {"terms": {"id": memo_ids}}}}))
         if web_document_ids:
             body = {"size": size, "_source": ["title", "content", "url", "source", "indexed_at", "web_document_id", "chunk_index", "total_chunks"],
-                    "query": {"bool": {"filter": [{"terms": {"web_document_id": web_document_ids}}], "should": [{"match": {"title": {"query": query, "boost": 3}}}, {"match": {"content": {"query": query}}}], "minimum_should_match": 0}}}
-            searches.append(es.search(index=get_language_index("web_doc_chunks", query_language), body=body))
+                    "query": _filtered_lexical_query("web_document_id", web_document_ids, query)}
+            searches.append(es.search(index=_language_search_indices("web_doc_chunks", query_language), body=body))
             if embedding:
                 searches.append(es.search(index=WEB_DOC_CHUNKS_INDEX, body={"size": size, "_source": body["_source"], "knn": {"field": "embedding", "query_vector": embedding, "k": size, "num_candidates": max(size * 10, 50), "filter": {"terms": {"web_document_id": web_document_ids}}}}))
         if email_thread_ids:
             body = {"size": size, "_source": ["title", "content", "indexed_at", "thread_id", "inline_images"],
-                    "query": {"bool": {"filter": [{"terms": {"_id": email_thread_ids}}], "should": [{"match": {"title": {"query": query, "boost": 3}}}, {"match": {"content": {"query": query}}}], "minimum_should_match": 0}}}
-            searches.append(es.search(index=get_language_index("knowledge_email_threads", query_language), body=body))
+                    "query": _filtered_lexical_query("_id", email_thread_ids, query)}
+            searches.append(es.search(index=_language_search_indices("knowledge_email_threads", query_language), body=body))
             if embedding:
                 searches.append(es.search(index=EMAIL_THREADS_INDEX, body={"size": size, "_source": body["_source"], "knn": {"field": "embedding", "query_vector": embedding, "k": size, "num_candidates": max(size * 10, 50), "filter": {"terms": {"_id": email_thread_ids}}}}))
 
@@ -499,6 +491,10 @@ async def knowledge_collection_search(collection_id: str, query: str, size: int 
                             "source": item.get("source", "email_thread" if is_email_thread else "memo" if is_memo else ""),
                             "indexed_at": item.get("updated_at", item.get("indexed_at", "")),
                             "score": round(hit.get("_score") or 0, 3),
+                            "chunk_index": item.get("chunk_index"),
+                            "web_document_id": item.get("web_document_id"),
+                            "file_id": item.get("file_id"),
+                            "heading_path": item.get("heading_path") or [],
                             **({"inline_images": item.get("inline_images", [])} if is_email_thread else {}),
                             **({"memo_id": item.get("id", hit["_id"])} if is_memo else {})})
         if not embedding:

@@ -12,6 +12,7 @@ logger = get_logger(__name__)
 _reranker = None
 _executor = ThreadPoolExecutor(max_workers=2)
 MODEL_NAME = "BAAI/bge-reranker-v2-m3"
+RERANK_PASSAGE_MAX_CHARS = 1200
 
 
 def load_reranker(force_download: bool = False):
@@ -65,7 +66,11 @@ def _rerank_sync(query: str, docs: list[dict], top_k: int) -> list[dict]:
         return docs[:top_k]
 
     # model.rank() 사용 (5.x 권장 방식)
-    passages = [f"{d['title']}\n{d['content'][:400]}" for d in docs]
+    passages = []
+    for document in docs:
+        heading_path = " > ".join(document.get("heading_path") or [])
+        metadata = "\n".join(part for part in (document.get("title", ""), heading_path) if part)
+        passages.append(f"{metadata}\n{document.get('content', '')[:RERANK_PASSAGE_MAX_CHARS]}")
     ranks = _reranker.rank(query, passages, return_documents=False)
 
     # ranks: [{"corpus_id": int, "score": float}, ...]

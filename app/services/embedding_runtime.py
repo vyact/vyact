@@ -156,22 +156,35 @@ async def get_embeddings(texts: list[str], raise_on_context_exceeded: bool = Fal
     try:
         async with _embedding_lock:
             model = await asyncio.to_thread(_load_model_sync)
-            fragments = [
-                (input_index, fragment, token_count)
-                for input_index, text in enumerate(texts)
-                for fragment, token_count in _split_embedding_input(model, text)
-            ]
             vectors_by_input: list[list[tuple[list[float], int]]] = [[] for _ in texts]
+            fragments: list[tuple[int, str, int]] = []
+            for input_index, input_text in enumerate(texts):
+                try:
+                    fragments.extend(
+                        (input_index, fragment, token_count)
+                        for fragment, token_count in _split_embedding_input(model, input_text)
+                    )
+                except EmbeddingContextExceeded:
+                    if raise_on_context_exceeded:
+                        raise
+                    logger.warning("Embedding input %d exceeded the fixed context window", input_index)
             for batch in _build_embedding_batches(fragments):
-                response = await asyncio.to_thread(model.create_embedding, [text for _, text, _ in batch])
-                response_vectors = [item["embedding"] for item in response["data"]]
-                if len(response_vectors) != len(batch):
-                    raise RuntimeError("Embedding response count does not match input count")
-                for (input_index, _, token_count), vector in zip(batch, response_vectors):
-                    vectors_by_input[input_index].append((vector, token_count))
-        if any(not vectors for vectors in vectors_by_input):
-            raise RuntimeError("Embedding response is missing an input vector")
-        return [_mean_embedding(vectors) for vectors in vectors_by_input]
+                try:
+                    response = await asyncio.to_thread(model.create_embedding, [text for _, text, _ in batch])
+                    response_vectors = [item["embedding"] for item in response["data"]]
+                    if len(response_vectors) != len(batch):
+                        raise RuntimeError("Embedding response count does not match input count")
+                    for (input_index, _, token_count), vector in zip(batch, response_vectors):
+                        vectors_by_input[input_index].append((vector, token_count))
+                except Exception as batch_error:
+                    logger.warning("Embedding batch failed; retrying %d inputs separately: %s", len(batch), batch_error)
+                    for input_index, fragment, token_count in batch:
+                        try:
+                            response = await asyncio.to_thread(model.create_embedding, [fragment])
+                            vectors_by_input[input_index].append((response["data"][0]["embedding"], token_count))
+                        except Exception as input_error:
+                            logger.warning("Embedding input %d failed: %s", input_index, input_error)
+        return [_mean_embedding(vectors) if vectors else None for vectors in vectors_by_input]
     except EmbeddingContextExceeded:
         if raise_on_context_exceeded:
             raise

@@ -253,19 +253,15 @@ async def index_chat_files(conv_id: str, source_name: str, file_docs: list[dict]
     return result_batch_id
 
 
-# BM25 키워드 검색 사용 — kNN/임계값 불필요
-# 키워드 없는 무관 질문은 BM25 점수 0으로 자연히 걸러짐
-
-
 async def search_chat_files(conv_id: str, query: str, size: int = SEARCH_SIZE) -> list[dict]:
     """
-    이 대화방(conv_id)에 첨부된 파일 청크 중 질문과 관련된 것만 BM25 키워드 검색.
+    이 대화방(conv_id)에 첨부된 파일 청크를 BM25+kNN hybrid 검색한다.
     반환값은 context_docs 형식({title, content, source, url, indexed_at})으로 맞춰서
     다른 RAG 결과와 동일하게 다룰 수 있게 한다.
 
-    kNN(임베딩)이 아닌 BM25를 쓰는 이유: 코드 파일은 자연어가 아니라 kNN 유사도가
-    무관한 질문에서도 0.73+ 로 높게 나와 false positive가 많다. BM25는 키워드가
-    없으면 점수가 0이라 "주유소 기름값" 같은 무관 질문에선 아무것도 안 잡힌다.
+    BM25 결과를 우선 보존하면서 벡터 결과를 RRF로 합쳐 자연어 문서의 표현 차이를
+    보완한다. 코드 파일의 벡터 false positive가 단독으로 상위를 독점하지 않도록
+    BM25와 겹친 결과에 유리한 rank fusion을 사용한다.
     """
     es = get_es()
     try:
@@ -281,10 +277,44 @@ async def search_chat_files(conv_id: str, query: str, size: int = SEARCH_SIZE) -
                     "filter": {"term": {"conv_id": conv_id}},
                 }
             },
-            "_source": ["filename", "content", "source_name", "indexed_at", "chunk_index", "total_chunks"],
+            "_source": ["filename", "content", "source_name", "indexed_at", "file_id", "chunk_index", "total_chunks", "chunk_method"],
         }
-        res = await es.search(index=CHAT_FILE_CHUNKS_INDEX, body=search_body)
-        hits = res["hits"]["hits"]
+        bm25_result = await es.search(index=CHAT_FILE_CHUNKS_INDEX, body=search_body)
+        bm25_hits = bm25_result["hits"]["hits"]
+        embedding = await get_embedding(query, is_query=True)
+        if embedding:
+            vector_result = await es.search(
+                index=CHAT_FILE_CHUNKS_INDEX,
+                body={
+                    "size": size,
+                    "_source": search_body["_source"],
+                    "knn": {
+                        "field": "embedding",
+                        "query_vector": embedding,
+                        "k": size,
+                        "num_candidates": max(size * 10, 50),
+                        "filter": {"term": {"conv_id": conv_id}},
+                    },
+                },
+            )
+            vector_hits = vector_result["hits"]["hits"]
+            rrf_scores: dict[str, float] = {}
+            hits_by_id: dict[str, dict] = {}
+            for rank, hit in enumerate(bm25_hits, start=1):
+                rrf_scores[hit["_id"]] = rrf_scores.get(hit["_id"], 0.0) + 1 / (60 + rank)
+                hits_by_id[hit["_id"]] = hit
+            for rank, hit in enumerate(vector_hits, start=1):
+                overlaps_bm25 = hit["_id"] in hits_by_id
+                is_natural_language_chunk = hit.get("_source", {}).get("chunk_method") == "sliding_window_char"
+                if not overlaps_bm25 and not is_natural_language_chunk:
+                    continue
+                # Vector-only natural-language results receive half weight. Code requires lexical evidence.
+                weight = 1.0 if overlaps_bm25 else 0.5
+                rrf_scores[hit["_id"]] = rrf_scores.get(hit["_id"], 0.0) + weight / (60 + rank)
+                hits_by_id[hit["_id"]] = hit
+            hits = [hits_by_id[hit_id] for hit_id in sorted(rrf_scores, key=rrf_scores.get, reverse=True)[:size]]
+        else:
+            hits = bm25_hits[:size]
 
         if not hits:
             logger.info("[chat_file_search] conv_id=%s query=%r hits=0", conv_id, query)
@@ -305,6 +335,8 @@ async def search_chat_files(conv_id: str, query: str, size: int = SEARCH_SIZE) -
                 "url": "",
                 "score": round(h.get("_score") or 0, 3),
                 "indexed_at": h["_source"].get("indexed_at", ""),
+                "file_id": h["_source"].get("file_id"),
+                "chunk_index": h["_source"].get("chunk_index"),
             }
             for h in hits
         ]
