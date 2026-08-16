@@ -6,17 +6,17 @@
   "results": [
     {
       "query": "국방 AI 전략에서 제안하는 신뢰 기반 책임있는 AI 프레임워크는 무엇인가?",
-      "expected_file_id": "2387b886-4228-49de-85bb-bef3af102e61",
+      "expected_file_id": "8c424c9e-84f1-4375-930c-82f3de89bce4",
       "rank": 1,
       "retrieved": [
         {
-          "file_id": "2387b886-4228-49de-85bb-bef3af102e61",
+          "file_id": "8c424c9e-84f1-4375-930c-82f3de89bce4",
           "title": "KCI_FI003095555.pdf [15/40]",
           "page_number": 8,
           "rerank_score": 0.995632
         },
         {
-          "file_id": "2387b886-4228-49de-85bb-bef3af102e61",
+          "file_id": "8c424c9e-84f1-4375-930c-82f3de89bce4",
           "title": "KCI_FI003095555.pdf [17/40]",
           "page_number": 9,
           "rerank_score": 0.994547
@@ -25,11 +25,11 @@
     },
     {
       "query": "자율살상무기체계 LAWS 국제 논의에서 인간 책임은 어떻게 다뤄지는가?",
-      "expected_file_id": "2387b886-4228-49de-85bb-bef3af102e61",
+      "expected_file_id": "8c424c9e-84f1-4375-930c-82f3de89bce4",
       "rank": 1,
       "retrieved": [
         {
-          "file_id": "2387b886-4228-49de-85bb-bef3af102e61",
+          "file_id": "8c424c9e-84f1-4375-930c-82f3de89bce4",
           "title": "KCI_FI003095555.pdf [6/40]",
           "page_number": 3,
           "rerank_score": 0.969326
@@ -38,191 +38,191 @@
     },
     {
       "query": "기업이 책임있는 AI를 위해 라이프사이클 단계별로 해야 할 활동은?",
-      "expected_file_id": "94de2237-0d2d-414d-a49b-6ca796b872f8",
+      "expected_file_id": "c230df82-1b20-4728-a10b-0ac5926fdddc",
       "rank": 1,
       "retrieved": [
         {
-          "file_id": "94de2237-0d2d-414d-a49b-6ca796b872f8",
-          "title": "KCI_FI003154695.pdf [23/52]",
+          "file_id": "c230df82-1b20-4728-a10b-0ac5926fdddc",
+          "title": "KCI_FI003154695.pdf [23/50]",
           "page_number": 12,
-          "rerank_score": 0.997115
+          "rerank_score": 0.996822
         },
         {
-          "file_id": "94de2237-0d2d-414d-a49b-6ca796b872f8",
-          "title": "KCI_FI003154695.pdf [22/52]",
+          "file_id": "c230df82-1b20-4728-a10b-0ac5926fdddc",
+          "title": "KCI_FI003154695.pdf [22/50]",
           "page_number": 11,
-          "rerank_score": 0.994338
+          "rerank_score": 0.994302
         }
       ]
     },
     {
       "query": "이루다 챗봇과 아마존 채용 AI 사례가 보여주는 윤리 문제는?",
-      "expected_file_id": "94de2237-0d2d-414d-a49b-6ca796b872f8",
+      "expected_file_id": "c230df82-1b20-4728-a10b-0ac5926fdddc",
       "rank": 1,
       "retrieved": [
         {
-          "file_id": "94de2237-0d2d-414d-a49b-6ca796b872f8",
-          "title": "KCI_FI003154695.pdf [2/52]",
+          "file_id": "c230df82-1b20-4728-a10b-0ac5926fdddc",
+          "title": "KCI_FI003154695.pdf [2/50]",
           "page_number": 2,
-          "rerank_score": 0.972194
+          "rerank_score": 0.97538
         },
         {
-          "file_id": "94de2237-0d2d-414d-a49b-6ca796b872f8",
-          "title": "KCI_FI003154695.pdf [4/52]",
+          "file_id": "c230df82-1b20-4728-a10b-0ac5926fdddc",
+          "title": "KCI_FI003154695.pdf [4/50]",
           "page_number": 3,
-          "rerank_score": 0.5217
+          "rerank_score": 0.530315
         }
       ]
     },
     {
       "query": "How do institutional investors affect multi-class share structures and valuation discounts?",
-      "expected_file_id": "f2b4a287-6877-4e86-b867-fa743e5d90a6",
+      "expected_file_id": "7d4d594a-f9b7-43b8-aae9-b6a913506489",
       "rank": 1,
       "retrieved": [
         {
-          "file_id": "f2b4a287-6877-4e86-b867-fa743e5d90a6",
-          "title": "KCI_FI003157572.pdf [91/160]",
+          "file_id": "7d4d594a-f9b7-43b8-aae9-b6a913506489",
+          "title": "KCI_FI003157572.pdf [90/159]",
           "page_number": 21,
-          "rerank_score": 0.98781
+          "rerank_score": 0.987664
         },
         {
-          "file_id": "f2b4a287-6877-4e86-b867-fa743e5d90a6",
-          "title": "KCI_FI003157572.pdf [1/160]",
+          "file_id": "7d4d594a-f9b7-43b8-aae9-b6a913506489",
+          "title": "KCI_FI003157572.pdf [1/159]",
           "page_number": 1,
-          "rerank_score": 0.983613
+          "rerank_score": 0.983444
         }
       ]
     },
     {
       "query": "What are the merits and costs of differential voting rights and dual-class shares?",
-      "expected_file_id": "f2b4a287-6877-4e86-b867-fa743e5d90a6",
+      "expected_file_id": "7d4d594a-f9b7-43b8-aae9-b6a913506489",
       "rank": 1,
       "retrieved": [
         {
-          "file_id": "f2b4a287-6877-4e86-b867-fa743e5d90a6",
-          "title": "KCI_FI003157572.pdf [3/160]",
+          "file_id": "7d4d594a-f9b7-43b8-aae9-b6a913506489",
+          "title": "KCI_FI003157572.pdf [3/159]",
           "page_number": 2,
-          "rerank_score": 0.942766
+          "rerank_score": 0.941867
         },
         {
-          "file_id": "f2b4a287-6877-4e86-b867-fa743e5d90a6",
-          "title": "KCI_FI003157572.pdf [141/160]",
+          "file_id": "7d4d594a-f9b7-43b8-aae9-b6a913506489",
+          "title": "KCI_FI003157572.pdf [140/159]",
           "page_number": 36,
-          "rerank_score": 0.683883
+          "rerank_score": 0.681275
         }
       ]
     },
     {
       "query": "How does stock overvaluation influence green patenting among Korean listed firms?",
-      "expected_file_id": "ab2f973c-fb12-4f51-a712-0dfc17ca9b57",
+      "expected_file_id": "cf5cf16a-940d-4d46-81ea-c16609129712",
       "rank": 1,
       "retrieved": [
         {
-          "file_id": "ab2f973c-fb12-4f51-a712-0dfc17ca9b57",
-          "title": "KCI_FI003336902.pdf [89/122]",
+          "file_id": "cf5cf16a-940d-4d46-81ea-c16609129712",
+          "title": "KCI_FI003336902.pdf [80/109]",
           "page_number": 27,
-          "rerank_score": 0.999627
+          "rerank_score": 0.999554
         },
         {
-          "file_id": "ab2f973c-fb12-4f51-a712-0dfc17ca9b57",
-          "title": "KCI_FI003336902.pdf [8/122]",
+          "file_id": "cf5cf16a-940d-4d46-81ea-c16609129712",
+          "title": "KCI_FI003336902.pdf [8/109]",
           "page_number": 3,
-          "rerank_score": 0.999351
+          "rerank_score": 0.999344
         }
       ]
     },
     {
       "query": "Does equity financing or a catering mechanism explain green patent filings?",
-      "expected_file_id": "ab2f973c-fb12-4f51-a712-0dfc17ca9b57",
+      "expected_file_id": "cf5cf16a-940d-4d46-81ea-c16609129712",
       "rank": 1,
       "retrieved": [
         {
-          "file_id": "ab2f973c-fb12-4f51-a712-0dfc17ca9b57",
-          "title": "KCI_FI003336902.pdf [89/122]",
+          "file_id": "cf5cf16a-940d-4d46-81ea-c16609129712",
+          "title": "KCI_FI003336902.pdf [80/109]",
           "page_number": 27,
-          "rerank_score": 0.998265
+          "rerank_score": 0.99814
         },
         {
-          "file_id": "ab2f973c-fb12-4f51-a712-0dfc17ca9b57",
-          "title": "KCI_FI003336902.pdf [9/122]",
+          "file_id": "cf5cf16a-940d-4d46-81ea-c16609129712",
+          "title": "KCI_FI003336902.pdf [9/109]",
           "page_number": 3,
-          "rerank_score": 0.997497
+          "rerank_score": 0.997307
         }
       ]
     },
     {
       "query": "What drives return asymmetry in Counter-Strike 2 skins: starting price or rarity tier?",
-      "expected_file_id": "5136bd4a-9c61-4df7-93cf-c50aa5f03ba9",
+      "expected_file_id": "b2bfcdc8-5d4a-45b1-9e1a-5e7ce0be1722",
       "rank": 1,
       "retrieved": [
         {
-          "file_id": "5136bd4a-9c61-4df7-93cf-c50aa5f03ba9",
-          "title": "ssrn-7265860.pdf [4/71]",
+          "file_id": "b2bfcdc8-5d4a-45b1-9e1a-5e7ce0be1722",
+          "title": "ssrn-7265860.pdf [4/68]",
           "page_number": 2,
-          "rerank_score": 0.996332
+          "rerank_score": 0.996411
         },
         {
-          "file_id": "5136bd4a-9c61-4df7-93cf-c50aa5f03ba9",
-          "title": "ssrn-7265860.pdf [46/71]",
+          "file_id": "b2bfcdc8-5d4a-45b1-9e1a-5e7ce0be1722",
+          "title": "ssrn-7265860.pdf [45/68]",
           "page_number": 17,
-          "rerank_score": 0.835294
+          "rerank_score": 0.837335
         }
       ]
     },
     {
       "query": "What legal ownership and tail risks arise when investing in CS2 virtual items?",
-      "expected_file_id": "5136bd4a-9c61-4df7-93cf-c50aa5f03ba9",
+      "expected_file_id": "b2bfcdc8-5d4a-45b1-9e1a-5e7ce0be1722",
       "rank": 1,
       "retrieved": [
         {
-          "file_id": "5136bd4a-9c61-4df7-93cf-c50aa5f03ba9",
-          "title": "ssrn-7265860.pdf [1/71]",
+          "file_id": "b2bfcdc8-5d4a-45b1-9e1a-5e7ce0be1722",
+          "title": "ssrn-7265860.pdf [1/68]",
           "page_number": 1,
-          "rerank_score": 0.78634
+          "rerank_score": 0.791617
         },
         {
-          "file_id": "5136bd4a-9c61-4df7-93cf-c50aa5f03ba9",
-          "title": "ssrn-7265860.pdf [66/71]",
+          "file_id": "b2bfcdc8-5d4a-45b1-9e1a-5e7ce0be1722",
+          "title": "ssrn-7265860.pdf [63/68]",
           "page_number": 25,
-          "rerank_score": 0.524946
+          "rerank_score": 0.536157
         }
       ]
     },
     {
       "query": "How does relative firm size determine bargaining power in patent transactions?",
-      "expected_file_id": "05bb3dac-5387-4c22-bea7-be0b302b3149",
+      "expected_file_id": "e4b6ec2a-cf24-43fe-af99-b2f0452929be",
       "rank": 1,
       "retrieved": [
         {
-          "file_id": "05bb3dac-5387-4c22-bea7-be0b302b3149",
-          "title": "ssrn-7268578.pdf [86/154]",
+          "file_id": "e4b6ec2a-cf24-43fe-af99-b2f0452929be",
+          "title": "ssrn-7268578.pdf [85/153]",
           "page_number": 35,
-          "rerank_score": 0.986771
+          "rerank_score": 0.986586
         },
         {
-          "file_id": "05bb3dac-5387-4c22-bea7-be0b302b3149",
-          "title": "ssrn-7268578.pdf [1/154]",
+          "file_id": "e4b6ec2a-cf24-43fe-af99-b2f0452929be",
+          "title": "ssrn-7268578.pdf [1/153]",
           "page_number": 1,
-          "rerank_score": 0.984509
+          "rerank_score": 0.982196
         }
       ]
     },
     {
       "query": "Why can large buyers' bargaining power reduce smaller firms' incentives to innovate?",
-      "expected_file_id": "05bb3dac-5387-4c22-bea7-be0b302b3149",
+      "expected_file_id": "e4b6ec2a-cf24-43fe-af99-b2f0452929be",
       "rank": 1,
       "retrieved": [
         {
-          "file_id": "05bb3dac-5387-4c22-bea7-be0b302b3149",
-          "title": "ssrn-7268578.pdf [1/154]",
+          "file_id": "e4b6ec2a-cf24-43fe-af99-b2f0452929be",
+          "title": "ssrn-7268578.pdf [1/153]",
           "page_number": 1,
-          "rerank_score": 0.995356
+          "rerank_score": 0.994872
         },
         {
-          "file_id": "05bb3dac-5387-4c22-bea7-be0b302b3149",
-          "title": "ssrn-7268578.pdf [86/154]",
+          "file_id": "e4b6ec2a-cf24-43fe-af99-b2f0452929be",
+          "title": "ssrn-7268578.pdf [85/153]",
           "page_number": 35,
-          "rerank_score": 0.987224
+          "rerank_score": 0.986443
         }
       ]
     }

@@ -10,18 +10,18 @@ from services.db import close_shared_es
 
 REPORT_PATH = Path(__file__).parents[1] / "tests" / "fixtures" / "rag_eval" / "document_report.json"
 CASES = [
-    ("국방 AI 전략에서 제안하는 신뢰 기반 책임있는 AI 프레임워크는 무엇인가?", "2387b886-4228-49de-85bb-bef3af102e61"),
-    ("자율살상무기체계 LAWS 국제 논의에서 인간 책임은 어떻게 다뤄지는가?", "2387b886-4228-49de-85bb-bef3af102e61"),
-    ("기업이 책임있는 AI를 위해 라이프사이클 단계별로 해야 할 활동은?", "94de2237-0d2d-414d-a49b-6ca796b872f8"),
-    ("이루다 챗봇과 아마존 채용 AI 사례가 보여주는 윤리 문제는?", "94de2237-0d2d-414d-a49b-6ca796b872f8"),
-    ("How do institutional investors affect multi-class share structures and valuation discounts?", "f2b4a287-6877-4e86-b867-fa743e5d90a6"),
-    ("What are the merits and costs of differential voting rights and dual-class shares?", "f2b4a287-6877-4e86-b867-fa743e5d90a6"),
-    ("How does stock overvaluation influence green patenting among Korean listed firms?", "ab2f973c-fb12-4f51-a712-0dfc17ca9b57"),
-    ("Does equity financing or a catering mechanism explain green patent filings?", "ab2f973c-fb12-4f51-a712-0dfc17ca9b57"),
-    ("What drives return asymmetry in Counter-Strike 2 skins: starting price or rarity tier?", "5136bd4a-9c61-4df7-93cf-c50aa5f03ba9"),
-    ("What legal ownership and tail risks arise when investing in CS2 virtual items?", "5136bd4a-9c61-4df7-93cf-c50aa5f03ba9"),
-    ("How does relative firm size determine bargaining power in patent transactions?", "05bb3dac-5387-4c22-bea7-be0b302b3149"),
-    ("Why can large buyers' bargaining power reduce smaller firms' incentives to innovate?", "05bb3dac-5387-4c22-bea7-be0b302b3149"),
+    ("국방 AI 전략에서 제안하는 신뢰 기반 책임있는 AI 프레임워크는 무엇인가?", "8c424c9e-84f1-4375-930c-82f3de89bce4"),
+    ("자율살상무기체계 LAWS 국제 논의에서 인간 책임은 어떻게 다뤄지는가?", "8c424c9e-84f1-4375-930c-82f3de89bce4"),
+    ("기업이 책임있는 AI를 위해 라이프사이클 단계별로 해야 할 활동은?", "c230df82-1b20-4728-a10b-0ac5926fdddc"),
+    ("이루다 챗봇과 아마존 채용 AI 사례가 보여주는 윤리 문제는?", "c230df82-1b20-4728-a10b-0ac5926fdddc"),
+    ("How do institutional investors affect multi-class share structures and valuation discounts?", "7d4d594a-f9b7-43b8-aae9-b6a913506489"),
+    ("What are the merits and costs of differential voting rights and dual-class shares?", "7d4d594a-f9b7-43b8-aae9-b6a913506489"),
+    ("How does stock overvaluation influence green patenting among Korean listed firms?", "cf5cf16a-940d-4d46-81ea-c16609129712"),
+    ("Does equity financing or a catering mechanism explain green patent filings?", "cf5cf16a-940d-4d46-81ea-c16609129712"),
+    ("What drives return asymmetry in Counter-Strike 2 skins: starting price or rarity tier?", "b2bfcdc8-5d4a-45b1-9e1a-5e7ce0be1722"),
+    ("What legal ownership and tail risks arise when investing in CS2 virtual items?", "b2bfcdc8-5d4a-45b1-9e1a-5e7ce0be1722"),
+    ("How does relative firm size determine bargaining power in patent transactions?", "e4b6ec2a-cf24-43fe-af99-b2f0452929be"),
+    ("Why can large buyers' bargaining power reduce smaller firms' incentives to innovate?", "e4b6ec2a-cf24-43fe-af99-b2f0452929be"),
 ]
 
 
