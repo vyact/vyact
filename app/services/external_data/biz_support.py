@@ -13,7 +13,7 @@ from elasticsearch.helpers import async_bulk
 from services.db import SETTINGS_INDEX, get_es
 from services.external_data.gov24 import normalize_application_deadline
 from services.external_data.quota import DailyRequestQuota
-from services.external_data.search import build_browser_search_query, build_candidate_search_query
+from services.external_data.search import RERANK_CANDIDATE_SIZE, build_browser_search_query, build_candidate_search_query, select_relevant_candidates
 from services.external_data.retention import is_storable_by_deadline
 from services.external_data.status_events import notify_status_changed
 
@@ -340,7 +340,7 @@ async def search_candidates(question: str, size: int = 8) -> list[dict]:
                 {"bool": {"must_not": {"exists": {"field": "application_end_date"}}}},
                 {"range": {"application_end_date": {"gte": datetime.now().date().isoformat()}}},
             ], "minimum_should_match": 1}}]
-        result = await es.search(index=INDEX_NAME, size=size, query=build_candidate_search_query(
+        result = await es.search(index=INDEX_NAME, size=RERANK_CANDIDATE_SIZE, query=build_candidate_search_query(
             question, ["title^6", "target^4", "agency^3", "category^2", "hashtags^2", "content_text"], filters,
         ))
         candidates = []
@@ -359,6 +359,6 @@ async def search_candidates(question: str, size: int = 8) -> list[dict]:
                 "score": hit.get("_score", 0),
                 "external_resource_id": SOURCE_ID,
             })
-        return candidates
+        return await select_relevant_candidates(question, candidates, size)
     finally:
         await es.close()

@@ -1,0 +1,12 @@
+{
+  "metrics": {},
+  "failure_count": 0,
+  "ranking_miss_count": 0,
+  "negative_metrics": {
+    "cases": 30,
+    "false_positive_rate": 0.0
+  },
+  "score_samples": {},
+  "failures": [],
+  "ranking_misses": []
+}

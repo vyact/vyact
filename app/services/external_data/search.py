@@ -2,9 +2,13 @@
 
 import re
 
+from reranker import is_available as is_reranker_available, rerank
+
 
 BROWSER_TEXT_FIELDS = ["title^6", "content_text"]
 AGENCY_FIELD = "agency"
+RERANK_CANDIDATE_SIZE = 20
+RERANK_SCORE_THRESHOLD = 0.35
 
 
 def _escape_wildcard(value: str) -> str:
@@ -70,3 +74,16 @@ def build_candidate_search_query(
     if filters:
         bool_query["filter"] = filters
     return {"bool": bool_query}
+
+
+async def select_relevant_candidates(question: str, candidates: list[dict], size: int) -> list[dict]:
+    """Apply the same semantic relevance gate to every external-data source."""
+    if not candidates:
+        return []
+    if not is_reranker_available():
+        return candidates[:size]
+    ranked = await rerank(question, candidates, top_k=size)
+    return [
+        candidate for candidate in ranked
+        if candidate.get("rerank_score", 0) >= RERANK_SCORE_THRESHOLD
+    ]
