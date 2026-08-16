@@ -193,6 +193,16 @@ async def _browser_close() -> str:
     return _as_text(await _command("close"))
 
 
+async def close_browser_session() -> None:
+    """Close only the Chrome tab/window allocated to a completed general-chat task."""
+    if current_code_folders.get() or not extension_browser.connected():
+        return
+    try:
+        await extension_browser.execute("close")
+    except Exception as error:
+        logger.debug("[browser_tools] Browser session cleanup skipped: %s", error)
+
+
 def register_browser_tools() -> bool:
     from services.mcp_client import mcp_manager
 

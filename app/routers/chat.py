@@ -18,6 +18,7 @@ from agent import (
     get_conversation, rag_query_stream,
 )
 from services.llm import chat_stream_with_tools
+from services.browser_tools import close_browser_session
 from config import IMAGE_MODEL_IDS
 from prompts import VOICE_MODE_SUFFIX, FORMAT_INSTRUCTION, EXTENSION_FORMAT_INSTRUCTION, get_extension_format_instruction
 from routers.deps import load_config_async
@@ -1011,6 +1012,12 @@ async def query_stream(req: QueryRequest):
                         yield _sse("tool", {"phase": "end", "name": "search_related_context"})
                     elif ev["type"] == "final":
                         final_result = ev["result"]
+
+                if any(
+                    str(activity.get("name", "")).split("__")[-1].startswith("browser_")
+                    for activity in _activity_log
+                ):
+                    await close_browser_session()
 
                 trailing_visible_text = metadata_stream_filter.finish()
                 if trailing_visible_text:
