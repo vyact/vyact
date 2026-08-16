@@ -1,5 +1,7 @@
 """Local API used by the Vyact Chrome extension browser executor."""
-from fastapi import APIRouter, Header, HTTPException, Request
+import time
+
+from fastapi import APIRouter, Header, HTTPException, Request, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 
 from services.extension_browser import extension_browser
@@ -12,6 +14,35 @@ class BrowserResult(BaseModel):
     ok: bool
     result: object | None = None
     error: str | None = None
+
+
+@router.websocket("/ws")
+async def browser_websocket(websocket: WebSocket):
+    if websocket.client and websocket.client.host not in {"127.0.0.1", "::1"}:
+        await websocket.close(code=1008)
+        return
+    origin = websocket.headers.get("origin", "")
+    if origin and not origin.startswith("chrome-extension://"):
+        await websocket.close(code=1008)
+        return
+    await websocket.accept()
+    extension_browser.attach(websocket)
+    try:
+        while True:
+            message = await websocket.receive_json()
+            extension_browser.last_seen = time.monotonic()
+            if message.get("type") == "result":
+                extension_browser.complete(str(message.get("id") or ""), {
+                    "ok": message.get("ok") is True,
+                    "result": message.get("result"),
+                    "error": message.get("error"),
+                })
+            elif message.get("type") == "ping":
+                await websocket.send_json({"type": "pong"})
+    except WebSocketDisconnect:
+        pass
+    finally:
+        extension_browser.detach(websocket)
 
 
 def _require_local(request: Request) -> None:

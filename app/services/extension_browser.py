@@ -3,10 +3,11 @@ import asyncio
 import secrets
 import time
 from dataclasses import dataclass, field
+from typing import Any
 
 
 EXTENSION_TIMEOUT_SECONDS = 35.0
-EXTENSION_HEARTBEAT_SECONDS = 35.0
+EXTENSION_HEARTBEAT_SECONDS = 7.0
 CHROME_STORE_URL = "https://chromewebstore.google.com/detail/vyact/opfbakfhoojmdkbbhcglolkpgmenjbib"
 EXTENSION_REQUIRED_MARKER = "VYACT_BROWSER_EXTENSION_REQUIRED"
 
@@ -17,13 +18,29 @@ class ExtensionBrowserBridge:
     last_seen: float = 0.0
     commands: asyncio.Queue = field(default_factory=asyncio.Queue)
     pending: dict[str, asyncio.Future] = field(default_factory=dict)
+    websocket: Any | None = None
 
     def register(self) -> str:
         self.last_seen = time.monotonic()
         return self.token
 
     def connected(self) -> bool:
-        return time.monotonic() - self.last_seen < EXTENSION_HEARTBEAT_SECONDS
+        return self.websocket is not None and time.monotonic() - self.last_seen < EXTENSION_HEARTBEAT_SECONDS
+
+    def attach(self, websocket: Any) -> None:
+        self.websocket = websocket
+        self.last_seen = time.monotonic()
+
+    def detach(self, websocket: Any) -> None:
+        if self.websocket is websocket:
+            self.websocket = None
+            error = RuntimeError(
+                f"{EXTENSION_REQUIRED_MARKER}: Chrome extension connection was lost. "
+                f"[Install Vyact Chrome extension]({CHROME_STORE_URL})"
+            )
+            for future in self.pending.values():
+                if not future.done():
+                    future.set_exception(error)
 
     async def next_command(self, timeout: float = 20.0):
         self.last_seen = time.monotonic()
@@ -41,7 +58,19 @@ class ExtensionBrowserBridge:
         command_id = secrets.token_urlsafe(12)
         future = asyncio.get_running_loop().create_future()
         self.pending[command_id] = future
-        await self.commands.put({"id": command_id, "command": command, "args": args})
+        item = {"type": "command", "id": command_id, "command": command, "args": args}
+        if self.websocket is not None:
+            try:
+                await self.websocket.send_json(item)
+            except Exception:
+                self.websocket = None
+                self.pending.pop(command_id, None)
+                raise RuntimeError(
+                    f"{EXTENSION_REQUIRED_MARKER}: Chrome extension connection was lost. "
+                    f"[Install Vyact Chrome extension]({CHROME_STORE_URL})"
+                )
+        else:
+            await self.commands.put(item)
         try:
             result = await asyncio.wait_for(future, timeout=EXTENSION_TIMEOUT_SECONDS)
         finally:

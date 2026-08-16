@@ -7,10 +7,17 @@ from services.extension_browser import CHROME_STORE_URL, ExtensionBrowserBridge
 class ExtensionBrowserBridgeTests(unittest.IsolatedAsyncioTestCase):
     async def test_command_round_trip(self):
         bridge = ExtensionBrowserBridge()
-        bridge.register()
+        sent = asyncio.Queue()
+
+        class FakeWebSocket:
+            async def send_json(self, message):
+                await sent.put(message)
+
+        websocket = FakeWebSocket()
+        bridge.attach(websocket)
 
         async def extension_worker():
-            command = await bridge.next_command(1)
+            command = await sent.get()
             bridge.complete(command["id"], {"ok": True, "result": {"url": "https://example.com"}})
 
         worker = asyncio.create_task(extension_worker())

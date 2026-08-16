@@ -16,6 +16,7 @@ logger = get_logger(__name__)
 BROWSER_CONTROL_URL = os.getenv("VYACT_BROWSER_CONTROL_URL", "").rstrip("/")
 BROWSER_CONTROL_TOKEN = os.getenv("VYACT_BROWSER_CONTROL_TOKEN", "")
 BROWSER_COMMAND_TIMEOUT_SECONDS = 35.0
+EXTENSION_STARTUP_WAIT_SECONDS = 8.0
 MAX_BATCH_READ_URLS = 5
 MAX_BATCH_PAGE_TEXT_CHARS = 16000
 
@@ -50,11 +51,7 @@ def _validate_public_url(url: str) -> str:
     return value
 
 
-async def _command(command: str, **args):
-    # A selected project keeps the embedded Electron browser for local app
-    # testing. Ordinary chat controls the user's real Chrome tab via extension.
-    if not current_code_folders.get():
-        return await extension_browser.execute(command, **args)
+async def _electron_command(command: str, **args):
     if not BROWSER_CONTROL_URL or not BROWSER_CONTROL_TOKEN:
         raise RuntimeError("The embedded test browser is available only in the Vyact desktop app")
     async with httpx.AsyncClient(timeout=BROWSER_COMMAND_TIMEOUT_SECONDS) as client:
@@ -68,6 +65,31 @@ async def _command(command: str, **args):
     if not payload.get("ok"):
         raise RuntimeError(payload.get("error") or "Browser command failed")
     return payload.get("result")
+
+
+async def _wait_for_extension_connection() -> bool:
+    if extension_browser.connected():
+        return True
+    if BROWSER_CONTROL_URL and BROWSER_CONTROL_TOKEN:
+        try:
+            await _electron_command("launch_external", url="https://www.google.com/?vyact_browser=1")
+        except Exception as error:
+            logger.warning("[browser_tools] Could not launch external browser: %s", error)
+    deadline = asyncio.get_running_loop().time() + EXTENSION_STARTUP_WAIT_SECONDS
+    while asyncio.get_running_loop().time() < deadline:
+        if extension_browser.connected():
+            return True
+        await asyncio.sleep(0.25)
+    return extension_browser.connected()
+
+
+async def _command(command: str, **args):
+    # A selected project keeps the embedded Electron browser for local app
+    # testing. Ordinary chat launches and controls the user's Chrome tab.
+    if not current_code_folders.get():
+        await _wait_for_extension_connection()
+        return await extension_browser.execute(command, **args)
+    return await _electron_command(command, **args)
 
 
 def _as_text(result) -> str:

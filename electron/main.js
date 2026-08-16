@@ -126,6 +126,11 @@ function closeFloatingBrowser() {
 }
 
 async function executeFloatingBrowserCommand(command, args = {}) {
+    if (command === "launch_external") {
+        const url = normalizeBrowserUrl(args.url || DEFAULT_BROWSER_URL);
+        await shell.openExternal(url);
+        return {opened: true, url};
+    }
     if (command === "open") return openFloatingBrowser(args.url);
     if (command === "close") return closeFloatingBrowser();
     if (command === "back") {
