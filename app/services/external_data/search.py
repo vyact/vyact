@@ -81,7 +81,10 @@ async def select_relevant_candidates(question: str, candidates: list[dict], size
     if not candidates:
         return []
     if not is_reranker_available():
-        return candidates[:size]
+        # Candidate retrieval intentionally favors recall and can return plausible-looking
+        # lexical matches for unrelated questions. Without the semantic gate, injecting
+        # those results is more harmful than returning no external grounding.
+        return []
     ranked = await rerank(question, candidates, top_k=size)
     return [
         candidate for candidate in ranked

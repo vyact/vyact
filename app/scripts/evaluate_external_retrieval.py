@@ -9,7 +9,7 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
-from reranker import load_reranker
+from reranker import is_available as is_reranker_available, load_reranker
 from services.db import close_shared_es, get_es
 from services.external_data import biz_support, gov24, housing, k_startup, lh_lease_complex, lh_lease_notice
 
@@ -218,6 +218,7 @@ async def evaluate_fixture(cases: list[dict], report_path: Path) -> dict:
         for bucket, values in totals.items()
     }
     report = {
+        "reranker_available": is_reranker_available(),
         "metrics": metrics,
         "failure_count": len(failures),
         "ranking_miss_count": len(ranking_misses),

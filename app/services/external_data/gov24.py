@@ -9,10 +9,13 @@ from urllib.parse import unquote
 import httpx
 from elasticsearch.helpers import async_bulk, async_scan
 
-from reranker import is_available as is_reranker_available, rerank
 from services.db import SETTINGS_INDEX, get_es
 from services.external_data.quota import DailyRequestQuota
-from services.external_data.search import build_browser_search_query, build_candidate_search_query
+from services.external_data.search import (
+    build_browser_search_query,
+    build_candidate_search_query,
+    select_relevant_candidates,
+)
 from services.external_data.retention import is_storable_by_deadline
 from services.external_data.status_events import notify_status_changed
 
@@ -25,7 +28,6 @@ BULK_CHUNK_SIZE = 100
 INACTIVE_AFTER_MISSING_SYNCS = 3
 QUERY_CANDIDATE_SIZE = 8
 QUERY_RERANK_CANDIDATE_SIZE = 50
-QUERY_RERANK_SCORE_THRESHOLD = 0.35
 BROWSE_PAGE_SIZE = 40
 DAILY_REQUEST_LIMIT = 10_000
 
@@ -153,13 +155,7 @@ async def search_candidates(question: str, size: int = QUERY_CANDIDATE_SIZE) -> 
                 "score": hit.get("_score", 0),
                 "external_resource_id": SOURCE_ID,
             })
-        if not is_reranker_available():
-            return candidates[:size]
-        ranked = await rerank(normalized_question, candidates, top_k=size)
-        return [
-            candidate for candidate in ranked
-            if candidate.get("rerank_score", 0) >= QUERY_RERANK_SCORE_THRESHOLD
-        ]
+        return await select_relevant_candidates(normalized_question, candidates, size)
     finally:
         await es.close()
 
