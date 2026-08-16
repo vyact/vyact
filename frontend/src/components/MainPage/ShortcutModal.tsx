@@ -13,6 +13,7 @@ const ShortcutModal: React.FC<ShortcutModalProps> = ({onClose}) => {
         {keys: ['Cmd', '1'], desc: t('shortcutModal.newChat')},
         {keys: ['Cmd', '/'], desc: t('shortcutModal.showShortcuts')},
         {keys: ['Cmd', 'Shift', 'G'], desc: t('shortcutModal.googleWorkspace')},
+        {keys: ['Cmd', 'Shift', 'B'], desc: t('moreMenu.browser')},
         {keys: ['Cmd', 'Shift', 'M'], desc: t('shortcutModal.quickMemo')},
         {keys: ['Cmd', 'Shift', 'N'], desc: t('shortcutModal.memo')},
         {keys: ['Cmd', 'Shift', 'D'], desc: t('shortcutModal.documents')},

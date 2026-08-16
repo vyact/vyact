@@ -1,5 +1,5 @@
 import {useEffect, useMemo, useState} from 'react';
-import {Check, ShieldAlert, X} from 'lucide-react';
+import {Check, ShieldAlert, UserRoundCheck, X} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {api} from '../../services/api';
 import './InlineToolApproval.css';
@@ -67,12 +67,19 @@ const InlineToolApproval = ({conversationId}: InlineToolApprovalProps) => {
     if (!visibleRequests.length) return null;
 
     return <div className="inline-tool-approval-cards">
-        {visibleRequests.map(request => <section className="inline-tool-approval-card" key={request.approval_id}>
-            <div className="inline-tool-approval-card__icon"><ShieldAlert size={18}/></div>
+        {visibleRequests.map(request => {
+            const isBrowserUserAction = request.name.split('__').slice(-1)[0] === 'browser_wait_for_user';
+            const action = typeof request.args.action === 'string' ? request.args.action : 'other';
+            const instructions = typeof request.args.instructions === 'string' ? request.args.instructions : '';
+            return <section className={`inline-tool-approval-card${isBrowserUserAction ? ' browser-user-action' : ''}`} key={request.approval_id}>
+            <div className="inline-tool-approval-card__icon">{isBrowserUserAction ? <UserRoundCheck size={18}/> : <ShieldAlert size={18}/>}</div>
             <div className="inline-tool-approval-card__content">
-                <strong>{t('approval.requestTitle')}</strong>
-                <span>{t('approval.toolRequest', {tool: request.name})}</span>
-                <dl className="inline-tool-approval-card__arguments">
+                <strong>{t(isBrowserUserAction ? 'approval.browserUserActionTitle' : 'approval.requestTitle')}</strong>
+                <span>{isBrowserUserAction
+                    ? t(`approval.browserUserActions.${action}`, {defaultValue: t('approval.browserUserActions.other')})
+                    : t('approval.toolRequest', {tool: request.name})}</span>
+                {isBrowserUserAction && instructions && <p className="inline-tool-approval-card__instruction">{instructions}</p>}
+                {!isBrowserUserAction && <dl className="inline-tool-approval-card__arguments">
                     {orderedArguments(request.args).map(([key, value]) => {
                         const formattedValue = formatArgumentValue(value);
                         const multiline = MULTILINE_ARGUMENT_KEYS.has(key) || formattedValue.includes('\n');
@@ -84,17 +91,17 @@ const InlineToolApproval = ({conversationId}: InlineToolApprovalProps) => {
                             </dd>
                         </div>;
                     })}
-                </dl>
+                </dl>}
             </div>
             <div className="inline-tool-approval-card__actions">
                 <button type="button" onClick={() => resolve(request, false)}>
-                    <X size={15}/>{t('approval.reject')}
+                    <X size={15}/>{t(isBrowserUserAction ? 'approval.stopBrowserTask' : 'approval.reject')}
                 </button>
                 <button type="button" className="approve" onClick={() => resolve(request, true)}>
-                    <Check size={15}/>{t('approval.approve')}
+                    <Check size={15}/>{t(isBrowserUserAction ? 'approval.continueBrowserTask' : 'approval.approve')}
                 </button>
             </div>
-        </section>)}
+        </section>})}
     </div>;
 };
 

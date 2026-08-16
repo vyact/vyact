@@ -16,13 +16,14 @@ READ_ONLY_TOOLS = {
     "check_free_busy", "get_calendar_event", "search_files", "get_drive_file",
     "read_document_content", "list_drive_folder_items", "get_google_doc",
     "get_google_sheet", "get_google_slides", "get_google_form", "get_form_responses",
-    "browser_search", "browser_open", "browser_read", "browser_inspect",
+    "browser_search", "browser_open", "browser_read", "browser_read_urls", "browser_inspect",
     "browser_scroll", "browser_wait", "browser_back", "browser_status", "browser_close",
 }
 SENSITIVE_TOOLS = {
     "send_email", "reply_email", "create_calendar_event", "update_calendar_event",
     "upload_drive_file", "download_drive_file", "move_drive_file",
     "browser_click", "browser_type",
+    "browser_wait_for_user",
 }
 DESTRUCTIVE_TOOLS = {
     "code_move_file", "code_delete_file", "trash_email", "batch_trash_emails",
@@ -60,6 +61,16 @@ _REJECTION_RESPONSES = {
     "vi": "Việc thực thi `{tool}` đã bị từ chối nên thao tác được yêu cầu không được thực hiện.",
     "th": "การอนุมัติให้เรียกใช้ `{tool}` ถูกปฏิเสธ จึงไม่ได้ดำเนินการตามที่ร้องขอ",
 }
+_BROWSER_USER_ACTION_STOPPED_RESPONSES = {
+    "ko": "사용자가 브라우저 작업을 중단하여 요청을 계속 진행하지 않았습니다.",
+    "en": "The browser task was stopped by the user, so the request was not continued.",
+    "ja": "ユーザーがブラウザ操作を中止したため、リクエストを続行しませんでした。",
+    "zh": "用户停止了浏览器任务，因此未继续执行请求。",
+    "es": "El usuario detuvo la tarea del navegador, por lo que no se continuó la solicitud.",
+    "fr": "L’utilisateur a arrêté la tâche du navigateur ; la demande n’a donc pas été poursuivie.",
+    "vi": "Người dùng đã dừng tác vụ trình duyệt nên yêu cầu không được tiếp tục.",
+    "th": "ผู้ใช้หยุดงานในเบราว์เซอร์ จึงไม่ได้ดำเนินการตามคำขอต่อ",
+}
 
 
 def _base_tool_name(tool_name: str) -> str:
@@ -73,7 +84,10 @@ async def get_tool_rejection_response(tool_name: str) -> str:
         language = (await load_ui_language_async() or "ko").split("-", 1)[0].lower()
     except Exception:
         language = "ko"
-    template = _REJECTION_RESPONSES.get(language, _REJECTION_RESPONSES["en"])
+    responses = (_BROWSER_USER_ACTION_STOPPED_RESPONSES
+                 if _base_tool_name(tool_name) == "browser_wait_for_user"
+                 else _REJECTION_RESPONSES)
+    template = responses.get(language, responses["en"])
     return template.format(tool=_base_tool_name(tool_name))
 
 
@@ -91,6 +105,8 @@ def get_tool_risk(tool_name: str) -> str:
 
 
 def requires_approval(tool_name: str, mode: str) -> bool:
+    if _base_tool_name(tool_name) == "browser_wait_for_user":
+        return True
     risk = get_tool_risk(tool_name)
     normalized_mode = mode if mode in APPROVAL_MODES else "risky_only"
     if normalized_mode == "always_confirm":
@@ -113,7 +129,8 @@ async def await_tool_approval(tool_name: str, arguments: dict, emit: ApprovalEmi
         "conversation_id": context.conversation_id, "project_id": context.project_id,
     })
     try:
-        return await asyncio.wait_for(future, timeout=300)
+        timeout_seconds = 900 if _base_tool_name(tool_name) == "browser_wait_for_user" else 300
+        return await asyncio.wait_for(future, timeout=timeout_seconds)
     except asyncio.TimeoutError:
         return False
     finally:

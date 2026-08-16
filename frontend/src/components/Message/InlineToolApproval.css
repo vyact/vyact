@@ -4,6 +4,8 @@
 .inline-tool-approval-card__content { display:grid; min-width:0; gap:3px; }
 .inline-tool-approval-card__content strong { color:var(--text); font-size:13px; }
 .inline-tool-approval-card__content span { overflow:hidden; color:var(--muted); font-size:11px; text-overflow:ellipsis; white-space:nowrap; }
+.inline-tool-approval-card.browser-user-action { border-color:color-mix(in srgb,var(--accent) 72%,var(--border)); }
+.inline-tool-approval-card__instruction { margin:5px 0 0; color:var(--text); font-size:12px; line-height:1.5; }
 .inline-tool-approval-card__arguments { display:grid; gap:5px; margin:5px 0 0; }
 .inline-tool-approval-card__arguments>div { display:grid; grid-template-columns:92px minmax(0,1fr); align-items:start; gap:8px; }
 .inline-tool-approval-card__arguments dt { color:var(--muted); font-size:11px; line-height:1.5; }

@@ -12,11 +12,11 @@
 .browser-panel--floating {
     position: fixed;
     z-index: 900;
-    top: 76px;
-    right: 24px;
     width: min(560px, calc(100vw - 48px));
     height: min(640px, calc(100vh - 108px));
     min-height: 320px;
+    max-width: calc(100vw - 16px);
+    max-height: calc(100vh - 16px);
     resize: both;
     border: 1px solid var(--border);
     border-radius: 14px;
@@ -33,6 +33,11 @@
     border-bottom: 1px solid var(--border);
     user-select: none;
 }
+.browser-panel--floating .floating-browser-toolbar { cursor: grab; touch-action: none; }
+.browser-panel--floating.is-dragging .floating-browser-toolbar { cursor: grabbing; }
+.browser-panel--floating .floating-browser-toolbar button,
+.browser-panel--floating .floating-browser-toolbar input { cursor: default; }
+.browser-panel--floating .floating-browser-toolbar input { cursor: text; }
 .floating-browser-toolbar button, .floating-browser-brand {
     width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;
     flex: 0 0 auto; border: 0; border-radius: 8px; color: var(--text-secondary, #b8bbc5); background: transparent;

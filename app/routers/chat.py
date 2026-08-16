@@ -967,12 +967,18 @@ async def query_stream(req: QueryRequest):
                         _phase = ev.get("phase")
                         _tool_name = ev.get("name", "")
                         if _phase in {"start", "approval_required"} and _tool_name:
-                            _activity_log.append({
-                                "phase": "running", "name": _tool_name, "label": _tool_name,
-                                "group": "code" if _tool_name.split("__")[-1].startswith("code_") else "tool",
-                                "detail": _tool_activity_detail(ev.get("args", {})),
-                                "startedAt": int(datetime.now(timezone.utc).timestamp() * 1000),
-                            })
+                            started_at = int(datetime.now(timezone.utc).timestamp() * 1000)
+                            if (_phase == "start" and _activity_log
+                                    and _activity_log[-1].get("phase") == "running"
+                                    and _activity_log[-1].get("name") == _tool_name):
+                                _activity_log[-1]["startedAt"] = started_at
+                            else:
+                                _activity_log.append({
+                                    "phase": "running", "name": _tool_name, "label": _tool_name,
+                                    "group": "code" if _tool_name.split("__")[-1].startswith("code_") else "tool",
+                                    "detail": _tool_activity_detail(ev.get("args", {})),
+                                    "startedAt": started_at,
+                                })
                         elif _phase == "approval_rejected" and _activity_log:
                             _activity_log.pop()
                         elif _phase == "end" and _activity_log:

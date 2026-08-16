@@ -559,7 +559,8 @@ export function useChat(deps: UseChatDeps) {
                         onTool: (data) => {
                             if (data.phase === 'approval_required') {
                                 window.dispatchEvent(new CustomEvent('vyact:tool-approval-required', {detail: data}));
-                                setToolStatus({phase: 'running', name: data.name, group: toolGroup(data.name), label: t('toolActivity.waitingApproval'), detail: getToolActivityDetail(data.args), awaitingApproval: true});
+                                const isBrowserUserAction = data.name?.split('__').slice(-1)[0] === 'browser_wait_for_user';
+                                setToolStatus({phase: 'running', name: data.name, group: toolGroup(data.name), label: t(isBrowserUserAction ? 'toolActivity.waitingBrowserUser' : 'toolActivity.waitingApproval'), detail: getToolActivityDetail(data.args), awaitingApproval: true});
                             } else if (data.phase === 'approval_rejected') {
                                 setToolStatus({phase: 'completed', outcome: 'rejected', name: data.name, group: toolGroup(data.name), label: t('toolActivity.approvalRejected'), detail: getToolActivityDetail(data.args)});
                                 setToolStatus({phase: 'judging', group: 'analysis', label: t('toolActivity.approvalRejectedPreparingResponse')});

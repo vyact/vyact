@@ -75,6 +75,13 @@ function compactSnippet(value: unknown): string | undefined {
 export function getToolActivityDetail(args?: Record<string, unknown>): string | undefined {
     if (!args) return undefined;
 
+    if (Array.isArray(args.urls)) {
+        const hosts = args.urls.filter((url): url is string => typeof url === 'string').map(url => {
+            try { return new URL(url).hostname; } catch { return url; }
+        });
+        return compactPaths(hosts);
+    }
+
     if (Array.isArray(args.paths)) {
         const paths = args.paths.filter((path): path is string => typeof path === 'string');
         return compactPaths(paths);
@@ -143,6 +150,9 @@ export function getToolActivityLabel(
         code_move_file: 'codeMoveFile', code_delete_file: 'codeDeleteFile',
         search_repositories: 'githubRepositories', get_file_contents: 'githubFile', list_commits: 'githubCommits',
         search_code: 'githubCode', create_issue: 'githubIssue',
+        browser_search: 'browserSearching', browser_open: 'browserOpening',
+        browser_read: 'browserReading', browser_read_urls: 'browserBatchReading',
+        browser_wait_for_user: 'waitingBrowserUser',
     };
     if (!server && tool === 'search_files') {
         return t('toolActivity.serviceAction', {
@@ -184,6 +194,14 @@ export function getToolActivityDisplayLabel(
         if (['code_run_check', 'code_run_task', 'code_list_tasks', 'code_git_status', 'code_git_diff'].includes(tool)) {
             return t('toolActivity.checkCompleted');
         }
+        const browserCompletionKeys: Record<string, string> = {
+            browser_search: 'browserSearchCompleted',
+            browser_open: 'browserOpenCompleted',
+            browser_read: 'browserReadCompleted',
+            browser_read_urls: 'browserBatchReadCompleted',
+            browser_wait_for_user: 'browserUserActionCompleted',
+        };
+        if (browserCompletionKeys[tool]) return t(`toolActivity.${browserCompletionKeys[tool]}`);
         return t('toolActivity.completed');
     }
     return label && label !== name ? label : getToolActivityLabel(name, t);

@@ -21,9 +21,11 @@ def test_browser_url_allows_public_https() -> None:
 
 def test_browser_tool_risk_classification() -> None:
     assert get_tool_risk("browser_read") == "read"
+    assert get_tool_risk("browser_read_urls") == "read"
     assert get_tool_risk("browser_search") == "read"
     assert get_tool_risk("browser_click") == "sensitive"
     assert get_tool_risk("browser_type") == "sensitive"
+    assert get_tool_risk("browser_wait_for_user") == "sensitive"
 
 
 def test_browser_tools_register_only_with_electron_bridge(monkeypatch) -> None:

@@ -6,9 +6,20 @@ import './BrowserPanel.css';
 
 const BROWSER_PANEL_ID = 'browser';
 const FLOATING_FOOTER_HEIGHT = 24;
+const FLOATING_VIEWPORT_MARGIN = 8;
+const DEFAULT_FLOATING_TOP = 76;
+const DEFAULT_FLOATING_RIGHT = 24;
+const DEFAULT_FLOATING_WIDTH = 560;
+const DEFAULT_FLOATING_HEIGHT = 640;
 const DEFAULT_STATE: BrowserViewState = {open: false, url: '', title: '', loading: false, canGoBack: false, canGoForward: false};
 
 type BrowserDisplayMode = 'docked' | 'floating';
+type FloatingPosition = {x: number; y: number};
+
+const getDefaultFloatingPosition = (): FloatingPosition => ({
+    x: Math.max(FLOATING_VIEWPORT_MARGIN, window.innerWidth - DEFAULT_FLOATING_WIDTH - DEFAULT_FLOATING_RIGHT),
+    y: Math.min(DEFAULT_FLOATING_TOP, Math.max(FLOATING_VIEWPORT_MARGIN, window.innerHeight - DEFAULT_FLOATING_HEIGHT)),
+});
 
 const BrowserPanel: React.FC<{style?: React.CSSProperties}> = ({style}) => {
     const {t} = useTranslation('main');
@@ -17,10 +28,13 @@ const BrowserPanel: React.FC<{style?: React.CSSProperties}> = ({style}) => {
     const stateRef = useRef<BrowserViewState>(DEFAULT_STATE);
     const modeRef = useRef<BrowserDisplayMode>('docked');
     const overlaySuspendedRef = useRef(false);
+    const dragRef = useRef<{pointerId: number; startX: number; startY: number; originX: number; originY: number} | null>(null);
     const [state, setState] = useState<BrowserViewState>(DEFAULT_STATE);
     const [address, setAddress] = useState('');
     const [mode, setModeState] = useState<BrowserDisplayMode>('docked');
     const [floatingSize, setFloatingSize] = useState({width: 560, height: 640});
+    const [floatingPosition, setFloatingPosition] = useState<FloatingPosition>(getDefaultFloatingPosition);
+    const [isDragging, setIsDragging] = useState(false);
     const isDocked = panels.activePanel === BROWSER_PANEL_ID && mode === 'docked';
     const isVisible = state.open && (isDocked || mode === 'floating');
 
@@ -50,6 +64,18 @@ const BrowserPanel: React.FC<{style?: React.CSSProperties}> = ({style}) => {
             unregister();
         };
     }, [panels.register]);
+
+    useEffect(() => {
+        const openBrowserShortcut = (event: KeyboardEvent) => {
+            if (event.altKey || !event.shiftKey || (!event.metaKey && !event.ctrlKey) || event.key.toLowerCase() !== 'b') return;
+            event.preventDefault();
+            setMode('docked');
+            panels.open(BROWSER_PANEL_ID);
+            if (!stateRef.current.open) void window.ragAPI?.browserOpen?.();
+        };
+        window.addEventListener('keydown', openBrowserShortcut);
+        return () => window.removeEventListener('keydown', openBrowserShortcut);
+    }, [panels.open]);
 
     useEffect(() => window.ragAPI?.onBrowserState?.(nextState => {
         const wasOpen = stateRef.current.open;
@@ -86,6 +112,24 @@ const BrowserPanel: React.FC<{style?: React.CSSProperties}> = ({style}) => {
             window.removeEventListener('resize', syncBounds);
         };
     }, [isVisible, mode]);
+
+    useEffect(() => {
+        if (mode === 'floating' && isVisible) requestAnimationFrame(syncBounds);
+    }, [floatingPosition, isVisible, mode]);
+
+    useEffect(() => {
+        if (mode !== 'floating') return;
+        const keepFloatingBrowserInViewport = () => {
+            const rect = panelRef.current?.getBoundingClientRect();
+            if (!rect) return;
+            setFloatingPosition(current => ({
+                x: Math.min(Math.max(FLOATING_VIEWPORT_MARGIN, current.x), Math.max(FLOATING_VIEWPORT_MARGIN, window.innerWidth - rect.width - FLOATING_VIEWPORT_MARGIN)),
+                y: Math.min(Math.max(FLOATING_VIEWPORT_MARGIN, current.y), Math.max(FLOATING_VIEWPORT_MARGIN, window.innerHeight - rect.height - FLOATING_VIEWPORT_MARGIN)),
+            }));
+        };
+        window.addEventListener('resize', keepFloatingBrowserInViewport);
+        return () => window.removeEventListener('resize', keepFloatingBrowserInViewport);
+    }, [mode]);
 
     useEffect(() => {
         const suspendForOverlay = () => {
@@ -128,13 +172,42 @@ const BrowserPanel: React.FC<{style?: React.CSSProperties}> = ({style}) => {
         setState(current => ({...current, open: false}));
         if (panels.activePanel === BROWSER_PANEL_ID) panels.close(BROWSER_PANEL_ID);
     };
+    const startDragging = (event: React.PointerEvent<HTMLDivElement>) => {
+        if (mode !== 'floating' || event.button !== 0 || (event.target as HTMLElement).closest('button, input, form')) return;
+        const rect = panelRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        dragRef.current = {pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, originX: rect.x, originY: rect.y};
+        event.currentTarget.setPointerCapture(event.pointerId);
+        setIsDragging(true);
+        event.preventDefault();
+    };
+    const dragBrowser = (event: React.PointerEvent<HTMLDivElement>) => {
+        const drag = dragRef.current;
+        const panel = panelRef.current;
+        if (!drag || !panel || drag.pointerId !== event.pointerId) return;
+        const rect = panel.getBoundingClientRect();
+        setFloatingPosition({
+            x: Math.min(Math.max(FLOATING_VIEWPORT_MARGIN, drag.originX + event.clientX - drag.startX), Math.max(FLOATING_VIEWPORT_MARGIN, window.innerWidth - rect.width - FLOATING_VIEWPORT_MARGIN)),
+            y: Math.min(Math.max(FLOATING_VIEWPORT_MARGIN, drag.originY + event.clientY - drag.startY), Math.max(FLOATING_VIEWPORT_MARGIN, window.innerHeight - rect.height - FLOATING_VIEWPORT_MARGIN)),
+        });
+    };
+    const stopDragging = (event: React.PointerEvent<HTMLDivElement>) => {
+        if (dragRef.current?.pointerId !== event.pointerId) return;
+        dragRef.current = null;
+        setIsDragging(false);
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    };
 
     if (!isVisible) return null;
     return <aside ref={panelRef}
-        className={`browser-panel browser-panel--${mode}`}
-        style={mode === 'docked' ? style : undefined}
+        className={`browser-panel browser-panel--${mode}${isDragging ? ' is-dragging' : ''}`}
+        style={mode === 'docked' ? style : {left: floatingPosition.x, top: floatingPosition.y}}
         aria-label={t('browser.title')}>
-        <div className="floating-browser-toolbar">
+        <div className="floating-browser-toolbar"
+            onPointerDown={startDragging}
+            onPointerMove={dragBrowser}
+            onPointerUp={stopDragging}
+            onPointerCancel={stopDragging}>
             <span className="floating-browser-brand" title={state.title || t('browser.title')}><Globe2 size={17}/></span>
             <button type="button" disabled={!state.canGoBack} title={t('browser.back')} onClick={() => void window.ragAPI?.browserBack?.()}><ArrowLeft size={17}/></button>
             <button type="button" disabled={!state.canGoForward} title={t('browser.forward')} onClick={() => void window.ragAPI?.browserForward?.()}><ArrowRight size={17}/></button>

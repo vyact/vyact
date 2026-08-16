@@ -6,6 +6,7 @@ const translations: Record<string, string> = {
     'toolActivity.actions.creating': '새 항목을 만들고 있어요',
     'toolActivity.actions.sending': '전송하고 있어요',
     'toolActivity.serviceAction': '{{service}} · {{action}}',
+    'toolActivity.browserBatchReading': '여러 원문을 확인하고 있어요',
 };
 
 const translate = (key: string, options?: Record<string, unknown>): string => {
@@ -46,5 +47,13 @@ describe('tool activity presentation', () => {
         expect(getToolActivityDetail({
             patch: '*** Update File: app/a.py\n*** Update File: app/b.py',
         })).toBe('app/a.py, app/b.py');
+    });
+
+    it('shows browser batch domains without exposing full URLs', () => {
+        expect(getToolActivityLabel('browser_read_urls', translate))
+            .toBe('여러 원문을 확인하고 있어요');
+        expect(getToolActivityDetail({
+            urls: ['https://news.example.com/a?secret=1', 'https://docs.example.org/b'],
+        })).toBe('news.example.com, docs.example.org');
     });
 });
