@@ -1,0 +1,192 @@
+{
+  "cases": 10,
+  "recall_at_8": 1.0,
+  "precision_at_1": 1.0,
+  "mrr_at_8": 1.0,
+  "results": [
+    {
+      "query": "국방 AI 전략에서 제안하는 신뢰 기반 책임있는 AI 프레임워크는 무엇인가?",
+      "expected_file_id": "2e752225-5499-4e31-a2d3-a9fa1f56cab7",
+      "rank": 1,
+      "retrieved": [
+        {
+          "file_id": "2e752225-5499-4e31-a2d3-a9fa1f56cab7",
+          "title": "KCI_FI003095555.pdf [15/40]",
+          "page_number": null,
+          "rerank_score": 0.995632
+        },
+        {
+          "file_id": "2e752225-5499-4e31-a2d3-a9fa1f56cab7",
+          "title": "KCI_FI003095555.pdf [17/40]",
+          "page_number": null,
+          "rerank_score": 0.994547
+        }
+      ]
+    },
+    {
+      "query": "자율살상무기체계 LAWS 국제 논의에서 인간 책임은 어떻게 다뤄지는가?",
+      "expected_file_id": "2e752225-5499-4e31-a2d3-a9fa1f56cab7",
+      "rank": 1,
+      "retrieved": [
+        {
+          "file_id": "2e752225-5499-4e31-a2d3-a9fa1f56cab7",
+          "title": "KCI_FI003095555.pdf [6/40]",
+          "page_number": null,
+          "rerank_score": 0.969326
+        }
+      ]
+    },
+    {
+      "query": "기업이 책임있는 AI를 위해 라이프사이클 단계별로 해야 할 활동은?",
+      "expected_file_id": "f2205f69-aacd-4a58-adbb-7f13a3c4c595",
+      "rank": 1,
+      "retrieved": [
+        {
+          "file_id": "f2205f69-aacd-4a58-adbb-7f13a3c4c595",
+          "title": "KCI_FI003154695.pdf [23/52]",
+          "page_number": null,
+          "rerank_score": 0.997115
+        },
+        {
+          "file_id": "f2205f69-aacd-4a58-adbb-7f13a3c4c595",
+          "title": "KCI_FI003154695.pdf [22/52]",
+          "page_number": null,
+          "rerank_score": 0.994338
+        }
+      ]
+    },
+    {
+      "query": "이루다 챗봇과 아마존 채용 AI 사례가 보여주는 윤리 문제는?",
+      "expected_file_id": "f2205f69-aacd-4a58-adbb-7f13a3c4c595",
+      "rank": 1,
+      "retrieved": [
+        {
+          "file_id": "f2205f69-aacd-4a58-adbb-7f13a3c4c595",
+          "title": "KCI_FI003154695.pdf [2/52]",
+          "page_number": null,
+          "rerank_score": 0.972194
+        },
+        {
+          "file_id": "f2205f69-aacd-4a58-adbb-7f13a3c4c595",
+          "title": "KCI_FI003154695.pdf [4/52]",
+          "page_number": null,
+          "rerank_score": 0.5217
+        }
+      ]
+    },
+    {
+      "query": "How do institutional investors affect multi-class share structures and valuation discounts?",
+      "expected_file_id": "4a4b74ba-e05c-4505-b800-083df5410b39",
+      "rank": 1,
+      "retrieved": [
+        {
+          "file_id": "4a4b74ba-e05c-4505-b800-083df5410b39",
+          "title": "KCI_FI003157572.pdf [91/160]",
+          "page_number": null,
+          "rerank_score": 0.98781
+        },
+        {
+          "file_id": "4a4b74ba-e05c-4505-b800-083df5410b39",
+          "title": "KCI_FI003157572.pdf [1/160]",
+          "page_number": null,
+          "rerank_score": 0.983613
+        }
+      ]
+    },
+    {
+      "query": "What are the merits and costs of differential voting rights and dual-class shares?",
+      "expected_file_id": "4a4b74ba-e05c-4505-b800-083df5410b39",
+      "rank": 1,
+      "retrieved": [
+        {
+          "file_id": "4a4b74ba-e05c-4505-b800-083df5410b39",
+          "title": "KCI_FI003157572.pdf [3/160]",
+          "page_number": null,
+          "rerank_score": 0.942766
+        },
+        {
+          "file_id": "4a4b74ba-e05c-4505-b800-083df5410b39",
+          "title": "KCI_FI003157572.pdf [141/160]",
+          "page_number": null,
+          "rerank_score": 0.683883
+        }
+      ]
+    },
+    {
+      "query": "How does stock overvaluation influence green patenting among Korean listed firms?",
+      "expected_file_id": "dbe27698-e9a7-41a1-941e-9db701a4b6ee",
+      "rank": 1,
+      "retrieved": [
+        {
+          "file_id": "dbe27698-e9a7-41a1-941e-9db701a4b6ee",
+          "title": "KCI_FI003336902.pdf [89/122]",
+          "page_number": null,
+          "rerank_score": 0.999627
+        },
+        {
+          "file_id": "dbe27698-e9a7-41a1-941e-9db701a4b6ee",
+          "title": "KCI_FI003336902.pdf [8/122]",
+          "page_number": null,
+          "rerank_score": 0.999351
+        }
+      ]
+    },
+    {
+      "query": "Does equity financing or a catering mechanism explain green patent filings?",
+      "expected_file_id": "dbe27698-e9a7-41a1-941e-9db701a4b6ee",
+      "rank": 1,
+      "retrieved": [
+        {
+          "file_id": "dbe27698-e9a7-41a1-941e-9db701a4b6ee",
+          "title": "KCI_FI003336902.pdf [89/122]",
+          "page_number": null,
+          "rerank_score": 0.998265
+        },
+        {
+          "file_id": "dbe27698-e9a7-41a1-941e-9db701a4b6ee",
+          "title": "KCI_FI003336902.pdf [9/122]",
+          "page_number": null,
+          "rerank_score": 0.997497
+        }
+      ]
+    },
+    {
+      "query": "What drives return asymmetry in Counter-Strike 2 skins: starting price or rarity tier?",
+      "expected_file_id": "46c85fee-b4d9-417d-8218-cb0b9b6ec5c9",
+      "rank": 1,
+      "retrieved": [
+        {
+          "file_id": "46c85fee-b4d9-417d-8218-cb0b9b6ec5c9",
+          "title": "ssrn-7265860.pdf [4/71]",
+          "page_number": null,
+          "rerank_score": 0.996332
+        },
+        {
+          "file_id": "46c85fee-b4d9-417d-8218-cb0b9b6ec5c9",
+          "title": "ssrn-7265860.pdf [46/71]",
+          "page_number": null,
+          "rerank_score": 0.835294
+        }
+      ]
+    },
+    {
+      "query": "What legal ownership and tail risks arise when investing in CS2 virtual items?",
+      "expected_file_id": "46c85fee-b4d9-417d-8218-cb0b9b6ec5c9",
+      "rank": 1,
+      "retrieved": [
+        {
+          "file_id": "46c85fee-b4d9-417d-8218-cb0b9b6ec5c9",
+          "title": "ssrn-7265860.pdf [1/71]",
+          "page_number": null,
+          "rerank_score": 0.78634
+        },
+        {
+          "file_id": "46c85fee-b4d9-417d-8218-cb0b9b6ec5c9",
+          "title": "ssrn-7265860.pdf [66/71]",
+          "page_number": null,
+          "rerank_score": 0.524946
+        }
+      ]
+    }
+  ]
+}

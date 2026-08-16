@@ -93,6 +93,9 @@ def _rerank(hits: list[dict], size: int, preserve_order: bool = False) -> list[d
             "web_document_id": h["_source"].get("web_document_id"),
             "file_id": h["_source"].get("file_id"),
             "heading_path": h["_source"].get("heading_path") or [],
+            "page_number": h["_source"].get("page_number"),
+            "chunk_type": h["_source"].get("chunk_type"),
+            "total_chunks": h["_source"].get("total_chunks"),
             **({"memo_id": h["_source"].get("id", h["_id"])} if source == "memo" else {}),
         }
         results.append(result)
