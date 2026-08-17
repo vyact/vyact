@@ -64,6 +64,8 @@
     "llmLogDesc": "将查询和响应保存到 llm_YYYYMMDD.log。",
     "toolLog": "Tool 调用日志",
     "toolLogDesc": "在应用日志中记录 LLM 调用时传递的 tool 名称。",
+    "debugLog": "调试模式",
+    "debugLogDesc": "记录模型决策和应用行为的详细诊断日志，以便分析问题。",
     "ttsTitle": "TTS 语音设置",
     "kokoroActive": "Kokoro-82M 已启用",
     "webSpeechMode": "Web Speech 模式",

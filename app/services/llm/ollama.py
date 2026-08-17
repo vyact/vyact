@@ -7,6 +7,7 @@ import json
 
 import httpx
 
+from logger import DebugLogSettings
 from prompts import build_system_message, build_user_prompt
 from .config import (
     OLLAMA_URL, LLM_NUM_CTX, LLM_NUM_PREDICT, LLM_TEMPERATURE, TOP_K, TOP_P, OLLAMA_KEEP_ALIVE,
@@ -297,6 +298,7 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
         msg = data.get("message", {}) or {}
         return {"tool_calls": msg.get("tool_calls") or [],
                 "content": msg.get("content", "") or "",
+                "thinking": msg.get("thinking", "") or "",
                 "stats": _extract_stats(data), "committed": False, "aborted": False}
 
     # ── 멀티라운드 stats 합산용 ──
@@ -402,6 +404,18 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
                  "arguments": (tc.get("function", {}) or {}).get("arguments")}
                 for tc in tool_calls
             ]
+            DebugLogSettings.log(
+                "llm_tool_decision",
+                provider="ollama",
+                round=_round + 1,
+                previous_tool=_last_tool_call(work)[0] or None,
+                decision_text=content,
+                reasoning=round_result.get("thinking") or None,
+                tool_calls=[{
+                    "name": item.get("name"),
+                    "arguments": DebugLogSettings.redact_arguments(item.get("arguments") or {}),
+                } for item in tc_summary],
+            )
             log_llm_call(
                 call_reason, "ollama", model, streaming=False,
                 reasoning=reasoning,
@@ -410,6 +424,14 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
             )
 
             if not tool_calls:
+                DebugLogSettings.log(
+                    "tool_flow_stopped",
+                    round=_round + 1,
+                    previous_tool=_last_tool_call(work)[0] or None,
+                    reason="model_returned_no_tool_calls",
+                    decision_text=content,
+                    reasoning=round_result.get("thinking") or None,
+                )
                 final_messages = work if len(work) > len(messages) else messages
                 merged = _build_merged_stats(round_result["stats"])
                 return _result(final_messages, direct_answer=content or None,

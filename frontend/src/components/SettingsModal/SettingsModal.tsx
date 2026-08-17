@@ -235,7 +235,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
 
     // 일반 설정 탭
     const [llmLogging, setLlmLogging] = useState(false);
-    const [toolLogging, setToolLogging] = useState(false);
+    const [toolLogging, setToolLogging] = useState(true);
+    const [debugLogging, setDebugLogging] = useState(false);
     const [runtimeSettings, setRuntimeSettings] = useState<RuntimeSettings>(DEFAULT_RUNTIME_SETTINGS);
     const [runtimeInputValues, setRuntimeInputValues] = useState<Record<string, string>>(
         toRuntimeInputValues(DEFAULT_RUNTIME_SETTINGS)
@@ -342,6 +343,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
             });
             api.getToolLogging().then(r => {
                 setToolLogging(r.tool_logging);
+            }).catch(() => {
+            });
+            api.getDebugLogging().then(r => {
+                setDebugLogging(r.debug_logging);
             }).catch(() => {
             });
             api.getRuntimeSettings().then(r => {
@@ -1144,6 +1149,29 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                                            await api.setToolLogging(v);
                                                        } catch {
                                                            setToolLogging(!v);
+                                                       }
+                                                   }}/>
+                                            <span className="settings-switch-slider"/>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                {/* ── Debug 모드 ── */}
+                                <div className="settings-general-section">
+                                    <div className="settings-toggle-row">
+                                        <div>
+                                            <div className="settings-toggle-title">{t('general.debugLog')}</div>
+                                            <div className="settings-toggle-desc">{t('general.debugLogDesc')}</div>
+                                        </div>
+                                        <label className="settings-switch">
+                                            <input type="checkbox" checked={debugLogging}
+                                                   onChange={async e => {
+                                                       const v = e.target.checked;
+                                                       setDebugLogging(v);
+                                                       try {
+                                                           await api.setDebugLogging(v);
+                                                       } catch {
+                                                           setDebugLogging(!v);
                                                        }
                                                    }}/>
                                             <span className="settings-switch-slider"/>

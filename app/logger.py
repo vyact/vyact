@@ -10,11 +10,72 @@ logger.py – 앱 전역 로깅 설정 및 logger 팩토리
     llm_YYYYMMDD.log   – LLM 요청/응답
     event_YYYYMMDD.log – 이벤트 감사 로그
 """
+import json
 import logging
+import os
 import sys
 import unicodedata
 
 _initialized = False
+
+
+class ToolLogSettings:
+    """Runtime switches shared by every app-log handler."""
+
+    enabled = True
+
+    @classmethod
+    def set_enabled(cls, enabled: bool) -> None:
+        cls.enabled = bool(enabled)
+
+
+class DebugLogSettings:
+    """Opt-in diagnostics shared by application debug instrumentation.
+
+    Keep this disabled in normal operation because browser inspection results may
+    contain page text. It can be toggled before startup with
+    ``VYACT_DEBUG_LOGGING=1`` or at runtime in tests/development.
+    """
+
+    enabled = os.getenv("VYACT_DEBUG_LOGGING", "").strip().lower() in {
+        "1", "true", "yes", "on",
+    }
+    MAX_PAYLOAD_CHARS = 30_000
+    _SENSITIVE_ARGUMENT_KEYS = {
+        "text", "password", "token", "api_key", "authorization", "secret",
+    }
+
+    @classmethod
+    def set_enabled(cls, enabled: bool) -> None:
+        cls.enabled = bool(enabled)
+
+    @classmethod
+    def redact_arguments(cls, arguments: object) -> object:
+        if not isinstance(arguments, dict):
+            return arguments
+        return {
+            key: "[REDACTED]" if key.lower() in cls._SENSITIVE_ARGUMENT_KEYS
+            else cls.redact_arguments(value)
+            for key, value in arguments.items()
+        }
+
+    @classmethod
+    def result_payload(cls, result: object) -> object:
+        if not isinstance(result, str):
+            return result
+        try:
+            return json.loads(result)
+        except (json.JSONDecodeError, TypeError):
+            return result
+
+    @classmethod
+    def log(cls, event: str, **payload: object) -> None:
+        if not cls.enabled:
+            return
+        serialized = json.dumps(payload, ensure_ascii=False, default=str)
+        if len(serialized) > cls.MAX_PAYLOAD_CHARS:
+            serialized = serialized[:cls.MAX_PAYLOAD_CHARS] + "…[truncated]"
+        logging.getLogger("debug").info("[debug] event=%s data=%s", event, serialized)
 
 
 class _UnicodeNormalizationFilter(logging.Filter):
@@ -34,6 +95,19 @@ class _PdfMinerFontBBoxFilter(logging.Filter):
 
     def filter(self, record: logging.LogRecord) -> bool:
         return not record.getMessage().startswith(self.MESSAGE_PREFIX)
+
+
+class _ToolLoggingFilter(logging.Filter):
+    """Suppress ordinary tool orchestration records when Tool logging is off."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        message = record.getMessage()
+        is_tool_log = (
+            message.startswith("[tool_calls]")
+            or message.startswith("[tool_pass]")
+            or (message.startswith("[llm_call]") and "kind=tool_judgment" in message)
+        )
+        return not is_tool_log or ToolLogSettings.enabled
 
 
 def setup_logging() -> None:
@@ -61,6 +135,7 @@ def setup_logging() -> None:
     if not any(isinstance(h, logging.FileHandler) for h in root.handlers):
         fh = logging.FileHandler(log_file, encoding="utf-8")
         fh.setFormatter(fmt)
+        fh.addFilter(_ToolLoggingFilter())
         fh.addFilter(_UnicodeNormalizationFilter())
         root.addHandler(fh)
 
@@ -70,6 +145,7 @@ def setup_logging() -> None:
     ):
         sh = logging.StreamHandler(sys.stdout)
         sh.setFormatter(fmt)
+        sh.addFilter(_ToolLoggingFilter())
         sh.addFilter(_UnicodeNormalizationFilter())
         root.addHandler(sh)
 
@@ -101,6 +177,7 @@ def setup_logging() -> None:
         (logging.StreamHandler(sys.stdout), fmt_uvi),
     ]:
         h.setFormatter(fmt_)
+        h.addFilter(_ToolLoggingFilter())
         h.addFilter(_UnicodeNormalizationFilter())
         uve.addHandler(h)
 

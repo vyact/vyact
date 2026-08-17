@@ -231,6 +231,7 @@ async def lifespan(app: FastAPI):
 
         try:
             from routers.deps import load_config_async, save_config_async
+            from logger import DebugLogSettings, ToolLogSettings
             from services.runtime_settings import apply_runtime_settings
             cfg = await load_config_async()
             if not cfg or not cfg.get("type"):
@@ -238,6 +239,10 @@ async def lifespan(app: FastAPI):
                 await save_config_async(cfg)
                 logger.info("Default config saved to ES")
             apply_runtime_settings(cfg.get("runtime_settings"))
+            ToolLogSettings.set_enabled(cfg.get("tool_logging", True))
+            DebugLogSettings.set_enabled(
+                cfg.get("debug_logging", cfg.get("tool_debug_logging", False))
+            )
         except Exception as e:
             logger.warning("Config initialization failed: %s", e)
     else:

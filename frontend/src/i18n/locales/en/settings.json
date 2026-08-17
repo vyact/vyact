@@ -90,6 +90,8 @@
     "llmLogDesc": "Save queries and responses to llm_YYYYMMDD.log.",
     "toolLog": "Tool call logs",
     "toolLogDesc": "Log tool names passed during LLM calls to the app log.",
+    "debugLog": "Debug mode",
+    "debugLogDesc": "Record detailed model decisions and application diagnostics for troubleshooting.",
     "ttsTitle": "TTS Voice Settings",
     "kokoroActive": "Kokoro-82M Active",
     "webSpeechMode": "Web Speech Mode",

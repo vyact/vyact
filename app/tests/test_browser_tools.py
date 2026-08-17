@@ -2,6 +2,7 @@ import importlib
 
 import pytest
 
+from logger import DebugLogSettings
 from services import browser_tools
 from services.tool_approval import get_tool_risk, requires_approval
 
@@ -81,3 +82,15 @@ def test_browser_tools_register_for_extension_or_electron(monkeypatch) -> None:
     monkeypatch.delenv("VYACT_BROWSER_CONTROL_TOKEN", raising=False)
     module = importlib.reload(browser_tools)
     assert module.register_browser_tools() is True
+
+
+def test_debug_logging_masks_user_input() -> None:
+    assert DebugLogSettings.redact_arguments({
+        "element_id": "vyact-12",
+        "text": "private input",
+        "nested": {"token": "secret", "url": "https://example.com"},
+    }) == {
+        "element_id": "vyact-12",
+        "text": "[REDACTED]",
+        "nested": {"token": "[REDACTED]", "url": "https://example.com"},
+    }

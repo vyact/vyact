@@ -64,6 +64,8 @@
     "llmLogDesc": "Guarda preguntas y respuestas.",
     "toolLog": "Logs de tools",
     "toolLogDesc": "Guarda nombres de tools en la app.",
+    "debugLog": "Modo de depuración",
+    "debugLogDesc": "Registra decisiones del modelo y diagnósticos detallados de la aplicación.",
     "ttsTitle": "Voz TTS",
     "kokoroActive": "Kokoro activo",
     "webSpeechMode": "Modo Web Speech",

@@ -930,6 +930,20 @@ export const api = {
         return res.json();
     },
 
+    async getDebugLogging(): Promise<{ debug_logging: boolean }> {
+        const res = await fetch(`${API_BASE}/settings/debug-logging`);
+        return res.json();
+    },
+
+    async setDebugLogging(enabled: boolean): Promise<{ debug_logging: boolean }> {
+        const res = await fetch(`${API_BASE}/settings/debug-logging`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({enabled})
+        });
+        return res.json();
+    },
+
     async getRuntimeSettings(): Promise<Record<string, number>> {
         const res = await fetch(`${API_BASE}/settings/runtime`);
         return res.json();

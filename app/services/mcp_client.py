@@ -19,7 +19,7 @@ from contextvars import ContextVar
 from contextlib import AsyncExitStack
 from typing import Any
 
-from logger import get_logger
+from logger import DebugLogSettings, get_logger
 
 logger = get_logger(__name__)
 
@@ -420,6 +420,8 @@ class MCPManager:
         sources는 self._pending_sources에 적재하고(drain_tool_sources로 소비),
         text만 결과 텍스트로 반환한다.
         """
+        safe_arguments = DebugLogSettings.redact_arguments(arguments or {})
+        DebugLogSettings.log("tool_execution_start", tool=prefixed_name, arguments=safe_arguments)
         spec = self._internal_tools.get(prefixed_name)
         if spec is not None:
             try:
@@ -428,9 +430,16 @@ class MCPManager:
                     srcs = result.get("sources") or []
                     if srcs:
                         self._pending_sources.extend(srcs)
-                    return str(result.get("text", "") or "")
-                return result if isinstance(result, str) else str(result)
+                    result_text = str(result.get("text", "") or "")
+                else:
+                    result_text = result if isinstance(result, str) else str(result)
+                DebugLogSettings.log(
+                    "tool_execution_end", tool=prefixed_name,
+                    result=DebugLogSettings.result_payload(result_text),
+                )
+                return result_text
             except Exception as e:
+                DebugLogSettings.log("tool_execution_error", tool=prefixed_name, error=str(e))
                 logger.warning("[mcp] internal tool failed %s: %s", prefixed_name, e)
                 return f"[오류] tool 실행 실패({prefixed_name}): {e}"
 
@@ -444,10 +453,16 @@ class MCPManager:
         try:
             result = await worker.server.session.call_tool(tool_name, arguments or {})
         except Exception as e:
+            DebugLogSettings.log("tool_execution_error", tool=prefixed_name, error=str(e))
             logger.warning("[mcp] call_tool failed %s: %s", prefixed_name, e)
             return f"[오류] tool 실행 실패({prefixed_name}): {e}"
 
-        return self._result_to_text(result)
+        result_text = self._result_to_text(result)
+        DebugLogSettings.log(
+            "tool_execution_end", tool=prefixed_name,
+            result=DebugLogSettings.result_payload(result_text),
+        )
+        return result_text
 
     @staticmethod
     def _result_to_text(result: Any) -> str:

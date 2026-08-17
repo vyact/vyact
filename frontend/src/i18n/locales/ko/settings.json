@@ -119,6 +119,8 @@
     "llmLogDesc": "질의·응답을 llm_YYYYMMDD.log에 저장합니다.",
     "toolLog": "Tool 전달 로그",
     "toolLogDesc": "LLM 호출 시 전달된 tool 이름을 app 로그에 기록합니다.",
+    "debugLog": "Debug 모드",
+    "debugLogDesc": "문제 분석을 위한 모델 판단과 앱 동작의 상세 진단 로그를 기록합니다.",
     "ttsTitle": "TTS 음성 설정",
     "kokoroActive": "Kokoro-82M 활성",
     "webSpeechMode": "Web Speech 모드",

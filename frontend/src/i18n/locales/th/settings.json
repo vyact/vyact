@@ -64,6 +64,8 @@
     "llmLogDesc": "บันทึกคำถามและคำตอบ",
     "toolLog": "บันทึก Tool",
     "toolLogDesc": "บันทึกชื่อ tool ในแอป",
+    "debugLog": "โหมดดีบัก",
+    "debugLogDesc": "บันทึกการตัดสินใจของโมเดลและข้อมูลวินิจฉัยแอปโดยละเอียด",
     "ttsTitle": "เสียง TTS",
     "kokoroActive": "Kokoro พร้อม",
     "webSpeechMode": "โหมด Web Speech",

@@ -127,7 +127,7 @@ async def log_tool_names(tool_names: list[str], reason: str = ""):
     try:
         from routers.deps import load_config_async
         cfg = await load_config_async()
-        if not cfg.get("tool_logging", False):
+        if not cfg.get("tool_logging", True):
             return
         logger.info("[tool_pass] reason=%s count=%d tools=[%s]", reason, len(tool_names), ", ".join(tool_names))
     except Exception:

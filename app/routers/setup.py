@@ -21,7 +21,7 @@ from config import (
 )
 from config.models import LLM_INITIAL_NUM_CTX, LLM_MAX_NUM_CTX
 from routers.deps import APP_DIR, load_config_async, save_config_async, sse, write_log
-from logger import get_logger
+from logger import DebugLogSettings, ToolLogSettings, get_logger
 from services.installer import is_docker_available, Installer
 from services.es_native import is_native_supported
 from services.mcp_config import ensure_mcp_config
@@ -842,7 +842,9 @@ async def set_llm_logging(body: dict):
 @router.get("/settings/tool-logging")
 async def get_tool_logging():
     cfg = await load_config_async()
-    return {"tool_logging": cfg.get("tool_logging", False)}
+    enabled = cfg.get("tool_logging", True)
+    ToolLogSettings.set_enabled(enabled)
+    return {"tool_logging": enabled}
 
 
 @router.post("/settings/tool-logging")
@@ -850,7 +852,26 @@ async def set_tool_logging(body: dict):
     cfg = await load_config_async()
     cfg["tool_logging"] = bool(body.get("enabled", False))
     await save_config_async(cfg)
+    ToolLogSettings.set_enabled(cfg["tool_logging"])
     return {"tool_logging": cfg["tool_logging"]}
+
+
+@router.get("/settings/debug-logging")
+async def get_debug_logging():
+    cfg = await load_config_async()
+    enabled = cfg.get("debug_logging", cfg.get("tool_debug_logging", False))
+    DebugLogSettings.set_enabled(enabled)
+    return {"debug_logging": enabled}
+
+
+@router.post("/settings/debug-logging")
+async def set_debug_logging(body: dict):
+    cfg = await load_config_async()
+    cfg["debug_logging"] = bool(body.get("enabled", False))
+    cfg.pop("tool_debug_logging", None)
+    await save_config_async(cfg)
+    DebugLogSettings.set_enabled(cfg["debug_logging"])
+    return {"debug_logging": cfg["debug_logging"]}
 
 
 @router.get("/settings/runtime")

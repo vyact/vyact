@@ -64,6 +64,8 @@
     "llmLogDesc": "Lưu câu hỏi và trả lời",
     "toolLog": "Log Tool",
     "toolLogDesc": "Lưu tên tool trong app",
+    "debugLog": "Chế độ gỡ lỗi",
+    "debugLogDesc": "Ghi lại quyết định của mô hình và chẩn đoán ứng dụng chi tiết",
     "ttsTitle": "Giọng TTS",
     "kokoroActive": "Kokoro bật",
     "webSpeechMode": "Chế độ Web Speech",
