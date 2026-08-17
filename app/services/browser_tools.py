@@ -228,7 +228,14 @@ async def _browser_search(query: str) -> str:
 
 
 async def _browser_open(url: str) -> str:
-    result = await _command("navigate", url=_validate_public_url(url))
+    target_url = _validate_public_url(url)
+    result = await _command("navigate", url=target_url)
+    # On the first command after launching Chrome, the extension can briefly
+    # report its bootstrap Google tab before the requested navigation is applied.
+    # Retry only this known transient state so ordinary redirects remain intact.
+    result_url = str(result.get("url") or "") if isinstance(result, dict) else ""
+    if "vyact_browser=1" in result_url:
+        result = await _command("navigate", url=target_url)
     return _as_text(result)
 
 
@@ -281,7 +288,18 @@ async def _browser_read_urls(urls: list[str]) -> dict:
             sources.append({"title": title, "url": page_url, "source": "browser"})
         except Exception as error:
             pages.append({"url": url, "error": str(error)})
-    return {"text": _as_text({"pages": pages}), "sources": sources}
+    return {
+        "text": _as_text({
+            "pages": pages,
+            "active_page_url": pages[-1].get("url") if pages else "",
+            "action_instruction": (
+                "This tool only read the pages and left the browser on the last page. "
+                "To act on multiple pages, open each exact page URL again, inspect it, perform one requested action, "
+                "and verify that action before moving to the next URL."
+            ),
+        }),
+        "sources": sources,
+    }
 
 
 async def _browser_inspect() -> str:

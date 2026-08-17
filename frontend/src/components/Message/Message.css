@@ -561,7 +561,7 @@
 .msg-activity.streaming .msg-activity-dot { top:6.5px; }
 .msg-activity-list li:has(.msg-activity-failed) { color:var(--danger); }
 .msg-activity-list li.running .msg-activity-dot, .msg-activity-list li.judging .msg-activity-dot { background:var(--accent); box-shadow:0 0 0 3px rgba(var(--accent-rgb), .14); }
-.msg-activity-detail { display:flex; align-items:center; flex-wrap:wrap; gap:5px; min-width:0; padding-left:10px; }
+.msg-activity-detail { display:flex; flex-direction:column; align-items:flex-start; gap:4px; min-width:0; max-width:100%; padding-left:10px; }
 .msg-activity-list code { min-width:0; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px; color:var(--muted); }
 .msg-activity-detail a { max-width:360px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--accent); font-size:11px; text-decoration:none; }
 .msg-activity-detail a:hover { text-decoration:underline; }

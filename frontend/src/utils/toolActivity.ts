@@ -140,15 +140,7 @@ export function getToolActivityLinks(args?: Record<string, unknown>): Array<{lab
     const urls = Array.isArray(args.urls) ? args.urls : [args.url];
     const uniqueUrls = [...new Map(urls
         .filter((url): url is string => typeof url === 'string' && /^https?:\/\//i.test(url))
-        .map(url => {
-            try {
-                const parsed = new URL(url);
-                const key = canonicalUrlKey(url);
-                return [key, url] as const;
-            } catch {
-                return [url.replace(/\/$/, ''), url] as const;
-            }
-        })).values()];
+        .map(url => [canonicalUrlKey(url), url] as const)).values()];
     const links = uniqueUrls
         .map(url => {
             try { return {label: new URL(url).hostname, url}; } catch { return {label: url, url}; }

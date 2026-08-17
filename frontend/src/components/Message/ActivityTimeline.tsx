@@ -76,7 +76,9 @@ const ActivityTimeline = ({
                                 {displayDetail && activity.links?.[0]
                                     ? <a href={activity.links[0].url} target="_blank" rel="noreferrer">{displayDetail}</a>
                                     : displayDetail && <code>{displayDetail}</code>}
-                                {!displayDetail && activity.links?.map(link => <a key={link.url} href={link.url} target="_blank" rel="noreferrer">{link.label}</a>)}
+                                {!displayDetail && activity.links?.map(link => (
+                                    <a key={link.url} href={link.url} target="_blank" rel="noreferrer">{link.label}</a>
+                                ))}
                             </span>}
                         </span>
                         {activitySeconds != null && (

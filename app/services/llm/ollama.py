@@ -110,6 +110,16 @@ def _tool_result_failed(result_text: str) -> bool:
     )
 
 
+def _expire_previous_browser_inspections(messages: list[dict]) -> None:
+    """Drop stale DOM inventories while retaining the current page's full inspect."""
+    for message in messages:
+        if message.get("role") == "tool" and message.get("tool_name") == "browser_inspect":
+            message["content"] = (
+                "[expired browser_inspect result: the page or DOM changed; "
+                "use only the latest browser_inspect IDs]"
+            )
+
+
 async def build_ollama_payload(
         question: str,
         context_docs: list[dict],
@@ -555,6 +565,8 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
                 _acc_stats["tool_call_count"] += 1
                 tool_sources = mcp_manager.drain_tool_sources()
                 await _emit({"phase": "end", "name": name, "args": args, "result": result_text, "sources": tool_sources})
+                if name == "browser_inspect" or name in _BROWSER_STATE_CHANGING_TOOL_NAMES:
+                    _expire_previous_browser_inspections(work)
                 work.append({"role": "tool", "content": result_text, "tool_name": name})
                 _debug_execution_ledger.append({
                     "round": _round + 1,

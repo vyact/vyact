@@ -3,10 +3,12 @@ from unittest.mock import AsyncMock, patch
 
 from services.llm.ollama import (
     _compact_tool_results,
+    _expire_previous_browser_inspections,
     _failure_call_key,
     _tool_decision_num_predict,
     resolve_tool_calls,
 )
+from services.llm.tools import build_tool_directive
 from services.llm.config import (
     TOOL_CALL_DECISION_NUM_PREDICT,
     TOOL_CALL_MUTATION_NUM_PREDICT,
@@ -37,6 +39,30 @@ class _Client:
 
 
 class OllamaToolRoundTests(unittest.IsolatedAsyncioTestCase):
+    async def test_browser_directive_separates_candidate_research_from_actions(self):
+        with patch(
+            "services.mcp_config.get_active_mcp_prompt",
+            AsyncMock(return_value=""),
+        ):
+            directive = await build_tool_directive([
+                "browser_read_urls", "browser_open", "browser_inspect", "browser_click",
+            ])
+
+        self.assertIn("최소 2N개", directive)
+        self.assertIn("후보 탐색·비교와 최종 변경 행동을 분리", directive)
+        self.assertIn("읽은 모든 상품을 자동으로 선정된 상품으로 간주하지 마라", directive)
+
+    def test_stale_browser_inspections_are_expired(self):
+        messages = [
+            {"role": "tool", "tool_name": "browser_inspect", "content": "large old DOM"},
+            {"role": "tool", "tool_name": "browser_read", "content": "current page text"},
+        ]
+
+        _expire_previous_browser_inspections(messages)
+
+        self.assertIn("expired browser_inspect", messages[0]["content"])
+        self.assertEqual(messages[1]["content"], "current page text")
+
     def test_final_request_retains_tool_schema_for_prefix_cache(self):
         tools = [{"type": "function", "function": {"name": "browser_read"}}]
         messages = [{"role": "user", "content": "read the page"}]
