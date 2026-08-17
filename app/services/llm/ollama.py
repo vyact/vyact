@@ -339,6 +339,7 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
     _fail_tracker: dict[str, int] = {}  # "tool_name:args_hash" → 연속 실패 횟수
     _call_count: dict[str, int] = {}    # 동일 호출 총 횟수 (성공 포함)
     _last_successful_call: tuple[str, str] | None = None  # 직전 성공 호출과 결과
+    _debug_execution_ledger: list[dict] = []
     _MAX_SAME_FAIL = 2   # 같은 호출이 2회 실패하면 중단
     _MAX_SAME_CALL = 3   # 같은 호출이 3회 이상이면 중단 (성공 포함)
     rejection_answer: str | None = None
@@ -346,6 +347,14 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
     runtime = get_runtime_settings()
     async with httpx.AsyncClient(timeout=timeout) as client:
         for _round in range(max_rounds):
+            DebugLogSettings.log(
+                "tool_round_start",
+                provider="ollama",
+                round=_round + 1,
+                message_count=len(work),
+                previous_tool=_last_tool_call(work)[0] or None,
+                executed_tool_count=len(_debug_execution_ledger),
+            )
             logger.info("[tool_calls] 판정 라운드 시작: round=%d/%d", _round + 1, max_rounds)
             await _emit({"phase": "judging", "round": _round})
             decision_options = {
@@ -424,6 +433,35 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
             )
 
             if not tool_calls:
+                visited_urls = []
+                clicks = []
+                user_waits = []
+                for execution in _debug_execution_ledger:
+                    summary = execution.get("summary") or {}
+                    url = summary.get("url")
+                    if url and url not in visited_urls:
+                        visited_urls.append(url)
+                    for page in summary.get("pages") or []:
+                        page_url = page.get("url")
+                        if page_url and page_url not in visited_urls:
+                            visited_urls.append(page_url)
+                    if execution.get("tool") == "browser_click":
+                        clicks.append(summary.get("element") or execution.get("arguments"))
+                    if execution.get("tool") in {"browser_ask_user", "browser_wait_for_user"}:
+                        user_waits.append(execution.get("tool"))
+                DebugLogSettings.log(
+                    "tool_flow_completion_audit",
+                    round=_round + 1,
+                    executed_tool_count=len(_debug_execution_ledger),
+                    tool_counts={name: sum(1 for item in _debug_execution_ledger if item["tool"] == name)
+                                 for name in {item["tool"] for item in _debug_execution_ledger}},
+                    visited_url_count=len(visited_urls),
+                    visited_urls=visited_urls,
+                    click_count=len(clicks),
+                    clicked_elements=clicks,
+                    user_wait_calls=user_waits,
+                    final_decision_text=content,
+                )
                 DebugLogSettings.log(
                     "tool_flow_stopped",
                     round=_round + 1,
@@ -500,6 +538,19 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
                 tool_sources = mcp_manager.drain_tool_sources()
                 await _emit({"phase": "end", "name": name, "args": args, "result": result_text, "sources": tool_sources})
                 work.append({"role": "tool", "content": result_text, "tool_name": name})
+                _debug_execution_ledger.append({
+                    "round": _round + 1,
+                    "tool": name,
+                    "arguments": DebugLogSettings.redact_arguments(args),
+                    "summary": DebugLogSettings.summarize_result(result_text),
+                })
+                DebugLogSettings.log(
+                    "tool_result_added_to_context",
+                    round=_round + 1,
+                    tool=name,
+                    result_chars=len(result_text),
+                    summary=DebugLogSettings.summarize_result(result_text),
+                )
                 if mcp_manager.is_single_shot(name):
                     hit_single_shot = True
 

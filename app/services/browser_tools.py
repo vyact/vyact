@@ -4,11 +4,13 @@ import ipaddress
 import json
 import os
 import re
+import time
+from contextvars import ContextVar
 from urllib.parse import quote_plus, urlparse
 
 import httpx
 
-from logger import get_logger
+from logger import DebugLogSettings, get_logger
 from services.code_tools import current_code_folders
 from services.extension_browser import extension_browser
 
@@ -22,6 +24,13 @@ MAX_BATCH_READ_URLS = 5
 MAX_BATCH_PAGE_TEXT_CHARS = 16000
 MAX_PAGE_TEXT_CHARS = 20000
 MAX_PAGE_LINKS = 100
+PAGE_READINESS_CACHE_TTL_SECONDS = 15.0
+PAGE_READINESS_INVALIDATING_COMMANDS = {
+    "navigate", "open", "back", "click", "type", "scroll", "wait", "close",
+}
+_page_readiness_cache: ContextVar[dict | None] = ContextVar(
+    "browser_page_readiness_cache", default=None,
+)
 
 
 def _validate_public_url(url: str) -> str:
@@ -89,10 +98,63 @@ async def _wait_for_extension_connection() -> bool:
 async def _command(command: str, **args):
     # A selected project keeps the embedded Electron browser for local app
     # testing. Ordinary chat launches and controls the user's Chrome tab.
-    if not current_code_folders.get():
+    use_extension = not current_code_folders.get()
+    if use_extension:
         await _wait_for_extension_connection()
-        return await extension_browser.execute(command, **args)
-    return await _electron_command(command, **args)
+    executor = extension_browser.execute if use_extension else _electron_command
+    if command in PAGE_READINESS_INVALIDATING_COMMANDS:
+        _page_readiness_cache.set(None)
+    if command in {"read", "inspect"}:
+        transport = "chrome_extension" if use_extension else "electron"
+        cached = _page_readiness_cache.get()
+        cache_age = time.monotonic() - cached["cached_at"] if cached else None
+        cache_reused = False
+        if cached and cached.get("transport") == transport and cache_age is not None \
+                and cache_age <= PAGE_READINESS_CACHE_TTL_SECONDS:
+            try:
+                status = await executor("status")
+                cache_reused = (
+                    not status.get("loading")
+                    and status.get("url") == cached.get("url")
+                )
+            except Exception:
+                cache_reused = False
+        if cache_reused:
+            DebugLogSettings.log(
+                "browser_page_readiness_reused",
+                command=command,
+                transport=transport,
+                url=cached.get("url"),
+                cache_age_ms=round(cache_age * 1000, 1),
+                metrics=cached.get("metrics"),
+            )
+            return await executor(command, **args)
+        try:
+            readiness = await executor("wait_ready")
+            readiness_url = readiness.get("url") if isinstance(readiness, dict) else None
+            _page_readiness_cache.set({
+                "transport": transport,
+                "url": readiness_url,
+                "cached_at": time.monotonic(),
+                "metrics": readiness,
+            })
+            DebugLogSettings.log(
+                "browser_page_readiness",
+                command=command,
+                transport=transport,
+                metrics=readiness,
+            )
+        except Exception as error:
+            # During a rolling desktop/extension update, an older extension may
+            # not know wait_ready yet. Preserve browser reads and make the
+            # degraded readiness check visible only in opt-in diagnostics.
+            DebugLogSettings.log(
+                "browser_page_readiness_unavailable",
+                command=command,
+                transport=transport,
+                error=str(error),
+            )
+    return await executor(command, **args)
 
 
 def _as_text(result) -> str:

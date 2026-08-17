@@ -13,8 +13,10 @@ logger.py – 앱 전역 로깅 설정 및 logger 팩토리
 import json
 import logging
 import os
+import secrets
 import sys
 import unicodedata
+from contextvars import ContextVar
 
 _initialized = False
 
@@ -44,6 +46,7 @@ class DebugLogSettings:
     _SENSITIVE_ARGUMENT_KEYS = {
         "text", "password", "token", "api_key", "authorization", "secret",
     }
+    _trace_id: ContextVar[str] = ContextVar("debug_trace_id", default="")
 
     @classmethod
     def set_enabled(cls, enabled: bool) -> None:
@@ -51,6 +54,8 @@ class DebugLogSettings:
 
     @classmethod
     def redact_arguments(cls, arguments: object) -> object:
+        if isinstance(arguments, list):
+            return [cls.redact_arguments(value) for value in arguments]
         if not isinstance(arguments, dict):
             return arguments
         return {
@@ -69,13 +74,64 @@ class DebugLogSettings:
             return result
 
     @classmethod
+    def ensure_trace_id(cls) -> str:
+        trace_id = cls._trace_id.get()
+        if not trace_id:
+            trace_id = secrets.token_hex(4)
+            cls._trace_id.set(trace_id)
+        return trace_id
+
+    @classmethod
+    def summarize_result(cls, result: object) -> dict:
+        payload = cls.result_payload(result)
+        if isinstance(payload, list):
+            return {
+                "result_type": "list",
+                "item_count": len(payload),
+                "items": payload[:20],
+            }
+        if not isinstance(payload, dict):
+            text = str(payload or "")
+            return {"result_type": "text", "length": len(text), "preview": text[:500]}
+        summary = {
+            key: payload.get(key)
+            for key in ("ok", "error", "url", "title", "open", "loading", "element")
+            if payload.get(key) is not None
+        }
+        text = payload.get("text")
+        if isinstance(text, str):
+            summary.update({"text_length": len(text), "text_preview": text[:500]})
+        pages = payload.get("pages")
+        if isinstance(pages, list):
+            summary["page_count"] = len(pages)
+            summary["pages"] = [
+                {
+                    "url": page.get("url"),
+                    "title": page.get("title"),
+                    "text_length": len(str(page.get("text") or "")),
+                    "error": page.get("error"),
+                }
+                for page in pages if isinstance(page, dict)
+            ]
+        return summary
+
+    @classmethod
     def log(cls, event: str, **payload: object) -> None:
         if not cls.enabled:
             return
-        serialized = json.dumps(payload, ensure_ascii=False, default=str)
+        serialized = json.dumps(
+            {"trace_id": cls.ensure_trace_id(), **payload},
+            ensure_ascii=False,
+            default=str,
+        )
         if len(serialized) > cls.MAX_PAYLOAD_CHARS:
             serialized = serialized[:cls.MAX_PAYLOAD_CHARS] + "…[truncated]"
-        logging.getLogger("debug").info("[debug] event=%s data=%s", event, serialized)
+        debug_logger = logging.getLogger("debug")
+        # Keep the root logger at INFO to avoid noisy third-party diagnostics.
+        # An explicit child level still lets these opt-in records reach the
+        # existing root handlers with the correct DEBUG severity label.
+        debug_logger.setLevel(logging.DEBUG)
+        debug_logger.debug("[debug] event=%s data=%s", event, serialized)
 
 
 class _UnicodeNormalizationFilter(logging.Filter):

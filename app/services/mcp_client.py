@@ -15,6 +15,7 @@ NOTE: LLM이 tool을 "직접 실행"하지 않는다. LLM은 tool_calls만 반�
 from __future__ import annotations
 
 import asyncio
+import time
 from contextvars import ContextVar
 from contextlib import AsyncExitStack
 from typing import Any
@@ -421,6 +422,7 @@ class MCPManager:
         text만 결과 텍스트로 반환한다.
         """
         safe_arguments = DebugLogSettings.redact_arguments(arguments or {})
+        started_at = time.monotonic()
         DebugLogSettings.log("tool_execution_start", tool=prefixed_name, arguments=safe_arguments)
         spec = self._internal_tools.get(prefixed_name)
         if spec is not None:
@@ -435,6 +437,8 @@ class MCPManager:
                     result_text = result if isinstance(result, str) else str(result)
                 DebugLogSettings.log(
                     "tool_execution_end", tool=prefixed_name,
+                    elapsed_ms=round((time.monotonic() - started_at) * 1000, 1),
+                    summary=DebugLogSettings.summarize_result(result_text),
                     result=DebugLogSettings.result_payload(result_text),
                 )
                 return result_text
@@ -460,6 +464,8 @@ class MCPManager:
         result_text = self._result_to_text(result)
         DebugLogSettings.log(
             "tool_execution_end", tool=prefixed_name,
+            elapsed_ms=round((time.monotonic() - started_at) * 1000, 1),
+            summary=DebugLogSettings.summarize_result(result_text),
             result=DebugLogSettings.result_payload(result_text),
         )
         return result_text

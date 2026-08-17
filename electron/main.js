@@ -146,6 +146,36 @@ async function executeFloatingBrowserCommand(command, args = {}) {
         return getFloatingBrowserState();
     }
     if (command === "status") return getFloatingBrowserState();
+    if (command === "wait_ready") {
+        return contents.executeJavaScript(`(async () => {
+            const timeoutMs = 8000;
+            const minimumWaitMs = 1800;
+            const stableForMs = 900;
+            const pollMs = 200;
+            const startedAt = Date.now();
+            let lastMutationAt = startedAt;
+            const observer = new MutationObserver(() => { lastMutationAt = Date.now(); });
+            if (document.documentElement) observer.observe(document.documentElement, {subtree:true,childList:true,characterData:true});
+            const measure = () => {
+                const root = document.querySelector('main, article, [role=main]') || document.body;
+                const textLength = String(root?.innerText || '').replace(/\\s+/g, ' ').trim().length;
+                const selector = 'a[href],button,input,textarea,select,[role="button"],[role="link"]';
+                const interactiveCount = Array.from(document.querySelectorAll(selector)).filter(el => el.isConnected && el.getClientRects().length && !el.disabled).length;
+                const elapsedMs = Date.now() - startedAt;
+                const stableMs = Date.now() - lastMutationAt;
+                const contentReady = textLength >= 500 || (textLength >= 150 && interactiveCount >= 8);
+                return {url:location.href,readyState:document.readyState,textLength,interactiveCount,elapsedMs,stableMs,contentReady};
+            };
+            let metrics = measure();
+            while (metrics.elapsedMs < timeoutMs) {
+                if (metrics.readyState === 'complete' && metrics.elapsedMs >= minimumWaitMs && metrics.stableMs >= stableForMs && metrics.contentReady) break;
+                await new Promise(resolve => setTimeout(resolve, pollMs));
+                metrics = measure();
+            }
+            observer.disconnect();
+            return {...metrics,timedOut:metrics.elapsedMs >= timeoutMs};
+        })()`);
+    }
     if (command === "read") {
         return contents.executeJavaScript(`(() => {
             const hidden = element => !element || !element.isConnected || element.closest('[aria-hidden="true"]') || !element.getClientRects().length;
