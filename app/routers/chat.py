@@ -720,17 +720,23 @@ def _tool_result_activity_presentation(result: object, arguments: dict) -> dict:
 
     element = payload.get("element") if isinstance(payload.get("element"), dict) else {}
     detail = element.get("name") or element.get("title") or element.get("tag") or payload.get("title")
+    titled_urls = []
+    pages = payload.get("pages")
+    if isinstance(pages, list):
+        for page in pages:
+            if isinstance(page, dict):
+                titled_urls.append((page.get("url"), page.get("title")))
     raw_urls = [element.get("href"), payload.get("url"), arguments.get("url")]
     if isinstance(arguments.get("urls"), list):
         raw_urls.extend(arguments["urls"])
     links = []
     seen_urls = set()
-    for raw_url in raw_urls:
+    for raw_url, supplied_title in [*titled_urls, *((url, None) for url in raw_urls)]:
         if not isinstance(raw_url, str) or not raw_url.startswith(("http://", "https://")) or raw_url in seen_urls:
             continue
         seen_urls.add(raw_url)
         try:
-            label = urlparse(raw_url).hostname or raw_url
+            label = str(supplied_title).strip() if supplied_title else (urlparse(raw_url).hostname or raw_url)
         except ValueError:
             label = raw_url
         links.append({"label": label, "url": raw_url})

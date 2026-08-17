@@ -554,7 +554,7 @@ export function useChat(deps: UseChatDeps) {
                             streamSources = data.sources || [];
                         },
                         onToken: (text) => appendToStreamMsg(
-                            text === '__VYACT_EMPTY_RESPONSE__' ? t('emptyResponse') : text
+                            text.includes('VYACT_EMPTY_RESPONSE') ? t('emptyResponse') : text
                         ),
                         onTool: (data) => {
                             if (data.phase === 'approval_required') {

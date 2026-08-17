@@ -78,5 +78,16 @@ describe('tool activity presentation', () => {
             ok: true,
             element: {name: '장바구니 담기', tag: 'button', href: ''},
         }))).toEqual({detail: '장바구니 담기', links: undefined});
+        expect(getToolActivityResultPresentation(JSON.stringify({pages: [
+            {title: '첫 번째 상품', url: 'https://shop.example.com/product/1'},
+            {title: '두 번째 상품', url: 'https://shop.example.com/product/2'},
+            {title: '중복 상품', url: 'https://shop.example.com/product/2'},
+        ]}))).toEqual({
+            detail: undefined,
+            links: [
+                {label: '첫 번째 상품', url: 'https://shop.example.com/product/1'},
+                {label: '두 번째 상품', url: 'https://shop.example.com/product/2'},
+            ],
+        });
     });
 });

@@ -240,11 +240,6 @@ async def chat_stream_with_tools(
         direct_answer = loop_result["direct_answer"]
         direct_stats = loop_result["stats"]
         body["messages"] = new_messages
-        # Keep the same schema used by the decision rounds. Ollama renders tools near
-        # the beginning of the prompt; removing them here turns an append-only tool
-        # result into a cache miss for the final-answer request.
-        if loop_result.get("tools"):
-            body["tools"] = loop_result["tools"]
         if any(message.get("role") == "tool" for message in new_messages):
             body["messages"].append({"role": "system", "content": _FINAL_ANSWER_AFTER_TOOLS})
 
@@ -578,7 +573,6 @@ async def query_llm(
                 if top_p is not None:
                     ollama_options["top_p"] = top_p
                 direct_answer = None
-                final_tools: list[dict] = []
                 if use_tools:
                     try:
                         loop_result = await resolve_tool_calls(
@@ -587,7 +581,6 @@ async def query_llm(
                         )
                         ollama_messages = loop_result["messages"]
                         direct_answer = loop_result["direct_answer"]
-                        final_tools = loop_result.get("tools")
                         if any(message.get("role") == "tool" for message in ollama_messages):
                             ollama_messages.append({"role": "system", "content": _FINAL_ANSWER_AFTER_TOOLS})
                         if stats_out is not None and loop_result.get("stats"):
@@ -609,8 +602,6 @@ async def query_llm(
                                      "messages": ollama_messages,
                                      "options": ollama_options,
                                      "keep_alive": OLLAMA_KEEP_ALIVE}
-                if final_tools:
-                    ollama_body["tools"] = final_tools
                 if structured_output_schema is not None:
                     ollama_body["format"] = structured_output_schema
                 if not reasoning:

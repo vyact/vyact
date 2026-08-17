@@ -122,7 +122,17 @@ export function getToolActivityDetail(args?: Record<string, unknown>): string | 
 export function getToolActivityLinks(args?: Record<string, unknown>): Array<{label: string; url: string}> | undefined {
     if (!args) return undefined;
     const urls = Array.isArray(args.urls) ? args.urls : [args.url];
-    const uniqueUrls = [...new Set(urls.filter((url): url is string => typeof url === 'string' && /^https?:\/\//i.test(url)))];
+    const uniqueUrls = [...new Map(urls
+        .filter((url): url is string => typeof url === 'string' && /^https?:\/\//i.test(url))
+        .map(url => {
+            try {
+                const parsed = new URL(url);
+                const key = `${parsed.protocol}//${parsed.host}${parsed.pathname.replace(/\/$/, '')}${parsed.search}`;
+                return [key, url] as const;
+            } catch {
+                return [url.replace(/\/$/, ''), url] as const;
+            }
+        })).values()];
     const links = uniqueUrls
         .map(url => {
             try { return {label: new URL(url).hostname, url}; } catch { return {label: url, url}; }
@@ -147,13 +157,35 @@ export function getToolActivityResultPresentation(
     const elementUrl = typeof element?.href === 'string' ? element.href : undefined;
     const payloadUrl = typeof payload?.url === 'string' ? payload.url : undefined;
     const payloadTitle = typeof payload?.title === 'string' ? payload.title : undefined;
-    const links = getToolActivityLinks({
+    const pageLinks = Array.isArray(payload?.pages) ? payload.pages.flatMap(page => {
+        if (!page || typeof page !== 'object') return [];
+        const pageData = page as Record<string, unknown>;
+        const url = typeof pageData.url === 'string' ? pageData.url : '';
+        if (!/^https?:\/\//i.test(url)) return [];
+        const title = typeof pageData.title === 'string' && pageData.title.trim()
+            ? pageData.title.trim()
+            : (() => { try { return new URL(url).hostname; } catch { return url; } })();
+        return [{label: title, url}];
+    }) : [];
+    const fallbackLinks = getToolActivityLinks({
         urls: [elementUrl, payloadUrl, ...(getToolActivityLinks(args)?.map(link => link.url) ?? [])]
             .filter((url): url is string => Boolean(url)),
     });
+    const uniqueLinks = new Map<string, {label: string; url: string}>();
+    for (const link of [...pageLinks, ...(fallbackLinks ?? [])]) {
+        let key: string;
+        try {
+            const parsed = new URL(link.url);
+            key = `${parsed.protocol}//${parsed.host}${parsed.pathname.replace(/\/$/, '')}${parsed.search}`;
+        } catch {
+            key = link.url.replace(/\/$/, '');
+        }
+        if (!uniqueLinks.has(key)) uniqueLinks.set(key, link);
+    }
+    const links = [...uniqueLinks.values()];
     return {
         detail: compactSnippet(elementName) ?? payloadTitle ?? (links?.length ? undefined : getToolActivityDetail(args)),
-        links,
+        links: links.length ? links : undefined,
     };
 }
 
