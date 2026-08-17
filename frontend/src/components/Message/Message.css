@@ -543,9 +543,9 @@
 }
 
 /* 실행 중에는 본문 위치에, 완료 후에는 메시지 하단 통계 아래에 표시한다. */
-.msg-activity { max-width:min(780px, 100%); color:var(--muted); font-size:13px; }
-.msg-activity.streaming { margin:8px 0 4px; padding:7px 10px; width:fit-content; border:1px solid color-mix(in srgb, var(--accent) 18%, var(--border)); border-radius:14px; background:transparent; color:var(--text-secondary); }
-.msg-activity.completed { margin:4px 0 0; max-width:min(780px, 100%); font-size:10.5px; opacity:.7; }
+.msg-activity { box-sizing:border-box; margin-right:16px; margin-left:16px; max-width:min(780px, calc(100% - 32px)); color:var(--muted); font-size:13px; }
+.msg-activity.streaming { margin-top:8px; margin-bottom:4px; padding:7px 10px; width:fit-content; border:1px solid color-mix(in srgb, var(--accent) 18%, var(--border)); border-radius:14px; background:transparent; color:var(--text-secondary); }
+.msg-activity.completed { margin-top:4px; margin-bottom:0; font-size:10.5px; opacity:.7; }
 .msg-activity-summary { display:flex; align-items:center; gap:7px; padding:3px 0; border:0; background:transparent; color:inherit; font:inherit; cursor:pointer; }
 .msg-activity-summary svg:last-child { margin-left:2px; }
 .msg-activity-spinner { width:14px; height:14px; flex:0 0 14px; border:2px solid color-mix(in srgb, var(--muted) 35%, transparent); border-top-color:var(--accent); border-radius:50%; animation:msg-stream-spin .8s linear infinite; }
