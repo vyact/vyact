@@ -6,7 +6,7 @@ import os
 import re
 import time
 from contextvars import ContextVar
-from urllib.parse import quote_plus, urlparse
+from urllib.parse import parse_qsl, quote_plus, urlencode, urlparse, urlunparse
 
 import httpx
 
@@ -21,9 +21,9 @@ BROWSER_CONTROL_TOKEN = os.getenv("VYACT_BROWSER_CONTROL_TOKEN", "")
 BROWSER_COMMAND_TIMEOUT_SECONDS = 35.0
 EXTENSION_STARTUP_WAIT_SECONDS = 8.0
 MAX_BATCH_READ_URLS = 5
-MAX_BATCH_PAGE_TEXT_CHARS = 16000
+MAX_BATCH_PAGE_TEXT_CHARS = 10000
 MAX_PAGE_TEXT_CHARS = 20000
-MAX_PAGE_LINKS = 100
+MAX_PAGE_LINKS = 40
 PAGE_READINESS_CACHE_TTL_SECONDS = 15.0
 PAGE_READINESS_INVALIDATING_COMMANDS = {
     "navigate", "open", "back", "click", "type", "scroll", "wait", "close",
@@ -31,6 +31,28 @@ PAGE_READINESS_INVALIDATING_COMMANDS = {
 _page_readiness_cache: ContextVar[dict | None] = ContextVar(
     "browser_page_readiness_cache", default=None,
 )
+
+TRACKING_QUERY_PARAMETERS = {
+    "clickEventId", "imagePath", "searchId", "source", "sourceType",
+    "subSourceType", "utm_campaign", "utm_content", "utm_id", "utm_medium",
+    "utm_source",
+}
+
+
+def _canonical_url_key(url: str) -> str:
+    """Identify the same destination despite UI/tracking query variants."""
+    try:
+        parsed = urlparse(url)
+        query = urlencode([
+            (key, value) for key, value in parse_qsl(parsed.query, keep_blank_values=True)
+            if key not in TRACKING_QUERY_PARAMETERS
+        ])
+        return urlunparse((
+            parsed.scheme.lower(), parsed.netloc.lower(), parsed.path.rstrip("/") or "/",
+            "", query, "",
+        ))
+    except ValueError:
+        return url.rstrip("/")
 
 
 def _validate_public_url(url: str) -> str:
@@ -180,10 +202,11 @@ def _compact_page_result(result: dict, text_limit: int = MAX_PAGE_TEXT_CHARS) ->
             continue
         label = re.sub(r"\s+", " ", str(raw_link.get("text") or "")).strip()
         url = str(raw_link.get("url") or "").strip()
-        if not label or not url or url in seen_urls:
+        url_key = _canonical_url_key(url)
+        if not label or not url or url_key in seen_urls:
             continue
-        seen_urls.add(url)
-        links.append({"text": label[:200], "url": url})
+        seen_urls.add(url_key)
+        links.append({"text": label[:120], "url": url})
         if len(links) >= MAX_PAGE_LINKS:
             break
 
@@ -221,16 +244,29 @@ async def _browser_read_urls(urls: list[str]) -> dict:
     if len(urls) > MAX_BATCH_READ_URLS:
         raise ValueError(f"At most {MAX_BATCH_READ_URLS} URLs can be read at once")
 
-    pages: list[dict] = []
-    sources: list[dict] = []
+    unique_urls: list[str] = []
+    seen_url_keys: set[str] = set()
     for raw_url in urls:
         url = _validate_public_url(str(raw_url))
+        url_key = _canonical_url_key(url)
+        if url_key not in seen_url_keys:
+            unique_urls.append(url)
+            seen_url_keys.add(url_key)
+
+    pages: list[dict] = []
+    sources: list[dict] = []
+    seen_page_keys: set[str] = set()
+    for url in unique_urls:
         try:
             await _command("navigate", url=url)
             result = _compact_page_result(
                 await _command("read"), text_limit=MAX_BATCH_PAGE_TEXT_CHARS,
             )
             page_url = str(result.get("url") or url)
+            page_key = _canonical_url_key(page_url)
+            if page_key in seen_page_keys:
+                continue
+            seen_page_keys.add(page_key)
             title = str(result.get("title") or page_url)
             pages.append({
                 "url": page_url,
@@ -245,7 +281,27 @@ async def _browser_read_urls(urls: list[str]) -> dict:
 
 
 async def _browser_inspect() -> str:
-    return _as_text(await _command("inspect"))
+    result = await _command("inspect")
+    if not isinstance(result, list):
+        return _as_text(result)
+    compact_elements: list[dict] = []
+    for raw_element in result:
+        if not isinstance(raw_element, dict):
+            continue
+        element = {
+            key: value for key, value in {
+                "id": raw_element.get("id"),
+                "name": str(raw_element.get("name") or "")[:160],
+                "tag": raw_element.get("tag"),
+                "role": raw_element.get("role"),
+                "type": raw_element.get("type"),
+                "href": raw_element.get("href"),
+                "context": str(raw_element.get("context") or "")[:120],
+            }.items() if value not in (None, "")
+        }
+        if element.get("id") and (element.get("name") or element.get("type") or element.get("href")):
+            compact_elements.append(element)
+    return _as_text(compact_elements)
 
 
 async def _browser_click(element_id: str) -> str:

@@ -2,6 +2,22 @@ export type ToolActivityTranslator = (key: string, options?: Record<string, unkn
 
 const MAX_VISIBLE_TOOL_PATHS = 3;
 const MAX_TOOL_SNIPPET_LENGTH = 80;
+const TRACKING_QUERY_PARAMETERS = new Set([
+    'clickEventId', 'imagePath', 'searchId', 'source', 'sourceType', 'subSourceType',
+    'utm_campaign', 'utm_content', 'utm_id', 'utm_medium', 'utm_source',
+]);
+
+function canonicalUrlKey(url: string): string {
+    try {
+        const parsed = new URL(url);
+        TRACKING_QUERY_PARAMETERS.forEach(parameter => parsed.searchParams.delete(parameter));
+        parsed.hash = '';
+        parsed.pathname = parsed.pathname.replace(/\/$/, '') || '/';
+        return parsed.toString();
+    } catch {
+        return url.replace(/\/$/, '');
+    }
+}
 
 const TOOL_ACTION_KEYS: Record<string, string> = {
     search: 'searching', list: 'listing', get: 'reading', read: 'reading', check: 'checking',
@@ -127,7 +143,7 @@ export function getToolActivityLinks(args?: Record<string, unknown>): Array<{lab
         .map(url => {
             try {
                 const parsed = new URL(url);
-                const key = `${parsed.protocol}//${parsed.host}${parsed.pathname.replace(/\/$/, '')}${parsed.search}`;
+                const key = canonicalUrlKey(url);
                 return [key, url] as const;
             } catch {
                 return [url.replace(/\/$/, ''), url] as const;
@@ -175,8 +191,7 @@ export function getToolActivityResultPresentation(
     for (const link of [...pageLinks, ...(fallbackLinks ?? [])]) {
         let key: string;
         try {
-            const parsed = new URL(link.url);
-            key = `${parsed.protocol}//${parsed.host}${parsed.pathname.replace(/\/$/, '')}${parsed.search}`;
+            key = canonicalUrlKey(link.url);
         } catch {
             key = link.url.replace(/\/$/, '');
         }

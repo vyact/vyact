@@ -31,6 +31,10 @@ _CODE_MUTATION_TOOL_NAMES = {
     "code_edit_file", "code_apply_patch", "code_create_file",
     "code_move_file", "code_delete_file",
 }
+_BROWSER_STATE_CHANGING_TOOL_NAMES = {
+    "browser_open", "browser_click", "browser_type", "browser_scroll", "browser_back",
+}
+_BROWSER_OBSERVATION_TOOL_NAMES = {"browser_read", "browser_inspect", "browser_status"}
 
 
 def _last_tool_call(messages: list[dict]) -> tuple[str, bool]:
@@ -90,6 +94,20 @@ def _failure_call_key(name: str, args: dict, exact_call_key: str) -> str:
     }
     canonical_target = json.dumps(target, ensure_ascii=False, sort_keys=True, default=str)
     return f"{name}:{hashlib.md5(canonical_target.encode()).hexdigest()[:8]}"
+
+
+def _tool_result_failed(result_text: str) -> bool:
+    if result_text.startswith("[오류]"):
+        return True
+    if not result_text.lstrip().startswith("{"):
+        return False
+    try:
+        payload = json.loads(result_text)
+    except json.JSONDecodeError:
+        return False
+    return isinstance(payload, dict) and (
+        payload.get("ok") is False or bool(payload.get("error"))
+    )
 
 
 async def build_ollama_payload(
@@ -555,7 +573,7 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
                     hit_single_shot = True
 
                 # 연속 실패 감지 — tool 결과가 에러이면 카운트
-                is_error = result_text.startswith("[오류]")
+                is_error = _tool_result_failed(result_text)
                 if is_error:
                     _fail_tracker[_fail_key] = _fail_tracker.get(_fail_key, 0) + 1
                     if _fail_tracker[_fail_key] >= _MAX_SAME_FAIL:
@@ -573,6 +591,12 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
                 else:
                     _fail_tracker.pop(_fail_key, None)
                     _last_successful_call = (_call_key, result_text)
+                    if name in _BROWSER_STATE_CHANGING_TOOL_NAMES:
+                        # Empty-argument observations refer to the current page, not the whole
+                        # tool flow. A navigation or DOM mutation starts a fresh observation scope.
+                        for call_key in list(_call_count):
+                            if call_key.split(":", 1)[0] in _BROWSER_OBSERVATION_TOOL_NAMES:
+                                _call_count.pop(call_key, None)
 
             if _should_break:
                 # 조기 중단 — 현재 문맥으로 최종 응답 생성

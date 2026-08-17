@@ -13,6 +13,7 @@ logger.py – 앱 전역 로깅 설정 및 logger 팩토리
 import json
 import logging
 import os
+import re
 import secrets
 import sys
 import unicodedata
@@ -145,6 +146,23 @@ class _UnicodeNormalizationFilter(logging.Filter):
         return True
 
 
+class _SensitiveLogDataFilter(logging.Filter):
+    """Redact credentials that third-party HTTP loggers may embed in URLs."""
+
+    _QUERY_SECRET_PATTERN = re.compile(
+        r"(?i)([?&](?:access_token|api_key|key|password|refresh_token|secret|token)=)[^&\s\"']+"
+    )
+    _BEARER_PATTERN = re.compile(r"(?i)(authorization[=:]\s*bearer\s+)[^\s\"']+")
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        message = record.getMessage()
+        message = self._QUERY_SECRET_PATTERN.sub(r"\1[REDACTED]", message)
+        message = self._BEARER_PATTERN.sub(r"\1[REDACTED]", message)
+        record.msg = message
+        record.args = ()
+        return True
+
+
 class _PdfMinerFontBBoxFilter(logging.Filter):
     """Hide a harmless warning emitted for PDFs with an omitted FontBBox."""
 
@@ -199,6 +217,7 @@ def setup_logging() -> None:
         fh = logging.FileHandler(log_file, encoding="utf-8")
         fh.setFormatter(fmt)
         fh.addFilter(_ToolLoggingFilter())
+        fh.addFilter(_SensitiveLogDataFilter())
         fh.addFilter(_UnicodeNormalizationFilter())
         root.addHandler(fh)
 
@@ -209,6 +228,7 @@ def setup_logging() -> None:
         sh = logging.StreamHandler(sys.stdout)
         sh.setFormatter(fmt)
         sh.addFilter(_ToolLoggingFilter())
+        sh.addFilter(_SensitiveLogDataFilter())
         sh.addFilter(_UnicodeNormalizationFilter())
         root.addHandler(sh)
 
@@ -241,6 +261,7 @@ def setup_logging() -> None:
     ]:
         h.setFormatter(fmt_)
         h.addFilter(_ToolLoggingFilter())
+        h.addFilter(_SensitiveLogDataFilter())
         h.addFilter(_UnicodeNormalizationFilter())
         uve.addHandler(h)
 

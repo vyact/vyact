@@ -5,7 +5,7 @@ import uuid
 import re
 import asyncio
 from datetime import datetime, timezone
-from urllib.parse import urlparse
+from urllib.parse import parse_qsl, urlencode, urlparse
 
 import json
 from fastapi import APIRouter, HTTPException
@@ -732,9 +732,21 @@ def _tool_result_activity_presentation(result: object, arguments: dict) -> dict:
     links = []
     seen_urls = set()
     for raw_url, supplied_title in [*titled_urls, *((url, None) for url in raw_urls)]:
-        if not isinstance(raw_url, str) or not raw_url.startswith(("http://", "https://")) or raw_url in seen_urls:
+        if not isinstance(raw_url, str) or not raw_url.startswith(("http://", "https://")):
             continue
-        seen_urls.add(raw_url)
+        parsed_url = urlparse(raw_url)
+        ignored_query_keys = {
+            "clickEventId", "imagePath", "searchId", "source", "sourceType", "subSourceType",
+            "utm_campaign", "utm_content", "utm_id", "utm_medium", "utm_source",
+        }
+        query = urlencode([
+            (key, value) for key, value in parse_qsl(parsed_url.query, keep_blank_values=True)
+            if key not in ignored_query_keys
+        ])
+        url_key = parsed_url._replace(query=query, fragment="").geturl().rstrip("/")
+        if url_key in seen_urls:
+            continue
+        seen_urls.add(url_key)
         try:
             label = str(supplied_title).strip() if supplied_title else (urlparse(raw_url).hostname or raw_url)
         except ValueError:

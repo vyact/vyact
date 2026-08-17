@@ -90,4 +90,17 @@ describe('tool activity presentation', () => {
             ],
         });
     });
+
+    it('deduplicates tracking variants that resolve to the same page', () => {
+        expect(getToolActivityResultPresentation(JSON.stringify({pages: [
+            {title: '상품 이미지', url: 'https://shop.example.com/product/1?itemId=10&sourceType=image'},
+            {title: '상품 제목', url: 'https://shop.example.com/product/1?itemId=10&sourceType=title'},
+        ]}))).toEqual({
+            detail: undefined,
+            links: [{
+                label: '상품 이미지',
+                url: 'https://shop.example.com/product/1?itemId=10&sourceType=image',
+            }],
+        });
+    });
 });

@@ -164,7 +164,9 @@ async function executeFloatingBrowserCommand(command, args = {}) {
                 const interactiveCount = Array.from(document.querySelectorAll(selector)).filter(el => el.isConnected && el.getClientRects().length && !el.disabled).length;
                 const elapsedMs = Date.now() - startedAt;
                 const stableMs = Date.now() - lastMutationAt;
-                const contentReady = textLength >= 500 || (textLength >= 150 && interactiveCount >= 8);
+                const contentReady = textLength >= 500
+                    || (textLength >= 120 && interactiveCount >= 5)
+                    || (textLength >= 30 && interactiveCount >= 12);
                 return {url:location.href,readyState:document.readyState,textLength,interactiveCount,elapsedMs,stableMs,contentReady};
             };
             let metrics = measure();
