@@ -157,7 +157,8 @@ async function executeFloatingBrowserCommand(command, args = {}) {
             const observer = new MutationObserver(() => { lastMutationAt = Date.now(); });
             if (document.documentElement) observer.observe(document.documentElement, {subtree:true,childList:true,characterData:true});
             const measure = () => {
-                const root = document.querySelector('main, article, [role=main]') || document.body;
+                const roots = [...document.querySelectorAll('main, article, [role=main]'), document.body].filter(Boolean);
+                const root = roots.reduce((largest,candidate) => String(candidate.innerText || '').length > String(largest?.innerText || '').length ? candidate : largest, null);
                 const textLength = String(root?.innerText || '').replace(/\\s+/g, ' ').trim().length;
                 const selector = 'a[href],button,input,textarea,select,[role="button"],[role="link"]';
                 const interactiveCount = Array.from(document.querySelectorAll(selector)).filter(el => el.isConnected && el.getClientRects().length && !el.disabled).length;
@@ -181,7 +182,8 @@ async function executeFloatingBrowserCommand(command, args = {}) {
             const hidden = element => !element || !element.isConnected || element.closest('[aria-hidden="true"]') || !element.getClientRects().length;
             const normalizedText = value => String(value || '').replace(/\\s+/g, ' ').trim();
             const accessibleName = element => normalizedText(element.getAttribute('aria-label') || element.innerText || element.getAttribute('title') || element.querySelector?.('img[alt]')?.getAttribute('alt') || element.getAttribute('placeholder') || element.getAttribute('name'));
-            const root = document.querySelector('main, article, [role="main"]') || document.body;
+            const roots = [...document.querySelectorAll('main, article, [role="main"]'), document.body].filter(Boolean);
+            const root = roots.reduce((largest,candidate) => String(candidate.innerText || '').length > String(largest?.innerText || '').length ? candidate : largest, null);
             const text = (root?.innerText || '').replace(/\\n{3,}/g, '\\n\\n').trim().slice(0, 20000);
             const links = Array.from(document.querySelectorAll('a[href]')).filter(a => !hidden(a)).slice(0, 100).map(a => ({text: accessibleName(a).slice(0, 200), url: a.href}));
             return {url: location.href, title: document.title, text, links};

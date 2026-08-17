@@ -17,6 +17,7 @@ import secrets
 import sys
 import unicodedata
 from contextvars import ContextVar
+from pathlib import Path
 
 _initialized = False
 
@@ -188,7 +189,13 @@ def setup_logging() -> None:
     root = logging.getLogger()
     root.setLevel(logging.INFO)
 
-    if not any(isinstance(h, logging.FileHandler) for h in root.handlers):
+    target_log_path = Path(log_file).resolve()
+    has_target_file_handler = any(
+        isinstance(handler, logging.FileHandler)
+        and Path(handler.baseFilename).resolve() == target_log_path
+        for handler in root.handlers
+    )
+    if not has_target_file_handler:
         fh = logging.FileHandler(log_file, encoding="utf-8")
         fh.setFormatter(fmt)
         fh.addFilter(_ToolLoggingFilter())
