@@ -428,12 +428,18 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
                     "[tool_calls] 판정 라운드 timeout(%ds), 축약 문맥으로 1회 재시도: round=%d",
                     TOOL_CALL_ROUND_TIMEOUT_SECONDS, _round + 1,
                 )
-                retry_body = {**body, "messages": _compact_tool_results(work)}
+                retry_messages = _compact_tool_results(work)
+                retry_body = {**body, "messages": retry_messages}
                 try:
                     round_result = await asyncio.wait_for(
                         _run_round_blocking(client, retry_body),
                         timeout=min(timeout, TOOL_CALL_ROUND_TIMEOUT_SECONDS),
                     )
+                    # Continue from the exact prompt that populated Ollama's cache.
+                    # Switching back to the pre-compaction messages here makes the
+                    # following round/final response a different prefix and forces
+                    # the full original context to be evaluated again.
+                    work = retry_messages
                 except asyncio.TimeoutError:
                     logger.error(
                         "[tool_calls] 축약 문맥 재시도도 timeout(%ds): round=%d",
@@ -460,12 +466,14 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
                         "[tool_calls] Ollama 일시적 서버 오류(%d), 축약 문맥으로 1회 재시도: round=%d",
                         e.response.status_code, _round + 1,
                     )
-                    retry_body = {**body, "messages": _compact_tool_results(work)}
+                    retry_messages = _compact_tool_results(work)
+                    retry_body = {**body, "messages": retry_messages}
                     try:
                         round_result = await asyncio.wait_for(
                             _run_round_blocking(client, retry_body),
                             timeout=min(timeout, TOOL_CALL_ROUND_TIMEOUT_SECONDS),
                         )
+                        work = retry_messages
                     except Exception as retry_error:
                         logger.error("[tool_calls] Ollama 서버 오류 재시도 실패: %s", retry_error)
                         failure_instruction = {

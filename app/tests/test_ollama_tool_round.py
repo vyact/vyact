@@ -171,12 +171,19 @@ class OllamaToolRoundTests(unittest.IsolatedAsyncioTestCase):
                 patch("services.llm.ollama.log_tool_names", AsyncMock()), \
                 patch("services.llm.ollama.build_tool_directive", AsyncMock(return_value="tools")):
             result = await resolve_tool_calls(
-                "test-model", [{"role": "user", "content": "read"}], {}, timeout=1,
+                "test-model", [
+                    {"role": "user", "content": "read"},
+                    {"role": "tool", "content": "x" * (TOOL_CALL_RETRY_RESULT_CHARS + 100)},
+                ], {}, timeout=1,
                 max_rounds=1, reasoning=False,
             )
 
         self.assertEqual(client.call_count, 2)
         self.assertEqual(result["direct_answer"], "done")
+        compacted_tool_message = next(
+            message for message in result["messages"] if message.get("role") == "tool"
+        )
+        self.assertIn("tool result shortened", compacted_tool_message["content"])
 
 
 if __name__ == "__main__":
