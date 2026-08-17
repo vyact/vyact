@@ -47,6 +47,27 @@ def test_browser_tool_risk_classification() -> None:
     assert get_tool_risk("browser_wait_for_user") == "sensitive"
 
 
+def test_page_result_removes_empty_and_duplicate_links() -> None:
+    result = browser_tools._compact_page_result({
+        "url": "https://example.com",
+        "title": "Example",
+        "text": "Visible text   \n\n\n\nMore text",
+        "links": [
+            {"text": "", "url": "https://example.com/image"},
+            {"text": " Product   one ", "url": "https://example.com/product"},
+            {"text": "Duplicate", "url": "https://example.com/product"},
+        ],
+        "html": "<style>.unused{color:red}</style><script>track()</script>",
+    })
+
+    assert result == {
+        "url": "https://example.com",
+        "title": "Example",
+        "text": "Visible text\n\nMore text",
+        "links": [{"text": "Product one", "url": "https://example.com/product"}],
+    }
+
+
 def test_risky_only_allows_routine_browser_interactions() -> None:
     assert requires_approval("browser_click", "risky_only") is False
     assert requires_approval("browser_type", "risky_only") is False

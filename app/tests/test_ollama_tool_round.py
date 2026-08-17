@@ -79,6 +79,7 @@ class OllamaToolRoundTests(unittest.IsolatedAsyncioTestCase):
                 reasoning=False,
             )
         self.assertEqual(result["direct_answer"], "done")
+        self.assertEqual(result["tools"], [tool])
 
 
 if __name__ == "__main__":

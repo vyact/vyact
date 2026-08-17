@@ -149,21 +149,31 @@ async function executeFloatingBrowserCommand(command, args = {}) {
     if (command === "read") {
         return contents.executeJavaScript(`(() => {
             const hidden = element => !element || !element.isConnected || element.closest('[aria-hidden="true"]') || !element.getClientRects().length;
+            const normalizedText = value => String(value || '').replace(/\\s+/g, ' ').trim();
+            const accessibleName = element => normalizedText(element.getAttribute('aria-label') || element.innerText || element.getAttribute('title') || element.querySelector?.('img[alt]')?.getAttribute('alt') || element.getAttribute('placeholder') || element.getAttribute('name'));
             const root = document.querySelector('main, article, [role="main"]') || document.body;
             const text = (root?.innerText || '').replace(/\\n{3,}/g, '\\n\\n').trim().slice(0, 20000);
-            const links = Array.from(document.querySelectorAll('a[href]')).filter(a => !hidden(a)).slice(0, 100).map(a => ({text: (a.innerText || a.getAttribute('aria-label') || '').trim().slice(0, 200), url: a.href}));
+            const links = Array.from(document.querySelectorAll('a[href]')).filter(a => !hidden(a)).slice(0, 100).map(a => ({text: accessibleName(a).slice(0, 200), url: a.href}));
             return {url: location.href, title: document.title, text, links};
         })()`);
     }
     if (command === "inspect") {
         return contents.executeJavaScript(`(() => {
             let index = 0;
+            const normalizedText = value => String(value || '').replace(/\\s+/g, ' ').trim();
+            const accessibleName = element => normalizedText(element.getAttribute('aria-label') || element.innerText || element.getAttribute('title') || element.querySelector?.('img[alt]')?.getAttribute('alt') || element.getAttribute('placeholder') || element.getAttribute('name'));
+            const nearbyContext = (element, name) => { const container = element.closest('form,article,li,[role="listitem"],[role="dialog"],[role="menuitem"]'); const context = normalizedText(container?.innerText); return context && context !== name ? context.slice(0, 300) : ''; };
             const selector = 'a[href],button,input,textarea,select,[role="button"],[role="link"]';
             const elements = Array.from(document.querySelectorAll(selector)).filter(el => el.isConnected && el.getClientRects().length && !el.disabled).slice(0, 150);
-            return elements.map(el => {
+            const names = elements.map(accessibleName);
+            const nameCounts = names.reduce((counts, name) => counts.set(name, (counts.get(name) || 0) + 1), new Map());
+            return elements.map((el, elementIndex) => {
                 const id = 'vyact-' + (++index);
                 el.setAttribute('data-vyact-browser-id', id);
-                return {id, tag: el.tagName.toLowerCase(), role: el.getAttribute('role') || '', name: (el.getAttribute('aria-label') || el.innerText || el.getAttribute('placeholder') || el.getAttribute('name') || '').trim().slice(0, 200), type: el.getAttribute('type') || '', href: el.href || ''};
+                const fullName = names[elementIndex];
+                const name = fullName.slice(0, 200);
+                const context = !fullName || nameCounts.get(fullName) > 1 ? nearbyContext(el, fullName) : '';
+                return {id, tag: el.tagName.toLowerCase(), role: el.getAttribute('role') || '', name, context, type: el.getAttribute('type') || '', href: el.href || '', autocomplete: el.getAttribute('autocomplete') || ''};
             });
         })()`);
     }

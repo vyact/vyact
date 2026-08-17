@@ -229,8 +229,13 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
             "total_duration": data.get("total_duration"),
         }
 
+    tools: list[dict] = []
+
     def _result(msgs: list, direct_answer: str | None = None, stats: dict | None = None) -> dict:
-        return {"messages": msgs, "direct_answer": direct_answer, "stats": stats}
+        # The final response request must retain the identical tool schema. Ollama's
+        # chat template places it near the front of the prompt, so dropping it after
+        # a tool round invalidates the otherwise reusable prefix cache.
+        return {"messages": msgs, "direct_answer": direct_answer, "stats": stats, "tools": tools}
 
     if not mcp_manager.connected or not mcp_manager.has_tools():
         return _result(messages)

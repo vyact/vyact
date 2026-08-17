@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {getToolActivityDetail, getToolActivityLabel} from './toolActivity';
+import {getToolActivityDetail, getToolActivityDisplayLabel, getToolActivityLabel} from './toolActivity';
 
 const translations: Record<string, string> = {
     'toolActivity.actions.searching': '검색하고 있어요',
@@ -7,6 +7,7 @@ const translations: Record<string, string> = {
     'toolActivity.actions.sending': '전송하고 있어요',
     'toolActivity.serviceAction': '{{service}} · {{action}}',
     'toolActivity.browserBatchReading': '여러 원문을 확인하고 있어요',
+    'toolActivity.browserClickCompleted': '페이지 요소 클릭 완료',
 };
 
 const translate = (key: string, options?: Record<string, unknown>): string => {
@@ -55,5 +56,11 @@ describe('tool activity presentation', () => {
         expect(getToolActivityDetail({
             urls: ['https://news.example.com/a?secret=1', 'https://docs.example.org/b'],
         })).toBe('news.example.com, docs.example.org');
+    });
+
+    it('shows the concrete completed browser action instead of a generic completion', () => {
+        expect(getToolActivityDisplayLabel(
+            'browser_click', '작업을 완료했어요', translate, 'completed', 'success',
+        )).toBe('페이지 요소 클릭 완료');
     });
 });

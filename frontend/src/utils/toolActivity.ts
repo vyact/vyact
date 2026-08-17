@@ -152,6 +152,8 @@ export function getToolActivityLabel(
         search_code: 'githubCode', create_issue: 'githubIssue',
         browser_search: 'browserSearching', browser_open: 'browserOpening',
         browser_read: 'browserReading', browser_read_urls: 'browserBatchReading',
+        browser_inspect: 'browserInspecting', browser_type: 'browserTyping',
+        browser_click: 'browserClicking', browser_scroll: 'browserScrolling',
         browser_wait_for_user: 'waitingBrowserUser',
     };
     if (!server && tool === 'search_files') {
@@ -199,6 +201,10 @@ export function getToolActivityDisplayLabel(
             browser_open: 'browserOpenCompleted',
             browser_read: 'browserReadCompleted',
             browser_read_urls: 'browserBatchReadCompleted',
+            browser_inspect: 'browserInspectCompleted',
+            browser_type: 'browserTypeCompleted',
+            browser_click: 'browserClickCompleted',
+            browser_scroll: 'browserScrollCompleted',
             browser_wait_for_user: 'browserUserActionCompleted',
         };
         if (browserCompletionKeys[tool]) return t(`toolActivity.${browserCompletionKeys[tool]}`);

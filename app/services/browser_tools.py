@@ -3,6 +3,7 @@ import asyncio
 import ipaddress
 import json
 import os
+import re
 from urllib.parse import quote_plus, urlparse
 
 import httpx
@@ -19,6 +20,8 @@ BROWSER_COMMAND_TIMEOUT_SECONDS = 35.0
 EXTENSION_STARTUP_WAIT_SECONDS = 8.0
 MAX_BATCH_READ_URLS = 5
 MAX_BATCH_PAGE_TEXT_CHARS = 16000
+MAX_PAGE_TEXT_CHARS = 20000
+MAX_PAGE_LINKS = 100
 
 
 def _validate_public_url(url: str) -> str:
@@ -96,6 +99,40 @@ def _as_text(result) -> str:
     return json.dumps(result, ensure_ascii=False, separators=(",", ":"))
 
 
+def _compact_page_result(result: dict, text_limit: int = MAX_PAGE_TEXT_CHARS) -> dict:
+    """Keep only user-visible page data that helps the model read or navigate.
+
+    Browser readers already use ``innerText``, so CSS, inline styles, attributes,
+    and non-visible script bodies never arrive here. This final boundary also
+    removes empty/duplicate links and normalizes excessive whitespace before the
+    result enters the LLM context.
+    """
+    raw_text = str(result.get("text") or "")
+    text = re.sub(r"[ \t]+\n", "\n", raw_text)
+    text = re.sub(r"\n{3,}", "\n\n", text).strip()[:text_limit]
+
+    links: list[dict[str, str]] = []
+    seen_urls: set[str] = set()
+    for raw_link in result.get("links") or []:
+        if not isinstance(raw_link, dict):
+            continue
+        label = re.sub(r"\s+", " ", str(raw_link.get("text") or "")).strip()
+        url = str(raw_link.get("url") or "").strip()
+        if not label or not url or url in seen_urls:
+            continue
+        seen_urls.add(url)
+        links.append({"text": label[:200], "url": url})
+        if len(links) >= MAX_PAGE_LINKS:
+            break
+
+    return {
+        "url": str(result.get("url") or ""),
+        "title": str(result.get("title") or ""),
+        "text": text,
+        "links": links,
+    }
+
+
 async def _browser_search(query: str) -> str:
     result = await _command("navigate", url=f"https://www.google.com/search?q={quote_plus(query.strip())}")
     return _as_text(result)
@@ -107,7 +144,7 @@ async def _browser_open(url: str) -> str:
 
 
 async def _browser_read() -> dict:
-    result = await _command("read")
+    result = _compact_page_result(await _command("read"))
     url = str(result.get("url") or "")
     title = str(result.get("title") or url)
     return {
@@ -128,13 +165,15 @@ async def _browser_read_urls(urls: list[str]) -> dict:
         url = _validate_public_url(str(raw_url))
         try:
             await _command("navigate", url=url)
-            result = await _command("read")
+            result = _compact_page_result(
+                await _command("read"), text_limit=MAX_BATCH_PAGE_TEXT_CHARS,
+            )
             page_url = str(result.get("url") or url)
             title = str(result.get("title") or page_url)
             pages.append({
                 "url": page_url,
                 "title": title,
-                "text": str(result.get("text") or "")[:MAX_BATCH_PAGE_TEXT_CHARS],
+                "text": result["text"],
                 "links": result.get("links") or [],
             })
             sources.append({"title": title, "url": page_url, "source": "browser"})
@@ -174,7 +213,7 @@ async def _browser_status() -> str:
 
 async def _browser_wait_for_user(action: str, instructions: str = "") -> dict:
     """Resume after the approval gate has waited for the user to act in the browser."""
-    result = await _command("read")
+    result = _compact_page_result(await _command("read"))
     url = str(result.get("url") or "")
     title = str(result.get("title") or url)
     payload = {
