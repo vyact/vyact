@@ -110,6 +110,7 @@ export interface ToolActivity {
     group?: 'analysis' | 'code' | 'tool';
     label: string;
     detail?: string;
+    links?: Array<{label: string; url: string}>;
     startedAt?: number;
     completedAt?: number;
 }

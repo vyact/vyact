@@ -5,6 +5,7 @@ import uuid
 import re
 import asyncio
 from datetime import datetime, timezone
+from urllib.parse import urlparse
 
 import json
 from fastapi import APIRouter, HTTPException
@@ -706,6 +707,39 @@ def _tool_activity_detail(arguments: dict) -> str | None:
     return " · ".join(details) or None
 
 
+def _tool_result_activity_presentation(result: object, arguments: dict) -> dict:
+    """Extract safe, compact UI metadata from a browser tool result."""
+    payload = None
+    if isinstance(result, str) and result.lstrip().startswith("{"):
+        try:
+            payload = json.loads(result)
+        except json.JSONDecodeError:
+            payload = None
+    if not isinstance(payload, dict):
+        return {"detail": _tool_activity_detail(arguments)}
+
+    element = payload.get("element") if isinstance(payload.get("element"), dict) else {}
+    detail = element.get("name") or element.get("title") or element.get("tag") or payload.get("title")
+    raw_urls = [element.get("href"), payload.get("url"), arguments.get("url")]
+    if isinstance(arguments.get("urls"), list):
+        raw_urls.extend(arguments["urls"])
+    links = []
+    seen_urls = set()
+    for raw_url in raw_urls:
+        if not isinstance(raw_url, str) or not raw_url.startswith(("http://", "https://")) or raw_url in seen_urls:
+            continue
+        seen_urls.add(raw_url)
+        try:
+            label = urlparse(raw_url).hostname or raw_url
+        except ValueError:
+            label = raw_url
+        links.append({"label": label, "url": raw_url})
+    return {
+        "detail": str(detail)[:200] if detail else (None if links else _tool_activity_detail(arguments)),
+        "links": links or None,
+    }
+
+
 @router.post("/query/stream")
 async def query_stream(req: QueryRequest):
     """채팅 토큰 SSE 스트리밍 엔드포인트.
@@ -988,6 +1022,11 @@ async def query_stream(req: QueryRequest):
                                 "failed" if isinstance(_result, str) and _result.startswith("[오류]") else "success"
                             )
                             _activity_log[-1]["completedAt"] = int(datetime.now(timezone.utc).timestamp() * 1000)
+                            _presentation = _tool_result_activity_presentation(_result, ev.get("args", {}))
+                            if _presentation.get("detail"):
+                                _activity_log[-1]["detail"] = _presentation["detail"]
+                            if _presentation.get("links"):
+                                _activity_log[-1]["links"] = _presentation["links"]
                         # tool call/result 메시지 수집 (히스토리 저장용)
                         if ev.get("phase") == "start" and ev.get("name"):
                             _tool_messages.append({

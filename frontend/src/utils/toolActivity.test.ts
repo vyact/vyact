@@ -1,5 +1,11 @@
 import {describe, expect, it} from 'vitest';
-import {getToolActivityDetail, getToolActivityDisplayLabel, getToolActivityLabel} from './toolActivity';
+import {
+    getToolActivityDetail,
+    getToolActivityDisplayLabel,
+    getToolActivityLabel,
+    getToolActivityLinks,
+    getToolActivityResultPresentation,
+} from './toolActivity';
 
 const translations: Record<string, string> = {
     'toolActivity.actions.searching': '검색하고 있어요',
@@ -62,5 +68,15 @@ describe('tool activity presentation', () => {
         expect(getToolActivityDisplayLabel(
             'browser_click', '작업을 완료했어요', translate, 'completed', 'success',
         )).toBe('페이지 요소 클릭 완료');
+    });
+
+    it('creates clickable page links and identifies the clicked element from its result', () => {
+        expect(getToolActivityLinks({url: 'https://shop.example.com/product/1'})).toEqual([
+            {label: 'shop.example.com', url: 'https://shop.example.com/product/1'},
+        ]);
+        expect(getToolActivityResultPresentation(JSON.stringify({
+            ok: true,
+            element: {name: '장바구니 담기', tag: 'button', href: ''},
+        }))).toEqual({detail: '장바구니 담기', links: undefined});
     });
 });

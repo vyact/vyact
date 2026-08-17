@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 export const REASONING_STORAGE_KEY = 'vyactReasoningEnabled';
+export const REASONING_CHANGED_EVENT = 'vyact:reasoning-changed';
 
 /**
  * 추론 on/off 안내 (물음표 툴팁용).
@@ -54,6 +55,7 @@ export function setReasoningEnabled(enabled: boolean): void {
     } catch {
         // storage 접근 실패 시 무시 (in-memory 기본값으로 동작)
     }
+    window.dispatchEvent(new CustomEvent(REASONING_CHANGED_EVENT, {detail: {enabled}}));
 }
 
 /**
@@ -70,8 +72,16 @@ export function useReasoning(): [boolean, () => void] {
                 setEnabled(getReasoningEnabled());
             }
         };
+        const onReasoningChanged = (event: Event) => {
+            const nextEnabled = (event as CustomEvent<{enabled?: unknown}>).detail?.enabled;
+            setEnabled(typeof nextEnabled === 'boolean' ? nextEnabled : getReasoningEnabled());
+        };
         window.addEventListener('storage', onStorage);
-        return () => window.removeEventListener('storage', onStorage);
+        window.addEventListener(REASONING_CHANGED_EVENT, onReasoningChanged);
+        return () => {
+            window.removeEventListener('storage', onStorage);
+            window.removeEventListener(REASONING_CHANGED_EVENT, onReasoningChanged);
+        };
     }, []);
 
     const toggle = useCallback(() => {

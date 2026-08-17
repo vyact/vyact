@@ -72,7 +72,10 @@ const ActivityTimeline = ({
                             <span className="msg-activity-label">
                                 {getToolActivityDisplayLabel(activity.name, activity.label, t, activity.phase, activity.outcome)}
                             </span>
-                            {displayDetail && <code>{displayDetail}</code>}
+                            {(displayDetail || activity.links?.length) && <span className="msg-activity-detail">
+                                {displayDetail && <code>{displayDetail}</code>}
+                                {activity.links?.map(link => <a key={link.url} href={link.url} target="_blank" rel="noreferrer" title={link.url}>{link.label}</a>)}
+                            </span>}
                         </span>
                         {activitySeconds != null && (
                             <span className="msg-activity-duration">

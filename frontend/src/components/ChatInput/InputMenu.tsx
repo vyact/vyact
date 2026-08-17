@@ -1,4 +1,5 @@
 import React, {useRef, useEffect} from 'react';
+import {Lightbulb} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {VYACT_ICON_URL} from '../../constants/assets';
 import {
@@ -10,6 +11,7 @@ import {
 import {onMcpServersChanged} from '../../utils/mcpEvents';
 import {CHAT_FILE_ACCEPT} from '../../utils/fileValidation';
 import ReasoningToggle from '../common/ReasoningToggle/ReasoningToggle';
+import {useReasoning} from '../../utils/reasoning';
 import './InputMenu.css';
 import {usePluginExtensions} from '../../plugins/usePluginExtensions';
 import {openPluginModal, openPluginPanel} from '../../plugins/registry';
@@ -49,6 +51,7 @@ const InputMenu: React.FC<InputMenuProps> = ({
                                                  onOpenGoogleWorkspace,
                                              }) => {
     const {t} = useTranslation('main');
+    const [reasoningEnabled] = useReasoning();
     const {inputMenu: pluginMenuItems} = usePluginExtensions();
     const [open, setOpen] = React.useState(false);
     const [google, setGoogle] = React.useState<GoogleWorkspaceStatus>(GOOGLE_STATUS_UNAVAILABLE);
@@ -125,13 +128,16 @@ const InputMenu: React.FC<InputMenuProps> = ({
     return (
         <div className="input-menu" ref={menuRef}>
             <button
-                className="input-menu-trigger"
+                className={`input-menu-trigger${reasoningEnabled ? ' reasoning-on' : ''}`}
                 onClick={() => setOpen(v => !v)}
             >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="12" y1="5" x2="12" y2="19"/>
                     <line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>
+                <span className="input-menu-reasoning-indicator" aria-hidden="true">
+                    <Lightbulb size={10}/>
+                </span>
             </button>
 
             {/* hidden file input */}

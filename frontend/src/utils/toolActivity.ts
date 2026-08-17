@@ -119,6 +119,44 @@ export function getToolActivityDetail(args?: Record<string, unknown>): string | 
     return details.length ? details.join(' · ') : undefined;
 }
 
+export function getToolActivityLinks(args?: Record<string, unknown>): Array<{label: string; url: string}> | undefined {
+    if (!args) return undefined;
+    const urls = Array.isArray(args.urls) ? args.urls : [args.url];
+    const uniqueUrls = [...new Set(urls.filter((url): url is string => typeof url === 'string' && /^https?:\/\//i.test(url)))];
+    const links = uniqueUrls
+        .map(url => {
+            try { return {label: new URL(url).hostname, url}; } catch { return {label: url, url}; }
+        });
+    return links.length ? links : undefined;
+}
+
+export function getToolActivityResultPresentation(
+    result: unknown,
+    args?: Record<string, unknown>,
+): {detail?: string; links?: Array<{label: string; url: string}>} {
+    let payload: Record<string, unknown> | undefined;
+    if (typeof result === 'string' && result.trim().startsWith('{')) {
+        try { payload = JSON.parse(result) as Record<string, unknown>; } catch { /* use args fallback */ }
+    } else if (result && typeof result === 'object') {
+        payload = result as Record<string, unknown>;
+    }
+    const element = payload?.element && typeof payload.element === 'object'
+        ? payload.element as Record<string, unknown>
+        : undefined;
+    const elementName = element?.name ?? element?.title ?? element?.tag;
+    const elementUrl = typeof element?.href === 'string' ? element.href : undefined;
+    const payloadUrl = typeof payload?.url === 'string' ? payload.url : undefined;
+    const payloadTitle = typeof payload?.title === 'string' ? payload.title : undefined;
+    const links = getToolActivityLinks({
+        urls: [elementUrl, payloadUrl, ...(getToolActivityLinks(args)?.map(link => link.url) ?? [])]
+            .filter((url): url is string => Boolean(url)),
+    });
+    return {
+        detail: compactSnippet(elementName) ?? payloadTitle ?? (links?.length ? undefined : getToolActivityDetail(args)),
+        links,
+    };
+}
+
 export function getStoredToolActivityDetail(detail?: string): string | undefined {
     if (!detail?.trim().startsWith('{')) return detail;
     try {
@@ -205,7 +243,12 @@ export function getToolActivityDisplayLabel(
             browser_type: 'browserTypeCompleted',
             browser_click: 'browserClickCompleted',
             browser_scroll: 'browserScrollCompleted',
+            browser_wait: 'browserWaitCompleted',
+            browser_back: 'browserBackCompleted',
+            browser_status: 'browserStatusCompleted',
+            browser_close: 'browserCloseCompleted',
             browser_wait_for_user: 'browserUserActionCompleted',
+            browser_ask_user: 'browserUserActionCompleted',
         };
         if (browserCompletionKeys[tool]) return t(`toolActivity.${browserCompletionKeys[tool]}`);
         return t('toolActivity.completed');

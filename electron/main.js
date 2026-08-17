@@ -179,12 +179,12 @@ async function executeFloatingBrowserCommand(command, args = {}) {
     }
     if (command === "click") {
         const elementId = JSON.stringify(String(args.element_id || ""));
-        return contents.executeJavaScript(`(() => { const el = document.querySelector('[data-vyact-browser-id="' + CSS.escape(${elementId}) + '"]'); if (!el) return {ok:false,error:'element_not_found'}; el.scrollIntoView({block:'center'}); el.click(); return {ok:true}; })()`);
+        return contents.executeJavaScript(`(() => { const el = document.querySelector('[data-vyact-browser-id="' + CSS.escape(${elementId}) + '"]'); if (!el) return {ok:false,error:'element_not_found'}; const name = String(el.getAttribute('aria-label') || el.innerText || el.getAttribute('title') || el.querySelector?.('img[alt]')?.getAttribute('alt') || el.getAttribute('placeholder') || el.getAttribute('name') || '').replace(/\\s+/g, ' ').trim().slice(0, 200); const element = {name,tag:el.tagName.toLowerCase(),href:el.href || ''}; el.scrollIntoView({block:'center'}); el.click(); return {ok:true,element}; })()`);
     }
     if (command === "type") {
         const elementId = JSON.stringify(String(args.element_id || ""));
         const value = JSON.stringify(String(args.text || ""));
-        return contents.executeJavaScript(`(() => { const el = document.querySelector('[data-vyact-browser-id="' + CSS.escape(${elementId}) + '"]'); if (!el) return {ok:false,error:'element_not_found'}; if (el.type === 'password') return {ok:false,error:'password_input_blocked'}; el.focus(); const setter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(el), 'value')?.set; if (setter) setter.call(el, ${value}); else el.value = ${value}; el.dispatchEvent(new Event('input',{bubbles:true})); el.dispatchEvent(new Event('change',{bubbles:true})); return {ok:true}; })()`);
+        return contents.executeJavaScript(`(() => { const el = document.querySelector('[data-vyact-browser-id="' + CSS.escape(${elementId}) + '"]'); if (!el) return {ok:false,error:'element_not_found'}; if (el.type === 'password') return {ok:false,error:'password_input_blocked'}; el.focus(); const setter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(el), 'value')?.set; if (setter) setter.call(el, ${value}); else el.value = ${value}; el.dispatchEvent(new Event('input',{bubbles:true})); el.dispatchEvent(new Event('change',{bubbles:true})); const name = String(el.getAttribute('aria-label') || el.getAttribute('title') || el.getAttribute('placeholder') || el.getAttribute('name') || '').replace(/\\s+/g, ' ').trim().slice(0, 200); return {ok:true,element:{name,tag:el.tagName.toLowerCase()}}; })()`);
     }
     if (command === "scroll") {
         const amount = Math.max(-4000, Math.min(4000, Number(args.amount || 700)));

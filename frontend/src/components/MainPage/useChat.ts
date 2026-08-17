@@ -15,7 +15,7 @@ import type {FileAttachment} from '../ChatInput/useAttachments';
 import type {ExternalDocumentSelection} from '../../services/externalDocumentSelections';
 import {findPluginCommand} from '../../plugins/registry';
 import {resolveApprovalMode} from '../../services/approvalPolicy';
-import {getToolActivityDetail, getToolActivityLabel} from '../../utils/toolActivity';
+import {getToolActivityDetail, getToolActivityLabel, getToolActivityLinks, getToolActivityResultPresentation} from '../../utils/toolActivity';
 
 const STREAM_RENDER_INTERVAL_MS = 32;
 
@@ -568,10 +568,11 @@ export function useChat(deps: UseChatDeps) {
                             } else if (data.phase === 'judging') {
                                 setToolStatus({phase: 'judging', group: 'analysis', label: t((data.round ?? 0) > 0 ? 'toolActivity.additionalAnalysis' : 'toolActivity.analyzing')});
                             } else if (data.phase === 'start') {
-                                setToolStatus({phase: 'running', name: data.name, group: toolGroup(data.name), label: getToolActivityLabel(data.name, t), detail: getToolActivityDetail(data.args)});
+                                setToolStatus({phase: 'running', name: data.name, group: toolGroup(data.name), label: getToolActivityLabel(data.name, t), detail: getToolActivityDetail(data.args), links: getToolActivityLinks(data.args)});
                             } else if (data.phase === 'end') {
                                 const toolResult = data.result ?? '';
                                 const failed = toolResult.startsWith('[오류]');
+                                const presentation = getToolActivityResultPresentation(toolResult, data.args);
                                 if (failed && toolResult.includes('VYACT_BROWSER_EXTENSION_REQUIRED')) {
                                     window.dispatchEvent(new CustomEvent('vyact:browser-extension-required'));
                                 }
@@ -581,7 +582,8 @@ export function useChat(deps: UseChatDeps) {
                                     name: data.name,
                                     group: toolGroup(data.name),
                                     label: t(failed ? 'toolActivity.failed' : 'toolActivity.completed'),
-                                    detail: getToolActivityDetail(data.args),
+                                    detail: presentation.detail,
+                                    links: presentation.links,
                                 });
                                 // 검색/도구 단계가 끝난 뒤 첫 토큰이 오기까지는 프롬프트 평가가 진행된다.
                                 // 완료된 작업명(예: 컬렉션 검색)을 계속 표시하지 않고 응답 준비 상태로 전환한다.

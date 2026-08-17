@@ -952,7 +952,7 @@
     "editCompleted": "代码修改完成",
     "checkCompleted": "代码检查完成",
     "browserSearching": "正在搜索网页", "browserOpening": "正在打开网页", "browserReading": "正在读取搜索结果", "browserBatchReading": "正在读取多个来源", "browserInspecting": "正在检查页面元素", "browserTyping": "正在页面中输入", "browserClicking": "正在点击页面元素", "browserScrolling": "正在页面中移动",
-    "browserSearchCompleted": "网页搜索完成", "browserOpenCompleted": "网页已打开", "browserReadCompleted": "搜索结果读取完成", "browserBatchReadCompleted": "多个来源读取完成", "browserInspectCompleted": "页面元素检查完成", "browserTypeCompleted": "页面输入完成", "browserClickCompleted": "页面元素点击完成", "browserScrollCompleted": "页面移动完成",
+    "browserSearchCompleted": "网页搜索完成", "browserOpenCompleted": "页面已打开", "browserReadCompleted": "页面内容检查完成", "browserBatchReadCompleted": "页面内容检查完成", "browserInspectCompleted": "页面元素检查完成", "browserTypeCompleted": "页面输入完成", "browserClickCompleted": "页面元素点击完成", "browserScrollCompleted": "页面移动完成", "browserWaitCompleted": "页面加载等待完成", "browserBackCompleted": "已返回上一页", "browserStatusCompleted": "页面状态检查完成", "browserCloseCompleted": "页面已关闭",
     "codeAnalysis": "正在分析代码库",
     "completedSummary": "已完成 {{count}} 项任务 · {{seconds}} 秒",
     "inProgressSummary": "{{count}} 项任务 · {{status}}",

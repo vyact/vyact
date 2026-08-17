@@ -952,7 +952,7 @@
     "editCompleted": "Đã sửa mã nguồn",
     "checkCompleted": "Đã kiểm tra mã nguồn",
     "browserSearching": "Đang tìm kiếm trên web", "browserOpening": "Đang mở trang web", "browserReading": "Đang đọc kết quả tìm kiếm", "browserBatchReading": "Đang đọc nhiều nguồn", "browserInspecting": "Đang kiểm tra các phần tử trang", "browserTyping": "Đang nhập văn bản trên trang", "browserClicking": "Đang nhấp phần tử trang", "browserScrolling": "Đang di chuyển trong trang",
-    "browserSearchCompleted": "Đã tìm kiếm web", "browserOpenCompleted": "Đã mở trang web", "browserReadCompleted": "Đã đọc kết quả tìm kiếm", "browserBatchReadCompleted": "Đã đọc nhiều nguồn", "browserInspectCompleted": "Đã kiểm tra các phần tử trang", "browserTypeCompleted": "Đã nhập văn bản trên trang", "browserClickCompleted": "Đã nhấp phần tử trang", "browserScrollCompleted": "Đã di chuyển trong trang",
+    "browserSearchCompleted": "Đã tìm kiếm web", "browserOpenCompleted": "Đã mở trang", "browserReadCompleted": "Đã kiểm tra nội dung trang", "browserBatchReadCompleted": "Đã kiểm tra nội dung trang", "browserInspectCompleted": "Đã kiểm tra các phần tử trang", "browserTypeCompleted": "Đã nhập văn bản trên trang", "browserClickCompleted": "Đã nhấp phần tử trang", "browserScrollCompleted": "Đã di chuyển trong trang", "browserWaitCompleted": "Đã chờ tải trang", "browserBackCompleted": "Đã quay lại trang trước", "browserStatusCompleted": "Đã kiểm tra trạng thái trang", "browserCloseCompleted": "Đã đóng trang",
     "codeAnalysis": "Đang phân tích mã nguồn",
     "completedSummary": "Đã hoàn thành {{count}} tác vụ · {{seconds}} giây",
     "inProgressSummary": "{{count}} tác vụ · {{status}}",

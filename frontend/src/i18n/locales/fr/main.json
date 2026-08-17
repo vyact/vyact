@@ -952,7 +952,7 @@
     "editCompleted": "Modification du code terminée",
     "checkCompleted": "Vérification du code terminée",
     "browserSearching": "Recherche sur le Web", "browserOpening": "Ouverture de la page Web", "browserReading": "Lecture des résultats", "browserBatchReading": "Lecture de plusieurs sources", "browserInspecting": "Inspection des éléments de la page", "browserTyping": "Saisie dans la page", "browserClicking": "Clic sur un élément de la page", "browserScrolling": "Déplacement dans la page",
-    "browserSearchCompleted": "Recherche Web terminée", "browserOpenCompleted": "Page Web ouverte", "browserReadCompleted": "Résultats lus", "browserBatchReadCompleted": "Plusieurs sources lues", "browserInspectCompleted": "Éléments de la page inspectés", "browserTypeCompleted": "Texte saisi dans la page", "browserClickCompleted": "Élément de la page cliqué", "browserScrollCompleted": "Déplacement dans la page terminé",
+    "browserSearchCompleted": "Recherche Web terminée", "browserOpenCompleted": "Page ouverte", "browserReadCompleted": "Contenu de la page vérifié", "browserBatchReadCompleted": "Contenu de la page vérifié", "browserInspectCompleted": "Éléments de la page inspectés", "browserTypeCompleted": "Texte saisi dans la page", "browserClickCompleted": "Élément de la page cliqué", "browserScrollCompleted": "Déplacement dans la page terminé", "browserWaitCompleted": "Attente du chargement terminée", "browserBackCompleted": "Retour à la page précédente terminé", "browserStatusCompleted": "État de la page vérifié", "browserCloseCompleted": "Page fermée",
     "codeAnalysis": "Analyse du code",
     "completedSummary": "{{count}} tâches terminées · {{seconds}} s",
     "inProgressSummary": "{{count}} tâches · {{status}}",
