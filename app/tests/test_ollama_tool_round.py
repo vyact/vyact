@@ -12,6 +12,7 @@ from services.llm.config import (
     TOOL_CALL_MUTATION_NUM_PREDICT,
     TOOL_CALL_RETRY_RESULT_CHARS,
 )
+from services.llm.core import _apply_ollama_tool_loop_result
 
 
 class _Response:
@@ -36,6 +37,19 @@ class _Client:
 
 
 class OllamaToolRoundTests(unittest.IsolatedAsyncioTestCase):
+    def test_final_request_retains_tool_schema_for_prefix_cache(self):
+        tools = [{"type": "function", "function": {"name": "browser_read"}}]
+        messages = [{"role": "user", "content": "read the page"}]
+        body = {"model": "test-model", "messages": []}
+
+        _apply_ollama_tool_loop_result(body, {
+            "messages": messages,
+            "tools": tools,
+        })
+
+        self.assertIs(body["messages"], messages)
+        self.assertIs(body["tools"], tools)
+
     def test_code_read_allows_a_larger_follow_up_patch(self):
         messages = [
             {"role": "assistant", "tool_calls": [{"function": {"name": "code_read_file"}}]},

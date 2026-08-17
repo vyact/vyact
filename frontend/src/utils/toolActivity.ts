@@ -204,6 +204,22 @@ export function getToolActivityResultPresentation(
     };
 }
 
+export function isToolActivityResultFailed(result: unknown): boolean {
+    if (typeof result === 'string') {
+        if (result.startsWith('[오류]')) return true;
+        if (!result.trim().startsWith('{')) return false;
+        try {
+            const payload = JSON.parse(result) as Record<string, unknown>;
+            return payload.ok === false || Boolean(payload.error);
+        } catch {
+            return false;
+        }
+    }
+    if (!result || typeof result !== 'object') return false;
+    const payload = result as Record<string, unknown>;
+    return payload.ok === false || Boolean(payload.error);
+}
+
 export function getStoredToolActivityDetail(detail?: string): string | undefined {
     if (!detail?.trim().startsWith('{')) return detail;
     try {

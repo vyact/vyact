@@ -5,6 +5,7 @@ import {
     getToolActivityLabel,
     getToolActivityLinks,
     getToolActivityResultPresentation,
+    isToolActivityResultFailed,
 } from './toolActivity';
 
 const translations: Record<string, string> = {
@@ -68,6 +69,11 @@ describe('tool activity presentation', () => {
         expect(getToolActivityDisplayLabel(
             'browser_click', '작업을 완료했어요', translate, 'completed', 'success',
         )).toBe('페이지 요소 클릭 완료');
+    });
+
+    it('treats structured tool errors as failed activity', () => {
+        expect(isToolActivityResultFailed('{"ok":false,"error":"element_not_found"}')).toBe(true);
+        expect(isToolActivityResultFailed('{"ok":true}')).toBe(false);
     });
 
     it('creates clickable page links and identifies the clicked element from its result', () => {

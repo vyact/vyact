@@ -19,6 +19,7 @@ from agent import (
     get_conversation, rag_query_stream,
 )
 from services.llm import chat_stream_with_tools
+from services.llm.ollama import _tool_result_failed
 from config import IMAGE_MODEL_IDS
 from prompts import VOICE_MODE_SUFFIX, FORMAT_INSTRUCTION, EXTENSION_FORMAT_INSTRUCTION, get_extension_format_instruction
 from routers.deps import load_config_async
@@ -1037,7 +1038,7 @@ async def query_stream(req: QueryRequest):
                             _activity_log[-1]["phase"] = "completed"
                             _result = ev.get("result")
                             _activity_log[-1]["outcome"] = (
-                                "failed" if isinstance(_result, str) and _result.startswith("[오류]") else "success"
+                                "failed" if isinstance(_result, str) and _tool_result_failed(_result) else "success"
                             )
                             _activity_log[-1]["completedAt"] = int(datetime.now(timezone.utc).timestamp() * 1000)
                             _presentation = _tool_result_activity_presentation(_result, ev.get("args", {}))

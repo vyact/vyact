@@ -31,6 +31,9 @@ PAGE_READINESS_INVALIDATING_COMMANDS = {
 _page_readiness_cache: ContextVar[dict | None] = ContextVar(
     "browser_page_readiness_cache", default=None,
 )
+_inspected_element_ids: ContextVar[frozenset[str]] = ContextVar(
+    "browser_inspected_element_ids", default=frozenset(),
+)
 
 TRACKING_QUERY_PARAMETERS = {
     "clickEventId", "imagePath", "searchId", "source", "sourceType",
@@ -126,6 +129,7 @@ async def _command(command: str, **args):
     executor = extension_browser.execute if use_extension else _electron_command
     if command in PAGE_READINESS_INVALIDATING_COMMANDS:
         _page_readiness_cache.set(None)
+        _inspected_element_ids.set(frozenset())
     if command in {"read", "inspect"}:
         transport = "chrome_extension" if use_extension else "electron"
         cached = _page_readiness_cache.get()
@@ -281,6 +285,7 @@ async def _browser_read_urls(urls: list[str]) -> dict:
 
 
 async def _browser_inspect() -> str:
+    _inspected_element_ids.set(frozenset())
     result = await _command("inspect")
     if not isinstance(result, list):
         return _as_text(result)
@@ -301,14 +306,47 @@ async def _browser_inspect() -> str:
         }
         if element.get("id") and (element.get("name") or element.get("type") or element.get("href")):
             compact_elements.append(element)
+    _inspected_element_ids.set(frozenset(
+        str(element["id"]) for element in compact_elements if element.get("id")
+    ))
     return _as_text(compact_elements)
 
 
+def _invalid_element_id_result(element_id: str) -> str | None:
+    normalized_id = str(element_id or "").strip()
+    if not re.fullmatch(r"vyact-\d+", normalized_id):
+        return _as_text({
+            "ok": False,
+            "error": "invalid_element_id",
+            "instruction": (
+                "element_id must be an exact vyact-<number> ID returned by browser_inspect. "
+                "Do not infer it from browser_read link order or text; use an exact href with browser_open "
+                "or call browser_inspect first."
+            ),
+        })
+    if normalized_id not in _inspected_element_ids.get():
+        return _as_text({
+            "ok": False,
+            "error": "stale_or_uninspected_element_id",
+            "instruction": (
+                "This element_id was not returned by the latest browser_inspect on the current page. "
+                "Call browser_inspect again before clicking or typing."
+            ),
+        })
+    return None
+
+
 async def _browser_click(element_id: str) -> str:
+    invalid_result = _invalid_element_id_result(element_id)
+    if invalid_result:
+        return invalid_result
     return _as_text(await _command("click", element_id=element_id))
 
 
 async def _browser_type(element_id: str, text: str) -> str:
+    invalid_result = _invalid_element_id_result(element_id)
+    if invalid_result:
+        return invalid_result
     return _as_text(await _command("type", element_id=element_id, text=text))
 
 

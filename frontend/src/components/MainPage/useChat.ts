@@ -15,7 +15,7 @@ import type {FileAttachment} from '../ChatInput/useAttachments';
 import type {ExternalDocumentSelection} from '../../services/externalDocumentSelections';
 import {findPluginCommand} from '../../plugins/registry';
 import {resolveApprovalMode} from '../../services/approvalPolicy';
-import {getToolActivityDetail, getToolActivityLabel, getToolActivityLinks, getToolActivityResultPresentation} from '../../utils/toolActivity';
+import {getToolActivityDetail, getToolActivityLabel, getToolActivityLinks, getToolActivityResultPresentation, isToolActivityResultFailed} from '../../utils/toolActivity';
 
 const STREAM_RENDER_INTERVAL_MS = 32;
 
@@ -571,7 +571,7 @@ export function useChat(deps: UseChatDeps) {
                                 setToolStatus({phase: 'running', name: data.name, group: toolGroup(data.name), label: getToolActivityLabel(data.name, t), detail: getToolActivityDetail(data.args), links: getToolActivityLinks(data.args)});
                             } else if (data.phase === 'end') {
                                 const toolResult = data.result ?? '';
-                                const failed = toolResult.startsWith('[오류]');
+                                const failed = isToolActivityResultFailed(toolResult);
                                 const presentation = getToolActivityResultPresentation(toolResult, data.args);
                                 if (failed && toolResult.includes('VYACT_BROWSER_EXTENSION_REQUIRED')) {
                                     window.dispatchEvent(new CustomEvent('vyact:browser-extension-required'));

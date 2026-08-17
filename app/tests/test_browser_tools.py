@@ -1,8 +1,12 @@
+import asyncio
 import importlib
+import json
+import logging
+from unittest.mock import AsyncMock
 
 import pytest
 
-from logger import DebugLogSettings
+from logger import DebugLogSettings, _SensitiveLogDataFilter
 from services import browser_tools
 from services.tool_approval import get_tool_risk, requires_approval
 
@@ -94,3 +98,38 @@ def test_debug_logging_masks_user_input() -> None:
         "text": "[REDACTED]",
         "nested": {"token": "[REDACTED]", "url": "https://example.com"},
     }
+
+
+def test_browser_click_rejects_inferred_element_id(monkeypatch) -> None:
+    command = AsyncMock()
+    monkeypatch.setattr(browser_tools, "_command", command)
+
+    result = json.loads(asyncio.run(browser_tools._browser_click("1")))
+
+    assert result["ok"] is False
+    assert result["error"] == "invalid_element_id"
+    command.assert_not_awaited()
+
+
+def test_browser_click_accepts_latest_inspected_element_id(monkeypatch) -> None:
+    command = AsyncMock(return_value={"ok": True})
+    monkeypatch.setattr(browser_tools, "_command", command)
+    token = browser_tools._inspected_element_ids.set(frozenset({"vyact-6"}))
+    try:
+        result = json.loads(asyncio.run(browser_tools._browser_click("vyact-6")))
+    finally:
+        browser_tools._inspected_element_ids.reset(token)
+
+    assert result == {"ok": True}
+    command.assert_awaited_once_with("click", element_id="vyact-6")
+
+
+def test_http_log_filter_masks_oauth_query_tokens() -> None:
+    record = logging.LogRecord(
+        "httpx", logging.INFO, __file__, 1,
+        "HTTP Request: GET https://oauth2.googleapis.com/tokeninfo?access_token=%s",
+        ("secret-token",), None,
+    )
+
+    assert _SensitiveLogDataFilter().filter(record) is True
+    assert record.getMessage().endswith("access_token=[REDACTED]")

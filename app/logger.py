@@ -216,10 +216,19 @@ def setup_logging() -> None:
     if not has_target_file_handler:
         fh = logging.FileHandler(log_file, encoding="utf-8")
         fh.setFormatter(fmt)
-        fh.addFilter(_ToolLoggingFilter())
-        fh.addFilter(_SensitiveLogDataFilter())
-        fh.addFilter(_UnicodeNormalizationFilter())
         root.addHandler(fh)
+
+    # A launcher may have installed the target FileHandler before this module is
+    # initialized. Apply security filters to existing handlers as well as handlers
+    # created above; otherwise third-party records such as httpx URLs bypass redaction.
+    for handler in root.handlers:
+        if isinstance(handler, logging.FileHandler) and Path(handler.baseFilename).resolve() == target_log_path:
+            if not any(isinstance(item, _ToolLoggingFilter) for item in handler.filters):
+                handler.addFilter(_ToolLoggingFilter())
+            if not any(isinstance(item, _SensitiveLogDataFilter) for item in handler.filters):
+                handler.addFilter(_SensitiveLogDataFilter())
+            if not any(isinstance(item, _UnicodeNormalizationFilter) for item in handler.filters):
+                handler.addFilter(_UnicodeNormalizationFilter())
 
     if not any(
             isinstance(h, logging.StreamHandler) and not isinstance(h, logging.FileHandler)

@@ -37,6 +37,16 @@ _FINAL_ANSWER_AFTER_TOOLS = (
 )
 
 
+def _apply_ollama_tool_loop_result(body: dict, loop_result: dict) -> None:
+    """Keep the final Ollama request prefix aligned with the tool rounds."""
+    body["messages"] = loop_result["messages"]
+    tools = loop_result.get("tools") or []
+    if tools:
+        body["tools"] = tools
+    else:
+        body.pop("tools", None)
+
+
 async def chat_stream_with_tools(
         question: str,
         context_docs: list[dict],
@@ -239,7 +249,7 @@ async def chat_stream_with_tools(
         new_messages = loop_result["messages"]
         direct_answer = loop_result["direct_answer"]
         direct_stats = loop_result["stats"]
-        body["messages"] = new_messages
+        _apply_ollama_tool_loop_result(body, loop_result)
         if any(message.get("role") == "tool" for message in new_messages):
             body["messages"].append({"role": "system", "content": _FINAL_ANSWER_AFTER_TOOLS})
 
@@ -331,6 +341,10 @@ async def chat_stream_with_tools(
             logger.warning("[chat_stream_with_tools] 로그 저장 실패: %s", _le)
         return
 
+    logger.info(
+        "[final_response] Ollama 요청 시작: messages=%d tools=%d direct_answer=%s",
+        len(body.get("messages") or []), len(body.get("tools") or []), direct_answer is not None,
+    )
     log_llm_call(call_reason, "ollama", model, streaming=True, reasoning=reasoning)
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
