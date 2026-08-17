@@ -120,6 +120,31 @@ def _expire_previous_browser_inspections(messages: list[dict]) -> None:
             )
 
 
+def _encode_browser_inspect_for_model(result_text: str) -> str:
+    """Remove repeated JSON object keys while preserving every inspected element.
+
+    The extension/backend keep the original object list for validation and logging.
+    Only the LLM-facing representation is changed to a column/row JSON table.
+    """
+    try:
+        elements = json.loads(result_text)
+    except (TypeError, ValueError):
+        return result_text
+    if not isinstance(elements, list) or not elements or not all(isinstance(item, dict) for item in elements):
+        return result_text
+
+    preferred_columns = ("id", "tag", "name", "href", "type", "role", "context")
+    available_columns = {key for item in elements for key in item}
+    columns = [key for key in preferred_columns if key in available_columns]
+    columns.extend(sorted(available_columns.difference(columns)))
+    compact = {
+        "format": "browser_inspect_table",
+        "columns": columns,
+        "rows": [[item.get(column) for column in columns] for item in elements],
+    }
+    return json.dumps(compact, ensure_ascii=False, separators=(",", ":"), default=str)
+
+
 async def build_ollama_payload(
         question: str,
         context_docs: list[dict],
@@ -426,8 +451,42 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
                     logger.warning("[tool_calls] 축약 문맥 재시도 실패: %s", retry_error)
                     return _result(work)
             except Exception as e:
-                logger.warning("[tool_calls] 호출 실패, tool 없이 진행: %s", e)
-                return _result(work)
+                is_transient_server_error = (
+                    isinstance(e, httpx.HTTPStatusError)
+                    and e.response.status_code >= 500
+                )
+                if is_transient_server_error:
+                    logger.warning(
+                        "[tool_calls] Ollama 일시적 서버 오류(%d), 축약 문맥으로 1회 재시도: round=%d",
+                        e.response.status_code, _round + 1,
+                    )
+                    retry_body = {**body, "messages": _compact_tool_results(work)}
+                    try:
+                        round_result = await asyncio.wait_for(
+                            _run_round_blocking(client, retry_body),
+                            timeout=min(timeout, TOOL_CALL_ROUND_TIMEOUT_SECONDS),
+                        )
+                    except Exception as retry_error:
+                        logger.error("[tool_calls] Ollama 서버 오류 재시도 실패: %s", retry_error)
+                        failure_instruction = {
+                            "role": "system",
+                            "content": (
+                                "The tool-decision request failed before the requested work was completed. "
+                                "Do not claim that any unverified action succeeded. State exactly which verified "
+                                "actions completed and that execution stopped because the local model server failed."
+                            ),
+                        }
+                        return _result([*work, failure_instruction], stats=_build_merged_stats(None))
+                else:
+                    logger.warning("[tool_calls] 호출 실패, tool 없이 진행: %s", e)
+                    failure_instruction = {
+                        "role": "system",
+                        "content": (
+                            "The tool-decision request failed before the requested work was completed. "
+                            "Do not claim that pending or unverified actions succeeded; report the execution failure."
+                        ),
+                    }
+                    return _result([*work, failure_instruction], stats=_build_merged_stats(None))
 
             tool_calls = round_result["tool_calls"]
             content = round_result["content"]
@@ -567,7 +626,12 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
                 await _emit({"phase": "end", "name": name, "args": args, "result": result_text, "sources": tool_sources})
                 if name == "browser_inspect" or name in _BROWSER_STATE_CHANGING_TOOL_NAMES:
                     _expire_previous_browser_inspections(work)
-                work.append({"role": "tool", "content": result_text, "tool_name": name})
+                model_result_text = (
+                    _encode_browser_inspect_for_model(result_text)
+                    if name == "browser_inspect"
+                    else result_text
+                )
+                work.append({"role": "tool", "content": model_result_text, "tool_name": name})
                 _debug_execution_ledger.append({
                     "round": _round + 1,
                     "tool": name,
@@ -579,6 +643,7 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
                     round=_round + 1,
                     tool=name,
                     result_chars=len(result_text),
+                    model_result_chars=len(model_result_text),
                     summary=DebugLogSettings.summarize_result(result_text),
                 )
                 if mcp_manager.is_single_shot(name):
@@ -602,7 +667,7 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
                         break
                 else:
                     _fail_tracker.pop(_fail_key, None)
-                    _last_successful_call = (_call_key, result_text)
+                    _last_successful_call = (_call_key, model_result_text)
                     if name in _BROWSER_STATE_CHANGING_TOOL_NAMES:
                         # Empty-argument observations refer to the current page, not the whole
                         # tool flow. A navigation or DOM mutation starts a fresh observation scope.

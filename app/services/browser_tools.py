@@ -365,7 +365,17 @@ async def _browser_type(element_id: str, text: str) -> str:
     invalid_result = _invalid_element_id_result(element_id)
     if invalid_result:
         return invalid_result
-    return _as_text(await _command("type", element_id=element_id, text=text))
+    result = await _command("type", element_id=element_id, text=text)
+    if isinstance(result, dict) and result.get("ok") is not False:
+        result = {
+            **result,
+            "submitted": False,
+            "action_instruction": (
+                "Typing only changed the field value; it did not submit the form. "
+                "If submission is required, inspect the current page and click its exact submit control."
+            ),
+        }
+    return _as_text(result)
 
 
 async def _browser_scroll(amount: int = 700) -> str:
@@ -441,7 +451,7 @@ def register_browser_tools() -> bool:
         ("browser_read_urls", "Sequentially open and read 1 to 5 public URLs in one call. Prefer this after a search when several source URLs are already known; use browser_open and browser_read when each next action depends on the previous page.", {"type": "object", "properties": {"urls": {"type": "array", "items": {"type": "string"}, "minItems": 1, "maxItems": MAX_BATCH_READ_URLS, "description": "Public HTTP/HTTPS source URLs to open and read in order"}}, "required": ["urls"]}, _browser_read_urls),
         ("browser_inspect", "List visible interactive elements and assign temporary element IDs for browser_click or browser_type.", object_schema, _browser_inspect),
         ("browser_click", "Click a visible element returned by browser_inspect. Re-inspect after navigation or page changes.", {"type": "object", "properties": {"element_id": {"type": "string"}}, "required": ["element_id"]}, _browser_click),
-        ("browser_type", "Type non-secret text into an element returned by browser_inspect. Password fields are always blocked.", {"type": "object", "properties": {"element_id": {"type": "string"}, "text": {"type": "string"}}, "required": ["element_id", "text"]}, _browser_type),
+        ("browser_type", "Type non-secret text into an element returned by browser_inspect. This changes the field value but does not submit its form. Password fields are always blocked.", {"type": "object", "properties": {"element_id": {"type": "string"}, "text": {"type": "string"}}, "required": ["element_id", "text"]}, _browser_type),
         ("browser_scroll", "Scroll the current page; positive values scroll down and negative values scroll up.", {"type": "object", "properties": {"amount": {"type": "integer", "description": "Pixels, from -4000 to 4000"}}}, _browser_scroll),
         ("browser_wait", "Wait briefly for navigation or dynamic content, then return browser status.", {"type": "object", "properties": {"seconds": {"type": "number", "description": "0.1 to 10 seconds"}}}, _browser_wait),
         ("browser_back", "Navigate the visible browser back one page.", object_schema, _browser_back),

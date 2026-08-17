@@ -1,8 +1,12 @@
+import json
 import unittest
 from unittest.mock import AsyncMock, patch
 
+import httpx
+
 from services.llm.ollama import (
     _compact_tool_results,
+    _encode_browser_inspect_for_model,
     _expire_previous_browser_inspections,
     _failure_call_key,
     _tool_decision_num_predict,
@@ -38,7 +42,41 @@ class _Client:
         return _Response()
 
 
+class _SequenceClient(_Client):
+    def __init__(self):
+        self.call_count = 0
+
+    async def post(self, *_args, **_kwargs):
+        self.call_count += 1
+        if self.call_count == 1:
+            request = httpx.Request("POST", "http://localhost:11434/api/chat")
+            return httpx.Response(500, request=request)
+        return _Response()
+
+
 class OllamaToolRoundTests(unittest.IsolatedAsyncioTestCase):
+    def test_browser_inspect_is_compacted_without_dropping_elements_or_fields(self):
+        elements = [
+            {
+                "id": f"vyact-{index}",
+                "tag": "a",
+                "name": f"상품 {index}",
+                "href": f"https://example.com/{index}",
+            }
+            for index in range(1, 21)
+        ]
+        original = json.dumps(elements, ensure_ascii=False)
+
+        encoded = _encode_browser_inspect_for_model(original)
+        table = json.loads(encoded)
+        restored = [
+            {column: value for column, value in zip(table["columns"], row) if value is not None}
+            for row in table["rows"]
+        ]
+
+        self.assertEqual(restored, elements)
+        self.assertLess(len(encoded), len(original))
+
     async def test_browser_directive_separates_candidate_research_from_actions(self):
         with patch(
             "services.mcp_config.get_active_mcp_prompt",
@@ -120,6 +158,25 @@ class OllamaToolRoundTests(unittest.IsolatedAsyncioTestCase):
             )
         self.assertEqual(result["direct_answer"], "done")
         self.assertEqual(result["tools"], [tool])
+
+    async def test_transient_ollama_server_error_retries_tool_judgment(self):
+        tool = {"type": "function", "function": {
+            "name": "browser_read", "description": "read", "parameters": {},
+        }}
+        client = _SequenceClient()
+        with patch("services.mcp_client.mcp_manager.get_ollama_tools", AsyncMock(return_value=[tool])), \
+                patch("services.mcp_client.mcp_manager.has_tools", return_value=True), \
+                patch("services.mcp_client.MCPManager.connected", new_callable=lambda: property(lambda _self: True)), \
+                patch("services.llm.ollama.httpx.AsyncClient", return_value=client), \
+                patch("services.llm.ollama.log_tool_names", AsyncMock()), \
+                patch("services.llm.ollama.build_tool_directive", AsyncMock(return_value="tools")):
+            result = await resolve_tool_calls(
+                "test-model", [{"role": "user", "content": "read"}], {}, timeout=1,
+                max_rounds=1, reasoning=False,
+            )
+
+        self.assertEqual(client.call_count, 2)
+        self.assertEqual(result["direct_answer"], "done")
 
 
 if __name__ == "__main__":

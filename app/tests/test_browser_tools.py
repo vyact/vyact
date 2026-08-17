@@ -124,6 +124,21 @@ def test_browser_click_accepts_latest_inspected_element_id(monkeypatch) -> None:
     command.assert_awaited_once_with("click", element_id="vyact-6")
 
 
+def test_browser_type_reports_that_form_was_not_submitted(monkeypatch) -> None:
+    command = AsyncMock(return_value={"ok": True, "element": {"tag": "input"}})
+    monkeypatch.setattr(browser_tools, "_command", command)
+    token = browser_tools._inspected_element_ids.set(frozenset({"vyact-9"}))
+    try:
+        result = json.loads(asyncio.run(browser_tools._browser_type("vyact-9", "query")))
+    finally:
+        browser_tools._inspected_element_ids.reset(token)
+
+    assert result["ok"] is True
+    assert result["submitted"] is False
+    assert "did not submit" in result["action_instruction"]
+    command.assert_awaited_once_with("type", element_id="vyact-9", text="query")
+
+
 def test_http_log_filter_masks_oauth_query_tokens() -> None:
     record = logging.LogRecord(
         "httpx", logging.INFO, __file__, 1,
