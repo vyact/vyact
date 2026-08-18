@@ -480,6 +480,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                                 model={msg.model}
                                 attachments={msg.attachments}
                                 isError={msg.isError}
+                                errorTitle={msg.errorTitle}
                                 onRetry={msg.isError ? onRetry : undefined}
                                 isGeneratedImage={msg.isGeneratedImage}
                                 articleSources={msg.articleSources}

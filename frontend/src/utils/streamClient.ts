@@ -14,7 +14,7 @@ export interface StreamHandlers {
     onTool?: (data: { phase?: string; name?: string; args?: Record<string, unknown>; round?: number; result?: string; approval_id?: string; risk?: string; conversation_id?: string; project_id?: string }) => void;
     onIndexProgress?: (data: { source_name?: string; done?: number; total?: number }) => void;
     onDone?: (data: { conv_id?: string; answer?: string; stats?: Record<string, number | null>; truncated?: boolean; code_changes?: import('../types').CodeChanges; conversation_title?: string }) => void;
-    onError?: (message: string) => void;
+    onError?: (error: { code?: string; model?: string; message?: string }) => void;
 }
 
 export async function streamSSE(
@@ -70,7 +70,7 @@ export async function streamSSE(
             case 'tool':  handlers.onTool?.(payload); break;
             case 'index_progress': handlers.onIndexProgress?.(payload); break;
             case 'done':  handlers.onDone?.(payload); break;
-            case 'error': handlers.onError?.(payload.message || '스트리밍 오류'); break;
+            case 'error': handlers.onError?.(payload); break;
         }
         return event;
     };

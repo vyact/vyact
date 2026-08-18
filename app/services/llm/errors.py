@@ -4,6 +4,35 @@ services/llm/errors.py — provider HTTP 에러 메시지 변환
 import httpx
 
 
+HTTP_ERROR_BODY_LOG_LIMIT = 4_000
+OLLAMA_IMAGE_UNSUPPORTED_ERROR = "this model does not support image input"
+
+
+def http_error_response_body(error: httpx.HTTPStatusError) -> str:
+    """Return a bounded provider error body suitable for application logs."""
+    response = error.response
+    try:
+        body = response.text.strip()
+    except Exception:
+        body = "<응답 본문을 읽을 수 없음>"
+    if not body:
+        return "<빈 응답 본문>"
+    if len(body) > HTTP_ERROR_BODY_LOG_LIMIT:
+        return f"{body[:HTTP_ERROR_BODY_LOG_LIMIT]}… (truncated)"
+    return body
+
+
+def is_ollama_image_unsupported_error(error: httpx.HTTPStatusError) -> bool:
+    """Identify Ollama's stable 400 response for a text-only model."""
+    if error.response.status_code != 400:
+        return False
+    try:
+        message = str(error.response.json().get("error", "")).strip().lower()
+    except Exception:
+        return False
+    return message == OLLAMA_IMAGE_UNSUPPORTED_ERROR
+
+
 def http_err_msg(e: httpx.HTTPStatusError, provider: str) -> str:
     try:
         data = e.response.json()

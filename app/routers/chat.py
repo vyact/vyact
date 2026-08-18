@@ -1067,6 +1067,12 @@ async def query_stream(req: QueryRequest):
                         # 메모/뉴스RAG/첨부파일 자동조회 진행 표시 (tool과 동일한 start/end 형식으로 변환)
                         yield _sse("tool", {"phase": "start", "name": "search_related_context"})
                         yield _sse("tool", {"phase": "end", "name": "search_related_context"})
+                    elif ev["type"] == "error":
+                        yield _sse("error", {
+                            "code": ev.get("code"),
+                            "model": ev.get("model"),
+                        })
+                        return
                     elif ev["type"] == "final":
                         final_result = ev["result"]
 
@@ -1188,6 +1194,12 @@ async def query_stream(req: QueryRequest):
                     stats = {k: v for k, v in ev.items() if k != "type"}
                 elif ev.get("type") == "finish":
                     finish_reason = ev.get("reason")
+                elif ev.get("type") == "error":
+                    yield _sse("error", {
+                        "code": ev.get("code"),
+                        "model": ev.get("model"),
+                    })
+                    return
 
             trailing_visible_text = metadata_stream_filter.finish()
             if trailing_visible_text:

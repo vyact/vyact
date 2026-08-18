@@ -87,7 +87,7 @@ const StreamingTextGroup: React.FC<{
 
 const Message: React.FC<MessageProps> = ({
                                              role, content, timestamp, sources, model, attachments,
-                                             isError, onRetry, isGeneratedImage, articleSources,
+                                             isError, errorTitle, onRetry, isGeneratedImage, articleSources,
                                              pdfFile, pdfParams, onPdfEdit, injectedContext, onShowInjectedContext, onOpenMemo,
                                              isStreaming = false, conversationId, requestStartedAt, toolStatus, activityLog, stats,
                                              truncated,
@@ -355,7 +355,7 @@ const Message: React.FC<MessageProps> = ({
                     <div className="message-error-card" role="alert">
                         <span className="message-error-icon" aria-hidden="true"><CircleAlert size={18}/></span>
                         <div className="message-error-copy">
-                            <strong>{t('message.requestFailed')}</strong>
+                            <strong>{errorTitle || t('message.requestFailed')}</strong>
                             <span>{errorDetail || t('message.unknownError')}</span>
                         </div>
                         {onRetry && (

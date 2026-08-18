@@ -444,6 +444,8 @@ async def rag_query_stream(
         elif ev.get("type") == "rag_fallback":
             # 메모/뉴스RAG/첨부파일 자동조회 결과 — UI 진행 표시용으로 그대로 통과
             yield ev
+        elif ev.get("type") == "error":
+            yield ev
 
     answer = "".join(parts).strip()
 

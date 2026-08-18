@@ -17,6 +17,7 @@ from .config import (
     get_provider_config, log_llm_call, log_tool_names, logger,
 )
 from .helpers import load_images_b64, history_for_ollama
+from .errors import http_error_response_body
 from .tools import build_approval_rejection_instruction, build_tool_directive
 from services.runtime_settings import get_runtime_settings
 from services.tool_approval import await_tool_approval, get_tool_rejection_response
@@ -346,7 +347,20 @@ async def resolve_tool_calls(model: str, messages: list, options: dict,
             "[tool_calls] Ollama 판정 응답 완료: elapsed=%.1fs status=%d",
             _time.monotonic() - started_at, resp.status_code,
         )
-        resp.raise_for_status()
+        try:
+            resp.raise_for_status()
+        except httpx.HTTPStatusError as error:
+            DebugLogSettings.log(
+                "ollama_api_error",
+                phase="tool_decision",
+                status=resp.status_code,
+                model=body.get("model"),
+                message_count=len(body.get("messages") or []),
+                tool_count=tool_count,
+                has_images=any(message.get("images") for message in body.get("messages") or []),
+                response_body=http_error_response_body(error),
+            )
+            raise
         data = resp.json()
         msg = data.get("message", {}) or {}
         return {"tool_calls": msg.get("tool_calls") or [],

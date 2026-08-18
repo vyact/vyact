@@ -1011,6 +1011,8 @@
     "codeReviewFileList": "ไฟล์ที่เปลี่ยนแปลง", "codeReviewSearchFiles": "ค้นหาเส้นทางไฟล์", "codeReviewPreviousFile": "ไฟล์ก่อนหน้า", "codeReviewNextFile": "ไฟล์ถัดไป", "codeReviewNoFiles": "ไม่พบไฟล์ที่ตรงกัน",
     "codeChangesTitle": "แก้ไขไฟล์ {{count}} ไฟล์แล้ว", "codeChangesUndo": "เลิกทำ", "codeChangesUndoing": "กำลังเลิกทำ…", "codeChangesUndone": "เลิกทำการเปลี่ยนแปลงแล้ว", "codeChangesUndoFailed": "ไม่สามารถเลิกทำการเปลี่ยนแปลงได้", "codeChangesUndoConflict": "ไฟล์ถูกแก้ไขภายหลัง จึงไม่สามารถเลิกทำอย่างปลอดภัยได้", "codeChangesMore": "แสดงอีก {{count}} ไฟล์", "codeChangesCollapse": "ยุบ", "codeChangesPreview": "ตัวอย่างการเปลี่ยนแปลงของ {{path}}",
     "modelNoResponse": "โมเดล AI ที่เลือกไม่สามารถสร้างคำตอบได้ โปรดลองอีกครั้ง",
+    "modelImageUnsupportedTitle": "โมเดลนี้ไม่สามารถดูรูปภาพได้",
+    "modelImageUnsupportedDescription": "{{model}} ไม่รองรับอินพุตรูปภาพ โปรดเปลี่ยนเป็นโมเดลที่รองรับการมองเห็นแล้วลองอีกครั้ง",
     "outputTruncated": "คำตอบถูกตัดเนื่องจากถึงความยาวเอาต์พุตสูงสุด โปรดขอให้โมเดลตอบต่อ",
     "followupTitle": "ถามต่อ",
     "followupSendSelected": "ส่ง {{count}} รายการ",

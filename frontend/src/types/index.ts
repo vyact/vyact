@@ -139,6 +139,7 @@ export interface Message {
     model?: string;
     attachments?: MessageAttachment[];
     isError?: boolean;
+    errorTitle?: string;
     toolStatus?: ToolActivity;  // MCP/code tool 실행 진행표시
     activityLog?: ToolActivity[]; // 도구·LLM 실행 흐름 누적 표시
     followups?: string[];  // 응답 말미 <followups> 블록에서 파싱한 후속 질문 목록

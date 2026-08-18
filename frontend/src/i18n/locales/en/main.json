@@ -1008,6 +1008,8 @@
     "codeReviewFileList": "Changed files", "codeReviewSearchFiles": "Search file paths", "codeReviewPreviousFile": "Previous file", "codeReviewNextFile": "Next file", "codeReviewNoFiles": "No matching files",
     "codeChangesTitle": "Edited {{count}} files", "codeChangesUndo": "Undo", "codeChangesUndoing": "Undoing…", "codeChangesUndone": "Changes undone", "codeChangesUndoFailed": "Could not undo the changes.", "codeChangesUndoConflict": "A file changed afterward, so these changes cannot be safely undone.", "codeChangesMore": "Show {{count}} more files", "codeChangesCollapse": "Collapse", "codeChangesPreview": "Changes in {{path}}",
     "modelNoResponse": "The selected AI model could not generate a response. Please try again.",
+    "modelImageUnsupportedTitle": "This model can’t view images",
+    "modelImageUnsupportedDescription": "{{model}} doesn’t support image input. Switch to a vision-capable model and try again.",
     "outputTruncated": "The response was cut off because it reached the maximum output length. Ask the model to continue.",
     "followupTitle": "Continue the conversation",
     "followupSendSelected": "Send {{count}}",

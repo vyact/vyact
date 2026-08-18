@@ -1011,6 +1011,8 @@
     "codeReviewFileList": "変更ファイル一覧", "codeReviewSearchFiles": "ファイルパスを検索", "codeReviewPreviousFile": "前のファイル", "codeReviewNextFile": "次のファイル", "codeReviewNoFiles": "一致するファイルがありません",
     "codeChangesTitle": "{{count}}個のファイルを編集しました", "codeChangesUndo": "元に戻す", "codeChangesUndoing": "元に戻しています…", "codeChangesUndone": "変更を元に戻しました", "codeChangesUndoFailed": "変更を元に戻せませんでした。", "codeChangesUndoConflict": "その後ファイルが変更されたため、安全に元に戻せません。", "codeChangesMore": "他{{count}}ファイルを表示", "codeChangesCollapse": "折りたたむ", "codeChangesPreview": "{{path}}の変更プレビュー",
     "modelNoResponse": "選択したAIモデルは応答を生成できませんでした。もう一度お試しください。",
+    "modelImageUnsupportedTitle": "このモデルは画像を表示できません",
+    "modelImageUnsupportedDescription": "{{model}} は画像入力に対応していません。画像対応モデルに切り替えて、もう一度お試しください。",
     "outputTruncated": "最大出力長に達したため、回答が途中で切れました。続きを回答するよう依頼してください。",
     "followupTitle": "続けて質問",
     "followupSendSelected": "{{count}}件を送信",

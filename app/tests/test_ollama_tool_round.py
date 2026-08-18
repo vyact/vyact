@@ -19,6 +19,11 @@ from services.llm.config import (
     TOOL_CALL_RETRY_RESULT_CHARS,
 )
 from services.llm.core import _apply_ollama_tool_loop_result
+from services.llm.errors import (
+    HTTP_ERROR_BODY_LOG_LIMIT,
+    http_error_response_body,
+    is_ollama_image_unsupported_error,
+)
 
 
 class _Response:
@@ -55,6 +60,27 @@ class _SequenceClient(_Client):
 
 
 class OllamaToolRoundTests(unittest.IsolatedAsyncioTestCase):
+    def test_http_error_response_body_is_bounded(self):
+        request = httpx.Request("POST", "http://localhost:11434/api/chat")
+        response = httpx.Response(400, request=request, text="x" * (HTTP_ERROR_BODY_LOG_LIMIT + 10))
+        error = httpx.HTTPStatusError("bad request", request=request, response=response)
+
+        result = http_error_response_body(error)
+
+        self.assertTrue(result.endswith("… (truncated)"))
+        self.assertLess(len(result), HTTP_ERROR_BODY_LOG_LIMIT + 30)
+
+    def test_ollama_image_unsupported_error_is_recognized(self):
+        request = httpx.Request("POST", "http://localhost:11434/api/chat")
+        response = httpx.Response(
+            400,
+            request=request,
+            json={"error": "this model does not support image input"},
+        )
+        error = httpx.HTTPStatusError("bad request", request=request, response=response)
+
+        self.assertTrue(is_ollama_image_unsupported_error(error))
+
     def test_browser_inspect_is_compacted_without_dropping_elements_or_fields(self):
         elements = [
             {

@@ -1011,6 +1011,8 @@
     "codeReviewFileList": "Tệp đã thay đổi", "codeReviewSearchFiles": "Tìm đường dẫn tệp", "codeReviewPreviousFile": "Tệp trước", "codeReviewNextFile": "Tệp tiếp theo", "codeReviewNoFiles": "Không có tệp phù hợp",
     "codeChangesTitle": "Đã chỉnh sửa {{count}} tệp", "codeChangesUndo": "Hoàn tác", "codeChangesUndoing": "Đang hoàn tác…", "codeChangesUndone": "Đã hoàn tác thay đổi", "codeChangesUndoFailed": "Không thể hoàn tác thay đổi.", "codeChangesUndoConflict": "Tệp đã được sửa sau đó nên không thể hoàn tác an toàn.", "codeChangesMore": "Hiện thêm {{count}} tệp", "codeChangesCollapse": "Thu gọn", "codeChangesPreview": "Thay đổi trong {{path}}",
     "modelNoResponse": "Mô hình AI đã chọn không thể tạo phản hồi. Vui lòng thử lại.",
+    "modelImageUnsupportedTitle": "Mô hình này không thể xem hình ảnh",
+    "modelImageUnsupportedDescription": "{{model}} không hỗ trợ đầu vào hình ảnh. Hãy chuyển sang mô hình có khả năng thị giác rồi thử lại.",
     "outputTruncated": "Phản hồi đã bị cắt do đạt độ dài đầu ra tối đa. Hãy yêu cầu mô hình tiếp tục.",
     "followupTitle": "Hỏi tiếp",
     "followupSendSelected": "Gửi {{count}} mục",

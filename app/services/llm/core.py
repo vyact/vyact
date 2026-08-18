@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 
 import httpx
 
+from logger import DebugLogSettings
 from prompts import build_system_message, build_user_prompt
 from .config import (
     OLLAMA_URL, IMAGES_DIR, LLM_NUM_CTX, LLM_NUM_PREDICT, LLM_TEMPERATURE, LLM_MAX_TOKENS, TOP_K, TOP_P,
@@ -22,7 +23,14 @@ from .helpers import (
     load_images_b64, mime_type,
     history_for_ollama, history_for_openai, history_for_gemini, history_for_claude,
 )
-from .errors import http_err_msg, openai_err, gemini_err, claude_err
+from .errors import (
+    http_err_msg,
+    http_error_response_body,
+    is_ollama_image_unsupported_error,
+    openai_err,
+    gemini_err,
+    claude_err,
+)
 from .ollama import build_ollama_payload, resolve_tool_calls
 from .context_window import select_context_allocation
 from .providers import openai_stream, gemini_stream, claude_stream
@@ -353,7 +361,24 @@ async def chat_stream_with_tools(
                     headers={"Content-Type": "application/json"},
                     json=body,
             ) as resp:
-                resp.raise_for_status()
+                if resp.is_error:
+                    # StreamingResponseNotRead를 피하고 Ollama의 실제 오류 본문을
+                    # opt-in 디버그 로그에 남길 수 있도록 오류 응답만 먼저 읽는다.
+                    await resp.aread()
+                try:
+                    resp.raise_for_status()
+                except httpx.HTTPStatusError as error:
+                    DebugLogSettings.log(
+                        "ollama_api_error",
+                        phase="final_response",
+                        status=resp.status_code,
+                        model=body.get("model"),
+                        message_count=len(body.get("messages") or []),
+                        tool_count=len(body.get("tools") or []),
+                        has_images=any(message.get("images") for message in body.get("messages") or []),
+                        response_body=http_error_response_body(error),
+                    )
+                    raise
                 async for line in resp.aiter_lines():
                     if not line.strip():
                         continue
@@ -449,6 +474,14 @@ async def chat_stream_with_tools(
             stats["llm_rounds"] = (tool_loop_stats.get("llm_rounds") or 0) + 1
         if stats:
             yield {"type": "stats", **stats}
+    except httpx.HTTPStatusError as e:
+        if is_ollama_image_unsupported_error(e):
+            log_entry["error"] = "model_image_unsupported"
+            yield {"type": "error", "code": "model_image_unsupported", "model": model}
+        else:
+            logger.error("[chat_stream_with_tools] Ollama 스트리밍 실패: %s", e)
+            log_entry["error"] = f"{type(e).__name__}: {e}"
+            yield {"type": "token", "text": f"\n\n❌ 스트리밍 중 오류가 발생했습니다: {type(e).__name__}"}
     except Exception as e:
         logger.error("[chat_stream_with_tools] Ollama 스트리밍 실패: %s", e)
         log_entry["error"] = f"{type(e).__name__}: {e}"

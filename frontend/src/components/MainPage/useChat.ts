@@ -680,10 +680,22 @@ export function useChat(deps: UseChatDeps) {
                             if (showVoiceChatModalRef.current && data.answer)
                                 window.dispatchEvent(new CustomEvent('voiceChatResponse', {detail: {text: data.answer}}));
                         },
-                        onError: (msg) => {
+                        onError: (error) => {
                             flushStreamText();
+                            const isImageUnsupported = error.code === 'model_image_unsupported';
+                            const message = isImageUnsupported
+                                ? t('message.modelImageUnsupportedDescription', {model: error.model || streamModel})
+                                : (error.message || t('message.unknownError'));
                             setMessagesForConversation(requestConvId, prev => prev.map(m =>
-                                m.id === streamId ? {...m, content: msg, isError: true, toolStatus: undefined} : m));
+                                m.id === streamId ? {
+                                    ...m,
+                                    content: message,
+                                    errorTitle: isImageUnsupported
+                                        ? t('message.modelImageUnsupportedTitle')
+                                        : undefined,
+                                    isError: true,
+                                    toolStatus: undefined,
+                                } : m));
                         },
                     }, abortControllerRef.current.signal);
                 } catch (streamErr) {

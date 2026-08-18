@@ -1011,6 +1011,8 @@
     "codeReviewFileList": "Archivos modificados", "codeReviewSearchFiles": "Buscar rutas de archivo", "codeReviewPreviousFile": "Archivo anterior", "codeReviewNextFile": "Archivo siguiente", "codeReviewNoFiles": "No hay archivos coincidentes",
     "codeChangesTitle": "Se editaron {{count}} archivos", "codeChangesUndo": "Deshacer", "codeChangesUndoing": "Deshaciendo…", "codeChangesUndone": "Cambios deshechos", "codeChangesUndoFailed": "No se pudieron deshacer los cambios.", "codeChangesUndoConflict": "El archivo se modificó después y no se puede deshacer con seguridad.", "codeChangesMore": "Mostrar {{count}} archivos más", "codeChangesCollapse": "Contraer", "codeChangesPreview": "Cambios en {{path}}",
     "modelNoResponse": "El modelo de IA seleccionado no pudo generar una respuesta. Inténtalo de nuevo.",
+    "modelImageUnsupportedTitle": "Este modelo no puede ver imágenes",
+    "modelImageUnsupportedDescription": "{{model}} no admite imágenes. Cambia a un modelo con visión y vuelve a intentarlo.",
     "outputTruncated": "La respuesta se cortó al alcanzar la longitud máxima de salida. Pide al modelo que continúe.",
     "followupTitle": "Continuar la conversación",
     "followupSendSelected": "Enviar {{count}}",

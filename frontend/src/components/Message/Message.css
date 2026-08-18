@@ -683,7 +683,7 @@
 .message-error-icon { display:grid; place-items:center; width:34px; height:34px; border-radius:10px; background:color-mix(in srgb, #ef4444 13%, transparent); color:#f87171; }
 .message-error-copy { display:flex; flex-direction:column; gap:2px; min-width:0; line-height:1.4; }
 .message-error-copy strong { color:var(--text); font-size:13px; font-weight:600; }
-.message-error-copy span { overflow:hidden; color:var(--text-secondary); font-size:12px; text-overflow:ellipsis; white-space:nowrap; }
+.message-error-copy span { color:var(--text-secondary); font-size:12px; white-space:normal; }
 .message-retry { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:34px; padding:0 12px; border:1px solid color-mix(in srgb, #ef4444 38%, var(--border)); border-radius:9px; background:color-mix(in srgb, #ef4444 10%, var(--surface2)); color:#fca5a5; cursor:pointer; font-size:12px; font-weight:550; white-space:nowrap; transition:border-color .15s ease, background .15s ease, color .15s ease; }
 .message-retry:hover { border-color:color-mix(in srgb, #ef4444 58%, var(--border)); background:color-mix(in srgb, #ef4444 17%, var(--surface2)); color:#fff; }
 .message-retry:focus-visible { outline:2px solid color-mix(in srgb, #ef4444 55%, transparent); outline-offset:2px; }
