@@ -4,6 +4,7 @@ import {useTranslation} from 'react-i18next';
 import {api} from '../../services/api';
 import {emitMcpServersChanged} from '../../utils/mcpEvents';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
+import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
 import './PluginsSection.css';
 import PluginSettingsFields from './PluginSettingsFields';
 import type {InstalledPlugin} from '../../types';
@@ -145,27 +146,24 @@ const PluginsSection: React.FC = () => {
                 </div>
             )}
 
-            {confirmPlugin && (
-                <div className="plugins-confirm">
-                    <div>
-                        <strong>{t('plugins.confirmTitle', {name: confirmPlugin.name})}</strong>
-                        <p>{t('plugins.confirmDescription')}</p>
-                        {!!confirmPlugin.removal_items?.length && (
-                            <ul className="plugins-confirm-removal-items">
-                                {confirmPlugin.removal_items.map(item => <li key={item}>{item}</li>)}
-                            </ul>
-                        )}
-                    </div>
-                    <div className="plugins-confirm-actions">
-                        <button type="button" onClick={() => setConfirmPlugin(null)} disabled={busy}>
-                            {t('plugins.cancel')}
-                        </button>
-                        <button type="button" className="danger" onClick={uninstallPlugin} disabled={busy}>
-                            {t('plugins.deleteAll')}
-                        </button>
-                    </div>
-                </div>
-            )}
+            {confirmPlugin && <ConfirmModal
+                title={t('plugins.confirmTitle', {name: confirmPlugin.name})}
+                description={t('plugins.confirmDescription')}
+                details={confirmPlugin.removal_items}
+                options={[
+                    {label: t('plugins.cancel'), value: 'cancel'},
+                    {label: t('plugins.deleteAll'), value: 'delete', variant: 'danger'},
+                ]}
+                actionLayout="horizontal"
+                loading={busy}
+                loadingValue="delete"
+                loadingLabel={t('plugins.processing')}
+                onClose={() => setConfirmPlugin(null)}
+                onSelect={value => {
+                    if (value === 'delete') void uninstallPlugin();
+                    else setConfirmPlugin(null);
+                }}
+            />}
         </section>
     );
 };

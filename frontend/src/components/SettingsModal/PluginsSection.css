@@ -21,8 +21,7 @@
 }
 
 .plugins-header p,
-.plugins-card p,
-.plugins-confirm p {
+.plugins-card p {
     margin: 0;
     color: var(--muted);
     font-size: 13px;
@@ -160,17 +159,19 @@
 }
 
 .plugins-delete-button {
-    border: 0;
-    border-radius: 6px;
-    background: transparent;
-    color: var(--muted);
+    border: 1px solid var(--del-border);
+    border-radius: 8px;
+    background: rgba(var(--del-rgb), 0.08);
+    color: var(--del-fg-soft);
     padding: 7px;
     cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
 .plugins-delete-button:hover {
-    background: rgba(239, 68, 68, .1);
-    color: #ef4444;
+    border-color: var(--del-border-hover);
+    background: rgba(var(--del-rgb), 0.18);
+    color: var(--del-fg);
 }
 
 .plugins-empty {
@@ -185,52 +186,4 @@
     color: var(--muted);
     font-size: 13px;
     text-align: center;
-}
-
-.plugins-confirm {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 14px;
-    border: 1px solid rgba(239, 68, 68, .4);
-    border-radius: 10px;
-    background: rgba(239, 68, 68, .06);
-}
-
-.plugins-confirm > div:first-child {
-    flex: 1;
-}
-
-.plugins-confirm strong {
-    display: block;
-    margin-bottom: 4px;
-    color: var(--text);
-    font-size: 13px;
-}
-
-.plugins-confirm-actions {
-    display: flex;
-    gap: 7px;
-}
-
-.plugins-confirm-actions button {
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--surface2);
-    color: var(--text);
-    padding: 7px 10px;
-    cursor: pointer;
-}
-
-.plugins-confirm-actions button.danger {
-    border-color: #ef4444;
-    background: #ef4444;
-    color: white;
-}
-.plugins-confirm-removal-items {
-    margin: 8px 0 0;
-    padding-left: 20px;
-    color: var(--muted);
-    font-size: 12px;
-    line-height: 1.6;
 }

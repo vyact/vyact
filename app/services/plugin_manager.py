@@ -130,6 +130,10 @@ class PluginApiDispatcher:
 plugin_api_dispatcher = PluginApiDispatcher()
 
 
+def _plugin_package_name(plugin_id: str) -> str:
+    return "_vyact_plugin_" + re.sub(r"[^a-zA-Z0-9_]", "_", plugin_id)
+
+
 def _deactivate_plugin_runtime(plugin_id: str, manifest: dict[str, Any]) -> None:
     for type_name in manifest.get("mcp_types", []):
         mcp_manager.unregister_internal_tools_by_type(type_name)
@@ -143,6 +147,10 @@ def _deactivate_plugin_runtime(plugin_id: str, manifest: dict[str, Any]) -> None
     if dependency_path:
         while dependency_path in sys.path:
             sys.path.remove(dependency_path)
+    package_name = _plugin_package_name(plugin_id)
+    for module_name in list(sys.modules):
+        if module_name == package_name or module_name.startswith(f"{package_name}."):
+            sys.modules.pop(module_name, None)
 
 
 async def _install_plugin_dependencies(plugin_dir: Path) -> None:
@@ -286,7 +294,7 @@ def _load_module(plugin_dir: Path, manifest: dict[str, Any]) -> tuple[ModuleType
     module_path = plugin_dir.joinpath(*module_name.split(".")).with_suffix(".py")
     if not module_path.is_file():
         raise ValueError(f"플러그인 entry 파일을 찾을 수 없습니다: {module_name}")
-    package_name = "_vyact_plugin_" + re.sub(r"[^a-zA-Z0-9_]", "_", manifest["id"])
+    package_name = _plugin_package_name(manifest["id"])
     full_name = f"{package_name}.{module_name}"
     package = ModuleType(package_name)
     package.__path__ = [str(plugin_dir)]

@@ -32,6 +32,21 @@
     white-space: pre-line;
 }
 
+.confirm-modal-details {
+    margin: -6px 0 18px;
+    padding: 10px 12px 10px 28px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--modal-inset);
+    color: var(--text-secondary);
+    font-size: var(--modal-sub);
+    line-height: 1.55;
+}
+
+.confirm-modal-details li + li {
+    margin-top: 3px;
+}
+
 .confirm-modal-progress {
     margin: -4px 0 16px;
 }
@@ -95,8 +110,9 @@
 }
 
 .confirm-modal-btn.danger {
-    color: var(--del-fg-soft);
-    border-color: var(--del-border);
+    color: var(--del-fg);
+    border-color: var(--del-border-hover);
+    background: rgba(var(--del-rgb), 0.1);
 }
 
 .confirm-modal-btn.danger:hover:not(:disabled) {
