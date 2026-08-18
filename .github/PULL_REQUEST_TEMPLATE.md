@@ -12,6 +12,10 @@ Link the related issue, if applicable: `Fixes #<issue number>`
 - [ ] I updated documentation when needed.
 - [ ] I did not include secrets, personal data, or generated build output.
 
-## Maintainer Note
+## Contributor Checklist
 
-Vyact is currently not accepting unsolicited code contributions. Please open an issue and receive maintainer confirmation before submitting a pull request. See [CONTRIBUTING.md](../CONTRIBUTING.md) for details.
+- [ ] This pull request is focused on one problem or improvement.
+- [ ] I added or updated tests for behavior changes.
+- [ ] I followed the community Code of Conduct and contribution guidelines.
+
+Large architectural or data-handling changes should be discussed in an issue before implementation. See [CONTRIBUTING.md](../CONTRIBUTING.md) for details.

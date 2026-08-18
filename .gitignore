@@ -60,6 +60,10 @@ electron/python-runtime/
 Thumbs.db
 .ai/
 
+# Local funding application packages may contain account identifiers.
+aws-open-source-credit-application/
+outputs/aws-open-source-credits-2026-08-18/
+
 .env
 .env.*
 !.env.example
