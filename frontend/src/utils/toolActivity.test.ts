@@ -12,6 +12,10 @@ const translations: Record<string, string> = {
     'toolActivity.actions.searching': '검색하고 있어요',
     'toolActivity.actions.creating': '새 항목을 만들고 있어요',
     'toolActivity.actions.sending': '전송하고 있어요',
+    'toolActivity.completedActions.searching': '검색 완료',
+    'toolActivity.completedActions.sending': '전송 완료',
+    'toolActivity.failedActions.searching': '검색 실패',
+    'toolActivity.approvalRejected': '사용자가 실행을 거부했어요',
     'toolActivity.serviceAction': '{{service}} · {{action}}',
     'toolActivity.browserBatchReading': '여러 원문을 확인하고 있어요',
     'toolActivity.browserClickCompleted': '페이지 요소 클릭 완료',
@@ -69,6 +73,24 @@ describe('tool activity presentation', () => {
         expect(getToolActivityDisplayLabel(
             'browser_click', '작업을 완료했어요', translate, 'completed', 'success',
         )).toBe('페이지 요소 클릭 완료');
+    });
+
+    it('shows the service and concrete action when an external tool completes', () => {
+        expect(getToolActivityDisplayLabel(
+            'naver_news__search_articles', '작업을 완료했어요', translate, 'completed', 'success',
+        )).toBe('naver news · 검색 완료');
+        expect(getToolActivityDisplayLabel(
+            'send_email', '작업을 완료했어요', translate, 'completed', 'success',
+        )).toBe('Gmail · 전송 완료');
+    });
+
+    it('keeps failure and rejection distinct from successful completion', () => {
+        expect(getToolActivityDisplayLabel(
+            'naver_news__search_articles', '작업에 실패했어요', translate, 'completed', 'failed',
+        )).toBe('naver news · 검색 실패');
+        expect(getToolActivityDisplayLabel(
+            'naver_news__search_articles', '사용자가 실행을 거부했어요', translate, 'completed', 'rejected',
+        )).toBe('사용자가 실행을 거부했어요');
     });
 
     it('treats structured tool errors as failed activity', () => {

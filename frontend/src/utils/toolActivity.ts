@@ -278,7 +278,18 @@ export function getToolActivityDisplayLabel(
     phase?: 'judging' | 'running' | 'completed',
     outcome?: 'success' | 'rejected' | 'failed',
 ): string {
-    if (outcome === 'failed') return t('toolActivity.failed');
+    if (outcome === 'rejected') return t('toolActivity.approvalRejected');
+    if (outcome === 'failed') {
+        const {server, tool} = name ? splitToolName(name) : {tool: ''};
+        const service = toolService(tool, server);
+        const actionKey = toolActionKey(tool);
+        return service && actionKey
+            ? t('toolActivity.serviceAction', {
+                service,
+                action: t(`toolActivity.failedActions.${actionKey}`),
+            })
+            : t('toolActivity.failed');
+    }
     if (phase === 'completed') {
         const tool = name ? splitToolName(name).tool : '';
         if (['code_read_file', 'code_read_files'].includes(tool)) return t('toolActivity.readCompleted');
@@ -306,6 +317,15 @@ export function getToolActivityDisplayLabel(
             browser_ask_user: 'browserUserActionCompleted',
         };
         if (browserCompletionKeys[tool]) return t(`toolActivity.${browserCompletionKeys[tool]}`);
+        const {server} = name ? splitToolName(name) : {};
+        const service = toolService(tool, server);
+        const actionKey = toolActionKey(tool);
+        if (service && actionKey) {
+            return t('toolActivity.serviceAction', {
+                service,
+                action: t(`toolActivity.completedActions.${actionKey}`),
+            });
+        }
         return t('toolActivity.completed');
     }
     return label && label !== name ? label : getToolActivityLabel(name, t);
