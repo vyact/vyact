@@ -33,6 +33,7 @@ export function useConversation() {
     // 메시지를 conversationId별로 보관한다.
     const messagesByConversationRef = React.useRef<Map<string, Message[]>>(new Map());
     const historyRequestRef = React.useRef<Promise<void> | null>(null);
+    const loadMoreHistoryRequestRef = React.useRef<Promise<void> | null>(null);
     const [pendingArticles, setPendingArticles] = useState<ArticleAttachment[]>([]);
     const normalizeConversationTitle = (title: string): string => {
         const normalized = unwrapPastedText(title).replace(/\s+/g, ' ').trim();
@@ -203,19 +204,45 @@ export function useConversation() {
     };
 
     // 더보기: 다음 20개를 이어서 조회해 append.
-    const loadMoreHistory = async () => {
-        try {
-            const data = await api.getHistory(HISTORY_PAGE, conversations.length, null, false);
-            const more = (data.conversations || []).map(normalizeConversation);
-            setConversations(prev => {
-                const seen = new Set(prev.map(c => c.conv_id));
-                return [...prev, ...more.filter(c => !seen.has(c.conv_id))];
-            });
-            if (typeof data.total === 'number') setHistoryTotal(data.total);
-        } catch (error) {
-            console.error('Failed to load more history:', error);
-        }
-    };
+    const loadMoreHistory = React.useCallback(() => {
+        if (loadMoreHistoryRequestRef.current) return loadMoreHistoryRequestRef.current;
+
+        const offset = conversations.length;
+        const loadedConversationIds = new Set(conversations.map(conversation => conversation.conv_id));
+        const request = (async () => {
+            try {
+                const data = await api.getHistory(HISTORY_PAGE, offset, null, false);
+                const more = (data.conversations || []).map(normalizeConversation);
+                const uniqueMore = more.filter(conversation => !loadedConversationIds.has(conversation.conv_id));
+
+                if (uniqueMore.length === 0) {
+                    // 서버 total과 실제 페이지가 어긋나거나 중복 페이지만 반환되는 경우,
+                    // 같은 offset을 무한히 재요청하지 않도록 현재 위치를 마지막으로 취급한다.
+                    setHistoryTotal(previous => Math.min(previous, offset));
+                    return;
+                }
+
+                setConversations(previous => {
+                    const seen = new Set(previous.map(conversation => conversation.conv_id));
+                    return [
+                        ...previous,
+                        ...uniqueMore.filter(conversation => !seen.has(conversation.conv_id)),
+                    ];
+                });
+                if (typeof data.total === 'number') setHistoryTotal(data.total);
+            } catch (error) {
+                console.error('Failed to load more history:', error);
+            }
+        })();
+
+        loadMoreHistoryRequestRef.current = request;
+        void request.finally(() => {
+            if (loadMoreHistoryRequestRef.current === request) {
+                loadMoreHistoryRequestRef.current = null;
+            }
+        });
+        return request;
+    }, [conversations]);
 
     const newConversation = (setResetTrigger: (fn: (n: number) => number) => void) => {
         const convId = generateUUID();

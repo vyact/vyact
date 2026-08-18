@@ -306,9 +306,9 @@ const Sidebar: React.FC<SidebarProps> = ({
     const [instructionsProject, setInstructionsProject] = useState<Project | null>(null);
     const [memoryProject, setMemoryProject] = useState<Project | null>(null);
     const loadMoreRef = useRef<HTMLDivElement>(null);
+    const loadingMoreRef = useRef(false);
     const previousActiveConversationIdsRef = useRef<Set<string>>(new Set(activeConversationIds));
     const completedConversationIdsPendingRef = useRef<Set<string>>(new Set());
-    const [loadingMore, setLoadingMore] = useState(false);
     const [isRefreshingHistory, setIsRefreshingHistory] = useState(false);
     const activeConversationIdSet = new Set(activeConversationIds);
     const favoriteConversationIdSet = new Set(favoriteConversations.map(conversation => conversation.conv_id));
@@ -369,17 +369,17 @@ const Sidebar: React.FC<SidebarProps> = ({
         const el = loadMoreRef.current;
         if (!el || !hasMore) return;
         const io = new IntersectionObserver(async (entries) => {
-            if (!entries[0].isIntersecting || loadingMore) return;
-            setLoadingMore(true);
+            if (!entries[0].isIntersecting || loadingMoreRef.current) return;
+            loadingMoreRef.current = true;
             try {
                 await onLoadMoreHistory?.();
             } finally {
-                setLoadingMore(false);
+                loadingMoreRef.current = false;
             }
         }, {root: el.closest('.hist-list'), rootMargin: '80px', threshold: 0});
         io.observe(el);
         return () => io.disconnect();
-    }, [hasMore, loadingMore, onLoadMoreHistory]);
+    }, [hasMore, onLoadMoreHistory]);
     const [isSettingsOpenInternal, setIsSettingsOpenInternal] = useState(false);
     const isSettingsOpen = openSettings || isSettingsOpenInternal;
     const setIsSettingsOpen = (v: boolean) => {
