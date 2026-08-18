@@ -420,9 +420,15 @@ async def search_related_context_candidates(
             }
             for hit in quicknote_hits[:memo_size]
         ]
-        logger.info(
-            "[related_context_search] query=%r candidates: rag=%d memo=%d quicknote=%d origins: rag=%s web=%s doc=%s memo=%s quicknote=%s",
-            rag_query, len(rag_results), len(memo_results), len(quicknote_results),
+        logger.debug("[related_context_search.query] query=%r", rag_query)
+        logger.debug(
+            "[related_context_search.results] candidates: rag=%d memo=%d quicknote=%d",
+            len(rag_results),
+            len(memo_results),
+            len(quicknote_results),
+        )
+        logger.debug(
+            "[related_context_search.origins] rag=%s web=%s doc=%s memo=%s quicknote=%s",
             _retrieval_origins(rag_candidate_hits, rag_bm25_hits, rag_knn_hits),
             _retrieval_origins(rag_candidate_hits, web_bm25_hits, web_knn_hits),
             _retrieval_origins(rag_candidate_hits, doc_bm25_hits, doc_knn_hits),

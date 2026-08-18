@@ -61,6 +61,11 @@ logger = get_logger(__name__)
 
 router = APIRouter()
 
+
+def _log_user_query(question: str) -> None:
+    """API가 전달받은 사용자 질문 원문을 RAG용 가공 질의와 구분해 기록한다."""
+    logger.info("[user_query] query=%r", question)
+
 EXTERNAL_DATA_INSTRUCTION = """
 [External public-data guidance]
 The attached Government24 records are search candidates, not confirmed recommendations.
@@ -472,6 +477,8 @@ async def query(req: QueryRequest):
     if not req.question.strip() and not req.attachments:
         raise HTTPException(400, "질문 또는 이미지를 입력하세요.")
 
+    _log_user_query(req.question)
+
     # 1) 붙여넣기 UI 마커 제거 (본문은 사용자 질문으로 유지)
     original_question = req.question
     clean_question = unwrap_pasted_text(req.question)
@@ -785,6 +792,8 @@ async def query_stream(req: QueryRequest):
     user 발화 시각은 "요청 도착 시점"으로 고정한다 — 스트림 종료 후 now로 찍으면
     user/assistant 타임스탬프가 같아져 버리기 때문이다.
     """
+
+    _log_user_query(req.question)
 
     async def stream():
         mcp_scope_token = None
