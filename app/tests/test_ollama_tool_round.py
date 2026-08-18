@@ -90,6 +90,23 @@ class OllamaToolRoundTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("후보 탐색·비교와 최종 변경 행동을 분리", directive)
         self.assertIn("읽은 모든 상품을 자동으로 선정된 상품으로 간주하지 마라", directive)
 
+    async def test_explicitly_selected_mcp_directive_requires_a_tool_call(self):
+        with patch(
+            "services.mcp_config.get_active_mcp_prompt",
+            AsyncMock(return_value=""),
+        ), patch(
+            "services.mcp_client.mcp_manager.get_request_scope_server_ids",
+            return_value={"naver-news"},
+        ), patch(
+            "services.mcp_client.mcp_manager.has_request_scope",
+            return_value=True,
+        ):
+            directive = await build_tool_directive(["get_naver_news"])
+
+        self.assertIn("반드시 선택된 MCP 도구를 최소 한 번 호출", directive)
+        self.assertIn("도구 호출 없이 질문에 답하는 것은 금지", directive)
+        self.assertNotIn("불필요한 호출을 하지 않아도 된다", directive)
+
     def test_stale_browser_inspections_are_expired(self):
         messages = [
             {"role": "tool", "tool_name": "browser_inspect", "content": "large old DOM"},
