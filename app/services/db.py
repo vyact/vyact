@@ -35,6 +35,7 @@ KNOWLEDGE_COLLECTIONS_INDEX = "knowledge_collections"
 EMAIL_THREADS_INDEX = "knowledge_email_threads_all"
 USER_PROFILE_INDEX = "user_profile"
 VOCAB_INDEX = "vocab_words"
+SAVED_SENTENCES_INDEX = "saved_sentences"
 NOTIFICATIONS_INDEX = "notifications"
 
 # 공통 분석기 설정 (nori)
@@ -233,6 +234,23 @@ async def ensure_index():
                     "account_email": {"type": "keyword"},
                 },
             )
+
+        # ── saved_sentences ──────────────────────────────────────
+        if not await es.indices.exists(index=SAVED_SENTENCES_INDEX):
+            await es.indices.create(
+                index=SAVED_SENTENCES_INDEX,
+                settings={"number_of_shards": 1, "number_of_replicas": 0},
+                mappings={"properties": {
+                    "original_text": {"type": "text"},
+                    "translated_text": {"type": "text"},
+                    "source_language": {"type": "keyword"},
+                    "target_language": {"type": "keyword"},
+                    "source_url": {"type": "keyword"},
+                    "source_title": {"type": "text"},
+                    "saved_at": {"type": "date"},
+                }},
+            )
+            logger.info("saved_sentences 인덱스 생성 완료")
 
         # ── system_settings ────────────────────────────────────────
         if not await es.indices.exists(index=SETTINGS_INDEX):

@@ -9,6 +9,7 @@ from services.vocab import (
     delete_vocab_sentence,
 )
 from logger import get_logger
+from services.saved_sentences import delete_saved_sentence, list_saved_sentences, save_sentence
 
 logger = get_logger(__name__)
 
@@ -34,6 +35,15 @@ class VocabAddRequest(BaseModel):
     ipa: str = ""
     meaning: str = ""
     original_text: str = ""
+    translated_text: str = ""
+    source_language: str = ""
+    target_language: str = ""
+    source_url: str = ""
+    source_title: str = ""
+
+
+class SavedSentenceRequest(BaseModel):
+    original_text: str
     translated_text: str = ""
     source_language: str = ""
     target_language: str = ""
@@ -79,3 +89,18 @@ async def vocab_delete(doc_id: str):
 async def vocab_delete_sentence(doc_id: str, sentence_index: int):
     ok = await delete_vocab_sentence(doc_id, sentence_index)
     return {"deleted": ok}
+
+
+@router.post("/sentences")
+async def sentence_save(req: SavedSentenceRequest):
+    return await save_sentence(**req.dict())
+
+
+@router.get("/sentences")
+async def sentence_list(query: str = "", size: int = 100, from_: int = 0):
+    return await list_saved_sentences(query=query, size=size, from_=from_)
+
+
+@router.delete("/sentences/{doc_id}")
+async def sentence_delete(doc_id: str):
+    return {"deleted": await delete_saved_sentence(doc_id)}
