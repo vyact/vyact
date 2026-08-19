@@ -28,7 +28,7 @@ QUESTION_BANK_DIR = Path(__file__).resolve().parent.parent / "question_banks"
 SESSION_INDEX = "language_test_sessions"
 PROFILE_INDEX = "language_learning_profiles"
 RESULT_INDEX = "language_test_results"
-QUESTION_BANK_VERSION = 5
+QUESTION_BANK_VERSION = 7
 
 QUICK_CATEGORY_TARGETS = {
     "VOCABULARY": 2,
@@ -104,6 +104,8 @@ def _level_index(level: str) -> int:
 def question_signature(question: dict) -> str:
     """ID나 Category가 달라도 사용자에게 같은 문제로 보이면 동일하게 취급한다."""
     prompt = question.get("stimulus") or question.get("question") or ""
+    if not prompt:
+        prompt = " | ".join(option["text"] for option in question.get("options", []))
     return " ".join(f"{question.get('instruction', '')} {prompt}".casefold().split())
 
 
@@ -181,8 +183,6 @@ def calculate_result(session: dict) -> dict:
         category_answers[answer["category"]].append(answer)
 
     category_results = {}
-    weighted_level_total = 0.0
-    used_weight_total = 0.0
     for category in CORE_CATEGORIES:
         items = category_answers.get(category, [])
         if not items:
@@ -202,11 +202,18 @@ def calculate_result(session: dict) -> dict:
             "confidence": round(confidence, 2),
             "answeredQuestions": len(items),
         }
-        weight = CATEGORY_WEIGHTS[category]
-        weighted_level_total += level_index * weight
-        used_weight_total += weight
-
-    overall_index = round(weighted_level_total / used_weight_total) if used_weight_total else _level_index(session["currentEstimate"])
+    # Later questions are targeted using the responses already observed, so they
+    # provide stronger evidence than the initial routing questions. The saved
+    # level selects only the starting difficulty and is not included directly.
+    response_weight_total = sum(range(1, len(answers) + 1))
+    weighted_evidence = sum(
+        sequence * (
+            _level_index(answer["level"])
+            + (0.55 if answer["correct"] else -0.75 if answer.get("unknown") else -0.55)
+        )
+        for sequence, answer in enumerate(answers, start=1)
+    )
+    overall_index = round(weighted_evidence / response_weight_total) if response_weight_total else _level_index(session["currentEstimate"])
     overall_index = max(0, min(len(CEFR_LEVELS) - 1, overall_index))
     overall_confidence = min(0.95, 0.45 + len(answers) / TEST_LENGTHS[session["testType"]] * 0.4)
     return {

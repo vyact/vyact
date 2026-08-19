@@ -6,6 +6,7 @@ from services.language_level_test import (
     SUPPORTED_LANGUAGES,
     TEST_LENGTHS,
     calculate_result,
+    _estimate_level,
     load_question_bank,
     public_question,
     question_signature,
@@ -29,6 +30,8 @@ def test_every_language_has_a_balanced_300_question_bank():
             assert "\n" not in question["instruction"]
             if question["type"] in {"CLOZE", "CLOZE_EXPRESSION"}:
                 assert "___" in question["question"]
+            if question["type"] == "PAIR_MATCH":
+                assert question["question"] == ""
 
 
 def test_public_question_never_exposes_answer_or_explanation():
@@ -131,3 +134,26 @@ def test_all_unknown_answers_are_a1_with_zero_accuracy():
     assert result["accuracy"] == 0.0
     assert result["correctAnswers"] == 0
     assert result["unknownAnswers"] == 30
+
+
+def test_quick_test_can_reach_c1_when_started_from_a1():
+    session = {
+        "language": "ko",
+        "testType": "QUICK",
+        "currentEstimate": "A1",
+        "questionIds": [],
+        "answers": [],
+    }
+    for _ in range(TEST_LENGTHS["QUICK"]):
+        question = select_next_question(session)
+        session["questionIds"].append(question["id"])
+        session["answers"].append({
+            "questionId": question["id"],
+            "level": question["level"],
+            "category": question["category"],
+            "correct": True,
+            "unknown": False,
+        })
+        session["currentEstimate"] = _estimate_level(session["answers"], session["currentEstimate"])
+
+    assert calculate_result(session)["overall"] == "C1"

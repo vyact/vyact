@@ -124,14 +124,14 @@ EXTRA_ITEMS = {
 
 
 INSTRUCTIONS = {
-    "en": ("Choose the meaning", "Choose the word", "Choose the matching sentence", "Choose the matching usage", "Read and choose the meaning", "Choose the natural response", "Choose the matching situation", "Read and choose the key word", "Listen and choose the meaning", "Listen and choose the response", "Fill in the blank", "Complete the key expression", "Complete the sentence", "Choose the natural continuation", "Choose the matching pair"),
-    "ko": ("뜻을 고르세요", "단어를 고르세요", "알맞은 문장을 고르세요", "알맞은 쓰임을 고르세요", "읽고 뜻을 고르세요", "자연스러운 응답을 고르세요", "알맞은 상황을 고르세요", "읽고 핵심 단어를 고르세요", "듣고 뜻을 고르세요", "듣고 응답을 고르세요", "빈칸을 채우세요", "핵심 표현을 완성하세요", "문장을 완성하세요", "자연스러운 다음 말을 고르세요", "서로 알맞은 짝을 고르세요"),
-    "ja": ("意味を選んでください", "単語を選んでください", "合う文を選んでください", "合う使い方を選んでください", "読んで意味を選んでください", "自然な返答を選んでください", "合う場面を選んでください", "読んで中心語を選んでください", "聞いて意味を選んでください", "聞いて返答を選んでください", "空欄を埋めてください", "重要表現を完成させてください", "文を完成させてください", "自然な続き方を選んでください", "正しい組み合わせを選んでください"),
-    "zh": ("请选择意思", "请选择词语", "请选择相符的句子", "请选择相符的用法", "阅读后选择意思", "请选择自然的回答", "请选择相符的情境", "阅读后选择关键词", "听后选择意思", "听后选择回答", "请填空", "请补全关键表达", "请补全句子", "请选择自然的后续表达", "请选择正确搭配"),
-    "th": ("เลือกความหมาย", "เลือกคำ", "เลือกประโยคที่ตรงกัน", "เลือกการใช้ที่เหมาะสม", "อ่านแล้วเลือกความหมาย", "เลือกคำตอบที่เป็นธรรมชาติ", "เลือกสถานการณ์ที่ตรงกัน", "อ่านแล้วเลือกคำสำคัญ", "ฟังแล้วเลือกความหมาย", "ฟังแล้วเลือกคำตอบ", "เติมคำในช่องว่าง", "เติมสำนวนสำคัญ", "เติมประโยคให้สมบูรณ์", "เลือกคำพูดต่อที่เป็นธรรมชาติ", "เลือกคู่ที่ถูกต้อง"),
-    "vi": ("Chọn nghĩa", "Chọn từ", "Chọn câu phù hợp", "Chọn cách dùng phù hợp", "Đọc và chọn nghĩa", "Chọn câu trả lời tự nhiên", "Chọn tình huống phù hợp", "Đọc và chọn từ khóa", "Nghe và chọn nghĩa", "Nghe và chọn câu trả lời", "Điền vào chỗ trống", "Hoàn thành cụm từ chính", "Hoàn thành câu", "Chọn lời tiếp nối tự nhiên", "Chọn cặp phù hợp"),
-    "es": ("Elige el significado", "Elige la palabra", "Elige la oración correspondiente", "Elige el uso adecuado", "Lee y elige el significado", "Elige la respuesta natural", "Elige la situación correspondiente", "Lee y elige la palabra clave", "Escucha y elige el significado", "Escucha y elige la respuesta", "Completa el espacio", "Completa la expresión clave", "Completa la oración", "Elige la continuación natural", "Elige la pareja correcta"),
-    "fr": ("Choisissez le sens", "Choisissez le mot", "Choisissez la phrase correspondante", "Choisissez l’emploi approprié", "Lisez et choisissez le sens", "Choisissez la réponse naturelle", "Choisissez la situation correspondante", "Lisez et choisissez le mot-clé", "Écoutez et choisissez le sens", "Écoutez et choisissez la réponse", "Complétez l’espace", "Complétez l’expression clé", "Complétez la phrase", "Choisissez la suite naturelle", "Choisissez la bonne paire"),
+    "en": ("Choose the meaning", "Choose the word", "Choose the matching sentence", "Choose the matching usage", "Read and choose the meaning", "Choose the natural response", "Choose the matching situation", "Read and choose the key word", "Listen and choose the meaning", "Listen and choose the response", "Fill in the blank", "Complete the key expression", "Complete the sentence", "Choose the natural continuation", "Choose the correctly matched word and meaning"),
+    "ko": ("뜻을 고르세요", "단어를 고르세요", "알맞은 문장을 고르세요", "알맞은 쓰임을 고르세요", "읽고 뜻을 고르세요", "자연스러운 응답을 고르세요", "알맞은 상황을 고르세요", "읽고 핵심 단어를 고르세요", "듣고 뜻을 고르세요", "듣고 응답을 고르세요", "빈칸을 채우세요", "핵심 표현을 완성하세요", "문장을 완성하세요", "자연스러운 다음 말을 고르세요", "단어와 뜻이 바르게 연결된 것을 고르세요"),
+    "ja": ("意味を選んでください", "単語を選んでください", "合う文を選んでください", "合う使い方を選んでください", "読んで意味を選んでください", "自然な返答を選んでください", "合う場面を選んでください", "読んで中心語を選んでください", "聞いて意味を選んでください", "聞いて返答を選んでください", "空欄を埋めてください", "重要表現を完成させてください", "文を完成させてください", "自然な続き方を選んでください", "単語と意味が正しく対応しているものを選んでください"),
+    "zh": ("请选择意思", "请选择词语", "请选择相符的句子", "请选择相符的用法", "阅读后选择意思", "请选择自然的回答", "请选择相符的情境", "阅读后选择关键词", "听后选择意思", "听后选择回答", "请填空", "请补全关键表达", "请补全句子", "请选择自然的后续表达", "请选择词语与释义搭配正确的一项"),
+    "th": ("เลือกความหมาย", "เลือกคำ", "เลือกประโยคที่ตรงกัน", "เลือกการใช้ที่เหมาะสม", "อ่านแล้วเลือกความหมาย", "เลือกคำตอบที่เป็นธรรมชาติ", "เลือกสถานการณ์ที่ตรงกัน", "อ่านแล้วเลือกคำสำคัญ", "ฟังแล้วเลือกความหมาย", "ฟังแล้วเลือกคำตอบ", "เติมคำในช่องว่าง", "เติมสำนวนสำคัญ", "เติมประโยคให้สมบูรณ์", "เลือกคำพูดต่อที่เป็นธรรมชาติ", "เลือกคู่คำและความหมายที่จับคู่ถูกต้อง"),
+    "vi": ("Chọn nghĩa", "Chọn từ", "Chọn câu phù hợp", "Chọn cách dùng phù hợp", "Đọc và chọn nghĩa", "Chọn câu trả lời tự nhiên", "Chọn tình huống phù hợp", "Đọc và chọn từ khóa", "Nghe và chọn nghĩa", "Nghe và chọn câu trả lời", "Điền vào chỗ trống", "Hoàn thành cụm từ chính", "Hoàn thành câu", "Chọn lời tiếp nối tự nhiên", "Chọn từ và nghĩa được ghép đúng"),
+    "es": ("Elige el significado", "Elige la palabra", "Elige la oración correspondiente", "Elige el uso adecuado", "Lee y elige el significado", "Elige la respuesta natural", "Elige la situación correspondiente", "Lee y elige la palabra clave", "Escucha y elige el significado", "Escucha y elige la respuesta", "Completa el espacio", "Completa la expresión clave", "Completa la oración", "Elige la continuación natural", "Elige la palabra correctamente emparejada con su significado"),
+    "fr": ("Choisissez le sens", "Choisissez le mot", "Choisissez la phrase correspondante", "Choisissez l’emploi approprié", "Lisez et choisissez le sens", "Choisissez la réponse naturelle", "Choisissez la situation correspondante", "Lisez et choisissez le mot-clé", "Écoutez et choisissez le sens", "Écoutez et choisissez la réponse", "Complétez l’espace", "Complétez l’expression clé", "Complétez la phrase", "Choisissez la suite naturelle", "Choisissez le mot correctement associé à sa définition"),
 }
 
 VARIANT_DEFINITIONS = (
@@ -230,14 +230,19 @@ def question_content(language, items, item_index, variant_index):
     elif variant_index == 12:
         prompt, correct, distractors = word, sentence, [item[2] for item in other_items]
     else:
-        prompt = word
+        prompt = ""
         correct = f"{word} — {meaning}"
-        distractors = [f"{item[0]} — {item[1]}" for item in other_items]
+        distractors = [
+            f"{item[0]} — {other_items[(index + 1) % len(other_items)][1]}"
+            for index, item in enumerate(other_items)
+        ]
     return instruction, prompt, stimulus, correct, distractors
 
 
 def visible_signature(question):
     prompt = question.get("stimulus") or question.get("question") or ""
+    if not prompt:
+        prompt = " | ".join(option["text"] for option in question.get("options", []))
     return " ".join(f"{question.get('instruction', '')} {prompt}".casefold().split())
 
 
@@ -274,6 +279,8 @@ def validate(questions, language):
     assert len({q["type"] for q in questions}) >= 8
     cloze_questions = [question for question in questions if question["type"] in {"CLOZE", "CLOZE_EXPRESSION"}]
     assert cloze_questions and all("___" in question["question"] for question in cloze_questions)
+    pair_questions = [question for question in questions if question["type"] == "PAIR_MATCH"]
+    assert pair_questions and all(not question["question"] for question in pair_questions)
     assert all("\n" not in question["instruction"] for question in questions)
     answer_positions = {question["correctOptionId"] for question in questions}
     assert answer_positions == {"A", "B", "C", "D"}
