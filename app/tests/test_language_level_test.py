@@ -1,3 +1,4 @@
+import random
 from collections import Counter
 
 from services.language_level_test import (
@@ -68,30 +69,43 @@ def test_adaptive_selector_does_not_repeat_questions():
         })
 
 
-def test_detailed_selector_does_not_repeat_visible_prompts():
+def test_detailed_selector_is_adaptive_without_repeating_visible_prompts():
     for language in SUPPORTED_LANGUAGES:
-        session = {
-            "language": language,
-            "testType": "DETAILED",
-            "currentEstimate": "B1",
-            "questionIds": [],
-            "answers": [],
-        }
-        selected_signatures = set()
-        selected_group_counts = Counter()
-        for _ in range(TEST_LENGTHS["DETAILED"]):
-            question = select_next_question(session)
-            signature = question_signature(question)
-            assert signature not in selected_signatures
-            selected_signatures.add(signature)
-            selected_group_counts[question["contentGroupId"]] += 1
-            session["questionIds"].append(question["id"])
-            session["answers"].append({
-                "questionId": question["id"], "level": question["level"],
-                "category": question["category"], "correct": True,
-            })
-        assert len(selected_group_counts) == TEST_LENGTHS["DETAILED"]
-        assert max(selected_group_counts.values()) == 1
+        level_distributions = []
+        for always_correct in (True, False):
+            session = {
+                "language": language,
+                "testType": "DETAILED",
+                "currentEstimate": "B1",
+                "questionIds": [],
+                "answers": [],
+            }
+            selected_signatures = set()
+            selected_group_counts = Counter()
+            previous_group_id = None
+            for _ in range(TEST_LENGTHS["DETAILED"]):
+                question = select_next_question(session)
+                signature = question_signature(question)
+                assert signature not in selected_signatures
+                assert question["contentGroupId"] != previous_group_id
+                selected_signatures.add(signature)
+                selected_group_counts[question["contentGroupId"]] += 1
+                previous_group_id = question["contentGroupId"]
+                session["questionIds"].append(question["id"])
+                session["answers"].append({
+                    "questionId": question["id"], "level": question["level"],
+                    "category": question["category"], "correct": always_correct,
+                    "unknown": not always_correct,
+                })
+                session["currentEstimate"] = _estimate_level(
+                    session["answers"], session["currentEstimate"]
+                )
+            assert max(selected_group_counts.values()) <= 2
+            level_distributions.append(Counter(answer["level"] for answer in session["answers"]))
+
+        assert level_distributions[0] != level_distributions[1]
+        assert level_distributions[0]["C1"] > level_distributions[1]["C1"]
+        assert level_distributions[1]["A1"] > level_distributions[0]["A1"]
 
 
 def test_detailed_result_contains_overall_and_all_categories():
@@ -157,3 +171,72 @@ def test_quick_test_can_reach_c1_when_started_from_a1():
         session["currentEstimate"] = _estimate_level(session["answers"], session["currentEstimate"])
 
     assert calculate_result(session)["overall"] == "C1"
+
+
+def test_detailed_test_identifies_each_cefr_level_in_every_language():
+    for language in SUPPORTED_LANGUAGES:
+        for expected_level in CEFR_LEVELS:
+            expected_index = CEFR_LEVELS.index(expected_level)
+            for seed in (0, 7):
+                random.seed(seed)
+                session = {
+                    "language": language,
+                    "testType": "DETAILED",
+                    "currentEstimate": "B1",
+                    "questionIds": [],
+                    "answers": [],
+                }
+                for _ in range(TEST_LENGTHS["DETAILED"]):
+                    question = select_next_question(session)
+                    is_correct = CEFR_LEVELS.index(question["level"]) <= expected_index
+                    session["questionIds"].append(question["id"])
+                    session["answers"].append({
+                        "questionId": question["id"],
+                        "level": question["level"],
+                        "category": question["category"],
+                        "correct": is_correct,
+                        "unknown": False,
+                    })
+                    session["currentEstimate"] = _estimate_level(
+                        session["answers"], session["currentEstimate"]
+                    )
+
+                assert calculate_result(session)["overall"] == expected_level
+
+
+def test_retest_prioritizes_different_questions():
+    for language in SUPPORTED_LANGUAGES:
+        for test_type in TEST_LENGTHS:
+            first_session = {
+                "language": language,
+                "testType": test_type,
+                "currentEstimate": "B1",
+                "questionIds": [],
+                "answers": [],
+            }
+            for _ in range(TEST_LENGTHS[test_type]):
+                question = select_next_question(first_session)
+                first_session["questionIds"].append(question["id"])
+                first_session["answers"].append({
+                    "questionId": question["id"], "level": question["level"],
+                    "category": question["category"], "correct": True,
+                })
+
+            second_session = {
+                "language": language,
+                "testType": test_type,
+                "currentEstimate": "B1",
+                "questionIds": [],
+                "previousQuestionIds": first_session["questionIds"],
+                "previousQuestionSignatures": [],
+                "answers": [],
+            }
+            for _ in range(TEST_LENGTHS[test_type]):
+                question = select_next_question(second_session)
+                second_session["questionIds"].append(question["id"])
+                second_session["answers"].append({
+                    "questionId": question["id"], "level": question["level"],
+                    "category": question["category"], "correct": True,
+                })
+
+            assert set(first_session["questionIds"]).isdisjoint(second_session["questionIds"])

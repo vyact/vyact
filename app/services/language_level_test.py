@@ -128,6 +128,26 @@ def _estimate_level(answers: list[dict], initial_level: str) -> str:
     return CEFR_LEVELS[max(0, min(len(CEFR_LEVELS) - 1, estimate))]
 
 
+def _demonstrated_detailed_level(answers: list[dict]) -> str:
+    """Return the highest CEFR band supported by this test's responses.
+
+    Detailed tests deliberately cover the full CEFR range. A level is
+    demonstrated when the user passes that band and remains consistent across
+    the bands at or below it. Previous profile data is not part of this score.
+    """
+    demonstrated_index = 0
+    for level_index, level in enumerate(CEFR_LEVELS):
+        level_answers = [answer for answer in answers if answer["level"] == level]
+        if not level_answers:
+            continue
+        lower_answers = [answer for answer in answers if _level_index(answer["level"]) <= level_index]
+        level_accuracy = sum(answer["correct"] for answer in level_answers) / len(level_answers)
+        lower_accuracy = sum(answer["correct"] for answer in lower_answers) / len(lower_answers)
+        if level_accuracy >= 0.6 and lower_accuracy >= 0.65:
+            demonstrated_index = level_index
+    return CEFR_LEVELS[demonstrated_index]
+
+
 def select_next_question(session: dict, previous_question_ids: set[str] | None = None) -> dict:
     bank = load_question_bank(session["language"])
     used_ids = set(session["questionIds"])
@@ -145,31 +165,56 @@ def select_next_question(session: dict, previous_question_ids: set[str] | None =
         if question["id"] not in used_ids
         and question_signature(question) not in used_signatures
     ]
-    used_group_ids = {
-        question.get("contentGroupId", question_signature(question))
-        for question in bank
-        if question["id"] in used_ids
-    }
+    remaining_question_count = TEST_LENGTHS[session["testType"]] - len(session["questionIds"])
+    unseen_eligible_questions = [
+        question for question in eligible_questions
+        if question["id"] not in previous_ids
+        and question_signature(question) not in previous_signatures
+    ]
+    if len(unseen_eligible_questions) >= remaining_question_count:
+        eligible_questions = unseen_eligible_questions
+    question_by_id = {question["id"]: question for question in bank}
+    used_group_counts: dict[str, int] = defaultdict(int)
+    for question_id in session["questionIds"]:
+        used_question = question_by_id.get(question_id)
+        if used_question:
+            used_group_counts[used_question.get("contentGroupId", question_signature(used_question))] += 1
+    last_group_id = None
+    if session["questionIds"]:
+        last_question = question_by_id.get(session["questionIds"][-1])
+        if last_question:
+            last_group_id = last_question.get("contentGroupId", question_signature(last_question))
+    max_concept_uses = 1 if session["testType"] == "QUICK" else 2
     candidates = [
         question for question in eligible_questions
         if question["category"] == category
-        and question.get("contentGroupId", question_signature(question)) not in used_group_ids
+        and question.get("contentGroupId", question_signature(question)) != last_group_id
+        and used_group_counts[question.get("contentGroupId", question_signature(question))] < max_concept_uses
     ]
     if not candidates:
         candidates = [
             question for question in eligible_questions
-            if question.get("contentGroupId", question_signature(question)) not in used_group_ids
+            if question.get("contentGroupId", question_signature(question)) != last_group_id
+            and used_group_counts[question.get("contentGroupId", question_signature(question))] < max_concept_uses
         ]
     if not candidates:
         raise HTTPException(status_code=409, detail="No unused question concepts are available")
 
     def selection_score(question: dict) -> float:
         distance = abs(_level_index(question["level"]) - estimate_index)
-        difficulty_match = max(0.0, 1.0 - distance * 0.35)
+        difficulty_match = max(0.0, 1.0 - distance * 0.42)
         seen_before = question["id"] in previous_ids or question_signature(question) in previous_signatures
         unseen_priority = 0.0 if seen_before else 1.0
+        group_id = question.get("contentGroupId", question_signature(question))
+        concept_novelty = 1.0 if used_group_counts[group_id] == 0 else 0.0
         quality_score = float(question.get("quality", {}).get("score", 1.0))
-        return difficulty_match * 0.55 + unseen_priority * 0.25 + quality_score * 0.15 + random.random() * 0.05
+        return (
+            difficulty_match * 0.62
+            + unseen_priority * 0.16
+            + concept_novelty * 0.12
+            + quality_score * 0.07
+            + random.random() * 0.03
+        )
 
     return max(candidates, key=selection_score)
 
@@ -213,7 +258,10 @@ def calculate_result(session: dict) -> dict:
         )
         for sequence, answer in enumerate(answers, start=1)
     )
-    overall_index = round(weighted_evidence / response_weight_total) if response_weight_total else _level_index(session["currentEstimate"])
+    if session["testType"] == "DETAILED":
+        overall_index = _level_index(_demonstrated_detailed_level(answers))
+    else:
+        overall_index = round(weighted_evidence / response_weight_total) if response_weight_total else _level_index(session["currentEstimate"])
     overall_index = max(0, min(len(CEFR_LEVELS) - 1, overall_index))
     overall_confidence = min(0.95, 0.45 + len(answers) / TEST_LENGTHS[session["testType"]] * 0.4)
     return {
