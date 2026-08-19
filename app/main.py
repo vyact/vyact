@@ -221,6 +221,8 @@ async def lifespan(app: FastAPI):
         try:
             from agent import ensure_index, load_prompts_cache
             await ensure_index()
+            from services.language_level_test import ensure_language_test_indices
+            await ensure_language_test_indices()
             from routers.skills import ensure_skills_index
             await ensure_skills_index()
             if SETUP_DONE.exists():
@@ -458,6 +460,7 @@ from routers.notifications import router as notifications_router
 from routers.plugins import router as plugins_router
 from routers.knowledge_collections import router as knowledge_collections_router
 from routers.external_data import router as external_data_router
+from routers.language_level_test import router as language_level_test_router
 
 app.include_router(setup_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
@@ -484,6 +487,7 @@ app.include_router(notifications_router, prefix="/api")
 app.include_router(plugins_router, prefix="/api")
 app.include_router(knowledge_collections_router, prefix="/api")
 app.include_router(external_data_router, prefix="/api")
+app.include_router(language_level_test_router, prefix="/api")
 from services.plugin_manager import plugin_api_dispatcher
 app.mount("/api/plugin-api", plugin_api_dispatcher)
 
