@@ -3,6 +3,8 @@
 
   # Vyact
 
+  **Vyact is an open-source, local-first AI workspace for Ollama, RAG, AI agents, document intelligence, and Google Workspace.**
+
   ### Your private AI workspace for conversations, knowledge, and getting work done.
 
   **Turn your files, notes, email, and everyday tools into useful AI context—without leaving your workflow.**
@@ -66,9 +68,9 @@ Practice in your target language through natural, voice-based conversations. Spe
   <img src="assets/readme/feature-voice-chat.png" alt="Vyact voice conversation and speaking practice" width="100%" />
 </p>
 
-### Learn from every page with the Chrome extension
+### Learn languages from Netflix and every page with the Chrome extension
 
-Translate foreign-language pages and turn what you are already reading into language practice. The Chrome extension also sends the current page or selected text into your chat as context, so you can ask questions about a site without copying its content by hand.
+Learn from Netflix with dual subtitles, subtitle navigation, repeat playback, and automatic pause controls. Take a CEFR level test in any of Vyact's eight supported languages, then get short AI explanations adapted to the level of the subtitle you are watching. You can also translate foreign-language pages and send the current page or selected text into chat as context without copying it by hand.
 
 <p align="center">
   <img src="assets/readme/feature-plugin.png" alt="Vyact Chrome extension side panel" width="100%" />
@@ -84,7 +86,7 @@ Translate foreign-language pages and turn what you are already reading into lang
 | 📝 | Rich-text memos | Organize ideas and plans in structured notes that RAG can retrieve during a conversation. |
 | 🗂️ | Google Workspace integration | Connect multiple accounts, switch between them, and work with Gmail, Drive, and Calendar alongside your AI conversation. |
 | 🎙️ | Voice-based language learning | Practice speaking through natural conversations with speech input and AI responses. |
-| 🌐 | Chrome extension for language learning | Translate pages, study while you browse, and ask questions with selected text or the current page as context. |
+| 🌐 | Chrome extension for Netflix and web language learning | Study Netflix with dual subtitles and level-aware explanations, translate pages, and ask questions with selected text or the current page as context. |
 | 🧩 | MCP tool connections | Connect the tools you use to tailor Vyact to the way you work. |
 | 🌍 | Multilingual interface | Available in Korean, English, Japanese, Chinese, Thai, Vietnamese, Spanish, and French. |
 
@@ -119,7 +121,7 @@ Translate foreign-language pages and turn what you are already reading into lang
 | Reply to a difficult email | Attach the email thread and relevant Drive files, ask for a draft in your voice, then edit and send it from Gmail. |
 | Build a personal work memory | Index frequently used documents and save decisions as memos; ask a normal question later and let RAG find the context. |
 | Plan a project without losing the thread | Create a project, add working instructions, keep discussions together, and export the conversation when you need a record. |
-| Practice a new language every day | Open voice chat, speak naturally, listen to the response, and save scripts for repeat practice. |
+| Practice a new language every day | Open voice chat, or learn from Netflix with dual subtitles and explanations matched to your CEFR level. |
 | Research while browsing | Send selected text or the current page from Chrome directly to Vyact and continue the conversation with page context. |
 
 ## Get started
@@ -177,7 +179,7 @@ Custom connection settings are included in Vyact backup and restore. Streaming, 
 2. Start the Vyact desktop app.
 3. Pin Vyact to the Chrome toolbar and open its side panel on any page.
 
-Translate pages, study a foreign language while you browse, or ask about the current page without copying its content into chat.
+Use dual subtitles and playback controls to study with Netflix, take an adaptive CEFR level test, and receive concise explanations matched to your level. You can also translate pages or ask about the current page without copying its content into chat.
 
 ## Support Vyact
 
