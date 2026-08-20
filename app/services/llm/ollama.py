@@ -202,12 +202,11 @@ async def build_ollama_payload(
         except Exception as e:
             logger.debug("스킬 매칭 실패 (무시): %s", e)
     user_language = ""
-    if not isolated_system_prompt:
-        try:
-            from routers.deps import load_ui_language_async
-            user_language = await load_ui_language_async() or ""
-        except Exception:
-            pass
+    try:
+        from routers.deps import load_ui_language_async
+        user_language = await load_ui_language_async() or ""
+    except Exception:
+        pass
     system_message = build_system_message(
         system_prompt, format_instruction_override, user_profile, skill_context, conversation_summary,
         user_language=user_language, isolated=isolated_system_prompt,

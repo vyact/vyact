@@ -346,7 +346,7 @@ class QueryRequest(BaseModel):
     knowledge_collection_ids: list[str] = []  # 선택한 여러 지식 컬렉션의 자료를 함께 검색
     external_resource_ids: list[str] = []  # 사용자가 명시적으로 선택한 외부 데이터만 별도 검색
     external_document_selections: list[dict] = []  # 모달에서 명시적으로 첨부한 외부 데이터 원문
-    minimal_prompt: bool = False  # True면 클라이언트가 보낸 system_prompt만 사용하고 백엔드 컨텍스트·도구·RAG 주입을 모두 제외.
+    minimal_prompt: bool = False  # True면 응답 언어 규칙 외에는 클라이언트 system_prompt만 사용하고 컨텍스트·도구·RAG 주입을 제외.
     selected_mcp_ids: list[str] = []  # @로 선택한 MCP들은 enabled 여부와 무관하게 이번 요청에만 사용.
     approval_mode: str = "risky_only"
     # 자막 학습처럼 요청 자체에 필요한 문맥이 모두 포함된 격리형 클라이언트용.

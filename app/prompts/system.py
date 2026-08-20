@@ -33,8 +33,16 @@ def build_system_message(
     작은 모델일수록 프롬프트 앞쪽보다 그 위치를 더 강하게 따르기 때문에,
     중간에 묻혀 무시되지 않도록 그쪽 한 곳에서만 처리한다.)
     """
+    normalized_language = normalize_language_code(user_language)
+    lang_label = get_language_label(normalized_language)
+    response_language_instruction = (
+        f"[응답 언어]\n사용자 UI 언어는 {lang_label}입니다. "
+        f"사용자가 다른 언어를 명시적으로 요청하지 않는 한, 반드시 {lang_label}로 답변하세요. "
+        f"제목과 섹션명도 {lang_label}로 작성하세요."
+    )
+
     if isolated:
-        return system_prompt
+        return "\n\n".join(part for part in (system_prompt, response_language_instruction) if part)
 
     if format_instruction_override is not None:
         if format_instruction_override == "":
@@ -60,9 +68,6 @@ def build_system_message(
     # 사용자 UI 언어가 없거나 미지원이면 시스템 기본 언어인 영어를 사용한다.
     # 기본 포맷의 작성 언어만으로는 문서 원문이나 스킬 지침의 언어를 이기지
     # 못할 수 있으므로, 한국어를 포함한 모든 UI 언어를 명시적으로 지시한다.
-    normalized_language = normalize_language_code(user_language)
-    lang_label = get_language_label(normalized_language)
-
     # user_profile 주입 (voice mode 제외: format_instruction_override == "" 이면 스킵)
     if user_profile and format_instruction_override != "":
         dynamic_context.append(f"[사용자 정보]\n{user_profile}")
@@ -82,10 +87,6 @@ def build_system_message(
 
     # 질문과 가장 가까운 스킬 지침 뒤에 언어 규칙을 둬, 영어 원문을 요약하는
     # 경우에도 UI 언어로 결과를 생성하게 한다.
-    dynamic_context.append(
-        f"[응답 언어]\n사용자 UI 언어는 {lang_label}입니다. "
-        f"사용자가 다른 언어를 명시적으로 요청하지 않는 한, 반드시 {lang_label}로 답변하세요. "
-        f"제목과 섹션명도 {lang_label}로 작성하세요."
-    )
+    dynamic_context.append(response_language_instruction)
 
     return "\n\n".join([message, *dynamic_context])
