@@ -303,6 +303,9 @@ async def rag_query_stream(
         knowledge_collection_ids: list[str] | None = None,
         inject_user_profile: bool = True,
         project_tool_first: bool = False,
+        use_tools: bool = True,
+        include_skills: bool = True,
+        isolated_system_prompt: bool = False,
 ):
     """일반 채팅 스트리밍. tool 진행 + 최종 답변 토큰을 이벤트로 흘린다.
 
@@ -423,6 +426,9 @@ async def rag_query_stream(
             ) else None,
             call_reason=call_reason,
             inject_user_profile=inject_user_profile,
+            use_tools=use_tools,
+            include_skills=include_skills,
+            isolated_system_prompt=isolated_system_prompt,
     ):
         if ev.get("type") == "token":
             parts.append(ev.get("text", ""))

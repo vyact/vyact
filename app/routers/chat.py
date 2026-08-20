@@ -21,7 +21,7 @@ from agent import (
 from services.llm import chat_stream_with_tools
 from services.llm.ollama import _tool_result_failed
 from config import IMAGE_MODEL_IDS
-from prompts import VOICE_MODE_SUFFIX, FORMAT_INSTRUCTION, EXTENSION_FORMAT_INSTRUCTION, get_extension_format_instruction
+from prompts import VOICE_MODE_SUFFIX, FORMAT_INSTRUCTION
 from routers.deps import load_config_async
 from routers.chat_helpers import (
     load_system_prompt, unwrap_pasted_text,
@@ -346,11 +346,10 @@ class QueryRequest(BaseModel):
     knowledge_collection_ids: list[str] = []  # 선택한 여러 지식 컬렉션의 자료를 함께 검색
     external_resource_ids: list[str] = []  # 사용자가 명시적으로 선택한 외부 데이터만 별도 검색
     external_document_selections: list[dict] = []  # 모달에서 명시적으로 첨부한 외부 데이터 원문
-    minimal_prompt: bool = False  # True면 앱 전용 기본 프롬프트(FORMAT_INSTRUCTION, conv_summary 태그 지시) 제외.
+    minimal_prompt: bool = False  # True면 클라이언트가 보낸 system_prompt만 사용하고 백엔드 컨텍스트·도구·RAG 주입을 모두 제외.
     selected_mcp_ids: list[str] = []  # @로 선택한 MCP들은 enabled 여부와 무관하게 이번 요청에만 사용.
     approval_mode: str = "risky_only"
-    # 크롬 확장처럼 프로젝트 블록/followups/SummaryModal UI가 없는 경량 클라이언트용.
-    # 날짜/사용자 프로필/참고 문서/MCP tool directive는 그대로 유지된다.
+    # 자막 학습처럼 요청 자체에 필요한 문맥이 모두 포함된 격리형 클라이언트용.
 
 
 def _selected_knowledge_collection_ids(request: QueryRequest) -> list[str]:
@@ -804,7 +803,7 @@ async def query_stream(req: QueryRequest):
                 mode=req.approval_mode, conversation_id=req.conv_id, project_id=req.project_id,
                 interactive=True,
             ))
-            if req.selected_mcp_ids:
+            if req.selected_mcp_ids and not req.minimal_prompt:
                 from services.mcp_client import mcp_manager
                 mcp_scope_token = await mcp_manager.enable_request_scope(req.selected_mcp_ids)
             # user 발화 시각을 요청 도착 시점으로 고정 (프론트가 전송 시각을 주면 우선 사용)
@@ -815,29 +814,28 @@ async def query_stream(req: QueryRequest):
             clean_question = unwrap_pasted_text(req.question)
 
             # 2) 설정/시스템 프롬프트 로드
-            cfg, current_model, system_prompt = await load_system_prompt(req.system_prompt)
-            project_prompt = await _get_project_prompt(req.project_id)
-            if project_prompt:
-                system_prompt = f"{system_prompt}\n\n[프로젝트 지침]\n{project_prompt}" if system_prompt else project_prompt
-            from services.project_memory import get_project_memory, project_memory_prompt_view
-            project_memory = await get_project_memory(req.project_id) if req.project_id else None
-            if project_memory and any(project_memory.get(key) for key in ("summary", "decisions", "action_items")):
-                memory_context = json.dumps(project_memory_prompt_view(project_memory), ensure_ascii=False)
-                system_prompt = f"{system_prompt}\n\n[프로젝트 메모리]\n{memory_context}" if system_prompt else f"[프로젝트 메모리]\n{memory_context}"
-            request_folder_paths = await _get_request_folder_paths(req.folder_path, req.project_id)
-            project_folder_context = await _build_project_folder_context(request_folder_paths)
-            if project_folder_context:
-                system_prompt = f"{system_prompt}\n\n{project_folder_context}" if system_prompt else project_folder_context
-            system_prompt = await _with_response_style(system_prompt)
-
-            # 사용자 UI 언어 (확장 클라이언트의 포맷 지시 언어 결정용)
-            _ui_language = ""
             if req.minimal_prompt:
-                try:
-                    from routers.deps import load_ui_language_async
-                    _ui_language = await load_ui_language_async() or ""
-                except Exception:
-                    pass
+                cfg = await load_config_async()
+                current_model = cfg.get("model", "")
+                system_prompt = req.system_prompt
+            else:
+                cfg, current_model, system_prompt = await load_system_prompt(req.system_prompt)
+            project_memory = None
+            request_folder_paths: list[str] = []
+            if not req.minimal_prompt:
+                project_prompt = await _get_project_prompt(req.project_id)
+                if project_prompt:
+                    system_prompt = f"{system_prompt}\n\n[프로젝트 지침]\n{project_prompt}" if system_prompt else project_prompt
+                from services.project_memory import get_project_memory, project_memory_prompt_view
+                project_memory = await get_project_memory(req.project_id) if req.project_id else None
+                if project_memory and any(project_memory.get(key) for key in ("summary", "decisions", "action_items")):
+                    memory_context = json.dumps(project_memory_prompt_view(project_memory), ensure_ascii=False)
+                    system_prompt = f"{system_prompt}\n\n[프로젝트 메모리]\n{memory_context}" if system_prompt else f"[프로젝트 메모리]\n{memory_context}"
+                request_folder_paths = await _get_request_folder_paths(req.folder_path, req.project_id)
+                project_folder_context = await _build_project_folder_context(request_folder_paths)
+                if project_folder_context:
+                    system_prompt = f"{system_prompt}\n\n{project_folder_context}" if system_prompt else project_folder_context
+                system_prompt = await _with_response_style(system_prompt)
 
             # 3) 첨부파일 분류
             file_context_docs = _file_attachments_to_context(req.attachments)
@@ -846,7 +844,7 @@ async def query_stream(req: QueryRequest):
             # conv_id를 여기서 미리 확정한다.
             conv_id = req.conv_id or str(uuid.uuid4())
             from services.conv_summary import get_prior_conv_summary
-            conversation_summary = await get_prior_conv_summary(conv_id)
+            conversation_summary = "" if req.minimal_prompt else await get_prior_conv_summary(conv_id)
 
             # 첨부파일 임베딩 인덱싱은 LLM 호출 '전에' 끝까지 마친다. (예전엔 LLM 호출과
             # 동시에 백그라운드로 돌렸는데, 로컬 환경에서는 임베딩 모델과 채팅 모델이 같은
@@ -872,21 +870,21 @@ async def query_stream(req: QueryRequest):
 
             # 질문에 포함된 URL 중 크롤링 대상 추출
             all_urls = [u.rstrip('.') for u in URL_RE.findall(clean_question)]
-            urls = _should_crawl_urls(clean_question, all_urls) if has_plugin_url_resolvers() else []
+            urls = _should_crawl_urls(clean_question, all_urls) if not req.minimal_prompt and has_plugin_url_resolvers() else []
 
             context_docs: list[dict] = []
             can_stream = False  # True면 아래 "실제 토큰 스트리밍"으로, False면 (C)/(D) 처리
             selected_external_instruction = ""
-            inject_user_profile = True
+            inject_user_profile = not req.minimal_prompt
 
             config = await load_config_async()
             is_image_model = config.get("model_type") in ("image_gen", "image_edit") or model in IMAGE_MODEL_IDS
-            knowledge_collection_ids = _selected_knowledge_collection_ids(req)
+            knowledge_collection_ids = [] if req.minimal_prompt else _selected_knowledge_collection_ids(req)
             external_selected = bool(req.external_document_selections or {GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, HOUSING_SOURCE_ID, LH_COMPLEX_SOURCE_ID, LH_NOTICE_SOURCE_ID}.intersection(req.external_resource_ids))
             external_docs: list[dict] = []
             external_instruction = ""
             external_status = {"failed_sources": [], "all_failed": False, "no_results": False}
-            if not is_image_model and not req.voice_mode:
+            if not req.minimal_prompt and not is_image_model and not req.voice_mode:
                 external_docs, external_instruction, inject_user_profile, external_status = await _get_selected_external_context(
                     clean_question, req.external_resource_ids, req.external_document_selections,
                 )
@@ -961,12 +959,11 @@ async def query_stream(req: QueryRequest):
                     a.get("type") in ("file", "zip") for a in req.attachments
                 )
                 # 대화 요약 태그 생성 지시 — 이 스트리밍 호출에만 덧붙인다.
-                # minimal_prompt(크롬 확장)면 요약 태그 지시를 통째로 생략하고
-                # FORMAT_INSTRUCTION 대신 EXTENSION_FORMAT_INSTRUCTION을 쓴다
-                # (SummaryModal/followups UI가 없는 클라이언트라 입력·출력 토큰만 낭비됨).
+                # minimal_prompt 요청은 클라이언트가 보낸 system_prompt를 그대로 쓰며,
+                # 백엔드 포맷·요약 지시를 일절 덧붙이지 않는다.
                 if req.minimal_prompt:
                     _summary_system_prompt = system_prompt
-                    _fmt_override = get_extension_format_instruction(_ui_language) if _ui_language else EXTENSION_FORMAT_INSTRUCTION
+                    _fmt_override = ""
                 else:
                     from services.conv_summary import build_summary_instruction
                     _summary_base_prompt = system_prompt if system_prompt else FORMAT_INSTRUCTION
@@ -1003,15 +1000,18 @@ async def query_stream(req: QueryRequest):
                 async for ev in rag_query_stream(
                         clean_question, _summary_system_prompt, image_attachments, req.messages,
                         extra_context=limit_direct_document_contexts(file_context_docs + external_docs),
-                        skip_rag=has_file_attachment or (external_selected and not knowledge_collection_ids),
+                        skip_rag=req.minimal_prompt or has_file_attachment or (external_selected and not knowledge_collection_ids),
                         reasoning=req.reasoning,
                         conv_id=conv_id,
-                        conversation_summary=conversation_summary,
+                        conversation_summary="" if req.minimal_prompt else conversation_summary,
                         format_instruction_override=_fmt_override,
                         call_reason="chat:general_stream",
                         knowledge_collection_ids=knowledge_collection_ids,
                         inject_user_profile=inject_user_profile,
                         project_tool_first=project_tool_first,
+                        use_tools=not req.minimal_prompt,
+                        include_skills=not req.minimal_prompt,
+                        isolated_system_prompt=req.minimal_prompt,
                 ):
                     if ev["type"] == "token":
                         emitted += ev["text"]
@@ -1183,13 +1183,14 @@ async def query_stream(req: QueryRequest):
             # 선택된 문서/기사/URL 기반 질의 — 답은 이 context 안에서 나오므로 tool 판정 불필요
             async for ev in chat_stream_with_tools(
                     clean_question, docs_for_llm, selected_docs_system_prompt, image_attachments, req.messages,
-                    format_instruction_override="" if req.voice_mode
-                    else (get_extension_format_instruction(_ui_language) if req.minimal_prompt else None),
-                    conversation_summary=conversation_summary,
+                    format_instruction_override="" if req.voice_mode or req.minimal_prompt else None,
+                    conversation_summary="" if req.minimal_prompt else conversation_summary,
                     use_tools=False,
                     reasoning=req.reasoning,
                     call_reason="chat:selected_docs",
                     inject_user_profile=inject_user_profile,
+                    include_skills=not req.minimal_prompt,
+                    isolated_system_prompt=req.minimal_prompt,
             ):
                 if ev.get("type") == "token":
                     token_text = ev.get("text", "")
