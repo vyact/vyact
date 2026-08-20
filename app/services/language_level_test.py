@@ -335,6 +335,36 @@ async def get_profiles() -> dict:
         await es.close()
 
 
+async def set_explanation_level(language: str, explanation_level: str | None) -> dict:
+    if language not in SUPPORTED_LANGUAGES:
+        raise HTTPException(status_code=400, detail="Unsupported test language")
+    if explanation_level is not None and explanation_level not in CEFR_LEVELS:
+        raise HTTPException(status_code=400, detail="Unsupported explanation level")
+    es = get_es()
+    try:
+        try:
+            source = (await es.get(index=PROFILE_INDEX, id=language))["_source"]
+            profile = source.get("payload") or {}
+        except Exception as error:
+            if getattr(error, "status_code", None) != 404:
+                raise
+            raise HTTPException(status_code=404, detail="Language test profile not found") from error
+        if explanation_level is None:
+            profile.pop("explanationLevel", None)
+        else:
+            profile["explanationLevel"] = explanation_level
+        await es.index(index=PROFILE_INDEX, id=language, document={
+            "language": language,
+            "overall": profile.get("overall"),
+            "sourceTestType": profile.get("sourceTestType"),
+            "testedAt": profile.get("testedAt"),
+            "payload": profile,
+        }, refresh=True)
+        return profile
+    finally:
+        await es.close()
+
+
 async def create_session(language: str, test_type: str) -> tuple[dict, dict]:
     if language not in SUPPORTED_LANGUAGES:
         raise HTTPException(status_code=400, detail="Unsupported test language")
@@ -446,6 +476,8 @@ async def _save_completed_test(es, session: dict, result: dict) -> None:
             "language": session["language"], "overall": result["overall"],
             "confidence": result["confidence"], "categories": result["categories"],
             "sourceTestType": session["testType"], "testedAt": result["testedAt"],
+            **({"explanationLevel": current_profile["explanationLevel"]}
+               if (current_profile or {}).get("explanationLevel") in CEFR_LEVELS else {}),
             "recentQuestionIds": list(dict.fromkeys([
                 *session.get("questionIds", []),
                 *(current_profile or {}).get("recentQuestionIds", []),

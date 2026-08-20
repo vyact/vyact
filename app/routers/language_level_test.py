@@ -3,7 +3,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from services.language_level_test import answer_session, create_session, get_profiles
+from services.language_level_test import answer_session, create_session, get_profiles, set_explanation_level
 
 
 router = APIRouter()
@@ -19,9 +19,19 @@ class TestAnswerRequest(BaseModel):
     option_id: str = Field(alias="optionId")
 
 
+class ExplanationLevelRequest(BaseModel):
+    explanation_level: str | None = Field(default=None, alias="explanationLevel")
+
+
 @router.get("/language-levels")
 async def list_language_levels():
     return {"profiles": await get_profiles()}
+
+
+@router.put("/language-levels/{language}/explanation-level")
+async def update_explanation_level(language: str, request: ExplanationLevelRequest):
+    normalized_level = request.explanation_level.upper() if request.explanation_level else None
+    return {"profile": await set_explanation_level(language, normalized_level)}
 
 
 @router.post("/language-tests")
