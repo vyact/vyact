@@ -70,7 +70,7 @@ Practice in your target language through natural, voice-based conversations. Spe
 
 ### Learn languages from Netflix and every page with the Chrome extension
 
-Learn from Netflix with dual subtitles, subtitle navigation, repeat playback, and automatic pause controls. Take a CEFR level test in any of Vyact's eight supported languages, then get short AI explanations adapted to the level of the subtitle you are watching. You can also translate foreign-language pages and send the current page or selected text into chat as context without copying it by hand.
+Learn from Netflix with dual subtitles, subtitle navigation, repeat playback, and automatic pause controls. Choose the language areas you find difficult, then get short AI explanations that focus on those weaknesses in the subtitle you are watching. You can also translate foreign-language pages and send the current page or selected text into chat as context without copying it by hand.
 
 <p align="center">
   <img src="assets/readme/feature-plugin.png" alt="Vyact Chrome extension side panel" width="100%" />
@@ -121,7 +121,7 @@ Learn from Netflix with dual subtitles, subtitle navigation, repeat playback, an
 | Reply to a difficult email | Attach the email thread and relevant Drive files, ask for a draft in your voice, then edit and send it from Gmail. |
 | Build a personal work memory | Index frequently used documents and save decisions as memos; ask a normal question later and let RAG find the context. |
 | Plan a project without losing the thread | Create a project, add working instructions, keep discussions together, and export the conversation when you need a record. |
-| Practice a new language every day | Open voice chat, or learn from Netflix with dual subtitles and explanations matched to your CEFR level. |
+| Practice a new language every day | Open voice chat, or learn from Netflix with dual subtitles and explanations focused on your selected weak areas. |
 | Research while browsing | Send selected text or the current page from Chrome directly to Vyact and continue the conversation with page context. |
 
 ## Get started
@@ -179,7 +179,7 @@ Custom connection settings are included in Vyact backup and restore. Streaming, 
 2. Start the Vyact desktop app.
 3. Pin Vyact to the Chrome toolbar and open its side panel on any page.
 
-Use dual subtitles and playback controls to study with Netflix, take an adaptive CEFR level test, and receive concise explanations matched to your level. You can also translate pages or ask about the current page without copying its content into chat.
+Use dual subtitles and playback controls to study with Netflix, select the language areas you find difficult, and receive concise explanations focused on those weaknesses. You can also translate pages or ask about the current page without copying its content into chat.
 
 ## Support Vyact
 
