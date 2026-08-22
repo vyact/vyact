@@ -158,6 +158,7 @@ async def build_ollama_payload(
         reasoning: bool = True,
         include_skills: bool = True,
         isolated_system_prompt: bool = False,
+        include_response_language: bool = True,
 ) -> tuple[str, dict]:
     """Ollama 스트리밍/논스트리밍 공용 — model 이름과 /api/chat 요청 body를 조립.
 
@@ -210,6 +211,7 @@ async def build_ollama_payload(
     system_message = build_system_message(
         system_prompt, format_instruction_override, user_profile, skill_context, conversation_summary,
         user_language=user_language, isolated=isolated_system_prompt,
+        include_response_language=include_response_language,
     )
     user_prompt = build_user_prompt(question, context_docs, attachments, model)
 

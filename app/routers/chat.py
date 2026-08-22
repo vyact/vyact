@@ -1301,6 +1301,7 @@ class TranslateRequest(BaseModel):
     text: str
     target_lang: str  # "영어" | "한국어" 등
     instruction: str = ""  # 커스텀 지시문 (있으면 기본 프롬프트 대신 사용)
+    include_response_language: bool = True  # 사용자 UI 언어 응답 규칙 포함 여부
     save_history: bool = False
     conv_id: str = ""
     history_label: str = ""  # 히스토리에 표시할 user 메시지 (없으면 자동 생성)
@@ -1382,6 +1383,7 @@ async def translate(req: TranslateRequest):
             reasoning=False,  # 번역은 추론 스위치와 무관하게 항상 off
             call_reason="translate",
             stats_out=gen_stats,
+            include_response_language=req.include_response_language,
         )
         translated = answer.strip()
 

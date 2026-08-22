@@ -16,8 +16,9 @@ def build_system_message(
         user_profile: str = "",
         skill_context: str = "",
         conversation_summary: str = "",
-    user_language: str = "",
-    isolated: bool = False,
+        user_language: str = "",
+        isolated: bool = False,
+        include_response_language: bool = True,
 ) -> str:
     """
     시스템 메시지를 조합하여 반환합니다.
@@ -42,7 +43,10 @@ def build_system_message(
     )
 
     if isolated:
-        return "\n\n".join(part for part in (system_prompt, response_language_instruction) if part)
+        return "\n\n".join(part for part in (
+            system_prompt,
+            response_language_instruction if include_response_language else "",
+        ) if part)
 
     if format_instruction_override is not None:
         if format_instruction_override == "":
@@ -87,6 +91,7 @@ def build_system_message(
 
     # 질문과 가장 가까운 스킬 지침 뒤에 언어 규칙을 둬, 영어 원문을 요약하는
     # 경우에도 UI 언어로 결과를 생성하게 한다.
-    dynamic_context.append(response_language_instruction)
+    if include_response_language:
+        dynamic_context.append(response_language_instruction)
 
     return "\n\n".join([message, *dynamic_context])

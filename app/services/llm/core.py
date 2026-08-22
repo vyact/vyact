@@ -71,6 +71,7 @@ async def chat_stream_with_tools(
         call_reason: str = "unspecified",
         include_skills: bool = True,
         isolated_system_prompt: bool = False,
+        include_response_language: bool = True,
 ):
     """MCP tool 처리 + 최종 답변 토큰 스트리밍 (모든 provider 지원).
 
@@ -113,6 +114,7 @@ async def chat_stream_with_tools(
                 question, context_docs, system_prompt, attachments,
                 conversation_history, format_instruction_override, inject_user_profile,
                 provider_type, model, conversation_summary, include_skills, isolated_system_prompt,
+                include_response_language,
             )
             log_entry["system_message"] = sys_msg
             log_entry["user_prompt"] = usr_msg
@@ -205,6 +207,7 @@ async def chat_stream_with_tools(
         question, context_docs, system_prompt, attachments, conversation_history,
         format_instruction_override, inject_user_profile, conversation_summary, reasoning=reasoning,
         include_skills=include_skills, isolated_system_prompt=isolated_system_prompt,
+        include_response_language=include_response_language,
     )
 
     if use_tools:
@@ -510,6 +513,7 @@ async def collect_llm_stream(
         call_reason: str = "unspecified",
         include_skills: bool = True,
         isolated_system_prompt: bool = False,
+        include_response_language: bool = True,
 ) -> tuple[str, dict | None]:
     """chat_stream_with_tools를 내부적으로 소비하여 (answer, stats)를 반환.
 
@@ -527,6 +531,7 @@ async def collect_llm_stream(
             inject_user_profile=inject_user_profile, conversation_summary=conversation_summary, use_tools=use_tools,
             reasoning=reasoning, call_reason=call_reason, include_skills=include_skills,
             isolated_system_prompt=isolated_system_prompt,
+            include_response_language=include_response_language,
     ):
         if ev.get("type") == "token":
             parts.append(ev.get("text", ""))
@@ -554,6 +559,7 @@ async def query_llm(
         stats_out: dict | None = None,
         include_skills: bool = True,
         structured_output_schema: dict | None = None,
+        include_response_language: bool = True,
 ) -> str:
     """논스트리밍 단발 응답 (모든 provider).
 
@@ -568,6 +574,9 @@ async def query_llm(
 
     structured_output_schema를 지정하면 Ollama의 ``format`` 요청 필드에 JSON
     Schema를 전달한다. 다른 provider는 기존 프롬프트 기반 동작을 유지한다.
+
+    include_response_language=False이면 사용자 UI 언어 응답 규칙만 제외한다.
+    기본값은 True이므로 기존 호출의 응답 언어 동작은 유지된다.
     """
     attachments = attachments or []
     conversation_history = conversation_history or []
@@ -593,6 +602,7 @@ async def query_llm(
         question, context_docs, system_prompt, attachments,
         conversation_history, format_instruction_override, inject_user_profile,
         provider_type, model, conversation_summary, include_skills,
+        include_response_language=include_response_language,
     )
     log_entry["system_message"] = system_message
     log_entry["user_prompt"] = user_prompt

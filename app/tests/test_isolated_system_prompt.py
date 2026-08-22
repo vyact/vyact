@@ -31,6 +31,17 @@ class IsolatedSystemPromptTests(unittest.TestCase):
         self.assertNotIn("BACKEND SKILL", result)
         self.assertNotIn("BACKEND SUMMARY", result)
 
+    def test_response_language_rule_can_be_excluded(self):
+        result = build_system_message(
+            "TRANSLATE ONLY",
+            format_instruction_override="",
+            user_language="en",
+            include_response_language=False,
+        )
+
+        self.assertNotIn("[응답 언어]", result)
+        self.assertNotIn("English", result)
+
 
 class IsolatedPreparedRequestTests(unittest.IsolatedAsyncioTestCase):
     async def test_empty_context_keeps_plugin_prompt_and_adds_server_language(self):
@@ -53,6 +64,24 @@ class IsolatedPreparedRequestTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("반드시 한국어로 답변하세요", system_message)
         self.assertEqual(user_prompt, "PLUGIN_USER_PROMPT")
         self.assertEqual(history, [])
+
+    async def test_prepared_request_can_exclude_response_language_rule(self):
+        with patch("routers.deps.load_ui_language_async", AsyncMock(return_value="en")):
+            _, system_message, _, _, _ = await prepare_request(
+                "TRANSLATE_USER_PROMPT",
+                [],
+                "",
+                [],
+                [],
+                "",
+                False,
+                "ollama",
+                include_skills=False,
+                include_response_language=False,
+            )
+
+        self.assertNotIn("[응답 언어]", system_message)
+        self.assertNotIn("English", system_message)
 
 
 if __name__ == "__main__":
