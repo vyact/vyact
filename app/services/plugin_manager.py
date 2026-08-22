@@ -26,7 +26,6 @@ from logger import get_logger
 from services.db import SETTINGS_INDEX, get_es
 from services.mcp_client import mcp_manager
 from services.mcp_config import MCP_CATALOG, load_mcp_config, save_mcp_config
-from services.prompts import delete_prompt
 
 logger = get_logger(__name__)
 
@@ -628,32 +627,6 @@ async def uninstall_plugin(plugin_id: str) -> dict[str, Any]:
             ]
             await save_mcp_config(config)
 
-    indices = manifest.get("data_indices", [])
-    if indices:
-        es = get_es()
-        try:
-            for index_name in indices:
-                if await es.indices.exists(index=index_name):
-                    await es.indices.delete(index=index_name)
-        finally:
-            await es.close()
-
-    for prompt_id in manifest.get("cleanup_settings", []):
-        await delete_prompt(prompt_id)
-    settings_doc_ids = manifest.get("settings_doc_ids", [])
-    if settings_doc_ids:
-        es = get_es()
-        try:
-            for document_id in settings_doc_ids:
-                await es.delete(
-                    index=SETTINGS_INDEX,
-                    id=document_id,
-                    ignore=[404],
-                    refresh=True,
-                )
-        finally:
-            await es.close()
-
     loaded = _loaded_plugins.get(plugin_id)
     if loaded:
         shutdown = getattr(loaded.module, "shutdown", None)
@@ -664,19 +637,10 @@ async def uninstall_plugin(plugin_id: str) -> dict[str, Any]:
     _deactivate_plugin_runtime(plugin_id, manifest)
     shutil.rmtree(target)
     try:
-        restore_state = await _load_restore_state()
-        restore_state["plugins"] = [
-            item for item in restore_state.get("plugins", [])
-            if item.get("id") != plugin_id
-        ]
-        await _save_restore_state(restore_state)
-    except Exception as error:
-        logger.warning("[plugins] restored-data state cleanup failed: %s", error)
-    try:
         await _save_plugin_state()
     except Exception as error:
         logger.warning("[plugins] state save failed after uninstall: %s", error)
-    logger.info("[plugins] uninstalled %s and deleted declared data", plugin_id)
+    logger.info("[plugins] uninstalled %s and preserved declared data", plugin_id)
     return manifest
 
 

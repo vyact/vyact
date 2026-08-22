@@ -149,7 +149,6 @@ const PluginsSection: React.FC = () => {
             {confirmPlugin && <ConfirmModal
                 title={t('plugins.confirmTitle', {name: confirmPlugin.name})}
                 description={t('plugins.confirmDescription')}
-                details={confirmPlugin.removal_items}
                 options={[
                     {label: t('plugins.cancel'), value: 'cancel'},
                     {label: t('plugins.deleteAll'), value: 'delete', variant: 'danger'},
