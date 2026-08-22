@@ -542,6 +542,12 @@
     "googleAccountUnavailableTitle": "Cuenta de Google no disponible",
     "googleAccountUnavailableMessage": "La cuenta de esta notificación se eliminó o se desconectó."
   },
+  "productReleaseModal": {
+    "eyebrow": "Novedades de Vyact",
+    "close": "Cerrar novedades",
+    "confirm": "Entendido",
+    "viewDetails": "Ver detalles"
+  },
   "commandPalette": {
     "searchPlaceholder": "Busca o inicia un chat",
     "quickActions": "Acciones rápidas",

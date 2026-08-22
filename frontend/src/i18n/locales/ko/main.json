@@ -542,6 +542,12 @@
     "googleAccountUnavailableTitle": "Google 계정을 열 수 없습니다",
     "googleAccountUnavailableMessage": "이 알림의 계정이 삭제되었거나 연결 해제되었습니다."
   },
+  "productReleaseModal": {
+    "eyebrow": "Vyact 새로운 소식",
+    "close": "새 소식 닫기",
+    "confirm": "확인",
+    "viewDetails": "자세히 보기"
+  },
   "commandPalette": {
     "searchPlaceholder": "검색하거나 채팅 시작",
     "quickActions": "빠른 작업",

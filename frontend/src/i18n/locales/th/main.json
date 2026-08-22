@@ -542,6 +542,12 @@
     "googleAccountUnavailableTitle": "ไม่สามารถเปิดบัญชี Google ได้",
     "googleAccountUnavailableMessage": "บัญชีของการแจ้งเตือนนี้ถูกลบหรือตัดการเชื่อมต่อแล้ว"
   },
+  "productReleaseModal": {
+    "eyebrow": "มีอะไรใหม่ใน Vyact",
+    "close": "ปิดข่าวสารใหม่",
+    "confirm": "เข้าใจแล้ว",
+    "viewDetails": "ดูรายละเอียด"
+  },
   "commandPalette": {
     "searchPlaceholder": "ค้นหาหรือเริ่มแชต",
     "quickActions": "คำสั่งด่วน",

@@ -36,7 +36,9 @@ OLLAMA_PROGRESS_PATTERN = re.compile(r"\b(\d{1,3})%")
 def start_background_services_after_setup() -> None:
     """Start services skipped during the first-run installation lifespan."""
     from services.notification_polling import start_notification_polling
+    from services.product_release_polling import start_product_release_polling
     start_notification_polling()
+    start_product_release_polling()
 
 
 def is_japanese_system_language() -> bool:

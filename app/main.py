@@ -345,7 +345,9 @@ async def lifespan(app: FastAPI):
 
     if es_available and SETUP_DONE.exists():
         from services.notification_polling import start_notification_polling
+        from services.product_release_polling import start_product_release_polling
         start_notification_polling()
+        start_product_release_polling()
         start_external_data_scheduler()
 
     yield
@@ -360,6 +362,12 @@ async def lifespan(app: FastAPI):
         await stop_notification_polling()
     except Exception as e:
         logger.warning("[notifications] Shutdown cleanup failed: %s", e)
+
+    try:
+        from services.product_release_polling import stop_product_release_polling
+        await stop_product_release_polling()
+    except Exception as e:
+        logger.warning("[product-releases] Shutdown cleanup failed: %s", e)
 
     try:
         from services.plugin_manager import shutdown_loaded_plugins

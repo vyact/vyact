@@ -542,6 +542,12 @@
     "googleAccountUnavailableTitle": "无法打开 Google 账号",
     "googleAccountUnavailableMessage": "此通知对应的账号已被移除或断开连接。"
   },
+  "productReleaseModal": {
+    "eyebrow": "Vyact 最新动态",
+    "close": "关闭最新动态",
+    "confirm": "知道了",
+    "viewDetails": "查看详情"
+  },
   "commandPalette": {
     "searchPlaceholder": "搜索或开始聊天",
     "quickActions": "快速操作",

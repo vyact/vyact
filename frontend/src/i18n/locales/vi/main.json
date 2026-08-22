@@ -542,6 +542,12 @@
     "googleAccountUnavailableTitle": "Không thể mở tài khoản Google",
     "googleAccountUnavailableMessage": "Tài khoản của thông báo này đã bị xóa hoặc ngắt kết nối."
   },
+  "productReleaseModal": {
+    "eyebrow": "Có gì mới trong Vyact",
+    "close": "Đóng thông báo mới",
+    "confirm": "Đã hiểu",
+    "viewDetails": "Xem chi tiết"
+  },
   "commandPalette": {
     "searchPlaceholder": "Tìm hoặc bắt đầu chat",
     "quickActions": "Thao tác nhanh",

@@ -1,4 +1,4 @@
-import {Bell, CalendarDays, CheckCircle2, FileText, Info, Mail, TriangleAlert} from 'lucide-react';
+import {Bell, CalendarDays, CheckCircle2, FileText, Info, Mail, Sparkles, TriangleAlert} from 'lucide-react';
 import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {useTranslation} from 'react-i18next';
@@ -6,6 +6,7 @@ import {api} from '../../services/api';
 import {getConfiguredGoogleWorkspaceAccountIds, refreshGoogleWorkspaceStatus} from '../../services/googleWorkspaceStatus';
 import {playNotificationSound} from '../../utils/notificationSound';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
+import ProductReleaseModal from './ProductReleaseModal';
 import './NotificationCenter.css';
 
 type NotificationItem = {
@@ -19,6 +20,9 @@ type NotificationItem = {
     occurred_at?: string;
     account_id?: string;
     account_email?: string;
+    translations?: Record<string, {title?: string; message?: string}>;
+    url?: string;
+    important?: boolean;
 };
 const PAGE_SIZE = 30;
 const POPOVER_GAP = 6;
@@ -59,6 +63,7 @@ function NotificationTypeIcon({type}: {type: string}) {
         : type === 'document' || type === 'file' ? FileText
             : type === 'success' || type === 'task_complete' ? CheckCircle2
                 : type === 'warning' || type === 'error' ? TriangleAlert
+                    : type === 'product_release' ? Sparkles
                     : type === 'system' ? Info : Bell;
     return <Icon size={18} strokeWidth={2} aria-hidden="true"/>;
 }
@@ -71,6 +76,18 @@ function formatNotificationDate(value: string, locale: string): string {
         hour: 'numeric',
         minute: '2-digit',
     });
+}
+
+function localizeNotification(item: NotificationItem, language: string): {title: string; message: string} {
+    const translations = item.translations;
+    if (!translations) return {title: item.title, message: item.message};
+    const baseLanguage = language.toLowerCase().split('-')[0];
+    const translation = translations[language] || translations[baseLanguage]
+        || translations.en || translations.ko || Object.values(translations)[0];
+    return {
+        title: translation?.title || item.title,
+        message: translation?.message || item.message,
+    };
 }
 
 function resolveNotificationGoogleAccountId(
@@ -112,6 +129,7 @@ export default function NotificationCenter({open, onOpenChange}: NotificationCen
     const [total, setTotal] = useState(0);
     const [unread, setUnread] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [selectedRelease, setSelectedRelease] = useState<NotificationItem | null>(null);
     const [popoverPosition, setPopoverPosition] = useState({top: 0, right: VIEWPORT_MARGIN, maxHeight: MAX_POPOVER_HEIGHT});
     const loadingRef = useRef(false);
     const pendingRefreshRef = useRef(false);
@@ -227,6 +245,11 @@ export default function NotificationCenter({open, onOpenChange}: NotificationCen
     }, [onOpenChange, open]);
 
     const selectNotification = useCallback(async (item: NotificationItem) => {
+        if (item.type === 'product_release') {
+            setSelectedRelease(item);
+            onOpenChange(false);
+            return;
+        }
         if (item.account_id && (item.type === 'google_mail' || item.type === 'google_calendar')) {
             // 연결 직후에는 캐시가 이전 슬롯 ID를 유지할 수 있어 매번 최신 상태를
             // 확인한다. 특히 계정 삭제 후 같은 Google 계정을 다시 추가한 경우다.
@@ -293,16 +316,22 @@ export default function NotificationCenter({open, onOpenChange}: NotificationCen
                 if (target.scrollHeight - target.scrollTop - target.clientHeight < 48 && items.length < total) void load(items.length);
             }}>
                 {!items.length && !loading && <p>{t('notificationCenter.empty')}</p>}
-                {items.map(item => <button key={item.id}
+                {items.map(item => {
+                    const localizedItem = localizeNotification(item, i18n.language);
+                    return <button key={item.id}
                     className={`notification-center-item${item.is_read ? '' : ' unread'}`}
                     onClick={() => void selectNotification(item)}>
                     <span className="notification-center-item-icon"><NotificationTypeIcon type={item.type}/></span>
                     <span className="notification-center-item-content">
-                        <strong>{item.account_email ? `[${item.account_email.split('@')[0]}] ` : ''}{item.title}</strong>
-                        <span>{item.message}</span>
-                        <small>{formatNotificationDate(item.occurred_at || item.created_at, i18n.language)}</small>
+                        <strong>{item.account_email ? `[${item.account_email.split('@')[0]}] ` : ''}{localizedItem.title}</strong>
+                        <span>{localizedItem.message}</span>
+                        <small>{formatNotificationDate(
+                            item.type === 'product_release' ? item.created_at : item.occurred_at || item.created_at,
+                            i18n.language,
+                        )}</small>
                     </span>
-                </button>)}
+                </button>;
+                })}
             </div>
         </div>;
 
@@ -314,5 +343,14 @@ export default function NotificationCenter({open, onOpenChange}: NotificationCen
             </button>
         </div>
         {open && createPortal(popover, document.body)}
+        {selectedRelease && (() => {
+            const localizedRelease = localizeNotification(selectedRelease, i18n.language);
+            return <ProductReleaseModal
+                title={localizedRelease.title}
+                message={localizedRelease.message}
+                url={selectedRelease.url}
+                important={selectedRelease.important}
+                onClose={() => setSelectedRelease(null)}/>;
+        })()}
     </>;
 }

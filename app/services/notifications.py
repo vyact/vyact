@@ -66,6 +66,10 @@ async def create_notification(
     update_only: bool = False,
     account_id: str = "",
     account_email: str = "",
+    translations: dict | None = None,
+    url: str = "",
+    important: bool = False,
+    replace_existing: bool = False,
 ) -> bool:
     es = get_es()
     notification_id = f"{notification_type}:{account_id}:{source_id}"
@@ -85,10 +89,39 @@ async def create_notification(
             document["account_email"] = account_email
         if occurred_at:
             document["occurred_at"] = occurred_at
+        if translations:
+            document["translations"] = translations
+        if url:
+            document["url"] = url
+        if important:
+            document["important"] = True
         await es.index(index=NOTIFICATIONS_INDEX, id=notification_id, op_type="create", document=document, refresh=True)
         publish_notification_change()
         return True
     except ConflictError:
+        if replace_existing:
+            updated_document = {
+                "title": title,
+                "message": message,
+                "translations": translations or {},
+                "url": url,
+                "important": important,
+            }
+            if occurred_at:
+                updated_document["occurred_at"] = occurred_at
+            existing = await es.get(index=NOTIFICATIONS_INDEX, id=notification_id)
+            existing_document = existing.get("_source", {})
+            if all(existing_document.get(key) == value for key, value in updated_document.items()):
+                return False
+            updated_document["is_read"] = False
+            await es.update(
+                index=NOTIFICATIONS_INDEX,
+                id=notification_id,
+                doc=updated_document,
+                refresh=True,
+            )
+            publish_notification_change()
+            return False
         if occurred_at:
             await es.update(index=NOTIFICATIONS_INDEX, id=notification_id, doc={"occurred_at": occurred_at}, refresh=True)
             publish_notification_change()

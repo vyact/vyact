@@ -542,6 +542,12 @@
     "googleAccountUnavailableTitle": "Google アカウントを開けません",
     "googleAccountUnavailableMessage": "この通知のアカウントは削除されたか、接続が解除されています。"
   },
+  "productReleaseModal": {
+    "eyebrow": "Vyact の新着情報",
+    "close": "新着情報を閉じる",
+    "confirm": "確認",
+    "viewDetails": "詳しく見る"
+  },
   "commandPalette": {
     "searchPlaceholder": "検索またはチャット開始",
     "quickActions": "クイック操作",

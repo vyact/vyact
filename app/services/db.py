@@ -223,6 +223,9 @@ async def ensure_index():
                     "title": {"type": "text"}, "message": {"type": "text"},
                     "is_read": {"type": "boolean"}, "created_at": {"type": "date"},
                     "occurred_at": {"type": "date"},
+                    "translations": {"type": "object", "enabled": False},
+                    "url": {"type": "keyword", "index": False},
+                    "important": {"type": "boolean"},
                 }},
             )
             logger.info("notifications 인덱스 생성 완료")
@@ -232,6 +235,9 @@ async def ensure_index():
                 properties={
                     "account_id": {"type": "keyword"},
                     "account_email": {"type": "keyword"},
+                    "translations": {"type": "object", "enabled": False},
+                    "url": {"type": "keyword", "index": False},
+                    "important": {"type": "boolean"},
                 },
             )
 

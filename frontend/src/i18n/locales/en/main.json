@@ -542,6 +542,12 @@
     "googleAccountUnavailableTitle": "Google account unavailable",
     "googleAccountUnavailableMessage": "The account for this notification was removed or disconnected."
   },
+  "productReleaseModal": {
+    "eyebrow": "What's new in Vyact",
+    "close": "Close announcement",
+    "confirm": "Got it",
+    "viewDetails": "Learn more"
+  },
   "commandPalette": {
     "searchPlaceholder": "Search or start chatting",
     "quickActions": "Quick Actions",
