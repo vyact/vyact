@@ -3,9 +3,9 @@
 
   # Vyact
 
-  **Vyact is an open-source, local-first AI workspace for Ollama, RAG, AI agents, document intelligence, and Google Workspace.**
+  **Vyact is an open-source, local-first personal AI workspace for Ollama, RAG, AI agents, document intelligence, and Google Workspace.**
 
-  ### Your private AI workspace for conversations, knowledge, and getting work done.
+  ### Your private workspace for conversations, knowledge, and getting work done.
 
   **Turn your files, notes, email, and everyday tools into useful AI context—without leaving your workflow.**
 

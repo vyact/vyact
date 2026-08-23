@@ -153,6 +153,8 @@
 }
 
 .memo-icon-btn {
+    width: 24px;
+    height: 24px;
     background: none;
     border: none;
     cursor: pointer;
@@ -160,14 +162,15 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 4px;
-    border-radius: 3px;
-    opacity: 0.72;
+    padding: 0;
+    border-radius: 5px;
+    opacity: 0.68;
+    transition: color 0.15s ease, opacity 0.15s ease;
 }
 
 .memo-icon-btn svg {
-    width: 14px;
-    height: 14px;
+    width: 15px;
+    height: 15px;
 }
 
 .memo-icon-btn:hover {
@@ -180,34 +183,86 @@
     color: var(--danger);
 }
 
-.memo-item-actions {
-    display: flex;
+.memo-more-btn {
+    display: inline-flex;
+    width: 24px;
+    height: 24px;
     align-items: center;
-    gap: 2px;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: 5px;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    opacity: 0.72;
+    transition: color 0.15s ease, opacity 0.15s ease;
 }
+
+.memo-more-btn svg {
+    width: 17px;
+    height: 17px;
+}
+
+.memo-more-btn:hover {
+    color: var(--accent);
+    opacity: 1;
+}
+
+.memo-actions-popup {
+    min-width: 168px;
+    padding: 5px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--surface2);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.42);
+}
+
+.memo-action-menu-item {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.memo-action-menu-item:hover { background: var(--surface); }
+.memo-action-menu-item svg { width: 16px; height: 16px; flex: 0 0 auto; }
+.memo-action-menu-item--danger { color: var(--del-fg-soft); }
+.memo-action-menu-item--danger:hover { background: var(--del-bg-hover); color: var(--del-fg); }
 
 .memo-item-actions .knowledge-collection-attach-select {
     display: inline-flex;
     align-items: center;
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
 }
 
 .memo-item-actions .knowledge-collection-attach-trigger {
-    width: 22px;
-    height: 22px;
-    min-height: 22px;
-    padding: 4px;
+    width: 24px;
+    height: 24px;
+    min-height: 24px;
+    padding: 0;
     border: 0;
-    border-radius: 3px;
+    border-radius: 5px;
     background: none;
     color: var(--muted);
-    opacity: 0.72;
+    opacity: 0.68;
+    transition: color 0.15s ease, opacity 0.15s ease;
 }
 
 .memo-item-actions .knowledge-collection-attach-trigger svg {
-    width: 14px;
-    height: 14px;
+    width: 15px;
+    height: 15px;
 }
 
 .memo-item-actions .knowledge-collection-attach-trigger:hover,

@@ -15,10 +15,11 @@ import { Details, DetailsSummary, DetailsContent } from '@tiptap/extension-detai
 import { Table, TableRow, TableHeader, TableCell } from '@tiptap/extension-table';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
-import { AlignCenter, AlignLeft, AlignRight, FileText, ImagePlus, Link as LinkIcon, LoaderCircle, Paperclip, Pencil, Search, Table2, Trash2, X } from 'lucide-react';
+import { AlignCenter, AlignLeft, AlignRight, Ellipsis, FileText, ImagePlus, Link as LinkIcon, LoaderCircle, Paperclip, Pencil, Search, Table2, Trash2, X } from 'lucide-react';
 
 import { api } from '../../services/api';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
+import ActionMenu from '../common/ActionMenu/ActionMenu';
 import KnowledgeCollectionAttachSelect from '../KnowledgeCollectionsModal/KnowledgeCollectionAttachSelect';
 import ImageViewer from '../ImageViewer/ImageViewer';
 import './MemoModal.css';
@@ -798,6 +799,7 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; title: string } | null>(null);
     const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [memoActionsId, setMemoActionsId] = useState<string | null>(null);
     const [editingId, setEditingId] = useState<string | null>(null); // null = 새 메모
     const [editingHtml, setEditingHtml] = useState('');
     const [isEditing, setIsEditing] = useState(false);
@@ -846,6 +848,12 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
             if (e.key !== 'Escape') return;
+            if (deleteConfirm) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                setDeleteConfirm(null);
+                return;
+            }
             if (isEditing) {
                 // 포커스가 툴바·사이드바로 옮겨져도 전역 Esc 핸들러가 편집 모달을 닫지 못하게 한다.
                 e.preventDefault();
@@ -858,7 +866,7 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
         };
         window.addEventListener('keydown', handler, true);
         return () => window.removeEventListener('keydown', handler, true);
-    }, [isEditing, onClose]);
+    }, [deleteConfirm, isEditing, onClose]);
 
     const handleNew = () => {
         setIsEditing(false); // 기존 편집 취소
@@ -1053,7 +1061,10 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
                                 key={memo.id}
                                 className={`memo-item ${((isEditing ? editingId : selectedId) === memo.id) ? 'selected' : ''} ${isEditing && editingId === memo.id ? 'editing' : ''} ${isEditing && editingId !== memo.id ? 'locked' : ''}`}
                                 onClick={() => {
-                                    if (!isEditing) setSelectedId(memo.id);
+                                    if (!isEditing) {
+                                        setSelectedId(memo.id);
+                                        setMemoActionsId(null);
+                                    }
                                 }}
                                 onDoubleClick={() => {
                                     if (!isEditing) void handleEdit(memo.id);
@@ -1063,15 +1074,11 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
                                 <div className="memo-item-title">{memo.title || t('memoModal.untitled')}</div>
                                 <div className="memo-item-meta">
                                     <span>{formatDate(memo.updated_at)}</span>
-                                    <div className="memo-item-actions">
-                                        <button className="memo-icon-btn" disabled={isEditing} onClick={(e) => { e.stopPropagation(); if (!isEditing) void handleEdit(memo.id); }} aria-label={t('memoModal.edit')}>
-                                            <Pencil aria-hidden="true" />
-                                        </button>
-                                        <KnowledgeCollectionAttachSelect source={{source_type: 'memo', source_id: memo.id}} onCreateCollection={onClose}/>
-                                        <button className="memo-icon-btn memo-icon-btn-danger" disabled={isEditing} onClick={(e) => { if (!isEditing) handleDelete(memo.id, memo.title, e); }} aria-label={t('memoModal.delete')}>
-                                            <Trash2 aria-hidden="true" />
-                                        </button>
-                                    </div>
+                                    <ActionMenu className="memo-actions-menu" isOpen={memoActionsId === memo.id} onOpenChange={open => setMemoActionsId(open ? memo.id : null)} disabled={isEditing} ariaLabel={t('common.more')} triggerClassName="memo-more-btn" menuClassName="memo-actions-popup" trigger={<Ellipsis aria-hidden="true" />}>
+                                        <button className="memo-action-menu-item" onClick={() => { setMemoActionsId(null); if (!isEditing) void handleEdit(memo.id); }}><Pencil aria-hidden="true" />{t('memoModal.edit')}</button>
+                                        <KnowledgeCollectionAttachSelect source={{source_type: 'memo', source_id: memo.id}} onCreateCollection={onClose} onSelectionComplete={() => setMemoActionsId(null)} menuItem/>
+                                        <button className="memo-action-menu-item memo-action-menu-item--danger" onClick={(e) => { setMemoActionsId(null); if (!isEditing) handleDelete(memo.id, memo.title, e); }}><Trash2 aria-hidden="true" />{t('memoModal.delete')}</button>
+                                    </ActionMenu>
                                 </div>
                             </div>
                         ))}

@@ -17,5 +17,6 @@
   "deselectAll": "전체 해제",
   "none": "없음",
   "notSet": "설정 안됨",
-  "retry": "재시도"
+  "retry": "재시도",
+  "more": "더보기"
 }
