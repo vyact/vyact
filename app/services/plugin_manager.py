@@ -5,6 +5,7 @@ plugin may register internal LLM tools and MCP catalog entries without running
 a separate MCP server.
 """
 import asyncio
+import hashlib
 import importlib.util
 import json
 import re
@@ -644,6 +645,23 @@ async def uninstall_plugin(plugin_id: str) -> dict[str, Any]:
     return manifest
 
 
+def _build_plugin_frontend_url(
+    plugin_id: str,
+    plugin_dir: Path,
+    frontend_entry: Any,
+) -> str | None:
+    if not isinstance(frontend_entry, str) or frontend_entry.startswith("official:"):
+        return None
+    frontend_file = (plugin_dir / frontend_entry).resolve()
+    if not frontend_file.is_file():
+        return None
+    frontend_digest = hashlib.sha256(frontend_file.read_bytes()).hexdigest()[:12]
+    return (
+        f"/api/plugins/{plugin_id}/frontend/{Path(frontend_entry).name}"
+        f"?v={frontend_digest}"
+    )
+
+
 def list_installed_plugins() -> list[dict[str, Any]]:
     installed_plugins: list[dict[str, Any]] = []
     for manifest_path in sorted(PLUGINS_DIR.glob(f"*/{MANIFEST_NAME}")):
@@ -655,6 +673,11 @@ def list_installed_plugins() -> list[dict[str, Any]]:
         plugin_id = manifest["id"]
         frontend_entry = manifest.get("frontend")
         active = plugin_id in _loaded_plugins
+        frontend_url = (
+            _build_plugin_frontend_url(plugin_id, manifest_path.parent, frontend_entry)
+            if active
+            else None
+        )
         installed_plugins.append({
             "id": plugin_id,
             "name": manifest["name"],
@@ -663,13 +686,7 @@ def list_installed_plugins() -> list[dict[str, Any]]:
             "mcp_types": manifest.get("mcp_types", []),
             "data_indices": manifest.get("data_indices", []),
             "frontend": frontend_entry,
-            "frontend_url": (
-                f"/api/plugins/{plugin_id}/frontend/{Path(frontend_entry).name}"
-                if active
-                and isinstance(frontend_entry, str)
-                and not frontend_entry.startswith("official:")
-                else None
-            ),
+            "frontend_url": frontend_url,
             "removal_items": manifest.get("removal_items", []),
             "settings": manifest.get("settings"),
             "active": active,

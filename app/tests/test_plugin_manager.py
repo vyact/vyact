@@ -1,11 +1,42 @@
 import sys
+import tempfile
 import unittest
+from pathlib import Path
 from types import ModuleType
 
-from services.plugin_manager import _deactivate_plugin_runtime, _plugin_package_name
+from services.plugin_manager import (
+    _build_plugin_frontend_url,
+    _deactivate_plugin_runtime,
+    _plugin_package_name,
+)
 
 
 class PluginManagerTests(unittest.TestCase):
+    def test_frontend_url_changes_when_bundle_content_changes(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            plugin_dir = Path(temporary_directory)
+            frontend_file = plugin_dir / "frontend" / "dist" / "index.js"
+            frontend_file.parent.mkdir(parents=True)
+            frontend_file.write_text("export default 'first';", encoding="utf-8")
+
+            first_url = _build_plugin_frontend_url(
+                "com.vyact.test",
+                plugin_dir,
+                "frontend/dist/index.js",
+            )
+            frontend_file.write_text("export default 'second';", encoding="utf-8")
+            second_url = _build_plugin_frontend_url(
+                "com.vyact.test",
+                plugin_dir,
+                "frontend/dist/index.js",
+            )
+
+            self.assertRegex(
+                first_url or "",
+                r"^/api/plugins/com\.vyact\.test/frontend/index\.js\?v=[0-9a-f]{12}$",
+            )
+            self.assertNotEqual(first_url, second_url)
+
     def test_deactivate_removes_plugin_package_and_submodules(self):
         plugin_id = "com.vyact.naver-news"
         package_name = _plugin_package_name(plugin_id)
