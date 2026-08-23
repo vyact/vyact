@@ -5,7 +5,8 @@
     "afternoon": "下午好",
     "evening": "晚上好",
     "night": "夜深了",
-    "withName": "{{name}}，{{greeting}}"
+    "withName": "{{name}}，{{greeting}}",
+    "project": "想在 {{projectName}} 中创建什么？"
   },
   "chatInput": {
     "placeholder": "随便问… / 命令 · @ 提示词",

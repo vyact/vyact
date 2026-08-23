@@ -51,6 +51,7 @@ interface SidebarProps {
     onSettingsClosed?: () => void;
     activeProjectId?: string | null;
     onProjectChange?: (projectId: string | null) => void;
+    onActiveProjectNameChange?: (projectName: string) => void;
 }
 
 const ProviderIcon: React.FC<{ provider: string; active: boolean }> = ({provider, active}) => {
@@ -247,6 +248,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                              onSettingsClosed,
                                              activeProjectId,
                                              onProjectChange,
+                                             onActiveProjectNameChange,
                                          }) => {
     const {t} = useTranslation('main');
     const [collapsedInternal] = useState(true);
@@ -270,6 +272,10 @@ const Sidebar: React.FC<SidebarProps> = ({
             projectsRequestRef.current = request;
         }
     }, []);
+    useEffect(() => {
+        const activeProjectName = projects.find(project => project.id === activeProjectId)?.name || '';
+        onActiveProjectNameChange?.(activeProjectName);
+    }, [activeProjectId, onActiveProjectNameChange, projects]);
     const createProject = async (name: string, folderPaths: string[], color: string) => { const project = await api.createProject(name, folderPaths, color); setProjects(prev => [project, ...prev]); setProjectsExpanded(true); localStorage.setItem('sidebar-projects-expanded', 'true'); setExpandedProjectIds(previous => { const next = new Set(previous); next.add(project.id); storeExpandedProjectIds(next); return next; }); onProjectChange?.(project.id); onNewConversation(); };
     const saveProjectDetails = async (name: string, folderPaths: string[], color: string) => {
         if (!editingProject) return;

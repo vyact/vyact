@@ -5,7 +5,8 @@
     "afternoon": "สวัสดีตอนบ่าย",
     "evening": "สวัสดีตอนเย็น",
     "night": "ดึกแล้ว",
-    "withName": "{{greeting}}, {{name}}"
+    "withName": "{{greeting}}, {{name}}",
+    "project": "มาสร้างอะไรใน {{projectName}} กันดี?"
   },
   "chatInput": {
     "placeholder": "ถามได้เลย… / คำสั่ง · @ พรอมต์",

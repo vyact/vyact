@@ -5,7 +5,8 @@
     "afternoon": "좋은 오후예요",
     "evening": "좋은 저녁이에요",
     "night": "늦은 시간이네요",
-    "withName": "{{name}}님, {{greeting}}"
+    "withName": "{{name}}님, {{greeting}}",
+    "project": "{{projectName}}에서 무엇을 만들어볼까요?"
   },
   "chatInput": {
     "placeholder": "무엇이든 물어보세요… / 명령어 · @ 프롬프트",

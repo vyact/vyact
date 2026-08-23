@@ -5,7 +5,8 @@
     "afternoon": "Good afternoon",
     "evening": "Good evening",
     "night": "Burning the midnight oil",
-    "withName": "{{greeting}}, {{name}}"
+    "withName": "{{greeting}}, {{name}}",
+    "project": "What shall we create in {{projectName}}?"
   },
   "chatInput": {
     "placeholder": "Ask anything… / commands · @ prompts",

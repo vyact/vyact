@@ -5,7 +5,8 @@
     "afternoon": "Chào buổi chiều",
     "evening": "Chào buổi tối",
     "night": "Khuya rồi",
-    "withName": "{{greeting}}, {{name}}"
+    "withName": "{{greeting}}, {{name}}",
+    "project": "Chúng ta sẽ tạo gì trong {{projectName}}?"
   },
   "chatInput": {
     "placeholder": "Hỏi bất cứ gì… / lệnh · @ prompt",

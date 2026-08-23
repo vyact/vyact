@@ -5,7 +5,8 @@
     "afternoon": "こんにちは",
     "evening": "こんばんは",
     "night": "夜遅くですね",
-    "withName": "{{name}}さん、{{greeting}}"
+    "withName": "{{name}}さん、{{greeting}}",
+    "project": "{{projectName}}で何を作りましょうか？"
   },
   "chatInput": {
     "placeholder": "何でも聞いてください… / コマンド · @ プロンプト",

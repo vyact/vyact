@@ -222,6 +222,7 @@ const handleScreenshot = async () => {
 };
 
 const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
+    const [activeProjectName, setActiveProjectName] = useState('');
     const {t} = useTranslation('main');
     // ── UI 상태 ──────────────────────────────────────────────────────
     const [sidebarCollapsed, setSidebarCollapsed] = useState(getStoredSidebarCollapsed);
@@ -627,6 +628,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                             onProjectChange={projectId => {
                                 conv.setActiveProjectId(projectId);
                             }}
+                            onActiveProjectNameChange={setActiveProjectName}
                             collapsed={sidebarCollapsed}
                             hoverOpen={sidebarHover}
                             onHoverEnter={handleSidebarHoverEnter}
@@ -647,6 +649,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                                 streamingMessageId={chat.streamingMessageId}
                                 responseStartedAt={chat.responseStartedAt}
                                 isEmpty={conv.messages.length === 0}
+                                projectName={activeProjectName}
                                 onRetry={handleRetry}
                                 imageGenProgress={chat.imageGenProgress}
                                 imageGenMessage={chat.imageGenMessage}

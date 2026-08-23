@@ -72,7 +72,7 @@ const buildConversationTurns = (messages: MessageType[]): ConversationTurn[] => 
     return turns;
 };
 
-const WelcomeGreeting: React.FC = () => {
+const WelcomeGreeting: React.FC<{projectName?: string}> = ({projectName}) => {
     const {t} = useTranslation('main');
     const [nickname, setNickname] = useState('');
 
@@ -86,7 +86,9 @@ const WelcomeGreeting: React.FC = () => {
     return (
         <div className="welcome">
             <h2 className="welcome-title">
-                {nickname ? t('greeting.withName', {name: nickname, greeting}) : greeting}
+                {projectName
+                    ? t('greeting.project', {projectName})
+                    : nickname ? t('greeting.withName', {name: nickname, greeting}) : greeting}
             </h2>
             <p className="welcome-shortcut-hint">
                 {t('shortcutModal.hint')}
@@ -99,6 +101,7 @@ interface ChatAreaProps {
     messages: MessageType[];
     isLoading: boolean;
     isEmpty: boolean;
+    projectName?: string;
     onRetry?: () => void;
     imageGenProgress?: number;
     imageGenMessage?: string;
@@ -131,6 +134,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                                                messages,
                                                isLoading,
                                                isEmpty,
+                                               projectName,
                                                onRetry,
                                                imageGenProgress = 0,
                                                imageGenMessage = '',
@@ -465,7 +469,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             <div className="chat-col">
                 <div className="chat-area" ref={chatRef}>
                     <div className="chat-area-content">
-                        {isEmpty && !isLoading && <WelcomeGreeting/>}
+                        {isEmpty && !isLoading && <WelcomeGreeting projectName={projectName}/>}
 
                         {messages.map((msg, idx) => (
                             <div
