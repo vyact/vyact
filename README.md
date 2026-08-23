@@ -132,12 +132,26 @@ Download the installer for **Apple Silicon Macs (M1 or later)** or **Windows** f
 
 ### Before your first launch
 
-Vyact includes its own Python 3.12 runtime, so hosted providers and remote custom LLM endpoints do not require Ollama. Install [Ollama](https://ollama.com/download) only when you want to use the local Ollama provider or connect a custom LLM to a local Ollama server.
+Vyact includes its own Python 3.12 runtime, so hosted providers and remote custom LLM endpoints do not require Ollama. **Ollama is optional, but we recommend installing it** for the simplest local-first setup and to keep AI requests on your machine when using local models.
+
+On an Apple Silicon Mac, install Ollama with [Homebrew](https://brew.sh/):
+
+```bash
+brew install ollama
+```
+
+Then start Ollama before launching Vyact:
+
+```bash
+ollama serve
+```
+
+If you do not use Homebrew, download the macOS app from the [Ollama website](https://ollama.com/download). Windows users can install Ollama from the same download page.
 
 | Platform | Required | Optional |
 | --- | --- | --- |
-| macOS (Apple Silicon) | None | **Local LLM**<br>• [Ollama](https://ollama.com/download), only when using local models<br><br>**Elasticsearch**<br>• Docker Desktop for container mode; native installation is also available<br><br>**Kokoro TTS**<br>• [Homebrew](https://brew.sh/) installs `espeak-ng` |
-| Windows | None | **Local LLM**<br>• [Ollama](https://ollama.com/download), only when using local models<br><br>**Elasticsearch**<br>• Docker Desktop for container mode; native installation is also available<br><br>**Kokoro TTS**<br>• [Chocolatey](https://chocolatey.org/) or `winget` installs `espeak-ng` |
+| macOS (Apple Silicon) | None | **Local LLM (recommended)**<br>• [Ollama](https://ollama.com/download) for local models; install with `brew install ollama`<br><br>**Elasticsearch**<br>• Docker Desktop for container mode; native installation is also available<br><br>**Kokoro TTS**<br>• [Homebrew](https://brew.sh/) installs `espeak-ng` |
+| Windows | None | **Local LLM (recommended)**<br>• [Ollama](https://ollama.com/download) for local models<br><br>**Elasticsearch**<br>• Docker Desktop for container mode; native installation is also available<br><br>**Kokoro TTS**<br>• [Chocolatey](https://chocolatey.org/) or `winget` installs `espeak-ng` |
 
 On both Apple Silicon Macs and Windows, Elasticsearch can run through Docker Desktop or use Vyact's native installation option. The other items are needed only when you use their corresponding features. On first launch, Vyact prepares the components required by the selected configuration.
 
