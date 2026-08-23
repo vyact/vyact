@@ -182,14 +182,18 @@
 
 .memo-item-actions {
     display: flex;
+    align-items: center;
     gap: 2px;
 }
 
 .memo-item-actions .knowledge-collection-attach-select {
+    display: inline-flex;
+    align-items: center;
+    width: 22px;
     height: 22px;
 }
 
-.memo-item-actions .custom-select-wrap.align-right.knowledge-collection-attach-select .custom-select-trigger {
+.memo-item-actions .knowledge-collection-attach-trigger {
     width: 22px;
     height: 22px;
     min-height: 22px;
@@ -197,15 +201,17 @@
     border: 0;
     border-radius: 3px;
     background: none;
+    color: var(--muted);
     opacity: 0.72;
 }
 
-.memo-item-actions .custom-select-wrap.align-right.knowledge-collection-attach-select .custom-select-trigger svg {
+.memo-item-actions .knowledge-collection-attach-trigger svg {
     width: 14px;
     height: 14px;
 }
 
-.memo-item-actions .custom-select-wrap.align-right.knowledge-collection-attach-select .custom-select-trigger:hover {
+.memo-item-actions .knowledge-collection-attach-trigger:hover,
+.memo-item-actions .knowledge-collection-attach-trigger[aria-expanded='true'] {
     background: none;
     border: 0;
     color: var(--accent);
