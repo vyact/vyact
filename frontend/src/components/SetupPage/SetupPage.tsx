@@ -76,7 +76,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
     };
 
     const [isInstalling, setIsInstalling] = useState(false);
-    const [progress, setProgress] = useState(0);
+    const [progress, setProgress] = useState<number | null>(0);
 
     const [logs, setLogs] = useState<LogEntry[]>([]);
     const [errorLogs, setErrorLogs] = useState<string[]>([]);
@@ -97,7 +97,12 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
             if (searchMlxOnly && response.hardware.apple_silicon && response.models.some(model => model.runtime !== 'mlx')) {
                 response = await api.searchVyactModels(trimmedQuery, true);
             }
-            setHuggingFaceModels(response.models);
+            if (!response.hardware.apple_silicon) setMlxOnly(false);
+            setHuggingFaceModels(
+                response.hardware.apple_silicon
+                    ? response.models
+                    : response.models.filter(model => model.runtime !== 'mlx'),
+            );
             setVyactHardware(response.hardware);
             setMtpSupportedModels(response.mtp_supported);
         } catch (error) {
@@ -256,13 +261,14 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
 
         try {
             if (provider === 'vyact' && selectedHubModelFile) {
+                setProgress(null);
                 addLog('info', t('main:modelDownload.downloading'));
                 await api.streamVyactModelDownload(
                     selectedHubModelFile.repository,
                     selectedHubModelFile.filename,
                     (message, downloadProgress) => {
                         addLog('log', message);
-                        if (downloadProgress != null) setProgress(downloadProgress);
+                        setProgress(downloadProgress ?? null);
                     },
                     selectedHubModelFile.revision,
                     selectedHubModelFile.runtime,
@@ -476,8 +482,8 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                     <div className="progress-wrap active">
                         <div className="pbar-bg">
                             <div
-                                className="pbar-fill"
-                                style={{ width: `${progress}%` }}
+                                className={`pbar-fill${progress == null ? ' is-indeterminate' : ''}`}
+                                style={progress == null ? undefined : {width: `${progress}%`}}
                             />
                         </div>
 

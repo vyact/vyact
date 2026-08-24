@@ -429,6 +429,16 @@
     transition: width 0.35s;
 }
 
+.pbar-fill.is-indeterminate {
+    width: 34%;
+    animation: setup-progress-indeterminate 1.15s ease-in-out infinite;
+}
+
+@keyframes setup-progress-indeterminate {
+    from { transform: translateX(-110%); }
+    to { transform: translateX(310%); }
+}
+
 @media (max-width: 580px) {
     .setup-page { padding: 14px; }
     .setup-card { padding: 22px 18px; border-radius: 18px; }
