@@ -23,8 +23,9 @@ LLM_INITIAL_NUM_CTX = 32768
 LLM_MAX_NUM_CTX = 65536 if IS_WINDOWS else 131072
 LLM_NUM_CTX = LLM_MAX_NUM_CTX
 
-# Local LLM 최대 출력 토큰
-LLM_NUM_PREDICT = 32768
+# Local LLM 최대 출력 토큰. 32K 컨텍스트의 1/4을 출력에 배정하고
+# 나머지는 시스템 프롬프트, RAG 문서, 대화 기록과 현재 질문에 사용한다.
+LLM_NUM_PREDICT = 8192
 
 # Claude 최대 출력 토큰
 LLM_MAX_TOKENS = 4096

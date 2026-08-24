@@ -4,6 +4,7 @@ import {useTranslation} from 'react-i18next';
 import {api, type VyactHardwareInfo, type VyactHubModel} from '../../services/api';
 import {inspectRemoteGguf, type GgufModelMetadata} from '../../utils/ggufMetadata';
 import {
+    formatCompactDownloads,
     formatModelBytes,
     getModelMemoryTone,
     getSelectableModelFiles,
@@ -365,7 +366,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                         {models.map(model => (
                             <article className="vyact-model-card" key={model.id}>
                                 <div className="vyact-model-card-heading">
-                                    <strong>{model.id}</strong><span>{t('modelSelector.monthlyDownloads')} {model.downloads.toLocaleString()}</span>
+                                    <strong>{model.id}</strong><span>{formatCompactDownloads(model.downloads)}</span>
                                 </div>
                                 <div className="vyact-model-files">
                                     {getSelectableModelFiles(model.files).map(filename => {

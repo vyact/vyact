@@ -1,10 +1,12 @@
 """
 main.py – FastAPI 앱 생성 + 라우터 등록 + Lifespan
 """
+import asyncio
 import os
 import locale
 import signal
 import warnings
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -121,7 +123,6 @@ async def warmup_kokoro_tts() -> bool:
             _get_pipeline,
             _unidic_installer,
         )
-        import asyncio
         loop = asyncio.get_running_loop()
         warmup_texts = {
             "a": "Hello", "b": "Hello", "e": "Hola", "f": "Bonjour",
@@ -212,17 +213,6 @@ async def lifespan(app: FastAPI):
     if not is_initial_setup:
         logger.info("[startup-status] models")
 
-    # 최초 설정 중 모델 다운로드는 Provider 선택 후 설치 단계에서 수행한다.
-    if not is_initial_setup:
-        import asyncio as _asyncio
-        from concurrent.futures import ThreadPoolExecutor as _TPE
-
-        def _load():
-            from reranker import load_reranker
-            load_reranker()
-
-        _asyncio.get_event_loop().run_in_executor(_TPE(max_workers=1), _load)
-
     if es_available:
         try:
             from agent import ensure_index, load_prompts_cache
@@ -282,6 +272,18 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.warning("Local model load failed: %s", e)
 
+    # MLX와 reranker는 둘 다 transformers 계열을 import한다. 앱 시작 시
+    # 별도 스레드에서 동시에 초기화하면 MLX의 lazy import가 일시적으로
+    # 실패할 수 있으므로, 선택된 로컬 LLM을 먼저 준비한 후 로드한다.
+    if not is_initial_setup:
+        def _load_reranker() -> None:
+            from reranker import load_reranker
+            load_reranker()
+
+        asyncio.get_running_loop().run_in_executor(
+            ThreadPoolExecutor(max_workers=1), _load_reranker,
+        )
+
     # MCP 서버 연결 (filesystem 등) — 실패해도 앱은 정상 동작
     try:
         from services.mcp_client import mcp_manager
@@ -336,7 +338,6 @@ async def lifespan(app: FastAPI):
         try:
             logger.info("[startup-status] stt")
             from routers.stt import _get_model
-            import asyncio
             loop = asyncio.get_running_loop()
             await loop.run_in_executor(None, _get_model)
             logger.info("[whisper] STT warm-up done")

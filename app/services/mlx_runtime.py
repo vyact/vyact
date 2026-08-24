@@ -154,7 +154,7 @@ def start_mlx_model(model_path: Path, context_size: int, debug_logging: bool = F
     try:
         import mlx_vlm  # noqa: F401
     except ImportError as error:
-        raise RuntimeError("The MLX runtime is not installed") from error
+        raise RuntimeError(f"The MLX runtime could not be imported: {error}") from error
     from services.vyact_runtime import stop_runtime
 
     stop_runtime()

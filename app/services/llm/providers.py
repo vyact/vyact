@@ -20,12 +20,23 @@ from .helpers import (
     image_attachment_path, load_image_data_urls, mime_type,
     history_for_openai, history_for_gemini, history_for_claude,
 )
+from .context_window import calculate_output_token_limit
 from .tools import (
     build_approval_rejection_instruction, build_tool_directive,
     to_openai_tools, to_gemini_tools, to_claude_tools,
 )
 from services.runtime_settings import get_runtime_settings
 from services.tool_approval import await_tool_approval
+
+def _local_max_tokens(messages: list[dict], provider_config: dict) -> int:
+    """Fit local output inside the model's shared input/output KV cache."""
+    runtime = get_runtime_settings()
+    return calculate_output_token_limit(
+        messages,
+        int(provider_config.get("context_size") or 32768),
+        runtime["history_chars_per_token"],
+        runtime["llm_num_predict"],
+    )
 
 
 async def _get_unified_tools(use_tools: bool):
@@ -105,6 +116,8 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
         for _round in range(TOOL_CALL_MAX_ROUNDS):
             body = {"model": model, "temperature": temperature,
                     "messages": messages, "tools": oa_tools}
+            if provider_config.get("is_local"):
+                body["max_tokens"] = _local_max_tokens(messages, provider_config)
             log_llm_call(call_reason, "openai", model, streaming=False, reasoning=reasoning,
                          is_tool_judgment=True, round_no=_round)
             resp = await client.post(base_url, headers=headers, json=body)
@@ -168,7 +181,7 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
     body = {"model": model, "temperature": temperature, "stream": True, "messages": messages}
     if provider_config.get("is_local"):
         runtime = get_runtime_settings()
-        body["max_tokens"] = runtime["llm_num_predict"]
+        body["max_tokens"] = _local_max_tokens(messages, provider_config)
         if runtime.get("top_p") is not None:
             body["top_p"] = runtime["top_p"]
         if provider_config.get("runtime") == "gguf":

@@ -60,7 +60,7 @@ type Tab = 'backup' | 'general' | 'runtime' | 'api' | 'externalData' | 'plugins'
 
 type RuntimeSettings = Record<string, number | null>;
 const DEFAULT_SETTINGS_TAB: Tab = 'general';
-const DEFAULT_RUNTIME_SETTINGS: RuntimeSettings = {llm_temperature: 0.2, llm_num_ctx: 131072, llm_num_predict: 32768, llm_max_tokens: 4096, top_k: null, top_p: null, history_token_budget: 32768, history_chars_per_token: 2, bge_num_ctx: 8192, document_chunk_size: 1200, document_chunk_overlap: 150};
+const DEFAULT_RUNTIME_SETTINGS: RuntimeSettings = {llm_temperature: 0.2, llm_num_ctx: 131072, llm_num_predict: 8192, llm_max_tokens: 4096, top_k: null, top_p: null, history_token_budget: 32768, history_chars_per_token: 2, bge_num_ctx: 8192, document_chunk_size: 1200, document_chunk_overlap: 150};
 const toRuntimeInputValues = (settings: RuntimeSettings): Record<string, string> => Object.fromEntries(
     Object.entries(settings).map(([key, value]) => [key, value === null ? '' : String(value)])
 );

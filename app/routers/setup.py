@@ -13,7 +13,7 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from agent import get_index_stats
+from agent import ensure_index, get_index_stats, load_prompts_cache
 from config import INSTALL_DIR, LOGS_DIR, SETUP_DONE, VENV_DIR, get_log_file
 from config.models import LLM_INITIAL_NUM_CTX, LLM_MAX_NUM_CTX
 from routers.deps import APP_DIR, load_config_async, save_config_async, sse, write_log
@@ -431,6 +431,25 @@ async def install(req: ModelSelectRequest):
                     return
                 yield sse(msg, "ok", 70)
 
+            # Preserve the optional Hugging Face token as soon as Elasticsearch is
+            # available. The remaining runtime/model preparation can take a long
+            # time or fail independently, and should not discard a token that the
+            # user already supplied in the setup form.
+            if req.type == "vyact" and huggingface_token:
+                try:
+                    await ensure_index()
+                    token_config = await load_config_async()
+                    token_config.setdefault("vyact_config", {})["huggingface_token"] = huggingface_token
+                    await save_config_async(token_config)
+                    saved_token_config = await load_config_async()
+                    if saved_token_config.get("vyact_config", {}).get("huggingface_token") != huggingface_token:
+                        raise RuntimeError("saved token could not be verified")
+                    logger.info("[setup] Hugging Face token saved after ES initialization")
+                except Exception as error:
+                    logger.exception("[setup] Failed to save Hugging Face token")
+                    yield sse(f"Hugging Face token save failed: {error}", "error", 0)
+                    return
+
             async for event, should_continue in _stream_common_runtime(installer):
                 yield event
                 if not should_continue:
@@ -438,7 +457,6 @@ async def install(req: ModelSelectRequest):
 
             # ES 인덱스 초기화
             try:
-                from agent import ensure_index, load_prompts_cache
                 from routers.skills import ensure_skills_index
                 await ensure_index()
                 await ensure_skills_index()

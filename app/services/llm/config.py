@@ -71,6 +71,7 @@ async def get_provider_config() -> dict:
                     "connection_name": "Vyact",
                     "model": config.get("model", provider_config.get("model", DEFAULT_MODEL)),
                     "runtime": provider_config.get("runtime", "gguf"),
+                    "context_size": provider_config.get("context_size", 32768),
                     "is_local": True,
                     "api_key": None,
                     "base_url": provider_config.get("base_url", VYACT_RUNTIME_URL),
