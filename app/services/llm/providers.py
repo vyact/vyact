@@ -17,7 +17,7 @@ from .config import (
     build_provider_headers, get_provider_config, log_llm_call, log_llm_interaction, log_tool_names, logger,
 )
 from .helpers import (
-    image_attachment_path, load_images_b64, mime_type,
+    image_attachment_path, load_image_data_urls, mime_type,
     history_for_openai, history_for_gemini, history_for_claude,
 )
 from .tools import (
@@ -66,12 +66,12 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
     그 안에 채워 넣는다 (호출자가 스트리밍 종료 후 읽어간다).
     """
     temperature = get_runtime_settings()["llm_temperature"]
-    images_b64 = load_images_b64(attachments)
-    if images_b64:
+    image_urls = load_image_data_urls(attachments)
+    if image_urls:
         content: list = [{"type": "text", "text": user_prompt}]
-        for b64 in images_b64:
+        for image_url in image_urls:
             content.append({"type": "image_url",
-                            "image_url": {"url": f"data:image/jpeg;base64,{b64}"}})
+                            "image_url": {"url": image_url}})
         user_msg = {"role": "user", "content": content}
     else:
         user_msg = {"role": "user", "content": user_prompt}

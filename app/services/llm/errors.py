@@ -22,15 +22,37 @@ def http_error_response_body(error: httpx.HTTPStatusError) -> str:
     return body
 
 
-def is_ollama_image_unsupported_error(error: httpx.HTTPStatusError) -> bool:
-    """Identify Ollama's stable 400 response for a text-only model."""
-    if error.response.status_code != 400:
+def is_model_image_unsupported_error(error: httpx.HTTPStatusError) -> bool:
+    """Identify text-only model errors from Ollama and OpenAI-compatible runtimes."""
+    if error.response.status_code not in (400, 422):
         return False
     try:
-        message = str(error.response.json().get("error", "")).strip().lower()
+        payload = error.response.json()
+        error_data = payload.get("error", payload) if isinstance(payload, dict) else payload
+        message = str(error_data.get("message", "")) if isinstance(error_data, dict) else str(error_data)
     except Exception:
-        return False
-    return message == OLLAMA_IMAGE_UNSUPPORTED_ERROR
+        try:
+            message = error.response.text
+        except Exception:
+            return False
+    normalized = " ".join(message.strip().lower().split())
+    if normalized == OLLAMA_IMAGE_UNSUPPORTED_ERROR:
+        return True
+    mentions_image = "image" in normalized or "vision" in normalized
+    unsupported = (
+        "does not support" in normalized
+        or "doesn't support" in normalized
+        or "not supported" in normalized
+        or "unsupported" in normalized
+        or "no image support" in normalized
+        or "no vision support" in normalized
+    )
+    return mentions_image and unsupported
+
+
+def is_ollama_image_unsupported_error(error: httpx.HTTPStatusError) -> bool:
+    """Backward-compatible alias for existing Ollama callers."""
+    return is_model_image_unsupported_error(error)
 
 
 def http_err_msg(e: httpx.HTTPStatusError, provider: str) -> str:

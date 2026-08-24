@@ -40,8 +40,46 @@ async def search_gguf_models(query: str, token: str | None = None, limit: int = 
     async with httpx.AsyncClient(timeout=20) as client:
         response = await client.get(f"{HF_API_URL}/models", params=params, headers=_headers(token))
         response.raise_for_status()
-    models = [model for item in response.json() if (model := _model_from_hub_item(item))]
+        search_items = response.json()
+        repository_ids = [
+            str(item.get("id", "")) for item in search_items
+            if isinstance(item, dict) and _REPO_ID_PATTERN.fullmatch(str(item.get("id", "")))
+        ]
+        detailed_items = await _fetch_model_details(client, repository_ids, token)
+    models = [
+        model for item in search_items
+        if isinstance(item, dict)
+        and (model := _model_from_hub_item(_merge_search_and_detail(item, detailed_items.get(str(item.get("id", ""))))))
+    ]
     return sorted(models, key=lambda model: model["downloads"], reverse=True)
+
+
+async def _fetch_model_details(
+        client: httpx.AsyncClient, repository_ids: list[str], token: str | None = None,
+) -> dict[str, dict]:
+    responses = await asyncio.gather(*(
+        client.get(
+            f"{HF_API_URL}/models/{quote(repository_id, safe='/')}",
+            params={"blobs": "true"},
+            headers=_headers(token),
+        )
+        for repository_id in repository_ids
+    ), return_exceptions=True)
+    return {
+        repository_id: response.json()
+        for repository_id, response in zip(repository_ids, responses)
+        if not isinstance(response, Exception) and response.is_success
+    }
+
+
+def _merge_search_and_detail(search_item: dict, detailed_item: dict | None) -> dict:
+    if not detailed_item:
+        return search_item
+    return {
+        **search_item,
+        **detailed_item,
+        "downloads": search_item.get("downloads", detailed_item.get("downloads", 0)),
+    }
 
 
 def _model_from_hub_item(item: dict) -> dict | None:
@@ -103,6 +141,29 @@ def _select_mtp_sidecar(item: dict, main_filename: str) -> tuple[str, int] | Non
     return filename, size
 
 
+def _select_vision_projector(item: dict, main_filename: str) -> tuple[str, int] | None:
+    """Select the best llama.cpp vision projector published beside a model."""
+    if PurePosixPath(main_filename).name.lower().startswith(("mtp-", "mmproj")):
+        return None
+    candidates = []
+    for sibling in item.get("siblings", []):
+        if not isinstance(sibling, dict):
+            continue
+        filename = str(sibling.get("rfilename", ""))
+        basename = PurePosixPath(filename).name.lower()
+        if not basename.startswith("mmproj") or not basename.endswith(".gguf"):
+            continue
+        if re.search(r"-\d{5}-of-\d{5}\.gguf$", basename):
+            continue
+        size = int(sibling.get("size") or sibling.get("lfs", {}).get("size") or 0)
+        priority = 1 if "bf16" in basename else 0 if "f16" in basename else 2 if "q8" in basename else 3
+        candidates.append((priority, size or 2**63, filename, size))
+    if not candidates:
+        return None
+    _, _, filename, size = min(candidates)
+    return filename, size
+
+
 async def find_mtp_sidecar(
         repo_id: str, main_filename: str, token: str | None = None,
 ) -> tuple[str, int] | None:
@@ -117,20 +178,30 @@ async def find_mtp_sidecar(
     return _select_mtp_sidecar(response.json(), main_filename)
 
 
+async def find_vision_projector(
+        repo_id: str, main_filename: str, token: str | None = None,
+) -> tuple[str, int] | None:
+    """Return a llama.cpp mmproj file from the selected model repository."""
+    if not _REPO_ID_PATTERN.fullmatch(repo_id):
+        raise ValueError("Invalid Hugging Face repository ID")
+    async with httpx.AsyncClient(timeout=20) as client:
+        response = await client.get(
+            f"{HF_API_URL}/models/{quote(repo_id, safe='/')}",
+            params={"blobs": "true"},
+            headers=_headers(token),
+        )
+        response.raise_for_status()
+    return _select_vision_projector(response.json(), main_filename)
+
+
 async def get_recommended_gguf_models(token: str | None = None) -> list[dict]:
     """Resolve the curated local-model choices while keeping their files current."""
     async with httpx.AsyncClient(timeout=20) as client:
-        responses = await asyncio.gather(*(
-            client.get(f"{HF_API_URL}/models/{repo_id}", params={"blobs": "true"}, headers=_headers(token))
-            for repo_id in RECOMMENDED_GGUF_REPOSITORIES
-        ), return_exceptions=True)
-    models = []
-    for response in responses:
-        if isinstance(response, Exception) or not response.is_success:
-            continue
-        model = _model_from_hub_item(response.json())
-        if model:
-            models.append(model)
+        detailed_items = await _fetch_model_details(client, list(RECOMMENDED_GGUF_REPOSITORIES), token)
+    models = [
+        model for repo_id in RECOMMENDED_GGUF_REPOSITORIES
+        if (item := detailed_items.get(repo_id)) and (model := _model_from_hub_item(item))
+    ]
     return sorted(models, key=lambda model: model["downloads"], reverse=True)
 
 

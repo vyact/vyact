@@ -20,13 +20,13 @@ from .config import (
     build_provider_headers, get_provider_config, log_llm_call, log_llm_interaction, logger,
 )
 from .helpers import (
-    load_images_b64, mime_type,
+    load_image_data_urls, load_images_b64, mime_type,
     history_for_ollama, history_for_openai, history_for_gemini, history_for_claude,
 )
 from .errors import (
     http_err_msg,
     http_error_response_body,
-    is_ollama_image_unsupported_error,
+    is_model_image_unsupported_error,
     openai_err,
     gemini_err,
     claude_err,
@@ -191,9 +191,13 @@ async def chat_stream_with_tools(
             if usage.get("finish_reason"):
                 yield {"type": "finish", "reason": usage["finish_reason"]}
         except httpx.HTTPStatusError as e:
-            msg = http_err_msg(e, _PROVIDER_LABEL.get(provider_type, provider_type))
-            log_entry["error"] = msg
-            yield {"type": "token", "text": f"\n\n❌ {msg}"}
+            if attachments and is_model_image_unsupported_error(e):
+                log_entry["error"] = "model_image_unsupported"
+                yield {"type": "error", "code": "model_image_unsupported", "model": model}
+            else:
+                msg = http_err_msg(e, _PROVIDER_LABEL.get(provider_type, provider_type))
+                log_entry["error"] = msg
+                yield {"type": "token", "text": f"\n\n❌ {msg}"}
         except Exception as e:
             logger.error("[chat_stream_with_tools] %s 스트리밍 실패: %s", provider_type, e)
             log_entry["error"] = f"{type(e).__name__}: {e}"
@@ -483,7 +487,7 @@ async def chat_stream_with_tools(
         if stats:
             yield {"type": "stats", **stats}
     except httpx.HTTPStatusError as e:
-        if is_ollama_image_unsupported_error(e):
+        if is_model_image_unsupported_error(e):
             log_entry["error"] = "model_image_unsupported"
             yield {"type": "error", "code": "model_image_unsupported", "model": model}
         else:
@@ -723,11 +727,11 @@ async def query_llm(
 
             elif provider_type == "openai":
                 temperature = runtime["llm_temperature"]
-                images_b64 = load_images_b64(attachments)
-                if images_b64:
+                image_urls = load_image_data_urls(attachments)
+                if image_urls:
                     content: list = [{"type": "text", "text": user_prompt}]
-                    for b64 in images_b64:
-                        content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}})
+                    for image_url in image_urls:
+                        content.append({"type": "image_url", "image_url": {"url": image_url}})
                     user_msg = {"role": "user", "content": content}
                 else:
                     user_msg = {"role": "user", "content": user_prompt}

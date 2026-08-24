@@ -785,7 +785,7 @@ async def update_vyact_runtime():
 @router.post("/vyact/models/download")
 async def download_vyact_model(req: HuggingFaceDownloadRequest):
     async def stream():
-        from services.huggingface_models import download_gguf_model, find_mtp_sidecar
+        from services.huggingface_models import download_gguf_model, find_mtp_sidecar, find_vision_projector
 
         config = await load_config_async()
         token = config.get("vyact_config", {}).get("huggingface_token")
@@ -795,21 +795,35 @@ async def download_vyact_model(req: HuggingFaceDownloadRequest):
             logger.info("[vyact] MTP sidecar discovery skipped: %s", error)
             mtp_sidecar = None
         try:
+            vision_projector = await find_vision_projector(req.repository, req.filename, token)
+        except Exception as error:
+            logger.info("[vyact] vision projector discovery skipped: %s", error)
+            vision_projector = None
+        sidecars = [item for item in (mtp_sidecar, vision_projector) if item]
+        model_progress_share = 80 if len(sidecars) == 2 else 90 if sidecars else 100
+        try:
             async for downloaded, total in download_gguf_model(req.repository, req.filename, token):
-                progress = int(downloaded * (85 if mtp_sidecar else 100) / total) if total else None
+                progress = int(downloaded * model_progress_share / total) if total else None
                 yield sse(f"Downloading {req.filename}", "log", progress)
         except Exception as error:
             logger.warning("[vyact] GGUF download failed: %s", error)
             yield sse(f"모델 다운로드 실패: {error}", "error", 0)
             return
-        if mtp_sidecar:
-            mtp_filename, _mtp_size = mtp_sidecar
+        sidecar_progress_share = (100 - model_progress_share) // len(sidecars) if sidecars else 0
+        for sidecar_index, (sidecar_filename, _sidecar_size) in enumerate(sidecars):
+            sidecar_type = "mtp_download" if mtp_sidecar and sidecar_filename == mtp_sidecar[0] else "vision_download"
+            sidecar_label = "MTP" if sidecar_type == "mtp_download" else "vision projector"
+            progress_start = model_progress_share + sidecar_index * sidecar_progress_share
             try:
-                async for downloaded, total in download_gguf_model(req.repository, mtp_filename, token):
-                    progress = 85 + int(downloaded * 15 / total) if total else None
-                    yield sse(f"Downloading MTP {mtp_filename}", "mtp_download", progress)
+                async for downloaded, total in download_gguf_model(req.repository, sidecar_filename, token):
+                    progress = progress_start + int(downloaded * sidecar_progress_share / total) if total else None
+                    yield sse(f"Downloading {sidecar_label} {sidecar_filename}", sidecar_type, progress)
             except Exception as error:
-                logger.info("[vyact] MTP sidecar download skipped; using the main model: %s", error)
+                if sidecar_type == "vision_download":
+                    logger.warning("[vyact] vision projector download failed: %s", error)
+                    yield sse(f"비전 projector 다운로드 실패: {error}", "error", progress_start)
+                    return
+                logger.info("[vyact] %s download skipped; using the main model: %s", sidecar_label, error)
         yield sse(f"{req.filename} 다운로드 완료", "ok", 100)
 
     return StreamingResponse(stream(), media_type="text/event-stream")

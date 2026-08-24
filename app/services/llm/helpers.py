@@ -71,6 +71,18 @@ def load_images_b64(attachments: list) -> list[str]:
     return result
 
 
+def load_image_data_urls(attachments: list) -> list[str]:
+    result = []
+    for attachment in attachments:
+        if attachment.get("type") != "image":
+            continue
+        path = image_attachment_path(attachment)
+        if path.exists():
+            encoded = base64.b64encode(path.read_bytes()).decode("utf-8")
+            result.append(f"data:{mime_type(attachment.get('filename', path.name))};base64,{encoded}")
+    return result
+
+
 def mime_type(filename: str) -> str:
     ext = filename.split(".")[-1].lower()
     return f"image/{ext}" if ext in ("jpeg", "jpg", "png", "gif", "webp") else "image/jpeg"
@@ -137,12 +149,12 @@ def history_for_openai(history_messages: list, valid_history: list) -> list:
             continue
         if msg["role"] == "user" and hi < len(valid_history):
             atts = valid_history[hi].get("attachments", [])
-            imgs = load_images_b64(atts)
+            image_urls = load_image_data_urls(atts)
             text = msg["content"]
-            if imgs:
+            if image_urls:
                 content: list = [{"type": "text", "text": text}]
-                for b64 in imgs:
-                    content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}})
+                for image_url in image_urls:
+                    content.append({"type": "image_url", "image_url": {"url": image_url}})
                 result.append({"role": "user", "content": content})
                 hi += 1
                 continue

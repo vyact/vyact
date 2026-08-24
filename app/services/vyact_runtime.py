@@ -196,6 +196,7 @@ def list_selectable_models() -> list[str]:
         model for model in list_downloaded_models()
         if PurePosixPath(model).parts[:1] != ("embeddings",)
         and not PurePosixPath(model).name.lower().startswith("mtp-")
+        and not PurePosixPath(model).name.lower().startswith("mmproj")
     ]
 
 
@@ -242,6 +243,29 @@ def get_cached_mtp_sidecar(model_path: Path) -> Path | None:
     if not candidates:
         return None
     candidates.sort(key=lambda path: (0 if "q4_0" in path.lower() else 1 if "q8_0" in path.lower() else 2, path))
+    return get_downloaded_model_path(candidates[0])
+
+
+def get_cached_vision_projector(model_path: Path) -> Path | None:
+    """Find a downloaded llama.cpp vision projector from the same repository."""
+    try:
+        relative_model = model_path.resolve().relative_to(VYACT_MODELS_DIR.resolve())
+    except ValueError:
+        return None
+    if len(relative_model.parts) < 3:
+        return None
+    repository_prefix = "/".join(relative_model.parts[:2]) + "/"
+    candidates = [
+        relative_path for relative_path in list_downloaded_models()
+        if relative_path.startswith(repository_prefix)
+        and PurePosixPath(relative_path).name.lower().startswith("mmproj")
+    ]
+    if not candidates:
+        return None
+    candidates.sort(key=lambda path: (
+        1 if "bf16" in path.lower() else 0 if "f16" in path.lower() else 2 if "q8" in path.lower() else 3,
+        path,
+    ))
     return get_downloaded_model_path(candidates[0])
 
 
@@ -370,11 +394,13 @@ def start_single_model(model_path: Path, context_size: int, debug_logging: bool 
     if not paths.llama_swap:
         raise RuntimeError("Vyact native runtime is not installed")
     mtp_model_path = get_cached_mtp_sidecar(model_path)
+    vision_projector_path = get_cached_vision_projector(model_path)
 
     def launch(enable_mtp: bool) -> tuple[str, subprocess.Popen]:
         stop_runtime()
         model_key = write_single_model_config(
             model_path, context_size, mtp_model_path if enable_mtp else None,
+            vision_projector_path=vision_projector_path,
             enable_mtp=enable_mtp, debug_logging=debug_logging,
         )
         VYACT_RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
@@ -419,7 +445,8 @@ def start_single_model(model_path: Path, context_size: int, debug_logging: bool 
 
 
 def write_single_model_config(
-        model_path: Path, context_size: int, mtp_model_path: Path | None = None, *,
+        model_path: Path, context_size: int, mtp_model_path: Path | None = None,
+        vision_projector_path: Path | None = None, *,
         enable_mtp: bool = True, debug_logging: bool = False,
 ) -> str:
     """Write a llama-swap config that can only load the selected model.
@@ -437,6 +464,12 @@ def write_single_model_config(
         or not mtp_model_path.name.lower().startswith("mtp-")
     ):
         raise ValueError("A compatible downloaded MTP sidecar is required")
+    if vision_projector_path is not None and (
+        vision_projector_path.suffix.lower() != ".gguf"
+        or not vision_projector_path.is_file()
+        or not vision_projector_path.name.lower().startswith("mmproj")
+    ):
+        raise ValueError("A compatible downloaded vision projector is required")
     paths = get_runtime_paths()
     if not paths.llama_server or not paths.llama_swap:
         raise RuntimeError("Vyact native runtime is not installed")
@@ -452,6 +485,8 @@ def write_single_model_config(
     ])
     if debug_logging:
         command += " --log-verbosity 4 --log-timestamps"
+    if vision_projector_path is not None:
+        command += f" --mmproj {json.dumps(str(vision_projector_path))}"
     if mtp_model_path is not None:
         command += " " + " ".join([
             "--spec-draft-model", json.dumps(str(mtp_model_path)),

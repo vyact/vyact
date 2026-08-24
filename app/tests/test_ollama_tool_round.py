@@ -22,6 +22,7 @@ from services.llm.core import _apply_ollama_tool_loop_result
 from services.llm.errors import (
     HTTP_ERROR_BODY_LOG_LIMIT,
     http_error_response_body,
+    is_model_image_unsupported_error,
     is_ollama_image_unsupported_error,
 )
 
@@ -80,6 +81,17 @@ class OllamaToolRoundTests(unittest.IsolatedAsyncioTestCase):
         error = httpx.HTTPStatusError("bad request", request=request, response=response)
 
         self.assertTrue(is_ollama_image_unsupported_error(error))
+
+    def test_llama_cpp_image_unsupported_error_is_recognized(self):
+        request = httpx.Request("POST", "http://127.0.0.1:11435/v1/chat/completions")
+        response = httpx.Response(
+            400,
+            request=request,
+            json={"error": {"message": "Image input is not supported by this model"}},
+        )
+        error = httpx.HTTPStatusError("bad request", request=request, response=response)
+
+        self.assertTrue(is_model_image_unsupported_error(error))
 
     def test_browser_inspect_is_compacted_without_dropping_elements_or_fields(self):
         elements = [

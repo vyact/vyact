@@ -5,9 +5,11 @@ from unittest.mock import patch
 
 from services.huggingface_models import (
     RECOMMENDED_GGUF_REPOSITORIES,
+    _merge_search_and_detail,
     _model_from_hub_item,
     _safe_relative_file_path,
     _select_mtp_sidecar,
+    _select_vision_projector,
     download_gguf_model,
 )
 
@@ -39,6 +41,21 @@ class HuggingFaceModelTests(unittest.TestCase):
             "mtp_supported_files": [],
         })
 
+    def test_search_item_uses_detailed_file_sizes_without_losing_search_downloads(self):
+        merged = _merge_search_and_detail(
+            {"id": "owner/model-GGUF", "downloads": 42, "siblings": [{"rfilename": "model.gguf"}]},
+            {
+                "id": "owner/model-GGUF",
+                "downloads": 1,
+                "siblings": [{"rfilename": "model.gguf", "size": 5_000}],
+            },
+        )
+
+        model = _model_from_hub_item(merged)
+
+        self.assertEqual(model["downloads"], 42)
+        self.assertEqual(model["file_sizes"], {"model.gguf": 5_000})
+
     def test_hub_item_marks_files_with_a_matching_mtp_sidecar(self):
         model = _model_from_hub_item({
             "id": "owner/Qwen-GGUF",
@@ -57,6 +74,15 @@ class HuggingFaceModelTests(unittest.TestCase):
             {"rfilename": "MTP/mtp-Other-Q4_0.gguf", "size": 500},
         ]}, "Qwen-Q4_K_M.gguf")
         self.assertEqual(selected, ("MTP/mtp-Qwen-Q4_0.gguf", 1_000))
+
+    def test_selects_f16_vision_projector(self):
+        selected = _select_vision_projector({"siblings": [
+            {"rfilename": "model-Q4_K_M.gguf", "size": 5_000},
+            {"rfilename": "mmproj-BF16.gguf", "size": 2_000},
+            {"rfilename": "vision/mmproj-F16.gguf", "size": 2_100},
+        ]}, "model-Q4_K_M.gguf")
+
+        self.assertEqual(selected, ("vision/mmproj-F16.gguf", 2_100))
 
 
 class HuggingFaceModelDownloadTests(unittest.IsolatedAsyncioTestCase):

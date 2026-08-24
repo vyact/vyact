@@ -68,6 +68,7 @@ class VyactRuntimeTests(unittest.TestCase):
             repository.mkdir(parents=True)
             (repository / "model-Q4_K_M.gguf").touch()
             (repository / "mtp-model-Q4_0.gguf").touch()
+            (repository / "mmproj-F16.gguf").touch()
             embeddings = models_dir / "embeddings"
             embeddings.mkdir()
             (embeddings / "bge-m3-q8_0.gguf").touch()
@@ -121,6 +122,7 @@ class VyactRuntimeTests(unittest.TestCase):
                  patch("services.vyact_runtime.write_single_model_config", return_value="vyact-model") as write_config, \
                  patch("services.vyact_runtime.subprocess.Popen") as popen, \
                  patch("services.vyact_runtime.get_cached_mtp_sidecar", return_value=None), \
+                 patch("services.vyact_runtime.get_cached_vision_projector", return_value=None), \
                  patch("services.vyact_runtime.model_has_integrated_mtp", return_value=False), \
                  patch("services.vyact_runtime.urllib.request.urlopen") as urlopen, \
                  patch("services.vyact_runtime.VYACT_RUNTIME_DIR", base), \
@@ -130,7 +132,7 @@ class VyactRuntimeTests(unittest.TestCase):
                 urlopen.return_value.__enter__.return_value.status = 200
                 self.assertEqual(start_single_model(model, 8192), "vyact-model")
             write_config.assert_called_once_with(
-                model, 8192, None, enable_mtp=False, debug_logging=False,
+                model, 8192, None, vision_projector_path=None, enable_mtp=False, debug_logging=False,
             )
             self.assertIn("llama-swap", str(popen.call_args.args[0][0]))
 
@@ -176,3 +178,25 @@ class VyactRuntimeTests(unittest.TestCase):
             contents = config.read_text(encoding="utf-8")
             self.assertIn("--log-verbosity 4 --log-timestamps", contents)
             self.assertNotIn("--verbose-prompt", contents)
+
+    def test_vision_projector_config_uses_mmproj(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            base = Path(temp_dir)
+            model = base / "model-Q4_K_M.gguf"
+            projector = base / "mmproj-F16.gguf"
+            server = base / "llama-server"
+            swap = base / "llama-swap"
+            config = base / "llama-swap.yaml"
+            for path in (model, projector, server, swap):
+                path.touch()
+            paths = RuntimePaths(server, swap, base / "models", config)
+            with patch("services.vyact_runtime.get_runtime_paths", return_value=paths), \
+                 patch("services.vyact_runtime.VYACT_RUNTIME_DIR", base), \
+                 patch("services.vyact_runtime.VYACT_MODELS_DIR", base / "models"), \
+                 patch("services.vyact_runtime.VYACT_SWAP_CONFIG", config), \
+                 patch("services.vyact_runtime.model_has_integrated_mtp", return_value=False):
+                write_single_model_config(model, 8192, vision_projector_path=projector)
+
+            contents = config.read_text(encoding="utf-8")
+            self.assertIn("--mmproj", contents)
+            self.assertIn(str(projector), contents)
