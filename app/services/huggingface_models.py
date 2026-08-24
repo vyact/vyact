@@ -229,9 +229,37 @@ def _mlx_metadata_from_config(config: dict, file_size: int, context_size: int) -
     head_dimension = number("head_dim") or (hidden_size // head_count if head_count else 0)
     model_context = number("max_position_embeddings", "model_max_length", "max_seq_len", "max_sequence_length")
     effective_context = min(context_size, model_context or context_size)
-    kv_cache_bytes = (
-        effective_context * block_count * kv_head_count * head_dimension * 2 * _F16_BYTES_PER_VALUE
-    )
+    layer_types = model_config.get("layer_types")
+    sliding_window = number("sliding_window")
+    if (
+        isinstance(layer_types, list)
+        and len(layer_types) == block_count
+        and sliding_window
+    ):
+        global_kv_head_count = number("num_global_key_value_heads") or kv_head_count
+        global_head_dimension = number("global_head_dim") or head_dimension
+        kv_cache_bytes = 0
+        for layer_type in layer_types:
+            normalized_layer_type = str(layer_type).lower()
+            if "sliding" in normalized_layer_type or "local" in normalized_layer_type:
+                cached_tokens = min(effective_context, sliding_window)
+                layer_kv_head_count = kv_head_count
+                layer_head_dimension = head_dimension
+            else:
+                cached_tokens = effective_context
+                layer_kv_head_count = global_kv_head_count
+                layer_head_dimension = global_head_dimension
+            kv_cache_bytes += (
+                cached_tokens
+                * layer_kv_head_count
+                * layer_head_dimension
+                * 2
+                * _F16_BYTES_PER_VALUE
+            )
+    else:
+        kv_cache_bytes = (
+            effective_context * block_count * kv_head_count * head_dimension * 2 * _F16_BYTES_PER_VALUE
+        )
     runtime_buffer_bytes = max(_MINIMUM_RUNTIME_BUFFER_BYTES, int(file_size * .05))
     architectures = model_config.get("architectures") or config.get("architectures") or []
     architecture = str(architectures[0] if isinstance(architectures, list) and architectures else "MLX")
