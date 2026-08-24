@@ -17,6 +17,7 @@ import ProjectMemoryModal from './ProjectMemoryModal';
 
 const ProviderSettingsModal = React.lazy(() => import('../ProviderSettingsModal/ProviderSettingsModal'));
 const CustomProviderModal = React.lazy(() => import('../CustomProviderModal/CustomProviderModal'));
+const VyactModelModal = React.lazy(() => import('../VyactModelModal/VyactModelModal'));
 const SettingsModal = React.lazy(() => import('../SettingsModal/SettingsModal'));
 
 interface SidebarProps {
@@ -66,6 +67,12 @@ const ProviderIcon: React.FC<{ provider: string; active: boolean }> = ({provider
                     <path d="M9 15s1 1.5 3 1.5 3-1.5 3-1.5" stroke={color} strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
             );
+        case 'vyact':
+            return (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M4 5h4l4 10 4-10h4l-6 14h-4L4 5z" stroke={color} strokeWidth="1.8" strokeLinejoin="round"/>
+                </svg>
+            );
         case 'openai':
             return (
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -94,7 +101,7 @@ const ProviderIcon: React.FC<{ provider: string; active: boolean }> = ({provider
 };
 
 const PROVIDER_LABELS: Record<string, string> = {
-    ollama: 'Ollama', openai: 'OpenAI', gemini: 'Gemini', claude: 'Claude',
+    ollama: 'Ollama', vyact: 'Vyact', openai: 'OpenAI', gemini: 'Gemini', claude: 'Claude',
 };
 
 const EXPANDED_PROJECT_IDS_STORAGE_KEY = 'vyact-expanded-project-ids';
@@ -395,6 +402,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     const [currentProvider, setCurrentProvider] = useState<string>('ollama');
     const [customProviders, setCustomProviders] = useState<CustomProviderSettings[]>([]);
     const [customProviderEditor, setCustomProviderEditor] = useState<CustomProviderSettings | 'new' | null>(null);
+    const [isVyactModalOpen, setIsVyactModalOpen] = useState(false);
 
 
 
@@ -416,6 +424,10 @@ const Sidebar: React.FC<SidebarProps> = ({
         if (provider === '__add_custom__') {
             setCustomProviderEditor('new');
             return;
+        }
+        if (provider === 'vyact') {
+            const data = await api.getProviders();
+            if (!data.providers.vyact?.has_key) { setIsVyactModalOpen(true); return; }
         }
         if (provider === currentProvider) return;
         const prev = currentProvider;
@@ -489,7 +501,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 {!visualCollapsed && (
                     <div className="sidebar-header-actions">
                         <div className="header-provider-wrap"><CustomSelect options={[
-                            ...(['ollama', 'openai', 'gemini', 'claude'] as const).map(provider => ({value: provider, label: PROVIDER_LABELS[provider]})),
+                            ...(['ollama', 'vyact', 'openai', 'gemini', 'claude'] as const).map(provider => ({value: provider, label: PROVIDER_LABELS[provider]})),
                             ...customProviders.map(provider => ({value: `custom:${provider.id}`, label: provider.name})),
                             {value: '__add_custom__', label: t('customProvider.addConnection')},
                         ]} value={currentProvider} onChange={handleProviderChange} className="header-provider-select" /></div>
@@ -516,7 +528,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         <div className="sidebar-section">
                             <div className="sec-label">Provider</div>
                             <div className="provider-select-wrap">
-                                {(['ollama', 'openai', 'gemini', 'claude'] as const).map(p => (
+                                {(['ollama', 'vyact', 'openai', 'gemini', 'claude'] as const).map(p => (
                                     <button
                                         key={p}
                                         className={`provider-select-btn${currentProvider === p ? ' active' : ''}`}
@@ -548,7 +560,16 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 installed={installed}
                                 selectedModel={selectedModel}
                                 currentProvider={currentProvider}
-                                onModelChange={async (m, d, modelType) => await onModelChange(m, d, modelType)}
+                                onModelChange={async (m, d, modelType) => {
+                                    if (currentProvider === 'vyact') {
+                                        if (d) return;
+                                        onBeforeModelContextChange?.();
+                                        await api.activateVyactModel(m);
+                                        await onProviderChange();
+                                        return;
+                                    }
+                                    await onModelChange(m, d, modelType);
+                                }}
                                 onProviderSettingsOpen={() => {
                                     const connection = customProviders.find(item => `custom:${item.id}` === currentProvider);
                                     if (connection) setCustomProviderEditor(connection);
@@ -875,6 +896,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 }}
             /></React.Suspense>}
         </aside>
+            {isVyactModalOpen && <React.Suspense fallback={null}><VyactModelModal onClose={() => setIsVyactModalOpen(false)} onSelected={async () => { await loadCurrentProvider(); await onProviderChange(); }}/></React.Suspense>}
             {isSettingsOpen && <React.Suspense fallback={null}>
                 <SettingsModal isOpen onClose={() => setIsSettingsOpen(false)} initialTab={openSettingsTab}/>
             </React.Suspense>}

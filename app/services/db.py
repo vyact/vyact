@@ -37,6 +37,7 @@ USER_PROFILE_INDEX = "user_profile"
 VOCAB_INDEX = "vocab_words"
 SAVED_SENTENCES_INDEX = "saved_sentences"
 NOTIFICATIONS_INDEX = "notifications"
+VYACT_MODEL_METADATA_INDEX = "vyact_model_metadata"
 
 # 공통 분석기 설정 (nori)
 KOREAN_ANALYSIS = {

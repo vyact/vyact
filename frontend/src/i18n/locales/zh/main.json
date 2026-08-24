@@ -508,7 +508,14 @@
     "imageType": "图片",
     "settingsManage": "设置管理",
     "delete": "删除",
-    "modelSearch": "搜索模型..."
+    "modelSearch": "搜索模型...",
+    "searchLabel": "模型搜索",
+    "searchAction": "搜索",
+    "searching": "正在搜索模型...",
+    "noSearchResults": "未找到模型，请尝试其他模型名称。",
+    "calculateAccurateMemory": "准确计算", "accurateMemoryHint": "读取GGUF头部并按32K上下文估算用量。",
+    "huggingFaceTokenHelp": "模型搜索不会使用令牌。令牌用于受限模型访问、GGUF检查和下载认证。开始下载时会保存到Elasticsearch，并用于后续下载。认证可能提高请求限额和稳定性，但不保证提升下载速度。",
+    "systemMemory": "系统内存", "unifiedMemory": "统一内存", "availableMemory": "可用", "monthlyDownloads": "近30天下载", "estimatedMemory": "预计内存", "sharedOrUnknownMemory": "共享内存或容量未知", "cpuExecution": "无GPU · 使用CPU/内存", "analyzingMetadata": "正在分析GGUF元数据...", "parameters": "参数", "architecture": "架构", "quantization": "量化", "maxContext": "最大上下文", "layers": "层数", "kvCache": "32K KV缓存", "execution": {"unified":"可使用统一内存运行","gpu":"可使用GPU运行","hybrid":"GPU+内存混合运行","cpu":"可使用CPU/内存运行","insufficient":"当前可用内存不足"}
   },
   "modelDownload": {
     "confirmTitle": "尚未安装 {{model}}。",

@@ -508,7 +508,14 @@
     "imageType": "Imagen",
     "settingsManage": "Ajustes",
     "delete": "Borrar",
-    "modelSearch": "Buscar modelos..."
+    "modelSearch": "Buscar modelos...",
+    "searchLabel": "Buscar modelos",
+    "searchAction": "Buscar",
+    "searching": "Buscando modelos...",
+    "noSearchResults": "No se encontraron modelos. Prueba con otro nombre.",
+    "calculateAccurateMemory": "Calcular con precisión", "accurateMemoryHint": "Lee la cabecera GGUF y estima el uso con contexto 32K.",
+    "huggingFaceTokenHelp": "La búsqueda no usa el token. Se utiliza para acceder a modelos restringidos, inspeccionar GGUF y autenticar descargas. Se guarda en Elasticsearch al iniciar una descarga y se reutiliza después. Puede mejorar los límites y la fiabilidad, pero no garantiza más velocidad.",
+    "systemMemory": "RAM del sistema", "unifiedMemory": "Memoria unificada", "availableMemory": "Disponible", "monthlyDownloads": "Descargas en 30 días", "estimatedMemory": "RAM estimada", "sharedOrUnknownMemory": "Memoria compartida o capacidad desconocida", "cpuExecution": "Sin GPU · ejecución CPU/RAM", "analyzingMetadata": "Analizando metadatos GGUF...", "parameters": "Parámetros", "architecture": "Arquitectura", "quantization": "Cuantización", "maxContext": "Contexto máximo", "layers": "Capas", "kvCache": "Caché KV 32K", "execution": {"unified":"Cabe en memoria unificada","gpu":"Ejecución GPU disponible","hybrid":"Ejecución híbrida GPU+RAM","cpu":"Ejecución CPU/RAM disponible","insufficient":"Memoria disponible insuficiente"}
   },
   "modelDownload": {
     "confirmTitle": "{{model}} no está instalado.",

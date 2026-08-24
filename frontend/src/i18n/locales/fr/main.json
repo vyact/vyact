@@ -508,7 +508,14 @@
     "imageType": "Image",
     "settingsManage": "Paramètres",
     "delete": "Supprimer",
-    "modelSearch": "Rechercher des modèles..."
+    "modelSearch": "Rechercher des modèles...",
+    "searchLabel": "Recherche de modèles",
+    "searchAction": "Rechercher",
+    "searching": "Recherche de modèles...",
+    "noSearchResults": "Aucun modèle trouvé. Essayez un autre nom.",
+    "calculateAccurateMemory": "Calculer précisément", "accurateMemoryHint": "Lit l’en-tête GGUF et estime l’usage avec un contexte 32K.",
+    "huggingFaceTokenHelp": "La recherche n’utilise pas le jeton. Il sert à accéder aux modèles restreints, inspecter les GGUF et authentifier les téléchargements. Il est enregistré dans Elasticsearch au début d’un téléchargement et réutilisé ensuite. Il peut améliorer les limites et la fiabilité, sans garantir une vitesse supérieure.",
+    "systemMemory": "RAM système", "unifiedMemory": "Mémoire unifiée", "availableMemory": "Disponible", "monthlyDownloads": "Téléchargements sur 30 jours", "estimatedMemory": "RAM estimée", "sharedOrUnknownMemory": "Mémoire partagée ou capacité inconnue", "cpuExecution": "Pas de GPU · exécution CPU/RAM", "analyzingMetadata": "Analyse des métadonnées GGUF...", "parameters": "Paramètres", "architecture": "Architecture", "quantization": "Quantification", "maxContext": "Contexte maximal", "layers": "Couches", "kvCache": "Cache KV 32K", "execution": {"unified":"Compatible avec la mémoire unifiée","gpu":"Exécution GPU possible","hybrid":"Exécution hybride GPU+RAM","cpu":"Exécution CPU/RAM possible","insufficient":"Mémoire disponible insuffisante"}
   },
   "modelDownload": {
     "confirmTitle": "{{model}} n’est pas installé.",

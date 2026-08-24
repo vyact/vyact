@@ -122,6 +122,45 @@ export interface CustomProviderPayload {
 
 type ProviderType = 'ollama' | 'openai' | 'gemini' | 'claude' | `custom:${string}`;
 
+export interface VyactHubModel {
+    id: string;
+    revision: string;
+    downloads: number;
+    files: string[];
+    file_sizes: Record<string, number>;
+}
+
+export interface VyactGgufMetadata {
+    architecture: string;
+    parameterCount: number;
+    contextLength: number;
+    blockCount: number;
+    quantization: string;
+    kvCacheBytes: number;
+    runtimeBufferBytes: number;
+    estimatedMemoryBytes: number;
+}
+
+export interface VyactModelSearchResponse {
+    models: VyactHubModel[];
+    hardware: VyactHardwareInfo;
+}
+
+export interface VyactGpuInfo {
+    name: string;
+    backend: string;
+    total_bytes: number;
+    available_bytes: number;
+    shared_memory: boolean;
+}
+
+export interface VyactHardwareInfo {
+    platform: string;
+    memory_mode: 'unified' | 'dedicated' | 'system';
+    system_memory: {total_bytes: number; available_bytes: number};
+    gpus: VyactGpuInfo[];
+}
+
 interface ProvidersResponse {
     providers: Record<string, ProviderSettings>;
     custom_providers: CustomProviderSettings[];
@@ -225,6 +264,117 @@ export interface AllExternalDocumentsResponse extends Omit<Gov24DocumentsRespons
 }
 
 export const api = {
+    async searchVyactModels(query: string): Promise<VyactModelSearchResponse> {
+        const response = await fetch(`${API_BASE}/vyact/models/search?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        return {
+            models: data.models || [],
+            hardware: data.hardware || {
+                platform: '', memory_mode: 'system',
+                system_memory: data.system_memory || {total_bytes: 0, available_bytes: 0},
+                gpus: [],
+            },
+        };
+    },
+
+    async getVyactModelMetadataCache(
+        repository: string, filename: string, revision: string, contextSize: number,
+    ): Promise<VyactGgufMetadata | null> {
+        const params = new URLSearchParams({repository, filename, revision, context_size: String(contextSize)});
+        const response = await fetch(`${API_BASE}/vyact/models/metadata-cache?${params}`);
+        if (!response.ok) return null;
+        const source = (await response.json()).metadata;
+        if (!source) return null;
+        return {
+            architecture: source.architecture,
+            parameterCount: source.parameter_count,
+            contextLength: source.context_length,
+            blockCount: source.block_count,
+            quantization: source.quantization,
+            kvCacheBytes: source.kv_cache_bytes,
+            runtimeBufferBytes: source.runtime_buffer_bytes,
+            estimatedMemoryBytes: source.estimated_memory_bytes,
+        };
+    },
+
+    async saveVyactModelMetadataCache(
+        repository: string, filename: string, revision: string, contextSize: number,
+        fileSize: number, metadata: VyactGgufMetadata,
+    ): Promise<void> {
+        await fetch(`${API_BASE}/vyact/models/metadata-cache`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                repository, filename, revision, context_size: contextSize,
+                architecture: metadata.architecture,
+                parameter_count: metadata.parameterCount,
+                context_length: metadata.contextLength,
+                block_count: metadata.blockCount,
+                quantization: metadata.quantization,
+                kv_cache_bytes: metadata.kvCacheBytes,
+                runtime_buffer_bytes: metadata.runtimeBufferBytes,
+                estimated_memory_bytes: metadata.estimatedMemoryBytes,
+                file_size_bytes: fileSize,
+            }),
+        });
+    },
+
+    async saveVyactHuggingFaceToken(token: string): Promise<void> {
+        await fetch(`${API_BASE}/vyact/huggingface-token`, {
+            method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({token}),
+        });
+    },
+
+    async streamVyactModelDownload(
+        repository: string, filename: string, onProgress: (message: string, progress?: number) => void,
+    ): Promise<void> {
+        const response = await fetch(`${API_BASE}/vyact/models/download`, {
+            method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({repository, filename}),
+        });
+        if (!response.body) return;
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let pending = '';
+        while (true) {
+            const {done, value} = await reader.read();
+            if (done) return;
+            pending += decoder.decode(value, {stream: true});
+            const lines = pending.split('\n');
+            pending = lines.pop() || '';
+            for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                const event = JSON.parse(line.slice(6));
+                onProgress(event.message, event.progress);
+                if (event.type === 'error') throw new Error(event.message);
+            }
+        }
+    },
+
+    async activateVyactModel(
+        modelPath: string, contextSize = 32768, onProgress?: (message: string, progress?: number) => void,
+    ): Promise<void> {
+        const response = await fetch(`${API_BASE}/vyact/models/activate`, {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({model_path: modelPath, context_size: contextSize}),
+        });
+        if (!response.body) return;
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let pending = '';
+        while (true) {
+            const {done, value} = await reader.read();
+            if (done) return;
+            pending += decoder.decode(value, {stream: true});
+            const lines = pending.split('\n');
+            pending = lines.pop() || '';
+            for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                const event = JSON.parse(line.slice(6));
+                onProgress?.(event.message, event.progress);
+                if (event.type === 'error') throw new Error(event.message);
+            }
+        }
+    },
     async getSetupStatus(): Promise<{
         setup_done: boolean;
         config: {

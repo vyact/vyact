@@ -180,6 +180,14 @@
     background: color-mix(in srgb, var(--surface2) 58%, var(--bg));
 }
 
+.setup-hub-search { display: flex; gap: 8px; }
+.setup-hub-search button, .setup-hub-result button { border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); color: var(--text); cursor: pointer; }
+.setup-hub-search button { padding: 0 12px; white-space: nowrap; }
+.setup-hub-search button:disabled, .setup-hub-result button:disabled { cursor: wait; opacity: .55; }
+.setup-hub-result { display: grid; gap: 6px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
+.setup-hub-result strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.setup-hub-result button { padding: 7px 9px; text-align: left; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 .setup-connection-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
 .setup-connection-heading > div { display: grid; gap: 4px; min-width: 0; }
 .setup-connection-heading strong { color: var(--text); font-size: 14px; }

@@ -7,6 +7,7 @@ import { syncPendingLanguageAfterSetup } from '../../i18n';
 import EsModeSelector from './EsModeSelector';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import {CUSTOM_PROTOCOL_OPTIONS, OPENAI_COMPATIBLE_DOCS_URL} from '../../constants/customProviders';
+import {api, type VyactHubModel} from '../../services/api';
 import './SetupPage.css';
 
 interface SetupPageProps {
@@ -20,10 +21,10 @@ interface RecommendedModel {
     type?: string;
 }
 
-type Provider = 'ollama' | 'openai' | 'gemini' | 'claude' | 'custom';
+type Provider = 'ollama' | 'vyact' | 'openai' | 'gemini' | 'claude' | 'custom';
 type CustomProtocol = 'openai-compatible';
 
-const DEFAULT_MODELS: Record<Exclude<Provider, 'ollama' | 'custom'>, string> = {
+const DEFAULT_MODELS: Record<Exclude<Provider, 'ollama' | 'vyact' | 'custom'>, string> = {
     openai: 'gpt-4o-mini',
     gemini: 'gemini-3.1-flash-lite-preview',
     claude: 'claude-3-5-sonnet',
@@ -42,6 +43,11 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
     const [selectedModel, setSelectedModel] = useState<string>('');
     const [customModel, setCustomModel] = useState<string>('');
     const [apiKey, setApiKey] = useState<string>('');
+    const [huggingFaceToken, setHuggingFaceToken] = useState<string>('');
+    const [huggingFaceQuery, setHuggingFaceQuery] = useState('');
+    const [huggingFaceModels, setHuggingFaceModels] = useState<VyactHubModel[]>([]);
+    const [isSearchingHub, setIsSearchingHub] = useState(false);
+    const [downloadingHubFile, setDownloadingHubFile] = useState('');
     const [isApiKeyVisible, setIsApiKeyVisible] = useState(false);
     const [connectionName, setConnectionName] = useState<string>('');
     const [baseUrl, setBaseUrl] = useState<string>('');
@@ -64,7 +70,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
     const logRef = useRef<HTMLDivElement>(null);
     const shouldFollowLogTailRef = useRef(true);
 
-    const isCloud = provider !== 'ollama';
+    const isCloud = provider !== 'ollama' && provider !== 'vyact';
 
     // 추천 모델 리스트 로드
     useEffect(() => {
@@ -114,6 +120,10 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
     useEffect(() => {
         if (provider === 'ollama') {
             setSelectedModel(prev => defaultModel || prev || '');
+            setCustomModel('');
+            setApiKey('');
+        } else if (provider === 'vyact') {
+            setSelectedModel('');
             setCustomModel('');
             setApiKey('');
         } else if (provider === 'custom') {
@@ -185,6 +195,12 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                     model: customModel || selectedModel,
                     config: { es_mode: esMode },
                 }
+                : provider === 'vyact'
+                    ? {
+                        type: 'vyact',
+                        model: selectedModel,
+                        config: {es_mode: esMode, model_path: selectedModel},
+                    }
                 : provider === 'custom'
                     ? {
                         type: 'custom',
@@ -310,10 +326,10 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                 <div className="sec-label">{t('provider')}</div>
 
                 <div className="provider-grid">
-                    {(['ollama', 'openai', 'gemini', 'claude', 'custom'] as const).map(id => ({
+                    {(['ollama', 'vyact', 'openai', 'gemini', 'claude', 'custom'] as const).map(id => ({
                         id,
-                        name: t(`providers.${id}.name`),
-                        desc: t(`providers.${id}.desc`),
+                        name: id === 'vyact' ? 'Vyact' : t(`providers.${id}.name`),
+                        desc: id === 'vyact' ? t('localExec') : t(`providers.${id}.desc`),
                     })).map(p => (
                         <div
                             key={p.id}
@@ -377,6 +393,16 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                                     onChange={e => setCustomModel(e.target.value)}
                                 />
                             </>
+                        )}
+
+                        {provider === 'vyact' && (
+                            <section className="setup-connection-panel">
+                                <div className="setup-connection-heading"><div><strong>Vyact</strong><span>{t('localExec')}</span></div></div>
+                                <label className="setup-field"><span>{t('apiKey')}</span><div className="setup-secret-field"><input className="input" type={isApiKeyVisible ? 'text' : 'password'} placeholder={t('apiKey')} value={huggingFaceToken} onChange={event => setHuggingFaceToken(event.target.value)} onBlur={() => huggingFaceToken.trim() && api.saveVyactHuggingFaceToken(huggingFaceToken.trim()).catch(error => console.error('Failed to save Hugging Face token:', error))}/><button type="button" onClick={() => setIsApiKeyVisible(current => !current)} aria-label={t(isApiKeyVisible ? 'main:customProvider.hideApiKey' : 'main:customProvider.showApiKey')}>{isApiKeyVisible ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div></label>
+                                <div className="setup-field"><span>{t('main:modelSelector.modelSearch')}</span><div className="setup-hub-search"><input className="input" value={huggingFaceQuery} onChange={event => setHuggingFaceQuery(event.target.value)} onKeyDown={async event => { if (event.key !== 'Enter' || !huggingFaceQuery.trim()) return; setIsSearchingHub(true); try { setHuggingFaceModels((await api.searchVyactModels(huggingFaceQuery)).models); } finally { setIsSearchingHub(false); } }} placeholder={t('main:modelSelector.modelSearch')}/><button type="button" disabled={isSearchingHub || !huggingFaceQuery.trim()} onClick={async () => { setIsSearchingHub(true); try { setHuggingFaceModels((await api.searchVyactModels(huggingFaceQuery)).models); } finally { setIsSearchingHub(false); } }}>{isSearchingHub ? '…' : t('main:modelSelector.add')}</button></div></div>
+                                {huggingFaceModels.map(model => <div className="setup-hub-result" key={model.id}><strong>{model.id}</strong>{model.files.map(file => { const fileKey = `${model.id}/${file}`; return <button key={file} type="button" disabled={!!downloadingHubFile} onClick={async () => { setDownloadingHubFile(fileKey); try { await api.streamVyactModelDownload(model.id, file, () => undefined); setSelectedModel(fileKey); } finally { setDownloadingHubFile(''); } }}>{downloadingHubFile === fileKey ? t('main:modelDownload.downloading') : file}</button>; })}</div>)}
+                                <label className="setup-field"><span>{t('modelId')}</span><input className="input" placeholder={t('modelIdPlaceholder')} value={selectedModel} onChange={event => setSelectedModel(event.target.value)}/></label>
+                            </section>
                         )}
 
                         {isCloud && <section className={`setup-connection-panel${provider === 'custom' ? ' setup-custom-connection-panel' : ''}`}>

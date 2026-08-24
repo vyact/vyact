@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@huggingface/gguf": "^0.4.6",
     "@tiptap/extension-code-block-lowlight": "^3.27.1",
     "@tiptap/extension-details": "^3.27.1",
     "@tiptap/extension-link": "^3.27.1",

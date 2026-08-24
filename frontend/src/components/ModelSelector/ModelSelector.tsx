@@ -48,19 +48,19 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
             .catch(err => console.error('Failed to load models:', err));
     }, []);
 
-    const handleOllamaSelect = (model: string, modelType?: ModelType) => {
+    const handleLocalModelSelect = (model: string, modelType?: ModelType) => {
         const needsDownload = !installed.includes(model);
         onModelChange(model, needsDownload, modelType);
     };
 
     const handleCustomSubmit = () => {
         if (!customModel.trim()) return;
-        handleOllamaSelect(customModel.trim(), customModelType);
+        handleLocalModelSelect(customModel.trim(), customModelType);
         setCustomModel('');
     };
 
     // 추천 + 설치된 모델 합치기
-    const recommendedIds = recommendedModels.map(m => m.id);
+    const recommendedIds = currentProvider === 'ollama' ? recommendedModels.map(m => m.id) : [];
     const allModelIds = Array.from(new Set([...recommendedIds, ...installed]));
     const options: SelectOption[] = allModelIds.map(id => {
         const info = recommendedModels.find(m => m.id === id);
@@ -69,7 +69,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
 
     // 트리거: dot + 모델명
     const renderTrigger = (_label: string, open: boolean) => {
-        const isInstalled = currentProvider !== 'ollama' || installed.includes(selectedModel);
+        const isInstalled = installed.includes(selectedModel);
         return (
             <>
                 <div className={`mdot ${isInstalled ? 'installed' : 'not-installed'}`}/>
@@ -203,7 +203,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
             </div>
     );
 
-    if (currentProvider !== 'ollama') {
+    if (currentProvider !== 'ollama' && currentProvider !== 'vyact') {
         return (
             <div className="model-select-wrap">
                 <div className="cloud-config">
@@ -223,7 +223,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
         <CustomSelect
             options={options}
             value={selectedModel}
-            onChange={id => handleOllamaSelect(id, recommendedModels.find(model => model.id === id)?.type)}
+            onChange={id => handleLocalModelSelect(id, recommendedModels.find(model => model.id === id)?.type)}
             searchable
             searchPlaceholder={t('modelSelector.modelSearch')}
             className="model-select-wrap"

@@ -64,6 +64,20 @@ async def get_provider_config() -> dict:
         config = await load_config_async()
         if config:
             selected_type = config.get("type", "ollama")
+            if selected_type == "vyact":
+                from services.vyact_runtime import VYACT_RUNTIME_URL
+                provider_config = config.get("vyact_config", {})
+                return {
+                    # llama-swap fronts llama.cpp with an OpenAI-compatible API.
+                    # Reusing this path preserves existing streaming and tool calls.
+                    "type": "openai",
+                    "selection_type": "vyact",
+                    "connection_name": "Vyact",
+                    "model": config.get("model", provider_config.get("model", DEFAULT_MODEL)),
+                    "api_key": None,
+                    "base_url": provider_config.get("base_url", VYACT_RUNTIME_URL),
+                    "headers": [],
+                }
             if selected_type.startswith("custom:"):
                 connection_id = selected_type.removeprefix("custom:")
                 connection = next(

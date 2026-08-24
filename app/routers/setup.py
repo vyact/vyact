@@ -10,7 +10,7 @@ import platform
 import re
 import shutil
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -24,8 +24,11 @@ from routers.deps import APP_DIR, load_config_async, save_config_async, sse, wri
 from logger import DebugLogSettings, ToolLogSettings, get_logger
 from services.installer import is_docker_available, Installer
 from services.es_native import is_native_supported
+from services.hardware_info import get_local_hardware_info
+from services.huggingface_models import search_gguf_models
 from services.mcp_config import ensure_mcp_config
 from services.runtime_settings import DEFAULT_RUNTIME_SETTINGS, apply_runtime_settings, get_runtime_settings
+from services.vyact_model_metadata_cache import get_cached_model_metadata, save_cached_model_metadata
 
 logger = get_logger(__name__)
 
@@ -81,6 +84,36 @@ class ProviderConfigRequest(BaseModel):
 class ProviderSelectRequest(BaseModel):
     provider: str
     model: str | None = None
+
+
+class HuggingFaceTokenRequest(BaseModel):
+    token: str = Field(min_length=1, max_length=2048)
+
+
+class HuggingFaceDownloadRequest(BaseModel):
+    repository: str = Field(min_length=3, max_length=256)
+    filename: str = Field(min_length=6, max_length=1024)
+
+
+class VyactModelActivateRequest(BaseModel):
+    model_path: str = Field(min_length=6, max_length=1024)
+    context_size: int = Field(default=32768, ge=512, le=131072)
+
+
+class VyactModelMetadataRequest(BaseModel):
+    repository: str = Field(min_length=3, max_length=256)
+    filename: str = Field(min_length=6, max_length=1024)
+    revision: str = Field(min_length=1, max_length=128)
+    context_size: int = Field(default=32768, ge=512, le=131072)
+    architecture: str = Field(min_length=1, max_length=128)
+    parameter_count: int = Field(ge=0)
+    context_length: int = Field(ge=0)
+    block_count: int = Field(ge=0)
+    quantization: str = Field(min_length=1, max_length=64)
+    kv_cache_bytes: int = Field(ge=0)
+    runtime_buffer_bytes: int = Field(ge=0)
+    estimated_memory_bytes: int = Field(ge=0)
+    file_size_bytes: int = Field(ge=0)
 
 
 class CustomProviderHeaderRequest(BaseModel):
@@ -292,6 +325,22 @@ async def install(req: ModelSelectRequest):
                 "ollama_config": {"model": req.model},
                 "config": persisted_setup_config,
             }
+        elif req.type == "vyact":
+            if not req.model:
+                yield sse("Vyact 모델을 먼저 다운로드하고 선택하세요.", "error", 0)
+                return
+            existing_config = await load_config_async()
+            vyact_config = existing_config.get("vyact_config", {})
+            cfg = {
+                "type": "vyact",
+                "model": req.model,
+                "vyact_config": {
+                    **vyact_config,
+                    "model": req.model,
+                    "model_path": request_config.get("model_path", vyact_config.get("model_path", "")),
+                },
+                "config": persisted_setup_config,
+            }
         elif req.type == "custom":
             connection_name = str(request_config.get("name", "")).strip()
             protocol = str(request_config.get("protocol", "openai-compatible")).strip()
@@ -477,6 +526,17 @@ async def install(req: ModelSelectRequest):
 
             yield sse("Preparing LLM connection...", "info", 10)
 
+            if req.type == "vyact":
+                from services.vyact_runtime import install_missing_runtime
+                yield sse("Checking Vyact local runtime...", "info", 12)
+                try:
+                    async for message in install_missing_runtime():
+                        yield sse(message, "info", 16)
+                except Exception as error:
+                    logger.warning("[setup] Vyact runtime installation failed: %s", error)
+                    yield sse(f"Vyact 런타임 설치 실패: {error}", "error", 0)
+                    return
+
             # ── ES 설치 (클라우드도 ES 필수) ──
             es_mode = (req.config or {}).get("es_mode", "docker")
 
@@ -525,6 +585,14 @@ async def install(req: ModelSelectRequest):
                 await ensure_index()
                 await ensure_skills_index()
                 await ensure_mcp_config()
+                if req.type == "vyact":
+                    from services.vyact_runtime import get_downloaded_model_path, start_single_model
+                    model_path = get_downloaded_model_path(cfg["vyact_config"]["model_path"])
+                    model_id = await asyncio.to_thread(
+                        start_single_model, model_path, cfg["vyact_config"].get("context_size", 32768),
+                    )
+                    cfg["model"] = model_id
+                    cfg["vyact_config"]["model"] = model_id
                 await save_config_async(cfg)
                 await load_prompts_cache()
                 logger.info("[setup] LLM connection config saved after ES initialization")
@@ -545,6 +613,16 @@ async def install(req: ModelSelectRequest):
 async def get_models():
     EMBED_MODELS = {"bge-m3", "nomic-embed-text", "mxbai-embed-large"}
     recommended_ids = [m["id"] for m in RECOMMENDED_MODELS]
+    cfg = await load_config_async()
+    if cfg.get("type") == "vyact":
+        from services.vyact_runtime import list_downloaded_models
+        installed_models = list_downloaded_models()
+        return {
+            "models": [[model] for model in installed_models],
+            "current": cfg.get("vyact_config", {}).get("model_path", ""),
+            "installed": installed_models,
+            "model_type": "chat",
+        }
     installed_models = []
     try:
         proc = await asyncio.create_subprocess_exec(
@@ -566,7 +644,6 @@ async def get_models():
 
     installed_models = list(dict.fromkeys(installed_models))
     all_models = list(dict.fromkeys(recommended_ids + installed_models))
-    cfg = await load_config_async()
     return {
         "models": [[m] for m in all_models],
         "current": cfg.get("model", ""),
@@ -581,6 +658,157 @@ async def get_models():
 @router.get("/models/recommended")
 async def get_recommended_models():
     return {"models": RECOMMENDED_MODELS, "default": DEFAULT_MODEL}
+
+
+@router.get("/vyact/models/search")
+async def search_vyact_models(q: str = Query("", max_length=200)):
+    """Search GGUF repositories only; model file selection stays explicit in the UI."""
+    try:
+        return {
+            "models": await search_gguf_models(q),
+            "hardware": get_local_hardware_info(),
+        }
+    except Exception as error:
+        logger.warning("[vyact] Hugging Face search failed: %s", error)
+        raise HTTPException(502, "Hugging Face 모델 검색에 실패했습니다.") from error
+
+
+@router.get("/vyact/models/metadata-cache")
+async def get_vyact_model_metadata_cache(
+        repository: str = Query(..., min_length=3, max_length=256),
+        filename: str = Query(..., min_length=6, max_length=1024),
+        revision: str = Query(..., min_length=1, max_length=128),
+        context_size: int = Query(32768, ge=512, le=131072),
+):
+    try:
+        metadata = await get_cached_model_metadata(repository, filename, revision, context_size)
+        return {"metadata": metadata}
+    except Exception as error:
+        logger.warning("[vyact] Model metadata cache lookup failed: %s", error)
+        return {"metadata": None}
+
+
+@router.post("/vyact/models/metadata-cache")
+async def save_vyact_model_metadata_cache(req: VyactModelMetadataRequest):
+    try:
+        document_id = await save_cached_model_metadata(
+            req.repository, req.filename, req.revision, req.context_size,
+            {
+                "architecture": req.architecture,
+                "parameter_count": req.parameter_count,
+                "context_length": req.context_length,
+                "block_count": req.block_count,
+                "quantization": req.quantization,
+                "kv_cache_bytes": req.kv_cache_bytes,
+                "runtime_buffer_bytes": req.runtime_buffer_bytes,
+                "estimated_memory_bytes": req.estimated_memory_bytes,
+                "file_size_bytes": req.file_size_bytes,
+            },
+        )
+        return {"saved": True, "id": document_id}
+    except Exception as error:
+        logger.warning("[vyact] Model metadata cache save failed: %s", error)
+        return {"saved": False}
+
+
+@router.post("/vyact/huggingface-token")
+async def save_vyact_huggingface_token(req: HuggingFaceTokenRequest):
+    config = await load_config_async()
+    config.setdefault("vyact_config", {})["huggingface_token"] = req.token.strip()
+    await save_config_async(config)
+    return {"ok": True}
+
+
+@router.post("/vyact/runtime/install")
+async def install_vyact_runtime():
+    async def stream():
+        from services.vyact_runtime import install_missing_runtime
+
+        try:
+            async for message in install_missing_runtime():
+                yield sse(message, "info")
+        except Exception as error:
+            logger.warning("[vyact] native runtime installation failed: %s", error)
+            yield sse(f"Vyact 런타임 설치 실패: {error}", "error", 0)
+            return
+        yield sse("Vyact 런타임 설치 완료", "ok", 100)
+
+    return StreamingResponse(stream(), media_type="text/event-stream")
+
+
+@router.post("/vyact/runtime/update")
+async def update_vyact_runtime():
+    async def stream():
+        from services.vyact_runtime import get_native_update_commands
+
+        commands = get_native_update_commands()
+        if not commands:
+            yield sse("패키지 관리자를 통한 런타임 업데이트를 지원하지 않는 환경입니다.", "error", 0)
+            return
+        for command in commands:
+            process = await asyncio.create_subprocess_exec(
+                *command,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+            )
+            assert process.stdout is not None
+            async for raw in process.stdout:
+                line = raw.decode("utf-8", errors="replace").strip()
+                if line:
+                    yield sse(line, "log")
+            if await process.wait() != 0:
+                yield sse("Vyact 런타임 업데이트에 실패했습니다.", "error", 0)
+                return
+        yield sse("Vyact 런타임 업데이트 완료", "ok", 100)
+
+    return StreamingResponse(stream(), media_type="text/event-stream")
+
+
+@router.post("/vyact/models/download")
+async def download_vyact_model(req: HuggingFaceDownloadRequest):
+    async def stream():
+        from services.huggingface_models import download_gguf_model
+
+        config = await load_config_async()
+        token = config.get("vyact_config", {}).get("huggingface_token")
+        try:
+            async for downloaded, total in download_gguf_model(req.repository, req.filename, token):
+                progress = int(downloaded * 100 / total) if total else None
+                yield sse(f"Downloading {req.filename}", "log", progress)
+        except Exception as error:
+            logger.warning("[vyact] GGUF download failed: %s", error)
+            yield sse(f"모델 다운로드 실패: {error}", "error", 0)
+            return
+        yield sse(f"{req.filename} 다운로드 완료", "ok", 100)
+
+    return StreamingResponse(stream(), media_type="text/event-stream")
+
+
+@router.post("/vyact/models/activate")
+async def activate_vyact_model(req: VyactModelActivateRequest):
+    async def stream():
+        from services.vyact_runtime import get_downloaded_model_path, start_single_model
+
+        yield sse("Vyact 모델을 메모리에 로드하는 중...", "model_loading", 10)
+        try:
+            model_path = get_downloaded_model_path(req.model_path)
+            model_id = await asyncio.to_thread(start_single_model, model_path, req.context_size)
+            config = await load_config_async()
+            config["type"] = "vyact"
+            config["model"] = model_id
+            config.setdefault("vyact_config", {}).update({
+                "model": model_id,
+                "model_path": req.model_path,
+                "context_size": req.context_size,
+            })
+            await save_config_async(config)
+        except Exception as error:
+            logger.warning("[vyact] model activation failed: %s", error)
+            yield sse(f"Vyact 모델 로드 실패: {error}", "error", 0)
+            return
+        yield sse("Vyact 모델 준비 완료", "done", 100)
+
+    return StreamingResponse(stream(), media_type="text/event-stream")
 
 
 @router.post("/models/select")
@@ -676,6 +904,11 @@ async def get_providers():
                 "has_key": bool(key),
                 "key_preview": f"{key[:8]}..." if len(key) > 8 else "",
             }
+    vyact_config = config.get("vyact_config", {})
+    providers["vyact"] = {
+        "model": vyact_config.get("model"),
+        "has_key": bool(vyact_config.get("model")),
+    }
     return {
         "current_type": config.get("type", "ollama"),
         "current_model": config.get("model"),
@@ -795,6 +1028,14 @@ async def select_provider(req: ProviderSelectRequest):
         if req.model:
             config["ollama_config"]["model"] = req.model
         config["model"] = config["ollama_config"]["model"]
+    elif req.provider == "vyact":
+        vyact_config = config.get("vyact_config", {})
+        model = req.model or vyact_config.get("model")
+        if not model:
+            raise HTTPException(400, "Vyact 모델이 없습니다. 먼저 모델을 다운로드하세요.")
+        config["type"] = "vyact"
+        config["model"] = model
+        config.setdefault("vyact_config", {})["model"] = model
     else:
         if req.provider.startswith("custom:"):
             connection_id = req.provider.removeprefix("custom:")
