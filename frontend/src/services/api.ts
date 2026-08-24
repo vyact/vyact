@@ -144,7 +144,10 @@ export interface VyactGgufMetadata {
 export interface VyactModelSearchResponse {
     models: VyactHubModel[];
     hardware: VyactHardwareInfo;
+    installed: string[];
 }
+
+let cachedVyactInstalledModels: string[] = [];
 
 export interface VyactGpuInfo {
     name: string;
@@ -267,14 +270,20 @@ export const api = {
     async searchVyactModels(query: string): Promise<VyactModelSearchResponse> {
         const response = await fetch(`${API_BASE}/vyact/models/search?q=${encodeURIComponent(query)}`);
         const data = await response.json();
+        cachedVyactInstalledModels = data.installed || [];
         return {
             models: data.models || [],
+            installed: cachedVyactInstalledModels,
             hardware: data.hardware || {
                 platform: '', memory_mode: 'system',
                 system_memory: data.system_memory || {total_bytes: 0, available_bytes: 0},
                 gpus: [],
             },
         };
+    },
+
+    getCachedVyactInstalledModels(): string[] {
+        return [...cachedVyactInstalledModels];
     },
 
     async getVyactModelMetadataCache(
@@ -341,7 +350,13 @@ export const api = {
         let pending = '';
         while (true) {
             const {done, value} = await reader.read();
-            if (done) return;
+            if (done) {
+                const modelPath = `${repository}/${filename}`;
+                if (!cachedVyactInstalledModels.includes(modelPath)) {
+                    cachedVyactInstalledModels = [...cachedVyactInstalledModels, modelPath];
+                }
+                return;
+            }
             pending += decoder.decode(value, {stream: true});
             const lines = pending.split('\n');
             pending = lines.pop() || '';
@@ -349,6 +364,30 @@ export const api = {
                 if (!line.startsWith('data: ')) continue;
                 const event = JSON.parse(line.slice(6));
                 onProgress(event.message, event.progress);
+                if (event.type === 'error') throw new Error(event.message);
+            }
+        }
+    },
+
+    async installVyactRuntime(
+        onProgress?: (message: string, progress?: number) => void,
+    ): Promise<void> {
+        const response = await fetch(`${API_BASE}/vyact/runtime/install`, {method: 'POST'});
+        if (!response.ok) throw new Error(`Vyact runtime installation failed (${response.status})`);
+        if (!response.body) return;
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let pending = '';
+        while (true) {
+            const {done, value} = await reader.read();
+            if (done) return;
+            pending += decoder.decode(value, {stream: true});
+            const lines = pending.split('\n');
+            pending = lines.pop() || '';
+            for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                const event = JSON.parse(line.slice(6));
+                onProgress?.(event.message, event.progress);
                 if (event.type === 'error') throw new Error(event.message);
             }
         }

@@ -664,9 +664,12 @@ async def get_recommended_models():
 async def search_vyact_models(q: str = Query("", max_length=200)):
     """Search GGUF repositories only; model file selection stays explicit in the UI."""
     try:
+        from services.vyact_runtime import list_downloaded_models
+
         return {
             "models": await search_gguf_models(q),
             "hardware": get_local_hardware_info(),
+            "installed": list_downloaded_models(),
         }
     except Exception as error:
         logger.warning("[vyact] Hugging Face search failed: %s", error)

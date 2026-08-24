@@ -4,8 +4,9 @@ from pathlib import Path
 from unittest.mock import patch
 
 from services.vyact_runtime import (
-    RuntimePaths, get_native_install_commands, get_native_update_commands,
-    list_downloaded_models, start_single_model, write_single_model_config,
+    RuntimePaths, cache_downloaded_model, get_native_install_commands, get_native_update_commands,
+    initialize_downloaded_models_cache, list_downloaded_models, start_single_model,
+    uncache_downloaded_model, write_single_model_config,
 )
 
 
@@ -45,7 +46,16 @@ class VyactRuntimeTests(unittest.TestCase):
             (models_dir / "partial.gguf.part").touch()
             (models_dir / "notes.txt").touch()
             with patch("services.vyact_runtime.VYACT_MODELS_DIR", models_dir):
+                initialize_downloaded_models_cache(force=True)
                 self.assertEqual(list_downloaded_models(), ["qwen.gguf"])
+
+                (models_dir / "later.gguf").touch()
+                self.assertEqual(list_downloaded_models(), ["qwen.gguf"])
+
+                cache_downloaded_model("owner/later.gguf")
+                self.assertEqual(list_downloaded_models(), ["owner/later.gguf", "qwen.gguf"])
+                uncache_downloaded_model("qwen.gguf")
+                self.assertEqual(list_downloaded_models(), ["owner/later.gguf"])
 
     def test_macos_installs_only_missing_component_with_brew(self):
         paths = RuntimePaths(None, Path("/opt/homebrew/bin/llama-swap"), Path("/models"), Path("/config"))

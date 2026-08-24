@@ -36,7 +36,8 @@
 .vyact-model-files button.memory-over { --memory-tone: #e06060; border-color: color-mix(in srgb, #e06060 42%, var(--border)); }
 .vyact-model-file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .vyact-model-files button small { grid-column: 1; color: var(--muted); font-size: 11px; }
-.vyact-model-files button svg { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+.vyact-model-file-status { display: flex; grid-column: 2; grid-row: 1 / span 2; align-items: center; gap: 7px; align-self: center; }
+.vyact-model-installed { padding: 3px 7px; border-radius: 999px; background: color-mix(in srgb, #47b881 16%, transparent); color: #63c998; font-size: 10px; font-weight: 750; white-space: nowrap; }
 .vyact-model-files button:hover:not(:disabled) { transform: translateY(-1px); }
 .vyact-model-files button:hover:not(:disabled) { color: var(--accent); }
 .vyact-model-files button.is-selected { background: color-mix(in srgb, var(--accent) 8%, var(--bg)); }
@@ -51,6 +52,14 @@
 .vyact-model-metadata .vyact-total-memory strong { color: var(--accent); }
 .vyact-memory-details { flex: 1 0 100%; padding-top: 0; border-top: 1px solid var(--border); padding-block-start: 10px; }
 .vyact-model-status { padding: 9px 12px; border-radius: 8px; background: color-mix(in srgb, var(--accent) 9%, transparent); color: var(--text-secondary); font-size: var(--modal-sub); }
+.vyact-model-status.is-progress { display: grid; gap: 8px; padding: 10px 12px; }
+.vyact-model-status-copy { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.vyact-model-status-copy > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vyact-model-status-copy strong { flex: 0 0 auto; color: var(--accent); font-variant-numeric: tabular-nums; }
+.vyact-model-progress { position: relative; height: 7px; overflow: hidden; border-radius: 999px; background: color-mix(in srgb, var(--accent) 16%, var(--surface2)); }
+.vyact-model-progress > span { display: block; height: 100%; border-radius: inherit; background: var(--accent); transition: width .25s ease; }
+.vyact-model-progress.is-indeterminate > span { width: 36%; animation: vyact-model-progress 1.2s ease-in-out infinite; }
+@keyframes vyact-model-progress { from { transform: translateX(-110%); } to { transform: translateX(310%); } }
 
 @media (max-width: 640px) {
     .vyact-model-controls { grid-template-columns: 1fr; }

@@ -518,8 +518,9 @@
     "quickEstimatedMemory": "Ước tính RAM nhanh", "detailedEstimatedMemory": "Ước tính RAM chi tiết", "conversationMemoryHelp": "Bộ nhớ bổ sung ở độ dài hội thoại mặc định của ứng dụng. Đây không phải mức cần thiết để dùng toàn bộ ngữ cảnh tối đa của mô hình.",
     "metadataAnalysisFailed": "Không thể tính hoặc lưu thông tin chi tiết của mô hình.",
     "totalEstimatedMemory": "Tổng RAM ước tính",
-    "layersHelp": "Số khối nội bộ xử lý đầu vào theo trình tự. Nhiều lớp hơn có thể tăng tính toán và bộ nhớ, nhưng riêng số lớp không quyết định chất lượng mô hình.",
+    "layersHelp": "Số khối xử lý nội bộ mà đầu vào đi qua theo trình tự. Với các mô hình có cấu trúc và độ rộng tương tự, nhiều lớp hơn thường cần nhiều thời gian tính toán và bộ nhớ hơn, nhưng tốc độ và chất lượng thực tế còn phụ thuộc vào kích thước lớp, tổng số tham số, kiến trúc, lượng tử hóa và phần cứng.",
     "huggingFaceTokenHelp": "Tìm kiếm mô hình không sử dụng token. Token dùng để xác thực khi truy cập mô hình hạn chế, kiểm tra GGUF và tải xuống. Token được lưu vào Elasticsearch khi bắt đầu tải và được dùng lại cho các lần sau. Xác thực có thể cải thiện giới hạn và độ ổn định nhưng không đảm bảo tải nhanh hơn.",
+    "installed": "Đã cài đặt",
     "systemMemory": "RAM hệ thống", "unifiedMemory": "Bộ nhớ hợp nhất", "availableMemory": "Khả dụng", "monthlyDownloads": "Lượt tải trong 30 ngày", "estimatedMemory": "RAM ước tính", "sharedOrUnknownMemory": "Bộ nhớ dùng chung hoặc không rõ dung lượng", "cpuExecution": "Không có GPU · chạy CPU/RAM", "analyzingMetadata": "Đang phân tích siêu dữ liệu GGUF...", "parameters": "Tham số", "architecture": "Kiến trúc", "quantization": "Lượng tử hóa", "maxContext": "Ngữ cảnh tối đa", "layers": "Lớp", "kvCache": "Bộ nhớ đệm KV 32K", "execution": {"unified":"Có thể chạy bằng bộ nhớ hợp nhất","gpu":"Có thể chạy bằng GPU","hybrid":"Chạy kết hợp GPU+RAM","cpu":"Có thể chạy bằng CPU/RAM","insufficient":"Không đủ bộ nhớ khả dụng"}
   },
   "modelDownload": {
@@ -527,6 +528,8 @@
     "confirmDescription": "Bạn có muốn tải xuống ngay bây giờ không? Quá trình có thể mất vài phút.",
     "downloadAction": "Tải xuống",
     "downloading": "Đang tải mô hình...",
+    "preparingRuntime": "Đang chuẩn bị llama.cpp và llama-swap...",
+    "activating": "Đang chuẩn bị mô hình...",
     "loadingIntoMemory": "Đang nạp mô hình vào bộ nhớ... ({{seconds}} giây)"
   },
   "shortcutModal": {

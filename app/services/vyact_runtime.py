@@ -12,6 +12,7 @@ import platform
 import shutil
 import signal
 import subprocess
+import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -24,6 +25,9 @@ VYACT_RUNTIME_DIR = INSTALL_DIR / "runtime"
 VYACT_MODELS_DIR = INSTALL_DIR / "models"
 VYACT_SWAP_CONFIG = VYACT_RUNTIME_DIR / "llama-swap.yaml"
 VYACT_RUNTIME_PID_FILE = VYACT_RUNTIME_DIR / "llama-swap.pid"
+
+_downloaded_models_lock = threading.RLock()
+_downloaded_models_cache: frozenset[str] | None = None
 
 
 @dataclass(frozen=True)
@@ -159,15 +163,42 @@ def _model_key(model_path: Path) -> str:
     return f"vyact-{hashlib.sha256(str(model_path).encode()).hexdigest()[:16]}"
 
 
+def initialize_downloaded_models_cache(*, force: bool = False) -> list[str]:
+    """Scan managed GGUF files once and retain the result in process memory."""
+    global _downloaded_models_cache
+    with _downloaded_models_lock:
+        if _downloaded_models_cache is not None and not force:
+            return sorted(_downloaded_models_cache)
+        models = {
+            path.relative_to(VYACT_MODELS_DIR).as_posix()
+            for path in VYACT_MODELS_DIR.rglob("*.gguf")
+            if path.is_file() and not path.name.endswith(".part")
+        } if VYACT_MODELS_DIR.is_dir() else set()
+        _downloaded_models_cache = frozenset(models)
+        return sorted(models)
+
+
 def list_downloaded_models() -> list[str]:
-    """Return complete GGUF files and ignore temporary download artifacts."""
-    if not VYACT_MODELS_DIR.is_dir():
-        return []
-    return sorted(
-        str(path.relative_to(VYACT_MODELS_DIR))
-        for path in VYACT_MODELS_DIR.rglob("*.gguf")
-        if path.is_file() and not path.name.endswith(".part")
-    )
+    """Return the cached GGUF inventory without rescanning the filesystem."""
+    return initialize_downloaded_models_cache()
+
+
+def cache_downloaded_model(relative_path: str) -> None:
+    """Record a completed managed download without rescanning model storage."""
+    global _downloaded_models_cache
+    with _downloaded_models_lock:
+        current = set(_downloaded_models_cache or initialize_downloaded_models_cache())
+        current.add(relative_path)
+        _downloaded_models_cache = frozenset(current)
+
+
+def uncache_downloaded_model(relative_path: str) -> None:
+    """Remove a model from the inventory when a managed deletion succeeds."""
+    global _downloaded_models_cache
+    with _downloaded_models_lock:
+        current = set(_downloaded_models_cache or initialize_downloaded_models_cache())
+        current.discard(relative_path)
+        _downloaded_models_cache = frozenset(current)
 
 
 def get_downloaded_model_path(relative_path: str) -> Path:

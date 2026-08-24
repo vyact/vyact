@@ -20,6 +20,8 @@ interface SelectedModelFile {
     fileSize: number;
 }
 
+type DownloadPhase = 'runtime' | 'model' | 'activation' | null;
+
 const MAX_FILES_PER_MODEL = 8;
 const MODEL_MEMORY_OVERHEAD_RATIO = 1.2;
 const EMPTY_HARDWARE_INFO: VyactHardwareInfo = {
@@ -75,10 +77,13 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     const [showToken, setShowToken] = useState(false);
     const [query, setQuery] = useState('');
     const [models, setModels] = useState<VyactHubModel[]>([]);
+    const [installedModels, setInstalledModels] = useState<string[]>(() => api.getCachedVyactInstalledModels());
     const [selectedFile, setSelectedFile] = useState<SelectedModelFile | null>(null);
     const [isSearching, setIsSearching] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
     const [message, setMessage] = useState('');
+    const [downloadPhase, setDownloadPhase] = useState<DownloadPhase>(null);
+    const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
     const [hardware, setHardware] = useState<VyactHardwareInfo>(EMPTY_HARDWARE_INFO);
     const [metadataByFile, setMetadataByFile] = useState<Record<string, GgufModelMetadata>>({});
     const [analyzingFile, setAnalyzingFile] = useState('');
@@ -101,6 +106,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
             if (requestId === searchRequestIdRef.current) {
                 setModels(searchResponse.models);
                 setHardware(searchResponse.hardware);
+                setInstalledModels(searchResponse.installed);
             }
         } catch (error) {
             if (requestId === searchRequestIdRef.current) setMessage(String(error));
@@ -118,18 +124,34 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     const downloadSelectedModel = async () => {
         if (!selectedFile) return;
         setIsDownloading(true);
-        setMessage(t('modelDownload.downloading'));
+        setDownloadPhase('runtime');
+        setDownloadProgress(null);
+        setMessage(t('modelDownload.preparingRuntime'));
         try {
             if (token.trim()) await api.saveVyactHuggingFaceToken(token.trim());
+            await api.installVyactRuntime(() => setMessage(t('modelDownload.preparingRuntime')));
+            setDownloadPhase('model');
+            setDownloadProgress(0);
+            setMessage(t('modelDownload.downloading'));
             await api.streamVyactModelDownload(
                 selectedFile.repository,
                 selectedFile.filename,
-                (_downloadMessage, progress) => setMessage(progress == null ? t('modelDownload.downloading') : `${progress}%`),
+                (_downloadMessage, progress) => {
+                    setMessage(t('modelDownload.downloading'));
+                    if (progress != null) setDownloadProgress(progress);
+                },
             );
+            setInstalledModels(api.getCachedVyactInstalledModels());
+            setDownloadPhase('activation');
+            setDownloadProgress(0);
+            setMessage(t('modelDownload.activating'));
             await api.activateVyactModel(
                 `${selectedFile.repository}/${selectedFile.filename}`,
                 32768,
-                (activationMessage, progress) => setMessage(progress == null ? activationMessage : `${activationMessage} ${progress}%`),
+                (_activationMessage, progress) => {
+                    setMessage(t('modelDownload.activating'));
+                    if (progress != null) setDownloadProgress(progress);
+                },
             );
             await onSelected();
             onClose();
@@ -137,6 +159,8 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
             setMessage(String(error));
         } finally {
             setIsDownloading(false);
+            setDownloadPhase(null);
+            setDownloadProgress(null);
         }
     };
 
@@ -320,11 +344,15 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                         const fileSize = model.file_sizes?.[filename] || 0;
                                         const estimatedMemory = fileSize * MODEL_MEMORY_OVERHEAD_RATIO;
                                         const memoryTone = getMemoryTone(estimatedMemory, hardware);
+                                        const isInstalled = installedModels.includes(`${model.id}/${filename}`);
                                         return (
                                             <button type="button" className={`${isSelected ? 'is-selected ' : ''}memory-${memoryTone}`} key={filename} onClick={() => void selectModelFile(model, filename, fileSize)} disabled={busy}>
                                                 <span className="vyact-model-file-name">{filename}</span>
                                                 {fileSize > 0 && <small>{formatBytes(fileSize)} · {t('modelSelector.estimatedMemory')} {formatBytes(estimatedMemory)}</small>}
-                                                {analyzingFile === fileKey ? <LoaderCircle className="vyact-model-spinner" size={15}/> : isSelected && <Check size={15}/>} 
+                                                <span className="vyact-model-file-status">
+                                                    {isInstalled && <span className="vyact-model-installed">{t('modelSelector.installed')}</span>}
+                                                    {analyzingFile === fileKey ? <LoaderCircle className="vyact-model-spinner" size={15}/> : isSelected && <Check size={15}/>}
+                                                </span>
                                             </button>
                                         );
                                     })}
@@ -333,13 +361,38 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                         ))}
                     </section>
 
-                    {message && <div className="vyact-model-status" role="status">{message}</div>}
+                    {message && (
+                        <div
+                            className={`vyact-model-status${isDownloading ? ' is-progress' : ''}`}
+                            role="status"
+                            aria-live="polite"
+                        >
+                            {isDownloading && (
+                                <div
+                                    className={`vyact-model-progress${downloadProgress == null ? ' is-indeterminate' : ''}`}
+                                    role="progressbar"
+                                    aria-label={t(`modelDownload.${downloadPhase === 'runtime' ? 'preparingRuntime' : downloadPhase === 'activation' ? 'activating' : 'downloading'}`)}
+                                    aria-valuemin={downloadProgress == null ? undefined : 0}
+                                    aria-valuemax={downloadProgress == null ? undefined : 100}
+                                    aria-valuenow={downloadProgress == null ? undefined : downloadProgress}
+                                >
+                                    <span style={downloadProgress == null ? undefined : {width: `${downloadProgress}%`}}/>
+                                </div>
+                            )}
+                            <div className="vyact-model-status-copy">
+                                <span>{message}</span>
+                                {isDownloading && downloadProgress != null && <strong>{downloadProgress}%</strong>}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <footer className="provider-editor-footer">
                     <button type="button" className="provider-editor-cancel" onClick={onClose} disabled={busy}>{t('customProvider.cancel')}</button>
                     <button type="button" className="provider-editor-save" onClick={() => void downloadSelectedModel()} disabled={!selectedFile || busy}>
-                        {isDownloading ? t('modelDownload.downloading') : t('modelDownload.downloadAction')}
+                        {isDownloading
+                            ? t(`modelDownload.${downloadPhase === 'runtime' ? 'preparingRuntime' : downloadPhase === 'activation' ? 'activating' : 'downloading'}`)
+                            : t('modelDownload.downloadAction')}
                     </button>
                 </footer>
             </section>

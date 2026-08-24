@@ -176,6 +176,13 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning("Failed to create log directory: %s", e)
 
+    try:
+        from services.vyact_runtime import initialize_downloaded_models_cache
+        installed_vyact_models = initialize_downloaded_models_cache()
+        logger.info("[vyact] Cached %d downloaded model(s)", len(installed_vyact_models))
+    except Exception as e:
+        logger.warning("[vyact] Failed to initialize downloaded model cache: %s", e)
+
     # 최초 설정에서는 Provider 선택 후 설치 진행 화면에서 준비한다.
     if not is_initial_setup:
         try:

@@ -518,8 +518,9 @@
     "quickEstimatedMemory": "快速预计内存", "detailedEstimatedMemory": "详细预计内存", "conversationMemoryHelp": "这是应用默认对话长度下额外使用的内存，并非使用模型全部最大上下文时所需的内存。",
     "metadataAnalysisFailed": "无法计算或保存模型详细信息。",
     "totalEstimatedMemory": "预计总内存",
-    "layersHelp": "按顺序处理输入的模型内部模块数量。层数增加可能提高计算量和内存占用，但不能仅凭层数判断模型质量。",
+    "layersHelp": "输入按顺序经过的内部处理模块数量。对于结构和宽度相近的模型，层数越多通常需要更多计算时间和内存，但实际速度和质量还取决于每层大小、总参数量、模型架构、量化方式和硬件。",
     "huggingFaceTokenHelp": "模型搜索不会使用令牌。令牌用于受限模型访问、GGUF检查和下载认证。开始下载时会保存到Elasticsearch，并用于后续下载。认证可能提高请求限额和稳定性，但不保证提升下载速度。",
+    "installed": "已安装",
     "systemMemory": "系统内存", "unifiedMemory": "统一内存", "availableMemory": "可用", "monthlyDownloads": "近30天下载", "estimatedMemory": "预计内存", "sharedOrUnknownMemory": "共享内存或容量未知", "cpuExecution": "无GPU · 使用CPU/内存", "analyzingMetadata": "正在分析GGUF元数据...", "parameters": "参数", "architecture": "架构", "quantization": "量化", "maxContext": "最大上下文", "layers": "层数", "kvCache": "32K KV缓存", "execution": {"unified":"可使用统一内存运行","gpu":"可使用GPU运行","hybrid":"GPU+内存混合运行","cpu":"可使用CPU/内存运行","insufficient":"当前可用内存不足"}
   },
   "modelDownload": {
@@ -527,6 +528,8 @@
     "confirmDescription": "现在下载吗？这可能需要几分钟。",
     "downloadAction": "下载",
     "downloading": "正在下载模型...",
+    "preparingRuntime": "正在准备 llama.cpp 和 llama-swap...",
+    "activating": "正在准备模型...",
     "loadingIntoMemory": "正在将模型加载到内存中...（{{seconds}} 秒）"
   },
   "shortcutModal": {

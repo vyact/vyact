@@ -7,7 +7,7 @@ from urllib.parse import quote
 
 import httpx
 
-from services.vyact_runtime import VYACT_MODELS_DIR
+from services.vyact_runtime import VYACT_MODELS_DIR, cache_downloaded_model
 
 HF_API_URL = "https://huggingface.co/api"
 RECOMMENDED_GGUF_REPOSITORIES = (
@@ -107,3 +107,4 @@ async def download_gguf_model(repo_id: str, filename: str, token: str | None = N
                     downloaded += len(chunk)
                     yield downloaded, total_bytes
     temporary.replace(destination)
+    cache_downloaded_model(destination.relative_to(VYACT_MODELS_DIR).as_posix())

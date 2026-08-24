@@ -518,8 +518,9 @@
     "quickEstimatedMemory": "Estimation rapide de RAM", "detailedEstimatedMemory": "Estimation détaillée de RAM", "conversationMemoryHelp": "Mémoire supplémentaire utilisée avec la longueur de conversation par défaut. Ce n’est pas la mémoire nécessaire pour exploiter tout le contexte maximal du modèle.",
     "metadataAnalysisFailed": "Impossible de calculer ou d’enregistrer les informations détaillées du modèle.",
     "totalEstimatedMemory": "RAM totale estimée",
-    "layersHelp": "Nombre de blocs internes qui traitent l’entrée successivement. Davantage de couches peut augmenter le calcul et la mémoire, sans déterminer à lui seul la qualité.",
+    "layersHelp": "Nombre de blocs de traitement internes que l’entrée traverse successivement. À structure et largeur comparables, davantage de couches demandent généralement plus de calcul et de mémoire, mais la vitesse et la qualité dépendent aussi de la taille des couches, du nombre total de paramètres, de l’architecture, de la quantification et du matériel.",
     "huggingFaceTokenHelp": "La recherche n’utilise pas le jeton. Il sert à accéder aux modèles restreints, inspecter les GGUF et authentifier les téléchargements. Il est enregistré dans Elasticsearch au début d’un téléchargement et réutilisé ensuite. Il peut améliorer les limites et la fiabilité, sans garantir une vitesse supérieure.",
+    "installed": "Installé",
     "systemMemory": "RAM système", "unifiedMemory": "Mémoire unifiée", "availableMemory": "Disponible", "monthlyDownloads": "Téléchargements sur 30 jours", "estimatedMemory": "RAM estimée", "sharedOrUnknownMemory": "Mémoire partagée ou capacité inconnue", "cpuExecution": "Pas de GPU · exécution CPU/RAM", "analyzingMetadata": "Analyse des métadonnées GGUF...", "parameters": "Paramètres", "architecture": "Architecture", "quantization": "Quantification", "maxContext": "Contexte maximal", "layers": "Couches", "kvCache": "Cache KV 32K", "execution": {"unified":"Compatible avec la mémoire unifiée","gpu":"Exécution GPU possible","hybrid":"Exécution hybride GPU+RAM","cpu":"Exécution CPU/RAM possible","insufficient":"Mémoire disponible insuffisante"}
   },
   "modelDownload": {
@@ -527,6 +528,8 @@
     "confirmDescription": "Voulez-vous le télécharger maintenant ? Cela peut prendre quelques minutes.",
     "downloadAction": "Télécharger",
     "downloading": "Téléchargement du modèle...",
+    "preparingRuntime": "Préparation de llama.cpp et llama-swap...",
+    "activating": "Préparation du modèle...",
     "loadingIntoMemory": "Chargement du modèle en mémoire... ({{seconds}} s)"
   },
   "shortcutModal": {

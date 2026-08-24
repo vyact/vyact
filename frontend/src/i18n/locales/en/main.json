@@ -518,15 +518,17 @@
     "quickEstimatedMemory": "Quick RAM estimate", "detailedEstimatedMemory": "Detailed RAM estimate", "conversationMemoryHelp": "Extra memory used at the app's default conversation length. This is not the amount required to use the model's full maximum context.",
     "metadataAnalysisFailed": "Could not calculate or save the detailed model information.",
     "totalEstimatedMemory": "Total estimated RAM",
-    "layersHelp": "The number of internal blocks that process input in sequence. More layers can increase computation and memory use, but layer count alone does not determine model quality.",
+    "layersHelp": "The number of internal processing blocks the input passes through in sequence. Among models with a similar structure and width, more layers usually require more compute time and memory, but actual speed and quality also depend on layer size, total parameters, architecture, quantization, and hardware.",
     "huggingFaceTokenHelp": "Model search does not use your token. It authenticates gated-model access, GGUF inspection, and downloads. It is saved to Elasticsearch when a download starts and reused for later downloads. Authentication can improve rate limits and reliability, but faster downloads are not guaranteed.",
-    "systemMemory": "System RAM", "unifiedMemory": "Unified memory", "availableMemory": "Available", "monthlyDownloads": "30-day downloads", "estimatedMemory": "Est. RAM", "sharedOrUnknownMemory": "Shared memory or capacity unavailable", "cpuExecution": "No GPU · CPU/RAM execution", "analyzingMetadata": "Analyzing GGUF metadata...", "parameters": "Parameters", "architecture": "Architecture", "quantization": "Quantization", "maxContext": "Max context", "layers": "Layers", "kvCache": "32K KV cache", "execution": {"unified":"Fits unified memory","gpu":"GPU execution available","hybrid":"GPU+RAM hybrid execution","cpu":"CPU/RAM execution available","insufficient":"Not enough available memory"}
+    "systemMemory": "System RAM", "unifiedMemory": "Unified memory", "availableMemory": "Available", "monthlyDownloads": "30-day downloads", "estimatedMemory": "Est. RAM", "installed": "Installed", "sharedOrUnknownMemory": "Shared memory or capacity unavailable", "cpuExecution": "No GPU · CPU/RAM execution", "analyzingMetadata": "Analyzing GGUF metadata...", "parameters": "Parameters", "architecture": "Architecture", "quantization": "Quantization", "maxContext": "Max context", "layers": "Layers", "kvCache": "32K KV cache", "execution": {"unified":"Fits unified memory","gpu":"GPU execution available","hybrid":"GPU+RAM hybrid execution","cpu":"CPU/RAM execution available","insufficient":"Not enough available memory"}
   },
   "modelDownload": {
     "confirmTitle": "{{model}} is not installed.",
     "confirmDescription": "Would you like to download it now? This may take a few minutes.",
     "downloadAction": "Download",
     "downloading": "Downloading model...",
+    "preparingRuntime": "Preparing llama.cpp and llama-swap...",
+    "activating": "Preparing model...",
     "loadingIntoMemory": "Loading model into memory... ({{seconds}}s)"
   },
   "shortcutModal": {
