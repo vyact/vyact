@@ -1,0 +1,152 @@
+"""Managed Apple Silicon MLX-VLM model downloads and OpenAI-compatible runtime."""
+import json
+import os
+import platform
+import signal
+import subprocess
+import sys
+import time
+import urllib.error
+import urllib.request
+from pathlib import Path
+
+from config import INSTALL_DIR
+from services.vyact_runtime import VYACT_RUNTIME_PORT
+
+MLX_MODELS_DIR = INSTALL_DIR / "models" / "mlx"
+MLX_RUNTIME_DIR = INSTALL_DIR / "runtime"
+MLX_RUNTIME_PID_FILE = MLX_RUNTIME_DIR / "mlx-vlm.pid"
+MLX_MODEL_MANIFEST = ".vyact-mlx-model.json"
+
+
+def is_apple_silicon() -> bool:
+    return platform.system() == "Darwin" and platform.machine().lower() in {"arm64", "aarch64"}
+
+
+def _repository_path(repository: str) -> Path:
+    parts = repository.split("/")
+    if len(parts) != 2 or not all(parts) or any(part in {".", ".."} for part in parts):
+        raise ValueError("Invalid Hugging Face repository ID")
+    return MLX_MODELS_DIR.joinpath(*parts)
+
+
+def list_downloaded_mlx_models() -> list[str]:
+    if not MLX_MODELS_DIR.is_dir():
+        return []
+    return sorted(
+        f"mlx/{path.parent.relative_to(MLX_MODELS_DIR).as_posix()}"
+        for path in MLX_MODELS_DIR.rglob(MLX_MODEL_MANIFEST)
+        if path.is_file()
+    )
+
+
+def download_mlx_model(repository: str, revision: str, token: str | None = None) -> Path:
+    if not is_apple_silicon():
+        raise RuntimeError("MLX models require Apple Silicon")
+    from huggingface_hub import snapshot_download
+    from services.huggingface_models import MLX_DOWNLOAD_PATTERNS
+
+    destination = _repository_path(repository)
+    destination.mkdir(parents=True, exist_ok=True)
+    snapshot_download(
+        repo_id=repository,
+        revision=revision,
+        token=token,
+        local_dir=str(destination),
+        allow_patterns=list(MLX_DOWNLOAD_PATTERNS),
+    )
+    if not (destination / "config.json").is_file() or not any(destination.rglob("*.safetensors")):
+        raise RuntimeError("The downloaded repository is not a complete MLX model")
+    (destination / MLX_MODEL_MANIFEST).write_text(json.dumps({
+        "repository": repository,
+        "revision": revision,
+    }), encoding="utf-8")
+    return destination
+
+
+def get_downloaded_mlx_model_path(model_path: str) -> Path:
+    repository = model_path.removeprefix("mlx/")
+    destination = _repository_path(repository).resolve()
+    if MLX_MODELS_DIR.resolve() not in destination.parents or not (destination / MLX_MODEL_MANIFEST).is_file():
+        raise ValueError("The selected MLX model has not been downloaded")
+    return destination
+
+
+def _read_pid() -> int | None:
+    try:
+        return int(MLX_RUNTIME_PID_FILE.read_text(encoding="utf-8").strip())
+    except (OSError, ValueError):
+        return None
+
+
+def stop_mlx_runtime() -> None:
+    pid = _read_pid()
+    if pid is None:
+        return
+    try:
+        command = subprocess.check_output(["ps", "-p", str(pid), "-o", "command="], text=True)
+    except (OSError, subprocess.SubprocessError):
+        MLX_RUNTIME_PID_FILE.unlink(missing_ok=True)
+        return
+    if "mlx_vlm.server" not in command and "mlx_lm.server" not in command:
+        MLX_RUNTIME_PID_FILE.unlink(missing_ok=True)
+        raise RuntimeError("Vyact MLX PID no longer refers to mlx_vlm.server")
+    os.kill(pid, signal.SIGTERM)
+    deadline = time.monotonic() + 10
+    while time.monotonic() < deadline:
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            MLX_RUNTIME_PID_FILE.unlink(missing_ok=True)
+            return
+        time.sleep(0.1)
+    raise RuntimeError("The existing MLX runtime did not stop in time")
+
+
+def _server_module_for_model(model_path: Path) -> str:
+    try:
+        config = json.loads((model_path / "config.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise RuntimeError("The MLX model config.json could not be read") from error
+    architectures = " ".join(str(value).lower() for value in config.get("architectures", []))
+    is_vision_model = bool(config.get("vision_config")) or any(
+        marker in architectures for marker in ("vision", "conditionalgeneration", "vl")
+    )
+    return "mlx_vlm.server" if is_vision_model else "mlx_lm.server"
+
+
+def start_mlx_model(model_path: Path, context_size: int, debug_logging: bool = False) -> str:
+    if not is_apple_silicon():
+        raise RuntimeError("MLX models require Apple Silicon")
+    try:
+        import mlx_vlm  # noqa: F401
+    except ImportError as error:
+        raise RuntimeError("The MLX runtime is not installed") from error
+    from services.vyact_runtime import stop_runtime
+
+    stop_runtime()
+    stop_mlx_runtime()
+    MLX_RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
+    log_path = MLX_RUNTIME_DIR / "mlx-vlm.log"
+    server_module = _server_module_for_model(model_path)
+    command = [
+        sys.executable, "-m", server_module, "--model", str(model_path),
+        "--host", "127.0.0.1", "--port", str(VYACT_RUNTIME_PORT),
+        "--max-kv-size", str(context_size),
+    ]
+    with log_path.open("ab") as log_file:
+        process = subprocess.Popen(command, stdout=log_file, stderr=subprocess.STDOUT, start_new_session=True)
+    MLX_RUNTIME_PID_FILE.write_text(str(process.pid), encoding="utf-8")
+    deadline = time.monotonic() + 180
+    health_url = f"http://127.0.0.1:{VYACT_RUNTIME_PORT}/v1/models"
+    while time.monotonic() < deadline:
+        if process.poll() is not None:
+            raise RuntimeError("MLX runtime stopped while loading the model")
+        try:
+            with urllib.request.urlopen(health_url, timeout=2) as response:
+                if response.status == 200:
+                    return str(model_path)
+        except (OSError, urllib.error.URLError):
+            pass
+        time.sleep(0.25)
+    raise RuntimeError("The MLX model did not become ready within 180 seconds")
