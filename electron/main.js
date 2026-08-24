@@ -1128,7 +1128,7 @@ app.on("before-quit", async (e) => {
     if (serverProc && !serverProc.killed) {
         e.preventDefault();
         isQuitting = true;
-        log("🛑 Shutting down — unloading Ollama...");
+        log("🛑 Shutting down local runtimes...");
         try {
             await fetch("http://localhost:8000/api/shutdown", {method: "POST"})
                 .catch(() => {

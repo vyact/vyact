@@ -11,6 +11,15 @@
 .vyact-model-search-field button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 42px; padding: 0 14px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface2); color: var(--text); cursor: pointer; font-size: var(--modal-btn); font-weight: 700; }
 .vyact-model-search-field button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
 .vyact-model-search-field button:disabled { cursor: not-allowed; opacity: .55; }
+.vyact-search-label { display: flex !important; justify-content: space-between; gap: 10px; }
+.vyact-search-label > span { display: inline-flex; align-items: center; gap: 6px; }
+.vyact-mlx-switch { display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; background: transparent; color: var(--muted); cursor: pointer; font: inherit; }
+.vyact-mlx-switch > span { position: relative; width: 29px; height: 17px; border-radius: 999px; background: var(--border); transition: background .15s; }
+.vyact-mlx-switch i { position: absolute; top: 3px; left: 3px; width: 11px; height: 11px; border-radius: 50%; background: var(--text); transition: transform .15s; }
+.vyact-mlx-switch.is-on { color: var(--accent); }
+.vyact-mlx-switch.is-on > span { background: var(--accent); }
+.vyact-mlx-switch.is-on i { transform: translateX(12px); background: #fff; }
+.vyact-mlx-switch:disabled { cursor: not-allowed; opacity: .55; }
 .vyact-token-help { display: inline-grid; place-items: center; width: 17px; height: 17px; border: 1px solid var(--border); border-radius: 50%; color: var(--muted); cursor: help; font-size: 11px; font-weight: 800; line-height: 1; }
 .vyact-token-help:hover, .vyact-token-help:focus-visible { border-color: var(--accent); outline: none; color: var(--accent); }
 .vyact-model-results { display: grid; align-content: start; gap: 10px; min-height: 160px; padding-right: 4px; overflow-y: auto; overscroll-behavior: contain; }

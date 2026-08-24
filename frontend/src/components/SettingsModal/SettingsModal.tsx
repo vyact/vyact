@@ -60,13 +60,13 @@ type Tab = 'backup' | 'general' | 'runtime' | 'api' | 'externalData' | 'plugins'
 
 type RuntimeSettings = Record<string, number | null>;
 const DEFAULT_SETTINGS_TAB: Tab = 'general';
-const DEFAULT_RUNTIME_SETTINGS: RuntimeSettings = {llm_temperature: 0.2, llm_num_ctx: 131072, llm_num_predict: 32768, llm_max_tokens: 4096, top_k: null, top_p: null, history_token_budget: 32768, history_chars_per_token: 2, ollama_keep_alive: -1, bge_num_ctx: 8192, document_chunk_size: 1200, document_chunk_overlap: 150};
+const DEFAULT_RUNTIME_SETTINGS: RuntimeSettings = {llm_temperature: 0.2, llm_num_ctx: 131072, llm_num_predict: 32768, llm_max_tokens: 4096, top_k: null, top_p: null, history_token_budget: 32768, history_chars_per_token: 2, bge_num_ctx: 8192, document_chunk_size: 1200, document_chunk_overlap: 150};
 const toRuntimeInputValues = (settings: RuntimeSettings): Record<string, string> => Object.fromEntries(
     Object.entries(settings).map(([key, value]) => [key, value === null ? '' : String(value)])
 );
 const RUNTIME_SETTING_SECTIONS = [
     {key: 'llm', fields: ['llm_temperature', 'llm_num_ctx', 'llm_num_predict', 'llm_max_tokens', 'top_k', 'top_p']},
-    {key: 'ollama', fields: ['ollama_keep_alive', 'bge_num_ctx']},
+    {key: 'embedding', fields: ['bge_num_ctx']},
     {key: 'history', fields: ['history_token_budget', 'history_chars_per_token']},
     {key: 'chunking', fields: ['document_chunk_size', 'document_chunk_overlap']},
 ] as const;
@@ -75,7 +75,7 @@ const RUNTIME_FIELD_CONSTRAINTS: Record<string, {min: number; max?: number; step
     llm_num_predict: {min: 1, max: 131072, step: 1}, llm_max_tokens: {min: 1, max: 32768, step: 1},
     top_k: {min: 0, max: 100, step: 1}, top_p: {min: 0, max: 1, step: 0.01},
     history_token_budget: {min: 0, max: 131072, step: 1}, history_chars_per_token: {min: 0.1, max: 10, step: 0.1},
-    ollama_keep_alive: {min: -1, step: 1}, bge_num_ctx: {min: 1, max: 8192, step: 1},
+    bge_num_ctx: {min: 1, max: 8192, step: 1},
     document_chunk_size: {min: 100, max: 100000, step: 1}, document_chunk_overlap: {min: 0, max: 99999, step: 1},
 };
 

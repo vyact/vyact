@@ -120,6 +120,7 @@ def get_local_hardware_info() -> dict:
         memory_mode = "dedicated" if any(gpu["total_bytes"] and not gpu["shared_memory"] for gpu in gpus) else "system"
     return {
         "platform": platform.system().lower(),
+        "apple_silicon": is_apple_silicon,
         "memory_mode": memory_mode,
         "system_memory": {"total_bytes": memory.total, "available_bytes": memory.available},
         "gpus": gpus,

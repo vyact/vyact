@@ -2,7 +2,7 @@
 services/mcp_client.py — MCP(Model Context Protocol) 클라이언트 매니저
 
 여러 MCP 서버(stdio)를 앱 생명주기 동안 연결 유지하고,
-- 전체 tool 목록을 Ollama tool schema로 변환해서 제공 (get_ollama_tools)
+- 전체 tool 목록을 OpenAI-compatible tool schema로 변환해서 제공 (get_tools)
 - LLM이 요청한 tool_call을 해당 서버로 라우팅해 실행 (call_tool)
 한다.
 
@@ -195,7 +195,7 @@ class MCPManager:
         # tool 실행 결과에 딸려온 sources(기사 등)를 임시 보관 — call_tool 직후
         # drain_tool_sources()로 꺼내 "참고" 표시용으로 상위(agent.py 등)에 전달한다.
         self._pending_sources: list[dict] = []
-        # Google Workspace 인증 상태 캐시 (get_ollama_tools에서 참조)
+        # Google Workspace 인증 상태 캐시 (get_tools에서 참조)
         self._google_authenticated: bool = False
 
     def drain_tool_sources(self) -> list[dict]:
@@ -318,15 +318,15 @@ class MCPManager:
                 worker.start()
 
             # 3) 새로 시작한 워커들의 최초 연결 시도 완료를 기다린다
-            #    (get_ollama_tools가 곧바로 정확한 tool 목록을 반환하도록)
+            #    (get_tools가 곧바로 정확한 tool 목록을 반환하도록)
             for worker in list(self._workers.values()):
                 try:
                     await asyncio.wait_for(worker.wait_ready(), timeout=30.0)
                 except asyncio.TimeoutError:
                     logger.warning("[mcp] '%s' connection wait timeout (continuing in background)", worker.name)
 
-    async def get_ollama_tools(self) -> list[dict]:
-        """연결된 모든 서버의 tool을 Ollama /api/chat 'tools' 스키마로 변환.
+    async def get_tools(self) -> list[dict]:
+        """연결된 모든 서버의 tool을 OpenAI-compatible 'tools' 스키마로 변환.
 
         내부 tool은 server_type이 지정된 경우 해당 타입 서버가 enabled일 때만 노출한다.
         """
@@ -405,9 +405,9 @@ class MCPManager:
     def has_tools(self) -> bool:
         """등록된 tool이 하나라도 있는지의 '가능성'만 보는 빠른 사전 체크.
         실제로 지금 이 순간 노출 가능한(enabled) tool이 있는지는 비동기 조회가 필요해서
-        여기선 판단하지 않는다 — 호출부가 이 체크 통과 후 반드시 get_ollama_tools()로
+        여기선 판단하지 않는다 — 호출부가 이 체크 통과 후 반드시 get_tools()로
         최종 필터링한다. 그래서 '모든 MCP를 껐는데도 tool 판정 호출이 발생하는' 문제의
-        진짜 원인은 여기가 아니라 get_ollama_tools()의 enabled 조회 실패 시 폴백 로직에 있다
+        진짜 원인은 여기가 아니라 get_tools()의 enabled 조회 실패 시 폴백 로직에 있다
         (아래 참고).
         """
         return bool(self._internal_tools) or any(

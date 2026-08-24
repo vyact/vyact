@@ -1,7 +1,7 @@
 """
 services/llm/tools.py — MCP tool을 provider별 스키마로 변환 + tool 사용 지시문
 
-mcp_manager.get_ollama_tools()가 반환하는 통일 형식
+mcp_manager.get_tools()가 반환하는 통일 형식
   {"type":"function","function":{"name","description","parameters"}}
 을 각 provider(function-calling)의 스키마로 변환한다.
 
@@ -9,7 +9,21 @@ mcp_manager.get_ollama_tools()가 반환하는 통일 형식
 - Gemini : tools=[{functionDeclarations:[{name,description,parameters}]}]
 - Claude : tools=[{name,description,input_schema}]
 """
+import json
+
 from .config import logger
+
+
+def tool_result_failed(result_text: str) -> bool:
+    if result_text.startswith("[오류]"):
+        return True
+    if not result_text.lstrip().startswith("{"):
+        return False
+    try:
+        payload = json.loads(result_text)
+    except json.JSONDecodeError:
+        return False
+    return isinstance(payload, dict) and (payload.get("ok") is False or bool(payload.get("error")))
 
 
 def build_approval_rejection_instruction(tool_name: str) -> str:
@@ -26,7 +40,7 @@ def build_approval_rejection_instruction(tool_name: str) -> str:
 async def build_tool_directive(tool_names: list[str]) -> str:
     """작은/일반 모델이 tool을 확실히 호출하도록 유도하는 system 지시문.
 
-    ollama 경로의 _resolve_tool_calls와 동일한 문구를 공통으로 쓴다.
+    모든 provider 도구 실행 경로에서 동일한 문구를 공통으로 쓴다.
     GitHub tool이 있으면 사용자 username을 주입해 '내 저장소' 요청을 지원한다.
 
     이 directive는 system 메시지 맨 끝, user 메시지 바로 앞에 붙는다. 작은 모델일수록

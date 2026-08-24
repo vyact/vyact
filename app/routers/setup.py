@@ -8,17 +8,13 @@ import math
 import os
 import platform
 import re
-import shutil
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from agent import get_index_stats
-from config import (
-    DEFAULT_MODEL, INSTALL_DIR, LOGS_DIR, RECOMMENDED_MODELS,
-    IMAGE_MODEL_IDS, SETUP_DONE, VENV_DIR, get_log_file,
-)
+from config import INSTALL_DIR, LOGS_DIR, SETUP_DONE, VENV_DIR, get_log_file
 from config.models import LLM_INITIAL_NUM_CTX, LLM_MAX_NUM_CTX
 from routers.deps import APP_DIR, load_config_async, save_config_async, sse, write_log
 from logger import DebugLogSettings, ToolLogSettings, get_logger
@@ -31,10 +27,6 @@ from services.runtime_settings import DEFAULT_RUNTIME_SETTINGS, apply_runtime_se
 from services.vyact_model_metadata_cache import get_cached_model_metadata, save_cached_model_metadata
 
 logger = get_logger(__name__)
-
-ANSI_ESCAPE_PATTERN = re.compile(r"\x1B\[[0-?]*[ -/]*[@-~]")
-OLLAMA_PROGRESS_PATTERN = re.compile(r"\b(\d{1,3})%")
-
 
 def start_background_services_after_setup() -> None:
     """Start services skipped during the first-run installation lifespan."""
@@ -50,18 +42,11 @@ def is_japanese_system_language() -> bool:
     return language == "ja"
 
 
-def clean_ollama_progress_line(raw_output: bytes) -> str:
-    """Ollama의 터미널 제어문자를 제거하고 가장 최근 진행 상태만 반환한다."""
-    decoded = raw_output.decode("utf-8", errors="replace")
-    without_ansi = ANSI_ESCAPE_PATTERN.sub("", decoded)
-    lines = [line.strip() for line in without_ansi.replace("\r", "\n").splitlines() if line.strip()]
-    return lines[-1] if lines else ""
-
 RUNTIME_SETTING_LIMITS = {
     "llm_temperature": (0, 1), "llm_num_ctx": (LLM_INITIAL_NUM_CTX, LLM_MAX_NUM_CTX), "llm_num_predict": (1, 131072),
     "llm_max_tokens": (1, 32768), "top_k": (0, 100), "top_p": (0, 1),
     "history_token_budget": (0, 131072), "history_chars_per_token": (0.1, 10),
-    "ollama_keep_alive": (-1, None), "bge_num_ctx": (1, 8192),
+    "bge_num_ctx": (1, 8192),
     "document_chunk_size": (100, 100000), "document_chunk_overlap": (0, 99999),
 }
 
@@ -93,11 +78,15 @@ class HuggingFaceTokenRequest(BaseModel):
 class HuggingFaceDownloadRequest(BaseModel):
     repository: str = Field(min_length=3, max_length=256)
     filename: str = Field(min_length=6, max_length=1024)
+    revision: str = Field(default="main", min_length=1, max_length=128)
+    runtime: str = Field(default="gguf", pattern="^(gguf|mlx)$")
 
 
 class VyactModelActivateRequest(BaseModel):
     model_path: str = Field(min_length=6, max_length=1024)
     context_size: int = Field(default=32768, ge=512, le=131072)
+    runtime: str = Field(default="gguf", pattern="^(gguf|mlx)$")
+    repository: str | None = Field(default=None, min_length=3, max_length=256)
 
 
 class VyactModelMetadataRequest(BaseModel):
@@ -178,9 +167,7 @@ def _normalize_custom_provider_base_url(base_url: str) -> str:
 @router.get("/status")
 async def status():
     cfg = await load_config_async()
-    current_model = cfg.get("model", "")
-    model_info = next((m for m in RECOMMENDED_MODELS if m["id"] == current_model), None)
-    model_type = cfg.get("model_type") or (model_info["type"] if model_info else "chat")
+    model_type = cfg.get("model_type", "chat")
     return {
         "status": "ok",
         "model_type": model_type,
@@ -204,7 +191,6 @@ async def setup_status():
         "ram_gb": ram_gb,
         "cpu_cores": os.popen("sysctl -n hw.ncpu").read().strip(),
         "arch": platform.machine(),
-        "recommended": DEFAULT_MODEL,
         "log_path": str(LOGS_DIR),
         "docker_available": await is_docker_available(),  # Docker 선택지 활성화 여부
         "native_supported": is_native_supported(),        # 설치형(네이티브) 지원 플랫폼 여부
@@ -317,15 +303,7 @@ async def install(req: ModelSelectRequest):
     async def stream():
         request_config = req.config or {}
         persisted_setup_config = {"es_mode": request_config.get("es_mode", "docker")}
-        if req.type == "ollama":
-            cfg = {
-                "type": "ollama",
-                "model": req.model,
-                "model_type": req.model_type or "chat",
-                "ollama_config": {"model": req.model},
-                "config": persisted_setup_config,
-            }
-        elif req.type == "vyact":
+        if req.type == "vyact":
             if not req.model:
                 yield sse("Vyact 모델을 먼저 다운로드하고 선택하세요.", "error", 0)
                 return
@@ -334,10 +312,13 @@ async def install(req: ModelSelectRequest):
             cfg = {
                 "type": "vyact",
                 "model": req.model,
+                "model_type": "chat",
                 "vyact_config": {
                     **vyact_config,
                     "model": req.model,
                     "model_path": request_config.get("model_path", vyact_config.get("model_path", "")),
+                    "runtime": request_config.get("runtime", vyact_config.get("runtime", "gguf")),
+                    "repository": request_config.get("repository", vyact_config.get("repository")),
                 },
                 "config": persisted_setup_config,
             }
@@ -392,141 +373,12 @@ async def install(req: ModelSelectRequest):
             yield sse("지원하지 않는 provider", "error", 0)
             return
 
-        if req.type == "ollama":
-            installer = Installer(INSTALL_DIR, APP_DIR, VENV_DIR, get_log_file("event"))
-            model = req.model
-
-            # ── ES 설치 방식: 'docker'(기본) 또는 'native'(바이너리 직접 설치) ──
-            es_mode = (req.config or {}).get("es_mode", "docker")
-
-            # ES가 이미 떠 있으면 어느 방식이든 ES 준비 단계를 건너뛴다.
-            yield sse("Checking Elasticsearch...", "info", 3)
-            es_running = await _es_already_running()
-
-            if es_running:
-                yield sse("Existing Elasticsearch detected — skipping ES installation", "ok", 15)
-            elif es_mode == "native":
-                from services.es_native import install_native_es, is_native_supported
-                if not is_native_supported():
-                    yield sse("Native ES is only supported on Windows/Apple Silicon Mac. Please select Docker.", "error", 0)
-                    return
-                es_ok = False
-                async for pct, msg, level in install_native_es():
-                    # native 설치 진행률(0~100)을 전체 흐름의 3~15% 구간으로 압축 매핑
-                    mapped = 3 + int(pct * 0.12)
-                    yield sse(msg, level, mapped)
-                    if level == "error":
-                        return
-                    if pct >= 100:
-                        es_ok = True
-                es_running = es_ok  # 뒤쪽 "ES 시작" 단계를 건너뛰게
-            else:
-                yield sse("Checking Docker...", "info", 5)
-                ok, msg = await installer.check_docker()
-                if not ok:
-                    yield sse(msg, "error", 0)
-                    return
-                yield sse(msg, "ok", 15)
-
-            yield sse("Checking Ollama...", "info", 18)
-            if shutil.which("ollama") is None and shutil.which("brew") is None:
-                yield sse(
-                    "Homebrew is required to install Ollama",
-                    "error",
-                    0,
-                    i18n_key="homebrewRequired",
-                )
-                return
-            ok, msg = await installer.install_ollama()
-            if not ok: yield sse(msg, "error", 0); return
-            yield sse(msg, "ok", 25)
-
-            yield sse("Checking Ollama server...", "info", 27)
-            ok, msg = await installer.start_ollama_server()
-            if not ok:
-                yield sse(msg, "error", 0)
-                return
-            yield sse(msg, "ok", 30)
-
-            yield sse(f"Downloading {model}...", "info", 33)
-            try:
-                async for line, progress in installer.download_model(model):
-                    yield sse(line, "log", progress)
-                yield sse(f"{model} download complete", "ok", 65)
-            except Exception as e:
-                write_log("model_download_failed", {"model": model, "error": str(e)})
-                yield sse(str(e), "error", 0);
-                return
-
-            async for event, should_continue in _stream_common_runtime(installer):
-                yield event
-                if not should_continue:
-                    return
-
-            # ES가 이미 떠 있으면 컨테이너 기동을 건너뛴다(위에서 감지)
-            if es_running:
-                yield sse("Using existing Elasticsearch — skipping start", "ok", 99)
-            else:
-                yield sse("Starting Elasticsearch...", "info", 95)
-                ok, msg = await installer.start_elasticsearch()
-                if not ok:
-                    yield sse(msg, "error", 0)
-                    return
-                yield sse(msg, "ok", 99)
-
-            # ES 인덱스 초기화 후 config 저장
-            try:
-                from agent import (
-                    ensure_index, load_prompts_cache,
-                )
-                from routers.skills import ensure_skills_index
-                await ensure_index()
-                await ensure_skills_index()
-                await ensure_mcp_config()
-                await save_config_async(cfg)
-                await load_prompts_cache()
-                logger.info("[setup] config ES 저장 및 초기 데이터 로드 완료")
-            except Exception as e:
-                logger.exception("[setup] 초기화 실패")
-                yield sse(f"Setup initialization failed: {e}", "error", 0)
-                return
-
-            # 메모리가 부족해 하나의 모델만 상주할 수 있으면, 설치 직후 바로 사용하는
-            # 채팅 모델이 남도록 bge-m3를 먼저 예열하고 채팅 모델을 마지막에 올린다.
-            yield sse(f"Loading {model} into memory...", "info", 96)
-            try:
-                from services.ollama_manager import get_loaded_model_names, load_model
-
-                chat_ready = await load_model(model)
-                loaded_models = await get_loaded_model_names()
-                model_loaded = any(name.split(":", 1)[0] == model.split(":", 1)[0] for name in loaded_models)
-
-                if chat_ready and model_loaded:
-                    yield sse(f"{model} ready in memory", "ok", 98)
-                    try:
-                        from routers.deps import load_ui_language_async
-                        from services.llm.warmup import warm_ollama_chat_prefix
-
-                        yield sse("Warming up chat…", "info", 99)
-                        if await warm_ollama_chat_prefix(model, await load_ui_language_async() or ""):
-                            logger.info("[setup] Ollama chat prefix warm-up completed")
-                    except Exception as warmup_error:
-                        logger.debug("[setup] Ollama chat prefix warm-up skipped: %s", warmup_error)
-                else:
-                    yield sse(f"{model} could not stay loaded (memory may be insufficient)", "log", 98)
-            except Exception as e:
-                logger.warning("[setup] Ollama model warm-up failed: %s", e)
-                yield sse(f"Model warm-up failed: {e}", "log", 98)
-
-            SETUP_DONE.touch()
-            start_background_services_after_setup()
-            yield sse("Installation complete!", "done", 100)
-        else:
+        if req.type in ("vyact", "custom", "openai", "gemini", "claude"):
             installer = Installer(INSTALL_DIR, APP_DIR, VENV_DIR, get_log_file("event"))
 
             yield sse("Preparing LLM connection...", "info", 10)
 
-            if req.type == "vyact":
+            if req.type == "vyact" and cfg.get("vyact_config", {}).get("runtime", "gguf") == "gguf":
                 from services.vyact_runtime import install_missing_runtime
                 yield sse("Checking Vyact local runtime...", "info", 12)
                 try:
@@ -586,12 +438,21 @@ async def install(req: ModelSelectRequest):
                 await ensure_skills_index()
                 await ensure_mcp_config()
                 if req.type == "vyact":
-                    from services.vyact_runtime import get_downloaded_model_path, start_single_model
-                    model_path = get_downloaded_model_path(cfg["vyact_config"]["model_path"])
-                    model_id = await asyncio.to_thread(
-                        start_single_model, model_path, cfg["vyact_config"].get("context_size", 32768),
-                        cfg.get("debug_logging", False),
-                    )
+                    vyact_config = cfg["vyact_config"]
+                    if vyact_config.get("runtime", "gguf") == "mlx":
+                        from services.mlx_runtime import get_downloaded_mlx_model_path, start_mlx_model
+                        model_path = get_downloaded_mlx_model_path(vyact_config["model_path"])
+                        model_id = await asyncio.to_thread(
+                            start_mlx_model, model_path, vyact_config.get("context_size", 32768),
+                            cfg.get("debug_logging", False),
+                        )
+                    else:
+                        from services.vyact_runtime import get_downloaded_model_path, start_single_model
+                        model_path = get_downloaded_model_path(vyact_config["model_path"])
+                        model_id = await asyncio.to_thread(
+                            start_single_model, model_path, vyact_config.get("context_size", 32768),
+                            cfg.get("debug_logging", False),
+                        )
                     cfg["model"] = model_id
                     cfg["vyact_config"]["model"] = model_id
                 await save_config_async(cfg)
@@ -612,12 +473,11 @@ async def install(req: ModelSelectRequest):
 # ── Models ────────────────────────────────────
 @router.get("/models")
 async def get_models():
-    EMBED_MODELS = {"bge-m3", "nomic-embed-text", "mxbai-embed-large"}
-    recommended_ids = [m["id"] for m in RECOMMENDED_MODELS]
     cfg = await load_config_async()
     if cfg.get("type") == "vyact":
+        from services.mlx_runtime import list_downloaded_mlx_models
         from services.vyact_runtime import get_active_mtp_model, list_mtp_supported_models, list_selectable_models
-        installed_models = list_selectable_models()
+        installed_models = [*list_selectable_models(), *list_downloaded_mlx_models()]
         return {
             "models": [[model] for model in installed_models],
             "current": cfg.get("vyact_config", {}).get("model_path", ""),
@@ -626,56 +486,31 @@ async def get_models():
             "mtp_active": get_active_mtp_model(),
             "model_type": "chat",
         }
-    installed_models = []
-    try:
-        proc = await asyncio.create_subprocess_exec(
-            "ollama", "list",
-            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
-        )
-        stdout, _ = await proc.communicate()
-        if proc.returncode == 0:
-            for line in stdout.decode().strip().split("\n")[1:]:
-                if line.strip():
-                    parts = line.split()
-                    if parts:
-                        name = parts[0]
-                        base = name.split(":")[0]
-                        if base not in EMBED_MODELS:
-                            installed_models.append(name)
-    except Exception as e:
-        logger.warning("모델 목록 조회 실패: %s", e)
-
-    installed_models = list(dict.fromkeys(installed_models))
-    all_models = list(dict.fromkeys(recommended_ids + installed_models))
     return {
-        "models": [[m] for m in all_models],
+        "models": [[cfg.get("model")]] if cfg.get("model") else [],
         "current": cfg.get("model", ""),
-        "installed": installed_models,
-        "model_type": cfg.get("model_type") or next(
-            (model["type"] for model in RECOMMENDED_MODELS if model["id"] == cfg.get("model")),
-            "chat",
-        ),
+        "installed": [],
+        "model_type": cfg.get("model_type", "chat"),
     }
 
 
-@router.get("/models/recommended")
-async def get_recommended_models():
-    return {"models": RECOMMENDED_MODELS, "default": DEFAULT_MODEL}
-
-
 @router.get("/vyact/models/search")
-async def search_vyact_models(q: str = Query("", max_length=200)):
-    """Search GGUF repositories only; model file selection stays explicit in the UI."""
+async def search_vyact_models(q: str = Query("", max_length=200), mlx_only: bool = Query(False)):
+    """Search MLX repositories on Apple Silicon, or GGUF repositories elsewhere."""
     try:
+        from services.mlx_runtime import is_apple_silicon, list_downloaded_mlx_models
         from services.vyact_runtime import list_downloaded_models, list_mtp_supported_models
 
         config = await load_config_async()
         token = config.get("vyact_config", {}).get("huggingface_token")
 
+        from services.huggingface_models import search_mlx_models
+
+        use_mlx = mlx_only and is_apple_silicon()
         return {
-            "models": await search_gguf_models(q, token),
+            "models": await search_mlx_models(q, token) if use_mlx else await search_gguf_models(q, token),
             "hardware": get_local_hardware_info(),
-            "installed": list_downloaded_models(),
+            "installed": [*list_downloaded_models(), *list_downloaded_mlx_models()],
             "mtp_supported": list_mtp_supported_models(),
         }
     except Exception as error:
@@ -785,6 +620,21 @@ async def update_vyact_runtime():
 @router.post("/vyact/models/download")
 async def download_vyact_model(req: HuggingFaceDownloadRequest):
     async def stream():
+        if req.runtime == "mlx":
+            from services.mlx_runtime import download_mlx_model
+
+            config = await load_config_async()
+            token = config.get("vyact_config", {}).get("huggingface_token")
+            yield sse(f"Downloading MLX {req.repository}", "log", None)
+            try:
+                await asyncio.to_thread(download_mlx_model, req.repository, req.revision, token)
+            except Exception as error:
+                logger.warning("[vyact] MLX model download failed: %s", error)
+                yield sse(f"MLX 모델 다운로드 실패: {error}", "error", 0)
+                return
+            yield sse(f"{req.repository} 다운로드 완료", "ok", 100)
+            return
+
         from services.huggingface_models import download_gguf_model, find_mtp_sidecar, find_vision_projector
 
         config = await load_config_async()
@@ -832,21 +682,32 @@ async def download_vyact_model(req: HuggingFaceDownloadRequest):
 @router.post("/vyact/models/activate")
 async def activate_vyact_model(req: VyactModelActivateRequest):
     async def stream():
-        from services.vyact_runtime import get_downloaded_model_path, start_single_model
-
         yield sse("Vyact 모델을 메모리에 로드하는 중...", "model_loading", 10)
         try:
-            model_path = get_downloaded_model_path(req.model_path)
             config = await load_config_async()
-            model_id = await asyncio.to_thread(
-                start_single_model, model_path, req.context_size, config.get("debug_logging", False),
-            )
+            if req.runtime == "mlx":
+                from services.mlx_runtime import get_downloaded_mlx_model_path, start_mlx_model
+
+                model_path = get_downloaded_mlx_model_path(req.model_path)
+                model_id = await asyncio.to_thread(
+                    start_mlx_model, model_path, req.context_size, config.get("debug_logging", False),
+                )
+            else:
+                from services.vyact_runtime import get_downloaded_model_path, start_single_model
+
+                model_path = get_downloaded_model_path(req.model_path)
+                model_id = await asyncio.to_thread(
+                    start_single_model, model_path, req.context_size, config.get("debug_logging", False),
+                )
             config["type"] = "vyact"
             config["model"] = model_id
+            config["model_type"] = "chat"
             config.setdefault("vyact_config", {}).update({
                 "model": model_id,
                 "model_path": req.model_path,
                 "context_size": req.context_size,
+                "runtime": req.runtime,
+                "repository": req.repository,
             })
             await save_config_async(config)
         except Exception as error:
@@ -862,80 +723,45 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
 async def select_model(req: ModelSelectRequest):
     async def stream():
         config = await load_config_async()
-        if req.type == "ollama":
-            model = req.model
-            # 현재 로드된 모델 확인 (변경 전)
-            prev_config = await load_config_async()
-            prev_model = prev_config.get("model") if prev_config.get("type") == "ollama" else None
-
-            config.setdefault("ollama_config", {})["model"] = req.model
-            config["type"] = "ollama"
-            config["model"] = req.model
-            recommended_model = next((m for m in RECOMMENDED_MODELS if m["id"] == req.model), None)
-            config["model_type"] = req.model_type or (
-                recommended_model["type"] if recommended_model else "chat"
-            )
-        else:
-            if req.type not in ("openai", "gemini", "claude"):
-                yield sse("지원하지 않는 provider", "error", 0)
+        if req.type == "vyact":
+            if not req.model:
+                yield sse("Vyact 모델을 선택하세요.", "error", 0)
                 return
+            runtime = "mlx" if req.model.startswith("mlx/") else "gguf"
+            vyact_config = config.setdefault("vyact_config", {})
+            vyact_config.update({
+                "model_path": req.model,
+                "runtime": runtime,
+                "repository": req.model.removeprefix("mlx/") if runtime == "mlx" else None,
+                "context_size": vyact_config.get("context_size", 32768),
+            })
+            yield sse("모델 메모리 로드 중...", "model_loading", 20)
+            try:
+                from services.vyact_runtime import start_configured_runtime
+                model_id = await asyncio.to_thread(
+                    start_configured_runtime, vyact_config, config.get("debug_logging", False),
+                )
+            except Exception as error:
+                yield sse(f"Vyact 모델 로드 실패: {error}", "error", 0)
+                return
+            config["type"] = "vyact"
+            config["model"] = model_id
+            config["model_type"] = "chat"
+            vyact_config["model"] = model_id
+        elif req.type in ("openai", "gemini", "claude"):
             if not req.api_key:
                 yield sse(f"{req.type.upper()} API KEY 필요", "error", 0)
                 return
             config["type"] = req.type
             config["model"] = req.model
-            # 초기 설정에서도 Provider 설정 화면과 같은 구조를 사용한다.
-            # 그렇지 않으면 설정 완료 직후 Sidebar에서 해당 Provider를 찾지 못한다.
-            config[f"{req.type}_config"] = {
-                "api_key": req.api_key,
-                "model": req.model,
-            }
-        await save_config_async(config)
-
-        if req.type == "ollama":
-            yield sse("Ollama 모드 설정", "info", 20)
-            proc = await asyncio.create_subprocess_exec(
-                "ollama", "list",
-                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT,
-            )
-            stdout, _ = await proc.communicate()
-            if model not in stdout.decode():
-                yield sse(f"모델 미설치: {model}", "info", 30)
-                yield sse("자동 다운로드 시작...", "info", 35)
-                pull = await asyncio.create_subprocess_exec(
-                    "ollama", "pull", model,
-                    stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT,
-                )
-                pull_progress = 0
-                async for raw in pull.stdout:
-                    line = clean_ollama_progress_line(raw)
-                    if line:
-                        progress_matches = OLLAMA_PROGRESS_PATTERN.findall(line)
-                        if progress_matches:
-                            pull_progress = min(int(progress_matches[-1]), 100)
-                        yield sse(line, "log", pull_progress)
-                if await pull.wait() != 0:
-                    yield sse("❌ 모델 다운로드 실패", "error", 0);
-                    return
-                yield sse(f"✅ {model} 다운로드 완료", "info", 100)
-            else:
-                yield sse(f"✅ {model} 이미 설치됨", "info", 50)
-
-            # 기존 모델 언로드 → 새 모델 로드
-            yield sse("모델 메모리 로드 중...", "model_loading", 100)
-            from services.ollama_manager import switch_model
-            await switch_model(prev_model, model)
-            yield sse("Ollama 설정 완료", "ok", 100)
-        elif req.type in ("openai", "gemini", "claude"):
-            yield sse(f"{req.type} 설정 완료", "ok", 100)
+            config[f"{req.type}_config"] = {"api_key": req.api_key, "model": req.model}
         else:
-            yield sse("지원하지 않는 provider", "error", 0);
+            yield sse("지원하지 않는 provider", "error", 0)
             return
-
+        await save_config_async(config)
         yield sse("설정 저장 완료", "done", 100)
 
     return StreamingResponse(stream(), media_type="text/event-stream")
-
 
 # ── Providers ────────────────────────────────
 @router.get("/providers")
@@ -957,7 +783,7 @@ async def get_providers():
         "has_key": bool(vyact_config.get("model")),
     }
     return {
-        "current_type": config.get("type", "ollama"),
+        "current_type": config.get("type", "vyact"),
         "current_model": config.get("model"),
         "providers": providers,
         "custom_providers": [
@@ -1034,8 +860,9 @@ async def delete_custom_provider(connection_id: str):
         raise HTTPException(404, "사용자 연결을 찾을 수 없습니다.")
     config["custom_providers"] = remaining
     if config.get("type") == f"custom:{connection_id}":
-        config["type"] = "ollama"
-        config["model"] = config.get("ollama_config", {}).get("model", DEFAULT_MODEL)
+        vyact_config = config.get("vyact_config", {})
+        config["type"] = "vyact"
+        config["model"] = vyact_config.get("model", "")
     await save_config_async(config)
     return {"ok": True}
 
@@ -1069,13 +896,7 @@ async def delete_provider(provider: str):
 @router.post("/provider/select")
 async def select_provider(req: ProviderSelectRequest):
     config = await load_config_async()
-    if req.provider == "ollama":
-        config["type"] = "ollama"
-        config.setdefault("ollama_config", {"model": DEFAULT_MODEL})
-        if req.model:
-            config["ollama_config"]["model"] = req.model
-        config["model"] = config["ollama_config"]["model"]
-    elif req.provider == "vyact":
+    if req.provider == "vyact":
         vyact_config = config.get("vyact_config", {})
         model = req.model or vyact_config.get("model")
         if not model:
@@ -1169,13 +990,16 @@ async def set_debug_logging(body: dict):
     if cfg.get("type") != "vyact" or not model_path_value or enabled == previous_enabled:
         return {"debug_logging": enabled, "runtime_restarted": False}
 
-    from services.vyact_runtime import get_downloaded_model_path, start_single_model
-
     try:
-        model_path = get_downloaded_model_path(model_path_value)
-        model_id = await asyncio.to_thread(
-            start_single_model, model_path, vyact_config.get("context_size", 32768), enabled,
-        )
+        if vyact_config.get("runtime", "gguf") == "mlx":
+            from services.mlx_runtime import get_downloaded_mlx_model_path, start_mlx_model
+            model_path = get_downloaded_mlx_model_path(model_path_value)
+            start_model = start_mlx_model
+        else:
+            from services.vyact_runtime import get_downloaded_model_path, start_single_model
+            model_path = get_downloaded_model_path(model_path_value)
+            start_model = start_single_model
+        model_id = await asyncio.to_thread(start_model, model_path, vyact_config.get("context_size", 32768), enabled)
         cfg["model"] = model_id
         cfg.setdefault("vyact_config", {})["model"] = model_id
         await save_config_async(cfg)
@@ -1185,10 +1009,7 @@ async def set_debug_logging(body: dict):
         await save_config_async(cfg)
         DebugLogSettings.set_enabled(previous_enabled)
         try:
-            model_path = get_downloaded_model_path(model_path_value)
-            await asyncio.to_thread(
-                start_single_model, model_path, vyact_config.get("context_size", 32768), previous_enabled,
-            )
+            await asyncio.to_thread(start_model, model_path, vyact_config.get("context_size", 32768), previous_enabled)
         except Exception as restore_error:
             logger.error("[vyact] failed to restore runtime after debug restart: %s", restore_error)
         raise HTTPException(500, "Vyact 런타임을 다시 시작하지 못했습니다.") from error

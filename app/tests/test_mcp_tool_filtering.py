@@ -27,7 +27,7 @@ class McpToolFilteringTests(unittest.IsolatedAsyncioTestCase):
             {"id": "code", "type": "code_tools", "enabled": True},
         ]
         with patch("services.mcp_config.list_servers", AsyncMock(return_value=servers)):
-            tools = await manager.get_ollama_tools()
+            tools = await manager.get_tools()
         self.assertEqual([tool["function"]["name"] for tool in tools], ["code_read_file"])
 
     async def test_disabled_external_worker_is_filtered_before_llm_exposure(self):
@@ -40,7 +40,7 @@ class McpToolFilteringTests(unittest.IsolatedAsyncioTestCase):
         with patch("services.mcp_config.list_servers", AsyncMock(return_value=[
             {"id": "disabled-server", "type": "custom", "enabled": False},
         ])):
-            tools = await manager.get_ollama_tools()
+            tools = await manager.get_tools()
         self.assertEqual(tools, [])
 
     async def test_explicit_request_scope_can_expose_an_off_server(self):
@@ -54,7 +54,7 @@ class McpToolFilteringTests(unittest.IsolatedAsyncioTestCase):
                 patch("services.mcp_config.build_servers_config", AsyncMock(return_value={})):
             tokens = await manager.enable_request_scope(["google"])
             try:
-                tools = await manager.get_ollama_tools()
+                tools = await manager.get_tools()
             finally:
                 manager.reset_request_scope(tokens)
         self.assertEqual([tool["function"]["name"] for tool in tools], ["search_emails"])

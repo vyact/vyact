@@ -18,6 +18,7 @@ interface SelectedModelFile {
     filename: string;
     revision: string;
     fileSize: number;
+    runtime: 'gguf' | 'mlx';
 }
 
 type DownloadPhase = 'runtime' | 'model' | 'mtp' | 'activation' | null;
@@ -25,7 +26,7 @@ type DownloadPhase = 'runtime' | 'model' | 'mtp' | 'activation' | null;
 const MAX_FILES_PER_MODEL = 8;
 const MODEL_MEMORY_OVERHEAD_RATIO = 1.2;
 const EMPTY_HARDWARE_INFO: VyactHardwareInfo = {
-    platform: '', memory_mode: 'system',
+    platform: '', apple_silicon: false, memory_mode: 'system',
     system_memory: {total_bytes: 0, available_bytes: 0},
     gpus: [],
 };
@@ -77,6 +78,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     const [tokenConfigured, setTokenConfigured] = useState(false);
     const [showToken, setShowToken] = useState(false);
     const [query, setQuery] = useState('');
+    const [mlxOnly, setMlxOnly] = useState(true);
     const [models, setModels] = useState<VyactHubModel[]>([]);
     const [installedModels, setInstalledModels] = useState<string[]>(() => api.getCachedVyactInstalledModels());
     const [mtpSupportedModels, setMtpSupportedModels] = useState<string[]>([]);
@@ -97,17 +99,19 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
         ? `${selectedFile.repository}@${selectedFile.revision}/${selectedFile.filename}`
         : '';
     const selectedMetadata = selectedFileKey ? metadataByFile[selectedFileKey] : undefined;
-    const selectedModelPath = selectedFile ? `${selectedFile.repository}/${selectedFile.filename}` : '';
+    const selectedModelPath = selectedFile
+        ? selectedFile.runtime === 'mlx' ? `mlx/${selectedFile.repository}` : `${selectedFile.repository}/${selectedFile.filename}`
+        : '';
     const selectedModelIsInstalled = Boolean(selectedModelPath && installedModels.includes(selectedModelPath));
 
-    const searchModels = useCallback(async (searchQuery: string) => {
+    const searchModels = useCallback(async (searchQuery: string, searchMlxOnly = mlxOnly) => {
         const requestId = ++searchRequestIdRef.current;
         setIsSearching(true);
         setModels([]);
         setSelectedFile(null);
         setMessage('');
         try {
-            const searchResponse = await api.searchVyactModels(searchQuery);
+            const searchResponse = await api.searchVyactModels(searchQuery, searchMlxOnly);
             if (requestId === searchRequestIdRef.current) {
                 setModels(searchResponse.models);
                 setHardware(searchResponse.hardware);
@@ -119,7 +123,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
         } finally {
             if (requestId === searchRequestIdRef.current) setIsSearching(false);
         }
-    }, []);
+    }, [mlxOnly]);
 
     useEffect(() => {
         void searchModels('');
@@ -153,7 +157,9 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
         setDownloadProgress(null);
         setMessage(t('modelDownload.preparingRuntime'));
         try {
-            await api.installVyactRuntime(() => setMessage(t('modelDownload.preparingRuntime')));
+            if (selectedFile.runtime === 'gguf') {
+                await api.installVyactRuntime(() => setMessage(t('modelDownload.preparingRuntime')));
+            }
             setDownloadPhase(selectedModelIsInstalled ? 'mtp' : 'model');
             setDownloadProgress(0);
             setMessage(t(selectedModelIsInstalled ? 'modelDownload.preparingMtp' : 'modelDownload.downloading'));
@@ -164,18 +170,22 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                     setMessage(t(selectedModelIsInstalled ? 'modelDownload.preparingMtp' : 'modelDownload.downloading'));
                     if (progress != null) setDownloadProgress(progress);
                 },
+                selectedFile.revision,
+                selectedFile.runtime,
             );
             setInstalledModels(api.getCachedVyactInstalledModels());
             setDownloadPhase('activation');
             setDownloadProgress(0);
             setMessage(t('modelDownload.activating'));
             await api.activateVyactModel(
-                `${selectedFile.repository}/${selectedFile.filename}`,
+                selectedModelPath,
                 32768,
                 (_activationMessage, progress) => {
                     setMessage(t('modelDownload.activating'));
                     if (progress != null) setDownloadProgress(progress);
                 },
+                selectedFile.runtime,
+                selectedFile.repository,
             );
             await onSelected();
             onClose();
@@ -189,7 +199,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     };
 
     const calculateAccurateMemory = async () => {
-        if (!selectedFile || !selectedFile.fileSize) return;
+        if (!selectedFile || selectedFile.runtime !== 'gguf' || !selectedFile.fileSize) return;
         const {repository, filename, revision, fileSize} = selectedFile;
         const fileKey = `${repository}@${revision}/${filename}`;
         if (metadataByFile[fileKey]) return;
@@ -215,10 +225,10 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     };
 
     const selectModelFile = async (model: VyactHubModel, filename: string, fileSize: number) => {
-        const selected = {repository: model.id, filename, revision: model.revision, fileSize};
+        const selected = {repository: model.id, filename, revision: model.revision, fileSize, runtime: model.runtime};
         const fileKey = `${model.id}@${model.revision}/${filename}`;
         setSelectedFile(selected);
-        if (metadataByFile[fileKey] || cacheCheckedFilesRef.current.has(fileKey)) return;
+        if (model.runtime !== 'gguf' || metadataByFile[fileKey] || cacheCheckedFilesRef.current.has(fileKey)) return;
 
         cacheCheckedFilesRef.current.add(fileKey);
         setAnalyzingFile(fileKey);
@@ -281,7 +291,25 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                         </label>
 
                         <label className="provider-editor-field">
-                            <span><Search size={14}/>{t('modelSelector.searchLabel')}</span>
+                            <span className="vyact-search-label">
+                                <span><Search size={14}/>{t('modelSelector.searchLabel')}</span>
+                                {hardware.apple_silicon && (
+                                    <button
+                                        type="button"
+                                        className={`vyact-mlx-switch${mlxOnly ? ' is-on' : ''}`}
+                                        role="switch"
+                                        aria-checked={mlxOnly}
+                                        disabled={busy}
+                                        onClick={() => {
+                                            const nextValue = !mlxOnly;
+                                            setMlxOnly(nextValue);
+                                            void searchModels(query, nextValue);
+                                        }}
+                                    >
+                                        <span aria-hidden="true"><i/></span>{t('modelSelector.mlxOnly')}
+                                    </button>
+                                )}
+                            </span>
                             <div className="vyact-model-search-field">
                                 <input value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => event.key === 'Enter' && void searchModels(query)} placeholder={t('modelSelector.modelSearch')}/>
                                 <button type="button" onClick={() => void searchModels(query)} disabled={busy}>
@@ -309,7 +337,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                 {selectedFile && (
                                     <div className="vyact-memory-selection">
                                         <span>{selectedFile.filename}</span>
-                                        {!selectedMetadata && (
+                                        {!selectedMetadata && selectedFile.runtime === 'gguf' && (
                                             <>
                                                 <span className="vyact-memory-requirement">
                                                     {t('modelSelector.quickEstimatedMemory')}
@@ -379,14 +407,18 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                         const fileSize = model.file_sizes?.[filename] || 0;
                                         const estimatedMemory = fileSize * MODEL_MEMORY_OVERHEAD_RATIO;
                                         const memoryTone = getMemoryTone(estimatedMemory, hardware);
-                                        const isInstalled = installedModels.includes(`${model.id}/${filename}`);
+                                        const isInstalled = installedModels.includes(
+                                            model.runtime === 'mlx' ? `mlx/${model.id}` : `${model.id}/${filename}`,
+                                        );
                                         const supportsMtp = model.mtp_supported_files?.includes(filename)
                                             || mtpSupportedModels.includes(`${model.id}/${filename}`);
                                         return (
                                             <button type="button" className={`${isSelected ? 'is-selected ' : ''}memory-${memoryTone}`} key={filename} onClick={() => void selectModelFile(model, filename, fileSize)} disabled={busy}>
                                                 <span className="vyact-model-file-name">
-                                                    {supportsMtp && <span className="vyact-mtp-badge">MTP</span>}
-                                                    <span>{filename}</span>
+                                                    {model.runtime === 'mlx'
+                                                        ? <span className="vyact-mtp-badge">{t('modelSelector.mlxRuntime')}</span>
+                                                        : supportsMtp && <span className="vyact-mtp-badge">MTP</span>}
+                                                    <span>{model.runtime === 'mlx' ? model.id.split('/').pop() : filename}</span>
                                                 </span>
                                                 {fileSize > 0 && <small>{formatBytes(fileSize)} · {t('modelSelector.estimatedMemory')} {formatBytes(estimatedMemory)}</small>}
                                                 <span className="vyact-model-file-status">

@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 from services.huggingface_models import (
     RECOMMENDED_GGUF_REPOSITORIES,
+    _mlx_model_from_hub_item,
     _merge_search_and_detail,
     _model_from_hub_item,
     _safe_relative_file_path,
@@ -36,7 +37,7 @@ class HuggingFaceModelTests(unittest.TestCase):
             "siblings": [{"rfilename": "model.gguf", "size": 1024}, {"rfilename": "README.md"}],
         })
         self.assertEqual(model, {
-            "id": "owner/model-GGUF", "revision": "abc123", "downloads": 12,
+            "id": "owner/model-GGUF", "runtime": "gguf", "revision": "abc123", "downloads": 12,
             "files": ["model.gguf"], "file_sizes": {"model.gguf": 1024},
             "mtp_supported_files": [],
         })
@@ -55,6 +56,23 @@ class HuggingFaceModelTests(unittest.TestCase):
 
         self.assertEqual(model["downloads"], 42)
         self.assertEqual(model["file_sizes"], {"model.gguf": 5_000})
+
+    def test_mlx_hub_item_represents_the_complete_repository(self):
+        model = _mlx_model_from_hub_item({
+            "id": "mlx-community/model-4bit",
+            "sha": "def456",
+            "downloads": 20,
+            "siblings": [
+                {"rfilename": "config.json", "size": 200},
+                {"rfilename": "model-00001-of-00002.safetensors", "size": 1_000},
+                {"rfilename": "model-00002-of-00002.safetensors", "lfs": {"size": 2_000}},
+                {"rfilename": "README.md", "size": 5_000},
+            ],
+        })
+
+        self.assertEqual(model["runtime"], "mlx")
+        self.assertEqual(model["files"], ["__mlx_repository__"])
+        self.assertEqual(model["file_sizes"], {"__mlx_repository__": 3_200})
 
     def test_hub_item_marks_files_with_a_matching_mtp_sidecar(self):
         model = _model_from_hub_item({

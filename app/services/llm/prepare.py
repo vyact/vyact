@@ -1,5 +1,5 @@
 """
-services/llm/prepare.py — 비-Ollama provider 공통 준비 로직
+services/llm/prepare.py — provider 공통 준비 로직
 
 api_key 로딩, 히스토리 구성, system/user 메시지 조합을 한 곳에서 처리한다.
 query_llm / chat_stream_with_tools가 공유한다.
@@ -19,15 +19,14 @@ async def prepare_request(
 
     provider_type: API 호출 방식(인증/스트리밍) 결정용.
     model: 첨부파일 프롬프트 포맷(xml/markdown) 결정용 — provider_type과 별개 축이다.
-           (예: ollama라도 내부 모델이 gemma/qwen/llama 등으로 바뀔 수 있으므로 모델명 기준으로 분기)
+           내부 모델이 gemma/qwen/llama 등으로 바뀔 수 있으므로 모델명 기준으로 분기한다.
     """
     api_key = None
-    if provider_type != "ollama":
-        try:
-            from .config import get_provider_config
-            api_key = (await get_provider_config()).get("api_key")
-        except Exception:
-            pass
+    try:
+        from .config import get_provider_config
+        api_key = (await get_provider_config()).get("api_key")
+    except Exception:
+        pass
 
     from .helpers import select_history_by_budget
     valid_slice = select_history_by_budget(conversation_history)

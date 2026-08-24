@@ -4,18 +4,14 @@ services/llm/config.py — LLM provider 설정 · 상수 · 로깅
 provider config 조회, 모델명, 상호작용 로그 저장을 담당한다.
 """
 import json
-import os
-
 from config.models import (
     DEFAULT_MODEL, LLM_TEMPERATURE, LLM_NUM_CTX, LLM_NUM_PREDICT, LLM_MAX_TOKENS, TOP_K, TOP_P,
-    OLLAMA_KEEP_ALIVE,
 )
 from config import INSTALL_DIR, get_log_file
 from logger import get_logger
 
 logger = get_logger(__name__)
 
-OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
 IMAGES_DIR = INSTALL_DIR / "uploads" / "images"
 
 # 답변에서 잘라내야 하는 모델 특수 토큰 (스트리밍/재사용 공통)
@@ -31,9 +27,9 @@ TOOL_CALL_RETRY_RESULT_CHARS = 8000
 
 # 상수 재노출 (다른 llm 하위 모듈에서 import해 사용)
 __all__ = [
-    "OLLAMA_URL", "IMAGES_DIR",
+    "IMAGES_DIR",
     "DEFAULT_MODEL", "LLM_TEMPERATURE", "LLM_NUM_CTX", "LLM_NUM_PREDICT", "LLM_MAX_TOKENS", "TOP_K", "TOP_P",
-    "OLLAMA_KEEP_ALIVE", "LLM_STOP_TOKENS", "TOOL_CALL_MAX_ROUNDS",
+    "LLM_STOP_TOKENS", "TOOL_CALL_MAX_ROUNDS",
     "TOOL_CALL_DECISION_NUM_PREDICT", "TOOL_CALL_MUTATION_NUM_PREDICT",
     "TOOL_CALL_ROUND_TIMEOUT_SECONDS", "TOOL_CALL_RETRY_RESULT_CHARS",
     "get_provider_config", "get_model_name", "get_model_display_name", "build_provider_headers",
@@ -63,7 +59,7 @@ async def get_provider_config() -> dict:
         from routers.deps import load_config_async
         config = await load_config_async()
         if config:
-            selected_type = config.get("type", "ollama")
+            selected_type = config.get("type", "vyact")
             if selected_type == "vyact":
                 from services.vyact_runtime import VYACT_RUNTIME_URL
                 provider_config = config.get("vyact_config", {})
@@ -74,6 +70,8 @@ async def get_provider_config() -> dict:
                     "selection_type": "vyact",
                     "connection_name": "Vyact",
                     "model": config.get("model", provider_config.get("model", DEFAULT_MODEL)),
+                    "runtime": provider_config.get("runtime", "gguf"),
+                    "is_local": True,
                     "api_key": None,
                     "base_url": provider_config.get("base_url", VYACT_RUNTIME_URL),
                     "headers": [],
@@ -105,7 +103,12 @@ async def get_provider_config() -> dict:
     except Exception as e:
         logger.warning("[llm] get_provider_config 실패: %s", e)
 
-    return {"type": "ollama", "model": os.getenv("OLLAMA_MODEL", DEFAULT_MODEL), "api_key": None}
+    from services.vyact_runtime import VYACT_RUNTIME_URL
+    return {
+        "type": "openai", "selection_type": "vyact", "connection_name": "Vyact",
+        "model": "", "api_key": None, "base_url": VYACT_RUNTIME_URL,
+        "headers": [], "runtime": "gguf", "is_local": True,
+    }
 
 
 async def get_model_name() -> str:
@@ -122,6 +125,8 @@ async def get_model_display_name() -> str:
 
         config = await load_config_async()
         model_path = config.get("vyact_config", {}).get("model_path", "")
+        if config.get("vyact_config", {}).get("runtime") == "mlx":
+            return config.get("vyact_config", {}).get("repository", model_path.removeprefix("mlx/")) or provider["model"]
         path_parts = model_path.split("/")
         return "/".join(path_parts[:2]) if len(path_parts) >= 2 else model_path or provider["model"]
     except Exception:

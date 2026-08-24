@@ -112,7 +112,7 @@
     "sections": {
       "llm": "LLM (chat)",
       "history": "Historique",
-      "ollama": "Ollama / embeddings",
+      "embedding": "Embeddings",
       "chunking": "Découpage des fichiers"
     },
     "fields": {
@@ -121,11 +121,11 @@
         "help": "Contrôle l'aléatoire"
       },
       "llm_num_ctx": {
-        "label": "Ollama Context Window",
+        "label": "Local LLM Context Window",
         "help": "Taille maximale du contexte total d'entrée et de sortie. Ne dépassez pas la limite prise en charge par le modèle."
       },
       "llm_num_predict": {
-        "label": "Ollama Max Output Tokens",
+        "label": "Local LLM Max Output Tokens",
         "help": "Nombre maximum de tokens"
       },
       "llm_max_tokens": {
@@ -147,10 +147,6 @@
       "history_chars_per_token": {
         "label": "Characters per Token",
         "help": "Estimation"
-      },
-      "ollama_keep_alive": {
-        "label": "Ollama Keep Alive",
-        "help": "Durée de rétention du modèle en mémoire (secondes). -1 conserve jusqu'à la fermeture de l'app, 0 libère immédiatement"
       },
       "bge_num_ctx": {
         "label": "BGE-M3 Context Window",

@@ -499,7 +499,7 @@ async def import_backup(
     # 복원한 인덱스에 system_settings(MCP 서버 설정 포함)가 있었으면, mcp_manager의 실제
     # 연결 상태를 새 설정으로 재동기화한다. 이걸 안 하면 복원 전에 연결돼 있던 서버(예:
     # 기본값으로 켜져 있던 filesystem)가 새 설정에서 꺼졌어도 메모리에는 그대로 연결된 채
-    # 남아있어서, get_ollama_tools()가 그 worker의 tool을 계속 노출해버린다
+    # 남아있어서, get_tools()가 그 worker의 tool을 계속 노출해버린다
     # (외부 서버 tool은 enabled 여부를 매번 다시 확인하는 게 아니라 "현재 연결된 worker"를
     # 그대로 신뢰하는 구조라, 설정 변경 후 반드시 connect_all()로 재동기화해야 한다).
     if "system_settings" in backup["indices"]:

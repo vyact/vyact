@@ -54,7 +54,7 @@ class IsolatedPreparedRequestTests(unittest.IsolatedAsyncioTestCase):
                 [],
                 "",
                 False,
-                "ollama",
+                "openai",
                 conversation_summary="",
                 include_skills=False,
                 isolated_system_prompt=True,
@@ -75,7 +75,7 @@ class IsolatedPreparedRequestTests(unittest.IsolatedAsyncioTestCase):
                 [],
                 "",
                 False,
-                "ollama",
+                "openai",
                 include_skills=False,
                 include_response_language=False,
             )

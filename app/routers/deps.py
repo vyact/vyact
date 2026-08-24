@@ -5,7 +5,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from config import DEFAULT_MODEL, INSTALL_DIR, SETUP_DONE, get_log_file
+from config import INSTALL_DIR, SETUP_DONE, get_log_file
 from logger import get_logger
 
 logger = get_logger(__name__)
@@ -61,7 +61,7 @@ async def load_config_async() -> dict:
             logger.warning("[config] ES load failed: %s", e)
         else:
             logger.debug("[config] ES not available (initial setup)")
-    return {"type": "ollama", "model": DEFAULT_MODEL}
+    return {"type": "vyact", "model": "", "vyact_config": {}}
 
 
 async def save_config_async(cfg: dict):

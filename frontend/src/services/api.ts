@@ -120,10 +120,11 @@ export interface CustomProviderPayload {
     headers: Array<{name: string; value: string}>;
 }
 
-type ProviderType = 'ollama' | 'vyact' | 'openai' | 'gemini' | 'claude' | `custom:${string}`;
+type ProviderType = 'vyact' | 'openai' | 'gemini' | 'claude' | `custom:${string}`;
 
 export interface VyactHubModel {
     id: string;
+    runtime: 'gguf' | 'mlx';
     revision: string;
     downloads: number;
     files: string[];
@@ -161,6 +162,7 @@ export interface VyactGpuInfo {
 
 export interface VyactHardwareInfo {
     platform: string;
+    apple_silicon: boolean;
     memory_mode: 'unified' | 'dedicated' | 'system';
     system_memory: {total_bytes: number; available_bytes: number};
     gpus: VyactGpuInfo[];
@@ -269,8 +271,9 @@ export interface AllExternalDocumentsResponse extends Omit<Gov24DocumentsRespons
 }
 
 export const api = {
-    async searchVyactModels(query: string): Promise<VyactModelSearchResponse> {
-        const response = await fetch(`${API_BASE}/vyact/models/search?q=${encodeURIComponent(query)}`);
+    async searchVyactModels(query: string, mlxOnly = false): Promise<VyactModelSearchResponse> {
+        const params = new URLSearchParams({q: query, mlx_only: String(mlxOnly)});
+        const response = await fetch(`${API_BASE}/vyact/models/search?${params}`);
         const data = await response.json();
         cachedVyactInstalledModels = data.installed || [];
         return {
@@ -278,7 +281,7 @@ export const api = {
             installed: cachedVyactInstalledModels,
             mtp_supported: data.mtp_supported || [],
             hardware: data.hardware || {
-                platform: '', memory_mode: 'system',
+                platform: '', apple_silicon: false, memory_mode: 'system',
                 system_memory: data.system_memory || {total_bytes: 0, available_bytes: 0},
                 gpus: [],
             },
@@ -350,9 +353,11 @@ export const api = {
 
     async streamVyactModelDownload(
         repository: string, filename: string, onProgress: (message: string, progress?: number) => void,
+        revision = 'main', runtime: 'gguf' | 'mlx' = 'gguf',
     ): Promise<void> {
         const response = await fetch(`${API_BASE}/vyact/models/download`, {
-            method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({repository, filename}),
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({repository, filename, revision, runtime}),
         });
         if (!response.body) return;
         const reader = response.body.getReader();
@@ -361,7 +366,7 @@ export const api = {
         while (true) {
             const {done, value} = await reader.read();
             if (done) {
-                const modelPath = `${repository}/${filename}`;
+                const modelPath = runtime === 'mlx' ? `mlx/${repository}` : `${repository}/${filename}`;
                 if (!cachedVyactInstalledModels.includes(modelPath)) {
                     cachedVyactInstalledModels = [...cachedVyactInstalledModels, modelPath];
                 }
@@ -405,10 +410,11 @@ export const api = {
 
     async activateVyactModel(
         modelPath: string, contextSize = 32768, onProgress?: (message: string, progress?: number) => void,
+        runtime: 'gguf' | 'mlx' = 'gguf', repository?: string,
     ): Promise<void> {
         const response = await fetch(`${API_BASE}/vyact/models/activate`, {
             method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({model_path: modelPath, context_size: contextSize}),
+            body: JSON.stringify({model_path: modelPath, context_size: contextSize, runtime, repository}),
         });
         if (!response.body) return;
         const reader = response.body.getReader();

@@ -8,11 +8,10 @@ import re
 import shutil
 import sys
 from pathlib import Path
-from typing import AsyncGenerator
 
 from logger import get_logger
 
-from config import KOKORO_CACHE_READY, RECOMMENDED_MODELS
+from config import KOKORO_CACHE_READY
 
 logger = get_logger(__name__)
 
@@ -91,75 +90,6 @@ class Installer:
     async def is_docker_available(self) -> bool:
         """Docker 설치+실행 여부를 부작용 없이 확인 (모듈 함수 위임)."""
         return await is_docker_available()
-
-    async def install_ollama(self) -> tuple[bool, str]:
-        # 설치 여부 확인
-        if shutil.which("ollama") is not None:
-            return True, "Ollama installed"
-
-        system = platform.system()
-
-        if system == "Darwin":
-            if shutil.which("brew") is None:
-                return False, "Homebrew is required to install Ollama"
-            if await self._run(["brew", "install", "ollama"], log=True) != 0:
-                return False, "Ollama installation failed"
-
-        elif system == "Linux":
-            return False, "Auto-install on Linux is not yet supported"
-
-        elif system == "Windows":
-            return False, "Please install Ollama manually on Windows"
-
-        return True, "Ollama installed"
-
-    async def start_ollama_server(self) -> tuple[bool, str]:
-        """Ollama 서버 시작"""
-        chk = await asyncio.create_subprocess_exec(
-            "curl", "-s", "http://localhost:11434",
-            stdout=asyncio.subprocess.DEVNULL,
-            stderr=asyncio.subprocess.DEVNULL
-        )
-        await chk.wait()
-
-        if chk.returncode != 0:
-            await asyncio.create_subprocess_exec(
-                "ollama", "serve",
-                stdout=asyncio.subprocess.DEVNULL,
-                stderr=asyncio.subprocess.DEVNULL
-            )
-            await asyncio.sleep(5)
-
-        return True, "Ollama server running"
-
-    async def download_model(self, model: str) -> AsyncGenerator[tuple[str, int], None]:
-        """Ollama 모델 다운로드 (진행률 스트리밍)"""
-        proc = await asyncio.create_subprocess_exec(
-            "ollama", "pull", model,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT,
-        )
-
-        progress = 33
-        async for raw in proc.stdout:
-            line = raw.decode("utf-8", errors="replace").strip()
-            if not line:
-                continue
-
-            if "%" in line:
-                try:
-                    pct = int(line.split("%")[0].split()[-1])
-                    progress = 33 + int(pct * 0.37)
-                except:
-                    progress = min(progress + 1, 69)
-            elif "success" in line.lower():
-                progress = 70
-
-            yield line, progress
-
-        await proc.wait()
-        if proc.returncode != 0:
-            raise Exception(f"{model} download failed")
 
     async def setup_venv(self):
         if platform.system() == "Windows":

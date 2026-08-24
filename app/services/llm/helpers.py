@@ -61,16 +61,6 @@ def image_attachment_path(attachment: dict) -> Path:
     return Path(attachment["path"]) if attachment.get("path") else IMAGES_DIR / attachment["filename"]
 
 
-def load_images_b64(attachments: list) -> list[str]:
-    result = []
-    for att in attachments:
-        if att.get("type") == "image":
-            path = image_attachment_path(att)
-            if path.exists():
-                result.append(base64.b64encode(path.read_bytes()).decode("utf-8"))
-    return result
-
-
 def load_image_data_urls(attachments: list) -> list[str]:
     result = []
     for attachment in attachments:
@@ -86,36 +76,6 @@ def load_image_data_urls(attachments: list) -> list[str]:
 def mime_type(filename: str) -> str:
     ext = filename.split(".")[-1].lower()
     return f"image/{ext}" if ext in ("jpeg", "jpg", "png", "gif", "webp") else "image/jpeg"
-
-
-def history_for_ollama(history_messages: list, valid_history: list) -> list:
-    """Ollama용 history: user 메시지에 이미지 포함"""
-    result = []
-    hi = 0
-    for msg in history_messages:
-        # tool 관련 메시지는 Ollama 형식으로 전달
-        if msg["role"] == "assistant" and msg.get("tool_calls"):
-            ollama_tcs = [{"function": {"name": tc["name"], "arguments": tc.get("args", {})}}
-                          for tc in msg["tool_calls"]]
-            result.append({"role": "assistant", "content": msg.get("content", ""), "tool_calls": ollama_tcs})
-            continue
-        if msg["role"] == "tool":
-            result.append({
-                "role": "tool",
-                "tool_name": msg.get("tool_name") or msg.get("name", ""),
-                "content": msg["content"],
-            })
-            continue
-        entry: dict = {"role": msg["role"], "content": msg["content"]}
-        if msg["role"] == "user" and hi < len(valid_history):
-            atts = valid_history[hi].get("attachments", [])
-            imgs = load_images_b64(atts)
-            if imgs:
-                entry["images"] = imgs
-        if msg["role"] == "user":
-            hi += 1
-        result.append(entry)
-    return result
 
 
 def history_for_openai(history_messages: list, valid_history: list) -> list:

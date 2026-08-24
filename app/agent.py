@@ -4,7 +4,7 @@ agent.py – RAG 진입점 + services 모듈 re-export
 app/services/
   db.py       – ES 클라이언트 / 인덱스 초기화
   indexer.py  – 문서 인덱싱 / 검색 / 통계
-  llm.py      – LLM 쿼리 (Ollama / OpenAI / Gemini / Claude)
+  llm.py      – LLM 쿼리 (Vyact / OpenAI / Gemini / Claude)
   history.py  – 대화 히스토리 CRUD
   prompts.py  – System Prompt CRUD + 캐시
 """
@@ -315,7 +315,7 @@ async def rag_query_stream(
     yield 형식: {"type": "tool", "phase": "start"/"end", "name": ..., "sources"?: [...]}
                 {"type": "token", "text": ...}
                 {"type": "stats", "prompt_eval_count", "prompt_eval_duration",
-                                  "eval_count", "eval_duration", "total_duration"}  (ollama만 해당, 없으면 미발생)
+                                  "eval_count", "eval_duration", "total_duration"}  (provider 지원 시)
                 {"type": "final", "result": {..., "sources": docs+tool_sources, "stats": {...} | None}}
 
     tool(예: 네이버 뉴스 검색)이 기사 등 sources를 반환하면 "tool" 이벤트의
@@ -323,12 +323,12 @@ async def rag_query_stream(
     "참고" 목록에 tool이 실제로 가져온 기사가 표시된다.
 
     ES(RAG) 뉴스 검색을 처음부터 하지 않는 지연 조회는 프로젝트 폴더가 연결된
-    Ollama 채팅(project_tool_first=True)에서만 동작한다.
-    (chat_stream_with_tools의 post_tool_docs 훅이 ollama 경로에만 구현돼 있음).
+    Vyact 로컬 채팅(project_tool_first=True)에서만 동작한다.
+    (chat_stream_with_tools의 post_tool_docs 훅이 Vyact 경로에 구현돼 있음).
     다른 provider(OpenAI/Gemini/Claude)는 회귀 방지를 위해 기존처럼 RAG+메모를
     tool 판정 전에 먼저(병렬로) 조회한다.
 
-    프로젝트 Ollama 경로에서는 tool 판정이 끝난 뒤에야 메모/RAG/첨부파일을 조회한다:
+    프로젝트 Vyact 경로에서는 tool 판정이 끝난 뒤에야 메모/RAG/첨부파일을 조회한다:
     - code_* 도구가 성공했으면 → 프로젝트 파일이 직접 근거이므로 일반 RAG·메모 후속 검색 생략
     - tool이 sources를 가져왔으면(예: 네이버 뉴스 검색 성공) → 메모+첨부파일만 조회
       (메모/첨부파일은 사용자 개인 데이터라 tool 성공 여부와 무관하게 항상 필요하지만, 뉴스 RAG는
@@ -341,7 +341,7 @@ async def rag_query_stream(
     extra_context = extra_context or []
     provider_config = await get_provider_config()
     current_user_question.set(question)
-    is_ollama = provider_config.get("type") == "ollama"
+    is_local_llm = provider_config.get("selection_type") == "vyact"
 
     collection_instruction = ""
     collection_docs: list[dict] = []
@@ -352,7 +352,7 @@ async def rag_query_stream(
         docs = list(extra_context) + collection_docs
     elif skip_rag:
         docs = list(extra_context)
-    elif is_ollama and project_tool_first:
+    elif is_local_llm and project_tool_first:
         docs = list(extra_context)  # 메모/RAG/첨부파일은 tool 판정 이후로 미룸
     else:
         docs = await _gather_docs(question, extra_context, skip_rag=False, conv_id=conv_id)
@@ -425,7 +425,7 @@ async def rag_query_stream(
             # 컬렉션은 위에서 검색한 결과를 첫 프롬프트에 이미 넣었으므로,
             # 지연 RAG 보충을 다시 실행하면 같은 문서가 중복 주입된다.
             post_tool_docs=_post_tool_docs if (
-                is_ollama and project_tool_first and not skip_rag and not knowledge_collection_ids
+                is_local_llm and project_tool_first and not skip_rag and not knowledge_collection_ids
             ) else None,
             call_reason=call_reason,
             inject_user_profile=inject_user_profile,

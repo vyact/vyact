@@ -112,7 +112,7 @@
     "sections": {
       "llm": "LLM（聊天）设置",
       "history": "对话历史设置",
-      "ollama": "Ollama / 嵌入设置",
+      "embedding": "嵌入设置",
       "chunking": "文件上传分块设置"
     },
     "fields": {
@@ -121,12 +121,12 @@
         "help": "控制回答的随机性。"
       },
       "llm_num_ctx": {
-        "label": "Ollama Context Window",
+        "label": "本地 LLM Context Window",
         "help": "输入和输出的总上下文最大大小。请勿超过模型支持的上限。"
       },
       "llm_num_predict": {
-        "label": "Ollama Max Output Tokens",
-        "help": "Ollama 可生成的最大 token 数。"
+        "label": "本地 LLM Max Output Tokens",
+        "help": "本地 LLM 可生成的最大 token 数。"
       },
       "llm_max_tokens": {
         "label": "Claude Max Output Tokens",
@@ -147,10 +147,6 @@
       "history_chars_per_token": {
         "label": "Characters per Token",
         "help": "用于估算 token 的字符数。"
-      },
-      "ollama_keep_alive": {
-        "label": "Ollama Keep Alive",
-        "help": "模型在内存中的保持时间（秒）。-1 保持到应用退出，0 立即释放。"
       },
       "bge_num_ctx": {
         "label": "BGE-M3 Context Window",

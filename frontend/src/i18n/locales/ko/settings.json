@@ -168,7 +168,7 @@
     "sections": {
       "llm": "LLM (Chat) 설정",
       "history": "대화 히스토리 설정",
-      "ollama": "Ollama / 임베딩 설정",
+      "embedding": "임베딩 설정",
       "chunking": "파일 업로드 청킹 전략"
     },
     "fields": {
@@ -177,12 +177,12 @@
         "help": "응답의 무작위성입니다. 낮을수록 일관되고, 높을수록 다양한 표현을 사용합니다."
       },
       "llm_num_ctx": {
-        "label": "Ollama Context Window",
+        "label": "로컬 LLM Context Window",
         "help": "입력과 출력을 합친 전체 컨텍스트의 최대 크기입니다. 모델 지원 한도를 넘기지 마세요."
       },
       "llm_num_predict": {
-        "label": "Ollama Max Output Tokens",
-        "help": "Ollama가 한 번의 응답에서 생성할 수 있는 최대 토큰 수입니다."
+        "label": "로컬 LLM Max Output Tokens",
+        "help": "로컬 LLM이 한 번의 응답에서 생성할 수 있는 최대 토큰 수입니다."
       },
       "llm_max_tokens": {
         "label": "Claude Max Output Tokens",
@@ -203,10 +203,6 @@
       "history_chars_per_token": {
         "label": "Characters per Token",
         "help": "히스토리 토큰을 근사할 때 쓰는 문자 수입니다."
-      },
-      "ollama_keep_alive": {
-        "label": "Ollama Keep Alive",
-        "help": "모델 메모리 유지 시간(초)입니다. -1은 앱 종료까지 유지, 0은 즉시 해제합니다."
       },
       "bge_num_ctx": {
         "label": "BGE-M3 Context Window",

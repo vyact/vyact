@@ -2,21 +2,8 @@ import { useState } from 'react';
 import { api } from '../../services/api';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
 
-export const IMAGE_MODEL_IDS = ['x/flux2-klein:9b', 'x/z-image-turbo:latest'];
-export const IMAGE_EDIT_IDS = ['x/flux2-klein:9b'];
-
-const OLLAMA_PROGRESS_PATTERN = /(\d{1,3})%(?!\d)/g;
-
-function getOllamaDownloadProgress(message: string): number | undefined {
-    const matches = [...message.matchAll(OLLAMA_PROGRESS_PATTERN)];
-    const lastMatch = matches[matches.length - 1]?.[1];
-    if (!lastMatch) return undefined;
-
-    // Ollama는 개별 레이어 전송이 끝나면 100%를 출력하지만, 이후에도
-    // 검증·압축 해제·매니페스트 반영을 수행한다. pull 프로세스가 종료된 뒤에만
-    // 메모리 로드 단계(100%)로 전환되므로 중간 상태는 99%로 유지한다.
-    return Math.min(Number(lastMatch), 99);
-}
+export const IMAGE_MODEL_IDS: string[] = [];
+export const IMAGE_EDIT_IDS: string[] = [];
 
 export function useModels(
     onModelChange?: (model: string) => void,
@@ -85,18 +72,9 @@ export function useModels(
 
         try {
             setSelectedModel(model);
-            await api.selectModel('ollama', model, undefined, (message: string, type: string, progress?: number) => {
+            await api.selectModel('vyact', model, undefined, (message: string, type: string, progress?: number) => {
                 if (needsDownload && progress !== undefined) {
-                    const actualDownloadProgress = type === 'log'
-                        ? getOllamaDownloadProgress(message)
-                        : undefined;
-
-                    // 이전 서버가 고정 70%를 보내더라도, Ollama 로그에 있는 실제 값을 우선한다.
-                    if (actualDownloadProgress !== undefined) {
-                        setDownloadProgress(actualDownloadProgress);
-                    } else if (type === 'model_loading') {
-                        setDownloadProgress(100);
-                    }
+                    setDownloadProgress(progress);
                     setIsModelLoadingIntoMemory(type === 'model_loading');
                     setDownloadMessage(type === 'log' ? message : '');
                 }

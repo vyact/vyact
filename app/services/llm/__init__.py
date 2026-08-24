@@ -1,5 +1,5 @@
 """
-services/llm — LLM 쿼리 패키지 (Ollama / OpenAI / Gemini / Claude)
+services/llm — LLM 쿼리 패키지 (Vyact / OpenAI / Gemini / Claude)
 
 기존 `from services.llm import ...` 호환을 위해 공개 API를 재노출한다.
 
@@ -8,9 +8,8 @@ services/llm — LLM 쿼리 패키지 (Ollama / OpenAI / Gemini / Claude)
   helpers.py   — 이미지/mime/rag/history 변환
   errors.py    — provider HTTP 에러 메시지
   tools.py     — MCP tool → provider 스키마 변환 + tool 지시문
-  ollama.py    — Ollama payload + tool 루프
   providers.py — OpenAI/Gemini/Claude tool 루프 + 스트리밍
-  prepare.py   — 비-Ollama 요청 공통 준비
+  prepare.py   — provider 요청 공통 준비
   core.py      — chat_stream_with_tools / query_llm (진입점)
 """
 from .config import get_model_display_name, get_provider_config, get_model_name, log_llm_interaction

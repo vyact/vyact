@@ -3,98 +3,11 @@ models_config.py - 모델 설정 중앙 관리
 """
 import platform
 
-# MLX 빌드는 Apple Silicon 전용이다. 그 밖의 환경에서는 Ollama의 일반 빌드를 사용한다.
-IS_MLX_SUPPORTED = (
-        platform.system() == "Darwin"
-        and platform.machine().lower() in {"arm64", "aarch64"}
-)
 IS_WINDOWS = platform.system() == "Windows"
-IS_MACOS = platform.system() == "Darwin"
-DEFAULT_MODEL = "gemma4:e2b-mlx" if IS_MLX_SUPPORTED else "gemma4:e2b"
 
-# 모델 타입 상수
-MODEL_TYPE_CHAT = "chat"  # 일반 대화
-MODEL_TYPE_IMAGE_GEN = "image_gen"  # 텍스트→이미지 생성 전용
-MODEL_TYPE_IMAGE_EDIT = "image_edit"  # 이미지 입력+편집+생성 (멀티모달)
-
-# Windows에서는 지원하지 않는 이미지 모델
-IMAGE_MODELS = [
-    {
-        "id": "x/flux2-klein:9b",
-        "name": "FLUX.2 Klein (4B/9B)",
-        "type": MODEL_TYPE_IMAGE_EDIT,
-        "desc": "Black Forest Labs의 이미지 생성·편집 모델 · VRAM 16GB 이상 권장 · 텍스트-이미지 및 참조 이미지 편집 지원"
-    },
-    {
-        "id": "x/z-image-turbo:latest",
-        "name": "Z-Image Turbo (6B)",
-        "type": MODEL_TYPE_IMAGE_GEN,
-        "desc": "Alibaba의 실사 이미지 생성 모델 · VRAM 12GB 이상 권장 · 영어·중국어 텍스트 렌더링 최적화"
-    },
-]
-
-# Windows와 macOS에서는 이미지 모델을 기본 추천 목록에 포함하지 않는다.
-# macOS는 직접 설치한 이미지 모델의 실행 지원은 유지한다.
-RECOMMENDED_MODELS = [] if IS_WINDOWS or IS_MACOS else list(IMAGE_MODELS)
-
-WINDOWS_CHAT_MODELS = [
-    {
-        "id": "gemma4:e2b",
-        "name": "Gemma 4 E2B (Effective 2B)",
-        "type": MODEL_TYPE_CHAT,
-        "desc": "Google DeepMind의 초경량 모델 · Windows용 Ollama 일반 빌드 · Text·Image 입력 지원 · 빠른 추론·간단한 코딩·멀티모달 작업에 적합"
-    },
-    {
-        "id": "qwen3.5:2b",
-        "name": "Qwen 3.5 2B",
-        "type": MODEL_TYPE_CHAT,
-        "desc": "Alibaba의 초경량 멀티모달 모델 · Windows용 Ollama 일반 빌드 · 약 2.7GB · 256K 컨텍스트 · Text·Image 입력 지원 · 빠른 추론·일반 대화·경량 에이전트 작업에 적합"
-    },
-    {
-        "id": "qwen3.5:4b",
-        "name": "Qwen 3.5 4B",
-        "type": MODEL_TYPE_CHAT,
-        "desc": "Alibaba의 경량 멀티모달 모델 · Windows용 Ollama 일반 빌드 · 약 3.4GB · 256K 컨텍스트 · Text·Image 입력 지원 · 추론·코딩·에이전트 작업에 적합"
-    },
-]
-
-MLX_CHAT_MODELS = [
-    {
-        "id": "gemma4:e2b-mlx",
-        "name": "Gemma 4 E2B MLX (Effective 2B)",
-        "type": MODEL_TYPE_CHAT,
-        "desc": "Google DeepMind의 초경량 엣지용 모델 · Apple Silicon(MLX) 최적화 · 약 6.5GB · 128K 컨텍스트 · Text·Image 입력 지원 · 빠른 추론·번역·일반 대화·경량 에이전트 작업에 적합"
-    },
-    {
-        "id": "gemma4:e4b-mlx",
-        "name": "Gemma 4 E4B MLX (Effective 4B)",
-        "type": MODEL_TYPE_CHAT,
-        "desc": "Google DeepMind의 엣지용 모델 · Apple Silicon(MLX) 최적화 · 약 8.8GB · 128K 컨텍스트 · Text·Image 입력 지원 · 경량 환경의 추론·코딩·멀티모달 작업에 적합"
-    },
-    {
-        "id": "gemma4:12b-mlx",
-        "name": "Gemma 4 12B MLX",
-        "type": MODEL_TYPE_CHAT,
-        "desc": "Google DeepMind의 워크스테이션용 모델 · Apple Silicon(MLX) 최적화 · 약 7.7GB · 256K 컨텍스트 · Text·Image 입력 지원 · 추론·코딩·에이전트 작업에 적합"
-    },
-    {
-        "id": "qwen3.5:2b-mlx",
-        "name": "Qwen 3.5 2B MLX",
-        "type": MODEL_TYPE_CHAT,
-        "desc": "Alibaba의 초경량 멀티모달 모델 · Apple Silicon(MLX) 최적화 · 약 3.1GB · 256K 컨텍스트 · Text·Image 입력 지원 · 빠른 추론·일반 대화·경량 에이전트 작업에 적합"
-    },
-    {
-        "id": "qwen3.5:4b-mlx",
-        "name": "Qwen 3.5 4B MLX",
-        "type": MODEL_TYPE_CHAT,
-        "desc": "Alibaba의 경량 멀티모달 모델 · Apple Silicon(MLX) 최적화 · 약 4.0GB · 256K 컨텍스트 · Text·Image 입력 지원 · 추론·코딩·에이전트 작업에 적합"
-    },
-]
-
-RECOMMENDED_MODELS.extend(MLX_CHAT_MODELS if IS_MLX_SUPPORTED else WINDOWS_CHAT_MODELS)
-
-# Windows와 macOS에서는 이미지 생성 모델을 지원하지 않는다.
-IMAGE_MODEL_IDS = set() if IS_WINDOWS or IS_MACOS else {model["id"] for model in IMAGE_MODELS}
+DEFAULT_MODEL = ""
+RECOMMENDED_MODELS: list[dict] = []
+IMAGE_MODEL_IDS: set[str] = set()
 
 # =========================
 # LLM(Chat) 설정
@@ -102,17 +15,15 @@ IMAGE_MODEL_IDS = set() if IS_WINDOWS or IS_MACOS else {model["id"] for model in
 
 LLM_TEMPERATURE = 0.2
 
-# Ollama context window
+# Local LLM context window
 # 입력(Input) + 출력(Output)을 모두 포함한 전체 컨텍스트 크기.
-# Windows는 일반 Ollama 빌드에서 채팅 모델과 bge-m3를 함께 유지하므로,
-# 메모리 부족을 피하기 위해 더 작은 기본 컨텍스트를 사용한다.
 # 모델은 32K KV cache로 준비하고, 요청별 context는 아래 최대값까지
 # 32K 단위에서 2배씩 확장한다.
 LLM_INITIAL_NUM_CTX = 32768
 LLM_MAX_NUM_CTX = 65536 if IS_WINDOWS else 131072
 LLM_NUM_CTX = LLM_MAX_NUM_CTX
 
-# Ollama 최대 출력 토큰
+# Local LLM 최대 출력 토큰
 LLM_NUM_PREDICT = 32768
 
 # Claude 최대 출력 토큰
@@ -136,22 +47,11 @@ HISTORY_TOKEN_BUDGET = 32768
 HISTORY_CHARS_PER_TOKEN = 2.0
 
 # =========================
-# Ollama 공통 설정
-# =========================
-
-# 모든 Ollama 요청(embed/chat)에 공통으로 사용하는 keep_alive
-#
-# Ollama는 요청마다 keep_alive가 없으면 기본값(5분)으로 다시 초기화된다.
-# 따라서 예열뿐 아니라 실제 chat/embed 요청에도 항상 이 값을 포함해야
-# 모델이 메모리에 계속 유지된다.
-OLLAMA_KEEP_ALIVE = -1
-
-# =========================
 # BGE-M3 임베딩 설정
 # =========================
 
 # BGE-M3의 실제 최대 컨텍스트는 8192 토큰.
-# 이보다 큰 num_ctx를 요청해도 Ollama가 자동으로 8192로 제한한다.
+# 이보다 큰 컨텍스트를 요청해도 임베딩 모델의 한도를 넘을 수 없다.
 # 따라서 입력 길이 계산은 반드시 이 값을 기준으로 해야 한다.
 BGE_NUM_CTX = 8192
 

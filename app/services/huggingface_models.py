@@ -15,6 +15,10 @@ RECOMMENDED_GGUF_REPOSITORIES = (
     "unsloth/Qwen3.5-9B-GGUF",
     "unsloth/Qwen3.8-27B-GGUF",
 )
+MLX_REPOSITORY_FILE = "__mlx_repository__"
+MLX_DOWNLOAD_PATTERNS = (
+    "*.json", "*.safetensors", "*.model", "*.txt", "*.tiktoken", "*.jinja", "*.py", "*.npz",
+)
 _REPO_ID_PATTERN = re.compile(r"^[\w.-]+/[\w.-]+$")
 
 
@@ -54,6 +58,33 @@ async def search_gguf_models(query: str, token: str | None = None, limit: int = 
     return sorted(models, key=lambda model: model["downloads"], reverse=True)
 
 
+async def search_mlx_models(query: str, token: str | None = None, limit: int = 20) -> list[dict]:
+    """Search complete MLX repositories for the Apple Silicon runtime."""
+    params = {
+        "library": "mlx", "limit": max(1, min(limit, 50)), "full": "true", "blobs": "true",
+        "sort": "downloads", "direction": "-1",
+    }
+    if query.strip():
+        params["search"] = query.strip()
+    async with httpx.AsyncClient(timeout=20) as client:
+        response = await client.get(f"{HF_API_URL}/models", params=params, headers=_headers(token))
+        response.raise_for_status()
+        search_items = response.json()
+        repository_ids = [
+            str(item.get("id", "")) for item in search_items
+            if isinstance(item, dict) and _REPO_ID_PATTERN.fullmatch(str(item.get("id", "")))
+        ]
+        detailed_items = await _fetch_model_details(client, repository_ids, token)
+    models = [
+        model for item in search_items
+        if isinstance(item, dict)
+        and (model := _mlx_model_from_hub_item(
+            _merge_search_and_detail(item, detailed_items.get(str(item.get("id", ""))))
+        ))
+    ]
+    return sorted(models, key=lambda model: model["downloads"], reverse=True)
+
+
 async def _fetch_model_details(
         client: httpx.AsyncClient, repository_ids: list[str], token: str | None = None,
 ) -> dict[str, dict]:
@@ -82,6 +113,31 @@ def _merge_search_and_detail(search_item: dict, detailed_item: dict | None) -> d
     }
 
 
+def _mlx_model_from_hub_item(item: dict) -> dict | None:
+    repo_id = str(item.get("id", ""))
+    if not _REPO_ID_PATTERN.fullmatch(repo_id):
+        return None
+    siblings = [sibling for sibling in item.get("siblings", []) if isinstance(sibling, dict)]
+    has_weights = any(str(sibling.get("rfilename", "")).lower().endswith(".safetensors") for sibling in siblings)
+    has_config = any(str(sibling.get("rfilename", "")).lower() == "config.json" for sibling in siblings)
+    if not has_weights or not has_config:
+        return None
+    size = sum(
+        int(sibling.get("size") or sibling.get("lfs", {}).get("size") or 0)
+        for sibling in siblings
+        if any(PurePosixPath(str(sibling.get("rfilename", ""))).match(pattern) for pattern in MLX_DOWNLOAD_PATTERNS)
+    )
+    return {
+        "id": repo_id,
+        "runtime": "mlx",
+        "revision": str(item.get("sha") or "main"),
+        "downloads": item.get("downloads", 0),
+        "files": [MLX_REPOSITORY_FILE],
+        "file_sizes": {MLX_REPOSITORY_FILE: size},
+        "mtp_supported_files": [],
+    }
+
+
 def _model_from_hub_item(item: dict) -> dict | None:
     repo_id = str(item.get("id", ""))
     if not _REPO_ID_PATTERN.fullmatch(repo_id):
@@ -104,6 +160,7 @@ def _model_from_hub_item(item: dict) -> dict | None:
     ]
     return {
         "id": repo_id,
+        "runtime": "gguf",
         "revision": str(item.get("sha") or "main"),
         "downloads": item.get("downloads", 0),
         "files": gguf_files,

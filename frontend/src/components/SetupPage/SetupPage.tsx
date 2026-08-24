@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {Eye, EyeOff, ExternalLink, Plus} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { LogEntry } from '../../types';
-import { getRecommendedModelDisplay } from '../../utils/recommendedModels';
 import { syncPendingLanguageAfterSetup } from '../../i18n';
 import EsModeSelector from './EsModeSelector';
 import CustomSelect from '../CustomSelect/CustomSelect';
@@ -14,17 +13,10 @@ interface SetupPageProps {
     onInstallComplete: () => void;
 }
 
-interface RecommendedModel {
-    id: string;
-    name: string;
-    desc: string;
-    type?: string;
-}
-
-type Provider = 'ollama' | 'vyact' | 'openai' | 'gemini' | 'claude' | 'custom';
+type Provider = 'vyact' | 'openai' | 'gemini' | 'claude' | 'custom';
 type CustomProtocol = 'openai-compatible';
 
-const DEFAULT_MODELS: Record<Exclude<Provider, 'ollama' | 'vyact' | 'custom'>, string> = {
+const DEFAULT_MODELS: Record<Exclude<Provider, 'vyact' | 'custom'>, string> = {
     openai: 'gpt-4o-mini',
     gemini: 'gemini-3.1-flash-lite-preview',
     claude: 'claude-3-5-sonnet',
@@ -32,16 +24,12 @@ const DEFAULT_MODELS: Record<Exclude<Provider, 'ollama' | 'vyact' | 'custom'>, s
 
 const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
     const { t } = useTranslation(['setup', 'main']);
-    const [provider, setProvider] = useState<Provider>('ollama');
+    const [provider, setProvider] = useState<Provider>('vyact');
     const [esMode, setEsMode] = useState<'docker' | 'native'>('docker');
     // null = 확인 중(상태 조회 완료 전). 확인 전에는 선택지를 잠가 "됐다 안 됐다"처럼 보이는 것을 방지.
     const [dockerAvailable, setDockerAvailable] = useState<boolean | null>(null);
     const [nativeSupported, setNativeSupported] = useState<boolean | null>(null);
-    const [recommendedModels, setRecommendedModels] = useState<RecommendedModel[]>([]);
-    const [defaultModel, setDefaultModel] = useState<string>('');
-
     const [selectedModel, setSelectedModel] = useState<string>('');
-    const [customModel, setCustomModel] = useState<string>('');
     const [apiKey, setApiKey] = useState<string>('');
     const [huggingFaceToken, setHuggingFaceToken] = useState<string>('');
     const [huggingFaceQuery, setHuggingFaceQuery] = useState('');
@@ -70,18 +58,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
     const logRef = useRef<HTMLDivElement>(null);
     const shouldFollowLogTailRef = useRef(true);
 
-    const isCloud = provider !== 'ollama' && provider !== 'vyact';
-
-    // 추천 모델 리스트 로드
-    useEffect(() => {
-        fetch('/api/models/recommended')
-            .then(res => res.json())
-            .then(data => {
-                setRecommendedModels(data.models);
-                setDefaultModel(data.default);
-            })
-            .catch(err => console.error('Failed to load models:', err));
-    }, []);
+    const isCloud = provider !== 'vyact';
 
     // 시스템 상태 조회 — Docker 설치 여부/네이티브 지원 여부에 따라 ES 방식 선택지 제어
     useEffect(() => {
@@ -118,26 +95,19 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
     };
 
     useEffect(() => {
-        if (provider === 'ollama') {
-            setSelectedModel(prev => defaultModel || prev || '');
-            setCustomModel('');
-            setApiKey('');
-        } else if (provider === 'vyact') {
+        if (provider === 'vyact') {
             setSelectedModel('');
-            setCustomModel('');
             setApiKey('');
         } else if (provider === 'custom') {
             setSelectedModel('');
-            setCustomModel('');
             setApiKey('');
             setConnectionName('');
             setBaseUrl('');
             setCustomHeaders([]);
         } else {
             setSelectedModel(DEFAULT_MODELS[provider]);
-            setCustomModel('');
         }
-    }, [provider, defaultModel]);
+    }, [provider]);
 
     const addLog = (type: LogEntry['type'], message: string, displayErrorMessage = message) => {
         if (type === 'log') {
@@ -167,9 +137,8 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
         if (provider === 'custom') return !connectionName.trim() || !baseUrl.trim() || !selectedModel.trim()
             || customHeaders.some(header => !header.name.trim() || !header.value.trim());
         if (isCloud) return !apiKey.trim() || !selectedModel.trim();
-        // Ollama: 모델 미선택 + 커스텀 미입력이면 비활성화
-        return !selectedModel.trim() && !customModel.trim();
-    }, [provider, isCloud, apiKey, selectedModel, customModel, connectionName, baseUrl, customHeaders]);
+        return !selectedModel.trim();
+    }, [provider, isCloud, apiKey, selectedModel, connectionName, baseUrl, customHeaders]);
 
     const changeProvider = (next: Provider) => {
         setProvider(next);
@@ -189,13 +158,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
         setErrorLogs([]); // 🔥 설치 시작 시 초기화
 
         const payload =
-            provider === 'ollama'
-                ? {
-                    type: 'ollama',
-                    model: customModel || selectedModel,
-                    config: { es_mode: esMode },
-                }
-                : provider === 'vyact'
+            provider === 'vyact'
                     ? {
                         type: 'vyact',
                         model: selectedModel,
@@ -326,7 +289,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                 <div className="sec-label">{t('provider')}</div>
 
                 <div className="provider-grid">
-                    {(['ollama', 'vyact', 'openai', 'gemini', 'claude', 'custom'] as const).map(id => ({
+                    {(['vyact', 'openai', 'gemini', 'claude', 'custom'] as const).map(id => ({
                         id,
                         name: id === 'vyact' ? 'Vyact' : t(`providers.${id}.name`),
                         desc: id === 'vyact' ? t('localExec') : t(`providers.${id}.desc`),
@@ -345,56 +308,6 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
 
                 {!isInstalling && (
                     <>
-                        {provider === 'ollama' && (
-                            <>
-                                <div className="sec-label">{t('ollamaModel')}</div>
-                                <div className="model-grid">
-                                    {[
-                                        // 1. chat 모델 (DEFAULT_MODEL 최상단)
-                                        ...recommendedModels
-                                            .filter(m => (!m.type || m.type === 'chat'))
-                                            .sort((a, b) => a.id === defaultModel ? -1 : b.id === defaultModel ? 1 : 0),
-                                        // 2. 구분자 (sentinel)
-                                        { id: '__divider__', name: '', desc: '', type: '__divider__' },
-                                        // 3. 이미지 모델
-                                        ...recommendedModels.filter(m => m.type === 'image_gen' || m.type === 'image_edit'),
-                                    ].map((model) => {
-                                        if (model.type === '__divider__') {
-                                            return (
-                                                <div key="divider" style={{
-                                                    display: 'flex', alignItems: 'center', gap: '8px',
-                                                    fontSize: '11px', color: 'var(--muted)', margin: '4px 0 2px',
-                                                    flexShrink: 0,
-                                                }}>
-                                                    <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
-                                                    🎨 {t('imageGenModel')}
-                                                    <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
-                                                </div>
-                                            );
-                                        }
-                                        const displayModel = getRecommendedModelDisplay(model, t);
-                                        return (
-                                            <div
-                                                key={model.id}
-                                                className={`model-item ${selectedModel === model.id ? 'selected' : ''}`}
-                                                onClick={() => setSelectedModel(model.id)}
-                                            >
-                                                <div className="model-name">{displayModel.name}</div>
-                                                <div className="model-desc">{displayModel.desc}</div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-
-                                <input
-                                    className="input setup-custom-model-input"
-                                    placeholder={t('customModel')}
-                                    value={customModel}
-                                    onChange={e => setCustomModel(e.target.value)}
-                                />
-                            </>
-                        )}
-
                         {provider === 'vyact' && (
                             <section className="setup-connection-panel">
                                 <div className="setup-connection-heading"><div><strong>Vyact</strong><span>{t('localExec')}</span></div></div>
@@ -415,7 +328,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                                 <label className="setup-field"><span>{t('main:customProvider.protocol')}</span><CustomSelect className="setup-protocol-select" options={CUSTOM_PROTOCOL_OPTIONS} value={customProtocol} onChange={value => setCustomProtocol(value as CustomProtocol)} ariaLabel={t('main:customProvider.protocol')}/></label>
                             </div>}
                             {provider === 'custom' && <div className="setup-protocol-help"><span>{t('main:customProvider.hint')}</span><a href={OPENAI_COMPATIBLE_DOCS_URL} target="_blank" rel="noreferrer">{t('main:customProvider.protocolDocs')}<ExternalLink size={13}/></a></div>}
-                            {provider === 'custom' && <label className="setup-field"><span>{t('customConnection.baseUrl')}</span><input className="input" placeholder="http://localhost:11434/v1" value={baseUrl} onChange={e => setBaseUrl(e.target.value)}/></label>}
+                            {provider === 'custom' && <label className="setup-field"><span>{t('customConnection.baseUrl')}</span><input className="input" placeholder="http://localhost:8000/v1" value={baseUrl} onChange={e => setBaseUrl(e.target.value)}/></label>}
                             <div className={provider === 'custom' ? 'setup-field-row' : 'setup-cloud-fields'}>
                                 <label className="setup-field"><span>{t('apiKey')}{provider === 'custom' && <small>{t('customConnection.optional')}</small>}</span><div className="setup-secret-field"><input className="input" type={isApiKeyVisible ? 'text' : 'password'} placeholder={t('apiKey')} value={apiKey} onChange={e => setApiKey(e.target.value)}/><button type="button" onClick={() => setIsApiKeyVisible(current => !current)} aria-label={t(isApiKeyVisible ? 'main:customProvider.hideApiKey' : 'main:customProvider.showApiKey')}>{isApiKeyVisible ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div></label>
                                 <label className="setup-field"><span>{t('modelId')}</span><input className="input" placeholder={t('modelIdPlaceholder')} value={selectedModel} onChange={e => setSelectedModel(e.target.value)}/></label>

@@ -510,6 +510,8 @@
     "delete": "삭제",
     "modelSearch": "모델 검색...",
     "searchLabel": "모델 검색",
+    "mlxOnly": "MLX만",
+    "mlxRuntime": "MLX",
     "searchAction": "검색",
     "searching": "모델을 검색하고 있습니다...",
     "noSearchResults": "검색 결과가 없습니다. 다른 모델명으로 검색해 보세요.",

@@ -111,7 +111,7 @@ const CustomProviderModal: React.FC<CustomProviderModalProps> = ({connection, on
                         <p>{t('customProvider.hint')}</p>
                         <a href={OPENAI_COMPATIBLE_DOCS_URL} target="_blank" rel="noreferrer">{t('customProvider.protocolDocs')}<ExternalLink size={13}/></a>
                     </div>
-                    <label className="provider-editor-field"><span>{t('customProvider.baseUrl')}</span><input value={baseUrl} onChange={event => setBaseUrl(event.target.value)} placeholder="http://localhost:11434/v1"/></label>
+                    <label className="provider-editor-field"><span>{t('customProvider.baseUrl')}</span><input value={baseUrl} onChange={event => setBaseUrl(event.target.value)} placeholder="http://localhost:8000/v1"/></label>
                     <div className="provider-editor-grid">
                         <label className="provider-editor-field"><span>{t('customProvider.apiKey')}<small>{t('customProvider.optional')}</small></span><div className="provider-api-key-field"><input type={isApiKeyVisible ? 'text' : 'password'} value={apiKey} onChange={event => setApiKey(event.target.value)} placeholder={connection?.has_key ? t('customProvider.apiKeyExisting') : t('customProvider.apiKeyOptional')}/><button type="button" onClick={() => setIsApiKeyVisible(current => !current)} aria-label={t(isApiKeyVisible ? 'customProvider.hideApiKey' : 'customProvider.showApiKey')}>{isApiKeyVisible ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div></label>
                         <label className="provider-editor-field"><span>{t('customProvider.modelId')}</span><input value={model} onChange={event => setModel(event.target.value)} placeholder={t('customProvider.modelPlaceholder')}/></label>

@@ -19,7 +19,7 @@ from agent import (
     get_conversation, rag_query_stream,
 )
 from services.llm import chat_stream_with_tools, get_model_display_name
-from services.llm.ollama import _tool_result_failed
+from services.llm.tools import tool_result_failed
 from config import IMAGE_MODEL_IDS
 from prompts import VOICE_MODE_SUFFIX, FORMAT_INSTRUCTION
 from routers.deps import load_config_async
@@ -425,7 +425,7 @@ def _trigger_chat_file_indexing(conv_id: str, attachments: list) -> list[dict]:
 
     ⚠ 스트리밍 경로(query_stream)에서는 이 함수 대신 아래 _index_attachments_sequential()을
     쓴다 — 백그라운드로 돌리면 로컬 환경에서 같은 GPU를 임베딩과 LLM 추론이 나눠 쓰면서
-    실제 응답 생성이 느려지는 문제가 있어(둘 다 Ollama가 처리), 인덱싱을 먼저 끝내고
+    실제 응답 생성이 느려지는 문제가 있어(둘 다 로컬 연산 자원을 사용), 인덱싱을 먼저 끝내고
     나서 LLM을 호출하는 쪽이 더 안전하다고 판단했다. 이 함수는 진행 표시가 불가능한
     비스트리밍 /query 경로에서만 계속 쓴다.
 
@@ -1048,7 +1048,7 @@ async def query_stream(req: QueryRequest):
                             _activity_log[-1]["phase"] = "completed"
                             _result = ev.get("result")
                             _activity_log[-1]["outcome"] = (
-                                "failed" if isinstance(_result, str) and _tool_result_failed(_result) else "success"
+                                "failed" if isinstance(_result, str) and tool_result_failed(_result) else "success"
                             )
                             _activity_log[-1]["completedAt"] = int(datetime.now(timezone.utc).timestamp() * 1000)
                             _presentation = _tool_result_activity_presentation(_result, ev.get("args", {}))
@@ -1373,7 +1373,7 @@ async def translate(req: TranslateRequest):
             f"다음 텍스트를 {req.target_lang}로 번역해줘. "
             f"번역 결과만 출력하고 설명은 하지 마:\n\n{req.text}"
         )
-        gen_stats: dict = {}  # query_llm이 ollama 토큰수/처리시간 통계를 채움
+        gen_stats: dict = {}  # query_llm이 provider 토큰수/처리시간 통계를 채움
         answer = await query_llm(
             prompt, [], "", [], [],
             timeout=300.0,

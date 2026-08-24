@@ -60,15 +60,6 @@ interface SidebarProps {
 const ProviderIcon: React.FC<{ provider: string; active: boolean }> = ({provider, active}) => {
     const color = active ? '#fff' : 'var(--muted)';
     switch (provider) {
-        case 'ollama':
-            return (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.8"/>
-                    <circle cx="9" cy="11" r="1.5" fill={color}/>
-                    <circle cx="15" cy="11" r="1.5" fill={color}/>
-                    <path d="M9 15s1 1.5 3 1.5 3-1.5 3-1.5" stroke={color} strokeWidth="1.5" strokeLinecap="round"/>
-                </svg>
-            );
         case 'vyact':
             return (
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -103,7 +94,7 @@ const ProviderIcon: React.FC<{ provider: string; active: boolean }> = ({provider
 };
 
 const PROVIDER_LABELS: Record<string, string> = {
-    ollama: 'Ollama', vyact: 'Vyact', openai: 'OpenAI', gemini: 'Gemini', claude: 'Claude',
+    vyact: 'Vyact', openai: 'OpenAI', gemini: 'Gemini', claude: 'Claude',
 };
 
 const EXPANDED_PROJECT_IDS_STORAGE_KEY = 'vyact-expanded-project-ids';
@@ -401,7 +392,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         setIsSettingsOpenInternal(v);
         if (!v) onSettingsClosed?.();
     };
-    const [currentProvider, setCurrentProvider] = useState<string>('ollama');
+    const [currentProvider, setCurrentProvider] = useState<string>('vyact');
     const [customProviders, setCustomProviders] = useState<CustomProviderSettings[]>([]);
     const [customProviderEditor, setCustomProviderEditor] = useState<CustomProviderSettings | 'new' | null>(null);
     const [isVyactModalOpen, setIsVyactModalOpen] = useState(false);
@@ -415,7 +406,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     const loadCurrentProvider = async () => {
         try {
             const data = await api.getProviders();
-            setCurrentProvider(data.current_type || 'ollama');
+            setCurrentProvider(data.current_type || 'vyact');
             setCustomProviders(data.custom_providers || []);
         } catch {
             // The provider selector remains usable with its default value.
@@ -434,13 +425,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         if (provider === currentProvider) return;
         const prev = currentProvider;
         try {
-            if (provider === 'ollama') {
-                onBeforeModelContextChange?.();
-                await api.selectProvider('ollama');
-                setCurrentProvider('ollama');
-                await loadCurrentProvider();
-                await onProviderChange();
-            } else if (provider.startsWith('custom:')) {
+            if (provider.startsWith('custom:')) {
                 onBeforeModelContextChange?.();
                 await api.selectProvider(provider);
                 setCurrentProvider(provider);
@@ -472,8 +457,8 @@ const Sidebar: React.FC<SidebarProps> = ({
         if (!confirm(t('customProvider.deleteConfirm', {name: label}))) return;
         try {
             await api.deleteCustomProvider(customProvider.id);
-            await api.selectProvider('ollama');
-            setCurrentProvider('ollama');
+            await api.selectProvider('vyact');
+            setCurrentProvider('vyact');
             await loadCurrentProvider();
             await onProviderChange();
         } catch (e) {
@@ -503,12 +488,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                 {!visualCollapsed && (
                     <div className="sidebar-header-actions">
                         <div className="header-provider-wrap"><CustomSelect options={[
-                            ...(['ollama', 'vyact', 'openai', 'gemini', 'claude'] as const).map(provider => ({value: provider, label: PROVIDER_LABELS[provider]})),
+                            ...(['vyact', 'openai', 'gemini', 'claude'] as const).map(provider => ({value: provider, label: PROVIDER_LABELS[provider]})),
                             ...customProviders.map(provider => ({value: `custom:${provider.id}`, label: provider.name})),
                             {value: '__add_custom__', label: t('customProvider.addConnection')},
                         ]} value={currentProvider} onChange={handleProviderChange} className="header-provider-select" /></div>
                         <button className="sidebar-header-settings" onClick={() => {
-                            if (currentProvider.startsWith('custom:') || currentProvider === 'ollama') setIsSettingsOpen(true);
+                            if (currentProvider.startsWith('custom:')) setIsSettingsOpen(true);
                             else setIsProviderSettingsOpen(true);
                         }} aria-label={t('modelSelector.settingsManage')}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -530,7 +515,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         <div className="sidebar-section">
                             <div className="sec-label">Provider</div>
                             <div className="provider-select-wrap">
-                                {(['ollama', 'vyact', 'openai', 'gemini', 'claude'] as const).map(p => (
+                                {(['vyact', 'openai', 'gemini', 'claude'] as const).map(p => (
                                     <button
                                         key={p}
                                         className={`provider-select-btn${currentProvider === p ? ' active' : ''}`}

@@ -510,6 +510,8 @@
     "delete": "Xóa",
     "modelSearch": "Tìm mô hình...",
     "searchLabel": "Tìm mô hình",
+    "mlxOnly": "Chỉ MLX",
+    "mlxRuntime": "MLX",
     "searchAction": "Tìm kiếm",
     "searching": "Đang tìm kiếm mô hình...",
     "noSearchResults": "Không tìm thấy mô hình. Hãy thử tên khác.",

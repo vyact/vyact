@@ -20,6 +20,7 @@ class HardwareInfoTests(unittest.TestCase):
     @patch("services.hardware_info.platform.system", return_value="Darwin")
     def test_apple_silicon_uses_unified_memory(self, _system, _machine, _nvidia):
         hardware = get_local_hardware_info()
+        self.assertTrue(hardware["apple_silicon"])
         self.assertEqual(hardware["memory_mode"], "unified")
         self.assertTrue(hardware["gpus"][0]["shared_memory"])
         self.assertEqual(hardware["gpus"][0]["backend"], "Metal")

@@ -393,6 +393,9 @@ def start_single_model(model_path: Path, context_size: int, debug_logging: bool 
     paths = get_runtime_paths()
     if not paths.llama_swap:
         raise RuntimeError("Vyact native runtime is not installed")
+    from services.mlx_runtime import stop_mlx_runtime
+
+    stop_mlx_runtime()
     mtp_model_path = get_cached_mtp_sidecar(model_path)
     vision_projector_path = get_cached_vision_projector(model_path)
 
@@ -442,6 +445,24 @@ def start_single_model(model_path: Path, context_size: int, debug_logging: bool 
         wait_until_loaded(model_key, process)
         _active_mtp_model = None
     return model_key
+
+
+def start_configured_runtime(vyact_config: dict, debug_logging: bool = False) -> str:
+    """Restore the configured GGUF or MLX model after an app restart."""
+    model_path_value = str(vyact_config.get("model_path") or "")
+    if not model_path_value:
+        raise ValueError("No Vyact model is configured")
+    context_size = int(vyact_config.get("context_size", 32768))
+    if vyact_config.get("runtime", "gguf") == "mlx":
+        from services.mlx_runtime import get_downloaded_mlx_model_path, start_mlx_model
+        return start_mlx_model(get_downloaded_mlx_model_path(model_path_value), context_size, debug_logging)
+    return start_single_model(get_downloaded_model_path(model_path_value), context_size, debug_logging)
+
+
+def stop_all_vyact_runtimes() -> None:
+    from services.mlx_runtime import stop_mlx_runtime
+    stop_runtime()
+    stop_mlx_runtime()
 
 
 def write_single_model_config(

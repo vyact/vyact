@@ -130,7 +130,7 @@ async def create_skill(body: SkillCreate):
         now = datetime.now(timezone.utc).isoformat()
         embedding = await get_embedding(body.description.strip())
         if not embedding:
-            raise HTTPException(status_code=500, detail="임베딩 생성 실패 — Ollama bge-m3 모델 상태를 확인하세요.")
+            raise HTTPException(status_code=500, detail="임베딩 생성 실패 — BGE-M3 모델 상태를 확인하세요.")
         doc = {
             "name": body.name.strip(),
             "description": body.description.strip(),
@@ -186,7 +186,7 @@ async def update_skill(skill_id: str, body: SkillUpdate):
             update_doc["description"] = body.description.strip()
             embedding = await get_embedding(update_doc["description"])
             if not embedding:
-                raise HTTPException(status_code=500, detail="임베딩 생성 실패 — Ollama bge-m3 모델 상태를 확인하세요.")
+                raise HTTPException(status_code=500, detail="임베딩 생성 실패 — BGE-M3 모델 상태를 확인하세요.")
             update_doc["embedding"] = embedding
         if body.instructions is not None:
             update_doc["instructions"] = body.instructions.strip()

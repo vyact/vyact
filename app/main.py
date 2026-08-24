@@ -15,7 +15,6 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from config import KOKORO_CACHE_READY, LOGS_DIR, SETUP_DONE
-from config.models import DEFAULT_MODEL
 from logger import setup_logging, get_logger
 from services.external_data.scheduler import (
     start_external_data_scheduler,
@@ -244,7 +243,7 @@ async def lifespan(app: FastAPI):
             from services.runtime_settings import apply_runtime_settings
             cfg = await load_config_async()
             if not cfg or not cfg.get("type"):
-                cfg = {"type": "ollama", "model": DEFAULT_MODEL, "api_key": None, "config": {}}
+                cfg = {"type": "vyact", "model": "", "vyact_config": {}, "config": {}}
                 await save_config_async(cfg)
                 logger.info("Default config saved to ES")
             apply_runtime_settings(cfg.get("runtime_settings"))
@@ -262,32 +261,26 @@ async def lifespan(app: FastAPI):
 
     if SETUP_DONE.exists():
         try:
-            from routers.deps import load_config_async
-            from services.ollama_manager import get_loaded_model_names, load_model
+            from routers.deps import load_config_async, save_config_async
             cfg = await load_config_async()
-            if cfg.get("type", "ollama") == "ollama" and cfg.get("model"):
-                model = cfg["model"]
-                logger.info("Loading Ollama model: %s", model)
-                ok = await load_model(model)
-                if ok:
-                    logger.info("Ollama model loaded: %s", model)
-                    loaded_models = await get_loaded_model_names()
-                    if any(name.split(":", 1)[0] == model.split(":", 1)[0] for name in loaded_models):
-                        logger.info("Ollama model verified in memory: %s", model)
-                    else:
-                        logger.warning("Ollama model was not retained in memory: %s", model)
-                    try:
-                        from routers.deps import load_ui_language_async
-                        from services.llm.warmup import warm_ollama_chat_prefix
-
-                        ui_language = await load_ui_language_async() or ""
-                        logger.info("[startup-status] llm_warmup")
-                        if await warm_ollama_chat_prefix(model, ui_language):
-                            logger.info("[llm_warmup] Completed before main screen entry")
-                    except Exception as e:
-                        logger.debug("[llm_warmup] Scheduling skipped: %s", e)
+            if cfg.get("type") == "vyact" and cfg.get("vyact_config", {}).get("model_path"):
+                from services.vyact_runtime import start_configured_runtime
+                vyact_config = cfg["vyact_config"]
+                logger.info("Loading Vyact local model: %s", vyact_config["model_path"])
+                model_id = await asyncio.to_thread(
+                    start_configured_runtime, vyact_config, cfg.get("debug_logging", False),
+                )
+                cfg["model"] = model_id
+                cfg["vyact_config"]["model"] = model_id
+                await save_config_async(cfg)
+                try:
+                    from routers.deps import load_ui_language_async
+                    from services.llm.warmup import warm_vyact_chat_prefix
+                    await warm_vyact_chat_prefix(model_id, await load_ui_language_async() or "")
+                except Exception as error:
+                    logger.debug("[llm_warmup] Vyact warm-up skipped: %s", error)
         except Exception as e:
-            logger.warning("Ollama model load failed: %s", e)
+            logger.warning("Local model load failed: %s", e)
 
     # MCP 서버 연결 (filesystem 등) — 실패해도 앱은 정상 동작
     try:
@@ -389,16 +382,10 @@ async def lifespan(app: FastAPI):
         logger.warning("[mcp] Shutdown cleanup failed: %s", e)
 
     try:
-        from routers.deps import load_config_async
-        from services.ollama_manager import unload_model
-        cfg = await load_config_async()
-        if cfg.get("type", "ollama") == "ollama" and cfg.get("model"):
-            model = cfg["model"]
-            logger.info("Unloading Ollama model: %s", model)
-            await unload_model(model)
-            logger.info("Ollama model unloaded: %s", model)
-    except Exception as e:
-        logger.warning("Ollama model unload failed: %s", e)
+        from services.vyact_runtime import stop_all_vyact_runtimes
+        await asyncio.to_thread(stop_all_vyact_runtimes)
+    except Exception as error:
+        logger.warning("Vyact runtime shutdown failed: %s", error)
 
     try:
         from services.db import close_shared_es
@@ -516,18 +503,12 @@ app.include_router(browser_extension_router, prefix="/api")
 # ─────────────────────────────
 @app.post("/api/shutdown")
 async def shutdown():
-    """Electron 앱 종료 시 호출 - ollama 언로드 후 서버 프로세스 종료"""
+    """Electron 앱 종료 시 호출 - local model runtimes unload 후 서버 종료."""
     try:
-        from routers.deps import load_config_async
-        from services.ollama_manager import unload_model
-        cfg = await load_config_async()
-        if cfg.get("type", "ollama") == "ollama" and cfg.get("model"):
-            model = cfg["model"]
-            logger.info("[shutdown] Unloading Ollama model: %s", model)
-            await unload_model(model)
-            logger.info("[shutdown] Ollama model unloaded: %s", model)
-    except Exception as e:
-        logger.error("[shutdown] Unload failed: %s", e)
+        from services.vyact_runtime import stop_all_vyact_runtimes
+        await asyncio.to_thread(stop_all_vyact_runtimes)
+    except Exception as error:
+        logger.error("[shutdown] Vyact runtime stop failed: %s", error)
     finally:
         os.kill(os.getpid(), signal.SIGTERM)
     return {"ok": True}

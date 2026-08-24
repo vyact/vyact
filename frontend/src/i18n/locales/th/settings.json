@@ -112,7 +112,7 @@
     "sections": {
       "llm": "LLM (แชต)",
       "history": "ประวัติแชต",
-      "ollama": "Ollama / embedding",
+      "embedding": "การตั้งค่า Embedding",
       "chunking": "แบ่งไฟล์"
     },
     "fields": {
@@ -121,11 +121,11 @@
         "help": "กำหนดความสุ่มของคำตอบ"
       },
       "llm_num_ctx": {
-        "label": "Ollama Context Window",
+        "label": "Local LLM Context Window",
         "help": "ขนาดบริบทรวมสูงสุดของอินพุตและเอาต์พุต อย่าเกินขีดจำกัดที่โมเดลรองรับ"
       },
       "llm_num_predict": {
-        "label": "Ollama Max Output Tokens",
+        "label": "Local LLM Max Output Tokens",
         "help": "โทเค็นสูงสุด"
       },
       "llm_max_tokens": {
@@ -147,10 +147,6 @@
       "history_chars_per_token": {
         "label": "Characters per Token",
         "help": "ค่าโดยประมาณ"
-      },
-      "ollama_keep_alive": {
-        "label": "Ollama Keep Alive",
-        "help": "เวลาเก็บโมเดลในหน่วยความจำ (วินาที) -1 เก็บจนปิดแอป, 0 ปล่อยทันที"
       },
       "bge_num_ctx": {
         "label": "BGE-M3 Context Window",

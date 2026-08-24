@@ -190,7 +190,7 @@ async def delete_server(server_id: str):
 async def mcp_status():
     return {
         "connected": mcp_manager.connected,
-        "tools": [t["function"]["name"] for t in await mcp_manager.get_ollama_tools()],
+        "tools": [t["function"]["name"] for t in await mcp_manager.get_tools()],
     }
 
 

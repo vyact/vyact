@@ -882,7 +882,7 @@ const Message: React.FC<MessageProps> = ({
                 </div>
             )}
 
-            {/* 토큰수/처리시간 통계 — ollama 응답에만 존재. user 버블엔 입력(prompt) 쪽,
+            {/* 토큰수/처리시간 통계 — provider가 제공할 때 표시. user 버블엔 입력(prompt) 쪽,
                 assistant 버블엔 생성(eval)+전체 소요시간 쪽을 보여준다. */}
             {!(isStreaming && role === 'assistant') && stats && (() => {
                 if (role === 'user') {

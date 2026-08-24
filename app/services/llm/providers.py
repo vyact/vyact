@@ -36,7 +36,7 @@ async def _get_unified_tools(use_tools: bool):
         from services.mcp_client import mcp_manager
         if not mcp_manager.connected or not mcp_manager.has_tools():
             return [], []
-        unified = await mcp_manager.get_ollama_tools()
+        unified = await mcp_manager.get_tools()
         names = [t["function"]["name"] for t in unified]
         await log_tool_names(names, reason="provider")
         return unified, names
@@ -59,7 +59,9 @@ async def _emit(on_event, ev: dict):
 async def openai_stream(client, model, api_key, system_message, user_prompt,
                         history_messages, valid_slice, attachments,
                         timeout, use_tools=True, on_event=None, usage: dict | None = None,
-                        call_reason: str = "unspecified", reasoning: bool | None = None):
+                        call_reason: str = "unspecified", reasoning: bool | None = None,
+                        post_tool_docs=None, post_tool_prompt=None,
+                        structured_output_schema: dict | None = None):
     """OpenAI: tool 루프(있으면) 후 최종 답변 SSE 스트리밍.
 
     usage(dict)를 넘기면 최종 청크의 토큰 사용량(prompt_tokens/completion_tokens)을
@@ -83,6 +85,7 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
 
     messages = [{"role": "system", "content": sys_content},
                 *history_for_openai(history_messages, valid_slice), user_msg]
+    user_message_index = len(messages) - 1
 
     headers = build_provider_headers(await get_provider_config())
     provider_config = await get_provider_config()
@@ -95,6 +98,8 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
 
     # ── tool 루프 (비스트리밍) ──
     approval_rejected = False
+    completed_tool_names: set[str] = set()
+    tool_sources_found = False
     if unified:
         oa_tools = to_openai_tools(unified)
         for _round in range(TOOL_CALL_MAX_ROUNDS):
@@ -140,14 +145,41 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
                 await _emit(on_event, {"phase": "start", "name": name, "args": args})
                 result_text = await mcp_manager.call_tool(name, args)
                 tool_sources = mcp_manager.drain_tool_sources()
+                if not str(result_text).startswith("[오류]"):
+                    completed_tool_names.add(name)
+                tool_sources_found = tool_sources_found or bool(tool_sources)
                 await _emit(on_event, {"phase": "end", "name": name, "args": args, "result": result_text, "sources": tool_sources})
                 messages.append({"role": "tool", "tool_call_id": tc.get("id", ""),
                                  "content": result_text})
             if approval_rejected:
                 break
 
+    if post_tool_docs is not None:
+        extra_docs = await post_tool_docs(tool_sources_found, completed_tool_names) or []
+        if extra_docs and post_tool_prompt is not None:
+            updated_prompt = post_tool_prompt(extra_docs)
+            if isinstance(messages[user_message_index].get("content"), list):
+                messages[user_message_index]["content"][0] = {"type": "text", "text": updated_prompt}
+            else:
+                messages[user_message_index]["content"] = updated_prompt
+            await _emit(on_event, {"phase": "rag_fallback", "docs": extra_docs})
+
     # ── 최종 답변 스트리밍 ──
     body = {"model": model, "temperature": temperature, "stream": True, "messages": messages}
+    if provider_config.get("is_local"):
+        runtime = get_runtime_settings()
+        body["max_tokens"] = runtime["llm_num_predict"]
+        if runtime.get("top_p") is not None:
+            body["top_p"] = runtime["top_p"]
+        if provider_config.get("runtime") == "gguf":
+            body["chat_template_kwargs"] = {"enable_thinking": bool(reasoning)}
+            if runtime.get("top_k") is not None:
+                body["top_k"] = runtime["top_k"]
+            if structured_output_schema is not None:
+                body["response_format"] = {
+                    "type": "json_schema",
+                    "json_schema": {"name": "vyact_response", "schema": structured_output_schema},
+                }
     if usage is not None:
         # stream=True에서도 마지막 청크에 usage를 실어 보내도록 요청 (choices는 빈 배열로 옴)
         body["stream_options"] = {"include_usage": True}

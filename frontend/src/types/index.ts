@@ -86,7 +86,7 @@ export interface InjectedContextItem {
     external_document?: Record<string, unknown>;
 }
 
-// Ollama 응답의 토큰수/처리시간 통계 (단위: eval_count류는 토큰 개수, duration류는 나노초)
+// 로컬 모델 응답의 토큰수/처리시간 통계 (단위: eval_count류는 토큰 개수, duration류는 나노초)
 export interface MessageStats {
     load_duration?: number | null;
     prompt_eval_count?: number | null;
@@ -147,7 +147,7 @@ export interface Message {
     articleSources?: ArticleAttachment[];  // 기사 기반 질의 시 참고 기사
     pdfFile?: string;
     injectedContext?: InjectedContextItem[];  // 이번 응답의 LLM 주입 데이터 (검증용)
-    stats?: MessageStats;  // 토큰수/처리시간 통계 (ollama만 해당, 응답(assistant) 메시지에 저장)
+    stats?: MessageStats;  // 토큰수/처리시간 통계 (provider가 제공할 때 assistant 메시지에 저장)
     truncated?: boolean;  // 모델 출력 한도에 도달하여 응답이 잘렸는지 여부
     codeChanges?: CodeChanges;
     pdfParams?: {

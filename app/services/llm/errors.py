@@ -5,7 +5,7 @@ import httpx
 
 
 HTTP_ERROR_BODY_LOG_LIMIT = 4_000
-OLLAMA_IMAGE_UNSUPPORTED_ERROR = "this model does not support image input"
+MODEL_IMAGE_UNSUPPORTED_ERROR = "this model does not support image input"
 
 
 def http_error_response_body(error: httpx.HTTPStatusError) -> str:
@@ -23,7 +23,7 @@ def http_error_response_body(error: httpx.HTTPStatusError) -> str:
 
 
 def is_model_image_unsupported_error(error: httpx.HTTPStatusError) -> bool:
-    """Identify text-only model errors from Ollama and OpenAI-compatible runtimes."""
+    """Identify text-only model errors from supported provider runtimes."""
     if error.response.status_code not in (400, 422):
         return False
     try:
@@ -36,7 +36,7 @@ def is_model_image_unsupported_error(error: httpx.HTTPStatusError) -> bool:
         except Exception:
             return False
     normalized = " ".join(message.strip().lower().split())
-    if normalized == OLLAMA_IMAGE_UNSUPPORTED_ERROR:
+    if normalized == MODEL_IMAGE_UNSUPPORTED_ERROR:
         return True
     mentions_image = "image" in normalized or "vision" in normalized
     unsupported = (
@@ -48,11 +48,6 @@ def is_model_image_unsupported_error(error: httpx.HTTPStatusError) -> bool:
         or "no vision support" in normalized
     )
     return mentions_image and unsupported
-
-
-def is_ollama_image_unsupported_error(error: httpx.HTTPStatusError) -> bool:
-    """Backward-compatible alias for existing Ollama callers."""
-    return is_model_image_unsupported_error(error)
 
 
 def http_err_msg(e: httpx.HTTPStatusError, provider: str) -> str:

@@ -138,7 +138,7 @@
     "sections": {
       "llm": "LLM (Chat)",
       "history": "Conversation history",
-      "ollama": "Ollama / embeddings",
+      "embedding": "Embeddings",
       "chunking": "File upload chunking"
     },
     "fields": {
@@ -147,12 +147,12 @@
         "help": "Controls response randomness."
       },
       "llm_num_ctx": {
-        "label": "Ollama Context Window",
+        "label": "Local LLM Context Window",
         "help": "Maximum total context size for input and output. Do not exceed the model's supported limit."
       },
       "llm_num_predict": {
-        "label": "Ollama Max Output Tokens",
-        "help": "Maximum tokens Ollama may generate."
+        "label": "Local LLM Max Output Tokens",
+        "help": "Maximum tokens the local LLM may generate."
       },
       "llm_max_tokens": {
         "label": "Claude Max Output Tokens",
@@ -173,10 +173,6 @@
       "history_chars_per_token": {
         "label": "Characters per Token",
         "help": "Characters used to approximate one token."
-      },
-      "ollama_keep_alive": {
-        "label": "Ollama Keep Alive",
-        "help": "Model memory retention time in seconds. -1 keeps until app exit, 0 releases immediately."
       },
       "bge_num_ctx": {
         "label": "BGE-M3 Context Window",

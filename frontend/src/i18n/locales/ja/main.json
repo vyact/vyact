@@ -510,6 +510,8 @@
     "delete": "削除",
     "modelSearch": "モデル検索...",
     "searchLabel": "モデル検索",
+    "mlxOnly": "MLXのみ",
+    "mlxRuntime": "MLX",
     "searchAction": "検索",
     "searching": "モデルを検索しています...",
     "noSearchResults": "モデルが見つかりません。別のモデル名で検索してください。",

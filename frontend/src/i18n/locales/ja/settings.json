@@ -112,7 +112,7 @@
     "sections": {
       "llm": "LLM（チャット）設定",
       "history": "会話履歴設定",
-      "ollama": "Ollama / 埋め込み設定",
+      "embedding": "埋め込み設定",
       "chunking": "ファイルアップロードのチャンク設定"
     },
     "fields": {
@@ -121,12 +121,12 @@
         "help": "応答のランダム性です。"
       },
       "llm_num_ctx": {
-        "label": "Ollama Context Window",
+        "label": "ローカル LLM Context Window",
         "help": "入力と出力を含むコンテキストの最大サイズです。モデルの対応上限を超えないでください。"
       },
       "llm_num_predict": {
-        "label": "Ollama Max Output Tokens",
-        "help": "Ollamaの最大出力トークン数です。"
+        "label": "ローカル LLM Max Output Tokens",
+        "help": "ローカル LLM の最大出力トークン数です。"
       },
       "llm_max_tokens": {
         "label": "Claude Max Output Tokens",
@@ -147,10 +147,6 @@
       "history_chars_per_token": {
         "label": "Characters per Token",
         "help": "トークン近似に使う文字数です。"
-      },
-      "ollama_keep_alive": {
-        "label": "Ollama Keep Alive",
-        "help": "モデルをメモリに保持する時間（秒）です。-1はアプリ終了まで保持、0は即時解放します。"
       },
       "bge_num_ctx": {
         "label": "BGE-M3 Context Window",

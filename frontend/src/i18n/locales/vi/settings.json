@@ -112,7 +112,7 @@
     "sections": {
       "llm": "LLM (Chat)",
       "history": "Lịch sử chat",
-      "ollama": "Ollama / embedding",
+      "embedding": "Cài đặt embedding",
       "chunking": "Chia tệp"
     },
     "fields": {
@@ -121,11 +121,11 @@
         "help": "Độ ngẫu nhiên"
       },
       "llm_num_ctx": {
-        "label": "Ollama Context Window",
+        "label": "Local LLM Context Window",
         "help": "Kích thước ngữ cảnh tổng tối đa cho đầu vào và đầu ra. Không vượt quá giới hạn mà mô hình hỗ trợ."
       },
       "llm_num_predict": {
-        "label": "Ollama Max Output Tokens",
+        "label": "Local LLM Max Output Tokens",
         "help": "Token tối đa"
       },
       "llm_max_tokens": {
@@ -147,10 +147,6 @@
       "history_chars_per_token": {
         "label": "Characters per Token",
         "help": "Ước lượng token"
-      },
-      "ollama_keep_alive": {
-        "label": "Ollama Keep Alive",
-        "help": "Thời gian giữ mô hình trong bộ nhớ (giây). -1 giữ đến khi tắt ứng dụng, 0 giải phóng ngay"
       },
       "bge_num_ctx": {
         "label": "BGE-M3 Context Window",

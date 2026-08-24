@@ -1,4 +1,4 @@
-"""Context-window selection for Ollama chat requests."""
+"""Context-window selection for local chat requests."""
 from __future__ import annotations
 
 import math

@@ -3,7 +3,7 @@ from contextvars import ContextVar
 from config.models import (
     BGE_NUM_CTX, HISTORY_CHARS_PER_TOKEN, HISTORY_TOKEN_BUDGET, LLM_INITIAL_NUM_CTX,
     LLM_MAX_NUM_CTX, LLM_MAX_TOKENS, LLM_NUM_CTX, LLM_NUM_PREDICT, LLM_TEMPERATURE,
-    OLLAMA_KEEP_ALIVE, TOP_K, TOP_P,
+    TOP_K, TOP_P,
 )
 
 DEFAULT_RUNTIME_SETTINGS = {
@@ -12,7 +12,7 @@ DEFAULT_RUNTIME_SETTINGS = {
     "top_k": TOP_K, "top_p": TOP_P,
     "history_token_budget": HISTORY_TOKEN_BUDGET,
     "history_chars_per_token": HISTORY_CHARS_PER_TOKEN,
-    "ollama_keep_alive": OLLAMA_KEEP_ALIVE, "bge_num_ctx": BGE_NUM_CTX,
+    "bge_num_ctx": BGE_NUM_CTX,
     "document_chunk_size": 1200, "document_chunk_overlap": 150,
 }
 _settings = dict(DEFAULT_RUNTIME_SETTINGS)
