@@ -381,7 +381,9 @@ async def install(req: ModelSelectRequest):
 
             yield sse("Preparing LLM connection...", "info", 10)
 
-            if req.type == "vyact" and cfg.get("vyact_config", {}).get("runtime", "gguf") == "gguf":
+            # 최초에 MLX 모델을 선택했더라도 이후 GGUF 모델로 바로 전환할 수 있도록
+            # Vyact 설치 시 네이티브 llama.cpp + llama-swap 런타임을 함께 준비한다.
+            if req.type == "vyact":
                 from services.vyact_runtime import install_missing_runtime
                 yield sse("Checking Vyact local runtime...", "info", 12)
                 try:
