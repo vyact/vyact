@@ -9,6 +9,7 @@ from unittest.mock import patch
 from services.mlx_runtime import (
     MLX_MODEL_MANIFEST,
     _build_mlx_server_command,
+    _mlx_server_environment,
     associate_mlx_mtp_model,
     delete_downloaded_mlx_model,
     download_mlx_model,
@@ -20,6 +21,15 @@ from services.mlx_runtime import (
 
 
 class MlxRuntimeTests(unittest.TestCase):
+    def test_mlx_server_enables_in_memory_prefix_cache(self):
+        with patch.dict(os.environ, {"EXISTING_SETTING": "preserved"}, clear=True):
+            environment = _mlx_server_environment()
+
+        self.assertEqual(environment["APC_ENABLED"], "1")
+        self.assertEqual(environment["APC_NUM_BLOCKS"], "2048")
+        self.assertEqual(environment["APC_DEFAULT_TENANT"], "vyact")
+        self.assertEqual(environment["EXISTING_SETTING"], "preserved")
+
     def test_deletes_mlx_model_and_its_unreferenced_mtp_companion(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             models_dir = Path(temp_dir)

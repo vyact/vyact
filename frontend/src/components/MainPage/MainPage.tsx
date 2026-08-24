@@ -602,6 +602,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                             mtpSupported={models.mtpSupported}
                             mtpActive={models.mtpActive}
                             selectedModel={models.selectedModel}
+                            isModelLoading={models.isModelLoading}
                             onModelChange={models.handleModelChange}
                             onProviderChange={models.refreshModels}
                             onBeforeModelContextChange={stopActiveResponseBeforeModelContextChange}

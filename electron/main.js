@@ -468,7 +468,7 @@ function resolvePython() {
 // Docker가 있으면 활용하고, 없으면 조용히 건너뛴다.
 function getDockerEnv() {
     return {
-        ...process.env,
+        ...getChildProcessEnv(),
         PATH: [
             "/usr/local/bin",           // Intel Mac Homebrew
             "/opt/homebrew/bin",        // Apple Silicon Homebrew
@@ -478,6 +478,15 @@ function getDockerEnv() {
             process.env.PATH || ""
         ].join(":")
     };
+}
+
+function getChildProcessEnv() {
+    const env = {...process.env};
+    // Xcode/Electron 실행 환경의 비활성 malloc 진단 값이 Python에 전달되면
+    // macOS가 불필요한 MallocStackLogging 경고를 stderr에 출력한다.
+    delete env.MallocStackLogging;
+    delete env.MallocStackLoggingNoCompact;
+    return env;
 }
 
 function isDockerRunning() {
@@ -718,7 +727,7 @@ async function startServer() {
 
     // ── 실행 환경 ─────────────────────────
     const env = {
-        ...process.env,
+        ...getChildProcessEnv(),
         PATH: [
             path.join(VENV_DIR, "bin"),
             "/usr/local/bin",
@@ -755,6 +764,9 @@ async function startServer() {
     // 디버깅용으로 Electron 콘솔에만 흘려보낸다.
     const forwardServerOutput = (data, isError = false) => {
         for (const line of data.toString().split(/\r?\n/).map((value) => value.trim()).filter(Boolean)) {
+            if (/MallocStackLogging: can't turn off malloc stack logging because it was not enabled\.$/.test(line)) {
+                continue;
+            }
             if (isError) console.error(`[server:err] ${line}`);
             else console.log(`[server] ${line}`);
             // Python의 초기화 로그는 자체 파일에도 기록되므로, 파일 중복 없이

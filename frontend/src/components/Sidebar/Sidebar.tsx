@@ -25,6 +25,7 @@ interface SidebarProps {
     mtpSupported: string[];
     mtpActive: string | null;
     selectedModel: string;
+    isModelLoading?: boolean;
     onModelChange: (model: string, needsDownload: boolean, modelType?: 'chat' | 'image_gen' | 'image_edit') => Promise<void> | void;
     onProviderChange: () => Promise<void>;
     onBeforeModelContextChange?: () => void;
@@ -235,7 +236,7 @@ blockquote{border-left:3px solid var(--accent);padding:8px 14px;margin:10px 0;co
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
-                                             installed, mtpSupported, mtpActive, selectedModel, onModelChange, onProviderChange,
+                                             installed, mtpSupported, mtpActive, selectedModel, isModelLoading = false, onModelChange, onProviderChange,
                                              onBeforeModelContextChange,
                                              conversations, favoriteConversations = [], activeConvId, activeConversationIds = [], onConversationSelect, onConversationDelete,
                                              historyTotal = 0, onLoadMoreHistory, onRefreshHistory,
@@ -553,17 +554,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 mtpActive={mtpActive}
                                 selectedModel={selectedModel}
                                 currentProvider={currentProvider}
+                                disabled={isModelLoading}
                                 onModelChange={async (m, d, modelType) => {
                                     if (currentProvider === 'vyact') {
                                         if (d) return;
-                                        onBeforeModelContextChange?.();
-                                        await api.activateVyactModel(
-                                            m,
-                                            32768,
-                                            undefined,
-                                            m.startsWith('mlx/') ? 'mlx' : 'gguf',
-                                        );
-                                        await onProviderChange();
+                                        await onModelChange(m, false, modelType);
                                         return;
                                     }
                                     await onModelChange(m, d, modelType);

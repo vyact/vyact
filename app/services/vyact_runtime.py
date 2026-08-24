@@ -509,7 +509,7 @@ def write_single_model_config(
         json.dumps(str(paths.llama_server)),
         "--host", "127.0.0.1", "--port", "${PORT}", "--model", json.dumps(str(model_path)),
         "--ctx-size", str(context_size), "--jinja", "--n-gpu-layers", "auto",
-        "--fit", "on", "--flash-attn", "auto",
+        "--fit", "on", "--flash-attn", "auto", "--cache-prompt",
     ])
     if debug_logging:
         command += " --log-verbosity 4 --log-timestamps"

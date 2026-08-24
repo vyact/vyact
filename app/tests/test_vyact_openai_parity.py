@@ -2,7 +2,12 @@ import json
 import unittest
 from unittest.mock import AsyncMock, patch
 
-from services.llm.providers import _accumulate_llm_timing, openai_stream
+from services.llm.providers import (
+    _accumulate_llm_timing,
+    _apply_local_prefix_cache_control,
+    _apply_local_reasoning_control,
+    openai_stream,
+)
 
 
 class _StreamResponse:
@@ -33,6 +38,24 @@ class _Client:
 
 
 class VyactOpenAiParityTests(unittest.IsolatedAsyncioTestCase):
+    def test_llama_receives_explicit_prefix_cache_choice(self):
+        body = {}
+
+        _apply_local_prefix_cache_control(
+            body, {"is_local": True, "runtime": "gguf"},
+        )
+
+        self.assertEqual(body, {"cache_prompt": True})
+
+    def test_mlx_receives_explicit_reasoning_choice(self):
+        body = {}
+
+        _apply_local_reasoning_control(
+            body, {"is_local": True, "runtime": "mlx"}, reasoning=False,
+        )
+
+        self.assertEqual(body, {"enable_thinking": False})
+
     def test_llm_total_accumulates_tool_judgment_and_final_call_timings(self):
         usage = {}
 
@@ -54,6 +77,7 @@ class VyactOpenAiParityTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(pieces, ["ok"])
         self.assertEqual(client.body["chat_template_kwargs"], {"enable_thinking": False})
+        self.assertTrue(client.body["cache_prompt"])
         self.assertIn("max_tokens", client.body)
 
     async def test_structured_output_uses_llama_json_schema(self):

@@ -54,6 +54,24 @@ def _local_max_tokens(messages: list[dict], provider_config: dict) -> int:
     )
 
 
+def _apply_local_reasoning_control(
+    body: dict, provider_config: dict, reasoning: bool | None,
+) -> None:
+    """Pass the UI reasoning choice using the selected local runtime's API."""
+    if not provider_config.get("is_local"):
+        return
+    if provider_config.get("runtime") == "mlx":
+        body["enable_thinking"] = bool(reasoning)
+    else:
+        body["chat_template_kwargs"] = {"enable_thinking": bool(reasoning)}
+
+
+def _apply_local_prefix_cache_control(body: dict, provider_config: dict) -> None:
+    """Explicitly retain llama.cpp's common-prefix KV cache between requests."""
+    if provider_config.get("is_local") and provider_config.get("runtime") == "gguf":
+        body["cache_prompt"] = True
+
+
 async def _get_unified_tools(use_tools: bool):
     """MCP tool(통일형)과 tool 이름 목록을 반환. tool이 없으면 ([], [])."""
     if not use_tools:
@@ -133,6 +151,8 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
                     "messages": messages, "tools": oa_tools}
             if provider_config.get("is_local"):
                 body["max_tokens"] = _local_max_tokens(messages, provider_config)
+                _apply_local_reasoning_control(body, provider_config, reasoning)
+                _apply_local_prefix_cache_control(body, provider_config)
             log_llm_call(call_reason, "openai", model, streaming=False, reasoning=reasoning,
                          is_tool_judgment=True, round_no=_round)
             resp = await client.post(base_url, headers=headers, json=body)
@@ -198,10 +218,11 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
     if provider_config.get("is_local"):
         runtime = get_runtime_settings()
         body["max_tokens"] = _local_max_tokens(messages, provider_config)
+        _apply_local_reasoning_control(body, provider_config, reasoning)
+        _apply_local_prefix_cache_control(body, provider_config)
         if runtime.get("top_p") is not None:
             body["top_p"] = runtime["top_p"]
         if provider_config.get("runtime") == "gguf":
-            body["chat_template_kwargs"] = {"enable_thinking": bool(reasoning)}
             if runtime.get("top_k") is not None:
                 body["top_k"] = runtime["top_k"]
             if structured_output_schema is not None:

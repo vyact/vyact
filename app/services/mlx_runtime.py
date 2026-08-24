@@ -26,6 +26,8 @@ MLX_MODEL_MANIFEST = ".vyact-mlx-model.json"
 _HF_ONLINE_DOWNLOAD_LOCK = threading.Lock()
 _MLX_RUNTIME_GRACEFUL_STOP_SECONDS = 30
 _MLX_RUNTIME_FORCE_STOP_SECONDS = 5
+_MLX_APC_NUM_BLOCKS = 2048
+_MLX_APC_DEFAULT_TENANT = "vyact"
 
 
 @contextmanager
@@ -249,6 +251,15 @@ def _build_mlx_server_command(model_path: Path, context_size: int) -> list[str]:
     return command
 
 
+def _mlx_server_environment() -> dict[str, str]:
+    return {
+        **os.environ,
+        "APC_ENABLED": "1",
+        "APC_NUM_BLOCKS": str(_MLX_APC_NUM_BLOCKS),
+        "APC_DEFAULT_TENANT": _MLX_APC_DEFAULT_TENANT,
+    }
+
+
 def start_mlx_model(model_path: Path, context_size: int, debug_logging: bool = False) -> str:
     if not is_apple_silicon():
         raise RuntimeError("MLX models require Apple Silicon")
@@ -264,7 +275,13 @@ def start_mlx_model(model_path: Path, context_size: int, debug_logging: bool = F
     log_path = MLX_RUNTIME_DIR / "mlx-vlm.log"
     command = _build_mlx_server_command(model_path, context_size)
     with log_path.open("ab") as log_file:
-        process = subprocess.Popen(command, stdout=log_file, stderr=subprocess.STDOUT, start_new_session=True)
+        process = subprocess.Popen(
+            command,
+            stdout=log_file,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+            env=_mlx_server_environment(),
+        )
     MLX_RUNTIME_PID_FILE.write_text(str(process.pid), encoding="utf-8")
     deadline = time.monotonic() + 180
     health_url = f"http://127.0.0.1:{VYACT_RUNTIME_PORT}/v1/models"

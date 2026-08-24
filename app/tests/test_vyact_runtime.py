@@ -52,6 +52,7 @@ class VyactRuntimeTests(unittest.TestCase):
             self.assertIn("--n-gpu-layers auto", contents)
             self.assertIn("--fit on", contents)
             self.assertIn("--flash-attn auto", contents)
+            self.assertIn("--cache-prompt", contents)
 
     def test_rejects_non_gguf_model(self):
         with tempfile.TemporaryDirectory() as temp_dir:

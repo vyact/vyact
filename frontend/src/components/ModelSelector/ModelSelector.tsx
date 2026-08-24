@@ -12,6 +12,7 @@ interface ModelSelectorProps {
     mtpActive: string | null;
     selectedModel: string;
     currentProvider: string;
+    disabled?: boolean;
     onModelChange: (model: string, needsDownload: boolean, modelType?: ModelType) => void;
     onModelDelete: (model: string) => Promise<void>;
     onProviderSettingsOpen: () => void;
@@ -27,6 +28,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                                                          mtpActive,
                                                          selectedModel,
                                                          currentProvider,
+                                                         disabled = false,
                                                          onModelChange,
                                                          onModelDelete,
                                                          onProviderSettingsOpen,
@@ -124,6 +126,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
             value={selectedModel}
             onChange={id => handleLocalModelSelect(id)}
             searchable
+            disabled={disabled}
             searchPlaceholder={t('modelSelector.modelSearch')}
             searchAction={currentProvider === 'vyact' ? (
                 <button
