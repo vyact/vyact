@@ -563,6 +563,15 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     }
                                     await onModelChange(m, d, modelType);
                                 }}
+                                onModelDelete={async model => {
+                                    try {
+                                        await api.deleteVyactModel(model);
+                                        await onProviderChange();
+                                    } catch (error) {
+                                        toast.error(t('modelSelector.deleteModelFailed'), String(error));
+                                        throw error;
+                                    }
+                                }}
                                 onProviderSettingsOpen={() => {
                                     if (currentProvider === 'vyact') {
                                         setIsVyactModalOpen(true);

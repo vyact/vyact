@@ -464,6 +464,19 @@ export const api = {
             }
         }
     },
+
+    async deleteVyactModel(modelPath: string): Promise<void> {
+        const response = await fetch(`${API_BASE}/vyact/models/downloaded`, {
+            method: 'DELETE',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({model_path: modelPath}),
+        });
+        if (!response.ok) {
+            const detail = await response.json().catch(() => null);
+            throw new Error(detail?.detail || `Model deletion failed (${response.status})`);
+        }
+        cachedVyactInstalledModels = cachedVyactInstalledModels.filter(model => model !== modelPath);
+    },
     async getSetupStatus(): Promise<{
         setup_done: boolean;
         config: {
@@ -891,22 +904,34 @@ export const api = {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({type, model, api_key: apiKey, model_type: modelType}),
         });
-        if (!onProgress || !res.body) return;
+        if (!res.ok) throw new Error(`Model selection failed (${res.status})`);
+        if (!res.body) return;
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
+        let pending = '';
         while (true) {
             const {done, value} = await reader.read();
-            if (done) break;
-            for (const line of decoder.decode(value).split('\n')) {
+            if (done) {
+                pending += decoder.decode();
+            } else {
+                pending += decoder.decode(value, {stream: true});
+            }
+            const lines = pending.split('\n');
+            pending = done ? '' : lines.pop() || '';
+            for (const line of lines) {
                 if (line.startsWith('data: ')) {
+                    let data: {message: string; type: string; progress?: number};
                     try {
-                        const data = JSON.parse(line.replace('data: ', '').trim());
-                        onProgress(data.message, data.type, data.progress);
+                        data = JSON.parse(line.replace('data: ', '').trim());
                     } catch (e) {
                         console.error('SSE parse error:', e);
+                        continue;
                     }
+                    onProgress?.(data.message, data.type, data.progress);
+                    if (data.type === 'error') throw new Error(data.message);
                 }
             }
+            if (done) break;
         }
     },
 

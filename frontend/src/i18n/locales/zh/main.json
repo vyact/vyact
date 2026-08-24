@@ -497,6 +497,7 @@
     }
   },
   "modelSelector": {
+    "cancel": "取消", "deleteModel": "删除 {{model}} 模型", "deleteModelConfirm": "删除 {{model}} 模型？", "deleteModelDescription": "已下载的模型文件将从此设备中删除。", "deletingModel": "正在删除...", "deleteModelFailed": "模型删除失败",
     "selectModel": "选择模型",
     "noModel": "未设置模型",
     "customPlaceholder": "自定义模型 (例: phi3:mini)",
@@ -532,6 +533,7 @@
     "downloadAction": "下载",
     "useInstalledAction": "使用",
     "downloading": "正在下载模型...",
+    "finalizing": "正在完成已下载文件的处理...",
     "preparingRuntime": "正在准备 llama.cpp 和 llama-swap...",
     "preparingMtp": "正在检查并准备兼容的 MTP...",
     "activating": "正在准备模型...",

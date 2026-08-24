@@ -497,6 +497,7 @@
     }
   },
   "modelSelector": {
+    "cancel": "Cancelar", "deleteModel": "Eliminar el modelo {{model}}", "deleteModelConfirm": "¿Eliminar el modelo {{model}}?", "deleteModelDescription": "Los archivos descargados del modelo se eliminarán de este dispositivo.", "deletingModel": "Eliminando...", "deleteModelFailed": "Error al eliminar el modelo",
     "selectModel": "Elegir modelo",
     "noModel": "Sin modelo",
     "customPlaceholder": "Modelo personalizado (p. ej. phi3:mini)",
@@ -531,6 +532,7 @@
     "downloadAction": "Descargar",
     "useInstalledAction": "Usar",
     "downloading": "Descargando modelo...",
+    "finalizing": "Finalizando los archivos descargados...",
     "preparingRuntime": "Preparando llama.cpp y llama-swap...",
     "preparingMtp": "Comprobando y preparando un MTP compatible...",
     "activating": "Preparando el modelo...",

@@ -218,6 +218,13 @@ def uncache_downloaded_model(relative_path: str) -> None:
         _downloaded_models_cache = frozenset(current)
 
 
+def delete_downloaded_model(relative_path: str) -> None:
+    """Delete one validated, non-active GGUF model from managed storage."""
+    model_path = get_downloaded_model_path(relative_path)
+    model_path.unlink()
+    uncache_downloaded_model(relative_path)
+
+
 def get_downloaded_model_path(relative_path: str) -> Path:
     candidate = (VYACT_MODELS_DIR / relative_path).resolve()
     models_dir = VYACT_MODELS_DIR.resolve()

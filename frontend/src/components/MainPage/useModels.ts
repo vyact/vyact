@@ -71,7 +71,6 @@ export function useModels(
         }
 
         try {
-            setSelectedModel(model);
             await api.selectModel('vyact', model, undefined, (message: string, type: string, progress?: number) => {
                 if (needsDownload && progress !== undefined) {
                     setDownloadProgress(progress);

@@ -74,24 +74,32 @@
     overflow: hidden;
 }
 
-/* 우측 설치/다운로드 */
-.dd-right-status {
+.dd-model-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 현재 모델이 아닌 항목의 삭제 버튼 */
+.dd-model-delete {
     margin-left: auto;
     display: flex;
     align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted);
     flex-shrink: 0;
+    cursor: pointer;
 }
 
-.dd-icon-installed {
-    color: #10b981;
-    display: flex;
-    align-items: center;
-}
-
-.dd-icon-download {
-    color: var(--accent);
-    display: flex;
-    align-items: center;
+.dd-model-delete:hover {
+    background: color-mix(in srgb, var(--danger, #ef4444) 14%, transparent);
+    color: var(--danger, #ef4444);
 }
 
 /* 툴팁 */

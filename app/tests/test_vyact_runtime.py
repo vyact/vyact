@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 from services.vyact_runtime import (
     RuntimePaths, cache_downloaded_model, get_native_install_commands, get_native_update_commands,
+    delete_downloaded_model,
     initialize_downloaded_models_cache, list_downloaded_models, list_mtp_supported_models,
     list_selectable_models, start_single_model,
     uncache_downloaded_model, write_single_model_config,
@@ -12,6 +13,22 @@ from services.vyact_runtime import (
 
 
 class VyactRuntimeTests(unittest.TestCase):
+    def test_deletes_only_the_selected_gguf_model(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            models_dir = Path(temp_dir)
+            repository = models_dir / "owner" / "repo"
+            repository.mkdir(parents=True)
+            selected_model = repository / "model-Q4.gguf"
+            other_model = repository / "model-Q8.gguf"
+            selected_model.touch()
+            other_model.touch()
+            with patch("services.vyact_runtime.VYACT_MODELS_DIR", models_dir):
+                initialize_downloaded_models_cache(force=True)
+                delete_downloaded_model("owner/repo/model-Q4.gguf")
+
+            self.assertFalse(selected_model.exists())
+            self.assertTrue(other_model.exists())
+
     def test_single_model_config_has_one_safe_model_entry(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             base = Path(temp_dir)
@@ -118,6 +135,7 @@ class VyactRuntimeTests(unittest.TestCase):
             model.touch()
             paths = RuntimePaths(base / "llama-server", base / "llama-swap", base / "models", base / "config.yaml")
             with patch("services.vyact_runtime.get_runtime_paths", return_value=paths), \
+                 patch("services.mlx_runtime.stop_mlx_runtime"), \
                  patch("services.vyact_runtime.stop_runtime"), \
                  patch("services.vyact_runtime.write_single_model_config", return_value="vyact-model") as write_config, \
                  patch("services.vyact_runtime.subprocess.Popen") as popen, \

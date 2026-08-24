@@ -94,6 +94,10 @@ class VyactModelActivateRequest(BaseModel):
     repository: str | None = Field(default=None, min_length=3, max_length=256)
 
 
+class VyactModelDeleteRequest(BaseModel):
+    model_path: str = Field(min_length=1, max_length=1024)
+
+
 class VyactModelMetadataRequest(BaseModel):
     repository: str = Field(min_length=3, max_length=256)
     filename: str = Field(min_length=6, max_length=1024)
@@ -519,6 +523,25 @@ async def get_models():
         "installed": [],
         "model_type": cfg.get("model_type", "chat"),
     }
+
+
+@router.delete("/vyact/models/downloaded")
+async def delete_vyact_model(req: VyactModelDeleteRequest):
+    config = await load_config_async()
+    current_model = str(config.get("vyact_config", {}).get("model_path") or "")
+    if req.model_path == current_model:
+        raise HTTPException(409, "현재 사용 중인 모델은 삭제할 수 없습니다.")
+    try:
+        if req.model_path.startswith("mlx/"):
+            from services.mlx_runtime import delete_downloaded_mlx_model
+            await asyncio.to_thread(delete_downloaded_mlx_model, req.model_path)
+        else:
+            from services.vyact_runtime import delete_downloaded_model
+            await asyncio.to_thread(delete_downloaded_model, req.model_path)
+    except (OSError, ValueError) as error:
+        logger.warning("[vyact] model deletion failed: %s", error)
+        raise HTTPException(400, "설치된 모델을 삭제할 수 없습니다.") from error
+    return {"deleted": True}
 
 
 @router.get("/vyact/models/search")

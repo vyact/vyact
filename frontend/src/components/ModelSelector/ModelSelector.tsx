@@ -1,8 +1,9 @@
-import React from 'react';
-import {Pencil, Settings} from 'lucide-react';
+import React, {useState} from 'react';
+import {Pencil, Settings, Trash2} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import type {SelectOption} from '../CustomSelect/CustomSelect';
+import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
 import './ModelSelector.css';
 
 interface ModelSelectorProps {
@@ -12,10 +13,13 @@ interface ModelSelectorProps {
     selectedModel: string;
     currentProvider: string;
     onModelChange: (model: string, needsDownload: boolean, modelType?: ModelType) => void;
+    onModelDelete: (model: string) => Promise<void>;
     onProviderSettingsOpen: () => void;
 }
 
 type ModelType = 'chat' | 'image_gen' | 'image_edit';
+
+const getModelDisplayName = (modelId: string) => modelId.split('/').filter(Boolean).pop() || modelId;
 
 const ModelSelector: React.FC<ModelSelectorProps> = ({
                                                          installed,
@@ -24,9 +28,12 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                                                          selectedModel,
                                                          currentProvider,
                                                          onModelChange,
+                                                         onModelDelete,
                                                          onProviderSettingsOpen,
                                                      }) => {
     const {t} = useTranslation('main');
+    const [modelToDelete, setModelToDelete] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
     const handleLocalModelSelect = (model: string, modelType?: ModelType) => {
         const needsDownload = !installed.includes(model);
         onModelChange(model, needsDownload, modelType);
@@ -34,7 +41,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
 
     const allModelIds = installed;
     const options: SelectOption[] = allModelIds.map(id => {
-        return {value: id, label: id};
+        return {value: id, label: getModelDisplayName(id)};
     });
 
     // 트리거: dot + 모델명
@@ -45,7 +52,9 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
             <>
                 <div className={`mdot ${isInstalled ? 'installed' : 'not-installed'}`}/>
                 {showMtp && <span className="mtp-model-badge">MTP</span>}
-                <span className="mname">{selectedModel || t('modelSelector.selectModel')}</span>
+                <span className="mname" title={selectedModel || undefined}>
+                    {selectedModel ? getModelDisplayName(selectedModel) : t('modelSelector.selectModel')}
+                </span>
                 <span className={`custom-select-arrow${open ? ' open' : ''}`}>▼</span>
             </>
         );
@@ -73,32 +82,20 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                 {/* 모델명 + 툴팁 + 추천뱃지 */}
                 <div className="dd-model-name">
                     {showMtp && <span className="mtp-model-badge">MTP</span>}
-                    <span style={{overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
+                    <span className="dd-model-label" title={opt.value}>
                         {opt.label}
                     </span>
                 </div>
 
-                {/* 우측 설치/다운로드 */}
-                <div className="dd-right-status">
-                    {isInst ? (
-                        <span className="dd-icon-installed" title="설치됨">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                                 stroke="currentColor" strokeWidth="2.5">
-                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                                <polyline points="22 4 12 14.01 9 11.01"/>
-                            </svg>
-                        </span>
-                    ) : (
-                        <span className="dd-icon-download" title="다운로드 필요">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                                 stroke="currentColor" strokeWidth="2.5">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                <polyline points="7 10 12 15 17 10"/>
-                                <line x1="12" y1="15" x2="12" y2="3"/>
-                            </svg>
-                        </span>
-                    )}
-                </div>
+                {!isSelected && isInst && <button type="button" className="dd-model-delete"
+                    aria-label={t('modelSelector.deleteModel', {model: opt.label})}
+                    title={t('modelSelector.delete')}
+                    onClick={event => {
+                        event.stopPropagation();
+                        setModelToDelete(opt.value);
+                    }}>
+                    <Trash2 size={14} aria-hidden="true"/>
+                </button>}
             </>
         );
     };
@@ -122,7 +119,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
         );
     }
 
-    return (
+    return (<>
         <CustomSelect
             options={options}
             value={selectedModel}
@@ -144,7 +141,31 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
             renderOption={renderOption}
             footer={footer}
         />
-    );
+        {modelToDelete && <ConfirmModal
+            title={t('modelSelector.deleteModelConfirm', {model: getModelDisplayName(modelToDelete)})}
+            description={t('modelSelector.deleteModelDescription')}
+            options={[
+                {label: t('modelSelector.cancel'), value: 'cancel'},
+                {label: t('modelSelector.delete'), value: 'delete', variant: 'danger'},
+            ]}
+            actionLayout="horizontal"
+            loading={isDeleting}
+            loadingValue="delete"
+            loadingLabel={t('modelSelector.deletingModel')}
+            onClose={() => setModelToDelete(null)}
+            onSelect={value => {
+                if (value !== 'delete') {
+                    setModelToDelete(null);
+                    return;
+                }
+                setIsDeleting(true);
+                void onModelDelete(modelToDelete).catch(() => undefined).finally(() => {
+                    setIsDeleting(false);
+                    setModelToDelete(null);
+                });
+            }}
+        />}
+    </>);
 };
 
 export default ModelSelector;

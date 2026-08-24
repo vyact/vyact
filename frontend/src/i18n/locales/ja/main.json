@@ -497,6 +497,7 @@
     }
   },
   "modelSelector": {
+    "cancel": "キャンセル", "deleteModel": "{{model}} モデルを削除", "deleteModelConfirm": "{{model}} モデルを削除しますか？", "deleteModelDescription": "ダウンロードしたモデルファイルがこのデバイスから削除されます。", "deletingModel": "削除中...", "deleteModelFailed": "モデルの削除に失敗しました",
     "selectModel": "モデル選択",
     "noModel": "モデル未設定",
     "customPlaceholder": "カスタムモデル (例: phi3:mini)",
@@ -532,6 +533,7 @@
     "downloadAction": "ダウンロード",
     "useInstalledAction": "使用",
     "downloading": "モデルをダウンロード中...",
+    "finalizing": "ダウンロードしたファイルを仕上げています...",
     "preparingRuntime": "llama.cpp と llama-swap を準備中...",
     "preparingMtp": "互換性のあるMTPを確認・準備中...",
     "activating": "モデルを準備中...",

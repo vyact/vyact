@@ -497,6 +497,7 @@
     }
   },
   "modelSelector": {
+    "cancel": "Annuler", "deleteModel": "Supprimer le modèle {{model}}", "deleteModelConfirm": "Supprimer le modèle {{model}} ?", "deleteModelDescription": "Les fichiers téléchargés du modèle seront supprimés de cet appareil.", "deletingModel": "Suppression...", "deleteModelFailed": "Échec de la suppression du modèle",
     "selectModel": "Choisir un modèle",
     "noModel": "Aucun modèle",
     "customPlaceholder": "Modèle personnalisé (ex. phi3:mini)",
@@ -532,6 +533,7 @@
     "downloadAction": "Télécharger",
     "useInstalledAction": "Utiliser",
     "downloading": "Téléchargement du modèle...",
+    "finalizing": "Finalisation des fichiers téléchargés...",
     "preparingRuntime": "Préparation de llama.cpp et llama-swap...",
     "preparingMtp": "Vérification et préparation d’un MTP compatible...",
     "activating": "Préparation du modèle...",

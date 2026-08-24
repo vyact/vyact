@@ -497,6 +497,7 @@
     "responseInProgress": "กำลังสร้างคำตอบ"
   },
   "modelSelector": {
+    "cancel": "ยกเลิก", "deleteModel": "ลบโมเดล {{model}}", "deleteModelConfirm": "ลบโมเดล {{model}} หรือไม่", "deleteModelDescription": "ไฟล์โมเดลที่ดาวน์โหลดจะถูกลบออกจากอุปกรณ์นี้", "deletingModel": "กำลังลบ...", "deleteModelFailed": "ลบโมเดลไม่สำเร็จ",
     "selectModel": "เลือกโมเดล",
     "noModel": "ยังไม่มีโมเดล",
     "customPlaceholder": "โมเดลกำหนดเอง (เช่น phi3:mini)",
@@ -532,6 +533,7 @@
     "downloadAction": "ดาวน์โหลด",
     "useInstalledAction": "ใช้",
     "downloading": "กำลังดาวน์โหลดโมเดล...",
+    "finalizing": "กำลังจัดเตรียมไฟล์ที่ดาวน์โหลด...",
     "preparingRuntime": "กำลังเตรียม llama.cpp และ llama-swap...",
     "preparingMtp": "กำลังตรวจสอบและเตรียม MTP ที่เข้ากันได้...",
     "activating": "กำลังเตรียมโมเดล...",

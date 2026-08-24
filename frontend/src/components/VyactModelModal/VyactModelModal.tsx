@@ -143,7 +143,12 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                 selectedFile.repository,
                 selectedFile.filename,
                 (_downloadMessage, progress) => {
-                    setMessage(t(selectedModelIsInstalled ? 'modelDownload.preparingMtp' : 'modelDownload.downloading'));
+                    const messageKey = progress != null && progress >= 99
+                        ? 'modelDownload.finalizing'
+                        : selectedModelIsInstalled
+                            ? 'modelDownload.preparingMtp'
+                            : 'modelDownload.downloading';
+                    setMessage(t(messageKey));
                     if (progress != null) setDownloadProgress(progress);
                 },
                 selectedFile.revision,

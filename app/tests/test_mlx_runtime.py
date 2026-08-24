@@ -1,5 +1,6 @@
 import json
 import os
+import signal
 import tempfile
 import unittest
 from pathlib import Path
@@ -9,14 +10,52 @@ from services.mlx_runtime import (
     MLX_MODEL_MANIFEST,
     _build_mlx_server_command,
     associate_mlx_mtp_model,
+    delete_downloaded_mlx_model,
     download_mlx_model,
     get_downloaded_mlx_model_path,
     list_downloaded_mlx_models,
     _server_module_for_model,
+    stop_mlx_runtime,
 )
 
 
 class MlxRuntimeTests(unittest.TestCase):
+    def test_deletes_mlx_model_and_its_unreferenced_mtp_companion(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            models_dir = Path(temp_dir)
+            model_dir = models_dir / "owner" / "model"
+            mtp_dir = models_dir / "owner" / "model-mtp"
+            model_dir.mkdir(parents=True)
+            mtp_dir.mkdir(parents=True)
+            (model_dir / MLX_MODEL_MANIFEST).write_text(json.dumps({
+                "repository": "owner/model", "mtp_repository": "owner/model-mtp",
+            }))
+            (mtp_dir / MLX_MODEL_MANIFEST).write_text(json.dumps({
+                "repository": "owner/model-mtp", "role": "mtp",
+            }))
+
+            with patch("services.mlx_runtime.MLX_MODELS_DIR", models_dir):
+                delete_downloaded_mlx_model("mlx/owner/model")
+
+            self.assertFalse(model_dir.exists())
+            self.assertFalse(mtp_dir.exists())
+
+    def test_force_stops_validated_mlx_runtime_after_graceful_timeout(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            pid_file = Path(temp_dir) / "mlx-vlm.pid"
+            pid_file.write_text("1234")
+            with patch("services.mlx_runtime.MLX_RUNTIME_PID_FILE", pid_file), \
+                 patch("services.mlx_runtime.subprocess.check_output", return_value="python -m mlx_vlm.server"), \
+                 patch("services.mlx_runtime._wait_for_process_exit", side_effect=[False, True]), \
+                 patch("services.mlx_runtime.os.kill") as kill:
+                stop_mlx_runtime()
+
+            self.assertEqual(
+                kill.call_args_list,
+                [unittest.mock.call(1234, signal.SIGTERM), unittest.mock.call(1234, signal.SIGKILL)],
+            )
+            self.assertFalse(pid_file.exists())
+
     def test_mtp_association_adds_server_drafter_arguments(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             model_dir = Path(temp_dir) / "owner" / "model"

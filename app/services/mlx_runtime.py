@@ -2,6 +2,7 @@
 import json
 import os
 import platform
+import shutil
 import signal
 import subprocess
 import sys
@@ -23,6 +24,8 @@ MLX_RUNTIME_DIR = INSTALL_DIR / "runtime"
 MLX_RUNTIME_PID_FILE = MLX_RUNTIME_DIR / "mlx-vlm.pid"
 MLX_MODEL_MANIFEST = ".vyact-mlx-model.json"
 _HF_ONLINE_DOWNLOAD_LOCK = threading.Lock()
+_MLX_RUNTIME_GRACEFUL_STOP_SECONDS = 30
+_MLX_RUNTIME_FORCE_STOP_SECONDS = 5
 
 
 @contextmanager
@@ -152,11 +155,46 @@ def get_downloaded_mlx_model_path(model_path: str) -> Path:
     return destination
 
 
+def delete_downloaded_mlx_model(model_path: str) -> None:
+    """Delete one validated MLX repository and an unreferenced MTP companion."""
+    destination = get_downloaded_mlx_model_path(model_path)
+    manifest = _read_model_manifest(destination / MLX_MODEL_MANIFEST)
+    mtp_repository = manifest.get("mtp_repository")
+    shutil.rmtree(destination)
+
+    if not isinstance(mtp_repository, str):
+        return
+    mtp_destination = _repository_path(mtp_repository)
+    is_still_referenced = any(
+        _read_model_manifest(path).get("mtp_repository") == mtp_repository
+        for path in MLX_MODELS_DIR.rglob(MLX_MODEL_MANIFEST)
+        if path.is_file()
+    )
+    mtp_manifest = _read_model_manifest(mtp_destination / MLX_MODEL_MANIFEST)
+    if not is_still_referenced and mtp_manifest.get("role") == "mtp":
+        shutil.rmtree(mtp_destination)
+
+
 def _read_pid() -> int | None:
     try:
         return int(MLX_RUNTIME_PID_FILE.read_text(encoding="utf-8").strip())
     except (OSError, ValueError):
         return None
+
+
+def _wait_for_process_exit(pid: int, timeout_seconds: float) -> bool:
+    deadline = time.monotonic() + timeout_seconds
+    while time.monotonic() < deadline:
+        try:
+            state = subprocess.check_output(
+                ["ps", "-p", str(pid), "-o", "stat="], text=True,
+            ).strip()
+        except (OSError, ValueError, subprocess.SubprocessError):
+            return True
+        if not state or state.upper().startswith("Z"):
+            return True
+        time.sleep(0.1)
+    return False
 
 
 def stop_mlx_runtime() -> None:
@@ -165,22 +203,18 @@ def stop_mlx_runtime() -> None:
         return
     try:
         command = subprocess.check_output(["ps", "-p", str(pid), "-o", "command="], text=True)
-    except (OSError, subprocess.SubprocessError):
+    except (OSError, ValueError, subprocess.SubprocessError):
         MLX_RUNTIME_PID_FILE.unlink(missing_ok=True)
         return
     if "mlx_vlm.server" not in command and "mlx_lm.server" not in command:
         MLX_RUNTIME_PID_FILE.unlink(missing_ok=True)
         raise RuntimeError("Vyact MLX PID no longer refers to mlx_vlm.server")
     os.kill(pid, signal.SIGTERM)
-    deadline = time.monotonic() + 10
-    while time.monotonic() < deadline:
-        try:
-            os.kill(pid, 0)
-        except ProcessLookupError:
-            MLX_RUNTIME_PID_FILE.unlink(missing_ok=True)
-            return
-        time.sleep(0.1)
-    raise RuntimeError("The existing MLX runtime did not stop in time")
+    if not _wait_for_process_exit(pid, _MLX_RUNTIME_GRACEFUL_STOP_SECONDS):
+        os.kill(pid, signal.SIGKILL)
+        if not _wait_for_process_exit(pid, _MLX_RUNTIME_FORCE_STOP_SECONDS):
+            raise RuntimeError("The existing MLX runtime did not stop in time")
+    MLX_RUNTIME_PID_FILE.unlink(missing_ok=True)
 
 
 def _server_module_for_model(model_path: Path) -> str:
