@@ -22,6 +22,8 @@ const SettingsModal = React.lazy(() => import('../SettingsModal/SettingsModal'))
 
 interface SidebarProps {
     installed: string[];
+    mtpSupported: string[];
+    mtpActive: string | null;
     selectedModel: string;
     onModelChange: (model: string, needsDownload: boolean, modelType?: 'chat' | 'image_gen' | 'image_edit') => Promise<void> | void;
     onProviderChange: () => Promise<void>;
@@ -238,7 +240,7 @@ blockquote{border-left:3px solid var(--accent);padding:8px 14px;margin:10px 0;co
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
-                                             installed, selectedModel, onModelChange, onProviderChange,
+                                             installed, mtpSupported, mtpActive, selectedModel, onModelChange, onProviderChange,
                                              onBeforeModelContextChange,
                                              conversations, favoriteConversations = [], activeConvId, activeConversationIds = [], onConversationSelect, onConversationDelete,
                                              historyTotal = 0, onLoadMoreHistory, onRefreshHistory,
@@ -558,6 +560,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                             <div className="sec-label">{t('sidebar.model')}</div>
                             <ModelSelector
                                 installed={installed}
+                                mtpSupported={mtpSupported}
+                                mtpActive={mtpActive}
                                 selectedModel={selectedModel}
                                 currentProvider={currentProvider}
                                 onModelChange={async (m, d, modelType) => {
@@ -571,6 +575,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     await onModelChange(m, d, modelType);
                                 }}
                                 onProviderSettingsOpen={() => {
+                                    if (currentProvider === 'vyact') {
+                                        setIsVyactModalOpen(true);
+                                        return;
+                                    }
                                     const connection = customProviders.find(item => `custom:${item.id}` === currentProvider);
                                     if (connection) setCustomProviderEditor(connection);
                                     else setIsProviderSettingsOpen(true);

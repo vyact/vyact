@@ -615,12 +615,14 @@ async def get_models():
     recommended_ids = [m["id"] for m in RECOMMENDED_MODELS]
     cfg = await load_config_async()
     if cfg.get("type") == "vyact":
-        from services.vyact_runtime import list_downloaded_models
-        installed_models = list_downloaded_models()
+        from services.vyact_runtime import get_active_mtp_model, list_mtp_supported_models, list_selectable_models
+        installed_models = list_selectable_models()
         return {
             "models": [[model] for model in installed_models],
             "current": cfg.get("vyact_config", {}).get("model_path", ""),
             "installed": installed_models,
+            "mtp_supported": list_mtp_supported_models(),
+            "mtp_active": get_active_mtp_model(),
             "model_type": "chat",
         }
     installed_models = []
@@ -770,18 +772,31 @@ async def update_vyact_runtime():
 @router.post("/vyact/models/download")
 async def download_vyact_model(req: HuggingFaceDownloadRequest):
     async def stream():
-        from services.huggingface_models import download_gguf_model
+        from services.huggingface_models import download_gguf_model, find_mtp_sidecar
 
         config = await load_config_async()
         token = config.get("vyact_config", {}).get("huggingface_token")
         try:
+            mtp_sidecar = await find_mtp_sidecar(req.repository, req.filename, token)
+        except Exception as error:
+            logger.info("[vyact] MTP sidecar discovery skipped: %s", error)
+            mtp_sidecar = None
+        try:
             async for downloaded, total in download_gguf_model(req.repository, req.filename, token):
-                progress = int(downloaded * 100 / total) if total else None
+                progress = int(downloaded * (85 if mtp_sidecar else 100) / total) if total else None
                 yield sse(f"Downloading {req.filename}", "log", progress)
         except Exception as error:
             logger.warning("[vyact] GGUF download failed: %s", error)
             yield sse(f"모델 다운로드 실패: {error}", "error", 0)
             return
+        if mtp_sidecar:
+            mtp_filename, _mtp_size = mtp_sidecar
+            try:
+                async for downloaded, total in download_gguf_model(req.repository, mtp_filename, token):
+                    progress = 85 + int(downloaded * 15 / total) if total else None
+                    yield sse(f"Downloading MTP {mtp_filename}", "mtp_download", progress)
+            except Exception as error:
+                logger.info("[vyact] MTP sidecar download skipped; using the main model: %s", error)
         yield sse(f"{req.filename} 다운로드 완료", "ok", 100)
 
     return StreamingResponse(stream(), media_type="text/event-stream")

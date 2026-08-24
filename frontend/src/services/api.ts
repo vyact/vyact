@@ -333,9 +333,10 @@ export const api = {
     },
 
     async saveVyactHuggingFaceToken(token: string): Promise<void> {
-        await fetch(`${API_BASE}/vyact/huggingface-token`, {
+        const response = await fetch(`${API_BASE}/vyact/huggingface-token`, {
             method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({token}),
         });
+        if (!response.ok) throw new Error(`Hugging Face token save failed (${response.status})`);
     },
 
     async streamVyactModelDownload(
@@ -473,6 +474,8 @@ export const api = {
         models: string[][];
         current: string;
         installed: string[];
+        mtp_supported?: string[];
+        mtp_active?: string | null;
         model_type?: 'chat' | 'image_gen' | 'image_edit';
     }> {
         const res = await fetch(`${API_BASE}/models`);

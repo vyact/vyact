@@ -28,6 +28,19 @@
     text-overflow: ellipsis;
 }
 
+.mtp-model-badge {
+    flex: 0 0 auto;
+    padding: 2px 5px;
+    border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    color: var(--accent);
+    font-size: 8px;
+    font-weight: 750;
+    line-height: 1;
+    letter-spacing: .35px;
+}
+
 /* ── 드롭다운 목록 ── */
 .model-select-wrap .custom-select-list {
     max-height: 200px;

@@ -518,6 +518,7 @@
     "quickEstimatedMemory": "簡易推定RAM", "detailedEstimatedMemory": "詳細推定RAM", "conversationMemoryHelp": "アプリの標準的な会話長で追加使用されるメモリです。モデルの最大コンテキストをすべて使用する場合の値ではありません。",
     "metadataAnalysisFailed": "モデルの詳細情報を計算または保存できませんでした。",
     "totalEstimatedMemory": "合計推定RAM",
+    "saveToken": "保存", "savingToken": "保存中...", "tokenSaved": "API Keyを保存しました。",
     "layersHelp": "入力が順番に通過する内部処理ブロックの数です。構造と幅が同程度のモデルでは、レイヤーが多いほど通常は計算時間とメモリが増えますが、実際の速度と品質は各レイヤーの大きさ、総パラメータ数、構造、量子化、ハードウェアにも左右されます。",
     "huggingFaceTokenHelp": "モデル検索ではトークンを使用しません。制限付きモデルへのアクセス、GGUFの確認、ダウンロードの認証に使用します。ダウンロード開始時にElasticsearchへ保存され、次回以降も再利用されます。リクエスト上限や安定性が改善する場合がありますが、速度向上は保証されません。",
     "installed": "インストール済み",
@@ -527,8 +528,10 @@
     "confirmTitle": "{{model}} はインストールされていません。",
     "confirmDescription": "今すぐダウンロードしますか？数分かかる場合があります。",
     "downloadAction": "ダウンロード",
+    "useInstalledAction": "使用",
     "downloading": "モデルをダウンロード中...",
     "preparingRuntime": "llama.cpp と llama-swap を準備中...",
+    "preparingMtp": "互換性のあるMTPを確認・準備中...",
     "activating": "モデルを準備中...",
     "loadingIntoMemory": "モデルをメモリに読み込み中... ({{seconds}}秒)"
   },

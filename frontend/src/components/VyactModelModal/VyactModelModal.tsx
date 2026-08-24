@@ -20,7 +20,7 @@ interface SelectedModelFile {
     fileSize: number;
 }
 
-type DownloadPhase = 'runtime' | 'model' | 'activation' | null;
+type DownloadPhase = 'runtime' | 'model' | 'mtp' | 'activation' | null;
 
 const MAX_FILES_PER_MODEL = 8;
 const MODEL_MEMORY_OVERHEAD_RATIO = 1.2;
@@ -81,6 +81,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     const [selectedFile, setSelectedFile] = useState<SelectedModelFile | null>(null);
     const [isSearching, setIsSearching] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
+    const [isSavingToken, setIsSavingToken] = useState(false);
     const [message, setMessage] = useState('');
     const [downloadPhase, setDownloadPhase] = useState<DownloadPhase>(null);
     const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
@@ -89,11 +90,13 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     const [analyzingFile, setAnalyzingFile] = useState('');
     const searchRequestIdRef = useRef(0);
     const cacheCheckedFilesRef = useRef(new Set<string>());
-    const busy = isSearching || isDownloading;
+    const busy = isSearching || isDownloading || isSavingToken;
     const selectedFileKey = selectedFile
         ? `${selectedFile.repository}@${selectedFile.revision}/${selectedFile.filename}`
         : '';
     const selectedMetadata = selectedFileKey ? metadataByFile[selectedFileKey] : undefined;
+    const selectedModelPath = selectedFile ? `${selectedFile.repository}/${selectedFile.filename}` : '';
+    const selectedModelIsInstalled = Boolean(selectedModelPath && installedModels.includes(selectedModelPath));
 
     const searchModels = useCallback(async (searchQuery: string) => {
         const requestId = ++searchRequestIdRef.current;
@@ -121,6 +124,20 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    const saveToken = async () => {
+        const trimmedToken = token.trim();
+        if (!trimmedToken) return;
+        setIsSavingToken(true);
+        try {
+            await api.saveVyactHuggingFaceToken(trimmedToken);
+            setMessage(t('modelSelector.tokenSaved'));
+        } catch (error) {
+            setMessage(String(error));
+        } finally {
+            setIsSavingToken(false);
+        }
+    };
+
     const downloadSelectedModel = async () => {
         if (!selectedFile) return;
         setIsDownloading(true);
@@ -128,16 +145,15 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
         setDownloadProgress(null);
         setMessage(t('modelDownload.preparingRuntime'));
         try {
-            if (token.trim()) await api.saveVyactHuggingFaceToken(token.trim());
             await api.installVyactRuntime(() => setMessage(t('modelDownload.preparingRuntime')));
-            setDownloadPhase('model');
+            setDownloadPhase(selectedModelIsInstalled ? 'mtp' : 'model');
             setDownloadProgress(0);
-            setMessage(t('modelDownload.downloading'));
+            setMessage(t(selectedModelIsInstalled ? 'modelDownload.preparingMtp' : 'modelDownload.downloading'));
             await api.streamVyactModelDownload(
                 selectedFile.repository,
                 selectedFile.filename,
                 (_downloadMessage, progress) => {
-                    setMessage(t('modelDownload.downloading'));
+                    setMessage(t(selectedModelIsInstalled ? 'modelDownload.preparingMtp' : 'modelDownload.downloading'));
                     if (progress != null) setDownloadProgress(progress);
                 },
             );
@@ -237,10 +253,15 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                 </Tooltip>
                                 <KeyRound size={14}/>{t('customProvider.apiKey')} <small>{t('customProvider.optional')}</small>
                             </span>
-                            <div className="provider-api-key-field">
-                                <input type={showToken ? 'text' : 'password'} value={token} onChange={event => setToken(event.target.value)} autoComplete="off"/>
-                                <button type="button" onClick={() => setShowToken(current => !current)} aria-label={t(showToken ? 'customProvider.hideApiKey' : 'customProvider.showApiKey')}>
-                                    {showToken ? <EyeOff size={17}/> : <Eye size={17}/>}
+                            <div className="vyact-token-input-row">
+                                <div className="provider-api-key-field">
+                                    <input type={showToken ? 'text' : 'password'} value={token} onChange={event => setToken(event.target.value)} autoComplete="off"/>
+                                    <button type="button" onClick={() => setShowToken(current => !current)} aria-label={t(showToken ? 'customProvider.hideApiKey' : 'customProvider.showApiKey')}>
+                                        {showToken ? <EyeOff size={17}/> : <Eye size={17}/>}
+                                    </button>
+                                </div>
+                                <button type="button" className="vyact-token-save" onClick={() => void saveToken()} disabled={!token.trim() || busy}>
+                                    {t(isSavingToken ? 'modelSelector.savingToken' : 'modelSelector.saveToken')}
                                 </button>
                             </div>
                         </label>
@@ -371,7 +392,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                 <div
                                     className={`vyact-model-progress${downloadProgress == null ? ' is-indeterminate' : ''}`}
                                     role="progressbar"
-                                    aria-label={t(`modelDownload.${downloadPhase === 'runtime' ? 'preparingRuntime' : downloadPhase === 'activation' ? 'activating' : 'downloading'}`)}
+                                    aria-label={t(`modelDownload.${downloadPhase === 'runtime' ? 'preparingRuntime' : downloadPhase === 'activation' ? 'activating' : downloadPhase === 'mtp' ? 'preparingMtp' : 'downloading'}`)}
                                     aria-valuemin={downloadProgress == null ? undefined : 0}
                                     aria-valuemax={downloadProgress == null ? undefined : 100}
                                     aria-valuenow={downloadProgress == null ? undefined : downloadProgress}
@@ -391,8 +412,8 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                     <button type="button" className="provider-editor-cancel" onClick={onClose} disabled={busy}>{t('customProvider.cancel')}</button>
                     <button type="button" className="provider-editor-save" onClick={() => void downloadSelectedModel()} disabled={!selectedFile || busy}>
                         {isDownloading
-                            ? t(`modelDownload.${downloadPhase === 'runtime' ? 'preparingRuntime' : downloadPhase === 'activation' ? 'activating' : 'downloading'}`)
-                            : t('modelDownload.downloadAction')}
+                            ? t(`modelDownload.${downloadPhase === 'runtime' ? 'preparingRuntime' : downloadPhase === 'activation' ? 'activating' : downloadPhase === 'mtp' ? 'preparingMtp' : 'downloading'}`)
+                            : t(selectedModelIsInstalled ? 'modelDownload.useInstalledAction' : 'modelDownload.downloadAction')}
                     </button>
                 </footer>
             </section>

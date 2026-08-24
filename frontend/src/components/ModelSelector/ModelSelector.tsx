@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {Pencil} from 'lucide-react';
+import {Pencil, Settings} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import type {SelectOption} from '../CustomSelect/CustomSelect';
@@ -8,6 +8,8 @@ import './ModelSelector.css';
 
 interface ModelSelectorProps {
     installed: string[];
+    mtpSupported: string[];
+    mtpActive: string | null;
     selectedModel: string;
     currentProvider: string;
     onModelChange: (model: string, needsDownload: boolean, modelType?: ModelType) => void;
@@ -25,6 +27,8 @@ type ModelType = 'chat' | 'image_gen' | 'image_edit';
 
 const ModelSelector: React.FC<ModelSelectorProps> = ({
                                                          installed,
+                                                         mtpSupported,
+                                                         mtpActive,
                                                          selectedModel,
                                                          currentProvider,
                                                          onModelChange,
@@ -70,9 +74,11 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
     // 트리거: dot + 모델명
     const renderTrigger = (_label: string, open: boolean) => {
         const isInstalled = installed.includes(selectedModel);
+        const showMtp = currentProvider === 'vyact' && mtpActive === selectedModel;
         return (
             <>
                 <div className={`mdot ${isInstalled ? 'installed' : 'not-installed'}`}/>
+                {showMtp && <span className="mtp-model-badge">MTP</span>}
                 <span className="mname">{selectedModel || t('modelSelector.selectModel')}</span>
                 <span className={`custom-select-arrow${open ? ' open' : ''}`}>▼</span>
             </>
@@ -84,6 +90,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
         const isInst = installed.includes(opt.value);
         const info = recommendedModels.find(m => m.id === opt.value);
         const displayModel = info ? getRecommendedModelDisplay(info, t) : null;
+        const showMtp = currentProvider === 'vyact' && mtpSupported.includes(opt.value);
 
         return (
             <>
@@ -101,6 +108,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
 
                 {/* 모델명 + 툴팁 + 추천뱃지 */}
                 <div className="dd-model-name">
+                    {showMtp && <span className="mtp-model-badge">MTP</span>}
                     {displayModel?.desc && (
                         <span
                             className="model-info-icon-wrapper"
@@ -170,7 +178,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
     };
 
     // 하단 커스텀 모델 입력
-    const footer = (
+    const footer = currentProvider === 'ollama' ? (
             <div className="custom-model-input">
                 <input
                 type="text"
@@ -201,7 +209,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                     </button>
                 </div>
             </div>
-    );
+    ) : undefined;
 
     if (currentProvider !== 'ollama' && currentProvider !== 'vyact') {
         return (
@@ -226,6 +234,16 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
             onChange={id => handleLocalModelSelect(id, recommendedModels.find(model => model.id === id)?.type)}
             searchable
             searchPlaceholder={t('modelSelector.modelSearch')}
+            searchAction={currentProvider === 'vyact' ? (
+                <button
+                    type="button"
+                    className="custom-select-search-action"
+                    aria-label={t('modelSelector.settingsManage')}
+                    onClick={onProviderSettingsOpen}
+                >
+                    <Settings size={15} aria-hidden="true"/>
+                </button>
+            ) : undefined}
             className="model-select-wrap"
             renderTrigger={renderTrigger}
             renderOption={renderOption}

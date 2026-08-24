@@ -68,6 +68,49 @@ def _model_from_hub_item(item: dict) -> dict | None:
     }
 
 
+def _model_family(filename: str) -> str:
+    basename = PurePosixPath(filename).name.lower()
+    if basename.startswith("mtp-"):
+        basename = basename[4:]
+    return re.sub(r"-(?:ud-)?(?:i?q\d(?:_[a-z0-9]+)+|bf16)\.gguf$", "", basename)
+
+
+def _select_mtp_sidecar(item: dict, main_filename: str) -> tuple[str, int] | None:
+    """Select a small MTP sidecar only; never mistake a full MTP model for one."""
+    main_family = _model_family(main_filename)
+    candidates = []
+    for sibling in item.get("siblings", []):
+        if not isinstance(sibling, dict):
+            continue
+        filename = str(sibling.get("rfilename", ""))
+        basename = PurePosixPath(filename).name.lower()
+        if not basename.startswith("mtp-") or not basename.endswith(".gguf"):
+            continue
+        if _model_family(filename) != main_family:
+            continue
+        size = int(sibling.get("size") or sibling.get("lfs", {}).get("size") or 0)
+        priority = 0 if "q4_0" in basename else 1 if "q8_0" in basename else 2
+        candidates.append((priority, size or 2**63, filename, size))
+    if not candidates:
+        return None
+    _, _, filename, size = min(candidates)
+    return filename, size
+
+
+async def find_mtp_sidecar(
+        repo_id: str, main_filename: str, token: str | None = None,
+) -> tuple[str, int] | None:
+    """Return a verified MTP sidecar from the selected model repository."""
+    if not _REPO_ID_PATTERN.fullmatch(repo_id):
+        raise ValueError("Invalid Hugging Face repository ID")
+    async with httpx.AsyncClient(timeout=20) as client:
+        response = await client.get(
+            f"{HF_API_URL}/models/{repo_id}", params={"blobs": "true"}, headers=_headers(token),
+        )
+        response.raise_for_status()
+    return _select_mtp_sidecar(response.json(), main_filename)
+
+
 async def get_recommended_gguf_models(token: str | None = None) -> list[dict]:
     """Resolve the curated local-model choices while keeping their files current."""
     async with httpx.AsyncClient(timeout=20) as client:
@@ -93,6 +136,11 @@ async def download_gguf_model(repo_id: str, filename: str, token: str | None = N
     destination = VYACT_MODELS_DIR / repo_id / Path(*relative_path.parts)
     temporary = destination.with_suffix(destination.suffix + ".part")
     destination.parent.mkdir(parents=True, exist_ok=True)
+    if destination.is_file():
+        cache_downloaded_model(destination.relative_to(VYACT_MODELS_DIR).as_posix())
+        file_size = destination.stat().st_size
+        yield file_size, file_size
+        return
     url = f"https://huggingface.co/{quote(repo_id, safe='/')}/resolve/main/{quote(filename, safe='/')}"
     async with httpx.AsyncClient(timeout=httpx.Timeout(connect=30, read=120, write=30, pool=30), follow_redirects=True) as client:
         async with client.stream("GET", url, headers=_headers(token)) as response:

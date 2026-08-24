@@ -24,6 +24,8 @@ export function useModels(
     onBeforeModelChange?: () => void,
 ) {
     const [installed, setInstalled] = useState<string[]>([]);
+    const [mtpSupported, setMtpSupported] = useState<string[]>([]);
+    const [mtpActive, setMtpActive] = useState<string | null>(null);
     const [selectedModel, setSelectedModel] = useState<string>('');
     const [isImageMode, setIsImageMode] = useState(false);
     const [modelType, setModelType] = useState<'chat' | 'image_gen' | 'image_edit'>('chat');
@@ -50,6 +52,8 @@ export function useModels(
         try {
             const modelData = await api.getModels();
             setInstalled(modelData.installed || []);
+            setMtpSupported(modelData.mtp_supported || []);
+            setMtpActive(modelData.mtp_active || null);
             const initialModel = modelData.current || modelData.installed?.[0] || '';
             setSelectedModel(initialModel);
             onModelChange?.(initialModel);
@@ -110,7 +114,7 @@ export function useModels(
     };
 
     return {
-        installed, selectedModel, isImageMode, modelType,
+        installed, mtpSupported, mtpActive, selectedModel, isImageMode, modelType,
         isModelLoading, isDownloading, downloadingModel, downloadProgress, downloadMessage, isModelLoadingIntoMemory,
         setIsDownloading, setDownloadingModel, setDownloadProgress, setDownloadMessage,
         refreshModels, handleModelChange,

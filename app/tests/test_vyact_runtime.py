@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from services.vyact_runtime import (
     RuntimePaths, cache_downloaded_model, get_native_install_commands, get_native_update_commands,
-    initialize_downloaded_models_cache, list_downloaded_models, start_single_model,
+    initialize_downloaded_models_cache, list_downloaded_models, list_selectable_models, start_single_model,
     uncache_downloaded_model, write_single_model_config,
 )
 
@@ -24,13 +24,16 @@ class VyactRuntimeTests(unittest.TestCase):
             with patch("services.vyact_runtime.get_runtime_paths", return_value=paths), \
                  patch("services.vyact_runtime.VYACT_RUNTIME_DIR", base), \
                  patch("services.vyact_runtime.VYACT_MODELS_DIR", base / "models"), \
-                 patch("services.vyact_runtime.VYACT_SWAP_CONFIG", config):
+                 patch("services.vyact_runtime.VYACT_SWAP_CONFIG", config), \
+                 patch("services.vyact_runtime.model_has_integrated_mtp", return_value=False):
                 key = write_single_model_config(model, 8192)
 
             contents = config.read_text(encoding="utf-8")
             self.assertTrue(key.startswith("vyact-"))
             self.assertEqual(contents.count("cmd:"), 1)
-            self.assertIn("--n-gpu-layers 99", contents)
+            self.assertIn("--n-gpu-layers auto", contents)
+            self.assertIn("--fit on", contents)
+            self.assertIn("--flash-attn auto", contents)
 
     def test_rejects_non_gguf_model(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -57,12 +60,34 @@ class VyactRuntimeTests(unittest.TestCase):
                 uncache_downloaded_model("qwen.gguf")
                 self.assertEqual(list_downloaded_models(), ["owner/later.gguf"])
 
+    def test_mtp_sidecars_are_not_user_selectable_models(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            models_dir = Path(temp_dir)
+            repository = models_dir / "owner" / "repo"
+            repository.mkdir(parents=True)
+            (repository / "model-Q4_K_M.gguf").touch()
+            (repository / "mtp-model-Q4_0.gguf").touch()
+            with patch("services.vyact_runtime.VYACT_MODELS_DIR", models_dir):
+                initialize_downloaded_models_cache(force=True)
+                self.assertEqual(list_selectable_models(), ["owner/repo/model-Q4_K_M.gguf"])
+
     def test_macos_installs_only_missing_component_with_brew(self):
         paths = RuntimePaths(None, Path("/opt/homebrew/bin/llama-swap"), Path("/models"), Path("/config"))
         with patch("services.vyact_runtime.get_runtime_paths", return_value=paths), \
              patch("services.vyact_runtime.platform.system", return_value="Darwin"), \
              patch("services.vyact_runtime.shutil.which", return_value="/opt/homebrew/bin/brew"):
             self.assertEqual(get_native_install_commands(), [["brew", "install", "llama.cpp"]])
+
+    def test_macos_trusts_only_llama_swap_formula_before_install(self):
+        paths = RuntimePaths(Path("/opt/homebrew/bin/llama-server"), None, Path("/models"), Path("/config"))
+        with patch("services.vyact_runtime.get_runtime_paths", return_value=paths), \
+             patch("services.vyact_runtime.platform.system", return_value="Darwin"), \
+             patch("services.vyact_runtime.shutil.which", return_value="/opt/homebrew/bin/brew"):
+            self.assertEqual(get_native_install_commands(), [
+                ["brew", "tap", "mostlygeek/llama-swap"],
+                ["brew", "trust", "--formula", "mostlygeek/llama-swap/llama-swap"],
+                ["brew", "install", "mostlygeek/llama-swap/llama-swap"],
+            ])
 
     def test_macos_runtime_updates_are_opt_in_through_brew(self):
         with patch("services.vyact_runtime.platform.system", return_value="Darwin"), \
@@ -79,9 +104,36 @@ class VyactRuntimeTests(unittest.TestCase):
                  patch("services.vyact_runtime.stop_runtime"), \
                  patch("services.vyact_runtime.write_single_model_config", return_value="vyact-model") as write_config, \
                  patch("services.vyact_runtime.subprocess.Popen") as popen, \
+                 patch("services.vyact_runtime.get_cached_mtp_sidecar", return_value=None), \
+                 patch("services.vyact_runtime.model_has_integrated_mtp", return_value=False), \
+                 patch("services.vyact_runtime.urllib.request.urlopen") as urlopen, \
                  patch("services.vyact_runtime.VYACT_RUNTIME_DIR", base), \
                  patch("services.vyact_runtime.VYACT_RUNTIME_PID_FILE", base / "runtime.pid"):
                 popen.return_value.pid = 1234
+                popen.return_value.poll.return_value = None
+                urlopen.return_value.__enter__.return_value.status = 200
                 self.assertEqual(start_single_model(model, 8192), "vyact-model")
-            write_config.assert_called_once_with(model, 8192)
+            write_config.assert_called_once_with(model, 8192, None, enable_mtp=False)
             self.assertIn("llama-swap", str(popen.call_args.args[0][0]))
+
+    def test_sidecar_config_enables_mtp_with_safe_auto_options(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            base = Path(temp_dir)
+            model = base / "model.gguf"
+            mtp = base / "mtp-model-Q4_0.gguf"
+            server = base / "llama-server"
+            swap = base / "llama-swap"
+            config = base / "llama-swap.yaml"
+            for path in (model, mtp, server, swap):
+                path.touch()
+            paths = RuntimePaths(server, swap, base / "models", config)
+            with patch("services.vyact_runtime.get_runtime_paths", return_value=paths), \
+                 patch("services.vyact_runtime.VYACT_RUNTIME_DIR", base), \
+                 patch("services.vyact_runtime.VYACT_MODELS_DIR", base / "models"), \
+                 patch("services.vyact_runtime.VYACT_SWAP_CONFIG", config):
+                write_single_model_config(model, 8192, mtp)
+
+            contents = config.read_text(encoding="utf-8")
+            self.assertIn("--spec-draft-model", contents)
+            self.assertIn("--spec-type draft-mtp", contents)
+            self.assertIn("--spec-draft-ngl auto", contents)

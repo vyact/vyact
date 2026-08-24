@@ -599,6 +599,8 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                     >
                         <Sidebar
                             installed={models.installed}
+                            mtpSupported={models.mtpSupported}
+                            mtpActive={models.mtpActive}
                             selectedModel={models.selectedModel}
                             onModelChange={models.handleModelChange}
                             onProviderChange={models.refreshModels}

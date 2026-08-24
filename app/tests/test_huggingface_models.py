@@ -1,9 +1,14 @@
+import tempfile
 import unittest
+from pathlib import Path
+from unittest.mock import patch
 
 from services.huggingface_models import (
     RECOMMENDED_GGUF_REPOSITORIES,
     _model_from_hub_item,
     _safe_relative_file_path,
+    _select_mtp_sidecar,
+    download_gguf_model,
 )
 
 
@@ -32,3 +37,27 @@ class HuggingFaceModelTests(unittest.TestCase):
             "id": "owner/model-GGUF", "revision": "abc123", "downloads": 12,
             "files": ["model.gguf"], "file_sizes": {"model.gguf": 1024},
         })
+
+    def test_selects_small_mtp_sidecar_without_treating_full_model_as_sidecar(self):
+        selected = _select_mtp_sidecar({"siblings": [
+            {"rfilename": "Qwen-MTP-Q4_K_M.gguf", "size": 5_000},
+            {"rfilename": "MTP/mtp-Qwen-Q8_0.gguf", "size": 2_000},
+            {"rfilename": "MTP/mtp-Qwen-Q4_0.gguf", "size": 1_000},
+            {"rfilename": "MTP/mtp-Other-Q4_0.gguf", "size": 500},
+        ]}, "Qwen-Q4_K_M.gguf")
+        self.assertEqual(selected, ("MTP/mtp-Qwen-Q4_0.gguf", 1_000))
+
+
+class HuggingFaceModelDownloadTests(unittest.IsolatedAsyncioTestCase):
+    async def test_existing_complete_model_is_not_downloaded_again(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            models_dir = Path(temp_dir)
+            model_path = models_dir / "owner" / "model" / "model.gguf"
+            model_path.parent.mkdir(parents=True)
+            model_path.write_bytes(b"existing-model")
+            with patch("services.huggingface_models.VYACT_MODELS_DIR", models_dir), \
+                 patch("services.huggingface_models.cache_downloaded_model") as cache_model:
+                progress = [item async for item in download_gguf_model("owner/model", "model.gguf")]
+
+            self.assertEqual(progress, [(14, 14)])
+            cache_model.assert_called_once_with("owner/model/model.gguf")

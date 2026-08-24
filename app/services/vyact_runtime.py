@@ -14,8 +14,10 @@ import signal
 import subprocess
 import threading
 import time
+import urllib.error
+import urllib.request
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from config import INSTALL_DIR
 
@@ -28,6 +30,8 @@ VYACT_RUNTIME_PID_FILE = VYACT_RUNTIME_DIR / "llama-swap.pid"
 
 _downloaded_models_lock = threading.RLock()
 _downloaded_models_cache: frozenset[str] | None = None
+_integrated_mtp_cache: dict[tuple[str, int, int], bool] = {}
+_active_mtp_model: str | None = None
 
 
 @dataclass(frozen=True)
@@ -77,7 +81,8 @@ def get_native_install_commands() -> list[list[str]]:
         if not paths.llama_swap:
             commands.extend([
                 ["brew", "tap", "mostlygeek/llama-swap"],
-                ["brew", "install", "llama-swap"],
+                ["brew", "trust", "--formula", "mostlygeek/llama-swap/llama-swap"],
+                ["brew", "install", "mostlygeek/llama-swap/llama-swap"],
             ])
         return commands
     if system == "Windows" and shutil.which("winget"):
@@ -125,9 +130,11 @@ async def install_missing_runtime():
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
         )
-        await process.communicate()
+        stdout, _ = await process.communicate()
         if process.returncode != 0:
-            raise RuntimeError(f"Runtime installation failed: {command[0]}")
+            output_lines = stdout.decode("utf-8", errors="replace").strip().splitlines()
+            detail = output_lines[-1] if output_lines else "unknown package manager error"
+            raise RuntimeError(f"Runtime installation failed: {' '.join(command)}: {detail}")
     if not runtime_is_available():
         raise RuntimeError("Runtime installation completed but executables were not found in PATH")
     yield "Vyact native runtime ready"
@@ -183,6 +190,14 @@ def list_downloaded_models() -> list[str]:
     return initialize_downloaded_models_cache()
 
 
+def list_selectable_models() -> list[str]:
+    """Return user-selectable models without internal MTP sidecar files."""
+    return [
+        model for model in list_downloaded_models()
+        if not PurePosixPath(model).name.lower().startswith("mtp-")
+    ]
+
+
 def cache_downloaded_model(relative_path: str) -> None:
     """Record a completed managed download without rescanning model storage."""
     global _downloaded_models_cache
@@ -207,6 +222,82 @@ def get_downloaded_model_path(relative_path: str) -> Path:
     if models_dir not in candidate.parents or candidate.suffix.lower() != ".gguf" or not candidate.is_file():
         raise ValueError("The selected Vyact model is not a downloaded GGUF file")
     return candidate
+
+
+def get_cached_mtp_sidecar(model_path: Path) -> Path | None:
+    """Find a downloaded MTP sidecar from the same managed repository."""
+    try:
+        relative_model = model_path.resolve().relative_to(VYACT_MODELS_DIR.resolve())
+    except ValueError:
+        return None
+    if len(relative_model.parts) < 3:
+        return None
+    repository_prefix = "/".join(relative_model.parts[:2]) + "/"
+    candidates = [
+        relative_path for relative_path in list_downloaded_models()
+        if relative_path.startswith(repository_prefix)
+        and PurePosixPath(relative_path).name.lower().startswith("mtp-")
+    ]
+    if not candidates:
+        return None
+    candidates.sort(key=lambda path: (0 if "q4_0" in path.lower() else 1 if "q8_0" in path.lower() else 2, path))
+    return get_downloaded_model_path(candidates[0])
+
+
+def model_has_integrated_mtp(model_path: Path) -> bool:
+    """Enable integrated MTP only when llama.cpp reports NextN/MTP tensors."""
+    try:
+        stat = model_path.stat()
+    except OSError:
+        return False
+    cache_key = (str(model_path.resolve()), stat.st_size, stat.st_mtime_ns)
+    cached = _integrated_mtp_cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    paths = get_runtime_paths()
+    if not paths.llama_server:
+        _integrated_mtp_cache[cache_key] = False
+        return False
+    inspector = paths.llama_server.with_name(_executable_name("llama-gguf"))
+    if not inspector.is_file():
+        resolved = _which_path("llama-gguf")
+        if not resolved:
+            _integrated_mtp_cache[cache_key] = False
+            return False
+        inspector = resolved
+    try:
+        result = subprocess.run(
+            [str(inspector), str(model_path), "r", "n"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=20,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        _integrated_mtp_cache[cache_key] = False
+        return False
+    output = result.stdout.lower()
+    supported = result.returncode == 0 and (b"nextn" in output or b"mtp" in output)
+    _integrated_mtp_cache[cache_key] = supported
+    return supported
+
+
+def list_mtp_supported_models() -> list[str]:
+    """Return selectable models whose MTP support was verified locally."""
+    supported = []
+    for relative_path in list_selectable_models():
+        try:
+            model_path = get_downloaded_model_path(relative_path)
+            if get_cached_mtp_sidecar(model_path) or model_has_integrated_mtp(model_path):
+                supported.append(relative_path)
+        except (OSError, ValueError):
+            continue
+    return supported
+
+
+def get_active_mtp_model() -> str | None:
+    return _active_mtp_model
 
 
 def _read_owned_pid() -> int | None:
@@ -236,6 +327,8 @@ def stop_runtime() -> None:
     signal is sent. Failure to stop is surfaced to the caller instead of
     starting a second server on the same local port.
     """
+    global _active_mtp_model
+    _active_mtp_model = None
     pid = _read_owned_pid()
     if pid is None:
         return
@@ -264,25 +357,61 @@ def stop_runtime() -> None:
 
 def start_single_model(model_path: Path, context_size: int) -> str:
     """Restart llama-swap with exactly one configured model and return its API ID."""
+    global _active_mtp_model
     paths = get_runtime_paths()
     if not paths.llama_swap:
         raise RuntimeError("Vyact native runtime is not installed")
-    stop_runtime()
-    model_key = write_single_model_config(model_path, context_size)
-    VYACT_RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
-    log_path = VYACT_RUNTIME_DIR / "llama-swap.log"
-    with log_path.open("ab") as log_file:
-        process = subprocess.Popen(
-            [str(paths.llama_swap), "--config", str(VYACT_SWAP_CONFIG), "--listen", f"127.0.0.1:{VYACT_RUNTIME_PORT}"],
-            stdout=log_file,
-            stderr=subprocess.STDOUT,
-            start_new_session=True,
+    mtp_model_path = get_cached_mtp_sidecar(model_path)
+
+    def launch(enable_mtp: bool) -> tuple[str, subprocess.Popen]:
+        stop_runtime()
+        model_key = write_single_model_config(
+            model_path, context_size, mtp_model_path if enable_mtp else None, enable_mtp=enable_mtp,
         )
-    VYACT_RUNTIME_PID_FILE.write_text(str(process.pid), encoding="utf-8")
+        VYACT_RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
+        log_path = VYACT_RUNTIME_DIR / "llama-swap.log"
+        with log_path.open("ab") as log_file:
+            process = subprocess.Popen(
+                [str(paths.llama_swap), "--config", str(VYACT_SWAP_CONFIG), "--listen", f"127.0.0.1:{VYACT_RUNTIME_PORT}"],
+                stdout=log_file,
+                stderr=subprocess.STDOUT,
+                start_new_session=True,
+            )
+        VYACT_RUNTIME_PID_FILE.write_text(str(process.pid), encoding="utf-8")
+        return model_key, process
+
+    def wait_until_loaded(model_key: str, process: subprocess.Popen) -> None:
+        deadline = time.monotonic() + 120
+        health_url = f"http://127.0.0.1:{VYACT_RUNTIME_PORT}/upstream/{model_key}/health"
+        while time.monotonic() < deadline:
+            if process.poll() is not None:
+                raise RuntimeError("llama-swap stopped while loading the model")
+            try:
+                with urllib.request.urlopen(health_url, timeout=2) as response:
+                    if response.status == 200:
+                        return
+            except (OSError, urllib.error.URLError):
+                pass
+            time.sleep(0.25)
+        raise RuntimeError("The model did not become ready within 120 seconds")
+
+    should_try_mtp = mtp_model_path is not None or model_has_integrated_mtp(model_path)
+    model_key, process = launch(should_try_mtp)
+    try:
+        wait_until_loaded(model_key, process)
+        _active_mtp_model = str(model_path.resolve().relative_to(VYACT_MODELS_DIR.resolve())) if should_try_mtp else None
+    except RuntimeError:
+        if not should_try_mtp:
+            raise
+        model_key, process = launch(False)
+        wait_until_loaded(model_key, process)
+        _active_mtp_model = None
     return model_key
 
 
-def write_single_model_config(model_path: Path, context_size: int) -> str:
+def write_single_model_config(
+        model_path: Path, context_size: int, mtp_model_path: Path | None = None, *, enable_mtp: bool = True,
+) -> str:
     """Write a llama-swap config that can only load the selected model.
 
     Replacing the config before restart is intentional: it prevents an old
@@ -292,6 +421,12 @@ def write_single_model_config(model_path: Path, context_size: int) -> str:
         raise ValueError("A downloaded GGUF model file is required")
     if context_size < 512:
         raise ValueError("Context size must be at least 512")
+    if mtp_model_path is not None and (
+        mtp_model_path.suffix.lower() != ".gguf"
+        or not mtp_model_path.is_file()
+        or not mtp_model_path.name.lower().startswith("mtp-")
+    ):
+        raise ValueError("A compatible downloaded MTP sidecar is required")
     paths = get_runtime_paths()
     if not paths.llama_server or not paths.llama_swap:
         raise RuntimeError("Vyact native runtime is not installed")
@@ -302,8 +437,18 @@ def write_single_model_config(model_path: Path, context_size: int) -> str:
     command = " ".join([
         json.dumps(str(paths.llama_server)),
         "--host", "127.0.0.1", "--port", "${PORT}", "--model", json.dumps(str(model_path)),
-        "--ctx-size", str(context_size), "--jinja", "--n-gpu-layers", "99",
+        "--ctx-size", str(context_size), "--jinja", "--n-gpu-layers", "auto",
+        "--fit", "on", "--flash-attn", "auto",
     ])
+    if mtp_model_path is not None:
+        command += " " + " ".join([
+            "--spec-draft-model", json.dumps(str(mtp_model_path)),
+            "--spec-draft-ngl", "auto",
+            "--spec-type", "draft-mtp",
+            "--spec-draft-n-max", "3",
+        ])
+    elif enable_mtp and model_has_integrated_mtp(model_path):
+        command += " --spec-type draft-mtp --spec-draft-n-max 3"
     config = "\n".join([
         "# Generated by Vyact. Do not add models here: one model is kept resident.",
         "models:",
