@@ -282,7 +282,7 @@ export const api = {
     ): Promise<VyactGgufMetadata | null> {
         const params = new URLSearchParams({repository, filename, revision, context_size: String(contextSize)});
         const response = await fetch(`${API_BASE}/vyact/models/metadata-cache?${params}`);
-        if (!response.ok) return null;
+        if (!response.ok) throw new Error(`Model metadata cache lookup failed (${response.status})`);
         const source = (await response.json()).metadata;
         if (!source) return null;
         return {
@@ -301,22 +301,26 @@ export const api = {
         repository: string, filename: string, revision: string, contextSize: number,
         fileSize: number, metadata: VyactGgufMetadata,
     ): Promise<void> {
-        await fetch(`${API_BASE}/vyact/models/metadata-cache`, {
+        const response = await fetch(`${API_BASE}/vyact/models/metadata-cache`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
                 repository, filename, revision, context_size: contextSize,
                 architecture: metadata.architecture,
-                parameter_count: metadata.parameterCount,
-                context_length: metadata.contextLength,
-                block_count: metadata.blockCount,
+                parameter_count: Math.round(metadata.parameterCount),
+                context_length: Math.round(metadata.contextLength),
+                block_count: Math.round(metadata.blockCount),
                 quantization: metadata.quantization,
-                kv_cache_bytes: metadata.kvCacheBytes,
-                runtime_buffer_bytes: metadata.runtimeBufferBytes,
-                estimated_memory_bytes: metadata.estimatedMemoryBytes,
-                file_size_bytes: fileSize,
+                kv_cache_bytes: Math.ceil(metadata.kvCacheBytes),
+                runtime_buffer_bytes: Math.ceil(metadata.runtimeBufferBytes),
+                estimated_memory_bytes: Math.ceil(metadata.estimatedMemoryBytes),
+                file_size_bytes: Math.round(fileSize),
             }),
         });
+        const result = response.ok ? await response.json() : null;
+        if (!response.ok || !result?.saved) {
+            throw new Error(`Model metadata cache save failed (${response.status})`);
+        }
     },
 
     async saveVyactHuggingFaceToken(token: string): Promise<void> {

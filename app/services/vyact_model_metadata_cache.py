@@ -66,5 +66,10 @@ async def save_cached_model_metadata(
         "parser_version": "@huggingface/gguf-0.4.6",
         "calculated_at": datetime.now(timezone.utc).isoformat(),
     }
-    await es.index(index=VYACT_MODEL_METADATA_INDEX, id=document_id, document=document, refresh=False)
+    await es.index(
+        index=VYACT_MODEL_METADATA_INDEX,
+        id=document_id,
+        document=document,
+        refresh="wait_for",
+    )
     return document_id

@@ -513,7 +513,12 @@
     "searchAction": "검색",
     "searching": "모델을 검색하고 있습니다...",
     "noSearchResults": "검색 결과가 없습니다. 다른 모델명으로 검색해 보세요.",
-    "calculateAccurateMemory": "정확히 계산", "accurateMemoryHint": "GGUF 헤더를 조회해 32K 기준 사용량을 계산합니다.",
+    "calculateAccurateMemory": "상세 메모리 계산", "accurateMemoryHint": "모델 정보를 확인해 긴 대화와 문서를 처리할 때 필요한 메모리까지 자세히 계산합니다.",
+    "conversationMemory": "기본 대화 메모리",
+    "quickEstimatedMemory": "빠른 예상 RAM", "detailedEstimatedMemory": "상세 예상 RAM", "conversationMemoryHelp": "앱의 기본 대화 길이에서 추가로 사용하는 메모리입니다. 모델의 최대 컨텍스트를 전부 사용할 때의 값은 아닙니다.",
+    "metadataAnalysisFailed": "상세 정보를 계산하거나 저장하지 못했습니다.",
+    "totalEstimatedMemory": "총 예상 RAM",
+    "layersHelp": "입력을 순서대로 처리하는 모델 내부 블록의 개수입니다. 많을수록 계산량과 메모리 사용량이 늘 수 있지만, 레이어 수만으로 모델 품질을 판단할 수는 없습니다.",
     "huggingFaceTokenHelp": "모델 검색에는 토큰을 사용하지 않습니다. 토큰은 제한된 모델 접근과 GGUF 조회·다운로드 시 인증에 사용되며, 다운로드를 시작할 때 Elasticsearch에 저장되어 다음 다운로드에도 재사용됩니다. 인증 시 요청 한도와 안정성이 좋아질 수 있지만 다운로드 속도 향상이 보장되지는 않습니다.",
     "systemMemory": "시스템 RAM", "unifiedMemory": "통합 메모리", "availableMemory": "사용 가능", "monthlyDownloads": "최근 30일 다운로드", "estimatedMemory": "예상 RAM", "sharedOrUnknownMemory": "공유 메모리 또는 용량 확인 불가", "cpuExecution": "GPU 없음 · CPU/RAM 실행", "analyzingMetadata": "GGUF 메타데이터 분석 중...", "parameters": "파라미터", "architecture": "아키텍처", "quantization": "양자화", "maxContext": "최대 컨텍스트", "layers": "레이어", "kvCache": "32K KV 캐시", "execution": {"unified":"통합 메모리 실행 가능","gpu":"GPU 실행 가능","hybrid":"GPU+RAM 혼합 실행","cpu":"CPU/RAM 실행 가능","insufficient":"현재 사용 가능 메모리 부족"}
   },

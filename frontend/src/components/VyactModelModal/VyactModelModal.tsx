@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {Check, Eye, EyeOff, KeyRound, LoaderCircle, Search, Sparkles} from 'lucide-react';
+import {Calculator, Check, Eye, EyeOff, KeyRound, LoaderCircle, Search, Sparkles} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {api, type VyactHardwareInfo, type VyactHubModel} from '../../services/api';
 import {inspectRemoteGguf, type GgufModelMetadata} from '../../utils/ggufMetadata';
@@ -33,7 +33,6 @@ const formatBytes = (bytes: number) => {
     return `${(bytes / 1024 ** 3).toFixed(1)} GB`;
 };
 
-const formatParameterCount = (count: number) => count >= 1e9 ? `${(count / 1e9).toFixed(1)}B` : `${(count / 1e6).toFixed(0)}M`;
 const formatContextLength = (tokens: number) => tokens >= 1024 ? `${Math.round(tokens / 1024)}K` : String(tokens);
 
 const getSelectableModelFiles = (files: string[]) => files
@@ -84,7 +83,12 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     const [metadataByFile, setMetadataByFile] = useState<Record<string, GgufModelMetadata>>({});
     const [analyzingFile, setAnalyzingFile] = useState('');
     const searchRequestIdRef = useRef(0);
+    const cacheCheckedFilesRef = useRef(new Set<string>());
     const busy = isSearching || isDownloading;
+    const selectedFileKey = selectedFile
+        ? `${selectedFile.repository}@${selectedFile.revision}/${selectedFile.filename}`
+        : '';
+    const selectedMetadata = selectedFileKey ? metadataByFile[selectedFileKey] : undefined;
 
     const searchModels = useCallback(async (searchQuery: string) => {
         const requestId = ++searchRequestIdRef.current;
@@ -143,16 +147,42 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
         if (metadataByFile[fileKey]) return;
         setAnalyzingFile(fileKey);
         try {
-            const cachedMetadata = await api.getVyactModelMetadataCache(repository, filename, revision, 32768);
+            const cachedMetadata = cacheCheckedFilesRef.current.has(fileKey)
+                ? null
+                : await api.getVyactModelMetadataCache(repository, filename, revision, 32768);
+            cacheCheckedFilesRef.current.add(fileKey);
             const metadata = cachedMetadata || await inspectRemoteGguf(
                 repository, filename, revision, fileSize, 32768, token.trim(),
             );
-            setMetadataByFile(current => ({...current, [fileKey]: metadata}));
             if (!cachedMetadata) {
                 await api.saveVyactModelMetadataCache(repository, filename, revision, 32768, fileSize, metadata);
             }
+            setMetadataByFile(current => ({...current, [fileKey]: metadata}));
+            setMessage('');
+        } catch (error) {
+            setMessage(`${t('modelSelector.metadataAnalysisFailed')} ${String(error)}`);
+        } finally {
+            setAnalyzingFile(current => current === fileKey ? '' : current);
+        }
+    };
+
+    const selectModelFile = async (model: VyactHubModel, filename: string, fileSize: number) => {
+        const selected = {repository: model.id, filename, revision: model.revision, fileSize};
+        const fileKey = `${model.id}@${model.revision}/${filename}`;
+        setSelectedFile(selected);
+        if (metadataByFile[fileKey] || cacheCheckedFilesRef.current.has(fileKey)) return;
+
+        cacheCheckedFilesRef.current.add(fileKey);
+        setAnalyzingFile(fileKey);
+        try {
+            const cachedMetadata = await api.getVyactModelMetadataCache(
+                model.id, filename, model.revision, 32768,
+            );
+            if (cachedMetadata) {
+                setMetadataByFile(current => ({...current, [fileKey]: cachedMetadata}));
+            }
         } catch {
-            // 원격 헤더 분석이 실패해도 파일 크기 기반 예상치와 다운로드 기능은 유지한다.
+            // 캐시 확인 실패도 원격 헤더 조회로 자동 전환하지 않고 사용자 동작을 기다린다.
         } finally {
             setAnalyzingFile(current => current === fileKey ? '' : current);
         }
@@ -205,16 +235,71 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                     <section className="vyact-model-results" aria-busy={busy}>
                         {!isSearching && hardware.system_memory.total_bytes > 0 && (
                             <div className="vyact-memory-summary">
-                                <span>
-                                    {t(hardware.memory_mode === 'unified' ? 'modelSelector.unifiedMemory' : 'modelSelector.systemMemory')}
-                                    <strong>{formatBytes(hardware.system_memory.total_bytes)}</strong>
-                                </span>
-                                {hardware.memory_mode !== 'unified' && hardware.gpus.map(gpu => (
-                                    <span key={`${gpu.backend}-${gpu.name}`}>
-                                        {gpu.name} <strong>{gpu.total_bytes ? formatBytes(gpu.total_bytes) : gpu.backend}</strong>
+                                <div className="vyact-memory-capacity">
+                                    <span>
+                                        {t(hardware.memory_mode === 'unified' ? 'modelSelector.unifiedMemory' : 'modelSelector.systemMemory')}
+                                        <strong>{formatBytes(hardware.system_memory.total_bytes)}</strong>
                                     </span>
-                                ))}
-                                {hardware.memory_mode !== 'unified' && hardware.gpus.length === 0 && <span>{t('modelSelector.cpuExecution')}</span>}
+                                    {hardware.memory_mode !== 'unified' && hardware.gpus.map(gpu => (
+                                        <span key={`${gpu.backend}-${gpu.name}`}>
+                                            {gpu.name} <strong>{gpu.total_bytes ? formatBytes(gpu.total_bytes) : gpu.backend}</strong>
+                                        </span>
+                                    ))}
+                                    {hardware.memory_mode !== 'unified' && hardware.gpus.length === 0 && <span>{t('modelSelector.cpuExecution')}</span>}
+                                </div>
+                                {selectedFile && (
+                                    <div className="vyact-memory-selection">
+                                        <span>{selectedFile.filename}</span>
+                                        {!selectedMetadata && (
+                                            <>
+                                                <span className="vyact-memory-requirement">
+                                                    {t('modelSelector.quickEstimatedMemory')}
+                                                    <strong>{formatBytes(selectedFile.fileSize * MODEL_MEMORY_OVERHEAD_RATIO)}</strong>
+                                                </span>
+                                                <Tooltip content={t('modelSelector.accurateMemoryHint')} multiline large>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => void calculateAccurateMemory()}
+                                                        disabled={busy || analyzingFile === selectedFileKey}
+                                                        aria-label={t('modelSelector.calculateAccurateMemory')}
+                                                    >
+                                                        {analyzingFile === selectedFileKey
+                                                            ? <LoaderCircle className="vyact-model-spinner" size={17}/>
+                                                            : <Calculator size={17}/>
+                                                        }
+                                                    </button>
+                                                </Tooltip>
+                                            </>
+                                        )}
+                                    </div>
+                                )}
+                                {selectedMetadata && (
+                                    <div className="vyact-model-metadata vyact-memory-details">
+                                        <span>
+                                            <small>
+                                                {t('modelSelector.layers')}
+                                                <Tooltip content={t('modelSelector.layersHelp')} multiline large>
+                                                    <i className="vyact-memory-help" tabIndex={0}>?</i>
+                                                </Tooltip>
+                                            </small>
+                                            <strong>{selectedMetadata.blockCount}</strong>
+                                        </span>
+                                        <span><small>{t('modelSelector.maxContext')}</small><strong>{formatContextLength(selectedMetadata.contextLength)}</strong></span>
+                                        <span>
+                                            <small>
+                                                {t('modelSelector.conversationMemory')}
+                                                <Tooltip content={t('modelSelector.conversationMemoryHelp')} multiline large>
+                                                    <i className="vyact-memory-help" tabIndex={0}>?</i>
+                                                </Tooltip>
+                                            </small>
+                                            <strong>{formatBytes(selectedMetadata.kvCacheBytes)}</strong>
+                                        </span>
+                                        <span className="vyact-total-memory">
+                                            <small>{t('modelSelector.totalEstimatedMemory')}</small>
+                                            <strong>{formatBytes(selectedMetadata.estimatedMemoryBytes)}</strong>
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         )}
                         {isSearching && (
@@ -233,11 +318,10 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                         const fileKey = `${model.id}@${model.revision}/${filename}`;
                                         const isSelected = selectedFile?.repository === model.id && selectedFile.filename === filename;
                                         const fileSize = model.file_sizes?.[filename] || 0;
-                                        const metadata = metadataByFile[fileKey];
-                                        const estimatedMemory = metadata?.estimatedMemoryBytes || fileSize * MODEL_MEMORY_OVERHEAD_RATIO;
+                                        const estimatedMemory = fileSize * MODEL_MEMORY_OVERHEAD_RATIO;
                                         const memoryTone = getMemoryTone(estimatedMemory, hardware);
                                         return (
-                                            <button type="button" className={`${isSelected ? 'is-selected ' : ''}memory-${memoryTone}`} key={filename} onClick={() => setSelectedFile({repository: model.id, filename, revision: model.revision, fileSize})} disabled={busy}>
+                                            <button type="button" className={`${isSelected ? 'is-selected ' : ''}memory-${memoryTone}`} key={filename} onClick={() => void selectModelFile(model, filename, fileSize)} disabled={busy}>
                                                 <span className="vyact-model-file-name">{filename}</span>
                                                 {fileSize > 0 && <small>{formatBytes(fileSize)} · {t('modelSelector.estimatedMemory')} {formatBytes(estimatedMemory)}</small>}
                                                 {analyzingFile === fileKey ? <LoaderCircle className="vyact-model-spinner" size={15}/> : isSelected && <Check size={15}/>} 
@@ -245,34 +329,6 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                         );
                                     })}
                                 </div>
-                                {selectedFile?.repository === model.id && (() => {
-                                    const fileKey = `${selectedFile.repository}@${selectedFile.revision}/${selectedFile.filename}`;
-                                    const metadata = metadataByFile[fileKey];
-                                    if (!metadata) return (
-                                        <div className="vyact-model-analysis">
-                                            {analyzingFile === fileKey ? (
-                                                <><LoaderCircle className="vyact-model-spinner" size={15}/>{t('modelSelector.analyzingMetadata')}</>
-                                            ) : (
-                                                <>
-                                                    <span>{t('modelSelector.accurateMemoryHint')}</span>
-                                                    <button type="button" onClick={() => void calculateAccurateMemory()} disabled={busy}>
-                                                        {t('modelSelector.calculateAccurateMemory')}
-                                                    </button>
-                                                </>
-                                            )}
-                                        </div>
-                                    );
-                                    return (
-                                        <div className="vyact-model-metadata">
-                                            <span><small>{t('modelSelector.parameters')}</small><strong>{formatParameterCount(metadata.parameterCount)}</strong></span>
-                                            <span><small>{t('modelSelector.architecture')}</small><strong>{metadata.architecture}</strong></span>
-                                            <span><small>{t('modelSelector.quantization')}</small><strong>{metadata.quantization}</strong></span>
-                                            <span><small>{t('modelSelector.maxContext')}</small><strong>{formatContextLength(metadata.contextLength)}</strong></span>
-                                            <span><small>{t('modelSelector.layers')}</small><strong>{metadata.blockCount}</strong></span>
-                                            <span><small>{t('modelSelector.kvCache')}</small><strong>{formatBytes(metadata.kvCacheBytes)}</strong></span>
-                                        </div>
-                                    );
-                                })()}
                             </article>
                         ))}
                     </section>

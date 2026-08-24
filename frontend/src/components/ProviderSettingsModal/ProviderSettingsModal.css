@@ -165,8 +165,9 @@
 .provider-editor-footer button { min-width: 104px; min-height: 40px; padding: 0 16px; border-radius: 9px; cursor: pointer; font-size: var(--modal-btn); font-weight: 700; }
 .provider-editor-delete { margin-right: auto; border: 1px solid color-mix(in srgb, var(--del-fg, #ff7474) 48%, var(--border)); background: color-mix(in srgb, var(--del-fg, #ff7474) 9%, transparent); color: var(--del-fg, #ff7474); }
 .provider-editor-delete:hover { border-color: var(--del-fg, #ff7474); background: color-mix(in srgb, var(--del-fg, #ff7474) 15%, transparent); }
-.provider-editor-cancel { border: 1px solid var(--border); background: transparent; color: var(--text-secondary); }
-.provider-editor-cancel:hover { border-color: var(--muted); background: var(--surface2); }
+.provider-editor-cancel { border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--muted); font-family: inherit; font-weight: 400; transition: background .15s, color .15s; }
+.provider-editor-cancel:hover:not(:disabled) { background: var(--surface); color: var(--text); }
+.provider-editor-cancel:disabled:hover { background: transparent; color: var(--muted); }
 .provider-editor-save { border: 1px solid var(--accent); background: var(--accent); color: white; }
 .provider-editor-save:hover { opacity: .9; }
 .provider-editor-footer button:disabled { cursor: not-allowed; opacity: .5; }

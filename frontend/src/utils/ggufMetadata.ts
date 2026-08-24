@@ -72,7 +72,7 @@ export const inspectRemoteGguf = (
     }
 
     return repositoryRequest.then(metadata => {
-        const runtimeBufferBytes = Math.max(MINIMUM_RUNTIME_BUFFER_BYTES, fileSize * .05);
+        const runtimeBufferBytes = Math.ceil(Math.max(MINIMUM_RUNTIME_BUFFER_BYTES, fileSize * .05));
         return {
             ...metadata,
             quantization: getQuantization(filename),

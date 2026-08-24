@@ -685,7 +685,7 @@ async def get_vyact_model_metadata_cache(
         return {"metadata": metadata}
     except Exception as error:
         logger.warning("[vyact] Model metadata cache lookup failed: %s", error)
-        return {"metadata": None}
+        raise HTTPException(503, "모델 상세 정보 캐시를 조회할 수 없습니다.") from error
 
 
 @router.post("/vyact/models/metadata-cache")
@@ -708,7 +708,7 @@ async def save_vyact_model_metadata_cache(req: VyactModelMetadataRequest):
         return {"saved": True, "id": document_id}
     except Exception as error:
         logger.warning("[vyact] Model metadata cache save failed: %s", error)
-        return {"saved": False}
+        raise HTTPException(503, "모델 상세 정보를 저장할 수 없습니다.") from error
 
 
 @router.post("/vyact/huggingface-token")

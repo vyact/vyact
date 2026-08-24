@@ -513,7 +513,12 @@
     "searchAction": "Rechercher",
     "searching": "Recherche de modèles...",
     "noSearchResults": "Aucun modèle trouvé. Essayez un autre nom.",
-    "calculateAccurateMemory": "Calculer précisément", "accurateMemoryHint": "Lit l’en-tête GGUF et estime l’usage avec un contexte 32K.",
+    "calculateAccurateMemory": "Calculer la mémoire détaillée", "accurateMemoryHint": "Inspecte le modèle et inclut la mémoire supplémentaire requise pour les longues conversations et les documents.",
+    "conversationMemory": "Mémoire de conversation par défaut",
+    "quickEstimatedMemory": "Estimation rapide de RAM", "detailedEstimatedMemory": "Estimation détaillée de RAM", "conversationMemoryHelp": "Mémoire supplémentaire utilisée avec la longueur de conversation par défaut. Ce n’est pas la mémoire nécessaire pour exploiter tout le contexte maximal du modèle.",
+    "metadataAnalysisFailed": "Impossible de calculer ou d’enregistrer les informations détaillées du modèle.",
+    "totalEstimatedMemory": "RAM totale estimée",
+    "layersHelp": "Nombre de blocs internes qui traitent l’entrée successivement. Davantage de couches peut augmenter le calcul et la mémoire, sans déterminer à lui seul la qualité.",
     "huggingFaceTokenHelp": "La recherche n’utilise pas le jeton. Il sert à accéder aux modèles restreints, inspecter les GGUF et authentifier les téléchargements. Il est enregistré dans Elasticsearch au début d’un téléchargement et réutilisé ensuite. Il peut améliorer les limites et la fiabilité, sans garantir une vitesse supérieure.",
     "systemMemory": "RAM système", "unifiedMemory": "Mémoire unifiée", "availableMemory": "Disponible", "monthlyDownloads": "Téléchargements sur 30 jours", "estimatedMemory": "RAM estimée", "sharedOrUnknownMemory": "Mémoire partagée ou capacité inconnue", "cpuExecution": "Pas de GPU · exécution CPU/RAM", "analyzingMetadata": "Analyse des métadonnées GGUF...", "parameters": "Paramètres", "architecture": "Architecture", "quantization": "Quantification", "maxContext": "Contexte maximal", "layers": "Couches", "kvCache": "Cache KV 32K", "execution": {"unified":"Compatible avec la mémoire unifiée","gpu":"Exécution GPU possible","hybrid":"Exécution hybride GPU+RAM","cpu":"Exécution CPU/RAM possible","insufficient":"Mémoire disponible insuffisante"}
   },

@@ -513,7 +513,12 @@
     "searchAction": "検索",
     "searching": "モデルを検索しています...",
     "noSearchResults": "モデルが見つかりません。別のモデル名で検索してください。",
-    "calculateAccurateMemory": "正確に計算", "accurateMemoryHint": "GGUFヘッダーから32K基準の使用量を計算します。",
+    "calculateAccurateMemory": "詳細なメモリを計算", "accurateMemoryHint": "モデル情報を確認し、長い会話や文書の処理に必要な追加メモリまで詳しく計算します。",
+    "conversationMemory": "標準会話メモリ",
+    "quickEstimatedMemory": "簡易推定RAM", "detailedEstimatedMemory": "詳細推定RAM", "conversationMemoryHelp": "アプリの標準的な会話長で追加使用されるメモリです。モデルの最大コンテキストをすべて使用する場合の値ではありません。",
+    "metadataAnalysisFailed": "モデルの詳細情報を計算または保存できませんでした。",
+    "totalEstimatedMemory": "合計推定RAM",
+    "layersHelp": "入力を順番に処理するモデル内部ブロックの数です。多いほど計算量やメモリ使用量が増える場合がありますが、レイヤー数だけでは品質を判断できません。",
     "huggingFaceTokenHelp": "モデル検索ではトークンを使用しません。制限付きモデルへのアクセス、GGUFの確認、ダウンロードの認証に使用します。ダウンロード開始時にElasticsearchへ保存され、次回以降も再利用されます。リクエスト上限や安定性が改善する場合がありますが、速度向上は保証されません。",
     "systemMemory": "システムRAM", "unifiedMemory": "ユニファイドメモリ", "availableMemory": "使用可能", "monthlyDownloads": "過去30日のダウンロード", "estimatedMemory": "推定RAM", "sharedOrUnknownMemory": "共有メモリまたは容量不明", "cpuExecution": "GPUなし · CPU/RAM実行", "analyzingMetadata": "GGUFメタデータを解析中...", "parameters": "パラメータ", "architecture": "アーキテクチャ", "quantization": "量子化", "maxContext": "最大コンテキスト", "layers": "レイヤー", "kvCache": "32K KVキャッシュ", "execution": {"unified":"ユニファイドメモリで実行可能","gpu":"GPUで実行可能","hybrid":"GPU+RAMハイブリッド実行","cpu":"CPU/RAMで実行可能","insufficient":"使用可能なメモリが不足しています"}
   },

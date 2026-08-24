@@ -513,7 +513,12 @@
     "searchAction": "Search",
     "searching": "Searching for models...",
     "noSearchResults": "No models found. Try a different model name.",
-    "calculateAccurateMemory": "Calculate accurately", "accurateMemoryHint": "Reads the GGUF header to estimate usage at 32K context.",
+    "calculateAccurateMemory": "Calculate detailed memory", "accurateMemoryHint": "Inspects the model and includes the extra memory needed to handle long conversations and documents.",
+    "conversationMemory": "Default conversation memory",
+    "quickEstimatedMemory": "Quick RAM estimate", "detailedEstimatedMemory": "Detailed RAM estimate", "conversationMemoryHelp": "Extra memory used at the app's default conversation length. This is not the amount required to use the model's full maximum context.",
+    "metadataAnalysisFailed": "Could not calculate or save the detailed model information.",
+    "totalEstimatedMemory": "Total estimated RAM",
+    "layersHelp": "The number of internal blocks that process input in sequence. More layers can increase computation and memory use, but layer count alone does not determine model quality.",
     "huggingFaceTokenHelp": "Model search does not use your token. It authenticates gated-model access, GGUF inspection, and downloads. It is saved to Elasticsearch when a download starts and reused for later downloads. Authentication can improve rate limits and reliability, but faster downloads are not guaranteed.",
     "systemMemory": "System RAM", "unifiedMemory": "Unified memory", "availableMemory": "Available", "monthlyDownloads": "30-day downloads", "estimatedMemory": "Est. RAM", "sharedOrUnknownMemory": "Shared memory or capacity unavailable", "cpuExecution": "No GPU · CPU/RAM execution", "analyzingMetadata": "Analyzing GGUF metadata...", "parameters": "Parameters", "architecture": "Architecture", "quantization": "Quantization", "maxContext": "Max context", "layers": "Layers", "kvCache": "32K KV cache", "execution": {"unified":"Fits unified memory","gpu":"GPU execution available","hybrid":"GPU+RAM hybrid execution","cpu":"CPU/RAM execution available","insufficient":"Not enough available memory"}
   },
