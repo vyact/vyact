@@ -130,6 +130,7 @@ export interface VyactHubModel {
     files: string[];
     file_sizes: Record<string, number>;
     mtp_supported_files: string[];
+    quantization?: string;
     mtp_model?: {repository: string; revision: string; size: number};
 }
 

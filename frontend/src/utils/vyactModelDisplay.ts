@@ -1,4 +1,4 @@
-import type {VyactHardwareInfo} from '../services/api';
+import type {VyactHardwareInfo, VyactHubModel} from '../services/api';
 
 export const MODEL_MEMORY_OVERHEAD_RATIO = 1.2;
 
@@ -14,6 +14,13 @@ export const formatCompactDownloads = (downloads: number) => {
     if (downloads >= 1_000_000) return compact(downloads / 1_000_000, 'm');
     if (downloads >= 1_000) return compact(downloads / 1_000, 'k');
     return String(downloads);
+};
+
+export const getModelQuantization = (model: VyactHubModel, filename: string) => {
+    if (model.runtime === 'mlx') return model.quantization || '';
+    const basename = filename.split('/').pop() || filename;
+    const match = basename.match(/(?:UD-)?(IQ\d_[A-Z0-9_]+|Q\d(?:_[A-Z0-9]+)+|MXFP4(?:_[A-Z0-9]+)*|BF16|F16|F32)\.gguf$/i);
+    return match?.[1]?.toUpperCase() || '';
 };
 
 export const getSelectableModelFiles = (files: string[]) => files

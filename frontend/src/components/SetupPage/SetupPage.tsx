@@ -13,6 +13,7 @@ import {
     formatCompactDownloads,
     formatModelBytes,
     getModelMemoryTone,
+    getModelQuantization,
     getSelectableModelFiles,
     MODEL_MEMORY_OVERHEAD_RATIO,
 } from '../../utils/vyactModelDisplay';
@@ -436,7 +437,8 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                                                 ) * MODEL_MEMORY_OVERHEAD_RATIO;
                                                 const supportsMtp = model.mtp_supported_files?.includes(file) || mtpSupportedModels.includes(`${model.id}/${file}`);
                                                 const displayName = model.runtime === 'mlx' ? model.id.split('/').pop() : file;
-                                                return <button className={`${selectedModel === modelPath ? 'is-selected ' : ''}memory-${getModelMemoryTone(estimatedMemory, vyactHardware)}`} key={file} type="button" onClick={event => { event.stopPropagation(); selectHubModelFile(model, file); }}><span className="vyact-model-file-name">{model.runtime === 'mlx' && <span className="vyact-mtp-badge">{t('main:modelSelector.mlxRuntime')}</span>}{supportsMtp && <span className="vyact-mtp-badge">MTP</span>}<span>{displayName}</span></span>{fileSize > 0 && <small>{formatModelBytes(fileSize)} · {t('main:modelSelector.estimatedMemory')} {formatModelBytes(estimatedMemory)}</small>}<span className="vyact-model-file-status">{selectedModel === modelPath && <Check size={15}/>}</span></button>;
+                                                const quantization = getModelQuantization(model, file);
+                                                return <button className={`${selectedModel === modelPath ? 'is-selected ' : ''}memory-${getModelMemoryTone(estimatedMemory, vyactHardware)}`} key={file} type="button" onClick={event => { event.stopPropagation(); selectHubModelFile(model, file); }}><span className="vyact-model-file-name">{model.runtime === 'mlx' && <span className="vyact-mtp-badge">{t('main:modelSelector.mlxRuntime')}</span>}{supportsMtp && <span className="vyact-mtp-badge">MTP</span>}<span>{displayName}</span></span>{fileSize > 0 && <small className="vyact-model-file-meta">{formatModelBytes(fileSize)} · {t('main:modelSelector.estimatedMemory')} {formatModelBytes(estimatedMemory)}{quantization && <span className="vyact-mtp-badge">{quantization}</span>}</small>}<span className="vyact-model-file-status">{selectedModel === modelPath && <Check size={15}/>}</span></button>;
                                             })}</div>
                                         </article>;
                                     })}

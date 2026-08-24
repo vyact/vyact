@@ -7,6 +7,7 @@ import {
     formatCompactDownloads,
     formatModelBytes,
     getModelMemoryTone,
+    getModelQuantization,
     getSelectableModelFiles,
     MODEL_MEMORY_OVERHEAD_RATIO,
 } from '../../utils/vyactModelDisplay';
@@ -406,6 +407,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                         );
                                         const supportsMtp = model.mtp_supported_files?.includes(filename)
                                             || mtpSupportedModels.includes(`${model.id}/${filename}`);
+                                        const quantization = getModelQuantization(model, filename);
                                         return (
                                             <button type="button" className={`${isSelected ? 'is-selected ' : ''}memory-${memoryTone}`} key={filename} onClick={() => void selectModelFile(model, filename, fileSize)} disabled={busy}>
                                                 <span className="vyact-model-file-name">
@@ -413,7 +415,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                                     {supportsMtp && <span className="vyact-mtp-badge">MTP</span>}
                                                     <span>{model.runtime === 'mlx' ? model.id.split('/').pop() : filename}</span>
                                                 </span>
-                                                {fileSize > 0 && <small>{formatBytes(fileSize)} · {t('modelSelector.estimatedMemory')} {formatBytes(estimatedMemory)}</small>}
+                                                {fileSize > 0 && <small className="vyact-model-file-meta">{formatBytes(fileSize)} · {t('modelSelector.estimatedMemory')} {formatBytes(estimatedMemory)}{quantization && <span className="vyact-mtp-badge">{quantization}</span>}</small>}
                                                 <span className="vyact-model-file-status">
                                                     {isInstalled && <span className="vyact-model-installed">{t('modelSelector.installed')}</span>}
                                                     {analyzingFile === fileKey ? <LoaderCircle className="vyact-model-spinner" size={15}/> : isSelected && <Check size={15}/>}

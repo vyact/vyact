@@ -6,6 +6,7 @@ from unittest.mock import patch
 from services.huggingface_models import (
     RECOMMENDED_GGUF_REPOSITORIES,
     _mlx_model_from_hub_item,
+    _mlx_quantization_label,
     _merge_search_and_detail,
     _mlx_metadata_from_config,
     _model_from_hub_item,
@@ -121,11 +122,33 @@ class HuggingFaceModelTests(unittest.TestCase):
                 {"rfilename": "model-00002-of-00002.safetensors", "lfs": {"size": 2_000}},
                 {"rfilename": "README.md", "size": 5_000},
             ],
-        })
+        }, {"quantization": {"group_size": 64, "bits": 4, "mode": "affine"}})
 
         self.assertEqual(model["runtime"], "mlx")
         self.assertEqual(model["files"], ["__mlx_repository__"])
         self.assertEqual(model["file_sizes"], {"__mlx_repository__": 3_200})
+        self.assertEqual(model["quantization"], "4-bit")
+
+    def test_reads_mlx_quantization_from_nested_text_config(self):
+        label = _mlx_quantization_label({
+            "text_config": {"quantization_config": {"weight_bits": 8}},
+        })
+
+        self.assertEqual(label, "8-bit")
+
+    def test_reads_mlx_dtype_when_weights_are_not_quantized(self):
+        self.assertEqual(_mlx_quantization_label({"dtype": "bfloat16"}), "BF16")
+
+    def test_prefers_mlx_quantization_algorithm_over_storage_dtype(self):
+        label = _mlx_quantization_label({
+            "dtype": "bfloat16",
+            "quantization_config": {
+                "quant_method": "modelopt",
+                "quantization": {"quant_algo": "NVFP4"},
+            },
+        })
+
+        self.assertEqual(label, "NVFP4")
 
     def test_hub_item_marks_files_with_a_matching_mtp_sidecar(self):
         model = _model_from_hub_item({

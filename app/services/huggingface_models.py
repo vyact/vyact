@@ -10,6 +10,7 @@ import httpx
 from services.vyact_runtime import VYACT_MODELS_DIR, cache_downloaded_model
 
 HF_API_URL = "https://huggingface.co/api"
+HF_BASE_URL = "https://huggingface.co"
 RECOMMENDED_GGUF_REPOSITORIES = (
     "unsloth/Qwen3.5-4B-GGUF",
     "unsloth/Qwen3.5-9B-GGUF",
@@ -77,13 +78,15 @@ async def search_mlx_models(query: str, token: str | None = None, limit: int = 2
             if isinstance(item, dict) and _REPO_ID_PATTERN.fullmatch(str(item.get("id", "")))
         ]
         detailed_items = await _fetch_model_details(client, repository_ids, token)
-    models = [
-        model for item in search_items
-        if isinstance(item, dict)
-        and "-mtp-" not in str(item.get("id", "")).lower()
-        and (model := _mlx_model_from_hub_item(
+        merged_items = [
             _merge_search_and_detail(item, detailed_items.get(str(item.get("id", ""))))
-        ))
+            for item in search_items if isinstance(item, dict)
+        ]
+        configs = await _fetch_mlx_configs(client, merged_items, token)
+    models = [
+        model for item in merged_items
+        if "-mtp-" not in str(item.get("id", "")).lower()
+        and (model := _mlx_model_from_hub_item(item, configs.get(str(item.get("id", "")))))
     ]
     try:
         mtp_candidates = await _search_mlx_mtp_models(query, token)
@@ -176,6 +179,35 @@ async def _fetch_model_details(
     }
 
 
+async def _fetch_mlx_configs(
+        client: httpx.AsyncClient, items: list[dict], token: str | None = None,
+) -> dict[str, dict]:
+    repositories = [
+        (str(item.get("id", "")), str(item.get("sha") or "main"))
+        for item in items
+        if _REPO_ID_PATTERN.fullmatch(str(item.get("id", "")))
+    ]
+    responses = await asyncio.gather(*(
+        client.get(
+            f"{HF_BASE_URL}/{quote(repository, safe='/')}/resolve/{quote(revision, safe='')}/config.json",
+            headers=_headers(token),
+            follow_redirects=True,
+        )
+        for repository, revision in repositories
+    ), return_exceptions=True)
+    configs = {}
+    for (repository, _), response in zip(repositories, responses):
+        if isinstance(response, Exception) or not response.is_success:
+            continue
+        try:
+            config = response.json()
+        except ValueError:
+            continue
+        if isinstance(config, dict):
+            configs[repository] = config
+    return configs
+
+
 def _merge_search_and_detail(search_item: dict, detailed_item: dict | None) -> dict:
     if not detailed_item:
         return search_item
@@ -186,7 +218,46 @@ def _merge_search_and_detail(search_item: dict, detailed_item: dict | None) -> d
     }
 
 
-def _mlx_model_from_hub_item(item: dict) -> dict | None:
+def _mlx_quantization_label(config: dict) -> str:
+    text_config = config.get("text_config") if isinstance(config.get("text_config"), dict) else {}
+    for model_config in (text_config, config):
+        for key in ("quantization_config", "quantization"):
+            quantization = model_config.get(key)
+            if not isinstance(quantization, dict):
+                continue
+            algorithms = [
+                str(value).upper()
+                for value_key, value in _walk_dict_values(quantization)
+                if value_key in {"quant_algo", "quantization_method"} and isinstance(value, str)
+            ]
+            for algorithm in ("NVFP4", "MXFP8", "FP8", "GPTQ", "AWQ"):
+                if any(algorithm in value for value in algorithms):
+                    return algorithm
+            bits = quantization.get("bits") or quantization.get("weight_bits")
+            if not bits:
+                bits = next((
+                    value for value_key, value in _walk_dict_values(quantization)
+                    if value_key == "num_bits" and isinstance(value, (int, float)) and value > 0
+                ), 0)
+            if isinstance(bits, (int, float)) and bits > 0:
+                return f"{int(bits)}-bit"
+    dtype = str(text_config.get("dtype") or config.get("dtype") or "").lower()
+    return {
+        "bfloat16": "BF16",
+        "float16": "FP16",
+        "float32": "FP32",
+        "float8": "FP8",
+    }.get(dtype, "")
+
+
+def _walk_dict_values(value: dict):
+    for key, child in value.items():
+        yield key, child
+        if isinstance(child, dict):
+            yield from _walk_dict_values(child)
+
+
+def _mlx_model_from_hub_item(item: dict, config: dict | None = None) -> dict | None:
     repo_id = str(item.get("id", ""))
     if not _REPO_ID_PATTERN.fullmatch(repo_id):
         return None
@@ -208,6 +279,7 @@ def _mlx_model_from_hub_item(item: dict) -> dict | None:
         "files": [MLX_REPOSITORY_FILE],
         "file_sizes": {MLX_REPOSITORY_FILE: size},
         "mtp_supported_files": [],
+        "quantization": _mlx_quantization_label(config or {}),
     }
 
 
@@ -268,7 +340,7 @@ def _mlx_metadata_from_config(config: dict, file_size: int, context_size: int) -
         "parameter_count": 0,
         "context_length": model_context,
         "block_count": block_count,
-        "quantization": "MLX",
+        "quantization": _mlx_quantization_label(config) or "MLX",
         "kv_cache_bytes": kv_cache_bytes,
         "runtime_buffer_bytes": runtime_buffer_bytes,
         "estimated_memory_bytes": file_size + kv_cache_bytes + runtime_buffer_bytes,
