@@ -11,6 +11,7 @@ import {
     MODEL_MEMORY_OVERHEAD_RATIO,
 } from '../../utils/vyactModelDisplay';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
+import OverflowTooltipText from '../common/OverflowTooltipText/OverflowTooltipText';
 import {Tooltip} from '../common/Tooltip/Tooltip';
 import '../ProviderSettingsModal/ProviderSettingsModal.css';
 import './VyactModelModal.css';
@@ -384,7 +385,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                             const selectableFiles = getSelectableModelFiles(model.files);
                             return <article className={`vyact-model-card${selectableFiles.length === 1 ? ' is-compact' : ''}`} key={model.id}>
                                 <div className="vyact-model-card-heading">
-                                    <strong>{model.id}</strong><span>{formatCompactDownloads(model.downloads)}</span>
+                                    <OverflowTooltipText text={model.id}/><span>{formatCompactDownloads(model.downloads)}</span>
                                 </div>
                                 <div className="vyact-model-files">
                                     {selectableFiles.map(filename => {

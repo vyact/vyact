@@ -8,6 +8,7 @@ import CustomSelect from '../CustomSelect/CustomSelect';
 import {CUSTOM_PROTOCOL_OPTIONS, OPENAI_COMPATIBLE_DOCS_URL} from '../../constants/customProviders';
 import {api, type VyactHardwareInfo, type VyactHubModel} from '../../services/api';
 import {Tooltip} from '../common/Tooltip/Tooltip';
+import OverflowTooltipText from '../common/OverflowTooltipText/OverflowTooltipText';
 import {
     formatCompactDownloads,
     formatModelBytes,
@@ -426,7 +427,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                                             key={`${model.runtime}-${model.id}`}
                                             onClick={() => onlyFile && selectHubModelFile(model, onlyFile)}
                                         >
-                                            <div className="vyact-model-card-heading"><strong title={model.id}>{model.id}</strong><span>{formatCompactDownloads(model.downloads)}</span></div>
+                                            <div className="vyact-model-card-heading"><OverflowTooltipText text={model.id}/><span>{formatCompactDownloads(model.downloads)}</span></div>
                                             <div className="vyact-model-files">{selectableFiles.map(file => {
                                                 const modelPath = model.runtime === 'mlx' ? `mlx/${model.id}` : `${model.id}/${file}`;
                                                 const fileSize = model.file_sizes?.[file] || 0;
