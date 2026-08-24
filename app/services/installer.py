@@ -8,6 +8,7 @@ import re
 import shutil
 import sys
 from pathlib import Path
+from typing import AsyncGenerator
 
 from logger import get_logger
 
