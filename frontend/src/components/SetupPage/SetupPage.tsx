@@ -1,13 +1,22 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {Eye, EyeOff, ExternalLink, Plus} from 'lucide-react';
+import {Check, Eye, EyeOff, ExternalLink, LoaderCircle, Plus, Search} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { LogEntry } from '../../types';
 import { syncPendingLanguageAfterSetup } from '../../i18n';
 import EsModeSelector from './EsModeSelector';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import {CUSTOM_PROTOCOL_OPTIONS, OPENAI_COMPATIBLE_DOCS_URL} from '../../constants/customProviders';
-import {api, type VyactHubModel} from '../../services/api';
+import {api, type VyactHardwareInfo, type VyactHubModel} from '../../services/api';
+import {Tooltip} from '../common/Tooltip/Tooltip';
+import {
+    formatCompactDownloads,
+    formatModelBytes,
+    getModelMemoryTone,
+    getSelectableModelFiles,
+    MODEL_MEMORY_OVERHEAD_RATIO,
+} from '../../utils/vyactModelDisplay';
 import './SetupPage.css';
+import '../VyactModelModal/VyactModelModal.css';
 
 interface SetupPageProps {
     onInstallComplete: () => void;
@@ -15,11 +24,25 @@ interface SetupPageProps {
 
 type Provider = 'vyact' | 'openai' | 'gemini' | 'claude' | 'custom';
 type CustomProtocol = 'openai-compatible';
+type SelectedHubModelFile = {
+    repository: string;
+    filename: string;
+    revision: string;
+    runtime: 'gguf' | 'mlx';
+    modelPath: string;
+};
 
 const DEFAULT_MODELS: Record<Exclude<Provider, 'vyact' | 'custom'>, string> = {
     openai: 'gpt-4o-mini',
     gemini: 'gemini-3.1-flash-lite-preview',
     claude: 'claude-3-5-sonnet',
+};
+
+const DEFAULT_VYACT_MODEL_QUERY = 'qwen3.5';
+const EMPTY_HARDWARE_INFO: VyactHardwareInfo = {
+    platform: '', apple_silicon: false, memory_mode: 'system',
+    system_memory: {total_bytes: 0, available_bytes: 0},
+    gpus: [],
 };
 
 const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
@@ -30,12 +53,15 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
     const [dockerAvailable, setDockerAvailable] = useState<boolean | null>(null);
     const [nativeSupported, setNativeSupported] = useState<boolean | null>(null);
     const [selectedModel, setSelectedModel] = useState<string>('');
+    const [selectedHubModelFile, setSelectedHubModelFile] = useState<SelectedHubModelFile | null>(null);
     const [apiKey, setApiKey] = useState<string>('');
     const [huggingFaceToken, setHuggingFaceToken] = useState<string>('');
-    const [huggingFaceQuery, setHuggingFaceQuery] = useState('');
+    const [huggingFaceQuery, setHuggingFaceQuery] = useState(DEFAULT_VYACT_MODEL_QUERY);
     const [huggingFaceModels, setHuggingFaceModels] = useState<VyactHubModel[]>([]);
+    const [vyactHardware, setVyactHardware] = useState<VyactHardwareInfo>(EMPTY_HARDWARE_INFO);
+    const [mtpSupportedModels, setMtpSupportedModels] = useState<string[]>([]);
+    const [mlxOnly, setMlxOnly] = useState(true);
     const [isSearchingHub, setIsSearchingHub] = useState(false);
-    const [downloadingHubFile, setDownloadingHubFile] = useState('');
     const [isApiKeyVisible, setIsApiKeyVisible] = useState(false);
     const [connectionName, setConnectionName] = useState<string>('');
     const [baseUrl, setBaseUrl] = useState<string>('');
@@ -58,7 +84,43 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
     const logRef = useRef<HTMLDivElement>(null);
     const shouldFollowLogTailRef = useRef(true);
 
+    const searchVyactModels = async (query: string, searchMlxOnly = mlxOnly) => {
+        const trimmedQuery = query.trim();
+        if (!trimmedQuery) return;
+        setIsSearchingHub(true);
+        setSelectedModel('');
+        setSelectedHubModelFile(null);
+        try {
+            let response = await api.searchVyactModels(trimmedQuery, searchMlxOnly);
+            // 최초에는 하드웨어 정보를 알 수 없으므로 GGUF 검색으로 확인한 뒤,
+            // Apple Silicon이면 기존 Vyact 모달과 같이 MLX를 기본으로 보여준다.
+            if (searchMlxOnly && response.hardware.apple_silicon && response.models.some(model => model.runtime !== 'mlx')) {
+                response = await api.searchVyactModels(trimmedQuery, true);
+            }
+            setHuggingFaceModels(response.models);
+            setVyactHardware(response.hardware);
+            setMtpSupportedModels(response.mtp_supported);
+        } catch (error) {
+            console.error('Failed to search Hugging Face models:', error);
+            setHuggingFaceModels([]);
+        } finally {
+            setIsSearchingHub(false);
+        }
+    };
+
     const isCloud = provider !== 'vyact';
+
+    const selectHubModelFile = (model: VyactHubModel, filename: string) => {
+        const modelPath = model.runtime === 'mlx' ? `mlx/${model.id}` : `${model.id}/${filename}`;
+        setSelectedModel(modelPath);
+        setSelectedHubModelFile({
+            repository: model.id,
+            filename,
+            revision: model.revision,
+            runtime: model.runtime,
+            modelPath,
+        });
+    };
 
     // 시스템 상태 조회 — Docker 설치 여부/네이티브 지원 여부에 따라 ES 방식 선택지 제어
     useEffect(() => {
@@ -81,6 +143,12 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
             });
     }, []);
 
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        void searchVyactModels(DEFAULT_VYACT_MODEL_QUERY);
+        // 최초 설치 화면에서는 Qwen 3.5 후보를 한 번만 자동 조회한다.
+    }, []);
+
     // 사용자가 이전 로그를 읽는 동안에는 자동 스크롤을 멈춘다.
     useEffect(() => {
         if (logRef.current && shouldFollowLogTailRef.current) {
@@ -97,9 +165,11 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
     useEffect(() => {
         if (provider === 'vyact') {
             setSelectedModel('');
+            setSelectedHubModelFile(null);
             setApiKey('');
         } else if (provider === 'custom') {
             setSelectedModel('');
+            setSelectedHubModelFile(null);
             setApiKey('');
             setConnectionName('');
             setBaseUrl('');
@@ -162,7 +232,13 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                     ? {
                         type: 'vyact',
                         model: selectedModel,
-                        config: {es_mode: esMode, model_path: selectedModel},
+                        config: {
+                            es_mode: esMode,
+                            model_path: selectedModel,
+                            runtime: selectedModel.startsWith('mlx/') ? 'mlx' : 'gguf',
+                            repository: selectedModel.startsWith('mlx/') ? selectedModel.slice(4) : selectedModel.split('/').slice(0, 2).join('/'),
+                            huggingface_token: huggingFaceToken.trim(),
+                        },
                     }
                 : provider === 'custom'
                     ? {
@@ -179,6 +255,21 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                 };
 
         try {
+            if (provider === 'vyact' && selectedHubModelFile) {
+                addLog('info', t('main:modelDownload.downloading'));
+                await api.streamVyactModelDownload(
+                    selectedHubModelFile.repository,
+                    selectedHubModelFile.filename,
+                    (message, downloadProgress) => {
+                        addLog('log', message);
+                        if (downloadProgress != null) setProgress(downloadProgress);
+                    },
+                    selectedHubModelFile.revision,
+                    selectedHubModelFile.runtime,
+                    huggingFaceToken,
+                );
+            }
+
             const response = await fetch('/api/setup/install', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -310,11 +401,31 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                     <>
                         {provider === 'vyact' && (
                             <section className="setup-connection-panel">
-                                <div className="setup-connection-heading"><div><strong>Vyact</strong><span>{t('localExec')}</span></div></div>
-                                <label className="setup-field"><span>{t('apiKey')}</span><div className="setup-secret-field"><input className="input" type={isApiKeyVisible ? 'text' : 'password'} placeholder={t('apiKey')} value={huggingFaceToken} onChange={event => setHuggingFaceToken(event.target.value)} onBlur={() => huggingFaceToken.trim() && api.saveVyactHuggingFaceToken(huggingFaceToken.trim()).catch(error => console.error('Failed to save Hugging Face token:', error))}/><button type="button" onClick={() => setIsApiKeyVisible(current => !current)} aria-label={t(isApiKeyVisible ? 'main:customProvider.hideApiKey' : 'main:customProvider.showApiKey')}>{isApiKeyVisible ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div></label>
-                                <div className="setup-field"><span>{t('main:modelSelector.modelSearch')}</span><div className="setup-hub-search"><input className="input" value={huggingFaceQuery} onChange={event => setHuggingFaceQuery(event.target.value)} onKeyDown={async event => { if (event.key !== 'Enter' || !huggingFaceQuery.trim()) return; setIsSearchingHub(true); try { setHuggingFaceModels((await api.searchVyactModels(huggingFaceQuery)).models); } finally { setIsSearchingHub(false); } }} placeholder={t('main:modelSelector.modelSearch')}/><button type="button" disabled={isSearchingHub || !huggingFaceQuery.trim()} onClick={async () => { setIsSearchingHub(true); try { setHuggingFaceModels((await api.searchVyactModels(huggingFaceQuery)).models); } finally { setIsSearchingHub(false); } }}>{isSearchingHub ? '…' : t('main:modelSelector.add')}</button></div></div>
-                                {huggingFaceModels.map(model => <div className="setup-hub-result" key={model.id}><strong>{model.id}</strong>{model.files.map(file => { const fileKey = `${model.id}/${file}`; return <button key={file} type="button" disabled={!!downloadingHubFile} onClick={async () => { setDownloadingHubFile(fileKey); try { await api.streamVyactModelDownload(model.id, file, () => undefined); setSelectedModel(fileKey); } finally { setDownloadingHubFile(''); } }}>{downloadingHubFile === fileKey ? t('main:modelDownload.downloading') : file}</button>; })}</div>)}
-                                <label className="setup-field"><span>{t('modelId')}</span><input className="input" placeholder={t('modelIdPlaceholder')} value={selectedModel} onChange={event => setSelectedModel(event.target.value)}/></label>
+                                <label className="setup-field"><span><Tooltip content={t('main:modelSelector.huggingFaceTokenHelp')} multiline large><i className="vyact-token-help" tabIndex={0}>?</i></Tooltip>{t('apiKey')}</span><div className="setup-secret-field"><input className="input" type={isApiKeyVisible ? 'text' : 'password'} placeholder={t('apiKey')} value={huggingFaceToken} onChange={event => setHuggingFaceToken(event.target.value)} onBlur={() => huggingFaceToken.trim() && api.saveVyactHuggingFaceToken(huggingFaceToken.trim()).catch(error => console.error('Failed to save Hugging Face token:', error))}/><button type="button" onClick={() => setIsApiKeyVisible(current => !current)} aria-label={t(isApiKeyVisible ? 'main:customProvider.hideApiKey' : 'main:customProvider.showApiKey')}>{isApiKeyVisible ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div></label>
+                                <div className="setup-field"><span className="vyact-search-label"><span><Search size={14}/>{t('main:modelSelector.searchLabel')}</span>{vyactHardware.apple_silicon && <button type="button" className={`vyact-mlx-switch${mlxOnly ? ' is-on' : ''}`} role="switch" aria-checked={mlxOnly} disabled={isSearchingHub} onClick={() => { const nextValue = !mlxOnly; setMlxOnly(nextValue); void searchVyactModels(huggingFaceQuery, nextValue); }}><span aria-hidden="true"><i/></span>{t('main:modelSelector.mlxOnly')}</button>}</span><div className="setup-hub-search"><input className="input" value={huggingFaceQuery} onChange={event => setHuggingFaceQuery(event.target.value)} onKeyDown={event => event.key === 'Enter' && void searchVyactModels(huggingFaceQuery)} placeholder={t('main:modelSelector.modelSearch')}/><button type="button" disabled={isSearchingHub || !huggingFaceQuery.trim()} onClick={() => void searchVyactModels(huggingFaceQuery)}>{isSearchingHub ? <LoaderCircle className="vyact-model-spinner" size={16}/> : <Search size={16}/>}<span>{t('main:modelSelector.searchAction')}</span></button></div></div>
+                                <div className="setup-hub-results" aria-busy={isSearchingHub}>
+                                    {isSearchingHub && <div className="vyact-model-empty"><LoaderCircle className="vyact-model-spinner" size={22}/><span>{t('main:modelSelector.searching')}</span></div>}
+                                    {!isSearchingHub && huggingFaceModels.map(model => {
+                                        const selectableFiles = getSelectableModelFiles(model.files);
+                                        const onlyFile = selectableFiles.length === 1 ? selectableFiles[0] : null;
+                                        const onlyModelPath = onlyFile ? (model.runtime === 'mlx' ? `mlx/${model.id}` : `${model.id}/${onlyFile}`) : '';
+                                        return <article
+                                            className={`vyact-model-card${selectedModel === onlyModelPath ? ' is-selected' : ''}${onlyFile ? ' is-clickable' : ''}`}
+                                            key={`${model.runtime}-${model.id}`}
+                                            onClick={() => onlyFile && selectHubModelFile(model, onlyFile)}
+                                        >
+                                            <div className="vyact-model-card-heading"><strong title={model.id}>{model.id}</strong><span>{formatCompactDownloads(model.downloads)}</span></div>
+                                            <div className="vyact-model-files">{selectableFiles.map(file => {
+                                                const modelPath = model.runtime === 'mlx' ? `mlx/${model.id}` : `${model.id}/${file}`;
+                                                const fileSize = model.file_sizes?.[file] || 0;
+                                                const estimatedMemory = fileSize * MODEL_MEMORY_OVERHEAD_RATIO;
+                                                const supportsMtp = model.mtp_supported_files?.includes(file) || mtpSupportedModels.includes(`${model.id}/${file}`);
+                                                const displayName = model.runtime === 'mlx' ? model.id.split('/').pop() : file;
+                                                return <button className={`${selectedModel === modelPath ? 'is-selected ' : ''}memory-${getModelMemoryTone(estimatedMemory, vyactHardware)}`} key={file} type="button" onClick={event => { event.stopPropagation(); selectHubModelFile(model, file); }}><span className="vyact-model-file-name">{model.runtime === 'mlx' ? <span className="vyact-mtp-badge">{t('main:modelSelector.mlxRuntime')}</span> : supportsMtp && <span className="vyact-mtp-badge">MTP</span>}<span>{displayName}</span></span>{fileSize > 0 && <small>{formatModelBytes(fileSize)} · {t('main:modelSelector.estimatedMemory')} {formatModelBytes(estimatedMemory)}</small>}<span className="vyact-model-file-status">{selectedModel === modelPath && <Check size={15}/>}</span></button>;
+                                            })}</div>
+                                        </article>;
+                                    })}
+                                </div>
                             </section>
                         )}
 

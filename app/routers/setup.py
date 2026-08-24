@@ -80,6 +80,7 @@ class HuggingFaceDownloadRequest(BaseModel):
     filename: str = Field(min_length=6, max_length=1024)
     revision: str = Field(default="main", min_length=1, max_length=128)
     runtime: str = Field(default="gguf", pattern="^(gguf|mlx)$")
+    token: str | None = Field(default=None, max_length=2048)
 
 
 class VyactModelActivateRequest(BaseModel):
@@ -309,6 +310,7 @@ async def install(req: ModelSelectRequest):
                 return
             existing_config = await load_config_async()
             vyact_config = existing_config.get("vyact_config", {})
+            huggingface_token = str(request_config.get("huggingface_token", "")).strip()
             cfg = {
                 "type": "vyact",
                 "model": req.model,
@@ -319,6 +321,7 @@ async def install(req: ModelSelectRequest):
                     "model_path": request_config.get("model_path", vyact_config.get("model_path", "")),
                     "runtime": request_config.get("runtime", vyact_config.get("runtime", "gguf")),
                     "repository": request_config.get("repository", vyact_config.get("repository")),
+                    **({"huggingface_token": huggingface_token} if huggingface_token else {}),
                 },
                 "config": persisted_setup_config,
             }
@@ -624,7 +627,7 @@ async def download_vyact_model(req: HuggingFaceDownloadRequest):
             from services.mlx_runtime import download_mlx_model
 
             config = await load_config_async()
-            token = config.get("vyact_config", {}).get("huggingface_token")
+            token = (req.token or "").strip() or config.get("vyact_config", {}).get("huggingface_token")
             yield sse(f"Downloading MLX {req.repository}", "log", None)
             try:
                 await asyncio.to_thread(download_mlx_model, req.repository, req.revision, token)
@@ -638,7 +641,7 @@ async def download_vyact_model(req: HuggingFaceDownloadRequest):
         from services.huggingface_models import download_gguf_model, find_mtp_sidecar, find_vision_projector
 
         config = await load_config_async()
-        token = config.get("vyact_config", {}).get("huggingface_token")
+        token = (req.token or "").strip() or config.get("vyact_config", {}).get("huggingface_token")
         try:
             mtp_sidecar = await find_mtp_sidecar(req.repository, req.filename, token)
         except Exception as error:

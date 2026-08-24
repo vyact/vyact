@@ -353,11 +353,11 @@ export const api = {
 
     async streamVyactModelDownload(
         repository: string, filename: string, onProgress: (message: string, progress?: number) => void,
-        revision = 'main', runtime: 'gguf' | 'mlx' = 'gguf',
+        revision = 'main', runtime: 'gguf' | 'mlx' = 'gguf', token = '',
     ): Promise<void> {
         const response = await fetch(`${API_BASE}/vyact/models/download`, {
             method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({repository, filename, revision, runtime}),
+            body: JSON.stringify({repository, filename, revision, runtime, token: token.trim() || undefined}),
         });
         if (!response.body) return;
         const reader = response.body.getReader();

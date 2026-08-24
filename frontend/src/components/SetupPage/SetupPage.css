@@ -180,13 +180,20 @@
     background: color-mix(in srgb, var(--surface2) 58%, var(--bg));
 }
 
-.setup-hub-search { display: flex; gap: 8px; }
-.setup-hub-search button, .setup-hub-result button { border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); color: var(--text); cursor: pointer; }
-.setup-hub-search button { padding: 0 12px; white-space: nowrap; }
-.setup-hub-search button:disabled, .setup-hub-result button:disabled { cursor: wait; opacity: .55; }
-.setup-hub-result { display: grid; gap: 6px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
-.setup-hub-result strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
-.setup-hub-result button { padding: 7px 9px; text-align: left; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.setup-hub-search { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.setup-hub-search button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 88px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); color: var(--text); cursor: pointer; white-space: nowrap; }
+.setup-hub-search button:disabled { cursor: wait; opacity: .55; }
+.setup-hub-results { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: max-content; align-content: start; align-items: start; gap: 10px; max-width: 100%; max-height: 340px; padding-right: 3px; overflow-x: hidden; overflow-y: auto; }
+.setup-hub-results > .vyact-model-card { box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; }
+.setup-hub-results > .vyact-model-card.is-clickable { cursor: pointer; }
+.setup-hub-results > .vyact-model-card.is-clickable:hover { border-color: color-mix(in srgb, var(--accent) 52%, var(--border)); }
+.setup-hub-results > .vyact-model-card.is-selected { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, var(--surface2)); }
+.setup-hub-results .vyact-model-card-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+.setup-hub-results .vyact-model-card-heading strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.setup-hub-results .vyact-model-files { grid-template-columns: minmax(0, 1fr); }
+.setup-hub-results .vyact-model-files button { box-sizing: border-box; width: 100%; min-width: 0; }
+.setup-hub-results .vyact-model-file-name > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.setup-hub-results > .vyact-model-empty { grid-column: 1 / -1; }
 
 .setup-connection-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
 .setup-connection-heading > div { display: grid; gap: 4px; min-width: 0; }
@@ -430,6 +437,7 @@
     .setup-protocol-help { align-items: flex-start; flex-direction: column; gap: 6px; }
     .setup-connection-heading { align-items: stretch; flex-direction: column; }
     .setup-protocol-badge { align-self: flex-start; }
+    .setup-hub-results { grid-template-columns: 1fr; }
 }
 
 .progress-log {

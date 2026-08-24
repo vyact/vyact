@@ -3,6 +3,12 @@ import {Calculator, Check, Eye, EyeOff, KeyRound, LoaderCircle, Search, Sparkles
 import {useTranslation} from 'react-i18next';
 import {api, type VyactHardwareInfo, type VyactHubModel} from '../../services/api';
 import {inspectRemoteGguf, type GgufModelMetadata} from '../../utils/ggufMetadata';
+import {
+    formatModelBytes,
+    getModelMemoryTone,
+    getSelectableModelFiles,
+    MODEL_MEMORY_OVERHEAD_RATIO,
+} from '../../utils/vyactModelDisplay';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import {Tooltip} from '../common/Tooltip/Tooltip';
 import '../ProviderSettingsModal/ProviderSettingsModal.css';
@@ -23,54 +29,15 @@ interface SelectedModelFile {
 
 type DownloadPhase = 'runtime' | 'model' | 'mtp' | 'activation' | null;
 
-const MAX_FILES_PER_MODEL = 8;
-const MODEL_MEMORY_OVERHEAD_RATIO = 1.2;
 const EMPTY_HARDWARE_INFO: VyactHardwareInfo = {
     platform: '', apple_silicon: false, memory_mode: 'system',
     system_memory: {total_bytes: 0, available_bytes: 0},
     gpus: [],
 };
 
-const formatBytes = (bytes: number) => {
-    if (!bytes) return '—';
-    return `${(bytes / 1024 ** 3).toFixed(1)} GB`;
-};
+const formatBytes = formatModelBytes;
 
 const formatContextLength = (tokens: number) => tokens >= 1024 ? `${Math.round(tokens / 1024)}K` : String(tokens);
-
-const getSelectableModelFiles = (files: string[]) => files
-    .filter(filename => !/^BF16\//i.test(filename) && !/(^|\/)mtp-[^/]*\.gguf$/i.test(filename))
-    .filter(filename => !/(^|\/)mmproj[^/]*\.gguf$/i.test(filename))
-    .filter(filename => !/-\d{5}-of-\d{5}\.gguf$/i.test(filename))
-    .sort((left, right) => {
-        const priority = (filename: string) => {
-            if (/Q4_K_M/i.test(filename)) return 0;
-            if (/Q4_0/i.test(filename)) return 1;
-            if (/Q5_K_M/i.test(filename)) return 2;
-            if (/Q6_K/i.test(filename)) return 3;
-            if (/Q8_0/i.test(filename)) return 4;
-            return 5;
-        };
-        return priority(left) - priority(right);
-    })
-    .slice(0, MAX_FILES_PER_MODEL);
-
-type MemoryTone = 'comfortable' | 'tight' | 'over';
-
-const getTotalModelMemoryCapacity = (hardware: VyactHardwareInfo) => {
-    if (hardware.memory_mode !== 'dedicated') return hardware.system_memory.total_bytes;
-    const dedicatedVram = hardware.gpus
-        .filter(gpu => !gpu.shared_memory)
-        .reduce((total, gpu) => total + gpu.total_bytes, 0);
-    return hardware.system_memory.total_bytes + dedicatedVram;
-};
-
-const getMemoryTone = (estimatedMemory: number, hardware: VyactHardwareInfo): MemoryTone => {
-    const capacity = getTotalModelMemoryCapacity(hardware);
-    if (!capacity || estimatedMemory > capacity * .85) return 'over';
-    if (estimatedMemory > capacity * .6) return 'tight';
-    return 'comfortable';
-};
 
 export default function VyactModelModal({onClose, onSelected}: VyactModelModalProps) {
     const {t} = useTranslation('main');
@@ -406,7 +373,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                         const isSelected = selectedFile?.repository === model.id && selectedFile.filename === filename;
                                         const fileSize = model.file_sizes?.[filename] || 0;
                                         const estimatedMemory = fileSize * MODEL_MEMORY_OVERHEAD_RATIO;
-                                        const memoryTone = getMemoryTone(estimatedMemory, hardware);
+                                        const memoryTone = getModelMemoryTone(estimatedMemory, hardware);
                                         const isInstalled = installedModels.includes(
                                             model.runtime === 'mlx' ? `mlx/${model.id}` : `${model.id}/${filename}`,
                                         );
