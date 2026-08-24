@@ -54,7 +54,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
             <>
                 <div className={`mdot ${isInstalled ? 'installed' : 'not-installed'}`}/>
                 {showMtp && <span className="mtp-model-badge">MTP</span>}
-                <span className="mname" title={selectedModel || undefined}>
+                <span className="mname">
                     {selectedModel ? getModelDisplayName(selectedModel) : t('modelSelector.selectModel')}
                 </span>
                 <span className={`custom-select-arrow${open ? ' open' : ''}`}>▼</span>

@@ -27,6 +27,7 @@ class MlxRuntimeTests(unittest.TestCase):
 
         self.assertEqual(environment["APC_ENABLED"], "1")
         self.assertEqual(environment["APC_NUM_BLOCKS"], "2048")
+        self.assertEqual(environment["APC_EXACT_CACHE_ENTRIES"], "4")
         self.assertEqual(environment["APC_DEFAULT_TENANT"], "vyact")
         self.assertEqual(environment["EXISTING_SETTING"], "preserved")
 
@@ -49,6 +50,35 @@ class MlxRuntimeTests(unittest.TestCase):
 
             self.assertFalse(model_dir.exists())
             self.assertFalse(mtp_dir.exists())
+
+    def test_removes_empty_mlx_owner_directory_after_model_deletion(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            models_dir = Path(temp_dir) / "mlx"
+            model_dir = models_dir / "owner" / "model"
+            model_dir.mkdir(parents=True)
+            (model_dir / MLX_MODEL_MANIFEST).write_text(json.dumps({"repository": "owner/model"}))
+
+            with patch("services.mlx_runtime.MLX_MODELS_DIR", models_dir):
+                delete_downloaded_mlx_model("mlx/owner/model")
+
+            self.assertFalse((models_dir / "owner").exists())
+            self.assertTrue(models_dir.exists())
+
+    def test_preserves_nonempty_mlx_owner_directory_after_model_deletion(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            models_dir = Path(temp_dir) / "mlx"
+            model_dir = models_dir / "owner" / "model"
+            sibling_dir = models_dir / "owner" / "other-model"
+            model_dir.mkdir(parents=True)
+            sibling_dir.mkdir()
+            (model_dir / MLX_MODEL_MANIFEST).write_text(json.dumps({"repository": "owner/model"}))
+            (sibling_dir / MLX_MODEL_MANIFEST).write_text(json.dumps({"repository": "owner/other-model"}))
+
+            with patch("services.mlx_runtime.MLX_MODELS_DIR", models_dir):
+                delete_downloaded_mlx_model("mlx/owner/model")
+
+            self.assertTrue((models_dir / "owner").exists())
+            self.assertTrue(sibling_dir.exists())
 
     def test_force_stops_validated_mlx_runtime_after_graceful_timeout(self):
         with tempfile.TemporaryDirectory() as temp_dir:

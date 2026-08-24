@@ -27,6 +27,7 @@ _HF_ONLINE_DOWNLOAD_LOCK = threading.Lock()
 _MLX_RUNTIME_GRACEFUL_STOP_SECONDS = 30
 _MLX_RUNTIME_FORCE_STOP_SECONDS = 5
 _MLX_APC_NUM_BLOCKS = 2048
+_MLX_APC_EXACT_CACHE_ENTRIES = 4
 _MLX_APC_DEFAULT_TENANT = "vyact"
 
 
@@ -157,12 +158,24 @@ def get_downloaded_mlx_model_path(model_path: str) -> Path:
     return destination
 
 
+def _remove_empty_mlx_parent_directories(start: Path) -> None:
+    models_root = MLX_MODELS_DIR.resolve()
+    current = start.resolve()
+    while current != models_root and models_root in current.parents:
+        try:
+            current.rmdir()
+        except OSError:
+            break
+        current = current.parent
+
+
 def delete_downloaded_mlx_model(model_path: str) -> None:
     """Delete one validated MLX repository and an unreferenced MTP companion."""
     destination = get_downloaded_mlx_model_path(model_path)
     manifest = _read_model_manifest(destination / MLX_MODEL_MANIFEST)
     mtp_repository = manifest.get("mtp_repository")
     shutil.rmtree(destination)
+    _remove_empty_mlx_parent_directories(destination.parent)
 
     if not isinstance(mtp_repository, str):
         return
@@ -175,6 +188,7 @@ def delete_downloaded_mlx_model(model_path: str) -> None:
     mtp_manifest = _read_model_manifest(mtp_destination / MLX_MODEL_MANIFEST)
     if not is_still_referenced and mtp_manifest.get("role") == "mtp":
         shutil.rmtree(mtp_destination)
+        _remove_empty_mlx_parent_directories(mtp_destination.parent)
 
 
 def _read_pid() -> int | None:
@@ -256,6 +270,7 @@ def _mlx_server_environment() -> dict[str, str]:
         **os.environ,
         "APC_ENABLED": "1",
         "APC_NUM_BLOCKS": str(_MLX_APC_NUM_BLOCKS),
+        "APC_EXACT_CACHE_ENTRIES": str(_MLX_APC_EXACT_CACHE_ENTRIES),
         "APC_DEFAULT_TENANT": _MLX_APC_DEFAULT_TENANT,
     }
 
