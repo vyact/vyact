@@ -26,6 +26,7 @@ interface SelectedModelFile {
     revision: string;
     fileSize: number;
     runtime: 'gguf' | 'mlx';
+    mtpModel?: {repository: string; revision: string; size: number};
 }
 
 type DownloadPhase = 'runtime' | 'model' | 'mtp' | 'activation' | null;
@@ -70,7 +71,13 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     const selectedModelPath = selectedFile
         ? selectedFile.runtime === 'mlx' ? `mlx/${selectedFile.repository}` : `${selectedFile.repository}/${selectedFile.filename}`
         : '';
+    const selectedFileDisplayName = selectedFile?.runtime === 'mlx'
+        ? selectedFile.repository.split('/').pop()
+        : selectedFile?.filename;
     const selectedModelIsInstalled = Boolean(selectedModelPath && installedModels.includes(selectedModelPath));
+    const selectedModelWeightBytes = selectedFile
+        ? selectedFile.fileSize + (selectedFile.mtpModel?.size || 0)
+        : 0;
 
     const searchModels = useCallback(async (searchQuery: string, searchMlxOnly = mlxOnly) => {
         const requestId = ++searchRequestIdRef.current;
@@ -140,6 +147,9 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                 },
                 selectedFile.revision,
                 selectedFile.runtime,
+                token.trim(),
+                selectedFile.fileSize,
+                selectedFile.mtpModel,
             );
             setInstalledModels(api.getCachedVyactInstalledModels());
             setDownloadPhase('activation');
@@ -167,20 +177,24 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     };
 
     const calculateAccurateMemory = async () => {
-        if (!selectedFile || selectedFile.runtime !== 'gguf' || !selectedFile.fileSize) return;
+        if (!selectedFile || !selectedFile.fileSize) return;
         const {repository, filename, revision, fileSize} = selectedFile;
         const fileKey = `${repository}@${revision}/${filename}`;
         if (metadataByFile[fileKey]) return;
         setAnalyzingFile(fileKey);
         try {
-            const cachedMetadata = cacheCheckedFilesRef.current.has(fileKey)
+            const cachedMetadata = selectedFile.runtime === 'mlx'
                 ? null
-                : await api.getVyactModelMetadataCache(repository, filename, revision, 32768);
+                : cacheCheckedFilesRef.current.has(fileKey)
+                    ? null
+                    : await api.getVyactModelMetadataCache(repository, filename, revision, 32768);
             cacheCheckedFilesRef.current.add(fileKey);
-            const metadata = cachedMetadata || await inspectRemoteGguf(
-                repository, filename, revision, fileSize, 32768, token.trim(),
-            );
-            if (!cachedMetadata) {
+            const metadata = cachedMetadata || (selectedFile.runtime === 'mlx'
+                ? await api.inspectVyactMlxMetadata(
+                    repository, revision, fileSize + (selectedFile.mtpModel?.size || 0), 32768,
+                )
+                : await inspectRemoteGguf(repository, filename, revision, fileSize, 32768, token.trim()));
+            if (!cachedMetadata && selectedFile.runtime === 'gguf') {
                 await api.saveVyactModelMetadataCache(repository, filename, revision, 32768, fileSize, metadata);
             }
             setMetadataByFile(current => ({...current, [fileKey]: metadata}));
@@ -193,7 +207,10 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     };
 
     const selectModelFile = async (model: VyactHubModel, filename: string, fileSize: number) => {
-        const selected = {repository: model.id, filename, revision: model.revision, fileSize, runtime: model.runtime};
+        const selected = {
+            repository: model.id, filename, revision: model.revision, fileSize,
+            runtime: model.runtime, mtpModel: model.mtp_model,
+        };
         const fileKey = `${model.id}@${model.revision}/${filename}`;
         setSelectedFile(selected);
         if (model.runtime !== 'gguf' || metadataByFile[fileKey] || cacheCheckedFilesRef.current.has(fileKey)) return;
@@ -304,12 +321,12 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                 </div>
                                 {selectedFile && (
                                     <div className="vyact-memory-selection">
-                                        <span>{selectedFile.filename}</span>
-                                        {!selectedMetadata && selectedFile.runtime === 'gguf' && (
+                                        <span>{selectedFileDisplayName}</span>
+                                        {!selectedMetadata && (
                                             <>
                                                 <span className="vyact-memory-requirement">
                                                     {t('modelSelector.quickEstimatedMemory')}
-                                                    <strong>{formatBytes(selectedFile.fileSize * MODEL_MEMORY_OVERHEAD_RATIO)}</strong>
+                                                    <strong>{formatBytes(selectedModelWeightBytes * MODEL_MEMORY_OVERHEAD_RATIO)}</strong>
                                                 </span>
                                                 <Tooltip content={t('modelSelector.accurateMemoryHint')} multiline large>
                                                     <button
@@ -363,17 +380,20 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                         {!isSearching && models.length === 0 && (
                             <div className="vyact-model-empty"><Search size={22}/><span>{t('modelSelector.noSearchResults')}</span></div>
                         )}
-                        {models.map(model => (
-                            <article className="vyact-model-card" key={model.id}>
+                        {models.map(model => {
+                            const selectableFiles = getSelectableModelFiles(model.files);
+                            return <article className={`vyact-model-card${selectableFiles.length === 1 ? ' is-compact' : ''}`} key={model.id}>
                                 <div className="vyact-model-card-heading">
                                     <strong>{model.id}</strong><span>{formatCompactDownloads(model.downloads)}</span>
                                 </div>
                                 <div className="vyact-model-files">
-                                    {getSelectableModelFiles(model.files).map(filename => {
+                                    {selectableFiles.map(filename => {
                                         const fileKey = `${model.id}@${model.revision}/${filename}`;
                                         const isSelected = selectedFile?.repository === model.id && selectedFile.filename === filename;
                                         const fileSize = model.file_sizes?.[filename] || 0;
-                                        const estimatedMemory = fileSize * MODEL_MEMORY_OVERHEAD_RATIO;
+                                        const estimatedMemory = (
+                                            fileSize + (model.runtime === 'mlx' ? model.mtp_model?.size || 0 : 0)
+                                        ) * MODEL_MEMORY_OVERHEAD_RATIO;
                                         const memoryTone = getModelMemoryTone(estimatedMemory, hardware);
                                         const isInstalled = installedModels.includes(
                                             model.runtime === 'mlx' ? `mlx/${model.id}` : `${model.id}/${filename}`,
@@ -383,9 +403,8 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                         return (
                                             <button type="button" className={`${isSelected ? 'is-selected ' : ''}memory-${memoryTone}`} key={filename} onClick={() => void selectModelFile(model, filename, fileSize)} disabled={busy}>
                                                 <span className="vyact-model-file-name">
-                                                    {model.runtime === 'mlx'
-                                                        ? <span className="vyact-mtp-badge">{t('modelSelector.mlxRuntime')}</span>
-                                                        : supportsMtp && <span className="vyact-mtp-badge">MTP</span>}
+                                                    {model.runtime === 'mlx' && <span className="vyact-mtp-badge">{t('modelSelector.mlxRuntime')}</span>}
+                                                    {supportsMtp && <span className="vyact-mtp-badge">MTP</span>}
                                                     <span>{model.runtime === 'mlx' ? model.id.split('/').pop() : filename}</span>
                                                 </span>
                                                 {fileSize > 0 && <small>{formatBytes(fileSize)} · {t('modelSelector.estimatedMemory')} {formatBytes(estimatedMemory)}</small>}
@@ -397,8 +416,8 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                         );
                                     })}
                                 </div>
-                            </article>
-                        ))}
+                            </article>;
+                        })}
                     </section>
 
                     {message && (

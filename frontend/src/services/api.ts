@@ -130,6 +130,7 @@ export interface VyactHubModel {
     files: string[];
     file_sizes: Record<string, number>;
     mtp_supported_files: string[];
+    mtp_model?: {repository: string; revision: string; size: number};
 }
 
 export interface VyactGgufMetadata {
@@ -312,6 +313,27 @@ export const api = {
         };
     },
 
+    async inspectVyactMlxMetadata(
+        repository: string, revision: string, fileSize: number, contextSize: number,
+    ): Promise<VyactGgufMetadata> {
+        const params = new URLSearchParams({
+            repository, revision, file_size: String(fileSize), context_size: String(contextSize),
+        });
+        const response = await fetch(`${API_BASE}/vyact/models/mlx-metadata?${params}`);
+        if (!response.ok) throw new Error(`MLX model metadata inspection failed (${response.status})`);
+        const source = (await response.json()).metadata;
+        return {
+            architecture: source.architecture,
+            parameterCount: source.parameter_count,
+            contextLength: source.context_length,
+            blockCount: source.block_count,
+            quantization: source.quantization,
+            kvCacheBytes: source.kv_cache_bytes,
+            runtimeBufferBytes: source.runtime_buffer_bytes,
+            estimatedMemoryBytes: source.estimated_memory_bytes,
+        };
+    },
+
     async saveVyactModelMetadataCache(
         repository: string, filename: string, revision: string, contextSize: number,
         fileSize: number, metadata: VyactGgufMetadata,
@@ -354,6 +376,7 @@ export const api = {
     async streamVyactModelDownload(
         repository: string, filename: string, onProgress: (message: string, progress?: number) => void,
         revision = 'main', runtime: 'gguf' | 'mlx' = 'gguf', token = '', totalSizeBytes = 0,
+        mtpModel?: {repository: string; revision: string; size: number},
     ): Promise<void> {
         const response = await fetch(`${API_BASE}/vyact/models/download`, {
             method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -361,6 +384,9 @@ export const api = {
                 repository, filename, revision, runtime,
                 token: token.trim() || undefined,
                 total_size_bytes: totalSizeBytes,
+                mtp_repository: mtpModel?.repository,
+                mtp_revision: mtpModel?.revision,
+                mtp_size_bytes: mtpModel?.size || 0,
             }),
         });
         if (!response.body) return;

@@ -9,6 +9,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable
 
@@ -21,6 +22,30 @@ MLX_MODELS_DIR = INSTALL_DIR / "models" / "mlx"
 MLX_RUNTIME_DIR = INSTALL_DIR / "runtime"
 MLX_RUNTIME_PID_FILE = MLX_RUNTIME_DIR / "mlx-vlm.pid"
 MLX_MODEL_MANIFEST = ".vyact-mlx-model.json"
+_HF_ONLINE_DOWNLOAD_LOCK = threading.Lock()
+
+
+@contextmanager
+def _hugging_face_online_download():
+    """Temporarily allow an explicit model download in an offline-by-default app."""
+    import huggingface_hub.constants as hub_constants
+    from huggingface_hub.utils import _http
+
+    with _HF_ONLINE_DOWNLOAD_LOCK:
+        previous_environment = os.environ.get("HF_HUB_OFFLINE")
+        previous_constant = hub_constants.HF_HUB_OFFLINE
+        os.environ["HF_HUB_OFFLINE"] = "0"
+        hub_constants.HF_HUB_OFFLINE = False
+        _http.close_session()
+        try:
+            yield
+        finally:
+            if previous_environment is None:
+                os.environ.pop("HF_HUB_OFFLINE", None)
+            else:
+                os.environ["HF_HUB_OFFLINE"] = previous_environment
+            hub_constants.HF_HUB_OFFLINE = previous_constant
+            _http.close_session()
 
 
 def is_apple_silicon() -> bool:
@@ -40,8 +65,16 @@ def list_downloaded_mlx_models() -> list[str]:
     return sorted(
         f"mlx/{path.parent.relative_to(MLX_MODELS_DIR).as_posix()}"
         for path in MLX_MODELS_DIR.rglob(MLX_MODEL_MANIFEST)
-        if path.is_file()
+        if path.is_file() and _read_model_manifest(path).get("role", "model") == "model"
     )
+
+
+def _read_model_manifest(path: Path) -> dict:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+        return value if isinstance(value, dict) else {}
+    except (OSError, json.JSONDecodeError):
+        return {}
 
 
 def download_mlx_model(
@@ -49,6 +82,7 @@ def download_mlx_model(
     revision: str,
     token: str | None = None,
     progress_callback: Callable[[int], None] | None = None,
+    role: str = "model",
 ) -> Path:
     if not is_apple_silicon():
         raise RuntimeError("MLX models require Apple Silicon")
@@ -80,21 +114,34 @@ def download_mlx_model(
                     progress_callback(int(n))
             return displayed
 
-    snapshot_download(
-        repo_id=repository,
-        revision=revision,
-        token=token,
-        local_dir=str(destination),
-        allow_patterns=list(MLX_DOWNLOAD_PATTERNS),
-        tqdm_class=MlxDownloadProgress,
-    )
+    with _hugging_face_online_download():
+        snapshot_download(
+            repo_id=repository,
+            revision=revision,
+            token=token,
+            local_dir=str(destination),
+            allow_patterns=list(MLX_DOWNLOAD_PATTERNS),
+            tqdm_class=MlxDownloadProgress,
+        )
     if not (destination / "config.json").is_file() or not any(destination.rglob("*.safetensors")):
         raise RuntimeError("The downloaded repository is not a complete MLX model")
     (destination / MLX_MODEL_MANIFEST).write_text(json.dumps({
         "repository": repository,
         "revision": revision,
+        "role": role,
     }), encoding="utf-8")
     return destination
+
+
+def associate_mlx_mtp_model(model_path: Path, mtp_repository: str, mtp_path: Path) -> None:
+    manifest_path = model_path / MLX_MODEL_MANIFEST
+    manifest = _read_model_manifest(manifest_path)
+    if not manifest:
+        raise RuntimeError("The downloaded MLX model manifest is missing")
+    if mtp_path != _repository_path(mtp_repository):
+        raise ValueError("The MTP model path does not match its repository")
+    manifest["mtp_repository"] = mtp_repository
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
 
 
 def get_downloaded_mlx_model_path(model_path: str) -> Path:
@@ -148,6 +195,26 @@ def _server_module_for_model(model_path: Path) -> str:
     return "mlx_vlm.server" if is_vision_model else "mlx_lm.server"
 
 
+def _build_mlx_server_command(model_path: Path, context_size: int) -> list[str]:
+    manifest = _read_model_manifest(model_path / MLX_MODEL_MANIFEST)
+    mtp_repository = manifest.get("mtp_repository")
+    try:
+        mtp_path = _repository_path(mtp_repository) if isinstance(mtp_repository, str) else None
+    except ValueError:
+        mtp_path = None
+    if mtp_path is not None and not (mtp_path / MLX_MODEL_MANIFEST).is_file():
+        mtp_path = None
+    server_module = "mlx_vlm.server" if mtp_path is not None else _server_module_for_model(model_path)
+    command = [
+        sys.executable, "-m", server_module, "--model", str(model_path),
+        "--host", "127.0.0.1", "--port", str(VYACT_RUNTIME_PORT),
+        "--max-kv-size", str(context_size),
+    ]
+    if mtp_path is not None:
+        command.extend(["--draft-model", str(mtp_path), "--draft-kind", "mtp"])
+    return command
+
+
 def start_mlx_model(model_path: Path, context_size: int, debug_logging: bool = False) -> str:
     if not is_apple_silicon():
         raise RuntimeError("MLX models require Apple Silicon")
@@ -161,12 +228,7 @@ def start_mlx_model(model_path: Path, context_size: int, debug_logging: bool = F
     stop_mlx_runtime()
     MLX_RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
     log_path = MLX_RUNTIME_DIR / "mlx-vlm.log"
-    server_module = _server_module_for_model(model_path)
-    command = [
-        sys.executable, "-m", server_module, "--model", str(model_path),
-        "--host", "127.0.0.1", "--port", str(VYACT_RUNTIME_PORT),
-        "--max-kv-size", str(context_size),
-    ]
+    command = _build_mlx_server_command(model_path, context_size)
     with log_path.open("ab") as log_file:
         process = subprocess.Popen(command, stdout=log_file, stderr=subprocess.STDOUT, start_new_session=True)
     MLX_RUNTIME_PID_FILE.write_text(str(process.pid), encoding="utf-8")

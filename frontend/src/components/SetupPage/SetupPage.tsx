@@ -31,6 +31,7 @@ type SelectedHubModelFile = {
     runtime: 'gguf' | 'mlx';
     modelPath: string;
     fileSize: number;
+    mtpModel?: {repository: string; revision: string; size: number};
 };
 
 const DEFAULT_MODELS: Record<Exclude<Provider, 'vyact' | 'custom'>, string> = {
@@ -126,6 +127,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
             runtime: model.runtime,
             modelPath,
             fileSize: model.file_sizes?.[filename] || 0,
+            mtpModel: model.mtp_model,
         });
     };
 
@@ -276,6 +278,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                     selectedHubModelFile.runtime,
                     huggingFaceToken,
                     selectedHubModelFile.fileSize,
+                    selectedHubModelFile.mtpModel,
                 );
             }
 
@@ -427,10 +430,12 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                                             <div className="vyact-model-files">{selectableFiles.map(file => {
                                                 const modelPath = model.runtime === 'mlx' ? `mlx/${model.id}` : `${model.id}/${file}`;
                                                 const fileSize = model.file_sizes?.[file] || 0;
-                                                const estimatedMemory = fileSize * MODEL_MEMORY_OVERHEAD_RATIO;
+                                                const estimatedMemory = (
+                                                    fileSize + (model.runtime === 'mlx' ? model.mtp_model?.size || 0 : 0)
+                                                ) * MODEL_MEMORY_OVERHEAD_RATIO;
                                                 const supportsMtp = model.mtp_supported_files?.includes(file) || mtpSupportedModels.includes(`${model.id}/${file}`);
                                                 const displayName = model.runtime === 'mlx' ? model.id.split('/').pop() : file;
-                                                return <button className={`${selectedModel === modelPath ? 'is-selected ' : ''}memory-${getModelMemoryTone(estimatedMemory, vyactHardware)}`} key={file} type="button" onClick={event => { event.stopPropagation(); selectHubModelFile(model, file); }}><span className="vyact-model-file-name">{model.runtime === 'mlx' ? <span className="vyact-mtp-badge">{t('main:modelSelector.mlxRuntime')}</span> : supportsMtp && <span className="vyact-mtp-badge">MTP</span>}<span>{displayName}</span></span>{fileSize > 0 && <small>{formatModelBytes(fileSize)} · {t('main:modelSelector.estimatedMemory')} {formatModelBytes(estimatedMemory)}</small>}<span className="vyact-model-file-status">{selectedModel === modelPath && <Check size={15}/>}</span></button>;
+                                                return <button className={`${selectedModel === modelPath ? 'is-selected ' : ''}memory-${getModelMemoryTone(estimatedMemory, vyactHardware)}`} key={file} type="button" onClick={event => { event.stopPropagation(); selectHubModelFile(model, file); }}><span className="vyact-model-file-name">{model.runtime === 'mlx' && <span className="vyact-mtp-badge">{t('main:modelSelector.mlxRuntime')}</span>}{supportsMtp && <span className="vyact-mtp-badge">MTP</span>}<span>{displayName}</span></span>{fileSize > 0 && <small>{formatModelBytes(fileSize)} · {t('main:modelSelector.estimatedMemory')} {formatModelBytes(estimatedMemory)}</small>}<span className="vyact-model-file-status">{selectedModel === modelPath && <Check size={15}/>}</span></button>;
                                             })}</div>
                                         </article>;
                                     })}

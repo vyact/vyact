@@ -20,6 +20,8 @@ MLX_DOWNLOAD_PATTERNS = (
     "*.json", "*.safetensors", "*.model", "*.txt", "*.tiktoken", "*.jinja", "*.py", "*.npz",
 )
 _REPO_ID_PATTERN = re.compile(r"^[\w.-]+/[\w.-]+$")
+_F16_BYTES_PER_VALUE = 2
+_MINIMUM_RUNTIME_BUFFER_BYTES = 512 * 1024 ** 2
 
 
 def _headers(token: str | None) -> dict[str, str]:
@@ -78,11 +80,82 @@ async def search_mlx_models(query: str, token: str | None = None, limit: int = 2
     models = [
         model for item in search_items
         if isinstance(item, dict)
+        and "-mtp-" not in str(item.get("id", "")).lower()
         and (model := _mlx_model_from_hub_item(
             _merge_search_and_detail(item, detailed_items.get(str(item.get("id", ""))))
         ))
     ]
+    try:
+        mtp_candidates = await _search_mlx_mtp_models(query, token)
+    except (httpx.HTTPError, ValueError):
+        mtp_candidates = []
+    for model in models:
+        candidate = _select_mlx_mtp_model(model["id"], mtp_candidates)
+        if candidate:
+            model["mtp_supported_files"] = [MLX_REPOSITORY_FILE]
+            model["mtp_model"] = candidate
     return sorted(models, key=lambda model: model["downloads"], reverse=True)
+
+
+def _mlx_model_family(repository: str) -> str:
+    name = repository.rsplit("/", 1)[-1].lower()
+    name = re.sub(r"-(?:mlx-)?(?:\d+(?:\.\d+)?bit|bf16|fp16|fp8)$", "", name)
+    name = re.sub(r"-mtp$", "", name)
+    return name
+
+
+def _select_mlx_mtp_model(repository: str, candidates: list[dict]) -> dict | None:
+    family = _mlx_model_family(repository)
+    matches = [candidate for candidate in candidates if _mlx_model_family(candidate["repository"]) == family]
+    if not matches:
+        return None
+    return min(matches, key=lambda candidate: (
+        0 if candidate["repository"].lower().endswith("-bf16") else 1,
+        candidate["size"],
+    ))
+
+
+async def _search_mlx_mtp_models(query: str, token: str | None) -> list[dict]:
+    search_term = f"{query.strip()} MTP".strip()
+    params = {
+        "search": search_term, "library": "mlx", "limit": 50, "full": "true", "blobs": "true",
+        "sort": "downloads", "direction": "-1",
+    }
+    async with httpx.AsyncClient(timeout=20) as client:
+        response = await client.get(f"{HF_API_URL}/models", params=params, headers=_headers(token))
+        response.raise_for_status()
+        search_items = response.json()
+        repository_ids = [
+            str(item.get("id", "")) for item in search_items
+            if isinstance(item, dict) and _REPO_ID_PATTERN.fullmatch(str(item.get("id", "")))
+        ]
+        detailed_items = await _fetch_model_details(client, repository_ids, token)
+    items = [
+        _merge_search_and_detail(item, detailed_items.get(str(item.get("id", ""))))
+        for item in search_items if isinstance(item, dict)
+    ]
+    return [
+        {
+            "repository": str(item.get("id")),
+            "revision": str(item.get("sha") or "main"),
+            "size": sum(
+                int(sibling.get("size") or sibling.get("lfs", {}).get("size") or 0)
+                for sibling in item.get("siblings", []) if isinstance(sibling, dict)
+            ),
+        }
+        for item in items
+        if isinstance(item, dict)
+        and "-mtp-" in str(item.get("id", "")).lower()
+        and _REPO_ID_PATTERN.fullmatch(str(item.get("id", "")))
+        and any(
+            str(sibling.get("rfilename", "")).lower().endswith(".safetensors")
+            for sibling in item.get("siblings", []) if isinstance(sibling, dict)
+        )
+        and any(
+            str(sibling.get("rfilename", "")).lower() == "config.json"
+            for sibling in item.get("siblings", []) if isinstance(sibling, dict)
+        )
+    ]
 
 
 async def _fetch_model_details(
@@ -136,6 +209,63 @@ def _mlx_model_from_hub_item(item: dict) -> dict | None:
         "file_sizes": {MLX_REPOSITORY_FILE: size},
         "mtp_supported_files": [],
     }
+
+
+def _mlx_metadata_from_config(config: dict, file_size: int, context_size: int) -> dict:
+    text_config = config.get("text_config") if isinstance(config.get("text_config"), dict) else {}
+    model_config = {**config, **text_config}
+
+    def number(*names: str) -> int:
+        for name in names:
+            value = model_config.get(name)
+            if isinstance(value, (int, float)) and value > 0:
+                return int(value)
+        return 0
+
+    block_count = number("num_hidden_layers", "num_layers", "n_layer")
+    head_count = number("num_attention_heads", "n_head")
+    kv_head_count = number("num_key_value_heads", "num_kv_heads") or head_count
+    hidden_size = number("hidden_size", "d_model", "n_embd")
+    head_dimension = number("head_dim") or (hidden_size // head_count if head_count else 0)
+    model_context = number("max_position_embeddings", "model_max_length", "max_seq_len", "max_sequence_length")
+    effective_context = min(context_size, model_context or context_size)
+    kv_cache_bytes = (
+        effective_context * block_count * kv_head_count * head_dimension * 2 * _F16_BYTES_PER_VALUE
+    )
+    runtime_buffer_bytes = max(_MINIMUM_RUNTIME_BUFFER_BYTES, int(file_size * .05))
+    architectures = model_config.get("architectures") or config.get("architectures") or []
+    architecture = str(architectures[0] if isinstance(architectures, list) and architectures else "MLX")
+    return {
+        "architecture": architecture,
+        "parameter_count": 0,
+        "context_length": model_context,
+        "block_count": block_count,
+        "quantization": "MLX",
+        "kv_cache_bytes": kv_cache_bytes,
+        "runtime_buffer_bytes": runtime_buffer_bytes,
+        "estimated_memory_bytes": file_size + kv_cache_bytes + runtime_buffer_bytes,
+        "file_size_bytes": file_size,
+    }
+
+
+async def inspect_mlx_model_metadata(
+        repository: str, revision: str, file_size: int, context_size: int,
+        token: str | None = None,
+) -> dict:
+    """Inspect a small MLX config without downloading model weights."""
+    if not _REPO_ID_PATTERN.fullmatch(repository):
+        raise ValueError("Invalid Hugging Face repository ID")
+    url = (
+        f"https://huggingface.co/{quote(repository, safe='/')}/resolve/"
+        f"{quote(revision, safe='')}/config.json"
+    )
+    async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
+        response = await client.get(url, headers=_headers(token))
+        response.raise_for_status()
+        config = response.json()
+    if not isinstance(config, dict):
+        raise ValueError("Invalid MLX config.json")
+    return _mlx_metadata_from_config(config, file_size, context_size)
 
 
 def _model_from_hub_item(item: dict) -> dict | None:

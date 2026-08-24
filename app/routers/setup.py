@@ -82,6 +82,9 @@ class HuggingFaceDownloadRequest(BaseModel):
     runtime: str = Field(default="gguf", pattern="^(gguf|mlx)$")
     token: str | None = Field(default=None, max_length=2048)
     total_size_bytes: int = Field(default=0, ge=0)
+    mtp_repository: str | None = Field(default=None, min_length=3, max_length=256)
+    mtp_revision: str | None = Field(default=None, min_length=1, max_length=128)
+    mtp_size_bytes: int = Field(default=0, ge=0)
 
 
 class VyactModelActivateRequest(BaseModel):
@@ -557,6 +560,27 @@ async def get_vyact_model_metadata_cache(
         raise HTTPException(503, "모델 상세 정보 캐시를 조회할 수 없습니다.") from error
 
 
+@router.get("/vyact/models/mlx-metadata")
+async def get_vyact_mlx_model_metadata(
+        repository: str = Query(..., min_length=3, max_length=256),
+        revision: str = Query(..., min_length=1, max_length=128),
+        file_size: int = Query(..., ge=1),
+        context_size: int = Query(32768, ge=512, le=131072),
+):
+    try:
+        from services.huggingface_models import inspect_mlx_model_metadata
+
+        config = await load_config_async()
+        token = config.get("vyact_config", {}).get("huggingface_token")
+        metadata = await inspect_mlx_model_metadata(
+            repository, revision, file_size, context_size, token,
+        )
+        return {"metadata": metadata}
+    except Exception as error:
+        logger.warning("[vyact] MLX model metadata inspection failed: %s", error)
+        raise HTTPException(502, "MLX 모델 상세 정보를 조회할 수 없습니다.") from error
+
+
 @router.post("/vyact/models/metadata-cache")
 async def save_vyact_model_metadata_cache(req: VyactModelMetadataRequest):
     try:
@@ -645,7 +669,7 @@ async def update_vyact_runtime():
 async def download_vyact_model(req: HuggingFaceDownloadRequest):
     async def stream():
         if req.runtime == "mlx":
-            from services.mlx_runtime import download_mlx_model
+            from services.mlx_runtime import associate_mlx_mtp_model, download_mlx_model
 
             config = await load_config_async()
             token = (req.token or "").strip() or config.get("vyact_config", {}).get("huggingface_token")
@@ -657,13 +681,17 @@ async def download_vyact_model(req: HuggingFaceDownloadRequest):
             def report_downloaded_bytes(byte_delta: int) -> None:
                 loop.call_soon_threadsafe(progress_queue.put_nowait, byte_delta)
 
-            download_task = asyncio.create_task(asyncio.to_thread(
-                download_mlx_model,
-                req.repository,
-                req.revision,
-                token,
-                report_downloaded_bytes,
-            ))
+            def download_mlx_with_optional_mtp():
+                model_path = download_mlx_model(
+                    req.repository, req.revision, token, report_downloaded_bytes,
+                )
+                if req.mtp_repository and req.mtp_revision:
+                    mtp_path = download_mlx_model(
+                        req.mtp_repository, req.mtp_revision, token, report_downloaded_bytes, "mtp",
+                    )
+                    associate_mlx_mtp_model(model_path, req.mtp_repository, mtp_path)
+
+            download_task = asyncio.create_task(asyncio.to_thread(download_mlx_with_optional_mtp))
             try:
                 while not download_task.done():
                     try:
@@ -671,8 +699,9 @@ async def download_vyact_model(req: HuggingFaceDownloadRequest):
                     except asyncio.TimeoutError:
                         continue
                     downloaded_bytes += byte_delta
-                    if req.total_size_bytes > 0:
-                        progress = min(int(downloaded_bytes * 100 / req.total_size_bytes), 99)
+                    total_download_size = req.total_size_bytes + req.mtp_size_bytes
+                    if total_download_size > 0:
+                        progress = min(int(downloaded_bytes * 100 / total_download_size), 99)
                         yield sse(f"Downloading MLX {req.repository}", "log", progress)
                 await download_task
             except Exception as error:
