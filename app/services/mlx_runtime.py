@@ -5,10 +5,14 @@ import platform
 import signal
 import subprocess
 import sys
+import threading
 import time
 import urllib.error
 import urllib.request
 from pathlib import Path
+from typing import Callable
+
+from tqdm.auto import tqdm
 
 from config import INSTALL_DIR
 from services.vyact_runtime import VYACT_RUNTIME_PORT
@@ -40,7 +44,12 @@ def list_downloaded_mlx_models() -> list[str]:
     )
 
 
-def download_mlx_model(repository: str, revision: str, token: str | None = None) -> Path:
+def download_mlx_model(
+    repository: str,
+    revision: str,
+    token: str | None = None,
+    progress_callback: Callable[[int], None] | None = None,
+) -> Path:
     if not is_apple_silicon():
         raise RuntimeError("MLX models require Apple Silicon")
     from huggingface_hub import snapshot_download
@@ -48,12 +57,36 @@ def download_mlx_model(repository: str, revision: str, token: str | None = None)
 
     destination = _repository_path(repository)
     destination.mkdir(parents=True, exist_ok=True)
+
+    class MlxDownloadProgress(tqdm):
+        """Forward byte deltas from concurrent Hub file downloads."""
+
+        _callback_lock = threading.Lock()
+
+        def __init__(self, *args, **kwargs):
+            description = str(kwargs.get("desc") or "")
+            # hf_xet emits both network-transfer and local-reconstruction byte
+            # bars for the same file. Counting both doubles reported progress.
+            self._tracks_bytes = (
+                kwargs.get("unit") == "B"
+                and not description.endswith(": reconstructing file")
+            )
+            super().__init__(*args, **kwargs)
+
+        def update(self, n=1):
+            displayed = super().update(n)
+            if self._tracks_bytes and progress_callback and n > 0:
+                with self._callback_lock:
+                    progress_callback(int(n))
+            return displayed
+
     snapshot_download(
         repo_id=repository,
         revision=revision,
         token=token,
         local_dir=str(destination),
         allow_patterns=list(MLX_DOWNLOAD_PATTERNS),
+        tqdm_class=MlxDownloadProgress,
     )
     if not (destination / "config.json").is_file() or not any(destination.rglob("*.safetensors")):
         raise RuntimeError("The downloaded repository is not a complete MLX model")

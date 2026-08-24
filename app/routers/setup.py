@@ -81,6 +81,7 @@ class HuggingFaceDownloadRequest(BaseModel):
     revision: str = Field(default="main", min_length=1, max_length=128)
     runtime: str = Field(default="gguf", pattern="^(gguf|mlx)$")
     token: str | None = Field(default=None, max_length=2048)
+    total_size_bytes: int = Field(default=0, ge=0)
 
 
 class VyactModelActivateRequest(BaseModel):
@@ -631,8 +632,31 @@ async def download_vyact_model(req: HuggingFaceDownloadRequest):
             config = await load_config_async()
             token = (req.token or "").strip() or config.get("vyact_config", {}).get("huggingface_token")
             yield sse(f"Downloading MLX {req.repository}", "log", None)
+            loop = asyncio.get_running_loop()
+            progress_queue: asyncio.Queue[int] = asyncio.Queue()
+            downloaded_bytes = 0
+
+            def report_downloaded_bytes(byte_delta: int) -> None:
+                loop.call_soon_threadsafe(progress_queue.put_nowait, byte_delta)
+
+            download_task = asyncio.create_task(asyncio.to_thread(
+                download_mlx_model,
+                req.repository,
+                req.revision,
+                token,
+                report_downloaded_bytes,
+            ))
             try:
-                await asyncio.to_thread(download_mlx_model, req.repository, req.revision, token)
+                while not download_task.done():
+                    try:
+                        byte_delta = await asyncio.wait_for(progress_queue.get(), timeout=0.25)
+                    except asyncio.TimeoutError:
+                        continue
+                    downloaded_bytes += byte_delta
+                    if req.total_size_bytes > 0:
+                        progress = min(int(downloaded_bytes * 100 / req.total_size_bytes), 99)
+                        yield sse(f"Downloading MLX {req.repository}", "log", progress)
+                await download_task
             except Exception as error:
                 logger.warning("[vyact] MLX model download failed: %s", error)
                 yield sse(f"MLX 모델 다운로드 실패: {error}", "error", 0)

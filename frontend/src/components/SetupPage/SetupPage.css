@@ -415,10 +415,26 @@
 }
 
 .pbar-bg {
+    flex: 1;
     height: 6px;
     background: rgba(150, 158, 196, 0.16);
     border-radius: 999px;
     overflow: hidden;
+}
+
+.pbar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pbar-percent {
+    flex: 0 0 38px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
 }
 
 .pbar-fill {

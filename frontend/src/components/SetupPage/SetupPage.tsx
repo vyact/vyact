@@ -30,6 +30,7 @@ type SelectedHubModelFile = {
     revision: string;
     runtime: 'gguf' | 'mlx';
     modelPath: string;
+    fileSize: number;
 };
 
 const DEFAULT_MODELS: Record<Exclude<Provider, 'vyact' | 'custom'>, string> = {
@@ -124,6 +125,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
             revision: model.revision,
             runtime: model.runtime,
             modelPath,
+            fileSize: model.file_sizes?.[filename] || 0,
         });
     };
 
@@ -273,6 +275,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                     selectedHubModelFile.revision,
                     selectedHubModelFile.runtime,
                     huggingFaceToken,
+                    selectedHubModelFile.fileSize,
                 );
             }
 
@@ -480,11 +483,14 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
 
                 {isInstalling && (
                     <div className="progress-wrap active">
-                        <div className="pbar-bg">
-                            <div
-                                className={`pbar-fill${progress == null ? ' is-indeterminate' : ''}`}
-                                style={progress == null ? undefined : {width: `${progress}%`}}
-                            />
+                        <div className="pbar-row">
+                            <div className="pbar-bg">
+                                <div
+                                    className={`pbar-fill${progress == null ? ' is-indeterminate' : ''}`}
+                                    style={progress == null ? undefined : {width: `${progress}%`}}
+                                />
+                            </div>
+                            <span className="pbar-percent">{progress == null ? '…' : `${Math.round(progress)}%`}</span>
                         </div>
 
                         <div className="progress-log" ref={logRef} onScroll={handleLogScroll}>
