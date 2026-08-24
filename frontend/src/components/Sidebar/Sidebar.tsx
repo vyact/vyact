@@ -557,7 +557,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     if (currentProvider === 'vyact') {
                                         if (d) return;
                                         onBeforeModelContextChange?.();
-                                        await api.activateVyactModel(m);
+                                        await api.activateVyactModel(
+                                            m,
+                                            32768,
+                                            undefined,
+                                            m.startsWith('mlx/') ? 'mlx' : 'gguf',
+                                        );
                                         await onProviderChange();
                                         return;
                                     }

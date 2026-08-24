@@ -784,7 +784,8 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
         yield sse("Vyact 모델을 메모리에 로드하는 중...", "model_loading", 10)
         try:
             config = await load_config_async()
-            if req.runtime == "mlx":
+            runtime = "mlx" if req.model_path.startswith("mlx/") else req.runtime
+            if runtime == "mlx":
                 from services.mlx_runtime import get_downloaded_mlx_model_path, start_mlx_model
 
                 model_path = get_downloaded_mlx_model_path(req.model_path)
@@ -802,13 +803,13 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
             config["model"] = model_id
             config["model_type"] = "chat"
             repository = req.repository
-            if req.runtime == "mlx" and not repository:
+            if runtime == "mlx" and not repository:
                 repository = req.model_path.removeprefix("mlx/")
             config.setdefault("vyact_config", {}).update({
                 "model": model_id,
                 "model_path": req.model_path,
                 "context_size": req.context_size,
-                "runtime": req.runtime,
+                "runtime": runtime,
                 "repository": repository,
             })
             await save_config_async(config)

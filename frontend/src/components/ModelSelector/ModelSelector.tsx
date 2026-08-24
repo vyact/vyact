@@ -89,7 +89,6 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
 
                 {!isSelected && isInst && <button type="button" className="dd-model-delete"
                     aria-label={t('modelSelector.deleteModel', {model: opt.label})}
-                    title={t('modelSelector.delete')}
                     onClick={event => {
                         event.stopPropagation();
                         setModelToDelete(opt.value);
