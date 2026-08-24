@@ -18,7 +18,7 @@ from agent import (
     query_llm, get_model_name,
     get_conversation, rag_query_stream,
 )
-from services.llm import chat_stream_with_tools
+from services.llm import chat_stream_with_tools, get_model_display_name
 from services.llm.ollama import _tool_result_failed
 from config import IMAGE_MODEL_IDS
 from prompts import VOICE_MODE_SUFFIX, FORMAT_INSTRUCTION
@@ -542,7 +542,7 @@ async def query(req: QueryRequest):
     external_selected = bool(req.external_document_selections or {GOV24_SOURCE_ID, BIZ_SUPPORT_SOURCE_ID, K_STARTUP_SOURCE_ID, HOUSING_SOURCE_ID, LH_COMPLEX_SOURCE_ID, LH_NOTICE_SOURCE_ID}.intersection(req.external_resource_ids))
 
     if external_status["all_failed"]:
-        result = {"answer": await _external_search_failure_answer(), "sources": [], "model": await get_model_name()}
+        result = {"answer": await _external_search_failure_answer(), "sources": [], "model": await get_model_display_name()}
     elif articles:
         # 기사/문서 첨부
         from services.conv_summary import build_summary_instruction
@@ -559,13 +559,13 @@ async def query(req: QueryRequest):
                                      conversation_summary=conversation_summary,
                                      reasoning=req.reasoning, call_reason="chat:article_attachment",
                                      inject_user_profile=inject_user_profile)
-        result = {"answer": raw_answer, "sources": context_docs, "model": await get_model_name()}
+        result = {"answer": raw_answer, "sources": context_docs, "model": await get_model_display_name()}
     elif req.voice_mode:
         raw_answer = await query_llm(req.question, file_context_docs, system_prompt, image_attachments, req.messages,
                                      format_instruction_override="", use_tools=False,
                                      conversation_summary=conversation_summary,
                                      reasoning=req.reasoning, call_reason="chat:voice_mode")
-        result = {"answer": raw_answer, "sources": [], "model": await get_model_name()}
+        result = {"answer": raw_answer, "sources": [], "model": await get_model_display_name()}
     else:
         # URL 크롤링
         all_urls = [u.rstrip('.') for u in URL_RE.findall(req.question)]
@@ -583,7 +583,7 @@ async def query(req: QueryRequest):
                 url_docs = [result for result in results_url if result]
 
         if url_error_answer:
-            result = {"answer": url_error_answer, "sources": [], "model": await get_model_name()}
+            result = {"answer": url_error_answer, "sources": [], "model": await get_model_display_name()}
         elif url_docs:
             from services.conv_summary import build_summary_instruction
             response_system_prompt = (system_prompt if system_prompt else FORMAT_INSTRUCTION) + build_summary_instruction(
@@ -606,7 +606,7 @@ async def query(req: QueryRequest):
                 reasoning=req.reasoning, call_reason="chat:url_context",
                 inject_user_profile=inject_user_profile,
             )
-            result = {"answer": raw_answer, "sources": combined_docs, "model": await get_model_name()}
+            result = {"answer": raw_answer, "sources": combined_docs, "model": await get_model_display_name()}
         else:
             _has_file_att = any(a.get("type") in ("file", "zip") for a in req.attachments)
             from services.conv_summary import build_summary_instruction
@@ -860,6 +860,7 @@ async def query_stream(req: QueryRequest):
                         yield _sse("index_progress", _idx_ev)
 
             model = await get_model_name()
+            display_model = await get_model_display_name()
 
             # 이전 assistant의 article_sources에서 file_id 승계
             articles = resolve_selected_articles(
@@ -890,7 +891,7 @@ async def query_stream(req: QueryRequest):
                 )
             if external_status["all_failed"]:
                 error_message = await _external_search_failure_answer()
-                yield _sse("meta", {"model": model, "sources": []})
+                yield _sse("meta", {"model": display_model, "sources": []})
                 yield _sse("token", {"text": error_message})
                 yield _sse("done", {"conv_id": req.conv_id or "", "answer": error_message})
                 return
@@ -912,7 +913,7 @@ async def query_stream(req: QueryRequest):
 
                 if url_errors:
                     error_message = _format_url_context_error(url_errors)
-                    yield _sse("meta", {"model": model, "sources": []})
+                    yield _sse("meta", {"model": display_model, "sources": []})
                     yield _sse("token", {"text": error_message})
                     yield _sse("done", {"conv_id": req.conv_id or "", "answer": error_message})
                     return
@@ -941,7 +942,7 @@ async def query_stream(req: QueryRequest):
                 # 논스트리밍 /query 로 위임하고 전체 답변을 token 1회 + done 으로 방출
                 if is_image_model or req.voice_mode:
                     result = await query(req)
-                    yield _sse("meta", {"model": result.get("model", model), "sources": result.get("sources", [])})
+                    yield _sse("meta", {"model": result.get("model", display_model), "sources": result.get("sources", [])})
                     yield _sse("token", {"text": result.get("answer", "")})
                     yield _sse("done", {"conv_id": result.get("conv_id", req.conv_id or ""),
                                         "answer": result.get("answer", ""),
@@ -1091,7 +1092,7 @@ async def query_stream(req: QueryRequest):
 
                 answer = final_result.get("answer", emitted).strip()
                 gen_sources = final_result.get("sources", []) or []
-                gen_model = final_result.get("model", model)
+                gen_model = final_result.get("model", display_model)
                 gen_stats = final_result.get("stats")
                 response_truncated = bool(final_result.get("truncated"))
                 yield _sse("meta", {"model": gen_model, "sources": gen_sources})
@@ -1165,7 +1166,7 @@ async def query_stream(req: QueryRequest):
                 return
 
             # ── 실제 토큰 스트리밍 (경로 A·B: 문서/URL context 기반, tool 미사용) ──
-            yield _sse("meta", {"model": model, "sources": context_docs})
+            yield _sse("meta", {"model": display_model, "sources": context_docs})
 
             from services.conv_summary import HiddenMetadataStreamFilter
             metadata_stream_filter = HiddenMetadataStreamFilter()
@@ -1266,7 +1267,7 @@ async def query_stream(req: QueryRequest):
                     ]
                     if partial:
                         msgs.append({"role": "assistant", "content": partial + "\n\n*(중단됨)*",
-                                     "timestamp": now, "model": model if 'model' in dir() else ""})
+                                     "timestamp": now, "model": display_model if 'display_model' in dir() else ""})
                     _run_in_background(save_conversation(conv_id, msgs))
                 except Exception as e:
                     logger.warning("[query_stream] 중단 시 저장 실패: %s", e)

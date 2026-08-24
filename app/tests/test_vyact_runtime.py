@@ -5,7 +5,8 @@ from unittest.mock import patch
 
 from services.vyact_runtime import (
     RuntimePaths, cache_downloaded_model, get_native_install_commands, get_native_update_commands,
-    initialize_downloaded_models_cache, list_downloaded_models, list_selectable_models, start_single_model,
+    initialize_downloaded_models_cache, list_downloaded_models, list_mtp_supported_models,
+    list_selectable_models, start_single_model,
     uncache_downloaded_model, write_single_model_config,
 )
 
@@ -67,9 +68,24 @@ class VyactRuntimeTests(unittest.TestCase):
             repository.mkdir(parents=True)
             (repository / "model-Q4_K_M.gguf").touch()
             (repository / "mtp-model-Q4_0.gguf").touch()
+            embeddings = models_dir / "embeddings"
+            embeddings.mkdir()
+            (embeddings / "bge-m3-q8_0.gguf").touch()
             with patch("services.vyact_runtime.VYACT_MODELS_DIR", models_dir):
                 initialize_downloaded_models_cache(force=True)
                 self.assertEqual(list_selectable_models(), ["owner/repo/model-Q4_K_M.gguf"])
+
+    def test_mtp_listing_does_not_inspect_large_model_files(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            models_dir = Path(temp_dir)
+            repository = models_dir / "owner" / "repo"
+            repository.mkdir(parents=True)
+            (repository / "model-Q4_K_M.gguf").touch()
+            with patch("services.vyact_runtime.VYACT_MODELS_DIR", models_dir), \
+                 patch("services.vyact_runtime.model_has_integrated_mtp") as inspect_model:
+                initialize_downloaded_models_cache(force=True)
+                self.assertEqual(list_mtp_supported_models(), [])
+            inspect_model.assert_not_called()
 
     def test_macos_installs_only_missing_component_with_brew(self):
         paths = RuntimePaths(None, Path("/opt/homebrew/bin/llama-swap"), Path("/models"), Path("/config"))
@@ -113,7 +129,9 @@ class VyactRuntimeTests(unittest.TestCase):
                 popen.return_value.poll.return_value = None
                 urlopen.return_value.__enter__.return_value.status = 200
                 self.assertEqual(start_single_model(model, 8192), "vyact-model")
-            write_config.assert_called_once_with(model, 8192, None, enable_mtp=False)
+            write_config.assert_called_once_with(
+                model, 8192, None, enable_mtp=False, debug_logging=False,
+            )
             self.assertIn("llama-swap", str(popen.call_args.args[0][0]))
 
     def test_sidecar_config_enables_mtp_with_safe_auto_options(self):
@@ -137,3 +155,24 @@ class VyactRuntimeTests(unittest.TestCase):
             self.assertIn("--spec-draft-model", contents)
             self.assertIn("--spec-type draft-mtp", contents)
             self.assertIn("--spec-draft-ngl auto", contents)
+
+    def test_debug_config_enables_trace_logging_without_verbose_prompt(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            base = Path(temp_dir)
+            model = base / "model.gguf"
+            server = base / "llama-server"
+            swap = base / "llama-swap"
+            config = base / "llama-swap.yaml"
+            for path in (model, server, swap):
+                path.touch()
+            paths = RuntimePaths(server, swap, base / "models", config)
+            with patch("services.vyact_runtime.get_runtime_paths", return_value=paths), \
+                 patch("services.vyact_runtime.VYACT_RUNTIME_DIR", base), \
+                 patch("services.vyact_runtime.VYACT_MODELS_DIR", base / "models"), \
+                 patch("services.vyact_runtime.VYACT_SWAP_CONFIG", config), \
+                 patch("services.vyact_runtime.model_has_integrated_mtp", return_value=False):
+                write_single_model_config(model, 8192, debug_logging=True)
+
+            contents = config.read_text(encoding="utf-8")
+            self.assertIn("--log-verbosity 4 --log-timestamps", contents)
+            self.assertNotIn("--verbose-prompt", contents)

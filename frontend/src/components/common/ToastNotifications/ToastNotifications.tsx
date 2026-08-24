@@ -30,6 +30,7 @@ const DEFAULT_DURATION: Record<ToastType, number> = {
 // ── Global event bus ────────────────────────────────────────────────
 type ToastListener = (toast: ToastItem) => void;
 const listeners = new Set<ToastListener>();
+const dismissListeners = new Set<(id: string) => void>();
 
 let idCounter = 0;
 
@@ -50,6 +51,7 @@ export const toast = {
     error(title: string, message?: string, duration?: number, hideIcon = false) { return this.show('error', title, message, duration, hideIcon); },
     warning(title: string, message?: string, duration?: number, hideIcon = false) { return this.show('warning', title, message, duration, hideIcon); },
     info(title: string, message?: string, duration?: number, hideIcon = false) { return this.show('info', title, message, duration, hideIcon); },
+    dismiss(id: string) { dismissListeners.forEach(fn => fn(id)); },
 };
 
 // ── Component ───────────────────────────────────────────────────────
@@ -70,6 +72,11 @@ export default function ToastContainer() {
             setExiting(prev => { const next = new Set(prev); next.delete(id); return next; });
         }, 250);
     }, []);
+
+    useEffect(() => {
+        dismissListeners.add(dismiss);
+        return () => { dismissListeners.delete(dismiss); };
+    }, [dismiss]);
 
     return <div className="toast-container">
         {items.map(item => (

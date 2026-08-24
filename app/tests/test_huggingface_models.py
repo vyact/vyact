@@ -36,7 +36,18 @@ class HuggingFaceModelTests(unittest.TestCase):
         self.assertEqual(model, {
             "id": "owner/model-GGUF", "revision": "abc123", "downloads": 12,
             "files": ["model.gguf"], "file_sizes": {"model.gguf": 1024},
+            "mtp_supported_files": [],
         })
+
+    def test_hub_item_marks_files_with_a_matching_mtp_sidecar(self):
+        model = _model_from_hub_item({
+            "id": "owner/Qwen-GGUF",
+            "siblings": [
+                {"rfilename": "Qwen-Q4_K_M.gguf", "size": 1000},
+                {"rfilename": "MTP/mtp-Qwen-Q4_0.gguf", "size": 100},
+            ],
+        })
+        self.assertEqual(model["mtp_supported_files"], ["Qwen-Q4_K_M.gguf"])
 
     def test_selects_small_mtp_sidecar_without_treating_full_model_as_sidecar(self):
         selected = _select_mtp_sidecar({"siblings": [

@@ -173,13 +173,18 @@ async def chat_stream_with_tools(
                         pass
 
             if usage.get("prompt_tokens") is not None or usage.get("completion_tokens") is not None:
-                # OpenAI/Gemini/Claude는 처리시간(*_duration)은 안 주므로 토큰수만 채운다.
+                prompt_duration = usage.get("prompt_eval_duration")
+                eval_duration = usage.get("eval_duration")
                 stats = {
                     "prompt_eval_count": usage.get("prompt_tokens"),
-                    "prompt_eval_duration": None,
+                    "prompt_eval_duration": prompt_duration,
                     "eval_count": usage.get("completion_tokens"),
-                    "eval_duration": None,
-                    "total_duration": None,
+                    "eval_duration": eval_duration,
+                    "total_duration": (
+                        prompt_duration + eval_duration
+                        if prompt_duration is not None and eval_duration is not None
+                        else None
+                    ),
                 }
                 log_entry["stats"] = stats
                 yield {"type": "stats", **stats}

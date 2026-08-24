@@ -590,6 +590,7 @@ async def install(req: ModelSelectRequest):
                     model_path = get_downloaded_model_path(cfg["vyact_config"]["model_path"])
                     model_id = await asyncio.to_thread(
                         start_single_model, model_path, cfg["vyact_config"].get("context_size", 32768),
+                        cfg.get("debug_logging", False),
                     )
                     cfg["model"] = model_id
                     cfg["vyact_config"]["model"] = model_id
@@ -666,12 +667,16 @@ async def get_recommended_models():
 async def search_vyact_models(q: str = Query("", max_length=200)):
     """Search GGUF repositories only; model file selection stays explicit in the UI."""
     try:
-        from services.vyact_runtime import list_downloaded_models
+        from services.vyact_runtime import list_downloaded_models, list_mtp_supported_models
+
+        config = await load_config_async()
+        token = config.get("vyact_config", {}).get("huggingface_token")
 
         return {
-            "models": await search_gguf_models(q),
+            "models": await search_gguf_models(q, token),
             "hardware": get_local_hardware_info(),
             "installed": list_downloaded_models(),
+            "mtp_supported": list_mtp_supported_models(),
         }
     except Exception as error:
         logger.warning("[vyact] Hugging Face search failed: %s", error)
@@ -722,6 +727,14 @@ async def save_vyact_huggingface_token(req: HuggingFaceTokenRequest):
     config.setdefault("vyact_config", {})["huggingface_token"] = req.token.strip()
     await save_config_async(config)
     return {"ok": True}
+
+
+@router.get("/vyact/huggingface-token/status")
+async def get_vyact_huggingface_token_status():
+    """Expose only whether a token exists; never return the stored secret."""
+    config = await load_config_async()
+    token = config.get("vyact_config", {}).get("huggingface_token", "")
+    return {"configured": bool(token.strip())}
 
 
 @router.post("/vyact/runtime/install")
@@ -810,8 +823,10 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
         yield sse("Vyact 모델을 메모리에 로드하는 중...", "model_loading", 10)
         try:
             model_path = get_downloaded_model_path(req.model_path)
-            model_id = await asyncio.to_thread(start_single_model, model_path, req.context_size)
             config = await load_config_async()
+            model_id = await asyncio.to_thread(
+                start_single_model, model_path, req.context_size, config.get("debug_logging", False),
+            )
             config["type"] = "vyact"
             config["model"] = model_id
             config.setdefault("vyact_config", {}).update({
@@ -1128,11 +1143,43 @@ async def get_debug_logging():
 @router.post("/settings/debug-logging")
 async def set_debug_logging(body: dict):
     cfg = await load_config_async()
-    cfg["debug_logging"] = bool(body.get("enabled", False))
+    previous_enabled = bool(cfg.get("debug_logging", cfg.get("tool_debug_logging", False)))
+    enabled = bool(body.get("enabled", False))
+    cfg["debug_logging"] = enabled
     cfg.pop("tool_debug_logging", None)
     await save_config_async(cfg)
-    DebugLogSettings.set_enabled(cfg["debug_logging"])
-    return {"debug_logging": cfg["debug_logging"]}
+    DebugLogSettings.set_enabled(enabled)
+
+    vyact_config = cfg.get("vyact_config", {})
+    model_path_value = vyact_config.get("model_path")
+    if cfg.get("type") != "vyact" or not model_path_value or enabled == previous_enabled:
+        return {"debug_logging": enabled, "runtime_restarted": False}
+
+    from services.vyact_runtime import get_downloaded_model_path, start_single_model
+
+    try:
+        model_path = get_downloaded_model_path(model_path_value)
+        model_id = await asyncio.to_thread(
+            start_single_model, model_path, vyact_config.get("context_size", 32768), enabled,
+        )
+        cfg["model"] = model_id
+        cfg.setdefault("vyact_config", {})["model"] = model_id
+        await save_config_async(cfg)
+    except Exception as error:
+        logger.warning("[vyact] debug logging restart failed: %s", error)
+        cfg["debug_logging"] = previous_enabled
+        await save_config_async(cfg)
+        DebugLogSettings.set_enabled(previous_enabled)
+        try:
+            model_path = get_downloaded_model_path(model_path_value)
+            await asyncio.to_thread(
+                start_single_model, model_path, vyact_config.get("context_size", 32768), previous_enabled,
+            )
+        except Exception as restore_error:
+            logger.error("[vyact] failed to restore runtime after debug restart: %s", restore_error)
+        raise HTTPException(500, "Vyact 런타임을 다시 시작하지 못했습니다.") from error
+
+    return {"debug_logging": enabled, "runtime_restarted": True}
 
 
 @router.get("/settings/runtime")

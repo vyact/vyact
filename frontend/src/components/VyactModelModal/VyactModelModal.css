@@ -38,7 +38,9 @@
 .vyact-model-files button.memory-comfortable { --memory-tone: #47b881; border-color: color-mix(in srgb, #47b881 34%, var(--border)); }
 .vyact-model-files button.memory-tight { --memory-tone: #e3a23b; border-color: color-mix(in srgb, #e3a23b 42%, var(--border)); }
 .vyact-model-files button.memory-over { --memory-tone: #e06060; border-color: color-mix(in srgb, #e06060 42%, var(--border)); }
-.vyact-model-file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vyact-model-file-name { display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; white-space: nowrap; }
+.vyact-model-file-name > span:last-child { overflow: hidden; text-overflow: ellipsis; }
+.vyact-mtp-badge { flex: 0 0 auto; padding: 2px 5px; border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); font-size: 8px; font-weight: 750; line-height: 1; letter-spacing: .35px; }
 .vyact-model-files button small { grid-column: 1; color: var(--muted); font-size: 11px; }
 .vyact-model-file-status { display: flex; grid-column: 2; grid-row: 1 / span 2; align-items: center; gap: 7px; align-self: center; }
 .vyact-model-installed { padding: 3px 7px; border-radius: 999px; background: color-mix(in srgb, #47b881 16%, transparent); color: #63c998; font-size: 10px; font-weight: 750; white-space: nowrap; }

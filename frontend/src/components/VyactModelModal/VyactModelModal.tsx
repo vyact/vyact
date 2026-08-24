@@ -38,7 +38,7 @@ const formatBytes = (bytes: number) => {
 const formatContextLength = (tokens: number) => tokens >= 1024 ? `${Math.round(tokens / 1024)}K` : String(tokens);
 
 const getSelectableModelFiles = (files: string[]) => files
-    .filter(filename => !/^(BF16|MTP)\//i.test(filename))
+    .filter(filename => !/^BF16\//i.test(filename) && !/(^|\/)mtp-[^/]*\.gguf$/i.test(filename))
     .filter(filename => !/(^|\/)mmproj[^/]*\.gguf$/i.test(filename))
     .filter(filename => !/-\d{5}-of-\d{5}\.gguf$/i.test(filename))
     .sort((left, right) => {
@@ -74,10 +74,12 @@ const getMemoryTone = (estimatedMemory: number, hardware: VyactHardwareInfo): Me
 export default function VyactModelModal({onClose, onSelected}: VyactModelModalProps) {
     const {t} = useTranslation('main');
     const [token, setToken] = useState('');
+    const [tokenConfigured, setTokenConfigured] = useState(false);
     const [showToken, setShowToken] = useState(false);
     const [query, setQuery] = useState('');
     const [models, setModels] = useState<VyactHubModel[]>([]);
     const [installedModels, setInstalledModels] = useState<string[]>(() => api.getCachedVyactInstalledModels());
+    const [mtpSupportedModels, setMtpSupportedModels] = useState<string[]>([]);
     const [selectedFile, setSelectedFile] = useState<SelectedModelFile | null>(null);
     const [isSearching, setIsSearching] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
@@ -110,6 +112,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                 setModels(searchResponse.models);
                 setHardware(searchResponse.hardware);
                 setInstalledModels(searchResponse.installed);
+                setMtpSupportedModels(searchResponse.mtp_supported);
             }
         } catch (error) {
             if (requestId === searchRequestIdRef.current) setMessage(String(error));
@@ -120,6 +123,9 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
 
     useEffect(() => {
         void searchModels('');
+        void api.getVyactHuggingFaceTokenStatus()
+            .then(status => setTokenConfigured(status.configured))
+            .catch(error => console.error('Failed to load Hugging Face token status:', error));
         // 인기 모델은 모달을 열 때 한 번만 불러온다.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -130,6 +136,8 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
         setIsSavingToken(true);
         try {
             await api.saveVyactHuggingFaceToken(trimmedToken);
+            setToken('');
+            setTokenConfigured(true);
             setMessage(t('modelSelector.tokenSaved'));
         } catch (error) {
             setMessage(String(error));
@@ -255,7 +263,13 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                             </span>
                             <div className="vyact-token-input-row">
                                 <div className="provider-api-key-field">
-                                    <input type={showToken ? 'text' : 'password'} value={token} onChange={event => setToken(event.target.value)} autoComplete="off"/>
+                                    <input
+                                        type={showToken ? 'text' : 'password'}
+                                        value={token}
+                                        placeholder={tokenConfigured ? '••••••••••••' : ''}
+                                        onChange={event => setToken(event.target.value)}
+                                        autoComplete="off"
+                                    />
                                     <button type="button" onClick={() => setShowToken(current => !current)} aria-label={t(showToken ? 'customProvider.hideApiKey' : 'customProvider.showApiKey')}>
                                         {showToken ? <EyeOff size={17}/> : <Eye size={17}/>}
                                     </button>
@@ -366,9 +380,14 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                         const estimatedMemory = fileSize * MODEL_MEMORY_OVERHEAD_RATIO;
                                         const memoryTone = getMemoryTone(estimatedMemory, hardware);
                                         const isInstalled = installedModels.includes(`${model.id}/${filename}`);
+                                        const supportsMtp = model.mtp_supported_files?.includes(filename)
+                                            || mtpSupportedModels.includes(`${model.id}/${filename}`);
                                         return (
                                             <button type="button" className={`${isSelected ? 'is-selected ' : ''}memory-${memoryTone}`} key={filename} onClick={() => void selectModelFile(model, filename, fileSize)} disabled={busy}>
-                                                <span className="vyact-model-file-name">{filename}</span>
+                                                <span className="vyact-model-file-name">
+                                                    {supportsMtp && <span className="vyact-mtp-badge">MTP</span>}
+                                                    <span>{filename}</span>
+                                                </span>
                                                 {fileSize > 0 && <small>{formatBytes(fileSize)} · {t('modelSelector.estimatedMemory')} {formatBytes(estimatedMemory)}</small>}
                                                 <span className="vyact-model-file-status">
                                                     {isInstalled && <span className="vyact-model-installed">{t('modelSelector.installed')}</span>}

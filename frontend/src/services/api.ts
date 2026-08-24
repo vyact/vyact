@@ -120,7 +120,7 @@ export interface CustomProviderPayload {
     headers: Array<{name: string; value: string}>;
 }
 
-type ProviderType = 'ollama' | 'openai' | 'gemini' | 'claude' | `custom:${string}`;
+type ProviderType = 'ollama' | 'vyact' | 'openai' | 'gemini' | 'claude' | `custom:${string}`;
 
 export interface VyactHubModel {
     id: string;
@@ -128,6 +128,7 @@ export interface VyactHubModel {
     downloads: number;
     files: string[];
     file_sizes: Record<string, number>;
+    mtp_supported_files: string[];
 }
 
 export interface VyactGgufMetadata {
@@ -145,6 +146,7 @@ export interface VyactModelSearchResponse {
     models: VyactHubModel[];
     hardware: VyactHardwareInfo;
     installed: string[];
+    mtp_supported: string[];
 }
 
 let cachedVyactInstalledModels: string[] = [];
@@ -274,6 +276,7 @@ export const api = {
         return {
             models: data.models || [],
             installed: cachedVyactInstalledModels,
+            mtp_supported: data.mtp_supported || [],
             hardware: data.hardware || {
                 platform: '', memory_mode: 'system',
                 system_memory: data.system_memory || {total_bytes: 0, available_bytes: 0},
@@ -337,6 +340,12 @@ export const api = {
             method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({token}),
         });
         if (!response.ok) throw new Error(`Hugging Face token save failed (${response.status})`);
+    },
+
+    async getVyactHuggingFaceTokenStatus(): Promise<{configured: boolean}> {
+        const response = await fetch(`${API_BASE}/vyact/huggingface-token/status`);
+        if (!response.ok) throw new Error(`Hugging Face token status failed (${response.status})`);
+        return response.json();
     },
 
     async streamVyactModelDownload(
@@ -1131,12 +1140,13 @@ export const api = {
         return res.json();
     },
 
-    async setDebugLogging(enabled: boolean): Promise<{ debug_logging: boolean }> {
+    async setDebugLogging(enabled: boolean): Promise<{ debug_logging: boolean; runtime_restarted: boolean }> {
         const res = await fetch(`${API_BASE}/settings/debug-logging`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({enabled})
         });
+        if (!res.ok) throw new Error(`Debug logging update failed (${res.status})`);
         return res.json();
     },
 

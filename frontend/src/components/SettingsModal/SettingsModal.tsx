@@ -237,6 +237,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
     const [llmLogging, setLlmLogging] = useState(false);
     const [toolLogging, setToolLogging] = useState(true);
     const [debugLogging, setDebugLogging] = useState(false);
+    const [debugLoggingRestarting, setDebugLoggingRestarting] = useState(false);
     const [runtimeSettings, setRuntimeSettings] = useState<RuntimeSettings>(DEFAULT_RUNTIME_SETTINGS);
     const [runtimeInputValues, setRuntimeInputValues] = useState<Record<string, string>>(
         toRuntimeInputValues(DEFAULT_RUNTIME_SETTINGS)
@@ -1165,13 +1166,28 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                         </div>
                                         <label className="settings-switch">
                                             <input type="checkbox" checked={debugLogging}
+                                                   disabled={debugLoggingRestarting}
                                                    onChange={async e => {
                                                        const v = e.target.checked;
                                                        setDebugLogging(v);
+                                                       let restartToastId = '';
+                                                       let isVyact = false;
                                                        try {
-                                                           await api.setDebugLogging(v);
+                                                           const providers = await api.getProviders();
+                                                           isVyact = providers.current_type === 'vyact';
+                                                           if (isVyact) {
+                                                               setDebugLoggingRestarting(true);
+                                                               restartToastId = toast.info(t('general.vyactRestarting'), undefined, 0);
+                                                           }
+                                                           const result = await api.setDebugLogging(v);
+                                                           if (restartToastId) toast.dismiss(restartToastId);
+                                                           if (result.runtime_restarted) toast.success(t('general.vyactRestarted'));
                                                        } catch {
+                                                           if (restartToastId) toast.dismiss(restartToastId);
                                                            setDebugLogging(!v);
+                                                           if (isVyact) toast.error(t('general.vyactRestartFailed'));
+                                                       } finally {
+                                                           setDebugLoggingRestarting(false);
                                                        }
                                                    }}/>
                                             <span className="settings-switch-slider"/>

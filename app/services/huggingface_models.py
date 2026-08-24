@@ -59,12 +59,18 @@ def _model_from_hub_item(item: dict) -> dict | None:
         sibling["rfilename"]: int(sibling.get("size") or sibling.get("lfs", {}).get("size") or 0)
         for sibling in gguf_siblings
     }
+    mtp_supported_files = [
+        filename for filename in gguf_files
+        if not PurePosixPath(filename).name.lower().startswith("mtp-")
+        and _select_mtp_sidecar(item, filename) is not None
+    ]
     return {
         "id": repo_id,
         "revision": str(item.get("sha") or "main"),
         "downloads": item.get("downloads", 0),
         "files": gguf_files,
         "file_sizes": file_sizes,
+        "mtp_supported_files": mtp_supported_files,
     }
 
 

@@ -36,7 +36,7 @@ __all__ = [
     "OLLAMA_KEEP_ALIVE", "LLM_STOP_TOKENS", "TOOL_CALL_MAX_ROUNDS",
     "TOOL_CALL_DECISION_NUM_PREDICT", "TOOL_CALL_MUTATION_NUM_PREDICT",
     "TOOL_CALL_ROUND_TIMEOUT_SECONDS", "TOOL_CALL_RETRY_RESULT_CHARS",
-    "get_provider_config", "get_model_name", "build_provider_headers",
+    "get_provider_config", "get_model_name", "get_model_display_name", "build_provider_headers",
     "log_llm_call", "log_tool_names", "log_llm_interaction", "logger",
 ]
 
@@ -110,6 +110,22 @@ async def get_provider_config() -> dict:
 
 async def get_model_name() -> str:
     return (await get_provider_config())["model"]
+
+
+async def get_model_display_name() -> str:
+    """Return the user-facing model name without exposing runtime routing IDs."""
+    provider = await get_provider_config()
+    if provider.get("selection_type") != "vyact":
+        return provider["model"]
+    try:
+        from routers.deps import load_config_async
+
+        config = await load_config_async()
+        model_path = config.get("vyact_config", {}).get("model_path", "")
+        path_parts = model_path.split("/")
+        return "/".join(path_parts[:2]) if len(path_parts) >= 2 else model_path or provider["model"]
+    except Exception:
+        return provider["model"]
 
 
 def log_llm_call(

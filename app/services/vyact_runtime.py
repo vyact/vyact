@@ -194,7 +194,8 @@ def list_selectable_models() -> list[str]:
     """Return user-selectable models without internal MTP sidecar files."""
     return [
         model for model in list_downloaded_models()
-        if not PurePosixPath(model).name.lower().startswith("mtp-")
+        if PurePosixPath(model).parts[:1] != ("embeddings",)
+        and not PurePosixPath(model).name.lower().startswith("mtp-")
     ]
 
 
@@ -284,12 +285,19 @@ def model_has_integrated_mtp(model_path: Path) -> bool:
 
 
 def list_mtp_supported_models() -> list[str]:
-    """Return selectable models whose MTP support was verified locally."""
+    """Return cached MTP support without inspecting model files on list requests.
+
+    Sidecar discovery uses the in-memory download inventory. Integrated MTP is
+    reported only after activation has already populated its stat-keyed cache.
+    This keeps model list and search endpoints fast regardless of model size.
+    """
     supported = []
     for relative_path in list_selectable_models():
         try:
             model_path = get_downloaded_model_path(relative_path)
-            if get_cached_mtp_sidecar(model_path) or model_has_integrated_mtp(model_path):
+            stat = model_path.stat()
+            cache_key = (str(model_path.resolve()), stat.st_size, stat.st_mtime_ns)
+            if get_cached_mtp_sidecar(model_path) or _integrated_mtp_cache.get(cache_key) is True:
                 supported.append(relative_path)
         except (OSError, ValueError):
             continue
@@ -355,7 +363,7 @@ def stop_runtime() -> None:
     raise RuntimeError("The existing Vyact runtime did not stop in time")
 
 
-def start_single_model(model_path: Path, context_size: int) -> str:
+def start_single_model(model_path: Path, context_size: int, debug_logging: bool = False) -> str:
     """Restart llama-swap with exactly one configured model and return its API ID."""
     global _active_mtp_model
     paths = get_runtime_paths()
@@ -366,7 +374,8 @@ def start_single_model(model_path: Path, context_size: int) -> str:
     def launch(enable_mtp: bool) -> tuple[str, subprocess.Popen]:
         stop_runtime()
         model_key = write_single_model_config(
-            model_path, context_size, mtp_model_path if enable_mtp else None, enable_mtp=enable_mtp,
+            model_path, context_size, mtp_model_path if enable_mtp else None,
+            enable_mtp=enable_mtp, debug_logging=debug_logging,
         )
         VYACT_RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
         log_path = VYACT_RUNTIME_DIR / "llama-swap.log"
@@ -410,7 +419,8 @@ def start_single_model(model_path: Path, context_size: int) -> str:
 
 
 def write_single_model_config(
-        model_path: Path, context_size: int, mtp_model_path: Path | None = None, *, enable_mtp: bool = True,
+        model_path: Path, context_size: int, mtp_model_path: Path | None = None, *,
+        enable_mtp: bool = True, debug_logging: bool = False,
 ) -> str:
     """Write a llama-swap config that can only load the selected model.
 
@@ -440,6 +450,8 @@ def write_single_model_config(
         "--ctx-size", str(context_size), "--jinja", "--n-gpu-layers", "auto",
         "--fit", "on", "--flash-attn", "auto",
     ])
+    if debug_logging:
+        command += " --log-verbosity 4 --log-timestamps"
     if mtp_model_path is not None:
         command += " " + " ".join([
             "--spec-draft-model", json.dumps(str(mtp_model_path)),

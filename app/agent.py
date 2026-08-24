@@ -28,7 +28,10 @@ from services.indexer import (
     memo_search,
     search_related_context_candidates,
 )
-from services.llm import query_llm, chat_stream_with_tools, collect_llm_stream, get_model_name, get_provider_config
+from services.llm import (
+    chat_stream_with_tools, collect_llm_stream, get_model_display_name, get_model_name,
+    get_provider_config, query_llm,
+)
 from services.history import (
     save_conversation, create_conversation_stub, list_conversations,
     get_conversation, delete_conversation, rename_conversation,
@@ -284,7 +287,7 @@ async def rag_query(
         "answer": answer.strip(),
         "response_type": "simple",
         "sources": docs,
-        "model": await get_model_name(),
+        "model": await get_model_display_name(),
     }
 
 
@@ -468,7 +471,7 @@ async def rag_query_stream(
         "answer": answer,
         "response_type": "simple",
         "sources": all_sources,
-        "model": await get_model_name(),
+        "model": await get_model_display_name(),
         "stats": stats,
         "truncated": finish_reason == "length",
     }}

@@ -13,7 +13,7 @@ services/llm — LLM 쿼리 패키지 (Ollama / OpenAI / Gemini / Claude)
   prepare.py   — 비-Ollama 요청 공통 준비
   core.py      — chat_stream_with_tools / query_llm (진입점)
 """
-from .config import get_provider_config, get_model_name, log_llm_interaction
+from .config import get_model_display_name, get_provider_config, get_model_name, log_llm_interaction
 from .core import chat_stream_with_tools, collect_llm_stream, query_llm
 
 __all__ = [
@@ -22,5 +22,6 @@ __all__ = [
     "query_llm",
     "get_provider_config",
     "get_model_name",
+    "get_model_display_name",
     "log_llm_interaction",
 ]

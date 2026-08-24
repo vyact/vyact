@@ -169,6 +169,16 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
                 if u:
                     usage["prompt_tokens"] = u.get("prompt_tokens")
                     usage["completion_tokens"] = u.get("completion_tokens")
+                timings = chunk.get("timings")
+                if isinstance(timings, dict):
+                    usage["prompt_eval_duration"] = _milliseconds_to_nanoseconds(timings.get("prompt_ms"))
+                    usage["eval_duration"] = _milliseconds_to_nanoseconds(timings.get("predicted_ms"))
+                    usage["prompt_tokens"] = usage.get("prompt_tokens") or timings.get("prompt_n")
+                    usage["completion_tokens"] = usage.get("completion_tokens") or timings.get("predicted_n")
+                    usage["prompt_tokens_per_second"] = timings.get("prompt_per_second")
+                    usage["completion_tokens_per_second"] = timings.get("predicted_per_second")
+                    usage["draft_tokens"] = timings.get("draft_n")
+                    usage["accepted_draft_tokens"] = timings.get("draft_n_accepted")
             choices = chunk.get("choices") or []
             if choices:
                 choice = choices[0]
@@ -178,6 +188,12 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
                 piece = choice.get("delta", {}).get("content")
                 if piece:
                     yield piece
+
+
+def _milliseconds_to_nanoseconds(value) -> int | None:
+    if not isinstance(value, (int, float)):
+        return None
+    return max(0, round(value * 1_000_000))
 
 
 # ══════════════════════════════════════════════════════════════════
