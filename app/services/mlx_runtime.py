@@ -16,7 +16,7 @@ from typing import Callable
 
 from tqdm.auto import tqdm
 
-from config import INSTALL_DIR
+from config import INSTALL_DIR, get_log_file
 from services.vyact_runtime import VYACT_RUNTIME_PORT
 
 MLX_MODELS_DIR = INSTALL_DIR / "models" / "mlx"
@@ -287,7 +287,7 @@ def start_mlx_model(model_path: Path, context_size: int, debug_logging: bool = F
     stop_runtime()
     stop_mlx_runtime()
     MLX_RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
-    log_path = MLX_RUNTIME_DIR / "mlx-vlm.log"
+    log_path = get_log_file("mlx-vlm")
     command = _build_mlx_server_command(model_path, context_size)
     with log_path.open("ab") as log_file:
         process = subprocess.Popen(

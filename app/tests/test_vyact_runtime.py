@@ -144,6 +144,7 @@ class VyactRuntimeTests(unittest.TestCase):
                  patch("services.vyact_runtime.get_cached_vision_projector", return_value=None), \
                  patch("services.vyact_runtime.model_has_integrated_mtp", return_value=False), \
                  patch("services.vyact_runtime.urllib.request.urlopen") as urlopen, \
+                 patch("services.vyact_runtime.get_log_file", return_value=base / "llama-swap_20260825.log"), \
                  patch("services.vyact_runtime.VYACT_RUNTIME_DIR", base), \
                  patch("services.vyact_runtime.VYACT_RUNTIME_PID_FILE", base / "runtime.pid"):
                 popen.return_value.pid = 1234
@@ -154,6 +155,7 @@ class VyactRuntimeTests(unittest.TestCase):
                 model, 8192, None, vision_projector_path=None, enable_mtp=False, debug_logging=False,
             )
             self.assertIn("llama-swap", str(popen.call_args.args[0][0]))
+            self.assertEqual(Path(popen.call_args.kwargs["stdout"].name).name, "llama-swap_20260825.log")
 
     def test_sidecar_config_enables_mtp_with_safe_auto_options(self):
         with tempfile.TemporaryDirectory() as temp_dir:

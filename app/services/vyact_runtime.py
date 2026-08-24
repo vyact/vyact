@@ -19,7 +19,7 @@ import urllib.request
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
-from config import INSTALL_DIR
+from config import INSTALL_DIR, get_log_file
 
 VYACT_RUNTIME_PORT = 11435
 VYACT_RUNTIME_URL = f"http://127.0.0.1:{VYACT_RUNTIME_PORT}/v1"
@@ -414,7 +414,7 @@ def start_single_model(model_path: Path, context_size: int, debug_logging: bool 
             enable_mtp=enable_mtp, debug_logging=debug_logging,
         )
         VYACT_RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
-        log_path = VYACT_RUNTIME_DIR / "llama-swap.log"
+        log_path = get_log_file("llama-swap")
         with log_path.open("ab") as log_file:
             process = subprocess.Popen(
                 [str(paths.llama_swap), "--config", str(VYACT_SWAP_CONFIG), "--listen", f"127.0.0.1:{VYACT_RUNTIME_PORT}"],
