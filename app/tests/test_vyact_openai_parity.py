@@ -2,7 +2,7 @@ import json
 import unittest
 from unittest.mock import AsyncMock, patch
 
-from services.llm.providers import openai_stream
+from services.llm.providers import _accumulate_llm_timing, openai_stream
 
 
 class _StreamResponse:
@@ -33,6 +33,14 @@ class _Client:
 
 
 class VyactOpenAiParityTests(unittest.IsolatedAsyncioTestCase):
+    def test_llm_total_accumulates_tool_judgment_and_final_call_timings(self):
+        usage = {}
+
+        _accumulate_llm_timing(usage, {"prompt_ms": 3_810, "predicted_ms": 410})
+        _accumulate_llm_timing(usage, {"prompt_ms": 3_820, "predicted_ms": 12_320})
+
+        self.assertEqual(usage["llm_total_duration"], 20_360_000_000)
+
     async def test_llama_stream_receives_reasoning_and_runtime_options(self):
         client = _Client()
         with patch("services.llm.providers.get_provider_config", AsyncMock(return_value={

@@ -749,12 +749,15 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
             config["type"] = "vyact"
             config["model"] = model_id
             config["model_type"] = "chat"
+            repository = req.repository
+            if req.runtime == "mlx" and not repository:
+                repository = req.model_path.removeprefix("mlx/")
             config.setdefault("vyact_config", {}).update({
                 "model": model_id,
                 "model_path": req.model_path,
                 "context_size": req.context_size,
                 "runtime": req.runtime,
-                "repository": req.repository,
+                "repository": repository,
             })
             await save_config_async(config)
         except Exception as error:

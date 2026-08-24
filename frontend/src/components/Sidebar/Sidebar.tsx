@@ -96,6 +96,10 @@ const ProviderIcon: React.FC<{ provider: string; active: boolean }> = ({provider
 const PROVIDER_LABELS: Record<string, string> = {
     vyact: 'Vyact', openai: 'OpenAI', gemini: 'Gemini', claude: 'Claude',
 };
+const API_PROVIDER_IDS = ['openai', 'gemini', 'claude'] as const;
+type ApiProviderId = typeof API_PROVIDER_IDS[number];
+const isApiProvider = (provider: string): provider is ApiProviderId =>
+    API_PROVIDER_IDS.includes(provider as ApiProviderId);
 
 const EXPANDED_PROJECT_IDS_STORAGE_KEY = 'vyact-expanded-project-ids';
 const PROJECT_HISTORY_PREVIEW_COUNT = 3;
@@ -493,8 +497,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                             {value: '__add_custom__', label: t('customProvider.addConnection')},
                         ]} value={currentProvider} onChange={handleProviderChange} className="header-provider-select" /></div>
                         <button className="sidebar-header-settings" onClick={() => {
-                            if (currentProvider.startsWith('custom:')) setIsSettingsOpen(true);
-                            else setIsProviderSettingsOpen(true);
+                            if (isApiProvider(currentProvider)) setIsProviderSettingsOpen(true);
+                            else setIsSettingsOpen(true);
                         }} aria-label={t('modelSelector.settingsManage')}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                              strokeWidth="2">
@@ -855,10 +859,10 @@ const Sidebar: React.FC<SidebarProps> = ({
             )}
 
             {/* 모달 */}
-            {isProviderSettingsOpen && (
+            {isProviderSettingsOpen && isApiProvider((window as any).__pendingProvider || currentProvider) && (
                 <React.Suspense fallback={null}><ProviderSettingsModal
                     isOpen={isProviderSettingsOpen}
-                    provider={((window as any).__pendingProvider || currentProvider) as 'openai' | 'gemini' | 'claude'}
+                    provider={((window as any).__pendingProvider || currentProvider) as ApiProviderId}
                     onClose={() => {
                         setIsProviderSettingsOpen(false);
                         (window as any).__pendingProvider = undefined;

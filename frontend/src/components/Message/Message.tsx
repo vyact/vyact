@@ -31,6 +31,13 @@ function formatNs(ns: number | null | undefined): string | null {
     return `${(ns / 1_000_000_000).toFixed(2)}s`;
 }
 
+function formatModelDisplayName(model: string | undefined): string {
+    if (!model) return '';
+    const normalized = model.replaceAll('\\', '/').replace(/\/$/, '');
+    const isLocalPath = normalized.startsWith('/') || /^[A-Za-z]:\//.test(normalized) || normalized.startsWith('mlx/');
+    return isLocalPath ? normalized.split('/').pop() || model : model;
+}
+
 // [라벨, 값] 쌍들을 "라벨 값" 형태로 이어붙인 문자열로 변환. 값이 없는 항목은 건너뜀.
 function formatStats(pairs: Array<[string, number | string | null | undefined]>): string {
     return pairs
@@ -836,11 +843,11 @@ const Message: React.FC<MessageProps> = ({
                                     </svg>
                                 )}
                             </button>
-                            <span className="msg-time">{formatTimestamp(timestamp)}{model && ` · ${model}`}</span>
+                            <span className="msg-time">{formatTimestamp(timestamp)}{model && ` · ${formatModelDisplayName(model)}`}</span>
                         </>
                     ) : (
                         <>
-                            <span className="msg-time">{formatTimestamp(timestamp)}{model && ` · ${model}`}</span>
+                            <span className="msg-time">{formatTimestamp(timestamp)}{model && ` · ${formatModelDisplayName(model)}`}</span>
                             <button className="msg-copy-btn" onClick={handleCopy} aria-label={copied ? '복사됨' : '복사'}>
                                 {copied ? (
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"

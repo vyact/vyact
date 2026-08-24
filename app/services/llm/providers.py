@@ -28,6 +28,21 @@ from .tools import (
 from services.runtime_settings import get_runtime_settings
 from services.tool_approval import await_tool_approval
 
+
+def _accumulate_llm_timing(usage: dict | None, timings: dict | None) -> None:
+    """Add one OpenAI-compatible call's model time to the request total."""
+    if usage is None or not isinstance(timings, dict):
+        return
+    prompt_duration = _milliseconds_to_nanoseconds(timings.get("prompt_ms"))
+    eval_duration = _milliseconds_to_nanoseconds(timings.get("predicted_ms"))
+    call_duration = sum(
+        duration for duration in (prompt_duration, eval_duration)
+        if duration is not None
+    )
+    if call_duration:
+        usage["llm_total_duration"] = usage.get("llm_total_duration", 0) + call_duration
+
+
 def _local_max_tokens(messages: list[dict], provider_config: dict) -> int:
     """Fit local output inside the model's shared input/output KV cache."""
     runtime = get_runtime_settings()
@@ -123,6 +138,7 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
             resp = await client.post(base_url, headers=headers, json=body)
             resp.raise_for_status()
             data = resp.json()
+            _accumulate_llm_timing(usage, data.get("timings"))
             choice = (data.get("choices") or [{}])[0]
             amsg = choice.get("message", {}) or {}
             tool_calls = amsg.get("tool_calls") or []
@@ -216,6 +232,7 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
                     usage["completion_tokens"] = u.get("completion_tokens")
                 timings = chunk.get("timings")
                 if isinstance(timings, dict):
+                    _accumulate_llm_timing(usage, timings)
                     usage["prompt_eval_duration"] = _milliseconds_to_nanoseconds(timings.get("prompt_ms"))
                     usage["eval_duration"] = _milliseconds_to_nanoseconds(timings.get("predicted_ms"))
                     usage["prompt_tokens"] = usage.get("prompt_tokens") or timings.get("prompt_n")

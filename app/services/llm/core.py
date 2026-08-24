@@ -166,6 +166,7 @@ async def chat_stream_with_tools(
                     "prompt_eval_duration": prompt_duration,
                     "eval_count": usage.get("completion_tokens"),
                     "eval_duration": eval_duration,
+                    "llm_total_duration": usage.get("llm_total_duration"),
                     "total_duration": (
                         prompt_duration + eval_duration
                         if prompt_duration is not None and eval_duration is not None

@@ -127,7 +127,8 @@ async def get_model_display_name() -> str:
         config = await load_config_async()
         model_path = config.get("vyact_config", {}).get("model_path", "")
         if config.get("vyact_config", {}).get("runtime") == "mlx":
-            return config.get("vyact_config", {}).get("repository", model_path.removeprefix("mlx/")) or provider["model"]
+            repository = config.get("vyact_config", {}).get("repository") or model_path.removeprefix("mlx/")
+            return repository.rstrip("/").split("/")[-1] if repository else provider["model"].rstrip("/").split("/")[-1]
         path_parts = model_path.split("/")
         return "/".join(path_parts[:2]) if len(path_parts) >= 2 else model_path or provider["model"]
     except Exception:
