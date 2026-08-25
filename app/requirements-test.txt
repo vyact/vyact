@@ -13,3 +13,5 @@ pypdfium2==5.13.0
 python-multipart==0.0.32
 pytest==9.1.1
 pytest-asyncio==1.4.0
+psutil
+tqdm
