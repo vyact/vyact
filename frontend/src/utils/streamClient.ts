@@ -46,7 +46,7 @@ export async function streamSSE(
     let buffer = '';
 
     // SSE 프레임은 빈 줄(\n\n)로 구분된다. 프레임 하나를 event/data로 파싱.
-    const dispatchFrame = (frame: string): string => {
+    const dispatchFrame = (frame: string): string | null => {
         let event = 'message';
         const dataLines: string[] = [];
         for (const line of frame.split('\n')) {
@@ -56,12 +56,12 @@ export async function streamSSE(
                 dataLines.push(line.slice(5).trim());
             }
         }
-        if (!dataLines.length) return event;
+        if (!dataLines.length) return null;
         let payload: any;
         try {
             payload = JSON.parse(dataLines.join('\n'));
         } catch {
-            return event;
+            return null;
         }
         switch (event) {
             case 'meta':  handlers.onMeta?.(payload); break;
@@ -95,6 +95,10 @@ export async function streamSSE(
                 // 업데이트를 한 번에 배치한다. 다음 token도 이미 버퍼에 있을 때만 한
                 // 프레임 양보하여 실제 스트리밍이 화면에 점진적으로 보이게 한다.
                 if (event === 'token' && buffer.includes('\n\n')) await waitForPaint();
+                if (event === 'done' || event === 'error') {
+                    await reader.cancel();
+                    return;
+                }
             }
         }
     }
