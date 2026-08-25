@@ -134,12 +134,12 @@ Download the installer for **Apple Silicon Macs (M1 or later)** or **Windows** f
 
 Vyact includes its own Python 3.12 runtime and manages its local model runtime for you. Local GGUF models run through native llama.cpp with llama-swap, while supported Apple Silicon models can run through MLX. Vyact detects compatible existing runtime binaries and installs only missing components when you choose a local model.
 
-| Platform | Required | Optional |
+| Platform | Required for the core app | Feature-specific requirements |
 | --- | --- | --- |
-| macOS (Apple Silicon) | None | **Local LLM**<br>• Vyact manages native llama.cpp/llama-swap and MLX models<br><br>**Elasticsearch**<br>• Docker Desktop for container mode; native installation is also available<br><br>**Kokoro TTS**<br>• [Homebrew](https://brew.sh/) installs `espeak-ng` |
-| Windows | None | **Local LLM**<br>• Vyact manages native llama.cpp/llama-swap and GGUF models<br><br>**Elasticsearch**<br>• Docker Desktop for container mode; native installation is also available<br><br>**Kokoro TTS**<br>• [Chocolatey](https://chocolatey.org/) or `winget` installs `espeak-ng` |
+| macOS (Apple Silicon) | None | **Local GGUF models**<br>• Existing `llama-server` and `llama-swap`, or [Homebrew](https://brew.sh/) so Vyact can install missing binaries<br><br>**Local MLX models**<br>• No separate runtime installation; Vyact installs the required Python packages<br><br>**Elasticsearch**<br>• No external dependency for native mode; Docker Desktop is optional for container mode<br><br>**Kokoro TTS**<br>• Homebrew is required only when Vyact needs to install `espeak-ng` |
+| Windows | None | **Local GGUF models**<br>• Existing `llama-server` and `llama-swap`, or `winget` so Vyact can install missing binaries<br><br>**Elasticsearch**<br>• No external dependency for native mode; Docker Desktop is optional for container mode<br><br>**Kokoro TTS**<br>• Chocolatey or `winget` is required only when Vyact needs to install `espeak-ng` |
 
-On both Apple Silicon Macs and Windows, Elasticsearch can run through Docker Desktop or use Vyact's native installation option. The other items are needed only when you use their corresponding features. On first launch, Vyact prepares the components required by the selected configuration.
+On both Apple Silicon Macs and Windows, Vyact can download and run its supported native Elasticsearch distribution, so Docker Desktop is not required. Package managers are needed only when a selected feature requires a missing system binary. On first launch, Vyact prepares the components required by the selected configuration.
 
 ### Your first five minutes
 
