@@ -17,10 +17,10 @@ def _approx_tokens(text: str) -> int:
     return int(len(text) / get_runtime_settings()["history_chars_per_token"]) + 1
 
 
-def select_history_by_budget(
+def select_history_by_budget_with_status(
         conversation_history: list,
         budget: int | None = None,
-) -> list:
+) -> tuple[list, bool]:
     """대화 히스토리에서 최근 것부터 토큰 예산까지 담아 반환.
 
     규칙:
@@ -31,7 +31,8 @@ def select_history_by_budget(
     - 다음 메시지를 넣으면 예산을 넘더라도, 그 메시지 1개까지는 포함하고 중단한다
       (경계에서 맥락이 뚝 끊기지 않도록 초과 1개 허용).
     - 가장 최근 메시지 하나가 예산보다 커도 통째로 포함(부분 절단 없음).
-    반환 순서는 원래(오래된→최신) 순서를 유지한다.
+    반환 순서는 원래(오래된→최신) 순서를 유지하며, 두 번째 값은 예산 때문에
+    오래된 메시지가 제외됐는지를 나타낸다.
     """
     budget = get_runtime_settings()["history_token_budget"] if budget is None else budget
     valid = [m for m in conversation_history
@@ -54,7 +55,15 @@ def select_history_by_budget(
         selected.append(m)
         used += t
     selected.reverse()  # 오래된→최신 순서 복원
-    return selected
+    return selected, len(selected) < len(valid)
+
+
+def select_history_by_budget(
+        conversation_history: list,
+        budget: int | None = None,
+) -> list:
+    """Return the selected history while preserving the existing public API."""
+    return select_history_by_budget_with_status(conversation_history, budget)[0]
 
 
 def image_attachment_path(attachment: dict) -> Path:

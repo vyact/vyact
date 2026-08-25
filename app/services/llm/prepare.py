@@ -28,8 +28,8 @@ async def prepare_request(
     except Exception:
         pass
 
-    from .helpers import select_history_by_budget
-    valid_slice = select_history_by_budget(conversation_history)
+    from .helpers import select_history_by_budget_with_status
+    valid_slice, history_was_truncated = select_history_by_budget_with_status(conversation_history)
     history_messages = []
     for m in valid_slice:
         if m["role"] == "tool":
@@ -63,8 +63,13 @@ async def prepare_request(
         user_language = await load_ui_language_async() or ""
     except Exception:
         pass
+    # The rolling summary changes after every response. Injecting it while the
+    # complete recent history is already present changes the system-prefix on
+    # every turn and prevents local runtimes from reusing their prompt cache.
+    # It is only needed when older messages were actually dropped by budget.
+    summary_for_prompt = conversation_summary if history_was_truncated else ""
     system_message = build_system_message(
-        system_prompt, format_instruction_override, user_profile, skill_context, conversation_summary,
+        system_prompt, format_instruction_override, user_profile, skill_context, summary_for_prompt,
         user_language=user_language, isolated=isolated_system_prompt,
         include_response_language=include_response_language,
     )
