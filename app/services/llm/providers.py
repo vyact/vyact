@@ -43,14 +43,21 @@ def _accumulate_llm_timing(usage: dict | None, timings: dict | None) -> None:
         usage["llm_total_duration"] = usage.get("llm_total_duration", 0) + call_duration
 
 
-def _local_max_tokens(messages: list[dict], provider_config: dict) -> int:
+async def _local_max_tokens(
+        messages: list[dict], provider_config: dict, tools: list[dict] | None = None,
+) -> int:
     """Fit local output inside the model's shared input/output KV cache."""
     runtime = get_runtime_settings()
+    from .token_counter import count_local_message_tokens
+    input_tokens = await count_local_message_tokens(
+        messages, provider_config, tools, runtime["history_chars_per_token"],
+    )
     return calculate_output_token_limit(
         messages,
         int(provider_config.get("context_size") or 32768),
         runtime["history_chars_per_token"],
         runtime["llm_num_predict"],
+        input_tokens=input_tokens,
     )
 
 
@@ -150,7 +157,7 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
             body = {"model": model, "temperature": temperature,
                     "messages": messages, "tools": oa_tools}
             if provider_config.get("is_local"):
-                body["max_tokens"] = _local_max_tokens(messages, provider_config)
+                body["max_tokens"] = await _local_max_tokens(messages, provider_config, unified)
                 _apply_local_reasoning_control(body, provider_config, reasoning)
                 _apply_local_prefix_cache_control(body, provider_config)
             log_llm_call(call_reason, "openai", model, streaming=False, reasoning=reasoning,
@@ -217,7 +224,7 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
     body = {"model": model, "temperature": temperature, "stream": True, "messages": messages}
     if provider_config.get("is_local"):
         runtime = get_runtime_settings()
-        body["max_tokens"] = _local_max_tokens(messages, provider_config)
+        body["max_tokens"] = await _local_max_tokens(messages, provider_config, unified)
         _apply_local_reasoning_control(body, provider_config, reasoning)
         _apply_local_prefix_cache_control(body, provider_config)
         if runtime.get("top_p") is not None:

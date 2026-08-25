@@ -8,6 +8,7 @@ import {
     formatModelBytes,
     getModelMemoryTone,
     getModelQuantization,
+    getOptimizedModelContext,
     getSelectableModelFiles,
     MODEL_MEMORY_OVERHEAD_RATIO,
 } from '../../utils/vyactModelDisplay';
@@ -162,9 +163,14 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
             setDownloadPhase('activation');
             setDownloadProgress(0);
             setMessage(t('modelDownload.activating'));
+            const optimizedContextSize = getOptimizedModelContext(
+                metadataByFile[`${selectedFile.repository}@${selectedFile.revision}/${selectedFile.filename}`],
+                selectedModelWeightBytes,
+                hardware,
+            );
             await api.activateVyactModel(
                 selectedModelPath,
-                32768,
+                optimizedContextSize,
                 (_activationMessage, progress) => {
                     setMessage(t('modelDownload.activating'));
                     if (progress != null) setDownloadProgress(progress);

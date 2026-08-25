@@ -1151,7 +1151,7 @@ app.on("before-quit", async (e) => {
             const timer = setTimeout(() => {
                 if (!serverProc.killed) serverProc.kill("SIGKILL");
                 resolve();
-            }, 5000);
+            }, 45000);
             serverProc.on("exit", () => {
                 clearTimeout(timer);
                 resolve();

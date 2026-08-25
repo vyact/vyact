@@ -22,6 +22,8 @@ MLX_DOWNLOAD_PATTERNS = (
 )
 _REPO_ID_PATTERN = re.compile(r"^[\w.-]+/[\w.-]+$")
 _F16_BYTES_PER_VALUE = 2
+_Q8_BYTES_PER_VALUE = 1.0625
+_KV_CACHE_QUANTIZATION_MIN_CONTEXT = 32768
 _MINIMUM_RUNTIME_BUFFER_BYTES = 512 * 1024 ** 2
 
 
@@ -36,7 +38,7 @@ def _safe_relative_file_path(filename: str) -> PurePosixPath:
     return path
 
 
-async def search_gguf_models(query: str, token: str | None = None, limit: int = 20) -> list[dict]:
+async def search_gguf_models(query: str, token: str | None = None, limit: int = 50) -> list[dict]:
     """Search public Hub repositories which declare GGUF as their library."""
     if not query.strip():
         return await get_recommended_gguf_models(token)
@@ -61,7 +63,7 @@ async def search_gguf_models(query: str, token: str | None = None, limit: int = 
     return sorted(models, key=lambda model: model["downloads"], reverse=True)
 
 
-async def search_mlx_models(query: str, token: str | None = None, limit: int = 20) -> list[dict]:
+async def search_mlx_models(query: str, token: str | None = None, limit: int = 50) -> list[dict]:
     """Search complete MLX repositories for the Apple Silicon runtime."""
     params = {
         "library": "mlx", "limit": max(1, min(limit, 50)), "full": "true", "blobs": "true",
@@ -301,6 +303,11 @@ def _mlx_metadata_from_config(config: dict, file_size: int, context_size: int) -
     head_dimension = number("head_dim") or (hidden_size // head_count if head_count else 0)
     model_context = number("max_position_embeddings", "model_max_length", "max_seq_len", "max_sequence_length")
     effective_context = min(context_size, model_context or context_size)
+    kv_bytes_per_value = (
+        _Q8_BYTES_PER_VALUE
+        if context_size >= _KV_CACHE_QUANTIZATION_MIN_CONTEXT
+        else _F16_BYTES_PER_VALUE
+    )
     layer_types = model_config.get("layer_types")
     sliding_window = number("sliding_window")
     if (
@@ -326,11 +333,11 @@ def _mlx_metadata_from_config(config: dict, file_size: int, context_size: int) -
                 * layer_kv_head_count
                 * layer_head_dimension
                 * 2
-                * _F16_BYTES_PER_VALUE
+                * kv_bytes_per_value
             )
     else:
         kv_cache_bytes = (
-            effective_context * block_count * kv_head_count * head_dimension * 2 * _F16_BYTES_PER_VALUE
+            effective_context * block_count * kv_head_count * head_dimension * 2 * kv_bytes_per_value
         )
     runtime_buffer_bytes = max(_MINIMUM_RUNTIME_BUFFER_BYTES, int(file_size * .05))
     architectures = model_config.get("architectures") or config.get("architectures") or []

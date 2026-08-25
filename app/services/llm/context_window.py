@@ -24,10 +24,11 @@ def estimate_message_tokens(messages: list[dict], chars_per_token: float) -> int
 
 
 def calculate_output_token_limit(messages: list[dict], context_size: int,
-                                 chars_per_token: float, configured_output: int) -> int:
+                                 chars_per_token: float, configured_output: int,
+                                 input_tokens: int | None = None) -> int:
     """Reserve most of a local KV cache for input and fit output in the remainder."""
     normalized_context_size = max(int(context_size), 1)
-    input_tokens = estimate_message_tokens(messages, chars_per_token)
+    input_tokens = input_tokens if input_tokens is not None else estimate_message_tokens(messages, chars_per_token)
     available_output = max(
         normalized_context_size - input_tokens - LOCAL_CONTEXT_RESERVE_TOKENS,
         1,

@@ -3,7 +3,7 @@
 
   # Vyact
 
-  **Vyact is an open-source, local-first personal AI workspace for Ollama, RAG, AI agents, document intelligence, and Google Workspace.**
+  **Vyact is an open-source, local-first personal AI workspace for llama.cpp, RAG, AI agents, document intelligence, and Google Workspace.**
 
   ### Your private workspace for conversations, knowledge, and getting work done.
 
@@ -25,7 +25,7 @@ Most AI chats begin with the same tedious ritual: find a file, copy an email, ex
 
 It brings AI chat, document intelligence, notes, and the tools you already use into one focused workspace. Attach a document, inspect the source behind an answer, turn a note into searchable knowledge, or carry the same context into Gmail, Drive, Calendar, and Chrome.
 
-Built around local LLMs through Ollama, Vyact helps you keep your conversations, documents, and working context in your own environment. Use a local model as a practical workspace—not just another chatbot tab—and connect hosted providers or your own OpenAI-compatible LLM endpoint when a task calls for them.
+Built around local LLMs through llama.cpp and MLX, Vyact helps you keep your conversations, documents, and working context in your own environment. Use a local model as a practical workspace—not just another chatbot tab—and connect hosted providers or your own OpenAI-compatible LLM endpoint when a task calls for them.
 
 <div align="center">
 
@@ -95,7 +95,7 @@ Learn from Netflix with dual subtitles, subtitle navigation, repeat playback, an
 - **Projects and conversation history** — Group chats by project, give a project its own working instructions, rename or export conversations, and return to the exact thread when work resumes.
 - **Files that stay useful** — Attach a file for one conversation or index it as long-term knowledge. Group documents, memos, and indexed email threads into knowledge collections to narrow RAG to the context for the task at hand. Inspect chunks, manage saved files, and remove data you no longer need.
 - **Notes that do not disappear into chat** — Keep rich-text memos, quick todos, and decisions in an organized workspace. They remain available to RAG when they matter again.
-- **Control over the AI** — Choose local Ollama, OpenAI, Gemini, Claude, or a custom OpenAI-compatible LLM; tune context, output, sampling, embedding, chunking, and model keep-alive settings for your machine and work style.
+- **Control over the AI** — Choose a local llama.cpp or MLX model, OpenAI, Gemini, Claude, or a custom OpenAI-compatible LLM; tune context, output, sampling, embedding, and chunking settings for your machine and work style.
 
 ### Connect work, then act on it
 
@@ -107,9 +107,9 @@ Learn from Netflix with dual subtitles, subtitle navigation, repeat playback, an
 
 ### Keep ownership of your workspace
 
-- **Local-first by default** — Vyact is designed around Ollama and local embedding so your core working context can stay on your machine.
+- **Local-first by default** — Vyact is designed around native llama.cpp, MLX on Apple Silicon, and local embedding so your core working context can stay on your machine.
 - **Choose your provider** — Use local models for private everyday work, connect OpenAI, Gemini, or Claude, or add an OpenAI-compatible endpoint operated by your organization or another service.
-- **Know when data leaves your machine** — When Gmail or Drive content is used as AI chat context, it may be sent to the selected AI provider. With a local model such as Ollama, that chat context is not sent to an external AI provider.
+- **Know when data leaves your machine** — When Gmail or Drive content is used as AI chat context, it may be sent to the selected AI provider. With a Vyact-managed local model, that chat context is not sent to an external AI provider.
 - **Back up what matters** — Export and restore conversations, documents, files, memos, prompts, settings, provider connections, projects, and vocabulary. Backups can also be saved to Google Drive.
 - **Open source** — Vyact is released under AGPL-3.0. You can inspect, adapt, and contribute to the workspace you rely on.
 
@@ -132,32 +132,18 @@ Download the installer for **Apple Silicon Macs (M1 or later)** or **Windows** f
 
 ### Before your first launch
 
-Vyact includes its own Python 3.12 runtime, so hosted providers and remote custom LLM endpoints do not require Ollama. **Ollama is optional, but we recommend installing it** for the simplest local-first setup and to keep AI requests on your machine when using local models.
-
-On an Apple Silicon Mac, install Ollama with [Homebrew](https://brew.sh/):
-
-```bash
-brew install ollama
-```
-
-Then start Ollama before launching Vyact:
-
-```bash
-ollama serve
-```
-
-If you do not use Homebrew, download the macOS app from the [Ollama website](https://ollama.com/download). Windows users can install Ollama from the same download page.
+Vyact includes its own Python 3.12 runtime and manages its local model runtime for you. Local GGUF models run through native llama.cpp with llama-swap, while supported Apple Silicon models can run through MLX. Vyact detects compatible existing runtime binaries and installs only missing components when you choose a local model.
 
 | Platform | Required | Optional |
 | --- | --- | --- |
-| macOS (Apple Silicon) | None | **Local LLM (recommended)**<br>• [Ollama](https://ollama.com/download) for local models; install with `brew install ollama`<br><br>**Elasticsearch**<br>• Docker Desktop for container mode; native installation is also available<br><br>**Kokoro TTS**<br>• [Homebrew](https://brew.sh/) installs `espeak-ng` |
-| Windows | None | **Local LLM (recommended)**<br>• [Ollama](https://ollama.com/download) for local models<br><br>**Elasticsearch**<br>• Docker Desktop for container mode; native installation is also available<br><br>**Kokoro TTS**<br>• [Chocolatey](https://chocolatey.org/) or `winget` installs `espeak-ng` |
+| macOS (Apple Silicon) | None | **Local LLM**<br>• Vyact manages native llama.cpp/llama-swap and MLX models<br><br>**Elasticsearch**<br>• Docker Desktop for container mode; native installation is also available<br><br>**Kokoro TTS**<br>• [Homebrew](https://brew.sh/) installs `espeak-ng` |
+| Windows | None | **Local LLM**<br>• Vyact manages native llama.cpp/llama-swap and GGUF models<br><br>**Elasticsearch**<br>• Docker Desktop for container mode; native installation is also available<br><br>**Kokoro TTS**<br>• [Chocolatey](https://chocolatey.org/) or `winget` installs `espeak-ng` |
 
 On both Apple Silicon Macs and Windows, Elasticsearch can run through Docker Desktop or use Vyact's native installation option. The other items are needed only when you use their corresponding features. On first launch, Vyact prepares the components required by the selected configuration.
 
 ### Your first five minutes
 
-1. Launch Vyact and choose a provider and model. Start with Ollama for a local-first setup, or add a custom LLM endpoint if you already operate one.
+1. Launch Vyact and choose a provider and model. Select **Vyact** to search for and download a local GGUF or MLX model, or add a custom LLM endpoint if you already operate one.
 2. Drop in a document or open **Document management** to index files you will use repeatedly. Create a knowledge collection when you want to limit RAG to a particular set of documents, memos, or email threads.
 3. Ask a question in chat and inspect the retrieved context when accuracy matters.
 4. Optionally connect Google Workspace or install the Chrome extension to bring live work into the same flow.
@@ -175,13 +161,13 @@ Configure the connection with:
 - **Model ID** — The exact model identifier expected by the API.
 - **Additional headers** — Optional headers for gateways or organization-specific authentication.
 
-For example, an existing local Ollama server can be connected with:
+For example, an existing OpenAI-compatible local server can be connected with:
 
 ```text
-Connection name: Local Ollama
-Base URL: http://localhost:11434/v1
+Connection name: Local LLM
+Base URL: http://localhost:8080/v1
 API key: (leave blank)
-Model ID: gemma4:e2b-mlx
+Model ID: my-local-model
 Additional headers: (none)
 ```
 

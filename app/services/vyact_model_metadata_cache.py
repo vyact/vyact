@@ -6,6 +6,8 @@ from elasticsearch import NotFoundError
 
 from services.db import VYACT_MODEL_METADATA_INDEX, get_es
 
+MODEL_METADATA_PARSER_VERSION = "@huggingface/gguf-0.4.6+q8-kv-v1"
+
 
 def build_model_metadata_id(repository: str, filename: str, revision: str, context_size: int) -> str:
     identity = "\0".join((repository, filename, revision, str(context_size)))
@@ -48,7 +50,10 @@ async def get_cached_model_metadata(
         response = await es.get(index=VYACT_MODEL_METADATA_INDEX, id=document_id)
     except NotFoundError:
         return None
-    return response.get("_source")
+    source = response.get("_source")
+    if not source or source.get("parser_version") != MODEL_METADATA_PARSER_VERSION:
+        return None
+    return source
 
 
 async def save_cached_model_metadata(
@@ -63,7 +68,7 @@ async def save_cached_model_metadata(
         "revision": revision,
         "context_size": context_size,
         **metadata,
-        "parser_version": "@huggingface/gguf-0.4.6",
+        "parser_version": MODEL_METADATA_PARSER_VERSION,
         "calculated_at": datetime.now(timezone.utc).isoformat(),
     }
     await es.index(

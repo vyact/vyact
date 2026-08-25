@@ -249,6 +249,8 @@ async def lifespan(app: FastAPI):
         else:
             logger.warning("Elasticsearch unavailable — RAG features disabled")
 
+    vyact_warmup_model_id = ""
+    vyact_warmup_language = ""
     if SETUP_DONE.exists():
         try:
             from routers.deps import load_config_async, save_config_async
@@ -265,10 +267,10 @@ async def lifespan(app: FastAPI):
                 await save_config_async(cfg)
                 try:
                     from routers.deps import load_ui_language_async
-                    from services.llm.warmup import warm_vyact_chat_prefix
-                    await warm_vyact_chat_prefix(model_id, await load_ui_language_async() or "")
+                    vyact_warmup_model_id = model_id
+                    vyact_warmup_language = await load_ui_language_async() or ""
                 except Exception as error:
-                    logger.debug("[llm_warmup] Vyact warm-up skipped: %s", error)
+                    logger.debug("[llm_warmup] Vyact warm-up preparation skipped: %s", error)
         except Exception as e:
             logger.warning("Local model load failed: %s", e)
 
@@ -329,6 +331,22 @@ async def lifespan(app: FastAPI):
             logger.debug("[mcp] GitHub username prefetch failed: %s", e)
     except Exception as e:
         logger.warning("[mcp] Connection init failed: %s", e)
+
+    if vyact_warmup_model_id:
+        try:
+            from prompts import FORMAT_INSTRUCTION
+            from routers.chat_helpers import load_system_prompt
+            from services.conv_summary import build_summary_instruction
+            from services.llm.warmup import warm_vyact_chat_prefix
+            _, _, selected_system_prompt = await load_system_prompt("")
+            general_chat_system_prompt = (
+                selected_system_prompt or FORMAT_INSTRUCTION
+            ) + build_summary_instruction("", False)
+            await warm_vyact_chat_prefix(
+                vyact_warmup_model_id, vyact_warmup_language, general_chat_system_prompt,
+            )
+        except Exception as error:
+            logger.debug("[llm_warmup] Vyact warm-up skipped: %s", error)
 
     if not is_initial_setup:
         await warmup_kokoro_tts()

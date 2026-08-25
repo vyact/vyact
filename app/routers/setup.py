@@ -793,11 +793,16 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
                     start_mlx_model, model_path, req.context_size, config.get("debug_logging", False),
                 )
             else:
-                from services.vyact_runtime import get_downloaded_model_path, start_single_model
+                from services.vyact_runtime import (
+                    get_downloaded_model_path, get_loaded_context_size, start_single_model,
+                )
 
                 model_path = get_downloaded_model_path(req.model_path)
                 model_id = await asyncio.to_thread(
                     start_single_model, model_path, req.context_size, config.get("debug_logging", False),
+                )
+                req.context_size = await asyncio.to_thread(
+                    get_loaded_context_size, model_id, req.context_size,
                 )
             config["type"] = "vyact"
             config["model"] = model_id

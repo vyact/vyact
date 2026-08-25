@@ -18,6 +18,7 @@ import urllib.error
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
+from urllib.parse import quote
 
 from config import INSTALL_DIR, get_log_file
 
@@ -27,11 +28,17 @@ VYACT_RUNTIME_DIR = INSTALL_DIR / "runtime"
 VYACT_MODELS_DIR = INSTALL_DIR / "models"
 VYACT_SWAP_CONFIG = VYACT_RUNTIME_DIR / "llama-swap.yaml"
 VYACT_RUNTIME_PID_FILE = VYACT_RUNTIME_DIR / "llama-swap.pid"
+KV_CACHE_QUANTIZATION_MIN_CONTEXT = 32768
+LLAMA_BATCH_SIZE = 2048
+LLAMA_UBATCH_SIZE = 512
+DEFAULT_CHAT_CONTEXT_SIZE = 32768
+MINIMUM_SUPPORTED_CHAT_CONTEXT_SIZE = 8192
 
 _downloaded_models_lock = threading.RLock()
 _downloaded_models_cache: frozenset[str] | None = None
 _integrated_mtp_cache: dict[tuple[str, int, int], bool] = {}
 _active_mtp_model: str | None = None
+_runtime_process: subprocess.Popen | None = None
 
 
 @dataclass(frozen=True)
@@ -359,6 +366,22 @@ def _is_llama_swap_process(pid: int) -> bool:
     return "llama-swap" in output.lower()
 
 
+def _process_has_exited(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return True
+    if os.name != "nt":
+        try:
+            state = subprocess.check_output(
+                ["ps", "-p", str(pid), "-o", "state="], text=True,
+            ).strip().upper()
+            return state.startswith("Z")
+        except (OSError, subprocess.SubprocessError):
+            pass
+    return False
+
+
 def stop_runtime() -> None:
     """Stop only the llama-swap process recorded by Vyact.
 
@@ -366,28 +389,36 @@ def stop_runtime() -> None:
     signal is sent. Failure to stop is surfaced to the caller instead of
     starting a second server on the same local port.
     """
-    global _active_mtp_model
+    global _active_mtp_model, _runtime_process
     _active_mtp_model = None
     pid = _read_owned_pid()
     if pid is None:
         return
-    try:
-        os.kill(pid, 0)
-    except ProcessLookupError:
+    if _process_has_exited(pid):
+        if _runtime_process is not None and _runtime_process.pid == pid:
+            _runtime_process.wait()
+            _runtime_process = None
         VYACT_RUNTIME_PID_FILE.unlink(missing_ok=True)
         return
     if not _is_llama_swap_process(pid):
         VYACT_RUNTIME_PID_FILE.unlink(missing_ok=True)
         raise RuntimeError("Vyact runtime PID no longer refers to llama-swap")
     try:
-        os.kill(pid, signal.SIGTERM)
+        if _runtime_process is not None and _runtime_process.pid == pid:
+            _runtime_process.terminate()
+        else:
+            os.kill(pid, signal.SIGTERM)
     except OSError as error:
         raise RuntimeError("Unable to stop the existing Vyact runtime") from error
     deadline = time.monotonic() + 10
     while time.monotonic() < deadline:
-        try:
-            os.kill(pid, 0)
-        except ProcessLookupError:
+        if _process_has_exited(pid):
+            if _runtime_process is not None and _runtime_process.pid == pid:
+                try:
+                    _runtime_process.wait(timeout=0)
+                except subprocess.TimeoutExpired:
+                    pass
+                _runtime_process = None
             VYACT_RUNTIME_PID_FILE.unlink(missing_ok=True)
             return
         time.sleep(0.1)
@@ -396,7 +427,7 @@ def stop_runtime() -> None:
 
 def start_single_model(model_path: Path, context_size: int, debug_logging: bool = False) -> str:
     """Restart llama-swap with exactly one configured model and return its API ID."""
-    global _active_mtp_model
+    global _active_mtp_model, _runtime_process
     paths = get_runtime_paths()
     if not paths.llama_swap:
         raise RuntimeError("Vyact native runtime is not installed")
@@ -422,6 +453,7 @@ def start_single_model(model_path: Path, context_size: int, debug_logging: bool 
                 stderr=subprocess.STDOUT,
                 start_new_session=True,
             )
+        _runtime_process = process
         VYACT_RUNTIME_PID_FILE.write_text(str(process.pid), encoding="utf-8")
         return model_key, process
 
@@ -459,11 +491,29 @@ def start_configured_runtime(vyact_config: dict, debug_logging: bool = False) ->
     model_path_value = str(vyact_config.get("model_path") or "")
     if not model_path_value:
         raise ValueError("No Vyact model is configured")
-    context_size = int(vyact_config.get("context_size", 32768))
+    context_size = int(vyact_config.get("context_size", DEFAULT_CHAT_CONTEXT_SIZE))
+    if context_size < MINIMUM_SUPPORTED_CHAT_CONTEXT_SIZE:
+        context_size = DEFAULT_CHAT_CONTEXT_SIZE
+        vyact_config["context_size"] = context_size
     if vyact_config.get("runtime", "gguf") == "mlx":
         from services.mlx_runtime import get_downloaded_mlx_model_path, start_mlx_model
         return start_mlx_model(get_downloaded_mlx_model_path(model_path_value), context_size, debug_logging)
-    return start_single_model(get_downloaded_model_path(model_path_value), context_size, debug_logging)
+    model_key = start_single_model(get_downloaded_model_path(model_path_value), context_size, debug_logging)
+    vyact_config["context_size"] = get_loaded_context_size(model_key, context_size)
+    return model_key
+
+
+def get_loaded_context_size(model_key: str, fallback: int) -> int:
+    """Read llama.cpp's effective context after automatic fit adjustments."""
+    props_url = f"http://127.0.0.1:{VYACT_RUNTIME_PORT}/upstream/{quote(model_key, safe='')}/props"
+    try:
+        with urllib.request.urlopen(props_url, timeout=5) as response:
+            props = json.load(response)
+        settings = props.get("default_generation_settings", {})
+        value = int(settings.get("n_ctx") or 0)
+        return value if value >= 512 else fallback
+    except (OSError, TypeError, ValueError, urllib.error.URLError):
+        return fallback
 
 
 def stop_all_vyact_runtimes() -> None:
@@ -509,8 +559,12 @@ def write_single_model_config(
         json.dumps(str(paths.llama_server)),
         "--host", "127.0.0.1", "--port", "${PORT}", "--model", json.dumps(str(model_path)),
         "--ctx-size", str(context_size), "--jinja", "--n-gpu-layers", "auto",
+        "--batch-size", str(LLAMA_BATCH_SIZE), "--ubatch-size", str(LLAMA_UBATCH_SIZE),
+        "--parallel", "1",
         "--fit", "on", "--flash-attn", "auto", "--cache-prompt",
     ])
+    if context_size >= KV_CACHE_QUANTIZATION_MIN_CONTEXT:
+        command += " --cache-type-k q8_0 --cache-type-v q8_0"
     if debug_logging:
         command += " --log-verbosity 4 --log-timestamps"
     if vision_projector_path is not None:

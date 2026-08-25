@@ -2,6 +2,8 @@ import {gguf} from '@huggingface/gguf';
 import type {VyactGgufMetadata} from '../services/api';
 
 const BYTES_PER_F16_VALUE = 2;
+const BYTES_PER_Q8_VALUE = 1.0625;
+const KV_CACHE_QUANTIZATION_MIN_CONTEXT = 32768;
 const MINIMUM_RUNTIME_BUFFER_BYTES = 512 * 1024 ** 2;
 
 export type GgufModelMetadata = VyactGgufMetadata;
@@ -58,13 +60,16 @@ export const inspectRemoteGguf = (
             const attentionLayerCount = Math.ceil(blockCount / fullAttentionInterval);
             const contextLength = asNumber(metadata[`${architecture}.context_length`]);
             const effectiveContextSize = Math.min(contextSize, contextLength || contextSize);
+            const kvBytesPerValue = contextSize >= KV_CACHE_QUANTIZATION_MIN_CONTEXT
+                ? BYTES_PER_Q8_VALUE
+                : BYTES_PER_F16_VALUE;
             return {
                 architecture,
                 parameterCount: parsed.parameterCount,
                 contextLength,
                 blockCount,
                 kvCacheBytes: effectiveContextSize * attentionLayerCount * kvHeadCount
-                    * (keyLength + valueLength) * BYTES_PER_F16_VALUE,
+                    * (keyLength + valueLength) * kvBytesPerValue,
             };
         })();
         repositoryMetadataCache.set(cacheKey, repositoryRequest);
