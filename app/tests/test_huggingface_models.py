@@ -43,7 +43,10 @@ class HuggingFaceModelTests(unittest.TestCase):
         self.assertEqual(metadata["architecture"], "QwenForCausalLM")
         self.assertEqual(metadata["block_count"], 32)
         self.assertEqual(metadata["context_length"], 65536)
-        self.assertEqual(metadata["kv_cache_bytes"], 32768 * 32 * 8 * 128 * 2 * 2)
+        self.assertEqual(
+            metadata["kv_cache_bytes"],
+            32768 * 32 * 8 * 128 * 2 * 1.0625
+        )
         self.assertGreater(metadata["estimated_memory_bytes"], 10_000_000_000)
 
     def test_estimates_hybrid_mlx_kv_cache_per_attention_type(self):
@@ -66,9 +69,13 @@ class HuggingFaceModelTests(unittest.TestCase):
             },
         }, file_size=6_300_000_000, context_size=32768)
 
-        sliding_cache_bytes = 40 * 1024 * 8 * 256 * 2 * 2
-        full_cache_bytes = 8 * 32768 * 1 * 512 * 2 * 2
-        self.assertEqual(metadata["kv_cache_bytes"], sliding_cache_bytes + full_cache_bytes)
+        sliding_cache_bytes = 40 * 1024 * 8 * 256 * 2 * 1.0625
+        full_cache_bytes = 8 * 32768 * 1 * 512 * 2 * 1.0625
+
+        self.assertEqual(
+            metadata["kv_cache_bytes"],
+            sliding_cache_bytes + full_cache_bytes
+        )
 
     def test_accepts_repository_relative_gguf_path(self):
         self.assertEqual(str(_safe_relative_file_path("Q4/model.gguf")), "Q4/model.gguf")
