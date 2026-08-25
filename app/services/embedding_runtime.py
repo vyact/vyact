@@ -9,13 +9,13 @@ from typing import Any
 
 from config import INSTALL_DIR
 from config.embeddings import (
-    EMBEDDING_MAX_TOKENS,
     EMBEDDING_MODEL_FILENAME,
     EMBEDDING_MODEL_ID,
     EMBEDDING_MODEL_REVISION,
     EMBEDDING_MODEL_SHA256,
 )
 from logger import get_logger
+from services.runtime_settings import get_runtime_settings
 
 logger = get_logger(__name__)
 
@@ -26,6 +26,7 @@ EMBEDDING_BATCH_TOKEN_BUDGET = 2048
 # 과도하게 늘리지 않는다.
 EMBEDDING_RUNTIME_BATCH_TOKENS = EMBEDDING_BATCH_TOKEN_BUDGET
 _model: Any | None = None
+_model_context_size: int | None = None
 # llama.cpp Llama 인스턴스는 동시 tokenize/create_embedding 호출에 안전하지 않다.
 # 파일 청크를 asyncio.gather로 임베딩할 때 이 락이 없으면 네이티브 코드가 SIGSEGV로
 # 프로세스 전체를 종료할 수 있으므로, 모델 로드와 추론을 하나의 큐로 직렬화한다.
@@ -33,7 +34,11 @@ _embedding_lock = asyncio.Lock()
 
 
 class EmbeddingContextExceeded(Exception):
-    """Raised when a text exceeds Vyact's fixed embedding context window."""
+    """Raised when a text exceeds Vyact's configured embedding context window."""
+
+
+def _configured_context_size() -> int:
+    return int(get_runtime_settings()["bge_num_ctx"])
 
 
 def _model_path() -> Path:
@@ -73,9 +78,17 @@ def _ensure_model_file() -> Path:
 
 
 def _load_model_sync() -> Any:
-    global _model
-    if _model is not None:
+    global _model, _model_context_size
+    context_size = _configured_context_size()
+    if _model is not None and _model_context_size == context_size:
         return _model
+
+    if _model is not None:
+        close = getattr(_model, "close", None)
+        if callable(close):
+            close()
+        _model = None
+        _model_context_size = None
 
     from llama_cpp import Llama
 
@@ -83,12 +96,13 @@ def _load_model_sync() -> Any:
     _model = Llama(
         model_path=str(path),
         embedding=True,
-        n_ctx=EMBEDDING_MAX_TOKENS,
-        n_batch=EMBEDDING_RUNTIME_BATCH_TOKENS,
-        n_ubatch=EMBEDDING_RUNTIME_BATCH_TOKENS,
+        n_ctx=context_size,
+        n_batch=min(EMBEDDING_RUNTIME_BATCH_TOKENS, context_size),
+        n_ubatch=min(EMBEDDING_RUNTIME_BATCH_TOKENS, context_size),
         n_gpu_layers=-1,
         verbose=False,
     )
+    _model_context_size = context_size
     return _model
 
 
@@ -102,13 +116,15 @@ def _normalize_embedding(vector: list[float]) -> list[float]:
     return [value / norm for value in vector] if norm else vector
 
 
-def _build_embedding_batches(items: list[tuple[int, str, int]]) -> list[list[tuple[int, str, int]]]:
+def _build_embedding_batches(
+    items: list[tuple[int, str, int]], batch_token_budget: int,
+) -> list[list[tuple[int, str, int]]]:
     """Group input fragments into native batches below the llama.cpp token limit."""
     batches: list[list[tuple[int, str, int]]] = []
     batch: list[tuple[int, str, int]] = []
     batch_tokens = 0
     for input_index, text, token_count in items:
-        if batch and batch_tokens + token_count > EMBEDDING_BATCH_TOKEN_BUDGET:
+        if batch and batch_tokens + token_count > batch_token_budget:
             batches.append(batch)
             batch = []
             batch_tokens = 0
@@ -119,19 +135,21 @@ def _build_embedding_batches(items: list[tuple[int, str, int]]) -> list[list[tup
     return batches
 
 
-def _split_embedding_input(model: Any, text: str) -> list[tuple[str, int]]:
+def _split_embedding_input(
+    model: Any, text: str, context_size: int, batch_token_budget: int,
+) -> list[tuple[str, int]]:
     """Split one long input so every native encoder call fits its micro-batch."""
     tokens = model.tokenize(text.encode("utf-8"))
-    if len(tokens) > EMBEDDING_MAX_TOKENS:
+    if len(tokens) > context_size:
         raise EmbeddingContextExceeded(
-            f"Embedding input exceeds the maximum of {EMBEDDING_MAX_TOKENS} tokens"
+            f"Embedding input exceeds the configured maximum of {context_size} tokens"
         )
-    if len(tokens) <= EMBEDDING_RUNTIME_BATCH_TOKENS:
+    if len(tokens) <= batch_token_budget:
         return [(text, len(tokens))]
 
     fragments: list[tuple[str, int]] = []
-    for start in range(0, len(tokens), EMBEDDING_RUNTIME_BATCH_TOKENS):
-        token_fragment = tokens[start:start + EMBEDDING_RUNTIME_BATCH_TOKENS]
+    for start in range(0, len(tokens), batch_token_budget):
+        token_fragment = tokens[start:start + batch_token_budget]
         fragment = model.detokenize(token_fragment).decode("utf-8", errors="replace")
         fragments.append((fragment, len(token_fragment)))
     return fragments
@@ -156,19 +174,23 @@ async def get_embeddings(texts: list[str], raise_on_context_exceeded: bool = Fal
     try:
         async with _embedding_lock:
             model = await asyncio.to_thread(_load_model_sync)
+            context_size = _model_context_size or _configured_context_size()
+            batch_token_budget = min(EMBEDDING_BATCH_TOKEN_BUDGET, context_size)
             vectors_by_input: list[list[tuple[list[float], int]]] = [[] for _ in texts]
             fragments: list[tuple[int, str, int]] = []
             for input_index, input_text in enumerate(texts):
                 try:
                     fragments.extend(
                         (input_index, fragment, token_count)
-                        for fragment, token_count in _split_embedding_input(model, input_text)
+                        for fragment, token_count in _split_embedding_input(
+                            model, input_text, context_size, batch_token_budget,
+                        )
                     )
                 except EmbeddingContextExceeded:
                     if raise_on_context_exceeded:
                         raise
-                    logger.warning("Embedding input %d exceeded the fixed context window", input_index)
-            for batch in _build_embedding_batches(fragments):
+                    logger.warning("Embedding input %d exceeded the configured context window", input_index)
+            for batch in _build_embedding_batches(fragments, batch_token_budget):
                 try:
                     response = await asyncio.to_thread(model.create_embedding, [text for _, text, _ in batch])
                     response_vectors = [item["embedding"] for item in response["data"]]
@@ -188,7 +210,7 @@ async def get_embeddings(texts: list[str], raise_on_context_exceeded: bool = Fal
     except EmbeddingContextExceeded:
         if raise_on_context_exceeded:
             raise
-        logger.warning("Embedding input exceeded the fixed context window")
+        logger.warning("Embedding input exceeded the configured context window")
         return [None] * len(texts)
     except Exception as exc:
         logger.exception("Vyact embedding failed: %s", exc)

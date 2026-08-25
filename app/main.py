@@ -23,6 +23,7 @@ from services.external_data.scheduler import (
     stop_external_data_scheduler,
 )
 from services.mcp_config import ensure_mcp_config
+from services.runtime_settings import apply_runtime_settings
 from routers.browser_extension import router as browser_extension_router
 
 APP_DIR = Path(__file__).parent
@@ -230,7 +231,6 @@ async def lifespan(app: FastAPI):
         try:
             from routers.deps import load_config_async, save_config_async
             from logger import DebugLogSettings, ToolLogSettings
-            from services.runtime_settings import apply_runtime_settings
             cfg = await load_config_async()
             if not cfg or not cfg.get("type"):
                 cfg = {"type": "vyact", "model": "", "vyact_config": {}, "config": {}}
@@ -264,6 +264,8 @@ async def lifespan(app: FastAPI):
                 )
                 cfg["model"] = model_id
                 cfg["vyact_config"]["model"] = model_id
+                cfg.setdefault("runtime_settings", {})["llm_num_ctx"] = cfg["vyact_config"]["context_size"]
+                apply_runtime_settings(cfg["runtime_settings"])
                 await save_config_async(cfg)
                 try:
                     from routers.deps import load_ui_language_async

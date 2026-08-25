@@ -817,6 +817,8 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
                 "runtime": runtime,
                 "repository": repository,
             })
+            config.setdefault("runtime_settings", {})["llm_num_ctx"] = req.context_size
+            apply_runtime_settings(config["runtime_settings"])
             await save_config_async(config)
         except Exception as error:
             logger.warning("[vyact] model activation failed: %s", error)
@@ -856,6 +858,8 @@ async def select_model(req: ModelSelectRequest):
             config["model"] = model_id
             config["model_type"] = "chat"
             vyact_config["model"] = model_id
+            config.setdefault("runtime_settings", {})["llm_num_ctx"] = vyact_config["context_size"]
+            apply_runtime_settings(config["runtime_settings"])
         elif req.type in ("openai", "gemini", "claude"):
             if not req.api_key:
                 yield sse(f"{req.type.upper()} API KEY 필요", "error", 0)
@@ -1128,7 +1132,10 @@ async def set_debug_logging(body: dict):
 @router.get("/settings/runtime")
 async def get_runtime_settings_endpoint():
     cfg = await load_config_async()
-    return apply_runtime_settings(cfg.get("runtime_settings"))
+    values = dict(cfg.get("runtime_settings", {}))
+    if cfg.get("type") == "vyact":
+        values["llm_num_ctx"] = cfg.get("vyact_config", {}).get("context_size", 32768)
+    return apply_runtime_settings(values)
 
 
 @router.post("/settings/runtime")
@@ -1151,6 +1158,27 @@ async def set_runtime_settings_endpoint(body: dict):
         raise HTTPException(400, "청크 겹침은 청크 크기보다 작아야 합니다.")
     cfg = await load_config_async()
     merged = {**DEFAULT_RUNTIME_SETTINGS, **cfg.get("runtime_settings", {}), **values}
+    vyact_config = cfg.get("vyact_config", {})
+    requested_context = values.get("llm_num_ctx")
+    if (
+        cfg.get("type") == "vyact"
+        and vyact_config.get("model_path")
+        and requested_context is not None
+        and int(requested_context) != int(vyact_config.get("context_size", 32768))
+    ):
+        previous_context = int(vyact_config.get("context_size", 32768))
+        vyact_config["context_size"] = int(requested_context)
+        try:
+            from services.vyact_runtime import start_configured_runtime
+            model_id = await asyncio.to_thread(
+                start_configured_runtime, vyact_config, cfg.get("debug_logging", False),
+            )
+            cfg["model"] = model_id
+            vyact_config["model"] = model_id
+            merged["llm_num_ctx"] = vyact_config["context_size"]
+        except Exception as error:
+            vyact_config["context_size"] = previous_context
+            raise HTTPException(500, "로컬 모델 컨텍스트 설정을 적용하지 못했습니다.") from error
     cfg["runtime_settings"] = apply_runtime_settings(merged)
     await save_config_async(cfg)
     return cfg["runtime_settings"]
