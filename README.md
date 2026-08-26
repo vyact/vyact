@@ -1,4 +1,4 @@
-<div align="center">
+<div align="center" markdown="1">
   <img src="assets/icon-transparent/icon_512x512.png" alt="Vyact logo" width="120" />
 
   # Vyact
@@ -27,7 +27,7 @@ It brings AI chat, document intelligence, notes, and the tools you already use i
 
 Built around local LLMs through llama.cpp and MLX, Vyact helps you keep your conversations, documents, and working context in your own environment. Use a local model as a practical workspace—not just another chatbot tab—and connect hosted providers or your own OpenAI-compatible LLM endpoint when a task calls for them.
 
-<div align="center">
+<div align="center" markdown="1">
 
 [![Download for Apple%20Silicon%20Mac%20and%20Windows](https://img.shields.io/badge/Download-GitHub%20Releases-7c3aed?style=for-the-badge&logo=github&logoColor=white)](https://github.com/vyact/vyact/releases)
 [![Support Vyact](https://img.shields.io/badge/Support-Vyact-ff5e5b?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/vyact)
@@ -187,7 +187,7 @@ Vyact is independently developed and released as open source. There is no ventur
 
 If Vyact saves you a little time, helps you think more clearly, or makes local AI genuinely useful in your day, your support funds the work that keeps it improving: development, testing, model compatibility, documentation, and support for new workflows. One-time support is meaningful, and sharing Vyact with someone who would benefit is just as valuable.
 
-<div align="center">
+<div align="center" markdown="1">
 
 [![Support on Ko-fi](https://img.shields.io/badge/Support%20on-Ko--fi-ff5e5b?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/vyact)
 [![Support with PayPal](https://img.shields.io/badge/Support%20with-PayPal-00457c?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/vyact)

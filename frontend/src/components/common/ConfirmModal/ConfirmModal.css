@@ -105,6 +105,16 @@
     opacity: 0.65;
 }
 
+.confirm-modal-btn.primary {
+    color: var(--primary-fg, #fff);
+    border-color: var(--accent);
+    background: var(--accent);
+}
+
+.confirm-modal-btn.primary:hover:not(:disabled) {
+    filter: brightness(1.08);
+}
+
 .confirm-modal-spinner {
     animation: confirm-modal-spin 0.8s linear infinite;
 }

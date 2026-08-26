@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from services.db import SETTINGS_INDEX, get_es
+from services.db import EXTERNAL_DATA_SETTINGS_INDEX, EXTERNAL_DATA_STATE_INDEX, get_es
 from services.external_data.cleanup import CLEANUP_STATUS_DOC_ID, get_cleanup_status
 from services.external_data.biz_support import (
     DAILY_REQUEST_LIMIT as BIZ_SUPPORT_REQUEST_LIMIT,
@@ -191,7 +191,7 @@ async def _load_source_statuses(source_ids: list[str]) -> dict[str, dict]:
     es = get_es()
     try:
         result = await es.mget(
-            index=SETTINGS_INDEX,
+            index=EXTERNAL_DATA_STATE_INDEX,
             ids=[document_id for document_id, _ in selected.values()],
         )
     finally:
@@ -335,7 +335,14 @@ async def get_external_data_bootstrap():
     ]
     es = get_es()
     try:
-        result = await es.mget(index=SETTINGS_INDEX, ids=document_ids)
+        settings_result, state_result = await asyncio.gather(
+            es.mget(index=EXTERNAL_DATA_SETTINGS_INDEX, ids=[EXTERNAL_DATA_SETTINGS_DOC_ID]),
+            es.mget(index=EXTERNAL_DATA_STATE_INDEX, ids=[
+                document_id for document_id in document_ids
+                if document_id != EXTERNAL_DATA_SETTINGS_DOC_ID
+            ]),
+        )
+        result = {"docs": settings_result.get("docs", []) + state_result.get("docs", [])}
     finally:
         await es.close()
     values = {

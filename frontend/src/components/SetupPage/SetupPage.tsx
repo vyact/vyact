@@ -6,9 +6,10 @@ import { syncPendingLanguageAfterSetup } from '../../i18n';
 import EsModeSelector from './EsModeSelector';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import {CUSTOM_PROTOCOL_OPTIONS, OPENAI_COMPATIBLE_DOCS_URL} from '../../constants/customProviders';
-import {api, type VyactHardwareInfo, type VyactHubModel} from '../../services/api';
+import {api, type VyactHardwareInfo, type VyactHubModel, VyactRuntimeInstallError} from '../../services/api';
 import {Tooltip} from '../common/Tooltip/Tooltip';
 import OverflowTooltipText from '../common/OverflowTooltipText/OverflowTooltipText';
+import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
 import {
     formatCompactDownloads,
     formatModelBytes,
@@ -84,6 +85,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
 
     const [logs, setLogs] = useState<LogEntry[]>([]);
     const [errorLogs, setErrorLogs] = useState<string[]>([]);
+    const [showRuntimeInstallHelp, setShowRuntimeInstallHelp] = useState(false);
 
     const logRef = useRef<HTMLDivElement>(null);
     const shouldFollowLogTailRef = useRef(true);
@@ -266,6 +268,20 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                 };
 
         try {
+            if (provider === 'vyact') {
+                setProgress(null);
+                addLog('info', t('main:modelDownload.preparingRuntime'));
+                try {
+                    await api.installVyactRuntime(message => addLog('log', message));
+                } catch (error) {
+                    if (error instanceof VyactRuntimeInstallError && error.code === 'runtime_package_manager_missing') {
+                        setShowRuntimeInstallHelp(true);
+                        setIsInstalling(false);
+                        return;
+                    }
+                    throw error;
+                }
+            }
             if (provider === 'vyact' && selectedHubModelFile) {
                 setProgress(null);
                 addLog('info', t('main:modelDownload.downloading'));
@@ -324,6 +340,13 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                         const localizedMessage = parsed.i18nKey
                             ? t(parsed.i18nKey, parsed.i18nParams ?? {})
                             : parsed.message;
+
+                        if (type === 'runtime_package_manager_missing') {
+                            setShowRuntimeInstallHelp(true);
+                            await reader.cancel();
+                            setIsInstalling(false);
+                            return;
+                        }
 
                         if (type === 'error') {
                             hasError = true;
@@ -512,6 +535,36 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                 )}
 
             </div>
+            {showRuntimeInstallHelp && <ConfirmModal
+                title={t('main:modelDownload.runtimeInstallRequiredTitle')}
+                description={t('main:modelDownload.runtimeInstallRequiredDescription')}
+                details={[
+                    t(vyactHardware.platform === 'windows'
+                        ? 'main:modelDownload.runtimeInstallWindows'
+                        : 'main:modelDownload.runtimeInstallBrew'),
+                    t('main:modelDownload.runtimeInstallRetryHelp'),
+                ]}
+                options={[
+                    {label: t('main:modelDownload.runtimeInstallGuide'), value: 'guide'},
+                    {label: t('main:modelDownload.runtimeInstallRetry'), value: 'retry', variant: 'primary'},
+                    {label: t('main:modelDownload.runtimeInstallClose'), value: 'close'},
+                ]}
+                onClose={() => setShowRuntimeInstallHelp(false)}
+                onSelect={value => {
+                    if (value === 'guide') {
+                        window.open(
+                            vyactHardware.platform === 'windows'
+                                ? 'https://learn.microsoft.com/windows/package-manager/winget/'
+                                : 'https://brew.sh/',
+                            '_blank',
+                            'noopener,noreferrer',
+                        );
+                        return;
+                    }
+                    setShowRuntimeInstallHelp(false);
+                    if (value === 'retry') void handleInstall();
+                }}
+            />}
         </div>
     );
 };

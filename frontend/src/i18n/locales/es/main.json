@@ -537,7 +537,15 @@
     "preparingRuntime": "Preparando llama.cpp y llama-swap...",
     "preparingMtp": "Comprobando y preparando un MTP compatible...",
     "activating": "Preparando el modelo...",
-    "loadingIntoMemory": "Cargando el modelo en memoria... ({{seconds}} s)"
+    "loadingIntoMemory": "Cargando el modelo en memoria... ({{seconds}} s)",
+    "runtimeInstallRequiredTitle": "No se pudo preparar el entorno de IA local",
+    "runtimeInstallRequiredDescription": "La instalación automática requiere un gestor de paquetes compatible. Consulta la guía oficial, vuelve aquí y comprueba de nuevo. La descarga del modelo no ha comenzado.",
+    "runtimeInstallBrew": "Instala Homebrew en macOS o Linux.",
+    "runtimeInstallWindows": "Instala o actualiza winget mediante App Installer en Windows.",
+    "runtimeInstallRetryHelp": "Puedes volver a comprobarlo sin reiniciar la aplicación. Los componentes ya preparados no se reinstalarán.",
+    "runtimeInstallGuide": "Ver guía oficial de instalación",
+    "runtimeInstallRetry": "Comprobar de nuevo",
+    "runtimeInstallClose": "Cerrar"
   },
   "shortcutModal": {
     "title": "Atajos",

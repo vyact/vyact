@@ -142,11 +142,7 @@
       },
       "history_token_budget": {
         "label": "History Token Budget",
-        "help": "Token chat trước"
-      },
-      "history_chars_per_token": {
-        "label": "Characters per Token",
-        "help": "Ước lượng token"
+        "help": "Ngân sách token tối đa cho hội thoại trước. Lượng được gửi sẽ tự động giới hạn trong phạm vi an toàn của kích thước ngữ cảnh mô hình sau khi tính đến lời nhắc hệ thống, tài liệu tham khảo, câu hỏi hiện tại, đầu ra và biên an toàn. Vyact dùng tokenizer của mô hình cục bộ đã chọn; nhà cung cấp đám mây dùng tokenizer chung nội bộ nên mức sử dụng thực tế có thể khác."
       },
       "bge_num_ctx": {
         "label": "BGE-M3 Context Window",
@@ -211,7 +207,10 @@
       "chat_file_chunks": "Các đoạn vector từ tệp đính kèm chat (xóa khi xóa hội thoại)",
       "projects": "Cấu hình dự án (thư mục)",
       "system_prompts": "Prompt hệ thống tùy chỉnh",
-      "system_settings": "Cài đặt ứng dụng (model, API key, cài đặt runtime, v.v.)",
+      "system_settings": "Cài đặt chung của ứng dụng và ngôn ngữ giao diện",
+      "integration_settings": "Cài đặt máy chủ MCP và tích hợp dịch vụ bên ngoài",
+      "google_workspace_settings": "Cài đặt Google Workspace theo từng tài khoản",
+      "external_data_settings": "Cài đặt kết nối dữ liệu công cộng bên ngoài",
       "rag_files": "Siêu dữ liệu của tệp đã tải lên và lập chỉ mục",
       "web_documents": "Siêu dữ liệu và toàn văn đã được làm sạch của trang web lưu từ tiện ích Chrome",
       "web_doc_chunks": "Các đoạn vector của trang web đã lưu",

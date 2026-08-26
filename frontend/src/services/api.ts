@@ -16,6 +16,13 @@ import { assertOk, ApiError } from '../utils/apiError';
 const API_BASE = '/api';
 const EXTERNAL_DATA_BOOTSTRAP_CACHE_MS = 10_000;
 
+export class VyactRuntimeInstallError extends Error {
+    constructor(message: string, public readonly code: string) {
+        super(message);
+        this.name = 'VyactRuntimeInstallError';
+    }
+}
+
 type ExternalDataBootstrapResponse = {
     connections: Record<string, {has_service_key: boolean; enabled: boolean}>;
     statuses: Record<string, Gov24SyncStatusResponse>;
@@ -446,7 +453,9 @@ export const api = {
                 if (!line.startsWith('data: ')) continue;
                 const event = JSON.parse(line.slice(6));
                 onProgress?.(event.message, event.progress);
-                if (event.type === 'error') throw new Error(event.message);
+                if (event.type === 'error' || event.type === 'runtime_package_manager_missing') {
+                    throw new VyactRuntimeInstallError(event.message, event.type);
+                }
             }
         }
     },

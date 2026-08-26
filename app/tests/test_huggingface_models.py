@@ -4,7 +4,6 @@ from pathlib import Path
 from unittest.mock import patch
 
 from services.huggingface_models import (
-    RECOMMENDED_GGUF_REPOSITORIES,
     _mlx_model_from_hub_item,
     _mlx_quantization_label,
     _merge_search_and_detail,
@@ -84,11 +83,6 @@ class HuggingFaceModelTests(unittest.TestCase):
         for filename in ("../model.gguf", "/model.gguf", "model.bin"):
             with self.assertRaises(ValueError):
                 _safe_relative_file_path(filename)
-
-    def test_recommended_models_cover_small_medium_and_large_choices(self):
-        self.assertEqual(len(RECOMMENDED_GGUF_REPOSITORIES), 3)
-        self.assertTrue(any("4B" in repo_id for repo_id in RECOMMENDED_GGUF_REPOSITORIES))
-        self.assertTrue(any("9B" in repo_id for repo_id in RECOMMENDED_GGUF_REPOSITORIES))
 
     def test_hub_item_keeps_only_gguf_files(self):
         model = _model_from_hub_item({

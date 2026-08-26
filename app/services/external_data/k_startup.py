@@ -10,7 +10,7 @@ from urllib.parse import unquote
 import httpx
 from elasticsearch.helpers import async_bulk
 
-from services.db import SETTINGS_INDEX, get_es
+from services.db import EXTERNAL_DATA_STATE_INDEX, get_es
 from services.external_data.gov24 import normalize_application_deadline
 from services.external_data.quota import DailyRequestQuota
 from services.external_data.search import RERANK_CANDIDATE_SIZE, build_browser_search_query, build_candidate_search_query, select_relevant_candidates
@@ -235,7 +235,7 @@ async def _ensure_index() -> None:
 async def _save_sync_status(status: dict) -> None:
     es = get_es()
     try:
-        await es.index(index=SETTINGS_INDEX, id=SYNC_STATUS_DOC_ID, document={"key": SYNC_STATUS_DOC_ID, "value": status}, refresh=False)
+        await es.index(index=EXTERNAL_DATA_STATE_INDEX, id=SYNC_STATUS_DOC_ID, document={"key": SYNC_STATUS_DOC_ID, "value": status}, refresh=False)
     finally:
         await es.close()
     await notify_status_changed(SOURCE_ID)
@@ -244,7 +244,7 @@ async def _save_sync_status(status: dict) -> None:
 async def get_sync_status() -> dict:
     es = get_es()
     try:
-        result = await es.get(index=SETTINGS_INDEX, id=SYNC_STATUS_DOC_ID, ignore=[404])
+        result = await es.get(index=EXTERNAL_DATA_STATE_INDEX, id=SYNC_STATUS_DOC_ID, ignore=[404])
         if not result.get("found"):
             return {"status": "idle", "document_count": 0, "request_count": 0, "request_limit": DAILY_REQUEST_LIMIT}
         value = result["_source"].get("value", {})

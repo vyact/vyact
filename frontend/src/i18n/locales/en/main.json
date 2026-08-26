@@ -537,7 +537,15 @@
     "preparingRuntime": "Preparing llama.cpp and llama-swap...",
     "preparingMtp": "Checking and preparing compatible MTP...",
     "activating": "Preparing model...",
-    "loadingIntoMemory": "Loading model into memory... ({{seconds}}s)"
+    "loadingIntoMemory": "Loading model into memory... ({{seconds}}s)",
+    "runtimeInstallRequiredTitle": "The local AI runtime could not be prepared",
+    "runtimeInstallRequiredDescription": "A supported package manager is required for automatic installation. Review the installation guide, then return here and try again. The model download has not started.",
+    "runtimeInstallBrew": "Install Homebrew on macOS or Linux.",
+    "runtimeInstallWindows": "Install or update winget through App Installer on Windows.",
+    "runtimeInstallRetryHelp": "You can try again without restarting the app. Components that are already ready will not be reinstalled.",
+    "runtimeInstallGuide": "View official installation guide",
+    "runtimeInstallRetry": "Check again",
+    "runtimeInstallClose": "Close"
   },
   "shortcutModal": {
     "title": "Shortcuts",

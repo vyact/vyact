@@ -538,7 +538,15 @@
     "preparingRuntime": "Đang chuẩn bị llama.cpp và llama-swap...",
     "preparingMtp": "Đang kiểm tra và chuẩn bị MTP tương thích...",
     "activating": "Đang chuẩn bị mô hình...",
-    "loadingIntoMemory": "Đang nạp mô hình vào bộ nhớ... ({{seconds}} giây)"
+    "loadingIntoMemory": "Đang nạp mô hình vào bộ nhớ... ({{seconds}} giây)",
+    "runtimeInstallRequiredTitle": "Không thể chuẩn bị môi trường AI cục bộ",
+    "runtimeInstallRequiredDescription": "Cần trình quản lý gói được hỗ trợ để cài đặt tự động. Hãy xem hướng dẫn chính thức rồi quay lại đây và kiểm tra lại. Mô hình chưa được tải xuống.",
+    "runtimeInstallBrew": "Cài đặt Homebrew trên macOS hoặc Linux.",
+    "runtimeInstallWindows": "Cài đặt hoặc cập nhật winget qua App Installer trên Windows.",
+    "runtimeInstallRetryHelp": "Bạn có thể kiểm tra lại mà không cần khởi động lại ứng dụng. Các thành phần đã sẵn sàng sẽ không được cài đặt lại.",
+    "runtimeInstallGuide": "Xem hướng dẫn cài đặt chính thức",
+    "runtimeInstallRetry": "Kiểm tra lại",
+    "runtimeInstallClose": "Đóng"
   },
   "shortcutModal": {
     "title": "Phím tắt",

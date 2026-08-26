@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {Calculator, Check, Eye, EyeOff, KeyRound, LoaderCircle, Search, Sparkles} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
-import {api, type VyactHardwareInfo, type VyactHubModel} from '../../services/api';
+import {api, type VyactHardwareInfo, type VyactHubModel, VyactRuntimeInstallError} from '../../services/api';
 import {inspectRemoteGguf, type GgufModelMetadata} from '../../utils/ggufMetadata';
 import {
     formatCompactDownloads,
@@ -16,6 +16,7 @@ import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import ModelSettingsModal from '../ModelSettingsModal/ModelSettingsModal';
 import OverflowTooltipText from '../common/OverflowTooltipText/OverflowTooltipText';
 import {Tooltip} from '../common/Tooltip/Tooltip';
+import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
 import '../ProviderSettingsModal/ProviderSettingsModal.css';
 import './VyactModelModal.css';
 
@@ -66,7 +67,9 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     const [metadataByFile, setMetadataByFile] = useState<Record<string, GgufModelMetadata>>({});
     const [analyzingFile, setAnalyzingFile] = useState('');
     const [downloadedSettings, setDownloadedSettings] = useState<{modelPath: string; runtime: 'gguf' | 'mlx'; repository: string; context: number} | null>(null);
+    const [showRuntimeInstallHelp, setShowRuntimeInstallHelp] = useState(false);
     const searchRequestIdRef = useRef(0);
+    const platformInitializedRef = useRef(false);
     const cacheCheckedFilesRef = useRef(new Set<string>());
     const busy = isSearching || isDownloading || isSavingToken;
     const selectedFileKey = selectedFile
@@ -93,6 +96,10 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
         try {
             const searchResponse = await api.searchVyactModels(searchQuery, searchMlxOnly);
             if (requestId === searchRequestIdRef.current) {
+                if (!platformInitializedRef.current) {
+                    setMlxOnly(searchResponse.hardware.apple_silicon);
+                    platformInitializedRef.current = true;
+                }
                 setModels(searchResponse.models);
                 setHardware(searchResponse.hardware);
                 setInstalledModels(searchResponse.installed);
@@ -124,7 +131,12 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
             setTokenConfigured(true);
             setMessage(t('modelSelector.tokenSaved'));
         } catch (error) {
-            setMessage(String(error));
+            if (error instanceof VyactRuntimeInstallError && error.code === 'runtime_package_manager_missing') {
+                setMessage('');
+                setShowRuntimeInstallHelp(true);
+            } else {
+                setMessage(String(error));
+            }
         } finally {
             setIsSavingToken(false);
         }
@@ -289,22 +301,20 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                         <label className="provider-editor-field">
                             <span className="vyact-search-label">
                                 <span><Search size={14}/>{t('modelSelector.searchLabel')}</span>
-                                {hardware.apple_silicon && (
-                                    <button
-                                        type="button"
-                                        className={`vyact-mlx-switch${mlxOnly ? ' is-on' : ''}`}
-                                        role="switch"
-                                        aria-checked={mlxOnly}
-                                        disabled={busy}
-                                        onClick={() => {
-                                            const nextValue = !mlxOnly;
-                                            setMlxOnly(nextValue);
-                                            void searchModels(query, nextValue);
-                                        }}
-                                    >
-                                        <span aria-hidden="true"><i/></span>{t('modelSelector.mlxOnly')}
-                                    </button>
-                                )}
+                                <button
+                                    type="button"
+                                    className={`vyact-mlx-switch${mlxOnly ? ' is-on' : ''}`}
+                                    role="switch"
+                                    aria-checked={mlxOnly}
+                                    disabled={busy || !hardware.apple_silicon}
+                                    onClick={() => {
+                                        const nextValue = !mlxOnly;
+                                        setMlxOnly(nextValue);
+                                        void searchModels(query, nextValue);
+                                    }}
+                                >
+                                    <span aria-hidden="true"><i/></span>{t('modelSelector.mlxOnly')}
+                                </button>
                             </span>
                             <div className="vyact-model-search-field">
                                 <input value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => event.key === 'Enter' && void searchModels(query)} placeholder={t('modelSelector.modelSearch')}/>
@@ -469,5 +479,35 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
             </section>
         </ModalOverlay>
         {downloadedSettings && <ModelSettingsModal modelPath={downloadedSettings.modelPath} runtime={downloadedSettings.runtime} repository={downloadedSettings.repository} recommendedContext={downloadedSettings.context} activateOnApply onClose={() => setDownloadedSettings(null)} onApplied={async () => {await onSelected(); onClose();}}/>}
+        {showRuntimeInstallHelp && <ConfirmModal
+            title={t('modelDownload.runtimeInstallRequiredTitle')}
+            description={t('modelDownload.runtimeInstallRequiredDescription')}
+            details={[
+                t(hardware.platform === 'windows'
+                    ? 'modelDownload.runtimeInstallWindows'
+                    : 'modelDownload.runtimeInstallBrew'),
+                t('modelDownload.runtimeInstallRetryHelp'),
+            ]}
+            options={[
+                {label: t('modelDownload.runtimeInstallGuide'), value: 'guide'},
+                {label: t('modelDownload.runtimeInstallRetry'), value: 'retry', variant: 'primary'},
+                {label: t('modelDownload.runtimeInstallClose'), value: 'close'},
+            ]}
+            onClose={() => setShowRuntimeInstallHelp(false)}
+            onSelect={value => {
+                if (value === 'guide') {
+                    window.open(
+                        hardware.platform === 'windows'
+                            ? 'https://learn.microsoft.com/windows/package-manager/winget/'
+                            : 'https://brew.sh/',
+                        '_blank',
+                        'noopener,noreferrer',
+                    );
+                    return;
+                }
+                setShowRuntimeInstallHelp(false);
+                if (value === 'retry') void downloadSelectedModel();
+            }}
+        />}
     </>);
 }

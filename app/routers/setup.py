@@ -23,7 +23,7 @@ from services.hardware_info import get_local_hardware_info
 from services.huggingface_models import search_gguf_models
 from services.mcp_config import ensure_mcp_config
 from services.runtime_settings import DEFAULT_RUNTIME_SETTINGS, apply_runtime_settings
-from services.model_runtime_profiles import get_model_profile, recommended_model_profile, save_model_profile
+from services.model_runtime_profiles import get_model_profile, normalize_model_profile, recommended_model_profile, save_model_profile
 from services.vyact_model_metadata_cache import get_cached_model_metadata, save_cached_model_metadata
 
 logger = get_logger(__name__)
@@ -43,7 +43,7 @@ def is_japanese_system_language() -> bool:
 
 
 RUNTIME_SETTING_LIMITS = {
-    "history_token_budget": (0, 131072), "history_chars_per_token": (0.1, 10),
+    "history_token_budget": (0, 131072),
     "bge_num_ctx": (1, 8192),
     "document_chunk_size": (100, 100000), "document_chunk_overlap": (0, 99999),
 }
@@ -415,11 +415,18 @@ async def install(req: ModelSelectRequest):
             # 최초에 MLX 모델을 선택했더라도 이후 GGUF 모델로 바로 전환할 수 있도록
             # Vyact 설치 시 네이티브 llama.cpp + llama-swap 런타임을 함께 준비한다.
             if req.type == "vyact":
-                from services.vyact_runtime import install_missing_runtime
+                from services.vyact_runtime import RuntimePackageManagerMissingError, install_missing_runtime
                 yield sse("Checking Vyact local runtime...", "info", 12)
                 try:
                     async for message in install_missing_runtime():
                         yield sse(message, "info", 16)
+                except RuntimePackageManagerMissingError:
+                    yield sse(
+                        "자동 설치에 필요한 패키지 관리자를 찾지 못했습니다.",
+                        "runtime_package_manager_missing",
+                        0,
+                    )
+                    return
                 except Exception as error:
                     logger.warning("[setup] Vyact runtime installation failed: %s", error)
                     yield sse(f"Vyact 런타임 설치 실패: {error}", "error", 0)
@@ -669,11 +676,18 @@ async def get_vyact_huggingface_token_status():
 @router.post("/vyact/runtime/install")
 async def install_vyact_runtime():
     async def stream():
-        from services.vyact_runtime import install_missing_runtime
+        from services.vyact_runtime import RuntimePackageManagerMissingError, install_missing_runtime
 
         try:
             async for message in install_missing_runtime():
                 yield sse(message, "info")
+        except RuntimePackageManagerMissingError:
+            yield sse(
+                "자동 설치에 필요한 패키지 관리자를 찾지 못했습니다.",
+                "runtime_package_manager_missing",
+                0,
+            )
+            return
         except Exception as error:
             logger.warning("[vyact] native runtime installation failed: %s", error)
             yield sse(f"Vyact 런타임 설치 실패: {error}", "error", 0)
@@ -826,6 +840,9 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
         try:
             config = await load_config_async()
             runtime = "mlx" if req.model_path.startswith("mlx/") else req.runtime
+            safe_profile = normalize_model_profile({**req.model_dump(), "runtime": runtime})
+            req.context_size = safe_profile["context_size"]
+            req.max_output_tokens = safe_profile["max_output_tokens"]
             if runtime == "mlx":
                 from services.mlx_runtime import get_downloaded_mlx_model_path, start_mlx_model
 

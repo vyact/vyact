@@ -6,7 +6,7 @@ import './ConfirmModal.css';
 interface ConfirmModalOption {
     label: string;
     value: string;
-    variant?: 'default' | 'danger';
+    variant?: 'default' | 'primary' | 'danger';
 }
 
 interface ConfirmModalProps {
@@ -51,7 +51,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                         return (
                         <button
                             key={opt.value}
-                            className={`confirm-modal-btn${opt.variant === 'danger' ? ' danger' : ''}`}
+                            className={`confirm-modal-btn${opt.variant === 'danger' ? ' danger' : opt.variant === 'primary' ? ' primary' : ''}`}
                             onClick={() => onSelect(opt.value)}
                             disabled={loading}
                         >

@@ -168,11 +168,7 @@
       },
       "history_token_budget": {
         "label": "History Token Budget",
-        "help": "Maximum budget for prior conversation."
-      },
-      "history_chars_per_token": {
-        "label": "Characters per Token",
-        "help": "Characters used to approximate one token."
+        "help": "Maximum token budget for prior conversation. The amount sent is automatically limited to a safe range within the model's context size after accounting for the system prompt, references, current question, output, and safety margin. Vyact uses the selected local model's tokenizer; cloud providers use an internal common tokenizer, so actual usage may differ."
       },
       "bge_num_ctx": {
         "label": "BGE-M3 Context Window",
@@ -237,7 +233,10 @@
       "chat_file_chunks": "Vector chunks from chat attachments (deleted with conversation)",
       "projects": "Project (folder) configuration",
       "system_prompts": "Custom system prompts",
-      "system_settings": "App settings (model, API keys, runtime settings, etc.)",
+      "system_settings": "General app settings and UI language",
+      "integration_settings": "MCP servers and external service integration settings",
+      "google_workspace_settings": "Per-account Google Workspace user settings",
+      "external_data_settings": "External public-data connection settings",
       "rag_files": "Metadata for uploaded and indexed files",
       "web_documents": "Metadata and cleaned full text for web pages saved from the Chrome extension",
       "web_doc_chunks": "Vector chunks from saved web pages",

@@ -26,6 +26,13 @@ HIST_INDEX = "rag_history"
 PROJECTS_INDEX = "projects"
 PROMPTS_INDEX = "system_prompts"
 SETTINGS_INDEX = "system_settings"
+INTEGRATION_SETTINGS_INDEX = "integration_settings"
+INTEGRATION_CREDENTIALS_INDEX = "integration_credentials"
+GOOGLE_WORKSPACE_SETTINGS_INDEX = "google_workspace_settings"
+EXTERNAL_DATA_SETTINGS_INDEX = "external_data_settings"
+EXTERNAL_DATA_STATE_INDEX = "external_data_state"
+PLUGIN_STATE_INDEX = "plugin_state"
+RUNTIME_STATE_INDEX = "runtime_state"
 FILES_INDEX = "rag_files"
 WEB_DOCUMENTS_INDEX = "web_documents"
 DOCUMENT_ORIGINALS_INDEX = "document_originals"
@@ -268,30 +275,39 @@ async def ensure_index():
                 mappings={"properties": {
                     "key": {"type": "keyword"},
                     "value": {"type": "object", "enabled": False},
-                    "google_granted_scopes": {"type": "keyword"},
-                    "google_account_key": {"type": "keyword"},
-                    "google_account_slot_id": {"type": "keyword"},
-                    "google_access_token_expires_at": {
-                        "type": "date",
-                        "format": "strict_date_optional_time||epoch_millis",
-                    },
                 }},
             )
             logger.info("system_settings 인덱스 생성 완료")
-        else:
-            # 기존 설치에도 Google OAuth 권한/만료 메타데이터 필드를 추가한다.
-            await es.indices.put_mapping(
-                index=SETTINGS_INDEX,
-                properties={
-                    "google_granted_scopes": {"type": "keyword"},
-                    "google_account_key": {"type": "keyword"},
-                    "google_account_slot_id": {"type": "keyword"},
-                    "google_access_token_expires_at": {
-                        "type": "date",
-                        "format": "strict_date_optional_time||epoch_millis",
-                    },
+
+        separated_settings_indices = {
+            INTEGRATION_SETTINGS_INDEX: {},
+            GOOGLE_WORKSPACE_SETTINGS_INDEX: {},
+            EXTERNAL_DATA_SETTINGS_INDEX: {},
+            EXTERNAL_DATA_STATE_INDEX: {},
+            PLUGIN_STATE_INDEX: {},
+            RUNTIME_STATE_INDEX: {},
+            INTEGRATION_CREDENTIALS_INDEX: {
+                "google_granted_scopes": {"type": "keyword"},
+                "google_account_key": {"type": "keyword"},
+                "google_account_slot_id": {"type": "keyword"},
+                "google_access_token_expires_at": {
+                    "type": "date",
+                    "format": "strict_date_optional_time||epoch_millis",
                 },
-            )
+            },
+        }
+        for index_name, extra_properties in separated_settings_indices.items():
+            if not await es.indices.exists(index=index_name):
+                await es.indices.create(
+                    index=index_name,
+                    settings={"number_of_shards": 1, "number_of_replicas": 0},
+                    mappings={"properties": {
+                        "key": {"type": "keyword"},
+                        "value": {"type": "object", "enabled": False},
+                        **extra_properties,
+                    }},
+                )
+                logger.info("%s index created", index_name)
 
         # ── chat_file_chunks ───────────────────────────────────────
         # 채팅 중 첨부한 zip/파일 청크 전용 (doc_chunks와 분리 — 대화방 종속, 방 삭제 시 cascade 삭제)

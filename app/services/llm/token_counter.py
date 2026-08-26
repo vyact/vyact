@@ -3,20 +3,22 @@ from __future__ import annotations
 
 import asyncio
 from functools import lru_cache
+import json
+import os
 from urllib.parse import quote
 
 import httpx
 
 from services.mlx_runtime import get_downloaded_mlx_model_path
+from config import INSTALL_DIR
 
 from .context_window import estimate_message_tokens
 
 
 async def count_local_message_tokens(
         messages: list[dict], provider_config: dict, tools: list[dict] | None,
-        chars_per_token: float,
 ) -> int:
-    """Count the fully templated request with the selected model tokenizer."""
+    """Count with the model tokenizer, falling back to the common tokenizer."""
     try:
         if provider_config.get("runtime") == "mlx":
             model_path = provider_config.get("model_path")
@@ -25,7 +27,34 @@ async def count_local_message_tokens(
             return await asyncio.to_thread(_count_mlx_tokens, model_path, messages, tools)
         return await _count_llama_tokens(messages, provider_config, tools)
     except (ImportError, OSError, RuntimeError, TypeError, ValueError, httpx.HTTPError, KeyError):
-        return estimate_message_tokens(messages, chars_per_token)
+        return count_cloud_message_tokens(messages)
+
+
+@lru_cache(maxsize=1)
+def _cloud_encoding():
+    import tiktoken
+
+    tokenizer_cache = INSTALL_DIR / "runtime" / "tokenizers"
+    tokenizer_cache.mkdir(parents=True, exist_ok=True)
+    os.environ.setdefault("TIKTOKEN_CACHE_DIR", str(tokenizer_cache))
+    return tiktoken.get_encoding("o200k_base")
+
+
+def count_cloud_message_tokens(messages: list[dict]) -> int:
+    """Estimate cloud-provider history with the local o200k_base tokenizer."""
+    try:
+        encoding = _cloud_encoding()
+        total = 2
+        for message in messages:
+            total += 4
+            for key in ("role", "name", "content", "tool_calls"):
+                value = message.get(key)
+                if value:
+                    text = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)
+                    total += len(encoding.encode(text))
+        return total
+    except Exception:
+        return estimate_message_tokens(messages, 2.0)
 
 
 async def _count_llama_tokens(

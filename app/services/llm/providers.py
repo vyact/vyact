@@ -50,12 +50,12 @@ async def _local_max_tokens(
     runtime = get_runtime_settings()
     from .token_counter import count_local_message_tokens
     input_tokens = await count_local_message_tokens(
-        messages, provider_config, tools, runtime["history_chars_per_token"],
+        messages, provider_config, tools,
     )
     return calculate_output_token_limit(
         messages,
         int(provider_config.get("context_size") or 32768),
-        runtime["history_chars_per_token"],
+        2.0,
         runtime["llm_num_predict"],
         input_tokens=input_tokens,
     )

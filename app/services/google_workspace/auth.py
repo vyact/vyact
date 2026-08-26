@@ -20,7 +20,7 @@ except ImportError:
     build = None  # type: ignore
 
 from logger import get_logger
-from services.db import get_es, SETTINGS_INDEX
+from services.db import get_es, INTEGRATION_CREDENTIALS_INDEX
 from services.mcp_config import list_servers
 
 logger = get_logger(__name__)
@@ -149,7 +149,7 @@ async def _save_token_to_es(account_id: str, token_data: dict) -> None:
     es = get_es()
     try:
         await es.index(
-            index=SETTINGS_INDEX, id=document_id,
+            index=INTEGRATION_CREDENTIALS_INDEX, id=document_id,
             document={
                 "key": document_id,
                 "value": token_data,
@@ -172,7 +172,7 @@ async def _load_token_from_es(account_id: str) -> dict | None:
     es = get_es()
     try:
         result = await es.search(
-            index=SETTINGS_INDEX,
+            index=INTEGRATION_CREDENTIALS_INDEX,
             size=1,
             query={"term": {"google_account_slot_id": account_id}},
             source=["value"],
@@ -477,7 +477,7 @@ async def revoke_token(account_id: str) -> None:
     es = get_es()
     try:
         await es.delete_by_query(
-            index=SETTINGS_INDEX,
+            index=INTEGRATION_CREDENTIALS_INDEX,
             query={"term": {"google_account_slot_id": account_id}},
             conflicts="proceed",
             refresh=True,
@@ -492,7 +492,7 @@ async def revoke_all_tokens() -> None:
     es = get_es()
     try:
         result = await es.delete_by_query(
-            index=SETTINGS_INDEX,
+            index=INTEGRATION_CREDENTIALS_INDEX,
             query={"prefix": {"key": "google_workspace_token"}},
             conflicts="proceed",
             refresh=True,

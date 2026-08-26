@@ -537,7 +537,15 @@
     "preparingRuntime": "llama.cpp 및 llama-swap 준비 중...",
     "preparingMtp": "호환되는 MTP 확인 및 준비 중...",
     "activating": "모델 준비 중...",
-    "loadingIntoMemory": "모델 메모리 로드 중... ({{seconds}}초)"
+    "loadingIntoMemory": "모델 메모리 로드 중... ({{seconds}}초)",
+    "runtimeInstallRequiredTitle": "로컬 AI 실행 환경을 준비할 수 없습니다",
+    "runtimeInstallRequiredDescription": "자동 설치에 필요한 패키지 관리자가 없습니다. 설치 방법을 확인한 뒤 이 화면으로 돌아와 다시 확인해 주세요. 모델 다운로드는 시작되지 않았습니다.",
+    "runtimeInstallBrew": "macOS와 Linux에서는 Homebrew를 설치해 주세요.",
+    "runtimeInstallWindows": "Windows에서는 App Installer에 포함된 winget을 설치하거나 업데이트해 주세요.",
+    "runtimeInstallRetryHelp": "설치 후 앱을 재시작할 필요 없이 다시 확인할 수 있습니다. 이미 준비된 구성요소는 다시 설치하지 않습니다.",
+    "runtimeInstallGuide": "공식 설치 방법 보기",
+    "runtimeInstallRetry": "다시 확인",
+    "runtimeInstallClose": "닫기"
   },
   "shortcutModal": {
     "title": "단축키",

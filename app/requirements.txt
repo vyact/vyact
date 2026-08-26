@@ -21,6 +21,7 @@ python-docx==1.2.0
 openpyxl==3.1.5
 Pillow==12.3.0
 sentence-transformers==5.6.1
+tiktoken==0.14.0
 huggingface-hub==1.26.0
 llama-cpp-python==0.3.34
 mlx-vlm==0.6.16; sys_platform == "darwin" and platform_machine == "arm64"

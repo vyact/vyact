@@ -538,7 +538,15 @@
     "preparingRuntime": "Préparation de llama.cpp et llama-swap...",
     "preparingMtp": "Vérification et préparation d’un MTP compatible...",
     "activating": "Préparation du modèle...",
-    "loadingIntoMemory": "Chargement du modèle en mémoire... ({{seconds}} s)"
+    "loadingIntoMemory": "Chargement du modèle en mémoire... ({{seconds}} s)",
+    "runtimeInstallRequiredTitle": "Impossible de préparer l’environnement IA local",
+    "runtimeInstallRequiredDescription": "L’installation automatique nécessite un gestionnaire de paquets pris en charge. Consultez le guide officiel, puis revenez ici et réessayez. Le téléchargement du modèle n’a pas commencé.",
+    "runtimeInstallBrew": "Installez Homebrew sous macOS ou Linux.",
+    "runtimeInstallWindows": "Installez ou mettez à jour winget via App Installer sous Windows.",
+    "runtimeInstallRetryHelp": "Vous pouvez réessayer sans redémarrer l’application. Les composants déjà prêts ne seront pas réinstallés.",
+    "runtimeInstallGuide": "Voir le guide d’installation officiel",
+    "runtimeInstallRetry": "Vérifier à nouveau",
+    "runtimeInstallClose": "Fermer"
   },
   "shortcutModal": {
     "title": "Raccourcis",

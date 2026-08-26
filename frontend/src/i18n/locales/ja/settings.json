@@ -142,11 +142,7 @@
       },
       "history_token_budget": {
         "label": "History Token Budget",
-        "help": "会話履歴の最大トークン予算です。"
-      },
-      "history_chars_per_token": {
-        "label": "Characters per Token",
-        "help": "トークン近似に使う文字数です。"
+        "help": "以前の会話に割り当てる最大トークン予算です。システムプロンプト、参考資料、現在の質問、出力、安全マージンを含むモデルのコンテキストサイズを考慮し、安全な範囲内に自動的に制限されます。Vyactは選択したローカルモデルのトークナイザーを使用し、クラウドプロバイダーは内部の共通トークナイザーを使用するため、実際の使用量と異なる場合があります。"
       },
       "bge_num_ctx": {
         "label": "BGE-M3 Context Window",
@@ -211,7 +207,10 @@
       "chat_file_chunks": "チャット添付ファイルのベクトルチャンク（会話削除時に一緒に削除）",
       "projects": "プロジェクト（フォルダ）設定情報",
       "system_prompts": "カスタムシステムプロンプト",
-      "system_settings": "アプリ設定（モデル、APIキー、ランタイム設定など）",
+      "system_settings": "アプリの共通設定とUI言語",
+      "integration_settings": "MCPサーバーと外部サービスの連携設定",
+      "google_workspace_settings": "Google Workspaceのアカウント別ユーザー設定",
+      "external_data_settings": "外部公共データの接続設定",
       "rag_files": "アップロード・インデックスされたファイルのメタデータ",
       "web_documents": "Chrome拡張機能から保存したウェブ文書のメタデータと整理済み本文",
       "web_doc_chunks": "保存したウェブ文書のベクトルチャンク",

@@ -24,7 +24,7 @@ from starlette.responses import JSONResponse
 
 from config import INSTALL_DIR
 from logger import get_logger
-from services.db import SETTINGS_INDEX, get_es
+from services.db import PLUGIN_STATE_INDEX, get_es
 from services.mcp_client import mcp_manager
 from services.mcp_config import MCP_CATALOG, load_mcp_config, save_mcp_config
 
@@ -341,7 +341,7 @@ async def _save_plugin_state() -> None:
             for loaded in _loaded_plugins.values()
         ]
         await es.index(
-            index=SETTINGS_INDEX,
+            index=PLUGIN_STATE_INDEX,
             id=PLUGIN_STATE_DOC_ID,
             document={"key": PLUGIN_STATE_DOC_ID, "value": {"plugins": plugins}},
             refresh=True,
@@ -383,7 +383,7 @@ async def _load_restore_state() -> dict[str, Any]:
     es = get_es()
     try:
         response = await es.get(
-            index=SETTINGS_INDEX,
+            index=PLUGIN_STATE_INDEX,
             id=PLUGIN_RESTORE_STATE_DOC_ID,
             ignore=[404],
         )
@@ -399,7 +399,7 @@ async def _save_restore_state(state: dict[str, Any]) -> None:
     es = get_es()
     try:
         await es.index(
-            index=SETTINGS_INDEX,
+            index=PLUGIN_STATE_INDEX,
             id=PLUGIN_RESTORE_STATE_DOC_ID,
             document={"key": PLUGIN_RESTORE_STATE_DOC_ID, "value": state},
             refresh=True,

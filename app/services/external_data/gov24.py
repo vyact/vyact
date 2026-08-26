@@ -9,7 +9,7 @@ from urllib.parse import unquote
 import httpx
 from elasticsearch.helpers import async_bulk, async_scan
 
-from services.db import SETTINGS_INDEX, get_es
+from services.db import EXTERNAL_DATA_STATE_INDEX, get_es
 from services.external_data.quota import DailyRequestQuota
 from services.external_data.search import (
     build_browser_search_query,
@@ -241,7 +241,7 @@ async def _save_sync_status(status: dict) -> None:
     es = get_es()
     try:
         await es.index(
-            index=SETTINGS_INDEX,
+            index=EXTERNAL_DATA_STATE_INDEX,
             id=SYNC_STATUS_DOC_ID,
             document={"key": SYNC_STATUS_DOC_ID, "value": status},
             # GET은 실시간 조회를 지원하므로 진행률 저장마다 인덱스 refresh를
@@ -256,7 +256,7 @@ async def _save_sync_status(status: dict) -> None:
 async def get_sync_status() -> dict:
     es = get_es()
     try:
-        result = await es.get(index=SETTINGS_INDEX, id=SYNC_STATUS_DOC_ID, ignore=[404])
+        result = await es.get(index=EXTERNAL_DATA_STATE_INDEX, id=SYNC_STATUS_DOC_ID, ignore=[404])
         if not result.get("found"):
             return {"status": "idle", "document_count": 0, "request_count": 0, "request_limit": DAILY_REQUEST_LIMIT}
         status = result["_source"].get("value", {})

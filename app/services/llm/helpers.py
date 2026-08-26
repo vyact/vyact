@@ -14,7 +14,49 @@ from services.runtime_settings import get_runtime_settings
 def _approx_tokens(text: str) -> int:
     if not text:
         return 0
-    return int(len(text) / get_runtime_settings()["history_chars_per_token"]) + 1
+    return int(len(text) / 2.0) + 1
+
+
+def _valid_history(conversation_history: list) -> list:
+    valid = [m for m in conversation_history
+             if m.get("role") in ("user", "assistant", "tool")
+             and not m.get("isError")
+             and (m.get("content") or m.get("tool_calls"))]
+    if valid and valid[-1].get("role") == "user":
+        valid = valid[:-1]
+    return valid
+
+
+async def select_history_by_budget_for_provider(
+        conversation_history: list, provider_config: dict, budget: int | None = None,
+) -> tuple[list, bool]:
+    """Select recent history using the local model tokenizer or o200k_base."""
+    from .token_counter import count_cloud_message_tokens, count_local_message_tokens
+
+    budget = get_runtime_settings()["history_token_budget"] if budget is None else budget
+    valid = _valid_history(conversation_history)
+    if not valid:
+        return [], False
+    if budget <= 0:
+        return [], True
+
+    async def count(candidate: list) -> int:
+        if provider_config.get("is_local"):
+            return await count_local_message_tokens(candidate, provider_config, None)
+        return count_cloud_message_tokens(candidate)
+
+    if await count(valid) <= budget:
+        return valid, False
+
+    # 토큰 수는 메시지를 제거할수록 감소하므로 이진 탐색으로 가장 긴 최근 구간을 찾는다.
+    low, high = 0, len(valid) - 1
+    while low < high:
+        middle = (low + high) // 2
+        if await count(valid[middle:]) <= budget:
+            high = middle
+        else:
+            low = middle + 1
+    return valid[low:], low > 0
 
 
 def select_history_by_budget_with_status(
@@ -35,12 +77,7 @@ def select_history_by_budget_with_status(
     오래된 메시지가 제외됐는지를 나타낸다.
     """
     budget = get_runtime_settings()["history_token_budget"] if budget is None else budget
-    valid = [m for m in conversation_history
-             if m.get("role") in ("user", "assistant", "tool")
-             and not m.get("isError")
-             and (m.get("content") or m.get("tool_calls"))]
-    if valid and valid[-1].get("role") == "user":
-        valid = valid[:-1]
+    valid = _valid_history(conversation_history)
 
     selected: list = []
     used = 0

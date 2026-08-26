@@ -538,7 +538,15 @@
     "preparingRuntime": "กำลังเตรียม llama.cpp และ llama-swap...",
     "preparingMtp": "กำลังตรวจสอบและเตรียม MTP ที่เข้ากันได้...",
     "activating": "กำลังเตรียมโมเดล...",
-    "loadingIntoMemory": "กำลังโหลดโมเดลเข้าสู่หน่วยความจำ... ({{seconds}} วินาที)"
+    "loadingIntoMemory": "กำลังโหลดโมเดลเข้าสู่หน่วยความจำ... ({{seconds}} วินาที)",
+    "runtimeInstallRequiredTitle": "ไม่สามารถเตรียมสภาพแวดล้อม AI ภายในเครื่องได้",
+    "runtimeInstallRequiredDescription": "การติดตั้งอัตโนมัติต้องใช้ตัวจัดการแพ็กเกจที่รองรับ โปรดดูคู่มืออย่างเป็นทางการแล้วกลับมาตรวจสอบอีกครั้ง ยังไม่ได้เริ่มดาวน์โหลดโมเดล",
+    "runtimeInstallBrew": "ติดตั้ง Homebrew บน macOS หรือ Linux",
+    "runtimeInstallWindows": "ติดตั้งหรืออัปเดต winget ผ่าน App Installer บน Windows",
+    "runtimeInstallRetryHelp": "ตรวจสอบอีกครั้งได้โดยไม่ต้องเริ่มแอปใหม่ และจะไม่ติดตั้งส่วนประกอบที่พร้อมใช้งานแล้วซ้ำ",
+    "runtimeInstallGuide": "ดูคู่มือการติดตั้งอย่างเป็นทางการ",
+    "runtimeInstallRetry": "ตรวจสอบอีกครั้ง",
+    "runtimeInstallClose": "ปิด"
   },
   "shortcutModal": {
     "title": "คีย์ลัด",

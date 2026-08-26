@@ -41,6 +41,10 @@ _active_mtp_model: str | None = None
 _runtime_process: subprocess.Popen | None = None
 
 
+class RuntimePackageManagerMissingError(RuntimeError):
+    """Raised when no supported installer can provide the native runtime."""
+
+
 @dataclass(frozen=True)
 class RuntimePaths:
     """Resolved executable and storage paths for the native local runtime."""
@@ -53,6 +57,29 @@ class RuntimePaths:
 
 def _executable_name(name: str) -> str:
     return f"{name}.exe" if os.name == "nt" else name
+
+
+def _known_executable_paths(name: str) -> list[Path]:
+    """Return package-manager locations commonly absent from desktop app PATH."""
+    executable = _executable_name(name)
+    system = platform.system()
+    if system == "Darwin":
+        return [Path("/opt/homebrew/bin") / executable, Path("/usr/local/bin") / executable]
+    if system == "Linux":
+        return [
+            Path("/home/linuxbrew/.linuxbrew/bin") / executable,
+            Path("/usr/local/bin") / executable,
+            Path("/usr/bin") / executable,
+        ]
+    if system == "Windows":
+        local_app_data = os.environ.get("LOCALAPPDATA")
+        if local_app_data:
+            base = Path(local_app_data)
+            return [
+                base / "Microsoft" / "WindowsApps" / executable,
+                base / "Microsoft" / "WinGet" / "Links" / executable,
+            ]
+    return []
 
 
 def get_runtime_paths() -> RuntimePaths:
@@ -81,24 +108,26 @@ def get_native_install_commands() -> list[list[str]]:
     """
     paths = get_runtime_paths()
     system = platform.system()
-    if system in {"Darwin", "Linux"} and shutil.which("brew"):
+    brew_path = _which_path("brew")
+    if system in {"Darwin", "Linux"} and brew_path:
         commands = []
         if not paths.llama_server:
-            commands.append(["brew", "install", "llama.cpp"])
+            commands.append([str(brew_path), "install", "llama.cpp"])
         if not paths.llama_swap:
             commands.extend([
-                ["brew", "tap", "mostlygeek/llama-swap"],
-                ["brew", "trust", "--formula", "mostlygeek/llama-swap/llama-swap"],
-                ["brew", "install", "mostlygeek/llama-swap/llama-swap"],
+                [str(brew_path), "tap", "mostlygeek/llama-swap"],
+                [str(brew_path), "trust", "--formula", "mostlygeek/llama-swap/llama-swap"],
+                [str(brew_path), "install", "mostlygeek/llama-swap/llama-swap"],
             ])
         return commands
-    if system == "Windows" and shutil.which("winget"):
+    winget_path = _which_path("winget")
+    if system == "Windows" and winget_path:
         common = ["--exact", "--accept-package-agreements", "--accept-source-agreements", "--disable-interactivity"]
         commands = []
         if not paths.llama_server:
-            commands.append(["winget", "install", "--id", "ggml.llamacpp", *common])
+            commands.append([str(winget_path), "install", "--id", "ggml.llamacpp", *common])
         if not paths.llama_swap:
-            commands.append(["winget", "install", "--id", "mostlygeek.llama-swap", *common])
+            commands.append([str(winget_path), "install", "--id", "mostlygeek.llama-swap", *common])
         return commands
     return []
 
@@ -110,13 +139,15 @@ def get_native_update_commands() -> list[list[str]]:
     or tool-call parsing, so starting the app must never update it implicitly.
     """
     system = platform.system()
-    if system in {"Darwin", "Linux"} and shutil.which("brew"):
-        return [["brew", "upgrade", "llama.cpp", "llama-swap"]]
-    if system == "Windows" and shutil.which("winget"):
+    brew_path = _which_path("brew")
+    if system in {"Darwin", "Linux"} and brew_path:
+        return [[str(brew_path), "upgrade", "llama.cpp", "llama-swap"]]
+    winget_path = _which_path("winget")
+    if system == "Windows" and winget_path:
         common = ["--exact", "--accept-package-agreements", "--accept-source-agreements", "--disable-interactivity"]
         return [
-            ["winget", "upgrade", "--id", "ggml.llamacpp", *common],
-            ["winget", "upgrade", "--id", "mostlygeek.llama-swap", *common],
+            [str(winget_path), "upgrade", "--id", "ggml.llamacpp", *common],
+            [str(winget_path), "upgrade", "--id", "mostlygeek.llama-swap", *common],
         ]
     return []
 
@@ -128,7 +159,9 @@ async def install_missing_runtime():
         return
     commands = get_native_install_commands()
     if not commands:
-        raise RuntimeError("No supported package manager was found for automatic runtime installation")
+        raise RuntimePackageManagerMissingError(
+            "No supported package manager was found for automatic runtime installation"
+        )
     for command in commands:
         package_name = command[command.index("--id") + 1] if "--id" in command else command[-1]
         yield f"Installing {package_name}..."
@@ -149,7 +182,9 @@ async def install_missing_runtime():
 
 def _which_path(name: str) -> Path | None:
     resolved = shutil.which(name)
-    return Path(resolved) if resolved else None
+    if resolved:
+        return Path(resolved)
+    return next((path for path in _known_executable_paths(name) if path.is_file()), None)
 
 
 def get_host_memory_gb() -> int | None:

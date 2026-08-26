@@ -1,14 +1,16 @@
+import asyncio
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
 from services.vyact_runtime import (
-    RuntimePaths, cache_downloaded_model, get_native_install_commands, get_native_update_commands,
+    RuntimePackageManagerMissingError, RuntimePaths, cache_downloaded_model,
+    get_native_install_commands, get_native_update_commands, install_missing_runtime,
     delete_downloaded_model,
     initialize_downloaded_models_cache, list_downloaded_models, list_mtp_supported_models,
     list_selectable_models, start_single_model,
-    uncache_downloaded_model, write_single_model_config,
+    uncache_downloaded_model, write_single_model_config, _which_path,
 )
 
 
@@ -111,7 +113,7 @@ class VyactRuntimeTests(unittest.TestCase):
         with patch("services.vyact_runtime.get_runtime_paths", return_value=paths), \
              patch("services.vyact_runtime.platform.system", return_value="Darwin"), \
              patch("services.vyact_runtime.shutil.which", return_value="/opt/homebrew/bin/brew"):
-            self.assertEqual(get_native_install_commands(), [["brew", "install", "llama.cpp"]])
+            self.assertEqual(get_native_install_commands(), [["/opt/homebrew/bin/brew", "install", "llama.cpp"]])
 
     def test_macos_trusts_only_llama_swap_formula_before_install(self):
         paths = RuntimePaths(Path("/opt/homebrew/bin/llama-server"), None, Path("/models"), Path("/config"))
@@ -119,15 +121,33 @@ class VyactRuntimeTests(unittest.TestCase):
              patch("services.vyact_runtime.platform.system", return_value="Darwin"), \
              patch("services.vyact_runtime.shutil.which", return_value="/opt/homebrew/bin/brew"):
             self.assertEqual(get_native_install_commands(), [
-                ["brew", "tap", "mostlygeek/llama-swap"],
-                ["brew", "trust", "--formula", "mostlygeek/llama-swap/llama-swap"],
-                ["brew", "install", "mostlygeek/llama-swap/llama-swap"],
+                ["/opt/homebrew/bin/brew", "tap", "mostlygeek/llama-swap"],
+                ["/opt/homebrew/bin/brew", "trust", "--formula", "mostlygeek/llama-swap/llama-swap"],
+                ["/opt/homebrew/bin/brew", "install", "mostlygeek/llama-swap/llama-swap"],
             ])
 
     def test_macos_runtime_updates_are_opt_in_through_brew(self):
         with patch("services.vyact_runtime.platform.system", return_value="Darwin"), \
              patch("services.vyact_runtime.shutil.which", return_value="/opt/homebrew/bin/brew"):
-            self.assertEqual(get_native_update_commands(), [["brew", "upgrade", "llama.cpp", "llama-swap"]])
+            self.assertEqual(get_native_update_commands(), [["/opt/homebrew/bin/brew", "upgrade", "llama.cpp", "llama-swap"]])
+
+    def test_finds_new_package_manager_outside_desktop_app_path(self):
+        known_brew = Path("/opt/homebrew/bin/brew")
+        with patch("services.vyact_runtime.shutil.which", return_value=None), \
+             patch("services.vyact_runtime._known_executable_paths", return_value=[known_brew]), \
+             patch.object(Path, "is_file", return_value=True):
+            self.assertEqual(_which_path("brew"), known_brew)
+
+
+    def test_missing_package_manager_stops_before_runtime_install(self):
+        async def consume_install_messages():
+            async for _message in install_missing_runtime():
+                pass
+
+        with patch("services.vyact_runtime.runtime_is_available", return_value=False), \
+             patch("services.vyact_runtime.get_native_install_commands", return_value=[]):
+            with self.assertRaises(RuntimePackageManagerMissingError):
+                asyncio.run(consume_install_messages())
 
     def test_start_single_model_uses_only_the_managed_swap_binary(self):
         with tempfile.TemporaryDirectory() as temp_dir:

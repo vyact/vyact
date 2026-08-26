@@ -41,11 +41,7 @@ TOP_P = None  # None이면 API에 전달하지 않음 (모델 기본값 사용)
 # 최근 메시지를 이 토큰 예산까지 포함하여 전송
 # (시스템 프롬프트, 현재 질문, RAG Context와 함께 컨텍스트를 공유)
 # 256K Context 기준 약 64K를 히스토리로 사용
-HISTORY_TOKEN_BUDGET = 32768
-
-# 근사 토큰 환산 (문자 수 / 값)
-# tiktoken 없이 사용하는 보수적인 근사값
-HISTORY_CHARS_PER_TOKEN = 2.0
+HISTORY_TOKEN_BUDGET = 16384
 
 # =========================
 # BGE-M3 임베딩 설정

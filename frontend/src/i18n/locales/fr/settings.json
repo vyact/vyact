@@ -142,11 +142,7 @@
       },
       "history_token_budget": {
         "label": "History Token Budget",
-        "help": "Chat précédent"
-      },
-      "history_chars_per_token": {
-        "label": "Characters per Token",
-        "help": "Estimation"
+        "help": "Budget maximal de jetons pour les conversations précédentes. La quantité envoyée est automatiquement limitée à une plage sûre dans la taille de contexte du modèle, en tenant compte du prompt système, des références, de la question actuelle, de la sortie et de la marge de sécurité. Vyact utilise le tokenizer du modèle local sélectionné ; les fournisseurs cloud utilisent un tokenizer commun interne, l'utilisation réelle peut donc différer."
       },
       "bge_num_ctx": {
         "label": "BGE-M3 Context Window",
@@ -211,7 +207,10 @@
       "chat_file_chunks": "Fragments vectoriels des pièces jointes du chat (supprimés avec la conversation)",
       "projects": "Configuration des projets (dossiers)",
       "system_prompts": "Prompts système personnalisés",
-      "system_settings": "Configuration de l'app (modèle, API keys, configuration d'exécution, etc.)",
+      "system_settings": "Paramètres généraux de l'application et langue de l'interface",
+      "integration_settings": "Paramètres des serveurs MCP et des intégrations externes",
+      "google_workspace_settings": "Paramètres Google Workspace par compte",
+      "external_data_settings": "Paramètres de connexion aux données publiques externes",
       "rag_files": "Métadonnées des fichiers téléversés et indexés",
       "web_documents": "Métadonnées et texte intégral nettoyé des pages web enregistrées depuis l’extension Chrome",
       "web_doc_chunks": "Fragments vectoriels des pages web enregistrées",

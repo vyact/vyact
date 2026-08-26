@@ -1,4 +1,8 @@
-from services.model_runtime_profiles import build_model_profile_id, recommended_model_profile
+from services.model_runtime_profiles import (
+    build_model_profile_id,
+    normalize_model_profile,
+    recommended_model_profile,
+)
 
 
 def test_profile_ids_are_stable_and_model_specific():
@@ -12,3 +16,14 @@ def test_recommended_profile_bounds_context_and_uses_conservative_output_limit()
     assert profile["context_size"] == 131072
     assert profile["max_output_tokens"] == 2048
     assert profile["cache_quantization"] is True
+
+
+def test_saved_profile_output_is_bounded_by_context():
+    profile = normalize_model_profile({
+        "model_path": "owner/small.gguf",
+        "context_size": 4096,
+        "max_output_tokens": 8192,
+    })
+
+    assert profile["context_size"] == 4096
+    assert profile["max_output_tokens"] == 1024

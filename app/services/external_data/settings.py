@@ -1,6 +1,6 @@
 """Persistent settings for external data connections."""
 
-from services.db import SETTINGS_INDEX, get_es
+from services.db import EXTERNAL_DATA_SETTINGS_INDEX, get_es
 
 EXTERNAL_DATA_SETTINGS_DOC_ID = "external_data_connections"
 
@@ -9,7 +9,7 @@ async def load_external_data_connections() -> dict:
     es = get_es()
     try:
         result = await es.get(
-            index=SETTINGS_INDEX,
+            index=EXTERNAL_DATA_SETTINGS_INDEX,
             id=EXTERNAL_DATA_SETTINGS_DOC_ID,
             ignore=[404],
         )
@@ -25,7 +25,7 @@ async def save_external_data_connections(connections: dict) -> None:
     es = get_es()
     try:
         await es.index(
-            index=SETTINGS_INDEX,
+            index=EXTERNAL_DATA_SETTINGS_INDEX,
             id=EXTERNAL_DATA_SETTINGS_DOC_ID,
             document={"key": EXTERNAL_DATA_SETTINGS_DOC_ID, "value": connections},
             refresh=True,

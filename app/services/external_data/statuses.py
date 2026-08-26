@@ -1,6 +1,6 @@
 """Bulk loading for external-data synchronization status documents."""
 
-from services.db import SETTINGS_INDEX, get_es
+from services.db import EXTERNAL_DATA_STATE_INDEX, get_es
 from services.external_data.biz_support import DAILY_REQUEST_LIMIT as BIZ_LIMIT, SYNC_STATUS_DOC_ID as BIZ_STATUS_ID
 from services.external_data.gov24 import DAILY_REQUEST_LIMIT as GOV24_LIMIT, SYNC_STATUS_DOC_ID as GOV24_STATUS_ID
 from services.external_data.housing import DAILY_REQUEST_LIMIT as HOUSING_LIMIT, SYNC_STATUS_DOC_ID as HOUSING_STATUS_ID
@@ -31,7 +31,7 @@ async def load_sync_statuses(source_ids: list[str]) -> dict[str, dict]:
     es = get_es()
     try:
         result = await es.mget(
-            index=SETTINGS_INDEX,
+            index=EXTERNAL_DATA_STATE_INDEX,
             ids=[document_id for document_id, _ in selected.values()],
         )
     finally:

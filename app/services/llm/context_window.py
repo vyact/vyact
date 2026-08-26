@@ -40,6 +40,23 @@ def calculate_output_token_limit(messages: list[dict], context_size: int,
     )
 
 
+def calculate_history_token_limit(
+        configured_history: int, context_size: int, base_input_tokens: int,
+        configured_output: int,
+) -> int:
+    """Fit optional conversation history around required request content."""
+    normalized_context_size = max(int(context_size), 1)
+    output_reserve = min(
+        max(int(configured_output), 1),
+        max(normalized_context_size // 4, 1),
+    )
+    available_history = max(
+        normalized_context_size - base_input_tokens - output_reserve - LOCAL_CONTEXT_RESERVE_TOKENS,
+        0,
+    )
+    return min(max(int(configured_history), 0), available_history)
+
+
 def select_context_window(messages: list[dict], max_context: int | float | None,
                           chars_per_token: float, num_predict: int | float | None) -> int:
     """Choose 32K, then double until input and the output allowance fit."""

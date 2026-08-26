@@ -50,6 +50,13 @@ interface BackupPreview {
     }[];
 }
 
+const BACKUP_SETTINGS_INDICES = new Set([
+    'system_settings',
+    'integration_settings',
+    'google_workspace_settings',
+    'external_data_settings',
+]);
+
 interface SettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -60,17 +67,17 @@ type Tab = 'backup' | 'general' | 'runtime' | 'api' | 'externalData' | 'plugins'
 
 type RuntimeSettings = Record<string, number | null>;
 const DEFAULT_SETTINGS_TAB: Tab = 'general';
-const DEFAULT_RUNTIME_SETTINGS: RuntimeSettings = {history_token_budget: 32768, history_chars_per_token: 2, bge_num_ctx: 8192, document_chunk_size: 1200, document_chunk_overlap: 150};
+const DEFAULT_RUNTIME_SETTINGS: RuntimeSettings = {history_token_budget: 16384, bge_num_ctx: 8192, document_chunk_size: 1200, document_chunk_overlap: 150};
 const toRuntimeInputValues = (settings: RuntimeSettings): Record<string, string> => Object.fromEntries(
     Object.entries(settings).map(([key, value]) => [key, value === null ? '' : String(value)])
 );
 const RUNTIME_SETTING_SECTIONS = [
     {key: 'embedding', fields: ['bge_num_ctx']},
-    {key: 'history', fields: ['history_token_budget', 'history_chars_per_token']},
+    {key: 'history', fields: ['history_token_budget']},
     {key: 'chunking', fields: ['document_chunk_size', 'document_chunk_overlap']},
 ] as const;
 const RUNTIME_FIELD_CONSTRAINTS: Record<string, {min: number; max?: number; step: number}> = {
-    history_token_budget: {min: 0, max: 131072, step: 1}, history_chars_per_token: {min: 0.1, max: 10, step: 0.1},
+    history_token_budget: {min: 0, max: 131072, step: 1},
     bge_num_ctx: {min: 1, max: 8192, step: 1},
     document_chunk_size: {min: 100, max: 100000, step: 1}, document_chunk_overlap: {min: 0, max: 99999, step: 1},
 };
@@ -165,7 +172,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
             defaultValue: t('backup.indexHelpDefault', {name: indexName}),
         });
         const restoreBehavior = t(
-            indexName === 'system_settings'
+            BACKUP_SETTINGS_INDICES.has(indexName)
                 ? 'backup.indexSettingsBehavior'
                 : 'backup.indexDataBehavior',
         );
@@ -567,7 +574,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
             const preview = data as BackupPreview;
             setRestoreFile(file);
             setBackupPreview(preview);
-            setRestoreIndices(preview.indices.filter(({name}) => name !== 'system_settings').map(({name}) => name));
+            setRestoreIndices(preview.indices.filter(({name}) => !BACKUP_SETTINGS_INDICES.has(name)).map(({name}) => name));
             setRestoreFiles(preview.file_count > 0);
         } catch (e) {
             setRestoreError(String(e));
@@ -1702,7 +1709,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                             </div>
                             <div className="restore-preview-list">
                                 {backupPreview.indices.map(({name, count}) => {
-                                    const isSettings = name === 'system_settings';
+                                    const isSettings = BACKUP_SETTINGS_INDICES.has(name);
                                     return <label key={name} className={`restore-preview-item ${restoreIndices.includes(name) ? 'checked' : ''}`}>
                                         <input type="checkbox" checked={restoreIndices.includes(name)} disabled={importing} onChange={() => toggleRestoreIndex(name)}/>
                                         <Tooltip content={getBackupIndexHelp(name)} multiline>

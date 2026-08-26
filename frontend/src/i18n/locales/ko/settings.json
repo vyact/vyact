@@ -198,11 +198,7 @@
       },
       "history_token_budget": {
         "label": "History Token Budget",
-        "help": "이전 대화에 할당할 최대 토큰 예산입니다."
-      },
-      "history_chars_per_token": {
-        "label": "Characters per Token",
-        "help": "히스토리 토큰을 근사할 때 쓰는 문자 수입니다."
+        "help": "이전 대화에 할당할 최대 토큰 예산입니다. 시스템 프롬프트, 참고 자료, 현재 질문, 출력 및 안전 여유를 포함한 모델의 컨텍스트 크기를 고려하여 안전한 범위까지만 자동으로 전달됩니다. Vyact는 선택한 로컬 모델의 토크나이저를 사용하고, 클라우드 공급자는 내부 공통 토크나이저를 사용하므로 실제 사용량과 다를 수 있습니다."
       },
       "bge_num_ctx": {
         "label": "BGE-M3 Context Window",
@@ -266,7 +262,10 @@
       "chat_file_chunks": "채팅에 첨부한 파일의 벡터 청크 (대화 삭제 시 함께 삭제)",
       "projects": "프로젝트(폴더) 설정 정보",
       "system_prompts": "사용자 정의 시스템 프롬프트",
-      "system_settings": "앱 설정값 (모델, API Key, 런타임 설정 등)",
+      "system_settings": "앱 공통 설정과 UI 언어",
+      "integration_settings": "MCP 서버와 외부 서비스 연동 설정",
+      "google_workspace_settings": "Google Workspace 계정별 사용자 설정",
+      "external_data_settings": "외부 공공데이터 연결 설정",
       "rag_files": "업로드 · 인덱싱된 원본 파일 메타데이터",
       "web_documents": "Chrome 확장에서 저장한 웹 문서의 메타데이터와 LLM 정리 본문",
       "web_doc_chunks": "저장한 웹 문서의 벡터 청크",

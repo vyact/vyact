@@ -6,7 +6,7 @@ import os
 import httpx
 
 from logger import get_logger
-from services.db import SETTINGS_INDEX, get_es
+from services.db import RUNTIME_STATE_INDEX, get_es
 from services.notifications import create_notification
 
 logger = get_logger(__name__)
@@ -47,7 +47,7 @@ async def _load_last_attempted_at() -> datetime | None:
     es = get_es()
     try:
         result = await es.get(
-            index=SETTINGS_INDEX,
+            index=RUNTIME_STATE_INDEX,
             id=PRODUCT_RELEASE_POLL_STATE_ID,
             ignore=[404],
         )
@@ -64,7 +64,7 @@ async def _record_attempted_at(attempted_at: datetime) -> None:
     try:
         attempted_at_text = attempted_at.isoformat().replace("+00:00", "Z")
         await es.index(
-            index=SETTINGS_INDEX,
+            index=RUNTIME_STATE_INDEX,
             id=PRODUCT_RELEASE_POLL_STATE_ID,
             document={
                 "key": PRODUCT_RELEASE_POLL_STATE_ID,

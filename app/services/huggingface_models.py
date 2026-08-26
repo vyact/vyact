@@ -11,11 +11,6 @@ from services.vyact_runtime import VYACT_MODELS_DIR, cache_downloaded_model
 
 HF_API_URL = "https://huggingface.co/api"
 HF_BASE_URL = "https://huggingface.co"
-RECOMMENDED_GGUF_REPOSITORIES = (
-    "unsloth/Qwen3.5-4B-GGUF",
-    "unsloth/Qwen3.5-9B-GGUF",
-    "unsloth/Qwen3.8-27B-GGUF",
-)
 MLX_REPOSITORY_FILE = "__mlx_repository__"
 MLX_DOWNLOAD_PATTERNS = (
     "*.json", "*.safetensors", "*.model", "*.txt", "*.tiktoken", "*.jinja", "*.py", "*.npz",
@@ -40,12 +35,12 @@ def _safe_relative_file_path(filename: str) -> PurePosixPath:
 
 async def search_gguf_models(query: str, token: str | None = None, limit: int = 50) -> list[dict]:
     """Search public Hub repositories which declare GGUF as their library."""
-    if not query.strip():
-        return await get_recommended_gguf_models(token)
     params = {
-        "search": query.strip(), "library": "gguf", "limit": max(1, min(limit, 50)),
+        "library": "gguf", "limit": max(1, min(limit, 50)),
         "full": "true", "blobs": "true", "sort": "downloads", "direction": "-1",
     }
+    if query.strip():
+        params["search"] = query.strip()
     async with httpx.AsyncClient(timeout=20) as client:
         response = await client.get(f"{HF_API_URL}/models", params=params, headers=_headers(token))
         response.raise_for_status()
@@ -486,17 +481,6 @@ async def find_vision_projector(
         )
         response.raise_for_status()
     return _select_vision_projector(response.json(), main_filename)
-
-
-async def get_recommended_gguf_models(token: str | None = None) -> list[dict]:
-    """Resolve the curated local-model choices while keeping their files current."""
-    async with httpx.AsyncClient(timeout=20) as client:
-        detailed_items = await _fetch_model_details(client, list(RECOMMENDED_GGUF_REPOSITORIES), token)
-    models = [
-        model for repo_id in RECOMMENDED_GGUF_REPOSITORIES
-        if (item := detailed_items.get(repo_id)) and (model := _model_from_hub_item(item))
-    ]
-    return sorted(models, key=lambda model: model["downloads"], reverse=True)
 
 
 async def download_gguf_model(repo_id: str, filename: str, token: str | None = None):

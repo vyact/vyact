@@ -3,6 +3,7 @@ routers/backup.py – ES 전체 인덱스 백업 / 복원
 - include_files=True 시 원본 문서 파일도 zip에 포함
 - 복원 시 zip이면 ES 복원 + 원본 파일 복구
 """
+import asyncio
 import io
 import json
 import zipfile
@@ -15,7 +16,20 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from config import INSTALL_DIR
-from services.db import INDEX_FAMILIES, LANGUAGES, get_es, get_language_index
+from services.db import (
+    EXTERNAL_DATA_SETTINGS_INDEX,
+    EXTERNAL_DATA_STATE_INDEX,
+    GOOGLE_WORKSPACE_SETTINGS_INDEX,
+    INDEX_FAMILIES,
+    INTEGRATION_CREDENTIALS_INDEX,
+    INTEGRATION_SETTINGS_INDEX,
+    LANGUAGES,
+    PLUGIN_STATE_INDEX,
+    RUNTIME_STATE_INDEX,
+    SETTINGS_INDEX,
+    get_es,
+    get_language_index,
+)
 from services.google_workspace.auth import revoke_all_tokens
 from services.prompts import load_prompts_cache
 from logger import get_logger
@@ -32,15 +46,26 @@ _SETTINGS_EXCLUDE = {
     "index.provided_name", "index.routing",
 }
 _MCP_SETTINGS_DOC_ID = "mcp"
-_GOOGLE_TOKEN_DOC_PREFIX = "google_workspace_token"
-_PLUGIN_SETTINGS_DOC_ID = "plugins"
-_PLUGIN_RESTORE_STATE_DOC_ID = "plugin_restore_state"
+_BACKUP_EXCLUDED_INDICES = {
+    INTEGRATION_CREDENTIALS_INDEX,
+    EXTERNAL_DATA_STATE_INDEX,
+    PLUGIN_STATE_INDEX,
+    RUNTIME_STATE_INDEX,
+}
+_UPSERT_INDICES = {
+    SETTINGS_INDEX,
+    INTEGRATION_SETTINGS_INDEX,
+    GOOGLE_WORKSPACE_SETTINGS_INDEX,
+    EXTERNAL_DATA_SETTINGS_INDEX,
+}
 
 EMAIL_THREAD_INDICES = {get_language_index("knowledge_email_threads", language) for language in LANGUAGES}
 LANGUAGE_SUFFIXES = tuple(f"_{language}" for language in LANGUAGES)
 
 
 def _logical_index_name(index_name: str) -> str:
+    if index_name.endswith("_all") and index_name[:-4] in INDEX_FAMILIES:
+        return index_name[:-4]
     for family in INDEX_FAMILIES:
         if index_name.startswith(f"{family}_") and index_name.endswith(LANGUAGE_SUFFIXES):
             return family
@@ -48,7 +73,7 @@ def _logical_index_name(index_name: str) -> str:
 
 
 def _expand_selected_indices(selected: list[str], available: list[str]) -> list[str]:
-    selected_names = set(selected)
+    selected_names = {_logical_index_name(name) for name in selected}
     return [name for name in available if name in selected_names or _logical_index_name(name) in selected_names]
 
 
@@ -57,7 +82,7 @@ async def _preserve_google_workspace_on_restore(backup: dict) -> bool:
 
     반환값은 복원 후 Google 계정들의 OAuth 재연결이 필요한지 여부다.
     """
-    settings = backup.get("indices", {}).get("system_settings")
+    settings = backup.get("indices", {}).get(INTEGRATION_SETTINGS_INDEX)
     if not settings:
         return False
     docs = settings.get("docs", [])
@@ -68,15 +93,7 @@ async def _preserve_google_workspace_on_restore(backup: dict) -> bool:
         if server.get("type") == "google_workspace"
     ]
     backup_has_google_server = False
-    filtered_docs = []
     for doc in docs:
-        if str(doc.get("_id", "")).startswith(_GOOGLE_TOKEN_DOC_PREFIX):
-            # access/refresh token은 어떤 백업에서도 복원하지 않는다.
-            continue
-        if doc.get("_id") in {_PLUGIN_SETTINGS_DOC_ID, _PLUGIN_RESTORE_STATE_DOC_ID}:
-            # 설치된 플러그인의 기준은 로컬 설치 디렉토리다. 백업 메타데이터를
-            # 복원해 설치되지 않은 실행 코드를 설치된 것처럼 표시하지 않는다.
-            continue
         source = doc.get("_source", {})
         if doc.get("_id") == _MCP_SETTINGS_DOC_ID:
             config = source.get("value")
@@ -93,9 +110,6 @@ async def _preserve_google_workspace_on_restore(backup: dict) -> bool:
                         server for server in servers
                         if server.get("type") != "google_workspace"
                     ] + current_google_servers
-        filtered_docs.append(doc)
-
-    settings["docs"] = filtered_docs
     return backup_has_google_server or bool(current_google_servers)
 
 
@@ -104,7 +118,7 @@ async def _get_user_indices(es) -> list[str]:
         indices = await es.indices.get(index="*")
         return sorted([
             name for name in indices.keys()
-            if not name.startswith(".")  # . 으로 시작하는 모든 시스템 인덱스 제외
+            if not name.startswith(".") and name not in _BACKUP_EXCLUDED_INDICES
         ])
     except Exception:
         return []
@@ -194,15 +208,25 @@ def _build_create_body(schema: dict) -> dict:
 async def backup_stats():
     es = get_es()
     try:
-        # 인덱스 목록 조회 후 인덱스마다 count를 순차 호출하지 않고,
-        # 한 번의 stats 요청으로 전체 문서 수를 가져온다.
+        # 일반 인덱스는 한 번의 stats 요청으로 집계한다. 언어별 인덱스 그룹은
+        # 물리 인덱스 값을 UI에서 직접 합산하지 않고 대표 read alias를 조회한다.
         response = await es.indices.stats(index="*", metric="docs")
         stats = {}
         for index_name, index_stats in sorted(response.get("indices", {}).items()):
             if index_name.startswith("."):
                 continue
+            if index_name in _BACKUP_EXCLUDED_INDICES:
+                continue
             logical_name = _logical_index_name(index_name)
-            stats[logical_name] = stats.get(logical_name, 0) + index_stats.get("total", {}).get("docs", {}).get("count", 0)
+            if logical_name in INDEX_FAMILIES:
+                continue
+            stats[index_name] = index_stats.get("total", {}).get("docs", {}).get("count", 0)
+
+        alias_counts = await asyncio.gather(*(
+            es.count(index=f"{family}_all") for family in INDEX_FAMILIES
+        ))
+        for family, count_response in zip(INDEX_FAMILIES, alias_counts):
+            stats[family] = count_response.get("count", 0)
         return {"stats": stats}
     finally:
         await es.close()
@@ -255,6 +279,8 @@ async def _read_backup(file: UploadFile) -> tuple[dict, dict[str, bytes], dict[s
 
     if backup.get("vyact_backup") is not True or backup.get("version") != "3.0" or not isinstance(backup.get("indices"), dict):
         raise HTTPException(400, "올바른 Vyact 백업 파일이 아닙니다.")
+    for excluded_index in _BACKUP_EXCLUDED_INDICES:
+        backup["indices"].pop(excluded_index, None)
     return backup, doc_files, memo_files, knowledge_mail_image_files
 
 
@@ -374,7 +400,9 @@ async def import_backup(
     ]
     if indices is not None:
         try:
-            selected_indices = set(json.loads(indices))
+            selected_indices = {
+                _logical_index_name(name) for name in json.loads(indices)
+            }
         except (json.JSONDecodeError, TypeError):
             raise HTTPException(400, "복원할 인덱스 선택 정보가 올바르지 않습니다.")
         backup["indices"] = {
@@ -455,8 +483,8 @@ async def import_backup(
                 source = doc.get("_source", {})
                 if not doc_id or not source:
                     continue
-                # system_settings는 upsert (기존 문서 덮어쓰기)
-                if index == "system_settings":
+                # 설정 및 상태 인덱스는 복원본으로 기존 문서를 갱신한다.
+                if index in _UPSERT_INDICES:
                     actions.append({"index": {"_index": index, "_id": doc_id}})
                 else:
                     actions.append({"create": {"_index": index, "_id": doc_id}})
@@ -506,13 +534,7 @@ async def import_backup(
         except Exception as e:
             logger.warning("[restore] plugin data reconciliation failed: %s", e)
 
-    # 복원한 인덱스에 system_settings(MCP 서버 설정 포함)가 있었으면, mcp_manager의 실제
-    # 연결 상태를 새 설정으로 재동기화한다. 이걸 안 하면 복원 전에 연결돼 있던 서버(예:
-    # 기본값으로 켜져 있던 filesystem)가 새 설정에서 꺼졌어도 메모리에는 그대로 연결된 채
-    # 남아있어서, get_tools()가 그 worker의 tool을 계속 노출해버린다
-    # (외부 서버 tool은 enabled 여부를 매번 다시 확인하는 게 아니라 "현재 연결된 worker"를
-    # 그대로 신뢰하는 구조라, 설정 변경 후 반드시 connect_all()로 재동기화해야 한다).
-    if "system_settings" in backup["indices"]:
+    if SETTINGS_INDEX in backup["indices"]:
         try:
             from routers.deps import load_config_async
             from services.runtime_settings import apply_runtime_settings
@@ -520,6 +542,9 @@ async def import_backup(
             logger.info("[restore] 런타임 설정 재적용 완료")
         except Exception as e:
             logger.warning("[restore] 런타임 설정 재적용 실패: %s", e)
+
+    # 연동 설정 복원 후 MCP worker를 새 설정과 일치시킨다.
+    if INTEGRATION_SETTINGS_INDEX in backup["indices"]:
         try:
             from services.mcp_client import mcp_manager
             from services.mcp_config import build_servers_config
@@ -530,7 +555,7 @@ async def import_backup(
 
     # 복원 후 Google Workspace tool 재등록
     google_auth_ok = False if google_reconnect_required else None
-    if "system_settings" in backup["indices"]:
+    if INTEGRATION_SETTINGS_INDEX in backup["indices"]:
         try:
             from services.google_workspace.auth import get_credentials
             from services.google_workspace import register_google_workspace_tools, get_granted_scopes

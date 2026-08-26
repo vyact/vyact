@@ -1,5 +1,9 @@
 from config.models import LLM_INITIAL_NUM_CTX
-from services.llm.context_window import calculate_output_token_limit, select_context_allocation
+from services.llm.context_window import (
+    calculate_history_token_limit,
+    calculate_output_token_limit,
+    select_context_allocation,
+)
 
 
 def _messages(token_count: int) -> list[dict]:
@@ -44,3 +48,21 @@ def test_local_output_shrinks_when_input_uses_remaining_context():
     output_limit = calculate_output_token_limit(_messages(28_000), 32_768, 2, 8_192)
 
     assert output_limit == 4_256
+
+
+def test_history_limit_uses_only_context_space_left_after_required_content():
+    assert calculate_history_token_limit(
+        configured_history=16_384,
+        context_size=32_768,
+        base_input_tokens=20_000,
+        configured_output=8_192,
+    ) == 4_064
+
+
+def test_history_limit_never_exceeds_configured_budget():
+    assert calculate_history_token_limit(
+        configured_history=2_000,
+        context_size=32_768,
+        base_input_tokens=1_000,
+        configured_output=2_048,
+    ) == 2_000

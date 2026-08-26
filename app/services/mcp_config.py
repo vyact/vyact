@@ -1,7 +1,7 @@
 """
 services/mcp_config.py — MCP 서버 설정 저장/로드 (ES 기반)
 
-저장 위치: ES SETTINGS_INDEX, id="mcp", 구조 {"key":"mcp", "value":{...}}
+저장 위치: ES INTEGRATION_SETTINGS_INDEX, id="mcp", 구조 {"key":"mcp", "value":{...}}
   value 구조:
     { "servers": [
         {"id": "fs1", "type": "filesystem", "enabled": true,
@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any
 
 from logger import get_logger
-from services.db import SETTINGS_INDEX, get_es
+from services.db import INTEGRATION_SETTINGS_INDEX, get_es
 
 logger = get_logger(__name__)
 
@@ -337,7 +337,7 @@ async def load_mcp_config() -> dict:
     try:
         es = get_es()
         try:
-            res = await es.get(index=SETTINGS_INDEX, id=_MCP_DOC_ID, ignore=[404])
+            res = await es.get(index=INTEGRATION_SETTINGS_INDEX, id=_MCP_DOC_ID, ignore=[404])
             if res.get("found"):
                 value = res["_source"].get("value")
                 if value and isinstance(value.get("servers"), list):
@@ -357,7 +357,7 @@ async def save_mcp_config(cfg: dict) -> None:
     try:
         es = get_es()
         try:
-            await es.index(index=SETTINGS_INDEX, id=_MCP_DOC_ID,
+            await es.index(index=INTEGRATION_SETTINGS_INDEX, id=_MCP_DOC_ID,
                            document={"key": _MCP_DOC_ID, "value": cfg}, refresh=True)
         finally:
             await es.close()
@@ -369,15 +369,15 @@ async def ensure_mcp_config() -> dict:
     """ES에 MCP 문서가 없을 때만 설치 기본값을 영속화한다."""
     es = get_es()
     try:
-        if await es.exists(index=SETTINGS_INDEX, id=_MCP_DOC_ID):
-            res = await es.get(index=SETTINGS_INDEX, id=_MCP_DOC_ID)
+        if await es.exists(index=INTEGRATION_SETTINGS_INDEX, id=_MCP_DOC_ID):
+            res = await es.get(index=INTEGRATION_SETTINGS_INDEX, id=_MCP_DOC_ID)
             value = res["_source"].get("value")
             if not isinstance(value, dict):
                 return {"servers": []}
             value, changed = _ensure_builtin_servers(value)
             if changed:
                 await es.index(
-                    index=SETTINGS_INDEX, id=_MCP_DOC_ID,
+                    index=INTEGRATION_SETTINGS_INDEX, id=_MCP_DOC_ID,
                     document={"key": _MCP_DOC_ID, "value": value}, refresh=True,
                 )
                 logger.info("[mcp_config] default browser MCP config added")
@@ -385,7 +385,7 @@ async def ensure_mcp_config() -> dict:
 
         cfg = _default_config()
         await es.index(
-            index=SETTINGS_INDEX,
+            index=INTEGRATION_SETTINGS_INDEX,
             id=_MCP_DOC_ID,
             document={"key": _MCP_DOC_ID, "value": cfg},
             refresh=True,

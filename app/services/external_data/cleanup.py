@@ -4,7 +4,7 @@ import asyncio
 from datetime import datetime
 
 from logger import get_logger
-from services.db import SETTINGS_INDEX, get_es
+from services.db import EXTERNAL_DATA_STATE_INDEX, get_es
 from services.external_data.biz_support import INDEX_NAME as BIZ_SUPPORT_INDEX, SYNC_STATUS_DOC_ID as BIZ_SUPPORT_STATUS_ID
 from services.external_data.gov24 import INDEX_NAME as GOV24_INDEX, SYNC_STATUS_DOC_ID as GOV24_STATUS_ID
 from services.external_data.housing import INDEX_NAME as HOUSING_INDEX, SYNC_STATUS_DOC_ID as HOUSING_STATUS_ID
@@ -44,7 +44,7 @@ def korea_date() -> str:
 async def get_cleanup_status() -> dict:
     es = get_es()
     try:
-        result = await es.get(index=SETTINGS_INDEX, id=CLEANUP_STATUS_DOC_ID, ignore=[404])
+        result = await es.get(index=EXTERNAL_DATA_STATE_INDEX, id=CLEANUP_STATUS_DOC_ID, ignore=[404])
         if not result.get("found"):
             return {"status": "idle", "deleted_count": 0}
         value = result["_source"].get("value", {})
@@ -57,7 +57,7 @@ async def _save_cleanup_status(status: dict) -> None:
     es = get_es()
     try:
         await es.index(
-            index=SETTINGS_INDEX,
+            index=EXTERNAL_DATA_STATE_INDEX,
             id=CLEANUP_STATUS_DOC_ID,
             document={"key": CLEANUP_STATUS_DOC_ID, "value": status},
             refresh=False,
@@ -95,13 +95,13 @@ async def delete_expired_documents() -> None:
                 deleted_count += deleted
                 per_source[index_name] = deleted
                 sync_status_id = SYNC_STATUS_IDS[index_name]
-                sync_status_result = await es.get(index=SETTINGS_INDEX, id=sync_status_id, ignore=[404])
+                sync_status_result = await es.get(index=EXTERNAL_DATA_STATE_INDEX, id=sync_status_id, ignore=[404])
                 if sync_status_result.get("found"):
                     sync_status = sync_status_result["_source"].get("value", {})
                     if isinstance(sync_status, dict):
                         document_count = int((await es.count(index=index_name)).get("count") or 0)
                         await es.index(
-                            index=SETTINGS_INDEX,
+                            index=EXTERNAL_DATA_STATE_INDEX,
                             id=sync_status_id,
                             document={
                                 "key": sync_status_id,

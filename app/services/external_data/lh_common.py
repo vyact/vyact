@@ -9,7 +9,7 @@ from urllib.parse import unquote
 import httpx
 from elasticsearch.helpers import async_bulk
 
-from services.db import SETTINGS_INDEX, get_es
+from services.db import EXTERNAL_DATA_STATE_INDEX, get_es
 from services.external_data.quota import DailyRequestQuota
 from services.external_data.search import RERANK_CANDIDATE_SIZE, build_browser_search_query, build_candidate_search_query, select_relevant_candidates
 from services.external_data.retention import is_storable_by_deadline
@@ -131,7 +131,7 @@ class LhSource:
     async def save_status(self, status: dict) -> None:
         es = get_es()
         try:
-            await es.index(index=SETTINGS_INDEX, id=self.status_id, document={"key": self.status_id, "value": status}, refresh=False)
+            await es.index(index=EXTERNAL_DATA_STATE_INDEX, id=self.status_id, document={"key": self.status_id, "value": status}, refresh=False)
         finally:
             await es.close()
         await notify_status_changed(self.source_id)
@@ -139,7 +139,7 @@ class LhSource:
     async def get_status(self) -> dict:
         es = get_es()
         try:
-            result = await es.get(index=SETTINGS_INDEX, id=self.status_id, ignore=[404])
+            result = await es.get(index=EXTERNAL_DATA_STATE_INDEX, id=self.status_id, ignore=[404])
             value = result.get("_source", {}).get("value", {}) if result.get("found") else {}
             value = value if isinstance(value, dict) else {}
             return {"status": "idle", "document_count": 0, **value, **DailyRequestQuota.from_status(value, DAILY_REQUEST_LIMIT).status_fields()}

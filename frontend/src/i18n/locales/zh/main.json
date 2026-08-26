@@ -538,7 +538,15 @@
     "preparingRuntime": "正在准备 llama.cpp 和 llama-swap...",
     "preparingMtp": "正在检查并准备兼容的 MTP...",
     "activating": "正在准备模型...",
-    "loadingIntoMemory": "正在将模型加载到内存中...（{{seconds}} 秒）"
+    "loadingIntoMemory": "正在将模型加载到内存中...（{{seconds}} 秒）",
+    "runtimeInstallRequiredTitle": "无法准备本地 AI 运行环境",
+    "runtimeInstallRequiredDescription": "自动安装需要受支持的包管理器。请查看官方安装指南，然后返回此处重新检查。模型下载尚未开始。",
+    "runtimeInstallBrew": "请在 macOS 或 Linux 上安装 Homebrew。",
+    "runtimeInstallWindows": "请在 Windows 上通过应用安装程序安装或更新 winget。",
+    "runtimeInstallRetryHelp": "无需重启应用即可重新检查。已准备好的组件不会重复安装。",
+    "runtimeInstallGuide": "查看官方安装指南",
+    "runtimeInstallRetry": "重新检查",
+    "runtimeInstallClose": "关闭"
   },
   "shortcutModal": {
     "title": "快捷键",

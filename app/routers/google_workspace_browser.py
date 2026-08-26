@@ -38,7 +38,7 @@ from services.google_workspace.gmail import (
     list_mail_threads_sync,
 )
 from services.llm.core import query_llm
-from services.db import EMAIL_THREADS_INDEX, SETTINGS_INDEX, find_document_index, get_es, get_language_index
+from services.db import EMAIL_THREADS_INDEX, GOOGLE_WORKSPACE_SETTINGS_INDEX, find_document_index, get_es, get_language_index
 from services.language_detection import detect_language
 from services.indexer import get_embedding
 from config import INSTALL_DIR
@@ -172,9 +172,9 @@ async def get_mail_signature(account_id: str):
     document_id = await _mail_signature_document_id(account_id)
     es = get_es()
     try:
-        if not await es.exists(index=SETTINGS_INDEX, id=document_id):
+        if not await es.exists(index=GOOGLE_WORKSPACE_SETTINGS_INDEX, id=document_id):
             return {"signature_html": "", "enabled": True, "macros": []}
-        result = await es.get(index=SETTINGS_INDEX, id=document_id)
+        result = await es.get(index=GOOGLE_WORKSPACE_SETTINGS_INDEX, id=document_id)
         signature = result["_source"].get("value", {})
         return {
             "signature_html": signature.get("signature_html", ""),
@@ -192,7 +192,7 @@ async def save_mail_signature(account_id: str, request: MailSignatureRequest):
     es = get_es()
     try:
         await es.index(
-            index=SETTINGS_INDEX,
+            index=GOOGLE_WORKSPACE_SETTINGS_INDEX,
             id=document_id,
             document={"key": document_id, "value": {"signature_html": request.signature_html, "enabled": request.enabled, "macros": request.macros}},
             refresh=True,

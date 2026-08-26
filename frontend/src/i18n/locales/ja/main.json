@@ -538,7 +538,15 @@
     "preparingRuntime": "llama.cpp と llama-swap を準備中...",
     "preparingMtp": "互換性のあるMTPを確認・準備中...",
     "activating": "モデルを準備中...",
-    "loadingIntoMemory": "モデルをメモリに読み込み中... ({{seconds}}秒)"
+    "loadingIntoMemory": "モデルをメモリに読み込み中... ({{seconds}}秒)",
+    "runtimeInstallRequiredTitle": "ローカルAI実行環境を準備できません",
+    "runtimeInstallRequiredDescription": "自動インストールに必要なパッケージマネージャーがありません。公式のインストール方法を確認し、この画面に戻って再確認してください。モデルのダウンロードは開始されていません。",
+    "runtimeInstallBrew": "macOSまたはLinuxではHomebrewをインストールしてください。",
+    "runtimeInstallWindows": "WindowsではApp Installerからwingetをインストールまたは更新してください。",
+    "runtimeInstallRetryHelp": "アプリを再起動せずに再確認できます。準備済みのコンポーネントは再インストールされません。",
+    "runtimeInstallGuide": "公式インストール方法を見る",
+    "runtimeInstallRetry": "再確認",
+    "runtimeInstallClose": "閉じる"
   },
   "shortcutModal": {
     "title": "ショートカット",
