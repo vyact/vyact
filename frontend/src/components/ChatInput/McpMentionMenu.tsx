@@ -50,7 +50,7 @@ export default function McpMentionMenu({query, selectedIds, activeIndex, onSelec
         <div ref={listRef} className="mcp-mention-list">{visible.map((server, index) => {
             const name = serverName(server);
             return <button key={server.id} type="button" className={`mcp-mention-item${activeIndex === index ? ' active' : ''}`} onMouseDown={e => { e.preventDefault(); onSelect(server); }}>
-                <span className="mcp-mention-copy"><strong>{name}</strong><small>{server.enabled ? t('mcpMenu.mentionActive') : t('mcpMenu.mentionRequestOnly')}</small></span>
+                <span className="mcp-mention-copy"><strong>{name}</strong></span>
                 {selectedIds.includes(server.id) && <Check size={18} className="mcp-mention-check"/>}
             </button>;
         })}</div>

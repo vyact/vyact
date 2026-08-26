@@ -1,4 +1,5 @@
-from routers.backup import _expand_selected_indices, _logical_index_name
+from routers.backup import _BACKUP_EXCLUDED_INDICES, _expand_selected_indices, _logical_index_name
+from services.db import MODEL_RUNTIME_PROFILES_INDEX
 
 
 def test_language_indices_share_one_logical_backup_name():
@@ -14,3 +15,7 @@ def test_selecting_logical_name_expands_every_language_index():
     assert _expand_selected_indices(["doc_chunks"], available) == available[:3]
     assert _expand_selected_indices(["doc_chunks_all"], available) == available[:3]
     assert _expand_selected_indices(["system_settings"], available) == ["system_settings"]
+
+
+def test_machine_specific_model_profiles_are_excluded_from_backup_and_restore():
+    assert MODEL_RUNTIME_PROFILES_INDEX in _BACKUP_EXCLUDED_INDICES

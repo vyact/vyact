@@ -1,7 +1,12 @@
-import pytest
+from unittest.mock import AsyncMock
 
+import pytest
+from elasticsearch import NotFoundError
+
+from services import model_runtime_profiles
 from services.model_runtime_profiles import (
     build_model_profile_id,
+    delete_model_profile,
     normalize_model_profile,
     recommended_model_profile,
 )
@@ -49,3 +54,26 @@ def test_profile_rejects_mtp_with_kv_cache_quantization():
             "cache_quantization": True,
             "mtp_enabled": True,
         })
+
+
+@pytest.mark.asyncio
+async def test_delete_profile_removes_matching_document(monkeypatch):
+    es = AsyncMock()
+    monkeypatch.setattr(model_runtime_profiles, "get_es", lambda: es)
+
+    await delete_model_profile("mlx/owner/model")
+
+    es.delete.assert_awaited_once_with(
+        index=model_runtime_profiles.MODEL_RUNTIME_PROFILES_INDEX,
+        id=build_model_profile_id("mlx/owner/model"),
+        refresh="wait_for",
+    )
+
+
+@pytest.mark.asyncio
+async def test_delete_profile_ignores_missing_documents(monkeypatch):
+    es = AsyncMock()
+    es.delete.side_effect = NotFoundError(message="not found", meta=None, body=None)
+    monkeypatch.setattr(model_runtime_profiles, "get_es", lambda: es)
+
+    await delete_model_profile("mlx/owner/missing")

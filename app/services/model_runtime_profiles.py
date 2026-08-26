@@ -95,3 +95,15 @@ async def save_model_profile(profile: dict) -> dict:
     document = {**profile, "created_at": (existing or {}).get("created_at", now), "updated_at": now}
     await es.index(index=MODEL_RUNTIME_PROFILES_INDEX, id=build_model_profile_id(profile["model_path"]), document=document, refresh="wait_for")
     return document
+
+
+async def delete_model_profile(model_path: str) -> None:
+    es = get_es()
+    try:
+        await es.delete(
+            index=MODEL_RUNTIME_PROFILES_INDEX,
+            id=build_model_profile_id(model_path),
+            refresh="wait_for",
+        )
+    except NotFoundError:
+        pass

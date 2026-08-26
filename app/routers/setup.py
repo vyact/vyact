@@ -23,7 +23,7 @@ from services.hardware_info import get_local_hardware_info
 from services.huggingface_models import search_gguf_models
 from services.mcp_config import ensure_mcp_config
 from services.runtime_settings import DEFAULT_RUNTIME_SETTINGS, apply_runtime_settings
-from services.model_runtime_profiles import get_model_profile, normalize_model_profile, recommended_model_profile, save_model_profile
+from services.model_runtime_profiles import delete_model_profile, get_model_profile, normalize_model_profile, recommended_model_profile, save_model_profile
 from services.vyact_model_metadata_cache import get_cached_model_metadata, save_cached_model_metadata
 
 logger = get_logger(__name__)
@@ -590,6 +590,7 @@ async def delete_vyact_model(req: VyactModelDeleteRequest):
     except (OSError, ValueError) as error:
         logger.warning("[vyact] model deletion failed: %s", error)
         raise HTTPException(400, "설치된 모델을 삭제할 수 없습니다.") from error
+    await delete_model_profile(req.model_path)
     return {"deleted": True}
 
 

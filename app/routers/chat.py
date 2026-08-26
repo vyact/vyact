@@ -798,6 +798,9 @@ async def query_stream(req: QueryRequest):
         mcp_scope_token = None
         approval_context_token = None
         _saved = False
+        conv_id = req.conv_id or str(uuid.uuid4())
+        user_ts = req.user_timestamp or datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        original_question = req.question
         try:
             approval_context_token = current_approval_context.set(ApprovalContext(
                 mode=req.approval_mode, conversation_id=req.conv_id, project_id=req.project_id,
@@ -806,11 +809,7 @@ async def query_stream(req: QueryRequest):
             if req.selected_mcp_ids and not req.minimal_prompt:
                 from services.mcp_client import mcp_manager
                 mcp_scope_token = await mcp_manager.enable_request_scope(req.selected_mcp_ids)
-            # user 발화 시각을 요청 도착 시점으로 고정 (프론트가 전송 시각을 주면 우선 사용)
-            user_ts = req.user_timestamp or datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-
             # 1) 붙여넣기 UI 마커 제거 (본문은 사용자 질문으로 유지)
-            original_question = req.question
             clean_question = unwrap_pasted_text(req.question)
 
             # 2) 설정/시스템 프롬프트 로드
@@ -841,8 +840,6 @@ async def query_stream(req: QueryRequest):
             file_context_docs = _file_attachments_to_context(req.attachments)
             image_attachments = [a for a in req.attachments if a.get("type") == "image"]
 
-            # conv_id를 여기서 미리 확정한다.
-            conv_id = req.conv_id or str(uuid.uuid4())
             from services.conv_summary import get_prior_conv_summary
             conversation_summary = "" if req.minimal_prompt else await get_prior_conv_summary(conv_id)
 
@@ -1268,7 +1265,11 @@ async def query_stream(req: QueryRequest):
                     if partial:
                         msgs.append({"role": "assistant", "content": partial + "\n\n*(중단됨)*",
                                      "timestamp": now, "model": display_model if 'display_model' in dir() else ""})
-                    _run_in_background(save_conversation(conv_id, msgs))
+                    _run_in_background(save_conversation(
+                        conv_id,
+                        msgs,
+                        project_id=req.project_id or None,
+                    ))
                 except Exception as e:
                     logger.warning("[query_stream] 중단 시 저장 실패: %s", e)
 

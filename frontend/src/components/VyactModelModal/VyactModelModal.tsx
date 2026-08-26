@@ -188,6 +188,15 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                 selectedModelWeightBytes,
                 hardware,
             );
+            if (!selectedModelIsInstalled) {
+                const defaultProfile = await api.getVyactModelProfile(
+                    selectedModelPath,
+                    selectedFile.runtime,
+                    selectedFile.repository,
+                    optimizedContextSize,
+                );
+                await api.saveVyactModelProfile(defaultProfile);
+            }
             setDownloadedSettings({modelPath: selectedModelPath, runtime: selectedFile.runtime, repository: selectedFile.repository, context: optimizedContextSize});
         } catch (error) {
             setMessage(String(error));
