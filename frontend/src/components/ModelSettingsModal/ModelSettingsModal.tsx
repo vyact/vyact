@@ -1,10 +1,11 @@
 import {useEffect, useState} from 'react';
-import {ChevronDown, X} from 'lucide-react';
+import {ChevronDown, CircleQuestionMark, X} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {api, type VyactModelProfile} from '../../services/api';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import SettingLabel from '../common/SettingLabel/SettingLabel';
+import {Tooltip} from '../common/Tooltip/Tooltip';
 import './ModelSettingsModal.css';
 
 interface Props {
@@ -20,6 +21,7 @@ interface Props {
 
 export default function ModelSettingsModal({modelPath, runtime, repository, recommendedContext = 32768, activateOnApply = false, mtpSupported = false, onClose, onApplied}: Props) {
     const {t} = useTranslation('main');
+    const automaticSetupTooltip = t(`modelSettings.${runtime === 'gguf' ? 'automaticSetupGgufTooltip' : 'automaticSetupMlxTooltip'}`);
     const [profile, setProfile] = useState<VyactModelProfile | null>(null);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
@@ -58,9 +60,9 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
         }
     };
 
-    return <ModalOverlay className="model-settings-overlay" onClose={onClose} closeOnBackdrop>
+    return <ModalOverlay className="model-settings-overlay" onClose={onClose} closeOnBackdrop={false}>
         <div className="model-settings-modal">
-            <header><div><h2>{t('modelSettings.title')}</h2><p title={modelPath}>{modelPath.split('/').pop()}</p></div><button type="button" onClick={onClose} aria-label={t('modelSettings.close')}><X size={20}/></button></header>
+            <header><div><h2>{t('modelSettings.title')}</h2><div className="model-settings-model"><Tooltip content={automaticSetupTooltip} multiline large><button type="button" className="model-settings-model-help" aria-label={automaticSetupTooltip}><CircleQuestionMark size={14}/></button></Tooltip><span title={modelPath}>{modelPath.split('/').pop()}</span></div></div><button type="button" onClick={onClose} aria-label={t('modelSettings.close')}><X size={20}/></button></header>
             {!profile ? <div className="model-settings-loading">{error || t('modelSettings.loading')}</div> : <div className="model-settings-body">
                 <p className="model-settings-description">{t('modelSettings.description')}</p>
                 <label><SettingLabel label={t('modelSettings.context')} help={t('modelSettings.contextTooltip')}/><input className="model-settings-input" type="number" min="512" max="131072" value={profile.context_size} onChange={e => updateNumber('context_size', e.target.value)}/></label>

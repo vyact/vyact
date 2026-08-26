@@ -2,14 +2,17 @@
 .model-settings-modal { display: flex; flex-direction: column; width: min(520px, calc(100vw - 32px)); max-height: min(860px, calc(100vh - 32px)); overflow: hidden; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); box-shadow: 0 24px 80px #0008; }
 .model-settings-modal header, .model-settings-modal footer { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--border); }
 .model-settings-modal header h2 { margin: 0; font-size: 18px; }
-.model-settings-modal header p { max-width: 390px; margin: 4px 0 0; overflow: hidden; color: var(--muted); font-size: 12px; text-overflow: ellipsis; }
+.model-settings-model { display: flex; align-items: center; gap: 5px; max-width: 390px; margin-top: 4px; color: var(--muted); font-size: 13px; }
+.model-settings-model > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.model-settings-modal header .model-settings-model-help { display: grid; place-items: center; flex: 0 0 17px; width: 17px; height: 17px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: help; }
+.model-settings-modal header .model-settings-model-help:hover, .model-settings-modal header .model-settings-model-help:focus-visible { outline: none; background: var(--surface2); color: var(--text-secondary); }
 .model-settings-modal button { padding: 9px 15px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); color: var(--text); cursor: pointer; }
 .model-settings-modal header button { padding: 6px; border: 0; background: transparent; }
 .model-settings-body { display: grid; gap: 12px; min-height: 0; overflow-y: auto; padding: 18px 22px; }
 .model-settings-description { margin: 0 0 4px; padding: 2px 0 6px; color: var(--muted); font-size: 13px; line-height: 1.45; }
 .model-settings-loading { padding: 18px 22px; color: var(--muted); font-size: 12px; }
 .model-settings-body > label, .model-settings-toggle { display: flex; align-items: center; justify-content: space-between; gap: 18px; font-size: 13px; }
-.model-settings-input { width: 150px; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; text-align: right; transition: border-color .15s, background .15s, box-shadow .15s; appearance: textfield; }
+.model-settings-input { box-sizing: border-box; flex: 0 0 150px; width: 150px; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; text-align: right; transition: border-color .15s, background .15s, box-shadow .15s; appearance: textfield; }
 .model-settings-input::-webkit-outer-spin-button, .model-settings-input::-webkit-inner-spin-button { margin: 0; appearance: none; }
 .model-settings-input:hover { border-color: var(--text-secondary); background: var(--surface2); }
 .model-settings-input:focus { outline: none; border-color: var(--accent); background: var(--bg); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent); }

@@ -1138,6 +1138,8 @@
     "close": "Close",
     "loading": "Loading model settings...",
     "description": "Recommended values are based on this model and system memory. Review them before applying.",
+    "automaticSetupGgufTooltip": "การตั้งค่าอัตโนมัติของ Vyact (GGUF)\nถ่ายงานไป GPU: อัตโนมัติ\nปรับให้พอดีกับหน่วยความจำ: อัตโนมัติ\nการสร้างพร้อมกัน: 1\nFlash Attention: อัตโนมัติ\nแคชพรอมต์: เปิด\nRoPE, mmap และ KV บน GPU: ค่าเริ่มต้น llama.cpp",
+    "automaticSetupMlxTooltip": "การตั้งค่าอัตโนมัติของ Vyact (MLX)\nการทำงาน Metal: จัดการโดย MLX\nแคชพรอมต์ (APC): เปิด\nแบตช์ เธรด และหน่วยความจำ: ค่าเริ่มต้น MLX",
     "context": "Context window",
     "contextTooltip": "ปริมาณบทสนทนาและเอกสารสูงสุดที่โมเดลพิจารณาได้ในครั้งเดียว ค่าที่สูงขึ้นใช้หน่วยความจำมากขึ้น ใช้ค่าที่แนะนำเว้นแต่ข้อความยาวถูกตัด",
     "maxOutput": "Max output tokens",

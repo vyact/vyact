@@ -1138,6 +1138,8 @@
     "close": "Close",
     "loading": "Loading model settings...",
     "description": "Recommended values are based on this model and system memory. Review them before applying.",
+    "automaticSetupGgufTooltip": "Vyact 自动运行设置 (GGUF)\nGPU 卸载：自动\n内存适配：自动\n并发生成：1\nFlash Attention：自动\n提示词缓存：启用\nRoPE、mmap、KV GPU 卸载：llama.cpp 默认值",
+    "automaticSetupMlxTooltip": "Vyact 自动运行设置 (MLX)\nMetal 执行：由 MLX 运行时管理\n提示词缓存 (APC)：启用\n批处理、线程与内存管理：MLX 默认值",
     "context": "Context window",
     "contextTooltip": "模型一次可以参考的对话和文档最大长度。数值越大，占用的内存越多。除非长输入被截断，否则建议保留推荐值。",
     "maxOutput": "Max output tokens",

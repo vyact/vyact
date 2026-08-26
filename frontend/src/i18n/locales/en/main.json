@@ -1134,6 +1134,8 @@
     "close": "Close",
     "loading": "Loading model settings...",
     "description": "Recommended values are based on this model and system memory. Review them before applying.",
+    "automaticSetupGgufTooltip": "Vyact automatic runtime settings (GGUF)\nGPU offload: Automatic\nMemory fitting: Automatic\nConcurrent generation: 1\nFlash Attention: Automatic\nPrompt cache: Enabled\nRoPE, mmap, KV GPU offload: llama.cpp defaults",
+    "automaticSetupMlxTooltip": "Vyact automatic runtime settings (MLX)\nMetal execution: Managed by the MLX runtime\nPrompt cache (APC): Enabled\nBatch, threads, and memory management: MLX defaults",
     "context": "Context window",
     "contextTooltip": "The maximum amount of conversation and document text the model can consider at once. Larger values use more memory. Keep the recommended value unless long inputs are being cut off.",
     "maxOutput": "Max output tokens",

@@ -1145,6 +1145,8 @@
     "close": "닫기",
     "loading": "모델 설정을 불러오는 중...",
     "description": "이 모델과 시스템 메모리를 기준으로 권장값을 설정했습니다. 적용 전에 확인하세요.",
+    "automaticSetupGgufTooltip": "Vyact 자동 실행 설정 (GGUF)\nGPU 오프로딩: 자동\n메모리 적합화: 자동\n동시 생성: 1개\nFlash Attention: 자동\n프롬프트 캐시: 사용\nRoPE·mmap·KV GPU 오프로딩: llama.cpp 기본값",
+    "automaticSetupMlxTooltip": "Vyact 자동 실행 설정 (MLX)\nMetal 실행: MLX 런타임이 자동 관리\n프롬프트 캐시(APC): 사용\n배치·스레드·메모리 관리: MLX 기본값",
     "context": "컨텍스트 윈도우",
     "contextTooltip": "모델이 한 번에 참고할 수 있는 대화와 문서의 최대 분량입니다. 값을 키우면 메모리를 더 사용합니다. 긴 입력이 잘리지 않는다면 권장값을 유지하세요.",
     "maxOutput": "최대 출력 토큰",

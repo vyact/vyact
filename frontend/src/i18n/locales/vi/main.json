@@ -1138,6 +1138,8 @@
     "close": "Close",
     "loading": "Loading model settings...",
     "description": "Recommended values are based on this model and system memory. Review them before applying.",
+    "automaticSetupGgufTooltip": "Thiết lập tự động của Vyact (GGUF)\nChuyển lớp sang GPU: Tự động\nCân chỉnh theo bộ nhớ: Tự động\nSố lượt sinh đồng thời: 1\nFlash Attention: Tự động\nBộ nhớ đệm prompt: Bật\nRoPE, mmap và KV trên GPU: Mặc định llama.cpp",
+    "automaticSetupMlxTooltip": "Thiết lập tự động của Vyact (MLX)\nThực thi Metal: Do MLX quản lý\nBộ nhớ đệm prompt (APC): Bật\nBatch, luồng và bộ nhớ: Mặc định MLX",
     "context": "Context window",
     "contextTooltip": "Lượng hội thoại và tài liệu tối đa mà mô hình có thể xem xét cùng lúc. Giá trị lớn hơn dùng nhiều bộ nhớ hơn. Giữ giá trị đề xuất trừ khi nội dung dài bị cắt.",
     "maxOutput": "Max output tokens",

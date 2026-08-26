@@ -1138,6 +1138,8 @@
     "close": "Close",
     "loading": "Loading model settings...",
     "description": "Recommended values are based on this model and system memory. Review them before applying.",
+    "automaticSetupGgufTooltip": "Vyact 自動実行設定 (GGUF)\nGPU オフロード：自動\nメモリ適合：自動\n同時生成：1\nFlash Attention：自動\nプロンプトキャッシュ：有効\nRoPE・mmap・KV GPU オフロード：llama.cpp の既定値",
+    "automaticSetupMlxTooltip": "Vyact 自動実行設定 (MLX)\nMetal 実行：MLX ランタイムが管理\nプロンプトキャッシュ (APC)：有効\nバッチ・スレッド・メモリ管理：MLX の既定値",
     "context": "Context window",
     "contextTooltip": "モデルが一度に参照できる会話と文書の最大量です。値を大きくするとメモリ使用量が増えます。長い入力が切れない限り推奨値を使用してください。",
     "maxOutput": "Max output tokens",

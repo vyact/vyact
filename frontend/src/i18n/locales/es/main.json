@@ -1137,6 +1137,8 @@
     "close": "Close",
     "loading": "Loading model settings...",
     "description": "Recommended values are based on this model and system memory. Review them before applying.",
+    "automaticSetupGgufTooltip": "Ajustes automáticos de Vyact (GGUF)\nDescarga a GPU: Automática\nAjuste a memoria: Automático\nGeneración simultánea: 1\nFlash Attention: Automático\nCaché de prompts: Activada\nRoPE, mmap y KV en GPU: Valores de llama.cpp",
+    "automaticSetupMlxTooltip": "Ajustes automáticos de Vyact (MLX)\nEjecución Metal: Gestionada por MLX\nCaché de prompts (APC): Activada\nLotes, hilos y memoria: Valores de MLX",
     "context": "Context window",
     "contextTooltip": "Cantidad máxima de conversación y documentos que el modelo puede considerar a la vez. Los valores mayores usan más memoria. Mantén el valor recomendado salvo que se recorten entradas largas.",
     "maxOutput": "Max output tokens",

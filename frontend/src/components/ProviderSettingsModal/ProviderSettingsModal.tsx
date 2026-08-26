@@ -99,10 +99,10 @@ const ProviderSettingsModal: React.FC<ProviderSettingsModalProps> = ({
     if (!isOpen) return null;
 
     return (
-        <ModalOverlay className="provider-settings-overlay" onClose={onClose} closeOnBackdrop>
+        <ModalOverlay className="provider-settings-overlay" onClose={onClose} closeOnBackdrop={false}>
             <div className="provider-settings-modal" onClick={(event) => event.stopPropagation()}>
                 <header>
-                    <div><h2>{t('main:providerSettings.title', {provider: PROVIDER_DEFAULTS[provider].name})}</h2><p>{PROVIDER_DEFAULTS[provider].name}</p></div>
+                    <h2>{t('main:providerSettings.title', {provider: PROVIDER_DEFAULTS[provider].name})}</h2>
                     <button type="button" onClick={onClose} aria-label={t('main:customProvider.close')}><X size={20}/></button>
                 </header>
 
