@@ -906,7 +906,15 @@ export function useChat(deps: UseChatDeps) {
             if (last?.role === 'assistant' && !last.content?.trim()) return prev.slice(0, -1);
             return prev;
         });
-        setConversationRequestState(requestConvId, {isLoading: false, streamingMessageId: null});
+        // 대화 ID가 스트리밍 도중 확정되거나 전환된 경우 이전 ID의 요청 상태가
+        // 남을 수 있다. 모델 변경처럼 전체 응답을 중지하는 경로에서는 활성 상태를
+        // 모두 해제해 히스토리를 다시 열었을 때 로딩 표시가 고착되지 않게 한다.
+        const requestConversationIds = new Set([...activeConversationIds, requestConvId]);
+        requestConversationIds.forEach(conversationId => {
+            if (conversationId) {
+                setConversationRequestState(conversationId, {isLoading: false, streamingMessageId: null});
+            }
+        });
         // 새 대화방이면 사이드바에 즉시 추가 (백엔드 저장 완료 대기 없이)
         if (requestConvId) {
             const firstMsg = getMessagesForConversation(requestConvId).find(m => m.role === 'user');
