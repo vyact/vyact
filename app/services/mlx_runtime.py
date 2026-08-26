@@ -296,7 +296,12 @@ def _build_mlx_server_command(model_path: Path, context_size: int, cache_quantiz
         "--max-kv-size", str(context_size),
     ]
     server_help = _server_help(server_module)
-    if cache_quantization and context_size >= _MLX_KV_QUANTIZATION_MIN_CONTEXT and "--kv-bits" in server_help:
+    if (
+        cache_quantization
+        and mtp_path is None
+        and context_size >= _MLX_KV_QUANTIZATION_MIN_CONTEXT
+        and "--kv-bits" in server_help
+    ):
         command.extend(["--kv-bits", "8"])
         if "--quantized-kv-start" in server_help:
             command.extend(["--quantized-kv-start", "0"])

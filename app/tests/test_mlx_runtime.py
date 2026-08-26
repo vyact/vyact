@@ -106,12 +106,28 @@ class MlxRuntimeTests(unittest.TestCase):
             (mtp_dir / MLX_MODEL_MANIFEST).write_text(json.dumps({"role": "mtp"}))
             (model_dir / MLX_MODEL_MANIFEST).write_text(json.dumps({"mtp_repository": "owner/mtp"}))
 
-            with patch("services.mlx_runtime.MLX_MODELS_DIR", Path(temp_dir)):
+            with patch("services.mlx_runtime.MLX_MODELS_DIR", Path(temp_dir)), \
+                 patch("services.mlx_runtime._server_help", return_value="--kv-bits --quantized-kv-start"):
                 command = _build_mlx_server_command(model_dir, 32768)
 
             self.assertIn("mlx_vlm.server", command)
             self.assertEqual(command[command.index("--draft-model") + 1], str(mtp_dir))
             self.assertEqual(command[command.index("--draft-kind") + 1], "mtp")
+            self.assertNotIn("--kv-bits", command)
+            self.assertNotIn("--quantized-kv-start", command)
+
+    def test_non_mtp_model_keeps_kv_cache_quantization(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            model_dir = Path(temp_dir) / "owner" / "model"
+            model_dir.mkdir(parents=True)
+            (model_dir / "config.json").write_text(json.dumps({"architectures": ["QwenForCausalLM"]}))
+            (model_dir / MLX_MODEL_MANIFEST).write_text(json.dumps({"repository": "owner/model"}))
+
+            with patch("services.mlx_runtime._server_help", return_value="--kv-bits --quantized-kv-start"):
+                command = _build_mlx_server_command(model_dir, 32768)
+
+            self.assertEqual(command[command.index("--kv-bits") + 1], "8")
+            self.assertEqual(command[command.index("--quantized-kv-start") + 1], "0")
 
     def test_associates_mtp_without_listing_drafter_as_selectable_model(self):
         with tempfile.TemporaryDirectory() as temp_dir:
