@@ -25,7 +25,7 @@ from services.mcp_config import ensure_mcp_config
 from services.runtime_settings import DEFAULT_RUNTIME_SETTINGS, apply_runtime_settings
 from services.model_runtime_profiles import delete_model_profile, get_model_profile, normalize_model_profile, recommended_model_profile, save_model_profile
 from services.vyact_model_metadata_cache import get_cached_model_metadata, save_cached_model_metadata
-from services.mlx_runtime import get_downloaded_mlx_model_path, get_mlx_runtime_capabilities, server_module_for_model
+from services.mlx_runtime import get_downloaded_mlx_model_path, get_mlx_runtime_capabilities
 from services.reasoning_capabilities import get_gguf_reasoning_capabilities, get_mlx_reasoning_capabilities
 from services.vyact_runtime import get_downloaded_model_path
 
@@ -863,10 +863,6 @@ async def read_vyact_model_profile(
         capabilities["reasoning"] = await asyncio.to_thread(
             get_mlx_reasoning_capabilities,
             downloaded_model_path,
-            runtime_supports_none=(
-                profile.get("mtp_enabled") is True
-                or server_module_for_model(downloaded_model_path) == "mlx_vlm.server"
-            ),
         )
     else:
         capabilities = {

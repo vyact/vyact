@@ -487,6 +487,7 @@ export function useChat(deps: UseChatDeps) {
                 setConversationRequestState(requestConvId, {streamingMessageId: streamId});
 
                 let responseWritingStarted = false;
+                let streamedResponseText = '';
                 let pendingStreamText = '';
                 let streamRenderTimer: number | null = null;
                 const flushStreamText = () => {
@@ -505,6 +506,7 @@ export function useChat(deps: UseChatDeps) {
                         responseWritingStarted = true;
                         setToolStatus({phase: 'running', group: 'analysis', label: t('toolActivity.thinking')});
                     }
+                    streamedResponseText += piece;
                     pendingStreamText += piece;
                     if (streamRenderTimer === null) {
                         streamRenderTimer = window.setTimeout(flushStreamText, STREAM_RENDER_INTERVAL_MS);
@@ -654,6 +656,9 @@ export function useChat(deps: UseChatDeps) {
                             const rawAnswer = data.answer ?? '';
                             const {body: fuBody, followups: fuList} = parseFollowups(rawAnswer);
                             const followupsOnly = !fuBody?.trim() && fuList.length > 0;
+                            if (followupsOnly || (!fuBody?.trim() && !streamedResponseText.trim())) {
+                                setLastFailedQuery(failedRequest);
+                            }
                             setMessagesForConversation(requestConvId, prev => prev.map(m => {
                                 if (m.id !== streamId) return m;
                                 // follow-up 블록만 생성된 경우에는 스트리밍 원문을 본문으로
@@ -685,6 +690,7 @@ export function useChat(deps: UseChatDeps) {
                         },
                         onError: (error) => {
                             flushStreamText();
+                            setLastFailedQuery(failedRequest);
                             const isImageUnsupported = error.code === 'model_image_unsupported';
                             const message = isImageUnsupported
                                 ? t('message.modelImageUnsupportedDescription', {model: error.model || streamModel})

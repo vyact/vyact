@@ -68,6 +68,7 @@ class ReasoningCapabilitiesTests(unittest.TestCase):
 
         self.assertEqual(capabilities["control"], "effort")
         self.assertEqual(capabilities["efforts"], ["low", "medium", "high"])
+        self.assertFalse(capabilities["supports_none"])
 
     def test_explicit_effort_list_preserves_extra_high(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -79,6 +80,23 @@ class ReasoningCapabilitiesTests(unittest.TestCase):
             capabilities = get_mlx_reasoning_capabilities(model_path)
 
         self.assertEqual(capabilities["efforts"], ["low", "medium", "high", "xhigh"])
+        self.assertFalse(capabilities["supports_none"])
+
+    def test_effort_control_never_exposes_none_as_a_level(self):
+        with tempfile.TemporaryDirectory() as directory:
+            model_path = Path(directory)
+            (model_path / "tokenizer_config.json").write_text(json.dumps({
+                "chat_template": (
+                    "{% if reasoning_effort in ['none', 'low', 'medium', 'high'] %}"
+                    "{% if enable_thinking %}<think>{% endif %}{% endif %}"
+                ),
+            }), encoding="utf-8")
+
+            capabilities = get_mlx_reasoning_capabilities(model_path)
+
+        self.assertEqual(capabilities["control"], "effort")
+        self.assertEqual(capabilities["efforts"], ["low", "medium", "high"])
+        self.assertFalse(capabilities["supports_none"])
 
 
 if __name__ == "__main__":

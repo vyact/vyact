@@ -18,7 +18,7 @@ _GGUF_SCALAR_FORMATS = {
 }
 
 
-def _template_capabilities(template: str, *, runtime_supports_none: bool = False) -> dict:
+def _template_capabilities(template: str) -> dict:
     normalized = template.lower()
     has_effort = any(marker in normalized for marker in _EFFORT_MARKERS)
     has_toggle = any(marker in normalized for marker in _TOGGLE_MARKERS)
@@ -34,7 +34,9 @@ def _template_capabilities(template: str, *, runtime_supports_none: bool = False
         return {
             "control": "effort",
             "efforts": declared_efforts,
-            "supports_none": runtime_supports_none or has_toggle or "'none'" in normalized or '"none"' in normalized,
+            # Effort-based models always start at their least expensive level.
+            # `none` belongs to toggle-based reasoning and is not an effort.
+            "supports_none": False,
         }
     if has_toggle:
         return {"control": "toggle", "efforts": [], "supports_none": False}
@@ -109,13 +111,15 @@ def get_gguf_reasoning_capabilities(model_path: Path) -> dict:
                         templates.append(value)
                     elif isinstance(value, list):
                         templates.extend(str(item) for item in value)
-            # llama.cpp normalizes reasoning_effort=none before applying the template.
-            return _template_capabilities("\n".join(templates), runtime_supports_none=True)
+            # Do not infer `none` from llama.cpp alone. Some templates accept an
+            # arbitrary effort string but their model only understands concrete
+            # levels, causing `none` to spend the whole output budget reasoning.
+            return _template_capabilities("\n".join(templates))
     except (OSError, ValueError, struct.error):
         return {"control": "none", "efforts": [], "supports_none": False}
 
 
-def get_mlx_reasoning_capabilities(model_path: Path, *, runtime_supports_none: bool = False) -> dict:
+def get_mlx_reasoning_capabilities(model_path: Path) -> dict:
     """Inspect the tokenizer chat template shipped with an MLX repository."""
     try:
         config = json.loads((model_path / "tokenizer_config.json").read_text(encoding="utf-8"))
@@ -134,4 +138,4 @@ def get_mlx_reasoning_capabilities(model_path: Path, *, runtime_supports_none: b
             template = (model_path / "chat_template.jinja").read_text(encoding="utf-8")
         except OSError:
             template = ""
-    return _template_capabilities(str(template), runtime_supports_none=runtime_supports_none)
+    return _template_capabilities(str(template))
