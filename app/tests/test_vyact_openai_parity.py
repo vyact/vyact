@@ -52,12 +52,33 @@ class VyactOpenAiParityTests(unittest.IsolatedAsyncioTestCase):
 
     def test_mlx_receives_explicit_reasoning_choice(self):
         body = {}
-
-        _apply_local_reasoning_control(
-            body, {"is_local": True, "runtime": "mlx"}, reasoning=False,
-        )
+        with patch("services.llm.providers.get_downloaded_mlx_model_path", return_value="/model"), \
+                patch("services.llm.providers.server_module_for_model", return_value="mlx_vlm.server"):
+            _apply_local_reasoning_control(
+                body, {"is_local": True, "runtime": "mlx", "model_path": "mlx/owner/model"}, reasoning=False,
+            )
 
         self.assertEqual(body, {"enable_thinking": False})
+
+    def test_mlx_text_receives_reasoning_effort_as_template_arguments(self):
+        body = {}
+        with patch("services.llm.providers.get_downloaded_mlx_model_path", return_value="/model"), \
+                patch("services.llm.providers.server_module_for_model", return_value="mlx_lm.server"):
+            _apply_local_reasoning_control(
+                body, {"is_local": True, "runtime": "mlx", "model_path": "mlx/owner/model"}, reasoning="high",
+            )
+
+        self.assertEqual(body, {"chat_template_kwargs": {"enable_thinking": True, "reasoning_effort": "high"}})
+
+    def test_llama_receives_none_reasoning_effort(self):
+        body = {}
+        _apply_local_reasoning_control(
+            body, {"is_local": True, "runtime": "gguf"}, reasoning="none",
+        )
+        self.assertEqual(body, {
+            "chat_template_kwargs": {"enable_thinking": False},
+            "reasoning_effort": "none",
+        })
 
     def test_local_runtime_receives_configured_seed(self):
         body = {}

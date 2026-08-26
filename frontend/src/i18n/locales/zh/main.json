@@ -596,6 +596,8 @@
     "label": "推理",
     "title": "推理(Thinking)",
     "intro": "模型在回答前进行逐步思考的功能。",
+    "effortLabel": "推理强度",
+    "efforts": {"none": "无", "low": "低", "medium": "中", "high": "高", "xhigh": "极高"},
     "onLabel": "适合开启的场景",
     "onItems": [
       "复杂推理、数学、编程问题",

@@ -595,6 +595,8 @@
     "label": "Reasoning",
     "title": "Reasoning (Thinking)",
     "intro": "The model thinks step-by-step before answering.",
+    "effortLabel": "Reasoning effort",
+    "efforts": {"none": "None", "low": "Low", "medium": "Medium", "high": "High", "xhigh": "Extra High"},
     "onLabel": "Best when ON",
     "onItems": [
       "Complex reasoning, math, or coding questions",

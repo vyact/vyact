@@ -596,6 +596,8 @@
     "label": "Phân tích",
     "title": "Suy luận",
     "intro": "Mô hình suy nghĩ trước khi trả lời.",
+    "effortLabel": "Mức độ suy luận",
+    "efforts": {"none": "Không", "low": "Thấp", "medium": "Trung bình", "high": "Cao", "xhigh": "Rất cao"},
     "onLabel": "Nên bật",
     "onItems": [
       "Câu hỏi khó, toán hoặc mã",

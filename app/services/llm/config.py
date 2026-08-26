@@ -73,6 +73,7 @@ async def get_provider_config() -> dict:
                     "runtime": provider_config.get("runtime", "gguf"),
                     "model_path": provider_config.get("model_path", ""),
                     "context_size": provider_config.get("context_size", 32768),
+                    "mtp_enabled": provider_config.get("mtp_enabled"),
                     "is_local": True,
                     "api_key": None,
                     "base_url": provider_config.get("base_url", VYACT_RUNTIME_URL),

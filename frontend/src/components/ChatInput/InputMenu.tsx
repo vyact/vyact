@@ -11,7 +11,14 @@ import {
 import {onMcpServersChanged} from '../../utils/mcpEvents';
 import {CHAT_FILE_ACCEPT} from '../../utils/fileValidation';
 import ReasoningToggle from '../common/ReasoningToggle/ReasoningToggle';
-import {useReasoning} from '../../utils/reasoning';
+import {
+    defaultReasoningValue,
+    isReasoningActive,
+    setReasoningValue,
+    type ReasoningCapability,
+    useReasoning,
+} from '../../utils/reasoning';
+import {api} from '../../services/api';
 import './InputMenu.css';
 import {usePluginExtensions} from '../../plugins/usePluginExtensions';
 import {openPluginModal, openPluginPanel} from '../../plugins/registry';
@@ -26,6 +33,7 @@ const GOOGLE_STATUS_UNAVAILABLE: GoogleWorkspaceStatus = {
 const CHAT_FILE_INPUT_ID = 'chat-file-input';
 
 interface InputMenuProps {
+    selectedModel: string;
     modelType: 'chat' | 'image_gen' | 'image_edit';
     fileInputRef: React.RefObject<HTMLInputElement>;
     onFileSelect: React.ChangeEventHandler<HTMLInputElement>;
@@ -39,6 +47,7 @@ interface InputMenuProps {
 }
 
 const InputMenu: React.FC<InputMenuProps> = ({
+                                                 selectedModel,
                                                  modelType,
                                                  fileInputRef,
                                                  onFileSelect,
@@ -51,11 +60,37 @@ const InputMenu: React.FC<InputMenuProps> = ({
                                                  onOpenGoogleWorkspace,
                                              }) => {
     const {t} = useTranslation('main');
-    const [reasoningEnabled] = useReasoning();
+    const [reasoningValue] = useReasoning();
+    const reasoningEnabled = isReasoningActive(reasoningValue);
+    const [reasoningCapability, setReasoningCapability] = React.useState<ReasoningCapability>({
+        control: 'none', efforts: [], supports_none: false,
+    });
     const {inputMenu: pluginMenuItems} = usePluginExtensions();
     const [open, setOpen] = React.useState(false);
     const [google, setGoogle] = React.useState<GoogleWorkspaceStatus>(GOOGLE_STATUS_UNAVAILABLE);
     const menuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        if (!selectedModel) {
+            setReasoningCapability({control: 'none', efforts: [], supports_none: false});
+            setReasoningValue('off');
+            return;
+        }
+        const runtime = selectedModel.startsWith('mlx/') ? 'mlx' : 'gguf';
+        api.getVyactModelProfile(selectedModel, runtime).then(profile => {
+            if (cancelled) return;
+            const capability = profile.capabilities?.reasoning ?? {control: 'none', efforts: [], supports_none: false};
+            setReasoningCapability(capability);
+            setReasoningValue(defaultReasoningValue(capability));
+        }).catch(() => {
+            if (!cancelled) {
+                setReasoningCapability({control: 'none', efforts: [], supports_none: false});
+                setReasoningValue('off');
+            }
+        });
+        return () => { cancelled = true; };
+    }, [selectedModel]);
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
@@ -246,9 +281,9 @@ const InputMenu: React.FC<InputMenuProps> = ({
                         t('inputMenu.supportVyact'), onOpenSupport
                     )}
                     {divider}
-                    <div className="input-menu-reasoning">
-                        <ReasoningToggle/>
-                    </div>
+                    {reasoningCapability.control !== 'none' && <div className="input-menu-reasoning">
+                        <ReasoningToggle capability={reasoningCapability}/>
+                    </div>}
                 </div>
             )}
         </div>

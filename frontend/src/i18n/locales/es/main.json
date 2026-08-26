@@ -595,6 +595,8 @@
     "label": "Análisis",
     "title": "Razonamiento",
     "intro": "El modelo piensa antes de responder.",
+    "effortLabel": "Nivel de razonamiento",
+    "efforts": {"none": "Ninguno", "low": "Bajo", "medium": "Medio", "high": "Alto", "xhigh": "Muy alto"},
     "onLabel": "Mejor activo",
     "onItems": [
       "Preguntas complejas, cálculo o código",

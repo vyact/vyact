@@ -8,7 +8,7 @@ import type {Message, ArticleAttachment, InjectedContextItem, ToolActivity} from
 import {IMAGE_MODEL_IDS} from './useModels';
 import {streamSSE} from '../../utils/streamClient';
 import {parseFollowups} from '../../utils/markdownUtils';
-import {getReasoningEnabled} from '../../utils/reasoning';
+import {getReasoningRequestValue} from '../../utils/reasoning';
 import {formatApiErrorForUser} from '../../utils/apiError';
 import {isSupportedChatFile} from '../../utils/fileValidation';
 import type {FileAttachment} from '../ChatInput/useAttachments';
@@ -540,7 +540,7 @@ export function useChat(deps: UseChatDeps) {
                         articles: articlesSnapshot.length > 0 ? articlesSnapshot : [],
                         article_selection_explicit: true,
                         voice_mode: false,
-                        reasoning: getReasoningEnabled(),
+                        reasoning: getReasoningRequestValue(),
                         folder_path: codeFolderPath || '',
                         project_id: deps.activeProjectId || '',
                         selected_mcp_ids: selectedMcpIds || [],
@@ -746,7 +746,7 @@ export function useChat(deps: UseChatDeps) {
                 attachments.length > 0 ? attachments : undefined,
                 articlesSnapshot.length > 0 ? articlesSnapshot : undefined,
                 systemPromptOverride, voiceMode,
-                getReasoningEnabled());
+                getReasoningRequestValue());
 
             const isNewConv = !requestConvId;
             if (response.conv_id && isNewConv) {

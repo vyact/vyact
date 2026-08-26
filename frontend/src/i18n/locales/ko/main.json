@@ -595,6 +595,8 @@
     "label": "추론",
     "title": "추론(Thinking)",
     "intro": "답변 전에 모델이 단계적으로 생각하는 기능입니다.",
+    "effortLabel": "추론 강도",
+    "efforts": {"none": "없음", "low": "낮음", "medium": "보통", "high": "높음", "xhigh": "매우 높음"},
     "onLabel": "켜면 좋은 경우",
     "onItems": [
       "복잡한 추론·수학·코딩 질문",

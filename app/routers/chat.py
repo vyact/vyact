@@ -339,7 +339,7 @@ class QueryRequest(BaseModel):
     voice_mode: bool = False  # 음성 대화 모드 (format_instruction 제거)
     user_timestamp: str = ""  # 전송 시점 timestamp (프론트에서 전달)
     no_history: bool = False  # True면 히스토리 저장 안 함
-    reasoning: bool = False  # True면 추론(gemma thinking) 켬. 프론트/확장 로컬 스위치로 제어. 기본 off
+    reasoning: bool | str = False  # bool 토글 또는 none/low/medium/high/xhigh 추론 강도
     folder_path: str = ""  # 코드 분석용 폴더 경로 (프론트에서 선택)
     project_id: str = ""
     knowledge_collection_id: str = ""  # 이전 클라이언트 호환용 단일 컬렉션

@@ -201,6 +201,11 @@ export interface VyactModelProfile {
         cpu_threads: boolean;
         kv_cache_precisions: Array<'q8' | 'q4'>;
         seed: boolean;
+        reasoning: {
+            control: 'none' | 'toggle' | 'effort';
+            efforts: Array<'low' | 'medium' | 'high' | 'xhigh'>;
+            supports_none: boolean;
+        };
     };
 }
 
@@ -996,7 +1001,7 @@ export const api = {
         articles?: ArticleAttachment[],
         systemPromptOverride?: string,
         voiceMode?: boolean,
-        reasoning: boolean = true
+        reasoning: boolean | 'none' | 'low' | 'medium' | 'high' | 'xhigh' = true
     ): Promise<ChatResponse> {
         const res = await fetch(`${API_BASE}/query`, {
             method: 'POST',

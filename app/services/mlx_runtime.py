@@ -277,7 +277,7 @@ def stop_mlx_runtime() -> None:
     MLX_RUNTIME_PID_FILE.unlink(missing_ok=True)
 
 
-def _server_module_for_model(model_path: Path) -> str:
+def server_module_for_model(model_path: Path) -> str:
     try:
         config = json.loads((model_path / "config.json").read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
@@ -287,6 +287,10 @@ def _server_module_for_model(model_path: Path) -> str:
         marker in architectures for marker in ("vision", "conditionalgeneration", "vl")
     )
     return "mlx_vlm.server" if is_vision_model else "mlx_lm.server"
+
+
+# Retain the private name used by existing callers and tests.
+_server_module_for_model = server_module_for_model
 
 
 @lru_cache(maxsize=2)
@@ -302,7 +306,7 @@ def _server_help(server_module: str) -> str:
 
 def get_mlx_runtime_capabilities(model_path: Path) -> dict:
     """Report advanced controls supported by the installed MLX server."""
-    server_help = _server_help(_server_module_for_model(model_path))
+    server_help = _server_help(server_module_for_model(model_path))
     return {
         "performance_modes": [],
         "cpu_threads": False,
@@ -326,7 +330,7 @@ def _build_mlx_server_command(
         mtp_path = None
     if enable_mtp is False:
         mtp_path = None
-    server_module = "mlx_vlm.server" if mtp_path is not None else _server_module_for_model(model_path)
+    server_module = "mlx_vlm.server" if mtp_path is not None else server_module_for_model(model_path)
     command = [
         sys.executable, "-m", server_module, "--model", str(model_path),
         "--host", "127.0.0.1", "--port", str(VYACT_RUNTIME_PORT),

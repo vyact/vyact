@@ -596,6 +596,8 @@
     "label": "Analyse",
     "title": "Raisonnement",
     "intro": "Le modèle réfléchit avant de répondre.",
+    "effortLabel": "Niveau de raisonnement",
+    "efforts": {"none": "Aucun", "low": "Faible", "medium": "Moyen", "high": "Élevé", "xhigh": "Très élevé"},
     "onLabel": "Mieux activé",
     "onItems": [
       "Questions complexes, calcul ou code",

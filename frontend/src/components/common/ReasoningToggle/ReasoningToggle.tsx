@@ -1,10 +1,18 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useReasoning } from '../../../utils/reasoning';
+import CustomSelect from '../../CustomSelect/CustomSelect';
+import {
+    defaultReasoningValue,
+    isReasoningActive,
+    type ReasoningCapability,
+    type ReasoningValue,
+    useReasoning,
+} from '../../../utils/reasoning';
 import './ReasoningToggle.css';
 
 interface ReasoningToggleProps {
     disabled?: boolean;
+    capability: ReasoningCapability;
 }
 
 /**
@@ -12,12 +20,22 @@ interface ReasoningToggleProps {
  * 상태는 localStorage에 저장되며(ES 미사용), 웹앱과 크롬 확장이 각각 독립적으로 동작한다.
  * 좌측 물음표에 마우스를 올리면 켜면/끄면 좋은 경우를 한 번에 안내하는 툴팁이 표시된다.
  */
-const ReasoningToggle: React.FC<ReasoningToggleProps> = ({ disabled }) => {
+const ReasoningToggle: React.FC<ReasoningToggleProps> = ({disabled, capability}) => {
     const { t } = useTranslation('main');
-    const [enabled, toggle] = useReasoning();
+    const [value, setValue] = useReasoning();
+    const enabled = isReasoningActive(value);
+
+    React.useEffect(() => {
+        const valid = capability.control === 'toggle'
+            ? value === 'off' || value === 'on'
+            : capability.control === 'effort'
+                ? (value === 'none' && capability.supports_none) || capability.efforts.includes(value as Exclude<ReasoningValue, 'off' | 'on' | 'none'>)
+                : value === 'off';
+        if (!valid) setValue(defaultReasoningValue(capability));
+    }, [capability, setValue, value]);
 
     const handleToggle = () => {
-        if (!disabled) toggle();
+        if (!disabled) setValue(enabled ? 'off' : 'on');
     };
 
     return (
@@ -48,8 +66,22 @@ const ReasoningToggle: React.FC<ReasoningToggleProps> = ({ disabled }) => {
                 </span>
             </span>
 
-            {/* 라벨 + 스위치 — 둘 다 클릭 시 토글 (버튼 아님) */}
-            <span
+            {capability.control === 'effort' ? <div className="reasoning-effort-control">
+                <span className="reasoning-toggle-label">{t('reasoning.label')}</span>
+                <CustomSelect
+                    portal
+                    alignRight
+                    disabled={disabled}
+                    ariaLabel={t('reasoning.effortLabel')}
+                    className="reasoning-effort-select"
+                    value={value}
+                    options={[
+                        ...(capability.supports_none ? [{value: 'none', label: t('reasoning.efforts.none')}] : []),
+                        ...capability.efforts.map(effort => ({value: effort, label: t(`reasoning.efforts.${effort}`)})),
+                    ]}
+                    onChange={nextValue => setValue(nextValue as ReasoningValue)}
+                />
+            </div> : <span
                 className="reasoning-toggle-control"
                 onClick={handleToggle}
                 role="switch"
@@ -67,7 +99,7 @@ const ReasoningToggle: React.FC<ReasoningToggleProps> = ({ disabled }) => {
                 <span className="reasoning-toggle-track">
                     <span className="reasoning-toggle-knob" />
                 </span>
-            </span>
+            </span>}
         </div>
     );
 };

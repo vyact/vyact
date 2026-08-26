@@ -27,6 +27,7 @@ from .tools import (
 )
 from services.runtime_settings import get_runtime_settings
 from services.tool_approval import await_tool_approval
+from services.mlx_runtime import get_downloaded_mlx_model_path, server_module_for_model
 
 
 def _accumulate_llm_timing(usage: dict | None, timings: dict | None) -> None:
@@ -62,15 +63,27 @@ async def _local_max_tokens(
 
 
 def _apply_local_reasoning_control(
-    body: dict, provider_config: dict, reasoning: bool | None,
+    body: dict, provider_config: dict, reasoning: bool | str | None,
 ) -> None:
     """Pass the UI reasoning choice using the selected local runtime's API."""
     if not provider_config.get("is_local"):
         return
+    effort = reasoning.lower() if isinstance(reasoning, str) else None
+    enabled = effort not in {"none", "off"} if effort is not None else bool(reasoning)
     if provider_config.get("runtime") == "mlx":
-        body["enable_thinking"] = bool(reasoning)
+        model_path = get_downloaded_mlx_model_path(provider_config.get("model_path", ""))
+        if provider_config.get("mtp_enabled") is True or server_module_for_model(model_path) == "mlx_vlm.server":
+            body["enable_thinking"] = enabled
+            if effort and enabled:
+                body["reasoning_effort"] = effort
+        else:
+            body["chat_template_kwargs"] = {"enable_thinking": enabled}
+            if effort and enabled:
+                body["chat_template_kwargs"]["reasoning_effort"] = effort
     else:
-        body["chat_template_kwargs"] = {"enable_thinking": bool(reasoning)}
+        body["chat_template_kwargs"] = {"enable_thinking": enabled}
+        if effort:
+            body["reasoning_effort"] = effort
 
 
 def _apply_local_prefix_cache_control(body: dict, provider_config: dict) -> None:

@@ -596,6 +596,8 @@
     "label": "推論",
     "title": "推論(Thinking)",
     "intro": "回答前にモデルが段階的に考える機能です。",
+    "effortLabel": "推論強度",
+    "efforts": {"none": "なし", "low": "低", "medium": "中", "high": "高", "xhigh": "最高"},
     "onLabel": "ONにすると良い場合",
     "onItems": [
       "複雑な推論・数学・コーディングの質問",

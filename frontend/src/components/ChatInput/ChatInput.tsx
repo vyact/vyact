@@ -552,6 +552,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                     <div className="chat-btn-row">
                         <div style={{display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0, flex: 1}}>
                             <InputMenu
+                                selectedModel={selectedModel}
                                 modelType={modelType}
                                 fileInputRef={attach.fileInputRef}
                                 onFileSelect={attach.handleFileSelect}
