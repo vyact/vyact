@@ -446,12 +446,6 @@ def _classify_text_lines_with_context(
     return chunks
 
 
-def _classify_text_lines(text: str) -> list[Chunk]:
-    """텍스트를 줄 단위로 분석해 heading/code/paragraph 청크로 분류 (하위 호환)"""
-    heading_stack: list[str] = []
-    return _classify_text_lines_with_context(text, heading_stack)
-
-
 def _text_to_chunks(text: str) -> list[Chunk]:
     """일반 텍스트 → paragraph 청크 리스트"""
     return [Chunk(text=c, chunk_type="paragraph") for c in split_chunks(text) if c.strip()]
@@ -548,7 +542,7 @@ def _parse_docx(path: Path) -> str:
 
 
 def _parse_xlsx(path: Path) -> str:
-    """하위 호환용 — typed 청크에서 텍스트만 추출"""
+    """XLSX typed chunks as complete plain text."""
     chunks = _parse_xlsx_chunks(path)
     return "\n\n".join(c.text for c in chunks)
 
@@ -925,12 +919,6 @@ def parse_file(path: Path) -> str:
         raise
 
 
-def parse_file_to_chunks(path: Path) -> list[str]:
-    """파일 파싱 → 텍스트 청크 리스트 반환 (하위 호환)"""
-    chunks = parse_file_to_typed_chunks(path)
-    return [c.text for c in chunks]
-
-
 def _normalize_typed_chunks(path: Path, chunks: list[Chunk]) -> list[Chunk]:
     """모든 typed 블록에 최대 길이를 적용하면서 구조 메타데이터를 보존한다."""
     result: list[Chunk] = []
@@ -1027,7 +1015,6 @@ def parse_file_for_indexing(path: Path) -> tuple[list[Chunk], str]:
         return _normalize_typed_chunks(path, chunks), original_text
 
     typed_chunks = parse_file_to_typed_chunks(path)
-    # 기존 XLSX 원문 함수도 typed 청크를 다시 생성한 뒤 같은 방식으로 합쳤다.
     if ext == ".xlsx":
         return typed_chunks, "\n\n".join(chunk.text for chunk in typed_chunks)
     return typed_chunks, parse_file(path)

@@ -22,7 +22,6 @@ from services.external_data.scheduler import (
     start_external_data_scheduler,
     stop_external_data_scheduler,
 )
-from services.mcp_config import ensure_mcp_config
 from services.runtime_settings import apply_runtime_settings
 from routers.browser_extension import router as browser_extension_router
 
@@ -264,8 +263,24 @@ async def lifespan(app: FastAPI):
                 )
                 cfg["model"] = model_id
                 cfg["vyact_config"]["model"] = model_id
-                cfg.setdefault("runtime_settings", {})["llm_num_ctx"] = cfg["vyact_config"]["context_size"]
-                apply_runtime_settings(cfg["runtime_settings"])
+                from services.model_runtime_profiles import get_model_profile, recommended_model_profile, save_model_profile
+                common_settings = cfg.get("runtime_settings", {})
+                profile = await get_model_profile(vyact_config["model_path"])
+                if profile is None:
+                    profile = recommended_model_profile(
+                        vyact_config["model_path"], vyact_config.get("runtime", "gguf"),
+                        vyact_config.get("repository"), vyact_config.get("context_size", 32768),
+                    )
+                    profile = await save_model_profile(profile)
+                vyact_config.update({key: profile.get(key) for key in (
+                    "context_size", "max_output_tokens", "temperature", "top_k", "top_p", "cache_quantization",
+                )})
+                profile_settings = {
+                    "llm_num_ctx": profile["context_size"], "llm_num_predict": profile["max_output_tokens"],
+                    "llm_max_tokens": profile["max_output_tokens"], "llm_temperature": profile["temperature"],
+                    "top_k": profile.get("top_k"), "top_p": profile.get("top_p"),
+                }
+                apply_runtime_settings({**common_settings, **profile_settings})
                 await save_config_async(cfg)
                 try:
                     from routers.deps import load_ui_language_async
@@ -292,8 +307,6 @@ async def lifespan(app: FastAPI):
     try:
         from services.mcp_client import mcp_manager
         from services.mcp_config import build_servers_config
-        # 과거 설치본을 포함해 MCP 문서가 빠진 경우에만 기본 filesystem 항목을 만든다.
-        await ensure_mcp_config()
         # 설치형 플러그인이 MCP 카탈로그와 내부 tool을 먼저 등록한다.
         try:
             from services.plugin_manager import load_installed_plugins

@@ -15,6 +15,7 @@ interface ModelSelectorProps {
     disabled?: boolean;
     onModelChange: (model: string, needsDownload: boolean, modelType?: ModelType) => void;
     onModelDelete: (model: string) => Promise<void>;
+    onModelSettingsOpen: (model: string) => void;
     onProviderSettingsOpen: () => void;
 }
 
@@ -31,6 +32,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                                                          disabled = false,
                                                          onModelChange,
                                                          onModelDelete,
+                                                         onModelSettingsOpen,
                                                          onProviderSettingsOpen,
                                                      }) => {
     const {t} = useTranslation('main');
@@ -89,6 +91,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                     </span>
                 </div>
 
+                {isInst && <button type="button" className="dd-model-settings" aria-label={t('modelSelector.modelSettings', {model: opt.label})} onClick={event => {event.stopPropagation(); onModelSettingsOpen(opt.value);}}><Settings size={14}/></button>}
                 {!isSelected && isInst && <button type="button" className="dd-model-delete"
                     aria-label={t('modelSelector.deleteModel', {model: opt.label})}
                     onClick={event => {

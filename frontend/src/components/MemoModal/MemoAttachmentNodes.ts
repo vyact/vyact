@@ -261,16 +261,6 @@ export const MemoAttachment = Node.create({
     parseHTML() {
         return [
             {
-                // 이전 버전이 저장한 첨부 칩도 일반 링크보다 우선해 원자형 노드로 복원한다.
-                tag: '.memo-attachment-link',
-                priority: 1000,
-                getAttrs: element => ({
-                    href: element.getAttribute('href') || null,
-                    filename: element.getAttribute('download') || element.textContent?.replace(/^📎\s*/, '') || '',
-                    mimeType: element.getAttribute('title') || '',
-                }),
-            },
-            {
                 tag: 'a[href*="/memo/"][href*="/attachments/"]',
                 priority: 900,
                 getAttrs: element => ({

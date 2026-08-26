@@ -90,7 +90,7 @@ def sse(event: str, data: dict) -> str:
 async def remember(req: RememberRequest):
     async def stream():
         import re as _re
-        from services.llm import query_llm, collect_llm_stream
+        from services.llm.core import collect_llm_stream, query_llm
         max_len = max(500, min(req.max_length, 5000))
         profile_language = get_language_label(req.language)
 

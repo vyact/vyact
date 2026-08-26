@@ -1,14 +1,14 @@
 """사용자 UI 언어를 LLM 프롬프트용 표시 이름으로 변환한다."""
 
 LANGUAGE_LABELS = {
-    "ko": "한국어",
+    "ko": "Korean",
     "en": "English",
-    "ja": "日本語",
-    "zh": "中文",
-    "th": "ภาษาไทย",
-    "vi": "Tiếng Việt",
-    "es": "Español",
-    "fr": "Français",
+    "ja": "Japanese",
+    "zh": "Chinese",
+    "th": "Thai",
+    "vi": "Vietnamese",
+    "es": "Spanish",
+    "fr": "French",
 }
 
 

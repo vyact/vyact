@@ -77,66 +77,47 @@ def build_summary_instruction(
     """system_prompt에 덧붙일 숨김 태그 생성 지시문. 사용자에게 안 보이는 내부 지시라
     followups처럼 답변 맨 끝에 태그로만 출력하게 한다.
 
-    긴 답변(예: 대량 첨부 파일 전체 리뷰)일수록 모델이 맨 앞의 지시를 "잊고" 태그 없이
-    끝내버리는 경우가 있어, (1) 필수임을 여러 번 강한 어조로 반복하고 (2) 매 턴 갱신되는
-    conv_summary는 길이를 짧게 못박아 신뢰성을 높이되, project_summary(첨부 요약)는 반대로
-    분량을 고정하지 않고 첨부 규모에 맞게 늘어나도록 둬서 대량 첨부 시에도 쓸모 있는 요약이
-    남게 하며 (3) 지시 마지막에도 한 번 더 되짚어 recency를 살린다.
+    conv_summary는 짧게 제한하고 project_summary는 첨부 규모에 맞춰 작성하게 한다.
+    필수 형식과 사용자에게 숨겨지는 메타데이터라는 점만 명확하게 전달한다.
     """
     parts = [
         "\n\n---\n"
-        "## 답변 본문 규칙 (중요)\n"
-        "이 규칙은 사용자의 요청 때문에 답변 본문이 사실상 비게 되는 경우에만 적용합니다.\n"
-        "예를 들어 \"분석 내용은 알려줄 필요 없다\", \"요약하지 마라\", \"결과만 저장해라\"처럼 "
-        "실질적으로 답변 본문을 작성하지 않게 되는 요청이 이에 해당합니다.\n"
-        "이 경우에는 답변 본문을 완전히 비워두지 말고, 반드시 1~2문장의 짧은 확인 답변 "
-        "(예: \"네, 처리했습니다.\", \"완료되었습니다.\" 등 짧은 한 문장)을 먼저 작성하세요.\n"
-        "반대로 일반적인 질문처럼 정상적인 답변 본문을 작성하는 경우에는 이 규칙을 적용하지 말고, "
-        "확인 답변을 추가하지 마세요.\n\n"
-        "## 내부 요약 태그 (사용자에게 언급하지 말 것) — 절대 생략 금지 (필수)\n"
-        "아래 태그는 답변 본문의 길이·주제·난이도와 무관하게 매 응답마다 반드시 출력해야 하는 "
-        "필수 항목입니다. 답변이 아무리 길어지더라도(예: 파일 수백 개 전체 코드 리뷰, 방대한 분석 등) "
-        "본문을 다 쓴 뒤 절대 그냥 끝내지 말고, 마지막에 이 태그를 빠뜨리지 않고 출력하세요.\n"
-        "위 답변 본문을 모두 작성한 뒤, 마지막 줄에 다음 형식으로 대화 요약을 갱신해서 출력하세요.\n"
-        "이 요약은 다음 요청에서 이전 대화를 복원하기 위한 용도입니다.\n"
-        "사용자의 요구사항, 중요한 결정사항, 진행 상태, 앞으로 이어질 작업을 우선적으로 포함하세요.\n"
-        "불필요한 내용은 생략하고 핵심만 유지하며, 아무리 답변 본문이 길었더라도 요약 자체는 "
-        "**최대 3~4문장 이내**로 짧게 압축하세요(본문 분량과 요약 분량은 비례하지 않습니다. "
-        "짧게 쓰는 것이 오히려 올바른 실행입니다).\n"
+        "## Visible response\n"
+        "Never leave the visible response empty. If the request produces no visible result, confirm completion in 1–2 short sentences. "
+        "Do not add a separate confirmation to a normal answer.\n\n"
+        "## Internal summary tag (required; never mention it to the user)\n"
+        "After the visible response, end every response with an updated conversation summary in this format. "
+        "It restores context in the next request.\n"
+        "Prioritize user requirements, important decisions, current progress, and next steps. "
+        "Regardless of response length, omit incidental details and keep it to at most 3–4 sentences.\n"
         "<conv_summary>...</conv_summary>\n"
     ]
     if not prior_conv_summary:
         parts.append(
-            "이번이 첫 응답이므로 <conv_summary> 바로 앞에 사이드바용 짧은 대화 제목도 반드시 "
-            "출력하세요. 사용자의 원문을 복사하지 말고 핵심 주제를 20자 안팎으로 자연스럽게 요약하며, "
-            "PASTE 같은 UI 마커를 포함하지 마세요:\n<conv_title>짧은 대화 제목</conv_title>\n"
+            "For the first response only, put a short sidebar title immediately before <conv_summary>. "
+            "Summarize the topic naturally in about 20 characters without copying the user's text or including UI markers such as PASTE:\n"
+            "<conv_title>Short conversation title</conv_title>\n"
         )
     if prior_conv_summary:
         parts.append(
-            f"직전까지의 요약은 다음과 같습니다. 이걸 기반으로 이번 턴 내용을 반영해 갱신하세요 "
-            f"(완전히 새로 쓰지 말고 이어서 갱신):\n\"{prior_conv_summary}\"\n"
+            f"Update the following prior summary with this turn instead of rewriting it from scratch:\n"
+            f"\"{prior_conv_summary}\"\n"
         )
     if request_project_summary:
         parts.append(
-            "이번 턴에 파일이 새로 첨부되었습니다. <conv_summary> 바로 다음 줄에 아래 태그도 "
-            "반드시 추가하세요(이것도 생략 금지):\n"
-            "<project_summary>이번에 첨부된 파일들의 디렉토리 구조와 핵심 파일 역할을 요약하세요. "
-            "분량은 고정하지 않습니다 — 파일 몇 개짜리 단순 첨부면 2~3문장이면 충분하지만, "
-            "파일 수가 많거나 구조가 복잡한 프로젝트라면 주요 디렉토리/모듈별로 나눠 "
-            "충분히 상세하게(필요하면 문단을 나눠서) 작성하세요. 짧게 뭉뚱그리는 것보다 "
-            "나중에 이 요약만 보고도 프로젝트 구조를 파악할 수 있는 게 더 중요합니다."
+            "Files were attached in this turn. Add this tag immediately after <conv_summary>:\n"
+            "<project_summary>Summarize the attached directory structure and the role of key files. "
+            "Use 2–3 sentences for a few simple files. For a large or complex project, provide enough detail by major directory or module, "
+            "using separate paragraphs if helpful, so the project can be understood from this summary alone."
             "</project_summary>\n"
         )
     if project_memory is not None:
         from services.project_memory import build_project_memory_instruction
         parts.append(build_project_memory_instruction(project_memory))
     parts.append(
-        "이 태그들은 화면에 표시되지 않고 내부 저장용이므로, 답변 본문에서 태그 내용을 다시 언급하거나 "
-        "사용자에게 \"요약을 남겼다\"는 식으로 말하지 마세요.\n"
-        "※ 마지막으로 다시 강조합니다: 답변 본문을 아무리 길게 작성했더라도, 그것으로 끝내지 말고 "
-        "반드시 <conv_summary> 태그"
-        + ("(및 <project_summary> 태그)" if request_project_summary else "")
-        + "를 짧게라도 남긴 뒤에 응답을 마치세요. 이 태그 없이 끝나는 응답은 오류로 간주됩니다."
+        "These tags are hidden internal metadata. Do not mention their content or creation in the visible response. "
+        + ("End with <conv_summary> followed by <project_summary>." if request_project_summary
+           else "End with <conv_summary>.")
     )
     return "".join(parts)
 

@@ -140,6 +140,16 @@ const ChatInput: React.FC<ChatInputProps> = ({
     const [showGov24DataModal, setShowGov24DataModal] = useState(false);
     const [browseExternalSource, setBrowseExternalSource] = useState<ExternalDataSource>(EXTERNAL_DATA_SOURCES[0]);
     const [browseAllExternalSources, setBrowseAllExternalSources] = useState(false);
+    const isKoreanLanguage = (i18n.resolvedLanguage || i18n.language).split('-')[0] === 'ko';
+
+    useEffect(() => {
+        if (isKoreanLanguage) return;
+        setKnowledgeSourceTab('collections');
+        setSelectedExternalResourceIds([]);
+        updateExternalDocumentSelections(() => []);
+        setSelectedExternalDocuments([]);
+        setShowGov24DataModal(false);
+    }, [isKoreanLanguage]);
 
     useEffect(() => {
         const refresh = () => setKnowledgeCollections(getCachedKnowledgeCollections());
@@ -349,7 +359,10 @@ const ChatInput: React.FC<ChatInputProps> = ({
             attach.clearAll();
             slash.clearSuggestions();
             if (textareaRef.current) textareaRef.current.style.height = 'auto';
-            const result = onSend(fullMessage, prevImages, prevFiles, selectedMcps.map(server => server.id), selectedKnowledgeCollectionIds, selectedExternalResourceIds, selectedExternalDocuments);
+            const result = onSend(
+                fullMessage, prevImages, prevFiles, selectedMcps.map(server => server.id), selectedKnowledgeCollectionIds,
+                isKoreanLanguage ? selectedExternalResourceIds : [], isKoreanLanguage ? selectedExternalDocuments : [],
+            );
             if (result instanceof Promise) {
                 const sent = await result;
                 if (sent === false) {
@@ -478,7 +491,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                 <button type="button" aria-label={t('mcpMenu.removeSelected')} onClick={() => setSelectedKnowledgeCollectionIds(current => current.filter(id => id !== collectionId))}><X size={10}/></button>
                             </div> : null;
                         })}
-                        {selectedExternalDocuments.map(document => <div className="selected-mcp-chip knowledge-source-chip is-external" key={`${document.source_id}:${document.document_id}`}>
+                        {isKoreanLanguage && selectedExternalDocuments.map(document => <div className="selected-mcp-chip knowledge-source-chip is-external" key={`${document.source_id}:${document.document_id}`}>
                             <span className="selected-mcp-chip-icon"><FileText size={11}/></span><span>{document.title}</span>
                             <button type="button" aria-label={t('mcpMenu.removeSelected')} onClick={() => updateExternalDocumentSelections(current => current.filter(item => item.source_id !== document.source_id || item.document_id !== document.document_id))}><X size={10}/></button>
                         </div>)}
@@ -626,7 +639,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                     setSelectedKnowledgeCollectionIds([]);
                                     setSelectedExternalResourceIds([]);
                                 }}
-                                onOpen={refreshExternalResources}
+                                onOpen={isKoreanLanguage ? refreshExternalResources : undefined}
                                 searchAction={knowledgeSourceTab === 'collections' ? <button type="button" className="custom-select-search-action"
                                     aria-label={t('knowledgeCollections.title')}
                                     onClick={() => setShowKnowledgeCollectionsModal(true)}><Settings size={15}/></button> : <>
@@ -641,7 +654,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                         aria-label={t('knowledgeSources.externalSettings')}
                                         onClick={() => window.dispatchEvent(new CustomEvent('vyact:open-settings', {detail: {tab: 'externalData'}}))}><Settings size={15}/></button>
                                 </>}
-                                header={<div className="knowledge-source-tabs">
+                                header={isKoreanLanguage ? <div className="knowledge-source-tabs">
                                     <button type="button" className={knowledgeSourceTab === 'collections' ? 'active' : ''}
                                         onClick={event => { event.stopPropagation(); setKnowledgeSourceTab('collections'); }}>
                                         {t('knowledgeSources.collections')}
@@ -650,7 +663,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                         onClick={event => { event.stopPropagation(); setKnowledgeSourceTab('external'); refreshExternalResources(); }}>
                                         {t('knowledgeSources.external')}
                                     </button>
-                                </div>}
+                                </div> : undefined}
                                 afterSearch={<div className="knowledge-source-bulk-actions">
                                     <button type="button" onClick={event => {
                                         event.stopPropagation();

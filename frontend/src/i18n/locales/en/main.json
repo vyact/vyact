@@ -524,7 +524,8 @@
     "saveToken": "Save", "savingToken": "Saving...", "tokenSaved": "API key saved.",
     "layersHelp": "The number of internal processing blocks the input passes through in sequence. Among models with a similar structure and width, more layers usually require more compute time and memory, but actual speed and quality also depend on layer size, total parameters, architecture, quantization, and hardware.",
     "huggingFaceTokenHelp": "Model search does not use your token. It authenticates gated-model access, GGUF inspection, and downloads. It is saved to Elasticsearch when a download starts and reused for later downloads. Authentication can improve rate limits and reliability, but faster downloads are not guaranteed.",
-    "systemMemory": "System RAM", "unifiedMemory": "Unified memory", "availableMemory": "Available", "monthlyDownloads": "30-day downloads", "estimatedMemory": "Est. RAM", "installed": "Installed", "sharedOrUnknownMemory": "Shared memory or capacity unavailable", "cpuExecution": "No GPU · CPU/RAM execution", "analyzingMetadata": "Analyzing GGUF metadata...", "parameters": "Parameters", "architecture": "Architecture", "quantization": "Quantization", "maxContext": "Max context", "layers": "Layers", "kvCache": "32K KV cache", "execution": {"unified":"Fits unified memory","gpu":"GPU execution available","hybrid":"GPU+RAM hybrid execution","cpu":"CPU/RAM execution available","insufficient":"Not enough available memory"}
+    "systemMemory": "System RAM", "unifiedMemory": "Unified memory", "availableMemory": "Available", "monthlyDownloads": "30-day downloads", "estimatedMemory": "Est. RAM", "installed": "Installed", "sharedOrUnknownMemory": "Shared memory or capacity unavailable", "cpuExecution": "No GPU · CPU/RAM execution", "analyzingMetadata": "Analyzing GGUF metadata...", "parameters": "Parameters", "architecture": "Architecture", "quantization": "Quantization", "maxContext": "Max context", "layers": "Layers", "kvCache": "32K KV cache", "execution": {"unified":"Fits unified memory","gpu":"GPU execution available","hybrid":"GPU+RAM hybrid execution","cpu":"CPU/RAM execution available","insufficient":"Not enough available memory"},
+    "modelSettings": "{{model}} settings"
   },
   "modelDownload": {
     "confirmTitle": "{{model}} is not installed.",
@@ -1119,5 +1120,22 @@
     "email_thread": "Email"
   },
   "providerSettings":{"title":"{{provider}} settings","required":"Enter both an API Key and Model.","save":"Save","saveFailed":"Save failed","deleteFailed":"Delete failed","model":"Model"},
-  "customProvider": {"addConnection":"+ Add LLM connection","add":"Add","addTitle":"Add LLM connection","editTitle":"Edit LLM connection","subtitle":"Connect the API server and model you want to use.","close":"Close","cancel":"Cancel","name":"Connection name","namePlaceholder":"e.g. Company LLM","protocol":"API format","protocolDocs":"API format docs","connectionSection":"Connection details","connectionSectionDesc":"Configure the API server and model to call.","baseUrl":"Base URL","apiKey":"API Key","optional":"Optional","apiKeyExisting":"New API Key (only to change it)","apiKeyOptional":"API Key (optional)","modelId":"Model ID","modelPlaceholder":"e.g. qwen3:8b","hint":"Connects to a server that implements the OpenAI-compatible /chat/completions API.","headers":"Additional headers","headersDesc":"Add HTTP headers required by gateways or custom authentication.","addHeader":"Add header","noHeaders":"Add a header when your server requires one","headerName":"Header label","headerValue":"Header value","headerValuePlaceholder":"Enter header value","headerValueExisting":"New value (only to change it)","removeHeader":"Remove header","showHeaderValue":"Show header value","hideHeaderValue":"Hide header value","showApiKey":"Show API Key","hideApiKey":"Hide API Key","headerValidation":"Enter both a label and value for every header.","validation":"Enter a name, Base URL, and Model ID.","save":"Save and select","saving":"Saving…","saveFailed":"Failed to save connection","deleteConfirm":"Delete the {{name}} connection?"}
+  "customProvider": {"addConnection":"+ Add LLM connection","add":"Add","addTitle":"Add LLM connection","editTitle":"Edit LLM connection","subtitle":"Connect the API server and model you want to use.","close":"Close","cancel":"Cancel","name":"Connection name","namePlaceholder":"e.g. Company LLM","protocol":"API format","protocolDocs":"API format docs","connectionSection":"Connection details","connectionSectionDesc":"Configure the API server and model to call.","baseUrl":"Base URL","apiKey":"API Key","optional":"Optional","apiKeyExisting":"New API Key (only to change it)","apiKeyOptional":"API Key (optional)","modelId":"Model ID","modelPlaceholder":"e.g. qwen3:8b","hint":"Connects to a server that implements the OpenAI-compatible /chat/completions API.","headers":"Additional headers","headersDesc":"Add HTTP headers required by gateways or custom authentication.","addHeader":"Add header","noHeaders":"Add a header when your server requires one","headerName":"Header label","headerValue":"Header value","headerValuePlaceholder":"Enter header value","headerValueExisting":"New value (only to change it)","removeHeader":"Remove header","showHeaderValue":"Show header value","hideHeaderValue":"Hide header value","showApiKey":"Show API Key","hideApiKey":"Hide API Key","headerValidation":"Enter both a label and value for every header.","validation":"Enter a name, Base URL, and Model ID.","save":"Save and select","saving":"Saving…","saveFailed":"Failed to save connection","deleteConfirm":"Delete the {{name}} connection?"},
+  "modelSettings": {
+    "title": "Model settings",
+    "close": "Close",
+    "loading": "Loading model settings...",
+    "description": "Recommended values are based on this model and system memory. Review them before applying.",
+    "context": "Context window",
+    "maxOutput": "Max output tokens",
+    "temperature": "Temperature",
+    "topK": "Top K",
+    "topP": "Top P",
+    "modelDefault": "Model default",
+    "cacheQuantization": "KV cache quantization",
+    "cacheQuantizationHelp": "Reduces cache memory use for larger contexts.",
+    "cancel": "Cancel",
+    "apply": "Apply",
+    "applying": "Applying..."
+  }
 }

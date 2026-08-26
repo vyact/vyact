@@ -359,7 +359,6 @@ async def get_backup_plugin_inventory() -> list[dict[str, Any]]:
             "id": manifest["id"],
             "name": manifest["name"],
             "version": manifest["version"],
-            "schema_version": int(manifest.get("schema_version", 1)),
             "mcp_types": list(manifest.get("mcp_types", [])),
             "data_indices": list(manifest.get("data_indices", [])),
         }
@@ -372,7 +371,6 @@ async def get_backup_plugin_inventory() -> list[dict[str, Any]]:
                     "id": plugin_id,
                     "name": pending.get("name", plugin_id),
                     "version": pending.get("version", ""),
-                    "schema_version": int(pending.get("schema_version", 1)),
                     "mcp_types": [],
                     "data_indices": list(pending.get("data_indices", [])),
                 }
@@ -442,7 +440,6 @@ async def record_restored_plugin_inventory(
             "id": plugin_id,
             "name": str(plugin.get("name", plugin_id)),
             "version": str(plugin.get("version", "")),
-            "schema_version": int(plugin.get("schema_version", 1)),
             "data_indices": declared_indices,
             "status": "pending",
         }
@@ -450,7 +447,7 @@ async def record_restored_plugin_inventory(
 
 
 async def reconcile_plugin_data(plugin_ids: set[str] | None = None) -> list[dict[str, Any]]:
-    """Run optional non-destructive migrations for restored plugin data."""
+    """Mark restored plugin data ready when the matching plugin is installed."""
     state = await _load_restore_state()
     remaining = []
     results = []
@@ -465,34 +462,9 @@ async def reconcile_plugin_data(plugin_ids: set[str] | None = None) -> list[dict
             results.append({"id": plugin_id, "status": "plugin_missing"})
             continue
 
-        manifest = loaded.manifest
-        from_version = int(pending.get("schema_version", 1))
-        to_version = int(manifest.get("schema_version", 1))
-        migrate_entry = manifest.get("migrate")
         if not pending.get("data_indices"):
             results.append({"id": plugin_id, "status": "ready"})
             continue
-        if from_version != to_version and not migrate_entry:
-            pending["status"] = "migration_required"
-            remaining.append(pending)
-            results.append({
-                "id": plugin_id,
-                "status": "migration_required",
-                "from": from_version,
-                "to": to_version,
-            })
-            continue
-        if migrate_entry and from_version != to_version:
-            migrate_manifest = {**manifest, "entry": migrate_entry}
-            module, function_name = _load_module(loaded.plugin_dir, migrate_manifest)
-            context = PluginContext(plugin_id=plugin_id, manifest=manifest)
-            migration_result = getattr(module, function_name)(
-                context,
-                from_version,
-                to_version,
-            )
-            if hasattr(migration_result, "__await__"):
-                await migration_result
         results.append({"id": plugin_id, "status": "ready"})
     await _save_restore_state({"plugins": remaining})
     return results
@@ -530,15 +502,11 @@ async def activate_plugin(plugin_dir: Path) -> dict[str, Any]:
     )
     _plugin_activation_errors.pop(plugin_id, None)
     try:
-        reconciliation = await reconcile_plugin_data({plugin_id})
-        if any(item.get("status") == "migration_required" for item in reconciliation):
-            raise ValueError(
-                f"{plugin_id} 플러그인이 복원 데이터 마이그레이션을 지원하지 않습니다."
-            )
+        await reconcile_plugin_data({plugin_id})
     except Exception as error:
         _deactivate_plugin_runtime(plugin_id, manifest)
         raise ValueError(
-            f"{plugin_id} 플러그인의 복원 데이터 확인 또는 마이그레이션에 실패했습니다: {error}"
+            f"{plugin_id} 플러그인의 복원 데이터 확인에 실패했습니다: {error}"
         ) from error
     logger.info("[plugins] activated %s %s", plugin_id, manifest["version"])
     return manifest

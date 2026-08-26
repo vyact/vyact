@@ -26,7 +26,7 @@
 
 <script>
   // main.js가 mainWindow.loadFile(errorPath, {query: {msg, title}}) 형태로 넘긴
-  // 실제 실패 사유를 표시. query가 없으면(구버전 호출 등) 기본 문구만 보여준다.
+  // query에 실패 사유가 있으면 기본 문구와 함께 표시한다.
   const params = new URLSearchParams(window.location.search);
   const msg = params.get('msg');
   const title = params.get('title');

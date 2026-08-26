@@ -153,6 +153,7 @@ class VyactRuntimeTests(unittest.TestCase):
                 self.assertEqual(start_single_model(model, 8192), "vyact-model")
             write_config.assert_called_once_with(
                 model, 8192, None, vision_projector_path=None, enable_mtp=False, debug_logging=False,
+                cache_quantization=True,
             )
             self.assertIn("llama-swap", str(popen.call_args.args[0][0]))
             self.assertEqual(Path(popen.call_args.kwargs["stdout"].name).name, "llama-swap_20260825.log")

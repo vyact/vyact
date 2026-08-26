@@ -425,7 +425,7 @@ def stop_runtime() -> None:
     raise RuntimeError("The existing Vyact runtime did not stop in time")
 
 
-def start_single_model(model_path: Path, context_size: int, debug_logging: bool = False) -> str:
+def start_single_model(model_path: Path, context_size: int, debug_logging: bool = False, cache_quantization: bool = True) -> str:
     """Restart llama-swap with exactly one configured model and return its API ID."""
     global _active_mtp_model, _runtime_process
     paths = get_runtime_paths()
@@ -442,7 +442,7 @@ def start_single_model(model_path: Path, context_size: int, debug_logging: bool 
         model_key = write_single_model_config(
             model_path, context_size, mtp_model_path if enable_mtp else None,
             vision_projector_path=vision_projector_path,
-            enable_mtp=enable_mtp, debug_logging=debug_logging,
+            enable_mtp=enable_mtp, debug_logging=debug_logging, cache_quantization=cache_quantization,
         )
         VYACT_RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
         log_path = get_log_file("llama-swap")
@@ -497,8 +497,8 @@ def start_configured_runtime(vyact_config: dict, debug_logging: bool = False) ->
         vyact_config["context_size"] = context_size
     if vyact_config.get("runtime", "gguf") == "mlx":
         from services.mlx_runtime import get_downloaded_mlx_model_path, start_mlx_model
-        return start_mlx_model(get_downloaded_mlx_model_path(model_path_value), context_size, debug_logging)
-    model_key = start_single_model(get_downloaded_model_path(model_path_value), context_size, debug_logging)
+        return start_mlx_model(get_downloaded_mlx_model_path(model_path_value), context_size, debug_logging, bool(vyact_config.get("cache_quantization", True)))
+    model_key = start_single_model(get_downloaded_model_path(model_path_value), context_size, debug_logging, bool(vyact_config.get("cache_quantization", True)))
     vyact_config["context_size"] = get_loaded_context_size(model_key, context_size)
     return model_key
 
@@ -525,7 +525,7 @@ def stop_all_vyact_runtimes() -> None:
 def write_single_model_config(
         model_path: Path, context_size: int, mtp_model_path: Path | None = None,
         vision_projector_path: Path | None = None, *,
-        enable_mtp: bool = True, debug_logging: bool = False,
+        enable_mtp: bool = True, debug_logging: bool = False, cache_quantization: bool = True,
 ) -> str:
     """Write a llama-swap config that can only load the selected model.
 
@@ -563,7 +563,7 @@ def write_single_model_config(
         "--parallel", "1",
         "--fit", "on", "--flash-attn", "auto", "--cache-prompt",
     ])
-    if context_size >= KV_CACHE_QUANTIZATION_MIN_CONTEXT:
+    if cache_quantization and context_size >= KV_CACHE_QUANTIZATION_MIN_CONTEXT:
         command += " --cache-type-k q8_0 --cache-type-v q8_0"
     if debug_logging:
         command += " --log-verbosity 4 --log-timestamps"

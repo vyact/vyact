@@ -524,7 +524,8 @@
     "saveToken": "Guardar", "savingToken": "Guardando...", "tokenSaved": "API Key guardada.",
     "layersHelp": "Número de bloques internos de procesamiento que la entrada atraviesa en secuencia. Entre modelos con estructura y anchura similares, más capas suelen requerir más tiempo de cálculo y memoria, pero la velocidad y la calidad también dependen del tamaño de cada capa, los parámetros totales, la arquitectura, la cuantización y el hardware.",
     "huggingFaceTokenHelp": "La búsqueda no usa el token. Se utiliza para acceder a modelos restringidos, inspeccionar GGUF y autenticar descargas. Se guarda en Elasticsearch al iniciar una descarga y se reutiliza después. Puede mejorar los límites y la fiabilidad, pero no garantiza más velocidad.",
-    "systemMemory": "RAM del sistema", "unifiedMemory": "Memoria unificada", "availableMemory": "Disponible", "monthlyDownloads": "Descargas en 30 días", "estimatedMemory": "RAM estimada", "installed": "Instalado", "sharedOrUnknownMemory": "Memoria compartida o capacidad desconocida", "cpuExecution": "Sin GPU · ejecución CPU/RAM", "analyzingMetadata": "Analizando metadatos GGUF...", "parameters": "Parámetros", "architecture": "Arquitectura", "quantization": "Cuantización", "maxContext": "Contexto máximo", "layers": "Capas", "kvCache": "Caché KV 32K", "execution": {"unified":"Cabe en memoria unificada","gpu":"Ejecución GPU disponible","hybrid":"Ejecución híbrida GPU+RAM","cpu":"Ejecución CPU/RAM disponible","insufficient":"Memoria disponible insuficiente"}
+    "systemMemory": "RAM del sistema", "unifiedMemory": "Memoria unificada", "availableMemory": "Disponible", "monthlyDownloads": "Descargas en 30 días", "estimatedMemory": "RAM estimada", "installed": "Instalado", "sharedOrUnknownMemory": "Memoria compartida o capacidad desconocida", "cpuExecution": "Sin GPU · ejecución CPU/RAM", "analyzingMetadata": "Analizando metadatos GGUF...", "parameters": "Parámetros", "architecture": "Arquitectura", "quantization": "Cuantización", "maxContext": "Contexto máximo", "layers": "Capas", "kvCache": "Caché KV 32K", "execution": {"unified":"Cabe en memoria unificada","gpu":"Ejecución GPU disponible","hybrid":"Ejecución híbrida GPU+RAM","cpu":"Ejecución CPU/RAM disponible","insufficient":"Memoria disponible insuficiente"},
+    "modelSettings": "{{model}} settings"
   },
   "modelDownload": {
     "confirmTitle": "{{model}} no está instalado.",
@@ -1122,5 +1123,22 @@
     "email_thread": "Correo"
   },
   "providerSettings":{"title":"Configuración de {{provider}}","required":"Introduce la API Key y el Model.","save":"Guardar","saveFailed":"Error al guardar","deleteFailed":"Error al eliminar","model":"Model"},
-  "customProvider": {"addConnection":"+ Añadir conexión LLM","add":"Añadir","addTitle":"Añadir conexión LLM","editTitle":"Editar conexión LLM","subtitle":"Conecta el servidor API y el modelo que quieras usar.","close":"Cerrar","cancel":"Cancelar","name":"Nombre de conexión","namePlaceholder":"Ej.: LLM de empresa","protocol":"Formato de API","protocolDocs":"Documentación del formato API","connectionSection":"Datos de conexión","connectionSectionDesc":"Configura el servidor API y el modelo.","baseUrl":"Base URL","apiKey":"API Key","optional":"Opcional","apiKeyExisting":"Nueva API Key (solo para cambiarla)","apiKeyOptional":"API Key (opcional)","modelId":"Model ID","modelPlaceholder":"Ej.: qwen3:8b","hint":"Conecta con un servidor que implementa la API /chat/completions compatible con OpenAI.","headers":"Headers adicionales","headersDesc":"Añade HTTP Headers para gateways o autenticación personalizada.","addHeader":"Añadir Header","noHeaders":"Añade un Header si el servidor lo requiere","headerName":"Etiqueta del Header","headerValue":"Valor del Header","headerValuePlaceholder":"Introduce el valor","headerValueExisting":"Nuevo valor (solo para cambiarlo)","removeHeader":"Eliminar Header","showHeaderValue":"Mostrar valor del Header","hideHeaderValue":"Ocultar valor del Header","showApiKey":"Mostrar API Key","hideApiKey":"Ocultar API Key","headerValidation":"Introduce etiqueta y valor para cada Header.","validation":"Introduce nombre, Base URL y Model ID.","save":"Guardar y seleccionar","saving":"Guardando…","saveFailed":"No se pudo guardar la conexión","deleteConfirm":"¿Eliminar la conexión {{name}}?"}
+  "customProvider": {"addConnection":"+ Añadir conexión LLM","add":"Añadir","addTitle":"Añadir conexión LLM","editTitle":"Editar conexión LLM","subtitle":"Conecta el servidor API y el modelo que quieras usar.","close":"Cerrar","cancel":"Cancelar","name":"Nombre de conexión","namePlaceholder":"Ej.: LLM de empresa","protocol":"Formato de API","protocolDocs":"Documentación del formato API","connectionSection":"Datos de conexión","connectionSectionDesc":"Configura el servidor API y el modelo.","baseUrl":"Base URL","apiKey":"API Key","optional":"Opcional","apiKeyExisting":"Nueva API Key (solo para cambiarla)","apiKeyOptional":"API Key (opcional)","modelId":"Model ID","modelPlaceholder":"Ej.: qwen3:8b","hint":"Conecta con un servidor que implementa la API /chat/completions compatible con OpenAI.","headers":"Headers adicionales","headersDesc":"Añade HTTP Headers para gateways o autenticación personalizada.","addHeader":"Añadir Header","noHeaders":"Añade un Header si el servidor lo requiere","headerName":"Etiqueta del Header","headerValue":"Valor del Header","headerValuePlaceholder":"Introduce el valor","headerValueExisting":"Nuevo valor (solo para cambiarlo)","removeHeader":"Eliminar Header","showHeaderValue":"Mostrar valor del Header","hideHeaderValue":"Ocultar valor del Header","showApiKey":"Mostrar API Key","hideApiKey":"Ocultar API Key","headerValidation":"Introduce etiqueta y valor para cada Header.","validation":"Introduce nombre, Base URL y Model ID.","save":"Guardar y seleccionar","saving":"Guardando…","saveFailed":"No se pudo guardar la conexión","deleteConfirm":"¿Eliminar la conexión {{name}}?"},
+  "modelSettings": {
+    "title": "Model settings",
+    "close": "Close",
+    "loading": "Loading model settings...",
+    "description": "Recommended values are based on this model and system memory. Review them before applying.",
+    "context": "Context window",
+    "maxOutput": "Max output tokens",
+    "temperature": "Temperature",
+    "topK": "Top K",
+    "topP": "Top P",
+    "modelDefault": "Model default",
+    "cacheQuantization": "KV cache quantization",
+    "cacheQuantizationHelp": "Reduces cache memory use for larger contexts.",
+    "cancel": "Cancel",
+    "apply": "Apply",
+    "applying": "Applying..."
+  }
 }

@@ -37,7 +37,7 @@ from services.google_workspace.gmail import (
     list_mail_messages_sync,
     list_mail_threads_sync,
 )
-from services.llm import query_llm
+from services.llm.core import query_llm
 from services.db import EMAIL_THREADS_INDEX, SETTINGS_INDEX, find_document_index, get_es, get_language_index
 from services.language_detection import detect_language
 from services.indexer import get_embedding

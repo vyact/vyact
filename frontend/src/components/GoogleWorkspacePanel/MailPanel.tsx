@@ -323,24 +323,8 @@ const createEmailDocument = (body: string, scrollable = false) => `<!doctype htm
 
 type QuotedReplyLabels = {show: string; hide: string};
 
-const isLegacyQuotedReply = (blockquote: HTMLElement) => {
-    const header = blockquote.previousElementSibling as HTMLElement | null;
-    if (!header || header.tagName !== 'DIV') return false;
-    const headerStyle = header.getAttribute('style')?.replace(/\s/g, '').toLowerCase() || '';
-    return headerStyle.includes('color:#888') && headerStyle.includes('font-size:13px');
-};
-
 const addQuotedReplyToggles = (document: Document, labels: QuotedReplyLabels, onToggle: () => void) => {
     const quotedReplies = Array.from(document.querySelectorAll<HTMLElement>('[data-vyact-quoted-reply]'));
-    document.querySelectorAll<HTMLElement>('blockquote').forEach(blockquote => {
-        if (blockquote.closest('[data-vyact-quoted-reply]') || !isLegacyQuotedReply(blockquote)) return;
-        const header = blockquote.previousElementSibling!;
-        const wrapper = document.createElement('section');
-        wrapper.setAttribute('data-vyact-quoted-reply', '');
-        header.before(wrapper);
-        wrapper.append(header, blockquote);
-        quotedReplies.push(wrapper);
-    });
     if (!quotedReplies.length) return;
 
     if (!document.getElementById('vyact-quoted-reply-style')) {

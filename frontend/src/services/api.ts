@@ -170,6 +170,18 @@ export interface VyactHardwareInfo {
     gpus: VyactGpuInfo[];
 }
 
+export interface VyactModelProfile {
+    model_path: string;
+    runtime: 'gguf' | 'mlx';
+    repository?: string | null;
+    context_size: number;
+    max_output_tokens: number;
+    temperature: number;
+    top_k: number | null;
+    top_p: number | null;
+    cache_quantization: boolean;
+}
+
 interface ProvidersResponse {
     providers: Record<string, ProviderSettings>;
     custom_providers: CustomProviderSettings[];
@@ -439,13 +451,29 @@ export const api = {
         }
     },
 
+    async getVyactModelProfile(modelPath: string, runtime: 'gguf' | 'mlx', repository?: string, recommendedContext = 32768): Promise<VyactModelProfile> {
+        const params = new URLSearchParams({model_path: modelPath, runtime, recommended_context: String(recommendedContext)});
+        if (repository) params.set('repository', repository);
+        const response = await fetch(`${API_BASE}/vyact/models/profile?${params}`);
+        if (!response.ok) throw new Error(`Model settings load failed (${response.status})`);
+        return response.json();
+    },
+
+    async saveVyactModelProfile(profile: VyactModelProfile): Promise<VyactModelProfile> {
+        const response = await fetch(`${API_BASE}/vyact/models/profile`, {
+            method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(profile),
+        });
+        if (!response.ok) throw new Error(`Model settings save failed (${response.status})`);
+        return response.json();
+    },
+
     async activateVyactModel(
         modelPath: string, contextSize = 32768, onProgress?: (message: string, progress?: number) => void,
-        runtime: 'gguf' | 'mlx' = 'gguf', repository?: string,
+        runtime: 'gguf' | 'mlx' = 'gguf', repository?: string, profile?: VyactModelProfile,
     ): Promise<void> {
         const response = await fetch(`${API_BASE}/vyact/models/activate`, {
             method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({model_path: modelPath, context_size: contextSize, runtime, repository}),
+            body: JSON.stringify({model_path: modelPath, context_size: contextSize, runtime, repository, ...profile}),
         });
         if (!response.body) return;
         const reader = response.body.getReader();

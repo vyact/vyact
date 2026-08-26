@@ -18,6 +18,7 @@ import ProjectMemoryModal from './ProjectMemoryModal';
 const ProviderSettingsModal = React.lazy(() => import('../ProviderSettingsModal/ProviderSettingsModal'));
 const CustomProviderModal = React.lazy(() => import('../CustomProviderModal/CustomProviderModal'));
 const VyactModelModal = React.lazy(() => import('../VyactModelModal/VyactModelModal'));
+const ModelSettingsModal = React.lazy(() => import('../ModelSettingsModal/ModelSettingsModal'));
 const SettingsModal = React.lazy(() => import('../SettingsModal/SettingsModal'));
 
 interface SidebarProps {
@@ -41,7 +42,6 @@ interface SidebarProps {
     onConversationDelete: (convId: string) => void;
     onConversationRename: () => void;
     onConversationFavoriteChange: (conversation: Conversation, isFavorite: boolean) => void | Promise<void>;
-    /** @deprecated 대화 요약은 자동 갱신되며 UI에서 노출하지 않는다. */
     onShowSummary?: (convId: string) => void;
     onNewConversation: () => void;
     onDeleteAllConversations: () => void;
@@ -401,6 +401,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     const [customProviders, setCustomProviders] = useState<CustomProviderSettings[]>([]);
     const [customProviderEditor, setCustomProviderEditor] = useState<CustomProviderSettings | 'new' | null>(null);
     const [isVyactModalOpen, setIsVyactModalOpen] = useState(false);
+    const [modelSettingsPath, setModelSettingsPath] = useState<string | null>(null);
 
 
 
@@ -572,6 +573,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                         throw error;
                                     }
                                 }}
+                                onModelSettingsOpen={setModelSettingsPath}
                                 onProviderSettingsOpen={() => {
                                     if (currentProvider === 'vyact') {
                                         setIsVyactModalOpen(true);
@@ -903,6 +905,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             /></React.Suspense>}
         </aside>
             {isVyactModalOpen && <React.Suspense fallback={null}><VyactModelModal onClose={() => setIsVyactModalOpen(false)} onSelected={async () => { await loadCurrentProvider(); await onProviderChange(); }}/></React.Suspense>}
+            {modelSettingsPath && <React.Suspense fallback={null}><ModelSettingsModal modelPath={modelSettingsPath} runtime={modelSettingsPath.startsWith('mlx/') ? 'mlx' : 'gguf'} repository={modelSettingsPath.startsWith('mlx/') ? modelSettingsPath.slice(4) : undefined} activateOnApply={modelSettingsPath === selectedModel} onClose={() => setModelSettingsPath(null)} onApplied={async () => {await loadCurrentProvider(); await onProviderChange();}}/></React.Suspense>}
             {isSettingsOpen && <React.Suspense fallback={null}>
                 <SettingsModal isOpen onClose={() => setIsSettingsOpen(false)} initialTab={openSettingsTab}/>
             </React.Suspense>}

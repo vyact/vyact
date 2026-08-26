@@ -81,7 +81,7 @@
 }
 
 /* 현재 모델이 아닌 항목의 삭제 버튼 */
-.dd-model-delete {
+.dd-model-delete,.dd-model-settings {
     margin-left: auto;
     display: flex;
     align-items: center;
@@ -101,6 +101,7 @@
     background: color-mix(in srgb, var(--danger, #ef4444) 14%, transparent);
     color: var(--danger, #ef4444);
 }
+.dd-model-settings:hover{background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
 
 /* 툴팁 */
 .model-info-icon-wrapper {

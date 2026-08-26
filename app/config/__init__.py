@@ -63,9 +63,6 @@ def cleanup_old_logs(keep_days: int = 20) -> None:
 # 앱 시작 시 오래된 로그 정리
 cleanup_old_logs()
 
-# 하위 호환성 — 기존 LOG_FILE 참조를 event 로그로 연결
-LOG_FILE = get_log_file("event")
-
 __all__ = [
     'APP_NAME',
     'DEFAULT_MODEL',
@@ -76,6 +73,5 @@ __all__ = [
     'SETUP_DONE',
     'KOKORO_CACHE_READY',
     'LOGS_DIR',
-    'LOG_FILE',
     'get_log_file',
 ]

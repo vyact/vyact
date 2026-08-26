@@ -13,6 +13,7 @@ import {
     MODEL_MEMORY_OVERHEAD_RATIO,
 } from '../../utils/vyactModelDisplay';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
+import ModelSettingsModal from '../ModelSettingsModal/ModelSettingsModal';
 import OverflowTooltipText from '../common/OverflowTooltipText/OverflowTooltipText';
 import {Tooltip} from '../common/Tooltip/Tooltip';
 import '../ProviderSettingsModal/ProviderSettingsModal.css';
@@ -64,6 +65,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     const [hardware, setHardware] = useState<VyactHardwareInfo>(EMPTY_HARDWARE_INFO);
     const [metadataByFile, setMetadataByFile] = useState<Record<string, GgufModelMetadata>>({});
     const [analyzingFile, setAnalyzingFile] = useState('');
+    const [downloadedSettings, setDownloadedSettings] = useState<{modelPath: string; runtime: 'gguf' | 'mlx'; repository: string; context: number} | null>(null);
     const searchRequestIdRef = useRef(0);
     const cacheCheckedFilesRef = useRef(new Set<string>());
     const busy = isSearching || isDownloading || isSavingToken;
@@ -160,26 +162,22 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                 selectedFile.mtpModel,
             );
             setInstalledModels(api.getCachedVyactInstalledModels());
-            setDownloadPhase('activation');
-            setDownloadProgress(0);
-            setMessage(t('modelDownload.activating'));
+            let optimizedMetadata = selectedMetadata;
+            if (!optimizedMetadata) {
+                try {
+                    optimizedMetadata = selectedFile.runtime === 'mlx'
+                        ? await api.inspectVyactMlxMetadata(selectedFile.repository, selectedFile.revision, selectedModelWeightBytes, 32768)
+                        : await inspectRemoteGguf(selectedFile.repository, selectedFile.filename, selectedFile.revision, selectedFile.fileSize, 32768, token.trim());
+                } catch (error) {
+                    console.warn('Model metadata inspection failed; using the safe context default:', error);
+                }
+            }
             const optimizedContextSize = getOptimizedModelContext(
-                metadataByFile[`${selectedFile.repository}@${selectedFile.revision}/${selectedFile.filename}`],
+                optimizedMetadata,
                 selectedModelWeightBytes,
                 hardware,
             );
-            await api.activateVyactModel(
-                selectedModelPath,
-                optimizedContextSize,
-                (_activationMessage, progress) => {
-                    setMessage(t('modelDownload.activating'));
-                    if (progress != null) setDownloadProgress(progress);
-                },
-                selectedFile.runtime,
-                selectedFile.repository,
-            );
-            await onSelected();
-            onClose();
+            setDownloadedSettings({modelPath: selectedModelPath, runtime: selectedFile.runtime, repository: selectedFile.repository, context: optimizedContextSize});
         } catch (error) {
             setMessage(String(error));
         } finally {
@@ -244,7 +242,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
         }
     };
 
-    return (
+    return (<>
         <ModalOverlay className="provider-editor-overlay" onClose={onClose} closeOnBackdrop={false} blur={5}>
             <section
                 className="provider-editor vyact-model-editor"
@@ -470,5 +468,6 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                 </footer>
             </section>
         </ModalOverlay>
-    );
+        {downloadedSettings && <ModelSettingsModal modelPath={downloadedSettings.modelPath} runtime={downloadedSettings.runtime} repository={downloadedSettings.repository} recommendedContext={downloadedSettings.context} activateOnApply onClose={() => setDownloadedSettings(null)} onApplied={async () => {await onSelected(); onClose();}}/>}
+    </>);
 }

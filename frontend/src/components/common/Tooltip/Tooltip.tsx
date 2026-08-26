@@ -4,7 +4,6 @@ import './Tooltip.css';
 
 type TooltipProps = {content: string; multiline?: boolean; large?: boolean; children: ReactElement};
 
-/** Use for new controls. TooltipProvider also migrates legacy title attributes. */
 export function Tooltip({content, multiline, large, children}: TooltipProps) {
     if (!isValidElement(children)) return children;
     return cloneElement(children, {
@@ -20,15 +19,6 @@ type TooltipState = {content: string; x: number; y: number; placement: 'above' |
 const getTooltipTarget = (target: EventTarget | null) => target instanceof Element
     ? target.closest<HTMLElement>('[data-instant-tooltip]')
     : null;
-
-const migrateTitle = (element: Element) => {
-    if (!(element instanceof HTMLElement)) return;
-    const title = element.getAttribute('title');
-    if (title) {
-        element.dataset.instantTooltip = title;
-        element.removeAttribute('title');
-    }
-};
 
 export function TooltipProvider({children}: {children: ReactNode}) {
     const [tooltip, setTooltip] = useState<TooltipState>(null);
@@ -58,11 +48,6 @@ export function TooltipProvider({children}: {children: ReactNode}) {
     }, [tooltip]);
 
     useEffect(() => {
-        const migrateTree = (node: Node) => {
-            if (!(node instanceof Element)) return;
-            migrateTitle(node);
-            node.querySelectorAll<HTMLElement>('[title]').forEach(migrateTitle);
-        };
         const hideTooltip = () => {
             activeTargetRef.current = null;
             setTooltip(null);
@@ -70,16 +55,8 @@ export function TooltipProvider({children}: {children: ReactNode}) {
         const closeOnEscape = (event: KeyboardEvent) => {
             if (event.key === 'Escape') hideTooltip();
         };
-        migrateTree(document.body);
-        const observer = new MutationObserver(records => records.forEach(record => {
-            if (record.type === 'attributes' && record.target instanceof Element) migrateTitle(record.target);
-            record.addedNodes.forEach(migrateTree);
-            if (activeTargetRef.current && !activeTargetRef.current.isConnected) hideTooltip();
-        }));
-        observer.observe(document.body, {childList: true, subtree: true, attributes: true, attributeFilter: ['title']});
         window.addEventListener('keydown', closeOnEscape, true);
         return () => {
-            observer.disconnect();
             window.removeEventListener('keydown', closeOnEscape, true);
         };
     }, []);

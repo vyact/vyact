@@ -60,20 +60,16 @@ type Tab = 'backup' | 'general' | 'runtime' | 'api' | 'externalData' | 'plugins'
 
 type RuntimeSettings = Record<string, number | null>;
 const DEFAULT_SETTINGS_TAB: Tab = 'general';
-const DEFAULT_RUNTIME_SETTINGS: RuntimeSettings = {llm_temperature: 0.2, llm_num_ctx: 131072, llm_num_predict: 8192, llm_max_tokens: 4096, top_k: null, top_p: null, history_token_budget: 32768, history_chars_per_token: 2, bge_num_ctx: 8192, document_chunk_size: 1200, document_chunk_overlap: 150};
+const DEFAULT_RUNTIME_SETTINGS: RuntimeSettings = {history_token_budget: 32768, history_chars_per_token: 2, bge_num_ctx: 8192, document_chunk_size: 1200, document_chunk_overlap: 150};
 const toRuntimeInputValues = (settings: RuntimeSettings): Record<string, string> => Object.fromEntries(
     Object.entries(settings).map(([key, value]) => [key, value === null ? '' : String(value)])
 );
 const RUNTIME_SETTING_SECTIONS = [
-    {key: 'llm', fields: ['llm_temperature', 'llm_num_ctx', 'llm_num_predict', 'llm_max_tokens', 'top_k', 'top_p']},
     {key: 'embedding', fields: ['bge_num_ctx']},
     {key: 'history', fields: ['history_token_budget', 'history_chars_per_token']},
     {key: 'chunking', fields: ['document_chunk_size', 'document_chunk_overlap']},
 ] as const;
 const RUNTIME_FIELD_CONSTRAINTS: Record<string, {min: number; max?: number; step: number}> = {
-    llm_temperature: {min: 0, max: 1, step: 0.01}, llm_num_ctx: {min: 1024, max: 262144, step: 1},
-    llm_num_predict: {min: 1, max: 131072, step: 1}, llm_max_tokens: {min: 1, max: 32768, step: 1},
-    top_k: {min: 0, max: 100, step: 1}, top_p: {min: 0, max: 1, step: 0.01},
     history_token_budget: {min: 0, max: 131072, step: 1}, history_chars_per_token: {min: 0.1, max: 10, step: 0.1},
     bge_num_ctx: {min: 1, max: 8192, step: 1},
     document_chunk_size: {min: 100, max: 100000, step: 1}, document_chunk_overlap: {min: 0, max: 99999, step: 1},
@@ -162,6 +158,7 @@ const KOKORO_VOICES: { value: string; name: string; lang: string }[] = [
 
 const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTab}) => {
     const {t, i18n} = useTranslation('settings');
+    const isKoreanLanguage = (i18n.resolvedLanguage || i18n.language).split('-')[0] === 'ko';
     const getBackupIndexHelp = (indexName: string) => {
         const baseIndexName = indexName.replace(/_(ko|en|ja|zh|th|vi|es|fr|und)$/, '');
         const summary = t(`backup.indexHelp.${baseIndexName}`, {
@@ -179,6 +176,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
         initialTab === 'plugins' ? DEFAULT_SETTINGS_TAB : (initialTab as Tab) || DEFAULT_SETTINGS_TAB
     );
     const [isPluginTabVisible, setIsPluginTabVisible] = useState(false);
+
+    useEffect(() => {
+        if (!isKoreanLanguage && tab === 'externalData') setTab(DEFAULT_SETTINGS_TAB);
+    }, [isKoreanLanguage, tab]);
 
     const handleClose = useCallback(() => {
         setTab(DEFAULT_SETTINGS_TAB);
@@ -906,7 +907,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                             {key: 'runtime' as Tab, icon: '🧠', label: t('tabs.runtime')},
                             {key: 'backup' as Tab, icon: '💾', label: t('tabs.backup')},
                             {key: 'api' as Tab, icon: '🔑', label: t('tabs.api')},
-                            {key: 'externalData' as Tab, icon: '🌐', label: t('tabs.externalData')},
+                            ...(isKoreanLanguage
+                                ? [{key: 'externalData' as Tab, icon: '🌐', label: t('tabs.externalData')}]
+                                : []),
                             {key: 'skills' as Tab, icon: '🧩', label: t('tabs.skills')},
                             ...(isPluginTabVisible
                                 ? [{key: 'plugins' as Tab, icon: '🔌', label: t('tabs.plugins')}]
@@ -1483,7 +1486,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                             </div>
                         )}
 
-                        {tab === 'externalData' && (
+                        {isKoreanLanguage && tab === 'externalData' && (
                             <div className="settings-general">
                                 <ExternalDataSection/>
                             </div>

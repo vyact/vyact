@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field
 
 from config import INSTALL_DIR
 from logger import get_logger
-from services.document_parser import Chunk, parse_file, parse_file_for_indexing, parse_file_to_chunks
+from services.document_parser import Chunk, parse_file, parse_file_for_indexing
 from services.embedding_runtime import get_embeddings
 from elasticsearch.helpers import async_bulk
 from services.db import DOCUMENT_ORIGINALS_INDEX, INDEX_NAME, DOC_CHUNKS_INDEX, FILES_INDEX, WEB_DOCUMENTS_INDEX, WEB_DOC_CHUNKS_INDEX, get_es, get_language_index

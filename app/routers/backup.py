@@ -15,7 +15,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from config import INSTALL_DIR
-from services.db import LANGUAGES, get_es, get_language_index
+from services.db import INDEX_FAMILIES, LANGUAGES, get_es, get_language_index
 from services.google_workspace.auth import revoke_all_tokens
 from services.prompts import load_prompts_cache
 from logger import get_logger
@@ -37,6 +37,19 @@ _PLUGIN_SETTINGS_DOC_ID = "plugins"
 _PLUGIN_RESTORE_STATE_DOC_ID = "plugin_restore_state"
 
 EMAIL_THREAD_INDICES = {get_language_index("knowledge_email_threads", language) for language in LANGUAGES}
+LANGUAGE_SUFFIXES = tuple(f"_{language}" for language in LANGUAGES)
+
+
+def _logical_index_name(index_name: str) -> str:
+    for family in INDEX_FAMILIES:
+        if index_name.startswith(f"{family}_") and index_name.endswith(LANGUAGE_SUFFIXES):
+            return family
+    return index_name
+
+
+def _expand_selected_indices(selected: list[str], available: list[str]) -> list[str]:
+    selected_names = set(selected)
+    return [name for name in available if name in selected_names or _logical_index_name(name) in selected_names]
 
 
 async def _preserve_google_workspace_on_restore(backup: dict) -> bool:
@@ -47,7 +60,7 @@ async def _preserve_google_workspace_on_restore(backup: dict) -> bool:
     settings = backup.get("indices", {}).get("system_settings")
     if not settings:
         return False
-    docs = settings if isinstance(settings, list) else settings.get("docs", [])
+    docs = settings.get("docs", [])
 
     from services.mcp_config import list_servers
     current_google_servers = [
@@ -82,10 +95,7 @@ async def _preserve_google_workspace_on_restore(backup: dict) -> bool:
                     ] + current_google_servers
         filtered_docs.append(doc)
 
-    if isinstance(settings, list):
-        backup["indices"]["system_settings"] = filtered_docs
-    else:
-        settings["docs"] = filtered_docs
+    settings["docs"] = filtered_docs
     return backup_has_google_server or bool(current_google_servers)
 
 
@@ -187,11 +197,12 @@ async def backup_stats():
         # 인덱스 목록 조회 후 인덱스마다 count를 순차 호출하지 않고,
         # 한 번의 stats 요청으로 전체 문서 수를 가져온다.
         response = await es.indices.stats(index="*", metric="docs")
-        stats = {
-            index_name: index_stats.get("total", {}).get("docs", {}).get("count", 0)
-            for index_name, index_stats in sorted(response.get("indices", {}).items())
-            if not index_name.startswith(".")
-        }
+        stats = {}
+        for index_name, index_stats in sorted(response.get("indices", {}).items()):
+            if index_name.startswith("."):
+                continue
+            logical_name = _logical_index_name(index_name)
+            stats[logical_name] = stats.get(logical_name, 0) + index_stats.get("total", {}).get("docs", {}).get("count", 0)
         return {"stats": stats}
     finally:
         await es.close()
@@ -242,7 +253,7 @@ async def _read_backup(file: UploadFile) -> tuple[dict, dict[str, bytes], dict[s
         except Exception:
             raise HTTPException(400, "JSON 파싱 실패")
 
-    if "indices" not in backup:
+    if backup.get("vyact_backup") is not True or backup.get("version") != "3.0" or not isinstance(backup.get("indices"), dict):
         raise HTTPException(400, "올바른 Vyact 백업 파일이 아닙니다.")
     return backup, doc_files, memo_files, knowledge_mail_image_files
 
@@ -251,10 +262,12 @@ async def _read_backup(file: UploadFile) -> tuple[dict, dict[str, bytes], dict[s
 async def preview_backup(file: UploadFile = File(...)):
     """복원 전에 백업에 포함된 인덱스와 원본 파일을 확인한다."""
     backup, doc_files, memo_files, knowledge_mail_image_files = await _read_backup(file)
-    indices = []
+    grouped_counts = {}
     for name, payload in backup["indices"].items():
-        docs = payload if isinstance(payload, list) else payload.get("docs", [])
-        indices.append({"name": name, "count": len(docs)})
+        docs = payload.get("docs", [])
+        logical_name = _logical_index_name(name)
+        grouped_counts[logical_name] = grouped_counts.get(logical_name, 0) + len(docs)
+    indices = [{"name": name, "count": count} for name, count in sorted(grouped_counts.items())]
     from services.plugin_manager import list_installed_plugins
     installed_ids = {plugin["id"] for plugin in list_installed_plugins()}
     plugins = [
@@ -279,7 +292,7 @@ async def export_backup(req: ExportRequest = None):
     try:
         all_indices = await _get_user_indices(es)
         if req and req.indices:
-            index_names = [i for i in req.indices if i in all_indices]
+            index_names = _expand_selected_indices(req.indices, all_indices)
         else:
             index_names = all_indices
 
@@ -287,7 +300,7 @@ async def export_backup(req: ExportRequest = None):
 
         backup = {
             "vyact_backup": True,
-            "version": "2.1",
+            "version": "3.0",
             "exported_at": datetime.now(timezone.utc).isoformat(),
             "include_files": include_files,
             "indices": {},
@@ -366,7 +379,7 @@ async def import_backup(
             raise HTTPException(400, "복원할 인덱스 선택 정보가 올바르지 않습니다.")
         backup["indices"] = {
             name: payload for name, payload in backup["indices"].items()
-            if name in selected_indices
+            if name in selected_indices or _logical_index_name(name) in selected_indices
         }
 
     google_reconnect_required = await _preserve_google_workspace_on_restore(backup)
@@ -416,11 +429,8 @@ async def import_backup(
     result = {}
     try:
         for index, payload in backup["indices"].items():
-            if isinstance(payload, list):
-                schema, docs = {}, payload
-            else:
-                schema = payload.get("schema", {})
-                docs = payload.get("docs", [])
+            schema = payload.get("schema", {})
+            docs = payload.get("docs", [])
 
             schema_created = False
             try:
@@ -562,7 +572,7 @@ async def export_backup_to_drive(req: ExportRequest = None):
     try:
         all_indices = await _get_user_indices(es)
         if req and req.indices:
-            index_names = [i for i in req.indices if i in all_indices]
+            index_names = _expand_selected_indices(req.indices, all_indices)
         else:
             index_names = all_indices
 
@@ -570,7 +580,7 @@ async def export_backup_to_drive(req: ExportRequest = None):
 
         backup = {
             "vyact_backup": True,
-            "version": "2.1",
+            "version": "3.0",
             "exported_at": datetime.now(timezone.utc).isoformat(),
             "include_files": include_files,
             "indices": {},

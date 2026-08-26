@@ -22,31 +22,6 @@ const COLOR_PRESETS = ['#f5f5f5', '#cc785c', '#d88e73', '#2cba66', '#5b89b8', '#
 const EMAIL_EDITOR_VERTICAL_PADDING = 24;
 const MAIL_SIGNATURE_STYLE = 'margin-top: 24px; padding-top: 16px; border-top: 1px solid #d9d9d9; font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.6; color: #222222;';
 
-/**
- * Repairs signatures saved while the editor used a shared memo-image marker.
- * That version could leave an empty image wrapper before the actual image;
- * ProseMirror then rendered the wrapper as the thin orange bar seen on edit.
- */
-const normalizeLegacySignatureHtml = (html: string): string => {
-    if (!html || typeof DOMParser === 'undefined') return html;
-
-    const document = new DOMParser().parseFromString(html, 'text/html');
-    document.querySelectorAll<HTMLElement>('div[data-signature-layout]').forEach(layout => {
-        const imageWrappers = Array.from(layout.querySelectorAll<HTMLElement>('span[data-signature-image], span[data-memo-image]'));
-        imageWrappers.forEach(wrapper => {
-            if (!wrapper.querySelector<HTMLImageElement>('img[src]')) wrapper.remove();
-        });
-
-        const hasImage = Boolean(layout.querySelector('img[src]'));
-        const nextSibling = layout.nextElementSibling;
-        if (!hasImage && nextSibling?.matches('span[data-signature-image], span[data-memo-image]')
-            && nextSibling.querySelector<HTMLImageElement>('img[src]')) {
-            layout.prepend(nextSibling);
-        }
-    });
-    return document.body.innerHTML;
-};
-
 // Keep the photo outside the editable content while allowing the content to flow around it.
 const SignatureLayout = TiptapNode.create({
     name: 'signatureLayout',
@@ -298,7 +273,7 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
             SignatureLayout,
             MailSignature.configure({locked: lockMailSignature}),
         ],
-        content: inlineImages ? normalizeLegacySignatureHtml(content) : content,
+        content,
         autofocus: autoFocus ? 'end' : false,
         onUpdate: ({editor: e}) => {
             // React state updates during IME composition can cancel Korean/Japanese input.
@@ -310,7 +285,7 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
     useImperativeHandle(ref, () => ({
         getHTML: () => editor?.getHTML() || '',
         setContent: (html: string) => {
-            editor?.commands.setContent(inlineImages ? normalizeLegacySignatureHtml(html) : html);
+            editor?.commands.setContent(html);
         },
         focus: () => editor?.commands.focus(),
         editor,

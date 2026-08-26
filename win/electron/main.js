@@ -25,7 +25,6 @@ const LOGS_DIR = path.join(INSTALL_DIR, "logs");
 const SERVER_PORT = 8000;
 const ES_PORT = Number(process.env.ES_PORT || 9251);
 const AUTO_START_DELAY_SECONDS = 15;
-const WINDOWS_AUTO_START_TASK = "Vyact Delayed Startup";
 
 // Chocolatey 기본 설치 경로
 const CHOCO_BIN = "C:\\ProgramData\\chocolatey\\bin";
@@ -186,49 +185,6 @@ function sendLoadingStatus(message) {
     if (mainWindow && !mainWindow.isDestroyed()) {
         try { mainWindow.webContents.send("loading-status", message); } catch {}
     }
-}
-
-function isDelayedLoginItemEnabled() {
-    try {
-        execFileSync("schtasks.exe", ["/Query", "/TN", WINDOWS_AUTO_START_TASK], {stdio: "ignore"});
-        return true;
-    } catch {
-        return false;
-    }
-}
-
-function setDelayedLoginItem(enable) {
-    try {
-        if (!enable) {
-            execFileSync("schtasks.exe", ["/Delete", "/TN", WINDOWS_AUTO_START_TASK, "/F"], {stdio: "ignore"});
-            return false;
-        }
-
-        const delay = `0000:${String(AUTO_START_DELAY_SECONDS).padStart(2, "0")}`;
-        execFileSync("schtasks.exe", [
-            "/Create", "/TN", WINDOWS_AUTO_START_TASK,
-            "/TR", `\"${process.execPath}\"`,
-            "/SC", "ONLOGON", "/DELAY", delay, "/F",
-        ], {stdio: "ignore"});
-        return true;
-    } catch (error) {
-        log(`Failed to update delayed startup task: ${error.message}`);
-        throw error;
-    }
-}
-
-function migrateLegacyLoginItem() {
-    if (!app.getLoginItemSettings().openAtLogin || isDelayedLoginItemEnabled()) return;
-    app.setLoginItemSettings({openAtLogin: false});
-    setDelayedLoginItem(true);
-    log("Migrated startup registration to delayed scheduled task");
-}
-
-function migrateDelayedLoginItemToLoginItem() {
-    if (!isDelayedLoginItemEnabled()) return;
-    setDelayedLoginItem(false);
-    app.setLoginItemSettings({openAtLogin: true});
-    log("Migrated delayed scheduled task to Login Item");
 }
 
 // ── 로그 함수 ─────────────────────────────
@@ -867,8 +823,7 @@ function waitForServerAndLoad() {
 async function loadServerApp() {
     if (!mainWindow || mainWindow.isDestroyed()) return;
 
-    // 이전 버전의 CSS/JS가 Electron HTTP 캐시에 남아 있어도 업데이트된 정적
-    // 리소스를 사용하도록, 앱을 로드하기 전에 이 창의 HTTP 캐시를 비운다.
+    // 최신 정적 리소스를 사용하도록 앱 로드 전에 HTTP 캐시를 비운다.
     try {
         await mainWindow.webContents.session.clearCache();
     } catch (error) {
@@ -969,7 +924,6 @@ app.on("browser-window-focus", (_event, focusedWindow) => {
 if (hasSingleInstanceLock) app.whenReady().then(() => {
     if (!fs.existsSync(LOGS_DIR)) fs.mkdirSync(LOGS_DIR, {recursive: true});
     cleanupOldLogs();
-    migrateDelayedLoginItemToLoginItem();
     log("✅ App started (Windows)");
 
     const startupDelayMs = app.getLoginItemSettings().wasOpenedAtLogin
@@ -1061,8 +1015,6 @@ ipcMain.handle("browser-set-bounds", (_event, bounds) => {
 // ── 부팅 시 자동 시작 설정 ──────────────────────────────────────────────────
 ipcMain.handle("get-login-item", () => app.getLoginItemSettings().openAtLogin);
 ipcMain.handle("set-login-item", (_, enable) => {
-    // 이전 버전이 만든 지연 작업을 정리하고 Windows Login Item을 사용한다.
-    try { setDelayedLoginItem(false); } catch {}
     app.setLoginItemSettings({openAtLogin: enable});
     return app.getLoginItemSettings().openAtLogin;
 });

@@ -38,6 +38,7 @@ VOCAB_INDEX = "vocab_words"
 SAVED_SENTENCES_INDEX = "saved_sentences"
 NOTIFICATIONS_INDEX = "notifications"
 VYACT_MODEL_METADATA_INDEX = "vyact_model_metadata"
+MODEL_RUNTIME_PROFILES_INDEX = "model_runtime_profiles"
 
 # 공통 분석기 설정 (nori)
 KOREAN_ANALYSIS = {
@@ -294,6 +295,21 @@ async def ensure_index():
 
         # ── chat_file_chunks ───────────────────────────────────────
         # 채팅 중 첨부한 zip/파일 청크 전용 (doc_chunks와 분리 — 대화방 종속, 방 삭제 시 cascade 삭제)
+        if not await es.indices.exists(index=MODEL_RUNTIME_PROFILES_INDEX):
+            await es.indices.create(
+                index=MODEL_RUNTIME_PROFILES_INDEX,
+                settings={"number_of_shards": 1, "number_of_replicas": 0},
+                mappings={"properties": {
+                    "model_path": {"type": "keyword"}, "runtime": {"type": "keyword"},
+                    "repository": {"type": "keyword"}, "context_size": {"type": "integer"},
+                    "max_output_tokens": {"type": "integer"}, "temperature": {"type": "float"},
+                    "top_k": {"type": "integer"}, "top_p": {"type": "float"},
+                    "cache_quantization": {"type": "boolean"},
+                    "created_at": {"type": "date"}, "updated_at": {"type": "date"},
+                }},
+            )
+            logger.info("model_runtime_profiles index created")
+
         if not await es.indices.exists(index=CHAT_FILE_CHUNKS_INDEX):
             await es.indices.create(
                 index=CHAT_FILE_CHUNKS_INDEX,

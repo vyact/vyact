@@ -34,6 +34,8 @@ def test_hides_project_metadata_tags():
 def test_first_turn_requests_and_extracts_conversation_title():
     instruction = build_summary_instruction("", False)
     assert "<conv_title>" in instruction
+    assert "at most 3–4 sentences" in instruction
+    assert "End with <conv_summary>." in instruction
 
     clean, summary, project_summary, title = extract_summary_tags(
         "본문\n<conv_title>코드 변경 추적 테스트</conv_title>\n"

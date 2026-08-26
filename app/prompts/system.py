@@ -10,6 +10,11 @@ from .format import FORMAT_INSTRUCTION
 from .language import get_language_label, normalize_language_code
 
 
+RESPONSE_LENGTH_INSTRUCTION = """\
+[Response length]
+Match the response length and structure to the request. Answer greetings, simple recommendations, and short factual questions directly in 1–3 sentences. Expand with reasoning and actionable steps only for complex analysis, document or code work, or when the user requests detail."""
+
+
 def build_system_message(
         system_prompt: str,
         format_instruction_override: str | None,
@@ -37,9 +42,9 @@ def build_system_message(
     normalized_language = normalize_language_code(user_language)
     lang_label = get_language_label(normalized_language)
     response_language_instruction = (
-        f"[응답 언어]\n사용자 UI 언어는 {lang_label}입니다. "
-        f"사용자가 다른 언어를 명시적으로 요청하지 않는 한, 반드시 {lang_label}로 답변하세요. "
-        f"제목과 섹션명도 {lang_label}로 작성하세요."
+        f"[Response language]\nThe user's UI language is {lang_label}. "
+        f"Respond in {lang_label} unless the user explicitly requests another language. "
+        f"Use {lang_label} for headings and section titles as well."
     )
 
     if isolated:
@@ -55,7 +60,7 @@ def build_system_message(
         else:
             message = format_instruction_override
             if system_prompt:
-                message += f"\n\n**추가 지시사항:**\n{system_prompt}\n\n---"
+                message += f"\n\n**Additional instructions:**\n{system_prompt}\n\n---"
     elif system_prompt:
         message = system_prompt
     else:
@@ -66,32 +71,32 @@ def build_system_message(
     dynamic_context: list[str] = []
 
     # 오늘 날짜는 변하는 정보이므로 정적 규칙 뒤에 둔다.
-    today_str = datetime.now().strftime("%Y년 %m월 %d일")
-    dynamic_context.append(f"오늘 날짜: {today_str}")
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    dynamic_context.append(f"Current date: {today_str}")
 
     # 사용자 UI 언어가 없거나 미지원이면 시스템 기본 언어인 영어를 사용한다.
     # 기본 포맷의 작성 언어만으로는 문서 원문이나 스킬 지침의 언어를 이기지
     # 못할 수 있으므로, 한국어를 포함한 모든 UI 언어를 명시적으로 지시한다.
     # user_profile 주입 (voice mode 제외: format_instruction_override == "" 이면 스킵)
     if user_profile and format_instruction_override != "":
-        dynamic_context.append(f"[사용자 정보]\n{user_profile}")
+        dynamic_context.append(f"[User profile]\n{user_profile}")
 
     # 음성 모드도 최근 대화와 함께 문맥을 이어가야 하므로 요약은 제외하지 않는다.
     if conversation_summary:
         dynamic_context.append(
-            "[이전 대화 요약]\n"
-            "아래는 오래된 대화를 압축한 문맥이다. 최근 대화와 충돌하면 최근 대화를 우선한다.\n"
+            "[Earlier conversation summary]\n"
+            "This is compressed context from older messages. Prefer recent messages if they conflict.\n"
             f"{conversation_summary}"
         )
 
     # 질문별로 달라지는 스킬은 대화 요약 뒤에 둔다. 고정 규칙·프로필 prefix의
     # cache 재사용 범위를 넓히고, 현재 질문에 가까운 지시로 모델의 준수도도 높인다.
     if skill_context and format_instruction_override != "":
-        dynamic_context.append(f"[스킬 지침]\n{skill_context}")
+        dynamic_context.append(f"[Skill instructions]\n{skill_context}")
 
     # 질문과 가장 가까운 스킬 지침 뒤에 언어 규칙을 둬, 영어 원문을 요약하는
     # 경우에도 UI 언어로 결과를 생성하게 한다.
     if include_response_language:
         dynamic_context.append(response_language_instruction)
 
-    return "\n\n".join([message, *dynamic_context])
+    return "\n\n".join([message, RESPONSE_LENGTH_INSTRUCTION, *dynamic_context])

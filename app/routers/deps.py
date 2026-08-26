@@ -13,7 +13,6 @@ logger = get_logger(__name__)
 APP_DIR = Path(__file__).parent.parent
 IMAGES_DIR = INSTALL_DIR / "uploads" / "images"
 IMAGES_DIR.mkdir(parents=True, exist_ok=True)
-LEGACY_GOOGLE_API_KEY_FIELD = "google_api_key"
 
 
 def sse(msg: str, type: str = "info", progress: int = None,
@@ -34,25 +33,10 @@ async def load_config_async() -> dict:
         from services.db import get_es, SETTINGS_INDEX
         es = get_es()
         try:
-            res = await es.get(index=SETTINGS_INDEX, id="config", ignore=[404])
+            res = await es.options(ignore_status=404).get(index=SETTINGS_INDEX, id="config")
             if res.get("found"):
                 config = res["_source"].get("value", {})
-                if not isinstance(config, dict):
-                    return {}
-                if LEGACY_GOOGLE_API_KEY_FIELD in config:
-                    config = {
-                        key: value
-                        for key, value in config.items()
-                        if key != LEGACY_GOOGLE_API_KEY_FIELD
-                    }
-                    await es.index(
-                        index=SETTINGS_INDEX,
-                        id="config",
-                        document={"key": "config", "value": config},
-                        refresh=True,
-                    )
-                    logger.info("[config] removed legacy global Google API key")
-                return config
+                return config if isinstance(config, dict) else {}
         finally:
             await es.close()
     except Exception as e:
@@ -66,11 +50,6 @@ async def load_config_async() -> dict:
 
 async def save_config_async(cfg: dict):
     """ES system_settings에 config 저장."""
-    sanitized_config = {
-        key: value
-        for key, value in cfg.items()
-        if key != LEGACY_GOOGLE_API_KEY_FIELD
-    }
     try:
         from services.db import get_es, SETTINGS_INDEX
         es = get_es()
@@ -78,7 +57,7 @@ async def save_config_async(cfg: dict):
             await es.index(
                 index=SETTINGS_INDEX,
                 id="config",
-                document={"key": "config", "value": sanitized_config},
+                document={"key": "config", "value": cfg},
                 refresh=True,
             )
         finally:
@@ -97,7 +76,7 @@ async def load_ui_language_async() -> str | None:
         from services.db import get_es, SETTINGS_INDEX
         es = get_es()
         try:
-            result = await es.get(index=SETTINGS_INDEX, id="ui_language", ignore=[404])
+            result = await es.options(ignore_status=404).get(index=SETTINGS_INDEX, id="ui_language")
             if result.get("found"):
                 language = result["_source"].get("value")
                 return language if isinstance(language, str) else None

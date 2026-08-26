@@ -15,7 +15,6 @@ from pydantic import BaseModel, Field
 
 from agent import ensure_index, get_index_stats, load_prompts_cache
 from config import INSTALL_DIR, LOGS_DIR, SETUP_DONE, VENV_DIR, get_log_file
-from config.models import LLM_INITIAL_NUM_CTX, LLM_MAX_NUM_CTX
 from routers.deps import APP_DIR, load_config_async, save_config_async, sse, write_log
 from logger import DebugLogSettings, ToolLogSettings, get_logger
 from services.installer import is_docker_available, Installer
@@ -23,7 +22,8 @@ from services.es_native import is_native_supported
 from services.hardware_info import get_local_hardware_info
 from services.huggingface_models import search_gguf_models
 from services.mcp_config import ensure_mcp_config
-from services.runtime_settings import DEFAULT_RUNTIME_SETTINGS, apply_runtime_settings, get_runtime_settings
+from services.runtime_settings import DEFAULT_RUNTIME_SETTINGS, apply_runtime_settings
+from services.model_runtime_profiles import get_model_profile, recommended_model_profile, save_model_profile
 from services.vyact_model_metadata_cache import get_cached_model_metadata, save_cached_model_metadata
 
 logger = get_logger(__name__)
@@ -43,12 +43,18 @@ def is_japanese_system_language() -> bool:
 
 
 RUNTIME_SETTING_LIMITS = {
-    "llm_temperature": (0, 1), "llm_num_ctx": (LLM_INITIAL_NUM_CTX, LLM_MAX_NUM_CTX), "llm_num_predict": (1, 131072),
-    "llm_max_tokens": (1, 32768), "top_k": (0, 100), "top_p": (0, 1),
     "history_token_budget": (0, 131072), "history_chars_per_token": (0.1, 10),
     "bge_num_ctx": (1, 8192),
     "document_chunk_size": (100, 100000), "document_chunk_overlap": (0, 99999),
 }
+def _profile_runtime_settings(profile: dict) -> dict:
+    return {
+        "llm_num_ctx": profile.get("context_size", 32768),
+        "llm_num_predict": profile.get("max_output_tokens", 2048),
+        "llm_max_tokens": profile.get("max_output_tokens", 2048),
+        "llm_temperature": profile.get("temperature", 0.2),
+        "top_k": profile.get("top_k"), "top_p": profile.get("top_p"),
+    }
 
 router = APIRouter()
 
@@ -92,6 +98,23 @@ class VyactModelActivateRequest(BaseModel):
     context_size: int = Field(default=32768, ge=512, le=131072)
     runtime: str = Field(default="gguf", pattern="^(gguf|mlx)$")
     repository: str | None = Field(default=None, min_length=3, max_length=256)
+    max_output_tokens: int = Field(default=4096, ge=1, le=32768)
+    temperature: float = Field(default=0.2, ge=0, le=1)
+    top_k: int | None = Field(default=None, ge=0, le=100)
+    top_p: float | None = Field(default=None, ge=0, le=1)
+    cache_quantization: bool = True
+
+
+class VyactModelProfileRequest(BaseModel):
+    model_path: str = Field(min_length=1, max_length=1024)
+    runtime: str = Field(default="gguf", pattern="^(gguf|mlx)$")
+    repository: str | None = Field(default=None, max_length=256)
+    context_size: int = Field(default=32768, ge=512, le=131072)
+    max_output_tokens: int = Field(default=4096, ge=1, le=32768)
+    temperature: float = Field(default=0.2, ge=0, le=1)
+    top_k: int | None = Field(default=None, ge=0, le=100)
+    top_p: float | None = Field(default=None, ge=0, le=1)
+    cache_quantization: bool = True
 
 
 class VyactModelDeleteRequest(BaseModel):
@@ -778,6 +801,24 @@ async def download_vyact_model(req: HuggingFaceDownloadRequest):
     return StreamingResponse(stream(), media_type="text/event-stream")
 
 
+@router.get("/vyact/models/profile")
+async def read_vyact_model_profile(
+    model_path: str = Query(min_length=1, max_length=1024),
+    runtime: str = Query(default="gguf", pattern="^(gguf|mlx)$"),
+    repository: str | None = Query(default=None, max_length=256),
+    recommended_context: int = Query(default=32768, ge=512, le=131072),
+):
+    profile = await get_model_profile(model_path)
+    if profile:
+        return profile
+    return recommended_model_profile(model_path, runtime, repository, recommended_context)
+
+
+@router.post("/vyact/models/profile")
+async def write_vyact_model_profile(req: VyactModelProfileRequest):
+    return await save_model_profile(req.model_dump())
+
+
 @router.post("/vyact/models/activate")
 async def activate_vyact_model(req: VyactModelActivateRequest):
     async def stream():
@@ -790,7 +831,7 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
 
                 model_path = get_downloaded_mlx_model_path(req.model_path)
                 model_id = await asyncio.to_thread(
-                    start_mlx_model, model_path, req.context_size, config.get("debug_logging", False),
+                    start_mlx_model, model_path, req.context_size, config.get("debug_logging", False), req.cache_quantization,
                 )
             else:
                 from services.vyact_runtime import (
@@ -799,7 +840,7 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
 
                 model_path = get_downloaded_model_path(req.model_path)
                 model_id = await asyncio.to_thread(
-                    start_single_model, model_path, req.context_size, config.get("debug_logging", False),
+                    start_single_model, model_path, req.context_size, config.get("debug_logging", False), req.cache_quantization,
                 )
                 req.context_size = await asyncio.to_thread(
                     get_loaded_context_size, model_id, req.context_size,
@@ -816,9 +857,19 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
                 "context_size": req.context_size,
                 "runtime": runtime,
                 "repository": repository,
+                "cache_quantization": req.cache_quantization,
+                "max_output_tokens": req.max_output_tokens, "temperature": req.temperature,
+                "top_k": req.top_k, "top_p": req.top_p,
             })
-            config.setdefault("runtime_settings", {})["llm_num_ctx"] = req.context_size
-            apply_runtime_settings(config["runtime_settings"])
+            await save_model_profile({
+                "model_path": req.model_path, "runtime": runtime, "repository": repository,
+                "context_size": req.context_size, "max_output_tokens": req.max_output_tokens,
+                "temperature": req.temperature, "top_k": req.top_k, "top_p": req.top_p,
+                "cache_quantization": req.cache_quantization,
+            })
+            common_settings = dict(config.get("runtime_settings", {}))
+            config["runtime_settings"] = common_settings
+            apply_runtime_settings({**common_settings, **_profile_runtime_settings(req.model_dump())})
             await save_config_async(config)
         except Exception as error:
             logger.warning("[vyact] model activation failed: %s", error)
@@ -838,12 +889,19 @@ async def select_model(req: ModelSelectRequest):
                 yield sse("Vyact 모델을 선택하세요.", "error", 0)
                 return
             runtime = "mlx" if req.model.startswith("mlx/") else "gguf"
+            repository = req.model.removeprefix("mlx/") if runtime == "mlx" else None
+            profile = await get_model_profile(req.model)
+            if profile is None:
+                profile = await save_model_profile(recommended_model_profile(req.model, runtime, repository, 32768))
             vyact_config = config.setdefault("vyact_config", {})
             vyact_config.update({
                 "model_path": req.model,
                 "runtime": runtime,
-                "repository": req.model.removeprefix("mlx/") if runtime == "mlx" else None,
-                "context_size": vyact_config.get("context_size", 32768),
+                "repository": profile.get("repository") or repository,
+                "context_size": profile["context_size"],
+                "cache_quantization": profile["cache_quantization"],
+                "max_output_tokens": profile["max_output_tokens"], "temperature": profile["temperature"],
+                "top_k": profile.get("top_k"), "top_p": profile.get("top_p"),
             })
             yield sse("모델 메모리 로드 중...", "model_loading", 20)
             try:
@@ -858,8 +916,9 @@ async def select_model(req: ModelSelectRequest):
             config["model"] = model_id
             config["model_type"] = "chat"
             vyact_config["model"] = model_id
-            config.setdefault("runtime_settings", {})["llm_num_ctx"] = vyact_config["context_size"]
-            apply_runtime_settings(config["runtime_settings"])
+            common_settings = dict(config.get("runtime_settings", {}))
+            config["runtime_settings"] = common_settings
+            apply_runtime_settings({**common_settings, **_profile_runtime_settings(profile)})
         elif req.type in ("openai", "gemini", "claude"):
             if not req.api_key:
                 yield sse(f"{req.type.upper()} API KEY 필요", "error", 0)
@@ -1135,7 +1194,7 @@ async def set_debug_logging(body: dict):
             from services.vyact_runtime import get_downloaded_model_path, start_single_model
             model_path = get_downloaded_model_path(model_path_value)
             start_model = start_single_model
-        model_id = await asyncio.to_thread(start_model, model_path, vyact_config.get("context_size", 32768), enabled)
+        model_id = await asyncio.to_thread(start_model, model_path, vyact_config.get("context_size", 32768), enabled, vyact_config.get("cache_quantization", True))
         cfg["model"] = model_id
         cfg.setdefault("vyact_config", {})["model"] = model_id
         await save_config_async(cfg)
@@ -1145,7 +1204,7 @@ async def set_debug_logging(body: dict):
         await save_config_async(cfg)
         DebugLogSettings.set_enabled(previous_enabled)
         try:
-            await asyncio.to_thread(start_model, model_path, vyact_config.get("context_size", 32768), previous_enabled)
+            await asyncio.to_thread(start_model, model_path, vyact_config.get("context_size", 32768), previous_enabled, vyact_config.get("cache_quantization", True))
         except Exception as restore_error:
             logger.error("[vyact] failed to restore runtime after debug restart: %s", restore_error)
         raise HTTPException(500, "Vyact 런타임을 다시 시작하지 못했습니다.") from error
@@ -1156,10 +1215,8 @@ async def set_debug_logging(body: dict):
 @router.get("/settings/runtime")
 async def get_runtime_settings_endpoint():
     cfg = await load_config_async()
-    values = dict(cfg.get("runtime_settings", {}))
-    if cfg.get("type") == "vyact":
-        values["llm_num_ctx"] = cfg.get("vyact_config", {}).get("context_size", 32768)
-    return apply_runtime_settings(values)
+    values = {**DEFAULT_RUNTIME_SETTINGS, **dict(cfg.get("runtime_settings", {}))}
+    return {key: values[key] for key in RUNTIME_SETTING_LIMITS}
 
 
 @router.post("/settings/runtime")
@@ -1181,31 +1238,16 @@ async def set_runtime_settings_endpoint(body: dict):
     if values.get("document_chunk_overlap", 0) >= values.get("document_chunk_size", 1):
         raise HTTPException(400, "청크 겹침은 청크 크기보다 작아야 합니다.")
     cfg = await load_config_async()
-    merged = {**DEFAULT_RUNTIME_SETTINGS, **cfg.get("runtime_settings", {}), **values}
+    values = {key: value for key, value in values.items() if key in RUNTIME_SETTING_LIMITS}
+    common_settings = {key: value for key, value in {**cfg.get("runtime_settings", {}), **values}.items() if key in RUNTIME_SETTING_LIMITS}
+    cfg["runtime_settings"] = common_settings
+    merged = {**DEFAULT_RUNTIME_SETTINGS, **common_settings}
     vyact_config = cfg.get("vyact_config", {})
-    requested_context = values.get("llm_num_ctx")
-    if (
-        cfg.get("type") == "vyact"
-        and vyact_config.get("model_path")
-        and requested_context is not None
-        and int(requested_context) != int(vyact_config.get("context_size", 32768))
-    ):
-        previous_context = int(vyact_config.get("context_size", 32768))
-        vyact_config["context_size"] = int(requested_context)
-        try:
-            from services.vyact_runtime import start_configured_runtime
-            model_id = await asyncio.to_thread(
-                start_configured_runtime, vyact_config, cfg.get("debug_logging", False),
-            )
-            cfg["model"] = model_id
-            vyact_config["model"] = model_id
-            merged["llm_num_ctx"] = vyact_config["context_size"]
-        except Exception as error:
-            vyact_config["context_size"] = previous_context
-            raise HTTPException(500, "로컬 모델 컨텍스트 설정을 적용하지 못했습니다.") from error
-    cfg["runtime_settings"] = apply_runtime_settings(merged)
+    if cfg.get("type") == "vyact" and vyact_config.get("model_path"):
+        merged.update(_profile_runtime_settings(vyact_config))
+    apply_runtime_settings(merged)
     await save_config_async(cfg)
-    return cfg["runtime_settings"]
+    return {key: merged[key] for key in RUNTIME_SETTING_LIMITS}
 
 
 # ─────────────────────────────
@@ -1217,7 +1259,7 @@ async def get_tts_settings():
     return {
         "rate": cfg.get("tts_rate", 1.0),
         "volume": cfg.get("tts_volume", 1.0),
-        "enVoiceURI": cfg.get("tts_en_voice_uri", cfg.get("tts_voice_uri", "")),  # 구버전 호환
+        "enVoiceURI": cfg.get("tts_en_voice_uri", ""),
         "kokoroVoice": cfg.get("tts_kokoro_voice", "af_heart"),
     }
 

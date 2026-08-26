@@ -4,14 +4,11 @@ routers/chat_helpers.py – chat.py의 query/query_stream에서 공통으로 쓰
 query/query_stream 안에서 "어떤 흐름으로 동작하는지" 한눈에 보이도록
 세부 구현을 여기로 분리한다.
 """
-import asyncio
 import re
 from datetime import datetime, timezone
-from pathlib import Path
 
-from services.db import DOCUMENT_ORIGINALS_INDEX, DOC_CHUNKS_INDEX, FILES_INDEX, WEB_DOCUMENTS_INDEX, WEB_DOC_CHUNKS_INDEX
+from services.db import DOCUMENT_ORIGINALS_INDEX, DOC_CHUNKS_INDEX, WEB_DOCUMENTS_INDEX, WEB_DOC_CHUNKS_INDEX
 from services.content_budget import allocate_text_content_limits
-from services.document_parser import parse_file
 from services.indexer import get_es as get_es_client
 from routers.deps import load_config_async
 from agent import get_prompt_by_id
@@ -120,35 +117,6 @@ def limit_direct_document_contexts(docs: list[dict]) -> list[dict]:
     return limited
 
 
-async def _load_legacy_document_original(es_client, document_id: str, article: dict) -> dict | None:
-    """원문 레코드가 없던 기존 저장 파일을 원본 파일에서 한 번만 보완한다."""
-    try:
-        file_metadata = await es_client.get(index=FILES_INDEX, id=document_id)
-        metadata = file_metadata["_source"]
-        original_path = Path(metadata.get("original_path", ""))
-        if not original_path.is_file():
-            return None
-        content = (await asyncio.to_thread(parse_file, original_path)).strip()
-        if not content:
-            return None
-        now = datetime.now(timezone.utc).isoformat()
-        original = {
-            "document_id": document_id,
-            "source_type": "document",
-            "title": metadata.get("filename", article.get("title", "")),
-            "content": content,
-            "url": f"file://{document_id}",
-            "file_ext": metadata.get("file_ext", ""),
-            "content_length": len(content),
-            "created_at": metadata.get("indexed_at", now),
-            "updated_at": now,
-        }
-        await es_client.index(index=DOCUMENT_ORIGINALS_INDEX, id=document_id, document=original, refresh=True)
-        return original
-    except Exception as error:
-        logger.warning("기존 저장 문서 원문 보완 실패 (%s): %s", document_id, error)
-        return None
-
 async def search_file_id_chunks(question: str, articles: list) -> tuple[list[dict], list[dict]]:
     """articles를 direct_articles / 저장 문서 참조로 분류한다.
 
@@ -199,8 +167,6 @@ async def search_file_id_chunks(question: str, articles: list) -> tuple[list[dic
                 document_id = article["file_id"]
                 source_type = article.get("source_type", "document")
                 original = originals_by_id.get(document_id)
-                if not original and source_type != "web":
-                    original = await _load_legacy_document_original(es_client, document_id, article)
                 if original:
                     saved_document_docs.append({
                         "title": original.get("title", article.get("title", "")),

@@ -2,7 +2,7 @@ import i18n from 'i18next';
 import {initReactI18next} from 'react-i18next';
 
 const SUPPORTED_LANGUAGE_CODES = ['ko', 'en', 'ja', 'zh', 'th', 'vi', 'es', 'fr'];
-const LEGACY_LANGUAGE_STORAGE_KEY = 'vyact-language';
+const PENDING_LANGUAGE_STORAGE_KEY = 'vyact-pending-language';
 const TRANSLATION_NAMESPACES = ['common', 'setup', 'settings', 'main'] as const;
 type TranslationNamespace = typeof TRANSLATION_NAMESPACES[number];
 type TranslationResources = Record<TranslationNamespace, Record<string, unknown>>;
@@ -20,8 +20,8 @@ const LANGUAGE_RESOURCE_LOADERS: Record<string, () => Promise<TranslationResourc
 );
 
 function detectLanguage(): string {
-    const legacyLanguage = localStorage.getItem(LEGACY_LANGUAGE_STORAGE_KEY);
-    if (legacyLanguage && SUPPORTED_LANGUAGE_CODES.includes(legacyLanguage)) return legacyLanguage;
+    const pendingLanguage = localStorage.getItem(PENDING_LANGUAGE_STORAGE_KEY);
+    if (pendingLanguage && SUPPORTED_LANGUAGE_CODES.includes(pendingLanguage)) return pendingLanguage;
     const systemLanguage = navigator.language.split('-')[0];
     return SUPPORTED_LANGUAGE_CODES.includes(systemLanguage) ? systemLanguage : 'en';
 }
@@ -56,30 +56,28 @@ async function saveLanguageToServer(language: string): Promise<boolean> {
 export const changeLanguage = (lang: string) => {
     const language = lang.split('-')[0];
     // ES가 준비되지 않은 초기 설치에서도 선택값을 잃지 않도록 먼저 보관한다.
-    localStorage.setItem(LEGACY_LANGUAGE_STORAGE_KEY, language);
+    localStorage.setItem(PENDING_LANGUAGE_STORAGE_KEY, language);
     void loadLanguageResources(language).then(() => i18n.changeLanguage(language)).then(() => saveLanguageToServer(language)).then(saved => {
-        if (saved) localStorage.removeItem(LEGACY_LANGUAGE_STORAGE_KEY);
+        if (saved) localStorage.removeItem(PENDING_LANGUAGE_STORAGE_KEY);
     });
 };
 
 /** 설치 완료 직후, 초기 설치 중 임시 보관한 언어를 ES에 저장한다. */
 export async function syncPendingLanguageAfterSetup(): Promise<void> {
-    const language = localStorage.getItem(LEGACY_LANGUAGE_STORAGE_KEY)
+    const language = localStorage.getItem(PENDING_LANGUAGE_STORAGE_KEY)
         || i18n.language.split('-')[0];
     if (!SUPPORTED_LANGUAGE_CODES.includes(language)) return;
 
     if (await saveLanguageToServer(language)) {
-        localStorage.removeItem(LEGACY_LANGUAGE_STORAGE_KEY);
+        localStorage.removeItem(PENDING_LANGUAGE_STORAGE_KEY);
     }
 }
 
 async function syncLanguageFromServer() {
     try {
-        // 기존 앱은 언어를 localStorage에만 저장했다. 업그레이드 직후 한 번은
-        // 사용자가 이미 선택한 값을 ES로 올려야 기존 선택이 기본값(예: ko)에 덮이지 않는다.
-        const legacyLanguage = localStorage.getItem(LEGACY_LANGUAGE_STORAGE_KEY);
-        if (legacyLanguage && SUPPORTED_LANGUAGE_CODES.includes(legacyLanguage)) {
-            changeLanguage(legacyLanguage);
+        const pendingLanguage = localStorage.getItem(PENDING_LANGUAGE_STORAGE_KEY);
+        if (pendingLanguage && SUPPORTED_LANGUAGE_CODES.includes(pendingLanguage)) {
+            changeLanguage(pendingLanguage);
             return;
         }
         const response = await fetch('/api/extension/bootstrap');
@@ -88,7 +86,7 @@ async function syncLanguageFromServer() {
         if (SUPPORTED_LANGUAGE_CODES.includes(language)) {
             await loadLanguageResources(language);
             await i18n.changeLanguage(language);
-            localStorage.removeItem(LEGACY_LANGUAGE_STORAGE_KEY);
+            localStorage.removeItem(PENDING_LANGUAGE_STORAGE_KEY);
             return;
         }
         // 첫 설치 시에만 시스템 언어 감지값을 ES의 기준값으로 저장한다.

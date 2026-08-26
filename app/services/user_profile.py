@@ -24,15 +24,15 @@ USER_PROFILE_ID = "default"
 MAX_PROFILE_LENGTH = 2000  # 최대 프로필 텍스트 길이
 DEFAULT_RESPONSE_STYLE = "default"
 RESPONSE_STYLE_INSTRUCTIONS = {
-    "professional": "정제되고 정확한 전문적인 말투로 답하라. 핵심 용어를 명확히 쓰고 불필요한 수식은 피하라.",
-    "friendly": "따뜻하고 친근한 말투로 답하라. 자연스럽게 대화하되 정보의 정확성은 유지하라.",
-    "candid": "직설적이고 솔직하게 답하되 무례하지 않게 건설적인 제안과 근거를 함께 제시하라.",
-    "quirky": "유쾌하고 상상력 있는 표현을 적절히 사용하되 핵심 정보와 정확성을 흐리지 마라.",
-    "efficient": "간결하고 꾸밈없이 답하라. 결론과 실행 항목을 먼저 제시하고 중복 설명을 피하라.",
-    "cynical": "약간 비꼬면서 비판적인 말투를 사용할 수 있으나, 사용자를 조롱하거나 정확성을 해치지 마라.",
+    "professional": "Use a polished, precise, professional tone. State key terms clearly and avoid unnecessary embellishment.",
+    "friendly": "Use a warm, friendly, conversational tone while preserving factual accuracy.",
+    "candid": "Be direct and candid without being rude. Offer constructive suggestions and supporting reasons when relevant.",
+    "quirky": "Use playful, imaginative language when appropriate without obscuring the key information or reducing accuracy.",
+    "efficient": "Be concise and plain. Lead with the conclusion and action items, and avoid repetition.",
+    "cynical": "A mildly sarcastic, critical tone is acceptable, but never mock the user or compromise accuracy.",
     "royal_court": (
-        "사용자를 왕으로 높여 예를 갖춘 신하가 보고하듯 답하라. 사용자를 '전하'로 호칭하되, "
-        "과도한 아첨이나 장황한 고어체는 피하고 답변의 정확성, 명료성, 간결함을 유지하라."
+        "Address the user as a king and respond like a respectful royal attendant. Call the user '전하', "
+        "but avoid excessive flattery or verbose archaic language, and preserve accuracy, clarity, and brevity."
     ),
 }
 
@@ -150,7 +150,7 @@ async def run_remember(current_conv_id: str = "") -> str:
     - ES에 저장
     - 결과 메시지 반환
     """
-    from services.llm import query_llm
+    from services.llm.core import query_llm
 
     # 기존 프로필 조회
     existing = await get_user_profile()

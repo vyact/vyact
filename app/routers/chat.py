@@ -18,7 +18,8 @@ from agent import (
     query_llm, get_model_name,
     get_conversation, rag_query_stream,
 )
-from services.llm import chat_stream_with_tools, get_model_display_name
+from services.llm.config import get_model_display_name
+from services.llm.core import chat_stream_with_tools
 from services.llm.tools import tool_result_failed
 from config import IMAGE_MODEL_IDS
 from prompts import VOICE_MODE_SUFFIX, FORMAT_INSTRUCTION
@@ -100,7 +101,7 @@ async def _with_response_style(system_prompt: str) -> str:
         return system_prompt
     if not style_instruction:
         return system_prompt
-    style_context = f"[응답 스타일 및 말투]\n{style_instruction}"
+    style_context = f"[Response style and tone]\n{style_instruction}"
     return f"{system_prompt}\n\n{style_context}" if system_prompt else style_context
 
 
@@ -269,17 +270,16 @@ async def _build_project_folder_context(folder_paths: list[str]) -> str:
         from services.code_tools import build_code_folder_map, build_project_manifest
         folders = build_code_folder_map(folder_paths)
         manifest = await asyncio.to_thread(build_project_manifest, folder_paths)
-        folder_context = "[프로젝트 소스 폴더]\n" + "\n".join(
+        folder_context = "[Project source folders]\n" + "\n".join(
             f"- {folder_id}: {path}" for folder_id, path in folders.items()
         )
         if manifest:
             folder_context += (
-                "\n\n[프로젝트 파일 구조 — 자동 생성 manifest]\n"
+                "\n\n[Project file structure — generated manifest]\n"
                 + manifest
-                + "\n이 manifest는 경로 구조만 보여준다. 파일 내용이 필요한 경우 code_read_file 또는 "
-                  "code_grep_search를 사용해 확인해야 한다."
+                + "\nThis manifest shows paths only. Use code_read_file or code_grep_search when file contents are needed."
             )
-        return folder_context + "\n모든 code_* 도구 호출에 작업 대상 folder_id를 반드시 지정해야 한다."
+        return folder_context + "\nEvery code_* tool call must specify the target folder_id."
     except Exception as e:
         logger.warning("[query_stream] 프로젝트 폴더 컨텍스트 생성 실패: %s", e)
         return ""
@@ -487,12 +487,12 @@ async def query(req: QueryRequest):
     cfg, current_model, system_prompt = await load_system_prompt(req.system_prompt)
     project_prompt = await _get_project_prompt(req.project_id)
     if project_prompt:
-        system_prompt = f"{system_prompt}\n\n[프로젝트 지침]\n{project_prompt}" if system_prompt else project_prompt
+        system_prompt = f"{system_prompt}\n\n[Project instructions]\n{project_prompt}" if system_prompt else project_prompt
     from services.project_memory import get_project_memory, project_memory_prompt_view
     project_memory = await get_project_memory(req.project_id) if req.project_id else None
     if project_memory and any(project_memory.get(key) for key in ("summary", "decisions", "action_items")):
         memory_context = json.dumps(project_memory_prompt_view(project_memory), ensure_ascii=False)
-        system_prompt = f"{system_prompt}\n\n[프로젝트 메모리]\n{memory_context}" if system_prompt else f"[프로젝트 메모리]\n{memory_context}"
+        system_prompt = f"{system_prompt}\n\n[Project memory]\n{memory_context}" if system_prompt else f"[Project memory]\n{memory_context}"
     request_folder_paths = await _get_request_folder_paths(req.folder_path, req.project_id)
     project_folder_context = await _build_project_folder_context(request_folder_paths)
     if project_folder_context:
@@ -825,12 +825,12 @@ async def query_stream(req: QueryRequest):
             if not req.minimal_prompt:
                 project_prompt = await _get_project_prompt(req.project_id)
                 if project_prompt:
-                    system_prompt = f"{system_prompt}\n\n[프로젝트 지침]\n{project_prompt}" if system_prompt else project_prompt
+                    system_prompt = f"{system_prompt}\n\n[Project instructions]\n{project_prompt}" if system_prompt else project_prompt
                 from services.project_memory import get_project_memory, project_memory_prompt_view
                 project_memory = await get_project_memory(req.project_id) if req.project_id else None
                 if project_memory and any(project_memory.get(key) for key in ("summary", "decisions", "action_items")):
                     memory_context = json.dumps(project_memory_prompt_view(project_memory), ensure_ascii=False)
-                    system_prompt = f"{system_prompt}\n\n[프로젝트 메모리]\n{memory_context}" if system_prompt else f"[프로젝트 메모리]\n{memory_context}"
+                    system_prompt = f"{system_prompt}\n\n[Project memory]\n{memory_context}" if system_prompt else f"[Project memory]\n{memory_context}"
                 request_folder_paths = await _get_request_folder_paths(req.folder_path, req.project_id)
                 project_folder_context = await _build_project_folder_context(request_folder_paths)
                 if project_folder_context:

@@ -1,6 +1,6 @@
 const {app, BrowserView, BrowserWindow, WebContentsView, dialog, ipcMain, session, shell} = require("electron");
 const path = require("path");
-const {spawn, execSync, execFileSync, spawnSync} = require("child_process");
+const {spawn, execSync, spawnSync} = require("child_process");
 const fs = require("fs");
 const os = require("os");
 const http = require("http");
@@ -26,7 +26,6 @@ const LOGS_DIR = path.join(INSTALL_DIR, "logs");
 const SERVER_PORT = 8000;
 const ES_PORT = Number(process.env.ES_PORT || 9251);
 const AUTO_START_DELAY_SECONDS = 15;
-const MAC_AUTO_START_LABEL = "com.vyact.app";
 
 let mainWindow = null;
 // The initial setup app is rendered in a child view.  Keeping loading.html in
@@ -284,64 +283,6 @@ function sendLoadingStatus(message) {
     if (mainWindow && !mainWindow.isDestroyed()) {
         try { mainWindow.webContents.send("loading-status", message); } catch {}
     }
-}
-
-function getDelayedLoginItemPath() {
-    return path.join(HOME, "Library", "LaunchAgents", `${MAC_AUTO_START_LABEL}.plist`);
-}
-
-function escapeXml(value) {
-    return value.replace(/[<>&'\"]/g, (character) => ({
-        "<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", '"': "&quot;",
-    }[character]));
-}
-
-function getMacAppBundlePath() {
-    return path.resolve(app.getPath("exe"), "..", "..");
-}
-
-function isDelayedLoginItemEnabled() {
-    return fs.existsSync(getDelayedLoginItemPath());
-}
-
-function setDelayedLoginItem(enable) {
-    const plistPath = getDelayedLoginItemPath();
-    const userDomain = `gui/${process.getuid()}`;
-    try {
-        execFileSync("launchctl", ["bootout", userDomain, plistPath], {stdio: "ignore"});
-    } catch {}
-
-    if (!enable) {
-        fs.rmSync(plistPath, {force: true});
-        return false;
-    }
-
-    fs.mkdirSync(path.dirname(plistPath), {recursive: true});
-    const bundlePath = escapeXml(getMacAppBundlePath());
-    const plist = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0"><dict>
-<key>Label</key><string>${MAC_AUTO_START_LABEL}</string>
-<key>ProgramArguments</key><array><string>/bin/sh</string><string>-c</string><string>sleep ${AUTO_START_DELAY_SECONDS}; exec /usr/bin/open -gj "$1"</string><string>sh</string><string>${bundlePath}</string></array>
-<key>RunAtLoad</key><true/>
-</dict></plist>`;
-    fs.writeFileSync(plistPath, plist, "utf8");
-    execFileSync("launchctl", ["bootstrap", userDomain, plistPath], {stdio: "ignore"});
-    return true;
-}
-
-function migrateLegacyLoginItem() {
-    if (!app.getLoginItemSettings().openAtLogin || isDelayedLoginItemEnabled()) return;
-    app.setLoginItemSettings({openAtLogin: false});
-    setDelayedLoginItem(true);
-    log("Migrated startup registration to delayed LaunchAgent");
-}
-
-function migrateDelayedLoginItemToLoginItem() {
-    if (!isDelayedLoginItemEnabled()) return;
-    setDelayedLoginItem(false);
-    app.setLoginItemSettings({openAtLogin: true, openAsHidden: true});
-    log("Migrated delayed LaunchAgent to Login Item");
 }
 
 // ── 로그 함수 ─────────────────────────────
@@ -957,8 +898,7 @@ function waitForServerAndLoad() {
 async function loadServerApp() {
     if (!mainWindow || mainWindow.isDestroyed()) return;
 
-    // 이전 버전의 CSS/JS가 Electron HTTP 캐시에 남아 있어도 업데이트된 정적
-    // 리소스를 사용하도록, 앱을 로드하기 전에 이 창의 HTTP 캐시를 비운다.
+    // 최신 정적 리소스를 사용하도록 앱 로드 전에 HTTP 캐시를 비운다.
     try {
         await mainWindow.webContents.session.clearCache();
     } catch (error) {
@@ -1082,7 +1022,6 @@ app.on("activate", () => {
 if (hasSingleInstanceLock) app.whenReady().then(() => {
     if (!fs.existsSync(LOGS_DIR)) fs.mkdirSync(LOGS_DIR, {recursive: true});
     cleanupOldLogs();
-    migrateDelayedLoginItemToLoginItem();
     log("✅ App started");
 
     const startupDelayMs = app.getLoginItemSettings().wasOpenedAtLogin
@@ -1232,8 +1171,6 @@ ipcMain.handle("get-login-item", () => {
 });
 
 ipcMain.handle("set-login-item", (_, enable) => {
-    // 이전 버전이 만든 지연 LaunchAgent를 정리하고 macOS Login Item을 사용한다.
-    setDelayedLoginItem(false);
     app.setLoginItemSettings({openAtLogin: enable, openAsHidden: true});
     return app.getLoginItemSettings().openAtLogin;
 });

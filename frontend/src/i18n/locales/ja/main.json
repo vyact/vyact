@@ -525,7 +525,8 @@
     "layersHelp": "入力が順番に通過する内部処理ブロックの数です。構造と幅が同程度のモデルでは、レイヤーが多いほど通常は計算時間とメモリが増えますが、実際の速度と品質は各レイヤーの大きさ、総パラメータ数、構造、量子化、ハードウェアにも左右されます。",
     "huggingFaceTokenHelp": "モデル検索ではトークンを使用しません。制限付きモデルへのアクセス、GGUFの確認、ダウンロードの認証に使用します。ダウンロード開始時にElasticsearchへ保存され、次回以降も再利用されます。リクエスト上限や安定性が改善する場合がありますが、速度向上は保証されません。",
     "installed": "インストール済み",
-    "systemMemory": "システムRAM", "unifiedMemory": "ユニファイドメモリ", "availableMemory": "使用可能", "monthlyDownloads": "過去30日のダウンロード", "estimatedMemory": "推定RAM", "sharedOrUnknownMemory": "共有メモリまたは容量不明", "cpuExecution": "GPUなし · CPU/RAM実行", "analyzingMetadata": "GGUFメタデータを解析中...", "parameters": "パラメータ", "architecture": "アーキテクチャ", "quantization": "量子化", "maxContext": "最大コンテキスト", "layers": "レイヤー", "kvCache": "32K KVキャッシュ", "execution": {"unified":"ユニファイドメモリで実行可能","gpu":"GPUで実行可能","hybrid":"GPU+RAMハイブリッド実行","cpu":"CPU/RAMで実行可能","insufficient":"使用可能なメモリが不足しています"}
+    "systemMemory": "システムRAM", "unifiedMemory": "ユニファイドメモリ", "availableMemory": "使用可能", "monthlyDownloads": "過去30日のダウンロード", "estimatedMemory": "推定RAM", "sharedOrUnknownMemory": "共有メモリまたは容量不明", "cpuExecution": "GPUなし · CPU/RAM実行", "analyzingMetadata": "GGUFメタデータを解析中...", "parameters": "パラメータ", "architecture": "アーキテクチャ", "quantization": "量子化", "maxContext": "最大コンテキスト", "layers": "レイヤー", "kvCache": "32K KVキャッシュ", "execution": {"unified":"ユニファイドメモリで実行可能","gpu":"GPUで実行可能","hybrid":"GPU+RAMハイブリッド実行","cpu":"CPU/RAMで実行可能","insufficient":"使用可能なメモリが不足しています"},
+    "modelSettings": "{{model}} settings"
   },
   "modelDownload": {
     "confirmTitle": "{{model}} はインストールされていません。",
@@ -1123,5 +1124,22 @@
     "email_thread": "メール"
   },
   "providerSettings":{"title":"{{provider}} 設定","required":"API KeyとModelを入力してください。","save":"保存","saveFailed":"保存に失敗しました","deleteFailed":"削除に失敗しました","model":"Model"},
-  "customProvider": {"addConnection":"+ LLM接続を追加","add":"追加","addTitle":"LLM接続を追加","editTitle":"LLM接続を編集","subtitle":"使用するAPIサーバーとモデルを接続します。","close":"閉じる","cancel":"キャンセル","name":"接続名","namePlaceholder":"例：社内LLM","protocol":"API形式","protocolDocs":"API形式のドキュメント","connectionSection":"接続情報","connectionSectionDesc":"APIサーバーとモデルを設定します。","baseUrl":"Base URL","apiKey":"API Key","optional":"任意","apiKeyExisting":"新しいAPI Key（変更時のみ）","apiKeyOptional":"API Key（任意）","modelId":"Model ID","modelPlaceholder":"例：qwen3:8b","hint":"OpenAI互換の /chat/completions APIを実装したサーバーに接続します。","headers":"追加Header","headersDesc":"認証などに必要なHTTP Headerを追加します。","addHeader":"Headerを追加","noHeaders":"必要な場合はHeaderを追加してください","headerName":"Headerラベル","headerValue":"Header値","headerValuePlaceholder":"Header値を入力","headerValueExisting":"新しい値（変更時のみ）","removeHeader":"Headerを削除","showHeaderValue":"Header値を表示","hideHeaderValue":"Header値を非表示","showApiKey":"API Keyを表示","hideApiKey":"API Keyを非表示","headerValidation":"各Headerのラベルと値を入力してください。","validation":"名前、Base URL、Model IDを入力してください。","save":"保存して選択","saving":"保存中…","saveFailed":"接続の保存に失敗しました","deleteConfirm":"{{name}}接続を削除しますか？"}
+  "customProvider": {"addConnection":"+ LLM接続を追加","add":"追加","addTitle":"LLM接続を追加","editTitle":"LLM接続を編集","subtitle":"使用するAPIサーバーとモデルを接続します。","close":"閉じる","cancel":"キャンセル","name":"接続名","namePlaceholder":"例：社内LLM","protocol":"API形式","protocolDocs":"API形式のドキュメント","connectionSection":"接続情報","connectionSectionDesc":"APIサーバーとモデルを設定します。","baseUrl":"Base URL","apiKey":"API Key","optional":"任意","apiKeyExisting":"新しいAPI Key（変更時のみ）","apiKeyOptional":"API Key（任意）","modelId":"Model ID","modelPlaceholder":"例：qwen3:8b","hint":"OpenAI互換の /chat/completions APIを実装したサーバーに接続します。","headers":"追加Header","headersDesc":"認証などに必要なHTTP Headerを追加します。","addHeader":"Headerを追加","noHeaders":"必要な場合はHeaderを追加してください","headerName":"Headerラベル","headerValue":"Header値","headerValuePlaceholder":"Header値を入力","headerValueExisting":"新しい値（変更時のみ）","removeHeader":"Headerを削除","showHeaderValue":"Header値を表示","hideHeaderValue":"Header値を非表示","showApiKey":"API Keyを表示","hideApiKey":"API Keyを非表示","headerValidation":"各Headerのラベルと値を入力してください。","validation":"名前、Base URL、Model IDを入力してください。","save":"保存して選択","saving":"保存中…","saveFailed":"接続の保存に失敗しました","deleteConfirm":"{{name}}接続を削除しますか？"},
+  "modelSettings": {
+    "title": "Model settings",
+    "close": "Close",
+    "loading": "Loading model settings...",
+    "description": "Recommended values are based on this model and system memory. Review them before applying.",
+    "context": "Context window",
+    "maxOutput": "Max output tokens",
+    "temperature": "Temperature",
+    "topK": "Top K",
+    "topP": "Top P",
+    "modelDefault": "Model default",
+    "cacheQuantization": "KV cache quantization",
+    "cacheQuantizationHelp": "Reduces cache memory use for larger contexts.",
+    "cancel": "Cancel",
+    "apply": "Apply",
+    "applying": "Applying..."
+  }
 }

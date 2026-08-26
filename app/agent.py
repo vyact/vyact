@@ -28,10 +28,8 @@ from services.indexer import (
     memo_search,
     search_related_context_candidates,
 )
-from services.llm import (
-    chat_stream_with_tools, collect_llm_stream, get_model_display_name, get_model_name,
-    get_provider_config, query_llm,
-)
+from services.llm.config import get_model_display_name, get_model_name, get_provider_config
+from services.llm.core import chat_stream_with_tools, collect_llm_stream, query_llm
 from services.history import (
     save_conversation, create_conversation_stub, list_conversations,
     get_conversation, delete_conversation, rename_conversation,

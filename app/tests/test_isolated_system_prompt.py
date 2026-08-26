@@ -6,6 +6,17 @@ from services.llm.prepare import prepare_request
 
 
 class IsolatedSystemPromptTests(unittest.TestCase):
+    def test_regular_prompt_calibrates_response_length(self):
+        result = build_system_message(
+            "SYSTEM PROMPT",
+            format_instruction_override=None,
+            user_language="ko",
+        )
+
+        self.assertIn("[Response length]", result)
+        self.assertIn("greetings, simple recommendations, and short factual questions", result)
+        self.assertIn("1–3 sentences", result)
+
     def test_isolated_prompt_adds_only_response_language_rule(self):
         plugin_prompt = "PLUGIN ONLY\n두 번째 줄"
 
@@ -22,9 +33,9 @@ class IsolatedSystemPromptTests(unittest.TestCase):
         self.assertEqual(
             result,
             plugin_prompt
-            + "\n\n[응답 언어]\n사용자 UI 언어는 한국어입니다. "
-              "사용자가 다른 언어를 명시적으로 요청하지 않는 한, 반드시 한국어로 답변하세요. "
-              "제목과 섹션명도 한국어로 작성하세요.",
+            + "\n\n[Response language]\nThe user's UI language is Korean. "
+              "Respond in Korean unless the user explicitly requests another language. "
+              "Use Korean for headings and section titles as well.",
         )
         self.assertNotIn("BACKEND FORMAT", result)
         self.assertNotIn("BACKEND PROFILE", result)
@@ -39,7 +50,7 @@ class IsolatedSystemPromptTests(unittest.TestCase):
             include_response_language=False,
         )
 
-        self.assertNotIn("[응답 언어]", result)
+        self.assertNotIn("[Response language]", result)
         self.assertNotIn("English", result)
 
 
@@ -60,8 +71,8 @@ class IsolatedPreparedRequestTests(unittest.IsolatedAsyncioTestCase):
                 isolated_system_prompt=True,
             )
 
-        self.assertTrue(system_message.startswith("PLUGIN_SYSTEM_PROMPT\n\n[응답 언어]"))
-        self.assertIn("반드시 한국어로 답변하세요", system_message)
+        self.assertTrue(system_message.startswith("PLUGIN_SYSTEM_PROMPT\n\n[Response language]"))
+        self.assertIn("Respond in Korean", system_message)
         self.assertEqual(user_prompt, "PLUGIN_USER_PROMPT")
         self.assertEqual(history, [])
 
@@ -80,7 +91,7 @@ class IsolatedPreparedRequestTests(unittest.IsolatedAsyncioTestCase):
                 include_response_language=False,
             )
 
-        self.assertNotIn("[응답 언어]", system_message)
+        self.assertNotIn("[Response language]", system_message)
         self.assertNotIn("English", system_message)
 
 

@@ -60,9 +60,18 @@ export const getModelMemoryTone = (estimatedMemory: number, hardware: VyactHardw
 
 export const getOptimizedModelContext = (
     metadata: VyactGgufMetadata | undefined,
-    _fileSize: number,
-    _hardware: VyactHardwareInfo,
+    fileSize: number,
+    hardware: VyactHardwareInfo,
 ) => {
     const modelLimit = metadata?.contextLength || DEFAULT_MODEL_CONTEXT;
-    return Math.max(512, Math.min(DEFAULT_MODEL_CONTEXT, modelLimit));
+    const capacity = getTotalModelMemoryCapacity(hardware);
+    if (!metadata?.kvCacheBytes || !capacity || !fileSize) {
+        return Math.max(512, Math.min(DEFAULT_MODEL_CONTEXT, modelLimit));
+    }
+    const fixedMemory = Math.max(fileSize * MODEL_MEMORY_OVERHEAD_RATIO, fileSize + metadata.runtimeBufferBytes);
+    const contextBudget = Math.max(0, capacity * .8 - fixedMemory);
+    const bytesPerToken = metadata.kvCacheBytes / DEFAULT_MODEL_CONTEXT;
+    const memoryLimitedContext = Math.floor(contextBudget / bytesPerToken);
+    const candidates = [131072, 65536, 32768, 16384, 8192, 4096, 2048, 1024, 512];
+    return candidates.find(value => value <= modelLimit && value <= memoryLimitedContext) || 512;
 };

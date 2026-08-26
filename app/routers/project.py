@@ -199,19 +199,11 @@ def parse_xml_project(raw: str) -> dict | None:
 async def download_project(request: Request):
     body = await request.json()
 
-    # xml:project 포맷 (raw 필드) 또는 기존 JSON 포맷 모두 지원
-    if "raw" in body:
-        data = parse_xml_project(body["raw"])
-        if not data:
-            raise HTTPException(status_code=400, detail="xml:project 파싱 실패")
-        project_name = data["project_name"]
-        files = data["files"]
-    else:
-        # 기존 JSON 포맷 호환
-        project_name = body.get("project_name", "my-project")
-        files = body.get("files", [])
-        if not files:
-            raise HTTPException(status_code=400, detail="files가 비어 있습니다.")
+    data = parse_xml_project(body.get("raw", ""))
+    if not data:
+        raise HTTPException(status_code=400, detail="xml:project 파싱 실패")
+    project_name = data["project_name"]
+    files = data["files"]
 
     # 프로젝트명 sanitize
     safe_name = project_name.replace("..", "").replace("/", "").replace("\\", "").strip() or "my-project"

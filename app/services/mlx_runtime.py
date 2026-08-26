@@ -280,7 +280,7 @@ def _server_help(server_module: str) -> str:
         return ""
 
 
-def _build_mlx_server_command(model_path: Path, context_size: int) -> list[str]:
+def _build_mlx_server_command(model_path: Path, context_size: int, cache_quantization: bool = True) -> list[str]:
     manifest = _read_model_manifest(model_path / MLX_MODEL_MANIFEST)
     mtp_repository = manifest.get("mtp_repository")
     try:
@@ -296,7 +296,7 @@ def _build_mlx_server_command(model_path: Path, context_size: int) -> list[str]:
         "--max-kv-size", str(context_size),
     ]
     server_help = _server_help(server_module)
-    if context_size >= _MLX_KV_QUANTIZATION_MIN_CONTEXT and "--kv-bits" in server_help:
+    if cache_quantization and context_size >= _MLX_KV_QUANTIZATION_MIN_CONTEXT and "--kv-bits" in server_help:
         command.extend(["--kv-bits", "8"])
         if "--quantized-kv-start" in server_help:
             command.extend(["--quantized-kv-start", "0"])
@@ -318,7 +318,7 @@ def _mlx_server_environment() -> dict[str, str]:
     }
 
 
-def start_mlx_model(model_path: Path, context_size: int, debug_logging: bool = False) -> str:
+def start_mlx_model(model_path: Path, context_size: int, debug_logging: bool = False, cache_quantization: bool = True) -> str:
     global _mlx_runtime_process
     if not is_apple_silicon():
         raise RuntimeError("MLX models require Apple Silicon")
@@ -332,7 +332,7 @@ def start_mlx_model(model_path: Path, context_size: int, debug_logging: bool = F
     stop_mlx_runtime()
     MLX_RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
     log_path = get_log_file("mlx-vlm")
-    command = _build_mlx_server_command(model_path, context_size)
+    command = _build_mlx_server_command(model_path, context_size, cache_quantization)
     with log_path.open("ab") as log_file:
         process = subprocess.Popen(
             command,

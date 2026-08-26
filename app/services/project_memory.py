@@ -81,17 +81,16 @@ async def get_project_memory(project_id: str) -> dict:
 def build_project_memory_instruction(memory: dict) -> str:
     current = json.dumps(project_memory_prompt_view(memory), ensure_ascii=False, separators=(",", ":"))
     return (
-        "\n\n## 프로젝트 메모리 갱신 (내부 저장용, 사용자에게 언급하지 말 것)\n"
-        "현재 프로젝트 메모리는 다음과 같습니다. 이번 사용자 발화와 답변에서 명시적으로 확인되는 "
-        "내용만 반영하세요. 추측하거나 일반적인 조언을 결정/할 일로 만들지 마세요.\n"
-        f"현재 메모리: {current}\n"
-        "답변 맨 끝에 아래 JSON 태그를 반드시 한 번 출력하세요. summary는 기존 핵심 맥락을 유지하면서 "
-        "이번 턴을 반영한 4문장 이내의 프로젝트 현황입니다. decisions와 action_items에는 이번 턴에서 "
-        "새로 확정된 항목만 넣으세요. 없으면 빈 배열을 사용하세요. due_date는 명시된 경우에만 ISO 8601 "
-        "날짜로 쓰고, owner도 명시된 경우에만 쓰세요.\n"
+        "\n\n## Project memory update (hidden; never mention it to the user)\n"
+        "The current project memory follows. Update it only with facts explicitly confirmed by this user message and response. "
+        "Never turn guesses or general advice into decisions or action items.\n"
+        f"Current memory: {current}\n"
+        "At the very end, output the JSON tag below exactly once. Keep summary to at most four sentences while preserving prior key context and reflecting this turn. "
+        "Put only newly confirmed items from this turn in decisions and action_items; use empty arrays when there are none. "
+        "Include due_date as an ISO 8601 date and owner only when explicitly stated.\n"
         '<project_memory>{"summary":"...","decisions":["..."],'
         '"action_items":[{"text":"...","owner":"","due_date":""}]}</project_memory>\n'
-        "JSON 이외의 텍스트를 태그 안에 넣지 마세요."
+        "Put no text other than JSON inside the tag."
     )
 
 

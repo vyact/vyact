@@ -488,21 +488,6 @@ const MemoEditor: React.FC<{
         };
     }, [editor]);
 
-    // 이전 버전에서 일반 인라인 링크로 저장된 첨부도 편집 불가능한 라벨로 강제한다.
-    useEffect(() => {
-        if (!editor) return;
-        const lockLegacyAttachments = () => {
-            editor.view.dom.querySelectorAll<HTMLElement>('[data-memo-attachment], .memo-attachment-link').forEach(attachment => {
-                attachment.contentEditable = 'false';
-                attachment.setAttribute('contenteditable', 'false');
-            });
-        };
-        lockLegacyAttachments();
-        const observer = new MutationObserver(lockLegacyAttachments);
-        observer.observe(editor.view.dom, { childList: true, subtree: true });
-        return () => observer.disconnect();
-    }, [editor]);
-
     // / 커맨드 간이 구현
     const applySlashItem = useCallback((idx: number) => {
         if (!editor) return;
