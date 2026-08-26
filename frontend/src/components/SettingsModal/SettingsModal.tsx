@@ -167,7 +167,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
     const {t, i18n} = useTranslation('settings');
     const isKoreanLanguage = (i18n.resolvedLanguage || i18n.language).split('-')[0] === 'ko';
     const getBackupIndexHelp = (indexName: string) => {
-        const baseIndexName = indexName.replace(/_(ko|en|ja|zh|th|vi|es|fr|und)$/, '');
+        const baseIndexName = indexName
+            .replace(/_all$/, '')
+            .replace(/_(ko|en|ja|zh|th|vi|es|fr|und)$/, '');
         const summary = t(`backup.indexHelp.${baseIndexName}`, {
             defaultValue: t('backup.indexHelpDefault', {name: indexName}),
         });

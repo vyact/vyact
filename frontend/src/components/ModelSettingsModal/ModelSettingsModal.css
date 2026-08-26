@@ -16,12 +16,12 @@
 .model-settings-toggle { min-height: 46px; }
 .model-settings-toggle small { display: block; margin-top: 3px; color: var(--muted); font-weight: 400; }
 .model-settings-toggle.is-disabled { opacity: .72; }
-.model-settings-switch { position: relative; flex: 0 0 42px; width: 42px; height: 24px; padding: 0; border: 0; border-radius: 999px; background: var(--border); transition: background .2s; }
-.model-settings-switch span { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px #0005; transition: transform .2s; }
-.model-settings-switch.is-on { background: var(--accent); }
-.model-settings-switch.is-on span { transform: translateX(18px); }
-.model-settings-switch:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent); outline-offset: 2px; }
-.model-settings-switch:disabled { cursor: not-allowed; }
+.model-settings-modal .model-settings-switch { position: relative; box-sizing: border-box; flex: 0 0 40px; width: 40px; min-width: 40px; height: 22px; padding: 0; border: 0; border-radius: 22px; background: var(--border); box-shadow: none; transition: background .2s; }
+.model-settings-modal .model-settings-switch span { position: absolute; top: 3px; left: 3px; box-sizing: border-box; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px #0005; transition: transform .2s; }
+.model-settings-modal .model-settings-switch.is-on { border: 0; background: var(--accent); }
+.model-settings-modal .model-settings-switch.is-on span { transform: translateX(18px); }
+.model-settings-modal .model-settings-switch:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent); outline-offset: 2px; }
+.model-settings-modal .model-settings-switch:disabled { border: 0; background: var(--border); cursor: not-allowed; }
 .model-settings-modal footer { justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border); border-bottom: 0; }
 .model-settings-modal footer .primary { border-color: var(--accent); background: var(--accent); color: #fff; }
 .model-settings-error { color: var(--danger, #ef4444); font-size: 12px; }

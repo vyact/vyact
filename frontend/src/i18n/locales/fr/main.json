@@ -497,7 +497,7 @@
     }
   },
   "modelSelector": {
-    "cancel": "Annuler", "deleteModel": "Supprimer le modèle {{model}}", "deleteModelConfirm": "Supprimer le modèle {{model}} ?", "deleteModelDescription": "Les fichiers téléchargés du modèle seront supprimés de cet appareil.", "deletingModel": "Suppression...", "deleteModelFailed": "Échec de la suppression du modèle",
+    "cancel": "Annuler", "modelActions": "Actions de {{model}}", "deleteModel": "Supprimer le modèle {{model}}", "deleteModelConfirm": "Supprimer le modèle {{model}} ?", "deleteModelDescription": "Les fichiers téléchargés du modèle seront supprimés de cet appareil.", "deletingModel": "Suppression...", "deleteModelFailed": "Échec de la suppression du modèle",
     "selectModel": "Choisir un modèle",
     "noModel": "Aucun modèle",
     "customPlaceholder": "Modèle personnalisé (ex. phi3:mini)",

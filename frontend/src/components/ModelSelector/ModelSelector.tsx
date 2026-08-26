@@ -1,9 +1,10 @@
 import React, {useState} from 'react';
-import {Pencil, Settings, Trash2} from 'lucide-react';
+import {Ellipsis, Pencil, Settings, Trash2} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import type {SelectOption} from '../CustomSelect/CustomSelect';
 import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
+import ActionMenu from '../common/ActionMenu/ActionMenu';
 import './ModelSelector.css';
 
 interface ModelSelectorProps {
@@ -37,6 +38,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                                                      }) => {
     const {t} = useTranslation('main');
     const [modelToDelete, setModelToDelete] = useState<string | null>(null);
+    const [modelMenuOpen, setModelMenuOpen] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const handleLocalModelSelect = (model: string, modelType?: ModelType) => {
         const needsDownload = !installed.includes(model);
@@ -91,15 +93,18 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                     </span>
                 </div>
 
-                {isInst && <button type="button" className="dd-model-settings" aria-label={t('modelSelector.modelSettings', {model: opt.label})} onClick={event => {event.stopPropagation(); onModelSettingsOpen(opt.value);}}><Settings size={14}/></button>}
-                {!isSelected && isInst && <button type="button" className="dd-model-delete"
-                    aria-label={t('modelSelector.deleteModel', {model: opt.label})}
-                    onClick={event => {
-                        event.stopPropagation();
-                        setModelToDelete(opt.value);
-                    }}>
-                    <Trash2 size={14} aria-hidden="true"/>
-                </button>}
+                {isInst && <ActionMenu
+                    isOpen={modelMenuOpen === opt.value}
+                    onOpenChange={open => setModelMenuOpen(open ? opt.value : null)}
+                    trigger={<Ellipsis size={17} aria-hidden="true"/>}
+                    ariaLabel={t('modelSelector.modelActions', {model: opt.label})}
+                    className="dd-model-actions"
+                    triggerClassName="dd-model-more"
+                    menuClassName="dd-model-actions-menu"
+                >
+                    <button type="button" className="dd-model-action" onClick={() => {setModelMenuOpen(null); onModelSettingsOpen(opt.value);}}><Settings size={15}/>{t('modelSettings.title')}</button>
+                    {!isSelected && <button type="button" className="dd-model-action danger" onClick={() => {setModelMenuOpen(null); setModelToDelete(opt.value);}}><Trash2 size={15}/>{t('modelSelector.delete')}</button>}
+                </ActionMenu>}
             </>
         );
     };
