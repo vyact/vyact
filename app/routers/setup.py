@@ -1072,7 +1072,9 @@ async def get_providers():
                 "key_preview": f"{key[:8]}..." if len(key) > 8 else "",
             }
     providers["vyact"] = {
-        "model": vyact_config.get("model"),
+        # UI에는 런타임이 해석한 로컬 절대 경로가 아니라 모델 선택기에서 사용하는
+        # 안정적인 식별자(mlx/<repository> 또는 GGUF model path)를 반환한다.
+        "model": vyact_config.get("model_path"),
         "has_key": bool(vyact_config.get("model_path")),
     }
     return {
