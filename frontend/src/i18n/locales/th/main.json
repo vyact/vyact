@@ -500,6 +500,8 @@
     "cancel": "ยกเลิก", "modelActions": "การทำงานสำหรับ {{model}}", "deleteModel": "ลบโมเดล {{model}}", "deleteModelConfirm": "ลบโมเดล {{model}} หรือไม่", "deleteModelDescription": "ไฟล์โมเดลที่ดาวน์โหลดจะถูกลบออกจากอุปกรณ์นี้", "deletingModel": "กำลังลบ...", "deleteModelFailed": "ลบโมเดลไม่สำเร็จ",
     "selectModel": "เลือกโมเดล",
     "noModel": "ยังไม่มีโมเดล",
+    "visionCapability": "รองรับอินพุตรูปภาพ",
+    "audioCapability": "รองรับอินพุตเสียง",
     "customPlaceholder": "โมเดลกำหนดเอง (เช่น phi3:mini)",
     "add": "เพิ่ม",
     "modelType": "ประเภทโมเดล",
@@ -934,7 +936,8 @@
     }
   },
   "fileUpload": {
-    "failed": "อัปโหลด {{name}} ล้มเหลว"
+    "failed": "อัปโหลด {{name}} ล้มเหลว",
+    "unsupportedAudioFormat": "ใช้ไฟล์เสียง MP3, WAV หรือ FLAC"
   },
   "approval": {
     "title": "โหมดการอนุมัติ",

@@ -41,6 +41,18 @@
     letter-spacing: .35px;
 }
 
+.model-capability-badge {
+    flex: 0 0 auto;
+    padding: 2px 5px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--muted);
+    font-size: 8px;
+    font-weight: 750;
+    line-height: 1;
+    letter-spacing: .25px;
+}
+
 /* ── 드롭다운 목록 ── */
 .model-select-wrap .custom-select-list {
     max-height: 200px;

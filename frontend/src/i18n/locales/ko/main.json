@@ -500,6 +500,8 @@
     "cancel": "취소", "modelActions": "{{model}} 모델 작업", "deleteModel": "{{model}} 모델 삭제", "deleteModelConfirm": "{{model}} 모델을 삭제할까요?", "deleteModelDescription": "다운로드한 모델 파일이 기기에서 삭제됩니다.", "deletingModel": "삭제 중...", "deleteModelFailed": "모델 삭제 실패",
     "selectModel": "모델 선택",
     "noModel": "모델 미설정",
+    "visionCapability": "이미지 입력 지원",
+    "audioCapability": "오디오 입력 지원",
     "customPlaceholder": "커스텀 모델 (예: phi3:mini)",
     "add": "추가",
     "modelType": "모델 유형",
@@ -930,7 +932,8 @@
     }
   },
   "fileUpload": {
-    "failed": "{{name}} 업로드 실패"
+    "failed": "{{name}} 업로드 실패",
+    "unsupportedAudioFormat": "MP3, WAV 또는 FLAC 오디오 파일을 사용하세요."
   },
   "approval": {
     "title": "승인 방식",

@@ -25,6 +25,8 @@ interface SidebarProps {
     installed: string[];
     mtpSupported: string[];
     mtpActive: string | null;
+    visionSupported: string[];
+    audioSupported: string[];
     selectedModel: string;
     isModelLoading?: boolean;
     onModelChange: (model: string, needsDownload: boolean, modelType?: 'chat' | 'image_gen' | 'image_edit') => Promise<void> | void;
@@ -236,7 +238,7 @@ blockquote{border-left:3px solid var(--accent);padding:8px 14px;margin:10px 0;co
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
-                                             installed, mtpSupported, mtpActive, selectedModel, isModelLoading = false, onModelChange, onProviderChange,
+                                             installed, mtpSupported, mtpActive, visionSupported, audioSupported, selectedModel, isModelLoading = false, onModelChange, onProviderChange,
                                              onBeforeModelContextChange,
                                              conversations, favoriteConversations = [], activeConvId, activeConversationIds = [], onConversationSelect, onConversationDelete,
                                              historyTotal = 0, onLoadMoreHistory, onRefreshHistory,
@@ -553,6 +555,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 installed={installed}
                                 mtpSupported={mtpSupported}
                                 mtpActive={mtpActive}
+                                visionSupported={visionSupported}
+                                audioSupported={audioSupported}
                                 selectedModel={selectedModel}
                                 currentProvider={currentProvider}
                                 disabled={isModelLoading}

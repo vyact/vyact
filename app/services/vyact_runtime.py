@@ -21,6 +21,7 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import quote
 
 from config import INSTALL_DIR, get_log_file
+from services.multimodal_capabilities import get_projector_modalities
 
 VYACT_RUNTIME_PORT = 11435
 VYACT_RUNTIME_URL = f"http://127.0.0.1:{VYACT_RUNTIME_PORT}/v1"
@@ -316,6 +317,22 @@ def get_cached_vision_projector(model_path: Path) -> Path | None:
         path,
     ))
     return get_downloaded_model_path(candidates[0])
+
+
+def get_model_modalities(model_path: Path) -> list[str]:
+    """Return modalities declared by the model's downloaded projector."""
+    return get_projector_modalities(get_cached_vision_projector(model_path))
+
+
+def list_multimodal_supported_models() -> dict[str, list[str]]:
+    """Return metadata-backed modality lists for installed GGUF models."""
+    result = {"image": [], "audio": []}
+    for relative_path in list_selectable_models():
+        modalities = get_model_modalities(get_downloaded_model_path(relative_path))
+        for modality in result:
+            if modality in modalities:
+                result[modality].append(relative_path)
+    return result
 
 
 def model_has_integrated_mtp(model_path: Path) -> bool:

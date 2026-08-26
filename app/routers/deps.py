@@ -13,6 +13,7 @@ logger = get_logger(__name__)
 APP_DIR = Path(__file__).parent.parent
 IMAGES_DIR = INSTALL_DIR / "uploads" / "images"
 IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+AUDIO_DIR = INSTALL_DIR / "uploads" / "audio"
 
 
 def sse(msg: str, type: str = "info", progress: int = None,

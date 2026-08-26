@@ -624,6 +624,11 @@ const Message: React.FC<MessageProps> = ({
                         )}
                     </>
                 )}
+                {role === 'assistant' && !isStreaming && truncated && (
+                    <div className="msg-truncation-notice" role="status">
+                        {t('message.outputTruncated')}
+                    </div>
+                )}
             </div>
 
             {tableImgViewer && (
@@ -911,12 +916,6 @@ const Message: React.FC<MessageProps> = ({
                 ]);
                 return line1 ? <div className="msg-stats bot">{line1}</div> : null;
             })()}
-
-            {role === 'assistant' && !isStreaming && truncated && (
-                <div className="msg-truncation-notice" role="status">
-                    {t('message.outputTruncated')}
-                </div>
-            )}
 
             {role === 'assistant' && !isStreaming && activityLog?.length ? (
                 <ActivityTimeline

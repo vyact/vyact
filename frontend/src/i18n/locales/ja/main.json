@@ -500,6 +500,8 @@
     "cancel": "キャンセル", "modelActions": "{{model}} の操作", "deleteModel": "{{model}} モデルを削除", "deleteModelConfirm": "{{model}} モデルを削除しますか？", "deleteModelDescription": "ダウンロードしたモデルファイルがこのデバイスから削除されます。", "deletingModel": "削除中...", "deleteModelFailed": "モデルの削除に失敗しました",
     "selectModel": "モデル選択",
     "noModel": "モデル未設定",
+    "visionCapability": "画像入力対応",
+    "audioCapability": "音声入力対応",
     "customPlaceholder": "カスタムモデル (例: phi3:mini)",
     "add": "追加",
     "modelType": "モデル種類",
@@ -934,7 +936,8 @@
     }
   },
   "fileUpload": {
-    "failed": "{{name}} のアップロードに失敗しました"
+    "failed": "{{name}} のアップロードに失敗しました",
+    "unsupportedAudioFormat": "MP3、WAV、またはFLACの音声ファイルを使用してください。"
   },
   "approval": {
     "title": "承認モード",

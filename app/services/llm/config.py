@@ -13,6 +13,7 @@ from logger import get_logger
 logger = get_logger(__name__)
 
 IMAGES_DIR = INSTALL_DIR / "uploads" / "images"
+AUDIO_DIR = INSTALL_DIR / "uploads" / "audio"
 
 # 답변에서 잘라내야 하는 모델 특수 토큰 (스트리밍/재사용 공통)
 LLM_STOP_TOKENS = ("<|endoftext|>", "<|im_start|>", "<|im_end|>")
@@ -27,7 +28,7 @@ TOOL_CALL_RETRY_RESULT_CHARS = 8000
 
 # 상수 재노출 (다른 llm 하위 모듈에서 import해 사용)
 __all__ = [
-    "IMAGES_DIR",
+    "AUDIO_DIR", "IMAGES_DIR",
     "DEFAULT_MODEL", "LLM_TEMPERATURE", "LLM_NUM_CTX", "LLM_NUM_PREDICT", "LLM_MAX_TOKENS", "TOP_K", "TOP_P",
     "LLM_STOP_TOKENS", "TOOL_CALL_MAX_ROUNDS",
     "TOOL_CALL_DECISION_NUM_PREDICT", "TOOL_CALL_MUTATION_NUM_PREDICT",

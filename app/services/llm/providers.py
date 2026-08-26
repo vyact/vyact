@@ -17,7 +17,7 @@ from .config import (
     build_provider_headers, get_provider_config, log_llm_call, log_llm_interaction, log_tool_names, logger,
 )
 from .helpers import (
-    image_attachment_path, load_image_data_urls, mime_type,
+    image_attachment_path, load_audio_content_blocks, load_image_data_urls, mime_type,
     history_for_openai, history_for_gemini, history_for_claude,
 )
 from .context_window import calculate_output_token_limit
@@ -143,11 +143,13 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
     provider_config = await get_provider_config()
     temperature = provider_config.get("temperature", get_runtime_settings()["llm_temperature"])
     image_urls = load_image_data_urls(attachments)
-    if image_urls:
+    audio_blocks = load_audio_content_blocks(attachments)
+    if image_urls or audio_blocks:
         content: list = [{"type": "text", "text": user_prompt}]
         for image_url in image_urls:
             content.append({"type": "image_url",
                             "image_url": {"url": image_url}})
+        content.extend(audio_blocks)
         user_msg = {"role": "user", "content": content}
     else:
         user_msg = {"role": "user", "content": user_prompt}

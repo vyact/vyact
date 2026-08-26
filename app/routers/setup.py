@@ -27,7 +27,7 @@ from services.model_runtime_profiles import delete_model_profile, get_model_prof
 from services.vyact_model_metadata_cache import get_cached_model_metadata, save_cached_model_metadata
 from services.mlx_runtime import get_downloaded_mlx_model_path, get_mlx_runtime_capabilities
 from services.reasoning_capabilities import get_gguf_reasoning_capabilities, get_mlx_reasoning_capabilities
-from services.vyact_runtime import get_downloaded_model_path
+from services.vyact_runtime import get_downloaded_model_path, get_model_modalities
 
 logger = get_logger(__name__)
 
@@ -559,14 +559,17 @@ async def get_models():
     cfg = await load_config_async()
     if cfg.get("type") == "vyact":
         from services.mlx_runtime import list_downloaded_mlx_models, list_mtp_supported_mlx_models
-        from services.vyact_runtime import get_active_mtp_model, list_mtp_supported_models, list_selectable_models
+        from services.vyact_runtime import get_active_mtp_model, list_mtp_supported_models, list_multimodal_supported_models, list_selectable_models
         installed_models = [*list_selectable_models(), *list_downloaded_mlx_models()]
+        multimodal_models = await asyncio.to_thread(list_multimodal_supported_models)
         return {
             "models": [[model] for model in installed_models],
             "current": cfg.get("vyact_config", {}).get("model_path", ""),
             "installed": installed_models,
             "mtp_supported": [*list_mtp_supported_models(), *list_mtp_supported_mlx_models()],
             "mtp_active": get_active_mtp_model(),
+            "vision_supported": multimodal_models["image"],
+            "audio_supported": multimodal_models["audio"],
             "model_type": "chat",
         }
     return {
@@ -872,6 +875,9 @@ async def read_vyact_model_profile(
             "seed": True,
             "reasoning": await asyncio.to_thread(
                 get_gguf_reasoning_capabilities, get_downloaded_model_path(model_path),
+            ),
+            "modalities": await asyncio.to_thread(
+                get_model_modalities, get_downloaded_model_path(model_path),
             ),
         }
     return {**profile, "capabilities": capabilities}

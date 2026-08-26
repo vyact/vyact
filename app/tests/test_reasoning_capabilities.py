@@ -7,6 +7,7 @@ from pathlib import Path
 from services.reasoning_capabilities import (
     get_gguf_reasoning_capabilities,
     get_mlx_reasoning_capabilities,
+    read_gguf_metadata,
 )
 
 
@@ -16,6 +17,17 @@ def _gguf_string(value: str) -> bytes:
 
 
 class ReasoningCapabilitiesTests(unittest.TestCase):
+    def test_selected_boolean_metadata_is_read(self):
+        metadata = _gguf_string("clip.has_audio_encoder") + struct.pack("<I?", 7, True)
+        payload = b"GGUF" + struct.pack("<IQQ", 3, 0, 1) + metadata
+        with tempfile.TemporaryDirectory() as directory:
+            model_path = Path(directory) / "projector.gguf"
+            model_path.write_bytes(payload)
+
+            values = read_gguf_metadata(model_path, {"clip.has_audio_encoder"})
+
+        self.assertEqual(values, {"clip.has_audio_encoder": True})
+
     def test_mlx_effort_template_is_detected(self):
         with tempfile.TemporaryDirectory() as directory:
             model_path = Path(directory)

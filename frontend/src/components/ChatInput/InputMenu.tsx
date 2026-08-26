@@ -201,9 +201,8 @@ const InputMenu: React.FC<InputMenuProps> = ({
                             <polyline points="21 15 16 10 5 21"/>
                         </svg>,
                         t('inputMenu.addFiles'),
-                        () => {},
+                        () => fileInputRef.current?.click(),
                         modelType === 'image_gen',
-                        CHAT_FILE_INPUT_ID,
                     )}
                     {google.registered && <>
                         {divider}

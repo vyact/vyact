@@ -7,7 +7,7 @@ import base64
 import json
 from pathlib import Path
 
-from .config import IMAGES_DIR
+from .config import AUDIO_DIR, IMAGES_DIR
 from services.runtime_settings import get_runtime_settings
 
 
@@ -119,6 +119,26 @@ def load_image_data_urls(attachments: list) -> list[str]:
     return result
 
 
+def load_audio_content_blocks(attachments: list) -> list[dict]:
+    """Build llama.cpp/OpenAI-compatible audio blocks from managed uploads."""
+    result = []
+    for attachment in attachments:
+        if attachment.get("type") != "audio":
+            continue
+        filename = Path(str(attachment.get("filename", ""))).name
+        path = AUDIO_DIR / filename
+        extension = path.suffix.lower().removeprefix(".")
+        if path.is_file() and extension in {"mp3", "wav", "flac"}:
+            result.append({
+                "type": "input_audio",
+                "input_audio": {
+                    "data": base64.b64encode(path.read_bytes()).decode("utf-8"),
+                    "format": extension,
+                },
+            })
+    return result
+
+
 def mime_type(filename: str) -> str:
     ext = filename.split(".")[-1].lower()
     return f"image/{ext}" if ext in ("jpeg", "jpg", "png", "gif", "webp") else "image/jpeg"
@@ -156,11 +176,13 @@ def history_for_openai(history_messages: list, valid_history: list) -> list:
         if msg["role"] == "user" and hi < len(valid_history):
             atts = valid_history[hi].get("attachments", [])
             image_urls = load_image_data_urls(atts)
+            audio_blocks = load_audio_content_blocks(atts)
             text = msg["content"]
-            if image_urls:
+            if image_urls or audio_blocks:
                 content: list = [{"type": "text", "text": text}]
                 for image_url in image_urls:
                     content.append({"type": "image_url", "image_url": {"url": image_url}})
+                content.extend(audio_blocks)
                 result.append({"role": "user", "content": content})
                 hi += 1
                 continue

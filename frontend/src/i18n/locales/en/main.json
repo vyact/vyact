@@ -500,6 +500,8 @@
     "cancel": "Cancel", "modelActions": "{{model}} actions", "deleteModel": "Delete {{model}} model", "deleteModelConfirm": "Delete the {{model}} model?", "deleteModelDescription": "The downloaded model files will be removed from this device.", "deletingModel": "Deleting...", "deleteModelFailed": "Model deletion failed",
     "selectModel": "Select model",
     "noModel": "No model set",
+    "visionCapability": "Supports image input",
+    "audioCapability": "Supports audio input",
     "customPlaceholder": "Custom model (e.g. phi3:mini)",
     "add": "Add",
     "modelType": "Model type",
@@ -930,7 +932,8 @@
     }
   },
   "fileUpload": {
-    "failed": "Failed to upload {{name}}"
+    "failed": "Failed to upload {{name}}",
+    "unsupportedAudioFormat": "Use an MP3, WAV, or FLAC audio file."
   },
   "approval": {
     "title": "Approval mode",

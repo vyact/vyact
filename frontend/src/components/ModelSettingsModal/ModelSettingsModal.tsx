@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {ChevronDown, CircleQuestionMark, X} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {api, type VyactModelProfile} from '../../services/api';
@@ -14,24 +14,38 @@ interface Props {
     repository?: string;
     recommendedContext?: number;
     activateOnApply?: boolean;
+    forceActivateOnApply?: boolean;
     mtpSupported?: boolean;
     onClose: () => void;
     onApplied: () => Promise<void>;
 }
 
-export default function ModelSettingsModal({modelPath, runtime, repository, recommendedContext = 32768, activateOnApply = false, mtpSupported = false, onClose, onApplied}: Props) {
+export default function ModelSettingsModal({modelPath, runtime, repository, recommendedContext = 32768, activateOnApply = false, forceActivateOnApply = false, mtpSupported = false, onClose, onApplied}: Props) {
     const {t} = useTranslation('main');
     const automaticSetupTooltip = t(`modelSettings.${runtime === 'gguf' ? 'automaticSetupGgufTooltip' : 'automaticSetupMlxTooltip'}`);
     const [profile, setProfile] = useState<VyactModelProfile | null>(null);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
+    const initialProfileRef = useRef<VyactModelProfile | null>(null);
+
+    const comparableProfile = (value: VyactModelProfile) => ({
+        model_path: value.model_path, runtime: value.runtime, repository: value.repository ?? null,
+        context_size: value.context_size, max_output_tokens: value.max_output_tokens,
+        history_token_budget: value.history_token_budget, temperature: value.temperature,
+        top_k: value.top_k, top_p: value.top_p, cache_quantization: value.cache_quantization,
+        mtp_enabled: value.mtp_enabled ?? null, kv_cache_precision: value.kv_cache_precision ?? 'none',
+        performance_mode: value.performance_mode ?? 'auto', cpu_threads: value.cpu_threads ?? null,
+        seed: value.seed ?? null,
+    });
 
     useEffect(() => {
         void api.getVyactModelProfile(modelPath, runtime, repository, recommendedContext)
             .then(value => {
                 const mtpEnabled = mtpSupported && (value.mtp_enabled ?? true);
                 const kvCachePrecision = value.kv_cache_precision ?? (value.cache_quantization ? 'q8' : 'none');
-                setProfile({...value, mtp_enabled: mtpEnabled, kv_cache_precision: mtpEnabled ? 'none' : kvCachePrecision, cache_quantization: mtpEnabled ? false : kvCachePrecision !== 'none'});
+                const normalizedProfile = {...value, mtp_enabled: mtpEnabled, kv_cache_precision: mtpEnabled ? 'none' as const : kvCachePrecision, cache_quantization: mtpEnabled ? false : kvCachePrecision !== 'none'};
+                initialProfileRef.current = normalizedProfile;
+                setProfile(normalizedProfile);
             })
             .catch(value => setError(String(value)));
     }, [modelPath, runtime, repository, recommendedContext, mtpSupported]);
@@ -49,7 +63,13 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
         setSaving(true);
         setError('');
         try {
-            const saved = await api.saveVyactModelProfile(profile);
+            const hasChanges = initialProfileRef.current === null
+                || JSON.stringify(comparableProfile(initialProfileRef.current)) !== JSON.stringify(comparableProfile(profile));
+            if (!hasChanges && !forceActivateOnApply) {
+                onClose();
+                return;
+            }
+            const saved = hasChanges ? await api.saveVyactModelProfile(profile) : profile;
             if (activateOnApply) await api.activateVyactModel(modelPath, saved.context_size, undefined, runtime, repository, saved);
             await onApplied();
             onClose();

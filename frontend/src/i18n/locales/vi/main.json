@@ -500,6 +500,8 @@
     "cancel": "Hủy", "modelActions": "Thao tác cho {{model}}", "deleteModel": "Xóa mô hình {{model}}", "deleteModelConfirm": "Xóa mô hình {{model}}?", "deleteModelDescription": "Các tệp mô hình đã tải xuống sẽ bị xóa khỏi thiết bị này.", "deletingModel": "Đang xóa...", "deleteModelFailed": "Không thể xóa mô hình",
     "selectModel": "Chọn mô hình",
     "noModel": "Chưa có mô hình",
+    "visionCapability": "Hỗ trợ đầu vào hình ảnh",
+    "audioCapability": "Hỗ trợ đầu vào âm thanh",
     "customPlaceholder": "Mô hình tùy chỉnh (vd: phi3:mini)",
     "add": "Thêm",
     "modelType": "Loại mô hình",
@@ -934,7 +936,8 @@
     }
   },
   "fileUpload": {
-    "failed": "Tải lên {{name}} thất bại"
+    "failed": "Tải lên {{name}} thất bại",
+    "unsupportedAudioFormat": "Hãy dùng tệp âm thanh MP3, WAV hoặc FLAC."
   },
   "approval": {
     "title": "Chế độ phê duyệt",

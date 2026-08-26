@@ -83,8 +83,8 @@ def _read_gguf_value(handle, value_type: int, *, keep: bool = False):
     raise ValueError("Unsupported GGUF metadata type")
 
 
-def get_gguf_reasoning_capabilities(model_path: Path) -> dict:
-    """Read only GGUF metadata and inspect its embedded chat template."""
+def read_gguf_metadata(model_path: Path, keys: set[str]) -> dict:
+    """Read selected GGUF metadata values without loading tensor data."""
     try:
         with model_path.open("rb") as handle:
             if handle.read(4) != b"GGUF":
@@ -97,26 +97,35 @@ def get_gguf_reasoning_capabilities(model_path: Path) -> dict:
             if version not in {2, 3}:
                 raise ValueError("Unsupported GGUF version")
             _, metadata_count = struct.unpack("<QQ", counts_data)
-            templates = []
+            values = {}
             for _ in range(metadata_count):
                 key = _read_gguf_string(handle)
                 value_type_data = handle.read(4)
                 if len(value_type_data) != 4:
                     raise ValueError("Incomplete GGUF metadata type")
                 value_type = struct.unpack("<I", value_type_data)[0]
-                keep = key in _GGUF_CHAT_TEMPLATE_KEYS
+                keep = key in keys
                 value = _read_gguf_value(handle, value_type, keep=keep)
                 if keep:
-                    if isinstance(value, str):
-                        templates.append(value)
-                    elif isinstance(value, list):
-                        templates.extend(str(item) for item in value)
-            # Do not infer `none` from llama.cpp alone. Some templates accept an
-            # arbitrary effort string but their model only understands concrete
-            # levels, causing `none` to spend the whole output budget reasoning.
-            return _template_capabilities("\n".join(templates))
+                    values[key] = value
+            return values
     except (OSError, ValueError, struct.error):
-        return {"control": "none", "efforts": [], "supports_none": False}
+        return {}
+
+
+def get_gguf_reasoning_capabilities(model_path: Path) -> dict:
+    """Read only GGUF metadata and inspect its embedded chat template."""
+    metadata = read_gguf_metadata(model_path, _GGUF_CHAT_TEMPLATE_KEYS)
+    templates = []
+    for value in metadata.values():
+        if isinstance(value, str):
+            templates.append(value)
+        elif isinstance(value, list):
+            templates.extend(str(item) for item in value)
+    # Do not infer `none` from llama.cpp alone. Some templates accept an
+    # arbitrary effort string but their model only understands concrete
+    # levels, causing `none` to spend the whole output budget reasoning.
+    return _template_capabilities("\n".join(templates))
 
 
 def get_mlx_reasoning_capabilities(model_path: Path) -> dict:

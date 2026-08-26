@@ -511,9 +511,9 @@ async def query(req: QueryRequest):
         system_prompt += VOICE_MODE_SUFFIX
 
     # 3) 첨부파일 분류 (분석용 context / 이미지)
-    file_context_docs, image_attachments = (
+    file_context_docs, media_attachments = (
         _file_attachments_to_context(req.attachments),
-        [a for a in req.attachments if a.get("type") == "image"],
+        [a for a in req.attachments if a.get("type") in {"image", "audio"}],
     )
 
     # 4) conv_id 확정 + 첨부파일 임베딩 인덱싱 (백그라운드)
@@ -553,7 +553,7 @@ async def query(req: QueryRequest):
             response_system_prompt = f"{response_system_prompt}\n\n{external_instruction}"
         direct_docs, file_chunks = await search_file_id_chunks(req.question, articles)
         context_docs = limit_direct_document_contexts(file_context_docs + direct_docs + file_chunks + external_docs)
-        raw_answer = await query_llm(req.question, context_docs, response_system_prompt, image_attachments,
+        raw_answer = await query_llm(req.question, context_docs, response_system_prompt, media_attachments,
                                      req.messages,
                                      format_instruction_override="" if req.voice_mode else None,
                                      conversation_summary=conversation_summary,
@@ -561,7 +561,7 @@ async def query(req: QueryRequest):
                                      inject_user_profile=inject_user_profile)
         result = {"answer": raw_answer, "sources": context_docs, "model": await get_model_display_name()}
     elif req.voice_mode:
-        raw_answer = await query_llm(req.question, file_context_docs, system_prompt, image_attachments, req.messages,
+        raw_answer = await query_llm(req.question, file_context_docs, system_prompt, media_attachments, req.messages,
                                      format_instruction_override="", use_tools=False,
                                      conversation_summary=conversation_summary,
                                      reasoning=req.reasoning, call_reason="chat:voice_mode")
@@ -591,7 +591,7 @@ async def query(req: QueryRequest):
             )
             if external_instruction:
                 response_system_prompt = f"{response_system_prompt}\n\n{external_instruction}"
-            rag_result = await rag_query(req.question, response_system_prompt, image_attachments, req.messages,
+            rag_result = await rag_query(req.question, response_system_prompt, media_attachments, req.messages,
                                          extra_context=limit_direct_document_contexts(external_docs),
                                          skip_rag=external_selected and not knowledge_collection_ids,
                                          reasoning=req.reasoning, conv_id=conv_id, conversation_summary=conversation_summary,
@@ -600,7 +600,7 @@ async def query(req: QueryRequest):
             combined_docs = limit_direct_document_contexts(file_context_docs + url_docs + rag_result.get("sources", []))
             raw_answer = await query_llm(
                 req.question, combined_docs, response_system_prompt,
-                image_attachments, req.messages,
+                media_attachments, req.messages,
                 format_instruction_override=None,
                 conversation_summary=conversation_summary,
                 reasoning=req.reasoning, call_reason="chat:url_context",
@@ -616,7 +616,7 @@ async def query(req: QueryRequest):
             )
             if external_instruction:
                 _summary_system_prompt = f"{_summary_system_prompt}\n\n{external_instruction}"
-            result = await rag_query(req.question, _summary_system_prompt, image_attachments, req.messages,
+            result = await rag_query(req.question, _summary_system_prompt, media_attachments, req.messages,
                                      extra_context=limit_direct_document_contexts(file_context_docs + external_docs),
                                      skip_rag=_has_file_att or (external_selected and not knowledge_collection_ids),
                                      reasoning=req.reasoning, conv_id=conv_id, conversation_summary=conversation_summary,
@@ -838,7 +838,7 @@ async def query_stream(req: QueryRequest):
 
             # 3) 첨부파일 분류
             file_context_docs = _file_attachments_to_context(req.attachments)
-            image_attachments = [a for a in req.attachments if a.get("type") == "image"]
+            media_attachments = [a for a in req.attachments if a.get("type") in {"image", "audio"}]
 
             from services.conv_summary import get_prior_conv_summary
             conversation_summary = "" if req.minimal_prompt else await get_prior_conv_summary(conv_id)
@@ -922,7 +922,7 @@ async def query_stream(req: QueryRequest):
                     url_system_prompt = system_prompt
                     if external_instruction:
                         url_system_prompt = f"{url_system_prompt}\n\n{external_instruction}"
-                    rag_result = await rag_query(clean_question, url_system_prompt, image_attachments, req.messages,
+                    rag_result = await rag_query(clean_question, url_system_prompt, media_attachments, req.messages,
                                                  extra_context=limit_direct_document_contexts(external_docs),
                                                  skip_rag=external_selected and not knowledge_collection_ids,
                                                  reasoning=req.reasoning, conv_id=conv_id, conversation_summary=conversation_summary,
@@ -996,7 +996,7 @@ async def query_stream(req: QueryRequest):
                     project_tool_first, len(request_folder_paths),
                 )
                 async for ev in rag_query_stream(
-                        clean_question, _summary_system_prompt, image_attachments, req.messages,
+                        clean_question, _summary_system_prompt, media_attachments, req.messages,
                         extra_context=limit_direct_document_contexts(file_context_docs + external_docs),
                         skip_rag=req.minimal_prompt or has_file_attachment or (external_selected and not knowledge_collection_ids),
                         reasoning=req.reasoning,
@@ -1180,7 +1180,7 @@ async def query_stream(req: QueryRequest):
                 selected_docs_system_prompt = f"{selected_docs_system_prompt}\n\n{selected_external_instruction}"
             # 선택된 문서/기사/URL 기반 질의 — 답은 이 context 안에서 나오므로 tool 판정 불필요
             async for ev in chat_stream_with_tools(
-                    clean_question, docs_for_llm, selected_docs_system_prompt, image_attachments, req.messages,
+                    clean_question, docs_for_llm, selected_docs_system_prompt, media_attachments, req.messages,
                     format_instruction_override="" if req.voice_mode or req.minimal_prompt else None,
                     conversation_summary="" if req.minimal_prompt else conversation_summary,
                     use_tools=False,

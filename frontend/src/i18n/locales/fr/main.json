@@ -500,6 +500,8 @@
     "cancel": "Annuler", "modelActions": "Actions de {{model}}", "deleteModel": "Supprimer le modèle {{model}}", "deleteModelConfirm": "Supprimer le modèle {{model}} ?", "deleteModelDescription": "Les fichiers téléchargés du modèle seront supprimés de cet appareil.", "deletingModel": "Suppression...", "deleteModelFailed": "Échec de la suppression du modèle",
     "selectModel": "Choisir un modèle",
     "noModel": "Aucun modèle",
+    "visionCapability": "Entrée d’image prise en charge",
+    "audioCapability": "Entrée audio prise en charge",
     "customPlaceholder": "Modèle personnalisé (ex. phi3:mini)",
     "add": "Ajouter",
     "modelType": "Type de modèle",
@@ -934,7 +936,8 @@
     }
   },
   "fileUpload": {
-    "failed": "Échec du téléchargement de {{name}}"
+    "failed": "Échec du téléchargement de {{name}}",
+    "unsupportedAudioFormat": "Utilisez un fichier audio MP3, WAV ou FLAC."
   },
   "approval": {
     "title": "Mode d’approbation",

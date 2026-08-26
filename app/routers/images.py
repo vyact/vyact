@@ -3,12 +3,13 @@ routers/images.py – 이미지 업로드 / 생성
 """
 import unicodedata
 import uuid
+from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 
-from routers.deps import IMAGES_DIR, sse
+from routers.deps import AUDIO_DIR, IMAGES_DIR, sse
 
 router = APIRouter()
 
@@ -44,6 +45,20 @@ async def get_image(filename: str):
     if not filepath.exists():
         raise HTTPException(404, "이미지를 찾을 수 없습니다")
     return FileResponse(filepath)
+
+
+@router.post("/audio/upload")
+async def upload_audio(file: UploadFile = File(...)):
+    allowed_extensions = {".mp3", ".wav", ".flac"}
+    original_name = Path(unicodedata.normalize("NFC", file.filename or "audio.wav")).name
+    extension = Path(original_name).suffix.lower()
+    if not (file.content_type or "").startswith("audio/") or extension not in allowed_extensions:
+        raise HTTPException(400, "unsupported_audio_format")
+    contents = await file.read()
+    filename = f"{str(uuid.uuid4())[:8]}_{original_name}"
+    AUDIO_DIR.mkdir(parents=True, exist_ok=True)
+    (AUDIO_DIR / filename).write_bytes(contents)
+    return {"status": "ok", "type": "audio", "filename": filename, "original_name": original_name}
 
 
 @router.post("/generate-image")

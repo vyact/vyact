@@ -160,6 +160,8 @@ export interface VyactModelSearchResponse {
     hardware: VyactHardwareInfo;
     installed: string[];
     mtp_supported: string[];
+    vision_supported?: string[];
+    audio_supported?: string[];
 }
 
 let cachedVyactInstalledModels: string[] = [];
@@ -201,6 +203,7 @@ export interface VyactModelProfile {
         cpu_threads: boolean;
         kv_cache_precisions: Array<'q8' | 'q4'>;
         seed: boolean;
+        modalities?: Array<'image' | 'audio'>;
         reasoning: {
             control: 'none' | 'toggle' | 'effort';
             efforts: Array<'low' | 'medium' | 'high' | 'xhigh'>;
@@ -592,6 +595,8 @@ export const api = {
         installed: string[];
         mtp_supported?: string[];
         mtp_active?: string | null;
+        vision_supported?: string[];
+        audio_supported?: string[];
         model_type?: 'chat' | 'image_gen' | 'image_edit';
     }> {
         const res = await fetch(`${API_BASE}/models`);
