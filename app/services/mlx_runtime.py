@@ -80,6 +80,26 @@ def list_downloaded_mlx_models() -> list[str]:
     )
 
 
+def list_mtp_supported_mlx_models() -> list[str]:
+    if not MLX_MODELS_DIR.is_dir():
+        return []
+    models = []
+    for path in MLX_MODELS_DIR.rglob(MLX_MODEL_MANIFEST):
+        if not path.is_file():
+            continue
+        manifest = _read_model_manifest(path)
+        mtp_repository = manifest.get("mtp_repository")
+        if manifest.get("role", "model") != "model" or not isinstance(mtp_repository, str):
+            continue
+        try:
+            mtp_path = _repository_path(mtp_repository)
+        except ValueError:
+            continue
+        if (mtp_path / MLX_MODEL_MANIFEST).is_file():
+            models.append(f"mlx/{path.parent.relative_to(MLX_MODELS_DIR).as_posix()}")
+    return sorted(models)
+
+
 def _read_model_manifest(path: Path) -> dict:
     try:
         value = json.loads(path.read_text(encoding="utf-8"))

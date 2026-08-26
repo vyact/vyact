@@ -15,6 +15,7 @@ from services.mlx_runtime import (
     download_mlx_model,
     get_downloaded_mlx_model_path,
     list_downloaded_mlx_models,
+    list_mtp_supported_mlx_models,
     _server_module_for_model,
     stop_mlx_runtime,
 )
@@ -183,6 +184,28 @@ class MlxRuntimeTests(unittest.TestCase):
                 self.assertEqual(
                     get_downloaded_mlx_model_path("mlx/mlx-community/model-4bit"), model_dir.resolve(),
                 )
+
+    def test_lists_mlx_models_with_mtp_companions(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            models_dir = Path(temp_dir)
+            mtp_model_dir = models_dir / "owner" / "mtp-model"
+            regular_model_dir = models_dir / "owner" / "regular-model"
+            drafter_dir = models_dir / "owner" / "drafter"
+            mtp_model_dir.mkdir(parents=True)
+            regular_model_dir.mkdir(parents=True)
+            drafter_dir.mkdir(parents=True)
+            (mtp_model_dir / MLX_MODEL_MANIFEST).write_text(json.dumps({
+                "repository": "owner/mtp-model", "mtp_repository": "owner/drafter",
+            }))
+            (regular_model_dir / MLX_MODEL_MANIFEST).write_text(json.dumps({
+                "repository": "owner/regular-model",
+            }))
+            (drafter_dir / MLX_MODEL_MANIFEST).write_text(json.dumps({
+                "repository": "owner/drafter", "role": "mtp",
+            }))
+
+            with patch("services.mlx_runtime.MLX_MODELS_DIR", models_dir):
+                self.assertEqual(list_mtp_supported_mlx_models(), ["mlx/owner/mtp-model"])
 
     def test_rejects_repository_path_traversal(self):
         with tempfile.TemporaryDirectory() as temp_dir, \

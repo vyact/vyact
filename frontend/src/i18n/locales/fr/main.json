@@ -1146,6 +1146,7 @@
     "modelDefault": "Model default",
     "cacheQuantization": "KV cache quantization",
     "cacheQuantizationHelp": "Reduces cache memory use for larger contexts.",
+    "cacheQuantizationMtpHelp": "Disabled because this model uses MTP acceleration.",
     "cancel": "Cancel",
     "apply": "Apply",
     "applying": "Applying..."

@@ -536,14 +536,14 @@ async def install(req: ModelSelectRequest):
 async def get_models():
     cfg = await load_config_async()
     if cfg.get("type") == "vyact":
-        from services.mlx_runtime import list_downloaded_mlx_models
+        from services.mlx_runtime import list_downloaded_mlx_models, list_mtp_supported_mlx_models
         from services.vyact_runtime import get_active_mtp_model, list_mtp_supported_models, list_selectable_models
         installed_models = [*list_selectable_models(), *list_downloaded_mlx_models()]
         return {
             "models": [[model] for model in installed_models],
             "current": cfg.get("vyact_config", {}).get("model_path", ""),
             "installed": installed_models,
-            "mtp_supported": list_mtp_supported_models(),
+            "mtp_supported": [*list_mtp_supported_models(), *list_mtp_supported_mlx_models()],
             "mtp_active": get_active_mtp_model(),
             "model_type": "chat",
         }
@@ -578,7 +578,7 @@ async def delete_vyact_model(req: VyactModelDeleteRequest):
 async def search_vyact_models(q: str = Query("", max_length=200), mlx_only: bool = Query(False)):
     """Search MLX repositories on Apple Silicon, or GGUF repositories elsewhere."""
     try:
-        from services.mlx_runtime import is_apple_silicon, list_downloaded_mlx_models
+        from services.mlx_runtime import is_apple_silicon, list_downloaded_mlx_models, list_mtp_supported_mlx_models
         from services.vyact_runtime import list_downloaded_models, list_mtp_supported_models
 
         config = await load_config_async()
@@ -591,7 +591,7 @@ async def search_vyact_models(q: str = Query("", max_length=200), mlx_only: bool
             "models": await search_mlx_models(q, token) if use_mlx else await search_gguf_models(q, token),
             "hardware": get_local_hardware_info(),
             "installed": [*list_downloaded_models(), *list_downloaded_mlx_models()],
-            "mtp_supported": list_mtp_supported_models(),
+            "mtp_supported": [*list_mtp_supported_models(), *list_mtp_supported_mlx_models()],
         }
     except Exception as error:
         logger.warning("[vyact] Hugging Face search failed: %s", error)
