@@ -1,11 +1,11 @@
 <div align="center" markdown="1">
   <img src="assets/icon-transparent/icon_512x512.png" alt="Vyact logo" width="120" />
 
-  # Vyact
+# Vyact
 
   **Vyact is an open-source, local-first personal AI workspace for llama.cpp, RAG, AI agents, document intelligence, and Google Workspace.**
 
-  ### Your private workspace for conversations, knowledge, and getting work done.
+### Your private workspace for conversations, knowledge, and getting work done.
 
   **Turn your files, notes, email, and everyday tools into useful AI context—without leaving your workflow.**
 
