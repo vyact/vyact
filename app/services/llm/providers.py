@@ -30,6 +30,27 @@ from services.tool_approval import await_tool_approval
 from services.mlx_runtime import get_downloaded_mlx_model_path, server_module_for_model
 
 
+_REPEATED_TOOL_CALL_RESULT = (
+    "[반복 호출 중단] 같은 도구와 인자가 이미 실행되었습니다. "
+    "기존 도구 결과를 사용해 최종 답변을 작성하고, 더 이상 도구를 호출하지 마세요."
+)
+_REPEATED_TOOL_FINAL_INSTRUCTION = (
+    "\n\n[최우선 — 반복 도구 호출 중단]\n"
+    "같은 도구와 인자의 반복 호출이 감지되어 도구 실행을 중단했다. "
+    "이미 받은 도구 결과만 사용해 지금 최종 답변을 작성해라. "
+    "<tool_call>, <function>, <parameter> 같은 내부 도구 호출 문법을 답변에 출력하지 마라."
+)
+
+
+def _tool_call_fingerprint(name: str, args: object) -> str:
+    """Return a stable identity for one tool invocation regardless of key order."""
+    try:
+        encoded_args = json.dumps(args, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    except (TypeError, ValueError):
+        encoded_args = str(args)
+    return f"{name}:{encoded_args}"
+
+
 def _accumulate_llm_timing(usage: dict | None, timings: dict | None) -> None:
     """Accumulate one call's complete server-provided timing breakdown."""
     if usage is None or not isinstance(timings, dict):
@@ -212,6 +233,8 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
     tool_sources_found = False
     emitted_text = False
     last_round_had_tools = False
+    repeated_tool_call = False
+    executed_tool_calls: set[str] = set()
     if unified:
         oa_tools = to_openai_tools(unified)
         for _round in range(TOOL_CALL_MAX_ROUNDS):
@@ -292,6 +315,14 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
                     args = json.loads(raw_args) if isinstance(raw_args, str) else raw_args
                 except json.JSONDecodeError:
                     args = {}
+                fingerprint = _tool_call_fingerprint(name, args)
+                if fingerprint in executed_tool_calls:
+                    messages.append({
+                        "role": "tool", "tool_call_id": tc.get("id", ""),
+                        "content": _REPEATED_TOOL_CALL_RESULT,
+                    })
+                    repeated_tool_call = True
+                    continue
                 if approval_rejected:
                     messages.append({
                         "role": "tool", "tool_call_id": tc.get("id", ""),
@@ -307,6 +338,7 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
                     approval_rejected = True
                     continue
                 await _emit(on_event, {"phase": "start", "name": name, "args": args})
+                executed_tool_calls.add(fingerprint)
                 result_text = await mcp_manager.call_tool(name, args)
                 tool_sources = mcp_manager.drain_tool_sources()
                 if not str(result_text).startswith("[오류]"):
@@ -315,7 +347,9 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
                 await _emit(on_event, {"phase": "end", "name": name, "args": args, "result": result_text, "sources": tool_sources})
                 messages.append({"role": "tool", "tool_call_id": tc.get("id", ""),
                                  "content": result_text})
-            if approval_rejected:
+            if approval_rejected or repeated_tool_call:
+                if repeated_tool_call:
+                    messages[0]["content"] += _REPEATED_TOOL_FINAL_INSTRUCTION
                 break
 
     post_tool_docs_applied = False
@@ -447,6 +481,8 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
 
     # ── tool 루프 (비스트리밍) ──
     approval_rejected = False
+    repeated_tool_call = False
+    executed_tool_calls: set[str] = set()
     if unified:
         gm_tools = to_gemini_tools(unified)
         for _round in range(TOOL_CALL_MAX_ROUNDS):
@@ -475,6 +511,13 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
             for fc in fcalls:
                 name = fc.get("name", "")
                 args = fc.get("args", {}) or {}
+                fingerprint = _tool_call_fingerprint(name, args)
+                if fingerprint in executed_tool_calls:
+                    resp_parts.append({"functionResponse": {
+                        "name": name, "response": {"result": _REPEATED_TOOL_CALL_RESULT},
+                    }})
+                    repeated_tool_call = True
+                    continue
                 if approval_rejected:
                     resp_parts.append({"functionResponse": {
                         "name": name,
@@ -490,13 +533,16 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
                     approval_rejected = True
                     continue
                 await _emit(on_event, {"phase": "start", "name": name, "args": args})
+                executed_tool_calls.add(fingerprint)
                 result_text = await mcp_manager.call_tool(name, args)
                 tool_sources = mcp_manager.drain_tool_sources()
                 await _emit(on_event, {"phase": "end", "name": name, "args": args, "result": result_text, "sources": tool_sources})
                 resp_parts.append({"functionResponse": {
                     "name": name, "response": {"result": result_text}}})
             contents.append({"role": "user", "parts": resp_parts})
-            if approval_rejected:
+            if approval_rejected or repeated_tool_call:
+                if repeated_tool_call:
+                    sys_text += _REPEATED_TOOL_FINAL_INSTRUCTION
                 break
 
     # ── 최종 답변 스트리밍 ──
@@ -505,7 +551,7 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
         "contents": contents,
         "generationConfig": gen_cfg,
     }
-    if unified and not approval_rejected:
+    if unified and not approval_rejected and not repeated_tool_call:
         body["tools"] = to_gemini_tools(unified)
     log_llm_call(call_reason, "gemini", model, streaming=True, reasoning=reasoning)
     async with client.stream("POST", stream_url, json=body) as resp:
@@ -572,6 +618,8 @@ async def claude_stream(client, model, api_key, system_message, user_prompt,
 
     # ── tool 루프 (비스트리밍) ──
     approval_rejected = False
+    repeated_tool_call = False
+    executed_tool_calls: set[str] = set()
     if unified:
         cl_tools = to_claude_tools(unified)
         for _round in range(TOOL_CALL_MAX_ROUNDS):
@@ -593,6 +641,14 @@ async def claude_stream(client, model, api_key, system_message, user_prompt,
             for tu in tool_uses:
                 name = tu.get("name", "")
                 args = tu.get("input", {}) or {}
+                fingerprint = _tool_call_fingerprint(name, args)
+                if fingerprint in executed_tool_calls:
+                    result_blocks.append({
+                        "type": "tool_result", "tool_use_id": tu.get("id", ""),
+                        "content": _REPEATED_TOOL_CALL_RESULT,
+                    })
+                    repeated_tool_call = True
+                    continue
                 if approval_rejected:
                     result_blocks.append({
                         "type": "tool_result", "tool_use_id": tu.get("id", ""),
@@ -608,6 +664,7 @@ async def claude_stream(client, model, api_key, system_message, user_prompt,
                     approval_rejected = True
                     continue
                 await _emit(on_event, {"phase": "start", "name": name, "args": args})
+                executed_tool_calls.add(fingerprint)
                 result_text = await mcp_manager.call_tool(name, args)
                 tool_sources = mcp_manager.drain_tool_sources()
                 await _emit(on_event, {"phase": "end", "name": name, "args": args, "result": result_text, "sources": tool_sources})
@@ -615,13 +672,15 @@ async def claude_stream(client, model, api_key, system_message, user_prompt,
                                       "tool_use_id": tu.get("id", ""),
                                       "content": result_text})
             messages.append({"role": "user", "content": result_blocks})
-            if approval_rejected:
+            if approval_rejected or repeated_tool_call:
+                if repeated_tool_call:
+                    system_text += _REPEATED_TOOL_FINAL_INSTRUCTION
                 break
 
     # ── 최종 답변 스트리밍 ──
     body = {"model": model, "max_tokens": max_tokens, "temperature": temperature,
             "system": system_text, "stream": True, "messages": messages}
-    if unified and not approval_rejected:
+    if unified and not approval_rejected and not repeated_tool_call:
         body["tools"] = to_claude_tools(unified)
     log_llm_call(call_reason, "claude", model, streaming=True, reasoning=reasoning)
     async with client.stream("POST", base_url, headers=headers, json=body) as resp:

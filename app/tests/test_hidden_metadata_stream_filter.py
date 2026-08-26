@@ -31,6 +31,20 @@ def test_hides_project_metadata_tags():
         assert visible == "Answer"
 
 
+def test_hides_tool_call_markup_from_stream_and_final_answer():
+    stream_filter = HiddenMetadataStreamFilter()
+    tool_markup = (
+        "<tool_call><function=get_naver_news><parameter=query>삼성전자"
+        "</parameter></function></tool_call>"
+    )
+
+    visible = stream_filter.feed("답변" + tool_markup) + stream_filter.finish()
+    clean, *_ = extract_summary_tags("답변\n" + tool_markup)
+
+    assert visible == "답변"
+    assert clean == "답변"
+
+
 def test_first_turn_requests_and_extracts_conversation_title():
     instruction = build_summary_instruction("", False)
     assert "<conv_title>" in instruction

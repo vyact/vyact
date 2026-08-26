@@ -19,12 +19,14 @@ logger = get_logger(__name__)
 CONV_TITLE_TAG_RE = re.compile(r"<conv_title>([\s\S]*?)</conv_title>", re.IGNORECASE)
 CONV_SUMMARY_TAG_RE = re.compile(r"<conv_summary>([\s\S]*?)</conv_summary>", re.IGNORECASE)
 PROJECT_SUMMARY_TAG_RE = re.compile(r"<project_summary>([\s\S]*?)</project_summary>", re.IGNORECASE)
+TOOL_CALL_TAG_RE = re.compile(r"<tool_call(?:\s[^>]*)?>[\s\S]*?(?:</tool_call>|$)", re.IGNORECASE)
 
 HIDDEN_STREAM_TAG_PREFIXES = (
     "<conv_title",
     "<conv_summary",
     "<project_summary",
     "<project_memory",
+    "<tool_call",
 )
 
 
@@ -130,6 +132,10 @@ def extract_summary_tags(answer: str) -> tuple[str, str | None, str | None, str 
     conv_summary = None
     project_summary = None
     conv_title = None
+
+    # 일부 로컬 모델은 tool 반복 한도 이후 내부 호출 문법을 일반 답변 텍스트로
+    # 내보낸다. 실행되지 않는 내부 마크업이므로 히스토리와 UI에서 제거한다.
+    answer = TOOL_CALL_TAG_RE.sub("", answer)
 
     title_match = CONV_TITLE_TAG_RE.search(answer)
     if title_match:

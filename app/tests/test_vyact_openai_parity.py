@@ -7,6 +7,7 @@ from services.llm.providers import (
     _apply_local_prefix_cache_control,
     _apply_local_reasoning_control,
     _apply_local_seed,
+    _tool_call_fingerprint,
     openai_stream,
 )
 
@@ -41,6 +42,13 @@ class _Client:
 
 
 class VyactOpenAiParityTests(unittest.IsolatedAsyncioTestCase):
+    def test_tool_call_fingerprint_ignores_argument_key_order(self):
+        first = _tool_call_fingerprint("search", {"query": "삼성전자", "page": 1})
+        second = _tool_call_fingerprint("search", {"page": 1, "query": "삼성전자"})
+
+        self.assertEqual(first, second)
+        self.assertNotEqual(first, _tool_call_fingerprint("search", {"query": "SK하이닉스", "page": 1}))
+
     def test_llama_receives_explicit_prefix_cache_choice(self):
         body = {}
 
