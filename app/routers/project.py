@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from services.db import PROJECTS_INDEX, get_es
 from services.history import delete_project_conversations
@@ -168,6 +168,21 @@ class ProjectDownloadRequest(BaseModel):
     files: list[ProjectFile]
 
 
+def parse_project_download_body(body: dict) -> dict | None:
+    """Accept the current structured payload while preserving legacy raw XML downloads."""
+    if isinstance(body.get("files"), list):
+        try:
+            request = ProjectDownloadRequest.model_validate(body)
+        except ValidationError:
+            return None
+        if not request.files:
+            return None
+        return request.model_dump()
+
+    raw = body.get("raw")
+    return parse_xml_project(raw) if isinstance(raw, str) else None
+
+
 def parse_xml_project(raw: str) -> dict | None:
     """
     xml:project 블록 파싱
@@ -199,9 +214,9 @@ def parse_xml_project(raw: str) -> dict | None:
 async def download_project(request: Request):
     body = await request.json()
 
-    data = parse_xml_project(body.get("raw", ""))
+    data = parse_project_download_body(body)
     if not data:
-        raise HTTPException(status_code=400, detail="xml:project 파싱 실패")
+        raise HTTPException(status_code=400, detail="프로젝트 파일 파싱 실패")
     project_name = data["project_name"]
     files = data["files"]
 

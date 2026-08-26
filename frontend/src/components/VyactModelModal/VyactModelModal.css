@@ -5,6 +5,7 @@
 .vyact-token-save { min-width: 58px; padding: 0 12px; border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border)); border-radius: 9px; background: color-mix(in srgb, var(--accent) 10%, var(--surface2)); color: var(--accent); cursor: pointer; font-size: var(--modal-btn); font-weight: 700; }
 .vyact-token-save:hover:not(:disabled) { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, var(--surface2)); }
 .vyact-token-save:disabled { cursor: not-allowed; opacity: .5; }
+.vyact-token-saved { display: inline-grid; place-items: center; width: 17px; height: 17px; flex: 0 0 auto; border: 1px solid color-mix(in srgb, #63c998 58%, transparent); border-radius: 50%; background: color-mix(in srgb, #63c998 12%, transparent); color: #63c998; }
 .vyact-model-search-field { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
 .vyact-model-search-field input { min-width: 0; min-height: 42px; padding: 0 12px; border: 1px solid var(--border); border-radius: 9px; outline: none; background: var(--bg); color: var(--text); font-size: var(--modal-text); }
 .vyact-model-search-field input:focus { border-color: var(--accent); background: var(--surface); }
@@ -29,9 +30,7 @@
 .vyact-memory-capacity > span { display: flex; align-items: baseline; gap: 8px; min-width: 150px; padding: 7px 11px; border-radius: 8px; background: var(--surface2); }
 .vyact-memory-summary strong { color: var(--text); font-size: var(--modal-text); }
 .vyact-memory-selection { display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 0; }
-.vyact-memory-selection > span:first-child { max-width: 280px; overflow: hidden; color: var(--text-secondary); font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
-.vyact-memory-selection .vyact-memory-requirement { display: flex; align-items: baseline; gap: 6px; margin-left: 4px; padding-left: 12px; border-left: 1px solid var(--border); color: var(--muted); white-space: nowrap; }
-.vyact-memory-selection .vyact-memory-requirement strong { color: var(--text); font-size: var(--modal-text); }
+.vyact-memory-selection > span:first-child { width: 240px; max-width: 28vw; overflow: hidden; color: var(--text-secondary); font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
 .vyact-memory-selection button { display: inline-grid; flex: 0 0 auto; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border)); border-radius: 8px; background: var(--bg); color: var(--accent); cursor: pointer; }
 .vyact-memory-selection button:hover:not(:disabled) { border-color: var(--accent); color: var(--text); }
 .vyact-memory-selection button:disabled { cursor: not-allowed; opacity: .6; }

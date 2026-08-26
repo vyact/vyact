@@ -526,6 +526,7 @@
     "huggingFaceTokenHelp": "Les modèles publics peuvent être recherchés et installés sans API Key. Si elle est renseignée, la clé est utilisée pour la recherche, l’accès aux modèles restreints, la consultation des informations et les téléchargements, puis réutilisée pour les installations suivantes. Vous devez d’abord obtenir l’accès aux modèles restreints sur Hugging Face.",
     "installed": "Installé",
     "systemMemory": "RAM système", "unifiedMemory": "Mémoire unifiée", "availableMemory": "Disponible", "monthlyDownloads": "Téléchargements sur 30 jours", "estimatedMemory": "RAM estimée", "sharedOrUnknownMemory": "Mémoire partagée ou capacité inconnue", "cpuExecution": "Pas de GPU · exécution CPU/RAM", "analyzingMetadata": "Analyse des métadonnées GGUF...", "parameters": "Paramètres", "architecture": "Architecture", "quantization": "Quantification", "maxContext": "Contexte maximal", "layers": "Couches", "kvCache": "Cache KV 32K", "execution": {"unified":"Compatible avec la mémoire unifiée","gpu":"Exécution GPU possible","hybrid":"Exécution hybride GPU+RAM","cpu":"Exécution CPU/RAM possible","insufficient":"Mémoire disponible insuffisante"},
+    "vram": "VRAM",
     "modelSettings": "{{model}} settings"
   },
   "modelDownload": {

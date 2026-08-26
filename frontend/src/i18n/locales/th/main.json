@@ -526,6 +526,7 @@
     "huggingFaceTokenHelp": "คุณสามารถค้นหาและติดตั้งโมเดลสาธารณะได้โดยไม่ต้องใช้ API Key หากกรอกคีย์ ระบบจะใช้คีย์ในการค้นหาโมเดล เข้าถึงโมเดลที่จำกัด ตรวจสอบข้อมูลโมเดล และดาวน์โหลด รวมทั้งนำกลับมาใช้ในการติดตั้งครั้งถัดไป สำหรับโมเดลที่จำกัด คุณต้องได้รับสิทธิ์จาก Hugging Face ก่อน",
     "installed": "ติดตั้งแล้ว",
     "systemMemory": "RAM ระบบ", "unifiedMemory": "หน่วยความจำรวม", "availableMemory": "ใช้ได้", "monthlyDownloads": "ดาวน์โหลดใน 30 วัน", "estimatedMemory": "RAM โดยประมาณ", "sharedOrUnknownMemory": "หน่วยความจำร่วม หรือไม่ทราบความจุ", "cpuExecution": "ไม่มี GPU · ใช้ CPU/RAM", "analyzingMetadata": "กำลังวิเคราะห์เมทาดาทา GGUF...", "parameters": "พารามิเตอร์", "architecture": "สถาปัตยกรรม", "quantization": "การควอนไทซ์", "maxContext": "บริบทสูงสุด", "layers": "เลเยอร์", "kvCache": "แคช KV 32K", "execution": {"unified":"ใช้หน่วยความจำรวมได้","gpu":"ใช้ GPU ได้","hybrid":"ใช้ GPU+RAM ร่วมกัน","cpu":"ใช้ CPU/RAM ได้","insufficient":"หน่วยความจำที่ใช้ได้ไม่เพียงพอ"},
+    "vram": "VRAM",
     "modelSettings": "{{model}} settings"
   },
   "modelDownload": {

@@ -129,7 +129,6 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
             await api.saveVyactHuggingFaceToken(trimmedToken);
             setToken('');
             setTokenConfigured(true);
-            setMessage(t('modelSelector.tokenSaved'));
         } catch (error) {
             if (error instanceof VyactRuntimeInstallError && error.code === 'runtime_package_manager_missing') {
                 setMessage('');
@@ -255,7 +254,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     };
 
     return (<>
-        <ModalOverlay className="provider-editor-overlay" onClose={onClose} closeOnBackdrop={false} blur={5}>
+        <ModalOverlay className="provider-editor-overlay" onClose={onClose} closeOnBackdrop={false} closeOnEscape={!isDownloading} blur={5}>
             <section
                 className="provider-editor vyact-model-editor"
                 aria-labelledby="vyact-model-editor-title"
@@ -278,6 +277,13 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                     <span className="vyact-token-help" tabIndex={0}>?</span>
                                 </Tooltip>
                                 <KeyRound size={14}/>{t('customProvider.apiKey')} <small>{t('customProvider.optional')}</small>
+                                {tokenConfigured && !token.trim() && (
+                                    <Tooltip content={t('modelSelector.tokenSaved')}>
+                                        <span className="vyact-token-saved" role="img" aria-label={t('modelSelector.tokenSaved')}>
+                                            <Check size={11}/>
+                                        </span>
+                                    </Tooltip>
+                                )}
                             </span>
                             <div className="vyact-token-input-row">
                                 <div className="provider-api-key-field">
@@ -335,7 +341,11 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                     </span>
                                     {hardware.memory_mode !== 'unified' && hardware.gpus.map(gpu => (
                                         <span key={`${gpu.backend}-${gpu.name}`}>
-                                            {gpu.name} <strong>{gpu.total_bytes ? formatBytes(gpu.total_bytes) : gpu.backend}</strong>
+                                            {gpu.name}
+                                            {gpu.total_bytes
+                                                ? <>· {t('modelSelector.vram')} <strong>{formatBytes(gpu.total_bytes)}</strong></>
+                                                : <strong>{gpu.backend}</strong>
+                                            }
                                         </span>
                                     ))}
                                     {hardware.memory_mode !== 'unified' && hardware.gpus.length === 0 && <span>{t('modelSelector.cpuExecution')}</span>}
@@ -344,25 +354,19 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                     <div className="vyact-memory-selection">
                                         <span>{selectedFileDisplayName}</span>
                                         {!selectedMetadata && (
-                                            <>
-                                                <span className="vyact-memory-requirement">
-                                                    {t('modelSelector.quickEstimatedMemory')}
-                                                    <strong>{formatBytes(selectedModelWeightBytes * MODEL_MEMORY_OVERHEAD_RATIO)}</strong>
-                                                </span>
-                                                <Tooltip content={t('modelSelector.accurateMemoryHint')} multiline large>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => void calculateAccurateMemory()}
-                                                        disabled={busy || analyzingFile === selectedFileKey}
-                                                        aria-label={t('modelSelector.calculateAccurateMemory')}
-                                                    >
-                                                        {analyzingFile === selectedFileKey
-                                                            ? <LoaderCircle className="vyact-model-spinner" size={17}/>
-                                                            : <Calculator size={17}/>
-                                                        }
-                                                    </button>
-                                                </Tooltip>
-                                            </>
+                                            <Tooltip content={t('modelSelector.accurateMemoryHint')} multiline large>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => void calculateAccurateMemory()}
+                                                    disabled={busy || analyzingFile === selectedFileKey}
+                                                    aria-label={t('modelSelector.calculateAccurateMemory')}
+                                                >
+                                                    {analyzingFile === selectedFileKey
+                                                        ? <LoaderCircle className="vyact-model-spinner" size={17}/>
+                                                        : <Calculator size={17}/>
+                                                    }
+                                                </button>
+                                            </Tooltip>
                                         )}
                                     </div>
                                 )}
