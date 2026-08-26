@@ -91,8 +91,10 @@ export interface MessageStats {
     load_duration?: number | null;
     prompt_eval_count?: number | null;
     prompt_eval_duration?: number | null;
+    prompt_tokens_per_second?: number | null;
     eval_count?: number | null;
     eval_duration?: number | null;
+    completion_tokens_per_second?: number | null;
     total_duration?: number | null;
     llm_total_duration?: number | null;
     tool_duration?: number | null;

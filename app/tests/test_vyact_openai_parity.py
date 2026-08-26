@@ -89,10 +89,22 @@ class VyactOpenAiParityTests(unittest.IsolatedAsyncioTestCase):
     def test_llm_total_accumulates_tool_judgment_and_final_call_timings(self):
         usage = {}
 
-        _accumulate_llm_timing(usage, {"prompt_ms": 3_810, "predicted_ms": 410})
-        _accumulate_llm_timing(usage, {"prompt_ms": 3_820, "predicted_ms": 12_320})
+        _accumulate_llm_timing(usage, {
+            "prompt_n": 1_000, "prompt_ms": 3_810,
+            "predicted_n": 20, "predicted_ms": 410,
+        })
+        _accumulate_llm_timing(usage, {
+            "prompt_n": 2_000, "prompt_ms": 3_820,
+            "predicted_n": 500, "predicted_ms": 12_320,
+        })
 
         self.assertEqual(usage["llm_total_duration"], 20_360_000_000)
+        self.assertEqual(usage["prompt_eval_duration"], 7_630_000_000)
+        self.assertEqual(usage["eval_duration"], 12_730_000_000)
+        self.assertEqual(usage["prompt_tokens"], 3_000)
+        self.assertEqual(usage["completion_tokens"], 520)
+        self.assertAlmostEqual(usage["prompt_tokens_per_second"], 3_000 / 7.63)
+        self.assertAlmostEqual(usage["completion_tokens_per_second"], 520 / 12.73)
 
     async def test_llama_stream_receives_reasoning_and_runtime_options(self):
         client = _Client()

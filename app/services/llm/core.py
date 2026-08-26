@@ -162,13 +162,23 @@ async def chat_stream_with_tools(
                         pass
 
             if usage.get("prompt_tokens") is not None or usage.get("completion_tokens") is not None:
-                prompt_duration = usage.get("prompt_eval_duration")
-                eval_duration = usage.get("eval_duration")
+                timings_complete = (
+                    usage.get("_llm_call_count", 0) > 0
+                    and usage.get("_timed_llm_call_count") == usage.get("_llm_call_count")
+                )
+                prompt_duration = usage.get("prompt_eval_duration") if timings_complete else None
+                eval_duration = usage.get("eval_duration") if timings_complete else None
                 stats = {
                     "prompt_eval_count": usage.get("prompt_tokens"),
                     "prompt_eval_duration": prompt_duration,
+                    "prompt_tokens_per_second": (
+                        usage.get("prompt_tokens_per_second") if timings_complete else None
+                    ),
                     "eval_count": usage.get("completion_tokens"),
                     "eval_duration": eval_duration,
+                    "completion_tokens_per_second": (
+                        usage.get("completion_tokens_per_second") if timings_complete else None
+                    ),
                     "llm_total_duration": usage.get("llm_total_duration"),
                     "total_duration": (
                         prompt_duration + eval_duration

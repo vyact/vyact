@@ -31,6 +31,11 @@ function formatNs(ns: number | null | undefined): string | null {
     return `${(ns / 1_000_000_000).toFixed(2)}s`;
 }
 
+function formatTokensPerSecond(value: number | null | undefined): string | null {
+    if (value == null || !Number.isFinite(value)) return null;
+    return `${value.toFixed(1)} tok/s`;
+}
+
 function formatModelDisplayName(model: string | undefined): string {
     if (!model) return '';
     const normalized = model.replaceAll('\\', '/').replace(/\/$/, '');
@@ -908,13 +913,24 @@ const Message: React.FC<MessageProps> = ({
                 // assistant: 모델 응답 생성 통계. tool 통계는 바로 아래 활동 요약에서 제공한다.
                 const llmTotal = stats.llm_total_duration || stats.total_duration;
 
+                const performanceLine = formatStats([
+                    [t('message.inputProcessingTime'), formatNs(stats.prompt_eval_duration)],
+                    [t('message.inputSpeed'), formatTokensPerSecond(stats.prompt_tokens_per_second)],
+                    [t('message.generationSpeed'), formatTokensPerSecond(stats.completion_tokens_per_second)],
+                ]);
+
                 const line1 = formatStats([
                     [t('message.outputTokens'), stats.eval_count],
-                    [t('message.modelLoading'), formatNs(stats.load_duration)],
                     [t('message.generationTime'), formatNs(stats.eval_duration)],
                     [t('message.llmTotal'), formatNs(llmTotal)],
                 ]);
-                return line1 ? <div className="msg-stats bot">{line1}</div> : null;
+                if (!performanceLine && !line1) return null;
+                return (
+                    <div className="msg-stats bot">
+                        {performanceLine && <div>{performanceLine}</div>}
+                        {line1 && <div>{line1}</div>}
+                    </div>
+                );
             })()}
 
             {role === 'assistant' && !isStreaming && activityLog?.length ? (

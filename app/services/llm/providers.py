@@ -31,17 +31,48 @@ from services.mlx_runtime import get_downloaded_mlx_model_path, server_module_fo
 
 
 def _accumulate_llm_timing(usage: dict | None, timings: dict | None) -> None:
-    """Add one OpenAI-compatible call's model time to the request total."""
+    """Accumulate one call's complete server-provided timing breakdown."""
     if usage is None or not isinstance(timings, dict):
         return
     prompt_duration = _milliseconds_to_nanoseconds(timings.get("prompt_ms"))
     eval_duration = _milliseconds_to_nanoseconds(timings.get("predicted_ms"))
+    prompt_tokens = timings.get("prompt_n")
+    completion_tokens = timings.get("predicted_n")
+    if (
+        prompt_duration is None
+        or eval_duration is None
+        or not isinstance(prompt_tokens, (int, float))
+        or not isinstance(completion_tokens, (int, float))
+    ):
+        return
+
+    usage["_timed_llm_call_count"] = usage.get("_timed_llm_call_count", 0) + 1
+    usage["prompt_tokens"] = usage.get("_timing_prompt_tokens", 0) + max(0, round(prompt_tokens))
+    usage["completion_tokens"] = usage.get("_timing_completion_tokens", 0) + max(0, round(completion_tokens))
+    usage["_timing_prompt_tokens"] = usage["prompt_tokens"]
+    usage["_timing_completion_tokens"] = usage["completion_tokens"]
+    usage["prompt_eval_duration"] = usage.get("prompt_eval_duration", 0) + prompt_duration
+    usage["eval_duration"] = usage.get("eval_duration", 0) + eval_duration
     call_duration = sum(
         duration for duration in (prompt_duration, eval_duration)
         if duration is not None
     )
     if call_duration:
         usage["llm_total_duration"] = usage.get("llm_total_duration", 0) + call_duration
+
+    prompt_seconds = usage["prompt_eval_duration"] / 1_000_000_000
+    eval_seconds = usage["eval_duration"] / 1_000_000_000
+    usage["prompt_tokens_per_second"] = (
+        usage["prompt_tokens"] / prompt_seconds if prompt_seconds > 0 else None
+    )
+    usage["completion_tokens_per_second"] = (
+        usage["completion_tokens"] / eval_seconds if eval_seconds > 0 else None
+    )
+
+
+def _mark_llm_call_started(usage: dict | None) -> None:
+    if usage is not None:
+        usage["_llm_call_count"] = usage.get("_llm_call_count", 0) + 1
 
 
 async def _local_max_tokens(
@@ -198,6 +229,7 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
             log_llm_call(call_reason, "openai", model, streaming=True, reasoning=reasoning,
                          is_tool_judgment=True, round_no=_round)
             tool_calls_by_index: dict[int, dict] = {}
+            _mark_llm_call_started(usage)
             async with client.stream("POST", base_url, headers=headers, json=body) as resp:
                 resp.raise_for_status()
                 async for line in resp.aiter_lines():
@@ -334,6 +366,7 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
         body["stream_options"] = {"include_usage": True}
     log_llm_call(call_reason, "openai", model, streaming=True, reasoning=reasoning,
                  is_tool_judgment=False if unified else None)
+    _mark_llm_call_started(usage)
     async with client.stream("POST", base_url, headers=headers, json=body) as resp:
         resp.raise_for_status()
         async for line in resp.aiter_lines():
@@ -354,12 +387,6 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
                 timings = chunk.get("timings")
                 if isinstance(timings, dict):
                     _accumulate_llm_timing(usage, timings)
-                    usage["prompt_eval_duration"] = _milliseconds_to_nanoseconds(timings.get("prompt_ms"))
-                    usage["eval_duration"] = _milliseconds_to_nanoseconds(timings.get("predicted_ms"))
-                    usage["prompt_tokens"] = usage.get("prompt_tokens") or timings.get("prompt_n")
-                    usage["completion_tokens"] = usage.get("completion_tokens") or timings.get("predicted_n")
-                    usage["prompt_tokens_per_second"] = timings.get("prompt_per_second")
-                    usage["completion_tokens_per_second"] = timings.get("predicted_per_second")
                     usage["draft_tokens"] = timings.get("draft_n")
                     usage["accepted_draft_tokens"] = timings.get("draft_n_accepted")
             choices = chunk.get("choices") or []
