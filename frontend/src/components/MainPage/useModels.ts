@@ -97,6 +97,7 @@ export function useModels(
     return {
         installed, mtpSupported, mtpActive, visionSupported, audioSupported, selectedModel, isImageMode, modelType,
         isModelLoading, isDownloading, downloadingModel, downloadProgress, downloadMessage, isModelLoadingIntoMemory,
+        setIsModelLoading,
         setIsDownloading, setDownloadingModel, setDownloadProgress, setDownloadMessage,
         refreshModels, handleModelChange,
     };

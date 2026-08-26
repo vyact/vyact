@@ -510,7 +510,16 @@ export function useChat(deps: UseChatDeps) {
                 const appendToStreamMsg = (piece: string) => {
                     if (!responseWritingStarted) {
                         responseWritingStarted = true;
-                        setToolStatus({phase: 'running', group: 'analysis', label: t('toolActivity.thinking')});
+                        // 최종 답변의 첫 토큰이 도착한 순간 작업 과정은 역할을 다했다.
+                        // done까지 남겨두면 답변과 경과 시간 위에 완료된 도구 목록이 계속 보인다.
+                        setMessagesForConversation(requestConvId, prev => prev.map(message => message.id === streamId
+                            ? {
+                                ...message,
+                                toolStatus: undefined,
+                                activityLog: undefined,
+                                progressMessages: undefined,
+                            }
+                            : message));
                     }
                     streamedResponseText += piece;
                     pendingStreamText += piece;

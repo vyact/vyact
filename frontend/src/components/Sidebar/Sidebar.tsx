@@ -29,6 +29,7 @@ interface SidebarProps {
     audioSupported: string[];
     selectedModel: string;
     isModelLoading?: boolean;
+    onModelLoadingChange?: (loading: boolean) => void;
     onModelChange: (model: string, needsDownload: boolean, modelType?: 'chat' | 'image_gen' | 'image_edit') => Promise<void> | void;
     onProviderChange: () => Promise<void>;
     onBeforeModelContextChange?: () => void;
@@ -238,7 +239,7 @@ blockquote{border-left:3px solid var(--accent);padding:8px 14px;margin:10px 0;co
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
-                                             installed, mtpSupported, mtpActive, visionSupported, audioSupported, selectedModel, isModelLoading = false, onModelChange, onProviderChange,
+                                             installed, mtpSupported, mtpActive, visionSupported, audioSupported, selectedModel, isModelLoading = false, onModelLoadingChange, onModelChange, onProviderChange,
                                              onBeforeModelContextChange,
                                              conversations, favoriteConversations = [], activeConvId, activeConversationIds = [], onConversationSelect, onConversationDelete,
                                              historyTotal = 0, onLoadMoreHistory, onRefreshHistory,
@@ -422,6 +423,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     };
 
     const handleProviderChange = async (provider: string) => {
+        if (isModelLoading) return;
         if (provider === '__add_custom__') {
             setCustomProviderEditor('new');
             return;
@@ -432,6 +434,8 @@ const Sidebar: React.FC<SidebarProps> = ({
         }
         if (provider === currentProvider) return;
         const prev = currentProvider;
+        const isSwitchingToVyact = provider === 'vyact';
+        if (isSwitchingToVyact) onModelLoadingChange?.(true);
         try {
             if (provider.startsWith('custom:')) {
                 onBeforeModelContextChange?.();
@@ -455,6 +459,8 @@ const Sidebar: React.FC<SidebarProps> = ({
         } catch {
             setCurrentProvider(prev);
             if (provider === 'vyact') setIsVyactModalOpen(true);
+        } finally {
+            if (isSwitchingToVyact) onModelLoadingChange?.(false);
         }
     };
 
@@ -500,7 +506,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                             ...(['vyact', 'openai', 'gemini', 'claude'] as const).map(provider => ({value: provider, label: PROVIDER_LABELS[provider]})),
                             ...customProviders.map(provider => ({value: `custom:${provider.id}`, label: provider.name})),
                             {value: '__add_custom__', label: t('customProvider.addConnection')},
-                        ]} value={currentProvider} onChange={handleProviderChange} className="header-provider-select" /></div>
+                        ]} value={currentProvider} onChange={handleProviderChange} disabled={isModelLoading} className="header-provider-select" /></div>
                         <button className="sidebar-header-settings" onClick={() => {
                             if (isApiProvider(currentProvider)) setIsProviderSettingsOpen(true);
                             else setIsSettingsOpen(true);
@@ -523,11 +529,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                         {/* Provider */}
                         <div className="sidebar-section">
                             <div className="sec-label">Provider</div>
-                            <div className="provider-select-wrap">
+                            <div className={`provider-select-wrap${isModelLoading ? ' disabled' : ''}`}>
                                 {(['vyact', 'openai', 'gemini', 'claude'] as const).map(p => (
                                     <button
                                         key={p}
                                         className={`provider-select-btn${currentProvider === p ? ' active' : ''}`}
+                                        disabled={isModelLoading}
                                         onClick={() => handleProviderChange(p)}
                                         title={PROVIDER_LABELS[p]}
                                     >
@@ -539,11 +546,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 ))}
                                 {customProviders.map(connection => {
                                     const value = `custom:${connection.id}`;
-                                    return <button key={connection.id} className={`provider-select-btn${currentProvider === value ? ' active' : ''}`} onClick={() => handleProviderChange(value)} title={connection.name}>
+                                    return <button key={connection.id} className={`provider-select-btn${currentProvider === value ? ' active' : ''}`} disabled={isModelLoading} onClick={() => handleProviderChange(value)} title={connection.name}>
                                         <span className="provider-btn-icon"><Plus size={16}/></span><span className="provider-btn-label">{connection.name}</span>
                                     </button>;
                                 })}
-                                <button className="provider-select-btn" onClick={() => setCustomProviderEditor('new')} title={t('customProvider.addConnection')}>
+                                <button className="provider-select-btn" disabled={isModelLoading} onClick={() => setCustomProviderEditor('new')} title={t('customProvider.addConnection')}>
                                     <span className="provider-btn-icon"><Plus size={16}/></span><span className="provider-btn-label">{t('customProvider.add')}</span>
                                 </button>
                             </div>
