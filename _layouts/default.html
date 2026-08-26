@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ page.title | default: site.title }}</title>
+    <meta name="description" content="{{ page.description | default: site.description }}">
+    <meta name="robots" content="noindex,follow">
+    <link rel="canonical" href="https://github.com/vyact/vyact/">
+    <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
+  </head>
+  <body>
+    <main class="container-lg px-3 my-5 markdown-body">
+      {{ content }}
+    </main>
+  </body>
+</html>
