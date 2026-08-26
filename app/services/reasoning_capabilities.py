@@ -5,6 +5,7 @@ from pathlib import Path
 
 
 REASONING_EFFORTS = ("low", "medium", "high", "xhigh")
+DEFAULT_REASONING_EFFORTS = ("low", "medium", "high")
 _EFFORT_MARKERS = ("reasoning_effort", "reasoning_strength")
 _TOGGLE_MARKERS = ("enable_thinking", "thinking_mode")
 _GGUF_CHAT_TEMPLATE_KEYS = {
@@ -22,13 +23,17 @@ def _template_capabilities(template: str, *, runtime_supports_none: bool = False
     has_effort = any(marker in normalized for marker in _EFFORT_MARKERS)
     has_toggle = any(marker in normalized for marker in _TOGGLE_MARKERS)
     if has_effort:
-        declared_efforts = [
+        mentioned_efforts = [
             effort for effort in REASONING_EFFORTS
             if f"'{effort}'" in normalized or f'"{effort}"' in normalized
         ]
+        # A lone literal is normally the template default (commonly "medium"),
+        # not its complete set of accepted values. Use the conservative common
+        # effort set unless the template explicitly enumerates multiple levels.
+        declared_efforts = mentioned_efforts if len(mentioned_efforts) > 1 else list(DEFAULT_REASONING_EFFORTS)
         return {
             "control": "effort",
-            "efforts": declared_efforts or list(REASONING_EFFORTS),
+            "efforts": declared_efforts,
             "supports_none": runtime_supports_none or has_toggle or "'none'" in normalized or '"none"' in normalized,
         }
     if has_toggle:

@@ -74,6 +74,7 @@ const ReasoningToggle: React.FC<ReasoningToggleProps> = ({disabled, capability})
                     disabled={disabled}
                     ariaLabel={t('reasoning.effortLabel')}
                     className="reasoning-effort-select"
+                    dropdownClassName="reasoning-effort-dropdown"
                     value={value}
                     options={[
                         ...(capability.supports_none ? [{value: 'none', label: t('reasoning.efforts.none')}] : []),

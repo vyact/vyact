@@ -26,7 +26,7 @@ class ReasoningCapabilitiesTests(unittest.TestCase):
             capabilities = get_mlx_reasoning_capabilities(model_path)
 
         self.assertEqual(capabilities["control"], "effort")
-        self.assertEqual(capabilities["efforts"], ["low"])
+        self.assertEqual(capabilities["efforts"], ["low", "medium", "high"])
         self.assertFalse(capabilities["supports_none"])
 
     def test_mlx_toggle_template_is_detected(self):
@@ -67,7 +67,18 @@ class ReasoningCapabilitiesTests(unittest.TestCase):
             capabilities = get_gguf_reasoning_capabilities(model_path)
 
         self.assertEqual(capabilities["control"], "effort")
-        self.assertEqual(capabilities["efforts"], ["medium"])
+        self.assertEqual(capabilities["efforts"], ["low", "medium", "high"])
+
+    def test_explicit_effort_list_preserves_extra_high(self):
+        with tempfile.TemporaryDirectory() as directory:
+            model_path = Path(directory)
+            (model_path / "tokenizer_config.json").write_text(json.dumps({
+                "chat_template": "{% if reasoning_effort in ['low', 'medium', 'high', 'xhigh'] %}{% endif %}",
+            }), encoding="utf-8")
+
+            capabilities = get_mlx_reasoning_capabilities(model_path)
+
+        self.assertEqual(capabilities["efforts"], ["low", "medium", "high", "xhigh"])
 
 
 if __name__ == "__main__":

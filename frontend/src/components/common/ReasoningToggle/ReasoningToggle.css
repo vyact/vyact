@@ -42,8 +42,14 @@
 }
 
 .reasoning-effort-control { display: inline-flex; align-items: center; gap: 8px; }
-.reasoning-effort-select { width: 112px; }
-.reasoning-effort-select .custom-select-trigger { min-height: 30px; padding: 4px 9px; font-size: 12px; }
+.reasoning-effort-select.custom-select-wrap { width: 160px; }
+.reasoning-effort-select.custom-select-wrap .custom-select-trigger {
+    width: 100%;
+    min-height: 30px;
+    padding: 4px 9px;
+    font-size: 12px;
+}
+.reasoning-effort-dropdown.custom-select-dropdown { min-width: 180px; }
 
 /* 스위치 트랙 */
 .reasoning-toggle-track {

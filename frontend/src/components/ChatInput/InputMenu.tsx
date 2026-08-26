@@ -94,7 +94,12 @@ const InputMenu: React.FC<InputMenuProps> = ({
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false);
+            const target = e.target as Node;
+            const isReasoningSelectInteraction = target instanceof Element
+                && Boolean(target.closest('.reasoning-effort-dropdown'));
+            if (menuRef.current && !menuRef.current.contains(target) && !isReasoningSelectInteraction) {
+                setOpen(false);
+            }
         };
         if (open) document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
