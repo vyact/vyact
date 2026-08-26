@@ -605,7 +605,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                             audioSupported={models.audioSupported}
                             selectedModel={models.selectedModel}
                             isModelLoading={models.isModelLoading}
-                            onModelLoadingChange={models.setIsModelLoading}
+                            onModelLoadingChange={models.setModelLoading}
                             onModelChange={models.handleModelChange}
                             onProviderChange={models.refreshModels}
                             onBeforeModelContextChange={stopActiveResponseBeforeModelContextChange}
@@ -697,6 +697,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                                     disabled={chat.hasActiveRequests || models.isModelLoading}
                                     isImageMode={models.isImageMode}
                                     selectedModel={models.selectedModel}
+                                    loadingModel={models.loadingModel}
                                     isLocalModel={models.installed.includes(models.selectedModel)}
                                     modelType={models.modelType}
                                     isModelLoading={models.isModelLoading}

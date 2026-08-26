@@ -57,6 +57,7 @@ interface ChatInputProps {
     isLocalModel?: boolean;
     modelType?: 'chat' | 'image_gen' | 'image_edit';
     isModelLoading?: boolean;
+    loadingModel?: string;
     focusTrigger?: number;
     resetTrigger?: number;
     externalDragging?: boolean;
@@ -90,7 +91,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                                  selectedModel = '',
                                                  isLocalModel = false,
                                                  modelType = 'chat',
-                                                 isModelLoading = false,
+                                                 isModelLoading = false, loadingModel = '',
                                                  focusTrigger = 0,
                                                  resetTrigger = 0,
                                                  externalDragging = false,
@@ -521,8 +522,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                         animation: 'spin 0.7s linear infinite',
                                     }}/>
                                     <span style={{fontSize: '13px', color: 'var(--muted)'}}>
-                                        {selectedModel
-                                            ? t('chatInput.modelLoadingWithName', {model: selectedModel})
+                                        {loadingModel || selectedModel
+                                            ? t('chatInput.modelLoadingWithName', {model: loadingModel || selectedModel})
                                             : t('chatInput.modelLoading')}
                                     </span>
                                 </div>

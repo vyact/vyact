@@ -268,7 +268,8 @@
 .cloud-model-display > span:nth-child(2) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cloud-model-status { width: 6px; height: 6px; flex: 0 0 auto; border-radius: 50%; background: var(--success, #20c997); }
 .cloud-model-settings { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid var(--border); border-radius: 9px; background: var(--surface2); color: var(--muted); cursor: pointer; transition: border-color .15s, color .15s, background .15s; }
-.cloud-model-settings:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--surface2)); color: var(--accent); }
+.cloud-model-settings:hover:not(:disabled) { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--surface2)); color: var(--accent); }
+.cloud-model-settings:disabled { cursor: not-allowed; opacity: .5; }
 .cloud-model-settings:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent); outline-offset: 2px; }
 
 /* 응답 중 비활성화 */

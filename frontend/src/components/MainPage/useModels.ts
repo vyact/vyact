@@ -19,6 +19,7 @@ export function useModels(
     const [isImageMode, setIsImageMode] = useState(false);
     const [modelType, setModelType] = useState<'chat' | 'image_gen' | 'image_edit'>('chat');
     const [isModelLoading, setIsModelLoading] = useState(false);
+    const [loadingModel, setLoadingModel] = useState('');
     const [isDownloading, setIsDownloading] = useState(false);
     const [downloadingModel, setDownloadingModel] = useState('');
     const [downloadProgress, setDownloadProgress] = useState(0);
@@ -35,6 +36,11 @@ export function useModels(
         const mType = IMAGE_EDIT_IDS.includes(model) ? 'image_edit' : isImg ? 'image_gen' : 'chat';
         setIsImageMode(isImg);
         setModelType(mType as 'chat' | 'image_gen' | 'image_edit');
+    };
+
+    const setModelLoading = (loading: boolean, model: string = '') => {
+        setIsModelLoading(loading);
+        setLoadingModel(loading ? model : '');
     };
 
     const refreshModels = async () => {
@@ -65,7 +71,7 @@ export function useModels(
         }
 
         onBeforeModelChange?.();
-        setIsModelLoading(true);
+        setModelLoading(true, model);
         if (needsDownload) {
             setIsDownloading(true);
             setDownloadingModel(model);
@@ -89,15 +95,15 @@ export function useModels(
             console.error('Model change failed:', error);
             toast.error('모델 변경 실패', String(error));
         } finally {
-            setIsModelLoading(false);
+            setModelLoading(false);
             setIsDownloading(false);
         }
     };
 
     return {
         installed, mtpSupported, mtpActive, visionSupported, audioSupported, selectedModel, isImageMode, modelType,
-        isModelLoading, isDownloading, downloadingModel, downloadProgress, downloadMessage, isModelLoadingIntoMemory,
-        setIsModelLoading,
+        isModelLoading, loadingModel, isDownloading, downloadingModel, downloadProgress, downloadMessage, isModelLoadingIntoMemory,
+        setModelLoading,
         setIsDownloading, setDownloadingModel, setDownloadProgress, setDownloadMessage,
         refreshModels, handleModelChange,
     };

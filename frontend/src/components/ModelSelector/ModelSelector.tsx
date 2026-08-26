@@ -133,7 +133,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                             <span className="cloud-model-status" aria-hidden="true"/>
                             <span>{selectedModel || t('modelSelector.noModel')}</span>
                         </div>
-                        <button className="cloud-model-settings" type="button" onClick={onProviderSettingsOpen} aria-label={t('modelSelector.settingsManage')}><Pencil size={16}/></button>
+                        <button className="cloud-model-settings" type="button" disabled={disabled} onClick={onProviderSettingsOpen} aria-label={t('modelSelector.settingsManage')}><Pencil size={16}/></button>
                     </div>
                 </div>
             </div>

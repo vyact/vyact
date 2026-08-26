@@ -29,7 +29,7 @@ interface SidebarProps {
     audioSupported: string[];
     selectedModel: string;
     isModelLoading?: boolean;
-    onModelLoadingChange?: (loading: boolean) => void;
+    onModelLoadingChange?: (loading: boolean, model?: string) => void;
     onModelChange: (model: string, needsDownload: boolean, modelType?: 'chat' | 'image_gen' | 'image_edit') => Promise<void> | void;
     onProviderChange: () => Promise<void>;
     onBeforeModelContextChange?: () => void;
@@ -431,11 +431,13 @@ const Sidebar: React.FC<SidebarProps> = ({
         if (provider === 'vyact') {
             const data = await api.getProviders();
             if (!data.providers.vyact?.has_key) { setIsVyactModalOpen(true); return; }
+            if (provider !== currentProvider) {
+                onModelLoadingChange?.(true, data.providers.vyact.model || '');
+            }
         }
         if (provider === currentProvider) return;
         const prev = currentProvider;
         const isSwitchingToVyact = provider === 'vyact';
-        if (isSwitchingToVyact) onModelLoadingChange?.(true);
         try {
             if (provider.startsWith('custom:')) {
                 onBeforeModelContextChange?.();
