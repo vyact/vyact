@@ -858,28 +858,32 @@ async def read_vyact_model_profile(
             "history_token_budget": config.get("runtime_settings", {}).get("history_token_budget", 16384),
         }
     profile = normalize_model_profile(profile)
-    if runtime == "mlx":
-        downloaded_model_path = get_downloaded_mlx_model_path(model_path)
-        capabilities = await asyncio.to_thread(
-            get_mlx_runtime_capabilities, downloaded_model_path,
-        )
-        capabilities["reasoning"] = await asyncio.to_thread(
-            get_mlx_reasoning_capabilities,
-            downloaded_model_path,
-        )
-    else:
-        capabilities = {
-            "performance_modes": ["auto", "memory", "performance"],
-            "cpu_threads": True,
-            "kv_cache_precisions": ["q8", "q4"],
-            "seed": True,
-            "reasoning": await asyncio.to_thread(
-                get_gguf_reasoning_capabilities, get_downloaded_model_path(model_path),
-            ),
-            "modalities": await asyncio.to_thread(
-                get_model_modalities, get_downloaded_model_path(model_path),
-            ),
-        }
+    try:
+        if runtime == "mlx":
+            downloaded_model_path = get_downloaded_mlx_model_path(model_path)
+            capabilities = await asyncio.to_thread(
+                get_mlx_runtime_capabilities, downloaded_model_path,
+            )
+            capabilities["reasoning"] = await asyncio.to_thread(
+                get_mlx_reasoning_capabilities,
+                downloaded_model_path,
+            )
+        else:
+            downloaded_model_path = get_downloaded_model_path(model_path)
+            capabilities = {
+                "performance_modes": ["auto", "memory", "performance"],
+                "cpu_threads": True,
+                "kv_cache_precisions": ["q8", "q4"],
+                "seed": True,
+                "reasoning": await asyncio.to_thread(
+                    get_gguf_reasoning_capabilities, downloaded_model_path,
+                ),
+                "modalities": await asyncio.to_thread(
+                    get_model_modalities, downloaded_model_path,
+                ),
+            }
+    except ValueError as error:
+        raise HTTPException(404, "local_model_not_downloaded") from error
     return {**profile, "capabilities": capabilities}
 
 
@@ -1069,7 +1073,7 @@ async def get_providers():
             }
     providers["vyact"] = {
         "model": vyact_config.get("model"),
-        "has_key": bool(vyact_config.get("model")),
+        "has_key": bool(vyact_config.get("model_path")),
     }
     return {
         "current_type": current_type,
@@ -1193,9 +1197,19 @@ async def select_provider(req: ProviderSelectRequest):
     config = await load_config_async()
     if req.provider == "vyact":
         vyact_config = config.get("vyact_config", {})
-        model = req.model or vyact_config.get("model")
-        if not model:
+        if not vyact_config.get("model_path"):
             raise HTTPException(400, "Vyact 모델이 없습니다. 먼저 모델을 다운로드하세요.")
+        try:
+            from services.vyact_runtime import start_configured_runtime
+
+            model = await asyncio.to_thread(
+                start_configured_runtime,
+                vyact_config,
+                config.get("debug_logging", False),
+            )
+        except (OSError, RuntimeError, ValueError) as error:
+            logger.warning("[providers] Vyact provider activation failed: %s", error)
+            raise HTTPException(503, "vyact_model_activation_failed") from error
         config["type"] = "vyact"
         config["model"] = model
         config.setdefault("vyact_config", {})["model"] = model

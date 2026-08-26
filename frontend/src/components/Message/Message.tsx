@@ -7,7 +7,7 @@ import {toast} from '../common/ToastNotifications/ToastNotifications';
 import CodeBlock from '../CodeBlock';
 import CodeFileViewer from '../CodeFileViewer/CodeFileViewer';
 import ImageViewer from '../ImageViewer/ImageViewer';
-import ActivityTimeline from './ActivityTimeline';
+import ResponseProcess from './ResponseProcess';
 import InlineToolApproval from './InlineToolApproval';
 import CodeChangesCard from './CodeChangesCard';
 import {useCodePanel} from '../../contexts/CodePanelContext';
@@ -101,12 +101,16 @@ const Message: React.FC<MessageProps> = ({
                                              role, content, timestamp, sources, model, attachments,
                                              isError, errorTitle, onRetry, isGeneratedImage, articleSources,
                                              pdfFile, pdfParams, onPdfEdit, injectedContext, onShowInjectedContext, onOpenMemo,
-                                             isStreaming = false, conversationId, requestStartedAt, toolStatus, activityLog, stats,
+                                             isStreaming = false, conversationId, requestStartedAt, toolStatus, activityLog, progressMessages, stats,
                                              truncated,
                                              codeChanges,
                                          }) => {
     const {t} = useTranslation('main');
     const {panel} = useCodePanel();
+    const hasResponseProcess = Boolean(
+        progressMessages?.length
+        || activityLog?.some(activity => activity.group === 'code' || activity.group === 'tool'),
+    );
     const visibleContent = useMemo(
         () => role === 'assistant' ? stripHiddenMetadata(content) : content,
         [role, content],
@@ -434,15 +438,16 @@ const Message: React.FC<MessageProps> = ({
                                 ))}
                             </div>
                         )}
-                        {/* 첫 토큰 전에는 현재 판정/도구 상태를, 상태 이벤트 전에는 로딩 점을 표시한다. */}
-                        {isStreaming && !content.trim() && activityLog?.some(activity => activity.group === 'code' || activity.group === 'tool') ? (
-                            <ActivityTimeline
+                        {role === 'assistant' && isStreaming && hasResponseProcess && (
+                            <ResponseProcess
                                 activities={activityLog}
-                                isStreaming
-                                currentStatus={toolStatus}
+                                progressMessages={progressMessages}
+                                isStreaming={isStreaming}
                                 requestElapsedLabel={requestElapsedLabel}
                             />
-                        ) : isStreaming && !content.trim() && toolStatus ? (
+                        )}
+                        {/* 첫 토큰 전에는 현재 판정/도구 상태를, 상태 이벤트 전에는 로딩 점을 표시한다. */}
+                        {isStreaming && !content.trim() && hasResponseProcess ? null : isStreaming && !content.trim() && toolStatus ? (
                             <div className={`msg-tool-status ${toolStatus.phase} ${toolStatus.group ?? 'analysis'}`} aria-live="polite" aria-label={t('toolActivity.ariaLabel')}>
                                 {toolStatus.phase === 'completed'
                                     ? <span className="msg-tool-icon completed" aria-hidden="true">✓</span>
@@ -932,13 +937,6 @@ const Message: React.FC<MessageProps> = ({
                     </div>
                 );
             })()}
-
-            {role === 'assistant' && !isStreaming && activityLog?.length ? (
-                <ActivityTimeline
-                    activities={activityLog}
-                    executionDurationNs={stats?.tool_duration}
-                />
-            ) : null}
 
             {viewerIndex !== null && viewerImages.length > 0 && (
                 <ImageViewer

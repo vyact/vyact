@@ -978,6 +978,7 @@
   "toolActivity": {
     "ariaLabel": "Hoạt động công cụ",
     "working": "Đang xử lý…",
+    "workingFor": "Đang làm việc trong {{duration}}",
     "waitingApproval": "Đang chờ phê duyệt thực thi",
     "waitingApprovalForAction": "Đang chờ phê duyệt · {{action}}",
     "waitingBrowserUser": "Đang chờ bạn thao tác trong trình duyệt", "browserUserActionCompleted": "Đã thao tác xong · Tiếp tục kiểm tra trình duyệt",

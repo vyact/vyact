@@ -454,6 +454,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             }
         } catch {
             setCurrentProvider(prev);
+            if (provider === 'vyact') setIsVyactModalOpen(true);
         }
     };
 

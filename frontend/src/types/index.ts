@@ -117,6 +117,12 @@ export interface ToolActivity {
     completedAt?: number;
 }
 
+export interface ResponseProgressMessage {
+    id?: string;
+    content: string;
+    createdAt: number;
+}
+
 export interface CodeChangeFile {
     folderId: string;
     path: string;
@@ -144,6 +150,7 @@ export interface Message {
     errorTitle?: string;
     toolStatus?: ToolActivity;  // MCP/code tool 실행 진행표시
     activityLog?: ToolActivity[]; // 도구·LLM 실행 흐름 누적 표시
+    progressMessages?: ResponseProgressMessage[]; // tool 호출 전 모델이 설명한 진행 과정
     followups?: string[];  // 응답 말미 <followups> 블록에서 파싱한 후속 질문 목록
     isGeneratedImage?: boolean;
     articleSources?: ArticleAttachment[];  // 기사 기반 질의 시 참고 기사

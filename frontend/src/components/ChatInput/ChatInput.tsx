@@ -54,6 +54,7 @@ interface ChatInputProps {
     disabled?: boolean;        // 전송 버튼만 막음 (입력은 허용)
     isImageMode?: boolean;
     selectedModel?: string;
+    isLocalModel?: boolean;
     modelType?: 'chat' | 'image_gen' | 'image_edit';
     isModelLoading?: boolean;
     focusTrigger?: number;
@@ -87,6 +88,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                                  disabled = false,
                                                  isImageMode = false,
                                                  selectedModel = '',
+                                                 isLocalModel = false,
                                                  modelType = 'chat',
                                                  isModelLoading = false,
                                                  focusTrigger = 0,
@@ -553,6 +555,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                         <div style={{display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0, flex: 1}}>
                             <InputMenu
                                 selectedModel={selectedModel}
+                                isLocalModel={isLocalModel}
                                 modelType={modelType}
                                 fileInputRef={attach.fileInputRef}
                                 onFileSelect={attach.handleFileSelect}

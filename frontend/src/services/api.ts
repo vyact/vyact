@@ -1140,6 +1140,7 @@ export const api = {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({provider, model})
         });
+        await assertOk(res, 'Unable to select LLM provider.');
         return res.json();
     },
 

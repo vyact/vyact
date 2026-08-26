@@ -974,6 +974,7 @@
   "toolActivity": {
     "ariaLabel": "Tool activity",
     "working": "Working…",
+    "workingFor": "Working for {{duration}}",
     "waitingApproval": "Waiting for execution approval",
     "waitingApprovalForAction": "Approval required · {{action}}",
     "waitingBrowserUser": "Waiting for your action in the browser", "browserUserActionCompleted": "User action completed · Browser resumed",

@@ -978,6 +978,7 @@
   "toolActivity": {
     "ariaLabel": "工具执行进度",
     "working": "正在处理…",
+    "workingFor": "已工作 {{duration}}",
     "waitingApproval": "正在等待执行审批",
     "waitingApprovalForAction": "等待批准 · {{action}}",
     "waitingBrowserUser": "正在等待您在浏览器中操作", "browserUserActionCompleted": "用户操作完成 · 已恢复浏览器检查",

@@ -990,6 +990,7 @@ async def query_stream(req: QueryRequest):
                 metadata_stream_filter = HiddenMetadataStreamFilter()
                 _tool_messages: list[dict] = []  # tool call/result 메시지 수집
                 _activity_log: list[dict] = []
+                visible_emitted = ""
                 project_tool_first = bool(request_folder_paths)
                 logger.info(
                     "[query_stream] RAG routing: project_tool_first=%s folder_count=%d",
@@ -1015,14 +1016,17 @@ async def query_stream(req: QueryRequest):
                         emitted += ev["text"]
                         visible_text = metadata_stream_filter.feed(ev["text"])
                         if visible_text:
+                            visible_emitted += visible_text
                             yield _sse("token", {"text": visible_text})
                     elif ev["type"] == "reset":
-                        # relay된 서두를 프론트에서 지우도록 지시 (뒤늦은 tool 호출 케이스)
+                        # tool 호출 전 모델이 설명한 내용은 진행 과정으로 보존하고,
+                        # 최종 답변 스트림만 본문에 남도록 새 구간을 시작한다.
+                        visible_emitted += metadata_stream_filter.finish()
+                        progress_content = visible_emitted.strip()
                         emitted = ""
+                        visible_emitted = ""
                         metadata_stream_filter = HiddenMetadataStreamFilter()
-                        _tool_messages.clear()
-                        _activity_log.clear()
-                        yield _sse("reset", {})
+                        yield _sse("reset", {"content": progress_content})
                     elif ev["type"] == "tool":
                         _phase = ev.get("phase")
                         _tool_name = ev.get("name", "")

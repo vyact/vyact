@@ -34,6 +34,7 @@ const CHAT_FILE_INPUT_ID = 'chat-file-input';
 
 interface InputMenuProps {
     selectedModel: string;
+    isLocalModel: boolean;
     modelType: 'chat' | 'image_gen' | 'image_edit';
     fileInputRef: React.RefObject<HTMLInputElement>;
     onFileSelect: React.ChangeEventHandler<HTMLInputElement>;
@@ -48,6 +49,7 @@ interface InputMenuProps {
 
 const InputMenu: React.FC<InputMenuProps> = ({
                                                  selectedModel,
+                                                 isLocalModel,
                                                  modelType,
                                                  fileInputRef,
                                                  onFileSelect,
@@ -72,7 +74,7 @@ const InputMenu: React.FC<InputMenuProps> = ({
 
     useEffect(() => {
         let cancelled = false;
-        if (!selectedModel) {
+        if (!selectedModel || !isLocalModel) {
             setReasoningCapability({control: 'none', efforts: [], supports_none: false});
             setReasoningValue('off');
             return;
@@ -90,7 +92,7 @@ const InputMenu: React.FC<InputMenuProps> = ({
             }
         });
         return () => { cancelled = true; };
-    }, [selectedModel]);
+    }, [selectedModel, isLocalModel]);
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {

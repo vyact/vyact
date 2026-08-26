@@ -298,18 +298,6 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.warning("Local model load failed: %s", e)
 
-    # MLX와 reranker는 둘 다 transformers 계열을 import한다. 앱 시작 시
-    # 별도 스레드에서 동시에 초기화하면 MLX의 lazy import가 일시적으로
-    # 실패할 수 있으므로, 선택된 로컬 LLM을 먼저 준비한 후 로드한다.
-    if not is_initial_setup:
-        def _load_reranker() -> None:
-            from reranker import load_reranker
-            load_reranker()
-
-        asyncio.get_running_loop().run_in_executor(
-            ThreadPoolExecutor(max_workers=1), _load_reranker,
-        )
-
     # MCP 서버 연결 (filesystem 등) — 실패해도 앱은 정상 동작
     try:
         from services.mcp_client import mcp_manager
@@ -372,6 +360,17 @@ async def lifespan(app: FastAPI):
 
     if not is_initial_setup:
         await warmup_kokoro_tts()
+
+        # Kokoro와 reranker는 모두 transformers의 lazy modules를 import한다.
+        # 서로 다른 스레드에서 첫 import를 겹치면 일부 model export가 일시적으로
+        # 보이지 않을 수 있으므로 Kokoro 초기화가 끝난 뒤 reranker를 시작한다.
+        def _load_reranker() -> None:
+            from reranker import load_reranker
+            load_reranker()
+
+        asyncio.get_running_loop().run_in_executor(
+            ThreadPoolExecutor(max_workers=1), _load_reranker,
+        )
 
     # ── Whisper STT warm-up ──
     if not is_initial_setup:

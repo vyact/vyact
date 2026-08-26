@@ -4,7 +4,7 @@ import {useTranslation} from 'react-i18next';
 import {api} from '../../services/api';
 import {generateUUID} from '../../utils/helpers';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
-import type {Message, ArticleAttachment, InjectedContextItem, ToolActivity} from '../../types';
+import type {Message, ArticleAttachment, InjectedContextItem, ResponseProgressMessage, ToolActivity} from '../../types';
 import {IMAGE_MODEL_IDS} from './useModels';
 import {streamSSE} from '../../utils/streamClient';
 import {parseFollowups} from '../../utils/markdownUtils';
@@ -564,6 +564,24 @@ export function useChat(deps: UseChatDeps) {
                         onToken: (text) => appendToStreamMsg(
                             text.includes('VYACT_EMPTY_RESPONSE') ? t('emptyResponse') : text
                         ),
+                        onReset: (data) => {
+                            flushStreamText();
+                            const progressContent = data.content?.trim() || streamedResponseText.trim();
+                            pendingStreamText = '';
+                            streamedResponseText = '';
+                            responseWritingStarted = false;
+                            setMessagesForConversation(requestConvId, prev => prev.map(m => {
+                                if (m.id !== streamId) return m;
+                                const progressMessages: ResponseProgressMessage[] = progressContent
+                                    ? [...(m.progressMessages || []), {
+                                        id: `${Date.now()}-${m.progressMessages?.length ?? 0}`,
+                                        content: progressContent,
+                                        createdAt: Date.now(),
+                                    }]
+                                    : m.progressMessages || [];
+                                return {...m, content: '', progressMessages};
+                            }));
+                        },
                         onTool: (data) => {
                             if (data.phase === 'approval_required') {
                                 window.dispatchEvent(new CustomEvent('vyact:tool-approval-required', {detail: data}));
@@ -689,6 +707,7 @@ export function useChat(deps: UseChatDeps) {
                                     stats: data.stats || m.stats,
                                     truncated: data.truncated || undefined,
                                     codeChanges: data.code_changes || m.codeChanges,
+                                    progressMessages: undefined,
                                 };
                             }));
                             if (showVoiceChatModalRef.current && data.answer)

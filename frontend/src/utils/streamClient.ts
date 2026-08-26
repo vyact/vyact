@@ -10,7 +10,7 @@ export interface StreamHandlers {
     onMeta?: (data: { model?: string; sources?: any[] }) => void;
     onToken?: (text: string) => void;
     /** 판정 스트림이 서두를 relay한 뒤 tool 호출로 전환된 케이스 — 표시 중인 답변 초기화 */
-    onReset?: () => void;
+    onReset?: (data: {content?: string}) => void;
     onTool?: (data: { phase?: string; name?: string; args?: Record<string, unknown>; round?: number; result?: string; approval_id?: string; risk?: string; conversation_id?: string; project_id?: string }) => void;
     onIndexProgress?: (data: { source_name?: string; done?: number; total?: number }) => void;
     onDone?: (data: { conv_id?: string; answer?: string; stats?: Record<string, number | null>; truncated?: boolean; code_changes?: import('../types').CodeChanges; conversation_title?: string }) => void;
@@ -66,7 +66,7 @@ export async function streamSSE(
         switch (event) {
             case 'meta':  handlers.onMeta?.(payload); break;
             case 'token': if (payload.text) handlers.onToken?.(payload.text); break;
-            case 'reset': handlers.onReset?.(); break;
+            case 'reset': handlers.onReset?.(payload); break;
             case 'tool':  handlers.onTool?.(payload); break;
             case 'index_progress': handlers.onIndexProgress?.(payload); break;
             case 'done':  handlers.onDone?.(payload); break;

@@ -696,6 +696,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                                     disabled={chat.hasActiveRequests || models.isModelLoading}
                                     isImageMode={models.isImageMode}
                                     selectedModel={models.selectedModel}
+                                    isLocalModel={models.installed.includes(models.selectedModel)}
                                     modelType={models.modelType}
                                     isModelLoading={models.isModelLoading}
                                     focusTrigger={focusTrigger}
