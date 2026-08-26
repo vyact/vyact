@@ -2,7 +2,7 @@
   "title": "設定",
   "tabs": {
     "general": "一般",
-    "runtime": "モデル設定",
+    "runtime": "RAG設定",
     "backup": "バックアップ / 復元",
     "api": "連携設定",
     "externalData": "外部データ",
@@ -105,7 +105,7 @@
     }
   },
   "runtime": {
-    "title": "モデル・ファイル処理設定",
+    "title": "RAG・ドキュメント処理設定",
     "description": "保存後すぐ適用され、Elasticsearchのバックアップ・復元にも含まれます。",
     "saving": "保存中…",
     "help": "説明",

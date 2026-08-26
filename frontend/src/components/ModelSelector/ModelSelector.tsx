@@ -136,6 +136,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
             searchable
             disabled={disabled}
             searchPlaceholder={t('modelSelector.modelSearch')}
+            onOpen={() => setModelMenuOpen(null)}
             searchAction={currentProvider === 'vyact' ? (
                 <button
                     type="button"

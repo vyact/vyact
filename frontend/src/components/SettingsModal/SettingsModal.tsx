@@ -67,17 +67,15 @@ type Tab = 'backup' | 'general' | 'runtime' | 'api' | 'externalData' | 'plugins'
 
 type RuntimeSettings = Record<string, number | null>;
 const DEFAULT_SETTINGS_TAB: Tab = 'general';
-const DEFAULT_RUNTIME_SETTINGS: RuntimeSettings = {history_token_budget: 16384, bge_num_ctx: 8192, document_chunk_size: 1200, document_chunk_overlap: 150};
+const DEFAULT_RUNTIME_SETTINGS: RuntimeSettings = {bge_num_ctx: 8192, document_chunk_size: 1200, document_chunk_overlap: 150};
 const toRuntimeInputValues = (settings: RuntimeSettings): Record<string, string> => Object.fromEntries(
     Object.entries(settings).map(([key, value]) => [key, value === null ? '' : String(value)])
 );
 const RUNTIME_SETTING_SECTIONS = [
     {key: 'embedding', fields: ['bge_num_ctx']},
-    {key: 'history', fields: ['history_token_budget']},
     {key: 'chunking', fields: ['document_chunk_size', 'document_chunk_overlap']},
 ] as const;
 const RUNTIME_FIELD_CONSTRAINTS: Record<string, {min: number; max?: number; step: number}> = {
-    history_token_budget: {min: 0, max: 131072, step: 1},
     bge_num_ctx: {min: 1, max: 8192, step: 1},
     document_chunk_size: {min: 100, max: 100000, step: 1}, document_chunk_overlap: {min: 0, max: 99999, step: 1},
 };

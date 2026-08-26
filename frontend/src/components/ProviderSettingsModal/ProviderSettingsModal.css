@@ -1,109 +1,26 @@
-.form-group {
-    margin-bottom: 20px;
-}
-
-.provider-modal-content { max-height: min(86vh, 720px); overflow: hidden; }
-.provider-modal-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
-.provider-modal-body .modal-actions { position: sticky; bottom: -20px; padding: 12px 0 20px; background: linear-gradient(to bottom, transparent, var(--modal-bg) 14px); }
-
-.form-group label {
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--muted);
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.provider-key-saved {
-    margin: -1px 0 8px;
-    color: var(--accent);
-    font-size: var(--modal-sub);
-    font-weight: 600;
-}
-
-.form-input {
-    width: 100%;
-    padding: 14px 16px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-size: 14px;
-    color: var(--text);
-    transition: border-color 0.15s;
-    box-sizing: border-box;
-}
-
-.form-input:focus {
-    outline: none;
-    border-color: var(--accent);
-}
-
-.form-input::placeholder {
-    color: var(--muted);
-}
-
-.modal-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 24px;
-}
-
-/* btn-save 충돌 방지 — 전용 클래스 사용 */
-.btn-save-provider {
-    flex: 1;
-    padding: 12px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity 0.15s;
-    background: var(--accent);
-    border: none;
-    color: white;
-}
-
-.btn-save-provider:hover {
-    opacity: 0.9;
-}
-
-.btn-save-provider:disabled { opacity: 0.55; cursor: default; }
-.provider-form-hint { margin: -4px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
-
-.modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
-}
-
-/* 타이틀 — 자료등록 모달과 동일 */
-.modal-header h3 {
-    font-size: 16px;
-    margin: 0;
-    color: var(--text);
-}
-
-.provider-close-btn {
-    background: none;
-    border: none;
-    font-size: 20px;
-    color: var(--muted);
-    cursor: pointer;
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 6px;
-    transition: all 0.15s;
-}
-
-.provider-close-btn:hover {
-    background: var(--border);
-}
+.provider-settings-overlay { display: flex; align-items: center; justify-content: center; z-index: 10020; }
+.provider-settings-modal { display: flex; flex-direction: column; width: min(520px, calc(100vw - 32px)); max-height: min(860px, calc(100vh - 32px)); overflow: hidden; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); box-shadow: 0 24px 80px #0008; }
+.provider-settings-modal header, .provider-settings-modal footer { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--border); }
+.provider-settings-modal header h2 { margin: 0; color: var(--text); font-size: 18px; }
+.provider-settings-modal header p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+.provider-settings-modal button { padding: 9px 15px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); color: var(--text); cursor: pointer; }
+.provider-settings-modal header button { padding: 6px; border: 0; background: transparent; }
+.provider-settings-body { display: grid; gap: 14px; min-height: 0; overflow-y: auto; padding: 18px 22px; }
+.provider-settings-description { margin: 0 0 2px; color: var(--muted); font-size: 13px; line-height: 1.45; }
+.provider-settings-stack { display: grid; gap: 7px; color: var(--text); font-size: 13px; }
+.provider-settings-stack > strong { font-size: 13px; }
+.provider-key-saved { color: var(--accent); font-size: 11px; font-weight: 600; }
+.provider-settings-wide-input, .provider-settings-input { box-sizing: border-box; border: 1px solid var(--border); border-radius: 8px; outline: none; background: var(--surface); color: var(--text); font: inherit; transition: border-color .15s, background .15s, box-shadow .15s; }
+.provider-settings-wide-input { width: 100%; padding: 11px 12px; }
+.provider-settings-input { width: 150px; padding: 9px 12px; text-align: right; appearance: textfield; }
+.provider-settings-input::-webkit-outer-spin-button, .provider-settings-input::-webkit-inner-spin-button { margin: 0; appearance: none; }
+.provider-settings-wide-input:hover, .provider-settings-input:hover { border-color: var(--text-secondary); background: var(--surface2); }
+.provider-settings-wide-input:focus, .provider-settings-input:focus { border-color: var(--accent); background: var(--bg); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent); }
+.provider-settings-wide-input::placeholder { color: var(--muted); }
+.provider-settings-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; min-height: 42px; font-size: 13px; }
+.provider-settings-modal footer { justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border); border-bottom: 0; }
+.provider-settings-modal footer .primary { border-color: var(--accent); background: var(--accent); color: #fff; }
+.provider-settings-modal footer button:disabled { cursor: not-allowed; opacity: .55; }
 
 /* Custom LLM connection editor */
 .provider-editor-overlay { padding: 26px; background: rgba(0, 0, 0, .72); backdrop-filter: blur(5px); }

@@ -2,7 +2,7 @@
   "title": "Ajustes",
   "tabs": {
     "general": "General",
-    "runtime": "Modelos",
+    "runtime": "Configuración RAG",
     "backup": "Copia",
     "api": "Conexiones",
     "externalData": "Datos externos",
@@ -105,7 +105,7 @@
     }
   },
   "runtime": {
-    "title": "Ajustes de modelo y archivos",
+    "title": "Configuración de RAG y procesamiento de documentos",
     "description": "Se aplica al instante e incluye copia de Elasticsearch.",
     "saving": "Guardando…",
     "help": "Ayuda",

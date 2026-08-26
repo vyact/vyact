@@ -1,12 +1,13 @@
 .model-settings-overlay { display: flex; align-items: center; justify-content: center; z-index: 10020; }
-.model-settings-modal { width: min(520px, calc(100vw - 32px)); overflow: hidden; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); box-shadow: 0 24px 80px #0008; }
+.model-settings-modal { display: flex; flex-direction: column; width: min(520px, calc(100vw - 32px)); max-height: min(860px, calc(100vh - 32px)); overflow: hidden; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); box-shadow: 0 24px 80px #0008; }
 .model-settings-modal header, .model-settings-modal footer { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--border); }
 .model-settings-modal header h2 { margin: 0; font-size: 18px; }
 .model-settings-modal header p { max-width: 390px; margin: 4px 0 0; overflow: hidden; color: var(--muted); font-size: 12px; text-overflow: ellipsis; }
 .model-settings-modal button { padding: 9px 15px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); color: var(--text); cursor: pointer; }
 .model-settings-modal header button { padding: 6px; border: 0; background: transparent; }
-.model-settings-body { display: grid; gap: 12px; padding: 18px 22px; }
-.model-settings-description, .model-settings-loading { padding: 18px 22px; color: var(--muted); font-size: 12px; }
+.model-settings-body { display: grid; gap: 12px; min-height: 0; overflow-y: auto; padding: 18px 22px; }
+.model-settings-description { margin: 0 0 4px; padding: 2px 0 6px; color: var(--muted); font-size: 13px; line-height: 1.45; }
+.model-settings-loading { padding: 18px 22px; color: var(--muted); font-size: 12px; }
 .model-settings-body > label, .model-settings-toggle { display: flex; align-items: center; justify-content: space-between; gap: 18px; font-size: 13px; }
 .model-settings-input { width: 150px; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; text-align: right; transition: border-color .15s, background .15s, box-shadow .15s; appearance: textfield; }
 .model-settings-input::-webkit-outer-spin-button, .model-settings-input::-webkit-inner-spin-button { margin: 0; appearance: none; }
@@ -25,3 +26,16 @@
 .model-settings-modal footer { justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border); border-bottom: 0; }
 .model-settings-modal footer .primary { border-color: var(--accent); background: var(--accent); color: #fff; }
 .model-settings-error { color: var(--danger, #ef4444); font-size: 12px; }
+.model-settings-advanced { margin-top: 2px; border-top: 1px solid var(--border); }
+.model-settings-advanced summary { display: flex; align-items: center; justify-content: space-between; padding: 14px 0 2px; color: var(--text-secondary); font-size: 13px; font-weight: 650; cursor: pointer; list-style: none; }
+.model-settings-advanced summary::-webkit-details-marker { display: none; }
+.model-settings-advanced summary svg { transition: transform .15s; }
+.model-settings-advanced[open] summary svg { transform: rotate(180deg); }
+.model-settings-advanced-fields { display: grid; gap: 12px; padding-top: 12px; }
+.model-settings-option { display: flex; align-items: center; justify-content: space-between; gap: 18px; min-height: 46px; font-size: 13px; }
+.model-settings-option > span { min-width: 0; }
+.model-settings-option strong, .model-settings-option small { display: block; }
+.model-settings-option small { margin-top: 3px; color: var(--muted); font-size: 11px; font-weight: 400; line-height: 1.35; }
+.model-settings-option > .custom-select-wrap { width: 150px; flex: 0 0 150px; }
+.model-settings-option > .custom-select-wrap .custom-select-trigger { height: 38px; }
+.model-settings-option.is-disabled { opacity: .72; }

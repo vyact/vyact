@@ -60,12 +60,14 @@ async def prepare_request(
         pass
     user_prompt = build_user_prompt(question, context_docs, attachments, model)
     runtime_settings = get_runtime_settings()
-    configured_history = runtime_settings["history_token_budget"]
+    configured_history = provider_config.get(
+        "history_token_budget", runtime_settings["history_token_budget"],
+    )
     context_size = int(provider_config.get("context_size") or 0)
     configured_output = (
         runtime_settings["llm_num_predict"]
         if provider_config.get("is_local")
-        else runtime_settings["llm_max_tokens"]
+        else provider_config.get("max_output_tokens", runtime_settings["llm_max_tokens"])
     )
 
     async def select_history(summary: str) -> tuple[list, bool, str]:

@@ -89,7 +89,8 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
     useEffect(() => {
         const handler = (e: PointerEvent) => {
             const target = e.target as Node;
-            if (wrapRef.current && !wrapRef.current.contains(target) && !dropdownRef.current?.contains(target)) {
+            const isActionMenuInteraction = target instanceof Element && Boolean(target.closest('.action-menu-content'));
+            if (wrapRef.current && !wrapRef.current.contains(target) && !dropdownRef.current?.contains(target) && !isActionMenuInteraction) {
                 setOpen(false);
                 setSearch('');
             }

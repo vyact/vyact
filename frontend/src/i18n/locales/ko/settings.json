@@ -2,7 +2,7 @@
   "title": "설정",
   "tabs": {
     "general": "일반",
-    "runtime": "모델 설정",
+    "runtime": "RAG 설정",
     "backup": "백업 / 복원",
     "api": "연동 설정",
     "externalData": "외부 데이터",
@@ -160,7 +160,7 @@
     }
   },
   "runtime": {
-    "title": "모델 및 파일 처리 설정",
+    "title": "RAG 및 문서 처리 설정",
     "description": "저장 즉시 적용되며 Elasticsearch 백업·복원에도 포함됩니다.",
     "saving": "저장 중…",
     "restoreDefaults": "기본값 복원",

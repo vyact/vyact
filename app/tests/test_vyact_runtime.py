@@ -15,6 +15,10 @@ from services.vyact_runtime import (
 
 
 class VyactRuntimeTests(unittest.TestCase):
+    def test_runtime_rejects_mtp_with_kv_cache_quantization(self):
+        with self.assertRaisesRegex(ValueError, "cannot be enabled together"):
+            start_single_model(Path("model.gguf"), 32768, cache_quantization=True, enable_mtp=True)
+
     def test_deletes_only_the_selected_gguf_model(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             models_dir = Path(temp_dir)
@@ -173,7 +177,8 @@ class VyactRuntimeTests(unittest.TestCase):
                 self.assertEqual(start_single_model(model, 8192), "vyact-model")
             write_config.assert_called_once_with(
                 model, 8192, None, vision_projector_path=None, enable_mtp=False, debug_logging=False,
-                cache_quantization=True,
+                cache_quantization=True, kv_cache_precision="q8", performance_mode="auto",
+                cpu_threads=None,
             )
             self.assertIn("llama-swap", str(popen.call_args.args[0][0]))
             self.assertEqual(Path(popen.call_args.kwargs["stdout"].name).name, "llama-swap_20260825.log")
@@ -193,12 +198,39 @@ class VyactRuntimeTests(unittest.TestCase):
                  patch("services.vyact_runtime.VYACT_RUNTIME_DIR", base), \
                  patch("services.vyact_runtime.VYACT_MODELS_DIR", base / "models"), \
                  patch("services.vyact_runtime.VYACT_SWAP_CONFIG", config):
-                write_single_model_config(model, 8192, mtp)
+                write_single_model_config(model, 32768, mtp)
 
             contents = config.read_text(encoding="utf-8")
             self.assertIn("--spec-draft-model", contents)
             self.assertIn("--spec-type draft-mtp", contents)
             self.assertIn("--spec-draft-ngl auto", contents)
+            self.assertNotIn("--cache-type-k", contents)
+            self.assertNotIn("--cache-type-v", contents)
+
+    def test_advanced_gguf_settings_map_to_runtime_flags(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            base = Path(temp_dir)
+            model = base / "model.gguf"
+            server = base / "llama-server"
+            swap = base / "llama-swap"
+            config = base / "llama-swap.yaml"
+            for path in (model, server, swap):
+                path.touch()
+            paths = RuntimePaths(server, swap, base / "models", config)
+            with patch("services.vyact_runtime.get_runtime_paths", return_value=paths), \
+                 patch("services.vyact_runtime.model_has_integrated_mtp", return_value=False), \
+                 patch("services.vyact_runtime.VYACT_RUNTIME_DIR", base), \
+                 patch("services.vyact_runtime.VYACT_MODELS_DIR", base / "models"), \
+                 patch("services.vyact_runtime.VYACT_SWAP_CONFIG", config):
+                write_single_model_config(
+                    model, 32768, enable_mtp=False, kv_cache_precision="q4",
+                    performance_mode="memory", cpu_threads=6,
+                )
+
+            contents = config.read_text(encoding="utf-8")
+            self.assertIn("--cache-type-k q4_0 --cache-type-v q4_0", contents)
+            self.assertIn("--batch-size 512 --ubatch-size 128", contents)
+            self.assertIn("--threads 6 --threads-batch 6", contents)
 
     def test_debug_config_enables_trace_logging_without_verbose_prompt(self):
         with tempfile.TemporaryDirectory() as temp_dir:

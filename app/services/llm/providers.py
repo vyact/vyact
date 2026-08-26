@@ -79,6 +79,15 @@ def _apply_local_prefix_cache_control(body: dict, provider_config: dict) -> None
         body["cache_prompt"] = True
 
 
+def _apply_local_seed(body: dict, provider_config: dict) -> None:
+    """Apply the selected local model's reproducibility seed per request."""
+    if not provider_config.get("is_local"):
+        return
+    seed = get_runtime_settings().get("seed")
+    if seed is not None:
+        body["seed"] = int(seed)
+
+
 async def _get_unified_tools(use_tools: bool):
     """MCP tool(통일형)과 tool 이름 목록을 반환. tool이 없으면 ([], [])."""
     if not use_tools:
@@ -118,7 +127,8 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
     usage(dict)를 넘기면 최종 청크의 토큰 사용량(prompt_tokens/completion_tokens)을
     그 안에 채워 넣는다 (호출자가 스트리밍 종료 후 읽어간다).
     """
-    temperature = get_runtime_settings()["llm_temperature"]
+    provider_config = await get_provider_config()
+    temperature = provider_config.get("temperature", get_runtime_settings()["llm_temperature"])
     image_urls = load_image_data_urls(attachments)
     if image_urls:
         content: list = [{"type": "text", "text": user_prompt}]
@@ -139,7 +149,6 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
     user_message_index = len(messages) - 1
 
     headers = build_provider_headers(await get_provider_config())
-    provider_config = await get_provider_config()
     configured_base_url = provider_config.get("base_url")
     base_url = (
         f"{configured_base_url.rstrip('/')}/chat/completions"
@@ -166,6 +175,9 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
                 body["max_tokens"] = await _local_max_tokens(messages, provider_config, unified)
                 _apply_local_reasoning_control(body, provider_config, reasoning)
                 _apply_local_prefix_cache_control(body, provider_config)
+                _apply_local_seed(body, provider_config)
+            elif provider_config.get("selection_type") == "openai":
+                body["max_completion_tokens"] = provider_config.get("max_output_tokens", 2048)
             if usage is not None:
                 body["stream_options"] = {"include_usage": True}
             log_llm_call(call_reason, "openai", model, streaming=True, reasoning=reasoning,
@@ -289,6 +301,7 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
         body["max_tokens"] = await _local_max_tokens(messages, provider_config, unified)
         _apply_local_reasoning_control(body, provider_config, reasoning)
         _apply_local_prefix_cache_control(body, provider_config)
+        _apply_local_seed(body, provider_config)
         if runtime.get("top_p") is not None:
             body["top_p"] = runtime["top_p"]
         if provider_config.get("runtime") == "gguf":
@@ -299,6 +312,8 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
                     "type": "json_schema",
                     "json_schema": {"name": "vyact_response", "schema": structured_output_schema},
                 }
+    elif provider_config.get("selection_type") == "openai":
+        body["max_completion_tokens"] = provider_config.get("max_output_tokens", 2048)
     if usage is not None:
         # stream=True에서도 마지막 청크에 usage를 실어 보내도록 요청 (choices는 빈 배열로 옴)
         body["stream_options"] = {"include_usage": True}
@@ -361,7 +376,9 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
     usage(dict)를 넘기면 매 청크의 usageMetadata(누적치)로 계속 덮어써서,
     스트림이 끝났을 때 최종 토큰 사용량이 남도록 한다.
     """
-    temperature = get_runtime_settings()["llm_temperature"]
+    provider_config = await get_provider_config()
+    temperature = provider_config.get("temperature", get_runtime_settings()["llm_temperature"])
+    max_output_tokens = provider_config.get("max_output_tokens", 2048)
     unified, names = await _get_unified_tools(use_tools)
     sys_text = system_message
     if names:
@@ -384,7 +401,7 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
                f"{model}:generateContent?key={api_key}")
     stream_url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
                   f"{model}:streamGenerateContent?alt=sse&key={api_key}")
-    gen_cfg = {"temperature": temperature}
+    gen_cfg = {"temperature": temperature, "maxOutputTokens": max_output_tokens}
 
     # ── tool 루프 (비스트리밍) ──
     approval_rejected = False
@@ -488,8 +505,9 @@ async def claude_stream(client, model, api_key, system_message, user_prompt,
     output_tokens(누적치)를 채워 넣는다.
     """
     runtime = get_runtime_settings()
-    temperature = runtime["llm_temperature"]
-    max_tokens = runtime["llm_max_tokens"]
+    provider_config = await get_provider_config()
+    temperature = provider_config.get("temperature", runtime["llm_temperature"])
+    max_tokens = provider_config.get("max_output_tokens", runtime["llm_max_tokens"])
     blocks: list = [{"type": "text", "text": user_prompt}]
     for att in attachments:
         if att.get("type") == "image":

@@ -11,7 +11,7 @@ import re
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from agent import ensure_index, get_index_stats, load_prompts_cache
 from config import INSTALL_DIR, LOGS_DIR, SETUP_DONE, VENV_DIR, get_log_file
@@ -43,17 +43,19 @@ def is_japanese_system_language() -> bool:
 
 
 RUNTIME_SETTING_LIMITS = {
-    "history_token_budget": (0, 131072),
     "bge_num_ctx": (1, 8192),
     "document_chunk_size": (100, 100000), "document_chunk_overlap": (0, 99999),
 }
 def _profile_runtime_settings(profile: dict) -> dict:
+    history_token_budget = profile.get("history_token_budget")
     return {
         "llm_num_ctx": profile.get("context_size", 32768),
         "llm_num_predict": profile.get("max_output_tokens", 2048),
         "llm_max_tokens": profile.get("max_output_tokens", 2048),
         "llm_temperature": profile.get("temperature", 0.2),
         "top_k": profile.get("top_k"), "top_p": profile.get("top_p"),
+        "seed": profile.get("seed"),
+        "history_token_budget": 16384 if history_token_budget is None else history_token_budget,
     }
 
 router = APIRouter()
@@ -70,6 +72,9 @@ class ModelSelectRequest(BaseModel):
 class ProviderConfigRequest(BaseModel):
     api_key: str
     model: str
+    history_token_budget: int = Field(default=16384, ge=0, le=131072)
+    temperature: float = Field(default=0.2, ge=0, le=1)
+    max_output_tokens: int = Field(default=2048, ge=1, le=32768)
 
 
 class ProviderSelectRequest(BaseModel):
@@ -99,10 +104,22 @@ class VyactModelActivateRequest(BaseModel):
     runtime: str = Field(default="gguf", pattern="^(gguf|mlx)$")
     repository: str | None = Field(default=None, min_length=3, max_length=256)
     max_output_tokens: int = Field(default=4096, ge=1, le=32768)
+    history_token_budget: int = Field(default=16384, ge=0, le=131072)
     temperature: float = Field(default=0.2, ge=0, le=1)
     top_k: int | None = Field(default=None, ge=0, le=100)
     top_p: float | None = Field(default=None, ge=0, le=1)
     cache_quantization: bool = True
+    mtp_enabled: bool | None = None
+    kv_cache_precision: str | None = Field(default=None, pattern="^(none|q8|q4)$")
+    performance_mode: str = Field(default="auto", pattern="^(auto|memory|performance)$")
+    cpu_threads: int | None = Field(default=None, ge=1, le=256)
+    seed: int | None = Field(default=None, ge=0, le=2147483647)
+
+    @model_validator(mode="after")
+    def validate_acceleration_settings(self):
+        if self.mtp_enabled is True and (self.kv_cache_precision or ("q8" if self.cache_quantization else "none")) != "none":
+            raise ValueError("MTP acceleration and KV cache quantization cannot be enabled together")
+        return self
 
 
 class VyactModelProfileRequest(BaseModel):
@@ -111,10 +128,22 @@ class VyactModelProfileRequest(BaseModel):
     repository: str | None = Field(default=None, max_length=256)
     context_size: int = Field(default=32768, ge=512, le=131072)
     max_output_tokens: int = Field(default=4096, ge=1, le=32768)
+    history_token_budget: int = Field(default=16384, ge=0, le=131072)
     temperature: float = Field(default=0.2, ge=0, le=1)
     top_k: int | None = Field(default=None, ge=0, le=100)
     top_p: float | None = Field(default=None, ge=0, le=1)
     cache_quantization: bool = True
+    mtp_enabled: bool | None = None
+    kv_cache_precision: str | None = Field(default=None, pattern="^(none|q8|q4)$")
+    performance_mode: str = Field(default="auto", pattern="^(auto|memory|performance)$")
+    cpu_threads: int | None = Field(default=None, ge=1, le=256)
+    seed: int | None = Field(default=None, ge=0, le=2147483647)
+
+    @model_validator(mode="after")
+    def validate_acceleration_settings(self):
+        if self.mtp_enabled is True and (self.kv_cache_precision or ("q8" if self.cache_quantization else "none")) != "none":
+            raise ValueError("MTP acceleration and KV cache quantization cannot be enabled together")
+        return self
 
 
 class VyactModelDeleteRequest(BaseModel):
@@ -500,20 +529,10 @@ async def install(req: ModelSelectRequest):
                 await ensure_mcp_config()
                 if req.type == "vyact":
                     vyact_config = cfg["vyact_config"]
-                    if vyact_config.get("runtime", "gguf") == "mlx":
-                        from services.mlx_runtime import get_downloaded_mlx_model_path, start_mlx_model
-                        model_path = get_downloaded_mlx_model_path(vyact_config["model_path"])
-                        model_id = await asyncio.to_thread(
-                            start_mlx_model, model_path, vyact_config.get("context_size", 32768),
-                            cfg.get("debug_logging", False),
-                        )
-                    else:
-                        from services.vyact_runtime import get_downloaded_model_path, start_single_model
-                        model_path = get_downloaded_model_path(vyact_config["model_path"])
-                        model_id = await asyncio.to_thread(
-                            start_single_model, model_path, vyact_config.get("context_size", 32768),
-                            cfg.get("debug_logging", False),
-                        )
+                    from services.vyact_runtime import start_configured_runtime
+                    model_id = await asyncio.to_thread(
+                        start_configured_runtime, vyact_config, cfg.get("debug_logging", False),
+                    )
                     cfg["model"] = model_id
                     cfg["vyact_config"]["model"] = model_id
                 await save_config_async(cfg)
@@ -823,9 +842,28 @@ async def read_vyact_model_profile(
     recommended_context: int = Query(default=32768, ge=512, le=131072),
 ):
     profile = await get_model_profile(model_path)
-    if profile:
-        return profile
-    return recommended_model_profile(model_path, runtime, repository, recommended_context)
+    if profile is None:
+        profile = recommended_model_profile(model_path, runtime, repository, recommended_context)
+    elif "history_token_budget" not in profile:
+        config = await load_config_async()
+        profile = {
+            **profile,
+            "history_token_budget": config.get("runtime_settings", {}).get("history_token_budget", 16384),
+        }
+    profile = normalize_model_profile(profile)
+    if runtime == "mlx":
+        from services.mlx_runtime import get_downloaded_mlx_model_path, get_mlx_runtime_capabilities
+        capabilities = await asyncio.to_thread(
+            get_mlx_runtime_capabilities, get_downloaded_mlx_model_path(model_path),
+        )
+    else:
+        capabilities = {
+            "performance_modes": ["auto", "memory", "performance"],
+            "cpu_threads": True,
+            "kv_cache_precisions": ["q8", "q4"],
+            "seed": True,
+        }
+    return {**profile, "capabilities": capabilities}
 
 
 @router.post("/vyact/models/profile")
@@ -843,12 +881,15 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
             safe_profile = normalize_model_profile({**req.model_dump(), "runtime": runtime})
             req.context_size = safe_profile["context_size"]
             req.max_output_tokens = safe_profile["max_output_tokens"]
+            req.history_token_budget = safe_profile["history_token_budget"]
             if runtime == "mlx":
                 from services.mlx_runtime import get_downloaded_mlx_model_path, start_mlx_model
 
                 model_path = get_downloaded_mlx_model_path(req.model_path)
                 model_id = await asyncio.to_thread(
-                    start_mlx_model, model_path, req.context_size, config.get("debug_logging", False), req.cache_quantization,
+                    start_mlx_model, model_path, req.context_size, config.get("debug_logging", False),
+                    req.cache_quantization, req.mtp_enabled, req.kv_cache_precision,
+                    req.performance_mode, req.cpu_threads,
                 )
             else:
                 from services.vyact_runtime import (
@@ -857,7 +898,9 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
 
                 model_path = get_downloaded_model_path(req.model_path)
                 model_id = await asyncio.to_thread(
-                    start_single_model, model_path, req.context_size, config.get("debug_logging", False), req.cache_quantization,
+                    start_single_model, model_path, req.context_size, config.get("debug_logging", False),
+                    req.cache_quantization, req.mtp_enabled, req.kv_cache_precision,
+                    req.performance_mode, req.cpu_threads,
                 )
                 req.context_size = await asyncio.to_thread(
                     get_loaded_context_size, model_id, req.context_size,
@@ -875,14 +918,24 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
                 "runtime": runtime,
                 "repository": repository,
                 "cache_quantization": req.cache_quantization,
+                "mtp_enabled": req.mtp_enabled,
+                "kv_cache_precision": safe_profile["kv_cache_precision"],
+                "performance_mode": req.performance_mode, "cpu_threads": req.cpu_threads,
+                "seed": req.seed,
                 "max_output_tokens": req.max_output_tokens, "temperature": req.temperature,
+                "history_token_budget": safe_profile["history_token_budget"],
                 "top_k": req.top_k, "top_p": req.top_p,
             })
             await save_model_profile({
                 "model_path": req.model_path, "runtime": runtime, "repository": repository,
                 "context_size": req.context_size, "max_output_tokens": req.max_output_tokens,
+                "history_token_budget": safe_profile["history_token_budget"],
                 "temperature": req.temperature, "top_k": req.top_k, "top_p": req.top_p,
                 "cache_quantization": req.cache_quantization,
+                "mtp_enabled": req.mtp_enabled,
+                "kv_cache_precision": safe_profile["kv_cache_precision"],
+                "performance_mode": req.performance_mode, "cpu_threads": req.cpu_threads,
+                "seed": req.seed,
             })
             common_settings = dict(config.get("runtime_settings", {}))
             config["runtime_settings"] = common_settings
@@ -917,6 +970,10 @@ async def select_model(req: ModelSelectRequest):
                 "repository": profile.get("repository") or repository,
                 "context_size": profile["context_size"],
                 "cache_quantization": profile["cache_quantization"],
+                "mtp_enabled": profile.get("mtp_enabled"),
+                "kv_cache_precision": profile.get("kv_cache_precision"),
+                "performance_mode": profile.get("performance_mode", "auto"),
+                "cpu_threads": profile.get("cpu_threads"), "seed": profile.get("seed"),
                 "max_output_tokens": profile["max_output_tokens"], "temperature": profile["temperature"],
                 "top_k": profile.get("top_k"), "top_p": profile.get("top_p"),
             })
@@ -987,6 +1044,9 @@ async def get_providers():
             key = pc.get("api_key", "")
             providers[p] = {
                 "model": pc.get("model"),
+                "history_token_budget": pc.get("history_token_budget", 16384),
+                "temperature": pc.get("temperature", 0.2),
+                "max_output_tokens": pc.get("max_output_tokens", 2048),
                 "has_key": bool(key),
                 "key_preview": f"{key[:8]}..." if len(key) > 8 else "",
             }
@@ -1089,7 +1149,13 @@ async def save_provider(provider: str, req: ProviderConfigRequest):
         api_key = req.api_key.strip() or existing.get("api_key", "")
         if not api_key:
             raise HTTPException(400, "API Key가 필요합니다.")
-        config[f"{provider}_config"] = {"api_key": api_key, "model": req.model.strip()}
+        config[f"{provider}_config"] = {
+            "api_key": api_key,
+            "model": req.model.strip(),
+            "history_token_budget": req.history_token_budget,
+            "temperature": req.temperature,
+            "max_output_tokens": req.max_output_tokens,
+        }
         await save_config_async(config)
         return {"ok": True}
     except Exception as e:
@@ -1211,7 +1277,12 @@ async def set_debug_logging(body: dict):
             from services.vyact_runtime import get_downloaded_model_path, start_single_model
             model_path = get_downloaded_model_path(model_path_value)
             start_model = start_single_model
-        model_id = await asyncio.to_thread(start_model, model_path, vyact_config.get("context_size", 32768), enabled, vyact_config.get("cache_quantization", True))
+        model_id = await asyncio.to_thread(
+            start_model, model_path, vyact_config.get("context_size", 32768), enabled,
+            vyact_config.get("cache_quantization", True), vyact_config.get("mtp_enabled"),
+            vyact_config.get("kv_cache_precision"), vyact_config.get("performance_mode", "auto"),
+            vyact_config.get("cpu_threads"),
+        )
         cfg["model"] = model_id
         cfg.setdefault("vyact_config", {})["model"] = model_id
         await save_config_async(cfg)
@@ -1221,7 +1292,12 @@ async def set_debug_logging(body: dict):
         await save_config_async(cfg)
         DebugLogSettings.set_enabled(previous_enabled)
         try:
-            await asyncio.to_thread(start_model, model_path, vyact_config.get("context_size", 32768), previous_enabled, vyact_config.get("cache_quantization", True))
+            await asyncio.to_thread(
+                start_model, model_path, vyact_config.get("context_size", 32768), previous_enabled,
+                vyact_config.get("cache_quantization", True), vyact_config.get("mtp_enabled"),
+                vyact_config.get("kv_cache_precision"), vyact_config.get("performance_mode", "auto"),
+                vyact_config.get("cpu_threads"),
+            )
         except Exception as restore_error:
             logger.error("[vyact] failed to restore runtime after debug restart: %s", restore_error)
         raise HTTPException(500, "Vyact 런타임을 다시 시작하지 못했습니다.") from error

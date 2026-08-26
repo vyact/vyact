@@ -300,7 +300,22 @@ def _server_help(server_module: str) -> str:
         return ""
 
 
-def _build_mlx_server_command(model_path: Path, context_size: int, cache_quantization: bool = True) -> list[str]:
+def get_mlx_runtime_capabilities(model_path: Path) -> dict:
+    """Report advanced controls supported by the installed MLX server."""
+    server_help = _server_help(_server_module_for_model(model_path))
+    return {
+        "performance_modes": [],
+        "cpu_threads": False,
+        "kv_cache_precisions": ["q8", "q4"] if "--kv-bits" in server_help else [],
+        "seed": True,
+    }
+
+
+def _build_mlx_server_command(
+        model_path: Path, context_size: int, cache_quantization: bool = True,
+        enable_mtp: bool | None = None,
+        kv_cache_precision: str | None = None,
+) -> list[str]:
     manifest = _read_model_manifest(model_path / MLX_MODEL_MANIFEST)
     mtp_repository = manifest.get("mtp_repository")
     try:
@@ -309,6 +324,8 @@ def _build_mlx_server_command(model_path: Path, context_size: int, cache_quantiz
         mtp_path = None
     if mtp_path is not None and not (mtp_path / MLX_MODEL_MANIFEST).is_file():
         mtp_path = None
+    if enable_mtp is False:
+        mtp_path = None
     server_module = "mlx_vlm.server" if mtp_path is not None else _server_module_for_model(model_path)
     command = [
         sys.executable, "-m", server_module, "--model", str(model_path),
@@ -316,13 +333,14 @@ def _build_mlx_server_command(model_path: Path, context_size: int, cache_quantiz
         "--max-kv-size", str(context_size),
     ]
     server_help = _server_help(server_module)
+    kv_cache_precision = kv_cache_precision or ("q8" if cache_quantization else "none")
     if (
-        cache_quantization
+        kv_cache_precision != "none"
         and mtp_path is None
         and context_size >= _MLX_KV_QUANTIZATION_MIN_CONTEXT
         and "--kv-bits" in server_help
     ):
-        command.extend(["--kv-bits", "8"])
+        command.extend(["--kv-bits", "4" if kv_cache_precision == "q4" else "8"])
         if "--quantized-kv-start" in server_help:
             command.extend(["--quantized-kv-start", "0"])
     if mtp_path is not None:
@@ -343,8 +361,16 @@ def _mlx_server_environment() -> dict[str, str]:
     }
 
 
-def start_mlx_model(model_path: Path, context_size: int, debug_logging: bool = False, cache_quantization: bool = True) -> str:
+def start_mlx_model(
+        model_path: Path, context_size: int, debug_logging: bool = False,
+        cache_quantization: bool = True, enable_mtp: bool | None = None,
+        kv_cache_precision: str | None = None, _performance_mode: str = "auto",
+        _cpu_threads: int | None = None,
+) -> str:
     global _mlx_runtime_process
+    kv_cache_precision = kv_cache_precision or ("q8" if cache_quantization else "none")
+    if enable_mtp is True and kv_cache_precision != "none":
+        raise ValueError("MTP acceleration and KV cache quantization cannot be enabled together")
     if not is_apple_silicon():
         raise RuntimeError("MLX models require Apple Silicon")
     try:
@@ -357,7 +383,7 @@ def start_mlx_model(model_path: Path, context_size: int, debug_logging: bool = F
     stop_mlx_runtime()
     MLX_RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
     log_path = get_log_file("mlx-vlm")
-    command = _build_mlx_server_command(model_path, context_size, cache_quantization)
+    command = _build_mlx_server_command(model_path, context_size, cache_quantization, enable_mtp, kv_cache_precision)
     with log_path.open("ab") as log_file:
         process = subprocess.Popen(
             command,

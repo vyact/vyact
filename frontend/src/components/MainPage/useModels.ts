@@ -51,7 +51,7 @@ export function useModels(
     };
 
     const handleModelChange = async (model: string, needsDownload: boolean = false, selectedType?: 'chat' | 'image_gen' | 'image_edit') => {
-        if (!model || isModelLoading) return;
+        if (!model || model === selectedModel || isModelLoading) return;
 
         if (needsDownload) {
             const confirmed = requestDownloadConfirmation

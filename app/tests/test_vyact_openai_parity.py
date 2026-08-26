@@ -6,6 +6,7 @@ from services.llm.providers import (
     _accumulate_llm_timing,
     _apply_local_prefix_cache_control,
     _apply_local_reasoning_control,
+    _apply_local_seed,
     openai_stream,
 )
 
@@ -57,6 +58,12 @@ class VyactOpenAiParityTests(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertEqual(body, {"enable_thinking": False})
+
+    def test_local_runtime_receives_configured_seed(self):
+        body = {}
+        with patch("services.llm.providers.get_runtime_settings", return_value={"seed": 42}):
+            _apply_local_seed(body, {"is_local": True, "runtime": "mlx"})
+        self.assertEqual(body, {"seed": 42})
 
     def test_llm_total_accumulates_tool_judgment_and_final_call_timings(self):
         usage = {}

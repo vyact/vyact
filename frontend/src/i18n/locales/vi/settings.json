@@ -2,7 +2,7 @@
   "title": "Cài đặt",
   "tabs": {
     "general": "Chung",
-    "runtime": "Mô hình",
+    "runtime": "Cài đặt RAG",
     "backup": "Sao lưu",
     "api": "Kết nối",
     "externalData": "Dữ liệu ngoài",
@@ -105,7 +105,7 @@
     }
   },
   "runtime": {
-    "title": "Cài đặt mô hình và tệp",
+    "title": "Cài đặt RAG và xử lý tài liệu",
     "description": "Áp dụng ngay và có trong sao lưu Elasticsearch.",
     "saving": "Đang lưu…",
     "help": "Trợ giúp",

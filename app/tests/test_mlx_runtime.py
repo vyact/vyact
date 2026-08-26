@@ -130,6 +130,33 @@ class MlxRuntimeTests(unittest.TestCase):
             self.assertEqual(command[command.index("--kv-bits") + 1], "8")
             self.assertEqual(command[command.index("--quantized-kv-start") + 1], "0")
 
+    def test_disabling_mtp_allows_kv_cache_quantization(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            model_dir = Path(temp_dir) / "owner" / "model"
+            mtp_dir = Path(temp_dir) / "owner" / "mtp"
+            model_dir.mkdir(parents=True)
+            mtp_dir.mkdir(parents=True)
+            (model_dir / "config.json").write_text(json.dumps({"architectures": ["QwenForCausalLM"]}))
+            (mtp_dir / MLX_MODEL_MANIFEST).write_text(json.dumps({"role": "mtp"}))
+            (model_dir / MLX_MODEL_MANIFEST).write_text(json.dumps({"mtp_repository": "owner/mtp"}))
+
+            with patch("services.mlx_runtime.MLX_MODELS_DIR", Path(temp_dir)), \
+                 patch("services.mlx_runtime._server_help", return_value="--kv-bits --quantized-kv-start"):
+                command = _build_mlx_server_command(model_dir, 32768, cache_quantization=True, enable_mtp=False)
+
+            self.assertNotIn("--draft-model", command)
+            self.assertEqual(command[command.index("--kv-bits") + 1], "8")
+
+    def test_mlx_q4_precision_maps_to_four_bit_cache(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            model_dir = Path(temp_dir) / "model"
+            model_dir.mkdir()
+            (model_dir / "config.json").write_text(json.dumps({"architectures": ["QwenForCausalLM"]}))
+            (model_dir / MLX_MODEL_MANIFEST).write_text(json.dumps({"repository": "owner/model"}))
+            with patch("services.mlx_runtime._server_help", return_value="--kv-bits --quantized-kv-start"):
+                command = _build_mlx_server_command(model_dir, 32768, kv_cache_precision="q4")
+            self.assertEqual(command[command.index("--kv-bits") + 1], "4")
+
     def test_associates_mtp_without_listing_drafter_as_selectable_model(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             models_dir = Path(temp_dir)

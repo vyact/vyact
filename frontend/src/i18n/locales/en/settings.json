@@ -2,7 +2,7 @@
   "title": "Settings",
   "tabs": {
     "general": "General",
-    "runtime": "Model settings",
+    "runtime": "RAG settings",
     "backup": "Backup / Restore",
     "api": "Integrations",
     "externalData": "External data",
@@ -131,7 +131,7 @@
     }
   },
   "runtime": {
-    "title": "Model and file processing settings",
+    "title": "RAG and document processing settings",
     "description": "Applied immediately and included in Elasticsearch backup and restore.",
     "saving": "Saving…",
     "help": "Help",

@@ -2,7 +2,7 @@
   "title": "Paramètres",
   "tabs": {
     "general": "Général",
-    "runtime": "Modèles",
+    "runtime": "Paramètres RAG",
     "backup": "Sauvegarde",
     "api": "Connexions",
     "externalData": "Données externes",
@@ -105,7 +105,7 @@
     }
   },
   "runtime": {
-    "title": "Paramètres de modèle et de fichiers",
+    "title": "Paramètres RAG et traitement des documents",
     "description": "S'applique instantanément et inclut la sauvegarde d'Elasticsearch.",
     "saving": "Enregistrement…",
     "help": "Aide",

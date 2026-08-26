@@ -106,6 +106,9 @@ interface ScriptPayload {
 interface ProviderSettings {
     has_key: boolean;
     model?: string;
+    history_token_budget?: number;
+    temperature?: number;
+    max_output_tokens?: number;
 }
 
 export interface CustomProviderSettings {
@@ -183,10 +186,22 @@ export interface VyactModelProfile {
     repository?: string | null;
     context_size: number;
     max_output_tokens: number;
+    history_token_budget: number;
     temperature: number;
     top_k: number | null;
     top_p: number | null;
     cache_quantization: boolean;
+    mtp_enabled?: boolean | null;
+    kv_cache_precision?: 'none' | 'q8' | 'q4';
+    performance_mode?: 'auto' | 'memory' | 'performance';
+    cpu_threads?: number | null;
+    seed?: number | null;
+    capabilities?: {
+        performance_modes: Array<'auto' | 'memory' | 'performance'>;
+        cpu_threads: boolean;
+        kv_cache_precisions: Array<'q8' | 'q4'>;
+        seed: boolean;
+    };
 }
 
 interface ProvidersResponse {
@@ -1077,11 +1092,11 @@ export const api = {
         return res.json();
     },
 
-    async saveProvider(provider: string, apiKey: string, model: string): Promise<ProvidersResponse> {
+    async saveProvider(provider: string, apiKey: string, model: string, historyTokenBudget = 16384, temperature = 0.2, maxOutputTokens = 2048): Promise<ProvidersResponse> {
         const res = await fetch(`${API_BASE}/providers/${provider}`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({api_key: apiKey, model})
+            body: JSON.stringify({api_key: apiKey, model, history_token_budget: historyTokenBudget, temperature, max_output_tokens: maxOutputTokens})
         });
         return res.json();
     },

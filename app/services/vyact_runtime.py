@@ -460,9 +460,17 @@ def stop_runtime() -> None:
     raise RuntimeError("The existing Vyact runtime did not stop in time")
 
 
-def start_single_model(model_path: Path, context_size: int, debug_logging: bool = False, cache_quantization: bool = True) -> str:
+def start_single_model(
+        model_path: Path, context_size: int, debug_logging: bool = False,
+        cache_quantization: bool = True, enable_mtp: bool | None = None,
+        kv_cache_precision: str | None = None, performance_mode: str = "auto",
+        cpu_threads: int | None = None,
+) -> str:
     """Restart llama-swap with exactly one configured model and return its API ID."""
     global _active_mtp_model, _runtime_process
+    kv_cache_precision = kv_cache_precision or ("q8" if cache_quantization else "none")
+    if enable_mtp is True and kv_cache_precision != "none":
+        raise ValueError("MTP acceleration and KV cache quantization cannot be enabled together")
     paths = get_runtime_paths()
     if not paths.llama_swap:
         raise RuntimeError("Vyact native runtime is not installed")
@@ -472,12 +480,15 @@ def start_single_model(model_path: Path, context_size: int, debug_logging: bool 
     mtp_model_path = get_cached_mtp_sidecar(model_path)
     vision_projector_path = get_cached_vision_projector(model_path)
 
-    def launch(enable_mtp: bool) -> tuple[str, subprocess.Popen]:
+    def launch(use_mtp: bool) -> tuple[str, subprocess.Popen]:
         stop_runtime()
         model_key = write_single_model_config(
-            model_path, context_size, mtp_model_path if enable_mtp else None,
+            model_path, context_size, mtp_model_path if use_mtp else None,
             vision_projector_path=vision_projector_path,
-            enable_mtp=enable_mtp, debug_logging=debug_logging, cache_quantization=cache_quantization,
+            enable_mtp=use_mtp, debug_logging=debug_logging,
+            cache_quantization=cache_quantization and not use_mtp,
+            kv_cache_precision="none" if use_mtp else kv_cache_precision,
+            performance_mode=performance_mode, cpu_threads=cpu_threads,
         )
         VYACT_RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
         log_path = get_log_file("llama-swap")
@@ -507,7 +518,8 @@ def start_single_model(model_path: Path, context_size: int, debug_logging: bool 
             time.sleep(0.25)
         raise RuntimeError("The model did not become ready within 120 seconds")
 
-    should_try_mtp = mtp_model_path is not None or model_has_integrated_mtp(model_path)
+    supports_mtp = mtp_model_path is not None or model_has_integrated_mtp(model_path)
+    should_try_mtp = supports_mtp and enable_mtp is not False
     model_key, process = launch(should_try_mtp)
     try:
         wait_until_loaded(model_key, process)
@@ -532,8 +544,18 @@ def start_configured_runtime(vyact_config: dict, debug_logging: bool = False) ->
         vyact_config["context_size"] = context_size
     if vyact_config.get("runtime", "gguf") == "mlx":
         from services.mlx_runtime import get_downloaded_mlx_model_path, start_mlx_model
-        return start_mlx_model(get_downloaded_mlx_model_path(model_path_value), context_size, debug_logging, bool(vyact_config.get("cache_quantization", True)))
-    model_key = start_single_model(get_downloaded_model_path(model_path_value), context_size, debug_logging, bool(vyact_config.get("cache_quantization", True)))
+        return start_mlx_model(
+            get_downloaded_mlx_model_path(model_path_value), context_size, debug_logging,
+            bool(vyact_config.get("cache_quantization", True)), vyact_config.get("mtp_enabled"),
+            vyact_config.get("kv_cache_precision"), vyact_config.get("performance_mode", "auto"),
+            vyact_config.get("cpu_threads"),
+        )
+    model_key = start_single_model(
+        get_downloaded_model_path(model_path_value), context_size, debug_logging,
+        bool(vyact_config.get("cache_quantization", True)), vyact_config.get("mtp_enabled"),
+        vyact_config.get("kv_cache_precision"), vyact_config.get("performance_mode", "auto"),
+        vyact_config.get("cpu_threads"),
+    )
     vyact_config["context_size"] = get_loaded_context_size(model_key, context_size)
     return model_key
 
@@ -561,6 +583,8 @@ def write_single_model_config(
         model_path: Path, context_size: int, mtp_model_path: Path | None = None,
         vision_projector_path: Path | None = None, *,
         enable_mtp: bool = True, debug_logging: bool = False, cache_quantization: bool = True,
+        kv_cache_precision: str | None = None, performance_mode: str = "auto",
+        cpu_threads: int | None = None,
 ) -> str:
     """Write a llama-swap config that can only load the selected model.
 
@@ -590,16 +614,26 @@ def write_single_model_config(
     VYACT_RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
     VYACT_MODELS_DIR.mkdir(parents=True, exist_ok=True)
     model_key = _model_key(model_path)
+    uses_integrated_mtp = enable_mtp and mtp_model_path is None and model_has_integrated_mtp(model_path)
+    uses_mtp = mtp_model_path is not None or uses_integrated_mtp
+    kv_cache_precision = kv_cache_precision or ("q8" if cache_quantization else "none")
+    batch_size, ubatch_size = {
+        "memory": (512, 128),
+        "performance": (4096, 1024),
+    }.get(performance_mode, (LLAMA_BATCH_SIZE, LLAMA_UBATCH_SIZE))
     command = " ".join([
         json.dumps(str(paths.llama_server)),
         "--host", "127.0.0.1", "--port", "${PORT}", "--model", json.dumps(str(model_path)),
         "--ctx-size", str(context_size), "--jinja", "--n-gpu-layers", "auto",
-        "--batch-size", str(LLAMA_BATCH_SIZE), "--ubatch-size", str(LLAMA_UBATCH_SIZE),
+        "--batch-size", str(batch_size), "--ubatch-size", str(ubatch_size),
         "--parallel", "1",
         "--fit", "on", "--flash-attn", "auto", "--cache-prompt",
     ])
-    if cache_quantization and context_size >= KV_CACHE_QUANTIZATION_MIN_CONTEXT:
-        command += " --cache-type-k q8_0 --cache-type-v q8_0"
+    if kv_cache_precision != "none" and not uses_mtp and context_size >= KV_CACHE_QUANTIZATION_MIN_CONTEXT:
+        cache_type = "q4_0" if kv_cache_precision == "q4" else "q8_0"
+        command += f" --cache-type-k {cache_type} --cache-type-v {cache_type}"
+    if cpu_threads is not None:
+        command += f" --threads {cpu_threads} --threads-batch {cpu_threads}"
     if debug_logging:
         command += " --log-verbosity 4 --log-timestamps"
     if vision_projector_path is not None:
@@ -611,7 +645,7 @@ def write_single_model_config(
             "--spec-type", "draft-mtp",
             "--spec-draft-n-max", "3",
         ])
-    elif enable_mtp and model_has_integrated_mtp(model_path):
+    elif uses_integrated_mtp:
         command += " --spec-type draft-mtp --spec-draft-n-max 3"
     config = "\n".join([
         "# Generated by Vyact. Do not add models here: one model is kept resident.",

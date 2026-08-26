@@ -319,8 +319,12 @@ async def ensure_index():
                     "model_path": {"type": "keyword"}, "runtime": {"type": "keyword"},
                     "repository": {"type": "keyword"}, "context_size": {"type": "integer"},
                     "max_output_tokens": {"type": "integer"}, "temperature": {"type": "float"},
+                    "history_token_budget": {"type": "integer"},
                     "top_k": {"type": "integer"}, "top_p": {"type": "float"},
                     "cache_quantization": {"type": "boolean"},
+                    "mtp_enabled": {"type": "boolean"},
+                    "kv_cache_precision": {"type": "keyword"}, "performance_mode": {"type": "keyword"},
+                    "cpu_threads": {"type": "integer"}, "seed": {"type": "integer"},
                     "created_at": {"type": "date"}, "updated_at": {"type": "date"},
                 }},
             )

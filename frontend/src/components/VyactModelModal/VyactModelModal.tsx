@@ -478,7 +478,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                 </footer>
             </section>
         </ModalOverlay>
-        {downloadedSettings && <ModelSettingsModal modelPath={downloadedSettings.modelPath} runtime={downloadedSettings.runtime} repository={downloadedSettings.repository} recommendedContext={downloadedSettings.context} activateOnApply mtpEnabled={Boolean(selectedFile?.mtpModel)} onClose={() => {setDownloadedSettings(null); void onSelected(); onClose();}} onApplied={async () => {await onSelected(); onClose();}}/>}
+        {downloadedSettings && <ModelSettingsModal modelPath={downloadedSettings.modelPath} runtime={downloadedSettings.runtime} repository={downloadedSettings.repository} recommendedContext={downloadedSettings.context} activateOnApply mtpSupported={Boolean(selectedFile?.mtpModel)} onClose={() => {setDownloadedSettings(null); void onSelected(); onClose();}} onApplied={async () => {await onSelected(); onClose();}}/>}
         {showRuntimeInstallHelp && <ConfirmModal
             title={t('modelDownload.runtimeInstallRequiredTitle')}
             description={t('modelDownload.runtimeInstallRequiredDescription')}

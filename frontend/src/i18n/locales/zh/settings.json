@@ -2,7 +2,7 @@
   "title": "设置",
   "tabs": {
     "general": "通用",
-    "runtime": "模型设置",
+    "runtime": "RAG 设置",
     "backup": "备份 / 恢复",
     "api": "集成设置",
     "externalData": "外部数据",
@@ -105,7 +105,7 @@
     }
   },
   "runtime": {
-    "title": "模型和文件处理设置",
+    "title": "RAG 与文档处理设置",
     "description": "保存后立即生效，并包含在 Elasticsearch 备份和恢复中。",
     "saving": "保存中…",
     "help": "说明",

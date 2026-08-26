@@ -101,6 +101,9 @@ async def get_provider_config() -> dict:
                 "model": config.get("model", DEFAULT_MODEL),
                 "api_key": provider_config.get("api_key") or config.get("api_key"),
                 "base_url": None,
+                "history_token_budget": provider_config.get("history_token_budget", 16384),
+                "temperature": provider_config.get("temperature", 0.2),
+                "max_output_tokens": provider_config.get("max_output_tokens", 2048),
             }
     except Exception as e:
         logger.warning("[llm] get_provider_config 실패: %s", e)

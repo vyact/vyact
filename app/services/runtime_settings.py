@@ -10,6 +10,7 @@ DEFAULT_RUNTIME_SETTINGS = {
     "llm_temperature": LLM_TEMPERATURE, "llm_num_ctx": LLM_NUM_CTX,
     "llm_num_predict": LLM_NUM_PREDICT, "llm_max_tokens": LLM_MAX_TOKENS,
     "top_k": TOP_K, "top_p": TOP_P,
+    "seed": None,
     "history_token_budget": HISTORY_TOKEN_BUDGET,
     "bge_num_ctx": BGE_NUM_CTX,
     "document_chunk_size": 1200, "document_chunk_overlap": 150,
@@ -46,7 +47,7 @@ def apply_runtime_settings(values: dict | None) -> dict:
                     _settings[key] = None
                 else:
                     try:
-                        cast_type = type(default) if default is not None else float
+                        cast_type = int if key == "seed" else type(default) if default is not None else float
                         parsed = cast_type(val)
                         _settings[key] = min(max(parsed, LLM_INITIAL_NUM_CTX), LLM_MAX_NUM_CTX) if key == "llm_num_ctx" else parsed
                     except (TypeError, ValueError):
