@@ -31,9 +31,11 @@ class _StreamResponse:
 class _Client:
     def __init__(self):
         self.body = None
+        self.stream_calls = 0
 
     def stream(self, _method, _url, *, headers, json):
         self.body = json
+        self.stream_calls += 1
         return _StreamResponse()
 
 
@@ -93,3 +95,21 @@ class VyactOpenAiParityTests(unittest.IsolatedAsyncioTestCase):
             )]
 
         self.assertEqual(client.body["response_format"]["json_schema"]["schema"], schema)
+
+    async def test_plain_answer_with_tools_uses_one_streaming_call(self):
+        client = _Client()
+        unified = [{"type": "function", "function": {
+            "name": "browser_read", "description": "read", "parameters": {"type": "object", "properties": {}},
+        }}]
+        with patch("services.llm.providers.get_provider_config", AsyncMock(return_value={
+                "type": "openai", "is_local": False, "model": "remote",
+            })), patch("services.llm.providers._get_unified_tools", AsyncMock(return_value=(unified, ["browser_read"]))), \
+                patch("services.llm.providers.build_tool_directive", AsyncMock(return_value="")):
+            pieces = [piece async for piece in openai_stream(
+                client, "remote", None, "system", "question", [], [], [], 30,
+            )]
+
+        self.assertEqual(pieces, ["ok"])
+        self.assertEqual(client.stream_calls, 1)
+        self.assertTrue(client.body["stream"])
+        self.assertIn("tools", client.body)

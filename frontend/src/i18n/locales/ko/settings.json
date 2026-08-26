@@ -422,6 +422,7 @@
   "mcpCatalog": {
     "servers": {
       "filesystem": "파일 시스템",
+      "browser": "브라우저",
       "github": "GitHub",
       "sequential_thinking": "순차적 사고 (Sequential Thinking)",
       "naver_news": "네이버 뉴스 검색",

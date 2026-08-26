@@ -105,6 +105,9 @@ async def chat_stream_with_tools(
             _queue: "asyncio.Queue[dict]" = asyncio.Queue()
 
             async def _on_tool_event(ev: dict):
+                if ev.get("phase") == "reset":
+                    await _queue.put({"type": "reset"})
+                    return
                 if ev.get("phase") == "rag_fallback":
                     await _queue.put({"type": "rag_fallback", "docs": ev.get("docs") or []})
                     return

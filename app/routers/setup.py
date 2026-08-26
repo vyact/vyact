@@ -879,6 +879,31 @@ async def select_model(req: ModelSelectRequest):
 @router.get("/providers")
 async def get_providers():
     config = await load_config_async()
+    vyact_config = config.get("vyact_config", {})
+    custom_providers = config.get("custom_providers", [])
+    current_type = config.get("type", "vyact")
+    supported_types = {"vyact", "openai", "gemini", "claude"}
+    has_selected_custom_provider = (
+        isinstance(current_type, str)
+        and current_type.startswith("custom:")
+        and any(
+            current_type == f"custom:{item.get('id')}"
+            for item in custom_providers
+        )
+    )
+    # 이전 Ollama 등의 더 이상 지원하지 않는 provider 값이 남아 있으면 선택 UI는
+    # options에서 해당 값을 찾지 못해 "선택"으로 표시된다. Vyact 모델이 이미
+    # 설치된 경우에만 안전하게 Vyact로 복구해 다음 앱 시작에도 유지한다.
+    if (
+        current_type not in supported_types
+        and not has_selected_custom_provider
+        and vyact_config.get("model")
+    ):
+        current_type = "vyact"
+        config["type"] = current_type
+        config["model"] = vyact_config["model"]
+        await save_config_async(config)
+        logger.info("[providers] restored Vyact as the selected provider")
     providers = {}
     for p in ["openai", "gemini", "claude"]:
         pc = config.get(f"{p}_config")
@@ -889,13 +914,12 @@ async def get_providers():
                 "has_key": bool(key),
                 "key_preview": f"{key[:8]}..." if len(key) > 8 else "",
             }
-    vyact_config = config.get("vyact_config", {})
     providers["vyact"] = {
         "model": vyact_config.get("model"),
         "has_key": bool(vyact_config.get("model")),
     }
     return {
-        "current_type": config.get("type", "vyact"),
+        "current_type": current_type,
         "current_model": config.get("model"),
         "providers": providers,
         "custom_providers": [
@@ -911,7 +935,7 @@ async def get_providers():
                     for header in item.get("headers", [])
                 ],
             }
-            for item in config.get("custom_providers", [])
+            for item in custom_providers
         ],
     }
 

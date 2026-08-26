@@ -30,6 +30,15 @@ class McpToolFilteringTests(unittest.IsolatedAsyncioTestCase):
             tools = await manager.get_tools()
         self.assertEqual([tool["function"]["name"] for tool in tools], ["code_read_file"])
 
+    async def test_disabled_browser_tools_are_not_exposed(self):
+        manager = MCPManager()
+        manager.register_internal_tool("browser_read", "browser", {}, _handler, server_type="browser")
+        with patch("services.mcp_config.list_servers", AsyncMock(return_value=[
+            {"id": "browser", "type": "browser", "enabled": False},
+        ])):
+            tools = await manager.get_tools()
+        self.assertEqual(tools, [])
+
     async def test_disabled_external_worker_is_filtered_before_llm_exposure(self):
         manager = MCPManager()
         worker = SimpleNamespace(

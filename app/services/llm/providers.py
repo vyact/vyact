@@ -2,9 +2,9 @@
 services/llm/providers.py — OpenAI / Gemini / Claude 요청·tool 루프·스트리밍
 
 각 provider의 function-calling 규격에 맞춰 MCP tool을 사용한다.
-1) tool 루프(비스트리밍): tool_call이 나오면 mcp_manager로 실행하고 결과를 재주입,
-   더 이상 tool_call이 없을 때까지 반복.
-2) 최종 답변: provider의 SSE 스트리밍으로 토큰 조각을 async yield.
+OpenAI 호환 경로는 첫 SSE에서 tool_call과 일반 답변을 함께 처리해, 도구를
+쓰지 않는 대화도 한 번의 호출로 바로 스트리밍한다. 도구 결과가 생긴 경우에만
+결과를 재주입해 다음 SSE 라운드를 연다.
 
 tool 진행 이벤트는 on_event 콜백(coroutine)으로 알린다:
   {"phase":"start","name":...,"args":...}  /  {"phase":"end","name":...}
@@ -147,33 +147,82 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
         else "https://api.openai.com/v1/chat/completions"
     )
 
-    # ── tool 루프 (비스트리밍) ──
+    # ── 통합 스트리밍 tool 루프 ──
+    # tool 판단과 일반 답변을 별도 요청으로 나누면, tool을 쓰지 않는 경우에도
+    # 첫 응답을 버린 뒤 다시 생성하게 된다. 첫 streaming 요청에서 tool_calls와
+    # 본문을 함께 받으면 일반 대화는 한 번의 호출로 끝나고, tool 결과는 messages의
+    # 끝에 추가돼 다음 라운드에서 local runtime의 prefix cache를 그대로 재사용한다.
     approval_rejected = False
     completed_tool_names: set[str] = set()
     tool_sources_found = False
+    emitted_text = False
+    last_round_had_tools = False
     if unified:
         oa_tools = to_openai_tools(unified)
         for _round in range(TOOL_CALL_MAX_ROUNDS):
             body = {"model": model, "temperature": temperature,
-                    "messages": messages, "tools": oa_tools}
+                    "stream": True, "messages": messages, "tools": oa_tools}
             if provider_config.get("is_local"):
                 body["max_tokens"] = await _local_max_tokens(messages, provider_config, unified)
                 _apply_local_reasoning_control(body, provider_config, reasoning)
                 _apply_local_prefix_cache_control(body, provider_config)
-            log_llm_call(call_reason, "openai", model, streaming=False, reasoning=reasoning,
+            if usage is not None:
+                body["stream_options"] = {"include_usage": True}
+            log_llm_call(call_reason, "openai", model, streaming=True, reasoning=reasoning,
                          is_tool_judgment=True, round_no=_round)
-            resp = await client.post(base_url, headers=headers, json=body)
-            resp.raise_for_status()
-            data = resp.json()
-            _accumulate_llm_timing(usage, data.get("timings"))
-            choice = (data.get("choices") or [{}])[0]
-            amsg = choice.get("message", {}) or {}
-            tool_calls = amsg.get("tool_calls") or []
+            tool_calls_by_index: dict[int, dict] = {}
+            async with client.stream("POST", base_url, headers=headers, json=body) as resp:
+                resp.raise_for_status()
+                async for line in resp.aiter_lines():
+                    if not line or not line.startswith("data:"):
+                        continue
+                    raw = line[len("data:"):].strip()
+                    if raw == "[DONE]":
+                        break
+                    try:
+                        chunk = json.loads(raw)
+                    except json.JSONDecodeError:
+                        continue
+                    if usage is not None:
+                        u = chunk.get("usage")
+                        if u:
+                            usage["prompt_tokens"] = u.get("prompt_tokens")
+                            usage["completion_tokens"] = u.get("completion_tokens")
+                        _accumulate_llm_timing(usage, chunk.get("timings"))
+                    choices = chunk.get("choices") or []
+                    if not choices:
+                        continue
+                    delta = choices[0].get("delta", {}) or {}
+                    piece = delta.get("content")
+                    if piece:
+                        emitted_text = True
+                        yield piece
+                    for tc_delta in delta.get("tool_calls") or []:
+                        index = tc_delta.get("index", 0)
+                        tool_call = tool_calls_by_index.setdefault(index, {
+                            "id": "", "type": "function",
+                            "function": {"name": "", "arguments": ""},
+                        })
+                        if tc_delta.get("id"):
+                            tool_call["id"] = tc_delta["id"]
+                        function_delta = tc_delta.get("function") or {}
+                        if function_delta.get("name"):
+                            tool_call["function"]["name"] = function_delta["name"]
+                        if function_delta.get("arguments"):
+                            tool_call["function"]["arguments"] += function_delta["arguments"]
+            tool_calls = [tool_calls_by_index[index] for index in sorted(tool_calls_by_index)]
             if not tool_calls:
+                last_round_had_tools = False
                 break
+            last_round_had_tools = True
+            # 일부 provider가 tool call 전에 짧은 문장을 stream할 수 있다. 그 문장은
+            # 최종 답변이 아니므로 클라이언트가 지우고 tool 진행상태를 표시하게 한다.
+            if emitted_text:
+                await _emit(on_event, {"phase": "reset"})
+                emitted_text = False
             # assistant tool_calls 메시지 추가
             messages.append({"role": "assistant",
-                             "content": amsg.get("content") or "",
+                             "content": "",
                              "tool_calls": tool_calls})
             from services.mcp_client import mcp_manager
             for tc in tool_calls:
@@ -210,6 +259,7 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
             if approval_rejected:
                 break
 
+    post_tool_docs_applied = False
     if post_tool_docs is not None:
         extra_docs = await post_tool_docs(tool_sources_found, completed_tool_names) or []
         if extra_docs and post_tool_prompt is not None:
@@ -219,6 +269,18 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
             else:
                 messages[user_message_index]["content"] = updated_prompt
             await _emit(on_event, {"phase": "rag_fallback", "docs": extra_docs})
+            post_tool_docs_applied = True
+            if emitted_text:
+                await _emit(on_event, {"phase": "reset"})
+                emitted_text = False
+
+    # tool을 사용한 경우 위 loop의 마지막 streaming 라운드가 이미 최종 답변을
+    # 보냈다. 승인 거부와 post-tool RAG 보충 때만 별도 final pass가 필요하다.
+    needs_final_stream = (
+        not unified or approval_rejected or post_tool_docs_applied or last_round_had_tools
+    )
+    if not needs_final_stream:
+        return
 
     # ── 최종 답변 스트리밍 ──
     body = {"model": model, "temperature": temperature, "stream": True, "messages": messages}
@@ -240,7 +302,8 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
     if usage is not None:
         # stream=True에서도 마지막 청크에 usage를 실어 보내도록 요청 (choices는 빈 배열로 옴)
         body["stream_options"] = {"include_usage": True}
-    log_llm_call(call_reason, "openai", model, streaming=True, reasoning=reasoning)
+    log_llm_call(call_reason, "openai", model, streaming=True, reasoning=reasoning,
+                 is_tool_judgment=False if unified else None)
     async with client.stream("POST", base_url, headers=headers, json=body) as resp:
         resp.raise_for_status()
         async for line in resp.aiter_lines():

@@ -461,6 +461,9 @@ def register_browser_tools() -> bool:
         ("browser_close", "Close the current Vyact browser task tab only when the user explicitly asks to close it. Never call this automatically after completing a task.", object_schema, _browser_close),
     ]
     for name, description, parameters, handler in definitions:
-        mcp_manager.register_internal_tool(name=name, description=description, parameters=parameters, handler=handler)
+        mcp_manager.register_internal_tool(
+            name=name, description=description, parameters=parameters, handler=handler,
+            server_type="browser",
+        )
     logger.info("[browser_tools] %d tools registered", len(definitions))
     return True

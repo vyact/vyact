@@ -393,6 +393,7 @@
   "mcpCatalog": {
     "servers": {
       "filesystem": "File System",
+      "browser": "Browser",
       "github": "GitHub",
       "sequential_thinking": "Sequential Thinking",
       "naver_news": "Naver News Search",

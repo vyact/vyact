@@ -130,6 +130,12 @@ MCP_CATALOG: dict[str, dict] = {
             {"key": "directories", "label": "허용 폴더", "type": "dir_list", "required": True},
         ],
     },
+    "browser": {
+        "label": "브라우저",
+        "singleton": True,
+        "kind": "internal",
+        "fields": [],
+    },
     "github": {
         "label": "GitHub",
         "singleton": True,
@@ -306,13 +312,25 @@ MCP_CATALOG: dict[str, dict] = {
 
 
 def _default_config() -> dict:
-    """기본값: 홈 디렉토리를 허용한 비활성 filesystem 하나."""
-    return {"servers": [{
-        "id": uuid.uuid4().hex[:8],
-        "type": "filesystem",
-        "enabled": False,
-        "config": {"directories": [str(Path.home())]},
-    }]}
+    """기본값: 비활성 filesystem·browser 도구."""
+    return {"servers": [
+        {
+            "id": uuid.uuid4().hex[:8],
+            "type": "filesystem",
+            "enabled": False,
+            "config": {"directories": [str(Path.home())]},
+        },
+        {"id": uuid.uuid4().hex[:8], "type": "browser", "enabled": False, "config": {}},
+    ]}
+
+
+def _ensure_builtin_servers(cfg: dict) -> tuple[dict, bool]:
+    """기존 설치에도 비활성 기본 internal 도구를 안전하게 추가한다."""
+    servers = cfg.setdefault("servers", [])
+    if any(server.get("type") == "browser" for server in servers):
+        return cfg, False
+    servers.append({"id": uuid.uuid4().hex[:8], "type": "browser", "enabled": False, "config": {}})
+    return cfg, True
 
 
 async def load_mcp_config() -> dict:
@@ -323,7 +341,7 @@ async def load_mcp_config() -> dict:
             if res.get("found"):
                 value = res["_source"].get("value")
                 if value and isinstance(value.get("servers"), list):
-                    return value
+                    return _ensure_builtin_servers(value)[0]
         finally:
             await es.close()
     except Exception as e:
@@ -354,7 +372,16 @@ async def ensure_mcp_config() -> dict:
         if await es.exists(index=SETTINGS_INDEX, id=_MCP_DOC_ID):
             res = await es.get(index=SETTINGS_INDEX, id=_MCP_DOC_ID)
             value = res["_source"].get("value")
-            return value if isinstance(value, dict) else {"servers": []}
+            if not isinstance(value, dict):
+                return {"servers": []}
+            value, changed = _ensure_builtin_servers(value)
+            if changed:
+                await es.index(
+                    index=SETTINGS_INDEX, id=_MCP_DOC_ID,
+                    document={"key": _MCP_DOC_ID, "value": value}, refresh=True,
+                )
+                logger.info("[mcp_config] default browser MCP config added")
+            return value
 
         cfg = _default_config()
         await es.index(

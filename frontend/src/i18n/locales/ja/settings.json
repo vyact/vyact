@@ -357,6 +357,7 @@
   "mcpCatalog": {
     "servers": {
       "filesystem": "ファイルシステム",
+      "browser": "ブラウザ",
       "github": "GitHub",
       "sequential_thinking": "逐次思考 (Sequential Thinking)",
       "naver_news": "Naverニュース検索",
