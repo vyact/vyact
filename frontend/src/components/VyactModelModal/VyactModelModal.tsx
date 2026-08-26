@@ -292,7 +292,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                         {showToken ? <EyeOff size={17}/> : <Eye size={17}/>}
                                     </button>
                                 </div>
-                                <button type="button" className="vyact-token-save" onClick={() => void saveToken()} disabled={!token.trim() || busy}>
+                                <button type="button" className="vyact-token-save" onClick={() => void saveToken()} disabled={!token.trim() || isSavingToken}>
                                     {t(isSavingToken ? 'modelSelector.savingToken' : 'modelSelector.saveToken')}
                                 </button>
                             </div>
