@@ -2,6 +2,7 @@ import React, {useState, useRef, useEffect, useCallback} from 'react';
 import {Mic, Square} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {loadTtsSettings} from '../../services/tts/ttsSettings';
+import {api} from '../../services/api';
 import {
     VOICE_SYSTEM_PROMPTS, LANGUAGES, getLanguageDisplayName, SILENCE_THRESHOLD, SILENCE_DURATION_MS,
     ChatPhase, ChatEntry, VoiceChatModalProps, speakWithKokoroOrFallback, stopAllTts,
@@ -15,6 +16,7 @@ const VoiceChatTab: React.FC<{ onSend: VoiceChatModalProps['onSend']; onClose: (
     const [isListening, setIsListening] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [isWaiting, setIsWaiting] = useState(false);
+    const [isPreparing, setIsPreparing] = useState(false);
     const [statusText, setStatusText] = useState('');
 
     const logEndRef = useRef<HTMLDivElement>(null);
@@ -78,6 +80,7 @@ const VoiceChatTab: React.FC<{ onSend: VoiceChatModalProps['onSend']; onClose: (
         setIsListening(false);
         setIsSpeaking(false);
         setIsWaiting(false);
+        setIsPreparing(false);
         setStatusText('');
     }, [stopRecording]);
 
@@ -178,12 +181,14 @@ const VoiceChatTab: React.FC<{ onSend: VoiceChatModalProps['onSend']; onClose: (
                 }
             };
             recorder.start();
+            setIsPreparing(false);
             setIsListening(true);
             setStatusText(t('voiceChat.speakNow'));
             startSilenceDetection(analyser, () => {
                 if (mediaRecorderRef.current?.state === 'recording') stopRecording();
             }, true);
         } catch {
+            setIsPreparing(false);
             setStatusText(t('voiceChat.microphoneFailed'));
         }
     }, [stopRecording, t]);
@@ -215,6 +220,7 @@ const VoiceChatTab: React.FC<{ onSend: VoiceChatModalProps['onSend']; onClose: (
     const handleStart = async () => {
         setPhase('chatting');
         setChatLog([]);
+        setIsPreparing(true);
         setStatusText(t('voiceChat.preparing'));
         isActiveRef.current = true;
         try {
@@ -223,6 +229,13 @@ const VoiceChatTab: React.FC<{ onSend: VoiceChatModalProps['onSend']; onClose: (
             currentSystemPromptRef.current = data?.content || '';
         } catch {
             currentSystemPromptRef.current = '';
+        }
+        const systemPrompt = currentSystemPromptRef.current
+            || (VOICE_SYSTEM_PROMPTS[selectedLangRef.current] ?? VOICE_SYSTEM_PROMPTS['ko-KR']);
+        try {
+            await api.warmVoiceChat(systemPrompt);
+        } catch {
+            // Prefix warm-up is an optimization; voice chat should still start if it fails.
         }
         setTimeout(() => startListeningRef.current(), 300);
     };
@@ -273,7 +286,11 @@ const VoiceChatTab: React.FC<{ onSend: VoiceChatModalProps['onSend']; onClose: (
                 <span>{statusText || t('voiceChat.waiting')}</span>
             </div>
             <div className="vc-chat-log">
-                {chatLog.length === 0 && <div className="vc-chat-empty">{t('voiceChat.emptyConversation')}</div>}
+                {chatLog.length === 0 && (
+                    <div className="vc-chat-empty">
+                        {t(isPreparing ? 'voiceChat.preparingConversation' : 'voiceChat.emptyConversation')}
+                    </div>
+                )}
                 {chatLog.map((entry, i) => (
                     <div key={i} className={`vc-chat-entry ${entry.role}`}>
                         <div className="vc-chat-bubble">{entry.text}</div>

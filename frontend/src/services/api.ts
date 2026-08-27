@@ -1027,6 +1027,14 @@ export const api = {
         return res.json();
     },
 
+    async warmVoiceChat(systemPrompt: string): Promise<void> {
+        await fetch(`${API_BASE}/query/voice-warmup`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({system_prompt: systemPrompt}),
+        });
+    },
+
     async resetIndex() {
         const res = await fetch(`${API_BASE}/index`, {method: 'DELETE'});
         return res.json();

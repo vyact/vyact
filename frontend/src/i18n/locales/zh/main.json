@@ -733,6 +733,7 @@
     "ttsHint": "* 可在设置中更改 TTS 语音。",
     "start": "开始对话",
     "preparing": "准备中...",
+    "preparingConversation": "正在准备语音对话，请稍候...",
     "waiting": "等待中...",
     "emptyConversation": "开始说话即可开始对话...",
     "end": "结束对话",

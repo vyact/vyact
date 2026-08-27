@@ -733,6 +733,7 @@
     "ttsHint": "* TTS音声は設定で変更できます。",
     "start": "会話を開始",
     "preparing": "準備中...",
+    "preparingConversation": "音声会話を準備しています。しばらくお待ちください...",
     "waiting": "待機中...",
     "emptyConversation": "話しかけると会話が始まります...",
     "end": "会話を終了",

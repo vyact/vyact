@@ -733,6 +733,7 @@
     "ttsHint": "* Bạn có thể đổi giọng TTS trong Cài đặt.",
     "start": "Bắt đầu hội thoại",
     "preparing": "Đang chuẩn bị...",
+    "preparingConversation": "Đang chuẩn bị trò chuyện bằng giọng nói. Vui lòng đợi một chút...",
     "waiting": "Đang chờ...",
     "emptyConversation": "Hãy nói để bắt đầu hội thoại...",
     "end": "Kết thúc hội thoại",

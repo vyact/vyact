@@ -19,12 +19,13 @@ from agent import (
     get_conversation, rag_query_stream,
 )
 from services.llm.config import get_model_display_name
+from services.llm.warmup import warm_vyact_voice_prefix
 from services.llm.core import chat_stream_with_tools
 from services.llm.tools import tool_result_failed
 from services.startup_activity import begin_chat_activity, end_chat_activity
 from config import IMAGE_MODEL_IDS
 from prompts import VOICE_MODE_SUFFIX, FORMAT_INSTRUCTION
-from routers.deps import load_config_async
+from routers.deps import load_config_async, load_ui_language_async
 from routers.chat_helpers import (
     load_system_prompt, unwrap_pasted_text,
     resolve_selected_articles, search_file_id_chunks,
@@ -353,6 +354,10 @@ class QueryRequest(BaseModel):
     # 자막 학습처럼 요청 자체에 필요한 문맥이 모두 포함된 격리형 클라이언트용.
 
 
+class VoiceWarmupRequest(BaseModel):
+    system_prompt: str = ""
+
+
 def _selected_knowledge_collection_ids(request: QueryRequest) -> list[str]:
     return list(dict.fromkeys([
         *request.knowledge_collection_ids,
@@ -365,6 +370,23 @@ async def resolve_pending_tool_approval(approval_id: str, body: dict):
     if not resolve_tool_approval(approval_id, bool(body.get("approved")), str(body.get("response") or "")):
         raise HTTPException(status_code=404, detail="Approval request is no longer active.")
     return {"ok": True}
+
+
+@router.post("/query/voice-warmup")
+async def warm_voice_chat(req: VoiceWarmupRequest):
+    """Warm the selected local model without creating conversation history."""
+    provider_config = await load_config_async()
+    if provider_config.get("type", "vyact") != "vyact":
+        return {"warmed": False}
+
+    _, current_model, system_prompt = await load_system_prompt(req.system_prompt)
+    system_prompt = await _with_response_style(system_prompt)
+    if system_prompt:
+        system_prompt += VOICE_MODE_SUFFIX
+
+    language = await load_ui_language_async() or ""
+    warmed = await warm_vyact_voice_prefix(current_model, language, system_prompt)
+    return {"warmed": warmed}
 
 
 def _file_attachments_to_context(attachments: list) -> list[dict]:

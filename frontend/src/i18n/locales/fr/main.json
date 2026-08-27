@@ -733,6 +733,7 @@
     "ttsHint": "* Vous pouvez changer la voix TTS dans les Paramètres.",
     "start": "Démarrer la conversation",
     "preparing": "Préparation...",
+    "preparingConversation": "Préparation de la conversation vocale. Veuillez patienter un instant...",
     "waiting": "En attente...",
     "emptyConversation": "Commencez à parler pour démarrer la conversation...",
     "end": "Terminer la conversation",
