@@ -263,7 +263,7 @@ async def lifespan(app: FastAPI):
                 await save_config_async(cfg)
                 logger.info("Default config saved to ES")
             apply_runtime_settings(cfg.get("runtime_settings"))
-            ToolLogSettings.set_enabled(cfg.get("tool_logging", True))
+            ToolLogSettings.set_enabled(cfg.get("tool_logging", False))
             DebugLogSettings.set_enabled(
                 cfg.get("debug_logging", cfg.get("tool_debug_logging", False))
             )
@@ -279,49 +279,17 @@ async def lifespan(app: FastAPI):
     vyact_warmup_language = ""
     if SETUP_DONE.exists():
         try:
-            from routers.deps import load_config_async, save_config_async
+            from routers.deps import load_config_async
+            from services.runtime_startup import detect_native_runtime_updates, load_configured_vyact_model
             cfg = await load_config_async()
             if cfg.get("type") == "vyact" and cfg.get("vyact_config", {}).get("model_path"):
-                from services.vyact_runtime import start_configured_runtime
                 vyact_config = cfg["vyact_config"]
-                logger.info("Loading Vyact local model: %s", vyact_config["model_path"])
-                model_id = await asyncio.to_thread(
-                    start_configured_runtime, vyact_config, cfg.get("debug_logging", False),
-                )
-                cfg["model"] = model_id
-                cfg["vyact_config"]["model"] = model_id
-                from services.model_runtime_profiles import get_model_profile, normalize_model_profile, recommended_model_profile, save_model_profile
-                common_settings = cfg.get("runtime_settings", {})
-                profile = await get_model_profile(vyact_config["model_path"])
-                if profile is None:
-                    profile = recommended_model_profile(
-                        vyact_config["model_path"], vyact_config.get("runtime", "gguf"),
-                        vyact_config.get("repository"), vyact_config.get("context_size", 32768),
-                    )
-                    profile = await save_model_profile(profile)
-                elif profile.get("history_token_budget") is None:
-                    profile = await save_model_profile(normalize_model_profile({
-                        **profile,
-                        "history_token_budget": cfg.get("runtime_settings", {}).get("history_token_budget", 16384),
-                    }))
-                vyact_config.update({key: profile.get(key) for key in (
-                    "context_size", "max_output_tokens", "temperature", "top_k", "top_p", "cache_quantization", "mtp_enabled",
-                    "kv_cache_precision", "performance_mode", "cpu_threads", "seed", "history_token_budget",
-                )})
-                profile_settings = {
-                    "llm_num_ctx": profile["context_size"], "llm_num_predict": profile["max_output_tokens"],
-                    "llm_max_tokens": profile["max_output_tokens"], "llm_temperature": profile["temperature"],
-                    "top_k": profile.get("top_k"), "top_p": profile.get("top_p"),
-                    "history_token_budget": profile.get("history_token_budget", common_settings.get("history_token_budget", 16384)),
-                }
-                apply_runtime_settings({**common_settings, **profile_settings})
-                await save_config_async(cfg)
-                try:
-                    from routers.deps import load_ui_language_async
-                    vyact_warmup_model_id = model_id
-                    vyact_warmup_language = await load_ui_language_async() or ""
-                except Exception as error:
-                    logger.debug("[llm_warmup] Vyact warm-up preparation skipped: %s", error)
+                update_state = await detect_native_runtime_updates(cfg)
+                if update_state["status"] != "update_available":
+                    logger.info("Loading Vyact local model: %s", vyact_config["model_path"])
+                    vyact_warmup_model_id, vyact_warmup_language = await load_configured_vyact_model(cfg)
+                else:
+                    logger.info("[runtime_update] model load deferred for user confirmation")
         except Exception as e:
             logger.warning("Local model load failed: %s", e)
 

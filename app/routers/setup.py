@@ -23,6 +23,7 @@ from services.hardware_info import get_local_hardware_info
 from services.huggingface_models import search_gguf_models
 from services.mcp_config import ensure_mcp_config
 from services.runtime_settings import DEFAULT_RUNTIME_SETTINGS, apply_runtime_settings
+from services.runtime_startup import apply_startup_runtime_choice, get_startup_runtime_state
 from services.model_runtime_profiles import delete_model_profile, get_model_profile, normalize_model_profile, recommended_model_profile, save_model_profile
 from services.vyact_model_metadata_cache import get_cached_model_metadata, save_cached_model_metadata
 from services.mlx_runtime import get_downloaded_mlx_model_path, get_mlx_runtime_capabilities
@@ -751,6 +752,21 @@ async def update_vyact_runtime():
     return StreamingResponse(stream(), media_type="text/event-stream")
 
 
+@router.get("/vyact/runtime/startup-status")
+async def get_vyact_runtime_startup_status():
+    return get_startup_runtime_state()
+
+
+@router.post("/vyact/runtime/startup-choice")
+async def choose_vyact_runtime_startup(body: dict):
+    try:
+        await apply_startup_runtime_choice(bool(body.get("update")))
+        return {"status": "ready"}
+    except Exception as error:
+        logger.warning("[runtime_update] startup choice failed: %s", error)
+        raise HTTPException(500, str(error)) from error
+
+
 @router.post("/vyact/models/download")
 async def download_vyact_model(req: HuggingFaceDownloadRequest):
     async def stream():
@@ -1264,7 +1280,7 @@ async def set_llm_logging(body: dict):
 @router.get("/settings/tool-logging")
 async def get_tool_logging():
     cfg = await load_config_async()
-    enabled = cfg.get("tool_logging", True)
+    enabled = cfg.get("tool_logging", False)
     ToolLogSettings.set_enabled(enabled)
     return {"tool_logging": enabled}
 

@@ -243,7 +243,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
 
     // 일반 설정 탭
     const [llmLogging, setLlmLogging] = useState(false);
-    const [toolLogging, setToolLogging] = useState(true);
+    const [toolLogging, setToolLogging] = useState(false);
     const [debugLogging, setDebugLogging] = useState(false);
     const [debugLoggingRestarting, setDebugLoggingRestarting] = useState(false);
     const [runtimeSettings, setRuntimeSettings] = useState<RuntimeSettings>(DEFAULT_RUNTIME_SETTINGS);

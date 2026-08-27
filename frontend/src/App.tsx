@@ -22,6 +22,9 @@ const App: React.FC = () => {
     const [isInstallingDictionary, setIsInstallingDictionary] = useState(false);
     const [dictionaryProgress, setDictionaryProgress] = useState(0);
     const [showBrowserExtensionPrompt, setShowBrowserExtensionPrompt] = useState(false);
+    const [runtimeUpdate, setRuntimeUpdate] = useState<Awaited<ReturnType<typeof api.getRuntimeStartupStatus>> | null>(null);
+    const [runtimeUpdateAction, setRuntimeUpdateAction] = useState<'update' | 'skip' | null>(null);
+    const [runtimeUpdateError, setRuntimeUpdateError] = useState('');
 
     useEffect(() => {
         checkStatus();
@@ -37,6 +40,13 @@ const App: React.FC = () => {
         // the SetupPage tree instead of waiting for a browser frame.
         window.ragAPI?.notifyAppReady?.();
     }, [isInitialSetupLaunch, isSetupComplete]);
+
+    useEffect(() => {
+        if (!isSetupComplete) return;
+        api.getRuntimeStartupStatus().then(status => {
+            if (status.status === 'update_available') setRuntimeUpdate(status);
+        }).catch(() => {});
+    }, [isSetupComplete]);
 
     useEffect(() => {
         const handleRequest = (event: Event) => setDictionaryRequest((event as CustomEvent<{resolve: (installed: boolean) => void}>).detail);
@@ -101,6 +111,20 @@ const App: React.FC = () => {
         }
     };
 
+    const handleRuntimeUpdateChoice = async (choice: string) => {
+        const shouldUpdate = choice === 'update';
+        setRuntimeUpdateAction(shouldUpdate ? 'update' : 'skip');
+        setRuntimeUpdateError('');
+        try {
+            await api.chooseRuntimeStartupUpdate(shouldUpdate);
+            setRuntimeUpdate(null);
+        } catch (error) {
+            setRuntimeUpdateError(error instanceof Error ? error.message : t('general.runtimeUpdateFailed'));
+        } finally {
+            setRuntimeUpdateAction(null);
+        }
+    };
+
     const checkStatus = async () => {
         try {
             const setup = await api.getSetupStatus();
@@ -126,6 +150,25 @@ const App: React.FC = () => {
                 )}
             </Suspense>
             <ToastContainer/>
+            {runtimeUpdate && <ConfirmModal
+                title={t('general.runtimeUpdateTitle')}
+                description={runtimeUpdateError || t('general.runtimeUpdateDescription')}
+                details={runtimeUpdate.packages.map(pkg => pkg.installed && pkg.available
+                    ? `${pkg.name}  ${pkg.installed} → ${pkg.available}`
+                    : pkg.name)}
+                options={[
+                    {value: 'skip', label: t('general.runtimeUpdateLater')},
+                    {value: 'update', label: t('general.runtimeUpdateNow'), variant: 'primary'},
+                ]}
+                loading={runtimeUpdateAction !== null}
+                loadingValue={runtimeUpdateAction || undefined}
+                loadingLabel={t(runtimeUpdateAction === 'update'
+                    ? 'general.runtimeUpdatingAndLoading'
+                    : 'general.runtimeLoadingModel')}
+                actionLayout="horizontal"
+                onSelect={choice => void handleRuntimeUpdateChoice(choice)}
+                onClose={() => void handleRuntimeUpdateChoice('skip')}
+            />}
             {dictionaryRequest && <ConfirmModal
                 title={t('general.japaneseTtsDictionaryTitle')}
                 description={t('general.japaneseTtsDictionaryDescription')}

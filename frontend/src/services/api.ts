@@ -483,6 +483,27 @@ export const api = {
         }
     },
 
+    async getRuntimeStartupStatus(): Promise<{
+        status: 'not_required' | 'check_failed' | 'update_available' | 'updating' | 'loading_model' | 'update_failed' | 'ready';
+        packages: Array<{name: string; installed: string; available: string}>;
+    }> {
+        const response = await fetch(`${API_BASE}/vyact/runtime/startup-status`);
+        if (!response.ok) throw new Error(`Runtime update status failed (${response.status})`);
+        return response.json();
+    },
+
+    async chooseRuntimeStartupUpdate(update: boolean): Promise<void> {
+        const response = await fetch(`${API_BASE}/vyact/runtime/startup-choice`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({update}),
+        });
+        if (!response.ok) {
+            const detail = await response.json().catch(() => null);
+            throw new Error(detail?.detail || `Runtime update failed (${response.status})`);
+        }
+    },
+
     async getVyactModelProfile(modelPath: string, runtime: 'gguf' | 'mlx', repository?: string, recommendedContext = 32768): Promise<VyactModelProfile> {
         const params = new URLSearchParams({model_path: modelPath, runtime, recommended_context: String(recommendedContext)});
         if (repository) params.set('repository', repository);
