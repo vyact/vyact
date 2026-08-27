@@ -39,9 +39,13 @@ contextBridge.exposeInMainWorld("ragAPI", {
     },
     platform: process.platform,
     version: process.versions.electron,
-    onFullscreenChange: (callback) => {
-        const handler = (_event, isFull) => callback(_event, isFull);
-        ipcRenderer.on("window-fullscreen-change", handler);
-        return () => ipcRenderer.removeListener("window-fullscreen-change", handler);
+    // 창 컨트롤 (frameless window)
+    minimize: () => ipcRenderer.invoke("window-minimize"),
+    maximize: () => ipcRenderer.invoke("window-maximize"),
+    close: () => ipcRenderer.invoke("window-close"),
+    onMaximizeChange: (callback) => {
+        const handler = (_event, isMaximized) => callback(_event, isMaximized);
+        ipcRenderer.on("window-maximize-change", handler);
+        return () => ipcRenderer.removeListener("window-maximize-change", handler);
     },
 });
