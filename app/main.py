@@ -6,7 +6,6 @@ import os
 import locale
 import signal
 import warnings
-from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -23,6 +22,7 @@ from services.external_data.scheduler import (
     stop_external_data_scheduler,
 )
 from services.runtime_settings import apply_runtime_settings
+from services.startup_activity import wait_for_chat_idle
 from routers.browser_extension import router as browser_extension_router
 
 APP_DIR = Path(__file__).parent
@@ -111,6 +111,7 @@ def initial_setup_message(message_key: str) -> str:
 # ─────────────────────────────
 setup_logging()
 logger = get_logger(__name__)
+STARTUP_WARMUP_DELAY_SECONDS = 2
 
 
 async def warmup_kokoro_tts() -> bool:
@@ -133,22 +134,48 @@ async def warmup_kokoro_tts() -> bool:
             language_codes.remove("j")
             logger.info("[kokoro] Japanese TTS warm-up deferred until UniDic is installed")
 
-        def _warmup():
-            for lang_code in language_codes:
-                pipeline = _get_pipeline(lang_code)
-                for _, _, _ in pipeline(
-                    warmup_texts[lang_code],
-                    voice=KOKORO_DEFAULT_VOICES[lang_code],
-                    speed=1.0,
-                ):
-                    break
+        def _warmup_language(lang_code: str) -> None:
+            pipeline = _get_pipeline(lang_code)
+            for _, _, _ in pipeline(
+                warmup_texts[lang_code],
+                voice=KOKORO_DEFAULT_VOICES[lang_code],
+                speed=1.0,
+            ):
+                break
 
-        await loop.run_in_executor(None, _warmup)
+        for language_code in language_codes:
+            await wait_for_chat_idle()
+            await loop.run_in_executor(None, _warmup_language, language_code)
         logger.info("[kokoro] all language TTS pipelines warmed up")
         return True
     except Exception as error:
         logger.info("[kokoro] TTS warm-up skipped: %s", error)
         return False
+
+
+async def warmup_optional_voice_models() -> None:
+    """Warm optional voice models after the API is available, yielding to chat."""
+    await asyncio.sleep(STARTUP_WARMUP_DELAY_SECONDS)
+    await wait_for_chat_idle()
+    await warmup_kokoro_tts()
+
+    # Kokoro와 reranker는 모두 transformers의 lazy modules를 import한다.
+    # 첫 import가 겹치지 않도록 Kokoro 완료 후 reranker를 준비한다.
+    await wait_for_chat_idle()
+    try:
+        from reranker import load_reranker
+        await asyncio.to_thread(load_reranker)
+    except Exception as error:
+        logger.info("[reranker] Background warm-up skipped: %s", error)
+
+    await wait_for_chat_idle()
+    try:
+        logger.info("[startup-status] stt")
+        from routers.stt import _get_model
+        await asyncio.to_thread(_get_model)
+        logger.info("[whisper] STT warm-up done")
+    except Exception as error:
+        logger.info("[whisper] STT warm-up skipped: %s", error)
 
 
 # ─────────────────────────────
@@ -358,30 +385,9 @@ async def lifespan(app: FastAPI):
         except Exception as error:
             logger.debug("[llm_warmup] Vyact warm-up skipped: %s", error)
 
+    startup_warmup_task = None
     if not is_initial_setup:
-        await warmup_kokoro_tts()
-
-        # Kokoro와 reranker는 모두 transformers의 lazy modules를 import한다.
-        # 서로 다른 스레드에서 첫 import를 겹치면 일부 model export가 일시적으로
-        # 보이지 않을 수 있으므로 Kokoro 초기화가 끝난 뒤 reranker를 시작한다.
-        def _load_reranker() -> None:
-            from reranker import load_reranker
-            load_reranker()
-
-        asyncio.get_running_loop().run_in_executor(
-            ThreadPoolExecutor(max_workers=1), _load_reranker,
-        )
-
-    # ── Whisper STT warm-up ──
-    if not is_initial_setup:
-        try:
-            logger.info("[startup-status] stt")
-            from routers.stt import _get_model
-            loop = asyncio.get_running_loop()
-            await loop.run_in_executor(None, _get_model)
-            logger.info("[whisper] STT warm-up done")
-        except Exception as e:
-            logger.info("[whisper] STT warm-up skipped: %s", e)
+        startup_warmup_task = asyncio.create_task(warmup_optional_voice_models())
 
     if es_available and SETUP_DONE.exists():
         from services.notification_polling import start_notification_polling
@@ -391,6 +397,10 @@ async def lifespan(app: FastAPI):
         start_external_data_scheduler()
 
     yield
+
+    if startup_warmup_task is not None and not startup_warmup_task.done():
+        startup_warmup_task.cancel()
+        await asyncio.gather(startup_warmup_task, return_exceptions=True)
 
     try:
         await stop_external_data_scheduler()

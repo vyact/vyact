@@ -21,6 +21,7 @@ from agent import (
 from services.llm.config import get_model_display_name
 from services.llm.core import chat_stream_with_tools
 from services.llm.tools import tool_result_failed
+from services.startup_activity import begin_chat_activity, end_chat_activity
 from config import IMAGE_MODEL_IDS
 from prompts import VOICE_MODE_SUFFIX, FORMAT_INSTRUCTION
 from routers.deps import load_config_async
@@ -795,6 +796,7 @@ async def query_stream(req: QueryRequest):
     _log_user_query(req.question)
 
     async def stream():
+        begin_chat_activity()
         mcp_scope_token = None
         approval_context_token = None
         _saved = False
@@ -1252,6 +1254,7 @@ async def query_stream(req: QueryRequest):
         except (asyncio.CancelledError, GeneratorExit):
             logger.info("[query_stream] 클라이언트 연결 종료 — 스트림 중단")
         finally:
+            end_chat_activity()
             if approval_context_token is not None:
                 current_approval_context.reset(approval_context_token)
             if mcp_scope_token is not None:
