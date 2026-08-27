@@ -732,6 +732,7 @@
     "languageSelect": "会話言語を選択",
     "ttsHint": "* TTS音声は設定で変更できます。",
     "start": "会話を開始",
+    "preparing": "準備中...",
     "waiting": "待機中...",
     "emptyConversation": "話しかけると会話が始まります...",
     "end": "会話を終了",

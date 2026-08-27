@@ -728,6 +728,7 @@
     "languageSelect": "대화 언어 선택",
     "ttsHint": "* TTS 음성은 설정에서 변경할 수 있습니다.",
     "start": "대화 시작",
+    "preparing": "준비 중...",
     "waiting": "대기 중...",
     "emptyConversation": "말씀하시면 대화를 시작합니다...",
     "end": "대화 종료",

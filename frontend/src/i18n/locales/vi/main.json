@@ -732,6 +732,7 @@
     "languageSelect": "Chọn ngôn ngữ hội thoại",
     "ttsHint": "* Bạn có thể đổi giọng TTS trong Cài đặt.",
     "start": "Bắt đầu hội thoại",
+    "preparing": "Đang chuẩn bị...",
     "waiting": "Đang chờ...",
     "emptyConversation": "Hãy nói để bắt đầu hội thoại...",
     "end": "Kết thúc hội thoại",

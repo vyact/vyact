@@ -731,6 +731,7 @@
     "languageSelect": "Elige el idioma de conversación",
     "ttsHint": "* Puedes cambiar la voz TTS en Ajustes.",
     "start": "Iniciar conversación",
+    "preparing": "Preparando...",
     "waiting": "Esperando...",
     "emptyConversation": "Empieza a hablar para iniciar la conversación...",
     "end": "Finalizar conversación",

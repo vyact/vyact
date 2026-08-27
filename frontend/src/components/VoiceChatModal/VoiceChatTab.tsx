@@ -215,6 +215,7 @@ const VoiceChatTab: React.FC<{ onSend: VoiceChatModalProps['onSend']; onClose: (
     const handleStart = async () => {
         setPhase('chatting');
         setChatLog([]);
+        setStatusText(t('voiceChat.preparing'));
         isActiveRef.current = true;
         try {
             const res = await fetch('/api/system-prompts/current');
