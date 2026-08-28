@@ -29,10 +29,39 @@ const getTooltipTarget = (target: EventTarget | null) => {
     return target.closest<HTMLElement>('[data-instant-tooltip], [title], [data-vyact-tooltip-title]');
 };
 
+const adoptNativeTitle = (target: Element) => {
+    if (!(target instanceof HTMLElement)) return;
+    const nativeTitle = target.getAttribute('title');
+    if (!nativeTitle) return;
+    target.dataset.vyactTooltipTitle = nativeTitle;
+    target.removeAttribute('title');
+};
+
 export function TooltipProvider({children}: {children: ReactNode}) {
     const [tooltip, setTooltip] = useState<TooltipState>(null);
     const activeTargetRef = useRef<HTMLElement | null>(null);
     const tooltipRef = useRef<HTMLDivElement | null>(null);
+
+    useLayoutEffect(() => {
+        const adoptTitlesWithin = (root: ParentNode) => {
+            if (root instanceof Element && root.hasAttribute('title')) adoptNativeTitle(root);
+            root.querySelectorAll?.('[title]').forEach(adoptNativeTitle);
+        };
+        adoptTitlesWithin(document.body);
+        const observer = new MutationObserver(records => {
+            records.forEach(record => {
+                if (record.type === 'attributes') {
+                    adoptNativeTitle(record.target as Element);
+                    return;
+                }
+                record.addedNodes.forEach(node => {
+                    if (node instanceof Element) adoptTitlesWithin(node);
+                });
+            });
+        });
+        observer.observe(document.body, {subtree: true, childList: true, attributes: true, attributeFilter: ['title']});
+        return () => observer.disconnect();
+    }, []);
 
     // Initially anchor to the trigger itself, then correct only when the rendered
     // tooltip would leave the viewport. Using a fixed maximum width here shifts
@@ -58,11 +87,6 @@ export function TooltipProvider({children}: {children: ReactNode}) {
 
     useEffect(() => {
         const hideTooltip = () => {
-            const activeTarget = activeTargetRef.current;
-            if (activeTarget?.dataset.vyactTooltipTitle) {
-                activeTarget.title = activeTarget.dataset.vyactTooltipTitle;
-                delete activeTarget.dataset.vyactTooltipTitle;
-            }
             activeTargetRef.current = null;
             setTooltip(null);
         };
@@ -76,16 +100,7 @@ export function TooltipProvider({children}: {children: ReactNode}) {
     }, []);
 
     const show = (target: HTMLElement) => {
-        const previousTarget = activeTargetRef.current;
-        if (previousTarget && previousTarget !== target && previousTarget.dataset.vyactTooltipTitle) {
-            previousTarget.title = previousTarget.dataset.vyactTooltipTitle;
-            delete previousTarget.dataset.vyactTooltipTitle;
-        }
-        const nativeTitle = target.getAttribute('title');
-        if (nativeTitle) {
-            target.dataset.vyactTooltipTitle = nativeTitle;
-            target.removeAttribute('title');
-        }
+        adoptNativeTitle(target);
         const content = tooltipContentRegistry.get(target.dataset.instantTooltipId || '')
             ?? target.dataset.instantTooltip
             ?? target.dataset.vyactTooltipTitle;
@@ -112,20 +127,11 @@ export function TooltipProvider({children}: {children: ReactNode}) {
     return <>
         <div onPointerOver={event => { const target = getTooltipTarget(event.target); if (target) show(target); }}
              onPointerOut={event => { const target = getTooltipTarget(event.target); if (target && !target.contains(event.relatedTarget as Node)) {
-                 if (target.dataset.vyactTooltipTitle) {
-                     target.title = target.dataset.vyactTooltipTitle;
-                     delete target.dataset.vyactTooltipTitle;
-                 }
                  activeTargetRef.current = null;
                  setTooltip(null);
              } }}
              onFocusCapture={event => { const target = getTooltipTarget(event.target); if (target) show(target); }}
              onBlurCapture={() => {
-                 const activeTarget = activeTargetRef.current;
-                 if (activeTarget?.dataset.vyactTooltipTitle) {
-                     activeTarget.title = activeTarget.dataset.vyactTooltipTitle;
-                     delete activeTarget.dataset.vyactTooltipTitle;
-                 }
                  activeTargetRef.current = null;
                  setTooltip(null);
              }}>
