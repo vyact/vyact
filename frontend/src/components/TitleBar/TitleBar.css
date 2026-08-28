@@ -55,6 +55,26 @@
 }
 .titlebar-tools { display: flex; align-items: center; gap: 4px; margin-right: 16px; -webkit-app-region: no-drag; }
 
+.titlebar-update-btn {
+    display: inline-flex;
+    height: 28px;
+    align-items: center;
+    gap: 5px;
+    padding: 0 9px;
+    border: 1px solid color-mix(in srgb, var(--accent) 48%, var(--border));
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: border-color .15s, background-color .15s, color .15s;
+    -webkit-app-region: no-drag;
+}
+
+.titlebar-update-btn small { font-size: 10px; font-weight: 500; opacity: .78; }
+.titlebar-update-btn:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 20%, var(--surface)); color: var(--text); }
+
 .titlebar-aspect-ratio-select {
     width: 68px;
     -webkit-app-region: no-drag;

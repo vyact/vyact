@@ -4,6 +4,7 @@ const {contextBridge, ipcRenderer} = require("electron");
 // 추후 음성인식, 시스템 자동화 등 여기서 확장
 contextBridge.exposeInMainWorld("ragAPI", {
     openExternal: (url) => ipcRenderer.invoke("open-external", url),
+    checkAppUpdate: () => ipcRenderer.invoke("check-app-update"),
     showNotification: (opts) => ipcRenderer.invoke("show-notification", opts),
     getLogPath: () => ipcRenderer.invoke("get-log-path"),
     screenshot: () => ipcRenderer.invoke("screenshot"),

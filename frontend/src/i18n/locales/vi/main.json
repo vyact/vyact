@@ -807,7 +807,7 @@
     "captureCurrent": "Chụp màn hình",
     "failed": "Chụp màn hình lỗi:"
   },
-  "titleBar": {},
+  "titleBar": {"update": "Cập nhật", "updateAvailable": "Phiên bản {{version}} đã sẵn sàng để tải xuống"},
   "systemPromptModal": {
     "clearSelection": "Bỏ chọn lời nhắc hệ thống",
     "eyebrow": "Thư viện prompt",

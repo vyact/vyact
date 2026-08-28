@@ -807,7 +807,7 @@
     "captureCurrent": "截取当前屏幕",
     "failed": "截图失败:"
   },
-  "titleBar": {},
+  "titleBar": {"update": "更新", "updateAvailable": "版本 {{version}} 可供下载"},
   "systemPromptModal": {
     "clearSelection": "清除系统提示词选择",
     "eyebrow": "提示词库",

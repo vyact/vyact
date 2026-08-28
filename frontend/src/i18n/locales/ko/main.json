@@ -803,7 +803,7 @@
     "captureCurrent": "현재 화면 스크린샷",
     "failed": "스크린샷 실패:"
   },
-  "titleBar": {},
+  "titleBar": {"update": "업데이트", "updateAvailable": "새 버전 {{version}}을 다운로드할 수 있습니다"},
   "systemPromptModal": {
     "clearSelection": "시스템 프롬프트 선택 해제",
     "eyebrow": "프롬프트 라이브러리",

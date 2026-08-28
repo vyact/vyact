@@ -1,39 +1,13 @@
 @import 'pretendard/dist/web/variable/pretendardvariable.css';
+@import './themes/dark.css';
+@import './themes/light.css';
 
 :root {
-  color-scheme: dark;
-  /* Codex 다크 톤 */
-  --bg: #171717;
-  --surface: #212121;
-  --surface2: #2a2a2a;
-  --border: #3a3a3a;
-  --accent: #cc785c;  /* 주황색 계열 */
-  --accent-rgb: 204, 120, 92;
-  --project-active: #d88e73;
-  --project-active-rgb: 216, 142, 115;
-  --project-neutral: #f5f5f5;
-  --accent2: #d88e73;
-  --success: #2cba66;
-  --warn: #f59e0b;
-  --danger: #ff5449;
-  --text: #f5f5f5;
-  --text-secondary: #b8b8b8;
-  --muted: #939393;
-  --code-color: #a2cdff;       /* 인라인 코드 텍스트 색상 */
   --r: 12px;
-
-  /* ── 모달 공통 색상 (빠른메모/메모 기준으로 통일) ──
-     모든 모달의 배경은 --modal-bg, 모달 내부 요소(입력창/카드/행)는 --modal-inset 을 쓴다.
-     모달 톤을 바꾸려면 이 두 값만 수정하면 전체 모달에 반영된다. */
-  --bg-secondary: #1c1c1c;      /* 빠른메모/메모가 쓰던 값 (하위호환 별칭) */
-  --modal-bg: #1c1c1c;          /* 모달 바깥 컨테이너 배경 */
-  --modal-inset: #262626;       /* 모달 내부 입력창/카드/리스트 행 배경 */
-  --modal-inset-hover: #303030; /* 내부 요소 hover */
 
   /* ── 삭제/위험 버튼 공통 색상 (사이드바 휴지통 .btn-delete-all 기준) ──
      --del-rgb 채널값을 두고, 투명도별로 조합해 border/text/bg 를 만든다.
      삭제 계열 버튼 색을 바꾸려면 --del-rgb 만 수정하면 전체에 반영된다. */
-  --del-rgb: 248, 113, 113;                       /* #f87171 */
   --del-fg: rgb(var(--del-rgb));                  /* 강조 텍스트/hover */
   --del-fg-soft: rgba(var(--del-rgb), 0.7);       /* 기본 텍스트 */
   --del-fg-faint: rgba(var(--del-rgb), 0.5);      /* 약한 아이콘 */
@@ -49,36 +23,6 @@
   --modal-btn: 13px;     /* 버튼 */
   --modal-sub: 13px;     /* 보조 설명·desc */
   --modal-label: 11px;   /* 작은 라벨·섹션 헤더 */
-}
-
-:root[data-theme='light'] {
-  color-scheme: light;
-  --bg: #edf3fa;
-  --surface: #f8fbff;
-  --surface2: #e7eef7;
-  --border: #ccd8e6;
-  --accent: #c46547;
-  --accent-rgb: 196, 101, 71;
-  --project-active: #ad543a;
-  --project-active-rgb: 173, 84, 58;
-  --project-neutral: #202938;
-  --accent2: #ad543a;
-  --success: #168557;
-  --warn: #b66b09;
-  --danger: #d83b3b;
-  --text: #202938;
-  --text-secondary: #536174;
-  --muted: #7b8798;
-  --code-color: #2669a8;
-  --bg-secondary: #f4f8fd;
-  --modal-bg: #fbfdff;
-  --modal-inset: #f0f5fb;
-  --modal-inset-hover: #e5edf7;
-  --del-rgb: 210, 55, 55;
-}
-
-:root[data-theme='light'] body {
-  background: linear-gradient(135deg, #f7faff 0%, var(--bg) 55%, #e7eff9 100%);
 }
 
 * {

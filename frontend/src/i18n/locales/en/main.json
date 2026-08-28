@@ -803,7 +803,7 @@
     "captureCurrent": "Capture current screen",
     "failed": "Screenshot capture failed:"
   },
-  "titleBar": {},
+  "titleBar": {"update": "Update", "updateAvailable": "Version {{version}} is available to download"},
   "systemPromptModal": {
     "clearSelection": "Clear system prompt selection",
     "eyebrow": "Prompt library",

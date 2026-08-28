@@ -1,6 +1,7 @@
 interface Window {
     ragAPI?: {
         openExternal?: (url: string) => Promise<void>;
+        checkAppUpdate?: () => Promise<{available: boolean; currentVersion: string; latestVersion?: string; releaseUrl?: string}>;
         copyToClipboard?: (text: string) => void;
         minimize?: () => void;
         maximize?: () => void;

@@ -807,7 +807,7 @@
     "captureCurrent": "現在の画面を撮影",
     "failed": "スクリーンショットに失敗しました:"
   },
-  "titleBar": {},
+  "titleBar": {"update": "アップデート", "updateAvailable": "バージョン{{version}}をダウンロードできます"},
   "systemPromptModal": {
     "clearSelection": "システムプロンプトの選択を解除",
     "eyebrow": "プロンプトライブラリ",

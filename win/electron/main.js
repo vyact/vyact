@@ -25,6 +25,8 @@ const LOGS_DIR = path.join(INSTALL_DIR, "logs");
 const SERVER_PORT = 8000;
 const ES_PORT = Number(process.env.ES_PORT || 9251);
 const AUTO_START_DELAY_SECONDS = 15;
+const GITHUB_LATEST_RELEASE_API = "https://api.github.com/repos/vyact/vyact/releases/latest";
+const GITHUB_RELEASES_URL = "https://github.com/vyact/vyact/releases";
 
 // Chocolatey 기본 설치 경로
 const CHOCO_BIN = "C:\\ProgramData\\chocolatey\\bin";
@@ -983,6 +985,50 @@ app.on("before-quit", async (e) => {
 app.on("window-all-closed", () => { app.quit(); });
 
 ipcMain.handle("get-log-path", () => getLogFile());
+ipcMain.handle("check-app-update", async () => {
+    const currentVersion = app.getVersion();
+    try {
+        const response = await fetch(GITHUB_LATEST_RELEASE_API, {
+            headers: {"Accept": "application/vnd.github+json", "User-Agent": `Vyact/${currentVersion}`},
+            signal: AbortSignal.timeout(8000),
+        });
+        if (!response.ok) return {available: false, currentVersion};
+        const release = await response.json();
+        const latestVersion = String(release.tag_name || "").trim().replace(/^v/i, "");
+        const parseVersion = (version) => version.split("-")[0].split(".").map(part => Number.parseInt(part, 10) || 0);
+        const currentParts = parseVersion(currentVersion);
+        const latestParts = parseVersion(latestVersion);
+        const segmentCount = Math.max(currentParts.length, latestParts.length);
+        let available = false;
+        for (let index = 0; index < segmentCount; index += 1) {
+            const difference = (latestParts[index] || 0) - (currentParts[index] || 0);
+            if (difference !== 0) {
+                available = difference > 0;
+                break;
+            }
+        }
+        const releaseUrl = typeof release.html_url === "string" && release.html_url.startsWith(`${GITHUB_RELEASES_URL}/`)
+            ? release.html_url
+            : GITHUB_RELEASES_URL;
+        return {available, currentVersion, latestVersion, releaseUrl};
+    } catch {
+        return {available: false, currentVersion};
+    }
+});
+ipcMain.handle("open-external", async (_event, rawUrl) => {
+    const url = String(rawUrl || "").trim();
+    let parsed;
+    try {
+        parsed = new URL(url);
+    } catch {
+        throw new Error("Invalid external URL");
+    }
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+        throw new Error("Only HTTP/HTTPS external URLs are allowed");
+    }
+    await shell.openExternal(url);
+    return true;
+});
 ipcMain.handle("browser-open", (_event, url) => openFloatingBrowser(url));
 ipcMain.handle("browser-close", () => closeFloatingBrowser());
 ipcMain.handle("browser-navigate", async (_event, url) => {

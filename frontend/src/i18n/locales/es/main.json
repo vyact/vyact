@@ -806,7 +806,7 @@
     "captureCurrent": "Capturar pantalla",
     "failed": "Error al capturar:"
   },
-  "titleBar": {},
+  "titleBar": {"update": "Actualizar", "updateAvailable": "La versión {{version}} está disponible para descargar"},
   "systemPromptModal": {
     "clearSelection": "Quitar la selección del prompt del sistema",
     "eyebrow": "Biblioteca de prompts",

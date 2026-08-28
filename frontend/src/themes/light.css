@@ -1,0 +1,29 @@
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #edf3fa;
+  --surface: #f8fbff;
+  --surface2: #e7eef7;
+  --border: #ccd8e6;
+  --accent: #c46547;
+  --accent-rgb: 196, 101, 71;
+  --project-active: #ad543a;
+  --project-active-rgb: 173, 84, 58;
+  --project-neutral: #202938;
+  --accent2: #ad543a;
+  --success: #168557;
+  --warn: #b66b09;
+  --danger: #d83b3b;
+  --text: #202938;
+  --text-secondary: #536174;
+  --muted: #7b8798;
+  --code-color: #2669a8;
+  --bg-secondary: #f4f8fd;
+  --modal-bg: #fbfdff;
+  --modal-inset: #f0f5fb;
+  --modal-inset-hover: #e5edf7;
+  --del-rgb: 210, 55, 55;
+}
+
+:root[data-theme='light'] body {
+  background: linear-gradient(135deg, #f7faff 0%, var(--bg) 55%, #e7eff9 100%);
+}

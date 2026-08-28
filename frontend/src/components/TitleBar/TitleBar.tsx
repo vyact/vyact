@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {Camera} from 'lucide-react';
+import {Camera, Download} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import './TitleBar.css';
 import NotificationCenter from './NotificationCenter';
@@ -17,12 +17,14 @@ interface TitleBarProps {
 
 const isMac = navigator.platform.toUpperCase().includes('MAC');
 const SCREENSHOT_ASPECT_RATIOS = ['16:9', '4:3', '1:1'] as const;
+type AppUpdate = {latestVersion: string; releaseUrl: string};
 
 const TitleBar: React.FC<TitleBarProps> = ({sidebarCollapsed, onToggleSidebar, onScreenshot, onSidebarHoverEnter, onSidebarHoverLeave, notificationCenterOpen, onNotificationCenterOpenChange}) => {
     const {t} = useTranslation('main');
     const [maximized, setMaximized] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [screenshotAspectRatio, setScreenshotAspectRatio] = useState('');
+    const [appUpdate, setAppUpdate] = useState<AppUpdate | null>(null);
 
     useEffect(() => {
         const {ragAPI} = window;
@@ -40,9 +42,22 @@ const TitleBar: React.FC<TitleBarProps> = ({sidebarCollapsed, onToggleSidebar, o
         return () => document.removeEventListener('fullscreenchange', onFsChange);
     }, []);
 
+    useEffect(() => {
+        let active = true;
+        void window.ragAPI?.checkAppUpdate?.().then(result => {
+            if (active && result.available && result.latestVersion && result.releaseUrl) {
+                setAppUpdate({latestVersion: result.latestVersion, releaseUrl: result.releaseUrl});
+            }
+        }).catch(() => {});
+        return () => { active = false; };
+    }, []);
+
     const handleMinimize = () => window.ragAPI?.minimize?.();
     const handleMaximize = () => window.ragAPI?.maximize?.();
     const handleClose = () => window.ragAPI?.close?.();
+    const handleOpenUpdate = () => {
+        if (appUpdate) void window.ragAPI?.openExternal?.(appUpdate.releaseUrl);
+    };
     const handleAspectRatioChange = async (aspectRatio: string) => {
         setScreenshotAspectRatio(aspectRatio);
         await window.ragAPI?.setWindowAspectRatio?.(aspectRatio);
@@ -71,6 +86,14 @@ const TitleBar: React.FC<TitleBarProps> = ({sidebarCollapsed, onToggleSidebar, o
             <div className="titlebar-drag" />
 
             <div className="titlebar-tools">
+                {appUpdate && (
+                    <button className="titlebar-update-btn" type="button" onClick={handleOpenUpdate}
+                            aria-label={t('titleBar.updateAvailable', {version: appUpdate.latestVersion})}>
+                        <Download size={13}/>
+                        <span>{t('titleBar.update')}</span>
+                        <small>v{appUpdate.latestVersion}</small>
+                    </button>
+                )}
                 <CustomSelect
                     className="titlebar-aspect-ratio-select"
                     options={SCREENSHOT_ASPECT_RATIOS.map(value => ({value, label: value}))}

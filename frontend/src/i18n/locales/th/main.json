@@ -807,7 +807,7 @@
     "captureCurrent": "จับภาพหน้าจอ",
     "failed": "จับภาพไม่สำเร็จ:"
   },
-  "titleBar": {},
+  "titleBar": {"update": "อัปเดต", "updateAvailable": "มีเวอร์ชัน {{version}} ให้ดาวน์โหลด"},
   "systemPromptModal": {
     "clearSelection": "ล้างการเลือกพรอมต์ระบบ",
     "eyebrow": "คลังพรอมป์ต",

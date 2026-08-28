@@ -432,7 +432,7 @@
     background: transparent;
     border-radius: 7px;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: none;
     display: flex;
     align-items: center;
     justify-content: space-between;
