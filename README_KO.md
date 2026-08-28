@@ -17,7 +17,31 @@
 ## 🚀 심사위원용 빠른 설치 안내
 
 > **Apple Silicon Mac(M1 이상)과 Windows를 지원합니다.**  
-> 설치 파일을 내려받아 실행하면 필요한 구성 요소는 Vyact가 자동으로 준비합니다.
+> Vyact에서 로컬 모델을 검색·다운로드해 사용하는 것을 기본 체험 과정으로 안내합니다.
+
+### 0. 설치 전 준비
+
+#### Mac: Homebrew 설치 필수
+
+Apple Silicon Mac에서 GGUF 또는 MLX 로컬 모델을 설치·실행하려면 Homebrew가 필요합니다. 터미널을 열고 아래 명령으로 먼저 설치하세요.
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+설치 여부는 다음 명령으로 확인할 수 있습니다.
+
+```bash
+brew --version
+```
+
+#### Windows: winget 확인
+
+Windows에서 로컬 GGUF 런타임을 자동 설치하려면 `winget`이 필요합니다. Windows 11과 최신 Windows 10에는 일반적으로 App Installer와 함께 제공됩니다.
+
+```powershell
+winget --version
+```
 
 ### 1. 데스크톱 앱 설치
 
@@ -31,9 +55,10 @@
 
 - **Mac:** Apple Silicon(M1 이상)용 설치 파일을 다운로드합니다.
 - **Windows:** Windows용 설치 파일을 다운로드합니다.
-- 설치 후 Vyact를 실행하고 초기 설정 화면의 안내를 따라 모델을 선택합니다.
-- 가장 간단한 체험 방법은 OpenAI·Gemini·Claude 등 사용 중인 AI 제공자를 연결하는 것입니다.
-- 로컬 AI를 체험하려면 모델 선택 화면에서 내 컴퓨터 사양에 맞는 GGUF 또는 MLX 모델을 검색해 설치합니다.
+- 설치 후 Vyact를 실행하고 초기 설정에서 **Vyact 로컬 모델**을 선택합니다.
+- 모델 검색 화면에서 내 컴퓨터의 메모리와 예상 사용량을 확인합니다.
+- Mac에서는 GGUF 또는 MLX 모델을, Windows에서는 GGUF 모델을 선택해 다운로드합니다.
+- 다운로드가 끝나면 Vyact가 로컬 런타임을 준비하고 선택한 모델을 실행합니다.
 
 ### 2. 크롬 확장 설치
 
@@ -54,7 +79,7 @@
 
 ### 3. 5분 안에 체험하기
 
-1. Vyact에서 AI 제공자 또는 로컬 모델을 선택합니다.
+1. Vyact 모델 검색에서 내 컴퓨터 사양에 맞는 로컬 모델을 다운로드하고 실행합니다.
 2. PDF나 문서를 대화창에 첨부하고 핵심 내용과 근거를 질문합니다.
 3. 문서 관리에서 파일을 색인한 뒤 일반 대화에서 관련 내용을 다시 질문해 RAG 검색을 확인합니다.
 4. 필요하면 Gmail·Google Drive·Calendar를 연결해 실제 업무 자료를 대화 맥락으로 사용합니다.
@@ -101,7 +126,7 @@ GGUF와 Apple Silicon용 MLX 모델을 앱 안에서 검색하고 비교할 수 
 현재 페이지나 선택한 문장을 복사하지 않고 Vyact 대화의 맥락으로 보낼 수 있습니다. 페이지 전체 번역, 선택 단어·문장 설명과 출처가 포함된 페이지 분석을 지원합니다.
 
 <p align="center">
-  <img src="assets/chrome/feature-summary.png" alt="Vyact 크롬 확장의 페이지 분석" width="100%" />
+  <img src="assets/chrome/feature-web-16-9.png" alt="Vyact 크롬 확장의 페이지 분석" width="100%" />
 </p>
 
 ### 넷플릭스 기반 언어 학습
@@ -109,7 +134,7 @@ GGUF와 Apple Silicon용 MLX 모델을 앱 안에서 검색하고 비교할 수 
 원문과 보조 자막을 함께 보고 문장별 이동, 반복 재생과 자동 일시정지를 사용할 수 있습니다. 어려운 문법과 표현은 AI가 학습 수준에 맞춰 설명하며, 시청 중 궁금한 내용을 바로 질문할 수 있습니다.
 
 <p align="center">
-  <img src="assets/chrome/feature-netflix.png" alt="Vyact 넷플릭스 언어 학습" width="100%" />
+  <img src="assets/chrome/wanted-netflix-16-9.png" alt="Vyact 넷플릭스 언어 학습" width="100%" />
 </p>
 
 ### 음성으로 연습하는 외국어 회화
@@ -137,8 +162,8 @@ GGUF와 Apple Silicon용 MLX 모델을 앱 안에서 검색하고 비교할 수 
 
 - **macOS:** Apple Silicon(M1 이상)을 지원합니다. Intel Mac은 현재 지원하지 않습니다.
 - **Windows:** Windows용 설치 파일을 제공합니다.
-- 로컬 GGUF 모델 실행에 필요한 바이너리가 없으면 macOS에서는 Homebrew, Windows에서는 `winget`을 통한 자동 설치를 지원합니다.
-- Apple Silicon의 MLX 모델은 필요한 Python 패키지를 Vyact가 준비합니다.
+- macOS에서는 Homebrew를 통해 GGUF용 `llama.cpp`·`llama-swap`과 MLX용 oMLX 런타임을 설치합니다.
+- Windows에서는 `winget`을 통해 GGUF용 `llama.cpp`와 `llama-swap`을 설치합니다.
 - 로컬 모델의 실행 가능 여부와 속도는 컴퓨터 메모리와 선택한 모델 크기에 따라 달라집니다.
 - Gmail·Drive 자료를 외부 AI 제공자와 함께 사용하면 해당 내용이 선택한 제공자로 전송될 수 있습니다. Vyact가 관리하는 로컬 모델을 사용하면 대화 맥락을 외부 AI 제공자에게 보내지 않습니다.
 
