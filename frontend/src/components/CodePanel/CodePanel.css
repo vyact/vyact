@@ -3,7 +3,7 @@
     flex-direction: column;
     flex-shrink: 0;
     border-left: 1px solid var(--border);
-    background: var(--surface);
+    background: var(--code-panel-surface);
     overflow: hidden;
     animation: cp-slide-in 0.18s ease;
 }
@@ -21,7 +21,7 @@
     padding: 10px 14px 10px 16px;
     gap: 8px;
     flex-shrink: 0;
-    background: var(--surface);
+    background: var(--code-panel-surface);
     border-bottom: 1px solid var(--border);
 }
 
@@ -124,7 +124,7 @@
     min-height:62px;
     padding:10px 16px;
     border-bottom-color:color-mix(in srgb, var(--text-secondary) 24%, var(--border));
-    background:linear-gradient(180deg, var(--surface) 0%, color-mix(in srgb, var(--surface) 74%, var(--surface2) 26%) 100%);
+    background:var(--code-panel-surface);
     box-shadow:0 2px 8px rgba(48, 68, 92, .06);
 }
 
@@ -181,7 +181,7 @@
     color:var(--text);
 }
 
-.cp-file-nav { position:relative; display:flex; min-height:42px; align-items:center; gap:8px; padding:6px 12px; flex-shrink:0; border-bottom:1px solid var(--border); background:var(--surface); }
+.cp-file-nav { position:relative; display:flex; min-height:42px; align-items:center; gap:8px; padding:6px 12px; flex-shrink:0; border-bottom:1px solid var(--border); background:var(--code-panel-surface); }
 .cp-file-selector { display:flex; min-width:0; height:30px; align-items:center; gap:8px; padding:0 10px; flex:1; border:1px solid var(--border); border-radius:7px; background:rgba(255,255,255,.025); color:var(--text-secondary); cursor:pointer; }
 .cp-file-selector:hover { border-color:var(--accent2); background:var(--surface2); color:var(--text); }
 .cp-file-selector-name { min-width:0; overflow:hidden; flex:1; font-family:'SF Mono','Monaco','Consolas',monospace; font-size:11px; text-align:left; text-overflow:ellipsis; white-space:nowrap; }
@@ -211,7 +211,7 @@
     display: flex;
     flex: 1;
     overflow: auto;
-    background: var(--bg);
+    background: var(--code-panel-bg);
 }
 
 .cp-pre {

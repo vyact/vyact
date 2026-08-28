@@ -22,6 +22,8 @@
   --modal-bg: #1c1c1c;
   --modal-inset: #262626;
   --modal-inset-hover: #303030;
+  --code-panel-bg: var(--bg);
+  --code-panel-surface: var(--surface);
   --del-rgb: 248, 113, 113;
   --on-accent: #ffffff;
   --interactive-hover: rgba(255, 255, 255, 0.055);

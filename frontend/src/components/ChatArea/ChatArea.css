@@ -115,7 +115,7 @@
 }
 
 :root[data-theme='light'] .chat-area {
-    background: linear-gradient(145deg, #f8fbff 0%, var(--bg) 58%, #e9f0f9 100%);
+    background: var(--bg);
 }
 
 /* 콘텐츠 50% 센터 제한 */

@@ -1,9 +1,9 @@
 :root[data-theme='light'] {
   color-scheme: light;
-  --bg: #edf3fa;
-  --surface: #f8fbff;
-  --surface2: #e7eef7;
-  --border: #ccd8e6;
+  --bg: #fafbfc;
+  --surface: #ffffff;
+  --surface2: #f0f3f6;
+  --border: #d9e0e7;
   --accent: #c46547;
   --accent-rgb: 196, 101, 71;
   --project-active: #ad543a;
@@ -17,10 +17,12 @@
   --text-secondary: #536174;
   --muted: #7b8798;
   --code-color: #2669a8;
-  --bg-secondary: #f4f8fd;
-  --modal-bg: #fbfdff;
-  --modal-inset: #f0f5fb;
-  --modal-inset-hover: #e5edf7;
+  --bg-secondary: #f6f8fa;
+  --modal-bg: #ffffff;
+  --modal-inset: #f5f7f9;
+  --modal-inset-hover: #eceff3;
+  --code-panel-bg: #f3f6fa;
+  --code-panel-surface: #f8fafc;
   --del-rgb: 210, 55, 55;
   --on-accent: #ffffff;
   --interactive-hover: rgba(32, 41, 56, 0.055);
@@ -34,12 +36,12 @@
   --user-message-bg: #f3e4df;
   --user-message-text: #202938;
   --code-inline-bg: rgba(32, 41, 56, 0.07);
-  --control-bg: #f8fbff;
-  --control-hover: #edf3fa;
+  --control-bg: #ffffff;
+  --control-hover: #f3f5f7;
 }
 
 :root[data-theme='light'] body {
-  background: linear-gradient(135deg, #f7faff 0%, var(--bg) 55%, #e7eff9 100%);
+  background: var(--bg);
 }
 
 /* Chromium이 라이트 테마 인터랙션 도중 기본 어두운 배경을 보간하지 않도록 한다. */
