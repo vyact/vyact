@@ -182,7 +182,7 @@
 .chat-btn-right {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
 }
 
 .chat-input {
@@ -212,17 +212,18 @@
 }
 
 .send-btn {
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
     background: var(--accent);
     border: none;
-    border-radius: 8px;
-    color: #fff;
+    border-radius: 50%;
+    color: var(--on-accent);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: opacity 0.2s;
+    box-shadow: 0 3px 10px color-mix(in srgb, var(--accent) 24%, transparent);
+    transition: background-color 0.16s ease, box-shadow 0.16s ease;
     flex-shrink: 0;
 }
 
@@ -233,7 +234,7 @@
 }
 
 .send-btn:hover:not(:disabled) {
-    opacity: 0.88;
+    box-shadow: 0 5px 14px color-mix(in srgb, var(--accent) 32%, transparent);
 }
 
 .send-btn:disabled {
@@ -241,6 +242,7 @@
     color: var(--muted);
     opacity: 1;
     cursor: not-allowed;
+    box-shadow: none;
 }
 
 .send-btn.stop-mode {
@@ -280,17 +282,18 @@
 
 /* 음성 대화 버튼 */
 .voice-chat-btn {
-    width: 30px;
-    height: 30px;
-    background: var(--surface2);
+    width: 32px;
+    height: 32px;
+    background: var(--control-bg);
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 50%;
     cursor: pointer;
     color: var(--text);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    box-shadow: var(--shadow-sm);
+    transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
     flex-shrink: 0;
 }
 
@@ -299,10 +302,9 @@
 }
 
 :root[data-theme='light'] .chat-btn-row .voice-chat-btn {
-    border-color: color-mix(in srgb, var(--accent) 62%, var(--border));
-    background: color-mix(in srgb, var(--accent) 8%, var(--surface));
-    color: var(--accent);
-    box-shadow: 0 1px 3px rgba(var(--accent-rgb), 0.1);
+    border-color: var(--border);
+    background: var(--control-bg);
+    color: var(--text-secondary);
 }
 
 .voice-chat-btn:hover:not(:disabled) {
@@ -323,6 +325,14 @@
     color: var(--muted);
     opacity: 0.4;
     cursor: not-allowed;
+    box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .send-btn,
+    .voice-chat-btn {
+        transition: none;
+    }
 }
 
 /* ── @ 시스템 프롬프트 선택 팝업 ── */
