@@ -3,7 +3,7 @@ import ImageViewer from '../ImageViewer/ImageViewer';
 import type {ArticleAttachment, KnowledgeCollection} from '../../types';
 import {api} from '../../services/api';
 import {useCodePanel} from '../../contexts/CodePanelContext';
-import {Check, Database, FileText, Settings, WandSparkles, X} from 'lucide-react';
+import {AudioLines, Check, Database, FileText, Settings, WandSparkles, X} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 
 import {useAttachments} from './useAttachments';
@@ -718,16 +718,22 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
                         <div style={{display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0, marginLeft: '8px'}}>
                             {!isImageMode && (
-                                <button className="voice-chat-btn" onClick={onOpenVoiceChat}
-                                        aria-label={t('voiceMode')}>
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                         strokeWidth="2">
-                                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                                        <line x1="12" y1="19" x2="12" y2="23"/>
-                                        <line x1="8" y1="23" x2="16" y2="23"/>
-                                    </svg>
-                                </button>
+                                <>
+                                    <button type="button" className="voice-chat-btn" onClick={onOpenVoiceChat}
+                                            aria-label={t('chatInput.languagePractice')} title={t('chatInput.languagePractice')}>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                             strokeWidth="2">
+                                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                                            <line x1="12" y1="19" x2="12" y2="23"/>
+                                            <line x1="8" y1="23" x2="16" y2="23"/>
+                                        </svg>
+                                    </button>
+                                    <button type="button" className="voice-chat-btn"
+                                            aria-label={t('chatInput.voiceAssistant')} title={t('chatInput.voiceAssistant')}>
+                                        <AudioLines size={17} strokeWidth={2}/>
+                                    </button>
+                                </>
                             )}
                             <button
                                 className={`send-btn${isImageMode ? ' image-mode-send' : ''}${disabled && onStop ? ' stop-mode' : ''}`}

@@ -18,6 +18,8 @@
     "imageGenMode": "🎨 Image Generation Mode",
     "imageEditTag": "Reference image editing supported",
     "send": "Send",
+    "voiceAssistant": "Voice conversation",
+    "languagePractice": "Speaking practice",
     "stop": "Stop",
     "waiting": "Waiting for response...",
     "imageGen": "Generate Image",

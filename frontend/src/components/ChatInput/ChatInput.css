@@ -313,6 +313,13 @@
     color: var(--accent);
 }
 
+.voice-chat-btn:focus-visible {
+    outline: none !important;
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: none !important;
+}
+
 :root[data-theme='light'] .chat-btn-row .voice-chat-btn:hover:not(:disabled) {
     border-color: var(--accent);
     background: color-mix(in srgb, var(--accent) 14%, var(--surface));

@@ -18,6 +18,8 @@
     "imageGenMode": "🎨 画像生成モード",
     "imageEditTag": "参照画像の編集に対応",
     "send": "送信",
+    "voiceAssistant": "音声会話",
+    "languagePractice": "スピーキング練習",
     "stop": "停止",
     "waiting": "応答待ち...",
     "imageGen": "画像生成",

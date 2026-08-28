@@ -18,6 +18,8 @@
     "imageGenMode": "🎨 图片生成模式",
     "imageEditTag": "支持参考图片编辑",
     "send": "发送",
+    "voiceAssistant": "语音对话",
+    "languagePractice": "口语练习",
     "stop": "停止",
     "waiting": "等待回复...",
     "imageGen": "生成图片",
