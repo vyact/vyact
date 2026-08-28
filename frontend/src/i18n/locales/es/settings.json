@@ -318,7 +318,7 @@
     "googleAccount": "Cuenta de Google {{number}}",
     "addGoogleAccount": "Añadir cuenta de Google",
     "removeAccount": "Eliminar cuenta",
-    "confirmRemoveGoogleAccountTitle": "¿Eliminar esta cuenta de Google?",
+    "confirmRemoveGoogleAccountTitle": "¿Eliminar {{account}}?",
     "confirmRemoveGoogleAccountDescription": "El token de conexión y la configuración de la cuenta se eliminarán inmediatamente. Las notificaciones anteriores se conservarán.",
     "disconnectFailed": "No se pudo desconectar",
     "connect": "Conectar",

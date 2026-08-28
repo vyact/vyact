@@ -355,7 +355,7 @@
     "googleAccount": "Google account {{number}}",
     "addGoogleAccount": "Add Google account",
     "removeAccount": "Remove account",
-    "confirmRemoveGoogleAccountTitle": "Remove this Google account?",
+    "confirmRemoveGoogleAccountTitle": "Remove {{account}}?",
     "confirmRemoveGoogleAccountDescription": "The connection token and account settings will be deleted immediately. Previous notifications will remain.",
     "disconnectFailed": "Failed to disconnect",
     "connect": "Connect",

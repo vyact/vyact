@@ -318,7 +318,7 @@
     "googleAccount": "Tài khoản Google {{number}}",
     "addGoogleAccount": "Thêm tài khoản Google",
     "removeAccount": "Xóa tài khoản",
-    "confirmRemoveGoogleAccountTitle": "Xóa tài khoản Google này?",
+    "confirmRemoveGoogleAccountTitle": "Xóa {{account}}?",
     "confirmRemoveGoogleAccountDescription": "Mã kết nối và cài đặt tài khoản sẽ bị xóa ngay lập tức. Các thông báo trước đó vẫn được giữ lại.",
     "disconnectFailed": "Ngắt thất bại",
     "connect": "Kết nối",

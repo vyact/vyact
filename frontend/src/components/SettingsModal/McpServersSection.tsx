@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useId, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {api} from '../../services/api';
 import {waitForGoogleWorkspaceConnection} from '../../services/googleWorkspaceStatus';
@@ -405,7 +405,9 @@ function GoogleAccountsEditor({value, onChange, onPersist, onCredentialUpload, o
     const removeAccount = async (accountId: string) => {
         setBusyAccountId(accountId);
         try {
-            await api.disconnectGoogle(accountId);
+            if (statuses[accountId]?.authenticated !== false) {
+                await api.disconnectGoogle(accountId);
+            }
             const oldestConnectedAccountId = findOldestConnectedAccountId(accountId);
             const nextAccounts = accounts.filter(account => account.id !== accountId);
             const nextValue = {
@@ -460,27 +462,6 @@ function GoogleAccountsEditor({value, onChange, onPersist, onCredentialUpload, o
             setBusyAccountId(null);
         }
     };
-    const disconnect = async (accountId: string) => {
-        setBusyAccountId(accountId);
-        try {
-            await api.disconnectGoogle(accountId);
-            const oldestConnectedAccountId = findOldestConnectedAccountId(accountId);
-            setStatuses(current => ({...current, [accountId]: {...current[accountId], authenticated: false}}));
-            const nextValue = {
-                ...value,
-                active_account_id: value.active_account_id === accountId
-                    ? oldestConnectedAccountId
-                    : value.active_account_id,
-            };
-            onChange(nextValue);
-            await persist(nextValue);
-            emitGoogleWorkspaceStatusChanged(Boolean(oldestConnectedAccountId));
-            await onAuthChanged?.();
-        } finally {
-            setBusyAccountId(null);
-        }
-    };
-
     const oauthField: Field = {key: 'gauth_json', label: 'OAuth 자격증명 (.gauth.json)', type: 'file_json', required: true};
     const mailModeField: Field = {
         key: 'mail_mode',
@@ -493,6 +474,13 @@ function GoogleAccountsEditor({value, onChange, onPersist, onCredentialUpload, o
         ],
     };
     const notificationField: Field = {key: 'mail_notifications', label: '알림 받기', type: 'toggle'};
+    const removeAccountIndex = accounts.findIndex(account => account.id === removeAccountId);
+    const removeAccountLabel = removeAccountId
+        ? statuses[removeAccountId]?.email || t('mcp.googleAccount', {
+            number: removeAccountIndex + 1,
+            defaultValue: `Google account ${removeAccountIndex + 1}`,
+        })
+        : '';
 
     return <div className="google-accounts">
         <McpFieldInput field={oauthField} value={value.gauth_json}
@@ -527,13 +515,25 @@ function GoogleAccountsEditor({value, onChange, onPersist, onCredentialUpload, o
                                }}/>
                         <span>{t('mcp.googleAccount', {number: index + 1, defaultValue: `Google account ${index + 1}`})}</span>
                     </label>
-                    <span className={statuses[account.id]?.authenticated ? 'google-oauth-ok' : 'google-oauth-idle'}>
-                        {statuses[account.id]?.authenticated
-                            ? (statuses[account.id]?.email || t('mcp.connected'))
-                            : t('mcp.notConnected')}
-                    </span>
+                    {statuses[account.id]?.authenticated ? (
+                        <span className="google-oauth-ok">
+                            {statuses[account.id]?.email || t('mcp.connected')}
+                        </span>
+                    ) : (
+                        <button type="button" className="mcp-btn-connect" onClick={() => connect(account)}
+                                disabled={busyAccountId === account.id}>
+                            {busyAccountId === account.id ? t('mcp.connecting') : t('mcp.connect')}
+                        </button>
+                    )}
                     <button type="button" className="mcp-icon-btn mcp-danger"
-                            onClick={() => setRemoveAccountId(account.id)} disabled={busyAccountId === account.id}>
+                            onClick={() => {
+                                if (statuses[account.id]?.authenticated === false) {
+                                    void removeAccount(account.id);
+                                    return;
+                                }
+                                setRemoveAccountId(account.id);
+                            }}
+                            disabled={busyAccountId === account.id}>
                         {t('mcp.removeAccount')}
                     </button>
                 </div>
@@ -544,17 +544,6 @@ function GoogleAccountsEditor({value, onChange, onPersist, onCredentialUpload, o
                     notificationsEnabled={account.mail_notifications}
                     onMailModeChange={mail_mode => updateAccount(account.id, {mail_mode: mail_mode as GoogleAccountConfig['mail_mode']})}
                     onNotificationsChange={mail_notifications => updateAccount(account.id, {mail_notifications})}/>
-                <div className="google-account-actions">
-                    {statuses[account.id]?.authenticated ? (
-                        <button type="button" className="mcp-btn-disconnect" onClick={() => disconnect(account.id)}
-                                disabled={busyAccountId === account.id}>{t('mcp.disconnect')}</button>
-                    ) : (
-                        <button type="button" className="mcp-btn-connect" onClick={() => connect(account)}
-                                disabled={busyAccountId === account.id}>
-                            {busyAccountId === account.id ? t('mcp.connecting') : t('mcp.connect')}
-                        </button>
-                    )}
-                </div>
             </section>
         ))}
         <button type="button" className="mcp-add-account-btn" onClick={() => {
@@ -569,7 +558,7 @@ function GoogleAccountsEditor({value, onChange, onPersist, onCredentialUpload, o
         }}>+ {t('mcp.addGoogleAccount')}</button>
         {error && <div className="mcp-err">{error}</div>}
         {removeAccountId && <ConfirmModal
-            title={t('mcp.confirmRemoveGoogleAccountTitle')}
+            title={t('mcp.confirmRemoveGoogleAccountTitle', {account: removeAccountLabel})}
             description={t('mcp.confirmRemoveGoogleAccountDescription')}
             options={[
                 {label: t('mcp.cancel'), value: 'cancel'},
@@ -814,11 +803,13 @@ function GoogleMailSettingsFields({mailModeField, notificationField, mailMode, n
     onNotificationsChange: (value: boolean) => void;
 }) {
     const {t} = useTranslation('settings');
+    const fieldIdPrefix = useId();
     const label = (field: Field) => t(`mcpCatalog.fields.${field.key}`, {defaultValue: field.label});
+    const notificationInputId = `${fieldIdPrefix}-${notificationField.key}`;
 
     return <div className="mcp-mail-settings">
-        <label className="mcp-field-label" htmlFor={`mcp-field-${mailModeField.key}`}>{label(mailModeField)}</label>
-        <label className="mcp-field-label mcp-notification-label" htmlFor={`mcp-field-${notificationField.key}`}>
+        <span className="mcp-field-label">{label(mailModeField)}</span>
+        <label className="mcp-field-label mcp-notification-label" htmlFor={notificationInputId}>
             <Tooltip content={t('mcpCatalog.fields.mail_notifications_help')} multiline size="medium">
                 <span className="mcp-notification-help" tabIndex={0} role="img"
                       aria-label={t('mcpCatalog.fields.mail_notifications_help')}
@@ -833,7 +824,7 @@ function GoogleMailSettingsFields({mailModeField, notificationField, mailMode, n
         />
         <div className="mcp-mail-toggle-control">
             <label className="mcp-switch">
-                <input id={`mcp-field-${notificationField.key}`} type="checkbox" checked={notificationsEnabled}
+                <input id={notificationInputId} type="checkbox" checked={notificationsEnabled}
                        onChange={event => onNotificationsChange(event.target.checked)}/>
                 <span className="mcp-slider"/>
             </label>

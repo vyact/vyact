@@ -318,7 +318,7 @@
     "googleAccount": "บัญชี Google {{number}}",
     "addGoogleAccount": "เพิ่มบัญชี Google",
     "removeAccount": "ลบบัญชี",
-    "confirmRemoveGoogleAccountTitle": "ลบบัญชี Google นี้หรือไม่",
+    "confirmRemoveGoogleAccountTitle": "ลบ {{account}} หรือไม่",
     "confirmRemoveGoogleAccountDescription": "โทเค็นการเชื่อมต่อและการตั้งค่าบัญชีจะถูกลบทันที โดยประวัติการแจ้งเตือนเดิมจะยังคงอยู่",
     "disconnectFailed": "ตัดการเชื่อมต่อไม่สำเร็จ",
     "connect": "เชื่อมต่อ",

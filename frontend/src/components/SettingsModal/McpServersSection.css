@@ -46,6 +46,11 @@
     background: rgba(var(--del-rgb), 0.1);
     border-color: var(--del-border-hover);
 }
+.mcp-danger:focus-visible {
+    outline: none !important;
+    border-color: var(--del-fg);
+    box-shadow: none;
+}
 
 /* iOS 스타일 스위치 */
 .mcp-switch { position: relative; display: inline-block; width: 34px; height: 20px; flex-shrink: 0; }
@@ -67,6 +72,7 @@
     display: flex; flex-direction: column; gap: 10px;
     padding: 10px; border-top: 1px solid var(--border, rgba(255,255,255,0.08));
 }
+.mcp-item > .mcp-form:first-child { border-top: 0; }
 .mcp-add-form {
     border: 1px solid var(--border, rgba(255,255,255,0.12));
     border-radius: 8px; margin-top: 6px;
@@ -172,12 +178,6 @@
     white-space: nowrap;
 }
 .mcp-btn-connect:disabled { opacity: 0.5; cursor: default; }
-.mcp-btn-disconnect {
-    border: 1px solid rgba(229, 72, 77, 0.4); background: transparent; color: #e5484d;
-    padding: 6px 12px; border-radius: 6px; font-size: 14px; cursor: pointer;
-    white-space: nowrap;
-}
-.mcp-btn-disconnect:disabled { opacity: 0.5; cursor: default; }
 .mcp-err { font-size: 13px; color: #e5484d; }
 
 /* 삭제 확인 */
@@ -201,7 +201,7 @@
     padding: 8px 0;
 }
 .google-oauth-ok {
-    color: #66bb6a;
+    color: var(--success);
     font-weight: 600;
 }
 .google-reconnect-notice {
@@ -219,6 +219,7 @@
 }
 .google-account-card.active { border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
 .google-account-card-head { display: flex; align-items: center; gap: 10px; }
+.google-account-card-head > button { box-sizing: border-box; height: 34px; min-height: 34px; padding: 0 12px; }
 .google-account-active {
     display: flex; align-items: center; gap: 7px; flex: 1;
     color: var(--text); font-size: 14px; font-weight: 600; cursor: pointer;
@@ -226,7 +227,6 @@
 .google-account-active input { accent-color: var(--accent); }
 .google-oauth-idle { color: var(--muted, #888); font-size: 12px; }
 .google-account-card .google-oauth-ok { font-size: 12px; }
-.google-account-actions { display: flex; justify-content: flex-end; }
 .mcp-add-account-btn {
     width: 100%; padding: 9px 12px;
     border: 1px dashed var(--border, rgba(255,255,255,0.18));
@@ -248,12 +248,19 @@
     background: rgba(217, 119, 87, 0.06);
 }
 .mcp-file-btn.uploaded {
-    border-style: solid; border-color: #66bb6a; color: #66bb6a;
+    border-style: solid;
+    border-color: var(--success);
+    background: color-mix(in srgb, var(--success) 5%, transparent);
+    color: var(--success);
+    font-weight: 600;
 }
 .mcp-file-clear {
-    flex-shrink: 0; padding: 6px 8px; font-size: 14px;
-    color: var(--muted, #999);
+    display: grid; width: 32px; height: 32px; flex: 0 0 32px; place-items: center;
+    padding: 0; border: 0; border-radius: 8px; background: transparent;
+    color: var(--muted, #999); cursor: pointer;
+    transition: color .15s, background .15s;
 }
+.mcp-file-clear:hover { background: rgba(var(--del-rgb), .08); color: var(--del-fg); }
 
 /* Google Workspace 셋업 가이드 */
 .gw-guide {

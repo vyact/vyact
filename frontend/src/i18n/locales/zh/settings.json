@@ -318,7 +318,7 @@
     "googleAccount": "Google 账号 {{number}}",
     "addGoogleAccount": "添加 Google 账号",
     "removeAccount": "移除账号",
-    "confirmRemoveGoogleAccountTitle": "要移除此 Google 账号吗？",
+    "confirmRemoveGoogleAccountTitle": "要移除 {{account}} 吗？",
     "confirmRemoveGoogleAccountDescription": "连接令牌和账号设置将立即删除，之前的通知记录会保留。",
     "disconnectFailed": "断开连接失败",
     "connect": "连接",

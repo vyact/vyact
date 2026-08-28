@@ -1,5 +1,6 @@
 import {useEffect, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
+import {X} from 'lucide-react';
 import CustomSelect from '../CustomSelect/CustomSelect';
 
 export interface McpField {
@@ -69,7 +70,12 @@ function JsonFileInput({field, value, onChange}: McpFieldInputProps) {
                     onClick={() => fileRef.current?.click()}>
                 {hasValue ? t('mcp.uploaded') : t('mcp.selectJsonFile')}
             </button>
-            {hasValue && <button className="mcp-btn-ghost mcp-file-clear" onClick={() => onChange(null)}>✕</button>}
+            {hasValue && (
+                <button type="button" className="mcp-file-clear" aria-label={t('mcp.delete')}
+                        onClick={() => onChange(null)}>
+                    <X size={17} aria-hidden="true"/>
+                </button>
+            )}
         </div>
     </div>;
 }

@@ -318,7 +318,7 @@
     "googleAccount": "Google アカウント {{number}}",
     "addGoogleAccount": "Google アカウントを追加",
     "removeAccount": "アカウントを削除",
-    "confirmRemoveGoogleAccountTitle": "Google アカウントを削除しますか？",
+    "confirmRemoveGoogleAccountTitle": "{{account}} を削除しますか？",
     "confirmRemoveGoogleAccountDescription": "接続トークンとアカウント設定はすぐに削除されます。以前の通知履歴は保持されます。",
     "disconnectFailed": "接続解除失敗",
     "connect": "接続",

@@ -384,7 +384,7 @@
     "googleAccount": "Google 계정 {{number}}",
     "addGoogleAccount": "Google 계정 추가",
     "removeAccount": "계정 제거",
-    "confirmRemoveGoogleAccountTitle": "Google 계정을 제거할까요?",
+    "confirmRemoveGoogleAccountTitle": "{{account}} 제거할까요?",
     "confirmRemoveGoogleAccountDescription": "연결 토큰과 계정 설정이 즉시 삭제됩니다. 이전 알림 기록은 유지됩니다.",
     "disconnectFailed": "연결 해제 실패",
     "connect": "연결",
