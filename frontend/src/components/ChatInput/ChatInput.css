@@ -469,12 +469,12 @@
 }
 
 .chat-system-prompt-select .custom-select-item:hover {
-    background: color-mix(in srgb, var(--surface) 82%, transparent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 .chat-system-prompt-select .custom-select-item.selected,
 .chat-system-prompt-select .custom-select-item.selected:hover {
-    background: rgba(var(--accent-rgb, 205, 100, 72), .1);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 .knowledge-source-tabs {

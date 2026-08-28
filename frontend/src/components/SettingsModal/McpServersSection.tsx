@@ -199,49 +199,51 @@ export default function McpServersSection({scope = 'mcp'}: {scope?: McpServersSe
                         : (t(`mcpCatalog.servers.${srv.type}`, {defaultValue: cat?.label || srv.type}));
                     return (
                         <div key={srv.id} className="mcp-item">
-                            <div className="mcp-item-row">
-                                <label className="mcp-switch">
-                                    <input type="checkbox" checked={srv.enabled}
-                                           onChange={() => toggleEnabled(srv)}/>
-                                    <span className="mcp-slider"/>
-                                </label>
-                                <span className="mcp-item-label">{displayName}</span>
-                                <div className="mcp-item-actions">
-                                    <button className="mcp-icon-btn"
-                                            onClick={() => setEditingId(editingId === srv.id ? null : srv.id)}>
-                                        {t('mcp.edit')}
-                                    </button>
-                                    <button className="mcp-icon-btn mcp-danger"
-                                            onClick={() => setConfirmId(srv.id)} disabled={busy}>
-                                        {t('mcp.delete')}
-                                    </button>
-                                </div>
-                            </div>
-                            {srv.type === 'google_workspace' && googleReconnectRequired && (
-                                <div className="google-reconnect-notice">
-                                    {t('mcp.googleConnectionRequired')}
-                                </div>
-                            )}
-                            {confirmId === srv.id && (
-                                <div className="mcp-confirm">
-                                    <span className="mcp-confirm-text">
-                                        {t('mcp.confirmDelete', {name: displayName})}
-                                    </span>
-                                    <div className="mcp-form-actions">
-                                        <button className="mcp-btn-ghost"
-                                                onClick={() => setConfirmId(null)}>{t('mcp.cancel')}
+                            {!isGoogleScope && <>
+                                <div className="mcp-item-row">
+                                    <label className="mcp-switch">
+                                        <input type="checkbox" checked={srv.enabled}
+                                               onChange={() => toggleEnabled(srv)}/>
+                                        <span className="mcp-slider"/>
+                                    </label>
+                                    <span className="mcp-item-label">{displayName}</span>
+                                    <div className="mcp-item-actions">
+                                        <button className="mcp-icon-btn"
+                                                onClick={() => setEditingId(editingId === srv.id ? null : srv.id)}>
+                                            {t('mcp.edit')}
                                         </button>
-                                        <button className="mcp-btn-danger"
-                                                onClick={() => {
-                                                    setConfirmId(null);
-                                                    handleRemove(srv.id);
-                                                }}
-                                                disabled={busy}>{t('mcp.delete')}
+                                        <button className="mcp-icon-btn mcp-danger"
+                                                onClick={() => setConfirmId(srv.id)} disabled={busy}>
+                                            {t('mcp.delete')}
                                         </button>
                                     </div>
                                 </div>
-                            )}
-                            {editingId === srv.id && cat && (
+                                {srv.type === 'google_workspace' && googleReconnectRequired && (
+                                    <div className="google-reconnect-notice">
+                                        {t('mcp.googleConnectionRequired')}
+                                    </div>
+                                )}
+                                {confirmId === srv.id && (
+                                    <div className="mcp-confirm">
+                                        <span className="mcp-confirm-text">
+                                            {t('mcp.confirmDelete', {name: displayName})}
+                                        </span>
+                                        <div className="mcp-form-actions">
+                                            <button className="mcp-btn-ghost"
+                                                    onClick={() => setConfirmId(null)}>{t('mcp.cancel')}
+                                            </button>
+                                            <button className="mcp-btn-danger"
+                                                    onClick={() => {
+                                                        setConfirmId(null);
+                                                        handleRemove(srv.id);
+                                                    }}
+                                                    disabled={busy}>{t('mcp.delete')}
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </>}
+                            {(isGoogleScope || editingId === srv.id) && cat && (
                                 <ServerForm
                                     fields={cat.fields}
                                     initial={srv.config}
@@ -257,7 +259,7 @@ export default function McpServersSection({scope = 'mcp'}: {scope?: McpServersSe
                                     onGoogleAuthChanged={load}
                                     onGoogleConnected={accountId => {
                                         // OAuth 계정 연결은 MCP 도구 활성화와 독립적이다.
-                                        // 사용자가 꺼 둔 enabled 상태를 연결 과정에서 바꾸지 않는다.
+                                        // 최초 등록 시에는 off지만, 이후 계정 연결은 사용자가 선택한 상태를 유지한다.
                                         window.dispatchEvent(new CustomEvent('vyact:google-account-changed', {
                                             detail: {accountId},
                                         }));
@@ -303,7 +305,10 @@ export default function McpServersSection({scope = 'mcp'}: {scope?: McpServersSe
                         setBusy(true);
                         setErr('');
                         try {
-                            const result = await api.addMcpServer(type, config, true, prompt);
+                            // Google 계정 연결과 AI 도구 활성화는 별도 선택이다.
+                            // OAuth 설정을 마쳐도 사용자가 직접 켜기 전까지 기본 비활성 상태를 유지한다.
+                            const enabledByDefault = type !== 'google_workspace';
+                            const result = await api.addMcpServer(type, config, enabledByDefault, prompt);
                             const nextServers = [...servers, result.server];
                             setServers(nextServers);
                             emitMcpServersChanged(nextServers);
@@ -603,7 +608,7 @@ function ServerForm({
     hasDefaultPrompt?: boolean;
     serverType?: string;
     serverId?: string;
-    onSave: (config: Record<string, any>, prompt: string) => void;
+    onSave: (config: Record<string, any>, prompt: string) => void | Promise<void>;
     onCancel: () => void;
     onRefresh?: (servers: Server[]) => void;
     onGoogleAuthChanged?: () => void;
@@ -614,14 +619,42 @@ function ServerForm({
     const {t} = useTranslation('settings');
     const [values, setValues] = useState<Record<string, any>>(() => ({...initial}));
     const [prompt, setPrompt] = useState(initialPrompt);
+    const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'failed'>('idle');
+    const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const isGoogle = serverType === 'google_workspace';
 
-    const setV = (k: string, v: any) => setValues(prev => ({...prev, [k]: v}));
+    useEffect(() => () => {
+        if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+    }, []);
+
+    const markChanged = () => {
+        if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+        setSaveState('idle');
+    };
+    const setV = (k: string, v: any) => {
+        markChanged();
+        setValues(prev => ({...prev, [k]: v}));
+    };
+    const handleValuesChange = (nextValues: Record<string, any>) => {
+        markChanged();
+        setValues(nextValues);
+    };
+    const handleSave = async () => {
+        setSaveState('saving');
+        try {
+            await onSave(values, prompt);
+            setSaveState('saved');
+            savedTimerRef.current = setTimeout(() => setSaveState('idle'), 2200);
+        } catch {
+            setSaveState('failed');
+            savedTimerRef.current = setTimeout(() => setSaveState('idle'), 2200);
+        }
+    };
 
     return (
         <div className="mcp-form">
             {isGoogle && <GoogleWorkspaceGuide/>}
-            {isGoogle && <GoogleAccountsEditor value={values} onChange={setValues}
+            {isGoogle && <GoogleAccountsEditor value={values} onChange={handleValuesChange}
                                                 onPersist={onGoogleConfigSave}
                                                 onAuthChanged={onGoogleAuthChanged}
                                                 onConnected={onGoogleConnected}
@@ -646,14 +679,23 @@ function ServerForm({
                         ? t('mcp.promptDefaultPlaceholder')
                         : t('mcp.promptEmptyPlaceholder')}
                     value={prompt}
-                    onChange={e => setPrompt(e.target.value)}
+                    onChange={e => {
+                        markChanged();
+                        setPrompt(e.target.value);
+                    }}
                 />
             </div>
             <div className="mcp-form-actions">
-                <button className="mcp-btn-ghost" onClick={onCancel}>{t('mcp.cancel')}</button>
-                <button className="mcp-btn-primary"
-                        onClick={() => onSave(values, prompt)}>
-                    {t('mcp.save')}
+                {!isGoogle && <button className="mcp-btn-ghost" onClick={onCancel}>{t('mcp.cancel')}</button>}
+                <button className={`mcp-btn-primary${saveState === 'saved' ? ' is-saved' : saveState === 'failed' ? ' is-failed' : ''}`}
+                        onClick={() => void handleSave()} disabled={saveState === 'saving'}>
+                    {saveState === 'saving'
+                        ? t('common:saving')
+                        : saveState === 'saved'
+                            ? `✓ ${t('apiKeyField.savedMsg')}`
+                            : saveState === 'failed'
+                                ? t('mcp.saveFailed')
+                                : t('mcp.save')}
                 </button>
             </div>
         </div>
@@ -750,7 +792,7 @@ function AddServerForm({catalog, servers, fixedType, err, onErr, onAdd, onCancel
             </div>
             {err && <div className="mcp-err">{err}</div>}
             <div className="mcp-form-actions">
-                <button className="mcp-btn-ghost" onClick={onCancel}>{t('mcp.cancel')}</button>
+                {!isGoogle && <button className="mcp-btn-ghost" onClick={onCancel}>{t('mcp.cancel')}</button>}
                 <button className="mcp-btn-primary"
                         onClick={() => isGoogle
                             ? registerGoogle(values)

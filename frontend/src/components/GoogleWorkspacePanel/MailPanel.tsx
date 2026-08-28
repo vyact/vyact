@@ -506,12 +506,15 @@ function MailRecipientField({name, label, recipients, suggestions, onChange, inv
         inputRef.current?.focus();
     };
 
+    const inputId = `gwp-recipient-${name}`;
+
     return <div className="gwp-recipient-field">
-        <span className="gwp-recipient-label">{label}</span>
+        <label className="gwp-recipient-label" htmlFor={inputId}>{label}</label>
         <div className="gwp-recipient-input-shell" onClick={() => inputRef.current?.focus()}>
             {recipients.map(recipient => <span className="gwp-recipient-chip" key={recipient}><span>{recipient}</span><button type="button" aria-label={removeLabel(recipient)} onClick={() => onChange(recipients.filter(item => item !== recipient))}>×</button></span>)}
             <input
                 ref={inputRef}
+                id={inputId}
                 type="email"
                 value={draft}
                 aria-label={label}
@@ -565,6 +568,7 @@ function MailRecipientField({name, label, recipients, suggestions, onChange, inv
                     aria-selected={index === activeSuggestionIndex}
                     className={index === activeSuggestionIndex ? 'active' : ''}
                     onMouseDown={event => event.preventDefault()}
+                    onMouseEnter={() => setActiveSuggestionIndex(index)}
                     onClick={() => selectSuggestion(suggestion)}
                 >
                     <span>{suggestion.name || suggestion.email}</span>

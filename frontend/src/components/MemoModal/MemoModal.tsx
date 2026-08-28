@@ -1011,7 +1011,7 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
                     <div className="memo-title-wrap">
                         <FileText className="memo-title-icon" aria-hidden="true" />
                         <span className="memo-title">{t('memoModal.title')}</span>
-                        <span className="memo-count">{memos.length}</span>
+                        {memos.length > 0 && <span className="memo-count">{memos.length}</span>}
                     </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
                         <button className="memo-new-btn" onClick={handleNew}>{t('memoModal.newMemo')}</button>

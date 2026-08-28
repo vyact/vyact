@@ -582,7 +582,7 @@
 .gwp-recipient-fields { position: relative; z-index: 6; display: grid; border: 1px solid var(--border); border-radius: 7px; background: var(--bg); overflow: visible; }
 .gwp-recipient-field { display: grid; grid-template-columns: 72px minmax(0, 1fr); align-items: stretch; min-height: 42px; }
 .gwp-recipient-field + .gwp-recipient-field { border-top: 1px solid var(--border); }
-.gwp-recipient-label { display: flex; align-items: center; padding: 0 10px; color: var(--muted); font-size: 12px; font-weight: 650; }
+.gwp-recipient-label { display: flex; align-items: center; padding: 0 10px; color: var(--muted); font-size: 12px; font-weight: 650; cursor: text; }
 .gwp-recipient-input-shell { position: relative; display: flex; min-width: 0; align-items: center; flex-wrap: wrap; gap: 6px; padding: 5px 8px 5px 0; cursor: text; }
 .gwp-compose .gwp-recipient-input-shell > input { min-width: 80px; flex: 1 1 140px; padding: 4px 2px; border: 0; outline: 0; background: transparent; box-shadow: none; }
 .gwp-recipient-actions { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 10px; margin-left: auto; }

@@ -100,7 +100,7 @@ export function updateGoogleWorkspaceConnectionStatus(connected: boolean): Googl
     statusRequestVersion += 1;
     cachedStatus = {
         registered: cachedStatus?.registered ?? true,
-        enabled: cachedStatus?.enabled ?? true,
+        enabled: cachedStatus?.enabled ?? false,
         connected,
         config: cachedStatus?.config,
         accounts: cachedStatus?.accounts || [],

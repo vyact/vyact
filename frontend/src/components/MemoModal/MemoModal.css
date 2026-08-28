@@ -14,7 +14,7 @@
     max-width: 96vw;
     height: 80vh;
     background: var(--bg-secondary, #1e1e1e);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--border);
     border-radius: 14px;
     display: flex;
     flex-direction: column;
@@ -28,7 +28,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 14px 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--border);
     flex-shrink: 0;
 }
 
@@ -97,7 +97,7 @@
 .memo-sidebar {
     width: 220px;
     flex-shrink: 0;
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    border-right: 1px solid var(--border);
     overflow-y: auto;
     padding: 8px 0;
 }
@@ -303,7 +303,7 @@
     align-items: center;
     gap: 2px;
     padding: 8px 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    border-bottom: 1px solid var(--border);
     flex-wrap: wrap;
     flex-shrink: 0;
 }
@@ -377,7 +377,7 @@
     max-width: min(100%, 720px);
     margin: 12px 0;
     width: fit-content;
-    border: 1px solid rgba(255,255,255,0.12);
+    border: 1px solid var(--border);
     border-radius: 8px;
     overflow: hidden;
     position: relative;
@@ -435,7 +435,7 @@
     width: fit-content;
     min-width: 160px;
     max-width: min(100%, 720px);
-    border: 1px solid rgba(255,255,255,0.12);
+    border: 1px solid var(--border);
     border-radius: 8px;
     overflow: hidden;
 }
@@ -479,7 +479,7 @@
     line-height: 1.35;
     color: var(--text);
     background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.12);
+    border: 1px solid var(--border);
     border-radius: 6px;
     text-decoration: none;
     overflow-wrap: anywhere;
@@ -588,7 +588,7 @@
     overflow-x: auto;
     margin: 0.6em 0;
     font-size: 15px;
-    border: 1px solid rgba(255,255,255,0.08);
+    border: 1px solid var(--border);
 }
 .tiptap pre code { background: none; padding: 0; }
 
@@ -606,7 +606,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 10px 16px;
-    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    border-top: 1px solid var(--border);
     flex-shrink: 0;
 }
 
@@ -631,7 +631,7 @@
 
 .memo-btn-cancel {
     background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.12);
+    border: 1px solid var(--border);
     border-radius: 6px;
     padding: 5px 14px;
     font-size: 14px;
@@ -666,7 +666,7 @@
     top: 8px;
     right: 10px;
     background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.2);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 3px 8px;
     font-size: 11px;
@@ -690,7 +690,7 @@
     align-items: center;
     gap: 7px;
     padding: 8px 12px;
-    border-bottom: 1px solid rgba(255,255,255,0.07);
+    border-bottom: 1px solid var(--border);
     color: var(--muted);
 }
 
@@ -748,7 +748,7 @@ details:not([open]) > .details-content-nodeview {
     display: flex;
     gap: 0;
     margin: 6px 0;
-    border: 1px solid rgba(255,255,255,0.12);
+    border: 1px solid var(--border);
     border-radius: 8px;
     overflow: hidden;
     background: rgba(255,255,255,0.03);
@@ -764,7 +764,7 @@ details:not([open]) > .details-content-nodeview {
     flex-shrink: 0;
     background: rgba(255,255,255,0.04);
     border: none;
-    border-right: 1px solid rgba(255,255,255,0.08);
+    border-right: 1px solid var(--border);
     cursor: pointer;
     color: var(--accent, #e07050);
     font-size: 11px;
@@ -807,7 +807,7 @@ details:not([open]) > .details-content-nodeview {
 .tiptap [data-type="details"] summary::-webkit-details-marker { display: none; }
 
 .tiptap [data-type="details"].is-open summary {
-    border-bottom: 1px solid rgba(255,255,255,0.08);
+    border-bottom: 1px solid var(--border);
 }
 
 /* detailsContent */
@@ -842,7 +842,7 @@ details:not([open]) > .details-content-nodeview {
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent, #e07050) 65%, transparent);
 }
 .tiptap th, .tiptap td {
-    border: 1px solid rgba(255,255,255,0.15);
+    border: 1px solid var(--border);
     padding: 7px 12px;
     text-align: left;
     min-width: 0;

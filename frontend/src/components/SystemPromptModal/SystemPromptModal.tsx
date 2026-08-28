@@ -199,11 +199,11 @@ const SystemPromptModal: React.FC<SystemPromptModalProps> = ({
                                 rows={10}
                             />
                             <div className="system-editor-actions">
-                                <button className="system-save" onClick={handleSave}>
-                                    {t('systemPromptModal.save')}
-                                </button>
                                 <button className="system-cancel" onClick={handleCancel}>
                                     {t('systemPromptModal.cancel')}
+                                </button>
+                                <button className="system-save" onClick={handleSave}>
+                                    {t('systemPromptModal.save')}
                                 </button>
                             </div>
                         </div>

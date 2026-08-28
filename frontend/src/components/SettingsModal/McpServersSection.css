@@ -92,8 +92,7 @@
 .mcp-prompt-textarea { min-height: 140px; resize: vertical; }
 .mcp-prompt-section {
     margin-top: 4px;
-    padding-top: 14px;
-    border-top: 1px solid var(--border, rgba(255,255,255,0.12));
+    padding-top: 8px;
 }
 
 .mcp-dir-list { display: flex; flex-direction: column; gap: 4px; }
@@ -123,6 +122,36 @@
     padding: 0 12px;
     line-height: 1;
 }
+
+.mcp-prompt-section + .mcp-form-actions {
+    padding-top: 10px;
+}
+
+.mcp-prompt-section + .mcp-form-actions .mcp-btn-primary {
+    height: auto;
+    min-height: 0;
+    padding: 9px 20px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: var(--modal-btn);
+    border-color: transparent;
+    color: #fff;
+    font-weight: 600;
+}
+
+.mcp-prompt-section + .mcp-form-actions .mcp-btn-primary:hover:not(:disabled) {
+    opacity: 0.88;
+}
+
+.mcp-prompt-section + .mcp-form-actions .mcp-btn-primary.is-saved {
+    border-color: var(--success, #22c55e);
+    color: var(--success, #22c55e);
+}
+
+.mcp-prompt-section + .mcp-form-actions .mcp-btn-primary.is-failed {
+    border-color: var(--danger, #ef4444);
+    color: var(--danger, #ef4444);
+}
 .mcp-btn-ghost,
 .mcp-btn-primary {
     border: 1px solid var(--border, rgba(255,255,255,0.12));
@@ -134,6 +163,9 @@
 .mcp-btn-primary {
     background: var(--accent, #d97757);
 }
+.mcp-btn-primary:disabled { cursor: wait; opacity: .7; }
+.mcp-btn-primary.is-saved { border-color: var(--success); background: color-mix(in srgb, var(--success) 14%, var(--surface)); color: var(--success); }
+.mcp-btn-primary.is-failed { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, var(--surface)); color: var(--danger); }
 .mcp-btn-connect {
     border: none; background: #4285f4; color: #fff;
     padding: 6px 12px; border-radius: 6px; font-size: 14px; cursor: pointer;

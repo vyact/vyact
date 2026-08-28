@@ -278,15 +278,15 @@
 .system-prompt-delete:hover { border-color: var(--del-border-hover); background: var(--del-bg-hover); color: var(--del-fg); }
 .system-new-prompt { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 42px; border: 1px solid var(--accent); border-radius: 9px; background: var(--accent); color: white; font-size: 13px; font-weight: 700; cursor: pointer; }
 .system-new-prompt:hover, .system-save:hover { filter: brightness(1.08); }
-.system-prompt-editor { display: flex; flex: 1; flex-direction: column; gap: 8px; min-height: 410px; padding: 18px; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; }
-.system-editor-heading { margin-bottom: 3px; color: var(--text); font-size: 16px; font-weight: 700; }
-.system-prompt-editor label { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.system-prompt-editor { display: flex; flex: 1; flex-direction: column; gap: 10px; min-height: 410px; }
+.system-editor-heading { margin-bottom: 7px; color: var(--text); font-size: 17px; font-weight: 750; }
+.system-prompt-editor label { margin-top: 2px; color: var(--text-secondary); font-size: 12px; font-weight: 700; letter-spacing: .01em; }
 .system-editor-title, .system-editor-content { width: 100%; box-sizing: border-box; border: 1px solid var(--border); border-radius: 9px; background: var(--surface2); color: var(--text); outline: none; }
 .system-editor-title { padding: 10px 12px; font-size: 14px; }
 .system-editor-content { min-height: 240px; flex: 1; padding: 12px; resize: vertical; font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; }
 .system-editor-title:focus, .system-editor-content:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(var(--accent-rgb), .12); }
-.system-editor-actions { display: flex; gap: 9px; margin-top: 4px; }
-.system-save, .system-cancel { flex: 1; min-height: 40px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.system-editor-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+.system-save, .system-cancel { min-width: 104px; min-height: 40px; padding: 0 18px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; }
 .system-save { border: 0; background: var(--accent); color: white; }
 .system-cancel { border: 1px solid var(--border); background: transparent; color: var(--text); }
 .system-cancel:hover { background: var(--surface2); }
