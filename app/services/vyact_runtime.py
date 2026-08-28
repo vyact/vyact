@@ -528,12 +528,12 @@ def start_single_model(
     """Restart llama-swap with exactly one configured model and return its API ID."""
     global _active_dflash2_model, _active_mtp_model, _runtime_process
     kv_cache_precision = kv_cache_precision or ("q8" if cache_quantization else "none")
-    paths = get_runtime_paths()
-    if not paths.llama_swap:
-        raise RuntimeError("Vyact native runtime is not installed")
     dflash2_model_path = get_cached_dflash2_model(model_path)
     if dflash2_model_path is None and enable_mtp is True and kv_cache_precision != "none":
         raise ValueError("MTP acceleration and KV cache quantization cannot be enabled together")
+    paths = get_runtime_paths()
+    if not paths.llama_swap:
+        raise RuntimeError("Vyact native runtime is not installed")
     from services.mlx_runtime import stop_mlx_runtime
 
     stop_mlx_runtime()
