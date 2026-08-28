@@ -133,8 +133,8 @@
     margin-top: 1px;
     font-family: inherit;
 }
-.dm-mode-badge.index { background: rgba(99,102,241,0.18); color: #a5b4fc; }
-.dm-mode-badge.query { background: rgba(204,120,92,0.18); color: var(--accent); }
+.dm-mode-badge.index,
+.dm-mode-badge.query { background: rgba(var(--accent-rgb), 0.18); color: var(--accent); }
 
 /* 바디 */
 .dm-body {

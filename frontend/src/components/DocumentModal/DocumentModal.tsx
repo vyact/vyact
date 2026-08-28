@@ -992,6 +992,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
                                             className="dm-chars-select"
                                             triggerStyle={{ borderRadius: '6px', fontSize: '12px', padding: '4px 8px', background: 'var(--surface)' }}
                                             dropdownBackground="var(--surface)"
+                                            portal
                                         />
                                     </div>
                                 </div>

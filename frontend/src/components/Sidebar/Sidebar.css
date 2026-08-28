@@ -306,6 +306,19 @@
     background: rgba(255, 120, 50, 0.08);
 }
 
+:root[data-theme='light'] .btn-refresh-history:not(:disabled) {
+    border-color: color-mix(in srgb, var(--text-secondary) 34%, var(--border));
+    background: var(--surface);
+    color: var(--text-secondary);
+    box-shadow: 0 1px 3px rgba(40, 58, 80, 0.08);
+}
+
+:root[data-theme='light'] .btn-refresh-history:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+    color: var(--accent);
+}
+
 .btn-refresh-history:disabled {
     cursor: wait;
     opacity: 0.7;
@@ -693,9 +706,22 @@
 }
 
 .sidebar-header-settings:hover {
-    color: var(--text);
+    color: var(--accent);
     border-color: var(--accent);
     background: rgba(255, 120, 50, 0.08);
+}
+
+:root[data-theme='light'] .sidebar-header-settings {
+    border-color: color-mix(in srgb, var(--text-secondary) 34%, var(--border));
+    background: var(--surface);
+    color: var(--text-secondary);
+    box-shadow: 0 1px 3px rgba(40, 58, 80, 0.08);
+}
+
+:root[data-theme='light'] .sidebar-header-settings:hover {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+    color: var(--accent);
 }
 
 /* 히스토리 무한 스크롤 로딩 영역 */

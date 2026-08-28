@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import {MessageCircle, Mic, NotebookPen, X} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {ModalTab, VoiceChatModalProps} from './voiceChat.types';
@@ -11,6 +11,12 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({isOpen, onClose, onSend}
     const {t} = useTranslation('main');
     const [tab, setTab] = useState<ModalTab>('chat');
 
+    const handleClose = useCallback(() => {
+        window.speechSynthesis.cancel();
+        window.dispatchEvent(new CustomEvent('voiceTabChange'));
+        onClose();
+    }, [onClose]);
+
     const handleTabChange = (newTab: ModalTab) => {
         // 탭 전환 시 진행 중인 음성/스크립트 모두 중단
         window.speechSynthesis.cancel();
@@ -20,14 +26,14 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({isOpen, onClose, onSend}
 
     if (!isOpen) return null;
     return (
-        <ModalOverlay className="vc-overlay">
+        <ModalOverlay className="vc-overlay" onClose={handleClose}>
             <div className="vc-modal" onClick={e => e.stopPropagation()}>
                 <div className="vc-header">
                     <div className="vc-header-title">
                         <Mic size={20} aria-hidden/>
                         {t('voiceChat.title')}
                     </div>
-                    <button className="vc-close-btn" onClick={onClose}><X size={20} aria-hidden/></button>
+                    <button className="vc-close-btn" onClick={handleClose}><X size={20} aria-hidden/></button>
                 </div>
                 <div className="vc-tabs">
                     <button className={`vc-tab${tab === 'chat' ? ' active' : ''}`}
@@ -38,7 +44,7 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({isOpen, onClose, onSend}
                     </button>
                 </div>
                 {tab === 'chat'
-                    ? <VoiceChatTab onSend={onSend} onClose={onClose}/>
+                    ? <VoiceChatTab onSend={onSend} onClose={handleClose}/>
                     : <ScriptPracticeTab/>
                 }
             </div>
