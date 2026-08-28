@@ -4,6 +4,7 @@
     "general": "일반",
     "runtime": "RAG 설정",
     "backup": "백업 / 복원",
+    "google": "Google 연동",
     "api": "연동 설정",
     "externalData": "외부 데이터",
     "plugins": "플러그인",
@@ -353,6 +354,9 @@
   },
   "mcp": {
     "title": "MCP 및 AI 도구",
+    "googleTitle": "Google Workspace",
+    "googleDesc": "Google 계정과 서비스 권한을 연결하고 관리합니다.",
+    "googleEmpty": "연결 설정을 추가하여 Google Workspace를 사용하세요.",
     "add": "+ 추가",
     "desc": "AI가 사용할 도구(파일 접근, GitHub 등)를 연결합니다.",
     "empty": "등록된 MCP 서버 또는 AI 도구가 없습니다.",

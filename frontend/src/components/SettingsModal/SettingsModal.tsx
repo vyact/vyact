@@ -63,7 +63,7 @@ interface SettingsModalProps {
     initialTab?: string;
 }
 
-type Tab = 'backup' | 'general' | 'runtime' | 'api' | 'externalData' | 'plugins' | 'skills' | 'profile';
+type Tab = 'backup' | 'general' | 'runtime' | 'google' | 'api' | 'externalData' | 'plugins' | 'skills' | 'profile';
 
 type RuntimeSettings = Record<string, number | null>;
 const DEFAULT_SETTINGS_TAB: Tab = 'general';
@@ -913,6 +913,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                             {key: 'general' as Tab, icon: '⚙️', label: t('tabs.general')},
                             {key: 'runtime' as Tab, icon: '🧠', label: t('tabs.runtime')},
                             {key: 'backup' as Tab, icon: '💾', label: t('tabs.backup')},
+                            {key: 'google' as Tab, icon: 'G', label: t('tabs.google')},
                             {key: 'api' as Tab, icon: '🔑', label: t('tabs.api')},
                             ...(isKoreanLanguage
                                 ? [{key: 'externalData' as Tab, icon: '🌐', label: t('tabs.externalData')}]
@@ -1480,6 +1481,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                         })}
                                     </div>
                                 ))}
+                            </div>
+                        )}
+
+                        {tab === 'google' && (
+                            <div className="settings-general">
+                                <div className="settings-general-section">
+                                    <McpServersSection scope="google"/>
+                                </div>
                             </div>
                         )}
 

@@ -4,6 +4,7 @@
     "general": "General",
     "runtime": "RAG settings",
     "backup": "Backup / Restore",
+    "google": "Google integration",
     "api": "Integrations",
     "externalData": "External data",
     "plugins": "Plugins",
@@ -324,6 +325,9 @@
   },
   "mcp": {
     "title": "MCP & AI Tools",
+    "googleTitle": "Google Workspace",
+    "googleDesc": "Connect and manage Google accounts and service permissions.",
+    "googleEmpty": "Add a connection to use Google Workspace.",
     "add": "+ Add",
     "desc": "Connect tools for AI to use (file access, GitHub, public data, etc.).",
     "empty": "No MCP servers or AI tools registered.",

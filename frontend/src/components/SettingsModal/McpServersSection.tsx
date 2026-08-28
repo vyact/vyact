@@ -63,7 +63,9 @@ const GOOGLE_WORKSPACE_SERVICES = [
     {name: 'Google Forms', descriptionKey: 'googleFormsService'},
 ] as const;
 
-export default function McpServersSection() {
+type McpServersSectionScope = 'mcp' | 'google';
+
+export default function McpServersSection({scope = 'mcp'}: {scope?: McpServersSectionScope}) {
     const {t} = useTranslation('settings');
     const [catalog, setCatalog] = useState<Record<string, CatalogEntry>>({});
     const [servers, setServers] = useState<Server[]>([]);
@@ -153,25 +155,35 @@ export default function McpServersSection() {
         }
     };
 
+    const isGoogleScope = scope === 'google';
+    const visibleServers = servers.filter(server =>
+        isGoogleScope ? server.type === 'google_workspace' : server.type !== 'google_workspace'
+    );
+    const visibleCatalog = Object.fromEntries(Object.entries(catalog).filter(([type]) =>
+        isGoogleScope ? type === 'google_workspace' : type !== 'google_workspace'
+    ));
+
     return (
         <div className="mcp-section">
             <div className="mcp-head">
-                <span className="mcp-title">{t('mcp.title')}</span>
-                <button className="mcp-add-btn" onClick={() => {
-                    setAdding(true);
-                    setErr('');
-                }}>
-                    {t('mcp.add')}
-                </button>
+                <span className="mcp-title">{t(isGoogleScope ? 'mcp.googleTitle' : 'mcp.title')}</span>
+                {(!isGoogleScope || visibleServers.length === 0) && (
+                    <button className="mcp-add-btn" onClick={() => {
+                        setAdding(true);
+                        setErr('');
+                    }}>
+                        {t('mcp.add')}
+                    </button>
+                )}
             </div>
-            <div className="mcp-desc">{t('mcp.desc')}</div>
+            <div className="mcp-desc">{t(isGoogleScope ? 'mcp.googleDesc' : 'mcp.desc')}</div>
 
             {err && !adding && <div className="mcp-err">{err}</div>}
 
-            {servers.length === 0 && <div className="mcp-empty">{t('mcp.empty')}</div>}
+            {visibleServers.length === 0 && !adding && <div className="mcp-empty">{t(isGoogleScope ? 'mcp.googleEmpty' : 'mcp.empty')}</div>}
 
             <div className="mcp-list">
-                {servers.map(srv => {
+                {visibleServers.map(srv => {
                     const cat = catalog[srv.type];
                     const displayName = ((srv.type === 'custom' || srv.type === 'custom_remote') && srv.config?.name)
                         ? srv.config.name
@@ -272,8 +284,9 @@ export default function McpServersSection() {
 
             {adding && (
                 <AddServerForm
-                    catalog={catalog}
+                    catalog={visibleCatalog}
                     servers={servers}
+                    fixedType={isGoogleScope ? 'google_workspace' : undefined}
                     err={err}
                     onErr={setErr}
                     onCancel={() => setAdding(false)}
@@ -635,9 +648,10 @@ function ServerForm({
 }
 
 // ── 서버 추가 폼 ────────────────────────────────────────
-function AddServerForm({catalog, servers, err, onErr, onAdd, onCancel}: {
+function AddServerForm({catalog, servers, fixedType, err, onErr, onAdd, onCancel}: {
     catalog: Record<string, CatalogEntry>;
     servers: Server[];
+    fixedType?: string;
     err: string;
     onErr: (s: string) => void;
     onAdd: (type: string, config: Record<string, any>, prompt: string) => void | Promise<Server | void>;
@@ -649,7 +663,7 @@ function AddServerForm({catalog, servers, err, onErr, onAdd, onCancel}: {
     const types = ['custom', 'custom_remote', ...allTypes.filter(t => t !== 'custom' && t !== 'custom_remote')]
         .filter(t => catalog[t])
         .filter(t => !(catalog[t].singleton && existingTypes.has(t)));
-    const [type, setType] = useState(types[0] || '');
+    const [type, setType] = useState(fixedType || types[0] || '');
     const [values, setValues] = useState<Record<string, any>>({});
     const [prompt, setPrompt] = useState('');
     const registeringGoogleRef = useRef(false);
@@ -689,14 +703,14 @@ function AddServerForm({catalog, servers, err, onErr, onAdd, onCancel}: {
 
     return (
         <div className="mcp-form mcp-add-form">
-            <div className="mcp-field">
+            {!fixedType && <div className="mcp-field">
                 <label className="mcp-field-label">{t('mcp.serverType')}</label>
                 <CustomSelect
                     options={types.map(tp => ({value: tp, label: t(`mcpCatalog.servers.${tp}`, {defaultValue: catalog[tp].label})}))}
                     value={type}
                     onChange={setType}
                 />
-            </div>
+            </div>}
             {isGoogle && <GoogleWorkspaceGuide/>}
             {isGoogle && <GoogleAccountsEditor value={values} onChange={setValues}
                                                 onCredentialUpload={registerGoogle}/>}

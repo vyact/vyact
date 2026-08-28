@@ -4,6 +4,7 @@
     "general": "Chung",
     "runtime": "Cài đặt RAG",
     "backup": "Sao lưu",
+    "google": "Kết nối Google",
     "api": "Kết nối",
     "externalData": "Dữ liệu ngoài",
     "skills": "Kỹ năng",
@@ -288,6 +289,9 @@
   },
   "mcp": {
     "title": "MCP và công cụ AI",
+    "googleTitle": "Google Workspace",
+    "googleDesc": "Kết nối và quản lý tài khoản Google cùng quyền dịch vụ.",
+    "googleEmpty": "Thêm kết nối để sử dụng Google Workspace.",
     "add": "+ Thêm",
     "desc": "Kết nối công cụ cho AI",
     "empty": "Chưa có máy chủ",

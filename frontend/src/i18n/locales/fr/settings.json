@@ -4,6 +4,7 @@
     "general": "Général",
     "runtime": "Paramètres RAG",
     "backup": "Sauvegarde",
+    "google": "Intégration Google",
     "api": "Connexions",
     "externalData": "Données externes",
     "skills": "Compétences",
@@ -288,6 +289,9 @@
   },
   "mcp": {
     "title": "MCP et outils d’IA",
+    "googleTitle": "Google Workspace",
+    "googleDesc": "Connectez et gérez les comptes Google et les autorisations des services.",
+    "googleEmpty": "Ajoutez une connexion pour utiliser Google Workspace.",
     "add": "+ Ajouter",
     "desc": "Connecte des outils pour l'IA",
     "empty": "Aucun serveur",

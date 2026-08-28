@@ -4,6 +4,7 @@
     "general": "通用",
     "runtime": "RAG 设置",
     "backup": "备份 / 恢复",
+    "google": "Google 集成",
     "api": "集成设置",
     "externalData": "外部数据",
     "skills": "技能",
@@ -288,6 +289,9 @@
   },
   "mcp": {
     "title": "MCP 与 AI 工具",
+    "googleTitle": "Google Workspace",
+    "googleDesc": "连接并管理 Google 帐号和服务权限。",
+    "googleEmpty": "添加连接以使用 Google Workspace。",
     "add": "+ 添加",
     "desc": "连接 AI 使用的工具（文件访问、GitHub、公共数据等）。",
     "empty": "暂无已注册的服务器。",

@@ -4,6 +4,7 @@
     "general": "一般",
     "runtime": "RAG設定",
     "backup": "バックアップ / 復元",
+    "google": "Google 連携",
     "api": "連携設定",
     "externalData": "外部データ",
     "skills": "スキル",
@@ -288,6 +289,9 @@
   },
   "mcp": {
     "title": "MCP・AIツール",
+    "googleTitle": "Google Workspace",
+    "googleDesc": "Google アカウントとサービス権限を連携・管理します。",
+    "googleEmpty": "Google Workspace を使用するには連携設定を追加してください。",
     "add": "+ 追加",
     "desc": "AIが使用するツール（ファイルアクセス、GitHub、公共データなど）を接続します。",
     "empty": "登録されたサーバーがありません。",

@@ -4,6 +4,7 @@
     "general": "ทั่วไป",
     "runtime": "การตั้งค่า RAG",
     "backup": "สำรอง",
+    "google": "เชื่อมต่อ Google",
     "api": "เชื่อมต่อ",
     "externalData": "ข้อมูลภายนอก",
     "skills": "สกิล",
@@ -288,6 +289,9 @@
   },
   "mcp": {
     "title": "MCP และเครื่องมือ AI",
+    "googleTitle": "Google Workspace",
+    "googleDesc": "เชื่อมต่อและจัดการบัญชี Google และสิทธิ์บริการ",
+    "googleEmpty": "เพิ่มการเชื่อมต่อเพื่อใช้ Google Workspace",
     "add": "+ เพิ่ม",
     "desc": "เชื่อมเครื่องมือให้ AI ใช้",
     "empty": "ยังไม่มีเซิร์ฟเวอร์",
