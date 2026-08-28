@@ -9,8 +9,10 @@ from unittest.mock import patch
 from services.mlx_runtime import (
     MLX_MODEL_MANIFEST,
     _build_mlx_server_command,
+    _build_omlx_server_command,
     _mlx_server_environment,
     associate_mlx_mtp_model,
+    associate_mlx_bundled_dflash2_model,
     delete_downloaded_mlx_model,
     download_mlx_model,
     get_downloaded_mlx_model_path,
@@ -22,6 +24,36 @@ from services.mlx_runtime import (
 
 
 class MlxRuntimeTests(unittest.TestCase):
+    def test_associates_bundled_dflash2_subdirectory(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            model_dir = Path(temp_dir) / "target"
+            draft_dir = model_dir / "dflash"
+            draft_dir.mkdir(parents=True)
+            (draft_dir / "config.json").write_text("{}", encoding="utf-8")
+            (draft_dir / "model.safetensors").touch()
+            manifest_path = model_dir / MLX_MODEL_MANIFEST
+            manifest_path.write_text(json.dumps({"role": "model"}), encoding="utf-8")
+            associate_mlx_bundled_dflash2_model(model_dir)
+            self.assertEqual(json.loads(manifest_path.read_text())["dflash2_subdirectory"], "dflash")
+
+    def test_omlx_command_enables_dflash2_in_isolated_settings(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            base = Path(temp_dir)
+            models = base / "models"
+            model = models / "owner" / "target"
+            draft = models / "z-lab" / "target-DFlash2"
+            model.mkdir(parents=True)
+            draft.mkdir(parents=True)
+            with patch("services.mlx_runtime.MLX_MODELS_DIR", models), \
+                 patch("services.mlx_runtime.OMLX_BASE_DIR", base / "omlx"), \
+                 patch("services.mlx_runtime.shutil.which", return_value="/opt/homebrew/bin/omlx"):
+                command, environment = _build_omlx_server_command(model, draft, 32768)
+            settings = json.loads((base / "omlx" / "model_settings.json").read_text(encoding="utf-8"))
+            self.assertTrue(settings["models"]["owner/target"]["dflash_enabled"])
+            self.assertEqual(settings["models"]["owner/target"]["dflash_draft_model"], str(draft))
+            self.assertIn("omlx", command[0])
+            self.assertEqual(environment["OMLX_BASE_PATH"], str(base / "omlx"))
+
     def test_mlx_server_enables_in_memory_prefix_cache(self):
         with patch.dict(os.environ, {"EXISTING_SETTING": "preserved"}, clear=True):
             environment = _mlx_server_environment()

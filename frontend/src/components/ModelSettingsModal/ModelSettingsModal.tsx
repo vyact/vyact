@@ -16,11 +16,12 @@ interface Props {
     activateOnApply?: boolean;
     forceActivateOnApply?: boolean;
     mtpSupported?: boolean;
+    dflash2Supported?: boolean;
     onClose: () => void;
     onApplied: () => Promise<void>;
 }
 
-export default function ModelSettingsModal({modelPath, runtime, repository, recommendedContext = 32768, activateOnApply = false, forceActivateOnApply = false, mtpSupported = false, onClose, onApplied}: Props) {
+export default function ModelSettingsModal({modelPath, runtime, repository, recommendedContext = 32768, activateOnApply = false, forceActivateOnApply = false, mtpSupported = false, dflash2Supported = false, onClose, onApplied}: Props) {
     const {t} = useTranslation('main');
     const automaticSetupTooltip = t(`modelSettings.${runtime === 'gguf' ? 'automaticSetupGgufTooltip' : 'automaticSetupMlxTooltip'}`);
     const [profile, setProfile] = useState<VyactModelProfile | null>(null);
@@ -41,14 +42,15 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
     useEffect(() => {
         void api.getVyactModelProfile(modelPath, runtime, repository, recommendedContext)
             .then(value => {
-                const mtpEnabled = mtpSupported && (value.mtp_enabled ?? true);
+                const mtpEnabled = !dflash2Supported && mtpSupported && (value.mtp_enabled ?? true);
                 const kvCachePrecision = value.kv_cache_precision ?? (value.cache_quantization ? 'q8' : 'none');
-                const normalizedProfile = {...value, mtp_enabled: mtpEnabled, kv_cache_precision: mtpEnabled ? 'none' as const : kvCachePrecision, cache_quantization: mtpEnabled ? false : kvCachePrecision !== 'none'};
+                const accelerationEnabled = dflash2Supported || mtpEnabled;
+                const normalizedProfile = {...value, mtp_enabled: mtpEnabled, kv_cache_precision: accelerationEnabled ? 'none' as const : kvCachePrecision, cache_quantization: accelerationEnabled ? false : kvCachePrecision !== 'none'};
                 initialProfileRef.current = normalizedProfile;
                 setProfile(normalizedProfile);
             })
             .catch(value => setError(String(value)));
-    }, [modelPath, runtime, repository, recommendedContext, mtpSupported]);
+    }, [modelPath, runtime, repository, recommendedContext, mtpSupported, dflash2Supported]);
 
     const updateNumber = (key: keyof VyactModelProfile, value: string, nullable = false) => {
         if (!profile) return;
@@ -91,13 +93,14 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
                 <label><SettingLabel label={t('modelSettings.temperature')} help={t('modelSettings.temperatureTooltip')}/><input className="model-settings-input" type="number" min="0" max="1" step="0.01" value={profile.temperature} onChange={e => updateNumber('temperature', e.target.value)}/></label>
                 <label><SettingLabel label={t('modelSettings.topK')} help={t('modelSettings.topKTooltip')}/><input className="model-settings-input" type="number" min="0" max="100" value={profile.top_k ?? ''} placeholder={t('modelSettings.modelDefault')} onChange={e => updateNumber('top_k', e.target.value, true)}/></label>
                 <label><SettingLabel label={t('modelSettings.topP')} help={t('modelSettings.topPTooltip')}/><input className="model-settings-input" type="number" min="0" max="1" step="0.01" value={profile.top_p ?? ''} placeholder={t('modelSettings.modelDefault')} onChange={e => updateNumber('top_p', e.target.value, true)}/></label>
-                {mtpSupported && <div className="model-settings-toggle"><SettingLabel label={t('modelSettings.mtpAcceleration')} help={t('modelSettings.mtpAccelerationTooltip')} description={t('modelSettings.mtpAccelerationHelp')}/><button type="button" className={`model-settings-switch${profile.mtp_enabled ? ' is-on' : ''}`} role="switch" aria-checked={Boolean(profile.mtp_enabled)} onClick={() => setProfile({...profile, mtp_enabled: !profile.mtp_enabled, kv_cache_precision: !profile.mtp_enabled ? 'none' : profile.kv_cache_precision, cache_quantization: !profile.mtp_enabled ? false : profile.cache_quantization})}><span/></button></div>}
+                {dflash2Supported && <div className="model-settings-toggle"><SettingLabel label="DFlash2" help={t('modelSettings.dflash2AccelerationTooltip')} description={t('modelSettings.dflash2AccelerationHelp')}/><span className="vyact-mtp-badge">{t('modelSettings.auto')}</span></div>}
+                {mtpSupported && !dflash2Supported && <div className="model-settings-toggle"><SettingLabel label={t('modelSettings.mtpAcceleration')} help={t('modelSettings.mtpAccelerationTooltip')} description={t('modelSettings.mtpAccelerationHelp')}/><button type="button" className={`model-settings-switch${profile.mtp_enabled ? ' is-on' : ''}`} role="switch" aria-checked={Boolean(profile.mtp_enabled)} onClick={() => setProfile({...profile, mtp_enabled: !profile.mtp_enabled, kv_cache_precision: !profile.mtp_enabled ? 'none' : profile.kv_cache_precision, cache_quantization: !profile.mtp_enabled ? false : profile.cache_quantization})}><span/></button></div>}
                 <details className="model-settings-advanced">
                     <summary><span>{t('modelSettings.advanced')}</span><ChevronDown size={16} aria-hidden="true"/></summary>
                     <div className="model-settings-advanced-fields">
                         {Boolean(profile.capabilities?.performance_modes.length) && <div className="model-settings-option"><SettingLabel label={t('modelSettings.performanceMode')} help={t('modelSettings.performanceModeTooltip')} description={t('modelSettings.performanceModeHelp')}/><CustomSelect portal options={profile.capabilities!.performance_modes.map(value => ({value, label: t(`modelSettings.performanceModes.${value}`)}))} value={profile.performance_mode ?? 'auto'} onChange={value => setProfile({...profile, performance_mode: value as VyactModelProfile['performance_mode']})}/></div>}
                         {profile.capabilities?.cpu_threads && <label className="model-settings-option"><SettingLabel label={t('modelSettings.cpuThreads')} help={t('modelSettings.cpuThreadsTooltip')} description={t('modelSettings.cpuThreadsHelp')}/><input className="model-settings-input" type="number" min="1" max="256" value={profile.cpu_threads ?? ''} placeholder={t('modelSettings.auto')} onChange={event => updateNumber('cpu_threads', event.target.value, true)}/></label>}
-                        {Boolean(profile.capabilities?.kv_cache_precisions.length) && <div className={`model-settings-option${profile.mtp_enabled ? ' is-disabled' : ''}`}><SettingLabel label={t('modelSettings.kvCachePrecision')} help={t('modelSettings.kvCachePrecisionTooltip')} description={t(profile.mtp_enabled ? 'modelSettings.cacheQuantizationMtpHelp' : 'modelSettings.kvCachePrecisionHelp')}/><CustomSelect portal disabled={Boolean(profile.mtp_enabled)} options={[{value: 'none', label: t('modelSettings.kvCachePrecisions.none')}, ...profile.capabilities!.kv_cache_precisions.map(value => ({value, label: t(`modelSettings.kvCachePrecisions.${value}`)}))]} value={profile.kv_cache_precision ?? 'none'} onChange={value => setProfile({...profile, kv_cache_precision: value as VyactModelProfile['kv_cache_precision'], cache_quantization: value !== 'none'})}/></div>}
+                        {Boolean(profile.capabilities?.kv_cache_precisions.length) && <div className={`model-settings-option${profile.mtp_enabled || dflash2Supported ? ' is-disabled' : ''}`}><SettingLabel label={t('modelSettings.kvCachePrecision')} help={t('modelSettings.kvCachePrecisionTooltip')} description={t(profile.mtp_enabled || dflash2Supported ? 'modelSettings.cacheQuantizationMtpHelp' : 'modelSettings.kvCachePrecisionHelp')}/><CustomSelect portal disabled={Boolean(profile.mtp_enabled || dflash2Supported)} options={[{value: 'none', label: t('modelSettings.kvCachePrecisions.none')}, ...profile.capabilities!.kv_cache_precisions.map(value => ({value, label: t(`modelSettings.kvCachePrecisions.${value}`)}))]} value={profile.kv_cache_precision ?? 'none'} onChange={value => setProfile({...profile, kv_cache_precision: value as VyactModelProfile['kv_cache_precision'], cache_quantization: value !== 'none'})}/></div>}
                         {profile.capabilities?.seed && <label className="model-settings-option"><SettingLabel label={t('modelSettings.seed')} help={t('modelSettings.seedTooltip')} description={t('modelSettings.seedHelp')}/><input className="model-settings-input" type="number" min="0" max="2147483647" value={profile.seed ?? ''} placeholder={t('modelSettings.randomSeed')} onChange={event => updateNumber('seed', event.target.value, true)}/></label>}
                     </div>
                 </details>

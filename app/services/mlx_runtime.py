@@ -1,4 +1,5 @@
 """Managed Apple Silicon MLX-VLM model downloads and OpenAI-compatible runtime."""
+import asyncio
 import json
 import os
 import platform
@@ -23,6 +24,8 @@ from services.vyact_runtime import VYACT_RUNTIME_PORT
 MLX_MODELS_DIR = INSTALL_DIR / "models" / "mlx"
 MLX_RUNTIME_DIR = INSTALL_DIR / "runtime"
 MLX_RUNTIME_PID_FILE = MLX_RUNTIME_DIR / "mlx-vlm.pid"
+OMLX_RUNTIME_PID_FILE = MLX_RUNTIME_DIR / "omlx.pid"
+OMLX_BASE_DIR = MLX_RUNTIME_DIR / "omlx"
 MLX_MODEL_MANIFEST = ".vyact-mlx-model.json"
 _HF_ONLINE_DOWNLOAD_LOCK = threading.Lock()
 _MLX_RUNTIME_GRACEFUL_STOP_SECONDS = 30
@@ -34,6 +37,7 @@ _MLX_APC_DISK_DIR = MLX_RUNTIME_DIR / "prompt-cache"
 _MLX_APC_DISK_MAX_GB = 2
 _MLX_KV_QUANTIZATION_MIN_CONTEXT = 32768
 _mlx_runtime_process: subprocess.Popen | None = None
+_active_dflash2_model: str | None = None
 
 
 @contextmanager
@@ -61,6 +65,26 @@ def _hugging_face_online_download():
 
 def is_apple_silicon() -> bool:
     return platform.system() == "Darwin" and platform.machine().lower() in {"arm64", "aarch64"}
+
+
+async def install_missing_omlx_runtime():
+    if shutil.which("omlx"):
+        yield "Existing oMLX installation detected"
+        return
+    brew = shutil.which("brew")
+    if not brew:
+        from services.vyact_runtime import RuntimePackageManagerMissingError
+        raise RuntimePackageManagerMissingError("Homebrew is required to install oMLX")
+    commands = ([brew, "tap", "jundot/omlx", "https://github.com/jundot/omlx"], [brew, "install", "omlx"])
+    for command in commands:
+        process = await asyncio.create_subprocess_exec(
+            *command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT,
+        )
+        assert process.stdout is not None
+        async for raw in process.stdout:
+            yield raw.decode(errors="replace").rstrip()
+        if await process.wait() != 0:
+            raise RuntimeError(f"oMLX installation failed: {' '.join(command)}")
 
 
 def _repository_path(repository: str) -> Path:
@@ -96,6 +120,40 @@ def list_mtp_supported_mlx_models() -> list[str]:
         except ValueError:
             continue
         if (mtp_path / MLX_MODEL_MANIFEST).is_file():
+            models.append(f"mlx/{path.parent.relative_to(MLX_MODELS_DIR).as_posix()}")
+    return sorted(models)
+
+
+def list_dflash2_supported_mlx_models() -> list[str]:
+    models = set(_list_companion_supported_mlx_models("dflash2_repository"))
+    for path in MLX_MODELS_DIR.rglob(MLX_MODEL_MANIFEST) if MLX_MODELS_DIR.is_dir() else []:
+        manifest = _read_model_manifest(path)
+        if manifest.get("role", "model") == "model" and manifest.get("dflash2_subdirectory") == "dflash":
+            if _is_complete_mlx_model(path.parent / "dflash"):
+                models.add(f"mlx/{path.parent.relative_to(MLX_MODELS_DIR).as_posix()}")
+    return sorted(models)
+
+
+def get_active_dflash2_mlx_model() -> str | None:
+    return _active_dflash2_model
+
+
+def _list_companion_supported_mlx_models(manifest_key: str) -> list[str]:
+    models = []
+    if not MLX_MODELS_DIR.is_dir():
+        return models
+    for path in MLX_MODELS_DIR.rglob(MLX_MODEL_MANIFEST):
+        if not path.is_file():
+            continue
+        manifest = _read_model_manifest(path)
+        repository = manifest.get(manifest_key)
+        if manifest.get("role", "model") != "model" or not isinstance(repository, str):
+            continue
+        try:
+            companion_path = _repository_path(repository)
+        except ValueError:
+            continue
+        if (companion_path / MLX_MODEL_MANIFEST).is_file():
             models.append(f"mlx/{path.parent.relative_to(MLX_MODELS_DIR).as_posix()}")
     return sorted(models)
 
@@ -175,6 +233,33 @@ def associate_mlx_mtp_model(model_path: Path, mtp_repository: str, mtp_path: Pat
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
 
 
+def associate_mlx_dflash2_model(model_path: Path, repository: str, companion_path: Path) -> None:
+    manifest_path = model_path / MLX_MODEL_MANIFEST
+    manifest = _read_model_manifest(manifest_path)
+    if not manifest:
+        raise RuntimeError("The downloaded MLX model manifest is missing")
+    if companion_path != _repository_path(repository):
+        raise ValueError("The DFlash2 model path does not match its repository")
+    manifest["dflash2_repository"] = repository
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+
+def associate_mlx_bundled_dflash2_model(model_path: Path) -> None:
+    draft_path = model_path / "dflash"
+    if not _is_complete_mlx_model(draft_path):
+        raise RuntimeError("The bundled DFlash2 model is incomplete")
+    manifest_path = model_path / MLX_MODEL_MANIFEST
+    manifest = _read_model_manifest(manifest_path)
+    if not manifest:
+        raise RuntimeError("The downloaded MLX model manifest is missing")
+    manifest["dflash2_subdirectory"] = "dflash"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+
+def _is_complete_mlx_model(path: Path) -> bool:
+    return (path / "config.json").is_file() and any(path.glob("*.safetensors"))
+
+
 def get_downloaded_mlx_model_path(model_path: str) -> Path:
     repository = model_path.removeprefix("mlx/")
     destination = _repository_path(repository).resolve()
@@ -198,22 +283,26 @@ def delete_downloaded_mlx_model(model_path: str) -> None:
     """Delete one validated MLX repository and an unreferenced MTP companion."""
     destination = get_downloaded_mlx_model_path(model_path)
     manifest = _read_model_manifest(destination / MLX_MODEL_MANIFEST)
-    mtp_repository = manifest.get("mtp_repository")
+    companion_repositories = {
+        "mtp": manifest.get("mtp_repository"),
+        "dflash2": manifest.get("dflash2_repository"),
+    }
     shutil.rmtree(destination)
     _remove_empty_mlx_parent_directories(destination.parent)
 
-    if not isinstance(mtp_repository, str):
-        return
-    mtp_destination = _repository_path(mtp_repository)
-    is_still_referenced = any(
-        _read_model_manifest(path).get("mtp_repository") == mtp_repository
-        for path in MLX_MODELS_DIR.rglob(MLX_MODEL_MANIFEST)
-        if path.is_file()
-    )
-    mtp_manifest = _read_model_manifest(mtp_destination / MLX_MODEL_MANIFEST)
-    if not is_still_referenced and mtp_manifest.get("role") == "mtp":
-        shutil.rmtree(mtp_destination)
-        _remove_empty_mlx_parent_directories(mtp_destination.parent)
+    for role, repository in companion_repositories.items():
+        if not isinstance(repository, str):
+            continue
+        companion_destination = _repository_path(repository)
+        manifest_key = f"{role}_repository"
+        is_still_referenced = any(
+            _read_model_manifest(path).get(manifest_key) == repository
+            for path in MLX_MODELS_DIR.rglob(MLX_MODEL_MANIFEST) if path.is_file()
+        )
+        companion_manifest = _read_model_manifest(companion_destination / MLX_MODEL_MANIFEST)
+        if not is_still_referenced and companion_manifest.get("role") == role:
+            shutil.rmtree(companion_destination)
+            _remove_empty_mlx_parent_directories(companion_destination.parent)
 
 
 def _read_pid() -> int | None:
@@ -239,7 +328,8 @@ def _wait_for_process_exit(pid: int, timeout_seconds: float) -> bool:
 
 
 def stop_mlx_runtime() -> None:
-    global _mlx_runtime_process
+    global _active_dflash2_model, _mlx_runtime_process
+    _active_dflash2_model = None
     pid = _read_pid()
     if pid is None:
         return
@@ -254,9 +344,9 @@ def stop_mlx_runtime() -> None:
     except (OSError, ValueError, subprocess.SubprocessError):
         MLX_RUNTIME_PID_FILE.unlink(missing_ok=True)
         return
-    if "mlx_vlm.server" not in command and "mlx_lm.server" not in command:
+    if "mlx_vlm.server" not in command and "mlx_lm.server" not in command and "omlx" not in command:
         MLX_RUNTIME_PID_FILE.unlink(missing_ok=True)
-        raise RuntimeError("Vyact MLX PID no longer refers to mlx_vlm.server")
+        raise RuntimeError("Vyact MLX PID no longer refers to a managed MLX server")
     if _mlx_runtime_process is not None and _mlx_runtime_process.pid == pid:
         _mlx_runtime_process.terminate()
     else:
@@ -352,6 +442,49 @@ def _build_mlx_server_command(
     return command
 
 
+def _get_dflash2_path(model_path: Path) -> Path | None:
+    manifest = _read_model_manifest(model_path / MLX_MODEL_MANIFEST)
+    if manifest.get("dflash2_subdirectory") == "dflash":
+        bundled_path = model_path / "dflash"
+        return bundled_path if _is_complete_mlx_model(bundled_path) else None
+    repository = manifest.get("dflash2_repository")
+    if not isinstance(repository, str):
+        return None
+    try:
+        path = _repository_path(repository)
+    except ValueError:
+        return None
+    companion_manifest = _read_model_manifest(path / MLX_MODEL_MANIFEST)
+    return path if companion_manifest.get("role") == "dflash2" else None
+
+
+def _build_omlx_server_command(model_path: Path, dflash2_path: Path, context_size: int) -> tuple[list[str], dict[str, str]]:
+    executable = shutil.which("omlx")
+    if not executable:
+        raise RuntimeError("oMLX is required for MLX DFlash2 acceleration")
+    repository = model_path.relative_to(MLX_MODELS_DIR).as_posix()
+    OMLX_BASE_DIR.mkdir(parents=True, exist_ok=True)
+    settings = {
+        "version": 1,
+        "models": {
+            repository: {
+                "max_context_window": context_size,
+                "dflash_enabled": True,
+                "dflash_draft_model": str(dflash2_path),
+                "dflash_in_memory_cache": True,
+            },
+        },
+    }
+    (OMLX_BASE_DIR / "model_settings.json").write_text(json.dumps(settings, indent=2), encoding="utf-8")
+    command = [
+        executable, "serve", "--model-dir", str(MLX_MODELS_DIR),
+        "--host", "127.0.0.1", "--port", str(VYACT_RUNTIME_PORT),
+        "--max-concurrent-requests", "1",
+    ]
+    environment = {**os.environ, "OMLX_BASE_PATH": str(OMLX_BASE_DIR), "OMLX_MODEL_DIR": str(MLX_MODELS_DIR)}
+    return command, environment
+
+
 def _mlx_server_environment() -> dict[str, str]:
     _MLX_APC_DISK_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
     return {
@@ -371,9 +504,10 @@ def start_mlx_model(
         kv_cache_precision: str | None = None, _performance_mode: str = "auto",
         _cpu_threads: int | None = None,
 ) -> str:
-    global _mlx_runtime_process
+    global _active_dflash2_model, _mlx_runtime_process
     kv_cache_precision = kv_cache_precision or ("q8" if cache_quantization else "none")
-    if enable_mtp is True and kv_cache_precision != "none":
+    dflash2_path = _get_dflash2_path(model_path)
+    if dflash2_path is None and enable_mtp is True and kv_cache_precision != "none":
         raise ValueError("MTP acceleration and KV cache quantization cannot be enabled together")
     if not is_apple_silicon():
         raise RuntimeError("MLX models require Apple Silicon")
@@ -387,14 +521,26 @@ def start_mlx_model(
     stop_mlx_runtime()
     MLX_RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
     log_path = get_log_file("mlx-vlm")
-    command = _build_mlx_server_command(model_path, context_size, cache_quantization, enable_mtp, kv_cache_precision)
+    model_id = str(model_path)
+    using_dflash2 = False
+    if dflash2_path is not None:
+        try:
+            command, environment = _build_omlx_server_command(model_path, dflash2_path, context_size)
+            model_id = model_path.relative_to(MLX_MODELS_DIR).as_posix()
+            using_dflash2 = True
+        except RuntimeError:
+            command = _build_mlx_server_command(model_path, context_size, cache_quantization, False, kv_cache_precision)
+            environment = _mlx_server_environment()
+    else:
+        command = _build_mlx_server_command(model_path, context_size, cache_quantization, enable_mtp, kv_cache_precision)
+        environment = _mlx_server_environment()
     with log_path.open("ab") as log_file:
         process = subprocess.Popen(
             command,
             stdout=log_file,
             stderr=subprocess.STDOUT,
             start_new_session=True,
-            env=_mlx_server_environment(),
+            env=environment,
         )
     _mlx_runtime_process = process
     MLX_RUNTIME_PID_FILE.write_text(str(process.pid), encoding="utf-8")
@@ -402,11 +548,40 @@ def start_mlx_model(
     health_url = f"http://127.0.0.1:{VYACT_RUNTIME_PORT}/v1/models"
     while time.monotonic() < deadline:
         if process.poll() is not None:
+            if using_dflash2:
+                process.wait()
+                MLX_RUNTIME_PID_FILE.unlink(missing_ok=True)
+                command = _build_mlx_server_command(
+                    model_path, context_size, cache_quantization, False, kv_cache_precision,
+                )
+                with log_path.open("ab") as log_file:
+                    process = subprocess.Popen(
+                        command, stdout=log_file, stderr=subprocess.STDOUT,
+                        start_new_session=True, env=_mlx_server_environment(),
+                    )
+                _mlx_runtime_process = process
+                MLX_RUNTIME_PID_FILE.write_text(str(process.pid), encoding="utf-8")
+                using_dflash2 = False
+                model_id = str(model_path)
+                deadline = time.monotonic() + 180
+                continue
             raise RuntimeError("MLX runtime stopped while loading the model")
         try:
             with urllib.request.urlopen(health_url, timeout=2) as response:
                 if response.status == 200:
-                    return str(model_path)
+                    if using_dflash2:
+                        try:
+                            payload = json.load(response)
+                            available_ids = [
+                                str(item.get("id")) for item in payload.get("data", [])
+                                if isinstance(item, dict) and item.get("id")
+                            ]
+                            repository_id = model_path.relative_to(MLX_MODELS_DIR).as_posix()
+                            model_id = repository_id if repository_id in available_ids else model_path.name
+                        except (AttributeError, TypeError, ValueError):
+                            model_id = model_path.name
+                    _active_dflash2_model = f"mlx/{model_path.relative_to(MLX_MODELS_DIR).as_posix()}" if using_dflash2 else None
+                    return model_id
         except (OSError, urllib.error.URLError):
             pass
         time.sleep(0.25)

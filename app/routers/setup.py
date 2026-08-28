@@ -100,6 +100,11 @@ class HuggingFaceDownloadRequest(BaseModel):
     mtp_repository: str | None = Field(default=None, min_length=3, max_length=256)
     mtp_revision: str | None = Field(default=None, min_length=1, max_length=128)
     mtp_size_bytes: int = Field(default=0, ge=0)
+    dflash2_repository: str | None = Field(default=None, min_length=3, max_length=256)
+    dflash2_revision: str | None = Field(default=None, min_length=1, max_length=128)
+    dflash2_filename: str | None = Field(default=None, min_length=6, max_length=1024)
+    dflash2_size_bytes: int = Field(default=0, ge=0)
+    dflash2_bundled: bool = False
 
 
 class VyactModelActivateRequest(BaseModel):
@@ -559,8 +564,8 @@ async def install(req: ModelSelectRequest):
 async def get_models():
     cfg = await load_config_async()
     if cfg.get("type") == "vyact":
-        from services.mlx_runtime import list_downloaded_mlx_models, list_mtp_supported_mlx_models
-        from services.vyact_runtime import get_active_mtp_model, list_mtp_supported_models, list_multimodal_supported_models, list_selectable_models
+        from services.mlx_runtime import get_active_dflash2_mlx_model, list_dflash2_supported_mlx_models, list_downloaded_mlx_models, list_mtp_supported_mlx_models
+        from services.vyact_runtime import get_active_dflash2_model, get_active_mtp_model, list_dflash2_supported_models, list_mtp_supported_models, list_multimodal_supported_models, list_selectable_models
         installed_models = [*list_selectable_models(), *list_downloaded_mlx_models()]
         multimodal_models = await asyncio.to_thread(list_multimodal_supported_models)
         return {
@@ -569,6 +574,8 @@ async def get_models():
             "installed": installed_models,
             "mtp_supported": [*list_mtp_supported_models(), *list_mtp_supported_mlx_models()],
             "mtp_active": get_active_mtp_model(),
+            "dflash2_supported": [*list_dflash2_supported_models(), *list_dflash2_supported_mlx_models()],
+            "dflash2_active": get_active_dflash2_mlx_model() or get_active_dflash2_model(),
             "vision_supported": multimodal_models["image"],
             "audio_supported": multimodal_models["audio"],
             "model_type": "chat",
@@ -605,8 +612,8 @@ async def delete_vyact_model(req: VyactModelDeleteRequest):
 async def search_vyact_models(q: str = Query("", max_length=200), mlx_only: bool = Query(False)):
     """Search MLX repositories on Apple Silicon, or GGUF repositories elsewhere."""
     try:
-        from services.mlx_runtime import is_apple_silicon, list_downloaded_mlx_models, list_mtp_supported_mlx_models
-        from services.vyact_runtime import list_downloaded_models, list_mtp_supported_models
+        from services.mlx_runtime import is_apple_silicon, list_dflash2_supported_mlx_models, list_downloaded_mlx_models, list_mtp_supported_mlx_models
+        from services.vyact_runtime import list_dflash2_supported_models, list_downloaded_models, list_mtp_supported_models
 
         config = await load_config_async()
         token = config.get("vyact_config", {}).get("huggingface_token")
@@ -619,6 +626,7 @@ async def search_vyact_models(q: str = Query("", max_length=200), mlx_only: bool
             "hardware": get_local_hardware_info(),
             "installed": [*list_downloaded_models(), *list_downloaded_mlx_models()],
             "mtp_supported": [*list_mtp_supported_models(), *list_mtp_supported_mlx_models()],
+            "dflash2_supported": [*list_dflash2_supported_models(), *list_dflash2_supported_mlx_models()],
         }
     except Exception as error:
         logger.warning("[vyact] Hugging Face search failed: %s", error)
@@ -701,13 +709,17 @@ async def get_vyact_huggingface_token_status():
 
 
 @router.post("/vyact/runtime/install")
-async def install_vyact_runtime():
+async def install_vyact_runtime(include_omlx: bool = Query(False)):
     async def stream():
         from services.vyact_runtime import RuntimePackageManagerMissingError, install_missing_runtime
 
         try:
             async for message in install_missing_runtime():
                 yield sse(message, "info")
+            if include_omlx:
+                from services.mlx_runtime import install_missing_omlx_runtime
+                async for message in install_missing_omlx_runtime():
+                    yield sse(message, "info")
         except RuntimePackageManagerMissingError:
             yield sse(
                 "자동 설치에 필요한 패키지 관리자를 찾지 못했습니다.",
@@ -771,7 +783,7 @@ async def choose_vyact_runtime_startup(body: dict):
 async def download_vyact_model(req: HuggingFaceDownloadRequest):
     async def stream():
         if req.runtime == "mlx":
-            from services.mlx_runtime import associate_mlx_mtp_model, download_mlx_model
+            from services.mlx_runtime import associate_mlx_bundled_dflash2_model, associate_mlx_dflash2_model, associate_mlx_mtp_model, download_mlx_model
 
             config = await load_config_async()
             token = (req.token or "").strip() or config.get("vyact_config", {}).get("huggingface_token")
@@ -787,11 +799,18 @@ async def download_vyact_model(req: HuggingFaceDownloadRequest):
                 model_path = download_mlx_model(
                     req.repository, req.revision, token, report_downloaded_bytes,
                 )
-                if req.mtp_repository and req.mtp_revision:
+                if req.dflash2_bundled:
+                    associate_mlx_bundled_dflash2_model(model_path)
+                if not req.dflash2_repository and req.mtp_repository and req.mtp_revision:
                     mtp_path = download_mlx_model(
                         req.mtp_repository, req.mtp_revision, token, report_downloaded_bytes, "mtp",
                     )
                     associate_mlx_mtp_model(model_path, req.mtp_repository, mtp_path)
+                if req.dflash2_repository and req.dflash2_revision:
+                    dflash2_path = download_mlx_model(
+                        req.dflash2_repository, req.dflash2_revision, token, report_downloaded_bytes, "dflash2",
+                    )
+                    associate_mlx_dflash2_model(model_path, req.dflash2_repository, dflash2_path)
 
             download_task = asyncio.create_task(asyncio.to_thread(download_mlx_with_optional_mtp))
             try:
@@ -801,7 +820,7 @@ async def download_vyact_model(req: HuggingFaceDownloadRequest):
                     except asyncio.TimeoutError:
                         continue
                     downloaded_bytes += byte_delta
-                    total_download_size = req.total_size_bytes + req.mtp_size_bytes
+                    total_download_size = req.total_size_bytes + req.mtp_size_bytes + req.dflash2_size_bytes
                     if total_download_size > 0:
                         progress = min(int(downloaded_bytes * 100 / total_download_size), 99)
                         yield sse(f"Downloading MLX {req.repository}", "log", progress)
@@ -814,11 +833,12 @@ async def download_vyact_model(req: HuggingFaceDownloadRequest):
             return
 
         from services.huggingface_models import download_gguf_model, find_mtp_sidecar, find_vision_projector
+        from services.vyact_runtime import VYACT_MODELS_DIR, associate_dflash2_model
 
         config = await load_config_async()
         token = (req.token or "").strip() or config.get("vyact_config", {}).get("huggingface_token")
         try:
-            mtp_sidecar = await find_mtp_sidecar(req.repository, req.filename, token)
+            mtp_sidecar = None if req.dflash2_repository else await find_mtp_sidecar(req.repository, req.filename, token)
         except Exception as error:
             logger.info("[vyact] MTP sidecar discovery skipped: %s", error)
             mtp_sidecar = None
@@ -837,6 +857,18 @@ async def download_vyact_model(req: HuggingFaceDownloadRequest):
             logger.warning("[vyact] GGUF download failed: %s", error)
             yield sse(f"모델 다운로드 실패: {error}", "error", 0)
             return
+        if req.dflash2_repository and req.dflash2_revision and req.dflash2_filename:
+            try:
+                async for downloaded, total in download_gguf_model(
+                    req.dflash2_repository, req.dflash2_filename, token,
+                ):
+                    progress = 90 + int(downloaded * 10 / total) if total else None
+                    yield sse(f"Downloading DFlash2 {req.dflash2_filename}", "dflash2_download", progress)
+                main_path = VYACT_MODELS_DIR / req.repository / req.filename
+                dflash2_path = VYACT_MODELS_DIR / req.dflash2_repository / req.dflash2_filename
+                associate_dflash2_model(main_path, dflash2_path)
+            except Exception as error:
+                logger.info("[vyact] DFlash2 download skipped; using the main model: %s", error)
         sidecar_progress_share = (100 - model_progress_share) // len(sidecars) if sidecars else 0
         for sidecar_index, (sidecar_filename, _sidecar_size) in enumerate(sidecars):
             sidecar_type = "mtp_download" if mtp_sidecar and sidecar_filename == mtp_sidecar[0] else "vision_download"

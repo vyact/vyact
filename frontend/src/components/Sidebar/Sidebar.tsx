@@ -25,6 +25,8 @@ interface SidebarProps {
     installed: string[];
     mtpSupported: string[];
     mtpActive: string | null;
+    dflash2Supported: string[];
+    dflash2Active: string | null;
     visionSupported: string[];
     audioSupported: string[];
     selectedModel: string;
@@ -239,7 +241,7 @@ blockquote{border-left:3px solid var(--accent);padding:8px 14px;margin:10px 0;co
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
-                                             installed, mtpSupported, mtpActive, visionSupported, audioSupported, selectedModel, isModelLoading = false, onModelLoadingChange, onModelChange, onProviderChange,
+                                             installed, mtpSupported, mtpActive, dflash2Supported, dflash2Active, visionSupported, audioSupported, selectedModel, isModelLoading = false, onModelLoadingChange, onModelChange, onProviderChange,
                                              onBeforeModelContextChange,
                                              conversations, favoriteConversations = [], activeConvId, activeConversationIds = [], onConversationSelect, onConversationDelete,
                                              historyTotal = 0, onLoadMoreHistory, onRefreshHistory,
@@ -565,6 +567,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 installed={installed}
                                 mtpSupported={mtpSupported}
                                 mtpActive={mtpActive}
+                                dflash2Supported={dflash2Supported}
+                                dflash2Active={dflash2Active}
                                 visionSupported={visionSupported}
                                 audioSupported={audioSupported}
                                 selectedModel={selectedModel}
@@ -919,7 +923,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             /></React.Suspense>}
         </aside>
             {isVyactModalOpen && <React.Suspense fallback={null}><VyactModelModal onClose={() => setIsVyactModalOpen(false)} onSelected={async () => { await loadCurrentProvider(); await onProviderChange(); }}/></React.Suspense>}
-            {modelSettingsPath && <React.Suspense fallback={null}><ModelSettingsModal modelPath={modelSettingsPath} runtime={modelSettingsPath.startsWith('mlx/') ? 'mlx' : 'gguf'} repository={modelSettingsPath.startsWith('mlx/') ? modelSettingsPath.slice(4) : undefined} activateOnApply={modelSettingsPath === selectedModel} mtpSupported={mtpSupported.includes(modelSettingsPath)} onClose={() => setModelSettingsPath(null)} onApplied={async () => {await loadCurrentProvider(); await onProviderChange();}}/></React.Suspense>}
+            {modelSettingsPath && <React.Suspense fallback={null}><ModelSettingsModal modelPath={modelSettingsPath} runtime={modelSettingsPath.startsWith('mlx/') ? 'mlx' : 'gguf'} repository={modelSettingsPath.startsWith('mlx/') ? modelSettingsPath.slice(4) : undefined} activateOnApply={modelSettingsPath === selectedModel} mtpSupported={mtpSupported.includes(modelSettingsPath)} dflash2Supported={dflash2Supported.includes(modelSettingsPath)} onClose={() => setModelSettingsPath(null)} onApplied={async () => {await loadCurrentProvider(); await onProviderChange();}}/></React.Suspense>}
             {isSettingsOpen && <React.Suspense fallback={null}>
                 <SettingsModal isOpen onClose={() => setIsSettingsOpen(false)} initialTab={openSettingsTab}/>
             </React.Suspense>}

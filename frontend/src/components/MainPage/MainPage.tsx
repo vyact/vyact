@@ -601,6 +601,8 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                             installed={models.installed}
                             mtpSupported={models.mtpSupported}
                             mtpActive={models.mtpActive}
+                            dflash2Supported={models.dflash2Supported}
+                            dflash2Active={models.dflash2Active}
                             visionSupported={models.visionSupported}
                             audioSupported={models.audioSupported}
                             selectedModel={models.selectedModel}

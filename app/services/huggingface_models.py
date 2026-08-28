@@ -53,8 +53,18 @@ async def search_gguf_models(query: str, token: str | None = None, limit: int = 
     models = [
         model for item in search_items
         if isinstance(item, dict)
+        and "dflash2" not in str(item.get("id", "")).lower()
         and (model := _model_from_hub_item(_merge_search_and_detail(item, detailed_items.get(str(item.get("id", ""))))))
     ]
+    try:
+        dflash2_candidates = await _search_dflash2_models(query, token, "gguf")
+    except (httpx.HTTPError, ValueError):
+        dflash2_candidates = []
+    for model in models:
+        candidate = _select_dflash2_model(model["id"], dflash2_candidates)
+        if candidate:
+            model["dflash2_supported_files"] = list(model["files"])
+            model["dflash2_model"] = candidate
     return sorted(models, key=lambda model: model["downloads"], reverse=True)
 
 
@@ -83,6 +93,7 @@ async def search_mlx_models(query: str, token: str | None = None, limit: int = 5
     models = [
         model for item in merged_items
         if "-mtp-" not in str(item.get("id", "")).lower()
+        and ("dflash2" not in str(item.get("id", "")).lower() or _is_bundled_dflash2_mlx(item))
         and (model := _mlx_model_from_hub_item(item, configs.get(str(item.get("id", "")))))
     ]
     try:
@@ -94,7 +105,81 @@ async def search_mlx_models(query: str, token: str | None = None, limit: int = 5
         if candidate:
             model["mtp_supported_files"] = [MLX_REPOSITORY_FILE]
             model["mtp_model"] = candidate
+    try:
+        dflash2_candidates = await _search_dflash2_models(query, token, "mlx")
+    except (httpx.HTTPError, ValueError):
+        dflash2_candidates = []
+    for model in models:
+        if model.get("dflash2_bundled"):
+            continue
+        candidate = _select_dflash2_model(model["id"], dflash2_candidates)
+        if candidate:
+            model["dflash2_supported_files"] = [MLX_REPOSITORY_FILE]
+            model["dflash2_model"] = candidate
     return sorted(models, key=lambda model: model["downloads"], reverse=True)
+
+
+def _dflash2_model_family(repository: str) -> str:
+    name = repository.rsplit("/", 1)[-1].lower()
+    name = re.sub(r"-(?:gguf|mlx)$", "", name)
+    name = re.sub(r"-dflash2(?:-w\d+a\d+)?$", "", name)
+    name = re.sub(r"-(?:mlx-)?(?:\d+(?:\.\d+)?bit|bf16|fp16|fp8|q\d(?:_[a-z0-9]+)*)$", "", name)
+    name = re.sub(r"-(?:gguf|mlx)$", "", name)
+    return name
+
+
+def _select_dflash2_model(repository: str, candidates: list[dict]) -> dict | None:
+    family = _dflash2_model_family(repository)
+    matches = [candidate for candidate in candidates if _dflash2_model_family(candidate["repository"]) == family]
+    if not matches:
+        return None
+    return min(matches, key=lambda candidate: (candidate.get("priority", 2), candidate["size"]))
+
+
+async def _search_dflash2_models(query: str, token: str | None, runtime: str) -> list[dict]:
+    params = {
+        "search": f"{query.strip()} DFlash2".strip(), "limit": 50, "full": "true", "blobs": "true",
+        "sort": "downloads", "direction": "-1",
+    }
+    async with httpx.AsyncClient(timeout=20) as client:
+        response = await client.get(f"{HF_API_URL}/models", params=params, headers=_headers(token))
+        response.raise_for_status()
+        search_items = response.json()
+        repository_ids = [
+            str(item.get("id", "")) for item in search_items
+            if isinstance(item, dict) and _REPO_ID_PATTERN.fullmatch(str(item.get("id", "")))
+        ]
+        detailed_items = await _fetch_model_details(client, repository_ids, token)
+    candidates = []
+    for item in search_items:
+        if not isinstance(item, dict):
+            continue
+        item = _merge_search_and_detail(item, detailed_items.get(str(item.get("id", ""))))
+        repository = str(item.get("id", ""))
+        if "dflash2" not in repository.lower() or not _REPO_ID_PATTERN.fullmatch(repository):
+            continue
+        siblings = [sibling for sibling in item.get("siblings", []) if isinstance(sibling, dict)]
+        if runtime == "gguf":
+            files = [
+                str(sibling.get("rfilename", "")) for sibling in siblings
+                if str(sibling.get("rfilename", "")).lower().endswith(".gguf")
+            ]
+            if not files:
+                continue
+            filename = min(files, key=lambda value: (0 if "q4_k_m" in value.lower() else 1, value))
+            sibling = next(value for value in siblings if value.get("rfilename") == filename)
+            size = int(sibling.get("size") or sibling.get("lfs", {}).get("size") or 0)
+            candidates.append({
+                "repository": repository, "revision": str(item.get("sha") or "main"),
+                "filename": filename, "size": size, "priority": 0 if "q4_k_m" in filename.lower() else 1,
+            })
+        elif any(str(sibling.get("rfilename", "")).lower().endswith(".safetensors") for sibling in siblings):
+            candidates.append({
+                "repository": repository, "revision": str(item.get("sha") or "main"),
+                "size": sum(int(s.get("size") or s.get("lfs", {}).get("size") or 0) for s in siblings),
+                "priority": 0,
+            })
+    return candidates
 
 
 def _mlx_model_family(repository: str) -> str:
@@ -268,6 +353,7 @@ def _mlx_model_from_hub_item(item: dict, config: dict | None = None) -> dict | N
         for sibling in siblings
         if any(PurePosixPath(str(sibling.get("rfilename", ""))).match(pattern) for pattern in MLX_DOWNLOAD_PATTERNS)
     )
+    bundled_dflash2 = _is_bundled_dflash2_mlx(item)
     return {
         "id": repo_id,
         "runtime": "mlx",
@@ -276,8 +362,24 @@ def _mlx_model_from_hub_item(item: dict, config: dict | None = None) -> dict | N
         "files": [MLX_REPOSITORY_FILE],
         "file_sizes": {MLX_REPOSITORY_FILE: size},
         "mtp_supported_files": [],
+        "dflash2_supported_files": [MLX_REPOSITORY_FILE] if bundled_dflash2 else [],
+        "dflash2_bundled": bundled_dflash2,
         "quantization": _mlx_quantization_label(config or {}),
     }
+
+
+def _is_bundled_dflash2_mlx(item: dict) -> bool:
+    filenames = {
+        str(sibling.get("rfilename", "")).lower()
+        for sibling in item.get("siblings", []) if isinstance(sibling, dict)
+    }
+    has_target = "config.json" in filenames and any(
+        "/" not in filename and filename.endswith(".safetensors") for filename in filenames
+    )
+    has_drafter = "dflash/config.json" in filenames and any(
+        filename.startswith("dflash/") and filename.endswith(".safetensors") for filename in filenames
+    )
+    return has_target and has_drafter
 
 
 def _mlx_metadata_from_config(config: dict, file_size: int, context_size: int) -> dict:
@@ -398,6 +500,7 @@ def _model_from_hub_item(item: dict) -> dict | None:
         "files": gguf_files,
         "file_sizes": file_sizes,
         "mtp_supported_files": mtp_supported_files,
+        "dflash2_supported_files": [],
     }
 
 

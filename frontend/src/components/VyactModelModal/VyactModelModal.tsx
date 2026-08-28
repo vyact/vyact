@@ -32,6 +32,8 @@ interface SelectedModelFile {
     fileSize: number;
     runtime: 'gguf' | 'mlx';
     mtpModel?: {repository: string; revision: string; size: number};
+    dflash2Model?: {repository: string; revision: string; filename?: string; size: number};
+    dflash2Bundled?: boolean;
 }
 
 type DownloadPhase = 'runtime' | 'model' | 'mtp' | 'activation' | null;
@@ -84,7 +86,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
         : selectedFile?.filename;
     const selectedModelIsInstalled = Boolean(selectedModelPath && installedModels.includes(selectedModelPath));
     const selectedModelWeightBytes = selectedFile
-        ? selectedFile.fileSize + (selectedFile.mtpModel?.size || 0)
+        ? selectedFile.fileSize + (selectedFile.dflash2Model?.size || selectedFile.mtpModel?.size || 0)
         : 0;
 
     const searchModels = useCallback(async (searchQuery: string, searchMlxOnly = mlxOnly) => {
@@ -150,6 +152,8 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
         try {
             if (selectedFile.runtime === 'gguf') {
                 await api.installVyactRuntime(() => setMessage(t('modelDownload.preparingRuntime')));
+            } else if (selectedFile.dflash2Model || selectedFile.dflash2Bundled) {
+                await api.installVyactRuntime(() => setMessage(t('modelDownload.preparingRuntime')), true);
             }
             setDownloadPhase(selectedModelIsInstalled ? 'mtp' : 'model');
             setDownloadProgress(0);
@@ -171,6 +175,8 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                 token.trim(),
                 selectedFile.fileSize,
                 selectedFile.mtpModel,
+                selectedFile.dflash2Model,
+                selectedFile.dflash2Bundled,
             );
             setInstalledModels(api.getCachedVyactInstalledModels());
             let optimizedMetadata = selectedMetadata;
@@ -222,7 +228,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
             cacheCheckedFilesRef.current.add(fileKey);
             const metadata = cachedMetadata || (selectedFile.runtime === 'mlx'
                 ? await api.inspectVyactMlxMetadata(
-                    repository, revision, fileSize + (selectedFile.mtpModel?.size || 0), 32768,
+                    repository, revision, fileSize + (selectedFile.dflash2Model?.size || selectedFile.mtpModel?.size || 0), 32768,
                 )
                 : await inspectRemoteGguf(repository, filename, revision, fileSize, 32768, token.trim()));
             if (!cachedMetadata && selectedFile.runtime === 'gguf') {
@@ -240,7 +246,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     const selectModelFile = async (model: VyactHubModel, filename: string, fileSize: number) => {
         const selected = {
             repository: model.id, filename, revision: model.revision, fileSize,
-            runtime: model.runtime, mtpModel: model.mtp_model,
+            runtime: model.runtime, mtpModel: model.mtp_model, dflash2Model: model.dflash2_model, dflash2Bundled: model.dflash2_bundled,
         };
         const fileKey = `${model.id}@${model.revision}/${filename}`;
         setSelectedFile(selected);
@@ -426,7 +432,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                         const isSelected = selectedFile?.repository === model.id && selectedFile.filename === filename;
                                         const fileSize = model.file_sizes?.[filename] || 0;
                                         const estimatedMemory = (
-                                            fileSize + (model.runtime === 'mlx' ? model.mtp_model?.size || 0 : 0)
+                                            fileSize + (model.dflash2_model?.size || (model.runtime === 'mlx' ? model.mtp_model?.size || 0 : 0))
                                         ) * MODEL_MEMORY_OVERHEAD_RATIO;
                                         const memoryTone = getModelMemoryTone(estimatedMemory, hardware);
                                         const isInstalled = installedModels.includes(
@@ -434,12 +440,14 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                         );
                                         const supportsMtp = model.mtp_supported_files?.includes(filename)
                                             || mtpSupportedModels.includes(`${model.id}/${filename}`);
+                                        const supportsDFlash2 = model.dflash2_supported_files?.includes(filename);
                                         const quantization = getModelQuantization(model, filename);
                                         return (
                                             <button type="button" className={`${isSelected ? 'is-selected ' : ''}memory-${memoryTone}`} key={filename} onClick={() => void selectModelFile(model, filename, fileSize)} disabled={busy}>
                                                 <span className="vyact-model-file-name">
                                                     {model.runtime === 'mlx' && <span className="vyact-mtp-badge">{t('modelSelector.mlxRuntime')}</span>}
                                                     {supportsMtp && <span className="vyact-mtp-badge">MTP</span>}
+                                                    {supportsDFlash2 && <span className="vyact-mtp-badge">DFlash2</span>}
                                                     <span>{model.runtime === 'mlx' ? model.id.split('/').pop() : filename}</span>
                                                 </span>
                                                 {fileSize > 0 && <small className="vyact-model-file-meta">{formatBytes(fileSize)} · {t('modelSelector.estimatedMemory')} {formatBytes(estimatedMemory)}{quantization && <span className="vyact-mtp-badge">{quantization}</span>}</small>}
@@ -491,7 +499,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                 </footer>
             </section>
         </ModalOverlay>
-        {downloadedSettings && <ModelSettingsModal modelPath={downloadedSettings.modelPath} runtime={downloadedSettings.runtime} repository={downloadedSettings.repository} recommendedContext={downloadedSettings.context} activateOnApply forceActivateOnApply mtpSupported={Boolean(selectedFile?.mtpModel)} onClose={() => {setDownloadedSettings(null); void onSelected(); onClose();}} onApplied={async () => {await onSelected(); onClose();}}/>}
+        {downloadedSettings && <ModelSettingsModal modelPath={downloadedSettings.modelPath} runtime={downloadedSettings.runtime} repository={downloadedSettings.repository} recommendedContext={downloadedSettings.context} activateOnApply forceActivateOnApply mtpSupported={Boolean(selectedFile?.mtpModel)} dflash2Supported={Boolean(selectedFile?.dflash2Model || selectedFile?.dflash2Bundled)} onClose={() => {setDownloadedSettings(null); void onSelected(); onClose();}} onApplied={async () => {await onSelected(); onClose();}}/>}
         {showRuntimeInstallHelp && <ConfirmModal
             title={t('modelDownload.runtimeInstallRequiredTitle')}
             description={t('modelDownload.runtimeInstallRequiredDescription')}

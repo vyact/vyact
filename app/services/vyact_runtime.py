@@ -39,6 +39,7 @@ _downloaded_models_lock = threading.RLock()
 _downloaded_models_cache: frozenset[str] | None = None
 _integrated_mtp_cache: dict[tuple[str, int, int], bool] = {}
 _active_mtp_model: str | None = None
+_active_dflash2_model: str | None = None
 _runtime_process: subprocess.Popen | None = None
 
 
@@ -240,6 +241,7 @@ def list_selectable_models() -> list[str]:
         if PurePosixPath(model).parts[:1] != ("embeddings",)
         and not PurePosixPath(model).name.lower().startswith("mtp-")
         and not PurePosixPath(model).name.lower().startswith("mmproj")
+        and "dflash2" not in PurePosixPath(model).name.lower()
     ]
 
 
@@ -264,8 +266,21 @@ def uncache_downloaded_model(relative_path: str) -> None:
 def delete_downloaded_model(relative_path: str) -> None:
     """Delete one validated, non-active GGUF model from managed storage."""
     model_path = get_downloaded_model_path(relative_path)
+    dflash2_path = get_cached_dflash2_model(model_path)
+    mapping_path = model_path.with_suffix(model_path.suffix + ".dflash2.json")
     model_path.unlink()
+    mapping_path.unlink(missing_ok=True)
     uncache_downloaded_model(relative_path)
+    if dflash2_path is None:
+        return
+    is_still_referenced = any(
+        get_cached_dflash2_model(get_downloaded_model_path(candidate)) == dflash2_path
+        for candidate in list_selectable_models()
+    )
+    if not is_still_referenced:
+        companion_relative_path = dflash2_path.relative_to(VYACT_MODELS_DIR).as_posix()
+        dflash2_path.unlink(missing_ok=True)
+        uncache_downloaded_model(companion_relative_path)
 
 
 def get_downloaded_model_path(relative_path: str) -> Path:
@@ -294,6 +309,21 @@ def get_cached_mtp_sidecar(model_path: Path) -> Path | None:
         return None
     candidates.sort(key=lambda path: (0 if "q4_0" in path.lower() else 1 if "q8_0" in path.lower() else 2, path))
     return get_downloaded_model_path(candidates[0])
+
+
+def associate_dflash2_model(model_path: Path, dflash2_path: Path) -> None:
+    relative_dflash2 = dflash2_path.resolve().relative_to(VYACT_MODELS_DIR.resolve()).as_posix()
+    mapping_path = model_path.with_suffix(model_path.suffix + ".dflash2.json")
+    mapping_path.write_text(json.dumps({"model_path": relative_dflash2}), encoding="utf-8")
+
+
+def get_cached_dflash2_model(model_path: Path) -> Path | None:
+    mapping_path = model_path.with_suffix(model_path.suffix + ".dflash2.json")
+    try:
+        value = json.loads(mapping_path.read_text(encoding="utf-8"))
+        return get_downloaded_model_path(str(value["model_path"]))
+    except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError):
+        return None
 
 
 def get_cached_vision_projector(model_path: Path) -> Path | None:
@@ -394,8 +424,19 @@ def list_mtp_supported_models() -> list[str]:
     return supported
 
 
+def list_dflash2_supported_models() -> list[str]:
+    return [
+        relative_path for relative_path in list_selectable_models()
+        if get_cached_dflash2_model(get_downloaded_model_path(relative_path)) is not None
+    ]
+
+
 def get_active_mtp_model() -> str | None:
     return _active_mtp_model
+
+
+def get_active_dflash2_model() -> str | None:
+    return _active_dflash2_model
 
 
 def _read_owned_pid() -> int | None:
@@ -441,8 +482,9 @@ def stop_runtime() -> None:
     signal is sent. Failure to stop is surfaced to the caller instead of
     starting a second server on the same local port.
     """
-    global _active_mtp_model, _runtime_process
+    global _active_dflash2_model, _active_mtp_model, _runtime_process
     _active_mtp_model = None
+    _active_dflash2_model = None
     pid = _read_owned_pid()
     if pid is None:
         return
@@ -484,27 +526,28 @@ def start_single_model(
         cpu_threads: int | None = None,
 ) -> str:
     """Restart llama-swap with exactly one configured model and return its API ID."""
-    global _active_mtp_model, _runtime_process
+    global _active_dflash2_model, _active_mtp_model, _runtime_process
     kv_cache_precision = kv_cache_precision or ("q8" if cache_quantization else "none")
-    if enable_mtp is True and kv_cache_precision != "none":
-        raise ValueError("MTP acceleration and KV cache quantization cannot be enabled together")
     paths = get_runtime_paths()
     if not paths.llama_swap:
         raise RuntimeError("Vyact native runtime is not installed")
+    dflash2_model_path = get_cached_dflash2_model(model_path)
+    if dflash2_model_path is None and enable_mtp is True and kv_cache_precision != "none":
+        raise ValueError("MTP acceleration and KV cache quantization cannot be enabled together")
     from services.mlx_runtime import stop_mlx_runtime
 
     stop_mlx_runtime()
     mtp_model_path = get_cached_mtp_sidecar(model_path)
     vision_projector_path = get_cached_vision_projector(model_path)
 
-    def launch(use_mtp: bool) -> tuple[str, subprocess.Popen]:
+    def launch(acceleration: str | None) -> tuple[str, subprocess.Popen]:
         stop_runtime()
         model_key = write_single_model_config(
-            model_path, context_size, mtp_model_path if use_mtp else None,
+            model_path, context_size, mtp_model_path if acceleration == "mtp" else None,
             vision_projector_path=vision_projector_path,
-            enable_mtp=use_mtp, debug_logging=debug_logging,
-            cache_quantization=cache_quantization and not use_mtp,
-            kv_cache_precision="none" if use_mtp else kv_cache_precision,
+            enable_mtp=acceleration == "mtp", dflash2_model_path=dflash2_model_path if acceleration == "dflash2" else None,
+            debug_logging=debug_logging, cache_quantization=cache_quantization and acceleration is None,
+            kv_cache_precision="none" if acceleration else kv_cache_precision,
             performance_mode=performance_mode, cpu_threads=cpu_threads,
         )
         VYACT_RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
@@ -537,16 +580,23 @@ def start_single_model(
 
     supports_mtp = mtp_model_path is not None or model_has_integrated_mtp(model_path)
     should_try_mtp = supports_mtp and enable_mtp is not False
-    model_key, process = launch(should_try_mtp)
+    acceleration = "dflash2" if dflash2_model_path is not None else "mtp" if should_try_mtp else None
+    model_key, process = launch(acceleration)
     try:
         wait_until_loaded(model_key, process)
-        _active_mtp_model = str(model_path.resolve().relative_to(VYACT_MODELS_DIR.resolve())) if should_try_mtp else None
+        try:
+            relative_model = str(model_path.resolve().relative_to(VYACT_MODELS_DIR.resolve()))
+        except ValueError:
+            relative_model = str(model_path)
+        _active_dflash2_model = relative_model if acceleration == "dflash2" else None
+        _active_mtp_model = relative_model if acceleration == "mtp" else None
     except RuntimeError:
-        if not should_try_mtp:
+        if acceleration is None:
             raise
-        model_key, process = launch(False)
+        model_key, process = launch(None)
         wait_until_loaded(model_key, process)
         _active_mtp_model = None
+        _active_dflash2_model = None
     return model_key
 
 
@@ -599,6 +649,7 @@ def stop_all_vyact_runtimes() -> None:
 def write_single_model_config(
         model_path: Path, context_size: int, mtp_model_path: Path | None = None,
         vision_projector_path: Path | None = None, *,
+        dflash2_model_path: Path | None = None,
         enable_mtp: bool = True, debug_logging: bool = False, cache_quantization: bool = True,
         kv_cache_precision: str | None = None, performance_mode: str = "auto",
         cpu_threads: int | None = None,
@@ -624,6 +675,11 @@ def write_single_model_config(
         or not vision_projector_path.name.lower().startswith("mmproj")
     ):
         raise ValueError("A compatible downloaded vision projector is required")
+    if dflash2_model_path is not None and (
+        dflash2_model_path.suffix.lower() != ".gguf" or not dflash2_model_path.is_file()
+        or "dflash2" not in dflash2_model_path.name.lower()
+    ):
+        raise ValueError("A compatible downloaded DFlash2 draft model is required")
     paths = get_runtime_paths()
     if not paths.llama_server or not paths.llama_swap:
         raise RuntimeError("Vyact native runtime is not installed")
@@ -646,7 +702,7 @@ def write_single_model_config(
         "--parallel", "1",
         "--fit", "on", "--flash-attn", "auto", "--cache-prompt",
     ])
-    if kv_cache_precision != "none" and not uses_mtp and context_size >= KV_CACHE_QUANTIZATION_MIN_CONTEXT:
+    if kv_cache_precision != "none" and not uses_mtp and dflash2_model_path is None and context_size >= KV_CACHE_QUANTIZATION_MIN_CONTEXT:
         cache_type = "q4_0" if kv_cache_precision == "q4" else "q8_0"
         command += f" --cache-type-k {cache_type} --cache-type-v {cache_type}"
     if cpu_threads is not None:
@@ -655,7 +711,12 @@ def write_single_model_config(
         command += " --log-verbosity 4 --log-timestamps"
     if vision_projector_path is not None:
         command += f" --mmproj {json.dumps(str(vision_projector_path))}"
-    if mtp_model_path is not None:
+    if dflash2_model_path is not None:
+        command += " " + " ".join([
+            "--spec-draft-model", json.dumps(str(dflash2_model_path)),
+            "--spec-draft-ngl", "auto", "--spec-type", "draft-dflash", "--spec-draft-n-max", "6",
+        ])
+    elif mtp_model_path is not None:
         command += " " + " ".join([
             "--spec-draft-model", json.dumps(str(mtp_model_path)),
             "--spec-draft-ngl", "auto",

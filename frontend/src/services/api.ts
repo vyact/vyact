@@ -140,8 +140,11 @@ export interface VyactHubModel {
     files: string[];
     file_sizes: Record<string, number>;
     mtp_supported_files: string[];
+    dflash2_supported_files: string[];
     quantization?: string;
     mtp_model?: {repository: string; revision: string; size: number};
+    dflash2_model?: {repository: string; revision: string; filename?: string; size: number};
+    dflash2_bundled?: boolean;
 }
 
 export interface VyactGgufMetadata {
@@ -160,6 +163,7 @@ export interface VyactModelSearchResponse {
     hardware: VyactHardwareInfo;
     installed: string[];
     mtp_supported: string[];
+    dflash2_supported: string[];
     vision_supported?: string[];
     audio_supported?: string[];
 }
@@ -324,6 +328,7 @@ export const api = {
             models: data.models || [],
             installed: cachedVyactInstalledModels,
             mtp_supported: data.mtp_supported || [],
+            dflash2_supported: data.dflash2_supported || [],
             hardware: data.hardware || {
                 platform: '', apple_silicon: false, memory_mode: 'system',
                 system_memory: data.system_memory || {total_bytes: 0, available_bytes: 0},
@@ -420,6 +425,8 @@ export const api = {
         repository: string, filename: string, onProgress: (message: string, progress?: number) => void,
         revision = 'main', runtime: 'gguf' | 'mlx' = 'gguf', token = '', totalSizeBytes = 0,
         mtpModel?: {repository: string; revision: string; size: number},
+        dflash2Model?: {repository: string; revision: string; filename?: string; size: number},
+        dflash2Bundled = false,
     ): Promise<void> {
         const response = await fetch(`${API_BASE}/vyact/models/download`, {
             method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -430,6 +437,11 @@ export const api = {
                 mtp_repository: mtpModel?.repository,
                 mtp_revision: mtpModel?.revision,
                 mtp_size_bytes: mtpModel?.size || 0,
+                dflash2_repository: dflash2Model?.repository,
+                dflash2_revision: dflash2Model?.revision,
+                dflash2_filename: dflash2Model?.filename,
+                dflash2_size_bytes: dflash2Model?.size || 0,
+                dflash2_bundled: dflash2Bundled,
             }),
         });
         if (!response.body) return;
@@ -459,8 +471,9 @@ export const api = {
 
     async installVyactRuntime(
         onProgress?: (message: string, progress?: number) => void,
+        includeOmlx = false,
     ): Promise<void> {
-        const response = await fetch(`${API_BASE}/vyact/runtime/install`, {method: 'POST'});
+        const response = await fetch(`${API_BASE}/vyact/runtime/install?include_omlx=${includeOmlx}`, {method: 'POST'});
         if (!response.ok) throw new Error(`Vyact runtime installation failed (${response.status})`);
         if (!response.body) return;
         const reader = response.body.getReader();
@@ -616,6 +629,8 @@ export const api = {
         installed: string[];
         mtp_supported?: string[];
         mtp_active?: string | null;
+        dflash2_supported?: string[];
+        dflash2_active?: string | null;
         vision_supported?: string[];
         audio_supported?: string[];
         model_type?: 'chat' | 'image_gen' | 'image_edit';

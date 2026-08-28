@@ -165,6 +165,7 @@ class VyactRuntimeTests(unittest.TestCase):
                  patch("services.vyact_runtime.write_single_model_config", return_value="vyact-model") as write_config, \
                  patch("services.vyact_runtime.subprocess.Popen") as popen, \
                  patch("services.vyact_runtime.get_cached_mtp_sidecar", return_value=None), \
+                 patch("services.vyact_runtime.get_cached_dflash2_model", return_value=None), \
                  patch("services.vyact_runtime.get_cached_vision_projector", return_value=None), \
                  patch("services.vyact_runtime.model_has_integrated_mtp", return_value=False), \
                  patch("services.vyact_runtime.urllib.request.urlopen") as urlopen, \
@@ -177,6 +178,7 @@ class VyactRuntimeTests(unittest.TestCase):
                 self.assertEqual(start_single_model(model, 8192), "vyact-model")
             write_config.assert_called_once_with(
                 model, 8192, None, vision_projector_path=None, enable_mtp=False, debug_logging=False,
+                dflash2_model_path=None,
                 cache_quantization=True, kv_cache_precision="q8", performance_mode="auto",
                 cpu_threads=None,
             )
@@ -206,6 +208,27 @@ class VyactRuntimeTests(unittest.TestCase):
             self.assertIn("--spec-draft-ngl auto", contents)
             self.assertNotIn("--cache-type-k", contents)
             self.assertNotIn("--cache-type-v", contents)
+
+    def test_dflash2_config_uses_block_diffusion_speculation(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            base = Path(temp_dir)
+            model = base / "Qwen3.8-27B-Q4_K_M.gguf"
+            draft = base / "Qwen3.8-27B-DFlash2-Q4_K_M.gguf"
+            server = base / "llama-server"
+            swap = base / "llama-swap"
+            config = base / "llama-swap.yaml"
+            for path in (model, draft, server, swap):
+                path.touch()
+            paths = RuntimePaths(server, swap, base / "models", config)
+            with patch("services.vyact_runtime.get_runtime_paths", return_value=paths), \
+                 patch("services.vyact_runtime.model_has_integrated_mtp", return_value=False), \
+                 patch("services.vyact_runtime.VYACT_RUNTIME_DIR", base), \
+                 patch("services.vyact_runtime.VYACT_SWAP_CONFIG", config):
+                write_single_model_config(model, 32768, dflash2_model_path=draft)
+            contents = config.read_text(encoding="utf-8")
+            self.assertIn("--spec-type draft-dflash", contents)
+            self.assertIn("--spec-draft-n-max 6", contents)
+            self.assertNotIn("--cache-type-k", contents)
 
     def test_advanced_gguf_settings_map_to_runtime_flags(self):
         with tempfile.TemporaryDirectory() as temp_dir:

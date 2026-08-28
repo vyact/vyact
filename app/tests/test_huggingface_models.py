@@ -5,12 +5,14 @@ from unittest.mock import patch
 
 from services.huggingface_models import (
     _mlx_model_from_hub_item,
+    _is_bundled_dflash2_mlx,
     _mlx_quantization_label,
     _merge_search_and_detail,
     _mlx_metadata_from_config,
     _model_from_hub_item,
     _safe_relative_file_path,
     _select_mlx_mtp_model,
+    _select_dflash2_model,
     _select_mtp_sidecar,
     _select_vision_projector,
     download_gguf_model,
@@ -18,6 +20,34 @@ from services.huggingface_models import (
 
 
 class HuggingFaceModelTests(unittest.TestCase):
+    def test_detects_complete_bundled_dflash2_mlx_repository(self):
+        item = {
+            "id": "owner/Qwen3.8-27B-DFlash2-MLX",
+            "siblings": [
+                {"rfilename": "config.json"},
+                {"rfilename": "model-00001-of-00002.safetensors", "size": 100},
+                {"rfilename": "dflash/config.json"},
+                {"rfilename": "dflash/model.safetensors", "size": 10},
+            ],
+        }
+        self.assertTrue(_is_bundled_dflash2_mlx(item))
+        model = _mlx_model_from_hub_item(item, {})
+        self.assertTrue(model["dflash2_bundled"])
+        self.assertEqual(model["dflash2_supported_files"], ["__mlx_repository__"])
+
+    def test_does_not_treat_drafter_only_repository_as_bundle(self):
+        self.assertFalse(_is_bundled_dflash2_mlx({"siblings": [
+            {"rfilename": "config.json"}, {"rfilename": "model.safetensors"},
+        ]}))
+
+    def test_selects_matching_dflash2_model_across_gguf_and_mlx_names(self):
+        candidates = [
+            {"repository": "z-lab/Qwen3.8-27B-DFlash2-GGUF", "revision": "draft", "size": 100},
+            {"repository": "z-lab/Qwen3.8-4B-DFlash2-GGUF", "revision": "wrong", "size": 10},
+        ]
+        self.assertEqual(_select_dflash2_model("owner/Qwen3.8-27B-GGUF", candidates)["revision"], "draft")
+        self.assertEqual(_select_dflash2_model("owner/Qwen3.8-27B-MLX-4bit", candidates)["revision"], "draft")
+
     def test_selects_matching_bf16_mlx_mtp_drafter(self):
         selected = _select_mlx_mtp_model("lmstudio-community/Qwen3.8-27B-MLX-4bit", [
             {"repository": "mlx-community/Qwen3.8-27B-MTP-4bit", "revision": "bad", "size": 100},
@@ -95,6 +125,7 @@ class HuggingFaceModelTests(unittest.TestCase):
             "id": "owner/model-GGUF", "runtime": "gguf", "revision": "abc123", "downloads": 12,
             "files": ["model.gguf"], "file_sizes": {"model.gguf": 1024},
             "mtp_supported_files": [],
+            "dflash2_supported_files": [],
         })
 
     def test_search_item_uses_detailed_file_sizes_without_losing_search_downloads(self):

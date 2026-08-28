@@ -1167,6 +1167,8 @@
     "modelDefault": "Model default",
     "mtpAcceleration": "MTP 加速",
     "mtpAccelerationHelp": "使用模型的 MTP 预测器加快生成速度。关闭后可使用 KV 缓存量化。",
+    "dflash2AccelerationHelp": "检测此模型兼容的 DFlash2 并自动启用。",
+    "dflash2AccelerationTooltip": "通过 llama.cpp 或 oMLX 运行兼容的 DFlash2 草稿模型。如果加速启动失败，Vyact 将回退到普通模型运行时。",
     "mtpAccelerationTooltip": "MTP 让兼容模型提前预测多个 token，从而提高生成速度。它会使用额外的预测器，在 Vyact 中不能与 KV 缓存量化同时使用。",
     "cacheQuantization": "KV cache quantization",
     "cacheQuantizationHelp": "Reduces cache memory use for larger contexts.",

@@ -1167,6 +1167,8 @@
     "modelDefault": "Model default",
     "mtpAcceleration": "MTP アクセラレーション",
     "mtpAccelerationHelp": "モデルの MTP 予測器で生成を高速化します。KV キャッシュ量子化を使用する場合はオフにしてください。",
+    "dflash2AccelerationHelp": "このモデルに対応する DFlash2 を検出して自動的に有効にします。",
+    "dflash2AccelerationTooltip": "対応する DFlash2 ドラフトモデルを llama.cpp または oMLX で実行します。高速化の起動に失敗した場合は通常のモデルランタイムに切り替えます。",
     "mtpAccelerationTooltip": "対応モデルが複数のトークンを先読みして生成を高速化します。追加の予測器を使用し、Vyact では KV キャッシュ量子化と同時に使用できません。",
     "cacheQuantization": "KV cache quantization",
     "cacheQuantizationHelp": "Reduces cache memory use for larger contexts.",

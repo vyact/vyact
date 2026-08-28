@@ -11,6 +11,8 @@ interface ModelSelectorProps {
     installed: string[];
     mtpSupported: string[];
     mtpActive: string | null;
+    dflash2Supported: string[];
+    dflash2Active: string | null;
     visionSupported: string[];
     audioSupported: string[];
     selectedModel: string;
@@ -30,6 +32,8 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                                                          installed,
                                                          mtpSupported,
                                                          mtpActive,
+                                                         dflash2Supported,
+                                                         dflash2Active,
                                                          visionSupported,
                                                          audioSupported,
                                                          selectedModel,
@@ -58,12 +62,14 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
     const renderTrigger = (_label: string, open: boolean) => {
         const isInstalled = installed.includes(selectedModel);
         const showMtp = currentProvider === 'vyact' && mtpActive === selectedModel;
+        const showDFlash2 = currentProvider === 'vyact' && dflash2Active === selectedModel;
         const supportsVision = currentProvider === 'vyact' && visionSupported.includes(selectedModel);
         const supportsAudio = currentProvider === 'vyact' && audioSupported.includes(selectedModel);
         return (
             <>
                 <div className={`mdot ${isInstalled ? 'installed' : 'not-installed'}`}/>
                 {showMtp && <span className="mtp-model-badge">MTP</span>}
+                {showDFlash2 && <span className="mtp-model-badge">DFlash2</span>}
                 {supportsVision && <span className="model-capability-badge" title={t('modelSelector.visionCapability')}>IMG</span>}
                 {supportsAudio && <span className="model-capability-badge" title={t('modelSelector.audioCapability')}>AUDIO</span>}
                 <span className="mname">
@@ -78,6 +84,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
     const renderOption = (opt: SelectOption, isSelected: boolean) => {
         const isInst = installed.includes(opt.value);
         const showMtp = currentProvider === 'vyact' && mtpSupported.includes(opt.value);
+        const showDFlash2 = currentProvider === 'vyact' && dflash2Supported.includes(opt.value);
         const supportsVision = currentProvider === 'vyact' && visionSupported.includes(opt.value);
         const supportsAudio = currentProvider === 'vyact' && audioSupported.includes(opt.value);
 
@@ -98,6 +105,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                 {/* 모델명 + 툴팁 + 추천뱃지 */}
                 <div className="dd-model-name">
                     {showMtp && <span className="mtp-model-badge">MTP</span>}
+                    {showDFlash2 && <span className="mtp-model-badge">DFlash2</span>}
                     {supportsVision && <span className="model-capability-badge" title={t('modelSelector.visionCapability')}>IMG</span>}
                     {supportsAudio && <span className="model-capability-badge" title={t('modelSelector.audioCapability')}>AUDIO</span>}
                     <span className="dd-model-label" title={opt.value}>

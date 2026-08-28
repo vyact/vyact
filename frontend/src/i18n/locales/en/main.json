@@ -1163,6 +1163,8 @@
     "modelDefault": "Model default",
     "mtpAcceleration": "MTP acceleration",
     "mtpAccelerationHelp": "Speeds up generation with the model's MTP predictor. Turn it off to use KV cache quantization.",
+    "dflash2AccelerationHelp": "DFlash2 is detected and enabled automatically for this model.",
+    "dflash2AccelerationTooltip": "Runs the compatible DFlash2 draft model through llama.cpp or oMLX. If accelerated startup fails, Vyact falls back to the regular model runtime.",
     "mtpAccelerationTooltip": "MTP lets a compatible model predict several tokens ahead and can improve generation speed. It uses an additional predictor and cannot be combined with KV cache quantization in Vyact.",
     "cacheQuantization": "KV cache quantization",
     "cacheQuantizationHelp": "Reduces cache memory use for larger contexts.",

@@ -1167,6 +1167,8 @@
     "modelDefault": "Model default",
     "mtpAcceleration": "Tăng tốc MTP",
     "mtpAccelerationHelp": "Tăng tốc tạo nội dung bằng bộ dự đoán MTP của mô hình. Hãy tắt để dùng lượng tử hóa bộ nhớ đệm KV.",
+    "dflash2AccelerationHelp": "Phát hiện và tự động bật DFlash2 tương thích với mô hình này.",
+    "dflash2AccelerationTooltip": "Chạy mô hình nháp DFlash2 tương thích qua llama.cpp hoặc oMLX. Nếu khởi động tăng tốc thất bại, Vyact sẽ quay lại runtime mô hình thông thường.",
     "mtpAccelerationTooltip": "MTP cho phép mô hình tương thích dự đoán trước nhiều token để tăng tốc tạo nội dung. Nó dùng thêm bộ dự đoán và không thể kết hợp với lượng tử hóa KV trong Vyact.",
     "cacheQuantization": "KV cache quantization",
     "cacheQuantizationHelp": "Reduces cache memory use for larger contexts.",

@@ -13,6 +13,8 @@ export function useModels(
     const [installed, setInstalled] = useState<string[]>([]);
     const [mtpSupported, setMtpSupported] = useState<string[]>([]);
     const [mtpActive, setMtpActive] = useState<string | null>(null);
+    const [dflash2Supported, setDflash2Supported] = useState<string[]>([]);
+    const [dflash2Active, setDflash2Active] = useState<string | null>(null);
     const [visionSupported, setVisionSupported] = useState<string[]>([]);
     const [audioSupported, setAudioSupported] = useState<string[]>([]);
     const [selectedModel, setSelectedModel] = useState<string>('');
@@ -49,6 +51,8 @@ export function useModels(
             setInstalled(modelData.installed || []);
             setMtpSupported(modelData.mtp_supported || []);
             setMtpActive(modelData.mtp_active || null);
+            setDflash2Supported(modelData.dflash2_supported || []);
+            setDflash2Active(modelData.dflash2_active || null);
             setVisionSupported(modelData.vision_supported || []);
             setAudioSupported(modelData.audio_supported || []);
             const initialModel = modelData.current || modelData.installed?.[0] || '';
@@ -101,7 +105,7 @@ export function useModels(
     };
 
     return {
-        installed, mtpSupported, mtpActive, visionSupported, audioSupported, selectedModel, isImageMode, modelType,
+        installed, mtpSupported, mtpActive, dflash2Supported, dflash2Active, visionSupported, audioSupported, selectedModel, isImageMode, modelType,
         isModelLoading, loadingModel, isDownloading, downloadingModel, downloadProgress, downloadMessage, isModelLoadingIntoMemory,
         setModelLoading,
         setIsDownloading, setDownloadingModel, setDownloadProgress, setDownloadMessage,

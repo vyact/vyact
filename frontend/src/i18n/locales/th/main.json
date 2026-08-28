@@ -1167,6 +1167,8 @@
     "modelDefault": "Model default",
     "mtpAcceleration": "การเร่งความเร็ว MTP",
     "mtpAccelerationHelp": "เร่งการสร้างคำตอบด้วยตัวทำนาย MTP ของโมเดล ปิดเพื่อใช้การควอนไทซ์แคช KV",
+    "dflash2AccelerationHelp": "ตรวจหา DFlash2 ที่เข้ากันได้กับโมเดลนี้และเปิดใช้งานโดยอัตโนมัติ",
+    "dflash2AccelerationTooltip": "เรียกใช้โมเดลร่าง DFlash2 ที่เข้ากันได้ผ่าน llama.cpp หรือ oMLX หากการเร่งความเร็วเริ่มไม่สำเร็จ Vyact จะกลับไปใช้รันไทม์โมเดลปกติ",
     "mtpAccelerationTooltip": "MTP ช่วยให้โมเดลที่รองรับคาดการณ์หลายโทเค็นล่วงหน้าเพื่อเพิ่มความเร็ว โดยใช้ตัวทำนายเพิ่มเติมและไม่สามารถใช้พร้อมการควอนไทซ์แคช KV ใน Vyact",
     "cacheQuantization": "KV cache quantization",
     "cacheQuantizationHelp": "Reduces cache memory use for larger contexts.",
