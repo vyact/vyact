@@ -13,7 +13,7 @@
     width: 1000px;
     max-width: 96vw;
     height: 80vh;
-    background: var(--bg-secondary, #1e1e1e);
+    background: var(--modal-bg);
     border: 1px solid var(--border);
     border-radius: 14px;
     display: flex;
@@ -46,7 +46,7 @@
 
 .memo-title {
     color: var(--text);
-    font-size: 14px;
+    font-size: var(--modal-title);
     font-weight: 600;
 }
 
@@ -59,6 +59,9 @@
 }
 
 .memo-new-btn {
+    display: block;
+    width: calc(100% - 20px);
+    margin: 2px 10px 8px;
     background: var(--accent, #e07050);
     border: none;
     border-radius: 6px;
@@ -69,22 +72,25 @@
     font-weight: 600;
 }
 
-.memo-new-btn:hover { opacity: 0.85; }
+.memo-new-btn:hover { filter: brightness(1.06); }
 
 .memo-close-btn {
-    background: none;
+    display: grid;
+    width: 28px;
+    height: 28px;
+    place-items: center;
+    background: transparent;
     border: none;
     color: var(--muted);
     cursor: pointer;
-    padding: 2px 8px;
-    border-radius: 4px;
+    padding: 0;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 20px;
     line-height: 1;
+    transition: background .15s, color .15s;
 }
-
-.memo-close-btn svg {
-    width: 17px;
-    height: 17px;
-}
+.memo-close-btn:hover { background: var(--surface); color: var(--text); }
 
 /* 바디 */
 .memo-modal-body {
@@ -100,6 +106,7 @@
     border-right: 1px solid var(--border);
     overflow-y: auto;
     padding: 8px 0;
+    background: color-mix(in srgb, var(--surface) 38%, transparent);
 }
 
 .memo-empty {
@@ -111,20 +118,22 @@
 }
 
 .memo-item {
-    padding: 8px 14px;
+    margin: 2px 8px;
+    padding: 8px 10px;
     cursor: pointer;
-    border-left: 2px solid transparent;
-    transition: all 0.15s;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    transition: background .15s, border-color .15s;
 }
 
-.memo-item:hover { background: rgba(255, 255, 255, 0.04); }
+.memo-item:hover { background: color-mix(in srgb, var(--accent) 5%, transparent); }
 .memo-item.selected {
-    background: rgba(255, 255, 255, 0.07);
-    border-left-color: var(--accent, #e07050);
+    background: color-mix(in srgb, var(--accent) 9%, transparent);
+    border-color: color-mix(in srgb, var(--accent) 22%, transparent);
 }
 .memo-item.editing {
-    background: rgba(255, 255, 255, 0.1);
-    border-left: 3px solid var(--accent, #e07050);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    border-color: var(--accent, #e07050);
 }
 .memo-item.locked {
     cursor: not-allowed;
@@ -233,9 +242,10 @@
     text-align: left;
     white-space: nowrap;
     cursor: pointer;
+    transition: background .15s, color .15s;
 }
 
-.memo-action-menu-item:hover { background: var(--surface); }
+.memo-action-menu-item:hover { background: color-mix(in srgb, var(--accent) 8%, var(--surface2)); color: var(--accent); }
 .memo-action-menu-item svg { width: 16px; height: 16px; flex: 0 0 auto; }
 .memo-action-menu-item--danger { color: var(--del-fg-soft); }
 .memo-action-menu-item--danger:hover { background: var(--del-bg-hover); color: var(--del-fg); }
@@ -630,14 +640,17 @@
 }
 
 .memo-btn-cancel {
-    background: rgba(255,255,255,0.06);
-    border: 1px solid var(--border);
+    background: transparent;
+    border: 1px solid color-mix(in srgb, var(--text-secondary) 35%, var(--border));
     border-radius: 6px;
     padding: 5px 14px;
     font-size: 14px;
-    color: var(--muted);
+    font-weight: 500;
+    color: var(--text);
     cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
+.memo-btn-cancel:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 6%, transparent); border-color: var(--accent); color: var(--accent); }
 
 /* 뷰어 */
 .memo-viewer {
@@ -689,10 +702,15 @@
     display: flex;
     align-items: center;
     gap: 7px;
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--border);
+    margin: 0 10px 8px;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface2);
     color: var(--muted);
+    transition: border-color .15s, box-shadow .15s;
 }
+.memo-search-wrap:focus-within { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent); }
 
 .memo-search-icon {
     width: 15px;
@@ -708,8 +726,6 @@
     font-size: 13px;
     color: var(--text);
 }
-
-.memo-search-input::placeholder { color: var(--muted); }
 
 .memo-search-clear {
     background: none;

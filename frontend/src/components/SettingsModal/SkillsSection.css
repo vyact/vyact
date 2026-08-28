@@ -277,15 +277,19 @@
 
 .skills-cancel-btn {
     padding: 8px 20px;
-    border: 1px solid var(--border);
+    border: 1px solid color-mix(in srgb, var(--text-secondary) 35%, var(--border));
     border-radius: 8px;
     background: transparent;
     color: var(--text);
     font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s;
 }
 .skills-cancel-btn:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
+    border-color: var(--accent);
+    color: var(--accent);
 }
 
 .skills-save-btn {

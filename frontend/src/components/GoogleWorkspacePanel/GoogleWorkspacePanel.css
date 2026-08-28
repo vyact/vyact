@@ -85,8 +85,8 @@
 .gwp-label-modal input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent); }
 .gwp-label-modal footer { justify-content: flex-end; gap: 8px; }
 .gwp-label-modal footer button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 7px; }
-.gwp-label-modal footer .gwp-label-modal-cancel { border: 1px solid var(--border); background: var(--surface) !important; color: var(--text); }
-.gwp-label-modal footer .gwp-label-modal-cancel:hover:not(:disabled) { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); background: color-mix(in srgb, var(--accent) 8%, var(--surface)) !important; }
+.gwp-label-modal footer .gwp-label-modal-cancel { border: 1px solid color-mix(in srgb, var(--text-secondary) 35%, var(--border)); background: transparent !important; color: var(--text); font-weight: 500; }
+.gwp-label-modal footer .gwp-label-modal-cancel:hover:not(:disabled) { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent) !important; color: var(--accent); }
 .gwp-label-modal button:disabled { cursor: not-allowed; opacity: .45; }
 
 .gwp-content { display: flex; flex: 1; min-width: 0; min-height: 0; flex-direction: column; padding: 0; overflow: hidden; }
@@ -352,7 +352,7 @@
 .gwp-drive { position: relative; display: flex; flex-direction: column; padding: 16px; overflow: hidden; flex: 1; min-height: 0; }
 .gwp-drive--dragging { outline: 2px solid var(--accent); outline-offset: -2px; }
 .gwp-drive-search { display: flex; min-height: 38px; align-items: center; gap: 9px; margin-bottom: 10px; padding: 0 11px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface2); color: var(--muted); transition: border-color .15s, box-shadow .15s, background .15s; }
-.gwp-drive-search:focus-within { border-color: var(--accent); background: var(--bg); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent); }
+.gwp-drive-search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent); }
 .gwp-drive-search > svg { flex: none; }
 .gwp-drive-search input { width: 100%; min-width: 0; padding: 8px 0; border: 0; outline: 0; background: transparent; color: var(--text); font-size: 13px; }
 .gwp-drive-search input::placeholder { color: var(--muted); }
@@ -479,7 +479,8 @@
 .gwp-drive-dialog button:disabled { cursor: default; opacity: .5; }
 .gwp-drive-dialog-primary, .gwp-drive-dialog-secondary { padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
 .gwp-drive-dialog-primary { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid var(--accent); background: var(--accent); color: #fff; }
-.gwp-drive-dialog-secondary { border: 1px solid var(--border); background: transparent; color: var(--text); }
+.gwp-drive-dialog-secondary { border: 1px solid color-mix(in srgb, var(--text-secondary) 35%, var(--border)); background: transparent; color: var(--text); font-weight: 500; transition: background .15s, color .15s, border-color .15s; }
+.gwp-drive-dialog-secondary:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 6%, transparent); border-color: var(--accent); color: var(--accent); }
 .gwp-drive-dialog-error { margin: 0; padding: 0 2px; color: #e57373; font-size: 12px; }
 .gwp-drive-move-dialog { width: min(520px, calc(100vw - 40px)); background: var(--modal-bg); }
 .gwp-drive-folder-tree { min-height: 250px; max-height: min(430px, calc(100vh - 270px)); margin: 0 24px; overflow: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--modal-inset); }
@@ -498,7 +499,7 @@
 .gwp-drive-name-dialog { width: min(440px, calc(100vw - 40px)); background: var(--modal-bg); }
 .gwp-drive-name-dialog > input { box-sizing: border-box; width: calc(100% - 48px); margin: 4px 24px 2px; padding: 11px 12px; border: 1px solid var(--accent); border-radius: 8px; outline: none; background: var(--bg); color: var(--text); font-size: 14px; }
 .gwp-drive-name-dialog > footer button { width: 128px; }
-.gwp-drive-name-dialog .gwp-drive-dialog-secondary { background: var(--modal-inset); }
+.gwp-drive-name-dialog .gwp-drive-dialog-secondary { background: transparent; }
 .gwp-drive-share-dialog { position: relative; width: min(640px, calc(100vw - 40px)); max-height: min(760px, calc(100vh - 40px)); overflow-y: auto; background: var(--modal-bg); }
 .gwp-drive-share-loading { position: absolute; inset: 72px 0 0; z-index: 5; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; background: color-mix(in srgb, var(--modal-bg) 92%, transparent); color: var(--muted); font-size: 13px; }
 .gwp-drive-share-loading svg { color: var(--accent); animation: gwp-spin .8s linear infinite; }
@@ -508,7 +509,7 @@
 .gwp-drive-invite-role-select { width: 112px; flex: 0 0 112px; }
 .gwp-drive-invite-role-select .custom-select-trigger { min-height: 34px; padding: 7px 10px; border-color: transparent; background: var(--surface); font-size: 13px; font-weight: 550; }
 .gwp-drive-invite-role-select .custom-select-trigger:hover,
-.gwp-drive-invite-role-select .custom-select-trigger.open { border-color: var(--accent); }
+.gwp-drive-invite-role-select .custom-select-trigger.open { border-color: color-mix(in srgb, var(--accent) 60%, var(--border)); }
 .gwp-drive-invite-role-select .custom-select-dropdown { min-width: 140px; }
 .gwp-drive-invite-role-select .custom-select-item { padding: 10px 12px; font-size: 13px; }
 .gwp-drive-invite button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 64px; padding: 7px 12px; border: 0; border-radius: 7px; background: var(--accent); color: #fff; font-weight: 600; cursor: pointer; }
@@ -532,7 +533,7 @@
 .gwp-drive-general-role-select { max-width: 320px; }
 .gwp-drive-general-role-select .custom-select-trigger { min-height: 38px; padding: 9px 11px; border-color: var(--border); background: var(--surface2); font-size: 13px; font-weight: 550; }
 .gwp-drive-general-role-select .custom-select-trigger:hover,
-.gwp-drive-general-role-select .custom-select-trigger.open { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 14%, transparent); }
+.gwp-drive-general-role-select .custom-select-trigger.open { border-color: color-mix(in srgb, var(--accent) 60%, var(--border)); box-shadow: none; }
 .gwp-drive-general-role-select .custom-select-dropdown { top: auto; bottom: calc(100% + 4px); min-width: min(320px, calc(100vw - 96px)); }
 .gwp-drive-general-role-select .custom-select-item { padding: 11px 12px; font-size: 13px; }
 .gwp-drive-copy-link { display: inline-flex; align-items: center; gap: 7px; padding: 9px 14px; border: 1px solid var(--accent); border-radius: 8px; background: transparent; color: var(--accent); font-weight: 600; cursor: pointer; }
@@ -574,12 +575,12 @@
 .gwp-macro-menu-popover { position: absolute; top: calc(100% + 7px); right: 0; z-index: 8; display: flex; width: min(300px, calc(100vw - 72px)); align-items: center; gap: 8px; padding: 8px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); box-shadow: 0 12px 30px rgba(0, 0, 0, .35); }
 .gwp-macro-menu-popover .gwp-mail-macro-select { min-width: 0; flex: 1; }
 .gwp-mail-macro-select { width: min(260px, 100%); }
-.gwp-mail-macro-select .custom-select-trigger { min-height: 36px; box-sizing: border-box; border-color: var(--border); border-radius: 7px; background: var(--bg); color: var(--text-secondary); font-size: 13px; font-weight: 600; }
-.gwp-mail-macro-select .custom-select-trigger:hover, .gwp-mail-macro-select .custom-select-trigger.open { border-color: var(--accent); background: var(--bg); color: var(--accent); }
+.gwp-mail-macro-select .custom-select-trigger { min-height: 36px; box-sizing: border-box; border-color: var(--border); border-radius: 7px; background: var(--surface2); color: var(--text-secondary); font-size: 13px; font-weight: 600; }
+.gwp-mail-macro-select .custom-select-trigger:hover, .gwp-mail-macro-select .custom-select-trigger.open { border-color: color-mix(in srgb, var(--accent) 60%, var(--border)); background: var(--surface2); color: var(--accent); }
 .gwp-mail-macro-select .custom-select-trigger:hover .custom-select-arrow, .gwp-mail-macro-select .custom-select-trigger.open .custom-select-arrow { color: var(--accent); }
-.gwp-mail-macro-select .custom-select-dropdown { background: var(--surface); box-shadow: 0 10px 24px rgba(0, 0, 0, .3); }
-.gwp-mail-macro-select .custom-select-item:hover { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); color: var(--accent); }
-.gwp-mail-macro-select .custom-select-item.selected { background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+.gwp-mail-macro-select .custom-select-dropdown { background: var(--surface2); box-shadow: 0 10px 24px rgba(0, 0, 0, .3); }
+.gwp-mail-macro-select .custom-select-item:hover { background: color-mix(in srgb, var(--accent) 6%, var(--surface2)); color: var(--accent); }
+.gwp-mail-macro-select .custom-select-item.selected { background: color-mix(in srgb, var(--accent) 10%, var(--surface2)); }
 .gwp-save-macro-button { display: inline-grid; width: 36px; min-width: 36px; min-height: 36px; place-items: center; padding: 0 !important; border: 1px solid var(--border) !important; border-radius: 7px !important; background: var(--bg) !important; color: var(--text-secondary) !important; font-size: 13px; font-weight: 600; white-space: nowrap; }
 .gwp-save-macro-button:hover:not(:disabled) { border-color: var(--accent) !important; color: var(--accent) !important; }
 .gwp-save-macro-button:disabled { cursor: not-allowed; opacity: .45; }

@@ -407,7 +407,7 @@
 }
 
 .chat-system-prompt-select.is-selected .custom-select-trigger {
-    border-color: color-mix(in srgb, var(--accent) 65%, var(--border));
+    border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
     color: var(--accent);
     font-weight: 600;
 }
@@ -419,7 +419,7 @@
 
 .chat-system-prompt-select.is-selected .custom-select-trigger:hover,
 .chat-system-prompt-select.is-selected .custom-select-trigger.open {
-    border-color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
 }
 
 .chat-system-prompt-select .custom-select-trigger-label {
@@ -448,7 +448,7 @@
     min-height: 38px;
     padding: 0 12px;
     border-radius: 10px;
-    background: color-mix(in srgb, var(--surface) 58%, transparent);
+    background: var(--surface2);
 }
 
 .chat-system-prompt-select .custom-select-search-action {
@@ -456,7 +456,7 @@
     height: 38px;
     flex-basis: 38px;
     border-radius: 10px;
-    background: color-mix(in srgb, var(--surface) 58%, transparent);
+    background: var(--surface2);
 }
 
 .chat-system-prompt-select .custom-select-list {
@@ -474,12 +474,12 @@
 }
 
 .chat-system-prompt-select .custom-select-item:hover {
-    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    background: color-mix(in srgb, var(--accent) 6%, var(--surface2));
 }
 
 .chat-system-prompt-select .custom-select-item.selected,
 .chat-system-prompt-select .custom-select-item.selected:hover {
-    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface2));
 }
 
 .knowledge-source-tabs {

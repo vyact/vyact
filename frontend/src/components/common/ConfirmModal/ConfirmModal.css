@@ -88,16 +88,19 @@
     width: 100%;
     padding: 10px 14px;
     border-radius: 8px;
-    border: 1px solid var(--border);
-    background: var(--modal-inset);
+    border: 1px solid color-mix(in srgb, var(--text-secondary) 35%, var(--border));
+    background: transparent;
     color: var(--text);
     font-size: var(--modal-btn);
+    font-weight: 500;
     cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
 .confirm-modal-btn:hover:not(:disabled) {
-    background: var(--modal-inset-hover);
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
+    border-color: var(--accent);
+    color: var(--accent);
 }
 
 .confirm-modal-btn:disabled {

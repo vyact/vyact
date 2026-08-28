@@ -626,7 +626,7 @@ export default function DrivePanel({onAttachToChat, onIndexDocument}: DrivePanel
             <Search aria-hidden="true" size={18}/>
             <input value={searchValue} onChange={event => setSearchValue(event.target.value)}
                    onKeyDown={event => { if (event.key === 'Enter') submitSearch(); }}
-                   placeholder={t('googleWorkspace.searchDrive')} aria-label={t('googleWorkspace.searchDrive')}/>
+                   placeholder={t('common:search')} aria-label={t('googleWorkspace.searchDrive')}/>
             {searchValue &&
                 <button type="button" onClick={() => { setSearchValue(''); setDebouncedSearch(''); }} aria-label={t('googleWorkspace.clearSearch')}>
                     <X size={17}/></button>}

@@ -1,6 +1,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {createPortal} from 'react-dom';
 import {Search, X} from 'lucide-react';
+import {useTranslation} from 'react-i18next';
 import './CustomSelect.css';
 
 export interface SelectOption {
@@ -48,7 +49,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                                                        onChange,
                                                        placeholder = '선택',
                                                        searchable = false,
-                                                       searchPlaceholder = '검색...',
+                                                       searchPlaceholder,
                                                        disabled = false,
                                                        alignRight = false,
                                                        triggerStyle,
@@ -70,6 +71,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                                                        afterSearch,
                                                        closeOnSelect = true,
                                                    }) => {
+    const {t} = useTranslation('common');
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
     const [dropdownPlacement, setDropdownPlacement] = useState<'up' | 'down'>('down');
@@ -171,7 +173,8 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                         <input
                             ref={searchRef}
                             type="text"
-                            placeholder={searchPlaceholder}
+                            placeholder={t('search')}
+                            aria-label={searchPlaceholder || t('search')}
                             value={search}
                             onChange={e => setSearch(e.target.value)}
                             onClick={e => e.stopPropagation()}

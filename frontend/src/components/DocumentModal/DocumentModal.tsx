@@ -1183,7 +1183,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
                                     </svg>
                                     <input
                                         className="dm-file-search"
-                                        placeholder={t('documentModal.fileSearchPlaceholder')}
+                                        placeholder={t('common:search')}
                                         aria-label={t('documentModal.fileSearchPlaceholder')}
                                         value={fileSearch}
                                         onChange={e => setFileSearch(e.target.value)}

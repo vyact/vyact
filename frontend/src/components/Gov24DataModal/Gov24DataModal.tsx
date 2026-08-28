@@ -232,7 +232,8 @@ const Gov24DataModal: React.FC<Gov24DataModalProps> = ({isOpen, onClose, sourceI
                                 // 같은 Escape가 부모 설정 모달의 닫기로 이어지지 않는다.
                                 window.setTimeout(onClose, 0);
                             }}
-                            placeholder={t('externalData.browser.searchPlaceholder')}
+                            placeholder={t('common:search')}
+                            aria-label={t('externalData.browser.searchPlaceholder')}
                             autoFocus
                         />
                         {searchQuery && <button type="button" onClick={() => setSearchQuery('')} aria-label={t('externalData.browser.clearSearch')}><X size={15}/></button>}

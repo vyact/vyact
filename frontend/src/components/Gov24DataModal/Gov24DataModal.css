@@ -6,7 +6,7 @@
 .gov24-browser-header > button:hover { background:color-mix(in srgb,var(--text) 8%,transparent); color:var(--text); }
 .gov24-browser-toolbar { display:flex; align-items:center; gap:16px; padding:12px 18px; border-bottom:1px solid var(--border); background:color-mix(in srgb,var(--surface2) 55%,transparent); }
 .gov24-browser-toolbar > span { flex-shrink:0; color:var(--muted); font-size:12px; font-variant-numeric:tabular-nums; }
-.gov24-browser-search { display:flex; flex:1; align-items:center; gap:9px; min-width:0; padding:9px 11px; border:1px solid var(--border); border-radius:10px; background:var(--surface); color:var(--muted); }
+.gov24-browser-search { display:flex; flex:1; align-items:center; gap:9px; min-width:0; padding:9px 11px; border:1px solid var(--border); border-radius:10px; background:var(--surface2); color:var(--muted); }
 .gov24-browser-search:focus-within { border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 12%,transparent); }
 .gov24-browser-search input { min-width:0; flex:1; padding:0; border:0; outline:0; background:transparent; color:var(--text); font:inherit; font-size:13px; }
 .gov24-browser-search button { display:grid; place-items:center; padding:2px; border:0; background:transparent; color:var(--muted); cursor:pointer; }

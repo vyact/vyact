@@ -219,7 +219,8 @@ const CodePanel: React.FC<{ style?: React.CSSProperties }> = ({ style }) => {
                                 autoFocus
                                 value={fileQuery}
                                 onChange={event => setFileQuery(event.target.value)}
-                                placeholder={t('message.codeReviewSearchFiles')}
+                                placeholder={t('common:search')}
+                                aria-label={t('message.codeReviewSearchFiles')}
                             />
                         </label>
                         <div className="cp-file-menu-list">

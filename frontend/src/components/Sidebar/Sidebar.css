@@ -142,9 +142,9 @@
 .project-section--history > .sec-label { margin-bottom: 0; }
 .favorite-conversations { display:flex; flex-direction:column; gap:2px; margin:2px 10px 2px 14px; padding:6px 0; max-height:180px; overflow-y:auto; flex-shrink:0; }
 .favorite-conversations > .sec-label { margin-bottom:0; }
-.favorite-conversation { position:relative; display:flex; align-items:center; gap:8px; width:100%; min-height:32px; box-sizing:border-box; margin:2px 0; padding:6px 8px; border:1px solid transparent; border-radius:7px; color:var(--text-secondary); cursor:pointer; }
-.favorite-conversation:is(:hover, :active) { background:color-mix(in srgb,var(--text) 6%,transparent); }
-.favorite-conversation.active { background:color-mix(in srgb,var(--text) 8%,transparent); color:var(--text); }
+.favorite-conversation { position:relative; display:flex; align-items:center; gap:8px; width:100%; min-height:32px; box-sizing:border-box; margin:2px 0; padding:6px 8px; border:1px solid transparent; border-radius:7px; color:var(--text-secondary); cursor:pointer; transition:background .15s,border-color .15s,color .15s; }
+.favorite-conversation:is(:hover, :active) { background:color-mix(in srgb,var(--accent) 5%,transparent); }
+.favorite-conversation.active { background:color-mix(in srgb,var(--accent) 9%,transparent); color:var(--text); }
 .favorite-conversation-title { flex:1; min-width:0; padding-right:64px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; }
 .favorite-conversation > .sidebar-overflow-menu { position:absolute; top:50%; right:8px; transform:translateY(-50%); }
 .favorite-conversation:hover .hist-menu-btn { opacity:1; }
@@ -171,9 +171,9 @@
 .project-collapse-btn svg { transition:transform .15s; }.project-collapse-btn svg.closed { transform:rotate(-90deg); }
 .project-row:is(:hover, :active) { background:color-mix(in srgb,var(--text) 5%,transparent); }
 .project-row.active {
-    color: var(--text-secondary);
-    background:color-mix(in srgb,var(--text) 7%,transparent);
-    box-shadow:none;
+    color: var(--text);
+    background: color-mix(in srgb, var(--project-color) 7%, transparent);
+    box-shadow: inset 4px 0 0 var(--project-color);
 }
 :root[data-theme='light'] .project-row:not(.active):is(:hover, :active) {
     background: color-mix(in srgb, var(--accent) 4%, var(--surface));
@@ -438,29 +438,17 @@
     justify-content: space-between;
     gap: 8px;
     border: 1px solid transparent;
+    transition: background .15s, border-color .15s, color .15s;
 }
 
 .hist-item:is(:hover, :active),
 .project-conversation:is(:hover, :active) {
-    background:color-mix(in srgb,var(--text) 6%,transparent);
+    background: color-mix(in srgb, var(--accent) 5%, transparent);
 }
 
 .hist-item.active,
 .project-conversation.active {
-    background:color-mix(in srgb,var(--text) 8%,transparent);
-    border-color: transparent;
-}
-
-:root[data-theme='light'] .hist-item:is(:hover, :active),
-:root[data-theme='light'] .project-conversation:is(:hover, :active),
-:root[data-theme='light'] .favorite-conversation:is(:hover, :active) {
-    background: color-mix(in srgb, var(--accent) 4%, var(--surface));
-}
-
-:root[data-theme='light'] .hist-item.active,
-:root[data-theme='light'] .project-conversation.active,
-:root[data-theme='light'] .favorite-conversation.active {
-    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    background: color-mix(in srgb, var(--accent) 9%, transparent);
     border-color: transparent;
     box-shadow: none;
 }
@@ -615,12 +603,13 @@
     text-align: left;
     cursor: pointer;
     border-radius: 5px;
-    transition: background 0.1s;
+    transition: background 0.15s, color 0.15s;
     white-space: nowrap;
 }
 
 .hist-menu-item:hover {
-    background: var(--surface);
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface2));
+    color: var(--accent);
 }
 
 .hist-menu-item.danger {

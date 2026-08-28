@@ -224,29 +224,30 @@
 }
 
 .qmemo-icon-btn {
-    background: var(--surface2);
-    border: 1px solid var(--border);
+    background: transparent;
+    border: 1px solid transparent;
     color: var(--muted);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 8px;
-    transition: all 0.15s;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border-radius: 7px;
+    transition: background .15s, border-color .15s, color .15s;
 }
 
 .qmemo-icon-btn:hover {
-    border-color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 22%, transparent);
     color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 8%, var(--surface2));
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
 /* 삭제 버튼: 사이드바 전체삭제 버튼과 동일한 색상 스타일 */
 .qmemo-icon-btn.danger {
     background: transparent;
-    border-color: var(--del-border);
+    border-color: transparent;
     color: var(--del-fg-soft);
 }
 
@@ -258,27 +259,17 @@
 
 .qmemo-confirm-text {
     font-size: 12px;
-    color: var(--del-fg);
+    color: var(--text-secondary);
     white-space: nowrap;
 }
 
 .qmemo-icon-btn.confirm {
-    border-color: color-mix(in srgb, #4ade80 38%, var(--border));
-    color: #4ade80;
+    background: color-mix(in srgb, var(--success) 8%, transparent);
+    border-color: color-mix(in srgb, var(--success) 24%, transparent);
+    color: var(--success);
 }
 
 .qmemo-icon-btn.confirm:hover {
-    border-color: #4ade80;
-    background: color-mix(in srgb, #4ade80 10%, var(--surface2));
-}
-
-:root[data-theme='light'] .qmemo-icon-btn:not(.danger) {
-    background: var(--surface);
-    border-color: color-mix(in srgb, var(--text-secondary) 34%, var(--border));
-    box-shadow: 0 1px 3px rgba(40, 58, 80, 0.08);
-}
-
-:root[data-theme='light'] .qmemo-icon-btn:not(.danger):hover {
-    border-color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+    border-color: var(--success);
+    background: color-mix(in srgb, var(--success) 13%, transparent);
 }

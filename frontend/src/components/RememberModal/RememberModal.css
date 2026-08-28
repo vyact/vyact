@@ -214,17 +214,20 @@
 .remember-close-btn {
     padding: 8px 20px;
     border-radius: 8px;
-    border: 1px solid var(--border);
-    background: var(--bg);
+    border: 1px solid color-mix(in srgb, var(--text-secondary) 35%, var(--border));
+    background: transparent;
     color: var(--text);
     font-size: var(--modal-btn);
+    font-weight: 500;
     cursor: pointer;
-    transition: background 0.15s;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
 .remember-cancel-btn:hover,
 .remember-close-btn:not(:disabled):hover {
-    background: var(--border);
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
+    border-color: var(--accent);
+    color: var(--accent);
 }
 
 .remember-close-btn:disabled {

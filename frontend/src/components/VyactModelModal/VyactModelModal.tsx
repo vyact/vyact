@@ -372,7 +372,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                 </button>}
                             </span>
                             <div className="vyact-model-search-field">
-                                <input value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => event.key === 'Enter' && void searchModels(query)} placeholder={t('modelSelector.modelSearch')}/>
+                                <input value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => event.key === 'Enter' && void searchModels(query)} placeholder={t('common:search')} aria-label={t('modelSelector.modelSearch')}/>
                                 <button type="button" onClick={() => void searchModels(query)} disabled={busy}>
                                     <Search size={17}/><span>{t('modelSelector.searchAction')}</span>
                                 </button>

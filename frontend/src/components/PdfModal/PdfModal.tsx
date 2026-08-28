@@ -1,5 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {Check, FileText, Heart, ImagePlus, Plus, Upload, X, XCircle} from 'lucide-react';
+import {Check, FileText, Heart, ImagePlus, Plus, Search, Upload, X, XCircle} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {SUPPORTED_LANGUAGES} from '../../i18n';
 import {api} from '../../services/api';
@@ -704,7 +704,8 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
                         {activeTab === 'memo' && (
                             <>
                                 <div className="pdf-article-search">
-                                    <input className="pdf-search-input" type="text" placeholder={t('pdfModal.memoSearch')}
+                                    <Search className="pdf-search-icon" aria-hidden="true" />
+                                    <input className="pdf-search-input" type="text" placeholder={t('common:search')} aria-label={t('pdfModal.memoSearch')}
                                            value={memoKeyword} onChange={e => setMemoKeyword(e.target.value)}
                                            disabled={isGenerating}/>
                                 </div>
@@ -741,7 +742,8 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
                         {activeTab === 'doc' && (
                             <>
                                 <div className="pdf-article-search">
-                                    <input className="pdf-search-input" type="text" placeholder={t('pdfModal.fileSearch')}
+                                    <Search className="pdf-search-icon" aria-hidden="true" />
+                                    <input className="pdf-search-input" type="text" placeholder={t('common:search')} aria-label={t('pdfModal.fileSearch')}
                                            value={docKeyword} onChange={e => setDocKeyword(e.target.value)}
                                            disabled={isGenerating}/>
                                 </div>

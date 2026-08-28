@@ -288,6 +288,6 @@
 .system-editor-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
 .system-save, .system-cancel { min-width: 104px; min-height: 40px; padding: 0 18px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; }
 .system-save { border: 0; background: var(--accent); color: white; }
-.system-cancel { border: 1px solid var(--border); background: transparent; color: var(--text); }
-.system-cancel:hover { background: var(--surface2); }
+.system-cancel { border: 1px solid color-mix(in srgb, var(--text-secondary) 35%, var(--border)); background: transparent; color: var(--text); font-weight: 500; transition: background .15s, color .15s, border-color .15s; }
+.system-cancel:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); border-color: var(--accent); color: var(--accent); }
 @media (max-width: 560px) { .system-prompt-overlay { padding: 12px; } .system-prompt-header, .system-prompt-body { padding-left: 16px; padding-right: 16px; } .system-template-grid { grid-template-columns: 1fr; } }

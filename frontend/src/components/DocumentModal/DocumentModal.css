@@ -113,7 +113,7 @@
 /* 모드 설명 */
 .dm-mode-desc {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 10px;
     padding: 12px 20px;
     font-size: var(--modal-sub);
@@ -130,7 +130,6 @@
     border-radius: 4px;
     font-size: 12px;
     font-weight: 600;
-    margin-top: 1px;
     font-family: inherit;
 }
 .dm-mode-badge.index,
@@ -448,21 +447,28 @@
 .dm-btn-cancel {
     padding: 9px 18px;
     background: transparent;
-    border: 1px solid var(--border);
+    border: 1px solid color-mix(in srgb, var(--text-secondary) 35%, var(--border));
     border-radius: 8px;
-    color: var(--muted);
+    color: var(--text);
     font-size: var(--modal-btn);
+    font-weight: 500;
     font-family: inherit;
-    transition: background 0.15s, color 0.15s;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
-.dm-btn-cancel:hover { background: var(--surface); color: var(--text); }
+.dm-btn-cancel:hover {
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
+    border-color: var(--accent);
+    color: var(--accent);
+}
 .dm-btn-cancel:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
 .dm-btn-cancel:disabled:hover {
     background: transparent;
-    color: var(--muted);
+    border-color: color-mix(in srgb, var(--text-secondary) 35%, var(--border));
+    color: var(--text);
 }
 
 .dm-btn-submit {
@@ -723,7 +729,6 @@
 }
 .dm-file-search-wrap:focus-within {
     border-color: var(--accent);
-    background: var(--bg);
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 .dm-file-search-wrap > svg {

@@ -7,6 +7,8 @@
 .model-settings-modal header .model-settings-model-help { display: grid; place-items: center; flex: 0 0 17px; width: 17px; height: 17px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: help; }
 .model-settings-modal header .model-settings-model-help:hover, .model-settings-modal header .model-settings-model-help:focus-visible { outline: none; background: var(--surface2); color: var(--text-secondary); }
 .model-settings-modal button { padding: 9px 15px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); color: var(--text); cursor: pointer; }
+.model-settings-modal .model-settings-cancel { border-color: color-mix(in srgb, var(--text-secondary) 35%, var(--border)); background: transparent; color: var(--text); font-weight: 500; transition: background .15s, color .15s, border-color .15s; }
+.model-settings-modal .model-settings-cancel:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); border-color: var(--accent); color: var(--accent); }
 .model-settings-modal header button { padding: 6px; border: 0; background: transparent; }
 .model-settings-body { display: grid; gap: 12px; min-height: 0; overflow-y: auto; padding: 18px 22px; }
 .model-settings-description { margin: 0 0 4px; padding: 2px 0 6px; color: var(--muted); font-size: 13px; line-height: 1.45; }

@@ -106,7 +106,7 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
                 </details>
                 {error && <div className="model-settings-error">{error}</div>}
             </div>}
-            <footer><button type="button" onClick={onClose}>{t('modelSettings.cancel')}</button><button className="primary" type="button" disabled={!profile || saving} onClick={() => void apply()}>{saving ? t('modelSettings.applying') : t('modelSettings.apply')}</button></footer>
+            <footer><button className="model-settings-cancel" type="button" onClick={onClose}>{t('modelSettings.cancel')}</button><button className="primary" type="button" disabled={!profile || saving} onClick={() => void apply()}>{saving ? t('modelSettings.applying') : t('modelSettings.apply')}</button></footer>
         </div>
     </ModalOverlay>;
 }

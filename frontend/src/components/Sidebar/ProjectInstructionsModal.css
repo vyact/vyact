@@ -12,5 +12,6 @@
 .project-instructions-modal__actions { display:flex; justify-content:flex-end; gap:8px; padding:16px 22px 20px; border-top:1px solid var(--border); }
 .project-instructions-modal__save, .project-instructions-modal__cancel { border-radius:6px; padding:5px 14px; font-size:14px; cursor:pointer; font-weight:600; }
 .project-instructions-modal__save { border:0; background:var(--accent, #e07050); color:#fff; }
-.project-instructions-modal__cancel { border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.06); color:var(--muted); }
+.project-instructions-modal__cancel { border:1px solid color-mix(in srgb, var(--text-secondary) 35%, var(--border)); background:transparent; color:var(--text); font-weight:500; transition:background .15s,color .15s,border-color .15s; }
+.project-instructions-modal__cancel:hover:not(:disabled) { background:color-mix(in srgb, var(--accent) 6%, transparent); border-color:var(--accent); color:var(--accent); }
 .project-instructions-modal__save:disabled, .project-instructions-modal__cancel:disabled { opacity:.6; cursor:not-allowed; }

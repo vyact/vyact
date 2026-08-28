@@ -1013,22 +1013,21 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
                         <span className="memo-title">{t('memoModal.title')}</span>
                         {memos.length > 0 && <span className="memo-count">{memos.length}</span>}
                     </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                        <button className="memo-new-btn" onClick={handleNew}>{t('memoModal.newMemo')}</button>
-                        <button className="memo-close-btn" onClick={() => { void closeMemoModal(); }} aria-label={t('common.close')}>
-                            <X aria-hidden="true" />
-                        </button>
-                    </div>
+                    <button className="memo-close-btn" onClick={() => { void closeMemoModal(); }} aria-label={t('common.close')}>
+                        ×
+                    </button>
                 </div>
 
                 <div className="memo-modal-body">
                     {/* 사이드바 - 목록 */}
                     <div className="memo-sidebar">
+                        <button className="memo-new-btn" onClick={handleNew}>{t('memoModal.newMemo')}</button>
                         <div className="memo-search-wrap">
                             <Search className="memo-search-icon" aria-hidden="true" />
                             <input
                                 className="memo-search-input"
-                                placeholder={t('memoModal.searchPlaceholder')}
+                                placeholder={t('common:search')}
+                                aria-label={t('memoModal.searchPlaceholder')}
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
                             />

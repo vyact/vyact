@@ -13,7 +13,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    background: var(--bg);
+    background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: 9px;
     padding: 8px 10px;
@@ -25,11 +25,11 @@
 }
 
 .custom-select-trigger:hover {
-    border-color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
 }
 
 .custom-select-trigger.open {
-    border-color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
 }
 
 .custom-select-clear {
@@ -138,7 +138,7 @@
     align-items: center;
     gap: 7px;
     padding: 0 10px;
-    background: color-mix(in srgb, var(--surface) 72%, transparent);
+    background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: 6px;
     transition: border-color .15s, background .15s, box-shadow .15s;
@@ -200,9 +200,7 @@
 }
 
 .custom-select-search-field:focus-within {
-    border-color: var(--accent);
-    background: color-mix(in srgb, var(--surface) 88%, transparent);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 12%, transparent);
+    border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
 }
 
 .custom-select-search-field:focus-within .custom-select-search-icon {
@@ -233,11 +231,12 @@
 }
 
 .custom-select-item:hover {
-    background: var(--surface);
+    background: color-mix(in srgb, var(--accent) 6%, var(--surface2));
+    color: var(--accent);
 }
 
 .custom-select-item.selected {
-    background: rgba(var(--accent-rgb, 205, 100, 72), 0.1);
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface2));
 }
 
 .custom-select-item.disabled {

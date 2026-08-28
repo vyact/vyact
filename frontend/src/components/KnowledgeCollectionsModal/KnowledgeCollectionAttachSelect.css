@@ -3,9 +3,14 @@
 .knowledge-collection-attach-select--menu-item { display: block; width: 100%; height: auto; }
 .knowledge-collection-attach-select--menu-item .knowledge-collection-attach-trigger { display: flex; width: 100%; height: auto; min-height: 0; justify-content: flex-start; gap: 10px; padding: 9px 10px; border: 0; border-radius: 6px; color: var(--text); font: inherit; font-size: 13px; text-align: left; }
 .knowledge-collection-attach-select--menu-item .knowledge-collection-attach-trigger:hover,
-.knowledge-collection-attach-select--menu-item .knowledge-collection-attach-trigger[aria-expanded='true'] { border: 0; background: var(--surface); color: var(--text); }
+.knowledge-collection-attach-select--menu-item .knowledge-collection-attach-trigger[aria-expanded='true'] { border: 0; background: color-mix(in srgb, var(--accent) 8%, var(--surface2)); color: var(--accent); }
 .knowledge-collection-attach-select--menu-item .knowledge-collection-attach-trigger span { flex: 1; }
 .knowledge-collection-attach-select--menu-item .knowledge-collection-attach-chevron { margin-left: auto; color: var(--muted); }
+
+.knowledge-collection-attach-option:hover {
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface2));
+    color: var(--accent);
+}
 
 /* ActionMenu content is portaled to body, so this action cannot rely on a
    descendant selector from the trigger wrapper. */

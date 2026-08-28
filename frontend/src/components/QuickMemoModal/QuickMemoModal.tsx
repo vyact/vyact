@@ -200,7 +200,7 @@ const QuickMemoModal: React.FC<QuickMemoModalProps> = ({onClose}) => {
                                             <button className="qmemo-icon-btn confirm" onClick={() => commitEdit(n.id)} aria-label={t('quickMemoModal.save')}>
                                                 <Check size={15} strokeWidth={2.5}/>
                                             </button>
-                                            <button className="qmemo-icon-btn danger" onClick={() => setEditingId(null)} aria-label={t('quickMemoModal.cancel')}>
+                                            <button className="qmemo-icon-btn" onClick={() => setEditingId(null)} aria-label={t('quickMemoModal.cancel')}>
                                                 <X size={15}/>
                                             </button>
                                         </>

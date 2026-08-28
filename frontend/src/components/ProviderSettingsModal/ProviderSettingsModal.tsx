@@ -153,7 +153,7 @@ const ProviderSettingsModal: React.FC<ProviderSettingsModalProps> = ({
                         <input type="number" className="provider-settings-input" min="0" max="1" step="0.01" value={temperature} onChange={(event) => setTemperature(Math.max(0, Math.min(1, Number(event.target.value))))}/>
                     </label>
                 </div>
-                <footer><button type="button" onClick={onClose}>{t('main:modelSettings.cancel')}</button><button className="primary" type="button" disabled={saving} onClick={() => void handleSave()}>{saving ? t('main:modelSettings.applying') : t('main:providerSettings.save')}</button></footer>
+                <footer><button className="provider-settings-cancel" type="button" onClick={onClose}>{t('main:modelSettings.cancel')}</button><button className="primary" type="button" disabled={saving} onClick={() => void handleSave()}>{saving ? t('main:modelSettings.applying') : t('main:providerSettings.save')}</button></footer>
             </div>
         </ModalOverlay>
     );

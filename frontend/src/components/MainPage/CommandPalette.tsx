@@ -130,7 +130,8 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
                             if (e.key === 'Escape') onClose();
                             if (e.key === 'Enter' && filteredQuick[0]) filteredQuick[0].action();
                         }}
-                        placeholder={t('commandPalette.searchPlaceholder')}
+                        placeholder={t('common:search')}
+                        aria-label={t('commandPalette.searchPlaceholder')}
                         className="command-palette-input"
                     />
                     <button className="command-palette-close" onClick={onClose}>✕</button>
