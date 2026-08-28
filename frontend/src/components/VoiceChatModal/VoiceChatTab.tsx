@@ -1,5 +1,5 @@
 import React, {useState, useRef, useEffect, useCallback} from 'react';
-import {Mic, Square} from 'lucide-react';
+import {ArrowUp, Mic, Square, X} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {loadTtsSettings} from '../../services/tts/ttsSettings';
 import {api} from '../../services/api';
@@ -8,9 +8,21 @@ import {
     ChatPhase, ChatEntry, VoiceChatModalProps, speakWithKokoroOrFallback, stopAllTts,
 } from './voiceChat.types';
 
-const VoiceChatTab: React.FC<{ onSend: VoiceChatModalProps['onSend']; onClose: () => void }> = ({onSend}) => {
+interface VoiceChatTabProps {
+    onSend: VoiceChatModalProps['onSend'];
+    onClose: () => void;
+    mode?: 'practice' | 'assistant';
+    variant?: 'panel' | 'inline';
+    inputValue?: string;
+    onInputChange?: (value: string) => void;
+}
+
+const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
+    onSend, onClose, mode = 'practice', variant = 'panel', inputValue = '', onInputChange,
+}) => {
     const {t, i18n} = useTranslation('main');
-    const [phase, setPhase] = useState<ChatPhase>('setup');
+    const isAssistantMode = mode === 'assistant';
+    const [phase, setPhase] = useState<ChatPhase>(isAssistantMode ? 'chatting' : 'setup');
     const [selectedLang, setSelectedLang] = useState('en-US');
     const [chatLog, setChatLog] = useState<ChatEntry[]>([]);
     const [isListening, setIsListening] = useState(false);
@@ -18,6 +30,7 @@ const VoiceChatTab: React.FC<{ onSend: VoiceChatModalProps['onSend']; onClose: (
     const [isWaiting, setIsWaiting] = useState(false);
     const [isPreparing, setIsPreparing] = useState(false);
     const [statusText, setStatusText] = useState('');
+    const [audioLevel, setAudioLevel] = useState(0);
 
     const logEndRef = useRef<HTMLDivElement>(null);
     const isActiveRef = useRef(false);
@@ -32,6 +45,9 @@ const VoiceChatTab: React.FC<{ onSend: VoiceChatModalProps['onSend']; onClose: (
     const streamRef = useRef<MediaStream | null>(null);
     const analyserRef = useRef<AnalyserNode | null>(null);
     const animFrameRef = useRef<number | null>(null);
+    const startListeningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const submitRequestedRef = useRef(false);
+    const inputValueRef = useRef(inputValue);
     const startListeningRef = useRef<() => void>(() => {
     });
     const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
@@ -51,6 +67,10 @@ const VoiceChatTab: React.FC<{ onSend: VoiceChatModalProps['onSend']; onClose: (
     }, [onSend]);
 
     useEffect(() => {
+        inputValueRef.current = inputValue;
+    }, [inputValue]);
+
+    useEffect(() => {
         selectedLangRef.current = selectedLang;
     }, [selectedLang]);
     useEffect(() => {
@@ -68,6 +88,7 @@ const VoiceChatTab: React.FC<{ onSend: VoiceChatModalProps['onSend']; onClose: (
             streamRef.current = null;
         }
         analyserRef.current = null;
+        setAudioLevel(0);
     }, []);
 
     const stopAll = useCallback((): void => {
@@ -91,6 +112,16 @@ const VoiceChatTab: React.FC<{ onSend: VoiceChatModalProps['onSend']; onClose: (
         return () => window.removeEventListener('voiceTabChange', handler);
     }, [stopAll]);
 
+    useEffect(() => () => {
+        isActiveRef.current = false;
+        speakAbortRef.current.cancelled = true;
+        if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+        if (startListeningTimerRef.current) clearTimeout(startListeningTimerRef.current);
+        if (mediaRecorderRef.current?.state !== 'inactive') mediaRecorderRef.current?.stop();
+        streamRef.current?.getTracks().forEach(track => track.stop());
+        stopAllTts();
+    }, []);
+
     const startSilenceDetection = (analyser: AnalyserNode, onSilence: () => void, waitForSpeech = false) => {
         const data = new Uint8Array(analyser.fftSize);
         let silenceStart: number | null = null;
@@ -104,6 +135,7 @@ const VoiceChatTab: React.FC<{ onSend: VoiceChatModalProps['onSend']; onClose: (
                 sum += v * v;
             }
             const rms = Math.sqrt(sum / data.length);
+            setAudioLevel(Math.min(1, rms / 0.18));
             if (rms >= SILENCE_THRESHOLD) {
                 hasSpeech = true;
                 silenceStart = null;
@@ -141,9 +173,18 @@ const VoiceChatTab: React.FC<{ onSend: VoiceChatModalProps['onSend']; onClose: (
             };
             recorder.onstop = async () => {
                 if (!isActiveRef.current || isSpeakingRef.current || isWaitingRef.current) return;
+                const submitRequested = submitRequestedRef.current;
+                submitRequestedRef.current = false;
                 const blob = new Blob(audioChunksRef.current, {type: mimeType});
                 audioChunksRef.current = [];
                 if (blob.size < 1000) {
+                    if (submitRequested && inputValueRef.current.trim()) {
+                        isWaitingRef.current = true;
+                        setIsWaiting(true);
+                        setStatusText(t('voiceChat.waitingForResponse'));
+                        onSendRef.current('', undefined, false);
+                        return;
+                    }
                     setTimeout(() => startListeningRef.current(), 300);
                     return;
                 }
@@ -155,15 +196,24 @@ const VoiceChatTab: React.FC<{ onSend: VoiceChatModalProps['onSend']; onClose: (
                     const formData = new FormData();
                     const ext = mimeType.includes('ogg') ? '.ogg' : '.webm';
                     formData.append('audio', blob, `audio${ext}`);
-                    formData.append('lang', selectedLangRef.current);
+                    formData.append('lang', isAssistantMode ? 'auto' : selectedLangRef.current);
                     const res = await fetch('/api/stt', {method: 'POST', body: formData});
                     const data = await res.json();
                     const spoken = (data.text || '').trim();
                     if (!spoken) {
+                        if (submitRequested && inputValueRef.current.trim()) {
+                            setStatusText(t('voiceChat.waitingForResponse'));
+                            onSendRef.current('', undefined, false);
+                            return;
+                        }
                         isWaitingRef.current = false;
                         setIsWaiting(false);
                         setTimeout(() => startListeningRef.current(), 300);
                         return;
+                    }
+                    if (isAssistantMode && typeof data.lang === 'string' && data.lang) {
+                        selectedLangRef.current = data.lang;
+                        setSelectedLang(data.lang);
                     }
                     setChatLog(prev => [...prev, {
                         role: 'user',
@@ -171,8 +221,12 @@ const VoiceChatTab: React.FC<{ onSend: VoiceChatModalProps['onSend']; onClose: (
                         timestamp: new Date().toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'})
                     }]);
                     setStatusText(t('voiceChat.waitingForResponse'));
-                    const systemPrompt = currentSystemPromptRef.current || (VOICE_SYSTEM_PROMPTS[selectedLangRef.current] ?? VOICE_SYSTEM_PROMPTS['ko-KR']);
-                    onSendRef.current(spoken, systemPrompt, true);
+                    if (isAssistantMode) {
+                        onSendRef.current(spoken, undefined, false);
+                    } else {
+                        const systemPrompt = currentSystemPromptRef.current || (VOICE_SYSTEM_PROMPTS[selectedLangRef.current] ?? VOICE_SYSTEM_PROMPTS['ko-KR']);
+                        onSendRef.current(spoken, systemPrompt, true);
+                    }
                 } catch {
                     isWaitingRef.current = false;
                     setIsWaiting(false);
@@ -191,7 +245,7 @@ const VoiceChatTab: React.FC<{ onSend: VoiceChatModalProps['onSend']; onClose: (
             setIsPreparing(false);
             setStatusText(t('voiceChat.microphoneFailed'));
         }
-    }, [stopRecording, t]);
+    }, [isAssistantMode, stopRecording, t]);
 
     useEffect(() => {
         startListeningRef.current = startListening;
@@ -217,28 +271,41 @@ const VoiceChatTab: React.FC<{ onSend: VoiceChatModalProps['onSend']; onClose: (
         });
     }, [t]);
 
-    const handleStart = async () => {
+    const handleStart = useCallback(async () => {
         setPhase('chatting');
         setChatLog([]);
         setIsPreparing(true);
         setStatusText(t('voiceChat.preparing'));
         isActiveRef.current = true;
-        try {
-            const res = await fetch('/api/system-prompts/current');
-            const data = await res.json();
-            currentSystemPromptRef.current = data?.content || '';
-        } catch {
-            currentSystemPromptRef.current = '';
+        if (!isAssistantMode) {
+            try {
+                const res = await fetch('/api/system-prompts/current');
+                const data = await res.json();
+                currentSystemPromptRef.current = data?.content || '';
+            } catch {
+                currentSystemPromptRef.current = '';
+            }
         }
         const systemPrompt = currentSystemPromptRef.current
             || (VOICE_SYSTEM_PROMPTS[selectedLangRef.current] ?? VOICE_SYSTEM_PROMPTS['ko-KR']);
-        try {
-            await api.warmVoiceChat(systemPrompt);
-        } catch {
-            // Prefix warm-up is an optimization; voice chat should still start if it fails.
+        if (!isAssistantMode) {
+            try {
+                await api.warmVoiceChat(systemPrompt);
+            } catch {
+                // Prefix warm-up is an optimization; voice chat should still start if it fails.
+            }
         }
-        setTimeout(() => startListeningRef.current(), 300);
-    };
+        if (startListeningTimerRef.current) clearTimeout(startListeningTimerRef.current);
+        startListeningTimerRef.current = setTimeout(() => {
+            startListeningTimerRef.current = null;
+            startListeningRef.current();
+        }, 300);
+    }, [isAssistantMode, t]);
+
+    useEffect(() => {
+        if (!isAssistantMode || isActiveRef.current) return;
+        void handleStart();
+    }, [handleStart, isAssistantMode]);
 
     useEffect(() => {
         const handler = (event: Event) => {
@@ -252,11 +319,71 @@ const VoiceChatTab: React.FC<{ onSend: VoiceChatModalProps['onSend']; onClose: (
             }]);
             isWaitingRef.current = false;
             setIsWaiting(false);
-            speakAndListen(text);
+            if (isAssistantMode) {
+                setTimeout(() => startListeningRef.current(), 300);
+            } else {
+                speakAndListen(text);
+            }
         };
         window.addEventListener('voiceChatResponse', handler);
         return () => window.removeEventListener('voiceChatResponse', handler);
-    }, [speakAndListen]);
+    }, [isAssistantMode, speakAndListen]);
+
+    if (variant === 'inline') {
+        const submitImmediately = () => {
+            if (isListening && mediaRecorderRef.current?.state === 'recording') {
+                submitRequestedRef.current = true;
+                stopRecording();
+                return;
+            }
+            if (inputValueRef.current.trim()) {
+                isWaitingRef.current = true;
+                setIsWaiting(true);
+                setStatusText(t('voiceChat.waitingForResponse'));
+                onSendRef.current('', undefined, false);
+            }
+        };
+        return (
+            <div className="voice-assistant-inline">
+                <textarea
+                    className="voice-assistant-inline__input"
+                    value={inputValue}
+                    onChange={event => onInputChange?.(event.target.value)}
+                    onKeyDown={event => {
+                        if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) return;
+                        event.preventDefault();
+                        submitImmediately();
+                    }}
+                    placeholder={statusText || t('chatInput.placeholder')}
+                    rows={1}
+                />
+                <div className="voice-assistant-inline__controls">
+                    <button type="button" className="voice-assistant-inline__button"
+                            onClick={() => { stopAll(); onClose(); }} aria-label={t('voiceChat.end')}>
+                        <X size={18}/>
+                    </button>
+                    <div className={`voice-assistant-inline__waveform${isListening ? ' is-listening' : ''}`}
+                         aria-hidden="true">
+                        {Array.from({length: 38}, (_, index) => {
+                            const shape = 0.35 + ((index * 7) % 11) / 16;
+                            const height = 3 + Math.round(audioLevel * shape * 19);
+                            return <span key={index} style={{height: `${height}px`}}/>;
+                        })}
+                    </div>
+                    <button type="button" className="voice-assistant-inline__button"
+                            onClick={stopRecording} disabled={!isListening}
+                            aria-label={t('chatInput.stop')}>
+                        <Square size={12} fill="currentColor"/>
+                    </button>
+                    <button type="button" className="voice-assistant-inline__button voice-assistant-inline__button--send"
+                            onClick={submitImmediately} disabled={!isListening && !inputValue.trim()}
+                            aria-label={t('chatInput.send')}>
+                        <ArrowUp size={18}/>
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     if (phase === 'setup') return (
         <div className="vc-setup">

@@ -630,6 +630,7 @@
     "youtube_desc": "Gérer et lire des vidéos YouTube",
     "memo_desc": "Écrire et gérer des notes",
     "quickmemo_desc": "Créez et gérez des notes rapides.",
+    "voicepractice_desc": "Commencez la pratique orale et avec scripts.",
     "clear_desc": "Effacer la conversation actuelle",
     "remember_desc": "Analyser la conversation et mettre à jour le profil"
   },

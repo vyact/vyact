@@ -69,9 +69,9 @@ async def speech_to_text(
     """
     오디오 파일 → 텍스트 변환 (faster-whisper)
     - audio: webm/ogg/wav 등 MediaRecorder 출력 포맷
-    - lang: BCP-47 언어 코드 (ko-KR, en-US 등)
+    - lang: BCP-47 언어 코드 (ko-KR, en-US 등), auto이면 자동 감지
     """
-    whisper_lang = LANG_MAP.get(lang, "ko")
+    whisper_lang = None if lang == "auto" else LANG_MAP.get(lang, "ko")
 
     try:
         audio_bytes = await audio.read()
@@ -96,7 +96,7 @@ async def speech_to_text(
                 ),
             )
             text = " ".join(seg.text.strip() for seg in segments).strip()
-            logger.info("STT 완료 [%s]: %s", whisper_lang, text[:50] if text else "(없음)")
+            logger.info("STT 완료 [%s]: %s", info.language, text[:50] if text else "(없음)")
             return {"text": text, "lang": info.language}
         finally:
             os.unlink(tmp_path)

@@ -26,11 +26,12 @@
   --interactive-hover: rgba(32, 41, 56, 0.055);
   --interactive-active: rgba(32, 41, 56, 0.09);
   --focus-ring: rgba(var(--accent-rgb), 0.32);
+  --selection-bg: rgba(61, 119, 184, 0.24);
   --overlay: rgba(20, 29, 42, 0.48);
   --shadow-sm: 0 4px 14px rgba(42, 61, 84, 0.08);
   --shadow-md: 0 14px 38px rgba(42, 61, 84, 0.14);
   --shadow-lg: 0 24px 70px rgba(27, 40, 58, 0.2);
-  --user-message-bg: #e6edf6;
+  --user-message-bg: #f3e4df;
   --user-message-text: #202938;
   --code-inline-bg: rgba(32, 41, 56, 0.07);
   --control-bg: #f8fbff;

@@ -114,6 +114,50 @@
     border-color: rgba(44, 186, 102, 0.4) !important;
 }
 
+:root[data-theme='light'] .cfv-item {
+    border-color:color-mix(in srgb, var(--text-secondary) 32%, var(--border));
+    background:var(--surface);
+    box-shadow:0 3px 12px rgba(48, 68, 92, .08);
+}
+
+:root[data-theme='light'] .cfv-item:hover {
+    border-color:color-mix(in srgb, var(--text-secondary) 48%, var(--border));
+    background:color-mix(in srgb, var(--surface) 72%, var(--surface2) 28%);
+    box-shadow:0 5px 16px rgba(48, 68, 92, .12);
+}
+
+:root[data-theme='light'] .cfv-item--active {
+    border-color:color-mix(in srgb, var(--accent) 48%, var(--border));
+    background:var(--surface);
+    box-shadow:0 5px 16px rgba(48, 68, 92, .12);
+}
+
+:root[data-theme='light'] .cfv-icon {
+    border-color:color-mix(in srgb, var(--text-secondary) 30%, var(--border));
+    background:var(--surface);
+    color:var(--text-secondary);
+}
+
+:root[data-theme='light'] .cfv-item--active .cfv-icon {
+    border-color:color-mix(in srgb, var(--accent) 62%, var(--border));
+    background:color-mix(in srgb, var(--surface) 88%, var(--accent) 12%);
+    color:var(--accent);
+}
+
+:root[data-theme='light'] .cfv-copy-btn,
+:root[data-theme='light'] .cfv-dl-btn {
+    border-color:color-mix(in srgb, var(--text-secondary) 35%, var(--border));
+    background:var(--surface);
+    box-shadow:0 1px 3px rgba(48, 68, 92, .07);
+}
+
+:root[data-theme='light'] .cfv-copy-btn--copied {
+    border-color:#159447 !important;
+    background:#159447 !important;
+    color:#fff !important;
+    box-shadow:0 2px 7px rgba(21, 148, 71, .24);
+}
+
 .cfv-dl-btn {
     min-height: 30px;
     padding: 5px 12px;

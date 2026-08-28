@@ -629,6 +629,7 @@
     "youtube_desc": "Gestiona y reproduce vídeos de YouTube",
     "memo_desc": "Escribe y gestiona notas",
     "quickmemo_desc": "Crea y administra notas rápidas.",
+    "voicepractice_desc": "Inicia la práctica oral y con guiones.",
     "clear_desc": "Borra el chat actual",
     "remember_desc": "Analiza el chat y actualiza el perfil"
   },

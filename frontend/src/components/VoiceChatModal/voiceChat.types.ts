@@ -145,7 +145,7 @@ export interface ScriptDoc {
 export interface VoiceChatModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSend: (message: string, systemPrompt: string, voiceMode: boolean) => void;
+    onSend: (message: string, systemPrompt: string | undefined, voiceMode: boolean) => void;
 }
 
 // ── 공통 유틸 ─────────────────────────────────────────────

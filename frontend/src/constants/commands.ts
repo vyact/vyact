@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import {ClipboardCheck, Eraser, FileText, Sparkles} from 'lucide-react';
+import {ClipboardCheck, Eraser, FileText, Mic, Sparkles} from 'lucide-react';
 
 export interface Command {
     name?: string;
@@ -31,6 +31,13 @@ export const COMMANDS: Command[] = [
         desc: '',
         example: '/quickmemo',
         icon: ClipboardCheck,
+    },
+    {
+        cmd: '/voicepractice',
+        usage: '/voicepractice',
+        desc: '말하기 연습과 스크립트 연습을 시작합니다.',
+        example: '/voicepractice',
+        icon: Mic,
     },
     {
         cmd: '/clear',

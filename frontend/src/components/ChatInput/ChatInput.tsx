@@ -3,7 +3,7 @@ import ImageViewer from '../ImageViewer/ImageViewer';
 import type {ArticleAttachment, KnowledgeCollection} from '../../types';
 import {api} from '../../services/api';
 import {useCodePanel} from '../../contexts/CodePanelContext';
-import {AudioLines, Check, Database, FileText, Settings, WandSparkles, X} from 'lucide-react';
+import {Check, Database, FileText, Settings, WandSparkles, X} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 
 import {useAttachments} from './useAttachments';
@@ -29,6 +29,7 @@ import {usePluginExtensions} from '../../plugins/usePluginExtensions';
 import KnowledgeCollectionsModal from '../KnowledgeCollectionsModal/KnowledgeCollectionsModal';
 import ApprovalControl from './ApprovalControl';
 import Gov24DataModal from '../Gov24DataModal';
+import VoiceChatTab from '../VoiceChatModal/VoiceChatTab';
 import {
     EXTERNAL_DOCUMENT_SELECTIONS_UPDATED_EVENT,
     getExternalDocumentSelections,
@@ -67,6 +68,9 @@ interface ChatInputProps {
     onArticleRemove?: (url: string) => void;
     onArticleRemoveAll?: () => void;
     onOpenVoiceChat?: () => void;
+    onOpenVoiceAssistant?: () => void;
+    voiceAssistantActive?: boolean;
+    onCloseVoiceAssistant?: () => void;
     systemPrompts?: { id: string; title: string; content: string }[];
     onSystemPromptSelect?: (promptId: string | null) => void;
     onOpenPdfModal?: () => void;
@@ -100,7 +104,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                                  articles = [],
                                                  onArticleRemove,
                                                  onArticleRemoveAll,
-                                                 onOpenVoiceChat,
+                                                 onOpenVoiceChat, onOpenVoiceAssistant,
+                                                 voiceAssistantActive = false, onCloseVoiceAssistant,
                                                  systemPrompts = [],
                                                  onSystemPromptSelect,
                                                  onOpenPdfModal,
@@ -332,6 +337,10 @@ const ChatInput: React.FC<ChatInputProps> = ({
             onOpenQuickMemo?.();
             return;
         }
+        if (cmd === '/voicepractice') {
+            onOpenVoiceChat?.();
+            return;
+        }
         if (cmd === '/presentation' || cmd === '/pdf') {
             onOpenPdfModal?.();
             return;
@@ -466,6 +475,35 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 )}
 
                 <div className={`chat-input-container${isImageMode ? ' image-mode' : ''}`}>
+                    {voiceAssistantActive ? (
+                        <VoiceChatTab
+                            mode="assistant"
+                            variant="inline"
+                            inputValue={value}
+                            onInputChange={setValue}
+                            onClose={() => onCloseVoiceAssistant?.()}
+                            onSend={async (message) => {
+                                const typedPrefix = value.trim();
+                                const spokenMessage = message.trim();
+                                const combinedMessage = typedPrefix && spokenMessage
+                                    ? `${typedPrefix}\n${spokenMessage}`
+                                    : typedPrefix || spokenMessage;
+                                const sent = await onSend(
+                                    combinedMessage,
+                                    undefined,
+                                    undefined,
+                                    selectedMcps.map(server => server.id),
+                                    selectedKnowledgeCollectionIds,
+                                    selectedExternalResourceIds,
+                                    selectedExternalDocuments,
+                                );
+                                if (sent !== false && typedPrefix) {
+                                    setValue('');
+                                    if (textareaRef.current) textareaRef.current.style.height = 'auto';
+                                }
+                            }}
+                        />
+                    ) : <>
                     {/* 첨부 기사 목록 */}
                     <ArticleList
                         articles={articles}
@@ -718,22 +756,16 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
                         <div style={{display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0, marginLeft: '8px'}}>
                             {!isImageMode && (
-                                <>
-                                    <button type="button" className="voice-chat-btn" onClick={onOpenVoiceChat}
-                                            aria-label={t('chatInput.languagePractice')} title={t('chatInput.languagePractice')}>
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                             strokeWidth="2">
-                                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                                            <line x1="12" y1="19" x2="12" y2="23"/>
-                                            <line x1="8" y1="23" x2="16" y2="23"/>
-                                        </svg>
-                                    </button>
-                                    <button type="button" className="voice-chat-btn"
-                                            aria-label={t('chatInput.voiceAssistant')} title={t('chatInput.voiceAssistant')}>
-                                        <AudioLines size={17} strokeWidth={2}/>
-                                    </button>
-                                </>
+                                <button type="button" className="voice-chat-btn" onClick={onOpenVoiceAssistant}
+                                        aria-label={t('chatInput.voiceAssistant')}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                         strokeWidth="2">
+                                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                                        <line x1="12" y1="19" x2="12" y2="23"/>
+                                        <line x1="8" y1="23" x2="16" y2="23"/>
+                                    </svg>
+                                </button>
                             )}
                             <button
                                 className={`send-btn${isImageMode ? ' image-mode-send' : ''}${disabled && onStop ? ' stop-mode' : ''}`}
@@ -765,6 +797,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                             {definition?.renderMini?.({panels})}
                         </React.Fragment>;
                     })}
+                    </>}
                 </div>
             </div>
 

@@ -310,10 +310,15 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
     }, []);
     const [showDocumentModal, setShowDocumentModal] = useState(false);
     const [showVoiceChatModal, setShowVoiceChatModal] = useState(false);
+    const [voiceAssistantActive, setVoiceAssistantActiveState] = useState(false);
     const showVoiceChatModalRef = React.useRef(false);
     const setVoiceChatModal = (v: boolean) => {
         showVoiceChatModalRef.current = v;
         setShowVoiceChatModal(v);
+    };
+    const setVoiceAssistantActive = (v: boolean) => {
+        showVoiceChatModalRef.current = v;
+        setVoiceAssistantActiveState(v);
     };
     const [googleWorkspaceOpen, setGoogleWorkspaceOpen] = useState(false);
     const [selectedGoogleMailId, setSelectedGoogleMailId] = useState<string | null>(null);
@@ -472,6 +477,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
         setShowPdfModal(false);
         setShowDocumentModal(false);
         setVoiceChatModal(false);
+        setVoiceAssistantActive(false);
         setShowShortcutModal(false);
         setShowCommandPalette(false);
         setOpenSettingsExternal(false);
@@ -712,6 +718,9 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                                     onArticleRemove={url => conv.setPendingArticles(prev => prev.filter(a => a.url !== url))}
                                     onArticleRemoveAll={() => conv.setPendingArticles([])}
                                     onOpenVoiceChat={() => setVoiceChatModal(true)}
+                                    onOpenVoiceAssistant={() => setVoiceAssistantActive(true)}
+                                    voiceAssistantActive={voiceAssistantActive}
+                                    onCloseVoiceAssistant={() => setVoiceAssistantActive(false)}
                                     onOpenPdfModal={() => {
                                         setPdfEditParams(null);
                                         setShowPdfModal(true);

@@ -630,6 +630,7 @@
     "youtube_desc": "按分组管理YouTube视频并在应用内播放。",
     "memo_desc": "编写和管理备忘录。包含在RAG搜索中。",
     "quickmemo_desc": "创建和管理快速备忘。",
+    "voicepractice_desc": "开始口语练习和脚本练习。",
     "clear_desc": "删除当前对话中的所有消息。（保留对话室和标题）",
     "remember_desc": "分析至今的对话以更新用户个人资料。自动反映在以后的对话中。"
   },

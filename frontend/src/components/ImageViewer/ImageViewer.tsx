@@ -79,7 +79,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ images, currentIndex, onClose
                     }}
                     aria-label={t('documentModal.download')}
                 >
-                    <Download size={19}/>
+                    <Download size={16}/>
                 </button>
                 <button
                     className="image-viewer__action image-viewer__action--close"
@@ -88,9 +88,8 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ images, currentIndex, onClose
                         onClose();
                     }}
                     aria-label={t('documentModal.close')}
-                    title={t('documentModal.close')}
                 >
-                    <X size={21}/>
+                    <X size={17}/>
                 </button>
             </div>
 
@@ -100,7 +99,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ images, currentIndex, onClose
                     className="image-viewer__navigation image-viewer__navigation--previous"
                     onClick={(e) => { e.stopPropagation(); onIndexChange((currentIndex - 1 + total) % total); }}
                     aria-label="Previous image"
-                ><ChevronLeft size={22}/></button>
+                ><ChevronLeft size={18}/></button>
             )}
 
             {/* 이미지 */}
@@ -121,7 +120,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ images, currentIndex, onClose
                     className="image-viewer__navigation image-viewer__navigation--next"
                     onClick={(e) => { e.stopPropagation(); onIndexChange((currentIndex + 1) % total); }}
                     aria-label="Next image"
-                ><ChevronRight size={22}/></button>
+                ><ChevronRight size={18}/></button>
             )}
 
             {/* 이미지 썸네일 */}

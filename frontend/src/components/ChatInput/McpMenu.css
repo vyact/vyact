@@ -1,9 +1,9 @@
 .mcp-menu { position: relative; flex-shrink: 0; }
-.mcp-menu-trigger { display: flex; align-items: center; height: 30px; flex-shrink: 0; gap: 5px; padding: 0 8px; border: 0; border-radius: 10px; background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 12px; font-weight: 600; transition: background .2s; }
+.mcp-menu-trigger { position:relative; display:flex; align-items:center; justify-content:center; width:30px; height:30px; flex-shrink:0; padding:0; border:0; border-radius:10px; background:transparent; color:var(--text-secondary); cursor:pointer; font-size:12px; font-weight:600; transition:background .2s; }
 .mcp-menu-trigger:hover { background: var(--surface2); }
 .mcp-menu-trigger:disabled { cursor: not-allowed; }
 .mcp-menu-trigger.active { color: var(--accent); }
-.mcp-menu-count { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; line-height: 1; }
+.mcp-menu-count { position:absolute; top:-4px; right:-6px; display:inline-flex; align-items:center; justify-content:center; min-width:16px; height:16px; padding:0 4px; border:1px solid var(--surface); border-radius:8px; background:var(--accent); color:#fff; font-size:10px; font-weight:700; line-height:1; pointer-events:none; }
 .mcp-menu-popover { position: absolute; bottom: 45px; left: 0; z-index: 1000; display: flex; min-width: 240px; max-width: 320px; max-height: 50vh; flex-direction: column; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); box-shadow: 0 4px 16px rgba(0, 0, 0, .35); }
 .mcp-menu-header { flex-shrink: 0; padding: 10px 14px 8px; border-bottom: 1px solid var(--border); color: var(--muted); font-size: 12px; font-weight: 600; }
 .mcp-menu-list { flex: 1; overflow-y: auto; }

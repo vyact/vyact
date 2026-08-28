@@ -542,41 +542,22 @@ const Message: React.FC<MessageProps> = ({
                                     }
                                 };
                                 return (
-                                    <div key={idx} style={{
-                                        margin: '12px 0',
-                                        padding: '14px 18px',
-                                        background: 'rgba(255,255,255,0.05)',
-                                        border: '1px solid rgba(255,255,255,0.1)',
-                                        borderRadius: '10px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '14px',
-                                    }}>
+                                    <div key={idx} className="message-project-card">
                                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
-                                             stroke="var(--accent)" strokeWidth="1.8" strokeLinecap="round"
+                                             className="message-project-card__icon" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
                                              strokeLinejoin="round">
                                             <path
                                                 d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
                                         </svg>
-                                        <div style={{flex: 1}}>
-                                            <div style={{fontWeight: 600, fontSize: '14px'}}>{projectName}</div>
-                                            <div style={{
-                                                fontSize: '12px',
-                                                color: 'var(--text-secondary)',
-                                                marginTop: '2px'
-                                            }}>
+                                        <div className="message-project-card__info">
+                                            <div className="message-project-card__name">{projectName}</div>
+                                            <div className="message-project-card__meta">
                                                 {fileCount}개 파일
                                             </div>
                                         </div>
                                         <button
                                             onClick={handleProjectDownload}
-                                            style={{
-                                                display: 'flex', alignItems: 'center', gap: '6px',
-                                                padding: '7px 14px', borderRadius: '7px',
-                                                background: 'var(--accent)', color: '#fff',
-                                                border: 'none', cursor: 'pointer',
-                                                fontSize: '13px', fontWeight: 600,
-                                            }}
+                                            className="message-project-card__download"
                                         >
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                                                  stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"

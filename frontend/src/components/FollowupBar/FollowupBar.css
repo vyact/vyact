@@ -12,11 +12,11 @@
     animation: followup-in 0.18s ease;
 }
 
-/* 코드뷰 열릴 때 입력창과 동일하게 폭 확장 */
+/* 코드뷰가 열리면 ChatInput의 좌우 18px 패딩 안쪽 컨테이너와 폭을 맞춘다. */
 .chat-area-split .followup-bar {
-    width: 100%;
+    width: calc(100% - 36px);
     min-width: 0;
-    align-self: stretch;
+    align-self: center;
 }
 
 @keyframes followup-in {

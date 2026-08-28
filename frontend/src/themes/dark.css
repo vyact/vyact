@@ -27,6 +27,7 @@
   --interactive-hover: rgba(255, 255, 255, 0.055);
   --interactive-active: rgba(255, 255, 255, 0.09);
   --focus-ring: rgba(var(--accent-rgb), 0.38);
+  --selection-bg: rgba(88, 145, 210, 0.32);
   --overlay: rgba(0, 0, 0, 0.7);
   --shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.22);
   --shadow-md: 0 14px 38px rgba(0, 0, 0, 0.38);

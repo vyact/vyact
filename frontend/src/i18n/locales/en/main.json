@@ -629,6 +629,7 @@
     "youtube_desc": "Manage YouTube videos by group and play them in-app.",
     "memo_desc": "Write and manage memos. Included in RAG search.",
     "quickmemo_desc": "Create and manage quick memos.",
+    "voicepractice_desc": "Start speaking and script practice.",
     "clear_desc": "Delete all messages in the current chat. (Room and title are kept)",
     "remember_desc": "Analyze conversations so far to update user profile. Automatically reflected in future conversations."
   },

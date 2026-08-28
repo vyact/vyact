@@ -2,8 +2,8 @@
     background: var(--bg);
     border-top: none;
     flex-shrink: 0;
-    width: min(760px, calc(100% - 40px));
-    min-width: 0;
+    width: 52%;
+    min-width: 480px;
     align-self: center;
     padding: 4px 0 14px;
 }
@@ -333,6 +333,114 @@
     opacity: 0.4;
     cursor: not-allowed;
     box-shadow: none;
+}
+
+.voice-assistant-inline {
+    display:flex;
+    min-height:112px;
+    flex-direction:column;
+    justify-content:space-between;
+    padding:14px 14px 12px;
+    border:1px solid var(--border);
+    border-radius:18px;
+    background:var(--surface2);
+}
+
+.voice-assistant-inline__input {
+    width:100%;
+    min-height:38px;
+    max-height:92px;
+    padding:0;
+    overflow-y:auto;
+    border:0;
+    outline:0;
+    background:transparent;
+    color:var(--text);
+    font:inherit;
+    font-size:15px;
+    line-height:1.5;
+    resize:none;
+}
+
+.voice-assistant-inline__input::placeholder {
+    color:var(--muted);
+}
+
+.voice-assistant-inline__controls {
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.voice-assistant-inline__button {
+    display:grid;
+    width:34px;
+    height:34px;
+    flex:0 0 34px;
+    padding:0;
+    place-items:center;
+    border:0;
+    border-radius:50%;
+    background:var(--control-bg);
+    color:var(--text);
+    cursor:pointer;
+}
+
+.voice-assistant-inline__button:hover:not(:disabled) {
+    background:var(--surface);
+    color:var(--accent);
+}
+
+.voice-assistant-inline__button:disabled {
+    color:var(--muted);
+    cursor:default;
+    opacity:.65;
+}
+
+.voice-assistant-inline__button--send {
+    background:var(--accent);
+    color:var(--on-accent);
+}
+
+.voice-assistant-inline__button--send:hover:not(:disabled) {
+    background:color-mix(in srgb, var(--accent) 88%, white);
+    color:var(--on-accent);
+}
+
+.voice-assistant-inline__button--send:disabled {
+    background:var(--surface);
+}
+
+.voice-assistant-inline__button svg {
+    pointer-events:none;
+}
+
+.voice-assistant-inline__waveform {
+    display:flex;
+    height:26px;
+    min-width:0;
+    flex:1;
+    align-items:center;
+    justify-content:space-between;
+    gap:3px;
+}
+
+.voice-assistant-inline__waveform span {
+    width:3px;
+    min-height:3px;
+    border-radius:999px;
+    background:var(--muted);
+    opacity:.55;
+    transition:height .07s ease, background-color .15s ease, opacity .15s ease;
+}
+
+.voice-assistant-inline__waveform.is-listening span {
+    background:var(--accent);
+    opacity:.9;
+}
+
+:root[data-theme='light'] .voice-assistant-inline {
+    background:color-mix(in srgb, var(--surface2) 72%, white);
 }
 
 @media (prefers-reduced-motion: reduce) {

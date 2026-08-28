@@ -83,9 +83,9 @@
 .msg.user .msg-bubble {
     background: var(--user-message-bg);
     color: var(--user-message-text);
-    border: 1px solid transparent;
+    border: 1px solid color-mix(in srgb, var(--accent) 14%, transparent);
     border-bottom-right-radius: 4px;
-    box-shadow: inset 0 1px 0 var(--interactive-hover);
+    box-shadow: none;
 }
 
 .user-attachment-stack {
@@ -168,6 +168,38 @@
     color: var(--muted);
     font-size: 10px;
     white-space: nowrap;
+}
+
+.message-project-card {
+    display:flex;
+    align-items:center;
+    gap:14px;
+    margin:12px 0;
+    padding:14px 18px;
+    border:1px solid var(--border);
+    border-radius:10px;
+    background:var(--surface2);
+    transition:border-color .15s ease, background .15s ease, box-shadow .15s ease;
+}
+
+.message-project-card__icon { flex:0 0 auto; color:var(--accent); }
+.message-project-card__info { min-width:0; flex:1; }
+.message-project-card__name { overflow:hidden; color:var(--text); font-size:14px; font-weight:600; text-overflow:ellipsis; white-space:nowrap; }
+.message-project-card__meta { margin-top:2px; color:var(--text-secondary); font-size:12px; }
+.message-project-card__download { display:flex; align-items:center; gap:6px; flex:0 0 auto; padding:7px 14px; border:0; border-radius:7px; background:var(--accent); color:#fff; cursor:pointer; font-size:13px; font-weight:600; transition:filter .15s ease, transform .15s ease; }
+.message-project-card__download:hover { filter:brightness(1.06); }
+.message-project-card__download:active { transform:translateY(1px); }
+
+:root[data-theme='light'] .message-project-card {
+    border-color:color-mix(in srgb, var(--text-secondary) 30%, var(--border));
+    background:var(--surface);
+    box-shadow:0 3px 12px rgba(48, 68, 92, .08);
+}
+
+:root[data-theme='light'] .message-project-card:hover {
+    border-color:color-mix(in srgb, var(--text-secondary) 46%, var(--border));
+    background:color-mix(in srgb, var(--surface) 72%, var(--surface2) 28%);
+    box-shadow:0 5px 16px rgba(48, 68, 92, .12);
 }
 
 .user-message-text {
@@ -320,12 +352,14 @@
     border: none;
     color: var(--muted);
     cursor: pointer;
-    padding: 4px;
-    border-radius: 4px;
+    width:24px;
+    height:24px;
+    padding:0;
+    border-radius:50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.15s;
+    transition:color .15s ease, opacity .15s ease, transform .15s ease;
     opacity: 0;
 }
 
@@ -334,12 +368,16 @@
 }
 
 .msg-copy-btn:hover {
-    background: var(--surface2);
-    color: var(--text);
+    background:transparent;
+    color:var(--accent);
 }
 
 .msg-copy-btn:active {
     transform: scale(0.95);
+}
+
+.msg-copy-btn svg {
+    pointer-events:none;
 }
 
 /* 복사와 읽기 동작은 하나의 액션 그룹이므로 메타데이터보다 촘촘하게 배치한다. */
