@@ -429,7 +429,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 onDragOver={e => e.preventDefault()}
                 style={{position: 'relative'}}
             >
-                {mcpMentionQuery !== null && <div ref={promptSuggestionsRef}><McpMentionMenu query={mcpMentionQuery} selectedIds={selectedMcps.map(server => server.id)} activeIndex={mcpMentionIndex} onVisibleServersChange={setVisibleMcpServers} onSelect={server => { setSelectedMcps(current => current.some(item => item.id === server.id) ? current : [...current, server]); setValue(''); setMcpMentionQuery(null); textareaRef.current?.focus(); }}/></div>}
+                {mcpMentionQuery !== null && <div ref={promptSuggestionsRef}><McpMentionMenu query={mcpMentionQuery} selectedIds={selectedMcps.map(server => server.id)} activeIndex={mcpMentionIndex} onActiveIndexChange={setMcpMentionIndex} onVisibleServersChange={setVisibleMcpServers} onSelect={server => { setSelectedMcps(current => current.some(item => item.id === server.id) ? current : [...current, server]); setValue(''); setMcpMentionQuery(null); textareaRef.current?.focus(); }}/></div>}
 
                 {/* / 슬래시 자동완성 */}
                 {slash.slashSuggestions.length > 0 && (

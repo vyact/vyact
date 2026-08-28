@@ -1,5 +1,6 @@
 import React, {useEffect, useRef, useState, useCallback} from 'react';
 import {useTranslation} from 'react-i18next';
+import {Grid2x2Plus} from 'lucide-react';
 import {api} from '../../services/api';
 import {
     getGoogleWorkspaceStatus,
@@ -8,7 +9,6 @@ import {
 } from '../../services/googleWorkspaceStatus';
 import {emitMcpServersChanged, onMcpServersChanged} from '../../utils/mcpEvents';
 import type {McpCatalogEntry, McpServer} from '../../types';
-import {Tooltip} from '../common/Tooltip/Tooltip';
 import './McpMenu.css';
 
 interface McpMenuProps {
@@ -134,24 +134,17 @@ const McpMenu: React.FC<McpMenuProps> = ({disabled = false}) => {
 
     return (
         <div className="mcp-menu" ref={menuRef}>
-            <Tooltip content={t('mcpMenu.title')}>
-                <button
-                    className={`mcp-menu-trigger${enabledCount > 0 ? ' active' : ''}`}
-                    onClick={() => setOpen(v => !v)}
-                    disabled={disabled}
-                    aria-label={t('mcpMenu.title')}
-                >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="3" y="3" width="7" height="7" rx="1"/>
-                        <rect x="14" y="3" width="7" height="7" rx="1"/>
-                        <rect x="3" y="14" width="7" height="7" rx="1"/>
-                        <path d="M17.5 14v3.5M14 17.5h7"/>
-                    </svg>
-                    {enabledCount > 0 && (
-                        <span className="mcp-menu-count">{enabledCount}</span>
-                    )}
-                </button>
-            </Tooltip>
+            <button
+                className={`mcp-menu-trigger${enabledCount > 0 ? ' active' : ''}`}
+                onClick={() => setOpen(v => !v)}
+                disabled={disabled}
+                aria-label={t('mcpMenu.title')}
+            >
+                <Grid2x2Plus size={18}/>
+                {enabledCount > 0 && (
+                    <span className="mcp-menu-count">{enabledCount}</span>
+                )}
+            </button>
 
             {open && (
                 <div className="mcp-menu-popover">

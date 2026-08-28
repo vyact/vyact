@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {Check, Plug} from 'lucide-react';
+import {Check, Grid2x2Plus} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {api} from '../../services/api';
 import {onMcpServersChanged} from '../../utils/mcpEvents';
@@ -11,11 +11,12 @@ interface Props {
     query: string;
     selectedIds: string[];
     activeIndex: number;
+    onActiveIndexChange: (index: number) => void;
     onSelect: (server: MentionMcpServer) => void;
     onVisibleServersChange: (servers: MentionMcpServer[]) => void;
 }
 
-export default function McpMentionMenu({query, selectedIds, activeIndex, onSelect, onVisibleServersChange}: Props) {
+export default function McpMentionMenu({query, selectedIds, activeIndex, onActiveIndexChange, onSelect, onVisibleServersChange}: Props) {
     const {t} = useTranslation(['main', 'settings']);
     const listRef = useRef<HTMLDivElement>(null);
     const [servers, setServers] = useState<MentionMcpServer[]>([]);
@@ -44,12 +45,14 @@ export default function McpMentionMenu({query, selectedIds, activeIndex, onSelec
     }, [activeIndex]);
     return <div className="mcp-mention-menu">
         <div className="mcp-mention-header">
-            <Plug size={15}/><span>{t('mcpMenu.mentionTitle')}</span>
+            <Grid2x2Plus size={15}/><span>{t('mcpMenu.mentionTitle')}</span>
             <small>{t('mcpMenu.mentionHint')}</small>
         </div>
         <div ref={listRef} className="mcp-mention-list">{visible.map((server, index) => {
             const name = serverName(server);
-            return <button key={server.id} type="button" className={`mcp-mention-item${activeIndex === index ? ' active' : ''}`} onMouseDown={e => { e.preventDefault(); onSelect(server); }}>
+            return <button key={server.id} type="button" className={`mcp-mention-item${activeIndex === index ? ' active' : ''}`}
+                           onMouseEnter={() => onActiveIndexChange(index)}
+                           onMouseDown={e => { e.preventDefault(); onSelect(server); }}>
                 <span className="mcp-mention-copy"><strong>{name}</strong></span>
                 {selectedIds.includes(server.id) && <Check size={18} className="mcp-mention-check"/>}
             </button>;
