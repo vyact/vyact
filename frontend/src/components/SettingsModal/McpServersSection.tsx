@@ -82,7 +82,16 @@ export default function McpServersSection({scope = 'mcp'}: {scope?: McpServersSe
             setCatalog(c.catalog || {});
             const nextServers = s.servers || [];
             setServers(nextServers);
-            if (nextServers.some((server: Server) => server.type === 'google_workspace')) {
+            const googleServer = nextServers.find((server: Server) => server.type === 'google_workspace');
+            if (scope === 'google') {
+                if (googleServer) {
+                    setEditingId(googleServer.id);
+                    setAdding(false);
+                } else {
+                    setAdding(true);
+                }
+            }
+            if (googleServer) {
                 const status = await api.getGoogleAuthStatus();
                 setGoogleReconnectRequired(!status.authenticated);
             } else {
@@ -167,7 +176,7 @@ export default function McpServersSection({scope = 'mcp'}: {scope?: McpServersSe
         <div className="mcp-section">
             <div className="mcp-head">
                 <span className="mcp-title">{t(isGoogleScope ? 'mcp.googleTitle' : 'mcp.title')}</span>
-                {(!isGoogleScope || visibleServers.length === 0) && (
+                {!isGoogleScope && (
                     <button className="mcp-add-btn" onClick={() => {
                         setAdding(true);
                         setErr('');
@@ -346,6 +355,7 @@ function GoogleAccountsEditor({value, onChange, onPersist, onCredentialUpload, o
     const [statuses, setStatuses] = useState<Record<string, {authenticated: boolean; email?: string}>>({});
     const [busyAccountId, setBusyAccountId] = useState<string | null>(null);
     const [error, setError] = useState('');
+    const [credentialError, setCredentialError] = useState('');
     const [removeAccountId, setRemoveAccountId] = useState<string | null>(null);
     const persistQueueRef = useRef<Promise<void>>(Promise.resolve());
 
@@ -410,9 +420,10 @@ function GoogleAccountsEditor({value, onChange, onPersist, onCredentialUpload, o
     };
     const connect = async (account: GoogleAccountConfig) => {
         if (!value.gauth_json) {
-            setError(t('mcp.oauthFileMissing'));
+            setCredentialError(t('mcp.oauthFileMissing'));
             return;
         }
+        setCredentialError('');
         setError('');
         setBusyAccountId(account.id);
         try {
@@ -481,6 +492,7 @@ function GoogleAccountsEditor({value, onChange, onPersist, onCredentialUpload, o
     return <div className="google-accounts">
         <McpFieldInput field={oauthField} value={value.gauth_json}
                     onChange={gauth_json => {
+                        setCredentialError('');
                         const nextValue = {...value, gauth_json};
                         onChange(nextValue);
                         if (onCredentialUpload && gauth_json) {
@@ -489,6 +501,7 @@ function GoogleAccountsEditor({value, onChange, onPersist, onCredentialUpload, o
                             void persist(nextValue);
                         }
                     }}/>
+        {credentialError && <div className="mcp-err">{credentialError}</div>}
         {accounts.map((account, index) => (
             <section className={`google-account-card ${value.active_account_id === account.id ? 'active' : ''}`} key={account.id}>
                 <div className="google-account-card-head">

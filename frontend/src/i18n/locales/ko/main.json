@@ -420,16 +420,16 @@
     }
   },
   "mcpMenu": {
-    "title": "MCP 및 AI 도구",
+    "title": "AI 도구",
     "loading": "불러오는 중...",
-    "empty": "등록된 서버가 없습니다.",
-    "emptyHint": "설정에서 추가하세요.",
-    "mentionTitle": "MCP 선택",
-    "mentionHint": "선택한 MCP 도구만 이번 요청에 사용합니다.",
-    "mentionActive": "활성 MCP",
+    "empty": "등록된 AI 도구가 없습니다.",
+    "emptyHint": "설정에서 AI 도구를 추가하세요.",
+    "mentionTitle": "AI 도구",
+    "mentionHint": "선택한 AI 도구만 이번 요청에 사용합니다.",
+    "mentionActive": "활성 AI 도구",
     "mentionRequestOnly": "선택 시 이 요청에서만 사용",
-    "mentionEmpty": "등록된 MCP가 없습니다.",
-    "removeSelected": "선택한 MCP 해제"
+    "mentionEmpty": "등록된 AI 도구가 없습니다.",
+    "removeSelected": "선택한 AI 도구 해제"
   },
   "sidebar": {
     "model": "모델",

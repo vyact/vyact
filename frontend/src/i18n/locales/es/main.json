@@ -420,16 +420,16 @@
     }
   },
   "mcpMenu": {
-    "title": "MCP y herramientas de IA",
+    "title": "Herramientas de IA",
     "loading": "Cargando...",
-    "empty": "Sin servidores",
-    "emptyHint": "Añádelos en Ajustes",
-    "mentionTitle": "Seleccionar MCP",
-    "mentionHint": "Solo se usan las herramientas MCP seleccionadas en esta solicitud.",
-    "mentionActive": "MCP activo",
+    "empty": "No hay herramientas de IA",
+    "emptyHint": "Añade herramientas de IA en Ajustes",
+    "mentionTitle": "Herramientas de IA",
+    "mentionHint": "Solo se usan las herramientas de IA seleccionadas en esta solicitud.",
+    "mentionActive": "Herramientas de IA activas",
     "mentionRequestOnly": "Se usa solo en esta solicitud al seleccionarlo",
-    "mentionEmpty": "No hay MCP registrados.",
-    "removeSelected": "Quitar MCP seleccionado"
+    "mentionEmpty": "No hay herramientas de IA registradas.",
+    "removeSelected": "Quitar herramienta de IA seleccionada"
   },
   "sidebar": {
     "model": "Modelo",

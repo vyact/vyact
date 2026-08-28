@@ -4,8 +4,8 @@
     "general": "General",
     "runtime": "Configuración RAG",
     "backup": "Copia",
-    "google": "Integración con Google",
-    "api": "Conexiones",
+    "google": "Google",
+    "api": "Herramientas de IA",
     "externalData": "Datos externos",
     "skills": "Habilidades",
     "profile": "Perfil IA",
@@ -288,7 +288,7 @@
     "show": "Mostrar"
   },
   "mcp": {
-    "title": "MCP y herramientas de IA",
+    "title": "Herramientas de IA",
     "googleTitle": "Google Workspace",
     "googleDesc": "Conecta y administra cuentas de Google y permisos de servicios.",
     "googleEmpty": "Añade una conexión para usar Google Workspace.",
@@ -298,7 +298,7 @@
     "edit": "Editar",
     "delete": "Borrar",
     "confirmDelete": "¿Borrar \"{{name}}\"?",
-    "promptLabel": "Prompt al activar (opcional)",
+    "promptLabel": "Instrucciones que se añadirán al activar esta herramienta (opcional)",
     "promptDefaultPlaceholder": "Vacío: prompt predeterminado",
     "promptEmptyPlaceholder": "Vacío: sin prompt",
     "serverType": "Tipo de herramienta",

@@ -4,8 +4,8 @@
     "general": "General",
     "runtime": "RAG settings",
     "backup": "Backup / Restore",
-    "google": "Google integration",
-    "api": "Integrations",
+    "google": "Google",
+    "api": "AI Tools",
     "externalData": "External data",
     "plugins": "Plugins",
     "skills": "Skills",
@@ -324,7 +324,7 @@
     "show": "Show"
   },
   "mcp": {
-    "title": "MCP & AI Tools",
+    "title": "AI Tools",
     "googleTitle": "Google Workspace",
     "googleDesc": "Connect and manage Google accounts and service permissions.",
     "googleEmpty": "Add a connection to use Google Workspace.",
@@ -334,7 +334,7 @@
     "edit": "Edit",
     "delete": "Delete",
     "confirmDelete": "Delete server \"{{name}}\"?",
-    "promptLabel": "Prompt to add when this server is enabled (optional)",
+    "promptLabel": "Instructions to add while this tool is enabled (optional)",
     "promptDefaultPlaceholder": "Leave empty to use the default prompt.",
     "promptEmptyPlaceholder": "Leave empty to add no prompt.",
     "serverType": "Tool type",

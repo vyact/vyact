@@ -4,8 +4,8 @@
     "general": "ทั่วไป",
     "runtime": "การตั้งค่า RAG",
     "backup": "สำรอง",
-    "google": "เชื่อมต่อ Google",
-    "api": "เชื่อมต่อ",
+    "google": "Google",
+    "api": "เครื่องมือ AI",
     "externalData": "ข้อมูลภายนอก",
     "skills": "สกิล",
     "profile": "โปรไฟล์ AI",
@@ -288,7 +288,7 @@
     "show": "แสดง"
   },
   "mcp": {
-    "title": "MCP และเครื่องมือ AI",
+    "title": "เครื่องมือ AI",
     "googleTitle": "Google Workspace",
     "googleDesc": "เชื่อมต่อและจัดการบัญชี Google และสิทธิ์บริการ",
     "googleEmpty": "เพิ่มการเชื่อมต่อเพื่อใช้ Google Workspace",
@@ -298,7 +298,7 @@
     "edit": "แก้ไข",
     "delete": "ลบ",
     "confirmDelete": "ลบ \"{{name}}\"?",
-    "promptLabel": "พรอมป์ตเมื่อเปิดใช้ (ไม่บังคับ)",
+    "promptLabel": "คำแนะนำที่จะเพิ่มเมื่อเปิดใช้เครื่องมือนี้ (ไม่บังคับ)",
     "promptDefaultPlaceholder": "เว้นว่างเพื่อใช้ค่าเริ่มต้น",
     "promptEmptyPlaceholder": "เว้นว่างเพื่อไม่เพิ่มพรอมป์ต",
     "serverType": "ชนิดเครื่องมือ",

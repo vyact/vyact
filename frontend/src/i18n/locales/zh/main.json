@@ -420,16 +420,16 @@
     }
   },
   "mcpMenu": {
-    "title": "MCP 与 AI 工具",
+    "title": "AI 工具",
     "loading": "加载中...",
-    "empty": "没有已注册的服务器。",
-    "emptyHint": "请在设置中添加。",
-    "mentionTitle": "选择 MCP",
-    "mentionHint": "本次请求仅使用所选 MCP 工具。",
-    "mentionActive": "已启用 MCP",
+    "empty": "没有已注册的 AI 工具。",
+    "emptyHint": "请在设置中添加 AI 工具。",
+    "mentionTitle": "AI 工具",
+    "mentionHint": "本次请求仅使用所选 AI 工具。",
+    "mentionActive": "已启用的 AI 工具",
     "mentionRequestOnly": "选择后仅用于本次请求",
-    "mentionEmpty": "没有已注册的 MCP。",
-    "removeSelected": "移除所选 MCP"
+    "mentionEmpty": "没有已注册的 AI 工具。",
+    "removeSelected": "移除所选 AI 工具"
   },
   "sidebar": {
     "model": "模型",

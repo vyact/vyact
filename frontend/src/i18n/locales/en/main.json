@@ -420,16 +420,16 @@
     }
   },
   "mcpMenu": {
-    "title": "MCP & AI Tools",
+    "title": "AI Tools",
     "loading": "Loading...",
-    "empty": "No servers registered.",
-    "emptyHint": "Add servers in settings.",
-    "mentionTitle": "Select MCP",
-    "mentionHint": "Only selected MCP tools are used for this request.",
-    "mentionActive": "Active MCP",
+    "empty": "No AI tools registered.",
+    "emptyHint": "Add AI tools in settings.",
+    "mentionTitle": "AI Tools",
+    "mentionHint": "Only selected AI tools are used for this request.",
+    "mentionActive": "Active AI tools",
     "mentionRequestOnly": "Used only for this request when selected",
-    "mentionEmpty": "No MCPs registered.",
-    "removeSelected": "Remove selected MCP"
+    "mentionEmpty": "No AI tools registered.",
+    "removeSelected": "Remove selected AI tool"
   },
   "sidebar": {
     "model": "Model",

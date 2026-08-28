@@ -1,5 +1,5 @@
 .mcp-menu { position: relative; flex-shrink: 0; }
-.mcp-menu-trigger { display: flex; align-items: center; height: 30px; flex-shrink: 0; gap: 5px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; color: #b0b0b8; cursor: pointer; font-size: 12px; font-weight: 600; transition: background .2s; }
+.mcp-menu-trigger { display: flex; align-items: center; height: 30px; flex-shrink: 0; gap: 5px; padding: 0 8px; border: 0; border-radius: 10px; background: transparent; color: #b0b0b8; cursor: pointer; font-size: 12px; font-weight: 600; transition: background .2s; }
 .mcp-menu-trigger:hover { background: var(--surface2); }
 .mcp-menu-trigger:disabled { cursor: not-allowed; }
 .mcp-menu-trigger.active { color: var(--accent); }

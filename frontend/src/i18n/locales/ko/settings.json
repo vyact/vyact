@@ -4,8 +4,8 @@
     "general": "일반",
     "runtime": "RAG 설정",
     "backup": "백업 / 복원",
-    "google": "Google 연동",
-    "api": "연동 설정",
+    "google": "Google",
+    "api": "AI 도구",
     "externalData": "외부 데이터",
     "plugins": "플러그인",
     "skills": "스킬",
@@ -353,7 +353,7 @@
     "show": "보기"
   },
   "mcp": {
-    "title": "MCP 및 AI 도구",
+    "title": "AI 도구",
     "googleTitle": "Google Workspace",
     "googleDesc": "Google 계정과 서비스 권한을 연결하고 관리합니다.",
     "googleEmpty": "연결 설정을 추가하여 Google Workspace를 사용하세요.",
@@ -363,7 +363,7 @@
     "edit": "편집",
     "delete": "삭제",
     "confirmDelete": "「{{name}}」 항목을 삭제할까요?",
-    "promptLabel": "이 서버가 켜져 있을 때 추가할 프롬프트 (선택)",
+    "promptLabel": "이 도구가 활성화되어 있을 때 추가할 지침 (선택)",
     "promptDefaultPlaceholder": "비워두면 기본 프롬프트가 적용됩니다.",
     "promptEmptyPlaceholder": "비워두면 아무 프롬프트도 추가되지 않습니다.",
     "serverType": "도구 종류",

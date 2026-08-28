@@ -420,16 +420,16 @@
     }
   },
   "mcpMenu": {
-    "title": "MCP และเครื่องมือ AI",
+    "title": "เครื่องมือ AI",
     "loading": "กำลังโหลด...",
-    "empty": "ยังไม่มีเซิร์ฟเวอร์",
-    "emptyHint": "เพิ่มในตั้งค่า",
-    "mentionTitle": "เลือก MCP",
-    "mentionHint": "คำขอนี้จะใช้เฉพาะเครื่องมือ MCP ที่เลือก",
-    "mentionActive": "MCP ที่เปิดใช้งาน",
+    "empty": "ยังไม่มีเครื่องมือ AI",
+    "emptyHint": "เพิ่มเครื่องมือ AI ในการตั้งค่า",
+    "mentionTitle": "เครื่องมือ AI",
+    "mentionHint": "คำขอนี้จะใช้เฉพาะเครื่องมือ AI ที่เลือก",
+    "mentionActive": "เครื่องมือ AI ที่เปิดใช้งาน",
     "mentionRequestOnly": "ใช้กับคำขอนี้เมื่อเลือกเท่านั้น",
-    "mentionEmpty": "ไม่มี MCP ที่ลงทะเบียนไว้",
-    "removeSelected": "เอา MCP ที่เลือกออก"
+    "mentionEmpty": "ไม่มีเครื่องมือ AI ที่ลงทะเบียนไว้",
+    "removeSelected": "เอาเครื่องมือ AI ที่เลือกออก"
   },
   "sidebar": {
     "model": "โมเดล",

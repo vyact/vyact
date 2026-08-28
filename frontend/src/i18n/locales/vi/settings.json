@@ -4,8 +4,8 @@
     "general": "Chung",
     "runtime": "Cài đặt RAG",
     "backup": "Sao lưu",
-    "google": "Kết nối Google",
-    "api": "Kết nối",
+    "google": "Google",
+    "api": "Công cụ AI",
     "externalData": "Dữ liệu ngoài",
     "skills": "Kỹ năng",
     "profile": "Hồ sơ AI",
@@ -288,7 +288,7 @@
     "show": "Hiện"
   },
   "mcp": {
-    "title": "MCP và công cụ AI",
+    "title": "Công cụ AI",
     "googleTitle": "Google Workspace",
     "googleDesc": "Kết nối và quản lý tài khoản Google cùng quyền dịch vụ.",
     "googleEmpty": "Thêm kết nối để sử dụng Google Workspace.",
@@ -298,7 +298,7 @@
     "edit": "Sửa",
     "delete": "Xóa",
     "confirmDelete": "Xóa \"{{name}}\"?",
-    "promptLabel": "Prompt khi bật máy chủ (tùy chọn)",
+    "promptLabel": "Hướng dẫn được thêm khi công cụ này bật (tùy chọn)",
     "promptDefaultPlaceholder": "Để trống dùng prompt mặc định",
     "promptEmptyPlaceholder": "Để trống không thêm prompt",
     "serverType": "Loại công cụ",

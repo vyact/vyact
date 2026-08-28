@@ -420,16 +420,16 @@
     }
   },
   "mcpMenu": {
-    "title": "MCP và công cụ AI",
+    "title": "Công cụ AI",
     "loading": "Đang tải...",
-    "empty": "Chưa có máy chủ",
-    "emptyHint": "Thêm trong Cài đặt",
-    "mentionTitle": "Chọn MCP",
-    "mentionHint": "Chỉ công cụ MCP đã chọn được dùng cho yêu cầu này.",
-    "mentionActive": "MCP đang bật",
+    "empty": "Chưa có công cụ AI",
+    "emptyHint": "Thêm công cụ AI trong Cài đặt",
+    "mentionTitle": "Công cụ AI",
+    "mentionHint": "Chỉ công cụ AI đã chọn được dùng cho yêu cầu này.",
+    "mentionActive": "Công cụ AI đang bật",
     "mentionRequestOnly": "Chỉ dùng cho yêu cầu này khi được chọn",
-    "mentionEmpty": "Chưa có MCP nào được đăng ký.",
-    "removeSelected": "Xóa MCP đã chọn"
+    "mentionEmpty": "Chưa có công cụ AI nào được đăng ký.",
+    "removeSelected": "Xóa công cụ AI đã chọn"
   },
   "sidebar": {
     "model": "Mô hình",

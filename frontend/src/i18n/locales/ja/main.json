@@ -420,16 +420,16 @@
     }
   },
   "mcpMenu": {
-    "title": "MCP・AIツール",
+    "title": "AIツール",
     "loading": "読み込み中...",
-    "empty": "登録されたサーバーがありません。",
-    "emptyHint": "設定から追加してください。",
-    "mentionTitle": "MCPを選択",
-    "mentionHint": "選択したMCPツールのみこのリクエストで使用します。",
-    "mentionActive": "有効なMCP",
+    "empty": "登録されたAIツールがありません。",
+    "emptyHint": "設定からAIツールを追加してください。",
+    "mentionTitle": "AIツール",
+    "mentionHint": "選択したAIツールのみこのリクエストで使用します。",
+    "mentionActive": "有効なAIツール",
     "mentionRequestOnly": "選択時のみこのリクエストで使用",
-    "mentionEmpty": "登録されたMCPはありません。",
-    "removeSelected": "選択したMCPを解除"
+    "mentionEmpty": "登録されたAIツールはありません。",
+    "removeSelected": "選択したAIツールを解除"
   },
   "sidebar": {
     "model": "モデル",

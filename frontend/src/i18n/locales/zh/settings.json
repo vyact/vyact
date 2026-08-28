@@ -4,8 +4,8 @@
     "general": "通用",
     "runtime": "RAG 设置",
     "backup": "备份 / 恢复",
-    "google": "Google 集成",
-    "api": "集成设置",
+    "google": "Google",
+    "api": "AI 工具",
     "externalData": "外部数据",
     "skills": "技能",
     "profile": "AI 个人资料分析",
@@ -288,7 +288,7 @@
     "show": "显示"
   },
   "mcp": {
-    "title": "MCP 与 AI 工具",
+    "title": "AI 工具",
     "googleTitle": "Google Workspace",
     "googleDesc": "连接并管理 Google 帐号和服务权限。",
     "googleEmpty": "添加连接以使用 Google Workspace。",
@@ -298,7 +298,7 @@
     "edit": "编辑",
     "delete": "删除",
     "confirmDelete": "删除服务器「{{name}}」？",
-    "promptLabel": "此服务器启用时添加的提示词（可选）",
+    "promptLabel": "此工具启用时添加的指令（可选）",
     "promptDefaultPlaceholder": "留空将使用默认提示词。",
     "promptEmptyPlaceholder": "留空将不添加任何提示词。",
     "serverType": "工具类型",

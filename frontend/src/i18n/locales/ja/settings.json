@@ -4,8 +4,8 @@
     "general": "一般",
     "runtime": "RAG設定",
     "backup": "バックアップ / 復元",
-    "google": "Google 連携",
-    "api": "連携設定",
+    "google": "Google",
+    "api": "AIツール",
     "externalData": "外部データ",
     "skills": "スキル",
     "profile": "AIプロフィール分析",
@@ -288,7 +288,7 @@
     "show": "表示"
   },
   "mcp": {
-    "title": "MCP・AIツール",
+    "title": "AIツール",
     "googleTitle": "Google Workspace",
     "googleDesc": "Google アカウントとサービス権限を連携・管理します。",
     "googleEmpty": "Google Workspace を使用するには連携設定を追加してください。",
@@ -298,7 +298,7 @@
     "edit": "編集",
     "delete": "削除",
     "confirmDelete": "「{{name}}」サーバーを削除しますか？",
-    "promptLabel": "このサーバーが有効な時に追加するプロンプト（任意）",
+    "promptLabel": "このツールが有効な時に追加する指示（任意）",
     "promptDefaultPlaceholder": "空欄にするとデフォルトプロンプトが適用されます。",
     "promptEmptyPlaceholder": "空欄にするとプロンプトは追加されません。",
     "serverType": "ツール種類",
