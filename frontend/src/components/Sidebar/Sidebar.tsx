@@ -1,6 +1,6 @@
 import React, {useEffect, useState, useRef} from 'react';
 import {useTranslation} from 'react-i18next';
-import {Pencil, Trash2, FileText, FileCode, NotebookText, Plus, ChevronDown, SquarePen, LoaderCircle, RefreshCw, Pin, PinOff} from 'lucide-react';
+import {Pencil, Trash2, FileText, FileCode, NotebookText, Plus, ChevronDown, SquarePen, LoaderCircle, RefreshCw, Pin, PinOff, MessageCircle, Folder} from 'lucide-react';
 import {renderMarkdown} from '../../utils/markdownUtils';
 import ModelSelector from '../ModelSelector';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
@@ -14,6 +14,7 @@ import SidebarOverflowMenu from './SidebarOverflowMenu';
 import ProjectInstructionsModal from './ProjectInstructionsModal';
 import ProjectCreateModal from './ProjectCreateModal';
 import ProjectMemoryModal from './ProjectMemoryModal';
+import {getProjectDisplayColor} from './projectColors';
 
 const ProviderSettingsModal = React.lazy(() => import('../ProviderSettingsModal/ProviderSettingsModal'));
 const CustomProviderModal = React.lazy(() => import('../CustomProviderModal/CustomProviderModal'));
@@ -328,6 +329,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     const [isRefreshingHistory, setIsRefreshingHistory] = useState(false);
     const activeConversationIdSet = new Set(activeConversationIds);
     const favoriteConversationIdSet = new Set(favoriteConversations.map(conversation => conversation.conv_id));
+    const projectNameById = new Map(projects.map(project => [project.id, project.name]));
+    const projectColorById = new Map(projects.map(project => [project.id, getProjectDisplayColor(project.color)]));
     const refreshHistory = async () => {
         if (isRefreshingHistory) return;
         setIsRefreshingHistory(true);
@@ -613,7 +616,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                             {favoriteConversations.map(conversation => (
                                 <div
                                     key={conversation.conv_id}
-                                    className={`favorite-conversation${conversation.conv_id === activeConvId ? ' active' : ''}`}
+                                    className={`favorite-conversation${conversation.project_id ? ' favorite-conversation--project' : ''}${conversation.conv_id === activeConvId ? ' active' : ''}`}
+                                    style={conversation.project_id ? {
+                                        '--project-color': projectColorById.get(conversation.project_id) || getProjectDisplayColor(),
+                                    } as React.CSSProperties : undefined}
                                     onClick={() => {
                                         onProjectChange?.(conversation.project_id || null);
                                         onConversationSelect(conversation.conv_id);
@@ -639,7 +645,21 @@ const Sidebar: React.FC<SidebarProps> = ({
                                             }}
                                         />
                                     ) : (
-                                        <span className="favorite-conversation-title">{conversation.title}</span>
+                                        <>
+                                            {conversation.project_id ? (
+                                                <span
+                                                    className="favorite-conversation-source favorite-conversation-source--project"
+                                                    title={projectNameById.get(conversation.project_id)}
+                                                >
+                                                    <Folder size={14}/>
+                                                </span>
+                                            ) : (
+                                                <span className="favorite-conversation-source favorite-conversation-source--general" aria-hidden="true">
+                                                    <MessageCircle size={14}/>
+                                                </span>
+                                            )}
+                                            <span className="favorite-conversation-title">{conversation.title}</span>
+                                        </>
                                     )}
                                     {activeConversationIdSet.has(conversation.conv_id) && (
                                         <span className="conversation-progress" role="status"
