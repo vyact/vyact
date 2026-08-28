@@ -18,10 +18,52 @@ export const formatCompactDownloads = (downloads: number) => {
 };
 
 export const getModelQuantization = (model: VyactHubModel, filename: string) => {
-    if (model.runtime === 'mlx') return model.quantization || '';
+    if (model.runtime === 'mlx') {
+        if (model.quantization) return model.quantization;
+        const mlxName = `${model.id}/${filename}`;
+        const bitMatch = mlxName.match(/(?:^|[-_.\/])(\d+)[-_]?bit(?:$|[-_.\/])/i);
+        if (bitMatch) return `${bitMatch[1]}-bit`;
+        const quantizationMatch = mlxName.match(/(?:^|[-_.\/])(IQ\d_[A-Z0-9_]+|Q\d(?:_[A-Z0-9]+)+|BF16|FP16|FP8|MXFP4|NVFP4)(?:$|[-.\/])/i);
+        return quantizationMatch?.[1]?.toUpperCase() || '';
+    }
     const basename = filename.split('/').pop() || filename;
     const match = basename.match(/(?:UD-)?(IQ\d_[A-Z0-9_]+|Q\d(?:_[A-Z0-9]+)+|MXFP4(?:_[A-Z0-9]+)*|BF16|F16|F32)\.gguf$/i);
     return match?.[1]?.toUpperCase() || '';
+};
+
+const getModelParameterCount = (modelName: string) => {
+    const mixtureMatch = modelName.match(/(?:^|[^a-z0-9])(\d+)\s*x\s*(\d+(?:\.\d+)?)\s*b(?=$|[^a-z0-9])/i);
+    if (mixtureMatch) return Number(mixtureMatch[1]) * Number(mixtureMatch[2]) * 1_000_000_000;
+
+    const matches = [...modelName.matchAll(/(?:^|[^a-z0-9])(\d+(?:\.\d+)?)\s*([bm])(?=$|[^a-z0-9])/gi)];
+    return matches.reduce((largest, match) => {
+        const scale = match[2].toLowerCase() === 'b' ? 1_000_000_000 : 1_000_000;
+        return Math.max(largest, Number(match[1]) * scale);
+    }, 0);
+};
+
+const getQuantizationBits = (quantization: string) => {
+    const normalized = quantization.toUpperCase();
+    const explicitBits = normalized.match(/(?:^|[^0-9])(\d+)[-_]?BIT/);
+    if (explicitBits) return Number(explicitBits[1]);
+    const ggufBits = normalized.match(/(?:^|[^A-Z0-9])(?:I?Q)(\d)/);
+    if (ggufBits) return Number(ggufBits[1]);
+    if (/BF16|FP16|F16/.test(normalized)) return 16;
+    if (/FP8|F8/.test(normalized)) return 8;
+    if (/MXFP4|NVFP4/.test(normalized)) return 4;
+    if (/FP32|F32/.test(normalized)) return 32;
+    return 16;
+};
+
+export const estimateModelMemoryBytes = (model: VyactHubModel, filename: string) => {
+    const fileSize = model.file_sizes?.[filename] || 0;
+    const companionSize = model.dflash2_model?.size || (model.runtime === 'mlx' ? model.mtp_model?.size || 0 : 0);
+    if (fileSize > 0) return (fileSize + companionSize) * MODEL_MEMORY_OVERHEAD_RATIO;
+
+    const parameterCount = getModelParameterCount(`${model.id}/${filename}`);
+    if (!parameterCount) return 0;
+    const quantizationBits = getQuantizationBits(getModelQuantization(model, filename));
+    return parameterCount * (quantizationBits / 8) * MODEL_MEMORY_OVERHEAD_RATIO;
 };
 
 export const getSelectableModelFiles = (files: string[]) => files

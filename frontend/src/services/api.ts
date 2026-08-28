@@ -382,6 +382,15 @@ export const api = {
         };
     },
 
+    async getVyactModelFileSize(
+        repository: string, filename: string, runtime: 'gguf' | 'mlx',
+    ): Promise<number> {
+        const params = new URLSearchParams({repository, filename, runtime});
+        const response = await fetch(`${API_BASE}/vyact/models/file-size?${params}`);
+        if (!response.ok) throw new Error(`Model file size lookup failed (${response.status})`);
+        return Number((await response.json()).file_size || 0);
+    },
+
     async saveVyactModelMetadataCache(
         repository: string, filename: string, revision: string, contextSize: number,
         fileSize: number, metadata: VyactGgufMetadata,

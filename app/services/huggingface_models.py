@@ -33,6 +33,43 @@ def _safe_relative_file_path(filename: str) -> PurePosixPath:
     return path
 
 
+def _model_file_size_from_hub_item(item: dict, filename: str, runtime: str) -> int:
+    siblings = [sibling for sibling in item.get("siblings", []) if isinstance(sibling, dict)]
+    if runtime == "mlx":
+        return sum(
+            int(sibling.get("size") or sibling.get("lfs", {}).get("size") or 0)
+            for sibling in siblings
+            if any(PurePosixPath(str(sibling.get("rfilename", ""))).match(pattern) for pattern in MLX_DOWNLOAD_PATTERNS)
+        )
+    return next((
+        int(sibling.get("size") or sibling.get("lfs", {}).get("size") or 0)
+        for sibling in siblings if str(sibling.get("rfilename", "")) == filename
+    ), 0)
+
+
+async def get_model_file_size(
+        repository: str, filename: str, runtime: str, token: str | None = None,
+) -> int:
+    """Fetch weight size for one selected model without slowing down search listing."""
+    if not _REPO_ID_PATTERN.fullmatch(repository):
+        raise ValueError("Invalid Hugging Face repository ID")
+    if runtime not in {"gguf", "mlx"}:
+        raise ValueError("Invalid model runtime")
+    if runtime == "gguf":
+        _safe_relative_file_path(filename)
+    async with httpx.AsyncClient(timeout=20) as client:
+        response = await client.get(
+            f"{HF_API_URL}/models/{quote(repository, safe='/')}",
+            params={"blobs": "true"},
+            headers=_headers(token),
+        )
+        response.raise_for_status()
+    size = _model_file_size_from_hub_item(response.json(), filename, runtime)
+    if size <= 0:
+        raise ValueError("Model weight size is unavailable")
+    return size
+
+
 async def search_gguf_models(query: str, token: str | None = None, limit: int = 50) -> list[dict]:
     """Search public Hub repositories which declare GGUF as their library."""
     params = {
@@ -45,26 +82,12 @@ async def search_gguf_models(query: str, token: str | None = None, limit: int = 
         response = await client.get(f"{HF_API_URL}/models", params=params, headers=_headers(token))
         response.raise_for_status()
         search_items = response.json()
-        repository_ids = [
-            str(item.get("id", "")) for item in search_items
-            if isinstance(item, dict) and _REPO_ID_PATTERN.fullmatch(str(item.get("id", "")))
-        ]
-        detailed_items = await _fetch_model_details(client, repository_ids, token)
     models = [
         model for item in search_items
         if isinstance(item, dict)
         and "dflash2" not in str(item.get("id", "")).lower()
-        and (model := _model_from_hub_item(_merge_search_and_detail(item, detailed_items.get(str(item.get("id", ""))))))
+        and (model := _model_from_hub_item(item))
     ]
-    try:
-        dflash2_candidates = await _search_dflash2_models(query, token, "gguf")
-    except (httpx.HTTPError, ValueError):
-        dflash2_candidates = []
-    for model in models:
-        candidate = _select_dflash2_model(model["id"], dflash2_candidates)
-        if candidate:
-            model["dflash2_supported_files"] = list(model["files"])
-            model["dflash2_model"] = candidate
     return sorted(models, key=lambda model: model["downloads"], reverse=True)
 
 
@@ -80,42 +103,13 @@ async def search_mlx_models(query: str, token: str | None = None, limit: int = 5
         response = await client.get(f"{HF_API_URL}/models", params=params, headers=_headers(token))
         response.raise_for_status()
         search_items = response.json()
-        repository_ids = [
-            str(item.get("id", "")) for item in search_items
-            if isinstance(item, dict) and _REPO_ID_PATTERN.fullmatch(str(item.get("id", "")))
-        ]
-        detailed_items = await _fetch_model_details(client, repository_ids, token)
-        merged_items = [
-            _merge_search_and_detail(item, detailed_items.get(str(item.get("id", ""))))
-            for item in search_items if isinstance(item, dict)
-        ]
-        configs = await _fetch_mlx_configs(client, merged_items, token)
     models = [
-        model for item in merged_items
+        model for item in search_items
+        if isinstance(item, dict)
         if "-mtp-" not in str(item.get("id", "")).lower()
         and ("dflash2" not in str(item.get("id", "")).lower() or _is_bundled_dflash2_mlx(item))
-        and (model := _mlx_model_from_hub_item(item, configs.get(str(item.get("id", "")))))
+        and (model := _mlx_model_from_hub_item(item))
     ]
-    try:
-        mtp_candidates = await _search_mlx_mtp_models(query, token)
-    except (httpx.HTTPError, ValueError):
-        mtp_candidates = []
-    for model in models:
-        candidate = _select_mlx_mtp_model(model["id"], mtp_candidates)
-        if candidate:
-            model["mtp_supported_files"] = [MLX_REPOSITORY_FILE]
-            model["mtp_model"] = candidate
-    try:
-        dflash2_candidates = await _search_dflash2_models(query, token, "mlx")
-    except (httpx.HTTPError, ValueError):
-        dflash2_candidates = []
-    for model in models:
-        if model.get("dflash2_bundled"):
-            continue
-        candidate = _select_dflash2_model(model["id"], dflash2_candidates)
-        if candidate:
-            model["dflash2_supported_files"] = [MLX_REPOSITORY_FILE]
-            model["dflash2_model"] = candidate
     return sorted(models, key=lambda model: model["downloads"], reverse=True)
 
 
@@ -332,6 +326,16 @@ def _mlx_quantization_label(config: dict) -> str:
     }.get(dtype, "")
 
 
+def _mlx_quantization_label_from_repository(repository: str) -> str:
+    name = repository.rsplit("/", 1)[-1].lower()
+    if match := re.search(r"(?:^|[-_])(\d+(?:\.\d+)?)bit(?:$|[-_])", name):
+        return f"{match.group(1)}-bit"
+    for marker, label in (("bf16", "BF16"), ("fp16", "FP16"), ("fp8", "FP8")):
+        if re.search(rf"(?:^|[-_]){marker}(?:$|[-_])", name):
+            return label
+    return ""
+
+
 def _walk_dict_values(value: dict):
     for key, child in value.items():
         yield key, child
@@ -364,7 +368,7 @@ def _mlx_model_from_hub_item(item: dict, config: dict | None = None) -> dict | N
         "mtp_supported_files": [],
         "dflash2_supported_files": [MLX_REPOSITORY_FILE] if bundled_dflash2 else [],
         "dflash2_bundled": bundled_dflash2,
-        "quantization": _mlx_quantization_label(config or {}),
+        "quantization": _mlx_quantization_label(config or {}) or _mlx_quantization_label_from_repository(repo_id),
     }
 
 

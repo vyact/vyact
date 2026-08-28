@@ -20,7 +20,7 @@ from logger import DebugLogSettings, ToolLogSettings, get_logger
 from services.installer import is_docker_available, Installer
 from services.es_native import is_native_supported
 from services.hardware_info import get_local_hardware_info
-from services.huggingface_models import search_gguf_models
+from services.huggingface_models import get_model_file_size, search_gguf_models
 from services.mcp_config import ensure_mcp_config
 from services.runtime_settings import DEFAULT_RUNTIME_SETTINGS, apply_runtime_settings
 from services.runtime_startup import apply_startup_runtime_choice, get_startup_runtime_state
@@ -627,7 +627,7 @@ async def delete_vyact_model(req: VyactModelDeleteRequest):
 
 @router.get("/vyact/models/search")
 async def search_vyact_models(q: str = Query("", max_length=200), mlx_only: bool = Query(False)):
-    """Search MLX repositories on Apple Silicon, or GGUF repositories elsewhere."""
+    """Search all compatible repositories, or only MLX when explicitly requested."""
     try:
         from services.mlx_runtime import list_dflash2_supported_mlx_models, list_downloaded_mlx_models, list_mtp_supported_mlx_models
         from services.vyact_runtime import list_dflash2_supported_models, list_downloaded_models, list_mtp_supported_models
@@ -638,9 +638,18 @@ async def search_vyact_models(q: str = Query("", max_length=200), mlx_only: bool
         from services.huggingface_models import search_mlx_models
 
         mlx_available = is_apple_silicon()
-        use_mlx = mlx_only and mlx_available
+        if mlx_only and mlx_available:
+            models = await search_mlx_models(q, token)
+        elif mlx_available:
+            gguf_models, mlx_models = await asyncio.gather(
+                search_gguf_models(q, token),
+                search_mlx_models(q, token),
+            )
+            models = sorted([*gguf_models, *mlx_models], key=lambda model: model["downloads"], reverse=True)
+        else:
+            models = await search_gguf_models(q, token)
         return {
-            "models": await search_mlx_models(q, token) if use_mlx else await search_gguf_models(q, token),
+            "models": models,
             "hardware": get_local_hardware_info(),
             "installed": [
                 *list_downloaded_models(),
@@ -673,6 +682,22 @@ async def get_vyact_model_metadata_cache(
     except Exception as error:
         logger.warning("[vyact] Model metadata cache lookup failed: %s", error)
         raise HTTPException(503, "모델 상세 정보 캐시를 조회할 수 없습니다.") from error
+
+
+@router.get("/vyact/models/file-size")
+async def get_vyact_model_file_size(
+        repository: str = Query(..., min_length=3, max_length=256),
+        filename: str = Query(..., min_length=1, max_length=1024),
+        runtime: str = Query(..., pattern="^(gguf|mlx)$"),
+):
+    try:
+        config = await load_config_async()
+        token = config.get("vyact_config", {}).get("huggingface_token")
+        size = await get_model_file_size(repository, filename, runtime, token)
+        return {"file_size": size}
+    except Exception as error:
+        logger.warning("[vyact] Model file size lookup failed: %s", error)
+        raise HTTPException(502, "모델 파일 크기를 조회할 수 없습니다.") from error
 
 
 @router.get("/vyact/models/mlx-metadata")

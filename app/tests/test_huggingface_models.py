@@ -7,8 +7,10 @@ from services.huggingface_models import (
     _mlx_model_from_hub_item,
     _is_bundled_dflash2_mlx,
     _mlx_quantization_label,
+    _mlx_quantization_label_from_repository,
     _merge_search_and_detail,
     _mlx_metadata_from_config,
+    _model_file_size_from_hub_item,
     _model_from_hub_item,
     _safe_relative_file_path,
     _select_mlx_mtp_model,
@@ -20,6 +22,21 @@ from services.huggingface_models import (
 
 
 class HuggingFaceModelTests(unittest.TestCase):
+    def test_reads_selected_gguf_size_from_repository_details(self):
+        item = {"siblings": [
+            {"rfilename": "model-Q4.gguf", "lfs": {"size": 4_000}},
+            {"rfilename": "model-Q8.gguf", "size": 8_000},
+        ]}
+        self.assertEqual(_model_file_size_from_hub_item(item, "model-Q4.gguf", "gguf"), 4_000)
+
+    def test_sums_only_mlx_download_files_from_repository_details(self):
+        item = {"siblings": [
+            {"rfilename": "config.json", "size": 200},
+            {"rfilename": "model.safetensors", "size": 3_000},
+            {"rfilename": "README.md", "size": 9_000},
+        ]}
+        self.assertEqual(_model_file_size_from_hub_item(item, "__mlx_repository__", "mlx"), 3_200)
+
     def test_detects_complete_bundled_dflash2_mlx_repository(self):
         item = {
             "id": "owner/Qwen3.8-27B-DFlash2-MLX",
@@ -170,6 +187,10 @@ class HuggingFaceModelTests(unittest.TestCase):
 
     def test_reads_mlx_dtype_when_weights_are_not_quantized(self):
         self.assertEqual(_mlx_quantization_label({"dtype": "bfloat16"}), "BF16")
+
+    def test_reads_mlx_quantization_from_repository_without_config_request(self):
+        self.assertEqual(_mlx_quantization_label_from_repository("owner/model-4bit"), "4-bit")
+        self.assertEqual(_mlx_quantization_label_from_repository("owner/model-BF16"), "BF16")
 
     def test_prefers_mlx_quantization_algorithm_over_storage_dtype(self):
         label = _mlx_quantization_label({

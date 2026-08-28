@@ -6,11 +6,11 @@ import {inspectRemoteGguf, type GgufModelMetadata} from '../../utils/ggufMetadat
 import {
     formatCompactDownloads,
     formatModelBytes,
+    estimateModelMemoryBytes,
     getModelMemoryTone,
     getModelQuantization,
     getOptimizedModelContext,
     getSelectableModelFiles,
-    MODEL_MEMORY_OVERHEAD_RATIO,
 } from '../../utils/vyactModelDisplay';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import ModelSettingsModal from '../ModelSettingsModal/ModelSettingsModal';
@@ -79,7 +79,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     const [tokenConfigured, setTokenConfigured] = useState(false);
     const [showToken, setShowToken] = useState(false);
     const [query, setQuery] = useState('');
-    const [mlxOnly, setMlxOnly] = useState(true);
+    const [mlxOnly, setMlxOnly] = useState(() => navigator.platform.toUpperCase().includes('MAC'));
     const [models, setModels] = useState<VyactHubModel[]>([]);
     const [installedModels, setInstalledModels] = useState<string[]>(() => api.getCachedVyactInstalledModels());
     const [mtpSupportedModels, setMtpSupportedModels] = useState<string[]>([]);
@@ -97,7 +97,6 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     const [downloadedSettings, setDownloadedSettings] = useState<{modelPath: string; runtime: 'gguf' | 'mlx'; repository: string; context: number} | null>(null);
     const [showRuntimeInstallHelp, setShowRuntimeInstallHelp] = useState(false);
     const searchRequestIdRef = useRef(0);
-    const platformInitializedRef = useRef(false);
     const cacheCheckedFilesRef = useRef(new Set<string>());
     const busy = isSearching || isDownloading || isSavingToken;
     const selectedFileKey = selectedFile
@@ -114,7 +113,9 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     const selectedModelWeightBytes = selectedFile
         ? selectedFile.fileSize + (selectedFile.dflash2Model?.size || selectedFile.mtpModel?.size || 0)
         : 0;
-    const mlxAvailable = hardware.apple_silicon || installedModels.some(model => model.startsWith('mlx/'));
+    const mlxAvailable = navigator.platform.toUpperCase().includes('MAC')
+        || hardware.apple_silicon
+        || installedModels.some(model => model.startsWith('mlx/'));
 
     const searchModels = useCallback(async (searchQuery: string, searchMlxOnly = mlxOnly) => {
         const requestId = ++searchRequestIdRef.current;
@@ -126,10 +127,6 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
         try {
             const searchResponse = await api.searchVyactModels(searchQuery, searchMlxOnly);
             if (requestId === searchRequestIdRef.current) {
-                if (!platformInitializedRef.current) {
-                    setMlxOnly(searchResponse.hardware.apple_silicon);
-                    platformInitializedRef.current = true;
-                }
                 setModels(searchResponse.models);
                 setHardware(searchResponse.hardware);
                 setInstalledModels(searchResponse.installed);
@@ -151,9 +148,6 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                 setInstalledModels(installed);
                 setMtpSupportedModels(mtpSupported);
                 setModels(buildInstalledModelCards(installed, mtpSupported, dflash2Supported));
-                if (installed.some(model => model.startsWith('mlx/'))) {
-                    setMlxOnly(true);
-                }
             })
             .catch(error => setMessage(String(error)));
         void api.getVyactHuggingFaceTokenStatus()
@@ -253,12 +247,18 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     };
 
     const calculateAccurateMemory = async () => {
-        if (!selectedFile || !selectedFile.fileSize) return;
-        const {repository, filename, revision, fileSize} = selectedFile;
+        if (!selectedFile) return;
+        const {repository, filename, revision} = selectedFile;
         const fileKey = `${repository}@${revision}/${filename}`;
         if (metadataByFile[fileKey]) return;
         setAnalyzingFile(fileKey);
         try {
+            const fileSize = selectedFile.fileSize || await api.getVyactModelFileSize(
+                repository, filename, selectedFile.runtime,
+            );
+            setSelectedFile(current => current && `${current.repository}@${current.revision}/${current.filename}` === fileKey
+                ? {...current, fileSize}
+                : current);
             const cachedMetadata = selectedFile.runtime === 'mlx'
                 ? null
                 : cacheCheckedFilesRef.current.has(fileKey)
@@ -308,7 +308,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     };
 
     return (<>
-        <ModalOverlay className="provider-editor-overlay" onClose={onClose} closeOnBackdrop={false} closeOnEscape={!isDownloading} blur={5}>
+        <ModalOverlay className="provider-editor-overlay" onClose={onClose} closeOnBackdrop={false} closeOnEscape={!isDownloading}>
             <section
                 className="provider-editor vyact-model-editor"
                 aria-labelledby="vyact-model-editor-title"
@@ -366,11 +366,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                     role="switch"
                                     aria-checked={mlxOnly}
                                     disabled={busy}
-                                    onClick={() => {
-                                        const nextValue = !mlxOnly;
-                                        setMlxOnly(nextValue);
-                                        void searchModels(query, nextValue);
-                                    }}
+                                    onClick={() => setMlxOnly(current => !current)}
                                 >
                                     <span aria-hidden="true"><i/></span>{t('modelSelector.mlxOnly')}
                                 </button>}
@@ -469,9 +465,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                         const fileKey = `${model.id}@${model.revision}/${filename}`;
                                         const isSelected = selectedFile?.repository === model.id && selectedFile.filename === filename;
                                         const fileSize = model.file_sizes?.[filename] || 0;
-                                        const estimatedMemory = (
-                                            fileSize + (model.dflash2_model?.size || (model.runtime === 'mlx' ? model.mtp_model?.size || 0 : 0))
-                                        ) * MODEL_MEMORY_OVERHEAD_RATIO;
+                                        const estimatedMemory = estimateModelMemoryBytes(model, filename);
                                         const memoryTone = getModelMemoryTone(estimatedMemory, hardware);
                                         const isInstalled = installedModels.includes(
                                             model.runtime === 'mlx' ? `mlx/${model.id}` : `${model.id}/${filename}`,
@@ -488,7 +482,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                                     {supportsDFlash2 && <span className="vyact-mtp-badge">DFlash2</span>}
                                                     <span>{model.runtime === 'mlx' ? model.id.split('/').pop() : filename}</span>
                                                 </span>
-                                                {fileSize > 0 && <small className="vyact-model-file-meta">{formatBytes(fileSize)} · {t('modelSelector.estimatedMemory')} {formatBytes(estimatedMemory)}{quantization && <span className="vyact-mtp-badge">{quantization}</span>}</small>}
+                                                {estimatedMemory > 0 && <small className="vyact-model-file-meta">{fileSize > 0 && <>{formatBytes(fileSize)} · </>}{t('modelSelector.estimatedMemory')} ≈ {formatBytes(estimatedMemory)}{quantization && <span className="vyact-mtp-badge">{quantization}</span>}</small>}
                                                 <span className="vyact-model-file-status">
                                                     {isInstalled && <span className="vyact-model-installed">{t('modelSelector.installed')}</span>}
                                                     {analyzingFile === fileKey ? <LoaderCircle className="vyact-model-spinner" size={15}/> : isSelected && <Check size={15}/>}

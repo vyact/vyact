@@ -27,3 +27,20 @@
 :root[data-theme='light'] body {
   background: linear-gradient(135deg, #f7faff 0%, var(--bg) 55%, #e7eff9 100%);
 }
+
+/* Chromium이 라이트 테마 인터랙션 도중 기본 어두운 배경을 보간하지 않도록 한다. */
+:root[data-theme='light'] :is(
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  [role='button'],
+  [role='option'],
+  [role='tab'],
+  [role='menuitem'],
+  [role='switch']
+) {
+  transition-property: color, border-color, box-shadow, opacity, transform !important;
+  -webkit-tap-highlight-color: transparent;
+}
