@@ -337,39 +337,46 @@
 
 .voice-assistant-inline {
     display:flex;
-    min-height:112px;
-    flex-direction:column;
-    justify-content:space-between;
-    padding:14px 14px 12px;
-    border:1px solid var(--border);
-    border-radius:18px;
-    background:var(--surface2);
-}
-
-.voice-assistant-inline__input {
     width:100%;
-    min-height:38px;
-    max-height:92px;
-    padding:0;
-    overflow-y:auto;
-    border:0;
-    outline:0;
-    background:transparent;
-    color:var(--text);
-    font:inherit;
-    font-size:15px;
-    line-height:1.5;
-    resize:none;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    min-width:0;
 }
 
-.voice-assistant-inline__input::placeholder {
-    color:var(--muted);
+.voice-assistant-inline__status {
+    display:flex;
+    min-width:0;
+    align-items:center;
+    gap:8px;
+    color:var(--text-secondary);
+    font-size:12px;
+    font-weight:550;
+    white-space:nowrap;
+}
+
+.voice-assistant-inline__status > span:last-child {
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.voice-assistant-inline__status-dot {
+    width:7px;
+    height:7px;
+    flex:0 0 7px;
+    border-radius:50%;
+    background:var(--muted);
+}
+
+.voice-assistant-inline__status-dot.is-listening {
+    background:var(--accent);
+    box-shadow:0 0 0 4px color-mix(in srgb, var(--accent) 15%, transparent);
 }
 
 .voice-assistant-inline__controls {
     display:flex;
     align-items:center;
-    gap:12px;
+    gap:7px;
 }
 
 .voice-assistant-inline__button {
@@ -418,11 +425,15 @@
 .voice-assistant-inline__waveform {
     display:flex;
     height:26px;
-    min-width:0;
-    flex:1;
+    width:112px;
+    flex:0 1 112px;
     align-items:center;
     justify-content:space-between;
-    gap:3px;
+    gap:2px;
+    padding:0 5px;
+    border:1px solid var(--border);
+    border-radius:999px;
+    background:var(--control-bg);
 }
 
 .voice-assistant-inline__waveform span {
@@ -439,8 +450,42 @@
     opacity:.9;
 }
 
-:root[data-theme='light'] .voice-assistant-inline {
-    background:color-mix(in srgb, var(--surface2) 72%, white);
+:root[data-theme='light'] .voice-assistant-inline__waveform {
+    border-color:color-mix(in srgb, var(--text-secondary) 28%, var(--border));
+    background:color-mix(in srgb, var(--surface) 82%, var(--surface2) 18%);
+    box-shadow:0 2px 6px rgba(48, 68, 92, .08);
+}
+
+:root[data-theme='light'] .chat-btn-row .voice-assistant-inline__button {
+    border:1px solid color-mix(in srgb, var(--text-secondary) 28%, var(--border));
+    background:var(--surface2);
+    color:var(--text-secondary);
+    box-shadow:0 2px 6px rgba(48, 68, 92, .08);
+}
+
+:root[data-theme='light'] .chat-btn-row .voice-assistant-inline__button:hover:not(:disabled) {
+    border-color:color-mix(in srgb, var(--accent) 48%, var(--border));
+    background:color-mix(in srgb, var(--surface) 88%, var(--accent) 12%);
+    color:var(--accent);
+}
+
+:root[data-theme='light'] .chat-btn-row .voice-assistant-inline__button--send {
+    border-color:var(--accent);
+    background:var(--accent);
+    color:var(--on-accent);
+    box-shadow:0 3px 10px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+:root[data-theme='light'] .chat-btn-row .voice-assistant-inline__button--send:hover:not(:disabled) {
+    background:color-mix(in srgb, var(--accent) 88%, white);
+    color:var(--on-accent);
+}
+
+:root[data-theme='light'] .chat-btn-row .voice-assistant-inline__button--send:disabled {
+    border-color:var(--border);
+    background:var(--surface2);
+    color:var(--muted);
+    box-shadow:none;
 }
 
 @media (prefers-reduced-motion: reduce) {

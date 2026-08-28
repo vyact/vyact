@@ -1,5 +1,5 @@
 import React, {useState, useRef, useEffect, useCallback} from 'react';
-import {ArrowUp, Mic, Square, X} from 'lucide-react';
+import {ArrowUp, Mic, Square} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {loadTtsSettings} from '../../services/tts/ttsSettings';
 import {api} from '../../services/api';
@@ -14,11 +14,11 @@ interface VoiceChatTabProps {
     mode?: 'practice' | 'assistant';
     variant?: 'panel' | 'inline';
     inputValue?: string;
-    onInputChange?: (value: string) => void;
+    deferListening?: boolean;
 }
 
 const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
-    onSend, onClose, mode = 'practice', variant = 'panel', inputValue = '', onInputChange,
+    onSend, onClose, mode = 'practice', variant = 'panel', inputValue = '', deferListening = false,
 }) => {
     const {t, i18n} = useTranslation('main');
     const isAssistantMode = mode === 'assistant';
@@ -304,8 +304,13 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
 
     useEffect(() => {
         if (!isAssistantMode || isActiveRef.current) return;
+        if (deferListening) {
+            setIsPreparing(true);
+            setStatusText(t('voiceChat.waitingForResponse'));
+            return;
+        }
         void handleStart();
-    }, [handleStart, isAssistantMode]);
+    }, [deferListening, handleStart, isAssistantMode, t]);
 
     useEffect(() => {
         const handler = (event: Event) => {
@@ -345,38 +350,26 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
         };
         return (
             <div className="voice-assistant-inline">
-                <textarea
-                    className="voice-assistant-inline__input"
-                    value={inputValue}
-                    onChange={event => onInputChange?.(event.target.value)}
-                    onKeyDown={event => {
-                        if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) return;
-                        event.preventDefault();
-                        submitImmediately();
-                    }}
-                    placeholder={statusText || t('chatInput.placeholder')}
-                    rows={1}
-                />
+                <div className="voice-assistant-inline__status" role="status" aria-live="polite">
+                    <span className={`voice-assistant-inline__status-dot${isListening ? ' is-listening' : ''}`} aria-hidden="true"/>
+                    <span>{statusText || t('voiceChat.preparing')}</span>
+                </div>
                 <div className="voice-assistant-inline__controls">
-                    <button type="button" className="voice-assistant-inline__button"
-                            onClick={() => { stopAll(); onClose(); }} aria-label={t('voiceChat.end')}>
-                        <X size={18}/>
-                    </button>
                     <div className={`voice-assistant-inline__waveform${isListening ? ' is-listening' : ''}`}
                          aria-hidden="true">
-                        {Array.from({length: 38}, (_, index) => {
+                        {Array.from({length: 18}, (_, index) => {
                             const shape = 0.35 + ((index * 7) % 11) / 16;
                             const height = 3 + Math.round(audioLevel * shape * 19);
                             return <span key={index} style={{height: `${height}px`}}/>;
                         })}
                     </div>
                     <button type="button" className="voice-assistant-inline__button"
-                            onClick={stopRecording} disabled={!isListening}
-                            aria-label={t('chatInput.stop')}>
+                            onClick={() => { stopAll(); onClose(); }}
+                            aria-label={t('voiceChat.end')}>
                         <Square size={12} fill="currentColor"/>
                     </button>
                     <button type="button" className="voice-assistant-inline__button voice-assistant-inline__button--send"
-                            onClick={submitImmediately} disabled={!isListening && !inputValue.trim()}
+                            onClick={submitImmediately} disabled={deferListening || (!isListening && !inputValue.trim())}
                             aria-label={t('chatInput.send')}>
                         <ArrowUp size={18}/>
                     </button>

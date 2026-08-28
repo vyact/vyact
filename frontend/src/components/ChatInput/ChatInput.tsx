@@ -475,35 +475,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 )}
 
                 <div className={`chat-input-container${isImageMode ? ' image-mode' : ''}`}>
-                    {voiceAssistantActive ? (
-                        <VoiceChatTab
-                            mode="assistant"
-                            variant="inline"
-                            inputValue={value}
-                            onInputChange={setValue}
-                            onClose={() => onCloseVoiceAssistant?.()}
-                            onSend={async (message) => {
-                                const typedPrefix = value.trim();
-                                const spokenMessage = message.trim();
-                                const combinedMessage = typedPrefix && spokenMessage
-                                    ? `${typedPrefix}\n${spokenMessage}`
-                                    : typedPrefix || spokenMessage;
-                                const sent = await onSend(
-                                    combinedMessage,
-                                    undefined,
-                                    undefined,
-                                    selectedMcps.map(server => server.id),
-                                    selectedKnowledgeCollectionIds,
-                                    selectedExternalResourceIds,
-                                    selectedExternalDocuments,
-                                );
-                                if (sent !== false && typedPrefix) {
-                                    setValue('');
-                                    if (textareaRef.current) textareaRef.current.style.height = 'auto';
-                                }
-                            }}
-                        />
-                    ) : <>
                     {/* 첨부 기사 목록 */}
                     <ArticleList
                         articles={articles}
@@ -592,6 +563,35 @@ const ChatInput: React.FC<ChatInputProps> = ({
                     {/* 하단 버튼 행 */}
                     <div className="chat-btn-row">
                         <div style={{display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0, flex: 1}}>
+                            {voiceAssistantActive ? (
+                                <VoiceChatTab
+                                    mode="assistant"
+                                    variant="inline"
+                                    inputValue={value}
+                                    deferListening={disabled}
+                                    onClose={() => onCloseVoiceAssistant?.()}
+                                    onSend={async (message) => {
+                                        const typedPrefix = value.trim();
+                                        const spokenMessage = message.trim();
+                                        const combinedMessage = typedPrefix && spokenMessage
+                                            ? `${typedPrefix}\n${spokenMessage}`
+                                            : typedPrefix || spokenMessage;
+                                        const sent = await onSend(
+                                            combinedMessage,
+                                            undefined,
+                                            undefined,
+                                            selectedMcps.map(server => server.id),
+                                            selectedKnowledgeCollectionIds,
+                                            selectedExternalResourceIds,
+                                            selectedExternalDocuments,
+                                        );
+                                        if (sent !== false && typedPrefix) {
+                                            setValue('');
+                                            if (textareaRef.current) textareaRef.current.style.height = 'auto';
+                                        }
+                                    }}
+                                />
+                            ) : <>
                             <InputMenu
                                 selectedModel={selectedModel}
                                 isLocalModel={isLocalModel}
@@ -752,8 +752,10 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                     return <><span className="custom-select-trigger-label">{label}</span><span className={`custom-select-arrow${open ? ' open' : ''}`}>▼</span></>;
                                 }}
                             />
+                            </>}
                         </div>
 
+                        {!voiceAssistantActive && (
                         <div style={{display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0, marginLeft: '8px'}}>
                             {!isImageMode && (
                                 <button type="button" className="voice-chat-btn" onClick={onOpenVoiceAssistant}
@@ -788,6 +790,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                 )}
                             </button>
                         </div>
+                        )}
                     </div>
 
                     {/* 미니 플레이어 — chat-btn-row 아래 */}
@@ -797,7 +800,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
                             {definition?.renderMini?.({panels})}
                         </React.Fragment>;
                     })}
-                    </>}
                 </div>
             </div>
 
