@@ -272,12 +272,13 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
         try {
             if (provider === 'vyact') {
                 setProgress(null);
-                addLog('info', t('main:modelDownload.preparingRuntime'));
+                addLog('info', t(selectedHubModelFile?.runtime === 'mlx' ? 'main:modelDownload.preparingOmlx' : 'main:modelDownload.preparingRuntime'));
                 try {
-                    await api.installVyactRuntime(
-                        message => addLog('log', message),
-                        selectedHubModelFile?.runtime === 'mlx' && Boolean(selectedHubModelFile.dflash2Model || selectedHubModelFile.dflash2Bundled),
-                    );
+                    if (selectedHubModelFile?.runtime === 'gguf') {
+                        await api.installVyactRuntime(message => addLog('log', message));
+                    } else if (selectedHubModelFile?.dflash2Model || selectedHubModelFile?.dflash2Bundled) {
+                        await api.installVyactRuntime(message => addLog('log', message), true);
+                    }
                 } catch (error) {
                     if (error instanceof VyactRuntimeInstallError && error.code === 'runtime_package_manager_missing') {
                         setShowRuntimeInstallHelp(true);
@@ -529,7 +530,11 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                                     style={progress == null ? undefined : {width: `${progress}%`}}
                                 />
                             </div>
-                            <span className="pbar-percent">{progress == null ? '…' : `${Math.round(progress)}%`}</span>
+                            <span className="pbar-percent">
+                                {progress == null
+                                    ? <LoaderCircle className="pbar-spinner" size={16} aria-label={t('installing')}/>
+                                    : `${Math.round(progress)}%`}
+                            </span>
                         </div>
 
                         <div className="progress-log" ref={logRef} onScroll={handleLogScroll}>

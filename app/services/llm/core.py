@@ -20,6 +20,7 @@ from .helpers import (
 )
 from .errors import (
     http_err_msg,
+    is_insufficient_memory_error,
     is_model_image_unsupported_error,
     openai_err,
     gemini_err,
@@ -191,7 +192,10 @@ async def chat_stream_with_tools(
             if usage.get("finish_reason"):
                 yield {"type": "finish", "reason": usage["finish_reason"]}
         except httpx.HTTPStatusError as e:
-            if attachments and is_model_image_unsupported_error(e):
+            if is_insufficient_memory_error(e):
+                log_entry["error"] = "model_insufficient_memory"
+                yield {"type": "error", "code": "model_insufficient_memory", "model": model}
+            elif attachments and is_model_image_unsupported_error(e):
                 log_entry["error"] = "model_image_unsupported"
                 yield {"type": "error", "code": "model_image_unsupported", "model": model}
             else:

@@ -430,11 +430,21 @@
 
 .pbar-percent {
     flex: 0 0 38px;
+    display: flex;
+    justify-content: flex-end;
     color: var(--muted);
     font-size: 12px;
     font-weight: 700;
     text-align: right;
     font-variant-numeric: tabular-nums;
+}
+
+.pbar-spinner {
+    animation: setup-progress-spin 0.8s linear infinite;
+}
+
+@keyframes setup-progress-spin {
+    to { transform: rotate(360deg); }
 }
 
 .pbar-fill {

@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 from services.llm.providers import (
     _accumulate_llm_timing,
+    _accumulate_openai_usage,
     _apply_local_prefix_cache_control,
     _apply_local_reasoning_control,
     _apply_local_seed,
@@ -42,6 +43,25 @@ class _Client:
 
 
 class VyactOpenAiParityTests(unittest.IsolatedAsyncioTestCase):
+    def test_accumulates_omlx_extended_usage_statistics(self):
+        usage = {"_llm_call_count": 1}
+        _accumulate_openai_usage(usage, {
+            "prompt_tokens": 839,
+            "completion_tokens": 75,
+            "prompt_eval_duration": 45.72,
+            "generation_duration": 5.36,
+            "total_time": 51.08,
+            "prompt_tokens_per_second": 18.35,
+            "generation_tokens_per_second": 13.99,
+        })
+
+        self.assertEqual(usage["prompt_tokens"], 839)
+        self.assertEqual(usage["completion_tokens"], 75)
+        self.assertEqual(usage["prompt_eval_duration"], 45_720_000_000)
+        self.assertEqual(usage["eval_duration"], 5_360_000_000)
+        self.assertEqual(usage["llm_total_duration"], 51_080_000_000)
+        self.assertAlmostEqual(usage["completion_tokens_per_second"], 75 / 5.36)
+
     def test_tool_call_fingerprint_ignores_argument_key_order(self):
         first = _tool_call_fingerprint("search", {"query": "삼성전자", "page": 1})
         second = _tool_call_fingerprint("search", {"page": 1, "query": "삼성전자"})

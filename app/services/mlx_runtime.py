@@ -68,6 +68,8 @@ def is_apple_silicon() -> bool:
 
 
 async def install_missing_omlx_runtime():
+    if not is_apple_silicon():
+        raise RuntimeError("oMLX requires Apple Silicon")
     if shutil.which("omlx"):
         yield "Existing oMLX installation detected"
         return
@@ -75,8 +77,7 @@ async def install_missing_omlx_runtime():
     if not brew:
         from services.vyact_runtime import RuntimePackageManagerMissingError
         raise RuntimePackageManagerMissingError("Homebrew is required to install oMLX")
-    commands = ([brew, "tap", "jundot/omlx", "https://github.com/jundot/omlx"], [brew, "install", "omlx"])
-    for command in commands:
+    for command in get_omlx_install_commands(brew):
         process = await asyncio.create_subprocess_exec(
             *command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT,
         )
@@ -85,6 +86,14 @@ async def install_missing_omlx_runtime():
             yield raw.decode(errors="replace").rstrip()
         if await process.wait() != 0:
             raise RuntimeError(f"oMLX installation failed: {' '.join(command)}")
+
+
+def get_omlx_install_commands(brew: str) -> list[list[str]]:
+    return [
+        [brew, "tap", "jundot/omlx", "https://github.com/jundot/omlx"],
+        [brew, "trust", "--formula", "jundot/omlx/omlx"],
+        [brew, "install", "omlx"],
+    ]
 
 
 def _repository_path(repository: str) -> Path:
@@ -462,12 +471,12 @@ def _build_omlx_server_command(model_path: Path, dflash2_path: Path, context_siz
     executable = shutil.which("omlx")
     if not executable:
         raise RuntimeError("oMLX is required for MLX DFlash2 acceleration")
-    repository = model_path.relative_to(MLX_MODELS_DIR).as_posix()
+    serving_model_id = model_path.name
     OMLX_BASE_DIR.mkdir(parents=True, exist_ok=True)
     settings = {
         "version": 1,
         "models": {
-            repository: {
+            serving_model_id: {
                 "max_context_window": context_size,
                 "dflash_enabled": True,
                 "dflash_draft_model": str(dflash2_path),
@@ -576,8 +585,11 @@ def start_mlx_model(
                                 str(item.get("id")) for item in payload.get("data", [])
                                 if isinstance(item, dict) and item.get("id")
                             ]
-                            repository_id = model_path.relative_to(MLX_MODELS_DIR).as_posix()
-                            model_id = repository_id if repository_id in available_ids else model_path.name
+                            model_id = (
+                                model_path.name
+                                if model_path.name in available_ids or not available_ids
+                                else available_ids[0]
+                            )
                         except (AttributeError, TypeError, ValueError):
                             model_id = model_path.name
                     _active_dflash2_model = f"mlx/{model_path.relative_to(MLX_MODELS_DIR).as_posix()}" if using_dflash2 else None

@@ -26,7 +26,7 @@ from services.runtime_settings import DEFAULT_RUNTIME_SETTINGS, apply_runtime_se
 from services.runtime_startup import apply_startup_runtime_choice, get_startup_runtime_state
 from services.model_runtime_profiles import delete_model_profile, get_model_profile, normalize_model_profile, recommended_model_profile, save_model_profile
 from services.vyact_model_metadata_cache import get_cached_model_metadata, save_cached_model_metadata
-from services.mlx_runtime import get_downloaded_mlx_model_path, get_mlx_runtime_capabilities
+from services.mlx_runtime import get_downloaded_mlx_model_path, get_mlx_runtime_capabilities, is_apple_silicon
 from services.reasoning_capabilities import get_gguf_reasoning_capabilities, get_mlx_reasoning_capabilities
 from services.vyact_runtime import get_downloaded_model_path, get_model_modalities
 
@@ -377,6 +377,10 @@ async def install(req: ModelSelectRequest):
             if not req.model:
                 yield sse("Vyact 모델을 먼저 다운로드하고 선택하세요.", "error", 0)
                 return
+            requested_runtime = request_config.get("runtime", "mlx" if req.model.startswith("mlx/") else "gguf")
+            if requested_runtime == "mlx" and not is_apple_silicon():
+                yield sse("mlx_unsupported_platform", "error", 0)
+                return
             existing_config = await load_config_async()
             vyact_config = existing_config.get("vyact_config", {})
             huggingface_token = str(request_config.get("huggingface_token", "")).strip()
@@ -566,16 +570,29 @@ async def get_models():
     if cfg.get("type") == "vyact":
         from services.mlx_runtime import get_active_dflash2_mlx_model, list_dflash2_supported_mlx_models, list_downloaded_mlx_models, list_mtp_supported_mlx_models
         from services.vyact_runtime import get_active_dflash2_model, get_active_mtp_model, list_dflash2_supported_models, list_mtp_supported_models, list_multimodal_supported_models, list_selectable_models
-        installed_models = [*list_selectable_models(), *list_downloaded_mlx_models()]
+        mlx_available = is_apple_silicon()
+        current_model = cfg.get("vyact_config", {}).get("model_path", "")
+        if not mlx_available and current_model.startswith("mlx/"):
+            current_model = ""
+        installed_models = [
+            *list_selectable_models(),
+            *(list_downloaded_mlx_models() if mlx_available else []),
+        ]
         multimodal_models = await asyncio.to_thread(list_multimodal_supported_models)
         return {
             "models": [[model] for model in installed_models],
-            "current": cfg.get("vyact_config", {}).get("model_path", ""),
+            "current": current_model,
             "installed": installed_models,
-            "mtp_supported": [*list_mtp_supported_models(), *list_mtp_supported_mlx_models()],
+            "mtp_supported": [
+                *list_mtp_supported_models(),
+                *(list_mtp_supported_mlx_models() if mlx_available else []),
+            ],
             "mtp_active": get_active_mtp_model(),
-            "dflash2_supported": [*list_dflash2_supported_models(), *list_dflash2_supported_mlx_models()],
-            "dflash2_active": get_active_dflash2_mlx_model() or get_active_dflash2_model(),
+            "dflash2_supported": [
+                *list_dflash2_supported_models(),
+                *(list_dflash2_supported_mlx_models() if mlx_available else []),
+            ],
+            "dflash2_active": (get_active_dflash2_mlx_model() if mlx_available else None) or get_active_dflash2_model(),
             "vision_supported": multimodal_models["image"],
             "audio_supported": multimodal_models["audio"],
             "model_type": "chat",
@@ -612,7 +629,7 @@ async def delete_vyact_model(req: VyactModelDeleteRequest):
 async def search_vyact_models(q: str = Query("", max_length=200), mlx_only: bool = Query(False)):
     """Search MLX repositories on Apple Silicon, or GGUF repositories elsewhere."""
     try:
-        from services.mlx_runtime import is_apple_silicon, list_dflash2_supported_mlx_models, list_downloaded_mlx_models, list_mtp_supported_mlx_models
+        from services.mlx_runtime import list_dflash2_supported_mlx_models, list_downloaded_mlx_models, list_mtp_supported_mlx_models
         from services.vyact_runtime import list_dflash2_supported_models, list_downloaded_models, list_mtp_supported_models
 
         config = await load_config_async()
@@ -620,13 +637,23 @@ async def search_vyact_models(q: str = Query("", max_length=200), mlx_only: bool
 
         from services.huggingface_models import search_mlx_models
 
-        use_mlx = mlx_only and is_apple_silicon()
+        mlx_available = is_apple_silicon()
+        use_mlx = mlx_only and mlx_available
         return {
             "models": await search_mlx_models(q, token) if use_mlx else await search_gguf_models(q, token),
             "hardware": get_local_hardware_info(),
-            "installed": [*list_downloaded_models(), *list_downloaded_mlx_models()],
-            "mtp_supported": [*list_mtp_supported_models(), *list_mtp_supported_mlx_models()],
-            "dflash2_supported": [*list_dflash2_supported_models(), *list_dflash2_supported_mlx_models()],
+            "installed": [
+                *list_downloaded_models(),
+                *(list_downloaded_mlx_models() if mlx_available else []),
+            ],
+            "mtp_supported": [
+                *list_mtp_supported_models(),
+                *(list_mtp_supported_mlx_models() if mlx_available else []),
+            ],
+            "dflash2_supported": [
+                *list_dflash2_supported_models(),
+                *(list_dflash2_supported_mlx_models() if mlx_available else []),
+            ],
         }
     except Exception as error:
         logger.warning("[vyact] Hugging Face search failed: %s", error)
@@ -655,6 +682,8 @@ async def get_vyact_mlx_model_metadata(
         file_size: int = Query(..., ge=1),
         context_size: int = Query(32768, ge=512, le=131072),
 ):
+    if not is_apple_silicon():
+        raise HTTPException(400, "mlx_unsupported_platform")
     try:
         from services.huggingface_models import inspect_mlx_model_metadata
 
@@ -710,15 +739,19 @@ async def get_vyact_huggingface_token_status():
 
 @router.post("/vyact/runtime/install")
 async def install_vyact_runtime(include_omlx: bool = Query(False)):
+    if include_omlx and not is_apple_silicon():
+        raise HTTPException(400, "mlx_unsupported_platform")
+
     async def stream():
         from services.vyact_runtime import RuntimePackageManagerMissingError, install_missing_runtime
 
         try:
-            async for message in install_missing_runtime():
-                yield sse(message, "info")
             if include_omlx:
                 from services.mlx_runtime import install_missing_omlx_runtime
                 async for message in install_missing_omlx_runtime():
+                    yield sse(message, "info")
+            else:
+                async for message in install_missing_runtime():
                     yield sse(message, "info")
         except RuntimePackageManagerMissingError:
             yield sse(
@@ -781,6 +814,9 @@ async def choose_vyact_runtime_startup(body: dict):
 
 @router.post("/vyact/models/download")
 async def download_vyact_model(req: HuggingFaceDownloadRequest):
+    if req.runtime == "mlx" and not is_apple_silicon():
+        raise HTTPException(400, "mlx_unsupported_platform")
+
     async def stream():
         if req.runtime == "mlx":
             from services.mlx_runtime import associate_mlx_bundled_dflash2_model, associate_mlx_dflash2_model, associate_mlx_mtp_model, download_mlx_model
@@ -896,6 +932,8 @@ async def read_vyact_model_profile(
     repository: str | None = Query(default=None, max_length=256),
     recommended_context: int = Query(default=32768, ge=512, le=131072),
 ):
+    if runtime == "mlx" and not is_apple_silicon():
+        raise HTTPException(400, "mlx_unsupported_platform")
     profile = await get_model_profile(model_path)
     if profile is None:
         profile = recommended_model_profile(model_path, runtime, repository, recommended_context)
@@ -937,11 +975,16 @@ async def read_vyact_model_profile(
 
 @router.post("/vyact/models/profile")
 async def write_vyact_model_profile(req: VyactModelProfileRequest):
+    if req.runtime == "mlx" and not is_apple_silicon():
+        raise HTTPException(400, "mlx_unsupported_platform")
     return await save_model_profile(req.model_dump())
 
 
 @router.post("/vyact/models/activate")
 async def activate_vyact_model(req: VyactModelActivateRequest):
+    if (req.runtime == "mlx" or req.model_path.startswith("mlx/")) and not is_apple_silicon():
+        raise HTTPException(400, "mlx_unsupported_platform")
+
     async def stream():
         yield sse("Vyact 모델을 메모리에 로드하는 중...", "model_loading", 10)
         try:
@@ -1028,6 +1071,9 @@ async def select_model(req: ModelSelectRequest):
                 yield sse("Vyact 모델을 선택하세요.", "error", 0)
                 return
             runtime = "mlx" if req.model.startswith("mlx/") else "gguf"
+            if runtime == "mlx" and not is_apple_silicon():
+                yield sse("mlx_unsupported_platform", "error", 0)
+                return
             repository = req.model.removeprefix("mlx/") if runtime == "mlx" else None
             profile = await get_model_profile(req.model)
             if profile is None:

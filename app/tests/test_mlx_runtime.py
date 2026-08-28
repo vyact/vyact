@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import signal
@@ -16,6 +17,8 @@ from services.mlx_runtime import (
     delete_downloaded_mlx_model,
     download_mlx_model,
     get_downloaded_mlx_model_path,
+    get_omlx_install_commands,
+    install_missing_omlx_runtime,
     list_downloaded_mlx_models,
     list_mtp_supported_mlx_models,
     _server_module_for_model,
@@ -24,6 +27,21 @@ from services.mlx_runtime import (
 
 
 class MlxRuntimeTests(unittest.TestCase):
+    def test_omlx_install_rejects_non_apple_silicon(self):
+        async def collect_messages():
+            return [message async for message in install_missing_omlx_runtime()]
+
+        with patch("services.mlx_runtime.is_apple_silicon", return_value=False):
+            with self.assertRaisesRegex(RuntimeError, "Apple Silicon"):
+                asyncio.run(collect_messages())
+
+    def test_omlx_install_trusts_formula_before_installing(self):
+        commands = get_omlx_install_commands("/opt/homebrew/bin/brew")
+        self.assertEqual(commands[1], [
+            "/opt/homebrew/bin/brew", "trust", "--formula", "jundot/omlx/omlx",
+        ])
+        self.assertEqual(commands[2], ["/opt/homebrew/bin/brew", "install", "omlx"])
+
     def test_associates_bundled_dflash2_subdirectory(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             model_dir = Path(temp_dir) / "target"
@@ -49,8 +67,8 @@ class MlxRuntimeTests(unittest.TestCase):
                  patch("services.mlx_runtime.shutil.which", return_value="/opt/homebrew/bin/omlx"):
                 command, environment = _build_omlx_server_command(model, draft, 32768)
             settings = json.loads((base / "omlx" / "model_settings.json").read_text(encoding="utf-8"))
-            self.assertTrue(settings["models"]["owner/target"]["dflash_enabled"])
-            self.assertEqual(settings["models"]["owner/target"]["dflash_draft_model"], str(draft))
+            self.assertTrue(settings["models"]["target"]["dflash_enabled"])
+            self.assertEqual(settings["models"]["target"]["dflash_draft_model"], str(draft))
             self.assertIn("omlx", command[0])
             self.assertEqual(environment["OMLX_BASE_PATH"], str(base / "omlx"))
 

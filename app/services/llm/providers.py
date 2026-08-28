@@ -91,6 +91,38 @@ def _accumulate_llm_timing(usage: dict | None, timings: dict | None) -> None:
     )
 
 
+def _accumulate_openai_usage(usage: dict | None, provider_usage: dict | None) -> None:
+    """Normalize standard and oMLX extended usage into Vyact's shared statistics."""
+    if usage is None or not isinstance(provider_usage, dict):
+        return
+    prompt_tokens = provider_usage.get("prompt_tokens")
+    completion_tokens = provider_usage.get("completion_tokens")
+    prompt_duration = _seconds_to_nanoseconds(provider_usage.get("prompt_eval_duration"))
+    eval_duration = _seconds_to_nanoseconds(provider_usage.get("generation_duration"))
+    if prompt_duration is None or eval_duration is None:
+        usage["prompt_tokens"] = prompt_tokens
+        usage["completion_tokens"] = completion_tokens
+        return
+    if not isinstance(prompt_tokens, (int, float)) or not isinstance(completion_tokens, (int, float)):
+        return
+
+    usage["_timed_llm_call_count"] = usage.get("_timed_llm_call_count", 0) + 1
+    usage["prompt_tokens"] = usage.get("_timing_prompt_tokens", 0) + max(0, round(prompt_tokens))
+    usage["completion_tokens"] = usage.get("_timing_completion_tokens", 0) + max(0, round(completion_tokens))
+    usage["_timing_prompt_tokens"] = usage["prompt_tokens"]
+    usage["_timing_completion_tokens"] = usage["completion_tokens"]
+    usage["prompt_eval_duration"] = usage.get("prompt_eval_duration", 0) + prompt_duration
+    usage["eval_duration"] = usage.get("eval_duration", 0) + eval_duration
+    total_duration = _seconds_to_nanoseconds(provider_usage.get("total_time"))
+    usage["llm_total_duration"] = usage.get("llm_total_duration", 0) + (
+        total_duration if total_duration is not None else prompt_duration + eval_duration
+    )
+    prompt_seconds = usage["prompt_eval_duration"] / 1_000_000_000
+    eval_seconds = usage["eval_duration"] / 1_000_000_000
+    usage["prompt_tokens_per_second"] = usage["prompt_tokens"] / prompt_seconds if prompt_seconds > 0 else None
+    usage["completion_tokens_per_second"] = usage["completion_tokens"] / eval_seconds if eval_seconds > 0 else None
+
+
 def _mark_llm_call_started(usage: dict | None) -> None:
     if usage is not None:
         usage["_llm_call_count"] = usage.get("_llm_call_count", 0) + 1
@@ -268,8 +300,7 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
                     if usage is not None:
                         u = chunk.get("usage")
                         if u:
-                            usage["prompt_tokens"] = u.get("prompt_tokens")
-                            usage["completion_tokens"] = u.get("completion_tokens")
+                            _accumulate_openai_usage(usage, u)
                         _accumulate_llm_timing(usage, chunk.get("timings"))
                     choices = chunk.get("choices") or []
                     if not choices:
@@ -416,8 +447,7 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
             if usage is not None:
                 u = chunk.get("usage")
                 if u:
-                    usage["prompt_tokens"] = u.get("prompt_tokens")
-                    usage["completion_tokens"] = u.get("completion_tokens")
+                    _accumulate_openai_usage(usage, u)
                 timings = chunk.get("timings")
                 if isinstance(timings, dict):
                     _accumulate_llm_timing(usage, timings)
@@ -438,6 +468,12 @@ def _milliseconds_to_nanoseconds(value) -> int | None:
     if not isinstance(value, (int, float)):
         return None
     return max(0, round(value * 1_000_000))
+
+
+def _seconds_to_nanoseconds(value) -> int | None:
+    if not isinstance(value, (int, float)):
+        return None
+    return max(0, round(value * 1_000_000_000))
 
 
 # ══════════════════════════════════════════════════════════════════

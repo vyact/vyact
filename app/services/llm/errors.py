@@ -6,6 +6,17 @@ import httpx
 
 HTTP_ERROR_BODY_LOG_LIMIT = 4_000
 MODEL_IMAGE_UNSUPPORTED_ERROR = "this model does not support image input"
+INSUFFICIENT_MEMORY_ERROR_MARKERS = (
+    "out of memory",
+    "insufficient memory",
+    "not enough memory",
+    "does not fit under the dynamic memory ceiling",
+    "memory ceiling",
+    "cuda out of memory",
+    "metal out of memory",
+    "failed to allocate memory",
+    "memory allocation failed",
+)
 
 
 def http_error_response_body(error: httpx.HTTPStatusError) -> str:
@@ -48,6 +59,21 @@ def is_model_image_unsupported_error(error: httpx.HTTPStatusError) -> bool:
         or "no vision support" in normalized
     )
     return mentions_image and unsupported
+
+
+def is_insufficient_memory_error(error: httpx.HTTPStatusError) -> bool:
+    """Identify model-load and inference failures caused by insufficient memory."""
+    try:
+        payload = error.response.json()
+        error_data = payload.get("error", payload) if isinstance(payload, dict) else payload
+        message = str(error_data.get("message", error_data)) if isinstance(error_data, dict) else str(error_data)
+    except Exception:
+        try:
+            message = error.response.text
+        except Exception:
+            return False
+    normalized = " ".join(message.strip().lower().split())
+    return any(marker in normalized for marker in INSUFFICIENT_MEMORY_ERROR_MARKERS)
 
 
 def http_err_msg(e: httpx.HTTPStatusError, provider: str) -> str:

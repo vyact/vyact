@@ -726,16 +726,21 @@ export function useChat(deps: UseChatDeps) {
                             flushStreamText();
                             setLastFailedQuery(failedRequest);
                             const isImageUnsupported = error.code === 'model_image_unsupported';
+                            const isInsufficientMemory = error.code === 'model_insufficient_memory';
                             const message = isImageUnsupported
                                 ? t('message.modelImageUnsupportedDescription', {model: error.model || streamModel})
-                                : (error.message || t('message.unknownError'));
+                                : isInsufficientMemory
+                                    ? t('message.modelInsufficientMemoryDescription', {model: error.model || streamModel})
+                                    : (error.message || t('message.unknownError'));
                             setMessagesForConversation(requestConvId, prev => prev.map(m =>
                                 m.id === streamId ? {
                                     ...m,
                                     content: message,
                                     errorTitle: isImageUnsupported
                                         ? t('message.modelImageUnsupportedTitle')
-                                        : undefined,
+                                        : isInsufficientMemory
+                                            ? t('message.modelInsufficientMemoryTitle')
+                                            : undefined,
                                     isError: true,
                                     toolStatus: undefined,
                                 } : m));

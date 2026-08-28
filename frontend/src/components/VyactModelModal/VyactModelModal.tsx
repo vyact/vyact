@@ -148,12 +148,13 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
         setIsDownloading(true);
         setDownloadPhase('runtime');
         setDownloadProgress(null);
-        setMessage(t('modelDownload.preparingRuntime'));
+        const runtimeMessageKey = selectedFile.runtime === 'mlx' ? 'modelDownload.preparingOmlx' : 'modelDownload.preparingRuntime';
+        setMessage(t(runtimeMessageKey));
         try {
             if (selectedFile.runtime === 'gguf') {
-                await api.installVyactRuntime(() => setMessage(t('modelDownload.preparingRuntime')));
+                await api.installVyactRuntime(() => setMessage(t(runtimeMessageKey)));
             } else if (selectedFile.dflash2Model || selectedFile.dflash2Bundled) {
-                await api.installVyactRuntime(() => setMessage(t('modelDownload.preparingRuntime')), true);
+                await api.installVyactRuntime(() => setMessage(t(runtimeMessageKey)), true);
             }
             setDownloadPhase(selectedModelIsInstalled ? 'mtp' : 'model');
             setDownloadProgress(0);
@@ -322,7 +323,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                         <label className="provider-editor-field">
                             <span className="vyact-search-label">
                                 <span><Search size={14}/>{t('modelSelector.searchLabel')}</span>
-                                <button
+                                {hardware.apple_silicon && <button
                                     type="button"
                                     className={`vyact-mlx-switch${mlxOnly ? ' is-on' : ''}`}
                                     role="switch"
@@ -335,7 +336,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                     }}
                                 >
                                     <span aria-hidden="true"><i/></span>{t('modelSelector.mlxOnly')}
-                                </button>
+                                </button>}
                             </span>
                             <div className="vyact-model-search-field">
                                 <input value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => event.key === 'Enter' && void searchModels(query)} placeholder={t('modelSelector.modelSearch')}/>
