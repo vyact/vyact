@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 import signal
+import struct
 import tempfile
 import unittest
 from pathlib import Path
@@ -27,6 +28,13 @@ from services.mlx_runtime import (
 
 
 class MlxRuntimeTests(unittest.TestCase):
+    @staticmethod
+    def _write_safetensors_metadata(
+        path: Path, metadata: dict[str, str], tensors: dict | None = None,
+    ):
+        header = json.dumps({"__metadata__": metadata, **(tensors or {})}).encode("utf-8")
+        path.write_bytes(struct.pack("<Q", len(header)) + header)
+
     def test_omlx_install_rejects_non_apple_silicon(self):
         async def collect_messages():
             return [message async for message in install_missing_omlx_runtime()]
@@ -62,15 +70,47 @@ class MlxRuntimeTests(unittest.TestCase):
             draft = models / "z-lab" / "target-DFlash2"
             model.mkdir(parents=True)
             draft.mkdir(parents=True)
+            (draft / "config.json").write_text(
+                json.dumps({"architectures": ["DFlash2DraftModel"]}), encoding="utf-8",
+            )
+            self._write_safetensors_metadata(
+                draft / "model.safetensors", {"bits": "4", "group_size": "64"}, {
+                    "projection.scales": {"shape": [16, 2], "dtype": "BF16", "data_offsets": [0, 0]},
+                    "projection.weight": {"shape": [16, 16], "dtype": "U32", "data_offsets": [0, 0]},
+                    "codebook.scales": {"shape": [16, 2], "dtype": "BF16", "data_offsets": [0, 0]},
+                    "codebook.weight": {"shape": [16, 32], "dtype": "U32", "data_offsets": [0, 0]},
+                },
+            )
             with patch("services.mlx_runtime.MLX_MODELS_DIR", models), \
                  patch("services.mlx_runtime.OMLX_BASE_DIR", base / "omlx"), \
                  patch("services.mlx_runtime.shutil.which", return_value="/opt/homebrew/bin/omlx"):
                 command, environment = _build_omlx_server_command(model, draft, 32768)
             settings = json.loads((base / "omlx" / "model_settings.json").read_text(encoding="utf-8"))
             self.assertTrue(settings["models"]["target"]["dflash_enabled"])
-            self.assertEqual(settings["models"]["target"]["dflash_draft_model"], str(draft))
+            overlay = base / "omlx" / "dflash-drafts" / "target"
+            self.assertEqual(settings["models"]["target"]["dflash_draft_model"], str(overlay))
+            self.assertNotIn("dflash_draft_quant_enabled", settings["models"]["target"])
+            overlay_config = json.loads((overlay / "config.json").read_text(encoding="utf-8"))
+            self.assertEqual(overlay_config["quantization"]["bits"], 4)
+            self.assertEqual(overlay_config["quantization"]["codebook"]["bits"], 8)
+            self.assertEqual((overlay / "model.safetensors").resolve(), (draft / "model.safetensors").resolve())
             self.assertIn("omlx", command[0])
             self.assertEqual(environment["OMLX_BASE_PATH"], str(base / "omlx"))
+
+    def test_omlx_command_leaves_unquantized_dflash2_draft_unchanged(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            base = Path(temp_dir)
+            model = base / "models" / "owner" / "target"
+            draft = base / "models" / "owner" / "draft"
+            model.mkdir(parents=True)
+            draft.mkdir(parents=True)
+            (draft / "model.safetensors").touch()
+            with patch("services.mlx_runtime.MLX_MODELS_DIR", base / "models"), \
+                 patch("services.mlx_runtime.OMLX_BASE_DIR", base / "omlx"), \
+                 patch("services.mlx_runtime.shutil.which", return_value="/opt/homebrew/bin/omlx"):
+                _build_omlx_server_command(model, draft, 32768)
+            settings = json.loads((base / "omlx" / "model_settings.json").read_text(encoding="utf-8"))
+            self.assertNotIn("dflash_draft_quant_enabled", settings["models"]["target"])
 
     def test_mlx_server_enables_in_memory_prefix_cache(self):
         with patch.dict(os.environ, {"EXISTING_SETTING": "preserved"}, clear=True):

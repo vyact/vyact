@@ -5,6 +5,7 @@ import os
 import platform
 import shutil
 import signal
+import struct
 import subprocess
 import sys
 import threading
@@ -467,19 +468,104 @@ def _get_dflash2_path(model_path: Path) -> Path | None:
     return path if companion_manifest.get("role") == "dflash2" else None
 
 
+def _read_safetensors_header(model_path: Path) -> dict:
+    """Read a local safetensors header without loading its tensor data."""
+    weight_path = next(model_path.glob("*.safetensors"), None)
+    if weight_path is None:
+        return {}
+    try:
+        with weight_path.open("rb") as weight_file:
+            header_size_bytes = weight_file.read(8)
+            if len(header_size_bytes) != 8:
+                return {}
+            header_size = struct.unpack("<Q", header_size_bytes)[0]
+            if header_size > 100 * 1024 * 1024:
+                return {}
+            header = json.loads(weight_file.read(header_size))
+    except (OSError, json.JSONDecodeError, struct.error):
+        return {}
+    return header if isinstance(header, dict) else {}
+
+
+def _read_safetensors_metadata(model_path: Path) -> dict[str, str]:
+    metadata = _read_safetensors_header(model_path).get("__metadata__")
+    if not isinstance(metadata, dict):
+        return {}
+    return {str(key): str(value) for key, value in metadata.items()}
+
+
+def _get_dflash2_quantization_config(dflash2_path: Path) -> dict:
+    header = _read_safetensors_header(dflash2_path)
+    metadata = header.get("__metadata__")
+    if not isinstance(metadata, dict):
+        return {}
+    try:
+        weight_bits = int(metadata["bits"])
+        group_size = int(metadata["group_size"])
+    except (KeyError, TypeError, ValueError):
+        return {}
+    if weight_bits not in {2, 4, 8} or group_size not in {32, 64, 128}:
+        return {}
+    quantization = {"group_size": group_size, "bits": weight_bits, "mode": "affine"}
+    for tensor_name, tensor_info in header.items():
+        if not tensor_name.endswith(".scales") or not isinstance(tensor_info, dict):
+            continue
+        module_name = tensor_name.removesuffix(".scales")
+        weight_info = header.get(f"{module_name}.weight")
+        scales_shape = tensor_info.get("shape")
+        weight_shape = weight_info.get("shape") if isinstance(weight_info, dict) else None
+        if not (
+            isinstance(scales_shape, list) and len(scales_shape) == 2
+            and isinstance(weight_shape, list) and len(weight_shape) == 2
+            and scales_shape[1]
+        ):
+            continue
+        module_bits = weight_shape[1] * 32 // (scales_shape[1] * group_size)
+        if module_bits in {2, 4, 8} and module_bits != weight_bits:
+            quantization[module_name] = {
+                "group_size": group_size, "bits": module_bits, "mode": "affine",
+            }
+    return quantization
+
+
+def _prepare_omlx_dflash2_path(dflash2_path: Path, serving_model_id: str) -> Path:
+    quantization = _get_dflash2_quantization_config(dflash2_path)
+    if not quantization:
+        return dflash2_path
+    try:
+        config = json.loads((dflash2_path / "config.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return dflash2_path
+    if not isinstance(config, dict):
+        return dflash2_path
+    config["quantization"] = quantization
+    overlay_path = OMLX_BASE_DIR / "dflash-drafts" / serving_model_id
+    overlay_path.mkdir(parents=True, exist_ok=True)
+    (overlay_path / "config.json").write_text(json.dumps(config, indent=2), encoding="utf-8")
+    for weight_path in dflash2_path.glob("model*.safetensors"):
+        overlay_weight_path = overlay_path / weight_path.name
+        if overlay_weight_path.is_symlink() and overlay_weight_path.resolve() == weight_path.resolve():
+            continue
+        if overlay_weight_path.exists() or overlay_weight_path.is_symlink():
+            overlay_weight_path.unlink()
+        overlay_weight_path.symlink_to(weight_path.resolve())
+    return overlay_path
+
+
 def _build_omlx_server_command(model_path: Path, dflash2_path: Path, context_size: int) -> tuple[list[str], dict[str, str]]:
     executable = shutil.which("omlx")
     if not executable:
         raise RuntimeError("oMLX is required for MLX DFlash2 acceleration")
     serving_model_id = model_path.name
     OMLX_BASE_DIR.mkdir(parents=True, exist_ok=True)
+    serving_dflash2_path = _prepare_omlx_dflash2_path(dflash2_path, serving_model_id)
     settings = {
         "version": 1,
         "models": {
             serving_model_id: {
                 "max_context_window": context_size,
                 "dflash_enabled": True,
-                "dflash_draft_model": str(dflash2_path),
+                "dflash_draft_model": str(serving_dflash2_path),
                 "dflash_in_memory_cache": True,
             },
         },
