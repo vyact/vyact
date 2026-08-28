@@ -1,6 +1,7 @@
 @import 'pretendard/dist/web/variable/pretendardvariable.css';
 
 :root {
+  color-scheme: dark;
   /* Codex 다크 톤 */
   --bg: #171717;
   --surface: #212121;
@@ -10,6 +11,7 @@
   --accent-rgb: 204, 120, 92;
   --project-active: #d88e73;
   --project-active-rgb: 216, 142, 115;
+  --project-neutral: #f5f5f5;
   --accent2: #d88e73;
   --success: #2cba66;
   --warn: #f59e0b;
@@ -47,6 +49,36 @@
   --modal-btn: 13px;     /* 버튼 */
   --modal-sub: 13px;     /* 보조 설명·desc */
   --modal-label: 11px;   /* 작은 라벨·섹션 헤더 */
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #edf3fa;
+  --surface: #f8fbff;
+  --surface2: #e7eef7;
+  --border: #ccd8e6;
+  --accent: #c46547;
+  --accent-rgb: 196, 101, 71;
+  --project-active: #ad543a;
+  --project-active-rgb: 173, 84, 58;
+  --project-neutral: #202938;
+  --accent2: #ad543a;
+  --success: #168557;
+  --warn: #b66b09;
+  --danger: #d83b3b;
+  --text: #202938;
+  --text-secondary: #536174;
+  --muted: #7b8798;
+  --code-color: #2669a8;
+  --bg-secondary: #f4f8fd;
+  --modal-bg: #fbfdff;
+  --modal-inset: #f0f5fb;
+  --modal-inset-hover: #e5edf7;
+  --del-rgb: 210, 55, 55;
+}
+
+:root[data-theme='light'] body {
+  background: linear-gradient(135deg, #f7faff 0%, var(--bg) 55%, #e7eff9 100%);
 }
 
 * {

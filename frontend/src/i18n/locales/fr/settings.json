@@ -37,6 +37,9 @@
   },
   "general": {
     "language": "Langue",
+    "theme": "Thème",
+    "themeDark": "Mode sombre",
+    "themeLight": "Mode clair",
     "restoreDefaults": "Restaurer",
     "languageDesc": "Change la langue de l'interface.",
     "autoStart": "Démarrage automatique",

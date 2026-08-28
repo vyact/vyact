@@ -5,6 +5,8 @@ import {toast} from '../common/ToastNotifications/ToastNotifications';
 import {fetchTtsSettings, updateTtsCache, DEFAULT_TTS_SETTINGS} from '../../services/tts/ttsSettings';
 import type {TtsSettings} from '../../services/tts/ttsSettings';
 import {changeLanguage, SUPPORTED_LANGUAGES} from '../../i18n';
+import {changeTheme, getStoredTheme} from '../../services/theme';
+import type {AppTheme} from '../../services/theme';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import {getTopmostModalOverlay} from '../common/ModalOverlay/modalStack';
 import {Tooltip} from '../common/Tooltip/Tooltip';
@@ -243,6 +245,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
 
     // 일반 설정 탭
     const [llmLogging, setLlmLogging] = useState(false);
+    const [theme, setTheme] = useState<AppTheme>(getStoredTheme);
     const [toolLogging, setToolLogging] = useState(false);
     const [debugLogging, setDebugLogging] = useState(false);
     const [debugLoggingRestarting, setDebugLoggingRestarting] = useState(false);
@@ -1097,6 +1100,28 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                     </div>
                                 </div>
 
+                                {/* ── 테마 설정 ── */}
+                                <div className="settings-general-section">
+                                    <div className="settings-toggle-row settings-language-row">
+                                        <div className="settings-toggle-title">{t('general.theme')}</div>
+                                        <div className="settings-select-field">
+                                            <CustomSelect
+                                                options={[
+                                                    {value: 'dark', label: t('general.themeDark')},
+                                                    {value: 'light', label: t('general.themeLight')},
+                                                ]}
+                                                value={theme}
+                                                onChange={(value) => {
+                                                    const nextTheme = value as AppTheme;
+                                                    setTheme(nextTheme);
+                                                    changeTheme(nextTheme);
+                                                }}
+                                                triggerStyle={{fontSize: '13px', padding: '5px 10px', width: '100%'}}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
                                 {/* ── 부팅 시 자동 시작 ── */}
                                 {isElectron && (
                                     <div className="settings-general-section">
@@ -1427,9 +1452,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                         {section.fields.map(key => {
                                             return <label className="settings-runtime-row" key={key}>
                                                 <span className="settings-runtime-label">
-                                                    <span className="settings-tooltip" tabIndex={0} aria-label={t('runtime.help')}>
-                                                        ?<span className="settings-tooltip-content">{t(`runtime.fields.${key}.help`)}</span>
-                                                    </span>
+                                                    <Tooltip content={t(`runtime.fields.${key}.help`)} multiline large>
+                                                        <span className="settings-tooltip" tabIndex={0} aria-label={t('runtime.help')}>?</span>
+                                                    </Tooltip>
                                                     {t(`runtime.fields.${key}.label`)}
                                                 </span>
                                                 <span className="settings-runtime-input-wrap">

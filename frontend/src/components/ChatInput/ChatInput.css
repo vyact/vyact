@@ -8,6 +8,15 @@
     padding: 4px 0 14px;
 }
 
+:root[data-theme='light'] .chat-input-wrap {
+    background: transparent;
+}
+
+:root[data-theme='light'] .chat-input-wrap .chat-input-container {
+    border-color: #c3d2e3;
+    box-shadow: 0 10px 30px rgba(54, 78, 108, 0.09), 0 2px 8px rgba(54, 78, 108, 0.05);
+}
+
 .chat-input-wrap .chat-input-container {
     background: var(--surface);
     border: 1px solid var(--border);

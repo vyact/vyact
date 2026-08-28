@@ -36,7 +36,7 @@
     background: none;
     border: none;
     border-radius: 6px;
-    color: #e0e0e0;
+    color: var(--text-secondary);
     cursor: pointer;
     transition: color 0.15s, background 0.15s;
     -webkit-app-region: no-drag;
@@ -99,7 +99,7 @@
 }
 
 .titlebar-win-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: color-mix(in srgb, var(--text) 8%, transparent);
     color: var(--text);
 }
 

@@ -22,6 +22,11 @@
     height: 80vh;
 }
 
+:root[data-theme='light'] .settings-modal {
+    border: 1px solid rgba(176, 193, 213, 0.75);
+    box-shadow: 0 24px 70px rgba(31, 46, 65, 0.24);
+}
+
 .backup-progress-overlay {
     position: absolute;
     inset: 0;
@@ -613,6 +618,18 @@
     flex-shrink: 0; /* Select 박스 고정 폭 유지 */
 }
 
+.settings-select-field {
+    width: 180px;
+}
+
+:root[data-theme='light'] .settings-sidebar-item:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+:root[data-theme='light'] .settings-sidebar-item.active {
+    background: rgba(0, 0, 0, 0.08);
+}
+
 .settings-toggle-desc {
     font-size: 13px;
     color: var(--muted);
@@ -725,6 +742,10 @@
     background: rgba(255, 255, 255, 0.04);
     border-left: 3px solid var(--accent);
     border-radius: 0 5px 5px 0;
+}
+
+:root[data-theme='light'] .settings-general-title {
+    background: rgba(0, 0, 0, 0.04);
 }
 
 /* (제목 안 힌트는 .settings-hint--inline 으로 처리) */
@@ -1233,8 +1254,6 @@
 .settings-runtime-input:hover { border-color: var(--text-secondary); background: var(--surface2); }
 .settings-runtime-input:focus { outline: none; border-color: var(--accent); background: var(--bg); }
 .settings-tooltip { position: relative; width: 17px; height: 17px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--muted); border-radius: 50%; color: var(--muted); font-size: 11px; font-weight: 700; cursor: help; }
-.settings-tooltip-content { position: absolute; z-index: 10; left: 0; bottom: calc(100% + 8px); transform: none; width: 260px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--modal-bg); box-shadow: 0 8px 24px rgba(0, 0, 0, .35); color: var(--text-secondary); font-size: 12px; font-weight: 400; line-height: 1.45; text-align: left; white-space: pre-line; visibility: hidden; opacity: 0; transition: opacity .15s; pointer-events: none; }
-.settings-tooltip:hover .settings-tooltip-content, .settings-tooltip:focus .settings-tooltip-content { visibility: visible; opacity: 1; }
 
 /* ── AI 프로필 탭 ── */
 .settings-profile-preferences-card {

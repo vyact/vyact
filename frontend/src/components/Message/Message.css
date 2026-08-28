@@ -182,7 +182,7 @@
 }
 
 .msg.bot .msg-bubble {
-    background: var(--bg);
+    background: transparent;
     color: var(--text);
     border-bottom-left-radius: 4px;
     white-space: normal;
@@ -433,30 +433,6 @@
     text-overflow: ellipsis;
 }
 
-.src-deadline::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    top: calc(100% + 8px);
-    left: 0;
-    display: none;
-    width: max-content;
-    max-width: min(420px, calc(100vw - 48px));
-    padding: 8px 10px;
-    border: 1px solid var(--border);
-    border-radius: 7px;
-    background: var(--surface2);
-    color: var(--text);
-    box-shadow: 0 8px 22px rgba(0, 0, 0, .35);
-    white-space: normal;
-    overflow-wrap: anywhere;
-    line-height: 1.5;
-    z-index: 10000;
-    pointer-events: auto;
-}
-
-.src-deadline[data-tooltip]:hover::after {
-    display: block;
-}
 /* ── 스트리밍 중 미완성 코드/프로젝트 블록 플레이스홀더 ── */
 .msg-stream-pending {
     display: flex;

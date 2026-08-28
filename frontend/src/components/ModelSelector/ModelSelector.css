@@ -147,24 +147,6 @@
     color: white;
 }
 
-.model-tooltip {
-    position: fixed;
-    margin-left: 20px;
-    padding: 8px 12px;
-    background: #1a1a1a;
-    border: 1px solid var(--accent);
-    border-radius: 6px;
-    color: #fff;
-    font-size: 12px;
-    font-weight: normal;
-    white-space: normal;
-    max-width: 280px;
-    line-height: 1.4;
-    pointer-events: none;
-    z-index: 9999;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-}
-
 /* ── 커스텀 모델 입력 (footer) ── */
 .custom-model-input {
     padding: 10px;

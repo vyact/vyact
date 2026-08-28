@@ -821,33 +821,6 @@
     box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.15);
 }
 
-.pdf-style-tooltip {
-    position: absolute;
-    bottom: calc(100% + 6px);
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--surface3, #2a2a32);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 4px 9px;
-    font-size: 11px;
-    color: var(--text);
-    white-space: nowrap;
-    pointer-events: none;
-    z-index: 200;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.pdf-style-tooltip::after {
-    content: '';
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 4px solid transparent;
-    border-top-color: var(--border);
-}
-
 /* ── 기사 검색 ── */
 .pdf-article-search {
     display: flex;

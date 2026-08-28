@@ -37,6 +37,9 @@
   },
   "general": {
     "language": "言語",
+    "theme": "テーマ",
+    "themeDark": "ダークモード",
+    "themeLight": "ライトモード",
     "restoreDefaults": "デフォルトに戻す",
     "languageDesc": "インターフェースの表示言語を変更します。",
     "autoStart": "起動時に自動実行",

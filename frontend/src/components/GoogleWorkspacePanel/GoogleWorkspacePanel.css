@@ -810,9 +810,7 @@
 .gwp-cal-event-status svg { flex: none; }
 .gwp-cal-event-reminder-indicator { position: relative; display: grid; width: 24px; height: 24px; flex: none; place-items: center; border-radius: 5px; color: var(--muted); cursor: default; }
 .gwp-cal-event-reminder-indicator:hover { color: var(--accent); }
-.gwp-cal-event-reminder-details { position: absolute; top: calc(100% + 6px); right: 0; z-index: 10; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 6px; min-width: max-content; max-width: 220px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); box-shadow: 0 8px 20px rgba(0, 0, 0, .32); color: var(--text-secondary); font-size: 12px; font-weight: 500; line-height: 1.45; opacity: 0; pointer-events: none; visibility: hidden; }
-.gwp-cal-event-reminder-details.is-visible { opacity: 1; visibility: visible; }
-.gwp-cal-event-reminder-details.opens-upward { top: auto; bottom: calc(100% + 6px); }
+.gwp-cal-event-reminder-content { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 6px; min-width: max-content; max-width: 220px; color: var(--text-secondary); font-size: 12px; font-weight: 500; line-height: 1.45; }
 .gwp-cal-event-time, .gwp-cal-event-location { display: flex; align-items: center; gap: 4px; color: var(--muted); font-size: 13px; }
 .gwp-cal-event-time svg, .gwp-cal-event-location svg { flex: none; }
 .gwp-cal-event-description { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: flex-start; gap: 5px; max-width: 100%; margin-top: 2px; color: var(--text-secondary); font-size: 13px; line-height: 1.5; }

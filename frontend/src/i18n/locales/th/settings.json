@@ -37,6 +37,9 @@
   },
   "general": {
     "language": "ภาษา",
+    "theme": "ธีม",
+    "themeDark": "โหมดมืด",
+    "themeLight": "โหมดสว่าง",
     "restoreDefaults": "ค่าเริ่มต้น",
     "languageDesc": "เปลี่ยนภาษาหน้าจอ",
     "autoStart": "เปิดพร้อมเครื่อง",

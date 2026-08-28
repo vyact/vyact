@@ -2,6 +2,7 @@ import {useEffect, useRef, useState} from 'react';
 import {Check, CircleHelp, Shield, ShieldAlert, ShieldCheck} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {resolveApprovalMode, saveApprovalMode, type ApprovalMode} from '../../services/approvalPolicy';
+import {Tooltip} from '../common/Tooltip/Tooltip';
 import './ApprovalControl.css';
 
 const MODE_OPTIONS: ApprovalMode[] = ['always_confirm', 'risky_only', 'trusted'];
@@ -42,10 +43,11 @@ const ApprovalControl = () => {
             </button>
             {open && <div className="approval-control__popover">
                 <div className="approval-control__modes">{MODE_OPTIONS.map(option => <div className="approval-control__mode" key={option}>
-                    <span className="approval-control__help" tabIndex={0} aria-label={t(`approval.modes.${option}.description`)}>
-                        <CircleHelp size={16}/>
-                        <span className="approval-control__tooltip" role="tooltip">{t(`approval.modes.${option}.description`)}</span>
-                    </span>
+                    <Tooltip content={t(`approval.modes.${option}.description`)} multiline large>
+                        <span className="approval-control__help" tabIndex={0} aria-label={t(`approval.modes.${option}.description`)}>
+                            <CircleHelp size={16}/>
+                        </span>
+                    </Tooltip>
                     <button type="button" onClick={() => selectMode(option)} className={mode === option ? 'selected' : ''}>
                         <strong>{t(`approval.modes.${option}.title`)}</strong>
                         {mode === option && <Check size={16}/>} 

@@ -97,42 +97,12 @@
     color: var(--text);
 }
 
-.reasoning-tooltip {
-    position: absolute;
-    bottom: calc(100% + 10px);
-    left: 0;
-    z-index: 1200;
+.reasoning-tooltip-content {
     width: 280px;
-    padding: 12px 14px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
     display: flex;
     flex-direction: column;
     gap: 8px;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(4px);
-    transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
-    pointer-events: none;
     font-weight: 400;
-}
-
-.reasoning-help:hover .reasoning-tooltip {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-}
-
-/* 말풍선 꼬리 */
-.reasoning-tooltip::after {
-    content: '';
-    position: absolute;
-    top: 100%;
-    left: 12px;
-    border: 6px solid transparent;
-    border-top-color: var(--surface);
 }
 
 .reasoning-tooltip-title {

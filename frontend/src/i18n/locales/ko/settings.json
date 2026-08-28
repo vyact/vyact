@@ -92,6 +92,9 @@
   },
   "general": {
     "language": "언어",
+    "theme": "테마",
+    "themeDark": "다크 모드",
+    "themeLight": "라이트 모드",
     "restoreDefaults": "기본값 복원",
     "languageDesc": "인터페이스 표시 언어를 변경합니다.",
     "autoStart": "부팅 시 자동 시작",

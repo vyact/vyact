@@ -6,13 +6,19 @@ import sys
 import subprocess
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from routers.deps import load_ui_language_async, save_ui_language_async
+from routers.deps import (
+    load_ui_language_async,
+    load_ui_theme_async,
+    save_ui_language_async,
+    save_ui_theme_async,
+)
 from logger import get_logger
 
 logger = get_logger(__name__)
 router = APIRouter()
 
 SUPPORTED_UI_LANGUAGES = {"ko", "en", "ja", "zh", "th", "vi", "es", "fr"}
+SUPPORTED_UI_THEMES = {"dark", "light"}
 
 IS_MAC = sys.platform == "darwin"
 IS_WIN = sys.platform == "win32"
@@ -25,6 +31,10 @@ class OpenAppRequest(BaseModel):
 
 class UiLanguageRequest(BaseModel):
     language: str
+
+
+class UiThemeRequest(BaseModel):
+    theme: str
 
 
 @router.get("/settings/language")
@@ -41,6 +51,21 @@ async def update_ui_language(req: UiLanguageRequest):
         raise HTTPException(400, "지원하지 않는 언어입니다.")
     saved = await save_ui_language_async(language)
     return {"language": language, "saved": saved}
+
+
+@router.get("/settings/theme")
+async def get_ui_theme():
+    theme = await load_ui_theme_async()
+    return {"theme": theme if theme in SUPPORTED_UI_THEMES else None}
+
+
+@router.put("/settings/theme")
+async def update_ui_theme(req: UiThemeRequest):
+    theme = req.theme.lower()
+    if theme not in SUPPORTED_UI_THEMES:
+        raise HTTPException(400, "지원하지 않는 테마입니다.")
+    saved = await save_ui_theme_async(theme)
+    return {"theme": theme, "saved": saved}
 
 
 @router.post("/system/open-app")

@@ -3,6 +3,7 @@ import {Check, Eye, EyeOff, ExternalLink, LoaderCircle, Plus, Search} from 'luci
 import { useTranslation } from 'react-i18next';
 import type { LogEntry } from '../../types';
 import { syncPendingLanguageAfterSetup } from '../../i18n';
+import {syncPendingThemeAfterSetup} from '../../services/theme';
 import EsModeSelector from './EsModeSelector';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import {CUSTOM_PROTOCOL_OPTIONS, OPENAI_COMPATIBLE_DOCS_URL} from '../../constants/customProviders';
@@ -375,6 +376,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                                 // setup 라우터가 ES 초기화와 .setup_done 생성을 끝낸 뒤에
                                 // 전송하는 이벤트다. 이 시점에 초기 언어를 바로 저장한다.
                                 await syncPendingLanguageAfterSetup();
+                                await syncPendingThemeAfterSetup();
                                 onInstallComplete();
                             }
 

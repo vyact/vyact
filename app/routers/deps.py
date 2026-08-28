@@ -112,6 +112,47 @@ async def save_ui_language_async(language: str) -> bool:
         return False
 
 
+async def load_ui_theme_async() -> str | None:
+    """ES system_settings의 UI 테마 설정을 읽는다."""
+    if not SETUP_DONE.exists():
+        return None
+    try:
+        from services.db import get_es, SETTINGS_INDEX
+        es = get_es()
+        try:
+            result = await es.options(ignore_status=404).get(index=SETTINGS_INDEX, id="ui_theme")
+            if result.get("found"):
+                theme = result["_source"].get("value")
+                return theme if isinstance(theme, str) else None
+        finally:
+            await es.close()
+    except Exception as e:
+        logger.warning("[ui_theme] ES load failed: %s", e)
+    return None
+
+
+async def save_ui_theme_async(theme: str) -> bool:
+    """ES system_settings에 UI 테마를 독립 문서로 저장한다."""
+    if not SETUP_DONE.exists():
+        return False
+    try:
+        from services.db import get_es, SETTINGS_INDEX
+        es = get_es()
+        try:
+            await es.index(
+                index=SETTINGS_INDEX,
+                id="ui_theme",
+                document={"key": "ui_theme", "value": theme},
+                refresh=True,
+            )
+            return True
+        finally:
+            await es.close()
+    except Exception as e:
+        logger.warning("[ui_theme] ES save failed: %s", e)
+        return False
+
+
 def write_log(event: str, extra: dict | None = None):
     try:
         entry = {

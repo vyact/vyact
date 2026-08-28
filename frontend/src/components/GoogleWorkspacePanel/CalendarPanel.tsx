@@ -1,4 +1,4 @@
-import {Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import {Fragment, useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {
     AlertCircle,
@@ -23,6 +23,7 @@ import {
 import {api} from '../../services/api';
 import type {GoogleCalendarSelection} from '../../types/googleWorkspace';
 import CustomSelect from '../CustomSelect/CustomSelect';
+import {Tooltip} from '../common/Tooltip/Tooltip';
 import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
 import LocalizedDateTimePicker from './LocalizedDateTimePicker';
 
@@ -265,22 +266,7 @@ const EventDescriptionPreview = ({description, expanded, onToggle}: {
 
 const EventReminderIndicator = ({reminders}: {reminders?: CalendarEvent['reminders']}) => {
     const {t} = useTranslation('main');
-    const indicatorRef = useRef<HTMLSpanElement>(null);
-    const detailsRef = useRef<HTMLSpanElement>(null);
-    const [isTooltipOpen, setIsTooltipOpen] = useState(false);
-    const [opensUpward, setOpensUpward] = useState(false);
     const overrides = reminders?.overrides ?? [];
-
-    useLayoutEffect(() => {
-        if (!isTooltipOpen || !indicatorRef.current || !detailsRef.current) return;
-
-        const indicatorBounds = indicatorRef.current.getBoundingClientRect();
-        const tooltipHeight = detailsRef.current.getBoundingClientRect().height;
-        const tooltipGap = 6;
-        const scrollContainerBounds = indicatorRef.current.closest('.gwp-cal-events-scroll')?.getBoundingClientRect();
-        const availableBottom = scrollContainerBounds?.bottom ?? window.innerHeight;
-        setOpensUpward(indicatorBounds.bottom + tooltipGap + tooltipHeight > availableBottom);
-    }, [isTooltipOpen, overrides.length]);
 
     if (!overrides.length) return <span className="gwp-cal-event-reminder-indicator" aria-hidden="true"/>;
     const reminderUnitKey: Record<ReminderUnit, 'minutes' | 'hours' | 'days'> = {
@@ -289,21 +275,7 @@ const EventReminderIndicator = ({reminders}: {reminders?: CalendarEvent['reminde
         day: 'days',
     };
 
-    const showTooltip = () => setIsTooltipOpen(true);
-
-    return <span
-        ref={indicatorRef}
-        className="gwp-cal-event-reminder-indicator"
-        onClick={event => event.stopPropagation()}
-        onMouseEnter={showTooltip}
-        onMouseLeave={() => setIsTooltipOpen(false)}
-    >
-        <Bell aria-hidden="true" size={14}/>
-        <span
-            ref={detailsRef}
-            className={`gwp-cal-event-reminder-details${isTooltipOpen ? ' is-visible' : ''}${opensUpward ? ' opens-upward' : ''}`}
-            role="tooltip"
-        >
+    const tooltipContent = <span className="gwp-cal-event-reminder-content">
             {overrides.map((reminder, index) => {
                 const {amount, unit} = minutesToReminderForm(reminder);
                 return <Fragment key={`${reminder.method}-${reminder.minutes}-${index}`}>
@@ -313,8 +285,13 @@ const EventReminderIndicator = ({reminders}: {reminders?: CalendarEvent['reminde
                     <span>· {amount} {t(`googleWorkspace.calendar.${reminderUnitKey[unit]}`)}</span>
                 </Fragment>;
             })}
+        </span>;
+
+    return <Tooltip content={tooltipContent} multiline>
+        <span className="gwp-cal-event-reminder-indicator" tabIndex={0} onClick={event => event.stopPropagation()}>
+            <Bell aria-hidden="true" size={14}/>
         </span>
-    </span>;
+    </Tooltip>;
 };
 
 export default function CalendarPanel({selectedEvent, onSelectedEventHandled}: {

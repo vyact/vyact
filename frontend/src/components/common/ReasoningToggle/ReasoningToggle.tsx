@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import CustomSelect from '../../CustomSelect/CustomSelect';
+import {Tooltip} from '../Tooltip/Tooltip';
 import {
     defaultReasoningValue,
     isReasoningActive,
@@ -38,33 +39,36 @@ const ReasoningToggle: React.FC<ReasoningToggleProps> = ({disabled, capability})
         if (!disabled) setValue(enabled ? 'off' : 'on');
     };
 
+    const tooltipContent = <span className="reasoning-tooltip-content">
+        <span className="reasoning-tooltip-title">{t('reasoning.title')}</span>
+        <span className="reasoning-tooltip-intro">{t('reasoning.intro')}</span>
+        <span className="reasoning-tooltip-section">
+            <span className="reasoning-tooltip-label on">{t('reasoning.onLabel')}</span>
+            <ul className="reasoning-tooltip-list">
+                {(t('reasoning.onItems', {returnObjects: true}) as string[]).map((it, i) => <li key={i}>{it}</li>)}
+            </ul>
+        </span>
+        <span className="reasoning-tooltip-section">
+            <span className="reasoning-tooltip-label off">{t('reasoning.offLabel')}</span>
+            <ul className="reasoning-tooltip-list">
+                {(t('reasoning.offItems', {returnObjects: true}) as string[]).map((it, i) => <li key={i}>{it}</li>)}
+            </ul>
+        </span>
+    </span>;
+
     return (
         <div className={`reasoning-toggle${enabled ? ' on' : ''}${disabled ? ' disabled' : ''}`}>
             {/* 좌측 물음표 — hover 시 툴팁만 표시(토글 아님) */}
-            <span className="reasoning-help" aria-label={t('reasoning.label')}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                     strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-                    <line x1="12" y1="17" x2="12.01" y2="17" />
-                </svg>
-                <span className="reasoning-tooltip" role="tooltip">
-                    <span className="reasoning-tooltip-title">{t('reasoning.title')}</span>
-                    <span className="reasoning-tooltip-intro">{t('reasoning.intro')}</span>
-                    <span className="reasoning-tooltip-section">
-                        <span className="reasoning-tooltip-label on">{t('reasoning.onLabel')}</span>
-                        <ul className="reasoning-tooltip-list">
-                            {(t('reasoning.onItems', {returnObjects: true}) as string[]).map((it, i) => <li key={i}>{it}</li>)}
-                        </ul>
-                    </span>
-                    <span className="reasoning-tooltip-section">
-                        <span className="reasoning-tooltip-label off">{t('reasoning.offLabel')}</span>
-                        <ul className="reasoning-tooltip-list">
-                            {(t('reasoning.offItems', {returnObjects: true}) as string[]).map((it, i) => <li key={i}>{it}</li>)}
-                        </ul>
-                    </span>
+            <Tooltip content={tooltipContent} multiline large>
+                <span className="reasoning-help" tabIndex={0} aria-label={t('reasoning.label')}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                         strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
                 </span>
-            </span>
+            </Tooltip>
 
             {capability.control === 'effort' ? <div className="reasoning-effort-control">
                 <span className="reasoning-toggle-label">{t('reasoning.label')}</span>

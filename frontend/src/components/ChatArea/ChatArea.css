@@ -53,44 +53,26 @@
     background: rgba(255, 255, 255, 0.58);
 }
 
-.conversation-navigator-tooltip {
-    position: absolute;
-    top: 50%;
-    left: 28px;
+.conversation-navigator-tooltip-content {
     display: flex;
     width: min(250px, 30vw);
     flex-direction: column;
     gap: 8px;
-    padding: 12px 14px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 16px;
-    background: rgba(43, 43, 43, 0.97);
-    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
     color: var(--text);
     font-size: 13px;
     line-height: 1.45;
-    opacity: 0;
-    pointer-events: none;
     text-align: left;
-    transform: translateY(-50%) translateX(-4px);
-    transition: opacity 0.16s ease, transform 0.16s ease;
 }
 
-.conversation-navigator-tooltip strong,
-.conversation-navigator-tooltip span {
+.conversation-navigator-tooltip-content strong,
+.conversation-navigator-tooltip-content span {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.conversation-navigator-tooltip strong { font-size: 14px; }
-.conversation-navigator-tooltip span { color: var(--muted); }
-
-.conversation-navigator button:hover .conversation-navigator-tooltip,
-.conversation-navigator button:focus-visible .conversation-navigator-tooltip {
-    opacity: 1;
-    transform: translateY(-50%) translateX(0);
-}
+.conversation-navigator-tooltip-content strong { font-size: 14px; }
+.conversation-navigator-tooltip-content span { color: var(--muted); }
 
 .chat-area-split .conversation-navigator { display: none; }
 
@@ -130,6 +112,10 @@
     overflow-y: auto;
     min-width: 0;
     align-items: center;
+}
+
+:root[data-theme='light'] .chat-area {
+    background: linear-gradient(145deg, #f8fbff 0%, var(--bg) 58%, #e9f0f9 100%);
 }
 
 /* 콘텐츠 50% 센터 제한 */

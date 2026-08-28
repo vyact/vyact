@@ -13,6 +13,7 @@ import {getUserProfile, onUserProfileUpdated} from '../../services/userProfile';
 import PanelResizer, {getSavedPanelWidth, savePanelWidth} from '../common/PanelResizer/PanelResizer';
 import {useTranslation} from 'react-i18next';
 import BrowserPanel from '../BrowserPanel/BrowserPanel';
+import {Tooltip} from '../common/Tooltip/Tooltip';
 
 const CodePanel = React.lazy(() => import('../CodePanel/CodePanel'));
 const GoogleWorkspacePanel = React.lazy(() => import('../GoogleWorkspacePanel/GoogleWorkspacePanel'));
@@ -450,6 +451,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             {conversationTurns.length > 1 && (
                 <nav className="conversation-navigator" aria-label="대화 탐색">
                     {conversationTurns.map((turn, turnIndex) => (
+                        <Tooltip content={<span className="conversation-navigator-tooltip-content"><strong>{turn.question || '질문'}</strong>{turn.answer && <span>{turn.answer}</span>}</span>} multiline large key={turn.messageIndex}>
                         <button
                             key={turn.messageIndex}
                             type="button"
@@ -457,11 +459,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                             onClick={() => navigateToTurn(turn.messageIndex)}
                         >
                             <span className="conversation-navigator-bar"/>
-                            <span className="conversation-navigator-tooltip">
-                                <strong>{turn.question || '질문'}</strong>
-                                {turn.answer && <span>{turn.answer}</span>}
-                            </span>
                         </button>
+                        </Tooltip>
                     ))}
                 </nav>
             )}

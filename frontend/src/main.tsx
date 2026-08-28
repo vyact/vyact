@@ -6,10 +6,14 @@ import {TooltipProvider} from './components/common/Tooltip/Tooltip';
 import {refreshGoogleWorkspaceStatus} from './services/googleWorkspaceStatus';
 import {initializeKnowledgeCollections} from './services/knowledgeCollectionsCache';
 import {installPluginRuntime} from './plugins/installPluginRuntime';
+import {applyTheme, getStoredTheme, syncThemeFromServer} from './services/theme';
 import './index.css';
+
+applyTheme(getStoredTheme());
 
 async function bootstrapApplication(): Promise<void> {
   await i18nInitialization;
+  await syncThemeFromServer();
   installPluginRuntime();
 
   // Google Workspace 연결 상태는 특정 메뉴가 열릴 때가 아니라 앱 시작 시 한 번 선조회한다.

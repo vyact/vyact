@@ -37,6 +37,9 @@
   },
   "general": {
     "language": "语言",
+    "theme": "主题",
+    "themeDark": "深色模式",
+    "themeLight": "浅色模式",
     "restoreDefaults": "恢复默认值",
     "languageDesc": "更改界面显示语言。",
     "autoStart": "开机自动启动",

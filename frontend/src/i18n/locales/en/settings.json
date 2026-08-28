@@ -63,6 +63,9 @@
   },
   "general": {
     "language": "Language",
+    "theme": "Theme",
+    "themeDark": "Dark mode",
+    "themeLight": "Light mode",
     "restoreDefaults": "Restore defaults",
     "languageDesc": "Change the interface display language.",
     "autoStart": "Launch at startup",

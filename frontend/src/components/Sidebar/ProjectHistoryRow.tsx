@@ -2,6 +2,7 @@ import type {CSSProperties, ReactNode} from 'react';
 import {BookOpen, Folder, FolderOpen, MoreHorizontal, Pencil, ScrollText, SquarePen, Trash2} from 'lucide-react';
 import type {Project} from '../../types';
 import SidebarOverflowMenu from './SidebarOverflowMenu';
+import {getProjectDisplayColor} from './projectColors';
 
 interface ProjectHistoryRowProps {
     project: Project;
@@ -61,10 +62,11 @@ const ProjectHistoryRow = ({
     children,
 }: ProjectHistoryRowProps) => {
     const FolderIcon = isExpanded ? FolderOpen : Folder;
+    const projectColor = getProjectDisplayColor(project.color);
 
     return (
         <div>
-            <div className={`project-row${isActive ? ' active' : ''}`} style={{'--project-color': project.color ?? 'var(--project-active)'} as CSSProperties} onClick={onToggle}>
+            <div className={`project-row${isActive ? ' active' : ''}`} style={{'--project-color': projectColor} as CSSProperties} onClick={onToggle}>
                 {isRenaming ? (
                     <input
                         className="hist-rename-input"
@@ -80,7 +82,7 @@ const ProjectHistoryRow = ({
                     />
                 ) : (
                     <button className="project-select-btn" aria-expanded={isExpanded}>
-                        <FolderIcon size={15} style={{color: project.color ?? 'var(--project-active)'}}/>
+                        <FolderIcon size={15} style={{color: projectColor}}/>
                         {project.name}
                     </button>
                 )}

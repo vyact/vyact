@@ -37,6 +37,9 @@
   },
   "general": {
     "language": "Ngôn ngữ",
+    "theme": "Giao diện",
+    "themeDark": "Chế độ tối",
+    "themeLight": "Chế độ sáng",
     "restoreDefaults": "Mặc định",
     "languageDesc": "Đổi ngôn ngữ giao diện",
     "autoStart": "Mở khi khởi động",

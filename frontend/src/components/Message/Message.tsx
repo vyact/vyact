@@ -9,6 +9,7 @@ import CodeFileViewer from '../CodeFileViewer/CodeFileViewer';
 import ImageViewer from '../ImageViewer/ImageViewer';
 import ResponseProcess from './ResponseProcess';
 import InlineToolApproval from './InlineToolApproval';
+import {Tooltip} from '../common/Tooltip/Tooltip';
 import CodeChangesCard from './CodeChangesCard';
 import {useCodePanel} from '../../contexts/CodePanelContext';
 import './Message.css';
@@ -713,11 +714,13 @@ const Message: React.FC<MessageProps> = ({
                             <div key={idx} className="src-item">
                                 <span className="src-name">{getLocalizedSourceLabel(art.source, t)}</span>
                                 {art.application_deadline ? (
-                                    <span className="src-date src-deadline" data-tooltip={art.application_deadline}>
+                                    <Tooltip content={art.application_deadline} multiline large>
+                                    <span className="src-date src-deadline">
                                         <span className="src-deadline-text">
                                             {t('message.applicationDeadline')} {art.application_deadline}
                                         </span>
                                     </span>
+                                    </Tooltip>
                                 ) : art.source !== 'Government24' && art.indexed_at && (
                                     <span className="src-date">{(() => {
                                         const d = new Date(art.indexed_at);

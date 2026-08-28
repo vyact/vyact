@@ -7,6 +7,7 @@ import ImageViewer from '../ImageViewer/ImageViewer';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import { getReasoningEnabled } from '../../utils/reasoning';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
+import {Tooltip} from '../common/Tooltip/Tooltip';
 import type {Message} from '../../types';
 import {getDocumentFiles} from '../../services/documentFiles';
 import './PdfModal.css';
@@ -95,7 +96,6 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
     const [aspectRatio, setAspectRatio] = useState<PresentationAspectRatio>(
         initialParams?.aspect_ratio === 'widescreen' || initialParams?.output_format === 'pptx' ? 'widescreen' : 'a4',
     );
-    const [styleTooltip, setStyleTooltip] = useState<string | null>(null);
 
     // 이미지
     const [images, setImages] = useState<File[]>([]);
@@ -602,11 +602,10 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
                                         const StyleIcon = s.icon;
                                         return (
                                         <div key={s.id} className="pdf-style-icon-wrap">
+                                            <Tooltip content={t(`pdfModal.styles.${s.id}`)}>
                                             <button className={`pdf-style-icon${selectedStyle === s.id ? ' active' : ''}`}
-                                                    onClick={() => !isGenerating && setSelectedStyle(s.id)}
-                                                    onMouseEnter={() => setStyleTooltip(s.id)}
-                                                    onMouseLeave={() => setStyleTooltip(null)}><StyleIcon size={20} color={s.id === 'white' ? '#f5f5f5' : 'var(--muted)'} fill={s.id === 'white' ? '#f5f5f5' : 'currentColor'} strokeWidth={1.8} aria-hidden/></button>
-                                            {styleTooltip === s.id && <div className="pdf-style-tooltip">{t(`pdfModal.styles.${s.id}`)}</div>}
+                                                    onClick={() => !isGenerating && setSelectedStyle(s.id)}><StyleIcon size={20} color={s.id === 'white' ? '#f5f5f5' : 'var(--muted)'} fill={s.id === 'white' ? '#f5f5f5' : 'currentColor'} strokeWidth={1.8} aria-hidden/></button>
+                                            </Tooltip>
                                         </div>
                                         );
                                     })}

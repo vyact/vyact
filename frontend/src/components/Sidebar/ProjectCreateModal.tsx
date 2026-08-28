@@ -3,9 +3,8 @@ import {Folder, FolderPlus, Trash2, X} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import type {Project} from '../../types';
+import {getProjectDisplayColor, PROJECT_COLORS} from './projectColors';
 import './ProjectCreateModal.css';
-
-const PROJECT_COLORS = ['#f5f5f5', '#ff6468', '#ff8a4c', '#ffd342', '#42c978', '#3696ed', '#9d6af1', '#ef7abb'];
 
 type DirectoryPickerWindow = Window & {
     showDirectoryPicker?: (options?: {mode?: 'read' | 'readwrite'}) => Promise<{name: string}>;
@@ -65,10 +64,10 @@ const ProjectCreateModal = ({onClose, project, onSubmit}: ProjectCreateModalProp
             </header>
             <div className="project-create-modal__body">
                 <div className="project-name-field">
-                    <button className="project-color-button" style={{'--project-color': color} as React.CSSProperties} onClick={() => setIsColorPickerOpen(open => !open)} aria-label={t('sidebar.projectCreate.chooseColor')}><Folder size={22}/></button>
+                    <button className="project-color-button" style={{'--project-color': getProjectDisplayColor(color)} as React.CSSProperties} onClick={() => setIsColorPickerOpen(open => !open)} aria-label={t('sidebar.projectCreate.chooseColor')}><Folder size={22}/></button>
                     <input value={name} onChange={event => setName(event.target.value)} placeholder={t('sidebar.projectCreate.namePlaceholder')} autoFocus onKeyDown={event => { if (event.key === 'Enter') void handleCreate(); }}/>
                     {isColorPickerOpen && <div className="project-color-picker" role="listbox" aria-label={t('sidebar.projectCreate.chooseColor')}>
-                        {PROJECT_COLORS.map(item => <button key={item} className={item === color ? 'selected' : ''} style={{backgroundColor: item}} onClick={() => { setColor(item); setIsColorPickerOpen(false); }} aria-label={item}/>) }
+                        {PROJECT_COLORS.map(item => <button key={item} className={item === color ? 'selected' : ''} style={{backgroundColor: getProjectDisplayColor(item)}} onClick={() => { setColor(item); setIsColorPickerOpen(false); }} aria-label={item}/>) }
                     </div>}
                 </div>
                 <section className="project-source-folders">
