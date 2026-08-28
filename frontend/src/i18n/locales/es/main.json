@@ -518,6 +518,7 @@
     "searchAction": "Buscar",
     "searching": "Buscando modelos...",
     "noSearchResults": "No se encontraron modelos. Prueba con otro nombre.",
+    "noInstalledModels": "No hay modelos instalados. Busca un modelo para instalarlo.",
     "calculateAccurateMemory": "Calcular memoria detallada", "accurateMemoryHint": "Inspecciona el modelo e incluye la memoria adicional necesaria para conversaciones y documentos largos.",
     "conversationMemory": "Memoria de conversación predeterminada",
     "quickEstimatedMemory": "Estimación rápida de RAM", "detailedEstimatedMemory": "Estimación detallada de RAM", "conversationMemoryHelp": "Memoria adicional usada con la longitud de conversación predeterminada. No es la necesaria para utilizar todo el contexto máximo del modelo.",

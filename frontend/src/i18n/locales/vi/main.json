@@ -518,6 +518,7 @@
     "searchAction": "Tìm kiếm",
     "searching": "Đang tìm kiếm mô hình...",
     "noSearchResults": "Không tìm thấy mô hình. Hãy thử tên khác.",
+    "noInstalledModels": "Chưa có mô hình nào được cài đặt. Hãy tìm mô hình để cài đặt.",
     "calculateAccurateMemory": "Tính bộ nhớ chi tiết", "accurateMemoryHint": "Kiểm tra mô hình và tính cả bộ nhớ bổ sung cần thiết cho hội thoại và tài liệu dài.",
     "conversationMemory": "Bộ nhớ hội thoại mặc định",
     "quickEstimatedMemory": "Ước tính RAM nhanh", "detailedEstimatedMemory": "Ước tính RAM chi tiết", "conversationMemoryHelp": "Bộ nhớ bổ sung ở độ dài hội thoại mặc định của ứng dụng. Đây không phải mức cần thiết để dùng toàn bộ ngữ cảnh tối đa của mô hình.",

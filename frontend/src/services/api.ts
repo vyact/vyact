@@ -636,7 +636,9 @@ export const api = {
         model_type?: 'chat' | 'image_gen' | 'image_edit';
     }> {
         const res = await fetch(`${API_BASE}/models`);
-        return res.json();
+        const data = await res.json();
+        cachedVyactInstalledModels = data.installed || [];
+        return data;
     },
 
     // ── MCP 서버 설정 ──

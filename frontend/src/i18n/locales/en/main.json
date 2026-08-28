@@ -518,6 +518,7 @@
     "searchAction": "Search",
     "searching": "Searching for models...",
     "noSearchResults": "No models found. Try a different model name.",
+    "noInstalledModels": "No models are installed. Search for a model to install.",
     "calculateAccurateMemory": "Calculate detailed memory", "accurateMemoryHint": "Inspects the model and includes the extra memory needed to handle long conversations and documents.",
     "conversationMemory": "Default conversation memory",
     "quickEstimatedMemory": "Quick RAM estimate", "detailedEstimatedMemory": "Detailed RAM estimate", "conversationMemoryHelp": "Extra memory used at the app's default conversation length. This is not the amount required to use the model's full maximum context.",

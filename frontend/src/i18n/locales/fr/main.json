@@ -518,6 +518,7 @@
     "searchAction": "Rechercher",
     "searching": "Recherche de modèles...",
     "noSearchResults": "Aucun modèle trouvé. Essayez un autre nom.",
+    "noInstalledModels": "Aucun modèle n’est installé. Recherchez un modèle à installer.",
     "calculateAccurateMemory": "Calculer la mémoire détaillée", "accurateMemoryHint": "Inspecte le modèle et inclut la mémoire supplémentaire requise pour les longues conversations et les documents.",
     "conversationMemory": "Mémoire de conversation par défaut",
     "quickEstimatedMemory": "Estimation rapide de RAM", "detailedEstimatedMemory": "Estimation détaillée de RAM", "conversationMemoryHelp": "Mémoire supplémentaire utilisée avec la longueur de conversation par défaut. Ce n’est pas la mémoire nécessaire pour exploiter tout le contexte maximal du modèle.",

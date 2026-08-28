@@ -48,6 +48,31 @@ const formatBytes = formatModelBytes;
 
 const formatContextLength = (tokens: number) => tokens >= 1024 ? `${Math.round(tokens / 1024)}K` : String(tokens);
 
+const buildInstalledModelCards = (
+    installed: string[], mtpSupported: string[], dflash2Supported: string[],
+): VyactHubModel[] => {
+    const models = new Map<string, VyactHubModel>();
+    installed.forEach(modelPath => {
+        const runtime = modelPath.startsWith('mlx/') ? 'mlx' : 'gguf';
+        const relativePath = runtime === 'mlx' ? modelPath.slice(4) : modelPath;
+        const pathParts = relativePath.split('/');
+        if (pathParts.length < 2) return;
+        const repository = pathParts.slice(0, 2).join('/');
+        const filename = runtime === 'mlx' ? pathParts[1] : pathParts.slice(2).join('/');
+        if (!filename) return;
+        const modelKey = `${runtime}:${repository}`;
+        const model = models.get(modelKey) || {
+            id: repository, runtime, revision: 'main', downloads: 0, files: [], file_sizes: {},
+            mtp_supported_files: [], dflash2_supported_files: [],
+        };
+        model.files.push(filename);
+        if (mtpSupported.includes(modelPath)) model.mtp_supported_files.push(filename);
+        if (dflash2Supported.includes(modelPath)) model.dflash2_supported_files.push(filename);
+        models.set(modelKey, model);
+    });
+    return [...models.values()];
+};
+
 export default function VyactModelModal({onClose, onSelected}: VyactModelModalProps) {
     const {t} = useTranslation('main');
     const [token, setToken] = useState('');
@@ -62,6 +87,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     const [isSearching, setIsSearching] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
     const [isSavingToken, setIsSavingToken] = useState(false);
+    const [hasSearched, setHasSearched] = useState(false);
     const [message, setMessage] = useState('');
     const [downloadPhase, setDownloadPhase] = useState<DownloadPhase>(null);
     const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
@@ -88,9 +114,11 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     const selectedModelWeightBytes = selectedFile
         ? selectedFile.fileSize + (selectedFile.dflash2Model?.size || selectedFile.mtpModel?.size || 0)
         : 0;
+    const mlxAvailable = hardware.apple_silicon || installedModels.some(model => model.startsWith('mlx/'));
 
     const searchModels = useCallback(async (searchQuery: string, searchMlxOnly = mlxOnly) => {
         const requestId = ++searchRequestIdRef.current;
+        setHasSearched(true);
         setIsSearching(true);
         setModels([]);
         setSelectedFile(null);
@@ -115,12 +143,22 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     }, [mlxOnly]);
 
     useEffect(() => {
-        void searchModels('');
+        void api.getModels()
+            .then(response => {
+                const installed = response.installed || [];
+                const mtpSupported = response.mtp_supported || [];
+                const dflash2Supported = response.dflash2_supported || [];
+                setInstalledModels(installed);
+                setMtpSupportedModels(mtpSupported);
+                setModels(buildInstalledModelCards(installed, mtpSupported, dflash2Supported));
+                if (installed.some(model => model.startsWith('mlx/'))) {
+                    setMlxOnly(true);
+                }
+            })
+            .catch(error => setMessage(String(error)));
         void api.getVyactHuggingFaceTokenStatus()
             .then(status => setTokenConfigured(status.configured))
             .catch(error => console.error('Failed to load Hugging Face token status:', error));
-        // 인기 모델은 모달을 열 때 한 번만 불러온다.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const saveToken = async () => {
@@ -323,12 +361,12 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                         <label className="provider-editor-field">
                             <span className="vyact-search-label">
                                 <span><Search size={14}/>{t('modelSelector.searchLabel')}</span>
-                                {hardware.apple_silicon && <button
+                                {mlxAvailable && <button
                                     type="button"
                                     className={`vyact-mlx-switch${mlxOnly ? ' is-on' : ''}`}
                                     role="switch"
                                     aria-checked={mlxOnly}
-                                    disabled={busy || !hardware.apple_silicon}
+                                    disabled={busy}
                                     onClick={() => {
                                         const nextValue = !mlxOnly;
                                         setMlxOnly(nextValue);
@@ -419,13 +457,13 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                             <div className="vyact-model-empty"><LoaderCircle className="vyact-model-spinner" size={22}/><span>{t('modelSelector.searching')}</span></div>
                         )}
                         {!isSearching && models.length === 0 && (
-                            <div className="vyact-model-empty"><Search size={22}/><span>{t('modelSelector.noSearchResults')}</span></div>
+                            <div className="vyact-model-empty"><Search size={22}/><span>{t(hasSearched ? 'modelSelector.noSearchResults' : 'modelSelector.noInstalledModels')}</span></div>
                         )}
                         {models.map(model => {
                             const selectableFiles = getSelectableModelFiles(model.files);
-                            return <article className={`vyact-model-card${selectableFiles.length === 1 ? ' is-compact' : ''}`} key={model.id}>
+                            return <article className={`vyact-model-card${selectableFiles.length === 1 ? ' is-compact' : ''}${hasSearched ? '' : ' is-installed-list'}`} key={model.id}>
                                 <div className="vyact-model-card-heading">
-                                    <OverflowTooltipText text={model.id}/><span>{formatCompactDownloads(model.downloads)}</span>
+                                    <OverflowTooltipText text={model.id}/>{hasSearched && <span>{formatCompactDownloads(model.downloads)}</span>}
                                 </div>
                                 <div className="vyact-model-files">
                                     {selectableFiles.map(filename => {

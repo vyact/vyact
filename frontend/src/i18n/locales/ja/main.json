@@ -518,6 +518,7 @@
     "searchAction": "検索",
     "searching": "モデルを検索しています...",
     "noSearchResults": "モデルが見つかりません。別のモデル名で検索してください。",
+    "noInstalledModels": "インストール済みのモデルはありません。インストールするモデルを検索してください。",
     "calculateAccurateMemory": "詳細なメモリを計算", "accurateMemoryHint": "モデル情報を確認し、長い会話や文書の処理に必要な追加メモリまで詳しく計算します。",
     "conversationMemory": "標準会話メモリ",
     "quickEstimatedMemory": "簡易推定RAM", "detailedEstimatedMemory": "詳細推定RAM", "conversationMemoryHelp": "アプリの標準的な会話長で追加使用されるメモリです。モデルの最大コンテキストをすべて使用する場合の値ではありません。",
