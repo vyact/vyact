@@ -27,11 +27,6 @@
     -webkit-tap-highlight-color: transparent;
 }
 
-.cfv-item:hover {
-    background: var(--surface2);
-    border-color: var(--border);
-}
-
 .cfv-item--active {
     background: var(--surface2);
     border-color: var(--border);
@@ -119,12 +114,6 @@
     border-color:color-mix(in srgb, var(--text-secondary) 32%, var(--border));
     background:var(--surface);
     box-shadow:0 3px 12px rgba(48, 68, 92, .08);
-}
-
-:root[data-theme='light'] .cfv-item:hover {
-    border-color:color-mix(in srgb, var(--text-secondary) 48%, var(--border));
-    background:color-mix(in srgb, var(--surface) 72%, var(--surface2) 28%);
-    box-shadow:0 5px 16px rgba(48, 68, 92, .12);
 }
 
 :root[data-theme='light'] .cfv-item--active {

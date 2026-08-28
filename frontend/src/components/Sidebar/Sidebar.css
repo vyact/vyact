@@ -181,7 +181,7 @@
 .project-row.active {
     color: var(--text);
     background: color-mix(in srgb, var(--project-color) 7%, transparent);
-    box-shadow: inset 4px 0 0 var(--project-color);
+    box-shadow: inset 3px 0 0 var(--project-color);
 }
 :root[data-theme='light'] .project-row:not(.active):is(:hover, :active) {
     background: color-mix(in srgb, var(--accent) 4%, var(--surface));
