@@ -23,7 +23,8 @@
     border: 1px solid var(--border);
     background: var(--surface2);
     cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
+    transition: border-color 0.15s;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .cfv-item:hover {
