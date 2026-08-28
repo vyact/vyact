@@ -108,7 +108,7 @@ const ScriptPracticeTab: React.FC = () => {
             </div>
             <div className="sp-prompt-box sp-prompt-box--compact">
                 <div className="sp-prompt-label">
-                    <Tooltip content={t('voiceChat.scriptPromptHelp')} multiline large>
+                    <Tooltip content={t('voiceChat.scriptPromptHelp')} multiline size="medium">
                         <button type="button" className="sp-prompt-help" aria-label={t('voiceChat.scriptPromptHelp')}>
                             <CircleHelp size={15} aria-hidden/>
                         </button>

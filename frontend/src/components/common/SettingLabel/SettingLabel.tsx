@@ -10,7 +10,7 @@ interface SettingLabelProps {
 
 export default function SettingLabel({label, help, description}: SettingLabelProps) {
     return <span className="setting-label">
-        <Tooltip content={help} multiline large>
+        <Tooltip content={help} multiline size="medium">
             <button type="button" className="setting-label-help" aria-label={`${label}: ${help}`}>
                 <CircleQuestionMark size={15}/>
             </button>

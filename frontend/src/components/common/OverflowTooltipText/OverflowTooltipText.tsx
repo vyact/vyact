@@ -19,7 +19,7 @@ export default function OverflowTooltipText({text}: OverflowTooltipTextProps) {
         return () => observer.disconnect();
     }, [text]);
 
-    return <Tooltip content={isOverflowing ? text : ''} multiline large>
+    return <Tooltip content={isOverflowing ? text : ''} multiline size="medium">
         <strong ref={textRef} tabIndex={isOverflowing ? 0 : -1}>{text}</strong>
     </Tooltip>;
 }

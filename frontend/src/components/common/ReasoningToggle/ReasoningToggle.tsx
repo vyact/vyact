@@ -59,7 +59,7 @@ const ReasoningToggle: React.FC<ReasoningToggleProps> = ({disabled, capability})
     return (
         <div className={`reasoning-toggle${enabled ? ' on' : ''}${disabled ? ' disabled' : ''}`}>
             {/* 좌측 물음표 — hover 시 툴팁만 표시(토글 아님) */}
-            <Tooltip content={tooltipContent} multiline large>
+            <Tooltip content={tooltipContent} multiline size="medium">
                 <span className="reasoning-help" tabIndex={0} aria-label={t('reasoning.label')}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
                          strokeLinecap="round" strokeLinejoin="round">

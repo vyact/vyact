@@ -714,7 +714,7 @@ const Message: React.FC<MessageProps> = ({
                             <div key={idx} className="src-item">
                                 <span className="src-name">{getLocalizedSourceLabel(art.source, t)}</span>
                                 {art.application_deadline ? (
-                                    <Tooltip content={art.application_deadline} multiline large>
+                                    <Tooltip content={art.application_deadline} multiline size="medium">
                                     <span className="src-date src-deadline">
                                         <span className="src-deadline-text">
                                             {t('message.applicationDeadline')} {art.application_deadline}

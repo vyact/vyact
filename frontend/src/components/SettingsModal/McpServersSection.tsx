@@ -777,7 +777,7 @@ function GoogleMailSettingsFields({mailModeField, notificationField, mailMode, n
     return <div className="mcp-mail-settings">
         <label className="mcp-field-label" htmlFor={`mcp-field-${mailModeField.key}`}>{label(mailModeField)}</label>
         <label className="mcp-field-label mcp-notification-label" htmlFor={`mcp-field-${notificationField.key}`}>
-            <Tooltip content={t('mcpCatalog.fields.mail_notifications_help')} multiline large>
+            <Tooltip content={t('mcpCatalog.fields.mail_notifications_help')} multiline size="medium">
                 <span className="mcp-notification-help" tabIndex={0} role="img"
                       aria-label={t('mcpCatalog.fields.mail_notifications_help')}
                       onClick={event => event.preventDefault()}>?</span>

@@ -314,12 +314,29 @@
 }
 
 .settings-index-count {
-    font-size: 14px;
-    color: var(--muted);
+    display: inline-flex;
+    min-width: 42px;
+    height: 26px;
     flex-shrink: 0;
-    background: var(--surface2);
-    padding: 2px 8px;
-    border-radius: 10px;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    padding: 0 9px;
+    border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+
+.settings-index-count.is-empty {
+    border-color: color-mix(in srgb, var(--border) 78%, transparent);
+    background: color-mix(in srgb, var(--surface2) 54%, transparent);
+    color: var(--muted);
+    font-weight: 600;
 }
 
 .settings-index-empty {
@@ -1374,7 +1391,7 @@
     overflow: hidden;
     border: 1px solid var(--border);
     border-radius: 14px;
-    background: color-mix(in srgb, var(--surface) 92%, var(--accent) 8%);
+    background: var(--surface);
     box-shadow: 0 12px 30px rgba(0, 0, 0, .08);
 }
 
@@ -1384,7 +1401,7 @@
     gap: 12px;
     padding: 16px 18px;
     border-bottom: 1px solid var(--border);
-    background: color-mix(in srgb, var(--surface2) 58%, transparent);
+    background: color-mix(in srgb, var(--surface2) 58%, var(--surface));
 }
 
 .settings-profile-avatar {
@@ -1410,7 +1427,8 @@
 
 .settings-profile-identity span {
     color: var(--muted);
-    font-size: 11px;
+    font-size: 13px;
+    font-weight: 600;
 }
 
 .settings-profile-status {

@@ -32,7 +32,7 @@
 .vyact-memory-selection { display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 0; }
 .vyact-memory-selection > span:first-child { max-width: min(240px, 28vw); overflow: hidden; color: var(--text-secondary); font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
 .vyact-memory-selection button { display: inline-grid; flex: 0 0 auto; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border)); border-radius: 8px; background: var(--bg); color: var(--accent); cursor: pointer; }
-.vyact-memory-selection button:hover:not(:disabled) { border-color: var(--accent); color: var(--text); }
+.vyact-memory-selection button:hover:not(:disabled) { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); color: var(--accent); }
 .vyact-memory-selection button:disabled { cursor: not-allowed; opacity: .6; }
 .vyact-model-empty { display: grid; place-items: center; align-content: center; gap: 10px; min-height: 220px; color: var(--muted); font-size: var(--modal-text); }
 .vyact-model-spinner { animation: vyact-model-spin .8s linear infinite; }
@@ -55,7 +55,8 @@
 .vyact-model-files button small { grid-column: 1; color: var(--muted); font-size: 11px; }
 .vyact-model-file-meta { display: flex; align-items: center; gap: 6px; }
 .vyact-model-file-status { display: flex; grid-column: 2; grid-row: 1 / span 2; align-items: center; gap: 7px; align-self: center; }
-.vyact-model-installed { padding: 3px 7px; border-radius: 999px; background: color-mix(in srgb, #47b881 16%, transparent); color: #63c998; font-size: 10px; font-weight: 750; white-space: nowrap; }
+.vyact-model-installed { padding: 3px 7px; border: 1px solid transparent; border-radius: 999px; background: color-mix(in srgb, #47b881 16%, transparent); color: #63c998; font-size: 10px; font-weight: 750; white-space: nowrap; }
+:root[data-theme='light'] .vyact-model-installed { border-color: color-mix(in srgb, var(--success) 36%, var(--border)); background: color-mix(in srgb, var(--success) 12%, var(--surface)); color: var(--success); box-shadow: 0 1px 3px color-mix(in srgb, var(--success) 12%, transparent); }
 .vyact-model-files button:hover:not(:disabled) { transform: translateY(-1px); }
 .vyact-model-files button:hover:not(:disabled) { color: var(--accent); }
 .vyact-model-files button.is-selected { background: color-mix(in srgb, var(--accent) 8%, var(--bg)); }

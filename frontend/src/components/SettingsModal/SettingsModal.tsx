@@ -1000,8 +1000,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                                         </Tooltip>
                                                         <div className="settings-index-info">
                                                             <span className="settings-index-name">{s.index}</span>
-                                                            <span
-                                                                className="settings-index-count">{s.doc_count.toLocaleString()}건</span>
+                                                            <span className={`settings-index-count${s.doc_count === 0 ? ' is-empty' : ''}`}>
+                                                                {t('backup.documentCount', {count: s.doc_count.toLocaleString()})}
+                                                            </span>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -1452,7 +1453,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                         {section.fields.map(key => {
                                             return <label className="settings-runtime-row" key={key}>
                                                 <span className="settings-runtime-label">
-                                                    <Tooltip content={t(`runtime.fields.${key}.help`)} multiline large>
+                                                    <Tooltip content={t(`runtime.fields.${key}.help`)} multiline size="medium">
                                                         <span className="settings-tooltip" tabIndex={0} aria-label={t('runtime.help')}>?</span>
                                                     </Tooltip>
                                                     {t(`runtime.fields.${key}.label`)}

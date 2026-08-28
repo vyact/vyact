@@ -2,10 +2,11 @@ import {cloneElement, isValidElement, ReactElement, ReactNode, useEffect, useId,
 import {createPortal} from 'react-dom';
 import './Tooltip.css';
 
-type TooltipProps = {content: ReactNode; multiline?: boolean; large?: boolean; children: ReactElement};
+type TooltipSize = 'small' | 'medium';
+type TooltipProps = {content: ReactNode; multiline?: boolean; size?: TooltipSize; children: ReactElement};
 const tooltipContentRegistry = new Map<string, ReactNode>();
 
-export function Tooltip({content, multiline, large, children}: TooltipProps) {
+export function Tooltip({content, multiline, size = 'small', children}: TooltipProps) {
     const tooltipId = useId();
     useEffect(() => {
         tooltipContentRegistry.set(tooltipId, content);
@@ -16,12 +17,12 @@ export function Tooltip({content, multiline, large, children}: TooltipProps) {
         'data-instant-tooltip': typeof content === 'string' ? content : '',
         'data-instant-tooltip-id': tooltipId,
         ...(multiline ? {'data-instant-tooltip-multiline': ''} : {}),
-        ...(large ? {'data-instant-tooltip-large': ''} : {}),
+        'data-instant-tooltip-size': size,
         title: undefined,
     } as never);
 }
 
-type TooltipState = {content: ReactNode; x: number; y: number; targetTop: number; targetBottom: number; placement: 'above' | 'below'; multiline: boolean; large: boolean} | null;
+type TooltipState = {content: ReactNode; x: number; y: number; targetTop: number; targetBottom: number; placement: 'above' | 'below'; multiline: boolean; size: TooltipSize} | null;
 
 const getTooltipTarget = (target: EventTarget | null) => target instanceof Element
     ? target.closest<HTMLElement>('[data-instant-tooltip], [title], [data-vyact-tooltip-title]')
@@ -90,7 +91,7 @@ export function TooltipProvider({children}: {children: ReactNode}) {
         const rect = target.getBoundingClientRect();
         const isLongNativeTitle = Boolean(target.dataset.vyactTooltipTitle && target.dataset.vyactTooltipTitle.length > 48);
         const multiline = target.hasAttribute('data-instant-tooltip-multiline') || isLongNativeTitle;
-        const large = target.hasAttribute('data-instant-tooltip-large') || isLongNativeTitle;
+        const size = target.dataset.instantTooltipSize === 'medium' ? 'medium' : 'small';
         const x = rect.left + rect.width / 2;
         if (content) {
             activeTargetRef.current = target;
@@ -102,7 +103,7 @@ export function TooltipProvider({children}: {children: ReactNode}) {
                 targetBottom: rect.bottom,
                 placement: 'above',
                 multiline,
-                large,
+                size,
             });
         }
     };
@@ -131,9 +132,9 @@ export function TooltipProvider({children}: {children: ReactNode}) {
         </div>
         {tooltip && createPortal(
             tooltip.multiline
-                ? <div ref={tooltipRef} className={`instant-tooltip ${tooltip.placement} multiline${tooltip.large ? ' large' : ''}`} role="tooltip" style={{left: tooltip.x, top: tooltip.y}}
+                ? <div ref={tooltipRef} className={`instant-tooltip ${tooltip.placement} multiline size-${tooltip.size}`} role="tooltip" style={{left: tooltip.x, top: tooltip.y}}
                 >{tooltip.content}</div>
-                : <div ref={tooltipRef} className={`instant-tooltip ${tooltip.placement}${tooltip.large ? ' large' : ''}`} role="tooltip" style={{left: tooltip.x, top: tooltip.y}}>{tooltip.content}</div>,
+                : <div ref={tooltipRef} className={`instant-tooltip ${tooltip.placement} size-${tooltip.size}`} role="tooltip" style={{left: tooltip.x, top: tooltip.y}}>{tooltip.content}</div>,
             document.body,
         )}
     </>;

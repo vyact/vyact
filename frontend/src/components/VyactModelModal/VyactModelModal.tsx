@@ -318,7 +318,6 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                     <div className="provider-editor-title-icon"><Sparkles size={20}/></div>
                     <div>
                         <h2 id="vyact-model-editor-title">Vyact</h2>
-                        <p>{t('modelSelector.selectModel')}</p>
                     </div>
                     <button type="button" className="provider-editor-close" onClick={onClose} aria-label={t('customProvider.close')} disabled={busy}>×</button>
                 </header>
@@ -327,7 +326,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                     <section className="provider-editor-section vyact-model-controls">
                         <label className="provider-editor-field">
                             <span>
-                                <Tooltip content={t('modelSelector.huggingFaceTokenHelp')} multiline large>
+                                <Tooltip content={t('modelSelector.huggingFaceTokenHelp')} multiline size="medium">
                                     <span className="vyact-token-help" tabIndex={0}>?</span>
                                 </Tooltip>
                                 <KeyRound size={14}/>{t('customProvider.apiKey')} <small>{t('customProvider.optional')}</small>
@@ -408,7 +407,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                     <div className="vyact-memory-selection">
                                         <span>{selectedFileDisplayName}</span>
                                         {!selectedMetadata && (
-                                            <Tooltip content={t('modelSelector.accurateMemoryHint')} multiline large>
+                                            <Tooltip content={t('modelSelector.accurateMemoryHint')} multiline size="medium">
                                                 <button
                                                     type="button"
                                                     onClick={() => void calculateAccurateMemory()}
@@ -429,7 +428,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                         <span>
                                             <small>
                                                 {t('modelSelector.layers')}
-                                                <Tooltip content={t('modelSelector.layersHelp')} multiline large>
+                                                <Tooltip content={t('modelSelector.layersHelp')} multiline size="medium">
                                                     <i className="vyact-memory-help" tabIndex={0}>?</i>
                                                 </Tooltip>
                                             </small>
@@ -439,7 +438,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                         <span>
                                             <small>
                                                 {t('modelSelector.conversationMemory')}
-                                                <Tooltip content={t('modelSelector.conversationMemoryHelp')} multiline large>
+                                                <Tooltip content={t('modelSelector.conversationMemoryHelp')} multiline size="medium">
                                                     <i className="vyact-memory-help" tabIndex={0}>?</i>
                                                 </Tooltip>
                                             </small>

@@ -43,7 +43,7 @@ const ApprovalControl = () => {
             </button>
             {open && <div className="approval-control__popover">
                 <div className="approval-control__modes">{MODE_OPTIONS.map(option => <div className="approval-control__mode" key={option}>
-                    <Tooltip content={t(`approval.modes.${option}.description`)} multiline large>
+                    <Tooltip content={t(`approval.modes.${option}.description`)} multiline size="medium">
                         <span className="approval-control__help" tabIndex={0} aria-label={t(`approval.modes.${option}.description`)}>
                             <CircleHelp size={16}/>
                         </span>

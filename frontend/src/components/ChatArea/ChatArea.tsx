@@ -451,7 +451,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             {conversationTurns.length > 1 && (
                 <nav className="conversation-navigator" aria-label="대화 탐색">
                     {conversationTurns.map((turn, turnIndex) => (
-                        <Tooltip content={<span className="conversation-navigator-tooltip-content"><strong>{turn.question || '질문'}</strong>{turn.answer && <span>{turn.answer}</span>}</span>} multiline large key={turn.messageIndex}>
+                        <Tooltip content={<span className="conversation-navigator-tooltip-content"><strong>{turn.question || '질문'}</strong>{turn.answer && <span>{turn.answer}</span>}</span>} multiline size="medium" key={turn.messageIndex}>
                         <button
                             key={turn.messageIndex}
                             type="button"
