@@ -244,7 +244,7 @@
   "api": {},
   "profile": {
     "maxLength": "Longitud máxima", "maxLengthDescription": "Nivel de detalle que la IA conserva en tu perfil",
-    "nickname": "Nombre / Apodo",
+    "nickname": "Nombre de usuario",
     "nicknamePlaceholder": "Nombre o apodo",
     "responseStyle": "Estilo y tono predeterminados", "responseStyleDescription": "Cómo responde la IA en conversaciones normales",
     "responseStyleDefault": "Predeterminado", "responseStyleDefaultDescription": "Estilo y tono actuales",

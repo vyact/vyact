@@ -719,7 +719,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                         <div style={{display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0, marginLeft: '8px'}}>
                             {!isImageMode && (
                                 <button className="voice-chat-btn" onClick={onOpenVoiceChat}
-                                        title={t('voiceMode')}>
+                                        aria-label={t('voiceMode')}>
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                          strokeWidth="2">
                                         <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
@@ -733,7 +733,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                 className={`send-btn${isImageMode ? ' image-mode-send' : ''}${disabled && onStop ? ' stop-mode' : ''}`}
                                 onClick={disabled && onStop ? onStop : handleSend}
                                 disabled={!disabled && !onStop && (!value.trim() && attach.images.length === 0 && attach.fileAttachments.length === 0 && attach.pastedTexts.length === 0)}
-                                title={disabled && onStop ? t('chatInput.stop') : disabled ? t('chatInput.waiting') : isImageMode ? t('chatInput.imageGen') : t('chatInput.send')}
+                                aria-label={disabled && onStop ? t('chatInput.stop') : disabled ? t('chatInput.waiting') : isImageMode ? t('chatInput.imageGen') : t('chatInput.send')}
                             >
                                 {disabled && onStop ? (
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none">

@@ -1579,29 +1579,29 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
 
                                 {profileMode === 'view' && (
                                     <>
-                                        <div className="settings-general-section">
-                                            <div className="remember-setup-row">
-                                                <span className="remember-setup-label">{t('profile.nickname')}</span>
-                                                <span style={{
-                                                    fontSize: '14px',
-                                                    color: 'var(--text)',
-                                                    opacity: existingNickname ? 1 : 0.4
-                                                }}>
+                                        <div className="settings-profile-summary-card">
+                                            <div className="settings-profile-summary-header">
+                                                <div className="settings-profile-avatar" aria-hidden="true">
+                                                    {existingNickname?.trim().charAt(0).toUpperCase() || 'AI'}
+                                                </div>
+                                                <div className="settings-profile-identity">
+                                                    <span>{t('profile.nickname')}</span>
+                                                </div>
+                                                <span className={`settings-profile-status${existingNickname ? ' is-ready' : ''}`}>
                                                     {existingNickname || t('common:notSet')}
                                                 </span>
                                             </div>
+                                            <div className={`settings-profile-content settings-profile-summary-content${!profileLoading && !existingProfile ? ' is-empty' : ''}`}>
+                                                {profileLoading ? (
+                                                    <div className="remember-profile-loading">{t('profile.checking')}</div>
+                                                ) : existingProfile ? (
+                                                    <div className="remember-profile-text">{existingProfile}</div>
+                                                ) : (
+                                                    <div className="settings-profile-label">{t('profile.noProfile')}</div>
+                                                )}
+                                            </div>
                                         </div>
-                                        <div className="settings-general-section settings-profile-content">
-                                            <div className="settings-profile-label">{t('profile.currentProfile')}</div>
-                                            {profileLoading ? (
-                                                <div className="remember-profile-loading">{t('profile.checking')}</div>
-                                            ) : existingProfile ? (
-                                                <div className="remember-profile-text">{existingProfile}</div>
-                                            ) : (
-                                                <div className="remember-profile-empty">{t('profile.noProfile')}</div>
-                                            )}
-                                        </div>
-                                        <div className="settings-profile-actions">
+                                        <div className="settings-profile-actions settings-profile-summary-actions">
                                             <button className="remember-edit-btn" onClick={profileEnterEdit}
                                                     disabled={profileLoading}>
                                                 {t('common:edit')}

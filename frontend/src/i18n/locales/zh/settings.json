@@ -244,7 +244,7 @@
   "api": {},
   "profile": {
     "maxLength": "最大字数", "maxLengthDescription": "AI在用户资料中保留的详细程度",
-    "nickname": "姓名 / 昵称",
+    "nickname": "用户名",
     "nicknamePlaceholder": "姓名或昵称",
     "responseStyle": "默认风格和语气", "responseStyleDescription": "AI在普通对话中的回答方式",
     "responseStyleDefault": "默认", "responseStyleDefaultDescription": "当前默认风格和语气",

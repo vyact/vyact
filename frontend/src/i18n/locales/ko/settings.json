@@ -300,7 +300,7 @@
   "profile": {
     "maxLength": "최대 글자 수",
     "maxLengthDescription": "아래 사용자 프로필에 저장할 최대 글자 수",
-    "nickname": "이름 / 닉네임",
+    "nickname": "사용자 이름",
     "nicknamePlaceholder": "이름 또는 닉네임",
     "responseStyle": "기본 스타일 및 말투",
     "responseStyleDescription": "일반 대화에서 AI가 답변하는 방식",
@@ -323,7 +323,7 @@
     "responseStyleSaved": "응답 말투를 저장했습니다.",
     "responseStyleSaveFailed": "응답 말투를 저장하지 못했습니다.",
     "currentProfile": "현재 저장된 프로필",
-    "noProfile": "저장된 프로필 없음",
+    "noProfile": "저장된 프로필이 없습니다.",
     "checking": "조회 중...",
     "editProfile": "프로필 편집",
     "editPlaceholder": "프로필 내용을 입력하세요...",

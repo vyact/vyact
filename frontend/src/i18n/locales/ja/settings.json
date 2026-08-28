@@ -244,7 +244,7 @@
   "api": {},
   "profile": {
     "maxLength": "最大文字数", "maxLengthDescription": "AIがプロフィールに保持する詳細度",
-    "nickname": "名前 / ニックネーム",
+    "nickname": "ユーザー名",
     "nicknamePlaceholder": "名前またはニックネーム",
     "responseStyle": "基本スタイルと口調", "responseStyleDescription": "通常の会話でAIが回答する方法",
     "responseStyleDefault": "デフォルト", "responseStyleDefaultDescription": "現在の標準スタイルと口調",

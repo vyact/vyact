@@ -136,6 +136,33 @@
     opacity: 0.7;
 }
 
+:root[data-theme='light'] .settings-sidebar-icon {
+    display: inline-grid;
+    width: 26px;
+    height: 26px;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--border) 82%, #fff);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--surface) 84%, var(--surface2));
+    box-shadow: 0 1px 2px rgba(40, 58, 80, 0.06);
+    filter: grayscale(1);
+    opacity: 0.82;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s, opacity 0.15s;
+}
+
+:root[data-theme='light'] .settings-sidebar-item:is(:hover, :focus-visible, :active) .settings-sidebar-icon {
+    border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+    background: color-mix(in srgb, var(--surface) 84%, var(--surface2));
+}
+
+:root[data-theme='light'] .settings-sidebar-item.active:is(:hover, :focus-visible, :active) .settings-sidebar-icon,
+:root[data-theme='light'] .settings-sidebar-item.active .settings-sidebar-icon {
+    border-color: color-mix(in srgb, var(--accent) 48%, var(--border));
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+    box-shadow: 0 2px 6px rgba(var(--accent-rgb), 0.12);
+    opacity: 1;
+}
+
 /* 헤더 */
 .settings-header {
     display: flex;
@@ -1339,9 +1366,101 @@
     padding-top: 4px;
 }
 
+.settings-profile-summary-card {
+    display: flex;
+    flex: 1;
+    min-height: 280px;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--surface) 92%, var(--accent) 8%);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .08);
+}
+
+.settings-profile-summary-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border);
+    background: color-mix(in srgb, var(--surface2) 58%, transparent);
+}
+
+.settings-profile-avatar {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 750;
+}
+
+.settings-profile-identity {
+    display: grid;
+    min-width: 0;
+    flex: 1;
+    gap: 2px;
+}
+
+.settings-profile-identity span {
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.settings-profile-status {
+    padding: 5px 9px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.settings-profile-status.is-ready {
+    border-color: color-mix(in srgb, var(--success) 34%, var(--border));
+    background: color-mix(in srgb, var(--success) 10%, var(--surface));
+    color: var(--success);
+}
+
+.settings-profile-summary-content {
+    padding: 18px;
+}
+
+.settings-profile-summary-content.is-empty {
+    align-items: center;
+    justify-content: center;
+}
+
+.settings-profile-summary-content.is-empty .settings-profile-label {
+    margin-bottom: 0;
+    text-align: center;
+}
+
+.settings-profile-summary-content .remember-profile-loading {
+    display: grid;
+    flex: 1;
+    min-height: 120px;
+    place-items: center;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--bg) 48%, transparent);
+}
+
+.settings-profile-summary-actions {
+    padding: 12px 0 0;
+}
+
 /* 설정 내 프로필 텍스트 높이 고정 */
 .settings-general .remember-profile-text {
-    height: 360px;
+    height: auto;
+    min-height: 120px;
     max-height: 360px;
 }
 

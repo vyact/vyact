@@ -271,7 +271,7 @@
   "profile": {
     "maxLength": "Max length",
     "maxLengthDescription": "How much detail the AI keeps in your profile",
-    "nickname": "Name / Nickname",
+    "nickname": "User name",
     "nicknamePlaceholder": "Name or nickname",
     "responseStyle": "Default style and tone",
     "responseStyleDescription": "How the AI responds in regular conversations",
