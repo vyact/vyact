@@ -28,7 +28,7 @@
     margin-left: auto;
 }
 .input-menu { position: relative; flex-shrink: 0; }
-.input-menu-trigger { position: relative; display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; flex-shrink: 0; border: 0; border-radius: 10px; background: transparent; color: #b0b0b8; cursor: pointer; transition: background .2s; }
+.input-menu-trigger { position: relative; display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; flex-shrink: 0; border: 0; border-radius: 10px; background: transparent; color: var(--text-secondary); cursor: pointer; transition: background .2s; }
 .input-menu-trigger:hover { background: var(--surface2); }
 .input-menu-reasoning-indicator { position: absolute; top: -2px; right: -3px; display: grid; width: 14px; height: 14px; place-items: center; border: 1px solid var(--border); border-radius: 50%; background: var(--surface); color: #686870; opacity: .72; pointer-events: none; transition: color .2s, border-color .2s, box-shadow .2s, opacity .2s; }
 .input-menu-trigger.reasoning-on .input-menu-reasoning-indicator { border-color: var(--accent); color: var(--accent); opacity: 1; box-shadow: 0 0 7px color-mix(in srgb, var(--accent) 65%, transparent); }

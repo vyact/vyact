@@ -201,9 +201,8 @@
     transition: opacity 0.15s;
     position: absolute;
     right: 13px;
-    background: var(--surface2);
-    padding: 2px 4px;
-    border-radius: 8px;
+    background: transparent;
+    padding: 0;
 }
 
 .qmemo-item:hover .qmemo-actions,
@@ -225,27 +224,28 @@
 }
 
 .qmemo-icon-btn {
-    background: transparent;
+    background: var(--surface2);
     border: 1px solid var(--border);
     color: var(--muted);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 30px;
-    height: 30px;
+    width: 34px;
+    height: 34px;
     border-radius: 8px;
     transition: all 0.15s;
 }
 
 .qmemo-icon-btn:hover {
-    color: var(--text);
-    background: rgba(255, 255, 255, 0.07);
-    border-color: var(--border);
+    border-color: var(--accent);
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface2));
 }
 
 /* 삭제 버튼: 사이드바 전체삭제 버튼과 동일한 색상 스타일 */
 .qmemo-icon-btn.danger {
+    background: transparent;
     border-color: var(--del-border);
     color: var(--del-fg-soft);
 }
@@ -263,11 +263,22 @@
 }
 
 .qmemo-icon-btn.confirm {
-    border-color: rgba(74, 222, 128, 0.3);
+    border-color: color-mix(in srgb, #4ade80 38%, var(--border));
     color: #4ade80;
 }
 
 .qmemo-icon-btn.confirm:hover {
-    background: rgba(74, 222, 128, 0.12);
-    border-color: rgba(74, 222, 128, 0.55);
+    border-color: #4ade80;
+    background: color-mix(in srgb, #4ade80 10%, var(--surface2));
+}
+
+:root[data-theme='light'] .qmemo-icon-btn:not(.danger) {
+    background: var(--surface);
+    border-color: color-mix(in srgb, var(--text-secondary) 34%, var(--border));
+    box-shadow: 0 1px 3px rgba(40, 58, 80, 0.08);
+}
+
+:root[data-theme='light'] .qmemo-icon-btn:not(.danger):hover {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 9%, var(--surface));
 }

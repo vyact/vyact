@@ -173,6 +173,7 @@
     background: var(--surface2);
     color: var(--muted);
     cursor: pointer;
+    transition: color .15s, border-color .15s, background .15s, box-shadow .15s;
 }
 
 .custom-select-search-action-slot {
@@ -181,7 +182,21 @@
 
 .custom-select-search-action:hover {
     border-color: var(--accent);
-    color: var(--text);
+    background: color-mix(in srgb, var(--accent) 9%, var(--surface2));
+    color: var(--accent);
+}
+
+:root[data-theme='light'] .custom-select-search-action {
+    border-color: color-mix(in srgb, var(--text-secondary) 34%, var(--border));
+    background: var(--surface);
+    color: var(--text-secondary);
+    box-shadow: 0 1px 3px rgba(40, 58, 80, .08);
+}
+
+:root[data-theme='light'] .custom-select-search-action:is(:hover, :active) {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+    color: var(--accent);
 }
 
 .custom-select-search-field:focus-within {

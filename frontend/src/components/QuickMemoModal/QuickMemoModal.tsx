@@ -194,13 +194,13 @@ const QuickMemoModal: React.FC<QuickMemoModalProps> = ({onClose}) => {
 
                                 <span className="qmemo-date">{formatDate(n.created_at, i18n.language)}</span>
 
-                                <div className="qmemo-actions">
+                                <div className="qmemo-actions" data-tooltip-disabled>
                                     {editingId === n.id ? (
                                         <>
-                                            <button className="qmemo-icon-btn confirm" onClick={() => commitEdit(n.id)} title={t('quickMemoModal.save')}>
+                                            <button className="qmemo-icon-btn confirm" onClick={() => commitEdit(n.id)} aria-label={t('quickMemoModal.save')}>
                                                 <Check size={15} strokeWidth={2.5}/>
                                             </button>
-                                            <button className="qmemo-icon-btn danger" onClick={() => setEditingId(null)} title={t('quickMemoModal.cancel')}>
+                                            <button className="qmemo-icon-btn danger" onClick={() => setEditingId(null)} aria-label={t('quickMemoModal.cancel')}>
                                                 <X size={15}/>
                                             </button>
                                         </>
@@ -214,10 +214,10 @@ const QuickMemoModal: React.FC<QuickMemoModalProps> = ({onClose}) => {
                                             {deletingId === n.id ? (
                                                 <>
                                                     <span className="qmemo-confirm-text">{t('quickMemoModal.deleteConfirm')}</span>
-                                                    <button className="qmemo-icon-btn" onClick={() => setDeletingId(null)} title={t('quickMemoModal.cancel')}>
+                                                    <button className="qmemo-icon-btn" onClick={() => setDeletingId(null)} aria-label={t('quickMemoModal.cancel')}>
                                                         <X size={15}/>
                                                     </button>
-                                                    <button className="qmemo-icon-btn danger" onClick={() => { setDeletingId(null); remove(n.id); }} title={t('quickMemoModal.confirm')}>
+                                                    <button className="qmemo-icon-btn danger" onClick={() => { setDeletingId(null); remove(n.id); }} aria-label={t('quickMemoModal.confirm')}>
                                                         <Check size={15} strokeWidth={2.5}/>
                                                     </button>
                                                 </>

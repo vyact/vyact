@@ -109,8 +109,13 @@ body {
 button {
   cursor: pointer;
   border: none;
+  background-color: transparent;
+  color: inherit;
   font-family: inherit;
   outline: none !important;
+  appearance: none;
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 button:focus,

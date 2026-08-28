@@ -6,3 +6,38 @@
 .knowledge-collection-attach-select--menu-item .knowledge-collection-attach-trigger[aria-expanded='true'] { border: 0; background: var(--surface); color: var(--text); }
 .knowledge-collection-attach-select--menu-item .knowledge-collection-attach-trigger span { flex: 1; }
 .knowledge-collection-attach-select--menu-item .knowledge-collection-attach-chevron { margin-left: auto; color: var(--muted); }
+
+/* ActionMenu content is portaled to body, so this action cannot rely on a
+   descendant selector from the trigger wrapper. */
+.knowledge-collection-create-action {
+    display: flex;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 38px;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 9px;
+    padding: 9px 10px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--accent);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 650;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .15s, background-color .15s, color .15s;
+}
+
+.knowledge-collection-create-action:hover {
+    border-color: color-mix(in srgb, var(--accent) 28%, transparent);
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface2));
+    color: var(--accent);
+}
+
+.knowledge-collection-create-action svg {
+    width: 17px;
+    height: 17px;
+    flex: none;
+}

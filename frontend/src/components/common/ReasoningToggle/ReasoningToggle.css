@@ -6,7 +6,7 @@
     gap: 6px;
     height: 36px;
     flex-shrink: 0;
-    color: #b0b0b8;
+    color: var(--text-secondary);
     font-size: 12px;
     font-weight: 600;
     user-select: none;
@@ -88,7 +88,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: #b0b0b8;
+    color: var(--text-secondary);
     cursor: help;
     transition: color 0.2s;
 }

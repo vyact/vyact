@@ -24,9 +24,10 @@ export function Tooltip({content, multiline, size = 'small', children}: TooltipP
 
 type TooltipState = {content: ReactNode; x: number; y: number; targetTop: number; targetBottom: number; placement: 'above' | 'below'; multiline: boolean; size: TooltipSize} | null;
 
-const getTooltipTarget = (target: EventTarget | null) => target instanceof Element
-    ? target.closest<HTMLElement>('[data-instant-tooltip], [title], [data-vyact-tooltip-title]')
-    : null;
+const getTooltipTarget = (target: EventTarget | null) => {
+    if (!(target instanceof Element) || target.closest('[data-tooltip-disabled]')) return null;
+    return target.closest<HTMLElement>('[data-instant-tooltip], [title], [data-vyact-tooltip-title]');
+};
 
 export function TooltipProvider({children}: {children: ReactNode}) {
     const [tooltip, setTooltip] = useState<TooltipState>(null);

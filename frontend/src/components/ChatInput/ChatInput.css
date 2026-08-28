@@ -29,16 +29,16 @@
     width: 100%;
     min-width: 0;
     align-self: stretch;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    padding: 14px 18px;
+    background: transparent;
+    border-top: 0;
+    padding: 4px 18px 14px;
 }
 
 .chat-input-wrap.panel-open .chat-input-container {
-    background: transparent;
-    border: none;
-    border-radius: 0;
-    padding: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 8px 14px;
 }
 
 @keyframes spin {
@@ -100,13 +100,21 @@
     border:1px solid var(--border);
     border-radius:10px;
     background:color-mix(in srgb, var(--surface2) 72%, transparent);
-    transition:border-color .15s ease, background .15s ease, transform .15s ease;
+    transition:border-color .15s ease, background-color .15s ease, transform .15s ease;
 }
 
 .file-attachment-preview:hover {
     border-color:color-mix(in srgb, var(--border) 55%, var(--text-secondary));
     background:var(--surface2);
     transform:translateY(-1px);
+}
+
+:root[data-theme='light'] .file-attachment-preview {
+    background: color-mix(in srgb, var(--surface2) 72%, var(--surface));
+}
+
+:root[data-theme='light'] .file-attachment-preview:hover {
+    background: color-mix(in srgb, var(--accent) 4%, var(--surface2));
 }
 
 .file-attachment-preview__icon {
@@ -157,11 +165,11 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    color: #b0b0b8;
+    color: var(--text-secondary);
 }
 
 .chat-btn-row button {
-    color: #b0b0b8;
+    color: var(--text-secondary);
 }
 
 .chat-btn-right {
@@ -396,12 +404,10 @@
 .chat-system-prompt-select .custom-select-trigger {
     height: 30px;
     padding: 5px 8px;
-    background: transparent;
 }
 
 .chat-system-prompt-select.is-selected .custom-select-trigger {
     border-color: color-mix(in srgb, var(--accent) 65%, var(--border));
-    background: transparent;
     color: var(--accent);
     font-weight: 600;
 }
@@ -414,7 +420,6 @@
 .chat-system-prompt-select.is-selected .custom-select-trigger:hover,
 .chat-system-prompt-select.is-selected .custom-select-trigger.open {
     border-color: var(--accent);
-    background: transparent;
 }
 
 .chat-system-prompt-select .custom-select-trigger-label {
@@ -480,33 +485,35 @@
 .knowledge-source-tabs {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 4px;
-    margin: 10px 10px 0;
-    padding: 4px;
-    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-    border-radius: 11px;
-    background: color-mix(in srgb, var(--bg) 42%, transparent);
+    gap: 8px;
+    margin: 0 12px;
+    padding: 8px 0 0;
+    border-bottom: 1px solid var(--border);
+    background: transparent;
 }
 
 .knowledge-source-tabs button {
-    padding: 8px;
+    position: relative;
+    padding: 9px 8px 10px;
     border: 0;
-    border-radius: 8px;
+    border-radius: 7px 7px 0 0;
     background: transparent;
     color: var(--muted);
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
+    transition: color .15s, background .15s;
 }
 
 .knowledge-source-tabs button:hover {
     color: var(--text);
+    background: color-mix(in srgb, var(--accent) 5%, transparent);
 }
 
 .knowledge-source-tabs button.active {
-    background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+    background: color-mix(in srgb, var(--accent) 7%, transparent);
     color: var(--accent);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, .18);
+    box-shadow: inset 0 -2px 0 var(--accent);
 }
 
 .knowledge-source-bulk-actions {
