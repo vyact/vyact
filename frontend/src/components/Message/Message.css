@@ -33,7 +33,7 @@
 
 .msg-bubble--empty { display:none; }
 .msg-pasted-preview-list { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:6px; margin-bottom:6px; }
-.msg-pasted-preview { position:relative; display:flex; width:min(260px, 100%); min-height:52px; border:1px solid rgba(255,255,255,.14); border-radius:15px; background:rgba(255,255,255,.045); }
+.msg-pasted-preview { position:relative; display:flex; width:min(260px, 100%); min-height:52px; border:1px solid var(--border); border-radius:15px; background:var(--interactive-hover); }
 .msg-pasted-preview__content { display:flex; align-items:center; gap:9px; width:100%; min-width:0; padding:8px 9px; cursor:pointer; }
 .msg-pasted-preview__content:hover { background:transparent; }
 .msg-pasted-preview--active::before { position:absolute; top:8px; bottom:8px; left:-1px; width:3px; border-radius:0 3px 3px 0; background:var(--accent); content:''; }
@@ -81,11 +81,11 @@
 }
 
 .msg.user .msg-bubble {
-    background: #252525;
-    color: #e8eaf0;
+    background: var(--user-message-bg);
+    color: var(--user-message-text);
     border: 1px solid transparent;
     border-bottom-right-radius: 4px;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
+    box-shadow: inset 0 1px 0 var(--interactive-hover);
 }
 
 .user-attachment-stack {
@@ -136,9 +136,9 @@
     gap: 9px;
     width:min(220px, 72vw);
     padding:7px 9px;
-    border: 1px solid rgba(255,255,255,.12);
+    border: 1px solid var(--border);
     border-radius: 9px;
-    background: rgba(255,255,255,.055);
+    background: var(--interactive-hover);
 }
 
 .user-file-card__icon {
@@ -148,7 +148,7 @@
     height: 28px;
     flex: 0 0 28px;
     border-radius: 7px;
-    background: rgba(255,255,255,.08);
+    background: var(--interactive-active);
     color: var(--text-secondary);
 }
 
@@ -204,7 +204,7 @@
 }
 
 .msg-bubble code {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--code-inline-bg);
     border-radius: 4px;
     padding: 1px 5px;
     font-size: 0.9em;

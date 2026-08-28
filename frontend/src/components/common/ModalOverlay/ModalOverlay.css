@@ -7,5 +7,7 @@
     justify-content: center;
     box-sizing: border-box;
     padding: 20px;
-    background: rgba(0, 0, 0, 0.6);
+    background: var(--overlay);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
 }

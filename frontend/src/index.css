@@ -31,11 +31,21 @@
   padding: 0;
 }
 
-/* 모든 포커스/선택 시 outline 제거 */
-*:focus,
-*:focus-visible,
-*:active {
+/* 마우스 클릭에는 기본 outline을 숨기되 키보드 탐색 위치는 명확히 표시한다. */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+:is(button, a, input, textarea, select, [role='button'], [role='option'], [role='tab'], [role='menuitem'], [role='switch']):focus-visible {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--focus-ring);
+}
+
+/* 텍스트 입력 계열은 컴포넌트 자체의 border 포커스만 사용해 이중 외곽선을 방지한다. */
+:is(input:not([type='checkbox']):not([type='radio']):not([type='range']), textarea, select):focus-visible {
   outline: none !important;
+  box-shadow: none !important;
 }
 
 body {
@@ -56,28 +66,35 @@ button {
   background-color: transparent;
   color: inherit;
   font-family: inherit;
-  outline: none !important;
   appearance: none;
   -webkit-appearance: none;
   -webkit-tap-highlight-color: transparent;
 }
 
-button:focus,
 button:active {
-  outline: none !important;
+  outline: none;
 }
 
 input,
 textarea,
 select {
   font-family: inherit;
-  outline: none !important;
 }
 
-input:focus,
-textarea:focus,
-select:focus {
+::selection {
+  background: rgba(var(--accent-rgb), 0.24);
+  color: var(--text);
+}
+
+/* 아이콘과 input을 한 컨트롤로 묶은 검색창은 내부 input에 별도 사각 포커스를 만들지 않는다. */
+:is(input[class*='search'], [class*='search'] input):focus-visible {
   outline: none !important;
+  box-shadow: none;
+}
+
+/* 검색 컨테이너는 두꺼운 링 대신 기존 테두리 색상 변화만 사용한다. */
+[class*='search']:focus-within {
+  box-shadow: none !important;
 }
 
 #root {

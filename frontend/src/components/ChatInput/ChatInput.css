@@ -2,8 +2,8 @@
     background: var(--bg);
     border-top: none;
     flex-shrink: 0;
-    width: 52%;
-    min-width: 480px;
+    width: min(760px, calc(100% - 40px));
+    min-width: 0;
     align-self: center;
     padding: 4px 0 14px;
 }
@@ -13,8 +13,8 @@
 }
 
 :root[data-theme='light'] .chat-input-wrap .chat-input-container {
-    border-color: #c3d2e3;
-    box-shadow: 0 10px 30px rgba(54, 78, 108, 0.09), 0 2px 8px rgba(54, 78, 108, 0.05);
+    border-color: var(--border);
+    box-shadow: var(--shadow-md);
 }
 
 .chat-input-wrap .chat-input-container {
@@ -22,6 +22,13 @@
     border: 1px solid var(--border);
     border-radius: 16px;
     padding: 8px 14px;
+}
+
+@media (max-width: 720px) {
+    .chat-input-wrap {
+        width: calc(100% - 24px);
+        padding-bottom: 10px;
+    }
 }
 
 /* 코드뷰 열릴 때 */
@@ -67,23 +74,23 @@
     display:flex;
     width:min(260px, 100%);
     min-height:52px;
-    border:1px solid rgba(255,255,255,.14);
+    border:1px solid var(--border);
     border-radius:15px;
-    background:rgba(255,255,255,.045);
+    background:var(--interactive-hover);
     transition:border-color .15s, background .15s;
 }
 
-.pasted-text-preview:hover { background:rgba(255,255,255,.075); border-color:rgba(255,255,255,.26); }
+.pasted-text-preview:hover { background:var(--interactive-active); border-color:var(--text-secondary); }
 .pasted-text-preview__content { display:flex; align-items:center; gap:9px; width:100%; min-width:0; padding:8px 38px 8px 9px; cursor:pointer; }
 .pasted-text-preview__icon { display:grid; place-items:center; width:36px; height:36px; flex:0 0 36px; border-radius:10px; background:var(--bg); color:var(--text-secondary); }
 .pasted-text-preview__copy { display:flex; flex-direction:column; gap:4px; min-width:0; }
 .pasted-text-preview__title { overflow:hidden; color:var(--text); font-size:12px; font-weight:600; text-overflow:ellipsis; white-space:nowrap; }
 .pasted-text-preview__meta { overflow:hidden; color:var(--muted); font-size:10px; text-overflow:ellipsis; white-space:nowrap; }
-.pasted-text-preview__remove { position:absolute; top:7px; right:8px; display:grid; place-items:center; width:16px; height:16px; border:0; border-radius:50%; background:#f4f4f5; color:#252525; cursor:pointer; }
-.pasted-text-preview__remove:hover { background:#fff; color:#111; }
+.pasted-text-preview__remove { position:absolute; top:7px; right:8px; display:grid; place-items:center; width:16px; height:16px; border:1px solid var(--border); border-radius:50%; background:var(--control-bg); color:var(--text-secondary); cursor:pointer; }
+.pasted-text-preview__remove:hover { background:var(--control-hover); color:var(--text); }
 .image-attachment-preview { position:relative; display:inline-flex; flex-direction:column; align-items:center; gap:4px; }
-.attachment-remove-btn { display:grid; place-items:center; border:0; border-radius:50%; background:#f4f4f5; color:#252525; cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,.25); }
-.attachment-remove-btn:hover { background:#fff; color:#111; }
+.attachment-remove-btn { display:grid; place-items:center; border:1px solid var(--border); border-radius:50%; background:var(--control-bg); color:var(--text-secondary); cursor:pointer; box-shadow:var(--shadow-sm); }
+.attachment-remove-btn:hover { background:var(--control-hover); color:var(--text); }
 .attachment-remove-btn--image { position:absolute; top:4px; right:4px; width:16px; height:16px; }
 .attachment-remove-btn--file { position:absolute; top:6px; right:6px; width:16px; height:16px; }
 

@@ -23,4 +23,17 @@
   --modal-inset: #262626;
   --modal-inset-hover: #303030;
   --del-rgb: 248, 113, 113;
+  --on-accent: #ffffff;
+  --interactive-hover: rgba(255, 255, 255, 0.055);
+  --interactive-active: rgba(255, 255, 255, 0.09);
+  --focus-ring: rgba(var(--accent-rgb), 0.38);
+  --overlay: rgba(0, 0, 0, 0.7);
+  --shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.22);
+  --shadow-md: 0 14px 38px rgba(0, 0, 0, 0.38);
+  --shadow-lg: 0 24px 70px rgba(0, 0, 0, 0.52);
+  --user-message-bg: #252525;
+  --user-message-text: #e8eaf0;
+  --code-inline-bg: rgba(255, 255, 255, 0.08);
+  --control-bg: #2a2a2a;
+  --control-hover: #333333;
 }

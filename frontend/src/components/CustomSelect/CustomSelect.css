@@ -20,7 +20,7 @@
     font-size: 12px;
     color: var(--text);
     cursor: pointer;
-    transition: border-color 0.15s;
+    transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
     text-align: left;
 }
 
@@ -30,6 +30,13 @@
 
 .custom-select-trigger.open {
     border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+    box-shadow: none;
+}
+
+.custom-select-trigger:focus-visible {
+    outline: 1px solid var(--accent) !important;
+    outline-offset: 1px;
+    box-shadow: none;
 }
 
 .custom-select-clear {
@@ -95,7 +102,7 @@
     border-radius: 8px;
     overflow: hidden;
     z-index: 200;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    box-shadow: var(--shadow-md);
 }
 
 .custom-select-dropdown.drop-up {
@@ -155,6 +162,12 @@
     outline: none;
 }
 
+/* 검색창은 field가 하나의 복합 컨트롤이므로 내부 input에 전역 포커스 링을 중복 표시하지 않는다. */
+.custom-select-search input:focus-visible {
+    outline: none !important;
+    box-shadow: none;
+}
+
 .custom-select-search-icon {
     flex: 0 0 auto;
     color: var(--muted);
@@ -201,6 +214,7 @@
 
 .custom-select-search-field:focus-within {
     border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+    box-shadow: none;
 }
 
 .custom-select-search-field:focus-within .custom-select-search-icon {
