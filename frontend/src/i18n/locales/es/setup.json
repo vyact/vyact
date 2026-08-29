@@ -3,7 +3,6 @@
   "installing": "Instalando...",
   "selectProvider": "Elegir proveedor",
   "provider": "Proveedor de LLM",
-  "ollamaModel": "Modelo Ollama",
   "customModel": "Ej.: gemma4:e2b-mlx",
   "apiKey": "API KEY",
   "model": "MODELO",
@@ -14,7 +13,6 @@
   "startInstall": "Instalar",
   "apiKeyModelRequired": "Se requieren API KEY y MODELO",
   "installationFailed": "La instalación falló. Revisa el registro de progreso e inténtalo de nuevo.",
-  "homebrewRequired": "Se necesita Homebrew para instalar Ollama automáticamente. Instala Homebrew y vuelve a intentarlo.",
   "localExec": "Local",
   "imageGenModel": "Modelo de generación de imágenes",
   "exportFailed": "Error al exportar",
@@ -42,25 +40,9 @@
     "qwen35_4bMlx": {
       "name": "Qwen 3.5 4B MLX",
       "desc": "Modelo multimodal ligero para Apple Silicon (MLX) · aproximadamente 4,0 GB · contexto de 256K · admite texto e imágenes"
-    },
-    "qwen35_2b": {
-      "name": "Qwen 3.5 2B",
-      "desc": "Modelo Ollama multimodal ultraligero para Windows · aproximadamente 2,7 GB · contexto de 256K · admite texto e imágenes"
-    },
-    "qwen35_4b": {
-      "name": "Qwen 3.5 4B",
-      "desc": "Modelo Ollama multimodal ligero para Windows · aproximadamente 3,4 GB · contexto de 256K · admite texto e imágenes"
-    },
-    "gemma4_26b": {
-      "name": "Gemma 4 26B A4B MoE",
-      "desc": "Compilación MoE de alto rendimiento de Ollama · se recomienda suficiente RAM o VRAM · adecuada para tareas avanzadas"
     }
   },
   "providers": {
-    "ollama": {
-      "name": "Ollama",
-      "desc": "Local"
-    },
     "openai": {
       "name": "OpenAI",
       "desc": "OpenAI"

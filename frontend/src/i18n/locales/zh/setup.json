@@ -3,7 +3,6 @@
   "installing": "安装中...",
   "selectProvider": "选择 Provider",
   "provider": "LLM 提供商",
-  "ollamaModel": "Ollama 模型",
   "customModel": "例如：gemma4:e2b-mlx",
   "apiKey": "API KEY",
   "model": "MODEL",
@@ -14,7 +13,6 @@
   "startInstall": "开始安装",
   "apiKeyModelRequired": "API KEY 和 MODEL 为必填项",
   "installationFailed": "安装失败。请查看进度日志后重试。",
-  "homebrewRequired": "自动安装 Ollama 需要 Homebrew。请先安装 Homebrew，然后重试。",
   "localExec": "本地运行",
   "imageGenModel": "图像生成模型",
   "exportFailed": "导出失败",
@@ -42,25 +40,9 @@
     "qwen35_4bMlx": {
       "name": "Qwen 3.5 4B MLX",
       "desc": "面向 Apple Silicon (MLX) 的轻量多模态模型 · 约 4.0GB · 256K 上下文 · 支持文本和图像输入"
-    },
-    "qwen35_2b": {
-      "name": "Qwen 3.5 2B",
-      "desc": "面向 Windows 的超轻量多模态 Ollama 模型 · 约 2.7GB · 256K 上下文 · 支持文本和图像输入"
-    },
-    "qwen35_4b": {
-      "name": "Qwen 3.5 4B",
-      "desc": "面向 Windows 的轻量多模态 Ollama 模型 · 约 3.4GB · 256K 上下文 · 支持文本和图像输入"
-    },
-    "gemma4_26b": {
-      "name": "Gemma 4 26B A4B MoE",
-      "desc": "标准 Ollama 高性能 MoE 构建 · 建议充足的内存或显存 · 适合高级任务"
     }
   },
   "providers": {
-    "ollama": {
-      "name": "Ollama",
-      "desc": "本地运行"
-    },
     "openai": {
       "name": "OpenAI",
       "desc": "OpenAI"

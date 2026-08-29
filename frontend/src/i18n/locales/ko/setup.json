@@ -3,7 +3,6 @@
   "installing": "설치 중...",
   "selectProvider": "Provider 선택",
   "provider": "Provider",
-  "ollamaModel": "Ollama Model",
   "customModel": "예) gemma4:e2b-mlx",
   "apiKey": "API KEY",
   "model": "MODEL",
@@ -14,7 +13,6 @@
   "startInstall": "설치 시작",
   "apiKeyModelRequired": "API KEY와 MODEL은 필수입니다",
   "installationFailed": "설치에 실패했습니다. 진행 로그를 확인한 후 다시 시도해주세요.",
-  "homebrewRequired": "Ollama를 자동으로 설치하려면 Homebrew가 필요합니다. Homebrew를 설치한 후 다시 시도해주세요.",
   "localExec": "로컬 실행",
   "imageGenModel": "이미지 생성 모델",
   "exportFailed": "export 실패",
@@ -42,25 +40,9 @@
     "qwen35_4bMlx": {
       "name": "Qwen 3.5 4B MLX",
       "desc": "Apple Silicon(MLX) 최적화 경량 멀티모달 모델 · 약 4.0GB · 256K 컨텍스트 · Text·Image 입력 지원"
-    },
-    "qwen35_2b": {
-      "name": "Qwen 3.5 2B",
-      "desc": "Windows용 Ollama 초경량 멀티모달 모델 · 약 2.7GB · 256K 컨텍스트 · Text·Image 입력 지원"
-    },
-    "qwen35_4b": {
-      "name": "Qwen 3.5 4B",
-      "desc": "Windows용 Ollama 경량 멀티모달 모델 · 약 3.4GB · 256K 컨텍스트 · Text·Image 입력 지원"
-    },
-    "gemma4_26b": {
-      "name": "Gemma 4 26B A4B MoE",
-      "desc": "Ollama 일반 빌드 고성능 MoE 모델 · 충분한 RAM 또는 VRAM 권장 · 고급 작업에 적합"
     }
   },
   "providers": {
-    "ollama": {
-      "name": "Ollama",
-      "desc": "로컬 실행"
-    },
     "openai": {
       "name": "OpenAI",
       "desc": "OpenAI"

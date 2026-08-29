@@ -3,7 +3,6 @@
   "installing": "インストール中...",
   "selectProvider": "プロバイダー選択",
   "provider": "LLMプロバイダー",
-  "ollamaModel": "Ollama モデル",
   "customModel": "例: gemma4:e2b-mlx",
   "apiKey": "API KEY",
   "model": "MODEL",
@@ -14,7 +13,6 @@
   "startInstall": "インストール開始",
   "apiKeyModelRequired": "API KEYとMODELは必須です",
   "installationFailed": "インストールに失敗しました。進行ログを確認してから、もう一度お試しください。",
-  "homebrewRequired": "Ollamaを自動インストールするにはHomebrewが必要です。Homebrewをインストールしてから、もう一度お試しください。",
   "localExec": "ローカル実行",
   "imageGenModel": "画像生成モデル",
   "exportFailed": "エクスポート失敗",
@@ -42,25 +40,9 @@
     "qwen35_4bMlx": {
       "name": "Qwen 3.5 4B MLX",
       "desc": "Apple Silicon (MLX) 向け軽量マルチモーダルモデル · 約4.0GB · 256Kコンテキスト · テキスト・画像入力対応"
-    },
-    "qwen35_2b": {
-      "name": "Qwen 3.5 2B",
-      "desc": "Windows向け超軽量マルチモーダルOllamaモデル · 約2.7GB · 256Kコンテキスト · テキスト・画像入力対応"
-    },
-    "qwen35_4b": {
-      "name": "Qwen 3.5 4B",
-      "desc": "Windows向け軽量マルチモーダルOllamaモデル · 約3.4GB · 256Kコンテキスト · テキスト・画像入力対応"
-    },
-    "gemma4_26b": {
-      "name": "Gemma 4 26B A4B MoE",
-      "desc": "標準 Ollama ビルドの高性能 MoE モデル · 十分な RAM または VRAM を推奨 · 高度な作業に適切"
     }
   },
   "providers": {
-    "ollama": {
-      "name": "Ollama",
-      "desc": "ローカル実行"
-    },
     "openai": {
       "name": "OpenAI",
       "desc": "OpenAI"

@@ -21,15 +21,7 @@ _configured_install_dir = os.environ.get("VYACT_INSTALL_DIR")
 if _configured_install_dir:
     INSTALL_DIR = Path(_configured_install_dir)
 elif os.name == "nt":
-    _legacy_windows_install_dir = Path("C:/.vyact")
-    _legacy_windows_markers = (".setup_done", "venv", "data", "models", "runtime")
-    _has_legacy_windows_install = any(
-        (_legacy_windows_install_dir / marker).exists()
-        for marker in _legacy_windows_markers
-    ) or any(_legacy_windows_install_dir.glob("elasticsearch-*"))
-    INSTALL_DIR = _legacy_windows_install_dir if _has_legacy_windows_install else (
-        Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local")) / "Vyact"
-    )
+    INSTALL_DIR = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local")) / "Vyact"
 else:
     INSTALL_DIR = Path.home() / f".{APP_NAME}"
 VENV_DIR = INSTALL_DIR / "venv"

@@ -1164,7 +1164,7 @@ async def get_providers():
             for item in custom_providers
         )
     )
-    # 이전 Ollama 등의 더 이상 지원하지 않는 provider 값이 남아 있으면 선택 UI는
+    # 더 이상 지원하지 않는 provider 값이 남아 있으면 선택 UI는
     # options에서 해당 값을 찾지 못해 "선택"으로 표시된다. Vyact 모델이 이미
     # 설치된 경우에만 안전하게 Vyact로 복구해 다음 앱 시작에도 유지한다.
     if (

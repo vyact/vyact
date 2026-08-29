@@ -93,7 +93,9 @@ jobs:
           }
           if (-not (Select-String -Quiet -Path electron/platform.js -SimpleMatch 'isWindows ? "python.exe"')) { throw "Bundled Windows Python path is missing" }
           if (Select-String -Quiet -Path electron/main.js,electron/platform.js -Pattern 'Ollama|Chocolatey') { throw "Legacy Windows bootstrap dependency remains" }
+          if (Get-ChildItem frontend/src/i18n/locales -Recurse -File | Select-String -Pattern 'Ollama|Chocolatey|\bchoco\b') { throw "Legacy dependency text remains in locales" }
           if (-not (Select-String -Quiet -Path electron/platform.js -SimpleMatch 'process.env.LOCALAPPDATA')) { throw "Per-user Windows install path is missing" }
+          if (Select-String -Quiet -Path electron/platform.js,app/config/__init__.py -SimpleMatch 'C:/.vyact','C:\.vyact') { throw "Legacy system-drive install path remains" }
           if (-not (Select-String -Quiet -Path electron/platform.js -SimpleMatch 'llama_cpp_python-0.3.34-py3-none-win_amd64.whl')) { throw "Prebuilt Windows llama-cpp-python wheel is missing" }
           if (-not (Select-String -Quiet -Path app/requirements.txt -SimpleMatch 'llama-cpp-python==0.3.34; sys_platform != "win32"')) { throw "Windows llama-cpp-python source build is not excluded" }
           if (Test-Path win/electron/main.js) { throw "Platform-specific main.js must not be reintroduced" }

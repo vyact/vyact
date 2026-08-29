@@ -1,35 +1,13 @@
-const fs = require("fs");
 const os = require("os");
 const path = require("path");
 
 const isWindows = process.platform === "win32";
-const legacyWindowsInstallDir = "C:\\.vyact";
-const legacyWindowsInstallMarkers = [
-    ".setup_done",
-    "venv",
-    "data",
-    "models",
-    "runtime",
-];
-
-function hasLegacyWindowsInstall() {
-    if (!fs.existsSync(legacyWindowsInstallDir)) return false;
-    if (legacyWindowsInstallMarkers.some((entry) => fs.existsSync(path.join(legacyWindowsInstallDir, entry)))) {
-        return true;
-    }
-    try {
-        return fs.readdirSync(legacyWindowsInstallDir).some((entry) => entry.startsWith("elasticsearch-"));
-    } catch {
-        return false;
-    }
-}
-
 const windowsUserInstallDir = path.join(
     process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local"),
     "Vyact",
 );
 const defaultInstallDir = isWindows
-    ? (hasLegacyWindowsInstall() ? legacyWindowsInstallDir : windowsUserInstallDir)
+    ? windowsUserInstallDir
     : path.join(os.homedir(), ".vyact");
 
 const installDir = process.env.VYACT_INSTALL_DIR || defaultInstallDir;

@@ -3,7 +3,6 @@
   "installing": "Đang cài...",
   "selectProvider": "Chọn nhà cung cấp",
   "provider": "Nhà cung cấp LLM",
-  "ollamaModel": "Ollama Model",
   "customModel": "Ví dụ: gemma4:e2b-mlx",
   "apiKey": "API KEY",
   "model": "MODEL",
@@ -14,7 +13,6 @@
   "startInstall": "Bắt đầu",
   "apiKeyModelRequired": "API KEY and MODEL are required",
   "installationFailed": "Cài đặt thất bại. Hãy kiểm tra nhật ký tiến trình rồi thử lại.",
-  "homebrewRequired": "Cần có Homebrew để tự động cài đặt Ollama. Hãy cài đặt Homebrew rồi thử lại.",
   "localExec": "Local",
   "imageGenModel": "Image Generation Model",
   "exportFailed": "Export failed",
@@ -42,25 +40,9 @@
     "qwen35_4bMlx": {
       "name": "Qwen 3.5 4B MLX",
       "desc": "Mô hình đa phương thức nhẹ cho Apple Silicon (MLX) · khoảng 4,0GB · ngữ cảnh 256K · hỗ trợ văn bản và hình ảnh"
-    },
-    "qwen35_2b": {
-      "name": "Qwen 3.5 2B",
-      "desc": "Mô hình Ollama đa phương thức siêu nhẹ cho Windows · khoảng 2,7GB · ngữ cảnh 256K · hỗ trợ văn bản và hình ảnh"
-    },
-    "qwen35_4b": {
-      "name": "Qwen 3.5 4B",
-      "desc": "Mô hình Ollama đa phương thức nhẹ cho Windows · khoảng 3,4GB · ngữ cảnh 256K · hỗ trợ văn bản và hình ảnh"
-    },
-    "gemma4_26b": {
-      "name": "Gemma 4 26B A4B MoE",
-      "desc": "Bản Ollama MoE hiệu năng cao · khuyến nghị đủ RAM hoặc VRAM · phù hợp tác vụ nâng cao"
     }
   },
   "providers": {
-    "ollama": {
-      "name": "Ollama",
-      "desc": "Local"
-    },
     "openai": {
       "name": "OpenAI",
       "desc": "OpenAI"
