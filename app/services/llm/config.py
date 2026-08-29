@@ -18,9 +18,11 @@ AUDIO_DIR = INSTALL_DIR / "uploads" / "audio"
 # 답변에서 잘라내야 하는 모델 특수 토큰 (스트리밍/재사용 공통)
 LLM_STOP_TOKENS = ("<|endoftext|>", "<|im_start|>", "<|im_end|>")
 
-# 여러 파일 수정과 후속 검증까지 완료할 수 있도록 충분한 도구 호출 라운드를 제공한다.
-# 동일 호출·연속 실패는 provider별 반복 방지 로직에서 이 한도보다 먼저 중단한다.
-TOOL_CALL_MAX_ROUNDS = 30
+# 로컬은 실행 시간과 context 부담을 제한하고, 클라우드는 대규모 코드 작업을
+# 충분히 이어갈 수 있도록 별도 도구 호출 라운드 한도를 사용한다.
+LOCAL_TOOL_CALL_MAX_ROUNDS = 30
+CLOUD_TOOL_CALL_MAX_ROUNDS = 100
+TOOL_CALL_MAX_CONSECUTIVE_FAILURES = 3
 TOOL_CALL_DECISION_NUM_PREDICT = 2048
 TOOL_CALL_MUTATION_NUM_PREDICT = 8192
 TOOL_CALL_ROUND_TIMEOUT_SECONDS = 300
@@ -30,7 +32,8 @@ TOOL_CALL_RETRY_RESULT_CHARS = 8000
 __all__ = [
     "AUDIO_DIR", "IMAGES_DIR",
     "DEFAULT_MODEL", "LLM_TEMPERATURE", "LLM_NUM_CTX", "LLM_NUM_PREDICT", "LLM_MAX_TOKENS", "TOP_K", "TOP_P",
-    "LLM_STOP_TOKENS", "TOOL_CALL_MAX_ROUNDS",
+    "LLM_STOP_TOKENS", "LOCAL_TOOL_CALL_MAX_ROUNDS", "CLOUD_TOOL_CALL_MAX_ROUNDS",
+    "TOOL_CALL_MAX_CONSECUTIVE_FAILURES",
     "TOOL_CALL_DECISION_NUM_PREDICT", "TOOL_CALL_MUTATION_NUM_PREDICT",
     "TOOL_CALL_ROUND_TIMEOUT_SECONDS", "TOOL_CALL_RETRY_RESULT_CHARS",
     "get_provider_config", "get_model_name", "get_model_display_name", "build_provider_headers",

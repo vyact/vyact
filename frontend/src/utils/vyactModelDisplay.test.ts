@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest';
 import type {VyactHubModel} from '../services/api';
-import {estimateModelMemoryBytes} from './vyactModelDisplay';
+import {estimateModelMemoryBytes, getModelPublisher} from './vyactModelDisplay';
 
 const model = (overrides: Partial<VyactHubModel>): VyactHubModel => ({
     id: 'example/model-12B',
@@ -37,5 +37,12 @@ describe('estimateModelMemoryBytes', () => {
     it('keeps exact file sizes ahead of name estimates', () => {
         const exactModel = model({file_sizes: {'model-Q4_K_M.gguf': 5_000_000_000}});
         expect(estimateModelMemoryBytes(exactModel, 'model-Q4_K_M.gguf')).toBe(6_000_000_000);
+    });
+});
+
+describe('getModelPublisher', () => {
+    it('returns the Hugging Face repository owner', () => {
+        expect(getModelPublisher('mlx-community/Qwen3.5-9B-MLX-4bit')).toBe('mlx-community');
+        expect(getModelPublisher('Qwen3.5-9B-MLX-4bit')).toBe('');
     });
 });

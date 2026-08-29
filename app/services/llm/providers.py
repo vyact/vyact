@@ -13,7 +13,9 @@ import base64
 import json
 
 from .config import (
-    IMAGES_DIR, LLM_TEMPERATURE, LLM_MAX_TOKENS, TOOL_CALL_MAX_ROUNDS,
+    IMAGES_DIR, LLM_TEMPERATURE, LLM_MAX_TOKENS,
+    LOCAL_TOOL_CALL_MAX_ROUNDS, CLOUD_TOOL_CALL_MAX_ROUNDS,
+    TOOL_CALL_MAX_CONSECUTIVE_FAILURES,
     build_provider_headers, get_provider_config, log_llm_call, log_llm_interaction, log_tool_names, logger,
 )
 from .helpers import (
@@ -34,12 +36,42 @@ _REPEATED_TOOL_CALL_RESULT = (
     "[반복 호출 중단] 같은 도구와 인자가 이미 실행되었습니다. "
     "기존 도구 결과를 사용해 최종 답변을 작성하고, 더 이상 도구를 호출하지 마세요."
 )
+_REPEATED_TOOL_SKIPPED_RESULT = "[중단] 앞선 도구의 동일 호출이 감지되어 실행하지 않았습니다."
+_FAILED_TOOL_SKIPPED_RESULT = "[중단] 앞선 도구 실행이 연속으로 실패하여 실행하지 않았습니다."
 _REPEATED_TOOL_FINAL_INSTRUCTION = (
     "\n\n[최우선 — 반복 도구 호출 중단]\n"
     "같은 도구와 인자의 반복 호출이 감지되어 도구 실행을 중단했다. "
     "이미 받은 도구 결과만 사용해 지금 최종 답변을 작성해라. "
     "<tool_call>, <function>, <parameter> 같은 내부 도구 호출 문법을 답변에 출력하지 마라."
 )
+_FAILED_TOOL_FINAL_INSTRUCTION = (
+    "\n\n[최우선 — 연속 도구 실패 중단]\n"
+    "도구 실행이 연속으로 실패하여 추가 호출을 중단했다. "
+    "실패 원인과 현재까지 확인한 내용을 설명하고, 더 이상 도구를 호출하지 마라."
+)
+_TOOL_ROUND_LIMIT_FINAL_INSTRUCTION = (
+    "\n\n[최우선 — 도구 호출 한도 도달]\n"
+    "이번 응답의 도구 호출 라운드 한도에 도달했다. "
+    "현재까지의 진행 상황과 남은 작업을 구체적으로 정리하고, 더 이상 도구를 호출하지 마라."
+)
+
+
+def _tool_call_max_rounds(provider_config: dict) -> int:
+    """Use a bounded local loop while allowing longer cloud agent runs."""
+    return (
+        LOCAL_TOOL_CALL_MAX_ROUNDS
+        if provider_config.get("is_local")
+        else CLOUD_TOOL_CALL_MAX_ROUNDS
+    )
+
+
+def _is_tool_failure(result_text: object) -> bool:
+    return str(result_text).startswith(("[오류]", "[tool 오류]"))
+
+
+def _next_consecutive_tool_failures(current: int, result_text: object) -> int:
+    """Count consecutive normalized MCP failures and reset after a success."""
+    return current + 1 if _is_tool_failure(result_text) else 0
 
 
 def _tool_call_fingerprint(name: str, args: object) -> str:
@@ -266,10 +298,12 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
     emitted_text = False
     last_round_had_tools = False
     repeated_tool_call = False
+    consecutive_tool_failures = 0
+    tool_failures_exhausted = False
     executed_tool_calls: set[str] = set()
     if unified:
         oa_tools = to_openai_tools(unified)
-        for _round in range(TOOL_CALL_MAX_ROUNDS):
+        for _round in range(_tool_call_max_rounds(provider_config)):
             body = {"model": model, "temperature": temperature,
                     "stream": True, "messages": messages, "tools": oa_tools}
             if provider_config.get("is_local"):
@@ -354,10 +388,22 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
                     })
                     repeated_tool_call = True
                     continue
+                if repeated_tool_call:
+                    messages.append({
+                        "role": "tool", "tool_call_id": tc.get("id", ""),
+                        "content": _REPEATED_TOOL_SKIPPED_RESULT,
+                    })
+                    continue
                 if approval_rejected:
                     messages.append({
                         "role": "tool", "tool_call_id": tc.get("id", ""),
                         "content": "[취소] 같은 응답의 앞선 도구 실행을 사용자가 거부하여 실행하지 않았습니다.",
+                    })
+                    continue
+                if tool_failures_exhausted:
+                    messages.append({
+                        "role": "tool", "tool_call_id": tc.get("id", ""),
+                        "content": _FAILED_TOOL_SKIPPED_RESULT,
                     })
                     continue
                 approved = await await_tool_approval(name, args, lambda event: _emit(on_event, event))
@@ -371,17 +417,26 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
                 await _emit(on_event, {"phase": "start", "name": name, "args": args})
                 executed_tool_calls.add(fingerprint)
                 result_text = await mcp_manager.call_tool(name, args)
+                consecutive_tool_failures = _next_consecutive_tool_failures(
+                    consecutive_tool_failures, result_text,
+                )
+                if consecutive_tool_failures >= TOOL_CALL_MAX_CONSECUTIVE_FAILURES:
+                    tool_failures_exhausted = True
                 tool_sources = mcp_manager.drain_tool_sources()
-                if not str(result_text).startswith("[오류]"):
+                if not _is_tool_failure(result_text):
                     completed_tool_names.add(name)
                 tool_sources_found = tool_sources_found or bool(tool_sources)
                 await _emit(on_event, {"phase": "end", "name": name, "args": args, "result": result_text, "sources": tool_sources})
                 messages.append({"role": "tool", "tool_call_id": tc.get("id", ""),
                                  "content": result_text})
-            if approval_rejected or repeated_tool_call:
+            if approval_rejected or repeated_tool_call or tool_failures_exhausted:
                 if repeated_tool_call:
                     messages[0]["content"] += _REPEATED_TOOL_FINAL_INSTRUCTION
+                if tool_failures_exhausted:
+                    messages[0]["content"] += _FAILED_TOOL_FINAL_INSTRUCTION
                 break
+        else:
+            messages[0]["content"] += _TOOL_ROUND_LIMIT_FINAL_INSTRUCTION
 
     post_tool_docs_applied = False
     if post_tool_docs is not None:
@@ -518,10 +573,13 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
     # ── tool 루프 (비스트리밍) ──
     approval_rejected = False
     repeated_tool_call = False
+    consecutive_tool_failures = 0
+    tool_failures_exhausted = False
+    tool_round_limit_reached = False
     executed_tool_calls: set[str] = set()
     if unified:
         gm_tools = to_gemini_tools(unified)
-        for _round in range(TOOL_CALL_MAX_ROUNDS):
+        for _round in range(_tool_call_max_rounds(provider_config)):
             body = {
                 "systemInstruction": {"parts": [{"text": sys_text}]},
                 "contents": contents,
@@ -554,10 +612,22 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
                     }})
                     repeated_tool_call = True
                     continue
+                if repeated_tool_call:
+                    resp_parts.append({"functionResponse": {
+                        "name": name,
+                        "response": {"result": _REPEATED_TOOL_SKIPPED_RESULT},
+                    }})
+                    continue
                 if approval_rejected:
                     resp_parts.append({"functionResponse": {
                         "name": name,
                         "response": {"result": "[취소] 같은 응답의 앞선 도구 실행을 사용자가 거부하여 실행하지 않았습니다."},
+                    }})
+                    continue
+                if tool_failures_exhausted:
+                    resp_parts.append({"functionResponse": {
+                        "name": name,
+                        "response": {"result": _FAILED_TOOL_SKIPPED_RESULT},
                     }})
                     continue
                 approved = await await_tool_approval(name, args, lambda event: _emit(on_event, event))
@@ -571,15 +641,25 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
                 await _emit(on_event, {"phase": "start", "name": name, "args": args})
                 executed_tool_calls.add(fingerprint)
                 result_text = await mcp_manager.call_tool(name, args)
+                consecutive_tool_failures = _next_consecutive_tool_failures(
+                    consecutive_tool_failures, result_text,
+                )
+                if consecutive_tool_failures >= TOOL_CALL_MAX_CONSECUTIVE_FAILURES:
+                    tool_failures_exhausted = True
                 tool_sources = mcp_manager.drain_tool_sources()
                 await _emit(on_event, {"phase": "end", "name": name, "args": args, "result": result_text, "sources": tool_sources})
                 resp_parts.append({"functionResponse": {
                     "name": name, "response": {"result": result_text}}})
             contents.append({"role": "user", "parts": resp_parts})
-            if approval_rejected or repeated_tool_call:
+            if approval_rejected or repeated_tool_call or tool_failures_exhausted:
                 if repeated_tool_call:
                     sys_text += _REPEATED_TOOL_FINAL_INSTRUCTION
+                if tool_failures_exhausted:
+                    sys_text += _FAILED_TOOL_FINAL_INSTRUCTION
                 break
+        else:
+            tool_round_limit_reached = True
+            sys_text += _TOOL_ROUND_LIMIT_FINAL_INSTRUCTION
 
     # ── 최종 답변 스트리밍 ──
     body = {
@@ -587,7 +667,13 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
         "contents": contents,
         "generationConfig": gen_cfg,
     }
-    if unified and not approval_rejected and not repeated_tool_call:
+    if (
+        unified
+        and not approval_rejected
+        and not repeated_tool_call
+        and not tool_failures_exhausted
+        and not tool_round_limit_reached
+    ):
         body["tools"] = to_gemini_tools(unified)
     log_llm_call(call_reason, "gemini", model, streaming=True, reasoning=reasoning)
     async with client.stream("POST", stream_url, json=body) as resp:
@@ -655,10 +741,13 @@ async def claude_stream(client, model, api_key, system_message, user_prompt,
     # ── tool 루프 (비스트리밍) ──
     approval_rejected = False
     repeated_tool_call = False
+    consecutive_tool_failures = 0
+    tool_failures_exhausted = False
+    tool_round_limit_reached = False
     executed_tool_calls: set[str] = set()
     if unified:
         cl_tools = to_claude_tools(unified)
-        for _round in range(TOOL_CALL_MAX_ROUNDS):
+        for _round in range(_tool_call_max_rounds(provider_config)):
             body = {"model": model, "max_tokens": max_tokens, "temperature": temperature,
                     "system": system_text, "messages": messages, "tools": cl_tools}
             log_llm_call(call_reason, "claude", model, streaming=False, reasoning=reasoning,
@@ -685,10 +774,22 @@ async def claude_stream(client, model, api_key, system_message, user_prompt,
                     })
                     repeated_tool_call = True
                     continue
+                if repeated_tool_call:
+                    result_blocks.append({
+                        "type": "tool_result", "tool_use_id": tu.get("id", ""),
+                        "content": _REPEATED_TOOL_SKIPPED_RESULT,
+                    })
+                    continue
                 if approval_rejected:
                     result_blocks.append({
                         "type": "tool_result", "tool_use_id": tu.get("id", ""),
                         "content": "[취소] 같은 응답의 앞선 도구 실행을 사용자가 거부하여 실행하지 않았습니다.",
+                    })
+                    continue
+                if tool_failures_exhausted:
+                    result_blocks.append({
+                        "type": "tool_result", "tool_use_id": tu.get("id", ""),
+                        "content": _FAILED_TOOL_SKIPPED_RESULT,
                     })
                     continue
                 approved = await await_tool_approval(name, args, lambda event: _emit(on_event, event))
@@ -702,21 +803,37 @@ async def claude_stream(client, model, api_key, system_message, user_prompt,
                 await _emit(on_event, {"phase": "start", "name": name, "args": args})
                 executed_tool_calls.add(fingerprint)
                 result_text = await mcp_manager.call_tool(name, args)
+                consecutive_tool_failures = _next_consecutive_tool_failures(
+                    consecutive_tool_failures, result_text,
+                )
+                if consecutive_tool_failures >= TOOL_CALL_MAX_CONSECUTIVE_FAILURES:
+                    tool_failures_exhausted = True
                 tool_sources = mcp_manager.drain_tool_sources()
                 await _emit(on_event, {"phase": "end", "name": name, "args": args, "result": result_text, "sources": tool_sources})
                 result_blocks.append({"type": "tool_result",
                                       "tool_use_id": tu.get("id", ""),
                                       "content": result_text})
             messages.append({"role": "user", "content": result_blocks})
-            if approval_rejected or repeated_tool_call:
+            if approval_rejected or repeated_tool_call or tool_failures_exhausted:
                 if repeated_tool_call:
                     system_text += _REPEATED_TOOL_FINAL_INSTRUCTION
+                if tool_failures_exhausted:
+                    system_text += _FAILED_TOOL_FINAL_INSTRUCTION
                 break
+        else:
+            tool_round_limit_reached = True
+            system_text += _TOOL_ROUND_LIMIT_FINAL_INSTRUCTION
 
     # ── 최종 답변 스트리밍 ──
     body = {"model": model, "max_tokens": max_tokens, "temperature": temperature,
             "system": system_text, "stream": True, "messages": messages}
-    if unified and not approval_rejected and not repeated_tool_call:
+    if (
+        unified
+        and not approval_rejected
+        and not repeated_tool_call
+        and not tool_failures_exhausted
+        and not tool_round_limit_reached
+    ):
         body["tools"] = to_claude_tools(unified)
     log_llm_call(call_reason, "claude", model, streaming=True, reasoning=reasoning)
     async with client.stream("POST", base_url, headers=headers, json=body) as resp:

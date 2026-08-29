@@ -8,7 +8,9 @@ from services.llm.providers import (
     _apply_local_prefix_cache_control,
     _apply_local_reasoning_control,
     _apply_local_seed,
+    _next_consecutive_tool_failures,
     _tool_call_fingerprint,
+    _tool_call_max_rounds,
     openai_stream,
 )
 
@@ -68,6 +70,16 @@ class VyactOpenAiParityTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(first, second)
         self.assertNotEqual(first, _tool_call_fingerprint("search", {"query": "SK하이닉스", "page": 1}))
+
+    def test_cloud_and_local_tool_round_limits_are_separate(self):
+        self.assertEqual(_tool_call_max_rounds({"is_local": True}), 30)
+        self.assertEqual(_tool_call_max_rounds({"is_local": False}), 100)
+
+    def test_consecutive_tool_failures_reset_after_success(self):
+        failures = _next_consecutive_tool_failures(0, "[오류] 첫 번째 실패")
+        failures = _next_consecutive_tool_failures(failures, "[tool 오류] 두 번째 실패")
+        self.assertEqual(failures, 2)
+        self.assertEqual(_next_consecutive_tool_failures(failures, "정상 결과"), 0)
 
     def test_llama_receives_explicit_prefix_cache_choice(self):
         body = {}

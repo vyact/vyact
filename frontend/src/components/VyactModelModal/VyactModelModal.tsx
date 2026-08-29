@@ -8,6 +8,7 @@ import {
     formatModelBytes,
     estimateModelMemoryBytes,
     getModelMemoryTone,
+    getModelPublisher,
     getModelQuantization,
     getOptimizedModelContext,
     getSelectableModelFiles,
@@ -463,6 +464,8 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                         )}
                         {models.map(model => {
                             const selectableFiles = getSelectableModelFiles(model.files);
+                            const publisher = getModelPublisher(model.id);
+                            const showsPublisher = hasSearched && Boolean(publisher);
                             return <article className={`vyact-model-card${selectableFiles.length === 1 ? ' is-compact' : ''}${hasSearched ? '' : ' is-installed-list'}`} key={model.id}>
                                 {selectableFiles.length > 1 && <div className="vyact-model-card-heading">
                                     <OverflowTooltipText text={model.id}/>{hasSearched && <span>{formatCompactDownloads(model.downloads)}</span>}
@@ -490,7 +493,11 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                                     {supportsDFlash2 && <span className="vyact-mtp-badge">DFlash2</span>}
                                                     <OverflowTooltipText text={displayName}/>
                                                 </span>
-                                                {estimatedMemory > 0 && <small className="vyact-model-file-meta">{fileSize > 0 && <>{formatBytes(fileSize)} · </>}{t('modelSelector.estimatedMemory')} ≈ {formatBytes(estimatedMemory)}{quantization && <span className="vyact-mtp-badge">{quantization}</span>}</small>}
+                                                {(showsPublisher || estimatedMemory > 0) && <small className="vyact-model-file-meta">
+                                                    {showsPublisher && <span className="vyact-model-publisher">@{publisher}</span>}
+                                                    {showsPublisher && estimatedMemory > 0 && <span aria-hidden="true">·</span>}
+                                                    {estimatedMemory > 0 && <>{fileSize > 0 && <>{formatBytes(fileSize)} · </>}{t('modelSelector.estimatedMemory')} ≈ {formatBytes(estimatedMemory)}{quantization && <span className="vyact-mtp-badge">{quantization}</span>}</>}
+                                                </small>}
                                                 <span className="vyact-model-file-status">
                                                     {hasSearched && selectableFiles.length === 1 && <span className="vyact-model-file-downloads">{formatCompactDownloads(model.downloads)}</span>}
                                                     {isInstalled && <span className="vyact-model-installed">{t('modelSelector.installed')}</span>}

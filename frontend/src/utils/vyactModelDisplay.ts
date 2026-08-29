@@ -17,6 +17,11 @@ export const formatCompactDownloads = (downloads: number) => {
     return String(downloads);
 };
 
+export const getModelPublisher = (modelId: string) => {
+    const separatorIndex = modelId.indexOf('/');
+    return separatorIndex > 0 ? modelId.slice(0, separatorIndex) : '';
+};
+
 export const getModelQuantization = (model: VyactHubModel, filename: string) => {
     if (model.runtime === 'mlx') {
         if (model.quantization) return model.quantization;
