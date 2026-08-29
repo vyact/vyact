@@ -178,14 +178,17 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     const downloadSelectedModel = async () => {
         if (!selectedFile) return;
         setIsDownloading(true);
-        setDownloadPhase('runtime');
         setDownloadProgress(null);
-        const runtimeMessageKey = selectedFile.runtime === 'mlx' ? 'modelDownload.preparingOmlx' : 'modelDownload.preparingRuntime';
-        setMessage(t(runtimeMessageKey));
         try {
             if (selectedFile.runtime === 'gguf') {
+                setDownloadPhase('runtime');
+                const runtimeMessageKey = 'modelDownload.preparingRuntime';
+                setMessage(t(runtimeMessageKey));
                 await api.installVyactRuntime(() => setMessage(t(runtimeMessageKey)));
             } else if (selectedFile.dflash2Model || selectedFile.dflash2Bundled) {
+                setDownloadPhase('runtime');
+                const runtimeMessageKey = 'modelDownload.preparingOmlx';
+                setMessage(t(runtimeMessageKey));
                 await api.installVyactRuntime(() => setMessage(t(runtimeMessageKey)), true);
             }
             setDownloadPhase(selectedModelIsInstalled ? 'mtp' : 'model');

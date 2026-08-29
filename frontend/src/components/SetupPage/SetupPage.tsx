@@ -273,11 +273,12 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
         try {
             if (provider === 'vyact') {
                 setProgress(null);
-                addLog('info', t(selectedHubModelFile?.runtime === 'mlx' ? 'main:modelDownload.preparingOmlx' : 'main:modelDownload.preparingRuntime'));
                 try {
                     if (selectedHubModelFile?.runtime === 'gguf') {
+                        addLog('info', t('main:modelDownload.preparingRuntime'));
                         await api.installVyactRuntime(message => addLog('log', message));
                     } else if (selectedHubModelFile?.dflash2Model || selectedHubModelFile?.dflash2Bundled) {
+                        addLog('info', t('main:modelDownload.preparingOmlx'));
                         await api.installVyactRuntime(message => addLog('log', message), true);
                     }
                 } catch (error) {
@@ -290,14 +291,14 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                 }
             }
             if (provider === 'vyact' && selectedHubModelFile) {
-                setProgress(null);
+                setProgress(0);
                 addLog('info', t('main:modelDownload.downloading'));
                 await api.streamVyactModelDownload(
                     selectedHubModelFile.repository,
                     selectedHubModelFile.filename,
                     (message, downloadProgress) => {
                         addLog('log', message);
-                        setProgress(downloadProgress ?? null);
+                        if (downloadProgress != null) setProgress(downloadProgress);
                     },
                     selectedHubModelFile.revision,
                     selectedHubModelFile.runtime,
