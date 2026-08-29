@@ -40,7 +40,6 @@ echo.
 echo [1/5] 원본 파일 백업...
 
 copy /y "electron\package.json"   "electron\package.json.mac_backup"   >nul
-copy /y "app\docker-compose.yml"  "app\docker-compose.yml.mac_backup"  >nul
 
 echo [OK] 백업 완료
 
@@ -53,9 +52,6 @@ if !errorlevel! neq 0 ( echo [FAIL] win\electron\package.json 복사 실패 & ca
 
 copy /y "win\electron\icon.ico"       "electron\icon.ico"       >nul
 if !errorlevel! neq 0 ( echo [FAIL] win\electron\icon.ico 복사 실패 & call :RESTORE & pause & exit /b 1 )
-
-copy /y "win\app\docker-compose.yml"  "app\docker-compose.yml"  >nul
-if !errorlevel! neq 0 ( echo [FAIL] win\app\docker-compose.yml 복사 실패 & call :RESTORE & pause & exit /b 1 )
 
 echo [OK] 윈도우 파일 적용 완료
 
@@ -125,9 +121,7 @@ exit /b 0
 echo.
 echo [RESTORE] 원본 파일 복원 중...
 if exist "electron\package.json.mac_backup"  ( copy /y "electron\package.json.mac_backup"  "electron\package.json"   >nul )
-if exist "app\docker-compose.yml.mac_backup" ( copy /y "app\docker-compose.yml.mac_backup" "app\docker-compose.yml"  >nul )
 del /q "electron\package.json.mac_backup"   2>nul
-del /q "app\docker-compose.yml.mac_backup"  2>nul
 if exist "electron\icon.ico" ( del /q "electron\icon.ico" 2>nul )
 echo [RESTORE] 원본 복원 완료
 exit /b 0
