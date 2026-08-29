@@ -24,8 +24,20 @@
     text-align: left;
 }
 
+:root[data-theme='light'] .custom-select-trigger {
+    background: var(--surface);
+    border-color: color-mix(in srgb, var(--text-secondary) 38%, var(--border));
+    box-shadow: 0 1px 3px rgba(40, 58, 80, 0.08);
+}
+
 .custom-select-trigger:hover {
     border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+}
+
+:root[data-theme='light'] .custom-select-trigger:hover,
+:root[data-theme='light'] .custom-select-trigger.open {
+    background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+    border-color: color-mix(in srgb, var(--accent) 68%, var(--border));
 }
 
 .custom-select-trigger.open {

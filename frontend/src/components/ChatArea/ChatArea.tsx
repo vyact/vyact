@@ -110,6 +110,7 @@ interface ChatAreaProps {
     onPdfEdit?: (params: NonNullable<MessageType['pdfParams']>) => void;
     onShowInjectedContext?: (ctx: NonNullable<MessageType['injectedContext']>, kind?: 'injected' | 'external') => void;
     onOpenMemo?: (memoId: string) => void;
+    onOpenQuickMemo?: (quickNoteId: string) => void;
     convId?: string;
     children?: React.ReactNode;
     googleWorkspaceOpen?: boolean;
@@ -143,6 +144,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                                                onPdfEdit,
                                                onShowInjectedContext,
                                                onOpenMemo,
+                                               onOpenQuickMemo,
                                                convId,
                                                children,
                                                googleWorkspaceOpen = false,
@@ -491,6 +493,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                                 injectedContext={msg.injectedContext}
                                 onShowInjectedContext={onShowInjectedContext}
                                 onOpenMemo={onOpenMemo}
+                                onOpenQuickMemo={onOpenQuickMemo}
                                 pdfParams={msg.pdfParams}
                                 onPdfEdit={onPdfEdit}
                                 isStreaming={!!streamingMessageId && (msg.id === streamingMessageId)}

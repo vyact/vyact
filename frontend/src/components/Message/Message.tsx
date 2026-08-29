@@ -101,7 +101,7 @@ const StreamingTextGroup: React.FC<{
 const Message: React.FC<MessageProps> = ({
                                              role, content, timestamp, sources, model, attachments,
                                              isError, errorTitle, onRetry, isGeneratedImage, articleSources,
-                                             pdfFile, pdfParams, onPdfEdit, injectedContext, onShowInjectedContext, onOpenMemo,
+                                             pdfFile, pdfParams, onPdfEdit, injectedContext, onShowInjectedContext, onOpenMemo, onOpenQuickMemo,
                                              isStreaming = false, conversationId, requestStartedAt, toolStatus, activityLog, progressMessages, stats,
                                              truncated,
                                              codeChanges,
@@ -653,18 +653,21 @@ const Message: React.FC<MessageProps> = ({
                 );
                 if (memoSources.length > 0) {
                     return (
-                        <div className="sources" style={{borderColor: 'rgba(255,160,80,0.25)'}}>
-                            <div className="sources-lbl" style={{color: 'rgba(255,160,80,0.9)'}}>📝 {t('message.memoSources', {count: memoSources.length})}
+                        <div className="sources sources--memo">
+                            <div className="sources-lbl sources-lbl--memo">📝 {t('message.memoSources', {count: memoSources.length})}
                             </div>
                             {memoSources.map((art, idx) => {
                                 const isQuicknote = art.url?.startsWith('quicknote://');
                                 const memoId = art.url?.replace('memo://', '').split('::')[0];
+                                const quickNoteId = art.url?.replace('quicknote://', '').split('::')[0];
+                                const canOpenSource = isQuicknote ? Boolean(onOpenQuickMemo) : Boolean(onOpenMemo);
                                 return (
-                                    <div key={idx} className="src-item"
-                                         style={{cursor: !isQuicknote && onOpenMemo ? 'pointer' : 'default'}}
-                                         onClick={() => !isQuicknote && memoId && onOpenMemo?.(memoId)}
+                                    <div key={idx} className={`src-item src-item--memo${canOpenSource ? ' is-clickable' : ''}`}
+                                         onClick={() => isQuicknote
+                                             ? quickNoteId && onOpenQuickMemo?.(quickNoteId)
+                                             : memoId && onOpenMemo?.(memoId)}
                                     >
-                                        <span className="src-name" style={{color: 'rgba(255,160,80,0.8)'}}>
+                                        <span className="src-name src-name--memo">
                                             {isQuicknote ? t('inputMenu.quickMemo') : t('message.memo')}
                                         </span>
                                         {art.indexed_at && (
@@ -673,7 +676,7 @@ const Message: React.FC<MessageProps> = ({
                                                 return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
                                             })()}</span>
                                         )}
-                                        <span style={{color: 'rgba(255,160,80,0.9)'}}>{art.title}</span>
+                                        <span className="src-title--memo">{art.title}</span>
                                     </div>
                                 );
                             })}

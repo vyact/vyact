@@ -401,7 +401,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                 </div>
                                 {selectedFile && (
                                     <div className="vyact-memory-selection">
-                                        <span>{selectedFileDisplayName}</span>
+                                        <OverflowTooltipText text={selectedFileDisplayName || ''}/>
                                         {!selectedMetadata && (
                                             <Tooltip content={t('modelSelector.accurateMemoryHint')} multiline size="medium">
                                                 <button
@@ -432,6 +432,10 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                         </span>
                                         <span><small>{t('modelSelector.maxContext')}</small><strong>{formatContextLength(selectedMetadata.contextLength)}</strong></span>
                                         <span>
+                                            <small>{t('modelSelector.modelMemory')}</small>
+                                            <strong>{formatBytes(Math.max(0, selectedMetadata.estimatedMemoryBytes - selectedMetadata.kvCacheBytes))}</strong>
+                                        </span>
+                                        <span>
                                             <small>
                                                 {t('modelSelector.conversationMemory')}
                                                 <Tooltip content={t('modelSelector.conversationMemoryHelp')} multiline size="medium">
@@ -457,9 +461,9 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                         {models.map(model => {
                             const selectableFiles = getSelectableModelFiles(model.files);
                             return <article className={`vyact-model-card${selectableFiles.length === 1 ? ' is-compact' : ''}${hasSearched ? '' : ' is-installed-list'}`} key={model.id}>
-                                <div className="vyact-model-card-heading">
+                                {selectableFiles.length > 1 && <div className="vyact-model-card-heading">
                                     <OverflowTooltipText text={model.id}/>{hasSearched && <span>{formatCompactDownloads(model.downloads)}</span>}
-                                </div>
+                                </div>}
                                 <div className="vyact-model-files">
                                     {selectableFiles.map(filename => {
                                         const fileKey = `${model.id}@${model.revision}/${filename}`;
@@ -474,16 +478,18 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                             || mtpSupportedModels.includes(`${model.id}/${filename}`);
                                         const supportsDFlash2 = model.dflash2_supported_files?.includes(filename);
                                         const quantization = getModelQuantization(model, filename);
+                                        const displayName = model.runtime === 'mlx' ? model.id.split('/').pop() || model.id : filename;
                                         return (
                                             <button type="button" className={`${isSelected ? 'is-selected ' : ''}memory-${memoryTone}`} key={filename} onClick={() => void selectModelFile(model, filename, fileSize)} disabled={busy}>
                                                 <span className="vyact-model-file-name">
                                                     {model.runtime === 'mlx' && <span className="vyact-mtp-badge">{t('modelSelector.mlxRuntime')}</span>}
                                                     {supportsMtp && <span className="vyact-mtp-badge">MTP</span>}
                                                     {supportsDFlash2 && <span className="vyact-mtp-badge">DFlash2</span>}
-                                                    <span>{model.runtime === 'mlx' ? model.id.split('/').pop() : filename}</span>
+                                                    <OverflowTooltipText text={displayName}/>
                                                 </span>
                                                 {estimatedMemory > 0 && <small className="vyact-model-file-meta">{fileSize > 0 && <>{formatBytes(fileSize)} · </>}{t('modelSelector.estimatedMemory')} ≈ {formatBytes(estimatedMemory)}{quantization && <span className="vyact-mtp-badge">{quantization}</span>}</small>}
                                                 <span className="vyact-model-file-status">
+                                                    {hasSearched && selectableFiles.length === 1 && <span className="vyact-model-file-downloads">{formatCompactDownloads(model.downloads)}</span>}
                                                     {isInstalled && <span className="vyact-model-installed">{t('modelSelector.installed')}</span>}
                                                     {analyzingFile === fileKey ? <LoaderCircle className="vyact-model-spinner" size={15}/> : isSelected && <Check size={15}/>}
                                                 </span>

@@ -481,6 +481,12 @@
     white-space: nowrap;
 }
 
+.sources--memo { border-color: rgba(255, 160, 80, .25); }
+.sources-lbl--memo, .src-title--memo { color: rgba(255, 160, 80, .9); }
+.src-name--memo { color: rgba(255, 160, 80, .8); }
+.src-item--memo.is-clickable { cursor: pointer; }
+.src-title--memo { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 /* 다크 모드의 기존 참고 스타일은 유지하고, 라이트 모드의 푸른 테두리만 완화한다. */
 :root[data-theme='light'] .sources {
     background: color-mix(in srgb, var(--surface2) 34%, var(--surface));
@@ -495,6 +501,16 @@
 :root[data-theme='light'] .src-name {
     background: color-mix(in srgb, var(--text-secondary) 7%, var(--surface2));
     color: var(--text-secondary);
+}
+
+:root[data-theme='light'] .sources--memo {
+    border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+}
+
+:root[data-theme='light'] .sources-lbl--memo,
+:root[data-theme='light'] .src-title--memo,
+:root[data-theme='light'] .src-name--memo {
+    color: color-mix(in srgb, var(--accent) 88%, #7a2f1d);
 }
 
 .src-deadline {

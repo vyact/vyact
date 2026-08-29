@@ -804,7 +804,6 @@
     border-color: color-mix(in srgb, #8b7bd8 58%, var(--border));
     background: color-mix(in srgb, #8b7bd8 12%, var(--surface));
 }
-.knowledge-source-chip.is-collection .selected-mcp-chip-icon { background: #7868c7; }
 .knowledge-source-chip.is-external {
     border-color: color-mix(in srgb, #d97858 58%, var(--border));
     background: color-mix(in srgb, #d97858 12%, var(--surface));

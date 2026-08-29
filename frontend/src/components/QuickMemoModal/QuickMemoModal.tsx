@@ -9,6 +9,7 @@ import {TEXTAREA_MAX_HEIGHT} from '../../constants/ui';
 
 interface QuickMemoModalProps {
     onClose: () => void;
+    initialNoteId?: string;
 }
 
 // 미완료 먼저, 그 안에서 created_at 내림차순
@@ -30,7 +31,7 @@ function formatDate(iso: string | undefined, locale: string): string {
         : {year: '2-digit', month: '2-digit', day: '2-digit'});
 }
 
-const QuickMemoModal: React.FC<QuickMemoModalProps> = ({onClose}) => {
+const QuickMemoModal: React.FC<QuickMemoModalProps> = ({onClose, initialNoteId}) => {
     const {t, i18n} = useTranslation('main');
     const [notes, setNotes] = useState<QuickNote[]>([]);
     const [input, setInput] = useState('');
@@ -56,6 +57,14 @@ const QuickMemoModal: React.FC<QuickMemoModalProps> = ({onClose}) => {
         load();
         inputRef.current?.focus();
     }, []);
+
+    useEffect(() => {
+        if (loading || !initialNoteId) return;
+        requestAnimationFrame(() => {
+            document.querySelector<HTMLElement>(`[data-quick-note-id="${initialNoteId}"]`)
+                ?.scrollIntoView({block: 'center'});
+        });
+    }, [initialNoteId, loading]);
 
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
@@ -160,11 +169,11 @@ const QuickMemoModal: React.FC<QuickMemoModalProps> = ({onClose}) => {
                         <div className="qmemo-empty">{t('quickMemoModal.empty')}</div>
                     ) : (
                         notes.map(n => (
-                            <div key={n.id} className={`qmemo-item${n.done ? ' done' : ''}${editingId === n.id ? ' editing' : ''}${deletingId === n.id ? ' deleting' : ''}`}>
+                            <div key={n.id} data-quick-note-id={n.id} className={`qmemo-item${n.done ? ' done' : ''}${editingId === n.id ? ' editing' : ''}${deletingId === n.id ? ' deleting' : ''}`}>
                                 <button
                                     className={`qmemo-check${n.done ? ' checked' : ''}`}
                                     onClick={() => toggleDone(n)}
-                                    title={n.done ? t('quickMemoModal.markIncomplete') : t('quickMemoModal.markComplete')}
+                                    aria-label={n.done ? t('quickMemoModal.markIncomplete') : t('quickMemoModal.markComplete')}
                                 >
                                     {n.done && <Check size={13} strokeWidth={3}/>}
                                 </button>

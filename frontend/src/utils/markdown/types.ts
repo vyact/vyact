@@ -19,6 +19,7 @@ export interface MessageProps {
     injectedContext?: Message['injectedContext'];
     onShowInjectedContext?: (ctx: NonNullable<Message['injectedContext']>, kind?: 'injected' | 'external') => void;
     onOpenMemo?: (memoId: string) => void;
+    onOpenQuickMemo?: (quickNoteId: string) => void;
     isStreaming?: boolean;
     conversationId?: string;
     requestStartedAt?: number | null;

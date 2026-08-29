@@ -293,7 +293,7 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    background: transparent;
+    background: var(--surface2);
     border: 1px solid var(--del-border);
     border-radius: 8px;
     color: var(--del-fg-soft);
@@ -305,6 +305,11 @@
     background: var(--del-bg-hover);
     border-color: var(--del-border-hover);
     color: var(--del-fg);
+}
+
+:root[data-theme='light'] .btn-delete-all {
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgba(40, 58, 80, 0.08);
 }
 
 .btn-refresh-history {
@@ -699,8 +704,8 @@
     padding: 7px 10px;
     background: var(--surface2);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    color: var(--text);
+    border-radius: 8px;
+    color: var(--accent);
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
@@ -713,21 +718,22 @@
 }
 
 .btn-new:not(:disabled):is(:hover, :active) {
-    border-color: var(--accent); /* 이때 브랜드 포인트 컬러(주황/보라) 노출 */
+    background: rgba(255, 120, 50, 0.08);
+    border-color: var(--accent);
+    color: var(--accent);
 }
 
 :root[data-theme='light'] .btn-new:not(:disabled) {
     background: var(--surface);
     border-color: color-mix(in srgb, var(--text-secondary) 34%, var(--border));
-    color: var(--text);
-    box-shadow: 0 2px 6px rgba(40, 58, 80, 0.1);
+    color: var(--accent);
+    box-shadow: 0 1px 3px rgba(40, 58, 80, 0.08);
 }
 
 :root[data-theme='light'] .btn-new:not(:disabled):is(:hover, :active) {
-    background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+    background: color-mix(in srgb, var(--accent) 9%, var(--surface));
     border-color: var(--accent);
-    color: var(--accent2);
-    box-shadow: none;
+    color: var(--accent);
 }
 
 .btn-new:disabled {
@@ -775,6 +781,14 @@
     border-color: var(--accent);
     background: color-mix(in srgb, var(--accent) 9%, var(--surface));
     color: var(--accent);
+}
+
+.btn-delete-all:focus-visible,
+.btn-refresh-history:focus-visible,
+.btn-new:focus-visible,
+.sidebar-header-settings:focus-visible {
+    outline: none !important;
+    outline-offset: 0;
 }
 
 /* 히스토리 무한 스크롤 로딩 영역 */

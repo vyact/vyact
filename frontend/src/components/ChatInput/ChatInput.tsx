@@ -495,14 +495,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                     />
 
                     {/* textarea 행 */}
-                    {(selectedMcps.length > 0 || selectedKnowledgeCollectionIds.length > 0 || selectedExternalDocuments.length > 0) && <div className="selected-mcp-chips">
-                        {selectedKnowledgeCollectionIds.map(collectionId => {
-                            const collection = knowledgeCollections.find(item => item.id === collectionId);
-                            return collection ? <div className="selected-mcp-chip knowledge-source-chip is-collection" key={collection.id}>
-                                <span className="selected-mcp-chip-icon">K</span><span>{collection.name}</span>
-                                <button type="button" aria-label={t('mcpMenu.removeSelected')} onClick={() => setSelectedKnowledgeCollectionIds(current => current.filter(id => id !== collectionId))}><X size={10}/></button>
-                            </div> : null;
-                        })}
+                    {(selectedMcps.length > 0 || selectedExternalDocuments.length > 0) && <div className="selected-mcp-chips">
                         {isKoreanLanguage && selectedExternalDocuments.map(document => <div className="selected-mcp-chip knowledge-source-chip is-external" key={`${document.source_id}:${document.document_id}`}>
                             <span className="selected-mcp-chip-icon"><FileText size={11}/></span><span>{document.title}</span>
                             <button type="button" aria-label={t('mcpMenu.removeSelected')} onClick={() => updateExternalDocumentSelections(current => current.filter(item => item.source_id !== document.source_id || item.document_id !== document.document_id))}><X size={10}/></button>

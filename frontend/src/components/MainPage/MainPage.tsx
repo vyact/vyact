@@ -263,6 +263,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
     const [showMemoModal, setShowMemoModal] = useState(false);
     const [showQuickMemoModal, setShowQuickMemoModal] = useState(false);
     const [memoInitialId, setMemoInitialId] = useState<string | undefined>(undefined);
+    const [quickMemoInitialId, setQuickMemoInitialId] = useState<string | undefined>(undefined);
     const [summaryConvId, setSummaryConvId] = useState<string | null>(null);
 
     const loadSystemPrompts = useCallback(async () => {
@@ -307,6 +308,10 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
     const handleOpenMemo = useCallback((memoId: string) => {
         setMemoInitialId(memoId);
         setShowMemoModal(true);
+    }, []);
+    const handleOpenQuickMemo = useCallback((quickNoteId: string) => {
+        setQuickMemoInitialId(quickNoteId);
+        setShowQuickMemoModal(true);
     }, []);
     const [showDocumentModal, setShowDocumentModal] = useState(false);
     const [showVoiceChatModal, setShowVoiceChatModal] = useState(false);
@@ -672,6 +677,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                                 onPdfEdit={handlePdfEdit}
                                 onShowInjectedContext={handleShowInjectedContext}
                                 onOpenMemo={handleOpenMemo}
+                                onOpenQuickMemo={handleOpenQuickMemo}
                                 googleWorkspaceOpen={googleWorkspaceOpen}
                                 selectedGoogleMailId={selectedGoogleMailId}
                                 selectedGoogleCalendarEvent={selectedGoogleCalendarEvent}
@@ -938,7 +944,10 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                         )}
                         {showQuickMemoModal && (
                             <React.Suspense fallback={null}>
-                                <QuickMemoModal onClose={() => setShowQuickMemoModal(false)}/>
+                                <QuickMemoModal initialNoteId={quickMemoInitialId} onClose={() => {
+                                    setShowQuickMemoModal(false);
+                                    setQuickMemoInitialId(undefined);
+                                }}/>
                             </React.Suspense>
                         )}
 
