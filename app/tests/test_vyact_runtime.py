@@ -10,7 +10,7 @@ from services.vyact_runtime import (
     delete_downloaded_model,
     initialize_downloaded_models_cache, list_downloaded_models, list_mtp_supported_models,
     list_selectable_models, start_single_model,
-    uncache_downloaded_model, write_single_model_config, _which_path,
+    uncache_downloaded_model, write_single_model_config, _known_executable_paths, _which_path,
 )
 
 
@@ -141,6 +141,18 @@ class VyactRuntimeTests(unittest.TestCase):
              patch("services.vyact_runtime._known_executable_paths", return_value=[known_brew]), \
              patch.object(Path, "is_file", return_value=True):
             self.assertEqual(_which_path("brew"), known_brew)
+
+    def test_finds_winget_package_executable_outside_process_path(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            local_app_data = Path(temp_dir)
+            package_dir = local_app_data / "Microsoft" / "WinGet" / "Packages" / "ggml.llamacpp_test"
+            package_dir.mkdir(parents=True)
+            executable = package_dir / "llama-server.exe"
+            executable.touch()
+            with patch("services.vyact_runtime.platform.system", return_value="Windows"), \
+                 patch("services.vyact_runtime._executable_name", return_value="llama-server.exe"), \
+                 patch.dict("os.environ", {"LOCALAPPDATA": str(local_app_data)}):
+                self.assertIn(executable, _known_executable_paths("llama-server"))
 
 
     def test_missing_package_manager_stops_before_runtime_install(self):

@@ -3,7 +3,6 @@ main.py – FastAPI 앱 생성 + 라우터 등록 + Lifespan
 """
 import asyncio
 import os
-import locale
 import signal
 import warnings
 from contextlib import asynccontextmanager
@@ -59,52 +58,14 @@ warnings.filterwarnings(
 if KOKORO_CACHE_READY.exists():
     os.environ.setdefault("HF_HUB_OFFLINE", "1")
 
-SYSTEM_LANGUAGE_FALLBACK = "en"
-SUPPORTED_SYSTEM_LANGUAGES = {"ko", "en", "ja", "zh", "th", "vi", "es", "fr"}
 INITIAL_SETUP_MESSAGES = {
-    "elasticsearch_not_installed": {
-        "ko": "Elasticsearch는 아직 설치 전입니다 — 초기 설정에서 준비합니다.",
-        "en": "Elasticsearch is not installed yet — it will be set up during initial configuration.",
-        "ja": "Elasticsearch はまだインストールされていません。初期設定で準備します。",
-        "zh": "Elasticsearch 尚未安装，将在初始设置中准备。",
-        "th": "ยังไม่ได้ติดตั้ง Elasticsearch — ระบบจะเตรียมให้ระหว่างการตั้งค่าเริ่มต้น",
-        "vi": "Elasticsearch chưa được cài đặt — sẽ được thiết lập trong quá trình cấu hình ban đầu.",
-        "es": "Elasticsearch aún no está instalado; se configurará durante la configuración inicial.",
-        "fr": "Elasticsearch n’est pas encore installé ; il sera préparé lors de la configuration initiale.",
-    },
-    "rag_available_after_setup": {
-        "ko": "초기 설정을 완료하면 RAG 기능을 사용할 수 있습니다.",
-        "en": "Complete initial setup to enable RAG features.",
-        "ja": "初期設定を完了すると、RAG 機能を利用できます。",
-        "zh": "完成初始设置后即可使用 RAG 功能。",
-        "th": "ทำการตั้งค่าเริ่มต้นให้เสร็จเพื่อใช้ฟีเจอร์ RAG",
-        "vi": "Hoàn tất cấu hình ban đầu để sử dụng các tính năng RAG.",
-        "es": "Complete la configuración inicial para habilitar las funciones RAG.",
-        "fr": "Terminez la configuration initiale pour activer les fonctionnalités RAG.",
-    },
+    "elasticsearch_not_installed": "Elasticsearch is not installed yet; it will be prepared during initial setup.",
+    "rag_available_after_setup": "Complete initial setup to enable RAG features.",
 }
 
-
-def get_system_language() -> str:
-    """React i18n이 시작되기 전의 부팅 로그에 사용할 OS 언어 코드."""
-    language_tag = (
-        os.environ.get("VYACT_SYSTEM_LANGUAGE")
-        or os.environ.get("LC_ALL")
-        or os.environ.get("LC_MESSAGES")
-        or os.environ.get("LANG")
-        or locale.getlocale()[0]
-        or ""
-    )
-    language = language_tag.split(".", 1)[0].split("_", 1)[0].lower()
-    return language if language in SUPPORTED_SYSTEM_LANGUAGES else SYSTEM_LANGUAGE_FALLBACK
-
-
 def initial_setup_message(message_key: str) -> str:
-    language = get_system_language()
-    return INITIAL_SETUP_MESSAGES[message_key].get(
-        language,
-        INITIAL_SETUP_MESSAGES[message_key][SYSTEM_LANGUAGE_FALLBACK],
-    )
+    """Return ASCII-safe English text for pre-i18n installation logs."""
+    return INITIAL_SETUP_MESSAGES[message_key]
 
 # ─────────────────────────────
 # LOGGING  (앱 시작 시 1회 초기화)

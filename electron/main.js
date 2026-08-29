@@ -355,7 +355,7 @@ async function waitForElasticsearch(retries = 10, retryDelayMs = 3000) {
     const startedAt = Date.now();
     for (let attempt = 1; attempt <= retries; attempt += 1) {
         if (await isElasticsearchReady()) {
-            log("✅ Elasticsearch ready");
+            log("Elasticsearch ready");
             // ES 연결 뒤에도 Python 서버의 모델 초기화가 이어진다. 이전 ES 대기 문구의
             // 타이머를 해제하지 않으면 실제로는 연결됐는데도 경과 초가 계속 표시된다.
             sendLoadingStatus("");
@@ -376,7 +376,7 @@ async function waitForElasticsearch(retries = 10, retryDelayMs = 3000) {
 
 function showElasticsearchUnavailableAndQuit() {
     const [title, message] = getElasticsearchStartupMessage();
-    log("❌ Elasticsearch was not ready before startup timeout");
+    log("Elasticsearch was not ready before startup timeout");
     dialog.showErrorBox(title, message);
     app.exit(1);
 }
@@ -385,7 +385,7 @@ function showStartupError(error) {
     const translation = getStartupTranslation();
     const errorPath = path.join(__dirname, "error.html");
     const detail = error instanceof Error ? error.message : String(error || "Unknown error");
-    log(`❌ Startup failed: ${detail}`);
+    log(`Startup failed: ${detail}`);
     if (mainWindow && !mainWindow.isDestroyed() && fs.existsSync(errorPath)) {
         return mainWindow.loadFile(errorPath, {query: {
             title: translation.pythonSetupFailedTitle,
@@ -412,10 +412,10 @@ function isSupportedPython(pythonBin) {
 
 function resolvePython() {
     if (isSupportedPython(BUNDLED_PYTHON)) {
-        log(`✅ Using bundled Python 3.12: ${BUNDLED_PYTHON}`);
+        log(`Using bundled Python 3.12: ${BUNDLED_PYTHON}`);
         return BUNDLED_PYTHON;
     }
-    log(`❌ Bundled Python 3.12 not found: ${BUNDLED_PYTHON}`);
+    log(`Bundled Python 3.12 not found: ${BUNDLED_PYTHON}`);
     return null;
 }
 
@@ -442,7 +442,7 @@ function getChildProcessEnv() {
 }
 
 function isDockerRunning() {
-    log("▸ Checking Docker (optional)...");
+    log("Checking Docker (optional)...");
 
     // Docker Desktop CLI 경로를 포함해야 앱에서 실행한 명령도 Docker를 찾을 수 있다.
     const env = getDockerEnv();
@@ -450,22 +450,22 @@ function isDockerRunning() {
     try {
         execSync("docker --version", {stdio: "pipe", env});
     } catch {
-        log("ℹ️ Docker not installed — will use native Elasticsearch");
+        log("Docker not installed; using native Elasticsearch");
         return false;
     }
     try {
         execSync("docker info", {stdio: "pipe", env});
-        log("✅ Docker is running");
+        log("Docker is running");
         return true;
     } catch {
-        log("ℹ️ Docker installed but not running — will use native Elasticsearch");
+        log("Docker installed but not running; using native Elasticsearch");
         return false;
     }
 }
 
 // ── Elasticsearch 설치 확인 및 자동 실행 ───
 function checkAndStartElasticsearch() {
-    log("▸ Checking Elasticsearch...");
+    log("Checking Elasticsearch...");
     const env = getDockerEnv();
 
     try {
@@ -483,21 +483,21 @@ function checkAndStartElasticsearch() {
             ).trim();
 
             if (running.includes("elasticsearch")) {
-                log("✅ Elasticsearch is running");
+                log("Elasticsearch is running");
                 return true;
             } else {
-                log("▸ Starting Elasticsearch...");
+                log("Starting Elasticsearch...");
                 execSync("docker start elasticsearch", {stdio: "inherit", env});
-                log("✅ Elasticsearch started");
+                log("Elasticsearch started");
                 return true;
             }
         } else {
             // 컨테이너 없음 — setup wizard에서 설치하므로 여기서는 건너뜀
-            log("ℹ️ Elasticsearch not installed — will be configured in setup wizard");
+            log("Elasticsearch not installed; setup wizard will configure it");
             return false;
         }
     } catch (e) {
-        log(`⚠️ Elasticsearch check failed: ${e.message}`);
+        log(`Elasticsearch check failed: ${e.message}`);
         return false;
     }
 }
@@ -510,7 +510,7 @@ function checkAllDependencies() {
 
     const dockerOk = isDockerRunning();
     if (!dockerOk) {
-        log("ℹ️ Docker not available — Elasticsearch will be configured in setup wizard");
+        log("Docker not available; setup wizard will configure Elasticsearch");
     }
 
     if (dockerOk) {
@@ -594,7 +594,7 @@ async function stopExistingServerBeforeDesktopStart() {
     // A backend launched directly from an IDE does not inherit the Electron
     // browser-control token, so it cannot expose browser_* tools. The desktop
     // app must own the backend process and start it with the bridge environment.
-    log(`⚠️ Existing Vyact server detected on port ${SERVER_PORT}; restarting it with the desktop browser bridge`);
+    log(`Existing Vyact server detected on port ${SERVER_PORT}; restarting it with the desktop browser bridge`);
     try {
         await fetch(`http://127.0.0.1:${SERVER_PORT}/api/shutdown`, {
             method: "POST",
@@ -616,7 +616,7 @@ async function stopExistingServerBeforeDesktopStart() {
 }
 
 async function startServer() {
-    log("▸ Starting server process");
+    log("Starting server process");
 
     if (!fs.existsSync(INSTALL_DIR)) fs.mkdirSync(INSTALL_DIR, {recursive: true});
 
@@ -635,7 +635,7 @@ async function startServer() {
     const uvicornCheck = platform.uvicornPath;
     const hasUvicorn = fs.existsSync(uvicornCheck);
     if (!isSupportedPython(python) || !hasUvicorn) {
-        log("▸ Creating virtual environment (venv)");
+        log("Creating virtual environment (venv)");
 
         if (fs.existsSync(VENV_DIR)) fs.rmSync(VENV_DIR, {recursive: true, force: true});
         try { fs.unlinkSync(path.join(INSTALL_DIR, ".req_hash")); } catch {}
@@ -645,7 +645,7 @@ async function startServer() {
             if (!pythonBin) {
                 throw new Error("Python 3.12 is required");
             }
-            log(`👉 Using python: ${pythonBin}`);
+            log(`Using Python: ${pythonBin}`);
 
             execFileSync(pythonBin, ["-m", "venv", VENV_DIR], {
                 stdio: "inherit",
@@ -653,7 +653,7 @@ async function startServer() {
                 ...platform.childProcessOptions,
             });
 
-            log("▸ Installing packages from requirements.txt...");
+            log("Installing packages from requirements.txt...");
             sendLoadingStatus(getStartupTranslation().pythonPackagesInstalling);
 
             // 1. pip 자체 업그레이드 (권장)
@@ -667,16 +667,16 @@ async function startServer() {
                 // 해시 저장 (이후 변경 감지용)
                 const hash = getRequirementsHash(reqPath);
                 fs.writeFileSync(path.join(INSTALL_DIR, ".req_hash"), hash);
-                log("✅ requirements.txt installed");
+                log("requirements.txt installed");
             } else {
-                log("⚠️ requirements.txt not found — installing base packages");
+                log("requirements.txt not found; installing base packages");
                 await runCommand(python, ["-m", "pip", "install", "fastapi", "uvicorn", "aiofiles", "pydantic", "httpx", "elasticsearch", "playwright", "bs4", "--quiet"]);
             }
 
-            log("✅ venv setup complete");
+            log("venv setup complete");
 
         } catch (err) {
-            log(`❌ venv creation or package install failed: ${err.message}`);
+            log(`venv creation or package install failed: ${err.message}`);
             try { fs.rmSync(VENV_DIR, {recursive: true, force: true}); } catch {}
             try { fs.unlinkSync(path.join(INSTALL_DIR, ".req_hash")); } catch {}
             throw new Error(`Python environment setup failed: ${err.message}`, {cause: err});
@@ -692,14 +692,14 @@ async function startServer() {
             try { savedHash = fs.readFileSync(reqHashFile, "utf-8").trim(); } catch {}
 
             if (currentHash !== savedHash) {
-                log("▸ requirements.txt changed — syncing packages...");
+                log("requirements.txt changed; syncing packages...");
                 try {
                     sendLoadingStatus(getStartupTranslation().pythonPackagesInstalling);
                     await installPythonPackages(python, reqPath);
                     fs.writeFileSync(reqHashFile, currentHash);
-                    log("✅ Package sync complete");
+                    log("Package sync complete");
                 } catch (err) {
-                    log(`❌ Package sync failed: ${err.message}`);
+                    log(`Package sync failed: ${err.message}`);
                     throw new Error(`Python package update failed: ${err.message}`, {cause: err});
                 }
             }
@@ -725,7 +725,7 @@ async function startServer() {
 
     const finalPython = fs.existsSync(python) ? python : resolvePython();
     if (!finalPython) throw new Error("Bundled Python 3.12 runtime is missing");
-    log(`🚀 Starting server: ${finalPython}`);
+    log(`Starting server: ${finalPython}`);
     sendLoadingStatus(getStartupTranslation().waitingForServer);
 
     serverProc = spawn(finalPython, ["-u", "main.py"], {
@@ -800,7 +800,7 @@ function waitForServer(retries = 180) {
 
 // ── 창 생성 ───────────────────────────────
 function createWindow() {
-    log("▸ Creating Electron window");
+    log("Creating Electron window");
 
     mainWindow = new BrowserWindow({
         width: 1200,
@@ -919,7 +919,7 @@ function createWindow() {
 function waitForServerAndLoad() {
     return waitForServer()
         .then(() => {
-            log("✅ Server ready");
+            log("Server ready");
             loadServerApp();
         })
         .catch(showStartupError);
@@ -932,7 +932,7 @@ async function loadServerApp() {
     try {
         await mainWindow.webContents.session.clearCache();
     } catch (error) {
-        log(`⚠️ Failed to clear HTTP cache: ${error.message}`);
+        log(`Failed to clear HTTP cache: ${error.message}`);
     }
 
     if (mainWindow.isDestroyed()) return;
@@ -1062,7 +1062,7 @@ app.on("browser-window-focus", (_event, focusedWindow) => {
 if (hasSingleInstanceLock) app.whenReady().then(() => {
     if (!fs.existsSync(LOGS_DIR)) fs.mkdirSync(LOGS_DIR, {recursive: true});
     cleanupOldLogs();
-    log("✅ App started");
+    log("App started");
 
     const startupDelayMs = app.getLoginItemSettings().wasOpenedAtLogin
         ? AUTO_START_DELAY_SECONDS * 1000
@@ -1099,7 +1099,7 @@ app.on("before-quit", async (e) => {
     if (serverProc && !serverProc.killed) {
         e.preventDefault();
         isQuitting = true;
-        log("🛑 Shutting down local runtimes...");
+        log("Shutting down local runtimes...");
         try {
             await fetch("http://localhost:8000/api/shutdown", {method: "POST"})
                 .catch(() => {
@@ -1116,7 +1116,7 @@ app.on("before-quit", async (e) => {
                 resolve();
             });
         });
-        log("✅ Server shutdown complete");
+        log("Server shutdown complete");
         app.quit();
     }
 });

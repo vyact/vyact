@@ -77,10 +77,15 @@ def _known_executable_paths(name: str) -> list[Path]:
         local_app_data = os.environ.get("LOCALAPPDATA")
         if local_app_data:
             base = Path(local_app_data)
-            return [
+            candidates = [
                 base / "Microsoft" / "WindowsApps" / executable,
                 base / "Microsoft" / "WinGet" / "Links" / executable,
             ]
+            packages_dir = base / "Microsoft" / "WinGet" / "Packages"
+            if packages_dir.is_dir():
+                candidates.extend(sorted(packages_dir.glob(f"*/{executable}")))
+                candidates.extend(sorted(packages_dir.glob(f"*/*/{executable}")))
+            return candidates
     return []
 
 
@@ -172,11 +177,16 @@ async def install_missing_runtime():
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
         )
-        stdout, _ = await process.communicate()
+        _stdout, _ = await process.communicate()
         if process.returncode != 0:
-            output_lines = stdout.decode("utf-8", errors="replace").strip().splitlines()
-            detail = output_lines[-1] if output_lines else "unknown package manager error"
-            raise RuntimeError(f"Runtime installation failed: {' '.join(command)}: {detail}")
+            executable_name = "llama-server" if package_name == "ggml.llamacpp" else "llama-swap"
+            if _which_path(executable_name):
+                yield f"Existing {package_name} installation detected"
+                continue
+            raise RuntimeError(
+                f"Runtime installation failed for {package_name} "
+                f"(package manager exit code {process.returncode})"
+            )
     if not runtime_is_available():
         raise RuntimeError("Runtime installation completed but executables were not found in PATH")
     yield "Vyact native runtime ready"
