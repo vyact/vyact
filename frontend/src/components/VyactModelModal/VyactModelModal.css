@@ -57,6 +57,7 @@
 .vyact-model-file-meta { display: flex; align-items: center; gap: 6px; }
 .vyact-model-publisher { min-width: 0; overflow: hidden; color: var(--text-secondary); font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
 .vyact-model-file-status { display: flex; grid-column: 2; grid-row: 1 / span 2; align-items: center; gap: 7px; min-width: 15px; min-height: 15px; align-self: center; }
+.vyact-model-file-stats { display: grid; justify-items: end; gap: 6px; }
 .vyact-model-file-downloads { color: var(--muted); font-size: 11px; font-weight: 600; white-space: nowrap; }
 .vyact-model-installed { padding: 3px 7px; border: 1px solid transparent; border-radius: 999px; background: color-mix(in srgb, #47b881 16%, transparent); color: #63c998; font-size: 10px; font-weight: 750; white-space: nowrap; }
 :root[data-theme='light'] .vyact-model-installed { border-color: color-mix(in srgb, var(--success) 36%, var(--border)); background: color-mix(in srgb, var(--success) 12%, var(--surface)); color: var(--success); box-shadow: 0 1px 3px color-mix(in srgb, var(--success) 12%, transparent); }

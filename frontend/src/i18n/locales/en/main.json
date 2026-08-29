@@ -500,6 +500,7 @@
     }
   },
   "modelSelector": {
+    "ram": "RAM",
     "cancel": "Cancel", "modelActions": "{{model}} actions", "deleteModel": "Delete {{model}} model", "deleteModelConfirm": "Delete the {{model}} model?", "deleteModelDescription": "The downloaded model files will be removed from this device.", "deletingModel": "Deleting...", "deleteModelFailed": "Model deletion failed",
     "selectModel": "Select model",
     "noModel": "No model set",

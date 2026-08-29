@@ -500,6 +500,7 @@
     "responseInProgress": "กำลังสร้างคำตอบ"
   },
   "modelSelector": {
+    "ram": "RAM",
     "cancel": "ยกเลิก", "modelActions": "การทำงานสำหรับ {{model}}", "deleteModel": "ลบโมเดล {{model}}", "deleteModelConfirm": "ลบโมเดล {{model}} หรือไม่", "deleteModelDescription": "ไฟล์โมเดลที่ดาวน์โหลดจะถูกลบออกจากอุปกรณ์นี้", "deletingModel": "กำลังลบ...", "deleteModelFailed": "ลบโมเดลไม่สำเร็จ",
     "selectModel": "เลือกโมเดล",
     "noModel": "ยังไม่มีโมเดล",

@@ -500,6 +500,7 @@
     }
   },
   "modelSelector": {
+    "ram": "RAM",
     "cancel": "Hủy", "modelActions": "Thao tác cho {{model}}", "deleteModel": "Xóa mô hình {{model}}", "deleteModelConfirm": "Xóa mô hình {{model}}?", "deleteModelDescription": "Các tệp mô hình đã tải xuống sẽ bị xóa khỏi thiết bị này.", "deletingModel": "Đang xóa...", "deleteModelFailed": "Không thể xóa mô hình",
     "selectModel": "Chọn mô hình",
     "noModel": "Chưa có mô hình",

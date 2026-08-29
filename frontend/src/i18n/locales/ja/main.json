@@ -500,6 +500,7 @@
     }
   },
   "modelSelector": {
+    "ram": "RAM",
     "cancel": "キャンセル", "modelActions": "{{model}} の操作", "deleteModel": "{{model}} モデルを削除", "deleteModelConfirm": "{{model}} モデルを削除しますか？", "deleteModelDescription": "ダウンロードしたモデルファイルがこのデバイスから削除されます。", "deletingModel": "削除中...", "deleteModelFailed": "モデルの削除に失敗しました",
     "selectModel": "モデル選択",
     "noModel": "モデル未設定",
