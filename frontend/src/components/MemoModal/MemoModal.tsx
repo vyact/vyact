@@ -19,6 +19,7 @@ import { AlignCenter, AlignLeft, AlignRight, Ellipsis, FileText, ImagePlus, Link
 
 import { api } from '../../services/api';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
+import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
 import ActionMenu from '../common/ActionMenu/ActionMenu';
 import KnowledgeCollectionAttachSelect from '../KnowledgeCollectionsModal/KnowledgeCollectionAttachSelect';
 import ImageViewer from '../ImageViewer/ImageViewer';
@@ -974,37 +975,20 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
                     </div>
                 )}
                 {deleteConfirm && (
-                    <div style={{
-                        position: 'absolute', inset: 0, zIndex: 100,
-                        background: 'rgba(0,0,0,0.7)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        borderRadius: '14px',
-                    }}>
-                        <div style={{
-                            background: 'var(--bg-secondary, #1e1e1e)',
-                            border: '1px solid rgba(255,255,255,0.15)',
-                            borderRadius: '12px', padding: '24px', width: '320px', textAlign: 'center',
-                        }}>
-                            <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text)', marginBottom: '8px', wordBreak: 'break-all' }}>
-                                {deleteConfirm.title || t('memoModal.untitled')}
-                            </div>
-                            <div style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '20px' }}>
-                                {t('memoModal.deleteConfirm')}
-                            </div>
-                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                                <button onClick={() => setDeleteConfirm(null)} style={{
-                                    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
-                                    borderRadius: '6px', padding: '7px 18px', fontSize: '13px',
-                                    color: 'var(--muted)', cursor: 'pointer',
-                                }}>{t('memoModal.cancel')}</button>
-                                <button onClick={confirmDelete} style={{
-                                    background: '#e05050', border: 'none',
-                                    borderRadius: '6px', padding: '7px 18px', fontSize: '13px',
-                                    color: 'white', cursor: 'pointer', fontWeight: 600,
-                                }}>{t('memoModal.delete')}</button>
-                            </div>
-                        </div>
-                    </div>
+                    <ConfirmModal
+                        title={deleteConfirm.title || t('memoModal.untitled')}
+                        description={t('memoModal.deleteConfirm')}
+                        options={[
+                            {label: t('memoModal.cancel'), value: 'cancel'},
+                            {label: t('memoModal.delete'), value: 'delete', variant: 'danger'},
+                        ]}
+                        actionLayout="horizontal"
+                        onClose={() => setDeleteConfirm(null)}
+                        onSelect={value => {
+                            if (value === 'delete') void confirmDelete();
+                            else setDeleteConfirm(null);
+                        }}
+                    />
                 )}
                 {/* 헤더 */}
                 <div className="memo-modal-header">

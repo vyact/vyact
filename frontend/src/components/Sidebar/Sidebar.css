@@ -13,6 +13,11 @@
     will-change: width;
 }
 
+:root[data-theme='light'] .sidebar {
+    background: color-mix(in srgb, var(--surface2) 58%, var(--surface));
+    border-right-color: color-mix(in srgb, var(--text-secondary) 24%, var(--border));
+}
+
 /* 폭 전환 중 콘텐츠가 갑자기 잘려 보이지 않도록 짧게 페이드한다. */
 .sidebar > * {
     transition: opacity 110ms ease;
@@ -148,7 +153,10 @@
 .favorite-conversation--project.active { background:color-mix(in srgb,var(--project-color) 7%,transparent); }
 :root[data-theme='light'] .favorite-conversation:is(:hover, :active) { background:color-mix(in srgb,var(--accent) 8%,transparent); }
 :root[data-theme='light'] .favorite-conversation.active { background:color-mix(in srgb,var(--accent) 14%,transparent); }
-:root[data-theme='light'] .favorite-conversation--project.active { background:color-mix(in srgb,var(--project-color) 12%,transparent); }
+:root[data-theme='light'] .favorite-conversation--project.active,
+:root[data-theme='light'] .project-row.active {
+    background: color-mix(in srgb, var(--project-color) 12%, transparent);
+}
 .favorite-conversation-source { display:grid; width:22px; height:22px; flex:0 0 22px; place-items:center; }
 .favorite-conversation-source--general { color:var(--text-secondary); }
 .favorite-conversation-source--project { color:var(--project-color); }
@@ -468,7 +476,9 @@
 
 :root[data-theme='light'] .hist-item.active,
 :root[data-theme='light'] .project-conversation.active {
-    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+    border-color: color-mix(in srgb, var(--accent) 20%, var(--border));
+    box-shadow: 0 2px 7px rgba(var(--accent-rgb), 0.09);
 }
 
 .hist-item.disabled,
@@ -705,7 +715,7 @@
     background: var(--surface);
     border-color: color-mix(in srgb, var(--text-secondary) 34%, var(--border));
     color: var(--text);
-    box-shadow: 0 1px 3px rgba(40, 58, 80, 0.08);
+    box-shadow: 0 2px 6px rgba(40, 58, 80, 0.1);
 }
 
 :root[data-theme='light'] .btn-new:not(:disabled):is(:hover, :active) {

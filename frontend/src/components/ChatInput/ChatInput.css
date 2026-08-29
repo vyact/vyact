@@ -13,8 +13,13 @@
 }
 
 :root[data-theme='light'] .chat-input-wrap .chat-input-container {
-    border-color: var(--border);
+    border-color: color-mix(in srgb, var(--text-secondary) 22%, var(--border));
     box-shadow: var(--shadow-md);
+}
+
+:root[data-theme='light'] .chat-input-wrap .chat-input-container:focus-within {
+    border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+    box-shadow: var(--shadow-md), 0 0 0 3px rgba(var(--accent-rgb), 0.08);
 }
 
 .chat-input-wrap .chat-input-container {
@@ -204,6 +209,14 @@
 
 .chat-input:focus {
     border-color: var(--accent);
+}
+
+:root[data-theme='light'] .chat-input {
+    background: color-mix(in srgb, var(--surface2) 42%, var(--surface));
+}
+
+:root[data-theme='light'] .chat-input:focus {
+    background: var(--surface);
 }
 
 .chat-input:disabled {

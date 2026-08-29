@@ -13,6 +13,12 @@
     z-index: 25000;
 }
 
+:root[data-theme='light'] .titlebar {
+    background: color-mix(in srgb, var(--surface) 86%, var(--surface2));
+    border-bottom-color: color-mix(in srgb, var(--text-secondary) 22%, var(--border));
+    box-shadow: 0 1px 5px rgba(42, 61, 84, 0.05);
+}
+
 .titlebar-left {
     display: flex;
     align-items: center;
@@ -86,6 +92,12 @@
     border-radius: 6px;
     background: transparent;
     font-size: 11px;
+}
+
+:root[data-theme='light'] .titlebar-aspect-ratio-select .custom-select-trigger {
+    border-color: color-mix(in srgb, var(--text-secondary) 30%, var(--border));
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgba(42, 61, 84, 0.08);
 }
 
 .titlebar-aspect-ratio-select .custom-select-dropdown {

@@ -602,6 +602,30 @@
 }
 .tiptap pre code { background: none; padding: 0; }
 
+/* 라이트 테마의 메모 코드 블록은 코드 패널과 같은 밝은 표면과 문법 팔레트를 사용한다. */
+:root[data-theme='light'] .memo-modal .tiptap pre {
+    background: var(--code-panel-bg);
+    border-color: color-mix(in srgb, var(--text-secondary) 24%, var(--border));
+    color: #24292f;
+}
+
+:root[data-theme='light'] .memo-modal .tiptap code:not(pre code) {
+    background: var(--code-inline-bg);
+    color: #24292f;
+}
+
+:root[data-theme='light'] .memo-modal .tiptap pre code { color: #24292f; }
+:root[data-theme='light'] .memo-modal .tiptap pre :is(.hljs-comment, .hljs-quote) { color: #57606a; }
+:root[data-theme='light'] .memo-modal .tiptap pre :is(.hljs-keyword, .hljs-selector-tag, .hljs-subst) { color: #cf222e; }
+:root[data-theme='light'] .memo-modal .tiptap pre :is(.hljs-number, .hljs-literal, .hljs-variable, .hljs-template-variable, .hljs-tag, .hljs-attr) { color: #0550ae; }
+:root[data-theme='light'] .memo-modal .tiptap pre :is(.hljs-string, .hljs-doctag, .hljs-regexp) { color: #0a3069; }
+:root[data-theme='light'] .memo-modal .tiptap pre :is(.hljs-title, .hljs-section, .hljs-selector-id, .hljs-symbol) { color: #8250df; }
+:root[data-theme='light'] .memo-modal .tiptap pre :is(.hljs-type, .hljs-class .hljs-title, .hljs-built_in, .hljs-bullet) { color: #953800; }
+:root[data-theme='light'] .memo-modal .tiptap pre :is(.hljs-attribute, .hljs-name, .hljs-selector-class, .hljs-selector-attr, .hljs-selector-pseudo) { color: #116329; }
+:root[data-theme='light'] .memo-modal .tiptap pre :is(.hljs-meta, .hljs-meta .hljs-keyword) { color: #0550ae; }
+:root[data-theme='light'] .memo-modal .tiptap pre .hljs-addition { color: #116329; background: #dafbe1; }
+:root[data-theme='light'] .memo-modal .tiptap pre .hljs-deletion { color: #82071e; background: #ffebe9; }
+
 /* placeholder */
 .tiptap p.is-editor-empty:first-child::before {
     content: attr(data-placeholder);
@@ -690,6 +714,19 @@
 .memo-code-copy:hover {
     background: rgba(255,255,255,0.18);
     color: var(--text);
+}
+
+:root[data-theme='light'] .memo-code-copy {
+    background: var(--surface);
+    border-color: color-mix(in srgb, var(--text-secondary) 30%, var(--border));
+    color: var(--text-secondary);
+    box-shadow: var(--shadow-sm);
+}
+
+:root[data-theme='light'] .memo-code-copy:hover {
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+    border-color: var(--accent);
+    color: var(--accent);
 }
 
 /* 뷰어 툴바 제거 후 본문 상단 여백 */

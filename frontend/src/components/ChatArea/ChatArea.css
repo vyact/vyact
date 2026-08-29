@@ -115,7 +115,9 @@
 }
 
 :root[data-theme='light'] .chat-area {
-    background: var(--bg);
+    background:
+        radial-gradient(circle at 76% 4%, rgba(var(--accent-rgb), 0.045), transparent 28%),
+        var(--bg);
 }
 
 /* 콘텐츠 50% 센터 제한 */
