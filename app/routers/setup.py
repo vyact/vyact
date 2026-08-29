@@ -286,7 +286,10 @@ async def install(req: ModelSelectRequest):
         except Exception:
             return False
 
-    async def _prepare_common_runtime(installer: Installer):
+    async def _prepare_common_runtime(
+        installer: Installer,
+        huggingface_token: str | None = None,
+    ):
         """Prepare runtime resources used independently of the selected LLM provider."""
         yield "Creating Python virtual environment...", "info", 74, True
         ok, msg = await installer.setup_venv()
@@ -350,7 +353,7 @@ async def install(req: ModelSelectRequest):
         yield msg, "ok" if ok else "log", 93, True
 
         yield "Downloading Kokoro TTS model...", "info", 93, True
-        ok, msg = await installer.download_kokoro_model()
+        ok, msg = await installer.download_kokoro_model(huggingface_token)
         if not ok:
             yield msg, "error", 0, False
             return
@@ -358,7 +361,7 @@ async def install(req: ModelSelectRequest):
 
         yield "Warming up Kokoro TTS...", "info", 94, True
         from main import warmup_kokoro_tts
-        tts_ready = await warmup_kokoro_tts()
+        tts_ready = await warmup_kokoro_tts(huggingface_token)
         yield (
             "Kokoro TTS ready" if tts_ready else "Kokoro TTS warm-up skipped",
             "ok" if tts_ready else "log",
@@ -366,8 +369,13 @@ async def install(req: ModelSelectRequest):
             True,
         )
 
-    async def _stream_common_runtime(installer: Installer):
-        async for message, level, progress, should_continue in _prepare_common_runtime(installer):
+    async def _stream_common_runtime(
+        installer: Installer,
+        huggingface_token: str | None = None,
+    ):
+        async for message, level, progress, should_continue in _prepare_common_runtime(
+            installer, huggingface_token,
+        ):
             yield sse(message, level, progress), should_continue
 
     async def stream():
@@ -529,7 +537,10 @@ async def install(req: ModelSelectRequest):
                     yield sse(f"Hugging Face token save failed: {error}", "error", 0)
                     return
 
-            async for event, should_continue in _stream_common_runtime(installer):
+            async for event, should_continue in _stream_common_runtime(
+                installer,
+                huggingface_token if req.type == "vyact" else None,
+            ):
                 yield event
                 if not should_continue:
                     return

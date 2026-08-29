@@ -23,6 +23,7 @@ from services.external_data.scheduler import (
 from services.runtime_settings import apply_runtime_settings
 from services.startup_activity import wait_for_chat_idle
 from routers.browser_extension import router as browser_extension_router
+from routers.deps import load_config_async
 
 APP_DIR = Path(__file__).parent
 
@@ -75,8 +76,12 @@ logger = get_logger(__name__)
 STARTUP_WARMUP_DELAY_SECONDS = 2
 
 
-async def warmup_kokoro_tts() -> bool:
+async def warmup_kokoro_tts(huggingface_token: str | None = None) -> bool:
     """Kokoro와 언어별 음성 파이프라인을 미리 준비한다."""
+    previous_hf_token = os.environ.get("HF_TOKEN")
+    normalized_hf_token = (huggingface_token or "").strip()
+    if normalized_hf_token:
+        os.environ["HF_TOKEN"] = normalized_hf_token
     try:
         logger.info("[startup-status] tts")
         from routers.tts import (
@@ -112,13 +117,21 @@ async def warmup_kokoro_tts() -> bool:
     except Exception as error:
         logger.info("[kokoro] TTS warm-up skipped: %s", error)
         return False
+    finally:
+        if normalized_hf_token:
+            if previous_hf_token is None:
+                os.environ.pop("HF_TOKEN", None)
+            else:
+                os.environ["HF_TOKEN"] = previous_hf_token
 
 
 async def warmup_optional_voice_models() -> None:
     """Warm optional voice models after the API is available, yielding to chat."""
     await asyncio.sleep(STARTUP_WARMUP_DELAY_SECONDS)
     await wait_for_chat_idle()
-    await warmup_kokoro_tts()
+    config = await load_config_async()
+    huggingface_token = config.get("vyact_config", {}).get("huggingface_token")
+    await warmup_kokoro_tts(huggingface_token)
 
     # Kokoro와 reranker는 모두 transformers의 lazy modules를 import한다.
     # 첫 import가 겹치지 않도록 Kokoro 완료 후 reranker를 준비한다.

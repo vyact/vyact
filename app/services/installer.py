@@ -346,7 +346,7 @@ class Installer:
 
         return True, "espeak-ng installed"
 
-    async def download_kokoro_model(self) -> tuple[bool, str]:
+    async def download_kokoro_model(self, huggingface_token: str | None = None) -> tuple[bool, str]:
         """Kokoro TTS 모델 및 전체 voice 파일 사전 다운로드"""
         logger.info("=== Kokoro 모델 다운로드 ===")
 
@@ -402,6 +402,8 @@ print('kokoro all voices ready')
 
         try:
             download_env = {**os.environ, "HF_HUB_OFFLINE": "0"}
+            if huggingface_token:
+                download_env["HF_TOKEN"] = huggingface_token
             rc = await self._run(
                 [str(python_exe), "-c", script],
                 log=True,
