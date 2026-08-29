@@ -1,9 +1,9 @@
 :root[data-theme='light'] {
   color-scheme: light;
-  --bg: #f7f8fa;
+  --bg: #f8fafc;
   --surface: #ffffff;
-  --surface2: #edf1f5;
-  --border: #cfd8e3;
+  --surface2: #f1f4f7;
+  --border: #d4dce6;
   --accent: #bd583b;
   --accent-rgb: 189, 88, 59;
   --project-active: #ad543a;
@@ -17,10 +17,10 @@
   --text-secondary: #46566b;
   --muted: #68778b;
   --code-color: #2669a8;
-  --bg-secondary: #f6f8fa;
+  --bg-secondary: #f7f9fb;
   --modal-bg: #ffffff;
-  --modal-inset: #f5f7f9;
-  --modal-inset-hover: #eceff3;
+  --modal-inset: #f6f8fa;
+  --modal-inset-hover: #eef2f6;
   --code-panel-bg: #f3f6fa;
   --code-panel-surface: #f8fafc;
   --del-rgb: 210, 55, 55;
@@ -36,8 +36,8 @@
   --user-message-bg: #252525;
   --user-message-text: #e8eaf0;
   --code-inline-bg: rgba(32, 41, 56, 0.07);
-  --control-bg: #ffffff;
-  --control-hover: #e9eef3;
+  --control-bg: #fbfcfe;
+  --control-hover: #eef2f6;
   --button-primary-hover: color-mix(in srgb, var(--accent) 88%, #000000);
   --button-danger-hover: color-mix(in srgb, var(--danger) 88%, #000000);
   --button-neutral-hover: var(--interactive-hover);
@@ -46,6 +46,11 @@
 
 :root[data-theme='light'] body {
   background: var(--bg);
+}
+
+:root[data-theme='light'] .app-modal-overlay > * {
+  border-color: color-mix(in srgb, var(--text-secondary) 18%, var(--border));
+  box-shadow: var(--shadow-lg) !important;
 }
 
 /* Chromium이 라이트 테마 인터랙션 도중 기본 어두운 배경을 보간하지 않도록 한다. */

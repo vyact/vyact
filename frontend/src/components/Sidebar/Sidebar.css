@@ -308,8 +308,8 @@
 }
 
 :root[data-theme='light'] .btn-delete-all {
-    background: var(--surface);
-    box-shadow: 0 1px 3px rgba(40, 58, 80, 0.08);
+    background: color-mix(in srgb, var(--del-bg-hover) 42%, var(--surface2));
+    box-shadow: none;
 }
 
 .btn-refresh-history {
@@ -335,10 +335,10 @@
 }
 
 :root[data-theme='light'] .btn-refresh-history:not(:disabled) {
-    border-color: color-mix(in srgb, var(--text-secondary) 34%, var(--border));
-    background: var(--surface);
-    color: var(--text-secondary);
-    box-shadow: 0 1px 3px rgba(40, 58, 80, 0.08);
+    border-color: color-mix(in srgb, var(--text-secondary) 22%, var(--border));
+    background: color-mix(in srgb, var(--surface2) 82%, var(--surface));
+    color: var(--muted);
+    box-shadow: none;
 }
 
 :root[data-theme='light'] .btn-refresh-history:is(:hover, :active):not(:disabled) {
@@ -724,10 +724,10 @@
 }
 
 :root[data-theme='light'] .btn-new:not(:disabled) {
-    background: var(--surface);
-    border-color: color-mix(in srgb, var(--text-secondary) 34%, var(--border));
+    background: color-mix(in srgb, var(--accent) 5%, var(--surface2));
+    border-color: color-mix(in srgb, var(--accent) 24%, var(--border));
     color: var(--accent);
-    box-shadow: 0 1px 3px rgba(40, 58, 80, 0.08);
+    box-shadow: none;
 }
 
 :root[data-theme='light'] .btn-new:not(:disabled):is(:hover, :active) {
@@ -771,10 +771,10 @@
 }
 
 :root[data-theme='light'] .sidebar-header-settings {
-    border-color: color-mix(in srgb, var(--text-secondary) 34%, var(--border));
-    background: var(--surface);
-    color: var(--text-secondary);
-    box-shadow: 0 1px 3px rgba(40, 58, 80, 0.08);
+    border-color: color-mix(in srgb, var(--text-secondary) 22%, var(--border));
+    background: color-mix(in srgb, var(--surface2) 82%, var(--surface));
+    color: var(--muted);
+    box-shadow: none;
 }
 
 :root[data-theme='light'] .sidebar-header-settings:hover {

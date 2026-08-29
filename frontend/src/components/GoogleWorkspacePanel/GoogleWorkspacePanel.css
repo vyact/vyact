@@ -45,6 +45,17 @@
 .gwp-header-close { display: flex; width: 28px; height: 28px; flex: 0 0 28px; align-items: center; justify-content: center; padding: 0; border-radius: 6px; color: var(--muted) !important; transition: color .12s, background .12s; }
 .gwp-header-close:hover { background: var(--surface2) !important; color: var(--text) !important; }
 .gwp-account-select { width: 190px; flex: 0 0 190px; margin-right: 10px; }
+:root[data-theme='light'] .gwp-account-select .custom-select-trigger {
+    padding-inline: 10px;
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+    font-weight: 600;
+}
+:root[data-theme='light'] .gwp-account-select .custom-select-trigger:is(:hover, .open) {
+    border-color: color-mix(in srgb, var(--text-secondary) 18%, var(--border));
+    background: color-mix(in srgb, var(--surface2) 78%, var(--surface));
+}
 .gwp-account-content { display: flex; flex: 1; min-height: 0; overflow: hidden; }
 
 .gwp-tabs { display: flex; align-items: center; gap: 10px; flex: 1; }
@@ -68,7 +79,7 @@
 .gwp-nav .gwp-compose-controls .gwp-signature-settings-button { display: grid; width: 40px; height: 40px; flex: 0 0 40px; margin-left: auto; place-items: center; padding: 0; border: 1px solid var(--border); border-radius: 10px; background: var(--surface2); color: var(--muted); transition: color .15s, border-color .15s, background .15s, box-shadow .15s; }
 .gwp-nav .gwp-compose-controls .gwp-signature-settings-button:hover { border-color: var(--accent); background: rgba(255, 120, 50, .08); color: var(--accent); }
 .gwp-nav .gwp-compose-controls .gwp-signature-settings-button:focus-visible { outline: none !important; outline-offset: 0; }
-:root[data-theme='light'] .gwp-nav .gwp-compose-controls .gwp-signature-settings-button { border-color: color-mix(in srgb, var(--text-secondary) 34%, var(--border)); background: var(--surface); color: var(--text-secondary); box-shadow: 0 1px 3px rgba(40, 58, 80, .08); }
+:root[data-theme='light'] .gwp-nav .gwp-compose-controls .gwp-signature-settings-button { border-color: color-mix(in srgb, var(--text-secondary) 22%, var(--border)); background: color-mix(in srgb, var(--surface2) 82%, var(--surface)); color: var(--muted); box-shadow: none; }
 :root[data-theme='light'] .gwp-nav .gwp-compose-controls .gwp-signature-settings-button:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, var(--surface)); color: var(--accent); }
 .gwp-mail-nav-separator { height: 1px; margin: 7px 8px; background: var(--border); }
 .gwp-more-labels { margin: 4px 0; color: var(--text) !important; }
