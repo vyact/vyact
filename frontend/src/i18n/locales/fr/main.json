@@ -40,6 +40,7 @@
     "supportVyact": "Soutenir Vyact"
   },
   "browser": {"title": "Navigateur", "back": "Retour", "forward": "Suivant", "reload": "Actualiser", "close": "Fermer", "float": "Passer en vue flottante", "dock": "Ancrer dans la barre latérale droite", "address": "Adresse ou recherche", "addressPlaceholder": "Saisissez une adresse ou une recherche"},
+  "panelResizer": {"label": "Redimensionner le panneau", "drag": "Faites glisser pour redimensionner", "reset": "Double-cliquez pour rétablir la taille par défaut"},
   "supportModal": {
     "title": "Soutenir Vyact",
     "message": "Vyact vous est utile ?\nVotre soutien nous aide à poursuivre le développement et à créer de meilleures fonctionnalités.",

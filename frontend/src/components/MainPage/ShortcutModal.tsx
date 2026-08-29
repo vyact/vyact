@@ -1,5 +1,6 @@
 import React from 'react';
 import {useTranslation} from 'react-i18next';
+import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import './ShortcutModal.css';
 
 interface ShortcutModalProps {
@@ -23,7 +24,7 @@ const ShortcutModal: React.FC<ShortcutModalProps> = ({onClose}) => {
         {keys: ['Cmd', 'Shift', ','], desc: t('shortcutModal.openSettings')},
     ];
     return (
-    <div className="shortcut-modal-overlay" onClick={onClose}>
+    <ModalOverlay className="shortcut-modal-overlay" onClose={onClose} closeOnBackdrop>
         <div
             onClick={e => e.stopPropagation()}
             className="shortcut-modal"
@@ -51,7 +52,7 @@ const ShortcutModal: React.FC<ShortcutModalProps> = ({onClose}) => {
                 {t('shortcutModal.windowsNote')}
             </div>
         </div>
-    </div>
+    </ModalOverlay>
     );
 };
 

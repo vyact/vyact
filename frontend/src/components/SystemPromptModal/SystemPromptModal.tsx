@@ -3,6 +3,7 @@ import {FilePlus2, Pencil, Plus, Sparkles, Trash2, X} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {getSystemPromptTemplates} from './systemPromptTemplates';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
+import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
 import './SystemPromptModal.css';
 
@@ -37,6 +38,7 @@ const SystemPromptModal: React.FC<SystemPromptModalProps> = ({
     const [content, setContent] = useState('');
     const [draggedPromptId, setDraggedPromptId] = useState<string | null>(null);
     const [dragOverPromptId, setDragOverPromptId] = useState<string | null>(null);
+    const [promptToDelete, setPromptToDelete] = useState<SystemPrompt | null>(null);
     const templates = getSystemPromptTemplates(t);
 
     // ESC 키로 닫기
@@ -45,12 +47,16 @@ const SystemPromptModal: React.FC<SystemPromptModalProps> = ({
         
         const handleEsc = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
+                if (promptToDelete) {
+                    setPromptToDelete(null);
+                    return;
+                }
                 onClose();
             }
         };
         document.addEventListener('keydown', handleEsc);
         return () => document.removeEventListener('keydown', handleEsc);
-    }, [isOpen, onClose]);
+    }, [isOpen, onClose, promptToDelete]);
 
     if (!isOpen) return null;
 
@@ -83,12 +89,12 @@ const SystemPromptModal: React.FC<SystemPromptModalProps> = ({
         setContent('');
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm(t('systemPromptModal.deleteConfirm'))) return;
-        await onDelete(id);
-        if (editingId === id) {
+    const handleDelete = async (prompt: SystemPrompt) => {
+        await onDelete(prompt.id);
+        if (editingId === prompt.id) {
             setEditingId(null);
         }
+        setPromptToDelete(null);
     };
 
     const handleCancel = () => {
@@ -119,7 +125,7 @@ const SystemPromptModal: React.FC<SystemPromptModalProps> = ({
         }
     };
 
-    return (
+    return (<>
         <ModalOverlay className="system-prompt-overlay" onClose={onClose} closeOnBackdrop>
             <div className="system-prompt-modal" onClick={(e) => e.stopPropagation()}>
                 <div className="system-prompt-header">
@@ -162,7 +168,7 @@ const SystemPromptModal: React.FC<SystemPromptModalProps> = ({
                                             <button className="system-prompt-edit" onClick={() => handleEdit(prompt)} aria-label={t('systemPromptModal.edit')}><Pencil size={16}/></button>
                                             <button
                                                 className="system-prompt-delete"
-                                                onClick={() => handleDelete(prompt.id)}
+                                                onClick={() => setPromptToDelete(prompt)}
                                                 aria-label={t('systemPromptModal.delete')}
                                             ><Trash2 size={16}/></button>
                                         </div>
@@ -211,7 +217,21 @@ const SystemPromptModal: React.FC<SystemPromptModalProps> = ({
                 </div>
             </div>
         </ModalOverlay>
-    );
+        {promptToDelete && <ConfirmModal
+            title={promptToDelete.title}
+            description={t('systemPromptModal.deleteConfirm')}
+            options={[
+                {label: t('systemPromptModal.cancel'), value: 'cancel'},
+                {label: t('systemPromptModal.delete'), value: 'delete', variant: 'danger'},
+            ]}
+            actionLayout="horizontal"
+            onClose={() => setPromptToDelete(null)}
+            onSelect={value => {
+                if (value === 'delete') void handleDelete(promptToDelete);
+                else setPromptToDelete(null);
+            }}
+        />}
+    </>);
 };
 
 export default SystemPromptModal;

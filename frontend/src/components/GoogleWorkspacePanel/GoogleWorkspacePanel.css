@@ -15,6 +15,14 @@
 }
 .google-workspace-panel--embedded { position: relative; top: auto; right: auto; bottom: auto; min-width: 0; max-width: none; flex: 0 0 auto; height: 100%; box-shadow: none; }
 
+:root[data-theme='light'] .google-workspace-panel {
+    border-left-color: color-mix(in srgb, var(--text-secondary) 30%, var(--border));
+}
+
+:root[data-theme='light'] .gwp-header {
+    border-bottom-color: color-mix(in srgb, var(--text-secondary) 22%, var(--border));
+}
+
 .gwp-panel-resizer {
     position: absolute;
     top: 0;
@@ -44,6 +52,10 @@
 
 .gwp-layout { display: flex; flex: 1; min-height: 0; }
 .gwp-nav { width: 220px; flex: 0 0 220px; padding: 10px; border-right: 1px solid var(--border); overflow: auto; }
+:root[data-theme='light'] .gwp-nav {
+    background: color-mix(in srgb, var(--surface2) 62%, var(--surface));
+    border-right-color: color-mix(in srgb, var(--text-secondary) 24%, var(--border));
+}
 .gwp-nav button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; text-align: left; border-radius: 7px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .gwp-nav button svg { flex: 0 0 auto; }
 .gwp-nav button span { overflow: hidden; text-overflow: ellipsis; }
@@ -161,6 +173,12 @@
 .gwp-mail-row { display: grid; grid-template-columns: 16px 28px minmax(0, 1fr) auto; align-items: center; gap: 4px; border-bottom: 1px solid var(--border); padding: 0 8px; }
 .gwp-mail-row.no-star { grid-template-columns: 16px minmax(0, 1fr) auto; gap: 12px; }
 .gwp-mail-row:not(.unread) { background: color-mix(in srgb, var(--surface2) 62%, var(--surface)); }
+:root[data-theme='light'] .gwp-mail-row {
+    border-bottom-color: color-mix(in srgb, var(--text-secondary) 20%, var(--border));
+}
+:root[data-theme='light'] .gwp-mail-row:not(.unread) {
+    background: color-mix(in srgb, var(--surface2) 76%, var(--surface));
+}
 .gwp-mail-list button { border: 0; border-bottom: 1px solid var(--border); background: transparent; color: var(--text); padding: 12px 4px; text-align: left; display: grid; gap: 4px; cursor: pointer; }
 .gwp-mail-row button { border-bottom: 0; min-width: 0; }
 .gwp-mail-row .gwp-mail-star { display: grid; width: 28px; height: 28px; place-items: center; padding: 0; border-radius: 50%; color: var(--muted); }

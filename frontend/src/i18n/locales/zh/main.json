@@ -40,6 +40,7 @@
     "supportVyact": "支持 Vyact"
   },
   "browser": {"title": "浏览器", "back": "后退", "forward": "前进", "reload": "刷新", "close": "关闭", "float": "切换为浮动视图", "dock": "固定到右侧边栏", "address": "地址或搜索", "addressPlaceholder": "输入地址或搜索内容"},
+  "panelResizer": {"label": "调整面板大小", "drag": "拖动以调整大小", "reset": "双击恢复默认大小"},
   "supportModal": {
     "title": "支持 Vyact",
     "message": "Vyact 对您有帮助吗？\n您的支持将帮助我们持续开发并打造更好的功能。",

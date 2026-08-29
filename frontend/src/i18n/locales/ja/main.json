@@ -40,6 +40,7 @@
     "supportVyact": "Vyactを支援する"
   },
   "browser": {"title": "ブラウザ", "back": "戻る", "forward": "進む", "reload": "再読み込み", "close": "閉じる", "float": "フローティング表示に切り替え", "dock": "右サイドバーに固定", "address": "アドレスまたは検索", "addressPlaceholder": "アドレスまたは検索語を入力"},
+  "panelResizer": {"label": "パネルサイズを調整", "drag": "ドラッグしてサイズを調整", "reset": "ダブルクリックで既定サイズに戻す"},
   "supportModal": {
     "title": "Vyactを支援する",
     "message": "Vyactはお役に立っていますか？\n皆さまのご支援が、継続的な開発とより良い機能づくりにつながります。",

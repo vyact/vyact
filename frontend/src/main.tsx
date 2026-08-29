@@ -8,6 +8,7 @@ import {initializeKnowledgeCollections} from './services/knowledgeCollectionsCac
 import {installPluginRuntime} from './plugins/installPluginRuntime';
 import {applyTheme, getStoredTheme, syncThemeFromServer} from './services/theme';
 import './index.css';
+import './plugins/pluginThemeOverrides.css';
 
 applyTheme(getStoredTheme());
 

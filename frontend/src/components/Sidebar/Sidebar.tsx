@@ -8,6 +8,7 @@ import {api} from '../../services/api';
 import type {CustomProviderSettings} from '../../services/api';
 import type {Conversation, Project} from '../../types';
 import CustomSelect from '../CustomSelect/CustomSelect';
+import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
 import './Sidebar.css';
 import ProjectHistoryRow from './ProjectHistoryRow';
 import SidebarOverflowMenu from './SidebarOverflowMenu';
@@ -306,10 +307,10 @@ const Sidebar: React.FC<SidebarProps> = ({
             return next;
         });
     };
-    const deleteProject = async (project: Project) => { if (!confirm(t('sidebar.deleteProjectConfirm', {name: project.name}))) return; await api.deleteProject(project.id); setProjects(prev => prev.filter(item => item.id !== project.id)); setExpandedProjectIds(previous => { const next = new Set(previous); next.delete(project.id); storeExpandedProjectIds(next); return next; }); setExpandedProjectHistoryIds(previous => { const next = new Set(previous); next.delete(project.id); return next; }); if (activeProjectId === project.id) onProjectChange?.(null); };
+    const deleteProject = async (project: Project) => { await api.deleteProject(project.id); setProjects(prev => prev.filter(item => item.id !== project.id)); setExpandedProjectIds(previous => { const next = new Set(previous); next.delete(project.id); storeExpandedProjectIds(next); return next; }); setExpandedProjectHistoryIds(previous => { const next = new Set(previous); next.delete(project.id); return next; }); if (activeProjectId === project.id) onProjectChange?.(null); setProjectToDelete(null); };
     const deleteProjectHistory = async (project: Project) => {
-        if (!confirm(t('sidebar.deleteProjectHistoryConfirm', {name: project.name}))) return;
         await onDeleteProjectConversations(project.id);
+        setProjectHistoryToDelete(null);
     };
     const collapsed = collapsedProp !== undefined ? collapsedProp : collapsedInternal;
 
@@ -322,6 +323,9 @@ const Sidebar: React.FC<SidebarProps> = ({
     const [projectRenameValue, setProjectRenameValue] = useState('');
     const [instructionsProject, setInstructionsProject] = useState<Project | null>(null);
     const [memoryProject, setMemoryProject] = useState<Project | null>(null);
+    const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+    const [projectHistoryToDelete, setProjectHistoryToDelete] = useState<Project | null>(null);
+    const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
     const loadMoreRef = useRef<HTMLDivElement>(null);
     const loadingMoreRef = useRef(false);
     const previousActiveConversationIdsRef = useRef<Set<string>>(new Set(activeConversationIds));
@@ -408,6 +412,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     const [currentProvider, setCurrentProvider] = useState<string>('vyact');
     const [customProviders, setCustomProviders] = useState<CustomProviderSettings[]>([]);
     const [customProviderEditor, setCustomProviderEditor] = useState<CustomProviderSettings | 'new' | null>(null);
+    const [providerToDelete, setProviderToDelete] = useState<CustomProviderSettings | null>(null);
     const [isVyactModalOpen, setIsVyactModalOpen] = useState(false);
     const [modelSettingsPath, setModelSettingsPath] = useState<string | null>(null);
 
@@ -471,20 +476,25 @@ const Sidebar: React.FC<SidebarProps> = ({
         }
     };
 
-    const handleProviderDelete = async (provider: string) => {
+    const handleProviderDelete = (provider: string) => {
         if (!provider.startsWith('custom:')) return;
         const customProvider = customProviders.find(item => `custom:${item.id}` === provider);
         if (!customProvider) return;
-        const label = customProvider.name;
-        if (!confirm(t('customProvider.deleteConfirm', {name: label}))) return;
+        setProviderToDelete(customProvider);
+    };
+
+    const confirmProviderDelete = async () => {
+        if (!providerToDelete) return;
         try {
-            await api.deleteCustomProvider(customProvider.id);
+            await api.deleteCustomProvider(providerToDelete.id);
             await api.selectProvider('vyact');
             setCurrentProvider('vyact');
             await loadCurrentProvider();
             await onProviderChange();
         } catch (e) {
             toast.error(t('providerSettings.deleteFailed'), String(e));
+        } finally {
+            setProviderToDelete(null);
         }
     };
 
@@ -744,8 +754,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 onEditInstructions={() => { setProjectMenuOpenId(null); setInstructionsProject(project); }}
                                 onOpenMemory={() => { setProjectMenuOpenId(null); setMemoryProject(project); }}
                                 onEditProject={() => { setProjectMenuOpenId(null); setEditingProject(project); }}
-                                onDelete={() => { setProjectMenuOpenId(null); deleteProject(project); }}
-                                onDeleteHistory={() => { setProjectMenuOpenId(null); deleteProjectHistory(project); }}
+                                onDelete={() => { setProjectMenuOpenId(null); setProjectToDelete(project); }}
+                                onDeleteHistory={() => { setProjectMenuOpenId(null); setProjectHistoryToDelete(project); }}
                             >
                                 {conversations.filter(conv => conv.project_id === project.id && !favoriteConversationIdSet.has(conv.conv_id)).slice(0, expandedProjectHistoryIds.has(project.id) ? undefined : PROJECT_HISTORY_PREVIEW_COUNT).map(conv => <div key={conv.conv_id} className={`project-conversation${conv.conv_id === activeConvId ? ' active' : ''}`} onClick={() => { onProjectChange?.(project.id); onConversationSelect(conv.conv_id); }}><button className="project-conversation-title">{conv.title}</button>{activeConversationIdSet.has(conv.conv_id) && <span className="conversation-progress" role="status" aria-label={t('sidebar.responseInProgress')} title={t('sidebar.responseInProgress')}><LoaderCircle size={13}/></span>}<button className="conversation-favorite-btn" type="button" aria-label={t('sidebar.addFavorite')} onClick={event => { event.stopPropagation(); void onConversationFavoriteChange(conv, true); }}><Pin size={14}/></button><SidebarOverflowMenu isOpen={menuOpenId === conv.conv_id} onOpenChange={isOpen => setMenuOpenId(isOpen ? conv.conv_id : null)} trigger="···"><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); onShowSummary(conv.conv_id); }}><NotebookText size={13}/>{t('sidebar.summary')}</button><button className="hist-menu-item" onClick={() => { setRenameValue(conv.title); setRenamingId(conv.conv_id); setMenuOpenId(null); }}><Pencil size={13}/>{t('sidebar.rename')}</button><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); exportConversation(conv.conv_id, conv.title, 'md'); }}><FileCode size={13}/>{t('sidebar.exportMarkdown')}</button><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); exportConversation(conv.conv_id, conv.title, 'pdf'); }}><FileText size={13}/>{t('sidebar.exportPdf')}</button><button className="hist-menu-item danger" onClick={() => { setMenuOpenId(null); onConversationDelete(conv.conv_id); }}><Trash2 size={13}/>{t('sidebar.delete')}</button></SidebarOverflowMenu></div>)}
                                 {!expandedProjectHistoryIds.has(project.id) && conversations.filter(conv => conv.project_id === project.id && !favoriteConversationIdSet.has(conv.conv_id)).length > PROJECT_HISTORY_PREVIEW_COUNT && <button className="project-history-more" onClick={() => setExpandedProjectHistoryIds(previous => new Set(previous).add(project.id))}>{t('googleWorkspace.more')}</button>}
@@ -762,9 +772,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 {conversations.some(conversation => !conversation.project_id) && (
                                     <button
                                         className="btn-delete-all"
-                                        onClick={() => {
-                                            if (confirm(t('sidebar.deleteAllConfirm'))) onDeleteAllConversations();
-                                        }}
+                                        onClick={() => setShowDeleteAllConfirm(true)}
                                     >
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                                              stroke="currentColor" strokeWidth="2">
@@ -947,6 +955,47 @@ const Sidebar: React.FC<SidebarProps> = ({
             {isSettingsOpen && <React.Suspense fallback={null}>
                 <SettingsModal isOpen onClose={() => setIsSettingsOpen(false)} initialTab={openSettingsTab}/>
             </React.Suspense>}
+            {providerToDelete && <ConfirmModal
+                title={providerToDelete.name}
+                description={t('customProvider.deleteConfirm', {name: providerToDelete.name})}
+                options={[
+                    {label: t('customProvider.cancel'), value: 'cancel'},
+                    {label: t('common:delete'), value: 'delete', variant: 'danger'},
+                ]}
+                actionLayout="horizontal"
+                onClose={() => setProviderToDelete(null)}
+                onSelect={value => {
+                    if (value === 'delete') void confirmProviderDelete();
+                    else setProviderToDelete(null);
+                }}
+            />}
+            {projectToDelete && <ConfirmModal
+                title={projectToDelete.name}
+                description={t('sidebar.deleteProjectConfirm', {name: projectToDelete.name})}
+                options={[{label: t('common:cancel'), value: 'cancel'}, {label: t('common:delete'), value: 'delete', variant: 'danger'}]}
+                actionLayout="horizontal"
+                onClose={() => setProjectToDelete(null)}
+                onSelect={value => value === 'delete' ? void deleteProject(projectToDelete) : setProjectToDelete(null)}
+            />}
+            {projectHistoryToDelete && <ConfirmModal
+                title={projectHistoryToDelete.name}
+                description={t('sidebar.deleteProjectHistoryConfirm', {name: projectHistoryToDelete.name})}
+                options={[{label: t('common:cancel'), value: 'cancel'}, {label: t('common:delete'), value: 'delete', variant: 'danger'}]}
+                actionLayout="horizontal"
+                onClose={() => setProjectHistoryToDelete(null)}
+                onSelect={value => value === 'delete' ? void deleteProjectHistory(projectHistoryToDelete) : setProjectHistoryToDelete(null)}
+            />}
+            {showDeleteAllConfirm && <ConfirmModal
+                title={t('sidebar.delete')}
+                description={t('sidebar.deleteAllConfirm')}
+                options={[{label: t('common:cancel'), value: 'cancel'}, {label: t('common:delete'), value: 'delete', variant: 'danger'}]}
+                actionLayout="horizontal"
+                onClose={() => setShowDeleteAllConfirm(false)}
+                onSelect={value => {
+                    if (value === 'delete') onDeleteAllConversations();
+                    setShowDeleteAllConfirm(false);
+                }}
+            />}
         </>
     );
 };

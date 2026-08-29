@@ -30,7 +30,7 @@ export const useTranslation = window.__VYACT_PLUGIN_RUNTIME__.useTranslation;
     "sdk.js": """
 const runtime = window.__VYACT_PLUGIN_RUNTIME__;
 export const {
-    CustomSelect, ModalOverlay, getReasoningEnabled, i18n,
+    ConfirmModal, CustomSelect, ModalOverlay, getReasoningEnabled, i18n,
     openPluginModal, openPluginPanel, toast, usePanelManager
 } = runtime;
 """,

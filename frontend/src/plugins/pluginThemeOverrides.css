@@ -1,0 +1,96 @@
+/*
+ * 플러그인의 기능별 레이아웃은 각 플러그인이 소유하고,
+ * 메인 앱 테마와 맞물리는 표면·경계선·상태 색상은 여기에서 통제한다.
+ * #root를 포함해 런타임에 나중에 삽입되는 플러그인 기본 CSS보다 우선한다.
+ */
+#root .youtube-video-item__action--attach {
+    border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+    color: var(--accent);
+    font-weight: 650;
+}
+
+#root .youtube-video-item__action--attach:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 15%, var(--surface));
+}
+
+#root .youtube-video-item__no-subtitles {
+    display: inline-flex;
+    width: auto;
+    min-width: 68px;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 7px;
+    border: 1px solid color-mix(in srgb, var(--warn) 42%, var(--border));
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--warn) 10%, var(--surface));
+    color: var(--warn);
+    font-size: 10px;
+    font-weight: 700;
+}
+
+:root[data-theme='light'] #root .youtube-panel {
+    background: var(--surface);
+    border-left-color: color-mix(in srgb, var(--text-secondary) 30%, var(--border));
+}
+
+:root[data-theme='light'] #root .youtube-panel__header,
+:root[data-theme='light'] #root .youtube-panel__inputs,
+:root[data-theme='light'] #root .youtube-panel__tabs {
+    border-color: color-mix(in srgb, var(--text-secondary) 22%, var(--border));
+}
+
+:root[data-theme='light'] #root .youtube-panel__input {
+    background: var(--surface);
+    border-color: color-mix(in srgb, var(--text-secondary) 30%, var(--border));
+}
+
+:root[data-theme='light'] #root .youtube-panel__input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), .1);
+}
+
+:root[data-theme='light'] #root .youtube-panel__search-button,
+:root[data-theme='light'] #root .youtube-video-item__action {
+    background: var(--surface);
+    border-color: color-mix(in srgb, var(--text-secondary) 34%, var(--border));
+    color: var(--text-secondary);
+}
+
+:root[data-theme='light'] #root .youtube-panel__list-area {
+    background: var(--surface2);
+}
+
+:root[data-theme='light'] #root .youtube-video-item {
+    background: var(--surface);
+    border-color: color-mix(in srgb, var(--text-secondary) 28%, var(--border));
+    box-shadow: 0 1px 3px rgba(42, 61, 84, .06);
+}
+
+:root[data-theme='light'] #root .youtube-video-item:hover {
+    background: color-mix(in srgb, var(--accent) 4%, var(--surface));
+    border-color: color-mix(in srgb, var(--accent) 48%, var(--border));
+}
+
+:root[data-theme='light'] #root .youtube-video-item--playing,
+:root[data-theme='light'] #root .youtube-video-item--playing:hover {
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+    border-color: var(--accent);
+}
+
+:root[data-theme='light'] #root .youtube-video-item__meta {
+    color: var(--text-secondary);
+}
+
+:root[data-theme='light'] #root .youtube-video-item__action--attach {
+    border-color: color-mix(in srgb, var(--accent) 48%, var(--border));
+    background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+    color: var(--accent2);
+}
+
+:root[data-theme='light'] #root .youtube-video-item__no-subtitles {
+    border-color: color-mix(in srgb, var(--warn) 48%, var(--border));
+    background: color-mix(in srgb, var(--warn) 12%, var(--surface));
+    color: var(--warn);
+}

@@ -3,6 +3,7 @@ import {CircleHelp, Trash2} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {api} from '../../services/api';
 import {Tooltip} from '../common/Tooltip/Tooltip';
+import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
 import {LANGUAGES, getLanguageDisplayName, getPromptTemplate, copyToClipboard, ScriptView, ScriptDoc} from './voiceChat.types';
 import PracticeView from './PracticeView';
 import ScriptFormView from './ScriptFormView';
@@ -29,6 +30,7 @@ const ScriptPracticeTab: React.FC = () => {
     const [scripts, setScripts] = useState<ScriptDoc[]>([]);
     const [activeScript, setActiveScript] = useState<ScriptDoc | null>(null);
     const [loading, setLoading] = useState(false);
+    const [scriptToDelete, setScriptToDelete] = useState<ScriptDoc | null>(null);
     const langInfo = LANGUAGES.find(l => l.code === selectedLang);
 
     const loadScripts = async () => {
@@ -63,11 +65,10 @@ const ScriptPracticeTab: React.FC = () => {
         setView('practice');
     };
 
-    const handleDelete = async (id: string, e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (!confirm(t('voiceChat.deleteScriptConfirm'))) return;
+    const handleDelete = async (id: string) => {
         await api.deleteScript(id);
         await loadScripts();
+        setScriptToDelete(null);
     };
 
     const handleSaved = async () => {
@@ -100,7 +101,7 @@ const ScriptPracticeTab: React.FC = () => {
                                                onCancel={() => setView('list')}/>;
 
     const filtered = scripts.filter(s => s.language === selectedLang);
-    return (
+    return (<>
         <div className="sp-list-view">
             <div className="sp-lang-bar">
                 <span className="sp-lang-badge">{langInfo?.flag} {getLanguageDisplayName(selectedLang, i18n.language)}</span>
@@ -127,13 +128,27 @@ const ScriptPracticeTab: React.FC = () => {
                         {filtered.map(s => (
                             <div key={s.id} className="sp-item" onClick={() => handleSelect(s)}>
                                 <span className="sp-item-title">{s.title}</span>
-                                <button className="sp-item-del" onClick={e => handleDelete(s.id, e)} title={t('voiceChat.delete')}><Trash2 size={17} aria-hidden/></button>
+                                <button className="sp-item-del" onClick={e => { e.stopPropagation(); setScriptToDelete(s); }} title={t('voiceChat.delete')}><Trash2 size={17} aria-hidden/></button>
                             </div>
                         ))}
                     </div>
             }
         </div>
-    );
+        {scriptToDelete && <ConfirmModal
+            title={scriptToDelete.title}
+            description={t('voiceChat.deleteScriptConfirm')}
+            options={[
+                {label: t('common:cancel'), value: 'cancel'},
+                {label: t('common:delete'), value: 'delete', variant: 'danger'},
+            ]}
+            actionLayout="horizontal"
+            onClose={() => setScriptToDelete(null)}
+            onSelect={value => {
+                if (value === 'delete') void handleDelete(scriptToDelete.id);
+                else setScriptToDelete(null);
+            }}
+        />}
+    </>);
 };
 
 export default ScriptPracticeTab;

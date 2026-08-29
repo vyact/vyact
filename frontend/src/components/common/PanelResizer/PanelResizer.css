@@ -20,6 +20,10 @@
     transition: background 0.15s, width 0.15s;
 }
 
+:root[data-theme='light'] .panel-resizer-line {
+    background: color-mix(in srgb, var(--text-secondary) 34%, var(--border));
+}
+
 .panel-resizer:hover .panel-resizer-line {
     width: 3px;
     background: var(--accent);
@@ -28,4 +32,65 @@
 .panel-resizer--active .panel-resizer-line {
     width: 3px;
     background: var(--accent);
+}
+
+.panel-resizer-handle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 78px;
+    border-radius: 999px;
+    background: var(--accent);
+    box-shadow: 0 2px 10px rgba(var(--accent-rgb), .28);
+    opacity: 0;
+    transform: translate(-50%, -50%) scaleY(.72);
+    transition: opacity .15s, transform .15s;
+}
+
+.panel-resizer-hint {
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    z-index: 3;
+    display: grid;
+    width: max-content;
+    gap: 3px;
+    padding: 9px 11px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--surface2);
+    color: var(--text-secondary);
+    box-shadow: var(--shadow-md);
+    font-size: 11px;
+    line-height: 1.35;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-50%) translateX(5px);
+    transition: opacity .15s, transform .15s;
+}
+
+.panel-resizer-hint strong {
+    color: var(--text);
+    font-weight: 650;
+}
+
+.panel-resizer:hover .panel-resizer-handle,
+.panel-resizer--active .panel-resizer-handle {
+    opacity: 1;
+    transform: translate(-50%, -50%) scaleY(1);
+}
+
+.panel-resizer:hover .panel-resizer-hint:not(:hover) {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+}
+
+.panel-resizer--active .panel-resizer-hint {
+    opacity: 0;
+}
+
+:root[data-theme='light'] .panel-resizer-hint {
+    border-color: color-mix(in srgb, var(--text-secondary) 30%, var(--border));
+    background: var(--surface);
 }

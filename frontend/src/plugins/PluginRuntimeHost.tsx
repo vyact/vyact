@@ -2,6 +2,13 @@ import React, {useEffect} from 'react';
 import {usePanelManager} from '../contexts/PanelManagerContext';
 import {usePluginExtensions} from './usePluginExtensions';
 
+const matchesShortcutKey = (event: KeyboardEvent, shortcutKey: string): boolean => {
+    if (event.key.toLowerCase() === shortcutKey.toLowerCase()) return true;
+    if (/^[a-z]$/i.test(shortcutKey)) return event.code === `Key${shortcutKey.toUpperCase()}`;
+    if (/^[0-9]$/.test(shortcutKey)) return event.code === `Digit${shortcutKey}`;
+    return false;
+};
+
 export const PluginProviders: React.FC<{children: React.ReactNode}> = ({children}) => {
     const {providers} = usePluginExtensions();
     return providers.reduceRight(
@@ -31,7 +38,7 @@ export const PluginPanelCoordinator: React.FC = () => {
         const onKeyDown = (event: KeyboardEvent) => {
             for (const shortcut of keyboardShortcuts) {
                 if (
-                    event.key.toLowerCase() === shortcut.key.toLowerCase()
+                    matchesShortcutKey(event, shortcut.key)
                     && Boolean(event.shiftKey) === Boolean(shortcut.shift)
                     && (!shortcut.meta || event.metaKey || event.ctrlKey)
                 ) {
@@ -48,8 +55,8 @@ export const PluginPanelCoordinator: React.FC = () => {
                 }
             }
         };
-        window.addEventListener('keydown', onKeyDown);
-        return () => window.removeEventListener('keydown', onKeyDown);
+        window.addEventListener('keydown', onKeyDown, true);
+        return () => window.removeEventListener('keydown', onKeyDown, true);
     }, [keyboardShortcuts, panels.activePanel, panels.close, sidePanels]);
     return null;
 };

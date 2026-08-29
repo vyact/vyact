@@ -1,4 +1,5 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {useTranslation} from 'react-i18next';
 import './PanelResizer.css';
 
 const STORAGE_KEY = 'vyact-panel-width';
@@ -46,7 +47,8 @@ interface Props {
     title?: string;
 }
 
-const PanelResizer: React.FC<Props> = ({onWidthChange, getWidth, onReset, className = '', title = '드래그하여 패널 너비 조절 · 더블클릭으로 초기화'}) => {
+const PanelResizer: React.FC<Props> = ({onWidthChange, getWidth, onReset, className = '', title}) => {
+    const {t} = useTranslation('main');
     const dragging = useRef(false);
     const [active, setActive] = useState(false);
 
@@ -128,9 +130,14 @@ const PanelResizer: React.FC<Props> = ({onWidthChange, getWidth, onReset, classN
             className={`panel-resizer${active ? ' panel-resizer--active' : ''}${className ? ` ${className}` : ''}`}
             onMouseDown={onMouseDown}
             onDoubleClick={onDoubleClick}
-            title={title}
+            aria-label={title || t('panelResizer.label')}
         >
             <div className="panel-resizer-line"/>
+            <div className="panel-resizer-handle" aria-hidden="true"/>
+            <div className="panel-resizer-hint" aria-hidden="true">
+                <strong>{t('panelResizer.drag')}</strong>
+                <span>{t('panelResizer.reset')}</span>
+            </div>
         </div>
     );
 };

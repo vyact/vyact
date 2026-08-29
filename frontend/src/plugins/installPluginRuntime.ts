@@ -3,6 +3,7 @@ import * as ReactJsxRuntime from 'react/jsx-runtime';
 import {useTranslation} from 'react-i18next';
 import CustomSelect from '../components/CustomSelect/CustomSelect';
 import ModalOverlay from '../components/common/ModalOverlay/ModalOverlay';
+import ConfirmModal from '../components/common/ConfirmModal/ConfirmModal';
 import {toast} from '../components/common/ToastNotifications/ToastNotifications';
 import {usePanelManager} from '../contexts/PanelManagerContext';
 import i18n from '../i18n';
@@ -16,6 +17,7 @@ export function installPluginRuntime(): void {
         useTranslation,
         CustomSelect,
         ModalOverlay,
+        ConfirmModal,
         toast,
         usePanelManager,
         i18n,
@@ -33,6 +35,7 @@ declare global {
             useTranslation: typeof useTranslation;
             CustomSelect: typeof CustomSelect;
             ModalOverlay: typeof ModalOverlay;
+            ConfirmModal: typeof ConfirmModal;
             toast: typeof toast;
             usePanelManager: typeof usePanelManager;
             i18n: typeof i18n;

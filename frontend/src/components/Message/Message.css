@@ -212,9 +212,19 @@
     background: transparent;
     color: var(--text);
     border-bottom-left-radius: 4px;
+    padding-bottom: 4px;
     white-space: normal;
     font-weight: 400;
     max-width: min(920px, 100%);
+}
+
+/* 응답 마지막 요소의 문단/카드 여백이 메타 정보 간격과 중복되지 않게 한다. */
+.msg.bot .msg-bubble > :last-child {
+    margin-bottom: 0 !important;
+}
+
+.msg.bot .msg-bubble > .para-break:last-child {
+    display: none;
 }
 
 .msg.bot .msg-bubble strong,
@@ -321,6 +331,13 @@
     /* 부모 .msg의 gap(4px)을 상쇄해 시간/액션 행 바로 아래에 붙인다.
        사이드패널 플러그인의 메시지 메타 간격과 동일한 밀도. */
     margin-top: -2px;
+}
+
+:root[data-theme='light'] .msg-stats {
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 500;
+    opacity: 0.82;
 }
 
 .msg-stats.bot {

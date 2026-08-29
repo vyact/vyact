@@ -14,7 +14,7 @@
 }
 
 :root[data-theme='light'] .sidebar {
-    background: color-mix(in srgb, var(--surface2) 58%, var(--surface));
+    background: var(--surface2);
     border-right-color: color-mix(in srgb, var(--text-secondary) 24%, var(--border));
 }
 
@@ -57,6 +57,10 @@
     background: var(--surface);
     display: flex !important;
     flex-direction: column;
+}
+
+:root[data-theme='light'] .sidebar--collapsed.sidebar--overlay {
+    background: var(--surface2);
 }
 
 .sidebar--collapsed.sidebar--overlay > * {

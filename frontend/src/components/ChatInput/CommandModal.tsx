@@ -2,6 +2,7 @@ import React from 'react';
 import {useTranslation} from 'react-i18next';
 import { COMMANDS } from '../../constants/commands';
 import {usePluginExtensions} from '../../plugins/usePluginExtensions';
+import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import './CommandModal.css';
 
 interface CommandModalProps {
@@ -14,7 +15,7 @@ const CommandModal: React.FC<CommandModalProps> = ({ onClose, onSelect }) => {
     const {commands: pluginCommands} = usePluginExtensions();
     const availableCommands = [...COMMANDS, ...pluginCommands];
     return (
-    <div className="command-modal-overlay">
+    <ModalOverlay className="command-modal-overlay" onClose={onClose} closeOnBackdrop>
         <div
             onClick={e => e.stopPropagation()}
             className="command-modal"
@@ -56,7 +57,7 @@ const CommandModal: React.FC<CommandModalProps> = ({ onClose, onSelect }) => {
                 {t('commandModal.footer')}
             </div>
         </div>
-    </div>
+    </ModalOverlay>
     );
 };
 

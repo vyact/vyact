@@ -40,6 +40,7 @@
     "supportVyact": "Apoyar a Vyact"
   },
   "browser": {"title": "Navegador", "back": "Atrás", "forward": "Adelante", "reload": "Recargar", "close": "Cerrar", "float": "Cambiar a vista flotante", "dock": "Acoplar a la barra lateral derecha", "address": "Dirección o búsqueda", "addressPlaceholder": "Introduce una dirección o búsqueda"},
+  "panelResizer": {"label": "Cambiar tamaño del panel", "drag": "Arrastra para cambiar el tamaño", "reset": "Haz doble clic para restaurar el tamaño predeterminado"},
   "supportModal": {
     "title": "Apoyar a Vyact",
     "message": "¿Vyact te ha resultado útil?\nTu apoyo nos ayuda a seguir desarrollando y creando mejores funciones.",

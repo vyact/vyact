@@ -2,6 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {getSkills, type Skill, updateSkillsCache} from '../../services/skills';
 import {renderMarkdown} from '../../utils/markdownUtils';
+import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
 import './SkillsSection.css';
 
 interface SkillFormData {
@@ -20,6 +21,7 @@ const SkillsSection: React.FC = () => {
     const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
     const [form, setForm] = useState<SkillFormData>(EMPTY_FORM);
     const [saving, setSaving] = useState(false);
+    const [skillToDelete, setSkillToDelete] = useState<Skill | null>(null);
 
     const loadSkills = async () => {
         setLoading(true);
@@ -73,7 +75,6 @@ const SkillsSection: React.FC = () => {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm(t('skills.confirmDelete'))) return;
         try {
             const response = await fetch(`/api/skills/${id}`, {method: 'DELETE'});
             if (!response.ok) return;
@@ -83,6 +84,7 @@ const SkillsSection: React.FC = () => {
                 setSelectedSkill(null);
             }
         } catch { /* ignore */ }
+        setSkillToDelete(null);
     };
 
     const handleToggle = async (skill: Skill) => {
@@ -159,13 +161,13 @@ const SkillsSection: React.FC = () => {
 
     // ── 상세 보기 ──
     if (mode === 'view' && selectedSkill) {
-        return (
+        return (<>
             <div className="skills-section">
                 <div className="skills-detail-header">
                     <button className="skills-back-btn" onClick={goBack}>{t('skills.backToList')}</button>
                     <div className="skills-detail-actions">
                         <button className="skills-edit-btn" onClick={() => openEdit(selectedSkill)}>{t('common:edit')}</button>
-                        <button className="skills-delete-btn" onClick={() => handleDelete(selectedSkill.id)}>{t('common:delete')}</button>
+                        <button className="skills-delete-btn" onClick={() => setSkillToDelete(selectedSkill)}>{t('common:delete')}</button>
                     </div>
                 </div>
                 <div className="skills-detail-name">{selectedSkill.name}</div>
@@ -179,7 +181,21 @@ const SkillsSection: React.FC = () => {
                          dangerouslySetInnerHTML={{__html: renderMarkdown(selectedSkill.instructions)}} />
                 </div>
             </div>
-        );
+            {skillToDelete && <ConfirmModal
+                title={skillToDelete.name}
+                description={t('skills.confirmDelete')}
+                options={[
+                    {label: t('common:cancel'), value: 'cancel'},
+                    {label: t('common:delete'), value: 'delete', variant: 'danger'},
+                ]}
+                actionLayout="horizontal"
+                onClose={() => setSkillToDelete(null)}
+                onSelect={value => {
+                    if (value === 'delete') void handleDelete(skillToDelete.id);
+                    else setSkillToDelete(null);
+                }}
+            />}
+        </>);
     }
 
     // ── 생성 / 편집 폼 ──

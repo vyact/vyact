@@ -40,6 +40,7 @@
     "supportVyact": "Support Vyact"
   },
   "browser": {"title": "Browser", "back": "Back", "forward": "Forward", "reload": "Reload", "close": "Close", "float": "Switch to floating view", "dock": "Dock in right sidebar", "address": "Address or search", "addressPlaceholder": "Enter an address or search"},
+  "panelResizer": {"label": "Resize panel", "drag": "Drag to resize", "reset": "Double-click to restore default size"},
   "supportModal": {
     "title": "Support Vyact",
     "message": "Has Vyact been helpful?\nYour support helps us continue development and build better features.",

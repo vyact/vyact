@@ -40,6 +40,7 @@
     "supportVyact": "Vyact 후원하기"
   },
   "browser": {"title": "브라우저", "back": "뒤로", "forward": "앞으로", "reload": "새로고침", "close": "닫기", "float": "플로팅 보기로 전환", "dock": "우측 사이드바에 고정", "address": "주소 또는 검색어", "addressPlaceholder": "주소 또는 검색어 입력"},
+  "panelResizer": {"label": "패널 크기 조절", "drag": "드래그하여 크기 조절", "reset": "더블 클릭하여 기본 크기로 복원"},
   "supportModal": {
     "title": "Vyact 후원하기",
     "message": "Vyact가 도움이 되었나요?\n여러분의 후원은 지속적인 개발과 더 나은 기능을 만드는 데 큰 힘이 됩니다.",
