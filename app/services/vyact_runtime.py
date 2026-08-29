@@ -83,8 +83,7 @@ def _known_executable_paths(name: str) -> list[Path]:
             ]
             packages_dir = base / "Microsoft" / "WinGet" / "Packages"
             if packages_dir.is_dir():
-                candidates.extend(sorted(packages_dir.glob(f"*/{executable}")))
-                candidates.extend(sorted(packages_dir.glob(f"*/*/{executable}")))
+                candidates.extend(sorted(packages_dir.rglob(executable)))
             return candidates
     return []
 

@@ -34,13 +34,16 @@ jobs:
           winget install --id mostlygeek.llama-swap --exact --accept-package-agreements --accept-source-agreements --disable-interactivity
           if ($LASTEXITCODE -ne 0) { throw "mostlygeek.llama-swap installation failed with exit code $LASTEXITCODE" }
 
-      - name: Verify WinGet executable exposure
+      - name: Verify WinGet installed executable files
         shell: pwsh
         run: |
-          $llamaServer = Get-Command llama-server.exe -ErrorAction Stop
-          $llamaSwap = Get-Command llama-swap.exe -ErrorAction Stop
-          Write-Output "llama-server: $($llamaServer.Source)"
-          Write-Output "llama-swap: $($llamaSwap.Source)"
+          $wingetRoot = Join-Path $env:LOCALAPPDATA "Microsoft\WinGet"
+          $llamaServer = Get-ChildItem $wingetRoot -Recurse -File -Filter llama-server.exe -ErrorAction SilentlyContinue
+          $llamaSwap = Get-ChildItem $wingetRoot -Recurse -File -Filter llama-swap.exe -ErrorAction SilentlyContinue
+          if (-not $llamaServer) { throw "llama-server.exe was not found under $wingetRoot" }
+          if (-not $llamaSwap) { throw "llama-swap.exe was not found under $wingetRoot" }
+          $llamaServer.FullName | ForEach-Object { Write-Output "llama-server: $_" }
+          $llamaSwap.FullName | ForEach-Object { Write-Output "llama-swap: $_" }
 
       - name: Verify Vyact runtime discovery
         shell: pwsh

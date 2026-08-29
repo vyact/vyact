@@ -145,7 +145,10 @@ class VyactRuntimeTests(unittest.TestCase):
     def test_finds_winget_package_executable_outside_process_path(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             local_app_data = Path(temp_dir)
-            package_dir = local_app_data / "Microsoft" / "WinGet" / "Packages" / "ggml.llamacpp_test"
+            package_dir = (
+                local_app_data / "Microsoft" / "WinGet" / "Packages"
+                / "ggml.llamacpp_test" / "nested" / "bin"
+            )
             package_dir.mkdir(parents=True)
             executable = package_dir / "llama-server.exe"
             executable.touch()
