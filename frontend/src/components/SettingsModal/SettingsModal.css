@@ -62,8 +62,11 @@
 .drive-backup-account-modal h4 { margin: 0; color: var(--text); font-size: 18px; }
 .drive-backup-account-modal > p { margin: 8px 0 18px; color: var(--muted); font-size: 13px; line-height: 1.55; }
 .drive-backup-account-list { display: grid; gap: 8px; }
-.drive-backup-account-list label { display: flex; align-items: center; gap: 11px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 9px; background: var(--modal-inset); cursor: pointer; transition: border-color .15s, background .15s; }
-.drive-backup-account-list label:hover, .drive-backup-account-list label.selected { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, var(--modal-inset)); }
+.drive-backup-account-list label { display: flex; align-items: center; gap: 11px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 9px; background-color: var(--modal-inset); color: var(--text); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: border-color .15s, background-color .15s; }
+.drive-backup-account-list label:is(:hover, :active, :focus-within), .drive-backup-account-list label.selected { border-color: var(--accent); background-color: color-mix(in srgb, var(--accent) 9%, var(--modal-inset)); }
+:root[data-theme='light'] .drive-backup-account-list label { background-color: var(--modal-inset); }
+:root[data-theme='light'] .drive-backup-account-list label:is(:hover, :active, :focus-within) { background-color: color-mix(in srgb, var(--accent) 8%, var(--modal-inset)); }
+:root[data-theme='light'] .drive-backup-account-list label.selected { background-color: color-mix(in srgb, var(--accent) 14%, var(--surface)); }
 .drive-backup-account-list input { accent-color: var(--accent); }
 .drive-backup-account-list span { display: flex; min-width: 0; flex: 1; align-items: center; justify-content: space-between; gap: 12px; }
 .drive-backup-account-list strong { overflow: hidden; color: var(--text); font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
