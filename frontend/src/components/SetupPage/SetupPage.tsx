@@ -449,7 +449,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
 
     return (
         <div className="setup-page">
-            <div className={`setup-card ${isInstalling ? 'installing' : ''}`}>
+            <div className={`setup-card${provider === 'vyact' && !isInstalling ? ' vyact-setup' : ''}${isInstalling ? ' installing' : ''}`}>
                 <header className="setup-header">
                     <div className="setup-brand-mark" aria-hidden="true">
                         <span>V</span>
@@ -491,12 +491,12 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                 {!isInstalling && (
                     <>
                         {provider === 'vyact' && (
-                            <section className="setup-connection-panel">
+                            <section className="setup-connection-panel setup-vyact-panel">
                                 <div className="setup-vyact-controls">
                                 <label className="setup-field"><span><Tooltip content={t('main:modelSelector.huggingFaceTokenHelp')} multiline size="medium"><i className="vyact-token-help" tabIndex={0}>?</i></Tooltip>{t('apiKey')} <small>{t('customConnection.optional')}</small></span><div className="setup-secret-field"><input className="input" type={isApiKeyVisible ? 'text' : 'password'} placeholder={t('apiKey')} value={huggingFaceToken} onChange={event => setHuggingFaceToken(event.target.value)} onBlur={() => huggingFaceToken.trim() && api.saveVyactHuggingFaceToken(huggingFaceToken.trim()).catch(error => console.error('Failed to save Hugging Face token:', error))}/><button type="button" onClick={() => setIsApiKeyVisible(current => !current)} aria-label={t(isApiKeyVisible ? 'main:customProvider.hideApiKey' : 'main:customProvider.showApiKey')}>{isApiKeyVisible ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div></label>
                                 <div className="setup-field"><span className="vyact-search-label"><span><Search size={14}/>{t('main:modelSelector.searchLabel')}</span>{vyactHardware.apple_silicon && <button type="button" className={`vyact-mlx-switch${mlxOnly ? ' is-on' : ''}`} role="switch" aria-checked={mlxOnly} disabled={isSearchingHub} onClick={() => setMlxOnly(current => !current)}><span aria-hidden="true"><i/></span>{t('main:modelSelector.mlxOnly')}</button>}</span><div className="setup-hub-search"><input className="input" value={huggingFaceQuery} onChange={event => setHuggingFaceQuery(event.target.value)} onKeyDown={event => event.key === 'Enter' && void searchVyactModels(huggingFaceQuery)} placeholder={t('common:search')} aria-label={t('main:modelSelector.modelSearch')}/><button type="button" disabled={isSearchingHub || !huggingFaceQuery.trim()} onClick={() => void searchVyactModels(huggingFaceQuery)}>{isSearchingHub ? <LoaderCircle className="vyact-model-spinner" size={16}/> : <Search size={16}/>}<span>{t('main:modelSelector.searchAction')}</span></button></div></div>
                                 </div>
-                                <div className="setup-hub-results" aria-busy={isSearchingHub}>
+                                <div className="setup-hub-browser">
                                     {!isSearchingHub && vyactHardware.system_memory.total_bytes > 0 && (
                                         <div className="vyact-memory-summary setup-memory-summary">
                                             <div className="vyact-memory-capacity">
@@ -514,6 +514,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                                             </div>}
                                         </div>
                                     )}
+                                    <div className="setup-hub-results" aria-busy={isSearchingHub}>
                                     {isSearchingHub && <div className="vyact-model-empty"><LoaderCircle className="vyact-model-spinner" size={22}/><span>{t('main:modelSelector.searching')}</span></div>}
                                     {!isSearchingHub && huggingFaceModels.map(model => {
                                         const selectableFiles = getSelectableModelFiles(model.files);
@@ -537,6 +538,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                                             })}</div>
                                         </article>;
                                     })}
+                                    </div>
                                 </div>
                             </section>
                         )}
