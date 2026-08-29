@@ -2,6 +2,7 @@
 
 from fastapi import HTTPException
 
+from config import SETUP_DONE
 from services.db import get_es
 
 
@@ -17,6 +18,10 @@ LEARNING_FOCUS_AREAS = (
 PROFILE_INDEX = "language_learning_focus_profiles"
 
 
+def empty_learning_profiles() -> dict:
+    return {language: None for language in SUPPORTED_LANGUAGES}
+
+
 async def ensure_language_learning_profile_index() -> None:
     es = get_es()
     try:
@@ -30,6 +35,10 @@ async def ensure_language_learning_profile_index() -> None:
 
 
 async def get_learning_profiles() -> dict:
+    # The Chrome extension can connect while the desktop setup wizard is still
+    # installing Elasticsearch. Do not probe ES until setup has fully finished.
+    if not SETUP_DONE.exists():
+        return empty_learning_profiles()
     es = get_es()
     try:
         response = await es.mget(index=PROFILE_INDEX, ids=list(SUPPORTED_LANGUAGES))
@@ -42,6 +51,8 @@ async def get_learning_profiles() -> dict:
 
 
 async def set_learning_focus(language: str, focus_areas: list[str]) -> dict:
+    if not SETUP_DONE.exists():
+        raise HTTPException(status_code=503, detail="Initial setup is not complete")
     if language not in SUPPORTED_LANGUAGES:
         raise HTTPException(status_code=400, detail="Unsupported learning language")
     normalized_focus_areas = list(dict.fromkeys(focus_areas))

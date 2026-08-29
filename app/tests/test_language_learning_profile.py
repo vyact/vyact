@@ -13,8 +13,26 @@ class FakeElasticsearch:
 
 
 @pytest.mark.asyncio
-async def test_set_learning_focus_deduplicates_areas(monkeypatch):
+async def test_get_learning_profiles_does_not_connect_before_setup(monkeypatch, tmp_path):
+    setup_done = tmp_path / ".setup_done"
+    get_es = AsyncMock()
+    monkeypatch.setattr(language_learning_profile, "SETUP_DONE", setup_done)
+    monkeypatch.setattr(language_learning_profile, "get_es", get_es)
+
+    profiles = await language_learning_profile.get_learning_profiles()
+
+    assert profiles == {
+        language: None for language in language_learning_profile.SUPPORTED_LANGUAGES
+    }
+    get_es.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_set_learning_focus_deduplicates_areas(monkeypatch, tmp_path):
     elasticsearch = FakeElasticsearch()
+    setup_done = tmp_path / ".setup_done"
+    setup_done.touch()
+    monkeypatch.setattr(language_learning_profile, "SETUP_DONE", setup_done)
     monkeypatch.setattr(language_learning_profile, "get_es", lambda: elasticsearch)
 
     profile = await language_learning_profile.set_learning_focus(
@@ -30,8 +48,11 @@ async def test_set_learning_focus_deduplicates_areas(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_set_learning_focus_rejects_unknown_area(monkeypatch):
+async def test_set_learning_focus_rejects_unknown_area(monkeypatch, tmp_path):
     elasticsearch = FakeElasticsearch()
+    setup_done = tmp_path / ".setup_done"
+    setup_done.touch()
+    monkeypatch.setattr(language_learning_profile, "SETUP_DONE", setup_done)
     monkeypatch.setattr(language_learning_profile, "get_es", lambda: elasticsearch)
 
     with pytest.raises(HTTPException) as error:
