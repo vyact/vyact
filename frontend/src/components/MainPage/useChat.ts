@@ -425,6 +425,11 @@ export function useChat(deps: UseChatDeps) {
             externalResourceIds,
             externalDocumentSelections,
         };
+        // 요청 도중 사용자가 토글을 바꾸더라도 이 응답의 UI와 종료 판정은
+        // 서버에 실제로 전달한 추론 설정을 기준으로 유지한다.
+        const reasoningRequestValue = getReasoningRequestValue();
+        const reasoningEnabledForRequest = reasoningRequestValue !== false
+            && reasoningRequestValue !== 'none';
 
         const userTs = new Date().toISOString();  // 전송 시각 — 화면/서버 동일하게 사용
         const userMessage: Message = {
@@ -489,6 +494,9 @@ export function useChat(deps: UseChatDeps) {
                 const streamId = generateUUID();
                 setMessagesForConversation(requestConvId, prev => [...prev, {
                     id: streamId, role: 'assistant', content: '', timestamp: new Date().toISOString(),
+                    toolStatus: reasoningEnabledForRequest
+                        ? {phase: 'judging', group: 'analysis', label: t('toolActivity.reasoning')}
+                        : undefined,
                 }]);
                 setConversationRequestState(requestConvId, {streamingMessageId: streamId});
 
@@ -557,7 +565,7 @@ export function useChat(deps: UseChatDeps) {
                         articles: articlesSnapshot.length > 0 ? articlesSnapshot : [],
                         article_selection_explicit: true,
                         voice_mode: false,
-                        reasoning: getReasoningRequestValue(),
+                        reasoning: reasoningRequestValue,
                         folder_path: codeFolderPath || '',
                         project_id: deps.activeProjectId || '',
                         selected_mcp_ids: selectedMcpIds || [],
@@ -625,7 +633,11 @@ export function useChat(deps: UseChatDeps) {
                                 });
                                 // 검색/도구 단계가 끝난 뒤 첫 토큰이 오기까지는 프롬프트 평가가 진행된다.
                                 // 완료된 작업명(예: 컬렉션 검색)을 계속 표시하지 않고 응답 준비 상태로 전환한다.
-                                setToolStatus({phase: 'judging', group: 'analysis', label: t('toolActivity.thinking')});
+                                setToolStatus({
+                                    phase: 'judging',
+                                    group: 'analysis',
+                                    label: t(reasoningEnabledForRequest ? 'toolActivity.reasoning' : 'toolActivity.thinking'),
+                                });
                             }
                         },
                         onIndexProgress: (data) => {
@@ -636,7 +648,11 @@ export function useChat(deps: UseChatDeps) {
                             const total = data.total ?? 0;
                             const done = data.done ?? 0;
                             if (total > 0 && done >= total) {
-                                setToolStatus({phase: 'judging', group: 'analysis', label: t('toolActivity.thinking')});
+                                setToolStatus({
+                                    phase: 'judging',
+                                    group: 'analysis',
+                                    label: t(reasoningEnabledForRequest ? 'toolActivity.reasoning' : 'toolActivity.thinking'),
+                                });
                             } else {
                                 setToolStatus({phase: 'running', group: 'tool', label: t('toolActivity.indexing', {done, total}), detail: data.source_name || undefined});
                             }
@@ -672,7 +688,7 @@ export function useChat(deps: UseChatDeps) {
                                 ...articlesSnapshot,
                                 ...esSources.filter(e => !articlesSnapshot.some(a => a.url === e.url)),
                             ];
-                            // "주입된 데이터" 모달용 — 이번 응답에 전달한 비메모 소스를 모두 보관한다.
+                            // "답변 근거" 모달용 — 이번 응답에 전달한 비메모 소스를 모두 보관한다.
                             // 이 목록은 검증 UI 전용이며, 다음 턴의 대화 이력에 재주입되지 않는다.
                             const injectedContextItems: InjectedContextItem[] = (streamSources || [])
                                 .filter((s: any) => {
@@ -689,6 +705,10 @@ export function useChat(deps: UseChatDeps) {
                             const rawAnswer = data.answer ?? '';
                             const {body: fuBody, followups: fuList} = parseFollowups(rawAnswer);
                             const followupsOnly = !fuBody?.trim() && fuList.length > 0;
+                            const hasVisibleAnswer = Boolean(fuBody?.trim() || streamedResponseText.trim());
+                            const reasoningTokenLimitReached = reasoningEnabledForRequest
+                                && Boolean(data.truncated)
+                                && !hasVisibleAnswer;
                             if (followupsOnly || (!fuBody?.trim() && !streamedResponseText.trim())) {
                                 setLastFailedQuery(failedRequest);
                             }
@@ -702,7 +722,12 @@ export function useChat(deps: UseChatDeps) {
                                 if (!finalContent) {
                                     return {
                                         ...m,
-                                        content: t('message.modelNoResponse'),
+                                        content: reasoningTokenLimitReached
+                                            ? t('message.reasoningTokenLimitDescription')
+                                            : t('message.modelNoResponse'),
+                                        errorTitle: reasoningTokenLimitReached
+                                            ? t('message.reasoningTokenLimitTitle')
+                                            : undefined,
                                         isError: true, toolStatus: undefined,
                                         stats: data.stats || m.stats
                                     };
@@ -791,7 +816,7 @@ export function useChat(deps: UseChatDeps) {
                 attachments.length > 0 ? attachments : undefined,
                 articlesSnapshot.length > 0 ? articlesSnapshot : undefined,
                 systemPromptOverride, voiceMode,
-                getReasoningRequestValue());
+                reasoningRequestValue);
 
             const isNewConv = !requestConvId;
             if (response.conv_id && isNewConv) {

@@ -5,10 +5,12 @@ import App from './App';
 import {TooltipProvider} from './components/common/Tooltip/Tooltip';
 import {installPluginRuntime} from './plugins/installPluginRuntime';
 import {applyTheme, getStoredTheme, syncThemeFromServer} from './services/theme';
+import {installFocusNavigationTracking} from './utils/focusNavigation';
 import './index.css';
 import './plugins/pluginThemeOverrides.css';
 
 applyTheme(getStoredTheme());
+installFocusNavigationTracking();
 
 async function bootstrapApplication(): Promise<void> {
   await i18nInitialization;

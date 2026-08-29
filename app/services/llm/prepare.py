@@ -18,6 +18,7 @@ async def prepare_request(
         provider_type, model="", conversation_summary: str = "", include_skills: bool = True,
         isolated_system_prompt: bool = False,
         include_response_language: bool = True,
+        reasoning: bool | str = False,
 ):
     """(api_key, system_message, user_prompt, history_messages, valid_slice) 반환.
 
@@ -75,6 +76,7 @@ async def prepare_request(
             system_prompt, format_instruction_override, user_profile, skill_context, summary,
             user_language=user_language, isolated=isolated_system_prompt,
             include_response_language=include_response_language,
+            reasoning=reasoning,
         )
         history_budget = configured_history
         if context_size:

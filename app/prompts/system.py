@@ -14,6 +14,10 @@ RESPONSE_LENGTH_INSTRUCTION = """\
 [Response length]
 Match the response length and structure to the request. Answer greetings, simple recommendations, and short factual questions directly in 1–3 sentences. Expand with reasoning and actionable steps only for complex analysis, document or code work, or when the user requests detail."""
 
+REASONING_BUDGET_INSTRUCTION = """\
+[Reasoning budget]
+추론은 필요한 만큼만 간결하게 수행하고, 최종 답변을 위한 출력 토큰을 반드시 남겨두세요."""
+
 
 def build_system_message(
         system_prompt: str,
@@ -24,6 +28,7 @@ def build_system_message(
         user_language: str = "",
         isolated: bool = False,
         include_response_language: bool = True,
+        reasoning: bool | str = False,
 ) -> str:
     """
     시스템 메시지를 조합하여 반환합니다.
@@ -68,6 +73,15 @@ def build_system_message(
 
     # 정적 규칙은 반드시 맨 앞에 둔다. provider의 prefix cache가 이 블록을
     # 요청 간 재사용할 수 있도록, 날짜·프로필·스킬처럼 변하는 정보는 뒤에 붙인다.
+    # 추론 지침은 ON/OFF 사이에서도 공통 정적 prefix를 먼저 공유하고, ON 요청끼리는
+    # 이 블록까지 재사용할 수 있도록 동적 컨텍스트 직전에 둔다.
+    reasoning_enabled = reasoning is True or (
+        isinstance(reasoning, str) and reasoning.lower() not in {"none", "off"}
+    )
+    static_context = [message, RESPONSE_LENGTH_INSTRUCTION]
+    if reasoning_enabled:
+        static_context.append(REASONING_BUDGET_INSTRUCTION)
+
     dynamic_context: list[str] = []
 
     # 오늘 날짜는 변하는 정보이므로 정적 규칙 뒤에 둔다.
@@ -99,4 +113,4 @@ def build_system_message(
     if include_response_language:
         dynamic_context.append(response_language_instruction)
 
-    return "\n\n".join([message, RESPONSE_LENGTH_INSTRUCTION, *dynamic_context])
+    return "\n\n".join([*static_context, *dynamic_context])

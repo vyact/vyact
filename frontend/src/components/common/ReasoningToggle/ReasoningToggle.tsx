@@ -42,6 +42,7 @@ const ReasoningToggle: React.FC<ReasoningToggleProps> = ({disabled, capability})
     const tooltipContent = <span className="reasoning-tooltip-content">
         <span className="reasoning-tooltip-title">{t('reasoning.title')}</span>
         <span className="reasoning-tooltip-intro">{t('reasoning.intro')}</span>
+        <span className="reasoning-tooltip-warning">{t('reasoning.warning')}</span>
         <span className="reasoning-tooltip-section">
             <span className="reasoning-tooltip-label on">{t('reasoning.onLabel')}</span>
             <ul className="reasoning-tooltip-list">

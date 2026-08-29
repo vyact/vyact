@@ -93,6 +93,7 @@ async def chat_stream_with_tools(
                 conversation_history, format_instruction_override, inject_user_profile,
                 provider_type, model, conversation_summary, include_skills, isolated_system_prompt,
                 include_response_language,
+                reasoning,
             )
             log_entry["system_message"] = sys_msg
             log_entry["user_prompt"] = usr_msg
@@ -319,6 +320,7 @@ async def query_llm(
         conversation_history, format_instruction_override, inject_user_profile,
         provider_type, model, conversation_summary, include_skills,
         include_response_language=include_response_language,
+        reasoning=reasoning,
     )
     log_entry["system_message"] = system_message
     log_entry["user_prompt"] = user_prompt

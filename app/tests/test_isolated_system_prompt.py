@@ -17,6 +17,29 @@ class IsolatedSystemPromptTests(unittest.TestCase):
         self.assertIn("greetings, simple recommendations, and short factual questions", result)
         self.assertIn("1–3 sentences", result)
 
+    def test_reasoning_prompt_reserves_tokens_before_dynamic_context(self):
+        result = build_system_message(
+            "SYSTEM PROMPT",
+            format_instruction_override=None,
+            user_language="ko",
+            reasoning=True,
+        )
+
+        instruction = "추론은 필요한 만큼만 간결하게 수행하고, 최종 답변을 위한 출력 토큰을 반드시 남겨두세요."
+        self.assertIn(instruction, result)
+        self.assertLess(result.index("[Response length]"), result.index(instruction))
+        self.assertLess(result.index(instruction), result.index("Current date:"))
+
+    def test_reasoning_prompt_is_excluded_when_reasoning_is_off(self):
+        result = build_system_message(
+            "SYSTEM PROMPT",
+            format_instruction_override=None,
+            user_language="ko",
+            reasoning=False,
+        )
+
+        self.assertNotIn("[Reasoning budget]", result)
+
     def test_isolated_prompt_adds_only_response_language_rule(self):
         plugin_prompt = "PLUGIN ONLY\n두 번째 줄"
 

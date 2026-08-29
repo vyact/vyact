@@ -220,7 +220,7 @@ async def search_file_id_chunks(question: str, articles: list) -> tuple[list[dic
 def build_injected_context(sources: list[dict]) -> list[dict]:
     """이번 응답에 주입한 비메모 소스를 검증용으로 저장한다.
 
-    이 데이터는 UI의 "주입된 데이터" 모달 전용이다. 대화 이력에 다시 주입하지
+    이 데이터는 UI의 "답변 근거" 모달 전용이다. 대화 이력에 다시 주입하지
     않으므로, 문서 청크를 저장해도 다음 턴의 토큰을 불필요하게 점유하지 않는다.
     """
     external_document_keys = (
