@@ -114,7 +114,10 @@
 }
 
 .dd-model-more:hover,
-.dd-model-more[aria-expanded="true"] { background: var(--surface2); color: var(--text); }
+.dd-model-more[aria-expanded="true"] {
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    color: var(--accent);
+}
 .dd-model-actions-menu { min-width: 150px; padding: 4px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); box-shadow: 0 8px 24px #0006; }
 .dd-model-action { display: flex; align-items: center; gap: 9px; width: 100%; padding: 9px 11px; border: 0; border-radius: 6px; background: transparent; color: var(--text); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
 .dd-model-action:hover { background: var(--button-neutral-hover); }

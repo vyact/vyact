@@ -114,6 +114,11 @@
     align-items: center;
 }
 
+/* Chromium이 스크롤 영역에 자동으로 그리는 포커스 테두리는 채팅 화면에서 숨긴다. */
+.chat-area:focus-visible {
+    outline: none;
+}
+
 :root[data-theme='light'] .chat-area {
     background:
         radial-gradient(circle at 76% 4%, rgba(var(--accent-rgb), 0.045), transparent 28%),

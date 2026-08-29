@@ -172,6 +172,48 @@
     align-items: flex-end;
 }
 
+.chat-input-field {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+}
+
+.chat-model-loading {
+    position: absolute;
+    z-index: 10;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    backdrop-filter: blur(2px);
+    color: var(--text-secondary);
+    cursor: not-allowed;
+}
+
+.chat-model-loading-spinner {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
+    box-sizing: border-box;
+    border: 2px solid color-mix(in srgb, var(--text-secondary) 20%, transparent);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+}
+
+.chat-model-loading-label {
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 /* 하단 버튼 행: + 버튼 좌측, 전송/마이크 우측 */
 .chat-btn-row {
     display: flex;

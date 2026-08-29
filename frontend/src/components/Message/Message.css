@@ -481,6 +481,22 @@
     white-space: nowrap;
 }
 
+/* 다크 모드의 기존 참고 스타일은 유지하고, 라이트 모드의 푸른 테두리만 완화한다. */
+:root[data-theme='light'] .sources {
+    background: color-mix(in srgb, var(--surface2) 34%, var(--surface));
+    border-color: color-mix(in srgb, var(--accent) 12%, var(--border));
+}
+
+:root[data-theme='light'] .src-item {
+    background: var(--surface);
+    border-color: color-mix(in srgb, var(--accent) 14%, var(--border));
+}
+
+:root[data-theme='light'] .src-name {
+    background: color-mix(in srgb, var(--text-secondary) 7%, var(--surface2));
+    color: var(--text-secondary);
+}
+
 .src-deadline {
     position: relative;
     max-width: 32%;

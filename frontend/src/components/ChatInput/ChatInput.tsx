@@ -516,21 +516,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
                         </div>})}
                     </div>}
                     <div className="chat-input-row">
-                        <div style={{position: 'relative', flex: 1}}>
+                        <div className="chat-input-field">
                             {isModelLoading && (
-                                <div style={{
-                                    position: 'absolute', inset: 0, display: 'flex', alignItems: 'center',
-                                    gap: '8px', padding: '0 14px', borderRadius: '12px',
-                                    background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(2px)',
-                                    zIndex: 10, pointerEvents: 'all', cursor: 'not-allowed',
-                                }}>
-                                    <div style={{
-                                        width: '14px', height: '14px', flexShrink: 0,
-                                        border: '2px solid rgba(255,255,255,0.15)',
-                                        borderTopColor: 'var(--accent)', borderRadius: '50%',
-                                        animation: 'spin 0.7s linear infinite',
-                                    }}/>
-                                    <span style={{fontSize: '13px', color: 'var(--muted)'}}>
+                                <div className="chat-model-loading" role="status" aria-live="polite">
+                                    <span className="chat-model-loading-spinner" aria-hidden="true"/>
+                                    <span className="chat-model-loading-label">
                                         {loadingModel || selectedModel
                                             ? t('chatInput.modelLoadingWithName', {model: loadingModel || selectedModel})
                                             : t('chatInput.modelLoading')}
