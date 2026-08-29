@@ -1070,7 +1070,7 @@
     "modelImageUnsupportedDescription": "{{model}} no admite imágenes. Cambia a un modelo con visión y vuelve a intentarlo.",
     "modelInsufficientMemoryTitle": "No hay memoria suficiente para ejecutar este modelo",
     "modelInsufficientMemoryDescription": "{{model}} no puede ejecutarse con la memoria disponible. Cierra otras aplicaciones o cambia a un modelo más pequeño y vuelve a intentarlo.",
-    "outputTruncated": "La respuesta se cortó al alcanzar la longitud máxima de salida. Pide al modelo que continúe.",
+    "outputTruncated": "La respuesta se cortó al alcanzar la longitud máxima de salida. Pide al modelo que continúe desde donde se detuvo sin repetir la respuesta anterior.",
     "followupTitle": "Continuar la conversación",
     "followupSendSelected": "Enviar {{count}}",
     "followupCustomPlaceholder": "O escribe una respuesta…",

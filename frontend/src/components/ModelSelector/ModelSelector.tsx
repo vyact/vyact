@@ -108,7 +108,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                     {showDFlash2 && <span className="mtp-model-badge">DFlash2</span>}
                     {supportsVision && <span className="model-capability-badge" title={t('modelSelector.visionCapability')}>IMG</span>}
                     {supportsAudio && <span className="model-capability-badge" title={t('modelSelector.audioCapability')}>AUDIO</span>}
-                    <span className="dd-model-label" title={opt.value}>
+                    <span className="dd-model-label">
                         {opt.label}
                     </span>
                 </div>

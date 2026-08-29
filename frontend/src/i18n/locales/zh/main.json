@@ -1071,7 +1071,7 @@
     "modelImageUnsupportedDescription": "{{model}} 不支持图片输入。请切换到支持视觉的模型后重试。",
     "modelInsufficientMemoryTitle": "内存不足，无法运行此模型",
     "modelInsufficientMemoryDescription": "当前可用内存不足以运行 {{model}}。请关闭其他应用或切换到较小的模型后重试。",
-    "outputTruncated": "回答因达到最大输出长度而被截断。请让模型继续回答。",
+    "outputTruncated": "回答因达到最大输出长度而被截断。请让模型不要重复之前的回答，并从中断处继续。",
     "followupTitle": "继续提问",
     "followupSendSelected": "发送 {{count}} 项",
     "followupCustomPlaceholder": "或直接回复…",

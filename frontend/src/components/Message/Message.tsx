@@ -618,7 +618,8 @@ const Message: React.FC<MessageProps> = ({
                 )}
                 {role === 'assistant' && !isStreaming && truncated && (
                     <div className="msg-truncation-notice" role="status">
-                        {t('message.outputTruncated')}
+                        <CircleAlert aria-hidden="true" size={14}/>
+                        <span>{t('message.outputTruncated')}</span>
                     </div>
                 )}
             </div>

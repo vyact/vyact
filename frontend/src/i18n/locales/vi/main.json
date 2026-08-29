@@ -1071,7 +1071,7 @@
     "modelImageUnsupportedDescription": "{{model}} không hỗ trợ đầu vào hình ảnh. Hãy chuyển sang mô hình có khả năng thị giác rồi thử lại.",
     "modelInsufficientMemoryTitle": "Không đủ bộ nhớ để chạy mô hình này",
     "modelInsufficientMemoryDescription": "Không thể chạy {{model}} với bộ nhớ hiện có. Hãy đóng các ứng dụng khác hoặc chuyển sang mô hình nhỏ hơn rồi thử lại.",
-    "outputTruncated": "Phản hồi đã bị cắt do đạt độ dài đầu ra tối đa. Hãy yêu cầu mô hình tiếp tục.",
+    "outputTruncated": "Phản hồi đã bị cắt do đạt độ dài đầu ra tối đa. Hãy yêu cầu mô hình tiếp tục từ chỗ bị ngắt mà không lặp lại phần trả lời trước.",
     "followupTitle": "Hỏi tiếp",
     "followupSendSelected": "Gửi {{count}} mục",
     "followupCustomPlaceholder": "Hoặc nhập phản hồi trực tiếp…",

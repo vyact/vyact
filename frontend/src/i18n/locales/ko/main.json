@@ -1067,7 +1067,7 @@
     "modelImageUnsupportedDescription": "{{model}}은 이미지 입력을 지원하지 않습니다. 이미지 지원 모델로 변경한 뒤 다시 시도해 주세요.",
     "modelInsufficientMemoryTitle": "모델 실행에 필요한 메모리가 부족합니다",
     "modelInsufficientMemoryDescription": "현재 사용 가능한 메모리로는 {{model}}을 실행할 수 없습니다. 다른 앱을 종료하거나 더 작은 모델로 변경한 뒤 다시 시도해 주세요.",
-    "outputTruncated": "최대 출력 길이에 도달하여 답변이 중간에 잘렸습니다. 계속해서 답변해 달라고 요청해 주세요.",
+    "outputTruncated": "최대 출력 길이에 도달하여 답변이 중간에 잘렸습니다. 앞 답변을 반복하지 말고, 끊긴 부분부터 이어서 답변해 달라고 요청해 주세요.",
     "followupTitle": "이어서 물어보기",
     "followupSendSelected": "{{count}}개 전송",
     "followupCustomPlaceholder": "또는 직접 답장…",

@@ -1067,7 +1067,7 @@
     "modelImageUnsupportedDescription": "{{model}} doesn’t support image input. Switch to a vision-capable model and try again.",
     "modelInsufficientMemoryTitle": "Not enough memory to run this model",
     "modelInsufficientMemoryDescription": "{{model}} cannot run with the currently available memory. Close other apps or switch to a smaller model, then try again.",
-    "outputTruncated": "The response was cut off because it reached the maximum output length. Ask the model to continue.",
+    "outputTruncated": "The response was cut off because it reached the maximum output length. Ask the model to continue from where it stopped without repeating the previous response.",
     "followupTitle": "Continue the conversation",
     "followupSendSelected": "Send {{count}}",
     "followupCustomPlaceholder": "Or type a reply…",

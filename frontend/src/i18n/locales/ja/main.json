@@ -1071,7 +1071,7 @@
     "modelImageUnsupportedDescription": "{{model}} は画像入力に対応していません。画像対応モデルに切り替えて、もう一度お試しください。",
     "modelInsufficientMemoryTitle": "このモデルを実行するためのメモリが不足しています",
     "modelInsufficientMemoryDescription": "現在利用可能なメモリでは {{model}} を実行できません。他のアプリを閉じるか、より小さいモデルに変更してから再試行してください。",
-    "outputTruncated": "最大出力長に達したため、回答が途中で切れました。続きを回答するよう依頼してください。",
+    "outputTruncated": "最大出力長に達したため、回答が途中で切れました。前の回答を繰り返さず、途切れた箇所から続けるよう依頼してください。",
     "followupTitle": "続けて質問",
     "followupSendSelected": "{{count}}件を送信",
     "followupCustomPlaceholder": "または直接返信…",

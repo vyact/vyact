@@ -1071,7 +1071,7 @@
     "modelImageUnsupportedDescription": "{{model}} ne prend pas en charge les images. Sélectionnez un modèle doté de capacités visuelles, puis réessayez.",
     "modelInsufficientMemoryTitle": "Mémoire insuffisante pour exécuter ce modèle",
     "modelInsufficientMemoryDescription": "{{model}} ne peut pas fonctionner avec la mémoire disponible. Fermez d’autres applications ou choisissez un modèle plus petit, puis réessayez.",
-    "outputTruncated": "La réponse a été interrompue après avoir atteint la longueur maximale. Demandez au modèle de continuer.",
+    "outputTruncated": "La réponse a été interrompue après avoir atteint la longueur maximale. Demandez au modèle de reprendre là où il s’est arrêté sans répéter la réponse précédente.",
     "followupTitle": "Poursuivre la conversation",
     "followupSendSelected": "Envoyer {{count}}",
     "followupCustomPlaceholder": "Ou écrire une réponse…",
