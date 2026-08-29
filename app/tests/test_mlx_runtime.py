@@ -18,6 +18,7 @@ from services.mlx_runtime import (
     delete_downloaded_mlx_model,
     download_mlx_model,
     get_downloaded_mlx_model_path,
+    get_mlx_downloaded_bytes,
     get_omlx_install_commands,
     install_missing_omlx_runtime,
     list_downloaded_mlx_models,
@@ -288,6 +289,18 @@ class MlxRuntimeTests(unittest.TestCase):
                 self.assertTrue(hub_constants.HF_HUB_OFFLINE)
 
             self.assertEqual(model_path, models_dir / "owner" / "model")
+
+    def test_downloaded_bytes_uses_allocated_file_blocks(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            models_dir = Path(temp_dir)
+            model_dir = models_dir / "owner" / "model"
+            model_dir.mkdir(parents=True)
+            model_file = model_dir / "model.safetensors"
+            model_file.write_bytes(b"weights")
+            expected_bytes = model_file.stat().st_blocks * 512
+
+            with patch("services.mlx_runtime.MLX_MODELS_DIR", models_dir):
+                self.assertEqual(get_mlx_downloaded_bytes("owner/model"), expected_bytes)
 
     def test_lists_and_resolves_downloaded_repository(self):
         with tempfile.TemporaryDirectory() as temp_dir:

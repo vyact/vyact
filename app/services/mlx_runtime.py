@@ -232,6 +232,27 @@ def download_mlx_model(
     return destination
 
 
+def get_mlx_downloaded_bytes(repository: str) -> int:
+    """Return bytes physically written for an in-progress MLX download.
+
+    hf_xet reconstructs sparse safetensors files and doesn't consistently emit
+    tqdm byte updates. ``st_blocks`` reflects the data actually written instead
+    of the files' preallocated logical size.
+    """
+    destination = _repository_path(repository)
+    downloaded_bytes = 0
+    for path in destination.rglob("*"):
+        if not path.is_file():
+            continue
+        try:
+            file_stat = path.stat()
+        except OSError:
+            continue
+        allocated_blocks = getattr(file_stat, "st_blocks", None)
+        downloaded_bytes += allocated_blocks * 512 if allocated_blocks is not None else file_stat.st_size
+    return downloaded_bytes
+
+
 def associate_mlx_mtp_model(model_path: Path, mtp_repository: str, mtp_path: Path) -> None:
     manifest_path = model_path / MLX_MODEL_MANIFEST
     manifest = _read_model_manifest(manifest_path)

@@ -844,47 +844,59 @@ async def download_vyact_model(req: HuggingFaceDownloadRequest):
 
     async def stream():
         if req.runtime == "mlx":
-            from services.mlx_runtime import associate_mlx_bundled_dflash2_model, associate_mlx_dflash2_model, associate_mlx_mtp_model, download_mlx_model
+            from services.mlx_runtime import associate_mlx_bundled_dflash2_model, associate_mlx_dflash2_model, associate_mlx_mtp_model, download_mlx_model, get_mlx_downloaded_bytes
 
             config = await load_config_async()
             token = (req.token or "").strip() or config.get("vyact_config", {}).get("huggingface_token")
+            main_download_size = req.total_size_bytes
+            if main_download_size <= 0:
+                try:
+                    main_download_size = await get_model_file_size(
+                        req.repository, req.filename, "mlx", token,
+                    )
+                except Exception as error:
+                    logger.warning("[vyact] MLX model size lookup failed: %s", error)
             yield sse(f"Downloading MLX {req.repository}", "log", None)
-            loop = asyncio.get_running_loop()
-            progress_queue: asyncio.Queue[int] = asyncio.Queue()
-            downloaded_bytes = 0
-
-            def report_downloaded_bytes(byte_delta: int) -> None:
-                loop.call_soon_threadsafe(progress_queue.put_nowait, byte_delta)
 
             def download_mlx_with_optional_mtp():
                 model_path = download_mlx_model(
-                    req.repository, req.revision, token, report_downloaded_bytes,
+                    req.repository, req.revision, token,
                 )
                 if req.dflash2_bundled:
                     associate_mlx_bundled_dflash2_model(model_path)
                 if not req.dflash2_repository and req.mtp_repository and req.mtp_revision:
                     mtp_path = download_mlx_model(
-                        req.mtp_repository, req.mtp_revision, token, report_downloaded_bytes, "mtp",
+                        req.mtp_repository, req.mtp_revision, token, role="mtp",
                     )
                     associate_mlx_mtp_model(model_path, req.mtp_repository, mtp_path)
                 if req.dflash2_repository and req.dflash2_revision:
                     dflash2_path = download_mlx_model(
-                        req.dflash2_repository, req.dflash2_revision, token, report_downloaded_bytes, "dflash2",
+                        req.dflash2_repository, req.dflash2_revision, token, role="dflash2",
                     )
                     associate_mlx_dflash2_model(model_path, req.dflash2_repository, dflash2_path)
 
             download_task = asyncio.create_task(asyncio.to_thread(download_mlx_with_optional_mtp))
             try:
+                download_repositories = [req.repository]
+                if not req.dflash2_repository and req.mtp_repository:
+                    download_repositories.append(req.mtp_repository)
+                if req.dflash2_repository:
+                    download_repositories.append(req.dflash2_repository)
+                total_download_size = main_download_size + req.mtp_size_bytes + req.dflash2_size_bytes
+                last_progress = -1
                 while not download_task.done():
-                    try:
-                        byte_delta = await asyncio.wait_for(progress_queue.get(), timeout=0.25)
-                    except asyncio.TimeoutError:
-                        continue
-                    downloaded_bytes += byte_delta
-                    total_download_size = req.total_size_bytes + req.mtp_size_bytes + req.dflash2_size_bytes
+                    await asyncio.sleep(0.25)
                     if total_download_size > 0:
+                        downloaded_bytes = sum(
+                            await asyncio.gather(*[
+                                asyncio.to_thread(get_mlx_downloaded_bytes, repository)
+                                for repository in download_repositories
+                            ])
+                        )
                         progress = min(int(downloaded_bytes * 100 / total_download_size), 99)
-                        yield sse(f"Downloading MLX {req.repository}", "log", progress)
+                        if progress != last_progress:
+                            last_progress = progress
+                            yield sse(f"Downloading MLX {req.repository}", "log", progress)
                 await download_task
             except Exception as error:
                 logger.warning("[vyact] MLX model download failed: %s", error)
