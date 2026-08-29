@@ -9,7 +9,7 @@ services:
       - discovery.type=single-node
       - xpack.security.enabled=false
       - xpack.security.http.ssl.enabled=false
-      - ES_JAVA_OPTS=-Xms512m -Xmx1g
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
       - cluster.name=rag-cluster
       - bootstrap.memory_lock=true
     ulimits:
@@ -28,7 +28,7 @@ services:
       retries: 10
 
 #  kibana:
-#    image: docker.elastic.co/kibana/kibana:9.4.2
+#    image: docker.elastic.co/kibana/kibana:9.5.2
 #    container_name: vyact-kibana
 #    environment:
 #      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200

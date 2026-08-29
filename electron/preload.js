@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld("ragAPI", {
     checkAppUpdate: () => ipcRenderer.invoke("check-app-update"),
     showNotification: (opts) => ipcRenderer.invoke("show-notification", opts),
     getLogPath: () => ipcRenderer.invoke("get-log-path"),
+    retryStartup: () => ipcRenderer.invoke("retry-startup"),
     screenshot: () => ipcRenderer.invoke("screenshot"),
     setWindowAspectRatio: (aspectRatio) => ipcRenderer.invoke("window-set-aspect-ratio", aspectRatio),
     getLoginItem: () => ipcRenderer.invoke("get-login-item"),
@@ -40,6 +41,14 @@ contextBridge.exposeInMainWorld("ragAPI", {
     },
     platform: process.platform,
     version: process.versions.electron,
+    minimize: () => ipcRenderer.invoke("window-minimize"),
+    maximize: () => ipcRenderer.invoke("window-maximize"),
+    close: () => ipcRenderer.invoke("window-close"),
+    onMaximizeChange: (callback) => {
+        const handler = (_event, isMaximized) => callback(_event, isMaximized);
+        ipcRenderer.on("window-maximize-change", handler);
+        return () => ipcRenderer.removeListener("window-maximize-change", handler);
+    },
     onFullscreenChange: (callback) => {
         const handler = (_event, isFull) => callback(_event, isFull);
         ipcRenderer.on("window-fullscreen-change", handler);

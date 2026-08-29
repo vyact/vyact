@@ -58,7 +58,7 @@ BGE_NUM_CTX = 8192
 
 # Docker 없이 Elasticsearch 바이너리를 직접 다운로드하여 실행
 # (회사 PC 등 Docker 사용이 어려운 환경용)
-ES_VERSION = "9.4.3"
+ES_VERSION = "9.5.2"
 
 ES_DOWNLOAD_BASE = "https://artifacts.elastic.co/downloads/elasticsearch"
 

@@ -11,6 +11,7 @@ from email import encoders
 from email.utils import parseaddr
 from pathlib import Path
 
+from config import INSTALL_DIR
 from logger import get_logger
 from .auth import _build_service, _get_google_config_async
 
@@ -30,7 +31,7 @@ _MAIL_THREAD_SUMMARY_FIELDS = (
 )
 
 # 첨부파일 검색 경로 (INSTALL_DIR 기준)
-_INSTALL_DIR = Path.home() / ".vyact"
+_INSTALL_DIR = INSTALL_DIR
 _ATTACHMENT_DIRS = [
     _INSTALL_DIR / "uploads" / "files",
     _INSTALL_DIR / "uploads" / "images",

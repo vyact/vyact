@@ -16,8 +16,22 @@ APP_NAME = "vyact"  # 앱 이름 — 디렉토리명 등에 사용
 # PATH
 # ─────────────────────────────
 # Electron 부트스트랩과 Python 서버가 동일한 가상환경·데이터·로그를 사용해야 한다.
-# Windows Electron이 사용하는 C:\\.vyact를 설치 경로로 사용한다.
-INSTALL_DIR = Path("C:/.vyact") if os.name == "nt" else Path.home() / f".{APP_NAME}"
+# Windows에서는 시스템 드라이브 루트 대신 사용자별 LocalAppData를 사용한다.
+_configured_install_dir = os.environ.get("VYACT_INSTALL_DIR")
+if _configured_install_dir:
+    INSTALL_DIR = Path(_configured_install_dir)
+elif os.name == "nt":
+    _legacy_windows_install_dir = Path("C:/.vyact")
+    _legacy_windows_markers = (".setup_done", "venv", "data", "models", "runtime")
+    _has_legacy_windows_install = any(
+        (_legacy_windows_install_dir / marker).exists()
+        for marker in _legacy_windows_markers
+    ) or any(_legacy_windows_install_dir.glob("elasticsearch-*"))
+    INSTALL_DIR = _legacy_windows_install_dir if _has_legacy_windows_install else (
+        Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local")) / "Vyact"
+    )
+else:
+    INSTALL_DIR = Path.home() / f".{APP_NAME}"
 VENV_DIR = INSTALL_DIR / "venv"
 SETUP_DONE = INSTALL_DIR / ".setup_done"
 # Kokoro 모델과 모든 음성 파일의 다운로드가 끝났음을 나타낸다. 이 파일이

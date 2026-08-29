@@ -28,12 +28,8 @@ echo "============================================"
 restore() {
     echo ""
     echo "[RESTORE] 원본 파일 복원 중..."
-    [ -f "electron/main.js.mac_backup" ]       && cp "electron/main.js.mac_backup"       "electron/main.js"
-    [ -f "electron/preload.js.mac_backup" ]    && cp "electron/preload.js.mac_backup"    "electron/preload.js"
     [ -f "electron/package.json.mac_backup" ]  && cp "electron/package.json.mac_backup"  "electron/package.json"
     [ -f "app/docker-compose.yml.mac_backup" ] && cp "app/docker-compose.yml.mac_backup" "app/docker-compose.yml"
-    rm -f "electron/main.js.mac_backup"
-    rm -f "electron/preload.js.mac_backup"
     rm -f "electron/package.json.mac_backup"
     rm -f "app/docker-compose.yml.mac_backup"
     rm -f "electron/icon.ico"
@@ -51,8 +47,6 @@ fi
 # ── 1. 원본 파일 백업 ─────────────────────────
 echo ""
 echo "[1/5] 원본 파일 백업..."
-cp "electron/main.js"        "electron/main.js.mac_backup"
-cp "electron/preload.js"     "electron/preload.js.mac_backup"
 cp "electron/package.json"   "electron/package.json.mac_backup"
 cp "app/docker-compose.yml"  "app/docker-compose.yml.mac_backup"
 echo "[OK] 백업 완료"
@@ -60,8 +54,6 @@ echo "[OK] 백업 완료"
 # ── 2. 윈도우 전용 파일 교체 ──────────────────
 echo ""
 echo "[2/5] 윈도우 전용 파일 적용..."
-cp "win/electron/main.js"        "electron/main.js"
-cp "win/electron/preload.js"     "electron/preload.js"
 cp "win/electron/package.json"   "electron/package.json"
 cp "win/electron/icon.ico"       "electron/icon.ico"
 cp "win/app/docker-compose.yml"  "app/docker-compose.yml"
@@ -86,6 +78,9 @@ if $IS_CLEAN_BUILD; then
     rm -rf node_modules
 fi
 npm install
+if [ -z "${CSC_LINK:-}" ]; then
+    export CSC_IDENTITY_AUTO_DISCOVERY=false
+fi
 npm run build   # package.json에 "build": "electron-builder --win" 으로 교체됐으므로 그대로 실행
 if [ ! -f "dist/win-unpacked/resources/locales/en/settings.json" ]; then
     echo "[FAIL] Packaged locale resource is missing: locales/en/settings.json"

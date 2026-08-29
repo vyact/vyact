@@ -39,8 +39,6 @@ if /i "!UPDATE_BEFORE_BUILD!"=="true" (
 echo.
 echo [1/5] 원본 파일 백업...
 
-copy /y "electron\main.js"        "electron\main.js.mac_backup"        >nul
-copy /y "electron\preload.js"     "electron\preload.js.mac_backup"     >nul
 copy /y "electron\package.json"   "electron\package.json.mac_backup"   >nul
 copy /y "app\docker-compose.yml"  "app\docker-compose.yml.mac_backup"  >nul
 
@@ -49,12 +47,6 @@ echo [OK] 백업 완료
 :: ── 2. 윈도우 전용 파일로 교체 ────────────────
 echo.
 echo [2/5] 윈도우 전용 파일 적용...
-
-copy /y "win\electron\main.js"        "electron\main.js"        >nul
-if !errorlevel! neq 0 ( echo [FAIL] win\electron\main.js 복사 실패 & call :RESTORE & pause & exit /b 1 )
-
-copy /y "win\electron\preload.js"     "electron\preload.js"     >nul
-if !errorlevel! neq 0 ( echo [FAIL] win\electron\preload.js 복사 실패 & call :RESTORE & pause & exit /b 1 )
 
 copy /y "win\electron\package.json"   "electron\package.json"   >nul
 if !errorlevel! neq 0 ( echo [FAIL] win\electron\package.json 복사 실패 & call :RESTORE & pause & exit /b 1 )
@@ -92,11 +84,9 @@ if exist dist rmdir /s /q dist
 if /i "!IS_CLEAN_BUILD!"=="true" if exist node_modules rmdir /s /q node_modules
 call npm install
 if !errorlevel! neq 0 ( echo [FAIL] npm install 실패 & cd .. & call :RESTORE & pause & exit /b 1 )
-:: Windows 빌드에는 macOS 코드사이닝(winCodeSign)이 불필요.
-:: 해당 아카이브의 심볼릭 링크 추출 시 권한 오류로 빌드가 실패하므로 서명을 비활성화한다.
-set CSC_IDENTITY_AUTO_DISCOVERY=false
-:: 이전 실패로 손상된 winCodeSign 캐시가 남아 있으면 제거(서명 비활성화 시 재사용되지 않음).
-if /i "!IS_CLEAN_BUILD!"=="true" if exist "%LOCALAPPDATA%\electron-builder\Cache\winCodeSign" rmdir /s /q "%LOCALAPPDATA%\electron-builder\Cache\winCodeSign"
+:: CSC_LINK/CSC_KEY_PASSWORD가 설정된 배포 환경에서는 electron-builder가
+:: Authenticode 서명을 적용한다. 인증서가 없는 로컬 빌드는 서명 없이 진행한다.
+if not defined CSC_LINK set CSC_IDENTITY_AUTO_DISCOVERY=false
 call npm run build
 if !errorlevel! neq 0 ( echo [FAIL] Electron build 실패 & cd .. & call :RESTORE & pause & exit /b 1 )
 if not exist "dist\win-unpacked\resources\locales\en\settings.json" ( echo [FAIL] 패키지 번역 리소스 누락: locales\en\settings.json & cd .. & call :RESTORE & pause & exit /b 1 )
@@ -108,6 +98,12 @@ echo.
 echo [5/5] Collecting artifacts...
 if not exist dist mkdir dist
 copy "electron\dist\*.exe" "dist\" >nul 2>&1
+if defined CSC_LINK (
+    for %%F in ("dist\*.exe") do (
+        powershell -NoProfile -Command "$signature = Get-AuthenticodeSignature -LiteralPath '%%~fF'; if ($signature.Status -ne 'Valid') { Write-Error ('Invalid Authenticode signature: ' + $signature.Status); exit 1 }"
+        if !errorlevel! neq 0 ( echo [FAIL] 코드 서명 검증 실패 & call :RESTORE & pause & exit /b 1 )
+    )
+)
 
 :: ── 원본 복원 ─────────────────────────────────
 call :RESTORE
@@ -128,12 +124,8 @@ exit /b 0
 :RESTORE
 echo.
 echo [RESTORE] 원본 파일 복원 중...
-if exist "electron\main.js.mac_backup"       ( copy /y "electron\main.js.mac_backup"       "electron\main.js"        >nul )
-if exist "electron\preload.js.mac_backup"    ( copy /y "electron\preload.js.mac_backup"    "electron\preload.js"     >nul )
 if exist "electron\package.json.mac_backup"  ( copy /y "electron\package.json.mac_backup"  "electron\package.json"   >nul )
 if exist "app\docker-compose.yml.mac_backup" ( copy /y "app\docker-compose.yml.mac_backup" "app\docker-compose.yml"  >nul )
-del /q "electron\main.js.mac_backup"        2>nul
-del /q "electron\preload.js.mac_backup"     2>nul
 del /q "electron\package.json.mac_backup"   2>nul
 del /q "app\docker-compose.yml.mac_backup"  2>nul
 if exist "electron\icon.ico" ( del /q "electron\icon.ico" 2>nul )

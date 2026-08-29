@@ -331,17 +331,14 @@ class Installer:
                 return False, "espeak-ng installation failed"
 
         elif system == "Windows":
-            if shutil.which("choco"):
-                cmd = ["choco", "install", "espeak-ng", "-y", "--no-progress"]
-            elif shutil.which("winget"):
-                cmd = [
-                    "winget", "install", "--id", "eSpeak-NG.eSpeak-NG", "--exact",
-                    "--source", "winget",
-                    "--silent", "--accept-package-agreements", "--accept-source-agreements",
-                ]
-            else:
-                logger.warning("Neither Chocolatey nor winget is available for espeak-ng installation")
+            if shutil.which("winget") is None:
+                logger.warning("winget is unavailable for espeak-ng installation")
                 return False, "espeak-ng installer unavailable"
+            cmd = [
+                "winget", "install", "--id", "eSpeak-NG.eSpeak-NG", "--exact",
+                "--source", "winget",
+                "--silent", "--accept-package-agreements", "--accept-source-agreements",
+            ]
 
             if await self._run(cmd, log=True) != 0:
                 logger.warning("espeak-ng installation failed on Windows")

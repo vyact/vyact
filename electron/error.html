@@ -15,32 +15,44 @@
     code{font-size:11px;color:#818cf8;background:#1a1d27;padding:6px 12px;
       border-radius:6px;margin-top:8px;display:block;-webkit-app-region:no-drag;
       user-select:text;}
+    button{margin-top:10px;padding:10px 18px;border:0;border-radius:8px;background:#6366f1;
+      color:white;font-weight:600;cursor:pointer;-webkit-app-region:no-drag;}
+    button:disabled{opacity:.6;cursor:default;}
   </style>
 </head>
 <body>
 <div class="icon">⚠️</div>
 <h2 id="title">서버 시작 실패</h2>
-<p>Python 환경이나 의존성 문제일 수 있습니다.<br>아래 로그 파일을 확인해 주세요.</p>
+<p id="message">Python 환경이나 의존성 문제일 수 있습니다.<br>아래 로그 파일을 확인해 주세요.</p>
 <p id="detail"></p>
 <code id="log-path">~/.vyact/logs/</code>
+<button id="retry" type="button">다시 시도</button>
 
 <script>
   // main.js가 mainWindow.loadFile(errorPath, {query: {msg, title}}) 형태로 넘긴
   // query에 실패 사유가 있으면 기본 문구와 함께 표시한다.
   const params = new URLSearchParams(window.location.search);
-  const msg = params.get('msg');
+  const message = params.get('message');
+  const detail = params.get('detail') || params.get('msg');
   const title = params.get('title');
+  const retry = params.get('retry');
   if (title) document.getElementById('title').textContent = title;
-  if (msg) {
+  if (message) document.getElementById('message').textContent = message;
+  if (detail) {
     const el = document.getElementById('detail');
-    el.textContent = msg;
+    el.textContent = detail;
     el.style.display = 'block';
   }
+  if (retry) document.getElementById('retry').textContent = retry;
   if (window.ragAPI && typeof window.ragAPI.getLogPath === 'function') {
     window.ragAPI.getLogPath().then((p) => {
       if (p) document.getElementById('log-path').textContent = p;
     }).catch(() => {});
   }
+  document.getElementById('retry').addEventListener('click', async (event) => {
+    event.currentTarget.disabled = true;
+    await window.ragAPI?.retryStartup?.();
+  });
 </script>
 </body>
 </html>

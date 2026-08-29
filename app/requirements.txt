@@ -1,6 +1,6 @@
 fastapi==0.140.0
 uvicorn[standard]==0.51.0
-elasticsearch==9.4.1
+elasticsearch==9.5.0
 playwright==1.61.0
 beautifulsoup4==4.15.0
 lxml==6.1.1
@@ -23,7 +23,7 @@ Pillow==12.3.0
 sentence-transformers==5.6.1
 tiktoken==0.14.0
 huggingface-hub==1.26.0
-llama-cpp-python==0.3.34
+llama-cpp-python==0.3.34; sys_platform != "win32"
 mlx-vlm==0.6.16; sys_platform == "darwin" and platform_machine == "arm64"
 mlx-lm==0.31.3; sys_platform == "darwin" and platform_machine == "arm64"
 mcp>=1.27,<2

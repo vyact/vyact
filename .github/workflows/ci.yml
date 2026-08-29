@@ -63,3 +63,37 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  windows-desktop:
+    name: Windows desktop static checks
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Validate Windows Electron entrypoint and package config
+        shell: pwsh
+        run: |
+          node --check electron/main.js
+          node --check electron/platform.js
+          node --check electron/preload.js
+          node -e "JSON.parse(require('fs').readFileSync('win/electron/package.json', 'utf8'))"
+          node -e "const p=require('./electron/platform'); if(!p.isWindows || !p.bundledPython('C:/resources', true).endsWith('python.exe') || !p.installDir.startsWith(process.env.LOCALAPPDATA)) process.exit(1)"
+
+      - name: Validate locale JSON and Windows Python path contract
+        shell: pwsh
+        run: |
+          Get-ChildItem frontend/src/i18n/locales/*/settings.json | ForEach-Object {
+            node -e "JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8'))" $_.FullName
+          }
+          if (-not (Select-String -Quiet -Path electron/platform.js -SimpleMatch 'isWindows ? "python.exe"')) { throw "Bundled Windows Python path is missing" }
+          if (Select-String -Quiet -Path electron/main.js,electron/platform.js -Pattern 'Ollama|Chocolatey') { throw "Legacy Windows bootstrap dependency remains" }
+          if (-not (Select-String -Quiet -Path electron/platform.js -SimpleMatch 'process.env.LOCALAPPDATA')) { throw "Per-user Windows install path is missing" }
+          if (-not (Select-String -Quiet -Path electron/platform.js -SimpleMatch 'llama_cpp_python-0.3.34-py3-none-win_amd64.whl')) { throw "Prebuilt Windows llama-cpp-python wheel is missing" }
+          if (-not (Select-String -Quiet -Path app/requirements.txt -SimpleMatch 'llama-cpp-python==0.3.34; sys_platform != "win32"')) { throw "Windows llama-cpp-python source build is not excluded" }
+          if (Test-Path win/electron/main.js) { throw "Platform-specific main.js must not be reintroduced" }

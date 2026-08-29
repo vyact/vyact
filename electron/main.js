@@ -1,16 +1,15 @@
 const {app, BrowserView, BrowserWindow, WebContentsView, dialog, ipcMain, session, shell} = require("electron");
 const path = require("path");
-const {spawn, execSync, spawnSync} = require("child_process");
+const {spawn, execSync, execFileSync, spawnSync} = require("child_process");
 const fs = require("fs");
-const os = require("os");
 const http = require("http");
 const crypto = require("crypto");
+const platform = require("./platform");
 
 // ── 기본 경로 ─────────────────────────────
-const HOME = os.homedir();
-const INSTALL_DIR = path.resolve(HOME, ".vyact");
-const VENV_DIR = path.join(INSTALL_DIR, "venv");
-const VENV_PYTHON = path.join(VENV_DIR, "bin", "python3");
+const INSTALL_DIR = platform.installDir;
+const VENV_DIR = platform.venvDir;
+const VENV_PYTHON = platform.venvPython;
 
 const APP_RES = app.isPackaged
     ? path.join(process.resourcesPath, "app")
@@ -18,9 +17,7 @@ const APP_RES = app.isPackaged
 const I18N_LOCALES_DIR = app.isPackaged
     ? path.join(process.resourcesPath, "locales")
     : path.join(__dirname, "..", "frontend", "src", "i18n", "locales");
-const BUNDLED_PYTHON = app.isPackaged
-    ? path.join(process.resourcesPath, "python", "bin", "python3")
-    : process.env.VYACT_PYTHON || "python3";
+const BUNDLED_PYTHON = platform.bundledPython(process.resourcesPath, app.isPackaged);
 
 const LOGS_DIR = path.join(INSTALL_DIR, "logs");
 const SERVER_PORT = 8000;
@@ -384,6 +381,22 @@ function showElasticsearchUnavailableAndQuit() {
     app.exit(1);
 }
 
+function showStartupError(error) {
+    const translation = getStartupTranslation();
+    const errorPath = path.join(__dirname, "error.html");
+    const detail = error instanceof Error ? error.message : String(error || "Unknown error");
+    log(`❌ Startup failed: ${detail}`);
+    if (mainWindow && !mainWindow.isDestroyed() && fs.existsSync(errorPath)) {
+        return mainWindow.loadFile(errorPath, {query: {
+            title: translation.pythonSetupFailedTitle,
+            message: translation.pythonSetupFailedMessage,
+            detail,
+            retry: translation.pythonSetupRetry,
+        }});
+    }
+    dialog.showErrorBox(translation.pythonSetupFailedTitle, `${translation.pythonSetupFailedMessage}\n\n${detail}`);
+}
+
 // 배포 앱은 자체 Python을 사용한다. 개발 실행에서만 VYACT_PYTHON 또는 python3를 쓴다.
 function isSupportedPython(pythonBin) {
     try {
@@ -410,6 +423,7 @@ function resolvePython() {
 // ES는 백엔드 setup(es_native)에서 네이티브 바이너리로 처리하므로 Docker는 선택 사항이다.
 // Docker가 있으면 활용하고, 없으면 조용히 건너뛴다.
 function getDockerEnv() {
+    if (platform.isWindows) return getChildProcessEnv();
     return {
         ...getChildProcessEnv(),
         PATH: [
@@ -419,17 +433,12 @@ function getDockerEnv() {
             "/usr/bin",
             "/bin",
             process.env.PATH || ""
-        ].join(":")
+        ].join(path.delimiter)
     };
 }
 
 function getChildProcessEnv() {
-    const env = {...process.env};
-    // Xcode/Electron 실행 환경의 비활성 malloc 진단 값이 Python에 전달되면
-    // macOS가 불필요한 MallocStackLogging 경고를 stderr에 출력한다.
-    delete env.MallocStackLogging;
-    delete env.MallocStackLoggingNoCompact;
-    return env;
+    return platform.childProcessEnv();
 }
 
 function isDockerRunning() {
@@ -519,7 +528,11 @@ function checkAllDependencies() {
 function runCommand(command, args, options = {}) {
     const {onOutput, ...spawnOptions} = options;
     return new Promise((resolve, reject) => {
-        const child = spawn(command, args, {stdio: ["ignore", "pipe", "pipe"], ...spawnOptions});
+        const child = spawn(command, args, {
+            stdio: ["ignore", "pipe", "pipe"],
+            ...platform.childProcessOptions,
+            ...spawnOptions,
+        });
         let output = "";
         const captureOutput = data => {
             const text = data.toString();
@@ -548,6 +561,24 @@ function createRequirementsProgressReporter(requirementsPath) {
             sendLoadingStatus(getStartupTranslation().pythonPackageDownloading.replace("{{package}}", packageName));
         }
     };
+}
+
+function getRequirementsHash(requirementsPath) {
+    const content = fs.readFileSync(requirementsPath);
+    const platformPackages = platform.pythonBootstrapPackages.join("\n");
+    return crypto.createHash("md5").update(content).update("\n").update(platformPackages).digest("hex");
+}
+
+async function installPythonPackages(python, requirementsPath) {
+    for (const packageSpec of platform.pythonBootstrapPackages) {
+        sendLoadingStatus(getStartupTranslation().pythonPackageDownloading.replace("{{package}}", "llama-cpp-python"));
+        await runCommand(python, ["-m", "pip", "install", packageSpec, "--quiet"]);
+    }
+    await runCommand(
+        python,
+        ["-m", "pip", "install", "-r", requirementsPath],
+        {onOutput: createRequirementsProgressReporter(requirementsPath)},
+    );
 }
 
 async function stopExistingServerBeforeDesktopStart() {
@@ -601,10 +632,13 @@ async function startServer() {
     // ── venv 및 서버 필수 패키지 준비 ─────────────────────────
     // 서버는 setup 화면을 제공하기 전부터 FastAPI/uvicorn이 필요하므로,
     // requirements 설치는 이 단계에서 한 번만 수행한다.
-    const uvicornCheck = path.join(VENV_DIR, "lib", "python3.12", "site-packages", "uvicorn");
+    const uvicornCheck = platform.uvicornPath;
     const hasUvicorn = fs.existsSync(uvicornCheck);
-    if (!fs.existsSync(python) || !hasUvicorn) {
+    if (!isSupportedPython(python) || !hasUvicorn) {
         log("▸ Creating virtual environment (venv)");
+
+        if (fs.existsSync(VENV_DIR)) fs.rmSync(VENV_DIR, {recursive: true, force: true});
+        try { fs.unlinkSync(path.join(INSTALL_DIR, ".req_hash")); } catch {}
 
         try {
             const pythonBin = resolvePython();
@@ -613,7 +647,11 @@ async function startServer() {
             }
             log(`👉 Using python: ${pythonBin}`);
 
-            execSync(`"${pythonBin}" -m venv "${VENV_DIR}"`);
+            execFileSync(pythonBin, ["-m", "venv", VENV_DIR], {
+                stdio: "inherit",
+                env: getChildProcessEnv(),
+                ...platform.childProcessOptions,
+            });
 
             log("▸ Installing packages from requirements.txt...");
             sendLoadingStatus(getStartupTranslation().pythonPackagesInstalling);
@@ -625,10 +663,9 @@ async function startServer() {
             const reqPath = path.join(serverAppDir, "requirements.txt");
 
             if (fs.existsSync(reqPath)) {
-                await runCommand(python, ["-m", "pip", "install", "-r", reqPath], {onOutput: createRequirementsProgressReporter(reqPath)});
+                await installPythonPackages(python, reqPath);
                 // 해시 저장 (이후 변경 감지용)
-                const crypto = require("crypto");
-                const hash = crypto.createHash("md5").update(fs.readFileSync(reqPath)).digest("hex");
+                const hash = getRequirementsHash(reqPath);
                 fs.writeFileSync(path.join(INSTALL_DIR, ".req_hash"), hash);
                 log("✅ requirements.txt installed");
             } else {
@@ -640,7 +677,9 @@ async function startServer() {
 
         } catch (err) {
             log(`❌ venv creation or package install failed: ${err.message}`);
-            throw err;
+            try { fs.rmSync(VENV_DIR, {recursive: true, force: true}); } catch {}
+            try { fs.unlinkSync(path.join(INSTALL_DIR, ".req_hash")); } catch {}
+            throw new Error(`Python environment setup failed: ${err.message}`, {cause: err});
         }
     } else {
         // ── venv 존재 시 requirements.txt 변경 감지 → 패키지 동기화 ──
@@ -648,8 +687,7 @@ async function startServer() {
         const reqHashFile = path.join(INSTALL_DIR, ".req_hash");
 
         if (fs.existsSync(reqPath)) {
-            const crypto = require("crypto");
-            const currentHash = crypto.createHash("md5").update(fs.readFileSync(reqPath)).digest("hex");
+            const currentHash = getRequirementsHash(reqPath);
             let savedHash = "";
             try { savedHash = fs.readFileSync(reqHashFile, "utf-8").trim(); } catch {}
 
@@ -657,12 +695,12 @@ async function startServer() {
                 log("▸ requirements.txt changed — syncing packages...");
                 try {
                     sendLoadingStatus(getStartupTranslation().pythonPackagesInstalling);
-                    await runCommand(python, ["-m", "pip", "install", "-r", reqPath], {onOutput: createRequirementsProgressReporter(reqPath)});
+                    await installPythonPackages(python, reqPath);
                     fs.writeFileSync(reqHashFile, currentHash);
                     log("✅ Package sync complete");
                 } catch (err) {
                     log(`❌ Package sync failed: ${err.message}`);
-                    throw err;
+                    throw new Error(`Python package update failed: ${err.message}`, {cause: err});
                 }
             }
         }
@@ -672,15 +710,10 @@ async function startServer() {
     const env = {
         ...getChildProcessEnv(),
         PATH: [
-            path.join(VENV_DIR, "bin"),
-            "/usr/local/bin",
-            "/opt/homebrew/bin",
-            "/usr/bin",
-            "/bin",
-            "/usr/sbin",
-            "/sbin",
+            platform.venvBinDir,
+            ...platform.executableSearchPaths,
             process.env.PATH || ""
-        ].join(":"),
+        ].join(path.delimiter),
         PYTHONPATH: serverAppDir,
         PYTHONUNBUFFERED: "1",
         // 설치된 앱 번들은 읽기 전용일 수 있으므로 __pycache__를 만들지 않는다.
@@ -699,6 +732,7 @@ async function startServer() {
         cwd: serverAppDir,
         env,
         stdio: ["ignore", "pipe", "pipe"],
+        ...platform.childProcessOptions,
     });
 
     // 파이썬 서버는 이미 자체 FileHandler로 같은 로그 파일에 직접 기록한다.
@@ -772,8 +806,7 @@ function createWindow() {
         width: 1200,
         height: 800,
         backgroundColor: "#0f1117",
-        titleBarStyle: "hiddenInset",
-        trafficLightPosition: { x: 12, y: 12 },
+        ...platform.windowOptions,
         webPreferences: {
             preload: path.join(__dirname, "preload.js"),
             contextIsolation: true,
@@ -792,9 +825,13 @@ function createWindow() {
     mainWindow.on("focus", focusActiveWebContents);
     mainWindow.on("resize", applyFloatingBrowserBounds);
 
-    // 전체화면 상태 변경 → 렌더러 알림
-    mainWindow.on("enter-full-screen", () => mainWindow?.webContents.send("window-fullscreen-change", true));
-    mainWindow.on("leave-full-screen", () => mainWindow?.webContents.send("window-fullscreen-change", false));
+    if (platform.isWindows) {
+        mainWindow.on("maximize", () => mainWindow?.webContents.send("window-maximize-change", true));
+        mainWindow.on("unmaximize", () => mainWindow?.webContents.send("window-maximize-change", false));
+    } else {
+        mainWindow.on("enter-full-screen", () => mainWindow?.webContents.send("window-fullscreen-change", true));
+        mainWindow.on("leave-full-screen", () => mainWindow?.webContents.send("window-fullscreen-change", false));
+    }
 
     // 마이크 + Web Speech API 네트워크 요청 권한 허용
     session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
@@ -819,7 +856,7 @@ function createWindow() {
         if (fs.existsSync(loadingPath)) {
             // venv가 이미 있으면 = 예전에 설치가 끝난 상태(재실행) → 간단한 화면만.
             // venv가 없으면 = 최초 설치 → 상세 로그를 보여줘서 뭘 하고 있는지 알 수 있게 한다.
-            const isFirstRun = !fs.existsSync(VENV_PYTHON);
+            const isFirstRun = !isSupportedPython(VENV_PYTHON) || !fs.existsSync(platform.uvicornPath);
             finishLoading();
             mainWindow.loadFile(loadingPath, {query: {firstRun: isFirstRun ? "1" : "0"}});
         } else {
@@ -880,21 +917,12 @@ function createWindow() {
 // 의존성 확인/서버 기동이 끝나기 전부터 폴링을 시작하면 retry 예산을 헛되이 소모하므로,
 // checkAllDependencies()+startServer()가 끝난 뒤에 호출한다 (app.whenReady()에서 순서 제어).
 function waitForServerAndLoad() {
-    waitForServer()
+    return waitForServer()
         .then(() => {
             log("✅ Server ready");
             loadServerApp();
         })
-        .catch(err => {
-            log(`❌ Server failed: ${err.message}`);
-            // data: URL 은 charset 이슈로 한글이 깨지므로 error.html 파일을 로드한다.
-            const errorPath = path.join(__dirname, "error.html");
-            if (fs.existsSync(errorPath)) {
-                mainWindow.loadFile(errorPath, {query: {msg: err.message}});
-            } else {
-                mainWindow.loadURL("data:text/html;charset=utf-8," + encodeURIComponent(`<meta charset="utf-8"><h1>Server Failed</h1><p>${err.message}</p>`));
-            }
-        });
+        .catch(showStartupError);
 }
 
 async function loadServerApp() {
@@ -968,14 +996,19 @@ async function preloadInitialSetupWindow() {
     // BrowserView auto-resize can briefly collapse during unmaximize on macOS.
     // Keep its bounds in sync explicitly so loading.html cannot become visible.
     mainWindow.on("resize", resizeInitialSetupView);
-    mainWindow.on("enter-full-screen", () => {
-        resizeInitialSetupView();
-        setupView.webContents.send("window-fullscreen-change", true);
-    });
-    mainWindow.on("leave-full-screen", () => {
-        resizeInitialSetupView();
-        setupView.webContents.send("window-fullscreen-change", false);
-    });
+    if (platform.isWindows) {
+        mainWindow.on("maximize", () => setupView.webContents.send("window-maximize-change", true));
+        mainWindow.on("unmaximize", () => setupView.webContents.send("window-maximize-change", false));
+    } else {
+        mainWindow.on("enter-full-screen", () => {
+            resizeInitialSetupView();
+            setupView.webContents.send("window-fullscreen-change", true);
+        });
+        mainWindow.on("leave-full-screen", () => {
+            resizeInitialSetupView();
+            setupView.webContents.send("window-fullscreen-change", false);
+        });
+    }
 }
 
 // ── 앱 생명주기 ───────────────────────────
@@ -1021,6 +1054,11 @@ app.on("activate", () => {
     restoreAndFocusMainWindow();
 });
 
+app.on("browser-window-focus", (_event, focusedWindow) => {
+    if (!platform.isWindows || focusedWindow !== mainWindow) return;
+    focusActiveWebContents();
+});
+
 if (hasSingleInstanceLock) app.whenReady().then(() => {
     if (!fs.existsSync(LOGS_DIR)) fs.mkdirSync(LOGS_DIR, {recursive: true});
     cleanupOldLogs();
@@ -1033,46 +1071,26 @@ if (hasSingleInstanceLock) app.whenReady().then(() => {
     // 1. 창부터 먼저 띄운다(loading.html) — 이래야 이어지는 의존성 확인/서버 기동 로그가
     //    실시간으로 화면에 표시된다. (예전엔 창 생성 전에 의존성 확인을 끝내버려서
     //    그 단계의 진행 상황을 사용자가 전혀 볼 수 없었다.)
-    setTimeout(() => createWindow().then(() => {
-        // 로딩 화면이 한 번 그려진 다음에만 동기식 설치 작업을 시작한다.
-        setTimeout(async () => {
-            const depsOk = checkAllDependencies();
-
-            if (!depsOk) {
-                log("❌ Required dependencies not met — exiting");
-                const errorPath = path.join(__dirname, "error.html");
-                if (mainWindow && !mainWindow.isDestroyed() && fs.existsSync(errorPath)) {
-                    mainWindow.loadFile(errorPath, {
-                        query: {title: "Dependency Installation Failed", msg: "Required dependencies could not be installed. Please check logs and restart the app."},
-                    });
-                }
-                return;
-            }
-
-            if (fs.existsSync(path.join(INSTALL_DIR, ".setup_done")) && !await waitForElasticsearch()) {
-                showElasticsearchUnavailableAndQuit();
-                return;
-            }
-
-            try {
-                await startBrowserControlServer();
-                await stopExistingServerBeforeDesktopStart();
-                await startServer();
-                waitForServerAndLoad();
-            } catch (error) {
-                log(`❌ Server startup failed: ${error.message}`);
-                const errorPath = path.join(__dirname, "error.html");
-                if (mainWindow && !mainWindow.isDestroyed() && fs.existsSync(errorPath)) {
-                    mainWindow.loadFile(errorPath, {
-                        query: {
-                            title: "Server Startup Failed",
-                            msg: `${error.message}\n\nPlease check the logs and restart the app.`,
-                        },
-                    });
-                }
-            }
-        }, 100);
-    }), startupDelayMs);
+    setTimeout(() => {
+        void createWindow().then(() => {
+            // 로딩 화면이 한 번 그려진 다음에만 동기식 설치 작업을 시작한다.
+            setTimeout(() => {
+                void (async () => {
+                    if (!checkAllDependencies()) {
+                        throw new Error("Bundled Python 3.12 runtime is missing or invalid");
+                    }
+                    if (fs.existsSync(path.join(INSTALL_DIR, ".setup_done")) && !await waitForElasticsearch()) {
+                        showElasticsearchUnavailableAndQuit();
+                        return;
+                    }
+                    await startBrowserControlServer();
+                    await stopExistingServerBeforeDesktopStart();
+                    await startServer();
+                    waitForServerAndLoad();
+                })().catch(showStartupError);
+            }, 100);
+        }).catch(showStartupError);
+    }, startupDelayMs);
 });
 
 let isQuitting = false;
@@ -1090,7 +1108,7 @@ app.on("before-quit", async (e) => {
         }
         await new Promise((resolve) => {
             const timer = setTimeout(() => {
-                if (!serverProc.killed) serverProc.kill("SIGKILL");
+                if (!serverProc.killed) serverProc.kill(platform.isWindows ? undefined : "SIGKILL");
                 resolve();
             }, 45000);
             serverProc.on("exit", () => {
@@ -1104,6 +1122,10 @@ app.on("before-quit", async (e) => {
 });
 
 ipcMain.handle("get-log-path", () => getLogFile());
+ipcMain.handle("retry-startup", () => {
+    app.relaunch();
+    app.quit();
+});
 ipcMain.handle("check-app-update", async () => {
     const currentVersion = app.getVersion();
     try {
@@ -1250,3 +1272,11 @@ ipcMain.handle("window-set-aspect-ratio", (_event, aspectRatio) => {
     });
     return true;
 });
+
+ipcMain.handle("window-minimize", () => mainWindow?.minimize());
+ipcMain.handle("window-maximize", () => {
+    if (!mainWindow) return;
+    if (mainWindow.isMaximized()) mainWindow.unmaximize();
+    else mainWindow.maximize();
+});
+ipcMain.handle("window-close", () => mainWindow?.close());

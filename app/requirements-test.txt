@@ -2,7 +2,7 @@
 # Keep shared package versions aligned with requirements.txt.
 aiofiles==25.1.0
 beautifulsoup4==4.15.0
-elasticsearch==9.4.1
+elasticsearch==9.5.0
 fastapi==0.140.0
 httpx==0.28.1
 lingua-language-detector==2.2.0
