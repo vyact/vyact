@@ -258,6 +258,11 @@
 .cp-pre--diff .cp-line--file { color: var(--muted); font-weight: 600; }
 .cp-pre--diff .cp-lineno { background: rgba(0,0,0,.12); }
 
+:root[data-theme='light'] .cp-pre--diff .cp-line--added { background: #dafbe1; color: #116329; }
+:root[data-theme='light'] .cp-pre--diff .cp-line--deleted { background: #ffebe9; color: #82071e; }
+:root[data-theme='light'] .cp-pre--diff .cp-line--hunk { background: #ddf4ff; color: #0550ae; }
+:root[data-theme='light'] .cp-pre--diff .cp-lineno { background: rgba(27,31,36,.08); }
+
 .cp-lineno {
     display: inline-block;
     min-width: 42px;
