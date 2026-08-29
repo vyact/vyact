@@ -25,7 +25,8 @@
     flex-direction: column;
     gap: 9px;
     max-height: calc(100dvh - 32px);
-    overflow-y: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     position: relative;
     z-index: 1;
     box-shadow: 0 18px 42px rgba(0, 0, 0, 0.2);
@@ -503,10 +504,6 @@
     .setup-connection-heading { align-items: stretch; flex-direction: column; }
     .setup-protocol-badge { align-self: flex-start; }
     .setup-hub-results { grid-template-columns: 1fr; }
-}
-
-@media (max-height: 760px) {
-    .setup-card { overflow-y: auto; }
 }
 
 @media (max-width: 760px) {
