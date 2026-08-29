@@ -1,0 +1,67 @@
+name: One-time Windows runtime install check
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  install-runtime:
+    name: Install llama.cpp and llama-swap with WinGet
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Show WinGet version
+        shell: pwsh
+        run: winget --version
+
+      - name: Install native runtime packages
+        shell: pwsh
+        run: |
+          winget install --id ggml.llamacpp --exact --accept-package-agreements --accept-source-agreements --disable-interactivity
+          if ($LASTEXITCODE -ne 0) { throw "ggml.llamacpp installation failed with exit code $LASTEXITCODE" }
+
+          winget install --id mostlygeek.llama-swap --exact --accept-package-agreements --accept-source-agreements --disable-interactivity
+          if ($LASTEXITCODE -ne 0) { throw "mostlygeek.llama-swap installation failed with exit code $LASTEXITCODE" }
+
+      - name: Verify WinGet executable exposure
+        shell: pwsh
+        run: |
+          $llamaServer = Get-Command llama-server.exe -ErrorAction Stop
+          $llamaSwap = Get-Command llama-swap.exe -ErrorAction Stop
+          Write-Output "llama-server: $($llamaServer.Source)"
+          Write-Output "llama-swap: $($llamaSwap.Source)"
+
+      - name: Verify Vyact runtime discovery
+        shell: pwsh
+        env:
+          PYTHONPATH: app
+          VYACT_INSTALL_DIR: ${{ runner.temp }}\Vyact
+        run: |
+          python -c "from services.vyact_runtime import get_runtime_paths, runtime_is_available; paths = get_runtime_paths(); print(f'llama-server: {paths.llama_server}'); print(f'llama-swap: {paths.llama_swap}'); assert runtime_is_available(), paths"
+
+      - name: Verify installation logs are ASCII-only
+        shell: pwsh
+        run: |
+          $electronSource = Get-Content electron/main.js -Raw
+          $logCalls = [regex]::Matches($electronSource, 'log\([^\r\n]*')
+          foreach ($logCall in $logCalls) {
+            if ($logCall.Value -match '[^\x00-\x7F]') {
+              throw "Non-ASCII Electron log call found: $($logCall.Value)"
+            }
+          }
+
+          $runtimeSource = Get-Content app/services/vyact_runtime.py -Raw
+          if ($runtimeSource -match 'stdout\.decode') {
+            throw "Localized WinGet output is still decoded into installation errors"
+          }
