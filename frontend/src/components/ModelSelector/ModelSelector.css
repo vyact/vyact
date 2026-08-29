@@ -54,14 +54,64 @@
 }
 
 /* ── 드롭다운 목록 ── */
+.model-select-wrap .custom-select-dropdown {
+    overflow:hidden;
+    border-color:color-mix(in srgb, var(--text-secondary) 34%, var(--border));
+    border-radius:12px;
+    background:var(--surface);
+    box-shadow:0 14px 34px rgba(0,0,0,.32);
+}
+
+.model-select-wrap .custom-select-search {
+    background:color-mix(in srgb, var(--surface2) 68%, var(--surface));
+}
+
 .model-select-wrap .custom-select-list {
     max-height: 200px;
+    display:grid;
+    gap:3px;
+    padding:5px;
+    background:color-mix(in srgb, var(--bg) 56%, var(--surface));
 }
 
 /* 아이템 레이아웃 */
 .model-select-wrap .custom-select-item {
     gap: 8px;
     padding: 10px 12px;
+    border-radius:8px;
+    background:color-mix(in srgb, var(--surface2) 42%, transparent);
+}
+
+.model-select-wrap .custom-select-item:hover {
+    background:color-mix(in srgb, var(--accent) 10%, var(--surface2));
+}
+
+.model-select-wrap .custom-select-item.selected,
+.model-select-wrap .custom-select-item.selected:hover {
+    background:color-mix(in srgb, var(--accent) 18%, var(--surface));
+}
+
+:root[data-theme='light'] .model-select-wrap .custom-select-dropdown {
+    border-color:color-mix(in srgb, var(--text-secondary) 28%, var(--border));
+    background:var(--surface);
+    box-shadow:0 16px 38px rgba(42,61,84,.2), 0 3px 10px rgba(42,61,84,.1);
+}
+
+:root[data-theme='light'] .model-select-wrap .custom-select-list {
+    background:color-mix(in srgb, var(--surface2) 58%, var(--surface));
+}
+
+:root[data-theme='light'] .model-select-wrap .custom-select-item {
+    background:rgba(255,255,255,.72);
+}
+
+:root[data-theme='light'] .model-select-wrap .custom-select-item:hover {
+    background:color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
+
+:root[data-theme='light'] .model-select-wrap .custom-select-item.selected,
+:root[data-theme='light'] .model-select-wrap .custom-select-item.selected:hover {
+    background:color-mix(in srgb, var(--accent) 16%, var(--surface));
 }
 
 /* 좌측 선택/dot 아이콘 */

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {Check, Eye, EyeOff, ExternalLink, LoaderCircle, Plus, Search} from 'lucide-react';
+import {Calculator, Check, Eye, EyeOff, ExternalLink, LoaderCircle, Plus, Search} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { LogEntry } from '../../types';
 import { syncPendingLanguageAfterSetup } from '../../i18n';
@@ -11,6 +11,7 @@ import {api, type VyactHardwareInfo, type VyactHubModel, VyactRuntimeInstallErro
 import {Tooltip} from '../common/Tooltip/Tooltip';
 import OverflowTooltipText from '../common/OverflowTooltipText/OverflowTooltipText';
 import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
+import {inspectRemoteGguf, type GgufModelMetadata} from '../../utils/ggufMetadata';
 import {
     formatCompactDownloads,
     formatModelBytes,
@@ -52,6 +53,7 @@ const EMPTY_HARDWARE_INFO: VyactHardwareInfo = {
     system_memory: {total_bytes: 0, available_bytes: 0},
     gpus: [],
 };
+const formatContextLength = (tokens: number) => tokens >= 1024 ? `${Math.round(tokens / 1024)}K` : String(tokens);
 
 const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
     const { t } = useTranslation(['setup', 'main']);
@@ -67,6 +69,8 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
     const [huggingFaceQuery, setHuggingFaceQuery] = useState(DEFAULT_VYACT_MODEL_QUERY);
     const [huggingFaceModels, setHuggingFaceModels] = useState<VyactHubModel[]>([]);
     const [vyactHardware, setVyactHardware] = useState<VyactHardwareInfo>(EMPTY_HARDWARE_INFO);
+    const [metadataByFile, setMetadataByFile] = useState<Record<string, GgufModelMetadata>>({});
+    const [analyzingFile, setAnalyzingFile] = useState('');
     const [mtpSupportedModels, setMtpSupportedModels] = useState<string[]>([]);
     const [mlxOnly, setMlxOnly] = useState(true);
     const [isSearchingHub, setIsSearchingHub] = useState(false);
@@ -92,6 +96,11 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
 
     const logRef = useRef<HTMLDivElement>(null);
     const shouldFollowLogTailRef = useRef(true);
+    const metadataCacheCheckedRef = useRef(new Set<string>());
+
+    const selectedFileKey = selectedHubModelFile ? `${selectedHubModelFile.repository}@${selectedHubModelFile.revision}/${selectedHubModelFile.filename}` : '';
+    const selectedMetadata = selectedFileKey ? metadataByFile[selectedFileKey] : undefined;
+    const selectedFileDisplayName = selectedHubModelFile?.runtime === 'mlx' ? selectedHubModelFile.repository.split('/').pop() : selectedHubModelFile?.filename;
 
     const searchVyactModels = async (query: string, searchMlxOnly = mlxOnly) => {
         const trimmedQuery = query.trim();
@@ -124,7 +133,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
 
     const isCloud = provider !== 'vyact';
 
-    const selectHubModelFile = (model: VyactHubModel, filename: string) => {
+    const selectHubModelFile = async (model: VyactHubModel, filename: string) => {
         const modelPath = model.runtime === 'mlx' ? `mlx/${model.id}` : `${model.id}/${filename}`;
         setSelectedModel(modelPath);
         setSelectedHubModelFile({
@@ -136,6 +145,40 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
             fileSize: model.file_sizes?.[filename] || 0,
             mtpModel: model.mtp_model, dflash2Model: model.dflash2_model, dflash2Bundled: model.dflash2_bundled,
         });
+        const fileKey = `${model.id}@${model.revision}/${filename}`;
+        if (model.runtime !== 'gguf' || metadataByFile[fileKey] || metadataCacheCheckedRef.current.has(fileKey)) return;
+        metadataCacheCheckedRef.current.add(fileKey);
+        setAnalyzingFile(fileKey);
+        try {
+            const cachedMetadata = await api.getVyactModelMetadataCache(model.id, filename, model.revision, 32768);
+            if (cachedMetadata) setMetadataByFile(current => ({...current, [fileKey]: cachedMetadata}));
+        } catch {
+            // 상세 조회 버튼에서 원격 메타데이터를 분석한다.
+        } finally {
+            setAnalyzingFile(current => current === fileKey ? '' : current);
+        }
+    };
+
+    const calculateAccurateMemory = async () => {
+        if (!selectedHubModelFile) return;
+        const {repository, filename, revision, runtime} = selectedHubModelFile;
+        const fileKey = `${repository}@${revision}/${filename}`;
+        if (metadataByFile[fileKey]) return;
+        setAnalyzingFile(fileKey);
+        try {
+            const fileSize = selectedHubModelFile.fileSize || await api.getVyactModelFileSize(repository, filename, runtime);
+            const companionSize = selectedHubModelFile.dflash2Model?.size || selectedHubModelFile.mtpModel?.size || 0;
+            const metadata = runtime === 'mlx'
+                ? await api.inspectVyactMlxMetadata(repository, revision, fileSize + companionSize, 32768)
+                : await inspectRemoteGguf(repository, filename, revision, fileSize, 32768, huggingFaceToken.trim());
+            if (runtime === 'gguf') await api.saveVyactModelMetadataCache(repository, filename, revision, 32768, fileSize, metadata);
+            setSelectedHubModelFile(current => current && `${current.repository}@${current.revision}/${current.filename}` === fileKey ? {...current, fileSize} : current);
+            setMetadataByFile(current => ({...current, [fileKey]: metadata}));
+        } catch (error) {
+            console.error('Failed to inspect model metadata:', error);
+        } finally {
+            setAnalyzingFile(current => current === fileKey ? '' : current);
+        }
     };
 
     // 시스템 상태 조회 — Docker 설치 여부/네이티브 지원 여부에 따라 ES 방식 선택지 제어
@@ -452,6 +495,23 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
                                 <label className="setup-field"><span><Tooltip content={t('main:modelSelector.huggingFaceTokenHelp')} multiline size="medium"><i className="vyact-token-help" tabIndex={0}>?</i></Tooltip>{t('apiKey')} <small>{t('customConnection.optional')}</small></span><div className="setup-secret-field"><input className="input" type={isApiKeyVisible ? 'text' : 'password'} placeholder={t('apiKey')} value={huggingFaceToken} onChange={event => setHuggingFaceToken(event.target.value)} onBlur={() => huggingFaceToken.trim() && api.saveVyactHuggingFaceToken(huggingFaceToken.trim()).catch(error => console.error('Failed to save Hugging Face token:', error))}/><button type="button" onClick={() => setIsApiKeyVisible(current => !current)} aria-label={t(isApiKeyVisible ? 'main:customProvider.hideApiKey' : 'main:customProvider.showApiKey')}>{isApiKeyVisible ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div></label>
                                 <div className="setup-field"><span className="vyact-search-label"><span><Search size={14}/>{t('main:modelSelector.searchLabel')}</span>{vyactHardware.apple_silicon && <button type="button" className={`vyact-mlx-switch${mlxOnly ? ' is-on' : ''}`} role="switch" aria-checked={mlxOnly} disabled={isSearchingHub} onClick={() => setMlxOnly(current => !current)}><span aria-hidden="true"><i/></span>{t('main:modelSelector.mlxOnly')}</button>}</span><div className="setup-hub-search"><input className="input" value={huggingFaceQuery} onChange={event => setHuggingFaceQuery(event.target.value)} onKeyDown={event => event.key === 'Enter' && void searchVyactModels(huggingFaceQuery)} placeholder={t('common:search')} aria-label={t('main:modelSelector.modelSearch')}/><button type="button" disabled={isSearchingHub || !huggingFaceQuery.trim()} onClick={() => void searchVyactModels(huggingFaceQuery)}>{isSearchingHub ? <LoaderCircle className="vyact-model-spinner" size={16}/> : <Search size={16}/>}<span>{t('main:modelSelector.searchAction')}</span></button></div></div>
                                 <div className="setup-hub-results" aria-busy={isSearchingHub}>
+                                    {!isSearchingHub && vyactHardware.system_memory.total_bytes > 0 && (
+                                        <div className="vyact-memory-summary setup-memory-summary">
+                                            <div className="vyact-memory-capacity">
+                                                <span>{t(`main:modelSelector.${vyactHardware.memory_mode === 'unified' ? 'unifiedMemory' : 'systemMemory'}`)}<strong>{formatModelBytes(vyactHardware.system_memory.total_bytes)}</strong></span>
+                                                {vyactHardware.memory_mode !== 'unified' && vyactHardware.gpus.map(gpu => <span key={`${gpu.backend}-${gpu.name}`}>{gpu.name}{gpu.total_bytes ? <> · {t('main:modelSelector.vram')} <strong>{formatModelBytes(gpu.total_bytes)}</strong></> : <strong>{gpu.backend}</strong>}</span>)}
+                                                {vyactHardware.memory_mode !== 'unified' && vyactHardware.gpus.length === 0 && <span>{t('main:modelSelector.cpuExecution')}</span>}
+                                            </div>
+                                            {selectedHubModelFile && <div className="vyact-memory-selection"><OverflowTooltipText text={selectedFileDisplayName || ''}/>{!selectedMetadata && <Tooltip content={t('main:modelSelector.accurateMemoryHint')} multiline size="medium"><button type="button" onClick={() => void calculateAccurateMemory()} disabled={analyzingFile === selectedFileKey} aria-label={t('main:modelSelector.calculateAccurateMemory')}>{analyzingFile === selectedFileKey ? <LoaderCircle className="vyact-model-spinner" size={17}/> : <Calculator size={17}/>}</button></Tooltip>}</div>}
+                                            {selectedMetadata && <div className="vyact-model-metadata vyact-memory-details">
+                                                <span><small>{t('main:modelSelector.layers')}<Tooltip content={t('main:modelSelector.layersHelp')} multiline size="medium"><i className="vyact-memory-help" tabIndex={0}>?</i></Tooltip></small><strong>{selectedMetadata.blockCount}</strong></span>
+                                                <span><small>{t('main:modelSelector.maxContext')}</small><strong>{formatContextLength(selectedMetadata.contextLength)}</strong></span>
+                                                <span><small>{t('main:modelSelector.modelMemory')}</small><strong>{formatModelBytes(Math.max(0, selectedMetadata.estimatedMemoryBytes - selectedMetadata.kvCacheBytes))}</strong></span>
+                                                <span><small>{t('main:modelSelector.conversationMemory')}<Tooltip content={t('main:modelSelector.conversationMemoryHelp')} multiline size="medium"><i className="vyact-memory-help" tabIndex={0}>?</i></Tooltip></small><strong>{formatModelBytes(selectedMetadata.kvCacheBytes)}</strong></span>
+                                                <span className="vyact-total-memory"><small>{t('main:modelSelector.totalEstimatedMemory')}</small><strong>{formatModelBytes(selectedMetadata.estimatedMemoryBytes)}</strong></span>
+                                            </div>}
+                                        </div>
+                                    )}
                                     {isSearchingHub && <div className="vyact-model-empty"><LoaderCircle className="vyact-model-spinner" size={22}/><span>{t('main:modelSelector.searching')}</span></div>}
                                     {!isSearchingHub && huggingFaceModels.map(model => {
                                         const selectableFiles = getSelectableModelFiles(model.files);

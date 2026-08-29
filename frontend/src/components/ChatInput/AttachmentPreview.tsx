@@ -79,7 +79,7 @@ const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({
                         <FileText size={20}/>
                     </span>
                     <span className="file-attachment-preview__copy">
-                        <span className="file-attachment-preview__name" title={fa.file.name}>
+                        <span className="file-attachment-preview__name">
                             {fa.file.name}
                         </span>
                         <span className="file-attachment-preview__meta">

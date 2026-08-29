@@ -618,6 +618,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                             audioSupported={models.audioSupported}
                             selectedModel={models.selectedModel}
                             isModelLoading={models.isModelLoading}
+                            isChatBusy={isChatBusy}
                             onModelLoadingChange={models.setModelLoading}
                             onModelChange={models.handleModelChange}
                             onProviderChange={models.refreshModels}

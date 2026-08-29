@@ -66,10 +66,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ images, currentIndex, onClose
     };
 
     return createPortal(
-        <div
-            className="image-viewer"
-            onClick={onClose}
-        >
+        <div className="image-viewer">
             <div className="image-viewer__actions">
                 <button
                     className="image-viewer__action"

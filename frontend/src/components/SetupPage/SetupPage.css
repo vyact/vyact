@@ -16,7 +16,7 @@
 ========================= */
 .setup-card {
     width: 100%;
-    max-width: 620px;
+    max-width: 920px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 18px;
@@ -194,6 +194,8 @@
 .setup-hub-results .vyact-model-files button { box-sizing: border-box; width: 100%; min-width: 0; }
 .setup-hub-results .vyact-model-file-name > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .setup-hub-results > .vyact-model-empty { grid-column: 1 / -1; }
+.setup-hub-results > .setup-memory-summary { grid-column: 1 / -1; }
+.setup-memory-summary .vyact-model-metadata { grid-template-columns: repeat(5, minmax(110px, 1fr)); }
 
 .setup-connection-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
 .setup-connection-heading > div { display: grid; gap: 4px; min-width: 0; }
@@ -473,6 +475,11 @@
     .setup-connection-heading { align-items: stretch; flex-direction: column; }
     .setup-protocol-badge { align-self: flex-start; }
     .setup-hub-results { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 760px) {
+    .setup-memory-summary .vyact-model-metadata { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .setup-memory-summary .vyact-total-memory { grid-column: 1 / -1; }
 }
 
 .progress-log {

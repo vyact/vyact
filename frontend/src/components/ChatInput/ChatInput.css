@@ -13,13 +13,13 @@
 }
 
 :root[data-theme='light'] .chat-input-wrap .chat-input-container {
-    border-color: color-mix(in srgb, var(--text-secondary) 22%, var(--border));
-    box-shadow: var(--shadow-md);
+    border-color: color-mix(in srgb, var(--text-secondary) 10%, var(--border));
+    box-shadow: 0 14px 36px rgba(42, 61, 84, .1), 0 2px 8px rgba(42, 61, 84, .05);
 }
 
 :root[data-theme='light'] .chat-input-wrap .chat-input-container:focus-within {
-    border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
-    box-shadow: var(--shadow-md), 0 0 0 3px rgba(var(--accent-rgb), 0.08);
+    border-color: color-mix(in srgb, var(--accent) 34%, var(--border));
+    box-shadow: 0 16px 40px rgba(42, 61, 84, .12), 0 0 0 3px rgba(var(--accent-rgb), .06);
 }
 
 .chat-input-wrap .chat-input-container {
@@ -111,23 +111,41 @@
     box-sizing:border-box;
     border:1px solid var(--border);
     border-radius:10px;
-    background:color-mix(in srgb, var(--surface2) 72%, transparent);
-    transition:border-color .15s ease, background-color .15s ease, transform .15s ease;
+    background:color-mix(in srgb, var(--surface2) 72%, var(--surface));
+    transition:border-color .15s ease, box-shadow .15s ease;
 }
 
 .file-attachment-preview:hover {
     border-color:color-mix(in srgb, var(--border) 55%, var(--text-secondary));
     background:var(--surface2);
-    transform:translateY(-1px);
 }
 
 :root[data-theme='light'] .file-attachment-preview {
-    background: color-mix(in srgb, var(--surface2) 72%, var(--surface));
+    border-color: color-mix(in srgb, var(--text-secondary) 20%, var(--border));
+    background: var(--surface);
+    box-shadow: 0 4px 14px rgba(42, 61, 84, .1);
 }
 
 :root[data-theme='light'] .file-attachment-preview:hover {
-    background: color-mix(in srgb, var(--accent) 4%, var(--surface2));
+    border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+    background: color-mix(in srgb, var(--accent) 3%, var(--surface));
+    box-shadow: 0 6px 18px rgba(42, 61, 84, .13);
 }
+
+:root[data-theme='light'] .file-attachment-preview__icon {
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+    color: var(--accent);
+}
+
+:root[data-theme='light'] .attachment-remove-btn--file {
+    border-color: color-mix(in srgb, var(--text-secondary) 16%, var(--border));
+    background: var(--surface);
+    color: var(--text-secondary);
+    box-shadow: 0 2px 6px rgba(42, 61, 84, .12);
+}
+
+:root[data-theme='light'] .file-attachment-preview__name { color: var(--text); }
+:root[data-theme='light'] .file-attachment-preview__meta { color: var(--text-secondary); }
 
 .file-attachment-preview__icon {
     display:grid;
@@ -254,11 +272,15 @@
 }
 
 :root[data-theme='light'] .chat-input {
-    background: color-mix(in srgb, var(--surface2) 42%, var(--surface));
+    border-color: transparent;
+    background: color-mix(in srgb, var(--surface2) 64%, var(--surface));
+    box-shadow: inset 0 0 0 1px rgba(70, 86, 107, .055);
 }
 
 :root[data-theme='light'] .chat-input:focus {
+    border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
     background: var(--surface);
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), .055);
 }
 
 .chat-input:disabled {
@@ -356,9 +378,10 @@
 }
 
 :root[data-theme='light'] .chat-btn-row .voice-chat-btn {
-    border-color: var(--border);
+    border-color: transparent;
     background: var(--control-bg);
     color: var(--text-secondary);
+    box-shadow: 0 4px 12px rgba(42, 61, 84, .1), inset 0 0 0 1px rgba(70, 86, 107, .06);
 }
 
 .voice-chat-btn:hover:not(:disabled) {
@@ -633,6 +656,19 @@
 .chat-system-prompt-select .custom-select-trigger {
     height: 30px;
     padding: 5px 8px;
+}
+
+:root[data-theme='light'] .chat-system-prompt-select .custom-select-trigger {
+    border-color: transparent;
+    background: color-mix(in srgb, var(--surface2) 72%, var(--surface));
+    box-shadow: inset 0 0 0 1px rgba(70, 86, 107, .055);
+}
+
+:root[data-theme='light'] .chat-system-prompt-select .custom-select-trigger:hover,
+:root[data-theme='light'] .chat-system-prompt-select .custom-select-trigger.open {
+    border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+    background: color-mix(in srgb, var(--accent) 4%, var(--surface));
+    box-shadow: 0 3px 10px rgba(42, 61, 84, .07);
 }
 
 .chat-system-prompt-select.is-selected .custom-select-trigger {
