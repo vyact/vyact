@@ -30,12 +30,12 @@
 .input-menu { position: relative; flex-shrink: 0; }
 .input-menu-trigger { position: relative; display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; flex-shrink: 0; border: 0; border-radius: 10px; background: transparent; color: var(--text-secondary); cursor: pointer; transition: background .2s; }
 .input-menu-trigger:hover { background: var(--surface2); }
-.input-menu-reasoning-indicator { position: absolute; top: -2px; right: -3px; display: grid; width: 14px; height: 14px; place-items: center; border: 1px solid var(--border); border-radius: 50%; background: var(--surface); color: #686870; opacity: .72; pointer-events: none; transition: color .2s, border-color .2s, box-shadow .2s, opacity .2s; }
-.input-menu-trigger.reasoning-on .input-menu-reasoning-indicator { border-color: var(--accent); color: var(--accent); opacity: 1; box-shadow: 0 0 7px color-mix(in srgb, var(--accent) 65%, transparent); }
+.input-menu-reasoning-indicator { position: absolute; top: -4px; right: -4px; display: grid; width: 17px; height: 17px; place-items: center; border: 1.5px solid color-mix(in srgb, var(--text-secondary) 42%, var(--border)); border-radius: 50%; background: var(--surface); color: var(--text-secondary); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); pointer-events: none; transition: color .2s, border-color .2s, box-shadow .2s, background .2s; }
+.input-menu-trigger.reasoning-on .input-menu-reasoning-indicator { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); color: var(--accent); box-shadow: none; }
 .input-menu-file-input { display: none; }
 .input-menu-popover { position: absolute; bottom: 45px; left: 0; z-index: 1000; min-width: 180px; overflow: visible; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); box-shadow: 0 4px 16px rgba(0, 0, 0, .35); }
 .input-menu-item { display: flex; align-items: center; width: 100%; gap: 10px; padding: 11px 14px; border: 0; background: transparent; color: var(--text); cursor: pointer; font-size: 13px; text-align: left; transition: background .15s; }
-.input-menu-item:hover { background: rgba(255, 255, 255, .05); }
+.input-menu-item:hover { background: var(--button-neutral-hover); }
 .input-menu-item:disabled { color: var(--muted); cursor: not-allowed; opacity: .4; }
 .input-menu-divider { height: 1px; margin: 0 10px; background: var(--border); }
 .input-menu-google-icon { color: #62b5f6; font-weight: 800; }

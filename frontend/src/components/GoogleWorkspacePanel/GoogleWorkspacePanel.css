@@ -38,6 +38,7 @@
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid var(--border);
+    background: color-mix(in srgb, var(--surface2) 62%, var(--surface));
 }
 
 .gwp-header button, .gwp-toolbar button, .gwp-nav button, .gwp-tabs button, .gwp-detail button, .gwp-compose button { border: 0; background: transparent; color: var(--text); cursor: pointer; }
@@ -63,6 +64,7 @@
 .gwp-nav .active { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
 .gwp-compose-controls { display: flex; align-items: center; gap: 7px; margin: 4px 0 12px; }
 .gwp-nav .gwp-compose-controls .gwp-compose-button { width: auto; flex: 1; justify-content: center; margin: 0; padding: 10px 14px !important; background: var(--accent) !important; color: white !important; font-weight: 700; }
+.gwp-nav .gwp-compose-controls .gwp-compose-button:hover:not(:disabled) { background: var(--button-primary-hover) !important; }
 .gwp-nav .gwp-compose-controls .gwp-signature-settings-button { display: grid; width: 40px; height: 40px; flex: 0 0 40px; margin-left: auto; place-items: center; padding: 0; border: 1px solid var(--border); border-radius: 10px; background: var(--surface2); color: var(--muted); transition: color .15s, border-color .15s, background .15s, box-shadow .15s; }
 .gwp-nav .gwp-compose-controls .gwp-signature-settings-button:hover { border-color: var(--accent); background: rgba(255, 120, 50, .08); color: var(--accent); }
 :root[data-theme='light'] .gwp-nav .gwp-compose-controls .gwp-signature-settings-button { border-color: color-mix(in srgb, var(--text-secondary) 34%, var(--border)); background: var(--surface); color: var(--text-secondary); box-shadow: 0 1px 3px rgba(40, 58, 80, .08); }
@@ -101,7 +103,7 @@
 .gwp-label-modal footer .gwp-label-modal-cancel:hover:not(:disabled) { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent) !important; color: var(--accent); }
 .gwp-label-modal button:disabled { cursor: not-allowed; opacity: .45; }
 
-.gwp-content { display: flex; flex: 1; min-width: 0; min-height: 0; flex-direction: column; padding: 0; overflow: hidden; }
+.gwp-content { display: flex; flex: 1; min-width: 0; min-height: 0; flex-direction: column; padding: 0; overflow: hidden; background: var(--surface); }
 .gwp-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
 .gwp-drive-toolbar-actions { display: flex; align-items: center; gap: 8px; flex: none; }
 .gwp-drive-new-folder, .gwp-drive-upload-trigger { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 34px; padding: 7px 11px !important; border-radius: 7px !important; font-size: 13px; font-weight: 600; white-space: nowrap; }
@@ -113,7 +115,7 @@
 .gwp-drive-upload-menu button { display: flex; align-items: center; gap: 9px; width: 100%; padding: 9px 10px; border-radius: 6px; color: var(--text); font-size: 13px; text-align: left; white-space: nowrap; }
 .gwp-drive-upload-menu button:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .gwp-drive-upload-menu button svg { color: var(--muted); }
-.gwp-mail-toolbar { box-sizing: border-box; flex: 0 0 66px; height: 66px; margin: 0; padding: 0 10px; color: var(--muted); font-size: 13px; font-weight: 700; }
+.gwp-mail-toolbar { box-sizing: border-box; flex: 0 0 66px; height: 66px; margin: 0; padding: 0 10px; background: var(--surface); color: var(--muted); font-size: 13px; font-weight: 700; }
 .gwp-mail-toolbar > div { display: flex; align-items: center; gap: 4px; }
 .gwp-select-all { display: flex; align-items: center; gap: 8px; cursor: pointer; }
 .gwp-select-all input, .gwp-mail-row > input {
@@ -170,14 +172,10 @@
 .gwp-mail-scroll { flex: 1; min-height: 0; overflow: auto; }
 .gwp-mail-empty { display: flex; flex: 1; min-height: 180px; align-items: center; justify-content: center; flex-direction: column; gap: 10px; color: var(--muted); }
 .gwp-mail-empty p { margin: 0; font-size: 13px; font-weight: 650; }
-.gwp-mail-row { display: grid; grid-template-columns: 16px 28px minmax(0, 1fr) auto; align-items: center; gap: 4px; border-bottom: 1px solid var(--border); padding: 0 8px; }
+.gwp-mail-row { display: grid; grid-template-columns: 16px 28px minmax(0, 1fr) auto; align-items: center; gap: 4px; border-bottom: 1px solid var(--border); padding: 0 8px; background: var(--surface); transition: background-color .15s; }
 .gwp-mail-row.no-star { grid-template-columns: 16px minmax(0, 1fr) auto; gap: 12px; }
-.gwp-mail-row:not(.unread) { background: color-mix(in srgb, var(--surface2) 62%, var(--surface)); }
 :root[data-theme='light'] .gwp-mail-row {
     border-bottom-color: color-mix(in srgb, var(--text-secondary) 20%, var(--border));
-}
-:root[data-theme='light'] .gwp-mail-row:not(.unread) {
-    background: color-mix(in srgb, var(--surface2) 76%, var(--surface));
 }
 .gwp-mail-list button { border: 0; border-bottom: 1px solid var(--border); background: transparent; color: var(--text); padding: 12px 4px; text-align: left; display: grid; gap: 4px; cursor: pointer; }
 .gwp-mail-row button { border-bottom: 0; min-width: 0; }
@@ -186,7 +184,11 @@
 .gwp-mail-row .gwp-mail-star.active { color: #f5b82e; }
 .gwp-mail-row .gwp-mail-star.active svg { fill: currentColor; }
 .gwp-mail-row .gwp-mail-star:disabled { cursor: wait; opacity: .6; }
-.gwp-mail-row:hover { background: color-mix(in srgb, var(--surface2) 97%, var(--text)); }
+.gwp-mail-row:hover { background: var(--interactive-hover); }
+.gwp-mail-row:active { background: var(--interactive-active); }
+.gwp-mail-row:has(> input:checked) { background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+.gwp-mail-row:has(> input:checked):hover { background: color-mix(in srgb, var(--accent) 17%, var(--surface)); }
+.gwp-mail-row:has(> input:checked):active { background: color-mix(in srgb, var(--accent) 21%, var(--surface)); }
 .gwp-mail-open strong { display: flex; min-width: 0; align-items: center; gap: 7px; }
 .gwp-mail-open .gwp-mail-participants { min-width: 0; }
 .gwp-mail-row .gwp-mail-open .gwp-mail-thread-count {
@@ -416,6 +418,7 @@
 .gwp-drive-thead .gwp-drive-sort-reset { justify-content: center; width: 24px; height: 24px; padding: 0; border-radius: 5px; color: var(--accent); }
 .gwp-drive-thead .gwp-drive-sort-reset:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
 .gwp-drive-bulk-actions { display: flex; align-items: center; gap: 2px; }
+.gwp-selected-count { display: inline-grid; min-width: 22px; height: 22px; flex: none; place-items: center; padding: 0 6px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font-variant-numeric: tabular-nums; line-height: 1; }
 .gwp-drive-bulk-download { display: grid; width: 32px; height: 32px; place-items: center; margin: 0; padding: 0; border-radius: 50% !important; background: transparent !important; color: var(--muted) !important; cursor: pointer; }
 .gwp-drive-bulk-download:hover { background: color-mix(in srgb, var(--accent) 10%, transparent) !important; color: var(--accent) !important; }
 .gwp-drive-thead .gwp-drive-bulk-download,
@@ -431,15 +434,17 @@
 .gwp-drive-rows { flex: 1; min-height: 0; overflow-y: auto; }
 .gwp-drive-loading-more { display: flex; min-height: 48px; align-items: center; justify-content: center; gap: 8px; color: var(--muted); font-size: 12px; }
 .gwp-drive-loading-more svg { animation: gwp-spin .8s linear infinite; }
-.gwp-drive-row { display: grid; grid-template-columns: 28px 1fr 120px 80px 60px; align-items: center; padding: 0 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
-.gwp-drive-row--selected { background: color-mix(in srgb, var(--accent) 8%, transparent); }
-.gwp-drive-row:hover { background: color-mix(in srgb, var(--surface2) 97%, var(--text)); }
+.gwp-drive-row { display: grid; grid-template-columns: 28px 1fr 120px 80px 60px; align-items: center; padding: 0 12px; border-bottom: 1px solid var(--border); font-size: 13px; transition: background-color .15s; }
+.gwp-drive-row--selected { background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+.gwp-drive-row:hover { background: var(--interactive-hover); }
 .gwp-drive-col-check { display: flex; align-items: center; }
 .gwp-drive-col-check input { appearance: none; inline-size: 16px; block-size: 16px; flex: 0 0 16px; margin: 0; border: 1px solid color-mix(in srgb, var(--muted) 72%, var(--border)); border-radius: 3px; background: var(--surface2); cursor: pointer; transition: border-color .15s, background-color .15s, box-shadow .15s; }
 .gwp-drive-col-check input:hover { border-color: var(--accent); }
 .gwp-drive-col-check input:checked { border-color: var(--accent); background-color: var(--accent); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m3.5 8 3 3 6-6'/%3E%3C/svg%3E"); }
 .gwp-drive-bulk-bar { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--accent); }
-.gwp-drive-row--selected:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.gwp-drive-row:active { background: var(--interactive-active); }
+.gwp-drive-row--selected:hover { background: color-mix(in srgb, var(--accent) 17%, var(--surface)); }
+.gwp-drive-row--selected:active { background: color-mix(in srgb, var(--accent) 21%, var(--surface)); }
 .gwp-drive-col-name { min-width: 0; overflow: hidden; padding-right: 12px; }
 .gwp-drive-col-date, .gwp-drive-col-size { color: var(--muted); font-size: 12px; white-space: nowrap; }
 .gwp-drive-col-action { position: relative; display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
@@ -644,7 +649,7 @@
 .gwp-compose-attachment-row button { display: grid; width: 24px; height: 24px; place-items: center; padding: 0; border-radius: 50%; color: var(--muted); font-size: 18px; line-height: 1; }
 .gwp-compose-attachment-row button:hover { background: color-mix(in srgb, #e1745c 20%, transparent); color: #e1745c; }
 .gwp-compose .gwp-compose-send { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 96px; min-height: 40px; padding: 9px 20px !important; border: 1px solid var(--accent) !important; border-radius: 8px !important; background: var(--accent) !important; color: white !important; font-size: var(--modal-btn, 14px); font-weight: 600; white-space: nowrap; }
-.gwp-compose .gwp-compose-send:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 88%, #000) !important; }
+.gwp-compose .gwp-compose-send:hover:not(:disabled) { background: var(--button-primary-hover) !important; }
 .gwp-compose-original { border-top: 1px solid var(--border); margin-top: -1px; border-radius: 0 0 8px 8px; overflow: hidden; background: #fff; }
 .gwp-compose-original iframe { display: block; width: 100%; min-height: 200px; max-height: 400px; border: none; }
 .gwp-compose .gwp-primary:disabled { cursor: not-allowed; opacity: .45; }
@@ -760,14 +765,14 @@
 .gwp-send-feedback--error { border-color: color-mix(in srgb, var(--danger) 55%, var(--border)); color: var(--danger); }
 
 /* ── Calendar ────────────────────────────────────────────────────── */
-.gwp-calendar { display: flex; flex-direction: column; flex: 1; min-height: 0; padding: 16px; overflow: hidden; }
+.gwp-calendar { display: flex; flex-direction: column; flex: 1; min-height: 0; padding: 18px; overflow: hidden; background: var(--surface); }
 
-.gwp-cal-header { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
+.gwp-cal-header { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 12px; }
 .gwp-cal-nav { display: flex; align-items: center; gap: 3px; }
 .gwp-cal-nav button { display: grid; width: 32px; height: 32px; flex: none; place-items: center; padding: 0; border: 1px solid transparent; border-radius: 9px; background: transparent; color: var(--muted); cursor: pointer; transition: background .15s, border-color .15s, color .15s, transform .15s; }
 .gwp-cal-nav button:hover { border-color: color-mix(in srgb, var(--accent) 24%, transparent); background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); }
 .gwp-cal-nav button:active { transform: scale(.94); }
-.gwp-cal-nav strong { min-width: 132px; color: var(--text); font-size: 15px; font-weight: 750; text-align: center; white-space: nowrap; }
+.gwp-cal-nav strong { min-width: 138px; color: var(--text); font-size: 16px; font-weight: 760; letter-spacing: -.02em; text-align: center; white-space: nowrap; }
 .gwp-cal-actions { display: flex; align-items: center; gap: 7px; }
 .gwp-cal-today-btn,
 .gwp-cal-refresh-btn,
@@ -777,8 +782,8 @@
 .gwp-cal-refresh-btn { display: grid; width: 34px; flex: none; place-items: center; padding: 0; border: 1px solid var(--border); background: color-mix(in srgb, var(--surface2) 72%, transparent); color: var(--muted); }
 .gwp-cal-refresh-btn:hover:not(:disabled) { border-color: color-mix(in srgb, var(--accent) 55%, transparent); background: color-mix(in srgb, var(--accent) 9%, transparent); color: var(--accent); }
 .gwp-cal-refresh-btn:disabled { cursor: wait; opacity: .65; }
-.gwp-cal-add-btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 0 13px 0 11px; border: 1px solid var(--accent); background: var(--accent); color: white; box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 24%, transparent); }
-.gwp-cal-add-btn:hover { background: color-mix(in srgb, var(--accent) 88%, white); box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 32%, transparent); transform: translateY(-1px); }
+.gwp-cal-add-btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 0 13px 0 11px; border: 1px solid var(--accent); background: var(--accent); color: white; }
+.gwp-cal-add-btn:hover { border-color: var(--button-primary-hover); background: var(--button-primary-hover); }
 .gwp-cal-today-btn:active,
 .gwp-cal-refresh-btn:active:not(:disabled),
 .gwp-cal-add-btn:active { transform: translateY(0) scale(.97); }
@@ -792,36 +797,38 @@
     .gwp-cal-actions { align-self: stretch; justify-content: flex-end; }
 }
 
-.gwp-cal-grid { flex: 0 0 auto; }
-.gwp-cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; margin-bottom: 4px; }
-.gwp-cal-weekdays span { text-align: center; font-size: 11px; font-weight: 700; color: var(--muted); padding: 4px 0; }
+.gwp-cal-grid { flex: 0 0 auto; padding: 10px 12px 12px; border: 1px solid color-mix(in srgb, var(--border) 86%, transparent); border-radius: 14px; background: color-mix(in srgb, var(--surface2) 52%, var(--surface)); box-shadow: 0 4px 16px rgba(0, 0, 0, .04); }
+.gwp-cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-bottom: 3px; }
+.gwp-cal-weekdays span { padding: 5px 0 7px; color: var(--muted); font-size: 11px; font-weight: 750; text-align: center; }
 .gwp-cal-weekdays .sun { color: #e57373; }
 .gwp-cal-weekdays .sat { color: #5c9ce6; }
 
 .gwp-cal-loading { display: flex; align-items: center; justify-content: center; min-height: 200px; color: var(--accent); }
 
-.gwp-cal-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
-.gwp-cal-day { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0; border: 0; border-radius: 6px; background: transparent; color: var(--text); font-size: 13px; cursor: pointer; }
-.gwp-cal-day:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.gwp-cal-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.gwp-cal-day { position: relative; display: flex; min-height: 38px; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 4px 0; border: 1px solid transparent; border-radius: 9px; background: transparent; color: var(--text); font-size: 13px; cursor: pointer; transition: background-color .15s, border-color .15s, transform .15s; }
+.gwp-cal-day:hover { border-color: color-mix(in srgb, var(--accent) 20%, transparent); background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.gwp-cal-day:active { transform: scale(.95); }
 .gwp-cal-day.other-month { color: var(--muted); opacity: .45; }
 .gwp-cal-day.sun { color: #e57373; }
 .gwp-cal-day.sat { color: #5c9ce6; }
 .gwp-cal-day.other-month.sun, .gwp-cal-day.other-month.sat { opacity: .3; }
-.gwp-cal-day.today > span { display: grid; width: 26px; height: 26px; place-items: center; border-radius: 50%; background: var(--accent); color: white; font-weight: 700; }
-.gwp-cal-day.selected { background: color-mix(in srgb, var(--accent) 14%, transparent); }
-.gwp-cal-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); }
+.gwp-cal-day.today > span { display: grid; width: 26px; height: 26px; place-items: center; border-radius: 50%; background: var(--accent); color: white; font-weight: 750; box-shadow: 0 3px 8px color-mix(in srgb, var(--accent) 28%, transparent); }
+.gwp-cal-day.selected { border-color: color-mix(in srgb, var(--accent) 26%, transparent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.gwp-cal-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 10%, transparent); }
 
-.gwp-cal-events { display: flex; flex-direction: column; flex: 1; min-height: 0; margin-top: 12px; border-top: 1px solid var(--border); }
-.gwp-cal-events-header { display: flex; align-items: center; gap: 7px; padding: 10px 0 8px; color: var(--text); font-size: 14px; }
+.gwp-cal-events { display: flex; flex-direction: column; flex: 1; min-height: 0; margin-top: 13px; }
+.gwp-cal-events-header { display: flex; align-items: center; gap: 7px; padding: 2px 2px 9px; color: var(--text); font-size: 14px; }
 .gwp-cal-events-header svg { color: var(--accent); }
 .gwp-cal-events-scroll { flex: 1; min-height: 0; overflow-y: auto; }
 .gwp-cal-empty { display: flex; align-items: center; justify-content: center; min-height: 80px; color: var(--muted); font-size: 13px; }
 
-.gwp-cal-event-row { position: relative; display: flex; align-items: center; gap: 8px; margin-bottom: 5px; padding: 11px 10px 11px 14px; border: 1px solid transparent; border-radius: 10px; background: color-mix(in srgb, var(--surface2) 48%, transparent); cursor: pointer; transition: background-color .15s, border-color .15s; }
+.gwp-cal-event-row { position: relative; display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 12px 11px 12px 17px; border: 1px solid color-mix(in srgb, var(--border) 78%, transparent); border-radius: 12px; background: color-mix(in srgb, var(--surface2) 48%, transparent); box-shadow: 0 3px 10px rgba(0, 0, 0, .035); cursor: pointer; transition: background-color .15s, border-color .15s; }
 .gwp-cal-event-row::before { position: absolute; top: 12px; bottom: 12px; left: 5px; width: 3px; border-radius: 999px; background: var(--accent); content: ""; }
-.gwp-cal-event-row:hover { border-color: color-mix(in srgb, var(--accent) 42%, var(--border)); background: var(--surface); }
+.gwp-cal-event-row:hover { border-color: color-mix(in srgb, var(--accent) 34%, var(--border)); background: color-mix(in srgb, var(--surface2) 78%, var(--surface)); }
+.gwp-cal-event-row:active { border-color: color-mix(in srgb, var(--accent) 46%, var(--border)); background: var(--interactive-active); }
 :root[data-theme='light'] .gwp-cal-event-row { background: color-mix(in srgb, var(--surface2) 48%, var(--surface)); }
-:root[data-theme='light'] .gwp-cal-event-row:hover { background: color-mix(in srgb, var(--accent) 5%, var(--surface)); }
+:root[data-theme='light'] .gwp-cal-event-row:hover { background: color-mix(in srgb, var(--surface2) 78%, var(--surface)); }
 .gwp-cal-event-row.notification-highlight { animation: gwp-calendar-notification-highlight .6s ease-in-out 4; }
 @keyframes gwp-calendar-notification-highlight {
     0%, 100% { border-color: transparent; box-shadow: 0 0 0 0 transparent; }
@@ -832,54 +839,54 @@
 }
 .gwp-cal-event-info { display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 3px; }
 .gwp-cal-event-title { display: flex; align-items: center; min-width: 0; gap: 8px; }
-.gwp-cal-event-title strong { flex: 1; min-width: 0; font-size: 14px; font-weight: 650; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.gwp-cal-event-actions { display: flex; flex: none; align-items: center; gap: 8px; }
-.gwp-cal-event-status { display: inline-flex; align-items: center; gap: 4px; flex: none; padding: 3px 7px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); font-size: 12px; font-weight: 700; line-height: 1.4; }
+.gwp-cal-event-title strong { flex: 1; min-width: 0; overflow: hidden; color: var(--text); font-size: 14px; font-weight: 720; letter-spacing: -.01em; text-overflow: ellipsis; white-space: nowrap; }
+.gwp-cal-event-actions { display: flex; flex: none; align-items: center; gap: 5px; }
+.gwp-cal-event-status { display: inline-flex; align-items: center; gap: 4px; flex: none; min-height: 25px; padding: 2px 8px; border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border)); border-radius: 999px; background: color-mix(in srgb, var(--accent) 7%, var(--surface2)); color: color-mix(in srgb, var(--accent) 78%, var(--text)); font-size: 11px; font-weight: 680; line-height: 1.4; }
 .gwp-cal-event-status svg { flex: none; }
-.gwp-cal-event-reminder-indicator { position: relative; display: grid; width: 24px; height: 24px; flex: none; place-items: center; border-radius: 5px; color: var(--muted); cursor: default; }
-.gwp-cal-event-reminder-indicator:hover { color: var(--accent); }
+.gwp-cal-event-reminder-indicator { position: relative; display: grid; width: 27px; height: 27px; flex: none; place-items: center; border: 1px solid color-mix(in srgb, var(--muted) 18%, var(--border)); border-radius: 7px; background: color-mix(in srgb, var(--surface) 62%, transparent); color: var(--muted); cursor: default; transition: border-color .15s, background-color .15s, color .15s; }
+.gwp-cal-event-reminder-indicator:hover, .gwp-cal-event-reminder-indicator:focus-visible { border-color: color-mix(in srgb, var(--accent) 34%, var(--border)); background: color-mix(in srgb, var(--accent) 8%, var(--surface)); color: var(--accent); outline: none; }
 .gwp-cal-event-reminder-content { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 6px; min-width: max-content; max-width: 220px; color: var(--text-secondary); font-size: 12px; font-weight: 500; line-height: 1.45; }
 .gwp-cal-event-time, .gwp-cal-event-location { display: flex; align-items: center; gap: 4px; color: var(--muted); font-size: 13px; }
 .gwp-cal-event-time svg, .gwp-cal-event-location svg { flex: none; }
-.gwp-cal-event-description { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: flex-start; gap: 5px; max-width: 100%; margin-top: 2px; color: var(--text-secondary); font-size: 13px; line-height: 1.5; }
+.gwp-cal-event-description { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: flex-start; gap: 5px; max-width: 100%; margin: 2px -6px -4px; padding: 5px 6px 6px; border-radius: 9px; color: var(--text-secondary); font-size: 13px; line-height: 1.5; cursor: pointer; transition: background-color .15s, color .15s; }
+.gwp-cal-event-description:hover { background: color-mix(in srgb, var(--surface2) 72%, transparent); color: var(--text); }
 .gwp-cal-event-description-preview { display: flex; min-width: 0; align-items: flex-start; gap: 5px; cursor: pointer; }
 .gwp-cal-event-description-preview > svg { flex: none; margin-top: 2px; color: var(--muted); }
 .gwp-cal-event-description-preview > span { display: -webkit-box; overflow: hidden; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .gwp-cal-event-description-toggle { display: grid; width: 28px; height: 28px; place-items: center; margin-top: -5px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }
 .gwp-cal-event-description-toggle:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
 .gwp-cal-event-description.is-expanded .gwp-cal-event-description-toggle svg { transform: rotate(180deg); }
-.gwp-cal-event-description-full { grid-column: 1 / -1; padding: 6px 8px; border-radius: 6px; background: color-mix(in srgb, var(--surface) 72%, transparent); color: var(--text-secondary); white-space: pre-wrap; overflow-wrap: anywhere; }
-.gwp-cal-event-delete { display: grid; width: 28px; height: 28px; flex: none; place-items: center; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; opacity: 0; transition: opacity .15s; }
-.gwp-cal-event-row:hover .gwp-cal-event-delete { opacity: 1; }
-.gwp-cal-event-delete:hover { background: rgba(225, 116, 92, .12); color: #e1745c; }
+.gwp-cal-event-description-full { grid-column: 1 / -1; margin-top: 1px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--text-secondary) 16%, var(--border)); border-radius: 8px; background: color-mix(in srgb, var(--surface) 72%, var(--surface2)); color: var(--text-secondary); white-space: pre-wrap; overflow-wrap: anywhere; box-shadow: inset 3px 0 0 color-mix(in srgb, var(--accent) 34%, var(--border)); }
+.gwp-cal-event-delete { display: grid; width: 27px; height: 27px; flex: none; place-items: center; padding: 0; border: 1px solid color-mix(in srgb, var(--muted) 18%, var(--border)); border-radius: 7px; background: color-mix(in srgb, var(--surface) 62%, transparent); color: var(--muted); cursor: pointer; transition: border-color .15s, background-color .15s, color .15s; }
+.gwp-cal-event-delete:hover, .gwp-cal-event-delete:focus-visible { border-color: color-mix(in srgb, var(--danger, #e1745c) 38%, var(--border)); background: color-mix(in srgb, var(--danger, #e1745c) 9%, var(--surface)); color: var(--danger, #e1745c); outline: none; }
 .gwp-cal-event-row.past { background: color-mix(in srgb, var(--surface2) 28%, transparent); }
 :root[data-theme='light'] .gwp-cal-event-row.past { background: color-mix(in srgb, var(--surface2) 28%, var(--surface)); }
 .gwp-cal-event-row.past::before { background: color-mix(in srgb, var(--muted) 60%, transparent); }
 .gwp-cal-event-row.past:hover { border-color: var(--border); background: color-mix(in srgb, var(--surface2) 65%, transparent); }
 :root[data-theme='light'] .gwp-cal-event-row.past:hover { background: color-mix(in srgb, var(--surface2) 65%, var(--surface)); }
 .gwp-cal-event-row.past .gwp-cal-event-title strong { color: var(--text-secondary); }
-.gwp-cal-event-row.past .gwp-cal-event-status { background: color-mix(in srgb, var(--muted) 12%, transparent); color: var(--muted); }
+.gwp-cal-event-row.past .gwp-cal-event-status { border-color: color-mix(in srgb, var(--muted) 18%, var(--border)); background: color-mix(in srgb, var(--muted) 7%, var(--surface2)); color: var(--muted); }
 .gwp-cal-event-row.past .gwp-cal-event-time,
 .gwp-cal-event-row.past .gwp-cal-event-location,
 .gwp-cal-event-row.past .gwp-cal-event-description { color: color-mix(in srgb, var(--muted) 78%, transparent); }
 .gwp-cal-event-row.ongoing { border-color: color-mix(in srgb, var(--success) 30%, var(--border)); background: color-mix(in srgb, var(--success) 5%, var(--surface2)); }
 .gwp-cal-event-row.ongoing::before { background: color-mix(in srgb, var(--success) 84%, var(--surface2)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--success) 10%, transparent); }
-.gwp-cal-event-status.ongoing { background: var(--success); color: white; }
+.gwp-cal-event-status.ongoing { border-color: color-mix(in srgb, var(--success) 32%, var(--border)); background: color-mix(in srgb, var(--success) 10%, var(--surface2)); color: color-mix(in srgb, var(--success) 82%, var(--text)); }
 
 /* Event Form */
-.gwp-cal-form-backdrop { position: absolute; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(0, 0, 0, .45); }
-.gwp-cal-form { display: flex; flex-direction: column; width: min(440px, 100%); max-height: calc(100vh - 48px); border: 1px solid var(--border); border-radius: 14px; background: var(--surface2); box-shadow: 0 18px 50px rgba(0, 0, 0, .4); }
-.gwp-cal-form header { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px 12px; }
-.gwp-cal-form header h3 { margin: 0; font-size: 17px; }
-.gwp-cal-form header button { display: grid; width: 30px; height: 30px; place-items: center; border: 0; border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer; }
-.gwp-cal-form header button:hover { background: var(--surface); color: var(--text); }
-.gwp-cal-form-body { display: grid; gap: 12px; min-height: 0; padding: 0 18px 12px; overflow-y: auto; }
-.gwp-cal-form-body label { display: grid; gap: 5px; }
-.gwp-cal-form-body label > span { font-size: 12px; font-weight: 650; color: var(--text-secondary); }
-.gwp-cal-form-body input, .gwp-cal-form-body textarea { box-sizing: border-box; width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 7px; outline: none; background: var(--surface); color: var(--text); font: inherit; font-size: 13px; color-scheme: dark light; }
+.gwp-cal-form-backdrop { position: absolute; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(0, 0, 0, .48); backdrop-filter: blur(3px); }
+.gwp-cal-form { display: flex; flex-direction: column; width: min(460px, 100%); max-height: calc(100vh - 48px); overflow: hidden; border: 1px solid color-mix(in srgb, var(--border) 82%, var(--accent)); border-radius: 16px; background: var(--surface); box-shadow: 0 24px 64px rgba(0, 0, 0, .34); }
+.gwp-cal-form header { display: flex; align-items: center; justify-content: space-between; padding: 17px 20px 14px; border-bottom: 1px solid var(--border); }
+.gwp-cal-form header h3 { margin: 0; font-size: 18px; letter-spacing: -.02em; }
+.gwp-cal-form header button { display: grid; width: 32px; height: 32px; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: pointer; transition: background-color .15s, color .15s; }
+.gwp-cal-form header button:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); }
+.gwp-cal-form-body { display: grid; gap: 13px; min-height: 0; padding: 16px 20px; overflow-y: auto; background: color-mix(in srgb, var(--modal-inset) 44%, var(--surface)); }
+.gwp-cal-form-body label { display: grid; gap: 6px; }
+.gwp-cal-form-body label > span { color: var(--text-secondary); font-size: 12px; font-weight: 700; }
+.gwp-cal-form-body input, .gwp-cal-form-body textarea { box-sizing: border-box; width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 9px; outline: none; background: var(--surface); color: var(--text); font: inherit; font-size: 13px; color-scheme: dark light; transition: border-color .15s, box-shadow .15s, background-color .15s; }
 .gwp-cal-form-body input:focus, .gwp-cal-form-body textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent); }
 .gwp-cal-form-body textarea { resize: vertical; min-height: 64px; }
-.gwp-cal-form-body .gwp-cal-description-input { min-height: 160px; }
+.gwp-cal-form-body .gwp-cal-description-input { min-height: 120px; }
 .gwp-cal-date-time-field { position: relative; }
 .gwp-cal-date-time-error-tooltip { position: absolute; right: 0; bottom: calc(100% + 8px); z-index: 2; display: flex; align-items: flex-start; gap: 7px; max-width: min(360px, 100%); padding: 8px 10px; border: 1px solid color-mix(in srgb, var(--danger) 24%, transparent); border-radius: 7px; background: color-mix(in srgb, var(--surface2) 96%, var(--danger)); box-shadow: 0 6px 18px rgba(0, 0, 0, .25); color: var(--danger); font-size: 11px; font-weight: 600; line-height: 1.45; }
 .gwp-cal-date-time-error-tooltip::after { position: absolute; right: 18px; top: 100%; width: 8px; height: 8px; border-right: 1px solid color-mix(in srgb, var(--danger) 24%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--danger) 24%, transparent); background: color-mix(in srgb, var(--surface2) 96%, var(--danger)); content: ""; transform: translateY(-5px) rotate(45deg); }
@@ -902,7 +909,7 @@
 .gwp-cal-reminder-remove { display: grid; width: 28px; height: 28px; place-items: center; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }
 .gwp-cal-reminder-remove:hover { background: color-mix(in srgb, var(--danger) 10%, transparent); color: var(--danger); }
 .gwp-date-time-picker { position: relative; }
-.gwp-date-time-trigger { display: flex; align-items: center; justify-content: space-between; box-sizing: border-box; width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); color: var(--text); font: inherit; font-size: 13px; cursor: pointer; }
+.gwp-date-time-trigger { display: flex; align-items: center; justify-content: space-between; box-sizing: border-box; width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); color: var(--text); font: inherit; font-size: 13px; cursor: pointer; transition: border-color .15s, box-shadow .15s; }
 .gwp-date-time-trigger:focus, .gwp-date-time-trigger[aria-expanded="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent); outline: none; }
 .gwp-date-time-picker.invalid .gwp-date-time-trigger { border-color: color-mix(in srgb, var(--danger) 68%, var(--border)); background: color-mix(in srgb, var(--danger) 4%, var(--surface)); }
 .gwp-date-time-picker.invalid .gwp-date-time-trigger:focus,
@@ -929,9 +936,9 @@
 .gwp-date-time-select .custom-select-trigger { min-height: 30px; padding: 5px 7px; border-radius: 6px; background: var(--surface); }
 .gwp-date-time-select .custom-select-dropdown { min-width: 64px; }
 .gwp-date-time-select .custom-select-item { padding: 7px 9px; }
-.gwp-cal-form footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 18px 16px; }
-.gwp-cal-form-cancel { padding: 8px 14px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); color: var(--text); font-size: 13px; font-weight: 600; cursor: pointer; }
-.gwp-cal-form-cancel:hover { border-color: var(--accent); color: var(--accent); }
+.gwp-cal-form footer { display: flex; justify-content: flex-end; gap: 9px; padding: 13px 20px 17px; border-top: 1px solid var(--border); background: var(--surface); }
+.gwp-cal-form-cancel { padding: 8px 15px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--text); font-size: 13px; font-weight: 650; cursor: pointer; transition: border-color .15s, background-color .15s, color .15s; }
+.gwp-cal-form-cancel:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, transparent); color: var(--accent); }
 .gwp-cal-form-error { display: flex; align-items: flex-start; gap: 7px; margin-top: 2px; padding: 8px 10px; border: 1px solid color-mix(in srgb, var(--danger) 24%, transparent); border-radius: 7px; background: color-mix(in srgb, var(--danger) 8%, transparent); color: var(--danger); font-size: 11px; font-weight: 600; line-height: 1.45; }
 .gwp-cal-form-error svg { flex: none; margin-top: 1px; }
 

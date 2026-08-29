@@ -9,7 +9,7 @@
 .mcp-menu-list { flex: 1; overflow-y: auto; }
 .mcp-menu-empty { padding: 14px; color: var(--muted); font-size: 13px; }
 .mcp-menu-server { display: flex; align-items: center; gap: 10px; padding: 11px 14px; cursor: pointer; transition: background .15s; }
-.mcp-menu-server:hover { background: rgba(255, 255, 255, .05); }
+.mcp-menu-server:hover { background: var(--button-neutral-hover); }
 .mcp-menu-server.busy { cursor: wait; }
 .mcp-menu-server-info { min-width: 0; flex: 1; }
 .mcp-menu-server-name { overflow: hidden; color: var(--text); font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }

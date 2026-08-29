@@ -36,7 +36,7 @@
     height: 26px;
 }
 
-.email-editor-toolbar button:hover { background: rgba(255,255,255,0.08); color: var(--text); }
+.email-editor-toolbar button:hover { background: var(--button-neutral-hover); color: var(--text); }
 .email-editor-toolbar button.active { background: rgba(255,255,255,0.12); color: var(--accent, #e07050); }
 
 .email-editor-separator {

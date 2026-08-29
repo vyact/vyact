@@ -245,12 +245,24 @@
 }
 
 .custom-select-item:hover {
-    background: color-mix(in srgb, var(--accent) 6%, var(--surface2));
-    color: var(--accent);
+    background: var(--interactive-hover);
+    color: var(--text);
 }
 
 .custom-select-item.selected {
-    background: color-mix(in srgb, var(--accent) 10%, var(--surface2));
+    background: color-mix(in srgb, var(--accent) 12%, var(--surface2));
+}
+
+.custom-select-item:active {
+    background: var(--interactive-active);
+}
+
+.custom-select-item.selected:hover {
+    background: color-mix(in srgb, var(--accent) 17%, var(--surface2));
+}
+
+.custom-select-item.selected:active {
+    background: color-mix(in srgb, var(--accent) 21%, var(--surface2));
 }
 
 .custom-select-item.disabled {

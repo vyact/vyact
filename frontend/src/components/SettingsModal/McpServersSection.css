@@ -10,7 +10,7 @@
     background: transparent; color: var(--text);
     padding: 4px 10px; border-radius: 6px; font-size: 14px; cursor: pointer;
 }
-.mcp-add-btn:hover { background: rgba(255,255,255,0.05); }
+.mcp-add-btn:hover { background: var(--button-neutral-hover); }
 
 .mcp-list { display: flex; flex-direction: column; gap: 6px; }
 
@@ -275,7 +275,7 @@
     color: var(--text); font-size: 13px; cursor: pointer;
     text-align: left;
 }
-.gw-guide-toggle:hover { background: rgba(255,255,255,0.05); }
+.gw-guide-toggle:hover { background: var(--button-neutral-hover); }
 .gw-guide-arrow {
     font-size: 10px; transition: transform 0.15s ease;
     display: inline-block;

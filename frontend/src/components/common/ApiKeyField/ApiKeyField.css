@@ -26,12 +26,12 @@
     font-size: var(--modal-btn);
     font-weight: 600;
     cursor: pointer;
-    transition: filter 0.15s, opacity 0.15s;
+    transition: background-color 0.15s, opacity 0.15s;
     white-space: nowrap;
 }
 
 .api-key-save-btn:hover:not(:disabled) {
-    filter: brightness(1.08);
+    background: var(--button-primary-hover);
 }
 
 .api-key-save-btn:disabled {

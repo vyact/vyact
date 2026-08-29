@@ -42,7 +42,7 @@
     width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;
     flex: 0 0 auto; border: 0; border-radius: 8px; color: var(--text-secondary, #b8bbc5); background: transparent;
 }
-.floating-browser-toolbar button:hover:not(:disabled) { background: rgba(255, 255, 255, .08); color: var(--text-primary, #fff); }
+.floating-browser-toolbar button:hover:not(:disabled) { background: var(--button-neutral-hover); color: var(--text-primary, #fff); }
 .floating-browser-toolbar button:disabled { opacity: .35; }
 .floating-browser-toolbar button.is-loading svg { animation: spin .8s linear infinite; }
 .floating-browser-toolbar form { flex: 1; min-width: 0; }

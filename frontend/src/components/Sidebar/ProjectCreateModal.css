@@ -7,7 +7,7 @@
 .project-name-field { position:relative; display:flex; height:58px; border:1px solid var(--border); border-radius:12px; background:var(--bg); overflow:visible; }
 .project-name-field:focus-within { border-color:var(--accent); box-shadow:0 0 0 3px rgba(var(--accent-rgb), .15); }
 .project-color-button { width:58px; flex:0 0 58px; border:0; border-right:1px solid var(--border); border-radius:12px 0 0 12px; background:transparent; color:var(--project-color); cursor:pointer; display:grid; place-items:center; }
-.project-color-button:hover { background:rgba(255,255,255,.05); }
+.project-color-button:hover { background:var(--button-neutral-hover); }
 .project-name-field input { min-width:0; flex:1; border:0; outline:0; padding:0 16px; background:transparent; color:var(--text); font:inherit; font-size:14px; }
 .project-color-picker { position:absolute; z-index:3; left:0; top:66px; width:346px; display:flex; flex-wrap:wrap; gap:18px; padding:18px; border:1px solid var(--border); border-radius:12px; background:var(--surface); box-shadow:0 12px 32px rgba(0,0,0,.45); }
 .project-color-picker button { width:35px; height:35px; border:2px solid transparent; border-radius:50%; cursor:pointer; }

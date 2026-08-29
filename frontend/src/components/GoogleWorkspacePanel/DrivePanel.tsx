@@ -683,7 +683,10 @@ export default function DrivePanel({onAttachToChat, onIndexDocument}: DrivePanel
                     </span>
                     {selectedIds.size > 0
                         ? <span className="gwp-drive-col-name gwp-drive-bulk-bar">
-                            <span>{t('googleWorkspace.selectedCount', {count: selectedIds.size})}</span>
+                            <span className="gwp-selected-count"
+                                  aria-label={t('googleWorkspace.selectedCount', {count: selectedIds.size})}>
+                                {selectedIds.size}
+                            </span>
                             <span className="gwp-drive-bulk-actions">
                                 <button type="button" className="gwp-drive-bulk-download"
                                         aria-label={t('googleWorkspace.download')}

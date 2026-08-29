@@ -1,6 +1,7 @@
 import React, {useState, useRef, useEffect, useCallback} from 'react';
 import {createPortal} from 'react-dom';
 import {useTranslation} from 'react-i18next';
+import {X} from 'lucide-react';
 import type {ArticleAttachment} from '../../types';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
@@ -814,7 +815,10 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
                         </svg>
                         <span>{t('inputMenu.documents')}</span>
                     </div>
-                    <button className="dm-close" onClick={handleClose} disabled={status === 'uploading'}>×</button>
+                    <button type="button" className="dm-close" onClick={handleClose}
+                            aria-label={t('common:close')} disabled={status === 'uploading'}>
+                        <X size={20} strokeWidth={2}/>
+                    </button>
                 </div>
 
                 {/* 탭 */}

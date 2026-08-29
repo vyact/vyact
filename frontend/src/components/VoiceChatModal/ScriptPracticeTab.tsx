@@ -128,7 +128,7 @@ const ScriptPracticeTab: React.FC = () => {
                         {filtered.map(s => (
                             <div key={s.id} className="sp-item" onClick={() => handleSelect(s)}>
                                 <span className="sp-item-title">{s.title}</span>
-                                <button className="sp-item-del" onClick={e => { e.stopPropagation(); setScriptToDelete(s); }} title={t('voiceChat.delete')}><Trash2 size={17} aria-hidden/></button>
+                                <button className="sp-item-del" aria-label={t('voiceChat.delete')} onClick={e => { e.stopPropagation(); setScriptToDelete(s); }}><Trash2 size={17} aria-hidden/></button>
                             </div>
                         ))}
                     </div>

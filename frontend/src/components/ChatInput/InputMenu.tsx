@@ -178,7 +178,7 @@ const InputMenu: React.FC<InputMenuProps> = ({
                     <line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>
                 <span className="input-menu-reasoning-indicator" aria-hidden="true">
-                    <Lightbulb size={10}/>
+                    <Lightbulb size={11} strokeWidth={2.5}/>
                 </span>
             </button>
 

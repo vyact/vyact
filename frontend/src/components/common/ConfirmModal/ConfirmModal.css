@@ -115,7 +115,8 @@
 }
 
 .confirm-modal-btn.primary:hover:not(:disabled) {
-    filter: brightness(1.08);
+    background: var(--button-primary-hover);
+    border-color: var(--button-primary-hover);
 }
 
 .confirm-modal-spinner {

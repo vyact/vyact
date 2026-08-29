@@ -187,8 +187,8 @@
 .message-project-card__info { min-width:0; flex:1; }
 .message-project-card__name { overflow:hidden; color:var(--text); font-size:14px; font-weight:600; text-overflow:ellipsis; white-space:nowrap; }
 .message-project-card__meta { margin-top:2px; color:var(--text-secondary); font-size:12px; }
-.message-project-card__download { display:flex; align-items:center; gap:6px; flex:0 0 auto; padding:7px 14px; border:0; border-radius:7px; background:var(--accent); color:#fff; cursor:pointer; font-size:13px; font-weight:600; transition:filter .15s ease, transform .15s ease; }
-.message-project-card__download:hover { filter:brightness(1.06); }
+.message-project-card__download { display:flex; align-items:center; gap:6px; flex:0 0 auto; padding:7px 14px; border:0; border-radius:7px; background:var(--accent); color:#fff; cursor:pointer; font-size:13px; font-weight:600; transition:background-color .15s ease, transform .15s ease; }
+.message-project-card__download:hover { background:var(--button-primary-hover); }
 .message-project-card__download:active { transform:translateY(1px); }
 
 :root[data-theme='light'] .message-project-card {

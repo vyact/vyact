@@ -73,9 +73,9 @@
     border-radius: 8px;
     padding: 4px 10px;
     cursor: pointer;
-    transition: opacity 0.15s, filter 0.15s;
+    transition: opacity 0.15s, background-color 0.15s;
 }
-.followup-send-selected:hover:not(:disabled) { filter: brightness(1.08); }
+.followup-send-selected:hover:not(:disabled) { background: var(--button-primary-hover); }
 .followup-send-selected:disabled { opacity: 0.5; cursor: default; }
 
 .followup-list {
@@ -176,7 +176,7 @@
     border-radius: 8px;
     padding: 5px 12px;
     cursor: pointer;
-    transition: filter 0.15s;
+    transition: background-color 0.15s;
 }
-.followup-custom-send:hover:not(:disabled) { filter: brightness(1.08); }
+.followup-custom-send:hover:not(:disabled) { background: var(--button-primary-hover); }
 .followup-custom-send:disabled { opacity: 0.5; cursor: default; }

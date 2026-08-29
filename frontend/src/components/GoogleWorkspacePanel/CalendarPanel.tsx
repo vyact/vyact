@@ -245,22 +245,21 @@ const EventDescriptionPreview = ({description, expanded, onToggle}: {
         onToggle();
     };
 
-    return <div className={`gwp-cal-event-description${expanded ? ' is-expanded' : ''}`}>
+    return <div className={`gwp-cal-event-description${expanded ? ' is-expanded' : ''}`}
+                onClick={toggleDescription}>
         <span
             className="gwp-cal-event-description-preview"
             onMouseDown={event => event.preventDefault()}
-            onClick={toggleDescription}
         >
             <MessageSquareText size={12}/>
             <span>{previewDescription}</span>
         </span>
         <button type="button" className="gwp-cal-event-description-toggle"
                 aria-label={t('googleWorkspace.calendar.description')} aria-expanded={expanded}
-                onMouseDown={event => event.preventDefault()}
-                onClick={toggleDescription}>
+                onMouseDown={event => event.preventDefault()}>
             <ChevronDown aria-hidden="true" size={15}/>
         </button>
-        {expanded && <div className="gwp-cal-event-description-full" onClick={event => event.stopPropagation()}>{description}</div>}
+        {expanded && <div className="gwp-cal-event-description-full">{description}</div>}
     </div>;
 };
 
@@ -268,7 +267,7 @@ const EventReminderIndicator = ({reminders}: {reminders?: CalendarEvent['reminde
     const {t} = useTranslation('main');
     const overrides = reminders?.overrides ?? [];
 
-    if (!overrides.length) return <span className="gwp-cal-event-reminder-indicator" aria-hidden="true"/>;
+    if (!overrides.length) return null;
     const reminderUnitKey: Record<ReminderUnit, 'minutes' | 'hours' | 'days'> = {
         minute: 'minutes',
         hour: 'hours',
@@ -616,15 +615,15 @@ export default function CalendarPanel({selectedEvent, onSelectedEventHandled}: {
         {/* Calendar Header */}
         <div className="gwp-cal-header">
             <div className="gwp-cal-nav">
-                <button onClick={previousYear} aria-label={t('googleWorkspace.calendar.prevYear')} title={t('googleWorkspace.calendar.prevYear')}><ChevronsLeft size={16}/></button>
-                <button onClick={prevMonth} aria-label={t('googleWorkspace.calendar.prevMonth')} title={t('googleWorkspace.calendar.prevMonth')}><ChevronLeft size={16}/></button>
+                <button onClick={previousYear} aria-label={t('googleWorkspace.calendar.prevYear')}><ChevronsLeft size={16}/></button>
+                <button onClick={prevMonth} aria-label={t('googleWorkspace.calendar.prevMonth')}><ChevronLeft size={16}/></button>
                 <strong>{new Date(year, month).toLocaleDateString(currentLanguage, {year: 'numeric', month: 'long'})}</strong>
-                <button onClick={nextMonth} aria-label={t('googleWorkspace.calendar.nextMonth')} title={t('googleWorkspace.calendar.nextMonth')}><ChevronRight size={16}/></button>
-                <button onClick={nextYear} aria-label={t('googleWorkspace.calendar.nextYear')} title={t('googleWorkspace.calendar.nextYear')}><ChevronsRight size={16}/></button>
+                <button onClick={nextMonth} aria-label={t('googleWorkspace.calendar.nextMonth')}><ChevronRight size={16}/></button>
+                <button onClick={nextYear} aria-label={t('googleWorkspace.calendar.nextYear')}><ChevronsRight size={16}/></button>
             </div>
             <div className="gwp-cal-actions">
                 <button className="gwp-cal-today-btn" onClick={goToday}>{t('googleWorkspace.calendar.today')}</button>
-                <button className="gwp-cal-refresh-btn" onClick={() => fetchEvents(true)} disabled={refreshing} aria-label={t('common:refresh')} title={t('common:refresh')}>
+                <button className="gwp-cal-refresh-btn" onClick={() => fetchEvents(true)} disabled={refreshing} aria-label={t('common:refresh')}>
                     <RotateCcw size={16} className={refreshing ? 'gwp-spin' : ''}/>
                 </button>
                 <button className="gwp-cal-add-btn" onClick={openCreateForm}>
@@ -775,7 +774,7 @@ export default function CalendarPanel({selectedEvent, onSelectedEventHandled}: {
                     </label>
                     <label>
                         <span>{t('googleWorkspace.calendar.location')}</span>
-                        <input type="text" value={form.location} onChange={e => setForm(f => ({...f, location: e.target.value}))} placeholder={t('googleWorkspace.calendar.locationPlaceholder')}/>
+                        <input type="text" autoComplete="off" value={form.location} onChange={e => setForm(f => ({...f, location: e.target.value}))} placeholder={t('googleWorkspace.calendar.locationPlaceholder')}/>
                     </label>
                     <label>
                         <span>{t('googleWorkspace.calendar.description')}</span>

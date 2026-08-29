@@ -169,7 +169,8 @@
 }
 
 .product-release-link:hover {
-    filter: brightness(1.08);
+    background: var(--button-primary-hover);
+    border-color: var(--button-primary-hover);
 }
 
 @media (max-width: 560px) {

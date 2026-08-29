@@ -380,14 +380,13 @@
     font-size: 14px;
     font-weight: 700;
     width: 100%;
-    box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 24%, transparent);
-    transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+    transition: background 0.2s, border-color 0.2s;
 }
 
 .btn-install:hover {
     opacity: 1;
-    border-color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 88%, white);
+    border-color: var(--button-primary-hover);
+    background: var(--button-primary-hover);
 }
 
 .btn-install:disabled {

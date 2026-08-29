@@ -522,13 +522,13 @@ const PracticeView: React.FC<{ script: ScriptDoc; onBack: () => void; onEdit: ()
                 <span className="sp-practice-title">{script.title}</span>
                 <div className="sp-practice-actions">
                     <button className={`sp-play-all-btn${isPlayingAll ? ' playing' : ''}`} onClick={playAll}
-                            disabled={isRunning} title={t('voiceChat.playAll')}>
+                            disabled={isRunning} aria-label={t('voiceChat.playAll')}>
                         {isPlayingAll
                             ? <Square size={13} fill="currentColor"/>
                             : <Volume2 size={15}/>
                         }
                     </button>
-                    <button className="sp-edit-btn" onClick={onEdit} title={t('voiceChat.editScript')}><Pencil size={16}/></button>
+                    <button className="sp-edit-btn" onClick={onEdit} aria-label={t('voiceChat.editScript')}><Pencil size={16}/></button>
                 </div>
             </div>
             <div className="sp-role-bar">
@@ -539,7 +539,14 @@ const PracticeView: React.FC<{ script: ScriptDoc; onBack: () => void; onEdit: ()
                 <button className={`sp-role-btn${roleMode === 'b' ? ' active' : ''}`}
                         onClick={() => !isRunning && !isPlayingAll && handleRoleToggle()} disabled={isRunning || isPlayingAll}>{t('voiceChat.speakAsB')}
                 </button>
-                <div className="sp-ko-toggle" onClick={() => setShowKo(v => !v)} title={t('voiceChat.showTranslations')}>
+                <div className="sp-ko-toggle" role="switch" tabIndex={0} aria-checked={showKo}
+                     aria-label={t('voiceChat.showTranslations')} onClick={() => setShowKo(v => !v)}
+                     onKeyDown={event => {
+                         if (event.key === 'Enter' || event.key === ' ') {
+                             event.preventDefault();
+                             setShowKo(value => !value);
+                         }
+                     }}>
                     <div className={`sp-ko-switch${showKo ? ' on' : ''}`}/>
                     <span className="sp-ko-label">{t('voiceChat.translation')}</span>
                 </div>

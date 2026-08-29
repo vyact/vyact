@@ -39,7 +39,7 @@
 :is(button, a, input, textarea, select, [role='button'], [role='option'], [role='tab'], [role='menuitem'], [role='switch']):focus-visible {
   outline: 2px solid var(--accent) !important;
   outline-offset: 2px;
-  box-shadow: 0 0 0 4px var(--focus-ring);
+  box-shadow: none;
 }
 
 /* 텍스트 입력 계열은 컴포넌트 자체의 border 포커스만 사용해 이중 외곽선을 방지한다. */

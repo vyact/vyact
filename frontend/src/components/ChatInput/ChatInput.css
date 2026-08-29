@@ -235,8 +235,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 3px 10px color-mix(in srgb, var(--accent) 24%, transparent);
-    transition: background-color 0.16s ease, box-shadow 0.16s ease;
+    transition: background-color 0.16s ease;
     flex-shrink: 0;
 }
 
@@ -247,7 +246,7 @@
 }
 
 .send-btn:hover:not(:disabled) {
-    box-shadow: 0 5px 14px color-mix(in srgb, var(--accent) 32%, transparent);
+    background: var(--button-primary-hover);
 }
 
 .send-btn:disabled {
@@ -383,7 +382,6 @@
 
 .voice-assistant-inline__status-dot.is-listening {
     background:var(--accent);
-    box-shadow:0 0 0 4px color-mix(in srgb, var(--accent) 15%, transparent);
 }
 
 .voice-assistant-inline__controls {
@@ -423,7 +421,7 @@
 }
 
 .voice-assistant-inline__button--send:hover:not(:disabled) {
-    background:color-mix(in srgb, var(--accent) 88%, white);
+    background:var(--button-primary-hover);
     color:var(--on-accent);
 }
 
@@ -486,11 +484,10 @@
     border-color:var(--accent);
     background:var(--accent);
     color:var(--on-accent);
-    box-shadow:0 3px 10px color-mix(in srgb, var(--accent) 24%, transparent);
 }
 
 :root[data-theme='light'] .chat-btn-row .voice-assistant-inline__button--send:hover:not(:disabled) {
-    background:color-mix(in srgb, var(--accent) 88%, white);
+    background:var(--button-primary-hover);
     color:var(--on-accent);
 }
 
@@ -664,12 +661,23 @@
 }
 
 .chat-system-prompt-select .custom-select-item:hover {
-    background: color-mix(in srgb, var(--accent) 6%, var(--surface2));
+    background: var(--interactive-hover);
 }
 
-.chat-system-prompt-select .custom-select-item.selected,
+.chat-system-prompt-select .custom-select-item.selected {
+    background: color-mix(in srgb, var(--accent) 12%, var(--surface2));
+}
+
+.chat-system-prompt-select .custom-select-item:active {
+    background: var(--interactive-active);
+}
+
 .chat-system-prompt-select .custom-select-item.selected:hover {
-    background: color-mix(in srgb, var(--accent) 10%, var(--surface2));
+    background: color-mix(in srgb, var(--accent) 17%, var(--surface2));
+}
+
+.chat-system-prompt-select .custom-select-item.selected:active {
+    background: color-mix(in srgb, var(--accent) 21%, var(--surface2));
 }
 
 .knowledge-source-tabs {

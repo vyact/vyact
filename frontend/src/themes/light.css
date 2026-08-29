@@ -38,6 +38,10 @@
   --code-inline-bg: rgba(32, 41, 56, 0.07);
   --control-bg: #ffffff;
   --control-hover: #e9eef3;
+  --button-primary-hover: color-mix(in srgb, var(--accent) 88%, #000000);
+  --button-danger-hover: color-mix(in srgb, var(--danger) 88%, #000000);
+  --button-neutral-hover: var(--interactive-hover);
+  --button-accent-soft-hover: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 :root[data-theme='light'] body {

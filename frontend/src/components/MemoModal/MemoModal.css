@@ -60,19 +60,21 @@
 
 .memo-new-btn {
     display: block;
+    box-sizing: border-box;
     width: calc(100% - 20px);
+    height: 34px;
     margin: 2px 10px 8px;
     background: var(--accent, #e07050);
     border: none;
-    border-radius: 6px;
-    padding: 5px 12px;
+    border-radius: 8px;
+    padding: 0 12px;
     font-size: 13px;
     color: white;
     cursor: pointer;
     font-weight: 600;
 }
 
-.memo-new-btn:hover { filter: brightness(1.06); }
+.memo-new-btn:hover { background: var(--button-primary-hover); }
 
 .memo-close-btn {
     display: grid;
@@ -331,7 +333,7 @@
     min-width: 28px;
 }
 
-.memo-editor-toolbar button:hover { background: rgba(255,255,255,0.08); color: var(--text); }
+.memo-editor-toolbar button:hover { background: var(--button-neutral-hover); color: var(--text); }
 .memo-editor-toolbar button.active { background: rgba(255,255,255,0.12); color: var(--accent, #e07050); }
 .memo-text-color-picker { position: relative; display: inline-flex; align-items: center; justify-content: center; }
 .memo-text-color-picker > button { width: 28px; height: 26px; padding: 4px; font-size: 15px; font-weight: 700; }

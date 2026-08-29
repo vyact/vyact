@@ -39,4 +39,8 @@
   --code-inline-bg: rgba(255, 255, 255, 0.08);
   --control-bg: #2a2a2a;
   --control-hover: #333333;
+  --button-primary-hover: color-mix(in srgb, var(--accent) 88%, #000000);
+  --button-danger-hover: color-mix(in srgb, var(--danger) 88%, #000000);
+  --button-neutral-hover: var(--interactive-hover);
+  --button-accent-soft-hover: color-mix(in srgb, var(--accent) 10%, transparent);
 }
