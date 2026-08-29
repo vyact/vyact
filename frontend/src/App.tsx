@@ -3,6 +3,8 @@ import ToastContainer from './components/common/ToastNotifications/ToastNotifica
 import {api} from './services/api';
 import {fetchTtsSettings} from './services/tts/ttsSettings';
 import {ttsService} from './services/tts/ttsService';
+import {refreshGoogleWorkspaceStatus} from './services/googleWorkspaceStatus';
+import {initializeKnowledgeCollections} from './services/knowledgeCollectionsCache';
 import ConfirmModal from './components/common/ConfirmModal/ConfirmModal';
 import {useTranslation} from 'react-i18next';
 import './App.css';
@@ -43,6 +45,10 @@ const App: React.FC = () => {
 
     useEffect(() => {
         if (!isSetupComplete) return;
+        // Elasticsearch-backed startup data must only be requested after the
+        // initial setup has installed and started Elasticsearch.
+        void refreshGoogleWorkspaceStatus().catch(() => {});
+        void initializeKnowledgeCollections();
         api.getRuntimeStartupStatus().then(status => {
             if (status.status === 'update_available') setRuntimeUpdate(status);
         }).catch(() => {});
