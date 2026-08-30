@@ -27,6 +27,38 @@ async def test_model_profile_rejects_a_non_downloaded_gguf_as_not_found(monkeypa
 
 
 @pytest.mark.asyncio
+async def test_new_model_profile_uses_hardware_recommendation(monkeypatch):
+    save_profile = AsyncMock(side_effect=lambda profile: profile)
+    monkeypatch.setattr(setup, "get_model_profile", AsyncMock(return_value=None))
+    monkeypatch.setattr(setup, "_recommended_local_context", AsyncMock(return_value=65536))
+    monkeypatch.setattr(setup, "save_model_profile", save_profile)
+
+    profile = await setup._get_or_create_model_profile(
+        "mlx/owner/model", "mlx", "owner/model", persist=True,
+    )
+
+    assert profile["context_size"] == 65536
+    assert profile["history_token_budget"] == 32768
+    assert profile["max_output_tokens"] == 4096
+    save_profile.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_existing_model_profile_is_not_recommended_again(monkeypatch):
+    existing = {"model_path": "mlx/owner/model", "context_size": 32768}
+    recommend_context = AsyncMock()
+    monkeypatch.setattr(setup, "get_model_profile", AsyncMock(return_value=existing))
+    monkeypatch.setattr(setup, "_recommended_local_context", recommend_context)
+
+    profile = await setup._get_or_create_model_profile(
+        "mlx/owner/model", "mlx", "owner/model", persist=True,
+    )
+
+    assert profile is existing
+    recommend_context.assert_not_awaited()
+
+
+@pytest.mark.asyncio
 async def test_selecting_vyact_starts_model_before_persisting_provider(monkeypatch):
     config = {
         "type": "gemini",

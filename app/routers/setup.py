@@ -20,7 +20,7 @@ from logger import DebugLogSettings, ToolLogSettings, get_logger
 from services.installer import is_docker_available, Installer
 from services.es_native import is_native_supported
 from services.hardware_info import get_local_hardware_info
-from services.huggingface_models import get_model_file_size, search_gguf_models
+from services.huggingface_models import get_model_file_size, recommend_downloaded_mlx_context, search_gguf_models
 from services.mcp_config import ensure_mcp_config
 from services.runtime_settings import DEFAULT_RUNTIME_SETTINGS, apply_runtime_settings
 from services.runtime_startup import apply_startup_runtime_choice, get_startup_runtime_state
@@ -31,6 +31,52 @@ from services.reasoning_capabilities import get_gguf_reasoning_capabilities, get
 from services.vyact_runtime import get_downloaded_model_path, get_model_modalities
 
 logger = get_logger(__name__)
+
+
+async def _recommended_local_context(model_path: str, runtime: str, fallback: int = 32768) -> int:
+    if runtime != "mlx":
+        return fallback
+    downloaded_model_path = get_downloaded_mlx_model_path(model_path)
+    total_memory = int(get_local_hardware_info()["system_memory"]["total_bytes"])
+    return await asyncio.to_thread(
+        recommend_downloaded_mlx_context,
+        downloaded_model_path,
+        total_memory,
+        fallback,
+    )
+
+
+async def _get_or_create_model_profile(
+    model_path: str,
+    runtime: str,
+    repository: str | None,
+    fallback_context: int = 32768,
+    persist: bool = False,
+) -> dict:
+    profile = await get_model_profile(model_path)
+    if profile is not None:
+        return profile
+    recommended_context = await _recommended_local_context(model_path, runtime, fallback_context)
+    profile = recommended_model_profile(model_path, runtime, repository, recommended_context)
+    return await save_model_profile(profile) if persist else profile
+
+
+def _apply_model_profile(vyact_config: dict, profile: dict) -> None:
+    vyact_config.update({
+        "repository": profile.get("repository") or vyact_config.get("repository"),
+        "context_size": profile["context_size"],
+        "cache_quantization": profile["cache_quantization"],
+        "mtp_enabled": profile.get("mtp_enabled"),
+        "kv_cache_precision": profile.get("kv_cache_precision"),
+        "performance_mode": profile.get("performance_mode", "auto"),
+        "cpu_threads": profile.get("cpu_threads"),
+        "seed": profile.get("seed"),
+        "max_output_tokens": profile["max_output_tokens"],
+        "history_token_budget": profile["history_token_budget"],
+        "temperature": profile["temperature"],
+        "top_k": profile.get("top_k"),
+        "top_p": profile.get("top_p"),
+    })
 
 def start_background_services_after_setup() -> None:
     """Start services skipped during the first-run installation lifespan."""
@@ -399,7 +445,7 @@ async def install(req: ModelSelectRequest):
                 "vyact_config": {
                     **vyact_config,
                     "model": req.model,
-                    "model_path": request_config.get("model_path", vyact_config.get("model_path", "")),
+                    "model_path": request_config.get("model_path") or vyact_config.get("model_path") or req.model,
                     "runtime": request_config.get("runtime", vyact_config.get("runtime", "gguf")),
                     "repository": request_config.get("repository", vyact_config.get("repository")),
                     **({"huggingface_token": huggingface_token} if huggingface_token else {}),
@@ -553,6 +599,14 @@ async def install(req: ModelSelectRequest):
                 await ensure_mcp_config()
                 if req.type == "vyact":
                     vyact_config = cfg["vyact_config"]
+                    profile = await _get_or_create_model_profile(
+                        vyact_config["model_path"],
+                        vyact_config.get("runtime", "gguf"),
+                        vyact_config.get("repository"),
+                        int(vyact_config.get("context_size") or 32768),
+                        persist=True,
+                    )
+                    _apply_model_profile(vyact_config, profile)
                     from services.vyact_runtime import start_configured_runtime
                     model_id = await asyncio.to_thread(
                         start_configured_runtime, vyact_config, cfg.get("debug_logging", False),
@@ -982,10 +1036,13 @@ async def read_vyact_model_profile(
 ):
     if runtime == "mlx" and not is_apple_silicon():
         raise HTTPException(400, "mlx_unsupported_platform")
-    profile = await get_model_profile(model_path)
-    if profile is None:
-        profile = recommended_model_profile(model_path, runtime, repository, recommended_context)
-    elif "history_token_budget" not in profile:
+    try:
+        profile = await _get_or_create_model_profile(
+            model_path, runtime, repository, recommended_context,
+        )
+    except ValueError as error:
+        raise HTTPException(404, "local_model_not_downloaded") from error
+    if "history_token_budget" not in profile:
         config = await load_config_async()
         profile = {
             **profile,
@@ -1123,23 +1180,15 @@ async def select_model(req: ModelSelectRequest):
                 yield sse("mlx_unsupported_platform", "error", 0)
                 return
             repository = req.model.removeprefix("mlx/") if runtime == "mlx" else None
-            profile = await get_model_profile(req.model)
-            if profile is None:
-                profile = await save_model_profile(recommended_model_profile(req.model, runtime, repository, 32768))
+            profile = await _get_or_create_model_profile(
+                req.model, runtime, repository, persist=True,
+            )
             vyact_config = config.setdefault("vyact_config", {})
             vyact_config.update({
                 "model_path": req.model,
                 "runtime": runtime,
-                "repository": profile.get("repository") or repository,
-                "context_size": profile["context_size"],
-                "cache_quantization": profile["cache_quantization"],
-                "mtp_enabled": profile.get("mtp_enabled"),
-                "kv_cache_precision": profile.get("kv_cache_precision"),
-                "performance_mode": profile.get("performance_mode", "auto"),
-                "cpu_threads": profile.get("cpu_threads"), "seed": profile.get("seed"),
-                "max_output_tokens": profile["max_output_tokens"], "temperature": profile["temperature"],
-                "top_k": profile.get("top_k"), "top_p": profile.get("top_p"),
             })
+            _apply_model_profile(vyact_config, profile)
             yield sse("모델 메모리 로드 중...", "model_loading", 20)
             try:
                 from services.vyact_runtime import start_configured_runtime

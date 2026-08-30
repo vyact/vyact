@@ -1,5 +1,6 @@
 """Hugging Face GGUF discovery and safe resumeless downloads for Vyact."""
 import asyncio
+import json
 import re
 import shutil
 from pathlib import Path, PurePosixPath
@@ -20,6 +21,8 @@ _F16_BYTES_PER_VALUE = 2
 _Q8_BYTES_PER_VALUE = 1.0625
 _KV_CACHE_QUANTIZATION_MIN_CONTEXT = 32768
 _MINIMUM_RUNTIME_BUFFER_BYTES = 512 * 1024 ** 2
+_RECOMMENDED_MEMORY_UTILIZATION = 0.60
+_CONTEXT_SIZE_CANDIDATES = (131072, 65536, 32768, 16384, 8192, 4096, 2048, 1024, 512)
 
 
 def _headers(token: str | None) -> dict[str, str]:
@@ -454,6 +457,29 @@ def _mlx_metadata_from_config(config: dict, file_size: int, context_size: int) -
         "estimated_memory_bytes": file_size + kv_cache_bytes + runtime_buffer_bytes,
         "file_size_bytes": file_size,
     }
+
+
+def recommend_downloaded_mlx_context(model_path: Path, total_memory_bytes: int, fallback: int = 32768) -> int:
+    """Choose a stable first-run context from the installed model and unified memory."""
+    try:
+        config = json.loads((model_path / "config.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, TypeError):
+        return fallback
+    if not isinstance(config, dict) or total_memory_bytes <= 0:
+        return fallback
+
+    file_size = sum(
+        path.stat().st_size
+        for path in model_path.rglob("*")
+        if path.is_file()
+    )
+    memory_budget = int(total_memory_bytes * _RECOMMENDED_MEMORY_UTILIZATION)
+    for context_size in _CONTEXT_SIZE_CANDIDATES:
+        metadata = _mlx_metadata_from_config(config, file_size, context_size)
+        model_limit = int(metadata.get("context_length") or context_size)
+        if context_size <= model_limit and int(metadata["estimated_memory_bytes"]) <= memory_budget:
+            return context_size
+    return 512
 
 
 async def inspect_mlx_model_metadata(
