@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 
 from services.db import DOCUMENT_ORIGINALS_INDEX, WEB_DOCUMENTS_INDEX, WEB_DOC_CHUNKS_INDEX, get_es, get_language_index
 from services.embedding_runtime import get_embeddings
+from services.document_events import publish_document_change
 from services.knowledge_collection_references import remove_source_references_from_collections
 from services.language_detection import detect_language
 from logger import get_logger
@@ -169,6 +170,7 @@ async def _index_document(request: WebDocumentIndexRequest, emit) -> dict:
             "content_length": len(content),
             "created_at": existing_source.get("saved_at", now), "updated_at": now,
         }, refresh=True)
+        publish_document_change()
         return {"web_document_id": document_id, "title": title, "url": url, "chunk_count": indexed, "updated": existing}
     finally:
         try:
@@ -262,6 +264,7 @@ async def delete_web_document(document_id: str):
         if bool(await es.exists(index=DOCUMENT_ORIGINALS_INDEX, id=document_id)):
             await es.delete(index=DOCUMENT_ORIGINALS_INDEX, id=document_id, refresh=True)
         collections_updated = await remove_source_references_from_collections(es, "web", [document_id])
+        publish_document_change()
         return {"deleted": document["_source"].get("title", document_id), "chunks_deleted": deleted.get("deleted", 0), "collections_updated": collections_updated}
     finally:
         await es.close()

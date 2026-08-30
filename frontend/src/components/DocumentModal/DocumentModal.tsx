@@ -8,7 +8,12 @@ import {toast} from '../common/ToastNotifications/ToastNotifications';
 import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import KnowledgeCollectionAttachSelect from '../KnowledgeCollectionsModal/KnowledgeCollectionAttachSelect';
-import {getDocumentFiles, invalidateDocumentFiles, removeCachedDocumentFiles} from '../../services/documentFiles';
+import {
+    getDocumentFiles,
+    invalidateDocumentFiles,
+    removeCachedDocumentFiles,
+    subscribeDocumentFileChanges,
+} from '../../services/documentFiles';
 import {translateBackendError} from '../../utils/apiError';
 import './DocumentModal.css';
 
@@ -277,10 +282,10 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
         return () => window.clearInterval(intervalId);
     }, [status]);
 
-    const loadSavedFiles = useCallback(async () => {
+    const loadSavedFiles = useCallback(async (forceRefresh = false) => {
         setFilesLoading(true);
         try {
-            setSavedFiles(await getDocumentFiles());
+            setSavedFiles(await getDocumentFiles(forceRefresh));
             setSelectedFileIds(new Set());
         } catch {
             setSavedFiles([]);
@@ -291,8 +296,12 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
     }, []);
 
     useEffect(() => {
-        if (isOpen && tab === 'files') loadSavedFiles();
+        if (isOpen && tab === 'files') void loadSavedFiles(true);
     }, [isOpen, tab, loadSavedFiles]);
+
+    useEffect(() => subscribeDocumentFileChanges(() => {
+        if (isOpen && tab === 'files') void loadSavedFiles(true);
+    }), [isOpen, tab, loadSavedFiles]);
 
     useEffect(() => {
         if (!confirmDelete) return;

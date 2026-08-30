@@ -12,6 +12,7 @@ import {OPEN_GOOGLE_DRIVE_EVENT, type GoogleCalendarSelection, type GoogleDriveS
 import type {DriveFile} from '../GoogleWorkspacePanel/DrivePanel';
 import type {Message} from '../../types';
 import type {Gov24Document} from '../../services/api';
+import {subscribeDocumentFileChanges} from '../../services/documentFiles';
 
 import {useModels} from './useModels';
 import {useConversation} from './useConversation';
@@ -250,6 +251,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
     // 모달 열림 상태
     const [activePluginModalId, setActivePluginModalId] = useState<string | null>(null);
     const pluginExtensions = usePluginExtensions();
+    useEffect(() => subscribeDocumentFileChanges(), []);
     useEffect(() => {
         const openModal = (event: Event) => {
             setActivePluginModalId((event as CustomEvent<{modalId: string}>).detail.modalId);

@@ -26,6 +26,7 @@ from config import INSTALL_DIR
 from logger import get_logger
 from error_responses import public_error_payload
 from services.document_parser import Chunk, parse_file, parse_file_for_indexing
+from services.document_events import publish_document_change, subscribe_document_events
 from services.embedding_runtime import get_embeddings
 from elasticsearch.helpers import async_bulk
 from services.db import DOCUMENT_ORIGINALS_INDEX, INDEX_NAME, DOC_CHUNKS_INDEX, FILES_INDEX, WEB_DOCUMENTS_INDEX, WEB_DOC_CHUNKS_INDEX, get_es, get_language_index
@@ -42,6 +43,7 @@ ALLOWED_EXTENSIONS = {".pdf", ".docx", ".xlsx", ".pptx", ".txt", ".html", ".htm"
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
 MAX_SAVED_FILES = 1000
 DOCUMENT_EMBED_BATCH_SIZE = 4
+DOCUMENT_STREAM_HEARTBEAT_SECONDS = 15
 
 
 class SelectedDocumentsDownloadRequest(BaseModel):
@@ -301,6 +303,7 @@ async def _index_saved_document(
         "already_exists": False,
     }
     logger.info("인덱싱 완료: %s → %d청크 (file_id: %s)", filename, indexed, file_id)
+    publish_document_change()
     await progress("completed", 100, result)
     return result
 
@@ -372,6 +375,29 @@ async def index_document_progress(file: UploadFile = File(...)):
         event_stream(),
         media_type="application/x-ndjson",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+# ─────────────────────────────
+
+@router.get("/document/events")
+async def stream_document_changes():
+    async def event_stream():
+        async for changed in subscribe_document_events(
+            DOCUMENT_STREAM_HEARTBEAT_SECONDS,
+        ):
+            if changed:
+                yield "event: changed\ndata: {}\n\n"
+            else:
+                yield ": heartbeat\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
     )
 
 
@@ -520,6 +546,7 @@ async def delete_all_files():
             refresh=True,
         )
         collections_updated = await remove_source_references_from_collections(es, "document", file_ids)
+        publish_document_change()
         return {
             "files_deleted": files_result.get("deleted", 0),
             "originals_deleted": deleted_originals,
@@ -577,6 +604,7 @@ async def delete_file(file_id: str):
             if bool(await es.exists(index=DOCUMENT_ORIGINALS_INDEX, id=file_id)):
                 await es.delete(index=DOCUMENT_ORIGINALS_INDEX, id=file_id, refresh=True)
             collections_updated = await remove_source_references_from_collections(es, "web", [file_id])
+            publish_document_change()
             return {"deleted": web_doc["_source"].get("title", file_id), "file_id": file_id, "chunks_deleted": deleted.get("deleted", 0), "collections_updated": collections_updated}
 
         src = doc["_source"]
@@ -602,6 +630,7 @@ async def delete_file(file_id: str):
         if bool(await es.exists(index=DOCUMENT_ORIGINALS_INDEX, id=file_id)):
             await es.delete(index=DOCUMENT_ORIGINALS_INDEX, id=file_id, refresh=True)
         collections_updated = await remove_source_references_from_collections(es, "document", [file_id])
+        publish_document_change()
 
         return {
             "deleted": filename,
