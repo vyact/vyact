@@ -668,6 +668,16 @@
     color: var(--del-fg);
 }
 
+:root[data-theme='light'] .hist-menu-item.danger {
+    color: var(--danger);
+    font-weight: 550;
+}
+
+:root[data-theme='light'] .hist-menu-item.danger:hover {
+    background: color-mix(in srgb, var(--danger) 12%, var(--surface));
+    color: var(--button-danger-hover);
+}
+
 .hist-rename-input {
     flex: 1;
     background: var(--bg);
