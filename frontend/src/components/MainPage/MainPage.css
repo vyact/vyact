@@ -67,7 +67,7 @@
 
 .download-progress-fill {
   height: 100%;
-  background: var(--accent);
+  background: var(--action-download);
   transition: width 0.3s ease;
 }
 
@@ -81,5 +81,5 @@
 .download-percent {
   font-size: 24px;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--action-download);
 }

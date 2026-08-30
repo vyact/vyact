@@ -161,7 +161,7 @@
 .plugins-delete-button {
     border: 1px solid var(--del-border);
     border-radius: 8px;
-    background: rgba(var(--del-rgb), 0.08);
+    background: color-mix(in srgb, var(--action-delete) 8%, transparent);
     color: var(--del-fg-soft);
     padding: 7px;
     cursor: pointer;
@@ -170,7 +170,7 @@
 
 .plugins-delete-button:hover {
     border-color: var(--del-border-hover);
-    background: rgba(var(--del-rgb), 0.18);
+    background: color-mix(in srgb, var(--action-delete) 18%, transparent);
     color: var(--del-fg);
 }
 

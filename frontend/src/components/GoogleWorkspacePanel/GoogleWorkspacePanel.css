@@ -101,8 +101,8 @@
 .gwp-label-menu-popover { position: absolute; z-index: 8; top: calc(100% + 4px); right: 0; min-width: 138px; padding: 5px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface2); box-shadow: 0 10px 28px rgba(0, 0, 0, .3); }
 .gwp-label-menu-popover button { display: flex; width: 100%; align-items: center; gap: 8px; padding: 8px 9px; border: 0; border-radius: 6px; background: transparent; color: var(--text); font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
 .gwp-label-menu-popover button:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
-.gwp-label-menu-popover button.danger { color: #e1745c; }
-.gwp-label-menu-popover button.danger:hover { background: rgba(225, 116, 92, .12); }
+.gwp-label-menu-popover button.danger { color: var(--action-delete); }
+.gwp-label-menu-popover button.danger:hover { background: var(--action-delete-bg-hover); }
 
 .gwp-label-modal-overlay { display: flex; align-items: center; justify-content: center; padding: 20px; }
 .gwp-label-modal { width: min(420px, calc(100vw - 40px)); padding: 20px; border: 1px solid var(--border); border-radius: 13px; background: var(--surface2); box-shadow: 0 18px 50px rgba(0, 0, 0, .35); }
@@ -165,7 +165,7 @@
     opacity: .55;
 }
 .gwp-trash-selected { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 50% !important; color: var(--muted) !important; }
-.gwp-trash-selected:hover { color: var(--del-fg) !important; background: var(--del-bg-hover) !important; }
+.gwp-trash-selected:hover { color: var(--action-delete) !important; background: var(--action-delete-bg-hover) !important; }
 .gwp-move-selected-wrap { position: relative; }
 .gwp-move-selected { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 50% !important; color: var(--muted) !important; }
 .gwp-move-selected:hover:not(:disabled), .gwp-move-selected[aria-expanded="true"] { background: color-mix(in srgb, var(--accent) 12%, transparent) !important; color: var(--accent) !important; }
@@ -277,13 +277,13 @@
 .gwp-mail-attach-menu button:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .gwp-mail-attach-menu button:disabled { cursor: not-allowed; opacity: .45; }
 .gwp-mail-attach-menu button svg { flex-shrink: 0; color: var(--muted); }
-.gwp-mail-attach-menu .gwp-mail-menu-delete { border-top: 1px solid var(--border); color: var(--danger); }
-.gwp-mail-attach-menu .gwp-mail-menu-delete:hover:not(:disabled) { background: color-mix(in srgb, var(--danger) 12%, transparent); }
+.gwp-mail-attach-menu .gwp-mail-menu-delete { border-top: 1px solid var(--border); color: var(--action-delete); }
+.gwp-mail-attach-menu .gwp-mail-menu-delete:hover:not(:disabled) { background: var(--action-delete-bg-hover); }
 .gwp-mail-attach-menu .gwp-mail-menu-delete svg { color: currentColor; }
 .gwp-detail-forward { color: var(--text-secondary) !important; }
 .gwp-detail-forward:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 12%, transparent) !important; color: var(--text) !important; }
-.gwp-detail-delete { color: #e1745c !important; }
-.gwp-detail-delete:hover:not(:disabled) { background: rgba(225, 116, 92, .12) !important; }
+.gwp-detail-delete { color: var(--action-delete) !important; }
+.gwp-detail-delete:hover:not(:disabled) { background: var(--action-delete-bg-hover) !important; }
 .gwp-detail-actions > button:disabled { cursor: wait; opacity: .6; }
 .gwp-single-message-scroll { display: flex; flex: 1; min-height: 0; flex-direction: column; background: var(--bg); overflow: hidden; }
 .gwp-email-frame--single { display: flex; flex: 1; min-height: 0; }
@@ -312,7 +312,7 @@
 .gwp-thread-message-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 3px; }
 .gwp-thread-message-actions button { display: grid; width: 30px; height: 30px; place-items: center; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: pointer; }
 .gwp-thread-message-actions button:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--text); }
-.gwp-thread-message-actions button:last-child:hover { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); }
+.gwp-thread-message-actions button:last-child:hover { background: color-mix(in srgb, var(--action-delete) 14%, transparent); color: var(--action-delete); }
 .gwp-thread-message-actions button:disabled { cursor: not-allowed; opacity: .45; }
 .gwp-thread-message-summary time { flex: 0 0 auto; color: var(--muted); font-size: 11px; }
 .gwp-thread-message-toggle { display: grid; width: 30px; height: 30px; flex: 0 0 30px; place-items: center; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: pointer; }
@@ -371,7 +371,8 @@
 .gwp-mail-attachment-list { position:fixed;display:flex;width:max-content;max-width:calc(100vw - 32px);max-height:min(280px,45vh);flex-direction:column;align-items:stretch;gap:7px;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);box-shadow:0 12px 32px rgba(0,0,0,.45);overflow:auto;pointer-events:auto; }.gwp-mail-attachment-list .attachment-item{width:100%;max-width:none}.gwp-mail-attachment-list .attachment-item-open{flex:1}
 .gwp-mail-attachment-attach:disabled, .gwp-mail-attachment-download:disabled { cursor: wait; opacity: .65; }
 .gwp-mail-attachment-attach, .gwp-mail-attachment-download { display: grid; width: 36px; flex: 0 0 36px; place-items: center; padding: 0 8px; border: 0; border-left: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; }
-.gwp-mail-attachment-attach:hover, .gwp-mail-attachment-download:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.gwp-mail-attachment-attach:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.gwp-mail-attachment-download:hover { color: var(--action-download); background: var(--action-download-bg-hover); }
 .gwp-mail-activity, .gwp-send-feedback { position: absolute; top: 50%; left: 50%; z-index: 12; display: flex; align-items: center; gap: 9px; padding: 13px 17px; border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border)); border-radius: 10px; transform: translate(-50%, -50%); background: color-mix(in srgb, var(--surface2) 92%, #000); box-shadow: 0 14px 34px rgba(0, 0, 0, .52); color: var(--text); font-size: 13px; font-weight: 750; }
 .gwp-attachment-preview-backdrop { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; background: rgba(0, 0, 0, .55); }
 .gwp-attachment-preview { display: flex; width: 80vw; height: 80vh; flex-direction: column; overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: 0 20px 50px rgba(0, 0, 0, .45); }
@@ -439,7 +440,7 @@
 .gwp-drive-bulk-actions { display: flex; align-items: center; gap: 2px; }
 .gwp-selected-count { display: inline-grid; min-width: 22px; height: 22px; flex: none; place-items: center; padding: 0 6px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font-variant-numeric: tabular-nums; line-height: 1; }
 .gwp-drive-bulk-download { display: grid; width: 32px; height: 32px; place-items: center; margin: 0; padding: 0; border-radius: 50% !important; background: transparent !important; color: var(--muted) !important; cursor: pointer; }
-.gwp-drive-bulk-download:hover { background: color-mix(in srgb, var(--accent) 10%, transparent) !important; color: var(--accent) !important; }
+.gwp-drive-bulk-download:hover { background: var(--action-download-bg-hover) !important; color: var(--action-download) !important; }
 .gwp-drive-thead .gwp-drive-bulk-download,
 .gwp-drive-thead .gwp-trash-selected {
     display: grid;
@@ -494,7 +495,7 @@
 
 /* Drive more button */
 .gwp-drive-download-btn, .gwp-drive-more-btn { display: grid; width: 30px; height: 30px; place-items: center; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; transition: background-color .15s, color .15s; }
-.gwp-drive-download-btn:hover,
+.gwp-drive-download-btn:hover { background: var(--action-download-bg-hover); color: var(--action-download); }
 .gwp-drive-more-btn:hover,
 .gwp-drive-more-btn[aria-expanded='true'] { background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); }
 
@@ -503,9 +504,9 @@
 .gwp-drive-context-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 14px; border: 0; background: transparent; color: var(--text); font-size: 13px; cursor: pointer; white-space: nowrap; }
 .gwp-drive-context-menu button:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .gwp-drive-context-menu button svg { flex-shrink: 0; color: var(--muted); }
-.gwp-drive-context-menu .gwp-drive-context-danger { color: #e1745c; }
-.gwp-drive-context-menu .gwp-drive-context-danger svg { color: #e1745c; }
-.gwp-drive-context-menu .gwp-drive-context-danger:hover { background: rgba(225, 116, 92, .12); }
+.gwp-drive-context-menu .gwp-drive-context-danger { color: var(--action-delete); }
+.gwp-drive-context-menu .gwp-drive-context-danger svg { color: currentColor; }
+.gwp-drive-context-menu .gwp-drive-context-danger:hover { background: var(--action-delete-bg-hover); }
 
 /* Drive share copied feedback */
 .gwp-drive-copied { display: inline-flex; align-items: center; gap: 4px; color: var(--accent); font-size: 12px; white-space: nowrap; animation: gwp-fade-in .2s ease; }
@@ -566,7 +567,7 @@
 .gwp-drive-permission small, .gwp-drive-general-access small { margin-top: 3px; color: var(--muted); font-size: 12px; }
 .gwp-drive-permission-role { color: var(--muted); font-size: 12px; }
 .gwp-drive-permission > button { display: grid; width: 30px; height: 30px; place-items: center; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }
-.gwp-drive-permission > button:hover { background: color-mix(in srgb, #e05252 12%, transparent); color: #e05252; }
+.gwp-drive-permission > button:hover { background: var(--action-delete-bg-hover); color: var(--action-delete); }
 .gwp-drive-general-access { display: flex; align-items: flex-start; gap: 12px; padding: 14px; border-radius: 10px; background: var(--modal-inset); }
 .gwp-drive-general-access > svg { flex: none; color: var(--accent); }
 .gwp-drive-general-access > div { display: flex; min-width: 0; flex: 1; flex-direction: column; align-items: flex-start; }
@@ -580,20 +581,20 @@
 .gwp-drive-general-role-select .custom-select-item { padding: 11px 12px; font-size: 13px; }
 .gwp-drive-copy-link { display: inline-flex; align-items: center; gap: 7px; padding: 9px 14px; border: 1px solid var(--accent); border-radius: 8px; background: transparent; color: var(--accent); font-weight: 600; cursor: pointer; }
 .gwp-drive-download-overlay { z-index: 9600; }
-.gwp-drive-download-dialog { width: min(520px, calc(100vw - 40px)); overflow: hidden; border: 1px solid var(--accent); border-radius: 16px; background: var(--surface2); color: var(--text); box-shadow: 0 18px 60px rgba(0, 0, 0, .38); }
+.gwp-drive-download-dialog { width: min(520px, calc(100vw - 40px)); overflow: hidden; border: 1px solid var(--action-download); border-radius: 16px; background: var(--surface2); color: var(--text); box-shadow: 0 18px 60px rgba(0, 0, 0, .38); }
 .gwp-drive-download-dialog > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 20px 22px; border-bottom: 1px solid var(--border); }
 .gwp-drive-download-dialog h2 { margin: 0; font-size: 19px; font-weight: 650; }
 .gwp-drive-download-dialog header p { max-width: 420px; margin: 5px 0 0; overflow: hidden; color: var(--muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .gwp-drive-download-dialog header button { display: grid; width: 32px; height: 32px; flex: none; place-items: center; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: pointer; }
 .gwp-drive-download-dialog header button:hover { background: var(--surface); color: var(--text); }
 .gwp-drive-download-state { display: grid; grid-template-columns: 42px 1fr 36px; align-items: center; gap: 12px; min-height: 78px; padding: 16px 22px; }
-.gwp-drive-download-state > svg:first-child { color: var(--accent); }
+.gwp-drive-download-state > svg:first-child { color: var(--action-download); }
 .gwp-drive-download-state strong, .gwp-drive-download-state small { display: block; }
 .gwp-drive-download-state strong { font-size: 14px; font-weight: 600; }
 .gwp-drive-download-state small { margin-top: 5px; color: var(--muted); font-size: 12px; }
 .gwp-drive-download-state.is-error { grid-template-columns: 42px 1fr; }
 .gwp-drive-download-state.is-error > svg { color: #e1745c; }
-.gwp-drive-download-spinner { color: var(--accent); animation: gwp-spin 1s linear infinite; }
+.gwp-drive-download-spinner { color: var(--action-download); animation: gwp-spin 1s linear infinite; }
 .gwp-drive-download-dialog > footer { display: flex; justify-content: flex-end; padding: 0 22px 18px; }
 .gwp-drive-download-dialog > footer button { padding: 8px 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); cursor: pointer; }
 @keyframes gwp-fade-in { from { opacity: 0; } to { opacity: 1; } }
@@ -640,7 +641,7 @@
 .gwp-recipient-chip { display: inline-flex; min-width: 0; max-width: 100%; align-items: center; gap: 3px; padding: 4px 4px 4px 9px; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border)); border-radius: 999px; background: color-mix(in srgb, var(--accent) 12%, var(--surface)); color: var(--text); }
 .gwp-recipient-chip > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .gwp-recipient-chip button { display: grid; width: 20px; height: 20px; place-items: center; padding: 0; border-radius: 50%; color: var(--muted); font-size: 18px; line-height: 1; }
-.gwp-recipient-chip button:hover { background: color-mix(in srgb, #e1745c 18%, transparent); color: #e1745c; }
+.gwp-recipient-chip button:hover { background: color-mix(in srgb, var(--action-delete) 18%, transparent); color: var(--action-delete); }
 .gwp-recipient-suggestions { position: absolute; top: calc(100% + 6px); right: 8px; left: 0; z-index: 20; display: grid; max-height: 240px; padding: 6px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); box-shadow: 0 12px 30px rgba(0, 0, 0, .42); overflow-y: auto; }
 .gwp-recipient-suggestions button { display: grid; width: 100%; gap: 2px; padding: 8px 10px; border: 0; border-radius: 6px; background: transparent; color: var(--text); text-align: left; cursor: pointer; }
 .gwp-recipient-suggestions button:hover, .gwp-recipient-suggestions button.active { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); }
@@ -666,7 +667,7 @@
 .gwp-compose-attachment-row > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .gwp-compose-attachment-row small { color: var(--muted); font-size: 11px; white-space: nowrap; }
 .gwp-compose-attachment-row button { display: grid; width: 24px; height: 24px; place-items: center; padding: 0; border-radius: 50%; color: var(--muted); font-size: 18px; line-height: 1; }
-.gwp-compose-attachment-row button:hover { background: color-mix(in srgb, #e1745c 20%, transparent); color: #e1745c; }
+.gwp-compose-attachment-row button:hover { background: color-mix(in srgb, var(--action-delete) 20%, transparent); color: var(--action-delete); }
 .gwp-compose .gwp-compose-send { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 96px; min-height: 40px; padding: 9px 20px !important; border: 1px solid var(--accent) !important; border-radius: 8px !important; background: var(--accent) !important; color: white !important; font-size: var(--modal-btn, 14px); font-weight: 600; white-space: nowrap; }
 .gwp-compose .gwp-compose-send:hover:not(:disabled) { background: var(--button-primary-hover) !important; }
 .gwp-compose-original { border-top: 1px solid var(--border); margin-top: -1px; border-radius: 0 0 8px 8px; overflow: hidden; background: #fff; }
@@ -878,7 +879,7 @@
 .gwp-cal-event-description.is-expanded .gwp-cal-event-description-toggle svg { transform: rotate(180deg); }
 .gwp-cal-event-description-full { grid-column: 1 / -1; margin-top: 1px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--text-secondary) 16%, var(--border)); border-radius: 8px; background: color-mix(in srgb, var(--surface) 72%, var(--surface2)); color: var(--text-secondary); white-space: pre-wrap; overflow-wrap: anywhere; box-shadow: inset 3px 0 0 color-mix(in srgb, var(--accent) 34%, var(--border)); }
 .gwp-cal-event-delete { display: grid; width: 27px; height: 27px; flex: none; place-items: center; padding: 0; border: 1px solid color-mix(in srgb, var(--muted) 18%, var(--border)); border-radius: 7px; background: color-mix(in srgb, var(--surface) 62%, transparent); color: var(--muted); cursor: pointer; transition: border-color .15s, background-color .15s, color .15s; }
-.gwp-cal-event-delete:hover, .gwp-cal-event-delete:focus-visible { border-color: color-mix(in srgb, var(--danger, #e1745c) 38%, var(--border)); background: color-mix(in srgb, var(--danger, #e1745c) 9%, var(--surface)); color: var(--danger, #e1745c); outline: none; }
+.gwp-cal-event-delete:hover, .gwp-cal-event-delete:focus-visible { border-color: var(--action-delete-border-hover); background: var(--action-delete-bg-hover); color: var(--action-delete); outline: none; }
 .gwp-cal-event-row.past { background: color-mix(in srgb, var(--surface2) 28%, transparent); }
 :root[data-theme='light'] .gwp-cal-event-row.past { background: color-mix(in srgb, var(--surface2) 28%, var(--surface)); }
 .gwp-cal-event-row.past::before { background: color-mix(in srgb, var(--muted) 60%, transparent); }
@@ -927,7 +928,7 @@
 .gwp-cal-reminder-row .custom-select-trigger { min-height: 34px; padding: 6px 8px; border-radius: 7px; background: var(--surface); }
 .gwp-cal-reminder-row .custom-select-item { padding: 7px 9px; }
 .gwp-cal-reminder-remove { display: grid; width: 28px; height: 28px; place-items: center; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }
-.gwp-cal-reminder-remove:hover { background: color-mix(in srgb, var(--danger) 10%, transparent); color: var(--danger); }
+.gwp-cal-reminder-remove:hover { background: var(--action-delete-bg-hover); color: var(--action-delete); }
 .gwp-date-time-picker { position: relative; }
 .gwp-date-time-trigger { display: flex; align-items: center; justify-content: space-between; box-sizing: border-box; width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); color: var(--text); font: inherit; font-size: 13px; cursor: pointer; transition: border-color .15s, box-shadow .15s; }
 .gwp-date-time-trigger:focus, .gwp-date-time-trigger[aria-expanded="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent); outline: none; }

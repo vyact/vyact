@@ -191,7 +191,7 @@
 }
 
 .memo-icon-btn-danger:hover {
-    color: var(--danger);
+    color: var(--action-delete);
 }
 
 .memo-more-btn {

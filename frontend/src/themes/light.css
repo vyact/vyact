@@ -13,6 +13,8 @@
   --success: #168557;
   --warn: #b66b09;
   --danger: #d83b3b;
+  --action-delete: #d23737;
+  --action-download: #2f6fae;
   --text: #202938;
   --text-secondary: #46566b;
   --muted: #68778b;
@@ -23,7 +25,6 @@
   --modal-inset-hover: #eef2f6;
   --code-panel-bg: #f3f6fa;
   --code-panel-surface: #f8fafc;
-  --del-rgb: 210, 55, 55;
   --on-accent: #ffffff;
   --interactive-hover: rgba(32, 41, 56, 0.07);
   --interactive-active: rgba(32, 41, 56, 0.11);

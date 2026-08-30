@@ -164,7 +164,7 @@ const CodePanel: React.FC<{ style?: React.CSSProperties }> = ({ style }) => {
                         )}
                     </button>
                     <button
-                        className="cp-btn"
+                        className="cp-btn cp-btn--download"
                         onClick={() => downloadFile(activeFile)}
                         aria-label={t('message.codeReviewDownload')}
                     >

@@ -43,7 +43,7 @@
 }
 .mcp-danger:hover {
     color: var(--del-fg);
-    background: rgba(var(--del-rgb), 0.1);
+    background: color-mix(in srgb, var(--action-delete) 10%, transparent);
     border-color: var(--del-border-hover);
 }
 .mcp-danger:focus-visible {
@@ -260,7 +260,7 @@
     color: var(--muted, #999); cursor: pointer;
     transition: color .15s, background .15s;
 }
-.mcp-file-clear:hover { background: rgba(var(--del-rgb), .08); color: var(--del-fg); }
+.mcp-file-clear:hover { background: color-mix(in srgb, var(--action-delete) 8%, transparent); color: var(--action-delete); }
 
 /* Google Workspace 셋업 가이드 */
 .gw-guide {

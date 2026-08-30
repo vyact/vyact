@@ -95,6 +95,7 @@
 }
 
 .cp-btn:hover { color: var(--text); background: var(--surface2); border-color: var(--accent2); }
+.cp-btn--download:hover { color: var(--action-download); background: var(--action-download-bg-hover); border-color: var(--action-download-border-hover); }
 .cp-btn--copied { color: #67d495 !important; border-color: rgba(103,212,149,0.42) !important; }
 
 :root[data-theme='light'] .cp-btn--copied {
@@ -159,6 +160,12 @@
     border-color:color-mix(in srgb, var(--accent) 52%, var(--border));
     background:color-mix(in srgb, var(--surface) 90%, var(--accent) 10%);
     color:var(--accent2);
+}
+
+:root[data-theme='light'] .cp-btn--download:hover {
+    border-color:var(--action-download-border-hover);
+    background:var(--action-download-bg-hover);
+    color:var(--action-download);
 }
 
 :root[data-theme='light'] .cp-btn.cp-btn--copied {

@@ -5,15 +5,25 @@
 :root {
   --r: 12px;
 
-  /* ── 삭제/위험 버튼 공통 색상 (사이드바 휴지통 .btn-delete-all 기준) ──
-     --del-rgb 채널값을 두고, 투명도별로 조합해 border/text/bg 를 만든다.
-     삭제 계열 버튼 색을 바꾸려면 --del-rgb 만 수정하면 전체에 반영된다. */
-  --del-fg: rgb(var(--del-rgb));                  /* 강조 텍스트/hover */
-  --del-fg-soft: rgba(var(--del-rgb), 0.7);       /* 기본 텍스트 */
-  --del-fg-faint: rgba(var(--del-rgb), 0.5);      /* 약한 아이콘 */
-  --del-border: rgba(var(--del-rgb), 0.25);       /* 기본 테두리 */
-  --del-border-hover: rgba(var(--del-rgb), 0.5);  /* hover 테두리 */
-  --del-bg-hover: rgba(var(--del-rgb), 0.12);     /* hover 배경 */
+  /* ── 의미 기반 액션 색상 ──
+     테마 파일의 --action-delete / --action-download 하나만 바꾸면
+     해당 액션의 text, border, hover background가 함께 변경된다. */
+  --action-delete-soft: color-mix(in srgb, var(--action-delete) 70%, transparent);
+  --action-delete-faint: color-mix(in srgb, var(--action-delete) 50%, transparent);
+  --action-delete-border: color-mix(in srgb, var(--action-delete) 25%, transparent);
+  --action-delete-border-hover: color-mix(in srgb, var(--action-delete) 50%, transparent);
+  --action-delete-bg-hover: color-mix(in srgb, var(--action-delete) 12%, transparent);
+  --action-download-border-hover: color-mix(in srgb, var(--action-download) 38%, var(--border));
+  --action-download-bg-hover: color-mix(in srgb, var(--action-download) 10%, transparent);
+  --action-download-filled-hover: color-mix(in srgb, var(--action-download) 88%, #000000);
+
+  /* 기존 컴포넌트 호환 별칭. 새 스타일은 --action-delete-*를 사용한다. */
+  --del-fg: var(--action-delete);
+  --del-fg-soft: var(--action-delete-soft);
+  --del-fg-faint: var(--action-delete-faint);
+  --del-border: var(--action-delete-border);
+  --del-border-hover: var(--action-delete-border-hover);
+  --del-bg-hover: var(--action-delete-bg-hover);
 
   /* ── 모달 공통 글자 크기 (메모 모달 기준) ──
      모든 모달의 제목/본문/버튼/라벨 폰트를 이 값들로 통일한다.

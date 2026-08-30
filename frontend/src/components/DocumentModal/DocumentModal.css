@@ -42,7 +42,7 @@
 .dm-download-overlay strong { font-size: 15px; }
 .dm-download-overlay > span:not(.dm-download-spinner) { color: var(--muted); font-size: 13px; }
 .dm-download-overlay small { max-width: min(440px, calc(100% - 48px)); overflow: hidden; color: var(--muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-.dm-download-spinner { width: 30px; height: 30px; border: 3px solid color-mix(in srgb, var(--accent) 28%, transparent); border-top-color: var(--accent); border-radius: 50%; animation: dm-spin .8s linear infinite; }
+.dm-download-spinner { width: 30px; height: 30px; border: 3px solid color-mix(in srgb, var(--action-download) 28%, transparent); border-top-color: var(--action-download); border-radius: 50%; animation: dm-spin .8s linear infinite; }
 
 /* 헤더 */
 .dm-header {
@@ -281,7 +281,7 @@
     flex-shrink: 0;
     transition: background 0.15s, color 0.15s;
 }
-.dm-file-remove:hover { background: rgba(255,84,73,0.15); color: var(--danger); }
+.dm-file-remove:hover { background: color-mix(in srgb, var(--action-delete) 15%, transparent); color: var(--action-delete); }
 
 /* 질의 입력 */
 .dm-question-wrap {
@@ -693,9 +693,9 @@
 }
 
 .dm-bulk-action-btn.icon-only:hover:not(:disabled) {
-    border-color: color-mix(in srgb, var(--code-color) 38%, var(--border));
-    background: color-mix(in srgb, var(--code-color) 10%, transparent);
-    color: var(--code-color);
+    border-color: var(--action-download-border-hover);
+    background: var(--action-download-bg-hover);
+    color: var(--action-download);
 }
 
 .dm-bulk-action-btn.icon-only.danger {
@@ -703,9 +703,9 @@
 }
 
 .dm-bulk-action-btn.icon-only.danger:hover:not(:disabled) {
-    border-color: color-mix(in srgb, var(--danger) 36%, var(--border));
-    background: color-mix(in srgb, var(--danger) 10%, transparent);
-    color: var(--danger);
+    border-color: var(--action-delete-border-hover);
+    background: var(--action-delete-bg-hover);
+    color: var(--action-delete);
 }
 
 .dm-bulk-action-btn:disabled,
@@ -852,9 +852,9 @@
 }
 
 .dm-saved-actions .dm-action-btn:hover:not(:disabled) {
-    border-color: color-mix(in srgb, var(--code-color) 38%, var(--border));
-    background: color-mix(in srgb, var(--code-color) 10%, transparent);
-    color: var(--code-color);
+    border-color: var(--action-download-border-hover);
+    background: var(--action-download-bg-hover);
+    color: var(--action-download);
 }
 
 .dm-saved-actions .dm-action-btn.danger {
@@ -863,9 +863,9 @@
 }
 
 .dm-saved-actions .dm-action-btn.danger:hover:not(:disabled) {
-    border-color: color-mix(in srgb, var(--danger) 36%, var(--border));
-    background: color-mix(in srgb, var(--danger) 10%, transparent);
-    color: var(--danger);
+    border-color: var(--action-delete-border-hover);
+    background: var(--action-delete-bg-hover);
+    color: var(--action-delete);
 }
 
 .dm-action-btn {
@@ -913,11 +913,11 @@
     background: color-mix(in srgb, var(--accent) 14%, transparent);
     color: var(--accent);
 }
-.dm-action-btn.danger { color: var(--danger); border-color: rgba(255,84,73,0.3); }
-.dm-action-btn.danger:hover { background: rgba(255,84,73,0.1); border-color: var(--danger); }
+.dm-action-btn.danger { color: var(--action-delete); border-color: var(--action-delete-border); }
+.dm-action-btn.danger:hover { background: var(--action-delete-bg-hover); border-color: var(--action-delete); }
 .dm-action-btn.danger.filled {
-    background: var(--danger);
-    border-color: var(--danger);
+    background: var(--action-delete);
+    border-color: var(--action-delete);
     color: #fff;
 }
 .dm-action-btn.danger.filled:hover { border-color: var(--button-danger-hover); background: var(--button-danger-hover); }

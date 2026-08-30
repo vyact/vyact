@@ -126,7 +126,7 @@
 .confirm-modal-btn.danger {
     color: var(--del-fg);
     border-color: var(--del-border-hover);
-    background: rgba(var(--del-rgb), 0.1);
+    background: color-mix(in srgb, var(--action-delete) 10%, transparent);
 }
 
 .confirm-modal-btn.danger:hover:not(:disabled) {

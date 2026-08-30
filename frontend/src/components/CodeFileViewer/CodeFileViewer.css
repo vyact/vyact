@@ -164,8 +164,9 @@
 }
 
 .cfv-dl-btn:hover {
-    background: var(--surface2);
-    border-color: var(--text-secondary, #b4b4b4);
+    color: var(--action-download);
+    background: var(--action-download-bg-hover);
+    border-color: var(--action-download-border-hover);
 }
 
 .cfv-all-btn {
@@ -185,9 +186,9 @@
 }
 
 .cfv-all-btn:hover {
-    color: var(--text);
-    background: var(--surface2);
-    border-color: var(--accent2);
+    color: var(--action-download);
+    background: var(--action-download-bg-hover);
+    border-color: var(--action-download-border-hover);
 }
 
 @media (max-width: 560px) {

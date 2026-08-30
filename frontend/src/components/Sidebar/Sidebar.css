@@ -186,7 +186,7 @@
 .project-row-actions > button:hover { color:var(--accent); background:color-mix(in srgb,var(--text) 8%,transparent); }
 .project-row-actions button:disabled, .project-add-btn:disabled, .project-collapse-btn:disabled, .project-select-btn:disabled, .project-conversation:disabled { cursor:not-allowed; opacity:.4; }
 .project-row-actions .project-delete-btn { color: var(--muted); }
-.project-row-actions .project-delete-btn:hover { color: var(--del-fg); background:rgba(255,80,80,.1); }
+.project-row-actions .project-delete-btn:hover { color: var(--action-delete); background:var(--action-delete-bg-hover); }
 .project-collapse-btn { flex:1; min-height:28px; justify-content:flex-start; color:var(--muted); font:inherit; font-weight:inherit; gap:5px; padding:0; }
 .project-collapse-btn svg { transition:transform .15s; }.project-collapse-btn svg.closed { transform:rotate(-90deg); }
 .project-row:is(:hover, :active) { background:color-mix(in srgb,var(--text) 5%,transparent); }
@@ -308,16 +308,16 @@
 }
 
 :root[data-theme='light'] .btn-delete-all {
-    background: color-mix(in srgb, var(--danger) 7%, var(--surface));
-    border-color: color-mix(in srgb, var(--danger) 42%, var(--border));
-    color: var(--danger);
+    background: color-mix(in srgb, var(--action-delete) 7%, var(--surface));
+    border-color: color-mix(in srgb, var(--action-delete) 42%, var(--border));
+    color: var(--action-delete);
     box-shadow: none;
 }
 
 :root[data-theme='light'] .btn-delete-all:is(:hover, :active) {
-    background: color-mix(in srgb, var(--danger) 14%, var(--surface));
-    border-color: var(--danger);
-    color: var(--button-danger-hover);
+    background: color-mix(in srgb, var(--action-delete) 14%, var(--surface));
+    border-color: var(--action-delete);
+    color: var(--action-delete);
 }
 
 .btn-refresh-history {
@@ -669,13 +669,13 @@
 }
 
 :root[data-theme='light'] .hist-menu-item.danger {
-    color: var(--danger);
+    color: var(--action-delete);
     font-weight: 550;
 }
 
 :root[data-theme='light'] .hist-menu-item.danger:hover {
-    background: color-mix(in srgb, var(--danger) 12%, var(--surface));
-    color: var(--button-danger-hover);
+    background: color-mix(in srgb, var(--action-delete) 12%, var(--surface));
+    color: var(--action-delete);
 }
 
 .hist-rename-input {
@@ -700,7 +700,7 @@
     display: flex;
     align-items: center;
     gap: 5px;
-    background: rgba(var(--del-rgb), 0.08);
+    background: color-mix(in srgb, var(--action-delete) 8%, transparent);
     border: 1px solid var(--del-border);
     color: var(--del-fg);
     font-size: 12px;
@@ -712,7 +712,7 @@
 }
 
 .hist-delete-all-btn:hover {
-    background: rgba(var(--del-rgb), 0.18);
+    background: color-mix(in srgb, var(--action-delete) 18%, transparent);
     border-color: var(--del-border-hover);
 }
 
