@@ -205,6 +205,8 @@ type ShareModalProps = {
 
 type ShareBusyAction = 'loading' | 'invite' | 'generalAccess' | `removePermission:${string}`;
 
+const INVITE_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export function DriveShareModal({file, onClose, onPermissionsChange}: ShareModalProps) {
     const {t} = useTranslation('main');
     const [permissions, setPermissions] = useState<DrivePermission[]>([]);
@@ -216,6 +218,7 @@ export function DriveShareModal({file, onClose, onPermissionsChange}: ShareModal
     const [copied, setCopied] = useState(false);
     const busy = busyAction !== null;
     const isSaving = busyAction !== null && busyAction !== 'loading';
+    const isEmailValid = INVITE_EMAIL_PATTERN.test(email.trim());
     const inviteRoleOptions = [
         {value: 'reader', label: t('googleWorkspace.viewer')},
         {value: 'writer', label: t('googleWorkspace.editor')},
@@ -241,7 +244,7 @@ export function DriveShareModal({file, onClose, onPermissionsChange}: ShareModal
     }, [file.id]);
 
     const invite = async () => {
-        if (!email.trim() || busy) return;
+        if (!isEmailValid || busy) return;
         setBusyAction('invite');
         try {
             await api.createGoogleDrivePermission(file.id, email.trim(), inviteRole);
@@ -289,7 +292,7 @@ export function DriveShareModal({file, onClose, onPermissionsChange}: ShareModal
         <section className="gwp-drive-dialog gwp-drive-share-dialog" onClick={event => event.stopPropagation()}>
             <header><div><h2>{t('googleWorkspace.shareTitle', {name: file.name})}</h2><p>{t('googleWorkspace.shareDescription')}</p></div><button type="button" onClick={close} disabled={isSaving} aria-label={t('googleWorkspace.close')}><X size={20}/></button></header>
             {busyAction === 'loading' && <div className="gwp-drive-share-loading" role="status">
-                <LoaderCircle aria-hidden="true" size={32}/>
+                <LoaderCircle aria-hidden="true" size={38}/>
                 <span>{t('googleWorkspace.loading')}</span>
             </div>}
             <form className="gwp-drive-invite" onSubmit={event => { event.preventDefault(); void invite(); }}>
@@ -304,7 +307,7 @@ export function DriveShareModal({file, onClose, onPermissionsChange}: ShareModal
                     onChange={value => setInviteRole(value as 'reader' | 'writer')}
                     disabled={busy}
                 />
-                <button type="submit" disabled={!email.trim() || busy}>
+                <button type="submit" disabled={!isEmailValid || busy}>
                     {busyAction === 'invite' && <LoaderCircle className="gwp-drive-dialog-button-spinner"
                                                               aria-hidden="true" size={16}/>}
                     {busyAction === 'invite' ? t('googleWorkspace.processing') : t('googleWorkspace.invite')}

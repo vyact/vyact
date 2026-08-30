@@ -545,7 +545,7 @@
 .gwp-drive-name-dialog > footer button { width: 128px; }
 .gwp-drive-name-dialog .gwp-drive-dialog-secondary { background: transparent; }
 .gwp-drive-share-dialog { position: relative; width: min(640px, calc(100vw - 40px)); max-height: min(760px, calc(100vh - 40px)); overflow-y: auto; background: var(--modal-bg); }
-.gwp-drive-share-loading { position: absolute; inset: 72px 0 0; z-index: 5; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; background: color-mix(in srgb, var(--modal-bg) 92%, transparent); color: var(--muted); font-size: 13px; }
+.gwp-drive-share-loading { position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px; background: var(--modal-bg); color: var(--text); font-size: 15px; font-weight: 600; }
 .gwp-drive-share-loading svg { color: var(--accent); animation: gwp-spin .8s linear infinite; }
 .gwp-drive-invite { display: flex; align-items: center; gap: 8px; margin: 0 24px 20px; padding: 7px 8px 7px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--modal-inset); }
 .gwp-drive-invite > svg { flex: none; color: var(--muted); }
@@ -556,7 +556,7 @@
 .gwp-drive-invite-role-select .custom-select-trigger.open { border-color: color-mix(in srgb, var(--accent) 60%, var(--border)); }
 .gwp-drive-invite-role-select .custom-select-dropdown { min-width: 140px; }
 .gwp-drive-invite-role-select .custom-select-item { padding: 10px 12px; font-size: 13px; }
-.gwp-drive-invite button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 64px; padding: 7px 12px; border: 0; border-radius: 7px; background: var(--accent); color: var(--on-accent); font-weight: 600; cursor: pointer; }
+.gwp-drive-invite > button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 64px; padding: 7px 12px; border: 0; border-radius: 7px; background: var(--accent); color: var(--on-accent); font-weight: 600; cursor: pointer; }
 .gwp-drive-share-section { padding: 0 24px 20px; }
 .gwp-drive-share-section h3 { margin: 0 0 12px; font-size: 14px; }
 .gwp-drive-share-empty { color: var(--muted); font-size: 13px; }
