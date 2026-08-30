@@ -693,9 +693,9 @@
 }
 
 .dm-bulk-action-btn.icon-only:hover:not(:disabled) {
-    border-color: color-mix(in srgb, var(--accent) 36%, var(--border));
-    background: color-mix(in srgb, var(--accent) 10%, transparent);
-    color: var(--accent);
+    border-color: color-mix(in srgb, var(--code-color) 38%, var(--border));
+    background: color-mix(in srgb, var(--code-color) 10%, transparent);
+    color: var(--code-color);
 }
 
 .dm-bulk-action-btn.icon-only.danger {
@@ -852,9 +852,9 @@
 }
 
 .dm-saved-actions .dm-action-btn:hover:not(:disabled) {
-    border-color: color-mix(in srgb, var(--accent) 36%, var(--border));
-    background: color-mix(in srgb, var(--accent) 10%, transparent);
-    color: var(--accent);
+    border-color: color-mix(in srgb, var(--code-color) 38%, var(--border));
+    background: color-mix(in srgb, var(--code-color) 10%, transparent);
+    color: var(--code-color);
 }
 
 .dm-saved-actions .dm-action-btn.danger {

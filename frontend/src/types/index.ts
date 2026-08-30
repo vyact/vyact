@@ -148,6 +148,7 @@ export interface Message {
     attachments?: MessageAttachment[];
     isError?: boolean;
     errorTitle?: string;
+    errorCode?: 'model_no_response' | 'tool_call_failed' | 'reasoning_token_limit';
     toolStatus?: ToolActivity;  // MCP/code tool 실행 진행표시
     activityLog?: ToolActivity[]; // 도구·LLM 실행 흐름 누적 표시
     progressMessages?: ResponseProgressMessage[]; // tool 호출 전 모델이 설명한 진행 과정

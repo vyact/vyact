@@ -1137,10 +1137,19 @@ async def query_stream(req: QueryRequest):
                 user_message = build_user_message(original_question, user_ts, req.attachments)
                 # "참고" 표시용 — url이 있는 소스만
                 article_sources = [s for s in gen_sources if s.get("url") and s.get("source") != "붙여넣기"]
+                assistant_error_code = None
+                if not answer:
+                    if response_truncated and req.reasoning not in (None, False, "none"):
+                        assistant_error_code = "reasoning_token_limit"
+                    elif any(activity.get("outcome") == "failed" for activity in _activity_log):
+                        assistant_error_code = "tool_call_failed"
+                    else:
+                        assistant_error_code = "model_no_response"
                 assistant_msg = build_assistant_message(
                     answer, gen_model, article_sources, injected_context, gen_stats, _activity_log,
                     code_changes=code_changes,
                     truncated=response_truncated,
+                    error_code=assistant_error_code,
                 )
 
                 # 여기까진 전부 순수 계산(빠름). ES 저장(save_conversation의 refresh=True 등)과
@@ -1254,8 +1263,17 @@ async def query_stream(req: QueryRequest):
             user_message = build_user_message(original_question, user_ts, req.attachments, articles)
             article_sources = filter_article_sources(context_docs)
             response_truncated = finish_reason == "length"
+            assistant_error_code = None
+            if not answer:
+                assistant_error_code = (
+                    "reasoning_token_limit"
+                    if response_truncated and req.reasoning not in (None, False, "none")
+                    else "model_no_response"
+                )
             assistant_msg = build_assistant_message(
-                answer, model, article_sources, injected_context, stats, truncated=response_truncated,
+                answer, model, article_sources, injected_context, stats,
+                truncated=response_truncated,
+                error_code=assistant_error_code,
             )
 
             if not req.no_history:

@@ -272,6 +272,7 @@ def build_assistant_message(
     activity_log: list[dict] | None = None,
     code_changes: dict | None = None,
     truncated: bool = False,
+    error_code: str | None = None,
 ) -> dict:
     """히스토리 저장용 assistant 메시지 빌드."""
     now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
@@ -293,6 +294,9 @@ def build_assistant_message(
         msg["codeChanges"] = code_changes
     if truncated:
         msg["truncated"] = True
+    if error_code:
+        msg["isError"] = True
+        msg["errorCode"] = error_code
     return msg
 
 

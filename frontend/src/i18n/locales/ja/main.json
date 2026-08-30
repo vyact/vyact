@@ -1004,7 +1004,7 @@
     "preparingResponse": "回答を準備しています…",
     "completed": "ステップが完了しました",
     "failed": "ステップに失敗しました",
-    "readCompleted": "コードの読み込み完了",
+    "readCompleted": "コードの確認完了",
     "searchCompleted": "コード検索完了",
     "editCompleted": "コード修正完了",
     "checkCompleted": "コードチェック完了",

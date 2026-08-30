@@ -74,6 +74,13 @@ def test_build_assistant_message_omits_truncation_when_complete():
     assert "truncated" not in message
 
 
+def test_build_assistant_message_persists_error_state():
+    message = build_assistant_message("", "gpt-test", error_code="model_no_response")
+
+    assert message["isError"] is True
+    assert message["errorCode"] == "model_no_response"
+
+
 def test_direct_document_limit_is_shared_across_all_direct_documents():
     documents = [
         {"content": "a" * DIRECT_DOCUMENT_TOTAL_MAX_CHARS, "direct_document": True},

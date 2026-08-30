@@ -1004,7 +1004,7 @@
     "preparingResponse": "Préparation de votre réponse…",
     "completed": "Étape terminée",
     "failed": "Échec de l’étape",
-    "readCompleted": "Lecture du code terminée",
+    "readCompleted": "Code examiné",
     "searchCompleted": "Recherche dans le code terminée",
     "editCompleted": "Modification du code terminée",
     "checkCompleted": "Vérification du code terminée",

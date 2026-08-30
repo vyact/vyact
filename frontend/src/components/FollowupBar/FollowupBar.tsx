@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {useTranslation} from 'react-i18next';
+import {getTopmostModalOverlay} from '../common/ModalOverlay/modalStack';
 import './FollowupBar.css';
 
 interface FollowupBarProps {
@@ -54,6 +55,9 @@ const FollowupBar: React.FC<FollowupBarProps> = ({ followups, onSubmit, onDismis
         if (!onDismiss) return;
         const onKey = (e: KeyboardEvent) => {
             if (e.key !== 'Escape') return;
+            // 열린 모달이 있으면 최상단 ModalOverlay가 Escape를 먼저 처리한다.
+            // Followups가 뒤에서 함께 닫히거나 입력을 지우면 안 된다.
+            if (getTopmostModalOverlay()) return;
             e.preventDefault();
             if (customText.trim()) {
                 setCustomText('');

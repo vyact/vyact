@@ -1004,7 +1004,7 @@
     "preparingResponse": "กำลังเตรียมคำตอบให้คุณ…",
     "completed": "ขั้นตอนเสร็จสิ้น",
     "failed": "ขั้นตอนล้มเหลว",
-    "readCompleted": "อ่านโค้ดเสร็จแล้ว",
+    "readCompleted": "ตรวจสอบโค้ดแล้ว",
     "searchCompleted": "ค้นหาโค้ดเสร็จแล้ว",
     "editCompleted": "แก้ไขโค้ดเสร็จแล้ว",
     "checkCompleted": "ตรวจสอบโค้ดเสร็จแล้ว",

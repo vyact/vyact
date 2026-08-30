@@ -48,8 +48,10 @@ export default function ResponseProcess({activities = [], progressMessages = [],
                         ? <CircleCheck size={15} aria-hidden="true"/>
                         : <BookOpen size={15} aria-hidden="true"/>;
             return <div key={activity.id ?? `tool-${item.timestamp}-${index}`} className={`msg-process-tool ${activity.phase}${outcomeClass}`}>
-                {icon}
-                <span>{getToolActivityDisplayLabel(activity.name, activity.label, t, activity.phase, activity.outcome)}</span>
+                <div className="msg-process-tool-header">
+                    {icon}
+                    <span>{getToolActivityDisplayLabel(activity.name, activity.label, t, activity.phase, activity.outcome)}</span>
+                </div>
                 {detail && <code>{detail}</code>}
             </div>;
         })())}

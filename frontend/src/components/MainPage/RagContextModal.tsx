@@ -1,10 +1,12 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import {X} from 'lucide-react';
 import hljs from '../../utils/syntaxHighlighter';
 import 'highlight.js/styles/github-dark.css';
 import { renderMarkdown } from '../../utils/markdownUtils';
 import { cleanNewsText } from '../../utils/helpers';
 import { getLocalizedSourceLabel } from '../../utils/sourceLabels';
+import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import './RagContextModal.css';
 
 interface InjectedContextItem {
@@ -71,12 +73,6 @@ const RagContextModal: React.FC<RagContextModalProps> = ({ items, onClose, kind 
     const { t } = useTranslation('main');
     const [activeIdx, setActiveIdx] = React.useState(0);
 
-    React.useEffect(() => {
-        const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-        window.addEventListener('keydown', handler);
-        return () => window.removeEventListener('keydown', handler);
-    }, [onClose]);
-
     const activeItem = items[activeIdx];
 
     const { isCode, isMarkdown, lang, highlightedHtml } = useMemo(() => {
@@ -111,7 +107,7 @@ const RagContextModal: React.FC<RagContextModalProps> = ({ items, onClose, kind 
             : cleanNewsText(rawData);
 
     return (
-        <div className="rag-context-overlay">
+        <ModalOverlay className="rag-context-overlay" onClose={onClose} closeOnBackdrop>
             <div
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
                 className="rag-context-modal"
@@ -129,7 +125,9 @@ const RagContextModal: React.FC<RagContextModalProps> = ({ items, onClose, kind 
                         </span>
                         <span className="rag-context-count">{t('message.count', { count: items.length })}</span>
                     </div>
-                    <button className="rag-context-close" onClick={onClose}>×</button>
+                    <button type="button" className="rag-context-close" onClick={onClose} aria-label={t('common:close')}>
+                        <X size={20} strokeWidth={2} aria-hidden="true"/>
+                    </button>
                 </div>
 
                 <div className="rag-context-layout">
@@ -219,7 +217,7 @@ const RagContextModal: React.FC<RagContextModalProps> = ({ items, onClose, kind 
                     </div>
                 </div>
             </div>
-        </div>
+        </ModalOverlay>
     );
 };
 

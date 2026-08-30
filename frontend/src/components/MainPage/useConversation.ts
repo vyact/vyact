@@ -14,6 +14,7 @@ type StoredConversationMessage = Message & {
     injected_context?: Message['injectedContext'];
     rag_context?: Message['injectedContext']; // 이전 대화 레코드 호환용
     tool_calls?: unknown;
+    error_code?: Message['errorCode'];
 };
 
 export function useConversation() {
@@ -139,6 +140,25 @@ export function useConversation() {
         // assistant 저장 content 말미의 <followups> 블록을 분리
         let content = msg.content;
         let followups: string[] | undefined = msg.followups;
+        let errorCode = msg.error_code || msg.errorCode;
+        // 이전 버전은 모델의 빈 응답을 실패 메타데이터 없이 저장했다.
+        // tool_calls 메시지는 아래에서 별도로 제외되므로, 남은 빈 assistant 응답은
+        // 과거의 model_no_response 기록으로 복원한다.
+        if (msg.role === 'assistant' && !msg.tool_calls && !content?.trim() && !errorCode) {
+            errorCode = 'model_no_response';
+        }
+        let errorTitle = msg.errorTitle;
+        if (msg.role === 'assistant' && errorCode) {
+            if (errorCode === 'tool_call_failed') {
+                content = t('message.toolCallFailedDescription');
+                errorTitle = t('message.toolCallFailedTitle');
+            } else if (errorCode === 'reasoning_token_limit') {
+                content = t('message.reasoningTokenLimitDescription');
+                errorTitle = t('message.reasoningTokenLimitTitle');
+            } else {
+                content = t('message.modelNoResponse');
+            }
+        }
         if (msg.role === 'assistant' && typeof content === 'string') {
             const parsed = parseFollowups(content);
             content = parsed.body;
@@ -148,6 +168,9 @@ export function useConversation() {
             id: msg.id || `${msg.timestamp || Date.now()}-${idx ?? 0}`,
             ...msg,
             content,
+            isError: msg.isError || Boolean(errorCode),
+            errorCode,
+            errorTitle,
             followups,
             timestamp: msg.timestamp || new Date().toISOString(),
             isGeneratedImage: msg.is_generated_image ?? false,

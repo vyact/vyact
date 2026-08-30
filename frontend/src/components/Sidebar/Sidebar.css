@@ -308,8 +308,16 @@
 }
 
 :root[data-theme='light'] .btn-delete-all {
-    background: color-mix(in srgb, var(--del-bg-hover) 42%, var(--surface2));
+    background: color-mix(in srgb, var(--danger) 7%, var(--surface));
+    border-color: color-mix(in srgb, var(--danger) 42%, var(--border));
+    color: var(--danger);
     box-shadow: none;
+}
+
+:root[data-theme='light'] .btn-delete-all:is(:hover, :active) {
+    background: color-mix(in srgb, var(--danger) 14%, var(--surface));
+    border-color: var(--danger);
+    color: var(--button-danger-hover);
 }
 
 .btn-refresh-history {
@@ -480,14 +488,14 @@
 
 :root[data-theme='light'] .hist-item:is(:hover, :active),
 :root[data-theme='light'] .project-conversation:is(:hover, :active) {
-    background: color-mix(in srgb, var(--accent) 8%, transparent);
+    background: color-mix(in srgb, var(--text) 6%, transparent);
 }
 
 :root[data-theme='light'] .hist-item.active,
 :root[data-theme='light'] .project-conversation.active {
-    background: color-mix(in srgb, var(--accent) 16%, var(--surface));
-    border-color: color-mix(in srgb, var(--accent) 20%, var(--border));
-    box-shadow: 0 2px 7px rgba(var(--accent-rgb), 0.09);
+    background: var(--surface);
+    border-color: color-mix(in srgb, var(--accent) 36%, var(--border));
+    box-shadow: var(--shadow-sm);
 }
 
 .hist-item.disabled,
@@ -724,16 +732,16 @@
 }
 
 :root[data-theme='light'] .btn-new:not(:disabled) {
-    background: color-mix(in srgb, var(--accent) 5%, var(--surface2));
-    border-color: color-mix(in srgb, var(--accent) 24%, var(--border));
-    color: var(--accent);
-    box-shadow: none;
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
+    box-shadow: 0 2px 6px rgba(var(--accent-rgb), 0.2);
 }
 
 :root[data-theme='light'] .btn-new:not(:disabled):is(:hover, :active) {
-    background: color-mix(in srgb, var(--accent) 9%, var(--surface));
-    border-color: var(--accent);
-    color: var(--accent);
+    background: var(--button-primary-hover);
+    border-color: var(--button-primary-hover);
+    color: var(--on-accent);
 }
 
 .btn-new:disabled {

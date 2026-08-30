@@ -1000,7 +1000,7 @@
     "preparingResponse": "답변을 준비하고 있어요…",
     "completed": "작업을 완료했어요",
     "failed": "작업에 실패했어요",
-    "readCompleted": "코드 읽기 완료",
+    "readCompleted": "코드 확인 완료",
     "searchCompleted": "코드 검색 완료",
     "editCompleted": "코드 수정 완료",
     "checkCompleted": "코드 검사 완료",

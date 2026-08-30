@@ -1004,7 +1004,7 @@
     "preparingResponse": "正在准备回答…",
     "completed": "步骤已完成",
     "failed": "步骤失败",
-    "readCompleted": "代码读取完成",
+    "readCompleted": "已检查代码",
     "searchCompleted": "代码搜索完成",
     "editCompleted": "代码修改完成",
     "checkCompleted": "代码检查完成",

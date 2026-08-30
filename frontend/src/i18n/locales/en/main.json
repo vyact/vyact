@@ -1000,7 +1000,7 @@
     "preparingResponse": "Getting your answer ready…",
     "completed": "Step completed",
     "failed": "Step failed",
-    "readCompleted": "Finished reading code",
+    "readCompleted": "Inspected code",
     "searchCompleted": "Finished searching code",
     "editCompleted": "Code update completed",
     "checkCompleted": "Code check completed",
