@@ -1066,7 +1066,7 @@
   "message": {
     "requestFailed": "No se pudo completar la solicitud", "unknownError": "Se produjo un error desconocido.", "retry": "Reintentar",
     "codeChangesReview": "Revisar",
-    "codeReviewFileList": "Archivos modificados", "codeReviewSearchFiles": "Buscar rutas de archivo", "codeReviewPreviousFile": "Archivo anterior", "codeReviewNextFile": "Archivo siguiente", "codeReviewNoFiles": "No hay archivos coincidentes",
+    "codeReviewFileList": "Archivos modificados", "codeReviewSearchFiles": "Buscar rutas de archivo", "codeReviewPreviousFile": "Archivo anterior", "codeReviewNextFile": "Archivo siguiente", "codeReviewNoFiles": "No hay archivos coincidentes", "codeReviewCopy": "Copiar", "codeReviewCopied": "Copiado", "codeReviewDownload": "Descargar", "codeReviewClosePanel": "Cerrar panel",
     "codeChangesTitle": "Se editaron {{count}} archivos", "codeChangesUndo": "Deshacer", "codeChangesUndoing": "Deshaciendo…", "codeChangesUndone": "Cambios deshechos", "codeChangesUndoFailed": "No se pudieron deshacer los cambios.", "codeChangesUndoConflict": "El archivo se modificó después y no se puede deshacer con seguridad.", "codeChangesMore": "Mostrar {{count}} archivos más", "codeChangesCollapse": "Contraer", "codeChangesPreview": "Cambios en {{path}}",
     "modelNoResponse": "El modelo de IA seleccionado no pudo generar una respuesta. Inténtalo de nuevo.",
     "reasoningTokenLimitTitle": "Todos los tokens de salida se usaron en el razonamiento",

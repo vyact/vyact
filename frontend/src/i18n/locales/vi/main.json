@@ -1067,7 +1067,7 @@
   "message": {
     "requestFailed": "Không thể hoàn tất yêu cầu", "unknownError": "Đã xảy ra lỗi không xác định.", "retry": "Gửi lại",
     "codeChangesReview": "Xem lại",
-    "codeReviewFileList": "Tệp đã thay đổi", "codeReviewSearchFiles": "Tìm đường dẫn tệp", "codeReviewPreviousFile": "Tệp trước", "codeReviewNextFile": "Tệp tiếp theo", "codeReviewNoFiles": "Không có tệp phù hợp",
+    "codeReviewFileList": "Tệp đã thay đổi", "codeReviewSearchFiles": "Tìm đường dẫn tệp", "codeReviewPreviousFile": "Tệp trước", "codeReviewNextFile": "Tệp tiếp theo", "codeReviewNoFiles": "Không có tệp phù hợp", "codeReviewCopy": "Sao chép", "codeReviewCopied": "Đã sao chép", "codeReviewDownload": "Tải xuống", "codeReviewClosePanel": "Đóng bảng",
     "codeChangesTitle": "Đã chỉnh sửa {{count}} tệp", "codeChangesUndo": "Hoàn tác", "codeChangesUndoing": "Đang hoàn tác…", "codeChangesUndone": "Đã hoàn tác thay đổi", "codeChangesUndoFailed": "Không thể hoàn tác thay đổi.", "codeChangesUndoConflict": "Tệp đã được sửa sau đó nên không thể hoàn tác an toàn.", "codeChangesMore": "Hiện thêm {{count}} tệp", "codeChangesCollapse": "Thu gọn", "codeChangesPreview": "Thay đổi trong {{path}}",
     "modelNoResponse": "Mô hình AI đã chọn không thể tạo phản hồi. Vui lòng thử lại.",
     "reasoningTokenLimitTitle": "Đã dùng hết token đầu ra để suy luận",

@@ -1067,7 +1067,7 @@
   "message": {
     "requestFailed": "Impossible de terminer la requête", "unknownError": "Une erreur inconnue s’est produite.", "retry": "Réessayer",
     "codeChangesReview": "Réviser",
-    "codeReviewFileList": "Fichiers modifiés", "codeReviewSearchFiles": "Rechercher un chemin", "codeReviewPreviousFile": "Fichier précédent", "codeReviewNextFile": "Fichier suivant", "codeReviewNoFiles": "Aucun fichier correspondant",
+    "codeReviewFileList": "Fichiers modifiés", "codeReviewSearchFiles": "Rechercher un chemin", "codeReviewPreviousFile": "Fichier précédent", "codeReviewNextFile": "Fichier suivant", "codeReviewNoFiles": "Aucun fichier correspondant", "codeReviewCopy": "Copier", "codeReviewCopied": "Copié", "codeReviewDownload": "Télécharger", "codeReviewClosePanel": "Fermer le panneau",
     "codeChangesTitle": "{{count}} fichiers modifiés", "codeChangesUndo": "Annuler", "codeChangesUndoing": "Annulation…", "codeChangesUndone": "Modifications annulées", "codeChangesUndoFailed": "Impossible d’annuler les modifications.", "codeChangesUndoConflict": "Le fichier a été modifié depuis et ne peut pas être annulé en toute sécurité.", "codeChangesMore": "Afficher {{count}} fichiers de plus", "codeChangesCollapse": "Réduire", "codeChangesPreview": "Modifications de {{path}}",
     "modelNoResponse": "Le modèle d’IA sélectionné n’a pas pu générer de réponse. Veuillez réessayer.",
     "reasoningTokenLimitTitle": "Tous les jetons de sortie ont été utilisés pour le raisonnement",

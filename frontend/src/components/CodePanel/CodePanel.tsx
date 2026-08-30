@@ -142,7 +142,7 @@ const CodePanel: React.FC<{ style?: React.CSSProperties }> = ({ style }) => {
                     <button
                         className={`cp-btn${copied ? ' cp-btn--copied' : ''}`}
                         onClick={handleCopy}
-                        aria-label={copied ? '복사됨' : '코드 복사'}
+                        aria-label={t(copied ? 'message.codeReviewCopied' : 'message.codeReviewCopy')}
                     >
                         {copied ? (
                             <>
@@ -150,7 +150,7 @@ const CodePanel: React.FC<{ style?: React.CSSProperties }> = ({ style }) => {
                                      stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
                                     <polyline points="20 6 9 17 4 12"/>
                                 </svg>
-                                복사됨
+                                {t('message.codeReviewCopied')}
                             </>
                         ) : (
                             <>
@@ -159,14 +159,14 @@ const CodePanel: React.FC<{ style?: React.CSSProperties }> = ({ style }) => {
                                     <rect x="9" y="9" width="13" height="13" rx="2"/>
                                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                                 </svg>
-                                복사
+                                {t('message.codeReviewCopy')}
                             </>
                         )}
                     </button>
                     <button
                         className="cp-btn"
                         onClick={() => downloadFile(activeFile)}
-                        aria-label="다운로드"
+                        aria-label={t('message.codeReviewDownload')}
                     >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
                              stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -174,12 +174,12 @@ const CodePanel: React.FC<{ style?: React.CSSProperties }> = ({ style }) => {
                             <polyline points="7 10 12 15 17 10"/>
                             <line x1="12" y1="15" x2="12" y2="3"/>
                         </svg>
-                        <span className="cp-btn-label">다운로드</span>
+                        <span className="cp-btn-label">{t('message.codeReviewDownload')}</span>
                     </button>
                     <button
                         className="cp-close"
                         onClick={closePanel}
-                        aria-label="패널 닫기"
+                        aria-label={t('message.codeReviewClosePanel')}
                     >
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
                              stroke="currentColor" strokeWidth="2" aria-hidden="true">

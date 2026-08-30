@@ -1063,7 +1063,7 @@
   "message": {
     "requestFailed": "요청을 완료하지 못했습니다", "unknownError": "알 수 없는 오류가 발생했습니다.", "retry": "다시 전송",
     "codeChangesReview": "리뷰",
-    "codeReviewFileList": "변경 파일 목록", "codeReviewSearchFiles": "파일 경로 검색", "codeReviewPreviousFile": "이전 파일", "codeReviewNextFile": "다음 파일", "codeReviewNoFiles": "일치하는 파일이 없습니다",
+    "codeReviewFileList": "변경 파일 목록", "codeReviewSearchFiles": "파일 경로 검색", "codeReviewPreviousFile": "이전 파일", "codeReviewNextFile": "다음 파일", "codeReviewNoFiles": "일치하는 파일이 없습니다", "codeReviewCopy": "복사", "codeReviewCopied": "복사됨", "codeReviewDownload": "다운로드", "codeReviewClosePanel": "패널 닫기",
     "codeChangesTitle": "파일 {{count}}개를 편집했습니다", "codeChangesUndo": "실행 취소", "codeChangesUndoing": "취소 중…", "codeChangesUndone": "변경을 취소했습니다", "codeChangesUndoFailed": "변경을 취소할 수 없습니다.", "codeChangesUndoConflict": "이후에 파일이 다시 수정되어 안전하게 취소할 수 없습니다.", "codeChangesMore": "{{count}}개 파일 더 보기", "codeChangesCollapse": "접기", "codeChangesPreview": "{{path}} 변경 미리보기",
     "modelNoResponse": "선택한 AI 모델이 응답을 생성하지 못했습니다. 다시 시도해주세요.",
     "reasoningTokenLimitTitle": "출력 토큰을 추론에 모두 사용했어요",
