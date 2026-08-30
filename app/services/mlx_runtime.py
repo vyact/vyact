@@ -20,6 +20,7 @@ from typing import Callable
 from tqdm.auto import tqdm
 
 from config import INSTALL_DIR, get_log_file
+from services.local_model_errors import LocalModelNotDownloadedError
 from services.vyact_runtime import VYACT_RUNTIME_PORT
 
 MLX_MODELS_DIR = INSTALL_DIR / "models" / "mlx"
@@ -295,7 +296,7 @@ def get_downloaded_mlx_model_path(model_path: str) -> Path:
     repository = model_path.removeprefix("mlx/")
     destination = _repository_path(repository).resolve()
     if MLX_MODELS_DIR.resolve() not in destination.parents or not (destination / MLX_MODEL_MANIFEST).is_file():
-        raise ValueError("The selected MLX model has not been downloaded")
+        raise LocalModelNotDownloadedError("The selected MLX model has not been downloaded")
     return destination
 
 

@@ -21,6 +21,7 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import quote
 
 from config import INSTALL_DIR, get_log_file
+from services.local_model_errors import LocalModelNotDownloadedError
 from services.multimodal_capabilities import get_projector_modalities
 
 VYACT_RUNTIME_PORT = 11435
@@ -296,7 +297,7 @@ def get_downloaded_model_path(relative_path: str) -> Path:
     candidate = (VYACT_MODELS_DIR / relative_path).resolve()
     models_dir = VYACT_MODELS_DIR.resolve()
     if models_dir not in candidate.parents or candidate.suffix.lower() != ".gguf" or not candidate.is_file():
-        raise ValueError("The selected Vyact model is not a downloaded GGUF file")
+        raise LocalModelNotDownloadedError("The selected Vyact model is not a downloaded GGUF file")
     return candidate
 
 

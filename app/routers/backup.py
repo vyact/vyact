@@ -4,6 +4,7 @@ routers/backup.py – ES 전체 인덱스 백업 / 복원
 - 복원 시 zip이면 ES 복원 + 원본 파일 복구
 """
 import asyncio
+import copy
 import io
 import json
 import zipfile
@@ -47,6 +48,8 @@ _SETTINGS_EXCLUDE = {
     "index.provided_name", "index.routing",
 }
 _MCP_SETTINGS_DOC_ID = "mcp"
+_CONFIG_DOC_ID = "config"
+_MACHINE_LOCAL_CONFIG_FIELDS = ("type", "model", "vyact_config")
 _BACKUP_EXCLUDED_INDICES = {
     INTEGRATION_CREDENTIALS_INDEX,
     EXTERNAL_DATA_STATE_INDEX,
@@ -77,6 +80,26 @@ def _logical_index_name(index_name: str) -> str:
 def _expand_selected_indices(selected: list[str], available: list[str]) -> list[str]:
     selected_names = {_logical_index_name(name) for name in selected}
     return [name for name in available if name in selected_names or _logical_index_name(name) in selected_names]
+
+
+def _preserve_machine_local_config(backup: dict, current_config: dict) -> None:
+    """Keep this device's provider and managed-model selection during restore."""
+    settings = backup.get("indices", {}).get(SETTINGS_INDEX)
+    if not isinstance(settings, dict):
+        return
+    for doc in settings.get("docs", []):
+        if doc.get("_id") != _CONFIG_DOC_ID:
+            continue
+        source = doc.get("_source")
+        restored_config = source.get("value") if isinstance(source, dict) else None
+        if not isinstance(restored_config, dict):
+            continue
+        for field in _MACHINE_LOCAL_CONFIG_FIELDS:
+            if field in current_config:
+                restored_config[field] = copy.deepcopy(current_config[field])
+            else:
+                restored_config.pop(field, None)
+        return
 
 
 async def _preserve_google_workspace_on_restore(backup: dict) -> bool:
@@ -419,6 +442,10 @@ async def import_backup(
         await revoke_all_tokens()
         logger.info("[restore] Google Workspace 전체 계정 OAuth 재연결 필요")
 
+    if SETTINGS_INDEX in backup["indices"]:
+        from routers.deps import load_config_async
+        _preserve_machine_local_config(backup, await load_config_async())
+
     # 원본 파일 복원
     files_restored = 0
     files_skipped = 0
@@ -500,7 +527,8 @@ async def import_backup(
             try:
                 resp = await es.bulk(operations=actions, refresh=True)
                 for item in resp.get("items", []):
-                    if item.get("create", {}).get("status") == 201:
+                    operation = item.get("index") or item.get("create") or {}
+                    if operation.get("status") in {200, 201}:
                         inserted += 1
                     else:
                         skipped += 1

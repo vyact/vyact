@@ -29,6 +29,7 @@ from .errors import (
 from .providers import openai_stream, gemini_stream, claude_stream
 from .prepare import prepare_request
 from services.runtime_settings import get_runtime_settings
+from services.local_model_errors import LocalModelNotDownloadedError
 
 _STREAMERS = {"openai": openai_stream, "gemini": gemini_stream, "claude": claude_stream}
 _PROVIDER_LABEL = {"openai": "OpenAI", "gemini": "Gemini", "claude": "Claude"}
@@ -192,6 +193,10 @@ async def chat_stream_with_tools(
                 yield {"type": "stats", **stats}
             if usage.get("finish_reason"):
                 yield {"type": "finish", "reason": usage["finish_reason"]}
+        except LocalModelNotDownloadedError as e:
+            logger.warning("[chat_stream_with_tools] 선택한 로컬 모델 없음: %s", e)
+            log_entry["error"] = "local_model_not_downloaded"
+            yield {"type": "error", "code": "local_model_not_downloaded", "model": model}
         except httpx.HTTPStatusError as e:
             if is_insufficient_memory_error(e):
                 log_entry["error"] = "model_insufficient_memory"
