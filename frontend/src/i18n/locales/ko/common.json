@@ -18,5 +18,5 @@
   "none": "없음",
   "notSet": "설정 안됨",
   "retry": "재시도",
-  "more": "더보기"
+  "more": "더보기", "select": "선택", "clearSelection": "선택 해제", "noSearchResults": "검색 결과 없음", "noItems": "항목 없음"
 }

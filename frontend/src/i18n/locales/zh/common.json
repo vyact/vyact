@@ -18,5 +18,5 @@
   "none": "无",
   "notSet": "未设置",
   "retry": "重试",
-  "more": "更多"
+  "more": "更多", "select": "选择", "clearSelection": "清除选择", "noSearchResults": "无搜索结果", "noItems": "无项目"
 }

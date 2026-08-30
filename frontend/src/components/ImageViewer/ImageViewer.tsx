@@ -95,7 +95,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ images, currentIndex, onClose
                 <button
                     className="image-viewer__navigation image-viewer__navigation--previous"
                     onClick={(e) => { e.stopPropagation(); onIndexChange((currentIndex - 1 + total) % total); }}
-                    aria-label="Previous image"
+                    aria-label={t('imageViewer.previous')}
                 ><ChevronLeft size={18}/></button>
             )}
 
@@ -107,7 +107,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ images, currentIndex, onClose
                 <img
                     className="image-viewer__image"
                     src={current.src}
-                    alt={current.alt ?? '이미지'}
+                    alt={current.alt ?? t('imageViewer.image')}
                 />
             </div>
 
@@ -116,7 +116,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ images, currentIndex, onClose
                 <button
                     className="image-viewer__navigation image-viewer__navigation--next"
                     onClick={(e) => { e.stopPropagation(); onIndexChange((currentIndex + 1) % total); }}
-                    aria-label="Next image"
+                    aria-label={t('imageViewer.next')}
                 ><ChevronRight size={18}/></button>
             )}
 

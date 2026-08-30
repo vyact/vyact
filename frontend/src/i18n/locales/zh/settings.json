@@ -203,7 +203,7 @@
     "googleExpired": "Google 连接已过期。请在设置中重新连接。",
     "restoreCompleteAlert": "恢复完成\n新增 {{inserted}} 条 · 重复 {{skipped}} 条{{googleMsg}}\n\n页面将刷新。",
     "previewFailed": "无法读取备份信息。",
-    "previewTitle": "选择要恢复的数据",
+    "previewTitle": "选择要恢复的数据", "restorePreview": "恢复备份",
     "previewDescription": "仅添加选中的项目。现有数据和同名文件将保留，重复项将跳过。设置将按单独说明恢复。",
     "restoreIndices": "要恢复的索引 ({{selected}}/{{total}})",
     "settingsOverwrite": "设置将被此备份覆盖",

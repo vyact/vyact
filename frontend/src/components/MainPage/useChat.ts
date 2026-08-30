@@ -714,6 +714,7 @@ export function useChat(deps: UseChatDeps) {
                             }
                             setMessagesForConversation(requestConvId, prev => prev.map(m => {
                                 if (m.id !== streamId) return m;
+                                const toolCallFailed = m.activityLog?.some(activity => activity.outcome === 'failed') ?? false;
                                 // follow-up 블록만 생성된 경우에는 스트리밍 원문을 본문으로
                                 // 되돌리지 않는다. 모델의 빈 본문을 안내하되 후속 질문은 유지한다.
                                 const finalContent = followupsOnly
@@ -724,10 +725,14 @@ export function useChat(deps: UseChatDeps) {
                                         ...m,
                                         content: reasoningTokenLimitReached
                                             ? t('message.reasoningTokenLimitDescription')
-                                            : t('message.modelNoResponse'),
+                                            : toolCallFailed
+                                                ? t('message.toolCallFailedDescription')
+                                                : t('message.modelNoResponse'),
                                         errorTitle: reasoningTokenLimitReached
                                             ? t('message.reasoningTokenLimitTitle')
-                                            : undefined,
+                                            : toolCallFailed
+                                                ? t('message.toolCallFailedTitle')
+                                                : undefined,
                                         isError: true, toolStatus: undefined,
                                         stats: data.stats || m.stats
                                     };

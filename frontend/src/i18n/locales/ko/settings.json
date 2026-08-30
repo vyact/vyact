@@ -258,7 +258,7 @@
     "googleExpired": "Google 연결이 만료되었습니다. 설정에서 재연결해주세요.",
     "restoreCompleteAlert": "복원 완료\n신규 {{inserted}}건 · 중복 {{skipped}}건{{googleMsg}}\n\n페이지를 새로고침합니다.",
     "previewFailed": "백업 정보를 읽지 못했습니다.",
-    "previewTitle": "복원할 데이터 선택",
+    "previewTitle": "복원할 데이터 선택", "restorePreview": "백업 복원",
     "previewDescription": "선택한 항목만 현재 데이터에 추가합니다. 기존 데이터와 같은 이름의 파일은 유지하며, 중복 항목은 건너뜁니다.",
     "restoreIndices": "복원할 인덱스 ({{selected}}/{{total}})",
     "settingsOverwrite": "설정값은 백업본으로 덮어씁니다 (기존 Google Workspace 설정은 유지)",

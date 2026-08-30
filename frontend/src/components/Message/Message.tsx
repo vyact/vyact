@@ -333,7 +333,7 @@ const Message: React.FC<MessageProps> = ({
                                         </svg>
                                     </span>
                                     <span className="user-file-card__name">
-                                        {att.original_name || att.saved_name || att.filename || '파일'}
+                                        {att.original_name || att.saved_name || att.filename || t('uiAuditExtra.file')}
                                     </span>
                                     {att.type === 'zip' && att.file_count != null && (
                                         <span className="user-file-card__meta">{att.file_count}개</span>
@@ -538,7 +538,7 @@ const Message: React.FC<MessageProps> = ({
                                         a.click();
                                         URL.revokeObjectURL(url);
                                     } catch {
-                                        toast.error('프로젝트 다운로드 실패');
+                                        toast.error(t('uiAudit.projectDownloadFailed'));
                                     }
                                 };
                                 return (
@@ -832,7 +832,7 @@ const Message: React.FC<MessageProps> = ({
                 <div className={`msg-meta ${role === 'user' ? 'user' : 'bot'}`}>
                     {role === 'user' ? (
                         <>
-                            <button className="msg-copy-btn" onClick={handleCopy} aria-label={copied ? '복사됨' : '복사'}>
+                            <button className="msg-copy-btn" onClick={handleCopy} aria-label={t(copied ? 'uiAudit.copied' : 'uiAudit.copy')}>
                                 {copied ? (
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                          strokeWidth="2">
@@ -851,7 +851,7 @@ const Message: React.FC<MessageProps> = ({
                     ) : (
                         <>
                             <span className="msg-time">{formatTimestamp(timestamp)}{model && ` · ${formatModelDisplayName(model)}`}</span>
-                            <button className="msg-copy-btn" onClick={handleCopy} aria-label={copied ? '복사됨' : '복사'}>
+                            <button className="msg-copy-btn" onClick={handleCopy} aria-label={t(copied ? 'uiAudit.copied' : 'uiAudit.copy')}>
                                 {copied ? (
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                          strokeWidth="2">
@@ -869,7 +869,7 @@ const Message: React.FC<MessageProps> = ({
                                 <button
                                     className={`msg-copy-btn${speaking ? ' msg-speak-btn--active' : ''}`}
                                     onClick={handleSpeak}
-                                    aria-label={speaking ? '읽기 중지' : '소리로 읽기'}
+                                    aria-label={t(speaking ? 'uiAudit.stopReading' : 'uiAudit.readAloud')}
                                 >
                                     {speaking ? (
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"

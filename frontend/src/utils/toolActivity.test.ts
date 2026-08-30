@@ -2,6 +2,7 @@ import {describe, expect, it} from 'vitest';
 import {
     getToolActivityDetail,
     getToolActivityDisplayLabel,
+    getToolActivityFailureDetail,
     getToolActivityLabel,
     getToolActivityLinks,
     getToolActivityResultPresentation,
@@ -96,6 +97,13 @@ describe('tool activity presentation', () => {
     it('treats structured tool errors as failed activity', () => {
         expect(isToolActivityResultFailed('{"ok":false,"error":"element_not_found"}')).toBe(true);
         expect(isToolActivityResultFailed('{"ok":true}')).toBe(false);
+    });
+
+    it('presents the actual reason for a failed AI tool call', () => {
+        expect(getToolActivityFailureDetail("[오류] _read_files() got an unexpected keyword argument 'offset'"))
+            .toBe("_read_files() got an unexpected keyword argument 'offset'");
+        expect(getToolActivityResultPresentation('{"ok":false,"error":"invalid arguments"}', {path: 'app.py'}))
+            .toEqual({detail: 'invalid arguments', links: undefined});
     });
 
     it('creates clickable page links and identifies the clicked element from its result', () => {

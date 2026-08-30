@@ -203,7 +203,7 @@
     "googleExpired": "La conexión con Google ha caducado. Vuelve a conectarla en ajustes.",
     "restoreCompleteAlert": "Restauración completa\n{{inserted}} nuevos · {{skipped}} omitidos{{googleMsg}}\n\nLa página se actualizará.",
     "previewFailed": "No se pudo leer la información de la copia de seguridad.",
-    "previewTitle": "Elige los datos a restaurar",
+    "previewTitle": "Elige los datos a restaurar", "restorePreview": "Restaurar copia de seguridad",
     "previewDescription": "Solo se agregan los elementos seleccionados. Se conservan los datos y archivos existentes con el mismo nombre, y se omiten los duplicados. Los ajustes siguen el aviso independiente.",
     "restoreIndices": "Índices a restaurar ({{selected}}/{{total}})",
     "settingsOverwrite": "Esta copia de seguridad sobrescribirá los ajustes",

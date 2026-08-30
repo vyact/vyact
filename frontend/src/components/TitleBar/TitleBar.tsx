@@ -112,12 +112,12 @@ const TitleBar: React.FC<TitleBarProps> = ({sidebarCollapsed, onToggleSidebar, o
             {/* 오른쪽: Windows 창 컨트롤 */}
             {!isMac && (
                 <div className="titlebar-win-controls">
-                    <button className="titlebar-win-btn" onClick={handleMinimize} title="최소화">
+                    <button className="titlebar-win-btn" onClick={handleMinimize} title={t('windowControls.minimize')}>
                         <svg width="12" height="12" viewBox="0 0 12 12">
                             <line x1="1" y1="6" x2="11" y2="6" stroke="currentColor" strokeWidth="1.2" />
                         </svg>
                     </button>
-                    <button className="titlebar-win-btn" onClick={handleMaximize} title={maximized ? '복원' : '최대화'}>
+                    <button className="titlebar-win-btn" onClick={handleMaximize} title={t(maximized ? 'windowControls.restore' : 'windowControls.maximize')}>
                         {maximized ? (
                             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.2">
                                 <rect x="2.5" y="3.5" width="7" height="7" rx="0.5" />
@@ -129,7 +129,7 @@ const TitleBar: React.FC<TitleBarProps> = ({sidebarCollapsed, onToggleSidebar, o
                             </svg>
                         )}
                     </button>
-                    <button className="titlebar-win-btn titlebar-win-btn--close" onClick={handleClose} title="닫기">
+                    <button className="titlebar-win-btn titlebar-win-btn--close" onClick={handleClose} title={t('windowControls.close')}>
                         <svg width="12" height="12" viewBox="0 0 12 12" stroke="currentColor" strokeWidth="1.2">
                             <line x1="2" y1="2" x2="10" y2="10" />
                             <line x1="10" y1="2" x2="2" y2="10" />

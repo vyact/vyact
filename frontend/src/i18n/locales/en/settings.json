@@ -229,7 +229,7 @@
     "googleExpired": "Google connection expired. Please reconnect in settings.",
     "restoreCompleteAlert": "Restore complete\n{{inserted}} new · {{skipped}} skipped{{googleMsg}}\n\nPage will refresh.",
     "previewFailed": "Could not read the backup information.",
-    "previewTitle": "Choose data to restore",
+    "previewTitle": "Choose data to restore", "restorePreview": "Backup restore",
     "previewDescription": "Only selected items are added. Existing data and files with the same name are kept, while duplicates are skipped.",
     "restoreIndices": "Indices to restore ({{selected}}/{{total}})",
     "settingsOverwrite": "Settings will be overwritten by this backup",

@@ -152,6 +152,7 @@ export function getToolActivityResultPresentation(
     result: unknown,
     args?: Record<string, unknown>,
 ): {detail?: string; links?: Array<{label: string; url: string}>} {
+    const failureDetail = getToolActivityFailureDetail(result);
     let payload: Record<string, unknown> | undefined;
     if (typeof result === 'string' && result.trim().startsWith('{')) {
         try { payload = JSON.parse(result) as Record<string, unknown>; } catch { /* use args fallback */ }
@@ -191,9 +192,32 @@ export function getToolActivityResultPresentation(
     }
     const links = [...uniqueLinks.values()];
     return {
-        detail: compactSnippet(elementName) ?? payloadTitle ?? (links?.length ? undefined : getToolActivityDetail(args)),
+        detail: failureDetail ?? compactSnippet(elementName) ?? payloadTitle ?? (links?.length ? undefined : getToolActivityDetail(args)),
         links: links.length ? links : undefined,
     };
+}
+
+export function getToolActivityFailureDetail(result: unknown): string | undefined {
+    if (typeof result === 'string') {
+        const trimmed = result.trim();
+        if (trimmed.startsWith('[오류]')) return compactSnippet(trimmed.slice('[오류]'.length).trim());
+        if (!trimmed.startsWith('{')) return undefined;
+        try {
+            return getToolActivityFailureDetail(JSON.parse(trimmed));
+        } catch {
+            return undefined;
+        }
+    }
+    if (!result || typeof result !== 'object') return undefined;
+    const payload = result as Record<string, unknown>;
+    if (payload.ok !== false && !payload.error) return undefined;
+    const error = payload.error;
+    if (typeof error === 'string') return compactSnippet(error);
+    if (error && typeof error === 'object') {
+        const errorPayload = error as Record<string, unknown>;
+        return compactSnippet(errorPayload.message ?? errorPayload.detail ?? errorPayload.code);
+    }
+    return compactSnippet(payload.message ?? payload.detail);
 }
 
 export function isToolActivityResultFailed(result: unknown): boolean {

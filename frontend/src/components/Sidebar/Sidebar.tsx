@@ -131,11 +131,11 @@ function storeExpandedProjectIds(projectIds: Set<string>) {
 }
 
 // ── 대화 내보내기 유틸 ─────────────────────────────────────
-async function exportConversation(convId: string, title: string, format: 'pdf' | 'md') {
+async function exportConversation(convId: string, title: string, format: 'pdf' | 'md', emptyMessage: string) {
     const data = await api.getConversation(convId);
     const messages = data.messages || [];
     if (!messages.length) {
-        toast.warning('대화 내용이 없습니다.');
+        toast.warning(emptyMessage);
         return;
     }
 
@@ -547,7 +547,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <div className="aside-top">
                         {/* Provider */}
                         <div className="sidebar-section">
-                            <div className="sec-label">Provider</div>
+                            <div className="sec-label">{t('uiAudit.provider')}</div>
                             <div className={`provider-select-wrap${modelContextSelectionDisabled ? ' disabled' : ''}`}>
                                 {(['vyact', 'openai', 'gemini', 'claude'] as const).map(p => (
                                     <button
@@ -707,12 +707,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                                             <button className="hist-menu-item" onClick={event => {
                                                 event.stopPropagation();
                                                 setMenuOpenId(null);
-                                                exportConversation(conversation.conv_id, conversation.title, 'md');
+                                                exportConversation(conversation.conv_id, conversation.title, 'md', t('uiAuditExtra.emptyConversation'));
                                             }}><FileCode size={13}/>{t('sidebar.exportMarkdown')}</button>
                                             <button className="hist-menu-item" onClick={event => {
                                                 event.stopPropagation();
                                                 setMenuOpenId(null);
-                                                exportConversation(conversation.conv_id, conversation.title, 'pdf');
+                                                exportConversation(conversation.conv_id, conversation.title, 'pdf', t('uiAuditExtra.emptyConversation'));
                                             }}><FileText size={13}/>{t('sidebar.exportPdf')}</button>
                                             <button className="hist-menu-item danger" onClick={event => {
                                                 event.stopPropagation();
@@ -759,7 +759,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 onDelete={() => { setProjectMenuOpenId(null); setProjectToDelete(project); }}
                                 onDeleteHistory={() => { setProjectMenuOpenId(null); setProjectHistoryToDelete(project); }}
                             >
-                                {conversations.filter(conv => conv.project_id === project.id && !favoriteConversationIdSet.has(conv.conv_id)).slice(0, expandedProjectHistoryIds.has(project.id) ? undefined : PROJECT_HISTORY_PREVIEW_COUNT).map(conv => <div key={conv.conv_id} className={`project-conversation${conv.conv_id === activeConvId ? ' active' : ''}`} onClick={() => { onProjectChange?.(project.id); onConversationSelect(conv.conv_id); }}><button className="project-conversation-title">{conv.title}</button>{activeConversationIdSet.has(conv.conv_id) && <span className="conversation-progress" role="status" aria-label={t('sidebar.responseInProgress')} title={t('sidebar.responseInProgress')}><LoaderCircle size={13}/></span>}<button className="conversation-favorite-btn" type="button" aria-label={t('sidebar.addFavorite')} onClick={event => { event.stopPropagation(); void onConversationFavoriteChange(conv, true); }}><Pin size={14}/></button><SidebarOverflowMenu isOpen={menuOpenId === conv.conv_id} onOpenChange={isOpen => setMenuOpenId(isOpen ? conv.conv_id : null)} trigger="···"><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); onShowSummary(conv.conv_id); }}><NotebookText size={13}/>{t('sidebar.summary')}</button><button className="hist-menu-item" onClick={() => { setRenameValue(conv.title); setRenamingId(conv.conv_id); setMenuOpenId(null); }}><Pencil size={13}/>{t('sidebar.rename')}</button><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); exportConversation(conv.conv_id, conv.title, 'md'); }}><FileCode size={13}/>{t('sidebar.exportMarkdown')}</button><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); exportConversation(conv.conv_id, conv.title, 'pdf'); }}><FileText size={13}/>{t('sidebar.exportPdf')}</button><button className="hist-menu-item danger" onClick={() => { setMenuOpenId(null); onConversationDelete(conv.conv_id); }}><Trash2 size={13}/>{t('sidebar.delete')}</button></SidebarOverflowMenu></div>)}
+                                {conversations.filter(conv => conv.project_id === project.id && !favoriteConversationIdSet.has(conv.conv_id)).slice(0, expandedProjectHistoryIds.has(project.id) ? undefined : PROJECT_HISTORY_PREVIEW_COUNT).map(conv => <div key={conv.conv_id} className={`project-conversation${conv.conv_id === activeConvId ? ' active' : ''}`} onClick={() => { onProjectChange?.(project.id); onConversationSelect(conv.conv_id); }}><button className="project-conversation-title">{conv.title}</button>{activeConversationIdSet.has(conv.conv_id) && <span className="conversation-progress" role="status" aria-label={t('sidebar.responseInProgress')} title={t('sidebar.responseInProgress')}><LoaderCircle size={13}/></span>}<button className="conversation-favorite-btn" type="button" aria-label={t('sidebar.addFavorite')} onClick={event => { event.stopPropagation(); void onConversationFavoriteChange(conv, true); }}><Pin size={14}/></button><SidebarOverflowMenu isOpen={menuOpenId === conv.conv_id} onOpenChange={isOpen => setMenuOpenId(isOpen ? conv.conv_id : null)} trigger="···"><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); onShowSummary(conv.conv_id); }}><NotebookText size={13}/>{t('sidebar.summary')}</button><button className="hist-menu-item" onClick={() => { setRenameValue(conv.title); setRenamingId(conv.conv_id); setMenuOpenId(null); }}><Pencil size={13}/>{t('sidebar.rename')}</button><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); exportConversation(conv.conv_id, conv.title, 'md', t('uiAuditExtra.emptyConversation')); }}><FileCode size={13}/>{t('sidebar.exportMarkdown')}</button><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); exportConversation(conv.conv_id, conv.title, 'pdf', t('uiAuditExtra.emptyConversation')); }}><FileText size={13}/>{t('sidebar.exportPdf')}</button><button className="hist-menu-item danger" onClick={() => { setMenuOpenId(null); onConversationDelete(conv.conv_id); }}><Trash2 size={13}/>{t('sidebar.delete')}</button></SidebarOverflowMenu></div>)}
                                 {!expandedProjectHistoryIds.has(project.id) && conversations.filter(conv => conv.project_id === project.id && !favoriteConversationIdSet.has(conv.conv_id)).length > PROJECT_HISTORY_PREVIEW_COUNT && <button className="project-history-more" onClick={() => setExpandedProjectHistoryIds(previous => new Set(previous).add(project.id))}>{t('googleWorkspace.more')}</button>}
                             </ProjectHistoryRow>
                         ))}
@@ -882,14 +882,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                                                         <button className="hist-menu-item" onClick={e => {
                                                             e.stopPropagation();
                                                             setMenuOpenId(null);
-                                                            exportConversation(conv.conv_id, conv.title, 'md');
+                                                            exportConversation(conv.conv_id, conv.title, 'md', t('uiAuditExtra.emptyConversation'));
                                                         }}>
                                                             <FileCode size={13}/> {t('sidebar.exportMarkdown')}
                                                         </button>
                                                         <button className="hist-menu-item" onClick={e => {
                                                             e.stopPropagation();
                                                             setMenuOpenId(null);
-                                                            exportConversation(conv.conv_id, conv.title, 'pdf');
+                                                            exportConversation(conv.conv_id, conv.title, 'pdf', t('uiAuditExtra.emptyConversation'));
                                                         }}>
                                                             <FileText size={13}/> {t('sidebar.exportPdf')}
                                                         </button>
@@ -908,7 +908,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                             )}
                             {hasMore && (
                                 <div ref={loadMoreRef} className="hist-loadmore">
-                                    <span className="hist-spinner" aria-label="불러오는 중"/>
+                                    <span className="hist-spinner" aria-label={t('uiAudit.loading')}/>
                                 </div>
                             )}
                         </div>

@@ -1729,7 +1729,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                  aria-labelledby="restore-preview-title" onClick={e => e.stopPropagation()}>
                             <div className="restore-preview-header">
                                 <div>
-                                    <span className="restore-preview-eyebrow">BACKUP RESTORE</span>
+                                    <span className="restore-preview-eyebrow">{t('backup.restorePreview')}</span>
                                     <h4 id="restore-preview-title">{t('backup.previewTitle')}</h4>
                                     <p>{restoreFile.name}</p>
                                 </div>

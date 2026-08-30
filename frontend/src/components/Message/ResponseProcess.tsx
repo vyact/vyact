@@ -1,4 +1,4 @@
-import {BookOpen, CircleCheck} from 'lucide-react';
+import {Ban, BookOpen, CircleCheck, CircleX} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import type {ResponseProgressMessage, ToolActivity} from '../../types';
 import {linkify, renderMarkdown} from '../../utils/markdownUtils';
@@ -39,10 +39,16 @@ export default function ResponseProcess({activities = [], progressMessages = [],
         ) : (() => {
             const activity = item.value;
             const detail = getStoredToolActivityDetail(activity.detail);
-            return <div key={activity.id ?? `tool-${item.timestamp}-${index}`} className={`msg-process-tool ${activity.phase}`}>
-                {activity.phase === 'completed'
-                    ? <CircleCheck size={15} aria-hidden="true"/>
-                    : <BookOpen size={15} aria-hidden="true"/>}
+            const outcomeClass = activity.outcome ? ` ${activity.outcome}` : '';
+            const icon = activity.outcome === 'failed'
+                ? <CircleX size={15} aria-hidden="true"/>
+                : activity.outcome === 'rejected'
+                    ? <Ban size={15} aria-hidden="true"/>
+                    : activity.phase === 'completed'
+                        ? <CircleCheck size={15} aria-hidden="true"/>
+                        : <BookOpen size={15} aria-hidden="true"/>;
+            return <div key={activity.id ?? `tool-${item.timestamp}-${index}`} className={`msg-process-tool ${activity.phase}${outcomeClass}`}>
+                {icon}
                 <span>{getToolActivityDisplayLabel(activity.name, activity.label, t, activity.phase, activity.outcome)}</span>
                 {detail && <code>{detail}</code>}
             </div>;

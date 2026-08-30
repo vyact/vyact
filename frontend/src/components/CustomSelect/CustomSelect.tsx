@@ -47,7 +47,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                                                        value,
                                                        selectedValues,
                                                        onChange,
-                                                       placeholder = '선택',
+                                                       placeholder,
                                                        searchable = false,
                                                        searchPlaceholder,
                                                        disabled = false,
@@ -61,7 +61,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                                                        searchAction,
                                                        clearable = false,
                                                        onClear,
-                                                       clearLabel = 'Clear selection',
+                                                       clearLabel,
                                                        footer,
                                                        emptyState,
                                                        ariaLabel,
@@ -72,6 +72,8 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                                                        closeOnSelect = true,
                                                    }) => {
     const {t} = useTranslation('common');
+    const resolvedPlaceholder = placeholder ?? t('select');
+    const resolvedClearLabel = clearLabel ?? t('clearSelection');
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
     const [dropdownPlacement, setDropdownPlacement] = useState<'up' | 'down'>('down');
@@ -221,7 +223,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                         </div>
                     ))
                 ) : (
-                    emptyState || <div className="custom-select-empty">{search ? '검색 결과 없음' : '항목 없음'}</div>
+                    emptyState || <div className="custom-select-empty">{t(search ? 'noSearchResults' : 'noItems')}</div>
                 )}
             </div>
 
@@ -248,18 +250,18 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                 type="button"
             >
                 {renderTrigger ? (
-                    renderTrigger(selectedLabel || placeholder, open)
+                    renderTrigger(selectedLabel || resolvedPlaceholder, open)
                 ) : (
                     <>
                         <span className="custom-select-trigger-label">
-                            {selectedLabel || placeholder}
+                            {selectedLabel || resolvedPlaceholder}
                         </span>
                         <span className={`custom-select-arrow${open ? ' open' : ''}`}>▼</span>
                     </>
                 )}
             </button>
             {showClearButton && (
-                <button type="button" className="custom-select-clear" aria-label={clearLabel}
+                <button type="button" className="custom-select-clear" aria-label={resolvedClearLabel}
                         onClick={event => {
                             event.stopPropagation();
                             onClear?.();

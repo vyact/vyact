@@ -125,7 +125,7 @@ const ProviderSettingsModal: React.FC<ProviderSettingsModalProps> = ({
                         <input
                             type="text"
                             className="provider-settings-wide-input"
-                            placeholder="Model"
+                            placeholder={t('main:providerSettings.model')}
                             value={model}
                             onChange={(e) => setModel(e.target.value)}
                         />

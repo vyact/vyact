@@ -1,4 +1,5 @@
 import React from 'react';
+import {useTranslation} from 'react-i18next';
 import './LoadingIndicator.css';
 
 interface LoadingIndicatorProps {
@@ -8,6 +9,7 @@ interface LoadingIndicatorProps {
 }
 
 const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({progress = 0, message = '', isImageMode = false}) => {
+    const {t} = useTranslation('main');
     const isImageGen = isImageMode || progress > 0;
     const displayProgress = isImageGen && progress === 0 ? 3 : progress;
     const hasMessage = !isImageGen && message;
@@ -17,7 +19,7 @@ const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({progress = 0, messag
             <div className="msg-bubble">
                 {isImageGen ? (
                     <div className="image-gen-progress">
-                        <div className="progress-label">{message || '이미지 생성 중...'}</div>
+                        <div className="progress-label">{message || t('loadingIndicator.generatingImage')}</div>
                         <div className="progress-bar-wrap">
                             <div className="progress-bar-fill" style={{width: `${displayProgress}%`}}/>
                         </div>

@@ -617,6 +617,10 @@
 .msg-process-tool { display:flex; align-items:center; gap:9px; min-width:0; color:var(--muted); font-size:13px; }
 .msg-process-tool svg { flex:0 0 auto; }
 .msg-process-tool.running svg { color:var(--text-secondary); }
+.msg-process-tool.success svg { color:var(--success); }
+.msg-process-tool.failed { color:var(--danger); }
+.msg-process-tool.failed code { color:var(--danger); }
+.msg-process-tool.rejected { color:var(--text-secondary); }
 .msg-process-tool code { min-width:0; overflow:hidden; color:var(--muted); font-size:12px; text-overflow:ellipsis; white-space:nowrap; }
 
 .code-changes-card { box-sizing:border-box; width:calc(100% - 32px); max-width:none; margin:12px 16px 4px; overflow:visible; border:1px solid var(--border); border-radius:14px; background:var(--surface); }

@@ -20,17 +20,14 @@ interface ProgressState {
     profile: string;
 }
 
-const MAX_LENGTH_OPTIONS = [
-    { value: '500',  label: '500자 (간결)' },
-    { value: '1000', label: '1000자' },
-    { value: '2000', label: '2000자 (기본)' },
-    { value: '3000', label: '3000자 (상세)' },
-];
-
 type Mode = 'view' | 'edit' | 'analyze';
 
 const RememberModal: React.FC<RememberModalProps> = ({onClose, onDone }) => {
-    const { i18n } = useTranslation();
+    const {t, i18n} = useTranslation('main');
+    const maxLengthOptions = [500, 1000, 2000, 3000].map(value => ({
+        value: String(value),
+        label: t(`rememberModal.length${value}`, {count: value}),
+    }));
     const [maxLength, setMaxLength] = useState('2000');
     const [existingProfile, setExistingProfile] = useState<string | null>(null);
     const [profileLoading, setProfileLoading] = useState(true);
@@ -67,7 +64,7 @@ const RememberModal: React.FC<RememberModalProps> = ({onClose, onDone }) => {
             await updateUserProfile({profile: editText});
             setExistingProfile(editText);
             setMode('view');
-            onDone(editText, '프로필이 저장되었습니다.');
+            onDone(editText, t('rememberModal.saved'));
         } catch (e) {
             console.error(e);
         } finally {
@@ -78,7 +75,7 @@ const RememberModal: React.FC<RememberModalProps> = ({onClose, onDone }) => {
     // AI 분석 시작
     const startAnalyze = () => {
         setMode('analyze');
-        setState({ status: '연결 중...', current: 0, total: 0, currentTitle: '', done: false, error: '', profile: '' });
+        setState({status: t('rememberModal.connecting'), current: 0, total: 0, currentTitle: '', done: false, error: '', profile: ''});
 
         let cancelled = false;
 
@@ -115,7 +112,7 @@ const RememberModal: React.FC<RememberModalProps> = ({onClose, onDone }) => {
                             setState(s => ({ ...s, status: data.message }));
                         } else if (event === 'progress') {
                             setState(s => ({
-                                ...s, status: '대화 분석 중...',
+                                ...s, status: t('rememberModal.analyzingConversations'),
                                 current: data.current, total: data.total, currentTitle: data.title,
                             }));
                         } else if (event === 'done') {
@@ -170,9 +167,9 @@ const RememberModal: React.FC<RememberModalProps> = ({onClose, onDone }) => {
                 <div className="remember-header">
                     <div className="remember-header-left">
                         <span className="remember-icon">🧩</span>
-                        <span>프로필 관리</span>
+                        <span>{t('rememberModal.title')}</span>
                     </div>
-                    <button className="remember-close-x" onClick={() => !isBusy && onClose()} disabled={isBusy}>✕</button>
+                    <button className="remember-close-x" aria-label={t('rememberModal.close')} onClick={() => !isBusy && onClose()} disabled={isBusy}>✕</button>
                 </div>
 
                 <div className="remember-body">
@@ -181,9 +178,9 @@ const RememberModal: React.FC<RememberModalProps> = ({onClose, onDone }) => {
                         <>
                             {/* AI 분석 설정 */}
                             <div className="remember-setup-row">
-                                <span className="remember-setup-label">최대 글자 수</span>
+                                <span className="remember-setup-label">{t('rememberModal.maxLength')}</span>
                                 <CustomSelect
-                                    options={MAX_LENGTH_OPTIONS}
+                                    options={maxLengthOptions}
                                     value={maxLength}
                                     onChange={setMaxLength}
                                     triggerStyle={{ fontSize: '13px', padding: '5px 10px' }}
@@ -191,13 +188,13 @@ const RememberModal: React.FC<RememberModalProps> = ({onClose, onDone }) => {
                             </div>
 
                             <div className="remember-existing">
-                                <div className="remember-profile-label">현재 저장된 프로필</div>
+                                <div className="remember-profile-label">{t('rememberModal.currentProfile')}</div>
                                 {profileLoading ? (
-                                    <div className="remember-profile-loading">조회 중...</div>
+                                    <div className="remember-profile-loading">{t('rememberModal.loading')}</div>
                                 ) : existingProfile ? (
                                     <div className="remember-profile-text">{existingProfile}</div>
                                 ) : (
-                                    <div className="remember-profile-empty">저장된 프로필 없음</div>
+                                    <div className="remember-profile-empty">{t('rememberModal.empty')}</div>
                                 )}
                             </div>
                         </>
@@ -206,16 +203,16 @@ const RememberModal: React.FC<RememberModalProps> = ({onClose, onDone }) => {
                     {/* ── 편집 모드 ── */}
                     {mode === 'edit' && (
                         <div className="remember-edit-wrap">
-                            <div className="remember-profile-label">프로필 편집</div>
+                            <div className="remember-profile-label">{t('rememberModal.editTitle')}</div>
                             <textarea
                                 className="remember-edit-textarea"
                                 value={editText}
                                 onChange={e => setEditText(e.target.value)}
-                                placeholder="프로필 내용을 입력하세요..."
+                                placeholder={t('rememberModal.placeholder')}
                                 autoFocus
                             />
                             <div className="remember-edit-count">
-                                {editText.length}자
+                                {t('rememberModal.characterCount', {count: editText.length})}
                             </div>
                         </div>
                     )}
@@ -248,7 +245,7 @@ const RememberModal: React.FC<RememberModalProps> = ({onClose, onDone }) => {
                             <div className="remember-done-msg">✅ {state.status}</div>
                             {state.profile && (
                                 <div className="remember-profile-preview">
-                                    <div className="remember-profile-label">업데이트된 프로필</div>
+                                    <div className="remember-profile-label">{t('rememberModal.updatedProfile')}</div>
                                     <div className="remember-profile-text">{state.profile}</div>
                                 </div>
                             )}
@@ -260,20 +257,20 @@ const RememberModal: React.FC<RememberModalProps> = ({onClose, onDone }) => {
                 <div className="remember-footer">
                     {mode === 'view' && (
                         <>
-                            <button className="remember-cancel-btn" onClick={onClose}>닫기</button>
+                            <button className="remember-cancel-btn" onClick={onClose}>{t('rememberModal.close')}</button>
                             <button className="remember-edit-btn" onClick={enterEdit} disabled={profileLoading}>
-                                ✏️ 편집
+                                ✏️ {t('rememberModal.edit')}
                             </button>
                             <button className="remember-start-btn" onClick={startAnalyze}>
-                                🔍 AI 분석
+                                🔍 {t('rememberModal.analyze')}
                             </button>
                         </>
                     )}
                     {mode === 'edit' && (
                         <>
-                            <button className="remember-cancel-btn" onClick={() => setMode('view')}>취소</button>
+                            <button className="remember-cancel-btn" onClick={() => setMode('view')}>{t('rememberModal.cancel')}</button>
                             <button className="remember-start-btn" onClick={handleSave} disabled={saving}>
-                                {saving ? '저장 중...' : '💾 저장'}
+                                {saving ? t('rememberModal.saving') : `💾 ${t('rememberModal.save')}`}
                             </button>
                         </>
                     )}
@@ -283,7 +280,7 @@ const RememberModal: React.FC<RememberModalProps> = ({onClose, onDone }) => {
                             onClick={() => setMode('view')}
                             disabled={isAnalyzing}
                         >
-                            {isAnalyzing ? '분석 중...' : '돌아가기'}
+                            {isAnalyzing ? t('rememberModal.analyzing') : t('rememberModal.back')}
                         </button>
                     )}
                 </div>

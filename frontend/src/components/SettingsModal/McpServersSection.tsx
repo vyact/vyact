@@ -462,18 +462,18 @@ function GoogleAccountsEditor({value, onChange, onPersist, onCredentialUpload, o
             setBusyAccountId(null);
         }
     };
-    const oauthField: Field = {key: 'gauth_json', label: 'OAuth 자격증명 (.gauth.json)', type: 'file_json', required: true};
+    const oauthField: Field = {key: 'gauth_json', label: t('uiAudit.googleOauthCredential'), type: 'file_json', required: true};
     const mailModeField: Field = {
         key: 'mail_mode',
-        label: '이메일 쓰기 권한',
+        label: t('uiAudit.googleMailPermission'),
         type: 'select',
         options: [
-            {value: 'readonly', label: '읽기 전용'},
-            {value: 'draft_only', label: '초안만 허용'},
-            {value: 'send', label: '발송 허용'},
+            {value: 'readonly', label: t('uiAudit.googleMailReadonly')},
+            {value: 'draft_only', label: t('uiAudit.googleMailDraftOnly')},
+            {value: 'send', label: t('uiAudit.googleMailSend')},
         ],
     };
-    const notificationField: Field = {key: 'mail_notifications', label: '알림 받기', type: 'toggle'};
+    const notificationField: Field = {key: 'mail_notifications', label: t('uiAudit.googleMailNotifications'), type: 'toggle'};
     const removeAccountIndex = accounts.findIndex(account => account.id === removeAccountId);
     const removeAccountLabel = removeAccountId
         ? statuses[removeAccountId]?.email || t('mcp.googleAccount', {

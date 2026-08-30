@@ -18,5 +18,5 @@
   "none": "なし",
   "notSet": "未設定",
   "retry": "再試行",
-  "more": "もっと見る"
+  "more": "もっと見る", "select": "選択", "clearSelection": "選択を解除", "noSearchResults": "検索結果はありません", "noItems": "項目はありません"
 }

@@ -203,7 +203,7 @@
     "googleExpired": "Google接続が期限切れです。設定から再接続してください。",
     "restoreCompleteAlert": "復元完了\n新規 {{inserted}}件 · 重複 {{skipped}}件{{googleMsg}}\n\nページを更新します。",
     "previewFailed": "バックアップ情報を読み取れませんでした。",
-    "previewTitle": "復元するデータを選択",
+    "previewTitle": "復元するデータを選択", "restorePreview": "バックアップの復元",
     "previewDescription": "選択した項目のみを追加します。既存データと同名のファイルは保持され、重複はスキップされます。設定は別途の案内に従って復元されます。",
     "restoreIndices": "復元するインデックス ({{selected}}/{{total}})",
     "settingsOverwrite": "設定はこのバックアップで上書きされます",

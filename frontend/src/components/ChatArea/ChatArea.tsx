@@ -164,6 +164,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                                                onFollowupDismiss,
                                            followupComposedRef,
                                        }) => {
+    const {t} = useTranslation('main');
     const chatRef = useRef<HTMLDivElement>(null);
     const [activeTurnIndex, setActiveTurnIndex] = useState(0);
     const conversationTurns = useMemo(() => buildConversationTurns(messages), [messages]);
@@ -451,9 +452,9 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         <div
             className={`chat-area-wrap${panels.activePanel ? ' chat-area-split' : ''}`}>
             {conversationTurns.length > 1 && (
-                <nav className="conversation-navigator" aria-label="대화 탐색">
+                <nav className="conversation-navigator" aria-label={t('conversationNavigator.label')}>
                     {conversationTurns.map((turn, turnIndex) => (
-                        <Tooltip content={<span className="conversation-navigator-tooltip-content"><strong>{turn.question || '질문'}</strong>{turn.answer && <span>{turn.answer}</span>}</span>} multiline size="medium" key={turn.messageIndex}>
+                        <Tooltip content={<span className="conversation-navigator-tooltip-content"><strong>{turn.question || t('conversationNavigator.question')}</strong>{turn.answer && <span>{turn.answer}</span>}</span>} multiline size="medium" key={turn.messageIndex}>
                         <button
                             key={turn.messageIndex}
                             type="button"

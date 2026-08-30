@@ -18,5 +18,5 @@
   "none": "Ninguno",
   "notSet": "No configurado",
   "retry": "Reintentar",
-  "more": "Más"
+  "more": "Más", "select": "Seleccionar", "clearSelection": "Borrar selección", "noSearchResults": "Sin resultados", "noItems": "No hay elementos"
 }

@@ -203,7 +203,7 @@
     "googleExpired": "La connexion à Google a expiré. Reconnectez-la dans les paramètres.",
     "restoreCompleteAlert": "Restauration terminée\n{{inserted}} nouveaux · {{skipped}} ignorés{{googleMsg}}\n\nLa page va s'actualiser.",
     "previewFailed": "Impossible de lire les informations de la sauvegarde.",
-    "previewTitle": "Choisissez les données à restaurer",
+    "previewTitle": "Choisissez les données à restaurer", "restorePreview": "Restaurer la sauvegarde",
     "previewDescription": "Seuls les éléments sélectionnés sont ajoutés. Les données et fichiers existants portant le même nom sont conservés, et les doublons sont ignorés. Les paramètres suivent l'avis dédié.",
     "restoreIndices": "Index à restaurer ({{selected}}/{{total}})",
     "settingsOverwrite": "Cette sauvegarde écrasera les paramètres",

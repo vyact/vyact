@@ -18,5 +18,5 @@
   "none": "Không có",
   "notSet": "Chưa thiết lập",
   "retry": "Thử lại",
-  "more": "Thêm"
+  "more": "Thêm", "select": "Chọn", "clearSelection": "Bỏ lựa chọn", "noSearchResults": "Không có kết quả", "noItems": "Không có mục nào"
 }

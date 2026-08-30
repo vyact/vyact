@@ -917,15 +917,11 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
 
                         {chat.zipConfirmRequest && (
                             <ConfirmModal
-                                title="zip 파일이 너무 많습니다"
-                                description={
-                                    `"${chat.zipConfirmRequest.originalName}"에서 처리 가능한 파일 ${chat.zipConfirmRequest.totalEligible}개를 찾았습니다.\n` +
-                                    `기본값(${chat.zipConfirmRequest.defaultLimit}개)만 사용하시겠습니까, 전체를 사용하시겠습니까?\n` +
-                                    `(파일이 많을수록 응답 속도가 느려질 수 있습니다)`
-                                }
+                                title={t('zipLimit.title')}
+                                description={t('zipLimit.description', {name: chat.zipConfirmRequest.originalName, total: chat.zipConfirmRequest.totalEligible, limit: chat.zipConfirmRequest.defaultLimit})}
                                 options={[
-                                    {label: `기본 ${chat.zipConfirmRequest.defaultLimit}개만 사용`, value: 'default'},
-                                    {label: `전체 ${chat.zipConfirmRequest.totalEligible}개 사용`, value: 'all'},
+                                    {label: t('zipLimit.useDefault', {count: chat.zipConfirmRequest.defaultLimit}), value: 'default'},
+                                    {label: t('zipLimit.useAll', {count: chat.zipConfirmRequest.totalEligible}), value: 'all'},
                                 ]}
                                 onSelect={value => chat.resolveZipConfirm(
                                     value === 'all' ? chat.zipConfirmRequest!.totalEligible : chat.zipConfirmRequest!.defaultLimit

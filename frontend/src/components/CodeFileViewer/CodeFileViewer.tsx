@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import {useTranslation} from 'react-i18next';
 import { useCodePanel } from '../../contexts/CodePanelContext';
 import './CodeFileViewer.css';
 
@@ -33,6 +34,7 @@ function downloadFile(file: CodeFile) {
 }
 
 const CodeFileViewer: React.FC<CodeFileViewerProps> = ({ files }) => {
+    const {t} = useTranslation('main');
     const { openPanel, panel } = useCodePanel();
     const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
     const [viewerId] = useState(() => Math.random().toString(36).slice(2));
@@ -96,15 +98,15 @@ const CodeFileViewer: React.FC<CodeFileViewerProps> = ({ files }) => {
                                              stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
                                             <polyline points="20 6 9 17 4 12"/>
                                         </svg>
-                                        복사됨
+                                        {t('codeFileViewer.copied')}
                                     </>
-                                ) : '복사'}
+                                ) : t('codeFileViewer.copy')}
                             </button>
                             <button
                                 className="cfv-dl-btn"
                                 onClick={e => { e.stopPropagation(); downloadFile(f); }}
                             >
-                                다운로드
+                                {t('codeFileViewer.download')}
                             </button>
                         </div>
                     );
@@ -118,7 +120,7 @@ const CodeFileViewer: React.FC<CodeFileViewerProps> = ({ files }) => {
                         <polyline points="7 10 12 15 17 10"/>
                         <line x1="12" y1="15" x2="12" y2="3"/>
                     </svg>
-                    모두 다운로드
+                    {t('codeFileViewer.downloadAll')}
                 </button>
             )}
         </div>

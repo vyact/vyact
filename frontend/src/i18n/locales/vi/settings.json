@@ -203,7 +203,7 @@
     "googleExpired": "Kết nối Google đã hết hạn. Vui lòng kết nối lại trong cài đặt.",
     "restoreCompleteAlert": "Khôi phục hoàn tất\n{{inserted}} mới · {{skipped}} bỏ qua{{googleMsg}}\n\nTrang sẽ được tải lại.",
     "previewFailed": "Không thể đọc thông tin sao lưu.",
-    "previewTitle": "Chọn dữ liệu để khôi phục",
+    "previewTitle": "Chọn dữ liệu để khôi phục", "restorePreview": "Khôi phục bản sao lưu",
     "previewDescription": "Chỉ các mục được chọn mới được thêm vào. Dữ liệu hiện có và tệp trùng tên được giữ nguyên, còn các mục trùng lặp sẽ bị bỏ qua. Cài đặt tuân theo thông báo riêng.",
     "restoreIndices": "Chỉ mục để khôi phục ({{selected}}/{{total}})",
     "settingsOverwrite": "Cài đặt sẽ bị ghi đè bởi bản sao lưu này",
