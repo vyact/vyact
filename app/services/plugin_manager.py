@@ -20,11 +20,18 @@ from typing import Any
 from collections.abc import Awaitable, Callable
 
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException
 from starlette.responses import JSONResponse
 
 from config import INSTALL_DIR
 from logger import get_logger
-from error_responses import public_error_payload
+from error_responses import (
+    http_exception_handler,
+    public_error_payload,
+    unhandled_exception_handler,
+    validation_exception_handler,
+)
 from services.db import PLUGIN_STATE_INDEX, get_es
 from services.mcp_client import mcp_manager
 from services.mcp_config import MCP_CATALOG, load_mcp_config, save_mcp_config
@@ -63,6 +70,9 @@ class PluginContext:
     def register_router(self, router: Any) -> None:
         """Attach a router to the plugin's isolated runtime ASGI application."""
         plugin_app = FastAPI()
+        plugin_app.add_exception_handler(HTTPException, http_exception_handler)
+        plugin_app.add_exception_handler(RequestValidationError, validation_exception_handler)
+        plugin_app.add_exception_handler(Exception, unhandled_exception_handler)
         plugin_app.include_router(router)
         _plugin_apps[self.plugin_id] = plugin_app
 
