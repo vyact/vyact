@@ -465,7 +465,7 @@ async def knowledge_collection_search(collection_id: str, query: str, size: int 
         query_language = detect_language(query)
         searches = []
         if document_ids:
-            body = {"size": size, "_source": ["title", "content", "url", "source", "indexed_at", "file_id", "chunk_type", "heading_path", "page_number"],
+            body = {"size": size, "_source": ["title", "content", "url", "source", "indexed_at", "file_id", "chunk_index", "total_chunks", "chunk_type", "heading_path", "page_number"],
                     "query": _filtered_lexical_query("file_id", document_ids, query)}
             searches.append(es.search(index=_language_search_indices("doc_chunks", query_language), body=body))
             if embedding:

@@ -49,6 +49,33 @@ class RetrievalCandidateTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(results), agent.RELATED_CONTEXT_RESULT_SIZE)
         self.assertEqual(len(same_document_results), agent.MAX_CHUNKS_PER_DOCUMENT)
 
+    async def test_explicit_collection_guarantees_only_top_low_scoring_results(self):
+        candidates = [
+            {
+                "file_id": f"study-{index}",
+                "chunk_index": index,
+                "title": f"chunk-{index}",
+                "content": "study evidence",
+                "rerank_score": 0.01,
+            }
+            for index in range(3)
+        ]
+
+        with patch.object(agent, "is_reranker_available", return_value=True), patch.object(
+            agent,
+            "rerank",
+            new=AsyncMock(return_value=candidates),
+        ):
+            results = await agent._rerank_related_context(
+                "question",
+                candidates,
+                relevance_threshold=agent.COLLECTION_RERANK_SCORE_THRESHOLD,
+                minimum_results=agent.COLLECTION_MIN_RESULTS,
+            )
+
+        self.assertEqual(len(results), agent.COLLECTION_MIN_RESULTS)
+        self.assertEqual([item["chunk_index"] for item in results], [0, 1])
+
 
 class RerankerPassageTests(unittest.TestCase):
     def test_reranker_reads_beyond_the_first_four_hundred_characters(self):

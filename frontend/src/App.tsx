@@ -35,15 +35,6 @@ const App: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        if (!isInitialSetupLaunch || isSetupComplete === undefined) return;
-
-        // The initial setup page is prepared in an unattached BrowserView.
-        // requestAnimationFrame is paused there, so notify after React commits
-        // the SetupPage tree instead of waiting for a browser frame.
-        window.ragAPI?.notifyAppReady?.();
-    }, [isInitialSetupLaunch, isSetupComplete]);
-
-    useEffect(() => {
         if (!isSetupComplete) return;
         // Elasticsearch-backed startup data must only be requested after the
         // initial setup has installed and started Elasticsearch.
@@ -152,7 +143,10 @@ const App: React.FC = () => {
                 {isSetupComplete ? (
                     <MainPage onModelChange={() => {}}/>
                 ) : (
-                    <SetupPage onInstallComplete={() => setIsSetupComplete(true)}/>
+                    <SetupPage
+                        onInstallComplete={() => setIsSetupComplete(true)}
+                        notifyAppReadyOnMount={isInitialSetupLaunch}
+                    />
                 )}
             </Suspense>
             <ToastContainer/>

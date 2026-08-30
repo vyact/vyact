@@ -44,6 +44,8 @@ from reranker import is_available as is_reranker_available, rerank
 logger = get_logger(__name__)
 
 RERANK_SCORE_THRESHOLD = 0.35
+COLLECTION_RERANK_SCORE_THRESHOLD = 0.10
+COLLECTION_MIN_RESULTS = 2
 RELATED_CONTEXT_CANDIDATE_SIZE = 10
 RELATED_CONTEXT_RESULT_SIZE = 8
 RELATED_CONTEXT_RERANK_SIZE = 20
@@ -110,8 +112,14 @@ def _select_diverse_candidates(candidates: list[dict], limit: int) -> list[dict]
     return selected
 
 
-async def _rerank_related_context(question: str, candidates: list[dict]) -> list[dict]:
-    """일반 RAG·메모·빠른메모 후보를 하나의 관련도 기준으로 선별한다."""
+async def _rerank_related_context(
+        question: str,
+        candidates: list[dict],
+        *,
+        relevance_threshold: float = RERANK_SCORE_THRESHOLD,
+        minimum_results: int = 0,
+) -> list[dict]:
+    """검색 후보를 재정렬하고, 일반 RAG에는 관련도 임계값을 적용한다."""
     unique_candidates: list[dict] = []
     seen_keys: set[str] = set()
     for candidate in candidates:
@@ -135,17 +143,17 @@ async def _rerank_related_context(question: str, candidates: list[dict]) -> list
         unique_candidates,
         top_k=min(RELATED_CONTEXT_RERANK_SIZE, len(unique_candidates)),
     )
-    relevant_candidates = _select_diverse_candidates(
-        [
-            candidate for candidate in ranked_candidates
-            if candidate.get("rerank_score") is None or candidate["rerank_score"] >= RERANK_SCORE_THRESHOLD
-        ],
-        RELATED_CONTEXT_RESULT_SIZE,
-    )
+    threshold_candidates = [
+        candidate for index, candidate in enumerate(ranked_candidates)
+        if index < minimum_results
+        or candidate.get("rerank_score") is None
+        or candidate["rerank_score"] >= relevance_threshold
+    ]
+    relevant_candidates = _select_diverse_candidates(threshold_candidates, RELATED_CONTEXT_RESULT_SIZE)
     if len(ranked_candidates) != len(relevant_candidates):
         logger.info(
-            "[rag_query] 관련도 필터: 일반 RAG/메모/빠른메모 %d개 → %d개 (임계값 %.2f)",
-            len(ranked_candidates), len(relevant_candidates), RERANK_SCORE_THRESHOLD,
+            "[rag_query] 관련도 필터: 후보 %d개 → %d개 (임계값 %.2f, 최소 보장 %d개)",
+            len(ranked_candidates), len(relevant_candidates), relevance_threshold, minimum_results,
         )
     return relevant_candidates
 
@@ -196,8 +204,18 @@ async def _search_knowledge_collections(collection_ids: list[str], question: str
             seen_documents.add(identity)
             merged_documents.append(document)
             if len(merged_documents) >= 20:
-                return await _rerank_related_context(question, merged_documents), "\n\n".join(instructions)
-    return await _rerank_related_context(question, merged_documents), "\n\n".join(instructions)
+                return await _rerank_related_context(
+                    question,
+                    merged_documents,
+                    relevance_threshold=COLLECTION_RERANK_SCORE_THRESHOLD,
+                    minimum_results=COLLECTION_MIN_RESULTS,
+                ), "\n\n".join(instructions)
+    return await _rerank_related_context(
+        question,
+        merged_documents,
+        relevance_threshold=COLLECTION_RERANK_SCORE_THRESHOLD,
+        minimum_results=COLLECTION_MIN_RESULTS,
+    ), "\n\n".join(instructions)
 
 
 async def _gather_docs(question: str, extra_context: list, skip_rag: bool = False, conv_id: str = "", knowledge_collection_ids: list[str] | None = None) -> list[dict]:

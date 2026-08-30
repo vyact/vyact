@@ -25,6 +25,7 @@ import '../VyactModelModal/VyactModelModal.css';
 
 interface SetupPageProps {
     onInstallComplete: () => void;
+    notifyAppReadyOnMount?: boolean;
 }
 
 type Provider = 'vyact' | 'openai' | 'gemini' | 'claude' | 'custom';
@@ -55,7 +56,7 @@ const EMPTY_HARDWARE_INFO: VyactHardwareInfo = {
 };
 const formatContextLength = (tokens: number) => tokens >= 1024 ? `${Math.round(tokens / 1024)}K` : String(tokens);
 
-const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
+const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReadyOnMount = false }) => {
     const { t } = useTranslation(['setup', 'main']);
     const [provider, setProvider] = useState<Provider>('vyact');
     const [esMode, setEsMode] = useState<'docker' | 'native'>('docker');
@@ -101,6 +102,14 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete }) => {
     const selectedFileKey = selectedHubModelFile ? `${selectedHubModelFile.repository}@${selectedHubModelFile.revision}/${selectedHubModelFile.filename}` : '';
     const selectedMetadata = selectedFileKey ? metadataByFile[selectedFileKey] : undefined;
     const selectedFileDisplayName = selectedHubModelFile?.runtime === 'mlx' ? selectedHubModelFile.repository.split('/').pop() : selectedHubModelFile?.filename;
+
+    useEffect(() => {
+        if (!notifyAppReadyOnMount) return;
+
+        // The initial setup BrowserView must remain detached until this lazy-loaded
+        // page has committed, otherwise Suspense's empty fallback is briefly shown.
+        window.ragAPI?.notifyAppReady?.();
+    }, [notifyAppReadyOnMount]);
 
     const searchVyactModels = async (query: string, searchMlxOnly = mlxOnly) => {
         const trimmedQuery = query.trim();
