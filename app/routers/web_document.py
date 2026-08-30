@@ -16,6 +16,7 @@ from services.embedding_runtime import get_embeddings
 from services.knowledge_collection_references import remove_source_references_from_collections
 from services.language_detection import detect_language
 from logger import get_logger
+from error_responses import public_error_payload
 
 router = APIRouter()
 logger = get_logger(__name__)
@@ -198,10 +199,10 @@ async def index_web_document_progress(request: WebDocumentIndexRequest):
             result = await task
             yield json.dumps({"type": "result", **result}, ensure_ascii=False) + "\n"
         except HTTPException as error:
-            yield json.dumps({"type": "error", "message": error.detail}, ensure_ascii=False) + "\n"
+            yield json.dumps({"type": "error", **public_error_payload("web_document_save_failed")}) + "\n"
         except Exception as error:
             logger.exception("웹 문서 인덱싱 실패: %s", error)
-            yield json.dumps({"type": "error", "message": "웹 문서 저장에 실패했습니다."}, ensure_ascii=False) + "\n"
+            yield json.dumps({"type": "error", **public_error_payload("web_document_save_failed")}) + "\n"
 
     return StreamingResponse(event_stream(), media_type="application/x-ndjson", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 

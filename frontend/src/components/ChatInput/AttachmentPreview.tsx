@@ -52,7 +52,7 @@ const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({
                         <span className="pasted-text-preview__icon"><Braces size={18}/></span>
                         <div className="pasted-text-preview__copy">
                             <span className="pasted-text-preview__title">{p.label}</span>
-                            <span className="pasted-text-preview__meta">{t('message.pastedText')} · {p.content.length.toLocaleString()}자 · {t('attachmentPreview.analysis')}</span>
+                            <span className="pasted-text-preview__meta">{t('message.pastedText')} · {t('uiAuditFinal.characterCount', {count: p.content.length.toLocaleString()})} · {t('attachmentPreview.analysis')}</span>
                         </div>
                     </div>
                     <button className="pasted-text-preview__remove" onClick={e => { e.stopPropagation(); onRemovePastedText(p.id); }} aria-label={t('sidebar.delete')}>

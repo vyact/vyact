@@ -12,6 +12,7 @@ import type {
     InstalledPlugin,
 } from '../types';
 import { assertOk, ApiError } from '../utils/apiError';
+import i18n from '../i18n';
 
 const API_BASE = '/api';
 const EXTERNAL_DATA_BOOTSTRAP_CACHE_MS = 10_000;
@@ -674,7 +675,7 @@ export const api = {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({type, config, enabled, prompt}),
         });
-        await assertOk(res, 'MCP 서버 추가 실패');
+        await assertOk(res, i18n.t('main:networkError.requestFailed'));
         return res.json();
     },
 
@@ -694,7 +695,7 @@ export const api = {
 
     async getPlugins(): Promise<{ plugins: InstalledPlugin[] }> {
         const res = await fetch(`${API_BASE}/plugins`);
-        await assertOk(res, '플러그인 목록을 불러오지 못했습니다.');
+        await assertOk(res, i18n.t('main:networkError.requestFailed'));
         return res.json();
     },
 
@@ -705,7 +706,7 @@ export const api = {
             method: 'POST',
             body: formData,
         });
-        await assertOk(res, '플러그인 설치에 실패했습니다.');
+        await assertOk(res, i18n.t('main:networkError.requestFailed'));
         return res.json();
     },
 
@@ -713,7 +714,7 @@ export const api = {
         const res = await fetch(`${API_BASE}/plugins/${encodeURIComponent(id)}`, {
             method: 'DELETE',
         });
-        await assertOk(res, '플러그인 삭제에 실패했습니다.');
+        await assertOk(res, i18n.t('main:networkError.requestFailed'));
         return res.json();
     },
 
@@ -738,7 +739,7 @@ export const api = {
 
     async activateGoogleAccount(accountId: string): Promise<{ok: boolean; active_account_id: string}> {
         const res = await fetch(`${API_BASE}/mcp/google/accounts/${encodeURIComponent(accountId)}/activate`, {method: 'POST'});
-        await assertOk(res, 'Google 계정을 전환하지 못했습니다.');
+        await assertOk(res, i18n.t('main:networkError.requestFailed'));
         return res.json();
     },
 
@@ -931,7 +932,7 @@ export const api = {
     async copyGoogleDriveFile(id: string, name: string) { return (await fetch(`${API_BASE}/google-workspace/drive/files/${encodeURIComponent(id)}/copy`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name})})).json(); },
     async downloadGoogleDriveFile(id: string, signal?: AbortSignal) {
         const response = await fetch(`${API_BASE}/google-workspace/drive/files/${encodeURIComponent(id)}/download`, {signal});
-        if (!response.ok) throw new Error('파일을 다운로드하지 못했습니다.');
+        if (!response.ok) throw new Error(i18n.t('main:networkError.requestFailed'));
         const disposition = response.headers.get('Content-Disposition') || '';
         const encodedFilename = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
         return {
@@ -941,7 +942,7 @@ export const api = {
     },
     async createGoogleDriveDownloadJob(id: string, signal?: AbortSignal) {
         const response = await fetch(`${API_BASE}/google-workspace/drive/files/${encodeURIComponent(id)}/download-jobs`, {method: 'POST', signal});
-        if (!response.ok) throw new Error('다운로드 작업을 시작하지 못했습니다.');
+        if (!response.ok) throw new Error(i18n.t('main:networkError.requestFailed'));
         return response.json() as Promise<{jobId: string}>;
     },
     async createGoogleDriveBulkDownloadJob(ids: string[], archiveName: string, signal?: AbortSignal) {
@@ -951,17 +952,17 @@ export const api = {
             body: JSON.stringify({file_ids: ids, archive_name: archiveName}),
             signal,
         });
-        if (!response.ok) throw new Error('다운로드 작업을 시작하지 못했습니다.');
+        if (!response.ok) throw new Error(i18n.t('main:networkError.requestFailed'));
         return response.json() as Promise<{jobId: string}>;
     },
     async getGoogleDriveDownloadJob(jobId: string, signal?: AbortSignal) {
         const response = await fetch(`${API_BASE}/google-workspace/drive/download-jobs/${encodeURIComponent(jobId)}`, {signal});
-        if (!response.ok) throw new Error('다운로드 진행 상태를 확인하지 못했습니다.');
+        if (!response.ok) throw new Error(i18n.t('main:networkError.requestFailed'));
         return response.json() as Promise<{status: 'collecting' | 'compressing' | 'complete' | 'error'; total: number; completed: number; error?: string}>;
     },
     async getGoogleDriveDownloadJobFile(jobId: string, signal?: AbortSignal) {
         const response = await fetch(`${API_BASE}/google-workspace/drive/download-jobs/${encodeURIComponent(jobId)}/file`, {signal});
-        if (!response.ok) throw new Error('압축 파일을 다운로드하지 못했습니다.');
+        if (!response.ok) throw new Error(i18n.t('main:networkError.requestFailed'));
         const disposition = response.headers.get('Content-Disposition') || '';
         const encodedFilename = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
         return {
@@ -1265,8 +1266,8 @@ export const api = {
                 override_model: overrideModel ?? ''
             }),
         });
-        await assertOk(res, '이미지 생성 요청 실패');
-        if (!res.body) throw new ApiError('스트림을 받을 수 없습니다.');
+        await assertOk(res, i18n.t('main:networkError.requestFailed'));
+        if (!res.body) throw new ApiError(i18n.t('main:networkError.streamFailed'));
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         while (true) {
@@ -1284,7 +1285,7 @@ export const api = {
                 }
             }
         }
-        throw new Error('이미지 생성 응답이 완료되지 않았습니다.');
+        throw new Error(i18n.t('main:networkError.streamFailed'));
     },
 
     async getLlmLogging(): Promise<{ llm_logging: boolean }> {
@@ -1648,7 +1649,7 @@ export const api = {
         const formData = new FormData();
         formData.append('file', file);
         const res = await fetch(`${API_BASE}/memo/${memoId}/attachments`, { method: 'POST', body: formData });
-        if (!res.ok) throw new Error((await res.json().catch(() => null))?.detail || '첨부 파일 업로드에 실패했습니다.');
+        if (!res.ok) throw new Error((await res.json().catch(() => null))?.detail || i18n.t('main:uiAuditSecond.attachmentUploadFailed'));
         return res.json();
     },
     async cleanupMemoAttachments(memoId: string, contentHtml: string): Promise<void> {
@@ -1657,7 +1658,7 @@ export const api = {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({content_html: contentHtml}),
         });
-        if (!res.ok) throw new Error('첨부 파일 정리에 실패했습니다.');
+        if (!res.ok) throw new Error(i18n.t('main:networkError.requestFailed'));
     },
 
     // ── 빠른 메모 (todo형) ──

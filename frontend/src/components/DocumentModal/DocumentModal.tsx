@@ -9,6 +9,7 @@ import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import KnowledgeCollectionAttachSelect from '../KnowledgeCollectionsModal/KnowledgeCollectionAttachSelect';
 import {getDocumentFiles, invalidateDocumentFiles, removeCachedDocumentFiles} from '../../services/documentFiles';
+import {translateBackendError} from '../../utils/apiError';
 import './DocumentModal.css';
 
 interface DocumentModalProps {
@@ -42,6 +43,8 @@ interface IndexProgressEvent {
     stage?: string;
     percent?: number;
     message?: string;
+    code?: string;
+    params?: Record<string, unknown>;
     chunks?: number;
     total_chunks?: number;
     embedded_chunks?: number;
@@ -438,7 +441,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
         const response = await fetch('/api/document/index-progress', {method: 'POST', body: formData});
         if (!response.ok || !response.body) {
             const data = await response.json().catch(() => null);
-            throw new Error(data?.detail || `${file.name} 인덱싱 실패`);
+            throw new Error(data?.code ? translateBackendError(data.code, data.params) : t('backendErrors.document_index_failed'));
         }
 
         const reader = response.body.getReader();
@@ -447,7 +450,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
         let result: IndexProgressEvent | null = null;
 
         const handleEvent = (event: IndexProgressEvent) => {
-            if (event.type === 'error') throw new Error(event.message || `${file.name} 인덱싱 실패`);
+            if (event.type === 'error') throw new Error(event.code ? translateBackendError(event.code, event.params) : event.message || t('backendErrors.document_index_failed'));
             if (event.type === 'result') {
                 result = event;
                 return;

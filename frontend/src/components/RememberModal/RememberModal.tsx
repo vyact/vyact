@@ -4,6 +4,7 @@ import './RememberModal.css';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import {getUserProfile, updateUserProfile} from '../../services/userProfile';
+import {translateBackendError} from '../../utils/apiError';
 
 interface RememberModalProps {
     onClose: () => void;
@@ -123,7 +124,7 @@ const RememberModal: React.FC<RememberModalProps> = ({onClose, onDone }) => {
                             setExistingProfile(data.profile);
                             onDone(data.profile, data.message);
                         } else if (event === 'error') {
-                            setState(s => ({ ...s, error: data.message }));
+                            setState(s => ({ ...s, error: data.code ? translateBackendError(data.code, data.params) : data.message }));
                         }
                     }
                 }

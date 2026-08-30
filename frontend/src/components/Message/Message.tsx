@@ -294,7 +294,7 @@ const Message: React.FC<MessageProps> = ({
                                 <span className="msg-pasted-preview__icon"><Braces size={18}/></span>
                                 <div className="msg-pasted-preview__copy">
                                     <span className="msg-pasted-preview__title">{chip.label}</span>
-                                    <span className="msg-pasted-preview__meta">{t('message.pastedText')} · {chip.content.length.toLocaleString()}자</span>
+                                    <span className="msg-pasted-preview__meta">{t('message.pastedText')} · {t('uiAuditFinal.characterCount', {count: chip.content.length.toLocaleString()})}</span>
                                 </div>
                             </div>
                         </div>
@@ -336,7 +336,7 @@ const Message: React.FC<MessageProps> = ({
                                         {att.original_name || att.saved_name || att.filename || t('uiAuditExtra.file')}
                                     </span>
                                     {att.type === 'zip' && att.file_count != null && (
-                                        <span className="user-file-card__meta">{att.file_count}개</span>
+                                        <span className="user-file-card__meta">{t('uiAuditFinal.itemCount', {count: att.file_count})}</span>
                                     )}
                                 </div>
                             ))}
@@ -416,7 +416,7 @@ const Message: React.FC<MessageProps> = ({
                                             <polyline points="7 10 12 15 17 10"/>
                                             <line x1="12" y1="15" x2="12" y2="3"/>
                                         </svg>
-                                        다운로드
+                                        {t('uiAuditFinal.download')}
                                     </button>
                                 </div>
                             )
@@ -552,7 +552,7 @@ const Message: React.FC<MessageProps> = ({
                                         <div className="message-project-card__info">
                                             <div className="message-project-card__name">{projectName}</div>
                                             <div className="message-project-card__meta">
-                                                {fileCount}개 파일
+                                                {t('uiAuditFinal.fileCount', {count: fileCount})}
                                             </div>
                                         </div>
                                         <button
@@ -566,7 +566,7 @@ const Message: React.FC<MessageProps> = ({
                                                 <polyline points="7 10 12 15 17 10"/>
                                                 <line x1="12" y1="15" x2="12" y2="3"/>
                                             </svg>
-                                            ZIP 다운로드
+                                            {t('uiAuditFinal.zipDownload')}
                                         </button>
                                     </div>
                                 );

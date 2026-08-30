@@ -515,7 +515,8 @@ async def _run_drive_download_job(job_id: str, file_id: str) -> None:
         if job.get("cancelled"):
             DRIVE_DOWNLOAD_JOBS.pop(job_id, None)
         else:
-            job.update({"status": "error", "error": str(error)})
+            logger.exception("Google Drive download job failed")
+            job.update({"status": "error", "error_code": "drive_download_failed"})
             asyncio.create_task(_expire_drive_download_job(job_id))
 
 
@@ -538,7 +539,8 @@ async def _run_drive_bulk_download_job(job_id: str, file_ids: list[str], archive
         if job.get("cancelled"):
             DRIVE_DOWNLOAD_JOBS.pop(job_id, None)
         else:
-            job.update({"status": "error", "error": str(error)})
+            logger.exception("Google Drive bulk download job failed")
+            job.update({"status": "error", "error_code": "drive_download_failed"})
             asyncio.create_task(_expire_drive_download_job(job_id))
 
 
@@ -1585,7 +1587,7 @@ async def get_drive_download_job(job_id: str):
         "status": job["status"],
         "total": job["total"],
         "completed": job["completed"],
-        "error": job.get("error", ""),
+        "code": job.get("error_code"),
     }
 
 

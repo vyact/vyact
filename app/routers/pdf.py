@@ -37,6 +37,7 @@ from services.presentation_grounding import (
     validate_evidence_ledger,
 )
 from logger import get_logger
+from error_responses import public_error_payload
 
 logger = get_logger(__name__)
 
@@ -1347,7 +1348,7 @@ async def generate_pdf(req: PdfGenerateRequest):
                 page_data = add_source_notes(page_data, fact_ledger, req.language)
             except Exception as llm_err:
                 logger.error("[pdf] step3 LLM/JSON 파싱 실패: %s", llm_err, exc_info=True)
-                yield sse(json.dumps({"error": f"슬라이드 구조 생성 실패: {llm_err}"}), "error")
+                yield sse(json.dumps(public_error_payload("presentation_generation_failed")), "error")
                 return
 
             n_pages = len(page_data.get("pages", []))
@@ -1480,7 +1481,7 @@ async def generate_pdf(req: PdfGenerateRequest):
             import traceback
             tb = traceback.format_exc()
             logger.error("[pdf] 생성 실패: %s\n%s", e, tb)
-            yield sse(json.dumps({"error": str(e)}), "error")
+            yield sse(json.dumps(public_error_payload("presentation_generation_failed")), "error")
         finally:
             if html_path and html_path.exists():
                 html_path.unlink(missing_ok=True)

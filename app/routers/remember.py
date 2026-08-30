@@ -9,6 +9,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from logger import get_logger
+from error_responses import public_error_payload
 from prompts.language import get_language_label
 from services.db import get_es
 from services.user_profile import (
@@ -186,7 +187,7 @@ async def remember(req: RememberRequest):
             })
 
         except Exception as e:
-            logger.error("remember 처리 오류: %s", e)
-            yield sse("error", {"message": str(e)})
+            logger.exception("remember 처리 오류")
+            yield sse("error", public_error_payload("profile_analysis_failed"))
 
     return StreamingResponse(stream(), media_type="text/event-stream")

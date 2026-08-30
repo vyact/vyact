@@ -9,6 +9,7 @@ import os
 from fastapi import APIRouter, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from logger import get_logger
+from error_responses import public_error_payload
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -76,7 +77,7 @@ async def speech_to_text(
     try:
         audio_bytes = await audio.read()
         if not audio_bytes:
-            return JSONResponse({"text": "", "error": "빈 오디오"}, status_code=400)
+            return JSONResponse(public_error_payload("empty_audio"), status_code=400)
 
         # 임시 파일로 저장 후 Whisper에 전달
         suffix = os.path.splitext(audio.filename or "audio.webm")[1] or ".webm"
@@ -102,8 +103,8 @@ async def speech_to_text(
             os.unlink(tmp_path)
 
     except Exception as e:
-        logger.error("STT 실패: %s", e)
-        return JSONResponse({"text": "", "error": str(e)}, status_code=500)
+        logger.exception("STT 실패")
+        return JSONResponse(public_error_payload("speech_recognition_failed"), status_code=500)
 
 
 @router.get("/stt/status")
@@ -113,4 +114,5 @@ async def stt_status():
         _get_model()
         return {"ready": True, "model": "small"}
     except Exception as e:
-        return {"ready": False, "error": str(e)}
+        logger.warning("STT 모델을 사용할 수 없음: %s", e)
+        return {"ready": False, **public_error_payload("speech_model_unavailable")}

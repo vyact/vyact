@@ -1,3 +1,5 @@
+import i18n from '../i18n';
+
 export interface Skill {
     id: string;
     name: string;
@@ -13,7 +15,7 @@ let pendingSkillsRequest: Promise<Skill[]> | null = null;
 
 async function requestSkills(): Promise<Skill[]> {
     const response = await fetch('/api/skills');
-    if (!response.ok) throw new Error('스킬 목록 조회 실패');
+    if (!response.ok) throw new Error(i18n.t('main:networkError.requestFailed'));
     const skills = await response.json();
     cachedSkills = skills;
     return skills;

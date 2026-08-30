@@ -23,6 +23,7 @@ from services.llm.warmup import warm_vyact_voice_prefix
 from services.llm.core import chat_stream_with_tools
 from services.llm.tools import tool_result_failed
 from services.startup_activity import begin_chat_activity, end_chat_activity
+from error_responses import public_error_payload
 from config import IMAGE_MODEL_IDS
 from prompts import VOICE_MODE_SUFFIX, FORMAT_INSTRUCTION
 from routers.deps import load_config_async, load_ui_language_async
@@ -1103,10 +1104,10 @@ async def query_stream(req: QueryRequest):
                         yield _sse("tool", {"phase": "start", "name": "search_related_context"})
                         yield _sse("tool", {"phase": "end", "name": "search_related_context"})
                     elif ev["type"] == "error":
-                        yield _sse("error", {
-                            "code": ev.get("code"),
-                            "model": ev.get("model"),
-                        })
+                        yield _sse("error", public_error_payload(
+                            ev.get("code") or "request_failed",
+                            params={"model": ev.get("model")} if ev.get("model") else {},
+                        ))
                         return
                     elif ev["type"] == "final":
                         final_result = ev["result"]
@@ -1231,10 +1232,10 @@ async def query_stream(req: QueryRequest):
                 elif ev.get("type") == "finish":
                     finish_reason = ev.get("reason")
                 elif ev.get("type") == "error":
-                    yield _sse("error", {
-                        "code": ev.get("code"),
-                        "model": ev.get("model"),
-                    })
+                    yield _sse("error", public_error_payload(
+                        ev.get("code") or "request_failed",
+                        params={"model": ev.get("model")} if ev.get("model") else {},
+                    ))
                     return
 
             trailing_visible_text = metadata_stream_filter.finish()

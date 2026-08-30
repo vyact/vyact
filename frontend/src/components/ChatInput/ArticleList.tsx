@@ -1,5 +1,6 @@
 import React from 'react';
 import { XCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { ArticleAttachment } from '../../types';
 import './ArticleList.css';
 
@@ -10,6 +11,7 @@ interface ArticleListProps {
 }
 
 const ArticleList: React.FC<ArticleListProps> = ({ articles, onRemove, onRemoveAll }) => {
+    const { t } = useTranslation('main');
     if (articles.length === 0) return null;
 
     const isDoc = (url: string) => url?.startsWith('manual://') || url?.startsWith('file://');
@@ -17,7 +19,7 @@ const ArticleList: React.FC<ArticleListProps> = ({ articles, onRemove, onRemoveA
     return (
         <div className="article-list">
             <div className="article-list-header">
-                <span className="article-list-count">첨부 {articles.length}개</span>
+                <span className="article-list-count">{t('uiAuditFinal.attachments', {count: articles.length})}</span>
                 <button
                     className="article-list-remove-all"
                     onClick={onRemoveAll}
@@ -28,7 +30,7 @@ const ArticleList: React.FC<ArticleListProps> = ({ articles, onRemove, onRemoveA
                         <path d="M10 11v6M14 11v6"/>
                         <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
                     </svg>
-                    전체 삭제
+                    {t('uiAuditFinal.removeAll')}
                 </button>
             </div>
 

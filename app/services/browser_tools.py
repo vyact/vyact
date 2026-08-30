@@ -286,8 +286,9 @@ async def _browser_read_urls(urls: list[str]) -> dict:
                 "links": result.get("links") or [],
             })
             sources.append({"title": title, "url": page_url, "source": "browser"})
-        except Exception as error:
-            pages.append({"url": url, "error": str(error)})
+        except Exception:
+            logger.exception("Browser page read failed: %s", url)
+            pages.append({"url": url, "error_code": "browser_page_read_failed"})
     return {
         "text": _as_text({
             "pages": pages,

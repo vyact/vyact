@@ -9,7 +9,8 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import uvicorn
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -24,6 +25,12 @@ from services.runtime_settings import apply_runtime_settings
 from services.startup_activity import wait_for_chat_idle
 from routers.browser_extension import router as browser_extension_router
 from routers.deps import load_config_async
+from error_responses import (
+    http_exception_handler,
+    request_id_for,
+    unhandled_exception_handler,
+    validation_exception_handler,
+)
 
 APP_DIR = Path(__file__).parent
 
@@ -390,6 +397,9 @@ async def lifespan(app: FastAPI):
 # APP
 # ─────────────────────────────
 app = FastAPI(title="RAG Agent", version="1.0.0", lifespan=lifespan)
+app.add_exception_handler(HTTPException, http_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(Exception, unhandled_exception_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -404,6 +414,7 @@ app.add_middleware(
 async def prevent_static_asset_caching(request: Request, call_next):
     """HTML은 갱신하고 콘텐츠 해시가 붙은 정적 자산은 장기 캐시한다."""
     response = await call_next(request)
+    response.headers.setdefault("X-Request-ID", request_id_for(request))
     if request.url.path == "/":
         response.headers["Cache-Control"] = "no-store, max-age=0, must-revalidate"
     elif request.url.path.startswith("/assets/"):

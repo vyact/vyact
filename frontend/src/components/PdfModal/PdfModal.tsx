@@ -10,6 +10,7 @@ import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import {Tooltip} from '../common/Tooltip/Tooltip';
 import type {Message} from '../../types';
 import {getDocumentFiles} from '../../services/documentFiles';
+import {translateBackendError} from '../../utils/apiError';
 import './PdfModal.css';
 
 // ── 타입 ────────────────────────────────────────────────────────────────────
@@ -442,7 +443,7 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
                     reasoning: getReasoningEnabled(),
                 }),
             });
-            if (!res.body) throw new Error('스트림 없음');
+            if (!res.body) throw new Error(t('networkError.streamFailed'));
 
             const reader = res.body.getReader();
             const decoder = new TextDecoder();
@@ -483,7 +484,12 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
                             setProgress(100);
                         } else if (data.type === 'error') {
                             let errMsg = data.message;
-                            try { errMsg = JSON.parse(data.message)?.error || data.message; } catch {
+                            try {
+                                const errorPayload = JSON.parse(data.message);
+                                errMsg = errorPayload.code
+                                    ? translateBackendError(errorPayload.code, errorPayload.params)
+                                    : errorPayload.error || data.message;
+                            } catch {
                                 // The server may return a plain-text error message.
                             }
                             throw new Error(errMsg);
@@ -503,7 +509,7 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
                 setProgress(0);
             } else {
                 const errorMessage = error instanceof Error ? error.message : String(error);
-                setProgressMsg(`❌ 오류: ${errorMessage}`);
+                setProgressMsg(t('uiAuditFinal.errorDetail', {message: errorMessage}));
                 setProgress(0);
             }
             setIsGenerating(false);

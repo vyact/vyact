@@ -66,7 +66,7 @@ const CodeFileViewer: React.FC<CodeFileViewerProps> = ({ files }) => {
                             </div>
                             <div className="cfv-info">
                                 <div className="cfv-name">{f.name}</div>
-                                <div className="cfv-type">코드 · {extLabel}</div>
+                                <div className="cfv-type">{t('codeFileViewer.code')} · {extLabel}</div>
                             </div>
                             <button
                                 className={`cfv-copy-btn${copiedIdx === i ? ' cfv-copy-btn--copied' : ''}`}

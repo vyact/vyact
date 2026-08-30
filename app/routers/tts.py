@@ -35,6 +35,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from logger import get_logger
+from error_responses import public_error_payload
 from config import INSTALL_DIR, VENV_DIR, get_log_file
 from routers.deps import APP_DIR
 from services.installer import Installer
@@ -226,7 +227,7 @@ async def kokoro_status():
             await loop.run_in_executor(None, _get_pipeline, "a")
         return {"available": True}
     except HTTPException as error:
-        return {"available": False, "detail": error.detail}
+        return {"available": False, **public_error_payload("speech_model_unavailable")}
     except Exception as error:
         logger.warning("Kokoro availability check failed: %s", error)
-        return {"available": False, "detail": str(error)}
+        return {"available": False, **public_error_payload("speech_model_unavailable")}

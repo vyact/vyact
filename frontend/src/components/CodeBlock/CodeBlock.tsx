@@ -1,4 +1,5 @@
 import React, {useState, useMemo} from 'react';
+import {useTranslation} from 'react-i18next';
 import hljs from '../../utils/syntaxHighlighter';
 import 'highlight.js/styles/github-dark.css';
 import {copyToClipboard} from '../../utils/helpers';
@@ -10,6 +11,7 @@ interface CodeBlockProps {
 }
 
 const CodeBlock: React.FC<CodeBlockProps> = ({code, language = 'code'}) => {
+    const {t} = useTranslation('main');
     const [copied, setCopied] = useState(false);
 
     const highlighted = useMemo(() => {
@@ -58,7 +60,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({code, language = 'code'}) => {
                                  strokeWidth="2">
                                 <polyline points="20 6 9 17 4 12"/>
                             </svg>
-                            복사됨
+                            {t('codeFileViewer.copied')}
                         </>
                     ) : (
                         <>
@@ -67,7 +69,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({code, language = 'code'}) => {
                                 <rect x="9" y="9" width="13" height="13" rx="2"/>
                                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                             </svg>
-                            복사
+                            {t('codeFileViewer.copy')}
                         </>
                     )}
                 </button>

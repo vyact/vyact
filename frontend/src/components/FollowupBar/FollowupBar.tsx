@@ -168,7 +168,7 @@ const FollowupBar: React.FC<FollowupBarProps> = ({ followups, onSubmit, onDismis
                 />
                 {customText.trim() && (
                     <button className="followup-custom-send" onClick={submit} disabled={!canSend}>
-                        전송
+                        {t('chatInput.send')}
                     </button>
                 )}
             </div>

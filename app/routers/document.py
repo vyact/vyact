@@ -24,6 +24,7 @@ from pydantic import BaseModel, Field
 
 from config import INSTALL_DIR
 from logger import get_logger
+from error_responses import public_error_payload
 from services.document_parser import Chunk, parse_file, parse_file_for_indexing
 from services.embedding_runtime import get_embeddings
 from elasticsearch.helpers import async_bulk
@@ -346,10 +347,10 @@ async def index_document_progress(file: UploadFile = File(...)):
                 result = await _index_saved_document(tmp, filename, report)
                 await queue.put({"type": "result", **result})
             except HTTPException as exc:
-                await queue.put({"type": "error", "message": str(exc.detail)})
+                await queue.put({"type": "error", **public_error_payload("document_index_failed")})
             except Exception as exc:
-                logger.error("index stream 실패 [%s]: %s", filename, exc)
-                await queue.put({"type": "error", "message": f"인덱싱 실패: {exc}"})
+                logger.exception("index stream 실패 [%s]", filename)
+                await queue.put({"type": "error", **public_error_payload("document_index_failed")})
             finally:
                 tmp.unlink(missing_ok=True)
                 await queue.put({"type": "end"})

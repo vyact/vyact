@@ -24,6 +24,7 @@ from starlette.responses import JSONResponse
 
 from config import INSTALL_DIR
 from logger import get_logger
+from error_responses import public_error_payload
 from services.db import PLUGIN_STATE_INDEX, get_es
 from services.mcp_client import mcp_manager
 from services.mcp_config import MCP_CATALOG, load_mcp_config, save_mcp_config
@@ -116,7 +117,7 @@ class PluginApiDispatcher:
         plugin_id = path_parts[0] if path_parts else ""
         plugin_app = _plugin_apps.get(plugin_id)
         if plugin_app is None:
-            await JSONResponse({"detail": "Plugin is not active."}, status_code=404)(
+            await JSONResponse(public_error_payload("plugin_not_active"), status_code=404)(
                 scope, receive, send
             )
             return

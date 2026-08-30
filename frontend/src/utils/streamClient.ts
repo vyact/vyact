@@ -1,4 +1,4 @@
-import { ApiError } from './apiError';
+import { ApiError, translateBackendError } from './apiError';
 import i18n from '../i18n';
 
 // streamClient.ts – 백엔드 토큰 SSE 엔드포인트 파서
@@ -34,7 +34,9 @@ export async function streamSSE(
         let detail = '';
         try {
             const body = await res.clone().json();
-            detail = body?.detail || body?.message || '';
+            detail = body?.code
+                ? translateBackendError(body.code, body.params)
+                : body?.detail || body?.message || '';
         } catch {
             // JSON이 아닌 응답 — 무시하고 상태 코드만 사용
         }
@@ -72,7 +74,11 @@ export async function streamSSE(
             case 'tool':  handlers.onTool?.(payload); break;
             case 'index_progress': handlers.onIndexProgress?.(payload); break;
             case 'done':  handlers.onDone?.(payload); break;
-            case 'error': handlers.onError?.(payload); break;
+            case 'error': handlers.onError?.({
+                ...payload,
+                model: payload.model || payload.params?.model,
+                message: payload.message || translateBackendError(payload.code, payload.params),
+            }); break;
         }
         return event;
     };

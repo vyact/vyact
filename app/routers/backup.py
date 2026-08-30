@@ -506,7 +506,7 @@ async def import_backup(
                         skipped += 1
             except Exception as e:
                 logger.warning("[restore] %s bulk 실패: %s", index, e)
-                result[index] = {"inserted": 0, "skipped": len(docs), "schema_created": schema_created, "error": str(e)}
+                result[index] = {"inserted": 0, "skipped": len(docs), "schema_created": schema_created, "error_code": "backup_index_restore_failed"}
                 continue
 
             result[index] = {"inserted": inserted, "skipped": skipped, "schema_created": schema_created}

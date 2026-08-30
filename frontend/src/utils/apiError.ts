@@ -11,12 +11,16 @@ export class ApiError extends Error {
     status?: number;
     /** 서버가 내려준 원본 상세 메시지 (JSON body의 detail/message 등) */
     detail?: string;
+    code?: string;
+    requestId?: string;
 
-    constructor(message: string, status?: number, detail?: string) {
+    constructor(message: string, status?: number, detail?: string, code?: string, requestId?: string) {
         super(message);
         this.name = 'ApiError';
         this.status = status;
         this.detail = detail;
+        this.code = code;
+        this.requestId = requestId;
     }
 
     /** 4xx — 요청 자체(입력값 등)가 잘못된 경우 */
@@ -35,15 +39,30 @@ export class ApiError extends Error {
  * JSON body의 detail(FastAPI 표준) 또는 message 필드를 우선 사용하고,
  * JSON 파싱이 안 되면 상태 텍스트로 폴백한다.
  */
-async function readErrorDetail(res: Response): Promise<string> {
+interface BackendErrorPayload {
+    code?: string;
+    params?: Record<string, unknown>;
+    request_id?: string;
+    detail?: string;
+    message?: string;
+}
+
+export function translateBackendError(code?: string, params?: Record<string, unknown>): string {
+    if (!code) return i18n.t('main:backendErrors.request_failed');
+    const key = `main:backendErrors.${code}`;
+    if (i18n.exists(key)) return i18n.t(key, params ?? {});
+    const streamKey = `main:backendStreamErrors.${code}`;
+    return i18n.exists(streamKey) ? i18n.t(streamKey, params ?? {}) : i18n.t('main:backendErrors.request_failed');
+}
+
+async function readErrorPayload(res: Response): Promise<BackendErrorPayload> {
     try {
         const body = await res.clone().json();
-        if (typeof body?.detail === 'string') return body.detail;
-        if (typeof body?.message === 'string') return body.message;
+        if (body && typeof body === 'object') return body;
     } catch {
         // JSON이 아닌 응답(HTML 에러 페이지 등) — 무시하고 아래 폴백 사용
     }
-    return res.statusText || `HTTP ${res.status}`;
+    return {message: res.statusText || `HTTP ${res.status}`};
 }
 
 /**
@@ -57,9 +76,12 @@ async function readErrorDetail(res: Response): Promise<string> {
  */
 export async function assertOk(res: Response, fallbackMessage = i18n.t('main:networkError.requestFailed')): Promise<Response> {
     if (res.ok) return res;
-    const detail = await readErrorDetail(res);
+    const payload = await readErrorPayload(res);
+    const localized = payload.code
+        ? translateBackendError(payload.code, payload.params)
+        : payload.detail || payload.message || fallbackMessage;
     const prefix = i18n.t(res.status >= 500 ? 'main:networkError.serverError' : 'main:networkError.requestFailed');
-    throw new ApiError(`${prefix} (${res.status}): ${detail || fallbackMessage}`, res.status, detail);
+    throw new ApiError(`${prefix} (${res.status}): ${localized}`, res.status, localized, payload.code, payload.request_id);
 }
 
 /**
