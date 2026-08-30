@@ -253,7 +253,7 @@
 .setup-custom-header-row { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr) 30px; gap: 7px; }
 .setup-custom-header-row .input { min-width: 0; }
 .setup-custom-header-row > button { border: 0; border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer; font-size: 18px; }
-.setup-custom-header-row > button:hover { background: rgba(255, 80, 80, .1); color: var(--del-fg, #ff7474); }
+.setup-custom-header-row > button:hover { background: var(--action-delete-bg-hover); color: var(--del-fg); }
 
 /* =========================
     INPUT (🔥 FIX 핵심)
@@ -405,7 +405,7 @@
     margin-top: 8px;
     background: var(--accent);
     border: 1px solid var(--accent);
-    color: white;
+    color: var(--on-accent);
     padding: 12px;
     border-radius: 10px;
     font-size: 14px;
@@ -585,8 +585,8 @@
     margin-top: 10px;
     padding: 10px 12px;
     border-radius: 8px;
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.4);
+    background: rgba(var(--danger-rgb), 0.1);
+    border: 1px solid rgba(var(--danger-rgb), 0.4);
     color: var(--del-fg);
     font-size: 12px;
     font-weight: 600;

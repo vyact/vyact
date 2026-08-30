@@ -20,7 +20,8 @@
 .provider-settings-wide-input::placeholder { color: var(--muted); }
 .provider-settings-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; min-height: 42px; font-size: 13px; }
 .provider-settings-modal footer { justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border); border-bottom: 0; }
-.provider-settings-modal footer .primary { border-color: var(--accent); background: var(--accent); color: #fff; }
+.provider-settings-modal footer .primary { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.provider-settings-modal footer .primary:hover:not(:disabled) { border-color: var(--button-primary-hover); background: var(--button-primary-hover); }
 .provider-settings-modal footer button:disabled { cursor: not-allowed; opacity: .55; }
 
 /* Custom LLM connection editor */
@@ -78,16 +79,16 @@
 .provider-api-key-field button:hover,
 .provider-header-value-field button:hover { background: var(--surface2); color: var(--text); }
 .provider-header-row > button { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer; }
-.provider-header-row > button:hover { background: rgba(255, 80, 80, .1); color: var(--del-fg, #ff7474); }
+.provider-header-row > button:hover { background: var(--action-delete-bg-hover); color: var(--del-fg); }
 .provider-editor-footer { display: flex; justify-content: flex-end; gap: 9px; flex: 0 0 auto; padding: 15px 24px; border-top: 1px solid var(--border); background: var(--modal-bg); }
 .provider-editor-footer button { min-width: 104px; min-height: 40px; padding: 0 16px; border-radius: 9px; cursor: pointer; font-size: var(--modal-btn); font-weight: 700; }
-.provider-editor-delete { margin-right: auto; border: 1px solid color-mix(in srgb, var(--del-fg, #ff7474) 48%, var(--border)); background: color-mix(in srgb, var(--del-fg, #ff7474) 9%, transparent); color: var(--del-fg, #ff7474); }
-.provider-editor-delete:hover { border-color: var(--del-fg, #ff7474); background: color-mix(in srgb, var(--del-fg, #ff7474) 15%, transparent); }
+.provider-editor-delete { margin-right: auto; border: 1px solid var(--action-delete-border-hover); background: color-mix(in srgb, var(--action-delete) 9%, transparent); color: var(--del-fg); }
+.provider-editor-delete:hover { border-color: var(--del-fg); background: color-mix(in srgb, var(--action-delete) 15%, transparent); }
 .provider-editor-cancel { border: 1px solid color-mix(in srgb, var(--text-secondary) 35%, var(--border)); border-radius: 8px; background: transparent; color: var(--text); font-family: inherit; font-weight: 500; transition: background .15s, color .15s, border-color .15s; }
 .provider-editor-cancel:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 6%, transparent); border-color: var(--accent); color: var(--accent); }
 .provider-editor-cancel:disabled:hover { background: transparent; color: var(--text); }
-.provider-editor-save { border: 1px solid var(--accent); background: var(--accent); color: white; }
-.provider-editor-save:hover { opacity: .9; }
+.provider-editor-save { border: 1px solid var(--accent); background: var(--accent); color: var(--on-accent); }
+.provider-editor-save:hover:not(:disabled) { border-color: var(--button-primary-hover); background: var(--button-primary-hover); }
 .provider-editor-footer button:disabled { cursor: not-allowed; opacity: .5; }
 
 @media (max-width: 640px) {

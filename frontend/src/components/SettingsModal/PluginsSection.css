@@ -35,7 +35,7 @@
     border: 1px solid var(--accent);
     border-radius: 7px;
     background: var(--accent);
-    color: white;
+    color: var(--on-accent);
     padding: 8px 12px;
     font-weight: 600;
     cursor: pointer;
@@ -46,6 +46,11 @@
 .plugins-delete-button:disabled {
     cursor: not-allowed;
     opacity: .55;
+}
+
+.plugins-upload-button:hover:not(:disabled) {
+    border-color: var(--button-primary-hover);
+    background: var(--button-primary-hover);
 }
 
 .plugins-file-input {

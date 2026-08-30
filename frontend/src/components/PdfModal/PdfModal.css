@@ -29,8 +29,8 @@
     position: absolute;
     inset: 0;
     z-index: 100;
-    background: rgba(255, 107, 53, 0.08);
-    border: 2px dashed rgba(255, 107, 53, 0.6);
+    background: rgba(var(--accent-rgb), 0.08);
+    border: 2px dashed rgba(var(--accent-rgb), 0.6);
     border-radius: 20px;
     display: flex;
     align-items: center;
@@ -64,7 +64,7 @@
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
-    background: linear-gradient(135deg, rgba(255, 107, 53, 0.05) 0%, transparent 60%);
+    background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.05) 0%, transparent 60%);
 }
 
 .pdf-header-left {
@@ -77,11 +77,11 @@
     width: 36px;
     height: 36px;
     border-radius: 9px;
-    background: linear-gradient(135deg, #ff6b35, #ff9a6c);
+    background: var(--accent);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #fff;
+    color: var(--on-accent);
     flex-shrink: 0;
 }
 
@@ -212,7 +212,7 @@
     font-size: 10px;
     font-weight: 700;
     background: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
     border-radius: 20px;
     padding: 1px 6px;
     line-height: 1.4;
@@ -234,12 +234,12 @@
 
 /* 선택 상태 아이템 */
 .pdf-article-item.selected {
-    border-color: rgba(255, 107, 53, 0.35);
-    background: rgba(255, 107, 53, 0.06);
+    border-color: rgba(var(--accent-rgb), 0.35);
+    background: rgba(var(--accent-rgb), 0.06);
 }
 
 .pdf-article-add.checked {
-    background: rgba(255, 107, 53, 0.15);
+    background: rgba(var(--accent-rgb), 0.15);
     border-color: var(--accent);
     color: var(--accent);
 }
@@ -250,7 +250,7 @@
     font-weight: 700;
     padding: 2px 5px;
     border-radius: 4px;
-    color: #fff;
+    color: var(--on-accent);
     flex-shrink: 0;
     letter-spacing: 0.03em;
 }
@@ -272,8 +272,8 @@
 }
 
 .pdf-source-type-tag--document {
-    border-color: rgba(255, 107, 53, 0.35);
-    background: rgba(255, 107, 53, 0.1);
+    border-color: rgba(var(--accent-rgb), 0.35);
+    background: rgba(var(--accent-rgb), 0.1);
     color: var(--accent);
 }
 
@@ -295,7 +295,7 @@
 }
 
 .pdf-bottom-right.pdf-source-drop-active {
-    background: rgba(255, 107, 53, 0.05);
+    background: rgba(var(--accent-rgb), 0.05);
 }
 
 .pdf-selected-sources-header {
@@ -317,9 +317,9 @@
     gap: 4px;
     min-height: 22px;
     padding: 2px 7px;
-    border: 1px solid rgba(255, 107, 53, 0.28);
+    border: 1px solid rgba(var(--accent-rgb), 0.28);
     border-radius: 11px;
-    background: rgba(255, 107, 53, 0.1);
+    background: rgba(var(--accent-rgb), 0.1);
     color: var(--accent);
     font-size: 11px;
     font-weight: 700;
@@ -334,8 +334,8 @@
 }
 
 .pdf-source-summary-badge--document {
-    border-color: rgba(255, 107, 53, 0.35);
-    background: rgba(255, 107, 53, 0.1);
+    border-color: rgba(var(--accent-rgb), 0.35);
+    background: rgba(var(--accent-rgb), 0.1);
     color: var(--accent);
 }
 
@@ -352,15 +352,15 @@
     width: 22px;
     height: 22px;
     padding: 0;
-    border: 1px solid rgba(255, 107, 53, 0.35);
+    border: 1px solid rgba(var(--accent-rgb), 0.35);
     border-radius: 50%;
-    background: rgba(255, 107, 53, 0.08);
+    background: rgba(var(--accent-rgb), 0.08);
     color: var(--accent);
     cursor: pointer;
 }
 
 .pdf-selected-sources-add:hover:not(:disabled) {
-    background: rgba(255, 107, 53, 0.18);
+    background: rgba(var(--accent-rgb), 0.18);
     color: var(--text);
 }
 
@@ -405,7 +405,7 @@
 .pdf-source-upload-spinner {
     width: 38px;
     height: 38px;
-    border: 4px solid rgba(255, 107, 53, 0.2);
+    border: 4px solid rgba(var(--accent-rgb), 0.2);
     border-top-color: var(--accent);
     border-radius: 50%;
     animation: pdf-spin 0.85s linear infinite;
@@ -452,7 +452,7 @@
 .pdf-source-upload-zone:hover:not(:disabled),
 .pdf-source-drop-active .pdf-source-upload-zone {
     border-color: var(--accent);
-    background: rgba(255, 107, 53, 0.08);
+    background: rgba(var(--accent-rgb), 0.08);
     color: var(--text);
 }
 
@@ -514,8 +514,8 @@
     font-size: 11px;
     font-weight: 600;
     color: var(--accent);
-    background: rgba(255, 107, 53, 0.12);
-    border: 1px solid rgba(255, 107, 53, 0.25);
+    background: rgba(var(--accent-rgb), 0.12);
+    border: 1px solid rgba(var(--accent-rgb), 0.25);
     border-radius: 20px;
     padding: 1px 8px;
     text-transform: none;
@@ -656,7 +656,7 @@
 .pdf-output-format-option.active {
     color: var(--text);
     background: var(--surface);
-    border-color: rgba(255, 107, 53, 0.45);
+    border-color: rgba(var(--accent-rgb), 0.45);
     box-shadow: 0 1px 5px rgba(0, 0, 0, 0.16);
 }
 
@@ -712,9 +712,9 @@
 }
 
 .pdf-add-btn:hover:not(.disabled) {
-    border-color: rgba(255, 107, 53, 0.5);
+    border-color: rgba(var(--accent-rgb), 0.5);
     color: var(--accent);
-    background: rgba(255, 107, 53, 0.05);
+    background: rgba(var(--accent-rgb), 0.05);
 }
 
 .pdf-add-btn.disabled {
@@ -766,7 +766,7 @@
     background: rgba(0, 0, 0, 0.75);
     border: none;
     cursor: pointer;
-    color: #fff;
+    color: var(--on-accent);
     font-size: 10px;
     line-height: 1;
     padding: 0;
@@ -777,7 +777,7 @@
 }
 
 .pdf-thumb-del:hover {
-    background: rgba(239, 68, 68, 0.9);
+    background: rgba(var(--danger-rgb), 0.9);
 }
 
 /* ── 스타일 아이콘 ── */
@@ -811,14 +811,14 @@
 }
 
 .pdf-style-icon:hover {
-    border-color: rgba(255, 107, 53, 0.4);
-    background: rgba(255, 107, 53, 0.06);
+    border-color: rgba(var(--accent-rgb), 0.4);
+    background: rgba(var(--accent-rgb), 0.06);
 }
 
 .pdf-style-icon.active {
     border-color: var(--accent);
-    background: rgba(255, 107, 53, 0.12);
-    box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.15);
+    background: rgba(var(--accent-rgb), 0.12);
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.15);
 }
 
 /* ── 기사 검색 ── */
@@ -881,7 +881,7 @@
 }
 
 .pdf-search-btn:hover {
-    background: rgba(255, 107, 53, 0.1);
+    background: rgba(var(--accent-rgb), 0.1);
     border-color: var(--accent);
     color: var(--accent);
 }
@@ -916,13 +916,13 @@
 }
 
 .pdf-article-item:hover {
-    border-color: rgba(255, 107, 53, 0.3);
-    background: rgba(255, 107, 53, 0.04);
+    border-color: rgba(var(--accent-rgb), 0.3);
+    background: rgba(var(--accent-rgb), 0.04);
 }
 
 .pdf-selected-item {
-    border-color: rgba(255, 107, 53, 0.2);
-    background: rgba(255, 107, 53, 0.04);
+    border-color: rgba(var(--accent-rgb), 0.2);
+    background: rgba(var(--accent-rgb), 0.04);
 }
 
 .pdf-selected-item--memo {
@@ -931,8 +931,8 @@
 }
 
 .pdf-selected-item--document {
-    border-color: rgba(255, 107, 53, 0.34);
-    background: rgba(255, 107, 53, 0.06);
+    border-color: rgba(var(--accent-rgb), 0.34);
+    background: rgba(var(--accent-rgb), 0.06);
 }
 
 .pdf-selected-item--attachment {
@@ -959,7 +959,7 @@
 }
 
 .pdf-article-item:hover .pdf-article-add {
-    background: rgba(255, 107, 53, 0.15);
+    background: rgba(var(--accent-rgb), 0.15);
     border-color: var(--accent);
     color: var(--accent);
 }
@@ -969,8 +969,8 @@
     height: 20px;
     border-radius: 50%;
     flex-shrink: 0;
-    background: rgba(255, 107, 53, 0.15);
-    border: 1px solid rgba(255, 107, 53, 0.3);
+    background: rgba(var(--accent-rgb), 0.15);
+    border: 1px solid rgba(var(--accent-rgb), 0.3);
     color: var(--accent);
     font-size: 10px;
     font-weight: 700;
@@ -1024,7 +1024,7 @@
 }
 
 .pdf-article-link:hover {
-    background: rgba(255, 107, 53, 0.1);
+    background: rgba(var(--accent-rgb), 0.1);
     border-color: var(--accent);
     color: var(--accent);
 }
@@ -1100,8 +1100,8 @@
     font-size: 11px;
     font-weight: 600;
     color: var(--accent);
-    background: rgba(255, 107, 53, 0.1);
-    border: 1px solid rgba(255, 107, 53, 0.25);
+    background: rgba(var(--accent-rgb), 0.1);
+    border: 1px solid rgba(var(--accent-rgb), 0.25);
     border-radius: 20px;
     padding: 1px 8px;
 }
@@ -1130,7 +1130,7 @@
 
 .pdf-progress-bar {
     height: 100%;
-    background: linear-gradient(90deg, #ff6b35, #ff9a6c);
+    background: var(--accent);
     border-radius: 2px;
     transition: width 0.4s ease;
 }
@@ -1167,23 +1167,23 @@
 
 .pdf-btn-generate {
     padding: 9px 20px;
-    background: linear-gradient(135deg, #ff6b35, #ff9a6c);
+    background: var(--accent);
     border: none;
     border-radius: 9px;
-    color: #fff;
+    color: var(--on-accent);
     font-size: var(--modal-btn);
     font-weight: 600;
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 7px;
-    transition: opacity 0.15s;
+    transition: background 0.15s;
     font-family: inherit;
     white-space: nowrap;
 }
 
 .pdf-btn-generate:hover:not(:disabled) {
-    opacity: 0.88;
+    background: var(--button-primary-hover);
 }
 
 .pdf-btn-generate:disabled {
@@ -1195,7 +1195,7 @@
     width: 13px;
     height: 13px;
     border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top-color: #fff;
+    border-top-color: var(--on-accent);
     border-radius: 50%;
     animation: pdf-spin 0.7s linear infinite;
 }

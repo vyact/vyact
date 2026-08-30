@@ -64,7 +64,7 @@
     content: ''; position: absolute; height: 16px; width: 16px; left: 2px; bottom: 2px;
     background: #fff; border-radius: 50%; transition: 0.2s;
 }
-.mcp-switch input:checked + .mcp-slider { background: var(--accent, #d97757); }
+.mcp-switch input:checked + .mcp-slider { background: var(--accent); }
 .mcp-switch input:checked + .mcp-slider::before { transform: translateX(14px); }
 
 /* 폼 */
@@ -141,22 +141,22 @@
     font-family: inherit;
     font-size: var(--modal-btn);
     border-color: transparent;
-    color: #fff;
+    color: var(--on-accent);
     font-weight: 600;
 }
 
-.mcp-prompt-section + .mcp-form-actions .mcp-btn-primary:hover:not(:disabled) {
-    opacity: 0.88;
+.mcp-prompt-section + .mcp-form-actions .mcp-btn-primary:hover:not(:disabled):not(.is-saved):not(.is-failed) {
+    background: var(--button-primary-hover);
 }
 
 .mcp-prompt-section + .mcp-form-actions .mcp-btn-primary.is-saved {
-    border-color: var(--success, #22c55e);
-    color: var(--success, #22c55e);
+    border-color: var(--success);
+    color: var(--success);
 }
 
 .mcp-prompt-section + .mcp-form-actions .mcp-btn-primary.is-failed {
-    border-color: var(--danger, #ef4444);
-    color: var(--danger, #ef4444);
+    border-color: var(--danger);
+    color: var(--danger);
 }
 .mcp-btn-ghost,
 .mcp-btn-primary {
@@ -167,16 +167,18 @@
     white-space: nowrap;
 }
 .mcp-btn-primary {
-    background: var(--accent, #d97757);
+    background: var(--accent);
 }
+.mcp-btn-primary:hover:not(:disabled):not(.is-saved):not(.is-failed) { border-color: var(--button-primary-hover); background: var(--button-primary-hover); }
 .mcp-btn-primary:disabled { cursor: wait; opacity: .7; }
 .mcp-btn-primary.is-saved { border-color: var(--success); background: color-mix(in srgb, var(--success) 14%, var(--surface)); color: var(--success); }
 .mcp-btn-primary.is-failed { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, var(--surface)); color: var(--danger); }
 .mcp-btn-connect {
-    border: none; background: #4285f4; color: #fff;
+    border: none; background: var(--accent); color: var(--on-accent);
     padding: 6px 12px; border-radius: 6px; font-size: 14px; cursor: pointer;
     white-space: nowrap;
 }
+.mcp-btn-connect:hover:not(:disabled) { background: var(--button-primary-hover); }
 .mcp-btn-connect:disabled { opacity: 0.5; cursor: default; }
 .mcp-err { font-size: 13px; color: #e5484d; }
 
@@ -188,7 +190,7 @@
 }
 .mcp-confirm-text { font-size: 14px; color: var(--text); }
 .mcp-btn-danger {
-    border: none; background: var(--del-fg-soft); color: #fff;
+    border: none; background: var(--del-fg-soft); color: var(--on-accent);
     padding: 6px 12px; border-radius: 6px; font-size: 14px; cursor: pointer;
 }
 .mcp-btn-danger:hover { background: var(--del-fg); }
@@ -233,7 +235,7 @@
     border-radius: 8px; background: transparent; color: var(--text);
     cursor: pointer; font-size: 13px;
 }
-.mcp-add-account-btn:hover { border-color: var(--accent); background: rgba(217, 119, 87, 0.06); }
+.mcp-add-account-btn:hover { border-color: var(--accent); background: rgba(var(--accent-rgb), 0.06); }
 
 /* 파일 업로드 */
 .mcp-file-upload { display: flex; gap: 6px; align-items: center; }
@@ -244,8 +246,8 @@
     cursor: pointer; transition: all 0.15s ease;
 }
 .mcp-file-btn:hover {
-    border-color: var(--accent, #d97757); color: var(--text);
-    background: rgba(217, 119, 87, 0.06);
+    border-color: var(--accent); color: var(--text);
+    background: rgba(var(--accent-rgb), 0.06);
 }
 .mcp-file-btn.uploaded {
     border-style: solid;
@@ -289,7 +291,7 @@
 .gw-services {
     padding: 9px 10px;
     border-radius: 6px;
-    background: rgba(217, 119, 87, 0.08);
+    background: rgba(var(--accent-rgb), 0.08);
 }
 .gw-services h4 {
     margin: 0 0 6px;
@@ -321,15 +323,15 @@
 .gw-step-num {
     flex-shrink: 0; width: 20px; height: 20px;
     display: flex; align-items: center; justify-content: center;
-    border-radius: 50%; background: var(--accent, #d97757);
-    color: #fff; font-size: 12px; font-weight: 600;
+    border-radius: 50%; background: var(--accent);
+    color: var(--on-accent); font-size: 12px; font-weight: 600;
     margin-top: 1px;
 }
 .gw-step-content {
     font-size: 13px; color: var(--text); line-height: 1.5;
 }
 .gw-step-content a {
-    color: var(--accent, #d97757); text-decoration: underline;
+    color: var(--accent); text-decoration: underline;
 }
 .gw-code {
     display: block; margin-top: 4px; padding: 5px 8px;

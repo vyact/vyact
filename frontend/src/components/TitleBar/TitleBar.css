@@ -137,5 +137,5 @@
 
 .titlebar-win-btn--close:hover {
     background: #e81123;
-    color: #fff;
+    color: var(--on-accent);
 }

@@ -10,9 +10,9 @@
 .rag-context-layout { display: flex; flex: 1; overflow: hidden; }
 .rag-context-tabs { width: 160px; flex-shrink: 0; padding: 8px 0; overflow-y: auto; border-right: 1px solid rgba(255, 255, 255, .08); }
 .rag-context-tab { width: 100%; padding: 8px 14px; border: 0; border-left: 2px solid transparent; background: none; color: var(--muted); cursor: pointer; font-size: 14px; text-align: left; transition: all .15s; }
-.rag-context-tab.active { border-left-color: var(--accent, #e07050); background: rgba(255, 255, 255, .08); color: var(--text); }
+.rag-context-tab.active { border-left-color: var(--accent); background: rgba(255, 255, 255, .08); color: var(--text); }
 .rag-context-content { flex: 1; padding: 16px 20px; overflow-y: auto; }
-.rag-context-item-title { margin-bottom: 4px; color: var(--accent, #e07050); font-size: 14px; font-weight: 600; }
+.rag-context-item-title { margin-bottom: 4px; color: var(--accent); font-size: 14px; font-weight: 600; }
 .rag-context-source { margin-bottom: 10px; color: var(--muted); font-size: 12px; }
 .rag-context-markdown { color: var(--text); font-size: 14px; line-height: 1.7; opacity: .9; }
 .rag-context-code-block { overflow: hidden; border: 1px solid rgba(255, 255, 255, .08); border-radius: 8px; }

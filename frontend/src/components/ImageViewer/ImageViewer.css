@@ -43,7 +43,7 @@
     border-color:color-mix(in srgb, var(--accent) 78%, white);
     outline:none;
     background:color-mix(in srgb, var(--accent) 34%, #212121);
-    color:#fff;
+    color: var(--on-accent);
     box-shadow:0 6px 20px rgba(0,0,0,.34);
 }
 
@@ -136,7 +136,7 @@
 :root[data-theme='light'] .image-viewer__navigation {
     border-color:rgba(255,255,255,.68);
     background:rgba(32,41,56,.9);
-    color:#fff;
+    color: var(--on-accent);
     box-shadow:0 5px 18px rgba(20,24,32,.24);
 }
 
@@ -144,7 +144,7 @@
 :root[data-theme='light'] .image-viewer__navigation:is(:hover, :focus-visible) {
     border-color:color-mix(in srgb, var(--accent) 72%, white);
     background:color-mix(in srgb, var(--accent) 18%, #202938);
-    color:#fff;
+    color: var(--on-accent);
     box-shadow:0 6px 20px rgba(20,24,32,.3);
 }
 

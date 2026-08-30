@@ -12,8 +12,13 @@
   --project-neutral: #f5f5f5;
   --accent2: #d88e73;
   --success: #2cba66;
+  --success-rgb: 44, 186, 102;
+  --info: #60a5fa;
+  --info-rgb: 96, 165, 250;
   --warn: #f59e0b;
+  --warn-rgb: 245, 158, 11;
   --danger: #ff5449;
+  --danger-rgb: 255, 84, 73;
   --action-delete: #f87171;
   --action-download: #79aee8;
   --text: #f5f5f5;

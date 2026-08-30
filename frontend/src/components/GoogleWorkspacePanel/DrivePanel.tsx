@@ -35,6 +35,7 @@ import {DriveDownloadStatusModal, DriveFileNameModal, DriveMoveDestinationModal,
 import {getDriveDropContents, getDriveInputContents, type DriveDropContents} from './driveDrop';
 
 type DrivePanelProps = {
+    initialFolder?: DriveFolder;
     onAttachToChat?: (file: DriveFile) => Promise<void> | void;
     onIndexDocument?: (file: DriveFile) => Promise<void> | void;
 };
@@ -57,7 +58,7 @@ type DrivePermissionSummary = {
     deleted?: boolean;
 };
 
-type DriveFolder = {
+export type DriveFolder = {
     id: string;
     name: string;
 };
@@ -116,10 +117,11 @@ const waitForDownloadPoll = (signal: AbortSignal) => new Promise<void>((resolve,
     signal.addEventListener('abort', handleAbort, {once: true});
 });
 
-export default function DrivePanel({onAttachToChat, onIndexDocument}: DrivePanelProps) {
+export default function DrivePanel({initialFolder, onAttachToChat, onIndexDocument}: DrivePanelProps) {
     const {t, i18n} = useTranslation('main');
-    const [folder, setFolder] = useState<DriveFolder>({id: 'root', name: t('googleWorkspace.myDrive')});
-    const [folders, setFolders] = useState<DriveFolder[]>([{id: 'root', name: t('googleWorkspace.myDrive')}]);
+    const rootFolder = {id: 'root', name: t('googleWorkspace.myDrive')};
+    const [folder, setFolder] = useState<DriveFolder>(initialFolder || rootFolder);
+    const [folders, setFolders] = useState<DriveFolder[]>(initialFolder ? [rootFolder, initialFolder] : [rootFolder]);
     const [files, setFiles] = useState<DriveFile[]>([]);
     const [busy, setBusy] = useState(false);
     const [driveMenuFileId, setDriveMenuFileId] = useState<string | null>(null);
@@ -203,6 +205,13 @@ export default function DrivePanel({onAttachToChat, onIndexDocument}: DrivePanel
     useEffect(() => {
         void loadFiles();
     }, [folder.id, debouncedSearch, sortKey, sortDirection]);
+    useEffect(() => {
+        if (!initialFolder || initialFolder.id === folder.id) return;
+        setSearchValue('');
+        setDebouncedSearch('');
+        setFolders([{id: 'root', name: t('googleWorkspace.myDrive')}, initialFolder]);
+        setFolder(initialFolder);
+    }, [folder.id, initialFolder, t]);
     useEffect(() => {
         const myDriveName = t('googleWorkspace.myDrive');
         setFolder(current => current.id === 'root' ? {...current, name: myDriveName} : current);

@@ -4,7 +4,7 @@ import {api} from '../../services/api';
 import PanelResizer from '../common/PanelResizer/PanelResizer';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import type {DriveFile} from './DrivePanel';
-import type {GoogleCalendarSelection} from '../../types/googleWorkspace';
+import type {GoogleCalendarSelection, GoogleDriveSelection} from '../../types/googleWorkspace';
 import {getGoogleWorkspaceStatus, refreshGoogleWorkspaceStatus} from '../../services/googleWorkspaceStatus';
 import './GoogleWorkspacePanel.css';
 
@@ -26,10 +26,11 @@ const getSavedPanelWidth = () => {
     return clampPanelWidth(DEFAULT_PANEL_WIDTH);
 };
 
-export default function GoogleWorkspacePanel({onClose, selectedMessageId, selectedCalendarEvent, embedded = false, style, onAttachDriveFileToChat, onAttachMailFilesToChat, onIndexDriveDocument}: {
+export default function GoogleWorkspacePanel({onClose, selectedMessageId, selectedCalendarEvent, selectedDriveFolder, embedded = false, style, onAttachDriveFileToChat, onAttachMailFilesToChat, onIndexDriveDocument}: {
     onClose: () => void;
     selectedMessageId?: string | null;
     selectedCalendarEvent?: GoogleCalendarSelection | null;
+    selectedDriveFolder?: GoogleDriveSelection | null;
     embedded?: boolean;
     style?: React.CSSProperties;
     onAttachDriveFileToChat?: (file: DriveFile) => Promise<void> | void;
@@ -90,6 +91,14 @@ export default function GoogleWorkspacePanel({onClose, selectedMessageId, select
     }, []);
 
     useEffect(() => {
+        if (!selectedDriveFolder) return;
+        setTab('drive');
+        if (selectedDriveFolder.accountId && selectedDriveFolder.accountId !== activeAccountId) {
+            void changeAccount(selectedDriveFolder.accountId);
+        }
+    }, [activeAccountId, changeAccount, selectedDriveFolder]);
+
+    useEffect(() => {
         if (selectedMessageId) setTab('mail');
     }, [selectedMessageId]);
 
@@ -140,7 +149,7 @@ export default function GoogleWorkspacePanel({onClose, selectedMessageId, select
         </header>
         <div key={activeAccountId} className="gwp-account-content">
         <Suspense fallback={null}>
-            {tab === 'mail' ? <MailPanel accountId={activeAccountId} selectedMessageId={selectedMessageId} onAttachFilesToChat={onAttachMailFilesToChat}/> : tab === 'drive' ? <DrivePanel onAttachToChat={onAttachDriveFileToChat} onIndexDocument={onIndexDriveDocument}/> : (
+            {tab === 'mail' ? <MailPanel accountId={activeAccountId} selectedMessageId={selectedMessageId} onAttachFilesToChat={onAttachMailFilesToChat}/> : tab === 'drive' ? <DrivePanel key={selectedDriveFolder?.requestId ?? 'drive'} initialFolder={selectedDriveFolder ? {id: selectedDriveFolder.folderId, name: selectedDriveFolder.folderName} : undefined} onAttachToChat={onAttachDriveFileToChat} onIndexDocument={onIndexDriveDocument}/> : (
                 <CalendarPanel
                     selectedEvent={pendingCalendarEvent}
                     onSelectedEventHandled={requestId => {

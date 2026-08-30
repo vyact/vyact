@@ -106,7 +106,7 @@
 }
 
 .cfv-copy-btn--copied {
-    color: #2cba66 !important;
+    color: var(--success) !important;
     border-color: rgba(44, 186, 102, 0.4) !important;
 }
 
@@ -144,7 +144,7 @@
 :root[data-theme='light'] .cfv-copy-btn--copied {
     border-color:#159447 !important;
     background:#159447 !important;
-    color:#fff !important;
+    color: var(--on-accent) !important;
     box-shadow:0 2px 7px rgba(21, 148, 71, .24);
 }
 

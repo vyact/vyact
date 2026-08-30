@@ -153,14 +153,14 @@
   background: var(--accent);
   border: none;
   border-radius: 8px;
-  color: white;
+  color: var(--on-accent);
   font-size: var(--modal-btn);
   cursor: pointer;
   transition: opacity 0.15s;
 }
 
 .btn-new-prompt:hover {
-  opacity: 0.9;
+  background: var(--button-primary-hover);
 }
 
 /* 편집 영역 */
@@ -222,11 +222,11 @@
 .btn-save {
   background: var(--accent);
   border: none;
-  color: white;
+  color: var(--on-accent);
 }
 
 .btn-save:hover {
-  opacity: 0.9;
+  background: var(--button-primary-hover);
 }
 
 .btn-cancel {
@@ -276,7 +276,7 @@
 .system-prompt-edit, .system-prompt-delete { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; padding: 0; border: 1px solid var(--border); border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer; }
 .system-prompt-edit:hover { border-color: var(--accent); color: var(--accent); }
 .system-prompt-delete:hover { border-color: var(--del-border-hover); background: var(--del-bg-hover); color: var(--del-fg); }
-.system-new-prompt { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 42px; border: 1px solid var(--accent); border-radius: 9px; background: var(--accent); color: white; font-size: 13px; font-weight: 700; cursor: pointer; }
+.system-new-prompt { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 42px; border: 1px solid var(--accent); border-radius: 9px; background: var(--accent); color: var(--on-accent); font-size: 13px; font-weight: 700; cursor: pointer; }
 .system-new-prompt:hover, .system-save:hover { border-color: var(--button-primary-hover); background: var(--button-primary-hover); }
 .system-prompt-editor { display: flex; flex: 1; flex-direction: column; gap: 10px; min-height: 410px; }
 .system-editor-heading { margin-bottom: 7px; color: var(--text); font-size: 17px; font-weight: 750; }
@@ -287,7 +287,7 @@
 .system-editor-title:focus, .system-editor-content:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(var(--accent-rgb), .12); }
 .system-editor-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
 .system-save, .system-cancel { min-width: 104px; min-height: 40px; padding: 0 18px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; }
-.system-save { border: 0; background: var(--accent); color: white; }
+.system-save { border: 0; background: var(--accent); color: var(--on-accent); }
 .system-cancel { border: 1px solid color-mix(in srgb, var(--text-secondary) 35%, var(--border)); background: transparent; color: var(--text); font-weight: 500; transition: background .15s, color .15s, border-color .15s; }
 .system-cancel:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); border-color: var(--accent); color: var(--accent); }
 @media (max-width: 560px) { .system-prompt-overlay { padding: 12px; } .system-prompt-header, .system-prompt-body { padding-left: 16px; padding-right: 16px; } .system-template-grid { grid-template-columns: 1fr; } }

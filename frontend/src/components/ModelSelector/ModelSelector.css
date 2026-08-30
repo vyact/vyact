@@ -197,7 +197,7 @@
 
 .model-info-icon:hover {
     background: var(--accent);
-    color: white;
+    color: var(--on-accent);
 }
 
 /* ── 커스텀 모델 입력 (footer) ── */
@@ -270,13 +270,13 @@
 }
 
 .custom-model-type button.active {
-    background: rgba(var(--accent-rgb, 205, 100, 72), 0.2);
+    background: rgba(var(--accent-rgb), 0.2);
     color: var(--text);
 }
 
 .custom-model-add {
     background: var(--accent);
-    color: white;
+    color: var(--on-accent);
     flex: 0 0 auto;
     padding-inline: 12px;
 }
@@ -287,7 +287,7 @@
 }
 
 .custom-model-add:hover:not(:disabled) {
-    opacity: 0.9;
+    background: var(--button-primary-hover);
 }
 
 /* ── Cloud Provider ── */
@@ -301,7 +301,7 @@
 .cloud-model-row { display: grid; grid-template-columns: minmax(0, 1fr) 34px; gap: 6px; min-width: 0; }
 .cloud-model-display { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; height: 34px; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg); color: var(--text); font-size: 12px; font-weight: 650; }
 .cloud-model-display > span:nth-child(2) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cloud-model-status { width: 6px; height: 6px; flex: 0 0 auto; border-radius: 50%; background: var(--success, #20c997); }
+.cloud-model-status { width: 6px; height: 6px; flex: 0 0 auto; border-radius: 50%; background: var(--success); }
 .cloud-model-settings { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid var(--border); border-radius: 9px; background: var(--surface2); color: var(--muted); cursor: pointer; transition: border-color .15s, color .15s, background .15s; }
 .cloud-model-settings:hover:not(:disabled) { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--surface2)); color: var(--accent); }
 .cloud-model-settings:disabled { cursor: not-allowed; opacity: .5; }

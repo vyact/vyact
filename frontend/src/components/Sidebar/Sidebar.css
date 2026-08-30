@@ -248,7 +248,7 @@
 .hist-actions .btn-settings:hover {
     border-color: var(--accent);
     color: var(--accent);
-    background: rgba(255, 120, 50, 0.08);
+    background: rgba(var(--accent-rgb), 0.08);
 }
 
 /* 새 대화 — 남은 공간 전체 사용, 텍스트 유지 */
@@ -339,7 +339,7 @@
 .btn-refresh-history:is(:hover, :active):not(:disabled) {
     border-color: var(--accent);
     color: var(--accent);
-    background: rgba(255, 120, 50, 0.08);
+    background: rgba(var(--accent-rgb), 0.08);
 }
 
 :root[data-theme='light'] .btn-refresh-history:not(:disabled) {
@@ -493,9 +493,9 @@
 
 :root[data-theme='light'] .hist-item.active,
 :root[data-theme='light'] .project-conversation.active {
-    background: var(--surface);
-    border-color: color-mix(in srgb, var(--accent) 36%, var(--border));
-    box-shadow: var(--shadow-sm);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    border-color: transparent;
+    box-shadow: none;
 }
 
 .hist-item.disabled,
@@ -736,7 +736,7 @@
 }
 
 .btn-new:not(:disabled):is(:hover, :active) {
-    background: rgba(255, 120, 50, 0.08);
+    background: rgba(var(--accent-rgb), 0.08);
     border-color: var(--accent);
     color: var(--accent);
 }
@@ -785,7 +785,7 @@
 .sidebar-header-settings:hover {
     color: var(--accent);
     border-color: var(--accent);
-    background: rgba(255, 120, 50, 0.08);
+    background: rgba(var(--accent-rgb), 0.08);
 }
 
 :root[data-theme='light'] .sidebar-header-settings {

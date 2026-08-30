@@ -227,7 +227,7 @@
 .external-data-source-refresh:not(:disabled):hover {
     border-color: var(--accent);
     background: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
 }
 
 .external-data-source-refresh:disabled {
@@ -485,7 +485,7 @@
     border: 0;
     border-radius: 7px;
     background: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
     font-size: var(--modal-btn);
     font-weight: 600;
     cursor: pointer;
@@ -494,6 +494,13 @@
 .external-data-save-key:disabled {
     cursor: not-allowed;
     opacity: 0.45;
+}
+
+.external-data-save-key:hover:not(:disabled),
+.external-data-sync-row button:hover:not(:disabled),
+.external-data-sync-actions button:not(.is-secondary):hover:not(:disabled) {
+    border-color: var(--button-primary-hover);
+    background: var(--button-primary-hover);
 }
 
 .external-data-key-saved {
@@ -612,7 +619,7 @@
     border: 0;
     border-radius: 7px;
     background: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
     font-size: var(--modal-btn);
     font-weight: 600;
     cursor: pointer;
@@ -705,7 +712,7 @@
 
 .external-data-service-progress-error {
     width: 100%;
-    color: var(--danger, #e36b6b);
+    color: var(--danger);
     font-size: var(--modal-sub);
     line-height: 1.45;
     white-space: normal;
@@ -713,11 +720,11 @@
 }
 
 .external-data-service-progress.is-failed .external-data-service-progress-header {
-    color: var(--danger, #e36b6b);
+    color: var(--danger);
 }
 
 .external-data-service-progress.is-failed .external-data-sync-progress-track span {
-    background: var(--danger, #e36b6b);
+    background: var(--danger);
 }
 
 .external-data-sync-progress-label {
@@ -778,7 +785,7 @@
 
 .external-data-sync-error {
     margin: 8px 0 0;
-    color: var(--danger, #e36b6b);
+    color: var(--danger);
     font-size: 11px;
 }
 

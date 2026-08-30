@@ -20,7 +20,7 @@
     flex-shrink: 0;
     padding: 0 16px;
     background: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
     border: none;
     border-radius: 8px;
     font-size: var(--modal-btn);

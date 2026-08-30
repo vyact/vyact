@@ -29,8 +29,9 @@
 .model-settings-modal .model-settings-switch:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent); outline-offset: 2px; }
 .model-settings-modal .model-settings-switch:disabled { border: 0; background: var(--border); cursor: not-allowed; }
 .model-settings-modal footer { justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border); border-bottom: 0; }
-.model-settings-modal footer .primary { border-color: var(--accent); background: var(--accent); color: #fff; }
-.model-settings-error { color: var(--danger, #ef4444); font-size: 12px; }
+.model-settings-modal footer .primary { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.model-settings-modal footer .primary:hover:not(:disabled) { border-color: var(--button-primary-hover); background: var(--button-primary-hover); }
+.model-settings-error { color: var(--danger); font-size: 12px; }
 .model-settings-advanced { margin-top: 2px; border-top: 1px solid var(--border); }
 .model-settings-advanced summary { display: flex; align-items: center; justify-content: space-between; padding: 14px 0 2px; color: var(--text-secondary); font-size: 13px; font-weight: 650; cursor: pointer; list-style: none; }
 .model-settings-advanced summary::-webkit-details-marker { display: none; }

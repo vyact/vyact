@@ -6,7 +6,7 @@
 .command-modal-close:hover { background: var(--surface2); }
 .command-modal-list { display: flex; max-height: 40vh; flex-direction: column; gap: 6px; padding: 10px 12px; overflow-y: auto; }
 .command-modal-item { padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--modal-inset); cursor: pointer; transition: all .15s; }
-.command-modal-item:hover { border-color: var(--accent); background: rgba(255, 120, 50, .08); }
+.command-modal-item:hover { border-color: var(--accent); background: rgba(var(--accent-rgb), .08); }
 .command-modal-item-heading { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
 .command-modal-item-heading code { color: var(--accent); font: 700 var(--modal-sub) monospace; }
 .command-modal-item p { margin: 0; color: var(--muted); font-size: var(--modal-sub); line-height: 1.5; }

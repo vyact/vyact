@@ -165,7 +165,7 @@
 .product-release-link {
     border: 1px solid var(--accent);
     background: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
 }
 
 .product-release-link:hover {

@@ -26,7 +26,7 @@
   width: 12px;
   height: 12px;
   border: 2px solid var(--border, rgba(255, 255, 255, 0.15));
-  border-top-color: var(--accent, #d97757);
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: analyze-spin 0.7s linear infinite;
   flex-shrink: 0;
@@ -99,7 +99,7 @@
 .image-gen-progress .progress-bar-fill {
   height: 100%;
   border-radius: 3px;
-  background: var(--accent, #7c6ef7);
+  background: var(--accent);
   transition: width 0.4s ease;
 }
 

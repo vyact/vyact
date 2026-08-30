@@ -41,7 +41,7 @@
 .memo-title-icon {
     width: 18px;
     height: 18px;
-    color: var(--accent, #e07050);
+    color: var(--accent);
 }
 
 .memo-title {
@@ -64,12 +64,12 @@
     width: calc(100% - 20px);
     height: 34px;
     margin: 2px 10px 8px;
-    background: var(--accent, #e07050);
+    background: var(--accent);
     border: none;
     border-radius: 8px;
     padding: 0 12px;
     font-size: 13px;
-    color: white;
+    color: var(--on-accent);
     cursor: pointer;
     font-weight: 600;
 }
@@ -135,7 +135,7 @@
 }
 .memo-item.editing {
     background: color-mix(in srgb, var(--accent) 12%, transparent);
-    border-color: var(--accent, #e07050);
+    border-color: var(--accent);
 }
 .memo-item.locked {
     cursor: not-allowed;
@@ -334,7 +334,7 @@
 }
 
 .memo-editor-toolbar button:hover { background: var(--button-neutral-hover); color: var(--text); }
-.memo-editor-toolbar button.active { background: rgba(255,255,255,0.12); color: var(--accent, #e07050); }
+.memo-editor-toolbar button.active { background: rgba(255,255,255,0.12); color: var(--accent); }
 .memo-text-color-picker { position: relative; display: inline-flex; align-items: center; justify-content: center; }
 .memo-text-color-picker > button { width: 28px; height: 26px; padding: 4px; font-size: 15px; font-weight: 700; }
 .memo-text-color-picker span { border-bottom: 3px solid currentColor; line-height: 1.1; }
@@ -345,7 +345,7 @@
 .memo-editor-toolbar .memo-color-preset { width: 18px; min-width: 18px; height: 18px; min-height: 18px; padding: 0; border: 1px solid rgba(255,255,255,.45); border-radius: 4px; }
 .memo-editor-toolbar .memo-color-preset:hover { outline: 2px solid var(--text); outline-offset: 1px; }
 .memo-editor-content a:not(.memo-attachment-link),
-.memo-viewer-content a:not(.memo-attachment-link) { color: var(--accent, #e07050); text-decoration: underline; text-underline-offset: 2px; }
+.memo-viewer-content a:not(.memo-attachment-link) { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
 .memo-link-modal-overlay { z-index: 9100; }
 .memo-link-modal { width: min(560px, 100%); padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--modal-bg); color: var(--text); box-shadow: 0 18px 48px rgba(0, 0, 0, .45); }
 .memo-link-modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
@@ -461,13 +461,13 @@
     padding: 0;
     border: 2px solid var(--bg-secondary, #1e1e1e);
     border-radius: 3px;
-    background: var(--accent, #e07050);
+    background: var(--accent);
     cursor: nwse-resize;
 }
 
 .memo-editor-content .memo-attachment-link.ProseMirror-selectednode {
-    border-color: var(--accent, #e07050);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent, #e07050) 30%, transparent);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
 .memo-editor-content .memo-image-wrapper.ProseMirror-selectednode {
@@ -475,8 +475,8 @@
 }
 
 .memo-editor-content .memo-image-wrapper.ProseMirror-selectednode .memo-image-editable-frame {
-    border-color: var(--accent, #e07050);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent, #e07050) 30%, transparent);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
 .tiptap .memo-attachment-link,
@@ -498,7 +498,7 @@
 }
 
 .tiptap .memo-attachment-link:hover,
-.memo-viewer-content .memo-attachment-link:hover { border-color: var(--accent, #e07050); }
+.memo-viewer-content .memo-attachment-link:hover { border-color: var(--accent); }
 
 .memo-editor-content .memo-attachment-link {
     cursor: pointer;
@@ -525,7 +525,7 @@
     align-items: center;
     gap: 12px;
     padding: 18px 22px;
-    border: 1px solid color-mix(in srgb, var(--accent, #e07050) 45%, var(--border, rgba(255, 255, 255, 0.18)));
+    border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border, rgba(255, 255, 255, 0.18)));
     border-radius: 12px;
     background: var(--bg-secondary, #1e1e1e);
     box-shadow: 0 18px 48px rgba(0, 0, 0, 0.42);
@@ -535,7 +535,7 @@
 }
 
 .memo-attachment-upload-spinner {
-    color: var(--accent, #e07050);
+    color: var(--accent);
     animation: memo-attachment-spin 0.9s linear infinite;
 }
 
@@ -554,7 +554,7 @@
     align-items: center;
     gap: 12px;
     padding: 18px 22px;
-    border: 1px solid color-mix(in srgb, var(--accent, #e07050) 45%, var(--border, rgba(255, 255, 255, 0.18)));
+    border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border, rgba(255, 255, 255, 0.18)));
     border-radius: 12px;
     background: var(--bg-secondary, #1e1e1e);
     box-shadow: 0 18px 48px rgba(0, 0, 0, 0.42);
@@ -564,7 +564,7 @@
 }
 
 .memo-loading-spinner {
-    color: var(--accent, #e07050);
+    color: var(--accent);
     animation: memo-attachment-spin 0.9s linear infinite;
 }
 
@@ -580,7 +580,7 @@
 .tiptap ul, .tiptap ol { padding-left: 1.4em; margin: 0.3em 0; }
 .tiptap li { margin: 0.2em 0; }
 .tiptap blockquote {
-    border-left: 3px solid var(--accent, #e07050);
+    border-left: 3px solid var(--accent);
     margin: 0.5em 0;
     padding: 0.3em 0 0.3em 1em;
     color: var(--muted);
@@ -649,12 +649,12 @@
 .memo-hint { font-size: 13px; color: var(--muted); }
 
 .memo-btn-save {
-    background: var(--accent, #e07050);
+    background: var(--accent);
     border: none;
     border-radius: 6px;
     padding: 5px 14px;
     font-size: 14px;
-    color: white;
+    color: var(--on-accent);
     cursor: pointer;
     font-weight: 600;
 }
@@ -821,7 +821,7 @@ details:not([open]) > .details-content-nodeview {
     border: none;
     border-right: 1px solid var(--border);
     cursor: pointer;
-    color: var(--accent, #e07050);
+    color: var(--accent);
     font-size: 11px;
 }
 
@@ -894,7 +894,7 @@ details:not([open]) > .details-content-nodeview {
     font-size: 14px;
 }
 .tiptap table.memo-table-selected {
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent, #e07050) 65%, transparent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 65%, transparent);
 }
 .tiptap th, .tiptap td {
     border: 1px solid var(--border);
@@ -917,7 +917,7 @@ details:not([open]) > .details-content-nodeview {
 .tiptap th::selection,
 .tiptap td::selection {
     background: rgba(91, 137, 184, 0.82);
-    color: #fff;
+    color: var(--on-accent);
 }
 .tiptap td .memo-image-wrapper,
 .tiptap th .memo-image-wrapper { width: 100% !important; max-width: 100%; min-width: 0; }
@@ -940,7 +940,7 @@ details:not([open]) > .details-content-nodeview {
 
 /* 링크 색상 */
 .tiptap a {
-    color: var(--accent, #e07050);
+    color: var(--accent);
     text-decoration: underline;
 }
 
@@ -953,7 +953,7 @@ details:not([open]) > .details-content-nodeview {
 .tiptap a strong,
 .memo-viewer-content strong a,
 .memo-viewer-content a strong {
-    color: var(--accent, #e07050);
+    color: var(--accent);
 }
 
 /* TaskList / TaskItem */
@@ -964,7 +964,7 @@ details:not([open]) > .details-content-nodeview {
 }
 
 .tiptap [data-type="details"].ProseMirror-selectednode {
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent, #e07050) 65%, transparent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 65%, transparent);
 }
 
 .tiptap li[data-checked] {
@@ -986,7 +986,7 @@ details:not([open]) > .details-content-nodeview {
 .tiptap li[data-checked] > label input[type="checkbox"] {
     width: 15px;
     height: 15px;
-    accent-color: var(--accent, #e07050);
+    accent-color: var(--accent);
     cursor: pointer;
     margin: 0;
 }

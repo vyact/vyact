@@ -8,7 +8,7 @@ import {PanelManagerProvider} from '../../contexts/PanelManagerContext';
 import {PluginPanelCoordinator, PluginProviders} from '../../plugins/PluginRuntimeHost';
 import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
 import {api} from '../../services/api';
-import type {GoogleCalendarSelection} from '../../types/googleWorkspace';
+import {OPEN_GOOGLE_DRIVE_EVENT, type GoogleCalendarSelection, type GoogleDriveSelection} from '../../types/googleWorkspace';
 import type {DriveFile} from '../GoogleWorkspacePanel/DrivePanel';
 import type {Message} from '../../types';
 import type {Gov24Document} from '../../services/api';
@@ -328,6 +328,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
     const [googleWorkspaceOpen, setGoogleWorkspaceOpen] = useState(false);
     const [selectedGoogleMailId, setSelectedGoogleMailId] = useState<string | null>(null);
     const [selectedGoogleCalendarEvent, setSelectedGoogleCalendarEvent] = useState<GoogleCalendarSelection | null>(null);
+    const [selectedGoogleDriveFolder, setSelectedGoogleDriveFolder] = useState<GoogleDriveSelection | null>(null);
     const openGoogleWorkspacePanel = (messageId?: string, calendarSelection?: GoogleCalendarSelection) => {
         setSelectedGoogleMailId(messageId || null);
         setSelectedGoogleCalendarEvent(calendarSelection || null);
@@ -337,6 +338,19 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
         setGoogleWorkspaceOpen(false);
         setSelectedGoogleMailId(null);
         setSelectedGoogleCalendarEvent(null);
+        setSelectedGoogleDriveFolder(null);
+    }, []);
+    useEffect(() => {
+        const openDriveFolder = (event: Event) => {
+            const selection = (event as CustomEvent<GoogleDriveSelection>).detail;
+            if (!selection?.folderId) return;
+            setSelectedGoogleMailId(null);
+            setSelectedGoogleCalendarEvent(null);
+            setSelectedGoogleDriveFolder(selection);
+            setGoogleWorkspaceOpen(true);
+        };
+        window.addEventListener(OPEN_GOOGLE_DRIVE_EVENT, openDriveFolder);
+        return () => window.removeEventListener(OPEN_GOOGLE_DRIVE_EVENT, openDriveFolder);
     }, []);
     const toggleGoogleWorkspacePanel = () => {
         if (!googleWorkspaceOpen) {
@@ -690,6 +704,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                                 googleWorkspaceOpen={googleWorkspaceOpen}
                                 selectedGoogleMailId={selectedGoogleMailId}
                                 selectedGoogleCalendarEvent={selectedGoogleCalendarEvent}
+                                selectedGoogleDriveFolder={selectedGoogleDriveFolder}
                                 onGoogleWorkspaceClose={closeGoogleWorkspacePanel}
                                 onAttachDriveFileToChat={handleAttachDriveFileToChat}
                                 onAttachMailFilesToChat={handleAttachMailFilesToChat}

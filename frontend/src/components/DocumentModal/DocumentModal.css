@@ -169,12 +169,12 @@
 .dm-dropzone:hover,
 .dm-dropzone.dragging {
     border-color: var(--accent);
-    background: rgba(204,120,92,0.05);
+    background: rgba(var(--accent-rgb), 0.05);
 }
 
 .dm-overlay.dragging .dm-dropzone {
     border-color: var(--accent);
-    background: rgba(204,120,92,0.05);
+    background: rgba(var(--accent-rgb), 0.05);
 }
 
 .dm-overlay.dragging .dm-dropzone .dm-dropzone-icon::before {
@@ -341,7 +341,7 @@
 }
 .dm-status.uploading { background: rgba(99,102,241,0.1); color: #a5b4fc; }
 .dm-status.done { background: rgba(44,186,102,0.1); color: var(--success); }
-.dm-status.stopped { background: rgba(245, 158, 11, 0.12); color: #fbbf24; }
+.dm-status.stopped { background: rgba(245, 158, 11, 0.12); color: var(--warn); }
 .dm-status.error { background: rgba(255,84,73,0.1); color: var(--danger); }
 .dm-status-elapsed {
     margin-left: auto;
@@ -482,13 +482,13 @@
     background: var(--accent);
     border: none;
     border-radius: 8px;
-    color: #fff;
+    color: var(--on-accent);
     font-size: var(--modal-btn);
     font-weight: 600;
     font-family: inherit;
-    transition: opacity 0.15s;
+    transition: background 0.15s;
 }
-.dm-btn-submit:hover:not(:disabled) { opacity: 0.88; }
+.dm-btn-submit:hover:not(:disabled) { background: var(--button-primary-hover); }
 .dm-btn-submit:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* 드롭존 compact (파일 있을 때) */
@@ -526,7 +526,7 @@
     border-color: color-mix(in srgb, var(--danger) 55%, var(--border));
 }
 .dm-file-item.is-stopped {
-    border-color: color-mix(in srgb, #f59e0b 55%, var(--border));
+    border-color: color-mix(in srgb, var(--warn) 55%, var(--border));
 }
 
 .dm-file-icon-sm {
@@ -579,7 +579,7 @@
 }
 .dm-file-state-stopped {
     background: rgba(245, 158, 11, 0.14);
-    color: #fbbf24;
+    color: var(--warn);
 }
 .dm-file-state-skipped {
     background: var(--surface2);
@@ -609,7 +609,7 @@
 .dm-add-more:hover {
     border-color: var(--accent);
     color: var(--accent);
-    background: rgba(204,120,92,0.05);
+    background: rgba(var(--accent-rgb), 0.05);
 }
 
 /* 질의 옵션 행 (라벨 + 텍스트 범위 드롭다운) */
@@ -918,7 +918,7 @@
 .dm-action-btn.danger.filled {
     background: var(--action-delete);
     border-color: var(--action-delete);
-    color: #fff;
+    color: var(--on-accent);
 }
 .dm-action-btn.danger.filled:hover { border-color: var(--button-danger-hover); background: var(--button-danger-hover); }
 .dm-action-btn:disabled { opacity: 0.4; cursor: not-allowed; }

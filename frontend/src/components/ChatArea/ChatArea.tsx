@@ -3,7 +3,7 @@ import Message from '../Message';
 import LoadingIndicator from '../LoadingIndicator';
 import FollowupBar from '../FollowupBar/FollowupBar';
 import type {DriveFile} from '../GoogleWorkspacePanel/DrivePanel';
-import type {GoogleCalendarSelection} from '../../types/googleWorkspace';
+import type {GoogleCalendarSelection, GoogleDriveSelection} from '../../types/googleWorkspace';
 import {useCodePanel} from '../../contexts/CodePanelContext';
 import {usePanelManager} from '../../contexts/PanelManagerContext';
 import {usePluginExtensions} from '../../plugins/usePluginExtensions';
@@ -116,6 +116,7 @@ interface ChatAreaProps {
     googleWorkspaceOpen?: boolean;
     selectedGoogleMailId?: string | null;
     selectedGoogleCalendarEvent?: GoogleCalendarSelection | null;
+    selectedGoogleDriveFolder?: GoogleDriveSelection | null;
     onGoogleWorkspaceClose?: () => void;
     onAttachDriveFileToChat?: (file: DriveFile) => Promise<void> | void;
     onAttachMailFilesToChat?: (files: File[]) => Promise<void> | void;
@@ -150,6 +151,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                                                googleWorkspaceOpen = false,
                                                selectedGoogleMailId,
                                                selectedGoogleCalendarEvent,
+                                               selectedGoogleDriveFolder,
                                                onGoogleWorkspaceClose,
                                                onAttachDriveFileToChat,
                                                onAttachMailFilesToChat,
@@ -570,6 +572,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                 <React.Suspense fallback={null}>
                     <GoogleWorkspacePanel embedded selectedMessageId={selectedGoogleMailId}
                         selectedCalendarEvent={selectedGoogleCalendarEvent}
+                        selectedDriveFolder={selectedGoogleDriveFolder}
                         onClose={onGoogleWorkspaceClose || (() => {})} style={{width: `${workspacePanelWidth}%`}}
                         onAttachDriveFileToChat={onAttachDriveFileToChat}
                         onAttachMailFilesToChat={onAttachMailFilesToChat}

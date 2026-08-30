@@ -62,7 +62,7 @@
 .drive-backup-account-modal h4 { margin: 0; color: var(--text); font-size: 18px; }
 .drive-backup-account-modal > p { margin: 8px 0 18px; color: var(--muted); font-size: 13px; line-height: 1.55; }
 .drive-backup-account-list { display: grid; gap: 8px; }
-.drive-backup-account-list label { display: flex; align-items: center; gap: 11px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 9px; background-color: var(--modal-inset); color: var(--text); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: border-color .15s, background-color .15s; }
+.drive-backup-account-list label { display: flex; align-items: center; gap: 11px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 9px; background-color: var(--modal-inset); color: var(--text); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: border-color .15s; }
 .drive-backup-account-list label:is(:hover, :active, :focus-within), .drive-backup-account-list label.selected { border-color: var(--accent); background-color: color-mix(in srgb, var(--accent) 9%, var(--modal-inset)); }
 :root[data-theme='light'] .drive-backup-account-list label { background-color: var(--modal-inset); }
 :root[data-theme='light'] .drive-backup-account-list label:is(:hover, :active, :focus-within) { background-color: color-mix(in srgb, var(--accent) 8%, var(--modal-inset)); }
@@ -70,10 +70,10 @@
 .drive-backup-account-list input { accent-color: var(--accent); }
 .drive-backup-account-list span { display: flex; min-width: 0; flex: 1; align-items: center; justify-content: space-between; gap: 12px; }
 .drive-backup-account-list strong { overflow: hidden; color: var(--text); font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
-.drive-backup-account-list small { flex-shrink: 0; padding: 2px 7px; border-radius: 999px; background: var(--surface2); color: var(--muted); font-size: 11px; }
 .drive-backup-account-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
 .drive-backup-account-actions button { min-width: 90px; padding: 9px 14px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--text); cursor: pointer; font-weight: 600; }
-.drive-backup-account-actions button.primary { border-color: var(--accent); background: var(--accent); color: #fff; }
+.drive-backup-account-actions button.primary { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.drive-backup-account-actions button.primary:hover:not(:disabled) { border-color: var(--button-primary-hover); background: var(--button-primary-hover); }
 .drive-backup-account-actions button:disabled { cursor: not-allowed; opacity: .5; }
 
 @keyframes backup-progress-spin { to { transform: rotate(360deg); } }
@@ -242,7 +242,7 @@
 }
 
 .settings-refresh-btn:hover:not(:disabled) {
-    background: rgba(255, 120, 50, 0.1);
+    background: rgba(var(--accent-rgb), 0.1);
 }
 
 .settings-refresh-btn:disabled {
@@ -283,11 +283,11 @@
 }
 
 .settings-index-item:hover {
-    background: rgba(204, 120, 92, 0.06);
+    background: rgba(var(--accent-rgb), 0.06);
 }
 
 .settings-index-item.checked {
-    background: rgba(204, 120, 92, 0.07);
+    background: rgba(var(--accent-rgb), 0.07);
 }
 
 .settings-index-item input[type="checkbox"] {
@@ -365,7 +365,7 @@
     background: var(--accent);
     border: none;
     border-radius: 8px;
-    color: #fff;
+    color: var(--on-accent);
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
@@ -377,7 +377,7 @@
 }
 
 .settings-btn-export:hover:not(:disabled) {
-    opacity: 0.9;
+    background: var(--button-primary-hover);
 }
 
 .settings-btn-export:disabled {
@@ -386,50 +386,78 @@
 }
 
 .settings-btn-export--drive {
-    background: #4285f4;
+    background: var(--accent);
 }
 
 .settings-btn-export--drive:hover:not(:disabled) {
-    background: #3367d6;
+    background: var(--button-primary-hover);
     opacity: 1;
 }
 
 .settings-drive-feedback {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    /* close 버튼 기준 */
-    isolation: isolate;
-    z-index: 12;
+    position: relative;
     display: flex;
     align-items: center;
     gap: 9px;
-    padding: 13px 17px;
+    flex: 0 0 auto;
+    padding: 11px 40px 11px 13px;
     border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
     border-radius: 10px;
-    transform: translate(-50%, -50%);
-    background: color-mix(in srgb, var(--surface2) 92%, #000);
-    box-shadow: 0 14px 34px rgba(0, 0, 0, .52);
+    background: color-mix(in srgb, var(--success) 8%, var(--surface));
     color: var(--text);
     font-size: 13px;
-    font-weight: 750;
-    white-space: pre-line;
 }
 
 .settings-drive-feedback--success {
-    border-color: color-mix(in srgb, var(--success, #4caf50) 55%, var(--border));
-    color: var(--success, #4caf50);
+    border-color: color-mix(in srgb, var(--success) 55%, var(--border));
 }
 
 .settings-drive-feedback--error {
-    border-color: color-mix(in srgb, var(--danger, #e53935) 55%, var(--border));
-    color: var(--danger, #e53935);
+    border-color: color-mix(in srgb, var(--danger) 55%, var(--border));
+    color: var(--danger);
+}
+
+.settings-drive-feedback-icon {
+    display: grid;
+    flex: 0 0 22px;
+    width: 22px;
+    height: 22px;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--success);
+    color: var(--on-accent);
+    font-weight: 800;
+}
+
+.settings-drive-feedback-message {
+    min-width: 0;
+    flex: 1;
+    color: var(--text);
+    font-weight: 650;
+    line-height: 1.45;
+    white-space: pre-line;
+}
+
+.settings-drive-feedback-link {
+    flex: 0 0 auto;
+    padding: 6px 10px;
+    border: 1px solid color-mix(in srgb, var(--success) 45%, var(--border));
+    border-radius: 7px;
+    background: transparent;
+    color: var(--success);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+}
+
+.settings-drive-feedback-link:hover {
+    background: color-mix(in srgb, var(--success) 10%, transparent);
 }
 
 .settings-drive-feedback-close {
     position: absolute;
-    top: -8px;
-    right: -8px;
+    top: 8px;
+    right: 8px;
     width: 22px;
     height: 22px;
     display: grid;
@@ -479,8 +507,8 @@
 .settings-result-error {
     margin-top: 10px;
     padding: 10px 14px;
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.3);
+    background: rgba(var(--danger-rgb), 0.1);
+    border: 1px solid rgba(var(--danger-rgb), 0.3);
     border-radius: 8px;
     font-size: 14px;
     color: var(--del-fg);
@@ -488,17 +516,17 @@
 
 .settings-result-success {
     margin-top: 10px;
-    background: rgba(34, 197, 94, 0.06);
-    border: 1px solid rgba(34, 197, 94, 0.2);
+    background: rgba(var(--success-rgb), 0.06);
+    border: 1px solid rgba(var(--success-rgb), 0.2);
     border-radius: 8px;
     overflow: hidden;
 }
 
 .settings-result-success-header {
     padding: 10px 14px;
-    border-bottom: 1px solid rgba(34, 197, 94, 0.15);
+    border-bottom: 1px solid rgba(var(--success-rgb), 0.15);
     font-size: 14px;
-    color: #4ade80;
+    color: var(--success);
     font-weight: 600;
 }
 
@@ -626,7 +654,8 @@
 .restore-preview-actions button { min-height: 38px; padding: 0 15px; border-radius: 8px; cursor: pointer; font-weight: 650; }
 .restore-preview-cancel { border: 1px solid color-mix(in srgb, var(--text-secondary) 35%, var(--border)); background: transparent; color: var(--text); font-weight: 500; transition: background .15s, color .15s, border-color .15s; }
 .restore-preview-cancel:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 6%, transparent); border-color: var(--accent); color: var(--accent); }
-.restore-preview-confirm { border: 1px solid var(--accent); background: var(--accent); color: white; }
+.restore-preview-confirm { border: 1px solid var(--accent); background: var(--accent); color: var(--on-accent); }
+.restore-preview-confirm:hover:not(:disabled) { border-color: var(--button-primary-hover); background: var(--button-primary-hover); }
 .restore-preview-confirm:disabled { cursor: not-allowed; opacity: .48; }
 
 /* 원본 문서 포함 스위치 카드 */
@@ -868,7 +897,7 @@
     border-radius: 8px;
     border: none;
     background: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
     font-size: var(--modal-btn);
     font-weight: 600;
     cursor: pointer;
@@ -881,7 +910,7 @@
 }
 
 .settings-save-btn:not(:disabled):hover {
-    opacity: 0.85;
+    background: var(--button-primary-hover);
 }
 
 .settings-save-msg {
@@ -890,7 +919,7 @@
 }
 
 .settings-save-msg.error {
-    color: #ef4444;
+    color: var(--danger);
 }
 
 /* ── TTS 설정 ── */
@@ -1000,11 +1029,11 @@
     margin-top: -6px;
     margin-bottom: 10px;
     padding: 10px 12px;
-    background: rgba(251, 191, 36, 0.08);
-    border: 1px solid rgba(251, 191, 36, 0.3);
+    background: rgba(var(--warn-rgb), 0.08);
+    border: 1px solid rgba(var(--warn-rgb), 0.3);
     border-radius: 8px;
     font-size: 14px;
-    color: #fbbf24;
+    color: var(--warn);
     line-height: 1.6;
 }
 
@@ -1013,16 +1042,16 @@
     margin-top: 4px;
     padding: 3px 10px;
     background: transparent;
-    border: 1px solid rgba(251, 191, 36, 0.4);
+    border: 1px solid rgba(var(--warn-rgb), 0.4);
     border-radius: 5px;
-    color: #fbbf24;
+    color: var(--warn);
     font-size: 13px;
     cursor: pointer;
     transition: all 0.15s;
 }
 
 .settings-tts-install-hint button:hover {
-    background: rgba(251, 191, 36, 0.1);
+    background: rgba(var(--warn-rgb), 0.1);
 }
 
 .settings-tts-install-hint-btns {
@@ -1033,10 +1062,10 @@
 
 .settings-tts-install-link-btn {
     padding: 3px 12px;
-    background: rgba(251, 191, 36, 0.15);
-    border: 1px solid rgba(251, 191, 36, 0.4);
+    background: rgba(var(--warn-rgb), 0.15);
+    border: 1px solid rgba(var(--warn-rgb), 0.4);
     border-radius: 5px;
-    color: #fbbf24;
+    color: var(--warn);
     font-size: 13px;
     cursor: pointer;
     text-decoration: none;
@@ -1044,7 +1073,7 @@
 }
 
 .settings-tts-install-link-btn:hover {
-    background: rgba(251, 191, 36, 0.25);
+    background: rgba(var(--warn-rgb), 0.25);
 }
 
 
@@ -1065,11 +1094,11 @@
 }
 
 .settings-tts-custom-option:hover:not(.not-installed) {
-    background: rgba(204, 120, 92, 0.08);
+    background: rgba(var(--accent-rgb), 0.08);
 }
 
 .settings-tts-custom-option.selected {
-    background: rgba(204, 120, 92, 0.07);
+    background: rgba(var(--accent-rgb), 0.07);
     color: var(--accent);
     font-weight: 500;
 }
@@ -1080,7 +1109,7 @@
 }
 
 .settings-tts-custom-option.not-installed:hover {
-    background: rgba(251, 191, 36, 0.05);
+    background: rgba(var(--warn-rgb), 0.05);
 }
 
 .settings-tts-check {
@@ -1134,8 +1163,8 @@
     display: inline-block;
     margin-left: 8px;
     padding: 1px 7px;
-    background: rgba(204, 120, 92, 0.15);
-    border: 1px solid rgba(204, 120, 92, 0.3);
+    background: rgba(var(--accent-rgb), 0.15);
+    border: 1px solid rgba(var(--accent-rgb), 0.3);
     border-radius: 10px;
     font-size: 12px;
     color: var(--accent);
@@ -1283,7 +1312,7 @@
 .settings-runtime-settings { gap: 14px; }
 .settings-runtime-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .settings-runtime-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.settings-runtime-saved { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; color: #4ade80; opacity: 0; transform: scale(.75); transition: opacity .18s ease, transform .18s ease; }
+.settings-runtime-saved { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; color: var(--success); opacity: 0; transform: scale(.75); transition: opacity .18s ease, transform .18s ease; }
 .settings-runtime-saved svg { width: 16px; height: 16px; }
 .settings-runtime-saved.is-visible { opacity: 1; transform: scale(1); }
 .settings-runtime-reset { border: 1px solid var(--border); border-radius: 6px; background: transparent; color: var(--text-secondary); padding: 6px 9px; font-size: 12px; cursor: pointer; }

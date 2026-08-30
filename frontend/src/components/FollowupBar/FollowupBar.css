@@ -67,7 +67,7 @@
 .followup-send-selected {
     font-size: 12px;
     font-weight: 600;
-    color: #fff;
+    color: var(--on-accent);
     background: var(--accent);
     border: none;
     border-radius: 8px;
@@ -112,7 +112,7 @@
     justify-content: center;
     border-radius: 6px;
     border: 1.5px solid var(--border);
-    color: #fff;
+    color: var(--on-accent);
     font-size: 12px;
     line-height: 1;
     background: transparent;
@@ -170,7 +170,7 @@
     flex: 0 0 auto;
     font-size: 12px;
     font-weight: 600;
-    color: #fff;
+    color: var(--on-accent);
     background: var(--accent);
     border: none;
     border-radius: 8px;

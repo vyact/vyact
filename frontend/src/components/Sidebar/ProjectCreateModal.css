@@ -26,5 +26,6 @@
 .project-create-modal__actions button { border-radius:8px; padding:7px 14px; font:inherit; font-size:14px; font-weight:600; cursor:pointer; }
 .project-create-modal__cancel { border:1px solid color-mix(in srgb, var(--text-secondary) 35%, var(--border)); background:transparent; color:var(--text); font-weight:500; transition:background .15s,color .15s,border-color .15s; }
 .project-create-modal__cancel:hover:not(:disabled) { background:color-mix(in srgb, var(--accent) 6%, transparent); border-color:var(--accent); color:var(--accent); }
-.project-create-modal__submit { border:0; background:var(--accent); color:#fff; }
+.project-create-modal__submit { border:0; background:var(--accent); color: var(--on-accent); }
+.project-create-modal__submit:hover:not(:disabled) { background:var(--button-primary-hover); }
 .project-create-modal__submit:disabled, .project-create-modal__cancel:disabled { opacity:.5; cursor:not-allowed; }

@@ -22,6 +22,7 @@ import {refreshGoogleWorkspaceStatus} from '../../services/googleWorkspaceStatus
 import {getUserProfile, updateUserProfile} from '../../services/userProfile';
 import {getKokoroAvailability} from '../../services/tts/kokoroStatus';
 import {translateBackendError} from '../../utils/apiError';
+import {OPEN_GOOGLE_DRIVE_EVENT} from '../../types/googleWorkspace';
 
 interface IndexStat {
     index: string;
@@ -51,6 +52,12 @@ interface BackupPreview {
         installed: boolean;
         data_indices?: string[];
     }[];
+}
+
+interface DriveExportResult {
+    fileName: string;
+    folderId: string;
+    accountId?: string;
 }
 
 const BACKUP_SETTINGS_INDICES = new Set([
@@ -243,6 +250,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
     const [activeDriveBackupAccountId, setActiveDriveBackupAccountId] = useState('');
     const [showDriveAccountSelection, setShowDriveAccountSelection] = useState(false);
     const [selectedDriveBackupAccountId, setSelectedDriveBackupAccountId] = useState('');
+    const [driveExportResult, setDriveExportResult] = useState<DriveExportResult | null>(null);
 
     // 일반 설정 탭
     const [llmLogging, setLlmLogging] = useState(false);
@@ -541,6 +549,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
         }
         const targetAccountId = accountId || driveBackupAccounts[0]?.id || activeDriveBackupAccountId;
         setShowDriveAccountSelection(false);
+        setDriveExportResult(null);
         setExportingDrive(true);
         try {
             const res = await fetch('/api/backup/export-to-drive', {
@@ -554,7 +563,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.code ? translateBackendError(data.code, data.params) : t('backendErrors.request_failed'));
-            toast.success(t('backup.exportDriveSuccess', {name: data.file_name}), undefined, 5000, true);
+            setDriveExportResult({
+                fileName: data.file_name,
+                folderId: data.folder_id,
+                accountId: targetAccountId || undefined,
+            });
         } catch (e) {
             toast.error(t('backup.exportDriveFailed', {error: String(e)}), undefined, undefined, true);
         } finally {
@@ -897,7 +910,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                         <input type="radio" name="drive-backup-account" value={account.id}
                                                checked={selectedDriveBackupAccountId === account.id}
                                                onChange={() => setSelectedDriveBackupAccountId(account.id)}/>
-                                        <span><strong>{account.email || account.id}</strong>{account.id === activeDriveBackupAccountId && <small>{t('backup.currentAccount')}</small>}</span>
+                                        <span><strong>{account.email || account.id}</strong></span>
                                     </label>
                                 ))}
                             </div>
@@ -1009,6 +1022,40 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                                 ))}
                                     </div>
                                 </div>
+
+                                {driveExportResult && (
+                                    <div className="settings-drive-feedback settings-drive-feedback--success" role="status">
+                                        <span className="settings-drive-feedback-icon" aria-hidden="true">✓</span>
+                                        <span className="settings-drive-feedback-message">
+                                            {t('backup.exportDriveSuccess', {name: driveExportResult.fileName})}
+                                        </span>
+                                        {driveExportResult.folderId && (
+                                            <button
+                                                type="button"
+                                                className="settings-drive-feedback-link"
+                                                onClick={() => {
+                                                    window.dispatchEvent(new CustomEvent(OPEN_GOOGLE_DRIVE_EVENT, {
+                                                        detail: {
+                                                            folderId: driveExportResult.folderId,
+                                                            folderName: 'vyact',
+                                                            accountId: driveExportResult.accountId,
+                                                            requestId: Date.now(),
+                                                        },
+                                                    }));
+                                                    onClose();
+                                                }}
+                                            >
+                                                {t('backup.openInDrive')}
+                                            </button>
+                                        )}
+                                        <button
+                                            type="button"
+                                            className="settings-drive-feedback-close"
+                                            aria-label={t('common:close')}
+                                            onClick={() => setDriveExportResult(null)}
+                                        >×</button>
+                                    </div>
+                                )}
 
                                 <div className="settings-btn-row">
                                     {googleDriveAvailable ? (

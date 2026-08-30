@@ -306,7 +306,7 @@
 /* The generic composer button colour is muted; the primary send action must
    retain a high-contrast icon instead. */
 .chat-btn-row .send-btn {
-    color: #fff;
+    color: var(--on-accent);
 }
 
 .send-btn:hover:not(:disabled) {
@@ -845,7 +845,7 @@
 .mcp-mention-header{display:flex;align-items:center;gap:8px;padding:12px 16px;color:var(--muted);font-size:12px;font-weight:700;border-bottom:1px solid var(--border)}.mcp-mention-header small{margin-left:auto;font-size:11px;font-weight:400}
 .mcp-mention-item{width:100%;display:flex;align-items:center;gap:12px;padding:13px 16px;border:0;background:transparent;color:var(--text);text-align:left;cursor:pointer}.mcp-mention-item:hover,.mcp-mention-item.active{background:color-mix(in srgb,var(--accent) 12%,transparent)}
 .mcp-mention-copy{display:grid;gap:3px;flex:1}.mcp-mention-check{color:var(--accent)}.mcp-mention-empty{padding:18px;color:var(--muted);font-size:13px}
-.selected-mcp-chips{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 0 8px 4px}.selected-mcp-chip{display:flex;align-items:center;gap:7px;max-width:100%;padding:5px 7px 5px 8px;border:1px solid color-mix(in srgb,var(--accent) 55%,var(--border));border-radius:9px;background:color-mix(in srgb,var(--accent) 12%,var(--surface));color:var(--text);font-size:13px;font-weight:600}.selected-mcp-chip-icon{display:grid;place-items:center;width:18px;height:18px;border-radius:5px;background:var(--accent);color:#fff;font-size:12px}.selected-mcp-chip button{display:grid;place-items:center;width:16px;height:16px;padding:0;border:0;border-radius:50%;background:#f4f4f5;color:#252525;cursor:pointer;line-height:1;box-shadow:0 1px 4px rgba(0,0,0,.25)}.selected-mcp-chip button:hover{background:#fff;color:#111}
+.selected-mcp-chips{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 0 8px 4px}.selected-mcp-chip{display:flex;align-items:center;gap:7px;max-width:100%;padding:5px 7px 5px 8px;border:1px solid color-mix(in srgb,var(--accent) 55%,var(--border));border-radius:9px;background:color-mix(in srgb,var(--accent) 12%,var(--surface));color:var(--text);font-size:13px;font-weight:600}.selected-mcp-chip-icon{display:grid;place-items:center;width:18px;height:18px;border-radius:5px;background:var(--accent);color: var(--on-accent);font-size:12px}.selected-mcp-chip button{display:grid;place-items:center;width:16px;height:16px;padding:0;border:0;border-radius:50%;background:#f4f4f5;color:#252525;cursor:pointer;line-height:1;box-shadow:0 1px 4px rgba(0,0,0,.25)}.selected-mcp-chip button:hover{background:#fff;color:#111}
 .selected-mcp-chip-icon { flex: 0 0 18px; }
 .selected-mcp-chip > span:nth-child(2) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .selected-mcp-chip button { flex: 0 0 16px; }

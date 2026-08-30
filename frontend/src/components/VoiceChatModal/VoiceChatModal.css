@@ -95,12 +95,12 @@
 
 .vc-lang-btn:hover {
     border-color: var(--accent);
-    background: rgba(204, 120, 92, 0.06);
+    background: rgba(var(--accent-rgb), 0.06);
 }
 
 .vc-lang-btn.selected {
     border-color: var(--accent);
-    background: rgba(204, 120, 92, 0.1);
+    background: rgba(var(--accent-rgb), 0.1);
 }
 
 .vc-lang-flag {
@@ -128,7 +128,7 @@
     background: var(--accent);
     border: none;
     border-radius: 10px;
-    color: #fff;
+    color: var(--on-accent);
     font-size: var(--modal-btn);
     font-weight: 600;
     cursor: pointer;
@@ -136,7 +136,7 @@
 }
 
 .vc-start-btn:hover {
-    opacity: 0.88;
+    background: var(--button-primary-hover);
 }
 
 /* Chatting */
@@ -161,7 +161,7 @@
 }
 
 .vc-status-dot.listening {
-    background: #22c55e;
+    background: var(--success);
     animation: vc-pulse 1s infinite;
 }
 
@@ -171,7 +171,7 @@
 }
 
 .vc-status-dot.waiting {
-    background: #fbbf24;
+    background: var(--warn);
     animation: vc-pulse 1.2s infinite;
 }
 
@@ -270,8 +270,8 @@
     align-items: center;
     gap: 8px;
     padding: 10px 24px;
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.3);
+    background: rgba(var(--danger-rgb), 0.1);
+    border: 1px solid rgba(var(--danger-rgb), 0.3);
     border-radius: 9px;
     color: var(--del-fg);
     font-size: var(--modal-btn);
@@ -281,7 +281,7 @@
 }
 
 .vc-stop-btn:hover {
-    background: rgba(239, 68, 68, 0.18);
+    background: rgba(var(--danger-rgb), 0.18);
     border-color: var(--del-fg);
 }
 
@@ -357,7 +357,7 @@
     background: var(--accent);
     border: none;
     border-radius: 6px;
-    color: #fff;
+    color: var(--on-accent);
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
@@ -369,7 +369,7 @@
 }
 
 .sp-copy-btn:hover {
-    opacity: 0.85;
+    background: var(--button-primary-hover);
 }
 
 .sp-list-header {
@@ -389,7 +389,7 @@
     background: var(--accent);
     border: none;
     border-radius: 7px;
-    color: #fff;
+    color: var(--on-accent);
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
@@ -397,7 +397,7 @@
 }
 
 .sp-new-btn:hover {
-    opacity: 0.85;
+    background: var(--button-primary-hover);
 }
 
 .sp-list {
@@ -563,7 +563,7 @@
 }
 
 .sp-progress-dot.done {
-    background: rgba(var(--accent-rgb, 255, 120, 50), 0.4);
+    background: rgba(var(--accent-rgb), 0.4);
 }
 
 .sp-progress-label {
@@ -594,8 +594,8 @@
 }
 
 .sp-card-a {
-    background: rgba(var(--accent-rgb, 255, 120, 50), 0.08);
-    border: 1px solid rgba(var(--accent-rgb, 255, 120, 50), 0.25);
+    background: rgba(var(--accent-rgb), 0.08);
+    border: 1px solid rgba(var(--accent-rgb), 0.25);
 }
 
 .sp-card-role {
@@ -692,7 +692,7 @@
     border-radius: 50%;
     background: var(--accent);
     border: none;
-    color: #fff;
+    color: var(--on-accent);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -702,7 +702,7 @@
 }
 
 .sp-mic-btn:hover:not(:disabled) {
-    opacity: 0.9;
+    background: var(--button-primary-hover);
     transform: scale(1.04);
 }
 
@@ -712,16 +712,16 @@
 }
 
 .sp-mic-btn.listening {
-    background: #ef4444;
+    background: var(--danger);
     animation: sp-pulse 1.2s ease-in-out infinite;
 }
 
 @keyframes sp-pulse {
     0%, 100% {
-        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+        box-shadow: 0 0 0 0 rgba(var(--danger-rgb), 0.4);
     }
     50% {
-        box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+        box-shadow: 0 0 0 10px rgba(var(--danger-rgb), 0);
     }
 }
 
@@ -802,7 +802,7 @@
 .sp-parse-btn {
     align-self: flex-start;
     padding: 7px 16px;
-    background: rgba(var(--accent-rgb, 255, 120, 50), 0.15);
+    background: rgba(var(--accent-rgb), 0.15);
     border: 1px solid var(--accent);
     border-radius: 7px;
     color: var(--accent);
@@ -814,7 +814,7 @@
 }
 
 .sp-parse-btn:hover {
-    background: rgba(var(--accent-rgb, 255, 120, 50), 0.25);
+    background: rgba(var(--accent-rgb), 0.25);
 }
 
 .sp-parse-error {
@@ -872,7 +872,7 @@
 }
 
 .sp-preview-badge.a {
-    background: rgba(var(--accent-rgb, 255, 120, 50), 0.2);
+    background: rgba(var(--accent-rgb), 0.2);
     color: var(--accent);
 }
 
@@ -893,7 +893,7 @@
     background: var(--accent);
     border: none;
     border-radius: 10px;
-    color: #fff;
+    color: var(--on-accent);
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
@@ -901,7 +901,7 @@
 }
 
 .sp-save-btn:hover:not(:disabled) {
-    opacity: 0.9;
+    background: var(--button-primary-hover);
 }
 
 .sp-save-btn:disabled {
@@ -990,13 +990,13 @@
 }
 
 .sp-add-btn.a {
-    background: rgba(var(--accent-rgb, 255, 120, 50), 0.12);
-    border: 1px solid rgba(var(--accent-rgb, 255, 120, 50), 0.4);
+    background: rgba(var(--accent-rgb), 0.12);
+    border: 1px solid rgba(var(--accent-rgb), 0.4);
     color: var(--accent);
 }
 
 .sp-add-btn.a:hover {
-    background: rgba(var(--accent-rgb, 255, 120, 50), 0.22);
+    background: rgba(var(--accent-rgb), 0.22);
 }
 
 .sp-add-btn.b {
@@ -1256,8 +1256,8 @@
 }
 
 .sp-card-item-a {
-    background: rgba(var(--accent-rgb, 255, 120, 50), 0.1);
-    border: 1px solid rgba(var(--accent-rgb, 255, 120, 50), 0.2);
+    background: rgba(var(--accent-rgb), 0.1);
+    border: 1px solid rgba(var(--accent-rgb), 0.2);
 }
 
 .sp-card-item-role {
@@ -1359,8 +1359,8 @@
 }
 
 .sp-chat-a.correct {
-    background: rgba(74, 222, 128, 0.12);
-    border-color: rgba(74, 222, 128, 0.35);
+    background: rgba(var(--success-rgb), 0.12);
+    border-color: rgba(var(--success-rgb), 0.35);
 }
 
 .sp-chat-a.wrong {
@@ -1416,7 +1416,7 @@
 .sp-role-btn.active {
     background: var(--accent);
     border-color: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
 }
 
 .sp-role-btn:disabled {
@@ -1454,10 +1454,10 @@
 
 @keyframes sp-bubble-pulse {
     0%, 100% {
-        box-shadow: 0 0 0 0 rgba(255, 120, 50, 0.4);
+        box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0.4);
     }
     50% {
-        box-shadow: 0 0 0 6px rgba(255, 120, 50, 0);
+        box-shadow: 0 0 0 6px rgba(var(--accent-rgb), 0);
     }
 }
 
@@ -1476,14 +1476,14 @@
 
 /* 통과 - 초록 유지 */
 .sp-chat-bubble.passed {
-    background: rgba(74, 222, 128, 0.1);
-    border-color: rgba(74, 222, 128, 0.35);
+    background: rgba(var(--success-rgb), 0.1);
+    border-color: rgba(var(--success-rgb), 0.35);
 }
 
 /* 정답 */
 .sp-chat-bubble.correct {
-    background: rgba(74, 222, 128, 0.15) !important;
-    border-color: rgba(74, 222, 128, 0.5) !important;
+    background: rgba(var(--success-rgb), 0.15) !important;
+    border-color: rgba(var(--success-rgb), 0.5) !important;
 }
 
 /* 오답 */
@@ -1574,12 +1574,12 @@
     gap: 10px;
     padding: 10px 16px;
     margin: 0 16px 4px;
-    background: rgba(74, 222, 128, 0.12);
-    border: 1px solid rgba(74, 222, 128, 0.35);
+    background: rgba(var(--success-rgb), 0.12);
+    border: 1px solid rgba(var(--success-rgb), 0.35);
     border-radius: 10px;
     font-size: 13px;
     font-weight: 600;
-    color: #4ade80;
+    color: var(--success);
     text-align: center;
     min-height: 48px;
     flex-shrink: 0;
@@ -1587,10 +1587,10 @@
 
 .sp-restart-btn {
     padding: 4px 10px;
-    background: rgba(74, 222, 128, 0.2);
-    border: 1px solid rgba(74, 222, 128, 0.4);
+    background: rgba(var(--success-rgb), 0.2);
+    border: 1px solid rgba(var(--success-rgb), 0.4);
     border-radius: 6px;
-    color: #4ade80;
+    color: var(--success);
     font-size: 11px;
     font-weight: 600;
     cursor: pointer;
@@ -1602,7 +1602,7 @@
 }
 
 .sp-restart-btn:hover {
-    background: rgba(74, 222, 128, 0.35);
+    background: rgba(var(--success-rgb), 0.35);
 }
 
 /* ── 전체 재생 버튼 ──────────────────────────── */
@@ -1627,7 +1627,7 @@
 }
 
 .sp-play-all-btn.playing {
-    background: rgba(var(--accent-rgb, 255, 120, 50), 0.15);
+    background: rgba(var(--accent-rgb), 0.15);
     border-color: var(--accent);
     color: var(--accent);
 }

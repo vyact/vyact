@@ -24,7 +24,7 @@
 .gov24-browser-list-select { display:grid; min-width:0; flex:1; gap:5px; padding:15px 8px 15px 18px; border:0; background:transparent; color:var(--text); text-align:left; cursor:pointer; }
 .gov24-browser-list-attach { flex:0 0 auto; margin-right:12px; padding:6px 9px; border:1px solid color-mix(in srgb,var(--accent) 38%,var(--border)); border-radius:8px; background:transparent; color:var(--accent); font-size:11px; font-weight:650; cursor:pointer; }
 .gov24-browser-list-attach:hover { background:color-mix(in srgb,var(--accent) 12%,transparent); }
-.gov24-browser-list-attach.is-attached { background:var(--accent); color:#fff; }
+.gov24-browser-list-attach.is-attached { background:var(--accent); color: var(--on-accent); }
 .gov24-browser-list strong { overflow:hidden; font-size:13px; line-height:1.45; text-overflow:ellipsis; white-space:nowrap; }
 .gov24-browser-list-select > span { overflow:hidden; color:var(--muted); font-size:11px; text-overflow:ellipsis; white-space:nowrap; }
 .gov24-browser-list-meta { display:flex; min-width:0; align-items:center; gap:8px; }
@@ -35,7 +35,7 @@
 .gov24-browser-date.is-year { color:var(--muted); }
 .gov24-browser-list-meta > span::before { content:'·'; margin-right:8px; color:var(--muted); }
 .gov24-browser-state,.gov24-browser-loading-more { display:grid; min-height:120px; place-items:center; padding:20px; color:var(--muted); font-size:12px; text-align:center; }
-.gov24-browser-state.is-error { color:var(--danger,#e36b6b); }
+.gov24-browser-state.is-error { color:var(--danger); }
 .gov24-browser-loading-more { min-height:auto; }
 .gov24-browser-detail { display:flex; min-width:0; min-height:0; flex-direction:column; overflow:hidden; background:var(--surface); }
 .gov24-browser-detail-hero { padding:16px 20px 14px; border-bottom:1px solid var(--border); background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 9%,transparent),transparent 65%); }
@@ -52,7 +52,7 @@
 .gov24-browser-side-actions .gov24-browser-date { padding:4px 8px; }
 .gov24-browser-attach { display:inline-flex; flex:0 0 auto; align-items:center; gap:6px; padding:7px 10px; border:1px solid color-mix(in srgb,var(--accent) 45%,var(--border)); border-radius:9px; background:color-mix(in srgb,var(--accent) 9%,transparent); color:var(--accent); font-size:12px; font-weight:650; cursor:pointer; }
 .gov24-browser-attach:hover { background:color-mix(in srgb,var(--accent) 15%,transparent); }
-.gov24-browser-attach.is-attached { background:var(--accent); color:#fff; }
+.gov24-browser-attach.is-attached { background:var(--accent); color: var(--on-accent); }
 .gov24-browser-detail-scroll { overflow:auto; padding:16px 20px 26px; scrollbar-width:thin; }
 .gov24-browser-info-card { display:flex; align-items:flex-start; gap:11px; margin-bottom:10px; padding:13px 15px; border:1px solid var(--border); border-radius:11px; background:color-mix(in srgb,var(--surface2) 66%,transparent); color:var(--accent); }
 .gov24-browser-info-card > svg { width:19px; height:19px; flex:0 0 19px; }

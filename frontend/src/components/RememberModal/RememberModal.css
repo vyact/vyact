@@ -142,7 +142,7 @@
 
 .remember-bar {
     height: 100%;
-    background: var(--primary, #c97d4e);
+    background: var(--accent);
     border-radius: 3px;
     transition: width 0.3s ease;
 }
@@ -160,7 +160,7 @@
     width: 20px;
     height: 20px;
     border: 2px solid var(--border);
-    border-top-color: var(--primary, #c97d4e);
+    border-top-color: var(--accent);
     border-radius: 50%;
     animation: remember-spin 0.8s linear infinite;
     align-self: center;
@@ -239,15 +239,15 @@
     padding: 8px 20px;
     border-radius: 8px;
     border: none;
-    background: var(--primary, #c97d4e);
-    color: #fff;
+    background: var(--accent);
+    color: var(--on-accent);
     font-size: var(--modal-btn);
     cursor: pointer;
     transition: opacity 0.15s;
 }
 
 .remember-start-btn:hover {
-    opacity: 0.85;
+    background: var(--button-primary-hover);
 }
 
 .remember-start-btn:disabled {
@@ -301,7 +301,7 @@
 
 .remember-edit-textarea:focus {
     outline: none;
-    border-color: var(--primary, #c97d4e);
+    border-color: var(--accent);
 }
 
 .remember-edit-count {
