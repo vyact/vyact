@@ -81,7 +81,7 @@ def _rerank_sync(query: str, docs: list[dict], top_k: int) -> list[dict]:
         ranked_docs.append(d)
 
     logger.info(
-        "[reranker] 상위 %d개 선택: %s",
+        "[reranker] selected top %d: %s",
         top_k,
         [(d["title"][:20], f"{d['rerank_score']:.6f}") for d in ranked_docs],
     )

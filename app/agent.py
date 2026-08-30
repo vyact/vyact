@@ -152,7 +152,8 @@ async def _rerank_related_context(
     relevant_candidates = _select_diverse_candidates(threshold_candidates, RELATED_CONTEXT_RESULT_SIZE)
     if len(ranked_candidates) != len(relevant_candidates):
         logger.info(
-            "[rag_query] 관련도 필터: 후보 %d개 → %d개 (임계값 %.2f, 최소 보장 %d개)",
+            "[rag_query] relevance filter: %d candidates -> %d results "
+            "(threshold %.2f, minimum guaranteed %d)",
             len(ranked_candidates), len(relevant_candidates), relevance_threshold, minimum_results,
         )
     return relevant_candidates
