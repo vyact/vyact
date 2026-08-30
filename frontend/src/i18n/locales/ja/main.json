@@ -629,7 +629,7 @@
     "image_usage": "/image [プロンプト]",
     "image_desc": "AIで画像を生成します。",
     "image_example": "/image 夕日の漢江、写真風",
-    "pdf_desc": "プロンプト・メモ・文書・画像を選択してAIが高品質PDF文書を自動生成します。",
+    "pdf_desc": "プロンプト・メモ・文書・画像を選択してAIが高品質PDF文書を自動生成します。", "presentation_desc": "プロンプト、記事、画像からAIプレゼンテーションを作成します。",
     "youtube_desc": "YouTube動画をグループ管理し、アプリ内で再生します。",
     "memo_desc": "メモを作成・管理します。RAG検索に含まれます。",
     "quickmemo_desc": "クイックメモを作成・管理します。",
@@ -1170,6 +1170,8 @@
   "uiAudit": {"projectDownloadFailed":"プロジェクトのダウンロードに失敗しました","copy":"コピー","copied":"コピー済み","stopReading":"読み上げを停止","readAloud":"読み上げる","provider":"プロバイダー","loading":"読み込み中","googleOauthCredential":"OAuth認証情報（.gauth.json）","googleMailPermission":"メール書き込み権限","googleMailReadonly":"読み取り専用","googleMailDraftOnly":"下書きのみ許可","googleMailSend":"送信を許可","googleMailNotifications":"通知を受け取る"},
   "uiAuditExtra": {"file":"ファイル","emptyConversation":"この会話には内容がありません。"},
   "loadingIndicator": {"generatingImage":"画像を生成中…"},
+  "uiAuditSecond": {"preparingImage":"画像生成を準備中…","modelChangeFailed":"モデルの変更に失敗しました","attachmentUploadFailed":"添付ファイルのアップロードに失敗しました。"},
+  "networkError": {"requestFailed":"リクエスト失敗","serverError":"サーバーエラー","streamFailed":"ストリーミングリクエストに失敗しました","clientErrorDetail":"リクエストエラー（{{status}}）：{{detail}}","serverErrorDetail":"サーバーエラー（{{status}}）：{{detail}} — しばらくしてからもう一度お試しください。","genericDetail":"エラー：{{detail}}"},
   "modelSettings": {
     "title": "Model settings",
     "close": "Close",

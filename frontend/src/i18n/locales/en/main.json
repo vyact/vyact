@@ -628,7 +628,7 @@
     "image_usage": "/image [prompt]",
     "image_desc": "Generate images with AI.",
     "image_example": "/image A sunset over the Han River, photorealistic",
-    "pdf_desc": "AI automatically generates high-quality PDF documents from prompts, memos, documents, and images.",
+    "pdf_desc": "AI automatically generates high-quality PDF documents from prompts, memos, documents, and images.", "presentation_desc": "Create an AI presentation from prompts, articles, and images.",
     "youtube_desc": "Manage YouTube videos by group and play them in-app.",
     "memo_desc": "Write and manage memos. Included in RAG search.",
     "quickmemo_desc": "Create and manage quick memos.",
@@ -1166,6 +1166,8 @@
   "uiAudit": {"projectDownloadFailed":"Project download failed","copy":"Copy","copied":"Copied","stopReading":"Stop reading","readAloud":"Read aloud","provider":"Provider","loading":"Loading","googleOauthCredential":"OAuth credentials (.gauth.json)","googleMailPermission":"Email write permission","googleMailReadonly":"Read only","googleMailDraftOnly":"Allow drafts only","googleMailSend":"Allow sending","googleMailNotifications":"Receive notifications"},
   "uiAuditExtra": {"file":"File","emptyConversation":"This conversation has no content."},
   "loadingIndicator": {"generatingImage":"Generating image…"},
+  "uiAuditSecond": {"preparingImage":"Preparing image generation…","modelChangeFailed":"Model change failed","attachmentUploadFailed":"Failed to upload the attachment."},
+  "networkError": {"requestFailed":"Request failed","serverError":"Server error","streamFailed":"Streaming request failed","clientErrorDetail":"Request error ({{status}}): {{detail}}","serverErrorDetail":"Server error ({{status}}): {{detail}} — Please try again shortly.","genericDetail":"Error: {{detail}}"},
   "modelSettings": {
     "title": "Model settings",
     "close": "Close",

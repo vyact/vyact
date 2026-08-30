@@ -210,7 +210,7 @@ export function useChat(deps: UseChatDeps) {
     // 사이드바 목록에도 바로 추가해 백엔드 저장 타이밍 레이스를 피한다.
     const assignNewConvId = (id: string, titleSeed: string) => {
         setConvId(id);
-        addLocalConversation(id, titleSeed || '새 대화', activeProjectId);
+        addLocalConversation(id, titleSeed || t('commandPalette.newChat'), activeProjectId);
     };
 
     const handleSend = async (
@@ -459,7 +459,7 @@ export function useChat(deps: UseChatDeps) {
             const isCurrentlyImageMode = IMAGE_MODEL_IDS.includes(selectedModel);
             if (isCurrentlyImageMode) {
                 resetImageGen();
-                setImageGenMessage('이미지 생성 준비 중...');
+                setImageGenMessage(t('uiAuditSecond.preparingImage'));
                 const response = await api.generateImage(query, requestConvId, sanitizedHistory,
                     attachments.length > 0 ? attachments : undefined,
                     (msg, progress) => {
@@ -953,7 +953,7 @@ export function useChat(deps: UseChatDeps) {
         // 새 대화방이면 사이드바에 즉시 추가 (백엔드 저장 완료 대기 없이)
         if (requestConvId) {
             const firstMsg = getMessagesForConversation(requestConvId).find(m => m.role === 'user');
-            addLocalConversation(requestConvId, firstMsg?.content?.slice(0, 30) || '새 대화', activeProjectId);
+            addLocalConversation(requestConvId, firstMsg?.content?.slice(0, 30) || t('commandPalette.newChat'), activeProjectId);
         }
     };
 

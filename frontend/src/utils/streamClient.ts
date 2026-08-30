@@ -1,4 +1,5 @@
 import { ApiError } from './apiError';
+import i18n from '../i18n';
 
 // streamClient.ts – 백엔드 토큰 SSE 엔드포인트 파서
 //
@@ -37,8 +38,9 @@ export async function streamSSE(
         } catch {
             // JSON이 아닌 응답 — 무시하고 상태 코드만 사용
         }
-        const prefix = res.status >= 500 ? '서버 오류' : '요청 실패';
-        throw new ApiError(`${prefix} (${res.status}): ${detail || res.statusText || '스트리밍 요청 실패'}`, res.status, detail);
+        const prefix = i18n.t(res.status >= 500 ? 'main:networkError.serverError' : 'main:networkError.requestFailed');
+        const fallback = i18n.t('main:networkError.streamFailed');
+        throw new ApiError(`${prefix} (${res.status}): ${detail || res.statusText || fallback}`, res.status, detail);
     }
 
     const reader = res.body.getReader();

@@ -141,7 +141,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
     onToggleSavedDocument,
     onDetachSavedDocuments,
 }) => {
-    const {t} = useTranslation('main');
+    const {t, i18n} = useTranslation('main');
     const [tab, setTab] = useState<Tab>('index');
 
     // 업로드 공통
@@ -986,10 +986,10 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
                                         <CustomSelect
                                             options={[
                                                 { value: '0', label: t('documentModal.rangeAll') },
-                                                { value: '5000', label: '5,000자' },
-                                                { value: '10000', label: '10,000자' },
-                                                { value: '20000', label: '20,000자' },
-                                                { value: '50000', label: '50,000자' },
+                                                ...[5000, 10000, 20000, 50000].map(count => ({
+                                                    value: String(count),
+                                                    label: t('documentModal.charCount', {count: count.toLocaleString(i18n.language)}),
+                                                })),
                                             ]}
                                             value={String(maxChars)}
                                             onChange={v => setMaxChars(Number(v))}

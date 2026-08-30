@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import {useTranslation} from 'react-i18next';
 import { api } from '../../services/api';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
 
@@ -10,6 +11,7 @@ export function useModels(
     requestDownloadConfirmation?: (model: string) => Promise<boolean>,
     onBeforeModelChange?: () => void,
 ) {
+    const {t} = useTranslation('main');
     const [installed, setInstalled] = useState<string[]>([]);
     const [mtpSupported, setMtpSupported] = useState<string[]>([]);
     const [mtpActive, setMtpActive] = useState<string | null>(null);
@@ -97,7 +99,7 @@ export function useModels(
             onModelChange?.(model);
         } catch (error) {
             console.error('Model change failed:', error);
-            toast.error('모델 변경 실패', String(error));
+            toast.error(t('uiAuditSecond.modelChangeFailed'), String(error));
         } finally {
             setModelLoading(false);
             setIsDownloading(false);

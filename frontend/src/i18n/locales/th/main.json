@@ -629,7 +629,7 @@
     "image_usage": "/image [prompt]",
     "image_desc": "สร้างภาพด้วย AI",
     "image_example": "/image A sunset over the Han River, photorealistic",
-    "pdf_desc": "AI สร้าง PDF จากพรอมป์ต บันทึก เอกสาร และรูป",
+    "pdf_desc": "AI สร้าง PDF จากพรอมป์ต บันทึก เอกสาร และรูป", "presentation_desc": "สร้างงานนำเสนอด้วย AI จากพรอมต์ บทความ และรูปภาพ",
     "youtube_desc": "จัดการและเล่นวิดีโอ YouTube",
     "memo_desc": "เขียนและจัดการโน้ต",
     "quickmemo_desc": "สร้างและจัดการโน้ตด่วน",
@@ -1170,6 +1170,8 @@
   "uiAudit": {"projectDownloadFailed":"ดาวน์โหลดโปรเจกต์ไม่สำเร็จ","copy":"คัดลอก","copied":"คัดลอกแล้ว","stopReading":"หยุดอ่าน","readAloud":"อ่านออกเสียง","provider":"ผู้ให้บริการ","loading":"กำลังโหลด","googleOauthCredential":"ข้อมูลรับรอง OAuth (.gauth.json)","googleMailPermission":"สิทธิ์เขียนอีเมล","googleMailReadonly":"อ่านอย่างเดียว","googleMailDraftOnly":"อนุญาตเฉพาะฉบับร่าง","googleMailSend":"อนุญาตให้ส่ง","googleMailNotifications":"รับการแจ้งเตือน"},
   "uiAuditExtra": {"file":"ไฟล์","emptyConversation":"การสนทนานี้ไม่มีเนื้อหา"},
   "loadingIndicator": {"generatingImage":"กำลังสร้างรูปภาพ…"},
+  "uiAuditSecond": {"preparingImage":"กำลังเตรียมสร้างรูปภาพ…","modelChangeFailed":"เปลี่ยนโมเดลไม่สำเร็จ","attachmentUploadFailed":"อัปโหลดไฟล์แนบไม่สำเร็จ"},
+  "networkError": {"requestFailed":"คำขอล้มเหลว","serverError":"เซิร์ฟเวอร์ผิดพลาด","streamFailed":"คำขอสตรีมล้มเหลว","clientErrorDetail":"คำขอผิดพลาด ({{status}}): {{detail}}","serverErrorDetail":"เซิร์ฟเวอร์ผิดพลาด ({{status}}): {{detail}} — โปรดลองอีกครั้งในภายหลัง","genericDetail":"ข้อผิดพลาด: {{detail}}"},
   "modelSettings": {
     "title": "Model settings",
     "close": "Close",

@@ -628,7 +628,7 @@
     "image_usage": "/image [프롬프트]",
     "image_desc": "이미지를 AI로 생성합니다.",
     "image_example": "/image 석양이 지는 한강 풍경, 사진 느낌",
-    "pdf_desc": "프롬프트·메모·문서·이미지를 선택해 AI가 고품질 PDF 문서를 자동 생성합니다.",
+    "pdf_desc": "프롬프트·메모·문서·이미지를 선택해 AI가 고품질 PDF 문서를 자동 생성합니다.", "presentation_desc": "프롬프트·기사·이미지를 선택해 AI 프레젠테이션을 생성합니다.",
     "youtube_desc": "유튜브 영상을 그룹별로 관리하고 앱 내에서 재생합니다.",
     "memo_desc": "메모를 작성하고 관리합니다. RAG 검색에 포함됩니다.",
     "quickmemo_desc": "빠른 메모를 작성하고 관리합니다.",
@@ -1177,6 +1177,8 @@
   "uiAudit": {"projectDownloadFailed":"프로젝트 다운로드 실패","copy":"복사","copied":"복사됨","stopReading":"읽기 중지","readAloud":"소리로 읽기","provider":"프로바이더","loading":"불러오는 중","googleOauthCredential":"OAuth 자격증명 (.gauth.json)","googleMailPermission":"이메일 쓰기 권한","googleMailReadonly":"읽기 전용","googleMailDraftOnly":"초안만 허용","googleMailSend":"발송 허용","googleMailNotifications":"알림 받기"},
   "uiAuditExtra": {"file":"파일","emptyConversation":"대화 내용이 없습니다."},
   "loadingIndicator": {"generatingImage":"이미지 생성 중…"},
+  "uiAuditSecond": {"preparingImage":"이미지 생성 준비 중…","modelChangeFailed":"모델 변경 실패","attachmentUploadFailed":"첨부 파일 업로드에 실패했습니다."},
+  "networkError": {"requestFailed":"요청 실패","serverError":"서버 오류","streamFailed":"스트리밍 요청 실패","clientErrorDetail":"요청 오류 ({{status}}): {{detail}}","serverErrorDetail":"서버 오류 ({{status}}): {{detail}} — 잠시 후 다시 시도해주세요.","genericDetail":"오류: {{detail}}"},
   "modelSettings": {
     "title": "모델 설정",
     "close": "닫기",

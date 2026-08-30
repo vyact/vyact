@@ -1,3 +1,5 @@
+import i18n from '../i18n';
+
 // utils/apiError.ts – 백엔드 호출 실패를 일관된 형태로 표현하는 공용 에러 타입
 //
 // 지금까지 api.ts 여기저기서 `throw new Error(err.detail || '실패')`처럼 각자 다르게
@@ -53,10 +55,10 @@ async function readErrorDetail(res: Response): Promise<string> {
  *   await assertOk(res, '서버 등록 실패');
  *   return res.json();
  */
-export async function assertOk(res: Response, fallbackMessage = '요청 실패'): Promise<Response> {
+export async function assertOk(res: Response, fallbackMessage = i18n.t('main:networkError.requestFailed')): Promise<Response> {
     if (res.ok) return res;
     const detail = await readErrorDetail(res);
-    const prefix = res.status >= 500 ? '서버 오류' : '요청 실패';
+    const prefix = i18n.t(res.status >= 500 ? 'main:networkError.serverError' : 'main:networkError.requestFailed');
     throw new ApiError(`${prefix} (${res.status}): ${detail || fallbackMessage}`, res.status, detail);
 }
 
@@ -67,13 +69,13 @@ export async function assertOk(res: Response, fallbackMessage = '요청 실패')
 export function formatApiErrorForUser(error: unknown): string {
     if (error instanceof ApiError) {
         if (error.isClientError) {
-            return `요청 오류 (${error.status}): ${error.detail || error.message}`;
+            return i18n.t('main:networkError.clientErrorDetail', {status: error.status, detail: error.detail || error.message});
         }
         if (error.isServerError) {
-            return `서버 오류 (${error.status}): ${error.detail || error.message} — 잠시 후 다시 시도해주세요.`;
+            return i18n.t('main:networkError.serverErrorDetail', {status: error.status, detail: error.detail || error.message});
         }
         return error.message;
     }
-    if (error instanceof Error) return `오류: ${error.message}`;
-    return `오류: ${String(error)}`;
+    if (error instanceof Error) return i18n.t('main:networkError.genericDetail', {detail: error.message});
+    return i18n.t('main:networkError.genericDetail', {detail: String(error)});
 }

@@ -628,7 +628,7 @@
     "image_usage": "/image [prompt]",
     "image_desc": "Genera imágenes con IA",
     "image_example": "/image Una puesta de sol sobre el río Han, fotorrealista",
-    "pdf_desc": "IA crea PDF con prompts, notas, documentos e imágenes",
+    "pdf_desc": "IA crea PDF con prompts, notas, documentos e imágenes", "presentation_desc": "Crea una presentación con IA a partir de instrucciones, artículos e imágenes.",
     "youtube_desc": "Gestiona y reproduce vídeos de YouTube",
     "memo_desc": "Escribe y gestiona notas",
     "quickmemo_desc": "Crea y administra notas rápidas.",
@@ -1169,6 +1169,8 @@
   "uiAudit": {"projectDownloadFailed":"Error al descargar el proyecto","copy":"Copiar","copied":"Copiado","stopReading":"Detener lectura","readAloud":"Leer en voz alta","provider":"Proveedor","loading":"Cargando","googleOauthCredential":"Credenciales OAuth (.gauth.json)","googleMailPermission":"Permiso de escritura de correo","googleMailReadonly":"Solo lectura","googleMailDraftOnly":"Permitir solo borradores","googleMailSend":"Permitir envío","googleMailNotifications":"Recibir notificaciones"},
   "uiAuditExtra": {"file":"Archivo","emptyConversation":"Esta conversación no tiene contenido."},
   "loadingIndicator": {"generatingImage":"Generando imagen…"},
+  "uiAuditSecond": {"preparingImage":"Preparando la generación de imágenes…","modelChangeFailed":"No se pudo cambiar el modelo","attachmentUploadFailed":"No se pudo subir el archivo adjunto."},
+  "networkError": {"requestFailed":"Solicitud fallida","serverError":"Error del servidor","streamFailed":"Falló la solicitud de transmisión","clientErrorDetail":"Error de solicitud ({{status}}): {{detail}}","serverErrorDetail":"Error del servidor ({{status}}): {{detail}} — Inténtalo de nuevo en breve.","genericDetail":"Error: {{detail}}"},
   "modelSettings": {
     "title": "Model settings",
     "close": "Close",

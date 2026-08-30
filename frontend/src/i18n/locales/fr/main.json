@@ -629,7 +629,7 @@
     "image_usage": "/image [prompt]",
     "image_desc": "Générer des images avec l'IA",
     "image_example": "/image Un coucher de soleil sur le fleuve Han, photoréaliste",
-    "pdf_desc": "L'IA crée un PDF avec prompts, notes, documents et images",
+    "pdf_desc": "L'IA crée un PDF avec prompts, notes, documents et images", "presentation_desc": "Créez une présentation IA à partir de prompts, d’articles et d’images.",
     "youtube_desc": "Gérer et lire des vidéos YouTube",
     "memo_desc": "Écrire et gérer des notes",
     "quickmemo_desc": "Créez et gérez des notes rapides.",
@@ -1170,6 +1170,8 @@
   "uiAudit": {"projectDownloadFailed":"Échec du téléchargement du projet","copy":"Copier","copied":"Copié","stopReading":"Arrêter la lecture","readAloud":"Lire à voix haute","provider":"Fournisseur","loading":"Chargement","googleOauthCredential":"Identifiants OAuth (.gauth.json)","googleMailPermission":"Autorisation d’écriture des e-mails","googleMailReadonly":"Lecture seule","googleMailDraftOnly":"Autoriser uniquement les brouillons","googleMailSend":"Autoriser l’envoi","googleMailNotifications":"Recevoir les notifications"},
   "uiAuditExtra": {"file":"Fichier","emptyConversation":"Cette conversation ne contient aucun contenu."},
   "loadingIndicator": {"generatingImage":"Génération de l’image…"},
+  "uiAuditSecond": {"preparingImage":"Préparation de la génération d’image…","modelChangeFailed":"Échec du changement de modèle","attachmentUploadFailed":"Échec de l’importation de la pièce jointe."},
+  "networkError": {"requestFailed":"Échec de la requête","serverError":"Erreur du serveur","streamFailed":"Échec de la requête en streaming","clientErrorDetail":"Erreur de requête ({{status}}) : {{detail}}","serverErrorDetail":"Erreur du serveur ({{status}}) : {{detail}} — Veuillez réessayer dans quelques instants.","genericDetail":"Erreur : {{detail}}"},
   "modelSettings": {
     "title": "Model settings",
     "close": "Close",

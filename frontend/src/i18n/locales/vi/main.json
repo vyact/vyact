@@ -629,7 +629,7 @@
     "image_usage": "/image [prompt]",
     "image_desc": "Tạo ảnh bằng AI",
     "image_example": "/image A sunset over the Han River, photorealistic",
-    "pdf_desc": "AI tạo PDF từ prompt, ghi chú, tài liệu và ảnh",
+    "pdf_desc": "AI tạo PDF từ prompt, ghi chú, tài liệu và ảnh", "presentation_desc": "Tạo bài thuyết trình bằng AI từ lời nhắc, bài viết và hình ảnh.",
     "youtube_desc": "Quản lý và phát video YouTube",
     "memo_desc": "Viết và quản lý ghi chú",
     "quickmemo_desc": "Tạo và quản lý ghi chú nhanh.",
@@ -1170,6 +1170,8 @@
   "uiAudit": {"projectDownloadFailed":"Tải dự án xuống thất bại","copy":"Sao chép","copied":"Đã sao chép","stopReading":"Dừng đọc","readAloud":"Đọc to","provider":"Nhà cung cấp","loading":"Đang tải","googleOauthCredential":"Thông tin xác thực OAuth (.gauth.json)","googleMailPermission":"Quyền ghi email","googleMailReadonly":"Chỉ đọc","googleMailDraftOnly":"Chỉ cho phép bản nháp","googleMailSend":"Cho phép gửi","googleMailNotifications":"Nhận thông báo"},
   "uiAuditExtra": {"file":"Tệp","emptyConversation":"Cuộc trò chuyện này không có nội dung."},
   "loadingIndicator": {"generatingImage":"Đang tạo hình ảnh…"},
+  "uiAuditSecond": {"preparingImage":"Đang chuẩn bị tạo hình ảnh…","modelChangeFailed":"Đổi mô hình thất bại","attachmentUploadFailed":"Không thể tải tệp đính kèm lên."},
+  "networkError": {"requestFailed":"Yêu cầu thất bại","serverError":"Lỗi máy chủ","streamFailed":"Yêu cầu phát trực tiếp thất bại","clientErrorDetail":"Lỗi yêu cầu ({{status}}): {{detail}}","serverErrorDetail":"Lỗi máy chủ ({{status}}): {{detail}} — Vui lòng thử lại sau ít phút.","genericDetail":"Lỗi: {{detail}}"},
   "modelSettings": {
     "title": "Model settings",
     "close": "Close",

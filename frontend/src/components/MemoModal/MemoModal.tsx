@@ -215,11 +215,11 @@ const MemoEditor: React.FC<{
                 : { type: 'memoAttachment', attrs: { href: attachment.url, filename: attachment.filename, mimeType: attachment.mime_type } }
             ).run();
         } catch (error) {
-            setUploadError(error instanceof Error ? error.message : '첨부 파일 업로드에 실패했습니다.');
+            setUploadError(error instanceof Error ? error.message : t('uiAuditSecond.attachmentUploadFailed'));
         } finally {
             setUploadCount(count => Math.max(0, count - 1));
         }
-    }, [editor, onEnsureMemoId]);
+    }, [editor, onEnsureMemoId, t]);
 
     const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>, isImage: boolean) => {
         const files = Array.from(event.target.files || []);

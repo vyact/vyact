@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import React from 'react';
+import {useTranslation} from 'react-i18next';
 import { api } from '../../services/api';
 import { generateUUID, unwrapPastedText } from '../../utils/helpers';
 import { parseFollowups } from '../../utils/markdownUtils';
@@ -16,6 +17,7 @@ type StoredConversationMessage = Message & {
 };
 
 export function useConversation() {
+    const {t} = useTranslation('main');
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [favoriteConversations, setFavoriteConversations] = useState<Conversation[]>([]);
     // 응답 저장이 끝나기 전의 새 대화는 서버 히스토리 재조회 결과에 아직 없을 수 있다.
@@ -37,7 +39,7 @@ export function useConversation() {
     const [pendingArticles, setPendingArticles] = useState<ArticleAttachment[]>([]);
     const normalizeConversationTitle = (title: string): string => {
         const normalized = unwrapPastedText(title).replace(/\s+/g, ' ').trim();
-        return normalized || '새 대화';
+        return normalized || t('commandPalette.newChat');
     };
     const normalizeConversation = (conversation: Conversation): Conversation => ({
         ...conversation,
