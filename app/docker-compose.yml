@@ -28,7 +28,7 @@ services:
       retries: 10
 
 #  kibana:
-#    image: docker.elastic.co/kibana/kibana:9.5.2
+#    image: docker.elastic.co/kibana/kibana:9.4.5
 #    container_name: vyact-kibana
 #    environment:
 #      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
