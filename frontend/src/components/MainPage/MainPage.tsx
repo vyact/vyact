@@ -489,6 +489,8 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
         setShowMemoModal(false);
         setShowQuickMemoModal(false);
         setNotificationCenterOpen(false);
+        setSummaryConvId(null);
+        setInjectedContextModal(null);
     };
 
     const toggleSidebar = useCallback(() => {
@@ -560,9 +562,15 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
             window.dispatchEvent(new Event(OPEN_KNOWLEDGE_COLLECTIONS_MODAL_EVENT));
         },
         onOpenChatSummary: () => {
-            if (conv.currentConvId) setSummaryConvId(conv.currentConvId);
+            if (!conv.currentConvId) return;
+            closeAllModals();
+            setSummaryConvId(conv.currentConvId);
         },
-        onToggleNotifications: () => setNotificationCenterOpen(open => !open),
+        onToggleNotifications: () => {
+            const next = !notificationCenterOpen;
+            closeAllModals();
+            if (next) setNotificationCenterOpen(true);
+        },
         onCloseAll: () => closeAllModals(),
     }, showMemoModal);
 
