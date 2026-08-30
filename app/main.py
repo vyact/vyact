@@ -9,11 +9,12 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException
 
 from config import KOKORO_CACHE_READY, LOGS_DIR, SETUP_DONE
 from logger import setup_logging, get_logger
@@ -26,8 +27,10 @@ from services.startup_activity import wait_for_chat_idle
 from routers.browser_extension import router as browser_extension_router
 from routers.deps import load_config_async
 from error_responses import (
+    bind_request_id,
     http_exception_handler,
     request_id_for,
+    reset_request_id,
     unhandled_exception_handler,
     validation_exception_handler,
 )
@@ -407,19 +410,24 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Request-ID"],
 )
 
 
 @app.middleware("http")
 async def prevent_static_asset_caching(request: Request, call_next):
     """HTML은 갱신하고 콘텐츠 해시가 붙은 정적 자산은 장기 캐시한다."""
-    response = await call_next(request)
-    response.headers.setdefault("X-Request-ID", request_id_for(request))
-    if request.url.path == "/":
-        response.headers["Cache-Control"] = "no-store, max-age=0, must-revalidate"
-    elif request.url.path.startswith("/assets/"):
-        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
-    return response
+    request_id_token = bind_request_id(request)
+    try:
+        response = await call_next(request)
+        response.headers.setdefault("X-Request-ID", request_id_for(request))
+        if request.url.path == "/":
+            response.headers["Cache-Control"] = "no-store, max-age=0, must-revalidate"
+        elif request.url.path.startswith("/assets/"):
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        return response
+    finally:
+        reset_request_id(request_id_token)
 
 
 if (APP_DIR / "static").exists():

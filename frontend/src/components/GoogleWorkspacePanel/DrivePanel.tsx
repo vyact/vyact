@@ -28,6 +28,7 @@ import {
     Users,
     X
 } from 'lucide-react';
+import {translateBackendError} from '../../utils/apiError';
 import {api} from '../../services/api';
 import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
 import {DriveDownloadStatusModal, DriveFileNameModal, DriveMoveDestinationModal, DriveShareModal} from './DriveModals';
@@ -407,7 +408,7 @@ export default function DrivePanel({onAttachToChat, onIndexDocument}: DrivePanel
                         setDownloadProgress({completed: job.completed, total: job.total});
                     }
                     if (job.status === 'error') {
-                        throw new Error(job.error || t('googleWorkspace.downloadFailedDescription'));
+                        throw new Error(job.code ? translateBackendError(job.code) : t('googleWorkspace.downloadFailedDescription'));
                     }
                     if (job.status === 'complete') break;
                     await waitForDownloadPoll(controller.signal);
@@ -594,7 +595,7 @@ export default function DrivePanel({onAttachToChat, onIndexDocument}: DrivePanel
                 if (job.status === 'compressing' || job.status === 'complete') {
                     setDownloadProgress({completed: job.completed, total: job.total});
                 }
-                if (job.status === 'error') throw new Error(job.error || t('googleWorkspace.downloadFailedDescription'));
+                if (job.status === 'error') throw new Error(job.code ? translateBackendError(job.code) : t('googleWorkspace.downloadFailedDescription'));
                 if (job.status === 'complete') break;
                 await waitForDownloadPoll(controller.signal);
             }

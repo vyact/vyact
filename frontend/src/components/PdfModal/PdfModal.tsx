@@ -10,7 +10,7 @@ import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import {Tooltip} from '../common/Tooltip/Tooltip';
 import type {Message} from '../../types';
 import {getDocumentFiles} from '../../services/documentFiles';
-import {translateBackendError} from '../../utils/apiError';
+import {assertOk, translateBackendError} from '../../utils/apiError';
 import './PdfModal.css';
 
 // ── 타입 ────────────────────────────────────────────────────────────────────
@@ -343,7 +343,7 @@ const PdfModal: React.FC<PdfModalProps> = ({onClose, onComplete, convId, message
                 formData.append('file', file);
                 // 프레젠테이션 전용 첨부는 검색 인덱스에 넣지 않고, 원문만 이번 요청에 사용한다.
                 const response = await fetch('/api/document/parse', {method: 'POST', body: formData});
-                if (!response.ok) throw new Error(await response.text());
+                await assertOk(response);
                 const parsed = await response.json() as {filename?: string; content: string};
 
                 const document: DocFile = {

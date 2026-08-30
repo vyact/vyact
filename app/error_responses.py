@@ -2,15 +2,19 @@
 
 import re
 import uuid
+from contextvars import ContextVar, Token
 from typing import Any
 
-from fastapi import HTTPException, Request
+from fastapi import Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException
 
 from logger import get_logger
 
 logger = get_logger(__name__)
+
+_request_id_context: ContextVar[str | None] = ContextVar("request_id", default=None)
 
 _MACHINE_CODE = re.compile(r"^[a-z][a-z0-9_]{2,80}$")
 _STATUS_CODES = {
@@ -38,6 +42,15 @@ def request_id_for(request: Request) -> str:
     return request_id
 
 
+def bind_request_id(request: Request) -> Token[str | None]:
+    request_id = request_id_for(request)
+    return _request_id_context.set(request_id)
+
+
+def reset_request_id(token: Token[str | None]) -> None:
+    _request_id_context.reset(token)
+
+
 def error_code_for(status_code: int, detail: Any = None) -> str:
     if isinstance(detail, str) and _MACHINE_CODE.fullmatch(detail):
         return detail
@@ -52,7 +65,7 @@ def public_error_payload(code: str, *, request_id: str | None = None, params: di
     return {
         "code": code,
         "params": params or {},
-        "request_id": request_id or uuid.uuid4().hex,
+        "request_id": request_id or _request_id_context.get() or uuid.uuid4().hex,
     }
 
 

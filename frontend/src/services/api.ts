@@ -262,7 +262,7 @@ const streamSyncStatus = async (
     onStatus: (status: Gov24SyncStatusResponse) => void,
 ): Promise<Gov24SyncStatusResponse> => {
     const res = await fetch(url, {method: 'POST', headers: {'Accept': 'text/event-stream'}});
-    if (!res.ok) throw new Error(await res.text());
+    await assertOk(res);
     if (!res.body) throw new Error('Synchronization stream is unavailable.');
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
@@ -347,7 +347,7 @@ export const api = {
     ): Promise<VyactGgufMetadata | null> {
         const params = new URLSearchParams({repository, filename, revision, context_size: String(contextSize)});
         const response = await fetch(`${API_BASE}/vyact/models/metadata-cache?${params}`);
-        if (!response.ok) throw new Error(`Model metadata cache lookup failed (${response.status})`);
+        await assertOk(response);
         const source = (await response.json()).metadata;
         if (!source) return null;
         return {
@@ -369,7 +369,7 @@ export const api = {
             repository, revision, file_size: String(fileSize), context_size: String(contextSize),
         });
         const response = await fetch(`${API_BASE}/vyact/models/mlx-metadata?${params}`);
-        if (!response.ok) throw new Error(`MLX model metadata inspection failed (${response.status})`);
+        await assertOk(response);
         const source = (await response.json()).metadata;
         return {
             architecture: source.architecture,
@@ -388,7 +388,7 @@ export const api = {
     ): Promise<number> {
         const params = new URLSearchParams({repository, filename, runtime});
         const response = await fetch(`${API_BASE}/vyact/models/file-size?${params}`);
-        if (!response.ok) throw new Error(`Model file size lookup failed (${response.status})`);
+        await assertOk(response);
         return Number((await response.json()).file_size || 0);
     },
 
@@ -412,22 +412,21 @@ export const api = {
                 file_size_bytes: Math.round(fileSize),
             }),
         });
-        const result = response.ok ? await response.json() : null;
-        if (!response.ok || !result?.saved) {
-            throw new Error(`Model metadata cache save failed (${response.status})`);
-        }
+        await assertOk(response);
+        const result = await response.json();
+        if (!result?.saved) throw new Error(i18n.t('main:networkError.requestFailed'));
     },
 
     async saveVyactHuggingFaceToken(token: string): Promise<void> {
         const response = await fetch(`${API_BASE}/vyact/huggingface-token`, {
             method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({token}),
         });
-        if (!response.ok) throw new Error(`Hugging Face token save failed (${response.status})`);
+        await assertOk(response);
     },
 
     async getVyactHuggingFaceTokenStatus(): Promise<{configured: boolean}> {
         const response = await fetch(`${API_BASE}/vyact/huggingface-token/status`);
-        if (!response.ok) throw new Error(`Hugging Face token status failed (${response.status})`);
+        await assertOk(response);
         return response.json();
     },
 
@@ -484,7 +483,7 @@ export const api = {
         includeOmlx = false,
     ): Promise<void> {
         const response = await fetch(`${API_BASE}/vyact/runtime/install?include_omlx=${includeOmlx}`, {method: 'POST'});
-        if (!response.ok) throw new Error(`Vyact runtime installation failed (${response.status})`);
+        await assertOk(response);
         if (!response.body) return;
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
@@ -511,7 +510,7 @@ export const api = {
         packages: Array<{name: string; installed: string; available: string}>;
     }> {
         const response = await fetch(`${API_BASE}/vyact/runtime/startup-status`);
-        if (!response.ok) throw new Error(`Runtime update status failed (${response.status})`);
+        await assertOk(response);
         return response.json();
     },
 
@@ -521,17 +520,14 @@ export const api = {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({update}),
         });
-        if (!response.ok) {
-            const detail = await response.json().catch(() => null);
-            throw new Error(detail?.detail || `Runtime update failed (${response.status})`);
-        }
+        await assertOk(response);
     },
 
     async getVyactModelProfile(modelPath: string, runtime: 'gguf' | 'mlx', repository?: string, recommendedContext = 32768): Promise<VyactModelProfile> {
         const params = new URLSearchParams({model_path: modelPath, runtime, recommended_context: String(recommendedContext)});
         if (repository) params.set('repository', repository);
         const response = await fetch(`${API_BASE}/vyact/models/profile?${params}`);
-        if (!response.ok) throw new Error(`Model settings load failed (${response.status})`);
+        await assertOk(response);
         return response.json();
     },
 
@@ -539,7 +535,7 @@ export const api = {
         const response = await fetch(`${API_BASE}/vyact/models/profile`, {
             method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(profile),
         });
-        if (!response.ok) throw new Error(`Model settings save failed (${response.status})`);
+        await assertOk(response);
         return response.json();
     },
 
@@ -576,10 +572,7 @@ export const api = {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({model_path: modelPath}),
         });
-        if (!response.ok) {
-            const detail = await response.json().catch(() => null);
-            throw new Error(detail?.detail || `Model deletion failed (${response.status})`);
-        }
+        await assertOk(response);
         cachedVyactInstalledModels = cachedVyactInstalledModels.filter(model => model !== modelPath);
     },
     async getSetupStatus(): Promise<{
@@ -810,7 +803,7 @@ export const api = {
     async getGoogleMailAttachment(messageId: string, attachmentId: string, mimeType: string) {
         const query = new URLSearchParams({mime_type: mimeType});
         const response = await fetch(`${API_BASE}/google-workspace/mail/messages/${encodeURIComponent(messageId)}/attachments/${encodeURIComponent(attachmentId)}?${query}`);
-        if (!response.ok) throw new Error('Unable to load email attachment.');
+        await assertOk(response);
         return response.blob();
     },
     async markGoogleMailMessageRead(id: string) { return (await fetch(`${API_BASE}/google-workspace/mail/messages/${encodeURIComponent(id)}/read`, {method: 'PATCH'})).json(); },
@@ -889,14 +882,14 @@ export const api = {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(data),
         });
+        await assertOk(response);
         const payload = await response.json();
-        if (!response.ok) throw new Error(payload.detail || 'Failed to generate email.');
         return payload as {body: string};
     },
     async sendGoogleMail(data: FormData) {
         const response = await fetch(`${API_BASE}/google-workspace/mail/send`, {method: 'POST', body: data});
+        await assertOk(response);
         const payload = await response.json();
-        if (!response.ok) throw new Error(payload.detail || 'Failed to send email.');
         return payload as {ok: boolean; id?: string; threadId?: string};
     },
     async getGoogleDriveFiles(folderId = 'root', query = '', pageToken = '', pageSize = 50,
@@ -918,13 +911,13 @@ export const api = {
     async batchTrashGoogleDriveFiles(fileIds: string[]) { return (await fetch(`${API_BASE}/google-workspace/drive/files/batch-trash`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({file_ids: fileIds})})).json(); },
     async batchMoveGoogleDriveFiles(fileIds: string[], targetFolderId: string) {
         const response = await fetch(`${API_BASE}/google-workspace/drive/files/batch-move`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({file_ids: fileIds, target_folder_id: targetFolderId})});
-        if (!response.ok) throw new Error('Unable to move Google Drive files.');
+        await assertOk(response);
         return response.json() as Promise<{ok: boolean; moved_ids: string[]}>;
     },
     async getGoogleDriveFolders(parentId = 'root') {
         const params = new URLSearchParams({parent_id: parentId});
         const response = await fetch(`${API_BASE}/google-workspace/drive/folders?${params}`);
-        if (!response.ok) throw new Error('Unable to load Google Drive folders.');
+        await assertOk(response);
         return response.json() as Promise<{folders: {id: string; name: string}[]}>;
     },
     async checkGoogleDriveDuplicates(folderId: string, names: string[]): Promise<{duplicates: string[]}> { return (await fetch(`${API_BASE}/google-workspace/drive/files/check-duplicates`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({folder_id: folderId, names})})).json(); },
@@ -958,7 +951,7 @@ export const api = {
     async getGoogleDriveDownloadJob(jobId: string, signal?: AbortSignal) {
         const response = await fetch(`${API_BASE}/google-workspace/drive/download-jobs/${encodeURIComponent(jobId)}`, {signal});
         if (!response.ok) throw new Error(i18n.t('main:networkError.requestFailed'));
-        return response.json() as Promise<{status: 'collecting' | 'compressing' | 'complete' | 'error'; total: number; completed: number; error?: string}>;
+        return response.json() as Promise<{status: 'collecting' | 'compressing' | 'complete' | 'error'; total: number; completed: number; code?: string}>;
     },
     async getGoogleDriveDownloadJobFile(jobId: string, signal?: AbortSignal) {
         const response = await fetch(`${API_BASE}/google-workspace/drive/download-jobs/${encodeURIComponent(jobId)}/file`, {signal});
@@ -1015,7 +1008,7 @@ export const api = {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({type, model, api_key: apiKey, model_type: modelType}),
         });
-        if (!res.ok) throw new Error(`Model selection failed (${res.status})`);
+        await assertOk(res);
         if (!res.body) return;
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
@@ -1327,7 +1320,7 @@ export const api = {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({enabled})
         });
-        if (!res.ok) throw new Error(`Debug logging update failed (${res.status})`);
+        await assertOk(res);
         return res.json();
     },
 
@@ -1340,7 +1333,7 @@ export const api = {
         const res = await fetch(`${API_BASE}/settings/runtime`, {
             method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(settings)
         });
-        if (!res.ok) throw new Error(await res.text());
+        await assertOk(res);
         return res.json();
     },
 
@@ -1348,7 +1341,7 @@ export const api = {
         connections: Record<string, {has_service_key: boolean; enabled: boolean}>;
     }> {
         const res = await fetch(`${API_BASE}/external-data/connections`);
-        if (!res.ok) throw new Error(await res.text());
+        await assertOk(res);
         return res.json();
     },
 
@@ -1361,7 +1354,7 @@ export const api = {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({service_key: serviceKey}),
         });
-        if (!res.ok) throw new Error(await res.text());
+        await assertOk(res);
         const result = await res.json();
         invalidateExternalDataBootstrap();
         return result;
@@ -1376,7 +1369,7 @@ export const api = {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({enabled}),
         });
-        if (!res.ok) throw new Error(await res.text());
+        await assertOk(res);
         const result = await res.json();
         invalidateExternalDataBootstrap();
         return result;
@@ -1384,7 +1377,7 @@ export const api = {
 
     async getGov24SyncStatus(): Promise<Gov24SyncStatusResponse> {
         const res = await fetch(`${API_BASE}/external-data/sources/kr.gov24/sync`);
-        if (!res.ok) throw new Error(await res.text());
+        await assertOk(res);
         return res.json();
     },
 
@@ -1393,7 +1386,7 @@ export const api = {
         sync_status?: Gov24SyncStatusResponse;
     }> {
         const res = await fetch(`${API_BASE}/external-data/sources/kr.gov24/sync?wait=true`, {method: 'POST'});
-        if (!res.ok) throw new Error(await res.text());
+        await assertOk(res);
         return res.json();
     },
 
@@ -1406,7 +1399,7 @@ export const api = {
             method: 'POST',
             headers: {'Accept': 'text/event-stream'},
         });
-        if (!res.ok) throw new Error(await res.text());
+        await assertOk(res);
         if (!res.body) throw new Error('Synchronization stream is unavailable.');
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
@@ -1434,13 +1427,13 @@ export const api = {
         if (cursor) params.set('cursor', cursor);
         const suffix = params.size ? `?${params.toString()}` : '';
         const res = await fetch(`${API_BASE}/external-data/sources/kr.gov24/documents${suffix}`);
-        if (!res.ok) throw new Error(await res.text());
+        await assertOk(res);
         return res.json();
     },
 
     async getExternalSourceSyncStatus(sourceId: string): Promise<Gov24SyncStatusResponse> {
         const res = await fetch(`${API_BASE}/external-data/sources/${encodeURIComponent(sourceId)}/sync`);
-        if (!res.ok) throw new Error(await res.text());
+        await assertOk(res);
         return res.json();
     },
 
@@ -1471,7 +1464,7 @@ export const api = {
         sync_status?: Gov24SyncStatusResponse;
     }> {
         const res = await fetch(`${API_BASE}/external-data/sources/${encodeURIComponent(sourceId)}/sync?wait=true`, {method: 'POST'});
-        if (!res.ok) throw new Error(await res.text());
+        await assertOk(res);
         return res.json();
     },
 
@@ -1485,7 +1478,7 @@ export const api = {
         if (cursor) params.set('cursor', cursor);
         const suffix = params.size ? `?${params.toString()}` : '';
         const res = await fetch(`${API_BASE}/external-data/sources/${encodeURIComponent(sourceId)}/documents${suffix}`);
-        if (!res.ok) throw new Error(await res.text());
+        await assertOk(res);
         return res.json();
     },
 
@@ -1495,13 +1488,13 @@ export const api = {
         if (cursor) params.set('cursor', cursor);
         const suffix = params.size ? `?${params.toString()}` : '';
         const res = await fetch(`${API_BASE}/external-data/documents${suffix}`);
-        if (!res.ok) throw new Error(await res.text());
+        await assertOk(res);
         return res.json();
     },
 
     async getGov24SyncSchedule(): Promise<{enabled: boolean; interval_hours: number}> {
         const res = await fetch(`${API_BASE}/external-data/sources/kr.gov24/schedule`);
-        if (!res.ok) throw new Error(await res.text());
+        await assertOk(res);
         return res.json();
     },
 
@@ -1514,13 +1507,13 @@ export const api = {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({enabled, interval_hours: intervalHours}),
         });
-        if (!res.ok) throw new Error(await res.text());
+        await assertOk(res);
         return res.json();
     },
 
     async getExternalDataCleanup(): Promise<{enabled: boolean; cleanup_status: {status: string; cleanup_date?: string; deleted_count?: number}}> {
         const res = await fetch(`${API_BASE}/external-data/cleanup`);
-        if (!res.ok) throw new Error(`Failed to load external data cleanup settings: ${res.status}`);
+        await assertOk(res);
         return res.json();
     },
 
@@ -1530,7 +1523,7 @@ export const api = {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({enabled}),
         });
-        if (!res.ok) throw new Error(`Failed to save external data cleanup settings: ${res.status}`);
+        await assertOk(res);
         return res.json();
     },
 
@@ -1540,7 +1533,7 @@ export const api = {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({instruction}),
         });
-        if (!res.ok) throw new Error(`Failed to save external data prompt: ${res.status}`);
+        await assertOk(res);
         return res.json();
     },
 

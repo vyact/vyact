@@ -21,6 +21,7 @@ import CustomSelect from '../CustomSelect/CustomSelect';
 import {refreshGoogleWorkspaceStatus} from '../../services/googleWorkspaceStatus';
 import {getUserProfile, updateUserProfile} from '../../services/userProfile';
 import {getKokoroAvailability} from '../../services/tts/kokoroStatus';
+import {translateBackendError} from '../../utils/apiError';
 
 interface IndexStat {
     index: string;
@@ -552,7 +553,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                 })
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.detail || 'Upload failed');
+            if (!res.ok) throw new Error(data.code ? translateBackendError(data.code, data.params) : t('backendErrors.request_failed'));
             toast.success(t('backup.exportDriveSuccess', {name: data.file_name}), undefined, 5000, true);
         } catch (e) {
             toast.error(t('backup.exportDriveFailed', {error: String(e)}), undefined, undefined, true);
@@ -573,7 +574,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
             formData.append('file', file);
             const res = await fetch('/api/backup/preview', {method: 'POST', body: formData});
             const data = await res.json();
-            if (!res.ok) throw new Error(data.detail || t('backup.previewFailed'));
+            if (!res.ok) throw new Error(data.code ? translateBackendError(data.code, data.params) : t('backup.previewFailed'));
             const preview = data as BackupPreview;
             setRestoreFile(file);
             setBackupPreview(preview);
@@ -610,7 +611,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
             formData.append('restore_files', String(restoreFiles));
             const res = await fetch('/api/backup/import', {method: 'POST', body: formData});
             const data = await res.json();
-            if (!res.ok) throw new Error(data.detail || t('backup.restoreComplete'));
+            if (!res.ok) throw new Error(data.code ? translateBackendError(data.code, data.params) : t('backendErrors.request_failed'));
             const detail = data.detail || {};
             const totalInserted = Object.values(detail).reduce((sum: number, v: any) => sum + (v.inserted ?? 0), 0);
             const totalSkipped = Object.values(detail).reduce((sum: number, v: any) => sum + (v.skipped ?? 0), 0);

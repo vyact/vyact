@@ -513,7 +513,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
                     if (maxChars > 0) formData.append('max_chars', String(maxChars));
                     const res = await fetch('/api/document/parse', {method: 'POST', body: formData});
                     const data = await res.json();
-                    if (!res.ok) throw new Error(data.detail || `${file.name} 파싱 실패`);
+                    if (!res.ok) throw new Error(data.code ? translateBackendError(data.code, data.params) : t('documentModal.error'));
                     articles.push({
                         title: file.name,
                         url: `manual://${file.name}`,

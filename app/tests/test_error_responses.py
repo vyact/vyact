@@ -5,9 +5,11 @@ from fastapi import HTTPException
 from starlette.requests import Request
 
 from error_responses import (
+    bind_request_id,
     error_code_for,
     http_exception_handler,
     public_error_payload,
+    reset_request_id,
 )
 
 
@@ -41,3 +43,13 @@ def test_stream_error_payload_contains_only_public_fields():
         "params": {},
         "request_id": "request-1",
     }
+
+
+def test_stream_error_uses_bound_http_request_id():
+    request = _request()
+    token = bind_request_id(request)
+    try:
+        payload = public_error_payload("document_index_failed")
+        assert payload["request_id"] == request.state.request_id
+    finally:
+        reset_request_id(token)

@@ -122,6 +122,7 @@ async def delete_expired_documents() -> None:
                 **status,
                 "status": "failed",
                 "failed_at": datetime.now(KOREA_TIMEZONE).isoformat(),
+                "error": "external_data_cleanup_failed",
                 "error_code": "external_data_cleanup_failed",
             }
             logger.warning("[external-data] expired document cleanup failed: %s", error)
