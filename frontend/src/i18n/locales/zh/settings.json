@@ -14,6 +14,7 @@
   },
   "apiServer": {"title":"本地 API 服务器","description":"通过 OpenAI 兼容 API，在 OpenClaw 等外部应用中使用当前 Vyact 本地模型。","checking":"正在检查服务器状态","online":"可用","offline":"不可用","onlineDescription":"本地模型服务器已可接收请求。","offlineDescription":"选择并运行 Vyact 本地模型即可启用 API 服务器。","endpoint":"端点","modelId":"模型 ID","modelUnavailable":"没有正在运行的模型","copy":"复制","copied":"已复制到剪贴板。","copyFailed":"无法复制。","localOnly":"此地址只能从本机访问。Vyact 必须保持运行并启用本地模型。","openClawTitle":"OpenClaw 配置","openClawDescription":"请将以下内容用作 OpenClaw 的自定义 OpenAI 兼容提供商设置。","copyConfig":"复制 OpenClaw 配置"},
   "apiServerCurl": {"title":"使用 curl 测试连接","description":"在终端中运行此命令，确认当前模型能够响应。","prompt":"请用一句话回答连接成功。","copy":"复制 curl 命令"},
+  "apiServerAuth": {"title":"API 令牌认证","description":"启用后，本地和远程请求都需要 Bearer 令牌。","token":"API 令牌","showToken":"显示 API 令牌","hideToken":"隐藏 API 令牌","regenerate":"重新生成","regenerated":"API 令牌已重新生成。","updateFailed":"无法保存认证设置。","regenerateFailed":"无法重新生成 API 令牌。","networkEndpoint":"网络端点","networkNotice":"同一网络中的其他设备也可以连接。关闭令牌认证后，网络中的任何人都可以调用模型。"},
   "externalData": {
     "savePromptShort": "保存说明",
     "promptDescriptionSimple": "默认资格和截止日期检查始终适用。请仅输入所需的附加说明。",

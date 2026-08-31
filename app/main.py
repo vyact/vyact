@@ -5,7 +5,7 @@ import asyncio
 import os
 import signal
 import warnings
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
 from pathlib import Path
 
 import uvicorn
@@ -36,6 +36,14 @@ from error_responses import (
 )
 
 APP_DIR = Path(__file__).parent
+
+
+class EmbeddedUvicornServer(uvicorn.Server):
+    """Run the model gateway without replacing the desktop server's signal handlers."""
+
+    @contextmanager
+    def capture_signals(self):
+        yield
 
 # 아래 경고는 현재 사용하는 외부 라이브러리 내부 구현에서 발생하며 앱이
 # 제어할 수 없다. 메시지와 발생 모듈을 함께 제한해 애플리케이션 경고는
@@ -348,7 +356,20 @@ async def lifespan(app: FastAPI):
         start_product_release_polling()
         start_external_data_scheduler()
 
+    from services.external_api_server import EXTERNAL_API_PORT, external_api_app
+    external_api_server = EmbeddedUvicornServer(uvicorn.Config(
+        external_api_app,
+        host="0.0.0.0",
+        port=EXTERNAL_API_PORT,
+        log_config=None,
+        log_level="warning",
+    ))
+    external_api_task = asyncio.create_task(external_api_server.serve())
+
     yield
+
+    external_api_server.should_exit = True
+    await asyncio.gather(external_api_task, return_exceptions=True)
 
     if startup_warmup_task is not None and not startup_warmup_task.done():
         startup_warmup_task.cancel()

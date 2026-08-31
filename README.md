@@ -93,7 +93,7 @@ Learn from Netflix with dual subtitles, subtitle navigation, repeat playback, an
 | 🔎 | Source-aware answers | Review the passages and documents that informed an answer. |
 | 📝 | Rich-text memos | Organize ideas and plans in structured notes that RAG can retrieve during a conversation. |
 | 🗂️ | Google Workspace integration | Connect multiple accounts, switch between them, and work with Gmail, Drive, and Calendar alongside your AI conversation. |
-| ↗️ | Local OpenAI-compatible API server | Use the active Vyact local model from OpenClaw or another app on the same computer, with a ready-to-copy endpoint, model ID, configuration, and curl test. |
+| ↗️ | Local OpenAI-compatible API server | Use the active Vyact local model from OpenClaw or another app on your network, with optional Bearer-token authentication and ready-to-copy configuration. |
 | 🎙️ | Voice-based language learning | Practice speaking through natural conversations with speech input and AI responses. |
 | 🌐 | Chrome extension for Netflix and web language learning | Study Netflix with dual subtitles and level-aware explanations, translate pages, and ask questions with selected text or the current page as context. |
 | 🧩 | MCP tool connections | Connect the tools you use to tailor Vyact to the way you work. |
@@ -118,7 +118,7 @@ Learn from Netflix with dual subtitles, subtitle navigation, repeat playback, an
 
 - **Local-first by default** — Vyact is designed around native llama.cpp, MLX on Apple Silicon, and local embedding so your core working context can stay on your machine.
 - **Choose your provider** — Use local models for private everyday work, connect OpenAI, Gemini, or Claude, or add an OpenAI-compatible endpoint operated by your organization or another service.
-- **Use your local model from another app** — Open **Settings > API Server** to copy the loopback endpoint, active model ID, OpenClaw configuration, or a curl test for the current Vyact-managed model.
+- **Use your local model from another app** — Open **Settings > API Server** to copy the network endpoint, active model ID, OpenClaw configuration, or a curl test. Optional token authentication applies consistently to both local and remote requests through Vyact's gateway.
 - **Know when data leaves your machine** — When Gmail or Drive content is used as AI chat context, it may be sent to the selected AI provider. With a Vyact-managed local model, that chat context is not sent to an external AI provider.
 - **Back up what matters** — Export and restore conversations, documents, files, memos, prompts, settings, provider connections, projects, and vocabulary. Backups can also be saved to Google Drive.
 - **Open source** — Vyact is released under AGPL-3.0. You can inspect, adapt, and contribute to the workspace you rely on.

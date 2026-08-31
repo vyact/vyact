@@ -1,16 +1,21 @@
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import {useTranslation} from 'react-i18next';
+import {Eye, EyeOff} from 'lucide-react';
 import {api} from '../../services/api';
 import type {VyactExternalApiStatus} from '../../services/api';
+import {copyToClipboard} from '../../utils/helpers';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
 
 const LOCAL_API_KEY_MARKER = 'vyact-local';
+const MASKED_API_TOKEN = '•'.repeat(24);
 const shellQuote = (value: string) => `'${value.replace(/'/g, `'"'"'`)}'`;
 
 export default function ApiServerSection() {
     const {t} = useTranslation('settings');
     const [status, setStatus] = useState<VyactExternalApiStatus | null>(null);
     const [loading, setLoading] = useState(true);
+    const [authUpdating, setAuthUpdating] = useState(false);
+    const [tokenVisible, setTokenVisible] = useState(false);
 
     const loadStatus = useCallback(async () => {
         setLoading(true);
@@ -28,14 +33,15 @@ export default function ApiServerSection() {
     }, [loadStatus]);
 
     const modelId = status?.model_id || t('apiServer.modelUnavailable');
+    const publicEndpoint = status?.network_endpoint || status?.endpoint || 'http://127.0.0.1:11436/v1';
     const openClawConfig = useMemo(() => JSON.stringify({
         agents: {defaults: {model: {primary: `vyact/${modelId}`}}},
         models: {
             mode: 'merge',
             providers: {
                 vyact: {
-                    baseUrl: status?.endpoint || 'http://127.0.0.1:11435/v1',
-                    apiKey: LOCAL_API_KEY_MARKER,
+                    baseUrl: publicEndpoint,
+                    apiKey: status?.auth_enabled ? status.api_token : LOCAL_API_KEY_MARKER,
                     api: 'openai-completions',
                     models: [{
                         id: modelId,
@@ -46,9 +52,13 @@ export default function ApiServerSection() {
                 },
             },
         },
-    }, null, 2), [modelId, status?.context_window, status?.endpoint, status?.max_tokens]);
+    }, null, 2), [modelId, publicEndpoint, status?.api_token, status?.auth_enabled, status?.context_window, status?.max_tokens]);
+    const displayedOpenClawConfig = useMemo(() => {
+        if (!status?.auth_enabled || !status.api_token) return openClawConfig;
+        return openClawConfig.replace(status.api_token, MASKED_API_TOKEN);
+    }, [openClawConfig, status?.api_token, status?.auth_enabled]);
     const curlCommand = useMemo(() => {
-        const endpoint = status?.endpoint || 'http://127.0.0.1:11435/v1';
+        const endpoint = publicEndpoint;
         const requestBody = JSON.stringify({
             model: modelId,
             messages: [{role: 'user', content: t('apiServerCurl.prompt')}],
@@ -58,16 +68,43 @@ export default function ApiServerSection() {
         return [
             `curl ${shellQuote(`${endpoint}/chat/completions`)} \\`,
             "  -H 'Content-Type: application/json' \\",
+            ...(status?.auth_enabled && status.api_token ? [`  -H ${shellQuote(`Authorization: Bearer ${status.api_token}`)} \\`] : []),
             `  -d ${shellQuote(requestBody)}`,
         ].join('\n');
-    }, [modelId, status?.endpoint, t]);
+    }, [modelId, publicEndpoint, status?.api_token, status?.auth_enabled, t]);
 
     const copy = async (value: string) => {
-        try {
-            await navigator.clipboard.writeText(value);
+        if (await copyToClipboard(value)) {
             toast.success(t('apiServer.copied'));
-        } catch {
+        } else {
             toast.error(t('apiServer.copyFailed'));
+        }
+    };
+
+    const updateAuth = async (enabled: boolean) => {
+        setAuthUpdating(true);
+        setTokenVisible(false);
+        try {
+            const result = await api.updateVyactExternalApiAuth(enabled);
+            setStatus(current => current ? {...current, auth_enabled: result.auth_enabled, api_token: result.api_token} : current);
+        } catch {
+            toast.error(t('apiServerAuth.updateFailed'));
+        } finally {
+            setAuthUpdating(false);
+        }
+    };
+
+    const regenerateToken = async () => {
+        setAuthUpdating(true);
+        setTokenVisible(false);
+        try {
+            const result = await api.regenerateVyactExternalApiToken();
+            setStatus(current => current ? {...current, auth_enabled: true, api_token: result.api_token} : current);
+            toast.success(t('apiServerAuth.regenerated'));
+        } catch {
+            toast.error(t('apiServerAuth.regenerateFailed'));
+        } finally {
+            setAuthUpdating(false);
         }
     };
 
@@ -75,37 +112,66 @@ export default function ApiServerSection() {
         <div className="settings-general settings-api-server">
             <div className="settings-section-label">
                 <span>{t('apiServer.title')}</span>
-                <button className="settings-refresh-btn" onClick={() => void loadStatus()} disabled={loading}>
-                    {loading ? t('common:loading') : `↻ ${t('common:refresh')}`}
-                </button>
+                <div className="settings-api-server-heading-actions">
+                    <div className={`settings-api-server-status-card${status?.available ? ' is-online' : ''}`}>
+                        <span className={`settings-api-server-status-dot${status?.available ? ' is-online' : ''}`}/>
+                        <strong>{loading ? t('apiServer.checking') : status?.available ? t('apiServer.online') : t('apiServer.offline')}</strong>
+                    </div>
+                    <button className="settings-refresh-btn" onClick={() => void loadStatus()} disabled={loading}>
+                        {loading ? t('common:loading') : `↻ ${t('common:refresh')}`}
+                    </button>
+                </div>
             </div>
 
             <p className="settings-api-server-description">{t('apiServer.description')}</p>
 
-            <div className="settings-api-server-status-card">
-                <span className={`settings-api-server-status-dot${status?.available ? ' is-online' : ''}`}/>
-                <div>
-                    <strong>{loading ? t('apiServer.checking') : status?.available ? t('apiServer.online') : t('apiServer.offline')}</strong>
-                    <p>{status?.available ? t('apiServer.onlineDescription') : t('apiServer.offlineDescription')}</p>
+            <div className="settings-api-server-fields">
+                <div className="settings-api-server-field">
+                    <label>{t('apiServerAuth.networkEndpoint')}</label>
+                    <div><code>{publicEndpoint}</code>
+                        <button onClick={() => void copy(publicEndpoint)}>{t('apiServer.copy')}</button>
+                    </div>
+                </div>
+                <div className="settings-api-server-field">
+                    <label>{t('apiServer.modelId')}</label>
+                    <div><code>{modelId}</code>
+                        <button disabled={!status?.model_id} onClick={() => void copy(modelId)}>{t('apiServer.copy')}</button>
+                    </div>
                 </div>
             </div>
 
-            <div className="settings-api-server-field">
-                <label>{t('apiServer.endpoint')}</label>
-                <div><code>{status?.endpoint || 'http://127.0.0.1:11435/v1'}</code>
-                    <button onClick={() => void copy(status?.endpoint || 'http://127.0.0.1:11435/v1')}>{t('apiServer.copy')}</button>
-                </div>
-            </div>
-            <div className="settings-api-server-field">
-                <label>{t('apiServer.modelId')}</label>
-                <div><code>{modelId}</code>
-                    <button disabled={!status?.model_id} onClick={() => void copy(modelId)}>{t('apiServer.copy')}</button>
-                </div>
-            </div>
+            <div className="settings-api-server-notice">{t('apiServerAuth.networkNotice')}</div>
 
-            <div className="settings-api-server-notice">{t('apiServer.localOnly')}</div>
+            <section className="settings-api-server-auth">
+                <div className="settings-toggle-row">
+                    <div>
+                        <div className="settings-toggle-title">{t('apiServerAuth.title')}</div>
+                        <div className="settings-toggle-desc">{t('apiServerAuth.description')}</div>
+                    </div>
+                    <label className="settings-switch">
+                        <input type="checkbox" checked={Boolean(status?.auth_enabled)} disabled={loading || authUpdating}
+                               onChange={event => void updateAuth(event.target.checked)}/>
+                        <span className="settings-switch-slider"/>
+                    </label>
+                </div>
+                {status?.auth_enabled && status.api_token && (
+                    <div className="settings-api-server-token">
+                        <label>{t('apiServerAuth.token')}</label>
+                        <div>
+                            <code>{tokenVisible ? status.api_token : MASKED_API_TOKEN}</code>
+                            <button className="settings-api-server-token-visibility" type="button"
+                                    onClick={() => setTokenVisible(current => !current)}
+                                    aria-label={t(tokenVisible ? 'apiServerAuth.hideToken' : 'apiServerAuth.showToken')}>
+                                {tokenVisible ? <EyeOff size={15}/> : <Eye size={15}/>}
+                            </button>
+                            <button onClick={() => void copy(status.api_token!)}>{t('apiServer.copy')}</button>
+                            <button disabled={authUpdating} onClick={() => void regenerateToken()}>{t('apiServerAuth.regenerate')}</button>
+                        </div>
+                    </div>
+                )}
+            </section>
 
-            <section className="settings-api-server-config">
+            <section className="settings-api-server-config settings-api-server-config--curl">
                 <div>
                     <strong>{t('apiServerCurl.title')}</strong>
                     <p>{t('apiServerCurl.description')}</p>
@@ -115,12 +181,12 @@ export default function ApiServerSection() {
                         onClick={() => void copy(curlCommand)}>{t('apiServerCurl.copy')}</button>
             </section>
 
-            <section className="settings-api-server-config">
+            <section className="settings-api-server-config settings-api-server-config--openclaw">
                 <div>
                     <strong>{t('apiServer.openClawTitle')}</strong>
                     <p>{t('apiServer.openClawDescription')}</p>
                 </div>
-                <pre><code>{openClawConfig}</code></pre>
+                <pre><code>{displayedOpenClawConfig}</code></pre>
                 <button className="settings-api-server-copy-config" disabled={!status?.model_id}
                         onClick={() => void copy(openClawConfig)}>{t('apiServer.copyConfig')}</button>
             </section>

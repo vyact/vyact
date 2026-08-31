@@ -11,6 +11,8 @@ import math
 import os
 import platform
 import re
+import secrets
+import socket
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
@@ -30,6 +32,7 @@ from services.runtime_startup import apply_startup_runtime_choice, get_startup_r
 from services.model_runtime_profiles import delete_model_profile, get_model_profile, normalize_model_profile, recommended_model_profile, save_model_profile
 from services.vyact_model_metadata_cache import get_cached_model_metadata, save_cached_model_metadata
 from services.mlx_runtime import get_downloaded_mlx_model_path, get_mlx_runtime_capabilities, is_apple_silicon
+from services.external_api_server import EXTERNAL_API_PORT, public_model_id
 from services.reasoning_capabilities import get_gguf_reasoning_capabilities, get_mlx_reasoning_capabilities
 from services.vyact_runtime import VYACT_RUNTIME_URL, get_downloaded_model_path, get_model_modalities
 
@@ -206,6 +209,10 @@ class VyactModelProfileRequest(BaseModel):
 
 class VyactModelDeleteRequest(BaseModel):
     model_path: str = Field(min_length=1, max_length=1024)
+
+
+class ExternalApiAuthRequest(BaseModel):
+    enabled: bool
 
 
 class VyactModelMetadataRequest(BaseModel):
@@ -897,9 +904,10 @@ async def get_vyact_runtime_startup_status():
 
 @router.get("/vyact/external-api/status")
 async def get_vyact_external_api_status():
-    """Return the local OpenAI-compatible endpoint exposed by the active runtime."""
+    """Return the network-facing Vyact gateway and active runtime status."""
     config = await load_config_async()
     vyact_config = config.get("vyact_config", {})
+    configured_model_id = str(vyact_config.get("model") or config.get("model") or "")
     context_window = int(vyact_config.get("context_size") or 32768)
     max_tokens = int(vyact_config.get("max_output_tokens") or 2048)
 
@@ -918,14 +926,55 @@ async def get_vyact_external_api_status():
         ]
 
     model_ids = await asyncio.to_thread(fetch_runtime_models)
+    active_model_id = configured_model_id if configured_model_id in model_ids else None
+    external_api = config.get("external_api", {})
+    local_endpoint = f"http://127.0.0.1:{EXTERNAL_API_PORT}/v1"
+
+    def get_lan_address() -> str | None:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            sock.connect(("192.0.2.1", 80))
+            address = sock.getsockname()[0]
+            return address if address and not address.startswith("127.") else None
+        except OSError:
+            return None
+        finally:
+            sock.close()
+
+    lan_address = await asyncio.to_thread(get_lan_address)
     return {
-        "endpoint": VYACT_RUNTIME_URL,
-        "available": bool(model_ids),
-        "model_id": model_ids[0] if model_ids else None,
+        "endpoint": local_endpoint,
+        "network_endpoint": f"http://{lan_address}:{EXTERNAL_API_PORT}/v1" if lan_address else None,
+        "available": active_model_id is not None,
+        "model_id": public_model_id(config) if active_model_id else None,
         "context_window": context_window,
         "max_tokens": max_tokens,
-        "network_scope": "loopback",
+        "network_scope": "lan",
+        "auth_enabled": bool(external_api.get("auth_enabled")),
+        "api_token": external_api.get("api_token"),
     }
+
+
+@router.post("/vyact/external-api/auth")
+async def update_vyact_external_api_auth(req: ExternalApiAuthRequest):
+    config = await load_config_async()
+    settings = config.setdefault("external_api", {})
+    settings["auth_enabled"] = req.enabled
+    if req.enabled and not settings.get("api_token"):
+        settings["api_token"] = secrets.token_urlsafe(32)
+    await save_config_async(config)
+    return {"auth_enabled": req.enabled, "api_token": settings.get("api_token")}
+
+
+@router.post("/vyact/external-api/token/regenerate")
+async def regenerate_vyact_external_api_token():
+    config = await load_config_async()
+    settings = config.setdefault("external_api", {})
+    if not settings.get("auth_enabled"):
+        raise HTTPException(409, "external_api_auth_disabled")
+    settings["api_token"] = secrets.token_urlsafe(32)
+    await save_config_async(config)
+    return {"auth_enabled": True, "api_token": settings["api_token"]}
 
 
 @router.post("/vyact/runtime/startup-choice")

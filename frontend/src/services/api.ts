@@ -195,11 +195,14 @@ export interface VyactHardwareInfo {
 
 export interface VyactExternalApiStatus {
     endpoint: string;
+    network_endpoint: string | null;
     available: boolean;
     model_id: string | null;
     context_window: number;
     max_tokens: number;
-    network_scope: 'loopback';
+    network_scope: 'lan';
+    auth_enabled: boolean;
+    api_token: string | null;
 }
 
 export interface VyactModelProfile {
@@ -531,6 +534,20 @@ export const api = {
 
     async getVyactExternalApiStatus(): Promise<VyactExternalApiStatus> {
         const response = await fetch(`${API_BASE}/vyact/external-api/status`);
+        await assertOk(response);
+        return response.json();
+    },
+
+    async updateVyactExternalApiAuth(enabled: boolean): Promise<{auth_enabled: boolean; api_token: string | null}> {
+        const response = await fetch(`${API_BASE}/vyact/external-api/auth`, {
+            method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({enabled}),
+        });
+        await assertOk(response);
+        return response.json();
+    },
+
+    async regenerateVyactExternalApiToken(): Promise<{auth_enabled: boolean; api_token: string}> {
+        const response = await fetch(`${API_BASE}/vyact/external-api/token/regenerate`, {method: 'POST'});
         await assertOk(response);
         return response.json();
     },

@@ -40,10 +40,27 @@ export function formatTime(date: Date = new Date()): string {
 
 export async function copyToClipboard(text: string): Promise<boolean> {
   try {
-    await navigator.clipboard.writeText(text);
-    return true;
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // Fall through to the DOM copy path used by non-secure renderer contexts.
+  }
+
+  const textArea = document.createElement('textarea');
+  textArea.value = text;
+  textArea.setAttribute('readonly', '');
+  textArea.style.position = 'fixed';
+  textArea.style.left = '-9999px';
+  document.body.appendChild(textArea);
+  try {
+    textArea.select();
+    return document.execCommand('copy');
   } catch {
     return false;
+  } finally {
+    document.body.removeChild(textArea);
   }
 }
 

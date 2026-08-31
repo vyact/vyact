@@ -1,5 +1,6 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
+import {Server} from 'lucide-react';
 import {api} from '../../services/api';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
 import {fetchTtsSettings, updateTtsCache, DEFAULT_TTS_SETTINGS} from '../../services/tts/ttsSettings';
@@ -930,7 +931,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                         {([
                             {key: 'general' as Tab, icon: '⚙️', label: t('tabs.general')},
                             {key: 'runtime' as Tab, icon: '🧠', label: t('tabs.runtime')},
-                            {key: 'apiServer' as Tab, icon: '↗', label: t('tabs.apiServer')},
+                            {key: 'apiServer' as Tab, icon: <Server size={16} strokeWidth={1.8}/>, label: t('tabs.apiServer')},
                             {key: 'backup' as Tab, icon: '💾', label: t('tabs.backup')},
                             {key: 'google' as Tab, icon: 'G', label: t('tabs.google')},
                             {key: 'api' as Tab, icon: '🔑', label: t('tabs.api')},
