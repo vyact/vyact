@@ -46,10 +46,10 @@ Ask questions with PDFs and documents attached, then trace answers back to their
 
 ### Find a local model that fits your hardware
 
-Search and compare local GGUF and MLX models without leaving Vyact. See model size, quantization, context capacity, and hardware-aware memory estimates before downloading, then let Vyact install the selected model and prepare the matching local runtime. Public models work without an API key, while an optional Hugging Face key enables access to gated models your account is authorized to use.
+Search and compare local GGUF and MLX models without leaving Vyact. See detected system RAM and GPU VRAM alongside model size, quantization, context capacity, and hardware-aware memory estimates before downloading, then let Vyact install the selected model and prepare the matching local runtime. For compatible multi-GPU llama.cpp systems, automatic memory fitting is the default, with an optional manual GPU split for advanced setups. Public models work without an API key, while an optional Hugging Face key enables access to gated models your account is authorized to use.
 
 <p align="center">
-  <img src="assets/readme/feature-local-models.png" alt="Vyact local MLX model search, memory estimates, and download progress" width="100%" />
+  <img src="assets/readme/feature-local-models.png" alt="Vyact local model search with detected system RAM, GPU VRAM, and hardware-aware memory estimates" width="100%" />
 </p>
 
 ### Turn documents into a knowledge base
