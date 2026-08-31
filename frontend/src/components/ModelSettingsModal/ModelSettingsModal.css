@@ -33,7 +33,7 @@
 .model-settings-modal footer { justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border); border-bottom: 0; }
 .model-settings-modal footer .primary { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
 .model-settings-modal footer .primary:hover:not(:disabled) { border-color: var(--button-primary-hover); background: var(--button-primary-hover); }
-.model-settings-error { color: var(--danger); font-size: 12px; }
+.model-settings-error { color: var(--danger); font-size: 12px; line-height: 1.45; white-space: pre-line; }
 .model-settings-advanced { margin-top: 2px; border-top: 1px solid var(--border); }
 .model-settings-modal .model-settings-advanced-trigger { display: flex; width: 100%; align-items: center; justify-content: space-between; padding: 14px 0 2px; border: 0; background: transparent; color: var(--text-secondary); font-size: 13px; font-weight: 650; cursor: pointer; }
 .model-settings-advanced-trigger svg { transition: transform .22s ease; }

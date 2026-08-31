@@ -1,7 +1,7 @@
 import {useEffect, useRef, useState} from 'react';
 import {ChevronDown, CircleQuestionMark, MemoryStick, X} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
-import {api, type VyactModelProfile} from '../../services/api';
+import {api, VyactModelActivationError, type VyactModelProfile} from '../../services/api';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import SettingLabel from '../common/SettingLabel/SettingLabel';
@@ -88,7 +88,12 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
             await onApplied();
             onClose();
         } catch (value) {
-            setError(String(value));
+            if (value instanceof VyactModelActivationError && value.code === 'model_insufficient_memory') {
+                const modelName = modelPath.split('/').pop() || modelPath;
+                setError(`${t('message.modelInsufficientMemoryTitle')}\n${t('message.modelInsufficientMemoryDescription', {model: modelName})}`);
+            } else {
+                setError(String(value));
+            }
         } finally {
             setSaving(false);
         }

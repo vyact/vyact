@@ -21,6 +21,7 @@ from tqdm.auto import tqdm
 
 from config import INSTALL_DIR, get_log_file
 from services.local_model_errors import LocalModelNotDownloadedError
+from services.runtime_error_details import runtime_startup_error
 from services.vyact_runtime import VYACT_RUNTIME_PORT
 
 MLX_MODELS_DIR = INSTALL_DIR / "models" / "mlx"
@@ -682,7 +683,7 @@ def start_mlx_model(
                 model_id = str(model_path)
                 deadline = time.monotonic() + 180
                 continue
-            raise RuntimeError("MLX runtime stopped while loading the model")
+            raise runtime_startup_error("MLX runtime stopped while loading the model", log_path)
         try:
             with urllib.request.urlopen(health_url, timeout=2) as response:
                 if response.status == 200:
@@ -705,4 +706,4 @@ def start_mlx_model(
         except (OSError, urllib.error.URLError):
             pass
         time.sleep(0.25)
-    raise RuntimeError("The MLX model did not become ready within 180 seconds")
+    raise runtime_startup_error("The MLX model did not become ready within 180 seconds", log_path)

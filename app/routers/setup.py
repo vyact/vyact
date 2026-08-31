@@ -23,6 +23,7 @@ from config import INSTALL_DIR, LOGS_DIR, SETUP_DONE, VENV_DIR, get_log_file
 from routers.deps import APP_DIR, load_config_async, save_config_async, sse, write_log
 from logger import DebugLogSettings, ToolLogSettings, get_logger
 from services.installer import is_docker_available, Installer
+from services.llm.errors import is_insufficient_memory_message
 from services.es_native import is_native_supported
 from services.hardware_info import get_local_hardware_info, validate_gpu_split_percentages
 from services.huggingface_models import get_model_file_size, recommend_downloaded_mlx_context, search_gguf_models
@@ -1278,7 +1279,10 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
             await save_config_async(config)
         except Exception as error:
             logger.warning("[vyact] model activation failed: %s", error)
-            yield sse(f"Vyact 모델 로드 실패: {error}", "error", 0)
+            diagnostic = getattr(error, "diagnostic", "")
+            is_insufficient_memory = is_insufficient_memory_message(error) or is_insufficient_memory_message(diagnostic)
+            message = "model_insufficient_memory" if is_insufficient_memory else f"Vyact 모델 로드 실패: {error}"
+            yield sse(message, "error", 0)
             return
         yield sse("Vyact 모델 준비 완료", "done", 100)
 

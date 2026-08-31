@@ -25,6 +25,7 @@ from services.hardware_info import GPU_SPLIT_DECIMAL_PLACES, get_local_hardware_
 from services.local_model_errors import LocalModelNotDownloadedError
 from services.model_runtime_profiles import normalize_gpu_split_for_hardware
 from services.multimodal_capabilities import get_projector_modalities
+from services.runtime_error_details import runtime_startup_error
 
 VYACT_RUNTIME_PORT = 11435
 VYACT_RUNTIME_URL = f"http://127.0.0.1:{VYACT_RUNTIME_PORT}/v1"
@@ -593,7 +594,7 @@ def start_single_model(
         health_url = f"http://127.0.0.1:{VYACT_RUNTIME_PORT}/upstream/{model_key}/health"
         while time.monotonic() < deadline:
             if process.poll() is not None:
-                raise RuntimeError("llama-swap stopped while loading the model")
+                raise runtime_startup_error("llama-swap stopped while loading the model", log_path)
             try:
                 with urllib.request.urlopen(health_url, timeout=2) as response:
                     if response.status == 200:
@@ -601,7 +602,7 @@ def start_single_model(
             except (OSError, urllib.error.URLError):
                 pass
             time.sleep(0.25)
-        raise RuntimeError("The model did not become ready within 120 seconds")
+        raise runtime_startup_error("The model did not become ready within 120 seconds", log_path)
 
     supports_mtp = mtp_model_path is not None or model_has_integrated_mtp(model_path)
     should_try_mtp = supports_mtp and enable_mtp is not False

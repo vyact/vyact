@@ -19,6 +19,12 @@ INSUFFICIENT_MEMORY_ERROR_MARKERS = (
 )
 
 
+def is_insufficient_memory_message(value: object) -> bool:
+    """Identify common local-runtime out-of-memory messages."""
+    normalized = " ".join(str(value).strip().lower().split())
+    return any(marker in normalized for marker in INSUFFICIENT_MEMORY_ERROR_MARKERS)
+
+
 def http_error_response_body(error: httpx.HTTPStatusError) -> str:
     """Return a bounded provider error body suitable for application logs."""
     response = error.response
@@ -72,8 +78,7 @@ def is_insufficient_memory_error(error: httpx.HTTPStatusError) -> bool:
             message = error.response.text
         except Exception:
             return False
-    normalized = " ".join(message.strip().lower().split())
-    return any(marker in normalized for marker in INSUFFICIENT_MEMORY_ERROR_MARKERS)
+    return is_insufficient_memory_message(message)
 
 
 def http_err_msg(e: httpx.HTTPStatusError, provider: str) -> str:

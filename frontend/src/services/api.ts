@@ -30,6 +30,13 @@ export class VyactRuntimeInstallError extends Error {
     }
 }
 
+export class VyactModelActivationError extends Error {
+    constructor(public code: string, message = code) {
+        super(message);
+        this.name = 'VyactModelActivationError';
+    }
+}
+
 type ExternalDataBootstrapResponse = {
     connections: Record<string, {has_service_key: boolean; enabled: boolean}>;
     statuses: Record<string, Gov24SyncStatusResponse>;
@@ -496,7 +503,7 @@ export const api = {
                 if (!line.startsWith('data: ')) continue;
                 const event = JSON.parse(line.slice(6));
                 onProgress(event.message, event.progress);
-                if (event.type === 'error') throw new Error(event.message);
+                if (event.type === 'error') throw new VyactModelActivationError(event.message);
             }
         }
     },

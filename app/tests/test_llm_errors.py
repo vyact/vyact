@@ -2,7 +2,7 @@ import unittest
 
 import httpx
 
-from services.llm.errors import is_insufficient_memory_error
+from services.llm.errors import is_insufficient_memory_error, is_insufficient_memory_message
 
 
 class LlmErrorTests(unittest.TestCase):
@@ -25,3 +25,8 @@ class LlmErrorTests(unittest.TestCase):
     def test_does_not_treat_disk_capacity_error_as_memory_error(self):
         error = self._status_error(507, {"error": {"message": "Insufficient disk storage"}})
         self.assertFalse(is_insufficient_memory_error(error))
+
+    def test_detects_local_runtime_out_of_memory_message(self):
+        self.assertTrue(is_insufficient_memory_message(
+            "MLX runtime stopped while loading the model\nMetal out of memory",
+        ))
