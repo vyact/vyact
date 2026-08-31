@@ -96,7 +96,12 @@ def normalize_gpu_split_for_hardware(profile: dict, hardware: dict) -> dict:
 
 def recommended_model_profile(model_path: str, runtime: str, repository: str | None, context_size: int) -> dict:
     safe_context = max(512, min(int(context_size or DEFAULT_CONTEXT_SIZE), 131072))
-    recommended_output = 4096 if safe_context >= 65536 else DEFAULT_MAX_OUTPUT_TOKENS
+    if safe_context >= 65536:
+        recommended_output = 4096
+    elif safe_context <= 8192:
+        recommended_output = 1024
+    else:
+        recommended_output = DEFAULT_MAX_OUTPUT_TOKENS
     recommended_history = min(safe_context // 2, 65536)
     return normalize_model_profile({
         "model_path": model_path,

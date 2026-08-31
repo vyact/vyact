@@ -33,3 +33,26 @@ def test_large_context_recommendation_scales_history_and_output_defaults():
     assert profile["context_size"] == 65536
     assert profile["history_token_budget"] == 32768
     assert profile["max_output_tokens"] == 4096
+
+
+def test_oversized_mlx_model_keeps_a_practical_minimum_profile(tmp_path):
+    (tmp_path / "config.json").write_text(json.dumps({
+        "text_config": {
+            "max_position_embeddings": 262144,
+            "hidden_size": 4096,
+            "num_hidden_layers": 30,
+            "num_attention_heads": 16,
+            "num_key_value_heads": 4,
+            "head_dim": 256,
+        },
+    }), encoding="utf-8")
+    model_file = tmp_path / "model.safetensors"
+    model_file.write_bytes(b"x")
+    os.truncate(model_file, 16_000_000_000)
+
+    context = recommend_downloaded_mlx_context(tmp_path, 24 * 1024 ** 3)
+    profile = recommended_model_profile("mlx/owner/model", "mlx", "owner/model", context)
+
+    assert profile["context_size"] == 8192
+    assert profile["max_output_tokens"] == 1024
+    assert profile["history_token_budget"] == 4096

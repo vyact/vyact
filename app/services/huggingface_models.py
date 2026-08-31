@@ -22,7 +22,8 @@ _Q8_BYTES_PER_VALUE = 1.0625
 _KV_CACHE_QUANTIZATION_MIN_CONTEXT = 32768
 _MINIMUM_RUNTIME_BUFFER_BYTES = 512 * 1024 ** 2
 _RECOMMENDED_MEMORY_UTILIZATION = 0.60
-_CONTEXT_SIZE_CANDIDATES = (131072, 65536, 32768, 16384, 8192, 4096, 2048, 1024, 512)
+_MINIMUM_PRACTICAL_CONTEXT_SIZE = 8192
+_CONTEXT_SIZE_CANDIDATES = (131072, 65536, 32768, 16384, _MINIMUM_PRACTICAL_CONTEXT_SIZE)
 
 
 def _headers(token: str | None) -> dict[str, str]:
@@ -484,7 +485,14 @@ def recommend_downloaded_mlx_context(model_path: Path, total_memory_bytes: int, 
         model_limit = int(metadata.get("context_length") or context_size)
         if context_size <= model_limit and int(metadata["estimated_memory_bytes"]) <= memory_budget:
             return context_size
-    return 512
+    # A 512-token profile leaves no useful room for a system prompt, user input,
+    # and response. Keep the memory warning visible, but initialize a functional
+    # profile when the model exceeds the conservative 60% recommendation budget.
+    model_metadata = calculate_mlx_metadata_from_config(
+        config, file_size, _MINIMUM_PRACTICAL_CONTEXT_SIZE,
+    )
+    model_limit = int(model_metadata.get("context_length") or _MINIMUM_PRACTICAL_CONTEXT_SIZE)
+    return max(512, min(_MINIMUM_PRACTICAL_CONTEXT_SIZE, model_limit))
 
 
 async def inspect_mlx_model_metadata(
