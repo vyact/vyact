@@ -2,6 +2,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import AsyncMock, patch
 
+from services.code_tools import current_code_folder
 from services.mcp_client import MCPManager, _Server
 
 
@@ -67,6 +68,30 @@ class McpToolFilteringTests(unittest.IsolatedAsyncioTestCase):
             finally:
                 manager.reset_request_scope(tokens)
         self.assertEqual([tool["function"]["name"] for tool in tools], ["search_emails"])
+
+    async def test_explicit_mcp_selection_keeps_project_code_tools(self):
+        manager = MCPManager()
+        manager.register_internal_tool(
+            "search_emails", "email", {}, _handler, server_type="google_workspace",
+        )
+        manager.register_internal_tool(
+            "code_read_file", "code", {}, _handler, server_type="code_tools",
+        )
+        manager._google_authenticated = True
+        server = {"id": "google", "type": "google_workspace", "enabled": False}
+        folder_token = current_code_folder.set("/tmp/project")
+        with patch("services.mcp_config.list_servers", AsyncMock(return_value=[server])), \
+                patch("services.mcp_config.build_servers_config", AsyncMock(return_value={})):
+            scope_tokens = await manager.enable_request_scope(["google"])
+            try:
+                tools = await manager.get_tools()
+            finally:
+                manager.reset_request_scope(scope_tokens)
+                current_code_folder.reset(folder_token)
+        self.assertEqual(
+            [tool["function"]["name"] for tool in tools],
+            ["search_emails", "code_read_file"],
+        )
 
 
 if __name__ == "__main__":

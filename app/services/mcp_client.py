@@ -379,7 +379,14 @@ class MCPManager:
                 })
         for name, spec in self._internal_tools.items():
             stype = spec.get("server_type")
-            if selected_server_ids and stype not in (selected_server_types or frozenset()):
+            # 프로젝트 폴더가 연결된 요청에서는 code_tools가 기본 작업 수단이다.
+            # @GitHub처럼 MCP를 명시 선택해도 선택 도구에 code_tools를 더해야 하며,
+            # request scope 필터가 프로젝트 도구를 제거하면 안 된다.
+            if (
+                selected_server_ids
+                and stype != "code_tools"
+                and stype not in (selected_server_types or frozenset())
+            ):
                 continue
             if stype is not None and stype not in enabled_types:
                 continue
