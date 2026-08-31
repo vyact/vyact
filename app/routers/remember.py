@@ -29,7 +29,7 @@ router = APIRouter()
 class RememberRequest(BaseModel):
     conv_id: str = ""
     user_timestamp: str = ""
-    max_length: int = 500
+    max_length: int = 200
     language: str = "en"
 
 
@@ -52,6 +52,7 @@ class ProfileUpdateRequest(BaseModel):
     nickname: str | None = None
     response_style: str | None = None
     analysis_cursor: datetime | None = None
+    max_length: int | None = None
 
 
 @router.put("/user-profile")
@@ -60,7 +61,12 @@ async def update_user_profile_api(req: ProfileUpdateRequest):
     now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     doc: dict = {"updated_at": now}
     if req.profile is not None:
-        doc["profile"] = req.profile.strip()
+        profile = req.profile.strip()
+        if req.max_length is not None:
+            max_length = max(100, min(req.max_length, 1000))
+            if len(profile) > max_length:
+                raise HTTPException(400, "Profile exceeds the selected character limit.")
+        doc["profile"] = profile
     if req.nickname is not None:
         doc["nickname"] = req.nickname.strip()
     if req.response_style is not None:
@@ -92,7 +98,7 @@ async def remember(req: RememberRequest):
     async def stream():
         import re as _re
         from services.llm.core import collect_llm_stream, query_llm
-        max_len = max(500, min(req.max_length, 5000))
+        max_len = max(100, min(req.max_length, 1000))
         profile_language = get_language_label(req.language)
 
         try:

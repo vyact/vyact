@@ -75,6 +75,7 @@ class HiddenMetadataStreamFilter:
 
 def build_summary_instruction(
         prior_conv_summary: str, request_project_summary: bool, project_memory: dict | None = None,
+        request_conversation_title: bool = False,
 ) -> str:
     """system_prompt에 덧붙일 숨김 태그 생성 지시문. 사용자에게 안 보이는 내부 지시라
     followups처럼 답변 맨 끝에 태그로만 출력하게 한다.
@@ -94,7 +95,7 @@ def build_summary_instruction(
         "Regardless of response length, omit incidental details and keep it to at most 3–4 sentences.\n"
         "<conv_summary>...</conv_summary>\n"
     ]
-    if not prior_conv_summary:
+    if request_conversation_title:
         parts.append(
             "For the first response only, put a short sidebar title immediately before <conv_summary>. "
             "Summarize the topic naturally in about 20 characters without copying the user's text or including UI markers such as PASTE:\n"

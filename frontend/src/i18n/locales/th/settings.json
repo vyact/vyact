@@ -250,7 +250,7 @@
   },
   "api": {},
   "profile": {
-    "maxLength": "ความยาวสูงสุด", "maxLengthDescription": "ระดับรายละเอียดที่ AI เก็บไว้ในโปรไฟล์",
+    "maxLength": "จำนวนอักขระสูงสุด", "maxLengthDescription": "ระดับรายละเอียดที่ AI เก็บไว้ในโปรไฟล์",
     "nickname": "ชื่อผู้ใช้",
     "nicknamePlaceholder": "ชื่อหรือชื่อเล่น",
     "responseStyle": "รูปแบบและน้ำเสียงเริ่มต้น", "responseStyleDescription": "วิธีที่ AI ตอบในการสนทนาทั่วไป",

@@ -46,7 +46,7 @@ def test_hides_tool_call_markup_from_stream_and_final_answer():
 
 
 def test_first_turn_requests_and_extracts_conversation_title():
-    instruction = build_summary_instruction("", False)
+    instruction = build_summary_instruction("", False, request_conversation_title=True)
     assert "<conv_title>" in instruction
     assert "at most 3–4 sentences" in instruction
     assert "End with <conv_summary>." in instruction
@@ -64,6 +64,11 @@ def test_first_turn_requests_and_extracts_conversation_title():
 
 def test_followup_turn_does_not_request_a_new_title():
     instruction = build_summary_instruction("기존 요약", False)
+    assert "<conv_title>" not in instruction
+
+
+def test_missing_prior_summary_does_not_imply_first_turn():
+    instruction = build_summary_instruction("", False)
     assert "<conv_title>" not in instruction
 
 

@@ -276,7 +276,7 @@
   },
   "api": {},
   "profile": {
-    "maxLength": "Max length",
+    "maxLength": "Maximum characters",
     "maxLengthDescription": "How much detail the AI keeps in your profile",
     "nickname": "User name",
     "nicknamePlaceholder": "Name or nickname",

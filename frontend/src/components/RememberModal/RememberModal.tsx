@@ -25,11 +25,11 @@ type Mode = 'view' | 'edit' | 'analyze';
 
 const RememberModal: React.FC<RememberModalProps> = ({onClose, onDone }) => {
     const {t, i18n} = useTranslation('main');
-    const maxLengthOptions = [500, 1000, 2000, 3000].map(value => ({
+    const maxLengthOptions = Array.from({length: 10}, (_, index) => (index + 1) * 100).map(value => ({
         value: String(value),
-        label: t(`rememberModal.length${value}`, {count: value}),
+        label: String(value),
     }));
-    const [maxLength, setMaxLength] = useState('2000');
+    const [maxLength, setMaxLength] = useState('200');
     const [existingProfile, setExistingProfile] = useState<string | null>(null);
     const [profileLoading, setProfileLoading] = useState(true);
     const [mode, setMode] = useState<Mode>('view');
@@ -62,7 +62,7 @@ const RememberModal: React.FC<RememberModalProps> = ({onClose, onDone }) => {
     const handleSave = async () => {
         setSaving(true);
         try {
-            await updateUserProfile({profile: editText});
+            await updateUserProfile({profile: editText, max_length: Number.parseInt(maxLength, 10)});
             setExistingProfile(editText);
             setMode('view');
             onDone(editText, t('rememberModal.saved'));
@@ -208,7 +208,8 @@ const RememberModal: React.FC<RememberModalProps> = ({onClose, onDone }) => {
                             <textarea
                                 className="remember-edit-textarea"
                                 value={editText}
-                                onChange={e => setEditText(e.target.value)}
+                                maxLength={Number.parseInt(maxLength, 10)}
+                                onChange={e => setEditText(e.target.value.slice(0, Number.parseInt(maxLength, 10)))}
                                 placeholder={t('rememberModal.placeholder')}
                                 autoFocus
                             />

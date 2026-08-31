@@ -250,7 +250,7 @@
   },
   "api": {},
   "profile": {
-    "maxLength": "Độ dài tối đa", "maxLengthDescription": "Mức chi tiết AI lưu trong hồ sơ của bạn",
+    "maxLength": "Số ký tự tối đa", "maxLengthDescription": "Mức chi tiết AI lưu trong hồ sơ của bạn",
     "nickname": "Tên người dùng",
     "nicknamePlaceholder": "Tên hoặc biệt danh",
     "responseStyle": "Phong cách và giọng điệu mặc định", "responseStyleDescription": "Cách AI trả lời trong hội thoại thông thường",

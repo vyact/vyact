@@ -544,6 +544,7 @@ async def query(req: QueryRequest):
     conv_id = req.conv_id or str(uuid.uuid4())
     from services.conv_summary import get_prior_conv_summary
     conversation_summary = await get_prior_conv_summary(conv_id)
+    request_conversation_title = not req.messages and not conversation_summary
     _chat_file_batches = _trigger_chat_file_indexing(conv_id, req.attachments) if not req.no_history else []
 
     # 6) 이전 assistant의 article_sources에서 file_id 승계
@@ -571,7 +572,7 @@ async def query(req: QueryRequest):
         # 기사/문서 첨부
         from services.conv_summary import build_summary_instruction
         response_system_prompt = (system_prompt if system_prompt else FORMAT_INSTRUCTION) + build_summary_instruction(
-            "", False, project_memory,
+            "", False, project_memory, request_conversation_title,
         )
         if external_instruction:
             response_system_prompt = f"{response_system_prompt}\n\n{external_instruction}"
@@ -611,7 +612,7 @@ async def query(req: QueryRequest):
         elif url_docs:
             from services.conv_summary import build_summary_instruction
             response_system_prompt = (system_prompt if system_prompt else FORMAT_INSTRUCTION) + build_summary_instruction(
-                "", False, project_memory,
+                "", False, project_memory, request_conversation_title,
             )
             if external_instruction:
                 response_system_prompt = f"{response_system_prompt}\n\n{external_instruction}"
@@ -636,7 +637,7 @@ async def query(req: QueryRequest):
             from services.conv_summary import build_summary_instruction
             _summary_base_prompt = system_prompt if system_prompt else FORMAT_INSTRUCTION
             _summary_system_prompt = _summary_base_prompt + build_summary_instruction(
-                "", _has_file_att, project_memory,
+                "", _has_file_att, project_memory, request_conversation_title,
             )
             if external_instruction:
                 _summary_system_prompt = f"{_summary_system_prompt}\n\n{external_instruction}"
@@ -867,6 +868,7 @@ async def query_stream(req: QueryRequest):
 
             from services.conv_summary import get_prior_conv_summary
             conversation_summary = "" if req.minimal_prompt else await get_prior_conv_summary(conv_id)
+            request_conversation_title = not req.messages and not conversation_summary
 
             # 첨부파일 임베딩 인덱싱은 LLM 호출 '전에' 끝까지 마친다. (예전엔 LLM 호출과
             # 동시에 백그라운드로 돌렸는데, 로컬 환경에서는 임베딩 모델과 채팅 모델이 같은
@@ -991,7 +993,7 @@ async def query_stream(req: QueryRequest):
                     from services.conv_summary import build_summary_instruction
                     _summary_base_prompt = system_prompt if system_prompt else FORMAT_INSTRUCTION
                     _summary_system_prompt = _summary_base_prompt + build_summary_instruction(
-                        "", has_file_attachment, project_memory,
+                        "", has_file_attachment, project_memory, request_conversation_title,
                     )
                     _fmt_override = None
                 if external_instruction:
@@ -1212,7 +1214,7 @@ async def query_stream(req: QueryRequest):
             if not req.voice_mode and not req.minimal_prompt:
                 from services.conv_summary import build_summary_instruction
                 selected_docs_system_prompt = (system_prompt if system_prompt else FORMAT_INSTRUCTION) + build_summary_instruction(
-                    "", False, project_memory,
+                    "", False, project_memory, request_conversation_title,
                 )
             if selected_external_instruction:
                 selected_docs_system_prompt = f"{selected_docs_system_prompt}\n\n{selected_external_instruction}"

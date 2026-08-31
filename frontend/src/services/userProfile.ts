@@ -7,6 +7,7 @@ export interface UserProfile {
 
 type UserProfileUpdate = Partial<Pick<UserProfile, 'profile' | 'nickname' | 'response_style'>> & {
     analysis_cursor?: string;
+    max_length?: number;
 };
 
 const DEFAULT_USER_PROFILE: UserProfile = {profile: null, nickname: '', response_style: 'default'};

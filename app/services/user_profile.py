@@ -21,7 +21,7 @@ logger = get_logger(__name__)
 
 USER_PROFILE_INDEX = "user_profile"
 USER_PROFILE_ID = "default"
-MAX_PROFILE_LENGTH = 2000  # 최대 프로필 텍스트 길이
+MAX_PROFILE_LENGTH = 200
 DEFAULT_RESPONSE_STYLE = "default"
 RESPONSE_STYLE_INSTRUCTIONS = {
     "professional": "Use a polished, precise, professional tone. State key terms clearly and avoid unnecessary embellishment.",

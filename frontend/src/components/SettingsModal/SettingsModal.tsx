@@ -340,7 +340,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
 
 
     // AI 프로필 분석
-    const [profileMaxLength, setProfileMaxLength] = useState('500');
+    const [profileMaxLength, setProfileMaxLength] = useState('200');
     const [existingProfile, setExistingProfile] = useState<string | null>(null);
     const [existingNickname, setExistingNickname] = useState('');
     const [profileResponseStyle, setProfileResponseStyle] = useState('default');
@@ -727,10 +727,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
     };
 
     // ── 프로필 편집/분석 ──
-    const profileMaxLengthLimit = Number.parseInt(profileMaxLength, 10) || 500;
+    const profileMaxLengthLimit = Number.parseInt(profileMaxLength, 10) || 200;
 
     const handleProfileMaxLengthChange = (value: string) => {
-        const limit = Number.parseInt(value, 10) || 500;
+        const limit = Number.parseInt(value, 10) || 200;
         setProfileMaxLength(value);
         setProfileEditText(current => current.slice(0, limit));
     };
@@ -744,7 +744,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
     const profileHandleSave = async () => {
         setProfileSaving(true);
         try {
-            await updateUserProfile({profile: profileEditText, nickname: nicknameEdit});
+            await updateUserProfile({
+                profile: profileEditText,
+                nickname: nicknameEdit,
+                max_length: profileMaxLengthLimit,
+            });
             setExistingProfile(profileEditText);
             setExistingNickname(nicknameEdit);
             setProfileMode('view');
@@ -788,7 +792,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                 const resp = await fetch('/api/remember', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({max_length: parseInt(profileMaxLength), language: i18n.language}),
+                    body: JSON.stringify({max_length: profileMaxLengthLimit, language: i18n.language}),
                 });
                 const reader = resp.body!.getReader();
                 const decoder = new TextDecoder();
@@ -843,6 +847,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
             await updateUserProfile({
                 profile: profileState.profile,
                 analysis_cursor: profileState.analysisCursor,
+                max_length: profileMaxLengthLimit,
             });
             setExistingProfile(profileState.profile);
             setProfileMode('view');
@@ -856,12 +861,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
 
     const profilePercent = profileState.total > 0 ? Math.round((profileState.current / profileState.total) * 100) : 0;
 
-    const PROFILE_MAX_LENGTH_OPTIONS = [
-        {value: '500', label: `500 (${t('profile.concise')})`},
-        {value: '1000', label: '1000'},
-        {value: '2000', label: `2000 (${t('profile.default')})`},
-        {value: '3000', label: `3000 (${t('profile.detailed')})`},
-    ];
+    const PROFILE_MAX_LENGTH_OPTIONS = Array.from({length: 10}, (_, index) => (index + 1) * 100).map(value => ({
+        value: String(value),
+        label: value === 200
+            ? `${value} (${t('profile.default')})`
+            : value === 1000 ? `${value} (${t('profile.detailed')})` : String(value),
+    }));
     const PROFILE_RESPONSE_STYLE_OPTIONS = [
         {value: 'default', label: t('profile.responseStyleDefault'), description: t('profile.responseStyleDefaultDescription')},
         {value: 'professional', label: t('profile.responseStyleProfessional'), description: t('profile.responseStyleProfessionalDescription')},

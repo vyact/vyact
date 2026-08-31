@@ -250,7 +250,7 @@
   },
   "api": {},
   "profile": {
-    "maxLength": "Longitud máxima", "maxLengthDescription": "Nivel de detalle que la IA conserva en tu perfil",
+    "maxLength": "Máximo de caracteres", "maxLengthDescription": "Nivel de detalle que la IA conserva en tu perfil",
     "nickname": "Nombre de usuario",
     "nicknamePlaceholder": "Nombre o apodo",
     "responseStyle": "Estilo y tono predeterminados", "responseStyleDescription": "Cómo responde la IA en conversaciones normales",
