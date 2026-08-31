@@ -4,7 +4,7 @@
 .model-settings-modal header h2 { margin: 0; font-size: 18px; }
 .model-settings-model { display: flex; align-items: center; gap: 5px; max-width: 390px; margin-top: 4px; color: var(--muted); font-size: 13px; }
 .model-settings-model-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.model-settings-memory-badge { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 4px; padding: 3px 7px; border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border)); border-radius: 999px; background: color-mix(in srgb, var(--accent) 7%, var(--surface2)); color: var(--text-secondary); font-size: 10px; font-weight: 650; line-height: 1; white-space: nowrap; }
+.model-settings-memory-badge { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 4px; padding: 4px 8px; border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border)); border-radius: 999px; background: color-mix(in srgb, var(--accent) 7%, var(--surface2)); color: var(--text-secondary); font-size: 11.5px; font-weight: 650; line-height: 1; white-space: nowrap; }
 .model-settings-memory-badge svg { color: var(--accent); }
 .model-settings-modal header .model-settings-model-help { display: grid; place-items: center; flex: 0 0 17px; width: 17px; height: 17px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: help; }
 .model-settings-modal header .model-settings-model-help:hover, .model-settings-modal header .model-settings-model-help:focus-visible { outline: none; background: var(--surface2); color: var(--text-secondary); }
