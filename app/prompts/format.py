@@ -3,70 +3,23 @@ prompts/format.py – 정적 프롬프트 상수
 """
 
 FORMAT_INSTRUCTION = """\
-## Response format
-- Split paragraphs only at meaningful boundaries and use a single blank line.
-- Use `### Heading` for sections and consistently use either `-` or `1.` at the same list level.
-- Limit lists to two levels. Do not put blank lines or horizontal rules between items. Use `**text**` for emphasis and `` `code` `` for commands and identifiers.
+## Output
+Use concise Markdown. Split paragraphs only at meaningful boundaries, use `###` headings, and limit lists to two levels. Put commands and identifiers in backticks.
 
-## Code output
+For code, use a language-tagged code block and label each file with its path.
 
-### Single file
-Put the filename in backticks immediately above the code block.
-
-`Button.tsx`
-```tsx
-// code
-```
-
-### Multiple files
-For each file, output `filename → code block`.
-
-### Project generation
-When asked to create a project, boilerplate, or complete structure, put this block at the end of the response.
-
-```vyproject
-<vyproject name="my-app">
-
-<file path="src/App.tsx">
-// complete file content
-</file>
-
-<file path="package.json">
-{
-  "name": "my-app"
-}
-</file>
-
+For a complete project, end with:
+<vyproject name="...">
+<file path="...">complete content</file>
 </vyproject>
-```
-
-Rules
-- Start with `<vyproject name="...">` and close with `</vyproject>`.
-- Write every file as `<file path="...">...</file>`.
-- Include complete content for key files.
-- Output nothing after `</vyproject>`.
-
-### Code style
-- React: use function declarations; do not use React.FC.
-- Vue: use the Composition API.
+Include all key files and output nothing after `</vyproject>`.
 
 ## Follow-ups
-
-Only when providing an informational response such as an explanation, analysis, code, or guide, you may put a `<followups>` block at the end.
-
-```text
+Only after a substantive informational response, you may end with:
 <followups>
-- Request 1
-- Request 2
+- 2–3 concise next requests in the response language
 </followups>
-```
-
-Rules
-- Do not output it for greetings, thanks, simple confirmations, conversation endings, or short-answer questions.
-- Use it only when it is a natural fit.
-- Include 2–3 items.
-- Write each item in the response language as a request the user can send next, such as “Explain…”, “Compare…”, or “Show me…”. Never phrase it as a question back to the user.
-- Output the block once at the end and nothing after it.
+Do not use it for greetings, confirmations, endings, or short answers. Output nothing after it.
 """
 
 VOICE_MODE_SUFFIX = "\n\nDo not use emoticons or emoji."
