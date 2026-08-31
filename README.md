@@ -14,7 +14,7 @@
   [![Built with React](https://img.shields.io/badge/frontend-React-61dafb.svg?style=flat-square)](frontend)
   ![Chrome Extension](https://img.shields.io/badge/browser-Chrome%20Extension-4285f4.svg?style=flat-square)
 
-  [Get started](#get-started) · [Workflows](#one-workspace-five-real-workflows) · [Features](#everything-you-need-to-stay-in-context) · [Support Vyact](#support-vyact) · [Contributing](CONTRIBUTING.md)
+  [Get started](#get-started) · [Workflows](#one-workspace-six-real-workflows) · [Features](#everything-you-need-to-stay-in-context) · [Support Vyact](#support-vyact) · [Contributing](CONTRIBUTING.md)
 </div>
 
 ---
@@ -93,6 +93,7 @@ Learn from Netflix with dual subtitles, subtitle navigation, repeat playback, an
 | 🔎 | Source-aware answers | Review the passages and documents that informed an answer. |
 | 📝 | Rich-text memos | Organize ideas and plans in structured notes that RAG can retrieve during a conversation. |
 | 🗂️ | Google Workspace integration | Connect multiple accounts, switch between them, and work with Gmail, Drive, and Calendar alongside your AI conversation. |
+| ↗️ | Local OpenAI-compatible API server | Use the active Vyact local model from OpenClaw or another app on the same computer, with a ready-to-copy endpoint, model ID, configuration, and curl test. |
 | 🎙️ | Voice-based language learning | Practice speaking through natural conversations with speech input and AI responses. |
 | 🌐 | Chrome extension for Netflix and web language learning | Study Netflix with dual subtitles and level-aware explanations, translate pages, and ask questions with selected text or the current page as context. |
 | 🧩 | MCP tool connections | Connect the tools you use to tailor Vyact to the way you work. |
@@ -110,13 +111,14 @@ Learn from Netflix with dual subtitles, subtitle navigation, repeat playback, an
 - **Gmail** — Search and read mail, work with labels, attach an email and its files to chat, compose replies with AI, manage signatures, and send from the connected account.
 - **Google Drive** — Browse, search, upload, download, rename, copy, share, and attach Drive files directly to a conversation or knowledge base.
 - **Google Calendar** — View, create, update, and remove events without switching away from your current task.
-- **Built-in Google Workspace connection** — In **Settings > MCP and AI tools**, add Google Workspace, upload the OAuth credentials JSON, and connect your account. Vyact's built-in tools call Gmail, Drive, and Calendar Google APIs directly with OAuth permissions; no separate external MCP server process sits in the request path. OAuth tokens are not included in exported backups.
-- **MCP and reusable skills** — Add filesystem access, GitHub, or a custom local/remote MCP server. Create reusable skills so recurring work gets the right instructions automatically.
+- **Built-in Google Workspace connection** — In **Settings > Google**, upload the OAuth credentials JSON and connect one or more accounts. Vyact's built-in tools call Gmail, Drive, and Calendar Google APIs directly with OAuth permissions; no separate external MCP server process sits in the request path. OAuth tokens are not included in exported backups.
+- **MCP and reusable skills** — In **Settings > AI Tools**, add filesystem access, GitHub, or a custom local/remote MCP server. Manage reusable instructions separately in **Settings > Skills** so recurring work gets the right guidance automatically.
 
 ### Keep ownership of your workspace
 
 - **Local-first by default** — Vyact is designed around native llama.cpp, MLX on Apple Silicon, and local embedding so your core working context can stay on your machine.
 - **Choose your provider** — Use local models for private everyday work, connect OpenAI, Gemini, or Claude, or add an OpenAI-compatible endpoint operated by your organization or another service.
+- **Use your local model from another app** — Open **Settings > API Server** to copy the loopback endpoint, active model ID, OpenClaw configuration, or a curl test for the current Vyact-managed model.
 - **Know when data leaves your machine** — When Gmail or Drive content is used as AI chat context, it may be sent to the selected AI provider. With a Vyact-managed local model, that chat context is not sent to an external AI provider.
 - **Back up what matters** — Export and restore conversations, documents, files, memos, prompts, settings, provider connections, projects, and vocabulary. Backups can also be saved to Google Drive.
 - **Open source** — Vyact is released under AGPL-3.0. You can inspect, adapt, and contribute to the workspace you rely on.
@@ -154,7 +156,7 @@ On both Apple Silicon Macs and Windows, Vyact can download and run its supported
 1. Launch Vyact and choose a provider and model. Select **Vyact** to search for and download a local GGUF or MLX model, or add a custom LLM endpoint if you already operate one.
 2. Drop in a document or open **Document management** to index files you will use repeatedly. Create a knowledge collection when you want to limit RAG to a particular set of documents, memos, or email threads.
 3. Ask a question in chat and inspect the retrieved context when accuracy matters.
-4. Optionally connect Google Workspace or install the Chrome extension to bring live work into the same flow.
+4. Optionally connect Google Workspace from **Settings > Google** or install the Chrome extension to bring live work into the same flow.
 5. Create a memo, project, or reusable skill once you find a workflow you repeat.
 
 ### Connect a custom LLM provider

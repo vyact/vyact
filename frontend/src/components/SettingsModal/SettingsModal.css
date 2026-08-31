@@ -139,6 +139,28 @@
     opacity: 0.7;
 }
 
+/* Local OpenAI-compatible API */
+.settings-api-server { max-width: 100%; }
+.settings-api-server-description { margin: 0 0 18px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.settings-api-server-status-card { display: flex; align-items: flex-start; gap: 11px; margin-bottom: 20px; padding: 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--modal-inset); }
+.settings-api-server-status-card strong { color: var(--text); font-size: 14px; }
+.settings-api-server-status-card p { margin: 4px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.settings-api-server-status-dot { width: 9px; height: 9px; flex: 0 0 auto; margin-top: 5px; border-radius: 50%; background: var(--muted); box-shadow: 0 0 0 3px color-mix(in srgb, var(--muted) 18%, transparent); }
+.settings-api-server-status-dot.is-online { background: #40b86c; box-shadow: 0 0 0 3px rgba(64, 184, 108, .16); }
+.settings-api-server-field { margin-top: 14px; }
+.settings-api-server-field > label { display: block; margin-bottom: 7px; color: var(--text-secondary); font-size: 12px; font-weight: 600; }
+.settings-api-server-field > div { display: flex; min-width: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); }
+.settings-api-server-field code { min-width: 0; flex: 1; overflow: hidden; padding: 10px 12px; color: var(--text); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.settings-api-server-field button, .settings-api-server-copy-config { flex: 0 0 auto; border: 0; border-left: 1px solid var(--border); background: transparent; color: var(--accent); cursor: pointer; font-size: 12px; font-weight: 600; padding: 0 13px; }
+.settings-api-server-field button:hover:not(:disabled), .settings-api-server-copy-config:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 9%, transparent); }
+.settings-api-server-field button:disabled, .settings-api-server-copy-config:disabled { cursor: not-allowed; opacity: .45; }
+.settings-api-server-notice { margin-top: 14px; padding: 10px 12px; border-radius: 8px; background: color-mix(in srgb, var(--accent) 8%, transparent); color: var(--text-secondary); font-size: 12px; line-height: 1.55; }
+.settings-api-server-config { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); }
+.settings-api-server-config strong { color: var(--text); font-size: 14px; }
+.settings-api-server-config p { margin: 5px 0 11px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.settings-api-server-config pre { max-height: 260px; margin: 0; overflow: auto; padding: 14px; border: 1px solid var(--border); border-radius: 8px 8px 0 0; background: #111318; color: #d8dee9; font-size: 11px; line-height: 1.55; white-space: pre; }
+.settings-api-server-copy-config { width: 100%; min-height: 36px; border: 1px solid var(--border); border-top: 0; border-radius: 0 0 8px 8px; background: var(--surface2); }
+
 :root[data-theme='light'] .settings-sidebar-icon {
     display: inline-grid;
     width: 26px;

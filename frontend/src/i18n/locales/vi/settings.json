@@ -3,6 +3,7 @@
   "tabs": {
     "general": "Chung",
     "runtime": "Cài đặt RAG",
+    "apiServer": "Máy chủ API",
     "backup": "Sao lưu",
     "google": "Google",
     "api": "Công cụ AI",
@@ -11,6 +12,8 @@
     "profile": "Hồ sơ AI",
     "plugins": "Plugins"
   },
+  "apiServer": {"title":"Máy chủ API cục bộ","description":"Sử dụng mô hình Vyact cục bộ hiện tại từ các ứng dụng bên ngoài như OpenClaw qua API tương thích OpenAI.","checking":"Đang kiểm tra trạng thái máy chủ","online":"Khả dụng","offline":"Không khả dụng","onlineDescription":"Máy chủ mô hình cục bộ đã sẵn sàng nhận yêu cầu.","offlineDescription":"Chọn và chạy mô hình Vyact cục bộ để kích hoạt máy chủ API.","endpoint":"Điểm cuối","modelId":"ID mô hình","modelUnavailable":"Không có mô hình đang chạy","copy":"Sao chép","copied":"Đã sao chép vào bảng nhớ tạm.","copyFailed":"Không thể sao chép.","localOnly":"Địa chỉ này chỉ có thể truy cập từ máy tính này. Vyact phải đang chạy với mô hình cục bộ được kích hoạt.","openClawTitle":"Cấu hình OpenClaw","openClawDescription":"Sử dụng nội dung sau làm nhà cung cấp tùy chỉnh tương thích OpenAI trong OpenClaw.","copyConfig":"Sao chép cấu hình OpenClaw"},
+  "apiServerCurl": {"title":"Kiểm tra bằng curl","description":"Chạy lệnh này trong terminal để xác minh mô hình hiện tại phản hồi.","prompt":"Trả lời kết nối thành công trong một câu.","copy":"Sao chép lệnh curl"},
   "externalData": {
     "savePromptShort": "Lưu hướng dẫn",
     "promptDescriptionSimple": "Các kiểm tra mặc định về điều kiện và thời hạn luôn được áp dụng. Chỉ thêm hướng dẫn bổ sung cần thiết.",

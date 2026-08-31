@@ -16,6 +16,7 @@ import McpServersSection from './McpServersSection';
 import SkillsSection from './SkillsSection';
 import PluginsSection from './PluginsSection';
 import ExternalDataSection from './ExternalDataSection';
+import ApiServerSection from './ApiServerSection';
 import {refreshSkills} from '../../services/skills';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import {refreshGoogleWorkspaceStatus} from '../../services/googleWorkspaceStatus';
@@ -73,7 +74,7 @@ interface SettingsModalProps {
     initialTab?: string;
 }
 
-type Tab = 'backup' | 'general' | 'runtime' | 'google' | 'api' | 'externalData' | 'plugins' | 'skills' | 'profile';
+type Tab = 'backup' | 'general' | 'runtime' | 'apiServer' | 'google' | 'api' | 'externalData' | 'plugins' | 'skills' | 'profile';
 
 type RuntimeSettings = Record<string, number | null>;
 const DEFAULT_SETTINGS_TAB: Tab = 'general';
@@ -929,6 +930,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                         {([
                             {key: 'general' as Tab, icon: '⚙️', label: t('tabs.general')},
                             {key: 'runtime' as Tab, icon: '🧠', label: t('tabs.runtime')},
+                            {key: 'apiServer' as Tab, icon: '↗', label: t('tabs.apiServer')},
                             {key: 'backup' as Tab, icon: '💾', label: t('tabs.backup')},
                             {key: 'google' as Tab, icon: 'G', label: t('tabs.google')},
                             {key: 'api' as Tab, icon: '🔑', label: t('tabs.api')},
@@ -954,6 +956,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                     </nav>
 
                     <div className={`settings-body${tab === 'backup' ? ' settings-body--backup' : ''}`}>
+
+                        {tab === 'apiServer' && <ApiServerSection/>}
 
                         {tab === 'backup' && (
                             <div className={`settings-general settings-backup${isBackupExporting ? ' settings-backup--exporting' : ''}`} aria-busy={isBackupExporting}>

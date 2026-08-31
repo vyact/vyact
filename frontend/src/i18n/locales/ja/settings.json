@@ -3,6 +3,7 @@
   "tabs": {
     "general": "一般",
     "runtime": "RAG設定",
+    "apiServer": "APIサーバー",
     "backup": "バックアップ / 復元",
     "google": "Google",
     "api": "AIツール",
@@ -11,6 +12,8 @@
     "profile": "AIプロフィール分析",
     "plugins": "Plugins"
   },
+  "apiServer": {"title":"ローカルAPIサーバー","description":"OpenClawなどの外部アプリから、現在のVyactローカルモデルをOpenAI互換APIで利用できます。","checking":"サーバー状態を確認中","online":"利用可能","offline":"利用不可","onlineDescription":"ローカルモデルサーバーはリクエストを受信できます。","offlineDescription":"Vyactローカルモデルを選択して実行するとAPIサーバーが有効になります。","endpoint":"エンドポイント","modelId":"モデルID","modelUnavailable":"実行中のモデルなし","copy":"コピー","copied":"クリップボードにコピーしました。","copyFailed":"コピーできませんでした。","localOnly":"このアドレスには同じコンピューターからのみアクセスできます。Vyactを起動し、ローカルモデルを有効にしてください。","openClawTitle":"OpenClaw設定","openClawDescription":"以下をOpenClawのカスタムOpenAI互換プロバイダー設定として使用してください。","copyConfig":"OpenClaw設定をコピー"},
+  "apiServerCurl": {"title":"curlで接続テスト","description":"ターミナルで実行し、現在のモデルが応答することを確認します。","prompt":"接続成功と一文で答えてください。","copy":"curlコマンドをコピー"},
   "externalData": {
     "savePromptShort": "指示を保存",
     "promptDescriptionSimple": "基本の資格・期限確認ルールは常に適用されます。必要な追加指示のみ入力してください。",

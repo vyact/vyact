@@ -3,6 +3,7 @@
   "tabs": {
     "general": "일반",
     "runtime": "RAG 설정",
+    "apiServer": "API 서버",
     "backup": "백업 / 복원",
     "google": "Google",
     "api": "AI 도구",
@@ -11,6 +12,8 @@
     "skills": "스킬",
     "profile": "AI 프로필 분석"
   },
+  "apiServer": {"title":"로컬 API 서버","description":"OpenClaw 같은 외부 앱에서 현재 Vyact 로컬 모델을 OpenAI 호환 API로 사용할 수 있습니다.","checking":"서버 상태 확인 중","online":"사용 가능","offline":"사용할 수 없음","onlineDescription":"현재 로컬 모델 서버가 요청을 받을 수 있습니다.","offlineDescription":"Vyact 로컬 모델을 선택하고 실행하면 API 서버가 활성화됩니다.","endpoint":"엔드포인트","modelId":"모델 ID","modelUnavailable":"실행 중인 모델 없음","copy":"복사","copied":"클립보드에 복사했습니다.","copyFailed":"복사하지 못했습니다.","localOnly":"이 주소는 같은 컴퓨터에서만 접근할 수 있습니다. Vyact가 실행 중이고 로컬 모델이 활성화되어 있어야 합니다.","openClawTitle":"OpenClaw 설정","openClawDescription":"아래 내용을 OpenClaw의 custom OpenAI-compatible provider 설정에 사용하세요.","copyConfig":"OpenClaw 설정 복사"},
+  "apiServerCurl": {"title":"curl로 연결 테스트","description":"터미널에서 실행하여 현재 모델이 응답하는지 확인하세요.","prompt":"한 문장으로 연결 성공이라고 답해줘.","copy":"curl 명령 복사"},
   "externalData": {
     "savePromptShort": "지침 저장",
     "promptDescriptionSimple": "기본 자격 및 마감 검증 규칙은 항상 적용됩니다. 필요한 추가 지침만 입력하세요.",

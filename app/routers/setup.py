@@ -2,7 +2,10 @@
 routers/setup.py – 설치 / 모델 / Provider / 상태
 """
 import asyncio
+import json
 import uuid
+import urllib.error
+import urllib.request
 from urllib.parse import urlparse
 import math
 import os
@@ -28,7 +31,7 @@ from services.model_runtime_profiles import delete_model_profile, get_model_prof
 from services.vyact_model_metadata_cache import get_cached_model_metadata, save_cached_model_metadata
 from services.mlx_runtime import get_downloaded_mlx_model_path, get_mlx_runtime_capabilities, is_apple_silicon
 from services.reasoning_capabilities import get_gguf_reasoning_capabilities, get_mlx_reasoning_capabilities
-from services.vyact_runtime import get_downloaded_model_path, get_model_modalities
+from services.vyact_runtime import VYACT_RUNTIME_URL, get_downloaded_model_path, get_model_modalities
 
 logger = get_logger(__name__)
 
@@ -890,6 +893,39 @@ async def update_vyact_runtime():
 @router.get("/vyact/runtime/startup-status")
 async def get_vyact_runtime_startup_status():
     return get_startup_runtime_state()
+
+
+@router.get("/vyact/external-api/status")
+async def get_vyact_external_api_status():
+    """Return the local OpenAI-compatible endpoint exposed by the active runtime."""
+    config = await load_config_async()
+    vyact_config = config.get("vyact_config", {})
+    context_window = int(vyact_config.get("context_size") or 32768)
+    max_tokens = int(vyact_config.get("max_output_tokens") or 2048)
+
+    def fetch_runtime_models() -> list[str]:
+        try:
+            with urllib.request.urlopen(f"{VYACT_RUNTIME_URL}/models", timeout=2) as response:
+                payload = json.load(response)
+        except (OSError, ValueError, urllib.error.URLError):
+            return []
+        if not isinstance(payload, dict):
+            return []
+        return [
+            str(item["id"])
+            for item in payload.get("data", [])
+            if isinstance(item, dict) and item.get("id")
+        ]
+
+    model_ids = await asyncio.to_thread(fetch_runtime_models)
+    return {
+        "endpoint": VYACT_RUNTIME_URL,
+        "available": bool(model_ids),
+        "model_id": model_ids[0] if model_ids else None,
+        "context_window": context_window,
+        "max_tokens": max_tokens,
+        "network_scope": "loopback",
+    }
 
 
 @router.post("/vyact/runtime/startup-choice")

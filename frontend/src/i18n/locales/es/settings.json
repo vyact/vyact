@@ -3,6 +3,7 @@
   "tabs": {
     "general": "General",
     "runtime": "Configuración RAG",
+    "apiServer": "Servidor API",
     "backup": "Copia",
     "google": "Google",
     "api": "Herramientas de IA",
@@ -11,6 +12,8 @@
     "profile": "Perfil IA",
     "plugins": "Plugins"
   },
+  "apiServer": {"title":"Servidor API local","description":"Usa el modelo local actual de Vyact desde aplicaciones externas como OpenClaw mediante una API compatible con OpenAI.","checking":"Comprobando el servidor","online":"Disponible","offline":"No disponible","onlineDescription":"El servidor del modelo local está listo para recibir solicitudes.","offlineDescription":"Selecciona y ejecuta un modelo local de Vyact para activar el servidor API.","endpoint":"Endpoint","modelId":"ID del modelo","modelUnavailable":"No hay ningún modelo en ejecución","copy":"Copiar","copied":"Copiado al portapapeles.","copyFailed":"No se pudo copiar.","localOnly":"Esta dirección solo es accesible desde este equipo. Vyact debe estar en ejecución con un modelo local activo.","openClawTitle":"Configuración de OpenClaw","openClawDescription":"Usa lo siguiente como proveedor personalizado compatible con OpenAI en OpenClaw.","copyConfig":"Copiar configuración de OpenClaw"},
+  "apiServerCurl": {"title":"Probar con curl","description":"Ejecuta este comando en una terminal para verificar que el modelo actual responde.","prompt":"Responde conexión correcta en una frase.","copy":"Copiar comando curl"},
   "externalData": {
     "savePromptShort": "Guardar instrucciones",
     "promptDescriptionSimple": "Las comprobaciones predeterminadas de requisitos y plazos siempre se aplican. Añade solo las instrucciones adicionales necesarias.",

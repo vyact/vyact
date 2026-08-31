@@ -193,6 +193,15 @@ export interface VyactHardwareInfo {
     gpus: VyactGpuInfo[];
 }
 
+export interface VyactExternalApiStatus {
+    endpoint: string;
+    available: boolean;
+    model_id: string | null;
+    context_window: number;
+    max_tokens: number;
+    network_scope: 'loopback';
+}
+
 export interface VyactModelProfile {
     model_path: string;
     runtime: 'gguf' | 'mlx';
@@ -516,6 +525,12 @@ export const api = {
         packages: Array<{name: string; installed: string; available: string}>;
     }> {
         const response = await fetch(`${API_BASE}/vyact/runtime/startup-status`);
+        await assertOk(response);
+        return response.json();
+    },
+
+    async getVyactExternalApiStatus(): Promise<VyactExternalApiStatus> {
+        const response = await fetch(`${API_BASE}/vyact/external-api/status`);
         await assertOk(response);
         return response.json();
     },
