@@ -1207,6 +1207,7 @@
     "gpuAllocationTooltip": "每个数值是llama.cpp张量拆分百分比，最多可输入两位小数，且总和必须为100%。它不是显存使用上限。",
     "gpuSplitTotal": "总计 {{value}}% / 100%",
     "gpuSplitInvalid": "请将GPU拆分百分比总和设为100%。",
+    "gpuSplitCapacityWarning": "按当前比例，GPU {{index}}可能分配约{{required}}，超过其{{capacity}}显存。llama.cpp的实际分配可能有所不同，但模型可能加载失败。请使用推荐比例或关闭手动拆分。",
     "gpuCapacity": "显存 {{value}} GB",
     "mtpAcceleration": "MTP 加速",
     "mtpAccelerationHelp": "使用模型的 MTP 预测器加快生成速度。关闭后可使用 KV 缓存量化。",

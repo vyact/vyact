@@ -1,5 +1,5 @@
 import {useEffect, useRef, useState} from 'react';
-import {ChevronDown, CircleQuestionMark, MemoryStick, X} from 'lucide-react';
+import {ChevronDown, CircleQuestionMark, MemoryStick, TriangleAlert, X} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {api, VyactModelActivationError, type VyactModelProfile} from '../../services/api';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
@@ -25,6 +25,9 @@ interface Props {
 const GPU_SPLIT_DECIMAL_PLACES = 2;
 const GPU_SPLIT_STEP = 10 ** -GPU_SPLIT_DECIMAL_PLACES;
 const GPU_SPLIT_SUM_TOLERANCE = GPU_SPLIT_STEP / 2;
+const GPU_SPLIT_INPUT_PATTERN = /^\d{0,3}(?:\.\d{0,2})?$/;
+const GPU_SPLIT_INPUT_MAX_LENGTH = 6;
+const formatGpuSplitPercentage = (value: number) => String(Number(value.toFixed(GPU_SPLIT_DECIMAL_PLACES)));
 
 export default function ModelSettingsModal({modelPath, runtime, repository, recommendedContext = 32768, activateOnApply = false, forceActivateOnApply = false, mtpSupported = false, dflash2Supported = false, onClose, onApplied}: Props) {
     const {t} = useTranslation('main');
@@ -33,6 +36,7 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
     const [advancedOpen, setAdvancedOpen] = useState(false);
+    const [gpuSplitInputValues, setGpuSplitInputValues] = useState<string[]>([]);
     const initialProfileRef = useRef<VyactModelProfile | null>(null);
 
     const comparableProfile = (value: VyactModelProfile) => ({
@@ -56,6 +60,7 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
                 const normalizedProfile = {...value, mtp_enabled: mtpEnabled, kv_cache_precision: accelerationEnabled ? 'none' as const : kvCachePrecision, cache_quantization: accelerationEnabled ? false : kvCachePrecision !== 'none'};
                 initialProfileRef.current = normalizedProfile;
                 setProfile(normalizedProfile);
+                setGpuSplitInputValues((normalizedProfile.gpu_split_percentages ?? []).map(String));
             })
             .catch(value => setError(String(value)));
     }, [modelPath, runtime, repository, recommendedContext, mtpSupported, dflash2Supported]);
@@ -100,22 +105,52 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
     };
 
     const dedicatedGpus = profile?.capabilities?.hardware?.gpus.filter(gpu => !gpu.shared_memory && gpu.total_bytes > 0) ?? [];
-    const allocationBackend = dedicatedGpus[0]?.backend;
-    const allocationGpus = dedicatedGpus.filter(gpu => gpu.backend === allocationBackend);
-    const gpuSplitTotal = (profile?.gpu_split_percentages ?? []).reduce((total, value) => total + value, 0);
-    const gpuSplitIsValid = !profile?.gpu_manual_split_enabled || (
-        profile.gpu_split_percentages?.length === allocationGpus.length
-        && profile.gpu_split_percentages.every(value => Number.isFinite(value) && value >= 0 && value <= 100)
+    const detectedAllocationBackend = dedicatedGpus[0]?.backend;
+    const allocationGpus = dedicatedGpus.filter(gpu => gpu.backend === detectedAllocationBackend);
+    const gpuManualSplitEnabled = Boolean(profile?.gpu_manual_split_enabled);
+    const gpuSplitPercentages = gpuSplitInputValues.map(value => value.trim() === '' ? Number.NaN : Number(value));
+    const gpuSplitTotal = gpuSplitPercentages.reduce((total, value) => total + (Number.isFinite(value) ? value : 0), 0);
+    const gpuSplitIsValid = !gpuManualSplitEnabled || (
+        gpuSplitPercentages.length === allocationGpus.length
+        && gpuSplitPercentages.every(value => Number.isFinite(value) && value >= 0 && value <= 100)
         && Math.abs(gpuSplitTotal - 100) <= GPU_SPLIT_SUM_TOLERANCE
     );
     const estimatedMemoryBytes = profile?.estimated_memory_bytes ?? 0;
+    const gpuCapacityWarnings = gpuManualSplitEnabled && estimatedMemoryBytes > 0
+        ? allocationGpus.flatMap((gpu, index) => {
+            const percentage = gpuSplitPercentages[index];
+            const estimatedGpuBytes = Number.isFinite(percentage) ? estimatedMemoryBytes * percentage / 100 : 0;
+            return gpu.total_bytes > 0 && estimatedGpuBytes > gpu.total_bytes
+                ? [{gpuIndex: index + 1, estimatedGpuBytes, capacityBytes: gpu.total_bytes}]
+                : [];
+        })
+        : [];
     const updateGpuSplitPercentage = (index: number, value: string) => {
         if (!profile) return;
+        if (!GPU_SPLIT_INPUT_PATTERN.test(value)) return;
+        const inputValues = [...gpuSplitInputValues];
+        inputValues[index] = value;
+        setGpuSplitInputValues(inputValues);
+        if (value.trim() === '' || !Number.isFinite(Number(value))) return;
         const percentages = [...(profile.gpu_split_percentages ?? [])];
-        percentages[index] = Math.round(
+        percentages[index] = Number(value);
+        setProfile({...profile, gpu_split_percentages: percentages});
+    };
+    const normalizeGpuSplitPercentage = (index: number) => {
+        const value = gpuSplitInputValues[index]?.trim() ?? '';
+        if (value === '' || !Number.isFinite(Number(value))) return;
+        const roundedValue = Math.round(
             Math.min(Math.max(0, Number(value)), 100) / GPU_SPLIT_STEP,
         ) * GPU_SPLIT_STEP;
-        setProfile({...profile, gpu_split_percentages: percentages});
+        const normalizedValue = Number(roundedValue.toFixed(GPU_SPLIT_DECIMAL_PLACES));
+        const inputValues = [...gpuSplitInputValues];
+        inputValues[index] = String(normalizedValue);
+        setGpuSplitInputValues(inputValues);
+        if (profile) {
+            const percentages = [...(profile.gpu_split_percentages ?? [])];
+            percentages[index] = normalizedValue;
+            setProfile({...profile, gpu_split_percentages: percentages});
+        }
     };
 
     return <ModalOverlay className="model-settings-overlay" onClose={onClose} closeOnBackdrop={false}>
@@ -135,11 +170,11 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
                     <button type="button" className="model-settings-advanced-trigger" aria-expanded={advancedOpen} onClick={() => setAdvancedOpen(open => !open)}><span>{t('modelSettings.advanced')}</span><ChevronDown size={16} aria-hidden="true"/></button>
                     <div className="model-settings-advanced-panel" aria-hidden={!advancedOpen}><div className="model-settings-advanced-fields">
                         {runtime === 'gguf' && allocationGpus.length >= 2 && <section className="model-settings-gpu-allocation">
-                            <div className="model-settings-gpu-heading"><SettingLabel label={t('modelSettings.gpuManualSplit')} help={t('modelSettings.gpuManualSplitTooltip')} description={t(profile.gpu_manual_split_enabled ? 'modelSettings.gpuManualSplitOnHelp' : 'modelSettings.gpuManualSplitOffHelp')}/><button type="button" className={`model-settings-switch${profile.gpu_manual_split_enabled ? ' is-on' : ''}`} role="switch" aria-label={t('modelSettings.gpuManualSplit')} aria-checked={Boolean(profile.gpu_manual_split_enabled)} onClick={() => setProfile({...profile, gpu_manual_split_enabled: !profile.gpu_manual_split_enabled})}><span/></button></div>
-                            {profile.gpu_manual_split_enabled && <><div className="model-settings-gpu-backend"><span>{t('modelSettings.gpuAllocation')}</span><b>{allocationBackend}</b></div><div className="model-settings-gpu-list">{allocationGpus.map((gpu, index) => <label key={`${gpu.backend}-${gpu.index}-${gpu.name}`}>
+                            <div className="model-settings-gpu-heading"><SettingLabel label={t('modelSettings.gpuManualSplit')} help={t('modelSettings.gpuManualSplitTooltip')} description={t(gpuManualSplitEnabled ? 'modelSettings.gpuManualSplitOnHelp' : 'modelSettings.gpuManualSplitOffHelp')}/><button type="button" className={`model-settings-switch${gpuManualSplitEnabled ? ' is-on' : ''}`} role="switch" aria-label={t('modelSettings.gpuManualSplit')} aria-checked={gpuManualSplitEnabled} onClick={() => setProfile({...profile, gpu_manual_split_enabled: !profile.gpu_manual_split_enabled})}><span/></button></div>
+                            {gpuManualSplitEnabled && <><div className="model-settings-gpu-backend"><span>{t('modelSettings.gpuAllocation')}</span></div><div className="model-settings-gpu-list">{allocationGpus.map((gpu, index) => <label key={`${gpu.backend}-${gpu.index}-${gpu.name}`}>
                                 <span><strong>{t('modelSettings.gpuIndex', {index: gpu.index + 1})}</strong><small title={gpu.name}>{gpu.name} · {t('modelSettings.gpuCapacity', {value: (gpu.total_bytes / 1024 ** 3).toFixed(1)})}</small></span>
-                                <span className="model-settings-gpu-input"><input type="number" min="0" max="100" step={GPU_SPLIT_STEP} value={profile.gpu_split_percentages?.[index] ?? 0} onChange={event => updateGpuSplitPercentage(index, event.target.value)}/><b>%</b></span>
-                            </label>)}</div><div className={`model-settings-gpu-total${gpuSplitIsValid ? '' : ' is-invalid'}`}>{t('modelSettings.gpuSplitTotal', {value: gpuSplitTotal.toFixed(GPU_SPLIT_DECIMAL_PLACES)})}</div></>}
+                                <span className="model-settings-gpu-input"><input type="text" inputMode="decimal" maxLength={GPU_SPLIT_INPUT_MAX_LENGTH} value={gpuSplitInputValues[index] ?? ''} onChange={event => updateGpuSplitPercentage(index, event.target.value)} onBlur={() => normalizeGpuSplitPercentage(index)}/><b>%</b></span>
+                            </label>)}</div><div className={`model-settings-gpu-total${gpuSplitIsValid ? '' : ' is-invalid'}`}>{t('modelSettings.gpuSplitTotal', {value: formatGpuSplitPercentage(gpuSplitTotal)})}</div>{gpuCapacityWarnings.map(warning => <div className="model-settings-gpu-warning" role="alert" key={warning.gpuIndex}><TriangleAlert size={15} aria-hidden="true"/><span>{t('modelSettings.gpuSplitCapacityWarning', {index: warning.gpuIndex, required: formatModelBytes(warning.estimatedGpuBytes), capacity: formatModelBytes(warning.capacityBytes)})}</span></div>)}</>}
                         </section>}
                         {Boolean(profile.capabilities?.performance_modes.length) && <div className="model-settings-option"><SettingLabel label={t('modelSettings.performanceMode')} help={t('modelSettings.performanceModeTooltip')} description={t('modelSettings.performanceModeHelp')}/><CustomSelect portal options={profile.capabilities!.performance_modes.map(value => ({value, label: t(`modelSettings.performanceModes.${value}`)}))} value={profile.performance_mode ?? 'auto'} onChange={value => setProfile({...profile, performance_mode: value as VyactModelProfile['performance_mode']})}/></div>}
                         {profile.capabilities?.cpu_threads && <label className="model-settings-option"><SettingLabel label={t('modelSettings.cpuThreads')} help={t('modelSettings.cpuThreadsTooltip')} description={t('modelSettings.cpuThreadsHelp')}/><input className="model-settings-input" type="number" min="1" max="256" value={profile.cpu_threads ?? ''} placeholder={t('modelSettings.auto')} onChange={event => updateNumber('cpu_threads', event.target.value, true)}/></label>}

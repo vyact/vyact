@@ -1203,6 +1203,7 @@
     "gpuAllocationTooltip": "Each value is a llama.cpp tensor split percentage with up to two decimal places, and the total must be 100%. It is not a hard VRAM usage limit.",
     "gpuSplitTotal": "Total {{value}}% / 100%",
     "gpuSplitInvalid": "Set the GPU split percentages to a total of 100%.",
+    "gpuSplitCapacityWarning": "At this ratio, GPU {{index}} may receive about {{required}}, exceeding its {{capacity}} VRAM. Actual llama.cpp allocation may differ, but the model may fail to load. Use the recommended ratio or turn off manual splitting.",
     "gpuCapacity": "{{value}} GB VRAM",
     "mtpAcceleration": "MTP acceleration",
     "mtpAccelerationHelp": "Speeds up generation with the model's MTP predictor. Turn it off to use KV cache quantization.",

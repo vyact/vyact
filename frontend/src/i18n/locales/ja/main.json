@@ -1207,6 +1207,7 @@
     "gpuAllocationTooltip": "各値はllama.cppのテンソル分割率で、小数第2位まで入力でき、合計は100%である必要があります。VRAM使用量の上限ではありません。",
     "gpuSplitTotal": "合計 {{value}}% / 100%",
     "gpuSplitInvalid": "GPU分割率の合計を100%に設定してください。",
+    "gpuSplitCapacityWarning": "この比率ではGPU {{index}}に約{{required}}が割り当てられ、{{capacity}}のVRAMを超える可能性があります。実際のllama.cppの割り当ては異なる場合がありますが、モデルの読み込みに失敗する可能性があります。推奨比率を使用するか、手動分割をオフにしてください。",
     "gpuCapacity": "VRAM {{value}} GB",
     "mtpAcceleration": "MTP アクセラレーション",
     "mtpAccelerationHelp": "モデルの MTP 予測器で生成を高速化します。KV キャッシュ量子化を使用する場合はオフにしてください。",

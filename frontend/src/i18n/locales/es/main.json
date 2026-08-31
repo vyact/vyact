@@ -1206,6 +1206,7 @@
     "gpuAllocationTooltip": "Cada valor es un porcentaje de división de tensores de llama.cpp con hasta dos decimales y el total debe ser 100%. No limita el uso real de VRAM.",
     "gpuSplitTotal": "Total {{value}}% / 100%",
     "gpuSplitInvalid": "Ajusta los porcentajes de GPU para que sumen 100%.",
+    "gpuSplitCapacityWarning": "Con esta proporción, la GPU {{index}} podría recibir unos {{required}}, superando sus {{capacity}} de VRAM. La asignación real de llama.cpp puede variar, pero el modelo podría no cargarse. Usa la proporción recomendada o desactiva la división manual.",
     "gpuCapacity": "{{value}} GB de VRAM",
     "mtpAcceleration": "Aceleración MTP",
     "mtpAccelerationHelp": "Acelera la generación con el predictor MTP del modelo. Desactívala para usar la cuantización de la caché KV.",

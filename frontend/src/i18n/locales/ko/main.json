@@ -1214,6 +1214,7 @@
     "gpuAllocationTooltip": "각 값은 llama.cpp 텐서 분할 비율이며 소수 둘째 자리까지 입력할 수 있고 합계가 100%여야 합니다. 실제 VRAM 사용량을 제한하는 값은 아닙니다.",
     "gpuSplitTotal": "합계 {{value}}% / 100%",
     "gpuSplitInvalid": "GPU 분할 비율의 합계를 100%로 설정하세요.",
+    "gpuSplitCapacityWarning": "현재 비율에서는 GPU {{index}}에 약 {{required}}가 배분되어 {{capacity}} VRAM을 초과할 수 있습니다. 실제 llama.cpp 배분은 다를 수 있지만 모델 로드에 실패할 수 있으니 권장 비율을 사용하거나 수동 분할을 끄세요.",
     "gpuCapacity": "VRAM {{value}} GB",
     "mtpAcceleration": "MTP 가속",
     "mtpAccelerationHelp": "모델의 MTP 예측기를 사용해 생성을 가속합니다. KV 캐시 양자화를 사용하려면 끄세요.",

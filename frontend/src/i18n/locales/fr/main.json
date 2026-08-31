@@ -1207,6 +1207,7 @@
     "gpuAllocationTooltip": "Chaque valeur est un pourcentage de répartition des tenseurs llama.cpp avec au plus deux décimales, et le total doit être de 100 %. Ce n'est pas une limite d'utilisation de la VRAM.",
     "gpuSplitTotal": "Total {{value}}% / 100%",
     "gpuSplitInvalid": "Réglez les pourcentages GPU pour obtenir un total de 100 %.",
+    "gpuSplitCapacityWarning": "Avec ce ratio, le GPU {{index}} pourrait recevoir environ {{required}}, dépassant ses {{capacity}} de VRAM. L'allocation réelle de llama.cpp peut varier, mais le chargement du modèle peut échouer. Utilisez le ratio recommandé ou désactivez la répartition manuelle.",
     "gpuCapacity": "{{value}} Go de VRAM",
     "mtpAcceleration": "Accélération MTP",
     "mtpAccelerationHelp": "Accélère la génération avec le prédicteur MTP du modèle. Désactivez-la pour utiliser la quantification du cache KV.",
