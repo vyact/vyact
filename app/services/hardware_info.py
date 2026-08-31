@@ -1,5 +1,6 @@
 """Cross-platform memory and accelerator discovery for local model guidance."""
 import json
+import math
 import platform
 import shutil
 import subprocess
@@ -9,6 +10,7 @@ import psutil
 
 COMMAND_TIMEOUT_SECONDS = 4
 MIB = 1024 ** 2
+GPU_SPLIT_TOTAL_PERCENT = 100.0
 
 
 def _run_command(command: list[str]) -> str:
@@ -116,8 +118,18 @@ def get_local_hardware_info() -> dict:
         }]
         memory_mode = "unified"
     else:
-        gpus = _nvidia_gpus() or _rocm_gpus() or _windows_display_adapters() or _linux_display_adapters()
-        memory_mode = "dedicated" if any(gpu["total_bytes"] and not gpu["shared_memory"] for gpu in gpus) else "system"
+        dedicated_gpus = [*_nvidia_gpus(), *_rocm_gpus()]
+        display_adapters = _windows_display_adapters() or _linux_display_adapters()
+        if dedicated_gpus:
+            has_cuda = any(gpu["backend"] == "CUDA" for gpu in dedicated_gpus)
+            has_rocm = any(gpu["backend"] == "ROCm" for gpu in dedicated_gpus)
+            display_adapters = [gpu for gpu in display_adapters if not (
+                (has_cuda and "nvidia" in gpu["name"].lower())
+                or (has_rocm and any(label in gpu["name"].lower() for label in ("amd", "ati", "radeon")))
+            )]
+        gpus = [*dedicated_gpus, *display_adapters]
+        memory_mode = "dedicated" if dedicated_gpus else "system"
+    gpus = [{**gpu, "index": index} for index, gpu in enumerate(gpus)]
     return {
         "platform": platform.system().lower(),
         "apple_silicon": is_apple_silicon,
@@ -125,3 +137,40 @@ def get_local_hardware_info() -> dict:
         "system_memory": {"total_bytes": memory.total, "available_bytes": memory.available},
         "gpus": gpus,
     }
+
+
+def get_runtime_compatible_gpus(hardware: dict) -> list[dict]:
+    """Return the dedicated GPU group one llama.cpp backend can use together."""
+    dedicated = [gpu for gpu in hardware.get("gpus", []) if gpu.get("total_bytes") and not gpu.get("shared_memory")]
+    if not dedicated:
+        return []
+    primary_backend = dedicated[0].get("backend")
+    return [gpu for gpu in dedicated if gpu.get("backend") == primary_backend]
+
+
+def recommend_gpu_split_percentages(hardware: dict) -> list[float]:
+    """Recommend a tensor split percentage from compatible GPU capacities."""
+    compatible = get_runtime_compatible_gpus(hardware)
+    if len(compatible) < 2:
+        return []
+    capacities = [int(gpu["total_bytes"]) for gpu in compatible]
+    total_capacity = sum(capacities)
+    if total_capacity <= 0:
+        return []
+    percentages = [round(GPU_SPLIT_TOTAL_PERCENT * capacity / total_capacity, 1) for capacity in capacities]
+    percentages[-1] = round(GPU_SPLIT_TOTAL_PERCENT - sum(percentages[:-1]), 1)
+    return percentages
+
+
+def validate_gpu_split_percentages(percentages: list[float], hardware: dict) -> list[float]:
+    """Return a valid complete percentage split, or an empty list."""
+    compatible = get_runtime_compatible_gpus(hardware)
+    if len(compatible) < 2 or len(percentages) != len(compatible):
+        return []
+    values = [float(value) for value in percentages]
+    if any(not math.isfinite(value) or value < 0 or value > GPU_SPLIT_TOTAL_PERCENT for value in values):
+        return []
+    if not math.isclose(sum(values), GPU_SPLIT_TOTAL_PERCENT, abs_tol=0.05):
+        return []
+    values[-1] = round(GPU_SPLIT_TOTAL_PERCENT - sum(values[:-1]), 1)
+    return [round(value, 1) for value in values]

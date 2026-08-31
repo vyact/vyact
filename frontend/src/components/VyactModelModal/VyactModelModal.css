@@ -28,6 +28,10 @@
 .vyact-memory-summary { position: sticky; top: 0; z-index: 1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--modal-bg); color: var(--muted); font-size: var(--modal-sub); }
 .vyact-memory-capacity { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
 .vyact-memory-capacity > span { display: flex; align-items: baseline; gap: 8px; min-width: 150px; padding: 7px 11px; border-radius: 8px; background: var(--surface2); }
+.vyact-memory-capacity > .vyact-gpu-memory { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; min-width: min(250px, 100%); }
+.vyact-gpu-memory > small { grid-column: 1 / -1; color: var(--muted); font-size: 10px; font-weight: 650; }
+.vyact-gpu-memory > span { min-width: 0; overflow: hidden; color: var(--text-secondary); text-overflow: ellipsis; white-space: nowrap; }
+.vyact-gpu-memory > em { grid-column: 1 / -1; color: var(--muted); font-size: 10px; font-style: normal; }
 .vyact-memory-summary strong { color: var(--text); font-size: var(--modal-text); }
 .vyact-memory-selection { display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 0; }
 .vyact-memory-selection > strong:first-child { display: block; max-width: min(240px, 28vw); overflow: hidden; color: var(--text-secondary); font-size: inherit; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }

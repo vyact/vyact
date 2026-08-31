@@ -178,6 +178,7 @@ export interface VyactModelSearchResponse {
 let cachedVyactInstalledModels: string[] = [];
 
 export interface VyactGpuInfo {
+    index: number;
     name: string;
     backend: string;
     total_bytes: number;
@@ -221,11 +222,14 @@ export interface VyactModelProfile {
     performance_mode?: 'auto' | 'memory' | 'performance';
     cpu_threads?: number | null;
     seed?: number | null;
+    gpu_split_percentages?: number[];
+    gpu_manual_split_enabled?: boolean;
     capabilities?: {
         performance_modes: Array<'auto' | 'memory' | 'performance'>;
         cpu_threads: boolean;
         kv_cache_precisions: Array<'q8' | 'q4'>;
         seed: boolean;
+        hardware?: VyactHardwareInfo;
         modalities?: Array<'image' | 'audio'>;
         reasoning: {
             control: 'none' | 'toggle' | 'effort';

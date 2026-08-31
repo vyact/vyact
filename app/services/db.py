@@ -325,6 +325,8 @@ async def ensure_index():
                     "mtp_enabled": {"type": "boolean"},
                     "kv_cache_precision": {"type": "keyword"}, "performance_mode": {"type": "keyword"},
                     "cpu_threads": {"type": "integer"}, "seed": {"type": "integer"},
+                    "gpu_split_percentages": {"type": "float"},
+                    "gpu_manual_split_enabled": {"type": "boolean"},
                     "created_at": {"type": "date"}, "updated_at": {"type": "date"},
                 }},
             )

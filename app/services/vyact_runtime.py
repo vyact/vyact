@@ -21,7 +21,9 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import quote
 
 from config import INSTALL_DIR, get_log_file
+from services.hardware_info import get_local_hardware_info, validate_gpu_split_percentages
 from services.local_model_errors import LocalModelNotDownloadedError
+from services.model_runtime_profiles import normalize_gpu_split_for_hardware
 from services.multimodal_capabilities import get_projector_modalities
 
 VYACT_RUNTIME_PORT = 11435
@@ -533,11 +535,23 @@ def start_single_model(
         model_path: Path, context_size: int, debug_logging: bool = False,
         cache_quantization: bool = True, enable_mtp: bool | None = None,
         kv_cache_precision: str | None = None, performance_mode: str = "auto",
-        cpu_threads: int | None = None,
+        cpu_threads: int | None = None, gpu_split_percentages: list[float] | None = None,
+        gpu_manual_split_enabled: bool = False,
 ) -> str:
     """Restart llama-swap with exactly one configured model and return its API ID."""
     global _active_dflash2_model, _active_mtp_model, _runtime_process
     kv_cache_precision = kv_cache_precision or ("q8" if cache_quantization else "none")
+    if gpu_manual_split_enabled and gpu_split_percentages:
+        validated_gpu_split = validate_gpu_split_percentages(
+            gpu_split_percentages, get_local_hardware_info(),
+        )
+        if not validated_gpu_split:
+            raise ValueError("invalid_gpu_split_percentages")
+        gpu_split_percentages = validated_gpu_split
+    elif gpu_manual_split_enabled:
+        raise ValueError("invalid_gpu_split_percentages")
+    else:
+        gpu_split_percentages = None
     dflash2_model_path = get_cached_dflash2_model(model_path)
     if dflash2_model_path is None and enable_mtp is True and kv_cache_precision != "none":
         raise ValueError("MTP acceleration and KV cache quantization cannot be enabled together")
@@ -559,6 +573,7 @@ def start_single_model(
             debug_logging=debug_logging, cache_quantization=cache_quantization and acceleration is None,
             kv_cache_precision="none" if acceleration else kv_cache_precision,
             performance_mode=performance_mode, cpu_threads=cpu_threads,
+            gpu_split_percentages=gpu_split_percentages,
         )
         VYACT_RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
         log_path = get_log_file("llama-swap")
@@ -627,11 +642,18 @@ def start_configured_runtime(vyact_config: dict, debug_logging: bool = False) ->
             vyact_config.get("kv_cache_precision"), vyact_config.get("performance_mode", "auto"),
             vyact_config.get("cpu_threads"),
         )
+    aligned_config = normalize_gpu_split_for_hardware(vyact_config, get_local_hardware_info())
+    vyact_config.update({
+        "gpu_split_percentages": aligned_config["gpu_split_percentages"],
+        "gpu_manual_split_enabled": aligned_config["gpu_manual_split_enabled"],
+    })
+    vyact_config.pop("gpu_memory_allocations", None)
     model_key = start_single_model(
         get_downloaded_model_path(model_path_value), context_size, debug_logging,
         bool(vyact_config.get("cache_quantization", True)), vyact_config.get("mtp_enabled"),
         vyact_config.get("kv_cache_precision"), vyact_config.get("performance_mode", "auto"),
-        vyact_config.get("cpu_threads"),
+        vyact_config.get("cpu_threads"), vyact_config.get("gpu_split_percentages"),
+        bool(vyact_config.get("gpu_manual_split_enabled", False)),
     )
     vyact_config["context_size"] = get_loaded_context_size(model_key, context_size)
     return model_key
@@ -662,7 +684,7 @@ def write_single_model_config(
         dflash2_model_path: Path | None = None,
         enable_mtp: bool = True, debug_logging: bool = False, cache_quantization: bool = True,
         kv_cache_precision: str | None = None, performance_mode: str = "auto",
-        cpu_threads: int | None = None,
+        cpu_threads: int | None = None, gpu_split_percentages: list[float] | None = None,
 ) -> str:
     """Write a llama-swap config that can only load the selected model.
 
@@ -710,8 +732,14 @@ def write_single_model_config(
         "--ctx-size", str(context_size), "--jinja", "--n-gpu-layers", "auto",
         "--batch-size", str(batch_size), "--ubatch-size", str(ubatch_size),
         "--parallel", "1",
-        "--fit", "on", "--flash-attn", "auto", "--cache-prompt",
+        "--flash-attn", "auto", "--cache-prompt",
     ])
+    gpu_split_percentages = [float(value) for value in (gpu_split_percentages or [])]
+    if len(gpu_split_percentages) >= 2 and any(value > 0 for value in gpu_split_percentages):
+        tensor_split = ",".join(f"{value:g}" for value in gpu_split_percentages)
+        command += f" --split-mode layer --tensor-split {tensor_split} --fit off"
+    else:
+        command += " --fit on"
     if kv_cache_precision != "none" and not uses_mtp and dflash2_model_path is None and context_size >= KV_CACHE_QUANTIZATION_MIN_CONTEXT:
         cache_type = "q4_0" if kv_cache_precision == "q4" else "q8_0"
         command += f" --cache-type-k {cache_type} --cache-type-v {cache_type}"

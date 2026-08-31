@@ -24,12 +24,12 @@ from routers.deps import APP_DIR, load_config_async, save_config_async, sse, wri
 from logger import DebugLogSettings, ToolLogSettings, get_logger
 from services.installer import is_docker_available, Installer
 from services.es_native import is_native_supported
-from services.hardware_info import get_local_hardware_info
+from services.hardware_info import get_local_hardware_info, validate_gpu_split_percentages
 from services.huggingface_models import get_model_file_size, recommend_downloaded_mlx_context, search_gguf_models
 from services.mcp_config import ensure_mcp_config
 from services.runtime_settings import DEFAULT_RUNTIME_SETTINGS, apply_runtime_settings
 from services.runtime_startup import apply_startup_runtime_choice, get_startup_runtime_state
-from services.model_runtime_profiles import delete_model_profile, get_model_profile, normalize_model_profile, recommended_model_profile, save_model_profile
+from services.model_runtime_profiles import delete_model_profile, get_model_profile, normalize_gpu_split_for_hardware, normalize_model_profile, recommended_model_profile, save_model_profile
 from services.vyact_model_metadata_cache import get_cached_model_metadata, save_cached_model_metadata
 from services.mlx_runtime import get_downloaded_mlx_model_path, get_mlx_runtime_capabilities, is_apple_silicon
 from services.external_api_server import EXTERNAL_API_PORT, public_model_id
@@ -174,6 +174,8 @@ class VyactModelActivateRequest(BaseModel):
     kv_cache_precision: str | None = Field(default=None, pattern="^(none|q8|q4)$")
     performance_mode: str = Field(default="auto", pattern="^(auto|memory|performance)$")
     cpu_threads: int | None = Field(default=None, ge=1, le=256)
+    gpu_split_percentages: list[float] = Field(default_factory=list, max_length=16)
+    gpu_manual_split_enabled: bool = False
     seed: int | None = Field(default=None, ge=0, le=2147483647)
 
     @model_validator(mode="after")
@@ -198,6 +200,8 @@ class VyactModelProfileRequest(BaseModel):
     kv_cache_precision: str | None = Field(default=None, pattern="^(none|q8|q4)$")
     performance_mode: str = Field(default="auto", pattern="^(auto|memory|performance)$")
     cpu_threads: int | None = Field(default=None, ge=1, le=256)
+    gpu_split_percentages: list[float] = Field(default_factory=list, max_length=16)
+    gpu_manual_split_enabled: bool = False
     seed: int | None = Field(default=None, ge=0, le=2147483647)
 
     @model_validator(mode="after")
@@ -1146,6 +1150,8 @@ async def read_vyact_model_profile(
             )
         else:
             downloaded_model_path = get_downloaded_model_path(model_path)
+            hardware = get_local_hardware_info()
+            profile = normalize_gpu_split_for_hardware(profile, hardware)
             capabilities = {
                 "performance_modes": ["auto", "memory", "performance"],
                 "cpu_threads": True,
@@ -1157,6 +1163,7 @@ async def read_vyact_model_profile(
                 "modalities": await asyncio.to_thread(
                     get_model_modalities, downloaded_model_path,
                 ),
+                "hardware": hardware,
             }
     except ValueError as error:
         raise HTTPException(404, "local_model_not_downloaded") from error
@@ -1167,7 +1174,13 @@ async def read_vyact_model_profile(
 async def write_vyact_model_profile(req: VyactModelProfileRequest):
     if req.runtime == "mlx" and not is_apple_silicon():
         raise HTTPException(400, "mlx_unsupported_platform")
-    return await save_model_profile(req.model_dump())
+    profile = req.model_dump()
+    profile["gpu_split_percentages"] = validate_gpu_split_percentages(
+        profile["gpu_split_percentages"], get_local_hardware_info(),
+    ) if req.runtime == "gguf" else []
+    if profile["gpu_manual_split_enabled"] and not profile["gpu_split_percentages"]:
+        raise HTTPException(400, "invalid_gpu_split_percentages")
+    return await save_model_profile(profile)
 
 
 @router.post("/vyact/models/activate")
@@ -1180,7 +1193,13 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
         try:
             config = await load_config_async()
             runtime = "mlx" if req.model_path.startswith("mlx/") else req.runtime
-            safe_profile = normalize_model_profile({**req.model_dump(), "runtime": runtime})
+            request_profile = req.model_dump()
+            request_profile["gpu_split_percentages"] = validate_gpu_split_percentages(
+                request_profile["gpu_split_percentages"], get_local_hardware_info(),
+            ) if runtime == "gguf" else []
+            if request_profile["gpu_manual_split_enabled"] and not request_profile["gpu_split_percentages"]:
+                raise ValueError("invalid_gpu_split_percentages")
+            safe_profile = normalize_model_profile({**request_profile, "runtime": runtime})
             req.context_size = safe_profile["context_size"]
             req.max_output_tokens = safe_profile["max_output_tokens"]
             req.history_token_budget = safe_profile["history_token_budget"]
@@ -1202,7 +1221,8 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
                 model_id = await asyncio.to_thread(
                     start_single_model, model_path, req.context_size, config.get("debug_logging", False),
                     req.cache_quantization, req.mtp_enabled, req.kv_cache_precision,
-                    req.performance_mode, req.cpu_threads,
+                    req.performance_mode, req.cpu_threads, safe_profile["gpu_split_percentages"],
+                    safe_profile["gpu_manual_split_enabled"],
                 )
                 req.context_size = await asyncio.to_thread(
                     get_loaded_context_size, model_id, req.context_size,
@@ -1223,6 +1243,8 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
                 "mtp_enabled": req.mtp_enabled,
                 "kv_cache_precision": safe_profile["kv_cache_precision"],
                 "performance_mode": req.performance_mode, "cpu_threads": req.cpu_threads,
+                "gpu_split_percentages": safe_profile["gpu_split_percentages"],
+                "gpu_manual_split_enabled": safe_profile["gpu_manual_split_enabled"],
                 "seed": req.seed,
                 "max_output_tokens": req.max_output_tokens, "temperature": req.temperature,
                 "history_token_budget": safe_profile["history_token_budget"],
@@ -1237,6 +1259,8 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
                 "mtp_enabled": req.mtp_enabled,
                 "kv_cache_precision": safe_profile["kv_cache_precision"],
                 "performance_mode": req.performance_mode, "cpu_threads": req.cpu_threads,
+                "gpu_split_percentages": safe_profile["gpu_split_percentages"],
+                "gpu_manual_split_enabled": safe_profile["gpu_manual_split_enabled"],
                 "seed": req.seed,
             })
             common_settings = dict(config.get("runtime_settings", {}))

@@ -10,7 +10,7 @@ from services.vyact_runtime import (
     delete_downloaded_model,
     initialize_downloaded_models_cache, list_downloaded_models, list_mtp_supported_models,
     list_selectable_models, start_single_model,
-    uncache_downloaded_model, write_single_model_config, _known_executable_paths, _which_path,
+    start_configured_runtime, uncache_downloaded_model, write_single_model_config, _known_executable_paths, _which_path,
 )
 
 
@@ -195,10 +195,75 @@ class VyactRuntimeTests(unittest.TestCase):
                 model, 8192, None, vision_projector_path=None, enable_mtp=False, debug_logging=False,
                 dflash2_model_path=None,
                 cache_quantization=True, kv_cache_precision="q8", performance_mode="auto",
-                cpu_threads=None,
+                cpu_threads=None, gpu_split_percentages=None,
             )
             self.assertIn("llama-swap", str(popen.call_args.args[0][0]))
             self.assertEqual(Path(popen.call_args.kwargs["stdout"].name).name, "llama-swap_20260825.log")
+
+    def test_single_model_config_applies_multi_gpu_tensor_split(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            base = Path(temp_dir)
+            model = base / "model.gguf"
+            server = base / "llama-server"
+            swap = base / "llama-swap"
+            config = base / "llama-swap.yaml"
+            for path in (model, server, swap):
+                path.touch()
+            paths = RuntimePaths(server, swap, base / "models", config)
+            with patch("services.vyact_runtime.get_runtime_paths", return_value=paths), \
+                 patch("services.vyact_runtime.VYACT_RUNTIME_DIR", base), \
+                 patch("services.vyact_runtime.VYACT_MODELS_DIR", base / "models"), \
+                 patch("services.vyact_runtime.VYACT_SWAP_CONFIG", config), \
+                 patch("services.vyact_runtime.model_has_integrated_mtp", return_value=False):
+                write_single_model_config(model, 8192, gpu_split_percentages=[66.7, 33.3])
+
+            contents = config.read_text(encoding="utf-8")
+            self.assertIn("--split-mode layer --tensor-split 66.7,33.3", contents)
+            self.assertIn("--fit off", contents)
+            self.assertNotIn("--fit on", contents)
+
+    def test_configured_runtime_migrates_legacy_gpu_split_before_start(self):
+        hardware = {"gpus": [
+            {"backend": "CUDA", "total_bytes": 24 * 1024 ** 3, "shared_memory": False},
+            {"backend": "CUDA", "total_bytes": 12 * 1024 ** 3, "shared_memory": False},
+        ]}
+        config = {
+            "model_path": "owner/model.gguf",
+            "gpu_memory_allocations": [8, 4],
+            "gpu_manual_split_enabled": True,
+        }
+        with patch("services.vyact_runtime.get_local_hardware_info", return_value=hardware), \
+             patch("services.vyact_runtime.get_downloaded_model_path", return_value=Path("model.gguf")), \
+             patch("services.vyact_runtime.start_single_model", return_value="vyact-model") as start_model, \
+             patch("services.vyact_runtime.get_loaded_context_size", return_value=32768):
+            self.assertEqual(start_configured_runtime(config), "vyact-model")
+
+        self.assertNotIn("gpu_memory_allocations", config)
+        self.assertEqual(config["gpu_split_percentages"], [66.7, 33.3])
+        self.assertTrue(config["gpu_manual_split_enabled"])
+        self.assertEqual(start_model.call_args.args[8], [66.7, 33.3])
+        self.assertTrue(start_model.call_args.args[9])
+
+    def test_single_model_config_keeps_automatic_fit_without_manual_split(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            base = Path(temp_dir)
+            model = base / "model.gguf"
+            server = base / "llama-server"
+            swap = base / "llama-swap"
+            config = base / "llama-swap.yaml"
+            for path in (model, server, swap):
+                path.touch()
+            paths = RuntimePaths(server, swap, base / "models", config)
+            with patch("services.vyact_runtime.get_runtime_paths", return_value=paths), \
+                 patch("services.vyact_runtime.VYACT_RUNTIME_DIR", base), \
+                 patch("services.vyact_runtime.VYACT_MODELS_DIR", base / "models"), \
+                 patch("services.vyact_runtime.VYACT_SWAP_CONFIG", config), \
+                 patch("services.vyact_runtime.model_has_integrated_mtp", return_value=False):
+                write_single_model_config(model, 8192)
+
+            contents = config.read_text(encoding="utf-8")
+            self.assertIn("--fit on", contents)
+            self.assertNotIn("--tensor-split", contents)
 
     def test_sidecar_config_enables_mtp_with_safe_auto_options(self):
         with tempfile.TemporaryDirectory() as temp_dir:

@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from elasticsearch import NotFoundError
 
 from services.db import MODEL_RUNTIME_PROFILES_INDEX, get_es
+from services.hardware_info import recommend_gpu_split_percentages, validate_gpu_split_percentages
 
 DEFAULT_CONTEXT_SIZE = 32768
 DEFAULT_MAX_OUTPUT_TOKENS = 2048
@@ -12,6 +13,8 @@ DEFAULT_HISTORY_TOKEN_BUDGET = 16384
 MINIMUM_CONTEXT_RESERVE_TOKENS = 512
 VALID_PERFORMANCE_MODES = {"auto", "memory", "performance"}
 VALID_KV_CACHE_PRECISIONS = {"none", "q8", "q4"}
+MAX_GPU_COUNT = 16
+MAX_GPU_SPLIT_PERCENT = 100.0
 
 
 def build_model_profile_id(model_path: str) -> str:
@@ -36,6 +39,18 @@ def normalize_model_profile(profile: dict) -> dict:
     normalized["cache_quantization"] = kv_cache_precision != "none"
     cpu_threads = normalized.get("cpu_threads")
     normalized["cpu_threads"] = None if cpu_threads in (None, "") else max(1, min(int(cpu_threads), 256))
+    legacy_gpu_split = normalized.get("gpu_memory_allocations") or []
+    gpu_split = normalized.get("gpu_split_percentages") or legacy_gpu_split
+    if not isinstance(gpu_split, list):
+        raise ValueError("GPU split percentages must be a list")
+    if legacy_gpu_split and not normalized.get("gpu_split_percentages"):
+        legacy_total = sum(max(0.0, float(value)) for value in legacy_gpu_split)
+        gpu_split = [100.0 * max(0.0, float(value)) / legacy_total for value in legacy_gpu_split] if legacy_total else []
+    normalized["gpu_split_percentages"] = [
+        max(0.0, min(float(value), MAX_GPU_SPLIT_PERCENT)) for value in gpu_split[:MAX_GPU_COUNT]
+    ]
+    normalized.pop("gpu_memory_allocations", None)
+    normalized["gpu_manual_split_enabled"] = bool(normalized.get("gpu_manual_split_enabled", False))
     seed = normalized.get("seed")
     normalized["seed"] = None if seed in (None, "") else max(0, min(int(seed), 2147483647))
     safe_context = max(512, min(int(normalized.get("context_size") or DEFAULT_CONTEXT_SIZE), 131072))
@@ -50,6 +65,28 @@ def normalize_model_profile(profile: dict) -> dict:
         max(1, safe_context // 4),
         max(1, safe_context - MINIMUM_CONTEXT_RESERVE_TOKENS),
     )
+    return normalized
+
+
+def normalize_gpu_split_for_hardware(profile: dict, hardware: dict) -> dict:
+    """Migrate and align a profile's manual split with the currently visible GPUs."""
+    normalized = dict(profile)
+    gpu_split = normalized.get("gpu_split_percentages") or []
+    legacy_gpu_split = normalized.get("gpu_memory_allocations") or []
+    if not gpu_split and legacy_gpu_split:
+        legacy_values = [max(0.0, float(value)) for value in legacy_gpu_split]
+        legacy_total = sum(legacy_values)
+        gpu_split = [100.0 * value / legacy_total for value in legacy_values] if legacy_total else []
+    normalized.pop("gpu_memory_allocations", None)
+    validated_split = validate_gpu_split_percentages(
+        gpu_split, hardware,
+    )
+    normalized["gpu_manual_split_enabled"] = bool(normalized.get("gpu_manual_split_enabled", False))
+    if validated_split:
+        normalized["gpu_split_percentages"] = validated_split
+        return normalized
+    normalized["gpu_split_percentages"] = recommend_gpu_split_percentages(hardware)
+    normalized["gpu_manual_split_enabled"] = False
     return normalized
 
 
@@ -76,6 +113,8 @@ def recommended_model_profile(model_path: str, runtime: str, repository: str | N
         "mtp_enabled": None,
         "performance_mode": "auto",
         "cpu_threads": None,
+        "gpu_split_percentages": [],
+        "gpu_manual_split_enabled": False,
         "seed": None,
     })
 

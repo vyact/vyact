@@ -7,6 +7,7 @@ from services import model_runtime_profiles
 from services.model_runtime_profiles import (
     build_model_profile_id,
     delete_model_profile,
+    normalize_gpu_split_for_hardware,
     normalize_model_profile,
     recommended_model_profile,
 )
@@ -44,6 +45,61 @@ def test_history_budget_is_stored_per_model_and_bounded_by_context():
     })
 
     assert profile["history_token_budget"] == 4096
+
+
+def test_gpu_split_percentages_are_normalized_and_bounded():
+    profile = normalize_model_profile({
+        "model_path": "owner/model.gguf",
+        "gpu_split_percentages": [-1, 12.5, 5000],
+    })
+
+    assert profile["gpu_split_percentages"] == [0.0, 12.5, 100.0]
+
+
+def test_legacy_gpu_allocations_migrate_to_split_values():
+    profile = normalize_model_profile({
+        "model_path": "owner/model.gguf",
+        "gpu_memory_allocations": [8, 4],
+    })
+
+    assert profile["gpu_split_percentages"] == pytest.approx([66.67, 33.33], abs=0.01)
+    assert "gpu_memory_allocations" not in profile
+
+
+def test_manual_gpu_split_is_disabled_by_default():
+    profile = normalize_model_profile({"model_path": "owner/model.gguf"})
+
+    assert profile["gpu_manual_split_enabled"] is False
+
+
+def test_gpu_split_is_recommended_again_when_visible_gpu_count_changes():
+    hardware = {"gpus": [
+        {"backend": "CUDA", "total_bytes": 24 * 1024 ** 3, "shared_memory": False},
+        {"backend": "CUDA", "total_bytes": 12 * 1024 ** 3, "shared_memory": False},
+    ]}
+    profile = normalize_gpu_split_for_hardware({
+        "model_path": "owner/model.gguf",
+        "gpu_split_percentages": [50, 30, 20],
+        "gpu_manual_split_enabled": True,
+    }, hardware)
+
+    assert profile["gpu_split_percentages"] == [66.7, 33.3]
+    assert profile["gpu_manual_split_enabled"] is False
+
+
+def test_legacy_gpu_split_stays_enabled_after_safe_hardware_migration():
+    hardware = {"gpus": [
+        {"backend": "CUDA", "total_bytes": 24 * 1024 ** 3, "shared_memory": False},
+        {"backend": "CUDA", "total_bytes": 12 * 1024 ** 3, "shared_memory": False},
+    ]}
+    profile = normalize_gpu_split_for_hardware({
+        "model_path": "owner/model.gguf",
+        "gpu_memory_allocations": [8, 4],
+        "gpu_manual_split_enabled": True,
+    }, hardware)
+
+    assert profile["gpu_split_percentages"] == [66.7, 33.3]
+    assert profile["gpu_manual_split_enabled"] is True
 
 
 def test_profile_rejects_mtp_with_kv_cache_quantization():

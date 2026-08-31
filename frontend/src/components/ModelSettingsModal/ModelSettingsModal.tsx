@@ -36,6 +36,8 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
         top_k: value.top_k, top_p: value.top_p, cache_quantization: value.cache_quantization,
         mtp_enabled: value.mtp_enabled ?? null, kv_cache_precision: value.kv_cache_precision ?? 'none',
         performance_mode: value.performance_mode ?? 'auto', cpu_threads: value.cpu_threads ?? null,
+        gpu_split_percentages: value.gpu_split_percentages ?? [],
+        gpu_manual_split_enabled: value.gpu_manual_split_enabled ?? false,
         seed: value.seed ?? null,
     });
 
@@ -58,6 +60,10 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
     };
     const apply = async () => {
         if (!profile) return;
+        if (profile.gpu_manual_split_enabled && !gpuSplitIsValid) {
+            setError(t('modelSettings.gpuSplitInvalid'));
+            return;
+        }
         if (profile.mtp_enabled && profile.kv_cache_precision !== 'none') {
             setError(t('modelSettings.accelerationConflict'));
             return;
@@ -82,6 +88,22 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
         }
     };
 
+    const dedicatedGpus = profile?.capabilities?.hardware?.gpus.filter(gpu => !gpu.shared_memory && gpu.total_bytes > 0) ?? [];
+    const allocationBackend = dedicatedGpus[0]?.backend;
+    const allocationGpus = dedicatedGpus.filter(gpu => gpu.backend === allocationBackend);
+    const gpuSplitTotal = (profile?.gpu_split_percentages ?? []).reduce((total, value) => total + value, 0);
+    const gpuSplitIsValid = !profile?.gpu_manual_split_enabled || (
+        profile.gpu_split_percentages?.length === allocationGpus.length
+        && profile.gpu_split_percentages.every(value => Number.isFinite(value) && value >= 0 && value <= 100)
+        && Math.abs(gpuSplitTotal - 100) < .05
+    );
+    const updateGpuSplitPercentage = (index: number, value: string) => {
+        if (!profile) return;
+        const percentages = [...(profile.gpu_split_percentages ?? [])];
+        percentages[index] = Math.round(Math.min(Math.max(0, Number(value)), 100) * 10) / 10;
+        setProfile({...profile, gpu_split_percentages: percentages});
+    };
+
     return <ModalOverlay className="model-settings-overlay" onClose={onClose} closeOnBackdrop={false}>
         <div className="model-settings-modal">
             <header><div><h2>{t('modelSettings.title')}</h2><div className="model-settings-model"><Tooltip content={automaticSetupTooltip} multiline size="medium"><button type="button" className="model-settings-model-help" aria-label={automaticSetupTooltip}><CircleQuestionMark size={14}/></button></Tooltip><span title={modelPath}>{modelPath.split('/').pop()}</span></div></div><button type="button" onClick={onClose} aria-label={t('modelSettings.close')}><X size={20}/></button></header>
@@ -93,6 +115,13 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
                 <label><SettingLabel label={t('modelSettings.temperature')} help={t('modelSettings.temperatureTooltip')}/><input className="model-settings-input" type="number" min="0" max="1" step="0.01" value={profile.temperature} onChange={e => updateNumber('temperature', e.target.value)}/></label>
                 <label><SettingLabel label={t('modelSettings.topK')} help={t('modelSettings.topKTooltip')}/><input className="model-settings-input" type="number" min="0" max="100" value={profile.top_k ?? ''} placeholder={t('modelSettings.modelDefault')} onChange={e => updateNumber('top_k', e.target.value, true)}/></label>
                 <label><SettingLabel label={t('modelSettings.topP')} help={t('modelSettings.topPTooltip')}/><input className="model-settings-input" type="number" min="0" max="1" step="0.01" value={profile.top_p ?? ''} placeholder={t('modelSettings.modelDefault')} onChange={e => updateNumber('top_p', e.target.value, true)}/></label>
+                {runtime === 'gguf' && allocationGpus.length >= 2 && <section className="model-settings-gpu-allocation">
+                    <div className="model-settings-gpu-heading"><SettingLabel label={t('modelSettings.gpuManualSplit')} help={t('modelSettings.gpuManualSplitTooltip')} description={t(profile.gpu_manual_split_enabled ? 'modelSettings.gpuManualSplitOnHelp' : 'modelSettings.gpuManualSplitOffHelp')}/><button type="button" className={`model-settings-switch${profile.gpu_manual_split_enabled ? ' is-on' : ''}`} role="switch" aria-label={t('modelSettings.gpuManualSplit')} aria-checked={Boolean(profile.gpu_manual_split_enabled)} onClick={() => setProfile({...profile, gpu_manual_split_enabled: !profile.gpu_manual_split_enabled})}><span/></button></div>
+                    {profile.gpu_manual_split_enabled && <><div className="model-settings-gpu-backend"><span>{t('modelSettings.gpuAllocation')}</span><b>{allocationBackend}</b></div><div className="model-settings-gpu-list">{allocationGpus.map((gpu, index) => <label key={`${gpu.backend}-${gpu.index}-${gpu.name}`}>
+                        <span><strong>{t('modelSettings.gpuIndex', {index: gpu.index + 1})}</strong><small title={gpu.name}>{gpu.name} · {t('modelSettings.gpuCapacity', {value: (gpu.total_bytes / 1024 ** 3).toFixed(1)})}</small></span>
+                        <span className="model-settings-gpu-input"><input type="number" min="0" max="100" step="0.1" value={profile.gpu_split_percentages?.[index] ?? 0} onChange={event => updateGpuSplitPercentage(index, event.target.value)}/><b>%</b></span>
+                    </label>)}</div><div className={`model-settings-gpu-total${gpuSplitIsValid ? '' : ' is-invalid'}`}>{t('modelSettings.gpuSplitTotal', {value: gpuSplitTotal.toFixed(1)})}</div></>}
+                </section>}
                 {dflash2Supported && <div className="model-settings-toggle"><SettingLabel label="DFlash2" help={t('modelSettings.dflash2AccelerationTooltip')} description={t('modelSettings.dflash2AccelerationHelp')}/><span className="vyact-mtp-badge">{t('modelSettings.auto')}</span></div>}
                 {mtpSupported && !dflash2Supported && <div className="model-settings-toggle"><SettingLabel label={t('modelSettings.mtpAcceleration')} help={t('modelSettings.mtpAccelerationTooltip')} description={t('modelSettings.mtpAccelerationHelp')}/><button type="button" className={`model-settings-switch${profile.mtp_enabled ? ' is-on' : ''}`} role="switch" aria-checked={Boolean(profile.mtp_enabled)} onClick={() => setProfile({...profile, mtp_enabled: !profile.mtp_enabled, kv_cache_precision: !profile.mtp_enabled ? 'none' : profile.kv_cache_precision, cache_quantization: !profile.mtp_enabled ? false : profile.cache_quantization})}><span/></button></div>}
                 <details className="model-settings-advanced">
@@ -106,7 +135,7 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
                 </details>
                 {error && <div className="model-settings-error">{error}</div>}
             </div>}
-            <footer><button className="model-settings-cancel" type="button" onClick={onClose}>{t('modelSettings.cancel')}</button><button className="primary" type="button" disabled={!profile || saving} onClick={() => void apply()}>{saving ? t('modelSettings.applying') : t('modelSettings.apply')}</button></footer>
+            <footer><button className="model-settings-cancel" type="button" onClick={onClose}>{t('modelSettings.cancel')}</button><button className="primary" type="button" disabled={!profile || saving || !gpuSplitIsValid} onClick={() => void apply()}>{saving ? t('modelSettings.applying') : t('modelSettings.apply')}</button></footer>
         </div>
     </ModalOverlay>;
 }

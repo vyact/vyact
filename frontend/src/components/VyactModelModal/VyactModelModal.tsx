@@ -393,11 +393,12 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                         <strong>{formatBytes(hardware.system_memory.total_bytes)}</strong>
                                     </span>
                                     {hardware.memory_mode !== 'unified' && hardware.gpus.map(gpu => (
-                                        <span key={`${gpu.backend}-${gpu.name}`}>
-                                            {gpu.name}
+                                        <span className="vyact-gpu-memory" key={`${gpu.backend}-${gpu.index}-${gpu.name}`}>
+                                            <small>{t('modelSettings.gpuIndex', {index: gpu.index + 1})} · {gpu.backend}</small>
+                                            <span>{gpu.name}</span>
                                             {gpu.total_bytes
                                                 ? <>· {t('modelSelector.vram')} <strong>{formatBytes(gpu.total_bytes)}</strong></>
-                                                : <strong>{gpu.backend}</strong>
+                                                : <em>{t('modelSelector.sharedOrUnknownMemory')}</em>
                                             }
                                         </span>
                                     ))}

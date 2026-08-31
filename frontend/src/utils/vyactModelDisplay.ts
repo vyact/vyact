@@ -92,8 +92,10 @@ export type ModelMemoryTone = 'comfortable' | 'tight' | 'over';
 
 const getTotalModelMemoryCapacity = (hardware: VyactHardwareInfo) => {
     if (hardware.memory_mode !== 'dedicated') return hardware.system_memory.total_bytes;
-    const dedicatedVram = hardware.gpus
-        .filter(gpu => !gpu.shared_memory)
+    const dedicatedGpus = hardware.gpus.filter(gpu => !gpu.shared_memory);
+    const runtimeBackend = dedicatedGpus[0]?.backend;
+    const dedicatedVram = dedicatedGpus
+        .filter(gpu => gpu.backend === runtimeBackend)
         .reduce((total, gpu) => total + gpu.total_bytes, 0);
     return hardware.system_memory.total_bytes + dedicatedVram;
 };

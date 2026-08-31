@@ -116,6 +116,8 @@ async def load_configured_vyact_model(config: dict | None = None) -> tuple[str, 
     vyact_config.update({key: profile.get(key) for key in (
         "context_size", "max_output_tokens", "temperature", "top_k", "top_p", "cache_quantization",
         "mtp_enabled", "kv_cache_precision", "performance_mode", "cpu_threads", "seed", "history_token_budget",
+        "gpu_split_percentages",
+        "gpu_manual_split_enabled",
     )})
     apply_runtime_settings({
         **common_settings,
