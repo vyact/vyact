@@ -4,11 +4,15 @@ routers/chat_helpers.py – chat.py의 query/query_stream에서 공통으로 쓰
 query/query_stream 안에서 "어떤 흐름으로 동작하는지" 한눈에 보이도록
 세부 구현을 여기로 분리한다.
 """
+import asyncio
 import re
 from datetime import datetime, timezone
 
+from config.models import LLM_NUM_CTX
 from services.db import DOCUMENT_ORIGINALS_INDEX, DOC_CHUNKS_INDEX, WEB_DOCUMENTS_INDEX, WEB_DOC_CHUNKS_INDEX
-from services.content_budget import allocate_text_content_limits
+from services.content_budget import allocate_content_limits
+from services.llm.config import get_provider_config
+from services.llm.token_counter import decode_provider_tokens, tokenize_text_for_provider
 from services.indexer import get_es as get_es_client
 from routers.deps import load_config_async
 from agent import get_prompt_by_id
@@ -94,25 +98,31 @@ def resolve_selected_articles(
 
 # ── 저장 문서 원문 컨텍스트 ─────────────────────────────────────────────
 
-SAVED_DOCUMENT_CONTEXT_MAX_CHARS = 30_000
-DIRECT_DOCUMENT_TOTAL_MAX_CHARS = 30_000
+DIRECT_DOCUMENT_CONTEXT_RATIO = 0.5
 
 
-def limit_direct_document_contexts(docs: list[dict]) -> list[dict]:
-    """명시적으로 첨부한 문서 원문이 컨텍스트를 무한히 점유하지 않게 제한한다."""
+async def limit_direct_document_contexts(docs: list[dict]) -> list[dict]:
+    """Bound direct attachments to a share of the selected model's token window."""
     document_indexes = [index for index, doc in enumerate(docs) if doc.get("direct_document")]
     if not document_indexes:
         return docs
 
-    content_limits = allocate_text_content_limits(
-        [str(docs[index].get("content", "")) for index in document_indexes],
-        DIRECT_DOCUMENT_TOTAL_MAX_CHARS,
-    )
+    provider_config = await get_provider_config()
+    context_size = max(int(provider_config.get("context_size") or LLM_NUM_CTX), 1)
+    token_budget = max(int(context_size * DIRECT_DOCUMENT_CONTEXT_RATIO), 1)
+    contents = [str(docs[index].get("content", "")) for index in document_indexes]
+    tokenized = await asyncio.gather(*(
+        tokenize_text_for_provider(content, provider_config) for content in contents
+    ))
+    content_limits = allocate_content_limits([len(tokens) for tokens, _ in tokenized], token_budget)
 
     limited = list(docs)
-    for index, content_limit in zip(document_indexes, content_limits):
+    for index, content_limit, (tokens, tokenizer) in zip(document_indexes, content_limits, tokenized):
         document = dict(limited[index])
-        document["content"] = str(document.get("content", ""))[:content_limit]
+        if len(tokens) > content_limit:
+            document["content"] = await decode_provider_tokens(
+                tokens[:content_limit], tokenizer, provider_config,
+            )
         limited[index] = document
     return limited
 
@@ -121,7 +131,8 @@ async def search_file_id_chunks(question: str, articles: list) -> tuple[list[dic
     """articles를 direct_articles / 저장 문서 참조로 분류한다.
 
     저장된 문서를 사용자가 명시적으로 채팅에 첨부한 경우에는, 새 파일 첨부와
-    동일하게 원문(최대 30,000자)을 이번 질문의 직접 컨텍스트로 제공한다.
+    동일하게 원문을 이번 질문의 직접 컨텍스트로 제공한다. 실제 주입 시 선택 모델의
+    컨텍스트 윈도우에 비례한 토큰 예산이 적용된다.
     영구 인덱스의 청크를 순서대로 합칠 뿐 대화 전용 청크를 다시 저장하지 않는다.
 
     Returns:
@@ -142,6 +153,7 @@ async def search_file_id_chunks(question: str, articles: list) -> tuple[list[dic
             "title": a.get("title", ""), "content": a.get("content", ""),
             "source": a.get("source", ""), "url": a.get("url", ""),
             "score": 1.0, "indexed_at": a.get("indexed_at", ""),
+            "direct_document": True,
         }
         for a in direct_articles
     ]
@@ -184,7 +196,7 @@ async def search_file_id_chunks(question: str, articles: list) -> tuple[list[dic
                     if content:
                         saved_document_docs.append({
                             "title": source.get("title", article.get("title", "")),
-                            "content": content[:SAVED_DOCUMENT_CONTEXT_MAX_CHARS], "url": source.get("url", article.get("url", "")),
+                            "content": content, "url": source.get("url", article.get("url", "")),
                         "source": "web", "score": 1.0, "indexed_at": source.get("updated_at", ""),
                             "file_id": document_id, "source_type": "web", "direct_document": True,
                         })
@@ -202,7 +214,7 @@ async def search_file_id_chunks(question: str, articles: list) -> tuple[list[dic
                 if content:
                     first = chunks[0]["_source"]
                     saved_document_docs.append({
-                        "title": article.get("title", ""), "content": content[:SAVED_DOCUMENT_CONTEXT_MAX_CHARS],
+                        "title": article.get("title", ""), "content": content,
                         "url": first.get("url", article.get("url", "")), "source": first.get("source", article.get("source", "")),
                         "score": 1.0, "indexed_at": first.get("indexed_at", article.get("indexed_at", "")),
                         "file_id": document_id, "source_type": source_type, "direct_document": True,

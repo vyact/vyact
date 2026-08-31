@@ -62,6 +62,44 @@ async def count_local_message_tokens(
         return count_cloud_message_tokens(sanitized_messages) + media_token_reserve
 
 
+async def tokenize_text_for_provider(text: str, provider_config: dict) -> tuple[list[int], object]:
+    """Tokenize plain text with the selected model, or Vyact's default tokenizer."""
+    try:
+        if provider_config.get("is_local") and provider_config.get("runtime") == "mlx":
+            model_path = provider_config.get("model_path")
+            if not model_path:
+                raise ValueError("MLX model path is unavailable")
+            tokenizer = await asyncio.to_thread(_load_mlx_tokenizer, model_path)
+            tokens = await asyncio.to_thread(tokenizer.encode, text)
+            return list(tokens), tokenizer
+        if provider_config.get("is_local"):
+            return await _tokenize_llama_text(text, provider_config), "llama"
+    except (ImportError, OSError, RuntimeError, TypeError, ValueError, httpx.HTTPError, KeyError):
+        pass
+    encoding = _encoding_for_model(str(provider_config.get("model") or ""))
+    return list(encoding.encode(text)), encoding
+
+
+async def truncate_text_to_tokens(text: str, token_limit: int, provider_config: dict) -> tuple[str, int]:
+    """Return a prefix bounded by token_limit using the selected model tokenizer."""
+    tokens, tokenizer = await tokenize_text_for_provider(text, provider_config)
+    limit = max(int(token_limit), 0)
+    if len(tokens) <= limit:
+        return text, len(tokens)
+    selected_tokens = tokens[:limit]
+    if tokenizer == "llama":
+        return await _detokenize_llama_text(selected_tokens, provider_config), limit
+    decoded = await asyncio.to_thread(tokenizer.decode, selected_tokens)
+    return str(decoded), limit
+
+
+async def decode_provider_tokens(tokens: list[int], tokenizer: object, provider_config: dict) -> str:
+    """Decode tokens returned by tokenize_text_for_provider without tokenizing twice."""
+    if tokenizer == "llama":
+        return await _detokenize_llama_text(tokens, provider_config)
+    return str(await asyncio.to_thread(tokenizer.decode, tokens))
+
+
 @lru_cache(maxsize=1)
 def _cloud_encoding():
     import tiktoken
@@ -70,6 +108,16 @@ def _cloud_encoding():
     tokenizer_cache.mkdir(parents=True, exist_ok=True)
     os.environ.setdefault("TIKTOKEN_CACHE_DIR", str(tokenizer_cache))
     return tiktoken.get_encoding("o200k_base")
+
+
+@lru_cache(maxsize=16)
+def _encoding_for_model(model: str):
+    """Use a known model encoding and otherwise fall back to Vyact's default."""
+    try:
+        import tiktoken
+        return tiktoken.encoding_for_model(model)
+    except (ImportError, KeyError):
+        return _cloud_encoding()
 
 
 def count_cloud_message_tokens(messages: list[dict]) -> int:
@@ -89,15 +137,41 @@ def count_cloud_message_tokens(messages: list[dict]) -> int:
         return estimate_message_tokens(messages, 2.0)
 
 
-async def _count_llama_tokens(
-        messages: list[dict], provider_config: dict, tools: list[dict] | None,
-) -> int:
-    sanitized_messages, media_token_reserve = _messages_without_media_payloads(messages)
+def _llama_native_base_url(provider_config: dict) -> tuple[str, str]:
     base_url = str(provider_config.get("base_url") or "").rstrip("/")
     native_base_url = base_url[:-3] if base_url.endswith("/v1") else base_url
     model = str(provider_config.get("model") or "")
     if provider_config.get("selection_type") == "vyact":
         native_base_url = f"{native_base_url}/upstream/{quote(model, safe='')}"
+    return native_base_url, model
+
+
+async def _tokenize_llama_text(text: str, provider_config: dict) -> list[int]:
+    native_base_url, model = _llama_native_base_url(provider_config)
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        response = await client.post(
+            f"{native_base_url}/tokenize",
+            json={"model": model, "content": text, "add_special": False},
+        )
+        response.raise_for_status()
+    return list(response.json()["tokens"])
+
+
+async def _detokenize_llama_text(tokens: list[int], provider_config: dict) -> str:
+    native_base_url, model = _llama_native_base_url(provider_config)
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        response = await client.post(
+            f"{native_base_url}/detokenize", json={"model": model, "tokens": tokens},
+        )
+        response.raise_for_status()
+    return str(response.json()["content"])
+
+
+async def _count_llama_tokens(
+        messages: list[dict], provider_config: dict, tools: list[dict] | None,
+) -> int:
+    sanitized_messages, media_token_reserve = _messages_without_media_payloads(messages)
+    native_base_url, model = _llama_native_base_url(provider_config)
     template_body: dict = {"model": model, "messages": sanitized_messages}
     if tools:
         template_body["tools"] = tools

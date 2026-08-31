@@ -1,6 +1,8 @@
+import pytest
+
 from routers.chat_helpers import (
     build_injected_context,
-    DIRECT_DOCUMENT_TOTAL_MAX_CHARS,
+    DIRECT_DOCUMENT_CONTEXT_RATIO,
     build_assistant_message,
     limit_direct_document_contexts,
     unwrap_pasted_text,
@@ -81,36 +83,62 @@ def test_build_assistant_message_persists_error_state():
     assert message["errorCode"] == "model_no_response"
 
 
-def test_direct_document_limit_is_shared_across_all_direct_documents():
+async def _character_tokenizer(text, _provider_config):
+    return list(range(len(text))), object()
+
+
+async def _character_decoder(tokens, _tokenizer, _provider_config):
+    return "x" * len(tokens)
+
+
+def _mock_document_tokenizer(monkeypatch, context_size=60_000):
+    async def provider_config():
+        return {"context_size": context_size}
+
+    monkeypatch.setattr("routers.chat_helpers.get_provider_config", provider_config)
+    monkeypatch.setattr("routers.chat_helpers.tokenize_text_for_provider", _character_tokenizer)
+    monkeypatch.setattr("routers.chat_helpers.decode_provider_tokens", _character_decoder)
+
+
+@pytest.mark.asyncio
+async def test_direct_document_limit_is_shared_across_all_direct_documents(monkeypatch):
+    _mock_document_tokenizer(monkeypatch)
+    total_budget = int(60_000 * DIRECT_DOCUMENT_CONTEXT_RATIO)
     documents = [
-        {"content": "a" * DIRECT_DOCUMENT_TOTAL_MAX_CHARS, "direct_document": True},
-        {"content": "b" * DIRECT_DOCUMENT_TOTAL_MAX_CHARS, "direct_document": True},
+        {"content": "a" * total_budget, "direct_document": True},
+        {"content": "b" * total_budget, "direct_document": True},
     ]
 
-    limited = limit_direct_document_contexts(documents)
+    limited = await limit_direct_document_contexts(documents)
 
-    assert sum(len(document["content"]) for document in limited) == DIRECT_DOCUMENT_TOTAL_MAX_CHARS
+    assert sum(len(document["content"]) for document in limited) == total_budget
 
 
-def test_direct_document_limit_redistributes_unused_short_document_budget():
+@pytest.mark.asyncio
+async def test_direct_document_limit_redistributes_unused_short_document_budget(monkeypatch):
+    _mock_document_tokenizer(monkeypatch)
+    total_budget = int(60_000 * DIRECT_DOCUMENT_CONTEXT_RATIO)
     documents = [
         {"content": "a" * 30, "direct_document": True},
-        {"content": "b" * DIRECT_DOCUMENT_TOTAL_MAX_CHARS, "direct_document": True},
+        {"content": "b" * total_budget, "direct_document": True},
     ]
 
-    limited = limit_direct_document_contexts(documents)
+    limited = await limit_direct_document_contexts(documents)
 
     assert len(limited[0]["content"]) == 30
-    assert len(limited[1]["content"]) == DIRECT_DOCUMENT_TOTAL_MAX_CHARS - 30
+    assert len(limited[1]["content"]) == total_budget - 30
 
 
-def test_direct_document_limit_redistributes_multiple_short_documents():
+@pytest.mark.asyncio
+async def test_direct_document_limit_redistributes_multiple_short_documents(monkeypatch):
+    _mock_document_tokenizer(monkeypatch)
+    total_budget = int(60_000 * DIRECT_DOCUMENT_CONTEXT_RATIO)
     documents = [
         {"content": "a" * 30, "direct_document": True},
         {"content": "b" * 10_000, "direct_document": True},
-        {"content": "c" * DIRECT_DOCUMENT_TOTAL_MAX_CHARS, "direct_document": True},
+        {"content": "c" * total_budget, "direct_document": True},
     ]
 
-    limited = limit_direct_document_contexts(documents)
+    limited = await limit_direct_document_contexts(documents)
 
     assert [len(document["content"]) for document in limited] == [30, 10_000, 19_970]

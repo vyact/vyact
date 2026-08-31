@@ -25,7 +25,7 @@ type Mode = 'view' | 'edit' | 'analyze';
 
 const RememberModal: React.FC<RememberModalProps> = ({onClose, onDone }) => {
     const {t, i18n} = useTranslation('main');
-    const maxLengthOptions = Array.from({length: 10}, (_, index) => (index + 1) * 100).map(value => ({
+    const maxLengthOptions = [100, 200, 300, 400, 500, 1000].map(value => ({
         value: String(value),
         label: String(value),
     }));

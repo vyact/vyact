@@ -861,7 +861,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
 
     const profilePercent = profileState.total > 0 ? Math.round((profileState.current / profileState.total) * 100) : 0;
 
-    const PROFILE_MAX_LENGTH_OPTIONS = Array.from({length: 10}, (_, index) => (index + 1) * 100).map(value => ({
+    const PROFILE_MAX_LENGTH_OPTIONS = [100, 200, 300, 400, 500, 1000].map(value => ({
         value: String(value),
         label: value === 200
             ? `${value} (${t('profile.default')})`

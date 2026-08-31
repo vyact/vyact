@@ -577,7 +577,7 @@ async def query(req: QueryRequest):
         if external_instruction:
             response_system_prompt = f"{response_system_prompt}\n\n{external_instruction}"
         direct_docs, file_chunks = await search_file_id_chunks(req.question, articles)
-        context_docs = limit_direct_document_contexts(file_context_docs + direct_docs + file_chunks + external_docs)
+        context_docs = await limit_direct_document_contexts(file_context_docs + direct_docs + file_chunks + external_docs)
         raw_answer = await query_llm(req.question, context_docs, response_system_prompt, media_attachments,
                                      req.messages,
                                      format_instruction_override="" if req.voice_mode else None,
@@ -617,12 +617,12 @@ async def query(req: QueryRequest):
             if external_instruction:
                 response_system_prompt = f"{response_system_prompt}\n\n{external_instruction}"
             rag_result = await rag_query(req.question, response_system_prompt, media_attachments, req.messages,
-                                         extra_context=limit_direct_document_contexts(external_docs),
+                                         extra_context=await limit_direct_document_contexts(external_docs),
                                          skip_rag=external_selected and not knowledge_collection_ids,
                                          reasoning=req.reasoning, conv_id=conv_id, conversation_summary=conversation_summary,
                                          call_reason="chat:url_context", knowledge_collection_ids=knowledge_collection_ids,
                                          inject_user_profile=inject_user_profile)
-            combined_docs = limit_direct_document_contexts(file_context_docs + url_docs + rag_result.get("sources", []))
+            combined_docs = await limit_direct_document_contexts(file_context_docs + url_docs + rag_result.get("sources", []))
             raw_answer = await query_llm(
                 req.question, combined_docs, response_system_prompt,
                 media_attachments, req.messages,
@@ -642,7 +642,7 @@ async def query(req: QueryRequest):
             if external_instruction:
                 _summary_system_prompt = f"{_summary_system_prompt}\n\n{external_instruction}"
             result = await rag_query(req.question, _summary_system_prompt, media_attachments, req.messages,
-                                     extra_context=limit_direct_document_contexts(file_context_docs + external_docs),
+                                     extra_context=await limit_direct_document_contexts(file_context_docs + external_docs),
                                      skip_rag=_has_file_att or (external_selected and not knowledge_collection_ids),
                                      reasoning=req.reasoning, conv_id=conv_id, conversation_summary=conversation_summary,
                                      call_reason="chat:general", knowledge_collection_ids=knowledge_collection_ids,
@@ -924,7 +924,7 @@ async def query_stream(req: QueryRequest):
                 # ══ 경로 (A): 기사/문서 첨부 ══
                 direct_docs, file_chunks = await search_file_id_chunks(clean_question, articles)
                 context_docs = file_context_docs + direct_docs + file_chunks + external_docs
-                docs_for_llm = limit_direct_document_contexts(context_docs)
+                docs_for_llm = await limit_direct_document_contexts(context_docs)
                 selected_external_instruction = external_instruction
                 can_stream = True
 
@@ -950,14 +950,14 @@ async def query_stream(req: QueryRequest):
                     if external_instruction:
                         url_system_prompt = f"{url_system_prompt}\n\n{external_instruction}"
                     rag_result = await rag_query(clean_question, url_system_prompt, media_attachments, req.messages,
-                                                 extra_context=limit_direct_document_contexts(external_docs),
+                                                 extra_context=await limit_direct_document_contexts(external_docs),
                                                  skip_rag=external_selected and not knowledge_collection_ids,
                                                  reasoning=req.reasoning, conv_id=conv_id, conversation_summary=conversation_summary,
                                                  call_reason="chat:url_context_stream",
                                                  knowledge_collection_ids=knowledge_collection_ids,
                                                  inject_user_profile=inject_user_profile)
                     context_docs = file_context_docs + url_docs + rag_result.get("sources", [])
-                    docs_for_llm = limit_direct_document_contexts(context_docs)
+                    docs_for_llm = await limit_direct_document_contexts(context_docs)
                     selected_external_instruction = external_instruction
                     can_stream = True
 
@@ -1025,7 +1025,7 @@ async def query_stream(req: QueryRequest):
                 )
                 async for ev in rag_query_stream(
                         clean_question, _summary_system_prompt, media_attachments, req.messages,
-                        extra_context=limit_direct_document_contexts(file_context_docs + external_docs),
+                        extra_context=await limit_direct_document_contexts(file_context_docs + external_docs),
                         skip_rag=req.minimal_prompt or has_file_attachment or (external_selected and not knowledge_collection_ids),
                         reasoning=req.reasoning,
                         conv_id=conv_id,
