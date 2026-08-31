@@ -27,7 +27,7 @@ interface CustomSelectProps {
     dropdownClassName?: string;
     // 커스텀 렌더러
     renderTrigger?: (selectedLabel: string, open: boolean) => React.ReactNode;
-    renderOption?: (opt: SelectOption, isSelected: boolean) => React.ReactNode;
+    renderOption?: (opt: SelectOption, isSelected: boolean, closeDropdown: () => void) => React.ReactNode;
     searchAction?: React.ReactNode;
     clearable?: boolean;
     onClear?: () => void;
@@ -157,6 +157,10 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
             setSearch('');
         }
     };
+    const closeDropdown = () => {
+        setOpen(false);
+        setSearch('');
+    };
 
     const dropdown = open ? (
         <div
@@ -208,7 +212,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                             }}
                         >
                             {renderOption ? (
-                                renderOption(opt, isSelected(opt.value))
+                                renderOption(opt, isSelected(opt.value), closeDropdown)
                             ) : (
                                 <>
                                     <span className="custom-select-item-copy">

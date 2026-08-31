@@ -224,6 +224,7 @@ export interface VyactModelProfile {
     seed?: number | null;
     gpu_split_percentages?: number[];
     gpu_manual_split_enabled?: boolean;
+    estimated_memory_bytes?: number;
     capabilities?: {
         performance_modes: Array<'auto' | 'memory' | 'performance'>;
         cpu_threads: boolean;

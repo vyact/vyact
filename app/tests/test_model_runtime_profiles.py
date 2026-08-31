@@ -83,7 +83,7 @@ def test_gpu_split_is_recommended_again_when_visible_gpu_count_changes():
         "gpu_manual_split_enabled": True,
     }, hardware)
 
-    assert profile["gpu_split_percentages"] == [66.7, 33.3]
+    assert profile["gpu_split_percentages"] == [66.67, 33.33]
     assert profile["gpu_manual_split_enabled"] is False
 
 
@@ -98,7 +98,7 @@ def test_legacy_gpu_split_stays_enabled_after_safe_hardware_migration():
         "gpu_manual_split_enabled": True,
     }, hardware)
 
-    assert profile["gpu_split_percentages"] == [66.7, 33.3]
+    assert profile["gpu_split_percentages"] == [66.67, 33.33]
     assert profile["gpu_manual_split_enabled"] is True
 
 

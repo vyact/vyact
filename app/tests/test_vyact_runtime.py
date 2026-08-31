@@ -215,10 +215,10 @@ class VyactRuntimeTests(unittest.TestCase):
                  patch("services.vyact_runtime.VYACT_MODELS_DIR", base / "models"), \
                  patch("services.vyact_runtime.VYACT_SWAP_CONFIG", config), \
                  patch("services.vyact_runtime.model_has_integrated_mtp", return_value=False):
-                write_single_model_config(model, 8192, gpu_split_percentages=[66.7, 33.3])
+                write_single_model_config(model, 8192, gpu_split_percentages=[66.666, 33.334])
 
             contents = config.read_text(encoding="utf-8")
-            self.assertIn("--split-mode layer --tensor-split 66.7,33.3", contents)
+            self.assertIn("--split-mode layer --tensor-split 66.67,33.33", contents)
             self.assertIn("--fit off", contents)
             self.assertNotIn("--fit on", contents)
 
@@ -239,9 +239,9 @@ class VyactRuntimeTests(unittest.TestCase):
             self.assertEqual(start_configured_runtime(config), "vyact-model")
 
         self.assertNotIn("gpu_memory_allocations", config)
-        self.assertEqual(config["gpu_split_percentages"], [66.7, 33.3])
+        self.assertEqual(config["gpu_split_percentages"], [66.67, 33.33])
         self.assertTrue(config["gpu_manual_split_enabled"])
-        self.assertEqual(start_model.call_args.args[8], [66.7, 33.3])
+        self.assertEqual(start_model.call_args.args[8], [66.67, 33.33])
         self.assertTrue(start_model.call_args.args[9])
 
     def test_single_model_config_keeps_automatic_fit_without_manual_split(self):

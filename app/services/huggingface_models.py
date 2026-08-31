@@ -389,7 +389,9 @@ def _is_bundled_dflash2_mlx(item: dict) -> bool:
     return has_target and has_drafter
 
 
-def _mlx_metadata_from_config(config: dict, file_size: int, context_size: int) -> dict:
+def calculate_mlx_metadata_from_config(
+    config: dict, file_size: int, context_size: int, kv_cache_precision: str | None = None,
+) -> dict:
     text_config = config.get("text_config") if isinstance(config.get("text_config"), dict) else {}
     model_config = {**config, **text_config}
 
@@ -407,10 +409,13 @@ def _mlx_metadata_from_config(config: dict, file_size: int, context_size: int) -
     head_dimension = number("head_dim") or (hidden_size // head_count if head_count else 0)
     model_context = number("max_position_embeddings", "model_max_length", "max_seq_len", "max_sequence_length")
     effective_context = min(context_size, model_context or context_size)
-    kv_bytes_per_value = (
-        _Q8_BYTES_PER_VALUE
-        if context_size >= _KV_CACHE_QUANTIZATION_MIN_CONTEXT
-        else _F16_BYTES_PER_VALUE
+    kv_bytes_per_value = {
+        "q4": 0.5625,
+        "q8": _Q8_BYTES_PER_VALUE,
+        "none": _F16_BYTES_PER_VALUE,
+    }.get(
+        kv_cache_precision,
+        _Q8_BYTES_PER_VALUE if context_size >= _KV_CACHE_QUANTIZATION_MIN_CONTEXT else _F16_BYTES_PER_VALUE,
     )
     layer_types = model_config.get("layer_types")
     sliding_window = number("sliding_window")
@@ -475,7 +480,7 @@ def recommend_downloaded_mlx_context(model_path: Path, total_memory_bytes: int, 
     )
     memory_budget = int(total_memory_bytes * _RECOMMENDED_MEMORY_UTILIZATION)
     for context_size in _CONTEXT_SIZE_CANDIDATES:
-        metadata = _mlx_metadata_from_config(config, file_size, context_size)
+        metadata = calculate_mlx_metadata_from_config(config, file_size, context_size)
         model_limit = int(metadata.get("context_length") or context_size)
         if context_size <= model_limit and int(metadata["estimated_memory_bytes"]) <= memory_budget:
             return context_size
@@ -499,7 +504,7 @@ async def inspect_mlx_model_metadata(
         config = response.json()
     if not isinstance(config, dict):
         raise ValueError("Invalid MLX config.json")
-    return _mlx_metadata_from_config(config, file_size, context_size)
+    return calculate_mlx_metadata_from_config(config, file_size, context_size)
 
 
 def _model_from_hub_item(item: dict) -> dict | None:

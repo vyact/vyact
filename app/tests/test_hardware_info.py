@@ -34,7 +34,7 @@ class HardwareInfoTests(unittest.TestCase):
 
         percentages = recommend_gpu_split_percentages(hardware)
 
-        self.assertEqual(percentages, [66.7, 33.3])
+        self.assertEqual(percentages, [66.67, 33.33])
 
     def test_does_not_mix_gpu_backends_in_one_runtime_split(self):
         hardware = {"gpus": [
@@ -51,5 +51,6 @@ class HardwareInfoTests(unittest.TestCase):
         ]}
 
         self.assertEqual(validate_gpu_split_percentages([66.7, 33.3], hardware), [66.7, 33.3])
+        self.assertEqual(validate_gpu_split_percentages([66.666, 33.334], hardware), [66.67, 33.33])
         self.assertEqual(validate_gpu_split_percentages([70, 20], hardware), [])
         self.assertEqual(validate_gpu_split_percentages([100, 0], hardware), [100.0, 0.0])

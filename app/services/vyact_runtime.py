@@ -21,7 +21,7 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import quote
 
 from config import INSTALL_DIR, get_log_file
-from services.hardware_info import get_local_hardware_info, validate_gpu_split_percentages
+from services.hardware_info import GPU_SPLIT_DECIMAL_PLACES, get_local_hardware_info, validate_gpu_split_percentages
 from services.local_model_errors import LocalModelNotDownloadedError
 from services.model_runtime_profiles import normalize_gpu_split_for_hardware
 from services.multimodal_capabilities import get_projector_modalities
@@ -734,7 +734,10 @@ def write_single_model_config(
         "--parallel", "1",
         "--flash-attn", "auto", "--cache-prompt",
     ])
-    gpu_split_percentages = [float(value) for value in (gpu_split_percentages or [])]
+    gpu_split_percentages = [
+        round(float(value), GPU_SPLIT_DECIMAL_PLACES)
+        for value in (gpu_split_percentages or [])
+    ]
     if len(gpu_split_percentages) >= 2 and any(value > 0 for value in gpu_split_percentages):
         tensor_split = ",".join(f"{value:g}" for value in gpu_split_percentages)
         command += f" --split-mode layer --tensor-split {tensor_split} --fit off"

@@ -30,6 +30,7 @@ from services.mcp_config import ensure_mcp_config
 from services.runtime_settings import DEFAULT_RUNTIME_SETTINGS, apply_runtime_settings
 from services.runtime_startup import apply_startup_runtime_choice, get_startup_runtime_state
 from services.model_runtime_profiles import delete_model_profile, get_model_profile, normalize_gpu_split_for_hardware, normalize_model_profile, recommended_model_profile, save_model_profile
+from services.model_memory import estimate_downloaded_model_memory_bytes
 from services.vyact_model_metadata_cache import get_cached_model_metadata, save_cached_model_metadata
 from services.mlx_runtime import get_downloaded_mlx_model_path, get_mlx_runtime_capabilities, is_apple_silicon
 from services.external_api_server import EXTERNAL_API_PORT, public_model_id
@@ -37,7 +38,6 @@ from services.reasoning_capabilities import get_gguf_reasoning_capabilities, get
 from services.vyact_runtime import VYACT_RUNTIME_URL, get_downloaded_model_path, get_model_modalities
 
 logger = get_logger(__name__)
-
 
 async def _recommended_local_context(model_path: str, runtime: str, fallback: int = 32768) -> int:
     if runtime != "mlx":
@@ -1167,7 +1167,16 @@ async def read_vyact_model_profile(
             }
     except ValueError as error:
         raise HTTPException(404, "local_model_not_downloaded") from error
-    return {**profile, "capabilities": capabilities}
+    return {
+        **profile,
+        "estimated_memory_bytes": estimate_downloaded_model_memory_bytes(
+            downloaded_model_path,
+            runtime,
+            profile["context_size"],
+            profile.get("kv_cache_precision") or "none",
+        ),
+        "capabilities": capabilities,
+    }
 
 
 @router.post("/vyact/models/profile")

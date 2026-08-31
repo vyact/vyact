@@ -81,7 +81,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
     };
 
     // 옵션 아이템: dot/체크 + 모델명 + 추천뱃지 + 설치상태
-    const renderOption = (opt: SelectOption, isSelected: boolean) => {
+    const renderOption = (opt: SelectOption, isSelected: boolean, closeDropdown: () => void) => {
         const isInst = installed.includes(opt.value);
         const showMtp = currentProvider === 'vyact' && mtpSupported.includes(opt.value);
         const showDFlash2 = currentProvider === 'vyact' && dflash2Supported.includes(opt.value);
@@ -122,7 +122,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                     triggerClassName="dd-model-more"
                     menuClassName="dd-model-actions-menu"
                 >
-                    <button type="button" className="dd-model-action" onClick={() => {setModelMenuOpen(null); onModelSettingsOpen(opt.value);}}><Settings size={15}/>{t('modelSettings.title')}</button>
+                    <button type="button" className="dd-model-action" onClick={() => {setModelMenuOpen(null); closeDropdown(); onModelSettingsOpen(opt.value);}}><Settings size={15}/>{t('modelSettings.title')}</button>
                     {!isSelected && <button type="button" className="dd-model-action danger" onClick={() => {setModelMenuOpen(null); setModelToDelete(opt.value);}}><Trash2 size={15}/>{t('modelSelector.delete')}</button>}
                 </ActionMenu>}
             </>

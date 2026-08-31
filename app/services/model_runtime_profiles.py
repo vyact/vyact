@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from elasticsearch import NotFoundError
 
 from services.db import MODEL_RUNTIME_PROFILES_INDEX, get_es
-from services.hardware_info import recommend_gpu_split_percentages, validate_gpu_split_percentages
+from services.hardware_info import GPU_SPLIT_DECIMAL_PLACES, recommend_gpu_split_percentages, validate_gpu_split_percentages
 
 DEFAULT_CONTEXT_SIZE = 32768
 DEFAULT_MAX_OUTPUT_TOKENS = 2048
@@ -47,7 +47,11 @@ def normalize_model_profile(profile: dict) -> dict:
         legacy_total = sum(max(0.0, float(value)) for value in legacy_gpu_split)
         gpu_split = [100.0 * max(0.0, float(value)) / legacy_total for value in legacy_gpu_split] if legacy_total else []
     normalized["gpu_split_percentages"] = [
-        max(0.0, min(float(value), MAX_GPU_SPLIT_PERCENT)) for value in gpu_split[:MAX_GPU_COUNT]
+        round(
+            max(0.0, min(float(value), MAX_GPU_SPLIT_PERCENT)),
+            GPU_SPLIT_DECIMAL_PLACES,
+        )
+        for value in gpu_split[:MAX_GPU_COUNT]
     ]
     normalized.pop("gpu_memory_allocations", None)
     normalized["gpu_manual_split_enabled"] = bool(normalized.get("gpu_manual_split_enabled", False))

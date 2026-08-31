@@ -9,7 +9,7 @@ from services.huggingface_models import (
     _mlx_quantization_label,
     _mlx_quantization_label_from_repository,
     _merge_search_and_detail,
-    _mlx_metadata_from_config,
+    calculate_mlx_metadata_from_config,
     _model_file_size_from_hub_item,
     _model_from_hub_item,
     _safe_relative_file_path,
@@ -75,7 +75,7 @@ class HuggingFaceModelTests(unittest.TestCase):
         self.assertEqual(selected["revision"], "good")
 
     def test_estimates_mlx_metadata_from_text_config_without_weights(self):
-        metadata = _mlx_metadata_from_config({
+        metadata = calculate_mlx_metadata_from_config({
             "architectures": ["QwenForCausalLM"],
             "text_config": {
                 "num_hidden_layers": 32,
@@ -96,7 +96,7 @@ class HuggingFaceModelTests(unittest.TestCase):
         self.assertGreater(metadata["estimated_memory_bytes"], 10_000_000_000)
 
     def test_estimates_hybrid_mlx_kv_cache_per_attention_type(self):
-        metadata = _mlx_metadata_from_config({
+        metadata = calculate_mlx_metadata_from_config({
             "architectures": ["Gemma4ForConditionalGeneration"],
             "text_config": {
                 "num_hidden_layers": 48,

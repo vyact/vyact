@@ -3,7 +3,9 @@
 .model-settings-modal header, .model-settings-modal footer { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--border); }
 .model-settings-modal header h2 { margin: 0; font-size: 18px; }
 .model-settings-model { display: flex; align-items: center; gap: 5px; max-width: 390px; margin-top: 4px; color: var(--muted); font-size: 13px; }
-.model-settings-model > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.model-settings-model-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.model-settings-memory-badge { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 4px; padding: 3px 7px; border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border)); border-radius: 999px; background: color-mix(in srgb, var(--accent) 7%, var(--surface2)); color: var(--text-secondary); font-size: 10px; font-weight: 650; line-height: 1; white-space: nowrap; }
+.model-settings-memory-badge svg { color: var(--accent); }
 .model-settings-modal header .model-settings-model-help { display: grid; place-items: center; flex: 0 0 17px; width: 17px; height: 17px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: help; }
 .model-settings-modal header .model-settings-model-help:hover, .model-settings-modal header .model-settings-model-help:focus-visible { outline: none; background: var(--surface2); color: var(--text-secondary); }
 .model-settings-modal button { padding: 9px 15px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); color: var(--text); cursor: pointer; }
@@ -33,10 +35,12 @@
 .model-settings-modal footer .primary:hover:not(:disabled) { border-color: var(--button-primary-hover); background: var(--button-primary-hover); }
 .model-settings-error { color: var(--danger); font-size: 12px; }
 .model-settings-advanced { margin-top: 2px; border-top: 1px solid var(--border); }
-.model-settings-advanced summary { display: flex; align-items: center; justify-content: space-between; padding: 14px 0 2px; color: var(--text-secondary); font-size: 13px; font-weight: 650; cursor: pointer; list-style: none; }
-.model-settings-advanced summary::-webkit-details-marker { display: none; }
-.model-settings-advanced summary svg { transition: transform .15s; }
-.model-settings-advanced[open] summary svg { transform: rotate(180deg); }
+.model-settings-modal .model-settings-advanced-trigger { display: flex; width: 100%; align-items: center; justify-content: space-between; padding: 14px 0 2px; border: 0; background: transparent; color: var(--text-secondary); font-size: 13px; font-weight: 650; cursor: pointer; }
+.model-settings-advanced-trigger svg { transition: transform .22s ease; }
+.model-settings-advanced.is-open .model-settings-advanced-trigger svg { transform: rotate(180deg); }
+.model-settings-advanced-panel { display: grid; visibility: hidden; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .24s ease, opacity .18s ease, visibility 0s linear .24s; }
+.model-settings-advanced.is-open .model-settings-advanced-panel { visibility: visible; grid-template-rows: 1fr; opacity: 1; transition-delay: 0s; }
+.model-settings-advanced-panel > div { min-height: 0; overflow: hidden; }
 .model-settings-advanced-fields { display: grid; gap: 12px; padding-top: 12px; }
 .model-settings-option { display: flex; align-items: center; justify-content: space-between; gap: 18px; min-height: 46px; font-size: 13px; }
 .model-settings-option > span { min-width: 0; }

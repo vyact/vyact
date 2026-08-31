@@ -11,6 +11,8 @@ import psutil
 COMMAND_TIMEOUT_SECONDS = 4
 MIB = 1024 ** 2
 GPU_SPLIT_TOTAL_PERCENT = 100.0
+GPU_SPLIT_DECIMAL_PLACES = 2
+GPU_SPLIT_SUM_TOLERANCE = 0.005
 
 
 def _run_command(command: list[str]) -> str:
@@ -157,8 +159,13 @@ def recommend_gpu_split_percentages(hardware: dict) -> list[float]:
     total_capacity = sum(capacities)
     if total_capacity <= 0:
         return []
-    percentages = [round(GPU_SPLIT_TOTAL_PERCENT * capacity / total_capacity, 1) for capacity in capacities]
-    percentages[-1] = round(GPU_SPLIT_TOTAL_PERCENT - sum(percentages[:-1]), 1)
+    percentages = [
+        round(GPU_SPLIT_TOTAL_PERCENT * capacity / total_capacity, GPU_SPLIT_DECIMAL_PLACES)
+        for capacity in capacities
+    ]
+    percentages[-1] = round(
+        GPU_SPLIT_TOTAL_PERCENT - sum(percentages[:-1]), GPU_SPLIT_DECIMAL_PLACES,
+    )
     return percentages
 
 
@@ -170,7 +177,10 @@ def validate_gpu_split_percentages(percentages: list[float], hardware: dict) -> 
     values = [float(value) for value in percentages]
     if any(not math.isfinite(value) or value < 0 or value > GPU_SPLIT_TOTAL_PERCENT for value in values):
         return []
-    if not math.isclose(sum(values), GPU_SPLIT_TOTAL_PERCENT, abs_tol=0.05):
+    if not math.isclose(sum(values), GPU_SPLIT_TOTAL_PERCENT, abs_tol=GPU_SPLIT_SUM_TOLERANCE):
         return []
-    values[-1] = round(GPU_SPLIT_TOTAL_PERCENT - sum(values[:-1]), 1)
-    return [round(value, 1) for value in values]
+    values = [round(value, GPU_SPLIT_DECIMAL_PLACES) for value in values]
+    values[-1] = round(
+        GPU_SPLIT_TOTAL_PERCENT - sum(values[:-1]), GPU_SPLIT_DECIMAL_PLACES,
+    )
+    return values
