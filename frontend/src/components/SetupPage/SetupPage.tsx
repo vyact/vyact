@@ -38,6 +38,7 @@ type SelectedHubModelFile = {
     modelPath: string;
     fileSize: number;
     mtpModel?: {repository: string; revision: string; size: number};
+    specprefillModel?: {repository: string; revision: string; size: number};
     dflash2Model?: {repository: string; revision: string; filename?: string; size: number};
     dflash2Bundled?: boolean;
 };
@@ -152,7 +153,8 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
             runtime: model.runtime,
             modelPath,
             fileSize: model.file_sizes?.[filename] || 0,
-            mtpModel: model.mtp_model, dflash2Model: model.dflash2_model, dflash2Bundled: model.dflash2_bundled,
+            mtpModel: model.mtp_model, specprefillModel: model.specprefill_model,
+            dflash2Model: model.dflash2_model, dflash2Bundled: model.dflash2_bundled,
         });
         const fileKey = `${model.id}@${model.revision}/${filename}`;
         if (model.runtime !== 'gguf' || metadataByFile[fileKey] || metadataCacheCheckedRef.current.has(fileKey)) return;
@@ -176,7 +178,10 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
         setAnalyzingFile(fileKey);
         try {
             const fileSize = selectedHubModelFile.fileSize || await api.getVyactModelFileSize(repository, filename, runtime);
-            const companionSize = selectedHubModelFile.dflash2Model?.size || selectedHubModelFile.mtpModel?.size || 0;
+            const companionSize = selectedHubModelFile.dflash2Model?.size
+                || selectedHubModelFile.mtpModel?.size
+                || selectedHubModelFile.specprefillModel?.size
+                || 0;
             const metadata = runtime === 'mlx'
                 ? await api.inspectVyactMlxMetadata(repository, revision, fileSize + companionSize, 32768)
                 : await inspectRemoteGguf(repository, filename, revision, fileSize, 32768, huggingFaceToken.trim());
@@ -357,6 +362,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
                     huggingFaceToken,
                     selectedHubModelFile.fileSize,
                     selectedHubModelFile.mtpModel,
+                    selectedHubModelFile.specprefillModel,
                     selectedHubModelFile.dflash2Model,
                     selectedHubModelFile.dflash2Bundled,
                 );

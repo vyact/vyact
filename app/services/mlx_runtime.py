@@ -1,5 +1,6 @@
 """Managed Apple Silicon MLX-VLM model downloads and OpenAI-compatible runtime."""
 import asyncio
+import hashlib
 import json
 import os
 import platform
@@ -229,10 +230,13 @@ def download_mlx_model(
         )
     if not (destination / "config.json").is_file() or not any(destination.rglob("*.safetensors")):
         raise RuntimeError("The downloaded repository is not a complete MLX model")
+    existing_manifest = _read_model_manifest(destination / MLX_MODEL_MANIFEST)
+    effective_role = "model" if role == "model" or existing_manifest.get("role") == "model" else role
     (destination / MLX_MODEL_MANIFEST).write_text(json.dumps({
+        **existing_manifest,
         "repository": repository,
         "revision": revision,
-        "role": role,
+        "role": effective_role,
     }), encoding="utf-8")
     return destination
 
@@ -266,6 +270,21 @@ def associate_mlx_mtp_model(model_path: Path, mtp_repository: str, mtp_path: Pat
     if mtp_path != _repository_path(mtp_repository):
         raise ValueError("The MTP model path does not match its repository")
     manifest["mtp_repository"] = mtp_repository
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+
+def associate_mlx_specprefill_model(model_path: Path, repository: str, draft_path: Path) -> None:
+    manifest_path = model_path / MLX_MODEL_MANIFEST
+    manifest = _read_model_manifest(manifest_path)
+    if not manifest:
+        raise RuntimeError("The downloaded MLX model manifest is missing")
+    if draft_path != _repository_path(repository):
+        raise ValueError("The SpecPrefill model path does not match its repository")
+    target_identity = _tokenizer_identity(model_path)
+    draft_identity = _tokenizer_identity(draft_path)
+    if target_identity is None or target_identity != draft_identity:
+        raise ValueError("The SpecPrefill draft tokenizer is incompatible with the target model")
+    manifest["specprefill_repository"] = repository
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
 
 
@@ -316,11 +335,12 @@ def _remove_empty_mlx_parent_directories(start: Path) -> None:
 
 
 def delete_downloaded_mlx_model(model_path: str) -> None:
-    """Delete one validated MLX repository and an unreferenced MTP companion."""
+    """Delete one validated MLX repository and its unreferenced companions."""
     destination = get_downloaded_mlx_model_path(model_path)
     manifest = _read_model_manifest(destination / MLX_MODEL_MANIFEST)
     companion_repositories = {
         "mtp": manifest.get("mtp_repository"),
+        "specprefill": manifest.get("specprefill_repository"),
         "dflash2": manifest.get("dflash2_repository"),
     }
     shutil.rmtree(destination)
@@ -518,7 +538,9 @@ def _prepare_omlx_dflash2_path(dflash2_path: Path, serving_model_id: str) -> Pat
     return overlay_path
 
 
-def _get_manifest_companion_path(model_path: Path, key: str, role: str) -> Path | None:
+def _get_manifest_companion_path(
+        model_path: Path, key: str, role: str | tuple[str, ...],
+) -> Path | None:
     repository = _read_model_manifest(model_path / MLX_MODEL_MANIFEST).get(key)
     if not isinstance(repository, str):
         return None
@@ -527,19 +549,38 @@ def _get_manifest_companion_path(model_path: Path, key: str, role: str) -> Path 
     except ValueError:
         return None
     manifest = _read_model_manifest(path / MLX_MODEL_MANIFEST)
-    return path if manifest.get("role") == role and _is_complete_mlx_model(path) else None
+    accepted_roles = (role,) if isinstance(role, str) else role
+    return path if manifest.get("role") in accepted_roles and _is_complete_mlx_model(path) else None
 
 
-def _tokenizer_identity(model_path: Path) -> tuple[str, str] | None:
-    """Return tokenizer identifiers used to reject arbitrary draft models."""
+def _tokenizer_identity(model_path: Path) -> tuple[str, str, str] | None:
+    """Return an exact tokenizer identity used to reject arbitrary draft models."""
     try:
         tokenizer = json.loads((model_path / "tokenizer_config.json").read_text(encoding="utf-8"))
         config = json.loads((model_path / "config.json").read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return None
     tokenizer_class = str(tokenizer.get("tokenizer_class") or "")
-    vocab_size = str(config.get("vocab_size") or tokenizer.get("vocab_size") or "")
-    return (tokenizer_class, vocab_size) if tokenizer_class and vocab_size else None
+    text_config = config.get("text_config") if isinstance(config.get("text_config"), dict) else {}
+    vocab_size = str(text_config.get("vocab_size") or config.get("vocab_size") or tokenizer.get("vocab_size") or "")
+    tokenizer_files = [model_path / "tokenizer.json"]
+    if not tokenizer_files[0].is_file():
+        tokenizer_files = [
+            path for path in (
+                model_path / "tokenizer.model",
+                model_path / "vocab.json",
+                model_path / "merges.txt",
+            ) if path.is_file()
+        ]
+    if not tokenizer_class or not vocab_size or not tokenizer_files:
+        return None
+    digest = hashlib.sha256()
+    for path in tokenizer_files:
+        digest.update(path.name.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(path.read_bytes())
+        digest.update(b"\0")
+    return tokenizer_class, vocab_size, digest.hexdigest()
 
 
 def _model_config(model_path: Path) -> dict:
@@ -561,13 +602,43 @@ def _compatible_external_mtp_path(model_path: Path) -> Path | None:
 
 def _compatible_specprefill_path(model_path: Path) -> Path | None:
     draft_path = _get_manifest_companion_path(
-        model_path, "specprefill_repository", "specprefill",
+        model_path, "specprefill_repository", ("specprefill", "model"),
     )
     if draft_path is None:
         return None
     target_identity = _tokenizer_identity(model_path)
     draft_identity = _tokenizer_identity(draft_path)
     return draft_path if target_identity is not None and target_identity == draft_identity else None
+
+
+def prepare_mlx_specprefill_draft(
+        model_path: Path, token: str | None = None, enable_mtp: bool | None = None,
+) -> bool:
+    """Download and attach one compatible small draft before a regular oMLX load."""
+    if _compatible_specprefill_path(model_path) is not None:
+        return True
+    if enable_mtp is not False and _compatible_external_mtp_path(model_path) is not None:
+        return False
+    manifest = _read_model_manifest(model_path / MLX_MODEL_MANIFEST)
+    repository = manifest.get("repository")
+    if not isinstance(repository, str) or not repository:
+        return False
+    from services.huggingface_models import search_mlx_models
+
+    models = asyncio.run(search_mlx_models(repository.rsplit("/", 1)[-1], token))
+    target = next((model for model in models if model.get("id") == repository), None)
+    draft = target.get("specprefill_model") if isinstance(target, dict) else None
+    if not isinstance(draft, dict):
+        return False
+    draft_repository = str(draft.get("repository") or "")
+    draft_revision = str(draft.get("revision") or "main")
+    if not draft_repository:
+        return False
+    draft_path = download_mlx_model(
+        draft_repository, draft_revision, token, role="specprefill",
+    )
+    associate_mlx_specprefill_model(model_path, draft_repository, draft_path)
+    return _compatible_specprefill_path(model_path) is not None
 
 
 def get_mlx_speculative_mode(model_path: Path, enable_mtp: bool | None = None) -> str:

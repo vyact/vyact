@@ -23,6 +23,7 @@
 
 .mname {
     flex: 1;
+    min-width: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -76,8 +77,10 @@
 
 /* 아이템 레이아웃 */
 .model-select-wrap .custom-select-item {
-    gap: 8px;
-    padding: 10px 12px;
+    display: grid;
+    grid-template-columns: 12px auto minmax(0, 1fr) auto;
+    column-gap: 6px;
+    padding: 10px;
     border-radius:8px;
     background:color-mix(in srgb, var(--surface2) 42%, transparent);
 }
@@ -116,27 +119,33 @@
 
 /* 좌측 선택/dot 아이콘 */
 .dd-left-icon {
-    width: 16px;
+    width: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
 }
 
+.dd-model-badges {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 4px;
+}
+
 /* 모델명 영역 */
 .dd-model-name {
-    flex: 1;
     min-width: 0;
     font-weight: 600;
     font-size: 11px;
     color: var(--text);
-    display: flex;
-    align-items: center;
-    gap: 5px;
     overflow: hidden;
 }
 
 .dd-model-label {
+    display: block;
+    width: 100%;
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

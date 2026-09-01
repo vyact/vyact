@@ -156,6 +156,9 @@ class HuggingFaceDownloadRequest(BaseModel):
     mtp_repository: str | None = Field(default=None, min_length=3, max_length=256)
     mtp_revision: str | None = Field(default=None, min_length=1, max_length=128)
     mtp_size_bytes: int = Field(default=0, ge=0)
+    specprefill_repository: str | None = Field(default=None, min_length=3, max_length=256)
+    specprefill_revision: str | None = Field(default=None, min_length=1, max_length=128)
+    specprefill_size_bytes: int = Field(default=0, ge=0)
     dflash2_repository: str | None = Field(default=None, min_length=3, max_length=256)
     dflash2_revision: str | None = Field(default=None, min_length=1, max_length=128)
     dflash2_filename: str | None = Field(default=None, min_length=6, max_length=1024)
@@ -1000,7 +1003,7 @@ async def download_vyact_model(req: HuggingFaceDownloadRequest):
 
     async def stream():
         if req.runtime == "mlx":
-            from services.mlx_runtime import associate_mlx_bundled_dflash2_model, associate_mlx_dflash2_model, associate_mlx_mtp_model, download_mlx_model, get_mlx_downloaded_bytes
+            from services.mlx_runtime import associate_mlx_bundled_dflash2_model, associate_mlx_dflash2_model, associate_mlx_mtp_model, associate_mlx_specprefill_model, download_mlx_model, get_mlx_downloaded_bytes
 
             config = await load_config_async()
             token = (req.token or "").strip() or config.get("vyact_config", {}).get("huggingface_token")
@@ -1025,6 +1028,17 @@ async def download_vyact_model(req: HuggingFaceDownloadRequest):
                         req.mtp_repository, req.mtp_revision, token, role="mtp",
                     )
                     associate_mlx_mtp_model(model_path, req.mtp_repository, mtp_path)
+                if req.specprefill_repository and req.specprefill_revision:
+                    try:
+                        specprefill_path = download_mlx_model(
+                            req.specprefill_repository, req.specprefill_revision, token,
+                            role="specprefill",
+                        )
+                        associate_mlx_specprefill_model(
+                            model_path, req.specprefill_repository, specprefill_path,
+                        )
+                    except Exception as error:
+                        logger.warning("[vyact] SpecPrefill preparation skipped: %s", error)
                 if req.dflash2_repository and req.dflash2_revision:
                     dflash2_path = download_mlx_model(
                         req.dflash2_repository, req.dflash2_revision, token, role="dflash2",
@@ -1036,9 +1050,14 @@ async def download_vyact_model(req: HuggingFaceDownloadRequest):
                 download_repositories = [req.repository]
                 if not req.dflash2_repository and req.mtp_repository:
                     download_repositories.append(req.mtp_repository)
+                if req.specprefill_repository:
+                    download_repositories.append(req.specprefill_repository)
                 if req.dflash2_repository:
                     download_repositories.append(req.dflash2_repository)
-                total_download_size = main_download_size + req.mtp_size_bytes + req.dflash2_size_bytes
+                total_download_size = (
+                    main_download_size + req.mtp_size_bytes
+                    + req.specprefill_size_bytes + req.dflash2_size_bytes
+                )
                 last_progress = -1
                 while not download_task.done():
                     await asyncio.sleep(0.25)
@@ -1215,9 +1234,18 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
             req.max_output_tokens = safe_profile["max_output_tokens"]
             req.history_token_budget = safe_profile["history_token_budget"]
             if runtime == "mlx":
-                from services.mlx_runtime import get_downloaded_mlx_model_path, start_mlx_model
+                from services.mlx_runtime import get_downloaded_mlx_model_path, prepare_mlx_specprefill_draft, start_mlx_model
 
                 model_path = get_downloaded_mlx_model_path(req.model_path)
+                try:
+                    await asyncio.to_thread(
+                        prepare_mlx_specprefill_draft,
+                        model_path,
+                        config.get("vyact_config", {}).get("huggingface_token"),
+                        req.mtp_enabled,
+                    )
+                except Exception as error:
+                    logger.warning("[omlx] SpecPrefill preparation skipped during activation: %s", error)
                 model_id = await asyncio.to_thread(
                     start_mlx_model, model_path, req.context_size, config.get("debug_logging", False),
                     req.cache_quantization, req.mtp_enabled, req.kv_cache_precision,

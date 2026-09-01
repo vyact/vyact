@@ -27,6 +27,8 @@ _MINIMUM_RUNTIME_BUFFER_BYTES = 512 * 1024 ** 2
 _RECOMMENDED_MEMORY_UTILIZATION = 0.60
 _MINIMUM_PRACTICAL_CONTEXT_SIZE = 8192
 _CONTEXT_SIZE_CANDIDATES = (131072, 65536, 32768, 16384, _MINIMUM_PRACTICAL_CONTEXT_SIZE)
+_MAX_SPECPREFILL_DRAFT_BYTES = 2 * 1024 ** 3
+_MAX_SPECPREFILL_TARGET_SIZE_RATIO = 0.35
 
 
 def _headers(token: str | None) -> dict[str, str]:
@@ -112,9 +114,10 @@ async def search_mlx_models(query: str, token: str | None = None, limit: int = 5
         response.raise_for_status()
         search_items = response.json()
         valid_items = [item for item in search_items if isinstance(item, dict)]
-        target_configs, mtp_candidates = await asyncio.gather(
+        target_configs, mtp_candidates, specprefill_candidates = await asyncio.gather(
             _fetch_mlx_configs(client, valid_items, token),
             _search_mlx_mtp_models(target_query, token),
+            _search_mlx_specprefill_models(target_query, token),
         )
     models = []
     for item in valid_items:
@@ -133,6 +136,13 @@ async def search_mlx_models(query: str, token: str | None = None, limit: int = 5
                 key: mtp_model[key] for key in ("repository", "revision", "size")
             }
             model["mtp_supported_files"] = [MLX_REPOSITORY_FILE]
+        specprefill_model = _select_mlx_specprefill_model(
+            repository, specprefill_candidates, config, model["file_sizes"].get(MLX_REPOSITORY_FILE, 0),
+        )
+        if specprefill_model:
+            model["specprefill_model"] = {
+                key: specprefill_model[key] for key in ("repository", "revision", "size")
+            }
         models.append(model)
     return sorted(models, key=lambda model: model["downloads"], reverse=True)
 
@@ -141,6 +151,31 @@ def _mlx_target_search_query(query: str) -> str:
     """Remove acceleration-only terms so an MTP query still finds target models."""
     terms = [term for term in query.strip().split() if term.lower() not in {"mtp", "external", "mtplx"}]
     return " ".join(terms)
+
+
+def _mlx_mtp_search_query(query: str) -> str:
+    """Build a family-level draft query independent of target packaging and quantization."""
+    terms = re.split(r"[\s/_-]+", query.strip())
+    excluded_terms = {"mlx", "gguf", "mtp", "external", "mtplx"}
+    family_terms = [
+        term for term in terms
+        if term
+        and term.lower() not in excluded_terms
+        and not re.fullmatch(r"(?:\d+(?:\.\d+)?bit|bf16|fp16|fp8|q\d(?:_[a-z0-9]+)*)", term.lower())
+    ]
+    return " ".join(family_terms)
+
+
+def _mlx_specprefill_search_query(query: str) -> str:
+    """Return a family query broad enough to find a smaller MLX draft model."""
+    family_terms = [
+        term for term in re.split(r"[\s/_-]+", query.strip())
+        if term
+        and term.lower() not in {"mlx", "gguf", "mtp", "external", "mtplx"}
+        and not re.fullmatch(r"\d+(?:\.\d+)?b", term.lower())
+        and not re.fullmatch(r"(?:\d+(?:\.\d+)?bit|bf16|fp16|fp8|q\d(?:_[a-z0-9]+)*)", term.lower())
+    ]
+    return " ".join(family_terms)
 
 
 def _is_standalone_or_embedded_mtp_repository(repository: str, config: dict) -> bool:
@@ -243,7 +278,7 @@ def _select_mlx_mtp_model(
 
 
 async def _search_mlx_mtp_models(query: str, token: str | None) -> list[dict]:
-    search_term = f"{query.strip()} MTP".strip()
+    search_term = f"{_mlx_mtp_search_query(query)} MTP".strip()
     params = {
         "search": search_term, "library": "mlx", "limit": 50, "full": "true", "blobs": "true",
         "sort": "downloads", "direction": "-1",
@@ -285,6 +320,71 @@ async def _search_mlx_mtp_models(query: str, token: str | None) -> list[dict]:
             for sibling in item.get("siblings", []) if isinstance(sibling, dict)
         )
     ]
+
+
+def _config_vocab_size(config: dict) -> int:
+    text_config = config.get("text_config") if isinstance(config.get("text_config"), dict) else {}
+    return int(text_config.get("vocab_size") or config.get("vocab_size") or 0)
+
+
+def _select_mlx_specprefill_model(
+        repository: str, candidates: list[dict], target_config: dict, target_size: int,
+) -> dict | None:
+    target_type = model_type(target_config)
+    target_vocab = _config_vocab_size(target_config)
+    if not target_type or target_vocab <= 0:
+        return None
+    matches = [
+        candidate for candidate in candidates
+        if candidate["repository"] != repository
+        and candidate["size"] > 0
+        and candidate["size"] <= _MAX_SPECPREFILL_DRAFT_BYTES
+        and (target_size <= 0 or candidate["size"] < target_size)
+        and (target_size <= 0 or candidate["size"] <= target_size * _MAX_SPECPREFILL_TARGET_SIZE_RATIO)
+        and model_type(candidate.get("config")) == target_type
+        and _config_vocab_size(candidate.get("config", {})) == target_vocab
+    ]
+    return min(matches, key=lambda candidate: candidate["size"]) if matches else None
+
+
+async def _search_mlx_specprefill_models(query: str, token: str | None) -> list[dict]:
+    family_query = _mlx_specprefill_search_query(query)
+    if not family_query:
+        return []
+    params = {
+        "search": f"{family_query} MLX 4bit", "library": "mlx", "limit": 50,
+        "full": "true", "blobs": "true", "sort": "downloads", "direction": "-1",
+    }
+    async with httpx.AsyncClient(timeout=20) as client:
+        response = await client.get(f"{HF_API_URL}/models", params=params, headers=_headers(token))
+        response.raise_for_status()
+        search_items = [item for item in response.json() if isinstance(item, dict)]
+        repository_ids = [
+            str(item.get("id", "")) for item in search_items
+            if _REPO_ID_PATTERN.fullmatch(str(item.get("id", "")))
+        ]
+        detailed_items = await _fetch_model_details(client, repository_ids, token)
+        configs = await _fetch_mlx_configs(client, search_items, token)
+    items = [
+        _merge_search_and_detail(item, detailed_items.get(str(item.get("id", ""))))
+        for item in search_items
+    ]
+    return [{
+        "repository": str(item.get("id")),
+        "revision": str(item.get("sha") or "main"),
+        "size": _model_file_size_from_hub_item(item, MLX_REPOSITORY_FILE, "mlx"),
+        "config": configs.get(str(item.get("id")), {}),
+    } for item in items if (
+        _REPO_ID_PATTERN.fullmatch(str(item.get("id", "")))
+        and not _is_standalone_or_embedded_mtp_repository(
+            str(item.get("id", "")), configs.get(str(item.get("id")), {}),
+        )
+        and "dflash2" not in str(item.get("id", "")).lower()
+        and any(
+            str(sibling.get("rfilename", "")).lower().endswith(".safetensors")
+            for sibling in item.get("siblings", []) if isinstance(sibling, dict)
+        )
+    )]
 
 
 async def _fetch_model_details(

@@ -157,6 +157,7 @@ export interface VyactHubModel {
     dflash2_supported_files: string[];
     quantization?: string;
     mtp_model?: {repository: string; revision: string; size: number};
+    specprefill_model?: {repository: string; revision: string; size: number};
     dflash2_model?: {repository: string; revision: string; filename?: string; size: number};
     dflash2_bundled?: boolean;
 }
@@ -464,6 +465,7 @@ export const api = {
         repository: string, filename: string, onProgress: (message: string, progress?: number) => void,
         revision = 'main', runtime: 'gguf' | 'mlx' = 'gguf', token = '', totalSizeBytes = 0,
         mtpModel?: {repository: string; revision: string; size: number},
+        specprefillModel?: {repository: string; revision: string; size: number},
         dflash2Model?: {repository: string; revision: string; filename?: string; size: number},
         dflash2Bundled = false,
     ): Promise<void> {
@@ -476,6 +478,9 @@ export const api = {
                 mtp_repository: mtpModel?.repository,
                 mtp_revision: mtpModel?.revision,
                 mtp_size_bytes: mtpModel?.size || 0,
+                specprefill_repository: specprefillModel?.repository,
+                specprefill_revision: specprefillModel?.revision,
+                specprefill_size_bytes: specprefillModel?.size || 0,
                 dflash2_repository: dflash2Model?.repository,
                 dflash2_revision: dflash2Model?.revision,
                 dflash2_filename: dflash2Model?.filename,

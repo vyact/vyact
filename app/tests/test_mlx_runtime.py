@@ -223,6 +223,7 @@ class MlxRuntimeTests(unittest.TestCase):
             for path in (model, draft):
                 (path / "config.json").write_text(json.dumps({"vocab_size": 151936}))
                 (path / "tokenizer_config.json").write_text(json.dumps(shared_tokenizer))
+                (path / "tokenizer.json").write_text(json.dumps({"model": {"vocab": {"hello": 0}}}))
                 (path / "model.safetensors").touch()
             (model / MLX_MODEL_MANIFEST).write_text(json.dumps({"specprefill_repository": "owner/draft"}))
             (draft / MLX_MODEL_MANIFEST).write_text(json.dumps({"role": "specprefill"}))
@@ -239,6 +240,29 @@ class MlxRuntimeTests(unittest.TestCase):
             self.assertEqual(settings["specprefill_keep_pct"], 0.2)
             self.assertEqual(settings["specprefill_threshold"], 1024)
             self.assertFalse(settings["mtp_enabled"])
+
+    def test_specprefill_rejects_different_token_id_mapping(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            base = Path(temp_dir)
+            models = base / "models"
+            model = models / "owner" / "target"
+            draft = models / "owner" / "draft"
+            for path, token_id in ((model, 0), (draft, 1)):
+                path.mkdir(parents=True)
+                (path / "config.json").write_text(json.dumps({"vocab_size": 151936}))
+                (path / "tokenizer_config.json").write_text(json.dumps({"tokenizer_class": "Qwen2Tokenizer"}))
+                (path / "tokenizer.json").write_text(json.dumps({"model": {"vocab": {"hello": token_id}}}))
+                (path / "model.safetensors").touch()
+            (model / MLX_MODEL_MANIFEST).write_text(json.dumps({"specprefill_repository": "owner/draft"}))
+            (draft / MLX_MODEL_MANIFEST).write_text(json.dumps({"role": "specprefill"}))
+
+            with patch("services.mlx_runtime.MLX_MODELS_DIR", models), \
+                 patch("services.mlx_runtime.OMLX_BASE_DIR", base / "omlx"), \
+                 patch("services.mlx_runtime._OMLX_CACHE_DIR", base / "cache"), \
+                 patch("services.mlx_runtime.shutil.which", return_value="/opt/homebrew/bin/omlx"):
+                _, _, mode = _build_omlx_server_command(model, 32768)
+
+            self.assertEqual(mode, "none")
 
     def test_associates_mtp_without_listing_drafter_as_selectable_model(self):
         with tempfile.TemporaryDirectory() as temp_dir:

@@ -102,12 +102,16 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                     )}
                 </div>
 
-                {/* 모델명 + 툴팁 + 추천뱃지 */}
-                <div className="dd-model-name">
+                {/* 실행 경로 및 모델 기능 */}
+                <div className="dd-model-badges">
                     {showMtp && <span className="mtp-model-badge">MTP</span>}
                     {showDFlash2 && <span className="mtp-model-badge">DFlash2</span>}
                     {supportsVision && <span className="model-capability-badge" title={t('modelSelector.visionCapability')}>IMG</span>}
                     {supportsAudio && <span className="model-capability-badge" title={t('modelSelector.audioCapability')}>AUDIO</span>}
+                </div>
+
+                {/* 남은 폭 안에서만 표시되는 모델명 */}
+                <div className="dd-model-name">
                     <span className="dd-model-label">
                         {opt.label}
                     </span>

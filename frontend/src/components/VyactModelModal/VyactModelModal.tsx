@@ -32,7 +32,9 @@ interface SelectedModelFile {
     revision: string;
     fileSize: number;
     runtime: 'gguf' | 'mlx';
+    mtpSupported?: boolean;
     mtpModel?: {repository: string; revision: string; size: number};
+    specprefillModel?: {repository: string; revision: string; size: number};
     dflash2Model?: {repository: string; revision: string; filename?: string; size: number};
     dflash2Bundled?: boolean;
 }
@@ -112,7 +114,12 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
         : selectedFile?.filename;
     const selectedModelIsInstalled = Boolean(selectedModelPath && installedModels.includes(selectedModelPath));
     const selectedModelWeightBytes = selectedFile
-        ? selectedFile.fileSize + (selectedFile.dflash2Model?.size || selectedFile.mtpModel?.size || 0)
+            ? selectedFile.fileSize + (
+                selectedFile.dflash2Model?.size
+                || selectedFile.mtpModel?.size
+                || selectedFile.specprefillModel?.size
+                || 0
+            )
         : 0;
     const mlxAvailable = navigator.platform.toUpperCase().includes('MAC')
         || hardware.apple_silicon
@@ -212,6 +219,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                 token.trim(),
                 selectedFile.fileSize,
                 selectedFile.mtpModel,
+                selectedFile.specprefillModel,
                 selectedFile.dflash2Model,
                 selectedFile.dflash2Bundled,
             );
@@ -287,9 +295,16 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     };
 
     const selectModelFile = async (model: VyactHubModel, filename: string, fileSize: number) => {
+        const modelPath = model.runtime === 'mlx' ? `mlx/${model.id}` : `${model.id}/${filename}`;
         const selected = {
             repository: model.id, filename, revision: model.revision, fileSize,
-            runtime: model.runtime, mtpModel: model.mtp_model, dflash2Model: model.dflash2_model, dflash2Bundled: model.dflash2_bundled,
+            runtime: model.runtime,
+            mtpSupported: Boolean(model.mtp_supported_files?.includes(filename)
+                || mtpSupportedModels.includes(modelPath)),
+            mtpModel: model.mtp_model,
+            specprefillModel: model.specprefill_model,
+            dflash2Model: model.dflash2_model,
+            dflash2Bundled: model.dflash2_bundled,
         };
         const fileKey = `${model.id}@${model.revision}/${filename}`;
         setSelectedFile(selected);
@@ -482,8 +497,11 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                         const isInstalled = installedModels.includes(
                                             model.runtime === 'mlx' ? `mlx/${model.id}` : `${model.id}/${filename}`,
                                         );
+                                        const modelPath = model.runtime === 'mlx'
+                                            ? `mlx/${model.id}`
+                                            : `${model.id}/${filename}`;
                                         const supportsMtp = model.mtp_supported_files?.includes(filename)
-                                            || mtpSupportedModels.includes(`${model.id}/${filename}`);
+                                            || mtpSupportedModels.includes(modelPath);
                                         const supportsDFlash2 = model.dflash2_supported_files?.includes(filename);
                                         const quantization = getModelQuantization(model, filename);
                                         const displayName = model.runtime === 'mlx' ? model.id.split('/').pop() || model.id : filename;
@@ -552,7 +570,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                 </footer>
             </section>
         </ModalOverlay>
-        {downloadedSettings && <ModelSettingsModal modelPath={downloadedSettings.modelPath} runtime={downloadedSettings.runtime} repository={downloadedSettings.repository} recommendedContext={downloadedSettings.context} activateOnApply forceActivateOnApply mtpSupported={Boolean(selectedFile?.mtpModel)} dflash2Supported={Boolean(selectedFile?.dflash2Model || selectedFile?.dflash2Bundled)} onClose={() => {setDownloadedSettings(null); void onSelected(); onClose();}} onApplied={async () => {await onSelected(); onClose();}}/>}
+        {downloadedSettings && <ModelSettingsModal modelPath={downloadedSettings.modelPath} runtime={downloadedSettings.runtime} repository={downloadedSettings.repository} recommendedContext={downloadedSettings.context} activateOnApply forceActivateOnApply mtpSupported={Boolean(selectedFile?.mtpSupported)} dflash2Supported={Boolean(selectedFile?.dflash2Model || selectedFile?.dflash2Bundled)} onClose={() => {setDownloadedSettings(null); void onSelected(); onClose();}} onApplied={async () => {await onSelected(); onClose();}}/>}
         {showRuntimeInstallHelp && <ConfirmModal
             title={t('modelDownload.runtimeInstallRequiredTitle')}
             description={t('modelDownload.runtimeInstallRequiredDescription')}

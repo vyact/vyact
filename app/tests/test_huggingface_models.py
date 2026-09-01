@@ -12,6 +12,8 @@ from services.huggingface_models import (
     _is_bundled_dflash2_mlx,
     _mlx_quantization_label,
     _mlx_quantization_label_from_repository,
+    _mlx_mtp_search_query,
+    _mlx_specprefill_search_query,
     _merge_search_and_detail,
     calculate_mlx_metadata_from_config,
     _model_file_size_from_hub_item,
@@ -19,6 +21,7 @@ from services.huggingface_models import (
     _safe_relative_file_path,
     _mlx_target_search_query,
     _select_mlx_mtp_model,
+    _select_mlx_specprefill_model,
     _select_dflash2_model,
     _select_mtp_sidecar,
     _select_vision_projector,
@@ -59,6 +62,13 @@ class HuggingFaceModelTests(unittest.TestCase):
             _mlx_target_search_query("qwen3.5 9b 8bit external MTP"),
             "qwen3.5 9b 8bit",
         )
+
+    def test_normalizes_exact_target_name_to_mtp_family_query(self):
+        self.assertEqual(_mlx_mtp_search_query("Qwen3.5-9B-MLX-8bit"), "Qwen3.5 9B")
+        self.assertEqual(_mlx_mtp_search_query("Qwen3.5 9b 8bit external MTP"), "Qwen3.5 9b")
+
+    def test_normalizes_target_name_to_specprefill_family_query(self):
+        self.assertEqual(_mlx_specprefill_search_query("Qwen3.5-9B-MLX-8bit"), "Qwen3.5")
 
     def test_external_mtp_compatibility_uses_supported_types_and_dimensions(self):
         qwen_target = {
@@ -139,13 +149,31 @@ class HuggingFaceModelTests(unittest.TestCase):
         fake_client = FakeClient()
         with patch("services.huggingface_models.httpx.AsyncClient", return_value=fake_client), \
              patch("services.huggingface_models._fetch_mlx_configs", side_effect=fake_configs), \
-             patch("services.huggingface_models._search_mlx_mtp_models", side_effect=fake_candidates):
+             patch("services.huggingface_models._search_mlx_mtp_models", side_effect=fake_candidates), \
+             patch("services.huggingface_models._search_mlx_specprefill_models", return_value=[]):
             models = asyncio.run(search_mlx_models("qwen3.5 9b 8bit mtp"))
 
         self.assertEqual(fake_client.params["search"], "qwen3.5 9b 8bit")
         self.assertEqual([model["id"] for model in models], [target_item["id"]])
         self.assertEqual(models[0]["mtp_model"]["repository"], candidate["repository"])
         self.assertEqual(models[0]["mtp_supported_files"], [MLX_REPOSITORY_FILE])
+
+    def test_selects_small_compatible_specprefill_model(self):
+        target_config = {"model_type": "qwen3_5", "text_config": {"vocab_size": 248320}}
+        selected = _select_mlx_specprefill_model(
+            "owner/Qwen3.5-9B-MLX-8bit",
+            [
+                {"repository": "owner/Qwen3.5-4B-MLX-4bit", "revision": "large", "size": 4_000,
+                 "config": target_config},
+                {"repository": "owner/Qwen3.5-0.8B-MLX-4bit", "revision": "small", "size": 800,
+                 "config": target_config},
+                {"repository": "owner/Other-0.5B-MLX-4bit", "revision": "wrong", "size": 500,
+                 "config": {"model_type": "other", "vocab_size": 248320}},
+            ],
+            target_config,
+            9_000,
+        )
+        self.assertEqual(selected["revision"], "small")
 
     def test_reads_selected_gguf_size_from_repository_details(self):
         item = {"siblings": [
