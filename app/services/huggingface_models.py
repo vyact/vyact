@@ -581,14 +581,17 @@ def calculate_mlx_metadata_from_config(
     if (
         isinstance(layer_types, list)
         and len(layer_types) == block_count
-        and sliding_window
     ):
         global_kv_head_count = number("num_global_key_value_heads") or kv_head_count
         global_head_dimension = number("global_head_dim") or head_dimension
         kv_cache_bytes = 0
         for layer_type in layer_types:
             normalized_layer_type = str(layer_type).lower()
-            if "sliding" in normalized_layer_type or "local" in normalized_layer_type:
+            if "linear" in normalized_layer_type:
+                # Recurrent linear-attention state does not grow with the
+                # prompt length like a transformer KV cache.
+                continue
+            if ("sliding" in normalized_layer_type or "local" in normalized_layer_type) and sliding_window:
                 cached_tokens = min(effective_context, sliding_window)
                 layer_kv_head_count = kv_head_count
                 layer_head_dimension = head_dimension

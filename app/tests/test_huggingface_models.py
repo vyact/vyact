@@ -282,6 +282,28 @@ class HuggingFaceModelTests(unittest.TestCase):
             sliding_cache_bytes + full_cache_bytes
         )
 
+    def test_excludes_linear_attention_layers_from_mlx_kv_cache(self):
+        metadata = calculate_mlx_metadata_from_config({
+            "architectures": ["Qwen3_5ForConditionalGeneration"],
+            "text_config": {
+                "num_hidden_layers": 32,
+                "num_attention_heads": 16,
+                "num_key_value_heads": 4,
+                "head_dim": 256,
+                "max_position_embeddings": 262144,
+                "layer_types": [
+                    layer_type
+                    for _ in range(8)
+                    for layer_type in (["linear_attention"] * 3 + ["full_attention"])
+                ],
+            },
+        }, file_size=6_000_000_000, context_size=65536, kv_cache_precision="none")
+
+        self.assertEqual(
+            metadata["kv_cache_bytes"],
+            8 * 65536 * 4 * 256 * 2 * 2.0,
+        )
+
     def test_accepts_repository_relative_gguf_path(self):
         self.assertEqual(str(_safe_relative_file_path("Q4/model.gguf")), "Q4/model.gguf")
 

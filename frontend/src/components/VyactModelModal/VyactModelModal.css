@@ -82,7 +82,7 @@
 .vyact-model-metadata strong { overflow: hidden; color: var(--text); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .vyact-model-metadata .vyact-total-memory { background: color-mix(in srgb, var(--accent) 7%, var(--bg)); }
 .vyact-model-metadata .vyact-total-memory strong { color: var(--accent); }
-.vyact-memory-details { flex: 1 0 100%; padding-top: 0; border-top: 1px solid var(--border); padding-block-start: 10px; }
+.vyact-memory-details { flex: 1 0 100%; padding-top: 0; padding-block-start: 10px; }
 @media (max-width: 720px) {
     .vyact-memory-capacity { display: grid; grid-template-columns: 1fr; overflow-x: visible; }
     .vyact-memory-capacity > .vyact-system-memory,
