@@ -26,11 +26,12 @@
 .vyact-model-results { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: max-content; align-content: start; align-items: start; gap: 10px; min-height: 160px; padding-right: 4px; overflow-y: auto; overscroll-behavior: contain; }
 .vyact-model-results > :not(.vyact-model-card.is-compact) { grid-column: 1 / -1; }
 .vyact-memory-summary { position: sticky; top: 0; z-index: 1; display: grid; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 0 0 10px 10px; background: var(--modal-bg); color: var(--muted); font-size: var(--modal-sub); }
-.vyact-memory-capacity { display: grid; grid-template-columns: minmax(130px, .72fr) repeat(2, minmax(0, 1.25fr)); gap: 8px; min-width: 0; }
+.vyact-memory-capacity { display: flex; flex-wrap: nowrap; gap: 8px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.vyact-memory-capacity::-webkit-scrollbar { display: none; }
 .vyact-memory-capacity > span { box-sizing: border-box; min-width: 0; min-height: 66px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--border) 72%, transparent); border-radius: 9px; background: linear-gradient(145deg, color-mix(in srgb, var(--surface2) 92%, transparent), color-mix(in srgb, var(--surface) 75%, transparent)); }
-.vyact-memory-capacity > .vyact-system-memory { display: grid; align-content: center; gap: 5px; }
+.vyact-memory-capacity > .vyact-system-memory { display: grid; flex: 0 0 130px; align-content: center; gap: 5px; }
 .vyact-system-memory > small { color: var(--muted); font-size: 10px; font-weight: 650; }
-.vyact-memory-capacity > .vyact-gpu-memory { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-content: center; gap: 8px 10px; }
+.vyact-memory-capacity > .vyact-gpu-memory { display: grid; flex: 1 1 0; grid-template-columns: minmax(0, 1fr) auto; align-content: center; gap: 8px 10px; max-width: calc((100% - 130px - 16px) / 2); }
 .vyact-gpu-memory > small { grid-column: 1; grid-row: 1; align-self: center; color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: .25px; text-transform: uppercase; }
 .vyact-gpu-memory > span { grid-column: 1 / -1; grid-row: 2; min-width: 0; overflow: hidden; color: var(--text-secondary); font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .vyact-gpu-vram { display: flex; grid-column: 2; grid-row: 1; align-items: baseline; justify-content: flex-end; gap: 5px; white-space: nowrap; }
@@ -83,7 +84,9 @@
 .vyact-model-metadata .vyact-total-memory strong { color: var(--accent); }
 .vyact-memory-details { flex: 1 0 100%; padding-top: 0; border-top: 1px solid var(--border); padding-block-start: 10px; }
 @media (max-width: 720px) {
-    .vyact-memory-capacity { grid-template-columns: 1fr; }
+    .vyact-memory-capacity { display: grid; grid-template-columns: 1fr; overflow-x: visible; }
+    .vyact-memory-capacity > .vyact-system-memory,
+    .vyact-memory-capacity > .vyact-gpu-memory { max-width: none; }
 }
 .vyact-model-status { padding: 9px 12px; border-radius: 8px; background: color-mix(in srgb, var(--accent) 9%, transparent); color: var(--text-secondary); font-size: var(--modal-sub); }
 .vyact-model-status.is-progress { display: grid; gap: 8px; padding: 10px 12px; }

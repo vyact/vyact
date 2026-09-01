@@ -216,10 +216,11 @@
 .setup-hub-results .vyact-model-file-name > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .setup-hub-results > .vyact-model-empty { grid-column: 1 / -1; }
 .setup-hub-browser > .setup-memory-summary { position: static; z-index: auto; box-sizing: border-box; width: 100%; flex: 0 0 auto; flex-wrap: wrap; gap: 8px; margin: 0; padding: 8px 12px; overflow: visible; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; background: transparent; }
-.setup-memory-summary .vyact-memory-capacity { flex: 1 1 auto; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.setup-memory-summary .vyact-memory-capacity { display: flex; flex: 1 1 auto; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
 .setup-memory-summary .vyact-memory-capacity::-webkit-scrollbar { display: none; }
 .setup-memory-summary .vyact-memory-capacity > span { min-width: max-content; padding: 5px 8px; font-size: 10px; white-space: nowrap; }
-.setup-memory-summary .vyact-memory-capacity > .vyact-gpu-memory { min-width: 0; white-space: normal; }
+.setup-memory-summary .vyact-memory-capacity > .vyact-system-memory { flex: 0 0 130px; }
+.setup-memory-summary .vyact-memory-capacity > .vyact-gpu-memory { flex: 1 1 0; max-width: calc((100% - 130px - 16px) / 2); min-width: 0; white-space: normal; }
 .setup-memory-summary .vyact-memory-capacity strong { font-size: 12px; }
 .setup-memory-summary .vyact-memory-selection { flex: 0 1 auto; }
 .setup-memory-summary .vyact-memory-selection > strong:first-child { max-width: 170px; }
