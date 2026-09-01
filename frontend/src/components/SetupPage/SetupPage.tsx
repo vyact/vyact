@@ -515,8 +515,20 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
                                     {!isSearchingHub && vyactHardware.system_memory.total_bytes > 0 && (
                                         <div className="vyact-memory-summary setup-memory-summary">
                                             <div className="vyact-memory-capacity">
-                                                <span>{t(`main:modelSelector.${vyactHardware.memory_mode === 'unified' ? 'unifiedMemory' : 'systemMemory'}`)}<strong>{formatModelBytes(vyactHardware.system_memory.total_bytes)}</strong></span>
-                                                {vyactHardware.memory_mode !== 'unified' && vyactHardware.gpus.map(gpu => <span key={`${gpu.backend}-${gpu.index}-${gpu.name}`}>{t('main:modelSettings.gpuIndex', {index: gpu.index + 1})} · {gpu.name}{gpu.total_bytes ? <> · {t('main:modelSelector.vram')} <strong>{formatModelBytes(gpu.total_bytes)}</strong></> : <strong>{gpu.backend}</strong>}</span>)}
+                                                <span className="vyact-system-memory">
+                                                    <small>{t(`main:modelSelector.${vyactHardware.memory_mode === 'unified' ? 'unifiedMemory' : 'systemMemory'}`)}</small>
+                                                    <strong>{formatModelBytes(vyactHardware.system_memory.total_bytes)}</strong>
+                                                </span>
+                                                {vyactHardware.memory_mode !== 'unified' && vyactHardware.gpus.map(gpu => (
+                                                    <span className="vyact-gpu-memory" key={`${gpu.backend}-${gpu.index}-${gpu.name}`}>
+                                                        <small>{t('main:modelSettings.gpuIndex', {index: gpu.index + 1})} · {gpu.backend}</small>
+                                                        <span title={gpu.name}>{gpu.name}</span>
+                                                        {gpu.total_bytes
+                                                            ? <strong className="vyact-gpu-vram"><small>{t('main:modelSelector.vram')}</small>{formatModelBytes(gpu.total_bytes)}</strong>
+                                                            : <em>{t('main:modelSelector.sharedOrUnknownMemory')}</em>
+                                                        }
+                                                    </span>
+                                                ))}
                                                 {vyactHardware.memory_mode !== 'unified' && vyactHardware.gpus.length === 0 && <span>{t('main:modelSelector.cpuExecution')}</span>}
                                             </div>
                                             {selectedHubModelFile && <div className="vyact-memory-selection"><OverflowTooltipText text={selectedFileDisplayName || ''}/>{!selectedMetadata && <Tooltip content={t('main:modelSelector.accurateMemoryHint')} multiline size="medium"><button type="button" onClick={() => void calculateAccurateMemory()} disabled={analyzingFile === selectedFileKey} aria-label={t('main:modelSelector.calculateAccurateMemory')}>{analyzingFile === selectedFileKey ? <LoaderCircle className="vyact-model-spinner" size={17}/> : <Calculator size={17}/>}</button></Tooltip>}</div>}

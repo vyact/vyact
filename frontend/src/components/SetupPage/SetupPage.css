@@ -219,6 +219,7 @@
 .setup-memory-summary .vyact-memory-capacity { flex: 1 1 auto; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
 .setup-memory-summary .vyact-memory-capacity::-webkit-scrollbar { display: none; }
 .setup-memory-summary .vyact-memory-capacity > span { min-width: max-content; padding: 5px 8px; font-size: 10px; white-space: nowrap; }
+.setup-memory-summary .vyact-memory-capacity > .vyact-gpu-memory { min-width: 0; white-space: normal; }
 .setup-memory-summary .vyact-memory-capacity strong { font-size: 12px; }
 .setup-memory-summary .vyact-memory-selection { flex: 0 1 auto; }
 .setup-memory-summary .vyact-memory-selection > strong:first-child { max-width: 170px; }
