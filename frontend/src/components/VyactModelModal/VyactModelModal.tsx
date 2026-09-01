@@ -6,13 +6,13 @@ import {inspectRemoteGguf, type GgufModelMetadata} from '../../utils/ggufMetadat
 import {
     formatCompactDownloads,
     formatModelBytes,
-    estimateModelMemoryBytes,
     getModelFileKey,
     getModelMemoryTone,
     getModelPublisher,
     getModelQuantization,
     getOptimizedModelContext,
     getSelectableModelFiles,
+    resolveModelMemoryBytes,
 } from '../../utils/vyactModelDisplay';
 import {loadSearchModelMetadata} from '../../utils/modelMetadataLoader';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
@@ -425,8 +425,11 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                     {selectableFiles.map(filename => {
                                         const isSelected = selectedFile?.repository === model.id && selectedFile.filename === filename;
                                         const fileSize = model.file_sizes?.[filename] || 0;
-                                        const estimatedMemory = metadataByFile[getModelFileKey(model, filename)]?.estimatedMemoryBytes
-                                            || estimateModelMemoryBytes(model, filename);
+                                        const estimatedMemory = resolveModelMemoryBytes(
+                                            model,
+                                            filename,
+                                            metadataByFile[getModelFileKey(model, filename)]?.estimatedMemoryBytes,
+                                        );
                                         const memoryTone = getModelMemoryTone(estimatedMemory, hardware);
                                         const isInstalled = installedModels.includes(
                                             model.runtime === 'mlx' ? `mlx/${model.id}` : `${model.id}/${filename}`,

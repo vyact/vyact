@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest';
 import type {VyactHubModel} from '../services/api';
-import {estimateModelMemoryBytes, getModelPublisher} from './vyactModelDisplay';
+import {estimateModelMemoryBytes, getModelPublisher, resolveModelMemoryBytes} from './vyactModelDisplay';
 
 const model = (overrides: Partial<VyactHubModel>): VyactHubModel => ({
     id: 'example/model-12B',
@@ -33,6 +33,7 @@ describe('estimateModelMemoryBytes', () => {
             quantization: '8-bit',
         });
         expect(estimateModelMemoryBytes(mlxModel, '__mlx_repository__')).toBe(10_800_000_000);
+        expect(resolveModelMemoryBytes(mlxModel, '__mlx_repository__', 1_500_000_000)).toBe(10_800_000_000);
     });
 
     it('reads GGUF-style quantization embedded in an MLX repository name', () => {

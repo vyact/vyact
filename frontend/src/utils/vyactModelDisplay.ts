@@ -76,6 +76,12 @@ export const estimateModelMemoryBytes = (model: VyactHubModel, filename: string)
     return nameEstimate;
 };
 
+export const resolveModelMemoryBytes = (
+    model: VyactHubModel,
+    filename: string,
+    inspectedMemoryBytes = 0,
+) => Math.max(inspectedMemoryBytes, estimateModelMemoryBytes(model, filename));
+
 export const getModelFileKey = (model: VyactHubModel, filename: string) =>
     `${model.id}@${model.revision}/${filename}`;
 

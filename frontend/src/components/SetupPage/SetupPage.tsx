@@ -15,11 +15,11 @@ import type {GgufModelMetadata} from '../../utils/ggufMetadata';
 import {
     formatCompactDownloads,
     formatModelBytes,
-    estimateModelMemoryBytes,
     getModelFileKey,
     getModelMemoryTone,
     getModelQuantization,
     getSelectableModelFiles,
+    resolveModelMemoryBytes,
 } from '../../utils/vyactModelDisplay';
 import {loadSearchModelMetadata} from '../../utils/modelMetadataLoader';
 import './SetupPage.css';
@@ -521,8 +521,11 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
                                             <div className="vyact-model-files">{selectableFiles.map(file => {
                                                 const modelPath = model.runtime === 'mlx' ? `mlx/${model.id}` : `${model.id}/${file}`;
                                                 const fileSize = model.file_sizes?.[file] || 0;
-                                                const estimatedMemory = metadataByFile[getModelFileKey(model, file)]?.estimatedMemoryBytes
-                                                    || estimateModelMemoryBytes(model, file);
+                                                const estimatedMemory = resolveModelMemoryBytes(
+                                                    model,
+                                                    file,
+                                                    metadataByFile[getModelFileKey(model, file)]?.estimatedMemoryBytes,
+                                                );
                                                 const supportsMtp = model.mtp_supported_files?.includes(file) || mtpSupportedModels.includes(`${model.id}/${file}`);
                                                 const supportsDFlash2 = model.dflash2_supported_files?.includes(file);
                                                 const displayName = model.runtime === 'mlx' ? model.id.split('/').pop() : file;

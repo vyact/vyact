@@ -1,6 +1,6 @@
 import {api, type VyactHubModel} from '../services/api';
 import {inspectRemoteGguf, type GgufModelMetadata} from './ggufMetadata';
-import {getModelFileKey, getSelectableModelFiles} from './vyactModelDisplay';
+import {getModelFileKey, getSelectableModelFiles, resolveModelMemoryBytes} from './vyactModelDisplay';
 
 const DEFAULT_MODEL_CONTEXT = 32768;
 
@@ -10,7 +10,14 @@ export const loadSearchModelMetadata = async (
     const entries = await Promise.all(models.flatMap(model =>
         getSelectableModelFiles(model.files).map(async filename => {
             const key = getModelFileKey(model, filename);
-            if (model.runtime === 'mlx' && model.metadata) return [key, model.metadata] as const;
+            if (model.runtime === 'mlx' && model.metadata) {
+                return [key, {
+                    ...model.metadata,
+                    estimatedMemoryBytes: resolveModelMemoryBytes(
+                        model, filename, model.metadata.estimatedMemoryBytes,
+                    ),
+                }] as const;
+            }
             if (model.runtime !== 'gguf') return null;
             const fileSize = model.file_sizes?.[filename] || 0;
             try {
