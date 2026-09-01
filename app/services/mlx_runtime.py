@@ -22,6 +22,7 @@ from services.local_model_errors import LocalModelNotDownloadedError
 from services.omlx_policy import (
     HOT_CACHE_MAX_SIZE, PAGED_SSD_CACHE_MAX_SIZE, SPECPREFILL_KEEP_PCT,
     SPECPREFILL_THRESHOLD_TOKENS, VLM_MTP_DRAFT_BLOCK_SIZE,
+    is_external_mtp_compatible,
 )
 from services.runtime_error_details import runtime_startup_error
 from services.vyact_runtime import VYACT_RUNTIME_PORT
@@ -541,25 +542,21 @@ def _tokenizer_identity(model_path: Path) -> tuple[str, str] | None:
     return (tokenizer_class, vocab_size) if tokenizer_class and vocab_size else None
 
 
-def _model_type(model_path: Path) -> str:
+def _model_config(model_path: Path) -> dict:
     try:
         config = json.loads((model_path / "config.json").read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
-        return ""
-    return str(config.get("model_type") or "").lower()
+        return {}
+    return config if isinstance(config, dict) else {}
 
 
 def _compatible_external_mtp_path(model_path: Path) -> Path | None:
     draft_path = _get_manifest_companion_path(model_path, "mtp_repository", "mtp")
     if draft_path is None:
         return None
-    target_type = _model_type(model_path)
-    draft_type = _model_type(draft_path)
-    compatible_types = (
-        (target_type.startswith(("qwen3_5", "qwen3_6")) and draft_type == "qwen3_5_mtp")
-        or (target_type.startswith("gemma4") and draft_type == "gemma4_assistant")
-    )
-    return draft_path if compatible_types else None
+    return draft_path if is_external_mtp_compatible(
+        _model_config(model_path), _model_config(draft_path),
+    ) else None
 
 
 def _compatible_specprefill_path(model_path: Path) -> Path | None:

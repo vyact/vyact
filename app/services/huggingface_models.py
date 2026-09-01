@@ -8,6 +8,9 @@ from urllib.parse import quote
 
 import httpx
 
+from services.omlx_policy import (
+    external_mtp_draft_types, is_external_mtp_compatible, model_type,
+)
 from services.vyact_runtime import VYACT_MODELS_DIR, cache_downloaded_model
 
 HF_API_URL = "https://huggingface.co/api"
@@ -97,24 +100,56 @@ async def search_gguf_models(query: str, token: str | None = None, limit: int = 
 
 async def search_mlx_models(query: str, token: str | None = None, limit: int = 50) -> list[dict]:
     """Search complete MLX repositories for the Apple Silicon runtime."""
+    target_query = _mlx_target_search_query(query)
     params = {
         "library": "mlx", "limit": max(1, min(limit, 50)), "full": "true", "blobs": "true",
         "sort": "downloads", "direction": "-1",
     }
-    if query.strip():
-        params["search"] = query.strip()
+    if target_query:
+        params["search"] = target_query
     async with httpx.AsyncClient(timeout=20) as client:
         response = await client.get(f"{HF_API_URL}/models", params=params, headers=_headers(token))
         response.raise_for_status()
         search_items = response.json()
-    models = [
-        model for item in search_items
-        if isinstance(item, dict)
-        if "-mtp-" not in str(item.get("id", "")).lower()
-        and ("dflash2" not in str(item.get("id", "")).lower() or _is_bundled_dflash2_mlx(item))
-        and (model := _mlx_model_from_hub_item(item))
-    ]
+        valid_items = [item for item in search_items if isinstance(item, dict)]
+        target_configs, mtp_candidates = await asyncio.gather(
+            _fetch_mlx_configs(client, valid_items, token),
+            _search_mlx_mtp_models(target_query, token),
+        )
+    models = []
+    for item in valid_items:
+        repository = str(item.get("id", ""))
+        config = target_configs.get(repository, {})
+        if _is_standalone_or_embedded_mtp_repository(repository, config):
+            continue
+        if "dflash2" in repository.lower() and not _is_bundled_dflash2_mlx(item):
+            continue
+        model = _mlx_model_from_hub_item(item, config)
+        if not model:
+            continue
+        mtp_model = _select_mlx_mtp_model(repository, mtp_candidates, config)
+        if mtp_model:
+            model["mtp_model"] = {
+                key: mtp_model[key] for key in ("repository", "revision", "size")
+            }
+            model["mtp_supported_files"] = [MLX_REPOSITORY_FILE]
+        models.append(model)
     return sorted(models, key=lambda model: model["downloads"], reverse=True)
+
+
+def _mlx_target_search_query(query: str) -> str:
+    """Remove acceleration-only terms so an MTP query still finds target models."""
+    terms = [term for term in query.strip().split() if term.lower() not in {"mtp", "external", "mtplx"}]
+    return " ".join(terms)
+
+
+def _is_standalone_or_embedded_mtp_repository(repository: str, config: dict) -> bool:
+    name = repository.rsplit("/", 1)[-1].lower()
+    return (
+        model_type(config) in external_mtp_draft_types()
+        or "mtplx" in name
+        or bool(re.search(r"(?:^|[-_])mtp(?:$|[-_])", name))
+    )
 
 
 def _dflash2_model_family(repository: str) -> str:
@@ -187,9 +222,18 @@ def _mlx_model_family(repository: str) -> str:
     return name
 
 
-def _select_mlx_mtp_model(repository: str, candidates: list[dict]) -> dict | None:
+def _select_mlx_mtp_model(
+        repository: str, candidates: list[dict], target_config: dict | None = None,
+) -> dict | None:
     family = _mlx_model_family(repository)
-    matches = [candidate for candidate in candidates if _mlx_model_family(candidate["repository"]) == family]
+    matches = [
+        candidate for candidate in candidates
+        if (
+            is_external_mtp_compatible(target_config, candidate.get("config"))
+            if target_config is not None
+            else _mlx_model_family(candidate["repository"]) == family
+        )
+    ]
     if not matches:
         return None
     return min(matches, key=lambda candidate: (
@@ -213,6 +257,7 @@ async def _search_mlx_mtp_models(query: str, token: str | None) -> list[dict]:
             if isinstance(item, dict) and _REPO_ID_PATTERN.fullmatch(str(item.get("id", "")))
         ]
         detailed_items = await _fetch_model_details(client, repository_ids, token)
+        configs = await _fetch_mlx_configs(client, search_items, token)
     items = [
         _merge_search_and_detail(item, detailed_items.get(str(item.get("id", ""))))
         for item in search_items if isinstance(item, dict)
@@ -225,10 +270,11 @@ async def _search_mlx_mtp_models(query: str, token: str | None) -> list[dict]:
                 int(sibling.get("size") or sibling.get("lfs", {}).get("size") or 0)
                 for sibling in item.get("siblings", []) if isinstance(sibling, dict)
             ),
+            "config": configs.get(str(item.get("id")), {}),
         }
         for item in items
         if isinstance(item, dict)
-        and "-mtp-" in str(item.get("id", "")).lower()
+        and model_type(configs.get(str(item.get("id")))) in external_mtp_draft_types()
         and _REPO_ID_PATTERN.fullmatch(str(item.get("id", "")))
         and any(
             str(sibling.get("rfilename", "")).lower().endswith(".safetensors")

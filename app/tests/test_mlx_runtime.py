@@ -189,8 +189,12 @@ class MlxRuntimeTests(unittest.TestCase):
             mtp_dir = Path(temp_dir) / "owner" / "mtp"
             model_dir.mkdir(parents=True)
             mtp_dir.mkdir(parents=True)
-            (model_dir / "config.json").write_text(json.dumps({"model_type": "qwen3_5"}))
-            (mtp_dir / "config.json").write_text(json.dumps({"model_type": "qwen3_5_mtp"}))
+            (model_dir / "config.json").write_text(json.dumps({
+                "model_type": "qwen3_5", "hidden_size": 4096, "vocab_size": 248320,
+            }))
+            (mtp_dir / "config.json").write_text(json.dumps({
+                "model_type": "qwen3_5_mtp", "hidden_size": 4096, "vocab_size": 248320,
+            }))
             (mtp_dir / "model.safetensors").touch()
             (mtp_dir / MLX_MODEL_MANIFEST).write_text(json.dumps({"role": "mtp"}))
             (model_dir / MLX_MODEL_MANIFEST).write_text(json.dumps({"mtp_repository": "owner/mtp"}))

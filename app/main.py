@@ -330,20 +330,8 @@ async def lifespan(app: FastAPI):
         logger.warning("[mcp] Connection init failed: %s", e)
 
     if vyact_warmup_model_id:
-        try:
-            from prompts import FORMAT_INSTRUCTION
-            from routers.chat_helpers import load_system_prompt
-            from services.conv_summary import build_summary_instruction
-            from services.llm.warmup import warm_vyact_chat_prefix
-            _, _, selected_system_prompt = await load_system_prompt("")
-            general_chat_system_prompt = (
-                selected_system_prompt or FORMAT_INSTRUCTION
-            ) + build_summary_instruction("", False)
-            await warm_vyact_chat_prefix(
-                vyact_warmup_model_id, vyact_warmup_language, general_chat_system_prompt,
-            )
-        except Exception as error:
-            logger.debug("[llm_warmup] Vyact warm-up skipped: %s", error)
+        from services.runtime_startup import warm_loaded_vyact_model
+        await warm_loaded_vyact_model(vyact_warmup_model_id, vyact_warmup_language)
 
     startup_warmup_task = None
     if not is_initial_setup:

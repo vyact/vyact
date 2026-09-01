@@ -1,9 +1,13 @@
+import asyncio
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from services.huggingface_models import (
+    MLX_REPOSITORY_FILE,
+    _is_standalone_or_embedded_mtp_repository,
     _mlx_model_from_hub_item,
     _is_bundled_dflash2_mlx,
     _mlx_quantization_label,
@@ -13,15 +17,136 @@ from services.huggingface_models import (
     _model_file_size_from_hub_item,
     _model_from_hub_item,
     _safe_relative_file_path,
+    _mlx_target_search_query,
     _select_mlx_mtp_model,
     _select_dflash2_model,
     _select_mtp_sidecar,
     _select_vision_projector,
     download_gguf_model,
+    search_mlx_models,
 )
+from services.omlx_policy import is_external_mtp_compatible
+from services import omlx_policy
 
 
 class HuggingFaceModelTests(unittest.TestCase):
+    def test_reads_new_external_mtp_types_from_installed_omlx(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            executable = Path(temp_dir) / "omlx"
+            executable.write_text("#!/runtime/python\n")
+            discovered = '["deepseek_v4_mtp", "gemma4_assistant", "qwen3_5_mtp"]\n'
+            with patch("services.omlx_policy.shutil.which", return_value=str(executable)), \
+                 patch("services.omlx_policy._omlx_python_executable", return_value="/runtime/python"), \
+                 patch("services.omlx_policy.subprocess.run", return_value=SimpleNamespace(stdout=discovered)), \
+                 patch.object(omlx_policy, "_omlx_capability_signature", None), \
+                 patch.object(
+                     omlx_policy, "_external_mtp_target_draft_types",
+                     omlx_policy._DEFAULT_EXTERNAL_MTP_TARGET_DRAFT_TYPES,
+                 ):
+                capabilities = omlx_policy.refresh_external_mtp_capabilities(force=True)
+                self.assertIn((("deepseek_v4",), "deepseek_v4_mtp"), capabilities)
+                self.assertEqual(
+                    omlx_policy.external_mtp_draft_type({"model_type": "deepseek_v4"}),
+                    "deepseek_v4_mtp",
+                )
+                self.assertTrue(omlx_policy.is_external_mtp_compatible(
+                    {"model_type": "deepseek_v4", "hidden_size": 7168},
+                    {"model_type": "deepseek_v4_mtp", "backbone_hidden_size": 7168},
+                ))
+
+    def test_normalizes_mtp_search_to_the_target_model_query(self):
+        self.assertEqual(
+            _mlx_target_search_query("qwen3.5 9b 8bit external MTP"),
+            "qwen3.5 9b 8bit",
+        )
+
+    def test_external_mtp_compatibility_uses_supported_types_and_dimensions(self):
+        qwen_target = {
+            "model_type": "qwen3_5_moe",
+            "text_config": {"hidden_size": 4096, "vocab_size": 248320},
+        }
+        self.assertTrue(is_external_mtp_compatible(qwen_target, {
+            "model_type": "qwen3_5_mtp", "hidden_size": 4096, "vocab_size": 248320,
+        }))
+        self.assertFalse(is_external_mtp_compatible(qwen_target, {
+            "model_type": "qwen3_5_mtp", "hidden_size": 2048, "vocab_size": 248320,
+        }))
+        self.assertFalse(is_external_mtp_compatible(qwen_target, {
+            "model_type": "unsupported_mtp", "hidden_size": 4096, "vocab_size": 248320,
+        }))
+        self.assertTrue(is_external_mtp_compatible(
+            {"model_type": "gemma4_text", "hidden_size": 2560},
+            {"model_type": "gemma4_assistant", "hidden_size": 2560},
+        ))
+        self.assertFalse(is_external_mtp_compatible(
+            {"model_type": "gemma4_text"}, {"model_type": "gemma4_assistant"},
+        ))
+
+    def test_excludes_full_mtp_and_mtplx_repositories_from_target_results(self):
+        self.assertTrue(_is_standalone_or_embedded_mtp_repository(
+            "owner/Qwen3.5-9B-mlx-8bit-mtp", {"model_type": "qwen3_5"},
+        ))
+        self.assertTrue(_is_standalone_or_embedded_mtp_repository(
+            "owner/Qwen3.5-9B-MTPLX-8bit", {"model_type": "qwen3_5"},
+        ))
+        self.assertTrue(_is_standalone_or_embedded_mtp_repository(
+            "owner/Qwen3.5-9B-MTP-4bit", {"model_type": "qwen3_5_mtp"},
+        ))
+        self.assertFalse(_is_standalone_or_embedded_mtp_repository(
+            "mlx-community/Qwen3.5-9B-MLX-8bit", {"model_type": "qwen3_5"},
+        ))
+
+    def test_search_attaches_external_mtp_to_compatible_target(self):
+        target_item = {
+            "id": "mlx-community/Qwen3.5-9B-MLX-8bit", "sha": "target", "downloads": 100,
+            "siblings": [{"rfilename": "config.json"}, {"rfilename": "model.safetensors", "size": 10}],
+        }
+        embedded_item = {
+            "id": "owner/Qwen3.5-9B-MTPLX-8bit", "sha": "embedded", "downloads": 10,
+            "siblings": [{"rfilename": "config.json"}, {"rfilename": "model.safetensors", "size": 10}],
+        }
+        target_config = {"model_type": "qwen3_5", "hidden_size": 4096}
+        candidate = {
+            "repository": "mlx-community/Qwen3.5-9B-MTP-bf16", "revision": "draft",
+            "size": 38_000_000,
+            "config": {"model_type": "qwen3_5_mtp", "hidden_size": 4096},
+        }
+
+        class FakeResponse:
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return [target_item, embedded_item]
+
+        class FakeClient:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *args):
+                return None
+
+            async def get(self, _url, params=None, headers=None):
+                self.params = params
+                return FakeResponse()
+
+        async def fake_configs(_client, _items, _token):
+            return {target_item["id"]: target_config, embedded_item["id"]: target_config}
+
+        async def fake_candidates(_query, _token):
+            return [candidate]
+
+        fake_client = FakeClient()
+        with patch("services.huggingface_models.httpx.AsyncClient", return_value=fake_client), \
+             patch("services.huggingface_models._fetch_mlx_configs", side_effect=fake_configs), \
+             patch("services.huggingface_models._search_mlx_mtp_models", side_effect=fake_candidates):
+            models = asyncio.run(search_mlx_models("qwen3.5 9b 8bit mtp"))
+
+        self.assertEqual(fake_client.params["search"], "qwen3.5 9b 8bit")
+        self.assertEqual([model["id"] for model in models], [target_item["id"]])
+        self.assertEqual(models[0]["mtp_model"]["repository"], candidate["repository"])
+        self.assertEqual(models[0]["mtp_supported_files"], [MLX_REPOSITORY_FILE])
+
     def test_reads_selected_gguf_size_from_repository_details(self):
         item = {"siblings": [
             {"rfilename": "model-Q4.gguf", "lfs": {"size": 4_000}},

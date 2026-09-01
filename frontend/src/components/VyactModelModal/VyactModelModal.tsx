@@ -490,7 +490,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                         return (
                                             <button type="button" className={`${isSelected ? 'is-selected ' : ''}memory-${memoryTone}`} key={filename} onClick={() => void selectModelFile(model, filename, fileSize)} disabled={busy}>
                                                 <span className="vyact-model-file-name">
-                                                    {model.runtime === 'mlx' && <span className="vyact-mtp-badge">{t('modelSelector.mlxRuntime')}</span>}
+                                                    {model.runtime === 'mlx' && <span className="vyact-mtp-badge">{t('modelSelector.mlxOnly')}</span>}
                                                     {supportsMtp && <span className="vyact-mtp-badge">MTP</span>}
                                                     {supportsDFlash2 && <span className="vyact-mtp-badge">DFlash2</span>}
                                                     <OverflowTooltipText text={displayName}/>

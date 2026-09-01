@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field
 
 from agent import ensure_index, get_index_stats, load_prompts_cache
 from config import INSTALL_DIR, LOGS_DIR, SETUP_DONE, VENV_DIR, get_log_file
-from routers.deps import APP_DIR, load_config_async, save_config_async, sse, write_log
+from routers.deps import APP_DIR, load_config_async, load_ui_language_async, save_config_async, sse, write_log
 from logger import DebugLogSettings, ToolLogSettings, get_logger
 from services.installer import is_docker_available, Installer
 from services.llm.errors import is_insufficient_memory_message
@@ -29,7 +29,9 @@ from services.hardware_info import get_local_hardware_info, validate_gpu_split_p
 from services.huggingface_models import get_model_file_size, recommend_downloaded_mlx_context, search_gguf_models
 from services.mcp_config import ensure_mcp_config
 from services.runtime_settings import DEFAULT_RUNTIME_SETTINGS, apply_runtime_settings
-from services.runtime_startup import apply_startup_runtime_choice, get_startup_runtime_state
+from services.runtime_startup import (
+    apply_startup_runtime_choice, get_startup_runtime_state, warm_loaded_vyact_model,
+)
 from services.model_runtime_profiles import delete_model_profile, get_model_profile, normalize_gpu_split_for_hardware, normalize_model_profile, recommended_model_profile, save_model_profile
 from services.model_memory import estimate_downloaded_model_memory_bytes
 from services.vyact_model_metadata_cache import get_cached_model_metadata, save_cached_model_metadata
@@ -616,6 +618,10 @@ async def install(req: ModelSelectRequest):
                     cfg["vyact_config"]["model"] = model_id
                 await save_config_async(cfg)
                 await load_prompts_cache()
+                if req.type == "vyact":
+                    await warm_loaded_vyact_model(
+                        model_id, await load_ui_language_async() or "",
+                    )
                 logger.info("[setup] LLM connection config saved after ES initialization")
             except Exception as e:
                 logger.exception("[setup] Cloud setup init failed")

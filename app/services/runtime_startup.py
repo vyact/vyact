@@ -52,12 +52,40 @@ def get_runtime_update_commands(config: dict) -> list[list[str]]:
     return get_native_update_commands()
 
 
+async def warm_loaded_vyact_model(model_id: str, language: str | None = None) -> bool:
+    """Warm the stable Vyact chat prefix after any successful runtime load."""
+    if not model_id:
+        return False
+    try:
+        from prompts import FORMAT_INSTRUCTION
+        from routers.chat_helpers import load_system_prompt
+        from services.conv_summary import build_summary_instruction
+        from services.llm.warmup import warm_vyact_chat_prefix
+
+        _, _, selected_system_prompt = await load_system_prompt("")
+        general_chat_system_prompt = (
+            selected_system_prompt or FORMAT_INSTRUCTION
+        ) + build_summary_instruction("", False)
+        return await warm_vyact_chat_prefix(
+            model_id,
+            language if language is not None else await load_ui_language_async() or "",
+            general_chat_system_prompt,
+        )
+    except Exception as error:
+        logger.debug("[llm_warmup] Vyact warm-up skipped: %s", error)
+        return False
+
+
 async def detect_native_runtime_updates(config: dict) -> dict:
     """Return package updates without modifying an installed runtime."""
     global _startup_state
     if not _uses_package_manager_runtime(config):
         _startup_state = {"status": "not_required", "packages": []}
         return get_startup_runtime_state()
+
+    if config.get("vyact_config", {}).get("runtime") == "mlx":
+        from services.omlx_policy import refresh_external_mtp_capabilities
+        await asyncio.to_thread(refresh_external_mtp_capabilities)
 
     try:
         if platform.system() in {"Darwin", "Linux"}:
@@ -167,7 +195,11 @@ async def apply_startup_runtime_choice(update: bool) -> tuple[str, str]:
                     detail = stdout.decode("utf-8", errors="replace").strip().splitlines()
                     _startup_state = {**_startup_state, "status": "update_failed"}
                     raise RuntimeError(detail[-1] if detail else "Runtime update failed")
+            if config.get("vyact_config", {}).get("runtime") == "mlx":
+                from services.omlx_policy import refresh_external_mtp_capabilities
+                await asyncio.to_thread(refresh_external_mtp_capabilities, True)
         _startup_state = {**_startup_state, "status": "loading_model"}
         result = await load_configured_vyact_model()
+        await warm_loaded_vyact_model(*result)
         _startup_state = {"status": "ready", "packages": []}
         return result
