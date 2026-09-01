@@ -1305,6 +1305,9 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
             common_settings = dict(config.get("runtime_settings", {}))
             config["runtime_settings"] = common_settings
             apply_runtime_settings({**common_settings, **_profile_runtime_settings(req.model_dump())})
+            await warm_loaded_vyact_model(
+                model_id, await load_ui_language_async() or "",
+            )
             await save_config_async(config)
         except Exception as error:
             logger.warning("[vyact] model activation failed: %s", error)
@@ -1356,6 +1359,9 @@ async def select_model(req: ModelSelectRequest):
             common_settings = dict(config.get("runtime_settings", {}))
             config["runtime_settings"] = common_settings
             apply_runtime_settings({**common_settings, **_profile_runtime_settings(profile)})
+            await warm_loaded_vyact_model(
+                model_id, await load_ui_language_async() or "",
+            )
         elif req.type in ("openai", "gemini", "claude"):
             if not req.api_key:
                 yield sse(f"{req.type.upper()} API KEY 필요", "error", 0)

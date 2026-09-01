@@ -119,3 +119,33 @@ async def test_selecting_vyact_without_configured_model_keeps_previous_provider(
     assert config["type"] == "gemini"
     assert config["model"] == "gemini-3.1-flash-lite-preview"
     save_config.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_selecting_model_warms_it_before_reporting_done(monkeypatch):
+    config = {"type": "vyact", "runtime_settings": {}, "vyact_config": {}}
+    profile = {
+        "repository": "owner/model", "context_size": 32768,
+        "cache_quantization": True, "mtp_enabled": False,
+        "kv_cache_precision": "none", "performance_mode": "auto",
+        "cpu_threads": None, "seed": None, "max_output_tokens": 2048,
+        "history_token_budget": 16384, "temperature": 0.2,
+        "top_k": None, "top_p": None,
+    }
+    warm_model = AsyncMock(return_value=True)
+    save_config = AsyncMock()
+    monkeypatch.setattr(setup, "load_config_async", AsyncMock(return_value=config))
+    monkeypatch.setattr(setup, "load_ui_language_async", AsyncMock(return_value="ko"))
+    monkeypatch.setattr(setup, "_get_or_create_model_profile", AsyncMock(return_value=profile))
+    monkeypatch.setattr(setup, "is_apple_silicon", lambda: True)
+    monkeypatch.setattr(setup, "warm_loaded_vyact_model", warm_model)
+    monkeypatch.setattr(setup, "save_config_async", save_config)
+    monkeypatch.setattr(setup, "apply_runtime_settings", Mock())
+    monkeypatch.setattr(vyact_runtime, "start_configured_runtime", Mock(return_value="model"))
+
+    response = await setup.select_model(setup.ModelSelectRequest(type="vyact", model="mlx/owner/model"))
+    chunks = [chunk async for chunk in response.body_iterator]
+
+    warm_model.assert_awaited_once_with("model", "ko")
+    save_config.assert_awaited_once_with(config)
+    assert '"type": "done"' in "".join(chunks)
