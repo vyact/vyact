@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {Calculator, Check, Eye, EyeOff, ExternalLink, LoaderCircle, Plus, Search} from 'lucide-react';
+import {Check, Eye, EyeOff, ExternalLink, LoaderCircle, Plus, Search} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { LogEntry } from '../../types';
 import { syncPendingLanguageAfterSetup } from '../../i18n';
@@ -11,15 +11,17 @@ import {api, type VyactHardwareInfo, type VyactHubModel, VyactRuntimeInstallErro
 import {Tooltip} from '../common/Tooltip/Tooltip';
 import OverflowTooltipText from '../common/OverflowTooltipText/OverflowTooltipText';
 import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
-import {inspectRemoteGguf, type GgufModelMetadata} from '../../utils/ggufMetadata';
+import type {GgufModelMetadata} from '../../utils/ggufMetadata';
 import {
     formatCompactDownloads,
     formatModelBytes,
     estimateModelMemoryBytes,
+    getModelFileKey,
     getModelMemoryTone,
     getModelQuantization,
     getSelectableModelFiles,
 } from '../../utils/vyactModelDisplay';
+import {loadSearchModelMetadata} from '../../utils/modelMetadataLoader';
 import './SetupPage.css';
 import '../VyactModelModal/VyactModelModal.css';
 
@@ -72,7 +74,6 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
     const [huggingFaceModels, setHuggingFaceModels] = useState<VyactHubModel[]>([]);
     const [vyactHardware, setVyactHardware] = useState<VyactHardwareInfo>(EMPTY_HARDWARE_INFO);
     const [metadataByFile, setMetadataByFile] = useState<Record<string, GgufModelMetadata>>({});
-    const [analyzingFile, setAnalyzingFile] = useState('');
     const [mtpSupportedModels, setMtpSupportedModels] = useState<string[]>([]);
     const [mlxOnly, setMlxOnly] = useState(true);
     const [isSearchingHub, setIsSearchingHub] = useState(false);
@@ -98,7 +99,6 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
 
     const logRef = useRef<HTMLDivElement>(null);
     const shouldFollowLogTailRef = useRef(true);
-    const metadataCacheCheckedRef = useRef(new Set<string>());
 
     const selectedFileKey = selectedHubModelFile ? `${selectedHubModelFile.repository}@${selectedHubModelFile.revision}/${selectedHubModelFile.filename}` : '';
     const selectedMetadata = selectedFileKey ? metadataByFile[selectedFileKey] : undefined;
@@ -126,11 +126,13 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
                 response = await api.searchVyactModels(trimmedQuery, true);
             }
             if (!response.hardware.apple_silicon) setMlxOnly(false);
+            const loadedMetadata = await loadSearchModelMetadata(response.models, huggingFaceToken.trim());
             setHuggingFaceModels(
                 response.hardware.apple_silicon
                     ? response.models
                     : response.models.filter(model => model.runtime !== 'mlx'),
             );
+            setMetadataByFile(loadedMetadata);
             setVyactHardware(response.hardware);
             setMtpSupportedModels(response.mtp_supported);
         } catch (error) {
@@ -143,7 +145,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
 
     const isCloud = provider !== 'vyact';
 
-    const selectHubModelFile = async (model: VyactHubModel, filename: string) => {
+    const selectHubModelFile = (model: VyactHubModel, filename: string) => {
         const modelPath = model.runtime === 'mlx' ? `mlx/${model.id}` : `${model.id}/${filename}`;
         setSelectedModel(modelPath);
         setSelectedHubModelFile({
@@ -156,43 +158,6 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
             mtpModel: model.mtp_model, specprefillModel: model.specprefill_model,
             dflash2Model: model.dflash2_model, dflash2Bundled: model.dflash2_bundled,
         });
-        const fileKey = `${model.id}@${model.revision}/${filename}`;
-        if (model.runtime !== 'gguf' || metadataByFile[fileKey] || metadataCacheCheckedRef.current.has(fileKey)) return;
-        metadataCacheCheckedRef.current.add(fileKey);
-        setAnalyzingFile(fileKey);
-        try {
-            const cachedMetadata = await api.getVyactModelMetadataCache(model.id, filename, model.revision, 32768);
-            if (cachedMetadata) setMetadataByFile(current => ({...current, [fileKey]: cachedMetadata}));
-        } catch {
-            // 상세 조회 버튼에서 원격 메타데이터를 분석한다.
-        } finally {
-            setAnalyzingFile(current => current === fileKey ? '' : current);
-        }
-    };
-
-    const calculateAccurateMemory = async () => {
-        if (!selectedHubModelFile) return;
-        const {repository, filename, revision, runtime} = selectedHubModelFile;
-        const fileKey = `${repository}@${revision}/${filename}`;
-        if (metadataByFile[fileKey]) return;
-        setAnalyzingFile(fileKey);
-        try {
-            const fileSize = selectedHubModelFile.fileSize || await api.getVyactModelFileSize(repository, filename, runtime);
-            const companionSize = selectedHubModelFile.dflash2Model?.size
-                || selectedHubModelFile.mtpModel?.size
-                || selectedHubModelFile.specprefillModel?.size
-                || 0;
-            const metadata = runtime === 'mlx'
-                ? await api.inspectVyactMlxMetadata(repository, revision, fileSize + companionSize, 32768)
-                : await inspectRemoteGguf(repository, filename, revision, fileSize, 32768, huggingFaceToken.trim());
-            if (runtime === 'gguf') await api.saveVyactModelMetadataCache(repository, filename, revision, 32768, fileSize, metadata);
-            setSelectedHubModelFile(current => current && `${current.repository}@${current.revision}/${current.filename}` === fileKey ? {...current, fileSize} : current);
-            setMetadataByFile(current => ({...current, [fileKey]: metadata}));
-        } catch (error) {
-            console.error('Failed to inspect model metadata:', error);
-        } finally {
-            setAnalyzingFile(current => current === fileKey ? '' : current);
-        }
     };
 
     // 시스템 상태 조회 — Docker 설치 여부/네이티브 지원 여부에 따라 ES 방식 선택지 제어
@@ -531,7 +496,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
                                                 ))}
                                                 {vyactHardware.memory_mode !== 'unified' && vyactHardware.gpus.length === 0 && <span>{t('main:modelSelector.cpuExecution')}</span>}
                                             </div>
-                                            {selectedHubModelFile && <div className="vyact-memory-selection"><OverflowTooltipText text={selectedFileDisplayName || ''}/>{!selectedMetadata && <Tooltip content={t('main:modelSelector.accurateMemoryHint')} multiline size="medium"><button type="button" onClick={() => void calculateAccurateMemory()} disabled={analyzingFile === selectedFileKey} aria-label={t('main:modelSelector.calculateAccurateMemory')}>{analyzingFile === selectedFileKey ? <LoaderCircle className="vyact-model-spinner" size={17}/> : <Calculator size={17}/>}</button></Tooltip>}</div>}
+                                            {selectedHubModelFile && <div className="vyact-memory-selection"><OverflowTooltipText text={selectedFileDisplayName || ''}/></div>}
                                             {selectedMetadata && <div className="vyact-model-metadata vyact-memory-details">
                                                 <span><small>{t('main:modelSelector.layers')}<Tooltip content={t('main:modelSelector.layersHelp')} multiline size="medium"><i className="vyact-memory-help" tabIndex={0}>?</i></Tooltip></small><strong>{selectedMetadata.blockCount}</strong></span>
                                                 <span><small>{t('main:modelSelector.maxContext')}</small><strong>{formatContextLength(selectedMetadata.contextLength)}</strong></span>
@@ -556,7 +521,8 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
                                             <div className="vyact-model-files">{selectableFiles.map(file => {
                                                 const modelPath = model.runtime === 'mlx' ? `mlx/${model.id}` : `${model.id}/${file}`;
                                                 const fileSize = model.file_sizes?.[file] || 0;
-                                                const estimatedMemory = estimateModelMemoryBytes(model, file);
+                                                const estimatedMemory = metadataByFile[getModelFileKey(model, file)]?.estimatedMemoryBytes
+                                                    || estimateModelMemoryBytes(model, file);
                                                 const supportsMtp = model.mtp_supported_files?.includes(file) || mtpSupportedModels.includes(`${model.id}/${file}`);
                                                 const supportsDFlash2 = model.dflash2_supported_files?.includes(file);
                                                 const displayName = model.runtime === 'mlx' ? model.id.split('/').pop() : file;

@@ -71,6 +71,9 @@ export const estimateModelMemoryBytes = (model: VyactHubModel, filename: string)
     return parameterCount * (quantizationBits / 8) * MODEL_MEMORY_OVERHEAD_RATIO;
 };
 
+export const getModelFileKey = (model: VyactHubModel, filename: string) =>
+    `${model.id}@${model.revision}/${filename}`;
+
 export const getSelectableModelFiles = (files: string[]) => files
     .filter(filename => !/^BF16\//i.test(filename) && !/(^|\/)mtp-[^/]*\.gguf$/i.test(filename))
     .filter(filename => !/(^|\/)mmproj[^/]*\.gguf$/i.test(filename))

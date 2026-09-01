@@ -162,6 +162,7 @@ class HuggingFaceModelTests(unittest.TestCase):
         self.assertEqual([model["id"] for model in models], [target_item["id"]])
         self.assertEqual(models[0]["mtp_model"]["repository"], candidate["repository"])
         self.assertEqual(models[0]["mtp_supported_files"], [MLX_REPOSITORY_FILE])
+        self.assertIn("metadata", models[0])
 
     def test_selects_small_compatible_specprefill_model(self):
         target_config = {"model_type": "qwen3_5", "text_config": {"vocab_size": 248320}}

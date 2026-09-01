@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {Calculator, Check, Eye, EyeOff, KeyRound, LoaderCircle, Search, Sparkles} from 'lucide-react';
+import {Check, Eye, EyeOff, KeyRound, LoaderCircle, Search, Sparkles} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {api, type VyactHardwareInfo, type VyactHubModel, VyactRuntimeInstallError} from '../../services/api';
 import {inspectRemoteGguf, type GgufModelMetadata} from '../../utils/ggufMetadata';
@@ -7,12 +7,14 @@ import {
     formatCompactDownloads,
     formatModelBytes,
     estimateModelMemoryBytes,
+    getModelFileKey,
     getModelMemoryTone,
     getModelPublisher,
     getModelQuantization,
     getOptimizedModelContext,
     getSelectableModelFiles,
 } from '../../utils/vyactModelDisplay';
+import {loadSearchModelMetadata} from '../../utils/modelMetadataLoader';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import ModelSettingsModal from '../ModelSettingsModal/ModelSettingsModal';
 import OverflowTooltipText from '../common/OverflowTooltipText/OverflowTooltipText';
@@ -96,11 +98,9 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
     const [hardware, setHardware] = useState<VyactHardwareInfo>(EMPTY_HARDWARE_INFO);
     const [metadataByFile, setMetadataByFile] = useState<Record<string, GgufModelMetadata>>({});
-    const [analyzingFile, setAnalyzingFile] = useState('');
     const [downloadedSettings, setDownloadedSettings] = useState<{modelPath: string; runtime: 'gguf' | 'mlx'; repository: string; context: number} | null>(null);
     const [showRuntimeInstallHelp, setShowRuntimeInstallHelp] = useState(false);
     const searchRequestIdRef = useRef(0);
-    const cacheCheckedFilesRef = useRef(new Set<string>());
     const busy = isSearching || isDownloading || isSavingToken;
     const selectedFileKey = selectedFile
         ? `${selectedFile.repository}@${selectedFile.revision}/${selectedFile.filename}`
@@ -134,8 +134,10 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
         setMessage('');
         try {
             const searchResponse = await api.searchVyactModels(searchQuery, searchMlxOnly);
+            const loadedMetadata = await loadSearchModelMetadata(searchResponse.models, token.trim());
             if (requestId === searchRequestIdRef.current) {
                 setModels(searchResponse.models);
+                setMetadataByFile(loadedMetadata);
                 setHardware(searchResponse.hardware);
                 setInstalledModels(searchResponse.installed);
                 setMtpSupportedModels(searchResponse.mtp_supported);
@@ -145,7 +147,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
         } finally {
             if (requestId === searchRequestIdRef.current) setIsSearching(false);
         }
-    }, [mlxOnly]);
+    }, [mlxOnly, token]);
 
     useEffect(() => {
         void api.getModels()
@@ -258,43 +260,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
         }
     };
 
-    const calculateAccurateMemory = async () => {
-        if (!selectedFile) return;
-        const {repository, filename, revision} = selectedFile;
-        const fileKey = `${repository}@${revision}/${filename}`;
-        if (metadataByFile[fileKey]) return;
-        setAnalyzingFile(fileKey);
-        try {
-            const fileSize = selectedFile.fileSize || await api.getVyactModelFileSize(
-                repository, filename, selectedFile.runtime,
-            );
-            setSelectedFile(current => current && `${current.repository}@${current.revision}/${current.filename}` === fileKey
-                ? {...current, fileSize}
-                : current);
-            const cachedMetadata = selectedFile.runtime === 'mlx'
-                ? null
-                : cacheCheckedFilesRef.current.has(fileKey)
-                    ? null
-                    : await api.getVyactModelMetadataCache(repository, filename, revision, 32768);
-            cacheCheckedFilesRef.current.add(fileKey);
-            const metadata = cachedMetadata || (selectedFile.runtime === 'mlx'
-                ? await api.inspectVyactMlxMetadata(
-                    repository, revision, fileSize + (selectedFile.dflash2Model?.size || selectedFile.mtpModel?.size || 0), 32768,
-                )
-                : await inspectRemoteGguf(repository, filename, revision, fileSize, 32768, token.trim()));
-            if (!cachedMetadata && selectedFile.runtime === 'gguf') {
-                await api.saveVyactModelMetadataCache(repository, filename, revision, 32768, fileSize, metadata);
-            }
-            setMetadataByFile(current => ({...current, [fileKey]: metadata}));
-            setMessage('');
-        } catch (error) {
-            setMessage(`${t('modelSelector.metadataAnalysisFailed')} ${String(error)}`);
-        } finally {
-            setAnalyzingFile(current => current === fileKey ? '' : current);
-        }
-    };
-
-    const selectModelFile = async (model: VyactHubModel, filename: string, fileSize: number) => {
+    const selectModelFile = (model: VyactHubModel, filename: string, fileSize: number) => {
         const modelPath = model.runtime === 'mlx' ? `mlx/${model.id}` : `${model.id}/${filename}`;
         const selected = {
             repository: model.id, filename, revision: model.revision, fileSize,
@@ -306,24 +272,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
             dflash2Model: model.dflash2_model,
             dflash2Bundled: model.dflash2_bundled,
         };
-        const fileKey = `${model.id}@${model.revision}/${filename}`;
         setSelectedFile(selected);
-        if (model.runtime !== 'gguf' || metadataByFile[fileKey] || cacheCheckedFilesRef.current.has(fileKey)) return;
-
-        cacheCheckedFilesRef.current.add(fileKey);
-        setAnalyzingFile(fileKey);
-        try {
-            const cachedMetadata = await api.getVyactModelMetadataCache(
-                model.id, filename, model.revision, 32768,
-            );
-            if (cachedMetadata) {
-                setMetadataByFile(current => ({...current, [fileKey]: cachedMetadata}));
-            }
-        } catch {
-            // 캐시 확인 실패도 원격 헤더 조회로 자동 전환하지 않고 사용자 동작을 기다린다.
-        } finally {
-            setAnalyzingFile(current => current === fileKey ? '' : current);
-        }
     };
 
     return (<>
@@ -422,21 +371,6 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                 {selectedFile && (
                                     <div className="vyact-memory-selection">
                                         <OverflowTooltipText text={selectedFileDisplayName || ''}/>
-                                        {!selectedMetadata && (
-                                            <Tooltip content={t('modelSelector.accurateMemoryHint')} multiline size="medium">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => void calculateAccurateMemory()}
-                                                    disabled={busy || analyzingFile === selectedFileKey}
-                                                    aria-label={t('modelSelector.calculateAccurateMemory')}
-                                                >
-                                                    {analyzingFile === selectedFileKey
-                                                        ? <LoaderCircle className="vyact-model-spinner" size={17}/>
-                                                        : <Calculator size={17}/>
-                                                    }
-                                                </button>
-                                            </Tooltip>
-                                        )}
                                     </div>
                                 )}
                                 {selectedMetadata && (
@@ -489,10 +423,10 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                 </div>}
                                 <div className="vyact-model-files">
                                     {selectableFiles.map(filename => {
-                                        const fileKey = `${model.id}@${model.revision}/${filename}`;
                                         const isSelected = selectedFile?.repository === model.id && selectedFile.filename === filename;
                                         const fileSize = model.file_sizes?.[filename] || 0;
-                                        const estimatedMemory = estimateModelMemoryBytes(model, filename);
+                                        const estimatedMemory = metadataByFile[getModelFileKey(model, filename)]?.estimatedMemoryBytes
+                                            || estimateModelMemoryBytes(model, filename);
                                         const memoryTone = getModelMemoryTone(estimatedMemory, hardware);
                                         const isInstalled = installedModels.includes(
                                             model.runtime === 'mlx' ? `mlx/${model.id}` : `${model.id}/${filename}`,
@@ -524,7 +458,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                                         {quantization && <span className="vyact-mtp-badge">{quantization}</span>}
                                                     </span>}
                                                     {isInstalled && <span className="vyact-model-installed">{t('modelSelector.installed')}</span>}
-                                                    {analyzingFile === fileKey ? <LoaderCircle className="vyact-model-spinner" size={15}/> : isSelected && <Check size={15}/>}
+                                                    {isSelected && <Check size={15}/>}
                                                 </span>
                                             </button>
                                         );

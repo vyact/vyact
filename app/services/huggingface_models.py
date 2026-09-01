@@ -16,7 +16,8 @@ from services.vyact_runtime import VYACT_MODELS_DIR, cache_downloaded_model
 HF_API_URL = "https://huggingface.co/api"
 HF_BASE_URL = "https://huggingface.co"
 MLX_REPOSITORY_FILE = "__mlx_repository__"
-MLX_TARGET_SEARCH_LIMIT = 10
+MODEL_SEARCH_RESULT_LIMIT = 10
+MLX_TARGET_SEARCH_LIMIT = MODEL_SEARCH_RESULT_LIMIT
 MLX_DOWNLOAD_PATTERNS = (
     "*.json", "*.safetensors", "*.model", "*.txt", "*.tiktoken", "*.jinja", "*.py", "*.npz",
 )
@@ -80,7 +81,9 @@ async def get_model_file_size(
     return size
 
 
-async def search_gguf_models(query: str, token: str | None = None, limit: int = 50) -> list[dict]:
+async def search_gguf_models(
+        query: str, token: str | None = None, limit: int = MODEL_SEARCH_RESULT_LIMIT,
+) -> list[dict]:
     """Search public Hub repositories which declare GGUF as their library."""
     params = {
         "library": "gguf", "limit": max(1, min(limit, 50)),
@@ -146,6 +149,12 @@ async def search_mlx_models(
             model["specprefill_model"] = {
                 key: specprefill_model[key] for key in ("repository", "revision", "size")
             }
+        companion_size = int((mtp_model or specprefill_model or {}).get("size") or 0)
+        model["metadata"] = calculate_mlx_metadata_from_config(
+            config,
+            model["file_sizes"].get(MLX_REPOSITORY_FILE, 0) + companion_size,
+            32768,
+        )
         models.append(model)
     return sorted(models, key=lambda model: model["downloads"], reverse=True)
 

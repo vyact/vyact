@@ -27,7 +27,7 @@ from services.installer import is_docker_available, Installer
 from services.llm.errors import is_insufficient_memory_message
 from services.es_native import is_native_supported
 from services.hardware_info import get_local_hardware_info, validate_gpu_split_percentages
-from services.huggingface_models import get_model_file_size, recommend_downloaded_mlx_context, search_gguf_models
+from services.huggingface_models import MODEL_SEARCH_RESULT_LIMIT, get_model_file_size, recommend_downloaded_mlx_context, search_gguf_models
 from services.mcp_config import ensure_mcp_config
 from services.runtime_settings import DEFAULT_RUNTIME_SETTINGS, apply_runtime_settings
 from services.runtime_startup import (
@@ -730,7 +730,9 @@ async def search_vyact_models(q: str = Query("", max_length=200), mlx_only: bool
                 search_gguf_models(q, token),
                 search_mlx_models(q, token),
             )
-            models = sorted([*gguf_models, *mlx_models], key=lambda model: model["downloads"], reverse=True)
+            models = sorted(
+                [*gguf_models, *mlx_models], key=lambda model: model["downloads"], reverse=True,
+            )[:MODEL_SEARCH_RESULT_LIMIT]
         else:
             models = await search_gguf_models(q, token)
         return {

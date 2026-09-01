@@ -160,6 +160,7 @@ export interface VyactHubModel {
     specprefill_model?: {repository: string; revision: string; size: number};
     dflash2_model?: {repository: string; revision: string; filename?: string; size: number};
     dflash2_bundled?: boolean;
+    metadata?: VyactGgufMetadata;
 }
 
 export interface VyactGgufMetadata {
@@ -184,6 +185,28 @@ export interface VyactModelSearchResponse {
 }
 
 let cachedVyactInstalledModels: string[] = [];
+
+interface VyactMetadataResponse {
+    architecture: string;
+    parameter_count: number;
+    context_length: number;
+    block_count: number;
+    quantization: string;
+    kv_cache_bytes: number;
+    runtime_buffer_bytes: number;
+    estimated_memory_bytes: number;
+}
+
+const mapVyactMetadata = (source: VyactMetadataResponse): VyactGgufMetadata => ({
+    architecture: source.architecture,
+    parameterCount: source.parameter_count,
+    contextLength: source.context_length,
+    blockCount: source.block_count,
+    quantization: source.quantization,
+    kvCacheBytes: source.kv_cache_bytes,
+    runtimeBufferBytes: source.runtime_buffer_bytes,
+    estimatedMemoryBytes: source.estimated_memory_bytes,
+});
 
 export interface VyactGpuInfo {
     index: number;
@@ -357,7 +380,10 @@ export const api = {
         const data = await response.json();
         cachedVyactInstalledModels = data.installed || [];
         return {
-            models: data.models || [],
+            models: (data.models || []).map((model: VyactHubModel & {metadata?: VyactMetadataResponse}) => ({
+                ...model,
+                metadata: model.metadata ? mapVyactMetadata(model.metadata) : undefined,
+            })),
             installed: cachedVyactInstalledModels,
             mtp_supported: data.mtp_supported || [],
             dflash2_supported: data.dflash2_supported || [],
@@ -381,16 +407,7 @@ export const api = {
         await assertOk(response);
         const source = (await response.json()).metadata;
         if (!source) return null;
-        return {
-            architecture: source.architecture,
-            parameterCount: source.parameter_count,
-            contextLength: source.context_length,
-            blockCount: source.block_count,
-            quantization: source.quantization,
-            kvCacheBytes: source.kv_cache_bytes,
-            runtimeBufferBytes: source.runtime_buffer_bytes,
-            estimatedMemoryBytes: source.estimated_memory_bytes,
-        };
+        return mapVyactMetadata(source);
     },
 
     async inspectVyactMlxMetadata(
@@ -402,16 +419,7 @@ export const api = {
         const response = await fetch(`${API_BASE}/vyact/models/mlx-metadata?${params}`);
         await assertOk(response);
         const source = (await response.json()).metadata;
-        return {
-            architecture: source.architecture,
-            parameterCount: source.parameter_count,
-            contextLength: source.context_length,
-            blockCount: source.block_count,
-            quantization: source.quantization,
-            kvCacheBytes: source.kv_cache_bytes,
-            runtimeBufferBytes: source.runtime_buffer_bytes,
-            estimatedMemoryBytes: source.estimated_memory_bytes,
-        };
+        return mapVyactMetadata(source);
     },
 
     async getVyactModelFileSize(
