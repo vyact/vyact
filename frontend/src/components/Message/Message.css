@@ -344,42 +344,6 @@
     padding: 0 16px;
 }
 
-.msg-cache-status {
-    display: inline-flex;
-    width: fit-content;
-    align-items: center;
-    gap: 5px;
-    margin: 1px 0 3px;
-    padding: 2px 7px;
-    border: 1px solid color-mix(in srgb, var(--muted) 22%, transparent);
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--surface2) 72%, transparent);
-    color: var(--muted);
-    font-size: 10px;
-    font-weight: 650;
-    line-height: 1.35;
-    opacity: 1;
-}
-
-.msg-cache-status.is-hit {
-    border-color: color-mix(in srgb, var(--success) 30%, transparent);
-    background: color-mix(in srgb, var(--success) 9%, transparent);
-    color: var(--success);
-}
-
-.msg-cache-status-dot {
-    width: 5px;
-    height: 5px;
-    flex: 0 0 auto;
-    border-radius: 50%;
-    background: currentColor;
-    box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 12%, transparent);
-}
-
-:root[data-theme='light'] .msg-cache-status {
-    background: color-mix(in srgb, var(--surface2) 82%, var(--surface));
-}
-
 .msg.user .msg-stats {
     text-align: right;
 }

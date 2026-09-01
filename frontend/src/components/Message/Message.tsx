@@ -906,16 +906,13 @@ const Message: React.FC<MessageProps> = ({
                 // assistant: 모델 응답 생성 통계. tool 통계는 바로 아래 활동 요약에서 제공한다.
                 const llmTotal = stats.llm_total_duration || stats.total_duration;
                 const cachedTokens = stats.cached_tokens;
-                const cacheStatus = cachedTokens == null ? null : (
-                    <div className={`msg-cache-status ${cachedTokens > 0 ? 'is-hit' : 'is-miss'}`}>
-                        <span className="msg-cache-status-dot" aria-hidden="true"/>
-                        {cachedTokens > 0
-                            ? t('message.cacheHitTokens', {
-                                count: new Intl.NumberFormat(i18n.resolvedLanguage || i18n.language).format(cachedTokens),
-                            })
-                            : t('message.cacheMiss')}
-                    </div>
-                );
+                const cacheSummary = cachedTokens == null
+                    ? null
+                    : cachedTokens > 0
+                        ? t('message.cacheHitTokens', {
+                            count: new Intl.NumberFormat(i18n.resolvedLanguage || i18n.language).format(cachedTokens),
+                        })
+                        : t('message.cacheMiss');
 
                 const performanceLine = formatStats([
                     [t('message.inputProcessingTime'), formatNs(stats.prompt_eval_duration)],
@@ -923,15 +920,15 @@ const Message: React.FC<MessageProps> = ({
                     [t('message.generationSpeed'), formatTokensPerSecond(stats.completion_tokens_per_second)],
                 ]);
 
-                const line1 = formatStats([
-                    [t('message.outputTokens'), stats.eval_count],
+                const outputTokens = formatStats([[t('message.outputTokens'), stats.eval_count]]);
+                const generationTiming = formatStats([
                     [t('message.generationTime'), formatNs(stats.eval_duration)],
                     [t('message.llmTotal'), formatNs(llmTotal)],
                 ]);
+                const line1 = [outputTokens, cacheSummary, generationTiming].filter(Boolean).join(' · ');
                 if (!performanceLine && !line1) return null;
                 return (
                     <div className="msg-stats bot">
-                        {cacheStatus}
                         {performanceLine && <div>{performanceLine}</div>}
                         {line1 && <div>{line1}</div>}
                     </div>

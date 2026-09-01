@@ -37,7 +37,7 @@ class HuggingFaceModelTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             executable = Path(temp_dir) / "omlx"
             executable.write_text("#!/runtime/python\n")
-            discovered = '["deepseek_v4_mtp", "gemma4_assistant", "qwen3_5_mtp"]\n'
+            discovered = '["deepseek_v4_mtp", "gemma4_assistant", "gemma4_unified_assistant", "qwen3_5_mtp"]\n'
             with patch("services.omlx_policy.shutil.which", return_value=str(executable)), \
                  patch("services.omlx_policy._omlx_python_executable", return_value="/runtime/python"), \
                  patch("services.omlx_policy.subprocess.run", return_value=SimpleNamespace(stdout=discovered)), \
@@ -51,6 +51,10 @@ class HuggingFaceModelTests(unittest.TestCase):
                 self.assertEqual(
                     omlx_policy.external_mtp_draft_type({"model_type": "deepseek_v4"}),
                     "deepseek_v4_mtp",
+                )
+                self.assertEqual(
+                    omlx_policy.external_mtp_draft_type({"model_type": "gemma4_unified"}),
+                    "gemma4_unified_assistant",
                 )
                 self.assertTrue(omlx_policy.is_external_mtp_compatible(
                     {"model_type": "deepseek_v4", "hidden_size": 7168},

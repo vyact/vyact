@@ -99,11 +99,13 @@ def model_type(config: Mapping | None) -> str:
 def external_mtp_draft_type(config: Mapping | None) -> str | None:
     """Return the oMLX External MTP draft type supported by a target config."""
     target_type = model_type(config)
-    return next((
-        draft_type
+    matches = [
+        (len(target_prefix), draft_type)
         for target_prefixes, draft_type in refresh_external_mtp_capabilities()
-        if target_type.startswith(target_prefixes)
-    ), None)
+        for target_prefix in target_prefixes
+        if target_type.startswith(target_prefix)
+    ]
+    return max(matches, key=lambda match: match[0])[1] if matches else None
 
 
 def is_external_mtp_compatible(
