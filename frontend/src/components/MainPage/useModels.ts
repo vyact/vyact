@@ -99,7 +99,13 @@ export function useModels(
             onModelChange?.(model);
         } catch (error) {
             console.error('Model change failed:', error);
-            toast.error(t('uiAuditSecond.modelChangeFailed'), String(error));
+            const insufficientMemory = error instanceof Error && error.message === 'model_insufficient_memory';
+            toast.error(
+                t(insufficientMemory ? 'message.modelInsufficientMemoryTitle' : 'uiAuditSecond.modelChangeFailed'),
+                insufficientMemory
+                    ? t('message.modelInsufficientMemoryDescription', {model: model.split('/').filter(Boolean).pop() || model})
+                    : String(error),
+            );
         } finally {
             setModelLoading(false);
             setIsDownloading(false);

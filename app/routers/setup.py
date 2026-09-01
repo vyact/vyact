@@ -2,6 +2,7 @@
 routers/setup.py – 설치 / 모델 / Provider / 상태
 """
 import asyncio
+import copy
 import json
 import uuid
 import urllib.error
@@ -1337,6 +1338,7 @@ async def select_model(req: ModelSelectRequest):
             profile = await _get_or_create_model_profile(
                 req.model, runtime, repository, persist=True,
             )
+            previous_config = copy.deepcopy(config)
             vyact_config = config.setdefault("vyact_config", {})
             vyact_config.update({
                 "model_path": req.model,
@@ -1349,19 +1351,37 @@ async def select_model(req: ModelSelectRequest):
                 model_id = await asyncio.to_thread(
                     start_configured_runtime, vyact_config, config.get("debug_logging", False),
                 )
+                config["type"] = "vyact"
+                config["model"] = model_id
+                config["model_type"] = "chat"
+                vyact_config["model"] = model_id
+                common_settings = dict(config.get("runtime_settings", {}))
+                config["runtime_settings"] = common_settings
+                apply_runtime_settings({**common_settings, **_profile_runtime_settings(profile)})
+                await warm_loaded_vyact_model(
+                    model_id, await load_ui_language_async() or "",
+                )
             except Exception as error:
-                yield sse(f"Vyact 모델 로드 실패: {error}", "error", 0)
+                error_code = runtime_load_error_code(error)
+                logger.warning("[vyact] model selection failed: %s", error)
+                config.clear()
+                config.update(previous_config)
+                previous_vyact_config = config.get("vyact_config", {})
+                if config.get("type") == "vyact" and previous_vyact_config.get("model_path"):
+                    try:
+                        restored_model_id = await asyncio.to_thread(
+                            start_configured_runtime,
+                            previous_vyact_config,
+                            config.get("debug_logging", False),
+                        )
+                        await warm_loaded_vyact_model(
+                            restored_model_id, await load_ui_language_async() or "",
+                        )
+                    except Exception as restore_error:
+                        logger.warning("[vyact] previous model restore failed: %s", restore_error)
+                message = error_code if error_code == "model_insufficient_memory" else f"Vyact 모델 로드 실패: {error}"
+                yield sse(message, "error", 0)
                 return
-            config["type"] = "vyact"
-            config["model"] = model_id
-            config["model_type"] = "chat"
-            vyact_config["model"] = model_id
-            common_settings = dict(config.get("runtime_settings", {}))
-            config["runtime_settings"] = common_settings
-            apply_runtime_settings({**common_settings, **_profile_runtime_settings(profile)})
-            await warm_loaded_vyact_model(
-                model_id, await load_ui_language_async() or "",
-            )
         elif req.type in ("openai", "gemini", "claude"):
             if not req.api_key:
                 yield sse(f"{req.type.upper()} API KEY 필요", "error", 0)

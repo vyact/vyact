@@ -149,3 +149,44 @@ async def test_selecting_model_warms_it_before_reporting_done(monkeypatch):
     warm_model.assert_awaited_once_with("model", "ko")
     save_config.assert_awaited_once_with(config)
     assert '"type": "done"' in "".join(chunks)
+
+
+@pytest.mark.asyncio
+async def test_failed_model_warmup_restores_previous_model_and_reports_memory_error(monkeypatch):
+    config = {
+        "type": "vyact", "model": "previous-model", "runtime_settings": {},
+        "vyact_config": {
+            "model": "previous-model", "model_path": "mlx/owner/previous-model", "runtime": "mlx",
+        },
+    }
+    profile = {
+        "repository": "owner/new-model", "context_size": 32768,
+        "cache_quantization": True, "mtp_enabled": False,
+        "kv_cache_precision": "none", "performance_mode": "auto",
+        "cpu_threads": None, "seed": None, "max_output_tokens": 2048,
+        "history_token_budget": 16384, "temperature": 0.2,
+        "top_k": None, "top_p": None,
+    }
+    start_runtime = Mock(side_effect=["new-model", "previous-model"])
+    warm_model = AsyncMock(side_effect=[
+        RuntimeError("does not fit under the dynamic memory ceiling"), True,
+    ])
+    save_config = AsyncMock()
+    monkeypatch.setattr(setup, "load_config_async", AsyncMock(return_value=config))
+    monkeypatch.setattr(setup, "load_ui_language_async", AsyncMock(return_value="ko"))
+    monkeypatch.setattr(setup, "_get_or_create_model_profile", AsyncMock(return_value=profile))
+    monkeypatch.setattr(setup, "is_apple_silicon", lambda: True)
+    monkeypatch.setattr(setup, "warm_loaded_vyact_model", warm_model)
+    monkeypatch.setattr(setup, "save_config_async", save_config)
+    monkeypatch.setattr(setup, "apply_runtime_settings", Mock())
+    monkeypatch.setattr(vyact_runtime, "start_configured_runtime", start_runtime)
+
+    response = await setup.select_model(setup.ModelSelectRequest(type="vyact", model="mlx/owner/new-model"))
+    chunks = [chunk async for chunk in response.body_iterator]
+
+    assert start_runtime.call_count == 2
+    assert warm_model.await_args_list[1].args == ("previous-model", "ko")
+    assert config["model"] == "previous-model"
+    assert config["vyact_config"]["model_path"] == "mlx/owner/previous-model"
+    save_config.assert_not_awaited()
+    assert "model_insufficient_memory" in "".join(chunks)
