@@ -524,7 +524,7 @@
     "noSearchResults": "Aucun modèle trouvé. Essayez un autre nom.",
     "noInstalledModels": "Aucun modèle n’est installé. Recherchez un modèle à installer.",
     "calculateAccurateMemory": "Calculer la mémoire détaillée", "accurateMemoryHint": "Inspecte le modèle et inclut la mémoire supplémentaire requise pour les longues conversations et les documents.",
-    "conversationMemory": "Mémoire de conversation par défaut", "modelMemory": "Mémoire du modèle",
+    "conversationMemory": "Mémoire conversation", "modelMemory": "Mémoire du modèle",
     "quickEstimatedMemory": "Estimation rapide de RAM", "detailedEstimatedMemory": "Estimation détaillée de RAM", "conversationMemoryHelp": "Mémoire supplémentaire utilisée avec la longueur de conversation par défaut. Ce n’est pas la mémoire nécessaire pour exploiter tout le contexte maximal du modèle.",
     "metadataAnalysisFailed": "Impossible de calculer ou d’enregistrer les informations détaillées du modèle.",
     "totalEstimatedMemory": "RAM totale estimée",

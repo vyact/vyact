@@ -498,10 +498,10 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
                                             </div>
                                             {selectedHubModelFile && <div className="vyact-memory-selection"><OverflowTooltipText text={selectedFileDisplayName || ''}/></div>}
                                             {selectedMetadata && <div className="vyact-model-metadata vyact-memory-details">
-                                                <span><small>{t('main:modelSelector.layers')}<Tooltip content={t('main:modelSelector.layersHelp')} multiline size="medium"><i className="vyact-memory-help" tabIndex={0}>?</i></Tooltip></small><strong>{selectedMetadata.blockCount}</strong></span>
+                                                <span><small><Tooltip content={t('main:modelSelector.layersHelp')} multiline size="medium"><i className="vyact-memory-help" tabIndex={0}>?</i></Tooltip>{t('main:modelSelector.layers')}</small><strong>{selectedMetadata.blockCount}</strong></span>
                                                 <span><small>{t('main:modelSelector.maxContext')}</small><strong>{formatContextLength(selectedMetadata.contextLength)}</strong></span>
                                                 <span><small>{t('main:modelSelector.modelMemory')}</small><strong>{formatModelBytes(Math.max(0, selectedMetadata.estimatedMemoryBytes - selectedMetadata.kvCacheBytes))}</strong></span>
-                                                <span><small>{t('main:modelSelector.conversationMemory')}<Tooltip content={t('main:modelSelector.conversationMemoryHelp')} multiline size="medium"><i className="vyact-memory-help" tabIndex={0}>?</i></Tooltip></small><strong>{formatModelBytes(selectedMetadata.kvCacheBytes)}</strong></span>
+                                                <span><small><Tooltip content={t('main:modelSelector.conversationMemoryHelp')} multiline size="medium"><i className="vyact-memory-help" tabIndex={0}>?</i></Tooltip>{t('main:modelSelector.conversationMemory')}</small><strong>{formatModelBytes(selectedMetadata.kvCacheBytes)}</strong></span>
                                                 <span className="vyact-total-memory"><small>{t('main:modelSelector.totalEstimatedMemory')}</small><strong>{formatModelBytes(selectedMetadata.estimatedMemoryBytes)}</strong></span>
                                             </div>}
                                         </div>

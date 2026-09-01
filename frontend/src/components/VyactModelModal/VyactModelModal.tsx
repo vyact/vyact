@@ -377,10 +377,10 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                     <div className="vyact-model-metadata vyact-memory-details">
                                         <span>
                                             <small>
-                                                {t('modelSelector.layers')}
                                                 <Tooltip content={t('modelSelector.layersHelp')} multiline size="medium">
                                                     <i className="vyact-memory-help" tabIndex={0}>?</i>
                                                 </Tooltip>
+                                                {t('modelSelector.layers')}
                                             </small>
                                             <strong>{selectedMetadata.blockCount}</strong>
                                         </span>
@@ -391,10 +391,10 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                         </span>
                                         <span>
                                             <small>
-                                                {t('modelSelector.conversationMemory')}
                                                 <Tooltip content={t('modelSelector.conversationMemoryHelp')} multiline size="medium">
                                                     <i className="vyact-memory-help" tabIndex={0}>?</i>
                                                 </Tooltip>
+                                                {t('modelSelector.conversationMemory')}
                                             </small>
                                             <strong>{formatBytes(selectedMetadata.kvCacheBytes)}</strong>
                                         </span>
