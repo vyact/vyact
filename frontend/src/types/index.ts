@@ -90,6 +90,7 @@ export interface InjectedContextItem {
 export interface MessageStats {
     load_duration?: number | null;
     prompt_eval_count?: number | null;
+    cached_tokens?: number | null;
     prompt_eval_duration?: number | null;
     prompt_tokens_per_second?: number | null;
     eval_count?: number | null;

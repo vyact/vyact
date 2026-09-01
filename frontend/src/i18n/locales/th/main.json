@@ -1093,6 +1093,8 @@
     "externalDataTitle": "ข้อมูลภายนอก",
     "count": "{{count}} รายการ",
     "inputTokens": "โทเค็นขาเข้า",
+    "cacheHitTokens": "ใช้แคช · {{count}} โทเค็น",
+    "cacheMiss": "ไม่พบแคช",
     "inputProcessing": "ประมวลผลขาเข้า",
     "inputProcessingTime": "เวลาประมวลผลขาเข้า",
     "inputSpeed": "ความเร็วขาเข้า",

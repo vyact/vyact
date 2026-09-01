@@ -1093,6 +1093,8 @@
     "externalDataTitle": "外部数据",
     "count": "{{count}}项",
     "inputTokens": "输入词元",
+    "cacheHitTokens": "缓存命中 · {{count}} 个词元",
+    "cacheMiss": "缓存未命中",
     "inputProcessing": "输入处理",
     "inputProcessingTime": "输入处理时间",
     "inputSpeed": "输入速度",

@@ -67,6 +67,31 @@ class VyactOpenAiParityTests(unittest.IsolatedAsyncioTestCase):
         self.assertAlmostEqual(usage["completion_tokens_per_second"], 75 / 5.36)
         self.assertEqual(usage["cached_tokens"], 512)
 
+    def test_accumulates_llama_cpp_cached_prompt_tokens(self):
+        usage = {"_llm_call_count": 1}
+
+        _accumulate_llm_timing(usage, {
+            "cache_n": 4096,
+            "prompt_n": 129,
+            "prompt_ms": 250.0,
+            "predicted_n": 32,
+            "predicted_ms": 1000.0,
+        })
+
+        self.assertEqual(usage["cached_tokens"], 4096)
+        self.assertEqual(usage["prompt_tokens"], 129)
+
+    def test_reads_cached_tokens_from_openai_input_token_details(self):
+        usage = {"_llm_call_count": 1}
+
+        _accumulate_openai_usage(usage, {
+            "prompt_tokens": 100,
+            "completion_tokens": 10,
+            "input_tokens_details": {"cached_tokens": 80},
+        })
+
+        self.assertEqual(usage["cached_tokens"], 80)
+
     def test_tool_call_fingerprint_ignores_argument_key_order(self):
         first = _tool_call_fingerprint("search", {"query": "삼성전자", "page": 1})
         second = _tool_call_fingerprint("search", {"page": 1, "query": "삼성전자"})

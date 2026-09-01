@@ -91,6 +91,9 @@ def _accumulate_llm_timing(usage: dict | None, timings: dict | None) -> None:
     eval_duration = _milliseconds_to_nanoseconds(timings.get("predicted_ms"))
     prompt_tokens = timings.get("prompt_n")
     completion_tokens = timings.get("predicted_n")
+    cached_tokens = timings.get("cache_n")
+    if isinstance(cached_tokens, (int, float)) and cached_tokens >= 0:
+        usage["cached_tokens"] = usage.get("cached_tokens", 0) + round(cached_tokens)
     if (
         prompt_duration is None
         or eval_duration is None
@@ -129,7 +132,11 @@ def _accumulate_openai_usage(usage: dict | None, provider_usage: dict | None) ->
         return
     prompt_tokens = provider_usage.get("prompt_tokens")
     completion_tokens = provider_usage.get("completion_tokens")
-    prompt_details = provider_usage.get("prompt_tokens_details") or {}
+    prompt_details = (
+        provider_usage.get("prompt_tokens_details")
+        or provider_usage.get("input_tokens_details")
+        or {}
+    )
     cached_tokens = prompt_details.get("cached_tokens", provider_usage.get("cached_tokens"))
     if isinstance(cached_tokens, (int, float)):
         usage["cached_tokens"] = usage.get("cached_tokens", 0) + max(0, round(cached_tokens))

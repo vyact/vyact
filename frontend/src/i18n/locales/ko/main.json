@@ -1089,6 +1089,8 @@
     "externalDataTitle": "외부 데이터",
     "count": "{{count}}개",
     "inputTokens": "입력 토큰",
+    "cacheHitTokens": "캐시 적중 · {{count}}토큰",
+    "cacheMiss": "캐시 미적중",
     "inputProcessing": "입력 처리",
     "inputProcessingTime": "입력 처리 시간",
     "inputSpeed": "입력 속도",

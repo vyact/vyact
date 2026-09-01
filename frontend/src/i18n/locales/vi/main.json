@@ -1093,6 +1093,8 @@
     "externalDataTitle": "Dữ liệu bên ngoài",
     "count": "{{count}} mục",
     "inputTokens": "Token đầu vào",
+    "cacheHitTokens": "Trúng bộ nhớ đệm · {{count}} token",
+    "cacheMiss": "Không trúng bộ nhớ đệm",
     "inputProcessing": "Xử lý đầu vào",
     "inputProcessingTime": "Thời gian xử lý đầu vào",
     "inputSpeed": "Tốc độ đầu vào",

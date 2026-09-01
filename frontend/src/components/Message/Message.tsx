@@ -106,7 +106,7 @@ const Message: React.FC<MessageProps> = ({
                                              truncated,
                                              codeChanges,
                                          }) => {
-    const {t} = useTranslation('main');
+    const {t, i18n} = useTranslation('main');
     const {panel} = useCodePanel();
     const hasResponseProcess = Boolean(
         progressMessages?.length
@@ -905,6 +905,17 @@ const Message: React.FC<MessageProps> = ({
                 }
                 // assistant: 모델 응답 생성 통계. tool 통계는 바로 아래 활동 요약에서 제공한다.
                 const llmTotal = stats.llm_total_duration || stats.total_duration;
+                const cachedTokens = stats.cached_tokens;
+                const cacheStatus = cachedTokens == null ? null : (
+                    <div className={`msg-cache-status ${cachedTokens > 0 ? 'is-hit' : 'is-miss'}`}>
+                        <span className="msg-cache-status-dot" aria-hidden="true"/>
+                        {cachedTokens > 0
+                            ? t('message.cacheHitTokens', {
+                                count: new Intl.NumberFormat(i18n.resolvedLanguage || i18n.language).format(cachedTokens),
+                            })
+                            : t('message.cacheMiss')}
+                    </div>
+                );
 
                 const performanceLine = formatStats([
                     [t('message.inputProcessingTime'), formatNs(stats.prompt_eval_duration)],
@@ -920,6 +931,7 @@ const Message: React.FC<MessageProps> = ({
                 if (!performanceLine && !line1) return null;
                 return (
                     <div className="msg-stats bot">
+                        {cacheStatus}
                         {performanceLine && <div>{performanceLine}</div>}
                         {line1 && <div>{line1}</div>}
                     </div>
