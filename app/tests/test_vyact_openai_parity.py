@@ -166,7 +166,7 @@ class VyactOpenAiParityTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(body, {
             "specprefill": True,
             "specprefill_keep_pct": 0.2,
-            "specprefill_threshold": 1024,
+            "specprefill_threshold": 1023,
         })
 
     async def test_specprefill_is_disabled_below_token_threshold(self):

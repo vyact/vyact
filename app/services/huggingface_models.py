@@ -9,6 +9,7 @@ from urllib.parse import quote
 import httpx
 
 from services.omlx_policy import (
+    MAX_SPECPREFILL_DRAFT_BYTES, MAX_SPECPREFILL_TARGET_SIZE_RATIO,
     external_mtp_draft_types, is_external_mtp_compatible, model_type,
 )
 from services.vyact_runtime import VYACT_MODELS_DIR, cache_downloaded_model
@@ -29,8 +30,6 @@ _MINIMUM_RUNTIME_BUFFER_BYTES = 512 * 1024 ** 2
 _RECOMMENDED_MEMORY_UTILIZATION = 0.60
 _MINIMUM_PRACTICAL_CONTEXT_SIZE = 8192
 _CONTEXT_SIZE_CANDIDATES = (131072, 65536, 32768, 16384, _MINIMUM_PRACTICAL_CONTEXT_SIZE)
-_MAX_SPECPREFILL_DRAFT_BYTES = 2 * 1024 ** 3
-_MAX_SPECPREFILL_TARGET_SIZE_RATIO = 0.35
 
 
 def _headers(token: str | None) -> dict[str, str]:
@@ -350,9 +349,9 @@ def _select_mlx_specprefill_model(
         candidate for candidate in candidates
         if candidate["repository"] != repository
         and candidate["size"] > 0
-        and candidate["size"] <= _MAX_SPECPREFILL_DRAFT_BYTES
+        and candidate["size"] <= MAX_SPECPREFILL_DRAFT_BYTES
         and (target_size <= 0 or candidate["size"] < target_size)
-        and (target_size <= 0 or candidate["size"] <= target_size * _MAX_SPECPREFILL_TARGET_SIZE_RATIO)
+        and (target_size <= 0 or candidate["size"] <= target_size * MAX_SPECPREFILL_TARGET_SIZE_RATIO)
         and model_type(candidate.get("config")) == target_type
         and _config_vocab_size(candidate.get("config", {})) == target_vocab
     ]

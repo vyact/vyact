@@ -6,7 +6,7 @@ import struct
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 from services.mlx_runtime import (
     MLX_MODEL_MANIFEST,
@@ -21,6 +21,7 @@ from services.mlx_runtime import (
     install_missing_omlx_runtime,
     list_downloaded_mlx_models,
     list_mtp_supported_mlx_models,
+    prepare_mlx_specprefill_draft,
     stop_mlx_runtime,
 )
 
@@ -138,6 +139,33 @@ class MlxRuntimeTests(unittest.TestCase):
             self.assertFalse(model_dir.exists())
             self.assertFalse(mtp_dir.exists())
 
+    def test_deleting_target_preserves_shared_specprefill_draft_and_role(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            models_dir = Path(temp_dir)
+            first_target = models_dir / "owner" / "first"
+            second_target = models_dir / "owner" / "second"
+            draft = models_dir / "owner" / "draft"
+            for path in (first_target, second_target, draft):
+                path.mkdir(parents=True)
+            for target, repository in ((first_target, "owner/first"), (second_target, "owner/second")):
+                (target / MLX_MODEL_MANIFEST).write_text(json.dumps({
+                    "repository": repository, "specprefill_repository": "owner/draft",
+                }))
+            draft_manifest = draft / MLX_MODEL_MANIFEST
+            draft_manifest.write_text(json.dumps({
+                "repository": "owner/draft", "role": "specprefill",
+            }))
+
+            with patch("services.mlx_runtime.MLX_MODELS_DIR", models_dir):
+                delete_downloaded_mlx_model("mlx/owner/first")
+
+            self.assertTrue(draft.is_dir())
+            self.assertEqual(json.loads(draft_manifest.read_text())["role"], "specprefill")
+            self.assertEqual(
+                json.loads((second_target / MLX_MODEL_MANIFEST).read_text())["specprefill_repository"],
+                "owner/draft",
+            )
+
     def test_removes_empty_mlx_owner_directory_after_model_deletion(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             models_dir = Path(temp_dir) / "mlx"
@@ -221,10 +249,13 @@ class MlxRuntimeTests(unittest.TestCase):
             draft.mkdir(parents=True)
             shared_tokenizer = {"tokenizer_class": "Qwen2Tokenizer"}
             for path in (model, draft):
-                (path / "config.json").write_text(json.dumps({"vocab_size": 151936}))
+                (path / "config.json").write_text(json.dumps({
+                    "model_type": "qwen3_5", "vocab_size": 151936,
+                }))
                 (path / "tokenizer_config.json").write_text(json.dumps(shared_tokenizer))
                 (path / "tokenizer.json").write_text(json.dumps({"model": {"vocab": {"hello": 0}}}))
-                (path / "model.safetensors").touch()
+            (model / "model.safetensors").write_bytes(b"target-weights")
+            (draft / "model.safetensors").write_bytes(b"draf")
             (model / MLX_MODEL_MANIFEST).write_text(json.dumps({"specprefill_repository": "owner/draft"}))
             (draft / MLX_MODEL_MANIFEST).write_text(json.dumps({"role": "specprefill"}))
 
@@ -238,7 +269,7 @@ class MlxRuntimeTests(unittest.TestCase):
             self.assertEqual(mode, "specprefill")
             self.assertTrue(settings["specprefill_enabled"])
             self.assertEqual(settings["specprefill_keep_pct"], 0.2)
-            self.assertEqual(settings["specprefill_threshold"], 1024)
+            self.assertEqual(settings["specprefill_threshold"], 1023)
             self.assertFalse(settings["mtp_enabled"])
 
     def test_specprefill_rejects_different_token_id_mapping(self):
@@ -249,10 +280,13 @@ class MlxRuntimeTests(unittest.TestCase):
             draft = models / "owner" / "draft"
             for path, token_id in ((model, 0), (draft, 1)):
                 path.mkdir(parents=True)
-                (path / "config.json").write_text(json.dumps({"vocab_size": 151936}))
+                (path / "config.json").write_text(json.dumps({
+                    "model_type": "qwen3_5", "vocab_size": 151936,
+                }))
                 (path / "tokenizer_config.json").write_text(json.dumps({"tokenizer_class": "Qwen2Tokenizer"}))
                 (path / "tokenizer.json").write_text(json.dumps({"model": {"vocab": {"hello": token_id}}}))
-                (path / "model.safetensors").touch()
+            (model / "model.safetensors").write_bytes(b"target-weights")
+            (draft / "model.safetensors").write_bytes(b"draf")
             (model / MLX_MODEL_MANIFEST).write_text(json.dumps({"specprefill_repository": "owner/draft"}))
             (draft / MLX_MODEL_MANIFEST).write_text(json.dumps({"role": "specprefill"}))
 
@@ -263,6 +297,95 @@ class MlxRuntimeTests(unittest.TestCase):
                 _, _, mode = _build_omlx_server_command(model, 32768)
 
             self.assertEqual(mode, "none")
+
+    def test_prepare_specprefill_attaches_compatible_installed_draft_without_network(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            models = Path(temp_dir) / "models"
+            target = models / "owner" / "target"
+            draft = models / "draft-owner" / "draft"
+            target.mkdir(parents=True)
+            draft.mkdir(parents=True)
+            shared_tokenizer = {"tokenizer_class": "Qwen2Tokenizer"}
+            for path in (target, draft):
+                (path / "config.json").write_text(json.dumps({
+                    "model_type": "qwen3_5", "vocab_size": 151936,
+                }))
+                (path / "tokenizer_config.json").write_text(json.dumps(shared_tokenizer))
+                (path / "tokenizer.json").write_text(json.dumps({"model": {"vocab": {"hello": 0}}}))
+            (target / "model.safetensors").write_bytes(b"target-weights")
+            (draft / "model.safetensors").write_bytes(b"draf")
+            target_manifest = target / MLX_MODEL_MANIFEST
+            target_manifest.write_text(json.dumps({
+                "repository": "owner/target", "mtp_repository": "owner/target-mtp",
+            }))
+            draft_manifest = draft / MLX_MODEL_MANIFEST
+            draft_manifest.write_text(json.dumps({
+                "repository": "draft-owner/draft", "role": "specprefill",
+            }))
+
+            with patch("services.mlx_runtime.MLX_MODELS_DIR", models), \
+                 patch("services.mlx_runtime.OMLX_BASE_DIR", Path(temp_dir) / "omlx"), \
+                 patch("services.mlx_runtime._OMLX_CACHE_DIR", Path(temp_dir) / "cache"), \
+                 patch("services.mlx_runtime.shutil.which", return_value="/opt/homebrew/bin/omlx"), \
+                 patch("services.huggingface_models.search_mlx_models") as search:
+                self.assertTrue(prepare_mlx_specprefill_draft(target, enable_mtp=False))
+                _, _, mode = _build_omlx_server_command(target, 32768, enable_mtp=False)
+
+            search.assert_not_called()
+            settings = json.loads(
+                (Path(temp_dir) / "omlx" / "model_settings.json").read_text()
+            )["models"]["target"]
+            self.assertEqual(mode, "specprefill")
+            self.assertEqual(settings["specprefill_draft_model"], str(draft))
+            self.assertEqual(
+                json.loads(target_manifest.read_text())["specprefill_repository"],
+                "draft-owner/draft",
+            )
+            self.assertEqual(json.loads(draft_manifest.read_text())["role"], "specprefill")
+
+    def test_prepare_specprefill_is_disabled_while_external_mtp_is_enabled(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            target = Path(temp_dir) / "target"
+            target.mkdir()
+            manifest_path = target / MLX_MODEL_MANIFEST
+            manifest_path.write_text(json.dumps({"repository": "owner/target"}))
+            with patch(
+                "services.mlx_runtime._compatible_external_mtp_path", return_value=Path(temp_dir) / "mtp",
+            ), patch("services.mlx_runtime._find_installed_specprefill_draft") as find_installed, \
+                 patch("services.huggingface_models.search_mlx_models") as search:
+                self.assertFalse(prepare_mlx_specprefill_draft(target, enable_mtp=True))
+            find_installed.assert_not_called()
+            search.assert_not_called()
+            self.assertNotIn("specprefill_repository", json.loads(manifest_path.read_text()))
+
+    def test_prepare_specprefill_skips_installed_draft_that_exceeds_size_ratio(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            models = Path(temp_dir) / "models"
+            target = models / "owner" / "target"
+            draft = models / "owner" / "draft"
+            target.mkdir(parents=True)
+            draft.mkdir(parents=True)
+            for path in (target, draft):
+                (path / "config.json").write_text(json.dumps({
+                    "model_type": "qwen3_5", "vocab_size": 151936,
+                }))
+                (path / "tokenizer_config.json").write_text(json.dumps({"tokenizer_class": "Qwen2Tokenizer"}))
+                (path / "tokenizer.json").write_text("same-tokenizer")
+            (target / "model.safetensors").write_bytes(b"1234567890")
+            (draft / "model.safetensors").write_bytes(b"1234")
+            (target / MLX_MODEL_MANIFEST).write_text(json.dumps({"repository": "owner/target"}))
+            (draft / MLX_MODEL_MANIFEST).write_text(json.dumps({
+                "repository": "owner/draft", "role": "specprefill",
+            }))
+
+            with patch("services.mlx_runtime.MLX_MODELS_DIR", models), \
+                 patch("services.huggingface_models.search_mlx_models", new=AsyncMock(return_value=[])):
+                self.assertFalse(prepare_mlx_specprefill_draft(target, enable_mtp=False))
+
+            self.assertNotIn(
+                "specprefill_repository",
+                json.loads((target / MLX_MODEL_MANIFEST).read_text()),
+            )
 
     def test_associates_mtp_without_listing_drafter_as_selectable_model(self):
         with tempfile.TemporaryDirectory() as temp_dir:

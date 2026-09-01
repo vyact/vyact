@@ -29,7 +29,10 @@ from .tools import (
 )
 from services.runtime_settings import get_runtime_settings
 from services.tool_approval import await_tool_approval
-from services.omlx_policy import SPECPREFILL_KEEP_PCT, SPECPREFILL_THRESHOLD_TOKENS
+from services.omlx_policy import (
+    OMLX_SPECPREFILL_THRESHOLD, SPECPREFILL_KEEP_PCT,
+    SPECPREFILL_THRESHOLD_TOKENS,
+)
 
 
 _REPEATED_TOOL_CALL_RESULT = (
@@ -213,7 +216,7 @@ async def _apply_local_specprefill_control(
     body["specprefill"] = eligible
     if eligible:
         body["specprefill_keep_pct"] = SPECPREFILL_KEEP_PCT
-        body["specprefill_threshold"] = SPECPREFILL_THRESHOLD_TOKENS
+        body["specprefill_threshold"] = OMLX_SPECPREFILL_THRESHOLD
     logger.info(
         "[omlx] SpecPrefill request policy: enabled=%s mode=%s input_tokens=%s reason=%s",
         eligible, speculative_mode, input_tokens if input_tokens is not None else "not_counted", call_reason,

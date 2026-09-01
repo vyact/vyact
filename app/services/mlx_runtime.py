@@ -21,9 +21,11 @@ from tqdm.auto import tqdm
 from config import INSTALL_DIR, get_log_file
 from services.local_model_errors import LocalModelNotDownloadedError
 from services.omlx_policy import (
-    HOT_CACHE_MAX_SIZE, PAGED_SSD_CACHE_MAX_SIZE, SPECPREFILL_KEEP_PCT,
-    SPECPREFILL_THRESHOLD_TOKENS, VLM_MTP_DRAFT_BLOCK_SIZE,
-    is_external_mtp_compatible,
+    HOT_CACHE_MAX_SIZE, MAX_SPECPREFILL_DRAFT_BYTES,
+    MAX_SPECPREFILL_TARGET_SIZE_RATIO, OMLX_SPECPREFILL_THRESHOLD,
+    PAGED_SSD_CACHE_MAX_SIZE,
+    SPECPREFILL_KEEP_PCT, SPECPREFILL_THRESHOLD_TOKENS,
+    VLM_MTP_DRAFT_BLOCK_SIZE, is_external_mtp_compatible, model_type,
 )
 from services.runtime_error_details import runtime_startup_error
 from services.vyact_runtime import VYACT_RUNTIME_PORT
@@ -280,10 +282,8 @@ def associate_mlx_specprefill_model(model_path: Path, repository: str, draft_pat
         raise RuntimeError("The downloaded MLX model manifest is missing")
     if draft_path != _repository_path(repository):
         raise ValueError("The SpecPrefill model path does not match its repository")
-    target_identity = _tokenizer_identity(model_path)
-    draft_identity = _tokenizer_identity(draft_path)
-    if target_identity is None or target_identity != draft_identity:
-        raise ValueError("The SpecPrefill draft tokenizer is incompatible with the target model")
+    if not _is_compatible_specprefill_draft(model_path, draft_path):
+        raise ValueError("The SpecPrefill draft is incompatible with the target model")
     manifest["specprefill_repository"] = repository
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
 
@@ -553,18 +553,38 @@ def _get_manifest_companion_path(
     return path if manifest.get("role") in accepted_roles and _is_complete_mlx_model(path) else None
 
 
-def _tokenizer_identity(model_path: Path) -> tuple[str, str, str] | None:
-    """Return an exact tokenizer identity used to reject arbitrary draft models."""
+def _tokenizer_identity(model_path: Path) -> tuple[str, str] | None:
+    """Hash the actual token-ID mapping read from the tokenizer files.
+
+    SpecPrefill receives token IDs produced by the target tokenizer, so wrapper
+    class, decoder, and pre-tokenizer serialization differences do not affect
+    draft compatibility. The vocabulary/model and added-token mapping must be
+    byte-for-byte equal after deterministic JSON serialization.
+    """
     try:
         tokenizer = json.loads((model_path / "tokenizer_config.json").read_text(encoding="utf-8"))
         config = json.loads((model_path / "config.json").read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return None
-    tokenizer_class = str(tokenizer.get("tokenizer_class") or "")
     text_config = config.get("text_config") if isinstance(config.get("text_config"), dict) else {}
     vocab_size = str(text_config.get("vocab_size") or config.get("vocab_size") or tokenizer.get("vocab_size") or "")
-    tokenizer_files = [model_path / "tokenizer.json"]
-    if not tokenizer_files[0].is_file():
+    tokenizer_json_path = model_path / "tokenizer.json"
+    if not vocab_size:
+        return None
+    digest = hashlib.sha256()
+    if tokenizer_json_path.is_file():
+        try:
+            tokenizer_json = json.loads(tokenizer_json_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return None
+        token_mapping = {
+            key: tokenizer_json.get(key)
+            for key in ("model", "added_tokens")
+        }
+        digest.update(json.dumps(
+            token_mapping, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+        ).encode("utf-8"))
+    else:
         tokenizer_files = [
             path for path in (
                 model_path / "tokenizer.model",
@@ -572,15 +592,17 @@ def _tokenizer_identity(model_path: Path) -> tuple[str, str, str] | None:
                 model_path / "merges.txt",
             ) if path.is_file()
         ]
-    if not tokenizer_class or not vocab_size or not tokenizer_files:
-        return None
-    digest = hashlib.sha256()
-    for path in tokenizer_files:
-        digest.update(path.name.encode("utf-8"))
-        digest.update(b"\0")
-        digest.update(path.read_bytes())
-        digest.update(b"\0")
-    return tokenizer_class, vocab_size, digest.hexdigest()
+        if not tokenizer_files:
+            return None
+        for path in tokenizer_files:
+            digest.update(path.name.encode("utf-8"))
+            digest.update(b"\0")
+            try:
+                digest.update(path.read_bytes())
+            except OSError:
+                return None
+            digest.update(b"\0")
+    return vocab_size, digest.hexdigest()
 
 
 def _model_config(model_path: Path) -> dict:
@@ -606,19 +628,85 @@ def _compatible_specprefill_path(model_path: Path) -> Path | None:
     )
     if draft_path is None:
         return None
+    return draft_path if _is_compatible_specprefill_draft(model_path, draft_path) else None
+
+
+def _mlx_model_size(model_path: Path) -> int:
+    try:
+        return sum(path.stat().st_size for path in model_path.glob("*.safetensors") if path.is_file())
+    except OSError:
+        return 0
+
+
+def _config_vocab_size(config: dict) -> int:
+    text_config = config.get("text_config") if isinstance(config.get("text_config"), dict) else {}
+    try:
+        return int(text_config.get("vocab_size") or config.get("vocab_size") or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _is_compatible_specprefill_draft(model_path: Path, draft_path: Path) -> bool:
+    """Apply the same architecture, vocabulary, size, and exact-tokenizer gates locally."""
+    target_config = _model_config(model_path)
+    draft_config = _model_config(draft_path)
+    target_size = _mlx_model_size(model_path)
+    draft_size = _mlx_model_size(draft_path)
     target_identity = _tokenizer_identity(model_path)
     draft_identity = _tokenizer_identity(draft_path)
-    return draft_path if target_identity is not None and target_identity == draft_identity else None
+    return (
+        bool(model_type(target_config))
+        and model_type(target_config) == model_type(draft_config)
+        and _config_vocab_size(target_config) > 0
+        and _config_vocab_size(target_config) == _config_vocab_size(draft_config)
+        and 0 < draft_size <= MAX_SPECPREFILL_DRAFT_BYTES
+        and target_size > draft_size
+        and draft_size <= target_size * MAX_SPECPREFILL_TARGET_SIZE_RATIO
+        and target_identity is not None
+        and target_identity == draft_identity
+    )
+
+
+def _find_installed_specprefill_draft(model_path: Path) -> tuple[str, Path] | None:
+    """Find the smallest compatible installed draft without changing companion manifests."""
+    candidates: list[tuple[int, str, Path]] = []
+    for manifest_path in MLX_MODELS_DIR.rglob(MLX_MODEL_MANIFEST) if MLX_MODELS_DIR.is_dir() else []:
+        draft_manifest = _read_model_manifest(manifest_path)
+        repository = draft_manifest.get("repository")
+        draft_path = manifest_path.parent
+        if (
+            draft_manifest.get("role") == "specprefill"
+            and isinstance(repository, str)
+            and _is_complete_mlx_model(draft_path)
+            and _is_compatible_specprefill_draft(model_path, draft_path)
+        ):
+            try:
+                if draft_path.resolve() != _repository_path(repository).resolve():
+                    continue
+            except (OSError, ValueError):
+                continue
+            candidates.append((_mlx_model_size(draft_path), repository, draft_path))
+    if not candidates:
+        return None
+    _, repository, draft_path = min(candidates, key=lambda candidate: candidate[0])
+    return repository, draft_path
 
 
 def prepare_mlx_specprefill_draft(
         model_path: Path, token: str | None = None, enable_mtp: bool | None = None,
 ) -> bool:
     """Download and attach one compatible small draft before a regular oMLX load."""
-    if _compatible_specprefill_path(model_path) is not None:
-        return True
     if enable_mtp is not False and _compatible_external_mtp_path(model_path) is not None:
         return False
+    if _get_dflash2_path(model_path) is not None:
+        return False
+    if _compatible_specprefill_path(model_path) is not None:
+        return True
+    installed_draft = _find_installed_specprefill_draft(model_path)
+    if installed_draft is not None:
+        repository, draft_path = installed_draft
+        associate_mlx_specprefill_model(model_path, repository, draft_path)
+        return True
     manifest = _read_model_manifest(model_path / MLX_MODEL_MANIFEST)
     repository = manifest.get("repository")
     if not isinstance(repository, str) or not repository:
@@ -665,9 +753,7 @@ def _configured_compatible_specprefill_path(model_path: Path) -> Path | None:
         return None
     if not draft_path.is_dir() or not _is_complete_mlx_model(draft_path):
         return None
-    target_identity = _tokenizer_identity(model_path)
-    draft_identity = _tokenizer_identity(draft_path)
-    return draft_path if target_identity is not None and target_identity == draft_identity else None
+    return draft_path if _is_compatible_specprefill_draft(model_path, draft_path) else None
 
 
 def _build_omlx_server_command(
@@ -708,7 +794,7 @@ def _build_omlx_server_command(
             "specprefill_enabled": True,
             "specprefill_draft_model": str(specprefill_path),
             "specprefill_keep_pct": SPECPREFILL_KEEP_PCT,
-            "specprefill_threshold": SPECPREFILL_THRESHOLD_TOKENS,
+            "specprefill_threshold": OMLX_SPECPREFILL_THRESHOLD,
         })
     settings = {
         "version": 1,
