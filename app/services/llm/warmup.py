@@ -29,6 +29,7 @@ async def warm_vyact_chat_prefix(model: str, language: str, system_prompt: str) 
             "stream": False,
             "max_tokens": 1,
             "temperature": get_runtime_settings()["llm_temperature"],
+            "specprefill": False,
             "messages": [
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": "."},
@@ -59,6 +60,7 @@ async def warm_vyact_voice_prefix(model: str, language: str, system_prompt: str)
             "stream": False,
             "max_tokens": 1,
             "cache_prompt": True,
+            "specprefill": False,
             "temperature": get_runtime_settings()["llm_temperature"],
             "messages": [
                 {"role": "system", "content": system_message},

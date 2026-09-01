@@ -31,8 +31,11 @@ def _uses_package_manager_runtime(config: dict) -> bool:
     if config.get("type") != "vyact":
         return False
     vyact_config = config.get("vyact_config", {})
-    if vyact_config.get("runtime", "gguf") != "gguf" or not vyact_config.get("model_path"):
+    if not vyact_config.get("model_path"):
         return False
+    if vyact_config.get("runtime", "gguf") == "mlx":
+        from services.mlx_runtime import is_apple_silicon
+        return is_apple_silicon()
     managed_bin = VYACT_RUNTIME_DIR / "bin"
     paths = get_runtime_paths()
     return bool(
@@ -40,6 +43,13 @@ def _uses_package_manager_runtime(config: dict) -> bool:
         and managed_bin not in Path(paths.llama_server).parents
         and managed_bin not in Path(paths.llama_swap).parents
     )
+
+
+def get_runtime_update_commands(config: dict) -> list[list[str]]:
+    if config.get("vyact_config", {}).get("runtime", "gguf") == "mlx":
+        from services.mlx_runtime import get_omlx_update_commands
+        return get_omlx_update_commands()
+    return get_native_update_commands()
 
 
 async def detect_native_runtime_updates(config: dict) -> dict:
@@ -51,11 +61,13 @@ async def detect_native_runtime_updates(config: dict) -> dict:
 
     try:
         if platform.system() in {"Darwin", "Linux"}:
-            brew = next((command[0] for command in get_native_update_commands() if command), "")
+            commands = get_runtime_update_commands(config)
+            brew = next((command[0] for command in commands if command), "")
             if not brew:
                 raise RuntimeError("Homebrew is unavailable")
+            formulae = ["omlx"] if config.get("vyact_config", {}).get("runtime") == "mlx" else ["llama.cpp", "llama-swap"]
             process = await asyncio.create_subprocess_exec(
-                brew, "outdated", "--formula", "--json=v2", "llama.cpp", "llama-swap",
+                brew, "outdated", "--formula", "--json=v2", *formulae,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 env={**os.environ, "HOMEBREW_NO_AUTO_UPDATE": "1"},
@@ -75,7 +87,7 @@ async def detect_native_runtime_updates(config: dict) -> dict:
         else:
             # winget reports available upgrades through the upgrade command itself.
             packages = []
-            for command in get_native_update_commands():
+            for command in get_runtime_update_commands(config):
                 check_command = [*command, "--include-unknown"]
                 process = await asyncio.create_subprocess_exec(
                     *check_command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT,
@@ -97,11 +109,6 @@ async def load_configured_vyact_model(config: dict | None = None) -> tuple[str, 
     vyact_config = config.get("vyact_config", {})
     if config.get("type") != "vyact" or not vyact_config.get("model_path"):
         return "", ""
-    model_id = await asyncio.to_thread(
-        start_configured_runtime, vyact_config, config.get("debug_logging", False),
-    )
-    config["model"] = model_id
-    vyact_config["model"] = model_id
     common_settings = config.get("runtime_settings", {})
     profile = await get_model_profile(vyact_config["model_path"])
     if profile is None:
@@ -109,16 +116,26 @@ async def load_configured_vyact_model(config: dict | None = None) -> tuple[str, 
             vyact_config["model_path"], vyact_config.get("runtime", "gguf"),
             vyact_config.get("repository"), vyact_config.get("context_size", 32768),
         ))
-    elif profile.get("history_token_budget") is None:
-        profile = await save_model_profile(normalize_model_profile({
-            **profile, "history_token_budget": common_settings.get("history_token_budget", 16384),
-        }))
+    else:
+        migrated_profile = normalize_model_profile({
+            **profile,
+            "history_token_budget": profile.get(
+                "history_token_budget", common_settings.get("history_token_budget", 16384),
+            ),
+        })
+        if any(profile.get(key) != value for key, value in migrated_profile.items()):
+            profile = await save_model_profile(migrated_profile)
     vyact_config.update({key: profile.get(key) for key in (
         "context_size", "max_output_tokens", "temperature", "top_k", "top_p", "cache_quantization",
         "mtp_enabled", "kv_cache_precision", "performance_mode", "cpu_threads", "seed", "history_token_budget",
         "gpu_split_percentages",
         "gpu_manual_split_enabled",
     )})
+    model_id = await asyncio.to_thread(
+        start_configured_runtime, vyact_config, config.get("debug_logging", False),
+    )
+    config["model"] = model_id
+    vyact_config["model"] = model_id
     apply_runtime_settings({
         **common_settings,
         "llm_num_ctx": profile["context_size"],
@@ -140,7 +157,8 @@ async def apply_startup_runtime_choice(update: bool) -> tuple[str, str]:
             return "", ""
         if update:
             _startup_state = {**_startup_state, "status": "updating"}
-            for command in get_native_update_commands():
+            config = await load_config_async()
+            for command in get_runtime_update_commands(config):
                 process = await asyncio.create_subprocess_exec(
                     *command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT,
                 )

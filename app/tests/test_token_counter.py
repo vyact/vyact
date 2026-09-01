@@ -49,3 +49,16 @@ def test_mlx_token_count_excludes_base64_image_payload():
         token_count = _count_mlx_tokens("mlx/model", messages, None)
 
     assert token_count == 12 + IMAGE_INPUT_TOKEN_RESERVE
+
+
+def test_mlx_batch_encoding_counts_input_ids_instead_of_mapping_keys():
+    class Tokenizer:
+        def apply_chat_template(self, _messages, **_kwargs):
+            return {"input_ids": list(range(20)), "attention_mask": [1] * 20}
+
+    with patch("services.llm.token_counter._load_mlx_tokenizer", return_value=Tokenizer()):
+        token_count = _count_mlx_tokens(
+            "mlx/model", [{"role": "user", "content": "hello"}], None,
+        )
+
+    assert token_count == 20

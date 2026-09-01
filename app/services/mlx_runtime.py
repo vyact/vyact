@@ -7,13 +7,11 @@ import shutil
 import signal
 import struct
 import subprocess
-import sys
 import threading
 import time
 import urllib.error
 import urllib.request
 from contextlib import contextmanager
-from functools import lru_cache
 from pathlib import Path
 from typing import Callable
 
@@ -21,24 +19,23 @@ from tqdm.auto import tqdm
 
 from config import INSTALL_DIR, get_log_file
 from services.local_model_errors import LocalModelNotDownloadedError
+from services.omlx_policy import (
+    HOT_CACHE_MAX_SIZE, PAGED_SSD_CACHE_MAX_SIZE, SPECPREFILL_KEEP_PCT,
+    SPECPREFILL_THRESHOLD_TOKENS, VLM_MTP_DRAFT_BLOCK_SIZE,
+)
 from services.runtime_error_details import runtime_startup_error
 from services.vyact_runtime import VYACT_RUNTIME_PORT
 
 MLX_MODELS_DIR = INSTALL_DIR / "models" / "mlx"
 MLX_RUNTIME_DIR = INSTALL_DIR / "runtime"
-MLX_RUNTIME_PID_FILE = MLX_RUNTIME_DIR / "mlx-vlm.pid"
-OMLX_RUNTIME_PID_FILE = MLX_RUNTIME_DIR / "omlx.pid"
+MLX_RUNTIME_PID_FILE = MLX_RUNTIME_DIR / "omlx.pid"
+LEGACY_MLX_RUNTIME_PID_FILE = MLX_RUNTIME_DIR / "mlx-vlm.pid"
 OMLX_BASE_DIR = MLX_RUNTIME_DIR / "omlx"
 MLX_MODEL_MANIFEST = ".vyact-mlx-model.json"
 _HF_ONLINE_DOWNLOAD_LOCK = threading.Lock()
 _MLX_RUNTIME_GRACEFUL_STOP_SECONDS = 30
 _MLX_RUNTIME_FORCE_STOP_SECONDS = 5
-_MLX_APC_NUM_BLOCKS = 2048
-_MLX_APC_EXACT_CACHE_ENTRIES = 4
-_MLX_APC_DEFAULT_TENANT = "vyact"
-_MLX_APC_DISK_DIR = MLX_RUNTIME_DIR / "prompt-cache"
-_MLX_APC_DISK_MAX_GB = 2
-_MLX_KV_QUANTIZATION_MIN_CONTEXT = 32768
+_OMLX_CACHE_DIR = MLX_RUNTIME_DIR / "prompt-cache"
 _mlx_runtime_process: subprocess.Popen | None = None
 _active_dflash2_model: str | None = None
 
@@ -97,6 +94,11 @@ def get_omlx_install_commands(brew: str) -> list[list[str]]:
         [brew, "trust", "--formula", "jundot/omlx/omlx"],
         [brew, "install", "omlx"],
     ]
+
+
+def get_omlx_update_commands() -> list[list[str]]:
+    brew = shutil.which("brew")
+    return [[brew, "upgrade", "omlx"]] if brew and shutil.which("omlx") else []
 
 
 def _repository_path(repository: str) -> Path:
@@ -338,11 +340,13 @@ def delete_downloaded_mlx_model(model_path: str) -> None:
             _remove_empty_mlx_parent_directories(companion_destination.parent)
 
 
-def _read_pid() -> int | None:
-    try:
-        return int(MLX_RUNTIME_PID_FILE.read_text(encoding="utf-8").strip())
-    except (OSError, ValueError):
-        return None
+def _read_pid() -> tuple[int | None, Path]:
+    for pid_file in (MLX_RUNTIME_PID_FILE, LEGACY_MLX_RUNTIME_PID_FILE):
+        try:
+            return int(pid_file.read_text(encoding="utf-8").strip()), pid_file
+        except (OSError, ValueError):
+            continue
+    return None, MLX_RUNTIME_PID_FILE
 
 
 def _wait_for_process_exit(pid: int, timeout_seconds: float) -> bool:
@@ -363,23 +367,26 @@ def _wait_for_process_exit(pid: int, timeout_seconds: float) -> bool:
 def stop_mlx_runtime() -> None:
     global _active_dflash2_model, _mlx_runtime_process
     _active_dflash2_model = None
-    pid = _read_pid()
+    pid, pid_file = _read_pid()
     if pid is None:
         return
     if _mlx_runtime_process is not None and _mlx_runtime_process.pid == pid \
             and _mlx_runtime_process.poll() is not None:
         _mlx_runtime_process.wait()
         _mlx_runtime_process = None
-        MLX_RUNTIME_PID_FILE.unlink(missing_ok=True)
+        pid_file.unlink(missing_ok=True)
         return
     try:
         command = subprocess.check_output(["ps", "-p", str(pid), "-o", "command="], text=True)
     except (OSError, ValueError, subprocess.SubprocessError):
-        MLX_RUNTIME_PID_FILE.unlink(missing_ok=True)
+        pid_file.unlink(missing_ok=True)
         return
-    if "mlx_vlm.server" not in command and "mlx_lm.server" not in command and "omlx" not in command:
-        MLX_RUNTIME_PID_FILE.unlink(missing_ok=True)
-        raise RuntimeError("Vyact MLX PID no longer refers to a managed MLX server")
+    is_legacy_runtime = pid_file == LEGACY_MLX_RUNTIME_PID_FILE and any(
+        legacy_name in command for legacy_name in ("mlx_vlm.server", "mlx_lm.server")
+    )
+    if "omlx" not in command and not is_legacy_runtime:
+        pid_file.unlink(missing_ok=True)
+        raise RuntimeError("Vyact oMLX PID no longer refers to the managed oMLX server")
     if _mlx_runtime_process is not None and _mlx_runtime_process.pid == pid:
         _mlx_runtime_process.terminate()
     else:
@@ -397,82 +404,17 @@ def stop_mlx_runtime() -> None:
         except subprocess.TimeoutExpired:
             pass
         _mlx_runtime_process = None
-    MLX_RUNTIME_PID_FILE.unlink(missing_ok=True)
-
-
-def server_module_for_model(model_path: Path) -> str:
-    try:
-        config = json.loads((model_path / "config.json").read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as error:
-        raise RuntimeError("The MLX model config.json could not be read") from error
-    architectures = " ".join(str(value).lower() for value in config.get("architectures", []))
-    is_vision_model = bool(config.get("vision_config")) or any(
-        marker in architectures for marker in ("vision", "conditionalgeneration", "vl")
-    )
-    return "mlx_vlm.server" if is_vision_model else "mlx_lm.server"
-
-
-# Retain the private name used by existing callers and tests.
-_server_module_for_model = server_module_for_model
-
-
-@lru_cache(maxsize=2)
-def _server_help(server_module: str) -> str:
-    try:
-        return subprocess.check_output(
-            [sys.executable, "-m", server_module, "--help"],
-            stderr=subprocess.STDOUT, text=True, timeout=30,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return ""
+    pid_file.unlink(missing_ok=True)
 
 
 def get_mlx_runtime_capabilities(model_path: Path) -> dict:
-    """Report advanced controls supported by the installed MLX server."""
-    server_help = _server_help(server_module_for_model(model_path))
+    """Report controls supported by the managed oMLX runtime."""
     return {
         "performance_modes": [],
         "cpu_threads": False,
-        "kv_cache_precisions": ["q8", "q4"] if "--kv-bits" in server_help else [],
+        "kv_cache_precisions": [],
         "seed": True,
     }
-
-
-def _build_mlx_server_command(
-        model_path: Path, context_size: int, cache_quantization: bool = True,
-        enable_mtp: bool | None = None,
-        kv_cache_precision: str | None = None,
-) -> list[str]:
-    manifest = _read_model_manifest(model_path / MLX_MODEL_MANIFEST)
-    mtp_repository = manifest.get("mtp_repository")
-    try:
-        mtp_path = _repository_path(mtp_repository) if isinstance(mtp_repository, str) else None
-    except ValueError:
-        mtp_path = None
-    if mtp_path is not None and not (mtp_path / MLX_MODEL_MANIFEST).is_file():
-        mtp_path = None
-    if enable_mtp is False:
-        mtp_path = None
-    server_module = "mlx_vlm.server" if mtp_path is not None else server_module_for_model(model_path)
-    command = [
-        sys.executable, "-m", server_module, "--model", str(model_path),
-        "--host", "127.0.0.1", "--port", str(VYACT_RUNTIME_PORT),
-        "--max-kv-size", str(context_size),
-    ]
-    server_help = _server_help(server_module)
-    kv_cache_precision = kv_cache_precision or ("q8" if cache_quantization else "none")
-    if (
-        kv_cache_precision != "none"
-        and mtp_path is None
-        and context_size >= _MLX_KV_QUANTIZATION_MIN_CONTEXT
-        and "--kv-bits" in server_help
-    ):
-        command.extend(["--kv-bits", "4" if kv_cache_precision == "q4" else "8"])
-        if "--quantized-kv-start" in server_help:
-            command.extend(["--quantized-kv-start", "0"])
-    if mtp_path is not None:
-        command.extend(["--draft-model", str(mtp_path), "--draft-kind", "mtp"])
-    return command
 
 
 def _get_dflash2_path(model_path: Path) -> Path | None:
@@ -575,45 +517,148 @@ def _prepare_omlx_dflash2_path(dflash2_path: Path, serving_model_id: str) -> Pat
     return overlay_path
 
 
-def _build_omlx_server_command(model_path: Path, dflash2_path: Path, context_size: int) -> tuple[list[str], dict[str, str]]:
+def _get_manifest_companion_path(model_path: Path, key: str, role: str) -> Path | None:
+    repository = _read_model_manifest(model_path / MLX_MODEL_MANIFEST).get(key)
+    if not isinstance(repository, str):
+        return None
+    try:
+        path = _repository_path(repository)
+    except ValueError:
+        return None
+    manifest = _read_model_manifest(path / MLX_MODEL_MANIFEST)
+    return path if manifest.get("role") == role and _is_complete_mlx_model(path) else None
+
+
+def _tokenizer_identity(model_path: Path) -> tuple[str, str] | None:
+    """Return tokenizer identifiers used to reject arbitrary draft models."""
+    try:
+        tokenizer = json.loads((model_path / "tokenizer_config.json").read_text(encoding="utf-8"))
+        config = json.loads((model_path / "config.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    tokenizer_class = str(tokenizer.get("tokenizer_class") or "")
+    vocab_size = str(config.get("vocab_size") or tokenizer.get("vocab_size") or "")
+    return (tokenizer_class, vocab_size) if tokenizer_class and vocab_size else None
+
+
+def _model_type(model_path: Path) -> str:
+    try:
+        config = json.loads((model_path / "config.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return ""
+    return str(config.get("model_type") or "").lower()
+
+
+def _compatible_external_mtp_path(model_path: Path) -> Path | None:
+    draft_path = _get_manifest_companion_path(model_path, "mtp_repository", "mtp")
+    if draft_path is None:
+        return None
+    target_type = _model_type(model_path)
+    draft_type = _model_type(draft_path)
+    compatible_types = (
+        (target_type.startswith(("qwen3_5", "qwen3_6")) and draft_type == "qwen3_5_mtp")
+        or (target_type.startswith("gemma4") and draft_type == "gemma4_assistant")
+    )
+    return draft_path if compatible_types else None
+
+
+def _compatible_specprefill_path(model_path: Path) -> Path | None:
+    draft_path = _get_manifest_companion_path(
+        model_path, "specprefill_repository", "specprefill",
+    )
+    if draft_path is None:
+        return None
+    target_identity = _tokenizer_identity(model_path)
+    draft_identity = _tokenizer_identity(draft_path)
+    return draft_path if target_identity is not None and target_identity == draft_identity else None
+
+
+def get_mlx_speculative_mode(model_path: Path, enable_mtp: bool | None = None) -> str:
+    """Return the single speculative path that oMLX will configure."""
+    if enable_mtp is not False and _compatible_external_mtp_path(model_path):
+        return "external_mtp"
+    if _get_dflash2_path(model_path):
+        return "dflash2"
+    if _compatible_specprefill_path(model_path) or _configured_compatible_specprefill_path(model_path):
+        return "specprefill"
+    return "none"
+
+
+def _configured_compatible_specprefill_path(model_path: Path) -> Path | None:
+    """Migrate a previously configured oMLX draft only after compatibility checks."""
+    try:
+        settings = json.loads((OMLX_BASE_DIR / "model_settings.json").read_text(encoding="utf-8"))
+        model_settings = settings.get("models", {}).get(model_path.name, {})
+        draft_value = model_settings.get("specprefill_draft_model")
+        if not isinstance(draft_value, str) or not draft_value.strip():
+            return None
+        draft_path = Path(draft_value).expanduser().resolve()
+    except (OSError, json.JSONDecodeError, TypeError):
+        return None
+    if not draft_path.is_dir() or not _is_complete_mlx_model(draft_path):
+        return None
+    target_identity = _tokenizer_identity(model_path)
+    draft_identity = _tokenizer_identity(draft_path)
+    return draft_path if target_identity is not None and target_identity == draft_identity else None
+
+
+def _build_omlx_server_command(
+        model_path: Path, context_size: int, enable_mtp: bool | None = None,
+) -> tuple[list[str], dict[str, str], str]:
     executable = shutil.which("omlx")
     if not executable:
-        raise RuntimeError("oMLX is required for MLX DFlash2 acceleration")
+        raise RuntimeError("oMLX is required to run MLX models")
     serving_model_id = model_path.name
     OMLX_BASE_DIR.mkdir(parents=True, exist_ok=True)
-    serving_dflash2_path = _prepare_omlx_dflash2_path(dflash2_path, serving_model_id)
+    dflash2_path = _get_dflash2_path(model_path)
+    external_mtp_path = _compatible_external_mtp_path(model_path)
+    if enable_mtp is False:
+        external_mtp_path = None
+    specprefill_path = (
+        _compatible_specprefill_path(model_path)
+        or _configured_compatible_specprefill_path(model_path)
+    )
+    model_settings = {"max_context_window": context_size, "mtp_enabled": False}
+    speculative_mode = get_mlx_speculative_mode(model_path, enable_mtp)
+    if external_mtp_path is not None:
+        model_settings.update({
+            "vlm_mtp_enabled": True,
+            "vlm_mtp_draft_model": str(external_mtp_path),
+            "vlm_mtp_draft_block_size": VLM_MTP_DRAFT_BLOCK_SIZE,
+            "specprefill_enabled": False,
+        })
+    elif dflash2_path is not None:
+        serving_dflash2_path = _prepare_omlx_dflash2_path(dflash2_path, serving_model_id)
+        model_settings.update({
+            "dflash_enabled": True,
+            "dflash_draft_model": str(serving_dflash2_path),
+            "dflash_in_memory_cache": True,
+            "specprefill_enabled": False,
+        })
+    elif specprefill_path is not None:
+        model_settings.update({
+            "specprefill_enabled": True,
+            "specprefill_draft_model": str(specprefill_path),
+            "specprefill_keep_pct": SPECPREFILL_KEEP_PCT,
+            "specprefill_threshold": SPECPREFILL_THRESHOLD_TOKENS,
+        })
     settings = {
         "version": 1,
-        "models": {
-            serving_model_id: {
-                "max_context_window": context_size,
-                "dflash_enabled": True,
-                "dflash_draft_model": str(serving_dflash2_path),
-                "dflash_in_memory_cache": True,
-            },
-        },
+        "models": {serving_model_id: model_settings},
     }
     (OMLX_BASE_DIR / "model_settings.json").write_text(json.dumps(settings, indent=2), encoding="utf-8")
     command = [
         executable, "serve", "--model-dir", str(MLX_MODELS_DIR),
         "--host", "127.0.0.1", "--port", str(VYACT_RUNTIME_PORT),
         "--max-concurrent-requests", "1",
+        "--paged-ssd-cache-dir", str(_OMLX_CACHE_DIR),
+        "--paged-ssd-cache-max-size", PAGED_SSD_CACHE_MAX_SIZE,
+        "--hot-cache-max-size", HOT_CACHE_MAX_SIZE,
+        "--hot-cache-write-through",
     ]
+    _OMLX_CACHE_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
     environment = {**os.environ, "OMLX_BASE_PATH": str(OMLX_BASE_DIR), "OMLX_MODEL_DIR": str(MLX_MODELS_DIR)}
-    return command, environment
-
-
-def _mlx_server_environment() -> dict[str, str]:
-    _MLX_APC_DISK_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
-    return {
-        **os.environ,
-        "APC_ENABLED": "1",
-        "APC_NUM_BLOCKS": str(_MLX_APC_NUM_BLOCKS),
-        "APC_EXACT_CACHE_ENTRIES": str(_MLX_APC_EXACT_CACHE_ENTRIES),
-        "APC_DEFAULT_TENANT": _MLX_APC_DEFAULT_TENANT,
-        "APC_DISK_PATH": str(_MLX_APC_DISK_DIR),
-        "APC_DISK_MAX_GB": str(_MLX_APC_DISK_MAX_GB),
-    }
+    return command, environment, speculative_mode
 
 
 def start_mlx_model(
@@ -623,35 +668,18 @@ def start_mlx_model(
         _cpu_threads: int | None = None,
 ) -> str:
     global _active_dflash2_model, _mlx_runtime_process
-    kv_cache_precision = kv_cache_precision or ("q8" if cache_quantization else "none")
-    dflash2_path = _get_dflash2_path(model_path)
-    if dflash2_path is None and enable_mtp is True and kv_cache_precision != "none":
-        raise ValueError("MTP acceleration and KV cache quantization cannot be enabled together")
     if not is_apple_silicon():
         raise RuntimeError("MLX models require Apple Silicon")
-    try:
-        import mlx_vlm  # noqa: F401
-    except ImportError as error:
-        raise RuntimeError(f"The MLX runtime could not be imported: {error}") from error
     from services.vyact_runtime import stop_runtime
 
     stop_runtime()
     stop_mlx_runtime()
     MLX_RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
-    log_path = get_log_file("mlx-vlm")
-    model_id = str(model_path)
-    using_dflash2 = False
-    if dflash2_path is not None:
-        try:
-            command, environment = _build_omlx_server_command(model_path, dflash2_path, context_size)
-            model_id = model_path.relative_to(MLX_MODELS_DIR).as_posix()
-            using_dflash2 = True
-        except RuntimeError:
-            command = _build_mlx_server_command(model_path, context_size, cache_quantization, False, kv_cache_precision)
-            environment = _mlx_server_environment()
-    else:
-        command = _build_mlx_server_command(model_path, context_size, cache_quantization, enable_mtp, kv_cache_precision)
-        environment = _mlx_server_environment()
+    log_path = get_log_file("omlx")
+    command, environment, speculative_mode = _build_omlx_server_command(
+        model_path, context_size, enable_mtp,
+    )
+    model_id = model_path.relative_to(MLX_MODELS_DIR).as_posix()
     with log_path.open("ab") as log_file:
         process = subprocess.Popen(
             command,
@@ -666,44 +694,25 @@ def start_mlx_model(
     health_url = f"http://127.0.0.1:{VYACT_RUNTIME_PORT}/v1/models"
     while time.monotonic() < deadline:
         if process.poll() is not None:
-            if using_dflash2:
-                process.wait()
-                MLX_RUNTIME_PID_FILE.unlink(missing_ok=True)
-                command = _build_mlx_server_command(
-                    model_path, context_size, cache_quantization, False, kv_cache_precision,
-                )
-                with log_path.open("ab") as log_file:
-                    process = subprocess.Popen(
-                        command, stdout=log_file, stderr=subprocess.STDOUT,
-                        start_new_session=True, env=_mlx_server_environment(),
-                    )
-                _mlx_runtime_process = process
-                MLX_RUNTIME_PID_FILE.write_text(str(process.pid), encoding="utf-8")
-                using_dflash2 = False
-                model_id = str(model_path)
-                deadline = time.monotonic() + 180
-                continue
-            raise runtime_startup_error("MLX runtime stopped while loading the model", log_path)
+            raise runtime_startup_error("oMLX stopped while loading the model", log_path)
         try:
             with urllib.request.urlopen(health_url, timeout=2) as response:
                 if response.status == 200:
-                    if using_dflash2:
-                        try:
-                            payload = json.load(response)
-                            available_ids = [
-                                str(item.get("id")) for item in payload.get("data", [])
-                                if isinstance(item, dict) and item.get("id")
-                            ]
-                            model_id = (
-                                model_path.name
-                                if model_path.name in available_ids or not available_ids
-                                else available_ids[0]
-                            )
-                        except (AttributeError, TypeError, ValueError):
-                            model_id = model_path.name
-                    _active_dflash2_model = f"mlx/{model_path.relative_to(MLX_MODELS_DIR).as_posix()}" if using_dflash2 else None
+                    try:
+                        payload = json.load(response)
+                        available_ids = [
+                            str(item.get("id")) for item in payload.get("data", [])
+                            if isinstance(item, dict) and item.get("id")
+                        ]
+                        model_id = model_path.name if model_path.name in available_ids or not available_ids else available_ids[0]
+                    except (AttributeError, TypeError, ValueError):
+                        model_id = model_path.name
+                    _active_dflash2_model = (
+                        f"mlx/{model_path.relative_to(MLX_MODELS_DIR).as_posix()}"
+                        if speculative_mode == "dflash2" else None
+                    )
                     return model_id
         except (OSError, urllib.error.URLError):
             pass
         time.sleep(0.25)
-    raise runtime_startup_error("The MLX model did not become ready within 180 seconds", log_path)
+    raise runtime_startup_error("The oMLX model did not become ready within 180 seconds", log_path)

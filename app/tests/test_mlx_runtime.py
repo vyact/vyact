@@ -10,9 +10,7 @@ from unittest.mock import patch
 
 from services.mlx_runtime import (
     MLX_MODEL_MANIFEST,
-    _build_mlx_server_command,
     _build_omlx_server_command,
-    _mlx_server_environment,
     associate_mlx_mtp_model,
     associate_mlx_bundled_dflash2_model,
     delete_downloaded_mlx_model,
@@ -23,7 +21,6 @@ from services.mlx_runtime import (
     install_missing_omlx_runtime,
     list_downloaded_mlx_models,
     list_mtp_supported_mlx_models,
-    _server_module_for_model,
     stop_mlx_runtime,
 )
 
@@ -71,6 +68,8 @@ class MlxRuntimeTests(unittest.TestCase):
             draft = models / "z-lab" / "target-DFlash2"
             model.mkdir(parents=True)
             draft.mkdir(parents=True)
+            (model / MLX_MODEL_MANIFEST).write_text(json.dumps({"dflash2_repository": "z-lab/target-DFlash2"}))
+            (draft / MLX_MODEL_MANIFEST).write_text(json.dumps({"role": "dflash2"}))
             (draft / "config.json").write_text(
                 json.dumps({"architectures": ["DFlash2DraftModel"]}), encoding="utf-8",
             )
@@ -85,7 +84,7 @@ class MlxRuntimeTests(unittest.TestCase):
             with patch("services.mlx_runtime.MLX_MODELS_DIR", models), \
                  patch("services.mlx_runtime.OMLX_BASE_DIR", base / "omlx"), \
                  patch("services.mlx_runtime.shutil.which", return_value="/opt/homebrew/bin/omlx"):
-                command, environment = _build_omlx_server_command(model, draft, 32768)
+                command, environment, mode = _build_omlx_server_command(model, 32768)
             settings = json.loads((base / "omlx" / "model_settings.json").read_text(encoding="utf-8"))
             self.assertTrue(settings["models"]["target"]["dflash_enabled"])
             overlay = base / "omlx" / "dflash-drafts" / "target"
@@ -97,6 +96,9 @@ class MlxRuntimeTests(unittest.TestCase):
             self.assertEqual((overlay / "model.safetensors").resolve(), (draft / "model.safetensors").resolve())
             self.assertIn("omlx", command[0])
             self.assertEqual(environment["OMLX_BASE_PATH"], str(base / "omlx"))
+            self.assertEqual(mode, "dflash2")
+            self.assertIn("--paged-ssd-cache-dir", command)
+            self.assertIn("--hot-cache-write-through", command)
 
     def test_omlx_command_leaves_unquantized_dflash2_draft_unchanged(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -105,23 +107,16 @@ class MlxRuntimeTests(unittest.TestCase):
             draft = base / "models" / "owner" / "draft"
             model.mkdir(parents=True)
             draft.mkdir(parents=True)
+            (model / MLX_MODEL_MANIFEST).write_text(json.dumps({"dflash2_repository": "owner/draft"}))
+            (draft / MLX_MODEL_MANIFEST).write_text(json.dumps({"role": "dflash2"}))
+            (draft / "config.json").write_text("{}")
             (draft / "model.safetensors").touch()
             with patch("services.mlx_runtime.MLX_MODELS_DIR", base / "models"), \
                  patch("services.mlx_runtime.OMLX_BASE_DIR", base / "omlx"), \
                  patch("services.mlx_runtime.shutil.which", return_value="/opt/homebrew/bin/omlx"):
-                _build_omlx_server_command(model, draft, 32768)
+                _build_omlx_server_command(model, 32768)
             settings = json.loads((base / "omlx" / "model_settings.json").read_text(encoding="utf-8"))
             self.assertNotIn("dflash_draft_quant_enabled", settings["models"]["target"])
-
-    def test_mlx_server_enables_in_memory_prefix_cache(self):
-        with patch.dict(os.environ, {"EXISTING_SETTING": "preserved"}, clear=True):
-            environment = _mlx_server_environment()
-
-        self.assertEqual(environment["APC_ENABLED"], "1")
-        self.assertEqual(environment["APC_NUM_BLOCKS"], "2048")
-        self.assertEqual(environment["APC_EXACT_CACHE_ENTRIES"], "4")
-        self.assertEqual(environment["APC_DEFAULT_TENANT"], "vyact")
-        self.assertEqual(environment["EXISTING_SETTING"], "preserved")
 
     def test_deletes_mlx_model_and_its_unreferenced_mtp_companion(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -174,10 +169,10 @@ class MlxRuntimeTests(unittest.TestCase):
 
     def test_force_stops_validated_mlx_runtime_after_graceful_timeout(self):
         with tempfile.TemporaryDirectory() as temp_dir:
-            pid_file = Path(temp_dir) / "mlx-vlm.pid"
+            pid_file = Path(temp_dir) / "omlx.pid"
             pid_file.write_text("1234")
             with patch("services.mlx_runtime.MLX_RUNTIME_PID_FILE", pid_file), \
-                 patch("services.mlx_runtime.subprocess.check_output", return_value="python -m mlx_vlm.server"), \
+                 patch("services.mlx_runtime.subprocess.check_output", return_value="omlx serve"), \
                  patch("services.mlx_runtime._wait_for_process_exit", side_effect=[False, True]), \
                  patch("services.mlx_runtime.os.kill") as kill:
                 stop_mlx_runtime()
@@ -188,65 +183,58 @@ class MlxRuntimeTests(unittest.TestCase):
             )
             self.assertFalse(pid_file.exists())
 
-    def test_mtp_association_adds_server_drafter_arguments(self):
+    def test_mtp_association_configures_external_vlm_mtp_only(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             model_dir = Path(temp_dir) / "owner" / "model"
             mtp_dir = Path(temp_dir) / "owner" / "mtp"
             model_dir.mkdir(parents=True)
             mtp_dir.mkdir(parents=True)
-            (model_dir / "config.json").write_text(json.dumps({"architectures": ["QwenForCausalLM"]}))
+            (model_dir / "config.json").write_text(json.dumps({"model_type": "qwen3_5"}))
+            (mtp_dir / "config.json").write_text(json.dumps({"model_type": "qwen3_5_mtp"}))
+            (mtp_dir / "model.safetensors").touch()
             (mtp_dir / MLX_MODEL_MANIFEST).write_text(json.dumps({"role": "mtp"}))
             (model_dir / MLX_MODEL_MANIFEST).write_text(json.dumps({"mtp_repository": "owner/mtp"}))
 
             with patch("services.mlx_runtime.MLX_MODELS_DIR", Path(temp_dir)), \
-                 patch("services.mlx_runtime._server_help", return_value="--kv-bits --quantized-kv-start"):
-                command = _build_mlx_server_command(model_dir, 32768)
+                 patch("services.mlx_runtime.OMLX_BASE_DIR", Path(temp_dir) / "omlx"), \
+                 patch("services.mlx_runtime.shutil.which", return_value="/opt/homebrew/bin/omlx"):
+                _, _, mode = _build_omlx_server_command(model_dir, 32768)
+                settings = json.loads((Path(temp_dir) / "omlx" / "model_settings.json").read_text())
 
-            self.assertIn("mlx_vlm.server", command)
-            self.assertEqual(command[command.index("--draft-model") + 1], str(mtp_dir))
-            self.assertEqual(command[command.index("--draft-kind") + 1], "mtp")
-            self.assertNotIn("--kv-bits", command)
-            self.assertNotIn("--quantized-kv-start", command)
+            model_settings = settings["models"]["model"]
+            self.assertEqual(mode, "external_mtp")
+            self.assertTrue(model_settings["vlm_mtp_enabled"])
+            self.assertFalse(model_settings["specprefill_enabled"])
+            self.assertFalse(model_settings["mtp_enabled"])
 
-    def test_non_mtp_model_keeps_kv_cache_quantization(self):
+    def test_specprefill_requires_explicit_compatible_draft(self):
         with tempfile.TemporaryDirectory() as temp_dir:
-            model_dir = Path(temp_dir) / "owner" / "model"
-            model_dir.mkdir(parents=True)
-            (model_dir / "config.json").write_text(json.dumps({"architectures": ["QwenForCausalLM"]}))
-            (model_dir / MLX_MODEL_MANIFEST).write_text(json.dumps({"repository": "owner/model"}))
+            base = Path(temp_dir)
+            models = base / "models"
+            model = models / "owner" / "target"
+            draft = models / "owner" / "draft"
+            model.mkdir(parents=True)
+            draft.mkdir(parents=True)
+            shared_tokenizer = {"tokenizer_class": "Qwen2Tokenizer"}
+            for path in (model, draft):
+                (path / "config.json").write_text(json.dumps({"vocab_size": 151936}))
+                (path / "tokenizer_config.json").write_text(json.dumps(shared_tokenizer))
+                (path / "model.safetensors").touch()
+            (model / MLX_MODEL_MANIFEST).write_text(json.dumps({"specprefill_repository": "owner/draft"}))
+            (draft / MLX_MODEL_MANIFEST).write_text(json.dumps({"role": "specprefill"}))
 
-            with patch("services.mlx_runtime._server_help", return_value="--kv-bits --quantized-kv-start"):
-                command = _build_mlx_server_command(model_dir, 32768)
+            with patch("services.mlx_runtime.MLX_MODELS_DIR", models), \
+                 patch("services.mlx_runtime.OMLX_BASE_DIR", base / "omlx"), \
+                 patch("services.mlx_runtime._OMLX_CACHE_DIR", base / "cache"), \
+                 patch("services.mlx_runtime.shutil.which", return_value="/opt/homebrew/bin/omlx"):
+                _, _, mode = _build_omlx_server_command(model, 32768)
 
-            self.assertEqual(command[command.index("--kv-bits") + 1], "8")
-            self.assertEqual(command[command.index("--quantized-kv-start") + 1], "0")
-
-    def test_disabling_mtp_allows_kv_cache_quantization(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            model_dir = Path(temp_dir) / "owner" / "model"
-            mtp_dir = Path(temp_dir) / "owner" / "mtp"
-            model_dir.mkdir(parents=True)
-            mtp_dir.mkdir(parents=True)
-            (model_dir / "config.json").write_text(json.dumps({"architectures": ["QwenForCausalLM"]}))
-            (mtp_dir / MLX_MODEL_MANIFEST).write_text(json.dumps({"role": "mtp"}))
-            (model_dir / MLX_MODEL_MANIFEST).write_text(json.dumps({"mtp_repository": "owner/mtp"}))
-
-            with patch("services.mlx_runtime.MLX_MODELS_DIR", Path(temp_dir)), \
-                 patch("services.mlx_runtime._server_help", return_value="--kv-bits --quantized-kv-start"):
-                command = _build_mlx_server_command(model_dir, 32768, cache_quantization=True, enable_mtp=False)
-
-            self.assertNotIn("--draft-model", command)
-            self.assertEqual(command[command.index("--kv-bits") + 1], "8")
-
-    def test_mlx_q4_precision_maps_to_four_bit_cache(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            model_dir = Path(temp_dir) / "model"
-            model_dir.mkdir()
-            (model_dir / "config.json").write_text(json.dumps({"architectures": ["QwenForCausalLM"]}))
-            (model_dir / MLX_MODEL_MANIFEST).write_text(json.dumps({"repository": "owner/model"}))
-            with patch("services.mlx_runtime._server_help", return_value="--kv-bits --quantized-kv-start"):
-                command = _build_mlx_server_command(model_dir, 32768, kv_cache_precision="q4")
-            self.assertEqual(command[command.index("--kv-bits") + 1], "4")
+            settings = json.loads((base / "omlx" / "model_settings.json").read_text())["models"]["target"]
+            self.assertEqual(mode, "specprefill")
+            self.assertTrue(settings["specprefill_enabled"])
+            self.assertEqual(settings["specprefill_keep_pct"], 0.2)
+            self.assertEqual(settings["specprefill_threshold"], 1024)
+            self.assertFalse(settings["mtp_enabled"])
 
     def test_associates_mtp_without_listing_drafter_as_selectable_model(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -342,15 +330,3 @@ class MlxRuntimeTests(unittest.TestCase):
              patch("services.mlx_runtime.MLX_MODELS_DIR", Path(temp_dir)):
             with self.assertRaises(ValueError):
                 get_downloaded_mlx_model_path("mlx/../model")
-
-    def test_selects_vlm_server_for_vision_config(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            model_dir = Path(temp_dir)
-            (model_dir / "config.json").write_text(json.dumps({"vision_config": {"image_size": 384}}))
-            self.assertEqual(_server_module_for_model(model_dir), "mlx_vlm.server")
-
-    def test_selects_lm_server_for_text_model(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            model_dir = Path(temp_dir)
-            (model_dir / "config.json").write_text(json.dumps({"architectures": ["LlamaForCausalLM"]}))
-            self.assertEqual(_server_module_for_model(model_dir), "mlx_lm.server")

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Mapping
 from functools import lru_cache
 import json
 import os
@@ -188,10 +189,12 @@ async def _count_llama_tokens(
 
 @lru_cache(maxsize=2)
 def _load_mlx_tokenizer(model_path: str):
-    from mlx_lm.tokenizer_utils import load_tokenizer
+    from transformers import AutoTokenizer
 
     downloaded_path = get_downloaded_mlx_model_path(model_path)
-    return load_tokenizer(downloaded_path)
+    return AutoTokenizer.from_pretrained(
+        downloaded_path, local_files_only=True, trust_remote_code=False,
+    )
 
 
 def _count_mlx_tokens(
@@ -203,4 +206,8 @@ def _count_mlx_tokens(
     if tools:
         template_kwargs["tools"] = [tool["function"] for tool in tools]
     tokens = tokenizer.apply_chat_template(sanitized_messages, **template_kwargs)
+    if isinstance(tokens, Mapping):
+        tokens = tokens.get("input_ids", [])
+    if tokens and isinstance(tokens[0], list):
+        tokens = tokens[0]
     return len(tokens) + media_token_reserve

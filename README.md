@@ -52,6 +52,12 @@ Search and compare local GGUF and MLX models without leaving Vyact. See detected
   <img src="assets/readme/feature-local-models.png" alt="Vyact local model search with detected system RAM, GPU VRAM, and hardware-aware memory estimates" width="100%" />
 </p>
 
+#### How MLX acceleration works
+
+On Apple Silicon, Vyact runs both text and vision-capable MLX models through a single oMLX runtime. Prefix KV Memory Cache is enabled by default, keeping reusable prompt state in a 4 GB hot cache backed by up to 10 GB of paged SSD cache. Repeated system prompts and conversation prefixes can therefore skip work already completed by the model; a first request may report `cached_tokens: 0`, while a matching follow-up reports the number of prefix tokens actually reused.
+
+When a compatible External MTP companion is available for a newly downloaded model, Vyact downloads it with the target model, validates the pairing, and lets oMLX use MTP for faster decoding while Memory Cache remains enabled. Without External MTP, Vyact loads the regular model and prepares an installed, compatible Speculative Prefill draft when available. Speculative Prefill is then switched per request without reloading the model: inputs of 1,024 tokens or more enable it, and shorter inputs disable it. External MTP, Speculative Prefill, and DFlash are mutually exclusive acceleration paths; embedded native MTP is not enabled automatically.
+
 ### Turn documents into a knowledge base
 
 Upload and index your documents once. During a normal chat, Vyact retrieves the passages most relevant to your question and adds them to the model's context automatically—so answers are grounded in your knowledge base without manually attaching the same files every time. Create knowledge collections to group related documents, memos, and indexed email threads, then select a collection in chat when you want RAG to stay within that specific context. Inspect the retrieved sources when you need to verify an answer.
@@ -142,11 +148,11 @@ Download the installer for **Apple Silicon Macs (M1 or later)** or **Windows** f
 
 ### Before your first launch
 
-Vyact includes its own Python 3.12 runtime and manages its local model runtime for you. Local GGUF models run through native llama.cpp with llama-swap, while supported Apple Silicon models can run through MLX. For the easiest local GGUF setup, use Homebrew on macOS or `winget` on Windows so Vyact can install missing runtime binaries automatically. Compatible existing binaries are reused when available.
+Vyact includes its own Python 3.12 runtime and manages its local model runtime for you. Local GGUF models run through native llama.cpp with llama-swap, while supported Apple Silicon MLX models run through oMLX. Use Homebrew on macOS or `winget` on Windows so Vyact can install missing runtime binaries automatically. Compatible existing binaries are reused when available.
 
 | Platform | Required for the core app | Feature-specific requirements |
 | --- | --- | --- |
-| macOS (Apple Silicon) | None | **Local GGUF models**<br>• [Homebrew](https://brew.sh/) (recommended) so Vyact can install missing binaries, or compatible existing `llama-server` and `llama-swap` binaries<br><br>**Local MLX models**<br>• No separate runtime installation; Vyact installs the required Python packages<br><br>**Elasticsearch**<br>• No external dependency for native mode; Docker Desktop is optional for container mode<br><br>**Kokoro TTS**<br>• Homebrew is required only when Vyact needs to install `espeak-ng` |
+| macOS (Apple Silicon) | None | **Local GGUF models**<br>• [Homebrew](https://brew.sh/) (recommended) so Vyact can install missing binaries, or compatible existing `llama-server` and `llama-swap` binaries<br><br>**Local MLX models**<br>• [Homebrew](https://brew.sh/) (recommended) so Vyact can install or update oMLX automatically, or a compatible existing `omlx` binary<br><br>**Elasticsearch**<br>• No external dependency for native mode; Docker Desktop is optional for container mode<br><br>**Kokoro TTS**<br>• Homebrew is required only when Vyact needs to install `espeak-ng` |
 | Windows | None | **Local GGUF models**<br>• `winget` (recommended) so Vyact can install missing binaries, or compatible existing `llama-server` and `llama-swap` binaries<br><br>**Elasticsearch**<br>• No external dependency for native mode; Docker Desktop is optional for container mode<br><br>**Kokoro TTS**<br>• `winget` is required only when Vyact needs to install `espeak-ng` |
 
 On both Apple Silicon Macs and Windows, Vyact can download and run its supported native Elasticsearch distribution, so Docker Desktop is not required. Package managers are the recommended path for automatic setup; they are required only when a selected feature needs a system binary that is not already installed. On first launch, Vyact prepares the components required by the selected configuration.

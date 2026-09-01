@@ -29,7 +29,7 @@ from .tools import (
 )
 from services.runtime_settings import get_runtime_settings
 from services.tool_approval import await_tool_approval
-from services.mlx_runtime import get_downloaded_mlx_model_path, server_module_for_model
+from services.omlx_policy import SPECPREFILL_KEEP_PCT, SPECPREFILL_THRESHOLD_TOKENS
 
 
 _REPEATED_TOOL_CALL_RESULT = (
@@ -129,6 +129,11 @@ def _accumulate_openai_usage(usage: dict | None, provider_usage: dict | None) ->
         return
     prompt_tokens = provider_usage.get("prompt_tokens")
     completion_tokens = provider_usage.get("completion_tokens")
+    prompt_details = provider_usage.get("prompt_tokens_details") or {}
+    cached_tokens = prompt_details.get("cached_tokens", provider_usage.get("cached_tokens"))
+    if isinstance(cached_tokens, (int, float)):
+        usage["cached_tokens"] = usage.get("cached_tokens", 0) + max(0, round(cached_tokens))
+        logger.info("[omlx] Memory Cache usage: cached_tokens=%d", max(0, round(cached_tokens)))
     prompt_duration = _seconds_to_nanoseconds(provider_usage.get("prompt_eval_duration"))
     eval_duration = _seconds_to_nanoseconds(provider_usage.get("generation_duration"))
     if prompt_duration is None or eval_duration is None:
@@ -178,6 +183,36 @@ async def _local_max_tokens(
     )
 
 
+async def _apply_local_specprefill_control(
+        body: dict, messages: list[dict], provider_config: dict,
+        call_reason: str, tools: list[dict] | None = None,
+) -> None:
+    """Toggle prepared SpecPrefill per request using only the input token count."""
+    if not provider_config.get("is_local") or provider_config.get("runtime") != "mlx":
+        return
+    eligible = True
+    speculative_mode = "not_applicable"
+    from services.mlx_runtime import get_downloaded_mlx_model_path, get_mlx_speculative_mode
+    model_path = get_downloaded_mlx_model_path(provider_config.get("model_path", ""))
+    speculative_mode = get_mlx_speculative_mode(
+        model_path, provider_config.get("mtp_enabled"),
+    )
+    eligible = speculative_mode == "specprefill"
+    input_tokens = None
+    if eligible:
+        from .token_counter import count_local_message_tokens
+        input_tokens = await count_local_message_tokens(messages, provider_config, tools)
+        eligible = input_tokens >= SPECPREFILL_THRESHOLD_TOKENS
+    body["specprefill"] = eligible
+    if eligible:
+        body["specprefill_keep_pct"] = SPECPREFILL_KEEP_PCT
+        body["specprefill_threshold"] = SPECPREFILL_THRESHOLD_TOKENS
+    logger.info(
+        "[omlx] SpecPrefill request policy: enabled=%s mode=%s input_tokens=%s reason=%s",
+        eligible, speculative_mode, input_tokens if input_tokens is not None else "not_counted", call_reason,
+    )
+
+
 def _apply_local_reasoning_control(
     body: dict, provider_config: dict, reasoning: bool | str | None,
 ) -> None:
@@ -187,15 +222,9 @@ def _apply_local_reasoning_control(
     effort = reasoning.lower() if isinstance(reasoning, str) else None
     enabled = effort not in {"none", "off"} if effort is not None else bool(reasoning)
     if provider_config.get("runtime") == "mlx":
-        model_path = get_downloaded_mlx_model_path(provider_config.get("model_path", ""))
-        if provider_config.get("mtp_enabled") is True or server_module_for_model(model_path) == "mlx_vlm.server":
-            body["enable_thinking"] = enabled
-            if effort and enabled:
-                body["reasoning_effort"] = effort
-        else:
-            body["chat_template_kwargs"] = {"enable_thinking": enabled}
-            if effort and enabled:
-                body["chat_template_kwargs"]["reasoning_effort"] = effort
+        body["chat_template_kwargs"] = {"enable_thinking": enabled}
+        if effort and enabled:
+            body["reasoning_effort"] = effort
     else:
         body["chat_template_kwargs"] = {"enable_thinking": enabled}
         if effort:
@@ -311,6 +340,9 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
                 _apply_local_reasoning_control(body, provider_config, reasoning)
                 _apply_local_prefix_cache_control(body, provider_config)
                 _apply_local_seed(body, provider_config)
+                await _apply_local_specprefill_control(
+                    body, messages, provider_config, call_reason, oa_tools,
+                )
             elif provider_config.get("selection_type") == "openai":
                 body["max_completion_tokens"] = provider_config.get("max_output_tokens", 2048)
             if usage is not None:
@@ -469,6 +501,9 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
         _apply_local_reasoning_control(body, provider_config, reasoning)
         _apply_local_prefix_cache_control(body, provider_config)
         _apply_local_seed(body, provider_config)
+        await _apply_local_specprefill_control(
+            body, messages, provider_config, call_reason, unified,
+        )
         if runtime.get("top_p") is not None:
             body["top_p"] = runtime["top_p"]
         if provider_config.get("runtime") == "gguf":

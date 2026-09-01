@@ -16,7 +16,7 @@ import socket
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 
 from agent import ensure_index, get_index_stats, load_prompts_cache
 from config import INSTALL_DIR, LOGS_DIR, SETUP_DONE, VENV_DIR, get_log_file
@@ -179,13 +179,6 @@ class VyactModelActivateRequest(BaseModel):
     gpu_manual_split_enabled: bool = False
     seed: int | None = Field(default=None, ge=0, le=2147483647)
 
-    @model_validator(mode="after")
-    def validate_acceleration_settings(self):
-        if self.mtp_enabled is True and (self.kv_cache_precision or ("q8" if self.cache_quantization else "none")) != "none":
-            raise ValueError("MTP acceleration and KV cache quantization cannot be enabled together")
-        return self
-
-
 class VyactModelProfileRequest(BaseModel):
     model_path: str = Field(min_length=1, max_length=1024)
     runtime: str = Field(default="gguf", pattern="^(gguf|mlx)$")
@@ -204,13 +197,6 @@ class VyactModelProfileRequest(BaseModel):
     gpu_split_percentages: list[float] = Field(default_factory=list, max_length=16)
     gpu_manual_split_enabled: bool = False
     seed: int | None = Field(default=None, ge=0, le=2147483647)
-
-    @model_validator(mode="after")
-    def validate_acceleration_settings(self):
-        if self.mtp_enabled is True and (self.kv_cache_precision or ("q8" if self.cache_quantization else "none")) != "none":
-            raise ValueError("MTP acceleration and KV cache quantization cannot be enabled together")
-        return self
-
 
 class VyactModelDeleteRequest(BaseModel):
     model_path: str = Field(min_length=1, max_length=1024)
@@ -877,9 +863,9 @@ async def install_vyact_runtime(include_omlx: bool = Query(False)):
 @router.post("/vyact/runtime/update")
 async def update_vyact_runtime():
     async def stream():
-        from services.vyact_runtime import get_native_update_commands
+        from services.runtime_startup import get_runtime_update_commands
 
-        commands = get_native_update_commands()
+        commands = get_runtime_update_commands(await load_config_async())
         if not commands:
             yield sse("패키지 관리자를 통한 런타임 업데이트를 지원하지 않는 환경입니다.", "error", 0)
             return

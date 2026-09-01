@@ -23,7 +23,8 @@ def test_recommended_profile_bounds_context_and_scales_output_limit():
 
     assert profile["context_size"] == 131072
     assert profile["max_output_tokens"] == 4096
-    assert profile["cache_quantization"] is True
+    assert profile["cache_quantization"] is False
+    assert profile["kv_cache_precision"] == "none"
 
 
 def test_saved_profile_output_is_bounded_by_context():

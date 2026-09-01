@@ -8,6 +8,7 @@ from services.llm.providers import (
     _apply_local_prefix_cache_control,
     _apply_local_reasoning_control,
     _apply_local_seed,
+    _apply_local_specprefill_control,
     _next_consecutive_tool_failures,
     _tool_call_fingerprint,
     _tool_call_max_rounds,
@@ -55,6 +56,7 @@ class VyactOpenAiParityTests(unittest.IsolatedAsyncioTestCase):
             "total_time": 51.08,
             "prompt_tokens_per_second": 18.35,
             "generation_tokens_per_second": 13.99,
+            "prompt_tokens_details": {"cached_tokens": 512},
         })
 
         self.assertEqual(usage["prompt_tokens"], 839)
@@ -63,6 +65,7 @@ class VyactOpenAiParityTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(usage["eval_duration"], 5_360_000_000)
         self.assertEqual(usage["llm_total_duration"], 51_080_000_000)
         self.assertAlmostEqual(usage["completion_tokens_per_second"], 75 / 5.36)
+        self.assertEqual(usage["cached_tokens"], 512)
 
     def test_tool_call_fingerprint_ignores_argument_key_order(self):
         first = _tool_call_fingerprint("search", {"query": "삼성전자", "page": 1})
@@ -92,23 +95,22 @@ class VyactOpenAiParityTests(unittest.IsolatedAsyncioTestCase):
 
     def test_mlx_receives_explicit_reasoning_choice(self):
         body = {}
-        with patch("services.llm.providers.get_downloaded_mlx_model_path", return_value="/model"), \
-                patch("services.llm.providers.server_module_for_model", return_value="mlx_vlm.server"):
-            _apply_local_reasoning_control(
-                body, {"is_local": True, "runtime": "mlx", "model_path": "mlx/owner/model"}, reasoning=False,
-            )
+        _apply_local_reasoning_control(
+            body, {"is_local": True, "runtime": "mlx", "model_path": "mlx/owner/model"}, reasoning=False,
+        )
 
-        self.assertEqual(body, {"enable_thinking": False})
+        self.assertEqual(body, {"chat_template_kwargs": {"enable_thinking": False}})
 
-    def test_mlx_text_receives_reasoning_effort_as_template_arguments(self):
+    def test_mlx_text_receives_reasoning_effort_through_omlx(self):
         body = {}
-        with patch("services.llm.providers.get_downloaded_mlx_model_path", return_value="/model"), \
-                patch("services.llm.providers.server_module_for_model", return_value="mlx_lm.server"):
-            _apply_local_reasoning_control(
-                body, {"is_local": True, "runtime": "mlx", "model_path": "mlx/owner/model"}, reasoning="high",
-            )
+        _apply_local_reasoning_control(
+            body, {"is_local": True, "runtime": "mlx", "model_path": "mlx/owner/model"}, reasoning="high",
+        )
 
-        self.assertEqual(body, {"chat_template_kwargs": {"enable_thinking": True, "reasoning_effort": "high"}})
+        self.assertEqual(body, {
+            "chat_template_kwargs": {"enable_thinking": True},
+            "reasoning_effort": "high",
+        })
 
     def test_llama_receives_none_reasoning_effort(self):
         body = {}
@@ -125,6 +127,58 @@ class VyactOpenAiParityTests(unittest.IsolatedAsyncioTestCase):
         with patch("services.llm.providers.get_runtime_settings", return_value={"seed": 42}):
             _apply_local_seed(body, {"is_local": True, "runtime": "mlx"})
         self.assertEqual(body, {"seed": 42})
+
+    async def test_specprefill_is_enabled_at_token_threshold(self):
+        body = {}
+        with patch("services.mlx_runtime.get_downloaded_mlx_model_path", return_value="/model"), \
+             patch("services.mlx_runtime.get_mlx_speculative_mode", return_value="specprefill"), \
+             patch("services.llm.token_counter.count_local_message_tokens", new=AsyncMock(return_value=4096)):
+            await _apply_local_specprefill_control(
+                body, [{"role": "user", "content": "long"}],
+                {"is_local": True, "runtime": "mlx", "model_path": "mlx/owner/model"},
+                "chat:general_stream",
+            )
+        self.assertEqual(body, {
+            "specprefill": True,
+            "specprefill_keep_pct": 0.2,
+            "specprefill_threshold": 1024,
+        })
+
+    async def test_specprefill_is_disabled_below_token_threshold(self):
+        body = {}
+        with patch("services.mlx_runtime.get_downloaded_mlx_model_path", return_value="/model"), \
+             patch("services.mlx_runtime.get_mlx_speculative_mode", return_value="specprefill"), \
+             patch("services.llm.token_counter.count_local_message_tokens", new=AsyncMock(return_value=1023)):
+            await _apply_local_specprefill_control(
+                body, [{"role": "user", "content": "short"}],
+                {"is_local": True, "runtime": "mlx", "model_path": "mlx/owner/model"},
+                "chat:general_stream",
+            )
+        self.assertEqual(body, {"specprefill": False})
+
+    async def test_specprefill_uses_only_tokens_for_rag_code_and_exactness(self):
+        body = {}
+        tools = [{"type": "function", "function": {"name": "code_read_file"}}]
+        with patch("services.mlx_runtime.get_downloaded_mlx_model_path", return_value="/model"), \
+             patch("services.mlx_runtime.get_mlx_speculative_mode", return_value="specprefill"), \
+             patch("services.llm.token_counter.count_local_message_tokens", new=AsyncMock(return_value=1024)):
+            await _apply_local_specprefill_control(
+                body, [{"role": "user", "content": "숫자를 정확히 인용해줘"}],
+                {"is_local": True, "runtime": "mlx", "model_path": "mlx/owner/model"},
+                "chat:selected_docs", tools,
+            )
+        self.assertTrue(body["specprefill"])
+
+    async def test_specprefill_is_disabled_for_external_mtp_mode(self):
+        body = {}
+        with patch("services.mlx_runtime.get_downloaded_mlx_model_path", return_value="/model"), \
+             patch("services.mlx_runtime.get_mlx_speculative_mode", return_value="external_mtp"):
+            await _apply_local_specprefill_control(
+                body, [{"role": "user", "content": "long"}],
+                {"is_local": True, "runtime": "mlx", "model_path": "mlx/owner/model"},
+                "chat:general_stream",
+            )
+        self.assertEqual(body, {"specprefill": False})
 
     def test_llm_total_accumulates_tool_judgment_and_final_call_timings(self):
         usage = {}

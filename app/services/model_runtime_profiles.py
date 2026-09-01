@@ -32,7 +32,11 @@ def normalize_model_profile(profile: dict) -> dict:
         kv_cache_precision = "q8" if bool(normalized.get("cache_quantization", True)) else "none"
     if kv_cache_precision not in VALID_KV_CACHE_PRECISIONS:
         raise ValueError("Unsupported KV cache precision")
-    if normalized.get("mtp_enabled") is True and kv_cache_precision != "none":
+    if normalized.get("runtime") == "mlx":
+        # oMLX's paged/hot memory cache replaces the legacy mlx-lm KV
+        # quantization setting. External VLM MTP remains cache-compatible.
+        kv_cache_precision = "none"
+    if normalized.get("runtime") != "mlx" and normalized.get("mtp_enabled") is True and kv_cache_precision != "none":
         raise ValueError("MTP acceleration and KV cache quantization cannot be enabled together")
     normalized["performance_mode"] = performance_mode
     normalized["kv_cache_precision"] = kv_cache_precision
@@ -117,8 +121,8 @@ def recommended_model_profile(model_path: str, runtime: str, repository: str | N
         "temperature": 0.2,
         "top_k": None,
         "top_p": None,
-        "cache_quantization": safe_context >= 32768,
-        "kv_cache_precision": "q8" if safe_context >= 32768 else "none",
+        "cache_quantization": runtime != "mlx" and safe_context >= 32768,
+        "kv_cache_precision": "q8" if runtime != "mlx" and safe_context >= 32768 else "none",
         "mtp_enabled": None,
         "performance_mode": "auto",
         "cpu_threads": None,

@@ -329,7 +329,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
                     if (selectedHubModelFile?.runtime === 'gguf') {
                         addLog('info', t('main:modelDownload.preparingRuntime'));
                         await api.installVyactRuntime(message => addLog('log', message));
-                    } else if (selectedHubModelFile?.dflash2Model || selectedHubModelFile?.dflash2Bundled) {
+                    } else if (selectedHubModelFile?.runtime === 'mlx') {
                         addLog('info', t('main:modelDownload.preparingOmlx'));
                         await api.installVyactRuntime(message => addLog('log', message), true);
                     }
