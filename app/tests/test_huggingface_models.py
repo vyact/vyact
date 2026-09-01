@@ -154,6 +154,7 @@ class HuggingFaceModelTests(unittest.TestCase):
             models = asyncio.run(search_mlx_models("qwen3.5 9b 8bit mtp"))
 
         self.assertEqual(fake_client.params["search"], "qwen3.5 9b 8bit")
+        self.assertEqual(fake_client.params["limit"], 10)
         self.assertEqual([model["id"] for model in models], [target_item["id"]])
         self.assertEqual(models[0]["mtp_model"]["repository"], candidate["repository"])
         self.assertEqual(models[0]["mtp_supported_files"], [MLX_REPOSITORY_FILE])

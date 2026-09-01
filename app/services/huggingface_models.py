@@ -16,6 +16,7 @@ from services.vyact_runtime import VYACT_MODELS_DIR, cache_downloaded_model
 HF_API_URL = "https://huggingface.co/api"
 HF_BASE_URL = "https://huggingface.co"
 MLX_REPOSITORY_FILE = "__mlx_repository__"
+MLX_TARGET_SEARCH_LIMIT = 10
 MLX_DOWNLOAD_PATTERNS = (
     "*.json", "*.safetensors", "*.model", "*.txt", "*.tiktoken", "*.jinja", "*.py", "*.npz",
 )
@@ -100,7 +101,9 @@ async def search_gguf_models(query: str, token: str | None = None, limit: int = 
     return sorted(models, key=lambda model: model["downloads"], reverse=True)
 
 
-async def search_mlx_models(query: str, token: str | None = None, limit: int = 50) -> list[dict]:
+async def search_mlx_models(
+        query: str, token: str | None = None, limit: int = MLX_TARGET_SEARCH_LIMIT,
+) -> list[dict]:
     """Search complete MLX repositories for the Apple Silicon runtime."""
     target_query = _mlx_target_search_query(query)
     params = {
