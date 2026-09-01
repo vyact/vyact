@@ -80,9 +80,17 @@
     display: grid;
     grid-template-columns: 12px auto minmax(0, 1fr) auto;
     column-gap: 6px;
-    padding: 10px;
+    padding: 5px 8px;
     border-radius:8px;
     background:color-mix(in srgb, var(--surface2) 42%, transparent);
+}
+
+.model-select-wrap .custom-select-item:has(.dd-model-badges:empty) {
+    grid-template-columns: 12px minmax(0, 1fr) auto;
+}
+
+.dd-model-badges:empty {
+    display: none;
 }
 
 .model-select-wrap .custom-select-item:hover {
