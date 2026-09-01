@@ -906,13 +906,11 @@ const Message: React.FC<MessageProps> = ({
                 // assistant: 모델 응답 생성 통계. tool 통계는 바로 아래 활동 요약에서 제공한다.
                 const llmTotal = stats.llm_total_duration || stats.total_duration;
                 const cachedTokens = stats.cached_tokens;
-                const cacheSummary = cachedTokens == null
-                    ? null
-                    : cachedTokens > 0
-                        ? t('message.cacheHitTokens', {
-                            count: new Intl.NumberFormat(i18n.resolvedLanguage || i18n.language).format(cachedTokens),
-                        })
-                        : t('message.cacheMiss');
+                const cacheSummary = cachedTokens != null && cachedTokens > 0
+                    ? t('message.cacheHitTokens', {
+                        count: new Intl.NumberFormat(i18n.resolvedLanguage || i18n.language).format(cachedTokens),
+                    })
+                    : null;
 
                 const performanceLine = formatStats([
                     [t('message.inputProcessingTime'), formatNs(stats.prompt_eval_duration)],
