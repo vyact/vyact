@@ -30,7 +30,8 @@ from services.huggingface_models import get_model_file_size, recommend_downloade
 from services.mcp_config import ensure_mcp_config
 from services.runtime_settings import DEFAULT_RUNTIME_SETTINGS, apply_runtime_settings
 from services.runtime_startup import (
-    apply_startup_runtime_choice, get_startup_runtime_state, warm_loaded_vyact_model,
+    apply_startup_runtime_choice, get_startup_runtime_state, runtime_load_error_code,
+    warm_loaded_vyact_model,
 )
 from services.model_runtime_profiles import delete_model_profile, get_model_profile, normalize_gpu_split_for_hardware, normalize_model_profile, recommended_model_profile, save_model_profile
 from services.model_memory import estimate_downloaded_model_memory_bytes
@@ -625,6 +626,14 @@ async def install(req: ModelSelectRequest):
                 logger.info("[setup] LLM connection config saved after ES initialization")
             except Exception as e:
                 logger.exception("[setup] Cloud setup init failed")
+                if req.type == "vyact" and runtime_load_error_code(e) == "model_insufficient_memory":
+                    yield sse(
+                        "The selected model does not fit in currently available memory.",
+                        "error", 0,
+                        "main:message.modelInsufficientMemoryDescription",
+                        {"model": cfg.get("model") or cfg.get("vyact_config", {}).get("model_path", "")},
+                    )
+                    return
                 yield sse(f"Setup initialization failed: {e}", "error", 0)
                 return
 

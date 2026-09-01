@@ -536,8 +536,10 @@ export const api = {
     },
 
     async getRuntimeStartupStatus(): Promise<{
-        status: 'not_required' | 'check_failed' | 'update_available' | 'updating' | 'loading_model' | 'update_failed' | 'ready';
+        status: 'not_required' | 'check_failed' | 'update_available' | 'updating' | 'loading_model' | 'update_failed' | 'load_failed' | 'ready';
         packages: Array<{name: string; installed: string; available: string}>;
+        error_code?: 'model_insufficient_memory' | 'model_warmup_failed';
+        model?: string;
     }> {
         const response = await fetch(`${API_BASE}/vyact/runtime/startup-status`);
         await assertOk(response);

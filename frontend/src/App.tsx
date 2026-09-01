@@ -14,7 +14,7 @@ const MainPage = lazy(() => import('./components/MainPage'));
 const CHROME_EXTENSION_STORE_URL = 'https://chromewebstore.google.com/detail/vyact/opfbakfhoojmdkbbhcglolkpgmenjbib';
 
 const App: React.FC = () => {
-    const {t} = useTranslation('settings');
+    const {t} = useTranslation(['settings', 'main']);
     const isInitialSetupLaunch = new URLSearchParams(window.location.search).get('initialSetup') === '1';
     // `initialSetup=1` BrowserView is retained after setup. On a renderer
     // refresh, do not assume setup is incomplete or the wizard flashes before
@@ -27,6 +27,7 @@ const App: React.FC = () => {
     const [runtimeUpdate, setRuntimeUpdate] = useState<Awaited<ReturnType<typeof api.getRuntimeStartupStatus>> | null>(null);
     const [runtimeUpdateAction, setRuntimeUpdateAction] = useState<'update' | 'skip' | null>(null);
     const [runtimeUpdateError, setRuntimeUpdateError] = useState('');
+    const [runtimeLoadFailure, setRuntimeLoadFailure] = useState<Awaited<ReturnType<typeof api.getRuntimeStartupStatus>> | null>(null);
 
     useEffect(() => {
         checkStatus();
@@ -42,6 +43,7 @@ const App: React.FC = () => {
         void initializeKnowledgeCollections();
         api.getRuntimeStartupStatus().then(status => {
             if (status.status === 'update_available') setRuntimeUpdate(status);
+            if (status.status === 'load_failed') setRuntimeLoadFailure(status);
         }).catch(() => {});
     }, [isSetupComplete]);
 
@@ -116,7 +118,10 @@ const App: React.FC = () => {
             await api.chooseRuntimeStartupUpdate(shouldUpdate);
             setRuntimeUpdate(null);
         } catch (error) {
-            setRuntimeUpdateError(error instanceof Error ? error.message : t('general.runtimeUpdateFailed'));
+            const message = error instanceof Error ? error.message : '';
+            setRuntimeUpdateError(message.includes('model_insufficient_memory')
+                ? t('general.runtimeModelInsufficientMemoryDescription')
+                : message || t('general.runtimeUpdateFailed'));
         } finally {
             setRuntimeUpdateAction(null);
         }
@@ -168,6 +173,18 @@ const App: React.FC = () => {
                 actionLayout="horizontal"
                 onSelect={choice => void handleRuntimeUpdateChoice(choice)}
                 onClose={() => void handleRuntimeUpdateChoice('skip')}
+            />}
+            {runtimeLoadFailure && <ConfirmModal
+                title={t(runtimeLoadFailure.error_code === 'model_insufficient_memory'
+                    ? 'main:message.modelInsufficientMemoryTitle'
+                    : 'general.runtimeModelLoadFailedTitle')}
+                description={t(runtimeLoadFailure.error_code === 'model_insufficient_memory'
+                    ? 'general.runtimeModelInsufficientMemoryDescription'
+                    : 'general.runtimeModelLoadFailedDescription')}
+                options={[{value: 'close', label: t('general.confirm')} ]}
+                actionLayout="horizontal"
+                onSelect={() => setRuntimeLoadFailure(null)}
+                onClose={() => setRuntimeLoadFailure(null)}
             />}
             {dictionaryRequest && <ConfirmModal
                 title={t('general.japaneseTtsDictionaryTitle')}

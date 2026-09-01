@@ -20,7 +20,7 @@ class RuntimeStartupTests(unittest.TestCase):
 
         self.assertTrue(result)
         warmup.assert_awaited_once_with(
-            "model-id", "ko", "Custom system prompt summary",
+            "model-id", "ko", "Custom system prompt summary", raise_on_error=True,
         )
 
     def test_startup_update_choice_warms_after_model_load(self):
@@ -43,6 +43,27 @@ class RuntimeStartupTests(unittest.TestCase):
 
         self.assertEqual(result, ("model-id", "en"))
         warmup.assert_awaited_once_with("model-id", "en")
+
+    def test_startup_update_choice_exposes_warmup_failure(self):
+        load_model = AsyncMock(return_value=("model-id", "en"))
+        warmup = AsyncMock(side_effect=RuntimeError(
+            "does not fit under the dynamic memory ceiling",
+        ))
+        state = {"status": "update_available", "packages": []}
+        with patch.object(runtime_startup, "_startup_state", state), patch.object(
+            runtime_startup, "load_configured_vyact_model", new=load_model,
+        ), patch.object(
+            runtime_startup, "warm_loaded_vyact_model", new=warmup,
+        ):
+            with self.assertRaisesRegex(RuntimeError, "model_insufficient_memory"):
+                asyncio.run(runtime_startup.apply_startup_runtime_choice(False))
+
+            self.assertEqual(runtime_startup.get_startup_runtime_state(), {
+                "status": "load_failed",
+                "packages": [],
+                "error_code": "model_insufficient_memory",
+                "model": "model-id",
+            })
 
 
 if __name__ == "__main__":

@@ -12,7 +12,9 @@ from .config import logger
 from .tools import build_tool_directive
 
 
-async def warm_vyact_chat_prefix(model: str, language: str, system_prompt: str) -> bool:
+async def warm_vyact_chat_prefix(
+        model: str, language: str, system_prompt: str, raise_on_error: bool = False,
+) -> bool:
     """Prime the OpenAI-compatible local runtime with Vyact's stable system prefix."""
     try:
         user_profile = await get_profile_text()
@@ -44,6 +46,8 @@ async def warm_vyact_chat_prefix(model: str, language: str, system_prompt: str) 
         return True
     except Exception as error:
         logger.debug("[llm_warmup] Vyact skipped: %s", error)
+        if raise_on_error:
+            raise
         return False
 
 

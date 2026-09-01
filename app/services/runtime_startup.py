@@ -6,6 +6,8 @@ import os
 import platform
 from pathlib import Path
 
+import httpx
+
 from logger import get_logger
 from routers.deps import load_config_async, load_ui_language_async, save_config_async
 from services.model_runtime_profiles import (
@@ -25,6 +27,23 @@ _action_lock = asyncio.Lock()
 
 def get_startup_runtime_state() -> dict:
     return dict(_startup_state)
+
+
+def runtime_load_error_code(error: Exception) -> str:
+    """Map a concrete runtime load failure to a stable user-facing code."""
+    from services.llm.errors import http_error_response_body, is_insufficient_memory_message
+
+    detail = http_error_response_body(error) if isinstance(error, httpx.HTTPStatusError) else str(error)
+    return "model_insufficient_memory" if is_insufficient_memory_message(detail) else "model_warmup_failed"
+
+
+def mark_runtime_load_failed(error: Exception, model_id: str) -> str:
+    global _startup_state
+    error_code = runtime_load_error_code(error)
+    _startup_state = {
+        "status": "load_failed", "packages": [], "error_code": error_code, "model": model_id,
+    }
+    return error_code
 
 
 def _uses_package_manager_runtime(config: dict) -> bool:
@@ -70,10 +89,11 @@ async def warm_loaded_vyact_model(model_id: str, language: str | None = None) ->
             model_id,
             language if language is not None else await load_ui_language_async() or "",
             general_chat_system_prompt,
+            raise_on_error=True,
         )
     except Exception as error:
-        logger.debug("[llm_warmup] Vyact warm-up skipped: %s", error)
-        return False
+        logger.warning("[llm_warmup] Vyact model warm-up failed: %s", error)
+        raise
 
 
 async def detect_native_runtime_updates(config: dict) -> dict:
@@ -200,6 +220,10 @@ async def apply_startup_runtime_choice(update: bool) -> tuple[str, str]:
                 await asyncio.to_thread(refresh_external_mtp_capabilities, True)
         _startup_state = {**_startup_state, "status": "loading_model"}
         result = await load_configured_vyact_model()
-        await warm_loaded_vyact_model(*result)
+        try:
+            await warm_loaded_vyact_model(*result)
+        except Exception as error:
+            error_code = mark_runtime_load_failed(error, result[0])
+            raise RuntimeError(error_code) from error
         _startup_state = {"status": "ready", "packages": []}
         return result

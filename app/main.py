@@ -330,8 +330,11 @@ async def lifespan(app: FastAPI):
         logger.warning("[mcp] Connection init failed: %s", e)
 
     if vyact_warmup_model_id:
-        from services.runtime_startup import warm_loaded_vyact_model
-        await warm_loaded_vyact_model(vyact_warmup_model_id, vyact_warmup_language)
+        from services.runtime_startup import mark_runtime_load_failed, warm_loaded_vyact_model
+        try:
+            await warm_loaded_vyact_model(vyact_warmup_model_id, vyact_warmup_language)
+        except Exception as error:
+            mark_runtime_load_failed(error, vyact_warmup_model_id)
 
     startup_warmup_task = None
     if not is_initial_setup:
