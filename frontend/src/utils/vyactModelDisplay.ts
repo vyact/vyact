@@ -63,12 +63,17 @@ const getQuantizationBits = (quantization: string) => {
 export const estimateModelMemoryBytes = (model: VyactHubModel, filename: string) => {
     const fileSize = model.file_sizes?.[filename] || 0;
     const companionSize = model.dflash2_model?.size || (model.runtime === 'mlx' ? model.mtp_model?.size || 0 : 0);
-    if (fileSize > 0) return (fileSize + companionSize) * MODEL_MEMORY_OVERHEAD_RATIO;
-
     const parameterCount = getModelParameterCount(`${model.id}/${filename}`);
-    if (!parameterCount) return 0;
-    const quantizationBits = getQuantizationBits(getModelQuantization(model, filename));
-    return parameterCount * (quantizationBits / 8) * MODEL_MEMORY_OVERHEAD_RATIO;
+    const nameEstimate = parameterCount > 0
+        ? parameterCount * (getQuantizationBits(getModelQuantization(model, filename)) / 8) * MODEL_MEMORY_OVERHEAD_RATIO
+        : 0;
+    if (fileSize > 0) {
+        const fileEstimate = (fileSize + companionSize) * MODEL_MEMORY_OVERHEAD_RATIO;
+        // Hub search results can expose sizes for only part of a sharded MLX repository.
+        // Never present that partial byte count as the complete model requirement.
+        return model.runtime === 'mlx' ? Math.max(fileEstimate, nameEstimate) : fileEstimate;
+    }
+    return nameEstimate;
 };
 
 export const getModelFileKey = (model: VyactHubModel, filename: string) =>

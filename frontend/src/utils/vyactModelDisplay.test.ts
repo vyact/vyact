@@ -24,6 +24,17 @@ describe('estimateModelMemoryBytes', () => {
         expect(estimateModelMemoryBytes(mlxModel, 'future-1.5B-4bit')).toBe(900_000_000);
     });
 
+    it('does not treat a partial sharded MLX size as the complete model size', () => {
+        const mlxModel = model({
+            id: 'example/Qwen3.5-9B-MLX-8bit',
+            files: ['__mlx_repository__'],
+            file_sizes: {'__mlx_repository__': 1_250_000_000},
+            runtime: 'mlx',
+            quantization: '8-bit',
+        });
+        expect(estimateModelMemoryBytes(mlxModel, '__mlx_repository__')).toBe(10_800_000_000);
+    });
+
     it('reads GGUF-style quantization embedded in an MLX repository name', () => {
         const mlxModel = model({id: 'example/future-27B-Q3_K_XL-MLX', files: ['future-27B-Q3_K_XL-MLX'], runtime: 'mlx'});
         expect(estimateModelMemoryBytes(mlxModel, 'future-27B-Q3_K_XL-MLX')).toBe(12_150_000_000);
