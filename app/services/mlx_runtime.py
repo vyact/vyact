@@ -2,6 +2,7 @@
 import asyncio
 import hashlib
 import json
+import logging
 import os
 import platform
 import shutil
@@ -42,6 +43,7 @@ _MLX_RUNTIME_FORCE_STOP_SECONDS = 5
 _OMLX_CACHE_DIR = MLX_RUNTIME_DIR / "prompt-cache"
 _mlx_runtime_process: subprocess.Popen | None = None
 _active_dflash2_model: str | None = None
+logger = logging.getLogger(__name__)
 
 
 @contextmanager
@@ -694,6 +696,7 @@ def _find_installed_specprefill_draft(model_path: Path) -> tuple[str, Path] | No
 
 def prepare_mlx_specprefill_draft(
         model_path: Path, token: str | None = None, enable_mtp: bool | None = None,
+        allow_download: bool = True,
 ) -> bool:
     """Download and attach one compatible small draft before a regular oMLX load."""
     if enable_mtp is not False and _compatible_external_mtp_path(model_path) is not None:
@@ -707,6 +710,8 @@ def prepare_mlx_specprefill_draft(
         repository, draft_path = installed_draft
         associate_mlx_specprefill_model(model_path, repository, draft_path)
         return True
+    if not allow_download:
+        return False
     manifest = _read_model_manifest(model_path / MLX_MODEL_MANIFEST)
     repository = manifest.get("repository")
     if not isinstance(repository, str) or not repository:
@@ -825,6 +830,16 @@ def start_mlx_model(
     if not is_apple_silicon():
         raise RuntimeError("MLX models require Apple Silicon")
     from services.vyact_runtime import stop_runtime
+
+    # Every reload path converges here. Repair an older target manifest from an
+    # already-installed companion before writing oMLX model settings. This is
+    # deliberately local-only; startup/activation callers own optional Hub I/O.
+    try:
+        prepare_mlx_specprefill_draft(
+            model_path, enable_mtp=enable_mtp, allow_download=False,
+        )
+    except Exception as error:
+        logger.warning("[omlx] Installed SpecPrefill preparation skipped during load: %s", error)
 
     stop_runtime()
     stop_mlx_runtime()

@@ -22,6 +22,7 @@ from services.mlx_runtime import (
     list_downloaded_mlx_models,
     list_mtp_supported_mlx_models,
     prepare_mlx_specprefill_draft,
+    start_mlx_model,
     stop_mlx_runtime,
 )
 
@@ -357,6 +358,23 @@ class MlxRuntimeTests(unittest.TestCase):
             find_installed.assert_not_called()
             search.assert_not_called()
             self.assertNotIn("specprefill_repository", json.loads(manifest_path.read_text()))
+
+    def test_every_mlx_load_repairs_installed_specprefill_before_building_settings(self):
+        model_path = Path("/models/owner/target")
+        with patch("services.mlx_runtime.is_apple_silicon", return_value=True), \
+             patch("services.vyact_runtime.stop_runtime"), \
+             patch("services.mlx_runtime.stop_mlx_runtime"), \
+             patch("services.mlx_runtime.prepare_mlx_specprefill_draft") as prepare, \
+             patch(
+                 "services.mlx_runtime._build_omlx_server_command",
+                 side_effect=RuntimeError("settings-built"),
+             ):
+            with self.assertRaisesRegex(RuntimeError, "settings-built"):
+                start_mlx_model(model_path, 65536, enable_mtp=False)
+
+        prepare.assert_called_once_with(
+            model_path, enable_mtp=False, allow_download=False,
+        )
 
     def test_prepare_specprefill_skips_installed_draft_that_exceeds_size_ratio(self):
         with tempfile.TemporaryDirectory() as temp_dir:
