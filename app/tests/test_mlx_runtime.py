@@ -6,7 +6,7 @@ import struct
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 from services.mlx_runtime import (
     MLX_MODEL_MANIFEST,
@@ -373,6 +373,38 @@ class MlxRuntimeTests(unittest.TestCase):
                 start_mlx_model(model_path, 65536, enable_mtp=False)
 
         prepare.assert_not_called()
+
+    def test_external_mtp_load_failure_falls_back_and_records_status(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            base = Path(temp_dir)
+            models = base / "models"
+            model_path = models / "owner" / "target"
+            model_path.mkdir(parents=True)
+            failed_process = Mock(pid=1234)
+            failed_process.poll.return_value = 1
+            fallback_process = Mock(pid=1235)
+            fallback_process.poll.return_value = None
+            status = {}
+            with patch("services.mlx_runtime.is_apple_silicon", return_value=True), \
+                 patch("services.vyact_runtime.stop_runtime"), \
+                 patch("services.mlx_runtime.stop_mlx_runtime"), \
+                 patch("services.mlx_runtime._build_omlx_server_command", side_effect=[
+                     (["omlx"], {}, "external_mtp"), (["omlx"], {}, "none"),
+                 ]), patch("services.mlx_runtime.subprocess.Popen", side_effect=[failed_process, fallback_process]), \
+                 patch("services.mlx_runtime.urllib.request.urlopen") as urlopen, \
+                 patch("services.mlx_runtime.json.load", return_value={"data": [{"id": "target"}]}), \
+                 patch("services.mlx_runtime.get_log_file", return_value=base / "omlx.log"), \
+                 patch("services.mlx_runtime.MLX_MODELS_DIR", models), \
+                 patch("services.mlx_runtime.MLX_RUNTIME_DIR", base), \
+                 patch("services.mlx_runtime.MLX_RUNTIME_PID_FILE", base / "omlx.pid"):
+                urlopen.return_value.__enter__.return_value.status = 200
+                self.assertEqual(
+                    start_mlx_model(model_path, 32768, enable_mtp=True, runtime_status=status),
+                    "target",
+                )
+
+            self.assertTrue(status["mtp_fallback"])
+            self.assertEqual(status["mtp_failure_code"], "load_failed")
 
     def test_prepare_specprefill_skips_installed_draft_that_exceeds_size_ratio(self):
         with tempfile.TemporaryDirectory() as temp_dir:

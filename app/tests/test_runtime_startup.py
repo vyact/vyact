@@ -1,11 +1,45 @@
 import asyncio
 import unittest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 from services import runtime_startup
 
 
 class RuntimeStartupTests(unittest.TestCase):
+    def test_saved_seed_is_reapplied_when_local_model_is_restored(self):
+        profile = runtime_startup.recommended_model_profile(
+            "owner/model.gguf", "gguf", "owner/model", 32768,
+        )
+        profile.update({
+            "seed": 42,
+            "mtp_enabled": False,
+            "kv_cache_precision": "none",
+            "cache_quantization": False,
+        })
+        apply_settings = Mock()
+        config = {
+            "type": "vyact",
+            "runtime_settings": {},
+            "vyact_config": {"runtime": "gguf", "model_path": "owner/model.gguf"},
+        }
+        with patch.object(
+            runtime_startup, "load_config_async", new=AsyncMock(return_value=config),
+        ), patch.object(
+            runtime_startup, "get_model_profile", new=AsyncMock(return_value=profile),
+        ), patch.object(
+            runtime_startup, "start_configured_runtime", return_value="model-id",
+        ), patch.object(
+            runtime_startup, "apply_runtime_settings", new=apply_settings,
+        ), patch.object(
+            runtime_startup, "save_config_async", new=AsyncMock(),
+        ), patch.object(
+            runtime_startup, "load_ui_language_async", new=AsyncMock(return_value="ko"),
+        ):
+            result = asyncio.run(runtime_startup.load_configured_vyact_model())
+
+        self.assertEqual(result, ("model-id", "ko"))
+        self.assertEqual(apply_settings.call_args.args[0]["seed"], 42)
+
     def test_warms_loaded_model_with_the_shared_chat_prefix(self):
         warmup = AsyncMock(return_value=True)
         with patch(

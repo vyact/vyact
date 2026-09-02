@@ -14,6 +14,7 @@ import platform
 import re
 import secrets
 import socket
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
@@ -179,6 +180,9 @@ class VyactModelActivateRequest(BaseModel):
     top_p: float | None = Field(default=None, ge=0, le=1)
     cache_quantization: bool = True
     mtp_enabled: bool | None = None
+    mtp_failure_code: str | None = Field(default=None, pattern="^(load_failed|out_of_memory)$")
+    mtp_failure_message: str | None = Field(default=None, max_length=500)
+    mtp_failed_at: str | None = Field(default=None, max_length=64)
     kv_cache_precision: str | None = Field(default=None, pattern="^(none|q8|q4)$")
     performance_mode: str = Field(default="auto", pattern="^(auto|memory|performance)$")
     cpu_threads: int | None = Field(default=None, ge=1, le=256)
@@ -198,6 +202,9 @@ class VyactModelProfileRequest(BaseModel):
     top_p: float | None = Field(default=None, ge=0, le=1)
     cache_quantization: bool = True
     mtp_enabled: bool | None = None
+    mtp_failure_code: str | None = Field(default=None, pattern="^(load_failed|out_of_memory)$")
+    mtp_failure_message: str | None = Field(default=None, max_length=500)
+    mtp_failed_at: str | None = Field(default=None, max_length=64)
     kv_cache_precision: str | None = Field(default=None, pattern="^(none|q8|q4)$")
     performance_mode: str = Field(default="auto", pattern="^(auto|memory|performance)$")
     cpu_threads: int | None = Field(default=None, ge=1, le=256)
@@ -1218,6 +1225,7 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
             req.context_size = safe_profile["context_size"]
             req.max_output_tokens = safe_profile["max_output_tokens"]
             req.history_token_budget = safe_profile["history_token_budget"]
+            runtime_status: dict = {}
             if runtime == "mlx":
                 from services.mlx_runtime import get_downloaded_mlx_model_path, start_mlx_model
 
@@ -1225,7 +1233,7 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
                 model_id = await asyncio.to_thread(
                     start_mlx_model, model_path, req.context_size, config.get("debug_logging", False),
                     req.cache_quantization, req.mtp_enabled, req.kv_cache_precision,
-                    req.performance_mode, req.cpu_threads,
+                    req.performance_mode, req.cpu_threads, runtime_status,
                 )
             else:
                 from services.vyact_runtime import (
@@ -1238,10 +1246,16 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
                     req.cache_quantization, req.mtp_enabled, req.kv_cache_precision,
                     req.performance_mode, req.cpu_threads, safe_profile["gpu_split_percentages"],
                     safe_profile["gpu_manual_split_enabled"],
+                    runtime_status,
                 )
                 req.context_size = await asyncio.to_thread(
                     get_loaded_context_size, model_id, req.context_size,
                 )
+            mtp_fallback = runtime_status.get("mtp_fallback", False)
+            effective_mtp_enabled = False if mtp_fallback else req.mtp_enabled
+            mtp_failure_code = runtime_status.get("mtp_failure_code") if mtp_fallback else None
+            mtp_failure_message = runtime_status.get("mtp_failure_message") if mtp_fallback else None
+            mtp_failed_at = datetime.now(timezone.utc).isoformat() if mtp_fallback else None
             config["type"] = "vyact"
             config["model"] = model_id
             config["model_type"] = "chat"
@@ -1255,7 +1269,10 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
                 "runtime": runtime,
                 "repository": repository,
                 "cache_quantization": req.cache_quantization,
-                "mtp_enabled": req.mtp_enabled,
+                "mtp_enabled": effective_mtp_enabled,
+                "mtp_failure_code": mtp_failure_code,
+                "mtp_failure_message": mtp_failure_message,
+                "mtp_failed_at": mtp_failed_at,
                 "kv_cache_precision": safe_profile["kv_cache_precision"],
                 "performance_mode": req.performance_mode, "cpu_threads": req.cpu_threads,
                 "gpu_split_percentages": safe_profile["gpu_split_percentages"],
@@ -1271,7 +1288,10 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
                 "history_token_budget": safe_profile["history_token_budget"],
                 "temperature": req.temperature, "top_k": req.top_k, "top_p": req.top_p,
                 "cache_quantization": req.cache_quantization,
-                "mtp_enabled": req.mtp_enabled,
+                "mtp_enabled": effective_mtp_enabled,
+                "mtp_failure_code": mtp_failure_code,
+                "mtp_failure_message": mtp_failure_message,
+                "mtp_failed_at": mtp_failed_at,
                 "kv_cache_precision": safe_profile["kv_cache_precision"],
                 "performance_mode": req.performance_mode, "cpu_threads": req.cpu_threads,
                 "gpu_split_percentages": safe_profile["gpu_split_percentages"],

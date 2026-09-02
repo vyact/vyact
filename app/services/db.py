@@ -323,6 +323,9 @@ async def ensure_index():
                     "top_k": {"type": "integer"}, "top_p": {"type": "float"},
                     "cache_quantization": {"type": "boolean"},
                     "mtp_enabled": {"type": "boolean"},
+                    "mtp_failure_code": {"type": "keyword"},
+                    "mtp_failure_message": {"type": "text", "index": False},
+                    "mtp_failed_at": {"type": "date"},
                     "kv_cache_precision": {"type": "keyword"}, "performance_mode": {"type": "keyword"},
                     "cpu_threads": {"type": "integer"}, "seed": {"type": "integer"},
                     "gpu_split_percentages": {"type": "float"},
@@ -331,6 +334,15 @@ async def ensure_index():
                 }},
             )
             logger.info("model_runtime_profiles index created")
+        else:
+            await es.indices.put_mapping(
+                index=MODEL_RUNTIME_PROFILES_INDEX,
+                properties={
+                    "mtp_failure_code": {"type": "keyword"},
+                    "mtp_failure_message": {"type": "text", "index": False},
+                    "mtp_failed_at": {"type": "date"},
+                },
+            )
 
         if not await es.indices.exists(index=CHAT_FILE_CHUNKS_INDEX):
             await es.indices.create(

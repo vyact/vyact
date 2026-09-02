@@ -1218,6 +1218,8 @@
     "cacheQuantizationHelp": "Reduces cache memory use for larger contexts.",
     "cacheQuantizationMtpHelp": "Turn off MTP acceleration to enable KV cache quantization.",
     "accelerationConflict": "MTP acceleration and KV cache quantization cannot be enabled together.",
+    "mtpFailures": {"load_failed": "MTP could not be loaded in this environment, so the model is running without it.", "out_of_memory": "MTP could not be loaded because there was not enough memory, so the model is running without it."},
+    "retryMtp": "Try MTP again",
     "advanced": "Advanced settings",
     "performanceMode": "Performance mode",
     "performanceModeHelp": "Adjusts llama.cpp batching for speed or lower memory use.",

@@ -1222,6 +1222,8 @@
     "cacheQuantizationHelp": "Reduces cache memory use for larger contexts.",
     "cacheQuantizationMtpHelp": "ปิดการเร่งความเร็ว MTP เพื่อเปิดใช้การควอนไทซ์แคช KV",
     "accelerationConflict": "ไม่สามารถเปิดการเร่งความเร็ว MTP และการควอนไทซ์แคช KV พร้อมกันได้",
+    "mtpFailures": {"load_failed": "ไม่สามารถโหลด MTP ในสภาพแวดล้อมนี้ได้ โมเดลจึงทำงานในโหมดปกติ", "out_of_memory": "หน่วยความจำไม่เพียงพอสำหรับโหลด MTP โมเดลจึงทำงานในโหมดปกติ"},
+    "retryMtp": "ลอง MTP อีกครั้ง",
     "advanced": "การตั้งค่าขั้นสูง",
     "performanceMode": "โหมดประสิทธิภาพ",
     "performanceModeHelp": "ปรับการประมวลผลแบบกลุ่มของ llama.cpp เพื่อเน้นความเร็วหรือประหยัดหน่วยความจำ",

@@ -22,6 +22,9 @@
 .model-settings-input:focus { outline: none; border-color: var(--accent); background: var(--bg); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent); }
 .model-settings-input::placeholder { color: var(--muted); opacity: .72; }
 .model-settings-toggle { min-height: 46px; }
+.model-settings-toggle:has(.model-settings-mtp-failure) { flex-wrap: wrap; }
+.model-settings-mtp-failure { display: flex; flex: 1 0 100%; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--border)); border-radius: 8px; background: color-mix(in srgb, var(--warn) 9%, transparent); color: var(--text-secondary); font-size: 11px; line-height: 1.4; }
+.model-settings-modal .model-settings-mtp-failure button { flex: 0 0 auto; padding: 6px 9px; border-color: color-mix(in srgb, var(--warn) 55%, var(--border)); background: transparent; font-size: 11px; }
 .model-settings-toggle small { display: block; margin-top: 3px; color: var(--muted); font-weight: 400; }
 .model-settings-toggle.is-disabled { opacity: .72; }
 .model-settings-modal .model-settings-switch { position: relative; box-sizing: border-box; flex: 0 0 40px; width: 40px; min-width: 40px; height: 22px; padding: 0; border: 0; border-radius: 22px; background: var(--border); box-shadow: none; transition: background .2s; }

@@ -4,6 +4,7 @@ import asyncio
 import json
 import os
 import platform
+from datetime import datetime, timezone
 from pathlib import Path
 
 import httpx
@@ -179,9 +180,24 @@ async def load_configured_vyact_model(config: dict | None = None) -> tuple[str, 
         "gpu_split_percentages",
         "gpu_manual_split_enabled",
     )})
+    runtime_status: dict = {}
     model_id = await asyncio.to_thread(
-        start_configured_runtime, vyact_config, config.get("debug_logging", False),
+        start_configured_runtime, vyact_config, config.get("debug_logging", False), runtime_status,
     )
+    if runtime_status.get("mtp_fallback"):
+        profile = await save_model_profile({
+            **profile,
+            "mtp_enabled": False,
+            "mtp_failure_code": runtime_status.get("mtp_failure_code", "load_failed"),
+            "mtp_failure_message": runtime_status.get("mtp_failure_message"),
+            "mtp_failed_at": datetime.now(timezone.utc).isoformat(),
+        })
+        vyact_config.update({
+            "mtp_enabled": False,
+            "mtp_failure_code": profile["mtp_failure_code"],
+            "mtp_failure_message": profile["mtp_failure_message"],
+            "mtp_failed_at": profile["mtp_failed_at"],
+        })
     config["model"] = model_id
     vyact_config["model"] = model_id
     apply_runtime_settings({
@@ -192,6 +208,7 @@ async def load_configured_vyact_model(config: dict | None = None) -> tuple[str, 
         "llm_temperature": profile["temperature"],
         "top_k": profile.get("top_k"),
         "top_p": profile.get("top_p"),
+        "seed": profile.get("seed"),
         "history_token_budget": profile.get("history_token_budget", common_settings.get("history_token_budget", 16384)),
     })
     await save_config_async(config)

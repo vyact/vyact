@@ -113,6 +113,22 @@ def test_profile_rejects_mtp_with_kv_cache_quantization():
         })
 
 
+def test_mtp_load_failure_is_normalized_and_cleared_without_failure_code():
+    failed = normalize_model_profile({
+        "model_path": "owner/model.gguf",
+        "mtp_enabled": False,
+        "mtp_failure_code": "load_failed",
+        "mtp_failure_message": "draft failed",
+        "mtp_failed_at": "2026-09-02T00:00:00+00:00",
+    })
+    assert failed["mtp_failure_code"] == "load_failed"
+    assert failed["mtp_failure_message"] == "draft failed"
+
+    cleared = normalize_model_profile({**failed, "mtp_failure_code": None})
+    assert cleared["mtp_failure_message"] is None
+    assert cleared["mtp_failed_at"] is None
+
+
 @pytest.mark.asyncio
 async def test_delete_profile_removes_matching_document(monkeypatch):
     es = AsyncMock()

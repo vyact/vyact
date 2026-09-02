@@ -249,6 +249,9 @@ export interface VyactModelProfile {
     top_p: number | null;
     cache_quantization: boolean;
     mtp_enabled?: boolean | null;
+    mtp_failure_code?: 'load_failed' | 'out_of_memory' | null;
+    mtp_failure_message?: string | null;
+    mtp_failed_at?: string | null;
     kv_cache_precision?: 'none' | 'q8' | 'q4';
     performance_mode?: 'auto' | 'memory' | 'performance';
     cpu_threads?: number | null;

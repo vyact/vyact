@@ -1222,6 +1222,8 @@
     "cacheQuantizationHelp": "Reduces cache memory use for larger contexts.",
     "cacheQuantizationMtpHelp": "KV キャッシュ量子化を有効にするには、MTP アクセラレーションをオフにしてください。",
     "accelerationConflict": "MTP アクセラレーションと KV キャッシュ量子化は同時に有効にできません。",
+    "mtpFailures": {"load_failed": "この環境では MTP を読み込めなかったため、通常モードで実行しています。", "out_of_memory": "メモリ不足で MTP を読み込めなかったため、通常モードで実行しています。"},
+    "retryMtp": "MTP を再試行",
     "advanced": "詳細設定",
     "performanceMode": "パフォーマンスモード",
     "performanceModeHelp": "llama.cpp のバッチ設定を速度または省メモリ向けに調整します。",

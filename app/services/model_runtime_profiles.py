@@ -13,6 +13,7 @@ DEFAULT_HISTORY_TOKEN_BUDGET = 16384
 MINIMUM_CONTEXT_RESERVE_TOKENS = 512
 VALID_PERFORMANCE_MODES = {"auto", "memory", "performance"}
 VALID_KV_CACHE_PRECISIONS = {"none", "q8", "q4"}
+VALID_MTP_LOAD_FAILURE_CODES = {"load_failed", "out_of_memory"}
 MAX_GPU_COUNT = 16
 MAX_GPU_SPLIT_PERCENT = 100.0
 
@@ -41,6 +42,14 @@ def normalize_model_profile(profile: dict) -> dict:
     normalized["performance_mode"] = performance_mode
     normalized["kv_cache_precision"] = kv_cache_precision
     normalized["cache_quantization"] = kv_cache_precision != "none"
+    mtp_failure_code = normalized.get("mtp_failure_code")
+    if mtp_failure_code not in VALID_MTP_LOAD_FAILURE_CODES:
+        mtp_failure_code = None
+    normalized["mtp_failure_code"] = mtp_failure_code
+    normalized["mtp_failure_message"] = (
+        str(normalized.get("mtp_failure_message") or "")[:500] if mtp_failure_code else None
+    )
+    normalized["mtp_failed_at"] = normalized.get("mtp_failed_at") if mtp_failure_code else None
     cpu_threads = normalized.get("cpu_threads")
     normalized["cpu_threads"] = None if cpu_threads in (None, "") else max(1, min(int(cpu_threads), 256))
     legacy_gpu_split = normalized.get("gpu_memory_allocations") or []

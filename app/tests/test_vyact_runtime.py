@@ -2,7 +2,7 @@ import asyncio
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from services.vyact_runtime import (
     RuntimePackageManagerMissingError, RuntimePaths, cache_downloaded_model,
@@ -200,6 +200,38 @@ class VyactRuntimeTests(unittest.TestCase):
             self.assertIn("llama-swap", str(popen.call_args.args[0][0]))
             self.assertEqual(Path(popen.call_args.kwargs["stdout"].name).name, "llama-swap_20260825.log")
 
+    def test_mtp_load_failure_records_status_before_plain_fallback(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            base = Path(temp_dir)
+            model = base / "model.gguf"
+            model.touch()
+            paths = RuntimePaths(base / "llama-server", base / "llama-swap", base / "models", base / "config.yaml")
+            failed_process = Mock(pid=1234)
+            failed_process.poll.return_value = 1
+            fallback_process = Mock(pid=1235)
+            fallback_process.poll.return_value = None
+            status = {}
+            with patch("services.vyact_runtime.get_runtime_paths", return_value=paths), \
+                 patch("services.mlx_runtime.stop_mlx_runtime"), \
+                 patch("services.vyact_runtime.stop_runtime"), \
+                 patch("services.vyact_runtime.write_single_model_config", return_value="vyact-model"), \
+                 patch("services.vyact_runtime.subprocess.Popen", side_effect=[failed_process, fallback_process]), \
+                 patch("services.vyact_runtime.get_cached_mtp_sidecar", return_value=None), \
+                 patch("services.vyact_runtime.get_cached_dflash2_model", return_value=None), \
+                 patch("services.vyact_runtime.get_cached_vision_projector", return_value=None), \
+                 patch("services.vyact_runtime.model_has_integrated_mtp", return_value=True), \
+                 patch("services.vyact_runtime.urllib.request.urlopen") as urlopen, \
+                 patch("services.vyact_runtime.get_log_file", return_value=base / "llama-swap.log"), \
+                 patch("services.vyact_runtime.VYACT_RUNTIME_DIR", base), \
+                 patch("services.vyact_runtime.VYACT_RUNTIME_PID_FILE", base / "runtime.pid"):
+                urlopen.return_value.__enter__.return_value.status = 200
+                self.assertEqual(
+                    start_single_model(model, 8192, cache_quantization=False, enable_mtp=True, runtime_status=status),
+                    "vyact-model",
+                )
+            self.assertTrue(status["mtp_fallback"])
+            self.assertEqual(status["mtp_failure_code"], "load_failed")
+
     def test_single_model_config_applies_multi_gpu_tensor_split(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             base = Path(temp_dir)
@@ -326,7 +358,7 @@ class VyactRuntimeTests(unittest.TestCase):
                  patch("services.vyact_runtime.VYACT_MODELS_DIR", base / "models"), \
                  patch("services.vyact_runtime.VYACT_SWAP_CONFIG", config):
                 write_single_model_config(
-                    model, 32768, enable_mtp=False, kv_cache_precision="q4",
+                    model, 8192, enable_mtp=False, kv_cache_precision="q4",
                     performance_mode="memory", cpu_threads=6,
                 )
 

@@ -1222,6 +1222,8 @@
     "cacheQuantizationHelp": "Reduces cache memory use for larger contexts.",
     "cacheQuantizationMtpHelp": "关闭 MTP 加速后即可启用 KV 缓存量化。",
     "accelerationConflict": "MTP 加速与 KV 缓存量化不能同时启用。",
+    "mtpFailures": {"load_failed": "此环境无法加载 MTP，模型正在普通模式下运行。", "out_of_memory": "内存不足，无法加载 MTP，模型正在普通模式下运行。"},
+    "retryMtp": "重试 MTP",
     "advanced": "高级设置",
     "performanceMode": "性能模式",
     "performanceModeHelp": "调整 llama.cpp 批处理设置，以优先速度或节省内存。",

@@ -29,7 +29,7 @@ from services.omlx_policy import (
     VLM_MTP_DRAFT_BLOCK_SIZE, is_external_mtp_compatible, model_type,
     recommend_omlx_cache_sizes,
 )
-from services.runtime_error_details import runtime_startup_error
+from services.runtime_error_details import classify_runtime_load_failure, runtime_startup_error
 from services.vyact_runtime import VYACT_RUNTIME_PORT
 
 MLX_MODELS_DIR = INSTALL_DIR / "models" / "mlx"
@@ -820,6 +820,7 @@ def start_mlx_model(
         cache_quantization: bool = True, enable_mtp: bool | None = None,
         kv_cache_precision: str | None = None, _performance_mode: str = "auto",
         _cpu_threads: int | None = None,
+        runtime_status: dict | None = None,
 ) -> str:
     global _active_dflash2_model, _mlx_runtime_process
     if not is_apple_silicon():
@@ -846,27 +847,42 @@ def start_mlx_model(
     MLX_RUNTIME_PID_FILE.write_text(str(process.pid), encoding="utf-8")
     deadline = time.monotonic() + 180
     health_url = f"http://127.0.0.1:{VYACT_RUNTIME_PORT}/v1/models"
-    while time.monotonic() < deadline:
-        if process.poll() is not None:
-            raise runtime_startup_error("oMLX stopped while loading the model", log_path)
-        try:
-            with urllib.request.urlopen(health_url, timeout=2) as response:
-                if response.status == 200:
-                    try:
-                        payload = json.load(response)
-                        available_ids = [
-                            str(item.get("id")) for item in payload.get("data", [])
-                            if isinstance(item, dict) and item.get("id")
-                        ]
-                        model_id = model_path.name if model_path.name in available_ids or not available_ids else available_ids[0]
-                    except (AttributeError, TypeError, ValueError):
-                        model_id = model_path.name
-                    _active_dflash2_model = (
-                        f"mlx/{model_path.relative_to(MLX_MODELS_DIR).as_posix()}"
-                        if speculative_mode == "dflash2" else None
-                    )
-                    return model_id
-        except (OSError, urllib.error.URLError):
-            pass
-        time.sleep(0.25)
-    raise runtime_startup_error("The oMLX model did not become ready within 180 seconds", log_path)
+    try:
+        while time.monotonic() < deadline:
+            if process.poll() is not None:
+                raise runtime_startup_error("oMLX stopped while loading the model", log_path)
+            try:
+                with urllib.request.urlopen(health_url, timeout=2) as response:
+                    if response.status == 200:
+                        try:
+                            payload = json.load(response)
+                            available_ids = [
+                                str(item.get("id")) for item in payload.get("data", [])
+                                if isinstance(item, dict) and item.get("id")
+                            ]
+                            model_id = model_path.name if model_path.name in available_ids or not available_ids else available_ids[0]
+                        except (AttributeError, TypeError, ValueError):
+                            model_id = model_path.name
+                        _active_dflash2_model = (
+                            f"mlx/{model_path.relative_to(MLX_MODELS_DIR).as_posix()}"
+                            if speculative_mode == "dflash2" else None
+                        )
+                        return model_id
+            except (OSError, urllib.error.URLError):
+                pass
+            time.sleep(0.25)
+        raise runtime_startup_error("The oMLX model did not become ready within 180 seconds", log_path)
+    except RuntimeError as error:
+        if speculative_mode != "external_mtp" or enable_mtp is False:
+            raise
+        if runtime_status is not None:
+            failure_code, failure_message = classify_runtime_load_failure(error)
+            runtime_status.update({
+                "mtp_fallback": True,
+                "mtp_failure_code": failure_code,
+                "mtp_failure_message": failure_message,
+            })
+        return start_mlx_model(
+            model_path, context_size, debug_logging, cache_quantization, False,
+            kv_cache_precision, _performance_mode, _cpu_threads, runtime_status,
+        )

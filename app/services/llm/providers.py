@@ -492,9 +492,9 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
         )
         if runtime.get("top_p") is not None:
             body["top_p"] = runtime["top_p"]
+        if runtime.get("top_k") is not None:
+            body["top_k"] = runtime["top_k"]
         if provider_config.get("runtime") == "gguf":
-            if runtime.get("top_k") is not None:
-                body["top_k"] = runtime["top_k"]
             if structured_output_schema is not None:
                 body["response_format"] = {
                     "type": "json_schema",

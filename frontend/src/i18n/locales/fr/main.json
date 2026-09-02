@@ -1222,6 +1222,8 @@
     "cacheQuantizationHelp": "Reduces cache memory use for larger contexts.",
     "cacheQuantizationMtpHelp": "Désactivez l’accélération MTP pour activer la quantification du cache KV.",
     "accelerationConflict": "L’accélération MTP et la quantification du cache KV ne peuvent pas être activées simultanément.",
+    "mtpFailures": {"load_failed": "MTP n’a pas pu être chargé dans cet environnement ; le modèle fonctionne en mode normal.", "out_of_memory": "La mémoire était insuffisante pour charger MTP ; le modèle fonctionne en mode normal."},
+    "retryMtp": "Réessayer MTP",
     "advanced": "Paramètres avancés",
     "performanceMode": "Mode de performance",
     "performanceModeHelp": "Ajuste les lots llama.cpp pour privilégier la vitesse ou économiser la mémoire.",

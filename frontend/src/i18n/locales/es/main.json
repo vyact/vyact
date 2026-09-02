@@ -1221,6 +1221,8 @@
     "cacheQuantizationHelp": "Reduces cache memory use for larger contexts.",
     "cacheQuantizationMtpHelp": "Desactiva la aceleración MTP para habilitar la cuantización de la caché KV.",
     "accelerationConflict": "La aceleración MTP y la cuantización de la caché KV no pueden activarse al mismo tiempo.",
+    "mtpFailures": {"load_failed": "No se pudo cargar MTP en este entorno; el modelo funciona en modo normal.", "out_of_memory": "No había memoria suficiente para cargar MTP; el modelo funciona en modo normal."},
+    "retryMtp": "Reintentar MTP",
     "advanced": "Configuración avanzada",
     "performanceMode": "Modo de rendimiento",
     "performanceModeHelp": "Ajusta el procesamiento por lotes de llama.cpp para priorizar velocidad o memoria.",

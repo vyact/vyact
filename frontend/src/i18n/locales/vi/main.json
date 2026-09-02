@@ -1222,6 +1222,8 @@
     "cacheQuantizationHelp": "Reduces cache memory use for larger contexts.",
     "cacheQuantizationMtpHelp": "Tắt tăng tốc MTP để bật lượng tử hóa bộ nhớ đệm KV.",
     "accelerationConflict": "Không thể bật đồng thời tăng tốc MTP và lượng tử hóa bộ nhớ đệm KV.",
+    "mtpFailures": {"load_failed": "Không thể tải MTP trong môi trường này; mô hình đang chạy ở chế độ thông thường.", "out_of_memory": "Không đủ bộ nhớ để tải MTP; mô hình đang chạy ở chế độ thông thường."},
+    "retryMtp": "Thử lại MTP",
     "advanced": "Cài đặt nâng cao",
     "performanceMode": "Chế độ hiệu năng",
     "performanceModeHelp": "Điều chỉnh xử lý theo lô của llama.cpp để ưu tiên tốc độ hoặc tiết kiệm bộ nhớ.",

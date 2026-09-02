@@ -25,7 +25,7 @@ from services.hardware_info import GPU_SPLIT_DECIMAL_PLACES, get_local_hardware_
 from services.local_model_errors import LocalModelNotDownloadedError
 from services.model_runtime_profiles import normalize_gpu_split_for_hardware
 from services.multimodal_capabilities import get_projector_modalities
-from services.runtime_error_details import runtime_startup_error
+from services.runtime_error_details import classify_runtime_load_failure, runtime_startup_error
 
 VYACT_RUNTIME_PORT = 11435
 VYACT_RUNTIME_URL = f"http://127.0.0.1:{VYACT_RUNTIME_PORT}/v1"
@@ -33,7 +33,6 @@ VYACT_RUNTIME_DIR = INSTALL_DIR / "runtime"
 VYACT_MODELS_DIR = INSTALL_DIR / "models"
 VYACT_SWAP_CONFIG = VYACT_RUNTIME_DIR / "llama-swap.yaml"
 VYACT_RUNTIME_PID_FILE = VYACT_RUNTIME_DIR / "llama-swap.pid"
-KV_CACHE_QUANTIZATION_MIN_CONTEXT = 32768
 LLAMA_BATCH_SIZE = 2048
 LLAMA_UBATCH_SIZE = 512
 DEFAULT_CHAT_CONTEXT_SIZE = 32768
@@ -538,6 +537,7 @@ def start_single_model(
         kv_cache_precision: str | None = None, performance_mode: str = "auto",
         cpu_threads: int | None = None, gpu_split_percentages: list[float] | None = None,
         gpu_manual_split_enabled: bool = False,
+        runtime_status: dict | None = None,
 ) -> str:
     """Restart llama-swap with exactly one configured model and return its API ID."""
     global _active_dflash2_model, _active_mtp_model, _runtime_process
@@ -564,6 +564,7 @@ def start_single_model(
     stop_mlx_runtime()
     mtp_model_path = get_cached_mtp_sidecar(model_path)
     vision_projector_path = get_cached_vision_projector(model_path)
+    log_path = get_log_file("llama-swap")
 
     def launch(acceleration: str | None) -> tuple[str, subprocess.Popen]:
         stop_runtime()
@@ -577,7 +578,6 @@ def start_single_model(
             gpu_split_percentages=gpu_split_percentages,
         )
         VYACT_RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
-        log_path = get_log_file("llama-swap")
         with log_path.open("ab") as log_file:
             process = subprocess.Popen(
                 [str(paths.llama_swap), "--config", str(VYACT_SWAP_CONFIG), "--listen", f"127.0.0.1:{VYACT_RUNTIME_PORT}"],
@@ -616,9 +616,16 @@ def start_single_model(
             relative_model = str(model_path)
         _active_dflash2_model = relative_model if acceleration == "dflash2" else None
         _active_mtp_model = relative_model if acceleration == "mtp" else None
-    except RuntimeError:
+    except RuntimeError as error:
         if acceleration is None:
             raise
+        if runtime_status is not None and acceleration == "mtp":
+            failure_code, failure_message = classify_runtime_load_failure(error)
+            runtime_status.update({
+                "mtp_fallback": True,
+                "mtp_failure_code": failure_code,
+                "mtp_failure_message": failure_message,
+            })
         model_key, process = launch(None)
         wait_until_loaded(model_key, process)
         _active_mtp_model = None
@@ -626,7 +633,9 @@ def start_single_model(
     return model_key
 
 
-def start_configured_runtime(vyact_config: dict, debug_logging: bool = False) -> str:
+def start_configured_runtime(
+        vyact_config: dict, debug_logging: bool = False, runtime_status: dict | None = None,
+) -> str:
     """Restore the configured GGUF or MLX model after an app restart."""
     model_path_value = str(vyact_config.get("model_path") or "")
     if not model_path_value:
@@ -641,7 +650,7 @@ def start_configured_runtime(vyact_config: dict, debug_logging: bool = False) ->
             get_downloaded_mlx_model_path(model_path_value), context_size, debug_logging,
             bool(vyact_config.get("cache_quantization", True)), vyact_config.get("mtp_enabled"),
             vyact_config.get("kv_cache_precision"), vyact_config.get("performance_mode", "auto"),
-            vyact_config.get("cpu_threads"),
+            vyact_config.get("cpu_threads"), runtime_status,
         )
     aligned_config = normalize_gpu_split_for_hardware(vyact_config, get_local_hardware_info())
     vyact_config.update({
@@ -655,6 +664,7 @@ def start_configured_runtime(vyact_config: dict, debug_logging: bool = False) ->
         vyact_config.get("kv_cache_precision"), vyact_config.get("performance_mode", "auto"),
         vyact_config.get("cpu_threads"), vyact_config.get("gpu_split_percentages"),
         bool(vyact_config.get("gpu_manual_split_enabled", False)),
+        runtime_status,
     )
     vyact_config["context_size"] = get_loaded_context_size(model_key, context_size)
     return model_key
@@ -744,7 +754,7 @@ def write_single_model_config(
         command += f" --split-mode layer --tensor-split {tensor_split} --fit off"
     else:
         command += " --fit on"
-    if kv_cache_precision != "none" and not uses_mtp and dflash2_model_path is None and context_size >= KV_CACHE_QUANTIZATION_MIN_CONTEXT:
+    if kv_cache_precision != "none" and not uses_mtp and dflash2_model_path is None:
         cache_type = "q4_0" if kv_cache_precision == "q4" else "q8_0"
         command += f" --cache-type-k {cache_type} --cache-type-v {cache_type}"
     if cpu_threads is not None:

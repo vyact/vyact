@@ -1229,6 +1229,8 @@
     "cacheQuantizationHelp": "긴 컨텍스트에서 캐시 메모리 사용량을 줄입니다.",
     "cacheQuantizationMtpHelp": "KV 캐시 양자화를 사용하려면 MTP 가속을 끄세요.",
     "accelerationConflict": "MTP 가속과 KV 캐시 양자화는 동시에 사용할 수 없습니다.",
+    "mtpFailures": {"load_failed": "이 환경에서 MTP 가속을 불러오지 못해 일반 모드로 실행 중입니다.", "out_of_memory": "메모리가 부족해 MTP 가속을 불러오지 못하고 일반 모드로 실행 중입니다."},
+    "retryMtp": "MTP 다시 시도",
     "advanced": "고급 설정",
     "performanceMode": "성능 모드",
     "performanceModeHelp": "llama.cpp의 배치 설정을 속도 또는 메모리 절약에 맞춥니다.",
