@@ -15,14 +15,15 @@ case "$TARGET_OS" in
 esac
 
 mkdir -p "$RUNTIME_DIR"
-RELEASE_ID="$(curl --fail --silent --show-error --location "$API_URL" \
-  | sed -n 's/.*"id": *\([0-9][0-9]*\),.*/\1/p' | head -n 1)"
+RELEASE_JSON="$(curl --fail --silent --show-error --location "$API_URL")"
+RELEASE_ID="$(grep -m 1 -o '"id": *[0-9][0-9]*' <<< "$RELEASE_JSON" | tr -cd '0-9')"
 ASSET_URL=""
 for PAGE in $(seq 1 10); do
-  ASSET_URL="$(curl --fail --silent --show-error --location \
-    "https://api.github.com/repos/astral-sh/python-build-standalone/releases/$RELEASE_ID/assets?per_page=100&page=$PAGE" \
-    | sed -n 's/.*"browser_download_url": *"\([^"]*\)".*/\1/p' \
-    | grep -E "$ASSET_PATTERN" | head -n 1 || true)"
+  ASSETS_JSON="$(curl --fail --silent --show-error --location \
+    "https://api.github.com/repos/astral-sh/python-build-standalone/releases/$RELEASE_ID/assets?per_page=100&page=$PAGE")"
+  MATCHING_ASSET_URLS="$(sed -n 's/.*"browser_download_url": *"\([^"]*\)".*/\1/p' <<< "$ASSETS_JSON" \
+    | grep -E "$ASSET_PATTERN" || true)"
+  ASSET_URL="${MATCHING_ASSET_URLS%%$'\n'*}"
   [ -n "$ASSET_URL" ] && break
 done
 
