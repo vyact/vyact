@@ -11,7 +11,7 @@
 
   [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-7c3aed.svg?style=flat-square)](LICENSE)
   [![Chrome Extension](https://img.shields.io/badge/browser-Chrome%20Extension-4285f4.svg?style=flat-square)](https://chromewebstore.google.com/detail/vyact/opfbakfhoojmdkbbhcglolkpgmenjbib)
-  ![Supported platforms: macOS, Windows, and Linux](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-475569.svg?style=flat-square)
+  <img alt="Supported platforms: macOS, Windows, and Linux" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-475569.svg?style=flat-square">
   [![Latest release](https://img.shields.io/github/v/release/vyact/vyact?style=flat-square&label=release)](https://github.com/vyact/vyact/releases/latest)
 
   [Get started](#get-started) · [Workflows](#one-workspace-six-real-workflows) · [Features](#everything-you-need-to-stay-in-context) · [Support Vyact](#support-vyact) · [Contributing](CONTRIBUTING.md)
