@@ -240,7 +240,7 @@ class MlxRuntimeTests(unittest.TestCase):
             self.assertFalse(model_settings["specprefill_enabled"])
             self.assertFalse(model_settings["mtp_enabled"])
 
-    def test_specprefill_requires_explicit_compatible_draft(self):
+    def test_omlx_ignores_existing_specprefill_draft(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             base = Path(temp_dir)
             models = base / "models"
@@ -267,10 +267,9 @@ class MlxRuntimeTests(unittest.TestCase):
                 _, _, mode = _build_omlx_server_command(model, 32768)
 
             settings = json.loads((base / "omlx" / "model_settings.json").read_text())["models"]["target"]
-            self.assertEqual(mode, "specprefill")
-            self.assertTrue(settings["specprefill_enabled"])
-            self.assertEqual(settings["specprefill_keep_pct"], 0.2)
-            self.assertEqual(settings["specprefill_threshold"], 1023)
+            self.assertEqual(mode, "none")
+            self.assertFalse(settings["specprefill_enabled"])
+            self.assertNotIn("specprefill_draft_model", settings)
             self.assertFalse(settings["mtp_enabled"])
 
     def test_specprefill_rejects_different_token_id_mapping(self):
@@ -299,7 +298,7 @@ class MlxRuntimeTests(unittest.TestCase):
 
             self.assertEqual(mode, "none")
 
-    def test_prepare_specprefill_attaches_compatible_installed_draft_without_network(self):
+    def test_prepared_specprefill_draft_is_not_loaded_by_omlx(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             models = Path(temp_dir) / "models"
             target = models / "owner" / "target"
@@ -336,8 +335,9 @@ class MlxRuntimeTests(unittest.TestCase):
             settings = json.loads(
                 (Path(temp_dir) / "omlx" / "model_settings.json").read_text()
             )["models"]["target"]
-            self.assertEqual(mode, "specprefill")
-            self.assertEqual(settings["specprefill_draft_model"], str(draft))
+            self.assertEqual(mode, "none")
+            self.assertFalse(settings["specprefill_enabled"])
+            self.assertNotIn("specprefill_draft_model", settings)
             self.assertEqual(
                 json.loads(target_manifest.read_text())["specprefill_repository"],
                 "draft-owner/draft",
@@ -359,7 +359,7 @@ class MlxRuntimeTests(unittest.TestCase):
             search.assert_not_called()
             self.assertNotIn("specprefill_repository", json.loads(manifest_path.read_text()))
 
-    def test_every_mlx_load_repairs_installed_specprefill_before_building_settings(self):
+    def test_every_mlx_load_skips_installed_specprefill_preparation(self):
         model_path = Path("/models/owner/target")
         with patch("services.mlx_runtime.is_apple_silicon", return_value=True), \
              patch("services.vyact_runtime.stop_runtime"), \
@@ -372,9 +372,7 @@ class MlxRuntimeTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "settings-built"):
                 start_mlx_model(model_path, 65536, enable_mtp=False)
 
-        prepare.assert_called_once_with(
-            model_path, enable_mtp=False, allow_download=False,
-        )
+        prepare.assert_not_called()
 
     def test_prepare_specprefill_skips_installed_draft_that_exceeds_size_ratio(self):
         with tempfile.TemporaryDirectory() as temp_dir:

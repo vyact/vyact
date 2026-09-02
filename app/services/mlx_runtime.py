@@ -21,12 +21,13 @@ from tqdm.auto import tqdm
 
 from config import INSTALL_DIR, get_log_file
 from services.local_model_errors import LocalModelNotDownloadedError
+from services.hardware_info import get_local_hardware_info
 from services.omlx_policy import (
-    HOT_CACHE_MAX_SIZE, MAX_SPECPREFILL_DRAFT_BYTES,
+    MAX_SPECPREFILL_DRAFT_BYTES,
     MAX_SPECPREFILL_TARGET_SIZE_RATIO, OMLX_SPECPREFILL_THRESHOLD,
-    PAGED_SSD_CACHE_MAX_SIZE,
     SPECPREFILL_KEEP_PCT, SPECPREFILL_THRESHOLD_TOKENS,
     VLM_MTP_DRAFT_BLOCK_SIZE, is_external_mtp_compatible, model_type,
+    recommend_omlx_cache_sizes,
 )
 from services.runtime_error_details import runtime_startup_error
 from services.vyact_runtime import VYACT_RUNTIME_PORT
@@ -740,8 +741,6 @@ def get_mlx_speculative_mode(model_path: Path, enable_mtp: bool | None = None) -
         return "external_mtp"
     if _get_dflash2_path(model_path):
         return "dflash2"
-    if _compatible_specprefill_path(model_path) or _configured_compatible_specprefill_path(model_path):
-        return "specprefill"
     return "none"
 
 
@@ -773,11 +772,11 @@ def _build_omlx_server_command(
     external_mtp_path = _compatible_external_mtp_path(model_path)
     if enable_mtp is False:
         external_mtp_path = None
-    specprefill_path = (
-        _compatible_specprefill_path(model_path)
-        or _configured_compatible_specprefill_path(model_path)
-    )
-    model_settings = {"max_context_window": context_size, "mtp_enabled": False}
+    model_settings = {
+        "max_context_window": context_size,
+        "mtp_enabled": False,
+        "specprefill_enabled": False,
+    }
     speculative_mode = get_mlx_speculative_mode(model_path, enable_mtp)
     if external_mtp_path is not None:
         model_settings.update({
@@ -794,25 +793,21 @@ def _build_omlx_server_command(
             "dflash_in_memory_cache": True,
             "specprefill_enabled": False,
         })
-    elif specprefill_path is not None:
-        model_settings.update({
-            "specprefill_enabled": True,
-            "specprefill_draft_model": str(specprefill_path),
-            "specprefill_keep_pct": SPECPREFILL_KEEP_PCT,
-            "specprefill_threshold": OMLX_SPECPREFILL_THRESHOLD,
-        })
     settings = {
         "version": 1,
         "models": {serving_model_id: model_settings},
     }
     (OMLX_BASE_DIR / "model_settings.json").write_text(json.dumps(settings, indent=2), encoding="utf-8")
+    hardware = get_local_hardware_info()
+    total_memory_bytes = int(hardware.get("system_memory", {}).get("total_bytes") or 0)
+    paged_cache_size, hot_cache_size = recommend_omlx_cache_sizes(total_memory_bytes)
     command = [
         executable, "serve", "--model-dir", str(MLX_MODELS_DIR),
         "--host", "127.0.0.1", "--port", str(VYACT_RUNTIME_PORT),
         "--max-concurrent-requests", "1",
         "--paged-ssd-cache-dir", str(_OMLX_CACHE_DIR),
-        "--paged-ssd-cache-max-size", PAGED_SSD_CACHE_MAX_SIZE,
-        "--hot-cache-max-size", HOT_CACHE_MAX_SIZE,
+        "--paged-ssd-cache-max-size", paged_cache_size,
+        "--hot-cache-max-size", hot_cache_size,
         "--hot-cache-write-through",
     ]
     _OMLX_CACHE_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -830,16 +825,6 @@ def start_mlx_model(
     if not is_apple_silicon():
         raise RuntimeError("MLX models require Apple Silicon")
     from services.vyact_runtime import stop_runtime
-
-    # Every reload path converges here. Repair an older target manifest from an
-    # already-installed companion before writing oMLX model settings. This is
-    # deliberately local-only; startup/activation callers own optional Hub I/O.
-    try:
-        prepare_mlx_specprefill_draft(
-            model_path, enable_mtp=enable_mtp, allow_download=False,
-        )
-    except Exception as error:
-        logger.warning("[omlx] Installed SpecPrefill preparation skipped during load: %s", error)
 
     stop_runtime()
     stop_mlx_runtime()

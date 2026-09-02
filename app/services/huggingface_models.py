@@ -119,10 +119,9 @@ async def search_mlx_models(
         response.raise_for_status()
         search_items = response.json()
         valid_items = [item for item in search_items if isinstance(item, dict)]
-        target_configs, mtp_candidates, specprefill_candidates = await asyncio.gather(
+        target_configs, mtp_candidates = await asyncio.gather(
             _fetch_mlx_configs(client, valid_items, token),
             _search_mlx_mtp_models(target_query, token),
-            _search_mlx_specprefill_models(target_query, token),
         )
     models = []
     for item in valid_items:
@@ -141,14 +140,7 @@ async def search_mlx_models(
                 key: mtp_model[key] for key in ("repository", "revision", "size")
             }
             model["mtp_supported_files"] = [MLX_REPOSITORY_FILE]
-        specprefill_model = _select_mlx_specprefill_model(
-            repository, specprefill_candidates, config, model["file_sizes"].get(MLX_REPOSITORY_FILE, 0),
-        )
-        if specprefill_model:
-            model["specprefill_model"] = {
-                key: specprefill_model[key] for key in ("repository", "revision", "size")
-            }
-        companion_size = int((mtp_model or specprefill_model or {}).get("size") or 0)
+        companion_size = int((mtp_model or {}).get("size") or 0)
         model["metadata"] = calculate_mlx_metadata_from_config(
             config,
             model["file_sizes"].get(MLX_REPOSITORY_FILE, 0) + companion_size,

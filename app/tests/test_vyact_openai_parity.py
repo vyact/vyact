@@ -153,7 +153,7 @@ class VyactOpenAiParityTests(unittest.IsolatedAsyncioTestCase):
             _apply_local_seed(body, {"is_local": True, "runtime": "mlx"})
         self.assertEqual(body, {"seed": 42})
 
-    async def test_specprefill_is_enabled_at_token_threshold(self):
+    async def test_specprefill_stays_disabled_above_previous_token_threshold(self):
         body = {}
         with patch("services.mlx_runtime.get_downloaded_mlx_model_path", return_value="/model"), \
              patch("services.mlx_runtime.get_mlx_speculative_mode", return_value="specprefill"), \
@@ -163,11 +163,7 @@ class VyactOpenAiParityTests(unittest.IsolatedAsyncioTestCase):
                 {"is_local": True, "runtime": "mlx", "model_path": "mlx/owner/model"},
                 "chat:general_stream",
             )
-        self.assertEqual(body, {
-            "specprefill": True,
-            "specprefill_keep_pct": 0.2,
-            "specprefill_threshold": 1023,
-        })
+        self.assertEqual(body, {"specprefill": False})
 
     async def test_specprefill_is_disabled_below_token_threshold(self):
         body = {}
@@ -181,7 +177,7 @@ class VyactOpenAiParityTests(unittest.IsolatedAsyncioTestCase):
             )
         self.assertEqual(body, {"specprefill": False})
 
-    async def test_specprefill_uses_only_tokens_for_rag_code_and_exactness(self):
+    async def test_specprefill_stays_disabled_for_rag_code_and_exactness(self):
         body = {}
         tools = [{"type": "function", "function": {"name": "code_read_file"}}]
         with patch("services.mlx_runtime.get_downloaded_mlx_model_path", return_value="/model"), \
@@ -192,7 +188,7 @@ class VyactOpenAiParityTests(unittest.IsolatedAsyncioTestCase):
                 {"is_local": True, "runtime": "mlx", "model_path": "mlx/owner/model"},
                 "chat:selected_docs", tools,
             )
-        self.assertTrue(body["specprefill"])
+        self.assertFalse(body["specprefill"])
 
     async def test_specprefill_is_disabled_for_external_mtp_mode(self):
         body = {}

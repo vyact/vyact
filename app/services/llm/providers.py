@@ -29,10 +29,6 @@ from .tools import (
 )
 from services.runtime_settings import get_runtime_settings
 from services.tool_approval import await_tool_approval
-from services.omlx_policy import (
-    OMLX_SPECPREFILL_THRESHOLD, SPECPREFILL_KEEP_PCT,
-    SPECPREFILL_THRESHOLD_TOKENS,
-)
 
 
 _REPEATED_TOOL_CALL_RESULT = (
@@ -197,30 +193,10 @@ async def _apply_local_specprefill_control(
         body: dict, messages: list[dict], provider_config: dict,
         call_reason: str, tools: list[dict] | None = None,
 ) -> None:
-    """Toggle prepared SpecPrefill per request using only the input token count."""
+    """Keep SpecPrefill disabled for local MLX requests."""
     if not provider_config.get("is_local") or provider_config.get("runtime") != "mlx":
         return
-    eligible = True
-    speculative_mode = "not_applicable"
-    from services.mlx_runtime import get_downloaded_mlx_model_path, get_mlx_speculative_mode
-    model_path = get_downloaded_mlx_model_path(provider_config.get("model_path", ""))
-    speculative_mode = get_mlx_speculative_mode(
-        model_path, provider_config.get("mtp_enabled"),
-    )
-    eligible = speculative_mode == "specprefill"
-    input_tokens = None
-    if eligible:
-        from .token_counter import count_local_message_tokens
-        input_tokens = await count_local_message_tokens(messages, provider_config, tools)
-        eligible = input_tokens >= SPECPREFILL_THRESHOLD_TOKENS
-    body["specprefill"] = eligible
-    if eligible:
-        body["specprefill_keep_pct"] = SPECPREFILL_KEEP_PCT
-        body["specprefill_threshold"] = OMLX_SPECPREFILL_THRESHOLD
-    logger.info(
-        "[omlx] SpecPrefill request policy: enabled=%s mode=%s input_tokens=%s reason=%s",
-        eligible, speculative_mode, input_tokens if input_tokens is not None else "not_counted", call_reason,
-    )
+    body["specprefill"] = False
 
 
 def _apply_local_reasoning_control(

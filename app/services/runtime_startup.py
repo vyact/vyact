@@ -179,17 +179,6 @@ async def load_configured_vyact_model(config: dict | None = None) -> tuple[str, 
         "gpu_split_percentages",
         "gpu_manual_split_enabled",
     )})
-    if vyact_config.get("runtime", "gguf") == "mlx":
-        try:
-            from services.mlx_runtime import get_downloaded_mlx_model_path, prepare_mlx_specprefill_draft
-            await asyncio.to_thread(
-                prepare_mlx_specprefill_draft,
-                get_downloaded_mlx_model_path(vyact_config["model_path"]),
-                vyact_config.get("huggingface_token"),
-                vyact_config.get("mtp_enabled"),
-            )
-        except Exception as error:
-            logger.warning("[omlx] SpecPrefill preparation skipped during startup: %s", error)
     model_id = await asyncio.to_thread(
         start_configured_runtime, vyact_config, config.get("debug_logging", False),
     )

@@ -14,10 +14,24 @@ OMLX_SPECPREFILL_THRESHOLD = SPECPREFILL_THRESHOLD_TOKENS - 1
 MAX_SPECPREFILL_DRAFT_BYTES = 2 * 1024 ** 3
 MAX_SPECPREFILL_TARGET_SIZE_RATIO = 0.35
 VLM_MTP_DRAFT_BLOCK_SIZE = 3
-PAGED_SSD_CACHE_MAX_SIZE = "10GB"
-HOT_CACHE_MAX_SIZE = "4GB"
+GIB = 1024 ** 3
+DEFAULT_PAGED_SSD_CACHE_MAX_SIZE = "10GB"
+DEFAULT_HOT_CACHE_MAX_SIZE = "4GB"
 
 logger = logging.getLogger(__name__)
+
+
+def recommend_omlx_cache_sizes(total_memory_bytes: int) -> tuple[str, str]:
+    """Return paged SSD and hot-cache limits for Apple unified memory."""
+    if total_memory_bytes <= 0:
+        return DEFAULT_PAGED_SSD_CACHE_MAX_SIZE, DEFAULT_HOT_CACHE_MAX_SIZE
+    if total_memory_bytes <= 8 * GIB:
+        return "4GB", "1GB"
+    if total_memory_bytes <= 16 * GIB:
+        return "6GB", "2GB"
+    if total_memory_bytes < 32 * GIB:
+        return "10GB", "4GB"
+    return "20GB", "8GB"
 
 # Safe fallback for installations which cannot expose their mlx-vlm registry.
 _DEFAULT_EXTERNAL_MTP_TARGET_DRAFT_TYPES = (
