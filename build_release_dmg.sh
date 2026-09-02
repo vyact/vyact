@@ -33,6 +33,16 @@ codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 spctl --assess --type exec --verbose=2 "$APP_PATH"
 xcrun stapler validate "$APP_PATH"
 
+SIGNING_IDENTITY="$(security find-identity -v -p codesigning | sed -n 's/.*"\(Developer ID Application:.*\)"/\1/p' | head -n 1)"
+
+if [ -z "$SIGNING_IDENTITY" ]; then
+  echo "A valid Developer ID Application signing identity was not found." >&2
+  exit 1
+fi
+
+echo "Signing DMG with $SIGNING_IDENTITY..."
+codesign --force --timestamp --sign "$SIGNING_IDENTITY" "$DMG_PATH"
+
 echo "Verifying DMG signature..."
 codesign --verify --strict --verbose=2 "$DMG_PATH"
 
