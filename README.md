@@ -10,8 +10,8 @@
   **Turn your files, notes, email, and everyday tools into useful AI context—without leaving your workflow.**
 
   [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-7c3aed.svg?style=flat-square)](LICENSE)
-  [![Built with FastAPI](https://img.shields.io/badge/backend-FastAPI-009688.svg?style=flat-square)](https://fastapi.tiangolo.com/)
-  [![Built with React](https://img.shields.io/badge/frontend-React-61dafb.svg?style=flat-square)](frontend)
+  ![Supported platforms: macOS, Windows, and Linux](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-6b7280.svg?style=flat-square)
+  [![Latest release](https://img.shields.io/github/v/release/vyact/vyact?style=flat-square&label=release)](https://github.com/vyact/vyact/releases/latest)
   ![Chrome Extension](https://img.shields.io/badge/browser-Chrome%20Extension-4285f4.svg?style=flat-square)
 
   [Get started](#get-started) · [Workflows](#one-workspace-six-real-workflows) · [Features](#everything-you-need-to-stay-in-context) · [Support Vyact](#support-vyact) · [Contributing](CONTRIBUTING.md)
