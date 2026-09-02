@@ -11,7 +11,7 @@ if [ "$(uname -s)" != "Darwin" ]; then
   exit 1
 fi
 
-for COMMAND in git gh; do
+for COMMAND in git gh node npm; do
   if ! command -v "$COMMAND" >/dev/null 2>&1; then
     echo "Required command not found: $COMMAND" >&2
     exit 1
@@ -19,6 +19,51 @@ for COMMAND in git gh; do
 done
 
 cd "$ROOT_DIR"
+
+ELECTRON_VERSION="$(node -p "require('./electron/package.json').version")"
+ELECTRON_LOCK_VERSION="$(node -p "require('./electron/package-lock.json').version")"
+WINDOWS_VERSION="$(node -p "require('./win/electron/package.json').version")"
+
+echo "Current release versions:"
+echo "  macOS/Linux package: $ELECTRON_VERSION"
+echo "  Electron lockfile:   $ELECTRON_LOCK_VERSION"
+echo "  Windows package:     $WINDOWS_VERSION"
+
+if [ "$ELECTRON_VERSION" != "$ELECTRON_LOCK_VERSION" ] || \
+   [ "$ELECTRON_VERSION" != "$WINDOWS_VERSION" ]; then
+  echo "Release versions are inconsistent. Make them match before building." >&2
+  exit 1
+fi
+
+read -r -p "Change the release version? [y/N]: " CHANGE_VERSION
+
+if [[ "$CHANGE_VERSION" =~ ^[Yy]$ ]]; then
+  if [ -n "$(git status --porcelain)" ]; then
+    echo "The working tree must be clean before changing the release version." >&2
+    exit 1
+  fi
+
+  read -r -p "Enter the new version (for example, 1.3.3): " NEW_VERSION
+
+  if ! [[ "$NEW_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]]; then
+    echo "Invalid version: $NEW_VERSION" >&2
+    exit 1
+  fi
+
+  if [ "$NEW_VERSION" = "$ELECTRON_VERSION" ]; then
+    echo "The version is already $NEW_VERSION. Continuing without changes."
+  else
+    (
+      cd "$ROOT_DIR/electron"
+      npm version "$NEW_VERSION" --no-git-tag-version
+    )
+    npm pkg set "version=$NEW_VERSION" --prefix "$ROOT_DIR/win/electron"
+
+    echo "Updated all desktop package versions to $NEW_VERSION."
+    echo "Review, commit, and push the changes, then run ./release_all.sh again."
+    exit 0
+  fi
+fi
 
 if [ -n "$(git status --porcelain)" ]; then
   echo "The working tree must be clean before creating release artifacts." >&2
