@@ -1,6 +1,6 @@
 {
   "name": "vyact",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "Local AI Agent - Voyage & Act",
   "main": "main.js",
   "author": "Alex",
@@ -19,7 +19,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ]
     },
