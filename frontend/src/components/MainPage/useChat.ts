@@ -444,8 +444,9 @@ export function useChat(deps: UseChatDeps) {
         // 이전 메시지의 첨부는 화면 기록으로만 유지하고 다음 요청에는 다시 보내지 않는다.
         // 파일·ZIP은 별도의 chat_file_chunks 대화방 검색을 통해 관련 청크만 조회된다.
         const sanitizedHistory = prevMessagesSnapshot.map(msg => {
-            if (!msg.attachments?.length) return msg;
-            return {...msg, attachments: undefined};
+            const {toolStatus: _toolStatus, activityLog: _activityLog, progressMessages: _progressMessages, ...persistentMessage} = msg;
+            if (!persistentMessage.attachments?.length) return persistentMessage;
+            return {...persistentMessage, attachments: undefined};
         });
         // 업로드 진행 메시지 제거 후 유저 메시지 추가
         if (uploadStreamId) setConversationRequestState(requestConvId, {streamingMessageId: null});
@@ -518,8 +519,6 @@ export function useChat(deps: UseChatDeps) {
                 const appendToStreamMsg = (piece: string) => {
                     if (!responseWritingStarted) {
                         responseWritingStarted = true;
-                        // 최종 답변의 첫 토큰이 도착한 순간 작업 과정은 역할을 다했다.
-                        // done까지 남겨두면 답변과 경과 시간 위에 완료된 도구 목록이 계속 보인다.
                         setMessagesForConversation(requestConvId, prev => prev.map(message => message.id === streamId
                             ? {
                                 ...message,
@@ -734,19 +733,22 @@ export function useChat(deps: UseChatDeps) {
                                                 ? t('message.toolCallFailedTitle')
                                                 : undefined,
                                         isError: true, toolStatus: undefined,
+                                        activityLog: undefined,
+                                        progressMessages: undefined,
                                         stats: data.stats || m.stats
                                     };
                                 }
                                 return {
                                     ...m, content: finalContent, model: streamModel || m.model,
                                     timestamp: new Date().toISOString(), isError: followupsOnly, toolStatus: undefined,
+                                    activityLog: undefined,
+                                    progressMessages: undefined,
                                     followups: fuList.length > 0 ? fuList : undefined,
                                     articleSources: mergedSources.length > 0 ? mergedSources : undefined,
                                     injectedContext: injectedContextItems.length > 0 ? injectedContextItems : undefined,
                                     stats: data.stats || m.stats,
                                     truncated: data.truncated || undefined,
                                     codeChanges: data.code_changes || m.codeChanges,
-                                    progressMessages: undefined,
                                 };
                             }));
                             if (showVoiceChatModalRef.current && data.answer)
@@ -773,6 +775,8 @@ export function useChat(deps: UseChatDeps) {
                                             : undefined,
                                     isError: true,
                                     toolStatus: undefined,
+                                    activityLog: undefined,
+                                    progressMessages: undefined,
                                 } : m));
                         },
                     }, abortControllerRef.current.signal);
@@ -803,7 +807,9 @@ export function useChat(deps: UseChatDeps) {
                                     ...m,
                                     content: formatApiErrorForUser(streamErr),
                                     isError: true,
-                                    toolStatus: undefined
+                                    toolStatus: undefined,
+                                    activityLog: undefined,
+                                    progressMessages: undefined,
                                 }
                                 : m));
                         setLastFailedQuery(failedRequest);

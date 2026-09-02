@@ -1148,7 +1148,7 @@ async def query_stream(req: QueryRequest):
                     else:
                         assistant_error_code = "model_no_response"
                 assistant_msg = build_assistant_message(
-                    answer, gen_model, article_sources, injected_context, gen_stats, _activity_log,
+                    answer, gen_model, article_sources, injected_context, gen_stats,
                     code_changes=code_changes,
                     truncated=response_truncated,
                     error_code=assistant_error_code,

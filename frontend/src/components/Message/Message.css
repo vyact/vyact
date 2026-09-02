@@ -412,23 +412,29 @@
 }
 
 .sources {
+    box-sizing: border-box;
+    min-width: 0;
     margin-top: 8px;
     margin-left: 16px;
-    padding: 10px 12px;
+    padding: 11px 12px 10px;
     background: var(--bg);
     border: 1px solid var(--border);
     border-radius: 9px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
     max-width: 100%;
 }
 
 .sources-lbl {
+    width: auto;
+    margin-left: 3px;
+    padding: 0 7px;
     font-size: 11px;
     font-weight: 600;
     color: var(--muted);
-    margin-bottom: 2px;
+    line-height: 1.4;
+}
+
+.sources .src-item + .src-item {
+    margin-top: 6px;
 }
 
 .src-item {
@@ -609,9 +615,17 @@
     to { transform: rotate(360deg); }
 }
 
-.msg-response-process { display:grid; gap:18px; margin:8px 0 20px; max-width:900px; }
-.msg-process-elapsed { padding-bottom:12px; border-bottom:1px solid var(--border); color:var(--muted); font-size:14px; }
-.msg-process-message { color:var(--text-secondary); font-size:14px; line-height:1.65; }
+.msg-response-process { width:fit-content; max-width:min(900px, 100%); margin:5px 0 14px; color:var(--muted); }
+.msg-process-toggle { display:flex; min-height:32px; align-items:center; gap:8px; padding:5px 8px 5px 6px; border:0; border-radius:8px; background:transparent; color:inherit; cursor:pointer; font:inherit; transition:background .14s ease, color .14s ease; }
+.msg-process-toggle:hover { background:var(--interactive-hover); color:var(--text-secondary); }
+.msg-process-toggle:focus-visible { outline:2px solid var(--focus-ring); outline-offset:1px; }
+.msg-process-status-icon { display:inline-flex; width:20px; height:20px; align-items:center; justify-content:center; color:var(--accent); }
+.msg-process-status-icon.streaming { animation:msg-process-shimmer 1.8s ease-in-out infinite; }
+.msg-process-status-label { font-size:13px; font-weight:500; letter-spacing:-.01em; }
+.msg-process-chevron { transition:transform .18s ease; }
+.msg-response-process.expanded .msg-process-chevron { transform:rotate(180deg); }
+.msg-process-details { display:grid; gap:12px; margin:5px 0 2px 15px; padding:8px 4px 8px 17px; border-left:1px solid color-mix(in srgb, var(--border) 78%, transparent); }
+.msg-process-message { color:var(--text-secondary); font-size:13px; line-height:1.6; }
 .msg-process-message > :first-child { margin-top:0; }
 .msg-process-message > :last-child { margin-bottom:0; }
 .msg-process-tool { display:flex; flex-direction:column; align-items:stretch; gap:8px; min-width:0; color:var(--muted); font-size:13px; }
@@ -623,6 +637,16 @@
 .msg-process-tool.failed code { color:var(--danger); }
 .msg-process-tool.rejected { color:var(--text-secondary); }
 .msg-process-tool code { align-self:flex-start; max-width:calc(100% - 24px); margin-left:24px; color:var(--muted); font-size:12px; line-height:1.6; overflow-wrap:anywhere; white-space:pre-wrap; }
+
+@keyframes msg-process-shimmer {
+    0%, 100% { opacity:.52; transform:scale(.92) rotate(-5deg); }
+    50% { opacity:1; transform:scale(1.08) rotate(5deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .msg-process-status-icon.streaming { animation:none; }
+    .msg-process-chevron { transition:none; }
+}
 
 .code-changes-card { box-sizing:border-box; width:calc(100% - 32px); max-width:none; margin:12px 16px 4px; overflow:visible; border:1px solid var(--border); border-radius:14px; background:var(--surface); }
 .code-changes-card.undone { background:var(--surface); }

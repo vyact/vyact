@@ -281,7 +281,6 @@ def build_assistant_message(
     article_sources: list | None = None,
     injected_context: list | None = None,
     stats: dict | None = None,
-    activity_log: list[dict] | None = None,
     code_changes: dict | None = None,
     truncated: bool = False,
     error_code: str | None = None,
@@ -300,8 +299,6 @@ def build_assistant_message(
         msg["injected_context"] = injected_context
     if stats:
         msg["stats"] = stats
-    if activity_log:
-        msg["activityLog"] = activity_log
     if code_changes:
         msg["codeChanges"] = code_changes
     if truncated:

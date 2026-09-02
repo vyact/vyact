@@ -190,6 +190,11 @@ export function useConversation() {
             injectedContext: storedInjectedContext && storedInjectedContext.length > 0
                 ? storedInjectedContext
                 : msg.injectedContext,
+            // 작업 과정은 응답 대기 중에만 사용하는 임시 UI 상태다.
+            // 이전 버전에서 저장된 activityLog도 히스토리 화면에는 복원하지 않는다.
+            toolStatus: undefined,
+            activityLog: undefined,
+            progressMessages: undefined,
         };
     };
 

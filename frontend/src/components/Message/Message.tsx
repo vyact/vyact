@@ -59,44 +59,16 @@ function stripHiddenMetadata(text: string): string {
     return text.replace(completeTags, '').replace(trailingTag, '').trimEnd();
 }
 
-// ── 스트리밍 중 텍스트 그룹을 단락 단위로 분리 렌더링 ──────────────────
-// 완성된 단락(\n\n으로 구분)은 별도 <span>으로 렌더하여 innerHTML이 동일하면
-// React가 DOM을 건드리지 않으므로 selection이 유지된다.
-// 마지막 단락(아직 스트리밍 중)만 매 토큰마다 re-render.
-const FrozenParagraph = React.memo(({html}: { html: string }) => (
-    <span dangerouslySetInnerHTML={{__html: html}}/>
-), (prev, next) => prev.html === next.html);
-
 const StreamingTextGroup: React.FC<{
     value: string;
     isStreaming: boolean;
     onClick?: (e: React.MouseEvent) => void;
     renderFn: (text: string) => string;
-}> = ({value, isStreaming, onClick, renderFn}) => {
-    const paragraphs = value.split('\n\n');
-    const frozenHtmls = useMemo(
-        () => value.split('\n\n').slice(0, -1).map(paragraph => renderFn(paragraph) + '\n'),
-        [value, renderFn],
-    );
-
-    if (!isStreaming) {
-        return <span dangerouslySetInnerHTML={{__html: renderFn(value)}} onClick={onClick}/>;
-    }
-    // \n\n 기준으로 단락 분리. 마지막 단락만 live, 나머지는 frozen.
-    if (paragraphs.length <= 1) {
-        return <span dangerouslySetInnerHTML={{__html: renderFn(value)}} onClick={onClick}/>;
-    }
-    const live = paragraphs[paragraphs.length - 1];
-    // frozen 단락의 렌더 결과를 캐싱 — 단락 수가 늘어날 때만 새 항목 추가
-    return (
-        <span onClick={onClick}>
-            {frozenHtmls.map((html, i) => (
-                <FrozenParagraph key={i} html={html}/>
-            ))}
-            <span dangerouslySetInnerHTML={{__html: renderFn(live)}}/>
-        </span>
-    );
-};
+}> = ({value, onClick, renderFn}) => (
+    // Markdown 문맥은 문단 경계를 넘어 이어진다. 문단별 렌더링은 순서 목록과
+    // 제목 구조를 끊으므로 스트리밍 중에도 안전 구간 전체를 함께 렌더한다.
+    <span dangerouslySetInnerHTML={{__html: renderFn(value)}} onClick={onClick}/>
+);
 
 const Message: React.FC<MessageProps> = ({
                                              role, content, timestamp, sources, model, attachments,
@@ -155,7 +127,12 @@ const Message: React.FC<MessageProps> = ({
         const timerId = window.setInterval(updateElapsedSeconds, 1000);
         return () => window.clearInterval(timerId);
     }, [isStreaming, requestStartedAt]);
-    const displayedRequestElapsedSeconds = isStreaming ? requestElapsedSeconds : 0;
+    const statsDurationSeconds = stats?.total_duration
+        ? Math.max(0, Math.round(stats.total_duration / 1_000_000_000))
+        : 0;
+    const displayedRequestElapsedSeconds = isStreaming
+        ? requestElapsedSeconds
+        : requestElapsedSeconds || statsDurationSeconds;
     const requestElapsedLabel = displayedRequestElapsedSeconds < 60
         ? t('toolActivity.elapsedShort', {seconds: displayedRequestElapsedSeconds})
         : t('toolActivity.elapsedMinutesSeconds', {
@@ -439,11 +416,12 @@ const Message: React.FC<MessageProps> = ({
                                 ))}
                             </div>
                         )}
-                        {role === 'assistant' && isStreaming && hasResponseProcess && (
+                        {role === 'assistant' && hasResponseProcess && (
                             <ResponseProcess
                                 activities={activityLog}
                                 progressMessages={progressMessages}
                                 isStreaming={isStreaming}
+                                hasResponseContent={Boolean(visibleContent.trim())}
                                 requestElapsedLabel={requestElapsedLabel}
                             />
                         )}
@@ -634,8 +612,8 @@ const Message: React.FC<MessageProps> = ({
             )}
 
             {sources && sources.length > 0 && (
-                <div className="sources">
-                    <div className="sources-lbl">📄 {t('message.sources', {count: sources.length})}</div>
+                <fieldset className="sources">
+                    <legend className="sources-lbl">📄 {t('message.sources', {count: sources.length})}</legend>
                     {sources.map((src, idx) => (
                         <div key={idx} className="src-item">
                             <span className="src-name">{getLocalizedSourceLabel(src.source, t)}</span>
@@ -643,7 +621,7 @@ const Message: React.FC<MessageProps> = ({
                             <span className="src-score">{src.score}</span>
                         </div>
                     ))}
-                </div>
+                </fieldset>
             )}
 
             {role !== 'user' && articleSources && articleSources.length > 0 && (() => {
@@ -653,9 +631,8 @@ const Message: React.FC<MessageProps> = ({
                 );
                 if (memoSources.length > 0) {
                     return (
-                        <div className="sources sources--memo">
-                            <div className="sources-lbl sources-lbl--memo">📝 {t('message.memoSources', {count: memoSources.length})}
-                            </div>
+                        <fieldset className="sources sources--memo">
+                            <legend className="sources-lbl sources-lbl--memo">📝 {t('message.memoSources', {count: memoSources.length})}</legend>
                             {memoSources.map((art, idx) => {
                                 const isQuicknote = art.url?.startsWith('quicknote://');
                                 const memoId = art.url?.replace('memo://', '').split('::')[0];
@@ -680,7 +657,7 @@ const Message: React.FC<MessageProps> = ({
                                     </div>
                                 );
                             })}
-                        </div>
+                        </fieldset>
                     );
                 }
                 return null;
@@ -693,8 +670,8 @@ const Message: React.FC<MessageProps> = ({
                 );
                 if (newsSources.length === 0) return null;
                 return (
-                    <div className="sources">
-                        <div className="sources-lbl">📰 {t('message.sources', {count: newsSources.length})}</div>
+                    <fieldset className="sources">
+                        <legend className="sources-lbl">📰 {t('message.sources', {count: newsSources.length})}</legend>
                         {newsSources.map((art, idx) => (
                             <div key={idx} className="src-item">
                                 <span className="src-name">{getLocalizedSourceLabel(art.source, t)}</span>
@@ -715,7 +692,7 @@ const Message: React.FC<MessageProps> = ({
                                 <a href={art.url} target="_blank" rel="noopener noreferrer">{art.title}</a>
                             </div>
                         ))}
-                    </div>
+                    </fieldset>
                 );
             })()}
 
