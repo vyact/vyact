@@ -382,9 +382,9 @@
     "dockerUnavailable": "ยังไม่ได้ติดตั้งหรือไม่ได้เปิด Docker",
     "dockerUnavailableTitle": "Docker Desktop ยังไม่ได้ติดตั้งหรือไม่ได้ทำงานอยู่",
     "nativeName": "📦 ติดตั้งโดยตรง",
-    "nativeAvailable": "ติดตั้งโดยตรงโดยไม่ใช้ Docker รองรับเฉพาะ Windows และ Mac ชิป Apple Silicon เท่านั้น",
-    "nativeUnavailable": "ไม่รองรับบนแพลตฟอร์มนี้ (รองรับเฉพาะ Windows และ Mac ชิป Apple Silicon เท่านั้น)",
-    "nativeUnavailableTitle": "แพลตฟอร์มนี้ไม่รองรับการติดตั้งโดยตรง (รองรับเฉพาะ Windows และ Mac ชิป Apple Silicon เท่านั้น)"
+    "nativeAvailable": "ติดตั้งโดยตรงโดยไม่ใช้ Docker รองรับ Windows x64, Mac ชิป Apple Silicon และ Linux x64",
+    "nativeUnavailable": "ไม่รองรับแพลตฟอร์มนี้ (รองรับเฉพาะ Windows x64, Mac ชิป Apple Silicon และ Linux x64)",
+    "nativeUnavailableTitle": "การติดตั้งโดยตรงรองรับ Windows x64, Mac ชิป Apple Silicon และ Linux x64"
   },
   "mcpCatalog": {
     "servers": {

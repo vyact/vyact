@@ -565,14 +565,21 @@ function createRequirementsProgressReporter(requirementsPath) {
 
 function getRequirementsHash(requirementsPath) {
     const content = fs.readFileSync(requirementsPath);
-    const platformPackages = platform.pythonBootstrapPackages.join("\n");
+    const platformPackages = [
+        ...platform.pythonBootstrapPackages,
+        ...platform.pythonBootstrapExtraArgs,
+    ].join("\n");
     return crypto.createHash("md5").update(content).update("\n").update(platformPackages).digest("hex");
 }
 
 async function installPythonPackages(python, requirementsPath) {
     for (const packageSpec of platform.pythonBootstrapPackages) {
         sendLoadingStatus(getStartupTranslation().pythonPackageDownloading.replace("{{package}}", "llama-cpp-python"));
-        await runCommand(python, ["-m", "pip", "install", packageSpec, "--quiet"]);
+        await runCommand(python, [
+            "-m", "pip", "install", packageSpec,
+            ...platform.pythonBootstrapExtraArgs,
+            "--quiet",
+        ]);
     }
     await runCommand(
         python,

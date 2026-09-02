@@ -99,3 +99,47 @@ jobs:
           if (-not (Select-String -Quiet -Path electron/platform.js -SimpleMatch 'llama_cpp_python-0.3.34-py3-none-win_amd64.whl')) { throw "Prebuilt Windows llama-cpp-python wheel is missing" }
           if (-not (Select-String -Quiet -Path app/requirements.txt -Pattern '^llama-cpp-python==[^;]+;\s*sys_platform\s*!=\s*"win32"\s*$')) { throw "Windows llama-cpp-python source build is not excluded" }
           if (Test-Path win/electron/main.js) { throw "Platform-specific main.js must not be reintroduced" }
+
+  linux-desktop:
+    name: Linux desktop package
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            frontend/package-lock.json
+            electron/package-lock.json
+
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Prepare bundled Python
+        run: scripts/prepare_python_runtime.sh linux-x64
+
+      - name: Build AppImage and deb packages
+        working-directory: electron
+        run: |
+          npm ci
+          npm run build:linux
+
+      - name: Validate package artifacts
+        run: |
+          test -n "$(find electron/dist -maxdepth 1 -name '*.AppImage' -print -quit)"
+          test -n "$(find electron/dist -maxdepth 1 -name '*.deb' -print -quit)"
+
+      - name: Upload Linux packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: vyact-linux-x64
+          path: |
+            electron/dist/*.AppImage
+            electron/dist/*.deb

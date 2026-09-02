@@ -2,7 +2,7 @@
 es_native.py — Docker 없이 Elasticsearch 바이너리를 직접 설치/실행한다.
 
 Docker가 보안정책(EDR·가상화 차단 등)에 막히는 환경을 위한 대안.
-지원: Windows(x86_64), Apple Silicon macOS(arm64).
+지원: Windows(x86_64), Apple Silicon macOS(arm64), Linux(x86_64).
 
 흐름:
   1. OS 감지 → 해당 아티팩트 URL 결정
@@ -11,7 +11,7 @@ Docker가 보안정책(EDR·가상화 차단 등)에 막히는 환경을 위한 
   4. config/elasticsearch.yml 에 path.data/logs, security off, single-node, 포트 주입
   5. nori(한국어 분석기) 플러그인 설치
   6. 백그라운드 실행
-  7. 부팅 자동시작 등록 (Windows: 시작프로그램 폴더 .vbs / mac: LaunchAgent)
+  7. 부팅 자동시작 등록 (Windows: 시작프로그램, macOS: LaunchAgent, Linux: XDG autostart)
   8. 포트 응답 대기
 
 각 단계는 (진행률, 메시지, level) 을 yield 한다.
@@ -50,7 +50,9 @@ def detect_platform() -> str | None:
         return "windows"
     if system == "Darwin" and machine in ("arm64", "aarch64"):
         return "darwin-arm64"
-    # Intel Mac / Linux 등은 설치형 미지원 (Docker 권장)
+    if system == "Linux" and machine in ("x86_64", "amd64"):
+        return "linux-x86_64"
+    # Intel Mac / Linux ARM 등은 설치형 미지원 (Docker 권장)
     return None
 
 
@@ -155,7 +157,7 @@ def _register_autostart():
             encoding="utf-8",
         )
         return str(vbs)
-    else:
+    if platform.system() == "Darwin":
         # macOS: LaunchAgent plist
         agents = Path.home() / "Library" / "LaunchAgents"
         agents.mkdir(parents=True, exist_ok=True)
@@ -174,6 +176,23 @@ def _register_autostart():
             encoding="utf-8",
         )
         return str(plist)
+
+    # Linux: desktop-environment portable XDG autostart entry. Elasticsearch's
+    # own -d mode handles daemonization, so no systemd dependency is required.
+    autostart_dir = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "autostart"
+    autostart_dir.mkdir(parents=True, exist_ok=True)
+    desktop_file = autostart_dir / "vyact-elasticsearch.desktop"
+    desktop_file.write_text(
+        "[Desktop Entry]\n"
+        "Type=Application\n"
+        "Name=Vyact Elasticsearch\n"
+        f'Exec="{_es_binary()}" -d\n'
+        "Terminal=false\n"
+        "X-GNOME-Autostart-enabled=true\n",
+        encoding="utf-8",
+    )
+    os.chmod(desktop_file, 0o755)
+    return str(desktop_file)
 
 
 async def _start_es_background():
@@ -201,7 +220,7 @@ async def install_native_es() -> AsyncGenerator[tuple, None]:
     """설치형 ES 전체 설치 파이프라인. (progress, message, level) 을 yield."""
     plat = detect_platform()
     if plat is None:
-        yield (0, "설치형 ES는 Windows 또는 Apple Silicon Mac만 지원합니다. Docker를 사용하세요.", "error")
+        yield (0, "설치형 ES는 Windows, Apple Silicon Mac 및 Linux x64에서 지원됩니다. Docker를 사용하세요.", "error")
         return
 
     # 이미 떠 있으면 스킵

@@ -382,9 +382,9 @@
     "dockerUnavailable": "Docker 未安装或未运行 — 无法使用。",
     "dockerUnavailableTitle": "Docker Desktop 未安装或未运行。",
     "nativeName": "📦 本地安装",
-    "nativeAvailable": "无需 Docker 直接安装。仅限 Windows 和 Apple Silicon Mac。",
-    "nativeUnavailable": "此平台不支持 (仅限 Windows 和 Apple Silicon Mac)。",
-    "nativeUnavailableTitle": "此平台不支持本地安装。(仅限 Windows 和 Apple Silicon Mac)"
+    "nativeAvailable": "无需 Docker 直接安装。支持 Windows x64、Apple Silicon Mac 和 Linux x64。",
+    "nativeUnavailable": "此平台不受支持（仅支持 Windows x64、Apple Silicon Mac 和 Linux x64）。",
+    "nativeUnavailableTitle": "本地安装支持 Windows x64、Apple Silicon Mac 和 Linux x64。"
   },
   "mcpCatalog": {
     "servers": {

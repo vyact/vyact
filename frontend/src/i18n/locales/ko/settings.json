@@ -447,9 +447,9 @@
     "dockerUnavailable": "Docker 미설치·미실행 — 사용할 수 없습니다.",
     "dockerUnavailableTitle": "Docker Desktop이 설치·실행되어 있지 않습니다.",
     "nativeName": "📦 설치형",
-    "nativeAvailable": "Docker 없이 직접 설치. Windows·Apple Silicon Mac 전용.",
-    "nativeUnavailable": "이 플랫폼 미지원 (Windows·Apple Silicon Mac 전용).",
-    "nativeUnavailableTitle": "이 플랫폼은 설치형을 지원하지 않습니다. (Windows·Apple Silicon Mac 전용)"
+    "nativeAvailable": "Docker 없이 직접 설치. Windows x64, Apple Silicon Mac, Linux x64 지원.",
+    "nativeUnavailable": "이 플랫폼은 지원하지 않습니다. (Windows x64, Apple Silicon Mac, Linux x64 지원)",
+    "nativeUnavailableTitle": "설치형은 Windows x64, Apple Silicon Mac, Linux x64에서 지원됩니다."
   },
   "mcpCatalog": {
     "servers": {

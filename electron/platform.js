@@ -2,6 +2,8 @@ const os = require("os");
 const path = require("path");
 
 const isWindows = process.platform === "win32";
+const isMac = process.platform === "darwin";
+const isLinux = process.platform === "linux";
 const windowsUserInstallDir = path.join(
     process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local"),
     "Vyact",
@@ -13,9 +15,12 @@ const defaultInstallDir = isWindows
 const installDir = process.env.VYACT_INSTALL_DIR || defaultInstallDir;
 const venvDir = path.join(installDir, "venv");
 const WINDOWS_LLAMA_CPP_PYTHON_WHEEL = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.3.34-vulkan/llama_cpp_python-0.3.34-py3-none-win_amd64.whl";
+const LLAMA_CPP_CPU_WHEEL_INDEX = "https://abetlen.github.io/llama-cpp-python/whl/cpu";
 
 module.exports = {
     isWindows,
+    isMac,
+    isLinux,
     installDir,
     venvDir,
     venvPython: path.join(venvDir, isWindows ? "Scripts" : "bin", isWindows ? "python.exe" : "python3"),
@@ -33,12 +38,29 @@ module.exports = {
     venvBinDir: path.join(venvDir, isWindows ? "Scripts" : "bin"),
     executableSearchPaths: isWindows
         ? []
-        : ["/usr/local/bin", "/opt/homebrew/bin", "/usr/bin", "/bin", "/usr/sbin", "/sbin"],
+        : [
+            "/home/linuxbrew/.linuxbrew/bin",
+            "/usr/local/bin",
+            "/opt/homebrew/bin",
+            "/usr/bin",
+            "/bin",
+            "/usr/sbin",
+            "/sbin",
+        ],
     childProcessOptions: isWindows ? {windowsHide: true} : {},
-    pythonBootstrapPackages: isWindows ? [WINDOWS_LLAMA_CPP_PYTHON_WHEEL] : [],
+    pythonBootstrapPackages: isWindows
+        ? [WINDOWS_LLAMA_CPP_PYTHON_WHEEL]
+        : isLinux
+            ? ["llama-cpp-python==0.3.35"]
+            : [],
+    pythonBootstrapExtraArgs: isLinux
+        ? ["--extra-index-url", LLAMA_CPP_CPU_WHEEL_INDEX, "--only-binary", "llama-cpp-python"]
+        : [],
     windowOptions: isWindows
         ? {frame: false}
-        : {titleBarStyle: "hiddenInset", trafficLightPosition: {x: 12, y: 12}},
+        : isMac
+            ? {titleBarStyle: "hiddenInset", trafficLightPosition: {x: 12, y: 12}}
+            : {},
     childProcessEnv() {
         const env = {...process.env, VYACT_INSTALL_DIR: installDir};
         delete env.MallocStackLogging;

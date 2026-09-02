@@ -418,9 +418,9 @@
     "dockerUnavailable": "Docker not installed or not running.",
     "dockerUnavailableTitle": "Docker Desktop is not installed or running.",
     "nativeName": "📦 Native",
-    "nativeAvailable": "Direct install without Docker. Windows & Apple Silicon Mac only.",
-    "nativeUnavailable": "Not supported on this platform (Windows & Apple Silicon Mac only).",
-    "nativeUnavailableTitle": "This platform does not support native install. (Windows & Apple Silicon Mac only)"
+    "nativeAvailable": "Direct install without Docker. Supports Windows x64, Apple Silicon Mac, and Linux x64.",
+    "nativeUnavailable": "Not supported on this platform (Windows x64, Apple Silicon Mac, and Linux x64 only).",
+    "nativeUnavailableTitle": "Native install supports Windows x64, Apple Silicon Mac, and Linux x64."
   },
   "mcpCatalog": {
     "servers": {

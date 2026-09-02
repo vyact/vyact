@@ -303,17 +303,13 @@ async def status():
 # ── Setup ─────────────────────────────────────
 @router.get("/setup/status")
 async def setup_status():
-    ram_gb = 8
-    try:
-        ram_bytes = os.popen("sysctl -n hw.memsize").read().strip()
-        ram_gb = int(ram_bytes) // (1024 ** 3)
-    except:
-        pass
+    hardware = get_local_hardware_info()
+    ram_gb = max(1, int(hardware["system_memory"]["total_bytes"]) // (1024 ** 3))
     return {
         "setup_done": SETUP_DONE.exists(),
         "config": await load_config_async(),
         "ram_gb": ram_gb,
-        "cpu_cores": os.popen("sysctl -n hw.ncpu").read().strip(),
+        "cpu_cores": str(os.cpu_count() or 1),
         "arch": platform.machine(),
         "log_path": str(LOGS_DIR),
         "docker_available": await is_docker_available(),  # Docker 선택지 활성화 여부
@@ -547,7 +543,7 @@ async def install(req: ModelSelectRequest):
             elif es_mode == "native":
                 from services.es_native import install_native_es, is_native_supported
                 if not is_native_supported():
-                    yield sse("Native ES is only supported on Windows/Apple Silicon Mac. Please select Docker.", "error", 0)
+                    yield sse("Native ES is supported on Windows x64, Apple Silicon Mac, and Linux x64. Please select Docker.", "error", 0)
                     return
                 async for pct, msg, level in install_native_es():
                     mapped = 20 + int(pct * 0.3)

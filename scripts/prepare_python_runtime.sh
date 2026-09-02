@@ -10,6 +10,7 @@ API_URL="https://api.github.com/repos/astral-sh/python-build-standalone/releases
 case "$TARGET_OS" in
   macos) ASSET_PATTERN='cpython-3\.12\.[0-9]+(\+|%2B).*-aarch64-apple-darwin-install_only_stripped\.tar\.gz' ;;
   windows) ASSET_PATTERN='cpython-3\.12\.[0-9]+(\+|%2B).*-x86_64-pc-windows-msvc-install_only_stripped\.tar\.gz' ;;
+  linux-x64) ASSET_PATTERN='cpython-3\.12\.[0-9]+(\+|%2B).*-x86_64-unknown-linux-gnu-install_only_stripped\.tar\.gz' ;;
   *) echo "Unsupported Python runtime target: $TARGET_OS" >&2; exit 1 ;;
 esac
 
@@ -37,7 +38,7 @@ curl --fail --show-error --location "$ASSET_URL" --output "$ARCHIVE_PATH"
 rm -rf "$RUNTIME_DIR/python"
 tar -xzf "$ARCHIVE_PATH" -C "$RUNTIME_DIR"
 
-if [ "$TARGET_OS" = "macos" ]; then
+if [ "$TARGET_OS" != "windows" ]; then
   "$RUNTIME_DIR/python/bin/python3" --version
 else
   test -f "$RUNTIME_DIR/python/python.exe"

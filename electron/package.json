@@ -8,7 +8,8 @@
     "start": "electron .",
     "start:dev": "VYACT_RENDERER_URL=http://localhost:5173 electron .",
     "build": "electron-builder --mac",
-    "build:dmg": "electron-builder --mac dmg"
+    "build:dmg": "electron-builder --mac dmg",
+    "build:linux": "electron-builder --linux AppImage deb --x64"
   },
   "build": {
     "appId": "com.vyact.app",
@@ -32,6 +33,30 @@
         "width": 660,
         "height": 400
       }
+    },
+    "linux": {
+      "category": "Utility",
+      "icon": "vyact-icon.png",
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "deb": {
+      "depends": [
+        "libgtk-3-0",
+        "libnotify4",
+        "libnss3",
+        "libxss1",
+        "libxtst6",
+        "xdg-utils"
+      ]
     },
     "files": [
       "main.js",

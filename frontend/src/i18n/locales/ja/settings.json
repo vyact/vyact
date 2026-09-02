@@ -382,9 +382,9 @@
     "dockerUnavailable": "Docker未インストール・未実行 — 使用できません。",
     "dockerUnavailableTitle": "Docker Desktopがインストール・実行されていません。",
     "nativeName": "📦 ネイティブ",
-    "nativeAvailable": "Dockerなしで直接インストール。Windows・Apple Silicon Mac専用。",
-    "nativeUnavailable": "このプラットフォームは未対応 (Windows・Apple Silicon Mac専用)。",
-    "nativeUnavailableTitle": "このプラットフォームはネイティブインストールに対応していません。(Windows・Apple Silicon Mac専用)"
+    "nativeAvailable": "Dockerなしで直接インストール。Windows x64、Apple Silicon Mac、Linux x64に対応。",
+    "nativeUnavailable": "このプラットフォームは未対応です (Windows x64、Apple Silicon Mac、Linux x64のみ)。",
+    "nativeUnavailableTitle": "ネイティブインストールはWindows x64、Apple Silicon Mac、Linux x64に対応しています。"
   },
   "mcpCatalog": {
     "servers": {

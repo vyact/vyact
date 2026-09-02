@@ -16,6 +16,23 @@ from config import KOKORO_CACHE_READY
 
 logger = get_logger(__name__)
 
+LINUX_ESPEAK_INSTALL_COMMANDS = (
+    ("apt-get", ["sudo", "apt-get", "-qq", "-y", "install", "espeak-ng"]),
+    ("dnf", ["sudo", "dnf", "-q", "-y", "install", "espeak-ng"]),
+    ("zypper", ["sudo", "zypper", "--non-interactive", "install", "espeak-ng"]),
+    ("pacman", ["sudo", "pacman", "--noconfirm", "-S", "--needed", "espeak-ng"]),
+)
+
+
+def get_linux_espeak_install_command() -> list[str] | None:
+    """Return the first supported distro package-manager command."""
+    if shutil.which("sudo") is None:
+        return None
+    for executable, command in LINUX_ESPEAK_INSTALL_COMMANDS:
+        if shutil.which(executable) is not None:
+            return command.copy()
+    return None
+
 async def is_docker_available() -> bool:
     """Docker 설치+데몬 실행 여부를 부작용 없이 확인 (Docker를 켜지 않음).
 
@@ -326,7 +343,11 @@ class Installer:
                 return False, "espeak-ng installation failed"
 
         elif system == "Linux":
-            if await self._run(["sudo", "apt-get", "-qq", "-y", "install", "espeak-ng"], log=True) != 0:
+            command = get_linux_espeak_install_command()
+            if command is None:
+                logger.warning("No supported Linux package manager is available for espeak-ng")
+                return False, "Install espeak-ng with your Linux package manager"
+            if await self._run(command, log=True) != 0:
                 logger.warning("espeak-ng installation failed")
                 return False, "espeak-ng installation failed"
 

@@ -382,9 +382,9 @@
     "dockerUnavailable": "Docker n'est pas installé ou n'est pas en cours d'exécution.",
     "dockerUnavailableTitle": "Docker Desktop n'est pas installé ou n'est pas en cours d'exécution.",
     "nativeName": "📦 Natif",
-    "nativeAvailable": "Installation directe sans Docker. Windows et Mac avec Apple Silicon uniquement.",
-    "nativeUnavailable": "Non pris en charge sur cette plateforme (Windows et Mac avec Apple Silicon uniquement).",
-    "nativeUnavailableTitle": "Cette plateforme ne prend pas en charge l'installation native. (Windows et Mac avec Apple Silicon uniquement)"
+    "nativeAvailable": "Installation directe sans Docker. Compatible avec Windows x64, les Mac Apple Silicon et Linux x64.",
+    "nativeUnavailable": "Plateforme non prise en charge (Windows x64, Mac Apple Silicon et Linux x64 uniquement).",
+    "nativeUnavailableTitle": "L'installation native prend en charge Windows x64, les Mac Apple Silicon et Linux x64."
   },
   "mcpCatalog": {
     "servers": {

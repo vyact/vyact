@@ -382,9 +382,9 @@
     "dockerUnavailable": "Docker chưa được cài đặt hoặc chưa chạy.",
     "dockerUnavailableTitle": "Docker Desktop chưa được cài đặt hoặc chưa chạy.",
     "nativeName": "📦 Gốc",
-    "nativeAvailable": "Cài đặt trực tiếp không cần Docker. Chỉ dành cho Windows & Apple Silicon Mac.",
-    "nativeUnavailable": "Không hỗ trợ trên nền tảng này (chỉ Windows & Apple Silicon Mac).",
-    "nativeUnavailableTitle": "Nền tảng này không hỗ trợ cài đặt gốc. (Chỉ Windows & Apple Silicon Mac)"
+    "nativeAvailable": "Cài đặt trực tiếp không cần Docker. Hỗ trợ Windows x64, Apple Silicon Mac và Linux x64.",
+    "nativeUnavailable": "Không hỗ trợ nền tảng này (chỉ Windows x64, Apple Silicon Mac và Linux x64).",
+    "nativeUnavailableTitle": "Cài đặt gốc hỗ trợ Windows x64, Apple Silicon Mac và Linux x64."
   },
   "mcpCatalog": {
     "servers": {

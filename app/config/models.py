@@ -72,4 +72,8 @@ ES_ARTIFACTS = {
         f"elasticsearch-{ES_VERSION}-darwin-aarch64.tar.gz",
         "tar.gz",
     ),
+    "linux-x86_64": (
+        f"elasticsearch-{ES_VERSION}-linux-x86_64.tar.gz",
+        "tar.gz",
+    ),
 }
