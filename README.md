@@ -146,6 +146,23 @@ Learn from Netflix with dual subtitles, subtitle navigation, repeat playback, an
 
 Download Vyact for **Apple Silicon Macs (M1 or later)**, **Windows**, or **Linux x64** from [GitHub Releases](https://github.com/vyact/vyact/releases), then install and launch it. macOS is distributed as a DMG, Windows as an EXE installer, and Linux as AppImage and DEB packages. Intel-based Macs are not currently supported.
 
+#### Run on Linux
+
+The AppImage runs without installation. From the directory where you downloaded it:
+
+```bash
+chmod +x Vyact-*.AppImage
+./Vyact-*.AppImage
+```
+
+On Ubuntu, Debian, or a compatible distribution, install the DEB package instead:
+
+```bash
+sudo apt install ./vyact_*_amd64.deb
+```
+
+After installing the DEB package, launch **Vyact** from your application menu.
+
 ### Before your first launch
 
 Vyact includes its own Python 3.12 runtime and manages its local model runtime for you. Local GGUF models run through native llama.cpp with llama-swap, while supported Apple Silicon MLX models run through oMLX. Use Homebrew on macOS or Linux, or `winget` on Windows, so Vyact can install missing runtime binaries automatically. Compatible existing binaries are reused when available.
