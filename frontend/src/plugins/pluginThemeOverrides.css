@@ -66,6 +66,7 @@
     background: var(--surface);
     border-color: color-mix(in srgb, var(--text-secondary) 28%, var(--border));
     box-shadow: 0 1px 3px rgba(42, 61, 84, .06);
+    transition-property: border-color, box-shadow, transform !important;
 }
 
 :root[data-theme='light'] #root .youtube-video-item:hover {

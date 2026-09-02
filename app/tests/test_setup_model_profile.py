@@ -146,7 +146,7 @@ async def test_selecting_model_warms_it_before_reporting_done(monkeypatch):
     response = await setup.select_model(setup.ModelSelectRequest(type="vyact", model="mlx/owner/model"))
     chunks = [chunk async for chunk in response.body_iterator]
 
-    warm_model.assert_awaited_once_with("model", "ko")
+    warm_model.assert_awaited_once_with("model", "ko", "mlx")
     save_config.assert_awaited_once_with(config)
     assert '"type": "done"' in "".join(chunks)
 
@@ -185,7 +185,7 @@ async def test_failed_model_warmup_restores_previous_model_and_reports_memory_er
     chunks = [chunk async for chunk in response.body_iterator]
 
     assert start_runtime.call_count == 2
-    assert warm_model.await_args_list[1].args == ("previous-model", "ko")
+    assert warm_model.await_args_list[1].args == ("previous-model", "ko", "mlx")
     assert config["model"] == "previous-model"
     assert config["vyact_config"]["model_path"] == "mlx/owner/previous-model"
     save_config.assert_not_awaited()

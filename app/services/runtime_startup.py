@@ -72,10 +72,24 @@ def get_runtime_update_commands(config: dict) -> list[list[str]]:
     return get_native_update_commands()
 
 
-async def warm_loaded_vyact_model(model_id: str, language: str | None = None) -> bool:
-    """Warm the stable Vyact chat prefix after any successful runtime load."""
+async def warm_loaded_vyact_model(
+        model_id: str, language: str | None = None, runtime: str | None = None,
+) -> bool:
+    """Require model compilation, then best-effort warm the stable chat prefix."""
     if not model_id:
         return False
+    try:
+        from services.llm.warmup import warm_vyact_model_compile
+
+        if runtime is None:
+            config = await load_config_async()
+            runtime = config.get("vyact_config", {}).get("runtime", "gguf")
+
+        await warm_vyact_model_compile(model_id, raise_on_error=True)
+    except Exception as error:
+        logger.warning("[llm_warmup] model_compile failed before prefix cache: %s", error)
+        raise
+
     try:
         from prompts import FORMAT_INSTRUCTION
         from routers.chat_helpers import load_system_prompt
@@ -86,15 +100,16 @@ async def warm_loaded_vyact_model(model_id: str, language: str | None = None) ->
         general_chat_system_prompt = (
             selected_system_prompt or FORMAT_INSTRUCTION
         ) + build_summary_instruction("", False)
-        return await warm_vyact_chat_prefix(
+        await warm_vyact_chat_prefix(
             model_id,
             language if language is not None else await load_ui_language_async() or "",
             general_chat_system_prompt,
-            raise_on_error=True,
+            runtime=runtime,
+            raise_on_error=False,
         )
     except Exception as error:
-        logger.warning("[llm_warmup] Vyact model warm-up failed: %s", error)
-        raise
+        logger.warning("[llm_warmup] prefix_cache preparation failed (model=%s): %s", model_id, error)
+    return True
 
 
 async def detect_native_runtime_updates(config: dict) -> dict:

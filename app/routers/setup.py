@@ -1302,7 +1302,7 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
             config["runtime_settings"] = common_settings
             apply_runtime_settings({**common_settings, **_profile_runtime_settings(req.model_dump())})
             await warm_loaded_vyact_model(
-                model_id, await load_ui_language_async() or "",
+                model_id, await load_ui_language_async() or "", runtime,
             )
             await save_config_async(config)
         except Exception as error:
@@ -1354,7 +1354,7 @@ async def select_model(req: ModelSelectRequest):
                 config["runtime_settings"] = common_settings
                 apply_runtime_settings({**common_settings, **_profile_runtime_settings(profile)})
                 await warm_loaded_vyact_model(
-                    model_id, await load_ui_language_async() or "",
+                    model_id, await load_ui_language_async() or "", runtime,
                 )
             except Exception as error:
                 error_code = runtime_load_error_code(error)
@@ -1371,6 +1371,7 @@ async def select_model(req: ModelSelectRequest):
                         )
                         await warm_loaded_vyact_model(
                             restored_model_id, await load_ui_language_async() or "",
+                            previous_vyact_config.get("runtime", "gguf"),
                         )
                     except Exception as restore_error:
                         logger.warning("[vyact] previous model restore failed: %s", restore_error)
