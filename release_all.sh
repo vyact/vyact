@@ -97,10 +97,10 @@ if [ -z "$RUN_ID" ]; then
 fi
 
 echo "Building the macOS release DMG..."
-printf '1\n' | "$ROOT_DIR/build_release_dmg.sh"
+printf '1\n' | bash "$ROOT_DIR/build_release_dmg.sh"
 
 echo "Building the Windows installer on macOS..."
-printf '1\n' | "$ROOT_DIR/build_win_on_mac.sh"
+printf '1\n' | bash "$ROOT_DIR/build_win_on_mac.sh"
 
 echo "Waiting for GitHub Actions run $RUN_ID..."
 gh run watch "$RUN_ID" --exit-status
