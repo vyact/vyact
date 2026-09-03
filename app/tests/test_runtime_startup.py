@@ -41,57 +41,37 @@ class RuntimeStartupTests(unittest.TestCase):
         self.assertEqual(apply_settings.call_args.args[0]["seed"], 42)
 
     def test_warms_loaded_model_with_the_shared_chat_prefix(self):
-        compile_warmup = AsyncMock(return_value=True)
         prefix_warmup = AsyncMock(return_value=True)
         with patch(
             "routers.chat_helpers.load_system_prompt",
             new=AsyncMock(return_value=("", "", "Custom system prompt")),
         ), patch(
             "services.conv_summary.build_summary_instruction", return_value=" summary",
-        ), patch(
-            "services.llm.warmup.warm_vyact_model_compile", new=compile_warmup,
-        ), patch(
+        ) as summary_instruction, patch(
             "services.llm.warmup.warm_vyact_chat_prefix", new=prefix_warmup,
         ):
             result = asyncio.run(runtime_startup.warm_loaded_vyact_model("model-id", "ko", "gguf"))
 
         self.assertTrue(result)
-        compile_warmup.assert_awaited_once_with("model-id", raise_on_error=True)
+        summary_instruction.assert_called_once_with("", False, request_conversation_title=True)
         prefix_warmup.assert_awaited_once_with(
-            "model-id", "ko", "Custom system prompt summary", runtime="gguf", raise_on_error=False,
+            "model-id", "ko", "Custom system prompt summary", runtime="gguf", raise_on_error=True,
         )
 
-    def test_prefix_cache_failure_does_not_fail_loaded_model(self):
-        compile_warmup = AsyncMock(return_value=True)
-        prefix_warmup = AsyncMock(return_value=False)
+    def test_chat_warmup_failure_fails_model_activation(self):
+        prefix_warmup = AsyncMock(side_effect=RuntimeError("warmup failed"))
         with patch(
             "routers.chat_helpers.load_system_prompt",
             new=AsyncMock(return_value=("", "", "System prompt")),
         ), patch(
             "services.conv_summary.build_summary_instruction", return_value="",
         ), patch(
-            "services.llm.warmup.warm_vyact_model_compile", new=compile_warmup,
-        ), patch(
             "services.llm.warmup.warm_vyact_chat_prefix", new=prefix_warmup,
         ):
-            result = asyncio.run(runtime_startup.warm_loaded_vyact_model("model-id", "ko", "mlx"))
-
-        self.assertTrue(result)
-        compile_warmup.assert_awaited_once()
-        prefix_warmup.assert_awaited_once()
-
-    def test_model_compile_failure_fails_model_activation(self):
-        compile_warmup = AsyncMock(side_effect=RuntimeError("compile failed"))
-        prefix_warmup = AsyncMock()
-        with patch(
-            "services.llm.warmup.warm_vyact_model_compile", new=compile_warmup,
-        ), patch(
-            "services.llm.warmup.warm_vyact_chat_prefix", new=prefix_warmup,
-        ):
-            with self.assertRaisesRegex(RuntimeError, "compile failed"):
+            with self.assertRaisesRegex(RuntimeError, "warmup failed"):
                 asyncio.run(runtime_startup.warm_loaded_vyact_model("model-id", "ko", "gguf"))
 
-        prefix_warmup.assert_not_awaited()
+        prefix_warmup.assert_awaited_once()
 
     def test_startup_update_choice_warms_after_model_load(self):
         load_model = AsyncMock(return_value=("model-id", "en"))

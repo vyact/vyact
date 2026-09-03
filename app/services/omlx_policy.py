@@ -33,6 +33,11 @@ def recommend_omlx_cache_sizes(total_memory_bytes: int) -> tuple[str, str]:
         return "10GB", "4GB"
     return "20GB", "8GB"
 
+
+def recommend_omlx_memory_guard(total_memory_bytes: int) -> str:
+    """Use available unified-memory headroom without relaxing smaller Macs."""
+    return "aggressive" if total_memory_bytes >= 24 * GIB else "balanced"
+
 # Safe fallback for installations which cannot expose their mlx-vlm registry.
 _DEFAULT_EXTERNAL_MTP_TARGET_DRAFT_TYPES = (
     (("qwen3_5", "qwen3_6"), "qwen3_5_mtp"),

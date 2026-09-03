@@ -14,37 +14,15 @@ from .config import logger
 from .tools import build_tool_directive
 
 
-async def warm_vyact_model_compile(
-        model: str, raise_on_error: bool = False,
-) -> bool:
-    """Run a minimal generation to load and compile the selected model."""
-    started_at = time.perf_counter()
-    logger.info("[llm_warmup] model_compile started (model=%s)", model)
-    try:
-        payload = {
-            "model": model,
-            "stream": False,
-            "max_tokens": 1,
-            "temperature": 0,
-            "specprefill": False,
-            "messages": [{"role": "user", "content": "."}],
-        }
-        async with httpx.AsyncClient(timeout=120.0) as client:
-            response = await client.post(f"{VYACT_RUNTIME_URL}/chat/completions", json=payload)
-            response.raise_for_status()
-        logger.info(
-            "[llm_warmup] model_compile succeeded (model=%s, duration_ms=%d)",
-            model, round((time.perf_counter() - started_at) * 1000),
-        )
-        return True
-    except Exception as error:
-        logger.warning(
-            "[llm_warmup] model_compile failed (model=%s, duration_ms=%d): %s",
-            model, round((time.perf_counter() - started_at) * 1000), error,
-        )
-        if raise_on_error:
-            raise
-        return False
+CHAT_WARMUP_USER_MESSAGE = "Hi! Reply briefly in one sentence."
+CHAT_WARMUP_MAX_TOKENS = 32
+
+
+def _warmup_user_message() -> dict[str, str]:
+    return {
+        "role": "user",
+        "content": CHAT_WARMUP_USER_MESSAGE,
+    }
 
 
 async def warm_vyact_chat_prefix(
@@ -69,13 +47,13 @@ async def warm_vyact_chat_prefix(
             system_message += await build_tool_directive(tool_names)
         payload = {
             "model": model,
-            "stream": False,
-            "max_tokens": 1,
+            "stream": True,
+            "max_tokens": CHAT_WARMUP_MAX_TOKENS,
             "temperature": get_runtime_settings()["llm_temperature"],
             "specprefill": False,
             "messages": [
                 {"role": "system", "content": system_message},
-                {"role": "user", "content": "."},
+                _warmup_user_message(),
             ],
         }
         if runtime == "gguf":

@@ -27,7 +27,7 @@ from services.omlx_policy import (
     MAX_SPECPREFILL_TARGET_SIZE_RATIO, OMLX_SPECPREFILL_THRESHOLD,
     SPECPREFILL_KEEP_PCT, SPECPREFILL_THRESHOLD_TOKENS,
     VLM_MTP_DRAFT_BLOCK_SIZE, is_external_mtp_compatible, model_type,
-    recommend_omlx_cache_sizes,
+    recommend_omlx_cache_sizes, recommend_omlx_memory_guard,
 )
 from services.runtime_error_details import classify_runtime_load_failure, runtime_startup_error
 from services.vyact_runtime import VYACT_RUNTIME_PORT
@@ -762,6 +762,7 @@ def _configured_compatible_specprefill_path(model_path: Path) -> Path | None:
 
 def _build_omlx_server_command(
         model_path: Path, context_size: int, enable_mtp: bool | None = None,
+        debug_logging: bool = False,
 ) -> tuple[list[str], dict[str, str], str]:
     executable = shutil.which("omlx")
     if not executable:
@@ -801,10 +802,13 @@ def _build_omlx_server_command(
     hardware = get_local_hardware_info()
     total_memory_bytes = int(hardware.get("system_memory", {}).get("total_bytes") or 0)
     paged_cache_size, hot_cache_size = recommend_omlx_cache_sizes(total_memory_bytes)
+    memory_guard = recommend_omlx_memory_guard(total_memory_bytes)
     command = [
         executable, "serve", "--model-dir", str(MLX_MODELS_DIR),
         "--host", "127.0.0.1", "--port", str(VYACT_RUNTIME_PORT),
+        "--log-level", "debug" if debug_logging else "info",
         "--max-concurrent-requests", "1",
+        "--memory-guard", memory_guard,
         "--paged-ssd-cache-dir", str(_OMLX_CACHE_DIR),
         "--paged-ssd-cache-max-size", paged_cache_size,
         "--hot-cache-max-size", hot_cache_size,
@@ -832,7 +836,7 @@ def start_mlx_model(
     MLX_RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
     log_path = get_log_file("omlx")
     command, environment, speculative_mode = _build_omlx_server_command(
-        model_path, context_size, enable_mtp,
+        model_path, context_size, enable_mtp, debug_logging,
     )
     model_id = model_path.relative_to(MLX_MODELS_DIR).as_posix()
     with log_path.open("ab") as log_file:

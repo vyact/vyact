@@ -91,9 +91,6 @@ def initial_setup_message(message_key: str) -> str:
 # ─────────────────────────────
 setup_logging()
 logger = get_logger(__name__)
-STARTUP_WARMUP_DELAY_SECONDS = 2
-
-
 async def warmup_kokoro_tts(huggingface_token: str | None = None) -> bool:
     """Kokoro와 언어별 음성 파이프라인을 미리 준비한다."""
     previous_hf_token = os.environ.get("HF_TOKEN")
@@ -144,9 +141,7 @@ async def warmup_kokoro_tts(huggingface_token: str | None = None) -> bool:
 
 
 async def warmup_optional_voice_models() -> None:
-    """Warm optional voice models after the API is available, yielding to chat."""
-    await asyncio.sleep(STARTUP_WARMUP_DELAY_SECONDS)
-    await wait_for_chat_idle()
+    """Warm optional voice models before loading the local chat model."""
     config = await load_config_async()
     huggingface_token = config.get("vyact_config", {}).get("huggingface_token")
     await warmup_kokoro_tts(huggingface_token)
@@ -228,10 +223,6 @@ async def lifespan(app: FastAPI):
         else:
             logger.warning("Elasticsearch connection failed: %s", e)
 
-    # 최초 설정 전에는 모델 준비를 Provider 선택 후 설치 화면에서 수행한다.
-    if not is_initial_setup:
-        logger.info("[startup-status] models")
-
     if es_available:
         try:
             from agent import ensure_index, load_prompts_cache
@@ -267,6 +258,9 @@ async def lifespan(app: FastAPI):
         else:
             logger.warning("Elasticsearch unavailable — RAG features disabled")
 
+    if not is_initial_setup:
+        await warmup_optional_voice_models()
+
     vyact_warmup_model_id = ""
     vyact_warmup_language = ""
     if SETUP_DONE.exists():
@@ -278,6 +272,7 @@ async def lifespan(app: FastAPI):
                 vyact_config = cfg["vyact_config"]
                 update_state = await detect_native_runtime_updates(cfg)
                 if update_state["status"] != "update_available":
+                    logger.info("[startup-status] models")
                     logger.info("Loading Vyact local model: %s", vyact_config["model_path"])
                     vyact_warmup_model_id, vyact_warmup_language = await load_configured_vyact_model(cfg)
                 else:
@@ -336,10 +331,6 @@ async def lifespan(app: FastAPI):
         except Exception as error:
             mark_runtime_load_failed(error, vyact_warmup_model_id)
 
-    startup_warmup_task = None
-    if not is_initial_setup:
-        startup_warmup_task = asyncio.create_task(warmup_optional_voice_models())
-
     if es_available and SETUP_DONE.exists():
         from services.notification_polling import start_notification_polling
         from services.product_release_polling import start_product_release_polling
@@ -361,10 +352,6 @@ async def lifespan(app: FastAPI):
 
     external_api_server.should_exit = True
     await asyncio.gather(external_api_task, return_exceptions=True)
-
-    if startup_warmup_task is not None and not startup_warmup_task.done():
-        startup_warmup_task.cancel()
-        await asyncio.gather(startup_warmup_task, return_exceptions=True)
 
     try:
         await stop_external_data_scheduler()

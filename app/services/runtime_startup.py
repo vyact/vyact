@@ -75,40 +75,29 @@ def get_runtime_update_commands(config: dict) -> list[list[str]]:
 async def warm_loaded_vyact_model(
         model_id: str, language: str | None = None, runtime: str | None = None,
 ) -> bool:
-    """Require model compilation, then best-effort warm the stable chat prefix."""
+    """Load and warm the model through the production-shaped chat prefix request."""
     if not model_id:
         return False
-    try:
-        from services.llm.warmup import warm_vyact_model_compile
+    from prompts import FORMAT_INSTRUCTION
+    from routers.chat_helpers import load_system_prompt
+    from services.conv_summary import build_summary_instruction
+    from services.llm.warmup import warm_vyact_chat_prefix
 
-        if runtime is None:
-            config = await load_config_async()
-            runtime = config.get("vyact_config", {}).get("runtime", "gguf")
+    if runtime is None:
+        config = await load_config_async()
+        runtime = config.get("vyact_config", {}).get("runtime", "gguf")
 
-        await warm_vyact_model_compile(model_id, raise_on_error=True)
-    except Exception as error:
-        logger.warning("[llm_warmup] model_compile failed before prefix cache: %s", error)
-        raise
-
-    try:
-        from prompts import FORMAT_INSTRUCTION
-        from routers.chat_helpers import load_system_prompt
-        from services.conv_summary import build_summary_instruction
-        from services.llm.warmup import warm_vyact_chat_prefix
-
-        _, _, selected_system_prompt = await load_system_prompt("")
-        general_chat_system_prompt = (
-            selected_system_prompt or FORMAT_INSTRUCTION
-        ) + build_summary_instruction("", False)
-        await warm_vyact_chat_prefix(
-            model_id,
-            language if language is not None else await load_ui_language_async() or "",
-            general_chat_system_prompt,
-            runtime=runtime,
-            raise_on_error=False,
-        )
-    except Exception as error:
-        logger.warning("[llm_warmup] prefix_cache preparation failed (model=%s): %s", model_id, error)
+    _, _, selected_system_prompt = await load_system_prompt("")
+    general_chat_system_prompt = (
+        selected_system_prompt or FORMAT_INSTRUCTION
+    ) + build_summary_instruction("", False, request_conversation_title=True)
+    await warm_vyact_chat_prefix(
+        model_id,
+        language if language is not None else await load_ui_language_async() or "",
+        general_chat_system_prompt,
+        runtime=runtime,
+        raise_on_error=True,
+    )
     return True
 
 
