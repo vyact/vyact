@@ -56,5 +56,8 @@ xcrun stapler staple "$DMG_PATH"
 xcrun stapler validate "$DMG_PATH"
 spctl --assess --type open --context context:primary-signature --verbose=2 "$DMG_PATH"
 
+echo "Finalizing macOS auto-update metadata..."
+node "$ROOT_DIR/scripts/finalize_mac_update_metadata.js" "$DIST_DIR/latest-mac.yml"
+
 echo "Release DMG is signed, notarized, stapled, and verified:"
 ls -lh "$DMG_PATH"
