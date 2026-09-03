@@ -2,7 +2,7 @@
 from contextvars import ContextVar
 from config.models import (
     BGE_NUM_CTX, HISTORY_TOKEN_BUDGET, LLM_INITIAL_NUM_CTX,
-    LLM_MAX_NUM_CTX, LLM_MAX_TOKENS, LLM_NUM_CTX, LLM_NUM_PREDICT, LLM_TEMPERATURE,
+    LLM_MAX_TOKENS, LLM_NUM_CTX, LLM_NUM_PREDICT, LLM_TEMPERATURE,
     TOP_K, TOP_P,
 )
 
@@ -49,7 +49,7 @@ def apply_runtime_settings(values: dict | None) -> dict:
                     try:
                         cast_type = int if key == "seed" else type(default) if default is not None else float
                         parsed = cast_type(val)
-                        _settings[key] = min(max(parsed, LLM_INITIAL_NUM_CTX), LLM_MAX_NUM_CTX) if key == "llm_num_ctx" else parsed
+                        _settings[key] = max(parsed, LLM_INITIAL_NUM_CTX) if key == "llm_num_ctx" else parsed
                     except (TypeError, ValueError):
                         pass
     return get_runtime_settings()

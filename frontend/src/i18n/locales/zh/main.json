@@ -524,7 +524,7 @@
     "searching": "正在搜索模型...",
     "noSearchResults": "未找到模型，请尝试其他模型名称。",
     "noInstalledModels": "尚未安装模型。请搜索要安装的模型。",
-    "calculateAccurateMemory": "计算详细内存", "accurateMemoryHint": "检查模型信息，并计入处理长对话和文档所需的额外内存。",
+    "calculateAccurateMemory": "查看模型详细信息", "accurateMemoryHint": "获取模型的层数、最大上下文和支持的功能。",
     "conversationMemory": "对话内存", "modelMemory": "模型内存",
     "quickEstimatedMemory": "快速预计内存", "detailedEstimatedMemory": "详细预计内存", "conversationMemoryHelp": "这是应用默认对话长度下额外使用的内存，并非使用模型全部最大上下文时所需的内存。",
     "metadataAnalysisFailed": "无法计算或保存模型详细信息。",
@@ -533,7 +533,7 @@
     "layersHelp": "输入按顺序经过的内部处理模块数量。对于结构和宽度相近的模型，层数越多通常需要更多计算时间和内存，但实际速度和质量还取决于每层大小、总参数量、模型架构、量化方式和硬件。",
     "huggingFaceTokenHelp": "公开模型无需API Key也可搜索和安装。输入API Key后，它将用于模型搜索、受限模型访问、模型信息检查和下载，并在后续安装中重复使用。受限模型需要先在Hugging Face上获得访问权限。",
     "installed": "已安装",
-    "systemMemory": "系统内存", "unifiedMemory": "统一内存", "availableMemory": "可用", "monthlyDownloads": "近30天下载", "estimatedMemory": "预计内存", "sharedOrUnknownMemory": "共享内存或容量未知", "cpuExecution": "无GPU · 使用CPU/内存", "analyzingMetadata": "正在分析GGUF元数据...", "parameters": "参数", "architecture": "架构", "quantization": "量化", "maxContext": "最大上下文", "layers": "层数", "kvCache": "32K KV缓存", "execution": {"unified":"可使用统一内存运行","gpu":"可使用GPU运行","hybrid":"GPU+内存混合运行","cpu":"可使用CPU/内存运行","insufficient":"当前可用内存不足"},
+    "systemMemory": "系统内存", "unifiedMemory": "统一内存", "availableMemory": "可用", "monthlyDownloads": "近30天下载", "estimatedMemory": "预计内存", "sharedOrUnknownMemory": "共享内存或容量未知", "cpuExecution": "无GPU · 使用CPU/内存", "analyzingMetadata": "正在加载模型详细信息...", "parameters": "参数", "architecture": "架构", "quantization": "量化", "maxContext": "最大上下文", "layers": "层数", "kvCache": "32K KV缓存", "execution": {"unified":"可使用统一内存运行","gpu":"可使用GPU运行","hybrid":"GPU+内存混合运行","cpu":"可使用CPU/内存运行","insufficient":"当前可用内存不足"},
     "vram": "VRAM",
     "modelSettings": "{{model}} settings"
   },

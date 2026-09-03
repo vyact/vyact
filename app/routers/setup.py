@@ -30,7 +30,7 @@ from services.es_native import is_native_supported
 from services.hardware_info import get_local_hardware_info, validate_gpu_split_percentages
 from services.huggingface_models import (
     MODEL_SEARCH_RESULT_LIMIT, enrich_model_file_sizes, get_model_file_size,
-    recommend_downloaded_mlx_context, search_gguf_models, search_mlx_models,
+    search_gguf_models, search_mlx_models,
 )
 from services.mcp_config import ensure_mcp_config
 from services.runtime_settings import DEFAULT_RUNTIME_SETTINGS, apply_runtime_settings
@@ -49,16 +49,7 @@ from services.vyact_runtime import VYACT_RUNTIME_URL, get_downloaded_model_path,
 logger = get_logger(__name__)
 
 async def _recommended_local_context(model_path: str, runtime: str, fallback: int = 32768) -> int:
-    if runtime != "mlx":
-        return fallback
-    downloaded_model_path = get_downloaded_mlx_model_path(model_path)
-    total_memory = int(get_local_hardware_info()["system_memory"]["total_bytes"])
-    return await asyncio.to_thread(
-        recommend_downloaded_mlx_context,
-        downloaded_model_path,
-        total_memory,
-        fallback,
-    )
+    return max(512, int(fallback))
 
 
 async def _get_or_create_model_profile(
@@ -173,11 +164,11 @@ class HuggingFaceDownloadRequest(BaseModel):
 
 class VyactModelActivateRequest(BaseModel):
     model_path: str = Field(min_length=6, max_length=1024)
-    context_size: int = Field(default=32768, ge=512, le=131072)
+    context_size: int = Field(default=32768, ge=512)
     runtime: str = Field(default="gguf", pattern="^(gguf|mlx)$")
     repository: str | None = Field(default=None, min_length=3, max_length=256)
     max_output_tokens: int = Field(default=4096, ge=1, le=32768)
-    history_token_budget: int = Field(default=16384, ge=0, le=131072)
+    history_token_budget: int = Field(default=16384, ge=0)
     temperature: float = Field(default=0.2, ge=0, le=1)
     top_k: int | None = Field(default=None, ge=0, le=100)
     top_p: float | None = Field(default=None, ge=0, le=1)
@@ -197,9 +188,9 @@ class VyactModelProfileRequest(BaseModel):
     model_path: str = Field(min_length=1, max_length=1024)
     runtime: str = Field(default="gguf", pattern="^(gguf|mlx)$")
     repository: str | None = Field(default=None, max_length=256)
-    context_size: int = Field(default=32768, ge=512, le=131072)
+    context_size: int = Field(default=32768, ge=512)
     max_output_tokens: int = Field(default=4096, ge=1, le=32768)
-    history_token_budget: int = Field(default=16384, ge=0, le=131072)
+    history_token_budget: int = Field(default=16384, ge=0)
     temperature: float = Field(default=0.2, ge=0, le=1)
     top_k: int | None = Field(default=None, ge=0, le=100)
     top_p: float | None = Field(default=None, ge=0, le=1)
@@ -227,7 +218,7 @@ class VyactModelMetadataRequest(BaseModel):
     repository: str = Field(min_length=3, max_length=256)
     filename: str = Field(min_length=6, max_length=1024)
     revision: str = Field(min_length=1, max_length=128)
-    context_size: int = Field(default=32768, ge=512, le=131072)
+    context_size: int = Field(default=32768, ge=512)
     architecture: str = Field(min_length=1, max_length=128)
     parameter_count: int = Field(ge=0)
     context_length: int = Field(ge=0)
@@ -766,7 +757,7 @@ async def get_vyact_model_metadata_cache(
         repository: str = Query(..., min_length=3, max_length=256),
         filename: str = Query(..., min_length=6, max_length=1024),
         revision: str = Query(..., min_length=1, max_length=128),
-        context_size: int = Query(32768, ge=512, le=131072),
+        context_size: int = Query(32768, ge=512),
 ):
     try:
         metadata = await get_cached_model_metadata(repository, filename, revision, context_size)
@@ -797,7 +788,7 @@ async def get_vyact_mlx_model_metadata(
         repository: str = Query(..., min_length=3, max_length=256),
         revision: str = Query(..., min_length=1, max_length=128),
         file_size: int = Query(..., ge=1),
-        context_size: int = Query(32768, ge=512, le=131072),
+        context_size: int = Query(32768, ge=512),
 ):
     if not is_apple_silicon():
         raise HTTPException(400, "mlx_unsupported_platform")
@@ -1136,7 +1127,7 @@ async def read_vyact_model_profile(
     model_path: str = Query(min_length=1, max_length=1024),
     runtime: str = Query(default="gguf", pattern="^(gguf|mlx)$"),
     repository: str | None = Query(default=None, max_length=256),
-    recommended_context: int = Query(default=32768, ge=512, le=131072),
+    recommended_context: int = Query(default=32768, ge=512),
 ):
     if runtime == "mlx" and not is_apple_silicon():
         raise HTTPException(400, "mlx_unsupported_platform")

@@ -146,7 +146,7 @@ class HuggingFaceModelTests(unittest.TestCase):
             models = asyncio.run(search_mlx_models("qwen3.5 9b 8bit mtp"))
 
         self.assertEqual(fake_client.params["search"], "qwen3.5 9b 8bit")
-        self.assertEqual(fake_client.params["limit"], 10)
+        self.assertEqual(fake_client.params["limit"], 30)
         self.assertEqual([model["id"] for model in models], [target_item["id"]])
         self.assertNotIn("mtp_model", models[0])
         self.assertNotIn("metadata", models[0])

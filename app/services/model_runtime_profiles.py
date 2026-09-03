@@ -70,7 +70,7 @@ def normalize_model_profile(profile: dict) -> dict:
     normalized["gpu_manual_split_enabled"] = bool(normalized.get("gpu_manual_split_enabled", False))
     seed = normalized.get("seed")
     normalized["seed"] = None if seed in (None, "") else max(0, min(int(seed), 2147483647))
-    safe_context = max(512, min(int(normalized.get("context_size") or DEFAULT_CONTEXT_SIZE), 131072))
+    safe_context = max(512, int(normalized.get("context_size") or DEFAULT_CONTEXT_SIZE))
     requested_output = max(1, int(normalized.get("max_output_tokens") or DEFAULT_MAX_OUTPUT_TOKENS))
     normalized["context_size"] = safe_context
     normalized["history_token_budget"] = max(
@@ -108,7 +108,7 @@ def normalize_gpu_split_for_hardware(profile: dict, hardware: dict) -> dict:
 
 
 def recommended_model_profile(model_path: str, runtime: str, repository: str | None, context_size: int) -> dict:
-    safe_context = max(512, min(int(context_size or DEFAULT_CONTEXT_SIZE), 131072))
+    safe_context = max(512, int(context_size or DEFAULT_CONTEXT_SIZE))
     if safe_context >= 65536:
         recommended_output = 4096
     elif safe_context <= 8192:

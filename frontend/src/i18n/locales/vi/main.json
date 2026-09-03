@@ -524,7 +524,7 @@
     "searching": "Đang tìm kiếm mô hình...",
     "noSearchResults": "Không tìm thấy mô hình. Hãy thử tên khác.",
     "noInstalledModels": "Chưa có mô hình nào được cài đặt. Hãy tìm mô hình để cài đặt.",
-    "calculateAccurateMemory": "Tính bộ nhớ chi tiết", "accurateMemoryHint": "Kiểm tra mô hình và tính cả bộ nhớ bổ sung cần thiết cho hội thoại và tài liệu dài.",
+    "calculateAccurateMemory": "Xem chi tiết mô hình", "accurateMemoryHint": "Lấy số lớp, ngữ cảnh tối đa và các khả năng được hỗ trợ của mô hình.",
     "conversationMemory": "Bộ nhớ hội thoại", "modelMemory": "Bộ nhớ mô hình",
     "quickEstimatedMemory": "Ước tính RAM nhanh", "detailedEstimatedMemory": "Ước tính RAM chi tiết", "conversationMemoryHelp": "Bộ nhớ bổ sung ở độ dài hội thoại mặc định của ứng dụng. Đây không phải mức cần thiết để dùng toàn bộ ngữ cảnh tối đa của mô hình.",
     "metadataAnalysisFailed": "Không thể tính hoặc lưu thông tin chi tiết của mô hình.",
@@ -533,7 +533,7 @@
     "layersHelp": "Số khối xử lý nội bộ mà đầu vào đi qua theo trình tự. Với các mô hình có cấu trúc và độ rộng tương tự, nhiều lớp hơn thường cần nhiều thời gian tính toán và bộ nhớ hơn, nhưng tốc độ và chất lượng thực tế còn phụ thuộc vào kích thước lớp, tổng số tham số, kiến trúc, lượng tử hóa và phần cứng.",
     "huggingFaceTokenHelp": "Có thể tìm kiếm và cài đặt mô hình công khai mà không cần API Key. Khi được nhập, khóa sẽ dùng để tìm kiếm mô hình, truy cập mô hình hạn chế, xem thông tin mô hình và tải xuống, đồng thời được dùng lại cho các lần cài đặt sau. Trước tiên, bạn phải được cấp quyền truy cập mô hình hạn chế trên Hugging Face.",
     "installed": "Đã cài đặt",
-    "systemMemory": "RAM hệ thống", "unifiedMemory": "Bộ nhớ hợp nhất", "availableMemory": "Khả dụng", "monthlyDownloads": "Lượt tải trong 30 ngày", "estimatedMemory": "RAM ước tính", "sharedOrUnknownMemory": "Bộ nhớ dùng chung hoặc không rõ dung lượng", "cpuExecution": "Không có GPU · chạy CPU/RAM", "analyzingMetadata": "Đang phân tích siêu dữ liệu GGUF...", "parameters": "Tham số", "architecture": "Kiến trúc", "quantization": "Lượng tử hóa", "maxContext": "Ngữ cảnh tối đa", "layers": "Lớp", "kvCache": "Bộ nhớ đệm KV 32K", "execution": {"unified":"Có thể chạy bằng bộ nhớ hợp nhất","gpu":"Có thể chạy bằng GPU","hybrid":"Chạy kết hợp GPU+RAM","cpu":"Có thể chạy bằng CPU/RAM","insufficient":"Không đủ bộ nhớ khả dụng"},
+    "systemMemory": "RAM hệ thống", "unifiedMemory": "Bộ nhớ hợp nhất", "availableMemory": "Khả dụng", "monthlyDownloads": "Lượt tải trong 30 ngày", "estimatedMemory": "RAM ước tính", "sharedOrUnknownMemory": "Bộ nhớ dùng chung hoặc không rõ dung lượng", "cpuExecution": "Không có GPU · chạy CPU/RAM", "analyzingMetadata": "Đang tải chi tiết mô hình...", "parameters": "Tham số", "architecture": "Kiến trúc", "quantization": "Lượng tử hóa", "maxContext": "Ngữ cảnh tối đa", "layers": "Lớp", "kvCache": "Bộ nhớ đệm KV 32K", "execution": {"unified":"Có thể chạy bằng bộ nhớ hợp nhất","gpu":"Có thể chạy bằng GPU","hybrid":"Chạy kết hợp GPU+RAM","cpu":"Có thể chạy bằng CPU/RAM","insufficient":"Không đủ bộ nhớ khả dụng"},
     "vram": "VRAM",
     "modelSettings": "{{model}} settings"
   },

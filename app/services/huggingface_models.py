@@ -18,7 +18,7 @@ from services.vyact_runtime import VYACT_MODELS_DIR, cache_downloaded_model
 HF_API_URL = "https://huggingface.co/api"
 HF_BASE_URL = "https://huggingface.co"
 MLX_REPOSITORY_FILE = "__mlx_repository__"
-MODEL_SEARCH_RESULT_LIMIT = 10
+MODEL_SEARCH_RESULT_LIMIT = 30
 MLX_TARGET_SEARCH_LIMIT = MODEL_SEARCH_RESULT_LIMIT
 MLX_DOWNLOAD_PATTERNS = (
     "*.json", "*.safetensors", "*.model", "*.txt", "*.tiktoken", "*.jinja", "*.py", "*.npz",

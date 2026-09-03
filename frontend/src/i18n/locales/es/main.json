@@ -524,7 +524,7 @@
     "searching": "Buscando modelos...",
     "noSearchResults": "No se encontraron modelos. Prueba con otro nombre.",
     "noInstalledModels": "No hay modelos instalados. Busca un modelo para instalarlo.",
-    "calculateAccurateMemory": "Calcular memoria detallada", "accurateMemoryHint": "Inspecciona el modelo e incluye la memoria adicional necesaria para conversaciones y documentos largos.",
+    "calculateAccurateMemory": "Ver detalles del modelo", "accurateMemoryHint": "Obtiene las capas, el contexto máximo y las funciones compatibles del modelo.",
     "conversationMemory": "Memoria de conversación", "modelMemory": "Memoria del modelo",
     "quickEstimatedMemory": "Estimación rápida de RAM", "detailedEstimatedMemory": "Estimación detallada de RAM", "conversationMemoryHelp": "Memoria adicional usada con la longitud de conversación predeterminada. No es la necesaria para utilizar todo el contexto máximo del modelo.",
     "metadataAnalysisFailed": "No se pudo calcular o guardar la información detallada del modelo.",
@@ -532,7 +532,7 @@
     "saveToken": "Guardar", "savingToken": "Guardando...", "tokenSaved": "API Key guardada.",
     "layersHelp": "Número de bloques internos de procesamiento que la entrada atraviesa en secuencia. Entre modelos con estructura y anchura similares, más capas suelen requerir más tiempo de cálculo y memoria, pero la velocidad y la calidad también dependen del tamaño de cada capa, los parámetros totales, la arquitectura, la cuantización y el hardware.",
     "huggingFaceTokenHelp": "Los modelos públicos se pueden buscar e instalar sin una API Key. Si la introduces, se usa para buscar modelos, acceder a modelos restringidos, consultar su información y descargarlos, y se reutiliza en instalaciones posteriores. Primero debes obtener acceso a los modelos restringidos en Hugging Face.",
-    "systemMemory": "RAM del sistema", "unifiedMemory": "Memoria unificada", "availableMemory": "Disponible", "monthlyDownloads": "Descargas en 30 días", "estimatedMemory": "RAM estimada", "installed": "Instalado", "sharedOrUnknownMemory": "Memoria compartida o capacidad desconocida", "cpuExecution": "Sin GPU · ejecución CPU/RAM", "analyzingMetadata": "Analizando metadatos GGUF...", "parameters": "Parámetros", "architecture": "Arquitectura", "quantization": "Cuantización", "maxContext": "Contexto máximo", "layers": "Capas", "kvCache": "Caché KV 32K", "execution": {"unified":"Cabe en memoria unificada","gpu":"Ejecución GPU disponible","hybrid":"Ejecución híbrida GPU+RAM","cpu":"Ejecución CPU/RAM disponible","insufficient":"Memoria disponible insuficiente"},
+    "systemMemory": "RAM del sistema", "unifiedMemory": "Memoria unificada", "availableMemory": "Disponible", "monthlyDownloads": "Descargas en 30 días", "estimatedMemory": "RAM estimada", "installed": "Instalado", "sharedOrUnknownMemory": "Memoria compartida o capacidad desconocida", "cpuExecution": "Sin GPU · ejecución CPU/RAM", "analyzingMetadata": "Cargando detalles del modelo...", "parameters": "Parámetros", "architecture": "Arquitectura", "quantization": "Cuantización", "maxContext": "Contexto máximo", "layers": "Capas", "kvCache": "Caché KV 32K", "execution": {"unified":"Cabe en memoria unificada","gpu":"Ejecución GPU disponible","hybrid":"Ejecución híbrida GPU+RAM","cpu":"Ejecución CPU/RAM disponible","insufficient":"Memoria disponible insuficiente"},
     "vram": "VRAM",
     "modelSettings": "{{model}} settings"
   },

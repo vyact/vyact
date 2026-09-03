@@ -191,14 +191,14 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
             };
             if (modelToDownload.fileSize !== selectedFile.fileSize) setSelectedFile(modelToDownload);
             let optimizedMetadata: GgufModelMetadata | undefined;
-            if (selectedFile.runtime === 'mlx') {
+            if (modelToDownload.runtime === 'mlx') {
                 const details = await api.inspectVyactMlxMetadata(
-                    selectedFile.repository, selectedFile.revision, selectedFile.fileSize, 32768,
+                    modelToDownload.repository, modelToDownload.revision, modelToDownload.fileSize, 32768,
                 );
                 optimizedMetadata = details.metadata;
                 if (details.mtpModel) {
                     modelToDownload = {
-                        ...selectedFile,
+                        ...modelToDownload,
                         mtpSupported: true,
                         mtpModel: details.mtpModel,
                     };

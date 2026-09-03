@@ -3,17 +3,17 @@ from __future__ import annotations
 
 import math
 
-from config.models import LLM_INITIAL_NUM_CTX, LLM_MAX_NUM_CTX
+from config.models import LLM_INITIAL_NUM_CTX, LLM_NUM_CTX
 
 LOCAL_CONTEXT_RESERVE_TOKENS = 512
 
 def clamp_context_limit(value: int | float | None) -> int:
     """Return a supported context upper bound, never below the initial floor."""
     try:
-        requested = int(value or LLM_MAX_NUM_CTX)
+        requested = int(value or LLM_NUM_CTX)
     except (TypeError, ValueError):
-        requested = LLM_MAX_NUM_CTX
-    return max(LLM_INITIAL_NUM_CTX, min(requested, LLM_MAX_NUM_CTX))
+        requested = LLM_NUM_CTX
+    return max(LLM_INITIAL_NUM_CTX, requested)
 
 
 def estimate_message_tokens(messages: list[dict], chars_per_token: float) -> int:
