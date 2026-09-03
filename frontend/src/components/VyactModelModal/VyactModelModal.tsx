@@ -107,16 +107,25 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
         ? selectedFile.repository.split('/').pop()
         : selectedFile?.filename;
     const selectedModelIsInstalled = Boolean(selectedModelPath && installedModels.includes(selectedModelPath));
+    const selectedModel = selectedFile
+        ? models.find(model => model.id === selectedFile.repository)
+        : undefined;
+    const selectedModelMemoryBytes = selectedFile && selectedModel
+        ? resolveModelMemoryBytes(selectedModel, selectedFile.filename)
+        : 0;
     const mlxAvailable = navigator.platform.toUpperCase().includes('MAC')
         || hardware.apple_silicon
         || installedModels.some(model => model.startsWith('mlx/'));
 
     const searchModels = useCallback(async (searchQuery: string, searchMlxOnly = mlxOnly) => {
         const requestId = ++searchRequestIdRef.current;
+        detailsRequestIdRef.current += 1;
         setHasSearched(true);
         setIsSearching(true);
+        setIsLoadingDetails(false);
         setModels([]);
         setSelectedFile(null);
+        setSelectedMetadata(null);
         setMessage('');
         try {
             const searchResponse = await api.searchVyactModels(searchQuery, searchMlxOnly);
@@ -463,13 +472,11 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                         </button>
                                     </div>
                                 )}
-                                {selectedMetadata && (
+                                {selectedFile && selectedMetadata && (
                                     <div className="vyact-model-metadata vyact-memory-details">
                                         <span><small>{t('modelSelector.layers')}</small><strong>{selectedMetadata.blockCount}</strong></span>
                                         <span><small>{t('modelSelector.maxContext')}</small><strong>{selectedMetadata.contextLength >= 1024 ? `${Math.round(selectedMetadata.contextLength / 1024)}K` : selectedMetadata.contextLength}</strong></span>
-                                        <span><small>{t('modelSelector.modelMemory')}</small><strong>{formatBytes(Math.max(0, selectedMetadata.estimatedMemoryBytes - selectedMetadata.kvCacheBytes))}</strong></span>
-                                        <span><small>{t('modelSelector.conversationMemory')}</small><strong>{formatBytes(selectedMetadata.kvCacheBytes)}</strong></span>
-                                        <span className="vyact-total-memory"><small>{t('modelSelector.totalEstimatedMemory')}</small><strong>{formatBytes(selectedMetadata.estimatedMemoryBytes)}</strong></span>
+                                        <span><small>{t('modelSelector.modelMemory')}</small><strong>{formatBytes(selectedModelMemoryBytes)}</strong></span>
                                     </div>
                                 )}
                             </div>

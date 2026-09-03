@@ -76,14 +76,12 @@
 .vyact-model-files button:active:not(:disabled) { background: color-mix(in srgb, var(--accent) 8%, var(--bg)); color: var(--accent); }
 .vyact-model-files button.is-selected { background: color-mix(in srgb, var(--accent) 8%, var(--bg)); }
 .vyact-model-files button.is-selected svg { color: var(--accent); }
-.vyact-model-metadata { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 7px; padding-top: 2px; }
+.vyact-model-metadata { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; padding-top: 2px; }
 .vyact-model-metadata > span { display: grid; gap: 3px; min-width: 0; padding: 8px 9px; border-radius: 8px; background: var(--bg); }
 .vyact-model-metadata small { display: flex; align-items: center; gap: 5px; overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .vyact-memory-help { display: inline-grid; flex: 0 0 auto; place-items: center; width: 14px; height: 14px; border: 1px solid var(--border); border-radius: 50%; color: var(--muted); cursor: help; font-size: 9px; font-style: normal; font-weight: 800; line-height: 1; }
 .vyact-memory-help:hover, .vyact-memory-help:focus-visible { border-color: var(--accent); outline: none; color: var(--accent); }
 .vyact-model-metadata strong { overflow: hidden; color: var(--text); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-.vyact-model-metadata .vyact-total-memory { background: color-mix(in srgb, var(--accent) 7%, var(--bg)); }
-.vyact-model-metadata .vyact-total-memory strong { color: var(--accent); }
 .vyact-memory-details { flex: 1 0 100%; padding-top: 0; padding-block-start: 10px; }
 @media (max-width: 720px) {
     .vyact-memory-capacity { display: grid; grid-template-columns: 1fr; overflow-x: visible; }
