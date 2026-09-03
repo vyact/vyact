@@ -38,7 +38,7 @@
 .vyact-gpu-vram > small { color: var(--muted); font-size: 8px; font-weight: 650; }
 .vyact-gpu-memory > em { grid-column: 1 / -1; color: var(--muted); font-size: 10px; font-style: normal; }
 .vyact-memory-summary strong { color: var(--text); font-size: var(--modal-text); }
-.vyact-memory-selection { display: flex; flex: 1 0 100%; align-items: center; justify-content: space-between; gap: 14px; min-width: 0; padding-top: 9px; border-top: 1px solid var(--border); }
+.vyact-memory-selection { display: flex; flex: 1 0 100%; align-items: center; justify-content: space-between; gap: 7px; min-width: 0; padding-top: 9px; border-top: 1px solid var(--border); }
 .vyact-selected-model-labels { display: flex; flex: 1 1 auto; min-width: 0; align-items: center; justify-content: flex-end; gap: 6px; text-align: right; }
 .vyact-selected-model-labels > strong { color: var(--text-secondary); font-size: var(--modal-title); font-weight: 650; line-height: 1.2; overflow-wrap: anywhere; white-space: normal; }
 .vyact-memory-selection button { display: inline-grid; flex: 0 0 34px; width: 34px; height: 34px; place-items: center; padding: 0; border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border)); border-radius: 8px; background: var(--bg); color: var(--accent); cursor: pointer; }
@@ -82,7 +82,7 @@
 .vyact-memory-help { display: inline-grid; flex: 0 0 auto; place-items: center; width: 14px; height: 14px; border: 1px solid var(--border); border-radius: 50%; color: var(--muted); cursor: help; font-size: 9px; font-style: normal; font-weight: 800; line-height: 1; }
 .vyact-memory-help:hover, .vyact-memory-help:focus-visible { border-color: var(--accent); outline: none; color: var(--accent); }
 .vyact-model-metadata strong { overflow: hidden; color: var(--text); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-.vyact-memory-details { flex: 1 0 100%; padding-top: 0; padding-block-start: 10px; }
+.vyact-memory-details { flex: 1 0 100%; padding-top: 0; }
 @media (max-width: 720px) {
     .vyact-memory-capacity { display: grid; grid-template-columns: 1fr; overflow-x: visible; }
     .vyact-memory-capacity > .vyact-system-memory,
