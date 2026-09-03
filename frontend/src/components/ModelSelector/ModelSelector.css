@@ -1,6 +1,6 @@
 /* ── 트리거 ── */
 .model-select-wrap .custom-select-trigger {
-    gap: 8px;
+    gap: 5px;
     height: 34px;
     box-sizing: border-box;
 }
