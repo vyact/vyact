@@ -56,6 +56,7 @@
     "warmingUpChat": "กำลังเตรียมแชต…",
     "preparingTts": "กำลังเตรียมฟีเจอร์เสียง…",
     "preparingStt": "กำลังเตรียมการรู้จำเสียง…",
+    "preparingReranker": "กำลังเตรียมโมเดลการค้นหา…",
     "pythonPackagesInstalling": "กำลังติดตั้งแพ็กเกจ Python อาจใช้เวลา 5–10 นาที ขึ้นอยู่กับเครือข่ายและประสิทธิภาพคอมพิวเตอร์ โปรดอย่าปิดแอป",
     "pythonPackageDownloading": "กำลังดาวน์โหลดแพ็กเกจ Python… {{package}}",
     "pythonSetupFailedTitle": "ตั้งค่า Python ไม่สำเร็จ",

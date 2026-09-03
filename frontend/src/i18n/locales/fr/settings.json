@@ -56,6 +56,7 @@
     "warmingUpChat": "Préparation du chat…",
     "preparingTts": "Préparation des fonctions vocales…",
     "preparingStt": "Préparation de la reconnaissance vocale…",
+    "preparingReranker": "Préparation du modèle de recherche…",
     "pythonPackagesInstalling": "Installation des paquets Python. Cela peut prendre 5 à 10 minutes selon votre réseau et votre ordinateur. Gardez l’application ouverte.",
     "pythonPackageDownloading": "Téléchargement du paquet Python… {{package}}",
     "pythonSetupFailedTitle": "Échec de la configuration Python",

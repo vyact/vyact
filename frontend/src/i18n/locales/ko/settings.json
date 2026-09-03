@@ -111,6 +111,7 @@
     "warmingUpChat": "대화 준비 중…",
     "preparingTts": "음성 기능을 준비하고 있습니다…",
     "preparingStt": "음성 인식 기능을 준비하고 있습니다…",
+    "preparingReranker": "검색 모델을 준비하고 있습니다…",
     "pythonPackagesInstalling": "Python 패키지를 설치하고 있습니다. 네트워크 및 컴퓨터 성능에 따라 5~10분 정도 걸릴 수 있습니다. 앱을 종료하지 마세요.",
     "pythonPackageDownloading": "Python 패키지를 다운로드하고 있습니다… {{package}}",
     "pythonSetupFailedTitle": "Python 환경 설치 실패",

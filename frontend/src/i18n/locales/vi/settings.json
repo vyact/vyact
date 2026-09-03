@@ -56,6 +56,7 @@
     "warmingUpChat": "Đang khởi động trò chuyện…",
     "preparingTts": "Đang chuẩn bị các tính năng giọng nói…",
     "preparingStt": "Đang chuẩn bị nhận dạng giọng nói…",
+    "preparingReranker": "Đang chuẩn bị mô hình tìm kiếm…",
     "pythonPackagesInstalling": "Đang cài đặt các gói Python. Có thể mất 5–10 phút tùy thuộc vào mạng và máy tính của bạn. Vui lòng giữ ứng dụng mở.",
     "pythonPackageDownloading": "Đang tải gói Python… {{package}}",
     "pythonSetupFailedTitle": "Thiết lập Python thất bại",

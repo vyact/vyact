@@ -9,6 +9,7 @@ app/services/
   prompts.py  – System Prompt CRUD + 캐시
 """
 import asyncio
+import time
 from pathlib import Path
 from typing import Any
 
@@ -138,10 +139,16 @@ async def _rerank_related_context(
         )
         return _select_diverse_candidates(unique_candidates, RELATED_CONTEXT_RESULT_SIZE)
 
+    rerank_started_at = time.perf_counter()
     ranked_candidates = await rerank(
         question,
         unique_candidates,
         top_k=min(RELATED_CONTEXT_RERANK_SIZE, len(unique_candidates)),
+    )
+    logger.info(
+        "[rag_timing] rerank_ms=%.1f candidates=%d ranked=%d",
+        (time.perf_counter() - rerank_started_at) * 1000,
+        len(unique_candidates), len(ranked_candidates),
     )
     threshold_candidates = [
         candidate for index, candidate in enumerate(ranked_candidates)
@@ -161,6 +168,7 @@ async def _rerank_related_context(
 
 async def _gather_related_context(question: str) -> list[dict]:
     """일반 RAG·메모·빠른메모 후보를 병렬 조회한 뒤 통합 재랭킹한다."""
+    search_started_at = time.perf_counter()
     try:
         candidates = await search_related_context_candidates(
             question,
@@ -170,7 +178,17 @@ async def _gather_related_context(question: str) -> list[dict]:
     except Exception as e:
         logger.warning("[rag_query] 관련 컨텍스트 검색 실패: %s", e)
         return []
-    return await _rerank_related_context(question, candidates)
+    logger.info(
+        "[rag_timing] candidate_search_ms=%.1f candidates=%d",
+        (time.perf_counter() - search_started_at) * 1000, len(candidates),
+    )
+    total_started_at = time.perf_counter()
+    results = await _rerank_related_context(question, candidates)
+    logger.info(
+        "[rag_timing] post_search_ms=%.1f results=%d",
+        (time.perf_counter() - total_started_at) * 1000, len(results),
+    )
+    return results
 
 
 async def _search_knowledge_collections(collection_ids: list[str], question: str) -> tuple[list[dict], str]:

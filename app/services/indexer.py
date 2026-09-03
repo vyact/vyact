@@ -2,6 +2,7 @@
 indexer.py – ES 문서 인덱싱 / 검색 / 통계
 """
 import hashlib
+import time
 from datetime import datetime, timezone
 
 from elasticsearch import NotFoundError
@@ -318,7 +319,9 @@ async def search_related_context_candidates(
 
     es = get_es()
     try:
+        embedding_started_at = time.perf_counter()
         embedding = await get_embedding(rag_query, is_query=True)
+        embedding_ms = (time.perf_counter() - embedding_started_at) * 1000
         rag_bm25_search_body = rag_bm25_body if embedding else {**rag_bm25_body, "min_score": 1.0}
         searches: list[dict] = [
             {"index": _language_search_indices("rag_documents", rag_language)}, rag_bm25_search_body,
@@ -355,7 +358,13 @@ async def search_related_context_candidates(
         else:
             logger.warning("[related_context_search] 임베딩 실패, BM25 fallback")
 
+        msearch_started_at = time.perf_counter()
         response = await es.msearch(searches=searches)
+        msearch_ms = (time.perf_counter() - msearch_started_at) * 1000
+        logger.info(
+            "[rag_timing] embedding_ms=%.1f es_msearch_ms=%.1f search_count=%d",
+            embedding_ms, msearch_ms, len(searches) // 2,
+        )
 
         rag_bm25_hits = _msearch_hits(response, response_positions["rag_bm25"], "일반 RAG BM25")
         web_bm25_hits = _msearch_hits(response, response_positions["web_bm25"], "웹 문서 BM25")

@@ -82,6 +82,7 @@
     "warmingUpChat": "Warming up chat…",
     "preparingTts": "Preparing voice features…",
     "preparingStt": "Preparing speech recognition…",
+    "preparingReranker": "Preparing the search model…",
     "pythonPackagesInstalling": "Installing Python packages. This may take 5–10 minutes depending on your network and computer. Please keep the app open.",
     "pythonPackageDownloading": "Downloading Python package… {{package}}",
     "pythonSetupFailedTitle": "Python setup failed",

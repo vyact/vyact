@@ -806,6 +806,8 @@ async function startServer() {
                 sendLoadingStatus(getStartupTranslation().preparingTts);
             } else if (line.includes("[startup-status] stt")) {
                 sendLoadingStatus(getStartupTranslation().preparingStt);
+            } else if (line.includes("[startup-status] reranker")) {
+                sendLoadingStatus(getStartupTranslation().preparingReranker);
             }
         }
     };

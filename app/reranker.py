@@ -4,6 +4,7 @@ sentence-transformers 5.6.x 기준
 서버 시작 시 한 번만 로드, 이후 인터넷 없이 로컬 캐시 사용
 """
 import asyncio
+import time
 from concurrent.futures import ThreadPoolExecutor
 from logger import get_logger
 
@@ -13,6 +14,13 @@ _reranker = None
 _executor = ThreadPoolExecutor(max_workers=2)
 MODEL_NAME = "BAAI/bge-reranker-v2-m3"
 RERANK_PASSAGE_MAX_CHARS = 1200
+RERANKER_WARMUP_QUERY = "로컬 검색과 관련된 문서를 찾아주세요."
+RERANKER_WARMUP_PASSAGES = (
+    ("로컬 검색은 기기의 색인에서 질문과 관련된 문서 내용을 찾아 제공합니다. " * 40)[:RERANK_PASSAGE_MAX_CHARS],
+    ("음성 인식은 녹음된 사용자의 목소리를 검색 가능한 텍스트로 변환합니다. " * 40)[:RERANK_PASSAGE_MAX_CHARS],
+    ("음성 합성은 인공지능이 생성한 답변을 기기에서 자연스러운 소리로 읽습니다. " * 40)[:RERANK_PASSAGE_MAX_CHARS],
+    ("리랭커는 검색된 후보 문서의 관련도를 평가하여 가장 유용한 결과를 선택합니다. " * 40)[:RERANK_PASSAGE_MAX_CHARS],
+)
 
 
 def load_reranker(force_download: bool = False):
@@ -58,6 +66,29 @@ def load_reranker(force_download: bool = False):
 
 def is_available() -> bool:
     return _reranker is not None
+
+
+def warmup_reranker() -> bool:
+    """Run one representative inference without depending on user ES data."""
+    if not _reranker:
+        return False
+
+    started_at = time.perf_counter()
+    try:
+        _reranker.rank(
+            RERANKER_WARMUP_QUERY,
+            list(RERANKER_WARMUP_PASSAGES),
+            return_documents=False,
+        )
+        logger.info(
+            "[reranker] Inference warm-up done (duration_ms=%.1f, passages=%d)",
+            (time.perf_counter() - started_at) * 1000,
+            len(RERANKER_WARMUP_PASSAGES),
+        )
+        return True
+    except Exception as error:
+        logger.warning("[reranker] Inference warm-up skipped: %s", error)
+        return False
 
 
 def _rerank_sync(query: str, docs: list[dict], top_k: int) -> list[dict]:

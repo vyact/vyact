@@ -56,6 +56,7 @@
     "warmingUpChat": "チャットを準備しています…",
     "preparingTts": "音声機能を準備しています…",
     "preparingStt": "音声認識を準備しています…",
+    "preparingReranker": "検索モデルを準備しています…",
     "pythonPackagesInstalling": "Python パッケージをインストールしています。ネットワークやコンピュータの性能により 5〜10 分ほどかかる場合があります。アプリを閉じないでください。",
     "pythonPackageDownloading": "Python パッケージをダウンロードしています… {{package}}",
     "pythonSetupFailedTitle": "Python セットアップに失敗しました",

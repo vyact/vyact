@@ -78,6 +78,24 @@ class RetrievalCandidateTests(unittest.IsolatedAsyncioTestCase):
 
 
 class RerankerPassageTests(unittest.TestCase):
+    def test_warmup_uses_synthetic_passages_without_es_data(self):
+        class FakeReranker:
+            def __init__(self):
+                self.calls = []
+
+            def rank(self, query, passages, return_documents=False):
+                self.calls.append((query, passages, return_documents))
+                return []
+
+        fake_reranker = FakeReranker()
+        with patch.object(reranker, "_reranker", fake_reranker):
+            self.assertTrue(reranker.warmup_reranker())
+
+        self.assertEqual(len(fake_reranker.calls), 1)
+        _, passages, return_documents = fake_reranker.calls[0]
+        self.assertEqual(passages, list(reranker.RERANKER_WARMUP_PASSAGES))
+        self.assertFalse(return_documents)
+
     def test_reranker_reads_beyond_the_first_four_hundred_characters(self):
         class FakeReranker:
             def __init__(self):

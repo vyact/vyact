@@ -146,15 +146,6 @@ async def warmup_optional_voice_models() -> None:
     huggingface_token = config.get("vyact_config", {}).get("huggingface_token")
     await warmup_kokoro_tts(huggingface_token)
 
-    # Kokoro와 reranker는 모두 transformers의 lazy modules를 import한다.
-    # 첫 import가 겹치지 않도록 Kokoro 완료 후 reranker를 준비한다.
-    await wait_for_chat_idle()
-    try:
-        from reranker import load_reranker
-        await asyncio.to_thread(load_reranker)
-    except Exception as error:
-        logger.info("[reranker] Background warm-up skipped: %s", error)
-
     await wait_for_chat_idle()
     try:
         logger.info("[startup-status] stt")
@@ -163,6 +154,20 @@ async def warmup_optional_voice_models() -> None:
         logger.info("[whisper] STT warm-up done")
     except Exception as error:
         logger.info("[whisper] STT warm-up skipped: %s", error)
+
+
+
+async def warmup_reranker_model() -> None:
+    """Load and exercise the reranker after the chat model warm-up."""
+    # 사용자 ES가 비어 있어도 첫 검색의 MPS 준비 비용을 시작 화면에서 끝낸다.
+    await wait_for_chat_idle()
+    try:
+        logger.info("[startup-status] reranker")
+        from reranker import load_reranker, warmup_reranker
+        if await asyncio.to_thread(load_reranker):
+            await asyncio.to_thread(warmup_reranker)
+    except Exception as error:
+        logger.info("[reranker] Startup warm-up skipped: %s", error)
 
 
 # ─────────────────────────────
@@ -330,6 +335,9 @@ async def lifespan(app: FastAPI):
             await warm_loaded_vyact_model(vyact_warmup_model_id, vyact_warmup_language)
         except Exception as error:
             mark_runtime_load_failed(error, vyact_warmup_model_id)
+
+    if not is_initial_setup:
+        await warmup_reranker_model()
 
     if es_available and SETUP_DONE.exists():
         from services.notification_polling import start_notification_polling
