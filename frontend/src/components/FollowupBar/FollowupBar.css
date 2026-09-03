@@ -93,7 +93,7 @@
     cursor: pointer;
     background: transparent;
     border: 1px solid transparent;
-    transition: background 0.12s, border-color 0.12s;
+    transition: border-color 0.12s;
 }
 .followup-item:hover {
     background: var(--surface2);

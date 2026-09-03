@@ -253,7 +253,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    transition: background 0.12s;
+    transition: none;
 }
 
 .custom-select-item:hover {

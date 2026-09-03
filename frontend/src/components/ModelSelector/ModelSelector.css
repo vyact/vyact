@@ -84,6 +84,7 @@
     padding: 5px 8px;
     border-radius:8px;
     background:color-mix(in srgb, var(--surface2) 42%, transparent);
+    transition: none;
 }
 
 .model-select-wrap .custom-select-item:has(.dd-model-badges:empty) {

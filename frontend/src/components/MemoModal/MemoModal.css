@@ -125,7 +125,7 @@
     cursor: pointer;
     border: 1px solid transparent;
     border-radius: 8px;
-    transition: background .15s, border-color .15s;
+    transition: border-color .15s;
 }
 
 .memo-item:hover { background: color-mix(in srgb, var(--accent) 5%, transparent); }
