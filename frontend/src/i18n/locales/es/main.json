@@ -450,7 +450,7 @@
     "removeFavorite": "Quitar de favoritos",
     "refreshHistory": "Actualizar historial de conversaciones",
     "responseInProgress": "Generando respuesta",
-    "appUpdate": {"title":"Hay una nueva actualización","available":"La versión {{version}} está disponible","version":"La versión {{version}} está disponible","download":"Descargar actualización","downloading":"Descargando {{progress}}%","restartToUpdate":"Reiniciar","viewRelease":"Obtener desde Releases","retry":"Reintentar","failed":"No se pudo completar la actualización"},
+    "appUpdate": {"title":"Hay una nueva actualización","available":"La versión {{version}} está disponible","version":"La versión {{version}} está disponible","download":"Descargar actualización","downloading":"Descargando {{progress}}%","restartToUpdate":"Reiniciar","restarting":"Reiniciando…","viewRelease":"Obtener desde Releases","retry":"Reintentar","failed":"No se pudo completar la actualización"},
     "projects": "Proyectos",
     "projectFolderPathPrompt": "Introduce la ruta de la carpeta del proyecto:",
     "projectEdit": "Editar proyecto",

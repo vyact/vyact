@@ -450,7 +450,7 @@
     "removeFavorite": "즐겨찾기에서 제거",
     "refreshHistory": "대화 히스토리 새로고침",
     "responseInProgress": "응답 생성 중",
-    "appUpdate": {"title":"새 업데이트가 있습니다","available":"새 버전 {{version}} 사용 가능","version":"버전 {{version}} 사용 가능","download":"업데이트 다운로드","downloading":"다운로드 중 {{progress}}%","restartToUpdate":"재시작","viewRelease":"릴리즈 페이지에서 받기","retry":"다시 시도","failed":"업데이트를 완료하지 못했습니다"},
+    "appUpdate": {"title":"새 업데이트가 있습니다","available":"새 버전 {{version}} 사용 가능","version":"버전 {{version}} 사용 가능","download":"업데이트 다운로드","downloading":"다운로드 중 {{progress}}%","restartToUpdate":"재시작","restarting":"재시작 중…","viewRelease":"릴리즈 페이지에서 받기","retry":"다시 시도","failed":"업데이트를 완료하지 못했습니다"},
     "projects": "프로젝트",
     "projectFolderPathPrompt": "프로젝트 폴더 경로를 입력하세요:",
     "projectEdit": "프로젝트 편집",

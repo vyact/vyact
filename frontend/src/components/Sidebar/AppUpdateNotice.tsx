@@ -26,10 +26,13 @@ export default function AppUpdateNotice() {
     const isManual = update.updateMode === 'manual';
     const isDownloading = update.status === 'downloading';
     const isDownloaded = update.status === 'downloaded';
+    const isInstalling = update.status === 'installing';
     const hasError = update.status === 'error';
     const actionLabel = isManual
         ? t('sidebar.appUpdate.viewRelease')
-        : isDownloaded
+        : isInstalling
+            ? t('sidebar.appUpdate.restarting')
+            : isDownloaded
             ? t('sidebar.appUpdate.restartToUpdate')
             : hasError
                 ? t('sidebar.appUpdate.retry')
@@ -64,7 +67,7 @@ export default function AppUpdateNotice() {
             {isDownloading && <div className="sidebar-app-update-progress" aria-hidden="true">
                 <span style={{width: `${Math.max(0, Math.min(100, update.progress ?? 0))}%`}}/>
             </div>}
-            <button type="button" onClick={handleClick} disabled={isDownloading}>
+            <button type="button" onClick={handleClick} disabled={isDownloading || isInstalling}>
                 <ActionIcon size={14} aria-hidden="true"/>
                 {actionLabel}
             </button>

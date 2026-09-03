@@ -1145,23 +1145,48 @@ if (hasSingleInstanceLock) app.whenReady().then(() => {
 });
 
 let isQuitting = false;
-async function stopLocalRuntimes() {
+function forceStopManagedModelRuntimes() {
+    if (platform.isWindows) return;
+    const managedProcesses = [
+        {pidFile: path.join(INSTALL_DIR, "runtime", "omlx.pid"), markers: ["omlx"]},
+        {pidFile: path.join(INSTALL_DIR, "runtime", "mlx-vlm.pid"), markers: ["mlx_vlm.server", "mlx_lm.server"]},
+        {pidFile: path.join(INSTALL_DIR, "runtime", "llama-swap.pid"), markers: ["llama-swap"]},
+    ];
+    for (const {pidFile, markers} of managedProcesses) {
+        try {
+            const pidText = fs.readFileSync(pidFile, "utf8").trim();
+            if (!/^\d+$/.test(pidText)) continue;
+            const pid = Number(pidText);
+            const command = execFileSync("ps", ["-p", String(pid), "-o", "command="], {encoding: "utf8"});
+            if (!markers.some(marker => command.includes(marker))) continue;
+            process.kill(pid, "SIGKILL");
+            log(`Force-stopped managed model runtime (pid=${pid})`);
+        } catch {
+            // The process may already have exited during graceful shutdown.
+        }
+    }
+}
+
+async function stopLocalRuntimes(forceAfterMs = 45000) {
     if (!serverProc || serverProc.killed) return;
     log("Shutting down local runtimes...");
-    try {
-        await fetch("http://localhost:8000/api/shutdown", {method: "POST"}).catch(() => {});
-    } catch (_) {
+    const serverExit = new Promise(resolve => serverProc.once("exit", resolve));
+    void fetch("http://localhost:8000/api/shutdown", {
+        method: "POST",
+        signal: AbortSignal.timeout(forceAfterMs),
+    }).catch(() => {});
+    const exitedGracefully = await Promise.race([
+        serverExit.then(() => true),
+        new Promise(resolve => setTimeout(() => resolve(false), forceAfterMs)),
+    ]);
+    if (!exitedGracefully) {
+        forceStopManagedModelRuntimes();
+        if (!serverProc.killed) serverProc.kill(platform.isWindows ? undefined : "SIGKILL");
+        await Promise.race([
+            serverExit,
+            new Promise(resolve => setTimeout(resolve, 1000)),
+        ]);
     }
-    await new Promise(resolve => {
-        const timer = setTimeout(() => {
-            if (!serverProc.killed) serverProc.kill(platform.isWindows ? undefined : "SIGKILL");
-            resolve();
-        }, 45000);
-        serverProc.once("exit", () => {
-            clearTimeout(timer);
-            resolve();
-        });
-    });
     log("Server shutdown complete");
 }
 
@@ -1239,8 +1264,10 @@ ipcMain.handle("download-app-update", async () => {
 });
 ipcMain.handle("install-app-update", async () => {
     if (!app.isPackaged || !APP_UPDATE_SUPPORTED || appUpdateState.status !== "downloaded") return false;
+    updateAppUpdateState({status: "installing", error: undefined});
+    log("Installing app update after local runtime shutdown...");
     isQuitting = true;
-    await stopLocalRuntimes();
+    await stopLocalRuntimes(3000);
     autoUpdater.quitAndInstall(false, true);
     return true;
 });

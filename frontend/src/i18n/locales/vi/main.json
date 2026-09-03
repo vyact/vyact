@@ -450,7 +450,7 @@
     "removeFavorite": "Xóa khỏi yêu thích",
     "refreshHistory": "Làm mới lịch sử trò chuyện",
     "responseInProgress": "Đang tạo phản hồi",
-    "appUpdate": {"title":"Có bản cập nhật mới","available":"Phiên bản {{version}} hiện có","version":"Phiên bản {{version}} hiện có","download":"Tải bản cập nhật","downloading":"Đang tải {{progress}}%","restartToUpdate":"Khởi động lại","viewRelease":"Tải từ trang Releases","retry":"Thử lại","failed":"Không thể hoàn tất cập nhật"},
+    "appUpdate": {"title":"Có bản cập nhật mới","available":"Phiên bản {{version}} hiện có","version":"Phiên bản {{version}} hiện có","download":"Tải bản cập nhật","downloading":"Đang tải {{progress}}%","restartToUpdate":"Khởi động lại","restarting":"Đang khởi động lại…","viewRelease":"Tải từ trang Releases","retry":"Thử lại","failed":"Không thể hoàn tất cập nhật"},
     "projects": "Dự án",
     "projectFolderPathPrompt": "Nhập đường dẫn thư mục dự án:",
     "projectEdit": "Chỉnh sửa dự án",

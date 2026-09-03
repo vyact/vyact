@@ -1,5 +1,5 @@
 interface AppUpdateState {
-    status: 'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'error';
+    status: 'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'installing' | 'error';
     currentVersion: string;
     updateMode: 'automatic' | 'manual';
     available?: boolean;

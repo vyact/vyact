@@ -450,7 +450,7 @@
     "removeFavorite": "Retirer des favoris",
     "refreshHistory": "Actualiser l’historique des conversations",
     "responseInProgress": "Génération de la réponse",
-    "appUpdate": {"title":"Une nouvelle mise à jour est disponible","available":"La version {{version}} est disponible","version":"La version {{version}} est disponible","download":"Télécharger la mise à jour","downloading":"Téléchargement {{progress}} %","restartToUpdate":"Redémarrer","viewRelease":"Obtenir depuis Releases","retry":"Réessayer","failed":"La mise à jour n’a pas pu être terminée"},
+    "appUpdate": {"title":"Une nouvelle mise à jour est disponible","available":"La version {{version}} est disponible","version":"La version {{version}} est disponible","download":"Télécharger la mise à jour","downloading":"Téléchargement {{progress}} %","restartToUpdate":"Redémarrer","restarting":"Redémarrage…","viewRelease":"Obtenir depuis Releases","retry":"Réessayer","failed":"La mise à jour n’a pas pu être terminée"},
     "projects": "Projets",
     "projectFolderPathPrompt": "Entrez le chemin du dossier du projet :",
     "projectEdit": "Modifier le projet",

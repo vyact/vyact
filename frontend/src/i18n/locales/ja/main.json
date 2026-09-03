@@ -450,7 +450,7 @@
     "removeFavorite": "お気に入りから削除",
     "refreshHistory": "会話履歴を更新",
     "responseInProgress": "応答を生成中",
-    "appUpdate": {"title":"新しいアップデートがあります","available":"バージョン{{version}}を利用できます","version":"バージョン{{version}}を利用できます","download":"アップデートをダウンロード","downloading":"ダウンロード中 {{progress}}%","restartToUpdate":"再起動","viewRelease":"リリースページから取得","retry":"再試行","failed":"アップデートを完了できませんでした"},
+    "appUpdate": {"title":"新しいアップデートがあります","available":"バージョン{{version}}を利用できます","version":"バージョン{{version}}を利用できます","download":"アップデートをダウンロード","downloading":"ダウンロード中 {{progress}}%","restartToUpdate":"再起動","restarting":"再起動しています…","viewRelease":"リリースページから取得","retry":"再試行","failed":"アップデートを完了できませんでした"},
     "projects": "プロジェクト",
     "projectFolderPathPrompt": "プロジェクトフォルダーのパスを入力してください:",
     "projectEdit": "プロジェクトを編集",
