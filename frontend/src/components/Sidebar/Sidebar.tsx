@@ -16,6 +16,7 @@ import ProjectInstructionsModal from './ProjectInstructionsModal';
 import ProjectCreateModal from './ProjectCreateModal';
 import ProjectMemoryModal from './ProjectMemoryModal';
 import {getProjectDisplayColor} from './projectColors';
+import AppUpdateNotice from './AppUpdateNotice';
 
 const ProviderSettingsModal = React.lazy(() => import('../ProviderSettingsModal/ProviderSettingsModal'));
 const CustomProviderModal = React.lazy(() => import('../CustomProviderModal/CustomProviderModal'));
@@ -912,6 +913,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         </div>
                     </div>
                     </>}
+                    <AppUpdateNotice/>
                 </>
             )}
 

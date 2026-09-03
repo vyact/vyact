@@ -135,6 +135,7 @@ jobs:
         run: |
           test -n "$(find electron/dist -maxdepth 1 -name '*.AppImage' -print -quit)"
           test -n "$(find electron/dist -maxdepth 1 -name '*.deb' -print -quit)"
+          test -f electron/dist/latest-linux.yml
 
       - name: Upload Linux packages
         uses: actions/upload-artifact@v4
@@ -143,3 +144,4 @@ jobs:
           path: |
             electron/dist/*.AppImage
             electron/dist/*.deb
+            electron/dist/latest-linux.yml

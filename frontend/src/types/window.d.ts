@@ -1,7 +1,21 @@
+interface AppUpdateState {
+    status: 'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'error';
+    currentVersion: string;
+    updateMode: 'automatic' | 'manual';
+    available?: boolean;
+    latestVersion?: string;
+    releaseUrl?: string;
+    progress?: number;
+    error?: string;
+}
+
 interface Window {
     ragAPI?: {
         openExternal?: (url: string) => Promise<void>;
-        checkAppUpdate?: () => Promise<{available: boolean; currentVersion: string; latestVersion?: string; releaseUrl?: string}>;
+        checkAppUpdate?: () => Promise<AppUpdateState>;
+        downloadAppUpdate?: () => Promise<AppUpdateState>;
+        installAppUpdate?: () => Promise<boolean>;
+        onAppUpdateState?: (callback: (state: AppUpdateState) => void) => () => void;
         copyToClipboard?: (text: string) => void;
         minimize?: () => void;
         maximize?: () => void;

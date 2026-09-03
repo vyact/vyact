@@ -28,6 +28,12 @@
           "arch": [
             "arm64"
           ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64"
+          ]
         }
       ],
       "hardenedRuntime": true,
@@ -71,6 +77,11 @@
         "xdg-utils"
       ]
     },
+    "publish": {
+      "provider": "github",
+      "owner": "vyact",
+      "repo": "vyact"
+    },
     "files": [
       "main.js",
       "platform.js",
@@ -105,5 +116,8 @@
   "devDependencies": {
     "electron": "^30.0.0",
     "electron-builder": "^24.0.0"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9"
   }
 }

@@ -28,6 +28,6 @@ npm ci
 npm run build:linux
 
 mkdir -p "$DIST_DIR"
-find "$ELECTRON_DIR/dist" -maxdepth 1 -type f \( -name '*.AppImage' -o -name '*.deb' \) -exec cp {} "$DIST_DIR/" \;
+find "$ELECTRON_DIR/dist" -maxdepth 1 -type f \( -name '*.AppImage' -o -name '*.deb' -o -name 'latest-linux.yml' \) -exec cp {} "$DIST_DIR/" \;
 
 echo "Linux packages created in $DIST_DIR"

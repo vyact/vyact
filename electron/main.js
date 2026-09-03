@@ -4,6 +4,7 @@ const {spawn, execSync, execFileSync, spawnSync} = require("child_process");
 const fs = require("fs");
 const http = require("http");
 const crypto = require("crypto");
+const {autoUpdater} = require("electron-updater");
 const platform = require("./platform");
 
 // ── 기본 경로 ─────────────────────────────
@@ -25,6 +26,9 @@ const ES_PORT = Number(process.env.ES_PORT || 9251);
 const AUTO_START_DELAY_SECONDS = 15;
 const GITHUB_LATEST_RELEASE_API = "https://api.github.com/repos/vyact/vyact/releases/latest";
 const GITHUB_RELEASES_URL = "https://github.com/vyact/vyact/releases";
+const APP_UPDATE_SUPPORTED = app.isPackaged
+    && !platform.isWindows
+    && (platform.isMac || Boolean(process.env.APPIMAGE));
 
 let mainWindow = null;
 // The initial setup app is rendered in a child view.  Keeping loading.html in
@@ -34,6 +38,44 @@ let floatingBrowserView = null;
 let floatingBrowserOpen = false;
 let floatingBrowserBounds = {x: 640, y: 120, width: 540, height: 620, toolbarHeight: 52, footerHeight: 0};
 let serverProc = null;
+let appUpdateState = {
+    status: "idle",
+    currentVersion: app.getVersion(),
+    updateMode: APP_UPDATE_SUPPORTED ? "automatic" : "manual",
+    releaseUrl: GITHUB_RELEASES_URL,
+};
+
+autoUpdater.autoDownload = false;
+autoUpdater.autoInstallOnAppQuit = false;
+
+function getActiveRenderer() {
+    return initialSetupView?.webContents && !initialSetupView.webContents.isDestroyed()
+        ? initialSetupView.webContents : mainWindow?.webContents;
+}
+
+function updateAppUpdateState(patch) {
+    appUpdateState = {...appUpdateState, ...patch};
+    const renderer = getActiveRenderer();
+    if (renderer && !renderer.isDestroyed()) renderer.send("app-update-state", appUpdateState);
+    return appUpdateState;
+}
+
+autoUpdater.on("update-available", info => {
+    updateAppUpdateState({status: "available", available: true, latestVersion: info.version});
+});
+autoUpdater.on("update-not-available", info => {
+    updateAppUpdateState({status: "idle", available: false, latestVersion: info.version});
+});
+autoUpdater.on("download-progress", progress => {
+    updateAppUpdateState({status: "downloading", progress: Math.round(progress.percent)});
+});
+autoUpdater.on("update-downloaded", info => {
+    updateAppUpdateState({status: "downloaded", available: true, latestVersion: info.version, progress: 100});
+});
+autoUpdater.on("error", error => {
+    log(`App update error: ${error.message}`);
+    updateAppUpdateState({status: "error", error: error.message});
+});
 
 const BROWSER_PARTITION = "persist:vyact-browser";
 const DEFAULT_BROWSER_URL = "https://www.google.com";
@@ -1101,31 +1143,32 @@ if (hasSingleInstanceLock) app.whenReady().then(() => {
 });
 
 let isQuitting = false;
-app.on("before-quit", async (e) => {
-    if (isQuitting) return;
-    if (serverProc && !serverProc.killed) {
-        e.preventDefault();
-        isQuitting = true;
-        log("Shutting down local runtimes...");
-        try {
-            await fetch("http://localhost:8000/api/shutdown", {method: "POST"})
-                .catch(() => {
-                });
-        } catch (_) {
-        }
-        await new Promise((resolve) => {
-            const timer = setTimeout(() => {
-                if (!serverProc.killed) serverProc.kill(platform.isWindows ? undefined : "SIGKILL");
-                resolve();
-            }, 45000);
-            serverProc.on("exit", () => {
-                clearTimeout(timer);
-                resolve();
-            });
-        });
-        log("Server shutdown complete");
-        app.quit();
+async function stopLocalRuntimes() {
+    if (!serverProc || serverProc.killed) return;
+    log("Shutting down local runtimes...");
+    try {
+        await fetch("http://localhost:8000/api/shutdown", {method: "POST"}).catch(() => {});
+    } catch (_) {
     }
+    await new Promise(resolve => {
+        const timer = setTimeout(() => {
+            if (!serverProc.killed) serverProc.kill(platform.isWindows ? undefined : "SIGKILL");
+            resolve();
+        }, 45000);
+        serverProc.once("exit", () => {
+            clearTimeout(timer);
+            resolve();
+        });
+    });
+    log("Server shutdown complete");
+}
+
+app.on("before-quit", async event => {
+    if (isQuitting || !serverProc || serverProc.killed) return;
+    event.preventDefault();
+    isQuitting = true;
+    await stopLocalRuntimes();
+    app.quit();
 });
 
 ipcMain.handle("get-log-path", () => getLogFile());
@@ -1135,12 +1178,24 @@ ipcMain.handle("retry-startup", () => {
 });
 ipcMain.handle("check-app-update", async () => {
     const currentVersion = app.getVersion();
+    if (app.isPackaged && APP_UPDATE_SUPPORTED) {
+        updateAppUpdateState({status: "checking", error: undefined});
+        try {
+            await autoUpdater.checkForUpdates();
+        } catch (error) {
+            log(`App update check failed: ${error.message}`);
+            return updateAppUpdateState({status: "error", error: error.message});
+        }
+        return appUpdateState;
+    }
     try {
         const response = await fetch(GITHUB_LATEST_RELEASE_API, {
             headers: {"Accept": "application/vnd.github+json", "User-Agent": `Vyact/${currentVersion}`},
             signal: AbortSignal.timeout(8000),
         });
-        if (!response.ok) return {available: false, currentVersion};
+        if (!response.ok) {
+            return updateAppUpdateState({status: "error", available: false, currentVersion});
+        }
         const release = await response.json();
         const latestVersion = String(release.tag_name || "").trim().replace(/^v/i, "");
         const parseVersion = (version) => version.split("-")[0].split(".").map(part => Number.parseInt(part, 10) || 0);
@@ -1158,10 +1213,34 @@ ipcMain.handle("check-app-update", async () => {
         const releaseUrl = typeof release.html_url === "string" && release.html_url.startsWith(`${GITHUB_RELEASES_URL}/`)
             ? release.html_url
             : GITHUB_RELEASES_URL;
-        return {available, currentVersion, latestVersion, releaseUrl};
+        return updateAppUpdateState({
+            status: available ? "available" : "idle",
+            available,
+            currentVersion,
+            latestVersion,
+            releaseUrl,
+        });
     } catch {
-        return {available: false, currentVersion};
+        return updateAppUpdateState({status: "error", available: false, currentVersion});
     }
+});
+ipcMain.handle("download-app-update", async () => {
+    if (!app.isPackaged || !APP_UPDATE_SUPPORTED || !appUpdateState.available) return appUpdateState;
+    updateAppUpdateState({status: "downloading", progress: 0, error: undefined});
+    try {
+        await autoUpdater.downloadUpdate();
+    } catch (error) {
+        log(`App update download failed: ${error.message}`);
+        updateAppUpdateState({status: "error", error: error.message});
+    }
+    return appUpdateState;
+});
+ipcMain.handle("install-app-update", async () => {
+    if (!app.isPackaged || !APP_UPDATE_SUPPORTED || appUpdateState.status !== "downloaded") return false;
+    isQuitting = true;
+    await stopLocalRuntimes();
+    autoUpdater.quitAndInstall(false, true);
+    return true;
 });
 ipcMain.handle("open-external", async (_event, rawUrl) => {
     const url = String(rawUrl || "").trim();

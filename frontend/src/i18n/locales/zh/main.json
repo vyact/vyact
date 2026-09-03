@@ -450,6 +450,7 @@
     "removeFavorite": "从收藏中移除",
     "refreshHistory": "刷新对话历史",
     "responseInProgress": "正在生成回复",
+    "appUpdate": {"title":"有新更新可用","available":"版本 {{version}} 可用","version":"版本 {{version}} 可用","download":"下载更新","downloading":"正在下载 {{progress}}%","restartToUpdate":"重启并更新","viewRelease":"从发布页面获取","retry":"重试","failed":"无法完成更新"},
     "projects": "项目",
     "projectFolderPathPrompt": "请输入项目文件夹路径：",
     "projectEdit": "编辑项目",

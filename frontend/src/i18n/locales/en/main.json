@@ -450,6 +450,7 @@
     "removeFavorite": "Remove from favorites",
     "refreshHistory": "Refresh conversation history",
     "responseInProgress": "Generating response",
+    "appUpdate": {"title":"A new update is available","available":"Version {{version}} is available","version":"Version {{version}} is available","download":"Download update","downloading":"Downloading {{progress}}%","restartToUpdate":"Restart to update","viewRelease":"Get it from Releases","retry":"Try again","failed":"The update could not be completed"},
     "projects": "Projects",
     "projectFolderPathPrompt": "Enter the project folder path:",
     "projectEdit": "Edit project",

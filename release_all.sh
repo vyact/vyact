@@ -117,19 +117,25 @@ gh run download "$RUN_ID" \
   --dir "$LINUX_DOWNLOAD_DIR"
 
 mkdir -p "$DIST_DIR"
-find "$LINUX_DOWNLOAD_DIR" -type f \( -name '*.AppImage' -o -name '*.deb' \) -exec cp {} "$DIST_DIR/" \;
+find "$LINUX_DOWNLOAD_DIR" -type f \( -name '*.AppImage' -o -name '*.deb' -o -name 'latest-linux.yml' \) -exec cp {} "$DIST_DIR/" \;
 
 shopt -s nullglob
 DMG_FILES=("$DIST_DIR"/*.dmg)
+MAC_ZIP_FILES=("$DIST_DIR"/*.zip)
+MAC_UPDATE_FILES=("$DIST_DIR"/latest-mac.yml)
 EXE_FILES=("$DIST_DIR"/*.exe)
 APPIMAGE_FILES=("$DIST_DIR"/*.AppImage)
 DEB_FILES=("$DIST_DIR"/*.deb)
+LINUX_UPDATE_FILES=("$DIST_DIR"/latest-linux.yml)
 shopt -u nullglob
 
 if [ "${#DMG_FILES[@]}" -eq 0 ] || \
+   [ "${#MAC_ZIP_FILES[@]}" -eq 0 ] || \
+   [ "${#MAC_UPDATE_FILES[@]}" -eq 0 ] || \
    [ "${#EXE_FILES[@]}" -eq 0 ] || \
    [ "${#APPIMAGE_FILES[@]}" -eq 0 ] || \
-   [ "${#DEB_FILES[@]}" -eq 0 ]; then
+   [ "${#DEB_FILES[@]}" -eq 0 ] || \
+   [ "${#LINUX_UPDATE_FILES[@]}" -eq 0 ]; then
   echo "Release artifact collection is incomplete." >&2
   exit 1
 fi

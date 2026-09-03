@@ -136,6 +136,9 @@ step "Collecting artifacts"
 
 mkdir -p "$DIST_DIR"
 cp "$ELECTRON_DIR/dist/"*.dmg "$DIST_DIR/" 2>/dev/null || true
+cp "$ELECTRON_DIR/dist/"*.zip "$DIST_DIR/" 2>/dev/null || true
+cp "$ELECTRON_DIR/dist/"latest-mac.yml "$DIST_DIR/" 2>/dev/null || true
+cp "$ELECTRON_DIR/dist/"*.blockmap "$DIST_DIR/" 2>/dev/null || true
 
 echo ""
 echo "========================================"

@@ -497,7 +497,8 @@
       "save": "บันทึก",
       "saving": "กำลังบันทึก…"
     },
-    "responseInProgress": "กำลังสร้างคำตอบ"
+    "responseInProgress": "กำลังสร้างคำตอบ",
+    "appUpdate": {"title":"มีอัปเดตใหม่","available":"มีเวอร์ชัน {{version}} พร้อมใช้งาน","version":"มีเวอร์ชัน {{version}} พร้อมใช้งาน","download":"ดาวน์โหลดอัปเดต","downloading":"กำลังดาวน์โหลด {{progress}}%","restartToUpdate":"เริ่มใหม่เพื่ออัปเดต","viewRelease":"ดาวน์โหลดจากหน้า Releases","retry":"ลองอีกครั้ง","failed":"ไม่สามารถอัปเดตให้เสร็จสมบูรณ์"}
   },
   "modelSelector": {
     "ram": "RAM",

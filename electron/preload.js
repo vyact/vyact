@@ -5,6 +5,13 @@ const {contextBridge, ipcRenderer} = require("electron");
 contextBridge.exposeInMainWorld("ragAPI", {
     openExternal: (url) => ipcRenderer.invoke("open-external", url),
     checkAppUpdate: () => ipcRenderer.invoke("check-app-update"),
+    downloadAppUpdate: () => ipcRenderer.invoke("download-app-update"),
+    installAppUpdate: () => ipcRenderer.invoke("install-app-update"),
+    onAppUpdateState: (callback) => {
+        const handler = (_event, state) => callback(state);
+        ipcRenderer.on("app-update-state", handler);
+        return () => ipcRenderer.removeListener("app-update-state", handler);
+    },
     showNotification: (opts) => ipcRenderer.invoke("show-notification", opts),
     getLogPath: () => ipcRenderer.invoke("get-log-path"),
     retryStartup: () => ipcRenderer.invoke("retry-startup"),
