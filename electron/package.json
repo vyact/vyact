@@ -11,9 +11,9 @@
   "scripts": {
     "start": "electron .",
     "start:dev": "VYACT_RENDERER_URL=http://localhost:5173 electron .",
-    "build": "electron-builder --mac",
-    "build:dmg": "electron-builder --mac dmg",
-    "build:linux": "electron-builder --linux AppImage deb --x64"
+    "build": "electron-builder --mac --publish never",
+    "build:dmg": "electron-builder --mac dmg --publish never",
+    "build:linux": "electron-builder --linux AppImage deb --x64 --publish never"
   },
   "build": {
     "appId": "com.vyact.app",

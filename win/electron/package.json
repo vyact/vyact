@@ -7,8 +7,8 @@
   "scripts": {
     "start": "electron .",
     "start:dev": "set VYACT_RENDERER_URL=http://localhost:5173&& electron .",
-    "build": "electron-builder --win",
-    "build:nsis": "electron-builder --win nsis"
+    "build": "electron-builder --win --publish never",
+    "build:nsis": "electron-builder --win nsis --publish never"
   },
   "build": {
     "appId": "com.vyact.app",
