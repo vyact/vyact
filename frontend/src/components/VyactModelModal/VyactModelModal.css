@@ -38,9 +38,10 @@
 .vyact-gpu-vram > small { color: var(--muted); font-size: 8px; font-weight: 650; }
 .vyact-gpu-memory > em { grid-column: 1 / -1; color: var(--muted); font-size: 10px; font-style: normal; }
 .vyact-memory-summary strong { color: var(--text); font-size: var(--modal-text); }
-.vyact-memory-selection { display: flex; align-items: center; justify-content: flex-end; gap: 10px; min-width: 0; padding-top: 9px; border-top: 1px solid var(--border); }
-.vyact-memory-selection > strong:first-child { display: block; max-width: min(240px, 28vw); overflow: hidden; color: var(--text-secondary); font-size: inherit; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
-.vyact-memory-selection button { display: inline-grid; flex: 0 0 auto; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border)); border-radius: 8px; background: var(--bg); color: var(--accent); cursor: pointer; }
+.vyact-memory-selection { display: flex; flex: 1 0 100%; align-items: center; justify-content: space-between; gap: 14px; min-width: 0; padding-top: 9px; border-top: 1px solid var(--border); }
+.vyact-selected-model-labels { display: flex; flex: 1 1 auto; min-width: 0; align-items: center; justify-content: flex-end; gap: 6px; text-align: right; }
+.vyact-selected-model-labels > strong { color: var(--text-secondary); font-size: var(--modal-title); font-weight: 650; line-height: 1.2; overflow-wrap: anywhere; white-space: normal; }
+.vyact-memory-selection button { display: inline-grid; flex: 0 0 34px; width: 34px; height: 34px; place-items: center; padding: 0; border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border)); border-radius: 8px; background: var(--bg); color: var(--accent); cursor: pointer; }
 .vyact-memory-selection button:hover:not(:disabled) { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); color: var(--accent); }
 .vyact-memory-selection button:disabled { cursor: not-allowed; opacity: .6; }
 .vyact-model-empty { display: grid; place-items: center; align-content: center; gap: 10px; min-height: 220px; color: var(--muted); font-size: var(--modal-text); }
@@ -62,6 +63,7 @@
 .vyact-model-file-name { display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; white-space: nowrap; }
 .vyact-model-file-name > strong:last-child { min-width: 0; overflow: hidden; color: inherit; font-size: inherit; font-weight: inherit; text-overflow: ellipsis; }
 .vyact-mtp-badge { flex: 0 0 auto; padding: 2px 5px; border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); font-size: 8px; font-weight: 750; line-height: 1; letter-spacing: .35px; }
+.vyact-mtp-badge.is-capability { border-color: color-mix(in srgb, var(--info) 52%, var(--border)); background: color-mix(in srgb, var(--info) 12%, transparent); color: var(--info); letter-spacing: .25px; }
 .vyact-model-files button small { grid-column: 1; color: var(--muted); font-size: 11px; }
 .vyact-model-file-meta { display: flex; align-items: center; gap: 6px; }
 .vyact-model-publisher { min-width: 0; overflow: hidden; color: var(--text-secondary); font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
@@ -103,7 +105,6 @@
     .vyact-model-search-field button span { display: none; }
     .vyact-model-metadata { grid-template-columns: 1fr; }
     .vyact-memory-summary { align-items: stretch; flex-direction: column; }
-    .vyact-memory-selection { justify-content: flex-start; }
-    .vyact-memory-selection > strong:first-child { max-width: 42vw; }
+    .vyact-memory-selection { align-items: center; }
     .vyact-model-results { grid-template-columns: 1fr; }
 }

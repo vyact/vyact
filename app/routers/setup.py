@@ -28,7 +28,10 @@ from services.installer import is_docker_available, Installer
 from services.llm.errors import is_insufficient_memory_message
 from services.es_native import is_native_supported
 from services.hardware_info import get_local_hardware_info, validate_gpu_split_percentages
-from services.huggingface_models import MODEL_SEARCH_RESULT_LIMIT, get_model_file_size, recommend_downloaded_mlx_context, search_gguf_models
+from services.huggingface_models import (
+    MODEL_SEARCH_RESULT_LIMIT, enrich_model_file_sizes, get_model_file_size,
+    recommend_downloaded_mlx_context, search_gguf_models, search_mlx_models,
+)
 from services.mcp_config import ensure_mcp_config
 from services.runtime_settings import DEFAULT_RUNTIME_SETTINGS, apply_runtime_settings
 from services.runtime_startup import (
@@ -723,8 +726,6 @@ async def search_vyact_models(q: str = Query("", max_length=200), mlx_only: bool
         config = await load_config_async()
         token = config.get("vyact_config", {}).get("huggingface_token")
 
-        from services.huggingface_models import search_mlx_models
-
         mlx_available = is_apple_silicon()
         if mlx_only and mlx_available:
             models = await search_mlx_models(q, token)
@@ -738,6 +739,7 @@ async def search_vyact_models(q: str = Query("", max_length=200), mlx_only: bool
             )[:MODEL_SEARCH_RESULT_LIMIT]
         else:
             models = await search_gguf_models(q, token)
+        models = await enrich_model_file_sizes(models[:MODEL_SEARCH_RESULT_LIMIT], token)
         return {
             "models": models,
             "hardware": get_local_hardware_info(),
@@ -804,10 +806,10 @@ async def get_vyact_mlx_model_metadata(
 
         config = await load_config_async()
         token = config.get("vyact_config", {}).get("huggingface_token")
-        metadata = await inspect_mlx_model_metadata(
+        details = await inspect_mlx_model_metadata(
             repository, revision, file_size, context_size, token,
         )
-        return {"metadata": metadata}
+        return details
     except Exception as error:
         logger.warning("[vyact] MLX model metadata inspection failed: %s", error)
         raise HTTPException(502, "MLX 모델 상세 정보를 조회할 수 없습니다.") from error

@@ -1,6 +1,8 @@
 import type {VyactGgufMetadata, VyactHardwareInfo, VyactHubModel} from '../services/api';
 
 export const MODEL_MEMORY_OVERHEAD_RATIO = 1.2;
+const MINIMUM_RUNTIME_BUFFER_BYTES = 512 * 1024 ** 2;
+const RUNTIME_BUFFER_RATIO = 0.05;
 
 const MAX_FILES_PER_MODEL = 8;
 const DEFAULT_MODEL_CONTEXT = 32768;
@@ -68,10 +70,8 @@ export const estimateModelMemoryBytes = (model: VyactHubModel, filename: string)
         ? parameterCount * (getQuantizationBits(getModelQuantization(model, filename)) / 8) * MODEL_MEMORY_OVERHEAD_RATIO
         : 0;
     if (fileSize > 0) {
-        const fileEstimate = (fileSize + companionSize) * MODEL_MEMORY_OVERHEAD_RATIO;
-        // Hub search results can expose sizes for only part of a sharded MLX repository.
-        // Never present that partial byte count as the complete model requirement.
-        return model.runtime === 'mlx' ? Math.max(fileEstimate, nameEstimate) : fileEstimate;
+        const modelBytes = fileSize + companionSize;
+        return modelBytes + Math.max(MINIMUM_RUNTIME_BUFFER_BYTES, modelBytes * RUNTIME_BUFFER_RATIO);
     }
     return nameEstimate;
 };

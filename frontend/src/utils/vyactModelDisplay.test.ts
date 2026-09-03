@@ -24,7 +24,7 @@ describe('estimateModelMemoryBytes', () => {
         expect(estimateModelMemoryBytes(mlxModel, 'future-1.5B-4bit')).toBe(900_000_000);
     });
 
-    it('does not treat a partial sharded MLX size as the complete model size', () => {
+    it('uses a fetched MLX repository size instead of a larger name estimate', () => {
         const mlxModel = model({
             id: 'example/Qwen3.5-9B-MLX-8bit',
             files: ['__mlx_repository__'],
@@ -32,8 +32,9 @@ describe('estimateModelMemoryBytes', () => {
             runtime: 'mlx',
             quantization: '8-bit',
         });
-        expect(estimateModelMemoryBytes(mlxModel, '__mlx_repository__')).toBe(10_800_000_000);
-        expect(resolveModelMemoryBytes(mlxModel, '__mlx_repository__', 1_500_000_000)).toBe(10_800_000_000);
+        const estimatedMemory = 1_250_000_000 + 512 * 1024 ** 2;
+        expect(estimateModelMemoryBytes(mlxModel, '__mlx_repository__')).toBe(estimatedMemory);
+        expect(resolveModelMemoryBytes(mlxModel, '__mlx_repository__', 1_500_000_000)).toBe(estimatedMemory);
     });
 
     it('reads GGUF-style quantization embedded in an MLX repository name', () => {
@@ -48,7 +49,7 @@ describe('estimateModelMemoryBytes', () => {
 
     it('keeps exact file sizes ahead of name estimates', () => {
         const exactModel = model({file_sizes: {'model-Q4_K_M.gguf': 5_000_000_000}});
-        expect(estimateModelMemoryBytes(exactModel, 'model-Q4_K_M.gguf')).toBe(6_000_000_000);
+        expect(estimateModelMemoryBytes(exactModel, 'model-Q4_K_M.gguf')).toBe(5_000_000_000 + 512 * 1024 ** 2);
     });
 });
 

@@ -1,6 +1,7 @@
 """Hugging Face GGUF discovery and safe resumeless downloads for Vyact."""
 import asyncio
 import json
+import logging
 import re
 import shutil
 from pathlib import Path, PurePosixPath
@@ -30,6 +31,7 @@ _MINIMUM_RUNTIME_BUFFER_BYTES = 512 * 1024 ** 2
 _RECOMMENDED_MEMORY_UTILIZATION = 0.60
 _MINIMUM_PRACTICAL_CONTEXT_SIZE = 8192
 _CONTEXT_SIZE_CANDIDATES = (131072, 65536, 32768, 16384, _MINIMUM_PRACTICAL_CONTEXT_SIZE)
+logger = logging.getLogger(__name__)
 
 
 def _headers(token: str | None) -> dict[str, str]:
@@ -119,33 +121,16 @@ async def search_mlx_models(
         response.raise_for_status()
         search_items = response.json()
         valid_items = [item for item in search_items if isinstance(item, dict)]
-        target_configs, mtp_candidates = await asyncio.gather(
-            _fetch_mlx_configs(client, valid_items, token),
-            _search_mlx_mtp_models(target_query, token),
-        )
     models = []
     for item in valid_items:
         repository = str(item.get("id", ""))
-        config = target_configs.get(repository, {})
-        if _is_standalone_or_embedded_mtp_repository(repository, config):
+        if _is_standalone_or_embedded_mtp_repository(repository, {}):
             continue
         if "dflash2" in repository.lower() and not _is_bundled_dflash2_mlx(item):
             continue
-        model = _mlx_model_from_hub_item(item, config)
+        model = _mlx_model_from_hub_item(item)
         if not model:
             continue
-        mtp_model = _select_mlx_mtp_model(repository, mtp_candidates, config)
-        if mtp_model:
-            model["mtp_model"] = {
-                key: mtp_model[key] for key in ("repository", "revision", "size")
-            }
-            model["mtp_supported_files"] = [MLX_REPOSITORY_FILE]
-        companion_size = int((mtp_model or {}).get("size") or 0)
-        model["metadata"] = calculate_mlx_metadata_from_config(
-            config,
-            model["file_sizes"].get(MLX_REPOSITORY_FILE, 0) + companion_size,
-            32768,
-        )
         models.append(model)
     return sorted(models, key=lambda model: model["downloads"], reverse=True)
 
@@ -408,6 +393,31 @@ async def _fetch_model_details(
     }
 
 
+async def enrich_model_file_sizes(models: list[dict], token: str | None = None) -> list[dict]:
+    """Fill file sizes for the final visible models using parallel Hub detail requests."""
+    repository_ids = [
+        str(model.get("id", "")) for model in models
+        if _REPO_ID_PATTERN.fullmatch(str(model.get("id", "")))
+    ]
+    async with httpx.AsyncClient(timeout=20) as client:
+        detailed_items = await _fetch_model_details(client, repository_ids, token)
+    enriched_models = []
+    for model in models:
+        repository = str(model.get("id", ""))
+        detail = detailed_items.get(repository)
+        if not detail:
+            enriched_models.append(model)
+            continue
+        runtime = str(model.get("runtime", ""))
+        file_sizes = dict(model.get("file_sizes") or {})
+        for filename in model.get("files") or []:
+            size = _model_file_size_from_hub_item(detail, str(filename), runtime)
+            if size > 0:
+                file_sizes[str(filename)] = size
+        enriched_models.append({**model, "file_sizes": file_sizes})
+    return enriched_models
+
+
 async def _fetch_mlx_configs(
         client: httpx.AsyncClient, items: list[dict], token: str | None = None,
 ) -> dict[str, dict]:
@@ -664,7 +674,23 @@ async def inspect_mlx_model_metadata(
         config = response.json()
     if not isinstance(config, dict):
         raise ValueError("Invalid MLX config.json")
-    return calculate_mlx_metadata_from_config(config, file_size, context_size)
+    metadata = calculate_mlx_metadata_from_config(config, file_size, context_size)
+    metadata["modalities"] = [
+        modality for modality, key in (("image", "vision_config"), ("audio", "audio_config"))
+        if isinstance(config.get(key), dict)
+    ]
+    try:
+        mtp_candidates = await _search_mlx_mtp_models(repository, token)
+        mtp_model = _select_mlx_mtp_model(repository, mtp_candidates, config)
+    except Exception as error:
+        logger.warning("Optional MLX MTP lookup failed for %s: %s", repository, error)
+        mtp_model = None
+    return {
+        "metadata": metadata,
+        "mtp_model": {
+            key: mtp_model[key] for key in ("repository", "revision", "size")
+        } if mtp_model else None,
+    }
 
 
 def _model_from_hub_item(item: dict) -> dict | None:

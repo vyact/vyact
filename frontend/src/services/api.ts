@@ -172,6 +172,7 @@ export interface VyactGgufMetadata {
     kvCacheBytes: number;
     runtimeBufferBytes: number;
     estimatedMemoryBytes: number;
+    modalities?: Array<'image' | 'audio'>;
 }
 
 export interface VyactModelSearchResponse {
@@ -415,14 +416,17 @@ export const api = {
 
     async inspectVyactMlxMetadata(
         repository: string, revision: string, fileSize: number, contextSize: number,
-    ): Promise<VyactGgufMetadata> {
+    ): Promise<{metadata: VyactGgufMetadata; mtpModel?: {repository: string; revision: string; size: number}}> {
         const params = new URLSearchParams({
             repository, revision, file_size: String(fileSize), context_size: String(contextSize),
         });
         const response = await fetch(`${API_BASE}/vyact/models/mlx-metadata?${params}`);
         await assertOk(response);
-        const source = (await response.json()).metadata;
-        return mapVyactMetadata(source);
+        const data = await response.json();
+        return {
+            metadata: {...mapVyactMetadata(data.metadata), modalities: data.metadata?.modalities || []},
+            mtpModel: data.mtp_model || undefined,
+        };
     },
 
     async getVyactModelFileSize(

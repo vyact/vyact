@@ -14,6 +14,7 @@ interface GgufRepositoryMetadata {
     contextLength: number;
     blockCount: number;
     kvCacheBytes: number;
+    modalities: Array<'image' | 'audio'>;
 }
 
 const repositoryMetadataCache = new Map<string, Promise<GgufRepositoryMetadata>>();
@@ -39,7 +40,7 @@ export const inspectRemoteGguf = (
     contextSize: number,
     token: string,
 ) => {
-    const cacheKey = `${repository}@${revision}@${contextSize}`;
+    const cacheKey = `${repository}@${revision}/${filename}@${contextSize}`;
     let repositoryRequest = repositoryMetadataCache.get(cacheKey);
 
     if (!repositoryRequest) {
@@ -60,6 +61,9 @@ export const inspectRemoteGguf = (
             const attentionLayerCount = Math.ceil(blockCount / fullAttentionInterval);
             const contextLength = asNumber(metadata[`${architecture}.context_length`]);
             const effectiveContextSize = Math.min(contextSize, contextLength || contextSize);
+            const modalities: Array<'image' | 'audio'> = [];
+            if (metadata['clip.has_vision_encoder'] === true) modalities.push('image');
+            if (metadata['clip.has_audio_encoder'] === true) modalities.push('audio');
             const kvBytesPerValue = contextSize >= KV_CACHE_QUANTIZATION_MIN_CONTEXT
                 ? BYTES_PER_Q8_VALUE
                 : BYTES_PER_F16_VALUE;
@@ -70,6 +74,7 @@ export const inspectRemoteGguf = (
                 blockCount,
                 kvCacheBytes: effectiveContextSize * attentionLayerCount * kvHeadCount
                     * (keyLength + valueLength) * kvBytesPerValue,
+                modalities,
             };
         })();
         repositoryMetadataCache.set(cacheKey, repositoryRequest);

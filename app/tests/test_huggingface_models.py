@@ -26,6 +26,7 @@ from services.huggingface_models import (
     _select_mtp_sidecar,
     _select_vision_projector,
     download_gguf_model,
+    enrich_model_file_sizes,
     search_mlx_models,
 )
 from services.omlx_policy import is_external_mtp_compatible
@@ -110,7 +111,7 @@ class HuggingFaceModelTests(unittest.TestCase):
             "mlx-community/Qwen3.5-9B-MLX-8bit", {"model_type": "qwen3_5"},
         ))
 
-    def test_search_attaches_external_mtp_to_compatible_target(self):
+    def test_search_returns_mlx_list_without_metadata_or_mtp_requests(self):
         target_item = {
             "id": "mlx-community/Qwen3.5-9B-MLX-8bit", "sha": "target", "downloads": 100,
             "siblings": [{"rfilename": "config.json"}, {"rfilename": "model.safetensors", "size": 10}],
@@ -119,13 +120,6 @@ class HuggingFaceModelTests(unittest.TestCase):
             "id": "owner/Qwen3.5-9B-MTPLX-8bit", "sha": "embedded", "downloads": 10,
             "siblings": [{"rfilename": "config.json"}, {"rfilename": "model.safetensors", "size": 10}],
         }
-        target_config = {"model_type": "qwen3_5", "hidden_size": 4096}
-        candidate = {
-            "repository": "mlx-community/Qwen3.5-9B-MTP-bf16", "revision": "draft",
-            "size": 38_000_000,
-            "config": {"model_type": "qwen3_5_mtp", "hidden_size": 4096},
-        }
-
         class FakeResponse:
             def raise_for_status(self):
                 return None
@@ -144,25 +138,21 @@ class HuggingFaceModelTests(unittest.TestCase):
                 self.params = params
                 return FakeResponse()
 
-        async def fake_configs(_client, _items, _token):
-            return {target_item["id"]: target_config, embedded_item["id"]: target_config}
-
-        async def fake_candidates(_query, _token):
-            return [candidate]
-
         fake_client = FakeClient()
         with patch("services.huggingface_models.httpx.AsyncClient", return_value=fake_client), \
-             patch("services.huggingface_models._fetch_mlx_configs", side_effect=fake_configs), \
-             patch("services.huggingface_models._search_mlx_mtp_models", side_effect=fake_candidates), \
-             patch("services.huggingface_models._search_mlx_specprefill_models", return_value=[]):
+             patch("services.huggingface_models._fetch_model_details") as fetch_details, \
+             patch("services.huggingface_models._fetch_mlx_configs") as fetch_configs, \
+             patch("services.huggingface_models._search_mlx_mtp_models") as search_mtp:
             models = asyncio.run(search_mlx_models("qwen3.5 9b 8bit mtp"))
 
         self.assertEqual(fake_client.params["search"], "qwen3.5 9b 8bit")
         self.assertEqual(fake_client.params["limit"], 10)
         self.assertEqual([model["id"] for model in models], [target_item["id"]])
-        self.assertEqual(models[0]["mtp_model"]["repository"], candidate["repository"])
-        self.assertEqual(models[0]["mtp_supported_files"], [MLX_REPOSITORY_FILE])
-        self.assertIn("metadata", models[0])
+        self.assertNotIn("mtp_model", models[0])
+        self.assertNotIn("metadata", models[0])
+        fetch_details.assert_not_called()
+        fetch_configs.assert_not_called()
+        search_mtp.assert_not_called()
 
     def test_selects_small_compatible_specprefill_model(self):
         target_config = {"model_type": "qwen3_5", "text_config": {"vocab_size": 248320}}
@@ -414,6 +404,25 @@ class HuggingFaceModelTests(unittest.TestCase):
 
 
 class HuggingFaceModelDownloadTests(unittest.IsolatedAsyncioTestCase):
+    async def test_enriches_only_visible_model_file_sizes_from_parallel_details(self):
+        models = [{
+            "id": "owner/model-mlx", "runtime": "mlx", "files": [MLX_REPOSITORY_FILE],
+            "file_sizes": {MLX_REPOSITORY_FILE: 0},
+        }]
+        detail = {
+            "siblings": [
+                {"rfilename": "config.json", "size": 200},
+                {"rfilename": "model.safetensors", "size": 3_000},
+            ],
+        }
+        with patch("services.huggingface_models._fetch_model_details", return_value={
+            "owner/model-mlx": detail,
+        }) as fetch_details:
+            enriched = await enrich_model_file_sizes(models)
+
+        self.assertEqual(enriched[0]["file_sizes"][MLX_REPOSITORY_FILE], 3_200)
+        fetch_details.assert_called_once()
+
     async def test_existing_complete_model_is_not_downloaded_again(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             models_dir = Path(temp_dir)
