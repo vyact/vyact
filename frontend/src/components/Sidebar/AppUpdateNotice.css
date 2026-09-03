@@ -1,0 +1,87 @@
+.sidebar-app-update {
+    display: flex;
+    flex-shrink: 0;
+    flex-direction: column;
+    gap: 9px;
+    margin: 0 10px 10px 14px;
+    padding: 11px;
+    border: 1px solid color-mix(in srgb, var(--accent) 38%, var(--border));
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface2));
+}
+
+.sidebar-app-update-copy {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 9px;
+    color: var(--accent);
+}
+
+.sidebar-app-update-copy > span {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.sidebar-app-update-copy strong {
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.sidebar-app-update-copy small {
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sidebar-app-update button {
+    display: flex;
+    width: 100%;
+    min-height: 30px;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    color: var(--accent);
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.sidebar-app-update button:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+    color: var(--text);
+}
+
+.sidebar-app-update button:disabled {
+    cursor: wait;
+    opacity: .75;
+}
+
+.sidebar-app-update-progress {
+    height: 3px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 15%, var(--border));
+}
+
+.sidebar-app-update-progress span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--accent);
+    transition: width .2s ease;
+}
+
+:root[data-theme='light'] .sidebar-app-update {
+    background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+}

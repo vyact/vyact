@@ -262,6 +262,7 @@ export function useConversation() {
                 if (typeof data.total === 'number') setHistoryTotal(data.total);
             } catch (error) {
                 console.error('Failed to load more history:', error);
+                throw error;
             }
         })();
 

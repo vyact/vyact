@@ -328,8 +328,10 @@ const Sidebar: React.FC<SidebarProps> = ({
     const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
     const [projectHistoryToDelete, setProjectHistoryToDelete] = useState<Project | null>(null);
     const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
-    const loadMoreRef = useRef<HTMLDivElement>(null);
+    const historyListRef = useRef<HTMLDivElement>(null);
     const loadingMoreRef = useRef(false);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [loadMoreFailed, setLoadMoreFailed] = useState(false);
     const previousActiveConversationIdsRef = useRef<Set<string>>(new Set(activeConversationIds));
     const completedConversationIdsPendingRef = useRef<Set<string>>(new Set());
     const [isRefreshingHistory, setIsRefreshingHistory] = useState(false);
@@ -388,23 +390,36 @@ const Sidebar: React.FC<SidebarProps> = ({
         });
     }, [activeConversationIds, conversations]);
 
-    // 무한 스크롤: sentinel이 보이면 다음 페이지 자동 로드
+    // 무한 스크롤: 실제 스크롤 위치를 기준으로 다음 페이지를 불러온다.
+    // IntersectionObserver만 사용하면 레이아웃 변경 뒤 sentinel이 계속 교차 상태로
+    // 남을 때 후속 이벤트가 발생하지 않아 스피너만 남을 수 있다.
     const hasMore = conversations.length < historyTotal;
+    const requestMoreHistory = React.useCallback(async (isRetry = false) => {
+        if (!hasMore || loadingMoreRef.current || !onLoadMoreHistory || (loadMoreFailed && !isRetry)) return;
+        loadingMoreRef.current = true;
+        setIsLoadingMore(true);
+        if (isRetry) setLoadMoreFailed(false);
+        try {
+            await onLoadMoreHistory();
+        } catch {
+            setLoadMoreFailed(true);
+        } finally {
+            loadingMoreRef.current = false;
+            setIsLoadingMore(false);
+        }
+    }, [hasMore, loadMoreFailed, onLoadMoreHistory]);
+
+    const loadMoreWhenNearBottom = React.useCallback(() => {
+        const list = historyListRef.current;
+        if (!list || list.scrollHeight - list.scrollTop - list.clientHeight > 100) return;
+        void requestMoreHistory();
+    }, [requestMoreHistory]);
+
     useEffect(() => {
-        const el = loadMoreRef.current;
-        if (!el || !hasMore) return;
-        const io = new IntersectionObserver(async (entries) => {
-            if (!entries[0].isIntersecting || loadingMoreRef.current) return;
-            loadingMoreRef.current = true;
-            try {
-                await onLoadMoreHistory?.();
-            } finally {
-                loadingMoreRef.current = false;
-            }
-        }, {root: el.closest('.hist-list'), rootMargin: '80px', threshold: 0});
-        io.observe(el);
-        return () => io.disconnect();
-    }, [hasMore, onLoadMoreHistory]);
+        if (!hasMore || isLoadingMore || loadMoreFailed) return;
+        const frame = requestAnimationFrame(loadMoreWhenNearBottom);
+        return () => cancelAnimationFrame(frame);
+    }, [conversations.length, hasMore, isLoadingMore, loadMoreFailed, loadMoreWhenNearBottom]);
     const [isSettingsOpenInternal, setIsSettingsOpenInternal] = useState(false);
     const isSettingsOpen = openSettings || isSettingsOpenInternal;
     const setIsSettingsOpen = (v: boolean) => {
@@ -799,7 +814,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                             </div>
                         </div>
 
-                        <div className="hist-list">
+                        <div className="hist-list" ref={historyListRef} onScroll={loadMoreWhenNearBottom}>
                             {conversations.length === 0 ? (
                                 <div className="hist-empty">
                                     <svg className="hist-empty-icon" viewBox="0 0 48 48" fill="none"
@@ -906,8 +921,16 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 ))
                             )}
                             {hasMore && (
-                                <div ref={loadMoreRef} className="hist-loadmore">
-                                    <span className="hist-spinner" aria-label={t('uiAudit.loading')}/>
+                                <div className="hist-loadmore">
+                                    {isLoadingMore
+                                        ? <span className="hist-spinner" aria-label={t('uiAudit.loading')}/>
+                                        : <button className="hist-loadmore-retry" type="button"
+                                                  aria-label={t('googleWorkspace.more')}
+                                                  onClick={() => void requestMoreHistory(true)}>
+                                            {loadMoreFailed
+                                                ? <RefreshCw size={15} aria-hidden="true"/>
+                                                : <ChevronDown size={16} aria-hidden="true"/>}
+                                        </button>}
                                 </div>
                             )}
                         </div>

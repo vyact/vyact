@@ -827,6 +827,27 @@
     animation: hist-spin 0.7s linear infinite;
 }
 
+.hist-loadmore-retry {
+    display: grid;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--text-secondary) 18%, transparent);
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--surface2) 72%, transparent);
+    color: var(--muted);
+    cursor: pointer;
+    transition: color .15s, border-color .15s, background-color .15s, transform .15s;
+}
+
+.hist-loadmore-retry:hover {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+    color: var(--accent);
+    transform: translateY(1px);
+}
+
 @keyframes hist-spin {
     to {
         transform: rotate(360deg);

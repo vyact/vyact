@@ -1152,6 +1152,7 @@ export const api = {
     async getHistory(limit = 20, offset = 0, projectId?: string | null, includeFavorites = true): Promise<HistoryResponse> {
         const projectParam = projectId ? `&project_id=${encodeURIComponent(projectId)}` : '';
         const res = await fetch(`${API_BASE}/history?limit=${limit}&offset=${offset}&include_favorites=${includeFavorites}${projectParam}`);
+        await assertOk(res);
         return res.json();
     },
 
