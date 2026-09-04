@@ -9,6 +9,18 @@ async def _collect_stream(**kwargs):
 
 
 class ProjectRagRoutingTests(unittest.IsolatedAsyncioTestCase):
+    async def test_answer_only_request_keeps_documents_without_tools(self):
+        docs = [{"title": "page", "source": "web", "content": "Reference text"}]
+        with patch.object(agent, "_gather_docs", AsyncMock(return_value=docs)), \
+                patch.object(agent, "query_llm", AsyncMock(return_value="answer")) as query_llm, \
+                patch.object(agent, "get_model_display_name", AsyncMock(return_value="model")):
+            result = await agent.rag_query("Follow-up question", extra_context=docs, use_tools=False)
+
+        self.assertFalse(query_llm.call_args.kwargs["use_tools"])
+        self.assertEqual(query_llm.call_args.args[1], docs)
+        self.assertEqual(result["answer"], "answer")
+        self.assertEqual(result["sources"], docs)
+
     async def test_isolated_prompt_skips_rag_and_forwards_no_injection_flags(self):
         observed = {}
 

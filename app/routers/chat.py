@@ -350,9 +350,13 @@ class QueryRequest(BaseModel):
     external_resource_ids: list[str] = []  # 사용자가 명시적으로 선택한 외부 데이터만 별도 검색
     external_document_selections: list[dict] = []  # 모달에서 명시적으로 첨부한 외부 데이터 원문
     minimal_prompt: bool = False  # True면 응답 언어 규칙 외에는 클라이언트 system_prompt만 사용하고 컨텍스트·도구·RAG 주입을 제외.
+    tools_enabled: bool = True  # 확장 프로그램 등 답변 전용 클라이언트는 False로 요청.
     selected_mcp_ids: list[str] = []  # @로 선택한 MCP들은 enabled 여부와 무관하게 이번 요청에만 사용.
     approval_mode: str = "risky_only"
-    # 자막 학습처럼 요청 자체에 필요한 문맥이 모두 포함된 격리형 클라이언트용.
+
+    @property
+    def use_tools(self) -> bool:
+        return self.tools_enabled and not self.minimal_prompt
 
 
 class VoiceWarmupRequest(BaseModel):
@@ -583,7 +587,7 @@ async def query(req: QueryRequest):
                                      format_instruction_override="" if req.voice_mode else None,
                                      conversation_summary=conversation_summary,
                                      reasoning=req.reasoning, call_reason="chat:article_attachment",
-                                     inject_user_profile=inject_user_profile)
+                                     inject_user_profile=inject_user_profile, use_tools=req.use_tools)
         result = {"answer": raw_answer, "sources": context_docs, "model": await get_model_display_name()}
     elif req.voice_mode:
         raw_answer = await query_llm(req.question, file_context_docs, system_prompt, media_attachments, req.messages,
@@ -621,7 +625,7 @@ async def query(req: QueryRequest):
                                          skip_rag=external_selected and not knowledge_collection_ids,
                                          reasoning=req.reasoning, conv_id=conv_id, conversation_summary=conversation_summary,
                                          call_reason="chat:url_context", knowledge_collection_ids=knowledge_collection_ids,
-                                         inject_user_profile=inject_user_profile)
+                                         inject_user_profile=inject_user_profile, use_tools=req.use_tools)
             combined_docs = await limit_direct_document_contexts(file_context_docs + url_docs + rag_result.get("sources", []))
             raw_answer = await query_llm(
                 req.question, combined_docs, response_system_prompt,
@@ -629,7 +633,7 @@ async def query(req: QueryRequest):
                 format_instruction_override=None,
                 conversation_summary=conversation_summary,
                 reasoning=req.reasoning, call_reason="chat:url_context",
-                inject_user_profile=inject_user_profile,
+                inject_user_profile=inject_user_profile, use_tools=req.use_tools,
             )
             result = {"answer": raw_answer, "sources": combined_docs, "model": await get_model_display_name()}
         else:
@@ -646,7 +650,7 @@ async def query(req: QueryRequest):
                                      skip_rag=_has_file_att or (external_selected and not knowledge_collection_ids),
                                      reasoning=req.reasoning, conv_id=conv_id, conversation_summary=conversation_summary,
                                      call_reason="chat:general", knowledge_collection_ids=knowledge_collection_ids,
-                                     inject_user_profile=inject_user_profile)
+                                     inject_user_profile=inject_user_profile, use_tools=req.use_tools)
 
     # 8) 요약 태그 추출 + 히스토리 저장
     from services.conv_summary import extract_summary_tags, save_conv_summary, append_attachment_summary
@@ -832,7 +836,7 @@ async def query_stream(req: QueryRequest):
                 mode=req.approval_mode, conversation_id=req.conv_id, project_id=req.project_id,
                 interactive=True,
             ))
-            if req.selected_mcp_ids and not req.minimal_prompt:
+            if req.selected_mcp_ids and req.use_tools:
                 from services.mcp_client import mcp_manager
                 mcp_scope_token = await mcp_manager.enable_request_scope(req.selected_mcp_ids)
             # 1) 붙여넣기 UI 마커 제거 (본문은 사용자 질문으로 유지)
@@ -955,7 +959,7 @@ async def query_stream(req: QueryRequest):
                                                  reasoning=req.reasoning, conv_id=conv_id, conversation_summary=conversation_summary,
                                                  call_reason="chat:url_context_stream",
                                                  knowledge_collection_ids=knowledge_collection_ids,
-                                                 inject_user_profile=inject_user_profile)
+                                                 inject_user_profile=inject_user_profile, use_tools=req.use_tools)
                     context_docs = file_context_docs + url_docs + rag_result.get("sources", [])
                     docs_for_llm = await limit_direct_document_contexts(context_docs)
                     selected_external_instruction = external_instruction
@@ -1035,7 +1039,7 @@ async def query_stream(req: QueryRequest):
                         knowledge_collection_ids=knowledge_collection_ids,
                         inject_user_profile=inject_user_profile,
                         project_tool_first=project_tool_first,
-                        use_tools=not req.minimal_prompt,
+                        use_tools=req.use_tools,
                         include_skills=not req.minimal_prompt,
                         isolated_system_prompt=req.minimal_prompt,
                 ):

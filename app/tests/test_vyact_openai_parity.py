@@ -221,6 +221,21 @@ class VyactOpenAiParityTests(unittest.IsolatedAsyncioTestCase):
         self.assertAlmostEqual(usage["prompt_tokens_per_second"], 3_000 / 7.63)
         self.assertAlmostEqual(usage["completion_tokens_per_second"], 520 / 12.73)
 
+    async def test_answer_only_request_does_not_discover_or_expose_tools(self):
+        client = _Client()
+        with patch("services.llm.providers.get_provider_config", AsyncMock(return_value={
+                "type": "openai", "selection_type": "vyact", "is_local": True,
+                "runtime": "gguf", "model": "local", "base_url": "http://127.0.0.1:11435/v1",
+            })), patch("services.mcp_client.mcp_manager.get_tools", AsyncMock()) as get_tools:
+            pieces = [piece async for piece in openai_stream(
+                client, "local", None, "system", "Follow-up question", [], [], [], 30,
+                reasoning=False, use_tools=False,
+            )]
+
+        get_tools.assert_not_awaited()
+        self.assertNotIn("tools", client.body)
+        self.assertEqual(pieces, ["ok"])
+
     async def test_llama_stream_receives_reasoning_and_runtime_options(self):
         client = _Client()
         with patch("services.llm.providers.get_provider_config", AsyncMock(return_value={

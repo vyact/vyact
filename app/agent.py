@@ -301,6 +301,7 @@ async def rag_query(
         call_reason: str = "chat",
         knowledge_collection_ids: list[str] | None = None,
         inject_user_profile: bool = True,
+        use_tools: bool = True,
 ) -> dict[str, Any]:
     """RAG 쿼리 실행 및 응답 (논스트리밍)."""
     attachments = attachments or []
@@ -317,7 +318,7 @@ async def rag_query(
         docs = await _gather_docs(question, extra_context, skip_rag=skip_rag, conv_id=conv_id)
     answer = await query_llm(question, docs, system_prompt, [*attachments, *_knowledge_inline_image_attachments(docs)], conversation_history,
                              reasoning=reasoning, conversation_summary=conversation_summary, call_reason=call_reason,
-                             inject_user_profile=inject_user_profile)
+                             inject_user_profile=inject_user_profile, use_tools=use_tools)
     return {
         "answer": answer.strip(),
         "response_type": "simple",
