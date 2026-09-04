@@ -390,7 +390,7 @@ const Message: React.FC<MessageProps> = ({
                                                 a.click();
                                                 URL.revokeObjectURL(url);
                                             } catch (e) {
-                                                console.error('다운로드 실패', e);
+                                                console.error(t('localOperationErrors.projectDownloadFailed'), e);
                                             }
                                         }}
                                         className="generated-image-download"
@@ -509,13 +509,13 @@ const Message: React.FC<MessageProps> = ({
                                 const handleProjectDownload = async () => {
                                     try {
                                         const data = parseProjectXml(group.value ?? '');
-                                        if (!data) throw new Error('XML 파싱 실패');
+                                        if (!data) throw new Error(t('localOperationErrors.projectXmlInvalid'));
                                         const res = await fetch('/api/project/download', {
                                             method: 'POST',
                                             headers: {'Content-Type': 'application/json'},
                                             body: JSON.stringify(data),
                                         });
-                                        if (!res.ok) throw new Error('다운로드 실패');
+                                        if (!res.ok) throw new Error(t('localOperationErrors.projectDownloadFailed'));
                                         const blob = await res.blob();
                                         const url = URL.createObjectURL(blob);
                                         const a = document.createElement('a');

@@ -3,6 +3,8 @@ services/llm/errors.py — provider HTTP 에러 메시지 변환
 """
 import httpx
 
+from .messages import llm_message
+
 
 HTTP_ERROR_BODY_LOG_LIMIT = 4_000
 MODEL_IMAGE_UNSUPPORTED_ERROR = "this model does not support image input"
@@ -81,48 +83,35 @@ def is_insufficient_memory_error(error: httpx.HTTPStatusError) -> bool:
     return is_insufficient_memory_message(message)
 
 
-def http_err_msg(e: httpx.HTTPStatusError, provider: str) -> str:
+def http_err_msg(e: httpx.HTTPStatusError, provider: str, language: str = "en") -> str:
+    code = e.response.status_code
+    message = ""
     try:
         data = e.response.json()
-        code = e.response.status_code
-        msg = data.get("error", {}).get("message", "")
-        if code == 429:
-            return f"{provider} API 사용량 한도를 초과했습니다."
-        if code == 401:
-            return f"{provider} API 키가 유효하지 않습니다."
-        if code == 503:
-            return f"{provider} API가 일시적으로 사용 불가능합니다."
-        return f"{provider} API 오류: {msg}"
-    except Exception:
-        return f"{provider} API 오류 (코드: {e.response.status_code})"
-
-
-def openai_err(e: httpx.HTTPStatusError, log_entry: dict) -> str:
-    msg = http_err_msg(e, "OpenAI")
-    log_entry["error"] = msg
-    return f"❌ {msg}"
-
-
-def gemini_err(e: httpx.HTTPStatusError, log_entry: dict) -> str:
-    try:
-        data = e.response.json()
-        code = data.get("error", {}).get("code")
-        raw = data.get("error", {}).get("message", "")
-        if code == 503:
-            msg = "Gemini API가 현재 과부하 상태입니다."
-        elif code == 429:
-            msg = "API 사용량 한도를 초과했습니다."
-        elif code == 401:
-            msg = "API 키가 유효하지 않습니다."
+        error = data.get("error", {}) if isinstance(data, dict) else {}
+        if isinstance(error, dict):
+            message = str(error.get("message", ""))
         else:
-            msg = f"Gemini API 오류: {raw}"
+            message = str(error)
     except Exception:
-        msg = f"Gemini API 오류 (코드: {e.response.status_code})"
+        pass
+    key = {429: "rate_limit", 401: "invalid_key", 503: "unavailable"}.get(code, "api_error")
+    return llm_message(key, language, provider=provider, status=code, detail=message)
+
+
+def _provider_error(e: httpx.HTTPStatusError, log_entry: dict, provider: str, language: str) -> str:
+    msg = http_err_msg(e, provider, language)
     log_entry["error"] = msg
     return f"❌ {msg}"
 
 
-def claude_err(e: httpx.HTTPStatusError, log_entry: dict) -> str:
-    msg = http_err_msg(e, "Claude")
-    log_entry["error"] = msg
-    return f"❌ {msg}"
+def openai_err(e: httpx.HTTPStatusError, log_entry: dict, language: str = "en") -> str:
+    return _provider_error(e, log_entry, "OpenAI", language)
+
+
+def gemini_err(e: httpx.HTTPStatusError, log_entry: dict, language: str = "en") -> str:
+    return _provider_error(e, log_entry, "Gemini", language)
+
+
+def claude_err(e: httpx.HTTPStatusError, log_entry: dict, language: str = "en") -> str:
+    return _provider_error(e, log_entry, "Claude", language)

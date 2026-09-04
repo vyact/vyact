@@ -1251,5 +1251,11 @@
     "cancel": "Cancel",
     "apply": "Apply",
     "applying": "Applying..."
+  },
+  "localOperationErrors": {
+    "projectXmlInvalid": "Could not parse the project XML.",
+    "projectDownloadFailed": "Could not download the project.",
+    "memoPrepareFailed": "Could not prepare the note.",
+    "indexResultMissing": "No indexing result was received for {{name}}."
   }
 }

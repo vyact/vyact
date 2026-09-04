@@ -1255,5 +1255,11 @@
     "cancel": "Cancel",
     "apply": "Apply",
     "applying": "Applying..."
+  },
+  "localOperationErrors": {
+    "projectXmlInvalid": "ไม่สามารถแยกวิเคราะห์ XML ของโครงการได้",
+    "projectDownloadFailed": "ไม่สามารถดาวน์โหลดโครงการได้",
+    "memoPrepareFailed": "ไม่สามารถเตรียมบันทึกได้",
+    "indexResultMissing": "ไม่ได้รับผลการจัดทำดัชนีสำหรับ {{name}}"
   }
 }

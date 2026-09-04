@@ -29,6 +29,8 @@ from .errors import (
 from .providers import openai_stream, gemini_stream, claude_stream
 from .prepare import prepare_request
 from services.runtime_settings import get_runtime_settings
+from services.tool_messages import get_tool_language
+from .messages import llm_message
 from services.local_model_errors import LocalModelNotDownloadedError
 
 _STREAMERS = {"openai": openai_stream, "gemini": gemini_stream, "claude": claude_stream}
@@ -206,13 +208,14 @@ async def chat_stream_with_tools(
                 log_entry["error"] = "model_image_unsupported"
                 yield {"type": "error", "code": "model_image_unsupported", "model": model}
             else:
-                msg = http_err_msg(e, _PROVIDER_LABEL.get(provider_type, provider_type))
+                msg = http_err_msg(e, _PROVIDER_LABEL.get(provider_type, provider_type), await get_tool_language())
                 log_entry["error"] = msg
                 yield {"type": "token", "text": f"\n\n❌ {msg}"}
         except Exception as e:
             logger.error("[chat_stream_with_tools] %s 스트리밍 실패: %s", provider_type, e)
             log_entry["error"] = f"{type(e).__name__}: {e}"
-            yield {"type": "token", "text": f"\n\n❌ 스트리밍 중 오류가 발생했습니다: {type(e).__name__}"}
+            msg = llm_message("stream_failed", await get_tool_language(), detail=type(e).__name__)
+            yield {"type": "token", "text": f"\n\n❌ {msg}"}
         finally:
             log_entry["response"] = "".join(collected)
             log_entry["tools_used"] = tools_used or None
@@ -355,7 +358,7 @@ async def query_llm(
                     log_entry["response"] = text
                     return text
                 except httpx.HTTPStatusError as e:
-                    return openai_err(e, log_entry)
+                    return openai_err(e, log_entry, await get_tool_language())
 
             elif provider_type == "gemini":
                 temperature = runtime["llm_temperature"]
@@ -379,7 +382,7 @@ async def query_llm(
                     log_entry["response"] = result
                     return result["candidates"][0]["content"]["parts"][0]["text"]
                 except httpx.HTTPStatusError as e:
-                    return gemini_err(e, log_entry)
+                    return gemini_err(e, log_entry, await get_tool_language())
 
             elif provider_type == "claude":
                 temperature = runtime["llm_temperature"]
@@ -410,10 +413,10 @@ async def query_llm(
                         text = "\n".join(text.split("\n")[1:-1])
                     return text
                 except httpx.HTTPStatusError as e:
-                    return claude_err(e, log_entry)
+                    return claude_err(e, log_entry, await get_tool_language())
 
             else:
-                return f"지원하지 않는 Provider: {provider_type}"
+                return llm_message("unsupported_provider", await get_tool_language(), provider=provider_type)
 
         except Exception as e:
             import traceback
@@ -422,7 +425,7 @@ async def query_llm(
             logger.error("[ERROR] 예상치 못한 에러: %s: %s", type(e).__name__, e)
             logger.error(err_detail)
             await log_llm_interaction(log_entry)
-            return f"❌ 오류가 발생했습니다: {type(e).__name__}: {str(e)}"
+            return "❌ " + llm_message("request_failed", await get_tool_language(), detail=f"{type(e).__name__}: {e}")
         finally:
             if not log_entry.get("error"):
                 await log_llm_interaction(log_entry)

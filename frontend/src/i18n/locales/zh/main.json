@@ -1255,5 +1255,11 @@
     "cancel": "Cancel",
     "apply": "Apply",
     "applying": "Applying..."
+  },
+  "localOperationErrors": {
+    "projectXmlInvalid": "无法解析项目XML。",
+    "projectDownloadFailed": "无法下载项目。",
+    "memoPrepareFailed": "无法准备笔记。",
+    "indexResultMissing": "未收到{{name}}的索引结果。"
   }
 }

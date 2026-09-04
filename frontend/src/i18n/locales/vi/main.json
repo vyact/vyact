@@ -1255,5 +1255,11 @@
     "cancel": "Cancel",
     "apply": "Apply",
     "applying": "Applying..."
+  },
+  "localOperationErrors": {
+    "projectXmlInvalid": "Không thể phân tích XML của dự án.",
+    "projectDownloadFailed": "Không thể tải xuống dự án.",
+    "memoPrepareFailed": "Không thể chuẩn bị ghi chú.",
+    "indexResultMissing": "Không nhận được kết quả lập chỉ mục cho {{name}}."
   }
 }

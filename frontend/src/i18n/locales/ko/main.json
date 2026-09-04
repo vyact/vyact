@@ -1262,5 +1262,11 @@
     "cancel": "취소",
     "apply": "적용",
     "applying": "적용 중..."
+  },
+  "localOperationErrors": {
+    "projectXmlInvalid": "프로젝트 XML을 해석하지 못했습니다.",
+    "projectDownloadFailed": "프로젝트를 다운로드하지 못했습니다.",
+    "memoPrepareFailed": "메모를 준비하지 못했습니다.",
+    "indexResultMissing": "{{name}} 인덱싱 결과를 받지 못했습니다."
   }
 }

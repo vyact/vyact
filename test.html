@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Timer</title>
+    <style>
+        :root {
+            --bg-color: #1a1a2e;
+            --card-bg: #16213e;
+            --primary-orange: #ff7e5f;
+            --secondary-orange: #feb47b;
+            --text-color: #ffffff;
+            --text-muted: #a0a0a0;
+            --button-bg: #ff7e5f;
+            --button-hover: #ff6b52;
+            --break-color: #4facfe;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            text-align: center;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: var(--primary-orange);
+            text-shadow: 0 0 10px rgba(255, 126, 95, 0.3);
+        }
+
+        .mode-switcher {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .mode-btn {
+            background: transparent;
+            border: 2px solid var(--text-muted);
+            color: var(--text-muted);
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .mode-btn.active {
+            background: var(--primary-orange);
+            border-color: var(--primary-orange);
+            color: white;
+            box-shadow: 0 0 15px rgba(255, 126, 95, 0.4);
+        }
+
+        .mode-btn:hover:not(.active) {
+            border-color: var(--primary-orange);
+            color: var(--primary-orange);
+        }
+
+        .timer-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 0 auto 40px;
+        }
+
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.5s ease;
+            transform-origin: 50% 50%;
+            transform-box: fill-box;
+        }
+
+        .timer-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--text-color);
+            text-shadow: 0 0 20px rgba(255, 126, 95, 0.5);
+        }
+
+        .timer-label {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            margin-top: 10px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .control-btn {
+            background: var(--button-bg);
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 126, 95, 0.3);
+        }
+
+        .control-btn:hover {
+            background: var(--button-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 126, 95, 0.4);
+        }
+
+        .control-btn:active {
+            transform: translateY(0);
+        }
+
+        .control-btn.reset {
+            background: transparent;
+            border: 2px solid var(--text-muted);
+            color: var(--text-muted);
+        }
+
+        .control-btn.reset:hover {
+            border-color: var(--text-muted);
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .status-message {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            min-height: 27px;
+        }
+
+        .status-message.active {
+            color: var(--primary-orange);
+            font-weight: 600;
+        }
+
+        .break-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .break-indicator.visible {
+            opacity: 1;
+        }
+
+        .break-indicator::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--break-color);
+            box-shadow: 0 0 20px var(--break-color);
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .control-btn:hover {
+            animation: pulse 0.3s ease;
+        }
+
+        @media (max-width: 480px) {
+            .timer-container {
+                width: 250px;
+                height: 250px;
+            }
+
+            .timer-text {
+                font-size: 2.5rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Pomodoro Timer</h1>
+
+    <div class="mode-switcher">
+        <button class="mode-btn active" id="focus-mode" onclick="switchMode('focus')">Focus</button>
+        <button class="mode-btn" id="break-mode" onclick="switchMode('break')">Break</button>
+    </div>
+
+    <div class="timer-container">
+        <svg class="progress-ring" width="300" height="300">
+            <circle
+                    class="progress-ring-bg"
+                    cx="150"
+                    cy="150"
+                    r="140"
+                    fill="none"
+                    stroke="#1a1a2e"
+                    stroke-width="8"
+            />
+            <circle
+                    class="progress-ring-circle"
+                    cx="150"
+                    cy="150"
+                    r="140"
+                    fill="none"
+                    stroke="var(--primary-orange)"
+                    stroke-width="8"
+                    stroke-linecap="round"
+                    style="stroke-dasharray: 879.646; stroke-dashoffset: 0;"
+            />
+        </svg>
+        <div class="break-indicator"></div>
+        <div class="timer-text" id="time-display">25:00</div>
+    </div>
+    <div class="timer-label" id="timer-label">Focus Time</div>
+
+    <div class="controls">
+        <button class="control-btn" id="start-btn" onclick="toggleTimer()">Start</button>
+        <button class="control-btn" id="reset-btn" onclick="resetTimer()">Reset</button>
+    </div>
+
+    <div class="status-message" id="status-message">Ready to focus?</div>
+</div>
+
+<script>
+    // Timer configuration
+    const FOCUS_DURATION = 25 * 60; // 25 minutes in seconds
+    const BREAK_DURATION = 5 * 60;   // 5 minutes in seconds
+
+    // Timer state
+    let currentMode = 'focus';
+    let timeLeft = FOCUS_DURATION;
+    let totalTime = FOCUS_DURATION;
+    let timerInterval = null;
+    let isRunning = false;
+
+    // DOM elements
+    const timeDisplay = document.getElementById('time-display');
+    const timerLabel = document.getElementById('timer-label');
+    const startBtn = document.getElementById('start-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const statusMessage = document.getElementById('status-message');
+    const focusModeBtn = document.getElementById('focus-mode');
+    const breakModeBtn = document.getElementById('break-mode');
+    const progressCircle = document.querySelector('.progress-ring-circle');
+    const breakIndicator = document.querySelector('.break-indicator');
+
+    // SVG circle properties
+    const circle = progressCircle;
+    const radius = circle.r.baseVal.value;
+    const circumference = 2 * Math.PI * radius;
+
+    // Initialize circle
+    circle.style.strokeDasharray = `${circumference} ${circumference}`;
+    circle.style.strokeDashoffset = 0;
+
+    // Format time as MM:SS
+    function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    // Update the timer display
+    function updateDisplay() {
+        timeDisplay.textContent = formatTime(timeLeft);
+
+        // Update circle color based on mode
+        if (currentMode === 'focus') {
+            circle.style.stroke = 'var(--primary-orange)';
+            timerLabel.textContent = 'Focus Time';
+            timerLabel.style.color = 'var(--text-muted)';
+        } else {
+            circle.style.stroke = 'var(--break-color)';
+            timerLabel.textContent = 'Break Time';
+            timerLabel.style.color = 'var(--break-color)';
+        }
+
+        // Update progress circle
+        const progress = timeLeft / totalTime;
+        const offset = circumference - (progress * circumference);
+        circle.style.strokeDashoffset = offset;
+
+        // Update status message
+        if (isRunning) {
+            statusMessage.textContent = currentMode === 'focus' ? 'Stay focused!' : 'Relax and recharge!';
+            statusMessage.classList.add('active');
+        } else {
+            statusMessage.textContent = 'Ready to focus?';
+            statusMessage.classList.remove('active');
+        }
+
+        // Show break indicator
+        if (currentMode === 'break') {
+            breakIndicator.classList.add('visible');
+        } else {
+            breakIndicator.classList.remove('visible');
+        }
+    }
+
+    // Start the timer
+    function startTimer() {
+        if (isRunning) return;
+
+        isRunning = true;
+        startBtn.textContent = 'Pause';
+        startBtn.style.background = '#e94560';
+        startBtn.style.boxShadow = '0 4px 15px rgba(233, 69, 96, 0.3)';
+
+        statusMessage.textContent = currentMode === 'focus' ? 'Stay focused!' : 'Relax and recharge!';
+        statusMessage.classList.add('active');
+
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            updateDisplay();
+
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                isRunning = false;
+                startBtn.textContent = 'Start';
+                startBtn.style.background = 'var(--button-bg)';
+                startBtn.style.boxShadow = '0 4px 15px rgba(255, 126, 95, 0.3)';
+                statusMessage.textContent = 'Timer finished!';
+                statusMessage.classList.remove('active');
+
+                // Play a subtle sound (optional)
+                // new Audio('timer-end.mp3').play().catch(() => {});
+            }
+        }, 1000);
+    }
+
+    // Toggle timer start/pause
+    function toggleTimer() {
+        if (isRunning) {
+            clearInterval(timerInterval);
+            isRunning = false;
+            startBtn.textContent = 'Start';
+            startBtn.style.background = 'var(--button-bg)';
+            startBtn.style.boxShadow = '0 4px 15px rgba(255, 126, 95, 0.3)';
+            statusMessage.textContent = 'Paused';
+            statusMessage.classList.remove('active');
+        } else {
+            startTimer();
+        }
+    }
+
+    // Reset the timer
+    function resetTimer() {
+        clearInterval(timerInterval);
+        isRunning = false;
+        timeLeft = currentMode === 'focus' ? FOCUS_DURATION : BREAK_DURATION;
+        totalTime = timeLeft;
+        startBtn.textContent = 'Start';
+        startBtn.style.background = 'var(--button-bg)';
+        startBtn.style.boxShadow = '0 4px 15px rgba(255, 126, 95, 0.3)';
+        statusMessage.textContent = 'Ready to focus?';
+        statusMessage.classList.remove('active');
+        updateDisplay();
+    }
+
+    // Switch between focus and break modes
+    function switchMode(mode) {
+        clearInterval(timerInterval);
+        isRunning = false;
+        currentMode = mode;
+        timeLeft = mode === 'focus' ? FOCUS_DURATION : BREAK_DURATION;
+        totalTime = timeLeft;
+
+        focusModeBtn.classList.toggle('active', mode === 'focus');
+        breakModeBtn.classList.toggle('active', mode === 'break');
+
+        startBtn.textContent = 'Start';
+        startBtn.style.background = 'var(--button-bg)';
+        startBtn.style.boxShadow = '0 4px 15px rgba(255, 126, 95, 0.3)';
+
+        statusMessage.textContent = mode === 'focus' ? 'Ready to focus?' : 'Ready for a break?';
+        statusMessage.classList.remove('active');
+
+        updateDisplay();
+    }
+
+    // Initialize
+    updateDisplay();
+</script>
+</body>
+</html>

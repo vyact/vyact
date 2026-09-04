@@ -19,6 +19,7 @@ from contextvars import ContextVar
 from pathlib import Path
 
 from logger import get_logger
+from services.code_messages import code_message, code_error, localized_code_tool
 
 logger = get_logger(__name__)
 
@@ -298,7 +299,7 @@ def _safe_path(folder: str, rel: str) -> Path | None:
 def _resolve_folder(folder_id: str) -> tuple[str | None, str | None]:
     folder = current_code_folders.get().get(folder_id)
     if not folder:
-        return None, f"[오류] 허용되지 않았거나 누락된 folder_id입니다: {folder_id}"
+        return None, code_error("invalid_folder", value=folder_id)
     return folder, None
 
 
@@ -313,7 +314,7 @@ def _run_command(command: list[str], folder: str, timeout: int = 60) -> str:
     """고정된 명령 배열만 실행하고 출력 길이를 제한한다."""
     executable = shutil.which(command[0])
     if not executable:
-        return f"[오류] 실행 명령을 찾을 수 없습니다: {command[0]}"
+        return code_error("not_found", value=command[0])
     resolved_command = [executable, *command[1:]]
     try:
         result = subprocess.run(
@@ -326,16 +327,17 @@ def _run_command(command: list[str], folder: str, timeout: int = 60) -> str:
             cwd=folder,
         )
     except subprocess.TimeoutExpired:
-        return f"[오류] 검사 시간 초과 ({timeout}초)"
+        return code_error("timeout", value=timeout)
     except FileNotFoundError:
-        return f"[오류] 실행 명령을 찾을 수 없습니다: {command[0]}"
+        return code_error("not_found", value=command[0])
     output = (result.stdout + result.stderr).strip()
     if len(output) > 12_000:
-        output = output[:12_000] + "\n...(출력 생략)"
-    prefix = "✅ 성공" if result.returncode == 0 else f"❌ 실패 (exit {result.returncode})"
-    return f"{prefix}: {' '.join(command)}\n{output or '(출력 없음)'}"
+        output = output[:12_000] + "\n" + code_message("truncated")
+    prefix = "✅ " + code_message("success") if result.returncode == 0 else "❌ " + code_message("failed", value=result.returncode)
+    return f"{prefix}: {' '.join(command)}\n{output or code_message('no_output')}"
 
 
+@localized_code_tool
 async def _list_directory(folder_id: str, path: str = ".", max_depth: int = 3) -> str:
     folder, error = _resolve_folder(folder_id)
     if error:
@@ -343,7 +345,7 @@ async def _list_directory(folder_id: str, path: str = ".", max_depth: int = 3) -
 
     target = _safe_path(folder, path)
     if not target or not target.is_dir():
-        return f"[오류] 디렉토리를 찾을 수 없습니다: {path}"
+        return code_error("not_found", value=path)
 
     lines = []
     base = Path(folder).resolve()
@@ -378,10 +380,11 @@ async def _list_directory(folder_id: str, path: str = ".", max_depth: int = 3) -
 
     _walk(target, 0)
     if not lines:
-        return f"{path} 디렉토리가 비어 있습니다."
+        return code_message("empty_directory", value=path)
     return "\n".join(lines[:500])
 
 
+@localized_code_tool
 async def _read_file(folder_id: str, path: str, offset: int = 0, limit: int = 1200) -> str:
     folder, error = _resolve_folder(folder_id)
     if error:
@@ -389,44 +392,46 @@ async def _read_file(folder_id: str, path: str, offset: int = 0, limit: int = 12
 
     target = _safe_path(folder, path)
     if not target or not target.is_file():
-        return f"[오류] 파일을 찾을 수 없습니다: {path}"
+        return code_error("not_found", value=path)
 
     if target.stat().st_size > MAX_READ_BYTES * 10:
-        return f"[오류] 파일이 너무 큽니다 ({target.stat().st_size} bytes). offset/limit으로 부분 읽기해주세요."
+        return code_error("large_file", value=target.stat().st_size)
 
     try:
         content = target.read_text(encoding="utf-8", errors="replace")
     except Exception as e:
-        return f"[오류] 파일 읽기 실패: {e}"
+        return code_error("read_failed", value=e)
 
     lines = content.split("\n")
     total = len(lines)
     selected = lines[offset:offset + limit]
     numbered = [f"{i + offset + 1:4d} | {line}" for i, line in enumerate(selected)]
-    header = f"파일: {path} (전체 {total}줄, {offset + 1}~{offset + len(selected)}줄 표시)"
+    header = code_message("file_header", path=path, total=total, start=offset + 1, end=offset + len(selected))
     return header + "\n" + "\n".join(numbered)
 
 
+@localized_code_tool
 async def _read_files(folder_id: str, paths: list[str], limit_per_file: int = 500) -> str:
     if not isinstance(paths, list) or not paths:
-        return "[오류] 읽을 파일 경로가 필요합니다."
+        return code_error("paths_required")
     if len(paths) > MAX_MULTI_READ_FILES:
-        return f"[오류] 한 번에 최대 {MAX_MULTI_READ_FILES}개 파일을 읽을 수 있습니다."
+        return code_error("max_files", value=MAX_MULTI_READ_FILES)
     outputs = []
     for path in paths:
         output = await _read_file(folder_id, str(path), 0, limit_per_file)
         outputs.append(output)
     combined = "\n\n---\n\n".join(outputs)
-    return combined[:50_000] + ("\n...(출력 생략)" if len(combined) > 50_000 else "")
+    return combined[:50_000] + ("\n" + code_message("truncated") if len(combined) > 50_000 else "")
 
 
+@localized_code_tool
 async def _find_files(folder_id: str, pattern: str = "*", path: str = ".") -> str:
     folder, error = _resolve_folder(folder_id)
     if error:
         return error
     target = _safe_path(folder, path)
     if not target or not target.is_dir():
-        return f"[오류] 디렉토리를 찾을 수 없습니다: {path}"
+        return code_error("not_found", value=path)
     base = Path(folder).resolve()
     matches: list[str] = []
     for root, directory_names, file_names in os.walk(target):
@@ -437,8 +442,8 @@ async def _find_files(folder_id: str, pattern: str = "*", path: str = ".") -> st
             if fnmatch.fnmatch(file_name, pattern) or fnmatch.fnmatch(relative_path, pattern):
                 matches.append(relative_path)
                 if len(matches) >= MAX_FIND_RESULTS:
-                    return "\n".join(matches) + f"\n... (상위 {MAX_FIND_RESULTS}개만 표시)"
-    return "\n".join(matches) if matches else f"'{pattern}' 파일 검색 결과 없음"
+                    return "\n".join(matches) + "\n... " + code_message("top_results", value=MAX_FIND_RESULTS)
+    return "\n".join(matches) if matches else code_message("no_matches", value=pattern)
 
 
 def _try_indent_correction(
@@ -512,6 +517,7 @@ def _try_indent_correction(
     return content, actual_old, corrected_new
 
 
+@localized_code_tool
 async def _edit_file(folder_id: str, path: str, old_string: str, new_string: str) -> str:
     folder, error = _resolve_folder(folder_id)
     if error:
@@ -519,12 +525,12 @@ async def _edit_file(folder_id: str, path: str, old_string: str, new_string: str
 
     target = _safe_path(folder, path)
     if not target or not target.is_file():
-        return f"[오류] 파일을 찾을 수 없습니다: {path}"
+        return code_error("not_found", value=path)
 
     try:
         content = target.read_text(encoding="utf-8")
     except Exception as e:
-        return f"[오류] 파일 읽기 실패: {e}"
+        return code_error("read_failed", value=e)
 
     count = content.count(old_string)
     if count == 0:
@@ -546,29 +552,29 @@ async def _edit_file(folder_id: str, path: str, old_string: str, new_string: str
                 for i, line in enumerate(content.split("\n"), 1):
                     if first_line in line:
                         indent = len(line) - len(line.lstrip())
-                        hint = (f" 힌트: {i}줄에 유사한 내용 발견 (들여쓰기={indent}칸). "
-                                f"code_read_file로 해당 줄을 읽고 정확한 들여쓰기로 다시 시도하세요.")
+                        hint = code_message("indent_hint", line=i, indent=indent)
                         break
-            msg = f"[오류] old_string을 찾을 수 없습니다.{hint}"
+            msg = code_error("old_missing", hint=hint)
             logger.warning("[code_edit] %s 수정 실패: %s (old_string 첫줄: %r)", path, msg, old_string.split("\n")[0][:100])
             return msg
     if count > 1:
-        msg = f"[오류] old_string이 {count}곳에서 발견됩니다. 더 구체적인 문자열을 사용해주세요."
+        msg = code_error("ambiguous", value=count)
         logger.warning("[code_edit] %s 수정 실패: %s", path, msg)
         return msg
 
     new_content = content.replace(old_string, new_string, 1)
     if new_content == content:
-        return "[오류] 변경 전후 내용이 동일하여 파일을 수정하지 않았습니다."
+        return code_error("unchanged")
     _record_file_before_change(folder_id, path)
     try:
         target.write_text(new_content, encoding="utf-8")
     except Exception as e:
-        return f"[오류] 파일 쓰기 실패: {e}"
+        return code_error("write_failed", value=e)
 
-    return f"✅ {path} 수정 완료 (1곳 변경)"
+    return "✅ " + code_message("edited", value=path)
 
 
+@localized_code_tool
 async def _create_file(folder_id: str, path: str, content: str = "") -> str:
     folder, error = _resolve_folder(folder_id)
     if error:
@@ -576,52 +582,53 @@ async def _create_file(folder_id: str, path: str, content: str = "") -> str:
 
     target = _safe_path(folder, path)
     if not target:
-        return f"[오류] 잘못된 경로: {path}"
+        return code_error("invalid_path", value=path)
     if target.exists():
-        return f"[오류] 파일이 이미 존재합니다. 기존 파일은 code_edit_file 또는 code_apply_patch로 수정하세요: {path}"
+        return code_error("exists", value=path)
 
     _record_file_before_change(folder_id, path)
     try:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(content, encoding="utf-8")
     except Exception as e:
-        return f"[오류] 파일 생성 실패: {e}"
+        return code_error("create_failed", value=e)
 
     _project_manifest_cache.clear()
-    return f"✅ {path} 생성 완료 ({len(content.split(chr(10)))}줄)"
+    return "✅ " + code_message("created", path=path, count=len(content.split(chr(10))))
 
 
+@localized_code_tool
 async def _apply_patch(folder_id: str, patch: str) -> str:
     """Apply a validated unified diff atomically enough to avoid partial patch failures."""
     folder, error = _resolve_folder(folder_id)
     if error:
         return error
     if not patch.strip() or len(patch.encode("utf-8")) > MAX_PATCH_BYTES:
-        return f"[오류] patch는 비어 있을 수 없고 최대 {MAX_PATCH_BYTES}바이트여야 합니다."
+        return code_error("patch_size", value=MAX_PATCH_BYTES)
 
     base = Path(folder).resolve()
     old_paths = re.findall(r"^---\s+([^\t\n ]+)", patch, re.MULTILINE)
     new_paths = re.findall(r"^\+\+\+\s+([^\t\n ]+)", patch, re.MULTILINE)
     if not new_paths or len(old_paths) != len(new_paths):
-        return "[오류] 올바른 unified diff 헤더(---/+++)가 필요합니다."
+        return code_error("patch_header")
     for old_path, new_path in zip(old_paths, new_paths):
         if new_path == "/dev/null":
-            return "[오류] patch를 통한 파일 삭제는 지원하지 않습니다. code_delete_file을 사용하세요."
+            return code_error("patch_delete")
         for candidate in (old_path, new_path):
             if candidate == "/dev/null":
                 continue
             if candidate.startswith(("/", "a/", "b/")) or ".." in Path(candidate).parts:
-                return "[오류] patch 경로는 a/ 또는 b/ 접두사 없는 등록 폴더 기준 상대경로여야 합니다."
+                return code_error("patch_path")
             target = (base / candidate).resolve()
             if not target.is_relative_to(base):
-                return f"[오류] 등록 폴더 밖의 경로는 수정할 수 없습니다: {candidate}"
+                return code_error("invalid_path", value=candidate)
 
     for relative_path in dict.fromkeys(path for path in old_paths + new_paths if path != "/dev/null"):
         _record_file_before_change(folder_id, relative_path)
 
     git_executable = shutil.which("git")
     if not git_executable:
-        return "[오류] patch 적용에 필요한 Git 실행 파일을 찾을 수 없습니다."
+        return code_error("not_found", value="Git")
     check_command = [git_executable, "apply", "--check", "--recount", "--whitespace=nowarn", "-p0", "-"]
     apply_command = [git_executable, "apply", "--recount", "--whitespace=nowarn", "-p0", "-"]
     try:
@@ -636,7 +643,7 @@ async def _apply_patch(folder_id: str, patch: str) -> str:
             cwd=str(base),
         )
         if dry_run.returncode != 0:
-            return f"[오류] patch 사전 검증 실패:\n{(dry_run.stdout + dry_run.stderr).strip()[:12_000]}"
+            return code_error("patch_check", value=(dry_run.stdout + dry_run.stderr).strip()[:12_000])
         applied = subprocess.run(
             apply_command,
             input=patch,
@@ -649,13 +656,14 @@ async def _apply_patch(folder_id: str, patch: str) -> str:
         )
         output = (applied.stdout + applied.stderr).strip()
         if applied.returncode != 0:
-            return f"[오류] patch 적용 실패:\n{output[:12_000]}"
+            return code_error("patch_failed", value=output[:12_000])
         _project_manifest_cache.clear()
-        return f"✅ patch 적용 완료\n{output[:12_000]}"
+        return "✅ " + code_message("patch_done") + "\n" + output[:12_000]
     except (OSError, subprocess.TimeoutExpired) as exc:
-        return f"[오류] patch 실행 실패: {exc}"
+        return code_error("patch_failed", value=exc)
 
 
+@localized_code_tool
 async def _grep_search(folder_id: str, pattern: str, path: str = ".", include: str = "") -> str:
     folder, error = _resolve_folder(folder_id)
     if error:
@@ -663,12 +671,12 @@ async def _grep_search(folder_id: str, pattern: str, path: str = ".", include: s
 
     target = _safe_path(folder, path)
     if not target or not target.exists():
-        return f"[오류] 경로를 찾을 수 없습니다: {path}"
+        return code_error("not_found", value=path)
 
     try:
         search_pattern = re.compile(pattern)
     except re.error as exc:
-        return f"[오류] 잘못된 검색 정규식입니다: {exc}"
+        return code_error("regex", value=exc)
 
     base = Path(folder).resolve()
     search_targets: list[Path] = []
@@ -705,11 +713,11 @@ async def _grep_search(folder_id: str, pattern: str, path: str = ".", include: s
                 matches.append(f"{relative_path}:{line_number}:{line}")
 
     if not matches:
-        return f"'{pattern}' 검색 결과 없음"
+        return code_message("no_matches", value=pattern)
 
-    header = f"'{pattern}' 검색 결과 ({total_matches}건"
+    header = code_message("matches", pattern=pattern, count=total_matches)
     if total_matches > MAX_GREP_RESULTS:
-        header += f", 상위 {MAX_GREP_RESULTS}건 표시"
+        header += ", " + code_message("top_results", value=MAX_GREP_RESULTS)
     header += ")"
     return header + "\n" + "\n".join(matches)
 
@@ -751,31 +759,33 @@ def _discover_project_tasks(folder: str) -> list[dict[str, str]]:
     return tasks
 
 
+@localized_code_tool
 async def _list_tasks(folder_id: str) -> str:
     folder, error = _resolve_folder(folder_id)
     if error:
         return error
     tasks = _discover_project_tasks(folder)
     if not tasks:
-        return "실행 가능한 프로젝트 작업을 찾지 못했습니다."
+        return code_message("no_tasks")
     return "\n".join(
         f"- working_directory={task['working_directory']} | task={task['task']} | {task['command']}"
         for task in tasks
     )
 
 
+@localized_code_tool
 async def _run_task(folder_id: str, working_directory: str, task: str) -> str:
     folder, error = _resolve_folder(folder_id)
     if error:
         return error
     target = _safe_path(folder, working_directory)
     if not target or not target.is_dir():
-        return f"[오류] 작업 디렉토리를 찾을 수 없습니다: {working_directory}"
+        return code_error("not_found", value=working_directory)
     normalized_directory = target.relative_to(Path(folder).resolve()).as_posix() or "."
     discovered = _discover_project_tasks(folder)
     selected = next((item for item in discovered if item["working_directory"] == normalized_directory and item["task"] == task), None)
     if not selected:
-        return "[오류] 등록된 프로젝트 설정에서 해당 작업을 찾을 수 없습니다. code_list_tasks로 실행 가능한 작업을 먼저 확인하세요."
+        return code_error("task_missing")
     if task.startswith("python:"):
         commands = {
             "python:test": [sys.executable, "-m", "pytest"],
@@ -789,6 +799,7 @@ async def _run_task(folder_id: str, working_directory: str, task: str) -> str:
     return _run_command(command, str(target), timeout=120)
 
 
+@localized_code_tool
 async def _run_project_check(folder_id: str, check: str, working_directory: str = ".") -> str:
     """Run a conventional check only when declared by the project configuration."""
     folder, error = _resolve_folder(folder_id)
@@ -796,7 +807,7 @@ async def _run_project_check(folder_id: str, check: str, working_directory: str 
         return error
     target = _safe_path(folder, working_directory)
     if not target or not target.is_dir():
-        return f"[오류] 작업 디렉토리를 찾을 수 없습니다: {working_directory}"
+        return code_error("not_found", value=working_directory)
     package_json = target / "package.json"
     if not package_json.is_file():
         python_task = f"python:{'compile' if check == 'build' else check}"
@@ -804,15 +815,16 @@ async def _run_project_check(folder_id: str, check: str, working_directory: str 
     try:
         scripts = json.loads(package_json.read_text(encoding="utf-8")).get("scripts", {})
     except Exception as e:
-        return f"[오류] package.json을 읽을 수 없습니다: {e}"
+        return code_error("read_failed", value=f"package.json: {e}")
     script_name = {"test": "test", "lint": "lint", "typecheck": "typecheck", "build": "build"}.get(check)
     if not script_name:
-        return "[오류] check은 test, lint, typecheck, build 중 하나여야 합니다."
+        return code_error("check_invalid")
     if script_name not in scripts:
-        return f"[오류] package.json에 '{script_name}' script가 없습니다."
+        return code_error("script_missing", value=script_name)
     return await _run_task(folder_id, working_directory, script_name)
 
 
+@localized_code_tool
 async def _git_status(folder_id: str) -> str:
     folder, error = _resolve_folder(folder_id)
     if error:
@@ -820,6 +832,7 @@ async def _git_status(folder_id: str) -> str:
     return _run_command(["git", "status", "--short", "--branch"], folder, timeout=15)
 
 
+@localized_code_tool
 async def _git_diff(folder_id: str, path: str = "") -> str:
     folder, error = _resolve_folder(folder_id)
     if error:
@@ -830,44 +843,46 @@ async def _git_diff(folder_id: str, path: str = "") -> str:
     return stat + "\n\n" + _run_command(detail_command, folder, timeout=15)
 
 
+@localized_code_tool
 async def _move_file(folder_id: str, source: str, destination: str) -> str:
     folder, error = _resolve_folder(folder_id)
     if error:
         return error
     if not _confirmation_received("MOVE", source, destination):
-        return f"[확인 필요] 파일 이동은 되돌리기 어려울 수 있습니다. 사용자에게 다음 문구를 입력해 달라고 요청하세요: MOVE {source} -> {destination}"
+        return code_message("confirm_move", source=source, destination=destination)
     src, dest = _safe_path(folder, source), _safe_path(folder, destination)
     if not src or not dest or not src.is_file():
-        return "[오류] 원본 파일을 찾을 수 없거나 허용되지 않은 경로입니다."
+        return code_error("missing_path")
     if dest.exists():
-        return "[오류] 대상 파일이 이미 존재합니다. 덮어쓰지는 지원하지 않습니다."
+        return code_error("no_overwrite")
     _record_file_before_change(folder_id, source)
     _record_file_before_change(folder_id, destination)
     try:
         dest.parent.mkdir(parents=True, exist_ok=True)
         src.rename(dest)
     except Exception as e:
-        return f"[오류] 파일 이동 실패: {e}"
+        return code_error("move_failed", value=e)
     _project_manifest_cache.clear()
-    return f"✅ 파일 이동 완료: {source} → {destination}"
+    return "✅ " + code_message("moved", source=source, destination=destination)
 
 
+@localized_code_tool
 async def _delete_file(folder_id: str, path: str) -> str:
     folder, error = _resolve_folder(folder_id)
     if error:
         return error
     if not _confirmation_received("DELETE", path):
-        return f"[확인 필요] 삭제는 복구할 수 없습니다. 사용자에게 다음 문구를 입력해 달라고 요청하세요: DELETE {path}"
+        return code_message("confirm_delete", value=path)
     target = _safe_path(folder, path)
     if not target or not target.is_file():
-        return "[오류] 파일을 찾을 수 없거나 허용되지 않은 경로입니다."
+        return code_error("missing_path")
     _record_file_before_change(folder_id, path)
     try:
         target.unlink()
     except Exception as e:
-        return f"[오류] 파일 삭제 실패: {e}"
+        return code_error("delete_failed", value=e)
     _project_manifest_cache.clear()
-    return f"✅ 파일 삭제 완료: {path}"
+    return "✅ " + code_message("deleted", value=path)
 
 
 def register_code_tools():

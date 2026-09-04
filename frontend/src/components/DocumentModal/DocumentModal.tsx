@@ -500,7 +500,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
             if (done) break;
         }
         if (buffer.trim()) handleEvent(JSON.parse(buffer));
-        if (!result) throw new Error(`${file.name} 인덱싱 결과를 받지 못했습니다.`);
+        if (!result) throw new Error(t('localOperationErrors.indexResultMissing', {name: file.name}));
         return result as IndexProgressEvent;
     };
 

@@ -1255,5 +1255,11 @@
     "cancel": "Cancel",
     "apply": "Apply",
     "applying": "Applying..."
+  },
+  "localOperationErrors": {
+    "projectXmlInvalid": "プロジェクトXMLを解析できませんでした。",
+    "projectDownloadFailed": "プロジェクトをダウンロードできませんでした。",
+    "memoPrepareFailed": "メモを準備できませんでした。",
+    "indexResultMissing": "{{name}}のインデックス結果を受信できませんでした。"
   }
 }

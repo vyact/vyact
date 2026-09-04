@@ -900,7 +900,7 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
         if (!draftMemoCreationRef.current) {
             draftMemoCreationRef.current = (async () => {
                 const result = await api.createMemo('<p></p>');
-                if (!result?.id) throw new Error('메모를 준비하지 못했습니다.');
+                if (!result?.id) throw new Error(t('localOperationErrors.memoPrepareFailed'));
                 editingIdRef.current = result.id;
                 draftMemoIdRef.current = result.id;
                 setEditingId(result.id);
@@ -914,7 +914,7 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
             draftMemoCreationRef.current = null;
             throw error;
         }
-    }, []);
+    }, [t]);
 
     const handleCancelEdit = useCallback(async () => {
         const draftMemoId = draftMemoIdRef.current;
