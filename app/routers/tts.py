@@ -7,7 +7,6 @@ import io
 import asyncio
 import json
 import logging
-import threading
 import warnings
 
 warnings.filterwarnings("ignore", message=r"invalid escape sequence.*", category=SyntaxWarning)
@@ -47,6 +46,7 @@ from error_responses import public_error_payload
 from config import INSTALL_DIR, VENV_DIR, get_log_file
 from routers.deps import APP_DIR
 from services.installer import Installer
+from services.tts_pipeline_cache import TtsPipelineCache
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -54,8 +54,7 @@ KOKORO_REPOSITORY_ID = "hexgrad/Kokoro-82M"
 jieba.setLogLevel(logging.WARNING)
 
 # ── Kokoro 싱글톤 ──────────────────────────────────
-_pipelines: dict = {}  # lang_code -> KPipeline; all share one KModel
-_pipeline_lock = threading.Lock()
+_pipeline_cache = TtsPipelineCache()
 _lock = asyncio.Lock()
 _unidic_install_lock = asyncio.Lock()
 
@@ -119,27 +118,17 @@ def _get_pipeline(lang_code: str):
     """Cache language pipelines while keeping only one shared acoustic model."""
     if KPipeline is None:
         raise HTTPException(status_code=503, detail="Kokoro is unavailable") from _kokoro_import_error
-    with _pipeline_lock:
-        if lang_code not in _pipelines:
-            try:
-                shared_model = next((pipeline.model for pipeline in _pipelines.values()), True)
-                pipeline = KPipeline(
-                    lang_code=lang_code,
-                    repo_id=KOKORO_REPOSITORY_ID,
-                    model=shared_model,
-                )
-                _pipelines[lang_code] = pipeline
-                logger.info("Kokoro pipeline loaded: lang_code=%s", lang_code)
-            except ModuleNotFoundError as error:
-                logger.error("Kokoro dependency missing for %s: %s", lang_code, error.name)
-                raise HTTPException(
-                    status_code=500,
-                    detail=f"Kokoro dependency missing for {lang_code}: {error.name}",
-                ) from error
-            except Exception as error:
-                logger.error("Kokoro pipeline creation failed for %s: %s", lang_code, error)
-                raise HTTPException(status_code=500, detail=str(error)) from error
-        return _pipelines[lang_code]
+    try:
+        return _pipeline_cache.get(lang_code, KPipeline, KOKORO_REPOSITORY_ID)
+    except ModuleNotFoundError as error:
+        logger.error("Kokoro dependency missing for %s: %s", lang_code, error.name)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Kokoro dependency missing for {lang_code}: {error.name}",
+        ) from error
+    except Exception as error:
+        logger.error("Kokoro pipeline creation failed for %s: %s", lang_code, error)
+        raise HTTPException(status_code=500, detail=str(error)) from error
 
 
 # ── 요청 모델 ──────────────────────────────────────

@@ -15,11 +15,20 @@ case "$TARGET_OS" in
 esac
 
 mkdir -p "$RUNTIME_DIR"
-RELEASE_JSON="$(curl --fail --silent --show-error --location "$API_URL")"
+github_api() {
+  local headers=(-H 'Accept: application/vnd.github+json')
+  local token="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
+  if [ -n "$token" ]; then
+    headers+=(-H "Authorization: Bearer $token")
+  fi
+  curl --fail --silent --show-error --location --retry 3 "${headers[@]}" "$1"
+}
+
+RELEASE_JSON="$(github_api "$API_URL")"
 RELEASE_ID="$(grep -m 1 -o '"id": *[0-9][0-9]*' <<< "$RELEASE_JSON" | tr -cd '0-9')"
 ASSET_URL=""
 for PAGE in $(seq 1 10); do
-  ASSETS_JSON="$(curl --fail --silent --show-error --location \
+  ASSETS_JSON="$(github_api \
     "https://api.github.com/repos/astral-sh/python-build-standalone/releases/$RELEASE_ID/assets?per_page=100&page=$PAGE")"
   MATCHING_ASSET_URLS="$(sed -n 's/.*"browser_download_url": *"\([^"]*\)".*/\1/p' <<< "$ASSETS_JSON" \
     | grep -E "$ASSET_PATTERN" || true)"
