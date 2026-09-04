@@ -947,8 +947,11 @@
     }
   },
   "fileUpload": {
+    "audioConversionFailed": "音声ファイルを変換できませんでした。正常に再生できるか確認してください。",
+    "imageNotSupported": "選択したモデルは画像入力に対応していません。画像対応モデルを選択してください。",
+    "audioNotSupported": "選択したモデルは音声入力に対応していません。音声対応モデルを選択してください。",
     "failed": "{{name}} のアップロードに失敗しました",
-    "unsupportedAudioFormat": "MP3、WAV、またはFLACの音声ファイルを使用してください。"
+    "unsupportedAudioFormat": "M4A / MP3、WAV、またはFLACの音声ファイルを使用してください。"
   },
   "approval": {
     "title": "承認モード",

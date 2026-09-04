@@ -947,8 +947,11 @@
     }
   },
   "fileUpload": {
+    "audioConversionFailed": "ไม่สามารถแปลงไฟล์เสียงได้ โปรดตรวจสอบว่าไฟล์เล่นได้ตามปกติ",
+    "imageNotSupported": "โมเดลที่เลือกไม่รองรับอินพุตรูปภาพ โปรดเลือกโมเดลที่รองรับรูปภาพ",
+    "audioNotSupported": "โมเดลที่เลือกไม่รองรับอินพุตเสียง โปรดเลือกโมเดลที่รองรับเสียง",
     "failed": "อัปโหลด {{name}} ล้มเหลว",
-    "unsupportedAudioFormat": "ใช้ไฟล์เสียง MP3, WAV หรือ FLAC"
+    "unsupportedAudioFormat": "ใช้ไฟล์เสียง M4A / MP3, WAV หรือ FLAC"
   },
   "approval": {
     "title": "โหมดการอนุมัติ",

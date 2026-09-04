@@ -20,6 +20,7 @@ from typing import Callable
 from tqdm.auto import tqdm
 
 from config import INSTALL_DIR, get_log_file
+from services.multimodal_capabilities import get_mlx_modalities
 from services.local_model_errors import LocalModelNotDownloadedError
 from services.hardware_info import get_local_hardware_info
 from services.omlx_policy import (
@@ -123,6 +124,14 @@ def list_downloaded_mlx_models() -> list[str]:
         for path in MLX_MODELS_DIR.rglob(MLX_MODEL_MANIFEST)
         if path.is_file() and _read_model_manifest(path).get("role", "model") == "model"
     )
+
+
+def list_multimodal_supported_mlx_models() -> dict[str, list[str]]:
+    result = {"image": [], "audio": []}
+    for model in list_downloaded_mlx_models():
+        for modality in get_mlx_modalities(MLX_MODELS_DIR / model.removeprefix("mlx/")):
+            result[modality].append(model)
+    return result
 
 
 def list_mtp_supported_mlx_models() -> list[str]:

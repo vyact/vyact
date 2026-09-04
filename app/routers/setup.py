@@ -41,7 +41,7 @@ from services.runtime_startup import (
 from services.model_runtime_profiles import delete_model_profile, get_model_profile, normalize_gpu_split_for_hardware, normalize_model_profile, recommended_model_profile, save_model_profile
 from services.model_memory import estimate_downloaded_model_memory_bytes
 from services.vyact_model_metadata_cache import get_cached_model_metadata, save_cached_model_metadata
-from services.mlx_runtime import get_downloaded_mlx_model_path, get_mlx_runtime_capabilities, is_apple_silicon
+from services.mlx_runtime import get_downloaded_mlx_model_path, get_mlx_runtime_capabilities, is_apple_silicon, list_multimodal_supported_mlx_models
 from services.external_api_server import EXTERNAL_API_PORT, public_model_id
 from services.reasoning_capabilities import get_gguf_reasoning_capabilities, get_mlx_reasoning_capabilities
 from services.vyact_runtime import VYACT_RUNTIME_URL, get_downloaded_model_path, get_model_modalities
@@ -661,6 +661,10 @@ async def get_models():
             *(list_downloaded_mlx_models() if mlx_available else []),
         ]
         multimodal_models = await asyncio.to_thread(list_multimodal_supported_models)
+        if mlx_available:
+            mlx_modalities = await asyncio.to_thread(list_multimodal_supported_mlx_models)
+            for modality in multimodal_models:
+                multimodal_models[modality].extend(mlx_modalities[modality])
         return {
             "models": [[model] for model in installed_models],
             "current": current_model,

@@ -947,8 +947,11 @@
     }
   },
   "fileUpload": {
+    "audioConversionFailed": "无法转换音频文件。请检查文件是否能正常播放。",
+    "imageNotSupported": "所选模型不支持图像输入。请选择支持图像的模型。",
+    "audioNotSupported": "所选模型不支持音频输入。请选择支持音频的模型。",
     "failed": "{{name}} 上传失败",
-    "unsupportedAudioFormat": "请使用 MP3、WAV 或 FLAC 音频文件。"
+    "unsupportedAudioFormat": "请使用 M4A / MP3、WAV 或 FLAC 音频文件。"
   },
   "approval": {
     "title": "审批模式",

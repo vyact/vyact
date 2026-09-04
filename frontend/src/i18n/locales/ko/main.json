@@ -943,8 +943,11 @@
     }
   },
   "fileUpload": {
+    "audioConversionFailed": "오디오 파일을 변환하지 못했습니다. 파일이 정상적으로 재생되는지 확인해 주세요.",
+    "imageNotSupported": "선택한 모델은 이미지 입력을 지원하지 않습니다. 이미지 지원 모델을 선택해 주세요.",
+    "audioNotSupported": "선택한 모델은 오디오 입력을 지원하지 않습니다. 오디오 지원 모델을 선택해 주세요.",
     "failed": "{{name}} 업로드 실패",
-    "unsupportedAudioFormat": "MP3, WAV 또는 FLAC 오디오 파일을 사용하세요."
+    "unsupportedAudioFormat": "M4A / MP3, WAV 또는 FLAC 오디오 파일을 사용하세요."
   },
   "approval": {
     "title": "승인 방식",

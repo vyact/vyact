@@ -1,0 +1,20 @@
+.model-capability-icons {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    flex: 0 0 auto;
+    height: 17px;
+    padding: 0 5px;
+    box-sizing: border-box;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--info) 18%, transparent);
+    color: var(--info);
+}
+
+.model-capability-icons > span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+}

@@ -1,3 +1,4 @@
+import ModelCapabilityIcons from '../common/ModelCapabilityIcons/ModelCapabilityIcons';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {Calculator, Check, Eye, EyeOff, KeyRound, LoaderCircle, Search, Sparkles} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
@@ -83,6 +84,8 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     const [mlxOnly, setMlxOnly] = useState(() => navigator.platform.toUpperCase().includes('MAC'));
     const [models, setModels] = useState<VyactHubModel[]>([]);
     const [installedModels, setInstalledModels] = useState<string[]>(() => api.getCachedVyactInstalledModels());
+    const [visionSupportedModels, setVisionSupportedModels] = useState<string[]>([]);
+    const [audioSupportedModels, setAudioSupportedModels] = useState<string[]>([]);
     const [mtpSupportedModels, setMtpSupportedModels] = useState<string[]>([]);
     const [selectedFile, setSelectedFile] = useState<SelectedModelFile | null>(null);
     const [isSearching, setIsSearching] = useState(false);
@@ -145,6 +148,8 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     useEffect(() => {
         void api.getModels()
             .then(response => {
+                setVisionSupportedModels(response.vision_supported || []);
+                setAudioSupportedModels(response.audio_supported || []);
                 const installed = response.installed || [];
                 const mtpSupported = response.mtp_supported || [];
                 const dflash2Supported = response.dflash2_supported || [];
@@ -454,8 +459,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                             {selectedFile.runtime === 'mlx' && <span className="vyact-mtp-badge">MLX</span>}
                                             {selectedFile.mtpSupported && <span className="vyact-mtp-badge">MTP</span>}
                                             {(selectedFile.dflash2Model || selectedFile.dflash2Bundled) && <span className="vyact-mtp-badge">DFlash2</span>}
-                                            {selectedMetadata?.modalities?.includes('image') && <span className="vyact-mtp-badge is-capability" title={t('modelSelector.visionCapability')}>IMG</span>}
-                                            {selectedMetadata?.modalities?.includes('audio') && <span className="vyact-mtp-badge is-capability" title={t('modelSelector.audioCapability')}>AUDIO</span>}
+                                            <ModelCapabilityIcons image={visionSupportedModels.includes(selectedModelPath) || selectedMetadata?.modalities?.includes('image')} audio={audioSupportedModels.includes(selectedModelPath) || selectedMetadata?.modalities?.includes('audio')}/>
                                             <strong>{selectedFileDisplayName}</strong>
                                         </span>
                                         <button
@@ -522,6 +526,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                                     {model.runtime === 'mlx' && <span className="vyact-mtp-badge">{t('modelSelector.mlxOnly')}</span>}
                                                     {supportsMtp && <span className="vyact-mtp-badge">MTP</span>}
                                                     {supportsDFlash2 && <span className="vyact-mtp-badge">DFlash2</span>}
+                                                    <ModelCapabilityIcons image={visionSupportedModels.includes(modelPath) || (modelPath === selectedModelPath && selectedMetadata?.modalities?.includes('image'))} audio={audioSupportedModels.includes(modelPath) || (modelPath === selectedModelPath && selectedMetadata?.modalities?.includes('audio'))}/>
                                                     <OverflowTooltipText text={displayName}/>
                                                 </span>
                                                 {(showsPublisher || estimatedMemory > 0) && <small className="vyact-model-file-meta">

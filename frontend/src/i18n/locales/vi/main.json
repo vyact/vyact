@@ -947,8 +947,11 @@
     }
   },
   "fileUpload": {
+    "audioConversionFailed": "Không thể chuyển đổi tệp âm thanh. Vui lòng kiểm tra xem tệp có phát bình thường không.",
+    "imageNotSupported": "Mô hình đã chọn không hỗ trợ đầu vào hình ảnh. Vui lòng chọn mô hình hỗ trợ hình ảnh.",
+    "audioNotSupported": "Mô hình đã chọn không hỗ trợ đầu vào âm thanh. Vui lòng chọn mô hình hỗ trợ âm thanh.",
     "failed": "Tải lên {{name}} thất bại",
-    "unsupportedAudioFormat": "Hãy dùng tệp âm thanh MP3, WAV hoặc FLAC."
+    "unsupportedAudioFormat": "Hãy dùng tệp âm thanh M4A / MP3, WAV hoặc FLAC."
   },
   "approval": {
     "title": "Chế độ phê duyệt",

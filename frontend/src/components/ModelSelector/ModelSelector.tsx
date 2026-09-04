@@ -1,3 +1,4 @@
+import ModelCapabilityIcons from '../common/ModelCapabilityIcons/ModelCapabilityIcons';
 import React, {useState} from 'react';
 import {Ellipsis, Pencil, Settings, Trash2} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
@@ -70,8 +71,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                 <div className={`mdot ${isInstalled ? 'installed' : 'not-installed'}`}/>
                 {showMtp && <span className="mtp-model-badge">MTP</span>}
                 {showDFlash2 && <span className="mtp-model-badge">DFlash2</span>}
-                {supportsVision && <span className="model-capability-badge" title={t('modelSelector.visionCapability')}>IMG</span>}
-                {supportsAudio && <span className="model-capability-badge" title={t('modelSelector.audioCapability')}>AUDIO</span>}
+                <ModelCapabilityIcons image={supportsVision} audio={supportsAudio}/>
                 <span className="mname">
                     {selectedModel ? getModelDisplayName(selectedModel) : t('modelSelector.selectModel')}
                 </span>
@@ -106,8 +106,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                 <div className="dd-model-badges">
                     {showMtp && <span className="mtp-model-badge">MTP</span>}
                     {showDFlash2 && <span className="mtp-model-badge">DFlash2</span>}
-                    {supportsVision && <span className="model-capability-badge" title={t('modelSelector.visionCapability')}>IMG</span>}
-                    {supportsAudio && <span className="model-capability-badge" title={t('modelSelector.audioCapability')}>AUDIO</span>}
+                    <ModelCapabilityIcons image={supportsVision} audio={supportsAudio}/>
                 </div>
 
                 {/* 남은 폭 안에서만 표시되는 모델명 */}

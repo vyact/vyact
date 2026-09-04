@@ -1,3 +1,4 @@
+import {isAudioChatFile} from '../../utils/fileValidation';
 import React from 'react';
 import {useState} from 'react';
 import {useTranslation} from 'react-i18next';
@@ -357,14 +358,16 @@ export function useChat(deps: UseChatDeps) {
                     updateUploadDetail(fa.file.name, t('toolActivity.uploading', {name: fa.file.name, pct: 0}));
                     const formData = new FormData();
                     formData.append('file', fa.file);
-                    const isAudio = fa.file.type.startsWith('audio/') || /\.(mp3|wav|flac)$/i.test(fa.file.name);
+                    const isAudio = isAudioChatFile(fa.file);
                     const uploadUrl = isAudio
                         ? 'http://localhost:8000/api/audio/upload'
                         : 'http://localhost:8000/api/files/upload';
                     const response = await uploadWithProgress(uploadUrl, formData, fa.file.name);
                     if (!response.ok) {
                         const errData = await response.json().catch(() => null);
-                        const detail = isAudio && errData?.detail === 'unsupported_audio_format'
+                        const detail = isAudio && errData?.detail === 'audio_conversion_failed'
+                            ? t('fileUpload.audioConversionFailed')
+                            : isAudio && errData?.detail === 'unsupported_audio_format'
                             ? t('fileUpload.unsupportedAudioFormat')
                             : errData?.detail || response.statusText;
                         toast.error(t('fileUpload.failed', {name: fa.file.name}), detail);

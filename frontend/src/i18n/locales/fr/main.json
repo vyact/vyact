@@ -947,8 +947,11 @@
     }
   },
   "fileUpload": {
+    "audioConversionFailed": "Impossible de convertir le fichier audio. Vérifiez qu’il se lit correctement.",
+    "imageNotSupported": "Le modèle sélectionné ne prend pas en charge les images en entrée. Sélectionnez un modèle compatible.",
+    "audioNotSupported": "Le modèle sélectionné ne prend pas en charge l’audio en entrée. Sélectionnez un modèle compatible.",
     "failed": "Échec du téléchargement de {{name}}",
-    "unsupportedAudioFormat": "Utilisez un fichier audio MP3, WAV ou FLAC."
+    "unsupportedAudioFormat": "Utilisez un fichier audio M4A / MP3, WAV ou FLAC."
   },
   "approval": {
     "title": "Mode d’approbation",

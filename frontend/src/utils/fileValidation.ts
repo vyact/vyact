@@ -8,12 +8,12 @@ const SUPPORTED_CHAT_FILE_EXTENSION_LIST = [
     '.vue', '.svelte', '.astro', '.graphql', '.gql',
     '.properties', '.gradle', '.cmake', '.mk',
     '.tf', '.proto', '.rb', '.php', '.lua', '.r', '.ex', '.exs',
-    '.mp3', '.wav', '.flac',
+    '.mp3', '.wav', '.flac', '.m4a',
 ];
 
 const SUPPORTED_CHAT_FILE_EXTENSIONS = new Set(SUPPORTED_CHAT_FILE_EXTENSION_LIST);
 
-export const CHAT_FILE_ACCEPT = ['image/*', 'audio/mpeg', 'audio/wav', 'audio/flac', ...SUPPORTED_CHAT_FILE_EXTENSION_LIST].join(',');
+export const CHAT_FILE_ACCEPT = ['image/*', 'audio/mpeg', 'audio/wav', 'audio/flac', 'audio/mp4', 'audio/x-m4a', ...SUPPORTED_CHAT_FILE_EXTENSION_LIST].join(',');
 
 function getFileExtension(fileName: string): string {
     const extensionStart = fileName.lastIndexOf('.');
@@ -28,4 +28,8 @@ export function isSupportedChatFile(file: File): boolean {
     return file.type.startsWith('image/')
         || file.type.startsWith('audio/')
         || isSupportedChatFileName(file.name);
+}
+
+export function isAudioChatFile(file: File): boolean {
+    return file.type.startsWith('audio/') || /\.(mp3|wav|flac|m4a)$/i.test(file.name);
 }

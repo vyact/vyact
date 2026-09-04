@@ -61,9 +61,8 @@
 .vyact-model-files button.memory-tight { --memory-tone: var(--warn); border-color: color-mix(in srgb, var(--warn) 42%, var(--border)); }
 .vyact-model-files button.memory-over { --memory-tone: var(--danger); border-color: color-mix(in srgb, var(--danger) 42%, var(--border)); }
 .vyact-model-file-name { display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; white-space: nowrap; }
-.vyact-model-file-name > strong:last-child { min-width: 0; overflow: hidden; color: inherit; font-size: inherit; font-weight: inherit; text-overflow: ellipsis; }
+.vyact-model-file-name > strong { min-width: 0; overflow: hidden; color: inherit; font-size: inherit; font-weight: inherit; text-overflow: ellipsis; }
 .vyact-mtp-badge { flex: 0 0 auto; padding: 2px 5px; border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); font-size: 8px; font-weight: 750; line-height: 1; letter-spacing: .35px; }
-.vyact-mtp-badge.is-capability { border-color: color-mix(in srgb, var(--info) 52%, var(--border)); background: color-mix(in srgb, var(--info) 12%, transparent); color: var(--info); letter-spacing: .25px; }
 .vyact-model-files button small { grid-column: 1; color: var(--muted); font-size: 11px; }
 .vyact-model-file-meta { display: flex; align-items: center; gap: 6px; }
 .vyact-model-publisher { min-width: 0; overflow: hidden; color: var(--text-secondary); font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }

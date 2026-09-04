@@ -1,6 +1,7 @@
 """
 routers/images.py – 이미지 업로드 / 생성
 """
+import asyncio
 import unicodedata
 import uuid
 from pathlib import Path
@@ -8,6 +9,8 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
+
+from services.audio_conversion import m4a_to_wav
 
 from routers.deps import AUDIO_DIR, IMAGES_DIR, sse
 
@@ -49,13 +52,20 @@ async def get_image(filename: str):
 
 @router.post("/audio/upload")
 async def upload_audio(file: UploadFile = File(...)):
-    allowed_extensions = {".mp3", ".wav", ".flac"}
+    allowed_extensions = {".mp3", ".wav", ".flac", ".m4a"}
     original_name = Path(unicodedata.normalize("NFC", file.filename or "audio.wav")).name
     extension = Path(original_name).suffix.lower()
-    if not (file.content_type or "").startswith("audio/") or extension not in allowed_extensions:
+    if extension not in allowed_extensions or (extension != ".m4a" and not (file.content_type or "").startswith("audio/")):
         raise HTTPException(400, "unsupported_audio_format")
     contents = await file.read()
-    filename = f"{str(uuid.uuid4())[:8]}_{original_name}"
+    stored_name = original_name
+    if extension == ".m4a":
+        try:
+            contents = await asyncio.to_thread(m4a_to_wav, contents)
+        except Exception as error:
+            raise HTTPException(400, "audio_conversion_failed") from error
+        stored_name = str(Path(original_name).with_suffix(".wav"))
+    filename = f"{str(uuid.uuid4())[:8]}_{stored_name}"
     AUDIO_DIR.mkdir(parents=True, exist_ok=True)
     (AUDIO_DIR / filename).write_bytes(contents)
     return {"status": "ok", "type": "audio", "filename": filename, "original_name": original_name}

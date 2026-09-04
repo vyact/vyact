@@ -1,6 +1,6 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {isSupportedChatFile} from '../../utils/fileValidation';
+import {isAudioChatFile, isSupportedChatFile} from '../../utils/fileValidation';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
 
 // 붙여넣기 텍스트를 chip으로 처리할 최소 기준
@@ -24,7 +24,9 @@ export function useAttachments(
     modelType: 'chat' | 'image_gen' | 'image_edit',
     externalDropFiles: File[],
     onExternalDropHandled?: () => void,
-    resetTrigger?: number
+    resetTrigger?: number,
+    supportsImageInput = true,
+    supportsAudioInput = true
 ) {
     const {t} = useTranslation('main');
     const [images, setImages] = useState<File[]>([]);
@@ -32,13 +34,29 @@ export function useAttachments(
     const [pastedTexts, setPastedTexts] = useState<PastedText[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    const isMediaSupported = useCallback((file: File) => {
+        if (file.type.startsWith('image/') && !supportsImageInput) return false;
+        if (isAudioChatFile(file) && !supportsAudioInput) return false;
+        return true;
+    }, [supportsImageInput, supportsAudioInput]);
+
+    const warnUnsupportedMedia = useCallback((files: File[]) => {
+        if (files.some(file => file.type.startsWith('image/') && !isMediaSupported(file))) {
+            toast.warning(t('fileUpload.imageNotSupported'));
+        }
+        if (files.some(file => !file.type.startsWith('image/') && !isMediaSupported(file))) {
+            toast.warning(t('fileUpload.audioNotSupported'));
+        }
+    }, [isMediaSupported, t]);
+
     const filterSupportedFiles = useCallback((selectedFiles: File[]) => {
         const unsupportedFile = selectedFiles.find(file => !isSupportedChatFile(file));
         if (unsupportedFile) {
             toast.warning(t('documentModal.unsupportedFormat', {name: unsupportedFile.name}));
         }
-        return selectedFiles.filter(isSupportedChatFile);
-    }, [t]);
+        warnUnsupportedMedia(selectedFiles);
+        return selectedFiles.filter(file => isSupportedChatFile(file) && isMediaSupported(file));
+    }, [t, isMediaSupported, warnUnsupportedMedia]);
 
     // 외부 드롭 파일 처리
     useEffect(() => {
@@ -85,7 +103,7 @@ export function useAttachments(
             if (item.type.startsWith('image/')) {
                 e.preventDefault();
                 const file = item.getAsFile();
-                if (file) {
+                if (file && filterSupportedFiles([file]).length > 0) {
                     setImages(prev => [...prev, file].slice(0, 5));
                 }
                 return;
@@ -110,7 +128,14 @@ export function useAttachments(
     const removeFileAttachment = (index: number) => setFileAttachments(prev => prev.filter((_, i) => i !== index));
     const clearAll = () => { setImages([]); setFileAttachments([]); setPastedTexts([]); };
 
+    const validateAttachments = () => {
+        const files = [...images, ...fileAttachments.map(attachment => attachment.file)];
+        warnUnsupportedMedia(files);
+        return files.every(isMediaSupported);
+    };
+
     return {
+        validateAttachments,
         images, fileAttachments, pastedTexts, fileInputRef,
         handleFileSelect, handlePaste,
         removeImage, removeFileAttachment, removePastedText, clearAll,

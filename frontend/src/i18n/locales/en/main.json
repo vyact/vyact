@@ -943,8 +943,11 @@
     }
   },
   "fileUpload": {
+    "audioConversionFailed": "Could not convert the audio file. Check that the file plays correctly.",
+    "imageNotSupported": "The selected model does not support image input. Select a model that supports images.",
+    "audioNotSupported": "The selected model does not support audio input. Select a model that supports audio.",
     "failed": "Failed to upload {{name}}",
-    "unsupportedAudioFormat": "Use an MP3, WAV, or FLAC audio file."
+    "unsupportedAudioFormat": "Use an M4A / MP3, WAV, or FLAC audio file."
   },
   "approval": {
     "title": "Approval mode",

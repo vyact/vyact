@@ -56,6 +56,8 @@ interface ChatInputProps {
     isImageMode?: boolean;
     selectedModel?: string;
     isLocalModel?: boolean;
+    supportsImageInput?: boolean;
+    supportsAudioInput?: boolean;
     modelType?: 'chat' | 'image_gen' | 'image_edit';
     isModelLoading?: boolean;
     loadingModel?: string;
@@ -94,6 +96,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                                  isImageMode = false,
                                                  selectedModel = '',
                                                  isLocalModel = false,
+                                                 supportsImageInput = true,
+                                                 supportsAudioInput = true,
                                                  modelType = 'chat',
                                                  isModelLoading = false, loadingModel = '',
                                                  focusTrigger = 0,
@@ -207,7 +211,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
     }, [onOpenGoogleWorkspace]);
 
     // ── hooks ─────────────────────────────────────────────────────
-    const attach = useAttachments(modelType, externalDropFiles, onExternalDropHandled, resetTrigger);
+    const attach = useAttachments(modelType, externalDropFiles, onExternalDropHandled, resetTrigger, supportsImageInput, supportsAudioInput);
     const slash = useSlashCommand([], undefined, setValue);
     const {clearSuggestions} = slash;
     const hasAutocompleteSuggestions = mcpMentionQuery !== null || slash.slashSuggestions.length > 0;
@@ -357,6 +361,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
     };
 
     const handleSend = async () => {
+        if (!attach.validateAttachments()) return;
         const trimmed = value.trim();
         const pastedAppend = attach.pastedTexts.length > 0
             ? '\n\n' + attach.pastedTexts.map(p => `«PASTE:${p.label}»\n${p.content.replaceAll('«/PASTE»', '«\\/PASTE»')}«/PASTE»`).join('\n\n')

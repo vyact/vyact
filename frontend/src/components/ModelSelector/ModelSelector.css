@@ -42,18 +42,6 @@
     letter-spacing: .35px;
 }
 
-.model-capability-badge {
-    flex: 0 0 auto;
-    padding: 2px 5px;
-    border: 1px solid color-mix(in srgb, var(--info) 52%, var(--border));
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--info) 12%, transparent);
-    color: var(--info);
-    font-size: 8px;
-    font-weight: 750;
-    line-height: 1;
-    letter-spacing: .25px;
-}
 
 /* ── 드롭다운 목록 ── */
 .model-select-wrap .custom-select-dropdown {
