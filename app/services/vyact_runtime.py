@@ -97,11 +97,18 @@ def get_runtime_paths() -> RuntimePaths:
     llama_server = managed_bin / _executable_name("llama-server")
     llama_swap = managed_bin / _executable_name("llama-swap")
     return RuntimePaths(
-        llama_server=llama_server if llama_server.exists() else _which_path("llama-server"),
-        llama_swap=llama_swap if llama_swap.exists() else _which_path("llama-swap"),
+        llama_server=llama_server if llama_server.exists() else _which_path("llama-server") or _bundled_linux_executable("llama-server"),
+        llama_swap=llama_swap if llama_swap.exists() else _which_path("llama-swap") or _bundled_linux_executable("llama-swap"),
         models_dir=VYACT_MODELS_DIR,
         config_file=VYACT_SWAP_CONFIG,
     )
+
+
+def _bundled_linux_executable(name: str) -> Path | None:
+    if platform.system() != "Linux":
+        return None
+    executable = Path(__file__).resolve().parents[2] / "linux-runtime" / name
+    return executable if executable.is_file() and os.access(executable, os.X_OK) else None
 
 
 def runtime_is_available() -> bool:

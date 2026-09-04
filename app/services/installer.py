@@ -13,25 +13,15 @@ from typing import AsyncGenerator
 from logger import get_logger
 
 from config import KOKORO_CACHE_READY
+from services.linux_dependencies import chromium_dependencies_available, linux_package_install_command
 
 logger = get_logger(__name__)
-
-LINUX_ESPEAK_INSTALL_COMMANDS = (
-    ("apt-get", ["sudo", "apt-get", "-qq", "-y", "install", "espeak-ng"]),
-    ("dnf", ["sudo", "dnf", "-q", "-y", "install", "espeak-ng"]),
-    ("zypper", ["sudo", "zypper", "--non-interactive", "install", "espeak-ng"]),
-    ("pacman", ["sudo", "pacman", "--noconfirm", "-S", "--needed", "espeak-ng"]),
-)
 
 
 def get_linux_espeak_install_command() -> list[str] | None:
     """Return the first supported distro package-manager command."""
-    if shutil.which("sudo") is None:
-        return None
-    for executable, command in LINUX_ESPEAK_INSTALL_COMMANDS:
-        if shutil.which(executable) is not None:
-            return command.copy()
-    return None
+    return linux_package_install_command("espeak")
+
 
 async def is_docker_available() -> bool:
     """Docker 설치+데몬 실행 여부를 부작용 없이 확인 (Docker를 켜지 않음).
@@ -308,12 +298,16 @@ class Installer:
             "chromium",
         ]
 
-        if os.name != "nt":
-            cmd.append("--with-deps")
-
         logger.info(f"Command: {' '.join(cmd)}")
 
         try:
+            if platform.system() == "Linux" and not chromium_dependencies_available():
+                dependency_command = linux_package_install_command("chromium")
+                if dependency_command is None or await self._run(dependency_command, log=True) != 0:
+                    logger.warning("Chromium system dependencies could not be installed")
+                    return False, "Playwright installation failed"
+                if not chromium_dependencies_available():
+                    return False, "Playwright installation failed"
             if await self._run(cmd, log=True) != 0:
                 logger.warning("Playwright installation failed")
                 return False, "Playwright installation failed"

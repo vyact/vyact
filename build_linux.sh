@@ -22,6 +22,7 @@ npm run build
 
 cd "$ROOT_DIR"
 "$ROOT_DIR/scripts/prepare_python_runtime.sh" linux-x64
+bash "$ROOT_DIR/scripts/prepare_linux_runtime.sh"
 
 cd "$ELECTRON_DIR"
 npm ci

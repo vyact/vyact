@@ -125,6 +125,9 @@ jobs:
       - name: Prepare bundled Python
         run: scripts/prepare_python_runtime.sh linux-x64
 
+      - name: Build bundled Linux model runtime
+        run: bash scripts/prepare_linux_runtime.sh
+
       - name: Build AppImage and deb packages
         working-directory: electron
         run: |
@@ -136,6 +139,23 @@ jobs:
           test -n "$(find electron/dist -maxdepth 1 -name '*.AppImage' -print -quit)"
           test -n "$(find electron/dist -maxdepth 1 -name '*.deb' -print -quit)"
           test -f electron/dist/latest-linux.yml
+
+      - name: Test Python runtime persistence
+        run: |
+          appimage_path="$(find "$PWD/electron/dist" -maxdepth 1 -name '*.AppImage' -print -quit)"
+          extraction_dir="$(mktemp -d)"
+          trap 'rm -rf "$extraction_dir"' EXIT
+          (cd "$extraction_dir" && "$appimage_path" --appimage-extract > /dev/null)
+          TEST_BUNDLED_PYTHON="$extraction_dir/squashfs-root/resources/python/bin/python3" node --test electron/tests/python-runtime.test.js
+
+      - name: Verify clean Ubuntu installation and native dependencies
+        run: |
+          for image in ubuntu:22.04 ubuntu:24.04; do
+            docker run --rm \
+              -v "$PWD/electron/dist:/packages:ro" \
+              -v "$PWD/scripts/check_linux_package.sh:/check.sh:ro" \
+              "$image" bash /check.sh
+          done
 
       - name: Upload Linux packages
         uses: actions/upload-artifact@v4

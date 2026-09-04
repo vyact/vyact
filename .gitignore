@@ -33,6 +33,7 @@ dist-ssr/
 *.mac_backup
 build.log
 electron/python-runtime/
+electron/linux-runtime/
 
 *.local
 

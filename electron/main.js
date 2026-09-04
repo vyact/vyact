@@ -6,6 +6,7 @@ const http = require("http");
 const crypto = require("crypto");
 const {autoUpdater} = require("electron-updater");
 const platform = require("./platform");
+const {persistPythonRuntime, isPythonRuntimeUsable} = require("./python-runtime");
 
 // ── 기본 경로 ─────────────────────────────
 const INSTALL_DIR = platform.installDir;
@@ -441,6 +442,7 @@ function showStartupError(error) {
 
 // 배포 앱은 자체 Python을 사용한다. 개발 실행에서만 VYACT_PYTHON 또는 python3를 쓴다.
 function isSupportedPython(pythonBin) {
+    if (platform.isLinux && app.isPackaged) return isPythonRuntimeUsable(pythonBin);
     try {
         const result = spawnSync(pythonBin, ["--version"], {encoding: "utf8"});
         const versionMatch = `${result.stdout || ""}${result.stderr || ""}`.match(/Python (\d+)\.(\d+)/i);
@@ -455,6 +457,9 @@ function isSupportedPython(pythonBin) {
 function resolvePython() {
     if (isSupportedPython(BUNDLED_PYTHON)) {
         log(`Using bundled Python 3.12: ${BUNDLED_PYTHON}`);
+        if (platform.isLinux && app.isPackaged) {
+            return persistPythonRuntime(BUNDLED_PYTHON, INSTALL_DIR, app.getVersion());
+        }
         return BUNDLED_PYTHON;
     }
     log(`Bundled Python 3.12 not found: ${BUNDLED_PYTHON}`);

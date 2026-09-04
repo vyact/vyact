@@ -40,6 +40,7 @@ ES_DATA = INSTALL_DIR / "data"
 ES_LOGS = INSTALL_DIR / "logs"
 DOWNLOAD_DIR = INSTALL_DIR / "es_download"
 ES_INSTALL_COMPLETE = ES_HOME / ".vyact_install_complete"
+ES_HEAP_SIZE_MB = 512  # Match the bundled Docker configuration; leave RAM for models.
 
 
 def detect_platform() -> str | None:
@@ -97,6 +98,13 @@ def _write_es_config():
         "",
     ]
     cfg.write_text("\n".join(lines), encoding="utf-8")
+    # Elasticsearch's server default reserves half of all RAM. On a desktop it
+    # shares memory with the embedding, speech and chat models.
+    jvm_options_dir = ES_HOME / "config" / "jvm.options.d"
+    jvm_options_dir.mkdir(parents=True, exist_ok=True)
+    (jvm_options_dir / "vyact.options").write_text(
+        f"-Xms{ES_HEAP_SIZE_MB}m\n-Xmx{ES_HEAP_SIZE_MB}m\n", encoding="utf-8",
+    )
 
 
 async def _already_running() -> bool:

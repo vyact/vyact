@@ -126,7 +126,9 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
                 response = await api.searchVyactModels(trimmedQuery, true);
             }
             if (!response.hardware.apple_silicon) setMlxOnly(false);
-            const loadedMetadata = await loadSearchModelMetadata(response.models, huggingFaceToken.trim());
+            const loadedMetadata = await loadSearchModelMetadata(
+                response.models, huggingFaceToken.trim(), undefined, false,
+            );
             setHuggingFaceModels(
                 response.hardware.apple_silicon
                     ? response.models

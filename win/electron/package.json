@@ -38,6 +38,7 @@
     "files": [
       "main.js",
       "platform.js",
+      "python-runtime.js",
       "preload.js",
       "loading.html",
       "error.html",

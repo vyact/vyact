@@ -7,6 +7,7 @@ from unittest.mock import Mock, patch
 from services.vyact_runtime import (
     RuntimePackageManagerMissingError, RuntimePaths, cache_downloaded_model,
     get_native_install_commands, get_native_update_commands, install_missing_runtime,
+    get_runtime_paths,
     delete_downloaded_model,
     initialize_downloaded_models_cache, list_downloaded_models, list_mtp_supported_models,
     list_selectable_models, start_single_model,
@@ -15,6 +16,20 @@ from services.vyact_runtime import (
 
 
 class VyactRuntimeTests(unittest.TestCase):
+    def test_bundled_linux_runtime_works_without_a_package_manager(self):
+        bundled = {"llama-server": Path("/resources/linux-runtime/llama-server"), "llama-swap": Path("/resources/linux-runtime/llama-swap")}
+        with tempfile.TemporaryDirectory() as root, \
+             patch("services.vyact_runtime.VYACT_RUNTIME_DIR", Path(root)), \
+             patch("services.vyact_runtime._which_path", return_value=None), \
+             patch("services.vyact_runtime._bundled_linux_executable", side_effect=bundled.get), \
+             patch("services.vyact_runtime.get_native_install_commands") as install_commands:
+            paths = get_runtime_paths()
+            self.assertEqual(paths.llama_server, bundled["llama-server"])
+            async def install():
+                return [message async for message in install_missing_runtime()]
+            asyncio.run(install())
+            install_commands.assert_not_called()
+
     def test_runtime_rejects_mtp_with_kv_cache_quantization(self):
         with self.assertRaisesRegex(ValueError, "cannot be enabled together"):
             start_single_model(Path("model.gguf"), 32768, cache_quantization=True, enable_mtp=True)

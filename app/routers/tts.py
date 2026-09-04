@@ -7,6 +7,7 @@ import io
 import asyncio
 import json
 import logging
+import threading
 import warnings
 
 warnings.filterwarnings("ignore", message=r"invalid escape sequence.*", category=SyntaxWarning)
@@ -30,6 +31,13 @@ warnings.filterwarnings(
 
 import jieba
 
+try:
+    from kokoro import KPipeline
+    _kokoro_import_error = None
+except ImportError as error:
+    KPipeline = None
+    _kokoro_import_error = error
+
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -46,7 +54,8 @@ KOKORO_REPOSITORY_ID = "hexgrad/Kokoro-82M"
 jieba.setLogLevel(logging.WARNING)
 
 # ── Kokoro 싱글톤 ──────────────────────────────────
-_pipelines: dict = {}  # lang_code -> KPipeline
+_pipelines: dict = {}  # lang_code -> KPipeline; all share one KModel
+_pipeline_lock = threading.Lock()
 _lock = asyncio.Lock()
 _unidic_install_lock = asyncio.Lock()
 
@@ -107,41 +116,30 @@ async def install_japanese_dictionary():
 
 
 def _get_pipeline(lang_code: str):
-    """KPipeline 싱글톤 (lang_code별 캐시)"""
-    if lang_code not in _pipelines:
-        try:
-            from kokoro import KPipeline
-        except ModuleNotFoundError as error:
-            if error.name != "kokoro":
-                logger.error("Kokoro dependency missing: %s", error.name)
+    """Cache language pipelines while keeping only one shared acoustic model."""
+    if KPipeline is None:
+        raise HTTPException(status_code=503, detail="Kokoro is unavailable") from _kokoro_import_error
+    with _pipeline_lock:
+        if lang_code not in _pipelines:
+            try:
+                shared_model = next((pipeline.model for pipeline in _pipelines.values()), True)
+                pipeline = KPipeline(
+                    lang_code=lang_code,
+                    repo_id=KOKORO_REPOSITORY_ID,
+                    model=shared_model,
+                )
+                _pipelines[lang_code] = pipeline
+                logger.info("Kokoro pipeline loaded: lang_code=%s", lang_code)
+            except ModuleNotFoundError as error:
+                logger.error("Kokoro dependency missing for %s: %s", lang_code, error.name)
                 raise HTTPException(
                     status_code=500,
-                    detail=f"Kokoro dependency missing: {error.name}",
+                    detail=f"Kokoro dependency missing for {lang_code}: {error.name}",
                 ) from error
-            raise HTTPException(
-                status_code=503,
-                detail="kokoro 패키지가 설치되어 있지 않습니다. pip install kokoro soundfile",
-            ) from error
-        except ImportError as error:
-            logger.error("Kokoro import failed: %s", error)
-            raise HTTPException(status_code=500, detail=f"Kokoro import failed: {error}") from error
-
-        try:
-            logger.info(f"Kokoro pipeline loaded: lang_code={lang_code}")
-            _pipelines[lang_code] = KPipeline(
-                lang_code=lang_code,
-                repo_id=KOKORO_REPOSITORY_ID,
-            )
-        except ModuleNotFoundError as error:
-            logger.error("Kokoro dependency missing for %s: %s", lang_code, error.name)
-            raise HTTPException(
-                status_code=500,
-                detail=f"Kokoro dependency missing for {lang_code}: {error.name}",
-            ) from error
-        except Exception as error:
-            logger.error("Kokoro pipeline creation failed for %s: %s", lang_code, error)
-            raise HTTPException(status_code=500, detail=str(error)) from error
-    return _pipelines[lang_code]
+            except Exception as error:
+                logger.error("Kokoro pipeline creation failed for %s: %s", lang_code, error)
+                raise HTTPException(status_code=500, detail=str(error)) from error
+        return _pipelines[lang_code]
 
 
 # ── 요청 모델 ──────────────────────────────────────
