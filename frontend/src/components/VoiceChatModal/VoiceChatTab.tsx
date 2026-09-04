@@ -1,3 +1,4 @@
+import CustomSelect from '../CustomSelect/CustomSelect';
 import {useStreamingReadAloud} from './useStreamingReadAloud';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
 import React, {useState, useRef, useEffect, useCallback} from 'react';
@@ -9,6 +10,8 @@ import {
     VOICE_SYSTEM_PROMPTS, LANGUAGES, getLanguageDisplayName, SILENCE_THRESHOLD, SILENCE_DURATION_MS,
     ChatPhase, ChatEntry, VoiceChatModalProps, speakWithKokoroOrFallback, stopAllTts,
 } from './voiceChat.types';
+
+const AUTO_READ_RATES = [1, 1.25, 1.5, 1.75, 2];
 
 interface VoiceChatTabProps {
     onSend: VoiceChatModalProps['onSend'];
@@ -34,9 +37,10 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
     const [statusText, setStatusText] = useState('');
     const [audioLevel, setAudioLevel] = useState(0);
     const [autoRead, setAutoRead] = useState(false);
+    const [autoReadRate, setAutoReadRate] = useState(1);
     const [autoReadReady, setAutoReadReady] = useState(false);
     const [savingAutoRead, setSavingAutoRead] = useState(false);
-    const readAloud = useStreamingReadAloud(isAssistantMode && autoRead, selectedLang);
+    const readAloud = useStreamingReadAloud(isAssistantMode && autoRead, selectedLang, autoReadRate);
     const deferListeningRef = useRef(deferListening);
     deferListeningRef.current = deferListening;
 
@@ -46,23 +50,29 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
         fetch('/api/settings/voice-auto-read').then(async response => {
             if (!response.ok) throw new Error('Settings unavailable');
             const data = await response.json();
-            if (active) setAutoRead(data.enabled === true);
+            if (active) {
+                setAutoRead(data.enabled === true);
+                setAutoReadRate(AUTO_READ_RATES.includes(data.rate) ? data.rate : 1);
+            }
         }).catch(() => {}).finally(() => { if (active) setAutoReadReady(true); });
         return () => { active = false; };
     }, [isAssistantMode]);
 
-    const toggleAutoRead = async () => {
-        const next = !autoRead;
+    const saveAutoRead = async (next: boolean, rate: number) => {
+        const previousEnabled = autoRead;
+        const previousRate = autoReadRate;
+        setAutoReadRate(rate);
         setAutoRead(next);
         if (!next) readAloud.cancel();
         setSavingAutoRead(true);
         try {
             const response = await fetch('/api/settings/voice-auto-read', {
-                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({enabled: next}),
+                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({enabled: next, rate}),
             });
             if (!response.ok) throw new Error('Save failed');
         } catch {
-            setAutoRead(!next);
+            setAutoRead(previousEnabled);
+            setAutoReadRate(previousRate);
             toast.warning(t('voiceChat.autoReadSaveFailed'));
         } finally { setSavingAutoRead(false); }
     };
@@ -416,9 +426,13 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
                 <div className="voice-assistant-inline__controls">
                     <button type="button" className={`voice-auto-read-switch${autoRead ? ' is-on' : ''}`}
                             role="switch" aria-checked={autoRead} disabled={!autoReadReady || savingAutoRead}
-                            onClick={() => void toggleAutoRead()}>
+                            onClick={() => void saveAutoRead(!autoRead, autoReadRate)}>
                         <span>{t('voiceChat.autoRead')}</span><i aria-hidden="true"/>
                     </button>
+                    <CustomSelect className="voice-auto-read-rate" ariaLabel={t('voiceChat.autoReadSpeed')}
+                        options={AUTO_READ_RATES.map(rate => ({value: String(rate), label: t('voiceChat.speedMultiplier', {rate})}))}
+                        value={String(autoReadRate)} onChange={value => void saveAutoRead(autoRead, Number(value))}
+                        disabled={!autoReadReady || savingAutoRead} searchable={false} portal/>
                     <div className={`voice-assistant-inline__waveform${isListening ? ' is-listening' : ''}`}
                          aria-hidden="true">
                         {Array.from({length: 18}, (_, index) => {

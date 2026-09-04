@@ -927,10 +927,13 @@
 .image-attachment-preview__image { display: block; width: 72px; height: 72px; border: 1px solid var(--border); border-radius: 8px; cursor: zoom-in; object-fit: cover; transition: opacity .2s; }
 .image-attachment-preview__image:hover { opacity: .8; }
 
-.voice-auto-read-switch { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; border: 0; padding: 4px 0; background: transparent; color: var(--text-secondary); font: inherit; font-size: 11px; cursor: pointer; }
+.voice-auto-read-switch { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; border: 0; padding: 4px 0; background: transparent; color: var(--text); font: inherit; font-size: 12px; font-weight: 650; cursor: pointer; }
 .voice-auto-read-switch > i { position: relative; width: 27px; height: 16px; border-radius: 999px; background: var(--border); }
 .voice-auto-read-switch > i::after { content: ''; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--surface); transition: transform .15s; }
 .voice-auto-read-switch.is-on > i { background: var(--accent); }
 .voice-auto-read-switch.is-on > i::after { transform: translateX(11px); }
 .voice-auto-read-switch:disabled { opacity: .5; cursor: default; }
 .voice-auto-read-switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+
+.voice-auto-read-rate { width: 65px; flex: 0 0 65px; }
+.voice-auto-read-rate .custom-select-trigger { min-height: 28px; height: 28px; padding: 3px 7px; font-size: 12px; font-weight: 600; color: var(--text); }

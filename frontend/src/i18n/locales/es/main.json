@@ -734,6 +734,8 @@
     }
   },
   "voiceChat": {
+    "autoReadSpeed": "Velocidad de lectura automática",
+    "speedMultiplier": "{{rate}}×",
     "autoRead": "Lectura automática",
     "autoReadSaveFailed": "No se pudo guardar la opción de lectura automática.",
     "title": "Modo voz",

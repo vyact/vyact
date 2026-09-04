@@ -402,8 +402,13 @@
 }
 
 /* 복사와 읽기 동작은 하나의 액션 그룹이므로 메타데이터보다 촘촘하게 배치한다. */
+.msg-meta.bot .msg-copy-btn {
+    width: 22px;
+    flex-shrink: 0;
+}
+
 .msg-meta.bot .msg-copy-btn + .msg-copy-btn {
-    margin-left: -6px;
+    margin-left: -8px;
 }
 
 .msg-speak-btn--active {

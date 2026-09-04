@@ -1,22 +1,32 @@
+import {WebSpeechTtsProvider} from '../../services/tts/WebSpeechTtsProvider';
+import {setAutoReadMessage} from '../../services/tts/autoReadState';
 import {splitSpeechBuffer} from '../../services/tts/speechBuffer';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {loadTtsSettings} from '../../services/tts/ttsSettings';
 import {speakWithKokoroOrFallback, stopAllTts} from './voiceChat.types';
 
-export function useStreamingReadAloud(enabled: boolean, language: string) {
+const speechSegmenter = new WebSpeechTtsProvider();
+
+export function useStreamingReadAloud(enabled: boolean, language: string, rate = 1) {
     const [speaking, setSpeaking] = useState(false);
     const state = useRef({buffer: '', queue: [] as string[], running: false, streamed: false, code: false, followups: false, abort: {cancelled: false}});
+    const messageIdRef = useRef<string | null>(null);
+    const stoppedRef = useRef(false);
+    const rateRef = useRef(rate);
+    rateRef.current = rate;
     const languageRef = useRef(language);
     languageRef.current = language;
     const cancel = useCallback(() => {
         state.current.abort.cancelled = true;
         state.current = {buffer: '', queue: [], running: false, streamed: false, code: false, followups: false, abort: {cancelled: false}};
+        setAutoReadMessage(null);
         stopAllTts();
         setSpeaking(false);
     }, []);
     useEffect(() => {
         if (!enabled) { cancel(); return; }
         const enqueue = (text: string, final: boolean) => {
+            if (stoppedRef.current) return;
             const current = state.current;
             current.buffer += text;
             const split = splitSpeechBuffer(current.buffer, final);
@@ -42,19 +52,30 @@ export function useStreamingReadAloud(enabled: boolean, language: string) {
             if (current.running || !current.queue.length) return;
             current.running = true;
             setSpeaking(true);
+            setAutoReadMessage(messageIdRef.current);
             void (async () => {
                 try {
                     while (current.queue.length && !current.abort.cancelled) {
-                        await speakWithKokoroOrFallback(current.queue.shift()!, languageRef.current, loadTtsSettings(), current.abort);
+                        const segments = speechSegmenter.splitToSegments(current.queue.shift()!);
+                        for (const segment of segments) {
+                            if (current.abort.cancelled) break;
+                            await speakWithKokoroOrFallback(segment.text, segment.lang || languageRef.current,
+                                {...loadTtsSettings(), rate: rateRef.current}, current.abort, true);
+                        }
                     }
                 } catch {
                     current.queue = [];
                 } finally {
-                    if (state.current === current) { current.running = false; setSpeaking(false); }
+                    if (state.current === current) { current.running = false; setSpeaking(false); setAutoReadMessage(null); }
                 }
             })();
         };
-        const start = () => cancel();
+        const start = (event: Event) => {
+            cancel();
+            stoppedRef.current = false;
+            messageIdRef.current = (event as CustomEvent<{messageId: string}>).detail.messageId;
+        };
+        const stopResponse = () => { stoppedRef.current = true; cancel(); };
         const chunk = (event: Event) => {
             state.current.streamed = true;
             enqueue((event as CustomEvent<string>).detail, false);
@@ -64,12 +85,14 @@ export function useStreamingReadAloud(enabled: boolean, language: string) {
             enqueue(state.current.streamed ? '' : text, true);
         };
         const end = () => enqueue('', true);
+        window.addEventListener('voiceReadStopResponse', stopResponse);
         window.addEventListener('voiceReadStart', start);
         window.addEventListener('voiceReadChunk', chunk);
         window.addEventListener('voiceChatResponse', done);
         window.addEventListener('voiceReadEnd', end);
         window.addEventListener('voiceReadCancel', cancel);
         return () => {
+            window.removeEventListener('voiceReadStopResponse', stopResponse);
             window.removeEventListener('voiceReadStart', start);
             window.removeEventListener('voiceReadChunk', chunk);
             window.removeEventListener('voiceChatResponse', done);

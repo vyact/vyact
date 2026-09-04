@@ -1,6 +1,7 @@
+import {useAutoReadMessage} from '../../services/tts/autoReadState';
 import React, {useMemo, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {Braces, CircleAlert, RotateCcw} from 'lucide-react';
+import {Braces, CircleAlert, RotateCcw, CircleStop} from 'lucide-react';
 import 'katex/dist/katex.min.css';
 import {escapeHtml, nl2br, unwrapPastedText} from '../../utils/helpers';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
@@ -71,7 +72,7 @@ const StreamingTextGroup: React.FC<{
 );
 
 const Message: React.FC<MessageProps> = ({
-                                             role, content, timestamp, sources, model, attachments,
+                                             messageId, role, content, timestamp, sources, model, attachments,
                                              isError, errorTitle, onRetry, isGeneratedImage, articleSources,
                                              pdfFile, pdfParams, onPdfEdit, injectedContext, onShowInjectedContext, onOpenMemo, onOpenQuickMemo,
                                              isStreaming = false, conversationId, requestStartedAt, toolStatus, activityLog, progressMessages, stats,
@@ -195,7 +196,14 @@ const Message: React.FC<MessageProps> = ({
         setTimeout(() => setCopied(false), 2000);
     };
 
+    const autoReadMessageId = useAutoReadMessage();
+    const autoReading = Boolean(messageId && autoReadMessageId === messageId);
     const handleSpeak = () => {
+        if (autoReading) {
+            window.dispatchEvent(new Event('voiceReadStopResponse'));
+            return;
+        }
+        window.dispatchEvent(new Event('voiceReadStopResponse'));
         if (speakingRef.current) {
             ttsService.stop();
             speakingRef.current = false;
@@ -844,16 +852,12 @@ const Message: React.FC<MessageProps> = ({
                             </button>
                             {ttsService.isSupported() && (
                                 <button
-                                    className={`msg-copy-btn${speaking ? ' msg-speak-btn--active' : ''}`}
+                                    className={`msg-copy-btn${speaking || autoReading ? ' msg-speak-btn--active' : ''}`}
                                     onClick={handleSpeak}
-                                    aria-label={t(speaking ? 'uiAudit.stopReading' : 'uiAudit.readAloud')}
+                                    aria-label={t(speaking || autoReading ? 'uiAudit.stopReading' : 'uiAudit.readAloud')}
                                 >
-                                    {speaking ? (
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                             strokeWidth="2">
-                                            <rect x="6" y="4" width="4" height="16"/>
-                                            <rect x="14" y="4" width="4" height="16"/>
-                                        </svg>
+                                    {speaking || autoReading ? (
+                                        <CircleStop size={14} strokeWidth={1.8} aria-hidden="true"/>
                                     ) : (
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                              strokeWidth="2">

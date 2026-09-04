@@ -74,6 +74,10 @@ Create structured notes for ideas, launch plans, decisions, and next actions. Vy
   <img src="assets/readme/feature-memo.png" alt="Vyact rich-text memo workspace" width="100%" />
 </p>
 
+### Listen to responses in voice mode
+
+For people who find on-screen text difficult to read, or simply prefer listening, voice mode offers optional automatic read-aloud. Vyact reads completed sentences as the response is generated, with adjustable playback speed from 1× to 2×. Automatic read-aloud is off by default, and your on/off and speed preferences are remembered. Use the response's stop button to stop reading at any time.
+
 ### Learn a language by speaking
 
 Practice in your target language through natural, voice-based conversations. Speak to Vyact, hear its response, and build confidence with real expressions and repeated conversation practice instead of studying isolated phrases.

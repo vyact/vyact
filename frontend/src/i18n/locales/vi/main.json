@@ -735,6 +735,8 @@
     }
   },
   "voiceChat": {
+    "autoReadSpeed": "Tốc độ tự động đọc",
+    "speedMultiplier": "{{rate}}×",
     "autoRead": "Tự động đọc",
     "autoReadSaveFailed": "Không thể lưu cài đặt tự động đọc.",
     "title": "Chế độ giọng nói",

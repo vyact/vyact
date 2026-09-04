@@ -482,6 +482,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                                 data-turn-index={msg.role === 'user' ? idx : undefined}
                             >
                             <Message
+                                messageId={msg.id}
                                 role={msg.role}
                                 content={msg.content}
                                 timestamp={msg.timestamp || ''}

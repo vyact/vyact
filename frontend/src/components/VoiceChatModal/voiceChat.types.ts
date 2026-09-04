@@ -173,13 +173,15 @@ export function getVoicesAsync(): Promise<SpeechSynthesisVoice[]> {
             resolve(voices);
             return;
         }
-        const handler = () => {
-            const loaded = window.speechSynthesis.getVoices();
-            if (loaded.length > 0) {
-                resolve(loaded);
-                window.speechSynthesis.removeEventListener('voiceschanged', handler);
-            }
+        const finish = () => {
+            clearTimeout(timer);
+            window.speechSynthesis.removeEventListener('voiceschanged', handler);
+            resolve(window.speechSynthesis.getVoices());
         };
+        const handler = () => {
+            if (window.speechSynthesis.getVoices().length) finish();
+        };
+        const timer = setTimeout(finish, 1500);
         window.speechSynthesis.addEventListener('voiceschanged', handler);
     });
 }
@@ -229,10 +231,11 @@ export async function speakWithKokoroOrFallback(
     lang: string,
     settings: { rate: number; volume: number; enVoiceURI: string; kokoroVoice: string },
     abortSignal?: { cancelled: boolean },
+    useRequestedRate = false,
 ): Promise<void> {
     if (abortSignal?.cancelled) return;
     const prefix = lang.split('-')[0];
-    const kokoro = await isKokoroAvailable();
+    const kokoro = KOKORO_SUPPORTED_PREFIXES.has(prefix) && await isKokoroAvailable();
 
     if (kokoro && KOKORO_SUPPORTED_PREFIXES.has(prefix)) {
         try {
@@ -251,6 +254,7 @@ export async function speakWithKokoroOrFallback(
 
             const buf = await res.arrayBuffer();
             if (!_kokoroAudioCtx) _kokoroAudioCtx = new AudioContext();
+            if (_kokoroAudioCtx.state === 'suspended') await _kokoroAudioCtx.resume();
             const audioBuffer = await _kokoroAudioCtx.decodeAudioData(buf);
             if (abortSignal?.cancelled) return;
             const source = _kokoroAudioCtx.createBufferSource();
@@ -287,12 +291,13 @@ export async function speakWithKokoroOrFallback(
     return new Promise<void>((resolve) => {
         const u = new SpeechSynthesisUtterance(text);
         u.lang = lang;
-        u.rate = lang.startsWith('ko') ? Math.max(1.2, settings.rate) : settings.rate;
+        u.rate = !useRequestedRate && lang.startsWith('ko') ? Math.max(1.2, settings.rate) : settings.rate;
         u.volume = settings.volume;
         u.voice = pickVoice(lang, voices, settings.enVoiceURI);
         u.onend = () => resolve();
         u.onerror = () => resolve();
         window.speechSynthesis.cancel();
+        window.speechSynthesis.resume();
         window.speechSynthesis.speak(u);
     });
 }

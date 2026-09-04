@@ -490,13 +490,14 @@ export function useChat(deps: UseChatDeps) {
             // 조건: (기사 첨부 있음) 또는 (질문에 URL 포함), 그리고 voice_mode 아님.
             // 이 경로는 <action> 실행 파이프라인을 타지 않아 스트리밍 안전.
             // 이미지 생성 모델/voice가 아니면 전부 스트리밍 (기사·URL·순수 일반채팅 모두 서버가 분기)
-            if (showVoiceChatModalRef.current) window.dispatchEvent(new Event('voiceReadStart'));
+
             const canStreamChat = !voiceMode && !isCurrentlyImageMode;
 
             if (canStreamChat) {
                 abortControllerRef.current = new AbortController();
 
                 const streamId = generateUUID();
+                if (showVoiceChatModalRef.current) window.dispatchEvent(new CustomEvent('voiceReadStart', {detail: {messageId: streamId}}));
                 setMessagesForConversation(requestConvId, prev => [...prev, {
                     id: streamId, role: 'assistant', content: '', timestamp: new Date().toISOString(),
                     toolStatus: reasoningEnabledForRequest
@@ -880,6 +881,7 @@ export function useChat(deps: UseChatDeps) {
                 : null;
             const botMessage: Message = {
                 ...storedAssistantMessage,
+                id: storedAssistantMessage?.id || generateUUID(),
                 role: 'assistant',
                 content: response.answer,
           model: response.model || storedAssistantMessage?.model,
@@ -890,8 +892,10 @@ export function useChat(deps: UseChatDeps) {
                 timestamp: storedAssistantMessage?.timestamp || new Date().toISOString(),
             };
             setMessagesForConversation(requestConvId, prev => [...prev, botMessage]);
-            if (showVoiceChatModalRef.current)
+            if (showVoiceChatModalRef.current) {
+                window.dispatchEvent(new CustomEvent('voiceReadStart', {detail: {messageId: botMessage.id}}));
                 window.dispatchEvent(new CustomEvent('voiceChatResponse', {detail: {text: botMessage.content}}));
+            }
         } catch (error) {
             if (error instanceof DOMException && error.name === 'AbortError') {
                 // 사용자 중지 — 에러 표시 안 함

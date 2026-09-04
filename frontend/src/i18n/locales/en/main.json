@@ -731,6 +731,8 @@
     "charCount": "{{count}} chars"
   },
   "voiceChat": {
+    "autoReadSpeed": "Read-aloud speed",
+    "speedMultiplier": "{{rate}}×",
     "autoRead": "Read aloud",
     "autoReadSaveFailed": "Could not save the read-aloud setting.",
     "title": "Voice Mode",

@@ -735,6 +735,8 @@
     }
   },
   "voiceChat": {
+    "autoReadSpeed": "自動読み上げ速度",
+    "speedMultiplier": "{{rate}}×",
     "autoRead": "自動読み上げ",
     "autoReadSaveFailed": "自動読み上げ設定を保存できませんでした。",
     "title": "音声モード",

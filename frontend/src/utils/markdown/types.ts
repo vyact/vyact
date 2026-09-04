@@ -2,6 +2,7 @@ import type {ArticleAttachment, CodeChanges, Message, ResponseProgressMessage, S
 import type {CodeFile} from '../../components/CodeFileViewer/CodeFileViewer';
 
 export interface MessageProps {
+    messageId?: string;
     role: 'user' | 'assistant';
     content: string;
     timestamp: string;
