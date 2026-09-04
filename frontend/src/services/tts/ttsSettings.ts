@@ -12,6 +12,8 @@ export const DEFAULT_TTS_SETTINGS: TtsSettings = {
     kokoroVoice: 'af_heart',  // 기본 voice (Kokoro 활성 시)
 };
 
+export const TTS_SETTINGS_CHANGED = 'ttsSettingsChanged';
+
 let _cache: TtsSettings = {...DEFAULT_TTS_SETTINGS};
 
 export async function fetchTtsSettings(): Promise<TtsSettings> {
@@ -36,4 +38,5 @@ export function loadTtsSettings(): TtsSettings {
 
 export function updateTtsCache(settings: TtsSettings): void {
     _cache = {...settings};
+    window.dispatchEvent(new Event(TTS_SETTINGS_CHANGED));
 }

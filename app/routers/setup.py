@@ -1770,12 +1770,12 @@ async def set_tts_settings(body: dict):
 @router.get("/settings/voice-auto-read")
 async def get_voice_auto_read():
     cfg = await load_config_async()
-    return {"enabled": cfg.get("voice_auto_read", False) is True, "rate": cfg.get("voice_auto_read_rate", 1.0)}
+    return {"enabled": cfg.get("voice_auto_read", False) is True, "rate": cfg.get("tts_rate", 1.0)}
 
 
 class VoiceAutoReadSettings(BaseModel):
     enabled: bool = False
-    rate: float = Field(default=1.0, ge=1.0, le=2.0)
+    rate: float = Field(default=1.0, ge=0.5, le=2.0)
 
 
 @router.post("/settings/voice-auto-read")
@@ -1783,8 +1783,8 @@ async def set_voice_auto_read(body: VoiceAutoReadSettings):
     es = get_es()
     try:
         await es.update(index=SETTINGS_INDEX, id="config",
-                        doc={"value": {"voice_auto_read": body.enabled, "voice_auto_read_rate": body.rate}},
-                        upsert={"key": "config", "value": {"voice_auto_read": body.enabled, "voice_auto_read_rate": body.rate}}, refresh=True)
+                        doc={"value": {"voice_auto_read": body.enabled, "tts_rate": body.rate}},
+                        upsert={"key": "config", "value": {"voice_auto_read": body.enabled, "tts_rate": body.rate}}, refresh=True)
     finally:
         await es.close()
     return {"enabled": body.enabled, "rate": body.rate}

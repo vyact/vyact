@@ -4,7 +4,7 @@ import {toast} from '../common/ToastNotifications/ToastNotifications';
 import React, {useState, useRef, useEffect, useCallback} from 'react';
 import {ArrowUp, Mic, Square} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
-import {loadTtsSettings} from '../../services/tts/ttsSettings';
+import {loadTtsSettings, updateTtsCache, TTS_SETTINGS_CHANGED} from '../../services/tts/ttsSettings';
 import {api} from '../../services/api';
 import {
     VOICE_SYSTEM_PROMPTS, LANGUAGES, getLanguageDisplayName, SILENCE_THRESHOLD, SILENCE_DURATION_MS,
@@ -37,7 +37,7 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
     const [statusText, setStatusText] = useState('');
     const [audioLevel, setAudioLevel] = useState(0);
     const [autoRead, setAutoRead] = useState(false);
-    const [autoReadRate, setAutoReadRate] = useState(1);
+    const [autoReadRate, setAutoReadRate] = useState(() => loadTtsSettings().rate);
     const [autoReadReady, setAutoReadReady] = useState(false);
     const [savingAutoRead, setSavingAutoRead] = useState(false);
     const readAloud = useStreamingReadAloud(isAssistantMode && autoRead, selectedLang, autoReadRate);
@@ -52,11 +52,18 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
             const data = await response.json();
             if (active) {
                 setAutoRead(data.enabled === true);
-                setAutoReadRate(AUTO_READ_RATES.includes(data.rate) ? data.rate : 1);
+                setAutoReadRate(data.rate ?? 1);
+                updateTtsCache({...loadTtsSettings(), rate: data.rate ?? 1});
             }
         }).catch(() => {}).finally(() => { if (active) setAutoReadReady(true); });
         return () => { active = false; };
     }, [isAssistantMode]);
+
+    useEffect(() => {
+        const syncRate = () => setAutoReadRate(loadTtsSettings().rate);
+        window.addEventListener(TTS_SETTINGS_CHANGED, syncRate);
+        return () => window.removeEventListener(TTS_SETTINGS_CHANGED, syncRate);
+    }, []);
 
     const saveAutoRead = async (next: boolean, rate: number) => {
         const previousEnabled = autoRead;
@@ -70,6 +77,7 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
                 method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({enabled: next, rate}),
             });
             if (!response.ok) throw new Error('Save failed');
+            updateTtsCache({...loadTtsSettings(), rate});
         } catch {
             setAutoRead(previousEnabled);
             setAutoReadRate(previousRate);
@@ -429,7 +437,8 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
                             onClick={() => void saveAutoRead(!autoRead, autoReadRate)}>
                         <span>{t('voiceChat.autoRead')}</span><i aria-hidden="true"/>
                     </button>
-                    <CustomSelect className="voice-auto-read-rate" ariaLabel={t('voiceChat.autoReadSpeed')}
+                    <CustomSelect className="voice-auto-read-rate" dropdownClassName="voice-auto-read-rate-menu"
+                        placeholder={t('voiceChat.speedMultiplier', {rate: autoReadRate})} ariaLabel={t('voiceChat.autoReadSpeed')}
                         options={AUTO_READ_RATES.map(rate => ({value: String(rate), label: t('voiceChat.speedMultiplier', {rate})}))}
                         value={String(autoReadRate)} onChange={value => void saveAutoRead(autoRead, Number(value))}
                         disabled={!autoReadReady || savingAutoRead} searchable={false} portal/>

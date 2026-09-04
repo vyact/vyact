@@ -3,7 +3,7 @@ import {useTranslation} from 'react-i18next';
 import {Server} from 'lucide-react';
 import {api} from '../../services/api';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
-import {fetchTtsSettings, updateTtsCache, DEFAULT_TTS_SETTINGS} from '../../services/tts/ttsSettings';
+import {fetchTtsSettings, updateTtsCache, DEFAULT_TTS_SETTINGS, loadTtsSettings, TTS_SETTINGS_CHANGED} from '../../services/tts/ttsSettings';
 import type {TtsSettings} from '../../services/tts/ttsSettings';
 import {changeLanguage, SUPPORTED_LANGUAGES} from '../../i18n';
 import {changeTheme, getStoredTheme} from '../../services/theme';
@@ -312,6 +312,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
 
     // TTS 설정
     const [ttsDraft, setTtsDraft] = useState<TtsSettings>(DEFAULT_TTS_SETTINGS);
+
+    useEffect(() => {
+        const syncTts = () => setTtsDraft(loadTtsSettings());
+        window.addEventListener(TTS_SETTINGS_CHANGED, syncTts);
+        return () => window.removeEventListener(TTS_SETTINGS_CHANGED, syncTts);
+    }, []);
 
     // TTS 설정을 즉시 상태 반영 + 서버 저장 + 캐시 갱신 (일반 탭은 즉시 적용)
     const applyTts = (next: TtsSettings) => {

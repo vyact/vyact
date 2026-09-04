@@ -954,3 +954,6 @@
     background: transparent;
     color: var(--accent);
 }
+
+.voice-auto-read-rate-menu { min-width: 88px; }
+.voice-auto-read-rate-menu .custom-select-item { font-size: 11px; }
