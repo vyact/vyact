@@ -3,9 +3,11 @@ import {Tooltip} from '../Tooltip/Tooltip';
 
 interface OverflowTooltipTextProps {
     text: string;
+    className?: string;
+    as?: 'strong' | 'span';
 }
 
-export default function OverflowTooltipText({text}: OverflowTooltipTextProps) {
+export default function OverflowTooltipText({text, className, as: Tag = 'strong'}: OverflowTooltipTextProps) {
     const textRef = useRef<HTMLElement>(null);
     const [isOverflowing, setIsOverflowing] = useState(false);
 
@@ -20,6 +22,6 @@ export default function OverflowTooltipText({text}: OverflowTooltipTextProps) {
     }, [text]);
 
     return <Tooltip content={isOverflowing ? text : ''} multiline size="medium">
-        <strong ref={textRef} tabIndex={isOverflowing ? 0 : -1}>{text}</strong>
+        <Tag className={className} ref={textRef} tabIndex={isOverflowing ? 0 : -1}>{text}</Tag>
     </Tooltip>;
 }

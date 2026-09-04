@@ -1,3 +1,4 @@
+import OverflowTooltipText from '../common/OverflowTooltipText/OverflowTooltipText';
 import ModelCapabilityIcons from '../common/ModelCapabilityIcons/ModelCapabilityIcons';
 import React, {useState} from 'react';
 import {Ellipsis, Pencil, Settings, Trash2} from 'lucide-react';
@@ -72,9 +73,8 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                 {showMtp && <span className="mtp-model-badge">MTP</span>}
                 {showDFlash2 && <span className="mtp-model-badge">DFlash2</span>}
                 <ModelCapabilityIcons image={supportsVision} audio={supportsAudio}/>
-                <span className="mname">
-                    {selectedModel ? getModelDisplayName(selectedModel) : t('modelSelector.selectModel')}
-                </span>
+                <OverflowTooltipText as="span" className="mname"
+                    text={selectedModel ? getModelDisplayName(selectedModel) : t('modelSelector.selectModel')}/>
                 <span className={`custom-select-arrow${open ? ' open' : ''}`}>▼</span>
             </>
         );
@@ -111,9 +111,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
 
                 {/* 남은 폭 안에서만 표시되는 모델명 */}
                 <div className="dd-model-name">
-                    <span className="dd-model-label">
-                        {opt.label}
-                    </span>
+                    <OverflowTooltipText as="span" className="dd-model-label" text={opt.label}/>
                 </div>
 
                 {isInst && <ActionMenu

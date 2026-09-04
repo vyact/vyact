@@ -133,6 +133,9 @@
 
 /* 모델명 영역 */
 .dd-model-name {
+    align-self: stretch;
+    display: grid;
+    margin-block: -5px;
     min-width: 0;
     font-weight: 600;
     font-size: 11px;
@@ -142,6 +145,9 @@
 
 .dd-model-label {
     display: block;
+    align-content: center;
+    padding-block: 5px;
+    box-sizing: border-box;
     width: 100%;
     min-width: 0;
     overflow: hidden;
