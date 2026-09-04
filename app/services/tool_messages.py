@@ -17,6 +17,20 @@ _KEYS = ("execution_failed", "invalid_name", "unknown_server", "image_result", "
 MESSAGES = {language: dict(zip(_KEYS, values)) for language, values in _MESSAGES.items()}
 
 
+_NOT_OFFERED_MESSAGES = {
+    "en": "Tool not offered in this request: {tool}",
+    "ko": "이번 요청에 제공되지 않은 도구입니다: {tool}",
+    "ja": "このリクエストで提供されていないツールです: {tool}",
+    "zh": "本次请求未提供此工具：{tool}",
+    "th": "เครื่องมือที่ไม่ได้ให้ไว้ในคำขอนี้: {tool}",
+    "vi": "Công cụ không được cung cấp trong yêu cầu này: {tool}",
+    "es": "Herramienta no ofrecida en esta solicitud: {tool}",
+    "fr": "Outil non proposé dans cette requête : {tool}",
+}
+for _language, _message in _NOT_OFFERED_MESSAGES.items():
+    MESSAGES[_language]["not_offered"] = _message
+
+
 async def get_tool_language() -> str:
     try:
         return await load_ui_language_async() or "en"

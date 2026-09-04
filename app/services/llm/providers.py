@@ -29,6 +29,7 @@ from .tools import (
 )
 from services.runtime_settings import get_runtime_settings
 from services.tool_approval import await_tool_approval
+from services.tool_messages import get_tool_language, tool_error, tool_message
 
 
 _REPEATED_TOOL_CALL_RESULT = (
@@ -249,6 +250,10 @@ async def _get_unified_tools(use_tools: bool):
         return [], []
 
 
+async def _unoffered_tool_result(name: str) -> str:
+    return tool_error(tool_message("not_offered", await get_tool_language(), tool=name))
+
+
 async def _emit(on_event, ev: dict):
     if on_event is not None:
         try:
@@ -286,6 +291,7 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
         user_msg = {"role": "user", "content": user_prompt}
 
     unified, names = await _get_unified_tools(use_tools)
+    allowed_tool_names = frozenset(tool["function"]["name"] for tool in unified)
     sys_content = system_message
     if names:
         sys_content = system_message + await build_tool_directive(names)
@@ -393,6 +399,12 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
             for tc in tool_calls:
                 fn = tc.get("function", {}) or {}
                 name = fn.get("name", "")
+                if name not in allowed_tool_names:
+                    messages.append({
+                        "role": "tool", "tool_call_id": tc.get("id", ""),
+                        "content": await _unoffered_tool_result(name),
+                    })
+                    continue
                 raw_args = fn.get("arguments") or "{}"
                 try:
                     args = json.loads(raw_args) if isinstance(raw_args, str) else raw_args
@@ -568,6 +580,7 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
     temperature = provider_config.get("temperature", get_runtime_settings()["llm_temperature"])
     max_output_tokens = provider_config.get("max_output_tokens", 2048)
     unified, names = await _get_unified_tools(use_tools)
+    allowed_tool_names = frozenset(tool["function"]["name"] for tool in unified)
     sys_text = system_message
     if names:
         sys_text = system_message + await build_tool_directive(names)
@@ -625,6 +638,11 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
             resp_parts = []
             for fc in fcalls:
                 name = fc.get("name", "")
+                if name not in allowed_tool_names:
+                    resp_parts.append({"functionResponse": {
+                        "name": name, "response": {"result": await _unoffered_tool_result(name)},
+                    }})
+                    continue
                 args = fc.get("args", {}) or {}
                 fingerprint = _tool_call_fingerprint(name, args)
                 if fingerprint in executed_tool_calls:
@@ -749,6 +767,7 @@ async def claude_stream(client, model, api_key, system_message, user_prompt,
                     "data": base64.b64encode(path.read_bytes()).decode()}})
 
     unified, names = await _get_unified_tools(use_tools)
+    allowed_tool_names = frozenset(tool["function"]["name"] for tool in unified)
     system_text = system_message
     if names:
         system_text = system_message + await build_tool_directive(names)
@@ -786,6 +805,12 @@ async def claude_stream(client, model, api_key, system_message, user_prompt,
             result_blocks = []
             for tu in tool_uses:
                 name = tu.get("name", "")
+                if name not in allowed_tool_names:
+                    result_blocks.append({
+                        "type": "tool_result", "tool_use_id": tu.get("id", ""),
+                        "content": await _unoffered_tool_result(name), "is_error": True,
+                    })
+                    continue
                 args = tu.get("input", {}) or {}
                 fingerprint = _tool_call_fingerprint(name, args)
                 if fingerprint in executed_tool_calls:
