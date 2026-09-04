@@ -501,6 +501,20 @@ async def _index_attachments_sequential(conv_id: str, attachments: list):
 
 @router.post("/query")
 async def query(req: QueryRequest):
+    # A stream fallback keeps its existing interactive approval channel.
+    if current_approval_context.get().interactive:
+        return await _query_response(req)
+    token = current_approval_context.set(ApprovalContext(
+        mode=req.approval_mode, conversation_id=req.conv_id,
+        project_id=req.project_id, interactive=False,
+    ))
+    try:
+        return await _query_response(req)
+    finally:
+        current_approval_context.reset(token)
+
+
+async def _query_response(req: QueryRequest):
     if not req.question.strip() and not req.attachments:
         raise HTTPException(400, "질문 또는 이미지를 입력하세요.")
 

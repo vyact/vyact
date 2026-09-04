@@ -118,8 +118,10 @@ def requires_approval(tool_name: str, mode: str) -> bool:
 
 async def await_tool_approval(tool_name: str, arguments: dict, emit: ApprovalEmitter) -> bool:
     context = current_approval_context.get()
-    if not context.interactive or not requires_approval(tool_name, context.mode):
+    if not requires_approval(tool_name, context.mode):
         return True
+    if not context.interactive:
+        return False
     approval_id = str(uuid.uuid4())
     future = asyncio.get_running_loop().create_future()
     _pending_approvals[approval_id] = PendingApproval(future, tool_name, arguments)

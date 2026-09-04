@@ -438,7 +438,7 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
                     continue
                 approved = await await_tool_approval(name, args, lambda event: _emit(on_event, event))
                 if not approved:
-                    result_text = "[사용자 거부] 사용자가 이 tool 실행을 승인하지 않았습니다."
+                    result_text = "[실행 미승인] 필요한 실행 승인을 받지 못해 이 도구를 실행하지 않았습니다."
                     await _emit(on_event, {"phase": "approval_rejected", "name": name, "args": args, "result": result_text})
                     messages.append({"role": "tool", "tool_call_id": tc.get("id", ""), "content": result_text})
                     messages[0]["content"] += build_approval_rejection_instruction(name)
@@ -671,7 +671,7 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
                     continue
                 approved = await await_tool_approval(name, args, lambda event: _emit(on_event, event))
                 if not approved:
-                    result_text = "[사용자 거부] 사용자가 이 tool 실행을 승인하지 않았습니다."
+                    result_text = "[실행 미승인] 필요한 실행 승인을 받지 못해 이 도구를 실행하지 않았습니다."
                     await _emit(on_event, {"phase": "approval_rejected", "name": name, "args": args, "result": result_text})
                     resp_parts.append({"functionResponse": {"name": name, "response": {"result": result_text}}})
                     sys_text += build_approval_rejection_instruction(name)
@@ -840,7 +840,7 @@ async def claude_stream(client, model, api_key, system_message, user_prompt,
                     continue
                 approved = await await_tool_approval(name, args, lambda event: _emit(on_event, event))
                 if not approved:
-                    result_text = "[사용자 거부] 사용자가 이 tool 실행을 승인하지 않았습니다."
+                    result_text = "[실행 미승인] 필요한 실행 승인을 받지 못해 이 도구를 실행하지 않았습니다."
                     await _emit(on_event, {"phase": "approval_rejected", "name": name, "args": args, "result": result_text})
                     result_blocks.append({"type": "tool_result", "tool_use_id": tu.get("id", ""), "content": result_text})
                     system_text += build_approval_rejection_instruction(name)
