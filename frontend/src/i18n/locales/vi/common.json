@@ -18,5 +18,7 @@
   "none": "Không có",
   "notSet": "Chưa thiết lập",
   "retry": "Thử lại",
-  "more": "Thêm", "select": "Chọn", "clearSelection": "Bỏ lựa chọn", "noSearchResults": "Không có kết quả", "noItems": "Không có mục nào"
+  "more": "Thêm", "select": "Chọn", "clearSelection": "Bỏ lựa chọn", "noSearchResults": "Không có kết quả", "noItems": "Không có mục nào",
+  "clearSearch": "Xóa tìm kiếm",
+  "selectColor": "Chọn màu {{color}}"
 }

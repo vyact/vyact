@@ -28,7 +28,7 @@ const ProjectCreateModal = ({onClose, project, onSubmit}: ProjectCreateModalProp
 
     const addFolders = async () => {
         if (window.ragAPI?.selectFolders) {
-            const selectedPaths = await window.ragAPI.selectFolders();
+            const selectedPaths = await window.ragAPI.selectFolders(t('sidebar.projectCreate.addFolders'));
             setFolderPaths(paths => [...new Set([...paths, ...selectedPaths])]);
             if (!name.trim() && selectedPaths[0]) setName(getFolderName(selectedPaths[0]));
             return;
@@ -67,7 +67,7 @@ const ProjectCreateModal = ({onClose, project, onSubmit}: ProjectCreateModalProp
                     <button className="project-color-button" style={{'--project-color': getProjectDisplayColor(color)} as React.CSSProperties} onClick={() => setIsColorPickerOpen(open => !open)} aria-label={t('sidebar.projectCreate.chooseColor')}><Folder size={22}/></button>
                     <input value={name} onChange={event => setName(event.target.value)} placeholder={t('sidebar.projectCreate.namePlaceholder')} autoFocus onKeyDown={event => { if (event.key === 'Enter') void handleCreate(); }}/>
                     {isColorPickerOpen && <div className="project-color-picker" role="listbox" aria-label={t('sidebar.projectCreate.chooseColor')}>
-                        {PROJECT_COLORS.map(item => <button key={item} className={item === color ? 'selected' : ''} style={{backgroundColor: getProjectDisplayColor(item)}} onClick={() => { setColor(item); setIsColorPickerOpen(false); }} aria-label={item}/>) }
+                        {PROJECT_COLORS.map(item => <button key={item} className={item === color ? 'selected' : ''} style={{backgroundColor: getProjectDisplayColor(item)}} onClick={() => { setColor(item); setIsColorPickerOpen(false); }} aria-label={t('common:selectColor', {color: item})}/>) }
                     </div>}
                 </div>
                 <section className="project-source-folders">

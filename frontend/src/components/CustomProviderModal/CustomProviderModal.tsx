@@ -3,7 +3,7 @@ import {Eye, EyeOff, ExternalLink, Link2, Plus, Trash2} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import type {CustomProviderPayload, CustomProviderSettings} from '../../services/api';
 import {api} from '../../services/api';
-import {CUSTOM_PROTOCOL_OPTIONS, OPENAI_COMPATIBLE_DOCS_URL} from '../../constants/customProviders';
+import {getCustomProtocolOptions, OPENAI_COMPATIBLE_DOCS_URL} from '../../constants/customProviders';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
@@ -105,7 +105,7 @@ const CustomProviderModal: React.FC<CustomProviderModalProps> = ({connection, on
                 <section className="provider-editor-section">
                     <div className="provider-editor-grid">
                         <label className="provider-editor-field"><span>{t('customProvider.name')}</span><input value={name} onChange={event => setName(event.target.value)} placeholder={t('customProvider.namePlaceholder')}/></label>
-                        <label className="provider-editor-field"><span>{t('customProvider.protocol')}</span><CustomSelect options={CUSTOM_PROTOCOL_OPTIONS} value={protocol} onChange={value => setProtocol(value as 'openai-compatible')} ariaLabel={t('customProvider.protocol')}/></label>
+                        <label className="provider-editor-field"><span>{t('customProvider.protocol')}</span><CustomSelect options={getCustomProtocolOptions(t)} value={protocol} onChange={value => setProtocol(value as 'openai-compatible')} ariaLabel={t('customProvider.protocol')}/></label>
                     </div>
                     <div className="provider-protocol-help">
                         <p>{t('customProvider.hint')}</p>

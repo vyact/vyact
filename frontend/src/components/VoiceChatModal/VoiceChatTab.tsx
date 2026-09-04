@@ -306,7 +306,7 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
                     setChatLog(prev => [...prev, {
                         role: 'user',
                         text: spoken,
-                        timestamp: new Date().toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'})
+                        timestamp: new Date().toLocaleTimeString(i18n.resolvedLanguage || i18n.language, {hour: '2-digit', minute: '2-digit'})
                     }]);
                     setStatusText(t('voiceChat.waitingForResponse'));
                     if (isAssistantMode) {
@@ -428,7 +428,7 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
             setChatLog(prev => [...prev, {
                 role: 'assistant',
                 text,
-                timestamp: new Date().toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'})
+                timestamp: new Date().toLocaleTimeString(i18n.resolvedLanguage || i18n.language, {hour: '2-digit', minute: '2-digit'})
             }]);
             isWaitingRef.current = false;
             setIsWaiting(false);

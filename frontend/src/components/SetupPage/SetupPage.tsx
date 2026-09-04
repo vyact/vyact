@@ -6,7 +6,7 @@ import { syncPendingLanguageAfterSetup } from '../../i18n';
 import {syncPendingThemeAfterSetup} from '../../services/theme';
 import EsModeSelector from './EsModeSelector';
 import CustomSelect from '../CustomSelect/CustomSelect';
-import {CUSTOM_PROTOCOL_OPTIONS, OPENAI_COMPATIBLE_DOCS_URL} from '../../constants/customProviders';
+import {getCustomProtocolOptions, OPENAI_COMPATIBLE_DOCS_URL} from '../../constants/customProviders';
 import {api, type VyactHardwareInfo, type VyactHubModel, VyactRuntimeInstallError} from '../../services/api';
 import {Tooltip} from '../common/Tooltip/Tooltip';
 import OverflowTooltipText from '../common/OverflowTooltipText/OverflowTooltipText';
@@ -342,7 +342,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
             });
 
             if (!response.ok) throw new Error(`Installation request failed (${response.status})`);
-            if (!response.body) throw new Error('Stream not supported');
+            if (!response.body) throw new Error(t('main:networkError.streamFailed'));
 
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
@@ -419,7 +419,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
             }
 
             if (!hasError) {
-                throw new Error('Installation stream ended before completion');
+                throw new Error(t('installationFailed'));
             }
             setIsInstalling(false);
 
@@ -548,7 +548,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
                             </div>
                             {provider === 'custom' && <div className="setup-field-row">
                                 <label className="setup-field"><span>{t('customConnection.name')}</span><input className="input" placeholder={t('customConnection.namePlaceholder')} value={connectionName} onChange={e => setConnectionName(e.target.value)}/></label>
-                                <label className="setup-field"><span>{t('main:customProvider.protocol')}</span><CustomSelect className="setup-protocol-select" options={CUSTOM_PROTOCOL_OPTIONS} value={customProtocol} onChange={value => setCustomProtocol(value as CustomProtocol)} ariaLabel={t('main:customProvider.protocol')}/></label>
+                                <label className="setup-field"><span>{t('main:customProvider.protocol')}</span><CustomSelect className="setup-protocol-select" options={getCustomProtocolOptions(t)} value={customProtocol} onChange={value => setCustomProtocol(value as CustomProtocol)} ariaLabel={t('main:customProvider.protocol')}/></label>
                             </div>}
                             {provider === 'custom' && <div className="setup-protocol-help"><span>{t('main:customProvider.hint')}</span><a href={OPENAI_COMPATIBLE_DOCS_URL} target="_blank" rel="noreferrer">{t('main:customProvider.protocolDocs')}<ExternalLink size={13}/></a></div>}
                             {provider === 'custom' && <label className="setup-field"><span>{t('customConnection.baseUrl')}</span><input className="input" placeholder="http://localhost:8000/v1" value={baseUrl} onChange={e => setBaseUrl(e.target.value)}/></label>}

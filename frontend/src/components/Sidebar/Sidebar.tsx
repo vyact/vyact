@@ -1,4 +1,6 @@
 import React, {useEffect, useState, useRef} from 'react';
+import type {TFunction} from 'i18next';
+import {escapeHtml} from '../../utils/helpers';
 import {useTranslation} from 'react-i18next';
 import {Pencil, Trash2, FileText, FileCode, NotebookText, Plus, ChevronDown, SquarePen, LoaderCircle, RefreshCw, Pin, PinOff, MessageCircle, Folder} from 'lucide-react';
 import {renderMarkdown} from '../../utils/markdownUtils';
@@ -132,7 +134,7 @@ function storeExpandedProjectIds(projectIds: Set<string>) {
 }
 
 // ── 대화 내보내기 유틸 ─────────────────────────────────────
-async function exportConversation(convId: string, title: string, format: 'pdf' | 'md', emptyMessage: string) {
+async function exportConversation(convId: string, title: string, format: 'pdf' | 'md', emptyMessage: string, t: TFunction<'main'>, language: string) {
     const data = await api.getConversation(convId);
     const messages = data.messages || [];
     if (!messages.length) {
@@ -140,16 +142,16 @@ async function exportConversation(convId: string, title: string, format: 'pdf' |
         return;
     }
 
-    const ts = new Date().toLocaleString('ko-KR');
+    const ts = new Date().toLocaleString(language);
     const safeTitle = title.replace(/[\\/:*?"<>|]/g, '_');
 
     // ── MD ──────────────────────────────────────────
     if (format === 'md') {
-        const lines: string[] = [`# ${title}`, `> 내보낸 시각: ${ts}`, ''];
+        const lines: string[] = [`# ${title}`, `> ${t('conversationExport.exportedAt', {time: ts})}`, ''];
         for (const m of messages) {
             if (m.isError) continue;
-            const label = m.role === 'user' ? '## 👤 사용자' : '## 🤖 어시스턴트';
-            const mts = m.timestamp ? new Date(m.timestamp).toLocaleString('ko-KR') : '';
+            const label = m.role === 'user' ? `## 👤 ${t('conversationExport.user')}` : `## 🤖 ${t('conversationExport.assistant')}`;
+            const mts = m.timestamp ? new Date(m.timestamp).toLocaleString(language) : '';
             lines.push(label + (mts ? `  _(${mts})_` : ''));
             lines.push('');
             lines.push(m.content);
@@ -170,7 +172,7 @@ async function exportConversation(convId: string, title: string, format: 'pdf' |
     // ── PDF — renderMarkdown 활용 ────────────────────
     const rows = messages.filter(m => !m.isError).map(m => {
         const isUser = m.role === 'user';
-        const mts = m.timestamp ? new Date(m.timestamp).toLocaleString('ko-KR') : '';
+        const mts = m.timestamp ? new Date(m.timestamp).toLocaleString(language) : '';
         const bodyHtml = isUser
             ? m.content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')
             : renderMarkdown(m.content);
@@ -180,7 +182,7 @@ async function exportConversation(convId: string, title: string, format: 'pdf' |
         const roleColor = isUser ? '#a78bfa' : '#cc785c';
         return `<div style="${msgStyle}">
             <div style="font-size:11px;font-weight:700;margin-bottom:8px;display:flex;justify-content:space-between;color:${roleColor}">
-                <span>${isUser ? '👤 사용자' : '🤖 어시스턴트'}</span>
+                <span>${isUser ? `👤 ${escapeHtml(t('conversationExport.user'))}` : `🤖 ${escapeHtml(t('conversationExport.assistant'))}`}</span>
                 ${mts ? `<span style="font-size:10px;color:#8e8e93;font-weight:400">${mts}</span>` : ''}
             </div>
             <div style="word-break:break-word;line-height:1.7;font-size:14px">${bodyHtml}</div>
@@ -188,7 +190,7 @@ async function exportConversation(convId: string, title: string, format: 'pdf' |
     }).join('');
 
     const html = `<!DOCTYPE html>
-<html lang="ko"><head><meta charset="UTF-8">
+<html lang="${escapeHtml(language)}"><head><meta charset="UTF-8">
 <title>${title.replace(/</g, '&lt;')}</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <style>
@@ -228,7 +230,7 @@ blockquote{border-left:3px solid var(--accent);padding:8px 14px;margin:10px 0;co
 </style></head><body style="padding:20px 24px">
 <div style="padding-bottom:14px;border-bottom:1px solid #4a4a4a;margin-bottom:20px">
     <div style="font-size:18px;font-weight:700;color:#ececec">${title.replace(/</g, '&lt;')}</div>
-    <div style="font-size:11px;color:#8e8e93;margin-top:4px">내보낸 시각: ${ts} · 메시지 ${messages.length}개</div>
+    <div style="font-size:11px;color:#8e8e93;margin-top:4px">${escapeHtml(t('conversationExport.exportedAt', {time: ts}))} · ${escapeHtml(t('conversationExport.messageCount', {count: messages.length}))}</div>
 </div>
 <div>${rows}</div>
 </body></html>`;
@@ -264,7 +266,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                              onProjectChange,
                                              onActiveProjectNameChange,
                                          }) => {
-    const {t} = useTranslation('main');
+    const {t, i18n} = useTranslation('main');
     const [collapsedInternal] = useState(true);
     const [projects, setProjects] = useState<Project[]>([]);
     const [projectsLoaded, setProjectsLoaded] = useState(false);
@@ -722,12 +724,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                                             <button className="hist-menu-item" onClick={event => {
                                                 event.stopPropagation();
                                                 setMenuOpenId(null);
-                                                exportConversation(conversation.conv_id, conversation.title, 'md', t('uiAuditExtra.emptyConversation'));
+                                                exportConversation(conversation.conv_id, conversation.title, 'md', t('uiAuditExtra.emptyConversation'), t, i18n.resolvedLanguage || i18n.language);
                                             }}><FileCode size={13}/>{t('sidebar.exportMarkdown')}</button>
                                             <button className="hist-menu-item" onClick={event => {
                                                 event.stopPropagation();
                                                 setMenuOpenId(null);
-                                                exportConversation(conversation.conv_id, conversation.title, 'pdf', t('uiAuditExtra.emptyConversation'));
+                                                exportConversation(conversation.conv_id, conversation.title, 'pdf', t('uiAuditExtra.emptyConversation'), t, i18n.resolvedLanguage || i18n.language);
                                             }}><FileText size={13}/>{t('sidebar.exportPdf')}</button>
                                             <button className="hist-menu-item danger" onClick={event => {
                                                 event.stopPropagation();
@@ -774,7 +776,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 onDelete={() => { setProjectMenuOpenId(null); setProjectToDelete(project); }}
                                 onDeleteHistory={() => { setProjectMenuOpenId(null); setProjectHistoryToDelete(project); }}
                             >
-                                {conversations.filter(conv => conv.project_id === project.id && !favoriteConversationIdSet.has(conv.conv_id)).slice(0, expandedProjectHistoryIds.has(project.id) ? undefined : PROJECT_HISTORY_PREVIEW_COUNT).map(conv => <div key={conv.conv_id} className={`project-conversation${conv.conv_id === activeConvId ? ' active' : ''}`} onClick={() => { onProjectChange?.(project.id); onConversationSelect(conv.conv_id); }}><button className="project-conversation-title">{conv.title}</button>{activeConversationIdSet.has(conv.conv_id) && <span className="conversation-progress" role="status" aria-label={t('sidebar.responseInProgress')}><LoaderCircle size={13}/></span>}<button className="conversation-favorite-btn" type="button" aria-label={t('sidebar.addFavorite')} onClick={event => { event.stopPropagation(); void onConversationFavoriteChange(conv, true); }}><Pin size={14}/></button><SidebarOverflowMenu isOpen={menuOpenId === conv.conv_id} onOpenChange={isOpen => setMenuOpenId(isOpen ? conv.conv_id : null)} trigger="···"><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); onShowSummary(conv.conv_id); }}><NotebookText size={13}/>{t('sidebar.summary')}</button><button className="hist-menu-item" onClick={() => { setRenameValue(conv.title); setRenamingId(conv.conv_id); setMenuOpenId(null); }}><Pencil size={13}/>{t('sidebar.rename')}</button><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); exportConversation(conv.conv_id, conv.title, 'md', t('uiAuditExtra.emptyConversation')); }}><FileCode size={13}/>{t('sidebar.exportMarkdown')}</button><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); exportConversation(conv.conv_id, conv.title, 'pdf', t('uiAuditExtra.emptyConversation')); }}><FileText size={13}/>{t('sidebar.exportPdf')}</button><button className="hist-menu-item danger" onClick={() => { setMenuOpenId(null); onConversationDelete(conv.conv_id); }}><Trash2 size={13}/>{t('sidebar.delete')}</button></SidebarOverflowMenu></div>)}
+                                {conversations.filter(conv => conv.project_id === project.id && !favoriteConversationIdSet.has(conv.conv_id)).slice(0, expandedProjectHistoryIds.has(project.id) ? undefined : PROJECT_HISTORY_PREVIEW_COUNT).map(conv => <div key={conv.conv_id} className={`project-conversation${conv.conv_id === activeConvId ? ' active' : ''}`} onClick={() => { onProjectChange?.(project.id); onConversationSelect(conv.conv_id); }}><button className="project-conversation-title">{conv.title}</button>{activeConversationIdSet.has(conv.conv_id) && <span className="conversation-progress" role="status" aria-label={t('sidebar.responseInProgress')}><LoaderCircle size={13}/></span>}<button className="conversation-favorite-btn" type="button" aria-label={t('sidebar.addFavorite')} onClick={event => { event.stopPropagation(); void onConversationFavoriteChange(conv, true); }}><Pin size={14}/></button><SidebarOverflowMenu isOpen={menuOpenId === conv.conv_id} onOpenChange={isOpen => setMenuOpenId(isOpen ? conv.conv_id : null)} trigger="···"><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); onShowSummary(conv.conv_id); }}><NotebookText size={13}/>{t('sidebar.summary')}</button><button className="hist-menu-item" onClick={() => { setRenameValue(conv.title); setRenamingId(conv.conv_id); setMenuOpenId(null); }}><Pencil size={13}/>{t('sidebar.rename')}</button><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); exportConversation(conv.conv_id, conv.title, 'md', t('uiAuditExtra.emptyConversation'), t, i18n.resolvedLanguage || i18n.language); }}><FileCode size={13}/>{t('sidebar.exportMarkdown')}</button><button className="hist-menu-item" onClick={() => { setMenuOpenId(null); exportConversation(conv.conv_id, conv.title, 'pdf', t('uiAuditExtra.emptyConversation'), t, i18n.resolvedLanguage || i18n.language); }}><FileText size={13}/>{t('sidebar.exportPdf')}</button><button className="hist-menu-item danger" onClick={() => { setMenuOpenId(null); onConversationDelete(conv.conv_id); }}><Trash2 size={13}/>{t('sidebar.delete')}</button></SidebarOverflowMenu></div>)}
                                 {!expandedProjectHistoryIds.has(project.id) && conversations.filter(conv => conv.project_id === project.id && !favoriteConversationIdSet.has(conv.conv_id)).length > PROJECT_HISTORY_PREVIEW_COUNT && <button className="project-history-more" onClick={() => setExpandedProjectHistoryIds(previous => new Set(previous).add(project.id))}>{t('googleWorkspace.more')}</button>}
                             </ProjectHistoryRow>
                         ))}
@@ -896,14 +898,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                                                         <button className="hist-menu-item" onClick={e => {
                                                             e.stopPropagation();
                                                             setMenuOpenId(null);
-                                                            exportConversation(conv.conv_id, conv.title, 'md', t('uiAuditExtra.emptyConversation'));
+                                                            exportConversation(conv.conv_id, conv.title, 'md', t('uiAuditExtra.emptyConversation'), t, i18n.resolvedLanguage || i18n.language);
                                                         }}>
                                                             <FileCode size={13}/> {t('sidebar.exportMarkdown')}
                                                         </button>
                                                         <button className="hist-menu-item" onClick={e => {
                                                             e.stopPropagation();
                                                             setMenuOpenId(null);
-                                                            exportConversation(conv.conv_id, conv.title, 'pdf', t('uiAuditExtra.emptyConversation'));
+                                                            exportConversation(conv.conv_id, conv.title, 'pdf', t('uiAuditExtra.emptyConversation'), t, i18n.resolvedLanguage || i18n.language);
                                                         }}>
                                                             <FileText size={13}/> {t('sidebar.exportPdf')}
                                                         </button>

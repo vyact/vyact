@@ -1,3 +1,5 @@
+import i18n from '../i18n';
+
 export function escapeHtml(text: string): string {
   return String(text ?? '')
       .replace(/&/g, '&amp;')
@@ -32,7 +34,7 @@ export function generateUUID(): string {
 }
 
 export function formatTime(date: Date = new Date()): string {
-  return date.toLocaleTimeString('ko-KR', {
+  return date.toLocaleTimeString(i18n.resolvedLanguage || i18n.language, {
     hour: '2-digit',
     minute: '2-digit',
   });

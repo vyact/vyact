@@ -448,5 +448,14 @@
     "loadFailed": "Unable to load plugins.",
     "installFailed": "Unable to install the plugin.",
     "deleteFailed": "Unable to delete the plugin."
+  },
+  "pluginSettings": {
+    "loadFailed": "プラグイン設定を読み込めませんでした。",
+    "saveFailed": "プラグイン設定を保存できませんでした。",
+    "help": "ドキュメント"
+  },
+  "googleSetupLinks": {
+    "apiLibrary": "API ライブラリ",
+    "audience": "対象"
   }
 }

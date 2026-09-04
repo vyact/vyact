@@ -1,3 +1,4 @@
+import {useTranslation} from 'react-i18next';
 import {useEffect, useState, useCallback} from 'react';
 import {CheckCircle, AlertCircle, AlertTriangle, Info, X} from 'lucide-react';
 import './ToastNotifications.css';
@@ -90,6 +91,7 @@ function ToastItemView({item, exiting: isExiting, onDismiss}: {
     exiting: boolean;
     onDismiss: (id: string) => void;
 }) {
+    const {t} = useTranslation('common');
     const Icon = ICON_MAP[item.type];
     const duration = item.duration ?? DEFAULT_DURATION[item.type];
 
@@ -105,7 +107,7 @@ function ToastItemView({item, exiting: isExiting, onDismiss}: {
             <strong>{item.title}</strong>
             {item.message && <span>{item.message}</span>}
         </div>
-        <button className="toast-close" onClick={() => onDismiss(item.id)}><X size={14}/></button>
+        <button aria-label={t('close')} className="toast-close" onClick={() => onDismiss(item.id)}><X size={14}/></button>
         {duration > 0 && <div className="toast-progress" style={{animationDuration: `${duration}ms`}}/>}
     </div>;
 }

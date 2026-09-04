@@ -1320,21 +1320,21 @@ ipcMain.handle("browser-set-bounds", (_event, bounds) => {
 });
 
 // ── 폴더 선택 다이얼로그 ──
-ipcMain.handle("select-folder", async () => {
+ipcMain.handle("select-folder", async (_event, title) => {
     const {dialog} = require("electron");
     const result = await dialog.showOpenDialog(mainWindow, {
         properties: ["openDirectory"],
-        title: "Select folder",
+        ...(typeof title === "string" && title.trim() ? {title} : {}),
     });
     if (result.canceled || !result.filePaths.length) return null;
     return result.filePaths[0];
 });
 
-ipcMain.handle("select-folders", async () => {
+ipcMain.handle("select-folders", async (_event, title) => {
     const {dialog} = require("electron");
     const result = await dialog.showOpenDialog(mainWindow, {
         properties: ["openDirectory", "multiSelections"],
-        title: "Select folders",
+        ...(typeof title === "string" && title.trim() ? {title} : {}),
     });
     return result.canceled ? [] : result.filePaths;
 });

@@ -693,7 +693,7 @@ const MemoEditor: React.FC<{
                             </label>
                             <div className="memo-color-presets" aria-label={t('memoModal.toolbar.vyactColors')}>
                                 {['#f5f5f5', '#cc785c', '#d88e73', '#2cba66', '#5b89b8', '#a78bfa', '#f2c94c', '#ef6461'].map(color => (
-                                    <button key={color} type="button" className="memo-color-preset" style={{ backgroundColor: color }} aria-label={color} onMouseDown={event => event.preventDefault()} onClick={() => {
+                                    <button key={color} type="button" className="memo-color-preset" style={{ backgroundColor: color }} aria-label={t('common:selectColor', {color})} onMouseDown={event => event.preventDefault()} onClick={() => {
                                         editor?.chain().focus().setColor(color).run();
                                         setIsColorPaletteOpen(false);
                                     }} />
@@ -997,7 +997,7 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
                         <span className="memo-title">{t('memoModal.title')}</span>
                         {memos.length > 0 && <span className="memo-count">{memos.length}</span>}
                     </div>
-                    <button className="memo-close-btn" onClick={() => { void closeMemoModal(); }} aria-label={t('common.close')}>
+                    <button className="memo-close-btn" onClick={() => { void closeMemoModal(); }} aria-label={t('common:close')}>
                         ×
                     </button>
                 </div>
@@ -1016,7 +1016,7 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
                                 onChange={e => setSearchQuery(e.target.value)}
                             />
                             {searchQuery && (
-                                <button className="memo-search-clear" onClick={() => setSearchQuery('')} aria-label={`${t('common.search')} ${t('common.close')}`}>
+                                <button className="memo-search-clear" onClick={() => setSearchQuery('')} aria-label={t('common:clearSearch')}>
                                     <X aria-hidden="true" />
                                 </button>
                             )}
@@ -1042,7 +1042,7 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
                                 <div className="memo-item-title">{memo.title || t('memoModal.untitled')}</div>
                                 <div className="memo-item-meta">
                                     <span>{formatDate(memo.updated_at)}</span>
-                                    <ActionMenu className="memo-actions-menu" isOpen={memoActionsId === memo.id} onOpenChange={open => setMemoActionsId(open ? memo.id : null)} disabled={isEditing} ariaLabel={t('common.more')} triggerClassName="memo-more-btn" menuClassName="memo-actions-popup" trigger={<Ellipsis aria-hidden="true" />}>
+                                    <ActionMenu className="memo-actions-menu" isOpen={memoActionsId === memo.id} onOpenChange={open => setMemoActionsId(open ? memo.id : null)} disabled={isEditing} ariaLabel={t('common:more')} triggerClassName="memo-more-btn" menuClassName="memo-actions-popup" trigger={<Ellipsis aria-hidden="true" />}>
                                         <button className="memo-action-menu-item" onClick={() => { setMemoActionsId(null); if (!isEditing) void handleEdit(memo.id); }}><Pencil aria-hidden="true" />{t('memoModal.edit')}</button>
                                         <KnowledgeCollectionAttachSelect source={{source_type: 'memo', source_id: memo.id}} onCreateCollection={onClose} onSelectionComplete={() => setMemoActionsId(null)} menuItem/>
                                         <button className="memo-action-menu-item memo-action-menu-item--danger" onClick={(e) => { setMemoActionsId(null); if (!isEditing) handleDelete(memo.id, memo.title, e); }}><Trash2 aria-hidden="true" />{t('memoModal.delete')}</button>

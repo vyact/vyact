@@ -1,3 +1,4 @@
+import {useTranslation} from 'react-i18next';
 import {useEffect, useState} from 'react';
 import ApiKeyField from '../common/ApiKeyField/ApiKeyField';
 import {assertOk} from '../../utils/apiError';
@@ -18,13 +19,14 @@ interface PluginSettingsFieldsProps {
 }
 
 const PluginSettingsFields = ({definition}: PluginSettingsFieldsProps) => {
+    const {t} = useTranslation('settings');
     const [status, setStatus] = useState<Record<string, {has_key: boolean; key_preview: string}>>({});
 
     useEffect(() => {
         let active = true;
         fetch(definition.endpoint)
             .then(async response => {
-                await assertOk(response, '플러그인 설정을 불러오지 못했습니다.');
+                await assertOk(response, t('pluginSettings.loadFailed'));
                 return response.json();
             })
             .then(result => {
@@ -45,7 +47,7 @@ const PluginSettingsFields = ({definition}: PluginSettingsFieldsProps) => {
         return () => {
             active = false;
         };
-    }, [definition]);
+    }, [definition, t]);
 
     return (
         <div className="plugin-settings-fields">
@@ -55,7 +57,7 @@ const PluginSettingsFields = ({definition}: PluginSettingsFieldsProps) => {
                         <strong>{field.label}</strong>
                         {field.help_url && (
                             <a href={field.help_url} target="_blank" rel="noreferrer">
-                                Google Cloud Console ↗
+                                {t('pluginSettings.help')} ↗
                             </a>
                         )}
                     </div>
@@ -69,7 +71,7 @@ const PluginSettingsFields = ({definition}: PluginSettingsFieldsProps) => {
                                 headers: {'Content-Type': 'application/json'},
                                 body: JSON.stringify({[field.id]: key}),
                             });
-                            await assertOk(response, '플러그인 설정을 저장하지 못했습니다.');
+                            await assertOk(response, t('pluginSettings.saveFailed'));
                             const result = await response.json();
                             setStatus(previous => ({
                                 ...previous,

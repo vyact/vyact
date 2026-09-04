@@ -492,7 +492,7 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
                         <input type="color" value={editor.getAttributes('textStyle').color || '#ffffff'} onChange={e => editor.chain().focus().setColor(e.target.value).run()}/>
                     </label>
                     <div className="email-editor-color-presets">
-                        {COLOR_PRESETS.map((color, index) => <button key={color} type="button" className={`email-editor-color-swatch email-editor-color-swatch-${index + 1}`} aria-label={color} onMouseDown={e => e.preventDefault()} onClick={() => { editor.chain().focus().setColor(color).run(); setIsColorOpen(false); }}/>)}
+                        {COLOR_PRESETS.map((color, index) => <button key={color} type="button" className={`email-editor-color-swatch email-editor-color-swatch-${index + 1}`} aria-label={t('common:selectColor', {color})} onMouseDown={e => e.preventDefault()} onClick={() => { editor.chain().focus().setColor(color).run(); setIsColorOpen(false); }}/>)}
                     </div>
                 </div>}
             </div>

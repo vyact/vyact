@@ -328,7 +328,7 @@ export function useChat(deps: UseChatDeps) {
                 xhr.addEventListener('load', () => {
                     resolve(new Response(xhr.responseText, {status: xhr.status, statusText: xhr.statusText, headers: new Headers({'Content-Type': xhr.getResponseHeader('Content-Type') || 'application/json'})}));
                 });
-                xhr.addEventListener('error', () => reject(new Error('Network error')));
+                xhr.addEventListener('error', () => reject(new Error(t('networkError.requestFailed'))));
                 xhr.addEventListener('abort', () => reject(new DOMException('Upload aborted', 'AbortError')));
                 xhr.send(formData);
             });

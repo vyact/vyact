@@ -26,8 +26,8 @@ interface Window {
         setWindowAspectRatio?: (aspectRatio: string) => Promise<boolean>;
         getLoginItem?: () => Promise<boolean>;
         setLoginItem?: (enabled: boolean) => Promise<boolean>;
-        selectFolder?: () => Promise<string | null>;
-        selectFolders?: () => Promise<string[]>;
+        selectFolder?: (title?: string) => Promise<string | null>;
+        selectFolders?: (title?: string) => Promise<string[]>;
         browserOpen?: (url?: string) => Promise<BrowserViewState>;
         browserClose?: () => Promise<BrowserViewState>;
         browserNavigate?: (url: string) => Promise<BrowserViewState>;

@@ -26,7 +26,7 @@ const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({
                                                                  onRemoveImage, onRemoveFile, onRemovePastedText, onImageClick,
                                                              }) => {
     const { openPanel } = useCodePanel();
-    const { t } = useTranslation('main');
+    const { t, i18n } = useTranslation('main');
 
     if ((images.length === 0 && fileAttachments.length === 0 && pastedTexts.length === 0) || modelType === 'image_gen') return null;
 
@@ -52,7 +52,7 @@ const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({
                         <span className="pasted-text-preview__icon"><Braces size={18}/></span>
                         <div className="pasted-text-preview__copy">
                             <span className="pasted-text-preview__title">{p.label}</span>
-                            <span className="pasted-text-preview__meta">{t('message.pastedText')} · {t('uiAuditFinal.characterCount', {count: p.content.length.toLocaleString()})} · {t('attachmentPreview.analysis')}</span>
+                            <span className="pasted-text-preview__meta">{t('message.pastedText')} · {t('uiAuditFinal.characterCount', {count: p.content.length.toLocaleString(i18n.resolvedLanguage || i18n.language)})} · {t('attachmentPreview.analysis')}</span>
                         </div>
                     </div>
                     <button className="pasted-text-preview__remove" onClick={e => { e.stopPropagation(); onRemovePastedText(p.id); }} aria-label={t('sidebar.delete')}>

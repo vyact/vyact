@@ -18,5 +18,7 @@
   "none": "Aucun",
   "notSet": "Non configuré",
   "retry": "Réessayer",
-  "more": "Plus", "select": "Sélectionner", "clearSelection": "Effacer la sélection", "noSearchResults": "Aucun résultat", "noItems": "Aucun élément"
+  "more": "Plus", "select": "Sélectionner", "clearSelection": "Effacer la sélection", "noSearchResults": "Aucun résultat", "noItems": "Aucun élément",
+  "clearSearch": "Effacer la recherche",
+  "selectColor": "Choisir la couleur {{color}}"
 }

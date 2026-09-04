@@ -123,10 +123,10 @@ const getWeekdayNames = (locale: string): string[] => {
     });
 };
 
-const toLocalTime = (dt?: string): string => {
+const toLocalTime = (dt: string | undefined, locale: string): string => {
     if (!dt) return '';
     try {
-        return new Date(dt).toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit', hour12: false});
+        return new Date(dt).toLocaleTimeString(locale, {hour: '2-digit', minute: '2-digit', hour12: false});
     } catch {
         return '';
     }
@@ -137,8 +137,8 @@ const formatDateRange = (event: CalendarEvent, locale: string, allDayLabel: stri
     const e = event.end;
     if (!s) return '';
     if (s.date) return allDayLabel;
-    const startTime = toLocalTime(s.dateTime);
-    const endTime = toLocalTime(e?.dateTime);
+    const startTime = toLocalTime(s.dateTime, locale);
+    const endTime = toLocalTime(e?.dateTime, locale);
     const startDate = s.dateTime ? new Date(s.dateTime) : null;
     const endDate = e?.dateTime ? new Date(e.dateTime) : null;
     const spansMultipleDays = startDate && endDate

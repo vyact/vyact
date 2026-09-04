@@ -321,7 +321,7 @@ const streamSyncStatus = async (
 ): Promise<Gov24SyncStatusResponse> => {
     const res = await fetch(url, {method: 'POST', headers: {'Accept': 'text/event-stream'}});
     await assertOk(res);
-    if (!res.body) throw new Error('Synchronization stream is unavailable.');
+    if (!res.body) throw new Error(i18n.t('main:networkError.streamFailed'));
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
@@ -821,12 +821,12 @@ export const api = {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({name}),
         });
-        await assertOk(response, 'Unable to create email label.');
+        await assertOk(response);
         return response.json();
     },
     async deleteGoogleMailLabel(id: string) {
         const response = await fetch(`${API_BASE}/google-workspace/mail/labels/${encodeURIComponent(id)}`, {method: 'DELETE'});
-        await assertOk(response, 'Unable to delete email label.');
+        await assertOk(response);
         return response.json();
     },
     async updateGoogleMailLabel(id: string, name: string) {
@@ -835,7 +835,7 @@ export const api = {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({name}),
         });
-        await assertOk(response, 'Unable to rename email label.');
+        await assertOk(response);
         return response.json();
     },
     async getGoogleMailWorkspace(label = 'INBOX'): Promise<GoogleMailWorkspaceResponse> {
@@ -845,7 +845,7 @@ export const api = {
         if (pendingRequest) return pendingRequest;
         const request = fetch(`${API_BASE}/google-workspace/mail/workspace?${params}`)
             .then(async response => {
-                await assertOk(response, 'Unable to load email workspace.');
+                await assertOk(response);
                 return response.json() as Promise<GoogleMailWorkspaceResponse>;
             })
             .finally(() => pendingGoogleMailWorkspaceRequests.delete(requestKey));
@@ -855,13 +855,13 @@ export const api = {
     async getGoogleMailMessages(label = 'INBOX', pageToken = '') { const params = new URLSearchParams({label}); if (pageToken) params.set('page_token', pageToken); return fetchJson(`${API_BASE}/google-workspace/mail/messages?${params}`); },
     async getGoogleMailMessage(id: string, label = 'INBOX') {
         const response = await fetch(`${API_BASE}/google-workspace/mail/messages/${encodeURIComponent(id)}?${new URLSearchParams({label})}`);
-        await assertOk(response, 'Unable to load email.');
+        await assertOk(response);
         return response.json();
     },
     async indexGoogleMailThreadForKnowledge(threadId: string, accountId: string, threadMessages?: Array<{id: string; from_: string; to: string; cc: string; date: string; subject: string; body: string; html_body: string; attachments: Array<{id: string; filename: string; mime_type: string; size: number}>}>) { return fetchJson<{source_id: string; thread_id: string; message_count: number; updated: boolean}>(`${API_BASE}/google-workspace/mail/threads/${encodeURIComponent(threadId)}/knowledge-index`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({account_id: accountId, thread_messages: threadMessages || []})}); },
     async getGoogleMailSignature(accountId: string): Promise<{signature_html: string; enabled: boolean; macros: Array<{id: string; title: string; content_html: string}>}> {
         const response = await fetch(`${API_BASE}/google-workspace/accounts/${encodeURIComponent(accountId)}/mail/signature`);
-        await assertOk(response, 'Unable to load email signature.');
+        await assertOk(response);
         return response.json();
     },
     async saveGoogleMailSignature(accountId: string, signatureHtml: string, enabled = true, macros: Array<{id: string; title: string; content_html: string}> = []) {
@@ -870,7 +870,7 @@ export const api = {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({signature_html: signatureHtml, enabled, macros}),
         });
-        await assertOk(response, 'Unable to save email signature.');
+        await assertOk(response);
         return response.json();
     },
     async getGoogleMailAttachment(messageId: string, attachmentId: string, mimeType: string) {
@@ -886,7 +886,7 @@ export const api = {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({starred}),
         });
-        await assertOk(response, 'Unable to update email star.');
+        await assertOk(response);
         return response.json();
     },
     async trashGoogleMailMessages(messageIds: string[]) {
@@ -895,7 +895,7 @@ export const api = {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({message_ids: messageIds}),
         });
-        await assertOk(response, 'Unable to delete email.');
+        await assertOk(response);
         return response.json();
     },
     async permanentlyDeleteGoogleMailMessages(messageIds: string[]) {
@@ -904,7 +904,7 @@ export const api = {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({message_ids: messageIds}),
         });
-        await assertOk(response, 'Unable to permanently delete email.');
+        await assertOk(response);
         return response.json();
     },
     async trashGoogleMailThreads(threadIds: string[]) {
@@ -913,7 +913,7 @@ export const api = {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({thread_ids: threadIds}),
         });
-        await assertOk(response, 'Unable to delete email thread.');
+        await assertOk(response);
         return response.json();
     },
     async permanentlyDeleteGoogleMailThreads(threadIds: string[]) {
@@ -922,7 +922,7 @@ export const api = {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({thread_ids: threadIds}),
         });
-        await assertOk(response, 'Unable to permanently delete email thread.');
+        await assertOk(response);
         return response.json();
     },
     async moveGoogleMailThreads(threadIds: string[], targetLabelId: string, sourceLabelId: string, sourceIsUserLabel: boolean) {
@@ -931,7 +931,7 @@ export const api = {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({thread_ids: threadIds, target_label_id: targetLabelId, source_label_id: sourceLabelId, source_is_user_label: sourceIsUserLabel}),
         });
-        await assertOk(response, 'Unable to move email.');
+        await assertOk(response);
         return response.json();
     },
     async applyGoogleMailThreadLabel(threadIds: string[], labelId: string) {
@@ -940,7 +940,7 @@ export const api = {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({thread_ids: threadIds, label_id: labelId}),
         });
-        await assertOk(response, 'Unable to apply email label.');
+        await assertOk(response);
         return response.json();
     },
     async generateGoogleMailBody(data: {
@@ -1200,7 +1200,7 @@ export const api = {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({is_favorite: isFavorite}),
         });
-        await assertOk(response, 'Unable to update favorite conversation.');
+        await assertOk(response);
     },
     async getProjects(): Promise<{projects: import('../types').Project[]}> { return fetchJson(`${API_BASE}/projects`); },
     async createProject(name: string, folderPaths: string[], color: string): Promise<import('../types').Project> { return fetchJson(`${API_BASE}/projects`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name, folder_paths: folderPaths, color})}); },
@@ -1211,7 +1211,7 @@ export const api = {
     async updateProjectMemoryItem(projectId: string, itemType: 'decision' | 'action_item', itemId: string, updates: {status?: 'active' | 'completed'; text?: string}): Promise<import('../types').ProjectMemory> { return fetchJson(`${API_BASE}/projects/${projectId}/memory/${itemType}/${itemId}`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(updates)}); },
     async deleteProjectMemoryItem(projectId: string, itemType: 'decision' | 'action_item', itemId: string): Promise<import('../types').ProjectMemory> { return fetchJson(`${API_BASE}/projects/${projectId}/memory/${itemType}/${itemId}`, {method: 'DELETE'}); },
     async setConversationProject(convId: string, projectId: string | null): Promise<void> { await fetch(`${API_BASE}/history/${convId}/project`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({project_id: projectId})}); },
-    async resolveToolApproval(approvalId: string, approved: boolean, userResponse = ''): Promise<void> { const response = await fetch(`${API_BASE}/tool-approvals/${encodeURIComponent(approvalId)}`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({approved, response: userResponse})}); await assertOk(response, 'Unable to resolve tool approval.'); },
+    async resolveToolApproval(approvalId: string, approved: boolean, userResponse = ''): Promise<void> { const response = await fetch(`${API_BASE}/tool-approvals/${encodeURIComponent(approvalId)}`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({approved, response: userResponse})}); await assertOk(response); },
     async getKnowledgeCollections(): Promise<{collections: import('../types').KnowledgeCollection[]}> { return fetchJson(`${API_BASE}/knowledge-collections`); },
     async createKnowledgeCollection(data: Omit<import('../types').KnowledgeCollection, 'id' | 'created_at' | 'updated_at'>): Promise<import('../types').KnowledgeCollection> { return fetchJson(`${API_BASE}/knowledge-collections`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)}); },
     async updateKnowledgeCollection(id: string, data: Omit<import('../types').KnowledgeCollection, 'id' | 'created_at' | 'updated_at'>): Promise<import('../types').KnowledgeCollection> { return fetchJson(`${API_BASE}/knowledge-collections/${encodeURIComponent(id)}`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)}); },
@@ -1241,19 +1241,19 @@ export const api = {
 
     async createCustomProvider(data: CustomProviderPayload): Promise<{ok: boolean; id: string}> {
         const res = await fetch(`${API_BASE}/providers/custom`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
-        await assertOk(res, 'Unable to create LLM connection.');
+        await assertOk(res);
         return res.json();
     },
 
     async updateCustomProvider(id: string, data: CustomProviderPayload): Promise<ApiSuccessResponse> {
         const res = await fetch(`${API_BASE}/providers/custom/${encodeURIComponent(id)}`, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
-        await assertOk(res, 'Unable to update LLM connection.');
+        await assertOk(res);
         return res.json();
     },
 
     async deleteCustomProvider(id: string): Promise<ApiSuccessResponse> {
         const res = await fetch(`${API_BASE}/providers/custom/${encodeURIComponent(id)}`, {method: 'DELETE'});
-        await assertOk(res, 'Unable to delete LLM connection.');
+        await assertOk(res);
         return res.json();
     },
 
@@ -1263,7 +1263,7 @@ export const api = {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({provider, model})
         });
-        await assertOk(res, 'Unable to select LLM provider.');
+        await assertOk(res);
         return res.json();
     },
 
@@ -1474,7 +1474,7 @@ export const api = {
             headers: {'Accept': 'text/event-stream'},
         });
         await assertOk(res);
-        if (!res.body) throw new Error('Synchronization stream is unavailable.');
+        if (!res.body) throw new Error(i18n.t('main:networkError.streamFailed'));
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';

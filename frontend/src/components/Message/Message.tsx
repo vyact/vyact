@@ -279,7 +279,7 @@ const Message: React.FC<MessageProps> = ({
                                 <span className="msg-pasted-preview__icon"><Braces size={18}/></span>
                                 <div className="msg-pasted-preview__copy">
                                     <span className="msg-pasted-preview__title">{chip.label}</span>
-                                    <span className="msg-pasted-preview__meta">{t('message.pastedText')} · {t('uiAuditFinal.characterCount', {count: chip.content.length.toLocaleString()})}</span>
+                                    <span className="msg-pasted-preview__meta">{t('message.pastedText')} · {t('uiAuditFinal.characterCount', {count: chip.content.length.toLocaleString(i18n.resolvedLanguage || i18n.language)})}</span>
                                 </div>
                             </div>
                         </div>

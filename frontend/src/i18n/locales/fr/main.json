@@ -669,9 +669,6 @@
     "indexingStopped": "Indexation arrêtée — {{done}} terminés · {{stopped}} arrêtés",
     "stopIndexing": "Arrêter l’indexation",
     "stopRequested": "Arrêt demandé",
-    "indexStates": {
-      "stopped": "Arrêté"
-    },
     "error": "Une erreur s'est produite.",
     "deleteError": "Une erreur s'est produite lors de la suppression.",
     "uploadMore": "Téléverser un autre fichier",
@@ -1261,5 +1258,13 @@
     "projectDownloadFailed": "Impossible de télécharger le projet.",
     "memoPrepareFailed": "Impossible de préparer la note.",
     "indexResultMissing": "Aucun résultat d’indexation reçu pour {{name}}."
-  }
+  },
+  "conversationExport": {
+    "user": "Utilisateur",
+    "assistant": "Assistant",
+    "exportedAt": "Exporté le : {{time}}",
+    "messageCount": "Messages : {{count}}"
+  },
+  "documentPage": "Page {{page}}",
+  "connectionProtocol": {"openaiCompatible": "Compatible avec OpenAI"}
 }

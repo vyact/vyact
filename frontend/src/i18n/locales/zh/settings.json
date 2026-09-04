@@ -448,5 +448,14 @@
     "loadFailed": "Unable to load plugins.",
     "installFailed": "Unable to install the plugin.",
     "deleteFailed": "Unable to delete the plugin."
+  },
+  "pluginSettings": {
+    "loadFailed": "无法加载插件设置。",
+    "saveFailed": "无法保存插件设置。",
+    "help": "文档"
+  },
+  "googleSetupLinks": {
+    "apiLibrary": "API 库",
+    "audience": "受众"
   }
 }

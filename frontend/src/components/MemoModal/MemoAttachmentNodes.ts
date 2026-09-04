@@ -1,3 +1,4 @@
+import i18n from '../../i18n';
 import { Node, mergeAttributes } from '@tiptap/core';
 import { NodeSelection, TextSelection } from '@tiptap/pm/state';
 
@@ -132,7 +133,9 @@ export const MemoImage = Node.create({
             const handle = document.createElement('button');
             handle.type = 'button';
             handle.className = 'memo-image-resize-handle';
-            handle.setAttribute('aria-label', 'Resize image');
+            const updateResizeLabel = () => handle.setAttribute('aria-label', i18n.t('main:googleWorkspace.editorToolbar.resizeImage'));
+            updateResizeLabel();
+            i18n.on('languageChanged', updateResizeLabel);
             frame = document.createElement('span');
             frame.className = 'memo-image-editable-frame';
             frame.append(image, handle);
@@ -204,6 +207,7 @@ export const MemoImage = Node.create({
                     return true;
                 },
                 destroy() {
+                    i18n.off('languageChanged', updateResizeLabel);
                     window.removeEventListener('pointermove', resize);
                     window.removeEventListener('pointerup', finishResize);
                     image.removeEventListener('dblclick', restoreNaturalWidth);

@@ -669,9 +669,6 @@
     "indexingStopped": "หยุดการจัดทำดัชนีแล้ว — เสร็จ {{done}} รายการ · หยุด {{stopped}} รายการ",
     "stopIndexing": "หยุดการจัดทำดัชนี",
     "stopRequested": "ส่งคำขอหยุดแล้ว",
-    "indexStates": {
-      "stopped": "หยุดแล้ว"
-    },
     "error": "เกิดข้อผิดพลาด",
     "deleteError": "เกิดข้อผิดพลาดขณะลบ",
     "uploadMore": "อัปโหลดไฟล์อื่น",
@@ -1261,5 +1258,13 @@
     "projectDownloadFailed": "ไม่สามารถดาวน์โหลดโครงการได้",
     "memoPrepareFailed": "ไม่สามารถเตรียมบันทึกได้",
     "indexResultMissing": "ไม่ได้รับผลการจัดทำดัชนีสำหรับ {{name}}"
-  }
+  },
+  "conversationExport": {
+    "user": "ผู้ใช้",
+    "assistant": "ผู้ช่วย",
+    "exportedAt": "ส่งออกเมื่อ: {{time}}",
+    "messageCount": "จำนวนข้อความ: {{count}}"
+  },
+  "documentPage": "หน้า {{page}}",
+  "connectionProtocol": {"openaiCompatible": "รองรับ OpenAI"}
 }

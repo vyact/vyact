@@ -570,7 +570,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                 })
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.code ? translateBackendError(data.code, data.params) : t('backendErrors.request_failed'));
+            if (!res.ok) throw new Error(data.code ? translateBackendError(data.code, data.params) : t('main:backendErrors.request_failed'));
             setDriveExportResult({
                 fileName: data.file_name,
                 folderId: data.folder_id,
@@ -632,7 +632,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
             formData.append('restore_files', String(restoreFiles));
             const res = await fetch('/api/backup/import', {method: 'POST', body: formData});
             const data = await res.json();
-            if (!res.ok) throw new Error(data.code ? translateBackendError(data.code, data.params) : t('backendErrors.request_failed'));
+            if (!res.ok) throw new Error(data.code ? translateBackendError(data.code, data.params) : t('main:backendErrors.request_failed'));
             const detail = data.detail || {};
             const totalInserted = Object.values(detail).reduce((sum: number, v: any) => sum + (v.inserted ?? 0), 0);
             const totalSkipped = Object.values(detail).reduce((sum: number, v: any) => sum + (v.skipped ?? 0), 0);
@@ -1031,7 +1031,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                                         <div className="settings-index-info">
                                                             <span className="settings-index-name">{s.index}</span>
                                                             <span className={`settings-index-count${s.doc_count === 0 ? ' is-empty' : ''}`}>
-                                                                {t('backup.documentCount', {count: s.doc_count.toLocaleString()})}
+                                                                {t('backup.documentCount', {count: s.doc_count.toLocaleString(i18n.resolvedLanguage || i18n.language)})}
                                                             </span>
                                                         </div>
                                                     </div>

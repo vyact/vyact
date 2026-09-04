@@ -463,5 +463,14 @@
     "github": "GitHub Code Changes and Pull Request Rules\nWhen asked to change code in a GitHub repository or create a pull request:\n1. Use get_file_contents to inspect the current file and SHA.\n2. Create a working branch with create_branch from the default branch.\n3. Commit changes with create_or_update_file, passing the previously retrieved SHA. Use push_files for multiple files.\n4. Create the pull request with create_pull_request and clearly describe what changed and why.\n\nAlways inspect files before changing them, show the proposed changes before committing, and use list_branches when the default branch is unknown. For code-review requests, review the retrieved code without modifying it.",
     "sequential_thinking": "Sequential Thinking Usage Rules\nUse the sequential thinking tool for tasks requiring multi-step reasoning, such as debugging, architecture design, root-cause analysis, investment decisions, and complex comparisons. Break the reasoning into stages, review previous conclusions, and revise them when necessary before reaching the final answer.\nDo not use it for simple factual questions, short answers, or requests completed with a single lookup.",
     "google_workspace": "Google Workspace Usage Rules\nUse the available Gmail, Google Calendar, Google Drive, Google Docs, Google Sheets, Google Slides, and Google Forms tools according to the user's request.\n\nSearch for and verify the relevant data before taking action. Handle recipients, titles, content, dates, times, attendees, locations, files, folders, and permissions accurately. Preserve the user's timezone and use ISO 8601 for calendar times; do not invent a time when it is unclear. Ask for clarification when the target is ambiguous. Confirm the scope before important changes or deletions, perform multi-step work in the required order, and clearly summarize the result."
+  },
+  "pluginSettings": {
+    "loadFailed": "Unable to load plugin settings.",
+    "saveFailed": "Unable to save plugin settings.",
+    "help": "Documentation"
+  },
+  "googleSetupLinks": {
+    "apiLibrary": "API Library",
+    "audience": "Audience"
   }
 }

@@ -18,5 +18,7 @@
   "none": "None",
   "notSet": "Not set",
   "retry": "Retry",
-  "more": "More", "select": "Select", "clearSelection": "Clear selection", "noSearchResults": "No search results", "noItems": "No items"
+  "more": "More", "select": "Select", "clearSelection": "Clear selection", "noSearchResults": "No search results", "noItems": "No items",
+  "clearSearch": "Clear search",
+  "selectColor": "Select color {{color}}"
 }

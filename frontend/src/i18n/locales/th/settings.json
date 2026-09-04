@@ -448,5 +448,14 @@
     "loadFailed": "Unable to load plugins.",
     "installFailed": "Unable to install the plugin.",
     "deleteFailed": "Unable to delete the plugin."
+  },
+  "pluginSettings": {
+    "loadFailed": "ไม่สามารถโหลดการตั้งค่าปลั๊กอินได้",
+    "saveFailed": "ไม่สามารถบันทึกการตั้งค่าปลั๊กอินได้",
+    "help": "เอกสารประกอบ"
+  },
+  "googleSetupLinks": {
+    "apiLibrary": "คลัง API",
+    "audience": "กลุ่มเป้าหมาย"
   }
 }

@@ -96,26 +96,6 @@ const FILE_ICON: Record<string, string> = {
     xlsx: '📊', xls: '📊', pptx: '📑', ppt: '📑',
     txt: '📃', html: '🌐', htm: '🌐', md: '📋',
 };
-const INDEX_STAGE_FALLBACKS: Record<string, string> = {
-    uploading: 'Uploading file',
-    checking_duplicate: 'Checking for duplicates',
-    parsing: 'Parsing document',
-    chunking: 'Chunking document',
-    saving_original: 'Saving original file',
-    embedding: 'Creating embeddings',
-    indexing_chunks: 'Saving to Elasticsearch',
-    saving_metadata: 'Saving file metadata',
-    duplicate: 'Duplicate file',
-    completed: 'Indexing complete',
-};
-const INDEX_STATE_FALLBACKS: Record<IndexFileState, string> = {
-    pending: 'Queued',
-    processing: 'Processing',
-    done: 'Done',
-    stopped: 'Stopped',
-    skipped: 'Duplicate',
-    error: 'Failed',
-};
 
 /** 청크 카운터가 갱신돼도 현재 작업 단계 문구는 다시 그리지 않는다. */
 const IndexStageText = React.memo(({label}: {label: string}) => <span>{label}</span>);
@@ -123,12 +103,6 @@ const IndexStageText = React.memo(({label}: {label: string}) => <span>{label}</s
 const getExt = (name: string) => name.split('.').pop()?.toLowerCase() || '';
 const getIcon = (name: string) => FILE_ICON[getExt(name)] || '📄';
 const getFileKey = (file: File) => `${file.name}:${file.size}:${file.lastModified}`;
-const CHUNK_TYPE_FALLBACKS: Record<string, string> = {
-    heading: 'Heading',
-    paragraph: 'Paragraph',
-    table: 'Table',
-    code: 'Code',
-};
 const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -450,7 +424,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
         const response = await fetch('/api/document/index-progress', {method: 'POST', body: formData});
         if (!response.ok || !response.body) {
             const data = await response.json().catch(() => null);
-            throw new Error(data?.code ? translateBackendError(data.code, data.params) : t('backendErrors.document_index_failed'));
+            throw new Error(data?.code ? translateBackendError(data.code, data.params) : t('backendStreamErrors.document_index_failed'));
         }
 
         const reader = response.body.getReader();
@@ -459,7 +433,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
         let result: IndexProgressEvent | null = null;
 
         const handleEvent = (event: IndexProgressEvent) => {
-            if (event.type === 'error') throw new Error(event.code ? translateBackendError(event.code, event.params) : event.message || t('backendErrors.document_index_failed'));
+            if (event.type === 'error') throw new Error(event.code ? translateBackendError(event.code, event.params) : event.message || t('backendStreamErrors.document_index_failed'));
             if (event.type === 'result') {
                 result = event;
                 return;
@@ -792,13 +766,13 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
         (tab === 'index' || question.trim().length > 0);
     const hasFiles = files.length > 0;
     const getIndexStageLabel = (stage: string) => t(`documentModal.indexStages.${stage}`, {
-        defaultValue: INDEX_STAGE_FALLBACKS[stage] || stage,
+        defaultValue: stage,
     });
     const getIndexStateLabel = (state: IndexFileState) => t(`documentModal.indexStates.${state}`, {
-        defaultValue: INDEX_STATE_FALLBACKS[state],
+        defaultValue: state,
     });
     const getChunkTypeLabel = (type: string) => t(`documentModal.chunkTypes.${type}`, {
-        defaultValue: CHUNK_TYPE_FALLBACKS[type] || type,
+        defaultValue: type,
     });
 
     return (
@@ -1153,7 +1127,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
                                                 <span className="dm-chunk-number">#{c.chunk_index + 1}</span>
                                                 <span className="dm-chunk-summary">
                                                     <span>{getChunkTypeLabel(c.chunk_type)}</span>
-                                                    {c.page_number && <span>p.{c.page_number}</span>}
+                                                    {c.page_number && <span>{t('documentPage', {page: c.page_number})}</span>}
                                                     <span>{t('documentModal.charCount', {count: c.content_length})}</span>
                                                 </span>
                                                 <span className="dm-chunk-preview">{c.content.replace(/\s+/g, ' ').trim()}</span>
@@ -1171,7 +1145,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({
                                                     </span>
                                                     {selectedChunk.page_number && (
                                                         <span className="dm-meta-badge">
-                                                            p.{selectedChunk.page_number}
+                                                            {t('documentPage', {page: selectedChunk.page_number})}
                                                         </span>
                                                     )}
                                                     <span className="dm-meta-badge">

@@ -448,5 +448,14 @@
     "loadFailed": "Unable to load plugins.",
     "installFailed": "Unable to install the plugin.",
     "deleteFailed": "Unable to delete the plugin."
+  },
+  "pluginSettings": {
+    "loadFailed": "No se pudo cargar la configuración del complemento.",
+    "saveFailed": "No se pudo guardar la configuración del complemento.",
+    "help": "Documentación"
+  },
+  "googleSetupLinks": {
+    "apiLibrary": "Biblioteca de APIs",
+    "audience": "Público"
   }
 }

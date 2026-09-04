@@ -669,9 +669,6 @@
     "indexingStopped": "索引已停止 — 已完成 {{done}} 个 · 已停止 {{stopped}} 个",
     "stopIndexing": "停止索引",
     "stopRequested": "已请求停止",
-    "indexStates": {
-      "stopped": "已停止"
-    },
     "error": "发生错误。",
     "deleteError": "删除时发生错误。",
     "uploadMore": "上传其他文件",
@@ -1173,7 +1170,7 @@
   },
   "providerSettings":{"title":"{{provider}} 设置","description":"此提供商使用的模型和响应设置。请输入模型支持范围内的值。","required":"请输入 API Key 和 Model。","save":"保存","saveFailed":"保存失败","deleteFailed":"删除失败","model":"Model"},
   "customProvider": {"addConnection":"+ 添加 LLM 连接","add":"添加","addTitle":"添加 LLM 连接","editTitle":"编辑 LLM 连接","subtitle":"连接要使用的 API 服务器和模型。","close":"关闭","cancel":"取消","name":"连接名称","namePlaceholder":"例如：公司 LLM","protocol":"API 格式","protocolDocs":"API 格式文档","connectionSection":"连接信息","connectionSectionDesc":"配置 API 服务器和模型。","baseUrl":"Base URL","apiKey":"API Key","optional":"可选","apiKeyExisting":"新 API Key（仅更改时填写）","apiKeyOptional":"API Key（可选）","modelId":"Model ID","modelPlaceholder":"例如：qwen3:8b","hint":"连接实现 OpenAI 兼容 /chat/completions API 的服务器。","headers":"附加 Header","headersDesc":"添加网关认证等所需的 HTTP Header。","addHeader":"添加 Header","noHeaders":"服务器需要时添加 Header","headerName":"Header 标签","headerValue":"Header 值","headerValuePlaceholder":"输入 Header 值","headerValueExisting":"新值（仅更改时填写）","removeHeader":"删除 Header","showHeaderValue":"显示 Header 值","hideHeaderValue":"隐藏 Header 值","showApiKey":"显示 API Key","hideApiKey":"隐藏 API Key","headerValidation":"请填写每个 Header 的标签和值。","validation":"请输入名称、Base URL 和 Model ID。","save":"保存并选择","saving":"正在保存…","saveFailed":"保存连接失败","deleteConfirm":"要删除 {{name}} 连接吗？"},
-  "rememberModal": {"title":"个人资料管理","maxLength":"最大字符数","currentProfile":"当前保存的个人资料","loading":"加载中…","empty":"没有已保存的个人资料","editTitle":"编辑个人资料","placeholder":"输入个人资料内容…","characterCount":"{{count}} 个字符","updatedProfile":"已更新的个人资料","close":"关闭","edit":"编辑","analyze":"AI 分析","cancel":"取消","saving":"保存中…","save":"保存","analyzing":"分析中…","back":"返回","saved":"个人资料已保存。","connecting":"连接中…","analyzingConversations":"正在分析对话…"},
+  "rememberModal": {"length500":"{{count}} 个字符（简洁）","length1000":"{{count}} 个字符","length2000":"{{count}} 个字符（默认）","length3000":"{{count}} 个字符（详细）","title":"个人资料管理","maxLength":"最大字符数","currentProfile":"当前保存的个人资料","loading":"加载中…","empty":"没有已保存的个人资料","editTitle":"编辑个人资料","placeholder":"输入个人资料内容…","characterCount":"{{count}} 个字符","updatedProfile":"已更新的个人资料","close":"关闭","edit":"编辑","analyze":"AI 分析","cancel":"取消","saving":"保存中…","save":"保存","analyzing":"分析中…","back":"返回","saved":"个人资料已保存。","connecting":"连接中…","analyzingConversations":"正在分析对话…"},
   "summaryModal": {"title":"对话摘要","loading":"加载中…","loadFailed":"无法加载摘要。","conversationSummary":"对话摘要","emptySummary":"暂无摘要。","attachments":"附件（{{count}}）","noAttachments":"没有附件。","fileCount":"{{count}} 个"},
   "codeFileViewer": {"code":"代码","copy":"复制","copied":"已复制","download":"下载","downloadAll":"全部下载"},
   "windowControls": {"minimize":"最小化","maximize":"最大化","restore":"还原","close":"关闭"},
@@ -1261,5 +1258,13 @@
     "projectDownloadFailed": "无法下载项目。",
     "memoPrepareFailed": "无法准备笔记。",
     "indexResultMissing": "未收到{{name}}的索引结果。"
-  }
+  },
+  "conversationExport": {
+    "user": "用户",
+    "assistant": "助手",
+    "exportedAt": "导出时间：{{time}}",
+    "messageCount": "消息数：{{count}}"
+  },
+  "documentPage": "第 {{page}} 页",
+  "connectionProtocol": {"openaiCompatible": "兼容 OpenAI"}
 }

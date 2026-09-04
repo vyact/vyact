@@ -669,9 +669,6 @@
     "indexingStopped": "Đã dừng lập chỉ mục — hoàn tất {{done}} · đã dừng {{stopped}}",
     "stopIndexing": "Dừng lập chỉ mục",
     "stopRequested": "Đã yêu cầu dừng",
-    "indexStates": {
-      "stopped": "Đã dừng"
-    },
     "error": "Đã xảy ra lỗi.",
     "deleteError": "Đã xảy ra lỗi khi xóa.",
     "uploadMore": "Tải thêm tệp",
@@ -1261,5 +1258,13 @@
     "projectDownloadFailed": "Không thể tải xuống dự án.",
     "memoPrepareFailed": "Không thể chuẩn bị ghi chú.",
     "indexResultMissing": "Không nhận được kết quả lập chỉ mục cho {{name}}."
-  }
+  },
+  "conversationExport": {
+    "user": "Người dùng",
+    "assistant": "Trợ lý",
+    "exportedAt": "Xuất lúc: {{time}}",
+    "messageCount": "Số tin nhắn: {{count}}"
+  },
+  "documentPage": "Trang {{page}}",
+  "connectionProtocol": {"openaiCompatible": "Tương thích OpenAI"}
 }

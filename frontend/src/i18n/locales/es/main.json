@@ -668,9 +668,6 @@
     "indexingStopped": "Indexación detenida — {{done}} completados · {{stopped}} detenidos",
     "stopIndexing": "Detener indexación",
     "stopRequested": "Detención solicitada",
-    "indexStates": {
-      "stopped": "Detenido"
-    },
     "error": "Ocurrió un error.",
     "deleteError": "Ocurrió un error al eliminar.",
     "uploadMore": "Subir otro archivo",
@@ -1260,5 +1257,13 @@
     "projectDownloadFailed": "No se pudo descargar el proyecto.",
     "memoPrepareFailed": "No se pudo preparar la nota.",
     "indexResultMissing": "No se recibió el resultado de indexación de {{name}}."
-  }
+  },
+  "conversationExport": {
+    "user": "Usuario",
+    "assistant": "Asistente",
+    "exportedAt": "Exportado el: {{time}}",
+    "messageCount": "Mensajes: {{count}}"
+  },
+  "documentPage": "Página {{page}}",
+  "connectionProtocol": {"openaiCompatible": "Compatible con OpenAI"}
 }

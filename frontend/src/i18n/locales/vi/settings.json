@@ -448,5 +448,14 @@
     "loadFailed": "Unable to load plugins.",
     "installFailed": "Unable to install the plugin.",
     "deleteFailed": "Unable to delete the plugin."
+  },
+  "pluginSettings": {
+    "loadFailed": "Không thể tải cài đặt tiện ích.",
+    "saveFailed": "Không thể lưu cài đặt tiện ích.",
+    "help": "Tài liệu"
+  },
+  "googleSetupLinks": {
+    "apiLibrary": "Thư viện API",
+    "audience": "Đối tượng"
   }
 }

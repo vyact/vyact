@@ -462,18 +462,18 @@ function GoogleAccountsEditor({value, onChange, onPersist, onCredentialUpload, o
             setBusyAccountId(null);
         }
     };
-    const oauthField: Field = {key: 'gauth_json', label: t('uiAudit.googleOauthCredential'), type: 'file_json', required: true};
+    const oauthField: Field = {key: 'gauth_json', label: t('main:uiAudit.googleOauthCredential'), type: 'file_json', required: true};
     const mailModeField: Field = {
         key: 'mail_mode',
-        label: t('uiAudit.googleMailPermission'),
+        label: t('main:uiAudit.googleMailPermission'),
         type: 'select',
         options: [
-            {value: 'readonly', label: t('uiAudit.googleMailReadonly')},
-            {value: 'draft_only', label: t('uiAudit.googleMailDraftOnly')},
-            {value: 'send', label: t('uiAudit.googleMailSend')},
+            {value: 'readonly', label: t('main:uiAudit.googleMailReadonly')},
+            {value: 'draft_only', label: t('main:uiAudit.googleMailDraftOnly')},
+            {value: 'send', label: t('main:uiAudit.googleMailSend')},
         ],
     };
-    const notificationField: Field = {key: 'mail_notifications', label: t('uiAudit.googleMailNotifications'), type: 'toggle'};
+    const notificationField: Field = {key: 'mail_notifications', label: t('main:uiAudit.googleMailNotifications'), type: 'toggle'};
     const removeAccountIndex = accounts.findIndex(account => account.id === removeAccountId);
     const removeAccountLabel = removeAccountId
         ? statuses[removeAccountId]?.email || t('mcp.googleAccount', {
@@ -867,7 +867,7 @@ function GoogleWorkspaceGuide() {
                         <span className="gw-step-num">2</span>
                         <div className="gw-step-content">
                             <a href="https://console.cloud.google.com/apis/library" target="_blank"
-                               rel="noreferrer">API Library</a> — {t('mcp.googleStep2')}
+                               rel="noreferrer">{t('googleSetupLinks.apiLibrary')}</a> — {t('mcp.googleStep2')}
                         </div>
                     </div>
                     <div className="gw-step">
@@ -881,7 +881,7 @@ function GoogleWorkspaceGuide() {
                         <span className="gw-step-num">4</span>
                         <div className="gw-step-content">
                             <a href="https://console.cloud.google.com/auth/audience"
-                               target="_blank" rel="noreferrer">Audience</a> — {t('mcp.googleStep4')}
+                               target="_blank" rel="noreferrer">{t('googleSetupLinks.audience')}</a> — {t('mcp.googleStep4')}
                         </div>
                     </div>
                     <div className="gw-step">
