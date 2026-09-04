@@ -230,6 +230,7 @@ export async function speakWithKokoroOrFallback(
     settings: { rate: number; volume: number; enVoiceURI: string; kokoroVoice: string },
     abortSignal?: { cancelled: boolean },
 ): Promise<void> {
+    if (abortSignal?.cancelled) return;
     const prefix = lang.split('-')[0];
     const kokoro = await isKokoroAvailable();
 
@@ -251,6 +252,7 @@ export async function speakWithKokoroOrFallback(
             const buf = await res.arrayBuffer();
             if (!_kokoroAudioCtx) _kokoroAudioCtx = new AudioContext();
             const audioBuffer = await _kokoroAudioCtx.decodeAudioData(buf);
+            if (abortSignal?.cancelled) return;
             const source = _kokoroAudioCtx.createBufferSource();
             source.buffer = audioBuffer;
             const gain = _kokoroAudioCtx.createGain();
@@ -281,6 +283,7 @@ export async function speakWithKokoroOrFallback(
 
     // Web Speech 폴백
     const voices = await getVoicesAsync();
+    if (abortSignal?.cancelled) return;
     return new Promise<void>((resolve) => {
         const u = new SpeechSynthesisUtterance(text);
         u.lang = lang;

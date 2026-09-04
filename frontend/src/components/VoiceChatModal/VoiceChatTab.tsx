@@ -1,3 +1,5 @@
+import {useStreamingReadAloud} from './useStreamingReadAloud';
+import {toast} from '../common/ToastNotifications/ToastNotifications';
 import React, {useState, useRef, useEffect, useCallback} from 'react';
 import {ArrowUp, Mic, Square} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
@@ -23,7 +25,7 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
     const {t, i18n} = useTranslation('main');
     const isAssistantMode = mode === 'assistant';
     const [phase, setPhase] = useState<ChatPhase>(isAssistantMode ? 'chatting' : 'setup');
-    const [selectedLang, setSelectedLang] = useState('en-US');
+    const [selectedLang, setSelectedLang] = useState(isAssistantMode ? (i18n.resolvedLanguage || i18n.language) : 'en-US');
     const [chatLog, setChatLog] = useState<ChatEntry[]>([]);
     const [isListening, setIsListening] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(false);
@@ -31,6 +33,39 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
     const [isPreparing, setIsPreparing] = useState(false);
     const [statusText, setStatusText] = useState('');
     const [audioLevel, setAudioLevel] = useState(0);
+    const [autoRead, setAutoRead] = useState(false);
+    const [autoReadReady, setAutoReadReady] = useState(false);
+    const [savingAutoRead, setSavingAutoRead] = useState(false);
+    const readAloud = useStreamingReadAloud(isAssistantMode && autoRead, selectedLang);
+    const deferListeningRef = useRef(deferListening);
+    deferListeningRef.current = deferListening;
+
+    useEffect(() => {
+        if (!isAssistantMode) return;
+        let active = true;
+        fetch('/api/settings/voice-auto-read').then(async response => {
+            if (!response.ok) throw new Error('Settings unavailable');
+            const data = await response.json();
+            if (active) setAutoRead(data.enabled === true);
+        }).catch(() => {}).finally(() => { if (active) setAutoReadReady(true); });
+        return () => { active = false; };
+    }, [isAssistantMode]);
+
+    const toggleAutoRead = async () => {
+        const next = !autoRead;
+        setAutoRead(next);
+        if (!next) readAloud.cancel();
+        setSavingAutoRead(true);
+        try {
+            const response = await fetch('/api/settings/voice-auto-read', {
+                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({enabled: next}),
+            });
+            if (!response.ok) throw new Error('Save failed');
+        } catch {
+            setAutoRead(!next);
+            toast.warning(t('voiceChat.autoReadSaveFailed'));
+        } finally { setSavingAutoRead(false); }
+    };
 
     const logEndRef = useRef<HTMLDivElement>(null);
     const isActiveRef = useRef(false);
@@ -40,6 +75,7 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
     const onSendRef = useRef(onSend);
     const selectedLangRef = useRef(selectedLang);
     const currentSystemPromptRef = useRef<string>('');
+    const startingListeningRef = useRef(false);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
     const streamRef = useRef<MediaStream | null>(null);
@@ -96,6 +132,7 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
         isSpeakingRef.current = false;
         isWaitingRef.current = false;
         stopRecording();
+        readAloud.cancel();
         speakAbortRef.current.cancelled = true;
         stopAllTts();
         setIsListening(false);
@@ -103,7 +140,7 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
         setIsWaiting(false);
         setIsPreparing(false);
         setStatusText('');
-    }, [stopRecording]);
+    }, [stopRecording, readAloud.cancel]);
 
     // 탭 전환 시 중단
     useEffect(() => {
@@ -152,9 +189,15 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
     };
 
     const startListening = useCallback(async () => {
-        if (!isActiveRef.current || isSpeakingRef.current || isWaitingRef.current) return;
+        if (!isActiveRef.current || isSpeakingRef.current || isWaitingRef.current || deferListeningRef.current) return;
+        if (startingListeningRef.current || mediaRecorderRef.current?.state === 'recording') return;
+        startingListeningRef.current = true;
         try {
             const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+            if (!isActiveRef.current || isSpeakingRef.current || isWaitingRef.current || deferListeningRef.current) {
+                stream.getTracks().forEach(track => track.stop());
+                return;
+            }
             streamRef.current = stream;
             const audioCtx = new AudioContext();
             const source = audioCtx.createMediaStreamSource(stream);
@@ -172,7 +215,7 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
                 if (e.data.size > 0) audioChunksRef.current.push(e.data);
             };
             recorder.onstop = async () => {
-                if (!isActiveRef.current || isSpeakingRef.current || isWaitingRef.current) return;
+                if (!isActiveRef.current || isSpeakingRef.current || isWaitingRef.current || deferListeningRef.current) return;
                 const submitRequested = submitRequestedRef.current;
                 submitRequestedRef.current = false;
                 const blob = new Blob(audioChunksRef.current, {type: mimeType});
@@ -244,12 +287,30 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
         } catch {
             setIsPreparing(false);
             setStatusText(t('voiceChat.microphoneFailed'));
-        }
+        } finally { startingListeningRef.current = false; }
     }, [isAssistantMode, stopRecording, t]);
 
     useEffect(() => {
         startListeningRef.current = startListening;
     }, [startListening]);
+
+    useEffect(() => {
+        if (!isAssistantMode || !isActiveRef.current) return;
+        isSpeakingRef.current = readAloud.speaking;
+        setIsSpeaking(readAloud.speaking);
+        if (deferListening || readAloud.speaking) {
+            isWaitingRef.current = true;
+            setIsWaiting(true);
+            stopRecording();
+            setIsListening(false);
+            setStatusText(t(readAloud.speaking ? 'voiceChat.readingResponse' : 'voiceChat.waitingForResponse'));
+        } else {
+            isWaitingRef.current = false;
+            setIsWaiting(false);
+            const timer = setTimeout(() => startListeningRef.current(), 300);
+            return () => clearTimeout(timer);
+        }
+    }, [deferListening, isAssistantMode, readAloud.speaking, stopRecording, t]);
 
     const speakAndListen = useCallback((text: string) => {
         if (!isActiveRef.current) return;
@@ -324,15 +385,13 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
             }]);
             isWaitingRef.current = false;
             setIsWaiting(false);
-            if (isAssistantMode) {
-                setTimeout(() => startListeningRef.current(), 300);
-            } else {
+            if (!isAssistantMode) {
                 speakAndListen(text);
             }
         };
         window.addEventListener('voiceChatResponse', handler);
         return () => window.removeEventListener('voiceChatResponse', handler);
-    }, [isAssistantMode, speakAndListen]);
+    }, [isAssistantMode, speakAndListen, autoRead]);
 
     if (variant === 'inline') {
         const submitImmediately = () => {
@@ -355,6 +414,11 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
                     <span>{statusText || t('voiceChat.preparing')}</span>
                 </div>
                 <div className="voice-assistant-inline__controls">
+                    <button type="button" className={`voice-auto-read-switch${autoRead ? ' is-on' : ''}`}
+                            role="switch" aria-checked={autoRead} disabled={!autoReadReady || savingAutoRead}
+                            onClick={() => void toggleAutoRead()}>
+                        <span>{t('voiceChat.autoRead')}</span><i aria-hidden="true"/>
+                    </button>
                     <div className={`voice-assistant-inline__waveform${isListening ? ' is-listening' : ''}`}
                          aria-hidden="true">
                         {Array.from({length: 18}, (_, index) => {

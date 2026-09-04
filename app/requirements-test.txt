@@ -16,3 +16,7 @@ pytest-asyncio==1.4.0
 psutil==7.2.2
 tqdm==4.70.0
 huggingface_hub==1.29.0
+
+# Direct dependency for M4A decoding (also used by faster-whisper).
+av==18.1.0
+numpy>=1.26,<3

@@ -735,6 +735,8 @@
     }
   },
   "voiceChat": {
+    "autoRead": "Tự động đọc",
+    "autoReadSaveFailed": "Không thể lưu cài đặt tự động đọc.",
     "title": "Chế độ giọng nói",
     "conversation": "Chat giọng nói",
     "scriptPractice": "Luyện kịch bản",

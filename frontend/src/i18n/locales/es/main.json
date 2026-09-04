@@ -734,6 +734,8 @@
     }
   },
   "voiceChat": {
+    "autoRead": "Lectura automática",
+    "autoReadSaveFailed": "No se pudo guardar la opción de lectura automática.",
     "title": "Modo voz",
     "conversation": "Chat de voz",
     "scriptPractice": "Práctica de guion",

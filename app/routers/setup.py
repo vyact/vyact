@@ -32,6 +32,7 @@ from services.huggingface_models import (
     MODEL_SEARCH_RESULT_LIMIT, enrich_model_file_sizes, get_model_file_size,
     search_gguf_models, search_mlx_models,
 )
+from services.db import get_es, SETTINGS_INDEX
 from services.mcp_config import ensure_mcp_config
 from services.runtime_settings import DEFAULT_RUNTIME_SETTINGS, apply_runtime_settings
 from services.runtime_startup import (
@@ -1763,3 +1764,25 @@ async def set_tts_settings(body: dict):
         "rate": cfg["tts_rate"], "volume": cfg["tts_volume"],
         "enVoiceURI": cfg["tts_en_voice_uri"], "kokoroVoice": cfg["tts_kokoro_voice"],
     }
+
+
+@router.get("/settings/voice-auto-read")
+async def get_voice_auto_read():
+    cfg = await load_config_async()
+    return {"enabled": cfg.get("voice_auto_read", False) is True}
+
+
+class VoiceAutoReadSettings(BaseModel):
+    enabled: bool = False
+
+
+@router.post("/settings/voice-auto-read")
+async def set_voice_auto_read(body: VoiceAutoReadSettings):
+    es = get_es()
+    try:
+        await es.update(index=SETTINGS_INDEX, id="config",
+                        doc={"value": {"voice_auto_read": body.enabled}},
+                        upsert={"key": "config", "value": {"voice_auto_read": body.enabled}}, refresh=True)
+    finally:
+        await es.close()
+    return {"enabled": body.enabled}

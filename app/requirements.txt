@@ -36,3 +36,6 @@ jaconv>=0.4.0
 mojimoji>=0.0.13
 unidic>=1.1.0
 pyopenjtalk-plus==0.4.1.post9
+
+# Direct dependency for M4A decoding (also used by faster-whisper).
+av==18.1.0

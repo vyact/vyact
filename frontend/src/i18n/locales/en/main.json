@@ -731,6 +731,8 @@
     "charCount": "{{count}} chars"
   },
   "voiceChat": {
+    "autoRead": "Read aloud",
+    "autoReadSaveFailed": "Could not save the read-aloud setting.",
     "title": "Voice Mode",
     "conversation": "Voice Chat",
     "scriptPractice": "Script Practice",

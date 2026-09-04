@@ -731,6 +731,8 @@
     "charCount": "{{count}}자"
   },
   "voiceChat": {
+    "autoRead": "자동 읽기",
+    "autoReadSaveFailed": "자동 읽기 설정을 저장하지 못했습니다.",
     "title": "음성 모드",
     "conversation": "음성 대화",
     "scriptPractice": "스크립트 연습",

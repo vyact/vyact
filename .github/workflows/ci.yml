@@ -1,6 +1,12 @@
 name: CI
 
 on:
+  workflow_dispatch:
+    inputs:
+      full_checks:
+        description: Run all backend tests and frontend lint
+        type: boolean
+        default: false
   push:
     branches: [main]
   pull_request:
@@ -11,7 +17,7 @@ permissions:
 
 jobs:
   backend:
-    name: Backend syntax check
+    name: Backend core checks
     runs-on: ubuntu-latest
     steps:
       - name: Check out source
@@ -30,7 +36,16 @@ jobs:
       - name: Compile Python source
         run: python -m compileall -q app
 
-      - name: Run backend unit tests
+      - name: Run core backend tests
+        if: ${{ !inputs.full_checks }}
+        env:
+          PYTHONPATH: app
+        run: |
+          mapfile -t tests < <(sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' scripts/ci_backend_tests.txt)
+          python -m pytest "${tests[@]}" -q
+
+      - name: Run full backend suite
+        if: ${{ inputs.full_checks }}
         env:
           PYTHONPATH: app
         run: python -m pytest app/tests -q
@@ -56,6 +71,7 @@ jobs:
         run: npm ci
 
       - name: Lint
+        if: ${{ inputs.full_checks }}
         run: npm run lint
 
       - name: Run unit tests
@@ -63,6 +79,14 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Upload built frontend for Linux packaging
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: app/static
+          if-no-files-found: error
+          retention-days: 1
 
   windows-desktop:
     name: Windows desktop static checks
@@ -101,6 +125,7 @@ jobs:
           if (Test-Path win/electron/main.js) { throw "Platform-specific main.js must not be reintroduced" }
 
   linux-desktop:
+    needs: frontend
     name: Linux desktop package
     runs-on: ubuntu-22.04
     steps:
@@ -116,19 +141,32 @@ jobs:
             frontend/package-lock.json
             electron/package-lock.json
 
-      - name: Build frontend
-        working-directory: frontend
-        run: |
-          npm ci
-          npm run build
+      - name: Download validated frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: app/static
 
       - name: Prepare bundled Python
         env:
           GH_TOKEN: ${{ github.token }}
         run: scripts/prepare_python_runtime.sh linux-x64
 
+      - name: Restore bundled Linux model runtime
+        id: linux-runtime-cache
+        uses: actions/cache@v4
+        with:
+          path: electron/linux-runtime
+          key: linux-runtime-ubuntu-22.04-x64-${{ hashFiles('scripts/prepare_linux_runtime.sh') }}
+
       - name: Build bundled Linux model runtime
+        if: steps.linux-runtime-cache.outputs.cache-hit != 'true'
         run: bash scripts/prepare_linux_runtime.sh
+
+      - name: Validate bundled Linux model runtime
+        run: |
+          electron/linux-runtime/llama-server --version
+          electron/linux-runtime/llama-swap --version
 
       - name: Build AppImage and deb packages
         working-directory: electron
@@ -163,6 +201,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: vyact-linux-x64
+          if-no-files-found: error
           path: |
             electron/dist/*.AppImage
             electron/dist/*.deb

@@ -490,6 +490,7 @@ export function useChat(deps: UseChatDeps) {
             // 조건: (기사 첨부 있음) 또는 (질문에 URL 포함), 그리고 voice_mode 아님.
             // 이 경로는 <action> 실행 파이프라인을 타지 않아 스트리밍 안전.
             // 이미지 생성 모델/voice가 아니면 전부 스트리밍 (기사·URL·순수 일반채팅 모두 서버가 분기)
+            if (showVoiceChatModalRef.current) window.dispatchEvent(new Event('voiceReadStart'));
             const canStreamChat = !voiceMode && !isCurrentlyImageMode;
 
             if (canStreamChat) {
@@ -580,10 +581,13 @@ export function useChat(deps: UseChatDeps) {
                             streamModel = data.model || '';
                             streamSources = data.sources || [];
                         },
-                        onToken: (text) => appendToStreamMsg(
-                            text.includes('VYACT_EMPTY_RESPONSE') ? t('emptyResponse') : text
-                        ),
+                        onToken: (text) => {
+                            const visibleText = text.includes('VYACT_EMPTY_RESPONSE') ? t('emptyResponse') : text;
+                            appendToStreamMsg(visibleText);
+                            if (showVoiceChatModalRef.current) window.dispatchEvent(new CustomEvent('voiceReadChunk', {detail: visibleText}));
+                        },
                         onReset: (data) => {
+                            window.dispatchEvent(new Event('voiceReadCancel'));
                             flushStreamText();
                             const progressContent = data.content?.trim() || streamedResponseText.trim();
                             pendingStreamText = '';
@@ -758,6 +762,7 @@ export function useChat(deps: UseChatDeps) {
                                 window.dispatchEvent(new CustomEvent('voiceChatResponse', {detail: {text: data.answer}}));
                         },
                         onError: (error) => {
+                            window.dispatchEvent(new Event('voiceReadCancel'));
                             flushStreamText();
                             setLastFailedQuery(failedRequest);
                             const isImageUnsupported = error.code === 'model_image_unsupported';
@@ -784,6 +789,7 @@ export function useChat(deps: UseChatDeps) {
                         },
                     }, abortControllerRef.current.signal);
                 } catch (streamErr) {
+                    window.dispatchEvent(new Event('voiceReadCancel'));
                     flushStreamText();
                     // 사용자가 직접 중지한 경우 — 에러 아님
                     if (streamErr instanceof DOMException && streamErr.name === 'AbortError') {
@@ -899,6 +905,7 @@ export function useChat(deps: UseChatDeps) {
                 }]);
             }
         } finally {
+            if (showVoiceChatModalRef.current) window.dispatchEvent(new Event(abortControllerRef.current?.signal.aborted ? 'voiceReadCancel' : 'voiceReadEnd'));
             setConversationRequestState(requestConvId, {isLoading: false, streamingMessageId: null});
             resetImageGen();
             abortControllerRef.current = null;
@@ -937,6 +944,7 @@ export function useChat(deps: UseChatDeps) {
     };
 
     const handleStop = () => {
+        window.dispatchEvent(new Event('voiceReadCancel'));
         // 이 앱은 한 번에 한 요청만 실행한다. 다른 대화를 보고 있어도
         // 실제 응답 중인 대화를 찾아 그 요청을 중지해야 한다.
         const requestConvId = activeConversationIds[0] || currentConvIdRef.current || currentConvId;

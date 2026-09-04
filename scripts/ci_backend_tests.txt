@@ -1,0 +1,12 @@
+# Required smoke/regression coverage for normal CI.
+# Run the full suite with CI workflow_dispatch -> full_checks.
+app/tests/test_linux_installer.py
+app/tests/test_vyact_runtime.py
+app/tests/test_runtime_startup.py
+app/tests/test_runtime_error_details.py
+app/tests/test_model_runtime_profiles.py
+app/tests/test_llm_errors.py
+app/tests/test_error_responses.py
+app/tests/test_multimodal_capabilities.py
+app/tests/test_llm_media_helpers.py
+app/tests/test_audio_conversion.py

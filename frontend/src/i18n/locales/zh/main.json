@@ -735,6 +735,8 @@
     }
   },
   "voiceChat": {
+    "autoRead": "自动朗读",
+    "autoReadSaveFailed": "无法保存自动朗读设置。",
     "title": "语音模式",
     "conversation": "语音对话",
     "scriptPractice": "脚本练习",

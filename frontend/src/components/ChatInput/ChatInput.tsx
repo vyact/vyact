@@ -553,6 +553,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                         <div style={{display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0, flex: 1}}>
                             {voiceAssistantActive ? (
                                 <VoiceChatTab
+                                    key={resetTrigger}
                                     mode="assistant"
                                     variant="inline"
                                     inputValue={value}

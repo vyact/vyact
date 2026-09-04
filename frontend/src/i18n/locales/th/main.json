@@ -735,6 +735,8 @@
     }
   },
   "voiceChat": {
+    "autoRead": "อ่านอัตโนมัติ",
+    "autoReadSaveFailed": "บันทึกการตั้งค่าอ่านอัตโนมัติไม่ได้",
     "title": "โหมดเสียง",
     "conversation": "แชตด้วยเสียง",
     "scriptPractice": "ฝึกบทสนทนา",
