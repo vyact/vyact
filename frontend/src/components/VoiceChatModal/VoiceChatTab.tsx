@@ -96,6 +96,7 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
     const streamRef = useRef<MediaStream | null>(null);
+    const recordingContextRef = useRef<AudioContext | null>(null);
     const analyserRef = useRef<AnalyserNode | null>(null);
     const animFrameRef = useRef<number | null>(null);
     const startListeningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -140,7 +141,11 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
             streamRef.current.getTracks().forEach(t => t.stop());
             streamRef.current = null;
         }
+        const context = recordingContextRef.current;
+        recordingContextRef.current = null;
+        if (context && context.state !== 'closed') void context.close().catch(() => {});
         analyserRef.current = null;
+        setIsListening(false);
         setAudioLevel(0);
     }, []);
 
@@ -173,6 +178,8 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
         if (startListeningTimerRef.current) clearTimeout(startListeningTimerRef.current);
         if (mediaRecorderRef.current?.state !== 'inactive') mediaRecorderRef.current?.stop();
         streamRef.current?.getTracks().forEach(track => track.stop());
+        const context = recordingContextRef.current;
+        if (context && context.state !== 'closed') void context.close().catch(() => {});
         stopAllTts();
     }, []);
 
@@ -216,11 +223,31 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
                 return;
             }
             streamRef.current = stream;
+            const audioTrack = stream.getAudioTracks().find(track => track.readyState === 'live');
+            if (!audioTrack) throw new Error('No live microphone track');
             const audioCtx = new AudioContext();
+            recordingContextRef.current = audioCtx;
+            if (audioCtx.state === 'suspended') await audioCtx.resume();
+            if (!isActiveRef.current || isSpeakingRef.current || isWaitingRef.current || deferListeningRef.current) {
+                stopRecording();
+                return;
+            }
+            if (audioCtx.state !== 'running') throw new Error('Microphone audio context is not running');
             const source = audioCtx.createMediaStreamSource(stream);
             const analyser = audioCtx.createAnalyser();
             analyser.fftSize = 2048;
             source.connect(analyser);
+            const silentOutput = audioCtx.createGain();
+            silentOutput.gain.value = 0;
+            analyser.connect(silentOutput);
+            silentOutput.connect(audioCtx.destination);
+            audioTrack.onended = () => {
+                if (streamRef.current !== stream) return;
+                // Discard incomplete recording when the input device disconnects.
+                if (mediaRecorderRef.current) mediaRecorderRef.current.onstop = null;
+                stopRecording();
+                setStatusText(t('voiceChat.microphoneFailed'));
+            };
             analyserRef.current = analyser;
             const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
                 ? 'audio/webm;codecs=opus'
@@ -258,6 +285,7 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
                     formData.append('audio', blob, `audio${ext}`);
                     formData.append('lang', isAssistantMode ? 'auto' : selectedLangRef.current);
                     const res = await fetch('/api/stt', {method: 'POST', body: formData});
+                    if (!res.ok) throw new Error(`STT request failed: ${res.status}`);
                     const data = await res.json();
                     const spoken = (data.text || '').trim();
                     if (!spoken) {
@@ -301,7 +329,9 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
             startSilenceDetection(analyser, () => {
                 if (mediaRecorderRef.current?.state === 'recording') stopRecording();
             }, true);
-        } catch {
+        } catch (error) {
+            console.error('[voice] Microphone initialization failed', error);
+            stopRecording();
             setIsPreparing(false);
             setStatusText(t('voiceChat.microphoneFailed'));
         } finally { startingListeningRef.current = false; }
