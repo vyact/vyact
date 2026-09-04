@@ -699,10 +699,14 @@ async def _grep_search(folder_id: str, pattern: str, path: str = ".", include: s
     total_matches = 0
     for file_path in search_targets:
         try:
-            if file_path.stat().st_size > MAX_READ_BYTES * 10:
+            # Check every discovered file, including symlink targets, before reading.
+            resolved_path = _safe_path(folder, str(file_path))
+            if resolved_path is None or not resolved_path.is_file():
                 continue
-            content = file_path.read_text(encoding="utf-8", errors="replace")
-        except (OSError, UnicodeError):
+            if resolved_path.stat().st_size > MAX_READ_BYTES * 10:
+                continue
+            content = resolved_path.read_text(encoding="utf-8", errors="replace")
+        except (OSError, UnicodeError, RuntimeError):
             continue
         relative_path = file_path.relative_to(base).as_posix()
         for line_number, line in enumerate(content.splitlines(), 1):
