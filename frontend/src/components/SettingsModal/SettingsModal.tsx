@@ -3,7 +3,7 @@ import {useTranslation} from 'react-i18next';
 import {Server} from 'lucide-react';
 import {api} from '../../services/api';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
-import {fetchTtsSettings, updateTtsCache, DEFAULT_TTS_SETTINGS, loadTtsSettings, TTS_SETTINGS_CHANGED} from '../../services/tts/ttsSettings';
+import {fetchTtsSettings, updateTtsCache, DEFAULT_TTS_SETTINGS, loadTtsSettings, TTS_SETTINGS_CHANGED, TTS_RATE_OPTIONS} from '../../services/tts/ttsSettings';
 import type {TtsSettings} from '../../services/tts/ttsSettings';
 import {changeLanguage, SUPPORTED_LANGUAGES} from '../../i18n';
 import {changeTheme, getStoredTheme} from '../../services/theme';
@@ -1428,21 +1428,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                                         <span
                                                             className="settings-tts-slider-name">{t('general.speed')}</span>
                                                         <span
-                                                            className="settings-tts-value">{ttsDraft.rate.toFixed(1)}x</span>
+                                                            className="settings-tts-value">{Number.isInteger(ttsDraft.rate * 10) ? ttsDraft.rate.toFixed(1) : ttsDraft.rate.toFixed(2)}x</span>
                                                     </div>
                                                     <div className="settings-tts-slider-wrap">
-                                                        <span className="settings-tts-tick">0.5</span>
-                                                        <input type="range" min="0.5" max="2.0" step="0.1"
-                                                               value={ttsDraft.rate}
-                                                               onChange={e => setTtsDraft(prev => ({
-                                                                   ...prev,
-                                                                   rate: parseFloat(e.target.value)
-                                                               }))}
-                                                               onMouseUp={commitTts}
-                                                               onTouchEnd={commitTts}
+                                                        <span className="settings-tts-tick">{TTS_RATE_OPTIONS[0].toFixed(1)}</span>
+                                                        <input type="range" min="0" max={TTS_RATE_OPTIONS.length - 1} step="1"
+                                                               value={Math.max(0, TTS_RATE_OPTIONS.indexOf(ttsDraft.rate))}
+                                                               onChange={e => applyTts({...ttsDraft, rate: TTS_RATE_OPTIONS[Number(e.target.value)]})}
+                                                               aria-label={t('general.speed')}
+                                                               aria-valuetext={t('main:voiceChat.speedMultiplier', {rate: ttsDraft.rate})}
                                                                className="settings-tts-slider"/>
-                                                        <span className="settings-tts-tick">2.0</span>
+                                                        <span className="settings-tts-tick">{TTS_RATE_OPTIONS[TTS_RATE_OPTIONS.length - 1].toFixed(1)}</span>
                                                     </div>
+
                                                 </div>
                                                 <div className="settings-tts-slider-half">
                                                     <div className="settings-tts-slider-header">

@@ -33,6 +33,7 @@ from services.huggingface_models import (
     search_gguf_models, search_mlx_models,
 )
 from services.db import get_es, SETTINGS_INDEX
+from services.tts_settings import normalize_tts_rate
 from services.mcp_config import ensure_mcp_config
 from services.runtime_settings import DEFAULT_RUNTIME_SETTINGS, apply_runtime_settings
 from services.runtime_startup import (
@@ -1746,7 +1747,7 @@ async def set_runtime_settings_endpoint(body: dict):
 async def get_tts_settings():
     cfg = await load_config_async()
     return {
-        "rate": cfg.get("tts_rate", 1.0),
+        "rate": normalize_tts_rate(cfg.get("tts_rate", 1.0)),
         "volume": cfg.get("tts_volume", 1.0),
         "enVoiceURI": cfg.get("tts_en_voice_uri", ""),
         "kokoroVoice": cfg.get("tts_kokoro_voice", "af_heart"),
@@ -1756,7 +1757,7 @@ async def get_tts_settings():
 @router.post("/settings/tts")
 async def set_tts_settings(body: dict):
     cfg = await load_config_async()
-    cfg["tts_rate"] = float(body.get("rate", 1.0))
+    cfg["tts_rate"] = normalize_tts_rate(body.get("rate", 1.0))
     cfg["tts_volume"] = float(body.get("volume", 1.0))
     cfg["tts_en_voice_uri"] = str(body.get("enVoiceURI", ""))
     cfg["tts_kokoro_voice"] = str(body.get("kokoroVoice", ""))
@@ -1770,7 +1771,7 @@ async def set_tts_settings(body: dict):
 @router.get("/settings/voice-auto-read")
 async def get_voice_auto_read():
     cfg = await load_config_async()
-    return {"enabled": cfg.get("voice_auto_read", False) is True, "rate": cfg.get("tts_rate", 1.0)}
+    return {"enabled": cfg.get("voice_auto_read", False) is True, "rate": normalize_tts_rate(cfg.get("tts_rate", 1.0))}
 
 
 class VoiceAutoReadSettings(BaseModel):
@@ -1783,8 +1784,8 @@ async def set_voice_auto_read(body: VoiceAutoReadSettings):
     es = get_es()
     try:
         await es.update(index=SETTINGS_INDEX, id="config",
-                        doc={"value": {"voice_auto_read": body.enabled, "tts_rate": body.rate}},
-                        upsert={"key": "config", "value": {"voice_auto_read": body.enabled, "tts_rate": body.rate}}, refresh=True)
+                        doc={"value": {"voice_auto_read": body.enabled, "tts_rate": normalize_tts_rate(body.rate)}},
+                        upsert={"key": "config", "value": {"voice_auto_read": body.enabled, "tts_rate": normalize_tts_rate(body.rate)}}, refresh=True)
     finally:
         await es.close()
-    return {"enabled": body.enabled, "rate": body.rate}
+    return {"enabled": body.enabled, "rate": normalize_tts_rate(body.rate)}

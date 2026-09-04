@@ -1,3 +1,8 @@
+export const TTS_RATE_OPTIONS = [1, 1.2, 1.5, 1.8, 2];
+export const normalizeTtsRate = (rate: number): number => TTS_RATE_OPTIONS.reduce(
+    (closest, candidate) => Math.abs(candidate - rate) < Math.abs(closest - rate) ? candidate : closest, 1,
+);
+
 export interface TtsSettings {
     rate: number;
     volume: number;
@@ -21,7 +26,7 @@ export async function fetchTtsSettings(): Promise<TtsSettings> {
         const res = await fetch('/api/settings/tts');
         const data = await res.json();
         _cache = {
-            rate: data.rate ?? 1.0,
+            rate: normalizeTtsRate(data.rate ?? 1.0),
             volume: data.volume ?? 1.0,
             enVoiceURI: data.enVoiceURI ?? '',
             kokoroVoice: data.kokoroVoice || 'af_heart',
@@ -37,6 +42,6 @@ export function loadTtsSettings(): TtsSettings {
 }
 
 export function updateTtsCache(settings: TtsSettings): void {
-    _cache = {...settings};
+    _cache = {...settings, rate: normalizeTtsRate(settings.rate)};
     window.dispatchEvent(new Event(TTS_SETTINGS_CHANGED));
 }

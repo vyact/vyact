@@ -4,14 +4,13 @@ import {toast} from '../common/ToastNotifications/ToastNotifications';
 import React, {useState, useRef, useEffect, useCallback} from 'react';
 import {ArrowUp, Mic, Square} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
-import {loadTtsSettings, updateTtsCache, TTS_SETTINGS_CHANGED} from '../../services/tts/ttsSettings';
+import {loadTtsSettings, updateTtsCache, TTS_SETTINGS_CHANGED, TTS_RATE_OPTIONS, normalizeTtsRate} from '../../services/tts/ttsSettings';
 import {api} from '../../services/api';
 import {
     VOICE_SYSTEM_PROMPTS, LANGUAGES, getLanguageDisplayName, SILENCE_THRESHOLD, SILENCE_DURATION_MS,
     ChatPhase, ChatEntry, VoiceChatModalProps, speakWithKokoroOrFallback, stopAllTts,
 } from './voiceChat.types';
 
-const AUTO_READ_RATES = [1, 1.25, 1.5, 1.75, 2];
 
 interface VoiceChatTabProps {
     onSend: VoiceChatModalProps['onSend'];
@@ -52,7 +51,7 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
             const data = await response.json();
             if (active) {
                 setAutoRead(data.enabled === true);
-                setAutoReadRate(data.rate ?? 1);
+                setAutoReadRate(normalizeTtsRate(data.rate ?? 1));
                 updateTtsCache({...loadTtsSettings(), rate: data.rate ?? 1});
             }
         }).catch(() => {}).finally(() => { if (active) setAutoReadReady(true); });
@@ -439,7 +438,7 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
                     </button>
                     <CustomSelect className="voice-auto-read-rate" dropdownClassName="voice-auto-read-rate-menu"
                         placeholder={t('voiceChat.speedMultiplier', {rate: autoReadRate})} ariaLabel={t('voiceChat.autoReadSpeed')}
-                        options={AUTO_READ_RATES.map(rate => ({value: String(rate), label: t('voiceChat.speedMultiplier', {rate})}))}
+                        options={TTS_RATE_OPTIONS.map(rate => ({value: String(rate), label: t('voiceChat.speedMultiplier', {rate})}))}
                         value={String(autoReadRate)} onChange={value => void saveAutoRead(autoRead, Number(value))}
                         disabled={!autoReadReady || savingAutoRead} searchable={false} portal/>
                     <div className={`voice-assistant-inline__waveform${isListening ? ' is-listening' : ''}`}
