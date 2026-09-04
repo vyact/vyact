@@ -937,3 +937,20 @@
 
 .voice-auto-read-rate { width: 65px; flex: 0 0 65px; }
 .voice-auto-read-rate .custom-select-trigger { min-height: 28px; height: 28px; padding: 3px 7px; font-size: 12px; font-weight: 600; color: var(--text); }
+
+.chat-btn-row .voice-assistant-inline__button:not(.voice-assistant-inline__button--send),
+:root[data-theme='light'] .chat-btn-row .voice-assistant-inline__button:not(.voice-assistant-inline__button--send) {
+    box-sizing: border-box;
+    border: 1px solid var(--border);
+    background: var(--control-bg);
+    color: var(--text);
+    box-shadow: var(--shadow-sm);
+    transition: background-color .16s ease, border-color .16s ease, color .16s ease;
+}
+
+.chat-btn-row .voice-assistant-inline__button:not(.voice-assistant-inline__button--send):hover:not(:disabled),
+:root[data-theme='light'] .chat-btn-row .voice-assistant-inline__button:not(.voice-assistant-inline__button--send):hover:not(:disabled) {
+    border-color: var(--accent);
+    background: transparent;
+    color: var(--accent);
+}
