@@ -15,7 +15,7 @@ from .config import logger
 
 
 def tool_result_failed(result_text: str) -> bool:
-    if result_text.startswith("[오류]"):
+    if result_text.startswith(("[오류]", "[tool 오류]")):
         return True
     if not result_text.lstrip().startswith("{"):
         return False

@@ -21,6 +21,7 @@ from contextlib import AsyncExitStack
 from typing import Any
 
 from logger import DebugLogSettings, get_logger
+from services.tool_messages import get_tool_language, tool_message, tool_error
 
 logger = get_logger(__name__)
 
@@ -428,6 +429,7 @@ class MCPManager:
         sources는 self._pending_sources에 적재하고(drain_tool_sources로 소비),
         text만 결과 텍스트로 반환한다.
         """
+        language = await get_tool_language()
         safe_arguments = DebugLogSettings.redact_arguments(arguments or {})
         started_at = time.monotonic()
         DebugLogSettings.log("tool_execution_start", tool=prefixed_name, arguments=safe_arguments)
@@ -452,23 +454,23 @@ class MCPManager:
             except Exception as e:
                 DebugLogSettings.log("tool_execution_error", tool=prefixed_name, error=str(e))
                 logger.warning("[mcp] internal tool failed %s: %s", prefixed_name, e)
-                return f"[오류] tool 실행 실패({prefixed_name}): {e}"
+                return tool_error(tool_message("execution_failed", language, tool=prefixed_name, detail=str(e)))
 
         if _SEP not in prefixed_name:
-            return f"[오류] 잘못된 tool 이름: {prefixed_name}"
+            return tool_error(tool_message("invalid_name", language, tool=prefixed_name))
         server_name, tool_name = prefixed_name.split(_SEP, 1)
         worker = self._workers.get(server_name)
         if not worker or worker.server is None:
-            return f"[오류] 알 수 없는 MCP 서버: {server_name}"
+            return tool_error(tool_message("unknown_server", language, server=server_name))
 
         try:
             result = await worker.server.session.call_tool(tool_name, arguments or {})
         except Exception as e:
             DebugLogSettings.log("tool_execution_error", tool=prefixed_name, error=str(e))
             logger.warning("[mcp] call_tool failed %s: %s", prefixed_name, e)
-            return f"[오류] tool 실행 실패({prefixed_name}): {e}"
+            return tool_error(tool_message("execution_failed", language, tool=prefixed_name, detail=str(e)))
 
-        result_text = self._result_to_text(result)
+        result_text = self._result_to_text(result, language)
         DebugLogSettings.log(
             "tool_execution_end", tool=prefixed_name,
             elapsed_ms=round((time.monotonic() - started_at) * 1000, 1),
@@ -478,7 +480,7 @@ class MCPManager:
         return result_text
 
     @staticmethod
-    def _result_to_text(result: Any) -> str:
+    def _result_to_text(result: Any, language: str = "en") -> str:
         """CallToolResult.content(블록 리스트)를 사람이/LLM이 읽을 텍스트로 평탄화."""
         parts: list[str] = []
         for block in getattr(result, "content", []) or []:
@@ -486,14 +488,14 @@ class MCPManager:
             if btype == "text":
                 parts.append(getattr(block, "text", ""))
             elif btype == "image":
-                parts.append("[이미지 결과]")
+                parts.append(tool_message("image_result", language))
             else:
                 txt = getattr(block, "text", None)
                 parts.append(txt if txt is not None else str(block))
         text = "\n".join(p for p in parts if p).strip()
         if getattr(result, "isError", False):
-            return f"[tool 오류] {text or '알 수 없는 오류'}"
-        return text or "(결과 없음)"
+            return tool_error(text or tool_message("unknown_error", language))
+        return text or tool_message("no_result", language)
 
     async def close(self) -> None:
         """모든 서버 워커를 정리한다. 각 stack은 자기 워커 task에서 닫힌다."""

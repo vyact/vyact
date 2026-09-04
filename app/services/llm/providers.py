@@ -25,7 +25,7 @@ from .helpers import (
 from .context_window import calculate_output_token_limit
 from .tools import (
     build_approval_rejection_instruction, build_tool_directive,
-    to_openai_tools, to_gemini_tools, to_claude_tools,
+    to_openai_tools, to_gemini_tools, to_claude_tools, tool_result_failed,
 )
 from services.runtime_settings import get_runtime_settings
 from services.tool_approval import await_tool_approval
@@ -65,7 +65,7 @@ def _tool_call_max_rounds(provider_config: dict) -> int:
 
 
 def _is_tool_failure(result_text: object) -> bool:
-    return str(result_text).startswith(("[오류]", "[tool 오류]"))
+    return tool_result_failed(str(result_text))
 
 
 def _next_consecutive_tool_failures(current: int, result_text: object) -> int:
