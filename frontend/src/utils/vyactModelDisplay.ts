@@ -102,7 +102,7 @@ export const getSelectableModelFiles = (files: string[]) => files
     })
     .slice(0, MAX_FILES_PER_MODEL);
 
-export type ModelMemoryTone = 'comfortable' | 'tight' | 'over';
+export type ModelMemoryTone = 'comfortable' | 'tight' | 'over' | 'unknown';
 
 const getTotalModelMemoryCapacity = (hardware: VyactHardwareInfo) => {
     if (hardware.memory_mode !== 'dedicated') return hardware.system_memory.total_bytes;
@@ -116,7 +116,8 @@ const getTotalModelMemoryCapacity = (hardware: VyactHardwareInfo) => {
 
 export const getModelMemoryTone = (estimatedMemory: number, hardware: VyactHardwareInfo): ModelMemoryTone => {
     const capacity = getTotalModelMemoryCapacity(hardware);
-    if (!capacity || estimatedMemory > capacity * .85) return 'over';
+    if (capacity <= 0 || estimatedMemory <= 0) return 'unknown';
+    if (estimatedMemory > capacity * .85) return 'over';
     if (estimatedMemory > capacity * .6) return 'tight';
     return 'comfortable';
 };

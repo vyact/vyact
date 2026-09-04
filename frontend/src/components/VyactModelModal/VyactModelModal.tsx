@@ -40,6 +40,11 @@ interface SelectedModelFile {
     dflash2Bundled?: boolean;
 }
 
+const modelDetailsKey = (runtime: string, repository: string, filename: string, revision: string) =>
+    JSON.stringify([runtime, repository, filename, revision]);
+
+type CachedModelDetails = {file: SelectedModelFile; metadata: GgufModelMetadata};
+
 type DownloadPhase = 'runtime' | 'model' | 'mtp' | 'activation' | null;
 
 const EMPTY_HARDWARE_INFO: VyactHardwareInfo = {
@@ -96,6 +101,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     const [downloadPhase, setDownloadPhase] = useState<DownloadPhase>(null);
     const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
     const [hardware, setHardware] = useState<VyactHardwareInfo>(EMPTY_HARDWARE_INFO);
+    const [modelDetailsCache, setModelDetailsCache] = useState<Record<string, CachedModelDetails>>({});
     const [selectedMetadata, setSelectedMetadata] = useState<GgufModelMetadata | null>(null);
     const [isLoadingDetails, setIsLoadingDetails] = useState(false);
     const [downloadedSettings, setDownloadedSettings] = useState<{modelPath: string; runtime: 'gguf' | 'mlx'; repository: string; context: number} | null>(null);
@@ -148,6 +154,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
     useEffect(() => {
         void api.getModels()
             .then(response => {
+                if (response.hardware) setHardware(response.hardware);
                 setVisionSupportedModels(response.vision_supported || []);
                 setAudioSupportedModels(response.audio_supported || []);
                 const installed = response.installed || [];
@@ -299,8 +306,11 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
             dflash2Model: model.dflash2_model,
             dflash2Bundled: model.dflash2_bundled,
         };
-        setSelectedFile(selected);
-        setSelectedMetadata(null);
+        const cached = modelDetailsCache[modelDetailsKey(selected.runtime, selected.repository, selected.filename, selected.revision)];
+        setSelectedFile(cached?.file || selected);
+        setSelectedMetadata(cached?.metadata || null);
+        setIsLoadingDetails(false);
+        setMessage('');
     };
 
     const loadSelectedModelDetails = async () => {
@@ -317,16 +327,15 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
             };
             if (requestId !== detailsRequestIdRef.current) return;
             if (modelForDetails.fileSize !== selectedFile.fileSize) setSelectedFile(modelForDetails);
+            let detailedFile = modelForDetails;
             let metadata: GgufModelMetadata;
             if (modelForDetails.runtime === 'mlx') {
                 const details = await api.inspectVyactMlxMetadata(
                     modelForDetails.repository, modelForDetails.revision, modelForDetails.fileSize, 32768,
                 );
                 metadata = details.metadata;
-                if (requestId === detailsRequestIdRef.current && details.mtpModel) {
-                    setSelectedFile(current => current ? {
-                        ...current, mtpSupported: true, mtpModel: details.mtpModel,
-                    } : current);
+                if (details.mtpModel) {
+                    detailedFile = {...modelForDetails, mtpSupported: true, mtpModel: details.mtpModel};
                 }
             } else {
                 const cached = await api.getVyactModelMetadataCache(
@@ -352,7 +361,12 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                     metadata = {...metadata, modalities: projectorMetadata.modalities};
                 }
             }
-            if (requestId === detailsRequestIdRef.current) setSelectedMetadata(metadata);
+            const key = modelDetailsKey(detailedFile.runtime, detailedFile.repository, detailedFile.filename, detailedFile.revision);
+            setModelDetailsCache(current => ({...current, [key]: {file: detailedFile, metadata}}));
+            if (requestId === detailsRequestIdRef.current) {
+                setSelectedFile(detailedFile);
+                setSelectedMetadata(metadata);
+            }
         } catch {
             if (requestId === detailsRequestIdRef.current) setMessage(t('modelSelector.metadataAnalysisFailed'));
         } finally {
@@ -526,7 +540,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                                     {model.runtime === 'mlx' && <span className="vyact-mtp-badge">{t('modelSelector.mlxOnly')}</span>}
                                                     {supportsMtp && <span className="vyact-mtp-badge">MTP</span>}
                                                     {supportsDFlash2 && <span className="vyact-mtp-badge">DFlash2</span>}
-                                                    <ModelCapabilityIcons image={visionSupportedModels.includes(modelPath) || (modelPath === selectedModelPath && selectedMetadata?.modalities?.includes('image'))} audio={audioSupportedModels.includes(modelPath) || (modelPath === selectedModelPath && selectedMetadata?.modalities?.includes('audio'))}/>
+                                                    <ModelCapabilityIcons image={visionSupportedModels.includes(modelPath) || modelDetailsCache[modelDetailsKey(model.runtime, model.id, filename, model.revision)]?.metadata.modalities?.includes('image')} audio={audioSupportedModels.includes(modelPath) || modelDetailsCache[modelDetailsKey(model.runtime, model.id, filename, model.revision)]?.metadata.modalities?.includes('audio')}/>
                                                     <OverflowTooltipText text={displayName}/>
                                                 </span>
                                                 {(showsPublisher || estimatedMemory > 0) && <small className="vyact-model-file-meta">

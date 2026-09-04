@@ -668,6 +668,7 @@ async def get_models():
                 multimodal_models[modality].extend(mlx_modalities[modality])
         return {
             "models": [[model] for model in installed_models],
+            "hardware": await asyncio.to_thread(get_local_hardware_info),
             "current": current_model,
             "installed": installed_models,
             "mtp_supported": [

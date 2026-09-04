@@ -699,6 +699,7 @@ export const api = {
     },
 
     async getModels(): Promise<{
+        hardware?: VyactHardwareInfo;
         models: string[][];
         current: string;
         installed: string[];

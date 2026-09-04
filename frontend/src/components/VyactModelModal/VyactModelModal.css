@@ -105,3 +105,23 @@
     .vyact-memory-selection { align-items: center; }
     .vyact-model-results { grid-template-columns: 1fr; }
 }
+
+/* Compact search controls without changing other provider forms. */
+.vyact-model-editor .vyact-model-controls {
+    padding: 9px 12px;
+    gap: 10px;
+    border-radius: 10px;
+}
+.vyact-model-controls .provider-editor-field { gap: 7px; }
+.vyact-model-controls .provider-editor-field > span { font-size: 11px; letter-spacing: .02em; }
+.vyact-model-controls .provider-api-key-field input,
+.vyact-model-controls .vyact-model-search-field input,
+.vyact-model-controls .vyact-model-search-field button,
+.vyact-model-controls .vyact-token-save {
+    min-height: 34px;
+    height: 34px;
+    box-sizing: border-box;
+    border-radius: 7px;
+}
+
+.vyact-model-files button.memory-unknown { --memory-tone: var(--border); border-color: var(--border); }
