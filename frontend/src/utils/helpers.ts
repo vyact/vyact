@@ -1,4 +1,4 @@
-import i18n from '../i18n';
+import i18n from 'i18next';
 
 export function escapeHtml(text: string): string {
   return String(text ?? '')

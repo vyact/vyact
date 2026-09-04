@@ -1,6 +1,24 @@
 import { describe, expect, it } from 'vitest';
+import i18n from 'i18next';
 
-import { cleanNewsText, escapeHtml, nl2br, unwrapPastedText } from './helpers';
+import { cleanNewsText, escapeHtml, formatTime, nl2br, unwrapPastedText } from './helpers';
+
+describe('time formatting without browser initialization', () => {
+  it('follows the active language when it changes', async () => {
+    await i18n.init({lng: 'en', fallbackLng: 'en', resources: {en: {translation: {}}, ko: {translation: {}}}});
+    const date = new Date(2026, 8, 4, 15, 7);
+    try {
+      for (const language of ['en', 'ko']) {
+        await i18n.changeLanguage(language);
+        expect(formatTime(date)).toBe(date.toLocaleTimeString(language, {
+          hour: '2-digit', minute: '2-digit',
+        }));
+      }
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+});
 
 describe('text helpers', () => {
   it('escapes HTML-sensitive characters', () => {
