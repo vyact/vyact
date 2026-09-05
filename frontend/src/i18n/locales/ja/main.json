@@ -1203,7 +1203,7 @@
     "model_benchmark_busy": "モデル性能テスト中です。終了または停止後に再試行してください。","invalid_request":"リクエスト内容を確認して、もう一度お試しください。","authentication_required":"認証が必要です。","permission_denied":"この操作を行う権限がありません。","resource_not_found":"リクエストされた項目が見つかりません。","conflict":"現在の状態と競合するリクエストです。","payload_too_large":"送信されたデータが大きすぎます。","validation_failed":"入力値の一部が無効です。","rate_limited":"リクエストが多すぎます。しばらくしてからお試しください。","internal_error":"内部エラーが発生しました。もう一度お試しください。","upstream_error":"接続先サービスでエラーが発生しました。","service_unavailable":"サービスは一時的に利用できません。","request_timeout":"リクエストがタイムアウトしました。","request_failed":"リクエストを完了できませんでした。"},
   "backendStreamErrors": {"presentation_generation_failed":"プレゼンテーションを生成できませんでした。","document_index_failed":"文書をインデックス化できませんでした。","profile_analysis_failed":"プロフィール分析を完了できませんでした。","web_document_save_failed":"Web文書を保存できませんでした。","empty_audio":"音声を受信できませんでした。","speech_recognition_failed":"音声認識に失敗しました。","speech_model_unavailable":"音声認識モデルを利用できません。","local_model_not_downloaded":"選択したローカルモデルが見つかりません。ダウンロード済みのモデルを再選択してください。"},
   "modelSettings": {
-    "modelFileSizeTooltip": "ディスク上のモデルファイルの実サイズです。MLXは重みファイルの合計で、実行時のメモリ使用量ではありません。",
+    "modelFileSizeTooltip": "ディスク上のモデルファイルの実サイズです。MLXはダウンロード済みモデルフォルダ内のファイルの合計で、実行時メモリではありません。",
     "initialSettingsTitle": "初期設定の決め方",
     "allowedTokenRange": "入力範囲：{{min}}–{{max}} トークン",
     "minimumTokens": "最小 {{min}} トークン",

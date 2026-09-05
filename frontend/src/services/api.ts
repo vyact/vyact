@@ -612,7 +612,15 @@ export const api = {
         if (repository) params.set('repository', repository);
         const response = await fetch(`${API_BASE}/vyact/models/profile?${params}`);
         await assertOk(response);
-        return response.json();
+        const profile: VyactModelProfile = await response.json();
+        if (!profile.model_file_bytes) {
+            // Older running backends already expose local file sizes in the model list.
+            try {
+                const models = await api.getModels();
+                profile.model_file_bytes = models.installed_details?.[modelPath]?.fileSize;
+            } catch { /* Profile editing remains available if the size lookup fails. */ }
+        }
+        return profile;
     },
 
     async saveVyactModelProfile(profile: VyactModelProfile): Promise<VyactModelProfile> {

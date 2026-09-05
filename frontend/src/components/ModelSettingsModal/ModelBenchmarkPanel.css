@@ -72,3 +72,7 @@
 .model-benchmark button:focus-visible {outline: 2px solid var(--accent); outline-offset: 2px;}
 @media (max-width: 600px) {.model-settings-tabs .modal-tabs-bar {padding-inline: 12px;} .model-benchmark {padding: 16px 14px;} .model-benchmark-card {padding: 14px;} .model-benchmark-choice {padding: 12px;}}
 @media (prefers-reduced-motion: reduce) {.model-benchmark-choice {transition: none;}}
+
+.model-benchmark-method {user-select: none; -webkit-user-select: none;}
+.model-benchmark-plan {grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 10px;}
+.model-benchmark-choice {padding: 12px;}

@@ -60,7 +60,7 @@ export default function ModelBenchmarkPanel({canTestMtp, profile, visible, disab
     const format = (value: number | null) => value === null ? b('unavailable') : value.toLocaleString(undefined, {maximumFractionDigits: 2});
     return <section className="model-benchmark" hidden={!visible} aria-label={b('title')}>
         <p className="model-benchmark-description">{b('description')}</p>
-        <details className="model-benchmark-method"><summary>{b('method')}</summary><p className="model-benchmark-description">{b('fixed')}</p>
+        <details className="model-benchmark-method"><summary onMouseDown={event => event.preventDefault()}>{b('method')}</summary><p className="model-benchmark-description">{b('fixed')}</p>
             {profile.runtime === 'mlx' && <p className="model-benchmark-description">{b('mlxPrefill')}</p>}
             <p className="model-benchmark-description">{b('comparisonNotice')}</p><p className="model-benchmark-description">{b('scoreNotice')}</p></details>
         <fieldset className="model-benchmark-plan" disabled={running || disabled}>

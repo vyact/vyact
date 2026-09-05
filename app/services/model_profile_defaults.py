@@ -36,19 +36,10 @@ def _positive_integer(value) -> int | None:
     return None
 
 
-def downloaded_model_file_bytes(path: Path) -> int | None:
-    try:
-        if path.is_file():
-            return path.stat().st_size
-        weights = list(path.glob("*.safetensors")) or list(path.glob("*.bin"))
-        return sum(file.stat().st_size for file in weights) if weights else None
-    except OSError:
-        return None
-
-
 def profile_model_info(model_path: str, runtime: str) -> dict:
     path = get_downloaded_mlx_model_path(model_path) if runtime == "mlx" else get_downloaded_model_path(model_path)
-    details = get_installed_model_details([model_path]).get(model_path, {}).get("metadata", {})
+    installed = get_installed_model_details([model_path]).get(model_path, {})
+    details = installed.get("metadata", {})
     context_max = _positive_integer(details.get("contextLength"))
     config = _read_config(path / "config.json") if runtime == "mlx" else {}
     text_config = config.get("text_config")
@@ -62,7 +53,7 @@ def profile_model_info(model_path: str, runtime: str) -> dict:
         raise ValueError("model_context_too_small")
     return {
         "path": path,
-        "model_file_bytes": downloaded_model_file_bytes(path),
+        "model_file_bytes": installed.get("fileSize"),
         "limits": {
             "context_min": context_min, "context_max": context_max,
             "output_min": min(MINIMUM_OUTPUT_TOKENS, explicit_output_max or MINIMUM_OUTPUT_TOKENS),

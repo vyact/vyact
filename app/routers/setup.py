@@ -1314,7 +1314,7 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
             await save_model_profile({
                 "model_path": req.model_path, "runtime": runtime, "repository": repository,
                 "limits": model_info["limits"],
-        "model_file_bytes": model_info.get("model_file_bytes"),
+                "model_file_bytes": model_info.get("model_file_bytes"),
                 "context_size": req.context_size, "max_output_tokens": req.max_output_tokens,
                 "history_token_budget": safe_profile["history_token_budget"],
                 "temperature": req.temperature, "top_k": req.top_k, "top_p": req.top_p,
