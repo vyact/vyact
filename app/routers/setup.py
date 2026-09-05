@@ -1,6 +1,9 @@
 """
 routers/setup.py – 설치 / 모델 / Provider / 상태
 """
+from services import model_benchmark
+from services.mlx_runtime import list_mtp_supported_mlx_models, list_dflash2_supported_mlx_models
+from services.vyact_runtime import list_mtp_supported_models, list_dflash2_supported_models
 from services.installed_model_details import get_installed_model_details
 
 import asyncio
@@ -1190,6 +1193,7 @@ async def read_vyact_model_profile(
     return {
         **profile,
         "limits": model_info["limits"],
+        "model_file_bytes": model_info.get("model_file_bytes"),
         "requires_apply": any(original_profile.get(key) != profile.get(key) for key in (
             "context_size", "max_output_tokens", "history_token_budget", "temperature", "top_k", "top_p",
             "cpu_threads", "seed", "kv_cache_precision", "cache_quantization", "mtp_enabled",
@@ -1310,6 +1314,7 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
             await save_model_profile({
                 "model_path": req.model_path, "runtime": runtime, "repository": repository,
                 "limits": model_info["limits"],
+        "model_file_bytes": model_info.get("model_file_bytes"),
                 "context_size": req.context_size, "max_output_tokens": req.max_output_tokens,
                 "history_token_budget": safe_profile["history_token_budget"],
                 "temperature": req.temperature, "top_k": req.top_k, "top_p": req.top_p,
@@ -1858,3 +1863,79 @@ async def set_voice_auto_read(body: VoiceAutoReadSettings):
     finally:
         await es.close()
     return {"enabled": body.enabled, "rate": normalize_tts_rate(body.rate)}
+
+
+@router.get("/vyact/models/benchmark")
+async def read_model_benchmark(model_path: str = Query(min_length=1, max_length=1024)):
+    current = model_benchmark.last_job
+    try:
+        saved = await model_benchmark.read_result(model_path)
+    except Exception:
+        if not current or current["model_path"] != model_path:
+            raise
+        logger.warning("[benchmark] saved result temporarily unavailable", exc_info=True)
+        saved = None
+    displayed = current if current and current["model_path"] == model_path else saved
+    stale = False
+    if displayed and displayed.get("phase") == "done":
+        try:
+            stale = displayed.get("fingerprint") != await asyncio.to_thread(model_benchmark.fingerprint, displayed["base_profile"])
+        except (ValueError, OSError):
+            stale = True
+    return {"job": current if current and current["model_path"] == model_path else None,
+            "last_completed": saved, "stale": stale,
+            "busy": model_benchmark.active_job is not None}
+
+
+async def prepare_model_benchmark(req: VyactModelProfileRequest):
+    current = await read_vyact_model_profile(req.model_path, req.runtime, req.repository, req.context_size)
+    # Hardware/capability metadata comes from the server, never the request.
+    profile = normalize_model_profile({**current, **req.model_dump(include=set(VyactModelProfileRequest.model_fields))}, current["limits"])
+    supported = await asyncio.to_thread(list_mtp_supported_mlx_models if req.runtime == "mlx" else list_mtp_supported_models)
+    dflash_models = await asyncio.to_thread(list_dflash2_supported_mlx_models if req.runtime == "mlx" else list_dflash2_supported_models)
+    mtp = req.model_path in supported and not profile.get("mtp_failure_code")
+    dflash = req.model_path in dflash_models
+    if not mtp or dflash:
+        profile["mtp_enabled"] = False
+    return profile, mtp, dflash
+
+
+class ModelBenchmarkRequest(VyactModelProfileRequest):
+    plan_id: str = Field(min_length=64, max_length=64)
+    selected_case_ids: list[str] = Field(min_length=1, max_length=10)
+
+
+@router.post("/vyact/models/benchmark/plan")
+async def preview_model_benchmark(req: VyactModelProfileRequest):
+    profile, mtp, dflash = await prepare_model_benchmark(req)
+    return {"plan_id": await asyncio.to_thread(model_benchmark.plan_identifier, profile, mtp, dflash), "cases": [{"id": str(i + 1), "profile": value} for i, value in enumerate(model_benchmark.planned_candidates(profile, mtp, dflash))], "mtp_supported": mtp}
+
+
+@router.post("/vyact/models/benchmark")
+async def start_model_benchmark(req: ModelBenchmarkRequest):
+    profile, mtp, dflash = await prepare_model_benchmark(req)
+    if req.plan_id != await asyncio.to_thread(model_benchmark.plan_identifier, profile, mtp, dflash):
+        raise HTTPException(409, "benchmark_plan_changed")
+    config = await load_config_async()
+    try:
+        job = model_benchmark.start_job(profile, config.get("vyact_config", {}), mtp, dflash, req.selected_case_ids)
+    except ValueError as error:
+        raise HTTPException(409, str(error)) from error
+    return job
+
+
+@router.post("/vyact/models/benchmark/stop")
+async def stop_model_benchmark():
+    model_benchmark.stop_job()
+    return {"ok": True}
+
+
+@router.post("/vyact/models/benchmark/save")
+async def retry_save_model_benchmark():
+    job = model_benchmark.last_job
+    if model_benchmark.active_job is not None or not job or job["status"] != "save_failed":
+        raise HTTPException(409, "model_benchmark_busy")
+    completed = {**job, "status": job.get("unsaved_status", "completed")}
+    await model_benchmark.save_result(completed)
+    job["status"] = completed["status"]
+    return {"ok": True}

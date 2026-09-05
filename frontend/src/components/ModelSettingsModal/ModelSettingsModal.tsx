@@ -1,7 +1,8 @@
 import {useEffect, useRef, useState} from 'react';
-import {ChevronDown, CircleQuestionMark, MemoryStick, TriangleAlert, X} from 'lucide-react';
+import {HardDrive, Activity, SlidersHorizontal, ChevronDown, CircleQuestionMark, TriangleAlert, X} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {api, VyactModelActivationError, type VyactModelProfile} from '../../services/api';
+import ModalTabs from '../common/ModalTabs/ModalTabs';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import SettingLabel from '../common/SettingLabel/SettingLabel';
@@ -10,6 +11,8 @@ import {getModelProfileLimits} from '../../utils/modelProfileLimits';
 import {formatModelBytes} from '../../utils/vyactModelDisplay';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
 import ModelSettingsHelp from './ModelSettingsHelp';
+import ModelBenchmarkPanel from './ModelBenchmarkPanel';
+import {selectBenchmarkSettings} from '../../services/modelBenchmark';
 import './ModelSettingsModal.css';
 
 interface Props {
@@ -36,11 +39,25 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
     const {t} = useTranslation('main');
     const modelHelp = <ModelSettingsHelp title={t('modelSettings.initialSettingsTitle')} description={t('modelSettings.initialSettingsEstimate')}/>;
     const [profile, setProfile] = useState<VyactModelProfile | null>(null);
+    const [benchmarkOpen, setBenchmarkOpen] = useState(false);
+    const [benchmarkBusy, setBenchmarkBusy] = useState(false);
+    useEffect(() => {if (benchmarkBusy) setBenchmarkOpen(true);}, [benchmarkBusy]);
+    const [benchmarkSelected, setBenchmarkSelected] = useState(false);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
     const [advancedOpen, setAdvancedOpen] = useState(false);
     const [gpuSplitInputValues, setGpuSplitInputValues] = useState<string[]>([]);
     const initialProfileRef = useRef<VyactModelProfile | null>(null);
+    const benchmarkBeforeRef = useRef<VyactModelProfile | null>(null);
+    const benchmarkFieldChanged = (key: keyof VyactModelProfile) => benchmarkSelected && benchmarkBeforeRef.current?.[key] !== profile?.[key];
+    const formRef = useRef<HTMLFormElement | null>(null);
+    const validateBenchmark = () => {
+        if (formRef.current?.checkValidity()) return true;
+        setBenchmarkOpen(false);
+        setAdvancedOpen(true);
+        setTimeout(() => formRef.current?.reportValidity(), 0);
+        return false;
+    };
 
     const comparableProfile = (value: VyactModelProfile) => ({
         model_path: value.model_path, runtime: value.runtime, repository: value.repository ?? null,
@@ -81,7 +98,7 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
         setProfile({...profile, [key]: nullable && value === '' ? null : Number(value)});
     };
     const apply = async () => {
-        if (!profile) return;
+        if (!profile || benchmarkBusy) return;
         if (profile.gpu_manual_split_enabled && !gpuSplitIsValid) {
             setError(t('modelSettings.gpuSplitInvalid'));
             return;
@@ -179,12 +196,13 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
         }
     };
 
-    return <ModalOverlay className="model-settings-overlay" onClose={onClose} closeOnBackdrop={false}>
-        <form className="model-settings-modal" onInvalidCapture={() => setAdvancedOpen(true)} onSubmit={event => {event.preventDefault(); void apply();}}>
-            <header><div><h2>{t('modelSettings.title')}</h2><div className="model-settings-model"><Tooltip content={modelHelp} multiline size="medium"><button type="button" className="model-settings-model-help" aria-label={t('modelSettings.initialSettingsTitle')}><CircleQuestionMark size={14}/></button></Tooltip><span className="model-settings-model-name">{modelPath.split('/').pop()}</span>{estimatedMemoryBytes > 0 && <Tooltip content={t('modelSettings.estimatedMemoryTooltip')} multiline size="medium"><span className="model-settings-memory-badge" aria-label={t('modelSettings.estimatedMemoryAria', {value: formatModelBytes(estimatedMemoryBytes)})}><MemoryStick size={13} aria-hidden="true"/><span>≈ {formatModelBytes(estimatedMemoryBytes)}</span></span></Tooltip>}</div></div><button type="button" onClick={onClose} aria-label={t('modelSettings.close')}><X size={20}/></button></header>
-            {!profile ? <div className="model-settings-loading">{error || t('modelSettings.loading')}</div> : <div className="model-settings-body">
-                {memoryEstimateIsCurrent && profile.recommendation_status === 'insufficient' && <p className="model-settings-error" role="status">{t('modelSettings.minimumMemoryWarning')}</p>}
-                {memoryEstimateIsCurrent && profile.recommendation_status === 'unavailable' && <p className="model-settings-description" role="status">{t('modelSettings.memoryEstimateUnavailable')}</p>}
+    return <ModalOverlay className="model-settings-overlay" onClose={benchmarkBusy ? undefined : onClose} closeOnBackdrop={false}>
+        <form ref={formRef} className="model-settings-modal" onInvalidCapture={() => setAdvancedOpen(true)} onSubmit={event => {event.preventDefault(); void apply();}}>
+            <header><div><h2>{t('modelSettings.title')}</h2><div className="model-settings-model"><Tooltip content={modelHelp} multiline size="medium"><button type="button" className="model-settings-model-help" aria-label={t('modelSettings.initialSettingsTitle')}><CircleQuestionMark size={14}/></button></Tooltip><span className="model-settings-model-name">{modelPath.split('/').pop()}</span>{profile?.model_file_bytes != null && profile.model_file_bytes > 0 && <Tooltip content={t('modelSettings.modelFileSizeTooltip')} multiline size="medium"><span className="model-settings-file-size"><HardDrive size={13} aria-hidden="true"/>{formatModelBytes(profile.model_file_bytes)}</span></Tooltip>}</div></div><button type="button" onClick={onClose} disabled={benchmarkBusy} aria-label={t('modelSettings.close')}><X size={20}/></button></header>
+            {profile && <nav className="model-settings-tabs" aria-label={t('modelSettings.title')}><ModalTabs tabs={[{key: 'settings', label: <><SlidersHorizontal size={15}/>{t('modelSettings.title')}</>}, {key: 'benchmark', label: <><Activity size={15}/>{t('modelBenchmark.title')}</>}]} activeKey={benchmarkOpen ? 'benchmark' : 'settings'} disabled={benchmarkBusy} onChange={key => setBenchmarkOpen(key === 'benchmark')}/></nav>}
+            {profile && <ModelBenchmarkPanel canTestMtp={mtpSupported && !dflash2Supported && !profile.mtp_failure_code} profile={profile} visible={benchmarkOpen} disabled={saving || !gpuSplitIsValid} validate={validateBenchmark} onBusy={setBenchmarkBusy} onSelect={value => {benchmarkBeforeRef.current = profile; setProfile(selectBenchmarkSettings(profile, value)); setBenchmarkSelected(true); setAdvancedOpen(true); setBenchmarkOpen(false);}}/>}
+            {!profile ? <div className="model-settings-loading">{error || t('modelSettings.loading')}</div> : <div className="model-settings-body" hidden={benchmarkOpen}>
+                {benchmarkSelected && <p className="model-settings-selection-notice" role="status">{t('modelBenchmark.selected')}</p>}
                 <label><SettingLabel label={t('modelSettings.context')} help={<ModelSettingsHelp title={t('modelSettings.context')} description={t('modelSettings.contextTooltip')} detail={limits!.contextMax != null ? t('modelSettings.allowedTokenRange', {min: limits!.contextMin, max: limits!.contextMax}) : t('modelSettings.minimumTokens', {min: limits!.contextMin})}/>}/><input className="model-settings-input" type="number" required min={limits!.contextMin} max={limits!.contextMax} value={profile.context_size} onChange={e => updateNumber('context_size', e.target.value)}/></label>
                 <label><SettingLabel label={t('modelSettings.maxOutput')} help={<ModelSettingsHelp title={t('modelSettings.maxOutput')} description={t('modelSettings.maxOutputTooltip')} detail={t('modelSettings.allowedTokenRange', {min: limits!.outputMin, max: limits!.outputMax})}/>}/><input className="model-settings-input" type="number" required min={limits!.outputMin} max={limits!.outputMax} value={profile.max_output_tokens} onChange={e => updateNumber('max_output_tokens', e.target.value)}/></label>
                 <label><SettingLabel label={t('modelSettings.historyTokenBudget')} help={<ModelSettingsHelp title={t('modelSettings.historyTokenBudget')} description={t('modelSettings.historyTokenBudgetTooltip')} detail={t('modelSettings.allowedTokenRange', {min: 0, max: limits!.historyMax})}/>}/><input className="model-settings-input" type="number" required min="0" max={limits!.historyMax} value={profile.history_token_budget} onChange={e => updateNumber('history_token_budget', e.target.value)}/></label>
@@ -192,7 +210,7 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
                 <label><SettingLabel label={t('modelSettings.topK')} help={<ModelSettingsHelp title={t('modelSettings.topK')} description={t('modelSettings.topKTooltip')}/>}/><input className="model-settings-input" type="number" min="0" value={profile.top_k ?? ''} placeholder={t('modelSettings.modelDefault')} onChange={e => updateNumber('top_k', e.target.value, true)}/></label>
                 <label><SettingLabel label={t('modelSettings.topP')} help={<ModelSettingsHelp title={t('modelSettings.topP')} description={t('modelSettings.topPTooltip')}/>}/><input className="model-settings-input" type="number" min="0" max="1" step="0.01" value={profile.top_p ?? ''} placeholder={t('modelSettings.modelDefault')} onChange={e => updateNumber('top_p', e.target.value, true)}/></label>
                 {dflash2Supported && <div className="model-settings-toggle"><SettingLabel label="DFlash2" help={<ModelSettingsHelp title="DFlash2" description={t('modelSettings.dflash2AccelerationTooltip')}/>} description={t('modelSettings.dflash2AccelerationHelp')}/><span className="vyact-mtp-badge">{t('modelSettings.auto')}</span></div>}
-                {mtpSupported && !dflash2Supported && <div className="model-settings-toggle"><SettingLabel label={t('modelSettings.mtpAcceleration')} help={<ModelSettingsHelp title={t('modelSettings.mtpAcceleration')} description={t(runtime === 'mlx' ? 'modelSettings.omlxMtpAccelerationTooltip' : 'modelSettings.mtpAccelerationTooltip')}/>} description={t(runtime === 'mlx' ? 'modelSettings.omlxMtpAccelerationHelp' : 'modelSettings.mtpAccelerationHelp')}/><button type="button" className={`model-settings-switch${profile.mtp_enabled ? ' is-on' : ''}`} role="switch" aria-checked={Boolean(profile.mtp_enabled)} disabled={Boolean(profile.mtp_failure_code)} onClick={() => setProfile({...profile, mtp_enabled: !profile.mtp_enabled, kv_cache_precision: !profile.mtp_enabled ? 'none' : profile.kv_cache_precision, cache_quantization: !profile.mtp_enabled ? false : profile.cache_quantization})}><span/></button>{profile.mtp_failure_code && <div className="model-settings-mtp-failure" role="status"><span>{t(`modelSettings.mtpFailures.${profile.mtp_failure_code}`)}</span><button type="button" onClick={() => setProfile({...profile, mtp_enabled: true, mtp_failure_code: null, mtp_failure_message: null, mtp_failed_at: null, kv_cache_precision: 'none', cache_quantization: false})}>{t('modelSettings.retryMtp')}</button></div>}</div>}
+                {mtpSupported && !dflash2Supported && <div className="model-settings-toggle" data-benchmark-changed={benchmarkFieldChanged('mtp_enabled')}><SettingLabel label={t('modelSettings.mtpAcceleration')} help={<ModelSettingsHelp title={t('modelSettings.mtpAcceleration')} description={t(runtime === 'mlx' ? 'modelSettings.omlxMtpAccelerationTooltip' : 'modelSettings.mtpAccelerationTooltip')}/>} description={t(runtime === 'mlx' ? 'modelSettings.omlxMtpAccelerationHelp' : 'modelSettings.mtpAccelerationHelp')}/><button type="button" className={`model-settings-switch${profile.mtp_enabled ? ' is-on' : ''}`} role="switch" aria-checked={Boolean(profile.mtp_enabled)} disabled={Boolean(profile.mtp_failure_code)} onClick={() => setProfile({...profile, mtp_enabled: !profile.mtp_enabled, kv_cache_precision: !profile.mtp_enabled ? 'none' : profile.kv_cache_precision, cache_quantization: !profile.mtp_enabled ? false : profile.cache_quantization})}><span/></button>{profile.mtp_failure_code && <div className="model-settings-mtp-failure" role="status"><span>{t(`modelSettings.mtpFailures.${profile.mtp_failure_code}`)}</span><button type="button" onClick={() => setProfile({...profile, mtp_enabled: true, mtp_failure_code: null, mtp_failure_message: null, mtp_failed_at: null, kv_cache_precision: 'none', cache_quantization: false})}>{t('modelSettings.retryMtp')}</button></div>}</div>}
                 <section className={`model-settings-advanced${advancedOpen ? ' is-open' : ''}`}>
                     <button type="button" className="model-settings-advanced-trigger" aria-expanded={advancedOpen} onClick={() => setAdvancedOpen(open => !open)}><span>{t('modelSettings.advanced')}</span><ChevronDown size={16} aria-hidden="true"/></button>
                     <div className="model-settings-advanced-panel" aria-hidden={!advancedOpen}><div className="model-settings-advanced-fields">
@@ -203,15 +221,15 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
                                 <span className="model-settings-gpu-input"><input type="text" inputMode="decimal" maxLength={GPU_SPLIT_INPUT_MAX_LENGTH} value={gpuSplitInputValues[index] ?? ''} onChange={event => updateGpuSplitPercentage(index, event.target.value)} onBlur={() => normalizeGpuSplitPercentage(index)}/><b>%</b></span>
                             </label>)}</div><div className={`model-settings-gpu-total${gpuSplitIsValid ? '' : ' is-invalid'}`}>{t('modelSettings.gpuSplitTotal', {value: formatGpuSplitPercentage(gpuSplitTotal)})}</div>{gpuCapacityWarnings.map(warning => <div className="model-settings-gpu-warning" role="alert" key={warning.gpuIndex}><TriangleAlert size={15} aria-hidden="true"/><span>{t('modelSettings.gpuSplitCapacityWarning', {index: warning.gpuIndex, required: formatModelBytes(warning.estimatedGpuBytes), capacity: formatModelBytes(warning.capacityBytes)})}</span></div>)}</>}
                         </section>}
-                        {Boolean(profile.capabilities?.performance_modes.length) && <div className="model-settings-option"><SettingLabel label={t('modelSettings.performanceMode')} help={<ModelSettingsHelp title={t('modelSettings.performanceMode')} description={t('modelSettings.performanceModeTooltip')}/>} description={t('modelSettings.performanceModeHelp')}/><CustomSelect portal options={profile.capabilities!.performance_modes.map(value => ({value, label: t(`modelSettings.performanceModes.${value}`)}))} value={profile.performance_mode ?? 'auto'} onChange={value => setProfile({...profile, performance_mode: value as VyactModelProfile['performance_mode']})}/></div>}
+                        {Boolean(profile.capabilities?.performance_modes.length) && <div className="model-settings-option" data-benchmark-changed={benchmarkFieldChanged('performance_mode')}><SettingLabel label={t('modelSettings.performanceMode')} help={<ModelSettingsHelp title={t('modelSettings.performanceMode')} description={t('modelSettings.performanceModeTooltip')}/>} description={t('modelSettings.performanceModeHelp')}/><CustomSelect portal options={profile.capabilities!.performance_modes.map(value => ({value, label: t(`modelSettings.performanceModes.${value}`)}))} value={profile.performance_mode ?? 'auto'} onChange={value => setProfile({...profile, performance_mode: value as VyactModelProfile['performance_mode']})}/></div>}
                         {profile.capabilities?.cpu_threads && <label className="model-settings-option"><SettingLabel label={t('modelSettings.cpuThreads')} help={<ModelSettingsHelp title={t('modelSettings.cpuThreads')} description={t('modelSettings.cpuThreadsTooltip')}/>} description={t('modelSettings.cpuThreadsHelp')}/><input className="model-settings-input" type="number" min="1" max={limits!.cpuThreadsMax} value={profile.cpu_threads ?? ''} placeholder={t('modelSettings.auto')} onChange={event => updateNumber('cpu_threads', event.target.value, true)}/></label>}
-                        {Boolean(profile.capabilities?.kv_cache_precisions.length) && <div className={`model-settings-option${profile.mtp_enabled || dflash2Supported ? ' is-disabled' : ''}`}><SettingLabel label={t('modelSettings.kvCachePrecision')} help={<ModelSettingsHelp title={t('modelSettings.kvCachePrecision')} description={t('modelSettings.kvCachePrecisionTooltip')}/>} description={t(profile.mtp_enabled || dflash2Supported ? 'modelSettings.cacheQuantizationMtpHelp' : 'modelSettings.kvCachePrecisionHelp')}/><CustomSelect portal disabled={Boolean(profile.mtp_enabled || dflash2Supported)} options={[{value: 'none', label: t('modelSettings.kvCachePrecisions.none')}, ...profile.capabilities!.kv_cache_precisions.map(value => ({value, label: t(`modelSettings.kvCachePrecisions.${value}`)}))]} value={profile.kv_cache_precision ?? 'none'} onChange={value => setProfile({...profile, kv_cache_precision: value as VyactModelProfile['kv_cache_precision'], cache_quantization: value !== 'none'})}/></div>}
+                        {Boolean(profile.capabilities?.kv_cache_precisions.length) && <div data-benchmark-changed={benchmarkFieldChanged('kv_cache_precision')} className={`model-settings-option${profile.mtp_enabled || dflash2Supported ? ' is-disabled' : ''}`}><SettingLabel label={t('modelSettings.kvCachePrecision')} help={<ModelSettingsHelp title={t('modelSettings.kvCachePrecision')} description={t('modelSettings.kvCachePrecisionTooltip')}/>} description={t(profile.mtp_enabled || dflash2Supported ? 'modelSettings.cacheQuantizationMtpHelp' : 'modelSettings.kvCachePrecisionHelp')}/><CustomSelect portal disabled={Boolean(profile.mtp_enabled || dflash2Supported)} options={[{value: 'none', label: t('modelSettings.kvCachePrecisions.none')}, ...profile.capabilities!.kv_cache_precisions.map(value => ({value, label: t(`modelSettings.kvCachePrecisions.${value}`)}))]} value={profile.kv_cache_precision ?? 'none'} onChange={value => setProfile({...profile, kv_cache_precision: value as VyactModelProfile['kv_cache_precision'], cache_quantization: value !== 'none'})}/></div>}
                         {profile.capabilities?.seed && <label className="model-settings-option"><SettingLabel label={t('modelSettings.seed')} help={<ModelSettingsHelp title={t('modelSettings.seed')} description={t('modelSettings.seedTooltip')}/>} description={t('modelSettings.seedHelp')}/><input className="model-settings-input" type="number" min="0" max="2147483647" value={profile.seed ?? ''} placeholder={t('modelSettings.randomSeed')} onChange={event => updateNumber('seed', event.target.value, true)}/></label>}
                     </div></div>
                 </section>
                 {error && <div className="model-settings-error">{error}</div>}
             </div>}
-            <footer><button className="model-settings-cancel" type="button" onClick={onClose}>{t('modelSettings.cancel')}</button><button className="primary" type="submit" disabled={!profile || saving || !gpuSplitIsValid}>{saving ? t('modelSettings.applying') : t('modelSettings.apply')}</button></footer>
+            <footer><button className="model-settings-cancel" type="button" onClick={onClose} disabled={benchmarkBusy}>{t('modelSettings.cancel')}</button><button className="primary" type="submit" disabled={!profile || saving || benchmarkBusy || !gpuSplitIsValid}>{saving ? t('modelSettings.applying') : t('modelSettings.apply')}</button></footer>
         </form>
     </ModalOverlay>;
 }

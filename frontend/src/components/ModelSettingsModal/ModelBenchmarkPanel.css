@@ -1,0 +1,74 @@
+.model-settings-modal:has(.model-benchmark:not([hidden])) { width: min(880px, 94vw); }
+.model-benchmark { padding: 16px 24px; overflow-y: auto; min-height: 0; }
+.model-benchmark[hidden], .model-settings-body[hidden] { display: none; }
+.model-benchmark-description { color: var(--text-secondary); font-size: 12px; line-height: 1.6; margin: 0 0 10px; }
+.model-benchmark-actions, .model-benchmark-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.model-benchmark button { padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; color: var(--text); background: var(--surface2); cursor: pointer; }
+.model-benchmark button.primary { background: var(--accent); color: var(--on-accent, #fff); }
+.model-benchmark button:disabled { opacity: .5; cursor: default; }
+.model-benchmark-progress { display: grid; gap: 8px; margin: 16px 0; padding: 14px; border-radius: 10px; background: var(--surface2); font-size: 12px; }
+.model-benchmark-progress progress { width: 100%; accent-color: var(--accent); }
+.model-benchmark-progress small { color: var(--text-secondary); }
+.model-benchmark-card { border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-top: 12px; }
+.model-benchmark-card.is-recommended { border-color: var(--accent); }
+.model-benchmark-card-heading { font-size: 13px; }
+.model-benchmark-card-heading strong span { display: inline-block; margin-inline-start: 10px; color: var(--accent); font-size: 11px; }
+.model-benchmark-settings { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 12px 0; color: var(--text-secondary); font-size: 11px; }
+.model-benchmark-table-wrap { overflow-x: auto; }
+.model-benchmark table { width: 100%; border-collapse: collapse; font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.model-benchmark th, .model-benchmark td { padding: 9px 7px; text-align: end; border-bottom: 1px solid var(--border); }
+.model-benchmark th:first-child { text-align: start; }
+.model-benchmark thead th, .model-benchmark th small { color: var(--text-secondary); font-weight: 400; }
+.model-settings-selection-notice { color: var(--accent); font-size: 12px; line-height: 1.5; padding: 10px; background: color-mix(in srgb, var(--accent) 8%, transparent); border-radius: 8px; }
+@media (max-width: 600px) { .model-benchmark { padding: 12px; } .model-benchmark-card-heading { align-items: flex-start; } }
+.model-benchmark-details { margin-top: 10px; font-size: 11px; color: var(--text-secondary); }
+.model-benchmark-details summary { cursor: pointer; padding: 4px 0; }
+.model-settings-modal button:disabled { opacity: .5; cursor: default; }
+.model-benchmark-method { margin-bottom: 14px; font-size: 12px; color: var(--text-secondary); }
+.model-benchmark-method summary { padding: 4px 0; cursor: pointer; color: var(--text); }
+.model-benchmark-method[open] summary { margin-bottom: 8px; }
+@media (max-width: 640px) {
+    .model-benchmark-table-wrap table, .model-benchmark-table-wrap tbody { display: block; white-space: normal; }
+    .model-benchmark-table-wrap thead { display: none; }
+    .model-benchmark-table-wrap tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; padding: 8px 0; }
+    .model-benchmark-table-wrap th { grid-column: 1 / -1; padding: 7px 0; color: var(--text); }
+    .model-benchmark-table-wrap td { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 7px 0; }
+    .model-benchmark-table-wrap td::before { content: attr(data-label); color: var(--text-secondary); text-align: start; font-size: 10px; }
+}
+.model-settings-modal [data-benchmark-changed="true"] { outline: 1px solid var(--accent); outline-offset: 5px; border-radius: 4px; background: color-mix(in srgb, var(--accent) 5%, transparent); }
+
+/* Match the document modal's compact underline navigation. */
+.model-settings-tabs {flex-shrink: 0;}
+.model-settings-tabs .modal-tabs-bar {padding: 10px 22px 0; gap: 4px;}
+.model-settings-modal .model-settings-tabs .modal-tab {display: inline-flex; align-items: center; gap: 7px; flex: 0 1 auto; padding: 10px 14px; margin-bottom: -1px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; color: var(--muted); font-size: 13px;}
+.model-settings-modal .model-settings-tabs .modal-tab.active {color: var(--accent); border-bottom-color: var(--accent);}
+.model-settings-modal .model-settings-tabs .modal-tab:hover:not(:disabled) {color: var(--text); background: transparent;}
+.model-settings-modal .model-settings-tabs .modal-tab:focus-visible {outline: 2px solid var(--accent); outline-offset: -3px;}
+.model-benchmark {padding: 20px 22px;}
+.model-benchmark-plan {min-width: 0; padding: 0; margin: 22px 0 16px; border: 0; display: grid; gap: 8px;}
+.model-benchmark-plan legend {width: 100%; box-sizing: border-box; padding: 0 0 12px; font-size: 13px; font-weight: 600; color: var(--text);}
+.model-benchmark-selection-count {float: right; padding: 2px 8px; border-radius: 6px; background: var(--surface2); color: var(--accent); font-size: 11px; font-variant-numeric: tabular-nums;}
+.model-benchmark-choice {position: relative; display: flex; align-items: center; gap: 12px; padding: 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface2); cursor: pointer; transition: border-color .15s, background .15s;}
+.model-benchmark-choice:has(input:checked) {border-color: color-mix(in srgb, var(--accent) 48%, var(--border)); background: color-mix(in srgb, var(--accent) 6%, var(--surface));}
+.model-benchmark-choice:hover:not(:has(input:disabled)) {border-color: var(--accent);}
+.model-benchmark-choice input {position: absolute; width: 1px; height: 1px; padding: 0; margin: 0; opacity: 0;}
+.model-benchmark-choice:has(input:focus-visible) {outline: 2px solid var(--accent); outline-offset: 3px;}
+.model-benchmark-checkbox {display: grid; place-items: center; flex: 0 0 18px; width: 18px; height: 18px; box-sizing: border-box; border: 1px solid var(--muted); border-radius: 5px; background: var(--surface); color: var(--on-accent);}
+.model-benchmark-checkbox svg {opacity: 0;}
+.model-benchmark-choice input:checked + .model-benchmark-checkbox {background: var(--accent); border-color: var(--accent);}
+.model-benchmark-choice input:checked + .model-benchmark-checkbox svg {opacity: 1;}
+.model-benchmark-choice:has(input:disabled) {cursor: default; opacity: .7;}
+.model-benchmark-choice-body {display: grid; gap: 6px; min-width: 0;}
+.model-benchmark-choice-body strong {font-size: 12px; font-weight: 600;}
+.model-benchmark-choice-values {display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--text-secondary); font-size: 11px; line-height: 1.6;}
+.model-benchmark-replace-notice {display: flex; gap: 9px; align-items: flex-start; margin: 16px 0; padding: 12px; border-radius: 8px; background: var(--surface2); color: var(--text-secondary); font-size: 11px; line-height: 1.7;}
+.model-benchmark-replace-notice svg {flex-shrink: 0; margin-top: 2px; color: var(--muted);}
+.model-benchmark-actions {justify-content: flex-end; padding-bottom: 18px; margin-bottom: 18px; border-bottom: 1px solid var(--border);}
+.model-benchmark-actions button {display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 36px; font-size: 12px; font-weight: 500;}
+.model-benchmark-actions button.primary {border-color: var(--accent);}
+.model-benchmark-actions button.primary:hover:not(:disabled) {background: var(--button-primary-hover);}
+.model-benchmark-card {padding: 18px; margin-top: 16px; background: var(--surface);}
+.model-benchmark-settings span {padding: 3px 7px; border-radius: 5px; background: var(--surface2);}
+.model-benchmark button:focus-visible {outline: 2px solid var(--accent); outline-offset: 2px;}
+@media (max-width: 600px) {.model-settings-tabs .modal-tabs-bar {padding-inline: 12px;} .model-benchmark {padding: 16px 14px;} .model-benchmark-card {padding: 14px;} .model-benchmark-choice {padding: 12px;}}
+@media (prefers-reduced-motion: reduce) {.model-benchmark-choice {transition: none;}}

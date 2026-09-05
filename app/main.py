@@ -22,6 +22,7 @@ from services.external_data.scheduler import (
     start_external_data_scheduler,
     stop_external_data_scheduler,
 )
+from services.model_benchmark import BenchmarkGuard, shutdown as shutdown_model_benchmark
 from services.runtime_settings import apply_runtime_settings
 from services.startup_activity import wait_for_chat_idle
 from routers.browser_extension import router as browser_extension_router
@@ -357,6 +358,7 @@ async def lifespan(app: FastAPI):
     external_api_task = asyncio.create_task(external_api_server.serve())
 
     yield
+    await shutdown_model_benchmark()
 
     external_api_server.should_exit = True
     await asyncio.gather(external_api_task, return_exceptions=True)
@@ -407,6 +409,7 @@ async def lifespan(app: FastAPI):
 # APP
 # ─────────────────────────────
 app = FastAPI(title="RAG Agent", version="1.0.0", lifespan=lifespan)
+app.add_middleware(BenchmarkGuard)
 app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(Exception, unhandled_exception_handler)
@@ -522,6 +525,7 @@ app.include_router(browser_extension_router, prefix="/api")
 @app.post("/api/shutdown")
 async def shutdown():
     """Electron 앱 종료 시 호출 - local model runtimes unload 후 서버 종료."""
+    await shutdown_model_benchmark()
     try:
         from services.vyact_runtime import stop_all_vyact_runtimes
         await asyncio.to_thread(stop_all_vyact_runtimes)

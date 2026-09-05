@@ -7,6 +7,7 @@ import httpx
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
+from services.model_benchmark import BenchmarkGuard
 from services.vyact_runtime import VYACT_RUNTIME_URL
 
 EXTERNAL_API_PORT = 11436
@@ -56,6 +57,7 @@ def rewrite_request_model(body: bytes, content_type: str, config: dict) -> bytes
 
 external_api_app = FastAPI(title="Vyact Local Model API", docs_url=None, redoc_url=None, openapi_url=None)
 
+external_api_app.add_middleware(BenchmarkGuard)
 
 @external_api_app.api_route("/v1/models", methods=["GET"])
 async def list_models(request: Request):

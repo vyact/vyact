@@ -21,6 +21,8 @@ function ModalTabs<T extends string>({ tabs, activeKey, onChange, disabled = fal
         <div className="modal-tabs-bar">
             {tabs.map(tab => (
                 <button
+                    type="button"
+                    aria-pressed={activeKey === tab.key}
                     key={tab.key}
                     className={`modal-tab ${activeKey === tab.key ? 'active' : ''}`}
                     onClick={() => onChange(tab.key)}

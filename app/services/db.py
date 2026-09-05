@@ -46,6 +46,7 @@ SAVED_SENTENCES_INDEX = "saved_sentences"
 NOTIFICATIONS_INDEX = "notifications"
 VYACT_MODEL_METADATA_INDEX = "vyact_model_metadata"
 MODEL_RUNTIME_PROFILES_INDEX = "model_runtime_profiles"
+MODEL_BENCHMARK_RESULTS_INDEX = "model_benchmark_results"
 
 # 공통 분석기 설정 (nori)
 KOREAN_ANALYSIS = {

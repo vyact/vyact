@@ -261,6 +261,7 @@ export interface VyactModelProfile {
     gpu_split_percentages?: number[];
     gpu_manual_split_enabled?: boolean;
     estimated_memory_bytes?: number;
+    model_file_bytes?: number | null;
     requires_apply?: boolean;
     recommendation_status?: 'estimated' | 'insufficient' | 'unavailable';
     limits?: {
