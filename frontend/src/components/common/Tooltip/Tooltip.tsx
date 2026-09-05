@@ -3,10 +3,10 @@ import {createPortal} from 'react-dom';
 import './Tooltip.css';
 
 type TooltipSize = 'small' | 'medium';
-type TooltipProps = {content: ReactNode; multiline?: boolean; size?: TooltipSize; children: ReactElement};
+type TooltipProps = {content: ReactNode; multiline?: boolean; size?: TooltipSize; hoverOnly?: boolean; children: ReactElement};
 const tooltipContentRegistry = new Map<string, ReactNode>();
 
-export function Tooltip({content, multiline, size = 'small', children}: TooltipProps) {
+export function Tooltip({content, multiline, size = 'small', hoverOnly = false, children}: TooltipProps) {
     const tooltipId = useId();
     useEffect(() => {
         tooltipContentRegistry.set(tooltipId, content);
@@ -18,6 +18,7 @@ export function Tooltip({content, multiline, size = 'small', children}: TooltipP
         'data-instant-tooltip-id': tooltipId,
         ...(multiline ? {'data-instant-tooltip-multiline': ''} : {}),
         'data-instant-tooltip-size': size,
+        'data-instant-tooltip-hover-only': hoverOnly ? '' : undefined,
         title: undefined,
     } as never);
 }
@@ -130,7 +131,7 @@ export function TooltipProvider({children}: {children: ReactNode}) {
                  activeTargetRef.current = null;
                  setTooltip(null);
              } }}
-             onFocusCapture={event => { const target = getTooltipTarget(event.target); if (target) show(target); }}
+             onFocusCapture={event => { const target = getTooltipTarget(event.target); if (target && !target.hasAttribute('data-instant-tooltip-hover-only')) show(target); }}
              onBlurCapture={() => {
                  activeTargetRef.current = null;
                  setTooltip(null);
