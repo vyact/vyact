@@ -1,9 +1,11 @@
+import {SUPPORTED_LANGUAGES} from '../../i18n/languages';
 import {resolveKokoroVoice} from '../../services/tts/kokoroVoice';
 import {getKokoroAvailability} from '../../services/tts/kokoroStatus';
 
 // ── 공통 상수 ─────────────────────────────────────────────
 // 음성 대화일때 선택된 시스템 프롬프트가 있으면 그것을 적용하고 없으면 아래의 값을 사용함.
 export const VOICE_SYSTEM_PROMPTS: Record<string, string> = {
+    'fr-FR': 'Tu es un interlocuteur amical. Réponds uniquement en français, en 2 à 3 phrases. Cette conversation est orale : évite le Markdown, les listes numérotées et les symboles spéciaux.',
     'ko-KR': '당신은 친근한 대화 상대입니다. 반드시 한국어로만 답변하세요. 음성 대화이므로 답변은 2~3문장으로 간결하게 해주세요. 마크다운, 번호 목록, 특수기호는 사용하지 마세요.',
     'en-US': 'You are a friendly conversational assistant. Always respond in English only. Keep responses to 2-3 sentences as this is a voice conversation. Do not use markdown, numbered lists, or special symbols.',
     'en-GB': 'You are a friendly conversational assistant. Always respond in English only. Keep responses to 2-3 sentences as this is a voice conversation. Do not use markdown, numbered lists, or special symbols.',
@@ -23,7 +25,11 @@ export const LANGUAGES = [
     {code: 'th-TH', fallbackLabel: 'ภาษาไทย', flag: '🇹🇭'},
     {code: 'vi-VN', fallbackLabel: 'Tiếng Việt', flag: '🇻🇳'},
     {code: 'es-ES', fallbackLabel: 'Español', flag: '🇪🇸'},
-];
+    {code: 'fr-FR', fallbackLabel: 'Français', flag: '🇫🇷'},
+].sort((a, b) =>
+    SUPPORTED_LANGUAGES.findIndex(language => language.value === a.code.split('-')[0])
+    - SUPPORTED_LANGUAGES.findIndex(language => language.value === b.code.split('-')[0]),
+);
 
 /** Returns the practice language name in the UI's currently configured language. */
 export function getLanguageDisplayName(languageCode: string, displayLocale: string): string {
@@ -61,6 +67,7 @@ export const PROMPT_TEMPLATES: Record<string, string> = {
     'th-TH': makePrompt('태국어'),
     'vi-VN': makePrompt('베트남어'),
     'es-ES': makePrompt('스페인어'),
+    'fr-FR': makePrompt('프랑스어'),
 };
 
 // clipboard 복사 - 앱/웹 모두 동작하는 fallback 방식
