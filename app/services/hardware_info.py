@@ -1,4 +1,5 @@
 """Cross-platform memory and accelerator discovery for local model guidance."""
+import ctypes
 import json
 import math
 import platform
@@ -109,6 +110,39 @@ def _linux_display_adapters() -> list[dict]:
     } for name in names]
 
 
+METAL_FRAMEWORK_PATH = "/System/Library/Frameworks/Metal.framework/Metal"
+OBJC_LIBRARY_PATH = "/usr/lib/libobjc.A.dylib"
+
+
+def get_metal_recommended_working_set_bytes() -> int | None:
+    """Read Metal's recommendation without MLX, PyObjC, or developer tools."""
+    if platform.system() != "Darwin":
+        return None
+    try:
+        metal = ctypes.CDLL(METAL_FRAMEWORK_PATH)
+        objc = ctypes.CDLL(OBJC_LIBRARY_PATH)
+        metal.MTLCreateSystemDefaultDevice.argtypes = []
+        metal.MTLCreateSystemDefaultDevice.restype = ctypes.c_void_p
+        objc.sel_registerName.argtypes = [ctypes.c_char_p]
+        objc.sel_registerName.restype = ctypes.c_void_p
+        send_uint = ctypes.CFUNCTYPE(ctypes.c_uint64, ctypes.c_void_p, ctypes.c_void_p)(
+            ("objc_msgSend", objc),
+        )
+        send_void = ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_void_p)(
+            ("objc_msgSend", objc),
+        )
+        device = metal.MTLCreateSystemDefaultDevice()
+        if not device:
+            return None
+        try:
+            value = int(send_uint(device, objc.sel_registerName(b"recommendedMaxWorkingSetSize")))
+            return value if value > 0 else None
+        finally:
+            send_void(device, objc.sel_registerName(b"release"))
+    except (OSError, AttributeError, TypeError, ValueError):
+        return None
+
+
 def get_local_hardware_info() -> dict:
     memory = psutil.virtual_memory()
     is_apple_silicon = platform.system() == "Darwin" and platform.machine().lower() in {"arm64", "aarch64"}
@@ -135,6 +169,7 @@ def get_local_hardware_info() -> dict:
     return {
         "platform": platform.system().lower(),
         "apple_silicon": is_apple_silicon,
+        "metal_recommended_working_set_bytes": get_metal_recommended_working_set_bytes(),
         "memory_mode": memory_mode,
         "system_memory": {"total_bytes": memory.total, "available_bytes": memory.available},
         "gpus": gpus,

@@ -501,6 +501,18 @@
     "appUpdate": {"title":"มีอัปเดตใหม่","available":"มีเวอร์ชัน {{version}} พร้อมใช้งาน","version":"มีเวอร์ชัน {{version}} พร้อมใช้งาน","download":"ดาวน์โหลดอัปเดต","downloading":"กำลังดาวน์โหลด {{progress}}%","restartToUpdate":"เริ่มใหม่","restarting":"กำลังเริ่มใหม่…","viewRelease":"ดาวน์โหลดจากหน้า Releases","retry":"ลองอีกครั้ง","failed":"ไม่สามารถอัปเดตให้เสร็จสมบูรณ์"}
   },
   "modelSelector": {
+    "metalRecommendedMemory": "หน่วยความจำแนะนำสำหรับ AI (Metal)",
+    "metalRecommendedMemoryHelp": "หน่วยความจำที่ Mac แนะนำสำหรับงาน AI ซึ่งต่างจากหน่วยความจำที่ว่างอยู่ตอนนี้",
+    "memoryColorGuide": "สีใช้เปรียบเทียบการใช้หน่วยความจำโดยประมาณเพื่อเป็นแนวทาง",
+    "memoryColor_comfortable": "สีเขียว · มีหน่วยความจำเหลือ",
+    "memoryColor_tight": "สีส้ม · ควรระวังการใช้หน่วยความจำ",
+    "memoryColor_over": "สีแดง · หน่วยความจำอาจไม่พอ",
+    "memoryColorCaution": "การสนทนาที่ยาวและแอปอื่นอาจเปลี่ยนความต้องการหน่วยความจำ สีไม่ได้รับประกันว่าโมเดลจะทำงานได้หรือไม่",
+    "memoryColorFallback": "อ่านค่าที่แนะนำไม่ได้ จึงใช้หน่วยความจำทั้งหมดเป็นเกณฑ์แสดงสี",
+    "metalRecommendationNote": "ปริมาณที่แนะนำสำหรับงาน AI",
+    "memoryUnavailable": "เรียกดูไม่ได้",
+    "memoryEstimateContext": "ประมาณการที่บริบท {{count}} โทเค็น การใช้งานจริงขึ้นอยู่กับโมเดลและงาน",
+
     "ram": "RAM",
     "cancel": "ยกเลิก", "modelActions": "การทำงานสำหรับ {{model}}", "deleteModel": "ลบโมเดล {{model}}", "deleteModelConfirm": "ลบโมเดล {{model}} หรือไม่", "deleteModelDescription": "ไฟล์โมเดลที่ดาวน์โหลดจะถูกลบออกจากอุปกรณ์นี้", "deletingModel": "กำลังลบ...", "deleteModelFailed": "ลบโมเดลไม่สำเร็จ",
     "selectModel": "เลือกโมเดล",

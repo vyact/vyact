@@ -1,3 +1,4 @@
+import ModelMemoryCapacity, {MemoryEstimateNote} from '../common/ModelMemoryCapacity/ModelMemoryCapacity';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {Check, Eye, EyeOff, ExternalLink, LoaderCircle, Plus, Search} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -481,23 +482,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
                                 <div className="setup-hub-browser">
                                     {!isSearchingHub && vyactHardware.system_memory.total_bytes > 0 && (
                                         <div className="vyact-memory-summary setup-memory-summary">
-                                            <div className="vyact-memory-capacity">
-                                                <span className="vyact-system-memory">
-                                                    <small>{t(`main:modelSelector.${vyactHardware.memory_mode === 'unified' ? 'unifiedMemory' : 'systemMemory'}`)}</small>
-                                                    <strong>{formatModelBytes(vyactHardware.system_memory.total_bytes)}</strong>
-                                                </span>
-                                                {vyactHardware.memory_mode !== 'unified' && vyactHardware.gpus.map(gpu => (
-                                                    <span className="vyact-gpu-memory" key={`${gpu.backend}-${gpu.index}-${gpu.name}`}>
-                                                        <small>{t('main:modelSettings.gpuIndex', {index: gpu.index + 1})} · {gpu.backend}</small>
-                                                        <span title={gpu.name}>{gpu.name}</span>
-                                                        {gpu.total_bytes
-                                                            ? <strong className="vyact-gpu-vram"><small>{t('main:modelSelector.vram')}</small>{formatModelBytes(gpu.total_bytes)}</strong>
-                                                            : <em>{t('main:modelSelector.sharedOrUnknownMemory')}</em>
-                                                        }
-                                                    </span>
-                                                ))}
-                                                {vyactHardware.memory_mode !== 'unified' && vyactHardware.gpus.length === 0 && <span>{t('main:modelSelector.cpuExecution')}</span>}
-                                            </div>
+                                            <ModelMemoryCapacity hardware={vyactHardware}/>
                                             {selectedHubModelFile && <div className="vyact-memory-selection"><OverflowTooltipText text={selectedFileDisplayName || ''}/></div>}
                                             {selectedMetadata && <div className="vyact-model-metadata vyact-memory-details">
                                                 <span><small><Tooltip content={t('main:modelSelector.layersHelp')} multiline size="medium"><i className="vyact-memory-help" tabIndex={0}>?</i></Tooltip>{t('main:modelSelector.layers')}</small><strong>{selectedMetadata.blockCount}</strong></span>
@@ -506,6 +491,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
                                                 <span><small><Tooltip content={t('main:modelSelector.conversationMemoryHelp')} multiline size="medium"><i className="vyact-memory-help" tabIndex={0}>?</i></Tooltip>{t('main:modelSelector.conversationMemory')}</small><strong>{formatModelBytes(selectedMetadata.kvCacheBytes)}</strong></span>
                                                 <span className="vyact-total-memory"><small>{t('main:modelSelector.totalEstimatedMemory')}</small><strong>{formatModelBytes(selectedMetadata.estimatedMemoryBytes)}</strong></span>
                                             </div>}
+                                            {selectedMetadata && <MemoryEstimateNote contextLength={selectedMetadata.contextLength}/>}
                                         </div>
                                     )}
                                     <div className="setup-hub-results" aria-busy={isSearchingHub}>

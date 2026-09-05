@@ -501,6 +501,18 @@
     }
   },
   "modelSelector": {
+    "metalRecommendedMemory": "AI推奨メモリ（Metal）",
+    "metalRecommendedMemoryHelp": "MacがAI処理に使うことを推奨するメモリ量です。現在の空きメモリとは異なります。",
+    "memoryColorGuide": "色は推定メモリ使用量を比較した目安です。",
+    "memoryColor_comfortable": "緑 · メモリに余裕があります",
+    "memoryColor_tight": "オレンジ · メモリ使用量に注意",
+    "memoryColor_over": "赤 · メモリが不足する可能性があります",
+    "memoryColorCaution": "長い会話や他のアプリの使用で状況は変わります。色はモデルが動作するかどうかを保証するものではありません。",
+    "memoryColorFallback": "推奨量を取得できないため、メモリの総容量を基準に色を表示しています。",
+    "metalRecommendationNote": "AI処理に推奨される容量",
+    "memoryUnavailable": "取得できません",
+    "memoryEstimateContext": "コンテキスト{{count}}トークンでの推定値です。実際の使用量はモデルと処理によって異なります。",
+
     "ram": "RAM",
     "cancel": "キャンセル", "modelActions": "{{model}} の操作", "deleteModel": "{{model}} モデルを削除", "deleteModelConfirm": "{{model}} モデルを削除しますか？", "deleteModelDescription": "ダウンロードしたモデルファイルがこのデバイスから削除されます。", "deletingModel": "削除中...", "deleteModelFailed": "モデルの削除に失敗しました",
     "selectModel": "モデル選択",

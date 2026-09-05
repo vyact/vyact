@@ -2,10 +2,10 @@ import {api, type VyactHubModel} from '../services/api';
 import {inspectRemoteGguf, type GgufModelMetadata} from './ggufMetadata';
 import {getModelFileKey, getSelectableModelFiles, resolveModelMemoryBytes} from './vyactModelDisplay';
 
-const DEFAULT_MODEL_CONTEXT = 32768;
+import {MODEL_ESTIMATE_CONTEXT} from '../constants/modelMemory';
 
 export const loadSearchModelMetadata = async (
-    models: VyactHubModel[], token: string, contextSize = DEFAULT_MODEL_CONTEXT,
+    models: VyactHubModel[], token: string, contextSize = MODEL_ESTIMATE_CONTEXT,
     usePersistentCache = true,
 ): Promise<Record<string, GgufModelMetadata>> => {
     const entries = await Promise.all(models.flatMap(model =>

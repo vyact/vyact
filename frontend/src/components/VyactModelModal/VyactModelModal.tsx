@@ -1,3 +1,5 @@
+import {MODEL_ESTIMATE_CONTEXT} from '../../constants/modelMemory';
+import ModelMemoryCapacity, {MemoryEstimateNote} from '../common/ModelMemoryCapacity/ModelMemoryCapacity';
 import ModelCapabilityIcons from '../common/ModelCapabilityIcons/ModelCapabilityIcons';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {Calculator, Check, Eye, EyeOff, KeyRound, LoaderCircle, Search, Sparkles} from 'lucide-react';
@@ -116,12 +118,6 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
         ? selectedFile.repository.split('/').pop()
         : selectedFile?.filename;
     const selectedModelIsInstalled = Boolean(selectedModelPath && installedModels.includes(selectedModelPath));
-    const selectedModel = selectedFile
-        ? models.find(model => model.id === selectedFile.repository)
-        : undefined;
-    const selectedModelMemoryBytes = selectedFile && selectedModel
-        ? resolveModelMemoryBytes(selectedModel, selectedFile.filename)
-        : 0;
     const mlxAvailable = navigator.platform.toUpperCase().includes('MAC')
         || hardware.apple_silicon
         || installedModels.some(model => model.startsWith('mlx/'));
@@ -205,7 +201,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
             let optimizedMetadata: GgufModelMetadata | undefined;
             if (modelToDownload.runtime === 'mlx') {
                 const details = await api.inspectVyactMlxMetadata(
-                    modelToDownload.repository, modelToDownload.revision, modelToDownload.fileSize, 32768,
+                    modelToDownload.repository, modelToDownload.revision, modelToDownload.fileSize, MODEL_ESTIMATE_CONTEXT,
                 );
                 optimizedMetadata = details.metadata;
                 if (details.mtpModel) {
@@ -263,7 +259,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                 try {
                     optimizedMetadata = await inspectRemoteGguf(
                         modelToDownload.repository, modelToDownload.filename, modelToDownload.revision,
-                        modelToDownload.fileSize, 32768, token.trim(),
+                        modelToDownload.fileSize, MODEL_ESTIMATE_CONTEXT, token.trim(),
                     );
                 } catch (error) {
                     console.warn('Model metadata inspection failed; using the safe context default:', error);
@@ -331,7 +327,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
             let metadata: GgufModelMetadata;
             if (modelForDetails.runtime === 'mlx') {
                 const details = await api.inspectVyactMlxMetadata(
-                    modelForDetails.repository, modelForDetails.revision, modelForDetails.fileSize, 32768,
+                    modelForDetails.repository, modelForDetails.revision, modelForDetails.fileSize, MODEL_ESTIMATE_CONTEXT,
                 );
                 metadata = details.metadata;
                 if (details.mtpModel) {
@@ -339,16 +335,16 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                 }
             } else {
                 const cached = await api.getVyactModelMetadataCache(
-                    modelForDetails.repository, modelForDetails.filename, modelForDetails.revision, 32768,
+                    modelForDetails.repository, modelForDetails.filename, modelForDetails.revision, MODEL_ESTIMATE_CONTEXT,
                 );
                 metadata = cached || await inspectRemoteGguf(
                     modelForDetails.repository, modelForDetails.filename, modelForDetails.revision,
-                    modelForDetails.fileSize, 32768, token.trim(),
+                    modelForDetails.fileSize, MODEL_ESTIMATE_CONTEXT, token.trim(),
                 );
                 if (!cached) {
                     void api.saveVyactModelMetadataCache(
                         modelForDetails.repository, modelForDetails.filename, modelForDetails.revision,
-                        32768, modelForDetails.fileSize, metadata,
+                        MODEL_ESTIMATE_CONTEXT, modelForDetails.fileSize, metadata,
                     ).catch(() => undefined);
                 }
                 const selectedModel = models.find(model => model.id === modelForDetails.repository);
@@ -356,7 +352,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                 if (projector) {
                     const projectorMetadata = await inspectRemoteGguf(
                         modelForDetails.repository, projector, modelForDetails.revision,
-                        selectedModel?.file_sizes?.[projector] || 0, 32768, token.trim(),
+                        selectedModel?.file_sizes?.[projector] || 0, MODEL_ESTIMATE_CONTEXT, token.trim(),
                     );
                     metadata = {...metadata, modalities: projectorMetadata.modalities};
                 }
@@ -450,23 +446,7 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                     <section className="vyact-model-results" aria-busy={busy}>
                         {!isSearching && hardware.system_memory.total_bytes > 0 && (
                             <div className="vyact-memory-summary">
-                                <div className="vyact-memory-capacity">
-                                    <span className="vyact-system-memory">
-                                        <small>{t(hardware.memory_mode === 'unified' ? 'modelSelector.unifiedMemory' : 'modelSelector.systemMemory')}</small>
-                                        <strong>{formatBytes(hardware.system_memory.total_bytes)}</strong>
-                                    </span>
-                                    {hardware.memory_mode !== 'unified' && hardware.gpus.map(gpu => (
-                                        <span className="vyact-gpu-memory" key={`${gpu.backend}-${gpu.index}-${gpu.name}`}>
-                                            <small>{t('modelSettings.gpuIndex', {index: gpu.index + 1})} · {gpu.backend}</small>
-                                            <span title={gpu.name}>{gpu.name}</span>
-                                            {gpu.total_bytes
-                                                ? <strong className="vyact-gpu-vram"><small>{t('modelSelector.vram')}</small>{formatBytes(gpu.total_bytes)}</strong>
-                                                : <em>{t('modelSelector.sharedOrUnknownMemory')}</em>
-                                            }
-                                        </span>
-                                    ))}
-                                    {hardware.memory_mode !== 'unified' && hardware.gpus.length === 0 && <span>{t('modelSelector.cpuExecution')}</span>}
-                                </div>
+                                <ModelMemoryCapacity hardware={hardware}/>
                                 {selectedFile && (
                                     <div className="vyact-memory-selection">
                                         <span className="vyact-selected-model-labels">
@@ -494,9 +474,12 @@ export default function VyactModelModal({onClose, onSelected}: VyactModelModalPr
                                     <div className="vyact-model-metadata vyact-memory-details">
                                         <span><small>{t('modelSelector.layers')}</small><strong>{selectedMetadata.blockCount}</strong></span>
                                         <span><small>{t('modelSelector.maxContext')}</small><strong>{selectedMetadata.contextLength >= 1024 ? `${Math.round(selectedMetadata.contextLength / 1024)}K` : selectedMetadata.contextLength}</strong></span>
-                                        <span><small>{t('modelSelector.modelMemory')}</small><strong>{formatBytes(selectedModelMemoryBytes)}</strong></span>
+                                        <span><small>{t('modelSelector.modelMemory')}</small><strong>{formatBytes(Math.max(0, selectedMetadata.estimatedMemoryBytes - selectedMetadata.kvCacheBytes))}</strong></span>
+                                        <span><small>{t('modelSelector.conversationMemory')}</small><strong>{formatBytes(selectedMetadata.kvCacheBytes)}</strong></span>
+                                        <span className="vyact-total-memory"><small>{t('modelSelector.totalEstimatedMemory')}</small><strong>{formatBytes(selectedMetadata.estimatedMemoryBytes)}</strong></span>
                                     </div>
                                 )}
+                                {selectedMetadata && <MemoryEstimateNote contextLength={selectedMetadata.contextLength}/>}
                             </div>
                         )}
                         {isSearching && (

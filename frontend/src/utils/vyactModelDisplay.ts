@@ -105,6 +105,9 @@ export const getSelectableModelFiles = (files: string[]) => files
 export type ModelMemoryTone = 'comfortable' | 'tight' | 'over' | 'unknown';
 
 const getTotalModelMemoryCapacity = (hardware: VyactHardwareInfo) => {
+    if (hardware.platform === 'darwin' && (hardware.metal_recommended_working_set_bytes ?? 0) > 0) {
+        return hardware.metal_recommended_working_set_bytes!;
+    }
     if (hardware.memory_mode !== 'dedicated') return hardware.system_memory.total_bytes;
     const dedicatedGpus = hardware.gpus.filter(gpu => !gpu.shared_memory);
     const runtimeBackend = dedicatedGpus[0]?.backend;

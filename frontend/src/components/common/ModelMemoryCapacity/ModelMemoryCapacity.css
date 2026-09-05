@@ -1,0 +1,26 @@
+.vyact-memory-capacity > .vyact-metal-memory {
+    display: grid;
+    flex: 0 1 auto;
+    align-content: center;
+    gap: 5px;
+    border-color: color-mix(in srgb, var(--accent) 24%, var(--border));
+}
+.vyact-metal-memory > small {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 650;
+}
+.vyact-metal-memory > span { color: var(--muted); font-size: 11px; line-height: 1.4; }
+.vyact-estimate-context { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+
+.vyact-metal-help { display: grid; gap: 10px; white-space: normal; }
+.vyact-metal-help p { margin: 0; }
+.vyact-memory-legend { display: grid; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
+.vyact-memory-legend li { display: flex; align-items: baseline; gap: 8px; }
+.vyact-memory-legend-dot { width: 9px; height: 9px; flex: 0 0 9px; border-radius: 50%; }
+.vyact-memory-legend-dot--comfortable { background: var(--success); }
+.vyact-memory-legend-dot--tight { background: var(--warn); }
+.vyact-memory-legend-dot--over { background: var(--danger); }

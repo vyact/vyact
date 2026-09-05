@@ -26,6 +26,18 @@ class HardwareInfoTests(unittest.TestCase):
         self.assertEqual(hardware["gpus"][0]["backend"], "Metal")
         self.assertEqual(hardware["gpus"][0]["index"], 0)
 
+    @patch("services.hardware_info.get_metal_recommended_working_set_bytes", return_value=19_069_665_280)
+    @patch("services.hardware_info.platform.machine", return_value="arm64")
+    @patch("services.hardware_info.platform.system", return_value="Darwin")
+    def test_reports_metal_value_without_ram_ratio(self, _system, _machine, _metal):
+        self.assertEqual(get_local_hardware_info()["metal_recommended_working_set_bytes"], 19_069_665_280)
+
+    @patch("services.hardware_info.get_metal_recommended_working_set_bytes", return_value=None)
+    @patch("services.hardware_info.platform.machine", return_value="arm64")
+    @patch("services.hardware_info.platform.system", return_value="Darwin")
+    def test_unavailable_metal_value_is_not_estimated(self, _system, _machine, _metal):
+        self.assertIsNone(get_local_hardware_info()["metal_recommended_working_set_bytes"])
+
     def test_recommends_multi_gpu_split_from_vram_ratio(self):
         hardware = {"gpus": [
             {"backend": "CUDA", "total_bytes": 24 * 1024 ** 3, "shared_memory": False},

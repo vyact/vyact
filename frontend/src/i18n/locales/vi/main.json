@@ -501,6 +501,18 @@
     }
   },
   "modelSelector": {
+    "metalRecommendedMemory": "Bộ nhớ khuyến nghị cho AI (Metal)",
+    "metalRecommendedMemoryHelp": "Đây là lượng bộ nhớ Mac khuyến nghị cho tác vụ AI, khác với bộ nhớ đang trống.",
+    "memoryColorGuide": "Màu so sánh mức dùng bộ nhớ ước tính để tham khảo.",
+    "memoryColor_comfortable": "Xanh lá · Bộ nhớ còn dư",
+    "memoryColor_tight": "Cam · Chú ý mức dùng bộ nhớ",
+    "memoryColor_over": "Đỏ · Bộ nhớ có thể không đủ",
+    "memoryColorCaution": "Hội thoại dài và các ứng dụng khác có thể thay đổi nhu cầu bộ nhớ. Màu không đảm bảo mô hình có chạy được hay không.",
+    "memoryColorFallback": "Không lấy được mức khuyến nghị nên màu dựa trên tổng bộ nhớ.",
+    "metalRecommendationNote": "Dung lượng khuyến nghị cho tác vụ AI",
+    "memoryUnavailable": "Không truy xuất được",
+    "memoryEstimateContext": "Ước tính với {{count}} token ngữ cảnh. Mức dùng thực tế tùy thuộc mô hình và tác vụ.",
+
     "ram": "RAM",
     "cancel": "Hủy", "modelActions": "Thao tác cho {{model}}", "deleteModel": "Xóa mô hình {{model}}", "deleteModelConfirm": "Xóa mô hình {{model}}?", "deleteModelDescription": "Các tệp mô hình đã tải xuống sẽ bị xóa khỏi thiết bị này.", "deletingModel": "Đang xóa...", "deleteModelFailed": "Không thể xóa mô hình",
     "selectModel": "Chọn mô hình",

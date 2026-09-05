@@ -501,6 +501,18 @@
     }
   },
   "modelSelector": {
+    "metalRecommendedMemory": "Memoria recomendada para IA (Metal)",
+    "metalRecommendedMemoryHelp": "Es la memoria que tu Mac recomienda para tareas de IA. No es la memoria libre en este momento.",
+    "memoryColorGuide": "Los colores comparan el uso estimado de memoria como orientación.",
+    "memoryColor_comfortable": "Verde · Hay margen de memoria",
+    "memoryColor_tight": "Naranja · Vigila el uso de memoria",
+    "memoryColor_over": "Rojo · La memoria podría no ser suficiente",
+    "memoryColorCaution": "Las conversaciones largas y otras apps pueden cambiar las necesidades. Los colores no garantizan que el modelo pueda ejecutarse.",
+    "memoryColorFallback": "La recomendación no está disponible; los colores se basan en la memoria total.",
+    "metalRecommendationNote": "Cantidad recomendada para tareas de IA",
+    "memoryUnavailable": "No disponible",
+    "memoryEstimateContext": "Estimación para {{count}} tokens de contexto. El uso real varía según el modelo y la tarea.",
+
     "ram": "RAM",
     "cancel": "Cancelar", "modelActions": "Acciones de {{model}}", "deleteModel": "Eliminar el modelo {{model}}", "deleteModelConfirm": "¿Eliminar el modelo {{model}}?", "deleteModelDescription": "Los archivos descargados del modelo se eliminarán de este dispositivo.", "deletingModel": "Eliminando...", "deleteModelFailed": "Error al eliminar el modelo",
     "selectModel": "Elegir modelo",

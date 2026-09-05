@@ -219,6 +219,7 @@ export interface VyactGpuInfo {
 }
 
 export interface VyactHardwareInfo {
+    metal_recommended_working_set_bytes?: number | null;
     platform: string;
     apple_silicon: boolean;
     memory_mode: 'unified' | 'dedicated' | 'system';
