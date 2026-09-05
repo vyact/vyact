@@ -1,3 +1,5 @@
+import {getKokoroVoiceLanguage} from '../../services/tts/kokoroVoice';
+import {ensureJapaneseTtsDictionary, JapaneseTtsDictionaryCancelledError} from '../../services/tts/japaneseTtsDictionary';
 import {formatLocalizedNumber} from '../../utils/localizedNumber';
 import {getVoicePreviewText} from '../../services/tts/voicePreview';
 import {microsoftRequest} from '../../services/microsoftWorkspace';
@@ -119,16 +121,6 @@ const KOKORO_PREFIX_DESC: Record<string, string> = {
     hf: 'hiF', hm: 'hiM', if: 'itF', im: 'itM',
     pf: 'brF', pm: 'brM',
 };
-
-const KOKORO_VOICE_LANGUAGES: Record<string, string> = {
-    af: 'en-US', am: 'en-US', bf: 'en-GB', bm: 'en-GB',
-    ef: 'es', em: 'es', ff: 'fr', hf: 'hi', hm: 'hi',
-    if: 'it', im: 'it', jf: 'ja-JP', jm: 'ja-JP',
-    pf: 'pt-BR', pm: 'pt-BR', zf: 'zh-CN', zm: 'zh-CN',
-};
-
-const getKokoroVoiceLanguage = (voice: string) =>
-    KOKORO_VOICE_LANGUAGES[voice.split('_')[0]] ?? 'en-US';
 
 const KOKORO_VOICES: { value: string; name: string; lang: string }[] = [
     {value: 'af_heart', name: 'Heart', lang: '🇺🇸'},
@@ -685,12 +677,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
         if (kokoroAvailable && ttsDraft.kokoroVoice) {
             // Kokoro 미리 듣기
             try {
+                const language = getKokoroVoiceLanguage(ttsDraft.kokoroVoice);
+                if (language.startsWith('ja') && !await ensureJapaneseTtsDictionary()) {
+                    throw new JapaneseTtsDictionaryCancelledError();
+                }
+                if (!previewPlayingRef.current) return;
                 const res = await fetch('/api/tts/kokoro/synthesize', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
-                        text: getVoicePreviewText(getKokoroVoiceLanguage(ttsDraft.kokoroVoice)),
-                        lang: getKokoroVoiceLanguage(ttsDraft.kokoroVoice),
+                        text: getVoicePreviewText(language),
+                        lang: language,
                         voice: ttsDraft.kokoroVoice,
                         speed: ttsDraft.rate,
                     }),

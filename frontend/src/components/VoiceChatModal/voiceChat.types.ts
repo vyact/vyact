@@ -1,3 +1,4 @@
+import {resolveKokoroVoice} from '../../services/tts/kokoroVoice';
 import {getKokoroAvailability} from '../../services/tts/kokoroStatus';
 
 // ── 공통 상수 ─────────────────────────────────────────────
@@ -245,7 +246,7 @@ export async function speakWithKokoroOrFallback(
                 body: JSON.stringify({
                     text,
                     lang,
-                    voice: settings.kokoroVoice || '',
+                    voice: resolveKokoroVoice(settings.kokoroVoice, lang),
                     speed: settings.rate,
                 }),
             });
