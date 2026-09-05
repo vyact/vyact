@@ -207,7 +207,8 @@
 .setup-hub-results .vyact-model-card-heading { gap: 8px; }
 .setup-hub-results .vyact-model-card-heading strong { min-width: 0; overflow: hidden; font-size: 12px; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
 .setup-hub-results .vyact-model-card-heading > span { font-size: 10px; }
-.setup-hub-results .vyact-model-files { grid-template-columns: minmax(0, 1fr); }
+.setup-hub-results > :not(.vyact-model-card.is-compact) { grid-column: 1 / -1; }
+.setup-hub-results .vyact-model-files { grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr)); }
 .setup-hub-results .vyact-model-files button { box-sizing: border-box; width: 100%; min-width: 0; min-height: 46px; gap: 2px 6px; padding: 6px 9px 6px 12px; border-radius: 8px; font-size: 10px; }
 .setup-hub-results .vyact-model-files button small { font-size: 9px; }
 .setup-hub-results .vyact-mtp-badge { padding: 2px 4px; font-size: 7px; }
@@ -222,9 +223,9 @@
 .setup-memory-summary .vyact-memory-capacity > .vyact-system-memory { flex: 0 0 130px; }
 .setup-memory-summary .vyact-memory-capacity > .vyact-gpu-memory { flex: 1 1 0; max-width: calc((100% - 130px - 16px) / 2); min-width: 0; white-space: normal; }
 .setup-memory-summary .vyact-memory-capacity strong { font-size: 12px; }
-.setup-memory-summary .vyact-memory-selection { flex: 0 1 auto; }
-.setup-memory-summary .vyact-memory-selection > strong:first-child { max-width: 170px; }
-.setup-memory-summary .vyact-memory-details { padding-block-start: 8px; }
+.setup-memory-summary .vyact-memory-selection { flex: 1 0 100%; }
+
+.setup-memory-summary .vyact-memory-details { padding-block-start: 0; }
 .setup-memory-summary .vyact-model-metadata { grid-template-columns: repeat(4, minmax(110px, 1fr)); }
 .setup-memory-summary .vyact-model-metadata > span { padding: 7px 8px; }
 

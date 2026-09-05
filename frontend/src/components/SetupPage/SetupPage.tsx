@@ -1,6 +1,6 @@
 import ModelMemoryCapacity, {LayersHelp, MaxContextHelp, ModelArchitectureDetail} from '../common/ModelMemoryCapacity/ModelMemoryCapacity';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {Check, Eye, EyeOff, ExternalLink, LoaderCircle, Plus, Search} from 'lucide-react';
+import {Calculator, Check, Eye, EyeOff, ExternalLink, LoaderCircle, Plus, Search} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { LogEntry } from '../../types';
 import { syncPendingLanguageAfterSetup } from '../../i18n';
@@ -20,6 +20,7 @@ import {
     getModelQuantization,
     getSelectableModelFiles,
 } from '../../utils/vyactModelDisplay';
+import {MODEL_ESTIMATE_CONTEXT} from '../../constants/modelMemory';
 import {loadSearchModelMetadata} from '../../utils/modelMetadataLoader';
 import './SetupPage.css';
 import '../VyactModelModal/VyactModelModal.css';
@@ -75,6 +76,10 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
     const [metadataByFile, setMetadataByFile] = useState<Record<string, GgufModelMetadata>>({});
     const [mtpSupportedModels, setMtpSupportedModels] = useState<string[]>([]);
     const [mlxOnly, setMlxOnly] = useState(true);
+    const searchRequestIdRef = useRef(0);
+    const detailsRequestIdRef = useRef(0);
+    const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+    const [detailsError, setDetailsError] = useState(false);
     const [isSearchingHub, setIsSearchingHub] = useState(false);
     const [isApiKeyVisible, setIsApiKeyVisible] = useState(false);
     const [connectionName, setConnectionName] = useState<string>('');
@@ -114,6 +119,11 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
     const searchVyactModels = async (query: string, searchMlxOnly = mlxOnly) => {
         const trimmedQuery = query.trim();
         if (!trimmedQuery) return;
+        const requestId = ++searchRequestIdRef.current;
+        ++detailsRequestIdRef.current;
+        setIsLoadingDetails(false);
+        setDetailsError(false);
+        setMetadataByFile({});
         setIsSearchingHub(true);
         setSelectedModel('');
         setSelectedHubModelFile(null);
@@ -124,29 +134,30 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
             if (searchMlxOnly && response.hardware.apple_silicon && response.models.some(model => model.runtime !== 'mlx')) {
                 response = await api.searchVyactModels(trimmedQuery, true);
             }
+            if (requestId !== searchRequestIdRef.current) return;
             if (!response.hardware.apple_silicon) setMlxOnly(false);
-            const loadedMetadata = await loadSearchModelMetadata(
-                response.models, huggingFaceToken.trim(), undefined, false,
-            );
             setHuggingFaceModels(
                 response.hardware.apple_silicon
                     ? response.models
                     : response.models.filter(model => model.runtime !== 'mlx'),
             );
-            setMetadataByFile(loadedMetadata);
             setVyactHardware(response.hardware);
             setMtpSupportedModels(response.mtp_supported);
         } catch (error) {
+            if (requestId !== searchRequestIdRef.current) return;
             console.error('Failed to search Hugging Face models:', error);
             setHuggingFaceModels([]);
         } finally {
-            setIsSearchingHub(false);
+            if (requestId === searchRequestIdRef.current) setIsSearchingHub(false);
         }
     };
 
     const isCloud = provider !== 'vyact';
 
     const selectHubModelFile = (model: VyactHubModel, filename: string) => {
+        ++detailsRequestIdRef.current;
+        setIsLoadingDetails(false);
+        setDetailsError(false);
         const modelPath = model.runtime === 'mlx' ? `mlx/${model.id}` : `${model.id}/${filename}`;
         setSelectedModel(modelPath);
         setSelectedHubModelFile({
@@ -159,6 +170,37 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
             mtpModel: model.mtp_model, specprefillModel: model.specprefill_model,
             dflash2Model: model.dflash2_model, dflash2Bundled: model.dflash2_bundled,
         });
+    };
+
+    const loadSelectedModelDetails = async () => {
+        const file = selectedHubModelFile;
+        if (!file) return;
+        const requestId = ++detailsRequestIdRef.current;
+        setIsLoadingDetails(true);
+        setDetailsError(false);
+        try {
+            let metadata: GgufModelMetadata | undefined;
+            if (file.runtime === 'mlx') {
+                const details = await api.inspectVyactMlxMetadata(
+                    file.repository, file.revision, file.fileSize, MODEL_ESTIMATE_CONTEXT,
+                );
+                metadata = details.metadata;
+            } else {
+                const model = huggingFaceModels.find(item => item.id === file.repository && item.runtime === file.runtime);
+                if (!model) return;
+                const entries = await loadSearchModelMetadata(
+                    [{...model, files: [file.filename]}], huggingFaceToken.trim(), undefined, false,
+                );
+                metadata = entries[selectedFileKey];
+            }
+            if (requestId !== detailsRequestIdRef.current) return;
+            if (metadata) setMetadataByFile(current => ({...current, [selectedFileKey]: metadata}));
+            else setDetailsError(true);
+        } catch {
+            if (requestId === detailsRequestIdRef.current) setDetailsError(true);
+        } finally {
+            if (requestId === detailsRequestIdRef.current) setIsLoadingDetails(false);
+        }
     };
 
     // 시스템 상태 조회 — Docker 설치 여부/네이티브 지원 여부에 따라 ES 방식 선택지 제어
@@ -481,7 +523,14 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
                                     {!isSearchingHub && vyactHardware.system_memory.total_bytes > 0 && (
                                         <div className="vyact-memory-summary setup-memory-summary">
                                             <ModelMemoryCapacity hardware={vyactHardware}/>
-                                            {selectedHubModelFile && <div className="vyact-memory-selection"><OverflowTooltipText text={selectedFileDisplayName || ''}/></div>}
+                                            {selectedHubModelFile && <div className="vyact-memory-selection">
+                                                <span className="vyact-selected-model-labels"><strong>{selectedFileDisplayName}</strong></span>
+                                                <button type="button" onClick={() => void loadSelectedModelDetails()} disabled={isLoadingDetails}
+                                                    aria-label={t('main:modelSelector.calculateAccurateMemory')} title={t('main:modelSelector.calculateAccurateMemory')}>
+                                                    {isLoadingDetails ? <LoaderCircle className="vyact-model-spinner" size={17}/> : <Calculator size={17}/>}
+                                                </button>
+                                            </div>}
+                                            {detailsError && <span role="alert">{t('main:modelSelector.metadataAnalysisFailed')}</span>}
                                             {selectedMetadata && <div className="vyact-model-metadata vyact-memory-details">
                                                 <ModelArchitectureDetail architecture={selectedMetadata.architecture}/>
                                                 <span><small><LayersHelp/>{t('main:modelSelector.layers')}</small><strong>{selectedMetadata.blockCount}</strong></span>
@@ -497,7 +546,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
                                         const onlyFile = selectableFiles.length === 1 ? selectableFiles[0] : null;
                                         const onlyModelPath = onlyFile ? (model.runtime === 'mlx' ? `mlx/${model.id}` : `${model.id}/${onlyFile}`) : '';
                                         return <article
-                                            className={`vyact-model-card${selectedModel === onlyModelPath ? ' is-selected' : ''}${onlyFile ? ' is-clickable' : ''}`}
+                                            className={`vyact-model-card${onlyFile && selectedModel === onlyModelPath ? ' is-selected' : ''}${onlyFile ? ' is-compact is-clickable' : ''}`}
                                             key={`${model.runtime}-${model.id}`}
                                             onClick={() => onlyFile && selectHubModelFile(model, onlyFile)}
                                         >
