@@ -248,6 +248,7 @@
     "newCount": "ใหม่ {{count}} รายการ",
     "skipCount": "ข้าม {{count}} รายการ",
     "googleExpired": "การเชื่อมต่อ Google หมดอายุ กรุณาเชื่อมต่อใหม่ในหน้าตั้งค่า",
+    "microsoftReconnect": "โปรดเชื่อมต่อบัญชี Microsoft อีกครั้งในการตั้งค่า",
     "restoreCompleteAlert": "กู้คืนเสร็จสมบูรณ์\nใหม่ {{inserted}} รายการ · ข้าม {{skipped}} รายการ{{googleMsg}}\n\nหน้าเว็บจะรีเฟรช",
     "previewFailed": "ไม่สามารถอ่านข้อมูลไฟล์สำรองได้",
     "previewTitle": "เลือกข้อมูลที่จะกู้คืน", "restorePreview": "กู้คืนข้อมูลสำรอง",

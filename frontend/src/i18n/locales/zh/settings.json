@@ -248,6 +248,7 @@
     "newCount": "新增 {{count}} 条",
     "skipCount": "重复 {{count}} 条",
     "googleExpired": "Google 连接已过期。请在设置中重新连接。",
+    "microsoftReconnect": "请在设置中重新连接 Microsoft 帐户。",
     "restoreCompleteAlert": "恢复完成\n新增 {{inserted}} 条 · 重复 {{skipped}} 条{{googleMsg}}\n\n页面将刷新。",
     "previewFailed": "无法读取备份信息。",
     "previewTitle": "选择要恢复的数据", "restorePreview": "恢复备份",

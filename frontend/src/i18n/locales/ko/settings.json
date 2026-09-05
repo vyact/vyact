@@ -303,6 +303,7 @@
     "newCount": "신규 {{count}}건",
     "skipCount": "중복 {{count}}건",
     "googleExpired": "Google 연결이 만료되었습니다. 설정에서 재연결해주세요.",
+    "microsoftReconnect": "Microsoft 계정을 설정에서 다시 연결해주세요.",
     "restoreCompleteAlert": "복원 완료\n신규 {{inserted}}건 · 중복 {{skipped}}건{{googleMsg}}\n\n페이지를 새로고침합니다.",
     "previewFailed": "백업 정보를 읽지 못했습니다.",
     "previewTitle": "복원할 데이터 선택", "restorePreview": "백업 복원",

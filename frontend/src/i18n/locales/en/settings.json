@@ -274,6 +274,7 @@
     "newCount": "{{count}} new",
     "skipCount": "{{count}} skipped",
     "googleExpired": "Google connection expired. Please reconnect in settings.",
+    "microsoftReconnect": "Please reconnect your Microsoft accounts in settings.",
     "restoreCompleteAlert": "Restore complete\n{{inserted}} new · {{skipped}} skipped{{googleMsg}}\n\nPage will refresh.",
     "previewFailed": "Could not read the backup information.",
     "previewTitle": "Choose data to restore", "restorePreview": "Backup restore",

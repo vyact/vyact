@@ -641,10 +641,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
             const totalSkipped = Object.values(detail).reduce((sum: number, v: any) => sum + (v.skipped ?? 0), 0);
             await loadStats();
             const googleMsg = data.google_auth_ok === false ? `\n⚠️ ${t('backup.googleExpired')}` : '';
+            const microsoftMsg = data.microsoft_auth_ok === false ? `\n⚠️ ${t('backup.microsoftReconnect')}` : '';
             toast.success(t('backup.restoreCompleteAlert', {
                 inserted: totalInserted,
                 skipped: totalSkipped,
-                googleMsg,
+                googleMsg: googleMsg + microsoftMsg,
             }));
             setTimeout(() => window.location.reload(), 2000);
         } catch (e) {

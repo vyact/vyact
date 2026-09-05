@@ -17,6 +17,8 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from services.microsoft_workspace.backup import upload_backup
+from services.microsoft_workspace.auth import revoke_all_tokens as revoke_all_microsoft_tokens
+from services.mcp_config import list_servers
 from config import INSTALL_DIR
 from services.db import (
     EXTERNAL_DATA_SETTINGS_INDEX,
@@ -105,40 +107,24 @@ def _preserve_machine_local_config(backup: dict, current_config: dict) -> None:
         return
 
 
-async def _preserve_google_workspace_on_restore(backup: dict) -> bool:
-    """복원본에서 OAuth 토큰을 제거하고 기존 Google Workspace 설정을 보존한다.
-
-    반환값은 복원 후 Google 계정들의 OAuth 재연결이 필요한지 여부다.
-    """
+async def _preserve_workspace_on_restore(backup: dict, provider: str) -> bool:
+    """Preserve this device's workspace settings and report whether reconnection is needed."""
     settings = backup.get("indices", {}).get(INTEGRATION_SETTINGS_INDEX)
     if not settings:
         return False
-    docs = settings.get("docs", [])
-
-    from services.mcp_config import list_servers
-    current_google_servers = [
-        server for server in await list_servers()
-        if server.get("type") == "google_workspace"
-    ]
-    backup_has_google_server = False
-    for doc in docs:
-        source = doc.get("_source", {})
-        if doc.get("_id") == _MCP_SETTINGS_DOC_ID:
-            config = source.get("value")
-            servers = config.get("servers") if isinstance(config, dict) else None
-            if isinstance(servers, list):
-                backup_google_servers = [
-                    server for server in servers
-                    if server.get("type") == "google_workspace"
-                ]
-                backup_has_google_server = bool(backup_google_servers)
-                if current_google_servers:
-                    # 현재 앱의 Google 설정이 우선이다. 나머지 MCP 설정은 백업본을 쓴다.
-                    config["servers"] = [
-                        server for server in servers
-                        if server.get("type") != "google_workspace"
-                    ] + current_google_servers
-    return backup_has_google_server or bool(current_google_servers)
+    current_servers = [server for server in await list_servers() if server.get("type") == provider]
+    reconnect_required = False
+    for doc in settings.get("docs", []):
+        if doc.get("_id") != _MCP_SETTINGS_DOC_ID:
+            continue
+        config = doc.get("_source", {}).get("value")
+        servers = config.get("servers") if isinstance(config, dict) else None
+        if not isinstance(servers, list):
+            continue
+        reconnect_required = bool(current_servers) or any(server.get("type") == provider for server in servers)
+        if current_servers:
+            config["servers"] = [server for server in servers if server.get("type") != provider] + copy.deepcopy(current_servers)
+    return reconnect_required
 
 
 async def _get_user_indices(es) -> list[str]:
@@ -439,12 +425,17 @@ async def import_backup(
             if name in selected_indices or _logical_index_name(name) in selected_indices
         }
 
-    google_reconnect_required = await _preserve_google_workspace_on_restore(backup)
+    google_reconnect_required = await _preserve_workspace_on_restore(backup, "google_workspace")
     if google_reconnect_required:
         # OAuth 토큰은 백업으로 이동하지 않으며, 복원 뒤에는 모든 계정을
         # 설정 화면에서 명시적으로 다시 연결해야 한다.
         await revoke_all_tokens()
         logger.info("[restore] Google Workspace 전체 계정 OAuth 재연결 필요")
+
+    microsoft_reconnect_required = await _preserve_workspace_on_restore(backup, "microsoft_workspace")
+    if microsoft_reconnect_required:
+        await revoke_all_microsoft_tokens()
+        logger.info("[restore] Microsoft Workspace OAuth reconnection required")
 
     if SETTINGS_INDEX in backup["indices"]:
         from routers.deps import load_config_async
@@ -618,6 +609,7 @@ async def import_backup(
         "total_inserted": sum(v.get("inserted", 0) for v in result.values()),
         "total_skipped": sum(v.get("skipped", 0) for v in result.values()),
         "google_auth_ok": google_auth_ok,
+        "microsoft_auth_ok": False if microsoft_reconnect_required else None,
         "plugins": plugin_reconciliation,
     }
 

@@ -248,6 +248,7 @@
     "newCount": "{{count}} nuevos",
     "skipCount": "{{count}} omitidos",
     "googleExpired": "La conexión con Google ha caducado. Vuelve a conectarla en ajustes.",
+    "microsoftReconnect": "Vuelve a conectar tus cuentas de Microsoft en ajustes.",
     "restoreCompleteAlert": "Restauración completa\n{{inserted}} nuevos · {{skipped}} omitidos{{googleMsg}}\n\nLa página se actualizará.",
     "previewFailed": "No se pudo leer la información de la copia de seguridad.",
     "previewTitle": "Elige los datos a restaurar", "restorePreview": "Restaurar copia de seguridad",

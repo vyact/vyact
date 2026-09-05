@@ -248,6 +248,7 @@
     "newCount": "新規 {{count}}件",
     "skipCount": "重複 {{count}}件",
     "googleExpired": "Google接続が期限切れです。設定から再接続してください。",
+    "microsoftReconnect": "設定で Microsoft アカウントを再接続してください。",
     "restoreCompleteAlert": "復元完了\n新規 {{inserted}}件 · 重複 {{skipped}}件{{googleMsg}}\n\nページを更新します。",
     "previewFailed": "バックアップ情報を読み取れませんでした。",
     "previewTitle": "復元するデータを選択", "restorePreview": "バックアップの復元",

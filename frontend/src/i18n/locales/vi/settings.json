@@ -248,6 +248,7 @@
     "newCount": "{{count}} mới",
     "skipCount": "{{count}} bỏ qua",
     "googleExpired": "Kết nối Google đã hết hạn. Vui lòng kết nối lại trong cài đặt.",
+    "microsoftReconnect": "Vui lòng kết nối lại các tài khoản Microsoft trong cài đặt.",
     "restoreCompleteAlert": "Khôi phục hoàn tất\n{{inserted}} mới · {{skipped}} bỏ qua{{googleMsg}}\n\nTrang sẽ được tải lại.",
     "previewFailed": "Không thể đọc thông tin sao lưu.",
     "previewTitle": "Chọn dữ liệu để khôi phục", "restorePreview": "Khôi phục bản sao lưu",

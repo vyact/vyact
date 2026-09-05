@@ -5,6 +5,7 @@ import hashlib
 import secrets
 import time
 import uuid
+from contextlib import AsyncExitStack
 from urllib.parse import urlencode
 
 import httpx
@@ -70,6 +71,27 @@ async def disconnect(account_id: str) -> None:
         await save_token(account_id, {})
 
 
+async def revoke_all_tokens() -> None:
+    """Clear Microsoft credentials and invalidate pending OAuth callbacks on restore."""
+    for account_id in set(_generations) | set(_locks) | {pending["account_id"] for pending in _pending.values()}:
+        _generations[account_id] = _generations.get(account_id, 0) + 1
+    _pending.clear()
+    async with AsyncExitStack() as stack:
+        # Wait for in-flight refreshes before deleting credentials they may have saved.
+        for account_id in sorted(_locks):
+            await stack.enter_async_context(_locks[account_id])
+        es = get_es()
+        try:
+            await es.delete_by_query(
+                index=INTEGRATION_CREDENTIALS_INDEX,
+                query={"prefix": {"key": "microsoft_token_"}},
+                conflicts="proceed",
+                refresh=True,
+            )
+        finally:
+            await es.close()
+
+
 async def status() -> dict:
     settings = await config()
     accounts = []
@@ -95,7 +117,7 @@ async def start_login(account_id: str, redirect_uri: str) -> str:
     state, verifier = secrets.token_urlsafe(32), secrets.token_urlsafe(64)
     challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).decode().rstrip("=")
     _pending[state] = {"account_id": account_id, "client_id": client_id, "verifier": verifier,
-                       "redirect_uri": redirect_uri, "expires_at": now + 600, "generation": _generations.get(account_id, 0)}
+                       "redirect_uri": redirect_uri, "expires_at": now + 600, "generation": _generations.setdefault(account_id, 0)}
     return f"{AUTHORITY}/authorize?{urlencode({'client_id': client_id, 'response_type': 'code', 'redirect_uri': redirect_uri, 'scope': SCOPES, 'state': state, 'code_challenge': challenge, 'code_challenge_method': 'S256', 'prompt': 'select_account'})}"
 
 
