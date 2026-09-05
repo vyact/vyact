@@ -37,10 +37,10 @@ from services.huggingface_models import (
 from services.db import get_es, SETTINGS_INDEX
 from services.tts_settings import normalize_tts_rate
 from services.mcp_config import ensure_mcp_config
-from services.runtime_settings import DEFAULT_RUNTIME_SETTINGS, apply_runtime_settings
+from services.runtime_settings import DEFAULT_RUNTIME_SETTINGS, apply_runtime_settings, get_runtime_settings
 from services.runtime_startup import (
     apply_startup_runtime_choice, get_startup_runtime_state, runtime_load_error_code,
-    warm_loaded_vyact_model,
+    warm_loaded_vyact_model, persist_mtp_fallback,
 )
 from services.model_runtime_profiles import delete_model_profile, get_model_profile, normalize_gpu_split_for_hardware, normalize_model_profile, recommended_model_profile, save_model_profile
 from services.model_memory import estimate_downloaded_model_memory_bytes
@@ -48,7 +48,7 @@ from services.vyact_model_metadata_cache import get_cached_model_metadata, save_
 from services.mlx_runtime import get_downloaded_mlx_model_path, get_mlx_runtime_capabilities, is_apple_silicon, list_multimodal_supported_mlx_models
 from services.external_api_server import EXTERNAL_API_PORT, public_model_id
 from services.reasoning_capabilities import get_gguf_reasoning_capabilities, get_mlx_reasoning_capabilities
-from services.vyact_runtime import VYACT_RUNTIME_URL, get_downloaded_model_path, get_model_modalities
+from services.vyact_runtime import VYACT_RUNTIME_URL, get_downloaded_model_path, get_model_modalities, start_configured_runtime
 
 logger = get_logger(__name__)
 
@@ -72,11 +72,16 @@ async def _get_or_create_model_profile(
 
 
 def _apply_model_profile(vyact_config: dict, profile: dict) -> None:
+    logger.info("[vyact] applying profile model=%s runtime=%s sampling=%s",
+                profile.get("model_path"), profile.get("runtime"), _profile_runtime_settings(profile))
     vyact_config.update({
         "repository": profile.get("repository") or vyact_config.get("repository"),
         "context_size": profile["context_size"],
         "cache_quantization": profile["cache_quantization"],
         "mtp_enabled": profile.get("mtp_enabled"),
+        "mtp_failure_code": profile.get("mtp_failure_code"),
+        "mtp_failure_message": profile.get("mtp_failure_message"),
+        "mtp_failed_at": profile.get("mtp_failed_at"),
         "kv_cache_precision": profile.get("kv_cache_precision"),
         "performance_mode": profile.get("performance_mode", "auto"),
         "cpu_threads": profile.get("cpu_threads"),
@@ -1217,8 +1222,12 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
 
     async def stream():
         yield sse("Vyact 모델을 메모리에 로드하는 중...", "model_loading", 10)
+        previous_config = None
+        previous_settings = get_runtime_settings()
+        engine_started = False
         try:
             config = await load_config_async()
+            previous_config = copy.deepcopy(config)
             runtime = "mlx" if req.model_path.startswith("mlx/") else req.runtime
             request_profile = req.model_dump()
             request_profile["gpu_split_percentages"] = validate_gpu_split_percentages(
@@ -1231,6 +1240,7 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
             req.max_output_tokens = safe_profile["max_output_tokens"]
             req.history_token_budget = safe_profile["history_token_budget"]
             runtime_status: dict = {}
+            engine_started = True
             if runtime == "mlx":
                 from services.mlx_runtime import get_downloaded_mlx_model_path, start_mlx_model
 
@@ -1311,13 +1321,36 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
             )
             await save_config_async(config)
         except Exception as error:
-            logger.warning("[vyact] model activation failed: %s", error)
+            logger.exception("[vyact] model activation failed model=%s runtime=%s", req.model_path, req.runtime)
             diagnostic = getattr(error, "diagnostic", "")
             is_insufficient_memory = is_insufficient_memory_message(error) or is_insufficient_memory_message(diagnostic)
             message = "model_insufficient_memory" if is_insufficient_memory else f"Vyact 모델 로드 실패: {error}"
-            yield sse(message, "error", 0)
+            recovery = "unknown"
+            apply_runtime_settings(previous_settings)
+            if engine_started and previous_config and previous_config.get("type") == "vyact":
+                previous_model = previous_config.get("vyact_config", {})
+                try:
+                    restore_status: dict = {}
+                    restored_id = await asyncio.to_thread(
+                        start_configured_runtime, previous_model,
+                        previous_config.get("debug_logging", False), restore_status,
+                    )
+                    await persist_mtp_fallback(previous_model, previous_model, restore_status)
+                    await save_model_profile(previous_model)
+                    await warm_loaded_vyact_model(
+                        restored_id, await load_ui_language_async() or "", previous_model.get("runtime", "gguf"),
+                    )
+                    previous_config["model"] = restored_id
+                    previous_model["model"] = restored_id
+                    await save_config_async(previous_config)
+                    recovery = "restored"
+                    logger.info("[vyact] activation rollback succeeded model=%s status=%s", restored_id, restore_status)
+                except Exception:
+                    recovery = "failed"
+                    logger.exception("[vyact] activation rollback failed model=%s", previous_model.get("model_path"))
+            yield "data: " + json.dumps({"type": "error", "message": message, "recovery": recovery}) + "\n\n"
             return
-        yield sse("Vyact 모델 준비 완료", "done", 100)
+        yield "data: " + json.dumps({"type": "done", "message": "Vyact 모델 준비 완료", "progress": 100, "mtp_fallback": mtp_fallback}) + "\n\n"
 
     return StreamingResponse(stream(), media_type="text/event-stream")
 
@@ -1339,6 +1372,7 @@ async def select_model(req: ModelSelectRequest):
                 req.model, runtime, repository, persist=True,
             )
             previous_config = copy.deepcopy(config)
+            previous_runtime_settings = get_runtime_settings()
             vyact_config = config.setdefault("vyact_config", {})
             vyact_config.update({
                 "model_path": req.model,
@@ -1346,40 +1380,47 @@ async def select_model(req: ModelSelectRequest):
             })
             _apply_model_profile(vyact_config, profile)
             yield sse("모델 메모리 로드 중...", "model_loading", 20)
+            runtime_status: dict = {}
             try:
                 from services.vyact_runtime import start_configured_runtime
                 model_id = await asyncio.to_thread(
-                    start_configured_runtime, vyact_config, config.get("debug_logging", False),
+                    start_configured_runtime, vyact_config, config.get("debug_logging", False), runtime_status,
                 )
+                profile = await persist_mtp_fallback(profile, vyact_config, runtime_status)
                 config["type"] = "vyact"
                 config["model"] = model_id
                 config["model_type"] = "chat"
                 vyact_config["model"] = model_id
                 common_settings = dict(config.get("runtime_settings", {}))
                 config["runtime_settings"] = common_settings
-                apply_runtime_settings({**common_settings, **_profile_runtime_settings(profile)})
+                apply_runtime_settings({**common_settings, **_profile_runtime_settings(vyact_config)})
                 await warm_loaded_vyact_model(
                     model_id, await load_ui_language_async() or "", runtime,
                 )
             except Exception as error:
                 error_code = runtime_load_error_code(error)
-                logger.warning("[vyact] model selection failed: %s", error)
+                logger.exception("[vyact] model selection failed model=%s runtime=%s status=%s", req.model, runtime, runtime_status)
+                logger.info("[vyact] restoring previous runtime settings=%s", previous_runtime_settings)
+                apply_runtime_settings(previous_runtime_settings)
                 config.clear()
                 config.update(previous_config)
                 previous_vyact_config = config.get("vyact_config", {})
                 if config.get("type") == "vyact" and previous_vyact_config.get("model_path"):
                     try:
+                        restore_status: dict = {}
                         restored_model_id = await asyncio.to_thread(
                             start_configured_runtime,
                             previous_vyact_config,
-                            config.get("debug_logging", False),
+                            config.get("debug_logging", False), restore_status,
                         )
+                        await persist_mtp_fallback(previous_vyact_config, previous_vyact_config, restore_status)
                         await warm_loaded_vyact_model(
                             restored_model_id, await load_ui_language_async() or "",
                             previous_vyact_config.get("runtime", "gguf"),
                         )
-                    except Exception as restore_error:
-                        logger.warning("[vyact] previous model restore failed: %s", restore_error)
+                        logger.info("[vyact] previous model restored model=%s status=%s", restored_model_id, restore_status)
+                    except Exception:
+                        logger.exception("[vyact] previous model restore failed model=%s", previous_vyact_config.get("model_path"))
                 message = error_code if error_code == "model_insufficient_memory" else f"Vyact 모델 로드 실패: {error}"
                 yield sse(message, "error", 0)
                 return
@@ -1575,16 +1616,18 @@ async def select_provider(req: ProviderSelectRequest):
             vyact_config.get("repository"), persist=True,
         )
         _apply_model_profile(vyact_config, profile)
+        runtime_status: dict = {}
         try:
             from services.vyact_runtime import start_configured_runtime
 
             model = await asyncio.to_thread(
                 start_configured_runtime,
                 vyact_config,
-                config.get("debug_logging", False),
+                config.get("debug_logging", False), runtime_status,
             )
+            await persist_mtp_fallback(profile, vyact_config, runtime_status)
         except (OSError, RuntimeError, ValueError) as error:
-            logger.warning("[providers] Vyact provider activation failed: %s", error)
+            logger.exception("[providers] Vyact activation failed model=%s runtime=%s status=%s", vyact_config.get("model_path"), vyact_config.get("runtime"), runtime_status)
             raise HTTPException(503, "vyact_model_activation_failed") from error
         config["type"] = "vyact"
         config["model"] = model

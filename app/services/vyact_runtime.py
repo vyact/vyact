@@ -21,11 +21,14 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import quote
 
 from config import INSTALL_DIR, get_log_file
+from logger import get_logger
 from services.hardware_info import GPU_SPLIT_DECIMAL_PLACES, get_local_hardware_info, validate_gpu_split_percentages
 from services.local_model_errors import LocalModelNotDownloadedError
 from services.model_runtime_profiles import normalize_gpu_split_for_hardware
 from services.multimodal_capabilities import get_projector_modalities
 from services.runtime_error_details import classify_runtime_load_failure, runtime_startup_error
+
+logger = get_logger(__name__)
 
 VYACT_RUNTIME_PORT = 11435
 VYACT_RUNTIME_URL = f"http://127.0.0.1:{VYACT_RUNTIME_PORT}/v1"
@@ -563,6 +566,9 @@ def start_single_model(
     dflash2_model_path = get_cached_dflash2_model(model_path)
     if dflash2_model_path is None and enable_mtp is True and kv_cache_precision != "none":
         raise ValueError("MTP acceleration and KV cache quantization cannot be enabled together")
+    logger.info("[llama] loading model=%s context=%s mtp=%s kv=%s performance=%s threads=%s gpu_split=%s manual=%s",
+                model_path, context_size, enable_mtp, kv_cache_precision, performance_mode,
+                cpu_threads, gpu_split_percentages, gpu_manual_split_enabled)
     paths = get_runtime_paths()
     if not paths.llama_swap:
         raise RuntimeError("Vyact native runtime is not installed")
@@ -624,6 +630,7 @@ def start_single_model(
         _active_dflash2_model = relative_model if acceleration == "dflash2" else None
         _active_mtp_model = relative_model if acceleration == "mtp" else None
     except RuntimeError as error:
+        logger.exception("[llama] load failed model=%s acceleration=%s context=%s", model_path, acceleration, context_size)
         if acceleration is None:
             raise
         if runtime_status is not None and acceleration == "mtp":
@@ -633,6 +640,7 @@ def start_single_model(
                 "mtp_failure_code": failure_code,
                 "mtp_failure_message": failure_message,
             })
+        logger.warning("[llama] retrying without acceleration model=%s", model_path)
         model_key, process = launch(None)
         wait_until_loaded(model_key, process)
         _active_mtp_model = None

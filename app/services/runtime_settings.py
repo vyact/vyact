@@ -1,10 +1,12 @@
 """ES에 저장되는 모델/문서 처리 설정의 런타임 캐시."""
 from contextvars import ContextVar
 from config.models import (
-    BGE_NUM_CTX, HISTORY_TOKEN_BUDGET, LLM_INITIAL_NUM_CTX,
+    BGE_NUM_CTX, HISTORY_TOKEN_BUDGET,
     LLM_MAX_TOKENS, LLM_NUM_CTX, LLM_NUM_PREDICT, LLM_TEMPERATURE,
     TOP_K, TOP_P,
 )
+
+MINIMUM_CONTEXT_SIZE = 512
 
 DEFAULT_RUNTIME_SETTINGS = {
     "llm_temperature": LLM_TEMPERATURE, "llm_num_ctx": LLM_NUM_CTX,
@@ -49,7 +51,7 @@ def apply_runtime_settings(values: dict | None) -> dict:
                     try:
                         cast_type = int if key == "seed" else type(default) if default is not None else float
                         parsed = cast_type(val)
-                        _settings[key] = max(parsed, LLM_INITIAL_NUM_CTX) if key == "llm_num_ctx" else parsed
+                        _settings[key] = max(parsed, MINIMUM_CONTEXT_SIZE) if key == "llm_num_ctx" else parsed
                     except (TypeError, ValueError):
                         pass
     return get_runtime_settings()

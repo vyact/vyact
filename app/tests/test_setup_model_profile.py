@@ -4,7 +4,8 @@ import pytest
 from fastapi import HTTPException
 
 from routers import setup
-from services import vyact_runtime
+from services import vyact_runtime, runtime_settings, runtime_startup
+from services.llm.context_window import select_context_allocation
 
 
 @pytest.mark.asyncio
@@ -211,3 +212,97 @@ def test_model_profile_replaces_previous_gpu_split():
     setup._apply_model_profile(config, profile)
     assert config["gpu_split_percentages"] == [70, 30]
     assert config["gpu_manual_split_enabled"] is True
+
+
+@pytest.mark.asyncio
+async def test_failed_model_switch_restores_sampling_and_logs_traceback(monkeypatch):
+
+    monkeypatch.setattr(runtime_settings, "_settings", dict(runtime_settings.DEFAULT_RUNTIME_SETTINGS))
+    previous = setup.recommended_model_profile("owner/old.gguf", "gguf", None, 4096)
+    previous.update(temperature=0.2, top_k=10, seed=1)
+    new = {**previous, "model_path": "owner/new.gguf", "temperature": 0.8, "top_k": 80, "seed": 99}
+    config = {"type": "vyact", "model": "old", "vyact_config": previous.copy()}
+    setup.apply_runtime_settings(setup._profile_runtime_settings(previous))
+    monkeypatch.setattr(setup, "load_config_async", AsyncMock(return_value=config))
+    monkeypatch.setattr(setup, "_get_or_create_model_profile", AsyncMock(return_value=new))
+    monkeypatch.setattr(setup, "load_ui_language_async", AsyncMock(return_value="ko"))
+    monkeypatch.setattr(setup, "warm_loaded_vyact_model", AsyncMock(side_effect=[RuntimeError("warmup failed"), True]))
+    monkeypatch.setattr(vyact_runtime, "start_configured_runtime", Mock(side_effect=["new", "old"]))
+    exception_log = Mock()
+    monkeypatch.setattr(setup.logger, "exception", exception_log)
+    response = await setup.select_model(setup.ModelSelectRequest(type="vyact", model="owner/new.gguf"))
+    chunks = [chunk async for chunk in response.body_iterator]
+    assert "error" in "".join(chunks)
+    assert config["model"] == "old"
+    settings = setup.get_runtime_settings()
+    assert (settings["llm_temperature"], settings["top_k"], settings["seed"]) == (0.2, 10, 1)
+    exception_log.assert_called_once()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("entry", ["model", "provider"])
+async def test_selection_persists_mtp_fallback(monkeypatch, entry):
+
+    profile = setup.recommended_model_profile("owner/model.gguf", "gguf", None, 4096)
+    profile.update(mtp_enabled=True, kv_cache_precision="none", cache_quantization=False)
+    config = {"type": "vyact", "model": "old", "vyact_config": profile.copy()}
+    def start(_config, _debug, status):
+        status.update(mtp_fallback=True, mtp_failure_code="out_of_memory", mtp_failure_message="allocation failed")
+        return "model"
+    save_profile = AsyncMock(side_effect=lambda value: value)
+    monkeypatch.setattr(runtime_startup, "save_model_profile", save_profile)
+    monkeypatch.setattr(setup, "load_config_async", AsyncMock(return_value=config))
+    monkeypatch.setattr(setup, "_get_or_create_model_profile", AsyncMock(return_value=profile))
+    monkeypatch.setattr(setup, "load_ui_language_async", AsyncMock(return_value="ko"))
+    monkeypatch.setattr(setup, "warm_loaded_vyact_model", AsyncMock())
+    monkeypatch.setattr(setup, "save_config_async", AsyncMock())
+    monkeypatch.setattr(setup, "apply_runtime_settings", Mock())
+    monkeypatch.setattr(vyact_runtime, "start_configured_runtime", start)
+    if entry == "model":
+        response = await setup.select_model(setup.ModelSelectRequest(type="vyact", model=profile["model_path"]))
+        chunks = [chunk async for chunk in response.body_iterator]
+        assert '"type": "done"' in "".join(chunks)
+    else:
+        await setup.select_provider(setup.ProviderSelectRequest(provider="vyact"))
+    saved = save_profile.await_args.args[0]
+    assert saved["mtp_enabled"] is False
+    assert saved["mtp_failure_code"] == "out_of_memory"
+    assert saved["mtp_failed_at"]
+    assert config["vyact_config"]["mtp_enabled"] is False
+
+
+def test_small_context_matches_runtime_cache_and_allocation(monkeypatch):
+
+    monkeypatch.setattr(runtime_settings, "_settings", dict(runtime_settings.DEFAULT_RUNTIME_SETTINGS))
+    settings = runtime_settings.apply_runtime_settings({"llm_num_ctx": 4096})
+    assert settings["llm_num_ctx"] == 4096
+    context, _ = select_context_allocation([], 4096, 2.0, 512)
+    assert context == 4096
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("restore_fails", [False, True])
+async def test_settings_activation_reports_rollback_result(monkeypatch, restore_fails):
+    profile = setup.recommended_model_profile("owner/old.gguf", "gguf", None, 4096)
+    profile.update(temperature=0.2, seed=1)
+    config = {"type": "vyact", "model": "old", "vyact_config": profile.copy()}
+    monkeypatch.setattr(runtime_settings, "_settings", dict(runtime_settings.DEFAULT_RUNTIME_SETTINGS))
+    setup.apply_runtime_settings(setup._profile_runtime_settings(profile))
+    monkeypatch.setattr(setup, "load_config_async", AsyncMock(return_value=config))
+    monkeypatch.setattr(setup, "save_config_async", AsyncMock())
+    monkeypatch.setattr(setup, "save_model_profile", AsyncMock(side_effect=lambda value: value))
+    monkeypatch.setattr(setup, "load_ui_language_async", AsyncMock(return_value="ko"))
+    monkeypatch.setattr(setup, "warm_loaded_vyact_model", AsyncMock(side_effect=[RuntimeError("warmup failed"), True]))
+    monkeypatch.setattr(vyact_runtime, "get_downloaded_model_path", Mock(return_value="new.gguf"))
+    monkeypatch.setattr(vyact_runtime, "start_single_model", Mock(return_value="new"))
+    monkeypatch.setattr(vyact_runtime, "get_loaded_context_size", Mock(return_value=4096))
+    restore = Mock(side_effect=RuntimeError("restore failed")) if restore_fails else Mock(return_value="old")
+    monkeypatch.setattr(setup, "start_configured_runtime", restore)
+    response = await setup.activate_vyact_model(setup.VyactModelActivateRequest(
+        model_path="owner/new.gguf", context_size=4096, temperature=0.8, seed=99,
+    ))
+    chunks = [chunk async for chunk in response.body_iterator]
+    assert f'"recovery": "{"failed" if restore_fails else "restored"}"' in "".join(chunks)
+    restore.assert_called_once()
+    settings = setup.get_runtime_settings()
+    assert (settings["llm_temperature"], settings["seed"]) == (0.2, 1)

@@ -847,6 +847,7 @@ def start_mlx_model(
     command, environment, speculative_mode = _build_omlx_server_command(
         model_path, context_size, enable_mtp, debug_logging,
     )
+    logger.info("[omlx] loading model=%s context=%s speculative_mode=%s", model_path, context_size, speculative_mode)
     model_id = model_path.relative_to(MLX_MODELS_DIR).as_posix()
     with log_path.open("ab") as log_file:
         process = subprocess.Popen(
@@ -886,6 +887,7 @@ def start_mlx_model(
             time.sleep(0.25)
         raise runtime_startup_error("The oMLX model did not become ready within 180 seconds", log_path)
     except RuntimeError as error:
+        logger.exception("[omlx] load failed model=%s context=%s speculative_mode=%s", model_path, context_size, speculative_mode)
         if speculative_mode != "external_mtp" or enable_mtp is False:
             raise
         if runtime_status is not None:
@@ -895,6 +897,7 @@ def start_mlx_model(
                 "mtp_failure_code": failure_code,
                 "mtp_failure_message": failure_message,
             })
+        logger.warning("[omlx] retrying without MTP model=%s", model_path)
         return start_mlx_model(
             model_path, context_size, debug_logging, cache_quantization, False,
             kv_cache_precision, _performance_mode, _cpu_threads, runtime_status,

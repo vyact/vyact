@@ -31,7 +31,7 @@ export class VyactRuntimeInstallError extends Error {
 }
 
 export class VyactModelActivationError extends Error {
-    constructor(public code: string, message = code) {
+    constructor(public code: string, message = code, public recovery: 'restored' | 'failed' | 'unknown' = 'unknown') {
         super(message);
         this.name = 'VyactModelActivationError';
     }
@@ -615,27 +615,33 @@ export const api = {
     async activateVyactModel(
         modelPath: string, contextSize = 32768, onProgress?: (message: string, progress?: number) => void,
         runtime: 'gguf' | 'mlx' = 'gguf', repository?: string, profile?: VyactModelProfile,
-    ): Promise<void> {
+    ): Promise<{mtpFallback: boolean}> {
         const response = await fetch(`${API_BASE}/vyact/models/activate`, {
             method: 'POST', headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({model_path: modelPath, context_size: contextSize, runtime, repository, ...profile}),
         });
-        if (!response.body) return;
+        if (!response.body) throw new VyactModelActivationError('activation_incomplete');
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let pending = '';
-        while (true) {
-            const {done, value} = await reader.read();
-            if (done) return;
-            pending += decoder.decode(value, {stream: true});
-            const lines = pending.split('\n');
-            pending = lines.pop() || '';
-            for (const line of lines) {
-                if (!line.startsWith('data: ')) continue;
-                const event = JSON.parse(line.slice(6));
-                onProgress?.(event.message, event.progress);
-                if (event.type === 'error') throw new Error(event.message);
+        try {
+            while (true) {
+                const {done, value} = await reader.read();
+                if (done) throw new VyactModelActivationError('activation_incomplete');
+                pending += decoder.decode(value, {stream: true});
+                const lines = pending.split('\n');
+                pending = lines.pop() || '';
+                for (const line of lines) {
+                    if (!line.startsWith('data: ')) continue;
+                    const event = JSON.parse(line.slice(6));
+                    onProgress?.(event.message, event.progress);
+                    if (event.type === 'error') throw new VyactModelActivationError(event.message, event.message, event.recovery ?? 'unknown');
+                    if (event.type === 'done') return {mtpFallback: Boolean(event.mtp_fallback)};
+                }
             }
+        } finally {
+            await reader.cancel().catch(() => undefined);
+            reader.releaseLock();
         }
     },
 

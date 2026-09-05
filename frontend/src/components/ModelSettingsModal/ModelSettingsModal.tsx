@@ -7,6 +7,7 @@ import CustomSelect from '../CustomSelect/CustomSelect';
 import SettingLabel from '../common/SettingLabel/SettingLabel';
 import {Tooltip} from '../common/Tooltip/Tooltip';
 import {formatModelBytes} from '../../utils/vyactModelDisplay';
+import {toast} from '../common/ToastNotifications/ToastNotifications';
 import './ModelSettingsModal.css';
 
 interface Props {
@@ -92,15 +93,25 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
                 return;
             }
             const saved = hasChanges ? await api.saveVyactModelProfile(profile) : profile;
-            if (activateOnApply) await api.activateVyactModel(modelPath, saved.context_size, undefined, runtime, repository, saved);
+            if (activateOnApply) {
+                const result = await api.activateVyactModel(modelPath, saved.context_size, undefined, runtime, repository, saved);
+                if (result.mtpFallback) toast.warning(t('modelSettings.activationNotice'), t('modelSettings.mtpFallbackNotice'), 8000);
+            }
             await onApplied();
             onClose();
         } catch (value) {
+            const recovery = value instanceof VyactModelActivationError ? value.recovery : 'unknown';
+            const notice = t(`modelSettings.activationRecovery.${recovery}`);
+            if (recovery === 'restored') {
+                toast.warning(t('modelSettings.activationNotice'), notice, 8000);
+            } else {
+                toast.error(t('modelSettings.activationNotice'), notice, 8000);
+            }
             if (value instanceof VyactModelActivationError && value.code === 'model_insufficient_memory') {
                 const modelName = modelPath.split('/').pop() || modelPath;
                 setError(`${t('message.modelInsufficientMemoryTitle')}\n${t('message.modelInsufficientMemoryDescription', {model: modelName})}`);
             } else {
-                setError(String(value));
+                setError(notice);
             }
         } finally {
             setSaving(false);

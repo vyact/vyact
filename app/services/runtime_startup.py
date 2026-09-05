@@ -156,6 +156,23 @@ async def detect_native_runtime_updates(config: dict) -> dict:
     return get_startup_runtime_state()
 
 
+async def persist_mtp_fallback(profile: dict, vyact_config: dict, runtime_status: dict) -> dict:
+    """Persist the effective acceleration state for every model loading entry point."""
+    if not runtime_status.get("mtp_fallback"):
+        return profile
+    failure = {
+        "mtp_enabled": False,
+        "mtp_failure_code": runtime_status.get("mtp_failure_code", "load_failed"),
+        "mtp_failure_message": runtime_status.get("mtp_failure_message"),
+        "mtp_failed_at": datetime.now(timezone.utc).isoformat(),
+    }
+    logger.warning("[runtime] MTP fallback model=%s runtime=%s failure=%s",
+                   profile.get("model_path"), profile.get("runtime"), failure)
+    saved = await save_model_profile({**profile, **failure})
+    vyact_config.update(failure)
+    return saved
+
+
 async def load_configured_vyact_model(config: dict | None = None) -> tuple[str, str]:
     """Load the persisted Vyact model and reapply its saved runtime profile."""
     config = config or await load_config_async()
@@ -185,23 +202,16 @@ async def load_configured_vyact_model(config: dict | None = None) -> tuple[str, 
         "gpu_manual_split_enabled",
     )})
     runtime_status: dict = {}
-    model_id = await asyncio.to_thread(
-        start_configured_runtime, vyact_config, config.get("debug_logging", False), runtime_status,
-    )
-    if runtime_status.get("mtp_fallback"):
-        profile = await save_model_profile({
-            **profile,
-            "mtp_enabled": False,
-            "mtp_failure_code": runtime_status.get("mtp_failure_code", "load_failed"),
-            "mtp_failure_message": runtime_status.get("mtp_failure_message"),
-            "mtp_failed_at": datetime.now(timezone.utc).isoformat(),
-        })
-        vyact_config.update({
-            "mtp_enabled": False,
-            "mtp_failure_code": profile["mtp_failure_code"],
-            "mtp_failure_message": profile["mtp_failure_message"],
-            "mtp_failed_at": profile["mtp_failed_at"],
-        })
+    try:
+        model_id = await asyncio.to_thread(
+            start_configured_runtime, vyact_config, config.get("debug_logging", False), runtime_status,
+        )
+        profile = await persist_mtp_fallback(profile, vyact_config, runtime_status)
+    except Exception:
+        logger.exception("[runtime] startup load failed model=%s runtime=%s context=%s status=%s",
+                         vyact_config.get("model_path"), vyact_config.get("runtime"),
+                         vyact_config.get("context_size"), runtime_status)
+        raise
     config["model"] = model_id
     vyact_config["model"] = model_id
     apply_runtime_settings({
