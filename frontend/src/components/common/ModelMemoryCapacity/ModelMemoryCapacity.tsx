@@ -1,24 +1,15 @@
 import {useTranslation} from 'react-i18next';
 import type {VyactHardwareInfo} from '../../../services/api';
 import {formatModelBytes} from '../../../utils/vyactModelDisplay';
+import OverflowTooltipText from '../OverflowTooltipText/OverflowTooltipText';
 import {Tooltip} from '../Tooltip/Tooltip';
 import './ModelMemoryCapacity.css';
 
-function MetalMemoryHelp({hasRecommendation}: {hasRecommendation: boolean}) {
+function MetalMemoryHelp() {
     const {t} = useTranslation('main');
     return <div className="vyact-metal-help">
         <p>{t('modelSelector.metalRecommendedMemoryHelp')}</p>
-        <div>
-            <p>{t('modelSelector.memoryColorGuide')}</p>
-            <ul className="vyact-memory-legend">
-                {(['comfortable', 'tight', 'over'] as const).map(tone => <li key={tone}>
-                    <span className={`vyact-memory-legend-dot vyact-memory-legend-dot--${tone}`} aria-hidden="true"/>
-                    <span>{t(`modelSelector.memoryColor_${tone}`)}</span>
-                </li>)}
-            </ul>
-        </div>
-        <p>{t('modelSelector.memoryColorCaution')}</p>
-        {!hasRecommendation && <p>{t('modelSelector.memoryColorFallback')}</p>}
+
     </div>;
 }
 
@@ -33,7 +24,7 @@ export default function ModelMemoryCapacity({hardware}: {hardware: VyactHardware
         </span>
         {isMac && <span className="vyact-metal-memory">
             <small>{t('modelSelector.metalRecommendedMemory')}
-                <Tooltip content={<MetalMemoryHelp hasRecommendation={Boolean(metalBytes && metalBytes > 0)}/>} multiline size="medium">
+                <Tooltip content={<MetalMemoryHelp/>} multiline size="medium">
                     <i className="vyact-memory-help" tabIndex={0} aria-label={t('modelSelector.metalRecommendedMemory')}>?</i>
                 </Tooltip>
             </small>
@@ -51,10 +42,29 @@ export default function ModelMemoryCapacity({hardware}: {hardware: VyactHardware
     </div>;
 }
 
-export function MaxContextHelp() {
+function ModelMetadataHelp({helpKey}: {helpKey: 'maxContextHelp' | 'layersHelp'}) {
     const {t} = useTranslation('main');
-    const explanation = t('modelSelector.maxContextHelp');
+    const explanation = t(`modelSelector.${helpKey}`);
     return <Tooltip content={explanation} multiline size="medium">
         <i className="vyact-memory-help" tabIndex={0} aria-label={explanation}>?</i>
     </Tooltip>;
+}
+
+export function ModelArchitectureDetail({architecture}: {architecture?: string}) {
+    const {t} = useTranslation('main');
+    const value = architecture?.trim();
+    const displayValue = value && !['GGUF', 'MLX'].includes(value.toUpperCase())
+        ? value : t('modelSelector.metadataUnavailable');
+    return <span>
+        <small>{t('modelSelector.architecture')}</small>
+        <OverflowTooltipText text={displayValue}/>
+    </span>;
+}
+
+export function MaxContextHelp() {
+    return <ModelMetadataHelp helpKey="maxContextHelp"/>;
+}
+
+export function LayersHelp() {
+    return <ModelMetadataHelp helpKey="layersHelp"/>;
 }

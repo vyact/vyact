@@ -126,10 +126,8 @@
 .vyact-model-files button.memory-unknown { --memory-tone: var(--border); }
 
 /* Keep the summary compact so search results retain room in the modal. */
-.vyact-model-editor .vyact-memory-details { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.vyact-model-editor .vyact-memory-details { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .vyact-model-editor .vyact-memory-details > span { padding: 10px; border: 1px solid transparent; }
-.vyact-model-editor .vyact-memory-details > .vyact-total-memory { border-color: color-mix(in srgb, var(--accent) 30%, var(--border)); background: color-mix(in srgb, var(--accent) 7%, var(--bg)); }
-.vyact-model-editor .vyact-total-memory strong { color: var(--accent); }
 .vyact-model-editor .vyact-memory-capacity > span { min-height: 62px; padding: 8px 12px; }
 .vyact-model-files button:focus-visible { outline: 2px solid var(--text-secondary); outline-offset: -3px; }
 @media (max-width: 720px) {

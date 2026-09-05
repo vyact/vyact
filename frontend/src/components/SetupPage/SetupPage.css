@@ -225,7 +225,7 @@
 .setup-memory-summary .vyact-memory-selection { flex: 0 1 auto; }
 .setup-memory-summary .vyact-memory-selection > strong:first-child { max-width: 170px; }
 .setup-memory-summary .vyact-memory-details { padding-block-start: 8px; }
-.setup-memory-summary .vyact-model-metadata { grid-template-columns: repeat(5, minmax(110px, 1fr)); }
+.setup-memory-summary .vyact-model-metadata { grid-template-columns: repeat(4, minmax(110px, 1fr)); }
 .setup-memory-summary .vyact-model-metadata > span { padding: 7px 8px; }
 
 .setup-connection-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }

@@ -501,6 +501,9 @@
     }
   },
   "modelSelector": {
+    "architecture": "Architecture",
+    "metadataUnavailable": "Unavailable",
+    "modelFileSize": "Model file size",
     "metalRecommendedMemory": "Recommended AI memory (Metal)",
     "metalRecommendedMemoryHelp": "The memory your Mac recommends for AI work. This is different from the memory currently free.",
     "memoryColorGuide": "Colors compare estimated memory usage as a guide.",
@@ -542,7 +545,7 @@
     "metadataAnalysisFailed": "Could not calculate or save the detailed model information.",
     "totalEstimatedMemory": "Total estimated RAM",
     "saveToken": "Save", "savingToken": "Saving...", "tokenSaved": "API key saved.",
-    "layersHelp": "The number of internal processing blocks the input passes through in sequence. Among models with a similar structure and width, more layers usually require more compute time and memory, but actual speed and quality also depend on layer size, total parameters, architecture, quantization, and hardware.",
+    "layersHelp": "The number of processing stages inside the model. Each stage helps analyze the input to produce a response. More layers do not necessarily mean a smarter model or better answers.",
     "huggingFaceTokenHelp": "Public models can be searched and installed without an API key. If provided, the key is used for model search, gated-model access, model inspection, and downloads, and is reused for later installations. You must first obtain access to gated models on Hugging Face.",
     "systemMemory": "System RAM", "unifiedMemory": "Unified memory", "availableMemory": "Available", "monthlyDownloads": "30-day downloads", "estimatedMemory": "Est. RAM", "installed": "Installed", "sharedOrUnknownMemory": "Shared memory or capacity unavailable", "cpuExecution": "No GPU · CPU/RAM execution", "analyzingMetadata": "Loading model details...", "parameters": "Parameters", "architecture": "Architecture", "quantization": "Quantization", "maxContext": "Max context", "layers": "Layers", "kvCache": "32K KV cache", "execution": {"unified":"Fits unified memory","gpu":"GPU execution available","hybrid":"GPU+RAM hybrid execution","cpu":"CPU/RAM execution available","insufficient":"Not enough available memory"},
     "vram": "VRAM",

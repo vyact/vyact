@@ -501,6 +501,9 @@
     }
   },
   "modelSelector": {
+    "architecture": "모델 구조",
+    "metadataUnavailable": "정보 없음",
+    "modelFileSize": "모델 파일 크기",
     "metalRecommendedMemory": "AI 권장 메모리 (Metal)",
     "metalRecommendedMemoryHelp": "Mac이 AI 작업에 사용하도록 권장하는 메모리 양입니다. 현재 비어 있는 메모리와는 다릅니다.",
     "memoryColorGuide": "색상은 예상 메모리 사용량을 비교한 참고 표시입니다.",
@@ -542,7 +545,7 @@
     "metadataAnalysisFailed": "상세 정보를 계산하거나 저장하지 못했습니다.",
     "totalEstimatedMemory": "총 예상 RAM",
     "saveToken": "저장", "savingToken": "저장 중...", "tokenSaved": "API Key를 저장했습니다.",
-    "layersHelp": "입력이 순서대로 통과하는 모델 내부 처리 블록 수입니다. 같은 구조와 크기의 모델이라면 많을수록 보통 연산 시간과 메모리가 늘지만, 실제 속도와 품질은 각 레이어의 크기·전체 파라미터·모델 구조·양자화·하드웨어에도 좌우됩니다.",
+    "layersHelp": "모델이 입력된 내용을 처리하는 단계의 수입니다. 각 단계를 거치며 정보를 분석해 답변을 만듭니다. 숫자가 크다고 반드시 더 똑똑하거나 답변이 좋은 것은 아닙니다.",
     "huggingFaceTokenHelp": "공개 모델은 API Key 없이도 검색하고 설치할 수 있습니다. API Key를 입력하면 모델 검색, 제한된 모델 접근, 모델 정보 조회 및 다운로드에 사용되며 이후 설치에도 재사용됩니다. 제한된 모델은 Hugging Face에서 먼저 접근 권한을 받아야 합니다.",
     "systemMemory": "시스템 RAM", "unifiedMemory": "통합 메모리", "availableMemory": "사용 가능", "monthlyDownloads": "최근 30일 다운로드", "estimatedMemory": "예상 RAM", "installed": "설치됨", "sharedOrUnknownMemory": "공유 메모리 또는 용량 확인 불가", "cpuExecution": "GPU 없음 · CPU/RAM 실행", "analyzingMetadata": "모델 상세 정보 조회 중...", "parameters": "파라미터", "architecture": "아키텍처", "quantization": "양자화", "maxContext": "최대 컨텍스트", "layers": "레이어", "kvCache": "32K KV 캐시", "execution": {"unified":"통합 메모리 실행 가능","gpu":"GPU 실행 가능","hybrid":"GPU+RAM 혼합 실행","cpu":"CPU/RAM 실행 가능","insufficient":"현재 사용 가능 메모리 부족"},
     "vram": "VRAM",

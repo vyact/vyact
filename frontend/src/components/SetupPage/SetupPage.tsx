@@ -1,4 +1,4 @@
-import ModelMemoryCapacity, {MaxContextHelp} from '../common/ModelMemoryCapacity/ModelMemoryCapacity';
+import ModelMemoryCapacity, {LayersHelp, MaxContextHelp, ModelArchitectureDetail} from '../common/ModelMemoryCapacity/ModelMemoryCapacity';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {Check, Eye, EyeOff, ExternalLink, LoaderCircle, Plus, Search} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -16,11 +16,8 @@ import type {GgufModelMetadata} from '../../utils/ggufMetadata';
 import {
     formatCompactDownloads,
     formatModelBytes,
-    getModelFileKey,
-    getModelMemoryTone,
     getModelQuantization,
     getSelectableModelFiles,
-    resolveModelMemoryBytes,
 } from '../../utils/vyactModelDisplay';
 import {loadSearchModelMetadata} from '../../utils/modelMetadataLoader';
 import './SetupPage.css';
@@ -485,11 +482,10 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
                                             <ModelMemoryCapacity hardware={vyactHardware}/>
                                             {selectedHubModelFile && <div className="vyact-memory-selection"><OverflowTooltipText text={selectedFileDisplayName || ''}/></div>}
                                             {selectedMetadata && <div className="vyact-model-metadata vyact-memory-details">
-                                                <span><small><Tooltip content={t('main:modelSelector.layersHelp')} multiline size="medium"><i className="vyact-memory-help" tabIndex={0}>?</i></Tooltip>{t('main:modelSelector.layers')}</small><strong>{selectedMetadata.blockCount}</strong></span>
+                                                <ModelArchitectureDetail architecture={selectedMetadata.architecture}/>
+                                                <span><small><LayersHelp/>{t('main:modelSelector.layers')}</small><strong>{selectedMetadata.blockCount}</strong></span>
                                                 <span><small><MaxContextHelp/>{t('main:modelSelector.maxContext')}</small><strong>{formatContextLength(selectedMetadata.contextLength)}</strong></span>
-                                                <span><small>{t('main:modelSelector.modelMemory')}</small><strong>{formatModelBytes(Math.max(0, selectedMetadata.estimatedMemoryBytes - selectedMetadata.kvCacheBytes))}</strong></span>
-                                                <span><small><Tooltip content={t('main:modelSelector.conversationMemoryHelp')} multiline size="medium"><i className="vyact-memory-help" tabIndex={0}>?</i></Tooltip>{t('main:modelSelector.conversationMemory')}</small><strong>{formatModelBytes(selectedMetadata.kvCacheBytes)}</strong></span>
-                                                <span className="vyact-total-memory"><small>{t('main:modelSelector.totalEstimatedMemory')}</small><strong>{formatModelBytes(selectedMetadata.estimatedMemoryBytes)}</strong></span>
+                                                <span><small>{t('main:modelSelector.modelFileSize')}</small><strong>{formatModelBytes(selectedHubModelFile?.fileSize || 0)}</strong></span>
                                             </div>}
                                         </div>
                                     )}
@@ -508,16 +504,11 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
                                             <div className="vyact-model-files">{selectableFiles.map(file => {
                                                 const modelPath = model.runtime === 'mlx' ? `mlx/${model.id}` : `${model.id}/${file}`;
                                                 const fileSize = model.file_sizes?.[file] || 0;
-                                                const estimatedMemory = resolveModelMemoryBytes(
-                                                    model,
-                                                    file,
-                                                    metadataByFile[getModelFileKey(model, file)]?.estimatedMemoryBytes,
-                                                );
                                                 const supportsMtp = model.mtp_supported_files?.includes(file) || mtpSupportedModels.includes(`${model.id}/${file}`);
                                                 const supportsDFlash2 = model.dflash2_supported_files?.includes(file);
                                                 const displayName = model.runtime === 'mlx' ? model.id.split('/').pop() : file;
                                                 const quantization = getModelQuantization(model, file);
-                                                return <button className={`${selectedModel === modelPath ? 'is-selected ' : ''}memory-${getModelMemoryTone(estimatedMemory, vyactHardware)}`} key={file} type="button" onClick={event => { event.stopPropagation(); selectHubModelFile(model, file); }}><span className="vyact-model-file-name">{model.runtime === 'mlx' && <span className="vyact-mtp-badge">{t('main:modelSelector.mlxOnly')}</span>}{supportsMtp && <span className="vyact-mtp-badge">MTP</span>}{supportsDFlash2 && <span className="vyact-mtp-badge">DFlash2</span>}<span>{displayName}</span></span>{estimatedMemory > 0 && <small className="vyact-model-file-meta">{fileSize > 0 && <>{formatModelBytes(fileSize)} · </>}{t('main:modelSelector.estimatedMemory')} ≈ {formatModelBytes(estimatedMemory)}{quantization && <span className="vyact-mtp-badge">{quantization}</span>}</small>}<span className="vyact-model-file-status">{selectedModel === modelPath && <Check size={15}/>}</span></button>;
+                                                return <button className={`${selectedModel === modelPath ? 'is-selected ' : ''}`} key={file} type="button" onClick={event => { event.stopPropagation(); selectHubModelFile(model, file); }}><span className="vyact-model-file-name">{model.runtime === 'mlx' && <span className="vyact-mtp-badge">{t('main:modelSelector.mlxOnly')}</span>}{supportsMtp && <span className="vyact-mtp-badge">MTP</span>}{supportsDFlash2 && <span className="vyact-mtp-badge">DFlash2</span>}<span>{displayName}</span></span>{fileSize > 0 && <small className="vyact-model-file-meta">{t('main:modelSelector.modelFileSize')} · {formatModelBytes(fileSize)}{quantization && <span className="vyact-mtp-badge">{quantization}</span>}</small>}<span className="vyact-model-file-status">{selectedModel === modelPath && <Check size={15}/>}</span></button>;
                                             })}</div>
                                         </article>;
                                     })}

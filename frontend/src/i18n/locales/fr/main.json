@@ -501,6 +501,9 @@
     }
   },
   "modelSelector": {
+    "architecture": "Architecture",
+    "metadataUnavailable": "Indisponible",
+    "modelFileSize": "Taille du fichier du modèle",
     "metalRecommendedMemory": "Mémoire conseillée pour l’IA (Metal)",
     "metalRecommendedMemoryHelp": "C’est la mémoire conseillée par votre Mac pour les tâches d’IA. Elle diffère de la mémoire libre actuellement.",
     "memoryColorGuide": "Les couleurs comparent l’usage estimé de mémoire à titre indicatif.",
@@ -542,7 +545,7 @@
     "metadataAnalysisFailed": "Impossible de calculer ou d’enregistrer les informations détaillées du modèle.",
     "totalEstimatedMemory": "RAM totale estimée",
     "saveToken": "Enregistrer", "savingToken": "Enregistrement...", "tokenSaved": "Clé API enregistrée.",
-    "layersHelp": "Nombre de blocs de traitement internes que l’entrée traverse successivement. À structure et largeur comparables, davantage de couches demandent généralement plus de calcul et de mémoire, mais la vitesse et la qualité dépendent aussi de la taille des couches, du nombre total de paramètres, de l’architecture, de la quantification et du matériel.",
+    "layersHelp": "Le nombre d’étapes de traitement dans le modèle. Chaque étape contribue à analyser les données reçues pour produire une réponse. Plus de couches ne signifient pas forcément un modèle plus intelligent ou de meilleures réponses.",
     "huggingFaceTokenHelp": "Les modèles publics peuvent être recherchés et installés sans API Key. Si elle est renseignée, la clé est utilisée pour la recherche, l’accès aux modèles restreints, la consultation des informations et les téléchargements, puis réutilisée pour les installations suivantes. Vous devez d’abord obtenir l’accès aux modèles restreints sur Hugging Face.",
     "installed": "Installé",
     "systemMemory": "RAM système", "unifiedMemory": "Mémoire unifiée", "availableMemory": "Disponible", "monthlyDownloads": "Téléchargements sur 30 jours", "estimatedMemory": "RAM estimée", "sharedOrUnknownMemory": "Mémoire partagée ou capacité inconnue", "cpuExecution": "Pas de GPU · exécution CPU/RAM", "analyzingMetadata": "Chargement des détails du modèle...", "parameters": "Paramètres", "architecture": "Architecture", "quantization": "Quantification", "maxContext": "Contexte maximal", "layers": "Couches", "kvCache": "Cache KV 32K", "execution": {"unified":"Compatible avec la mémoire unifiée","gpu":"Exécution GPU possible","hybrid":"Exécution hybride GPU+RAM","cpu":"Exécution CPU/RAM possible","insufficient":"Mémoire disponible insuffisante"},

@@ -501,6 +501,9 @@
     }
   },
   "modelSelector": {
+    "architecture": "模型架构",
+    "metadataUnavailable": "暂无信息",
+    "modelFileSize": "模型文件大小",
     "metalRecommendedMemory": "AI 建议内存（Metal）",
     "metalRecommendedMemoryHelp": "这是 Mac 建议用于 AI 任务的内存量，与当前空闲内存不同。",
     "memoryColorGuide": "颜色用于比较预计内存用量，仅供参考。",
@@ -542,7 +545,7 @@
     "metadataAnalysisFailed": "无法计算或保存模型详细信息。",
     "totalEstimatedMemory": "预计总内存",
     "saveToken": "保存", "savingToken": "正在保存...", "tokenSaved": "API Key 已保存。",
-    "layersHelp": "输入按顺序经过的内部处理模块数量。对于结构和宽度相近的模型，层数越多通常需要更多计算时间和内存，但实际速度和质量还取决于每层大小、总参数量、模型架构、量化方式和硬件。",
+    "layersHelp": "模型处理输入内容的阶段数量。模型通过各个阶段分析信息并生成回答。层数更多并不一定代表模型更聪明或回答更好。",
     "huggingFaceTokenHelp": "公开模型无需API Key也可搜索和安装。输入API Key后，它将用于模型搜索、受限模型访问、模型信息检查和下载，并在后续安装中重复使用。受限模型需要先在Hugging Face上获得访问权限。",
     "installed": "已安装",
     "systemMemory": "系统内存", "unifiedMemory": "统一内存", "availableMemory": "可用", "monthlyDownloads": "近30天下载", "estimatedMemory": "预计内存", "sharedOrUnknownMemory": "共享内存或容量未知", "cpuExecution": "无GPU · 使用CPU/内存", "analyzingMetadata": "正在加载模型详细信息...", "parameters": "参数", "architecture": "架构", "quantization": "量化", "maxContext": "最大上下文", "layers": "层数", "kvCache": "32K KV缓存", "execution": {"unified":"可使用统一内存运行","gpu":"可使用GPU运行","hybrid":"GPU+内存混合运行","cpu":"可使用CPU/内存运行","insufficient":"当前可用内存不足"},

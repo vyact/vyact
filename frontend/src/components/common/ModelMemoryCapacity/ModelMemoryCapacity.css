@@ -23,3 +23,13 @@
 .vyact-memory-legend-dot--comfortable { background: var(--success); }
 .vyact-memory-legend-dot--tight { background: var(--warn); }
 .vyact-memory-legend-dot--over { background: var(--danger); }
+
+.vyact-total-memory.memory-comfortable { --memory-tone: var(--success); }
+.vyact-total-memory.memory-tight { --memory-tone: var(--warn); }
+.vyact-total-memory.memory-over { --memory-tone: var(--danger); }
+.vyact-total-memory.memory-unknown { --memory-tone: var(--muted); }
+.vyact-memory-summary .vyact-memory-details > .vyact-total-memory {
+    border: 1px solid color-mix(in srgb, var(--memory-tone) 30%, var(--border));
+    background: color-mix(in srgb, var(--memory-tone) 7%, var(--bg));
+}
+.vyact-memory-summary .vyact-total-memory strong { color: var(--memory-tone); }

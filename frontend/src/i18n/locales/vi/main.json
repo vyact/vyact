@@ -501,6 +501,9 @@
     }
   },
   "modelSelector": {
+    "architecture": "Kiến trúc mô hình",
+    "metadataUnavailable": "Không có thông tin",
+    "modelFileSize": "Kích thước tệp mô hình",
     "metalRecommendedMemory": "Bộ nhớ khuyến nghị cho AI (Metal)",
     "metalRecommendedMemoryHelp": "Đây là lượng bộ nhớ Mac khuyến nghị cho tác vụ AI, khác với bộ nhớ đang trống.",
     "memoryColorGuide": "Màu so sánh mức dùng bộ nhớ ước tính để tham khảo.",
@@ -542,7 +545,7 @@
     "metadataAnalysisFailed": "Không thể tính hoặc lưu thông tin chi tiết của mô hình.",
     "totalEstimatedMemory": "Tổng RAM ước tính",
     "saveToken": "Lưu", "savingToken": "Đang lưu...", "tokenSaved": "Đã lưu API Key.",
-    "layersHelp": "Số khối xử lý nội bộ mà đầu vào đi qua theo trình tự. Với các mô hình có cấu trúc và độ rộng tương tự, nhiều lớp hơn thường cần nhiều thời gian tính toán và bộ nhớ hơn, nhưng tốc độ và chất lượng thực tế còn phụ thuộc vào kích thước lớp, tổng số tham số, kiến trúc, lượng tử hóa và phần cứng.",
+    "layersHelp": "Số bước xử lý bên trong mô hình. Mỗi bước giúp phân tích nội dung đầu vào để tạo câu trả lời. Nhiều lớp hơn không nhất thiết có nghĩa là mô hình thông minh hơn hay trả lời tốt hơn.",
     "huggingFaceTokenHelp": "Có thể tìm kiếm và cài đặt mô hình công khai mà không cần API Key. Khi được nhập, khóa sẽ dùng để tìm kiếm mô hình, truy cập mô hình hạn chế, xem thông tin mô hình và tải xuống, đồng thời được dùng lại cho các lần cài đặt sau. Trước tiên, bạn phải được cấp quyền truy cập mô hình hạn chế trên Hugging Face.",
     "installed": "Đã cài đặt",
     "systemMemory": "RAM hệ thống", "unifiedMemory": "Bộ nhớ hợp nhất", "availableMemory": "Khả dụng", "monthlyDownloads": "Lượt tải trong 30 ngày", "estimatedMemory": "RAM ước tính", "sharedOrUnknownMemory": "Bộ nhớ dùng chung hoặc không rõ dung lượng", "cpuExecution": "Không có GPU · chạy CPU/RAM", "analyzingMetadata": "Đang tải chi tiết mô hình...", "parameters": "Tham số", "architecture": "Kiến trúc", "quantization": "Lượng tử hóa", "maxContext": "Ngữ cảnh tối đa", "layers": "Lớp", "kvCache": "Bộ nhớ đệm KV 32K", "execution": {"unified":"Có thể chạy bằng bộ nhớ hợp nhất","gpu":"Có thể chạy bằng GPU","hybrid":"Chạy kết hợp GPU+RAM","cpu":"Có thể chạy bằng CPU/RAM","insufficient":"Không đủ bộ nhớ khả dụng"},

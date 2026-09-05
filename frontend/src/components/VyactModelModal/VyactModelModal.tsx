@@ -1,5 +1,5 @@
 import {MODEL_ESTIMATE_CONTEXT} from '../../constants/modelMemory';
-import ModelMemoryCapacity, {MaxContextHelp} from '../common/ModelMemoryCapacity/ModelMemoryCapacity';
+import ModelMemoryCapacity, {LayersHelp, MaxContextHelp, ModelArchitectureDetail} from '../common/ModelMemoryCapacity/ModelMemoryCapacity';
 import ModelCapabilityIcons from '../common/ModelCapabilityIcons/ModelCapabilityIcons';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {Calculator, Check, Eye, EyeOff, KeyRound, LoaderCircle, Search, Sparkles} from 'lucide-react';
@@ -9,12 +9,10 @@ import {inspectRemoteGguf, type GgufModelMetadata} from '../../utils/ggufMetadat
 import {
     formatCompactDownloads,
     formatModelBytes,
-    getModelMemoryTone,
     getModelPublisher,
     getModelQuantization,
     getOptimizedModelContext,
     getSelectableModelFiles,
-    resolveModelMemoryBytes,
 } from '../../utils/vyactModelDisplay';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import ModelSettingsModal from '../ModelSettingsModal/ModelSettingsModal';
@@ -479,11 +477,10 @@ export default function VyactModelModal({onClose, onSelected, activeModelPath}: 
                                 )}
                                 {selectedFile && selectedMetadata && (
                                     <div className="vyact-model-metadata vyact-memory-details">
-                                        <span><small>{t('modelSelector.layers')}</small><strong>{selectedMetadata.blockCount}</strong></span>
+                                                <ModelArchitectureDetail architecture={selectedMetadata.architecture}/>
+                                        <span><small><LayersHelp/>{t('modelSelector.layers')}</small><strong>{selectedMetadata.blockCount}</strong></span>
                                         <span><small><MaxContextHelp/>{t('modelSelector.maxContext')}</small><strong>{selectedMetadata.contextLength >= 1024 ? `${Math.round(selectedMetadata.contextLength / 1024)}K` : selectedMetadata.contextLength}</strong></span>
-                                        <span><small>{t('modelSelector.modelMemory')}</small><strong>{formatBytes(Math.max(0, selectedMetadata.estimatedMemoryBytes - selectedMetadata.kvCacheBytes))}</strong></span>
-                                        <span><small>{t('modelSelector.conversationMemory')}</small><strong>{formatBytes(selectedMetadata.kvCacheBytes)}</strong></span>
-                                        <span className="vyact-total-memory"><small>{t('modelSelector.totalEstimatedMemory')}</small><strong>{formatBytes(selectedMetadata.estimatedMemoryBytes)}</strong></span>
+                                        <span><small>{t('modelSelector.modelFileSize')}</small><strong>{formatBytes(selectedFile.fileSize)}</strong></span>
                                     </div>
                                 )}
                             </div>
@@ -507,11 +504,6 @@ export default function VyactModelModal({onClose, onSelected, activeModelPath}: 
                                     {selectableFiles.map(filename => {
                                         const isSelected = selectedFile?.repository === model.id && selectedFile.filename === filename;
                                         const fileSize = model.file_sizes?.[filename] || 0;
-                                        const estimatedMemory = resolveModelMemoryBytes(
-                                            model,
-                                            filename,
-                                        );
-                                        const memoryTone = getModelMemoryTone(estimatedMemory, hardware);
                                         const isInstalled = installedModels.includes(
                                             model.runtime === 'mlx' ? `mlx/${model.id}` : `${model.id}/${filename}`,
                                         );
@@ -524,7 +516,7 @@ export default function VyactModelModal({onClose, onSelected, activeModelPath}: 
                                         const quantization = getModelQuantization(model, filename);
                                         const displayName = model.runtime === 'mlx' ? model.id.split('/').pop() || model.id : filename;
                                         return (
-                                            <button type="button" aria-pressed={isSelected} className={`${isSelected ? 'is-selected ' : ''}memory-${memoryTone}`} key={filename} onClick={() => void selectModelFile(model, filename, fileSize)} disabled={busy}>
+                                            <button type="button" aria-pressed={isSelected} className={`${isSelected ? 'is-selected ' : ''}`} key={filename} onClick={() => void selectModelFile(model, filename, fileSize)} disabled={busy}>
                                                 <span className="vyact-model-file-name">
                                                     {model.runtime === 'mlx' && <span className="vyact-mtp-badge">{t('modelSelector.mlxOnly')}</span>}
                                                     {supportsMtp && <span className="vyact-mtp-badge">MTP</span>}
@@ -532,10 +524,10 @@ export default function VyactModelModal({onClose, onSelected, activeModelPath}: 
                                                     <ModelCapabilityIcons image={visionSupportedModels.includes(modelPath) || modelDetailsCache[modelDetailsKey(model.runtime, model.id, filename, model.revision)]?.metadata.modalities?.includes('image')} audio={audioSupportedModels.includes(modelPath) || modelDetailsCache[modelDetailsKey(model.runtime, model.id, filename, model.revision)]?.metadata.modalities?.includes('audio')}/>
                                                     <OverflowTooltipText text={displayName}/>
                                                 </span>
-                                                {(showsPublisher || estimatedMemory > 0) && <small className="vyact-model-file-meta">
+                                                {(showsPublisher || fileSize > 0) && <small className="vyact-model-file-meta">
                                                     {showsPublisher && <span className="vyact-model-publisher">@{publisher}</span>}
-                                                    {showsPublisher && estimatedMemory > 0 && <span aria-hidden="true">·</span>}
-                                                    {estimatedMemory > 0 && <>{t('modelSelector.ram')} ≈ {formatBytes(estimatedMemory)}</>}
+                                                    {showsPublisher && fileSize > 0 && <span aria-hidden="true">·</span>}
+                                                    {fileSize > 0 && <>{t('modelSelector.modelFileSize')} · {formatBytes(fileSize)}</>}
                                                 </small>}
                                                 <span className="vyact-model-file-status">
                                                     <span className="vyact-model-file-status-top">

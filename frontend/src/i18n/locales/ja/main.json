@@ -501,6 +501,9 @@
     }
   },
   "modelSelector": {
+    "architecture": "モデル構造",
+    "metadataUnavailable": "情報なし",
+    "modelFileSize": "モデルファイルサイズ",
     "metalRecommendedMemory": "AI推奨メモリ（Metal）",
     "metalRecommendedMemoryHelp": "MacがAI処理に使うことを推奨するメモリ量です。現在の空きメモリとは異なります。",
     "memoryColorGuide": "色は推定メモリ使用量を比較した目安です。",
@@ -542,7 +545,7 @@
     "metadataAnalysisFailed": "モデルの詳細情報を計算または保存できませんでした。",
     "totalEstimatedMemory": "合計推定RAM",
     "saveToken": "保存", "savingToken": "保存中...", "tokenSaved": "API Keyを保存しました。",
-    "layersHelp": "入力が順番に通過する内部処理ブロックの数です。構造と幅が同程度のモデルでは、レイヤーが多いほど通常は計算時間とメモリが増えますが、実際の速度と品質は各レイヤーの大きさ、総パラメータ数、構造、量子化、ハードウェアにも左右されます。",
+    "layersHelp": "モデルが入力内容を処理する段階の数です。各段階で情報を分析し、回答を作ります。数が多いほど必ず賢くなったり、回答が良くなったりするわけではありません。",
     "huggingFaceTokenHelp": "公開モデルはAPI Keyなしでも検索・インストールできます。API Keyを入力すると、モデル検索、制限付きモデルへのアクセス、モデル情報の確認、ダウンロードに使用され、以降のインストールでも再利用されます。制限付きモデルは、事前にHugging Faceでアクセス権を取得する必要があります。",
     "installed": "インストール済み",
     "systemMemory": "システムRAM", "unifiedMemory": "ユニファイドメモリ", "availableMemory": "使用可能", "monthlyDownloads": "過去30日のダウンロード", "estimatedMemory": "推定RAM", "sharedOrUnknownMemory": "共有メモリまたは容量不明", "cpuExecution": "GPUなし · CPU/RAM実行", "analyzingMetadata": "モデルの詳細情報を取得中...", "parameters": "パラメータ", "architecture": "アーキテクチャ", "quantization": "量子化", "maxContext": "最大コンテキスト", "layers": "レイヤー", "kvCache": "32K KVキャッシュ", "execution": {"unified":"ユニファイドメモリで実行可能","gpu":"GPUで実行可能","hybrid":"GPU+RAMハイブリッド実行","cpu":"CPU/RAMで実行可能","insufficient":"使用可能なメモリが不足しています"},
