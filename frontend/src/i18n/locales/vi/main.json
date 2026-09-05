@@ -511,7 +511,7 @@
     "memoryColorFallback": "Không lấy được mức khuyến nghị nên màu dựa trên tổng bộ nhớ.",
     "metalRecommendationNote": "Dung lượng khuyến nghị cho tác vụ AI",
     "memoryUnavailable": "Không truy xuất được",
-    "memoryEstimateContext": "Ước tính với {{count}} token ngữ cảnh. Mức dùng thực tế tùy thuộc mô hình và tác vụ.",
+    "maxContextHelp": "Độ dài tối đa của hội thoại và tài liệu mà mô hình có thể xử lý cùng lúc. Độ dài sử dụng được có thể thay đổi theo cài đặt và bộ nhớ còn trống.",
 
     "ram": "RAM",
     "cancel": "Hủy", "modelActions": "Thao tác cho {{model}}", "deleteModel": "Xóa mô hình {{model}}", "deleteModelConfirm": "Xóa mô hình {{model}}?", "deleteModelDescription": "Các tệp mô hình đã tải xuống sẽ bị xóa khỏi thiết bị này.", "deletingModel": "Đang xóa...", "deleteModelFailed": "Không thể xóa mô hình",

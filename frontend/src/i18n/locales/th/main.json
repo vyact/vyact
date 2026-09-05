@@ -511,7 +511,7 @@
     "memoryColorFallback": "อ่านค่าที่แนะนำไม่ได้ จึงใช้หน่วยความจำทั้งหมดเป็นเกณฑ์แสดงสี",
     "metalRecommendationNote": "ปริมาณที่แนะนำสำหรับงาน AI",
     "memoryUnavailable": "เรียกดูไม่ได้",
-    "memoryEstimateContext": "ประมาณการที่บริบท {{count}} โทเค็น การใช้งานจริงขึ้นอยู่กับโมเดลและงาน",
+    "maxContextHelp": "ความยาวสูงสุดของบทสนทนาและเนื้อหาที่โมเดลประมวลผลได้ในครั้งเดียว ความยาวที่ใช้ได้จริงอาจแตกต่างตามการตั้งค่าและหน่วยความจำที่ว่างอยู่",
 
     "ram": "RAM",
     "cancel": "ยกเลิก", "modelActions": "การทำงานสำหรับ {{model}}", "deleteModel": "ลบโมเดล {{model}}", "deleteModelConfirm": "ลบโมเดล {{model}} หรือไม่", "deleteModelDescription": "ไฟล์โมเดลที่ดาวน์โหลดจะถูกลบออกจากอุปกรณ์นี้", "deletingModel": "กำลังลบ...", "deleteModelFailed": "ลบโมเดลไม่สำเร็จ",

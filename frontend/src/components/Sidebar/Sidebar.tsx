@@ -977,7 +977,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 }}
             /></React.Suspense>}
         </aside>
-            {isVyactModalOpen && <React.Suspense fallback={null}><VyactModelModal onClose={() => setIsVyactModalOpen(false)} onSelected={async () => { await loadCurrentProvider(); await onProviderChange(); }}/></React.Suspense>}
+            {isVyactModalOpen && <React.Suspense fallback={null}><VyactModelModal activeModelPath={currentProvider === 'vyact' ? selectedModel : undefined} onClose={() => setIsVyactModalOpen(false)} onSelected={async () => { await loadCurrentProvider(); await onProviderChange(); }}/></React.Suspense>}
             {modelSettingsPath && <React.Suspense fallback={null}><ModelSettingsModal modelPath={modelSettingsPath} runtime={modelSettingsPath.startsWith('mlx/') ? 'mlx' : 'gguf'} repository={modelSettingsPath.startsWith('mlx/') ? modelSettingsPath.slice(4) : undefined} activateOnApply={modelSettingsPath === selectedModel} mtpSupported={mtpSupported.includes(modelSettingsPath)} dflash2Supported={dflash2Supported.includes(modelSettingsPath)} onClose={() => setModelSettingsPath(null)} onApplied={async () => {await loadCurrentProvider(); await onProviderChange();}}/></React.Suspense>}
             {isSettingsOpen && <React.Suspense fallback={null}>
                 <SettingsModal isOpen onClose={() => setIsSettingsOpen(false)} initialTab={openSettingsTab}/>

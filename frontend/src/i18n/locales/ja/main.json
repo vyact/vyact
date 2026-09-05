@@ -511,7 +511,7 @@
     "memoryColorFallback": "推奨量を取得できないため、メモリの総容量を基準に色を表示しています。",
     "metalRecommendationNote": "AI処理に推奨される容量",
     "memoryUnavailable": "取得できません",
-    "memoryEstimateContext": "コンテキスト{{count}}トークンでの推定値です。実際の使用量はモデルと処理によって異なります。",
+    "maxContextHelp": "モデルが一度に処理できる会話や資料の最大の長さです。実際に使える長さは設定や空きメモリによって変わる場合があります。",
 
     "ram": "RAM",
     "cancel": "キャンセル", "modelActions": "{{model}} の操作", "deleteModel": "{{model}} モデルを削除", "deleteModelConfirm": "{{model}} モデルを削除しますか？", "deleteModelDescription": "ダウンロードしたモデルファイルがこのデバイスから削除されます。", "deletingModel": "削除中...", "deleteModelFailed": "モデルの削除に失敗しました",

@@ -511,7 +511,7 @@
     "memoryColorFallback": "권장량을 확인할 수 없어 전체 메모리를 기준으로 색상을 표시합니다.",
     "metalRecommendationNote": "AI 작업을 위한 권장량",
     "memoryUnavailable": "조회 불가",
-    "memoryEstimateContext": "컨텍스트 {{count}}토큰 기준 추정치입니다. 실제 사용량은 모델과 작업에 따라 달라집니다.",
+    "maxContextHelp": "모델이 한 번에 처리할 수 있는 대화와 자료의 최대 길이입니다. 실제 사용 가능한 길이는 설정과 메모리 여유에 따라 달라질 수 있습니다.",
 
     "ram": "RAM",
     "cancel": "취소", "modelActions": "{{model}} 모델 작업", "deleteModel": "{{model}} 모델 삭제", "deleteModelConfirm": "{{model}} 모델을 삭제할까요?", "deleteModelDescription": "다운로드한 모델 파일이 기기에서 삭제됩니다.", "deletingModel": "삭제 중...", "deleteModelFailed": "모델 삭제 실패",

@@ -1,6 +1,6 @@
 import {describe, expect, it, vi} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
-import ModelMemoryCapacity, {MemoryEstimateNote} from './ModelMemoryCapacity';
+import ModelMemoryCapacity, {MaxContextHelp} from './ModelMemoryCapacity';
 import type {VyactHardwareInfo} from '../../../services/api';
 
 vi.mock('react-i18next', () => ({useTranslation: () => ({t: (key: string, options?: {count?: number}) => `${key}${options?.count === undefined ? '' : `:${options.count}`}`})}));
@@ -25,8 +25,9 @@ describe('ModelMemoryCapacity', () => {
         const html = renderToStaticMarkup(<ModelMemoryCapacity hardware={{...hardware, platform: 'linux', apple_silicon: false, memory_mode: 'system'}}/>);
         expect(html).not.toContain('metalRecommendedMemory');
     });
-    it('labels the context actually used for the estimate', () => {
-        expect(renderToStaticMarkup(<MemoryEstimateNote contextLength={131072}/>)).toContain(':32768');
-        expect(renderToStaticMarkup(<MemoryEstimateNote contextLength={8192}/>)).toContain(':8192');
+    it('provides a keyboard-accessible context explanation without an estimate count', () => {
+        const html = renderToStaticMarkup(<MaxContextHelp/>);
+        expect(html).toContain('tabindex="0"');
+        expect(html).toContain('aria-label="modelSelector.maxContextHelp"');
     });
 });

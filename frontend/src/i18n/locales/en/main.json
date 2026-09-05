@@ -511,7 +511,7 @@
     "memoryColorFallback": "The recommendation is unavailable, so colors use total memory.",
     "metalRecommendationNote": "Recommended amount for AI work",
     "memoryUnavailable": "Unavailable",
-    "memoryEstimateContext": "Estimate at {{count}} context tokens. Actual usage varies with the model and workload.",
+    "maxContextHelp": "The maximum length of conversation and material the model can process at once. The usable length may vary with settings and available memory.",
 
     "ram": "RAM",
     "cancel": "Cancel", "modelActions": "{{model}} actions", "deleteModel": "Delete {{model}} model", "deleteModelConfirm": "Delete the {{model}} model?", "deleteModelDescription": "The downloaded model files will be removed from this device.", "deletingModel": "Deleting...", "deleteModelFailed": "Model deletion failed",

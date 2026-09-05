@@ -2,7 +2,6 @@ import {useTranslation} from 'react-i18next';
 import type {VyactHardwareInfo} from '../../../services/api';
 import {formatModelBytes} from '../../../utils/vyactModelDisplay';
 import {Tooltip} from '../Tooltip/Tooltip';
-import {MODEL_ESTIMATE_CONTEXT} from '../../../constants/modelMemory';
 import './ModelMemoryCapacity.css';
 
 function MetalMemoryHelp({hasRecommendation}: {hasRecommendation: boolean}) {
@@ -52,9 +51,10 @@ export default function ModelMemoryCapacity({hardware}: {hardware: VyactHardware
     </div>;
 }
 
-export function MemoryEstimateNote({contextLength}: {contextLength: number}) {
+export function MaxContextHelp() {
     const {t} = useTranslation('main');
-    return <p className="vyact-estimate-context">{t('modelSelector.memoryEstimateContext', {
-        count: Math.min(contextLength || MODEL_ESTIMATE_CONTEXT, MODEL_ESTIMATE_CONTEXT),
-    })}</p>;
+    const explanation = t('modelSelector.maxContextHelp');
+    return <Tooltip content={explanation} multiline size="medium">
+        <i className="vyact-memory-help" tabIndex={0} aria-label={explanation}>?</i>
+    </Tooltip>;
 }

@@ -14,7 +14,6 @@
     font-weight: 650;
 }
 .vyact-metal-memory > span { color: var(--muted); font-size: 11px; line-height: 1.4; }
-.vyact-estimate-context { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
 
 .vyact-metal-help { display: grid; gap: 10px; white-space: normal; }
 .vyact-metal-help p { margin: 0; }

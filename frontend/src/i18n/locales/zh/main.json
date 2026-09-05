@@ -511,7 +511,7 @@
     "memoryColorFallback": "无法获取建议值，颜色以总内存为基准。",
     "metalRecommendationNote": "AI 任务的建议内存量",
     "memoryUnavailable": "无法获取",
-    "memoryEstimateContext": "按 {{count}} 个上下文 token 估算。实际用量因模型和任务而异。",
+    "maxContextHelp": "模型一次能处理的对话和资料的最大长度。实际可用长度可能因设置和可用内存而异。",
 
     "ram": "内存",
     "cancel": "取消", "modelActions": "{{model}} 操作", "deleteModel": "删除 {{model}} 模型", "deleteModelConfirm": "删除 {{model}} 模型？", "deleteModelDescription": "已下载的模型文件将从此设备中删除。", "deletingModel": "正在删除...", "deleteModelFailed": "模型删除失败",

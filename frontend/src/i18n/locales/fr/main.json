@@ -511,7 +511,7 @@
     "memoryColorFallback": "La recommandation est indisponible ; les couleurs se basent sur la mémoire totale.",
     "metalRecommendationNote": "Quantité conseillée pour les tâches d’IA",
     "memoryUnavailable": "Indisponible",
-    "memoryEstimateContext": "Estimation pour {{count}} tokens de contexte. L’utilisation réelle varie selon le modèle et la tâche.",
+    "maxContextHelp": "La longueur maximale de conversation et de contenu que le modèle peut traiter à la fois. La longueur utilisable peut varier selon les réglages et la mémoire disponible.",
 
     "ram": "RAM",
     "cancel": "Annuler", "modelActions": "Actions de {{model}}", "deleteModel": "Supprimer le modèle {{model}}", "deleteModelConfirm": "Supprimer le modèle {{model}} ?", "deleteModelDescription": "Les fichiers téléchargés du modèle seront supprimés de cet appareil.", "deletingModel": "Suppression...", "deleteModelFailed": "Échec de la suppression du modèle",
