@@ -1,3 +1,4 @@
+import {notifyWorkspaceError} from '../../utils/workspaceError';
 import {useEffect, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import WorkspaceMailSettingsFields from './WorkspaceMailSettingsFields';
@@ -19,7 +20,7 @@ export default function MicrosoftWorkspaceSection() {
         void microsoftRequest('/status').then(value => {
             if (!mounted.current) return;
             setStatus(value); setConfig({...EMPTY_CONFIG, prompt: t('microsoft.defaultPrompt'), ...value.config});
-        }).catch(() => setError(t('mcp.saveFailed')));
+        }).catch(error => { if (mounted.current) setError(notifyWorkspaceError(error)); });
         return () => { mounted.current = false; };
     }, []);
     const persist = async (next: MicrosoftConfig) => {
@@ -32,7 +33,7 @@ export default function MicrosoftWorkspaceSection() {
         if (busyRef.current) return;
         busyRef.current = true;
         setBusy(true); setError('');
-        try { await action(); } catch { if (mounted.current) setError(t('microsoft.requestFailed')); }
+        try { await action(); } catch (error) { if (mounted.current) setError(notifyWorkspaceError(error)); }
         finally { busyRef.current = false; if (mounted.current) setBusy(false); }
     };
     const connect = (id: string) => perform(async () => {

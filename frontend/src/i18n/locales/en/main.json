@@ -50,6 +50,7 @@
     "close": "Close"
   },
   "googleWorkspace": {
+    "reconnectAccount": "Account authentication is required. Reconnect the affected Google or Microsoft account in Settings.",
     "connected": "Connected",
     "accountNumber": "Google account {{number}}",
     "mail": "Mail",
@@ -235,7 +236,7 @@
     "shareTitle": "Share “{{name}}”",
     "shareDescription": "Add people or manage link access.",
     "emailPlaceholder": "Enter an email address",
-    "microsoftAccountInviteHelp": "Personal OneDrive can invite only email addresses registered to a Microsoft account. Addresses from other domains, such as Gmail, also work if registered with Microsoft.",
+    "microsoftAccountInviteHelp": "You can invite any email address. Depending on the recipient's account and sharing policy, Microsoft may require sign-in or a one-time passcode.",
     "viewer": "Viewer",
     "editor": "Editor",
     "owner": "Owner",
@@ -503,7 +504,6 @@
   },
   "modelSelector": {
     "fileSizeColorGuide": "Card colors compare model file size with recommended memory: green up to 60%, orange up to 85%, red above 85%. They do not indicate actual runtime memory usage or whether the model will run.",
-    "architecture": "Architecture",
     "metadataUnavailable": "Unavailable",
     "modelFileSize": "Model file size",
     "metalRecommendedMemory": "Recommended AI memory (Metal)",

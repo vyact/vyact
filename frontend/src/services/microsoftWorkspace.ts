@@ -1,3 +1,4 @@
+import {assertOk} from '../utils/apiError';
 
 export type MicrosoftAccount = {id: string; mail_mode: 'readonly' | 'draft_only' | 'send'; mail_notifications: boolean};
 export type MicrosoftConfig = {client_id: string; active_account_id: string; accounts: MicrosoftAccount[]; prompt?: string};
@@ -9,6 +10,6 @@ export async function microsoftRequest<T = MicrosoftStatus>(path: string, method
         method, headers: body ? {'Content-Type': 'application/json'} : undefined,
         body: body ? JSON.stringify(body) : undefined,
     });
-    if (!response.ok) throw new Error('microsoft.requestFailed');
+    await assertOk(response);
     return response.json();
 }

@@ -50,6 +50,7 @@
     "close": "关闭"
   },
   "googleWorkspace": {
+    "reconnectAccount": "需要验证账户身份。请在设置中重新连接相应的 Google 或 Microsoft 账户。",
     "connected": "已连接",
     "accountNumber": "Google 账号 {{number}}",
     "mail": "邮件",
@@ -198,7 +199,7 @@
     "shareTitle": "共享“{{name}}”",
     "shareDescription": "添加用户或管理链接访问权限。",
     "emailPlaceholder": "输入电子邮件地址",
-    "microsoftAccountInviteHelp": "个人 OneDrive 只能邀请已注册 Microsoft 帐户的电子邮件地址。Gmail 等其他域名的邮箱只要已在 Microsoft 注册也可以使用。",
+    "microsoftAccountInviteHelp": "可以邀请任何电子邮件地址。根据收件人的帐户和共享策略，Microsoft 可能要求登录或使用一次性验证码。",
     "viewer": "查看者",
     "editor": "编辑者",
     "owner": "所有者",
@@ -503,7 +504,6 @@
   },
   "modelSelector": {
     "fileSizeColorGuide": "卡片颜色比较模型文件大小与建议内存：绿色不超过60%，橙色不超过85%，红色超过85%。这不表示实际运行内存用量或模型能否运行。",
-    "architecture": "模型架构",
     "metadataUnavailable": "暂无信息",
     "modelFileSize": "模型文件大小",
     "metalRecommendedMemory": "AI 建议内存（Metal）",

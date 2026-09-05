@@ -9,7 +9,7 @@
     "deleteFolderDescription": "Se eliminarán la carpeta y su contenido.",
     "unknownShareUser": "Información del usuario no disponible",
     "inviteNotificationFailed": "La respuesta de invitación contiene un error. No se pudo confirmar el envío del correo. Revisa los permisos e inténtalo en OneDrive.",
-    "inviteRecipientRejected": "Microsoft rechazó la invitación para esta dirección. Comprueba que esté registrada en una cuenta de Microsoft.",
+    "inviteRecipientRejected": "Microsoft no pudo procesar la invitación para esta dirección. Comprueba la dirección y la configuración de uso compartido de OneDrive.",
     "inviteVerification": "Microsoft requiere verificar la cuenta antes de enviar invitaciones. Completa la verificación en OneDrive web y vuelve a invitar.",
 
     "closePanel": "Cerrar panel de Microsoft",

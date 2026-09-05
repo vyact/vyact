@@ -50,6 +50,7 @@
     "close": "Đóng"
   },
   "googleWorkspace": {
+    "reconnectAccount": "Cần xác thực tài khoản. Hãy kết nối lại tài khoản Google hoặc Microsoft gặp sự cố trong phần Cài đặt.",
     "connected": "Đã kết nối",
     "accountNumber": "Tài khoản Google {{number}}",
     "mail": "Thư",
@@ -198,7 +199,7 @@
     "shareTitle": "Chia sẻ “{{name}}”",
     "shareDescription": "Thêm người hoặc quản lý quyền truy cập liên kết.",
     "emailPlaceholder": "Nhập địa chỉ email",
-    "microsoftAccountInviteHelp": "OneDrive cá nhân chỉ có thể mời địa chỉ email đã đăng ký với tài khoản Microsoft. Địa chỉ thuộc miền khác, chẳng hạn như Gmail, vẫn dùng được nếu đã đăng ký với Microsoft.",
+    "microsoftAccountInviteHelp": "Bạn có thể mời bất kỳ địa chỉ email nào. Tùy vào tài khoản người nhận và chính sách chia sẻ, Microsoft có thể yêu cầu đăng nhập hoặc mã dùng một lần.",
     "viewer": "Người xem",
     "editor": "Người chỉnh sửa",
     "owner": "Chủ sở hữu",
@@ -503,7 +504,6 @@
   },
   "modelSelector": {
     "fileSizeColorGuide": "Màu so sánh kích thước tệp với bộ nhớ khuyến nghị: xanh lá đến 60%, cam đến 85%, đỏ trên 85%. Không thể hiện mức dùng bộ nhớ thực tế hay khả năng chạy mô hình.",
-    "architecture": "Kiến trúc mô hình",
     "metadataUnavailable": "Không có thông tin",
     "modelFileSize": "Kích thước tệp mô hình",
     "metalRecommendedMemory": "Bộ nhớ khuyến nghị cho AI (Metal)",

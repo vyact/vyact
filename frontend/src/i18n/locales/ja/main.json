@@ -50,6 +50,7 @@
     "close": "閉じる"
   },
   "googleWorkspace": {
+    "reconnectAccount": "アカウントの認証が必要です。設定で該当する Google または Microsoft アカウントを再接続してください。",
     "connected": "接続済み",
     "accountNumber": "Google アカウント {{number}}",
     "mail": "メール",
@@ -198,7 +199,7 @@
     "shareTitle": "「{{name}}」を共有",
     "shareDescription": "ユーザーを追加するか、リンクアクセスを管理します。",
     "emailPlaceholder": "メールアドレスを入力",
-    "microsoftAccountInviteHelp": "個人用 OneDrive では、Microsoft アカウントに登録されたメールアドレスのみ招待できます。Gmail など他のドメインのメールアドレスも、Microsoft に登録済みなら使用できます。",
+    "microsoftAccountInviteHelp": "どのメールアドレスでも招待できます。受信者のアカウントと共有ポリシーによっては、Microsoft へのサインインまたはワンタイム パスコードが必要です。",
     "viewer": "閲覧者",
     "editor": "編集者",
     "owner": "オーナー",
@@ -503,7 +504,6 @@
   },
   "modelSelector": {
     "fileSizeColorGuide": "カードの色はモデルファイルサイズと推奨メモリの比較です。緑は60%以下、オレンジは85%以下、赤は85%超です。実際のメモリ使用量や動作可否を示すものではありません。",
-    "architecture": "モデル構造",
     "metadataUnavailable": "情報なし",
     "modelFileSize": "モデルファイルサイズ",
     "metalRecommendedMemory": "AI推奨メモリ（Metal）",

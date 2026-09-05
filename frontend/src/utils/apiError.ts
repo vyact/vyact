@@ -1,4 +1,4 @@
-import i18n from '../i18n';
+import i18n from 'i18next';
 
 // utils/apiError.ts – 백엔드 호출 실패를 일관된 형태로 표현하는 공용 에러 타입
 //

@@ -50,6 +50,7 @@
     "close": "ปิด"
   },
   "googleWorkspace": {
+    "reconnectAccount": "ต้องยืนยันตัวตนบัญชี โปรดเชื่อมต่อบัญชี Google หรือ Microsoft ที่มีปัญหาอีกครั้งในการตั้งค่า",
     "connected": "เชื่อมต่อแล้ว",
     "accountNumber": "บัญชี Google {{number}}",
     "mail": "อีเมล",
@@ -198,7 +199,7 @@
     "shareTitle": "แชร์ “{{name}}”",
     "shareDescription": "เพิ่มผู้ใช้หรือจัดการการเข้าถึงผ่านลิงก์",
     "emailPlaceholder": "ป้อนอีเมล",
-    "microsoftAccountInviteHelp": "OneDrive ส่วนบุคคลเชิญได้เฉพาะอีเมลที่ลงทะเบียนกับบัญชี Microsoft เท่านั้น อีเมลจากโดเมนอื่น เช่น Gmail ก็ใช้ได้หากลงทะเบียนกับ Microsoft แล้ว",
+    "microsoftAccountInviteHelp": "คุณสามารถเชิญอีเมลใดก็ได้ Microsoft อาจกำหนดให้ผู้รับลงชื่อเข้าใช้หรือใช้รหัสแบบใช้ครั้งเดียว ทั้งนี้ขึ้นอยู่กับบัญชีและนโยบายการแชร์",
     "viewer": "ผู้ดู",
     "editor": "ผู้แก้ไข",
     "owner": "เจ้าของ",
@@ -503,7 +504,6 @@
   },
   "modelSelector": {
     "fileSizeColorGuide": "สีเปรียบเทียบขนาดไฟล์กับหน่วยความจำที่แนะนำ: เขียวไม่เกิน 60% ส้มไม่เกิน 85% แดงเกิน 85% ไม่ได้แสดงการใช้หน่วยความจำจริงหรือยืนยันว่าโมเดลจะทำงานได้",
-    "architecture": "สถาปัตยกรรมโมเดล",
     "metadataUnavailable": "ไม่มีข้อมูล",
     "modelFileSize": "ขนาดไฟล์โมเดล",
     "metalRecommendedMemory": "หน่วยความจำแนะนำสำหรับ AI (Metal)",

@@ -1,3 +1,4 @@
+import {notifyWorkspaceError} from '../../utils/workspaceError';
 import {lazy, Suspense, useCallback, useEffect, useState, useMemo} from 'react';
 import {useTranslation} from 'react-i18next';
 import {api as googleApi, createWorkspaceApi} from '../../services/api';
@@ -113,12 +114,12 @@ export default function GoogleWorkspacePanel({provider = 'google', requestedAcco
     }, [provider]);
 
     useEffect(() => {
-        void loadAccounts();
+        void loadAccounts().catch(notifyWorkspaceError);
         const handleAccountChanged = (event: Event) => {
             const accountId = (event as CustomEvent).detail?.accountId;
             if (provider === 'google' && accountId) setActiveAccountId(accountId);
         };
-        const handleWorkspaceStatusChanged = () => void loadAccounts(true);
+        const handleWorkspaceStatusChanged = () => void loadAccounts(true).catch(notifyWorkspaceError);
         window.addEventListener(MICROSOFT_WORKSPACE_CHANGED, handleWorkspaceStatusChanged);
         window.addEventListener('vyact:google-account-changed', handleAccountChanged);
         window.addEventListener('vyact:google-workspace-status-changed', handleWorkspaceStatusChanged);
@@ -160,6 +161,8 @@ export default function GoogleWorkspacePanel({provider = 'google', requestedAcco
                 else await googleApi.activateGoogleAccount(target.id);
                 onAccountSwitch?.(target.provider, target.id);
             }
+        } catch (error) {
+            notifyWorkspaceError(error);
         } finally { setSwitchingAccount(false); }
     };
     const renderAccountLabel = (value: string, label: string) => <span className="gwp-account-label">
@@ -171,7 +174,7 @@ export default function GoogleWorkspacePanel({provider = 'google', requestedAcco
         if (!activeDriveSelection) return;
         setTab('drive');
         if (activeDriveSelection.accountId && activeDriveSelection.accountId !== activeAccountId) {
-            void changeAccount(activeDriveSelection.accountId);
+            void changeAccount(activeDriveSelection.accountId).catch(notifyWorkspaceError);
         }
     }, [activeAccountId, changeAccount, activeDriveSelection]);
 

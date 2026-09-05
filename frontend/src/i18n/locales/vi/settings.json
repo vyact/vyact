@@ -9,7 +9,7 @@
     "deleteFolderDescription": "Thư mục và nội dung bên trong sẽ bị xóa.",
     "unknownShareUser": "Không có thông tin người dùng",
     "inviteNotificationFailed": "Phản hồi lời mời có lỗi. Không thể xác nhận việc gửi email. Hãy kiểm tra quyền và thử lại trong OneDrive.",
-    "inviteRecipientRejected": "Microsoft đã từ chối lời mời cho địa chỉ email này. Hãy kiểm tra địa chỉ đã được đăng ký với tài khoản Microsoft.",
+    "inviteRecipientRejected": "Microsoft không thể xử lý lời mời cho địa chỉ email này. Hãy kiểm tra địa chỉ và cài đặt chia sẻ OneDrive.",
     "inviteVerification": "Microsoft yêu cầu xác minh tài khoản trước khi gửi email mời. Hoàn tất xác minh trên OneDrive web rồi mời lại.",
 
     "closePanel": "Đóng bảng Microsoft",

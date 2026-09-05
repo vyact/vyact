@@ -50,6 +50,7 @@
     "close": "닫기"
   },
   "googleWorkspace": {
+    "reconnectAccount": "계정 인증이 필요합니다. 설정에서 해당 Google 또는 Microsoft 계정을 다시 연결해 주세요.",
     "connected": "연결됨",
     "accountNumber": "Google 계정 {{number}}",
     "mail": "메일",
@@ -235,7 +236,7 @@
     "shareTitle": "“{{name}}” 공유",
     "shareDescription": "사용자를 추가하거나 링크 접근 권한을 설정합니다.",
     "emailPlaceholder": "이메일 주소 입력",
-    "microsoftAccountInviteHelp": "개인 OneDrive에서는 Microsoft 계정에 등록된 이메일만 초대할 수 있습니다. Gmail 등 다른 도메인의 이메일도 Microsoft 계정에 등록되어 있으면 사용할 수 있습니다.",
+    "microsoftAccountInviteHelp": "모든 이메일 주소를 초대할 수 있습니다. 받는 사람의 계정과 공유 정책에 따라 Microsoft 로그인 또는 일회용 코드 확인이 필요할 수 있습니다.",
     "viewer": "뷰어",
     "editor": "편집자",
     "owner": "소유자",
@@ -503,7 +504,6 @@
   },
   "modelSelector": {
     "fileSizeColorGuide": "카드 색상은 모델 파일 크기를 권장 메모리와 비교한 참고 표시입니다. 초록은 60% 이하, 주황은 85% 이하, 빨강은 85% 초과입니다. 실제 실행 메모리 사용량이나 실행 가능 여부를 뜻하지 않습니다.",
-    "architecture": "모델 구조",
     "metadataUnavailable": "정보 없음",
     "modelFileSize": "모델 파일 크기",
     "metalRecommendedMemory": "AI 권장 메모리 (Metal)",

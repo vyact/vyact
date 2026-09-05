@@ -50,6 +50,7 @@
     "close": "Fermer"
   },
   "googleWorkspace": {
+    "reconnectAccount": "Une authentification est nécessaire. Reconnectez le compte Google ou Microsoft concerné dans les paramètres.",
     "connected": "Connecté",
     "accountNumber": "Compte Google {{number}}",
     "mail": "E-mail",
@@ -198,7 +199,7 @@
     "shareTitle": "Partager « {{name}} »",
     "shareDescription": "Ajoutez des personnes ou gérez l'accès par lien.",
     "emailPlaceholder": "Saisissez une adresse e-mail",
-    "microsoftAccountInviteHelp": "OneDrive personnel ne peut inviter que les adresses enregistrées auprès d’un compte Microsoft. Les adresses d’autres domaines, comme Gmail, fonctionnent aussi si elles sont enregistrées auprès de Microsoft.",
+    "microsoftAccountInviteHelp": "Vous pouvez inviter n’importe quelle adresse e-mail. Selon le compte du destinataire et la stratégie de partage, Microsoft peut exiger une connexion ou un code à usage unique.",
     "viewer": "Lecteur",
     "editor": "Éditeur",
     "owner": "Propriétaire",
@@ -503,7 +504,6 @@
   },
   "modelSelector": {
     "fileSizeColorGuide": "Les couleurs comparent la taille du fichier à la mémoire recommandée : vert jusqu’à 60 %, orange jusqu’à 85 %, rouge au-delà. Elles n’indiquent ni l’usage réel de mémoire ni si le modèle pourra fonctionner.",
-    "architecture": "Architecture",
     "metadataUnavailable": "Indisponible",
     "modelFileSize": "Taille du fichier du modèle",
     "metalRecommendedMemory": "Mémoire conseillée pour l’IA (Metal)",

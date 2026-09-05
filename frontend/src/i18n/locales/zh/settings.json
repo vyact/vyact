@@ -9,7 +9,7 @@
     "deleteFolderDescription": "文件夹及其内容将被删除。",
     "unknownShareUser": "用户信息不可用",
     "inviteNotificationFailed": "共享邀请响应包含错误，无法确认邀请邮件是否发送。请检查权限并在 OneDrive 中重试。",
-    "inviteRecipientRejected": "Microsoft 拒绝了对此电子邮件地址的邀请。请确认该地址已注册 Microsoft 帐户。",
+    "inviteRecipientRejected": "Microsoft 无法处理对此电子邮件地址的邀请。请检查地址和 OneDrive 共享设置。",
     "inviteVerification": "Microsoft 要求在发送邀请邮件前验证帐户。请在 OneDrive 网页版完成验证后重新邀请。",
 
     "closePanel": "关闭 Microsoft 面板",
