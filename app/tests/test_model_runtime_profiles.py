@@ -35,7 +35,7 @@ def test_saved_profile_output_is_bounded_by_context():
     })
 
     assert profile["context_size"] == 4096
-    assert profile["max_output_tokens"] == 1024
+    assert profile["max_output_tokens"] == 3072
 
 
 def test_history_budget_is_stored_per_model_and_bounded_by_context():
@@ -45,7 +45,7 @@ def test_history_budget_is_stored_per_model_and_bounded_by_context():
         "history_token_budget": 12000,
     })
 
-    assert profile["history_token_budget"] == 4096
+    assert profile["history_token_budget"] == 1024
 
 
 def test_gpu_split_percentages_are_normalized_and_bounded():
@@ -150,3 +150,43 @@ async def test_delete_profile_ignores_missing_documents(monkeypatch):
     monkeypatch.setattr(model_runtime_profiles, "get_es", lambda: es)
 
     await delete_model_profile("mlx/owner/missing")
+
+
+def test_model_specific_bounds_override_global_defaults():
+    limits = {"context_min": 4096, "context_max": 65536, "output_max": 512}
+    profile = normalize_model_profile({"context_size": 999999, "max_output_tokens": 8192, "history_token_budget": 999999}, limits)
+    assert profile["context_size"] == 65536
+    assert profile["max_output_tokens"] == 512
+    assert profile["history_token_budget"] == 64000
+    small = normalize_model_profile({"context_size": 1, "max_output_tokens": 1}, limits)
+    assert small["context_size"] == 4096
+    assert small["max_output_tokens"] == 256
+
+
+def test_small_model_output_limit_takes_precedence_over_output_floor():
+    profile = normalize_model_profile({"context_size": 4096, "max_output_tokens": 1}, {"output_max": 64})
+    assert profile["max_output_tokens"] == 64
+
+
+def test_zero_sampling_history_seed_and_automatic_threads_are_preserved():
+    profile = normalize_model_profile({"history_token_budget": 0, "temperature": 0, "top_k": 0, "top_p": 0, "seed": 0, "cpu_threads": None})
+    assert all(profile[key] == 0 for key in ("history_token_budget", "temperature", "top_k", "top_p", "seed"))
+    assert profile["cpu_threads"] is None
+
+
+def test_cpu_threads_are_bounded_by_detected_cpu(monkeypatch):
+    monkeypatch.setattr(model_runtime_profiles.os, "cpu_count", lambda: 8)
+    assert normalize_model_profile({"cpu_threads": 200})["cpu_threads"] == 8
+
+
+@pytest.mark.parametrize("field", ["temperature", "top_k", "top_p", "seed"])
+def test_nonfinite_sampling_values_are_rejected(field):
+    with pytest.raises(ValueError):
+        normalize_model_profile({field: float("nan")})
+
+
+def test_dflash_constraints_disable_incompatible_cache_and_mtp():
+    result = normalize_model_profile({"runtime": "gguf", "mtp_enabled": True, "kv_cache_precision": "q8"}, {"dflash_enabled": True})
+    assert result["kv_cache_precision"] == "none"
+    assert result["cache_quantization"] is False
+    assert result["mtp_enabled"] is False

@@ -1202,6 +1202,10 @@
   "backendErrors": {"invalid_request":"Hãy kiểm tra yêu cầu và thử lại.","authentication_required":"Cần xác thực.","permission_denied":"Bạn không có quyền thực hiện thao tác này.","resource_not_found":"Không tìm thấy mục được yêu cầu.","conflict":"Yêu cầu xung đột với trạng thái hiện tại.","payload_too_large":"Dữ liệu gửi lên quá lớn.","validation_failed":"Một số giá trị không hợp lệ.","rate_limited":"Có quá nhiều yêu cầu. Vui lòng thử lại sau.","internal_error":"Đã xảy ra lỗi nội bộ. Vui lòng thử lại.","upstream_error":"Dịch vụ được kết nối đã trả về lỗi.","service_unavailable":"Dịch vụ tạm thời không khả dụng.","request_timeout":"Yêu cầu đã hết thời gian chờ.","request_failed":"Không thể hoàn tất yêu cầu."},
   "backendStreamErrors": {"presentation_generation_failed":"Không thể tạo bản trình bày.","document_index_failed":"Không thể lập chỉ mục tài liệu.","profile_analysis_failed":"Không thể hoàn tất phân tích hồ sơ.","web_document_save_failed":"Không thể lưu tài liệu web.","empty_audio":"Không nhận được âm thanh.","speech_recognition_failed":"Nhận dạng giọng nói thất bại.","speech_model_unavailable":"Mô hình nhận dạng giọng nói không khả dụng.","local_model_not_downloaded":"Không tìm thấy mô hình cục bộ đã chọn. Hãy chọn lại một mô hình đã tải xuống."},
   "modelSettings": {
+    "memoryEstimateUnavailable": "Thiếu thông tin mô hình hoặc bộ nhớ nên không thể tính mức độ phù hợp với bộ nhớ.",
+    "initialSettingsEstimate": "Thiết lập ban đầu được tính từ thông tin mô hình và bộ nhớ hiện tại, chưa được xác minh bằng suy luận thực tế. MTP mặc định tắt.",
+    "minimumMemoryWarning": "Bộ nhớ ước tính cho thiết lập này vượt ngân sách khả dụng được khuyến nghị. Nếu ngữ cảnh tối thiểu vẫn không đủ, hãy đóng ứng dụng khác hoặc chọn mô hình nhỏ hơn.",
+    "tokenBounds": "Ngữ cảnh tối thiểu: {{contextMin}} · Đầu ra: {{outputMin}}–{{outputMax}} · Lịch sử: 0–{{historyMax}} token. Dành riêng dung lượng cho đầu vào và lời nhắc hệ thống.",
     "activationNotice": "Cập nhật cài đặt mô hình",
     "mtpFallbackNotice": "Tăng tốc MTP thất bại. Mô hình đang chạy không có MTP.",
     "activationRecovery": {

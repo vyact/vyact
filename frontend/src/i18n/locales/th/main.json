@@ -1202,6 +1202,10 @@
   "backendErrors": {"invalid_request":"ตรวจสอบคำขอแล้วลองอีกครั้ง","authentication_required":"จำเป็นต้องยืนยันตัวตน","permission_denied":"คุณไม่มีสิทธิ์ดำเนินการนี้","resource_not_found":"ไม่พบรายการที่ร้องขอ","conflict":"คำขอขัดแย้งกับสถานะปัจจุบัน","payload_too_large":"ข้อมูลที่ส่งมีขนาดใหญ่เกินไป","validation_failed":"ค่าบางรายการไม่ถูกต้อง","rate_limited":"มีคำขอมากเกินไป โปรดลองอีกครั้งภายหลัง","internal_error":"เกิดข้อผิดพลาดภายใน โปรดลองอีกครั้ง","upstream_error":"บริการที่เชื่อมต่อส่งคืนข้อผิดพลาด","service_unavailable":"บริการไม่พร้อมใช้งานชั่วคราว","request_timeout":"คำขอหมดเวลา","request_failed":"ไม่สามารถดำเนินการตามคำขอได้"},
   "backendStreamErrors": {"presentation_generation_failed":"ไม่สามารถสร้างงานนำเสนอได้","document_index_failed":"ไม่สามารถจัดทำดัชนีเอกสารได้","profile_analysis_failed":"ไม่สามารถวิเคราะห์โปรไฟล์ให้เสร็จสมบูรณ์ได้","web_document_save_failed":"ไม่สามารถบันทึกเอกสารเว็บได้","empty_audio":"ไม่ได้รับเสียง","speech_recognition_failed":"การรู้จำเสียงล้มเหลว","speech_model_unavailable":"โมเดลรู้จำเสียงไม่พร้อมใช้งาน","local_model_not_downloaded":"ไม่พบโมเดลภายในเครื่องที่เลือก โปรดเลือกโมเดลที่ดาวน์โหลดแล้วอีกครั้ง"},
   "modelSettings": {
+    "memoryEstimateUnavailable": "ข้อมูลโมเดลหรือหน่วยความจำไม่ครบ จึงคำนวณไม่ได้ว่าหน่วยความจำเพียงพอหรือไม่",
+    "initialSettingsEstimate": "การตั้งค่าเริ่มต้นคำนวณจากข้อมูลโมเดลและหน่วยความจำปัจจุบัน ยังไม่ได้ตรวจสอบด้วยการอนุมานจริง MTP ปิดไว้โดยค่าเริ่มต้น",
+    "minimumMemoryWarning": "หน่วยความจำโดยประมาณสำหรับการตั้งค่านี้เกินงบที่แนะนำ หากบริบทขั้นต่ำยังไม่พอ ให้ปิดแอปอื่นหรือเลือกโมเดลที่เล็กกว่า",
+    "tokenBounds": "บริบทขั้นต่ำ: {{contextMin}} · เอาต์พุต: {{outputMin}}–{{outputMax}} · ประวัติ: 0–{{historyMax}} โทเคน โดยสำรองพื้นที่สำหรับอินพุตและพรอมต์ระบบ",
     "activationNotice": "การอัปเดตการตั้งค่าโมเดล",
     "mtpFallbackNotice": "การเร่งด้วย MTP ล้มเหลว โมเดลกำลังทำงานโดยไม่ใช้ MTP",
     "activationRecovery": {

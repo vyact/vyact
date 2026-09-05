@@ -1,5 +1,7 @@
 """Per-model local runtime profiles stored separately from global settings."""
 import hashlib
+import math
+import os
 from datetime import datetime, timezone
 
 from elasticsearch import NotFoundError
@@ -10,7 +12,10 @@ from services.hardware_info import GPU_SPLIT_DECIMAL_PLACES, recommend_gpu_split
 DEFAULT_CONTEXT_SIZE = 32768
 DEFAULT_MAX_OUTPUT_TOKENS = 2048
 DEFAULT_HISTORY_TOKEN_BUDGET = 16384
-MINIMUM_CONTEXT_RESERVE_TOKENS = 512
+MINIMUM_CONTEXT_RESERVE_TOKENS = 1024
+MINIMUM_CONTEXT_SIZE = 4096
+MINIMUM_OUTPUT_TOKENS = 256
+MAXIMUM_SEED = 2147483647
 VALID_PERFORMANCE_MODES = {"auto", "memory", "performance"}
 VALID_KV_CACHE_PRECISIONS = {"none", "q8", "q4"}
 VALID_MTP_LOAD_FAILURE_CODES = {"load_failed", "out_of_memory"}
@@ -22,9 +27,10 @@ def build_model_profile_id(model_path: str) -> str:
     return hashlib.sha256(model_path.encode("utf-8")).hexdigest()
 
 
-def normalize_model_profile(profile: dict) -> dict:
+def normalize_model_profile(profile: dict, limits: dict | None = None) -> dict:
     """Keep persisted generation settings inside the model's context window."""
     normalized = dict(profile)
+    limits = limits or profile.get("limits") or {}
     performance_mode = str(normalized.get("performance_mode") or "auto")
     if performance_mode not in VALID_PERFORMANCE_MODES:
         raise ValueError("Unsupported performance mode")
@@ -33,6 +39,9 @@ def normalize_model_profile(profile: dict) -> dict:
         kv_cache_precision = "q8" if bool(normalized.get("cache_quantization", True)) else "none"
     if kv_cache_precision not in VALID_KV_CACHE_PRECISIONS:
         raise ValueError("Unsupported KV cache precision")
+    if limits.get("dflash_enabled"):
+        normalized["mtp_enabled"] = False
+        kv_cache_precision = "none"
     if normalized.get("runtime") == "mlx":
         # oMLX's paged/hot memory cache replaces the legacy mlx-lm KV
         # quantization setting. External VLM MTP remains cache-compatible.
@@ -51,7 +60,7 @@ def normalize_model_profile(profile: dict) -> dict:
     )
     normalized["mtp_failed_at"] = normalized.get("mtp_failed_at") if mtp_failure_code else None
     cpu_threads = normalized.get("cpu_threads")
-    normalized["cpu_threads"] = None if cpu_threads in (None, "") else max(1, min(int(cpu_threads), 256))
+    normalized["cpu_threads"] = None if cpu_threads in (None, "") else max(1, min(int(cpu_threads), os.cpu_count() or 1))
     legacy_gpu_split = normalized.get("gpu_memory_allocations") or []
     gpu_split = normalized.get("gpu_split_percentages") or legacy_gpu_split
     if not isinstance(gpu_split, list):
@@ -68,21 +77,43 @@ def normalize_model_profile(profile: dict) -> dict:
     ]
     normalized.pop("gpu_memory_allocations", None)
     normalized["gpu_manual_split_enabled"] = bool(normalized.get("gpu_manual_split_enabled", False))
-    seed = normalized.get("seed")
-    normalized["seed"] = None if seed in (None, "") else max(0, min(int(seed), 2147483647))
-    safe_context = max(512, int(normalized.get("context_size") or DEFAULT_CONTEXT_SIZE))
-    requested_output = max(1, int(normalized.get("max_output_tokens") or DEFAULT_MAX_OUTPUT_TOKENS))
+    minimum_context = limits.get("context_min", 512)
+    maximum_context = limits.get("context_max")
+    safe_context = max(minimum_context, int(normalized.get("context_size") or DEFAULT_CONTEXT_SIZE))
+    if maximum_context:
+        safe_context = min(safe_context, maximum_context)
+    reserve = min(MINIMUM_CONTEXT_RESERVE_TOKENS, safe_context // 2)
+    output_max = min(limits.get("output_max") or safe_context, safe_context - reserve)
+    output_min = min(MINIMUM_OUTPUT_TOKENS, output_max)
+    requested_output = int(normalized.get("max_output_tokens") or DEFAULT_MAX_OUTPUT_TOKENS)
     normalized["context_size"] = safe_context
-    normalized["history_token_budget"] = max(
-        0,
-        min(int(normalized.get("history_token_budget", DEFAULT_HISTORY_TOKEN_BUDGET)), safe_context),
-    )
-    normalized["max_output_tokens"] = min(
-        requested_output,
-        max(1, safe_context // 4),
-        max(1, safe_context - MINIMUM_CONTEXT_RESERVE_TOKENS),
-    )
+    normalized["max_output_tokens"] = max(output_min, min(requested_output, output_max))
+    normalized["history_token_budget"] = max(0, min(
+        int(normalized.get("history_token_budget", DEFAULT_HISTORY_TOKEN_BUDGET)),
+        safe_context - normalized["max_output_tokens"] - reserve,
+    ))
+    for key, default, maximum, integer in (
+        ("temperature", 0.2, 1, False), ("top_k", None, 100, True),
+        ("top_p", None, 1, False), ("seed", None, MAXIMUM_SEED, True),
+    ):
+        value = normalized.get(key, default)
+        if value is None and default is None:
+            normalized[key] = None
+            continue
+        number = float(value)
+        if not math.isfinite(number):
+            raise ValueError("Invalid numeric model setting")
+        normalized[key] = max(0, min(int(number) if integer else number, maximum))
     return normalized
+
+
+
+def normalize_loaded_model_profile(profile: dict, context_size: int) -> dict:
+    """Keep query budgets within the context actually allocated by the runtime."""
+    minimum = (profile.get("limits") or {}).get("context_min", 512)
+    if context_size < minimum:
+        raise RuntimeError("Insufficient memory: runtime context is below the model profile minimum")
+    return normalize_model_profile({**profile, "context_size": context_size})
 
 
 def normalize_gpu_split_for_hardware(profile: dict, hardware: dict) -> dict:
@@ -108,7 +139,7 @@ def normalize_gpu_split_for_hardware(profile: dict, hardware: dict) -> dict:
 
 
 def recommended_model_profile(model_path: str, runtime: str, repository: str | None, context_size: int) -> dict:
-    safe_context = max(512, int(context_size or DEFAULT_CONTEXT_SIZE))
+    safe_context = max(MINIMUM_CONTEXT_SIZE, int(context_size or DEFAULT_CONTEXT_SIZE))
     if safe_context >= 65536:
         recommended_output = 4096
     elif safe_context <= 8192:
@@ -132,7 +163,7 @@ def recommended_model_profile(model_path: str, runtime: str, repository: str | N
         "top_p": None,
         "cache_quantization": runtime != "mlx" and safe_context >= 32768,
         "kv_cache_precision": "q8" if runtime != "mlx" and safe_context >= 32768 else "none",
-        "mtp_enabled": None,
+        "mtp_enabled": False,
         "performance_mode": "auto",
         "cpu_threads": None,
         "gpu_split_percentages": [],

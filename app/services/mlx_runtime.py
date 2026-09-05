@@ -902,3 +902,9 @@ def start_mlx_model(
             model_path, context_size, debug_logging, cache_quantization, False,
             kv_cache_precision, _performance_mode, _cpu_threads, runtime_status,
         )
+
+
+def get_mlx_memory_companions(model_path: Path) -> list[Path]:
+    """Active automatic companions for initial memory planning with MTP disabled."""
+    draft = _get_dflash2_path(model_path)
+    return [draft] if draft else []

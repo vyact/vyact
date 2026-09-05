@@ -1,11 +1,10 @@
-import type {VyactGgufMetadata, VyactHardwareInfo, VyactHubModel} from '../services/api';
+import type {VyactHardwareInfo, VyactHubModel} from '../services/api';
 
 export const MODEL_MEMORY_OVERHEAD_RATIO = 1.2;
 const MINIMUM_RUNTIME_BUFFER_BYTES = 512 * 1024 ** 2;
 const RUNTIME_BUFFER_RATIO = 0.05;
 
 const MAX_FILES_PER_MODEL = 8;
-const DEFAULT_MODEL_CONTEXT = 32768;
 
 export const formatModelBytes = (bytes: number) => {
     if (!bytes) return '—';
@@ -123,13 +122,4 @@ export const getModelMemoryTone = (estimatedMemory: number, hardware: VyactHardw
     if (estimatedMemory > capacity * .85) return 'over';
     if (estimatedMemory > capacity * .6) return 'tight';
     return 'comfortable';
-};
-
-export const getOptimizedModelContext = (
-    metadata: VyactGgufMetadata | undefined,
-    _fileSize: number,
-    _hardware: VyactHardwareInfo,
-) => {
-    const modelLimit = metadata?.contextLength || DEFAULT_MODEL_CONTEXT;
-    return Math.max(512, modelLimit);
 };

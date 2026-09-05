@@ -31,7 +31,7 @@ async def test_model_profile_rejects_a_non_downloaded_gguf_as_not_found(monkeypa
 async def test_new_model_profile_uses_hardware_recommendation(monkeypatch):
     save_profile = AsyncMock(side_effect=lambda profile: profile)
     monkeypatch.setattr(setup, "get_model_profile", AsyncMock(return_value=None))
-    monkeypatch.setattr(setup, "_recommended_local_context", AsyncMock(return_value=65536))
+    monkeypatch.setattr(setup, "hardware_model_profile", Mock(return_value=setup.recommended_model_profile("mlx/owner/model", "mlx", "owner/model", 65536)))
     monkeypatch.setattr(setup, "save_model_profile", save_profile)
 
     profile = await setup._get_or_create_model_profile(
@@ -47,16 +47,16 @@ async def test_new_model_profile_uses_hardware_recommendation(monkeypatch):
 @pytest.mark.asyncio
 async def test_existing_model_profile_is_not_recommended_again(monkeypatch):
     existing = {"model_path": "mlx/owner/model", "context_size": 32768}
-    recommend_context = AsyncMock()
+    recommend_context = Mock()
     monkeypatch.setattr(setup, "get_model_profile", AsyncMock(return_value=existing))
-    monkeypatch.setattr(setup, "_recommended_local_context", recommend_context)
+    monkeypatch.setattr(setup, "hardware_model_profile", recommend_context)
 
     profile = await setup._get_or_create_model_profile(
         "mlx/owner/model", "mlx", "owner/model", persist=True,
     )
 
     assert profile is existing
-    recommend_context.assert_not_awaited()
+    recommend_context.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -136,6 +136,7 @@ async def test_selecting_vyact_without_configured_model_keeps_previous_provider(
 
 @pytest.mark.asyncio
 async def test_selecting_model_warms_it_before_reporting_done(monkeypatch):
+    monkeypatch.setattr(runtime_startup, "save_model_profile", AsyncMock(side_effect=lambda value: value))
     config = {"type": "vyact", "runtime_settings": {}, "vyact_config": {}}
     profile = {
         "repository": "owner/model", "context_size": 32768,
@@ -166,6 +167,7 @@ async def test_selecting_model_warms_it_before_reporting_done(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_failed_model_warmup_restores_previous_model_and_reports_memory_error(monkeypatch):
+    monkeypatch.setattr(runtime_startup, "save_model_profile", AsyncMock(side_effect=lambda value: value))
     config = {
         "type": "vyact", "model": "previous-model", "runtime_settings": {},
         "vyact_config": {
@@ -283,6 +285,7 @@ def test_small_context_matches_runtime_cache_and_allocation(monkeypatch):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("restore_fails", [False, True])
 async def test_settings_activation_reports_rollback_result(monkeypatch, restore_fails):
+    monkeypatch.setattr(setup, "profile_model_info", Mock(return_value={"limits": {"context_min": 4096, "context_max": 32768}}))
     profile = setup.recommended_model_profile("owner/old.gguf", "gguf", None, 4096)
     profile.update(temperature=0.2, seed=1)
     config = {"type": "vyact", "model": "old", "vyact_config": profile.copy()}
@@ -306,3 +309,39 @@ async def test_settings_activation_reports_rollback_result(monkeypatch, restore_
     restore.assert_called_once()
     settings = setup.get_runtime_settings()
     assert (settings["llm_temperature"], settings["seed"]) == (0.2, 1)
+
+
+@pytest.mark.asyncio
+async def test_profile_save_applies_model_and_hardware_bounds(monkeypatch):
+    limits = {"context_min": 4096, "context_max": 131072, "output_max": 65536}
+    monkeypatch.setattr(setup, "profile_model_info", Mock(return_value={"limits": limits}))
+    monkeypatch.setattr(setup, "get_local_hardware_info", Mock(return_value={"gpus": []}))
+    save = AsyncMock(side_effect=lambda profile: profile)
+    monkeypatch.setattr(setup, "save_model_profile", save)
+    result = await setup.write_vyact_model_profile(setup.VyactModelProfileRequest(
+        model_path="owner/model.gguf", context_size=512, max_output_tokens=1, history_token_budget=999999,
+    ))
+    assert (result["context_size"], result["max_output_tokens"], result["history_token_budget"]) == (4096, 256, 2816)
+    result = await setup.write_vyact_model_profile(setup.VyactModelProfileRequest(
+        model_path="owner/model.gguf", context_size=131072, max_output_tokens=65536,
+    ))
+    assert result["max_output_tokens"] == 65536
+    assert save.await_count == 2
+
+
+@pytest.mark.asyncio
+async def test_read_marks_adjusted_saved_settings_for_application(monkeypatch):
+    saved = setup.recommended_model_profile("owner/model.gguf", "gguf", None, 32768)
+    saved.update(context_size=512, max_output_tokens=1, history_token_budget=0)
+    monkeypatch.setattr(setup, "_get_or_create_model_profile", AsyncMock(return_value=saved))
+    monkeypatch.setattr(setup, "profile_model_info", Mock(return_value={"limits": {"context_min": 4096, "context_max": 32768}}))
+    monkeypatch.setattr(setup, "get_downloaded_model_path", Mock(return_value="model.gguf"))
+    monkeypatch.setattr(setup, "get_local_hardware_info", Mock(return_value={"gpus": []}))
+    monkeypatch.setattr(setup, "get_gguf_reasoning_capabilities", Mock(return_value={}))
+    monkeypatch.setattr(setup, "get_model_modalities", Mock(return_value=[]))
+    monkeypatch.setattr(setup, "profile_memory_assessment", Mock(return_value={}))
+    result = await setup.read_vyact_model_profile("owner/model.gguf", "gguf", None, 32768)
+    assert result["context_size"] == 4096
+    assert result["max_output_tokens"] == 256
+    assert result["requires_apply"] is True
+    assert saved["context_size"] == 512  # A GET must not overwrite the saved profile.

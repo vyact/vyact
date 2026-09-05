@@ -40,10 +40,10 @@ from services.mcp_config import ensure_mcp_config
 from services.runtime_settings import DEFAULT_RUNTIME_SETTINGS, apply_runtime_settings, get_runtime_settings
 from services.runtime_startup import (
     apply_startup_runtime_choice, get_startup_runtime_state, runtime_load_error_code,
-    warm_loaded_vyact_model, persist_mtp_fallback,
+    warm_loaded_vyact_model, persist_loaded_model_profile,
 )
-from services.model_runtime_profiles import delete_model_profile, get_model_profile, normalize_gpu_split_for_hardware, normalize_model_profile, recommended_model_profile, save_model_profile
-from services.model_memory import estimate_downloaded_model_memory_bytes
+from services.model_runtime_profiles import delete_model_profile, get_model_profile, normalize_gpu_split_for_hardware, normalize_model_profile, normalize_loaded_model_profile, recommended_model_profile, save_model_profile
+from services.model_profile_defaults import hardware_model_profile, profile_model_info, profile_memory_assessment
 from services.vyact_model_metadata_cache import get_cached_model_metadata, save_cached_model_metadata
 from services.mlx_runtime import get_downloaded_mlx_model_path, get_mlx_runtime_capabilities, is_apple_silicon, list_multimodal_supported_mlx_models
 from services.external_api_server import EXTERNAL_API_PORT, public_model_id
@@ -51,10 +51,6 @@ from services.reasoning_capabilities import get_gguf_reasoning_capabilities, get
 from services.vyact_runtime import VYACT_RUNTIME_URL, get_downloaded_model_path, get_model_modalities, start_configured_runtime
 
 logger = get_logger(__name__)
-
-async def _recommended_local_context(model_path: str, runtime: str, fallback: int = 32768) -> int:
-    return max(512, int(fallback))
-
 
 async def _get_or_create_model_profile(
     model_path: str,
@@ -66,8 +62,7 @@ async def _get_or_create_model_profile(
     profile = await get_model_profile(model_path)
     if profile is not None:
         return profile
-    recommended_context = await _recommended_local_context(model_path, runtime, fallback_context)
-    profile = recommended_model_profile(model_path, runtime, repository, recommended_context)
+    profile = await asyncio.to_thread(hardware_model_profile, model_path, runtime, repository, fallback_context)
     return await save_model_profile(profile) if persist else profile
 
 
@@ -178,11 +173,11 @@ class VyactModelActivateRequest(BaseModel):
     context_size: int = Field(default=32768, ge=512)
     runtime: str = Field(default="gguf", pattern="^(gguf|mlx)$")
     repository: str | None = Field(default=None, min_length=3, max_length=256)
-    max_output_tokens: int = Field(default=4096, ge=1, le=32768)
+    max_output_tokens: int = Field(default=4096, ge=1)
     history_token_budget: int = Field(default=16384, ge=0)
-    temperature: float = Field(default=0.2, ge=0, le=1)
+    temperature: float = Field(default=0.2, ge=0, le=1, allow_inf_nan=False)
     top_k: int | None = Field(default=None, ge=0, le=100)
-    top_p: float | None = Field(default=None, ge=0, le=1)
+    top_p: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
     cache_quantization: bool = True
     mtp_enabled: bool | None = None
     mtp_failure_code: str | None = Field(default=None, pattern="^(load_failed|out_of_memory)$")
@@ -190,7 +185,7 @@ class VyactModelActivateRequest(BaseModel):
     mtp_failed_at: str | None = Field(default=None, max_length=64)
     kv_cache_precision: str | None = Field(default=None, pattern="^(none|q8|q4)$")
     performance_mode: str = Field(default="auto", pattern="^(auto|memory|performance)$")
-    cpu_threads: int | None = Field(default=None, ge=1, le=256)
+    cpu_threads: int | None = Field(default=None, ge=1)
     gpu_split_percentages: list[float] = Field(default_factory=list, max_length=16)
     gpu_manual_split_enabled: bool = False
     seed: int | None = Field(default=None, ge=0, le=2147483647)
@@ -200,11 +195,11 @@ class VyactModelProfileRequest(BaseModel):
     runtime: str = Field(default="gguf", pattern="^(gguf|mlx)$")
     repository: str | None = Field(default=None, max_length=256)
     context_size: int = Field(default=32768, ge=512)
-    max_output_tokens: int = Field(default=4096, ge=1, le=32768)
+    max_output_tokens: int = Field(default=4096, ge=1)
     history_token_budget: int = Field(default=16384, ge=0)
-    temperature: float = Field(default=0.2, ge=0, le=1)
+    temperature: float = Field(default=0.2, ge=0, le=1, allow_inf_nan=False)
     top_k: int | None = Field(default=None, ge=0, le=100)
-    top_p: float | None = Field(default=None, ge=0, le=1)
+    top_p: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
     cache_quantization: bool = True
     mtp_enabled: bool | None = None
     mtp_failure_code: str | None = Field(default=None, pattern="^(load_failed|out_of_memory)$")
@@ -212,7 +207,7 @@ class VyactModelProfileRequest(BaseModel):
     mtp_failed_at: str | None = Field(default=None, max_length=64)
     kv_cache_precision: str | None = Field(default=None, pattern="^(none|q8|q4)$")
     performance_mode: str = Field(default="auto", pattern="^(auto|memory|performance)$")
-    cpu_threads: int | None = Field(default=None, ge=1, le=256)
+    cpu_threads: int | None = Field(default=None, ge=1)
     gpu_split_percentages: list[float] = Field(default_factory=list, max_length=16)
     gpu_manual_split_enabled: bool = False
     seed: int | None = Field(default=None, ge=0, le=2147483647)
@@ -1160,8 +1155,10 @@ async def read_vyact_model_profile(
             **profile,
             "history_token_budget": config.get("runtime_settings", {}).get("history_token_budget", 16384),
         }
-    profile = normalize_model_profile(profile)
+    original_profile = profile
     try:
+        model_info = await asyncio.to_thread(profile_model_info, model_path, runtime)
+        profile = normalize_model_profile(profile, model_info["limits"])
         if runtime == "mlx":
             downloaded_model_path = get_downloaded_mlx_model_path(model_path)
             capabilities = await asyncio.to_thread(
@@ -1192,12 +1189,13 @@ async def read_vyact_model_profile(
         raise HTTPException(404, "local_model_not_downloaded") from error
     return {
         **profile,
-        "estimated_memory_bytes": estimate_downloaded_model_memory_bytes(
-            downloaded_model_path,
-            runtime,
-            profile["context_size"],
-            profile.get("kv_cache_precision") or "none",
-        ),
+        "limits": model_info["limits"],
+        "requires_apply": any(original_profile.get(key) != profile.get(key) for key in (
+            "context_size", "max_output_tokens", "history_token_budget", "temperature", "top_k", "top_p",
+            "cpu_threads", "seed", "kv_cache_precision", "cache_quantization", "mtp_enabled",
+            "gpu_split_percentages", "gpu_manual_split_enabled",
+        )),
+        **await asyncio.to_thread(profile_memory_assessment, profile, model_info),
         "capabilities": capabilities,
     }
 
@@ -1212,7 +1210,13 @@ async def write_vyact_model_profile(req: VyactModelProfileRequest):
     ) if req.runtime == "gguf" else []
     if profile["gpu_manual_split_enabled"] and not profile["gpu_split_percentages"]:
         raise HTTPException(400, "invalid_gpu_split_percentages")
-    return await save_model_profile(profile)
+    try:
+        info = await asyncio.to_thread(profile_model_info, req.model_path, req.runtime)
+        profile = normalize_model_profile({**profile, "limits": info["limits"]}, info["limits"])
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from error
+    saved = await save_model_profile(profile)
+    return {**saved, "limits": info["limits"]}
 
 
 @router.post("/vyact/models/activate")
@@ -1235,10 +1239,11 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
             ) if runtime == "gguf" else []
             if request_profile["gpu_manual_split_enabled"] and not request_profile["gpu_split_percentages"]:
                 raise ValueError("invalid_gpu_split_percentages")
-            safe_profile = normalize_model_profile({**request_profile, "runtime": runtime})
-            req.context_size = safe_profile["context_size"]
-            req.max_output_tokens = safe_profile["max_output_tokens"]
-            req.history_token_budget = safe_profile["history_token_budget"]
+            model_info = await asyncio.to_thread(profile_model_info, req.model_path, runtime)
+            safe_profile = normalize_model_profile({**request_profile, "runtime": runtime}, model_info["limits"])
+            for key in type(req).model_fields:
+                if key in safe_profile:
+                    setattr(req, key, safe_profile[key])
             runtime_status: dict = {}
             engine_started = True
             if runtime == "mlx":
@@ -1266,6 +1271,11 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
                 req.context_size = await asyncio.to_thread(
                     get_loaded_context_size, model_id, req.context_size,
                 )
+            safe_profile = normalize_loaded_model_profile(
+                {**req.model_dump(), "limits": model_info["limits"]}, req.context_size,
+            )
+            req.max_output_tokens = safe_profile["max_output_tokens"]
+            req.history_token_budget = safe_profile["history_token_budget"]
             mtp_fallback = runtime_status.get("mtp_fallback", False)
             effective_mtp_enabled = False if mtp_fallback else req.mtp_enabled
             mtp_failure_code = runtime_status.get("mtp_failure_code") if mtp_fallback else None
@@ -1299,6 +1309,7 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
             })
             await save_model_profile({
                 "model_path": req.model_path, "runtime": runtime, "repository": repository,
+                "limits": model_info["limits"],
                 "context_size": req.context_size, "max_output_tokens": req.max_output_tokens,
                 "history_token_budget": safe_profile["history_token_budget"],
                 "temperature": req.temperature, "top_k": req.top_k, "top_p": req.top_p,
@@ -1335,7 +1346,7 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
                         start_configured_runtime, previous_model,
                         previous_config.get("debug_logging", False), restore_status,
                     )
-                    await persist_mtp_fallback(previous_model, previous_model, restore_status)
+                    await persist_loaded_model_profile(previous_model, previous_model, restore_status)
                     await save_model_profile(previous_model)
                     await warm_loaded_vyact_model(
                         restored_id, await load_ui_language_async() or "", previous_model.get("runtime", "gguf"),
@@ -1386,7 +1397,7 @@ async def select_model(req: ModelSelectRequest):
                 model_id = await asyncio.to_thread(
                     start_configured_runtime, vyact_config, config.get("debug_logging", False), runtime_status,
                 )
-                profile = await persist_mtp_fallback(profile, vyact_config, runtime_status)
+                profile = await persist_loaded_model_profile(profile, vyact_config, runtime_status)
                 config["type"] = "vyact"
                 config["model"] = model_id
                 config["model_type"] = "chat"
@@ -1413,7 +1424,7 @@ async def select_model(req: ModelSelectRequest):
                             previous_vyact_config,
                             config.get("debug_logging", False), restore_status,
                         )
-                        await persist_mtp_fallback(previous_vyact_config, previous_vyact_config, restore_status)
+                        await persist_loaded_model_profile(previous_vyact_config, previous_vyact_config, restore_status)
                         await warm_loaded_vyact_model(
                             restored_model_id, await load_ui_language_async() or "",
                             previous_vyact_config.get("runtime", "gguf"),
@@ -1625,7 +1636,7 @@ async def select_provider(req: ProviderSelectRequest):
                 vyact_config,
                 config.get("debug_logging", False), runtime_status,
             )
-            await persist_mtp_fallback(profile, vyact_config, runtime_status)
+            await persist_loaded_model_profile(profile, vyact_config, runtime_status)
         except (OSError, RuntimeError, ValueError) as error:
             logger.exception("[providers] Vyact activation failed model=%s runtime=%s status=%s", vyact_config.get("model_path"), vyact_config.get("runtime"), runtime_status)
             raise HTTPException(503, "vyact_model_activation_failed") from error

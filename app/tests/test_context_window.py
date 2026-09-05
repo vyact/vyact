@@ -38,10 +38,10 @@ def test_output_uses_only_remaining_space_at_context_cap():
     assert output_limit == 11_072
 
 
-def test_local_output_defaults_to_one_quarter_of_context():
+def test_local_output_honors_configured_limit_and_actual_input():
     output_limit = calculate_output_token_limit(_messages(1_205), 32_768, 2, 32_768)
 
-    assert output_limit == 8_192
+    assert output_limit == 31_051
 
 
 def test_local_output_shrinks_when_input_uses_remaining_context():
@@ -66,3 +66,11 @@ def test_history_limit_never_exceeds_configured_budget():
         base_input_tokens=1_000,
         configured_output=2_048,
     ) == 2_000
+
+
+def test_history_reserves_the_full_configured_output_above_a_quarter():
+    assert calculate_history_token_limit(32768, 32768, 1000, 20000) == 11256
+
+
+def test_actual_token_count_overrides_the_text_estimate():
+    assert calculate_output_token_limit(_messages(1), 32768, 2, 20000, input_tokens=20000) == 12256

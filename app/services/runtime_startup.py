@@ -14,10 +14,12 @@ from routers.deps import load_config_async, load_ui_language_async, save_config_
 from services.model_runtime_profiles import (
     get_model_profile,
     normalize_model_profile,
+    normalize_loaded_model_profile,
     recommended_model_profile,
     save_model_profile,
 )
 from services.runtime_settings import apply_runtime_settings
+from services.model_profile_defaults import hardware_model_profile
 from services.vyact_runtime import VYACT_RUNTIME_DIR, get_native_update_commands, get_runtime_paths, start_configured_runtime
 
 logger = get_logger(__name__)
@@ -156,21 +158,37 @@ async def detect_native_runtime_updates(config: dict) -> dict:
     return get_startup_runtime_state()
 
 
-async def persist_mtp_fallback(profile: dict, vyact_config: dict, runtime_status: dict) -> dict:
-    """Persist the effective acceleration state for every model loading entry point."""
-    if not runtime_status.get("mtp_fallback"):
-        return profile
-    failure = {
-        "mtp_enabled": False,
-        "mtp_failure_code": runtime_status.get("mtp_failure_code", "load_failed"),
-        "mtp_failure_message": runtime_status.get("mtp_failure_message"),
-        "mtp_failed_at": datetime.now(timezone.utc).isoformat(),
+async def persist_loaded_model_profile(profile: dict, vyact_config: dict, runtime_status: dict) -> dict:
+    """Reconcile saved/query settings with the actual context and acceleration."""
+    source = {
+        "model_path": vyact_config.get("model_path"),
+        "runtime": vyact_config.get("runtime", "gguf"),
+        **profile,
     }
-    logger.warning("[runtime] MTP fallback model=%s runtime=%s failure=%s",
-                   profile.get("model_path"), profile.get("runtime"), failure)
-    saved = await save_model_profile({**profile, **failure})
-    vyact_config.update(failure)
-    return saved
+    effective = normalize_loaded_model_profile(
+        source, int(vyact_config.get("context_size") or profile.get("context_size") or 32768),
+    )
+    if effective["context_size"] != profile.get("context_size"):
+        logger.info("[runtime] fitted profile model=%s context=%s->%s output=%s history=%s",
+                    effective.get("model_path"), profile.get("context_size"), effective["context_size"],
+                    effective["max_output_tokens"], effective["history_token_budget"])
+    if runtime_status.get("mtp_fallback"):
+        logger.warning("[runtime] MTP fallback model=%s failure=%s",
+                       effective.get("model_path"), runtime_status.get("mtp_failure_code"))
+        effective.update({
+            "mtp_enabled": False,
+            "mtp_failure_code": runtime_status.get("mtp_failure_code", "load_failed"),
+            "mtp_failure_message": runtime_status.get("mtp_failure_message"),
+            "mtp_failed_at": datetime.now(timezone.utc).isoformat(),
+        })
+    if any(profile.get(key) != value for key, value in effective.items()):
+        effective = await save_model_profile(effective)
+    vyact_config.update({key: effective.get(key) for key in (
+        "context_size", "max_output_tokens", "history_token_budget", "temperature", "top_k", "top_p",
+        "cpu_threads", "seed", "kv_cache_precision", "cache_quantization", "mtp_enabled",
+        "mtp_failure_code", "mtp_failure_message", "mtp_failed_at",
+    )})
+    return effective
 
 
 async def load_configured_vyact_model(config: dict | None = None) -> tuple[str, str]:
@@ -182,10 +200,12 @@ async def load_configured_vyact_model(config: dict | None = None) -> tuple[str, 
     common_settings = config.get("runtime_settings", {})
     profile = await get_model_profile(vyact_config["model_path"])
     if profile is None:
-        profile = await save_model_profile(recommended_model_profile(
+        profile = await asyncio.to_thread(
+            hardware_model_profile,
             vyact_config["model_path"], vyact_config.get("runtime", "gguf"),
             vyact_config.get("repository"), vyact_config.get("context_size", 32768),
-        ))
+        )
+        profile = await save_model_profile(profile)
     else:
         migrated_profile = normalize_model_profile({
             **profile,
@@ -206,7 +226,7 @@ async def load_configured_vyact_model(config: dict | None = None) -> tuple[str, 
         model_id = await asyncio.to_thread(
             start_configured_runtime, vyact_config, config.get("debug_logging", False), runtime_status,
         )
-        profile = await persist_mtp_fallback(profile, vyact_config, runtime_status)
+        profile = await persist_loaded_model_profile(profile, vyact_config, runtime_status)
     except Exception:
         logger.exception("[runtime] startup load failed model=%s runtime=%s context=%s status=%s",
                          vyact_config.get("model_path"), vyact_config.get("runtime"),

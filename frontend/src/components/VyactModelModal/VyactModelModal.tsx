@@ -12,7 +12,6 @@ import {
     getModelPublisher,
     getModelMemoryTone,
     getModelQuantization,
-    getOptimizedModelContext,
     getSelectableModelFiles,
 } from '../../utils/vyactModelDisplay';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
@@ -217,12 +216,10 @@ export default function VyactModelModal({onClose, onSelected, activeModelPath}: 
                 ),
             };
             if (modelToDownload.fileSize !== selectedFile.fileSize) setSelectedFile(modelToDownload);
-            let optimizedMetadata: GgufModelMetadata | undefined;
             if (modelToDownload.runtime === 'mlx') {
                 const details = await api.inspectVyactMlxMetadata(
                     modelToDownload.repository, modelToDownload.revision, modelToDownload.fileSize, MODEL_ESTIMATE_CONTEXT,
                 );
-                optimizedMetadata = details.metadata;
                 if (details.mtpModel) {
                     modelToDownload = {
                         ...modelToDownload,
@@ -232,12 +229,6 @@ export default function VyactModelModal({onClose, onSelected, activeModelPath}: 
                     setSelectedFile(modelToDownload);
                 }
             }
-            const modelToDownloadWeightBytes = modelToDownload.fileSize + (
-                modelToDownload.dflash2Model?.size
-                || modelToDownload.mtpModel?.size
-                || modelToDownload.specprefillModel?.size
-                || 0
-            );
             if (modelToDownload.runtime === 'gguf') {
                 setDownloadPhase('runtime');
                 const runtimeMessageKey = 'modelDownload.preparingRuntime';
@@ -274,21 +265,8 @@ export default function VyactModelModal({onClose, onSelected, activeModelPath}: 
                 modelToDownload.dflash2Bundled,
             );
             setInstalledModels(api.getCachedVyactInstalledModels());
-            if (!optimizedMetadata) {
-                try {
-                    optimizedMetadata = await inspectRemoteGguf(
-                        modelToDownload.repository, modelToDownload.filename, modelToDownload.revision,
-                        modelToDownload.fileSize, MODEL_ESTIMATE_CONTEXT, token.trim(),
-                    );
-                } catch (error) {
-                    console.warn('Model metadata inspection failed; using the safe context default:', error);
-                }
-            }
-            const optimizedContextSize = getOptimizedModelContext(
-                optimizedMetadata,
-                modelToDownloadWeightBytes,
-                hardware,
-            );
+            // Downloaded metadata and current hardware are inspected by the profile API.
+            const optimizedContextSize = MODEL_ESTIMATE_CONTEXT;
             if (!selectedModelIsInstalled) {
                 const defaultProfile = await api.getVyactModelProfile(
                     selectedModelPath,

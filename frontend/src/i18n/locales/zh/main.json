@@ -1202,6 +1202,10 @@
   "backendErrors": {"invalid_request":"请检查请求后重试。","authentication_required":"需要身份验证。","permission_denied":"您无权执行此操作。","resource_not_found":"找不到请求的项目。","conflict":"请求与当前状态冲突。","payload_too_large":"提交的数据过大。","validation_failed":"部分输入值无效。","rate_limited":"请求过多，请稍后重试。","internal_error":"发生内部错误，请重试。","upstream_error":"连接的服务返回了错误。","service_unavailable":"服务暂时不可用。","request_timeout":"请求超时。","request_failed":"无法完成请求。"},
   "backendStreamErrors": {"presentation_generation_failed":"无法生成演示文稿。","document_index_failed":"无法为文档建立索引。","profile_analysis_failed":"无法完成个人资料分析。","web_document_save_failed":"无法保存网页文档。","empty_audio":"未收到音频。","speech_recognition_failed":"语音识别失败。","speech_model_unavailable":"语音识别模型不可用。","local_model_not_downloaded":"找不到所选的本地模型。请重新选择已下载的模型。"},
   "modelSettings": {
+    "memoryEstimateUnavailable": "模型或内存信息不完整，无法计算内存是否足够。",
+    "initialSettingsEstimate": "初始设置是根据模型信息和当前内存计算的建议值，未经实际推理验证。MTP默认关闭。",
+    "minimumMemoryWarning": "当前设置的预计内存超过可用的建议预算。如果最小上下文仍无法满足，请关闭其他应用或选择更小的模型。",
+    "tokenBounds": "上下文最小 {{contextMin}} · 输出 {{outputMin}}–{{outputMax}} · 历史记录 0–{{historyMax}} 个令牌。为输入和系统提示预留空间。",
     "activationNotice": "模型设置更新",
     "mtpFallbackNotice": "MTP 加速失败，模型正在不启用 MTP 的情况下运行。",
     "activationRecovery": {

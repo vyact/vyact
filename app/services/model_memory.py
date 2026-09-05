@@ -40,6 +40,8 @@ def _estimate_gguf_memory_bytes(
     embedding_length = number("embedding_length")
     key_length = number("attention.key_length") or (embedding_length / head_count if head_count else 0)
     value_length = number("attention.value_length") or key_length
+    if not block_count or not kv_head_count or not key_length or not value_length:
+        return 0
     full_attention_interval = max(1, int(number("full_attention_interval") or 1))
     attention_layer_count = math.ceil(block_count / full_attention_interval)
     model_context = int(number("context_length"))
@@ -63,6 +65,8 @@ def estimate_downloaded_model_memory_bytes(
             metadata = calculate_mlx_metadata_from_config(
                 config, _downloaded_size(model_path), context_size, kv_cache_precision,
             )
+            if not metadata.get("block_count") or not metadata.get("kv_cache_bytes"):
+                return 0
             return math.ceil(float(metadata["estimated_memory_bytes"]))
         return _estimate_gguf_memory_bytes(model_path, context_size, kv_cache_precision)
     except (OSError, ValueError, TypeError, json.JSONDecodeError):

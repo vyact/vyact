@@ -27,7 +27,7 @@ def estimate_message_tokens(messages: list[dict], chars_per_token: float) -> int
 def calculate_output_token_limit(messages: list[dict], context_size: int,
                                  chars_per_token: float, configured_output: int,
                                  input_tokens: int | None = None) -> int:
-    """Reserve most of a local KV cache for input and fit output in the remainder."""
+    """Honor the configured model output limit within the actual remaining context."""
     normalized_context_size = max(int(context_size), 1)
     input_tokens = input_tokens if input_tokens is not None else estimate_message_tokens(messages, chars_per_token)
     available_output = max(
@@ -36,7 +36,6 @@ def calculate_output_token_limit(messages: list[dict], context_size: int,
     )
     return min(
         max(int(configured_output), 1),
-        max(normalized_context_size // 4, 1),
         available_output,
     )
 
@@ -47,10 +46,7 @@ def calculate_history_token_limit(
 ) -> int:
     """Fit optional conversation history around required request content."""
     normalized_context_size = max(int(context_size), 1)
-    output_reserve = min(
-        max(int(configured_output), 1),
-        max(normalized_context_size // 4, 1),
-    )
+    output_reserve = max(int(configured_output), 1)
     available_history = max(
         normalized_context_size - base_input_tokens - output_reserve - LOCAL_CONTEXT_RESERVE_TOKENS,
         0,

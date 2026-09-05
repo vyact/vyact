@@ -261,6 +261,16 @@ export interface VyactModelProfile {
     gpu_split_percentages?: number[];
     gpu_manual_split_enabled?: boolean;
     estimated_memory_bytes?: number;
+    requires_apply?: boolean;
+    recommendation_status?: 'estimated' | 'insufficient' | 'unavailable';
+    limits?: {
+        context_min: number;
+        context_max: number | null;
+        output_min: number;
+        output_max: number | null;
+        context_reserve: number;
+        cpu_threads_max: number;
+    };
     capabilities?: {
         performance_modes: Array<'auto' | 'memory' | 'performance'>;
         cpu_threads: boolean;
