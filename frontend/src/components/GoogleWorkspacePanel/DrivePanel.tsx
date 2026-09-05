@@ -211,13 +211,6 @@ export default function DrivePanel({initialFolder, onAttachToChat, onIndexDocume
         void loadFiles();
     }, [folder.id, debouncedSearch, sortKey, sortDirection]);
     useEffect(() => {
-        if (!initialFolder || initialFolder.id === folder.id) return;
-        setSearchValue('');
-        setDebouncedSearch('');
-        setFolders([{id: 'root', name: provider === 'microsoft' ? t('settings:microsoft.drive') : t('googleWorkspace.myDrive')}, initialFolder]);
-        setFolder(initialFolder);
-    }, [folder.id, initialFolder, t]);
-    useEffect(() => {
         const myDriveName = t('googleWorkspace.myDrive');
         setFolder(current => current.id === 'root' ? {...current, name: myDriveName} : current);
         setFolders(current => current.map(item => item.id === 'root' ? {...item, name: myDriveName} : item));
