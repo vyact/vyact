@@ -666,6 +666,9 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
     const attachmentRef = useRef<HTMLInputElement>(null);
     const composeAttachmentDetailsRef = useRef<HTMLDetailsElement>(null);
     const mailOpenRequestIdRef = useRef(0);
+    const mailLabelsRequestIdRef = useRef(0);
+    const mailReadRevisionRef = useRef(0);
+    const mailReadUpdatesRef = useRef(new Map<string, {revision: number; pending: boolean}>());
     const [aiPromptOpen, setAiPromptOpen] = useState(false);
     const [aiPrompt, setAiPrompt] = useState('');
 
@@ -724,8 +727,9 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
     const trashingMailsRef = useRef(false);
 
     const loadMailLabels = async () => {
+        const requestId = ++mailLabelsRequestIdRef.current;
         const data = await api.getGoogleMailLabels();
-        setLabels(data.labels || []);
+        if (requestId === mailLabelsRequestIdRef.current) setLabels(data.labels || []);
     };
     const createMailLabel = async () => {
         const name = newLabelName.trim();
@@ -778,13 +782,22 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
 
     const loadMails = async (pageToken = '') => {
         const isNextPage = Boolean(pageToken);
+        const labelsRequestId = isNextPage ? null : ++mailLabelsRequestIdRef.current;
+        const readRevision = mailReadRevisionRef.current;
+        const pendingReadIds = new Set([...mailReadUpdatesRef.current]
+            .filter(([, update]) => update.pending).map(([id]) => id));
         if (isNextPage) setLoadingMoreMails(true); else setMailLoading(true);
         try {
             const result = isNextPage
                 ? await api.getGoogleMailMessages(label, pageToken)
                 : await api.getGoogleMailWorkspace(label);
-            if (!isNextPage) setLabels(result.labels || []);
-            const nextMails = result.messages || [];
+            if (labelsRequestId === mailLabelsRequestIdRef.current) setLabels(result.labels || []);
+            // A list started before a read completed can still contain unread metadata.
+            const nextMails = (result.messages || []).map((mail: MailItem) => {
+                const readUpdate = mailReadUpdatesRef.current.get(mail.id);
+                return readUpdate && (pendingReadIds.has(mail.id) || readUpdate.revision > readRevision)
+                    ? {...mail, isUnread: false} : mail;
+            });
             const discoveredRecipients = nextMails.flatMap((mail: MailItem) => {
                 const participants = mail.participants?.filter((participant: MailParticipant) => !participant.isMe) || [];
                 return participants.length
@@ -835,7 +848,15 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
                 threadMessages.at(-1)?.id || message.id,
             ]));
             setMails(current => current.map(mail => mail.id === id ? {...mail, isUnread: false} : mail));
-            void api.markGoogleMailMessageRead(id).then(loadMailLabels);
+            mailReadUpdatesRef.current.set(id, {revision: ++mailReadRevisionRef.current, pending: true});
+            void api.markGoogleMailMessageRead(id).then(() => {
+                mailReadUpdatesRef.current.set(id, {revision: ++mailReadRevisionRef.current, pending: false});
+                return loadMailLabels();
+            }).catch(() => {
+                mailReadUpdatesRef.current.delete(id);
+                // Reconcile optimistic state when the read operation fails.
+                void loadMails();
+            });
         } catch (error) {
             if (requestId !== mailOpenRequestIdRef.current) return;
             if (!(error instanceof ApiError && error.status === 404)) throw error;
