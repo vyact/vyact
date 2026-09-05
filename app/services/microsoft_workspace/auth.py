@@ -11,12 +11,16 @@ import httpx
 from elasticsearch import NotFoundError
 from fastapi import HTTPException
 
+from logger import get_logger
+
 from services.db import INTEGRATION_CREDENTIALS_INDEX, get_es
 from services.mcp_config import list_servers
 
 AUTHORITY = "https://login.microsoftonline.com/common/oauth2/v2.0"
 GRAPH_ROOT = "https://graph.microsoft.com/v1.0"
 SCOPES = "offline_access User.Read Mail.ReadWrite Mail.Send Calendars.ReadWrite Files.ReadWrite"
+logger = get_logger(__name__)
+_graph_limits: dict[str, asyncio.Semaphore] = {}
 _pending: dict[str, dict] = {}
 _locks: dict[str, asyncio.Lock] = {}
 _generations: dict[str, int] = {}
@@ -159,11 +163,83 @@ async def graph(path: str, method: str = "GET", *, account_id: str = "", params:
     allowed_modes = {"draft_only", "send"} if write == "draft" else {"send"}
     if write and item.get("mail_mode", "readonly") not in allowed_modes:
         raise HTTPException(403, "microsoft.writeDisabled")
-    async with httpx.AsyncClient(timeout=60) as client:
-        response = await client.request(method, GRAPH_ROOT + path, params=params, json=json, content=content,
-                                        headers={"Authorization": f"Bearer {token}", "Prefer": 'IdType="ImmutableId"'})
-    if response.is_error:
-        raise HTTPException(response.status_code, "microsoft.requestFailed")
+    is_read_request = method == "GET" or (path == "/$batch" and bool(json)
+        and bool(json.get("requests")) and all(entry.get("method") == "GET" for entry in json["requests"]))
+    request_id = str(uuid.uuid4())
+    # Omit query values and resource identifiers from diagnostic logs.
+    route = "/".join(path.split("?")[0].split("/")[:3])
+    async with _graph_limits.setdefault(item["id"], asyncio.Semaphore(3)):
+        async with httpx.AsyncClient(timeout=60) as client:
+            for attempt in range(3):
+                try:
+                    response = await client.request(method, GRAPH_ROOT + path, params=params, json=json, content=content,
+                        headers={"Authorization": f"Bearer {token}", "Prefer": 'IdType="ImmutableId"',
+                                 "client-request-id": request_id})
+                except httpx.RequestError as error:
+                    logger.warning("Graph transport failure account=%s route=%s request=%s error=%s",
+                                   item["id"], route, request_id, type(error).__name__)
+                    raise
+                if not response.is_error:
+                    break
+                try:
+                    error_code = response.json().get("error", {}).get("code", "unknown")
+                except (ValueError, AttributeError):
+                    error_code = "unknown"
+                logger.warning("Graph failure account=%s method=%s route=%s status=%s code=%s request=%s graph_request=%s retry_after=%s attempt=%s",
+                               item["id"], method, route, response.status_code, error_code, request_id,
+                               response.headers.get("request-id", ""), response.headers.get("Retry-After", ""), attempt + 1)
+                if response.status_code == 429 and is_read_request and attempt < 2:
+                    try:
+                        delay = max(1, int(response.headers.get("Retry-After", "2")))
+                    except ValueError:
+                        delay = 2
+                    if delay <= 30:
+                        await asyncio.sleep(delay)
+                        continue
+                raise HTTPException(response.status_code, "microsoft.requestFailed")
     if raw:
         return response
     return response.json() if response.content else {}
+
+
+async def graph_batch_get(requests: dict[str, str], account_id: str) -> dict[str, dict]:
+    """Read-only batches run sequentially inside one Graph concurrency slot."""
+    pending = dict(requests)
+    results = {}
+    for attempt in range(3):
+        batch = []
+        for key, url in pending.items():
+            entry = {"id": key, "method": "GET", "url": url,
+                     "headers": {"Prefer": 'IdType="ImmutableId"'}}
+            if batch:
+                entry["dependsOn"] = [batch[-1]["id"]]
+            batch.append(entry)
+        payload = await graph("/$batch", "POST", account_id=account_id, json={"requests": batch})
+        responses = {entry["id"]: entry for entry in payload.get("responses", [])}
+        retry = {}
+        delay = 1
+        for key, url in pending.items():
+            entry = responses.get(key, {})
+            status = entry.get("status", 502)
+            if 200 <= status < 300:
+                results[key] = entry.get("body", {})
+                continue
+            headers = {k.lower(): v for k, v in entry.get("headers", {}).items()}
+            code = (entry.get("body", {}).get("error") or {}).get("code", "unknown")
+            logger.warning("Graph batch failure account=%s item=%s status=%s code=%s graph_request=%s retry_after=%s attempt=%s",
+                           account_id, key, status, code, headers.get("request-id", ""),
+                           headers.get("retry-after", ""), attempt + 1)
+            if status not in (429, 424, 503) or attempt == 2:
+                raise HTTPException(status, "microsoft.requestFailed")
+            try:
+                delay = max(delay, int(headers.get("retry-after", "2")))
+            except ValueError:
+                delay = max(delay, 2)
+            retry[key] = url
+        if not retry:
+            return results
+        if delay > 30:
+            raise HTTPException(429, "microsoft.requestFailed")
+        await asyncio.sleep(delay)
+        pending = retry
+    return results

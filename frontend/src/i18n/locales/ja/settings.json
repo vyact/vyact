@@ -1,5 +1,12 @@
 {
   "microsoft": {
+    "folders": "フォルダー",
+    "newFolder": "新しいフォルダー",
+    "folderName": "フォルダー名",
+    "renameFolder": "フォルダー名を変更",
+    "folderActions": "{{name}}の操作",
+    "deleteFolderTitle": "「{{name}}」を削除しますか？",
+    "deleteFolderDescription": "フォルダーとその内容が削除されます。",
     "unknownShareUser": "ユーザー情報なし",
     "inviteNotificationFailed": "共有招待の応答にエラーがあります。招待メールの送信を確認できません。権限を確認し、OneDriveで再試行してください。",
     "inviteVerification": "Microsoftが招待メール送信前のアカウント確認を要求しています。OneDriveのWeb版で確認後、再度招待してください。",

@@ -1,5 +1,12 @@
 {
   "microsoft": {
+    "folders": "Dossiers",
+    "newFolder": "Nouveau dossier",
+    "folderName": "Nom du dossier",
+    "renameFolder": "Renommer le dossier",
+    "folderActions": "Actions de {{name}}",
+    "deleteFolderTitle": "Supprimer le dossier « {{name}} » ?",
+    "deleteFolderDescription": "Le dossier et son contenu seront supprimés.",
     "unknownShareUser": "Informations utilisateur indisponibles",
     "inviteNotificationFailed": "La réponse à l’invitation contient une erreur. L’envoi du courriel n’a pas pu être confirmé. Vérifiez les autorisations et réessayez dans OneDrive.",
     "inviteVerification": "Microsoft exige une vérification du compte avant l’envoi des invitations. Effectuez-la dans OneDrive sur le Web, puis réinvitez.",

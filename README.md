@@ -3,7 +3,9 @@
 
 # Vyact
 
-  **Vyact is an open-source, local-first personal AI workspace for llama.cpp, RAG, AI agents, document intelligence, and Google Workspace.**
+[English](README.md) · [한국어](README_KO.md) · [日本語](README_JA.md) · [ไทย](README_TH.md) · [Tiếng Việt](README_VI.md)
+
+  **Vyact is an open-source, local-first personal AI workspace for llama.cpp, RAG, AI agents, document intelligence, and Google Workspace / Microsoft integration.**
 
 ### Your private workspace for conversations, knowledge, and getting work done.
 
@@ -23,7 +25,7 @@
 
 Most AI chats begin with the same tedious ritual: find a file, copy an email, explain the background again, and hope the answer has not lost the plot. Vyact keeps the useful parts of your work together so you can ask better questions with less setup.
 
-It brings AI chat, document intelligence, notes, and the tools you already use into one focused workspace. Attach a document, inspect the source behind an answer, turn a note into searchable knowledge, or carry the same context into Gmail, Drive, Calendar, and Chrome.
+It brings AI chat, document intelligence, notes, and the tools you already use into one focused workspace. Attach a document, inspect the source behind an answer, turn a note into searchable knowledge, or carry the same context into Gmail, Outlook, Google Drive, OneDrive, calendars, and Chrome.
 
 Built around local LLMs through llama.cpp and MLX, Vyact helps you keep your conversations, documents, and working context in your own environment. Use a local model as a practical workspace—not just another chatbot tab—and connect hosted providers or your own OpenAI-compatible LLM endpoint when a task calls for them.
 
@@ -36,9 +38,9 @@ Built around local LLMs through llama.cpp and MLX, Vyact helps you keep your con
 
 ## One workspace for everyday work
 
-### One workspace for AI chat, files, and Google Workspace
+### One workspace for AI chat, files, Google, and Microsoft
 
-Ask questions with PDFs and documents attached, then trace answers back to their supporting context. Connect multiple Google Workspace accounts and switch between them as your work requires. Bring Gmail messages, email attachments, and Google Drive files directly into the conversation when your next action depends on real work—not copied-and-pasted fragments. When it is time to reply, Vyact can help draft an email from the same context.
+Ask questions with PDFs and documents attached, then trace answers back to their supporting context. Connect multiple Google and Microsoft accounts and switch between them in a shared account list. Bring Gmail or Outlook messages, email attachments, and Google Drive or OneDrive files directly into the conversation when your next action depends on real work—not copied-and-pasted fragments. When it is time to reply, Vyact can help draft an email from the same context.
 
 <p align="center">
   <img src="assets/readme/feature-ai-workspace.png" alt="Vyact AI chat with document context and Google Workspace panels" width="100%" />
@@ -127,7 +129,7 @@ Review the **Before** and **After** side by side, then copy the result back into
 | ⚡ | Local model performance tests | Compare settings on your hardware, inspect timings and token counts, and apply the best tested configuration. |
 | 🔎 | Source-aware answers | Review the passages and documents that informed an answer. |
 | 📝 | Rich-text memos | Organize ideas and plans in structured notes that RAG can retrieve during a conversation. |
-| 🗂️ | Google Workspace integration | Connect multiple accounts, switch between them, and work with Gmail, Drive, and Calendar alongside your AI conversation. |
+| 🗂️ | Google and Microsoft integration | Switch accounts and work with Gmail, Outlook, Google Drive, OneDrive, and calendars alongside your AI conversation. |
 | ↗️ | Local OpenAI-compatible API server | Use the active Vyact local model from OpenClaw or another app on your network, with optional Bearer-token authentication and ready-to-copy configuration. |
 | 🎙️ | Voice-based language learning | Practice speaking through natural conversations with speech input and AI responses. |
 | 🌐 | Chrome extension for Netflix and web language learning | Study Netflix with dual subtitles and level-aware explanations, translate pages, and ask questions with selected text or the current page as context. |
@@ -148,6 +150,9 @@ Review the **Before** and **After** side by side, then copy the result back into
 - **Google Drive** — Browse, search, upload, download, rename, copy, share, and attach Drive files directly to a conversation or knowledge base.
 - **Google Calendar** — View, create, update, and remove events without switching away from your current task.
 - **Built-in Google Workspace connection** — In **Settings > Google**, upload the OAuth credentials JSON and connect one or more accounts. Vyact's built-in tools call Gmail, Drive, and Calendar Google APIs directly with OAuth permissions; no separate external MCP server process sits in the request path. OAuth tokens are not included in exported backups.
+- **Microsoft** — Read, search, compose, and send Outlook mail; browse and manage mail folders; work with OneDrive files and sharing; and view or edit calendar events. Connect personal Microsoft accounts or supported work/school accounts.
+- **Built-in Microsoft connection** — Open **Settings > Microsoft** and follow the setup guide. Register an application in Microsoft Entra, choose support for the accounts you will connect, configure the mobile/desktop redirect URI shown in Vyact, and paste the Application (client) ID into Vyact. Browser sign-in uses OAuth with PKCE; no client secret is needed. App registration requires an Entra tenant and registration permissions; work/school policies may require administrator consent.
+- **One account switcher** — Google accounts appear above Microsoft accounts, marked **G** and **M**. Each service puts its last selected account first. **Cmd+Shift+G** on macOS, or **Ctrl+Shift+G** on Windows/Linux, opens or closes the shared panel.
 - **MCP and reusable skills** — In **Settings > AI Tools**, add filesystem access, GitHub, or a custom local/remote MCP server. Manage reusable instructions separately in **Settings > Skills** so recurring work gets the right guidance automatically.
 
 ### Keep ownership of your workspace
@@ -155,8 +160,8 @@ Review the **Before** and **After** side by side, then copy the result back into
 - **Local-first by default** — Vyact is designed around native llama.cpp, MLX on Apple Silicon, and local embedding so your core working context can stay on your machine.
 - **Choose your provider** — Use local models for private everyday work, connect OpenAI, Gemini, or Claude, or add an OpenAI-compatible endpoint operated by your organization or another service.
 - **Use your local model from another app** — Open **Settings > API Server** to copy the network endpoint, active model ID, OpenClaw configuration, or a curl test. Optional token authentication applies consistently to both local and remote requests through Vyact's gateway.
-- **Know when data leaves your machine** — When Gmail or Drive content is used as AI chat context, it may be sent to the selected AI provider. With a Vyact-managed local model, that chat context is not sent to an external AI provider.
-- **Back up what matters** — Export and restore conversations, documents, files, memos, prompts, settings, provider connections, projects, and vocabulary. Backups can also be saved to Google Drive.
+- **Know when data leaves your machine** — When connected email or cloud-file content is used as AI chat context, it may be sent to the selected AI provider. With a Vyact-managed local model, that chat context is not sent to an external AI provider.
+- **Back up what matters** — Export and restore conversations, documents, files, memos, prompts, settings, provider connections, projects, and vocabulary. Cloud backups can be saved to Google Drive or OneDrive using the selected account.
 - **Open source** — Vyact is released under AGPL-3.0. You can inspect, adapt, and contribute to the workspace you rely on.
 
 ## A few ways to start today
@@ -164,7 +169,7 @@ Review the **Before** and **After** side by side, then copy the result back into
 | If you want to… | Try this in Vyact |
 | --- | --- |
 | Understand a report quickly | Attach the PDF, ask for a concise briefing, then open the retrieved sources to check the answer. |
-| Reply to a difficult email | Attach the email thread and relevant Drive files, ask for a draft in your voice, then edit and send it from Gmail. |
+| Reply to a difficult email | Attach the email thread and relevant Drive files, ask for a draft in your voice, then edit and send it from Gmail or Outlook. |
 | Build a personal work memory | Index frequently used documents and save decisions as memos; ask a normal question later and let RAG find the context. |
 | Plan a project without losing the thread | Create a project, add working instructions, keep discussions together, and export the conversation when you need a record. |
 | Practice a new language every day | Open voice chat, or learn from Netflix with dual subtitles and explanations focused on your selected weak areas. |
@@ -211,7 +216,7 @@ On macOS, Windows, and Linux, Vyact can download and run its supported native El
 1. Launch Vyact and choose a provider and model. Select **Vyact** to search for and download a local GGUF or MLX model, or add a custom LLM endpoint if you already operate one.
 2. Drop in a document or open **Document management** to index files you will use repeatedly. Create a knowledge collection when you want to limit RAG to a particular set of documents, memos, or email threads.
 3. Ask a question in chat and inspect the retrieved context when accuracy matters.
-4. Optionally connect Google Workspace from **Settings > Google** or install the Chrome extension to bring live work into the same flow.
+4. Optionally connect Google from **Settings > Google**, Microsoft from **Settings > Microsoft**, or install the Chrome extension to bring live work into the same flow.
 5. Create a memo, project, or reusable skill once you find a workflow you repeat.
 
 ### Connect a custom LLM provider

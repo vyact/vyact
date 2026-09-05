@@ -1,3 +1,4 @@
+import {getGoogleWorkspaceStatus} from '../../services/googleWorkspaceStatus';
 import {createWorkspaceApi} from '../../services/api';
 import {microsoftRequest, OPEN_MICROSOFT_WORKSPACE} from '../../services/microsoftWorkspace';
 import React, {useEffect, useState, useCallback, useRef} from 'react';
@@ -363,14 +364,28 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
         window.addEventListener(OPEN_GOOGLE_DRIVE_EVENT, openDriveFolder);
         return () => window.removeEventListener(OPEN_GOOGLE_DRIVE_EVENT, openDriveFolder);
     }, []);
-    const toggleGoogleWorkspacePanel = () => {
-        setWorkspaceProvider('google');
-        if (workspaceProvider === 'microsoft') { setSelectedGoogleMailId(null); setSelectedGoogleCalendarEvent(null); setSelectedGoogleDriveFolder(null); setGoogleWorkspaceOpen(true); return; }
-        if (!googleWorkspaceOpen) {
-            setSelectedGoogleMailId(null);
-            setSelectedGoogleCalendarEvent(null);
+    const toggleGoogleWorkspacePanel = async () => {
+        if (googleWorkspaceOpen) {
+            closeGoogleWorkspacePanel();
+            return;
         }
-        setGoogleWorkspaceOpen(open => !open);
+        const [google, microsoft] = await Promise.allSettled([
+            getGoogleWorkspaceStatus(),
+            microsoftRequest('/status'),
+        ]);
+        const googleConnected = google.status === 'fulfilled' && google.value.connected;
+        const microsoftConnected = microsoft.status === 'fulfilled' && microsoft.value.authenticated;
+        if (!googleConnected && !microsoftConnected) return;
+        const provider = workspaceProvider === 'microsoft'
+            ? microsoftConnected ? 'microsoft' : 'google'
+            : googleConnected ? 'google' : 'microsoft';
+        setWorkspaceProvider(provider);
+        setWorkspaceAccountId(provider === 'microsoft' && microsoft.status === 'fulfilled'
+            ? microsoft.value.config.active_account_id : '');
+        setSelectedGoogleMailId(null);
+        setSelectedGoogleCalendarEvent(null);
+        setSelectedGoogleDriveFolder(null);
+        setGoogleWorkspaceOpen(true);
     };
     useEffect(() => onGoogleWorkspaceStatusChanged(closeGoogleWorkspacePanel), [closeGoogleWorkspacePanel]);
     useEffect(() => {
@@ -385,18 +400,10 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
             setSelectedGoogleDriveFolder(null);
             setGoogleWorkspaceOpen(true);
         };
-        const shortcut = (event: KeyboardEvent) => {
-            if (event.repeat || !(event.metaKey || event.ctrlKey) || !event.shiftKey || event.altKey || event.key.toLowerCase() !== 'o') return;
-            event.preventDefault();
-            if (googleWorkspaceOpen && workspaceProvider === 'microsoft') closeGoogleWorkspacePanel();
-            else void openMicrosoft(event).catch(() => {});
-        };
         const open = (event: Event) => void openMicrosoft(event).catch(() => {});
         window.addEventListener(OPEN_MICROSOFT_WORKSPACE, open);
-        window.addEventListener('keydown', shortcut);
         return () => {
             window.removeEventListener(OPEN_MICROSOFT_WORKSPACE, open);
-            window.removeEventListener('keydown', shortcut);
         };
     }, [googleWorkspaceOpen, workspaceProvider, closeGoogleWorkspacePanel]);
     const [showShortcutModal, setShowShortcutModal] = useState(false);

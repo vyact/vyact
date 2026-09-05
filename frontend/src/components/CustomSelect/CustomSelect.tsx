@@ -8,6 +8,7 @@ export interface SelectOption {
     value: string;
     label: string;
     description?: string;
+    group?: string;
     disabled?: boolean;
 }
 
@@ -200,10 +201,10 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
 
             <div className="custom-select-list">
                 {filtered.length > 0 ? (
-                    filtered.map(opt => (
+                    filtered.map((opt, index) => (
                         <div
                             key={opt.value}
-                            className={`custom-select-item${isSelected(opt.value) ? ' selected' : ''}${opt.disabled ? ' disabled' : ''}`}
+                            className={`custom-select-item${index > 0 && opt.group !== filtered[index - 1].group ? ' group-start' : ''}${isSelected(opt.value) ? ' selected' : ''}${opt.disabled ? ' disabled' : ''}`}
                             aria-disabled={opt.disabled || undefined}
                             onClick={event => {
                                 event.stopPropagation();

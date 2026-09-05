@@ -328,3 +328,7 @@
     opacity: 0.5;
     pointer-events: none;
 }
+
+.custom-select-item.group-start {
+    border-top: 1px solid var(--border);
+}

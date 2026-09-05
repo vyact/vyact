@@ -50,13 +50,18 @@ export default function GoogleWorkspacePanel({provider = 'google', requestedAcco
     const [panelWidth, setPanelWidth] = useState(getSavedPanelWidth);
     const [accounts, setAccounts] = useState<Array<{id: string; email?: string; mailMode?: string}>>([]);
     const [otherAccounts, setOtherAccounts] = useState<Array<{id: string; email?: string}>>([]);
+    const [otherActiveAccountId, setOtherActiveAccountId] = useState('');
     const [switchingAccount, setSwitchingAccount] = useState(false);
     useEffect(() => {
         let active = true;
         const refresh = async () => {
             try {
                 const status = provider === 'google' ? await microsoftRequest('/status') : await getGoogleWorkspaceStatus();
-                if (active) setOtherAccounts(status.accounts.filter(account => account.authenticated));
+                if (active) {
+                    setOtherAccounts(status.accounts.filter(account => account.authenticated));
+                    setOtherActiveAccountId(typeof status.config?.active_account_id === 'string'
+                        ? status.config.active_account_id : '');
+                }
             } catch { if (active) setOtherAccounts([]); }
         };
         void refresh();
@@ -69,6 +74,9 @@ export default function GoogleWorkspacePanel({provider = 'google', requestedAcco
         };
     }, [provider]);
     const [activeAccountId, setActiveAccountId] = useState(requestedAccountId || '');
+    const [dismissedDriveRequestId, setDismissedDriveRequestId] = useState<number | null>(null);
+    const activeDriveSelection = selectedDriveFolder?.requestId === dismissedDriveRequestId
+        ? null : selectedDriveFolder;
     const api = useMemo(() => provider === 'microsoft' ? createWorkspaceApi('microsoft-workspace', activeAccountId) : googleApi, [provider, activeAccountId]);
 
     const loadAccounts = useCallback(async (forceRefresh = false) => {
@@ -77,8 +85,9 @@ export default function GoogleWorkspacePanel({provider = 'google', requestedAcco
             const connected = status.accounts.filter(account => account.authenticated);
             setAccounts(connected.map(account => ({...account, mailMode: status.config.accounts.find(item => item.id === account.id)?.mail_mode || 'readonly'})));
             const preferredAccountId = requestedAccountId || status.config.active_account_id;
-            setActiveAccountId(connected.some(account => account.id === preferredAccountId)
-                ? preferredAccountId : connected[0]?.id || '');
+            setActiveAccountId(current => connected.some(account => account.id === current)
+                ? current : connected.some(account => account.id === preferredAccountId)
+                    ? preferredAccountId : connected[0]?.id || '');
             return;
         }
         const workspaceStatus = await (forceRefresh
@@ -94,7 +103,7 @@ export default function GoogleWorkspacePanel({provider = 'google', requestedAcco
             : connectedAccounts[0]?.id || '';
 
         setAccounts(connectedAccounts);
-        setActiveAccountId(activeAccountId);
+        setActiveAccountId(current => connectedAccounts.some(account => account.id === current) ? current : activeAccountId);
 
         // 예전 설정이나 연결 해제 때문에 활성 슬롯이 미연결 계정을 가리키면
         // 패널을 여는 시점에 실제 연결된 첫 계정으로 복구한다.
@@ -131,8 +140,10 @@ export default function GoogleWorkspacePanel({provider = 'google', requestedAcco
         ...accounts.map(account => ({...account, provider})),
         ...otherAccounts.map(account => ({...account, provider: provider === 'google' ? 'microsoft' as const : 'google' as const})),
     ].sort((a, b) => {
-        const priority = (account: {provider: string; id: string}) =>
-            account.provider !== provider ? 2 : account.id === activeAccountId ? 0 : 1;
+        const priority = (account: {provider: string; id: string}) => {
+            const lastSelectedAccountId = account.provider === provider ? activeAccountId : otherActiveAccountId;
+            return (account.provider === 'google' ? 0 : 2) + (account.id === lastSelectedAccountId ? 0 : 1);
+        };
         return priority(a) - priority(b);
     });
     const selectWorkspaceAccount = async (value: string) => {
@@ -140,7 +151,10 @@ export default function GoogleWorkspacePanel({provider = 'google', requestedAcco
         if (!target || switchingAccount) return;
         setSwitchingAccount(true);
         try {
-            if (target.provider === provider) await changeAccount(target.id);
+            if (target.provider === provider) {
+                await changeAccount(target.id);
+                setDismissedDriveRequestId(selectedDriveFolder?.requestId ?? null);
+            }
             else {
                 if (target.provider === 'microsoft') await microsoftRequest(`/accounts/${target.id}/activate`, 'POST');
                 else await googleApi.activateGoogleAccount(target.id);
@@ -154,12 +168,12 @@ export default function GoogleWorkspacePanel({provider = 'google', requestedAcco
     </span>;
 
     useEffect(() => {
-        if (!selectedDriveFolder) return;
+        if (!activeDriveSelection) return;
         setTab('drive');
-        if (selectedDriveFolder.accountId && selectedDriveFolder.accountId !== activeAccountId) {
-            void changeAccount(selectedDriveFolder.accountId);
+        if (activeDriveSelection.accountId && activeDriveSelection.accountId !== activeAccountId) {
+            void changeAccount(activeDriveSelection.accountId);
         }
-    }, [activeAccountId, changeAccount, selectedDriveFolder]);
+    }, [activeAccountId, changeAccount, activeDriveSelection]);
 
     useEffect(() => {
         if (selectedMessageId) setTab('mail');
@@ -193,6 +207,7 @@ export default function GoogleWorkspacePanel({provider = 'google', requestedAcco
                 <CustomSelect
                     options={accountOptions.map((account, index) => ({
                         value: `${account.provider}:${account.id}`,
+                        group: account.provider,
                         label: account.email || t('googleWorkspace.accountNumber', {number: index + 1}),
                     }))}
                     value={`${provider}:${activeAccountId}`}
@@ -216,7 +231,7 @@ export default function GoogleWorkspacePanel({provider = 'google', requestedAcco
         </header>
         <div key={activeAccountId} className="gwp-account-content">
         <Suspense fallback={null}>
-            {activeAccountId && (!selectedDriveFolder?.accountId || selectedDriveFolder.accountId === activeAccountId) && (tab === 'mail' ? <MailPanel accountId={activeAccountId} selectedMessageId={selectedMessageId} onAttachFilesToChat={onAttachMailFilesToChat}/> : tab === 'drive' ? <DrivePanel key={selectedDriveFolder?.requestId ?? 'drive'} initialFolder={selectedDriveFolder ? {id: selectedDriveFolder.folderId, name: selectedDriveFolder.folderName} : undefined} onAttachToChat={onAttachDriveFileToChat} onIndexDocument={onIndexDriveDocument}/> : (
+            {activeAccountId && (!activeDriveSelection?.accountId || activeDriveSelection.accountId === activeAccountId) && (tab === 'mail' ? <MailPanel accountId={activeAccountId} selectedMessageId={selectedMessageId} onAttachFilesToChat={onAttachMailFilesToChat}/> : tab === 'drive' ? <DrivePanel key={activeDriveSelection?.requestId ?? 'drive'} initialFolder={activeDriveSelection ? {id: activeDriveSelection.folderId, name: activeDriveSelection.folderName} : undefined} onAttachToChat={onAttachDriveFileToChat} onIndexDocument={onIndexDriveDocument}/> : (
                 <CalendarPanel
                     selectedEvent={pendingCalendarEvent}
                     onSelectedEventHandled={requestId => {

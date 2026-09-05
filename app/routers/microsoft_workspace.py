@@ -122,8 +122,7 @@ async def messages(label: str = "INBOX", page_token: str = "", query: str = "", 
 
 @router.get("/mail/workspace")
 async def workspace(label: str = "INBOX", account_id: str = ""):
-    folder_data, message_data = await asyncio.gather(mail.labels(account_id), mail.messages(label, account_id=account_id))
-    return {**folder_data, **message_data}
+    return await mail.workspace(label, account_id)
 
 
 @router.get("/mail/messages/{message_id}")

@@ -1,5 +1,12 @@
 {
   "microsoft": {
+    "folders": "โฟลเดอร์",
+    "newFolder": "สร้างโฟลเดอร์ใหม่",
+    "folderName": "ชื่อโฟลเดอร์",
+    "renameFolder": "เปลี่ยนชื่อโฟลเดอร์",
+    "folderActions": "เมนูโฟลเดอร์ {{name}}",
+    "deleteFolderTitle": "ลบโฟลเดอร์ “{{name}}” หรือไม่",
+    "deleteFolderDescription": "โฟลเดอร์และเนื้อหาภายในจะถูกลบ",
     "unknownShareUser": "ไม่มีข้อมูลผู้ใช้",
     "inviteNotificationFailed": "การตอบกลับคำเชิญมีข้อผิดพลาด จึงยืนยันการส่งอีเมลไม่ได้ โปรดตรวจสอบสิทธิ์แล้วลองอีกครั้งใน OneDrive",
     "inviteVerification": "Microsoft ต้องการให้ยืนยันบัญชีก่อนส่งอีเมลเชิญ โปรดยืนยันบัญชีใน OneDrive บนเว็บแล้วเชิญอีกครั้ง",

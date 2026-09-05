@@ -1,10 +1,11 @@
 """Normalize Outlook messages to the shared mail panel contract."""
 import asyncio
-from urllib.parse import quote, urlsplit
+import time
+from urllib.parse import quote, urlsplit, urlencode
 
 from fastapi import HTTPException
 
-from services.microsoft_workspace.auth import graph, account, read_token
+from services.microsoft_workspace.auth import graph, graph_batch_get, account, read_token
 
 FOLDERS = {"INBOX": "inbox", "SENT": "sentitems", "DRAFT": "drafts", "TRASH": "deleteditems", "SPAM": "junkemail", "ARCHIVE": "archive"}
 MESSAGE_FIELDS = "id,conversationId,subject,from,toRecipients,ccRecipients,bccRecipients,receivedDateTime,bodyPreview,isRead,flag,hasAttachments,parentFolderId"
@@ -49,23 +50,63 @@ def normalize_message(value: dict, email: str = "") -> dict:
             "attachments": []}
 
 
+_folder_ids: dict[tuple[str, str, str], tuple[float, dict[str, str]]] = {}
+_folder_locks: dict[str, asyncio.Lock] = {}
+_FOLDER_CACHE_SECONDS = 3600
+_FOLDER_LIST_PATH = "/me/mailFolders?$top=100&$select=id,displayName,unreadItemCount"
+
+
+async def _folder_context(account_id: str):
+    _, item = await account(account_id)
+    account_id = item["id"]
+    token = await read_token(account_id)
+    # Reconnecting a slot to another mailbox/client must not reuse its IDs.
+    key = (account_id, token.get("client_id", ""), token.get("email", ""))
+    return account_id, key
+
+
+async def _load_workspace(label: str | None, account_id: str) -> dict:
+    account_id, cache_key = await _folder_context(account_id)
+    async with _folder_locks.setdefault(account_id, asyncio.Lock()):
+        cached_at, known = _folder_ids.get(cache_key, (0, {}))
+        if time.monotonic() - cached_at >= _FOLDER_CACHE_SECONDS:
+            known = {}
+        requests = {"folders": _FOLDER_LIST_PATH}
+        if not known:
+            requests.update({key: f"/me/mailFolders/{folder}?$select=id"
+                             for key, folder in FOLDERS.items()})
+        if label is not None:
+            path, params = message_query(label)
+            requests["messages"] = path + "?" + urlencode(params)
+        data = await graph_batch_get(requests, account_id)
+        if not known:
+            known = {key: data[key]["id"] for key in FOLDERS}
+            _folder_ids[cache_key] = (time.monotonic(), known)
+        folders = data["folders"]
+        values = list(folders.get("value", []))
+        while folders.get("@odata.nextLink"):
+            folders = await graph(page_path(folders["@odata.nextLink"], "/me/mailFolders"), account_id=account_id)
+            values.extend(folders.get("value", []))
+        by_id = {value: key for key, value in known.items()}
+        labels_result = [{"id": by_id.get(v["id"], v["id"]), "name": v["displayName"],
+                          "type": "system" if v["id"] in by_id else "user",
+                          "unreadCount": v.get("unreadItemCount", 0)} for v in values]
+        labels_result.append({"id": "STARRED", "name": "STARRED", "type": "system", "unreadCount": 0})
+        result = {"labels": labels_result}
+        if label is not None:
+            result.update(normalize_message_list(data["messages"]))
+        return result
+
+
 async def labels(account_id: str = "") -> dict:
-    async def system(key: str, folder: str):
-        value = await graph(f"/me/mailFolders/{folder}", account_id=account_id)
-        return {"id": key, "name": value.get("displayName", key), "type": "system", "unreadCount": value.get("unreadItemCount", 0)}, value["id"]
-    systems = await asyncio.gather(*(system(key, folder) for key, folder in FOLDERS.items()))
-    known = {value[1] for value in systems}
-    result = [value[0] for value in systems]
-    path = "/me/mailFolders?$top=100"
-    while path:
-        data = await graph(path, account_id=account_id)
-        result.extend({"id": v["id"], "name": v["displayName"], "type": "user", "unreadCount": v.get("unreadItemCount", 0)} for v in data.get("value", []) if v["id"] not in known)
-        path = page_path(data["@odata.nextLink"], "/me/mailFolders") if data.get("@odata.nextLink") else ""
-    result.append({"id": "STARRED", "name": "STARRED", "type": "system", "unreadCount": 0})
-    return {"labels": result}
+    return await _load_workspace(None, account_id)
 
 
-async def messages(label: str = "INBOX", page_token: str = "", query: str = "", account_id: str = "") -> dict:
+async def workspace(label: str = "INBOX", account_id: str = "") -> dict:
+    return await _load_workspace(label, account_id)
+
+
+def message_query(label: str, query: str = "") -> tuple[str, dict]:
     folder = FOLDERS.get(label, label)
     path = f"/me/mailFolders/{resource_id(folder)}/messages"
     params = {"$top": "30", "$select": MESSAGE_FIELDS, "$orderby": "receivedDateTime desc"}
@@ -77,10 +118,20 @@ async def messages(label: str = "INBOX", page_token: str = "", query: str = "", 
         if query:
             params["$search"] = '"' + query.replace('"', '') + '"'
             params.pop("$orderby", None)
+    return path, params
+
+
+def normalize_message_list(result: dict) -> dict:
+    return {"messages": [normalize_message(item) for item in result.get("value", [])],
+            "nextPageToken": result.get("@odata.nextLink")}
+
+
+async def messages(label: str = "INBOX", page_token: str = "", query: str = "", account_id: str = "") -> dict:
+    path, params = message_query(label, query)
     if page_token:
         path, params = page_path(page_token, "/me/"), None
     result = await graph(path, params=params, account_id=account_id)
-    return {"messages": [normalize_message(item) for item in result.get("value", [])], "nextPageToken": result.get("@odata.nextLink")}
+    return normalize_message_list(result)
 
 
 async def message(message_id: str, account_id: str = "") -> dict:

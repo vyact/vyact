@@ -6,7 +6,7 @@
 ### 내 데이터와 웹을 연결하는 로컬 퍼스널 AI 워크스페이스
 
 문서·메일·메모·웹페이지의 맥락을 하나의 AI 작업공간에서 연결합니다.  
-로컬 LLM, 문서 RAG, Google Workspace, 크롬 확장 기능을 한 앱에서 사용할 수 있습니다.
+로컬 LLM, 문서 RAG, Google·Microsoft 연동, 크롬 확장 기능을 한 앱에서 사용할 수 있습니다.
 
 [**⬇️ Vyact 다운로드 및 설치**](https://github.com/vyact/vyact/releases/latest) · [**🌐 크롬 확장 설치**](https://chromewebstore.google.com/detail/vyact/opfbakfhoojmdkbbhcglolkpgmenjbib)
 
@@ -20,9 +20,9 @@
 
 ### 0. 설치 전 준비
 
-#### Mac: Homebrew 설치 필수
+#### Mac: 자동 런타임 설치를 위한 Homebrew 준비
 
-Apple Silicon Mac에서 GGUF 또는 MLX 로컬 모델을 설치·실행하려면 Homebrew가 필요합니다. 터미널을 열고 아래 명령으로 먼저 설치하세요.
+Apple Silicon Mac에서 로컬 모델용 런타임을 자동으로 준비하려면 Homebrew 사용을 권장합니다. 필요한 런타임이 아직 없다면 터미널을 열고 아래 명령으로 먼저 설치하세요.
 
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -76,12 +76,14 @@ winget --version
 
 > 크롬 확장의 전체 기능을 이용하려면 Vyact 데스크톱 앱이 실행 중이어야 합니다.
 
-### 3. 5분 안에 체험하기
+### 3. 모델 준비 후 빠르게 체험하기
 
-1. Vyact 모델 검색에서 내 컴퓨터 사양에 맞는 로컬 모델을 다운로드하고 실행합니다.
+모델 다운로드와 최초 런타임 준비에는 네트워크와 컴퓨터 사양에 따라 시간이 걸립니다. 준비가 끝나면 아래 순서로 핵심 기능을 확인하세요.
+
+1. 선택한 로컬 모델로 짧은 질문을 보내 응답을 확인합니다.
 2. PDF나 문서를 대화창에 첨부하고 핵심 내용과 근거를 질문합니다.
 3. 문서 관리에서 파일을 색인한 뒤 일반 대화에서 관련 내용을 다시 질문해 RAG 검색을 확인합니다.
-4. 필요하면 Gmail·Google Drive·Calendar를 연결해 실제 업무 자료를 대화 맥락으로 사용합니다.
+4. 메일 연동은 선택 사항입니다. 설정의 **Google** 또는 **Microsoft**에서 계정을 연결하면 Gmail·Outlook, Google Drive·OneDrive와 일정을 사용할 수 있습니다.
 5. 크롬 확장을 열어 현재 웹페이지를 요약하거나 선택한 문장을 번역·설명받습니다.
 
 ---
@@ -98,11 +100,17 @@ Vyact는 흩어진 작업 맥락을 하나의 워크스페이스에 연결합니
 
 ### 문서와 메일을 함께 이해하는 AI 작업공간
 
-PDF와 문서를 첨부해 질문하고, 답변에 활용된 근거를 확인할 수 있습니다. Gmail과 Google Drive 파일을 같은 대화에 연결하고, 필요한 경우 답장 초안 작성까지 이어갈 수 있습니다.
+PDF와 문서를 첨부해 질문하고, 답변에 활용된 근거를 확인할 수 있습니다. Gmail·Outlook 메일과 Google Drive·OneDrive 파일을 같은 대화에 연결하고, 필요한 경우 답장 초안 작성까지 이어갈 수 있습니다.
 
 <p align="center">
   <img src="assets/readme/feature-ai-workspace.png" alt="문서와 Gmail을 연결한 Vyact AI 작업공간" width="100%" />
 </p>
+
+### Google·Microsoft 업무 도구 연동 (선택)
+
+설정의 **Google**에서는 OAuth 자격증명 JSON으로, **Microsoft**에서는 Entra에 등록한 앱의 Client ID로 계정을 연결합니다. 각 설정 화면의 사전 설정 가이드를 따라 브라우저에서 로그인하세요. Microsoft 앱 등록에는 테넌트와 등록 권한이 필요하며, 회사·학교 계정은 관리자 동의가 필요할 수 있습니다.
+
+연결한 계정은 **G / M** 표시가 있는 목록에서 전환합니다. 메일·파일·일정을 같은 패널에서 확인하고, 클라우드 백업은 선택한 Google Drive 또는 OneDrive 계정에 저장할 수 있습니다. 패널 열기·닫기는 Mac에서 **Cmd+Shift+G**, Windows에서 **Ctrl+Shift+G**입니다.
 
 ### 내 컴퓨터에 맞는 로컬 AI 모델 검색·설치
 
@@ -157,7 +165,7 @@ GGUF와 Apple Silicon용 MLX 모델을 앱 안에서 검색하고 비교할 수 
 | 음성 입력 | faster-whisper |
 | 브라우저 연동 | Chrome Extension, 사이드 패널 |
 | 외부 AI | OpenAI, Gemini, Claude, OpenAI 호환 API |
-| 업무 도구 | Gmail, Google Drive, Google Calendar |
+| 업무 도구 | Gmail, Google Drive, Google Calendar, Outlook, OneDrive, Microsoft Calendar |
 
 ---
 
@@ -168,7 +176,7 @@ GGUF와 Apple Silicon용 MLX 모델을 앱 안에서 검색하고 비교할 수 
 - macOS에서는 Homebrew를 통해 GGUF용 `llama.cpp`·`llama-swap`과 MLX용 oMLX 런타임을 설치합니다.
 - Windows에서는 `winget`을 통해 GGUF용 `llama.cpp`와 `llama-swap`을 설치합니다.
 - 로컬 모델의 실행 가능 여부와 속도는 컴퓨터 메모리와 선택한 모델 크기에 따라 달라집니다.
-- Gmail·Drive 자료를 외부 AI 제공자와 함께 사용하면 해당 내용이 선택한 제공자로 전송될 수 있습니다. Vyact가 관리하는 로컬 모델을 사용하면 대화 맥락을 외부 AI 제공자에게 보내지 않습니다.
+- 연결한 메일·클라우드 파일을 외부 AI 제공자와 함께 사용하면 해당 내용이 선택한 제공자로 전송될 수 있습니다. Vyact가 관리하는 로컬 모델을 사용하면 대화 맥락을 외부 AI 제공자에게 보내지 않습니다.
 
 ---
 

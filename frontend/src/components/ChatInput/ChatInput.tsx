@@ -18,7 +18,6 @@ import CustomSelect from '../CustomSelect/CustomSelect';
 import type {SelectOption} from '../CustomSelect/CustomSelect';
 import CommandModal from './CommandModal';
 import {KNOWLEDGE_COLLECTIONS_UPDATED_EVENT, OPEN_KNOWLEDGE_COLLECTIONS_MODAL_EVENT, TEXTAREA_MAX_HEIGHT} from '../../constants/ui';
-import {getGoogleWorkspaceStatus} from '../../services/googleWorkspaceStatus';
 import {getCachedKnowledgeCollections, updateCachedKnowledgeCollections} from '../../services/knowledgeCollectionsCache';
 import type {GoogleCalendarSelection} from '../../types/googleWorkspace';
 
@@ -293,22 +292,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
     }, [showCommandModal]);
 
     useEffect(() => {
-        const handleGoogleWorkspaceShortcut = async (event: globalThis.KeyboardEvent) => {
-            if (!event.repeat && (event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLowerCase() === 'g') {
-                if (googleWorkspaceOpen) {
-                    event.preventDefault();
-                    onToggleGoogleWorkspace?.();
-                    return;
-                }
-                try {
-                    const google = await getGoogleWorkspaceStatus();
-                    if (!google.registered || !google.connected) return;
-                    event.preventDefault();
-                    onToggleGoogleWorkspace?.();
-                } catch {
-                    // 연결 상태를 확인할 수 없으면 단축키 동작을 막는다.
-                }
-            }
+        const handleGoogleWorkspaceShortcut = (event: globalThis.KeyboardEvent) => {
+            if (event.repeat || !(event.metaKey || event.ctrlKey) || !event.shiftKey
+                || event.altKey || event.key.toLowerCase() !== 'g') return;
+            event.preventDefault();
+            onToggleGoogleWorkspace?.();
         };
         window.addEventListener('keydown', handleGoogleWorkspaceShortcut);
         return () => window.removeEventListener('keydown', handleGoogleWorkspaceShortcut);

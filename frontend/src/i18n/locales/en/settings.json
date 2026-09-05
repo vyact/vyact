@@ -1,5 +1,12 @@
 {
   "microsoft": {
+    "folders": "Folders",
+    "newFolder": "New folder",
+    "folderName": "Folder name",
+    "renameFolder": "Rename folder",
+    "folderActions": "Folder actions: {{name}}",
+    "deleteFolderTitle": "Delete folder \"{{name}}\"?",
+    "deleteFolderDescription": "The folder and its contents will be deleted.",
     "unknownShareUser": "User information unavailable",
     "inviteNotificationFailed": "The sharing invitation response contains an error. Invitation email sending could not be confirmed. Check the permissions and try again in OneDrive.",
     "inviteVerification": "Microsoft requires account verification before sending invitation emails. Complete account verification in OneDrive on the web, then invite again.",

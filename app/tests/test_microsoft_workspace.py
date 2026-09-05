@@ -1,5 +1,6 @@
 """Microsoft contracts: no real account or external mutations."""
 import unittest
+import httpx
 from unittest.mock import AsyncMock, patch
 from urllib.parse import parse_qs, urlsplit
 from fastapi import HTTPException
@@ -146,3 +147,62 @@ def test_drive_shared_facet_survives_normalization():
     assert normalize_file({"id": "shared", "shared": {"scope": "users"}})["shared"] is True
     assert normalize_file({"id": "shared-empty", "shared": {}})["shared"] is True
     assert normalize_file({"id": "private"})["shared"] is False
+
+
+class MicrosoftThrottleTests(unittest.IsolatedAsyncioTestCase):
+    async def test_get_waits_for_retry_after_and_logs_error(self):
+        response = httpx.Response(429, headers={"Retry-After": "3", "request-id": "graph-test"},
+                                  json={"error": {"code": "TooManyRequests"}})
+        client = AsyncMock()
+        client.request.side_effect = [response, httpx.Response(200, json={"value": []})]
+        with patch.object(auth, "access_token", AsyncMock(return_value=("secret-token", {"id": "throttle-test"}))), \
+                patch.object(auth.httpx, "AsyncClient") as factory, \
+                patch.object(auth.asyncio, "sleep", AsyncMock()) as sleep, \
+                self.assertLogs(auth.logger, level="WARNING") as logs:
+            factory.return_value.__aenter__.return_value = client
+            result = await auth.graph("/me/mailFolders")
+        self.assertEqual(result, {"value": []})
+        sleep.assert_awaited_once_with(3)
+        self.assertEqual(client.request.await_count, 2)
+        self.assertIn("status=429", logs.output[0])
+        self.assertIn("TooManyRequests", logs.output[0])
+        self.assertNotIn("secret-token", logs.output[0])
+
+
+class MicrosoftBatchWorkspaceTests(unittest.IsolatedAsyncioTestCase):
+    async def test_cache_only_ids_and_fetch_latest_data_for_each_account(self):
+        mail._folder_ids.clear()
+        mail._folder_locks.clear()
+        calls = []
+        async def batch(requests, account_id):
+            calls.append((dict(requests), account_id))
+            result = {key: {"id": account_id + key} for key in mail.FOLDERS if key in requests}
+            result["folders"] = {"value": [{"id": account_id + "INBOX", "displayName": "Inbox",
+                                           "unreadItemCount": len(calls)}]}
+            result["messages"] = {"value": []}
+            return result
+        with patch.object(mail, "account", AsyncMock(side_effect=lambda value: ({}, {"id": value}))), \
+                patch.object(mail, "read_token", AsyncMock(return_value={"email": "test", "client_id": "client"})), \
+                patch.object(mail, "graph_batch_get", batch):
+            first = await mail.workspace(account_id="one")
+            second = await mail.workspace(account_id="one")
+            await mail.workspace(account_id="two")
+        self.assertEqual(len(calls[0][0]), 8)
+        self.assertEqual(set(calls[1][0]), {"folders", "messages"})
+        self.assertEqual(len(calls[2][0]), 8)
+        self.assertEqual(first["labels"][0]["unreadCount"], 1)
+        self.assertEqual(second["labels"][0]["unreadCount"], 2)
+
+    async def test_batch_retries_only_throttled_and_dependent_items(self):
+        graph = AsyncMock(side_effect=[
+            {"responses": [{"id": "folders", "status": 200, "body": {"value": []}},
+                           {"id": "messages", "status": 429, "headers": {"Retry-After": "4"},
+                            "body": {"error": {"code": "TooManyRequests"}}}]},
+            {"responses": [{"id": "messages", "status": 200, "body": {"value": []}}]},
+        ])
+        with patch.object(auth, "graph", graph), patch.object(auth.asyncio, "sleep", AsyncMock()) as sleep:
+            result = await auth.graph_batch_get({"folders": "/me/mailFolders", "messages": "/me/messages"}, "one")
+        self.assertEqual(set(result), {"folders", "messages"})
+        sleep.assert_awaited_once_with(4)
+        self.assertEqual([r["id"] for r in graph.call_args_list[1].kwargs["json"]["requests"]], ["messages"])
+        self.assertEqual(graph.call_args_list[0].kwargs["json"]["requests"][1]["dependsOn"], ["folders"])

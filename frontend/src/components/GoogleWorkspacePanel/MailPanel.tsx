@@ -589,6 +589,8 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
     const {api, provider} = useWorkspace();
     const {t, i18n} = useTranslation('main');
     const [labels, setLabels] = useState<MailLabel[]>([]);
+    const [mailLoadFailed, setMailLoadFailed] = useState(false);
+    const mailListRequestIdRef = useRef(0);
     const [label, setLabel] = useState('INBOX');
     const [showAllSystemLabels, setShowAllSystemLabels] = useState(false);
     const [isLabelCreateOpen, setIsLabelCreateOpen] = useState(false);
@@ -783,16 +785,20 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
     };
 
     const loadMails = async (pageToken = '') => {
+        const requestId = ++mailListRequestIdRef.current;
         const isNextPage = Boolean(pageToken);
+        setMailLoadFailed(false);
         const labelsRequestId = isNextPage ? null : ++mailLabelsRequestIdRef.current;
         const readRevision = mailReadRevisionRef.current;
         const pendingReadIds = new Set([...mailReadUpdatesRef.current]
             .filter(([, update]) => update.pending).map(([id]) => id));
         if (isNextPage) setLoadingMoreMails(true); else setMailLoading(true);
         try {
-            const result = isNextPage
-                ? await api.getGoogleMailMessages(label, pageToken)
-                : await api.getGoogleMailWorkspace(label);
+            const fetchMails = () => isNextPage
+                ? api.getGoogleMailMessages(label, pageToken)
+                : api.getGoogleMailWorkspace(label);
+            const result = await fetchMails();
+            if (requestId !== mailListRequestIdRef.current) return;
             if (labelsRequestId === mailLabelsRequestIdRef.current) setLabels(result.labels || []);
             // A list started before a read completed can still contain unread metadata.
             const nextMails = (result.messages || []).map((mail: MailItem) => {
@@ -810,8 +816,12 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
             setMails(current => isNextPage ? [...current, ...nextMails] : nextMails);
             if (!isNextPage) setSelectedMailIds(new Set());
             setNextMailPageToken(result.nextPageToken || null);
+        } catch {
+            if (requestId === mailListRequestIdRef.current) setMailLoadFailed(true);
         } finally {
-            if (isNextPage) setLoadingMoreMails(false); else setMailLoading(false);
+            if (requestId === mailListRequestIdRef.current) {
+                if (isNextPage) setLoadingMoreMails(false); else setMailLoading(false);
+            }
         }
     };
 
@@ -820,6 +830,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
         setSelected(null);
         setNextMailPageToken(null);
         if (accountId) void loadMails();
+        return () => { mailListRequestIdRef.current += 1; };
     }, [accountId, label]);
     useEffect(() => {
         if (!selectedMessageId || !accountId) return;
@@ -2010,7 +2021,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
                     <button className="gwp-compose-button" onClick={openNewCompose}><PenLine aria-hidden="true" size={18}/><span>{t('googleWorkspace.compose')}</span></button>
                     <button className="gwp-signature-settings-button" aria-label={t('googleWorkspace.signatureSettings')} onClick={openSignatureSettings}><Settings aria-hidden="true" size={19}/></button>
                 </div>
-                {provider === 'microsoft' ? labels.filter(item => item.id !== 'STARRED').sort((a, b) => {
+                {provider === 'microsoft' ? labels.filter(item => item.type === 'system' && item.id !== 'STARRED').sort((a, b) => {
                     const rank = (id: string) => { const index = MICROSOFT_FOLDER_IDS.indexOf(id); return index < 0 ? MICROSOFT_FOLDER_IDS.length - 1 : id === 'ARCHIVE' ? MICROSOFT_FOLDER_IDS.length : index; };
                     return rank(a.id) - rank(b.id);
                 }).map(item => {
@@ -2025,45 +2036,45 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
                 {primarySystemLabels.map(id => <SystemLabelButton key={id} id={id as keyof typeof SYSTEM_LABELS} active={label === id} onClick={() => selectLabel(id)}/>) }
                 {collapsibleSystemLabels.length > 0 && <button className="gwp-more-labels" onClick={() => setShowAllSystemLabels(current => !current)}>{showAllSystemLabels ? <ChevronUp size={18}/> : <ChevronDown size={18}/>}<span>{t(showAllSystemLabels ? 'googleWorkspace.less' : 'googleWorkspace.more')}</span></button>}
                 {showAllSystemLabels && collapsibleSystemLabels.map(id => <SystemLabelButton key={id} id={id as keyof typeof SYSTEM_LABELS} active={label === id} onClick={() => selectLabel(id)}/>) }
+                </>}
                 <div className="gwp-user-labels">
                     <div className="gwp-label-section-header">
-                        <span className="gwp-label-section-title">{t('googleWorkspace.labels')}</span>
-                        <button className="gwp-label-add-button" aria-label={t('googleWorkspace.addLabel')} onClick={() => setIsLabelCreateOpen(true)}><Plus aria-hidden="true" size={18}/></button>
+                        <span className="gwp-label-section-title">{t(provider === 'microsoft' ? 'settings:microsoft.folders' : 'googleWorkspace.labels')}</span>
+                        <button className="gwp-label-add-button" aria-label={t(provider === 'microsoft' ? 'settings:microsoft.newFolder' : 'googleWorkspace.addLabel')} onClick={() => setIsLabelCreateOpen(true)}><Plus aria-hidden="true" size={18}/></button>
                     </div>
                     {userLabels.map(item => <div className="gwp-user-label-row" key={item.id}>
-                        <button className={`gwp-user-label-select${label === item.id ? ' active' : ''}`} onClick={() => selectLabel(item.id)}><Tag aria-hidden="true" size={18}/><span>{item.name}</span>{item.unreadCount > 0 && <strong className="gwp-label-unread-count" aria-label={String(item.unreadCount)}>{item.unreadCount}</strong>}</button>
+                        <button className={`gwp-user-label-select${label === item.id ? ' active' : ''}`} onClick={() => selectLabel(item.id)}><>{provider === 'microsoft' ? <Folder aria-hidden="true" size={18}/> : <Tag aria-hidden="true" size={18}/>}</><span>{item.name}</span>{item.unreadCount > 0 && <strong className="gwp-label-unread-count" aria-label={String(item.unreadCount)}>{item.unreadCount}</strong>}</button>
                         <div className="gwp-label-menu" ref={labelMenuId === item.id ? labelMenuRef : undefined}>
-                            <button className="gwp-label-menu-button" aria-label={t('googleWorkspace.labelActions', {name: item.name})} aria-expanded={labelMenuId === item.id} onClick={() => setLabelMenuId(current => current === item.id ? null : item.id)}><MoreVertical aria-hidden="true" size={17}/></button>
+                            <button className="gwp-label-menu-button" aria-label={t(provider === 'microsoft' ? 'settings:microsoft.folderActions' : 'googleWorkspace.labelActions', {name: item.name})} aria-expanded={labelMenuId === item.id} onClick={() => setLabelMenuId(current => current === item.id ? null : item.id)}><MoreVertical aria-hidden="true" size={17}/></button>
                             {labelMenuId === item.id && <div className="gwp-label-menu-popover" role="menu">
-                                <button role="menuitem" onClick={() => openLabelRename(item)}><Pencil aria-hidden="true" size={15}/>{t('googleWorkspace.renameLabel')}</button>
+                                <button role="menuitem" onClick={() => openLabelRename(item)}><Pencil aria-hidden="true" size={15}/>{t(provider === 'microsoft' ? 'settings:microsoft.renameFolder' : 'googleWorkspace.renameLabel')}</button>
                                 <button className="danger" role="menuitem" onClick={() => { setLabelMenuId(null); setLabelToDelete(item); }}><Trash2 aria-hidden="true" size={15}/>{t('googleWorkspace.delete')}</button>
                             </div>}
                         </div>
                     </div>)}
                 </div>
-                </>}
             </nav>
             <main className="gwp-content">
-                {isOpeningNotification ? <div className="gwp-mail-empty" role="status"><LoaderCircle aria-hidden="true" size={30} className="gwp-spin"/><p>{t('googleWorkspace.loadingMail')}</p></div> : selected ? renderMailThread() : <><div className="gwp-toolbar gwp-mail-toolbar"><label className="gwp-select-all"><input type="checkbox" checked={mails.length > 0 && selectedMailIds.size === mails.length} onChange={toggleAllMailSelection} disabled={isMailActionBusy}/><span className={selectedMailIds.size ? 'gwp-selected-count' : undefined} aria-label={selectedMailIds.size ? t('googleWorkspace.selected', {count: selectedMailIds.size}) : undefined}>{selectedMailIds.size || selectedMailCategoryName}</span></label><div>{selectedMailIds.size > 0 && <>{provider === 'google' && <SelectedMailLabelAction/>}<div className="gwp-move-selected-wrap"><button className="gwp-move-selected" aria-label={t('googleWorkspace.moveTo')} aria-expanded={moveMenuOpen} onClick={() => { setLabelApplyMenuOpen(false); setMoveMenuOpen(current => !current); }} disabled={isMailActionBusy}>{isMovingMails ? <LoaderCircle aria-hidden="true" size={17} className="gwp-spin"/> : <FolderInput aria-hidden="true" size={18}/>}</button>{moveMenuOpen && <div className="gwp-move-menu"><strong>{t('googleWorkspace.moveTo')}</strong>{moveTargetLabels.map(target => <button key={target.id} onClick={() => void moveSelectedMails(target.id)}><Tag aria-hidden="true" size={16}/><span>{target.name}</span>{target.unreadCount > 0 && <strong className="gwp-move-label-unread-count" aria-label={String(target.unreadCount)}>{target.unreadCount}</strong>}</button>)}</div>}</div><button className="gwp-trash-selected" aria-label={t('googleWorkspace.delete')} onClick={trashSelectedMails} disabled={isMailActionBusy}>{isTrashingMails ? <LoaderCircle aria-hidden="true" size={17} className="gwp-spin"/> : <Trash2 aria-hidden="true" size={17}/>}</button></>}<button className="gwp-refresh" aria-label={t('googleWorkspace.refresh')} onClick={refreshMails} disabled={mailLoading || isMailActionBusy}><RefreshCw aria-hidden="true" size={18} className={mailLoading ? 'gwp-spin' : ''}/></button></div></div>{mailLoading && mails.length === 0 ? <MailListSkeleton/> : mails.length === 0 ? <div className="gwp-mail-empty" role="status"><Mail aria-hidden="true" size={30}/><p>{t('googleWorkspace.emptyMailbox')}</p></div> : <div className="gwp-mail-scroll" onScroll={event => { const target = event.currentTarget; if (nextMailPageToken && !loadingMoreMails && !isMailActionBusy && target.scrollHeight - target.scrollTop - target.clientHeight < 96) void loadMails(nextMailPageToken); }}><div className="gwp-mail-list">{mails.map(mail => <div key={mail.threadId || mail.id} className={`gwp-mail-row${mail.isUnread ? ' unread' : ''}${label === 'TRASH' ? ' no-star' : ''}`}><input aria-label={t('googleWorkspace.selectMail')} type="checkbox" checked={selectedMailIds.has(mail.id)} onChange={() => toggleMailSelection(mail.id)} disabled={isMailActionBusy}/>{label !== 'TRASH' && <button className={`gwp-mail-star${mail.isStarred ? ' active' : ''}`} aria-label={t(mail.isStarred ? 'googleWorkspace.removeStar' : 'googleWorkspace.addStar')} aria-pressed={mail.isStarred} onClick={() => void toggleMailStar(mail)} disabled={isMailActionBusy || updatingStarMailIds.has(mail.id)}><Star aria-hidden="true" size={17}/></button>}<button className="gwp-mail-open" onClick={() => void openMail(mail.id)} disabled={isMailActionBusy}><strong>{renderMailParticipants(mail)}</strong><span className="gwp-mail-subject-line">{renderAppliedLabels(mail.labelIds)}<span className="gwp-mail-subject">{mail.subject || t('googleWorkspace.noSubject')}</span>{mail.hasAttachments && <Paperclip className="gwp-mail-attachment-indicator" aria-hidden="true" size={15}/>}</span><small>{mail.snippet}</small></button><time dateTime={mail.date}>{formatMailDate(mail.date, i18n.resolvedLanguage || i18n.language)}</time></div>)}</div>{loadingMoreMails && <div className="gwp-mail-loading-more"><LoaderCircle aria-hidden="true" size={16} className="gwp-spin"/><span>{t('googleWorkspace.loadingMore')}</span></div>}</div>}</>}
+                {isOpeningNotification ? <div className="gwp-mail-empty" role="status"><LoaderCircle aria-hidden="true" size={30} className="gwp-spin"/><p>{t('googleWorkspace.loadingMail')}</p></div> : selected ? renderMailThread() : <><div className="gwp-toolbar gwp-mail-toolbar"><label className="gwp-select-all"><input type="checkbox" checked={mails.length > 0 && selectedMailIds.size === mails.length} onChange={toggleAllMailSelection} disabled={isMailActionBusy}/><span className={selectedMailIds.size ? 'gwp-selected-count' : undefined} aria-label={selectedMailIds.size ? t('googleWorkspace.selected', {count: selectedMailIds.size}) : undefined}>{selectedMailIds.size || selectedMailCategoryName}</span></label><div>{selectedMailIds.size > 0 && <>{provider === 'google' && <SelectedMailLabelAction/>}<div className="gwp-move-selected-wrap"><button className="gwp-move-selected" aria-label={t('googleWorkspace.moveTo')} aria-expanded={moveMenuOpen} onClick={() => { setLabelApplyMenuOpen(false); setMoveMenuOpen(current => !current); }} disabled={isMailActionBusy}>{isMovingMails ? <LoaderCircle aria-hidden="true" size={17} className="gwp-spin"/> : <FolderInput aria-hidden="true" size={18}/>}</button>{moveMenuOpen && <div className="gwp-move-menu"><strong>{t('googleWorkspace.moveTo')}</strong>{moveTargetLabels.map(target => <button key={target.id} onClick={() => void moveSelectedMails(target.id)}><Tag aria-hidden="true" size={16}/><span>{target.name}</span>{target.unreadCount > 0 && <strong className="gwp-move-label-unread-count" aria-label={String(target.unreadCount)}>{target.unreadCount}</strong>}</button>)}</div>}</div><button className="gwp-trash-selected" aria-label={t('googleWorkspace.delete')} onClick={trashSelectedMails} disabled={isMailActionBusy}>{isTrashingMails ? <LoaderCircle aria-hidden="true" size={17} className="gwp-spin"/> : <Trash2 aria-hidden="true" size={17}/>}</button></>}<button className="gwp-refresh" aria-label={t('googleWorkspace.refresh')} onClick={refreshMails} disabled={mailLoading || isMailActionBusy}><RefreshCw aria-hidden="true" size={18} className={mailLoading ? 'gwp-spin' : ''}/></button></div></div>{mailLoadFailed ? <div className="gwp-mail-empty" role="alert"><p>{t('networkError.requestFailed')}</p><button className="gwp-refresh" onClick={() => void loadMails()}>{t('common:retry')}</button></div> : mailLoading && mails.length === 0 ? <MailListSkeleton/> : mails.length === 0 ? <div className="gwp-mail-empty" role="status"><Mail aria-hidden="true" size={30}/><p>{t('googleWorkspace.emptyMailbox')}</p></div> : <div className="gwp-mail-scroll" onScroll={event => { const target = event.currentTarget; if (nextMailPageToken && !loadingMoreMails && !isMailActionBusy && target.scrollHeight - target.scrollTop - target.clientHeight < 96) void loadMails(nextMailPageToken); }}><div className="gwp-mail-list">{mails.map(mail => <div key={mail.threadId || mail.id} className={`gwp-mail-row${mail.isUnread ? ' unread' : ''}${label === 'TRASH' ? ' no-star' : ''}`}><input aria-label={t('googleWorkspace.selectMail')} type="checkbox" checked={selectedMailIds.has(mail.id)} onChange={() => toggleMailSelection(mail.id)} disabled={isMailActionBusy}/>{label !== 'TRASH' && <button className={`gwp-mail-star${mail.isStarred ? ' active' : ''}`} aria-label={t(mail.isStarred ? 'googleWorkspace.removeStar' : 'googleWorkspace.addStar')} aria-pressed={mail.isStarred} onClick={() => void toggleMailStar(mail)} disabled={isMailActionBusy || updatingStarMailIds.has(mail.id)}><Star aria-hidden="true" size={17}/></button>}<button className="gwp-mail-open" onClick={() => void openMail(mail.id)} disabled={isMailActionBusy}><strong>{renderMailParticipants(mail)}</strong><span className="gwp-mail-subject-line">{renderAppliedLabels(mail.labelIds)}<span className="gwp-mail-subject">{mail.subject || t('googleWorkspace.noSubject')}</span>{mail.hasAttachments && <Paperclip className="gwp-mail-attachment-indicator" aria-hidden="true" size={15}/>}</span><small>{mail.snippet}</small></button><time dateTime={mail.date}>{formatMailDate(mail.date, i18n.resolvedLanguage || i18n.language)}</time></div>)}</div>{loadingMoreMails && <div className="gwp-mail-loading-more"><LoaderCircle aria-hidden="true" size={16} className="gwp-spin"/><span>{t('googleWorkspace.loadingMore')}</span></div>}</div>}</>}
             </main>
         </div>
         {isLabelCreateOpen && <ModalOverlay className="gwp-label-modal-overlay" onClose={() => { if (!isCreatingLabel) setIsLabelCreateOpen(false); }} closeOnBackdrop={!isCreatingLabel}>
             <form className="gwp-label-modal" aria-busy={isCreatingLabel} onSubmit={event => { event.preventDefault(); void createMailLabel(); }}>
-                <header><h3>{t('googleWorkspace.newLabel')}</h3><button type="button" aria-label={t('googleWorkspace.close')} onClick={() => setIsLabelCreateOpen(false)} disabled={isCreatingLabel}><X aria-hidden="true" size={20}/></button></header>
-                <label><span>{t('googleWorkspace.newLabelName')}</span><input autoFocus value={newLabelName} onChange={event => setNewLabelName(event.target.value)} maxLength={225} disabled={isCreatingLabel}/></label>
+                <header><h3>{t(provider === 'microsoft' ? 'settings:microsoft.newFolder' : 'googleWorkspace.newLabel')}</h3><button type="button" aria-label={t('googleWorkspace.close')} onClick={() => setIsLabelCreateOpen(false)} disabled={isCreatingLabel}><X aria-hidden="true" size={20}/></button></header>
+                <label><span>{t(provider === 'microsoft' ? 'settings:microsoft.folderName' : 'googleWorkspace.newLabelName')}</span><input autoFocus value={newLabelName} onChange={event => setNewLabelName(event.target.value)} maxLength={225} disabled={isCreatingLabel}/></label>
                 <footer><button type="button" className="gwp-label-modal-cancel" onClick={() => setIsLabelCreateOpen(false)} disabled={isCreatingLabel}>{t('googleWorkspace.cancel')}</button><button type="submit" className="gwp-primary" disabled={!newLabelName.trim() || isCreatingLabel}>{isCreatingLabel ? <LoaderCircle aria-hidden="true" size={16} className="gwp-spin"/> : null}{t('googleWorkspace.create')}</button></footer>
             </form>
         </ModalOverlay>}
         {labelToRename && <ModalOverlay className="gwp-label-modal-overlay" onClose={() => { if (!isRenamingLabel) setLabelToRename(null); }} closeOnBackdrop={!isRenamingLabel}>
             <form className="gwp-label-modal" aria-busy={isRenamingLabel} onSubmit={event => { event.preventDefault(); void renameMailLabel(); }}>
-                <header><h3>{t('googleWorkspace.renameLabel')}</h3><button type="button" aria-label={t('googleWorkspace.close')} onClick={() => setLabelToRename(null)} disabled={isRenamingLabel}><X aria-hidden="true" size={20}/></button></header>
-                <label><span>{t('googleWorkspace.labelName')}</span><input autoFocus value={renamedLabelName} onChange={event => setRenamedLabelName(event.target.value)} maxLength={225} disabled={isRenamingLabel}/></label>
+                <header><h3>{t(provider === 'microsoft' ? 'settings:microsoft.renameFolder' : 'googleWorkspace.renameLabel')}</h3><button type="button" aria-label={t('googleWorkspace.close')} onClick={() => setLabelToRename(null)} disabled={isRenamingLabel}><X aria-hidden="true" size={20}/></button></header>
+                <label><span>{t(provider === 'microsoft' ? 'settings:microsoft.folderName' : 'googleWorkspace.labelName')}</span><input autoFocus value={renamedLabelName} onChange={event => setRenamedLabelName(event.target.value)} maxLength={225} disabled={isRenamingLabel}/></label>
                 <footer><button type="button" className="gwp-label-modal-cancel" onClick={() => setLabelToRename(null)} disabled={isRenamingLabel}>{t('googleWorkspace.cancel')}</button><button type="submit" className="gwp-primary" disabled={!renamedLabelName.trim() || isRenamingLabel}>{isRenamingLabel ? <LoaderCircle aria-hidden="true" size={16} className="gwp-spin"/> : null}{t('googleWorkspace.saveLabel')}</button></footer>
             </form>
         </ModalOverlay>}
         {labelToDelete && <ConfirmModal
-            title={t('googleWorkspace.deleteLabelTitle', {name: labelToDelete.name})}
-            description={t('googleWorkspace.deleteLabelDescription')}
+            title={t(provider === 'microsoft' ? 'settings:microsoft.deleteFolderTitle' : 'googleWorkspace.deleteLabelTitle', {name: labelToDelete.name})}
+            description={t(provider === 'microsoft' ? 'settings:microsoft.deleteFolderDescription' : 'googleWorkspace.deleteLabelDescription')}
             options={[
                 {label: t('googleWorkspace.cancel'), value: 'cancel'},
                 {label: t('googleWorkspace.delete'), value: 'delete', variant: 'danger'},

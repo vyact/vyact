@@ -1,5 +1,12 @@
 {
   "microsoft": {
+    "folders": "Thư mục",
+    "newFolder": "Tạo thư mục mới",
+    "folderName": "Tên thư mục",
+    "renameFolder": "Đổi tên thư mục",
+    "folderActions": "Thao tác với {{name}}",
+    "deleteFolderTitle": "Xóa thư mục “{{name}}”?",
+    "deleteFolderDescription": "Thư mục và nội dung bên trong sẽ bị xóa.",
     "unknownShareUser": "Không có thông tin người dùng",
     "inviteNotificationFailed": "Phản hồi lời mời có lỗi. Không thể xác nhận việc gửi email. Hãy kiểm tra quyền và thử lại trong OneDrive.",
     "inviteVerification": "Microsoft yêu cầu xác minh tài khoản trước khi gửi email mời. Hoàn tất xác minh trên OneDrive web rồi mời lại.",
