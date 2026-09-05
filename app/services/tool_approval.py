@@ -19,7 +19,9 @@ READ_ONLY_TOOLS = {
     "browser_search", "browser_open", "browser_read", "browser_read_urls", "browser_inspect",
     "browser_scroll", "browser_wait", "browser_back", "browser_status", "browser_close",
 }
+READ_ONLY_TOOLS.update({"microsoft_search_emails", "microsoft_get_email", "microsoft_list_calendar_events", "microsoft_search_files"})
 SENSITIVE_TOOLS = {
+    "microsoft_send_email", "microsoft_create_calendar_event",
     "send_email", "reply_email", "create_calendar_event", "update_calendar_event",
     "upload_drive_file", "download_drive_file", "move_drive_file",
     "browser_wait_for_user",

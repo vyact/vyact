@@ -180,6 +180,7 @@ MCP_CATALOG: dict[str, dict] = {
             "단순 사실 질문, 짧은 답변, 단일 조회로 끝나는 요청에는 사용하지 않습니다."
         ),
     },
+    "microsoft_workspace": {"label": "Microsoft 365", "singleton": True, "kind": "internal", "fields": [], "default_prompt": "Use Microsoft tools only as requested. Verify recipients and content before sending mail."},
     "google_workspace": {
         "label": "Google Workspace",
         "singleton": True,

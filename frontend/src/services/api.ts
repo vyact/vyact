@@ -17,11 +17,6 @@ import i18n from '../i18n';
 const API_BASE = '/api';
 const EXTERNAL_DATA_BOOTSTRAP_CACHE_MS = 10_000;
 
-async function fetchJson<T = any>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
-    const response = await fetch(input, init);
-    await assertOk(response);
-    return response.json() as Promise<T>;
-}
 
 export class VyactRuntimeInstallError extends Error {
     constructor(message: string, public readonly code: string) {
@@ -389,7 +384,22 @@ export interface AllExternalDocumentsResponse extends Omit<Gov24DocumentsRespons
     items: Array<Gov24Document & {source_id: string}>;
 }
 
-export const api = {
+export const createWorkspaceApi = (workspace = 'google-workspace', accountId = '') => {
+    const fetch: typeof globalThis.fetch = (input, init) => {
+        if (typeof input === 'string' && input.includes('/microsoft-workspace/') && accountId) {
+            const [path, query = ''] = input.split('?');
+            const params = new URLSearchParams(query);
+            params.set('account_id', accountId);
+            input = `${path}?${params}`;
+        }
+        return globalThis.fetch(input, init);
+    };
+    const fetchJson = async <T = any>(input: RequestInfo | URL, init?: RequestInit): Promise<T> => {
+        const response = await fetch(input, init);
+        await assertOk(response);
+        return response.json();
+    };
+    return ({
     async searchVyactModels(query: string, mlxOnly = false): Promise<VyactModelSearchResponse> {
         const params = new URLSearchParams({q: query, mlx_only: String(mlxOnly)});
         const response = await fetch(`${API_BASE}/vyact/models/search?${params}`);
@@ -841,9 +851,9 @@ export const api = {
         return res.json();
     },
 
-    async getGoogleMailLabels() { return fetchJson(`${API_BASE}/google-workspace/mail/labels`); },
+    async getGoogleMailLabels() { return fetchJson(`${API_BASE}/${workspace}/mail/labels`); },
     async createGoogleMailLabel(name: string) {
-        const response = await fetch(`${API_BASE}/google-workspace/mail/labels`, {
+        const response = await fetch(`${API_BASE}/${workspace}/mail/labels`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({name}),
@@ -852,12 +862,12 @@ export const api = {
         return response.json();
     },
     async deleteGoogleMailLabel(id: string) {
-        const response = await fetch(`${API_BASE}/google-workspace/mail/labels/${encodeURIComponent(id)}`, {method: 'DELETE'});
+        const response = await fetch(`${API_BASE}/${workspace}/mail/labels/${encodeURIComponent(id)}`, {method: 'DELETE'});
         await assertOk(response);
         return response.json();
     },
     async updateGoogleMailLabel(id: string, name: string) {
-        const response = await fetch(`${API_BASE}/google-workspace/mail/labels/${encodeURIComponent(id)}`, {
+        const response = await fetch(`${API_BASE}/${workspace}/mail/labels/${encodeURIComponent(id)}`, {
             method: 'PATCH',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({name}),
@@ -867,10 +877,10 @@ export const api = {
     },
     async getGoogleMailWorkspace(label = 'INBOX'): Promise<GoogleMailWorkspaceResponse> {
         const params = new URLSearchParams({label});
-        const requestKey = params.toString();
+        const requestKey = `${workspace}:${accountId}:${params.toString()}`;
         const pendingRequest = pendingGoogleMailWorkspaceRequests.get(requestKey);
         if (pendingRequest) return pendingRequest;
-        const request = fetch(`${API_BASE}/google-workspace/mail/workspace?${params}`)
+        const request = fetch(`${API_BASE}/${workspace}/mail/workspace?${params}`)
             .then(async response => {
                 await assertOk(response);
                 return response.json() as Promise<GoogleMailWorkspaceResponse>;
@@ -879,20 +889,20 @@ export const api = {
         pendingGoogleMailWorkspaceRequests.set(requestKey, request);
         return request;
     },
-    async getGoogleMailMessages(label = 'INBOX', pageToken = '') { const params = new URLSearchParams({label}); if (pageToken) params.set('page_token', pageToken); return fetchJson(`${API_BASE}/google-workspace/mail/messages?${params}`); },
+    async getGoogleMailMessages(label = 'INBOX', pageToken = '') { const params = new URLSearchParams({label}); if (pageToken) params.set('page_token', pageToken); return fetchJson(`${API_BASE}/${workspace}/mail/messages?${params}`); },
     async getGoogleMailMessage(id: string, label = 'INBOX') {
-        const response = await fetch(`${API_BASE}/google-workspace/mail/messages/${encodeURIComponent(id)}?${new URLSearchParams({label})}`);
+        const response = await fetch(`${API_BASE}/${workspace}/mail/messages/${encodeURIComponent(id)}?${new URLSearchParams({label})}`);
         await assertOk(response);
         return response.json();
     },
-    async indexGoogleMailThreadForKnowledge(threadId: string, accountId: string, threadMessages?: Array<{id: string; from_: string; to: string; cc: string; date: string; subject: string; body: string; html_body: string; attachments: Array<{id: string; filename: string; mime_type: string; size: number}>}>) { return fetchJson<{source_id: string; thread_id: string; message_count: number; updated: boolean}>(`${API_BASE}/google-workspace/mail/threads/${encodeURIComponent(threadId)}/knowledge-index`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({account_id: accountId, thread_messages: threadMessages || []})}); },
+    async indexGoogleMailThreadForKnowledge(threadId: string, accountId: string, threadMessages?: Array<{id: string; from_: string; to: string; cc: string; date: string; subject: string; body: string; html_body: string; attachments: Array<{id: string; filename: string; mime_type: string; size: number}>}>) { return fetchJson<{source_id: string; thread_id: string; message_count: number; updated: boolean}>(`${API_BASE}/${workspace}/mail/threads/${encodeURIComponent(threadId)}/knowledge-index`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({account_id: accountId, thread_messages: threadMessages || []})}); },
     async getGoogleMailSignature(accountId: string): Promise<{signature_html: string; enabled: boolean; macros: Array<{id: string; title: string; content_html: string}>}> {
-        const response = await fetch(`${API_BASE}/google-workspace/accounts/${encodeURIComponent(accountId)}/mail/signature`);
+        const response = await fetch(`${API_BASE}/${workspace}/accounts/${encodeURIComponent(accountId)}/mail/signature`);
         await assertOk(response);
         return response.json();
     },
     async saveGoogleMailSignature(accountId: string, signatureHtml: string, enabled = true, macros: Array<{id: string; title: string; content_html: string}> = []) {
-        const response = await fetch(`${API_BASE}/google-workspace/accounts/${encodeURIComponent(accountId)}/mail/signature`, {
+        const response = await fetch(`${API_BASE}/${workspace}/accounts/${encodeURIComponent(accountId)}/mail/signature`, {
             method: 'PUT',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({signature_html: signatureHtml, enabled, macros}),
@@ -902,13 +912,13 @@ export const api = {
     },
     async getGoogleMailAttachment(messageId: string, attachmentId: string, mimeType: string) {
         const query = new URLSearchParams({mime_type: mimeType});
-        const response = await fetch(`${API_BASE}/google-workspace/mail/messages/${encodeURIComponent(messageId)}/attachments/${encodeURIComponent(attachmentId)}?${query}`);
+        const response = await fetch(`${API_BASE}/${workspace}/mail/messages/${encodeURIComponent(messageId)}/attachments/${encodeURIComponent(attachmentId)}?${query}`);
         await assertOk(response);
         return response.blob();
     },
-    async markGoogleMailMessageRead(id: string) { return fetchJson(`${API_BASE}/google-workspace/mail/messages/${encodeURIComponent(id)}/read`, {method: 'PATCH'}); },
+    async markGoogleMailMessageRead(id: string) { return fetchJson(`${API_BASE}/${workspace}/mail/messages/${encodeURIComponent(id)}/read`, {method: 'PATCH'}); },
     async setGoogleMailMessageStarred(id: string, starred: boolean) {
-        const response = await fetch(`${API_BASE}/google-workspace/mail/messages/${encodeURIComponent(id)}/star`, {
+        const response = await fetch(`${API_BASE}/${workspace}/mail/messages/${encodeURIComponent(id)}/star`, {
             method: 'PATCH',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({starred}),
@@ -917,7 +927,7 @@ export const api = {
         return response.json();
     },
     async trashGoogleMailMessages(messageIds: string[]) {
-        const response = await fetch(`${API_BASE}/google-workspace/mail/messages/trash`, {
+        const response = await fetch(`${API_BASE}/${workspace}/mail/messages/trash`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({message_ids: messageIds}),
@@ -926,7 +936,7 @@ export const api = {
         return response.json();
     },
     async permanentlyDeleteGoogleMailMessages(messageIds: string[]) {
-        const response = await fetch(`${API_BASE}/google-workspace/mail/messages/delete`, {
+        const response = await fetch(`${API_BASE}/${workspace}/mail/messages/delete`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({message_ids: messageIds}),
@@ -935,7 +945,7 @@ export const api = {
         return response.json();
     },
     async trashGoogleMailThreads(threadIds: string[]) {
-        const response = await fetch(`${API_BASE}/google-workspace/mail/threads/trash`, {
+        const response = await fetch(`${API_BASE}/${workspace}/mail/threads/trash`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({thread_ids: threadIds}),
@@ -944,7 +954,7 @@ export const api = {
         return response.json();
     },
     async permanentlyDeleteGoogleMailThreads(threadIds: string[]) {
-        const response = await fetch(`${API_BASE}/google-workspace/mail/threads/delete`, {
+        const response = await fetch(`${API_BASE}/${workspace}/mail/threads/delete`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({thread_ids: threadIds}),
@@ -953,7 +963,7 @@ export const api = {
         return response.json();
     },
     async moveGoogleMailThreads(threadIds: string[], targetLabelId: string, sourceLabelId: string, sourceIsUserLabel: boolean) {
-        const response = await fetch(`${API_BASE}/google-workspace/mail/threads/move`, {
+        const response = await fetch(`${API_BASE}/${workspace}/mail/threads/move`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({thread_ids: threadIds, target_label_id: targetLabelId, source_label_id: sourceLabelId, source_is_user_label: sourceIsUserLabel}),
@@ -962,7 +972,7 @@ export const api = {
         return response.json();
     },
     async applyGoogleMailThreadLabel(threadIds: string[], labelId: string) {
-        const response = await fetch(`${API_BASE}/google-workspace/mail/threads/labels`, {
+        const response = await fetch(`${API_BASE}/${workspace}/mail/threads/labels`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({thread_ids: threadIds, label_id: labelId}),
@@ -977,7 +987,7 @@ export const api = {
         attachments: Array<{name: string; mime_type: string; size: number}>;
         thread_messages: Array<{from_: string; to: string; cc: string; subject: string; date: string; body: string}>;
     }) {
-        const response = await fetch(`${API_BASE}/google-workspace/mail/generate`, {
+        const response = await fetch(`${API_BASE}/${workspace}/mail/generate`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(data),
@@ -987,7 +997,7 @@ export const api = {
         return payload as {body: string};
     },
     async sendGoogleMail(data: FormData) {
-        const response = await fetch(`${API_BASE}/google-workspace/mail/send`, {method: 'POST', body: data});
+        const response = await fetch(`${API_BASE}/${workspace}/mail/send`, {method: 'POST', body: data});
         await assertOk(response);
         const payload = await response.json();
         return payload as {ok: boolean; id?: string; threadId?: string};
@@ -1003,28 +1013,28 @@ export const api = {
             order_by: orderBy,
             order_direction: orderDirection,
         });
-        return fetchJson(`${API_BASE}/google-workspace/drive/files?${params}`);
+        return fetchJson(`${API_BASE}/${workspace}/drive/files?${params}`);
     },
-    async uploadGoogleDriveFiles(data: FormData) { return fetchJson(`${API_BASE}/google-workspace/drive/upload`, {method: 'POST', body: data}); },
-    async createGoogleDriveFolder(parentId: string, name: string) { return fetchJson(`${API_BASE}/google-workspace/drive/folders`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({parent_id: parentId, name})}); },
-    async deleteGoogleDriveFile(id: string) { return fetchJson(`${API_BASE}/google-workspace/drive/files/${encodeURIComponent(id)}`, {method: 'DELETE'}); },
-    async batchTrashGoogleDriveFiles(fileIds: string[]) { return fetchJson(`${API_BASE}/google-workspace/drive/files/batch-trash`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({file_ids: fileIds})}); },
+    async uploadGoogleDriveFiles(data: FormData) { return fetchJson(`${API_BASE}/${workspace}/drive/upload`, {method: 'POST', body: data}); },
+    async createGoogleDriveFolder(parentId: string, name: string) { return fetchJson(`${API_BASE}/${workspace}/drive/folders`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({parent_id: parentId, name})}); },
+    async deleteGoogleDriveFile(id: string) { return fetchJson(`${API_BASE}/${workspace}/drive/files/${encodeURIComponent(id)}`, {method: 'DELETE'}); },
+    async batchTrashGoogleDriveFiles(fileIds: string[]) { return fetchJson(`${API_BASE}/${workspace}/drive/files/batch-trash`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({file_ids: fileIds})}); },
     async batchMoveGoogleDriveFiles(fileIds: string[], targetFolderId: string) {
-        const response = await fetch(`${API_BASE}/google-workspace/drive/files/batch-move`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({file_ids: fileIds, target_folder_id: targetFolderId})});
+        const response = await fetch(`${API_BASE}/${workspace}/drive/files/batch-move`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({file_ids: fileIds, target_folder_id: targetFolderId})});
         await assertOk(response);
         return response.json() as Promise<{ok: boolean; moved_ids: string[]}>;
     },
     async getGoogleDriveFolders(parentId = 'root') {
         const params = new URLSearchParams({parent_id: parentId});
-        const response = await fetch(`${API_BASE}/google-workspace/drive/folders?${params}`);
+        const response = await fetch(`${API_BASE}/${workspace}/drive/folders?${params}`);
         await assertOk(response);
         return response.json() as Promise<{folders: {id: string; name: string}[]}>;
     },
-    async checkGoogleDriveDuplicates(folderId: string, names: string[]): Promise<{duplicates: string[]}> { return fetchJson(`${API_BASE}/google-workspace/drive/files/check-duplicates`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({folder_id: folderId, names})}); },
-    async renameGoogleDriveFile(id: string, name: string) { return fetchJson(`${API_BASE}/google-workspace/drive/files/${encodeURIComponent(id)}/rename`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name})}); },
-    async copyGoogleDriveFile(id: string, name: string) { return fetchJson(`${API_BASE}/google-workspace/drive/files/${encodeURIComponent(id)}/copy`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name})}); },
+    async checkGoogleDriveDuplicates(folderId: string, names: string[]): Promise<{duplicates: string[]}> { return fetchJson(`${API_BASE}/${workspace}/drive/files/check-duplicates`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({folder_id: folderId, names})}); },
+    async renameGoogleDriveFile(id: string, name: string) { return fetchJson(`${API_BASE}/${workspace}/drive/files/${encodeURIComponent(id)}/rename`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name})}); },
+    async copyGoogleDriveFile(id: string, name: string) { return fetchJson(`${API_BASE}/${workspace}/drive/files/${encodeURIComponent(id)}/copy`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name})}); },
     async downloadGoogleDriveFile(id: string, signal?: AbortSignal) {
-        const response = await fetch(`${API_BASE}/google-workspace/drive/files/${encodeURIComponent(id)}/download`, {signal});
+        const response = await fetch(`${API_BASE}/${workspace}/drive/files/${encodeURIComponent(id)}/download`, {signal});
         if (!response.ok) throw new Error(i18n.t('main:networkError.requestFailed'));
         const disposition = response.headers.get('Content-Disposition') || '';
         const encodedFilename = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
@@ -1034,12 +1044,12 @@ export const api = {
         };
     },
     async createGoogleDriveDownloadJob(id: string, signal?: AbortSignal) {
-        const response = await fetch(`${API_BASE}/google-workspace/drive/files/${encodeURIComponent(id)}/download-jobs`, {method: 'POST', signal});
+        const response = await fetch(`${API_BASE}/${workspace}/drive/files/${encodeURIComponent(id)}/download-jobs`, {method: 'POST', signal});
         if (!response.ok) throw new Error(i18n.t('main:networkError.requestFailed'));
         return response.json() as Promise<{jobId: string}>;
     },
     async createGoogleDriveBulkDownloadJob(ids: string[], archiveName: string, signal?: AbortSignal) {
-        const response = await fetch(`${API_BASE}/google-workspace/drive/download-jobs`, {
+        const response = await fetch(`${API_BASE}/${workspace}/drive/download-jobs`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({file_ids: ids, archive_name: archiveName}),
@@ -1049,12 +1059,12 @@ export const api = {
         return response.json() as Promise<{jobId: string}>;
     },
     async getGoogleDriveDownloadJob(jobId: string, signal?: AbortSignal) {
-        const response = await fetch(`${API_BASE}/google-workspace/drive/download-jobs/${encodeURIComponent(jobId)}`, {signal});
+        const response = await fetch(`${API_BASE}/${workspace}/drive/download-jobs/${encodeURIComponent(jobId)}`, {signal});
         if (!response.ok) throw new Error(i18n.t('main:networkError.requestFailed'));
         return response.json() as Promise<{status: 'collecting' | 'compressing' | 'complete' | 'error'; total: number; completed: number; code?: string}>;
     },
     async getGoogleDriveDownloadJobFile(jobId: string, signal?: AbortSignal) {
-        const response = await fetch(`${API_BASE}/google-workspace/drive/download-jobs/${encodeURIComponent(jobId)}/file`, {signal});
+        const response = await fetch(`${API_BASE}/${workspace}/drive/download-jobs/${encodeURIComponent(jobId)}/file`, {signal});
         if (!response.ok) throw new Error(i18n.t('main:networkError.requestFailed'));
         const disposition = response.headers.get('Content-Disposition') || '';
         const encodedFilename = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
@@ -1064,12 +1074,12 @@ export const api = {
         };
     },
     async cancelGoogleDriveDownloadJob(jobId: string) {
-        await fetch(`${API_BASE}/google-workspace/drive/download-jobs/${encodeURIComponent(jobId)}`, {method: 'DELETE'});
+        await fetch(`${API_BASE}/${workspace}/drive/download-jobs/${encodeURIComponent(jobId)}`, {method: 'DELETE'});
     },
-    async getGoogleDrivePermissions(id: string) { return fetchJson(`${API_BASE}/google-workspace/drive/files/${encodeURIComponent(id)}/permissions`); },
-    async createGoogleDrivePermission(id: string, email: string, role: 'reader' | 'writer') { return fetchJson(`${API_BASE}/google-workspace/drive/files/${encodeURIComponent(id)}/permissions`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({email, role})}); },
-    async updateGoogleDriveGeneralAccess(id: string, role: 'private' | 'reader' | 'writer') { return fetchJson(`${API_BASE}/google-workspace/drive/files/${encodeURIComponent(id)}/general-access`, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({role})}); },
-    async deleteGoogleDrivePermission(id: string, permissionId: string) { return fetchJson(`${API_BASE}/google-workspace/drive/files/${encodeURIComponent(id)}/permissions/${encodeURIComponent(permissionId)}`, {method: 'DELETE'}); },
+    async getGoogleDrivePermissions(id: string) { return fetchJson(`${API_BASE}/${workspace}/drive/files/${encodeURIComponent(id)}/permissions`); },
+    async createGoogleDrivePermission(id: string, email: string, role: 'reader' | 'writer') { return fetchJson(`${API_BASE}/${workspace}/drive/files/${encodeURIComponent(id)}/permissions`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({email, role})}); },
+    async updateGoogleDriveGeneralAccess(id: string, role: 'private' | 'reader' | 'writer') { return fetchJson(`${API_BASE}/${workspace}/drive/files/${encodeURIComponent(id)}/general-access`, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({role})}); },
+    async deleteGoogleDrivePermission(id: string, permissionId: string) { return fetchJson(`${API_BASE}/${workspace}/drive/files/${encodeURIComponent(id)}/permissions/${encodeURIComponent(permissionId)}`, {method: 'DELETE'}); },
 
     // ── Calendar ──
     async getGoogleCalendarEvents(params: {time_min?: string; time_max?: string; max_results?: number; calendar_id?: string; q?: string} = {}) {
@@ -1079,18 +1089,18 @@ export const api = {
         if (params.max_results) query.set('max_results', String(params.max_results));
         if (params.calendar_id) query.set('calendar_id', params.calendar_id);
         if (params.q) query.set('q', params.q);
-        return fetchJson(`${API_BASE}/google-workspace/calendar/events?${query}`);
+        return fetchJson(`${API_BASE}/${workspace}/calendar/events?${query}`);
     },
     async createGoogleCalendarEvent(data: {summary: string; start: string; end: string; description?: string; location?: string; calendar_id?: string; timezone?: string; reminders?: {method: 'popup' | 'email'; minutes: number}[]; use_default_reminders?: boolean}) {
-        return fetchJson(`${API_BASE}/google-workspace/calendar/events`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
+        return fetchJson(`${API_BASE}/${workspace}/calendar/events`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
     },
     async updateGoogleCalendarEvent(eventId: string, data: {summary?: string; start?: string; end?: string; description?: string; location?: string; calendar_id?: string; timezone?: string; reminders?: {method: 'popup' | 'email'; minutes: number}[]; use_default_reminders?: boolean}) {
-        return fetchJson(`${API_BASE}/google-workspace/calendar/events/${encodeURIComponent(eventId)}`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
+        return fetchJson(`${API_BASE}/${workspace}/calendar/events/${encodeURIComponent(eventId)}`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
     },
     async deleteGoogleCalendarEvent(eventId: string, calendarId = 'primary') {
-        return fetchJson(`${API_BASE}/google-workspace/calendar/events/${encodeURIComponent(eventId)}?calendar_id=${encodeURIComponent(calendarId)}`, {method: 'DELETE'});
+        return fetchJson(`${API_BASE}/${workspace}/calendar/events/${encodeURIComponent(eventId)}?calendar_id=${encodeURIComponent(calendarId)}`, {method: 'DELETE'});
     },
-    async getGoogleCalendars() { return fetchJson(`${API_BASE}/google-workspace/calendar/calendars`); },
+    async getGoogleCalendars() { return fetchJson(`${API_BASE}/${workspace}/calendar/calendars`); },
 
     async getNotifications(limit = 30, offset = 0) { return fetchJson(`${API_BASE}/notifications?limit=${limit}&offset=${offset}`); },
     async createNotification(data: {type: string; source_id: string; title: string; message?: string; occurred_at?: string; update_only?: boolean; account_id?: string; account_email?: string}) { return fetchJson(`${API_BASE}/notifications`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)}); },
@@ -1787,4 +1797,8 @@ export const api = {
     async deleteQuickNote(id: string): Promise<void> {
         await fetch(`${API_BASE}/quicknote/${id}`, {method: 'DELETE'});
     },
+});
 };
+
+export const api = createWorkspaceApi();
+export const microsoftApi = createWorkspaceApi('microsoft-workspace');

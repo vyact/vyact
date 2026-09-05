@@ -20,7 +20,7 @@ import {
     Trash2,
     X,
 } from 'lucide-react';
-import {api} from '../../services/api';
+import {useWorkspace} from './WorkspaceContext';
 import type {GoogleCalendarSelection} from '../../types/googleWorkspace';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import {Tooltip} from '../common/Tooltip/Tooltip';
@@ -297,6 +297,8 @@ export default function CalendarPanel({selectedEvent, onSelectedEventHandled}: {
     selectedEvent?: GoogleCalendarSelection | null;
     onSelectedEventHandled?: (requestId: number) => void;
 }) {
+    const {api, provider} = useWorkspace();
+    const maxReminders = provider === 'microsoft' ? 1 : MAX_REMINDERS;
     const {t, i18n} = useTranslation('main');
     const currentLanguage = i18n.resolvedLanguage ?? i18n.language;
     const today = useMemo(() => new Date(), []);
@@ -441,7 +443,7 @@ export default function CalendarPanel({selectedEvent, onSelectedEventHandled}: {
                     if (reminderTimeDifference !== 0) return reminderTimeDifference;
                     return left.method === right.method ? 0 : left.method === 'popup' ? -1 : 1;
                 })
-                .slice(0, MAX_REMINDERS)
+                .slice(0, maxReminders)
                 .map(minutesToReminderForm),
             useDefaultReminders: event.reminders?.useDefault !== false,
         };
@@ -561,7 +563,7 @@ export default function CalendarPanel({selectedEvent, onSelectedEventHandled}: {
         setSaving(true);
         const timezone = getSystemTimeZone();
         const remindersToSave = form.reminders
-            .slice(0, MAX_REMINDERS)
+            .slice(0, maxReminders)
             .filter(reminder => reminderFormToMinutes(reminder) > 0);
         const shouldUpdateReminders = remindersChanged || remindersToSave.length !== form.reminders.length;
         const reminderPayload = shouldUpdateReminders
@@ -790,14 +792,14 @@ export default function CalendarPanel({selectedEvent, onSelectedEventHandled}: {
                                     reminders: [...current.reminders, {method: 'popup', amount: 30, unit: 'minute'}],
                                     useDefaultReminders: false,
                                 }))}
-                                disabled={form.reminders.length >= MAX_REMINDERS}
+                                disabled={form.reminders.length >= maxReminders}
                             >
                                 <Bell aria-hidden="true" size={13}/>
                                 {t('googleWorkspace.calendar.addReminder')}
                             </button>
                         </div>
                         {form.reminders.length === 0 && <small>
-                            {t('googleWorkspace.calendar.defaultReminderHint')}
+                            {t(provider === 'microsoft' ? 'settings:microsoft.defaultReminderHint' : 'googleWorkspace.calendar.defaultReminderHint')}
                         </small>}
                         {form.reminders.map((reminder, index) => {
                             const hasReminderError = hasAttemptedSave && isReminderInvalid(reminder);
@@ -808,7 +810,7 @@ export default function CalendarPanel({selectedEvent, onSelectedEventHandled}: {
                                 portal
                                 options={[
                                     {value: 'popup', label: t('googleWorkspace.calendar.notification')},
-                                    {value: 'email', label: t('googleWorkspace.calendar.email')},
+                                    ...(provider === 'google' ? [{value: 'email', label: t('googleWorkspace.calendar.email')}] : []),
                                 ]}
                                 value={reminder.method}
                                 onChange={method => updateReminder(index, {method: method as ReminderMethod})}

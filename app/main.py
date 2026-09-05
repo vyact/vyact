@@ -293,6 +293,7 @@ async def lifespan(app: FastAPI):
     try:
         from services.mcp_client import mcp_manager
         from services.mcp_config import build_servers_config
+        register_microsoft_workspace_tools(mcp_manager)
         # 설치형 플러그인이 MCP 카탈로그와 내부 tool을 먼저 등록한다.
         try:
             from services.plugin_manager import load_installed_plugins
@@ -478,6 +479,8 @@ from routers.project import router as project_router
 from routers.files import router as files_router
 from routers.system import router as system_router
 from routers.mcp import router as mcp_router
+from services.microsoft_workspace.tools import register_microsoft_workspace_tools
+from routers.microsoft_workspace import router as microsoft_workspace_router
 from routers.google_workspace_browser import router as google_workspace_browser_router
 from routers.remember import router as remember_router
 from routers.vocab import router as vocab_router
@@ -506,6 +509,7 @@ app.include_router(files_router, prefix="/api")
 app.include_router(system_router, prefix="/api")
 app.include_router(mcp_router, prefix="/api")
 app.include_router(google_workspace_browser_router, prefix="/api")
+app.include_router(microsoft_workspace_router, prefix="/api")
 app.include_router(remember_router, prefix="/api")
 app.include_router(vocab_router, prefix="/api")
 app.include_router(skills_router)

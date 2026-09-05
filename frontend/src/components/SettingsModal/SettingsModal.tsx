@@ -1,3 +1,5 @@
+import {microsoftRequest} from '../../services/microsoftWorkspace';
+import MicrosoftWorkspaceSection from './MicrosoftWorkspaceSection';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Server} from 'lucide-react';
@@ -75,7 +77,7 @@ interface SettingsModalProps {
     initialTab?: string;
 }
 
-type Tab = 'backup' | 'general' | 'runtime' | 'apiServer' | 'google' | 'api' | 'externalData' | 'plugins' | 'skills' | 'profile';
+type Tab = 'backup' | 'general' | 'runtime' | 'apiServer' | 'google' | 'microsoft' | 'api' | 'externalData' | 'plugins' | 'skills' | 'profile';
 
 type RuntimeSettings = Record<string, number | null>;
 const DEFAULT_SETTINGS_TAB: Tab = 'general';
@@ -248,7 +250,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
     const [previewLoading, setPreviewLoading] = useState(false);
     const [googleDriveAvailable, setGoogleDriveAvailable] = useState(false);
     const [exportingDrive, setExportingDrive] = useState(false);
-    const [driveBackupAccounts, setDriveBackupAccounts] = useState<Array<{id: string; email?: string}>>([]);
+    const [driveBackupAccounts, setDriveBackupAccounts] = useState<Array<{id: string; email?: string; provider: 'google' | 'microsoft'; accountId: string}>>([]);
     const [activeDriveBackupAccountId, setActiveDriveBackupAccountId] = useState('');
     const [showDriveAccountSelection, setShowDriveAccountSelection] = useState(false);
     const [selectedDriveBackupAccountId, setSelectedDriveBackupAccountId] = useState('');
@@ -466,19 +468,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
     // 백업 탭 진입 시 Google Drive 사용 가능 여부를 최신 상태로 확인
     useEffect(() => {
         if (isOpen && tab === 'backup') {
-            refreshGoogleWorkspaceStatus().then(status => {
-                setGoogleDriveAvailable(status.connected);
-                const connectedAccounts = status.accounts.filter(account => account.authenticated);
-                const configuredAccountId = typeof status.config?.active_account_id === 'string'
-                    ? status.config.active_account_id
-                    : '';
-                const activeAccountId = connectedAccounts.some(account => account.id === configuredAccountId)
-                    ? configuredAccountId
-                    : connectedAccounts[0]?.id || '';
-                setDriveBackupAccounts(connectedAccounts);
-                setActiveDriveBackupAccountId(activeAccountId);
-                setSelectedDriveBackupAccountId(activeAccountId);
-            }).catch(() => setGoogleDriveAvailable(false));
+            Promise.allSettled([refreshGoogleWorkspaceStatus(), microsoftRequest('/status')]).then(([google, microsoft]) => {
+                const connected = [
+                    ...(google.status === 'fulfilled' ? google.value.accounts.filter(a => a.authenticated).map(a => ({...a, accountId: a.id, id: `google:${a.id}`, provider: 'google' as const})) : []),
+                    ...(microsoft.status === 'fulfilled' ? microsoft.value.accounts.filter(a => a.authenticated).map(a => ({...a, accountId: a.id, id: `microsoft:${a.id}`, provider: 'microsoft' as const})) : []),
+                ];
+                setDriveBackupAccounts(connected);
+                setGoogleDriveAvailable(connected.length > 0);
+                setActiveDriveBackupAccountId(connected[0]?.id || '');
+                setSelectedDriveBackupAccountId(connected[0]?.id || '');
+            });
         }
     }, [isOpen, tab]);
 
@@ -556,6 +555,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
             return;
         }
         const targetAccountId = accountId || driveBackupAccounts[0]?.id || activeDriveBackupAccountId;
+        const targetAccount = driveBackupAccounts.find(account => account.id === targetAccountId);
+        if (!targetAccount) return;
         setShowDriveAccountSelection(false);
         setDriveExportResult(null);
         setExportingDrive(true);
@@ -566,7 +567,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                 body: JSON.stringify({
                     indices: selectedIndices,
                     include_files: includeFiles,
-                    account_id: targetAccountId || undefined,
+                    account_id: targetAccount.accountId,
+                    provider: targetAccount.provider,
                 })
             });
             const data = await res.json();
@@ -923,7 +925,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                         <input type="radio" name="drive-backup-account" value={account.id}
                                                checked={selectedDriveBackupAccountId === account.id}
                                                onChange={() => setSelectedDriveBackupAccountId(account.id)}/>
-                                        <span><strong>{account.email || account.id}</strong></span>
+                                        <span className="drive-backup-account-identity"><span className="drive-backup-account-provider" aria-label={t(account.provider === 'google' ? 'tabs.google' : 'microsoft.title')}>{account.provider === 'google' ? 'G' : 'M'}</span>
+                                        <strong>{account.email || account.accountId}</strong></span>
                                     </label>
                                 ))}
                             </div>
@@ -945,6 +948,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                             {key: 'apiServer' as Tab, icon: <Server size={16} strokeWidth={1.8}/>, label: t('tabs.apiServer')},
                             {key: 'backup' as Tab, icon: '💾', label: t('tabs.backup')},
                             {key: 'google' as Tab, icon: 'G', label: t('tabs.google')},
+                            {key: 'microsoft' as Tab, icon: 'M', label: t('microsoft.title')},
                             {key: 'api' as Tab, icon: '🔑', label: t('tabs.api')},
                             ...(isKoreanLanguage
                                 ? [{key: 'externalData' as Tab, icon: '🌐', label: t('tabs.externalData')}]
@@ -1572,6 +1576,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                             </div>
                         )}
 
+                        {tab === 'microsoft' && <div className="settings-general"><div className="settings-general-section"><MicrosoftWorkspaceSection/></div></div>}
                         {tab === 'google' && (
                             <div className="settings-general">
                                 <div className="settings-general-section">

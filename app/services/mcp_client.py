@@ -21,6 +21,7 @@ from contextlib import AsyncExitStack
 from typing import Any
 
 from logger import DebugLogSettings, get_logger
+from services.microsoft_workspace.auth import status as microsoft_auth_status
 from services.tool_messages import get_tool_language, tool_message, tool_error
 
 logger = get_logger(__name__)
@@ -358,6 +359,12 @@ class MCPManager:
         except Exception:
             pass
 
+        if "microsoft_workspace" in enabled_types:
+            try:
+                if not (await microsoft_auth_status())["authenticated"]:
+                    enabled_types.discard("microsoft_workspace")
+            except Exception:
+                enabled_types.discard("microsoft_workspace")
         out: list[dict] = []
         for worker in self._workers.values():
             srv = worker.server

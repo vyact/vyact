@@ -10,12 +10,13 @@ import json
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Literal
 
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from services.microsoft_workspace.backup import upload_backup
 from config import INSTALL_DIR
 from services.db import (
     EXTERNAL_DATA_SETTINGS_INDEX,
@@ -263,6 +264,7 @@ class ExportRequest(BaseModel):
     indices: Optional[list[str]] = None
     include_files: bool = True  # 원본 문서 파일 포함 여부
     account_id: Optional[str] = None
+    provider: Literal["google", "microsoft"] = "google"
 
 
 async def _read_backup(file: UploadFile) -> tuple[dict, dict[str, bytes], dict[str, bytes], dict[str, bytes]]:
@@ -675,6 +677,9 @@ async def export_backup_to_drive(req: ExportRequest = None):
             mime_type = "application/json"
     finally:
         await es.close()
+
+    if req and req.provider == "microsoft":
+        return await upload_backup(file_bytes, filename, req.account_id or "")
 
     # Google Drive 업로드
     try:

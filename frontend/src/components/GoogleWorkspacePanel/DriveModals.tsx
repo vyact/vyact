@@ -4,7 +4,8 @@ import {useTranslation} from 'react-i18next';
 import {Archive, Check, ChevronRight, Copy, FileDown, FolderIcon, Link2, LoaderCircle, Trash2, UserPlus, X} from 'lucide-react';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import CustomSelect from '../CustomSelect/CustomSelect';
-import {api} from '../../services/api';
+import {useWorkspace} from './WorkspaceContext';
+import {toast} from '../common/ToastNotifications/ToastNotifications';
 import {copyToClipboard} from '../../utils/helpers';
 
 export type DrivePermission = {
@@ -113,6 +114,7 @@ type MoveDestinationModalProps = {
 };
 
 export function DriveMoveDestinationModal({selectedCount, onClose, onConfirm}: MoveDestinationModalProps) {
+    const {api} = useWorkspace();
     const {t} = useTranslation('main');
     const [childrenByParent, setChildrenByParent] = useState<Record<string, DriveFolder[]>>({});
     const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set(['root']));
@@ -208,6 +210,7 @@ type ShareBusyAction = 'loading' | 'invite' | 'generalAccess' | `removePermissio
 const INVITE_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function DriveShareModal({file, onClose, onPermissionsChange}: ShareModalProps) {
+    const {api} = useWorkspace();
     const {t} = useTranslation('main');
     const [permissions, setPermissions] = useState<DrivePermission[]>([]);
     const [link, setLink] = useState('');
@@ -247,7 +250,8 @@ export function DriveShareModal({file, onClose, onPermissionsChange}: ShareModal
         if (!isEmailValid || busy) return;
         setBusyAction('invite');
         try {
-            await api.createGoogleDrivePermission(file.id, email.trim(), inviteRole);
+            const result = await api.createGoogleDrivePermission(file.id, email.trim(), inviteRole) as {notificationFailed?: boolean; verificationRequired?: boolean};
+            if (result.notificationFailed) toast.warning(t(result.verificationRequired ? 'settings:microsoft.inviteVerification' : 'settings:microsoft.inviteNotificationFailed'));
             setEmail('');
             await loadPermissions();
         } finally {
@@ -318,7 +322,7 @@ export function DriveShareModal({file, onClose, onPermissionsChange}: ShareModal
                 {permissions.filter(permission => permission.type !== 'anyone').map(permission =>
                         <div className="gwp-drive-permission" key={permission.id}>
                             <span className="gwp-drive-avatar">{permission.photoLink ? <img src={permission.photoLink} alt=""/> : (permission.displayName || permission.emailAddress || '?')[0]}</span>
-                            <span><strong>{permission.displayName || permission.emailAddress || permission.type}</strong>{permission.displayName && permission.emailAddress && <small>{permission.emailAddress}</small>}</span>
+                            <span><strong>{permission.displayName || permission.emailAddress || t('settings:microsoft.unknownShareUser')}</strong>{permission.displayName && permission.emailAddress && <small>{permission.emailAddress}</small>}</span>
                             <span className="gwp-drive-permission-role">{permission.role === 'owner' ? t('googleWorkspace.owner') : permission.role === 'writer' ? t('googleWorkspace.editor') : t('googleWorkspace.viewer')}</span>
                             {permission.role !== 'owner' && <button type="button" onClick={() => void removePermission(permission.id)} disabled={busy} aria-label={t('googleWorkspace.removePermission')}>
                                 {busyAction === `removePermission:${permission.id}`

@@ -1,11 +1,12 @@
-import {useEffect, useId, useRef, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {api} from '../../services/api';
 import {waitForGoogleWorkspaceConnection} from '../../services/googleWorkspaceStatus';
 import {emitGoogleWorkspaceStatusChanged, emitMcpServersChanged} from '../../utils/mcpEvents';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
-import {Tooltip} from '../common/Tooltip/Tooltip';
+import WorkspaceMailSettingsFields from './WorkspaceMailSettingsFields';
+import WorkspaceSetupGuide from './WorkspaceSetupGuide';
 import McpFieldInput, {type McpField as Field} from './McpFieldInput';
 import './McpServersSection.css';
 
@@ -169,7 +170,7 @@ export default function McpServersSection({scope = 'mcp'}: {scope?: McpServersSe
         isGoogleScope ? server.type === 'google_workspace' : server.type !== 'google_workspace'
     );
     const visibleCatalog = Object.fromEntries(Object.entries(catalog).filter(([type]) =>
-        isGoogleScope ? type === 'google_workspace' : type !== 'google_workspace'
+        isGoogleScope ? type === 'google_workspace' : type !== 'google_workspace' && type !== 'microsoft_workspace'
     ));
 
     return (
@@ -209,7 +210,7 @@ export default function McpServersSection({scope = 'mcp'}: {scope?: McpServersSe
                                     <span className="mcp-item-label">{displayName}</span>
                                     <div className="mcp-item-actions">
                                         <button className="mcp-icon-btn"
-                                                onClick={() => setEditingId(editingId === srv.id ? null : srv.id)}>
+                                                onClick={() => { if (srv.type === 'microsoft_workspace') { window.dispatchEvent(new CustomEvent('vyact:open-settings', {detail: {tab: 'microsoft'}})); return; } setEditingId(editingId === srv.id ? null : srv.id); }}>
                                             {t('mcp.edit')}
                                         </button>
                                         <button className="mcp-icon-btn mcp-danger"
@@ -537,7 +538,7 @@ function GoogleAccountsEditor({value, onChange, onPersist, onCredentialUpload, o
                         {t('mcp.removeAccount')}
                     </button>
                 </div>
-                <GoogleMailSettingsFields
+                <WorkspaceMailSettingsFields
                     mailModeField={mailModeField}
                     notificationField={notificationField}
                     mailMode={account.mail_mode}
@@ -654,7 +655,7 @@ function ServerForm({
                 const notificationField = fields[index + 1];
                 if (field.key === 'mail_notifications' && fields[index - 1]?.key === 'mail_mode') return null;
                 if (field.key === 'mail_mode' && notificationField?.key === 'mail_notifications') {
-                    return <GoogleMailSettingsFields key={field.key} mailModeField={field} notificationField={notificationField}
+                    return <WorkspaceMailSettingsFields key={field.key} mailModeField={field} notificationField={notificationField}
                         mailMode={values[field.key]} notificationsEnabled={Boolean(values[notificationField.key])}
                         onMailModeChange={(v) => setV(field.key, v)} onNotificationsChange={(v) => setV(notificationField.key, v)}/>;
                 }
@@ -762,7 +763,7 @@ function AddServerForm({catalog, servers, fixedType, err, onErr, onAdd, onCancel
                 const notificationField = cat.fields[index + 1];
                 if (field.key === 'mail_notifications' && cat.fields[index - 1]?.key === 'mail_mode') return null;
                 if (field.key === 'mail_mode' && notificationField?.key === 'mail_notifications') {
-                    return <GoogleMailSettingsFields key={field.key} mailModeField={field} notificationField={notificationField}
+                    return <WorkspaceMailSettingsFields key={field.key} mailModeField={field} notificationField={notificationField}
                         mailMode={values[field.key]} notificationsEnabled={Boolean(values[notificationField.key])}
                         onMailModeChange={(v) => setV(field.key, v)} onNotificationsChange={(v) => setV(notificationField.key, v)}/>;
                 }
@@ -794,57 +795,12 @@ function AddServerForm({catalog, servers, fixedType, err, onErr, onAdd, onCancel
 }
 
 // ── 필드 타입별 입력 위젯 ────────────────────────────────────────────
-function GoogleMailSettingsFields({mailModeField, notificationField, mailMode, notificationsEnabled, onMailModeChange, onNotificationsChange}: {
-    mailModeField: Field;
-    notificationField: Field;
-    mailMode: string;
-    notificationsEnabled: boolean;
-    onMailModeChange: (value: string) => void;
-    onNotificationsChange: (value: boolean) => void;
-}) {
-    const {t} = useTranslation('settings');
-    const fieldIdPrefix = useId();
-    const label = (field: Field) => t(`mcpCatalog.fields.${field.key}`, {defaultValue: field.label});
-    const notificationInputId = `${fieldIdPrefix}-${notificationField.key}`;
-
-    return <div className="mcp-mail-settings">
-        <span className="mcp-field-label">{label(mailModeField)}</span>
-        <label className="mcp-field-label mcp-notification-label" htmlFor={notificationInputId}>
-            <Tooltip content={t('mcpCatalog.fields.mail_notifications_help')} multiline size="medium">
-                <span className="mcp-notification-help" tabIndex={0} role="img"
-                      aria-label={t('mcpCatalog.fields.mail_notifications_help')}
-                      onClick={event => event.preventDefault()}>?</span>
-            </Tooltip>
-            <span>{label(notificationField)}</span>
-        </label>
-        <CustomSelect
-            options={(mailModeField.options || []).map(option => ({value: option.value, label: t(`mcpCatalog.options.${option.value}`, {defaultValue: option.label})}))}
-            value={mailMode || mailModeField.options?.[0]?.value || ''}
-            onChange={onMailModeChange}
-        />
-        <div className="mcp-mail-toggle-control">
-            <label className="mcp-switch">
-                <input id={notificationInputId} type="checkbox" checked={notificationsEnabled}
-                       onChange={event => onNotificationsChange(event.target.checked)}/>
-                <span className="mcp-slider"/>
-            </label>
-        </div>
-    </div>;
-}
-
 // ── Google Workspace 셋업 가이드 ──────────────────────────────────────
 function GoogleWorkspaceGuide() {
     const {t} = useTranslation('settings');
-    const [open, setOpen] = useState(false);
 
     return (
-        <div className="gw-guide">
-            <button className="gw-guide-toggle" onClick={() => setOpen(!open)}>
-                <span className={`gw-guide-arrow ${open ? 'open' : ''}`}>▶</span>
-                <span>{t('mcp.googleGuideTitle')}</span>
-            </button>
-            {open && (
-                <div className="gw-guide-body">
+        <WorkspaceSetupGuide title={t('mcp.googleGuideTitle')}>
                     <section className="gw-services" aria-labelledby="gw-services-title">
                         <h4 id="gw-services-title">{t('mcp.googleServicesTitle')}</h4>
                         <ul className="gw-services-list">
@@ -893,8 +849,6 @@ function GoogleWorkspaceGuide() {
                     <div className="gw-guide-note">
                         {t('mcp.googleNote')}
                     </div>
-                </div>
-            )}
-        </div>
+        </WorkspaceSetupGuide>
     );
 }

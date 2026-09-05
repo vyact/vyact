@@ -29,7 +29,7 @@ import {
     X
 } from 'lucide-react';
 import {translateBackendError} from '../../utils/apiError';
-import {api} from '../../services/api';
+import {useWorkspace} from './WorkspaceContext';
 import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
 import {DriveDownloadStatusModal, DriveFileNameModal, DriveMoveDestinationModal, DriveShareModal} from './DriveModals';
 import {getDriveDropContents, getDriveInputContents, type DriveDropContents} from './driveDrop';
@@ -40,7 +40,7 @@ type DrivePanelProps = {
     onIndexDocument?: (file: DriveFile) => Promise<void> | void;
 };
 
-export type DriveFile = {
+export type DriveFile = {provider?: 'google' | 'microsoft'; accountId?: string;
     id: string;
     name: string;
     mimeType: string;
@@ -49,6 +49,7 @@ export type DriveFile = {
     webViewLink?: string;
     parentPath?: DriveFolder[];
     permissions?: DrivePermissionSummary[];
+    shared?: boolean;
 };
 
 type DrivePermissionSummary = {
@@ -77,6 +78,7 @@ const DRIVE_PAGE_SIZE = 50;
 const getDriveSharingStatus = (file: DriveFile) => {
     const permissions = file.permissions || [];
     return {
+        hasSharedAccess: file.permissions === undefined && file.shared === true,
         hasGeneralAccess: permissions.some(permission =>
             !permission.deleted && (permission.type === 'anyone' || permission.type === 'domain')),
         hasSpecificAccess: permissions.some(permission =>
@@ -118,8 +120,9 @@ const waitForDownloadPoll = (signal: AbortSignal) => new Promise<void>((resolve,
 });
 
 export default function DrivePanel({initialFolder, onAttachToChat, onIndexDocument}: DrivePanelProps) {
+    const {api, provider, accountId} = useWorkspace();
     const {t, i18n} = useTranslation('main');
-    const rootFolder = {id: 'root', name: t('googleWorkspace.myDrive')};
+    const rootFolder = {id: 'root', name: provider === 'microsoft' ? t('settings:microsoft.drive') : t('googleWorkspace.myDrive')};
     const [folder, setFolder] = useState<DriveFolder>(initialFolder || rootFolder);
     const [folders, setFolders] = useState<DriveFolder[]>(initialFolder ? [rootFolder, initialFolder] : [rootFolder]);
     const [files, setFiles] = useState<DriveFile[]>([]);
@@ -209,7 +212,7 @@ export default function DrivePanel({initialFolder, onAttachToChat, onIndexDocume
         if (!initialFolder || initialFolder.id === folder.id) return;
         setSearchValue('');
         setDebouncedSearch('');
-        setFolders([{id: 'root', name: t('googleWorkspace.myDrive')}, initialFolder]);
+        setFolders([{id: 'root', name: provider === 'microsoft' ? t('settings:microsoft.drive') : t('googleWorkspace.myDrive')}, initialFolder]);
         setFolder(initialFolder);
     }, [folder.id, initialFolder, t]);
     useEffect(() => {
@@ -636,7 +639,7 @@ export default function DrivePanel({initialFolder, onAttachToChat, onIndexDocume
             <Search aria-hidden="true" size={18}/>
             <input value={searchValue} onChange={event => setSearchValue(event.target.value)}
                    onKeyDown={event => { if (event.key === 'Enter') submitSearch(); }}
-                   placeholder={t('common:search')} aria-label={t('googleWorkspace.searchDrive')}/>
+                   placeholder={t('common:search')} aria-label={t(provider === 'microsoft' ? 'settings:microsoft.searchDrive' : 'googleWorkspace.searchDrive')}/>
             {searchValue &&
                 <button type="button" onClick={() => { setSearchValue(''); setDebouncedSearch(''); }} aria-label={t('googleWorkspace.clearSearch')}>
                     <X size={17}/></button>}
@@ -763,9 +766,16 @@ export default function DrivePanel({initialFolder, onAttachToChat, onIndexDocume
                             : <span className="gwp-drive-file-info">
                                 <span className="gwp-drive-file-title">
                                     <button className="gwp-drive-file-name"
-                                            onClick={() => item.mimeType === FOLDER_MIME ? openFolder(item) : item.webViewLink && window.open(item.webViewLink, '_blank')}>
+                                            onClick={event => {
+                                                event.stopPropagation();
+                                                if (item.mimeType === FOLDER_MIME) openFolder(item);
+                                                else if (item.webViewLink) window.open(item.webViewLink, '_blank');
+                                            }}>
                                         {item.name}
                                     </button>
+                                    {getDriveSharingStatus(item).hasSharedAccess && <span className="gwp-drive-sharing-status" title={t('googleWorkspace.share')} aria-label={t('googleWorkspace.share')}>
+                                        <Share2 aria-hidden="true" size={12}/>
+                                    </span>}
                                     {getDriveSharingStatus(item).hasGeneralAccess && <span className="gwp-drive-sharing-status" title={t('googleWorkspace.generalAccessShared')} aria-label={t('googleWorkspace.generalAccessShared')}>
                                         <Share2 aria-hidden="true" size={12}/>
                                     </span>}
@@ -779,7 +789,10 @@ export default function DrivePanel({initialFolder, onAttachToChat, onIndexDocume
                                         className="gwp-drive-file-path-segment" key={pathFolder.id}>
                                         {pathIndex > 0 && <ChevronRight aria-hidden="true" size={12}/>}
                                         <button type="button"
-                                                onClick={() => openSearchPathFolder(item.parentPath!, pathIndex)}>
+                                                onClick={event => {
+                                                    event.stopPropagation();
+                                                    openSearchPathFolder(item.parentPath!, pathIndex);
+                                                }}>
                                             {pathFolder.name}
                                         </button>
                                     </span>)}
@@ -803,10 +816,10 @@ export default function DrivePanel({initialFolder, onAttachToChat, onIndexDocume
                         <Ellipsis aria-hidden="true" size={20}/>
                     </button>
                         {driveMenuFileId === item.id && <div className="gwp-drive-context-menu" ref={driveMenuRef}>
-                            {item.mimeType !== FOLDER_MIME && isChatAttachableFile(item.name) && onAttachToChat && <button onClick={async () => { setDriveMenuFileId(null); setProcessingFile({name: item.name, type: 'attach'}); try { await onAttachToChat(item); } finally { setProcessingFile(null); } }}><Paperclip aria-hidden="true"
+                            {item.mimeType !== FOLDER_MIME && isChatAttachableFile(item.name) && onAttachToChat && <button onClick={async () => { setDriveMenuFileId(null); setProcessingFile({name: item.name, type: 'attach'}); try { await onAttachToChat({...item, provider, accountId}); } finally { setProcessingFile(null); } }}><Paperclip aria-hidden="true"
                                                                                        size={16}/><span>{t('googleWorkspace.attachToChat')}</span>
                             </button>}
-                            {item.mimeType !== FOLDER_MIME && isIndexableFile(item.name) && onIndexDocument && <button onClick={async () => { setDriveMenuFileId(null); setProcessingFile({name: item.name, type: 'index'}); try { await onIndexDocument(item); } finally { setProcessingFile(null); } }}><Database aria-hidden="true"
+                            {item.mimeType !== FOLDER_MIME && isIndexableFile(item.name) && onIndexDocument && <button onClick={async () => { setDriveMenuFileId(null); setProcessingFile({name: item.name, type: 'index'}); try { await onIndexDocument({...item, provider, accountId}); } finally { setProcessingFile(null); } }}><Database aria-hidden="true"
                                                                                        size={16}/><span>{t('googleWorkspace.indexDocument')}</span>
                             </button>}
                             <button onClick={() => driveRenameStart(item)}><Pencil aria-hidden="true"

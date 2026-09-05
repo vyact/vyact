@@ -1,3 +1,4 @@
+import {microsoftRequest, MICROSOFT_WORKSPACE_CHANGED, OPEN_MICROSOFT_WORKSPACE} from '../../services/microsoftWorkspace';
 import React, {useRef, useEffect} from 'react';
 import {Lightbulb} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
@@ -70,6 +71,14 @@ const InputMenu: React.FC<InputMenuProps> = ({
     const {inputMenu: pluginMenuItems} = usePluginExtensions();
     const [open, setOpen] = React.useState(false);
     const [google, setGoogle] = React.useState<GoogleWorkspaceStatus>(GOOGLE_STATUS_UNAVAILABLE);
+    const [microsoftConnected, setMicrosoftConnected] = React.useState(false);
+    useEffect(() => {
+        let active = true;
+        const refresh = () => void microsoftRequest('/status').then(status => { if (active) setMicrosoftConnected(status.authenticated); }).catch(() => { if (active) setMicrosoftConnected(false); });
+        refresh();
+        window.addEventListener(MICROSOFT_WORKSPACE_CHANGED, refresh);
+        return () => { active = false; window.removeEventListener(MICROSOFT_WORKSPACE_CHANGED, refresh); };
+    }, []);
     const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -222,6 +231,9 @@ const InputMenu: React.FC<InputMenuProps> = ({
                             false
                         )}
                     </>}
+                    {microsoftConnected && menuItem(<span className="input-menu-google-icon">M</span>,
+                        t('settings:microsoft.title'),
+                        () => window.dispatchEvent(new Event(OPEN_MICROSOFT_WORKSPACE)), false)}
                     {divider}
                     {menuItem(
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"

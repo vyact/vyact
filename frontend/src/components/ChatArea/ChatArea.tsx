@@ -113,6 +113,10 @@ interface ChatAreaProps {
     onOpenQuickMemo?: (quickNoteId: string) => void;
     convId?: string;
     children?: React.ReactNode;
+    workspaceRequestId?: number;
+    workspaceAccountId?: string;
+    workspaceProvider?: 'google' | 'microsoft';
+    onWorkspaceAccountSwitch?: (provider: 'google' | 'microsoft', accountId: string) => void;
     googleWorkspaceOpen?: boolean;
     selectedGoogleMailId?: string | null;
     selectedGoogleCalendarEvent?: GoogleCalendarSelection | null;
@@ -148,7 +152,11 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                                                onOpenQuickMemo,
                                                convId,
                                                children,
-                                               googleWorkspaceOpen = false,
+                                               workspaceRequestId = 0,
+                                               workspaceAccountId = '',
+                                               workspaceProvider = 'google',
+                                               onWorkspaceAccountSwitch,
+    googleWorkspaceOpen = false,
                                                selectedGoogleMailId,
                                                selectedGoogleCalendarEvent,
                                                selectedGoogleDriveFolder,
@@ -571,7 +579,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                 ))}
             {panels.activePanel === 'google-workspace' && googleWorkspaceOpen && (
                 <React.Suspense fallback={null}>
-                    <GoogleWorkspacePanel embedded selectedMessageId={selectedGoogleMailId}
+                    <GoogleWorkspacePanel onAccountSwitch={onWorkspaceAccountSwitch} key={`${workspaceProvider}:${workspaceProvider === 'microsoft' ? `${workspaceAccountId}:${workspaceRequestId}` : ''}`} requestedAccountId={workspaceProvider === 'microsoft' ? workspaceAccountId : undefined} provider={workspaceProvider} embedded selectedMessageId={selectedGoogleMailId}
                         selectedCalendarEvent={selectedGoogleCalendarEvent}
                         selectedDriveFolder={selectedGoogleDriveFolder}
                         onClose={onGoogleWorkspaceClose || (() => {})} style={{width: `${workspacePanelWidth}%`}}

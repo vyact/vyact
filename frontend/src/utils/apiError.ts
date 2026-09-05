@@ -79,7 +79,9 @@ export async function assertOk(res: Response, fallbackMessage = i18n.t('main:net
     const payload = await readErrorPayload(res);
     const localized = payload.code
         ? translateBackendError(payload.code, payload.params)
-        : payload.detail || payload.message || fallbackMessage;
+        : typeof payload.detail === 'string' && payload.detail.startsWith('microsoft.')
+            ? i18n.t('settings:microsoft.requestFailed')
+            : payload.detail || payload.message || fallbackMessage;
     const prefix = i18n.t(res.status >= 500 ? 'main:networkError.serverError' : 'main:networkError.requestFailed');
     throw new ApiError(`${prefix} (${res.status}): ${localized}`, res.status, localized, payload.code, payload.request_id);
 }

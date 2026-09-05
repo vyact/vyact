@@ -13,6 +13,7 @@ from services.google_workspace.auth import (
 )
 from services.google_workspace.gmail import list_mail_messages_sync
 from services.mcp_config import list_servers
+from services.microsoft_workspace.notifications import collect_microsoft_notifications
 from services.notifications import create_notification, has_notification_type
 
 logger = get_logger(__name__)
@@ -334,6 +335,7 @@ async def _collect_google_calendar_notifications_for_account(account: dict) -> N
 
 
 NOTIFICATION_COLLECTORS: tuple[NotificationCollector, ...] = (
+    collect_microsoft_notifications,
     collect_google_mail_notifications,
     collect_google_calendar_notifications,
 )

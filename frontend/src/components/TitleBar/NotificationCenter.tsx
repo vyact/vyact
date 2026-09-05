@@ -1,3 +1,4 @@
+import {microsoftRequest, OPEN_MICROSOFT_WORKSPACE} from '../../services/microsoftWorkspace';
 import {Bell, CalendarDays, CheckCircle2, FileText, Info, Mail, Sparkles, TriangleAlert} from 'lucide-react';
 import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
@@ -58,7 +59,7 @@ function persistKnownNotificationIds(ids: string[]): void {
 }
 
 function NotificationTypeIcon({type}: {type: string}) {
-    const Icon = type === 'google_mail' ? Mail
+    const Icon = (type === 'google_mail' || type === 'microsoft_mail') ? Mail
         : type === 'google_calendar' ? CalendarDays
         : type === 'document' || type === 'file' ? FileText
             : type === 'success' || type === 'task_complete' ? CheckCircle2
@@ -245,6 +246,18 @@ export default function NotificationCenter({open, onOpenChange}: NotificationCen
     }, [onOpenChange, open]);
 
     const selectNotification = useCallback(async (item: NotificationItem) => {
+        if (item.type === 'microsoft_mail') {
+            try {
+                const status = await microsoftRequest('/status');
+                const account = status.accounts.find(account => account.authenticated && account.id === item.account_id)
+                    || status.accounts.find(account => account.authenticated && account.email.toLowerCase() === item.account_email?.toLowerCase());
+                if (!account) throw new Error('disconnected');
+                await microsoftRequest(`/accounts/${account.id}/activate`, 'POST');
+                window.dispatchEvent(new CustomEvent(OPEN_MICROSOFT_WORKSPACE, {detail: {messageId: item.source_id, accountId: account.id}}));
+                onOpenChange(false);
+            } catch { toast.warning(t('settings:microsoft.title'), t('settings:microsoft.requestFailed')); }
+            return;
+        }
         if (item.type === 'product_release') {
             setSelectedRelease(item);
             onOpenChange(false);

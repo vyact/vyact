@@ -1,3 +1,5 @@
+import {createWorkspaceApi} from '../../services/api';
+import {microsoftRequest, OPEN_MICROSOFT_WORKSPACE} from '../../services/microsoftWorkspace';
 import React, {useEffect, useState, useCallback, useRef} from 'react';
 import {useTranslation} from 'react-i18next';
 import Sidebar from '../Sidebar';
@@ -327,11 +329,15 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
         showVoiceChatModalRef.current = v;
         setVoiceAssistantActiveState(v);
     };
+    const [workspaceRequestId, setWorkspaceRequestId] = useState(0);
+    const [workspaceAccountId, setWorkspaceAccountId] = useState('');
+    const [workspaceProvider, setWorkspaceProvider] = useState<'google' | 'microsoft'>('google');
     const [googleWorkspaceOpen, setGoogleWorkspaceOpen] = useState(false);
     const [selectedGoogleMailId, setSelectedGoogleMailId] = useState<string | null>(null);
     const [selectedGoogleCalendarEvent, setSelectedGoogleCalendarEvent] = useState<GoogleCalendarSelection | null>(null);
     const [selectedGoogleDriveFolder, setSelectedGoogleDriveFolder] = useState<GoogleDriveSelection | null>(null);
     const openGoogleWorkspacePanel = (messageId?: string, calendarSelection?: GoogleCalendarSelection) => {
+        setWorkspaceProvider('google');
         setSelectedGoogleMailId(messageId || null);
         setSelectedGoogleCalendarEvent(calendarSelection || null);
         setGoogleWorkspaceOpen(true);
@@ -346,6 +352,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
         const openDriveFolder = (event: Event) => {
             const selection = (event as CustomEvent<GoogleDriveSelection>).detail;
             if (!selection?.folderId) return;
+            setWorkspaceProvider('google');
             setSelectedGoogleMailId(null);
             setSelectedGoogleCalendarEvent(null);
             setSelectedGoogleDriveFolder(selection);
@@ -355,6 +362,8 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
         return () => window.removeEventListener(OPEN_GOOGLE_DRIVE_EVENT, openDriveFolder);
     }, []);
     const toggleGoogleWorkspacePanel = () => {
+        setWorkspaceProvider('google');
+        if (workspaceProvider === 'microsoft') { setSelectedGoogleMailId(null); setSelectedGoogleCalendarEvent(null); setSelectedGoogleDriveFolder(null); setGoogleWorkspaceOpen(true); return; }
         if (!googleWorkspaceOpen) {
             setSelectedGoogleMailId(null);
             setSelectedGoogleCalendarEvent(null);
@@ -362,6 +371,32 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
         setGoogleWorkspaceOpen(open => !open);
     };
     useEffect(() => onGoogleWorkspaceStatusChanged(closeGoogleWorkspacePanel), [closeGoogleWorkspacePanel]);
+    useEffect(() => {
+        const openMicrosoft = async (event: Event) => {
+            const status = await microsoftRequest('/status');
+            if (!status.authenticated) return;
+            setWorkspaceAccountId((event as CustomEvent).detail?.accountId || status.config.active_account_id || status.accounts.find(account => account.authenticated)?.id || '');
+            setWorkspaceRequestId(current => current + 1);
+            setWorkspaceProvider('microsoft');
+            setSelectedGoogleMailId((event as CustomEvent).detail?.messageId || null);
+            setSelectedGoogleCalendarEvent(null);
+            setSelectedGoogleDriveFolder(null);
+            setGoogleWorkspaceOpen(true);
+        };
+        const shortcut = (event: KeyboardEvent) => {
+            if (event.repeat || !(event.metaKey || event.ctrlKey) || !event.shiftKey || event.altKey || event.key.toLowerCase() !== 'o') return;
+            event.preventDefault();
+            if (googleWorkspaceOpen && workspaceProvider === 'microsoft') closeGoogleWorkspacePanel();
+            else void openMicrosoft(event).catch(() => {});
+        };
+        const open = (event: Event) => void openMicrosoft(event).catch(() => {});
+        window.addEventListener(OPEN_MICROSOFT_WORKSPACE, open);
+        window.addEventListener('keydown', shortcut);
+        return () => {
+            window.removeEventListener(OPEN_MICROSOFT_WORKSPACE, open);
+            window.removeEventListener('keydown', shortcut);
+        };
+    }, [googleWorkspaceOpen, workspaceProvider, closeGoogleWorkspacePanel]);
     const [showShortcutModal, setShowShortcutModal] = useState(false);
     const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
     const [showSupportModal, setShowSupportModal] = useState(false);
@@ -453,7 +488,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
 
     const handleAttachDriveFileToChat = useCallback(async (file: DriveFile) => {
         try {
-            const {blob, filename} = await api.downloadGoogleDriveFile(file.id);
+            const {blob, filename} = await (file.provider === 'microsoft' ? createWorkspaceApi('microsoft-workspace', file.accountId) : api).downloadGoogleDriveFile(file.id);
             const downloadedFile = new File([blob], filename || file.name);
             setExternalDropFiles([downloadedFile]);
         } catch (e) {
@@ -467,7 +502,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
 
     const handleIndexDriveDocument = useCallback(async (file: DriveFile) => {
         try {
-            const {blob, filename} = await api.downloadGoogleDriveFile(file.id);
+            const {blob, filename} = await (file.provider === 'microsoft' ? createWorkspaceApi('microsoft-workspace', file.accountId) : api).downloadGoogleDriveFile(file.id);
             const downloadedFile = new File([blob], filename || file.name);
             setDocumentModalDropFiles([downloadedFile]);
             setShowDocumentModal(true);
@@ -703,6 +738,17 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                                 onShowInjectedContext={handleShowInjectedContext}
                                 onOpenMemo={handleOpenMemo}
                                 onOpenQuickMemo={handleOpenQuickMemo}
+                                workspaceRequestId={workspaceRequestId}
+                                workspaceAccountId={workspaceAccountId}
+                                workspaceProvider={workspaceProvider}
+                                onWorkspaceAccountSwitch={(provider, accountId) => {
+                                    setSelectedGoogleMailId(null);
+                                    setSelectedGoogleCalendarEvent(null);
+                                    setSelectedGoogleDriveFolder(null);
+                                    setWorkspaceProvider(provider);
+                                    setWorkspaceAccountId(accountId);
+                                    setWorkspaceRequestId(current => current + 1);
+                                }}
                                 googleWorkspaceOpen={googleWorkspaceOpen}
                                 selectedGoogleMailId={selectedGoogleMailId}
                                 selectedGoogleCalendarEvent={selectedGoogleCalendarEvent}

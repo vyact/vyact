@@ -68,7 +68,7 @@
 :root[data-theme='light'] .drive-backup-account-list label:is(:hover, :active, :focus-within) { background-color: color-mix(in srgb, var(--accent) 8%, var(--modal-inset)); }
 :root[data-theme='light'] .drive-backup-account-list label.selected { background-color: color-mix(in srgb, var(--accent) 14%, var(--surface)); }
 .drive-backup-account-list input { accent-color: var(--accent); }
-.drive-backup-account-list span { display: flex; min-width: 0; flex: 1; align-items: center; justify-content: space-between; gap: 12px; }
+.drive-backup-account-identity { display: flex; min-width: 0; flex: 1; align-items: center; gap: 6px; }
 .drive-backup-account-list strong { overflow: hidden; color: var(--text); font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
 .drive-backup-account-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
 .drive-backup-account-actions button { min-width: 90px; padding: 9px 14px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--text); cursor: pointer; font-weight: 600; }
@@ -1573,3 +1573,5 @@
     flex: 1;
     min-height: 200px;
 }
+
+.drive-backup-account-provider { color: #62b5f6; font-weight: 800; flex: 0 0 20px; text-align: center; }
