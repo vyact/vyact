@@ -246,14 +246,20 @@ export default function NotificationCenter({open, onOpenChange}: NotificationCen
     }, [onOpenChange, open]);
 
     const selectNotification = useCallback(async (item: NotificationItem) => {
-        if (item.type === 'microsoft_mail') {
+        if (item.type === 'microsoft_mail' || item.type === 'microsoft_calendar') {
             try {
                 const status = await microsoftRequest('/status');
                 const account = status.accounts.find(account => account.authenticated && account.id === item.account_id)
                     || status.accounts.find(account => account.authenticated && account.email.toLowerCase() === item.account_email?.toLowerCase());
                 if (!account) throw new Error('disconnected');
                 await microsoftRequest(`/accounts/${account.id}/activate`, 'POST');
-                window.dispatchEvent(new CustomEvent(OPEN_MICROSOFT_WORKSPACE, {detail: {messageId: item.source_id, accountId: account.id}}));
+                const sourceMatch = item.type === 'microsoft_calendar'
+                    ? item.source_id.match(/^primary:([^:]+):(.+):\d+$/) : null;
+                window.dispatchEvent(new CustomEvent(OPEN_MICROSOFT_WORKSPACE, {detail: {
+                    accountId: account.id,
+                    messageId: item.type === 'microsoft_mail' ? item.source_id : undefined,
+                    calendarSelection: sourceMatch ? {eventId: sourceMatch[1], startAt: sourceMatch[2], requestId: Date.now()} : undefined,
+                }}));
                 onOpenChange(false);
             } catch { toast.warning(t('settings:microsoft.title'), t('settings:microsoft.requestFailed')); }
             return;

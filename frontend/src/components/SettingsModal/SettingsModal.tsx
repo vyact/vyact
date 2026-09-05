@@ -957,8 +957,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                             {key: 'apiServer' as Tab, icon: <Server size={16} strokeWidth={1.8}/>, label: t('tabs.apiServer')},
                             {key: 'backup' as Tab, icon: '💾', label: t('tabs.backup')},
                             {key: 'google' as Tab, icon: 'G', label: t('tabs.google')},
-                            // Microsoft setup is temporarily hidden; keep the integration available for re-enabling.
-                            // {key: 'microsoft' as Tab, icon: 'M', label: t('microsoft.title')},
+                            {key: 'microsoft' as Tab, icon: 'M', label: t('microsoft.title')},
                             {key: 'api' as Tab, icon: '🔑', label: t('tabs.api')},
                             ...(isKoreanLanguage
                                 ? [{key: 'externalData' as Tab, icon: '🌐', label: t('tabs.externalData')}]

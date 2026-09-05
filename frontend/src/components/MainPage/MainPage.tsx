@@ -32,6 +32,7 @@ interface MainPageProps {
 }
 
 const SIDEBAR_COLLAPSED_STORAGE_KEY = 'vyact-sidebar-collapsed';
+const WORKSPACE_PROVIDER_STORAGE_KEY = 'vyact-workspace-provider';
 
 const PdfModal = React.lazy(() => import('../PdfModal/PdfModal'));
 const DocumentModal = React.lazy(() => import('../DocumentModal/DocumentModal'));
@@ -332,7 +333,18 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
     };
     const [workspaceRequestId, setWorkspaceRequestId] = useState(0);
     const [workspaceAccountId, setWorkspaceAccountId] = useState('');
-    const [workspaceProvider, setWorkspaceProvider] = useState<'google' | 'microsoft'>('google');
+    const [workspaceProvider, setWorkspaceProvider] = useState<'google' | 'microsoft'>(() => {
+        try {
+            return localStorage.getItem(WORKSPACE_PROVIDER_STORAGE_KEY) === 'microsoft' ? 'microsoft' : 'google';
+        } catch {
+            return 'google';
+        }
+    });
+    useEffect(() => {
+        try {
+            localStorage.setItem(WORKSPACE_PROVIDER_STORAGE_KEY, workspaceProvider);
+        } catch { /* Keep the workspace usable when storage is unavailable. */ }
+    }, [workspaceProvider]);
     const [googleWorkspaceOpen, setGoogleWorkspaceOpen] = useState(false);
     const [selectedGoogleMailId, setSelectedGoogleMailId] = useState<string | null>(null);
     const [selectedGoogleCalendarEvent, setSelectedGoogleCalendarEvent] = useState<GoogleCalendarSelection | null>(null);
@@ -396,7 +408,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
             setWorkspaceRequestId(current => current + 1);
             setWorkspaceProvider('microsoft');
             setSelectedGoogleMailId((event as CustomEvent).detail?.messageId || null);
-            setSelectedGoogleCalendarEvent(null);
+            setSelectedGoogleCalendarEvent((event as CustomEvent).detail?.calendarSelection || null);
             setSelectedGoogleDriveFolder(null);
             setGoogleWorkspaceOpen(true);
         };
