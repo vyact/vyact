@@ -3,7 +3,7 @@ import {resolveKokoroVoice} from '../../services/tts/kokoroVoice';
 import {getKokoroAvailability} from '../../services/tts/kokoroStatus';
 
 // ── 공통 상수 ─────────────────────────────────────────────
-// 음성 대화일때 선택된 시스템 프롬프트가 있으면 그것을 적용하고 없으면 아래의 값을 사용함.
+// Preserve the selected conversation language alongside custom system instructions.
 export const VOICE_SYSTEM_PROMPTS: Record<string, string> = {
     'fr-FR': 'Tu es un interlocuteur amical. Réponds uniquement en français, en 2 à 3 phrases. Cette conversation est orale : évite le Markdown, les listes numérotées et les symboles spéciaux.',
     'ko-KR': '당신은 친근한 대화 상대입니다. 반드시 한국어로만 답변하세요. 음성 대화이므로 답변은 2~3문장으로 간결하게 해주세요. 마크다운, 번호 목록, 특수기호는 사용하지 마세요.',
@@ -15,6 +15,11 @@ export const VOICE_SYSTEM_PROMPTS: Record<string, string> = {
     'vi-VN': 'Bạn là một trợ lý trò chuyện thân thiện. Chỉ trả lời bằng tiếng Việt. Đây là cuộc trò chuyện bằng giọng nói, hãy trả lời ngắn gọn 2-3 câu. Không dùng markdown hay ký hiệu đặc biệt.',
     'es-ES': 'Eres un asistente de conversación amigable. Responde solo en español. Esta es una conversación de voz, responde en 2-3 oraciones. No uses markdown, listas numeradas ni símbolos especiales.',
 };
+
+export function buildVoiceSystemPrompt(language: string, customPrompt = ''): string {
+    const languagePrompt = VOICE_SYSTEM_PROMPTS[language] ?? VOICE_SYSTEM_PROMPTS['en-US'];
+    return [customPrompt.trim(), languagePrompt].filter(Boolean).join('\n\n');
+}
 
 export const LANGUAGES = [
     {code: 'ko-KR', fallbackLabel: '한국어', flag: '🇰🇷'},

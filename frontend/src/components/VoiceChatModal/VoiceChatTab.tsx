@@ -7,7 +7,7 @@ import {useTranslation} from 'react-i18next';
 import {loadTtsSettings, updateTtsCache, TTS_SETTINGS_CHANGED, TTS_RATE_OPTIONS, normalizeTtsRate} from '../../services/tts/ttsSettings';
 import {api} from '../../services/api';
 import {
-    VOICE_SYSTEM_PROMPTS, LANGUAGES, getLanguageDisplayName, SILENCE_THRESHOLD, SILENCE_DURATION_MS,
+    buildVoiceSystemPrompt, LANGUAGES, getLanguageDisplayName, SILENCE_THRESHOLD, SILENCE_DURATION_MS,
     ChatPhase, ChatEntry, VoiceChatModalProps, speakWithKokoroOrFallback, stopAllTts,
 } from './voiceChat.types';
 
@@ -312,7 +312,7 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
                     if (isAssistantMode) {
                         onSendRef.current(spoken, undefined, false);
                     } else {
-                        const systemPrompt = currentSystemPromptRef.current || (VOICE_SYSTEM_PROMPTS[selectedLangRef.current] ?? VOICE_SYSTEM_PROMPTS['ko-KR']);
+                        const systemPrompt = buildVoiceSystemPrompt(selectedLangRef.current, currentSystemPromptRef.current);
                         onSendRef.current(spoken, systemPrompt, true);
                     }
                 } catch {
@@ -394,8 +394,7 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
                 currentSystemPromptRef.current = '';
             }
         }
-        const systemPrompt = currentSystemPromptRef.current
-            || (VOICE_SYSTEM_PROMPTS[selectedLangRef.current] ?? VOICE_SYSTEM_PROMPTS['ko-KR']);
+        const systemPrompt = buildVoiceSystemPrompt(selectedLangRef.current, currentSystemPromptRef.current);
         if (!isAssistantMode) {
             try {
                 await api.warmVoiceChat(systemPrompt);

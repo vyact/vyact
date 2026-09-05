@@ -59,6 +59,7 @@ LANG_MAP = {
     "th-TH": "th",
     "vi-VN": "vi",
     "es-ES": "es",
+    "fr-FR": "fr",
 }
 
 
