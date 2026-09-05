@@ -33,7 +33,7 @@ _config_lock = asyncio.Lock()
 class AccountConfig(BaseModel):
     id: str = Field(pattern=r"^[a-zA-Z0-9_-]{1,100}$")
     mail_mode: str = Field(default="readonly", pattern=r"^(readonly|draft_only|send)$")
-    mail_notifications: bool = False
+    mail_notifications: bool = True
 
 
 class WorkspaceConfig(BaseModel):

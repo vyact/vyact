@@ -109,7 +109,7 @@ export default function MicrosoftWorkspaceSection() {
                 </section>;
             })}
             <button className="mcp-add-account-btn" disabled={busy} onClick={() => void perform(() => {
-                const account = {id: crypto.randomUUID(), mail_mode: 'readonly' as const, mail_notifications: false};
+                const account = {id: crypto.randomUUID(), mail_mode: 'readonly' as const, mail_notifications: true};
                 return persist({...config, accounts: [...config.accounts, account], active_account_id: config.active_account_id || account.id});
             })}>{t('microsoft.addAccount')}</button>
             </div>
