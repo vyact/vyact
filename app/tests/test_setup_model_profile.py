@@ -312,7 +312,7 @@ async def test_settings_activation_reports_rollback_result(monkeypatch, restore_
 
 
 @pytest.mark.asyncio
-async def test_profile_save_applies_model_and_hardware_bounds(monkeypatch):
+async def test_profile_save_bounds_context_and_preserves_user_budgets(monkeypatch):
     limits = {"context_min": 4096, "context_max": 131072, "output_max": 65536}
     monkeypatch.setattr(setup, "profile_model_info", Mock(return_value={"limits": limits}))
     monkeypatch.setattr(setup, "get_local_hardware_info", Mock(return_value={"gpus": []}))
@@ -321,7 +321,7 @@ async def test_profile_save_applies_model_and_hardware_bounds(monkeypatch):
     result = await setup.write_vyact_model_profile(setup.VyactModelProfileRequest(
         model_path="owner/model.gguf", context_size=512, max_output_tokens=1, history_token_budget=999999,
     ))
-    assert (result["context_size"], result["max_output_tokens"], result["history_token_budget"]) == (4096, 256, 2816)
+    assert (result["context_size"], result["max_output_tokens"], result["history_token_budget"]) == (4096, 1, 999999)
     result = await setup.write_vyact_model_profile(setup.VyactModelProfileRequest(
         model_path="owner/model.gguf", context_size=131072, max_output_tokens=65536,
     ))
@@ -342,7 +342,7 @@ async def test_read_marks_adjusted_saved_settings_for_application(monkeypatch):
     monkeypatch.setattr(setup, "profile_memory_assessment", Mock(return_value={}))
     result = await setup.read_vyact_model_profile("owner/model.gguf", "gguf", None, 32768)
     assert result["context_size"] == 4096
-    assert result["max_output_tokens"] == 256
+    assert result["max_output_tokens"] == 1
     assert result["requires_apply"] is True
     assert saved["context_size"] == 512  # A GET must not overwrite the saved profile.
 
@@ -352,3 +352,30 @@ def test_model_sampling_defaults_are_accepted_by_save_and_activate(request_type)
     request = request_type(model_path="owner/model.gguf", temperature=1.5, top_k=200)
     assert request.temperature == 1.5
     assert request.top_k == 200
+
+
+@pytest.mark.parametrize("field,value", [
+    ("context_size", None), ("context_size", 0),
+    ("max_output_tokens", None), ("max_output_tokens", 0),
+    ("history_token_budget", None), ("history_token_budget", -1),
+    ("temperature", None), ("temperature", -1), ("temperature", 11),
+    ("temperature", float("inf")), ("temperature", float("nan")),
+    ("top_k", -1), ("top_k", 1048577), ("top_p", -1), ("top_p", 1.1),
+    ("cpu_threads", 0), ("cpu_threads", 1025), ("seed", -1), ("seed", 2147483648),
+    ("context_size", 16777217), ("max_output_tokens", 16777217),
+    ("history_token_budget", 16777217),
+])
+def test_profile_request_rejects_invalid_numeric_inputs(field, value):
+    with pytest.raises(ValueError):
+        setup.VyactModelProfileRequest(model_path="owner/model.gguf", **{field: value})
+
+
+def test_profile_request_preserves_valid_zero_and_optional_empty_values():
+    request = setup.VyactModelProfileRequest(
+        model_path="owner/model.gguf", history_token_budget=0, temperature=0,
+        top_k=None, top_p=None, cpu_threads=None, seed=None,
+    )
+    assert request.history_token_budget == request.temperature == 0
+    assert request.top_k is request.top_p is request.cpu_threads is request.seed is None
+    zeros = setup.VyactModelProfileRequest(model_path="owner/model.gguf", top_k=0, top_p=0, seed=0)
+    assert zeros.top_k == zeros.top_p == zeros.seed == 0

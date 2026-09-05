@@ -27,7 +27,7 @@ def build_model_profile_id(model_path: str) -> str:
     return hashlib.sha256(model_path.encode("utf-8")).hexdigest()
 
 
-def normalize_model_profile(profile: dict, limits: dict | None = None) -> dict:
+def normalize_model_profile(profile: dict, limits: dict | None = None, *, initial_defaults: bool = False) -> dict:
     """Keep persisted generation settings inside the model's context window."""
     normalized = dict(profile)
     limits = limits or profile.get("limits") or {}
@@ -60,7 +60,7 @@ def normalize_model_profile(profile: dict, limits: dict | None = None) -> dict:
     )
     normalized["mtp_failed_at"] = normalized.get("mtp_failed_at") if mtp_failure_code else None
     cpu_threads = normalized.get("cpu_threads")
-    normalized["cpu_threads"] = None if cpu_threads in (None, "") else max(1, min(int(cpu_threads), os.cpu_count() or 1))
+    normalized["cpu_threads"] = None if cpu_threads in (None, "") else max(1, int(cpu_threads))
     legacy_gpu_split = normalized.get("gpu_memory_allocations") or []
     gpu_split = normalized.get("gpu_split_percentages") or legacy_gpu_split
     if not isinstance(gpu_split, list):
@@ -82,16 +82,17 @@ def normalize_model_profile(profile: dict, limits: dict | None = None) -> dict:
     safe_context = max(minimum_context, int(normalized.get("context_size") or DEFAULT_CONTEXT_SIZE))
     if maximum_context:
         safe_context = min(safe_context, maximum_context)
-    reserve = min(MINIMUM_CONTEXT_RESERVE_TOKENS, safe_context // 2)
-    output_max = min(limits.get("output_max") or safe_context, safe_context - reserve)
-    output_min = min(MINIMUM_OUTPUT_TOKENS, output_max)
-    requested_output = int(normalized.get("max_output_tokens") or DEFAULT_MAX_OUTPUT_TOKENS)
     normalized["context_size"] = safe_context
-    normalized["max_output_tokens"] = max(output_min, min(requested_output, output_max))
-    normalized["history_token_budget"] = max(0, min(
-        int(normalized.get("history_token_budget", DEFAULT_HISTORY_TOKEN_BUDGET)),
-        safe_context - normalized["max_output_tokens"] - reserve,
-    ))
+    normalized["max_output_tokens"] = max(1, int(normalized.get("max_output_tokens") or DEFAULT_MAX_OUTPUT_TOKENS))
+    normalized["history_token_budget"] = max(0, int(normalized.get("history_token_budget", DEFAULT_HISTORY_TOKEN_BUDGET)))
+    if initial_defaults:
+        reserve = min(MINIMUM_CONTEXT_RESERVE_TOKENS, safe_context // 2)
+        output_max = min(limits.get("output_max") or safe_context, safe_context - reserve)
+        output_min = min(MINIMUM_OUTPUT_TOKENS, output_max)
+        normalized["max_output_tokens"] = max(output_min, min(normalized["max_output_tokens"], output_max))
+        normalized["history_token_budget"] = min(
+            normalized["history_token_budget"], safe_context - normalized["max_output_tokens"] - reserve,
+        )
     for key, default, maximum, integer in (
         ("temperature", 0.2, None, False), ("top_k", None, None, True),
         ("top_p", None, 1, False), ("seed", None, MAXIMUM_SEED, True),
@@ -110,7 +111,7 @@ def normalize_model_profile(profile: dict, limits: dict | None = None) -> dict:
 
 
 def normalize_loaded_model_profile(profile: dict, context_size: int) -> dict:
-    """Keep query budgets within the context actually allocated by the runtime."""
+    """Update allocated context while preserving user-selected token budgets."""
     minimum = (profile.get("limits") or {}).get("context_min", 512)
     if context_size < minimum:
         raise RuntimeError("Insufficient memory: runtime context is below the model profile minimum")
@@ -168,7 +169,7 @@ def recommended_model_profile(
         "gpu_split_percentages": [],
         "gpu_manual_split_enabled": False,
         "seed": None,
-    }, limits)
+    }, limits, initial_defaults=True)
 
 
 async def get_model_profile(model_path: str) -> dict | None:

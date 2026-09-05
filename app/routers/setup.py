@@ -171,15 +171,22 @@ class HuggingFaceDownloadRequest(BaseModel):
     dflash2_bundled: bool = False
 
 
+# Application input guards, independent of model metadata and initial recommendations.
+MAXIMUM_PROFILE_TOKENS = 16777216
+MAXIMUM_PROFILE_TEMPERATURE = 10
+MAXIMUM_PROFILE_TOP_K = 1048576
+MAXIMUM_PROFILE_CPU_THREADS = 1024
+
+
 class VyactModelActivateRequest(BaseModel):
     model_path: str = Field(min_length=6, max_length=1024)
-    context_size: int = Field(default=32768, ge=512)
+    context_size: int = Field(default=32768, ge=512, le=MAXIMUM_PROFILE_TOKENS)
     runtime: str = Field(default="gguf", pattern="^(gguf|mlx)$")
     repository: str | None = Field(default=None, min_length=3, max_length=256)
-    max_output_tokens: int = Field(default=4096, ge=1)
-    history_token_budget: int = Field(default=16384, ge=0)
-    temperature: float = Field(default=0.2, ge=0, allow_inf_nan=False)
-    top_k: int | None = Field(default=None, ge=0)
+    max_output_tokens: int = Field(default=4096, ge=1, le=MAXIMUM_PROFILE_TOKENS)
+    history_token_budget: int = Field(default=16384, ge=0, le=MAXIMUM_PROFILE_TOKENS)
+    temperature: float = Field(default=0.2, ge=0, le=MAXIMUM_PROFILE_TEMPERATURE, allow_inf_nan=False)
+    top_k: int | None = Field(default=None, ge=0, le=MAXIMUM_PROFILE_TOP_K)
     top_p: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
     cache_quantization: bool = True
     mtp_enabled: bool | None = None
@@ -188,7 +195,7 @@ class VyactModelActivateRequest(BaseModel):
     mtp_failed_at: str | None = Field(default=None, max_length=64)
     kv_cache_precision: str | None = Field(default=None, pattern="^(none|q8|q4)$")
     performance_mode: str = Field(default="auto", pattern="^(auto|memory|performance)$")
-    cpu_threads: int | None = Field(default=None, ge=1)
+    cpu_threads: int | None = Field(default=None, ge=1, le=MAXIMUM_PROFILE_CPU_THREADS)
     gpu_split_percentages: list[float] = Field(default_factory=list, max_length=16)
     gpu_manual_split_enabled: bool = False
     seed: int | None = Field(default=None, ge=0, le=2147483647)
@@ -197,11 +204,11 @@ class VyactModelProfileRequest(BaseModel):
     model_path: str = Field(min_length=1, max_length=1024)
     runtime: str = Field(default="gguf", pattern="^(gguf|mlx)$")
     repository: str | None = Field(default=None, max_length=256)
-    context_size: int = Field(default=32768, ge=512)
-    max_output_tokens: int = Field(default=4096, ge=1)
-    history_token_budget: int = Field(default=16384, ge=0)
-    temperature: float = Field(default=0.2, ge=0, allow_inf_nan=False)
-    top_k: int | None = Field(default=None, ge=0)
+    context_size: int = Field(default=32768, ge=512, le=MAXIMUM_PROFILE_TOKENS)
+    max_output_tokens: int = Field(default=4096, ge=1, le=MAXIMUM_PROFILE_TOKENS)
+    history_token_budget: int = Field(default=16384, ge=0, le=MAXIMUM_PROFILE_TOKENS)
+    temperature: float = Field(default=0.2, ge=0, le=MAXIMUM_PROFILE_TEMPERATURE, allow_inf_nan=False)
+    top_k: int | None = Field(default=None, ge=0, le=MAXIMUM_PROFILE_TOP_K)
     top_p: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
     cache_quantization: bool = True
     mtp_enabled: bool | None = None
@@ -210,7 +217,7 @@ class VyactModelProfileRequest(BaseModel):
     mtp_failed_at: str | None = Field(default=None, max_length=64)
     kv_cache_precision: str | None = Field(default=None, pattern="^(none|q8|q4)$")
     performance_mode: str = Field(default="auto", pattern="^(auto|memory|performance)$")
-    cpu_threads: int | None = Field(default=None, ge=1)
+    cpu_threads: int | None = Field(default=None, ge=1, le=MAXIMUM_PROFILE_CPU_THREADS)
     gpu_split_percentages: list[float] = Field(default_factory=list, max_length=16)
     gpu_manual_split_enabled: bool = False
     seed: int | None = Field(default=None, ge=0, le=2147483647)
@@ -227,7 +234,7 @@ class VyactModelMetadataRequest(BaseModel):
     repository: str = Field(min_length=3, max_length=256)
     filename: str = Field(min_length=6, max_length=1024)
     revision: str = Field(min_length=1, max_length=128)
-    context_size: int = Field(default=32768, ge=512)
+    context_size: int = Field(default=32768, ge=512, le=MAXIMUM_PROFILE_TOKENS)
     architecture: str = Field(min_length=1, max_length=128)
     parameter_count: int = Field(ge=0)
     context_length: int = Field(ge=0)
@@ -1142,7 +1149,7 @@ async def read_vyact_model_profile(
     model_path: str = Query(min_length=1, max_length=1024),
     runtime: str = Query(default="gguf", pattern="^(gguf|mlx)$"),
     repository: str | None = Query(default=None, max_length=256),
-    recommended_context: int = Query(default=32768, ge=512),
+    recommended_context: int = Query(default=32768, ge=512, le=MAXIMUM_PROFILE_TOKENS),
 ):
     if runtime == "mlx" and not is_apple_silicon():
         raise HTTPException(400, "mlx_unsupported_platform")

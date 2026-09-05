@@ -27,7 +27,7 @@ def test_recommended_profile_preserves_model_context_and_scales_output_limit():
     assert profile["kv_cache_precision"] == "none"
 
 
-def test_saved_profile_output_is_bounded_by_context():
+def test_saved_profile_output_preserves_user_budget():
     profile = normalize_model_profile({
         "model_path": "owner/small.gguf",
         "context_size": 4096,
@@ -35,17 +35,17 @@ def test_saved_profile_output_is_bounded_by_context():
     })
 
     assert profile["context_size"] == 4096
-    assert profile["max_output_tokens"] == 3072
+    assert profile["max_output_tokens"] == 8192
 
 
-def test_history_budget_is_stored_per_model_and_bounded_by_context():
+def test_history_budget_is_stored_without_context_clamping():
     profile = normalize_model_profile({
         "model_path": "owner/small.gguf",
         "context_size": 4096,
         "history_token_budget": 12000,
     })
 
-    assert profile["history_token_budget"] == 1024
+    assert profile["history_token_budget"] == 12000
 
 
 def test_gpu_split_percentages_are_normalized_and_bounded():
@@ -156,16 +156,16 @@ def test_model_specific_bounds_override_global_defaults():
     limits = {"context_min": 4096, "context_max": 65536, "output_max": 512}
     profile = normalize_model_profile({"context_size": 999999, "max_output_tokens": 8192, "history_token_budget": 999999}, limits)
     assert profile["context_size"] == 65536
-    assert profile["max_output_tokens"] == 512
-    assert profile["history_token_budget"] == 64000
+    assert profile["max_output_tokens"] == 8192
+    assert profile["history_token_budget"] == 999999
     small = normalize_model_profile({"context_size": 1, "max_output_tokens": 1}, limits)
     assert small["context_size"] == 4096
-    assert small["max_output_tokens"] == 256
+    assert small["max_output_tokens"] == 1
 
 
-def test_small_model_output_limit_takes_precedence_over_output_floor():
+def test_output_metadata_does_not_overwrite_user_output():
     profile = normalize_model_profile({"context_size": 4096, "max_output_tokens": 1}, {"output_max": 64})
-    assert profile["max_output_tokens"] == 64
+    assert profile["max_output_tokens"] == 1
 
 
 def test_zero_sampling_history_seed_and_automatic_threads_are_preserved():
@@ -174,9 +174,9 @@ def test_zero_sampling_history_seed_and_automatic_threads_are_preserved():
     assert profile["cpu_threads"] is None
 
 
-def test_cpu_threads_are_bounded_by_detected_cpu(monkeypatch):
+def test_cpu_threads_preserve_user_selection(monkeypatch):
     monkeypatch.setattr(model_runtime_profiles.os, "cpu_count", lambda: 8)
-    assert normalize_model_profile({"cpu_threads": 200})["cpu_threads"] == 8
+    assert normalize_model_profile({"cpu_threads": 200})["cpu_threads"] == 200
 
 
 @pytest.mark.parametrize("field", ["temperature", "top_k", "top_p", "seed"])
