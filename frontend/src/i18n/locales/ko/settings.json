@@ -132,6 +132,7 @@
     "deleteFailed": "플러그인 삭제에 실패했습니다."
   },
   "general": {
+    "voicePreviewSamples": {"en": "Hello. This is a voice preview.", "ko": "안녕하세요. 음성 미리듣기입니다.", "ja": "こんにちは。これは音声のプレビューです。", "zh": "你好。这是语音试听。", "th": "สวัสดี นี่คือตัวอย่างเสียง", "vi": "Xin chào. Đây là bản nghe thử giọng nói.", "es": "Hola. Esta es una muestra de voz.", "fr": "Bonjour. Ceci est un aperçu de la voix.", "hi": "नमस्ते। यह आवाज़ का नमूना है।", "it": "Ciao. Questa è un’anteprima della voce.", "pt": "Olá. Esta é uma prévia da voz."},
     "language": "언어",
     "theme": "테마",
     "themeDark": "다크 모드",
@@ -491,6 +492,7 @@
   },
   "mcpCatalog": {
     "servers": {
+      "microsoft_workspace": "Microsoft",
       "filesystem": "파일 시스템",
       "browser": "브라우저",
       "github": "GitHub",

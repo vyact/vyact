@@ -1,3 +1,4 @@
+import {formatLocalizedNumber} from '../../utils/localizedNumber';
 import React, {useState, useRef, useEffect, useCallback} from 'react';
 import {createPortal} from 'react-dom';
 import {useTranslation} from 'react-i18next';
@@ -105,8 +106,8 @@ const getIcon = (name: string) => FILE_ICON[getExt(name)] || '📄';
 const getFileKey = (file: File) => `${file.name}:${file.size}:${file.lastModified}`;
 const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    if (bytes < 1024 * 1024) return `${formatLocalizedNumber(bytes / 1024, 1)} KB`;
+    return `${formatLocalizedNumber(bytes / (1024 * 1024), 1)} MB`;
 };
 const formatDate = (iso: string) => {
     const d = new Date(iso);

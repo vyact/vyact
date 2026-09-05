@@ -199,7 +199,7 @@
     "shareTitle": "แชร์ “{{name}}”",
     "shareDescription": "เพิ่มผู้ใช้หรือจัดการการเข้าถึงผ่านลิงก์",
     "emailPlaceholder": "ป้อนอีเมล",
-    "microsoftAccountInviteHelp": "คุณสามารถเชิญอีเมลใดก็ได้ Microsoft อาจกำหนดให้ผู้รับลงชื่อเข้าใช้หรือใช้รหัสแบบใช้ครั้งเดียว ทั้งนี้ขึ้นอยู่กับบัญชีและนโยบายการแชร์",
+    "microsoftAccountInviteHelp": "ขอแชร์ผ่านที่อยู่อีเมล บัญชีของผู้รับและนโยบายการแชร์ของ Microsoft อาจจำกัดการเชิญหรือการเข้าถึง",
     "viewer": "ผู้ดู",
     "editor": "ผู้แก้ไข",
     "owner": "เจ้าของ",
@@ -1201,6 +1201,15 @@
   "uiAuditFinal": {"attachments":"ไฟล์แนบ {{count}} รายการ","removeAll":"ลบทั้งหมด","characterCount":"{{count}} อักขระ","itemCount":"{{count}} รายการ","download":"ดาวน์โหลด","fileCount":"{{count}} ไฟล์","zipDownload":"ดาวน์โหลด ZIP","errorDetail":"❌ ข้อผิดพลาด: {{message}}"},
   "networkError": {"requestFailed":"คำขอล้มเหลว","serverError":"เซิร์ฟเวอร์ผิดพลาด","streamFailed":"คำขอสตรีมล้มเหลว","clientErrorDetail":"คำขอผิดพลาด ({{status}}): {{detail}}","serverErrorDetail":"เซิร์ฟเวอร์ผิดพลาด ({{status}}): {{detail}} — โปรดลองอีกครั้งในภายหลัง","genericDetail":"ข้อผิดพลาด: {{detail}}"},
   "backendErrors": {
+    "plugin_not_active": "ปลั๊กอินยังไม่เปิดใช้งาน โปรดเปิดใช้งานในการตั้งค่า",
+    "mlx_unsupported_platform": "สภาพแวดล้อมนี้ไม่รองรับ MLX",
+    "external_api_auth_disabled": "การยืนยันตัวตน API ภายนอกถูกปิดอยู่ โปรดเปิดการยืนยันตัวตน API ในการตั้งค่า",
+    "invalid_gpu_split_percentages": "โปรดตรวจสอบค่าการจัดสรรหน่วยความจำ GPU",
+    "benchmark_plan_changed": "เงื่อนไขการทดสอบประสิทธิภาพเปลี่ยนไป โปรดตรวจสอบรายการทดสอบก่อนเริ่มใหม่",
+    "vyact_model_activation_failed": "ไม่สามารถเปิดใช้งานโมเดลได้ โปรดตรวจสอบสถานะและการตั้งค่าแล้วลองอีกครั้ง",
+    "unsupported_audio_format": "ไม่รองรับรูปแบบเสียงนี้",
+    "audio_conversion_failed": "ไม่สามารถแปลงเสียงได้ โปรดตรวจสอบไฟล์แล้วลองอีกครั้ง",
+
     "model_benchmark_busy": "กำลังทดสอบโมเดล โปรดลองใหม่เมื่อเสร็จหรือหยุด","invalid_request":"ตรวจสอบคำขอแล้วลองอีกครั้ง","authentication_required":"จำเป็นต้องยืนยันตัวตน","permission_denied":"คุณไม่มีสิทธิ์ดำเนินการนี้","resource_not_found":"ไม่พบรายการที่ร้องขอ","conflict":"คำขอขัดแย้งกับสถานะปัจจุบัน","payload_too_large":"ข้อมูลที่ส่งมีขนาดใหญ่เกินไป","validation_failed":"ค่าบางรายการไม่ถูกต้อง","rate_limited":"มีคำขอมากเกินไป โปรดลองอีกครั้งภายหลัง","internal_error":"เกิดข้อผิดพลาดภายใน โปรดลองอีกครั้ง","upstream_error":"บริการที่เชื่อมต่อส่งคืนข้อผิดพลาด","service_unavailable":"บริการไม่พร้อมใช้งานชั่วคราว","request_timeout":"คำขอหมดเวลา","request_failed":"ไม่สามารถดำเนินการตามคำขอได้"},
   "backendStreamErrors": {"presentation_generation_failed":"ไม่สามารถสร้างงานนำเสนอได้","document_index_failed":"ไม่สามารถจัดทำดัชนีเอกสารได้","profile_analysis_failed":"ไม่สามารถวิเคราะห์โปรไฟล์ให้เสร็จสมบูรณ์ได้","web_document_save_failed":"ไม่สามารถบันทึกเอกสารเว็บได้","empty_audio":"ไม่ได้รับเสียง","speech_recognition_failed":"การรู้จำเสียงล้มเหลว","speech_model_unavailable":"โมเดลรู้จำเสียงไม่พร้อมใช้งาน","local_model_not_downloaded":"ไม่พบโมเดลภายในเครื่องที่เลือก โปรดเลือกโมเดลที่ดาวน์โหลดแล้วอีกครั้ง"},
   "modelSettings": {

@@ -199,7 +199,7 @@
     "shareTitle": "Chia sẻ “{{name}}”",
     "shareDescription": "Thêm người hoặc quản lý quyền truy cập liên kết.",
     "emailPlaceholder": "Nhập địa chỉ email",
-    "microsoftAccountInviteHelp": "Bạn có thể mời bất kỳ địa chỉ email nào. Tùy vào tài khoản người nhận và chính sách chia sẻ, Microsoft có thể yêu cầu đăng nhập hoặc mã dùng một lần.",
+    "microsoftAccountInviteHelp": "Yêu cầu chia sẻ qua địa chỉ email. Tài khoản người nhận và chính sách chia sẻ của Microsoft có thể hạn chế lời mời hoặc quyền truy cập.",
     "viewer": "Người xem",
     "editor": "Người chỉnh sửa",
     "owner": "Chủ sở hữu",
@@ -1201,6 +1201,15 @@
   "uiAuditFinal": {"attachments":"{{count}} tệp đính kèm","removeAll":"Xóa tất cả","characterCount":"{{count}} ký tự","itemCount":"{{count}} mục","download":"Tải xuống","fileCount":"{{count}} tệp","zipDownload":"Tải ZIP xuống","errorDetail":"❌ Lỗi: {{message}}"},
   "networkError": {"requestFailed":"Yêu cầu thất bại","serverError":"Lỗi máy chủ","streamFailed":"Yêu cầu phát trực tiếp thất bại","clientErrorDetail":"Lỗi yêu cầu ({{status}}): {{detail}}","serverErrorDetail":"Lỗi máy chủ ({{status}}): {{detail}} — Vui lòng thử lại sau ít phút.","genericDetail":"Lỗi: {{detail}}"},
   "backendErrors": {
+    "plugin_not_active": "Plugin chưa được kích hoạt. Hãy bật trong phần Cài đặt.",
+    "mlx_unsupported_platform": "Môi trường này không hỗ trợ MLX.",
+    "external_api_auth_disabled": "Xác thực API bên ngoài đang tắt. Hãy bật xác thực API trong phần Cài đặt.",
+    "invalid_gpu_split_percentages": "Hãy kiểm tra các giá trị phân bổ bộ nhớ GPU.",
+    "benchmark_plan_changed": "Điều kiện kiểm tra hiệu năng đã thay đổi. Hãy xem lại các trường hợp kiểm tra trước khi bắt đầu lại.",
+    "vyact_model_activation_failed": "Không thể kích hoạt mô hình. Hãy kiểm tra trạng thái và cài đặt rồi thử lại.",
+    "unsupported_audio_format": "Định dạng âm thanh này không được hỗ trợ.",
+    "audio_conversion_failed": "Không thể chuyển đổi âm thanh. Hãy kiểm tra tệp rồi thử lại.",
+
     "model_benchmark_busy": "Đang kiểm tra hiệu năng. Thử lại khi hoàn tất hoặc dừng.","invalid_request":"Hãy kiểm tra yêu cầu và thử lại.","authentication_required":"Cần xác thực.","permission_denied":"Bạn không có quyền thực hiện thao tác này.","resource_not_found":"Không tìm thấy mục được yêu cầu.","conflict":"Yêu cầu xung đột với trạng thái hiện tại.","payload_too_large":"Dữ liệu gửi lên quá lớn.","validation_failed":"Một số giá trị không hợp lệ.","rate_limited":"Có quá nhiều yêu cầu. Vui lòng thử lại sau.","internal_error":"Đã xảy ra lỗi nội bộ. Vui lòng thử lại.","upstream_error":"Dịch vụ được kết nối đã trả về lỗi.","service_unavailable":"Dịch vụ tạm thời không khả dụng.","request_timeout":"Yêu cầu đã hết thời gian chờ.","request_failed":"Không thể hoàn tất yêu cầu."},
   "backendStreamErrors": {"presentation_generation_failed":"Không thể tạo bản trình bày.","document_index_failed":"Không thể lập chỉ mục tài liệu.","profile_analysis_failed":"Không thể hoàn tất phân tích hồ sơ.","web_document_save_failed":"Không thể lưu tài liệu web.","empty_audio":"Không nhận được âm thanh.","speech_recognition_failed":"Nhận dạng giọng nói thất bại.","speech_model_unavailable":"Mô hình nhận dạng giọng nói không khả dụng.","local_model_not_downloaded":"Không tìm thấy mô hình cục bộ đã chọn. Hãy chọn lại một mô hình đã tải xuống."},
   "modelSettings": {

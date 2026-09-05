@@ -1,3 +1,4 @@
+import {formatLocalizedNumber} from '../../utils/localizedNumber';
 import {memo, type CSSProperties, type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {useTranslation} from 'react-i18next';
@@ -1500,8 +1501,8 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
     const canSendMail = Boolean(composeFields.to.length && composeFields.subject.trim() && (composeFields.body.replace(/<p><\/p>/g, '').trim() || originalHtmlBody)) && !attachmentLimitExceeded;
     const isMailActionBusy = isOpeningMail || isRefreshingSentReply || isTrashingMails || isMovingMails || isApplyingLabel;
     const formatAttachmentSize = (bytes: number) => {
-        if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(bytes >= 10 * 1024 * 1024 ? 0 : 1)} MB`;
-        if (bytes >= 1024) return `${(bytes / 1024).toFixed(bytes >= 10 * 1024 ? 0 : 1)} KB`;
+        if (bytes >= 1024 * 1024) return `${formatLocalizedNumber(bytes / (1024 * 1024), bytes >= 10 * 1024 * 1024 ? 0 : 1)} MB`;
+        if (bytes >= 1024) return `${formatLocalizedNumber(bytes / 1024, bytes >= 10 * 1024 ? 0 : 1)} KB`;
         return `${bytes} B`;
     };
     const primarySystemLabels = PRIMARY_SYSTEM_LABEL_IDS.filter(id => labelsById.has(id));

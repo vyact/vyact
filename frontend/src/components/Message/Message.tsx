@@ -1,3 +1,4 @@
+import {formatLocalizedNumber} from '../../utils/localizedNumber';
 import {useAutoReadMessage} from '../../services/tts/autoReadState';
 import React, {useMemo, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
@@ -30,12 +31,12 @@ import {
 // 나노초 → "0.42s" 형태로 변환. 값이 없으면 null (해당 항목은 렌더링에서 제외됨)
 function formatNs(ns: number | null | undefined): string | null {
     if (ns === null || ns === undefined) return null;
-    return `${(ns / 1_000_000_000).toFixed(2)}s`;
+    return `${formatLocalizedNumber(ns / 1_000_000_000, 2)}s`;
 }
 
 function formatTokensPerSecond(value: number | null | undefined): string | null {
     if (value == null || !Number.isFinite(value)) return null;
-    return `${value.toFixed(1)} tok/s`;
+    return `${formatLocalizedNumber(value, 1)} tok/s`;
 }
 
 function formatModelDisplayName(model: string | undefined): string {

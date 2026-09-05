@@ -1,3 +1,5 @@
+import i18n from 'i18next';
+import {formatLocalizedNumber} from './localizedNumber';
 import type {VyactHardwareInfo, VyactHubModel} from '../services/api';
 
 export const MODEL_MEMORY_OVERHEAD_RATIO = 1.2;
@@ -8,14 +10,13 @@ const MAX_FILES_PER_MODEL = 8;
 
 export const formatModelBytes = (bytes: number) => {
     if (!bytes) return '—';
-    return `${(bytes / 1024 ** 3).toFixed(1)} GB`;
+    return `${formatLocalizedNumber(bytes / 1024 ** 3, 1)} GB`;
 };
 
 export const formatCompactDownloads = (downloads: number) => {
-    const compact = (value: number, suffix: string) => `${value.toFixed(1).replace(/\.0$/, '')}${suffix}`;
-    if (downloads >= 1_000_000) return compact(downloads / 1_000_000, 'm');
-    if (downloads >= 1_000) return compact(downloads / 1_000, 'k');
-    return String(downloads);
+    return new Intl.NumberFormat(i18n.resolvedLanguage || i18n.language || 'en', {
+        notation: 'compact', maximumFractionDigits: 1,
+    }).format(downloads);
 };
 
 export const getModelPublisher = (modelId: string) => {

@@ -1,3 +1,4 @@
+import {formatLocalizedNumber} from '../../utils/localizedNumber';
 import React from 'react';
 import { Braces, FileText, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -18,7 +19,7 @@ interface AttachmentPreviewProps {
 const formatFileSize = (size: number) => {
     if (size < 1024) return `${size} B`;
     if (size < 1024 * 1024) return `${Math.round(size / 1024)} KB`;
-    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+    return `${formatLocalizedNumber(size / (1024 * 1024), 1)} MB`;
 };
 
 const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({

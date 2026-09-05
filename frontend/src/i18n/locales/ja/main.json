@@ -199,7 +199,7 @@
     "shareTitle": "「{{name}}」を共有",
     "shareDescription": "ユーザーを追加するか、リンクアクセスを管理します。",
     "emailPlaceholder": "メールアドレスを入力",
-    "microsoftAccountInviteHelp": "どのメールアドレスでも招待できます。受信者のアカウントと共有ポリシーによっては、Microsoft へのサインインまたはワンタイム パスコードが必要です。",
+    "microsoftAccountInviteHelp": "メールアドレスで共有をリクエストします。受信者のアカウントと Microsoft の共有ポリシーにより、招待やアクセスが制限される場合があります。",
     "viewer": "閲覧者",
     "editor": "編集者",
     "owner": "オーナー",
@@ -1201,6 +1201,15 @@
   "uiAuditFinal": {"attachments":"添付ファイル {{count}}件","removeAll":"すべて削除","characterCount":"{{count}}文字","itemCount":"{{count}}件","download":"ダウンロード","fileCount":"{{count}}ファイル","zipDownload":"ZIPをダウンロード","errorDetail":"❌ エラー: {{message}}"},
   "networkError": {"requestFailed":"リクエスト失敗","serverError":"サーバーエラー","streamFailed":"ストリーミングリクエストに失敗しました","clientErrorDetail":"リクエストエラー（{{status}}）：{{detail}}","serverErrorDetail":"サーバーエラー（{{status}}）：{{detail}} — しばらくしてからもう一度お試しください。","genericDetail":"エラー：{{detail}}"},
   "backendErrors": {
+    "plugin_not_active": "プラグインが有効になっていません。設定で有効にしてください。",
+    "mlx_unsupported_platform": "この環境では MLX を使用できません。",
+    "external_api_auth_disabled": "外部 API 認証が無効です。設定で API 認証を有効にしてください。",
+    "invalid_gpu_split_percentages": "GPU メモリの配分値を確認してください。",
+    "benchmark_plan_changed": "性能テストの条件が変更されました。テスト項目を確認してから再実行してください。",
+    "vyact_model_activation_failed": "モデルを有効化できませんでした。状態と設定を確認して再試行してください。",
+    "unsupported_audio_format": "この音声形式には対応していません。",
+    "audio_conversion_failed": "音声を変換できませんでした。ファイルを確認して再試行してください。",
+
     "model_benchmark_busy": "モデル性能テスト中です。終了または停止後に再試行してください。","invalid_request":"リクエスト内容を確認して、もう一度お試しください。","authentication_required":"認証が必要です。","permission_denied":"この操作を行う権限がありません。","resource_not_found":"リクエストされた項目が見つかりません。","conflict":"現在の状態と競合するリクエストです。","payload_too_large":"送信されたデータが大きすぎます。","validation_failed":"入力値の一部が無効です。","rate_limited":"リクエストが多すぎます。しばらくしてからお試しください。","internal_error":"内部エラーが発生しました。もう一度お試しください。","upstream_error":"接続先サービスでエラーが発生しました。","service_unavailable":"サービスは一時的に利用できません。","request_timeout":"リクエストがタイムアウトしました。","request_failed":"リクエストを完了できませんでした。"},
   "backendStreamErrors": {"presentation_generation_failed":"プレゼンテーションを生成できませんでした。","document_index_failed":"文書をインデックス化できませんでした。","profile_analysis_failed":"プロフィール分析を完了できませんでした。","web_document_save_failed":"Web文書を保存できませんでした。","empty_audio":"音声を受信できませんでした。","speech_recognition_failed":"音声認識に失敗しました。","speech_model_unavailable":"音声認識モデルを利用できません。","local_model_not_downloaded":"選択したローカルモデルが見つかりません。ダウンロード済みのモデルを再選択してください。"},
   "modelSettings": {

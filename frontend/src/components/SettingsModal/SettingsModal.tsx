@@ -1,3 +1,5 @@
+import {formatLocalizedNumber} from '../../utils/localizedNumber';
+import {getVoicePreviewText} from '../../services/tts/voicePreview';
 import {microsoftRequest} from '../../services/microsoftWorkspace';
 import MicrosoftWorkspaceSection from './MicrosoftWorkspaceSection';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
@@ -687,7 +689,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
-                        text: 'Hello. This is a voice preview.',
+                        text: getVoicePreviewText(getKokoroVoiceLanguage(ttsDraft.kokoroVoice)),
                         lang: getKokoroVoiceLanguage(ttsDraft.kokoroVoice),
                         voice: ttsDraft.kokoroVoice,
                         speed: ttsDraft.rate,
@@ -724,7 +726,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
             const selectedVoice = ttsDraft.enVoiceURI
                 ? availableVoices.find(v => v.voiceURI === ttsDraft.enVoiceURI) ?? null
                 : null;
-            const u = new SpeechSynthesisUtterance('Hello. This is a voice preview.');
+            const u = new SpeechSynthesisUtterance(getVoicePreviewText(selectedVoice?.lang ?? 'en-US'));
             u.lang = selectedVoice?.lang ?? 'en-US';
             u.rate = ttsDraft.rate;
             u.volume = ttsDraft.volume;
@@ -955,7 +957,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                             {key: 'apiServer' as Tab, icon: <Server size={16} strokeWidth={1.8}/>, label: t('tabs.apiServer')},
                             {key: 'backup' as Tab, icon: '💾', label: t('tabs.backup')},
                             {key: 'google' as Tab, icon: 'G', label: t('tabs.google')},
-                            {key: 'microsoft' as Tab, icon: 'M', label: t('microsoft.title')},
+                            // Microsoft setup is temporarily hidden; keep the integration available for re-enabling.
+                            // {key: 'microsoft' as Tab, icon: 'M', label: t('microsoft.title')},
                             {key: 'api' as Tab, icon: '🔑', label: t('tabs.api')},
                             ...(isKoreanLanguage
                                 ? [{key: 'externalData' as Tab, icon: '🌐', label: t('tabs.externalData')}]
@@ -1435,17 +1438,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                                         <span
                                                             className="settings-tts-slider-name">{t('general.speed')}</span>
                                                         <span
-                                                            className="settings-tts-value">{Number.isInteger(ttsDraft.rate * 10) ? ttsDraft.rate.toFixed(1) : ttsDraft.rate.toFixed(2)}x</span>
+                                                            className="settings-tts-value">{formatLocalizedNumber(ttsDraft.rate, Number.isInteger(ttsDraft.rate * 10) ? 1 : 2)}x</span>
                                                     </div>
                                                     <div className="settings-tts-slider-wrap">
-                                                        <span className="settings-tts-tick">{TTS_RATE_OPTIONS[0].toFixed(1)}</span>
+                                                        <span className="settings-tts-tick">{formatLocalizedNumber(TTS_RATE_OPTIONS[0], 1)}</span>
                                                         <input type="range" min="0" max={TTS_RATE_OPTIONS.length - 1} step="1"
                                                                value={Math.max(0, TTS_RATE_OPTIONS.indexOf(ttsDraft.rate))}
                                                                onChange={e => applyTts({...ttsDraft, rate: TTS_RATE_OPTIONS[Number(e.target.value)]})}
                                                                aria-label={t('general.speed')}
                                                                aria-valuetext={t('main:voiceChat.speedMultiplier', {rate: ttsDraft.rate})}
                                                                className="settings-tts-slider"/>
-                                                        <span className="settings-tts-tick">{TTS_RATE_OPTIONS[TTS_RATE_OPTIONS.length - 1].toFixed(1)}</span>
+                                                        <span className="settings-tts-tick">{formatLocalizedNumber(TTS_RATE_OPTIONS[TTS_RATE_OPTIONS.length - 1], 1)}</span>
                                                     </div>
 
                                                 </div>
