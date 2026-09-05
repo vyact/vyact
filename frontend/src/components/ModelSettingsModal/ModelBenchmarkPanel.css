@@ -13,7 +13,7 @@
 .model-benchmark-card.is-recommended { border-color: var(--accent); border-inline-start-width: 4px; box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent); }
 .model-benchmark-card-heading { font-size: 13px; }
 .model-benchmark-card-heading > strong {display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px;}
-.model-benchmark-recommended-badge {display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 7px; background: var(--accent); color: var(--on-accent, #fff); font-size: 14px; font-weight: 600; line-height: 1.4;}
+.model-benchmark-recommended-badge {display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border)); border-radius: 999px; background: color-mix(in srgb, var(--accent) 8%, var(--surface)); color: var(--accent); font-size: 12px; font-weight: 600; line-height: 1.4;}
 .model-benchmark-recommended-badge svg {flex-shrink: 0;}
 .model-benchmark-card.is-recommended .model-benchmark-card-heading {padding-bottom: 12px; border-bottom: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border));}
 .model-benchmark-settings { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 12px 0; color: var(--text-secondary); font-size: 13px; }
@@ -36,7 +36,7 @@
     .model-benchmark-table-wrap td { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 7px 0; }
     .model-benchmark-table-wrap td::before { content: attr(data-label); color: var(--text-secondary); text-align: start; font-size: 12px; }
 }
-.model-settings-modal [data-benchmark-changed="true"] { outline: 1px solid var(--accent); outline-offset: 5px; border-radius: 4px; background: color-mix(in srgb, var(--accent) 5%, transparent); }
+.model-settings-modal [data-benchmark-changed="true"] { outline: 1px solid var(--accent); outline-offset: -1px; border-radius: 8px; padding: 8px; background: color-mix(in srgb, var(--accent) 5%, transparent); }
 
 /* Match the document modal's compact underline navigation. */
 .model-settings-tabs {flex-shrink: 0;}
@@ -86,6 +86,7 @@
 .model-benchmark-progress-heading strong {margin-inline-end: auto;}
 .model-benchmark-progress small {font-size: 13px; line-height: 1.5;}
 .model-benchmark-card-heading {font-size: 15px;}
+.model-benchmark-card-heading > button {padding: 5px 10px; min-height: 30px; font-size: 13px; line-height: 1.4; border-radius: 6px;}
 .model-benchmark-card {padding: 14px; margin-top: 12px;}
 .model-benchmark-settings {margin: 8px 0;}
 @media (max-width: 640px) {

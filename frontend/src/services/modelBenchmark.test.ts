@@ -16,3 +16,14 @@ describe('benchmark settings selection', () => {
         expect(median([1, 3])).toBe(2);
     });
 });
+
+import {orderBenchmarkRows, type BenchmarkRow, type BenchmarkSample} from './modelBenchmark';
+
+it('orders finished results by recommendation score without changing live or stored order', () => {
+    const row = (id: string, speed: number): BenchmarkRow => ({id, profile: {} as VyactModelProfile, error: null,
+        samples: Object.fromEntries(['short', 'long', 'followup'].map(key => [key, [{ttft_s: 1, decode_tps: speed} as BenchmarkSample]]))});
+    const rows = [row('1', 20), row('2', 40), {...row('3', 100), error: 'case_failed'}, row('4', 40), {...row('5', 100), samples: {}}];
+    expect(orderBenchmarkRows(rows, true)).toBe(rows);
+    expect(orderBenchmarkRows(rows, false).map(value => value.id)).toEqual(['2', '4', '1', '3', '5']);
+    expect(rows.map(value => value.id)).toEqual(['1', '2', '3', '4', '5']);
+});

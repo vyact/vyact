@@ -2,7 +2,7 @@ import {useEffect, useRef, useState} from 'react';
 import {Check, Play, Square, Info, Award} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import type {VyactModelProfile} from '../../services/api';
-import {benchmarkConditionsMatch, median, modelBenchmark, type BenchmarkJob, type BenchmarkState} from '../../services/modelBenchmark';
+import {benchmarkConditionsMatch, orderBenchmarkRows, median, modelBenchmark, type BenchmarkJob, type BenchmarkState} from '../../services/modelBenchmark';
 import './ModelBenchmarkPanel.css';
 
 type Props = {dflashEnabled: boolean; canTestMtp: boolean; profile: VyactModelProfile; visible: boolean; disabled: boolean; validate: () => boolean; onBusy: (busy: boolean) => void; onSelect: (profile: VyactModelProfile) => void};
@@ -71,7 +71,7 @@ export default function ModelBenchmarkPanel({dflashEnabled, canTestMtp, profile,
             <h3 id="model-benchmark-plan-title">{b('selectCases')} <span className="model-benchmark-selection-count">{running ? job?.cases_total ?? selected.length : selected.length}/{running ? job?.cases_total ?? selected.length : plan?.cases.length ?? 0}</span></h3>
         <div className="model-benchmark-actions">
             {!running && <button type="button" className="primary" disabled={disabled || !state || !plan || !selected.length} onClick={() => void start()}><Play size={14} aria-hidden="true"/>{b(job ? 'rerun' : 'start')}</button>}
-            {running && <button type="button" disabled={stopping || job?.phase === 'restoring'} onClick={() => void stop()}><Square size={13} aria-hidden="true"/>{b(stopping ? 'stopping' : 'stop')}</button>}
+            {running && <button type="button" disabled={stopping || job?.phase === 'restoring'} onClick={() => void stop()}><Square size={13} fill="currentColor" strokeWidth={0} aria-hidden="true"/>{b(stopping ? 'stopping' : 'stop')}</button>}
             {!running && job?.status === 'save_failed' && <button type="button" onClick={() => void modelBenchmark.save().catch(() => setError(true))}>{b('saveRetry')}</button>}
         </div>
         </div>
@@ -100,8 +100,8 @@ export default function ModelBenchmarkPanel({dflashEnabled, canTestMtp, profile,
         {shownJob && <>
             <p className="model-benchmark-description">{t('modelBenchmark.lastRun', {date: new Date(shownJob.created_at).toLocaleString()})}</p>
             {conditionsChanged && <p className="model-settings-error" role="status">{b('stale')}</p>}
-            {shownJob.rows.map(row => <article className={`model-benchmark-card${shownJob.recommended === row.id ? ' is-recommended' : ''}`} key={row.id}>
-                <div className="model-benchmark-card-heading"><strong>{t('modelBenchmark.case', {number: row.id})}{shownJob.recommended === row.id && <span className="model-benchmark-recommended-badge"><Award size={17} aria-hidden="true"/>{b('recommended')}</span>}</strong>
+            {orderBenchmarkRows(shownJob.rows, running).map(row => <article className={`model-benchmark-card${shownJob.recommended === row.id ? ' is-recommended' : ''}`} key={row.id}>
+                <div className="model-benchmark-card-heading"><strong>{t('modelBenchmark.case', {number: row.id})}{shownJob.recommended === row.id && <span className="model-benchmark-recommended-badge"><Award size={13} aria-hidden="true"/>{b('recommended')}</span>}</strong>
                     <button type="button" className={shownJob.recommended === row.id ? 'primary' : undefined} disabled={running || !!row.error || !['short', 'long', 'followup'].every(workload => row.samples[workload]?.length) || conditionsChanged} onClick={() => onSelect(row.profile)}>{b('useSettings')}</button></div>
                 <div className="model-benchmark-settings">
                     {profile.runtime === 'gguf' && <span>{t('modelSettings.performanceMode')}: {t(`modelSettings.performanceModes.${row.profile.performance_mode ?? 'auto'}`)}</span>}

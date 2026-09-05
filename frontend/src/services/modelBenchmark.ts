@@ -32,3 +32,24 @@ export function median(values: Array<number | null>): number | null {
     const middle = Math.floor(sorted.length / 2);
     return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
 }
+
+// Match the server's recommendation score: TTFT + time for 256 output tokens.
+const BENCHMARK_SCORE_OUTPUT_TOKENS = 256;
+export function benchmarkRowScore(row: BenchmarkRow): number {
+    if (row.error) return Infinity;
+    let score = 0;
+    for (const workload of ['short', 'long', 'followup']) {
+        const samples = row.samples[workload];
+        if (!samples?.length || samples.some(sample => sample.ttft_s === null
+            || !Number.isFinite(sample.ttft_s) || !sample.decode_tps || !Number.isFinite(sample.decode_tps) || sample.decode_tps < 0)) return Infinity;
+        score += median(samples.map(sample => sample.ttft_s! + BENCHMARK_SCORE_OUTPUT_TOKENS / sample.decode_tps!))!;
+    }
+    return score;
+}
+
+export function orderBenchmarkRows(rows: BenchmarkRow[], running: boolean): BenchmarkRow[] {
+    if (running) return rows;
+    return rows.map(row => ({row, score: benchmarkRowScore(row)}))
+        .sort((a, b) => a.score === b.score ? 0 : a.score - b.score)
+        .map(({row}) => row);
+}
