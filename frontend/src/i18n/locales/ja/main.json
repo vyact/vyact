@@ -1202,8 +1202,11 @@
   "backendErrors": {"invalid_request":"リクエスト内容を確認して、もう一度お試しください。","authentication_required":"認証が必要です。","permission_denied":"この操作を行う権限がありません。","resource_not_found":"リクエストされた項目が見つかりません。","conflict":"現在の状態と競合するリクエストです。","payload_too_large":"送信されたデータが大きすぎます。","validation_failed":"入力値の一部が無効です。","rate_limited":"リクエストが多すぎます。しばらくしてからお試しください。","internal_error":"内部エラーが発生しました。もう一度お試しください。","upstream_error":"接続先サービスでエラーが発生しました。","service_unavailable":"サービスは一時的に利用できません。","request_timeout":"リクエストがタイムアウトしました。","request_failed":"リクエストを完了できませんでした。"},
   "backendStreamErrors": {"presentation_generation_failed":"プレゼンテーションを生成できませんでした。","document_index_failed":"文書をインデックス化できませんでした。","profile_analysis_failed":"プロフィール分析を完了できませんでした。","web_document_save_failed":"Web文書を保存できませんでした。","empty_audio":"音声を受信できませんでした。","speech_recognition_failed":"音声認識に失敗しました。","speech_model_unavailable":"音声認識モデルを利用できません。","local_model_not_downloaded":"選択したローカルモデルが見つかりません。ダウンロード済みのモデルを再選択してください。"},
   "modelSettings": {
+    "initialSettingsTitle": "初期設定の決め方",
+    "allowedTokenRange": "入力範囲：{{min}}–{{max}} トークン",
+    "minimumTokens": "最小 {{min}} トークン",
     "memoryEstimateUnavailable": "モデルまたはメモリ情報が不足しているため、メモリに収まるか計算できません。",
-    "initialSettingsEstimate": "初期設定はモデル情報と現在のメモリに基づく推奨値で、実際の推論で検証された値ではありません。MTPは既定でオフです。",
+    "initialSettingsEstimate": "初期値はモデル情報と利用可能なメモリから計算します。メモリが十分ならモデルの最大コンテキストを使用し、保存済みの設定があれば復元します。メモリは推定値で、実際の使用量は入力によって変わります。",
     "minimumMemoryWarning": "現在の設定の推定メモリが推奨予算を超えています。最小コンテキストでも不足する場合は、他のアプリを閉じるか小さいモデルを選択してください。",
     "tokenBounds": "コンテキスト最小 {{contextMin}} · 出力 {{outputMin}}–{{outputMax}} · 履歴 0–{{historyMax}} トークン。入力とシステムプロンプト用の領域を確保します。",
     "activationNotice": "モデル設定の適用",
