@@ -5,7 +5,7 @@
 
 [English](README.md) · [한국어](README_KO.md) · [日本語](README_JA.md) · [ไทย](README_TH.md) · [Tiếng Việt](README_VI.md)
 
-**Vyact là không gian làm việc AI cá nhân mã nguồn mở, ưu tiên xử lý cục bộ, dành cho llama.cpp, RAG, AI agent, trí tuệ tài liệu và tích hợp Google Workspace.**
+**Vyact là không gian làm việc AI cá nhân mã nguồn mở, ưu tiên xử lý cục bộ, dành cho llama.cpp, RAG, AI agent, trí tuệ tài liệu và tích hợp Google Workspace và Microsoft.**
 
 ### Không gian riêng tư cho hội thoại, tri thức và công việc
 
@@ -22,7 +22,7 @@ Biến tệp, ghi chú, email và công cụ hằng ngày thành ngữ cảnh h�
 
 ## Mô hình có thể thay đổi, nhưng ngữ cảnh của bạn nên được giữ lại
 
-Bạn không cần tìm lại tệp, sao chép email và giải thích bối cảnh từ đầu mỗi khi mở một cuộc trò chuyện AI. Vyact kết hợp AI chat, tài liệu, ghi chú và các công cụ quen thuộc trong một không gian làm việc. Bạn có thể kiểm tra nguồn của câu trả lời, biến ghi chú thành tri thức có thể tìm kiếm và sử dụng cùng ngữ cảnh với Gmail, Google Drive, lịch và Chrome.
+Bạn không cần tìm lại tệp, sao chép email và giải thích bối cảnh từ đầu mỗi khi mở một cuộc trò chuyện AI. Vyact kết hợp AI chat, tài liệu, ghi chú và các công cụ quen thuộc trong một không gian làm việc. Bạn có thể kiểm tra nguồn của câu trả lời, biến ghi chú thành tri thức có thể tìm kiếm và sử dụng cùng ngữ cảnh với Gmail, Outlook, Google Drive, OneDrive, lịch và Chrome.
 
 Được xây dựng xoay quanh LLM cục bộ qua llama.cpp và MLX, Vyact giúp giữ hội thoại, tài liệu và ngữ cảnh làm việc trong môi trường của bạn. Khi cần, bạn vẫn có thể kết nối nhà cung cấp đám mây hoặc endpoint LLM tương thích OpenAI của riêng mình.
 
@@ -35,9 +35,9 @@ Bạn không cần tìm lại tệp, sao chép email và giải thích bối c�
 
 ## Một không gian cho công việc hằng ngày
 
-### AI chat, tệp và Google trong cùng một nơi
+### AI chat, tệp, Google và Microsoft trong cùng một nơi
 
-Đính kèm PDF hoặc tài liệu để đặt câu hỏi rồi truy ngược đến nguồn hỗ trợ câu trả lời. Kết nối nhiều tài khoản Google; đưa thư và tệp đính kèm từ Gmail, cũng như tệp Google Drive, trực tiếp vào cuộc trò chuyện. Vyact cũng có thể giúp soạn email trả lời từ chính ngữ cảnh đó.
+Đính kèm PDF hoặc tài liệu để đặt câu hỏi rồi truy ngược đến nguồn hỗ trợ câu trả lời. Kết nối nhiều tài khoản Google và Microsoft; đưa thư và tệp đính kèm từ Gmail hoặc Outlook, cũng như tệp Google Drive hoặc OneDrive, trực tiếp vào cuộc trò chuyện. Vyact cũng có thể giúp soạn email trả lời từ chính ngữ cảnh đó.
 
 <p align="center"><img src="assets/readme/feature-ai-workspace.png" alt="AI chat Vyact với ngữ cảnh tài liệu và Google Workspace" width="100%" /></p>
 
@@ -100,7 +100,7 @@ Dùng **Cải thiện bài viết** trong tiện ích Chrome để sửa ngữ p
 | ⚡ | Kiểm tra hiệu năng mô hình | So sánh cài đặt, thời gian và số token trên máy của bạn. |
 | 🔎 | Câu trả lời có nguồn | Kiểm tra đoạn văn và tài liệu đã cung cấp thông tin cho câu trả lời. |
 | 📝 | Ghi chú rich text | Sắp xếp ý tưởng để RAG có thể tìm lại khi trò chuyện. |
-| 🗂️ | Tích hợp Google | Làm việc với Gmail, Drive và lịch. |
+| 🗂️ | Tích hợp Google và Microsoft | Làm việc với Gmail, Outlook, Google Drive, OneDrive và lịch. |
 | ↗️ | API cục bộ tương thích OpenAI | Dùng mô hình Vyact từ OpenClaw hoặc ứng dụng khác trong mạng. |
 | 🎙️ | Học ngôn ngữ bằng giọng nói | Luyện nói với đầu vào giọng nói và phản hồi AI. |
 | 🌐 | Tiện ích Chrome | Học từ Netflix, dịch trang và hỏi từ nội dung web. |
@@ -121,7 +121,8 @@ Dùng **Cải thiện bài viết** trong tiện ích Chrome để sửa ngữ p
 - **Google Drive** — Duyệt, tìm, upload, download, đổi tên, sao chép, chia sẻ và đính kèm tệp vào hội thoại hoặc cơ sở tri thức.
 - **Google Calendar** — Xem, tạo, cập nhật và xóa sự kiện.
 - **Kết nối Google tích hợp** — Trong **Cài đặt > Google**, tải OAuth credentials JSON lên và kết nối nhiều tài khoản. Vyact gọi trực tiếp Google API, không qua MCP server bên ngoài; OAuth token không có trong backup export.
-- **Chuyển tài khoản** — Chuyển giữa các tài khoản Google đã kết nối. Dùng **Cmd+Shift+G** trên macOS hoặc **Ctrl+Shift+G** trên Windows/Linux để mở hoặc đóng bảng Google.
+- **Tích hợp Microsoft** — Trong **Cài đặt > Microsoft**, nhập Client ID của ứng dụng đã đăng ký trong Microsoft Entra và làm theo hướng dẫn thiết lập để đăng nhập, sử dụng thư Outlook, tệp OneDrive và lịch Microsoft.
+- **Chuyển tài khoản** — Chuyển giữa các tài khoản Google và Microsoft đã kết nối. Dùng **Cmd+Shift+G** trên macOS hoặc **Ctrl+Shift+G** trên Windows/Linux để mở hoặc đóng bảng thư, tệp và lịch.
 - **MCP và skill tái sử dụng** — Thêm filesystem, GitHub hoặc custom MCP server trong **Cài đặt > AI Tools**; quản lý chỉ dẫn tái sử dụng trong **Cài đặt > Skills**.
 
 ### Giữ quyền sở hữu không gian làm việc
@@ -130,7 +131,7 @@ Dùng **Cải thiện bài viết** trong tiện ích Chrome để sửa ngữ p
 - **Tự chọn nhà cung cấp** — Dùng mô hình cục bộ, OpenAI, Gemini, Claude hoặc endpoint tương thích OpenAI.
 - **Dùng mô hình từ ứng dụng khác** — Mở **Cài đặt > API Server** để sao chép endpoint, model ID, cấu hình OpenClaw hoặc lệnh curl. Hỗ trợ Bearer token tùy chọn.
 - **Biết khi nào dữ liệu rời máy** — Nội dung email hoặc tệp đám mây dùng với nhà cung cấp AI bên ngoài có thể được gửi đến nhà cung cấp đó. Với mô hình cục bộ do Vyact quản lý, context chat không được gửi đến nhà cung cấp AI bên ngoài.
-- **Sao lưu dữ liệu quan trọng** — Export và restore hội thoại, tài liệu, tệp, ghi chú, prompt, cài đặt, kết nối, project và từ vựng; có thể lưu lên Google Drive.
+- **Sao lưu dữ liệu quan trọng** — Export và restore hội thoại, tài liệu, tệp, ghi chú, prompt, cài đặt, kết nối, project và từ vựng; có thể lưu lên Google Drive hoặc OneDrive.
 - **Mã nguồn mở** — Phát hành theo AGPL-3.0.
 
 ## Một vài cách bắt đầu ngay hôm nay
@@ -183,7 +184,7 @@ Trên macOS, Windows và Linux, Vyact có thể tải và chạy native Elastics
 1. Khởi động Vyact rồi chọn provider và model. Chọn **Vyact** để tìm và tải mô hình GGUF / MLX cục bộ.
 2. Thả tài liệu vào hoặc mở **Quản lý tài liệu** để lập chỉ mục; tạo bộ sưu tập tri thức khi cần giới hạn RAG.
 3. Đặt câu hỏi trong chat và kiểm tra context được truy xuất khi độ chính xác quan trọng.
-4. Kết nối Google từ **Cài đặt > Google** hoặc cài tiện ích Chrome.
+4. Kết nối Google hoặc Microsoft từ **Cài đặt > Google** hoặc **Cài đặt > Microsoft** hoặc cài tiện ích Chrome.
 5. Tạo ghi chú, project hoặc skill tái sử dụng cho quy trình lặp lại.
 
 ### Kết nối nhà cung cấp LLM tùy chỉnh

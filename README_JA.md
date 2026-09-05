@@ -5,7 +5,7 @@
 
 [English](README.md) · [한국어](README_KO.md) · [日本語](README_JA.md) · [ไทย](README_TH.md) · [Tiếng Việt](README_VI.md)
 
-**Vyact は、llama.cpp、RAG、AI エージェント、ドキュメントインテリジェンス、Google Workspace 連携に対応した、オープンソースかつローカルファーストのパーソナル AI ワークスペースです。**
+**Vyact は、llama.cpp、RAG、AI エージェント、ドキュメントインテリジェンス、Google Workspace・Microsoft 連携に対応した、オープンソースかつローカルファーストのパーソナル AI ワークスペースです。**
 
 ### 会話、知識、日々の作業をひとつにまとめるプライベートワークスペース
 
@@ -22,7 +22,7 @@
 
 ## モデルは変わっても、あなたのコンテキストは残るべきです
 
-AI チャットを使うたびに、ファイルを探し、メールをコピーし、背景を説明し直す必要はありません。Vyact は AI チャット、ドキュメント、メモ、普段使うツールをひとつのワークスペースにまとめます。回答の根拠を確認し、メモを検索可能な知識に変え、Gmail、Google Drive、カレンダー、Chrome の情報を同じ会話で利用できます。
+AI チャットを使うたびに、ファイルを探し、メールをコピーし、背景を説明し直す必要はありません。Vyact は AI チャット、ドキュメント、メモ、普段使うツールをひとつのワークスペースにまとめます。回答の根拠を確認し、メモを検索可能な知識に変え、Gmail、Outlook、Google Drive、OneDrive、カレンダー、Chrome の情報を同じ会話で利用できます。
 
 llama.cpp と MLX によるローカル LLM を中心に設計されているため、会話、文書、作業コンテキストを自分の環境に保持できます。必要に応じて、ホステッドプロバイダーや独自の OpenAI 互換 LLM エンドポイントにも接続できます。
 
@@ -35,9 +35,9 @@ llama.cpp と MLX によるローカル LLM を中心に設計されているた
 
 ## 日々の作業をひとつのワークスペースで
 
-### AI チャット、ファイル、Google をひとつに
+### AI チャット、ファイル、Google、Microsoft をひとつに
 
-PDF や文書を添付して質問し、回答の根拠までたどれます。複数の Google アカウントを接続し、Gmail のメールと添付ファイル、Drive のファイルを会話に直接追加できます。同じコンテキストから返信メールの下書きも作成できます。
+PDF や文書を添付して質問し、回答の根拠までたどれます。複数の Google・Microsoft アカウントを接続し、Gmail・Outlook のメールと添付ファイル、Google Drive・OneDrive のファイルを会話に直接追加できます。同じコンテキストから返信メールの下書きも作成できます。
 
 <p align="center"><img src="assets/readme/feature-ai-workspace.png" alt="ドキュメントと Google Workspace を利用する Vyact AI チャット" width="100%" /></p>
 
@@ -100,7 +100,7 @@ Chrome 拡張機能の **文章を改善** では、選択テキストや入力�
 | ⚡ | ローカルモデル性能テスト | 実機で設定、時間、token 数を比較できます。 |
 | 🔎 | ソース付き回答 | 回答に使われた箇所と文書を確認できます。 |
 | 📝 | リッチテキストメモ | 会話中に RAG で再利用できる構造化メモを残せます。 |
-| 🗂️ | Google 連携 | Gmail、Drive、カレンダーを利用できます。 |
+| 🗂️ | Google・Microsoft 連携 | Gmail、Outlook、Google Drive、OneDrive、カレンダーを利用できます。 |
 | ↗️ | ローカル OpenAI 互換 API | 有効なローカルモデルを他のアプリから利用できます。 |
 | 🎙️ | 音声語学学習 | 音声入力と AI 応答で会話練習ができます。 |
 | 🌐 | Chrome 拡張機能 | Netflix や Web ページを使って学習・質問できます。 |
@@ -121,7 +121,8 @@ Chrome 拡張機能の **文章を改善** では、選択テキストや入力�
 - **Google Drive** — 閲覧、検索、upload、download、rename、copy、share を行い、ファイルを会話や knowledge base に追加できます。
 - **Google Calendar** — 現在の作業から離れず event の表示、作成、更新、削除ができます。
 - **組み込み Google Workspace 接続** — **設定 > Google** で OAuth credentials JSON を upload し、複数アカウントを接続できます。外部 MCP server を介さず Google API を直接呼び出し、OAuth token は backup export に含まれません。
-- **アカウント切替** — 接続済みの Google アカウントを切り替えられます。macOS は **Cmd+Shift+G**、Windows/Linux は **Ctrl+Shift+G** で Google パネルを開閉できます。
+- **Microsoft 連携** — **設定 > Microsoft** で Microsoft Entra に登録したアプリの Client ID を入力し、設定画面のガイドに従ってログインすると、Outlook のメール、OneDrive のファイル、Microsoft のカレンダーを利用できます。
+- **アカウント切替** — 接続済みの Google・Microsoft アカウントを切り替えられます。macOS は **Cmd+Shift+G**、Windows/Linux は **Ctrl+Shift+G** で メール・ファイル・カレンダーパネルを開閉できます。
 - **MCP と再利用可能な skill** — **設定 > AI Tools** で filesystem、GitHub、custom MCP server を追加し、**設定 > Skills** で再利用可能な指示を管理できます。
 
 ### ワークスペースの所有権を保つ
@@ -130,7 +131,7 @@ Chrome 拡張機能の **文章を改善** では、選択テキストや入力�
 - **プロバイダーを選択** — ローカルモデル、OpenAI、Gemini、Claude、独自 OpenAI 互換 endpoint を選べます。
 - **別のアプリから利用** — **設定 > API Server** で endpoint、model ID、OpenClaw 設定、curl テストをコピーできます。任意の Bearer token 認証に対応します。
 - **データ送信を把握** — メールやクラウドファイルを外部 AI provider の会話コンテキストに使うと、その内容が provider に送信される場合があります。Vyact 管理のローカルモデルでは外部 AI provider に送信されません。
-- **バックアップ** — 会話、文書、ファイル、メモ、prompt、設定、接続、project、語彙を export / restore できます。Google Drive にも保存できます。
+- **バックアップ** — 会話、文書、ファイル、メモ、prompt、設定、接続、project、語彙を export / restore できます。Google Drive または OneDrive にも保存できます。
 - **オープンソース** — AGPL-3.0 の下で公開されています。
 
 ## 今日から始められること
@@ -183,7 +184,7 @@ macOS、Windows、Linux では対応する native Elasticsearch distribution を
 1. Vyact を起動し、provider と model を選びます。ローカル GGUF / MLX model を検索するには **Vyact** を選択します。
 2. 文書をドロップするか **文書管理** で索引化し、必要に応じて知識コレクションを作成します。
 3. チャットで質問し、正確性が重要な場合は取得されたコンテキストを確認します。
-4. **設定 > Google**、または Chrome 拡張機能を接続します。
+4. **設定 > Google** または **設定 > Microsoft** でアカウントを接続するか、Chrome 拡張機能をインストールします。
 5. 繰り返す作業のためにメモ、project、再利用可能な skill を作成します。
 
 ### カスタム LLM provider
