@@ -36,7 +36,7 @@ VYACT_RUNTIME_PID_FILE = VYACT_RUNTIME_DIR / "llama-swap.pid"
 LLAMA_BATCH_SIZE = 2048
 LLAMA_UBATCH_SIZE = 512
 DEFAULT_CHAT_CONTEXT_SIZE = 32768
-MINIMUM_SUPPORTED_CHAT_CONTEXT_SIZE = 8192
+MINIMUM_SUPPORTED_CHAT_CONTEXT_SIZE = 512
 
 _downloaded_models_lock = threading.RLock()
 _downloaded_models_cache: frozenset[str] | None = None

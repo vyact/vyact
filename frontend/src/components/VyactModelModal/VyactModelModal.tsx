@@ -157,7 +157,22 @@ export default function VyactModelModal({onClose, onSelected, activeModelPath}: 
                 const dflash2Supported = response.dflash2_supported || [];
                 setInstalledModels(installed);
                 setMtpSupportedModels(mtpSupported);
-                setModels(buildInstalledModelCards(installed, mtpSupported, dflash2Supported));
+                const cards = buildInstalledModelCards(installed, mtpSupported, dflash2Supported);
+                const detailsCache: Record<string, CachedModelDetails> = {};
+                for (const model of cards) {
+                    for (const filename of model.files) {
+                        const path = model.runtime === 'mlx' ? `mlx/${model.id}` : `${model.id}/${filename}`;
+                        const detail = response.installed_details?.[path];
+                        if (!detail) continue;
+                        model.file_sizes[filename] = detail.fileSize;
+                        detailsCache[modelDetailsKey(model.runtime, model.id, filename, model.revision)] = {
+                            file: {repository: model.id, filename, revision: model.revision, runtime: model.runtime, fileSize: detail.fileSize, mtpSupported: mtpSupported.includes(path)},
+                            metadata: {...detail.metadata, parameterCount: 0, quantization: '', kvCacheBytes: 0, runtimeBufferBytes: 0, estimatedMemoryBytes: 0},
+                        };
+                    }
+                }
+                setModelDetailsCache(current => ({...current, ...detailsCache}));
+                setModels(cards);
             })
             .catch(error => setMessage(String(error)));
         void api.getVyactHuggingFaceTokenStatus()
@@ -305,17 +320,20 @@ export default function VyactModelModal({onClose, onSelected, activeModelPath}: 
             dflash2Model: model.dflash2_model,
             dflash2Bundled: model.dflash2_bundled,
         };
-        const cached = modelDetailsCache[modelDetailsKey(selected.runtime, selected.repository, selected.filename, selected.revision)];
+        const cached = installedModels.includes(modelPath)
+            ? Object.values(modelDetailsCache).find(detail => detail.file.runtime === selected.runtime
+                && detail.file.repository === selected.repository && detail.file.filename === selected.filename)
+            : modelDetailsCache[modelDetailsKey(selected.runtime, selected.repository, selected.filename, selected.revision)];
         setSelectedFile(cached?.file || selected);
         setSelectedMetadata(cached?.metadata || null);
         setIsLoadingDetails(false);
         setMessage('');
-        if (!cached && installedModels.includes(modelPath)) {
-            void loadModelDetails(selected);
-        }
+
     };
 
     const loadModelDetails = async (file: SelectedModelFile) => {
+        const path = file.runtime === 'mlx' ? `mlx/${file.repository}` : `${file.repository}/${file.filename}`;
+        if (installedModels.includes(path)) return;
         const requestId = ++detailsRequestIdRef.current;
         setIsLoadingDetails(true);
         setMessage('');
@@ -464,7 +482,7 @@ export default function VyactModelModal({onClose, onSelected, activeModelPath}: 
                                         <button
                                             type="button"
                                             onClick={() => selectedFile && void loadModelDetails(selectedFile)}
-                                            disabled={busy || isLoadingDetails}
+                                            disabled={busy || isLoadingDetails || selectedModelIsInstalled}
                                             aria-label={t(isLoadingDetails ? 'modelSelector.analyzingMetadata' : 'modelSelector.calculateAccurateMemory')}
                                             title={t(isLoadingDetails ? 'modelSelector.analyzingMetadata' : 'modelSelector.calculateAccurateMemory')}
                                         >

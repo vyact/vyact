@@ -1,6 +1,8 @@
 """
 routers/setup.py – 설치 / 모델 / Provider / 상태
 """
+from services.installed_model_details import get_installed_model_details
+
 import asyncio
 import copy
 import json
@@ -78,6 +80,8 @@ def _apply_model_profile(vyact_config: dict, profile: dict) -> None:
         "kv_cache_precision": profile.get("kv_cache_precision"),
         "performance_mode": profile.get("performance_mode", "auto"),
         "cpu_threads": profile.get("cpu_threads"),
+        "gpu_split_percentages": profile.get("gpu_split_percentages", []),
+        "gpu_manual_split_enabled": profile.get("gpu_manual_split_enabled", False),
         "seed": profile.get("seed"),
         "max_output_tokens": profile["max_output_tokens"],
         "history_token_budget": profile["history_token_budget"],
@@ -672,6 +676,7 @@ async def get_models():
             "hardware": await asyncio.to_thread(get_local_hardware_info),
             "current": current_model,
             "installed": installed_models,
+            "installed_details": await asyncio.to_thread(get_installed_model_details, installed_models),
             "mtp_supported": [
                 *list_mtp_supported_models(),
                 *(list_mtp_supported_mlx_models() if mlx_available else []),
@@ -1562,9 +1567,14 @@ async def delete_provider(provider: str):
 async def select_provider(req: ProviderSelectRequest):
     config = await load_config_async()
     if req.provider == "vyact":
-        vyact_config = config.get("vyact_config", {})
+        vyact_config = copy.deepcopy(config.get("vyact_config", {}))
         if not vyact_config.get("model_path"):
             raise HTTPException(400, "Vyact 모델이 없습니다. 먼저 모델을 다운로드하세요.")
+        profile = await _get_or_create_model_profile(
+            vyact_config["model_path"], vyact_config.get("runtime", "gguf"),
+            vyact_config.get("repository"), persist=True,
+        )
+        _apply_model_profile(vyact_config, profile)
         try:
             from services.vyact_runtime import start_configured_runtime
 
@@ -1578,7 +1588,12 @@ async def select_provider(req: ProviderSelectRequest):
             raise HTTPException(503, "vyact_model_activation_failed") from error
         config["type"] = "vyact"
         config["model"] = model
-        config.setdefault("vyact_config", {})["model"] = model
+        vyact_config["model"] = model
+        config["vyact_config"] = vyact_config
+        apply_runtime_settings({
+            **config.get("runtime_settings", {}),
+            **_profile_runtime_settings(vyact_config),
+        })
     else:
         if req.provider.startswith("custom:"):
             connection_id = req.provider.removeprefix("custom:")

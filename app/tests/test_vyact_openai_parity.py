@@ -275,6 +275,32 @@ class VyactOpenAiParityTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(client.body["top_k"], 40)
         self.assertEqual(client.body["top_p"], 0.9)
 
+    async def test_tool_round_receives_configured_sampling(self):
+        for engine in ("mlx", "gguf"):
+            client = _Client()
+            runtime = {
+                "llm_temperature": 0.2,
+                "llm_num_predict": 2048,
+                "top_p": 0.9,
+                "top_k": 40,
+                "seed": None,
+            }
+            with patch("services.llm.providers.get_provider_config", AsyncMock(return_value={
+                    "type": "openai", "selection_type": "vyact", "is_local": True,
+                    "runtime": engine, "model": "local", "context_size": 32768,
+                    "base_url": "http://127.0.0.1:11435/v1",
+                })), patch("services.llm.providers.get_runtime_settings", return_value=runtime), \
+                    patch("services.llm.providers._get_unified_tools", AsyncMock(return_value=([{ "type": "function", "function": {"name": "read", "description": "read", "parameters": {"type": "object", "properties": {}}}}], []))):
+                pieces = [piece async for piece in openai_stream(
+                    client, "local", None, "system", "question", [], [], [], 30,
+                )]
+
+            self.assertEqual(pieces, ["ok"])
+            self.assertIn("tools", client.body)
+            self.assertEqual(client.stream_calls, 1)
+            self.assertEqual(client.body["top_k"], 40)
+            self.assertEqual(client.body["top_p"], 0.9)
+
     async def test_structured_output_uses_llama_json_schema(self):
         client = _Client()
         schema = {"type": "object", "properties": {"answer": {"type": "string"}}}

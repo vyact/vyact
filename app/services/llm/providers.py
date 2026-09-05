@@ -233,6 +233,17 @@ def _apply_local_seed(body: dict, provider_config: dict) -> None:
         body["seed"] = int(seed)
 
 
+def _apply_local_sampling(body: dict, provider_config: dict) -> None:
+    """Use the same sampling settings for tool rounds and final answers."""
+    if not provider_config.get("is_local"):
+        return
+    _apply_local_seed(body, provider_config)
+    runtime = get_runtime_settings()
+    for key in ("top_k", "top_p"):
+        if runtime.get(key) is not None:
+            body[key] = runtime[key]
+
+
 async def _get_unified_tools(use_tools: bool):
     """MCP tool(통일형)과 tool 이름 목록을 반환. tool이 없으면 ([], [])."""
     if not use_tools:
@@ -331,7 +342,7 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
                 body["max_tokens"] = await _local_max_tokens(messages, provider_config, unified)
                 _apply_local_reasoning_control(body, provider_config, reasoning)
                 _apply_local_prefix_cache_control(body, provider_config)
-                _apply_local_seed(body, provider_config)
+                _apply_local_sampling(body, provider_config)
                 await _apply_local_specprefill_control(
                     body, messages, provider_config, call_reason, oa_tools,
                 )
@@ -494,18 +505,13 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
     # ── 최종 답변 스트리밍 ──
     body = {"model": model, "temperature": temperature, "stream": True, "messages": messages}
     if provider_config.get("is_local"):
-        runtime = get_runtime_settings()
         body["max_tokens"] = await _local_max_tokens(messages, provider_config, unified)
         _apply_local_reasoning_control(body, provider_config, reasoning)
         _apply_local_prefix_cache_control(body, provider_config)
-        _apply_local_seed(body, provider_config)
+        _apply_local_sampling(body, provider_config)
         await _apply_local_specprefill_control(
             body, messages, provider_config, call_reason, unified,
         )
-        if runtime.get("top_p") is not None:
-            body["top_p"] = runtime["top_p"]
-        if runtime.get("top_k") is not None:
-            body["top_k"] = runtime["top_k"]
         if provider_config.get("runtime") == "gguf":
             if structured_output_schema is not None:
                 body["response_format"] = {

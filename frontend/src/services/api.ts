@@ -700,6 +700,7 @@ export const api = {
     },
 
     async getModels(): Promise<{
+        installed_details?: Record<string, {fileSize: number; metadata: Pick<VyactGgufMetadata, 'architecture' | 'blockCount' | 'contextLength'>}>;
         hardware?: VyactHardwareInfo;
         models: string[][];
         current: string;

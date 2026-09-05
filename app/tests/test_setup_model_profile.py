@@ -69,11 +69,18 @@ async def test_selecting_vyact_starts_model_before_persisting_provider(monkeypat
     start_runtime = Mock(return_value="owner/model")
     monkeypatch.setattr(setup, "load_config_async", AsyncMock(return_value=config))
     monkeypatch.setattr(setup, "save_config_async", save_config)
+    profile = setup.recommended_model_profile("mlx/owner/model", "mlx", "owner/model", 4096)
+    profile.update({"top_k": 17, "seed": 42})
+    monkeypatch.setattr(setup, "_get_or_create_model_profile", AsyncMock(return_value=profile))
+    apply_settings = Mock()
+    monkeypatch.setattr(setup, "apply_runtime_settings", apply_settings)
     monkeypatch.setattr(vyact_runtime, "start_configured_runtime", start_runtime)
 
     await setup.select_provider(setup.ProviderSelectRequest(provider="vyact"))
 
     start_runtime.assert_called_once()
+    assert start_runtime.call_args.args[0]["context_size"] == 4096
+    assert apply_settings.call_args.args[0]["top_k"] == 17
     assert config["type"] == "vyact"
     assert config["model"] == "owner/model"
     save_config.assert_awaited_once_with(config)
@@ -90,6 +97,11 @@ async def test_failed_vyact_activation_keeps_previous_provider(monkeypatch):
     start_runtime = Mock(side_effect=RuntimeError("failed to load"))
     monkeypatch.setattr(setup, "load_config_async", AsyncMock(return_value=config))
     monkeypatch.setattr(setup, "save_config_async", save_config)
+    profile = setup.recommended_model_profile("mlx/owner/model", "mlx", "owner/model", 4096)
+    profile.update({"top_k": 17, "seed": 42})
+    monkeypatch.setattr(setup, "_get_or_create_model_profile", AsyncMock(return_value=profile))
+    apply_settings = Mock()
+    monkeypatch.setattr(setup, "apply_runtime_settings", apply_settings)
     monkeypatch.setattr(vyact_runtime, "start_configured_runtime", start_runtime)
 
     with pytest.raises(HTTPException) as error:
@@ -190,3 +202,12 @@ async def test_failed_model_warmup_restores_previous_model_and_reports_memory_er
     assert config["vyact_config"]["model_path"] == "mlx/owner/previous-model"
     save_config.assert_not_awaited()
     assert "model_insufficient_memory" in "".join(chunks)
+
+
+def test_model_profile_replaces_previous_gpu_split():
+    profile = setup.recommended_model_profile("owner/model.gguf", "gguf", None, 4096)
+    profile.update({"gpu_split_percentages": [70, 30], "gpu_manual_split_enabled": True})
+    config = {"gpu_split_percentages": [50, 50], "gpu_manual_split_enabled": False}
+    setup._apply_model_profile(config, profile)
+    assert config["gpu_split_percentages"] == [70, 30]
+    assert config["gpu_manual_split_enabled"] is True

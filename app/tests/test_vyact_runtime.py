@@ -291,6 +291,21 @@ class VyactRuntimeTests(unittest.TestCase):
         self.assertEqual(start_model.call_args.args[8], [66.67, 33.33])
         self.assertTrue(start_model.call_args.args[9])
 
+    def test_restart_preserves_small_context_for_both_engines(self):
+        for engine in ("mlx", "gguf"):
+            config = {"model_path": "owner/model", "runtime": engine, "context_size": 4096}
+            with patch("services.mlx_runtime.get_downloaded_mlx_model_path", return_value=Path("model")), patch(
+                "services.vyact_runtime.get_downloaded_model_path", return_value=Path("model"),
+            ), patch("services.vyact_runtime.get_local_hardware_info", return_value={"gpus": []}), patch(
+                "services.vyact_runtime.get_loaded_context_size", return_value=4096,
+            ), patch("services.vyact_runtime.start_single_model", return_value="model") as llama_start, patch(
+                "services.mlx_runtime.start_mlx_model", return_value="model",
+            ) as mlx_start:
+                start_configured_runtime(config)
+            start = mlx_start if engine == "mlx" else llama_start
+            self.assertEqual(start.call_args.args[1], 4096)
+            self.assertEqual(config["context_size"], 4096)
+
     def test_single_model_config_keeps_automatic_fit_without_manual_split(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             base = Path(temp_dir)
