@@ -44,3 +44,20 @@ def test_settings_hardware_reuses_snapshot_without_sharing_mutable_data(monkeypa
         probe.assert_called_once()
     finally:
         hardware_info._settings_hardware_snapshot.cache_clear()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('read_fails', [False, True])
+async def test_cache_failure_still_returns_local_metadata(tmp_path, monkeypatch, read_fails):
+    model = tmp_path / 'model.gguf'
+    model.write_bytes(b'model')
+    result = {'info': {'path': str(model), 'limits': {}}, 'reasoning': {}, 'modalities': []}
+    monkeypatch.setattr(cache, '_read_settings_metadata', Mock(return_value=result))
+    monkeypatch.setattr(cache, 'get_cached_model_metadata', AsyncMock(
+        return_value=None, side_effect=RuntimeError('read failed') if read_fails else None))
+    writer = AsyncMock(side_effect=RuntimeError('write failed'))
+    monkeypatch.setattr(cache, 'save_cached_model_metadata', writer)
+    metadata = await cache.read_model_settings_metadata('model.gguf', 'gguf', model)
+    assert metadata['info']['path'] == model
+    assert metadata['reasoning'] == {}
+    writer.assert_awaited_once()

@@ -18,7 +18,7 @@ from elasticsearch import NotFoundError
 from starlette.responses import JSONResponse
 
 from services.db import MODEL_BENCHMARK_RESULTS_INDEX, get_es
-from services.hardware_info import get_local_hardware_info
+from services.hardware_info import get_settings_hardware_info
 from logger import get_logger
 from services.mlx_runtime import get_downloaded_mlx_model_path
 from services.model_runtime_profiles import build_model_profile_id, normalize_model_profile
@@ -61,7 +61,7 @@ class BenchmarkGuard:
 
 
 def fingerprint(profile):
-    hardware = get_local_hardware_info()
+    hardware = get_settings_hardware_info()
     try:
         omlx_version = version("omlx")
     except PackageNotFoundError:

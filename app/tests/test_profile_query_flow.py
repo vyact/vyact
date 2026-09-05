@@ -90,7 +90,27 @@ async def test_restart_uses_runtime_reduced_context_for_next_query(monkeypatch):
     await runtime_startup.load_configured_vyact_model(config)
     settings = runtime_settings.get_runtime_settings()
     assert settings["llm_num_ctx"] == 8192
-    assert settings["llm_num_predict"] == settings["llm_max_tokens"] == 7168
-    assert settings["history_token_budget"] == 0
+    assert settings["llm_num_predict"] == settings["llm_max_tokens"] == 16000
+    assert settings["history_token_budget"] == 15000
     assert config["vyact_config"]["context_size"] == 8192
     assert save_profile.await_args.args[0]["context_size"] == 8192
+
+    assert save_profile.await_args.args[0]["max_output_tokens"] == 16000
+    assert save_profile.await_args.args[0]["history_token_budget"] == 15000
+    monkeypatch.setattr(deps, "load_config_async", AsyncMock(return_value=config))
+    monkeypatch.setattr(token_counter, "count_local_message_tokens", AsyncMock(return_value=1000))
+    bodies = []
+
+    def respond(request):
+        bodies.append(json.loads(request.content))
+        return httpx.Response(200, text='data: {"choices":[{"delta":{"content":"ok"}}]}\n\ndata: [DONE]\n\n',
+                              headers={"content-type": "text/event-stream"})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:
+        result = [part async for part in providers.openai_stream(
+            client, "test-model", None, "system", "test question", [], [], [], 30,
+            use_tools=False, reasoning=False,
+        )]
+    assert result == ["ok"]
+    # Preserve user settings, but enforce the reduced context on the actual request.
+    assert bodies[0]["max_tokens"] == 8192 - 1000 - 512

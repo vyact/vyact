@@ -1,9 +1,11 @@
 import asyncio
 import copy
-from unittest.mock import AsyncMock
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 
+from services import hardware_info
 from services import model_benchmark as bench
 from services.model_runtime_profiles import recommended_model_profile
 
@@ -278,3 +280,21 @@ async def test_stop_retains_completed_case_and_restores_previous_model(monkeypat
     assert saved[-1]["completed"] == 3
     assert saved[-1]["status"] == "cancelled"
     assert loaded[-1] == previous
+
+
+def test_fingerprint_reuses_session_hardware_and_detects_file_changes(tmp_path, monkeypatch):
+    model = tmp_path / 'model.gguf'
+    model.write_bytes(b'model')
+    probe = Mock(return_value={'gpus': [], 'system_memory': {'total_bytes': 16000}})
+    monkeypatch.setattr(hardware_info, 'get_local_hardware_info', probe)
+    monkeypatch.setattr(bench, 'get_downloaded_model_path', lambda _: model)
+    monkeypatch.setattr(bench, 'get_runtime_paths', lambda: SimpleNamespace(llama_server=None))
+    hardware_info._settings_hardware_snapshot.cache_clear()
+    try:
+        first = bench.fingerprint(profile())
+        assert bench.fingerprint(profile()) == first
+        model.write_bytes(b'replaced model')
+        assert bench.fingerprint(profile()) != first
+        probe.assert_called_once()
+    finally:
+        hardware_info._settings_hardware_snapshot.cache_clear()

@@ -1,15 +1,29 @@
-# Required smoke/regression coverage for normal CI.
-# Run the full suite with CI workflow_dispatch -> full_checks.
+# Fast default CI: installation, startup, request contracts and recovery.
+# Detailed parameter matrices and helper tests remain in workflow_dispatch -> full_checks.
+# Entries may be test files or individual pytest node IDs.
 app/tests/test_linux_installer.py
 app/tests/test_vyact_runtime.py
 app/tests/test_runtime_startup.py
 app/tests/test_runtime_error_details.py
-app/tests/test_model_runtime_profiles.py
-# Hardware defaults and saved settings reaching real request construction (mock transport).
-app/tests/test_model_profile_defaults.py
 app/tests/test_profile_query_flow.py
 app/tests/test_llm_errors.py
 app/tests/test_error_responses.py
-app/tests/test_multimodal_capabilities.py
-app/tests/test_llm_media_helpers.py
-app/tests/test_audio_conversion.py
+
+# Activation must preserve the previous working model and user settings on failure.
+app/tests/test_setup_model_profile.py::test_failed_model_warmup_restores_previous_model_and_reports_memory_error
+app/tests/test_setup_model_profile.py::test_failed_model_switch_restores_sampling_and_logs_traceback
+app/tests/test_setup_model_profile.py::test_settings_activation_reports_rollback_result
+app/tests/test_setup_model_profile.py::test_profile_save_bounds_context_and_preserves_user_budgets
+
+# Benchmark exclusivity, cancellation, checkpoints and original-model recovery.
+app/tests/test_model_benchmark.py::test_guard_keeps_streaming_request_exclusive
+app/tests/test_model_benchmark.py::test_stop_interrupts_prefill_before_first_sse_chunk
+app/tests/test_model_benchmark.py::test_selected_cases_checkpoint_before_next_case_and_restore
+app/tests/test_model_benchmark.py::test_stop_retains_completed_case_and_restores_previous_model
+app/tests/test_model_benchmark.py::test_restore_failure_is_explicit_and_persisted
+app/tests/test_model_benchmark.py::test_delete_failure_never_unloads_model
+app/tests/test_model_benchmark.py::test_invalid_selection_rejected_before_deleting
+app/tests/test_model_benchmark.py::test_preview_identity_changes_with_capability_and_hardware
+
+# Existing installations must open settings even when the optional cache fails.
+app/tests/test_model_settings_cache.py
