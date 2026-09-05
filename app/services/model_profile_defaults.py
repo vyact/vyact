@@ -117,12 +117,14 @@ def hardware_model_profile(model_path: str, runtime: str, repository: str | None
     hardware = get_local_hardware_info()
     budget = model_memory_budget(hardware)
     minimum = limits["context_min"]
-    target = max(minimum, min(limits["context_max"] or DEFAULT_CONTEXT_SIZE, DEFAULT_CONTEXT_SIZE, max(minimum, fallback)))
+    target = max(minimum, limits["context_max"] or fallback or DEFAULT_CONTEXT_SIZE)
     # MTP stays opt-in: available memory alone cannot prove a speed improvement.
     # DFlash2 is automatic and requires an unquantized cache.
     has_dflash = runtime == "gguf" and bool(get_cached_dflash2_model(info["path"]))
     precisions = ["none"] if runtime == "mlx" or has_dflash else ["none", "q8"]
-    candidates = sorted({minimum, target, *range(minimum, target + 1, CONTEXT_STEP)})
+    last_candidate = (target - minimum + CONTEXT_STEP - 1) // CONTEXT_STEP
+    def candidate(index: int) -> int:
+        return min(target, minimum + index * CONTEXT_STEP)
     selected_context, selected_precision = minimum, precisions[-1]
     known = False
     fits = False
@@ -133,32 +135,34 @@ def hardware_model_profile(model_path: str, runtime: str, repository: str | None
         known = known or floor_memory > 0
         if floor_memory <= 0 or budget is None or budget <= 0 or floor_memory > budget:
             continue
-        lower, upper = 0, len(candidates) - 1
+        lower, upper = 0, last_candidate
         while lower < upper:
             middle = (lower + upper + 1) // 2
-            estimate = profile_memory_bytes(info, runtime, candidates[middle], precision)
+            estimate = profile_memory_bytes(info, runtime, candidate(middle), precision)
             if 0 < estimate <= budget:
                 lower = middle
             else:
                 upper = middle - 1
-        context = candidates[lower]
+        context = candidate(lower)
         if not fits or context > selected_context:
             selected_context, selected_precision = context, precision
         fits = True
         if context == target:
             break
-    profile = recommended_model_profile(model_path, runtime, repository, selected_context)
+    profile = recommended_model_profile(model_path, runtime, repository, selected_context, limits)
     profile.update(kv_cache_precision=selected_precision, cache_quantization=selected_precision != "none")
     generation = info["generation"]
     for key in ("temperature", "top_k", "top_p"):
         value = generation.get(key)
         if isinstance(value, (int, float)) and math.isfinite(value):
             profile[key] = value
-    default_output = _positive_integer(generation.get("max_new_tokens"))
+    default_output = limits["output_max"] or _positive_integer(generation.get("max_new_tokens"))
     if default_output:
         profile["max_output_tokens"] = default_output
     profile["limits"] = limits
     profile = normalize_model_profile(profile, limits)
+    reserve = min(MINIMUM_CONTEXT_RESERVE_TOKENS, profile["context_size"] // 2)
+    profile["history_token_budget"] = max(0, profile["context_size"] - profile["max_output_tokens"] - reserve)
     profile["recommendation_status"] = "estimated" if fits else "insufficient" if known and budget is not None else "unavailable"
     return profile
 

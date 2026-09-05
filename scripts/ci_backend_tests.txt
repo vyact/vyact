@@ -5,6 +5,9 @@ app/tests/test_vyact_runtime.py
 app/tests/test_runtime_startup.py
 app/tests/test_runtime_error_details.py
 app/tests/test_model_runtime_profiles.py
+# Hardware defaults and saved settings reaching real request construction (mock transport).
+app/tests/test_model_profile_defaults.py
+app/tests/test_profile_query_flow.py
 app/tests/test_llm_errors.py
 app/tests/test_error_responses.py
 app/tests/test_multimodal_capabilities.py

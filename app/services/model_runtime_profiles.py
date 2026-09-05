@@ -93,7 +93,7 @@ def normalize_model_profile(profile: dict, limits: dict | None = None) -> dict:
         safe_context - normalized["max_output_tokens"] - reserve,
     ))
     for key, default, maximum, integer in (
-        ("temperature", 0.2, 1, False), ("top_k", None, 100, True),
+        ("temperature", 0.2, None, False), ("top_k", None, None, True),
         ("top_p", None, 1, False), ("seed", None, MAXIMUM_SEED, True),
     ):
         value = normalized.get(key, default)
@@ -103,7 +103,8 @@ def normalize_model_profile(profile: dict, limits: dict | None = None) -> dict:
         number = float(value)
         if not math.isfinite(number):
             raise ValueError("Invalid numeric model setting")
-        normalized[key] = max(0, min(int(number) if integer else number, maximum))
+        bounded = int(number) if integer else number
+        normalized[key] = max(0, min(bounded, maximum) if maximum is not None else bounded)
     return normalized
 
 
@@ -138,25 +139,23 @@ def normalize_gpu_split_for_hardware(profile: dict, hardware: dict) -> dict:
     return normalized
 
 
-def recommended_model_profile(model_path: str, runtime: str, repository: str | None, context_size: int) -> dict:
-    safe_context = max(MINIMUM_CONTEXT_SIZE, int(context_size or DEFAULT_CONTEXT_SIZE))
-    if safe_context >= 65536:
-        recommended_output = 4096
-    elif safe_context <= 8192:
-        recommended_output = 1024
-    else:
-        recommended_output = DEFAULT_MAX_OUTPUT_TOKENS
-    recommended_history = min(safe_context // 2, 65536)
+def recommended_model_profile(
+    model_path: str, runtime: str, repository: str | None, context_size: int,
+    limits: dict | None = None,
+) -> dict:
+    limits = limits or {}
+    safe_context = max(limits.get("context_min", MINIMUM_CONTEXT_SIZE), int(context_size or DEFAULT_CONTEXT_SIZE))
+    if limits.get("context_max"):
+        safe_context = min(safe_context, limits["context_max"])
+    available_tokens = safe_context - min(MINIMUM_CONTEXT_RESERVE_TOKENS, safe_context // 2)
+    recommended_output = available_tokens // 2
+    recommended_history = available_tokens - recommended_output
     return normalize_model_profile({
         "model_path": model_path,
         "runtime": runtime,
         "repository": repository,
         "context_size": safe_context,
-        "max_output_tokens": min(
-            recommended_output,
-            max(1, safe_context // 4),
-            max(1, safe_context - MINIMUM_CONTEXT_RESERVE_TOKENS),
-        ),
+        "max_output_tokens": recommended_output,
         "history_token_budget": recommended_history,
         "temperature": 0.2,
         "top_k": None,
@@ -169,7 +168,7 @@ def recommended_model_profile(model_path: str, runtime: str, repository: str | N
         "gpu_split_percentages": [],
         "gpu_manual_split_enabled": False,
         "seed": None,
-    })
+    }, limits)
 
 
 async def get_model_profile(model_path: str) -> dict | None:

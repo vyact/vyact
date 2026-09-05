@@ -39,8 +39,8 @@ async def test_new_model_profile_uses_hardware_recommendation(monkeypatch):
     )
 
     assert profile["context_size"] == 65536
-    assert profile["history_token_budget"] == 32768
-    assert profile["max_output_tokens"] == 4096
+    assert profile["history_token_budget"] == 32256
+    assert profile["max_output_tokens"] == 32256
     save_profile.assert_awaited_once()
 
 
@@ -345,3 +345,10 @@ async def test_read_marks_adjusted_saved_settings_for_application(monkeypatch):
     assert result["max_output_tokens"] == 256
     assert result["requires_apply"] is True
     assert saved["context_size"] == 512  # A GET must not overwrite the saved profile.
+
+
+@pytest.mark.parametrize("request_type", [setup.VyactModelProfileRequest, setup.VyactModelActivateRequest])
+def test_model_sampling_defaults_are_accepted_by_save_and_activate(request_type):
+    request = request_type(model_path="owner/model.gguf", temperature=1.5, top_k=200)
+    assert request.temperature == 1.5
+    assert request.top_k == 200

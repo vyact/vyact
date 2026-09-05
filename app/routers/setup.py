@@ -175,8 +175,8 @@ class VyactModelActivateRequest(BaseModel):
     repository: str | None = Field(default=None, min_length=3, max_length=256)
     max_output_tokens: int = Field(default=4096, ge=1)
     history_token_budget: int = Field(default=16384, ge=0)
-    temperature: float = Field(default=0.2, ge=0, le=1, allow_inf_nan=False)
-    top_k: int | None = Field(default=None, ge=0, le=100)
+    temperature: float = Field(default=0.2, ge=0, allow_inf_nan=False)
+    top_k: int | None = Field(default=None, ge=0)
     top_p: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
     cache_quantization: bool = True
     mtp_enabled: bool | None = None
@@ -197,8 +197,8 @@ class VyactModelProfileRequest(BaseModel):
     context_size: int = Field(default=32768, ge=512)
     max_output_tokens: int = Field(default=4096, ge=1)
     history_token_budget: int = Field(default=16384, ge=0)
-    temperature: float = Field(default=0.2, ge=0, le=1, allow_inf_nan=False)
-    top_k: int | None = Field(default=None, ge=0, le=100)
+    temperature: float = Field(default=0.2, ge=0, allow_inf_nan=False)
+    top_k: int | None = Field(default=None, ge=0)
     top_p: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
     cache_quantization: bool = True
     mtp_enabled: bool | None = None

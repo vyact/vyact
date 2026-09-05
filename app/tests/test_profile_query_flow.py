@@ -13,11 +13,15 @@ from services.model_runtime_profiles import recommended_model_profile
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("runtime", ["gguf", "mlx"])
-@pytest.mark.parametrize("use_tools", [False, True])
-async def test_saved_settings_reach_answer_and_tool_rounds(monkeypatch, runtime, use_tools):
+@pytest.mark.parametrize("runtime,use_tools,sampling", [
+    ("gguf", False, (0, 0)),
+    ("gguf", True, (1.5, 200)),
+    ("mlx", False, (1.5, 200)),
+    ("mlx", True, (0, 0)),
+])
+async def test_saved_settings_reach_answer_and_tool_rounds(monkeypatch, runtime, use_tools, sampling):
     profile = recommended_model_profile("owner/model.gguf", runtime, None, 32768)
-    profile.update(temperature=0, top_k=0, top_p=0, seed=0, max_output_tokens=16000)
+    profile.update(temperature=sampling[0], top_k=sampling[1], top_p=0, seed=0, max_output_tokens=16000)
     config = {"type": "vyact", "model": "test-model", "vyact_config": profile}
     monkeypatch.setattr(deps, "load_config_async", AsyncMock(return_value=config))
     monkeypatch.setattr(runtime_settings, "_settings", dict(runtime_settings.DEFAULT_RUNTIME_SETTINGS))
@@ -49,27 +53,12 @@ async def test_saved_settings_reach_answer_and_tool_rounds(monkeypatch, runtime,
     assert result == ["ok"]
     assert len(bodies) == (2 if use_tools else 1)
     for body in bodies:
-        assert (body["temperature"], body["top_k"], body["top_p"], body["seed"]) == (0, 0, 0, 0)
+        assert (body["temperature"], body["top_k"], body["top_p"], body["seed"]) == (*sampling, 0, 0)
         assert body["model"] == "test-model"
     assert bodies[0]["max_tokens"] == 16000  # Not silently capped to 8192.
     if use_tools:
         assert bodies[1]["max_tokens"] == 12256  # Real input growth leaves less output space.
         assert bodies[1]["messages"][-1]["role"] == "tool"
-
-
-@pytest.mark.asyncio
-async def test_effective_context_updates_profile_config_and_query_budgets(monkeypatch):
-    profile = recommended_model_profile("owner/model.gguf", "gguf", None, 32768)
-    profile.update(max_output_tokens=16000, history_token_budget=15000)
-    profile["limits"] = {"context_min": 4096, "context_max": 32768}
-    config = {**profile, "context_size": 8192}
-    saved = AsyncMock(side_effect=lambda value: value)
-    monkeypatch.setattr(runtime_startup, "save_model_profile", saved)
-    effective = await runtime_startup.persist_loaded_model_profile(profile, config, {})
-    assert effective["context_size"] == config["context_size"] == 8192
-    assert effective["max_output_tokens"] == config["max_output_tokens"] == 7168
-    assert effective["history_token_budget"] == config["history_token_budget"] == 0
-    saved.assert_awaited_once()
 
 
 @pytest.mark.asyncio
@@ -89,7 +78,8 @@ async def test_restart_uses_runtime_reduced_context_for_next_query(monkeypatch):
     profile.update(max_output_tokens=16000, history_token_budget=15000)
     config = {"type": "vyact", "vyact_config": {"model_path": profile["model_path"], "runtime": "gguf"}}
     monkeypatch.setattr(runtime_startup, "get_model_profile", AsyncMock(return_value=profile))
-    monkeypatch.setattr(runtime_startup, "save_model_profile", AsyncMock(side_effect=lambda value: value))
+    save_profile = AsyncMock(side_effect=lambda value: value)
+    monkeypatch.setattr(runtime_startup, "save_model_profile", save_profile)
     monkeypatch.setattr(runtime_startup, "save_config_async", AsyncMock())
     monkeypatch.setattr(runtime_startup, "load_ui_language_async", AsyncMock(return_value="ko"))
     monkeypatch.setattr(runtime_settings, "_settings", dict(runtime_settings.DEFAULT_RUNTIME_SETTINGS))
@@ -103,3 +93,4 @@ async def test_restart_uses_runtime_reduced_context_for_next_query(monkeypatch):
     assert settings["llm_num_predict"] == settings["llm_max_tokens"] == 7168
     assert settings["history_token_budget"] == 0
     assert config["vyact_config"]["context_size"] == 8192
+    assert save_profile.await_args.args[0]["context_size"] == 8192

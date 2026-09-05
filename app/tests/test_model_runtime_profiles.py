@@ -22,7 +22,7 @@ def test_recommended_profile_preserves_model_context_and_scales_output_limit():
     profile = recommended_model_profile("mlx/owner/model", "mlx", "owner/model", 262144)
 
     assert profile["context_size"] == 262144
-    assert profile["max_output_tokens"] == 4096
+    assert profile["max_output_tokens"] == 130560
     assert profile["cache_quantization"] is False
     assert profile["kv_cache_precision"] == "none"
 
@@ -190,3 +190,9 @@ def test_dflash_constraints_disable_incompatible_cache_and_mtp():
     assert result["kv_cache_precision"] == "none"
     assert result["cache_quantization"] is False
     assert result["mtp_enabled"] is False
+
+
+def test_sampling_metadata_is_not_cut_to_arbitrary_one_or_100():
+    result = normalize_model_profile({"temperature": 1.5, "top_k": 200})
+    assert result["temperature"] == 1.5
+    assert result["top_k"] == 200

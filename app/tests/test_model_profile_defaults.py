@@ -75,3 +75,40 @@ def test_exhausted_budget_keeps_floor_and_reports_insufficient(recommendation, m
     result = defaults.hardware_model_profile("model.gguf", "gguf", None, 32768)
     assert result["context_size"] == 4096
     assert result["recommendation_status"] == "insufficient"
+
+
+@pytest.mark.parametrize("model_limit", [131072, 131073])
+def test_sufficient_memory_uses_exact_metadata_maximum(monkeypatch, tmp_path, model_limit):
+    info = {"path": tmp_path, "limits": {"context_min": 4096, "context_max": model_limit, "output_max": 65536},
+            "generation": {"max_new_tokens": 2048, "temperature": 1.5, "top_k": 200}}
+    monkeypatch.setattr(defaults, "profile_model_info", lambda *_: info)
+    monkeypatch.setattr(defaults, "get_local_hardware_info", lambda: {})
+    monkeypatch.setattr(defaults, "model_memory_budget", lambda _: model_limit)
+    monkeypatch.setattr(defaults, "profile_memory_bytes", lambda info, runtime, context, precision: context)
+    monkeypatch.setattr(defaults, "get_mlx_memory_companions", lambda _: [])
+    result = defaults.hardware_model_profile("mlx/model", "mlx", None, 32768)
+    assert result["context_size"] == model_limit
+    assert result["max_output_tokens"] == 65536
+    assert result["history_token_budget"] == model_limit - 65536 - 1024
+    assert result["temperature"] == 1.5
+    assert result["top_k"] == 200
+
+
+@pytest.mark.parametrize("context,expected_budget", [(2048, 512), (262144, 130560)])
+def test_missing_output_metadata_uses_context_budget_without_fixed_caps(monkeypatch, tmp_path, context, expected_budget):
+    info = {"path": tmp_path, "limits": {"context_min": min(4096, context), "context_max": context, "output_max": None}, "generation": {}}
+    monkeypatch.setattr(defaults, "profile_model_info", lambda *_: info)
+    monkeypatch.setattr(defaults, "get_local_hardware_info", lambda: {})
+    monkeypatch.setattr(defaults, "model_memory_budget", lambda _: 262144)
+    monkeypatch.setattr(defaults, "profile_memory_bytes", lambda info, runtime, context, precision: context)
+    monkeypatch.setattr(defaults, "get_mlx_memory_companions", lambda _: [])
+    result = defaults.hardware_model_profile("mlx/model", "mlx", None, 32768)
+    assert result["context_size"] == context
+    assert result["max_output_tokens"] == result["history_token_budget"] == expected_budget
+
+
+def test_memory_constrained_model_can_still_select_above_32k(recommendation, monkeypatch):
+    monkeypatch.setattr(defaults, "model_memory_budget", lambda _: 98304)
+    monkeypatch.setattr(defaults, "profile_memory_bytes", lambda info, runtime, context, precision: context)
+    result = defaults.hardware_model_profile("model.gguf", "gguf", None, 32768)
+    assert result["context_size"] == 98304
