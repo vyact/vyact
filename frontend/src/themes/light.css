@@ -66,11 +66,19 @@
   input,
   select,
   textarea,
+  label,
+  summary,
+  [tabindex],
   [role='button'],
   [role='option'],
   [role='tab'],
   [role='menuitem'],
-  [role='switch']
+  [role='switch'],
+  [role='checkbox'],
+  [role='radio'],
+  [role='treeitem'],
+  [role='menuitemcheckbox'],
+  [role='menuitemradio']
 ) {
   transition-property: color, border-color, box-shadow, opacity, transform !important;
   -webkit-tap-highlight-color: transparent;
