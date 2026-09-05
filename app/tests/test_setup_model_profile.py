@@ -340,7 +340,12 @@ async def test_read_marks_adjusted_saved_settings_for_application(monkeypatch):
     monkeypatch.setattr(setup, "get_gguf_reasoning_capabilities", Mock(return_value={}))
     monkeypatch.setattr(setup, "get_model_modalities", Mock(return_value=[]))
     monkeypatch.setattr(setup, "profile_memory_assessment", Mock(return_value={}))
+    monkeypatch.setattr(setup, "read_model_settings_metadata", AsyncMock(return_value={
+        "info": {"limits": {"context_min": 4096, "context_max": 32768}}, "reasoning": {}, "modalities": [],
+    }))
+    monkeypatch.setattr(setup, "get_settings_hardware_info", Mock(return_value={"gpus": []}))
     result = await setup.read_vyact_model_profile("owner/model.gguf", "gguf", None, 32768)
+    setup.profile_memory_assessment.assert_not_called()
     assert result["context_size"] == 4096
     assert result["max_output_tokens"] == 1
     assert result["requires_apply"] is True

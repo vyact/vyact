@@ -1,6 +1,8 @@
 """
 main.py – FastAPI 앱 생성 + 라우터 등록 + Lifespan
 """
+from services.hardware_info import get_settings_hardware_info
+
 import asyncio
 import os
 import signal
@@ -176,6 +178,7 @@ async def warmup_reranker_model() -> None:
 # ─────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    await asyncio.to_thread(get_settings_hardware_info)
     # `python -m uvicorn main:app --reload` 같은 CLI 실행 경로에서는
     # uvicorn.run(log_config=None)이 적용되는 __main__ 블록을 안 타기 때문에,
     # uvicorn이 자체 기본 LOGGING_CONFIG로 dictConfig()를 호출해버려서

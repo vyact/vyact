@@ -32,7 +32,8 @@ from logger import DebugLogSettings, ToolLogSettings, get_logger
 from services.installer import is_docker_available, Installer
 from services.llm.errors import is_insufficient_memory_message
 from services.es_native import is_native_supported
-from services.hardware_info import get_local_hardware_info, validate_gpu_split_percentages
+from services.model_settings_cache import read_model_settings_metadata
+from services.hardware_info import get_settings_hardware_info, get_local_hardware_info, validate_gpu_split_percentages
 from services.huggingface_models import (
     MODEL_SEARCH_RESULT_LIMIT, enrich_model_file_sizes, get_model_file_size,
     search_gguf_models, search_mlx_models,
@@ -1155,7 +1156,7 @@ async def read_vyact_model_profile(
         raise HTTPException(400, "mlx_unsupported_platform")
     try:
         profile = await _get_or_create_model_profile(
-            model_path, runtime, repository, recommended_context,
+            model_path, runtime, repository, recommended_context, persist=True,
         )
     except ValueError as error:
         raise HTTPException(404, "local_model_not_downloaded") from error
@@ -1167,32 +1168,27 @@ async def read_vyact_model_profile(
         }
     original_profile = profile
     try:
-        model_info = await asyncio.to_thread(profile_model_info, model_path, runtime)
+        downloaded_model_path = get_downloaded_mlx_model_path(model_path) if runtime == "mlx" else get_downloaded_model_path(model_path)
+        metadata = await read_model_settings_metadata(model_path, runtime, downloaded_model_path)
+        model_info = metadata["info"]
         profile = normalize_model_profile(profile, model_info["limits"])
         if runtime == "mlx":
             downloaded_model_path = get_downloaded_mlx_model_path(model_path)
             capabilities = await asyncio.to_thread(
                 get_mlx_runtime_capabilities, downloaded_model_path,
             )
-            capabilities["reasoning"] = await asyncio.to_thread(
-                get_mlx_reasoning_capabilities,
-                downloaded_model_path,
-            )
+            capabilities["reasoning"] = metadata["reasoning"]
         else:
             downloaded_model_path = get_downloaded_model_path(model_path)
-            hardware = get_local_hardware_info()
+            hardware = get_settings_hardware_info()
             profile = normalize_gpu_split_for_hardware(profile, hardware)
             capabilities = {
                 "performance_modes": ["auto", "memory", "performance"],
                 "cpu_threads": True,
                 "kv_cache_precisions": ["q8", "q4"],
                 "seed": True,
-                "reasoning": await asyncio.to_thread(
-                    get_gguf_reasoning_capabilities, downloaded_model_path,
-                ),
-                "modalities": await asyncio.to_thread(
-                    get_model_modalities, downloaded_model_path,
-                ),
+                "reasoning": metadata["reasoning"],
+                "modalities": metadata["modalities"],
                 "hardware": hardware,
             }
     except ValueError as error:
@@ -1206,7 +1202,8 @@ async def read_vyact_model_profile(
             "cpu_threads", "seed", "kv_cache_precision", "cache_quantization", "mtp_enabled",
             "gpu_split_percentages", "gpu_manual_split_enabled",
         )),
-        **await asyncio.to_thread(profile_memory_assessment, profile, model_info),
+        **(await asyncio.to_thread(profile_memory_assessment, profile, model_info)
+           if runtime == "gguf" and profile.get("gpu_manual_split_enabled") else {}),
         "capabilities": capabilities,
     }
 

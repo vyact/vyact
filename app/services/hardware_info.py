@@ -1,4 +1,6 @@
 """Cross-platform memory and accelerator discovery for local model guidance."""
+import copy
+from functools import lru_cache
 import ctypes
 import json
 import math
@@ -219,3 +221,13 @@ def validate_gpu_split_percentages(percentages: list[float], hardware: dict) -> 
         GPU_SPLIT_TOTAL_PERCENT - sum(values[:-1]), GPU_SPLIT_DECIMAL_PLACES,
     )
     return values
+
+
+@lru_cache(maxsize=1)
+def _settings_hardware_snapshot() -> dict:
+    return get_local_hardware_info()
+
+
+def get_settings_hardware_info() -> dict:
+    """Session snapshot for settings UI; runtime admission still uses live data."""
+    return copy.deepcopy(_settings_hardware_snapshot())
