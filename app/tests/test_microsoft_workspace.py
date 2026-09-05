@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, patch
 from urllib.parse import parse_qs, urlsplit
 from fastapi import HTTPException
 from starlette.datastructures import FormData
-from routers.microsoft_workspace import send_mail, bulk_mail, event_body, safe_filename, normalize_event, normalize_permission, normalize_file
+from routers.microsoft_workspace import drive_items_for_delete, send_mail, bulk_mail, event_body, safe_filename, normalize_event, normalize_permission, normalize_file, visible_drive_items
 from services.microsoft_workspace import auth, mail, tools
 
 
@@ -147,6 +147,35 @@ def test_drive_shared_facet_survives_normalization():
     assert normalize_file({"id": "shared", "shared": {"scope": "users"}})["shared"] is True
     assert normalize_file({"id": "shared-empty", "shared": {}})["shared"] is True
     assert normalize_file({"id": "private"})["shared"] is False
+
+
+def test_remote_drive_items_are_protected_but_local_special_folders_remain_deletable():
+    assert normalize_file({"id": "pictures", "folder": {}, "specialFolder": {"name": "photos"}})["capabilities"]["canDelete"] is True
+    assert normalize_file({"id": "vault-with-missing-facets", "name": "Personal Vault"})["capabilities"]["canDelete"] is False
+    remote_vault = normalize_file({"id": "vault", "remoteItem": {"folder": {"childCount": 0}}})
+    assert remote_vault["capabilities"]["canDelete"] is False
+    assert remote_vault["mimeType"] == "application/octet-stream"
+    assert normalize_file({"id": "regular-file", "file": {}})["capabilities"]["canDelete"] is True
+    assert normalize_file({"id": "regular-folder", "folder": {}})["capabilities"]["canDelete"] is True
+
+
+def test_remote_drive_items_are_hidden_from_drive_lists():
+    values = [
+        {"id": "vault", "remoteItem": {"folder": {}}},
+        {"id": "pictures", "folder": {}, "specialFolder": {"name": "photos"}},
+        {"id": "regular", "folder": {}},
+    ]
+    assert [item["id"] for item in visible_drive_items(values)] == ["pictures", "regular"]
+
+
+class MicrosoftDriveDeleteTests(unittest.IsolatedAsyncioTestCase):
+    async def test_bulk_delete_preflight_rejects_special_items(self):
+        graph = AsyncMock(side_effect=[{"id": "regular", "folder": {}}, {"id": "vault", "remoteItem": {"folder": {}}}])
+        with patch.object(auth, "graph", graph):
+            with self.assertRaises(HTTPException) as caught:
+                await drive_items_for_delete(["regular", "vault"], "account")
+        self.assertEqual(caught.exception.status_code, 403)
+        self.assertTrue(all(call.args[0].startswith("/me/drive/items/") for call in graph.await_args_list))
 
 
 class MicrosoftThrottleTests(unittest.IsolatedAsyncioTestCase):

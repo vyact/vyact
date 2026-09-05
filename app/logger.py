@@ -282,6 +282,11 @@ def setup_logging() -> None:
     ):
         logging.getLogger(name).setLevel(logging.ERROR)
 
+    # httpx는 성공한 모든 외부 요청을 INFO로 기록한다. 메일 알림처럼 짧은
+    # 주기로 실행되는 폴링이 URL과 함께 로그를 채우지 않도록 요청 로그만
+    # 숨기고, 각 서비스가 남기는 실패/재시도 경고는 그대로 유지한다.
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+
 
 def get_logger(name: str) -> logging.Logger:
     """모듈별 logger 반환."""

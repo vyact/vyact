@@ -50,6 +50,7 @@ export type DriveFile = {provider?: 'google' | 'microsoft'; accountId?: string;
     parentPath?: DriveFolder[];
     permissions?: DrivePermissionSummary[];
     shared?: boolean;
+    capabilities?: {canEdit?: boolean; canDelete?: boolean; canShare?: boolean};
 };
 
 type DrivePermissionSummary = {
@@ -73,6 +74,7 @@ const CHAT_ATTACHABLE_EXTENSIONS = new Set([...INDEXABLE_EXTENSIONS, '.zip']);
 const getFileExt = (name: string) => { const dot = name.lastIndexOf('.'); return dot > 0 ? name.slice(dot).toLowerCase() : ''; };
 const isIndexableFile = (name: string) => INDEXABLE_EXTENSIONS.has(getFileExt(name));
 const isChatAttachableFile = (name: string) => CHAT_ATTACHABLE_EXTENSIONS.has(getFileExt(name));
+const isDriveFileDeletable = (file?: DriveFile) => file ? file.capabilities?.canDelete !== false : false;
 const DRIVE_PAGE_SIZE = 50;
 
 const getDriveSharingStatus = (file: DriveFile) => {
@@ -555,6 +557,7 @@ export default function DrivePanel({initialFolder, onAttachToChat, onIndexDocume
     const isDefaultSort = sortKey === 'name' && sortDirection === 'asc';
 
     const toggleSelect = (id: string) => setSelectedIds(prev => {
+        if (!isDriveFileDeletable(files.find(file => file.id === id))) return prev;
         const next = new Set(prev);
         if (next.has(id)) {
             next.delete(id);
@@ -563,7 +566,10 @@ export default function DrivePanel({initialFolder, onAttachToChat, onIndexDocume
         }
         return next;
     });
-    const toggleSelectAll = () => setSelectedIds(prev => prev.size === files.length ? new Set() : new Set(files.map(f => f.id)));
+    const toggleSelectAll = () => setSelectedIds(prev => {
+        const deletableIds = files.filter(isDriveFileDeletable).map(file => file.id);
+        return prev.size === deletableIds.length ? new Set() : new Set(deletableIds);
+    });
     const bulkTrash = async () => {
         if (isBulkTrashing) return;
         setIsBulkTrashing(true);
@@ -691,7 +697,7 @@ export default function DrivePanel({initialFolder, onAttachToChat, onIndexDocume
             </div> : <div className="gwp-drive-table">
                 <div className="gwp-drive-thead">
                     <span className="gwp-drive-col-check">
-                        <input type="checkbox" checked={files.length > 0 && selectedIds.size === files.length}
+                        <input type="checkbox" checked={files.some(isDriveFileDeletable) && selectedIds.size === files.filter(isDriveFileDeletable).length}
                                onChange={toggleSelectAll}/>
                     </span>
                     {selectedIds.size > 0
@@ -742,7 +748,7 @@ export default function DrivePanel({initialFolder, onAttachToChat, onIndexDocume
                 <div className="gwp-drive-rows" onScroll={handleDriveRowsScroll}>{files.map(item => <div
                     className={`gwp-drive-row${selectedIds.has(item.id) ? ' gwp-drive-row--selected' : ''}`} key={item.id}>
                 <span className="gwp-drive-col-check">
-                    <input type="checkbox" checked={selectedIds.has(item.id)}
+                    <input type="checkbox" checked={selectedIds.has(item.id)} disabled={!isDriveFileDeletable(item)}
                            onChange={() => toggleSelect(item.id)} onClick={e => e.stopPropagation()}/>
                 </span>
                 <span className="gwp-drive-col-name">
@@ -831,8 +837,9 @@ export default function DrivePanel({initialFolder, onAttachToChat, onIndexDocume
                             <button onClick={() => driveShare(item)}><Link2 aria-hidden="true"
                                                                             size={16}/><span>{t('googleWorkspace.share')}</span>
                             </button>
-                            <button className="gwp-drive-context-danger" onClick={() => driveTrashStart(item)}><Trash2
+                            {isDriveFileDeletable(item) && <button className="gwp-drive-context-danger" onClick={() => driveTrashStart(item)}><Trash2
                                 aria-hidden="true" size={16}/><span>{t('googleWorkspace.moveToTrash')}</span></button>
+                            }
                         </div>}
                 </span>
                 </div>)}{isLoadingMore && <div className="gwp-drive-loading-more"><LoaderCircle aria-hidden="true"

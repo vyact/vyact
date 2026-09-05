@@ -26,6 +26,7 @@ router = APIRouter(prefix="/microsoft-workspace")
 MAX_MAIL_ATTACHMENT_BYTES = 25 * 1024 * 1024
 SMALL_ATTACHMENT_BYTES = 3_000_000
 ATTACHMENT_CHUNK_BYTES = 320 * 1024
+DRIVE_ITEM_FIELDS = "id,name,file,folder,package,remoteItem,size,lastModifiedDateTime,webUrl,parentReference,shared,specialFolder,root"
 _config_lock = asyncio.Lock()
 
 
@@ -349,35 +350,69 @@ def drive_path(file_id: str) -> str:
     return "/me/drive/root" if file_id == "root" else f"/me/drive/items/{mail.resource_id(file_id)}"
 
 
+def is_protected_drive_item(value: dict) -> bool:
+    """Return whether Graph exposes an item that must not be mutated as a normal drive item."""
+    has_local_item_facet = any(value.get(facet) is not None for facet in ("file", "folder", "package"))
+    return (
+        value.get("root") is not None
+        or value.get("remoteItem") is not None
+        or not has_local_item_facet
+    )
+
+
 def normalize_file(value: dict) -> dict:
-    return {"id": value["id"], "name": value.get("name", ""), "mimeType": "application/vnd.google-apps.folder" if "folder" in value else (value.get("file") or {}).get("mimeType", "application/octet-stream"),
+    is_protected = is_protected_drive_item(value)
+    remote_item = value.get("remoteItem") or {}
+    is_folder = value.get("folder") is not None
+    file_facet = value.get("file") or remote_item.get("file") or {}
+    return {"id": value["id"], "name": value.get("name", ""), "mimeType": "application/vnd.google-apps.folder" if is_folder else file_facet.get("mimeType", "application/octet-stream"),
             "shared": value.get("shared") is not None,
             "size": str(value.get("size", 0)), "modifiedTime": value.get("lastModifiedDateTime", ""), "webViewLink": value.get("webUrl", ""),
-            "parents": [(value.get("parentReference") or {}).get("id", "root")], "capabilities": {"canEdit": True, "canDelete": True, "canShare": True}}
+            "parents": [(value.get("parentReference") or {}).get("id", "root")],
+            "capabilities": {"canEdit": True, "canDelete": not is_protected, "canShare": True}}
+
+
+def visible_drive_items(values: list[dict]) -> list[dict]:
+    """Hide remote placeholders such as a locked Personal Vault from the local drive browser."""
+    return [value for value in values if value.get("remoteItem") is None]
+
+
+async def drive_items_for_delete(file_ids: list[str], account_id: str) -> list[dict]:
+    """Validate every item before mutating any of a bulk-delete request."""
+    unique_ids = list(dict.fromkeys(file_ids))
+    items = await asyncio.gather(*(
+        auth.graph(drive_path(file_id), params={"$select": DRIVE_ITEM_FIELDS}, account_id=account_id)
+        for file_id in unique_ids
+    ))
+    if any(is_protected_drive_item(item) for item in items):
+        raise HTTPException(403, "permission_denied")
+    return items
 
 
 @router.get("/drive/files")
 async def drive_files(folder_id: str = "root", query: str = "", page_token: str = "", order_by: str = "name", order_direction: str = "asc", account_id: str = ""):
     order = {"name": "name", "modifiedTime": "lastModifiedDateTime", "size": "size"}.get(order_by, "name")
-    params = {"$top": "50", "$orderby": f"{order} {'desc' if order_direction == 'desc' else 'asc'}"}
+    params = {"$top": "50", "$orderby": f"{order} {'desc' if order_direction == 'desc' else 'asc'}", "$select": DRIVE_ITEM_FIELDS}
     path = drive_path(folder_id) + "/children"
     if query:
         path = drive_path(folder_id) + "/search(q='" + quote(query.replace("'", "''"), safe="") + "')"
-        params = {"$top": "50"}
+        params = {"$top": "50", "$select": DRIVE_ITEM_FIELDS}
     if page_token:
         path, params = mail.page_path(page_token, "/"), None
     value = await auth.graph(path, params=params, account_id=account_id)
-    return {"files": [normalize_file(v) for v in value.get("value", [])], "nextPageToken": value.get("@odata.nextLink")}
+    return {"files": [normalize_file(v) for v in visible_drive_items(value.get("value", []))],
+            "nextPageToken": value.get("@odata.nextLink")}
 
 
 @router.get("/drive/folders")
 async def drive_folders(parent_id: str = "root", account_id: str = ""):
-    data = await auth.graph(drive_path(parent_id) + "/children", account_id=account_id, params={"$top": "200"})
+    data = await auth.graph(drive_path(parent_id) + "/children", account_id=account_id,
+                            params={"$top": "200", "$select": DRIVE_ITEM_FIELDS})
     values = data.get("value", [])
     while data.get("@odata.nextLink"):
         data = await auth.graph(mail.page_path(data["@odata.nextLink"], "/"), account_id=account_id)
         values.extend(data.get("value", []))
-    return {"folders": [normalize_file(v) for v in values if "folder" in v]}
+    return {"folders": [normalize_file(v) for v in visible_drive_items(values) if "folder" in v]}
 
 
 @router.post("/drive/folders")
@@ -388,6 +423,7 @@ async def create_drive_folder(request: Request, account_id: str = ""):
 
 @router.delete("/drive/files/{file_id}")
 async def delete_file(file_id: str, account_id: str = ""):
+    await drive_items_for_delete([file_id], account_id)
     await auth.graph(drive_path(file_id), "DELETE", account_id=account_id)
     return {"ok": True}
 
@@ -400,9 +436,11 @@ async def rename_file(file_id: str, request: Request, account_id: str = ""):
 
 @router.post("/drive/files/batch-trash")
 async def trash_files(request: Request, account_id: str = ""):
-    for file_id in (await request.json()).get("file_ids", []):
+    file_ids = list(dict.fromkeys((await request.json()).get("file_ids", [])))
+    await drive_items_for_delete(file_ids, account_id)
+    for file_id in file_ids:
         await auth.graph(drive_path(file_id), "DELETE", account_id=account_id)
-    return {"ok": True}
+    return {"ok": True, "trashed": len(file_ids)}
 
 
 @router.post("/drive/files/batch-move")

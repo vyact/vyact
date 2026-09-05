@@ -65,6 +65,12 @@ warnings.filterwarnings(
 )
 warnings.filterwarnings(
     "ignore",
+    message=r"`torch\.jit\.script` is deprecated\. Please switch to `torch\.compile` or `torch\.export`\.",
+    category=FutureWarning,
+    module=r"torch\.jit\._script",
+)
+warnings.filterwarnings(
+    "ignore",
     message=r"invalid escape sequence.*",
     category=SyntaxWarning,
 )
