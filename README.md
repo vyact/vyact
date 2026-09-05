@@ -14,7 +14,7 @@
   <a href="https://github.com/vyact/vyact/releases/latest"><img alt="Supported platforms: macOS, Windows, and Linux" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-475569.svg?style=flat-square"></a>
   [![Latest release](https://img.shields.io/github/v/release/vyact/vyact?style=flat-square&label=release)](https://github.com/vyact/vyact/releases/latest)
 
-  [Get started](#get-started) · [Workflows](#one-workspace-six-real-workflows) · [Features](#everything-you-need-to-stay-in-context) · [Support Vyact](#support-vyact) · [Contributing](CONTRIBUTING.md)
+  [Get started](#get-started) · [Workflows](#one-workspace-for-everyday-work) · [Features](#everything-you-need-to-stay-in-context) · [Support Vyact](#support-vyact) · [Contributing](CONTRIBUTING.md)
 </div>
 
 ---
@@ -34,7 +34,7 @@ Built around local LLMs through llama.cpp and MLX, Vyact helps you keep your con
 
 </div>
 
-## One workspace, six real workflows
+## One workspace for everyday work
 
 ### One workspace for AI chat, files, and Google Workspace
 
@@ -54,9 +54,23 @@ Search and compare local GGUF and MLX models without leaving Vyact. See detected
 
 #### How MLX acceleration works
 
-On Apple Silicon, Vyact runs both text and vision-capable MLX models through a single oMLX runtime. Prefix KV Memory Cache is enabled by default, keeping reusable prompt state in a 4 GB hot cache backed by up to 10 GB of paged SSD cache. Repeated system prompts and conversation prefixes can therefore skip work already completed by the model; a first request may report `cached_tokens: 0`, while a matching follow-up reports the number of prefix tokens actually reused.
+On Apple Silicon, Vyact runs both text and vision-capable MLX models through a single oMLX runtime. Prefix KV Memory Cache is enabled by default, keeping reusable prompt state in memory and a paged SSD cache, with cache limits selected for your system memory. Repeated system prompts and conversation prefixes can therefore skip work already completed by the model; a first request may report `cached_tokens: 0`, while a matching follow-up reports the number of prefix tokens actually reused.
 
-When a compatible External MTP companion is available for a newly downloaded model, Vyact downloads it with the target model, validates the pairing, and lets oMLX use MTP for faster decoding while Memory Cache remains enabled. Vyact reads External MTP capabilities from the installed oMLX runtime at app startup and refreshes them after a managed runtime update, so compatibility follows the engine version instead of a fixed model list. Vyact also discovers a sufficiently small MLX draft with the same model type and vocabulary, validates its tokenizer, and prepares it during download or before a regular model load. Speculative Prefill is then switched per request without reloading the model: inputs of 1,024 tokens or more enable it, and shorter inputs disable it. External MTP, Speculative Prefill, and DFlash are mutually exclusive acceleration paths; embedded native MTP is not enabled automatically.
+When a compatible External MTP companion is available for a newly downloaded model, Vyact downloads it with the target model, validates the pairing, and lets oMLX use MTP for faster decoding while Memory Cache remains enabled. Vyact reads External MTP capabilities from the installed oMLX runtime at app startup and refreshes them after a managed runtime update, so compatibility follows the engine version instead of a fixed model list. Speculative Prefill and embedded native MTP are disabled in the current integration. Compatible DFlash models use their dedicated acceleration path.
+
+### Compare model settings on your own hardware
+
+Open **Model settings > Performance test** to compare settings before choosing them. Preview the combinations and run all of them or select only the ones you want: performance mode, KV cache quantization, and supported MTP for GGUF, or supported MTP for MLX. Context, output limits, and sampling settings stay fixed across combinations.
+
+Each combination runs a short input, a long input, and a follow-up conversation. Compare time to first token, generation speed, total response time, reused prefix tokens, and actual input/output token counts in one view. Prefill time and speed are shown when the engine reports them separately; unavailable metrics stay marked as unavailable. Follow-up requests intentionally test conversation cache reuse.
+
+Completed results are sorted by a speed score combining time to first token and generation time normalized to 256 output tokens across the three workloads. The best tested combination is highlighted; this is a speed comparison, not a measure of answer quality or memory savings. Choose **Use these settings** to copy a result into the form, then **Apply** to activate the model with those settings.
+
+Measurements are saved as they finish. You can stop a test and keep completed measurements; Vyact restores the previous model and settings after completion, cancellation, or failure, and reports any restoration error. Starting another test replaces the previous results for that model.
+
+<p align="center">
+  <img src="assets/readme/feature-model-benchmark.png" alt="Vyact model performance test results ranked by speed, with a recommended configuration and per-workload timings and token counts" width="100%" />
+</p>
 
 ### Turn documents into a knowledge base
 
@@ -100,6 +114,7 @@ Learn from Netflix with dual subtitles, subtitle navigation, repeat playback, an
 | --- | --- | --- |
 | 💬 | AI chat with streaming responses | Keep conversations fast and useful, whether you use a local or hosted model. |
 | 📚 | File attachments, knowledge collections, and RAG | Group documents, memos, and indexed email threads into focused collections, then ask questions with the right context. |
+| ⚡ | Local model performance tests | Compare settings on your hardware, inspect timings and token counts, and apply the best tested configuration. |
 | 🔎 | Source-aware answers | Review the passages and documents that informed an answer. |
 | 📝 | Rich-text memos | Organize ideas and plans in structured notes that RAG can retrieve during a conversation. |
 | 🗂️ | Google Workspace integration | Connect multiple accounts, switch between them, and work with Gmail, Drive, and Calendar alongside your AI conversation. |
@@ -142,6 +157,7 @@ Learn from Netflix with dual subtitles, subtitle navigation, repeat playback, an
 | Build a personal work memory | Index frequently used documents and save decisions as memos; ask a normal question later and let RAG find the context. |
 | Plan a project without losing the thread | Create a project, add working instructions, keep discussions together, and export the conversation when you need a record. |
 | Practice a new language every day | Open voice chat, or learn from Netflix with dual subtitles and explanations focused on your selected weak areas. |
+| Compare local model settings | Open Model settings > Performance test, select combinations, compare results, then apply your preferred settings. |
 | Research while browsing | Send selected text or the current page from Chrome directly to Vyact and continue the conversation with page context. |
 
 ## Get started
