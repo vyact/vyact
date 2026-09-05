@@ -69,11 +69,20 @@ Apple Silicon では、テキストおよび画像対応 MLX モデルを単一�
 
 <p align="center"><img src="assets/readme/feature-memo.png" alt="Vyact リッチテキストメモ" width="100%" /></p>
 
-### 音声モードと語学学習
+### 音声モードで回答を聞く
 
-任意の自動読み上げで、生成済みの文を 1×〜2× の速度で聞けます。音声会話で対象言語を練習したり、Chrome 拡張機能で Netflix の二重字幕、字幕移動、リピート再生、自動停止、弱点に合わせた短い AI 解説を利用したりできます。外国語ページの翻訳や、現在のページ・選択テキストのチャット送信にも対応します。
+画面上の文字を読むのが難しい方や、耳で聞く方を好む方のために、自動読み上げを任意で有効にできます。回答の生成中に完了した文を読み上げ、速度は 1×〜2× で調整できます。設定は記憶され、回答の停止ボタンからいつでも読み上げを止められます。
+
+### 話しながら言語を学ぶ
+
+対象言語で自然な音声会話を練習できます。Vyact に話しかけて回答を聞き、単独のフレーズ暗記ではなく、実際の表現と反復会話で自信を身につけられます。
 
 <p align="center"><img src="assets/readme/feature-voice-chat.png" alt="Vyact 音声会話" width="100%" /></p>
+
+### Chrome 拡張機能で Netflix とあらゆるページから言語を学ぶ
+
+Netflix の二重字幕、字幕移動、リピート再生、自動停止を利用できます。苦手な言語領域を選ぶと、視聴中の字幕についてその弱点に焦点を当てた短い AI 解説が表示されます。外国語ページの翻訳や、現在のページ・選択テキストのチャット送信にも対応します。
+
 <p align="center"><img src="assets/readme/feature-plugin.png" alt="Vyact Chrome 拡張機能" width="100%" /></p>
 
 ### ページを離れず文章を改善
@@ -99,6 +108,24 @@ Chrome 拡張機能の **文章を改善** では、選択テキストや入力�
 | 🧩 | MCP ツール接続 | 普段使うツールを Vyact に接続できます。 |
 | 🌍 | 多言語 UI | 韓国語、英語、日本語、中国語、タイ語、ベトナム語、スペイン語、フランス語に対応します。 |
 
+### コンテキストを何度も作り直さずに作業する
+
+- **プロジェクトと会話履歴** — チャットをプロジェクト単位でまとめ、プロジェクト固有の作業指示を設定し、会話の名前変更・export を行い、再開時に同じスレッドへ戻れます。
+- **使い続けられるファイル** — 一度だけ添付することも、長期知識として索引化することもできます。文書、メモ、メールスレッドを知識コレクションにまとめ、RAG の対象を絞れます。
+- **チャットに埋もれないメモ** — rich text memo、簡単な todo、決定事項を整理し、後で RAG から利用できます。
+- **AI を自分で制御** — llama.cpp / MLX、OpenAI、Gemini、Claude、または OpenAI 互換 LLM を選び、context、output、sampling、embedding、chunking を調整できます。
+
+### 仕事を接続し、その場で操作する
+
+- **Gmail** — メールの検索・閲覧、label 操作、メールと添付の chat 追加、AI による返信作成、署名管理、送信に対応します。
+- **Google Drive** — 閲覧、検索、upload、download、rename、copy、share を行い、ファイルを会話や knowledge base に追加できます。
+- **Google Calendar** — 現在の作業から離れず event の表示、作成、更新、削除ができます。
+- **組み込み Google Workspace 接続** — **設定 > Google** で OAuth credentials JSON を upload し、複数アカウントを接続できます。外部 MCP server を介さず Google API を直接呼び出し、OAuth token は backup export に含まれません。
+- **Microsoft** — Outlook mail の閲覧、検索、作成、送信、folder 管理、OneDrive file / share、calendar event の表示・編集に対応します。
+- **組み込み Microsoft 接続** — **設定 > Microsoft** の guide に従い、Microsoft Entra で application を登録して Vyact 表示の mobile/desktop redirect URI と Application (client) ID を設定します。OAuth PKCE を使用するため client secret は不要です。組織の policy により administrator consent が必要な場合があります。
+- **共通アカウント切替** — Google アカウントは Microsoft より上に表示され、**G** / **M** で区別されます。macOS は **Cmd+Shift+G**、Windows/Linux は **Ctrl+Shift+G** で panel を開閉できます。
+- **MCP と再利用可能な skill** — **設定 > AI Tools** で filesystem、GitHub、custom MCP server を追加し、**設定 > Skills** で再利用可能な指示を管理できます。
+
 ### ワークスペースの所有権を保つ
 
 - **ローカルファースト** — llama.cpp、Apple Silicon の MLX、ローカル embedding を中心に設計されています。
@@ -107,6 +134,18 @@ Chrome 拡張機能の **文章を改善** では、選択テキストや入力�
 - **データ送信を把握** — メールやクラウドファイルを外部 AI provider の会話コンテキストに使うと、その内容が provider に送信される場合があります。Vyact 管理のローカルモデルでは外部 AI provider に送信されません。
 - **バックアップ** — 会話、文書、ファイル、メモ、prompt、設定、接続、project、語彙を export / restore できます。Google Drive / OneDrive にも保存できます。
 - **オープンソース** — AGPL-3.0 の下で公開されています。
+
+## 今日から始められること
+
+| やりたいこと | Vyact で試す方法 |
+| --- | --- |
+| レポートをすばやく理解する | PDF を添付し、簡潔な briefing を依頼して、取得された source を確認します。 |
+| 難しいメールに返信する | メールスレッドと Drive file を添付し、自分の文体で下書きを作り、Gmail / Outlook から送信します。 |
+| 個人用の仕事の記憶を作る | よく使う文書を索引化し、決定を memo に保存して、後から RAG で取得します。 |
+| 文脈を失わず project を計画する | project と作業指示を作成し、discussion をまとめ、必要に応じて会話を export します。 |
+| 毎日新しい言語を練習する | voice chat、または二重字幕と弱点別解説を備えた Netflix 学習を利用します。 |
+| ローカルモデル設定を比較する | モデル設定の performance test で組合せを比較し、好みの設定を適用します。 |
+| browsing 中に調査する | Chrome から選択テキストや現在の page を Vyact に送り、page context と共に会話します。 |
 
 ## はじめる
 
@@ -127,7 +166,19 @@ Ubuntu / Debian:
 sudo apt install ./vyact_*_amd64.deb
 ```
 
-Vyact は Python 3.12 を内蔵し、ローカルモデルランタイムを管理します。GGUF は llama.cpp / llama-swap、Apple Silicon の対応 MLX モデルは oMLX で動作します。macOS では Homebrew、Windows では `winget` が不足バイナリの自動導入に推奨されます。Linux パッケージには Ubuntu 22.04（glibc 2.35 以上）で構築した CPU runtime が含まれ、互換性のある既存の GPU 対応 runtime が優先されます。Elasticsearch は対応する native distribution を利用できるため Docker は必須ではありません。
+DEB のインストール後は application menu から **Vyact** を起動します。
+
+### 初回起動の前に
+
+Vyact は Python 3.12 を内蔵し、ローカルモデルランタイムを管理します。GGUF は llama.cpp / llama-swap、Apple Silicon の対応 MLX モデルは oMLX で動作します。
+
+| プラットフォーム | コアアプリの要件 | 機能別の要件 |
+| --- | --- | --- |
+| macOS (Apple Silicon) | なし | **ローカル GGUF**: 不足 binary の導入には [Homebrew](https://brew.sh/) 推奨、または互換 `llama-server` / `llama-swap`。<br><br>**ローカル MLX**: oMLX の自動導入・更新には Homebrew 推奨、または互換 `omlx`。<br><br>**Elasticsearch**: native mode は外部依存なし、container mode の Docker Desktop は任意。<br><br>**Kokoro TTS**: `espeak-ng` の導入が必要な場合のみ Homebrew が必要。 |
+| Windows | なし | **ローカル GGUF**: 不足 binary の導入には `winget` 推奨、または互換 `llama-server` / `llama-swap`。<br><br>**Elasticsearch**: native mode は外部依存なし、Docker Desktop は任意。<br><br>**Kokoro TTS**: `espeak-ng` の導入が必要な場合のみ `winget` が必要。 |
+| Linux (x64) | glibc 2.35+ の x86-64 desktop。DEB は宣言済み desktop library dependency を APT で導入します。 | **ローカル GGUF**: CPU runtime 同梱、Homebrew 不要。<br><br>**Elasticsearch**: native mode は外部依存なし、Docker は任意。<br><br>**Browser / Kokoro TTS**: library や `espeak-ng` が不足する場合、対応 package manager (`apt-get`, `dnf`, `zypper`, `pacman`) と PolicyKit authentication agent が必要です。Vyact は `pkexec` で認証を求め、利用できない場合は passwordless/cached `sudo` のみ試行します。 |
+
+macOS、Windows、Linux では対応する native Elasticsearch distribution を download / run できるため Docker は不要です。package manager は選択機能に必要な system binary がない場合の自動設定にのみ必要です。初回起動時、選択した構成に必要な component が準備されます。
 
 ### 最初の 5 分
 
@@ -139,7 +190,23 @@ Vyact は Python 3.12 を内蔵し、ローカルモデルランタイムを管�
 
 ### カスタム LLM provider
 
-OpenAI 互換 `/chat/completions` API に接続できます。接続名、`/chat/completions` を除いた Base URL、任意の API key、正確な Model ID、必要に応じた追加 header を設定してください。ストリーミング、tool calling、画像入力は接続先 server / model の機能に依存します。
+OpenAI 互換 `/chat/completions` API に接続できます。初期設定では **Custom LLM** を選び、インストール後は sidebar の provider controls から追加・編集します。
+
+- **接続名** — Vyact に表示する label。
+- **Base URL** — `/chat/completions` を除いた API root（例: `http://localhost:11434/v1`）。
+- **API key** — local server では任意、Bearer 認証を使う endpoint では必須。
+- **Model ID** — API が要求する正確な model identifier。
+- **追加 header** — gateway や組織固有の認証用 header。
+
+```text
+Connection name: Local LLM
+Base URL: http://localhost:8080/v1
+API key: (leave blank)
+Model ID: my-local-model
+Additional headers: (none)
+```
+
+custom 接続設定は backup / restore に含まれます。streaming、tool calling、画像入力は接続先 server / model の機能と OpenAI compatibility に依存します。
 
 ### Chrome 拡張機能
 
@@ -164,6 +231,12 @@ Vyact は独立して開発され、オープンソースとして公開され�
 
 コード、ドキュメント、翻訳、テスト、アイデア、バグ報告、ワークフローへのフィードバックを歓迎します。参加前に [CONTRIBUTING.md](CONTRIBUTING.md) をお読みください。セキュリティ上の脆弱性は公開 issue にせず、[セキュリティポリシー](SECURITY.md) に従ってください。
 
-## ライセンスと商標
+project role と公開意思決定については [GOVERNANCE.md](GOVERNANCE.md) を参照してください。discussion board、real-time chat、検索可能な support knowledge の計画は [community roadmap](COMMUNITY_ROADMAP.md) と [AWS infrastructure plan](docs/AWS_COMMUNITY_INFRASTRUCTURE.md) に記載されています。質問や設定支援は title の先頭に `[Question]` を付けて issue を作成してください。
 
-Vyact は [GNU Affero General Public License v3.0](LICENSE)（AGPL-3.0）で提供されます。変更版をネットワーク経由で提供する場合、対応するソースコードも同じライセンスで公開する必要があります。Vyact の名称、ロゴ、公式ビジュアルブランド資産は AGPL-3.0 の対象外です。fork や変更版では明確に異なる名称と visual identity を使用してください。詳細は [ブランドおよび商標ポリシー](TRADEMARKS.md) を参照してください。
+## ライセンス
+
+Vyact は [GNU Affero General Public License v3.0](LICENSE)（AGPL-3.0）で提供されます。変更版を web app や SaaS などネットワーク経由で提供する場合、対応する source code も同じ license で公開する必要があります。
+
+## ブランドと商標
+
+Vyact の名称、ロゴ、公式 visual brand asset は AGPL-3.0 の対象外です。公式 project を正確に参照することはできますが、fork や変更版では明確に異なる名称と visual identity を使用してください。[Vyact ブランドおよび商標ポリシー](TRADEMARKS.md) を参照してください。

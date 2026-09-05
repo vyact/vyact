@@ -69,11 +69,20 @@ Tạo ghi chú rich text với tiêu đề, trích dẫn, danh sách và code bl
 
 <p align="center"><img src="assets/readme/feature-memo.png" alt="Không gian ghi chú rich text của Vyact" width="100%" /></p>
 
-### Chế độ giọng nói và học ngôn ngữ
+### Nghe câu trả lời trong chế độ giọng nói
 
-Tùy chọn đọc tự động phát các câu đã hoàn tất với tốc độ điều chỉnh từ 1× đến 2×. Bạn có thể luyện ngôn ngữ bằng hội thoại giọng nói tự nhiên, hoặc dùng tiện ích Chrome để học với Netflix qua phụ đề song ngữ, điều hướng phụ đề, phát lặp, tự động tạm dừng và giải thích AI ngắn tập trung vào điểm yếu đã chọn. Tiện ích cũng có thể dịch trang và gửi trang hiện tại hoặc đoạn văn được chọn vào chat.
+Tùy chọn đọc tự động phát các câu đã hoàn tất trong lúc câu trả lời được tạo, với tốc độ từ 1× đến 2×. Trạng thái bật/tắt và tốc độ được ghi nhớ; bạn có thể dừng đọc bất cứ lúc nào bằng nút dừng của câu trả lời.
+
+### Học ngôn ngữ bằng cách nói
+
+Luyện tập bằng hội thoại giọng nói tự nhiên trong ngôn ngữ mục tiêu. Nói với Vyact, nghe câu trả lời và xây dựng sự tự tin bằng cách dùng biểu đạt thực tế và luyện hội thoại lặp lại.
 
 <p align="center"><img src="assets/readme/feature-voice-chat.png" alt="Hội thoại giọng nói Vyact" width="100%" /></p>
+
+### Học ngôn ngữ từ Netflix và mọi trang web bằng tiện ích Chrome
+
+Học với phụ đề song ngữ, điều hướng phụ đề, phát lặp và tự động tạm dừng. Chọn những điểm ngôn ngữ bạn thấy khó để nhận giải thích AI ngắn tập trung vào điểm yếu đó. Bạn cũng có thể dịch trang hoặc gửi trang hiện tại hay đoạn văn đã chọn vào chat.
+
 <p align="center"><img src="assets/readme/feature-plugin.png" alt="Tiện ích Chrome Vyact" width="100%" /></p>
 
 ### Cải thiện bài viết mà không rời trang
@@ -99,6 +108,23 @@ Dùng **Cải thiện bài viết** trong tiện ích Chrome để sửa ngữ p
 | 🧩 | Kết nối công cụ MCP | Kết nối các công cụ bạn dùng với Vyact. |
 | 🌍 | Giao diện đa ngôn ngữ | Có tiếng Hàn, Anh, Nhật, Trung, Thái, Việt, Tây Ban Nha và Pháp. |
 
+### Làm việc mà không phải dựng lại ngữ cảnh
+
+- **Project và lịch sử hội thoại** — Nhóm chat theo project, đặt chỉ dẫn riêng, đổi tên hoặc export và quay lại đúng thread khi tiếp tục.
+- **Tệp tiếp tục hữu ích** — Đính kèm một lần hoặc lập chỉ mục thành tri thức lâu dài. Nhóm tài liệu, ghi chú và email thành bộ sưu tập để thu hẹp RAG.
+- **Ghi chú không biến mất trong chat** — Lưu memo rich text, todo và quyết định để RAG dùng lại khi cần.
+- **Kiểm soát AI** — Chọn llama.cpp, MLX, OpenAI, Gemini, Claude hoặc LLM tương thích OpenAI; điều chỉnh context, output, sampling, embedding và chunking.
+
+### Kết nối công việc rồi hành động
+
+- **Gmail / Outlook** — Tìm, đọc, đính kèm thư và tệp, soạn trả lời bằng AI, quản lý chữ ký, thư mục và gửi thư.
+- **Google Drive / OneDrive** — Duyệt, tìm, upload, download, đổi tên, sao chép, chia sẻ và đính kèm tệp vào hội thoại hoặc cơ sở tri thức.
+- **Google Calendar / Microsoft Calendar** — Xem, tạo, cập nhật và xóa sự kiện.
+- **Kết nối Google tích hợp** — Trong **Cài đặt > Google**, tải OAuth credentials JSON lên và kết nối nhiều tài khoản. Vyact gọi trực tiếp Google API, không qua MCP server bên ngoài; OAuth token không có trong backup export.
+- **Kết nối Microsoft tích hợp** — Trong **Cài đặt > Microsoft**, đăng ký application trong Microsoft Entra, đặt mobile/desktop redirect URI do Vyact hiển thị và nhập Application (client) ID. Đăng nhập dùng OAuth PKCE nên không cần client secret; chính sách tổ chức có thể yêu cầu administrator consent.
+- **Một bộ chuyển tài khoản** — Google nằm trên Microsoft, đánh dấu **G** / **M**. Dùng **Cmd+Shift+G** trên macOS hoặc **Ctrl+Shift+G** trên Windows/Linux để mở hoặc đóng panel.
+- **MCP và skill tái sử dụng** — Thêm filesystem, GitHub hoặc custom MCP server trong **Cài đặt > AI Tools**; quản lý chỉ dẫn tái sử dụng trong **Cài đặt > Skills**.
+
 ### Giữ quyền sở hữu không gian làm việc
 
 - **Ưu tiên cục bộ** — Thiết kế xoay quanh llama.cpp, MLX trên Apple Silicon và embedding cục bộ.
@@ -107,6 +133,18 @@ Dùng **Cải thiện bài viết** trong tiện ích Chrome để sửa ngữ p
 - **Biết khi nào dữ liệu rời máy** — Nội dung email hoặc tệp đám mây dùng với nhà cung cấp AI bên ngoài có thể được gửi đến nhà cung cấp đó. Với mô hình cục bộ do Vyact quản lý, context chat không được gửi đến nhà cung cấp AI bên ngoài.
 - **Sao lưu dữ liệu quan trọng** — Export và restore hội thoại, tài liệu, tệp, ghi chú, prompt, cài đặt, kết nối, project và từ vựng; có thể lưu lên Google Drive / OneDrive.
 - **Mã nguồn mở** — Phát hành theo AGPL-3.0.
+
+## Một vài cách bắt đầu ngay hôm nay
+
+| Nếu bạn muốn… | Hãy thử cách này trong Vyact |
+| --- | --- |
+| Hiểu nhanh một báo cáo | Đính kèm PDF, yêu cầu briefing ngắn rồi mở các source được truy xuất để kiểm tra. |
+| Trả lời email khó | Đính kèm thread và tệp Drive, yêu cầu bản nháp theo giọng văn của bạn rồi sửa và gửi từ Gmail / Outlook. |
+| Xây dựng trí nhớ công việc cá nhân | Lập chỉ mục tài liệu thường dùng và lưu quyết định thành memo để RAG tìm lại sau. |
+| Lập kế hoạch project mà không mất mạch | Tạo project, thêm chỉ dẫn, giữ thảo luận cùng nhau và export khi cần bản ghi. |
+| Luyện ngôn ngữ mới mỗi ngày | Mở voice chat hoặc học từ Netflix với phụ đề song ngữ và giải thích theo điểm yếu. |
+| So sánh cài đặt mô hình cục bộ | Mở kiểm tra hiệu năng, chọn tổ hợp, so sánh rồi áp dụng cài đặt mong muốn. |
+| Nghiên cứu trong khi duyệt web | Gửi đoạn văn đã chọn hoặc trang hiện tại từ Chrome sang Vyact. |
 
 ## Bắt đầu
 
@@ -127,7 +165,19 @@ Ubuntu / Debian:
 sudo apt install ./vyact_*_amd64.deb
 ```
 
-Vyact tích hợp Python 3.12 và quản lý local model runtime. GGUF chạy qua llama.cpp / llama-swap; mô hình MLX tương thích trên Apple Silicon chạy qua oMLX. Homebrew trên macOS và `winget` trên Windows được khuyến nghị để tự động cài binary còn thiếu. Gói Linux gồm CPU runtime dựng trên Ubuntu 22.04 (glibc 2.35 trở lên) và ưu tiên runtime tương thích có sẵn, kể cả bản hỗ trợ GPU. Vyact có thể tải bản phân phối Elasticsearch native tương thích nên không bắt buộc dùng Docker.
+Sau khi cài gói DEB, mở **Vyact** từ menu ứng dụng.
+
+### Trước lần khởi chạy đầu tiên
+
+Vyact tích hợp Python 3.12 và quản lý local model runtime. GGUF chạy qua llama.cpp / llama-swap; MLX tương thích trên Apple Silicon chạy qua oMLX.
+
+| Nền tảng | Yêu cầu cho ứng dụng lõi | Yêu cầu theo tính năng |
+| --- | --- | --- |
+| macOS (Apple Silicon) | Không có | **Local GGUF**: khuyên dùng [Homebrew](https://brew.sh/) để cài binary còn thiếu, hoặc `llama-server` / `llama-swap` tương thích.<br><br>**Local MLX**: khuyên dùng Homebrew để cài/cập nhật oMLX, hoặc `omlx` tương thích.<br><br>**Elasticsearch**: native mode không có phụ thuộc ngoài; Docker Desktop tùy chọn cho container mode.<br><br>**Kokoro TTS**: chỉ cần Homebrew khi Vyact phải cài `espeak-ng`. |
+| Windows | Không có | **Local GGUF**: khuyên dùng `winget` để cài binary còn thiếu, hoặc `llama-server` / `llama-swap` tương thích.<br><br>**Elasticsearch**: native mode không có phụ thuộc ngoài; Docker Desktop tùy chọn.<br><br>**Kokoro TTS**: chỉ cần `winget` khi phải cài `espeak-ng`. |
+| Linux (x64) | Môi trường desktop x86-64 với glibc 2.35+; gói DEB cài các desktop-library dependency đã khai báo qua APT | **Local GGUF**: có sẵn CPU runtime, không cần Homebrew.<br><br>**Elasticsearch**: native mode không có phụ thuộc ngoài; Docker tùy chọn.<br><br>**Browser / Kokoro TTS**: khi thiếu library hoặc `espeak-ng`, cần package manager (`apt-get`, `dnf`, `zypper`, `pacman`) và PolicyKit authentication agent. Vyact xin quyền bằng `pkexec`; nếu không có, chỉ thử passwordless/cached `sudo`. |
+
+Trên macOS, Windows và Linux, Vyact có thể tải và chạy native Elasticsearch được hỗ trợ nên không bắt buộc Docker. Package manager chỉ cần khi tính năng đã chọn cần system binary chưa được cài. Trong lần chạy đầu, Vyact chuẩn bị các component theo cấu hình đã chọn.
 
 ### Năm phút đầu tiên
 
@@ -139,7 +189,23 @@ Vyact tích hợp Python 3.12 và quản lý local model runtime. GGUF chạy qu
 
 ### Kết nối nhà cung cấp LLM tùy chỉnh
 
-Vyact kết nối được với API triển khai `/chat/completions` tương thích OpenAI. Hãy cấu hình tên kết nối, Base URL không có `/chat/completions`, API key tùy chọn, Model ID chính xác và header bổ sung nếu cần. Streaming, tool calling và đầu vào hình ảnh phụ thuộc vào khả năng của server và model được kết nối.
+Vyact kết nối được với API triển khai `/chat/completions` tương thích OpenAI. Chọn **Custom LLM** trong thiết lập ban đầu hoặc thêm sau từ provider controls.
+
+- **Tên kết nối** — Nhãn hiển thị trong Vyact.
+- **Base URL** — API root không có `/chat/completions`, ví dụ `http://localhost:11434/v1`.
+- **API key** — Tùy chọn với local server; bắt buộc nếu endpoint dùng Bearer authentication.
+- **Model ID** — Model identifier chính xác mà API yêu cầu.
+- **Header bổ sung** — Dành cho gateway hoặc authentication riêng của tổ chức.
+
+```text
+Connection name: Local LLM
+Base URL: http://localhost:8080/v1
+API key: (leave blank)
+Model ID: my-local-model
+Additional headers: (none)
+```
+
+Cài đặt kết nối tùy chỉnh được đưa vào backup / restore. Streaming, tool calling và hình ảnh phụ thuộc khả năng cùng mức tương thích OpenAI của server / model.
 
 ### Dùng tiện ích Chrome
 
@@ -164,6 +230,12 @@ Vyact được phát triển độc lập và phát hành dưới dạng mã ngu
 
 Chúng tôi hoan nghênh mã nguồn, tài liệu, bản dịch, kiểm thử, ý tưởng, báo lỗi và phản hồi về quy trình. Vui lòng đọc [CONTRIBUTING.md](CONTRIBUTING.md) trước khi đóng góp. Với lỗ hổng bảo mật, đừng mở issue công khai; hãy làm theo [chính sách bảo mật](SECURITY.md).
 
-## Giấy phép và thương hiệu
+Vai trò project và việc ra quyết định công khai được mô tả trong [GOVERNANCE.md](GOVERNANCE.md). Kế hoạch discussion board, real-time chat và kho kiến thức hỗ trợ nằm trong [community roadmap](COMMUNITY_ROADMAP.md) cùng [AWS infrastructure plan](docs/AWS_COMMUNITY_INFRASTRUCTURE.md). Nếu cần trợ giúp, hãy mở issue với `[Question]` ở đầu tiêu đề.
 
-Vyact được cấp phép theo [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0). Nếu sửa đổi Vyact và cung cấp phiên bản đó cho người dùng qua mạng, bạn phải cung cấp mã nguồn tương ứng theo cùng giấy phép. Tên, logo và tài sản nhận diện chính thức của Vyact không thuộc giấy phép AGPL-3.0. Các fork và phiên bản sửa đổi phải dùng tên và nhận diện khác biệt rõ ràng. Xem [Chính sách thương hiệu và nhãn hiệu Vyact](TRADEMARKS.md).
+## Giấy phép
+
+Vyact được cấp phép theo [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0). Nếu sửa đổi và cung cấp phiên bản đó qua mạng, chẳng hạn dưới dạng web app hoặc SaaS, bạn phải cung cấp source code tương ứng theo cùng giấy phép.
+
+## Thương hiệu và nhãn hiệu
+
+Tên, logo và tài sản nhận diện chính thức của Vyact không thuộc AGPL-3.0. Bạn có thể nhắc đến project chính thức một cách chính xác, nhưng fork và bản sửa đổi phải dùng tên cùng nhận diện khác biệt rõ ràng. Xem [Chính sách thương hiệu và nhãn hiệu Vyact](TRADEMARKS.md).

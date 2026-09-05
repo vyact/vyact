@@ -69,11 +69,20 @@ Vyact สร้างขึ้นโดยมี local LLM ผ่าน llama.cp
 
 <p align="center"><img src="assets/readme/feature-memo.png" alt="พื้นที่โน้ต rich text ของ Vyact" width="100%" /></p>
 
-### โหมดเสียงและการเรียนภาษา
+### ฟังคำตอบในโหมดเสียง
 
-ฟังประโยคที่สร้างเสร็จด้วยการอ่านออกเสียงอัตโนมัติที่เปิดใช้ได้ตามต้องการ ปรับความเร็วได้ตั้งแต่ 1× ถึง 2× ฝึกภาษาด้วยบทสนทนาเสียงตามธรรมชาติ หรือใช้ส่วนขยาย Chrome เพื่อเรียนจาก Netflix ด้วยคำบรรยายสองภาษา การนำทางคำบรรยาย เล่นซ้ำ หยุดอัตโนมัติ และคำอธิบาย AI แบบสั้นที่เน้นจุดอ่อนของคุณ นอกจากนี้ยังแปลหน้าเว็บและส่งหน้าปัจจุบันหรือข้อความที่เลือกไปยังแชตได้
+เปิดการอ่านออกเสียงอัตโนมัติได้ตามต้องการ ระบบจะอ่านข้อความที่สร้างเสร็จด้วยความเร็ว 1×–2× จดจำค่าการเปิด/ปิดและความเร็ว และหยุดได้ทุกเมื่อจากปุ่มหยุดของคำตอบ
+
+### เรียนภาษาด้วยการพูด
+
+ฝึกภาษาที่ต้องการผ่านบทสนทนาเสียงตามธรรมชาติ พูดกับ Vyact ฟังคำตอบ และสร้างความมั่นใจด้วยสำนวนจริงและการฝึกสนทนาซ้ำ ๆ
 
 <p align="center"><img src="assets/readme/feature-voice-chat.png" alt="บทสนทนาเสียงของ Vyact" width="100%" /></p>
+
+### เรียนภาษาจาก Netflix และทุกหน้าเว็บด้วยส่วนขยาย Chrome
+
+ใช้คำบรรยายสองภาษา การนำทางคำบรรยาย เล่นซ้ำ หยุดอัตโนมัติ และคำอธิบาย AI แบบสั้นที่เน้นจุดอ่อนที่เลือกไว้ นอกจากนี้ยังแปลหน้าเว็บและส่งหน้าปัจจุบันหรือข้อความที่เลือกไปยังแชตได้
+
 <p align="center"><img src="assets/readme/feature-plugin.png" alt="ส่วนขยาย Chrome ของ Vyact" width="100%" /></p>
 
 ### ปรับปรุงงานเขียนโดยไม่ออกจากหน้าเว็บ
@@ -99,6 +108,23 @@ Vyact สร้างขึ้นโดยมี local LLM ผ่าน llama.cp
 | 🧩 | การเชื่อมต่อเครื่องมือ MCP | เชื่อมเครื่องมือที่คุณใช้กับ Vyact |
 | 🌍 | อินเทอร์เฟซหลายภาษา | รองรับเกาหลี อังกฤษ ญี่ปุ่น จีน ไทย เวียดนาม สเปน และฝรั่งเศส |
 
+### ทำงานโดยไม่ต้องสร้างบริบทใหม่ซ้ำ ๆ
+
+- **โปรเจกต์และประวัติการสนทนา** — จัดกลุ่มแชต กำหนดคำสั่งเฉพาะโปรเจกต์ เปลี่ยนชื่อหรือ export และกลับสู่เธรดเดิมได้
+- **ไฟล์ที่ใช้งานต่อได้** — แนบครั้งเดียวหรือทำดัชนีเป็นความรู้ระยะยาว จัดเอกสาร โน้ต และอีเมลเป็นคอลเลกชันความรู้เพื่อจำกัด RAG
+- **โน้ตที่ไม่หายไปในแชต** — เก็บโน้ต rich text, todo และการตัดสินใจให้ RAG เรียกใช้ภายหลัง
+- **ควบคุม AI** — เลือก llama.cpp, MLX, OpenAI, Gemini, Claude หรือ OpenAI-compatible LLM และปรับ context, output, sampling, embedding และ chunking
+
+### เชื่อมต่องานแล้วลงมือทำ
+
+- **Gmail / Outlook** — ค้นหา อ่าน แนบอีเมลและไฟล์ ร่างคำตอบ จัดการลายเซ็น โฟลเดอร์ และส่งอีเมล
+- **Google Drive / OneDrive** — เรียกดู ค้นหา upload, download, rename, copy, share และแนบไฟล์เข้าบทสนทนาหรือฐานความรู้
+- **Google Calendar / Microsoft Calendar** — ดู สร้าง แก้ไข และลบ event
+- **การเชื่อมต่อ Google ในตัว** — ที่ **การตั้งค่า > Google** ให้อัปโหลด OAuth credentials JSON และเชื่อมหลายบัญชี เรียก Google API โดยตรงโดยไม่มี MCP server ภายนอก และไม่รวม OAuth token ใน backup export
+- **การเชื่อมต่อ Microsoft ในตัว** — ที่ **การตั้งค่า > Microsoft** ให้ลงทะเบียน app ใน Microsoft Entra ตั้งค่า mobile/desktop redirect URI ที่ Vyact แสดง และใส่ Application (client) ID ระบบใช้ OAuth PKCE จึงไม่ต้องมี client secret ทั้งนี้นโยบายองค์กรอาจกำหนด administrator consent
+- **ตัวสลับบัญชีเดียว** — บัญชี Google แสดงเหนือ Microsoft พร้อมเครื่องหมาย **G** / **M** กด **Cmd+Shift+G** บน macOS หรือ **Ctrl+Shift+G** บน Windows/Linux เพื่อเปิดหรือปิด panel
+- **MCP และ skill ที่ใช้ซ้ำได้** — เพิ่ม filesystem, GitHub หรือ custom MCP server ใน **การตั้งค่า > AI Tools** และจัดการคำสั่งที่ใช้ซ้ำใน **การตั้งค่า > Skills**
+
 ### รักษาความเป็นเจ้าของพื้นที่ทำงานของคุณ
 
 - **Local-first** — ออกแบบโดยใช้ llama.cpp, MLX บน Apple Silicon และ embedding ภายในเครื่องเป็นหลัก
@@ -107,6 +133,18 @@ Vyact สร้างขึ้นโดยมี local LLM ผ่าน llama.cp
 - **รู้ว่าข้อมูลออกจากเครื่องเมื่อใด** — เนื้อหาอีเมลหรือไฟล์คลาวด์ที่ใช้กับผู้ให้บริการ AI ภายนอกอาจถูกส่งไปยังผู้ให้บริการนั้น แต่เมื่อใช้โมเดลในเครื่องที่ Vyact จัดการ context แชตจะไม่ถูกส่งไปยังผู้ให้บริการ AI ภายนอก
 - **สำรองข้อมูลสำคัญ** — export และ restore บทสนทนา เอกสาร ไฟล์ โน้ต prompt การตั้งค่า การเชื่อมต่อ project และคำศัพท์ รวมถึงบันทึกบน Google Drive / OneDrive
 - **โอเพนซอร์ส** — เผยแพร่ภายใต้ AGPL-3.0
+
+## วิธีเริ่มต้นวันนี้
+
+| หากคุณต้องการ… | ลองทำสิ่งนี้ใน Vyact |
+| --- | --- |
+| เข้าใจรายงานอย่างรวดเร็ว | แนบ PDF ขอ briefing แบบกระชับ แล้วตรวจสอบ source ที่ดึงมา |
+| ตอบอีเมลที่ยาก | แนบเธรดและไฟล์ Drive ขอร่างในสำนวนของคุณ แล้วแก้และส่งจาก Gmail / Outlook |
+| สร้างความจำส่วนตัวสำหรับงาน | ทำดัชนีเอกสารและบันทึกการตัดสินใจเป็นโน้ต เพื่อให้ RAG ค้นคืนภายหลัง |
+| วางแผนโปรเจกต์โดยไม่เสียบริบท | สร้างโปรเจกต์ เพิ่มคำสั่ง เก็บการสนทนาไว้ด้วยกัน และ export เมื่อจำเป็น |
+| ฝึกภาษาใหม่ทุกวัน | ใช้ voice chat หรือ Netflix พร้อมคำบรรยายสองภาษาและคำอธิบายจุดอ่อน |
+| เปรียบเทียบการตั้งค่าโมเดล | เปิดการทดสอบประสิทธิภาพ เปรียบเทียบชุดค่า และใช้ค่าที่ต้องการ |
+| ค้นคว้าระหว่างท่องเว็บ | ส่งข้อความที่เลือกหรือหน้าปัจจุบันจาก Chrome ไปยัง Vyact |
 
 ## เริ่มต้นใช้งาน
 
@@ -127,7 +165,19 @@ Ubuntu / Debian:
 sudo apt install ./vyact_*_amd64.deb
 ```
 
-Vyact มี Python 3.12 ในตัวและจัดการ local model runtime ให้ GGUF ทำงานผ่าน llama.cpp / llama-swap และโมเดล MLX ที่รองรับบน Apple Silicon ทำงานผ่าน oMLX แนะนำ Homebrew บน macOS และ `winget` บน Windows สำหรับติดตั้ง binary ที่ขาดโดยอัตโนมัติ แพ็กเกจ Linux มี CPU runtime ที่สร้างบน Ubuntu 22.04 (glibc 2.35 ขึ้นไป) และจะให้ความสำคัญกับ runtime ที่เข้ากันได้ซึ่งติดตั้งไว้อยู่แล้ว รวมถึงรุ่นที่ใช้ GPU Vyact ดาวน์โหลด Elasticsearch แบบ native ที่รองรับได้ จึงไม่จำเป็นต้องใช้ Docker
+หลังติดตั้ง DEB ให้เปิด **Vyact** จากเมนูแอปพลิเคชัน
+
+### ก่อนเปิดใช้งานครั้งแรก
+
+Vyact มี Python 3.12 ในตัวและจัดการ local model runtime ให้ GGUF ทำงานผ่าน llama.cpp / llama-swap และ MLX ที่รองรับบน Apple Silicon ทำงานผ่าน oMLX
+
+| แพลตฟอร์ม | สิ่งที่แอปหลักต้องใช้ | ข้อกำหนดตามคุณสมบัติ |
+| --- | --- | --- |
+| macOS (Apple Silicon) | ไม่มี | **Local GGUF**: แนะนำ [Homebrew](https://brew.sh/) เพื่อติดตั้ง binary ที่ขาด หรือใช้ `llama-server` / `llama-swap` ที่เข้ากันได้<br><br>**Local MLX**: แนะนำ Homebrew เพื่อติดตั้งหรืออัปเดต oMLX หรือใช้ `omlx` ที่เข้ากันได้<br><br>**Elasticsearch**: native mode ไม่พึ่งพาภายนอก; Docker Desktop เป็นตัวเลือกสำหรับ container mode<br><br>**Kokoro TTS**: ต้องใช้ Homebrew เฉพาะเมื่อจำเป็นต้องติดตั้ง `espeak-ng` |
+| Windows | ไม่มี | **Local GGUF**: แนะนำ `winget` เพื่อติดตั้ง binary ที่ขาด หรือใช้ `llama-server` / `llama-swap` ที่เข้ากันได้<br><br>**Elasticsearch**: native mode ไม่พึ่งพาภายนอก; Docker Desktop เป็นตัวเลือก<br><br>**Kokoro TTS**: ต้องใช้ `winget` เฉพาะเมื่อต้องติดตั้ง `espeak-ng` |
+| Linux (x64) | desktop x86-64 ที่ใช้ glibc 2.35+; DEB ติดตั้ง desktop library dependency ที่ประกาศไว้ผ่าน APT | **Local GGUF**: มี CPU runtime ให้ ไม่ต้องใช้ Homebrew<br><br>**Elasticsearch**: native mode ไม่พึ่งพาภายนอก; Docker เป็นตัวเลือก<br><br>**Browser / Kokoro TTS**: เมื่อขาด library หรือ `espeak-ng` ต้องมี package manager (`apt-get`, `dnf`, `zypper`, `pacman`) และ PolicyKit authentication agent Vyact ขอสิทธิ์ผ่าน `pkexec`; หากไม่มีจะลองเฉพาะ passwordless/cached `sudo` |
+
+บน macOS, Windows และ Linux Vyact ดาวน์โหลดและรัน native Elasticsearch ที่รองรับได้ จึงไม่จำเป็นต้องใช้ Docker package manager จำเป็นเฉพาะเมื่อคุณสมบัติที่เลือกต้องใช้ system binary ที่ยังไม่มี และการเปิดครั้งแรกจะเตรียม component ตาม configuration ที่เลือก
 
 ### ห้านาทีแรก
 
@@ -139,7 +189,23 @@ Vyact มี Python 3.12 ในตัวและจัดการ local model 
 
 ### เชื่อมต่อผู้ให้บริการ LLM แบบกำหนดเอง
 
-Vyact เชื่อมต่อ API ที่รองรับ OpenAI `/chat/completions` ได้ กำหนดชื่อการเชื่อมต่อ, Base URL ที่ไม่มี `/chat/completions`, API key แบบเลือกใช้, Model ID ที่ถูกต้อง และ header เพิ่มเติมหากจำเป็น ความสามารถ streaming, tool calling และภาพขึ้นอยู่กับ server และ model ที่เชื่อมต่อ
+Vyact เชื่อมต่อ API ที่รองรับ OpenAI `/chat/completions` ได้ เลือก **Custom LLM** ระหว่างตั้งค่าเริ่มต้น หรือเพิ่มภายหลังจาก provider controls
+
+- **ชื่อการเชื่อมต่อ** — ป้ายชื่อที่แสดงใน Vyact
+- **Base URL** — API root ที่ไม่มี `/chat/completions` เช่น `http://localhost:11434/v1`
+- **API key** — เลือกเว้นว่างได้สำหรับ local server; ต้องมีเมื่อ endpoint ใช้ Bearer authentication
+- **Model ID** — model identifier ที่ API ต้องการ
+- **Header เพิ่มเติม** — สำหรับ gateway หรือ authentication ขององค์กร
+
+```text
+Connection name: Local LLM
+Base URL: http://localhost:8080/v1
+API key: (leave blank)
+Model ID: my-local-model
+Additional headers: (none)
+```
+
+ค่าการเชื่อมต่อรวมอยู่ใน backup / restore ส่วน streaming, tool calling และภาพขึ้นอยู่กับความสามารถและ OpenAI compatibility ของ server / model
 
 ### ใช้ส่วนขยาย Chrome
 
@@ -164,6 +230,12 @@ Vyact พัฒนาอย่างอิสระและเผยแพร�
 
 เรายินดีรับโค้ด เอกสาร งานแปล การทดสอบ ไอเดีย รายงานบั๊ก และข้อเสนอแนะเกี่ยวกับขั้นตอนการทำงาน โปรดอ่าน [CONTRIBUTING.md](CONTRIBUTING.md) ก่อนร่วมพัฒนา สำหรับช่องโหว่ด้านความปลอดภัย โปรดอย่าเปิด issue สาธารณะ และให้ปฏิบัติตาม [นโยบายความปลอดภัย](SECURITY.md)
 
-## ใบอนุญาตและเครื่องหมายการค้า
+บทบาทของโปรเจกต์และการตัดสินใจสาธารณะอธิบายใน [GOVERNANCE.md](GOVERNANCE.md) แผน discussion board, real-time chat และฐานความรู้ support อยู่ใน [community roadmap](COMMUNITY_ROADMAP.md) และ [AWS infrastructure plan](docs/AWS_COMMUNITY_INFRASTRUCTURE.md) หากต้องการความช่วยเหลือ ให้เปิด issue โดยขึ้นต้นชื่อด้วย `[Question]`
 
-Vyact ใช้ [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0) หากแก้ไข Vyact และให้ผู้ใช้เข้าถึงรุ่นแก้ไขผ่านเครือข่าย คุณต้องเผยแพร่ source code ที่เกี่ยวข้องภายใต้ใบอนุญาตเดียวกัน ชื่อ โลโก้ และทรัพย์สินแบรนด์ทางภาพอย่างเป็นทางการของ Vyact ไม่ได้รวมอยู่ใน AGPL-3.0 fork และรุ่นแก้ไขต้องใช้ชื่อและอัตลักษณ์ทางภาพที่แตกต่างอย่างชัดเจน โปรดอ่าน [นโยบายแบรนด์และเครื่องหมายการค้า](TRADEMARKS.md)
+## ใบอนุญาต
+
+Vyact ใช้ [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0) หากแก้ไขและให้ผู้ใช้เข้าถึงรุ่นแก้ไขผ่านเครือข่าย เช่น web app หรือ SaaS ต้องเปิดเผย source code ที่เกี่ยวข้องภายใต้ใบอนุญาตเดียวกัน
+
+## แบรนด์และเครื่องหมายการค้า
+
+ชื่อ โลโก้ และทรัพย์สินภาพแบรนด์ทางการของ Vyact ไม่ได้อยู่ภายใต้ AGPL-3.0 คุณอ้างถึงโปรเจกต์ทางการอย่างถูกต้องได้ แต่ fork และรุ่นแก้ไขต้องใช้ชื่อและอัตลักษณ์ที่ต่างอย่างชัดเจน โปรดอ่าน [นโยบายแบรนด์และเครื่องหมายการค้า](TRADEMARKS.md)
