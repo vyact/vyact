@@ -1337,7 +1337,7 @@
     "description": "Compare modo, precisión KV y MTP compatible con el contexto actual. Recargar puede tardar.",
     "fixed": "Hilos CPU, reparto GPU, contexto y muestreo fijos. Texto sintético, sin evaluar calidad.",
     "restoreNotice": "Chat y cambios pausados durante la prueba. Al detener, se restaura el modelo original.",
-    "comparisonNotice": "Valores medianos. Prefill usa tiempos del servidor y tokens sin caché. Repita si cambia el entorno o ajustes.",
+    "comparisonNotice": "Prefill y generación usan mediciones del motor. Las métricas que no se proporcionan aparecen como no disponibles. Repita la prueba si cambia el entorno o los ajustes.",
     "mlxPrefill": "Este motor MLX no informa Prefill por separado. Se muestra no disponible, sin sustituirlo por el primer token.",
     "remaining": "Quedan unos {{minutes}} min · sin recargas ni verificaciones adicionales",
     "scoreNotice": "Cada combinación seleccionada prueba una entrada corta, una larga y una continuación una vez. La comparación usa el tiempo al primer token y la velocidad de generación, y solo se aplica a estas condiciones.",
@@ -1349,6 +1349,9 @@
     "method": "Método y ajustes fijos",
     "selectCases": "Seleccionar combinaciones (por defecto: todas)",
     "replaceWarning": "Al iniciar otra prueba se borran los resultados anteriores de este modelo. Las mediciones finalizadas se guardan inmediatamente y se conservan al detener la prueba.",
-    "caseProgress": "Combinaciones completadas: {{completed}}/{{total}}"
+    "caseProgress": "Combinaciones completadas: {{completed}}/{{total}}",
+    "comparisonFields": "Ajustes comparados: {{fields}}. Los demás permanecen fijos; recargar el modelo puede tardar.",
+    "currentOnly": "Solo hay una configuración disponible; se mide su rendimiento.",
+    "dflashNotice": "DFlash2 se aplica automáticamente a los modelos compatibles y se mantiene durante la prueba. No se compara activado y desactivado."
   }
 }

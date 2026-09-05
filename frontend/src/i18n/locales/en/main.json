@@ -1337,7 +1337,7 @@
     "description": "Compare performance mode, KV precision and supported MTP at the current context. Model reloads can take time.",
     "fixed": "CPU threads, GPU split, context and sampling stay fixed. Uses synthetic text; answer quality is not evaluated.",
     "restoreNotice": "Chat and setting changes pause during testing. Stopping ends the request and restores the original model.",
-    "comparisonNotice": "Values are medians. Prefill uses server timings and uncached processed tokens. Retest if your environment or settings changed.",
+    "comparisonNotice": "Prefill and generation rates use engine-reported measurements. Unavailable metrics are shown as unavailable. Retest after changing the environment or settings.",
     "mlxPrefill": "This MLX engine does not report a separate prefill duration. It is unavailable, rather than substituted with first-token time.",
     "remaining": "About {{minutes}} min of measurements left · excludes reloads and additional checks",
     "scoreNotice": "Each selected combination runs short input, long input and follow-up once. Comparison uses first-token time and generation rate and applies only to these test conditions.",
@@ -1349,6 +1349,9 @@
     "method": "Method and fixed settings",
     "selectCases": "Select test combinations (default: all)",
     "replaceWarning": "Starting a new test deletes previous results for this model. Finished measurements are saved immediately and retained if stopped.",
-    "caseProgress": "Combinations completed: {{completed}}/{{total}}"
+    "caseProgress": "Combinations completed: {{completed}}/{{total}}",
+    "comparisonFields": "Compared settings: {{fields}}. Other settings stay fixed; model reloading may take time.",
+    "currentOnly": "Only one configuration is available, so this measures its performance.",
+    "dflashNotice": "DFlash2 is applied automatically to compatible models and stays enabled during testing. On/off comparison is not performed."
   }
 }

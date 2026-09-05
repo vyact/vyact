@@ -1338,7 +1338,7 @@
     "description": "Comparez mode, précision KV et MTP pris en charge au contexte actuel. Le rechargement peut prendre du temps.",
     "fixed": "Threads CPU, répartition GPU, contexte et échantillonnage fixes. Texte synthétique, sans évaluation de qualité.",
     "restoreNotice": "Chat et réglages suspendus pendant le test. L’arrêt restaure le modèle initial.",
-    "comparisonNotice": "Valeurs médianes. Prefill utilise les temps serveur et les tokens hors cache. Relancez après changement d’environnement ou de réglages.",
+    "comparisonNotice": "Prefill et génération utilisent les mesures du moteur. Les métriques non fournies sont indiquées comme indisponibles. Relancez le test après un changement d’environnement ou de paramètres.",
     "mlxPrefill": "Ce moteur MLX ne fournit pas de durée Prefill distincte. Elle reste indisponible, sans utiliser le délai du premier token.",
     "remaining": "Environ {{minutes}} min restantes · hors rechargements et vérifications supplémentaires",
     "scoreNotice": "Chaque combinaison sélectionnée teste une entrée courte, une longue et une suite une fois. La comparaison utilise le délai du premier token et la vitesse de génération, uniquement dans ces conditions.",
@@ -1350,6 +1350,9 @@
     "method": "Méthode et réglages fixes",
     "selectCases": "Choisir les combinaisons (toutes par défaut)",
     "replaceWarning": "Démarrer un nouveau test supprime les anciens résultats de ce modèle. Les mesures terminées sont enregistrées immédiatement et conservées en cas d’arrêt.",
-    "caseProgress": "Combinaisons terminées : {{completed}}/{{total}}"
+    "caseProgress": "Combinaisons terminées : {{completed}}/{{total}}",
+    "comparisonFields": "Paramètres comparés : {{fields}}. Les autres restent fixes ; le rechargement peut prendre du temps.",
+    "currentOnly": "Une seule configuration est disponible ; ses performances sont mesurées.",
+    "dflashNotice": "DFlash2 est appliqué automatiquement aux modèles compatibles et reste actif pendant le test. Aucune comparaison activé/désactivé n’est effectuée."
   }
 }

@@ -1338,7 +1338,7 @@
     "description": "仅在当前上下文下比较性能模式、KV 精度和支持的 MTP。重新加载模型可能耗时。",
     "fixed": "CPU 线程、GPU 分配、上下文和采样保持不变。使用合成文本，不评估回答质量。",
     "restoreNotice": "测试期间暂停聊天和设置更改。停止后结束请求并恢复原模型。",
-    "comparisonNotice": "数值为中位数。Prefill 使用服务器实测时间和未缓存处理 token。环境或设置改变后请重新测试。",
+    "comparisonNotice": "Prefill和生成速度使用引擎报告的测量值。未提供的指标显示为无法测量。环境或设置变化后请重新测试。",
     "mlxPrefill": "当前 MLX 引擎不提供独立 Prefill 时间，因此显示无法测量，不以首 token 时间代替。",
     "remaining": "测量约剩 {{minutes}} 分钟 · 不含重载及追加验证",
     "scoreNotice": "每个选定组合分别测试一次短输入、长输入和后续对话。根据首个令牌时间和生成速度比较，结果仅适用于本次测试条件。",
@@ -1350,6 +1350,9 @@
     "method": "测量方法和固定设置",
     "selectCases": "选择测试组合（默认全部）",
     "replaceWarning": "开始新测试将删除此模型的旧结果。完成的测量会立即保存，停止后仍会保留。",
-    "caseProgress": "已完成组合：{{completed}}/{{total}}"
+    "caseProgress": "已完成组合：{{completed}}/{{total}}",
+    "comparisonFields": "比较项：{{fields}}。其他设置保持不变，重新加载模型可能需要时间。",
+    "currentOnly": "只有一种配置，因此测量该配置的性能。",
+    "dflashNotice": "DFlash2会自动应用于兼容模型，测试期间保持启用，不进行开关对比。"
   }
 }

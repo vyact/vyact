@@ -1338,7 +1338,7 @@
     "description": "So sánh chế độ, độ chính xác KV và MTP được hỗ trợ với ngữ cảnh hiện tại. Tải lại có thể mất thời gian.",
     "fixed": "Giữ nguyên luồng CPU, phân chia GPU, ngữ cảnh và lấy mẫu. Dùng văn bản tổng hợp, không đánh giá chất lượng.",
     "restoreNotice": "Tạm dừng chat và đổi cài đặt khi kiểm tra. Dừng sẽ kết thúc yêu cầu và khôi phục mô hình gốc.",
-    "comparisonNotice": "Giá trị là trung vị. Prefill dùng thời gian máy chủ và token chưa lưu đệm. Kiểm tra lại khi môi trường hay cài đặt đổi.",
+    "comparisonNotice": "Prefill và tốc độ sinh dùng số đo do bộ máy cung cấp. Chỉ số không được cung cấp hiển thị là không đo được. Hãy thử lại khi môi trường hoặc thiết lập thay đổi.",
     "mlxPrefill": "MLX hiện tại không báo thời gian Prefill riêng. Hiển thị không có dữ liệu thay vì dùng thời gian token đầu.",
     "remaining": "Còn khoảng {{minutes}} phút đo · chưa tính tải lại và kiểm tra thêm",
     "scoreNotice": "Mỗi tổ hợp được chọn chạy đầu vào ngắn, dài và hội thoại tiếp nối một lần. So sánh thời gian token đầu tiên và tốc độ sinh, chỉ áp dụng cho điều kiện thử nghiệm này.",
@@ -1350,6 +1350,9 @@
     "method": "Phương pháp và cài đặt cố định",
     "selectCases": "Chọn tổ hợp thử nghiệm (mặc định: tất cả)",
     "replaceWarning": "Bắt đầu thử nghiệm mới sẽ xóa kết quả cũ của mô hình này. Phép đo hoàn tất được lưu ngay và giữ lại khi dừng.",
-    "caseProgress": "Tổ hợp hoàn tất: {{completed}}/{{total}}"
+    "caseProgress": "Tổ hợp hoàn tất: {{completed}}/{{total}}",
+    "comparisonFields": "Thiết lập so sánh: {{fields}}. Các thiết lập khác giữ nguyên; tải lại mô hình có thể mất thời gian.",
+    "currentOnly": "Chỉ có một cấu hình, nên sẽ đo hiệu năng của cấu hình đó.",
+    "dflashNotice": "DFlash2 tự áp dụng cho mô hình tương thích và duy trì trong thử nghiệm. Không so sánh bật/tắt."
   }
 }

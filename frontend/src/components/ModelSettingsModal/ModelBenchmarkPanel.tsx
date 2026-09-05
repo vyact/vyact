@@ -5,8 +5,8 @@ import type {VyactModelProfile} from '../../services/api';
 import {benchmarkConditionsMatch, median, modelBenchmark, type BenchmarkJob, type BenchmarkState} from '../../services/modelBenchmark';
 import './ModelBenchmarkPanel.css';
 
-type Props = {canTestMtp: boolean; profile: VyactModelProfile; visible: boolean; disabled: boolean; validate: () => boolean; onBusy: (busy: boolean) => void; onSelect: (profile: VyactModelProfile) => void};
-export default function ModelBenchmarkPanel({canTestMtp, profile, visible, disabled, validate, onBusy, onSelect}: Props) {
+type Props = {dflashEnabled: boolean; canTestMtp: boolean; profile: VyactModelProfile; visible: boolean; disabled: boolean; validate: () => boolean; onBusy: (busy: boolean) => void; onSelect: (profile: VyactModelProfile) => void};
+export default function ModelBenchmarkPanel({dflashEnabled, canTestMtp, profile, visible, disabled, validate, onBusy, onSelect}: Props) {
     const {t} = useTranslation('main');
     const b = (key: string) => t(`modelBenchmark.${key}`);
     const pendingRef = useRef(false);
@@ -57,11 +57,15 @@ export default function ModelBenchmarkPanel({canTestMtp, profile, visible, disab
     };
     const shownJob = job;
     const conditionsChanged = Boolean(shownJob && (!benchmarkConditionsMatch(profile, shownJob.base_profile) || state?.stale));
+    const displayedCases = running && job?.selected_cases ? job.selected_cases : plan?.cases ?? [];
+    const comparisonFields = ([['performance_mode', 'performanceMode'], ['kv_cache_precision', 'kvCachePrecision'], ['mtp_enabled', 'mtpAcceleration']] as const)
+        .filter(([field]) => (profile.runtime === 'gguf' || field === 'mtp_enabled') && new Set(displayedCases.map(item => item.profile[field])).size > 1)
+        .map(([, label]) => t(`modelSettings.${label}`));
     const format = (value: number | null) => value === null ? b('unavailable') : value.toLocaleString(undefined, {maximumFractionDigits: 2});
     return <section className="model-benchmark" hidden={!visible} aria-label={b('title')}>
-        <p className="model-benchmark-description">{b('description')}</p>
+        <p className="model-benchmark-description">{comparisonFields.length ? t('modelBenchmark.comparisonFields', {fields: comparisonFields.join(' · ')}) : b('currentOnly')}</p>
         <details className="model-benchmark-method"><summary onMouseDown={event => event.preventDefault()}>{b('method')}</summary><p className="model-benchmark-description">{b('fixed')}</p>
-            {profile.runtime === 'mlx' && <p className="model-benchmark-description">{b('mlxPrefill')}</p>}
+            {dflashEnabled && <p className="model-benchmark-description">{b('dflashNotice')}</p>}
             <p className="model-benchmark-description">{b('comparisonNotice')}</p><p className="model-benchmark-description">{b('scoreNotice')}</p></details>
         <fieldset className="model-benchmark-plan" disabled={running || disabled}>
             <legend>{b('selectCases')} <span className="model-benchmark-selection-count">{running ? job?.cases_total ?? selected.length : selected.length}/{running ? job?.cases_total ?? selected.length : plan?.cases.length ?? 0}</span></legend>
@@ -92,7 +96,7 @@ export default function ModelBenchmarkPanel({canTestMtp, profile, visible, disab
         {!running && job && <p role="status">{b(job.status)} · {t('modelBenchmark.caseProgress', {completed: job.cases_completed ?? 0, total: job.cases_total ?? job.rows.length})}</p>}
         {shownJob && <>
             <p className="model-benchmark-description">{t('modelBenchmark.lastRun', {date: new Date(shownJob.created_at).toLocaleString()})}</p>
-            {profile.runtime === 'mlx' && <p className="model-benchmark-description">{b('mlxPrefill')}</p>}
+            <p className="model-benchmark-description">{b('comparisonNotice')}</p>
             {conditionsChanged && <p className="model-settings-error" role="status">{b('stale')}</p>}
             {shownJob.rows.map(row => <article className={`model-benchmark-card${shownJob.recommended === row.id ? ' is-recommended' : ''}`} key={row.id}>
                 <div className="model-benchmark-card-heading"><strong>{t('modelBenchmark.case', {number: row.id})}{shownJob.recommended === row.id && <span>{b('recommended')}</span>}</strong>
