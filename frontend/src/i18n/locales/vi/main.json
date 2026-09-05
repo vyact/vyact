@@ -501,6 +501,7 @@
     }
   },
   "modelSelector": {
+    "fileSizeColorGuide": "Màu so sánh kích thước tệp với bộ nhớ khuyến nghị: xanh lá đến 60%, cam đến 85%, đỏ trên 85%. Không thể hiện mức dùng bộ nhớ thực tế hay khả năng chạy mô hình.",
     "architecture": "Kiến trúc mô hình",
     "metadataUnavailable": "Không có thông tin",
     "modelFileSize": "Kích thước tệp mô hình",

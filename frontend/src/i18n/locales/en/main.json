@@ -501,6 +501,7 @@
     }
   },
   "modelSelector": {
+    "fileSizeColorGuide": "Card colors compare model file size with recommended memory: green up to 60%, orange up to 85%, red above 85%. They do not indicate actual runtime memory usage or whether the model will run.",
     "architecture": "Architecture",
     "metadataUnavailable": "Unavailable",
     "modelFileSize": "Model file size",

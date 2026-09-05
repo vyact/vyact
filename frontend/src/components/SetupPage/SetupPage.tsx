@@ -16,6 +16,7 @@ import type {GgufModelMetadata} from '../../utils/ggufMetadata';
 import {
     formatCompactDownloads,
     formatModelBytes,
+    getModelMemoryTone,
     getModelQuantization,
     getSelectableModelFiles,
 } from '../../utils/vyactModelDisplay';
@@ -508,7 +509,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
                                                 const supportsDFlash2 = model.dflash2_supported_files?.includes(file);
                                                 const displayName = model.runtime === 'mlx' ? model.id.split('/').pop() : file;
                                                 const quantization = getModelQuantization(model, file);
-                                                return <button className={`${selectedModel === modelPath ? 'is-selected ' : ''}`} key={file} type="button" onClick={event => { event.stopPropagation(); selectHubModelFile(model, file); }}><span className="vyact-model-file-name">{model.runtime === 'mlx' && <span className="vyact-mtp-badge">{t('main:modelSelector.mlxOnly')}</span>}{supportsMtp && <span className="vyact-mtp-badge">MTP</span>}{supportsDFlash2 && <span className="vyact-mtp-badge">DFlash2</span>}<span>{displayName}</span></span>{fileSize > 0 && <small className="vyact-model-file-meta">{t('main:modelSelector.modelFileSize')} · {formatModelBytes(fileSize)}{quantization && <span className="vyact-mtp-badge">{quantization}</span>}</small>}<span className="vyact-model-file-status">{selectedModel === modelPath && <Check size={15}/>}</span></button>;
+                                                return <button className={`${selectedModel === modelPath ? 'is-selected ' : ''}memory-${getModelMemoryTone(fileSize, vyactHardware)}`} key={file} type="button" onClick={event => { event.stopPropagation(); selectHubModelFile(model, file); }}><span className="vyact-model-file-name">{model.runtime === 'mlx' && <span className="vyact-mtp-badge">{t('main:modelSelector.mlxOnly')}</span>}{supportsMtp && <span className="vyact-mtp-badge">MTP</span>}{supportsDFlash2 && <span className="vyact-mtp-badge">DFlash2</span>}<span>{displayName}</span></span>{fileSize > 0 && <small className="vyact-model-file-meta">{t('main:modelSelector.modelFileSize')} · {formatModelBytes(fileSize)}{quantization && <span className="vyact-mtp-badge">{quantization}</span>}</small>}<span className="vyact-model-file-status">{selectedModel === modelPath && <Check size={15}/>}</span></button>;
                                             })}</div>
                                         </article>;
                                     })}

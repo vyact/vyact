@@ -501,6 +501,7 @@
     }
   },
   "modelSelector": {
+    "fileSizeColorGuide": "Les couleurs comparent la taille du fichier à la mémoire recommandée : vert jusqu’à 60 %, orange jusqu’à 85 %, rouge au-delà. Elles n’indiquent ni l’usage réel de mémoire ni si le modèle pourra fonctionner.",
     "architecture": "Architecture",
     "metadataUnavailable": "Indisponible",
     "modelFileSize": "Taille du fichier du modèle",

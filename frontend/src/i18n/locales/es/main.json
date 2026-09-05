@@ -501,6 +501,7 @@
     }
   },
   "modelSelector": {
+    "fileSizeColorGuide": "Los colores comparan el tamaño del archivo con la memoria recomendada: verde hasta el 60%, naranja hasta el 85% y rojo por encima del 85%. No indican el uso real de memoria ni si el modelo podrá ejecutarse.",
     "architecture": "Arquitectura",
     "metadataUnavailable": "Sin información",
     "modelFileSize": "Tamaño del archivo del modelo",

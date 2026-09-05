@@ -9,6 +9,7 @@ function MetalMemoryHelp() {
     const {t} = useTranslation('main');
     return <div className="vyact-metal-help">
         <p>{t('modelSelector.metalRecommendedMemoryHelp')}</p>
+        <p>{t('modelSelector.fileSizeColorGuide')}</p>
 
     </div>;
 }

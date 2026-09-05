@@ -501,6 +501,7 @@
     }
   },
   "modelSelector": {
+    "fileSizeColorGuide": "카드 색상은 모델 파일 크기를 권장 메모리와 비교한 참고 표시입니다. 초록은 60% 이하, 주황은 85% 이하, 빨강은 85% 초과입니다. 실제 실행 메모리 사용량이나 실행 가능 여부를 뜻하지 않습니다.",
     "architecture": "모델 구조",
     "metadataUnavailable": "정보 없음",
     "modelFileSize": "모델 파일 크기",

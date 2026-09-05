@@ -10,6 +10,7 @@ import {
     formatCompactDownloads,
     formatModelBytes,
     getModelPublisher,
+    getModelMemoryTone,
     getModelQuantization,
     getOptimizedModelContext,
     getSelectableModelFiles,
@@ -534,7 +535,7 @@ export default function VyactModelModal({onClose, onSelected, activeModelPath}: 
                                         const quantization = getModelQuantization(model, filename);
                                         const displayName = model.runtime === 'mlx' ? model.id.split('/').pop() || model.id : filename;
                                         return (
-                                            <button type="button" aria-pressed={isSelected} className={`${isSelected ? 'is-selected ' : ''}`} key={filename} onClick={() => void selectModelFile(model, filename, fileSize)} disabled={busy}>
+                                            <button type="button" aria-pressed={isSelected} className={`${isSelected ? 'is-selected ' : ''}memory-${getModelMemoryTone(fileSize, hardware)}`} key={filename} onClick={() => void selectModelFile(model, filename, fileSize)} disabled={busy}>
                                                 <span className="vyact-model-file-name">
                                                     {model.runtime === 'mlx' && <span className="vyact-mtp-badge">{t('modelSelector.mlxOnly')}</span>}
                                                     {supportsMtp && <span className="vyact-mtp-badge">MTP</span>}

@@ -501,6 +501,7 @@
     }
   },
   "modelSelector": {
+    "fileSizeColorGuide": "カードの色はモデルファイルサイズと推奨メモリの比較です。緑は60%以下、オレンジは85%以下、赤は85%超です。実際のメモリ使用量や動作可否を示すものではありません。",
     "architecture": "モデル構造",
     "metadataUnavailable": "情報なし",
     "modelFileSize": "モデルファイルサイズ",

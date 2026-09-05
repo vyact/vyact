@@ -501,6 +501,7 @@
     }
   },
   "modelSelector": {
+    "fileSizeColorGuide": "卡片颜色比较模型文件大小与建议内存：绿色不超过60%，橙色不超过85%，红色超过85%。这不表示实际运行内存用量或模型能否运行。",
     "architecture": "模型架构",
     "metadataUnavailable": "暂无信息",
     "modelFileSize": "模型文件大小",
