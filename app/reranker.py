@@ -1,10 +1,15 @@
 """
 reranker.py — BGE Reranker v2 m3 전역 로드 및 재정렬
-sentence-transformers 5.6.x 기준
+sentence-transformers 기반
 서버 시작 시 한 번만 로드, 이후 인터넷 없이 로컬 캐시 사용
 """
 import asyncio
 import time
+import gc
+
+import torch
+from huggingface_hub import try_to_load_from_cache
+from sentence_transformers import CrossEncoder
 from concurrent.futures import ThreadPoolExecutor
 from logger import get_logger
 
@@ -23,45 +28,47 @@ RERANKER_WARMUP_PASSAGES = (
 )
 
 
-def load_reranker(force_download: bool = False):
-    """서버 시작 시 호출 — 모델 로드 (블로킹)"""
+def _create_reranker(device: str, dtype: torch.dtype, force_download: bool):
+    options = dict(device=device, max_length=512, model_kwargs={"dtype": dtype})
+    cached = try_to_load_from_cache(MODEL_NAME, "config.json")
+    if isinstance(cached, str):
+        try:
+            model = CrossEncoder(MODEL_NAME, local_files_only=True, **options)
+            logger.info("[reranker] Loaded from local cache")
+            return model
+        except Exception:
+            if not force_download:
+                raise
+            logger.info("[reranker] Local cache load failed — retrying with download allowed")
+    return CrossEncoder(MODEL_NAME, local_files_only=False, **options)
+
+
+def _release_reranker():
     global _reranker
-    try:
-        from sentence_transformers import CrossEncoder
-        import torch
-        device = "mps" if torch.backends.mps.is_available() else "cpu"
-        logger.info("[reranker] Loading model: %s (device=%s)", MODEL_NAME, device)
-        # 캐시 확인 후 local_files_only로 로드 (HuggingFace 요청 차단)
-        import os
-        from huggingface_hub import try_to_load_from_cache
-        cached = try_to_load_from_cache(MODEL_NAME, "config.json")
-        if cached is not None:
-            try:
-                _reranker = CrossEncoder(
-                    MODEL_NAME,
-                    device=device,
-                    max_length=512,
-                    local_files_only=True,
-                )
-                logger.info("[reranker] Loaded from local cache")
-            except Exception:
-                if not force_download:
-                    raise
-                logger.info("[reranker] Local cache is incomplete — resuming download")
-                _reranker = None
-        if _reranker is None:
-            _reranker = CrossEncoder(
-                MODEL_NAME,
-                device=device,
-                max_length=512,
-                local_files_only=False,
-            )
-        logger.info("[reranker] Model loaded")
-        return True
-    except Exception as e:
-        logger.warning("[reranker] 모델 로딩 실패 (리랭킹 비활성화): %s", e)
-        _reranker = None
-        return False
+    _reranker = None
+    gc.collect()
+    if torch.backends.mps.is_available():
+        torch.mps.empty_cache()
+
+
+def load_reranker(force_download: bool = False, *, use_fp16: bool = True):
+    """Load cached weights; prefer FP16 on MPS with an FP32 retry."""
+    global _reranker
+    device = "mps" if torch.backends.mps.is_available() else "cpu"
+    dtypes = (torch.float16, torch.float32) if device == "mps" and use_fp16 else (torch.float32,)
+    for dtype in dtypes:
+        logger.info("[reranker] Loading model: %s (device=%s, dtype=%s)", MODEL_NAME, device, dtype)
+        try:
+            _reranker = _create_reranker(device, dtype, force_download)
+            logger.info("[reranker] Model loaded (device=%s, dtype=%s)", device, dtype)
+            return True
+        except Exception as error:
+            logger.warning("[reranker] Load failed (device=%s, dtype=%s): %s", device, dtype, error)
+        # Release failed-attempt resources after the exception traceback is cleared.
+        _release_reranker()
+        if dtype == torch.float16:
+            logger.warning("[reranker] Retrying load with FP32")
+    return False
 
 
 def is_available() -> bool:
@@ -87,8 +94,13 @@ def warmup_reranker() -> bool:
         )
         return True
     except Exception as error:
-        logger.warning("[reranker] Inference warm-up skipped: %s", error)
-        return False
+        logger.warning("[reranker] Inference warm-up failed: %s", error)
+    if next(_reranker.model.parameters()).dtype == torch.float16:
+        logger.warning("[reranker] Retrying warm-up with FP32")
+        _release_reranker()
+        if load_reranker(use_fp16=False):
+            return warmup_reranker()
+    return False
 
 
 def _rerank_sync(query: str, docs: list[dict], top_k: int) -> list[dict]:
