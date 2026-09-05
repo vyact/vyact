@@ -432,11 +432,13 @@
 }
 
 .settings-btn-export--drive {
-    background: var(--accent);
+    --cloud-backup-color: #62b5f6;
+    background: var(--cloud-backup-color);
+    color: #102536;
 }
 
 .settings-btn-export--drive:hover:not(:disabled) {
-    background: var(--button-primary-hover);
+    background: color-mix(in srgb, var(--cloud-backup-color) 88%, black);
     opacity: 1;
 }
 

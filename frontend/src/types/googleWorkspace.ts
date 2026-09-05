@@ -5,6 +5,7 @@ export type GoogleCalendarSelection = {
 };
 
 export type GoogleDriveSelection = {
+    provider?: 'google' | 'microsoft';
     folderId: string;
     folderName: string;
     accountId?: string;

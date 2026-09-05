@@ -76,8 +76,9 @@ export default function GoogleWorkspacePanel({provider = 'google', requestedAcco
             const status = await microsoftRequest('/status');
             const connected = status.accounts.filter(account => account.authenticated);
             setAccounts(connected.map(account => ({...account, mailMode: status.config.accounts.find(item => item.id === account.id)?.mail_mode || 'readonly'})));
-            setActiveAccountId(connected.some(account => account.id === status.config.active_account_id)
-                ? status.config.active_account_id : connected[0]?.id || '');
+            const preferredAccountId = requestedAccountId || status.config.active_account_id;
+            setActiveAccountId(connected.some(account => account.id === preferredAccountId)
+                ? preferredAccountId : connected[0]?.id || '');
             return;
         }
         const workspaceStatus = await (forceRefresh
@@ -215,7 +216,7 @@ export default function GoogleWorkspacePanel({provider = 'google', requestedAcco
         </header>
         <div key={activeAccountId} className="gwp-account-content">
         <Suspense fallback={null}>
-            {activeAccountId && (tab === 'mail' ? <MailPanel accountId={activeAccountId} selectedMessageId={selectedMessageId} onAttachFilesToChat={onAttachMailFilesToChat}/> : tab === 'drive' ? <DrivePanel key={selectedDriveFolder?.requestId ?? 'drive'} initialFolder={selectedDriveFolder ? {id: selectedDriveFolder.folderId, name: selectedDriveFolder.folderName} : undefined} onAttachToChat={onAttachDriveFileToChat} onIndexDocument={onIndexDriveDocument}/> : (
+            {activeAccountId && (!selectedDriveFolder?.accountId || selectedDriveFolder.accountId === activeAccountId) && (tab === 'mail' ? <MailPanel accountId={activeAccountId} selectedMessageId={selectedMessageId} onAttachFilesToChat={onAttachMailFilesToChat}/> : tab === 'drive' ? <DrivePanel key={selectedDriveFolder?.requestId ?? 'drive'} initialFolder={selectedDriveFolder ? {id: selectedDriveFolder.folderId, name: selectedDriveFolder.folderName} : undefined} onAttachToChat={onAttachDriveFileToChat} onIndexDocument={onIndexDriveDocument}/> : (
                 <CalendarPanel
                     selectedEvent={pendingCalendarEvent}
                     onSelectedEventHandled={requestId => {

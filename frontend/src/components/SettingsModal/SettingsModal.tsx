@@ -2,7 +2,7 @@ import {microsoftRequest} from '../../services/microsoftWorkspace';
 import MicrosoftWorkspaceSection from './MicrosoftWorkspaceSection';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {Server} from 'lucide-react';
+import {Cloud, Server} from 'lucide-react';
 import {api} from '../../services/api';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
 import {fetchTtsSettings, updateTtsCache, DEFAULT_TTS_SETTINGS, loadTtsSettings, TTS_SETTINGS_CHANGED, TTS_RATE_OPTIONS} from '../../services/tts/ttsSettings';
@@ -59,6 +59,8 @@ interface BackupPreview {
 }
 
 interface DriveExportResult {
+    provider: 'google' | 'microsoft';
+    service: string;
     fileName: string;
     folderId: string;
     accountId?: string;
@@ -250,6 +252,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
     const [previewLoading, setPreviewLoading] = useState(false);
     const [googleDriveAvailable, setGoogleDriveAvailable] = useState(false);
     const [exportingDrive, setExportingDrive] = useState(false);
+    const [backupServiceName, setBackupServiceName] = useState('Google Drive');
     const [driveBackupAccounts, setDriveBackupAccounts] = useState<Array<{id: string; email?: string; provider: 'google' | 'microsoft'; accountId: string}>>([]);
     const [activeDriveBackupAccountId, setActiveDriveBackupAccountId] = useState('');
     const [showDriveAccountSelection, setShowDriveAccountSelection] = useState(false);
@@ -559,6 +562,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
         if (!targetAccount) return;
         setShowDriveAccountSelection(false);
         setDriveExportResult(null);
+        const service = targetAccount.provider === 'microsoft' ? 'OneDrive' : 'Google Drive';
+        setBackupServiceName(service);
         setExportingDrive(true);
         try {
             const res = await fetch('/api/backup/export-to-drive', {
@@ -576,10 +581,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
             setDriveExportResult({
                 fileName: data.file_name,
                 folderId: data.folder_id,
-                accountId: targetAccountId || undefined,
+                accountId: targetAccount.accountId,
+                provider: targetAccount.provider,
+                service,
             });
         } catch (e) {
-            toast.error(t('backup.exportDriveFailed', {error: String(e)}), undefined, undefined, true);
+            toast.error(t('backup.exportDriveFailed', {error: String(e), service}), undefined, undefined, true);
         } finally {
             setExportingDrive(false);
         }
@@ -907,8 +914,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                     <div className="backup-progress-overlay" role="status" aria-live="polite" aria-busy="true">
                         <div className="backup-progress-card">
                             <span className="backup-progress-spinner" aria-hidden="true"/>
-                            <strong>{exportingDrive ? t('backup.exportingDrive') : t('backup.exporting')}</strong>
-                            <p>{exportingDrive ? t('backup.exportingDriveDetail') : t('backup.exportingLocalDetail')}</p>
+                            <strong>{exportingDrive ? t('backup.exportingDrive', {service: backupServiceName}) : t('backup.exporting')}</strong>
+                            <p>{exportingDrive ? t('backup.exportingDriveDetail', {service: backupServiceName}) : t('backup.exportingLocalDetail')}</p>
                             <div className="backup-progress-track" aria-hidden="true"><span/></div>
                         </div>
                     </div>
@@ -1047,7 +1054,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                     <div className="settings-drive-feedback settings-drive-feedback--success" role="status">
                                         <span className="settings-drive-feedback-icon" aria-hidden="true">✓</span>
                                         <span className="settings-drive-feedback-message">
-                                            {t('backup.exportDriveSuccess', {name: driveExportResult.fileName})}
+                                            {t('backup.exportDriveSuccess', {name: driveExportResult.fileName, service: driveExportResult.service})}
                                         </span>
                                         {driveExportResult.folderId && (
                                             <button
@@ -1056,6 +1063,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                                 onClick={() => {
                                                     window.dispatchEvent(new CustomEvent(OPEN_GOOGLE_DRIVE_EVENT, {
                                                         detail: {
+                                                            provider: driveExportResult.provider,
                                                             folderId: driveExportResult.folderId,
                                                             folderName: 'vyact',
                                                             accountId: driveExportResult.accountId,
@@ -1065,7 +1073,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                                     onClose();
                                                 }}
                                             >
-                                                {t('backup.openInDrive')}
+                                                {t('backup.openInDrive', {service: driveExportResult.service})}
                                             </button>
                                         )}
                                         <button
@@ -1092,13 +1100,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                             </button>
                                             <button className="settings-btn-export settings-btn-export--drive" onClick={() => void handleExportToDrive()}
                                                     disabled={isBackupExporting || statsLoading || !selectedIndices.length}>
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                                     stroke="currentColor" strokeWidth="2">
-                                                    <path d="M12 15V3m0 0l-4 4m4-4l4 4"/>
-                                                    <path d="M2 17l.621 2.485A2 2 0 0 0 4.561 21h14.878a2 2 0 0 0 1.94-1.515L22 17"/>
-                                                    <path d="M5 17h14"/>
-                                                </svg>
-                                                {exportingDrive ? t('backup.exportingDrive') : t('backup.exportDrive')}
+                                                <Cloud size={16} aria-hidden="true"/>
+                                                {exportingDrive ? t('backup.exportingDrive', {service: backupServiceName}) : t('backup.exportDrive')}
                                             </button>
                                         </>
                                     ) : (

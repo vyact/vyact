@@ -14,3 +14,10 @@
 .notification-center-item-content > span, .notification-center-item-content small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
 .notification-center-item-content > span { font-size: 13px; }
 .notification-center-item-content small { font-size: 11px; }
+
+.notification-center-provider {
+    display: inline-block;
+    margin-right: 6px;
+    color: #62b5f6;
+    font-weight: 800;
+}

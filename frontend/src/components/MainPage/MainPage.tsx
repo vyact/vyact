@@ -352,7 +352,9 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
         const openDriveFolder = (event: Event) => {
             const selection = (event as CustomEvent<GoogleDriveSelection>).detail;
             if (!selection?.folderId) return;
-            setWorkspaceProvider('google');
+            setWorkspaceProvider(selection.provider || 'google');
+            setWorkspaceAccountId(selection.accountId || '');
+            setWorkspaceRequestId(requestId => requestId + 1);
             setSelectedGoogleMailId(null);
             setSelectedGoogleCalendarEvent(null);
             setSelectedGoogleDriveFolder(selection);

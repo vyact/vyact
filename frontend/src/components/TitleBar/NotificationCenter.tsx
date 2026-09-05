@@ -60,7 +60,7 @@ function persistKnownNotificationIds(ids: string[]): void {
 
 function NotificationTypeIcon({type}: {type: string}) {
     const Icon = (type === 'google_mail' || type === 'microsoft_mail') ? Mail
-        : type === 'google_calendar' ? CalendarDays
+        : (type === 'google_calendar' || type === 'microsoft_calendar') ? CalendarDays
         : type === 'document' || type === 'file' ? FileText
             : type === 'success' || type === 'task_complete' ? CheckCircle2
                 : type === 'warning' || type === 'error' ? TriangleAlert
@@ -331,12 +331,19 @@ export default function NotificationCenter({open, onOpenChange}: NotificationCen
                 {!items.length && !loading && <p>{t('notificationCenter.empty')}</p>}
                 {items.map(item => {
                     const localizedItem = localizeNotification(item, i18n.language);
+                    const provider = item.type === 'google_mail' || item.type === 'google_calendar'
+                        ? 'google'
+                        : item.type === 'microsoft_mail' || item.type === 'microsoft_calendar'
+                            ? 'microsoft' : null;
                     return <button key={item.id}
                     className={`notification-center-item${item.is_read ? '' : ' unread'}`}
                     onClick={() => void selectNotification(item)}>
                     <span className="notification-center-item-icon"><NotificationTypeIcon type={item.type}/></span>
                     <span className="notification-center-item-content">
-                        <strong>{item.account_email ? `[${item.account_email.split('@')[0]}] ` : ''}{localizedItem.title}</strong>
+                        <strong>{provider && <span
+                            className="notification-center-provider"
+                            aria-label={t(provider === 'google' ? 'settings:tabs.google' : 'settings:microsoft.title')}
+                        >{provider === 'google' ? 'G' : 'M'}</span>}{item.account_email ? `[${item.account_email.split('@')[0]}] ` : ''}{localizedItem.title}</strong>
                         <span>{localizedItem.message}</span>
                         <small>{formatNotificationDate(
                             item.type === 'product_release' ? item.created_at : item.occurred_at || item.created_at,
