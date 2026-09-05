@@ -235,6 +235,7 @@
     "shareTitle": "Share “{{name}}”",
     "shareDescription": "Add people or manage link access.",
     "emailPlaceholder": "Enter an email address",
+    "microsoftAccountInviteHelp": "Personal OneDrive can invite only email addresses registered to a Microsoft account. Addresses from other domains, such as Gmail, also work if registered with Microsoft.",
     "viewer": "Viewer",
     "editor": "Editor",
     "owner": "Owner",

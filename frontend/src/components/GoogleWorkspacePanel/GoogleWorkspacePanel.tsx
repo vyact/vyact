@@ -200,6 +200,11 @@ export default function GoogleWorkspacePanel({provider = 'google', requestedAcco
         try { localStorage.removeItem(PANEL_WIDTH_STORAGE_KEY); } catch { /* ignore */ }
     }, []);
 
+    const openDriveRoot = () => {
+        setDismissedDriveRequestId(selectedDriveFolder?.requestId ?? null);
+        setTab('drive');
+    };
+
     return <WorkspaceContext.Provider value={{api, provider, accountId: activeAccountId, mailMode: accounts.find(account => account.id === activeAccountId)?.mailMode || (provider === 'google' ? 'send' : 'readonly')}}><aside className={`google-workspace-panel${embedded ? ' google-workspace-panel--embedded' : ''}`} style={embedded ? style : {width: panelWidth}}>
         {!embedded && <PanelResizer className="gwp-panel-resizer" onWidthChange={resizePanel} getWidth={event => window.innerWidth - event.clientX} onReset={resetPanelWidth} title={t('googleWorkspace.resizePanel')}/>}
         <header className="gwp-header">
@@ -220,7 +225,7 @@ export default function GoogleWorkspacePanel({provider = 'google', requestedAcco
             </div>}
             <div className="gwp-tabs">
                 <button className={tab === 'mail' ? 'active' : ''} onClick={() => setTab('mail')}>{t('googleWorkspace.mail')}</button>
-                <button className={tab === 'drive' ? 'active' : ''} onClick={() => setTab('drive')}>{provider === 'microsoft' ? t('settings:microsoft.drive') : t('googleWorkspace.drive')}</button>
+                <button className={tab === 'drive' ? 'active' : ''} onClick={openDriveRoot}>{provider === 'microsoft' ? t('settings:microsoft.drive') : t('googleWorkspace.drive')}</button>
                 <button className={tab === 'calendar' ? 'active' : ''} onClick={() => setTab('calendar')}>{t('googleWorkspace.calendar.title')}</button>
             </div>
             <button className="gwp-header-close" aria-label={t(provider === 'microsoft' ? 'settings:microsoft.closePanel' : 'googleWorkspace.closePanel')} onClick={onClose}>

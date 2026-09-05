@@ -9,6 +9,7 @@
     "deleteFolderDescription": "โฟลเดอร์และเนื้อหาภายในจะถูกลบ",
     "unknownShareUser": "ไม่มีข้อมูลผู้ใช้",
     "inviteNotificationFailed": "การตอบกลับคำเชิญมีข้อผิดพลาด จึงยืนยันการส่งอีเมลไม่ได้ โปรดตรวจสอบสิทธิ์แล้วลองอีกครั้งใน OneDrive",
+    "inviteRecipientRejected": "Microsoft ปฏิเสธคำเชิญสำหรับอีเมลนี้ โปรดตรวจสอบว่าอีเมลดังกล่าวลงทะเบียนกับบัญชี Microsoft แล้ว",
     "inviteVerification": "Microsoft ต้องการให้ยืนยันบัญชีก่อนส่งอีเมลเชิญ โปรดยืนยันบัญชีใน OneDrive บนเว็บแล้วเชิญอีกครั้ง",
 
     "closePanel": "ปิดแผง Microsoft",

@@ -9,6 +9,7 @@
     "deleteFolderDescription": "Le dossier et son contenu seront supprimés.",
     "unknownShareUser": "Informations utilisateur indisponibles",
     "inviteNotificationFailed": "La réponse à l’invitation contient une erreur. L’envoi du courriel n’a pas pu être confirmé. Vérifiez les autorisations et réessayez dans OneDrive.",
+    "inviteRecipientRejected": "Microsoft a refusé l’invitation pour cette adresse. Vérifiez qu’elle est enregistrée auprès d’un compte Microsoft.",
     "inviteVerification": "Microsoft exige une vérification du compte avant l’envoi des invitations. Effectuez-la dans OneDrive sur le Web, puis réinvitez.",
 
     "closePanel": "Fermer le panneau Microsoft",

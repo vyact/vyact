@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, patch
 from urllib.parse import parse_qs, urlsplit
 from fastapi import HTTPException
 from starlette.datastructures import FormData
-from routers.microsoft_workspace import drive_items_for_delete, send_mail, bulk_mail, event_body, safe_filename, normalize_event, normalize_permission, normalize_file, visible_drive_items
+from routers.microsoft_workspace import drive_items_for_delete, send_mail, bulk_mail, event_body, safe_filename, normalize_event, normalize_permission, normalize_file, visible_drive_items, invite
 from services.microsoft_workspace import auth, mail, tools
 
 
@@ -176,6 +176,26 @@ class MicrosoftDriveDeleteTests(unittest.IsolatedAsyncioTestCase):
                 await drive_items_for_delete(["regular", "vault"], "account")
         self.assertEqual(caught.exception.status_code, 403)
         self.assertTrue(all(call.args[0].startswith("/me/drive/items/") for call in graph.await_args_list))
+
+
+class MicrosoftDriveInviteTests(unittest.IsolatedAsyncioTestCase):
+    async def test_recipient_error_is_returned_as_invite_failure(self):
+        request = AsyncMock()
+        request.json.return_value = {"email": "guest@example.com", "role": "reader"}
+        graph_result = {"value": [{"error": {"code": "invalidRequest", "message": "Recipient rejected"}}]}
+        with patch.object(auth, "graph", AsyncMock(return_value=graph_result)):
+            result = await invite("file", request, "account")
+        self.assertTrue(result["inviteFailed"])
+        self.assertEqual(result["failureReason"], "recipient_rejected")
+
+    async def test_verification_error_has_specific_failure_reason(self):
+        request = AsyncMock()
+        request.json.return_value = {"email": "guest@example.com", "role": "reader"}
+        graph_result = {"value": [{"error": {"code": "invalidRequest", "innerError": {"code": "accountVerificationRequired"}}}]}
+        with patch.object(auth, "graph", AsyncMock(return_value=graph_result)):
+            result = await invite("file", request, "account")
+        self.assertTrue(result["inviteFailed"])
+        self.assertEqual(result["failureReason"], "verification_required")
 
 
 class MicrosoftThrottleTests(unittest.IsolatedAsyncioTestCase):

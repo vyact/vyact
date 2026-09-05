@@ -198,6 +198,7 @@
     "shareTitle": "Chia sẻ “{{name}}”",
     "shareDescription": "Thêm người hoặc quản lý quyền truy cập liên kết.",
     "emailPlaceholder": "Nhập địa chỉ email",
+    "microsoftAccountInviteHelp": "OneDrive cá nhân chỉ có thể mời địa chỉ email đã đăng ký với tài khoản Microsoft. Địa chỉ thuộc miền khác, chẳng hạn như Gmail, vẫn dùng được nếu đã đăng ký với Microsoft.",
     "viewer": "Người xem",
     "editor": "Người chỉnh sửa",
     "owner": "Chủ sở hữu",

@@ -198,6 +198,7 @@
     "shareTitle": "แชร์ “{{name}}”",
     "shareDescription": "เพิ่มผู้ใช้หรือจัดการการเข้าถึงผ่านลิงก์",
     "emailPlaceholder": "ป้อนอีเมล",
+    "microsoftAccountInviteHelp": "OneDrive ส่วนบุคคลเชิญได้เฉพาะอีเมลที่ลงทะเบียนกับบัญชี Microsoft เท่านั้น อีเมลจากโดเมนอื่น เช่น Gmail ก็ใช้ได้หากลงทะเบียนกับ Microsoft แล้ว",
     "viewer": "ผู้ดู",
     "editor": "ผู้แก้ไข",
     "owner": "เจ้าของ",

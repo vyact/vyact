@@ -9,6 +9,7 @@
     "deleteFolderDescription": "フォルダーとその内容が削除されます。",
     "unknownShareUser": "ユーザー情報なし",
     "inviteNotificationFailed": "共有招待の応答にエラーがあります。招待メールの送信を確認できません。権限を確認し、OneDriveで再試行してください。",
+    "inviteRecipientRejected": "Microsoft がこのメールアドレスへの招待を拒否しました。このアドレスが Microsoft アカウントに登録されていることを確認してください。",
     "inviteVerification": "Microsoftが招待メール送信前のアカウント確認を要求しています。OneDriveのWeb版で確認後、再度招待してください。",
 
     "closePanel": "Microsoftパネルを閉じる",

@@ -198,6 +198,7 @@
     "shareTitle": "共享“{{name}}”",
     "shareDescription": "添加用户或管理链接访问权限。",
     "emailPlaceholder": "输入电子邮件地址",
+    "microsoftAccountInviteHelp": "个人 OneDrive 只能邀请已注册 Microsoft 帐户的电子邮件地址。Gmail 等其他域名的邮箱只要已在 Microsoft 注册也可以使用。",
     "viewer": "查看者",
     "editor": "编辑者",
     "owner": "所有者",

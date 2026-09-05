@@ -557,6 +557,7 @@
 .gwp-drive-invite-role-select .custom-select-dropdown { min-width: 140px; }
 .gwp-drive-invite-role-select .custom-select-item { padding: 10px 12px; font-size: 13px; }
 .gwp-drive-invite > button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 64px; padding: 7px 12px; border: 0; border-radius: 7px; background: var(--accent); color: var(--on-accent); font-weight: 600; cursor: pointer; }
+.gwp-drive-invite-help { margin: -12px 24px 20px; color: var(--muted); font-size: 12px; line-height: 1.5; }
 .gwp-drive-share-section { padding: 0 24px 20px; }
 .gwp-drive-share-section h3 { margin: 0 0 12px; font-size: 14px; }
 .gwp-drive-share-empty { color: var(--muted); font-size: 13px; }

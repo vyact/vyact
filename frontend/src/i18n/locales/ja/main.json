@@ -198,6 +198,7 @@
     "shareTitle": "「{{name}}」を共有",
     "shareDescription": "ユーザーを追加するか、リンクアクセスを管理します。",
     "emailPlaceholder": "メールアドレスを入力",
+    "microsoftAccountInviteHelp": "個人用 OneDrive では、Microsoft アカウントに登録されたメールアドレスのみ招待できます。Gmail など他のドメインのメールアドレスも、Microsoft に登録済みなら使用できます。",
     "viewer": "閲覧者",
     "editor": "編集者",
     "owner": "オーナー",

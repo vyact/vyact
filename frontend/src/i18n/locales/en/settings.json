@@ -9,6 +9,7 @@
     "deleteFolderDescription": "The folder and its contents will be deleted.",
     "unknownShareUser": "User information unavailable",
     "inviteNotificationFailed": "The sharing invitation response contains an error. Invitation email sending could not be confirmed. Check the permissions and try again in OneDrive.",
+    "inviteRecipientRejected": "Microsoft rejected the invitation for this email address. Check that the address is registered to a Microsoft account.",
     "inviteVerification": "Microsoft requires account verification before sending invitation emails. Complete account verification in OneDrive on the web, then invite again.",
 
     "closePanel": "Close Microsoft panel",

@@ -9,6 +9,7 @@
     "deleteFolderDescription": "폴더와 그 안의 내용이 삭제됩니다.",
     "unknownShareUser": "사용자 정보 없음",
     "inviteNotificationFailed": "공유 초대 응답에 오류가 포함되어 있습니다. 초대 메일 발송을 확인할 수 없습니다. 권한 목록을 확인하고 OneDrive에서 다시 시도하세요.",
+    "inviteRecipientRejected": "Microsoft가 이 이메일 주소에 대한 초대를 거부했습니다. 해당 주소가 Microsoft 계정에 등록되어 있는지 확인하세요.",
     "inviteVerification": "Microsoft가 초대 메일 발송 전에 계정 확인을 요구합니다. OneDrive 웹에서 계정 확인을 완료한 뒤 다시 초대하세요.",
 
     "closePanel": "Microsoft 패널 닫기",

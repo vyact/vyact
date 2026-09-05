@@ -210,7 +210,7 @@ type ShareBusyAction = 'loading' | 'invite' | 'generalAccess' | `removePermissio
 const INVITE_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function DriveShareModal({file, onClose, onPermissionsChange}: ShareModalProps) {
-    const {api} = useWorkspace();
+    const {api, provider} = useWorkspace();
     const {t} = useTranslation('main');
     const [permissions, setPermissions] = useState<DrivePermission[]>([]);
     const [link, setLink] = useState('');
@@ -250,8 +250,16 @@ export function DriveShareModal({file, onClose, onPermissionsChange}: ShareModal
         if (!isEmailValid || busy) return;
         setBusyAction('invite');
         try {
-            const result = await api.createGoogleDrivePermission(file.id, email.trim(), inviteRole) as {notificationFailed?: boolean; verificationRequired?: boolean};
-            if (result.notificationFailed) toast.warning(t(result.verificationRequired ? 'settings:microsoft.inviteVerification' : 'settings:microsoft.inviteNotificationFailed'));
+            const result = await api.createGoogleDrivePermission(file.id, email.trim(), inviteRole) as {
+                inviteFailed?: boolean;
+                failureReason?: 'verification_required' | 'recipient_rejected';
+            };
+            if (result.inviteFailed) {
+                toast.error(t(result.failureReason === 'verification_required'
+                    ? 'settings:microsoft.inviteVerification'
+                    : 'settings:microsoft.inviteRecipientRejected'));
+                return;
+            }
             setEmail('');
             await loadPermissions();
         } finally {
@@ -302,6 +310,7 @@ export function DriveShareModal({file, onClose, onPermissionsChange}: ShareModal
             <form className="gwp-drive-invite" onSubmit={event => { event.preventDefault(); void invite(); }}>
                 <UserPlus size={18}/>
                 <input type="email" value={email} disabled={busy}
+                       aria-describedby={provider === 'microsoft' ? 'gwp-microsoft-account-help' : undefined}
                        onChange={event => setEmail(event.target.value)}
                        placeholder={t('googleWorkspace.emailPlaceholder')}/>
                 <CustomSelect
@@ -317,6 +326,9 @@ export function DriveShareModal({file, onClose, onPermissionsChange}: ShareModal
                     {busyAction === 'invite' ? t('googleWorkspace.processing') : t('googleWorkspace.invite')}
                 </button>
             </form>
+            {provider === 'microsoft' && <p id="gwp-microsoft-account-help" className="gwp-drive-invite-help">
+                {t('googleWorkspace.microsoftAccountInviteHelp')}
+            </p>}
             <div className="gwp-drive-share-section">
                 <h3>{t('googleWorkspace.peopleWithAccess')}</h3>
                 {permissions.filter(permission => permission.type !== 'anyone').map(permission =>

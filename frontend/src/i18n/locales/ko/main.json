@@ -235,6 +235,7 @@
     "shareTitle": "“{{name}}” 공유",
     "shareDescription": "사용자를 추가하거나 링크 접근 권한을 설정합니다.",
     "emailPlaceholder": "이메일 주소 입력",
+    "microsoftAccountInviteHelp": "개인 OneDrive에서는 Microsoft 계정에 등록된 이메일만 초대할 수 있습니다. Gmail 등 다른 도메인의 이메일도 Microsoft 계정에 등록되어 있으면 사용할 수 있습니다.",
     "viewer": "뷰어",
     "editor": "편집자",
     "owner": "소유자",

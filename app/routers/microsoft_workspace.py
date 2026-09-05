@@ -606,7 +606,12 @@ async def invite(file_id: str, request: Request, account_id: str = ""):
                 if error.get("code"):
                     codes.append(error["code"])
                 error = error.get("innererror") or error.get("innerError")
-        return {**result, "notificationFailed": True, "verificationRequired": any(code in ("accountVerificationRequired", "hipCheckRequired") for code in codes)}
+        verification_required = any(code in ("accountVerificationRequired", "hipCheckRequired") for code in codes)
+        return {
+            **result,
+            "inviteFailed": True,
+            "failureReason": "verification_required" if verification_required else "recipient_rejected",
+        }
     return result
 
 
