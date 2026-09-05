@@ -69,11 +69,10 @@ def profile_model_info(model_path: str, runtime: str) -> dict:
 def model_memory_budget(hardware: dict) -> int | None:
     memory = hardware.get("system_memory", {})
     total = int(memory.get("total_bytes") or 0)
-    available_value = memory.get("available_bytes")
-    if total <= 0 or not isinstance(available_value, (int, float)) or available_value < 0:
+    # Saved defaults describe capacity, independent of running apps/models.
+    if total <= 0:
         return None
-    available = int(available_value)
-    capacity = min(total, available)
+    capacity = total
     if hardware.get("platform") == "darwin":
         metal = int(hardware.get("metal_recommended_working_set_bytes") or 0)
         if metal > 0:
@@ -82,7 +81,7 @@ def model_memory_budget(hardware: dict) -> int | None:
         gpus = [gpu for gpu in hardware.get("gpus", []) if not gpu.get("shared_memory")]
         if gpus:
             backend = gpus[0].get("backend")
-            vram = sum(int(gpu.get("available_bytes") or 0) for gpu in gpus if gpu.get("backend") == backend)
+            vram = sum(int(gpu.get("total_bytes") or 0) for gpu in gpus if gpu.get("backend") == backend)
             if vram <= 0:
                 return None
             # Prefer GPU-resident defaults. Do not add RAM and VRAM as interchangeable capacity.
@@ -165,6 +164,7 @@ def hardware_model_profile(model_path: str, runtime: str, repository: str | None
     profile = normalize_model_profile(profile, limits, initial_defaults=True)
     reserve = min(MINIMUM_CONTEXT_RESERVE_TOKENS, profile["context_size"] // 2)
     profile["history_token_budget"] = max(0, profile["context_size"] - profile["max_output_tokens"] - reserve)
+    profile["recommendation_basis"] = "hardware_capacity"
     profile["recommendation_status"] = "estimated" if fits else "insufficient" if known and budget is not None else "unavailable"
     return profile
 

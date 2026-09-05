@@ -5,17 +5,17 @@ from services import model_profile_defaults as defaults
 GIB = 1024 ** 3
 
 
-def test_metal_budget_uses_available_memory_and_working_set():
+def test_metal_budget_uses_capacity_independent_of_available_memory():
     hardware = {"platform": "darwin", "metal_recommended_working_set_bytes": 18 * GIB,
                 "system_memory": {"total_bytes": 24 * GIB, "available_bytes": 12 * GIB}}
-    assert defaults.model_memory_budget(hardware) == 12 * GIB - int(12 * GIB * .1)
+    assert defaults.model_memory_budget(hardware) == 18 * GIB - int(18 * GIB * .1)
     hardware["system_memory"]["available_bytes"] = 22 * GIB
     assert defaults.model_memory_budget(hardware) == 18 * GIB - int(18 * GIB * .1)
 
 
 def test_dedicated_memory_does_not_add_host_ram_to_vram():
     hardware = {"memory_mode": "dedicated", "system_memory": {"total_bytes": 64 * GIB, "available_bytes": 50 * GIB},
-                "gpus": [{"backend": "CUDA", "available_bytes": 8 * GIB}, {"backend": "ROCm", "available_bytes": 24 * GIB}]}
+                "gpus": [{"backend": "CUDA", "total_bytes": 8 * GIB, "available_bytes": 0}, {"backend": "ROCm", "total_bytes": 24 * GIB, "available_bytes": 0}]}
     assert defaults.model_memory_budget(hardware) == 7 * GIB
 
 
@@ -64,9 +64,9 @@ def test_mlx_and_dflash_preserve_unquantized_cache(recommendation, monkeypatch, 
     assert result["kv_cache_precision"] == "none"
 
 
-def test_zero_memory_budget_is_distinct_from_missing_hardware_information():
+def test_exhausted_available_memory_does_not_change_capacity_budget():
     assert defaults.model_memory_budget({}) is None
-    assert defaults.model_memory_budget({"system_memory": {"total_bytes": 24 * GIB, "available_bytes": 0}}) == 0
+    assert defaults.model_memory_budget({"system_memory": {"total_bytes": 24 * GIB, "available_bytes": 0}}) == 24 * GIB - int(24 * GIB * .1)
 
 
 def test_exhausted_budget_keeps_floor_and_reports_insufficient(recommendation, monkeypatch):

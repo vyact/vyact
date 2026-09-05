@@ -64,7 +64,12 @@ async def _get_or_create_model_profile(
     persist: bool = False,
 ) -> dict:
     profile = await get_model_profile(model_path)
-    if profile is not None:
+    # Explicit user saves omit recommendation_status; preserve those settings.
+    outdated_recommendation = profile is not None and (
+        profile.get("recommendation_status") in {"estimated", "insufficient", "unavailable"}
+        and profile.get("recommendation_basis") != "hardware_capacity"
+    )
+    if profile is not None and not outdated_recommendation:
         return profile
     profile = await asyncio.to_thread(hardware_model_profile, model_path, runtime, repository, fallback_context)
     return await save_model_profile(profile) if persist else profile

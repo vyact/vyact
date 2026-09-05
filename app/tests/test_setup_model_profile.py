@@ -384,3 +384,21 @@ def test_profile_request_preserves_valid_zero_and_optional_empty_values():
     assert request.top_k is request.top_p is request.cpu_threads is request.seed is None
     zeros = setup.VyactModelProfileRequest(model_path="owner/model.gguf", top_k=0, top_p=0, seed=0)
     assert zeros.top_k == zeros.top_p == zeros.seed == 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("status", ["estimated", "insufficient", "unavailable"])
+async def test_legacy_automatic_profile_is_recalculated_once(monkeypatch, status):
+    existing = {"model_path": "model.gguf", "context_size": 4096, "recommendation_status": status}
+    updated = {**existing, "context_size": 65536, "recommendation_basis": "hardware_capacity"}
+    recommend = Mock(return_value=updated)
+    saved = AsyncMock(side_effect=lambda profile: profile)
+    monkeypatch.setattr(setup, "get_model_profile", AsyncMock(return_value=existing))
+    monkeypatch.setattr(setup, "hardware_model_profile", recommend)
+    monkeypatch.setattr(setup, "save_model_profile", saved)
+    result = await setup._get_or_create_model_profile("model.gguf", "gguf", None, persist=True)
+    assert result["context_size"] == 65536
+    saved.assert_awaited_once()
+    monkeypatch.setattr(setup, "get_model_profile", AsyncMock(return_value=result))
+    await setup._get_or_create_model_profile("model.gguf", "gguf", None, persist=True)
+    recommend.assert_called_once()
