@@ -108,6 +108,16 @@ Learn from Netflix with dual subtitles, subtitle navigation, repeat playback, an
   <img src="assets/readme/feature-plugin.png" alt="Vyact Chrome extension side panel" width="100%" />
 </p>
 
+### Improve your writing without leaving the page
+
+Use **Improve writing** in the Chrome extension to refine selected text or the full input while drafting a post, email, or comment. Choose **Grammar** to correct spelling and grammar while preserving your meaning, or try **Natural**, **Polite**, **Concise**, or **Humorous** to adjust the wording and tone. Keep the original language or choose an output language, and add specific instructions when needed.
+
+Review the **Before** and **After** side by side, then copy the result back into your draft.
+
+<p align="center">
+  <img src="assets/readme/feature-writing-assistant.png" alt="Vyact Chrome extension correcting grammar in a Reddit draft, with the original text and corrected result side by side" width="100%" />
+</p>
+
 ## Everything you need to stay in context
 
 | | Capability | Why it matters |
@@ -121,6 +131,7 @@ Learn from Netflix with dual subtitles, subtitle navigation, repeat playback, an
 | ↗️ | Local OpenAI-compatible API server | Use the active Vyact local model from OpenClaw or another app on your network, with optional Bearer-token authentication and ready-to-copy configuration. |
 | 🎙️ | Voice-based language learning | Practice speaking through natural conversations with speech input and AI responses. |
 | 🌐 | Chrome extension for Netflix and web language learning | Study Netflix with dual subtitles and level-aware explanations, translate pages, and ask questions with selected text or the current page as context. |
+| ✍️ | Browser writing assistant | Correct grammar, adjust tone, or shorten a draft, then compare the original and revised text before copying the result. |
 | 🧩 | MCP tool connections | Connect the tools you use to tailor Vyact to the way you work. |
 | 🌍 | Multilingual interface | Available in Korean, English, Japanese, Chinese, Thai, Vietnamese, Spanish, and French. |
 
@@ -234,6 +245,8 @@ Custom connection settings are included in Vyact backup and restore. Streaming, 
 3. Pin Vyact to the Chrome toolbar and open its side panel on any page.
 
 Use dual subtitles and playback controls to study with Netflix, select the language areas you find difficult, and receive concise explanations focused on those weaknesses. You can also translate pages or ask about the current page without copying its content into chat.
+
+When writing a post, email, or comment, open **Improve writing** to refine your text, choose a style and output language, and compare the result with your original draft.
 
 ## Support Vyact
 

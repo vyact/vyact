@@ -45,6 +45,7 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
     const [benchmarkSelected, setBenchmarkSelected] = useState(false);
     const [numberInputs, setNumberInputs] = useState<Partial<Record<keyof VyactModelProfile, string>>>({});
     const [saving, setSaving] = useState(false);
+    const interactionLocked = saving || benchmarkBusy;
     const [error, setError] = useState('');
     const [advancedOpen, setAdvancedOpen] = useState(false);
     const [gpuSplitInputValues, setGpuSplitInputValues] = useState<string[]>([]);
@@ -105,7 +106,7 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
         if (Number.isFinite(Number(value))) setProfile({...profile, [key]: Number(value)});
     };
     const apply = async () => {
-        if (!profile || benchmarkBusy || !formRef.current?.reportValidity()) return;
+        if (!profile || interactionLocked || !formRef.current?.reportValidity()) return;
         if (profile.gpu_manual_split_enabled && !gpuSplitIsValid) {
             setError(t('modelSettings.gpuSplitInvalid'));
             return;
@@ -203,10 +204,10 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
         }
     };
 
-    return <ModalOverlay className="model-settings-overlay" onClose={benchmarkBusy ? undefined : onClose} closeOnBackdrop={false}>
+    return <ModalOverlay className="model-settings-overlay" onClose={interactionLocked ? undefined : onClose} closeOnBackdrop={false}>
         <form ref={formRef} className="model-settings-modal" onInvalidCapture={() => setAdvancedOpen(true)} onSubmit={event => {event.preventDefault(); void apply();}}>
-            <header><div><h2>{t('modelSettings.title')}</h2><div className="model-settings-model"><Tooltip hoverOnly content={modelHelp} multiline size="medium"><button type="button" className="model-settings-model-help" aria-label={t('modelSettings.initialSettingsTitle')}><CircleQuestionMark size={14}/></button></Tooltip><span className="model-settings-model-name">{modelPath.split('/').pop()}</span>{profile?.model_file_bytes != null && profile.model_file_bytes > 0 && <Tooltip content={t('modelSettings.modelFileSizeTooltip')} multiline size="medium"><span className="model-settings-file-size"><HardDrive size={13} aria-hidden="true"/>{formatModelBytes(profile.model_file_bytes)}</span></Tooltip>}</div></div><button type="button" onClick={onClose} disabled={benchmarkBusy} aria-label={t('modelSettings.close')}><X size={20}/></button></header>
-            {profile && <nav className="model-settings-tabs" aria-label={t('modelSettings.title')}><ModalTabs tabs={[{key: 'settings', label: <><SlidersHorizontal size={15}/>{t('modelSettings.title')}</>}, {key: 'benchmark', label: <><Activity size={15}/>{t('modelBenchmark.title')}</>}]} activeKey={benchmarkOpen ? 'benchmark' : 'settings'} disabled={benchmarkBusy} onChange={key => setBenchmarkOpen(key === 'benchmark')}/></nav>}
+            <header><div><h2>{t('modelSettings.title')}</h2><div className="model-settings-model"><Tooltip hoverOnly content={modelHelp} multiline size="medium"><button type="button" className="model-settings-model-help" aria-label={t('modelSettings.initialSettingsTitle')}><CircleQuestionMark size={14}/></button></Tooltip><span className="model-settings-model-name">{modelPath.split('/').pop()}</span>{profile?.model_file_bytes != null && profile.model_file_bytes > 0 && <Tooltip content={t('modelSettings.modelFileSizeTooltip')} multiline size="medium"><span className="model-settings-file-size"><HardDrive size={13} aria-hidden="true"/>{formatModelBytes(profile.model_file_bytes)}</span></Tooltip>}</div></div><button type="button" onClick={onClose} disabled={interactionLocked} aria-label={t('modelSettings.close')}><X size={20}/></button></header>
+            {profile && <nav className="model-settings-tabs" aria-label={t('modelSettings.title')}><ModalTabs tabs={[{key: 'settings', label: <><SlidersHorizontal size={15}/>{t('modelSettings.title')}</>}, {key: 'benchmark', label: <><Activity size={15}/>{t('modelBenchmark.title')}</>}]} activeKey={benchmarkOpen ? 'benchmark' : 'settings'} disabled={interactionLocked} onChange={key => setBenchmarkOpen(key === 'benchmark')}/></nav>}
             {profile && <ModelBenchmarkPanel dflashEnabled={dflash2Supported} canTestMtp={mtpSupported && !dflash2Supported && !profile.mtp_failure_code} profile={profile} visible={benchmarkOpen} disabled={saving || !gpuSplitIsValid} validate={validateBenchmark} onBusy={setBenchmarkBusy} onSelect={value => {benchmarkBeforeRef.current = profile; setProfile(selectBenchmarkSettings(profile, value)); setNumberInputs({}); setBenchmarkSelected(true); setAdvancedOpen(true); setBenchmarkOpen(false);}}/>}
             {!profile ? <div className="model-settings-loading">{error || t('modelSettings.loading')}</div> : <div className="model-settings-body" hidden={benchmarkOpen}>
                 {benchmarkSelected && <p className="model-settings-selection-notice" role="status">{t('modelBenchmark.selected')}</p>}
@@ -240,7 +241,7 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
                 </section>
                 {error && <div className="model-settings-error">{error}</div>}
             </div>}
-            <footer><button className="model-settings-cancel" type="button" onClick={onClose} disabled={benchmarkBusy}>{t('modelSettings.cancel')}</button><button className="primary" type="submit" disabled={!profile || saving || benchmarkBusy || !gpuSplitIsValid}>{saving ? t('modelSettings.applying') : t('modelSettings.apply')}</button></footer>
+            <footer><button className="model-settings-cancel" type="button" onClick={onClose} disabled={interactionLocked}>{t('modelSettings.cancel')}</button><button className="primary" type="submit" disabled={!profile || saving || benchmarkBusy || !gpuSplitIsValid}>{saving ? t('modelSettings.applying') : t('modelSettings.apply')}</button></footer>
         </form>
     </ModalOverlay>;
 }
