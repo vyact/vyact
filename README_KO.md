@@ -86,7 +86,7 @@ winget --version
 
 ## 내 데이터와 웹을 연결하는 로컬 AI 워크스페이스
 
-![Vyact: 내 데이터와 웹을 연결하는 로컬 AI 워크스페이스](assets/readme_ko/feature-main.png)
+![Vyact: 내 데이터와 웹을 연결하는 로컬 AI 워크스페이스](assets/readme_ko/feature-main-final.png)
 
 Vyact는 문서·메일·메모·웹페이지를 AI 대화에 연결하는 데스크톱 앱입니다. 내 컴퓨터에서 실행할 로컬 모델이나 외부 AI 제공자를 선택하고, 크롬 확장으로 글쓰기·웹 탐색·언어 학습까지 이어갈 수 있습니다.
 
