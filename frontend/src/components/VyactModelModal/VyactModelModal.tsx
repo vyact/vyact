@@ -95,6 +95,7 @@ export default function VyactModelModal({onClose, onSelected, activeModelPath}: 
     const [mtpSupportedModels, setMtpSupportedModels] = useState<string[]>([]);
     const [selectedFile, setSelectedFile] = useState<SelectedModelFile | null>(null);
     const [isSearching, setIsSearching] = useState(false);
+    const [installedModelsStatus, setInstalledModelsStatus] = useState<'loading' | 'ready' | 'error'>('loading');
     const [isDownloading, setIsDownloading] = useState(false);
     const [isSavingToken, setIsSavingToken] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
@@ -109,7 +110,7 @@ export default function VyactModelModal({onClose, onSelected, activeModelPath}: 
     const [showRuntimeInstallHelp, setShowRuntimeInstallHelp] = useState(false);
     const searchRequestIdRef = useRef(0);
     const detailsRequestIdRef = useRef(0);
-    const busy = isSearching || isDownloading || isSavingToken;
+    const busy = installedModelsStatus === 'loading' || isSearching || isDownloading || isSavingToken;
     const selectedModelPath = selectedFile
         ? selectedFile.runtime === 'mlx' ? `mlx/${selectedFile.repository}` : `${selectedFile.repository}/${selectedFile.filename}`
         : '';
@@ -173,8 +174,9 @@ export default function VyactModelModal({onClose, onSelected, activeModelPath}: 
                 }
                 setModelDetailsCache(current => ({...current, ...detailsCache}));
                 setModels(cards);
+                setInstalledModelsStatus('ready');
             })
-            .catch(error => setMessage(String(error)));
+            .catch(error => {setInstalledModelsStatus('error'); setMessage(String(error));});
         void api.getVyactHuggingFaceTokenStatus()
             .then(status => setTokenConfigured(status.configured))
             .catch(error => console.error('Failed to load Hugging Face token status:', error));
@@ -482,10 +484,10 @@ export default function VyactModelModal({onClose, onSelected, activeModelPath}: 
                                 )}
                             </div>
                         )}
-                        {isSearching && (
-                            <div className="vyact-model-empty"><LoaderCircle className="vyact-model-spinner" size={22}/><span>{t('modelSelector.searching')}</span></div>
+                        {(installedModelsStatus === 'loading' || isSearching) && (
+                            <div className="vyact-model-empty" role="status" aria-label={t('modelSettings.loading')}><LoaderCircle className="vyact-model-spinner" size={22} aria-hidden="true"/></div>
                         )}
-                        {!isSearching && models.length === 0 && (
+                        {!isSearching && (hasSearched || installedModelsStatus === 'ready') && models.length === 0 && (
                             <div className="vyact-model-empty"><Search size={22}/><span>{t(hasSearched ? 'modelSelector.noSearchResults' : 'modelSelector.noInstalledModels')}</span></div>
                         )}
                         {models.map(model => {

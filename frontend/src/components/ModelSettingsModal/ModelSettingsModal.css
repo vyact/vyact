@@ -74,3 +74,10 @@
 .model-settings-help-detail { padding: 8px 10px; border-radius: 7px; background: color-mix(in srgb, var(--accent) 9%, var(--surface2)); color: var(--text); font-size: 11.5px; line-height: 1.5; font-variant-numeric: tabular-nums; }
 
 .model-settings-file-size {display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface2); color: var(--text-secondary); font-size: 11px; font-variant-numeric: tabular-nums;}
+
+.model-settings-budget-warning { display: flex; align-items: center; gap: 12px; }
+.model-settings-budget-warning .model-settings-error { flex: 1; min-width: 0; }
+.model-settings-budget-warning button { flex: none; white-space: nowrap; transition: background .15s, color .15s, border-color .15s; }
+.model-settings-budget-warning button:hover:not(:disabled),
+.model-settings-budget-warning button:focus-visible:not(:disabled) { background: color-mix(in srgb, var(--text) 5%, var(--surface2)); }
+.model-settings-budget-warning button:focus-visible:not(:disabled) { outline: 2px solid var(--accent); outline-offset: 2px; }
