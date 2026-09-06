@@ -21,18 +21,7 @@ github_api() {
   if [ -n "$token" ]; then
     headers+=(-H "Authorization: Bearer $token")
   fi
-  # Reuse the CLI login for local releases when no CI token is provided.
-  if [ -z "$token" ] && command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
-    if gh api "${1#https://api.github.com/}"; then
-      return 0
-    fi
-    echo "GitHub CLI request failed; retrying the public API: $1" >&2
-  fi
-  if ! curl --fail --silent --show-error --location --retry 3 "${headers[@]}" "$1"; then
-    echo "Failed to resolve bundled Python runtime ($TARGET_OS) via GitHub API: $1" >&2
-    echo "Check GitHub access and API limits; authenticate with gh auth login if needed." >&2
-    return 1
-  fi
+  curl --fail --silent --show-error --location --retry 3 "${headers[@]}" "$1"
 }
 
 RELEASE_JSON="$(github_api "$API_URL")"
