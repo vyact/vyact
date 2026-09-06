@@ -350,6 +350,9 @@ async def query_llm(
                         stats_out.update({
                             "prompt_eval_count": usage.get("prompt_tokens"),
                             "cached_tokens": usage.get("cached_tokens"),
+                            "prompt_tokens_per_second": usage.get("prompt_tokens_per_second"),
+                            "completion_tokens_per_second": usage.get("completion_tokens_per_second"),
+                            "llm_total_duration": usage.get("llm_total_duration"),
                             "prompt_eval_duration": usage.get("prompt_eval_duration"),
                             "eval_count": usage.get("completion_tokens"),
                             "eval_duration": usage.get("eval_duration"),

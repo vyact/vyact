@@ -19,6 +19,7 @@ from agent import (
     get_conversation, rag_query_stream,
 )
 from services.llm.config import get_model_display_name
+from services.llm.stats import format_generation_stats
 from services.llm.warmup import warm_vyact_voice_prefix
 from services.llm.core import chat_stream_with_tools
 from services.llm.tools import tool_result_failed
@@ -1434,7 +1435,7 @@ def _clean_translate_for_history(raw_answer: str) -> str:
 async def translate(req: TranslateRequest):
     t_start = datetime.now(timezone.utc)
     logger.info(
-        "[translate] 진입 target_lang=%s save_history=%s conv_id=%s text_len=%d preview=%r",
+        "[translate] start target_lang=%s save_history=%s conv_id=%s text_len=%d preview=%r",
         req.target_lang, req.save_history, req.conv_id or "(new)", len(req.text), req.text[:80],
                                            )
     try:
@@ -1476,11 +1477,11 @@ async def translate(req: TranslateRequest):
 
         elapsed = (datetime.now(timezone.utc) - t_start).total_seconds()
         logger.info(
-            "[translate] 종료 elapsed=%.2fs result_len=%d conv_id=%s",
-            elapsed, len(translated), conv_id,
+            "[translate] completed elapsed=%.2fs result_len=%d conv_id=%s %s",
+            elapsed, len(translated), conv_id, format_generation_stats(gen_stats),
         )
         return {"translated": translated, "conv_id": conv_id, "stats": gen_stats or None}
     except Exception:
         elapsed = (datetime.now(timezone.utc) - t_start).total_seconds()
-        logger.exception("[translate] 실패 elapsed=%.2fs conv_id=%s", elapsed, req.conv_id or "(new)")
+        logger.exception("[translate] failed elapsed=%.2fs conv_id=%s", elapsed, req.conv_id or "(new)")
         raise
