@@ -39,7 +39,6 @@ from error_responses import (
 )
 
 APP_DIR = Path(__file__).parent
-SEARCH_MODEL_WARMUP_DELAY_SECONDS = 2.0
 
 
 class EmbeddedUvicornServer(uvicorn.Server):
@@ -168,15 +167,12 @@ async def warmup_optional_voice_models() -> None:
 
 
 async def warmup_reranker_model() -> None:
-    """Load and exercise the reranker after the chat model warm-up."""
-    # 사용자 ES가 비어 있어도 첫 검색의 MPS 준비 비용을 시작 화면에서 끝낸다.
+    """Load the reranker and immediately run inference warm-up."""
     await wait_for_chat_idle()
     try:
         logger.info("[startup-status] reranker")
         from reranker import load_reranker, warmup_reranker
         if await asyncio.to_thread(load_reranker):
-            await asyncio.sleep(SEARCH_MODEL_WARMUP_DELAY_SECONDS)
-            await wait_for_chat_idle()
             await asyncio.to_thread(warmup_reranker)
     except Exception as error:
         logger.info("[reranker] Startup warm-up skipped: %s", error)
