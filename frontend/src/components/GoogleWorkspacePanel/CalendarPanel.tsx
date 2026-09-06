@@ -1,3 +1,5 @@
+import WorkspaceLoadError from './WorkspaceLoadError';
+import {workspaceLoadErrorMessage} from '../../utils/workspaceError';
 import {Fragment, useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {
@@ -308,6 +310,7 @@ export default function CalendarPanel({selectedEvent, onSelectedEventHandled}: {
     const [events, setEvents] = useState<CalendarEvent[]>([]);
     const [expandedDescriptionIds, setExpandedDescriptionIds] = useState<Set<string>>(new Set());
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState('');
     const [refreshing, setRefreshing] = useState(false);
 
     // Event form
@@ -342,6 +345,7 @@ export default function CalendarPanel({selectedEvent, onSelectedEventHandled}: {
 
     const fetchEvents = useCallback(async (showRefresh = false) => {
         const id = ++fetchRef.current;
+        setLoadError('');
         if (showRefresh) setRefreshing(true); else setLoading(true);
         try {
             const firstDay = new Date(year, month, 1);
@@ -357,13 +361,15 @@ export default function CalendarPanel({selectedEvent, onSelectedEventHandled}: {
                 max_results: 250,
             });
             if (id === fetchRef.current) setEvents(res.events ?? []);
-        } catch { /* ignore */ } finally {
+        } catch (error) {
+            if (id === fetchRef.current) setLoadError(workspaceLoadErrorMessage(error));
+        } finally {
             if (id === fetchRef.current) {
                 setLoading(false);
                 setRefreshing(false);
             }
         }
-    }, [year, month]);
+    }, [year, month, api]);
 
     useEffect(() => { fetchEvents(); }, [fetchEvents]);
 
@@ -640,7 +646,7 @@ export default function CalendarPanel({selectedEvent, onSelectedEventHandled}: {
             <div className="gwp-cal-weekdays">
                 {weekdays.map((d, i) => <span key={d} className={i === 0 ? 'sun' : i === 6 ? 'sat' : ''}>{d}</span>)}
             </div>
-            {loading ? (
+            {loadError ? <WorkspaceLoadError message={loadError} onRetry={() => void fetchEvents(true)} busy={loading || refreshing}/> : loading ? (
                 <div className="gwp-cal-loading"><LoaderCircle size={20} className="gwp-spin"/></div>
             ) : (
                 <div className="gwp-cal-days">
@@ -677,7 +683,7 @@ export default function CalendarPanel({selectedEvent, onSelectedEventHandled}: {
                 <strong>{selectedDate ? new Date(selectedDate + 'T00:00').toLocaleDateString(currentLanguage, {month: 'long', day: 'numeric', weekday: 'short'}) : ''}</strong>
             </div>
             <div className="gwp-cal-events-scroll">
-                {eventsForDate.length === 0 ? (
+                {loadError || loading ? null : eventsForDate.length === 0 ? (
                     <div className="gwp-cal-empty">{t('googleWorkspace.calendar.noEvents')}</div>
                 ) : (
                     eventsForDate.map(event => {

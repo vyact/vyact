@@ -13,6 +13,7 @@ export class ApiError extends Error {
     detail?: string;
     code?: string;
     requestId?: string;
+    feedbackHandled = false;
 
     constructor(message: string, status?: number, detail?: string, code?: string, requestId?: string) {
         super(message);

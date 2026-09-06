@@ -1200,6 +1200,13 @@
   "uiAuditFinal": {"attachments":"{{count}} attachments","removeAll":"Remove all","characterCount":"{{count}} characters","itemCount":"{{count}} items","download":"Download","fileCount":"{{count}} files","zipDownload":"Download ZIP","errorDetail":"❌ Error: {{message}}"},
   "networkError": {"requestFailed":"Request failed","serverError":"Server error","streamFailed":"Streaming request failed","clientErrorDetail":"Request error ({{status}}): {{detail}}","serverErrorDetail":"Server error ({{status}}): {{detail}} — Please try again shortly.","genericDetail":"Error: {{detail}}"},
   "backendErrors": {
+    "microsoft_authentication_required": "Please reconnect your Microsoft account.",
+    "microsoft_permission_denied": "You do not have permission to access this item or perform this action. Check your account and sharing permissions.",
+    "microsoft_item_not_found": "The item could not be found. Please refresh the list.",
+    "microsoft_connection_failed": "Could not connect to Microsoft. Please try again later. If you were sending or changing something, check the result first.",
+    "microsoft_request_failed": "Could not complete the action. If the problem persists, contact support.",
+    "microsoft_account_suspended": "Access to your Outlook mailbox is suspended. Sign in with the affected account at https://outlook.live.com and follow the instructions to verify your identity and unblock access. Then try again in Vyact.",
+    "microsoft_rate_limited": "Microsoft has temporarily limited requests because too many were sent. Please wait a while before trying again.",
     "plugin_not_active": "The plugin is not active. Enable it in Settings.",
     "mlx_unsupported_platform": "MLX is not supported in this environment.",
     "external_api_auth_disabled": "External API authentication is disabled. Enable API authentication in Settings.",

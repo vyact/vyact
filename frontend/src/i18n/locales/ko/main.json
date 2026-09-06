@@ -1211,6 +1211,13 @@
   "uiAuditFinal": {"attachments":"첨부 {{count}}개","removeAll":"전체 삭제","characterCount":"{{count}}자","itemCount":"{{count}}개","download":"다운로드","fileCount":"{{count}}개 파일","zipDownload":"ZIP 다운로드","errorDetail":"❌ 오류: {{message}}"},
   "networkError": {"requestFailed":"요청 실패","serverError":"서버 오류","streamFailed":"스트리밍 요청 실패","clientErrorDetail":"요청 오류 ({{status}}): {{detail}}","serverErrorDetail":"서버 오류 ({{status}}): {{detail}} — 잠시 후 다시 시도해주세요.","genericDetail":"오류: {{detail}}"},
   "backendErrors": {
+    "microsoft_authentication_required": "Microsoft 계정을 다시 연결해 주세요.",
+    "microsoft_permission_denied": "이 항목에 접근하거나 작업을 수행할 권한이 없습니다. 계정과 공유 권한을 확인해 주세요.",
+    "microsoft_item_not_found": "항목을 찾을 수 없습니다. 목록을 새로고침해 주세요.",
+    "microsoft_connection_failed": "Microsoft에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요. 보내기나 변경 작업 중이었다면 먼저 처리 결과를 확인해 주세요.",
+    "microsoft_request_failed": "작업을 완료하지 못했습니다. 문제가 계속되면 지원팀에 문의해 주세요.",
+    "microsoft_account_suspended": "Outlook 메일함 접근이 정지되었습니다. https://outlook.live.com 에서 해당 계정으로 로그인한 뒤 화면의 안내에 따라 본인 확인 및 정지 해제를 진행해 주세요. 해제 후 Vyact에서 다시 시도해 주세요.",
+    "microsoft_rate_limited": "Microsoft에서 요청이 너무 많아 일시적으로 제한했습니다. 잠시 기다린 뒤 다시 시도해 주세요.",
     "plugin_not_active": "플러그인이 활성화되어 있지 않습니다. 설정에서 활성화해 주세요.",
     "mlx_unsupported_platform": "이 환경에서는 MLX를 사용할 수 없습니다.",
     "external_api_auth_disabled": "외부 API 인증이 비활성화되어 있습니다. 설정에서 API 인증을 활성화해 주세요.",

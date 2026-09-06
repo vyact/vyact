@@ -1201,6 +1201,13 @@
   "uiAuditFinal": {"attachments":"{{count}} 个附件","removeAll":"全部删除","characterCount":"{{count}} 个字符","itemCount":"{{count}} 项","download":"下载","fileCount":"{{count}} 个文件","zipDownload":"下载 ZIP","errorDetail":"❌ 错误：{{message}}"},
   "networkError": {"requestFailed":"请求失败","serverError":"服务器错误","streamFailed":"流式请求失败","clientErrorDetail":"请求错误（{{status}}）：{{detail}}","serverErrorDetail":"服务器错误（{{status}}）：{{detail}} — 请稍后重试。","genericDetail":"错误：{{detail}}"},
   "backendErrors": {
+    "microsoft_authentication_required": "请重新连接您的 Microsoft 账户。",
+    "microsoft_permission_denied": "您没有权限访问此项目或执行此操作。请检查账户和共享权限。",
+    "microsoft_item_not_found": "找不到该项目。请刷新列表。",
+    "microsoft_connection_failed": "无法连接到 Microsoft。请稍后重试。如果正在发送或修改内容，请先确认处理结果。",
+    "microsoft_request_failed": "无法完成操作。如果问题持续存在，请联系支持团队。",
+    "microsoft_account_suspended": "您的 Outlook 邮箱访问已被暂停。请使用受影响的账户登录 https://outlook.live.com，并按照页面提示验证身份并解除限制。解除后，请在 Vyact 中重试。",
+    "microsoft_rate_limited": "由于请求过多，Microsoft 已暂时限制请求。请稍等片刻后重试。",
     "plugin_not_active": "插件未启用。请在设置中启用。",
     "mlx_unsupported_platform": "此环境不支持 MLX。",
     "external_api_auth_disabled": "外部 API 身份验证已禁用。请在设置中启用 API 身份验证。",

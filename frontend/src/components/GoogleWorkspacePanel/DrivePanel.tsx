@@ -1,3 +1,5 @@
+import WorkspaceLoadError from './WorkspaceLoadError';
+import {workspaceLoadErrorMessage} from '../../utils/workspaceError';
 import {useEffect, useRef, useState} from 'react';
 import type {InputHTMLAttributes, UIEvent} from 'react';
 import {useTranslation} from 'react-i18next';
@@ -172,11 +174,13 @@ export default function DrivePanel({initialFolder, onAttachToChat, onIndexDocume
     const [processingFile, setProcessingFile] = useState<{ name: string; type: 'attach' | 'index' } | null>(null);
     const dragDepthRef = useRef(0);
     const requestIdRef = useRef(0);
+    const [loadError, setLoadError] = useState('');
     const loadingMoreRef = useRef(false);
 
     const loadFiles = async (append = false, pageToken = '') => {
         if (append && loadingMoreRef.current) return;
         const requestId = append ? requestIdRef.current : ++requestIdRef.current;
+        setLoadError('');
         if (append) {
             loadingMoreRef.current = true;
             setIsLoadingMore(true);
@@ -196,6 +200,8 @@ export default function DrivePanel({initialFolder, onAttachToChat, onIndexDocume
             if (!append) setSelectedIds(new Set());
             setFiles(current => append ? [...current, ...(result.files || [])] : result.files || []);
             setNextPageToken(result.nextPageToken || '');
+        } catch (error) {
+            if (requestId === requestIdRef.current) setLoadError(workspaceLoadErrorMessage(error));
         } finally {
             if (append) {
                 loadingMoreRef.current = false;
@@ -680,7 +686,7 @@ export default function DrivePanel({initialFolder, onAttachToChat, onIndexDocume
                 event.target.value = '';
             }}/>
         </div>
-        {busy ? <div className="gwp-drive-skeleton">{[0, 1, 2, 3, 4].map(i => <div className="gwp-drive-skeleton-row"
+        {loadError ? <WorkspaceLoadError message={loadError} onRetry={() => void loadFiles()} busy={busy || isLoadingMore}/> : busy ? <div className="gwp-drive-skeleton">{[0, 1, 2, 3, 4].map(i => <div className="gwp-drive-skeleton-row"
                                                                                    key={i}><span
             className="gwp-drive-skeleton-icon"/><span className="gwp-drive-skeleton-name"/><span
             className="gwp-drive-skeleton-date"/><span className="gwp-drive-skeleton-size"/>

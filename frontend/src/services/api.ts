@@ -13,6 +13,8 @@ import type {
 } from '../types';
 import { assertOk, ApiError } from '../utils/apiError';
 import i18n from '../i18n';
+import {microsoftFetch} from './microsoftFetch';
+import type {MicrosoftErrorFeedback} from '../utils/microsoftErrorToast';
 
 const API_BASE = '/api';
 const EXTERNAL_DATA_BOOTSTRAP_CACHE_MS = 10_000;
@@ -385,17 +387,18 @@ export interface AllExternalDocumentsResponse extends Omit<Gov24DocumentsRespons
 }
 
 export const createWorkspaceApi = (workspace = 'google-workspace', accountId = '') => {
-    const fetch: typeof globalThis.fetch = (input, init) => {
+    const fetch = (input: RequestInfo | URL, init?: RequestInit, feedback: MicrosoftErrorFeedback = 'action') => {
         if (typeof input === 'string' && input.includes('/microsoft-workspace/') && accountId) {
             const [path, query = ''] = input.split('?');
             const params = new URLSearchParams(query);
             params.set('account_id', accountId);
             input = `${path}?${params}`;
         }
-        return globalThis.fetch(input, init);
+        return typeof input === 'string' && input.startsWith(`${API_BASE}/microsoft-workspace/`)
+            ? microsoftFetch(input, init, feedback) : globalThis.fetch(input, init);
     };
-    const fetchJson = async <T = any>(input: RequestInfo | URL, init?: RequestInit): Promise<T> => {
-        const response = await fetch(input, init);
+    const fetchJson = async <T = any>(input: RequestInfo | URL, init?: RequestInit, feedback: MicrosoftErrorFeedback = 'action'): Promise<T> => {
+        const response = await fetch(input, init, feedback);
         await assertOk(response);
         return response.json();
     };
@@ -851,7 +854,7 @@ export const createWorkspaceApi = (workspace = 'google-workspace', accountId = '
         return res.json();
     },
 
-    async getGoogleMailLabels() { return fetchJson(`${API_BASE}/${workspace}/mail/labels`); },
+    async getGoogleMailLabels() { return fetchJson(`${API_BASE}/${workspace}/mail/labels`, undefined, 'list'); },
     async createGoogleMailLabel(name: string) {
         const response = await fetch(`${API_BASE}/${workspace}/mail/labels`, {
             method: 'POST',
@@ -880,7 +883,7 @@ export const createWorkspaceApi = (workspace = 'google-workspace', accountId = '
         const requestKey = `${workspace}:${accountId}:${params.toString()}`;
         const pendingRequest = pendingGoogleMailWorkspaceRequests.get(requestKey);
         if (pendingRequest) return pendingRequest;
-        const request = fetch(`${API_BASE}/${workspace}/mail/workspace?${params}`)
+        const request = fetch(`${API_BASE}/${workspace}/mail/workspace?${params}`, undefined, 'list')
             .then(async response => {
                 await assertOk(response);
                 return response.json() as Promise<GoogleMailWorkspaceResponse>;
@@ -889,7 +892,7 @@ export const createWorkspaceApi = (workspace = 'google-workspace', accountId = '
         pendingGoogleMailWorkspaceRequests.set(requestKey, request);
         return request;
     },
-    async getGoogleMailMessages(label = 'INBOX', pageToken = '') { const params = new URLSearchParams({label}); if (pageToken) params.set('page_token', pageToken); return fetchJson(`${API_BASE}/${workspace}/mail/messages?${params}`); },
+    async getGoogleMailMessages(label = 'INBOX', pageToken = '') { const params = new URLSearchParams({label}); if (pageToken) params.set('page_token', pageToken); return fetchJson(`${API_BASE}/${workspace}/mail/messages?${params}`, undefined, 'list'); },
     async getGoogleMailMessage(id: string, label = 'INBOX') {
         const response = await fetch(`${API_BASE}/${workspace}/mail/messages/${encodeURIComponent(id)}?${new URLSearchParams({label})}`);
         await assertOk(response);
@@ -897,7 +900,7 @@ export const createWorkspaceApi = (workspace = 'google-workspace', accountId = '
     },
     async indexGoogleMailThreadForKnowledge(threadId: string, accountId: string, threadMessages?: Array<{id: string; from_: string; to: string; cc: string; date: string; subject: string; body: string; html_body: string; attachments: Array<{id: string; filename: string; mime_type: string; size: number}>}>) { return fetchJson<{source_id: string; thread_id: string; message_count: number; updated: boolean}>(`${API_BASE}/${workspace}/mail/threads/${encodeURIComponent(threadId)}/knowledge-index`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({account_id: accountId, thread_messages: threadMessages || []})}); },
     async getGoogleMailSignature(accountId: string): Promise<{signature_html: string; enabled: boolean; macros: Array<{id: string; title: string; content_html: string}>}> {
-        const response = await fetch(`${API_BASE}/${workspace}/accounts/${encodeURIComponent(accountId)}/mail/signature`);
+        const response = await fetch(`${API_BASE}/${workspace}/accounts/${encodeURIComponent(accountId)}/mail/signature`, undefined, 'background');
         await assertOk(response);
         return response.json();
     },
@@ -1013,7 +1016,7 @@ export const createWorkspaceApi = (workspace = 'google-workspace', accountId = '
             order_by: orderBy,
             order_direction: orderDirection,
         });
-        return fetchJson(`${API_BASE}/${workspace}/drive/files?${params}`);
+        return fetchJson(`${API_BASE}/${workspace}/drive/files?${params}`, undefined, 'list');
     },
     async uploadGoogleDriveFiles(data: FormData) { return fetchJson(`${API_BASE}/${workspace}/drive/upload`, {method: 'POST', body: data}); },
     async createGoogleDriveFolder(parentId: string, name: string) { return fetchJson(`${API_BASE}/${workspace}/drive/folders`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({parent_id: parentId, name})}); },
@@ -1089,7 +1092,7 @@ export const createWorkspaceApi = (workspace = 'google-workspace', accountId = '
         if (params.max_results) query.set('max_results', String(params.max_results));
         if (params.calendar_id) query.set('calendar_id', params.calendar_id);
         if (params.q) query.set('q', params.q);
-        return fetchJson(`${API_BASE}/${workspace}/calendar/events?${query}`);
+        return fetchJson(`${API_BASE}/${workspace}/calendar/events?${query}`, undefined, 'list');
     },
     async createGoogleCalendarEvent(data: {summary: string; start: string; end: string; description?: string; location?: string; calendar_id?: string; timezone?: string; reminders?: {method: 'popup' | 'email'; minutes: number}[]; use_default_reminders?: boolean}) {
         return fetchJson(`${API_BASE}/${workspace}/calendar/events`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
@@ -1100,7 +1103,7 @@ export const createWorkspaceApi = (workspace = 'google-workspace', accountId = '
     async deleteGoogleCalendarEvent(eventId: string, calendarId = 'primary') {
         return fetchJson(`${API_BASE}/${workspace}/calendar/events/${encodeURIComponent(eventId)}?calendar_id=${encodeURIComponent(calendarId)}`, {method: 'DELETE'});
     },
-    async getGoogleCalendars() { return fetchJson(`${API_BASE}/${workspace}/calendar/calendars`); },
+    async getGoogleCalendars() { return fetchJson(`${API_BASE}/${workspace}/calendar/calendars`, undefined, 'list'); },
 
     async getNotifications(limit = 30, offset = 0) { return fetchJson(`${API_BASE}/notifications?limit=${limit}&offset=${offset}`); },
     async createNotification(data: {type: string; source_id: string; title: string; message?: string; occurred_at?: string; update_only?: boolean; account_id?: string; account_email?: string}) { return fetchJson(`${API_BASE}/notifications`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)}); },

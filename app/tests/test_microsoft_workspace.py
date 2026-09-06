@@ -4,6 +4,7 @@ import httpx
 from unittest.mock import AsyncMock, patch
 from urllib.parse import parse_qs, urlsplit
 from fastapi import HTTPException
+from error_responses import error_code_for
 from starlette.datastructures import FormData
 from routers.microsoft_workspace import drive_items_for_delete, send_mail, bulk_mail, event_body, safe_filename, normalize_event, normalize_permission, normalize_file, visible_drive_items, invite
 from services.microsoft_workspace import auth, mail, tools
@@ -255,3 +256,75 @@ class MicrosoftBatchWorkspaceTests(unittest.IsolatedAsyncioTestCase):
         sleep.assert_awaited_once_with(4)
         self.assertEqual([r["id"] for r in graph.call_args_list[1].kwargs["json"]["requests"]], ["messages"])
         self.assertEqual(graph.call_args_list[0].kwargs["json"]["requests"][1]["dependsOn"], ["folders"])
+
+
+class MicrosoftActionableErrorTests(unittest.IsolatedAsyncioTestCase):
+    async def test_direct_errors_preserve_actionable_public_codes(self):
+        for status, graph_code, public_code in (
+            (403, "ErrorAccountSuspend", "microsoft_account_suspended"),
+            (429, "TooManyRequests", "microsoft_rate_limited"),
+            (403, "accessDenied", "permission_denied"),
+        ):
+            with self.subTest(code=graph_code):
+                client = AsyncMock()
+                client.request.return_value = httpx.Response(status, json={"error": {"code": graph_code}})
+                with patch.object(auth, "access_token", AsyncMock(return_value=("token", {"id": "actionable-test"}))), \
+                        patch.object(auth.httpx, "AsyncClient") as factory:
+                    factory.return_value.__aenter__.return_value = client
+                    with self.assertRaises(HTTPException) as caught:
+                        await auth.graph("/me/messages", "POST")
+                self.assertEqual(error_code_for(status, caught.exception.detail), public_code)
+                self.assertEqual(client.request.await_count, 1)
+
+    async def test_batch_errors_preserve_actionable_codes_after_retries(self):
+        for status, graph_code, public_code, retry_after, calls in (
+            (403, "ErrorAccountSuspend", "microsoft_account_suspended", "2", 1),
+            (429, "TooManyRequests", "microsoft_rate_limited", "2", 3),
+            (429, "TooManyRequests", "microsoft_rate_limited", "60", 1),
+        ):
+            with self.subTest(code=graph_code, retry_after=retry_after):
+                response = {"responses": [{"id": "messages", "status": status,
+                    "headers": {"Retry-After": retry_after}, "body": {"error": {"code": graph_code}}}]}
+                with patch.object(auth, "graph", AsyncMock(return_value=response)) as graph, \
+                        patch.object(auth.asyncio, "sleep", AsyncMock()):
+                    with self.assertRaises(HTTPException) as caught:
+                        await auth.graph_batch_get({"messages": "/me/messages"}, "test")
+                self.assertEqual(error_code_for(status, caught.exception.detail), public_code)
+                self.assertEqual(graph.await_count, calls)
+
+
+class MicrosoftConnectionErrorTests(unittest.IsolatedAsyncioTestCase):
+    async def test_graph_timeout_returns_public_connection_error(self):
+        client = AsyncMock()
+        client.request.side_effect = httpx.ConnectTimeout('private connection details')
+        with patch.object(auth, 'access_token', AsyncMock(return_value=('secret-token', {'id': 'connection-test'}))), \
+                patch.object(auth.httpx, 'AsyncClient') as factory:
+            factory.return_value.__aenter__.return_value = client
+            with self.assertRaises(HTTPException) as caught:
+                await auth.graph('/me/messages')
+        self.assertEqual(caught.exception.status_code, 503)
+        self.assertEqual(caught.exception.detail, 'microsoft_connection_failed')
+
+    async def test_transient_refresh_failures_do_not_request_reconnection_or_remove_token(self):
+        for failure, status, code in (
+            (httpx.ConnectTimeout('private connection details'), 503, 'microsoft_connection_failed'),
+            (httpx.Response(503), 503, 'microsoft_connection_failed'),
+            (httpx.Response(429), 429, 'microsoft_rate_limited'),
+        ):
+            with self.subTest(failure=str(failure)):
+                client = AsyncMock()
+                if isinstance(failure, Exception):
+                    client.post.side_effect = failure
+                else:
+                    client.post.return_value = failure
+                token = {'refresh_token': 'secret-refresh', 'client_id': 'client', 'expires_at': 0}
+                with patch.object(auth, 'account', AsyncMock(return_value=({'client_id': 'client'}, {'id': 'refresh-test'}))), \
+                        patch.object(auth, 'read_token', AsyncMock(return_value=token)), \
+                        patch.object(auth, 'save_token', AsyncMock()) as save, \
+                        patch.object(auth.httpx, 'AsyncClient') as factory:
+                    factory.return_value.__aenter__.return_value = client
+                    with self.assertRaises(HTTPException) as caught:
+                        await auth.access_token('refresh-test')
+                self.assertEqual(caught.exception.status_code, status)
+                self.assertEqual(caught.exception.detail, code)
+                save.assert_not_awaited()

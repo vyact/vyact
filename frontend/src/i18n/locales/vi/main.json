@@ -1201,6 +1201,13 @@
   "uiAuditFinal": {"attachments":"{{count}} tệp đính kèm","removeAll":"Xóa tất cả","characterCount":"{{count}} ký tự","itemCount":"{{count}} mục","download":"Tải xuống","fileCount":"{{count}} tệp","zipDownload":"Tải ZIP xuống","errorDetail":"❌ Lỗi: {{message}}"},
   "networkError": {"requestFailed":"Yêu cầu thất bại","serverError":"Lỗi máy chủ","streamFailed":"Yêu cầu phát trực tiếp thất bại","clientErrorDetail":"Lỗi yêu cầu ({{status}}): {{detail}}","serverErrorDetail":"Lỗi máy chủ ({{status}}): {{detail}} — Vui lòng thử lại sau ít phút.","genericDetail":"Lỗi: {{detail}}"},
   "backendErrors": {
+    "microsoft_authentication_required": "Vui lòng kết nối lại tài khoản Microsoft.",
+    "microsoft_permission_denied": "Bạn không có quyền truy cập mục này hoặc thực hiện thao tác này. Hãy kiểm tra tài khoản và quyền chia sẻ.",
+    "microsoft_item_not_found": "Không tìm thấy mục này. Vui lòng làm mới danh sách.",
+    "microsoft_connection_failed": "Không thể kết nối với Microsoft. Vui lòng thử lại sau. Nếu bạn đang gửi hoặc thay đổi nội dung, hãy kiểm tra kết quả trước.",
+    "microsoft_request_failed": "Không thể hoàn tất thao tác. Nếu sự cố vẫn tiếp diễn, hãy liên hệ bộ phận hỗ trợ.",
+    "microsoft_account_suspended": "Quyền truy cập hộp thư Outlook của bạn đã bị đình chỉ. Hãy đăng nhập bằng tài khoản bị ảnh hưởng tại https://outlook.live.com và làm theo hướng dẫn để xác minh danh tính và bỏ chặn truy cập. Sau đó thử lại trong Vyact.",
+    "microsoft_rate_limited": "Microsoft đã tạm thời giới hạn yêu cầu do có quá nhiều yêu cầu được gửi. Vui lòng đợi một lúc rồi thử lại.",
     "plugin_not_active": "Plugin chưa được kích hoạt. Hãy bật trong phần Cài đặt.",
     "mlx_unsupported_platform": "Môi trường này không hỗ trợ MLX.",
     "external_api_auth_disabled": "Xác thực API bên ngoài đang tắt. Hãy bật xác thực API trong phần Cài đặt.",

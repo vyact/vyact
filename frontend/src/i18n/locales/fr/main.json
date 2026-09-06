@@ -1201,6 +1201,13 @@
   "uiAuditFinal": {"attachments":"{{count}} pièces jointes","removeAll":"Tout supprimer","characterCount":"{{count}} caractères","itemCount":"{{count}} éléments","download":"Télécharger","fileCount":"{{count}} fichiers","zipDownload":"Télécharger le ZIP","errorDetail":"❌ Erreur : {{message}}"},
   "networkError": {"requestFailed":"Échec de la requête","serverError":"Erreur du serveur","streamFailed":"Échec de la requête en streaming","clientErrorDetail":"Erreur de requête ({{status}}) : {{detail}}","serverErrorDetail":"Erreur du serveur ({{status}}) : {{detail}} — Veuillez réessayer dans quelques instants.","genericDetail":"Erreur : {{detail}}"},
   "backendErrors": {
+    "microsoft_authentication_required": "Veuillez reconnecter votre compte Microsoft.",
+    "microsoft_permission_denied": "Vous n’avez pas l’autorisation d’accéder à cet élément ou d’effectuer cette action. Vérifiez votre compte et les autorisations de partage.",
+    "microsoft_item_not_found": "L’élément est introuvable. Veuillez actualiser la liste.",
+    "microsoft_connection_failed": "Impossible de se connecter à Microsoft. Réessayez plus tard. Si vous étiez en train d’envoyer ou de modifier un élément, vérifiez d’abord le résultat.",
+    "microsoft_request_failed": "Impossible de terminer l’action. Si le problème persiste, contactez l’assistance.",
+    "microsoft_account_suspended": "L’accès à votre boîte Outlook est suspendu. Connectez-vous avec le compte concerné sur https://outlook.live.com et suivez les instructions pour vérifier votre identité et débloquer l’accès. Réessayez ensuite dans Vyact.",
+    "microsoft_rate_limited": "Microsoft a temporairement limité les requêtes car elles sont trop nombreuses. Patientez un moment avant de réessayer.",
     "plugin_not_active": "Le plugin n’est pas actif. Activez-le dans les paramètres.",
     "mlx_unsupported_platform": "MLX n’est pas pris en charge dans cet environnement.",
     "external_api_auth_disabled": "L’authentification de l’API externe est désactivée. Activez-la dans les paramètres.",

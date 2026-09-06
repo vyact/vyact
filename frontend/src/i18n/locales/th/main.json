@@ -1201,6 +1201,13 @@
   "uiAuditFinal": {"attachments":"ไฟล์แนบ {{count}} รายการ","removeAll":"ลบทั้งหมด","characterCount":"{{count}} อักขระ","itemCount":"{{count}} รายการ","download":"ดาวน์โหลด","fileCount":"{{count}} ไฟล์","zipDownload":"ดาวน์โหลด ZIP","errorDetail":"❌ ข้อผิดพลาด: {{message}}"},
   "networkError": {"requestFailed":"คำขอล้มเหลว","serverError":"เซิร์ฟเวอร์ผิดพลาด","streamFailed":"คำขอสตรีมล้มเหลว","clientErrorDetail":"คำขอผิดพลาด ({{status}}): {{detail}}","serverErrorDetail":"เซิร์ฟเวอร์ผิดพลาด ({{status}}): {{detail}} — โปรดลองอีกครั้งในภายหลัง","genericDetail":"ข้อผิดพลาด: {{detail}}"},
   "backendErrors": {
+    "microsoft_authentication_required": "โปรดเชื่อมต่อบัญชี Microsoft ของคุณอีกครั้ง",
+    "microsoft_permission_denied": "คุณไม่มีสิทธิ์เข้าถึงรายการนี้หรือดำเนินการนี้ โปรดตรวจสอบบัญชีและสิทธิ์การแชร์",
+    "microsoft_item_not_found": "ไม่พบรายการ โปรดรีเฟรชรายการ",
+    "microsoft_connection_failed": "เชื่อมต่อกับ Microsoft ไม่ได้ โปรดลองอีกครั้งในภายหลัง หากกำลังส่งหรือเปลี่ยนแปลงข้อมูล โปรดตรวจสอบผลลัพธ์ก่อน",
+    "microsoft_request_failed": "ดำเนินการไม่สำเร็จ หากยังเกิดปัญหา โปรดติดต่อฝ่ายสนับสนุน",
+    "microsoft_account_suspended": "การเข้าถึงกล่องจดหมาย Outlook ของคุณถูกระงับ โปรดลงชื่อเข้าใช้ด้วยบัญชีที่ได้รับผลกระทบที่ https://outlook.live.com แล้วทำตามคำแนะนำเพื่อยืนยันตัวตนและปลดการระงับ จากนั้นลองอีกครั้งใน Vyact",
+    "microsoft_rate_limited": "Microsoft จำกัดคำขอชั่วคราวเนื่องจากมีคำขอมากเกินไป โปรดรอสักครู่แล้วลองอีกครั้ง",
     "plugin_not_active": "ปลั๊กอินยังไม่เปิดใช้งาน โปรดเปิดใช้งานในการตั้งค่า",
     "mlx_unsupported_platform": "สภาพแวดล้อมนี้ไม่รองรับ MLX",
     "external_api_auth_disabled": "การยืนยันตัวตน API ภายนอกถูกปิดอยู่ โปรดเปิดการยืนยันตัวตน API ในการตั้งค่า",

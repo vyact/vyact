@@ -161,12 +161,20 @@ async def access_token(account_id: str = "") -> tuple[str, dict]:
         if not token.get("refresh_token") or token.get("client_id") != settings.get("client_id"):
             raise HTTPException(401, "microsoft.accountUnavailable")
         if token.get("expires_at", 0) < time.time() + 60:
-            async with httpx.AsyncClient(timeout=30) as client:
-                response = await client.post(f"{AUTHORITY}/token", data={
-                    "client_id": settings["client_id"], "grant_type": "refresh_token",
-                    "refresh_token": token["refresh_token"], "scope": SCOPES,
-                })
+            try:
+                async with httpx.AsyncClient(timeout=30) as client:
+                    response = await client.post(f"{AUTHORITY}/token", data={
+                        "client_id": settings["client_id"], "grant_type": "refresh_token",
+                        "refresh_token": token["refresh_token"], "scope": SCOPES,
+                    })
+            except httpx.RequestError as error:
+                logger.warning("Microsoft token transport failure account=%s error=%s", account_id, type(error).__name__)
+                raise HTTPException(503, "microsoft_connection_failed") from error
             if response.is_error:
+                if response.status_code == 429 or response.status_code >= 500:
+                    logger.warning("Microsoft token service failure account=%s status=%s", account_id, response.status_code)
+                    raise HTTPException(response.status_code if response.status_code == 429 else 503,
+                                        "microsoft_rate_limited" if response.status_code == 429 else "microsoft_connection_failed")
                 if response.status_code == 400:
                     await save_token(account_id, {})
                 raise HTTPException(401, "microsoft.accountUnavailable")
@@ -174,6 +182,14 @@ async def access_token(account_id: str = "") -> tuple[str, dict]:
             token["expires_at"] = time.time() + token.get("expires_in", 3600)
             await save_token(account_id, token)
         return token["access_token"], item
+
+
+def graph_error_detail(status: int, code: str = "") -> str:
+    if status == 403 and code == "ErrorAccountSuspend":
+        return "microsoft_account_suspended"
+    if status == 429:
+        return "microsoft_rate_limited"
+    return "microsoft.requestFailed"
 
 
 async def graph(path: str, method: str = "GET", *, account_id: str = "", params: dict | None = None,
@@ -200,7 +216,7 @@ async def graph(path: str, method: str = "GET", *, account_id: str = "", params:
                 except httpx.RequestError as error:
                     logger.warning("Graph transport failure account=%s route=%s request=%s error=%s",
                                    item["id"], route, request_id, type(error).__name__)
-                    raise
+                    raise HTTPException(503, "microsoft_connection_failed") from error
                 if not response.is_error:
                     break
                 try:
@@ -218,7 +234,7 @@ async def graph(path: str, method: str = "GET", *, account_id: str = "", params:
                     if delay <= 30:
                         await asyncio.sleep(delay)
                         continue
-                raise HTTPException(response.status_code, "microsoft.requestFailed")
+                raise HTTPException(response.status_code, graph_error_detail(response.status_code, error_code))
     if raw:
         return response
     return response.json() if response.content else {}
@@ -252,7 +268,7 @@ async def graph_batch_get(requests: dict[str, str], account_id: str) -> dict[str
                            account_id, key, status, code, headers.get("request-id", ""),
                            headers.get("retry-after", ""), attempt + 1)
             if status not in (429, 424, 503) or attempt == 2:
-                raise HTTPException(status, "microsoft.requestFailed")
+                raise HTTPException(status, graph_error_detail(status, code))
             try:
                 delay = max(delay, int(headers.get("retry-after", "2")))
             except ValueError:
@@ -261,7 +277,7 @@ async def graph_batch_get(requests: dict[str, str], account_id: str) -> dict[str
         if not retry:
             return results
         if delay > 30:
-            raise HTTPException(429, "microsoft.requestFailed")
+            raise HTTPException(429, graph_error_detail(429))
         await asyncio.sleep(delay)
         pending = retry
     return results

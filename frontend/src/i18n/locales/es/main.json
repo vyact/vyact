@@ -1200,6 +1200,13 @@
   "uiAuditFinal": {"attachments":"{{count}} archivos adjuntos","removeAll":"Eliminar todo","characterCount":"{{count}} caracteres","itemCount":"{{count}} elementos","download":"Descargar","fileCount":"{{count}} archivos","zipDownload":"Descargar ZIP","errorDetail":"❌ Error: {{message}}"},
   "networkError": {"requestFailed":"Solicitud fallida","serverError":"Error del servidor","streamFailed":"Falló la solicitud de transmisión","clientErrorDetail":"Error de solicitud ({{status}}): {{detail}}","serverErrorDetail":"Error del servidor ({{status}}): {{detail}} — Inténtalo de nuevo en breve.","genericDetail":"Error: {{detail}}"},
   "backendErrors": {
+    "microsoft_authentication_required": "Vuelve a conectar tu cuenta de Microsoft.",
+    "microsoft_permission_denied": "No tienes permiso para acceder a este elemento o realizar esta acción. Comprueba tu cuenta y los permisos de uso compartido.",
+    "microsoft_item_not_found": "No se ha encontrado el elemento. Actualiza la lista.",
+    "microsoft_connection_failed": "No se pudo conectar con Microsoft. Vuelve a intentarlo más tarde. Si estabas enviando o modificando algo, comprueba primero el resultado.",
+    "microsoft_request_failed": "No se pudo completar la acción. Si el problema persiste, contacta con soporte.",
+    "microsoft_account_suspended": "El acceso a tu buzón de Outlook está suspendido. Inicia sesión con la cuenta afectada en https://outlook.live.com y sigue las instrucciones para verificar tu identidad y desbloquear el acceso. Después, vuelve a intentarlo en Vyact.",
+    "microsoft_rate_limited": "Microsoft ha limitado temporalmente las solicitudes porque se han enviado demasiadas. Espera un momento antes de volver a intentarlo.",
     "plugin_not_active": "El complemento no está activo. Actívalo en Configuración.",
     "mlx_unsupported_platform": "MLX no es compatible con este entorno.",
     "external_api_auth_disabled": "La autenticación de la API externa está desactivada. Actívala en Configuración.",

@@ -1201,6 +1201,13 @@
   "uiAuditFinal": {"attachments":"添付ファイル {{count}}件","removeAll":"すべて削除","characterCount":"{{count}}文字","itemCount":"{{count}}件","download":"ダウンロード","fileCount":"{{count}}ファイル","zipDownload":"ZIPをダウンロード","errorDetail":"❌ エラー: {{message}}"},
   "networkError": {"requestFailed":"リクエスト失敗","serverError":"サーバーエラー","streamFailed":"ストリーミングリクエストに失敗しました","clientErrorDetail":"リクエストエラー（{{status}}）：{{detail}}","serverErrorDetail":"サーバーエラー（{{status}}）：{{detail}} — しばらくしてからもう一度お試しください。","genericDetail":"エラー：{{detail}}"},
   "backendErrors": {
+    "microsoft_authentication_required": "Microsoft アカウントを再接続してください。",
+    "microsoft_permission_denied": "この項目へのアクセスまたは操作を行う権限がありません。アカウントと共有権限を確認してください。",
+    "microsoft_item_not_found": "項目が見つかりません。リストを更新してください。",
+    "microsoft_connection_failed": "Microsoft に接続できませんでした。しばらくしてから再試行してください。送信や変更の途中だった場合は、先に処理結果を確認してください。",
+    "microsoft_request_failed": "操作を完了できませんでした。問題が続く場合はサポートにお問い合わせください。",
+    "microsoft_account_suspended": "Outlook メールボックスへのアクセスが停止されています。https://outlook.live.com に対象のアカウントでサインインし、画面の案内に従って本人確認と停止解除を行ってください。解除後、Vyact で再試行してください。",
+    "microsoft_rate_limited": "リクエストが多すぎるため、Microsoft が一時的に制限しています。しばらく待ってから再試行してください。",
     "plugin_not_active": "プラグインが有効になっていません。設定で有効にしてください。",
     "mlx_unsupported_platform": "この環境では MLX を使用できません。",
     "external_api_auth_disabled": "外部 API 認証が無効です。設定で API 認証を有効にしてください。",
