@@ -118,7 +118,7 @@ def hardware_model_profile(model_path: str, runtime: str, repository: str | None
     hardware = get_local_hardware_info()
     budget = model_memory_budget(hardware)
     minimum = limits["context_min"]
-    target = max(minimum, limits["context_max"] or fallback or DEFAULT_CONTEXT_SIZE)
+    target = max(minimum, limits["context_max"] // 2 if limits["context_max"] else fallback or DEFAULT_CONTEXT_SIZE)
     # MTP stays opt-in: available memory alone cannot prove a speed improvement.
     # DFlash2 is automatic and requires an unquantized cache.
     has_dflash = runtime == "gguf" and bool(get_cached_dflash2_model(info["path"]))
@@ -159,7 +159,7 @@ def hardware_model_profile(model_path: str, runtime: str, repository: str | None
             profile[key] = value
     default_output = limits["output_max"] or _positive_integer(generation.get("max_new_tokens"))
     if default_output:
-        profile["max_output_tokens"] = default_output
+        profile["max_output_tokens"] = min(profile["max_output_tokens"], default_output)
     profile["limits"] = limits
     profile = normalize_model_profile(profile, limits, initial_defaults=True)
     reserve = min(MINIMUM_CONTEXT_RESERVE_TOKENS, profile["context_size"] // 2)

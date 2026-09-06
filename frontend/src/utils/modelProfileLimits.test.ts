@@ -39,7 +39,8 @@ describe('context normalization on blur', () => {
 describe('context budget adjustment', () => {
     it('reduces overflowing budgets to fit the context reserve', () => {
         const result = adjustModelContextBudgets(profile({context_size: 32768, max_output_tokens: 130560, history_token_budget: 130560}));
-        expect(result.max_output_tokens + result.history_token_budget).toBe(31744);
+        expect(result.max_output_tokens).toBe(15872);
+        expect(result.history_token_budget).toBe(15872);
         expect(result.context_size).toBe(32768);
     });
     it('preserves budgets that already fit when context grows', () => {
@@ -47,4 +48,20 @@ describe('context budget adjustment', () => {
         expect(result.max_output_tokens).toBe(4096);
         expect(result.history_token_budget).toBe(16384);
     });
+});
+
+it('keeps the previous budget ratio when shrinking', () => {
+    const result = adjustModelContextBudgets(profile({context_size: 32768, max_output_tokens: 32768, history_token_budget: 98304}));
+    expect(result.max_output_tokens).toBe(7936);
+    expect(result.history_token_budget).toBe(23808);
+});
+it('preserves explicitly disabled history', () => {
+    const result = adjustModelContextBudgets(profile({context_size: 32768, max_output_tokens: 130560, history_token_budget: 0}));
+    expect(result.max_output_tokens).toBe(31744);
+    expect(result.history_token_budget).toBe(0);
+});
+it('keeps positive history even with a very large output budget', () => {
+    const result = adjustModelContextBudgets(profile({context_size: 4096, max_output_tokens: 130560, history_token_budget: 1}));
+    expect(result.history_token_budget).toBe(1);
+    expect(result.max_output_tokens + result.history_token_budget).toBeLessThanOrEqual(3072);
 });

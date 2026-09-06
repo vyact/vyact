@@ -32,7 +32,19 @@ export const normalizeModelContext = (profile: VyactModelProfile): VyactModelPro
 
 export const adjustModelContextBudgets = (profile: VyactModelProfile): VyactModelProfile => {
     const normalized = normalizeModelContext(profile);
-    const max_output_tokens = Math.min(normalized.max_output_tokens, getModelProfileLimits(normalized).outputMax);
-    const withOutput = {...normalized, max_output_tokens};
-    return {...withOutput, history_token_budget: Math.min(withOutput.history_token_budget, getModelProfileLimits(withOutput).historyMax)};
+    const limits = getModelProfileLimits(normalized);
+    const availableBudget = getModelProfileLimits({...normalized, max_output_tokens: 0}).historyMax;
+    const totalBudget = normalized.max_output_tokens + normalized.history_token_budget;
+    const scale = totalBudget > availableBudget ? availableBudget / totalBudget : 1;
+    const historyMinimum = normalized.history_token_budget > 0 ? 1 : 0;
+    const max_output_tokens = Math.min(
+        limits.outputMax,
+        availableBudget - historyMinimum,
+        Math.max(1, Math.floor(normalized.max_output_tokens * scale)),
+    );
+    const history_token_budget = Math.min(
+        availableBudget - max_output_tokens,
+        Math.max(historyMinimum, Math.floor(normalized.history_token_budget * scale)),
+    );
+    return {...normalized, max_output_tokens, history_token_budget};
 };
