@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest';
 import type {VyactModelProfile} from '../services/api';
-import {getModelProfileLimits, normalizeModelContext} from './modelProfileLimits';
+import {getModelProfileLimits, normalizeModelContext, adjustModelContextBudgets} from './modelProfileLimits';
 const profile = (value: Partial<VyactModelProfile>) => value as VyactModelProfile;
 describe('model profile field limits', () => {
     it('reserves input and output before allowing history', () => {
@@ -33,5 +33,18 @@ describe('context normalization on blur', () => {
     it('does not invent a missing metadata ceiling', () => {
         const original = profile({context_size: 999999, max_output_tokens: 4096});
         expect(normalizeModelContext(original)).toEqual(original);
+    });
+});
+
+describe('context budget adjustment', () => {
+    it('reduces overflowing budgets to fit the context reserve', () => {
+        const result = adjustModelContextBudgets(profile({context_size: 32768, max_output_tokens: 130560, history_token_budget: 130560}));
+        expect(result.max_output_tokens + result.history_token_budget).toBe(31744);
+        expect(result.context_size).toBe(32768);
+    });
+    it('preserves budgets that already fit when context grows', () => {
+        const result = adjustModelContextBudgets(profile({context_size: 65536, max_output_tokens: 4096, history_token_budget: 16384}));
+        expect(result.max_output_tokens).toBe(4096);
+        expect(result.history_token_budget).toBe(16384);
     });
 });

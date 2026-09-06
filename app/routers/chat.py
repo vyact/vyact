@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from urllib.parse import parse_qsl, urlencode, urlparse
 
 import json
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
@@ -18,6 +18,7 @@ from agent import (
     query_llm, get_model_name,
     get_conversation, rag_query_stream,
 )
+from services.request_cancellation import await_while_connected
 from services.llm.config import get_model_display_name
 from services.llm.stats import format_generation_stats
 from services.llm.warmup import warm_vyact_voice_prefix
@@ -1432,7 +1433,7 @@ def _clean_translate_for_history(raw_answer: str) -> str:
 
 
 @router.post("/translate")
-async def translate(req: TranslateRequest):
+async def translate(req: TranslateRequest, request: Request):
     t_start = datetime.now(timezone.utc)
     logger.info(
         "[translate] start target_lang=%s save_history=%s conv_id=%s text_len=%d preview=%r",
@@ -1444,7 +1445,7 @@ async def translate(req: TranslateRequest):
             f"번역 결과만 출력하고 설명은 하지 마:\n\n{req.text}"
         )
         gen_stats: dict = {}  # query_llm이 provider 토큰수/처리시간 통계를 채움
-        answer = await query_llm(
+        answer = await await_while_connected(request, query_llm(
             prompt, [], "", [], [],
             timeout=300.0,
             format_instruction_override="",
@@ -1455,7 +1456,7 @@ async def translate(req: TranslateRequest):
             call_reason="translate",
             stats_out=gen_stats,
             include_response_language=req.include_response_language,
-        )
+        ))
         translated = answer.strip()
 
         conv_id = req.conv_id

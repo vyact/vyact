@@ -1222,6 +1222,7 @@
     "model_benchmark_busy": "Đang kiểm tra hiệu năng. Thử lại khi hoàn tất hoặc dừng.","invalid_request":"Hãy kiểm tra yêu cầu và thử lại.","authentication_required":"Cần xác thực.","permission_denied":"Bạn không có quyền thực hiện thao tác này.","resource_not_found":"Không tìm thấy mục được yêu cầu.","conflict":"Yêu cầu xung đột với trạng thái hiện tại.","payload_too_large":"Dữ liệu gửi lên quá lớn.","validation_failed":"Một số giá trị không hợp lệ.","rate_limited":"Có quá nhiều yêu cầu. Vui lòng thử lại sau.","internal_error":"Đã xảy ra lỗi nội bộ. Vui lòng thử lại.","upstream_error":"Dịch vụ được kết nối đã trả về lỗi.","service_unavailable":"Dịch vụ tạm thời không khả dụng.","request_timeout":"Yêu cầu đã hết thời gian chờ.","request_failed":"Không thể hoàn tất yêu cầu."},
   "backendStreamErrors": {"presentation_generation_failed":"Không thể tạo bản trình bày.","document_index_failed":"Không thể lập chỉ mục tài liệu.","profile_analysis_failed":"Không thể hoàn tất phân tích hồ sơ.","web_document_save_failed":"Không thể lưu tài liệu web.","empty_audio":"Không nhận được âm thanh.","speech_recognition_failed":"Nhận dạng giọng nói thất bại.","speech_model_unavailable":"Mô hình nhận dạng giọng nói không khả dụng.","local_model_not_downloaded":"Không tìm thấy mô hình cục bộ đã chọn. Hãy chọn lại một mô hình đã tải xuống."},
   "modelSettings": {
+    "tokenBudgetExceeded": "Vượt giới hạn ngữ cảnh. Với cài đặt hiện tại, đầu ra tối đa {{output}} token và lịch sử hội thoại {{history}} token.",
     "modelFileSizeTooltip": "Kích thước tệp mô hình",
     "initialSettingsTitle": "Cách chọn thiết lập ban đầu",
     "allowedTokenRange": "Phạm vi: {{min}}–{{max}} token",
@@ -1246,7 +1247,7 @@
     "automaticSetupGgufTooltip": "Thiết lập tự động của Vyact (GGUF)\nChuyển lớp sang GPU: Tự động\nCân chỉnh theo bộ nhớ: Tự động\nSố lượt sinh đồng thời: 1\nFlash Attention: Tự động\nBộ nhớ đệm prompt: Bật\nRoPE, mmap và KV trên GPU: Mặc định llama.cpp",
     "automaticSetupMlxTooltip": "Thiết lập tự động của Vyact (MLX)\nThực thi Metal: Do MLX quản lý\nBộ nhớ đệm prompt (APC): Bật\nBatch, luồng và bộ nhớ: Mặc định MLX",
     "context": "Context window",
-    "contextTooltip": "Lượng hội thoại và tài liệu tối đa mà mô hình có thể xem xét cùng lúc. Giá trị lớn hơn dùng nhiều bộ nhớ hơn. Giữ giá trị đề xuất trừ khi nội dung dài bị cắt.",
+    "contextTooltip": "Lượng hội thoại và tài liệu tối đa mà mô hình có thể xem xét cùng lúc. Giá trị lớn có thể dùng nhiều bộ nhớ và làm máy tính chậm đi. Dù được đặt ở mức tối đa của mô hình, hãy giảm giá trị cho phù hợp với độ dài hội thoại, tài liệu thực tế cần dùng và bộ nhớ còn trống trên máy tính.",
     "maxOutput": "Max output tokens",
     "maxOutputTooltip": "Độ dài tối đa của một phản hồi. Tăng giá trị cho phép câu trả lời dài hơn nhưng mất nhiều thời gian và giảm không gian dành cho ngữ cảnh.",
     "historyTokenBudget": "Lịch sử hội thoại",

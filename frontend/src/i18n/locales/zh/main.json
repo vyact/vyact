@@ -1222,6 +1222,7 @@
     "model_benchmark_busy": "正在进行模型性能测试，请在完成或停止后重试。","invalid_request":"请检查请求后重试。","authentication_required":"需要身份验证。","permission_denied":"您无权执行此操作。","resource_not_found":"找不到请求的项目。","conflict":"请求与当前状态冲突。","payload_too_large":"提交的数据过大。","validation_failed":"部分输入值无效。","rate_limited":"请求过多，请稍后重试。","internal_error":"发生内部错误，请重试。","upstream_error":"连接的服务返回了错误。","service_unavailable":"服务暂时不可用。","request_timeout":"请求超时。","request_failed":"无法完成请求。"},
   "backendStreamErrors": {"presentation_generation_failed":"无法生成演示文稿。","document_index_failed":"无法为文档建立索引。","profile_analysis_failed":"无法完成个人资料分析。","web_document_save_failed":"无法保存网页文档。","empty_audio":"未收到音频。","speech_recognition_failed":"语音识别失败。","speech_model_unavailable":"语音识别模型不可用。","local_model_not_downloaded":"找不到所选的本地模型。请重新选择已下载的模型。"},
   "modelSettings": {
+    "tokenBudgetExceeded": "超出上下文预算。当前设置下，输出最多为 {{output}} 个令牌，对话历史最多为 {{history}} 个令牌。",
     "modelFileSizeTooltip": "模型文件大小",
     "initialSettingsTitle": "初始设置依据",
     "allowedTokenRange": "输入范围：{{min}}–{{max}} 个令牌",
@@ -1246,7 +1247,7 @@
     "automaticSetupGgufTooltip": "Vyact 自动运行设置 (GGUF)\nGPU 卸载：自动\n内存适配：自动\n并发生成：1\nFlash Attention：自动\n提示词缓存：启用\nRoPE、mmap、KV GPU 卸载：llama.cpp 默认值",
     "automaticSetupMlxTooltip": "Vyact 自动运行设置 (MLX)\nMetal 执行：由 MLX 运行时管理\n提示词缓存 (APC)：启用\n批处理、线程与内存管理：MLX 默认值",
     "context": "Context window",
-    "contextTooltip": "模型一次可以参考的对话和文档最大长度。数值越大，占用的内存越多。除非长输入被截断，否则建议保留推荐值。",
+    "contextTooltip": "模型一次可以参考的对话和文档最大长度。较大的值可能占用大量内存，导致电脑变慢。即使已设为模型的最大值，也请根据实际需要的对话和文档长度以及电脑的可用内存适当调低。",
     "maxOutput": "Max output tokens",
     "maxOutputTooltip": "单次响应可以生成的最大长度。增大后可以生成更长的回答，但耗时更长，并会减少可用于对话上下文的空间。",
     "historyTokenBudget": "对话历史令牌",

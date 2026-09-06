@@ -1222,6 +1222,7 @@
     "model_benchmark_busy": "Un test est en cours. Réessayez après sa fin ou son arrêt.","invalid_request":"Vérifiez la requête et réessayez.","authentication_required":"Une authentification est requise.","permission_denied":"Vous n’avez pas l’autorisation d’effectuer cette action.","resource_not_found":"L’élément demandé est introuvable.","conflict":"La requête entre en conflit avec l’état actuel.","payload_too_large":"Les données envoyées sont trop volumineuses.","validation_failed":"Certaines valeurs sont invalides.","rate_limited":"Trop de requêtes. Réessayez dans quelques instants.","internal_error":"Une erreur interne s’est produite. Réessayez.","upstream_error":"Le service connecté a renvoyé une erreur.","service_unavailable":"Le service est temporairement indisponible.","request_timeout":"La requête a expiré.","request_failed":"La requête n’a pas pu être effectuée."},
   "backendStreamErrors": {"presentation_generation_failed":"La présentation n’a pas pu être générée.","document_index_failed":"Le document n’a pas pu être indexé.","profile_analysis_failed":"L’analyse du profil n’a pas pu être terminée.","web_document_save_failed":"Le document web n’a pas pu être enregistré.","empty_audio":"Aucun son n’a été reçu.","speech_recognition_failed":"La reconnaissance vocale a échoué.","speech_model_unavailable":"Le modèle de reconnaissance vocale est indisponible.","local_model_not_downloaded":"Le modèle local sélectionné est introuvable. Sélectionnez à nouveau un modèle téléchargé."},
   "modelSettings": {
+    "tokenBudgetExceeded": "Budget de contexte dépassé. Avec ces réglages, la sortie est limitée à {{output}} tokens et l’historique à {{history}} tokens.",
     "modelFileSizeTooltip": "Taille du fichier du modèle",
     "initialSettingsTitle": "Choix des réglages initiaux",
     "allowedTokenRange": "Plage autorisée : {{min}}–{{max}} tokens",
@@ -1246,7 +1247,7 @@
     "automaticSetupGgufTooltip": "Réglages automatiques Vyact (GGUF)\nDéchargement GPU : Automatique\nAdaptation à la mémoire : Automatique\nGénération simultanée : 1\nFlash Attention : Automatique\nCache des prompts : Activé\nRoPE, mmap et KV sur GPU : Valeurs llama.cpp",
     "automaticSetupMlxTooltip": "Réglages automatiques Vyact (MLX)\nExécution Metal : Gérée par MLX\nCache des prompts (APC) : Activé\nLots, threads et mémoire : Valeurs MLX",
     "context": "Context window",
-    "contextTooltip": "Quantité maximale de conversation et de documents que le modèle peut examiner à la fois. Une valeur élevée utilise plus de mémoire. Gardez la valeur recommandée sauf si les longues entrées sont tronquées.",
+    "contextTooltip": "Quantité maximale de conversation et de documents que le modèle peut examiner à la fois. Une valeur élevée peut consommer beaucoup de mémoire et ralentir votre ordinateur. Même si elle est réglée au maximum du modèle, réduisez-la selon la longueur des conversations et documents nécessaires et la mémoire disponible.",
     "maxOutput": "Max output tokens",
     "maxOutputTooltip": "Longueur maximale d’une réponse. Une valeur élevée permet des réponses plus longues, mais prend plus de temps et laisse moins de place au contexte.",
     "historyTokenBudget": "Historique de conversation",

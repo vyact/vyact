@@ -8,7 +8,7 @@ import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import SettingLabel from '../common/SettingLabel/SettingLabel';
 import {Tooltip} from '../common/Tooltip/Tooltip';
-import {getModelProfileLimits, normalizeModelContext, MODEL_SETTING_INPUT_MAX} from '../../utils/modelProfileLimits';
+import {getModelProfileLimits, adjustModelContextBudgets, MODEL_SETTING_INPUT_MAX} from '../../utils/modelProfileLimits';
 import {formatModelBytes} from '../../utils/vyactModelDisplay';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
 import ModelSettingsHelp from './ModelSettingsHelp';
@@ -106,8 +106,12 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
         }
         if (Number.isFinite(Number(value))) setProfile({...profile, [key]: Number(value)});
     };
+    const tokenBudgetInvalid = Boolean(profile && (
+        profile.max_output_tokens > getModelProfileLimits(profile).outputMax
+        || profile.history_token_budget > getModelProfileLimits(profile).historyMax
+    ));
     const apply = async () => {
-        if (!profile || interactionLocked || !formRef.current?.reportValidity()) return;
+        if (!profile || interactionLocked || tokenBudgetInvalid || !formRef.current?.reportValidity()) return;
         if (profile.gpu_manual_split_enabled && !gpuSplitIsValid) {
             setError(t('modelSettings.gpuSplitInvalid'));
             return;
@@ -213,12 +217,12 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
             {!profile ? <div className="model-settings-loading">{error || t('modelSettings.loading')}</div> : <div className="model-settings-body" hidden={benchmarkOpen}>
                 {benchmarkSelected && <p className="model-settings-selection-notice" role="status">{t('modelBenchmark.selected')}</p>}
                 <label><SettingLabel helpHoverOnly label={t('modelSettings.context')} help={<ModelSettingsHelp title={t('modelSettings.context')} description={t('modelSettings.contextTooltip')}/>}/><input className="model-settings-input" type="number" required min={limits!.contextMin} max={limits!.contextMax ?? MODEL_SETTING_INPUT_MAX.tokens} value={numberInputs.context_size ?? profile.context_size} onChange={e => updateNumber('context_size', e.target.value)} onBlur={() => {
-                    if (numberInputs.context_size === '') return;
-                    setProfile(current => current ? normalizeModelContext(current) : current);
-                    setNumberInputs(current => ({...current, context_size: undefined}));
+                    if (numberInputs.context_size === '' || numberInputs.context_size === undefined) return;
+                    setProfile(current => current ? adjustModelContextBudgets(current) : current);
+                    setNumberInputs(current => ({...current, context_size: undefined, max_output_tokens: undefined, history_token_budget: undefined}));
                 }}/></label>
-                <label><SettingLabel helpHoverOnly label={t('modelSettings.maxOutput')} help={<ModelSettingsHelp title={t('modelSettings.maxOutput')} description={t('modelSettings.maxOutputTooltip')}/>}/><input className="model-settings-input" type="number" required min="1" max={MODEL_SETTING_INPUT_MAX.tokens} value={numberInputs.max_output_tokens ?? profile.max_output_tokens} onChange={e => updateNumber('max_output_tokens', e.target.value)}/></label>
-                <label><SettingLabel helpHoverOnly label={t('modelSettings.historyTokenBudget')} help={<ModelSettingsHelp title={t('modelSettings.historyTokenBudget')} description={t('modelSettings.historyTokenBudgetTooltip')}/>}/><input className="model-settings-input" type="number" required min="0" max={MODEL_SETTING_INPUT_MAX.tokens} value={numberInputs.history_token_budget ?? profile.history_token_budget} onChange={e => updateNumber('history_token_budget', e.target.value)}/></label>
+                <label><SettingLabel helpHoverOnly label={t('modelSettings.maxOutput')} help={<ModelSettingsHelp title={t('modelSettings.maxOutput')} description={t('modelSettings.maxOutputTooltip')}/>}/><input className="model-settings-input" type="number" required min="1" max={limits!.outputMax} aria-invalid={profile.max_output_tokens > limits!.outputMax} value={numberInputs.max_output_tokens ?? profile.max_output_tokens} onChange={e => updateNumber('max_output_tokens', e.target.value)}/></label>
+                <label><SettingLabel helpHoverOnly label={t('modelSettings.historyTokenBudget')} help={<ModelSettingsHelp title={t('modelSettings.historyTokenBudget')} description={t('modelSettings.historyTokenBudgetTooltip')}/>}/><input className="model-settings-input" type="number" required min="0" max={limits!.historyMax} aria-invalid={profile.history_token_budget > limits!.historyMax} value={numberInputs.history_token_budget ?? profile.history_token_budget} onChange={e => updateNumber('history_token_budget', e.target.value)}/></label>
                 <label><SettingLabel helpHoverOnly label={t('modelSettings.temperature')} help={<ModelSettingsHelp title={t('modelSettings.temperature')} description={t('modelSettings.temperatureTooltip')}/>}/><input className="model-settings-input" type="number" required min="0" max={MODEL_SETTING_INPUT_MAX.temperature} step="any" value={numberInputs.temperature ?? profile.temperature} onChange={e => updateNumber('temperature', e.target.value)}/></label>
                 <label><SettingLabel helpHoverOnly label={t('modelSettings.topK')} help={<ModelSettingsHelp title={t('modelSettings.topK')} description={t('modelSettings.topKTooltip')}/>}/><input className="model-settings-input" type="number" min="0" max={MODEL_SETTING_INPUT_MAX.topK} value={numberInputs.top_k ?? profile.top_k ?? ''} placeholder={t('modelSettings.modelDefault')} onChange={e => updateNumber('top_k', e.target.value, true)}/></label>
                 <label><SettingLabel helpHoverOnly label={t('modelSettings.topP')} help={<ModelSettingsHelp title={t('modelSettings.topP')} description={t('modelSettings.topPTooltip')}/>}/><input className="model-settings-input" type="number" min="0" max="1" step="any" value={numberInputs.top_p ?? profile.top_p ?? ''} placeholder={t('modelSettings.modelDefault')} onChange={e => updateNumber('top_p', e.target.value, true)}/></label>
@@ -240,9 +244,10 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
                         {profile.capabilities?.seed && <label className="model-settings-option"><SettingLabel helpHoverOnly label={t('modelSettings.seed')} help={<ModelSettingsHelp title={t('modelSettings.seed')} description={t('modelSettings.seedTooltip')}/>} description={t('modelSettings.seedHelp')}/><input className="model-settings-input" type="number" min="0" max={MODEL_SETTING_INPUT_MAX.seed} value={numberInputs.seed ?? profile.seed ?? ''} placeholder={t('modelSettings.randomSeed')} onChange={event => updateNumber('seed', event.target.value, true)}/></label>}
                     </div></div>
                 </section>
+                {tokenBudgetInvalid && <div className="model-settings-error" role="alert">{t('modelSettings.tokenBudgetExceeded', {output: limits!.outputMax, history: limits!.historyMax})}</div>}
                 {error && <div className="model-settings-error">{error}</div>}
             </div>}
-            <footer><button className="model-settings-cancel" type="button" onClick={onClose} disabled={interactionLocked}>{t('modelSettings.cancel')}</button><button className="primary" type="submit" disabled={!profile || saving || benchmarkBusy || !gpuSplitIsValid}>{saving ? t('modelSettings.applying') : t('modelSettings.apply')}</button></footer>
+            <footer><button className="model-settings-cancel" type="button" onClick={onClose} disabled={interactionLocked}>{t('modelSettings.cancel')}</button><button className="primary" type="submit" disabled={!profile || saving || benchmarkBusy || !gpuSplitIsValid || tokenBudgetInvalid}>{saving ? t('modelSettings.applying') : t('modelSettings.apply')}</button></footer>
         </form>
     </ModalOverlay>;
 }

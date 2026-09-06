@@ -1221,6 +1221,7 @@
     "model_benchmark_busy": "A model performance test is running. Retry after it finishes or stops.","invalid_request":"Check your request and try again.","authentication_required":"Authentication is required.","permission_denied":"You do not have permission to perform this action.","resource_not_found":"The requested item could not be found.","conflict":"The request conflicts with the current state.","payload_too_large":"The submitted data is too large.","validation_failed":"Some submitted values are invalid.","rate_limited":"Too many requests. Please try again shortly.","internal_error":"An internal error occurred. Please try again.","upstream_error":"The connected service returned an error.","service_unavailable":"The service is temporarily unavailable.","request_timeout":"The request timed out.","request_failed":"The request could not be completed."},
   "backendStreamErrors": {"presentation_generation_failed":"The presentation could not be generated.","document_index_failed":"The document could not be indexed.","profile_analysis_failed":"The profile analysis could not be completed.","web_document_save_failed":"The web document could not be saved.","empty_audio":"No audio was received.","speech_recognition_failed":"Speech recognition failed.","speech_model_unavailable":"The speech recognition model is unavailable.","local_model_not_downloaded":"The selected local model is unavailable. Select a downloaded model again."},
   "modelSettings": {
+    "tokenBudgetExceeded": "Context budget exceeded. With the current settings, output can be at most {{output}} tokens and conversation history {{history}} tokens.",
     "modelFileSizeTooltip": "Model file size",
     "initialSettingsTitle": "How initial settings are chosen",
     "allowedTokenRange": "Allowed range: {{min}}–{{max}} tokens",
@@ -1245,7 +1246,7 @@
     "automaticSetupGgufTooltip": "Vyact automatic runtime settings (GGUF)\nGPU offload: Automatic\nMemory fitting: Automatic\nConcurrent generation: 1\nFlash Attention: Automatic\nPrompt cache: Enabled\nRoPE, mmap, KV GPU offload: llama.cpp defaults",
     "automaticSetupMlxTooltip": "Vyact automatic runtime settings (MLX)\nMetal execution: Managed by the MLX runtime\nPrompt cache (APC): Enabled\nBatch, threads, and memory management: MLX defaults",
     "context": "Context window",
-    "contextTooltip": "The maximum amount of conversation and document text the model can consider at once. Larger values use more memory. Keep the recommended value unless long inputs are being cut off.",
+    "contextTooltip": "The maximum amount of conversation and document text the model can consider at once. Large values can use substantial memory and slow down your computer. Even if set to the model’s maximum, lower it to suit the conversation and document length you need and the memory available on your computer.",
     "maxOutput": "Max output tokens",
     "maxOutputTooltip": "The maximum length of one response. Increasing it allows longer answers but takes more time and leaves less room for the conversation context.",
     "historyTokenBudget": "Conversation history",
