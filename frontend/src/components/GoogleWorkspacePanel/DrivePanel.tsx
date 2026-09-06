@@ -1,3 +1,6 @@
+import {toast} from '../common/ToastNotifications/ToastNotifications';
+import {findOversizedDriveUpload, DRIVE_UPLOAD_LIMIT_MIB} from './driveUploadValidation';
+import {MICROSOFT_ERROR_TOAST_DURATION} from '../../utils/microsoftErrorToast';
 import WorkspaceLoadError from './WorkspaceLoadError';
 import {workspaceLoadErrorMessage} from '../../utils/workspaceError';
 import {useEffect, useRef, useState} from 'react';
@@ -253,7 +256,16 @@ export default function DrivePanel({initialFolder, onAttachToChat, onIndexDocume
         while (existingNames.has(`${stem} (${i})${ext}`)) i++;
         return `${stem} (${i})${ext}`;
     };
+    const validateUpload = (contents: DriveDropContents): boolean => {
+        const oversized = findOversizedDriveUpload(provider, contents);
+        if (!oversized) return true;
+        toast.error(t('backendErrors.microsoft_drive_upload_too_large', {
+            name: oversized.path, limit: DRIVE_UPLOAD_LIMIT_MIB,
+        }), undefined, MICROSOFT_ERROR_TOAST_DURATION);
+        return false;
+    };
     const startUpload = async (contents: DriveDropContents) => {
+        if (!validateUpload(contents)) return;
         // 최상위 이름만 중복 확인 (폴더는 디렉토리명, 파일은 파일명)
         const topLevelNames = new Set<string>();
         contents.directories.forEach(d => {
@@ -320,6 +332,7 @@ export default function DrivePanel({initialFolder, onAttachToChat, onIndexDocume
         }
     };
     const doUpload = async (contents: DriveDropContents, replace = false) => {
+        if (!validateUpload(contents)) return;
         if (!contents.files.length && !contents.directories.length) return;
         const total = contents.files.length;
         setUploadTotal(total);

@@ -9,12 +9,13 @@ const lastShownAt = new Map<string, number>();
 export type MicrosoftErrorFeedback = 'action' | 'list' | 'background';
 const attentionCodes = new Set([
     'microsoft_account_suspended', 'microsoft_rate_limited',
-    'microsoft_authentication_required', 'microsoft_permission_denied',
+    'microsoft_authentication_required', 'microsoft_permission_denied', 'payload_too_large',
 ]);
 const statusCodes: Record<number, string> = {
     401: 'microsoft_authentication_required',
     403: 'microsoft_permission_denied',
     404: 'microsoft_item_not_found',
+    413: 'payload_too_large',
     429: 'microsoft_rate_limited',
     502: 'microsoft_connection_failed',
     503: 'microsoft_connection_failed',
@@ -28,8 +29,11 @@ export function handleMicrosoftApiError(error: unknown, feedback: MicrosoftError
         ? original.code
         : original ? statusCodes[original.status ?? 0] || 'microsoft_request_failed'
             : 'microsoft_connection_failed';
-    const message = i18n.t(`main:backendErrors.${code}`);
+    const message = code === 'microsoft_rate_limited' && original?.retryAfterSeconds
+        ? i18n.t('main:backendErrors.microsoft_rate_limited_retry', {seconds: original.retryAfterSeconds})
+        : i18n.t(`main:backendErrors.${code}`);
     const failure = new ApiError(message, original?.status, message, code, original?.requestId);
+    failure.retryAfterSeconds = original?.retryAfterSeconds;
     // The request layer owns feedback, including intentional silence for passive loads.
     failure.feedbackHandled = true;
     if (feedback === 'background' || (feedback === 'list' && !attentionCodes.has(code))) return failure;

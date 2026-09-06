@@ -2,6 +2,7 @@
 from services.microsoft_workspace.auth import status
 from services.microsoft_workspace.mail import messages
 from services.notifications import create_notification
+from services.microsoft_workspace.request_limits import is_throttled
 
 _known: dict[str, set[str]] = {}
 
@@ -13,7 +14,12 @@ async def collect_microsoft_notifications() -> None:
     for account_id in set(_known) - active:
         _known.pop(account_id, None)
     for account_id in active:
-        data = await messages(account_id=account_id)
+        try:
+            data = await messages(account_id=account_id)
+        except Exception as error:
+            if is_throttled(error):
+                continue
+            raise
         current = {item["id"] for item in data["messages"]}
         previous = _known.get(account_id)
         for item in data["messages"]:

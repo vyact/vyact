@@ -4,7 +4,7 @@ from urllib.parse import quote
 import httpx
 from fastapi import HTTPException
 
-from services.microsoft_workspace.auth import graph
+from services.microsoft_workspace.auth import graph, external_request
 
 UPLOAD_CHUNK_BYTES = 10 * 320 * 1024
 
@@ -30,7 +30,7 @@ async def upload_backup(content: bytes, filename: str, account_id: str) -> dict:
     async with httpx.AsyncClient(timeout=120) as client:
         for offset in range(0, len(content), UPLOAD_CHUNK_BYTES):
             chunk = content[offset:offset + UPLOAD_CHUNK_BYTES]
-            response = await client.put(url, content=chunk, headers={
+            response = await external_request(client, "PUT", url, account_id=account_id, content=chunk, headers={
                 "Content-Length": str(len(chunk)),
                 "Content-Range": f"bytes {offset}-{offset + len(chunk) - 1}/{len(content)}",
             })

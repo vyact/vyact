@@ -16,12 +16,13 @@ from logger import get_logger
 
 from services.db import INTEGRATION_CREDENTIALS_INDEX, get_es
 from services.mcp_config import list_servers
+from services.microsoft_workspace import request_limits as limits
+from services.microsoft_workspace.transport import managed_request
 
 AUTHORITY = "https://login.microsoftonline.com/common/oauth2/v2.0"
 GRAPH_ROOT = "https://graph.microsoft.com/v1.0"
 SCOPES = "offline_access User.Read Mail.ReadWrite Mail.Send Calendars.ReadWrite Files.ReadWrite"
 logger = get_logger(__name__)
-_graph_limits: dict[str, asyncio.Semaphore] = {}
 _pending: dict[str, dict] = {}
 _locks: dict[str, asyncio.Lock] = {}
 _generations: dict[str, int] = {}
@@ -129,14 +130,14 @@ async def complete_login(state: str, code: str) -> None:
     if settings.get("client_id") != pending["client_id"]:
         raise HTTPException(400, "microsoft.loginExpired")
     async with httpx.AsyncClient(timeout=30) as client:
-        response = await client.post(f"{AUTHORITY}/token", data={
+        response = await managed_request(client, scope_for_token(settings["client_id"], {}, pending["account_id"], "oauth"), "POST", f"{AUTHORITY}/token", data={
             "client_id": pending["client_id"], "grant_type": "authorization_code", "code": code,
             "redirect_uri": pending["redirect_uri"], "code_verifier": pending["verifier"], "scope": SCOPES,
         })
         if response.is_error:
             raise HTTPException(401, "microsoft.connectFailed")
         token = response.json()
-        profile = await client.get(f"{GRAPH_ROOT}/me", headers={"Authorization": f"Bearer {token['access_token']}"})
+        profile = await managed_request(client, scope_for_token(settings["client_id"], {}, pending["account_id"], "profile"), "GET", f"{GRAPH_ROOT}/me", headers={"Authorization": f"Bearer {token['access_token']}"})
         if profile.is_error:
             raise HTTPException(401, "microsoft.connectFailed")
     # A disconnected/deleted account must not be resurrected by an in-flight login.
@@ -146,6 +147,7 @@ async def complete_login(state: str, code: str) -> None:
     if not token.get("refresh_token"):
         raise HTTPException(401, "microsoft.connectFailed")
     token.update(client_id=pending["client_id"], expires_at=time.time() + token.get("expires_in", 3600),
+                 mailbox_id=profile.json().get("id", ""),
                  email=profile.json().get("mail") or profile.json().get("userPrincipalName", ""))
     async with _locks.setdefault(pending["account_id"], asyncio.Lock()):
         if pending["generation"] != _generations.get(pending["account_id"], 0):
@@ -161,20 +163,15 @@ async def access_token(account_id: str = "") -> tuple[str, dict]:
         if not token.get("refresh_token") or token.get("client_id") != settings.get("client_id"):
             raise HTTPException(401, "microsoft.accountUnavailable")
         if token.get("expires_at", 0) < time.time() + 60:
-            try:
-                async with httpx.AsyncClient(timeout=30) as client:
-                    response = await client.post(f"{AUTHORITY}/token", data={
-                        "client_id": settings["client_id"], "grant_type": "refresh_token",
-                        "refresh_token": token["refresh_token"], "scope": SCOPES,
-                    })
-            except httpx.RequestError as error:
-                logger.warning("Microsoft token transport failure account=%s error=%s", account_id, type(error).__name__)
-                raise HTTPException(503, "microsoft_connection_failed") from error
+            async with httpx.AsyncClient(timeout=30) as client:
+                response = await managed_request(client, scope_for_token(settings["client_id"], token, account_id, "oauth"), "POST", f"{AUTHORITY}/token", data={
+                    "client_id": settings["client_id"], "grant_type": "refresh_token",
+                    "refresh_token": token["refresh_token"], "scope": SCOPES,
+                })
             if response.is_error:
-                if response.status_code == 429 or response.status_code >= 500:
+                if response.status_code >= 500:
                     logger.warning("Microsoft token service failure account=%s status=%s", account_id, response.status_code)
-                    raise HTTPException(response.status_code if response.status_code == 429 else 503,
-                                        "microsoft_rate_limited" if response.status_code == 429 else "microsoft_connection_failed")
+                    raise HTTPException(503, "microsoft_connection_failed")
                 if response.status_code == 400:
                     await save_token(account_id, {})
                 raise HTTPException(401, "microsoft.accountUnavailable")
@@ -192,92 +189,86 @@ def graph_error_detail(status: int, code: str = "") -> str:
     return "microsoft.requestFailed"
 
 
+def scope_for_token(client_id: str, token: dict, account_id: str, service: str) -> str:
+    principal = token.get("email") or token.get("mailbox_id") or account_id
+    return limits.request_scope(client_id, principal, service)
+
+
+async def scope_for_account(account_id: str, service: str) -> str:
+    settings, item = await account(account_id)
+    token = await read_token(item["id"])
+    return scope_for_token(settings.get("client_id", ""), token, item["id"], service)
+
+
+async def external_request(client: httpx.AsyncClient, method: str, url: str, *, account_id: str,
+                           service: str = "drive", **kwargs) -> httpx.Response:
+    scope = await scope_for_account(account_id, service)
+    return await managed_request(client, scope, method, url, **kwargs)
+
+
+def graph_service(path: str) -> str:
+    if path == "/me":
+        return "profile"
+    return "drive" if path.startswith(("/me/drive", "/drives/", "/sites/")) else "outlook"
+
+
 async def graph(path: str, method: str = "GET", *, account_id: str = "", params: dict | None = None,
                 json: dict | None = None, content: bytes | None = None, write: bool | str = False,
                 raw: bool = False):
     if not path.startswith("/") or path.startswith("//") or "://" in path:
         raise HTTPException(400, "microsoft.invalidRequest")
+    batch = json.get("requests", []) if path == "/$batch" and json else []
+    services = {graph_service(entry["url"]) for entry in batch} if batch else {graph_service(path)}
+    if len(services) != 1:
+        raise HTTPException(400, "microsoft.invalidRequest")
+    scope = await scope_for_account(account_id, services.pop())
+    limits.request_limiter.check(scope)
     token, item = await access_token(account_id)
     allowed_modes = {"draft_only", "send"} if write == "draft" else {"send"}
     if write and item.get("mail_mode", "readonly") not in allowed_modes:
         raise HTTPException(403, "microsoft.writeDisabled")
-    is_read_request = method == "GET" or (path == "/$batch" and bool(json)
-        and bool(json.get("requests")) and all(entry.get("method") == "GET" for entry in json["requests"]))
     request_id = str(uuid.uuid4())
-    # Omit query values and resource identifiers from diagnostic logs.
     route = "/".join(path.split("?")[0].split("/")[:3])
-    async with _graph_limits.setdefault(item["id"], asyncio.Semaphore(3)):
-        async with httpx.AsyncClient(timeout=60) as client:
-            for attempt in range(3):
-                try:
-                    response = await client.request(method, GRAPH_ROOT + path, params=params, json=json, content=content,
-                        headers={"Authorization": f"Bearer {token}", "Prefer": 'IdType="ImmutableId"',
-                                 "client-request-id": request_id})
-                except httpx.RequestError as error:
-                    logger.warning("Graph transport failure account=%s route=%s request=%s error=%s",
-                                   item["id"], route, request_id, type(error).__name__)
-                    raise HTTPException(503, "microsoft_connection_failed") from error
-                if not response.is_error:
-                    break
-                try:
-                    error_code = response.json().get("error", {}).get("code", "unknown")
-                except (ValueError, AttributeError):
-                    error_code = "unknown"
-                logger.warning("Graph failure account=%s method=%s route=%s status=%s code=%s request=%s graph_request=%s retry_after=%s attempt=%s",
-                               item["id"], method, route, response.status_code, error_code, request_id,
-                               response.headers.get("request-id", ""), response.headers.get("Retry-After", ""), attempt + 1)
-                if response.status_code == 429 and is_read_request and attempt < 2:
-                    try:
-                        delay = max(1, int(response.headers.get("Retry-After", "2")))
-                    except ValueError:
-                        delay = 2
-                    if delay <= 30:
-                        await asyncio.sleep(delay)
-                        continue
-                raise HTTPException(response.status_code, graph_error_detail(response.status_code, error_code))
+    async with httpx.AsyncClient(timeout=60) as client:
+        response = await managed_request(client, scope, method, GRAPH_ROOT + path,
+            units=len(batch) or 1, batch=bool(batch), params=params, json=json, content=content,
+            headers={"Authorization": f"Bearer {token}", "Prefer": 'IdType="ImmutableId"',
+                     "client-request-id": request_id})
+    if response.is_error:
+        try:
+            error_code = response.json().get("error", {}).get("code", "unknown")
+        except (ValueError, AttributeError):
+            error_code = "unknown"
+        logger.warning("Graph failure account=%s method=%s route=%s status=%s code=%s request=%s graph_request=%s",
+                       item["id"], method, route, response.status_code, error_code, request_id,
+                       response.headers.get("request-id", ""))
+        raise HTTPException(response.status_code, graph_error_detail(response.status_code, error_code))
     if raw:
         return response
     return response.json() if response.content else {}
 
 
 async def graph_batch_get(requests: dict[str, str], account_id: str) -> dict[str, dict]:
-    """Read-only batches run sequentially inside one Graph concurrency slot."""
-    pending = dict(requests)
+    """Count each subrequest and execute Outlook batches sequentially in one slot."""
+    batch = []
+    for key, url in requests.items():
+        entry = {"id": key, "method": "GET", "url": url,
+                 "headers": {"Prefer": 'IdType="ImmutableId"'}}
+        if batch:
+            entry["dependsOn"] = [batch[-1]["id"]]
+        batch.append(entry)
+    if not batch:
+        return {}
+    payload = await graph("/$batch", "POST", account_id=account_id, json={"requests": batch})
+    responses = {entry["id"]: entry for entry in payload.get("responses", [])}
     results = {}
-    for attempt in range(3):
-        batch = []
-        for key, url in pending.items():
-            entry = {"id": key, "method": "GET", "url": url,
-                     "headers": {"Prefer": 'IdType="ImmutableId"'}}
-            if batch:
-                entry["dependsOn"] = [batch[-1]["id"]]
-            batch.append(entry)
-        payload = await graph("/$batch", "POST", account_id=account_id, json={"requests": batch})
-        responses = {entry["id"]: entry for entry in payload.get("responses", [])}
-        retry = {}
-        delay = 1
-        for key, url in pending.items():
-            entry = responses.get(key, {})
-            status = entry.get("status", 502)
-            if 200 <= status < 300:
-                results[key] = entry.get("body", {})
-                continue
-            headers = {k.lower(): v for k, v in entry.get("headers", {}).items()}
+    for key in requests:
+        entry = responses.get(key, {})
+        status_code = entry.get("status", 502)
+        if not 200 <= status_code < 300:
             code = (entry.get("body", {}).get("error") or {}).get("code", "unknown")
-            logger.warning("Graph batch failure account=%s item=%s status=%s code=%s graph_request=%s retry_after=%s attempt=%s",
-                           account_id, key, status, code, headers.get("request-id", ""),
-                           headers.get("retry-after", ""), attempt + 1)
-            if status not in (429, 424, 503) or attempt == 2:
-                raise HTTPException(status, graph_error_detail(status, code))
-            try:
-                delay = max(delay, int(headers.get("retry-after", "2")))
-            except ValueError:
-                delay = max(delay, 2)
-            retry[key] = url
-        if not retry:
-            return results
-        if delay > 30:
-            raise HTTPException(429, graph_error_detail(429))
-        await asyncio.sleep(delay)
-        pending = retry
+            logger.warning("Graph batch failure account=%s item=%s status=%s code=%s",
+                           account_id, key, status_code, code)
+            raise HTTPException(status_code, graph_error_detail(status_code, code))
+        results[key] = entry.get("body", {})
     return results

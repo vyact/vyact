@@ -1201,6 +1201,8 @@
   "uiAuditFinal": {"attachments":"{{count}} 个附件","removeAll":"全部删除","characterCount":"{{count}} 个字符","itemCount":"{{count}} 项","download":"下载","fileCount":"{{count}} 个文件","zipDownload":"下载 ZIP","errorDetail":"❌ 错误：{{message}}"},
   "networkError": {"requestFailed":"请求失败","serverError":"服务器错误","streamFailed":"流式请求失败","clientErrorDetail":"请求错误（{{status}}）：{{detail}}","serverErrorDetail":"服务器错误（{{status}}）：{{detail}} — 请稍后重试。","genericDetail":"错误：{{detail}}"},
   "backendErrors": {
+    "microsoft_drive_upload_too_large": "“{{name}}”超过了 OneDrive 每个文件 {{limit}} MiB 的上传限制。未上传任何文件或文件夹。请移除此文件后重试。",
+    "microsoft_rate_limited_retry": "请求过多，Microsoft 已暂时限制访问。请在 {{seconds}} 秒后重试。",
     "microsoft_authentication_required": "请重新连接您的 Microsoft 账户。",
     "microsoft_permission_denied": "您没有权限访问此项目或执行此操作。请检查账户和共享权限。",
     "microsoft_item_not_found": "找不到该项目。请刷新列表。",

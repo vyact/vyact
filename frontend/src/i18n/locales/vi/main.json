@@ -1201,6 +1201,8 @@
   "uiAuditFinal": {"attachments":"{{count}} tệp đính kèm","removeAll":"Xóa tất cả","characterCount":"{{count}} ký tự","itemCount":"{{count}} mục","download":"Tải xuống","fileCount":"{{count}} tệp","zipDownload":"Tải ZIP xuống","errorDetail":"❌ Lỗi: {{message}}"},
   "networkError": {"requestFailed":"Yêu cầu thất bại","serverError":"Lỗi máy chủ","streamFailed":"Yêu cầu phát trực tiếp thất bại","clientErrorDetail":"Lỗi yêu cầu ({{status}}): {{detail}}","serverErrorDetail":"Lỗi máy chủ ({{status}}): {{detail}} — Vui lòng thử lại sau ít phút.","genericDetail":"Lỗi: {{detail}}"},
   "backendErrors": {
+    "microsoft_drive_upload_too_large": "“{{name}}” vượt quá giới hạn tải lên OneDrive là {{limit}} MiB mỗi tệp. Chưa có tệp hoặc thư mục nào được tải lên. Vui lòng bỏ tệp này và thử lại.",
+    "microsoft_rate_limited_retry": "Yêu cầu tới Microsoft đang bị giới hạn tạm thời do có quá nhiều yêu cầu. Vui lòng thử lại sau {{seconds}} giây.",
     "microsoft_authentication_required": "Vui lòng kết nối lại tài khoản Microsoft.",
     "microsoft_permission_denied": "Bạn không có quyền truy cập mục này hoặc thực hiện thao tác này. Hãy kiểm tra tài khoản và quyền chia sẻ.",
     "microsoft_item_not_found": "Không tìm thấy mục này. Vui lòng làm mới danh sách.",

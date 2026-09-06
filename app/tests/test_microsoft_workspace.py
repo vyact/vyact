@@ -1,5 +1,6 @@
 """Microsoft contracts: no real account or external mutations."""
 import unittest
+import pytest
 import httpx
 from unittest.mock import AsyncMock, patch
 from urllib.parse import parse_qs, urlsplit
@@ -7,7 +8,14 @@ from fastapi import HTTPException
 from error_responses import error_code_for
 from starlette.datastructures import FormData
 from routers.microsoft_workspace import drive_items_for_delete, send_mail, bulk_mail, event_body, safe_filename, normalize_event, normalize_permission, normalize_file, visible_drive_items, invite
-from services.microsoft_workspace import auth, mail, tools
+from services.microsoft_workspace import auth, mail, tools, request_limits as limits
+
+
+@pytest.fixture(autouse=True)
+def isolated_request_limits(tmp_path, monkeypatch):
+    monkeypatch.setattr(limits, 'request_limiter', limits.MicrosoftRequestLimiter(tmp_path / 'limits.db'))
+    monkeypatch.setattr(auth, 'scope_for_account', AsyncMock(side_effect=lambda account_id, service:
+        limits.request_scope('test-client', account_id or 'test-account', service)))
 
 
 class MicrosoftWorkspaceTests(unittest.IsolatedAsyncioTestCase):
@@ -200,23 +208,19 @@ class MicrosoftDriveInviteTests(unittest.IsolatedAsyncioTestCase):
 
 
 class MicrosoftThrottleTests(unittest.IsolatedAsyncioTestCase):
-    async def test_get_waits_for_retry_after_and_logs_error(self):
-        response = httpx.Response(429, headers={"Retry-After": "3", "request-id": "graph-test"},
-                                  json={"error": {"code": "TooManyRequests"}})
+    async def test_get_persists_retry_after_without_immediate_retry(self):
         client = AsyncMock()
-        client.request.side_effect = [response, httpx.Response(200, json={"value": []})]
+        client.request.return_value = httpx.Response(429, headers={"Retry-After": "30"}, json={"error": {"code": "TooManyRequests"}})
         with patch.object(auth, "access_token", AsyncMock(return_value=("secret-token", {"id": "throttle-test"}))), \
-                patch.object(auth.httpx, "AsyncClient") as factory, \
-                patch.object(auth.asyncio, "sleep", AsyncMock()) as sleep, \
-                self.assertLogs(auth.logger, level="WARNING") as logs:
+                patch.object(auth.httpx, "AsyncClient") as factory:
             factory.return_value.__aenter__.return_value = client
-            result = await auth.graph("/me/mailFolders")
-        self.assertEqual(result, {"value": []})
-        sleep.assert_awaited_once_with(3)
-        self.assertEqual(client.request.await_count, 2)
-        self.assertIn("status=429", logs.output[0])
-        self.assertIn("TooManyRequests", logs.output[0])
-        self.assertNotIn("secret-token", logs.output[0])
+            with self.assertRaises(HTTPException) as caught:
+                await auth.graph("/me/mailFolders")
+            self.assertEqual(caught.exception.status_code, 429)
+            self.assertEqual(caught.exception.headers['Retry-After'], '30')
+            with self.assertRaises(HTTPException):
+                await auth.graph("/me/mailFolders")
+        self.assertEqual(client.request.await_count, 1)
 
 
 class MicrosoftBatchWorkspaceTests(unittest.IsolatedAsyncioTestCase):
@@ -243,19 +247,15 @@ class MicrosoftBatchWorkspaceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(first["labels"][0]["unreadCount"], 1)
         self.assertEqual(second["labels"][0]["unreadCount"], 2)
 
-    async def test_batch_retries_only_throttled_and_dependent_items(self):
-        graph = AsyncMock(side_effect=[
-            {"responses": [{"id": "folders", "status": 200, "body": {"value": []}},
-                           {"id": "messages", "status": 429, "headers": {"Retry-After": "4"},
-                            "body": {"error": {"code": "TooManyRequests"}}}]},
-            {"responses": [{"id": "messages", "status": 200, "body": {"value": []}}]},
-        ])
-        with patch.object(auth, "graph", graph), patch.object(auth.asyncio, "sleep", AsyncMock()) as sleep:
-            result = await auth.graph_batch_get({"folders": "/me/mailFolders", "messages": "/me/messages"}, "one")
-        self.assertEqual(set(result), {"folders", "messages"})
-        sleep.assert_awaited_once_with(4)
-        self.assertEqual([r["id"] for r in graph.call_args_list[1].kwargs["json"]["requests"]], ["messages"])
-        self.assertEqual(graph.call_args_list[0].kwargs["json"]["requests"][1]["dependsOn"], ["folders"])
+    async def test_batch_keeps_subrequests_ordered(self):
+        graph = AsyncMock(return_value={'responses': [
+            {'id': 'folders', 'status': 200, 'body': {'value': []}},
+            {'id': 'messages', 'status': 200, 'body': {'value': []}},
+        ]})
+        with patch.object(auth, 'graph', graph):
+            result = await auth.graph_batch_get({'folders': '/me/mailFolders', 'messages': '/me/messages'}, 'one')
+        self.assertEqual(set(result), {'folders', 'messages'})
+        self.assertEqual(graph.call_args.kwargs['json']['requests'][1]['dependsOn'], ['folders'])
 
 
 class MicrosoftActionableErrorTests(unittest.IsolatedAsyncioTestCase):
@@ -272,14 +272,14 @@ class MicrosoftActionableErrorTests(unittest.IsolatedAsyncioTestCase):
                         patch.object(auth.httpx, "AsyncClient") as factory:
                     factory.return_value.__aenter__.return_value = client
                     with self.assertRaises(HTTPException) as caught:
-                        await auth.graph("/me/messages", "POST")
+                        await auth.graph("/me/messages", "POST", account_id=graph_code)
                 self.assertEqual(error_code_for(status, caught.exception.detail), public_code)
                 self.assertEqual(client.request.await_count, 1)
 
-    async def test_batch_errors_preserve_actionable_codes_after_retries(self):
+    async def test_batch_errors_preserve_actionable_codes(self):
         for status, graph_code, public_code, retry_after, calls in (
             (403, "ErrorAccountSuspend", "microsoft_account_suspended", "2", 1),
-            (429, "TooManyRequests", "microsoft_rate_limited", "2", 3),
+            (429, "TooManyRequests", "microsoft_rate_limited", "2", 1),
             (429, "TooManyRequests", "microsoft_rate_limited", "60", 1),
         ):
             with self.subTest(code=graph_code, retry_after=retry_after):
@@ -314,9 +314,9 @@ class MicrosoftConnectionErrorTests(unittest.IsolatedAsyncioTestCase):
             with self.subTest(failure=str(failure)):
                 client = AsyncMock()
                 if isinstance(failure, Exception):
-                    client.post.side_effect = failure
+                    client.request.side_effect = failure
                 else:
-                    client.post.return_value = failure
+                    client.request.return_value = failure
                 token = {'refresh_token': 'secret-refresh', 'client_id': 'client', 'expires_at': 0}
                 with patch.object(auth, 'account', AsyncMock(return_value=({'client_id': 'client'}, {'id': 'refresh-test'}))), \
                         patch.object(auth, 'read_token', AsyncMock(return_value=token)), \

@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from services.microsoft_workspace.auth import graph, status
 from services.microsoft_workspace.mail import page_path
 from services.notifications import create_notification
+from services.microsoft_workspace.request_limits import is_throttled
 
 logger = logging.getLogger(__name__)
 LOOKBACK_SECONDS = 20
@@ -22,7 +23,9 @@ async def collect_microsoft_calendar_notifications() -> None:
     for account_id, account in accounts.items():
         try:
             await _collect_account(account_id, account.get('email', ''), datetime.now(timezone.utc))
-        except Exception:
+        except Exception as error:
+            if is_throttled(error):
+                continue
             logger.exception('Microsoft calendar notification collection failed')
 
 

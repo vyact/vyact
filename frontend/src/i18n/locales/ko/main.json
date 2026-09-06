@@ -1211,6 +1211,8 @@
   "uiAuditFinal": {"attachments":"첨부 {{count}}개","removeAll":"전체 삭제","characterCount":"{{count}}자","itemCount":"{{count}}개","download":"다운로드","fileCount":"{{count}}개 파일","zipDownload":"ZIP 다운로드","errorDetail":"❌ 오류: {{message}}"},
   "networkError": {"requestFailed":"요청 실패","serverError":"서버 오류","streamFailed":"스트리밍 요청 실패","clientErrorDetail":"요청 오류 ({{status}}): {{detail}}","serverErrorDetail":"서버 오류 ({{status}}): {{detail}} — 잠시 후 다시 시도해주세요.","genericDetail":"오류: {{detail}}"},
   "backendErrors": {
+    "microsoft_drive_upload_too_large": "“{{name}}” 파일이 OneDrive 업로드 제한인 파일당 {{limit}}MiB를 초과합니다. 파일과 폴더를 업로드하지 않았습니다. 해당 파일을 제외하고 다시 시도해 주세요.",
+    "microsoft_rate_limited_retry": "요청이 너무 많아 Microsoft 호출이 일시적으로 제한되었습니다. {{seconds}}초 후 다시 시도해 주세요.",
     "microsoft_authentication_required": "Microsoft 계정을 다시 연결해 주세요.",
     "microsoft_permission_denied": "이 항목에 접근하거나 작업을 수행할 권한이 없습니다. 계정과 공유 권한을 확인해 주세요.",
     "microsoft_item_not_found": "항목을 찾을 수 없습니다. 목록을 새로고침해 주세요.",

@@ -140,3 +140,26 @@ describe('Microsoft request context', () => {
         expect(show).not.toHaveBeenCalled();
     });
 });
+
+describe('Microsoft cooldown feedback', () => {
+    it('shows the server remaining seconds and updates them on a later attempt', async () => {
+        const show = vi.spyOn(toast, 'error');
+        const fetch = vi.fn()
+            .mockResolvedValueOnce(new Response(JSON.stringify({code: 'microsoft_rate_limited'}), {status: 429, headers: {'Retry-After': '60'}}))
+            .mockResolvedValueOnce(new Response(JSON.stringify({code: 'microsoft_rate_limited'}), {status: 429, headers: {'Retry-After': '40'}}));
+        vi.stubGlobal('fetch', fetch);
+        const first = await microsoftRequest('/mail/workspace').catch(error => error);
+        expect(first).toMatchObject({retryAfterSeconds: 60, code: 'microsoft_rate_limited'});
+        expect(show).toHaveBeenLastCalledWith(main.backendErrors.microsoft_rate_limited_retry.replace('{{seconds}}', '60'), undefined, 15_000);
+        vi.setSystemTime(Date.now() + 20_000);
+        await microsoftRequest('/mail/workspace').catch(notifyWorkspaceError);
+        expect(show).toHaveBeenLastCalledWith(main.backendErrors.microsoft_rate_limited_retry.replace('{{seconds}}', '40'), undefined, 15_000);
+    });
+
+    it('keeps timed background failures silent', async () => {
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({code: 'microsoft_rate_limited'}), {status: 429, headers: {'Retry-After': '90'}})));
+        const show = vi.spyOn(toast, 'error');
+        await microsoftRequest('/status').catch(notifyWorkspaceError);
+        expect(show).not.toHaveBeenCalled();
+    });
+});

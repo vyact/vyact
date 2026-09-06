@@ -1201,6 +1201,8 @@
   "uiAuditFinal": {"attachments":"添付ファイル {{count}}件","removeAll":"すべて削除","characterCount":"{{count}}文字","itemCount":"{{count}}件","download":"ダウンロード","fileCount":"{{count}}ファイル","zipDownload":"ZIPをダウンロード","errorDetail":"❌ エラー: {{message}}"},
   "networkError": {"requestFailed":"リクエスト失敗","serverError":"サーバーエラー","streamFailed":"ストリーミングリクエストに失敗しました","clientErrorDetail":"リクエストエラー（{{status}}）：{{detail}}","serverErrorDetail":"サーバーエラー（{{status}}）：{{detail}} — しばらくしてからもう一度お試しください。","genericDetail":"エラー：{{detail}}"},
   "backendErrors": {
+    "microsoft_drive_upload_too_large": "「{{name}}」はOneDriveの1ファイルあたり{{limit}}MiBのアップロード制限を超えています。ファイルとフォルダーはアップロードされていません。このファイルを除いて再試行してください。",
+    "microsoft_rate_limited_retry": "リクエストが多すぎるため、Microsoft へのアクセスが一時的に制限されています。{{seconds}} 秒後に再試行してください。",
     "microsoft_authentication_required": "Microsoft アカウントを再接続してください。",
     "microsoft_permission_denied": "この項目へのアクセスまたは操作を行う権限がありません。アカウントと共有権限を確認してください。",
     "microsoft_item_not_found": "項目が見つかりません。リストを更新してください。",

@@ -1200,6 +1200,8 @@
   "uiAuditFinal": {"attachments":"{{count}} archivos adjuntos","removeAll":"Eliminar todo","characterCount":"{{count}} caracteres","itemCount":"{{count}} elementos","download":"Descargar","fileCount":"{{count}} archivos","zipDownload":"Descargar ZIP","errorDetail":"❌ Error: {{message}}"},
   "networkError": {"requestFailed":"Solicitud fallida","serverError":"Error del servidor","streamFailed":"Falló la solicitud de transmisión","clientErrorDetail":"Error de solicitud ({{status}}): {{detail}}","serverErrorDetail":"Error del servidor ({{status}}): {{detail}} — Inténtalo de nuevo en breve.","genericDetail":"Error: {{detail}}"},
   "backendErrors": {
+    "microsoft_drive_upload_too_large": "«{{name}}» supera el límite de carga de OneDrive de {{limit}} MiB por archivo. No se ha subido ningún archivo ni carpeta. Excluye este archivo y vuelve a intentarlo.",
+    "microsoft_rate_limited_retry": "Las solicitudes a Microsoft están limitadas temporalmente porque se han enviado demasiadas. Vuelve a intentarlo en {{seconds}} segundos.",
     "microsoft_authentication_required": "Vuelve a conectar tu cuenta de Microsoft.",
     "microsoft_permission_denied": "No tienes permiso para acceder a este elemento o realizar esta acción. Comprueba tu cuenta y los permisos de uso compartido.",
     "microsoft_item_not_found": "No se ha encontrado el elemento. Actualiza la lista.",

@@ -39,6 +39,7 @@ from error_responses import (
 )
 
 APP_DIR = Path(__file__).parent
+SEARCH_MODEL_WARMUP_DELAY_SECONDS = 2.0
 
 
 class EmbeddedUvicornServer(uvicorn.Server):
@@ -174,6 +175,8 @@ async def warmup_reranker_model() -> None:
         logger.info("[startup-status] reranker")
         from reranker import load_reranker, warmup_reranker
         if await asyncio.to_thread(load_reranker):
+            await asyncio.sleep(SEARCH_MODEL_WARMUP_DELAY_SECONDS)
+            await wait_for_chat_idle()
             await asyncio.to_thread(warmup_reranker)
     except Exception as error:
         logger.info("[reranker] Startup warm-up skipped: %s", error)

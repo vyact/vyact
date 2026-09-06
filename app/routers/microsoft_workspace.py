@@ -17,13 +17,15 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, Response
 from pydantic import BaseModel, Field
 
-from services.microsoft_workspace import auth, mail
+from services.microsoft_workspace import auth, mail, request_limits
+from services.microsoft_workspace.transport import json_upload_bytes
 from routers.google_workspace_browser import MailAiGenerateRequest, MailKnowledgeIndexRequest, generate_mail_body, index_mail_thread_for_knowledge
 from services.mcp_config import add_server, list_servers, update_server
 from services.db import GOOGLE_WORKSPACE_SETTINGS_INDEX, get_es
 
 router = APIRouter(prefix="/microsoft-workspace")
 MAX_MAIL_ATTACHMENT_BYTES = 25 * 1024 * 1024
+MAX_DRIVE_UPLOAD_BYTES = 25 * 1024 * 1024
 SMALL_ATTACHMENT_BYTES = 3_000_000
 ATTACHMENT_CHUNK_BYTES = 320 * 1024
 DRIVE_ITEM_FIELDS = "id,name,file,folder,package,remoteItem,size,lastModifiedDateTime,webUrl,parentReference,shared,specialFolder,root"
@@ -201,39 +203,51 @@ async def send_mail(request: Request, account_id: str = ""):
             if total > MAX_MAIL_ATTACHMENT_BYTES:
                 raise HTTPException(413, "microsoft.attachmentLimit")
             uploads.append((upload, content, key == "inline_images"))
-    if data.get("reply_to"):
-        draft = await auth.graph(f"/me/messages/{mail.resource_id(str(data['reply_to']))}/createReply", "POST", account_id=account_id)
-        await auth.graph(f"/me/messages/{mail.resource_id(draft['id'])}", "PATCH", json=message_body, account_id=account_id)
-    else:
-        draft = await auth.graph("/me/messages", "POST", json=message_body, account_id=account_id)
-    draft_path = f"/me/messages/{mail.resource_id(draft['id'])}"
-    # Upload attachments individually to keep JSON requests below Graph's request-size limit.
-    # If upload/send fails, retain the recoverable draft rather than silently deleting user text.
+    attachment_bodies = []
+    upload_bytes = json_upload_bytes(message_body)
     for upload, content, inline in uploads:
         if len(content) < SMALL_ATTACHMENT_BYTES:
-            await auth.graph(draft_path + "/attachments", "POST", json={
+            body = {
                 "@odata.type": "#microsoft.graph.fileAttachment", "name": upload.filename,
                 "contentType": upload.content_type or "application/octet-stream",
                 "contentBytes": base64.b64encode(content).decode(), "isInline": inline, "contentId": upload.filename,
-            }, account_id=account_id)
+            }
         else:
-            session = await auth.graph(draft_path + "/attachments/createUploadSession", "POST", json={"AttachmentItem": {
+            body = {"AttachmentItem": {
                 "attachmentType": "file", "name": upload.filename, "size": len(content), "isInline": inline, "contentId": upload.filename,
-            }}, account_id=account_id)
-            upload_url = session["uploadUrl"]
-            if not upload_url.startswith("https://"):
-                raise HTTPException(502, "microsoft.requestFailed")
-            async with httpx.AsyncClient(timeout=60) as client:
-                for offset in range(0, len(content), ATTACHMENT_CHUNK_BYTES):
-                    chunk = content[offset:offset + ATTACHMENT_CHUNK_BYTES]
-                    result = await client.put(upload_url, content=chunk, headers={
-                        "Content-Type": "application/octet-stream", "Content-Length": str(len(chunk)),
-                        "Content-Range": f"bytes {offset}-{offset + len(chunk) - 1}/{len(content)}",
-                    })
-                    if result.is_error:
-                        raise HTTPException(502, "microsoft.requestFailed")
-    await auth.graph(draft_path + "/send", "POST", account_id=account_id)
-    return {"ok": True, "id": draft["id"], "threadId": draft["id"]}
+            }}
+            upload_bytes += len(content)
+        attachment_bodies.append(body)
+        upload_bytes += json_upload_bytes(body)
+    scope = await auth.scope_for_account(account_id, "outlook")
+    async with request_limits.request_limiter.upload(scope, upload_bytes):
+        if data.get("reply_to"):
+            draft = await auth.graph(f"/me/messages/{mail.resource_id(str(data['reply_to']))}/createReply", "POST", account_id=account_id)
+            await auth.graph(f"/me/messages/{mail.resource_id(draft['id'])}", "PATCH", json=message_body, account_id=account_id)
+        else:
+            draft = await auth.graph("/me/messages", "POST", json=message_body, account_id=account_id)
+        draft_path = f"/me/messages/{mail.resource_id(draft['id'])}"
+        # Upload attachments individually to keep JSON requests below Graph's request-size limit.
+        # If upload/send fails, retain the recoverable draft rather than silently deleting user text.
+        for (upload, content, inline), attachment_body in zip(uploads, attachment_bodies):
+            if len(content) < SMALL_ATTACHMENT_BYTES:
+                await auth.graph(draft_path + "/attachments", "POST", json=attachment_body, account_id=account_id)
+            else:
+                session = await auth.graph(draft_path + "/attachments/createUploadSession", "POST", json=attachment_body, account_id=account_id)
+                upload_url = session["uploadUrl"]
+                if not upload_url.startswith("https://"):
+                    raise HTTPException(502, "microsoft.requestFailed")
+                async with httpx.AsyncClient(timeout=60) as client:
+                    for offset in range(0, len(content), ATTACHMENT_CHUNK_BYTES):
+                        chunk = content[offset:offset + ATTACHMENT_CHUNK_BYTES]
+                        result = await auth.external_request(client, "PUT", upload_url, account_id=account_id, service="outlook", content=chunk, headers={
+                            "Content-Type": "application/octet-stream", "Content-Length": str(len(chunk)),
+                            "Content-Range": f"bytes {offset}-{offset + len(chunk) - 1}/{len(content)}",
+                        })
+                        if result.is_error:
+                            raise HTTPException(502, "microsoft.requestFailed")
+        await auth.graph(draft_path + "/send", "POST", account_id=account_id)
+        return {"ok": True, "id": draft["id"], "threadId": draft["id"]}
 
 
 @router.api_route("/accounts/{account_id}/mail/signature", methods=["GET", "PUT"])
@@ -462,7 +476,7 @@ async def download_file(file_id: str, account_id: str = ""):
     if not url or not url.startswith("https://"):
         raise HTTPException(400, "microsoft.requestFailed")
     async with httpx.AsyncClient(timeout=60) as client:
-        response = await client.get(url)
+        response = await auth.external_request(client, "GET", url, account_id=account_id)
     if response.is_error:
         raise HTTPException(502, "microsoft.requestFailed")
     return Response(response.content, media_type=(metadata.get("file") or {}).get("mimeType", "application/octet-stream"))
@@ -494,18 +508,25 @@ async def upload_files(request: Request, account_id: str = ""):
                 folders[key] = item["id"]
             current = folders[key]
         return current
-    for directory in form.getlist("directories"):
-        await ensure_folder(path_parts(str(directory)))
-    files = []
+    directories = [path_parts(str(directory)) for directory in form.getlist("directories")]
+    uploads = []
     paths = form.getlist("paths")
+    # Validate every selected file before creating folders or uploading any content.
     for index, upload in enumerate(form.getlist("files")):
         parts = path_parts(str(paths[index]) if index < len(paths) else upload.filename)
         if not parts:
             raise HTTPException(400, "microsoft.invalidRequest")
+        content = await upload.read(MAX_DRIVE_UPLOAD_BYTES + 1)
+        if len(content) > MAX_DRIVE_UPLOAD_BYTES:
+            raise HTTPException(413, "payload_too_large")
+        await upload.seek(0)
+        uploads.append((upload, parts))
+    for parts in directories:
+        await ensure_folder(parts)
+    files = []
+    for upload, parts in uploads:
         parent = await ensure_folder(parts[:-1])
-        content = await upload.read(MAX_MAIL_ATTACHMENT_BYTES + 1)
-        if len(content) > MAX_MAIL_ATTACHMENT_BYTES:
-            raise HTTPException(413, "microsoft.requestFailed")
+        content = await upload.read(MAX_DRIVE_UPLOAD_BYTES + 1)
         path = drive_path(parent) + ":/" + quote(parts[-1], safe="") + ":/content"
         value = await auth.graph(path, "PUT", content=content, account_id=account_id,
                                  params={"@microsoft.graph.conflictBehavior": "replace" if form.get("replace") == "true" else "fail"})
@@ -550,7 +571,7 @@ async def copy_file(file_id: str, request: Request, account_id: str = ""):
         raise HTTPException(502, "microsoft.requestFailed")
     async with httpx.AsyncClient(timeout=30) as client:
         for _ in range(30):
-            result = await client.get(monitor)
+            result = await auth.external_request(client, "GET", monitor, account_id=account_id)
             if result.status_code == 303:
                 location = result.headers.get("Location", "")
                 resource = location.split("/items/")[-1].split("?")[0]

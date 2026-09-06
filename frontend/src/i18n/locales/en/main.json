@@ -1200,6 +1200,8 @@
   "uiAuditFinal": {"attachments":"{{count}} attachments","removeAll":"Remove all","characterCount":"{{count}} characters","itemCount":"{{count}} items","download":"Download","fileCount":"{{count}} files","zipDownload":"Download ZIP","errorDetail":"❌ Error: {{message}}"},
   "networkError": {"requestFailed":"Request failed","serverError":"Server error","streamFailed":"Streaming request failed","clientErrorDetail":"Request error ({{status}}): {{detail}}","serverErrorDetail":"Server error ({{status}}): {{detail}} — Please try again shortly.","genericDetail":"Error: {{detail}}"},
   "backendErrors": {
+    "microsoft_drive_upload_too_large": "“{{name}}” exceeds the OneDrive upload limit of {{limit}} MiB per file. No files or folders were uploaded. Please remove this file and try again.",
+    "microsoft_rate_limited_retry": "Microsoft requests are temporarily limited because too many were sent. Please try again in {{seconds}} seconds.",
     "microsoft_authentication_required": "Please reconnect your Microsoft account.",
     "microsoft_permission_denied": "You do not have permission to access this item or perform this action. Check your account and sharing permissions.",
     "microsoft_item_not_found": "The item could not be found. Please refresh the list.",

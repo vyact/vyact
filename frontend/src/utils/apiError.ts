@@ -14,6 +14,7 @@ export class ApiError extends Error {
     code?: string;
     requestId?: string;
     feedbackHandled = false;
+    retryAfterSeconds?: number;
 
     constructor(message: string, status?: number, detail?: string, code?: string, requestId?: string) {
         super(message);
@@ -84,7 +85,10 @@ export async function assertOk(res: Response, fallbackMessage = i18n.t('main:net
             ? i18n.t('settings:microsoft.requestFailed')
             : payload.detail || payload.message || fallbackMessage;
     const prefix = i18n.t(res.status >= 500 ? 'main:networkError.serverError' : 'main:networkError.requestFailed');
-    throw new ApiError(`${prefix} (${res.status}): ${localized}`, res.status, localized, payload.code, payload.request_id);
+    const error = new ApiError(`${prefix} (${res.status}): ${localized}`, res.status, localized, payload.code, payload.request_id);
+    const retryAfter = Number(res.headers.get('Retry-After'));
+    if (Number.isFinite(retryAfter) && retryAfter > 0) error.retryAfterSeconds = Math.ceil(retryAfter);
+    throw error;
 }
 
 /**
