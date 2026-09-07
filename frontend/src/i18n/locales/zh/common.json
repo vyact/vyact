@@ -22,6 +22,7 @@
   "clearSearch": "清除搜索",
   "selectColor": "选择颜色 {{color}}",
   "modelStorage": {
+    "restoreDefault": "恢复默认",
     "title": "模型存储位置",
     "change": "更改",
     "confirmTitle": "更改模型存储位置？",

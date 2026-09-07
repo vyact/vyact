@@ -22,6 +22,7 @@
   "clearSearch": "Borrar búsqueda",
   "selectColor": "Seleccionar color {{color}}",
   "modelStorage": {
+    "restoreDefault": "Restaurar ubicación",
     "title": "Ubicación de los modelos",
     "change": "Cambiar",
     "confirmTitle": "¿Cambiar la ubicación de los modelos?",

@@ -1320,11 +1320,12 @@ ipcMain.handle("browser-set-bounds", (_event, bounds) => {
 });
 
 // ── 폴더 선택 다이얼로그 ──
-ipcMain.handle("select-folder", async (_event, title) => {
+ipcMain.handle("select-folder", async (_event, title, defaultPath) => {
     const {dialog} = require("electron");
     const result = await dialog.showOpenDialog(mainWindow, {
         properties: ["openDirectory"],
         ...(typeof title === "string" && title.trim() ? {title} : {}),
+        ...(typeof defaultPath === "string" && path.isAbsolute(defaultPath) ? {defaultPath} : {}),
     });
     if (result.canceled || !result.filePaths.length) return null;
     return result.filePaths[0];

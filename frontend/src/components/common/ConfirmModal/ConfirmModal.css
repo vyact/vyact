@@ -115,6 +115,7 @@
 }
 
 .confirm-modal-btn.primary:hover:not(:disabled) {
+    color: var(--primary-fg, #fff);
     background: var(--button-primary-hover);
     border-color: var(--button-primary-hover);
 }

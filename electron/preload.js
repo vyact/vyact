@@ -19,7 +19,7 @@ contextBridge.exposeInMainWorld("ragAPI", {
     setWindowAspectRatio: (aspectRatio) => ipcRenderer.invoke("window-set-aspect-ratio", aspectRatio),
     getLoginItem: () => ipcRenderer.invoke("get-login-item"),
     setLoginItem: (enable) => ipcRenderer.invoke("set-login-item", enable),
-    selectFolder: (title) => ipcRenderer.invoke("select-folder", title),
+    selectFolder: (title, defaultPath) => ipcRenderer.invoke("select-folder", title, defaultPath),
     selectFolders: (title) => ipcRenderer.invoke("select-folders", title),
     browserOpen: (url) => ipcRenderer.invoke("browser-open", url),
     browserClose: () => ipcRenderer.invoke("browser-close"),

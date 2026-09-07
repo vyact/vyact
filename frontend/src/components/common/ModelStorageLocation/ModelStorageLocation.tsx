@@ -1,7 +1,7 @@
 import ModelStorageProgressOverlay from './ModelStorageProgressOverlay';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {FolderOpen} from 'lucide-react';
+import {FolderOpen, RotateCcw} from 'lucide-react';
 import ConfirmModal from '../ConfirmModal/ConfirmModal';
 import {modelStorage, type ModelStoragePlan, type ModelStorageStatus} from '../../../services/modelStorage';
 import {formatModelBytes} from '../../../utils/vyactModelDisplay';
@@ -52,11 +52,11 @@ export default function ModelStorageLocation({disabled, onBusyChange, onChanged}
         return () => {disposed = true; clearTimeout(timer);};
     }, []);
     const message = (code: string) => t(`modelStorage.${code}`, {defaultValue: t('modelStorage.storage_failed')});
-    const select = async () => {
+    const select = async (targetDirectory?: string) => {
         setError('');
         setWorking(true);
         try {
-            const path = await window.ragAPI?.selectFolder?.(t('modelStorage.title'));
+            const path = targetDirectory ?? await window.ragAPI?.selectFolder?.(t('modelStorage.title'), status?.parent_directory);
             if (!path) return;
             const next = await modelStorage.plan(path);
             if (!next.same) setPlan(next);
@@ -71,7 +71,7 @@ export default function ModelStorageLocation({disabled, onBusyChange, onChanged}
             const result = await modelStorage.move(plan.selected_directory);
             if (!result.same) {
                 wasMoving.current = true;
-                setStatus(current => current ? {...current, busy: true, phase: 'preparing'} : current);
+                setStatus(current => current ? {...current, busy: true, phase: 'preparing', copied_bytes: 0, total_bytes: plan.total_bytes, current_file: undefined} : current);
             }
             setStatus(await modelStorage.status());
             setPlan(null);
@@ -79,15 +79,21 @@ export default function ModelStorageLocation({disabled, onBusyChange, onChanged}
         finally {setWorking(false);}
     };
     return <section ref={bindSurface} className="model-storage-location" aria-busy={busy}>
-        <div className="model-storage-row"><FolderOpen size={17} aria-hidden="true"/>
-            <span>{t('modelStorage.title')}</span>
-            <span className="model-storage-path" title={status?.path}>{status?.path || t('loading')}</span>
+        <div className="model-storage-row">
+            <span className="model-storage-label">{t('modelStorage.title')}</span>
+            <div className="model-storage-path-row"><FolderOpen size={17} aria-hidden="true"/><span className="model-storage-path">{status?.path || t('loading')}</span></div>
+            <div className="model-storage-actions">
+                {status?.is_default === false && status.default_directory && <button type="button" className="model-storage-restore"
+                    onClick={() => void select(status.default_directory)} disabled={disabled || busy}>
+                    <RotateCcw size={14} aria-hidden="true"/>{t('modelStorage.restoreDefault')}
+                </button>}
             <button type="button" onClick={() => void select()}
                 disabled={disabled || busy || !status || !window.ragAPI?.selectFolder}>{t('modelStorage.change')}</button>
+            </div>
         </div>
         {status?.busy && surface && <ModelStorageProgressOverlay surface={surface} status={status}/>}
         {(error || connectionFailed || status?.phase === 'error') && <p className="model-storage-error" role="alert">{message(error || status?.error || 'storage_failed')}</p>}
-        {!busy && status?.phase === 'complete' && <p role="status">{message(status.warning || 'complete')}</p>}
+        {!busy && status?.phase === 'complete' && status.warning && <p role="status">{message(status.warning)}</p>}
         {!window.ragAPI?.selectFolder && <p>{t('modelStorage.desktopOnly')}</p>}
         {plan && <ConfirmModal title={t('modelStorage.confirmTitle')} description={t('modelStorage.confirmDescription')}
             details={[plan.destination, t('modelStorage.size', {size: formatModelBytes(plan.total_bytes)})]}

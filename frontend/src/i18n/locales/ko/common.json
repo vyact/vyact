@@ -22,6 +22,7 @@
   "clearSearch": "검색어 지우기",
   "selectColor": "{{color}} 색상 선택",
   "modelStorage": {
+    "restoreDefault": "원위치로",
     "title": "모델 저장 위치",
     "change": "변경",
     "confirmTitle": "모델 저장 위치를 변경할까요?",

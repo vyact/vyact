@@ -96,7 +96,15 @@ async def _move(plan: dict) -> None:
 
 @router.get("/vyact/model-storage")
 async def storage_status():
-    return {"path": str(model_storage.get_configured_models_dir()), "busy": model_storage.active_move, **model_storage.move_status}
+    current = model_storage.get_configured_models_dir()
+    default_directory = model_storage.INSTALL_DIR.resolve()
+    default_path = default_directory / model_storage.DEFAULT_MODELS_DIRECTORY_NAME
+    return {
+        **model_storage.move_status, "path": str(current), "busy": model_storage.active_move,
+        "is_default": current.resolve() == default_path.resolve(),
+        "default_directory": str(default_directory),
+        "parent_directory": str(current.parent),
+    }
 
 
 def _plan(path: str) -> dict:

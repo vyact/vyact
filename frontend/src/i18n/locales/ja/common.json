@@ -22,6 +22,7 @@
   "clearSearch": "検索をクリア",
   "selectColor": "色 {{color}} を選択",
   "modelStorage": {
+    "restoreDefault": "既定に戻す",
     "title": "モデルの保存先",
     "change": "変更",
     "confirmTitle": "モデルの保存先を変更しますか？",

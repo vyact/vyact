@@ -22,6 +22,7 @@
   "clearSearch": "Clear search",
   "selectColor": "Select color {{color}}",
   "modelStorage": {
+    "restoreDefault": "Restore default",
     "title": "Model storage location",
     "change": "Change",
     "confirmTitle": "Change model storage location?",

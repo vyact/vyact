@@ -22,6 +22,7 @@
   "clearSearch": "ล้างการค้นหา",
   "selectColor": "เลือกสี {{color}}",
   "modelStorage": {
+    "restoreDefault": "คืนค่าเริ่มต้น",
     "title": "ตำแหน่งจัดเก็บโมเดล",
     "change": "เปลี่ยน",
     "confirmTitle": "เปลี่ยนตำแหน่งจัดเก็บโมเดลหรือไม่?",

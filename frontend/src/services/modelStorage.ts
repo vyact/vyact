@@ -1,5 +1,8 @@
 export interface ModelStorageStatus {
     path: string;
+    is_default: boolean;
+    default_directory: string;
+    parent_directory: string;
     busy: boolean;
     phase: string;
     copied_bytes: number;

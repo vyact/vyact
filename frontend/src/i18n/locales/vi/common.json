@@ -22,6 +22,7 @@
   "clearSearch": "Xóa tìm kiếm",
   "selectColor": "Chọn màu {{color}}",
   "modelStorage": {
+    "restoreDefault": "Về mặc định",
     "title": "Vị trí lưu mô hình",
     "change": "Thay đổi",
     "confirmTitle": "Thay đổi vị trí lưu mô hình?",
