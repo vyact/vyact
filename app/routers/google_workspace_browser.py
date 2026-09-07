@@ -1144,6 +1144,17 @@ async def mark_mail_message_read(message_id: str):
     return {"ok": True}
 
 
+@router.patch("/google-workspace/mail/messages/{message_id}/unspam")
+async def unspam_mail_message(message_id: str):
+    await _require_connection()
+    service = await _build_service("gmail", "v1")
+    service.users().messages().modify(
+        userId="me", id=message_id,
+        body={"removeLabelIds": ["SPAM"], "addLabelIds": ["INBOX"]},
+    ).execute()
+    return {"ok": True}
+
+
 @router.patch("/google-workspace/mail/messages/{message_id}/star")
 async def set_mail_message_star(message_id: str, request: MailStarRequest):
     await _require_connection()

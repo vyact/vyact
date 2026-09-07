@@ -319,6 +319,14 @@
 .gwp-thread-message-toggle { display: grid; width: 30px; height: 30px; flex: 0 0 30px; place-items: center; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: pointer; }
 .gwp-thread-message-toggle:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--text); }
 .gwp-thread-message-body { padding: 0 10px 10px; }
+.gwp-spam-notice { display: flex; align-items: center; gap: 12px; margin: 12px 10px; padding: 16px; border: 1px solid var(--border); border-radius: 12px; background: color-mix(in srgb, var(--text) 9%, var(--surface)); color: var(--text); flex-wrap: wrap; }
+.gwp-spam-notice > svg { flex-shrink: 0; color: var(--muted); }
+.gwp-spam-notice-content { flex: 1 1 180px; min-width: 0; }
+.gwp-spam-notice-content strong { font-size: 13px; overflow-wrap: anywhere; }
+.gwp-spam-notice-content p { margin: 5px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
+.gwp-spam-release { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.gwp-spam-release:hover:not(:disabled) { border-color: var(--text); }
+.gwp-spam-release:disabled { opacity: .5; cursor: wait; }
 .gwp-thread-message-body .gwp-email-html { height: auto; min-height: 120px; overflow: hidden; }
 .gwp-message-header { display: flex; flex: 0 0 auto; gap: 10px; padding: 10px 15px; border-bottom: 1px solid var(--border); background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, var(--surface)), var(--surface) 58%); }
 .gwp-message-icon { display: grid; flex: 0 0 auto; width: 32px; height: 32px; place-items: center; border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border)); border-radius: 9px; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }

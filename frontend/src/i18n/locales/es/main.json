@@ -150,6 +150,8 @@
     "scheduled": "Programados",
     "allMail": "Todos",
     "spam": "Spam",
+    "unspam": "No es spam",
+    "spamNotice": "Este mensaje está en Spam. Márcalo como no spam para moverlo a Recibidos.",
     "trash": "Papelera",
     "labels": "Etiquetas",
     "addLabel": "Añadir etiqueta",

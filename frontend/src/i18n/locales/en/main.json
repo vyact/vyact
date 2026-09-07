@@ -186,6 +186,8 @@
     "scheduled": "Scheduled",
     "allMail": "All mail",
     "spam": "Spam",
+    "unspam": "Not spam",
+    "spamNotice": "This message is in Spam. Mark it as not spam to move it to your inbox.",
     "trash": "Trash",
     "labels": "Labels",
     "addLabel": "Add label",

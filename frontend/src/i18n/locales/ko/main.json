@@ -186,6 +186,8 @@
     "scheduled": "예약됨",
     "allMail": "전체보관함",
     "spam": "스팸함",
+    "unspam": "스팸 해제",
+    "spamNotice": "이 메일이 스팸함에 있습니다. 해제하면 받은편지함으로 이동합니다.",
     "trash": "휴지통",
     "labels": "라벨",
     "addLabel": "라벨 추가",

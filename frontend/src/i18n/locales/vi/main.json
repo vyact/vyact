@@ -115,6 +115,8 @@
     "scheduled": "Đã lên lịch",
     "allMail": "Tất cả thư",
     "spam": "Thư rác",
+    "unspam": "Không phải thư rác",
+    "spamNotice": "Thư này nằm trong thư rác. Đánh dấu không phải thư rác để chuyển vào hộp thư đến.",
     "trash": "Thùng rác",
     "labels": "Nhãn",
     "addLabel": "Thêm nhãn",

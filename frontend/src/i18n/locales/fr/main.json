@@ -115,6 +115,8 @@
     "scheduled": "Planifiés",
     "allMail": "Tous les messages",
     "spam": "Spam",
+    "unspam": "Non-spam",
+    "spamNotice": "Ce message est dans les spams. Marquez-le comme non-spam pour le déplacer vers la boîte de réception.",
     "trash": "Corbeille",
     "labels": "Libellés",
     "addLabel": "Ajouter un libellé",

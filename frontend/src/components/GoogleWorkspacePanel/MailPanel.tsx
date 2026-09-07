@@ -1,5 +1,5 @@
 import WorkspaceLoadError from './WorkspaceLoadError';
-import {workspaceLoadErrorMessage} from '../../utils/workspaceError';
+import {notifyWorkspaceError, workspaceLoadErrorMessage} from '../../utils/workspaceError';
 import {formatLocalizedNumber} from '../../utils/localizedNumber';
 import {memo, type CSSProperties, type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
@@ -1902,12 +1902,44 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
             <span className="gwp-drive-upload-count">{label}</span>
         </div>;
     };
+    const [unspammingMessageId, setUnspammingMessageId] = useState<string | null>(null);
+    const unspamPendingRef = useRef(false);
+    const unspamMessage = async (messageId: string) => {
+        if (unspamPendingRef.current) return;
+        unspamPendingRef.current = true;
+        setUnspammingMessageId(messageId);
+        try {
+            await api.unspamGoogleMailMessage(messageId);
+            // Return to the refreshed spam list after Gmail has moved this message.
+            setSelected(null);
+            await loadMails();
+        } catch (error) {
+            notifyWorkspaceError(error);
+        } finally {
+            unspamPendingRef.current = false;
+            setUnspammingMessageId(null);
+        }
+    };
+    const renderSpamNotice = (message: MailThreadMessage) => provider === 'google' && message.labelIds?.includes('SPAM') ? (
+        <div className="gwp-spam-notice">
+            <TriangleAlert size={19} aria-hidden="true"/>
+            <div className="gwp-spam-notice-content">
+                <strong>{parseMailAddress(message.from).email}</strong>
+                <p>{t('googleWorkspace.spamNotice')}</p>
+            </div>
+            <button type="button" className="gwp-spam-release" disabled={Boolean(unspammingMessageId) || isMailActionBusy} onClick={() => void unspamMessage(message.id)}>
+                {unspammingMessageId === message.id && <LoaderCircle size={15} className="gwp-spin" aria-hidden="true"/>}
+                {t('googleWorkspace.unspam')}
+            </button>
+        </div>
+    ) : null;
     const renderMailThread = () => {
         if (!selected) return null;
         const threadMessages: MailThreadMessage[] = selected.threadMessages?.length
             ? selected.threadMessages
             : [{
                 id: selected.id,
+                labelIds: selected.labelIds,
                 from: selected.from,
                 to: selected.to.map(address => address.email).join(', '),
                 cc: selected.cc.map(address => address.email).join(', '),
@@ -1974,6 +2006,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
                             </div>
                         </div>
                     </header>
+                    {renderSpamNotice(message)}
                     <div className="gwp-email-frame gwp-email-frame--single"><EmailBody mail={message} fillAvailableSpace/></div>
                 </div>
                 {messageDetail.attachments.length > 0 && (
@@ -2043,7 +2076,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
                             </button>
                         </div>
                         {expanded && <>
-                            <div className="gwp-thread-message-body"><EmailBody mail={message}/></div>
+                            <div className="gwp-thread-message-body">{renderSpamNotice(message)}<EmailBody mail={message}/></div>
                             {messageDetail.attachments.length > 0 && (
                                 <MailAttachments attachments={messageDetail.attachments.map(attachment => ({attachment, messageId: message.id}))} floatingInThread/>
                             )}

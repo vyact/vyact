@@ -115,6 +115,8 @@
     "scheduled": "已安排",
     "allMail": "所有邮件",
     "spam": "垃圾邮件",
+    "unspam": "不是垃圾邮件",
+    "spamNotice": "此邮件在垃圾邮件中。取消标记后将移至收件箱。",
     "trash": "回收站",
     "labels": "标签",
     "addLabel": "添加标签",

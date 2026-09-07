@@ -920,6 +920,7 @@ export const createWorkspaceApi = (workspace = 'google-workspace', accountId = '
         return response.blob();
     },
     async markGoogleMailMessageRead(id: string) { return fetchJson(`${API_BASE}/${workspace}/mail/messages/${encodeURIComponent(id)}/read`, {method: 'PATCH'}); },
+    async unspamGoogleMailMessage(id: string) { return fetchJson(`${API_BASE}/${workspace}/mail/messages/${encodeURIComponent(id)}/unspam`, {method: 'PATCH'}); },
     async setGoogleMailMessageStarred(id: string, starred: boolean) {
         const response = await fetch(`${API_BASE}/${workspace}/mail/messages/${encodeURIComponent(id)}/star`, {
             method: 'PATCH',
