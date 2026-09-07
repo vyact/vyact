@@ -9,11 +9,12 @@ import './ModelStorageLocation.css';
 
 interface Props {
     disabled?: boolean;
+    confirmChanges?: boolean;
     onBusyChange?: (busy: boolean) => void;
     onChanged?: () => void | Promise<void>;
 }
 const POLL_MS = 750;
-export default function ModelStorageLocation({disabled, onBusyChange, onChanged}: Props) {
+export default function ModelStorageLocation({disabled, confirmChanges = true, onBusyChange, onChanged}: Props) {
     const {t} = useTranslation('common');
     const [surface, setSurface] = useState<HTMLElement | null>(null);
     const bindSurface = useCallback((node: HTMLElement | null) => {
@@ -59,19 +60,21 @@ export default function ModelStorageLocation({disabled, onBusyChange, onChanged}
             const path = targetDirectory ?? await window.ragAPI?.selectFolder?.(t('modelStorage.title'), status?.parent_directory);
             if (!path) return;
             const next = await modelStorage.plan(path);
-            if (!next.same) setPlan(next);
+            if (!next.same) {
+                if (confirmChanges) setPlan(next);
+                else await move(next);
+            }
         } catch (reason) {setError(reason instanceof Error ? reason.message : 'storage_failed');}
         finally {setWorking(false);}
     };
-    const move = async () => {
-        if (!plan) return;
+    const move = async (selectedPlan: ModelStoragePlan) => {
         setWorking(true);
         setError('');
         try {
-            const result = await modelStorage.move(plan.selected_directory);
+            const result = await modelStorage.move(selectedPlan.selected_directory);
             if (!result.same) {
                 wasMoving.current = true;
-                setStatus(current => current ? {...current, busy: true, phase: 'preparing', copied_bytes: 0, total_bytes: plan.total_bytes, current_file: undefined} : current);
+                setStatus(current => current ? {...current, busy: true, phase: 'preparing', copied_bytes: 0, total_bytes: selectedPlan.total_bytes, current_file: undefined} : current);
             }
             setStatus(await modelStorage.status());
             setPlan(null);
@@ -99,6 +102,6 @@ export default function ModelStorageLocation({disabled, onBusyChange, onChanged}
             details={[plan.destination, t('modelStorage.size', {size: formatModelBytes(plan.total_bytes)})]}
             options={[{label: t('cancel'), value: 'cancel'}, {label: t('modelStorage.move'), value: 'move', variant: 'primary'}]}
             actionLayout="horizontal" loading={working} loadingValue="move"
-            onClose={() => setPlan(null)} onSelect={value => value === 'move' ? void move() : setPlan(null)}/>}
+            onClose={() => setPlan(null)} onSelect={value => value === 'move' ? void move(plan) : setPlan(null)}/>}
     </section>;
 }

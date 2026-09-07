@@ -198,37 +198,10 @@
 .setup-hub-search { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
 .setup-hub-search button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 72px; padding: 0 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); color: var(--text); cursor: pointer; white-space: nowrap; }
 .setup-hub-search button:disabled { cursor: wait; opacity: .55; }
-.setup-hub-browser { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 13px; background: color-mix(in srgb, var(--surface2) 34%, transparent); }
-.setup-hub-results { display: grid; flex: 1 1 auto; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: max-content; align-content: start; align-items: start; gap: 7px; box-sizing: border-box; max-width: 100%; min-height: 0; padding: 8px 6px 9px 9px; overflow-x: hidden; overflow-y: auto; }
-.setup-hub-results > .vyact-model-card { box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; gap: 6px; padding: 9px; border-color: transparent; border-radius: 10px; background: color-mix(in srgb, var(--surface2) 62%, transparent); }
-.setup-hub-results > .vyact-model-card.is-clickable { cursor: pointer; }
-.setup-hub-results > .vyact-model-card.is-clickable:hover { border-color: color-mix(in srgb, var(--accent) 52%, var(--border)); }
-.setup-hub-results > .vyact-model-card.is-selected { border-color: color-mix(in srgb, var(--accent) 70%, var(--border)); background: color-mix(in srgb, var(--accent) 9%, var(--surface2)); }
-.setup-hub-results .vyact-model-card-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
-.setup-hub-results .vyact-model-card-heading { gap: 8px; }
-.setup-hub-results .vyact-model-card-heading strong { min-width: 0; overflow: hidden; font-size: 12px; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
-.setup-hub-results .vyact-model-card-heading > span { font-size: 10px; }
+.setup-hub-browser { min-width: 0; min-height: 0; }
+.setup-hub-browser.vyact-model-results { min-height: 0; }
+.setup-hub-results { display: contents; }
 .setup-hub-results > :not(.vyact-model-card.is-compact) { grid-column: 1 / -1; }
-.setup-hub-results .vyact-model-files { grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr)); }
-.setup-hub-results .vyact-model-files button { box-sizing: border-box; width: 100%; min-width: 0; min-height: 46px; gap: 2px 6px; padding: 6px 9px 6px 12px; border-radius: 8px; font-size: 10px; }
-.setup-hub-results .vyact-model-files button small { font-size: 9px; }
-.setup-hub-results .vyact-mtp-badge { padding: 2px 4px; font-size: 7px; }
-.setup-hub-results .vyact-model-files button[class*='memory-'] { border-color: transparent; background: color-mix(in srgb, var(--bg) 76%, transparent); }
-.setup-hub-results .vyact-model-files button.is-selected { background: color-mix(in srgb, var(--accent) 8%, var(--bg)); }
-.setup-hub-results .vyact-model-file-name > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.setup-hub-results > .vyact-model-empty { grid-column: 1 / -1; }
-.setup-hub-browser > .setup-memory-summary { position: static; z-index: auto; box-sizing: border-box; width: 100%; flex: 0 0 auto; flex-wrap: wrap; gap: 8px; margin: 0; padding: 8px 12px; overflow: visible; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; background: transparent; }
-.setup-memory-summary .vyact-memory-capacity { display: flex; flex: 1 1 auto; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
-.setup-memory-summary .vyact-memory-capacity::-webkit-scrollbar { display: none; }
-.setup-memory-summary .vyact-memory-capacity > span { min-width: max-content; padding: 5px 8px; font-size: 10px; white-space: nowrap; }
-.setup-memory-summary .vyact-memory-capacity > .vyact-system-memory { flex: 0 0 130px; }
-.setup-memory-summary .vyact-memory-capacity > .vyact-gpu-memory { flex: 1 1 0; max-width: calc((100% - 130px - 16px) / 2); min-width: 0; white-space: normal; }
-.setup-memory-summary .vyact-memory-capacity strong { font-size: 12px; }
-.setup-memory-summary .vyact-memory-selection { flex: 1 0 100%; }
-
-.setup-memory-summary .vyact-memory-details { padding-block-start: 0; }
-.setup-memory-summary .vyact-model-metadata { grid-template-columns: repeat(4, minmax(110px, 1fr)); }
-.setup-memory-summary .vyact-model-metadata > span { padding: 7px 8px; }
 
 .setup-connection-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
 .setup-connection-heading > div { display: grid; gap: 4px; min-width: 0; }
@@ -507,7 +480,7 @@
     .setup-protocol-help { align-items: flex-start; flex-direction: column; gap: 6px; }
     .setup-connection-heading { align-items: stretch; flex-direction: column; }
     .setup-protocol-badge { align-self: flex-start; }
-    .setup-hub-results { grid-template-columns: 1fr; }
+    .setup-hub-browser { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 760px) {
