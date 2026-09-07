@@ -467,6 +467,7 @@ async def health():
 # ─────────────────────────────
 # ROUTERS
 # ─────────────────────────────
+from routers.model_storage import router as model_storage_router
 from routers.setup import router as setup_router
 from routers.chat import router as chat_router
 from routers.history import router as history_router
@@ -497,6 +498,7 @@ from routers.external_data import router as external_data_router
 from routers.language_learning_profile import router as language_learning_profile_router
 
 app.include_router(setup_router, prefix="/api")
+app.include_router(model_storage_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
 app.include_router(history_router, prefix="/api")
 app.include_router(prompts_router, prefix="/api")

@@ -429,7 +429,7 @@ class HuggingFaceModelDownloadTests(unittest.IsolatedAsyncioTestCase):
             model_path = models_dir / "owner" / "model" / "model.gguf"
             model_path.parent.mkdir(parents=True)
             model_path.write_bytes(b"existing-model")
-            with patch("services.huggingface_models.VYACT_MODELS_DIR", models_dir), \
+            with patch("services.huggingface_models.get_models_dir", return_value=models_dir), \
                  patch("services.huggingface_models.cache_downloaded_model") as cache_model:
                 progress = [item async for item in download_gguf_model("owner/model", "model.gguf")]
 

@@ -1,3 +1,4 @@
+import ModelStorageLocation from '../common/ModelStorageLocation/ModelStorageLocation';
 import ModelMemoryCapacity, {LayersHelp, MaxContextHelp, ModelArchitectureDetail} from '../common/ModelMemoryCapacity/ModelMemoryCapacity';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {Calculator, Check, Eye, EyeOff, ExternalLink, LoaderCircle, Plus, Search} from 'lucide-react';
@@ -61,6 +62,7 @@ const formatContextLength = (tokens: number) => tokens >= 1024 ? `${Math.round(t
 
 const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReadyOnMount = false }) => {
     const { t } = useTranslation(['setup', 'main']);
+    const [storageBusy, setStorageBusy] = useState(false);
     const [provider, setProvider] = useState<Provider>('vyact');
     const [esMode, setEsMode] = useState<'docker' | 'native'>('docker');
     // null = 확인 중(상태 조회 완료 전). 확인 전에는 선택지를 잠가 "됐다 안 됐다"처럼 보이는 것을 방지.
@@ -472,7 +474,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
 
     return (
         <div className="setup-page">
-            <div className={`setup-card${provider === 'vyact' && !isInstalling ? ' vyact-setup' : ''}${isInstalling ? ' installing' : ''}`}>
+            <div data-model-storage-surface aria-busy={storageBusy} className={`setup-card${provider === 'vyact' && !isInstalling ? ' vyact-setup' : ''}${isInstalling ? ' installing' : ''}`}>
                 <header className="setup-header">
                     <div className="setup-brand-mark" aria-hidden="true">
                         <span>V</span>
@@ -502,8 +504,8 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
                         <div
                             key={p.id}
                             className={`provider-item ${provider === p.id ? 'selected' : ''} ${isInstalling && provider !== p.id ? 'disabled' : ''}`}
-                            onClick={() => !isInstalling && changeProvider(p.id as Provider)}
-                            aria-disabled={isInstalling}
+                            onClick={() => !isInstalling && !storageBusy && changeProvider(p.id as Provider)}
+                            aria-disabled={isInstalling || storageBusy}
                         >
                             <div className="provider-name">{p.name}</div>
                             <div className="provider-desc">{p.desc}</div>
@@ -519,6 +521,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
                                 <label className="setup-field"><span><Tooltip content={t('main:modelSelector.huggingFaceTokenHelp')} multiline size="medium"><i className="vyact-token-help" tabIndex={0}>?</i></Tooltip>{t('apiKey')} <small>{t('customConnection.optional')}</small></span><div className="setup-secret-field"><input className="input" type={isApiKeyVisible ? 'text' : 'password'} placeholder={t('apiKey')} value={huggingFaceToken} onChange={event => setHuggingFaceToken(event.target.value)} onBlur={() => huggingFaceToken.trim() && api.saveVyactHuggingFaceToken(huggingFaceToken.trim()).catch(error => console.error('Failed to save Hugging Face token:', error))}/><button type="button" onClick={() => setIsApiKeyVisible(current => !current)} aria-label={t(isApiKeyVisible ? 'main:customProvider.hideApiKey' : 'main:customProvider.showApiKey')}>{isApiKeyVisible ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div></label>
                                 <div className="setup-field"><span className="vyact-search-label"><span><Search size={14}/>{t('main:modelSelector.searchLabel')}</span>{vyactHardware.apple_silicon && <button type="button" className={`vyact-mlx-switch${mlxOnly ? ' is-on' : ''}`} role="switch" aria-checked={mlxOnly} disabled={isSearchingHub} onClick={() => setMlxOnly(current => !current)}><span aria-hidden="true"><i/></span>{t('main:modelSelector.mlxOnly')}</button>}</span><div className="setup-hub-search"><input className="input" value={huggingFaceQuery} onChange={event => setHuggingFaceQuery(event.target.value)} onKeyDown={event => event.key === 'Enter' && void searchVyactModels(huggingFaceQuery)} placeholder={t('common:search')} aria-label={t('main:modelSelector.modelSearch')}/><button type="button" disabled={isSearchingHub || !huggingFaceQuery.trim()} onClick={() => void searchVyactModels(huggingFaceQuery)}>{isSearchingHub ? <LoaderCircle className="vyact-model-spinner" size={16}/> : <Search size={16}/>}<span>{t('main:modelSelector.searchAction')}</span></button></div></div>
                                 </div>
+                                <ModelStorageLocation onBusyChange={setStorageBusy}/>
                                 <div className="setup-hub-browser">
                                     {!isSearchingHub && vyactHardware.system_memory.total_bytes > 0 && (
                                         <div className="vyact-memory-summary setup-memory-summary">
@@ -603,7 +606,7 @@ const SetupPage: React.FC<SetupPageProps> = ({ onInstallComplete, notifyAppReady
                         <button
                             className="btn-install"
                             onClick={handleInstall}
-                            disabled={isInstallDisabled || (dockerAvailable === null && nativeSupported === null)}
+                            disabled={storageBusy || isInstallDisabled || (dockerAvailable === null && nativeSupported === null)}
                         >
                             {t('startInstall')}
                         </button>

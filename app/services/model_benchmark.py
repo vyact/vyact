@@ -1,4 +1,5 @@
 """Bounded benchmarks of user-visible model controls; never persist trial profiles."""
+from services import model_storage
 import asyncio
 import copy
 import hashlib
@@ -46,8 +47,12 @@ class BenchmarkGuard:
     async def __call__(self, scope, receive, send):
         global active_requests
         guarded = scope["type"] == "http" and scope.get("method") not in ("GET", "HEAD", "OPTIONS")
+        storage = scope.get("path", "").startswith("/api/vyact/model-storage")
+        if guarded and model_storage.active_move and not storage:
+            await JSONResponse({"code": "storage_busy", "detail": "storage_busy"}, status_code=409)(scope, receive, send)
+            return
         benchmark = scope.get("path", "").startswith("/api/vyact/models/benchmark")
-        if guarded and not benchmark:
+        if guarded and not benchmark and not storage:
             if active_job is not None and scope.get("path") != "/api/shutdown":
                 await JSONResponse({"code": "model_benchmark_busy", "detail": "model_benchmark_busy"}, status_code=409)(scope, receive, send)
                 return

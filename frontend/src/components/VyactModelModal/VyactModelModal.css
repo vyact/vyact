@@ -1,5 +1,6 @@
 .vyact-model-editor { width: min(820px, 94vw); }
-.vyact-model-editor-body { grid-template-rows: auto minmax(0, 1fr) auto; }
+.vyact-model-editor-body { grid-template-rows: auto auto minmax(0, 1fr) auto; }
+.vyact-model-editor-body > .model-storage-location { margin: 0; }
 .vyact-model-controls { grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); align-items: end; }
 .vyact-token-input-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
 .vyact-token-save { min-width: 58px; padding: 0 12px; border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border)); border-radius: 9px; background: color-mix(in srgb, var(--accent) 10%, var(--surface2)); color: var(--accent); cursor: pointer; font-size: var(--modal-btn); font-weight: 700; }

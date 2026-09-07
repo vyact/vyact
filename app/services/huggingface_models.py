@@ -13,7 +13,8 @@ from services.omlx_policy import (
     MAX_SPECPREFILL_DRAFT_BYTES, MAX_SPECPREFILL_TARGET_SIZE_RATIO,
     external_mtp_draft_types, is_external_mtp_compatible, model_type,
 )
-from services.vyact_runtime import VYACT_MODELS_DIR, cache_downloaded_model
+from services.model_storage import get_models_dir
+from services.vyact_runtime import cache_downloaded_model
 
 HF_API_URL = "https://huggingface.co/api"
 HF_BASE_URL = "https://huggingface.co"
@@ -779,11 +780,11 @@ async def download_gguf_model(repo_id: str, filename: str, token: str | None = N
     if not _REPO_ID_PATTERN.fullmatch(repo_id):
         raise ValueError("Invalid Hugging Face repository ID")
     relative_path = _safe_relative_file_path(filename)
-    destination = VYACT_MODELS_DIR / repo_id / Path(*relative_path.parts)
+    destination = get_models_dir() / repo_id / Path(*relative_path.parts)
     temporary = destination.with_suffix(destination.suffix + ".part")
     destination.parent.mkdir(parents=True, exist_ok=True)
     if destination.is_file():
-        cache_downloaded_model(destination.relative_to(VYACT_MODELS_DIR).as_posix())
+        cache_downloaded_model(destination.relative_to(get_models_dir()).as_posix())
         file_size = destination.stat().st_size
         yield file_size, file_size
         return
@@ -801,4 +802,4 @@ async def download_gguf_model(repo_id: str, filename: str, token: str | None = N
                     downloaded += len(chunk)
                     yield downloaded, total_bytes
     temporary.replace(destination)
-    cache_downloaded_model(destination.relative_to(VYACT_MODELS_DIR).as_posix())
+    cache_downloaded_model(destination.relative_to(get_models_dir()).as_posix())

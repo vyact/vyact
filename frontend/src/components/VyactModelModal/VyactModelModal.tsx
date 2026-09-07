@@ -1,3 +1,4 @@
+import ModelStorageLocation from '../common/ModelStorageLocation/ModelStorageLocation';
 import {MODEL_ESTIMATE_CONTEXT} from '../../constants/modelMemory';
 import ModelMemoryCapacity, {LayersHelp, MaxContextHelp, ModelArchitectureDetail} from '../common/ModelMemoryCapacity/ModelMemoryCapacity';
 import ModelCapabilityIcons from '../common/ModelCapabilityIcons/ModelCapabilityIcons';
@@ -110,7 +111,8 @@ export default function VyactModelModal({onClose, onSelected, activeModelPath}: 
     const [showRuntimeInstallHelp, setShowRuntimeInstallHelp] = useState(false);
     const searchRequestIdRef = useRef(0);
     const detailsRequestIdRef = useRef(0);
-    const busy = installedModelsStatus === 'loading' || isSearching || isDownloading || isSavingToken;
+    const [storageBusy, setStorageBusy] = useState(false);
+    const busy = storageBusy || installedModelsStatus === 'loading' || isSearching || isDownloading || isSavingToken;
     const selectedModelPath = selectedFile
         ? selectedFile.runtime === 'mlx' ? `mlx/${selectedFile.repository}` : `${selectedFile.repository}/${selectedFile.filename}`
         : '';
@@ -375,9 +377,10 @@ export default function VyactModelModal({onClose, onSelected, activeModelPath}: 
     };
 
     return (<>
-        <ModalOverlay className="provider-editor-overlay" onClose={onClose} closeOnBackdrop={false} closeOnEscape={!isDownloading}>
+        <ModalOverlay className="provider-editor-overlay" onClose={onClose} closeOnBackdrop={false} closeOnEscape={!busy}>
             <section
                 className="provider-editor vyact-model-editor"
+                data-model-storage-surface aria-busy={storageBusy}
                 aria-labelledby="vyact-model-editor-title"
                 onClick={event => event.stopPropagation()}
             >
@@ -447,6 +450,7 @@ export default function VyactModelModal({onClose, onSelected, activeModelPath}: 
                         </label>
                     </section>
 
+                    <ModelStorageLocation disabled={busy} onBusyChange={setStorageBusy} onChanged={onSelected}/>
                     <section className="vyact-model-results" aria-busy={busy}>
                         {!isSearching && hardware.system_memory.total_bytes > 0 && (
                             <div className="vyact-memory-summary">

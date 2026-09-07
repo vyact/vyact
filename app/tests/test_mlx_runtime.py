@@ -83,7 +83,7 @@ class MlxRuntimeTests(unittest.TestCase):
                     "codebook.weight": {"shape": [16, 32], "dtype": "U32", "data_offsets": [0, 0]},
                 },
             )
-            with patch("services.mlx_runtime.MLX_MODELS_DIR", models), \
+            with patch("services.mlx_runtime.get_mlx_models_dir", return_value=models), \
                  patch("services.mlx_runtime.OMLX_BASE_DIR", base / "omlx"), \
                  patch("services.mlx_runtime.shutil.which", return_value="/opt/homebrew/bin/omlx"):
                 command, environment, mode = _build_omlx_server_command(model, 32768)
@@ -113,7 +113,7 @@ class MlxRuntimeTests(unittest.TestCase):
             (draft / MLX_MODEL_MANIFEST).write_text(json.dumps({"role": "dflash2"}))
             (draft / "config.json").write_text("{}")
             (draft / "model.safetensors").touch()
-            with patch("services.mlx_runtime.MLX_MODELS_DIR", base / "models"), \
+            with patch("services.mlx_runtime.get_mlx_models_dir", return_value=base / "models"), \
                  patch("services.mlx_runtime.OMLX_BASE_DIR", base / "omlx"), \
                  patch("services.mlx_runtime.shutil.which", return_value="/opt/homebrew/bin/omlx"):
                 _build_omlx_server_command(model, 32768)
@@ -134,7 +134,7 @@ class MlxRuntimeTests(unittest.TestCase):
                 "repository": "owner/model-mtp", "role": "mtp",
             }))
 
-            with patch("services.mlx_runtime.MLX_MODELS_DIR", models_dir):
+            with patch("services.mlx_runtime.get_mlx_models_dir", return_value=models_dir):
                 delete_downloaded_mlx_model("mlx/owner/model")
 
             self.assertFalse(model_dir.exists())
@@ -157,7 +157,7 @@ class MlxRuntimeTests(unittest.TestCase):
                 "repository": "owner/draft", "role": "specprefill",
             }))
 
-            with patch("services.mlx_runtime.MLX_MODELS_DIR", models_dir):
+            with patch("services.mlx_runtime.get_mlx_models_dir", return_value=models_dir):
                 delete_downloaded_mlx_model("mlx/owner/first")
 
             self.assertTrue(draft.is_dir())
@@ -174,7 +174,7 @@ class MlxRuntimeTests(unittest.TestCase):
             model_dir.mkdir(parents=True)
             (model_dir / MLX_MODEL_MANIFEST).write_text(json.dumps({"repository": "owner/model"}))
 
-            with patch("services.mlx_runtime.MLX_MODELS_DIR", models_dir):
+            with patch("services.mlx_runtime.get_mlx_models_dir", return_value=models_dir):
                 delete_downloaded_mlx_model("mlx/owner/model")
 
             self.assertFalse((models_dir / "owner").exists())
@@ -190,7 +190,7 @@ class MlxRuntimeTests(unittest.TestCase):
             (model_dir / MLX_MODEL_MANIFEST).write_text(json.dumps({"repository": "owner/model"}))
             (sibling_dir / MLX_MODEL_MANIFEST).write_text(json.dumps({"repository": "owner/other-model"}))
 
-            with patch("services.mlx_runtime.MLX_MODELS_DIR", models_dir):
+            with patch("services.mlx_runtime.get_mlx_models_dir", return_value=models_dir):
                 delete_downloaded_mlx_model("mlx/owner/model")
 
             self.assertTrue((models_dir / "owner").exists())
@@ -228,7 +228,7 @@ class MlxRuntimeTests(unittest.TestCase):
             (mtp_dir / MLX_MODEL_MANIFEST).write_text(json.dumps({"role": "mtp"}))
             (model_dir / MLX_MODEL_MANIFEST).write_text(json.dumps({"mtp_repository": "owner/mtp"}))
 
-            with patch("services.mlx_runtime.MLX_MODELS_DIR", Path(temp_dir)), \
+            with patch("services.mlx_runtime.get_mlx_models_dir", return_value=Path(temp_dir)), \
                  patch("services.mlx_runtime.OMLX_BASE_DIR", Path(temp_dir) / "omlx"), \
                  patch("services.mlx_runtime.shutil.which", return_value="/opt/homebrew/bin/omlx"):
                 _, _, mode = _build_omlx_server_command(model_dir, 32768)
@@ -260,7 +260,7 @@ class MlxRuntimeTests(unittest.TestCase):
             (model / MLX_MODEL_MANIFEST).write_text(json.dumps({"specprefill_repository": "owner/draft"}))
             (draft / MLX_MODEL_MANIFEST).write_text(json.dumps({"role": "specprefill"}))
 
-            with patch("services.mlx_runtime.MLX_MODELS_DIR", models), \
+            with patch("services.mlx_runtime.get_mlx_models_dir", return_value=models), \
                  patch("services.mlx_runtime.OMLX_BASE_DIR", base / "omlx"), \
                  patch("services.mlx_runtime._OMLX_CACHE_DIR", base / "cache"), \
                  patch("services.mlx_runtime.shutil.which", return_value="/opt/homebrew/bin/omlx"):
@@ -290,7 +290,7 @@ class MlxRuntimeTests(unittest.TestCase):
             (model / MLX_MODEL_MANIFEST).write_text(json.dumps({"specprefill_repository": "owner/draft"}))
             (draft / MLX_MODEL_MANIFEST).write_text(json.dumps({"role": "specprefill"}))
 
-            with patch("services.mlx_runtime.MLX_MODELS_DIR", models), \
+            with patch("services.mlx_runtime.get_mlx_models_dir", return_value=models), \
                  patch("services.mlx_runtime.OMLX_BASE_DIR", base / "omlx"), \
                  patch("services.mlx_runtime._OMLX_CACHE_DIR", base / "cache"), \
                  patch("services.mlx_runtime.shutil.which", return_value="/opt/homebrew/bin/omlx"):
@@ -323,7 +323,7 @@ class MlxRuntimeTests(unittest.TestCase):
                 "repository": "draft-owner/draft", "role": "specprefill",
             }))
 
-            with patch("services.mlx_runtime.MLX_MODELS_DIR", models), \
+            with patch("services.mlx_runtime.get_mlx_models_dir", return_value=models), \
                  patch("services.mlx_runtime.OMLX_BASE_DIR", Path(temp_dir) / "omlx"), \
                  patch("services.mlx_runtime._OMLX_CACHE_DIR", Path(temp_dir) / "cache"), \
                  patch("services.mlx_runtime.shutil.which", return_value="/opt/homebrew/bin/omlx"), \
@@ -394,7 +394,7 @@ class MlxRuntimeTests(unittest.TestCase):
                  patch("services.mlx_runtime.urllib.request.urlopen") as urlopen, \
                  patch("services.mlx_runtime.json.load", return_value={"data": [{"id": "target"}]}), \
                  patch("services.mlx_runtime.get_log_file", return_value=base / "omlx.log"), \
-                 patch("services.mlx_runtime.MLX_MODELS_DIR", models), \
+                 patch("services.mlx_runtime.get_mlx_models_dir", return_value=models), \
                  patch("services.mlx_runtime.MLX_RUNTIME_DIR", base), \
                  patch("services.mlx_runtime.MLX_RUNTIME_PID_FILE", base / "omlx.pid"):
                 urlopen.return_value.__enter__.return_value.status = 200
@@ -426,7 +426,7 @@ class MlxRuntimeTests(unittest.TestCase):
                 "repository": "owner/draft", "role": "specprefill",
             }))
 
-            with patch("services.mlx_runtime.MLX_MODELS_DIR", models), \
+            with patch("services.mlx_runtime.get_mlx_models_dir", return_value=models), \
                  patch("services.huggingface_models.search_mlx_models", new=AsyncMock(return_value=[])):
                 self.assertFalse(prepare_mlx_specprefill_draft(target, enable_mtp=False))
 
@@ -447,7 +447,7 @@ class MlxRuntimeTests(unittest.TestCase):
                 "repository": "owner/model-mtp", "role": "mtp",
             }))
 
-            with patch("services.mlx_runtime.MLX_MODELS_DIR", models_dir):
+            with patch("services.mlx_runtime.get_mlx_models_dir", return_value=models_dir):
                 associate_mlx_mtp_model(model_dir, "owner/model-mtp", mtp_dir)
                 self.assertEqual(list_downloaded_mlx_models(), ["mlx/owner/model"])
             manifest = json.loads((model_dir / MLX_MODEL_MANIFEST).read_text())
@@ -469,7 +469,7 @@ class MlxRuntimeTests(unittest.TestCase):
             with patch.dict(os.environ, {"HF_HUB_OFFLINE": "1"}), \
                  patch.object(hub_constants, "HF_HUB_OFFLINE", True), \
                  patch("services.mlx_runtime.is_apple_silicon", return_value=True), \
-                 patch("services.mlx_runtime.MLX_MODELS_DIR", models_dir), \
+                 patch("services.mlx_runtime.get_mlx_models_dir", return_value=models_dir), \
                  patch("huggingface_hub.snapshot_download", side_effect=fake_snapshot_download):
                 model_path = download_mlx_model("owner/model", "revision")
                 self.assertEqual(os.environ.get("HF_HUB_OFFLINE"), "1")
@@ -486,7 +486,7 @@ class MlxRuntimeTests(unittest.TestCase):
             model_file.write_bytes(b"weights")
             expected_bytes = model_file.stat().st_blocks * 512
 
-            with patch("services.mlx_runtime.MLX_MODELS_DIR", models_dir):
+            with patch("services.mlx_runtime.get_mlx_models_dir", return_value=models_dir):
                 self.assertEqual(get_mlx_downloaded_bytes("owner/model"), expected_bytes)
 
     def test_lists_and_resolves_downloaded_repository(self):
@@ -496,7 +496,7 @@ class MlxRuntimeTests(unittest.TestCase):
             model_dir.mkdir(parents=True)
             (model_dir / MLX_MODEL_MANIFEST).write_text(json.dumps({"repository": "mlx-community/model-4bit"}))
 
-            with patch("services.mlx_runtime.MLX_MODELS_DIR", models_dir):
+            with patch("services.mlx_runtime.get_mlx_models_dir", return_value=models_dir):
                 self.assertEqual(list_downloaded_mlx_models(), ["mlx/mlx-community/model-4bit"])
                 self.assertEqual(
                     get_downloaded_mlx_model_path("mlx/mlx-community/model-4bit"), model_dir.resolve(),
@@ -521,11 +521,11 @@ class MlxRuntimeTests(unittest.TestCase):
                 "repository": "owner/drafter", "role": "mtp",
             }))
 
-            with patch("services.mlx_runtime.MLX_MODELS_DIR", models_dir):
+            with patch("services.mlx_runtime.get_mlx_models_dir", return_value=models_dir):
                 self.assertEqual(list_mtp_supported_mlx_models(), ["mlx/owner/mtp-model"])
 
     def test_rejects_repository_path_traversal(self):
         with tempfile.TemporaryDirectory() as temp_dir, \
-             patch("services.mlx_runtime.MLX_MODELS_DIR", Path(temp_dir)):
+             patch("services.mlx_runtime.get_mlx_models_dir", return_value=Path(temp_dir)):
             with self.assertRaises(ValueError):
                 get_downloaded_mlx_model_path("mlx/../model")

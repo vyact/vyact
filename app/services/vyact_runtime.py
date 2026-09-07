@@ -20,6 +20,7 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from urllib.parse import quote
 
+from services.model_storage import get_models_dir
 from config import INSTALL_DIR, get_log_file
 from logger import get_logger
 from services.hardware_info import GPU_SPLIT_DECIMAL_PLACES, get_local_hardware_info, validate_gpu_split_percentages
@@ -33,7 +34,6 @@ logger = get_logger(__name__)
 VYACT_RUNTIME_PORT = 11435
 VYACT_RUNTIME_URL = f"http://127.0.0.1:{VYACT_RUNTIME_PORT}/v1"
 VYACT_RUNTIME_DIR = INSTALL_DIR / "runtime"
-VYACT_MODELS_DIR = INSTALL_DIR / "models"
 VYACT_SWAP_CONFIG = VYACT_RUNTIME_DIR / "llama-swap.yaml"
 VYACT_RUNTIME_PID_FILE = VYACT_RUNTIME_DIR / "llama-swap.pid"
 LLAMA_BATCH_SIZE = 2048
@@ -102,7 +102,7 @@ def get_runtime_paths() -> RuntimePaths:
     return RuntimePaths(
         llama_server=llama_server if llama_server.exists() else _which_path("llama-server") or _bundled_linux_executable("llama-server"),
         llama_swap=llama_swap if llama_swap.exists() else _which_path("llama-swap") or _bundled_linux_executable("llama-swap"),
-        models_dir=VYACT_MODELS_DIR,
+        models_dir=get_models_dir(),
         config_file=VYACT_SWAP_CONFIG,
     )
 
@@ -243,10 +243,10 @@ def initialize_downloaded_models_cache(*, force: bool = False) -> list[str]:
         if _downloaded_models_cache is not None and not force:
             return sorted(_downloaded_models_cache)
         models = {
-            path.relative_to(VYACT_MODELS_DIR).as_posix()
-            for path in VYACT_MODELS_DIR.rglob("*.gguf")
+            path.relative_to(get_models_dir()).as_posix()
+            for path in get_models_dir().rglob("*.gguf")
             if path.is_file() and not path.name.endswith(".part")
-        } if VYACT_MODELS_DIR.is_dir() else set()
+        } if get_models_dir().is_dir() else set()
         _downloaded_models_cache = frozenset(models)
         return sorted(models)
 
@@ -300,14 +300,14 @@ def delete_downloaded_model(relative_path: str) -> None:
         for candidate in list_selectable_models()
     )
     if not is_still_referenced:
-        companion_relative_path = dflash2_path.relative_to(VYACT_MODELS_DIR).as_posix()
+        companion_relative_path = dflash2_path.relative_to(get_models_dir()).as_posix()
         dflash2_path.unlink(missing_ok=True)
         uncache_downloaded_model(companion_relative_path)
 
 
 def get_downloaded_model_path(relative_path: str) -> Path:
-    candidate = (VYACT_MODELS_DIR / relative_path).resolve()
-    models_dir = VYACT_MODELS_DIR.resolve()
+    candidate = (get_models_dir() / relative_path).resolve()
+    models_dir = get_models_dir().resolve()
     if models_dir not in candidate.parents or candidate.suffix.lower() != ".gguf" or not candidate.is_file():
         raise LocalModelNotDownloadedError("The selected Vyact model is not a downloaded GGUF file")
     return candidate
@@ -316,7 +316,7 @@ def get_downloaded_model_path(relative_path: str) -> Path:
 def get_cached_mtp_sidecar(model_path: Path) -> Path | None:
     """Find a downloaded MTP sidecar from the same managed repository."""
     try:
-        relative_model = model_path.resolve().relative_to(VYACT_MODELS_DIR.resolve())
+        relative_model = model_path.resolve().relative_to(get_models_dir().resolve())
     except ValueError:
         return None
     if len(relative_model.parts) < 3:
@@ -334,7 +334,7 @@ def get_cached_mtp_sidecar(model_path: Path) -> Path | None:
 
 
 def associate_dflash2_model(model_path: Path, dflash2_path: Path) -> None:
-    relative_dflash2 = dflash2_path.resolve().relative_to(VYACT_MODELS_DIR.resolve()).as_posix()
+    relative_dflash2 = dflash2_path.resolve().relative_to(get_models_dir().resolve()).as_posix()
     mapping_path = model_path.with_suffix(model_path.suffix + ".dflash2.json")
     mapping_path.write_text(json.dumps({"model_path": relative_dflash2}), encoding="utf-8")
 
@@ -351,7 +351,7 @@ def get_cached_dflash2_model(model_path: Path) -> Path | None:
 def get_cached_vision_projector(model_path: Path) -> Path | None:
     """Find a downloaded llama.cpp vision projector from the same repository."""
     try:
-        relative_model = model_path.resolve().relative_to(VYACT_MODELS_DIR.resolve())
+        relative_model = model_path.resolve().relative_to(get_models_dir().resolve())
     except ValueError:
         return None
     if len(relative_model.parts) < 3:
@@ -624,7 +624,7 @@ def start_single_model(
     try:
         wait_until_loaded(model_key, process)
         try:
-            relative_model = str(model_path.resolve().relative_to(VYACT_MODELS_DIR.resolve()))
+            relative_model = str(model_path.resolve().relative_to(get_models_dir().resolve()))
         except ValueError:
             relative_model = str(model_path)
         _active_dflash2_model = relative_model if acceleration == "dflash2" else None
@@ -743,7 +743,7 @@ def write_single_model_config(
         raise RuntimeError("Vyact native runtime is not installed")
 
     VYACT_RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
-    VYACT_MODELS_DIR.mkdir(parents=True, exist_ok=True)
+    get_models_dir().mkdir(parents=True, exist_ok=True)
     model_key = _model_key(model_path)
     uses_integrated_mtp = enable_mtp and mtp_model_path is None and model_has_integrated_mtp(model_path)
     uses_mtp = mtp_model_path is not None or uses_integrated_mtp

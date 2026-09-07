@@ -1,6 +1,7 @@
 """
 routers/setup.py – 설치 / 모델 / Provider / 상태
 """
+from services.model_storage import download_operation, get_models_dir
 from services import model_benchmark
 from services.mlx_runtime import list_mtp_supported_mlx_models, list_dflash2_supported_mlx_models
 from services.vyact_runtime import list_mtp_supported_models, list_dflash2_supported_models
@@ -1044,6 +1045,7 @@ async def download_vyact_model(req: HuggingFaceDownloadRequest):
                     logger.warning("[vyact] MLX model size lookup failed: %s", error)
             yield sse(f"Downloading MLX {req.repository}", "log", None)
 
+            @download_operation()
             def download_mlx_with_optional_mtp():
                 model_path = download_mlx_model(
                     req.repository, req.revision, token,
@@ -1094,7 +1096,7 @@ async def download_vyact_model(req: HuggingFaceDownloadRequest):
             return
 
         from services.huggingface_models import download_gguf_model, find_mtp_sidecar, find_vision_projector
-        from services.vyact_runtime import VYACT_MODELS_DIR, associate_dflash2_model
+        from services.vyact_runtime import associate_dflash2_model
 
         config = await load_config_async()
         token = (req.token or "").strip() or config.get("vyact_config", {}).get("huggingface_token")
@@ -1125,8 +1127,8 @@ async def download_vyact_model(req: HuggingFaceDownloadRequest):
                 ):
                     progress = 90 + int(downloaded * 10 / total) if total else None
                     yield sse(f"Downloading DFlash2 {req.dflash2_filename}", "dflash2_download", progress)
-                main_path = VYACT_MODELS_DIR / req.repository / req.filename
-                dflash2_path = VYACT_MODELS_DIR / req.dflash2_repository / req.dflash2_filename
+                main_path = get_models_dir() / req.repository / req.filename
+                dflash2_path = get_models_dir() / req.dflash2_repository / req.dflash2_filename
                 associate_dflash2_model(main_path, dflash2_path)
             except Exception as error:
                 logger.info("[vyact] DFlash2 download skipped; using the main model: %s", error)

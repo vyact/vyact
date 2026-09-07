@@ -19,6 +19,7 @@ from typing import Callable
 
 from tqdm.auto import tqdm
 
+from services.model_storage import get_mlx_models_dir
 from config import INSTALL_DIR, get_log_file
 from services.multimodal_capabilities import get_mlx_modalities
 from services.local_model_errors import LocalModelNotDownloadedError
@@ -33,7 +34,6 @@ from services.omlx_policy import (
 from services.runtime_error_details import classify_runtime_load_failure, runtime_startup_error
 from services.vyact_runtime import VYACT_RUNTIME_PORT
 
-MLX_MODELS_DIR = INSTALL_DIR / "models" / "mlx"
 MLX_RUNTIME_DIR = INSTALL_DIR / "runtime"
 MLX_RUNTIME_PID_FILE = MLX_RUNTIME_DIR / "omlx.pid"
 LEGACY_MLX_RUNTIME_PID_FILE = MLX_RUNTIME_DIR / "mlx-vlm.pid"
@@ -113,15 +113,15 @@ def _repository_path(repository: str) -> Path:
     parts = repository.split("/")
     if len(parts) != 2 or not all(parts) or any(part in {".", ".."} for part in parts):
         raise ValueError("Invalid Hugging Face repository ID")
-    return MLX_MODELS_DIR.joinpath(*parts)
+    return get_mlx_models_dir().joinpath(*parts)
 
 
 def list_downloaded_mlx_models() -> list[str]:
-    if not MLX_MODELS_DIR.is_dir():
+    if not get_mlx_models_dir().is_dir():
         return []
     return sorted(
-        f"mlx/{path.parent.relative_to(MLX_MODELS_DIR).as_posix()}"
-        for path in MLX_MODELS_DIR.rglob(MLX_MODEL_MANIFEST)
+        f"mlx/{path.parent.relative_to(get_mlx_models_dir()).as_posix()}"
+        for path in get_mlx_models_dir().rglob(MLX_MODEL_MANIFEST)
         if path.is_file() and _read_model_manifest(path).get("role", "model") == "model"
     )
 
@@ -129,16 +129,16 @@ def list_downloaded_mlx_models() -> list[str]:
 def list_multimodal_supported_mlx_models() -> dict[str, list[str]]:
     result = {"image": [], "audio": []}
     for model in list_downloaded_mlx_models():
-        for modality in get_mlx_modalities(MLX_MODELS_DIR / model.removeprefix("mlx/")):
+        for modality in get_mlx_modalities(get_mlx_models_dir() / model.removeprefix("mlx/")):
             result[modality].append(model)
     return result
 
 
 def list_mtp_supported_mlx_models() -> list[str]:
-    if not MLX_MODELS_DIR.is_dir():
+    if not get_mlx_models_dir().is_dir():
         return []
     models = []
-    for path in MLX_MODELS_DIR.rglob(MLX_MODEL_MANIFEST):
+    for path in get_mlx_models_dir().rglob(MLX_MODEL_MANIFEST):
         if not path.is_file():
             continue
         manifest = _read_model_manifest(path)
@@ -150,17 +150,17 @@ def list_mtp_supported_mlx_models() -> list[str]:
         except ValueError:
             continue
         if (mtp_path / MLX_MODEL_MANIFEST).is_file():
-            models.append(f"mlx/{path.parent.relative_to(MLX_MODELS_DIR).as_posix()}")
+            models.append(f"mlx/{path.parent.relative_to(get_mlx_models_dir()).as_posix()}")
     return sorted(models)
 
 
 def list_dflash2_supported_mlx_models() -> list[str]:
     models = set(_list_companion_supported_mlx_models("dflash2_repository"))
-    for path in MLX_MODELS_DIR.rglob(MLX_MODEL_MANIFEST) if MLX_MODELS_DIR.is_dir() else []:
+    for path in get_mlx_models_dir().rglob(MLX_MODEL_MANIFEST) if get_mlx_models_dir().is_dir() else []:
         manifest = _read_model_manifest(path)
         if manifest.get("role", "model") == "model" and manifest.get("dflash2_subdirectory") == "dflash":
             if _is_complete_mlx_model(path.parent / "dflash"):
-                models.add(f"mlx/{path.parent.relative_to(MLX_MODELS_DIR).as_posix()}")
+                models.add(f"mlx/{path.parent.relative_to(get_mlx_models_dir()).as_posix()}")
     return sorted(models)
 
 
@@ -170,9 +170,9 @@ def get_active_dflash2_mlx_model() -> str | None:
 
 def _list_companion_supported_mlx_models(manifest_key: str) -> list[str]:
     models = []
-    if not MLX_MODELS_DIR.is_dir():
+    if not get_mlx_models_dir().is_dir():
         return models
-    for path in MLX_MODELS_DIR.rglob(MLX_MODEL_MANIFEST):
+    for path in get_mlx_models_dir().rglob(MLX_MODEL_MANIFEST):
         if not path.is_file():
             continue
         manifest = _read_model_manifest(path)
@@ -184,7 +184,7 @@ def _list_companion_supported_mlx_models(manifest_key: str) -> list[str]:
         except ValueError:
             continue
         if (companion_path / MLX_MODEL_MANIFEST).is_file():
-            models.append(f"mlx/{path.parent.relative_to(MLX_MODELS_DIR).as_posix()}")
+            models.append(f"mlx/{path.parent.relative_to(get_mlx_models_dir()).as_posix()}")
     return sorted(models)
 
 
@@ -330,13 +330,13 @@ def _is_complete_mlx_model(path: Path) -> bool:
 def get_downloaded_mlx_model_path(model_path: str) -> Path:
     repository = model_path.removeprefix("mlx/")
     destination = _repository_path(repository).resolve()
-    if MLX_MODELS_DIR.resolve() not in destination.parents or not (destination / MLX_MODEL_MANIFEST).is_file():
+    if get_mlx_models_dir().resolve() not in destination.parents or not (destination / MLX_MODEL_MANIFEST).is_file():
         raise LocalModelNotDownloadedError("The selected MLX model has not been downloaded")
     return destination
 
 
 def _remove_empty_mlx_parent_directories(start: Path) -> None:
-    models_root = MLX_MODELS_DIR.resolve()
+    models_root = get_mlx_models_dir().resolve()
     current = start.resolve()
     while current != models_root and models_root in current.parents:
         try:
@@ -365,7 +365,7 @@ def delete_downloaded_mlx_model(model_path: str) -> None:
         manifest_key = f"{role}_repository"
         is_still_referenced = any(
             _read_model_manifest(path).get(manifest_key) == repository
-            for path in MLX_MODELS_DIR.rglob(MLX_MODEL_MANIFEST) if path.is_file()
+            for path in get_mlx_models_dir().rglob(MLX_MODEL_MANIFEST) if path.is_file()
         )
         companion_manifest = _read_model_manifest(companion_destination / MLX_MODEL_MANIFEST)
         if not is_still_referenced and companion_manifest.get("role") == role:
@@ -682,7 +682,7 @@ def _is_compatible_specprefill_draft(model_path: Path, draft_path: Path) -> bool
 def _find_installed_specprefill_draft(model_path: Path) -> tuple[str, Path] | None:
     """Find the smallest compatible installed draft without changing companion manifests."""
     candidates: list[tuple[int, str, Path]] = []
-    for manifest_path in MLX_MODELS_DIR.rglob(MLX_MODEL_MANIFEST) if MLX_MODELS_DIR.is_dir() else []:
+    for manifest_path in get_mlx_models_dir().rglob(MLX_MODEL_MANIFEST) if get_mlx_models_dir().is_dir() else []:
         draft_manifest = _read_model_manifest(manifest_path)
         repository = draft_manifest.get("repository")
         draft_path = manifest_path.parent
@@ -813,7 +813,7 @@ def _build_omlx_server_command(
     paged_cache_size, hot_cache_size = recommend_omlx_cache_sizes(total_memory_bytes)
     memory_guard = recommend_omlx_memory_guard(total_memory_bytes)
     command = [
-        executable, "serve", "--model-dir", str(MLX_MODELS_DIR),
+        executable, "serve", "--model-dir", str(get_mlx_models_dir()),
         "--host", "127.0.0.1", "--port", str(VYACT_RUNTIME_PORT),
         "--log-level", "debug" if debug_logging else "info",
         "--max-concurrent-requests", "1",
@@ -824,7 +824,7 @@ def _build_omlx_server_command(
         "--hot-cache-write-through",
     ]
     _OMLX_CACHE_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
-    environment = {**os.environ, "OMLX_BASE_PATH": str(OMLX_BASE_DIR), "OMLX_MODEL_DIR": str(MLX_MODELS_DIR)}
+    environment = {**os.environ, "OMLX_BASE_PATH": str(OMLX_BASE_DIR), "OMLX_MODEL_DIR": str(get_mlx_models_dir())}
     return command, environment, speculative_mode
 
 
@@ -848,7 +848,7 @@ def start_mlx_model(
         model_path, context_size, enable_mtp, debug_logging,
     )
     logger.info("[omlx] loading model=%s context=%s speculative_mode=%s", model_path, context_size, speculative_mode)
-    model_id = model_path.relative_to(MLX_MODELS_DIR).as_posix()
+    model_id = model_path.relative_to(get_mlx_models_dir()).as_posix()
     with log_path.open("ab") as log_file:
         process = subprocess.Popen(
             command,
@@ -878,7 +878,7 @@ def start_mlx_model(
                         except (AttributeError, TypeError, ValueError):
                             model_id = model_path.name
                         _active_dflash2_model = (
-                            f"mlx/{model_path.relative_to(MLX_MODELS_DIR).as_posix()}"
+                            f"mlx/{model_path.relative_to(get_mlx_models_dir()).as_posix()}"
                             if speculative_mode == "dflash2" else None
                         )
                         return model_id

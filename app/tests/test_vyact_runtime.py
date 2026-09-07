@@ -43,7 +43,7 @@ class VyactRuntimeTests(unittest.TestCase):
             other_model = repository / "model-Q8.gguf"
             selected_model.touch()
             other_model.touch()
-            with patch("services.vyact_runtime.VYACT_MODELS_DIR", models_dir):
+            with patch("services.vyact_runtime.get_models_dir", return_value=models_dir):
                 initialize_downloaded_models_cache(force=True)
                 delete_downloaded_model("owner/repo/model-Q4.gguf")
 
@@ -62,7 +62,7 @@ class VyactRuntimeTests(unittest.TestCase):
             paths = RuntimePaths(server, swap, base / "models", config)
             with patch("services.vyact_runtime.get_runtime_paths", return_value=paths), \
                  patch("services.vyact_runtime.VYACT_RUNTIME_DIR", base), \
-                 patch("services.vyact_runtime.VYACT_MODELS_DIR", base / "models"), \
+                 patch("services.vyact_runtime.get_models_dir", return_value=base / "models"), \
                  patch("services.vyact_runtime.VYACT_SWAP_CONFIG", config), \
                  patch("services.vyact_runtime.model_has_integrated_mtp", return_value=False):
                 key = write_single_model_config(model, 8192)
@@ -88,7 +88,7 @@ class VyactRuntimeTests(unittest.TestCase):
             (models_dir / "qwen.gguf").touch()
             (models_dir / "partial.gguf.part").touch()
             (models_dir / "notes.txt").touch()
-            with patch("services.vyact_runtime.VYACT_MODELS_DIR", models_dir):
+            with patch("services.vyact_runtime.get_models_dir", return_value=models_dir):
                 initialize_downloaded_models_cache(force=True)
                 self.assertEqual(list_downloaded_models(), ["qwen.gguf"])
 
@@ -111,7 +111,7 @@ class VyactRuntimeTests(unittest.TestCase):
             embeddings = models_dir / "embeddings"
             embeddings.mkdir()
             (embeddings / "bge-m3-q8_0.gguf").touch()
-            with patch("services.vyact_runtime.VYACT_MODELS_DIR", models_dir):
+            with patch("services.vyact_runtime.get_models_dir", return_value=models_dir):
                 initialize_downloaded_models_cache(force=True)
                 self.assertEqual(list_selectable_models(), ["owner/repo/model-Q4_K_M.gguf"])
 
@@ -121,7 +121,7 @@ class VyactRuntimeTests(unittest.TestCase):
             repository = models_dir / "owner" / "repo"
             repository.mkdir(parents=True)
             (repository / "model-Q4_K_M.gguf").touch()
-            with patch("services.vyact_runtime.VYACT_MODELS_DIR", models_dir), \
+            with patch("services.vyact_runtime.get_models_dir", return_value=models_dir), \
                  patch("services.vyact_runtime.model_has_integrated_mtp") as inspect_model:
                 initialize_downloaded_models_cache(force=True)
                 self.assertEqual(list_mtp_supported_models(), [])
@@ -259,7 +259,7 @@ class VyactRuntimeTests(unittest.TestCase):
             paths = RuntimePaths(server, swap, base / "models", config)
             with patch("services.vyact_runtime.get_runtime_paths", return_value=paths), \
                  patch("services.vyact_runtime.VYACT_RUNTIME_DIR", base), \
-                 patch("services.vyact_runtime.VYACT_MODELS_DIR", base / "models"), \
+                 patch("services.vyact_runtime.get_models_dir", return_value=base / "models"), \
                  patch("services.vyact_runtime.VYACT_SWAP_CONFIG", config), \
                  patch("services.vyact_runtime.model_has_integrated_mtp", return_value=False):
                 write_single_model_config(model, 8192, gpu_split_percentages=[66.666, 33.334])
@@ -318,7 +318,7 @@ class VyactRuntimeTests(unittest.TestCase):
             paths = RuntimePaths(server, swap, base / "models", config)
             with patch("services.vyact_runtime.get_runtime_paths", return_value=paths), \
                  patch("services.vyact_runtime.VYACT_RUNTIME_DIR", base), \
-                 patch("services.vyact_runtime.VYACT_MODELS_DIR", base / "models"), \
+                 patch("services.vyact_runtime.get_models_dir", return_value=base / "models"), \
                  patch("services.vyact_runtime.VYACT_SWAP_CONFIG", config), \
                  patch("services.vyact_runtime.model_has_integrated_mtp", return_value=False):
                 write_single_model_config(model, 8192)
@@ -340,7 +340,7 @@ class VyactRuntimeTests(unittest.TestCase):
             paths = RuntimePaths(server, swap, base / "models", config)
             with patch("services.vyact_runtime.get_runtime_paths", return_value=paths), \
                  patch("services.vyact_runtime.VYACT_RUNTIME_DIR", base), \
-                 patch("services.vyact_runtime.VYACT_MODELS_DIR", base / "models"), \
+                 patch("services.vyact_runtime.get_models_dir", return_value=base / "models"), \
                  patch("services.vyact_runtime.VYACT_SWAP_CONFIG", config):
                 write_single_model_config(model, 32768, mtp)
 
@@ -385,7 +385,7 @@ class VyactRuntimeTests(unittest.TestCase):
             with patch("services.vyact_runtime.get_runtime_paths", return_value=paths), \
                  patch("services.vyact_runtime.model_has_integrated_mtp", return_value=False), \
                  patch("services.vyact_runtime.VYACT_RUNTIME_DIR", base), \
-                 patch("services.vyact_runtime.VYACT_MODELS_DIR", base / "models"), \
+                 patch("services.vyact_runtime.get_models_dir", return_value=base / "models"), \
                  patch("services.vyact_runtime.VYACT_SWAP_CONFIG", config):
                 write_single_model_config(
                     model, 8192, enable_mtp=False, kv_cache_precision="q4",
@@ -409,7 +409,7 @@ class VyactRuntimeTests(unittest.TestCase):
             paths = RuntimePaths(server, swap, base / "models", config)
             with patch("services.vyact_runtime.get_runtime_paths", return_value=paths), \
                  patch("services.vyact_runtime.VYACT_RUNTIME_DIR", base), \
-                 patch("services.vyact_runtime.VYACT_MODELS_DIR", base / "models"), \
+                 patch("services.vyact_runtime.get_models_dir", return_value=base / "models"), \
                  patch("services.vyact_runtime.VYACT_SWAP_CONFIG", config), \
                  patch("services.vyact_runtime.model_has_integrated_mtp", return_value=False):
                 write_single_model_config(model, 8192, debug_logging=True)
@@ -431,7 +431,7 @@ class VyactRuntimeTests(unittest.TestCase):
             paths = RuntimePaths(server, swap, base / "models", config)
             with patch("services.vyact_runtime.get_runtime_paths", return_value=paths), \
                  patch("services.vyact_runtime.VYACT_RUNTIME_DIR", base), \
-                 patch("services.vyact_runtime.VYACT_MODELS_DIR", base / "models"), \
+                 patch("services.vyact_runtime.get_models_dir", return_value=base / "models"), \
                  patch("services.vyact_runtime.VYACT_SWAP_CONFIG", config), \
                  patch("services.vyact_runtime.model_has_integrated_mtp", return_value=False):
                 write_single_model_config(model, 8192, vision_projector_path=projector)
