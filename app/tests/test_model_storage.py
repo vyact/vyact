@@ -19,7 +19,7 @@ class ModelStorageTests(unittest.TestCase):
         self.root = Path(self.temporary.name)
         self.config = self.root / 'app' / 'model-storage.json'
         self.source = self.root / 'app' / 'models'
-        self.destination = self.root / 'disk' / 'models'
+        self.destination = self.root / 'disk' / 'vyact_models'
         self.destination.mkdir(parents=True)
         for name, value in [('INSTALL_DIR', self.root / 'app'), ('STORAGE_CONFIG', self.config)]:
             patcher = patch.object(storage, name, value)
@@ -131,9 +131,9 @@ class ModelStorageTests(unittest.TestCase):
         personal.write_bytes(b'private notes')
         (parent / 'photos').mkdir()
         plan = storage.plan_move(str(parent))
-        self.assertEqual(Path(plan['destination']), parent.resolve() / 'models')
+        self.assertEqual(Path(plan['destination']), parent.resolve() / 'vyact_models')
         self.assertEqual(Path(plan['selected_directory']), parent.resolve())
-        self.assertFalse((parent / 'models').exists())
+        self.assertFalse((parent / 'vyact_models').exists())
         created = storage.copy_models(plan, lambda **_: None)
         storage.save_models_dir(Path(plan['destination']))
         self.assertTrue(storage.clean_source(plan, created))
@@ -166,6 +166,23 @@ class ModelStorageTests(unittest.TestCase):
         self.assertFalse((self.source / 'models').exists())
         self.assertTrue(storage.plan_move(str(self.source.parent))['same'])
         self.assertTrue(storage.plan_move(str(self.source))['same'])
+
+    def test_existing_saved_models_root_is_preserved(self):
+        legacy = self.root / 'legacy-disk' / 'models'
+        legacy.mkdir(parents=True)
+        storage.save_models_dir(legacy)
+        self.assertEqual(storage.get_models_dir(), legacy)
+        self.assertTrue(storage.plan_move(str(legacy))['same'])
+        self.assertFalse((legacy / 'vyact_models').exists())
+
+    def test_generic_models_folder_is_not_adopted(self):
+        generic = self.root / 'shared' / 'models'
+        generic.mkdir(parents=True)
+        personal = generic / 'other-app.bin'
+        personal.write_bytes(b'other app')
+        plan = storage.plan_move(str(generic))
+        self.assertEqual(Path(plan['destination']), generic.resolve() / 'vyact_models')
+        self.assertEqual(personal.read_bytes(), b'other app')
 
     def test_populated_dedicated_root_is_not_adopted(self):
         self.model()
@@ -263,7 +280,7 @@ class StorageApiIntegrationTests(unittest.IsolatedAsyncioTestCase):
     async def test_actual_gguf_and_mlx_move_through_api_without_es(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            source, destination = root / "app/models", root / "disk/models"
+            source, destination = root / "app/models", root / "disk/vyact_models"
             destination.parent.mkdir(parents=True)
             for relative, data in [("owner/model.gguf", b"gguf" * 1024),
                                    ("mlx/owner/model/weights.safetensors", b"mlx weights"),

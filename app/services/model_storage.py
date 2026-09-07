@@ -12,7 +12,8 @@ from typing import Callable
 from config import INSTALL_DIR
 
 STORAGE_CONFIG = INSTALL_DIR / "model-storage.json"
-MODELS_DIRECTORY_NAME = "models"
+DEFAULT_MODELS_DIRECTORY_NAME = "models"
+EXTERNAL_MODELS_DIRECTORY_NAME = "vyact_models"
 COPY_CHUNK_BYTES = 8 * 1024 * 1024
 active_move = False
 active_downloads = 0
@@ -37,7 +38,7 @@ def download_operation():
 
 def get_configured_models_dir() -> Path:
     if not STORAGE_CONFIG.exists():
-        return INSTALL_DIR / MODELS_DIRECTORY_NAME
+        return INSTALL_DIR / DEFAULT_MODELS_DIRECTORY_NAME
     # A missing external drive must never silently fall back to the system disk.
     value = json.loads(STORAGE_CONFIG.read_text(encoding="utf-8"))
     path = Path(value["path"])
@@ -82,7 +83,7 @@ def _validate_destination(destination: Path) -> None:
         raise ValueError("storage_not_empty")
     if not destination.exists():
         return
-    default_root = (INSTALL_DIR / MODELS_DIRECTORY_NAME).resolve()
+    default_root = (INSTALL_DIR / DEFAULT_MODELS_DIRECTORY_NAME).resolve()
     for entry in destination.iterdir():
         if destination == default_root and entry.name == "embeddings" and entry.is_dir() and not entry.is_symlink():
             continue
@@ -98,7 +99,13 @@ def plan_move(raw_path: str) -> dict:
     if not selected.is_dir():
         raise ValueError("invalid_storage_path")
     # Existing custom roots remain usable; reselecting one must never nest models.
-    destination = selected if selected == source or selected.name.casefold() == MODELS_DIRECTORY_NAME else selected / MODELS_DIRECTORY_NAME
+    default_root = (INSTALL_DIR / DEFAULT_MODELS_DIRECTORY_NAME).resolve()
+    if selected in {source, default_root} or selected.name.casefold() == EXTERNAL_MODELS_DIRECTORY_NAME:
+        destination = selected
+    elif selected == INSTALL_DIR.resolve():
+        destination = default_root
+    else:
+        destination = selected / EXTERNAL_MODELS_DIRECTORY_NAME
     if destination != selected and destination.is_symlink():
         raise ValueError("storage_not_empty")
     plan = {"source": str(source), "destination": str(destination), "selected_directory": str(selected)}
