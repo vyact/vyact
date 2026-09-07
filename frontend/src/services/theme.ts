@@ -3,7 +3,7 @@ const PENDING_THEME_STORAGE_KEY = 'vyact-pending-theme';
 
 export type AppTheme = 'dark' | 'light';
 
-export const DEFAULT_THEME: AppTheme = 'light';
+export const DEFAULT_THEME: AppTheme = 'dark';
 
 export const getStoredTheme = (): AppTheme => {
     try {
