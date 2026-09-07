@@ -12,6 +12,7 @@ from typing import Callable
 from config import INSTALL_DIR
 
 STORAGE_CONFIG = INSTALL_DIR / "model-storage.json"
+MODELS_DIRECTORY_NAME = "models"
 COPY_CHUNK_BYTES = 8 * 1024 * 1024
 active_move = False
 active_downloads = 0
@@ -36,7 +37,7 @@ def download_operation():
 
 def get_configured_models_dir() -> Path:
     if not STORAGE_CONFIG.exists():
-        return INSTALL_DIR / "models"
+        return INSTALL_DIR / MODELS_DIRECTORY_NAME
     # A missing external drive must never silently fall back to the system disk.
     value = json.loads(STORAGE_CONFIG.read_text(encoding="utf-8"))
     path = Path(value["path"])
@@ -75,30 +76,44 @@ def save_models_dir(path: Path) -> None:
         Path(temporary).unlink(missing_ok=True)
 
 
+def _validate_destination(destination: Path) -> None:
+    """Only the dedicated root is owned by Vyact; never adopt a populated folder."""
+    if destination.is_symlink() or (destination.exists() and not destination.is_dir()):
+        raise ValueError("storage_not_empty")
+    if not destination.exists():
+        return
+    default_root = (INSTALL_DIR / MODELS_DIRECTORY_NAME).resolve()
+    for entry in destination.iterdir():
+        if destination == default_root and entry.name == "embeddings" and entry.is_dir() and not entry.is_symlink():
+            continue
+        raise ValueError("storage_not_empty")
+
+
 def plan_move(raw_path: str) -> dict:
     source = get_models_dir().resolve()
     candidate = Path(raw_path).expanduser()
     if not raw_path.strip() or not candidate.is_absolute():
         raise ValueError("invalid_storage_path")
-    destination = candidate.resolve(strict=True)
-    if not destination.is_dir():
+    selected = candidate.resolve(strict=True)
+    if not selected.is_dir():
         raise ValueError("invalid_storage_path")
-    if source == destination or (source.exists() and source.samefile(destination)):
-        return {"source": str(source), "destination": str(destination), "same": True, "total_bytes": 0}
+    # Existing custom roots remain usable; reselecting one must never nest models.
+    destination = selected if selected == source or selected.name.casefold() == MODELS_DIRECTORY_NAME else selected / MODELS_DIRECTORY_NAME
+    if destination != selected and destination.is_symlink():
+        raise ValueError("storage_not_empty")
+    plan = {"source": str(source), "destination": str(destination), "selected_directory": str(selected)}
+    if source == destination or (source.exists() and destination.exists() and source.samefile(destination)):
+        return {**plan, "same": True, "total_bytes": 0}
     if source in destination.parents or destination in source.parents:
         raise ValueError("nested_storage_path")
-    if any(destination.iterdir()):
-        raise ValueError("storage_not_empty")
-    # A selected custom root going offline is different from an unused default.
-    if STORAGE_CONFIG.exists() and not source.is_dir():
-        raise ValueError("storage_unavailable")
+    _validate_destination(destination)
     files = _model_entries(source)
     if any(path.is_symlink() or not (path.is_file() or path.is_dir()) for path in files):
         raise ValueError("storage_links_unsupported")
     total = sum(path.stat().st_size for path in files if path.is_file())
-    if shutil.disk_usage(destination).free < total:
+    if shutil.disk_usage(selected).free < total:
         raise ValueError("storage_space")
-    return {"source": str(source), "destination": str(destination), "same": False, "total_bytes": total, "file_count": sum(path.is_file() for path in files)}
+    return {**plan, "same": False, "total_bytes": total, "file_count": sum(path.is_file() for path in files)}
 
 
 def copy_models(plan: dict, progress: Callable[..., None]) -> list[Path]:
@@ -108,6 +123,10 @@ def copy_models(plan: dict, progress: Callable[..., None]) -> list[Path]:
     copied = 0
     plan["source_signatures"] = {}
     try:
+        _validate_destination(destination)
+        if not destination.exists():
+            destination.mkdir()
+            created.append(destination)
         for original in sorted(_model_entries(source)):
             relative = original.relative_to(source)
             target = destination / relative
@@ -155,6 +174,8 @@ def clean_source(plan: dict, created: list[Path]) -> bool:
     source, destination = Path(plan["source"]), Path(plan["destination"])
     clean = True
     for target in reversed(created):
+        if target == destination:
+            continue
         original = source / target.relative_to(destination)
         try:
             if target.is_dir():

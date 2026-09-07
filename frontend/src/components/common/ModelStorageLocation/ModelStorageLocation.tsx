@@ -68,7 +68,7 @@ export default function ModelStorageLocation({disabled, onBusyChange, onChanged}
         setWorking(true);
         setError('');
         try {
-            const result = await modelStorage.move(plan.destination);
+            const result = await modelStorage.move(plan.selected_directory);
             if (!result.same) {
                 wasMoving.current = true;
                 setStatus(current => current ? {...current, busy: true, phase: 'preparing'} : current);

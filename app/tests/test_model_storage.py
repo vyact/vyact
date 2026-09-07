@@ -19,8 +19,8 @@ class ModelStorageTests(unittest.TestCase):
         self.root = Path(self.temporary.name)
         self.config = self.root / 'app' / 'model-storage.json'
         self.source = self.root / 'app' / 'models'
-        self.destination = self.root / 'disk'
-        self.destination.mkdir()
+        self.destination = self.root / 'disk' / 'models'
+        self.destination.mkdir(parents=True)
         for name, value in [('INSTALL_DIR', self.root / 'app'), ('STORAGE_CONFIG', self.config)]:
             patcher = patch.object(storage, name, value)
             patcher.start()
@@ -53,7 +53,7 @@ class ModelStorageTests(unittest.TestCase):
         self.model()
         child = self.source / 'child'
         child.mkdir()
-        for path in (child, self.source.parent):
+        for path in (child,):
             with self.assertRaisesRegex(ValueError, 'nested_storage_path'):
                 storage.plan_move(str(path))
         (self.destination / 'keep').touch()
@@ -123,6 +123,80 @@ class ModelStorageTests(unittest.TestCase):
         self.assertEqual(original.read_bytes(), b'new user content')
 
 
+    def test_parent_selection_uses_dedicated_root_without_adopting_siblings(self):
+        original = self.model()
+        parent = self.root / 'other-disk'
+        parent.mkdir()
+        personal = parent / 'personal.txt'
+        personal.write_bytes(b'private notes')
+        (parent / 'photos').mkdir()
+        plan = storage.plan_move(str(parent))
+        self.assertEqual(Path(plan['destination']), parent.resolve() / 'models')
+        self.assertEqual(Path(plan['selected_directory']), parent.resolve())
+        self.assertFalse((parent / 'models').exists())
+        created = storage.copy_models(plan, lambda **_: None)
+        storage.save_models_dir(Path(plan['destination']))
+        self.assertTrue(storage.clean_source(plan, created))
+        self.assertFalse(original.exists())
+        self.assertEqual(personal.read_bytes(), b'private notes')
+        # A second relocation only enumerates the dedicated root, never its siblings.
+        next_plan = storage.plan_move(str(self.destination))
+        next_created = storage.copy_models(next_plan, lambda **_: None)
+        storage.save_models_dir(Path(next_plan['destination']))
+        self.assertTrue(storage.clean_source(next_plan, next_created))
+        self.assertFalse((self.destination / 'personal.txt').exists())
+        self.assertFalse((self.destination / 'photos').exists())
+        self.assertEqual(personal.read_bytes(), b'private notes')
+
+    def test_round_trip_to_default_with_embeddings_and_no_nested_models(self):
+        self.model()
+        embedding = self.model('embeddings/search.gguf', b'embedding')
+        outbound = storage.plan_move(str(self.destination.parent))
+        copied = storage.copy_models(outbound, lambda **_: None)
+        storage.save_models_dir(Path(outbound['destination']))
+        self.assertTrue(storage.clean_source(outbound, copied))
+        for selected in [self.source, self.source.parent]:
+            inbound = storage.plan_move(str(selected))
+            self.assertEqual(Path(inbound['destination']), self.source.resolve())
+        copied = storage.copy_models(inbound, lambda **_: None)
+        storage.save_models_dir(Path(inbound['destination']))
+        self.assertTrue(storage.clean_source(inbound, copied))
+        self.assertEqual(embedding.read_bytes(), b'embedding')
+        self.assertEqual((self.source / 'owner/model/model.gguf').read_bytes(), b'weights')
+        self.assertFalse((self.source / 'models').exists())
+        self.assertTrue(storage.plan_move(str(self.source.parent))['same'])
+        self.assertTrue(storage.plan_move(str(self.source))['same'])
+
+    def test_populated_dedicated_root_is_not_adopted(self):
+        self.model()
+        personal = self.destination / 'personal.txt'
+        personal.write_bytes(b'keep')
+        for selected in [self.destination, self.destination.parent]:
+            with self.assertRaisesRegex(ValueError, 'storage_not_empty'):
+                storage.plan_move(str(selected))
+        self.assertEqual(personal.read_bytes(), b'keep')
+
+    def test_new_dedicated_root_rolls_back_on_copy_failure(self):
+        original = self.model()
+        self.destination.rmdir()
+        plan = storage.plan_move(str(self.destination.parent))
+        with patch.object(storage.os, 'fsync', side_effect=OSError('unplugged')):
+            with self.assertRaises(OSError):
+                storage.copy_models(plan, lambda **_: None)
+        self.assertFalse(self.destination.exists())
+        self.assertTrue(original.exists())
+
+    def test_symlinked_child_models_is_not_followed(self):
+        self.model()
+        self.destination.rmdir()
+        self.destination.symlink_to(self.source, target_is_directory=True)
+        # Selecting the child alias itself is a same-directory noop.
+        self.assertTrue(storage.plan_move(str(self.destination))['same'])
+        # A parent containing a redirected models child is not a new managed root.
+        with self.assertRaisesRegex(ValueError, 'storage_not_empty'):
+            storage.plan_move(str(self.destination.parent))
+
+
 
 class StorageJobTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
@@ -189,8 +263,8 @@ class StorageApiIntegrationTests(unittest.IsolatedAsyncioTestCase):
     async def test_actual_gguf_and_mlx_move_through_api_without_es(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            source, destination = root / "app/models", root / "disk"
-            destination.mkdir()
+            source, destination = root / "app/models", root / "disk/models"
+            destination.parent.mkdir(parents=True)
             for relative, data in [("owner/model.gguf", b"gguf" * 1024),
                                    ("mlx/owner/model/weights.safetensors", b"mlx weights"),
                                    ("mlx/owner/model/.vyact-mlx-model.json", b"{}")]:
@@ -208,10 +282,12 @@ class StorageApiIntegrationTests(unittest.IsolatedAsyncioTestCase):
                  patch('services.vyact_runtime._downloaded_models_cache', None):
                 storage.active_move = False
                 async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-                    plan = await client.post('/api/vyact/model-storage/plan', json={'path': str(destination)})
+                    plan = await client.post('/api/vyact/model-storage/plan', json={'path': str(destination.parent)})
                     self.assertEqual(plan.status_code, 200)
                     self.assertEqual(plan.json()['file_count'], 3)
-                    response = await client.post('/api/vyact/model-storage/move', json={'path': str(destination)})
+                    self.assertEqual(plan.json()['destination'], str(destination.resolve()))
+                    self.assertFalse(destination.exists())
+                    response = await client.post('/api/vyact/model-storage/move', json={'path': str(destination.parent)})
                     self.assertEqual(response.status_code, 200)
                     await routes._move_task
                     status = (await client.get('/api/vyact/model-storage')).json()

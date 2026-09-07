@@ -11,6 +11,7 @@ export interface ModelStorageStatus {
 export interface ModelStoragePlan {
     source: string;
     destination: string;
+    selected_directory: string;
     same: boolean;
     total_bytes: number;
 }
