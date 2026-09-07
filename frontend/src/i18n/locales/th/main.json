@@ -116,7 +116,8 @@
     "allMail": "อีเมลทั้งหมด",
     "spam": "สแปม",
     "unspam": "ไม่ใช่สแปม",
-    "spamNotice": "อีเมลนี้อยู่ในโฟลเดอร์สแปม ทำเครื่องหมายว่าไม่ใช่สแปมเพื่อย้ายไปยังกล่องจดหมาย",
+    "spamNotice": "อีเมลใหม่จากผู้ส่งนี้จะไม่ถูกทำเครื่องหมายว่าเป็นสแปม",
+    "spamFilterReconnect": "เชื่อมต่อบัญชี Google อีกครั้งในการตั้งค่าเพื่อจัดการตัวกรองสแปมตามผู้ส่ง",
     "trash": "ถังขยะ",
     "labels": "ป้ายกำกับ",
     "addLabel": "เพิ่มป้ายกำกับ",
@@ -1203,6 +1204,7 @@
   "uiAuditFinal": {"attachments":"ไฟล์แนบ {{count}} รายการ","removeAll":"ลบทั้งหมด","characterCount":"{{count}} อักขระ","itemCount":"{{count}} รายการ","download":"ดาวน์โหลด","fileCount":"{{count}} ไฟล์","zipDownload":"ดาวน์โหลด ZIP","errorDetail":"❌ ข้อผิดพลาด: {{message}}"},
   "networkError": {"requestFailed":"คำขอล้มเหลว","serverError":"เซิร์ฟเวอร์ผิดพลาด","streamFailed":"คำขอสตรีมล้มเหลว","clientErrorDetail":"คำขอผิดพลาด ({{status}}): {{detail}}","serverErrorDetail":"เซิร์ฟเวอร์ผิดพลาด ({{status}}): {{detail}} — โปรดลองอีกครั้งในภายหลัง","genericDetail":"ข้อผิดพลาด: {{detail}}"},
   "backendErrors": {
+    "gmail_filter_reconnect_required": "$t(main:googleWorkspace.spamFilterReconnect)",
     "microsoft_drive_upload_too_large": "ไฟล์ “{{name}}” เกินขีดจำกัดการอัปโหลด OneDrive ที่ {{limit}} MiB ต่อไฟล์ ยังไม่มีการอัปโหลดไฟล์หรือโฟลเดอร์ใด โปรดนำไฟล์นี้ออกแล้วลองอีกครั้ง",
     "microsoft_rate_limited_retry": "คำขอไปยัง Microsoft ถูกจำกัดชั่วคราวเนื่องจากมีคำขอมากเกินไป โปรดลองอีกครั้งใน {{seconds}} วินาที",
     "microsoft_authentication_required": "โปรดเชื่อมต่อบัญชี Microsoft ของคุณอีกครั้ง",

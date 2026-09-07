@@ -116,7 +116,8 @@
     "allMail": "すべてのメール",
     "spam": "迷惑メール",
     "unspam": "迷惑メールではない",
-    "spamNotice": "このメールは迷惑メールに分類されています。解除すると受信トレイに移動します。",
+    "spamNotice": "この送信者からの新しいメールを迷惑メールに分類しません。",
+    "spamFilterReconnect": "送信者の迷惑メール設定を変更するには、設定でGoogleアカウントを再接続してください。",
     "trash": "ゴミ箱",
     "labels": "ラベル",
     "addLabel": "ラベルを追加",
@@ -1203,6 +1204,7 @@
   "uiAuditFinal": {"attachments":"添付ファイル {{count}}件","removeAll":"すべて削除","characterCount":"{{count}}文字","itemCount":"{{count}}件","download":"ダウンロード","fileCount":"{{count}}ファイル","zipDownload":"ZIPをダウンロード","errorDetail":"❌ エラー: {{message}}"},
   "networkError": {"requestFailed":"リクエスト失敗","serverError":"サーバーエラー","streamFailed":"ストリーミングリクエストに失敗しました","clientErrorDetail":"リクエストエラー（{{status}}）：{{detail}}","serverErrorDetail":"サーバーエラー（{{status}}）：{{detail}} — しばらくしてからもう一度お試しください。","genericDetail":"エラー：{{detail}}"},
   "backendErrors": {
+    "gmail_filter_reconnect_required": "$t(main:googleWorkspace.spamFilterReconnect)",
     "microsoft_drive_upload_too_large": "「{{name}}」はOneDriveの1ファイルあたり{{limit}}MiBのアップロード制限を超えています。ファイルとフォルダーはアップロードされていません。このファイルを除いて再試行してください。",
     "microsoft_rate_limited_retry": "リクエストが多すぎるため、Microsoft へのアクセスが一時的に制限されています。{{seconds}} 秒後に再試行してください。",
     "microsoft_authentication_required": "Microsoft アカウントを再接続してください。",

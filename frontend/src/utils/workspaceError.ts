@@ -4,7 +4,9 @@ import {toast} from '../components/common/ToastNotifications/ToastNotifications'
 
 export function notifyWorkspaceError(error: unknown): string {
     if (error instanceof ApiError && error.feedbackHandled) return error.detail || error.message;
-    const message = error instanceof ApiError && (error.status === 401 || error.code === 'authentication_required')
+    const message = error instanceof ApiError && error.code === 'gmail_filter_reconnect_required'
+        ? i18n.t('main:googleWorkspace.spamFilterReconnect')
+        : error instanceof ApiError && (error.status === 401 || error.code === 'authentication_required')
         ? i18n.t('main:googleWorkspace.reconnectAccount')
         : error instanceof ApiError
             ? formatApiErrorForUser(error)

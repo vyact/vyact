@@ -324,9 +324,11 @@
 .gwp-spam-notice-content { flex: 1 1 180px; min-width: 0; }
 .gwp-spam-notice-content strong { font-size: 13px; overflow-wrap: anywhere; }
 .gwp-spam-notice-content p { margin: 5px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
-.gwp-spam-release { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
-.gwp-spam-release:hover:not(:disabled) { border-color: var(--text); }
-.gwp-spam-release:disabled { opacity: .5; cursor: wait; }
+.gwp-spam-notice .gwp-spam-release { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; padding: 8px 14px; border: 1px solid color-mix(in srgb, var(--text) 35%, var(--border)); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: background-color .15s, border-color .15s, color .15s; }
+.gwp-spam-notice .gwp-spam-release:hover:not(:disabled) { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.gwp-spam-notice .gwp-spam-release:active:not(:disabled) { background: var(--button-primary-hover); border-color: var(--button-primary-hover); color: var(--on-accent); }
+.gwp-spam-notice .gwp-spam-release:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.gwp-spam-notice .gwp-spam-release:disabled { opacity: .5; cursor: wait; }
 .gwp-thread-message-body .gwp-email-html { height: auto; min-height: 120px; overflow: hidden; }
 .gwp-message-header { display: flex; flex: 0 0 auto; gap: 10px; padding: 10px 15px; border-bottom: 1px solid var(--border); background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, var(--surface)), var(--surface) 58%); }
 .gwp-message-icon { display: grid; flex: 0 0 auto; width: 32px; height: 32px; place-items: center; border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border)); border-radius: 9px; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }

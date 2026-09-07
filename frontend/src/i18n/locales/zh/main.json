@@ -116,7 +116,8 @@
     "allMail": "所有邮件",
     "spam": "垃圾邮件",
     "unspam": "不是垃圾邮件",
-    "spamNotice": "此邮件在垃圾邮件中。取消标记后将移至收件箱。",
+    "spamNotice": "此发件人的新邮件将不会被标记为垃圾邮件。",
+    "spamFilterReconnect": "请在设置中重新连接Google账号，以管理发件人的垃圾邮件过滤规则。",
     "trash": "回收站",
     "labels": "标签",
     "addLabel": "添加标签",
@@ -1203,6 +1204,7 @@
   "uiAuditFinal": {"attachments":"{{count}} 个附件","removeAll":"全部删除","characterCount":"{{count}} 个字符","itemCount":"{{count}} 项","download":"下载","fileCount":"{{count}} 个文件","zipDownload":"下载 ZIP","errorDetail":"❌ 错误：{{message}}"},
   "networkError": {"requestFailed":"请求失败","serverError":"服务器错误","streamFailed":"流式请求失败","clientErrorDetail":"请求错误（{{status}}）：{{detail}}","serverErrorDetail":"服务器错误（{{status}}）：{{detail}} — 请稍后重试。","genericDetail":"错误：{{detail}}"},
   "backendErrors": {
+    "gmail_filter_reconnect_required": "$t(main:googleWorkspace.spamFilterReconnect)",
     "microsoft_drive_upload_too_large": "“{{name}}”超过了 OneDrive 每个文件 {{limit}} MiB 的上传限制。未上传任何文件或文件夹。请移除此文件后重试。",
     "microsoft_rate_limited_retry": "请求过多，Microsoft 已暂时限制访问。请在 {{seconds}} 秒后重试。",
     "microsoft_authentication_required": "请重新连接您的 Microsoft 账户。",

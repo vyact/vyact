@@ -116,7 +116,8 @@
     "allMail": "Tất cả thư",
     "spam": "Thư rác",
     "unspam": "Không phải thư rác",
-    "spamNotice": "Thư này nằm trong thư rác. Đánh dấu không phải thư rác để chuyển vào hộp thư đến.",
+    "spamNotice": "Thư mới từ người gửi này sẽ không bị đánh dấu là thư rác.",
+    "spamFilterReconnect": "Kết nối lại tài khoản Google trong Cài đặt để quản lý bộ lọc thư rác theo người gửi.",
     "trash": "Thùng rác",
     "labels": "Nhãn",
     "addLabel": "Thêm nhãn",
@@ -1203,6 +1204,7 @@
   "uiAuditFinal": {"attachments":"{{count}} tệp đính kèm","removeAll":"Xóa tất cả","characterCount":"{{count}} ký tự","itemCount":"{{count}} mục","download":"Tải xuống","fileCount":"{{count}} tệp","zipDownload":"Tải ZIP xuống","errorDetail":"❌ Lỗi: {{message}}"},
   "networkError": {"requestFailed":"Yêu cầu thất bại","serverError":"Lỗi máy chủ","streamFailed":"Yêu cầu phát trực tiếp thất bại","clientErrorDetail":"Lỗi yêu cầu ({{status}}): {{detail}}","serverErrorDetail":"Lỗi máy chủ ({{status}}): {{detail}} — Vui lòng thử lại sau ít phút.","genericDetail":"Lỗi: {{detail}}"},
   "backendErrors": {
+    "gmail_filter_reconnect_required": "$t(main:googleWorkspace.spamFilterReconnect)",
     "microsoft_drive_upload_too_large": "“{{name}}” vượt quá giới hạn tải lên OneDrive là {{limit}} MiB mỗi tệp. Chưa có tệp hoặc thư mục nào được tải lên. Vui lòng bỏ tệp này và thử lại.",
     "microsoft_rate_limited_retry": "Yêu cầu tới Microsoft đang bị giới hạn tạm thời do có quá nhiều yêu cầu. Vui lòng thử lại sau {{seconds}} giây.",
     "microsoft_authentication_required": "Vui lòng kết nối lại tài khoản Microsoft.",

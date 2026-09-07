@@ -1147,12 +1147,25 @@ async def mark_mail_message_read(message_id: str):
 @router.patch("/google-workspace/mail/messages/{message_id}/unspam")
 async def unspam_mail_message(message_id: str):
     await _require_connection()
+    if "https://www.googleapis.com/auth/gmail.settings.basic" not in await get_granted_scopes():
+        raise HTTPException(403, "gmail_filter_reconnect_required")
     service = await _build_service("gmail", "v1")
-    service.users().messages().modify(
-        userId="me", id=message_id,
-        body={"removeLabelIds": ["SPAM"], "addLabelIds": ["INBOX"]},
+    message = service.users().messages().get(
+        userId="me", id=message_id, format="metadata", metadataHeaders=["From"],
     ).execute()
-    return {"ok": True}
+    sender_headers = [h.get("value", "") for h in message.get("payload", {}).get("headers", []) if h.get("name", "").lower() == "from"]
+    addresses = getaddresses(sender_headers)
+    sender = addresses[0][1].strip().lower() if len(addresses) == 1 else ""
+    if not re.fullmatch(r"[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9.-]+", sender):
+        raise HTTPException(400, "Invalid sender email address.")
+    filters = service.users().settings().filters()
+    criteria = {"from": sender}
+    existing = filters.list(userId="me").execute().get("filter", [])
+    for item in existing:
+        if item.get("criteria") == criteria and "SPAM" in item.get("action", {}).get("removeLabelIds", []):
+            return {"ok": True, "sender": sender}
+    filters.create(userId="me", body={"criteria": criteria, "action": {"removeLabelIds": ["SPAM"]}}).execute()
+    return {"ok": True, "sender": sender}
 
 
 @router.patch("/google-workspace/mail/messages/{message_id}/star")

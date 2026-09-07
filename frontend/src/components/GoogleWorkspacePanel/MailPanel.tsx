@@ -334,7 +334,7 @@ const addQuotedReplyToggles = (document: Document, labels: QuotedReplyLabels, on
     if (!document.getElementById('vyact-quoted-reply-style')) {
         const style = document.createElement('style');
         style.id = 'vyact-quoted-reply-style';
-        style.textContent = '.vyact-quoted-reply-toggle{display:inline-flex;align-items:center;margin:12px 0 8px;padding:5px 10px;border:1px solid #b6b6b6;border-radius:14px;background:#f5f5f5;color:#424242;cursor:pointer;font:600 12px/1.25 Arial,sans-serif}.vyact-quoted-reply-toggle:hover{background:#e9e9e9}.vyact-quoted-reply-content[hidden]{display:none!important}';
+        style.textContent = '.vyact-quoted-reply-toggle{display:inline-flex;align-items:center;margin:12px 0 8px;padding:5px 10px;border:1px solid #b6b6b6;border-radius:8px;gap:9px;min-height:34px;transition:background .15s,border-color .15s;background:#f5f5f5;color:#424242;cursor:pointer;font:600 12px/1.25 Arial,sans-serif}.vyact-quoted-reply-toggle:hover{background:#f4e7e1;border-color:#b9593c;color:#94452f}.vyact-quoted-reply-toggle:focus-visible{outline:2px solid #b9593c;outline-offset:3px}.vyact-quoted-reply-toggle::after{content:"";width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);margin-top:-3px}.vyact-quoted-reply-toggle[aria-expanded=true]::after{transform:rotate(225deg);margin-top:3px}.vyact-quoted-reply-content[hidden]{display:none!important}';
         document.head.append(style);
     }
 
@@ -1904,15 +1904,14 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
     };
     const [unspammingMessageId, setUnspammingMessageId] = useState<string | null>(null);
     const unspamPendingRef = useRef(false);
+    const [trustedSenders, setTrustedSenders] = useState<Set<string>>(new Set());
     const unspamMessage = async (messageId: string) => {
         if (unspamPendingRef.current) return;
         unspamPendingRef.current = true;
         setUnspammingMessageId(messageId);
         try {
-            await api.unspamGoogleMailMessage(messageId);
-            // Return to the refreshed spam list after Gmail has moved this message.
-            setSelected(null);
-            await loadMails();
+            const result = await api.unspamGoogleMailMessage(messageId);
+            setTrustedSenders(current => new Set([...current, result.sender.toLowerCase()]));
         } catch (error) {
             notifyWorkspaceError(error);
         } finally {
@@ -1920,7 +1919,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
             setUnspammingMessageId(null);
         }
     };
-    const renderSpamNotice = (message: MailThreadMessage) => provider === 'google' && message.labelIds?.includes('SPAM') ? (
+    const renderSpamNotice = (message: MailThreadMessage) => provider === 'google' && message.labelIds?.includes('SPAM') && !trustedSenders.has(parseMailAddress(message.from).email.toLowerCase()) ? (
         <div className="gwp-spam-notice">
             <TriangleAlert size={19} aria-hidden="true"/>
             <div className="gwp-spam-notice-content">

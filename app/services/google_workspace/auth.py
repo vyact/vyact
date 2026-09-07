@@ -30,6 +30,7 @@ GMAIL_FULL_ACCESS_SCOPE = "https://mail.google.com/"
 
 SCOPES = [
     "https://www.googleapis.com/auth/gmail.modify",
+    "https://www.googleapis.com/auth/gmail.settings.basic",
     # Gmail의 messages.delete/threads.delete는 gmail.modify로 호출할 수 없다.
     # 휴지통에서 영구 삭제를 지원하려면 이 scope를 OAuth 동의 시 받아야 한다.
     GMAIL_FULL_ACCESS_SCOPE,

@@ -187,7 +187,8 @@
     "allMail": "All mail",
     "spam": "Spam",
     "unspam": "Not spam",
-    "spamNotice": "This message is in Spam. Mark it as not spam to move it to your inbox.",
+    "spamNotice": "New messages from this sender will not be marked as spam.",
+    "spamFilterReconnect": "Reconnect your Google account in Settings to manage sender spam filters.",
     "trash": "Trash",
     "labels": "Labels",
     "addLabel": "Add label",
@@ -1202,6 +1203,7 @@
   "uiAuditFinal": {"attachments":"{{count}} attachments","removeAll":"Remove all","characterCount":"{{count}} characters","itemCount":"{{count}} items","download":"Download","fileCount":"{{count}} files","zipDownload":"Download ZIP","errorDetail":"❌ Error: {{message}}"},
   "networkError": {"requestFailed":"Request failed","serverError":"Server error","streamFailed":"Streaming request failed","clientErrorDetail":"Request error ({{status}}): {{detail}}","serverErrorDetail":"Server error ({{status}}): {{detail}} — Please try again shortly.","genericDetail":"Error: {{detail}}"},
   "backendErrors": {
+    "gmail_filter_reconnect_required": "$t(main:googleWorkspace.spamFilterReconnect)",
     "microsoft_drive_upload_too_large": "“{{name}}” exceeds the OneDrive upload limit of {{limit}} MiB per file. No files or folders were uploaded. Please remove this file and try again.",
     "microsoft_rate_limited_retry": "Microsoft requests are temporarily limited because too many were sent. Please try again in {{seconds}} seconds.",
     "microsoft_authentication_required": "Please reconnect your Microsoft account.",
