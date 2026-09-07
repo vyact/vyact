@@ -1105,7 +1105,14 @@ async def get_mail_attachment(message_id: str, attachment_id: str, mime_type: st
 async def mark_mail_message_read(message_id: str):
     await _require_connection()
     service = await _build_service("gmail", "v1")
-    service.users().messages().modify(userId="me", id=message_id, body={"removeLabelIds": ["UNREAD"]}).execute()
+    # The panel opens a conversation, so every message in it must become read.
+    # Reading only the representative message leaves the thread unread on refresh.
+    message = service.users().messages().get(
+        userId="me", id=message_id, format="minimal", fields="threadId",
+    ).execute()
+    service.users().threads().modify(
+        userId="me", id=message["threadId"], body={"removeLabelIds": ["UNREAD"]},
+    ).execute()
     return {"ok": True}
 
 
