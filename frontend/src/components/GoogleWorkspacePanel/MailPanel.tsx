@@ -1038,8 +1038,10 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
                 sentRecipients,
                 true,
             ));
+            // Outlook displays individual messages. Keep the original message open
+            // instead of showing the sent reply beneath the current folder heading.
             const threadRefreshMessageId = composeMode === 'reply'
-                ? sentMessage.id || replyTo?.id
+                ? (provider === 'microsoft' ? replyTo?.id : sentMessage.id || replyTo?.id)
                 : null;
             closeCompose();
             if (threadRefreshMessageId) {

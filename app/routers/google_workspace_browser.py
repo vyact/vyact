@@ -7,6 +7,7 @@ import re
 import secrets
 import shutil
 import zipfile
+from contextvars import ContextVar
 from datetime import datetime as _dt
 from io import BytesIO
 from zoneinfo import ZoneInfo
@@ -19,7 +20,7 @@ from typing import Annotated, Literal
 from urllib.parse import quote
 from pathlib import Path, PurePosixPath
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaIoBaseDownload, MediaInMemoryUpload
@@ -27,15 +28,18 @@ from pydantic import BaseModel, Field
 
 from services.google_workspace.auth import (
     GMAIL_FULL_ACCESS_SCOPE,
-    _build_service,
+    _build_service as build_google_service,
+    check_auth_status,
+    get_active_account_id,
     get_auth_status,
-    get_granted_scopes,
+    get_granted_scopes as get_google_granted_scopes,
 )
 from services.google_workspace.gmail import (
     GMAIL_TRASH_LABEL_ID,
     load_mail_workspace_sync,
     list_mail_messages_sync,
     list_mail_threads_sync,
+    visible_mail_thread_messages,
 )
 from services.llm.core import query_llm
 from services.db import EMAIL_THREADS_INDEX, GOOGLE_WORKSPACE_SETTINGS_INDEX, find_document_index, get_es, get_language_index
@@ -43,7 +47,34 @@ from services.language_detection import detect_language
 from services.indexer import get_embedding
 from config import INSTALL_DIR
 
-router = APIRouter()
+_request_account_id: ContextVar[str | None] = ContextVar("google_workspace_request_account_id", default=None)
+
+
+async def _bind_request_account(account_id: str = ""):
+    # Snapshot the account once; a concurrent activation must not redirect this request.
+    resolved_account_id = account_id or await get_active_account_id()
+    if not resolved_account_id:
+        raise HTTPException(401, "Google Workspace connection is required.")
+    if not all(character.isalnum() or character in "-_" for character in resolved_account_id):
+        raise HTTPException(400, "Invalid Google account ID.")
+    token = _request_account_id.set(resolved_account_id)
+    try:
+        yield
+    finally:
+        _request_account_id.reset(token)
+
+
+async def _build_service(service_name: str, version: str, account_id: str | None = None, **kwargs):
+    return await build_google_service(
+        service_name, version, account_id=account_id or _request_account_id.get(), **kwargs,
+    )
+
+
+async def get_granted_scopes():
+    return await get_google_granted_scopes(account_id=_request_account_id.get())
+
+
+router = APIRouter(dependencies=[Depends(_bind_request_account)])
 MAIL_PAGE_SIZE = 30
 MAX_MAIL_ATTACHMENT_BYTES = 25 * 1024 * 1024
 MAX_AI_THREAD_MESSAGES = 10
@@ -288,7 +319,9 @@ class MailAiGenerateRequest(BaseModel):
 
 
 async def _require_connection() -> None:
-    if not (await get_auth_status()).get("authenticated"):
+    account_id = _request_account_id.get()
+    authenticated = await check_auth_status(account_id) if account_id else (await get_auth_status()).get("authenticated")
+    if not authenticated:
         raise HTTPException(401, "Google Workspace connection is required.")
 
 
@@ -959,12 +992,7 @@ async def get_mail_message(message_id: str, label: str = "INBOX"):
             thread = service.users().threads().get(userId="me", id=thread_id, format="full").execute()
             thread_messages = [
                 _thread_message_detail(thread_message, service)
-                for thread_message in thread.get("messages", [])
-                if (
-                    GMAIL_TRASH_LABEL_ID in thread_message.get("labelIds", [])
-                    if label == GMAIL_TRASH_LABEL_ID
-                    else GMAIL_TRASH_LABEL_ID not in thread_message.get("labelIds", [])
-                )
+                for thread_message in visible_mail_thread_messages(thread.get("messages", []), label)
             ]
         except HttpError:
             thread_messages = []

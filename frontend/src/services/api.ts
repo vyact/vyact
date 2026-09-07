@@ -388,7 +388,7 @@ export interface AllExternalDocumentsResponse extends Omit<Gov24DocumentsRespons
 
 export const createWorkspaceApi = (workspace = 'google-workspace', accountId = '') => {
     const fetch = (input: RequestInfo | URL, init?: RequestInit, feedback: MicrosoftErrorFeedback = 'action') => {
-        if (typeof input === 'string' && input.includes('/microsoft-workspace/') && accountId) {
+        if (typeof input === 'string' && input.startsWith(`${API_BASE}/${workspace}/`) && accountId) {
             const [path, query = ''] = input.split('?');
             const params = new URLSearchParams(query);
             params.set('account_id', accountId);

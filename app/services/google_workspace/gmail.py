@@ -17,6 +17,17 @@ from .auth import _build_service, _get_google_config_async
 
 logger = get_logger(__name__)
 GMAIL_TRASH_LABEL_ID = "TRASH"
+GMAIL_SPAM_LABEL_ID = "SPAM"
+
+
+def visible_mail_thread_messages(messages: list[dict], label: str) -> list[dict]:
+    """Keep spam/trash isolated from ordinary conversation views."""
+    if label in {GMAIL_TRASH_LABEL_ID, GMAIL_SPAM_LABEL_ID}:
+        return [message for message in messages if label in message.get("labelIds", [])]
+    return [
+        message for message in messages
+        if not {GMAIL_TRASH_LABEL_ID, GMAIL_SPAM_LABEL_ID}.intersection(message.get("labelIds", []))
+    ]
 
 # Keep mail-list responses small while retaining enough MIME metadata to identify
 # attachments.  The nested parts cover the multipart structures Gmail commonly
@@ -182,15 +193,7 @@ def _format_mail_threads(
     for summary in summaries:
         thread = threads_by_id.get(summary["id"])
         all_thread_messages = thread.get("messages", []) if thread else []
-        thread_messages = [
-            message
-            for message in all_thread_messages
-            if (
-                GMAIL_TRASH_LABEL_ID in message.get("labelIds", [])
-                if label == GMAIL_TRASH_LABEL_ID
-                else GMAIL_TRASH_LABEL_ID not in message.get("labelIds", [])
-            )
-        ]
+        thread_messages = visible_mail_thread_messages(all_thread_messages, label)
         if not thread_messages:
             continue
         latest_message = thread_messages[-1]

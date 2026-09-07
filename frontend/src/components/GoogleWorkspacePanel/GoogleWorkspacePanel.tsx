@@ -78,7 +78,7 @@ export default function GoogleWorkspacePanel({provider = 'google', requestedAcco
     const [dismissedDriveRequestId, setDismissedDriveRequestId] = useState<number | null>(null);
     const activeDriveSelection = selectedDriveFolder?.requestId === dismissedDriveRequestId
         ? null : selectedDriveFolder;
-    const api = useMemo(() => provider === 'microsoft' ? createWorkspaceApi('microsoft-workspace', activeAccountId) : googleApi, [provider, activeAccountId]);
+    const api = useMemo(() => createWorkspaceApi(`${provider}-workspace`, activeAccountId), [provider, activeAccountId]);
 
     const loadAccounts = useCallback(async (forceRefresh = false) => {
         if (provider === 'microsoft') {
