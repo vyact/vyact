@@ -1,5 +1,5 @@
 .vyact-model-editor { width: min(820px, 94vw); }
-.vyact-model-editor-body { grid-template-rows: auto auto minmax(0, 1fr) auto; }
+.provider-editor-body.vyact-model-editor-body { grid-template-rows: auto auto minmax(0, 1fr) auto; }
 .vyact-model-editor-body > .model-storage-location { margin: 0; }
 .vyact-model-controls { grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); align-items: end; }
 .vyact-token-input-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
