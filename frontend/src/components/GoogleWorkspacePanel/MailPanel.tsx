@@ -742,11 +742,12 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
     }, [accountId]);
     const sendingRef = useRef(false);
     const trashingMailsRef = useRef(false);
+    const hasPendingMailReads = () => [...mailReadUpdatesRef.current.values()].some(update => update.pending);
 
     const loadMailLabels = async () => {
         const requestId = ++mailLabelsRequestIdRef.current;
         const data = await api.getGoogleMailLabels();
-        if (requestId === mailLabelsRequestIdRef.current) setLabels(data.labels || []);
+        if (requestId === mailLabelsRequestIdRef.current && !hasPendingMailReads()) setLabels(data.labels || []);
     };
     const createMailLabel = async () => {
         const name = newLabelName.trim();
@@ -812,7 +813,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
                 : api.getGoogleMailWorkspace(label);
             const result = await fetchMails();
             if (requestId !== mailListRequestIdRef.current) return;
-            if (labelsRequestId === mailLabelsRequestIdRef.current) setLabels(result.labels || []);
+            if (labelsRequestId === mailLabelsRequestIdRef.current && !hasPendingMailReads()) setLabels(result.labels || []);
             // A list started before a read completed can still contain unread metadata.
             const nextMails = (result.messages || []).map((mail: MailItem) => {
                 const readUpdate = mailReadUpdatesRef.current.get(mail.id);
@@ -874,6 +875,24 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
                 threadMessages.at(-1)?.id || message.id,
             ]));
             setMails(current => current.map(mail => mail.id === id ? {...mail, isUnread: false} : mail));
+            if (mailReadUpdatesRef.current.get(id)?.pending) return;
+            // Gmail counts unread messages per label, including older messages in a conversation.
+            // Update the badge with the opened body instead of waiting for two provider requests.
+            if (provider === 'google') {
+                const unreadCountsByLabel = new Map<string, number>();
+                const messagesToRead: Pick<MailThreadMessage, 'labelIds'>[] = threadMessages.length ? threadMessages : [message];
+                for (const threadMessage of messagesToRead) {
+                    if (!threadMessage.labelIds?.includes('UNREAD')) continue;
+                    for (const labelId of new Set(threadMessage.labelIds)) {
+                        unreadCountsByLabel.set(labelId, (unreadCountsByLabel.get(labelId) || 0) + 1);
+                    }
+                }
+                ++mailLabelsRequestIdRef.current;
+                setLabels(current => current.map(item => ({
+                    ...item,
+                    unreadCount: Math.max(0, item.unreadCount - (unreadCountsByLabel.get(item.id) || 0)),
+                })));
+            }
             mailReadUpdatesRef.current.set(id, {revision: ++mailReadRevisionRef.current, pending: true});
             void api.markGoogleMailMessageRead(id).then(() => {
                 mailReadUpdatesRef.current.set(id, {revision: ++mailReadRevisionRef.current, pending: false});
@@ -980,6 +999,11 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
         setIsSending(true);
         try {
             const data = new FormData(form);
+            // Use the submitted values for history as well: input blur can commit a
+            // recipient after the React state captured by this handler was rendered.
+            const sentRecipients = ['to', 'cc', 'bcc'].flatMap(field =>
+                String(data.get(field) || '').split(/[,;]+/).map(parseMailAddress),
+            );
             const resolvedFiles = await Promise.all(attachments.map(async (att) => {
                 if (isForwardedAttachment(att)) {
                     const blob = await api.getGoogleMailAttachment(att.messageId, att.id, att.mimeType);
@@ -1011,7 +1035,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
             const sentMessage = await api.sendGoogleMail(data);
             setRecipientSuggestions(saveRecentMailRecipients(
                 accountId,
-                [...composeFields.to, ...composeFields.cc, ...composeFields.bcc].map(email => ({name: '', email})),
+                sentRecipients,
                 true,
             ));
             const threadRefreshMessageId = composeMode === 'reply'
