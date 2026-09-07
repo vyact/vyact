@@ -350,29 +350,34 @@
 .gwp-message-sender summary::-webkit-details-marker { display: none; }
 .gwp-message-sender summary svg { display: block; flex: 0 0 auto; color: var(--muted); transition: transform .15s; }
 .gwp-message-sender[open] summary svg { transform: rotate(180deg); }
+/* Sender/recipient popover: compact sections with readable, copyable addresses. */
 .gwp-recipient-tooltip {
     position: fixed;
     z-index: 12;
     display: grid;
     width: min(340px, calc(100vw - 16px));
     max-width: calc(100vw - 16px);
+    max-height: min(420px, calc(100vh - 32px));
+    overflow-y: auto;
     box-sizing: border-box;
-    gap: 10px;
-    padding: 11px 12px;
+    padding: 2px 12px;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 12px;
     background: var(--surface2);
-    box-shadow: 0 10px 28px rgba(0, 0, 0, .4);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .18);
 }
-.gwp-recipient-tooltip > div { display: grid; gap: 3px; }
-.gwp-recipient-tooltip > div > span { font-size: 11px; }
-.gwp-recipient-tooltip strong { color: var(--text); font-size: 13px; font-weight: 500; }
-.gwp-recipient-address { display: flex; min-width: 0; align-items: center; gap: 6px; margin: 0 -12px; padding: 3px 12px; border-radius: 5px; cursor: pointer; transition: background 0.15s; }
+.gwp-recipient-tooltip > div { display: grid; gap: 2px; padding: 6px 0; }
+.gwp-recipient-tooltip > div + div { border-top: 1px solid var(--border); }
+.gwp-recipient-tooltip > div > span { color: var(--muted); font-size: 11px; font-weight: 500; }
+.gwp-recipient-address { display: flex; min-width: 0; align-items: center; gap: 6px; margin: 0 -6px; padding: 4px 6px; border-radius: 7px; cursor: pointer; transition: background .15s; }
 .gwp-recipient-address:hover, .gwp-recipient-address:focus-visible { background: color-mix(in srgb, var(--accent) 12%, transparent); }
-.gwp-recipient-address-text { display: flex; flex: 1; align-items: center; gap: 0 4px; min-width: 0; white-space: nowrap; }
-.gwp-recipient-address-text > span { min-width: 0; overflow: hidden; color: var(--text); font-size: 12px; font-weight: 500; letter-spacing: normal; text-overflow: ellipsis; }
-.gwp-recipient-address-text > em { padding: 1px 5px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); font-size: 10px; font-style: normal; font-weight: 750; }
-.gwp-recipient-address > small { display: inline-flex; flex-shrink: 0; align-items: center; color: var(--success); }
+.gwp-recipient-address:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.gwp-recipient-address-text { display: grid; flex: 1; grid-template-columns: minmax(0, 1fr); align-items: center; gap: 1px 8px; min-width: 0; }
+.gwp-recipient-address-text > span { min-width: 0; overflow-wrap: anywhere; letter-spacing: normal; }
+.gwp-recipient-address-text > .gwp-recipient-name { display: flex; align-items: center; gap: 6px; grid-column: 1; color: var(--text); font-size: 13px; font-weight: 600; }
+.gwp-recipient-address-text > .gwp-recipient-email { grid-column: 1; color: var(--muted); font-size: 12px; font-weight: 400; line-height: 1.5; }
+.gwp-recipient-name > em { flex-shrink: 0; align-self: flex-start; margin-top: 1px; padding: 2px 6px; border-radius: 5px; background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font-size: 10px; font-style: normal; font-weight: 600; }
+.gwp-recipient-address > .gwp-recipient-copy-status { display: inline-flex; width: 14px; height: 14px; flex: 0 0 14px; align-items: center; color: var(--success); }
 .gwp-email-frame { display: flex; flex: 1; min-height: 0; padding: 10px; background: var(--bg); }
 .gwp-email-html { display: block; flex: 1; min-height: 0; width: 100%; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
 .gwp-email-empty { display: flex; flex: 1; min-height: 120px; width: 100%; align-items: center; justify-content: center; flex-direction: column; gap: 10px; border: 1px solid var(--border); border-radius: 10px; background: #fff; color: #777; text-align: center; }
@@ -1008,3 +1013,5 @@
 }
 
 .gwp-account-dropdown { min-width: min(320px, calc(100vw - 32px)); }
+
+.gwp-recipient-name:empty { display: none; }

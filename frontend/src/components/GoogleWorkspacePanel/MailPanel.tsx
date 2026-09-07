@@ -35,6 +35,7 @@ type ComposeAttachment = File | ForwardedAttachment;
 const isForwardedAttachment = (a: ComposeAttachment): a is ForwardedAttachment => 'forwarded' in a;
 
 const MAX_MAIL_ATTACHMENT_BYTES = 25 * 1024 * 1024;
+const MAIL_SEND_FEEDBACK_MS = {success: 1500, error: 3500};
 const MAX_AI_CONTEXT_CHARS = 60_000;
 const DOCX_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 const PREVIEWABLE_IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.svg']);
@@ -989,7 +990,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
     }, [compose]);
     useEffect(() => {
         if (!sendFeedback) return;
-        const timeoutId = window.setTimeout(() => setSendFeedback(null), 3500);
+        const timeoutId = window.setTimeout(() => setSendFeedback(null), MAIL_SEND_FEEDBACK_MS[sendFeedback]);
         return () => window.clearTimeout(timeoutId);
     }, [sendFeedback]);
 
@@ -1681,11 +1682,15 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat}: {
         };
         const MailAddressRow = ({recipient}: {recipient: MailAddress}) => <strong className="gwp-recipient-address" role="button" tabIndex={0} onClick={() => void copyEmail(recipient.email)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); void copyEmail(recipient.email); } }}>
             <span className="gwp-recipient-address-text">
-                {recipient.name && <span>{recipient.name}</span>}
-                <span>{recipient.name ? `<${recipient.email}>` : recipient.email}</span>
-                {mail.accountEmail && recipient.email.toLowerCase() === mail.accountEmail.toLowerCase() && <em>{t('googleWorkspace.me')}</em>}
+                <span className="gwp-recipient-name">
+                    {mail.accountEmail && recipient.email.toLowerCase() === mail.accountEmail.toLowerCase() && <em>{t('googleWorkspace.me')}</em>}
+                    {recipient.name}
+                </span>
+                <span className="gwp-recipient-email">{recipient.email}</span>
             </span>
-            {copiedEmail === recipient.email && <small role="status" aria-label={t('memoModal.copied')}><CheckCircle2 aria-hidden="true" size={14}/></small>}
+            <small className="gwp-recipient-copy-status" role="status" aria-label={copiedEmail === recipient.email ? t('memoModal.copied') : undefined}>
+                {copiedEmail === recipient.email && <CheckCircle2 aria-hidden="true" size={14}/>}
+            </small>
         </strong>;
         const sender = parseMailAddress(mail.from);
         const recipientDetails = <div ref={tooltipRef} className="gwp-recipient-tooltip" style={recipientTooltipPosition}>
