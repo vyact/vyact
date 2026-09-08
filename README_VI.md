@@ -87,9 +87,13 @@ Học với phụ đề song ngữ, điều hướng phụ đề, phát lặp v�
 
 ### Cải thiện bài viết mà không rời trang
 
-Dùng **Cải thiện bài viết** trong tiện ích Chrome để sửa ngữ pháp hoặc đổi cách diễn đạt thành tự nhiên, lịch sự, súc tích hay hài hước. Giữ nguyên ngôn ngữ hoặc chọn ngôn ngữ đầu ra, rồi so sánh Before / After trước khi sao chép kết quả về bản nháp.
+Dùng tiện ích Chrome để kiểm tra chính tả và ngữ pháp khi viết bài đăng, email hoặc bình luận. Những chỗ cần sửa được gạch chân ngay trong văn bản; **Gợi ý từ** được đánh dấu màu tím khi bật tính năng này. Mở một gợi ý để xem trước thay đổi, rồi áp dụng hoặc bỏ qua ngay trên trang.
 
-<p align="center"><img src="assets/readme/feature-writing-assistant.png" alt="Trợ lý viết trong tiện ích Chrome Vyact" width="100%" /></p>
+Bật **Lý do chỉnh sửa** để biết vì sao một thay đổi được đề xuất. Gợi ý từ và phần giải thích mặc định đều tắt, nên bạn có thể chỉ bật những gì cần dùng. Trong cùng menu, bạn có thể áp dụng hoặc bỏ qua từng gợi ý hay tất cả, hoàn tác thay đổi đã áp dụng và bật hoặc tắt **Tự động kiểm tra**.
+
+<p align="center">
+  <img src="assets/readme/feature-writing-assistant.png" alt="Tiện ích Chrome Vyact hiển thị lỗi ngữ pháp, gợi ý từ và nút áp dụng trong bản nháp trên Reddit" width="100%" />
+</p>
 
 ## Mọi thứ bạn cần để duy trì ngữ cảnh
 

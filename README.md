@@ -112,12 +112,12 @@ Learn from Netflix with dual subtitles, subtitle navigation, repeat playback, an
 
 ### Improve your writing without leaving the page
 
-Use **Improve writing** in the Chrome extension to refine selected text or the full input while drafting a post, email, or comment. Choose **Grammar** to correct spelling and grammar while preserving your meaning, or try **Natural**, **Polite**, **Concise**, or **Humorous** to adjust the wording and tone. Keep the original language or choose an output language, and add specific instructions when needed.
+Use the Chrome extension to check spelling and grammar while writing posts, emails, or comments. Corrections appear as underlines directly in the text; optional **Word suggestions** are highlighted in purple. Open a suggestion to preview the change, then **Apply** or **Dismiss** it without leaving the page.
 
-Review the **Before** and **After** side by side, then copy the result back into your draft.
+Turn on **Reasons for changes** to see why an edit is suggested. Word suggestions and explanations are off by default, so you can enable only what you need. Apply or dismiss suggestions individually or all at once, undo applied changes, and control **Auto-check** from the same menu.
 
 <p align="center">
-  <img src="assets/readme/feature-writing-assistant.png" alt="Vyact Chrome extension correcting grammar in a Reddit draft, with the original text and corrected result side by side" width="100%" />
+  <img src="assets/readme/feature-writing-assistant.png" alt="Vyact Chrome extension showing inline grammar corrections, word suggestions, and an Apply button in a Reddit draft" width="100%" />
 </p>
 
 ## Everything you need to stay in context
