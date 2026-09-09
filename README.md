@@ -5,13 +5,15 @@
 
 [English](README.md) · [한국어](README_KO.md) · [日本語](README_JA.md) · [ไทย](README_TH.md) · [Tiếng Việt](README_VI.md)
 
-  **Vyact is an open-source, local-first personal AI workspace for llama.cpp, RAG, AI agents, document intelligence, and Google Workspace and Microsoft integration.**
+### Put your local LLM to work.
 
-### Your private workspace for conversations, knowledge, and getting work done.
+Use local AI with your documents, email, and browser—from finding answers in your files to drafting replies and improving your writing.
 
-  **Turn your files, notes, email, and everyday tools into useful AI context—without leaving your workflow.**
+Open source. Run models on your computer, with optional cloud providers.
 
-  [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-7c3aed.svg?style=flat-square)](LICENSE)
+[**Download Vyact**](https://github.com/vyact/vyact/releases/latest) · [**Watch the 28-second demo**](https://youtu.be/k3awr5jAdMk)
+
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-7c3aed.svg?style=flat-square)](LICENSE)
   [![Chrome Extension](https://img.shields.io/badge/browser-Chrome%20Extension-4285f4.svg?style=flat-square)](https://chromewebstore.google.com/detail/vyact/opfbakfhoojmdkbbhcglolkpgmenjbib)
   <a href="https://github.com/vyact/vyact/releases/latest"><img alt="Supported platforms: macOS, Windows, and Linux" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-475569.svg?style=flat-square"></a>
   [![Latest release](https://img.shields.io/github/v/release/vyact/vyact?style=flat-square&label=release)](https://github.com/vyact/vyact/releases/latest)
@@ -21,22 +23,19 @@
 
 ---
 
-## Models may change. Your context should remain.
+[![Watch the 28-second demo](assets/readme/demo-local-document.jpg)](https://youtu.be/k3awr5jAdMk)
 
-Most AI chats begin with the same tedious ritual: find a file, copy an email, explain the background again, and hope the answer has not lost the plot. Vyact keeps the useful parts of your work together so you can ask better questions with less setup.
-
-It brings AI chat, document intelligence, notes, and the tools you already use into one focused workspace. Attach a document, inspect the source behind an answer, turn a note into searchable knowledge, or carry the same context into Gmail, Outlook, Google Drive, OneDrive, calendars, and Chrome.
-
-Built around local LLMs through llama.cpp and MLX, Vyact helps you keep your conversations, documents, and working context in your own environment. Use a local model as a practical workspace—not just another chatbot tab—and connect hosted providers or your own OpenAI-compatible LLM endpoint when a task calls for them.
-
-<div align="center" markdown="1">
-
-[![Download for macOS%2C%20Windows%2C%20and%20Linux](https://img.shields.io/badge/Download-GitHub%20Releases-7c3aed?style=for-the-badge&logo=github&logoColor=white)](https://github.com/vyact/vyact/releases)
-[![Support Vyact](https://img.shields.io/badge/Support-Vyact-ff5e5b?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/vyact)
-
-</div>
+A local 9B model finds launch risks, owners, and fallbacks in a sample document, then shows the original source. Actual Vyact recording with Qwen3.5-9B Q4_K_M; fictional sample data, edited for length, with generation shown at 2× speed.
 
 ## One workspace for everyday work
+
+### Turn documents into a knowledge base
+
+Upload and index your documents once. During a normal chat, Vyact retrieves the passages most relevant to your question and adds them to the model's context automatically—so answers are grounded in your knowledge base without manually attaching the same files every time. Create knowledge collections to group related documents, memos, and indexed email threads, then select a collection in chat when you want RAG to stay within that specific context. Inspect the retrieved sources when you need to verify an answer.
+
+<p align="center">
+  <img src="assets/readme/feature-document-rag.png" alt="Vyact document management and RAG knowledge base" width="100%" />
+</p>
 
 ### One workspace for AI chat, files, Google, and Microsoft
 
@@ -46,40 +45,14 @@ Ask questions with PDFs and documents attached, then trace answers back to their
   <img src="assets/readme/feature-ai-workspace.png" alt="Vyact AI chat with document context and Google Workspace panels" width="100%" />
 </p>
 
-### Find a local model that fits your hardware
+### Improve your writing without leaving the page
 
-Search and compare local GGUF and MLX models without leaving Vyact. See detected system RAM and GPU VRAM alongside model size, quantization, context capacity, and hardware-aware memory estimates before downloading, then let Vyact install the selected model and prepare the matching local runtime. For compatible multi-GPU llama.cpp systems, automatic memory fitting is the default, with an optional manual GPU split for advanced setups. Public models work without an API key, while an optional Hugging Face key enables access to gated models your account is authorized to use.
+Use the Chrome extension to check spelling and grammar while writing posts, emails, or comments. Corrections appear as underlines directly in the text; optional **Word suggestions** are highlighted in purple. Open a suggestion to preview the change, then **Apply** or **Dismiss** it without leaving the page.
 
-<p align="center">
-  <img src="assets/readme/feature-local-models.png" alt="Vyact local model search with detected system RAM, GPU VRAM, and hardware-aware memory estimates" width="100%" />
-</p>
-
-#### How MLX acceleration works
-
-On Apple Silicon, Vyact runs both text and vision-capable MLX models through a single oMLX runtime. Prefix KV Memory Cache is enabled by default, keeping reusable prompt state in memory and a paged SSD cache, with cache limits selected for your system memory. Repeated system prompts and conversation prefixes can therefore skip work already completed by the model; a first request may report `cached_tokens: 0`, while a matching follow-up reports the number of prefix tokens actually reused.
-
-When a compatible External MTP companion is available for a newly downloaded model, Vyact downloads it with the target model, validates the pairing, and lets oMLX use MTP for faster decoding while Memory Cache remains enabled. Vyact reads External MTP capabilities from the installed oMLX runtime at app startup and refreshes them after a managed runtime update, so compatibility follows the engine version instead of a fixed model list. Speculative Prefill and embedded native MTP are disabled in the current integration. Compatible DFlash models use their dedicated acceleration path.
-
-### Compare model settings on your own hardware
-
-Open **Model settings > Performance test** to compare settings before choosing them. Preview the combinations and run all of them or select only the ones you want: performance mode, KV cache quantization, and supported MTP for GGUF, or supported MTP for MLX. Context, output limits, and sampling settings stay fixed across combinations.
-
-Each combination runs a short input, a long input, and a follow-up conversation. Compare time to first token, generation speed, total response time, reused prefix tokens, and actual input/output token counts in one view. Prefill time and speed are shown when the engine reports them separately; unavailable metrics stay marked as unavailable. Follow-up requests intentionally test conversation cache reuse.
-
-Completed results are sorted by a speed score combining time to first token and generation time normalized to 256 output tokens across the three workloads. The best tested combination is highlighted; this is a speed comparison, not a measure of answer quality or memory savings. Choose **Use these settings** to copy a result into the form, then **Apply** to activate the model with those settings.
-
-Measurements are saved as they finish. You can stop a test and keep completed measurements; Vyact restores the previous model and settings after completion, cancellation, or failure, and reports any restoration error. Starting another test replaces the previous results for that model.
+Turn on **Reasons for changes** to see why an edit is suggested. Word suggestions and explanations are off by default, so you can enable only what you need. Apply or dismiss suggestions individually or all at once, undo applied changes, and control **Auto-check** from the same menu.
 
 <p align="center">
-  <img src="assets/readme/feature-model-benchmark.png" alt="Vyact model performance test results ranked by speed, with a recommended configuration and per-workload timings and token counts" width="100%" />
-</p>
-
-### Turn documents into a knowledge base
-
-Upload and index your documents once. During a normal chat, Vyact retrieves the passages most relevant to your question and adds them to the model's context automatically—so answers are grounded in your knowledge base without manually attaching the same files every time. Create knowledge collections to group related documents, memos, and indexed email threads, then select a collection in chat when you want RAG to stay within that specific context. Inspect the retrieved sources when you need to verify an answer.
-
-<p align="center">
-  <img src="assets/readme/feature-document-rag.png" alt="Vyact document management and RAG knowledge base" width="100%" />
+  <img src="assets/readme/feature-writing-assistant.png" alt="Vyact Chrome extension showing inline grammar corrections, word suggestions, and an Apply button in a Reddit draft" width="100%" />
 </p>
 
 ### Keep ideas, plans, and decisions—and find them with RAG
@@ -110,15 +83,49 @@ Learn from Netflix with dual subtitles, subtitle navigation, repeat playback, an
   <img src="assets/readme/feature-plugin.png" alt="Vyact Chrome extension side panel" width="100%" />
 </p>
 
-### Improve your writing without leaving the page
+### Find a local model that fits your hardware
 
-Use the Chrome extension to check spelling and grammar while writing posts, emails, or comments. Corrections appear as underlines directly in the text; optional **Word suggestions** are highlighted in purple. Open a suggestion to preview the change, then **Apply** or **Dismiss** it without leaving the page.
-
-Turn on **Reasons for changes** to see why an edit is suggested. Word suggestions and explanations are off by default, so you can enable only what you need. Apply or dismiss suggestions individually or all at once, undo applied changes, and control **Auto-check** from the same menu.
+Search and compare local GGUF and MLX models without leaving Vyact. See detected system RAM and GPU VRAM alongside model size, quantization, context capacity, and hardware-aware memory estimates before downloading, then let Vyact install the selected model and prepare the matching local runtime. For compatible multi-GPU llama.cpp systems, automatic memory fitting is the default, with an optional manual GPU split for advanced setups. Public models work without an API key, while an optional Hugging Face key enables access to gated models your account is authorized to use.
 
 <p align="center">
-  <img src="assets/readme/feature-writing-assistant.png" alt="Vyact Chrome extension showing inline grammar corrections, word suggestions, and an Apply button in a Reddit draft" width="100%" />
+  <img src="assets/readme/feature-local-models.png" alt="Vyact local model search with detected system RAM, GPU VRAM, and hardware-aware memory estimates" width="100%" />
 </p>
+
+#### How MLX acceleration works
+
+On Apple Silicon, Vyact runs both text and vision-capable MLX models through a single oMLX runtime. Prefix KV Memory Cache is enabled by default, keeping reusable prompt state in memory and a paged SSD cache, with cache limits selected for your system memory. Repeated system prompts and conversation prefixes can therefore skip work already completed by the model; a first request may report `cached_tokens: 0`, while a matching follow-up reports the number of prefix tokens actually reused.
+
+When a compatible External MTP companion is available for a newly downloaded model, Vyact downloads it with the target model, validates the pairing, and lets oMLX use MTP for faster decoding while Memory Cache remains enabled. Vyact reads External MTP capabilities from the installed oMLX runtime at app startup and refreshes them after a managed runtime update, so compatibility follows the engine version instead of a fixed model list. Speculative Prefill and embedded native MTP are disabled in the current integration. Compatible DFlash models use their dedicated acceleration path.
+
+### Compare model settings on your own hardware
+
+Open **Model settings > Performance test** to compare settings before choosing them. Preview the combinations and run all of them or select only the ones you want: performance mode, KV cache quantization, and supported MTP for GGUF, or supported MTP for MLX. Context, output limits, and sampling settings stay fixed across combinations.
+
+Each combination runs a short input, a long input, and a follow-up conversation. Compare time to first token, generation speed, total response time, reused prefix tokens, and actual input/output token counts in one view. Prefill time and speed are shown when the engine reports them separately; unavailable metrics stay marked as unavailable. Follow-up requests intentionally test conversation cache reuse.
+
+Completed results are sorted by a speed score combining time to first token and generation time normalized to 256 output tokens across the three workloads. The best tested combination is highlighted; this is a speed comparison, not a measure of answer quality or memory savings. Choose **Use these settings** to copy a result into the form, then **Apply** to activate the model with those settings.
+
+Measurements are saved as they finish. You can stop a test and keep completed measurements; Vyact restores the previous model and settings after completion, cancellation, or failure, and reports any restoration error. Starting another test replaces the previous results for that model.
+
+<p align="center">
+  <img src="assets/readme/feature-model-benchmark.png" alt="Vyact model performance test results ranked by speed, with a recommended configuration and per-workload timings and token counts" width="100%" />
+</p>
+
+
+## Models may change. Your context should remain.
+
+Most AI chats begin with the same tedious ritual: find a file, copy an email, explain the background again, and hope the answer has not lost the plot. Vyact keeps the useful parts of your work together so you can ask better questions with less setup.
+
+It brings AI chat, document intelligence, notes, and the tools you already use into one focused workspace. Attach a document, inspect the source behind an answer, turn a note into searchable knowledge, or carry the same context into Gmail, Outlook, Google Drive, OneDrive, calendars, and Chrome.
+
+Built around local LLMs through llama.cpp and MLX, Vyact helps you keep your conversations, documents, and working context in your own environment. Use a local model as a practical workspace—not just another chatbot tab—and connect hosted providers or your own OpenAI-compatible LLM endpoint when a task calls for them.
+
+<div align="center" markdown="1">
+
+[![Download for macOS%2C%20Windows%2C%20and%20Linux](https://img.shields.io/badge/Download-GitHub%20Releases-7c3aed?style=for-the-badge&logo=github&logoColor=white)](https://github.com/vyact/vyact/releases)
+[![Support Vyact](https://img.shields.io/badge/Support-Vyact-ff5e5b?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/vyact)
+
+</div>
 
 ## Everything you need to stay in context
 

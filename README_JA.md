@@ -5,11 +5,13 @@
 
 [English](README.md) · [한국어](README_KO.md) · [日本語](README_JA.md) · [ไทย](README_TH.md) · [Tiếng Việt](README_VI.md)
 
-**Vyact は、llama.cpp、RAG、AI エージェント、ドキュメントインテリジェンス、Google Workspace・Microsoft 連携に対応した、オープンソースかつローカルファーストのパーソナル AI ワークスペースです。**
+### ローカルLLMを、毎日の仕事に。
 
-### 会話、知識、日々の作業をひとつにまとめるプライベートワークスペース
+文書、メール、ブラウザでローカルAIを活用。ファイルから答えを見つけ、返信を下書きし、文章を推敲できます。
 
-ファイル、メモ、メール、普段使うツールを、作業の流れを変えることなく有用な AI コンテキストとして活用できます。
+オープンソース。モデルを自分のコンピューターで実行でき、必要に応じてクラウドのAIも選べます。
+
+[**Vyactをダウンロード**](https://github.com/vyact/vyact/releases/latest) · [**28秒のデモを見る**](https://youtu.be/k3awr5jAdMk)
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-7c3aed.svg?style=flat-square)](LICENSE)
 [![Chrome Extension](https://img.shields.io/badge/browser-Chrome%20Extension-4285f4.svg?style=flat-square)](https://chromewebstore.google.com/detail/vyact/opfbakfhoojmdkbbhcglolkpgmenjbib)
@@ -20,20 +22,17 @@
 
 ---
 
-## モデルは変わっても、あなたのコンテキストは残るべきです
+[![28秒のデモを見る](assets/readme/demo-local-document.jpg)](https://youtu.be/k3awr5jAdMk)
 
-AI チャットを使うたびに、ファイルを探し、メールをコピーし、背景を説明し直す必要はありません。Vyact は AI チャット、ドキュメント、メモ、普段使うツールをひとつのワークスペースにまとめます。回答の根拠を確認し、メモを検索可能な知識に変え、Gmail、Outlook、Google Drive、OneDrive、カレンダー、Chrome の情報を同じ会話で利用できます。
-
-llama.cpp と MLX によるローカル LLM を中心に設計されているため、会話、文書、作業コンテキストを自分の環境に保持できます。必要に応じて、ホステッドプロバイダーや独自の OpenAI 互換 LLM エンドポイントにも接続できます。
-
-<div align="center" markdown="1">
-
-[![ダウンロード](https://img.shields.io/badge/Download-GitHub%20Releases-7c3aed?style=for-the-badge&logo=github&logoColor=white)](https://github.com/vyact/vyact/releases)
-[![Vyact を支援](https://img.shields.io/badge/Support-Vyact-ff5e5b?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/vyact)
-
-</div>
+ローカルの9Bモデルがサンプル文書からリリースのリスク、担当者、代替案を整理し、原文を確認するデモです。Qwen3.5-9B Q4_K_Mを使用した実際のVyactの録画です。架空の資料を使用し、待ち時間を編集しています。生成シーンは2倍速です。
 
 ## 日々の作業をひとつのワークスペースで
+
+### 文書をナレッジベースに
+
+文書を一度アップロードして索引化すると、通常のチャット中に質問と関連する箇所が自動取得されます。文書、メモ、索引化したメールスレッドを知識コレクションにまとめ、RAG の対象を限定できます。必要なときは取得されたソースを確認できます。
+
+<p align="center"><img src="assets/readme/feature-document-rag.png" alt="Vyact の文書管理と RAG" width="100%" /></p>
 
 ### AI チャット、ファイル、Google、Microsoft をひとつに
 
@@ -41,27 +40,15 @@ PDF や文書を添付して質問し、回答の根拠までたどれます。�
 
 <p align="center"><img src="assets/readme/feature-ai-workspace.png" alt="ドキュメントと Google Workspace を利用する Vyact AI チャット" width="100%" /></p>
 
-### ハードウェアに合うローカルモデルを探す
+### ページを離れず文章を改善
 
-Vyact 内で GGUF / MLX モデルを検索・比較できます。モデルサイズ、量子化、コンテキスト長、検出された RAM / GPU VRAM、ハードウェアに応じたメモリ見積もりを確認してからダウンロードできます。対応するマルチ GPU llama.cpp 環境では自動メモリ調整が既定で、上級者向けに手動 GPU 分割も用意されています。公開モデルは API キー不要で、Hugging Face キーを追加すると許可された gated model にアクセスできます。
+Chrome 拡張機能で、投稿やメール、コメントを書きながらスペルや文法をチェックできます。修正候補は本文に下線で表示され、任意の**単語の提案**は紫色で区別されます。候補を開いて変更内容を確認し、ページを離れずに適用または無視できます。
 
-<p align="center"><img src="assets/readme/feature-local-models.png" alt="Vyact のローカルモデル検索" width="100%" /></p>
+**変更の理由**をオンにすると、修正を提案する理由も確認できます。単語の提案と理由の説明は初期設定ではオフです。必要な機能だけを有効にし、候補の個別・一括適用や無視、適用した変更の取り消し、**自動チェック**の切り替えを同じメニューで操作できます。
 
-#### MLX アクセラレーション
-
-Apple Silicon では、テキストおよび画像対応 MLX モデルを単一の oMLX ランタイムで実行します。Prefix KV Memory Cache は既定で有効で、再利用可能なプロンプト状態をメモリとページ化 SSD キャッシュに保持します。互換性のある External MTP companion が存在する場合はモデルと共に取得・検証し、高速なデコードに利用します。機能情報はインストール済み oMLX から読み取られるため、固定されたモデル一覧ではなくエンジンのバージョンに追従します。現在、Speculative Prefill と組み込み native MTP は無効です。対応 DFlash モデルは専用の高速化経路を使用します。
-
-### 自分のハードウェアで設定を比較
-
-**モデル設定 > パフォーマンステスト** で、GGUF の performance mode、KV cache quantization、対応 MTP、または MLX の対応 MTP を比較できます。短い入力、長い入力、フォローアップ会話を実行し、最初のトークンまでの時間、生成速度、総応答時間、再利用された prefix token、実際の入出力 token 数を表示します。結果は速度スコア順に並び、選択した結果を設定フォームに反映できます。テストの完了・中止・失敗後には以前のモデルと設定が復元されます。
-
-<p align="center"><img src="assets/readme/feature-model-benchmark.png" alt="Vyact モデル性能テスト" width="100%" /></p>
-
-### 文書をナレッジベースに
-
-文書を一度アップロードして索引化すると、通常のチャット中に質問と関連する箇所が自動取得されます。文書、メモ、索引化したメールスレッドを知識コレクションにまとめ、RAG の対象を限定できます。必要なときは取得されたソースを確認できます。
-
-<p align="center"><img src="assets/readme/feature-document-rag.png" alt="Vyact の文書管理と RAG" width="100%" /></p>
+<p align="center">
+  <img src="assets/readme/feature-writing-assistant.png" alt="Reddit の下書きで文法の修正候補、単語の提案、適用ボタンを表示する Vyact Chrome 拡張機能" width="100%" />
+</p>
 
 ### アイデア、計画、決定を記録して RAG で検索
 
@@ -85,15 +72,35 @@ Netflix の二重字幕、字幕移動、リピート再生、自動停止を利
 
 <p align="center"><img src="assets/readme/feature-plugin.png" alt="Vyact Chrome 拡張機能" width="100%" /></p>
 
-### ページを離れず文章を改善
+### ハードウェアに合うローカルモデルを探す
 
-Chrome 拡張機能で、投稿やメール、コメントを書きながらスペルや文法をチェックできます。修正候補は本文に下線で表示され、任意の**単語の提案**は紫色で区別されます。候補を開いて変更内容を確認し、ページを離れずに適用または無視できます。
+Vyact 内で GGUF / MLX モデルを検索・比較できます。モデルサイズ、量子化、コンテキスト長、検出された RAM / GPU VRAM、ハードウェアに応じたメモリ見積もりを確認してからダウンロードできます。対応するマルチ GPU llama.cpp 環境では自動メモリ調整が既定で、上級者向けに手動 GPU 分割も用意されています。公開モデルは API キー不要で、Hugging Face キーを追加すると許可された gated model にアクセスできます。
 
-**変更の理由**をオンにすると、修正を提案する理由も確認できます。単語の提案と理由の説明は初期設定ではオフです。必要な機能だけを有効にし、候補の個別・一括適用や無視、適用した変更の取り消し、**自動チェック**の切り替えを同じメニューで操作できます。
+<p align="center"><img src="assets/readme/feature-local-models.png" alt="Vyact のローカルモデル検索" width="100%" /></p>
 
-<p align="center">
-  <img src="assets/readme/feature-writing-assistant.png" alt="Reddit の下書きで文法の修正候補、単語の提案、適用ボタンを表示する Vyact Chrome 拡張機能" width="100%" />
-</p>
+#### MLX アクセラレーション
+
+Apple Silicon では、テキストおよび画像対応 MLX モデルを単一の oMLX ランタイムで実行します。Prefix KV Memory Cache は既定で有効で、再利用可能なプロンプト状態をメモリとページ化 SSD キャッシュに保持します。互換性のある External MTP companion が存在する場合はモデルと共に取得・検証し、高速なデコードに利用します。機能情報はインストール済み oMLX から読み取られるため、固定されたモデル一覧ではなくエンジンのバージョンに追従します。現在、Speculative Prefill と組み込み native MTP は無効です。対応 DFlash モデルは専用の高速化経路を使用します。
+
+### 自分のハードウェアで設定を比較
+
+**モデル設定 > パフォーマンステスト** で、GGUF の performance mode、KV cache quantization、対応 MTP、または MLX の対応 MTP を比較できます。短い入力、長い入力、フォローアップ会話を実行し、最初のトークンまでの時間、生成速度、総応答時間、再利用された prefix token、実際の入出力 token 数を表示します。結果は速度スコア順に並び、選択した結果を設定フォームに反映できます。テストの完了・中止・失敗後には以前のモデルと設定が復元されます。
+
+<p align="center"><img src="assets/readme/feature-model-benchmark.png" alt="Vyact モデル性能テスト" width="100%" /></p>
+
+
+## モデルは変わっても、あなたのコンテキストは残るべきです
+
+AI チャットを使うたびに、ファイルを探し、メールをコピーし、背景を説明し直す必要はありません。Vyact は AI チャット、ドキュメント、メモ、普段使うツールをひとつのワークスペースにまとめます。回答の根拠を確認し、メモを検索可能な知識に変え、Gmail、Outlook、Google Drive、OneDrive、カレンダー、Chrome の情報を同じ会話で利用できます。
+
+llama.cpp と MLX によるローカル LLM を中心に設計されているため、会話、文書、作業コンテキストを自分の環境に保持できます。必要に応じて、ホステッドプロバイダーや独自の OpenAI 互換 LLM エンドポイントにも接続できます。
+
+<div align="center" markdown="1">
+
+[![ダウンロード](https://img.shields.io/badge/Download-GitHub%20Releases-7c3aed?style=for-the-badge&logo=github&logoColor=white)](https://github.com/vyact/vyact/releases)
+[![Vyact を支援](https://img.shields.io/badge/Support-Vyact-ff5e5b?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/vyact)
+
+</div>
 
 ## コンテキストを保つために必要なすべて
 

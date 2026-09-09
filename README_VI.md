@@ -5,11 +5,13 @@
 
 [English](README.md) · [한국어](README_KO.md) · [日本語](README_JA.md) · [ไทย](README_TH.md) · [Tiếng Việt](README_VI.md)
 
-**Vyact là không gian làm việc AI cá nhân mã nguồn mở, ưu tiên xử lý cục bộ, dành cho llama.cpp, RAG, AI agent, trí tuệ tài liệu và tích hợp Google Workspace và Microsoft.**
+### Đưa LLM chạy trên máy vào công việc thực tế.
 
-### Không gian riêng tư cho hội thoại, tri thức và công việc
+Dùng AI trên máy với tài liệu, email và trình duyệt: tìm câu trả lời trong tệp, soạn bản nháp trả lời và cải thiện bài viết.
 
-Biến tệp, ghi chú, email và công cụ hằng ngày thành ngữ cảnh hữu ích cho AI mà không làm gián đoạn quy trình làm việc.
+Mã nguồn mở. Chạy mô hình trên máy tính của bạn, với tùy chọn dùng nhà cung cấp AI đám mây.
+
+[**Tải Vyact**](https://github.com/vyact/vyact/releases/latest) · [**Xem demo 28 giây**](https://youtu.be/k3awr5jAdMk)
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-7c3aed.svg?style=flat-square)](LICENSE)
 [![Chrome Extension](https://img.shields.io/badge/browser-Chrome%20Extension-4285f4.svg?style=flat-square)](https://chromewebstore.google.com/detail/vyact/opfbakfhoojmdkbbhcglolkpgmenjbib)
@@ -20,20 +22,17 @@ Biến tệp, ghi chú, email và công cụ hằng ngày thành ngữ cảnh h�
 
 ---
 
-## Mô hình có thể thay đổi, nhưng ngữ cảnh của bạn nên được giữ lại
+[![Xem demo 28 giây](assets/readme/demo-local-document.jpg)](https://youtu.be/k3awr5jAdMk)
 
-Bạn không cần tìm lại tệp, sao chép email và giải thích bối cảnh từ đầu mỗi khi mở một cuộc trò chuyện AI. Vyact kết hợp AI chat, tài liệu, ghi chú và các công cụ quen thuộc trong một không gian làm việc. Bạn có thể kiểm tra nguồn của câu trả lời, biến ghi chú thành tri thức có thể tìm kiếm và sử dụng cùng ngữ cảnh với Gmail, Outlook, Google Drive, OneDrive, lịch và Chrome.
-
-Được xây dựng xoay quanh LLM cục bộ qua llama.cpp và MLX, Vyact giúp giữ hội thoại, tài liệu và ngữ cảnh làm việc trong môi trường của bạn. Khi cần, bạn vẫn có thể kết nối nhà cung cấp đám mây hoặc endpoint LLM tương thích OpenAI của riêng mình.
-
-<div align="center" markdown="1">
-
-[![Tải xuống](https://img.shields.io/badge/Download-GitHub%20Releases-7c3aed?style=for-the-badge&logo=github&logoColor=white)](https://github.com/vyact/vyact/releases)
-[![Ủng hộ Vyact](https://img.shields.io/badge/Support-Vyact-ff5e5b?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/vyact)
-
-</div>
+Mô hình 9B chạy trên máy tìm rủi ro, người phụ trách và phương án dự phòng trong tài liệu mẫu, sau đó mở nguồn gốc để kiểm tra. Video quay trực tiếp Vyact với Qwen3.5-9B Q4_K_M và dữ liệu giả định; đã cắt bớt thời gian chờ, đoạn tạo câu trả lời được phát nhanh 2 lần.
 
 ## Một không gian cho công việc hằng ngày
+
+### Biến tài liệu thành cơ sở tri thức
+
+Tải lên và lập chỉ mục tài liệu một lần. Trong hội thoại bình thường, Vyact tự động truy xuất đoạn liên quan nhất rồi thêm vào context. Nhóm tài liệu, ghi chú và chuỗi email đã lập chỉ mục thành bộ sưu tập tri thức để giới hạn phạm vi RAG, đồng thời kiểm tra nguồn đã truy xuất khi cần.
+
+<p align="center"><img src="assets/readme/feature-document-rag.png" alt="Quản lý tài liệu và RAG trong Vyact" width="100%" /></p>
 
 ### AI chat, tệp, Google và Microsoft trong cùng một nơi
 
@@ -41,27 +40,15 @@ Bạn không cần tìm lại tệp, sao chép email và giải thích bối c�
 
 <p align="center"><img src="assets/readme/feature-ai-workspace.png" alt="AI chat Vyact với ngữ cảnh tài liệu và Google Workspace" width="100%" /></p>
 
-### Tìm mô hình cục bộ phù hợp với phần cứng
+### Cải thiện bài viết mà không rời trang
 
-Tìm kiếm và so sánh mô hình GGUF và MLX ngay trong Vyact. Xem kích thước, mức lượng tử hóa, dung lượng context, RAM / GPU VRAM được phát hiện và ước tính bộ nhớ theo phần cứng trước khi tải. Trên hệ thống llama.cpp đa GPU tương thích, tự động cân chỉnh bộ nhớ là mặc định và người dùng nâng cao có thể chia GPU thủ công. Mô hình công khai không cần API key; Hugging Face key tùy chọn cho phép truy cập gated model mà tài khoản của bạn được cấp quyền.
+Dùng tiện ích Chrome để kiểm tra chính tả và ngữ pháp khi viết bài đăng, email hoặc bình luận. Những chỗ cần sửa được gạch chân ngay trong văn bản; **Gợi ý từ** được đánh dấu màu tím khi bật tính năng này. Mở một gợi ý để xem trước thay đổi, rồi áp dụng hoặc bỏ qua ngay trên trang.
 
-<p align="center"><img src="assets/readme/feature-local-models.png" alt="Tìm kiếm mô hình cục bộ trong Vyact" width="100%" /></p>
+Bật **Lý do chỉnh sửa** để biết vì sao một thay đổi được đề xuất. Gợi ý từ và phần giải thích mặc định đều tắt, nên bạn có thể chỉ bật những gì cần dùng. Trong cùng menu, bạn có thể áp dụng hoặc bỏ qua từng gợi ý hay tất cả, hoàn tác thay đổi đã áp dụng và bật hoặc tắt **Tự động kiểm tra**.
 
-#### Cách tăng tốc MLX hoạt động
-
-Trên Apple Silicon, mô hình MLX hỗ trợ văn bản và hình ảnh chạy qua một oMLX runtime duy nhất. Prefix KV Memory Cache được bật mặc định, lưu trạng thái prompt có thể tái sử dụng trong bộ nhớ và cache SSD phân trang. Khi có External MTP companion tương thích, Vyact tải xuống, xác thực cặp mô hình và dùng MTP để giải mã nhanh hơn. Khả năng này được đọc từ oMLX đã cài đặt nên bám theo phiên bản engine thay vì danh sách mô hình cố định. Speculative Prefill và native MTP nhúng hiện bị tắt; mô hình DFlash tương thích dùng đường tăng tốc riêng.
-
-### So sánh cài đặt trên phần cứng của bạn
-
-Mở **Cài đặt mô hình > Kiểm tra hiệu năng** để so sánh performance mode, KV cache quantization và MTP được hỗ trợ cho GGUF, hoặc MTP được hỗ trợ cho MLX. Mỗi tổ hợp chạy đầu vào ngắn, đầu vào dài và hội thoại tiếp nối; hiển thị thời gian đến token đầu tiên, tốc độ sinh, tổng thời gian phản hồi, prefix token tái sử dụng và số token vào/ra thực tế. Kết quả được xếp theo điểm tốc độ và có thể sao chép vào biểu mẫu cài đặt. Vyact khôi phục mô hình cùng cài đặt trước đó sau khi hoàn tất, hủy hoặc gặp lỗi.
-
-<p align="center"><img src="assets/readme/feature-model-benchmark.png" alt="Kết quả kiểm tra hiệu năng mô hình Vyact" width="100%" /></p>
-
-### Biến tài liệu thành cơ sở tri thức
-
-Tải lên và lập chỉ mục tài liệu một lần. Trong hội thoại bình thường, Vyact tự động truy xuất đoạn liên quan nhất rồi thêm vào context. Nhóm tài liệu, ghi chú và chuỗi email đã lập chỉ mục thành bộ sưu tập tri thức để giới hạn phạm vi RAG, đồng thời kiểm tra nguồn đã truy xuất khi cần.
-
-<p align="center"><img src="assets/readme/feature-document-rag.png" alt="Quản lý tài liệu và RAG trong Vyact" width="100%" /></p>
+<p align="center">
+  <img src="assets/readme/feature-writing-assistant.png" alt="Tiện ích Chrome Vyact hiển thị lỗi ngữ pháp, gợi ý từ và nút áp dụng trong bản nháp trên Reddit" width="100%" />
+</p>
 
 ### Lưu ý tưởng, kế hoạch, quyết định và tìm lại bằng RAG
 
@@ -85,15 +72,35 @@ Học với phụ đề song ngữ, điều hướng phụ đề, phát lặp v�
 
 <p align="center"><img src="assets/readme/feature-plugin.png" alt="Tiện ích Chrome Vyact" width="100%" /></p>
 
-### Cải thiện bài viết mà không rời trang
+### Tìm mô hình cục bộ phù hợp với phần cứng
 
-Dùng tiện ích Chrome để kiểm tra chính tả và ngữ pháp khi viết bài đăng, email hoặc bình luận. Những chỗ cần sửa được gạch chân ngay trong văn bản; **Gợi ý từ** được đánh dấu màu tím khi bật tính năng này. Mở một gợi ý để xem trước thay đổi, rồi áp dụng hoặc bỏ qua ngay trên trang.
+Tìm kiếm và so sánh mô hình GGUF và MLX ngay trong Vyact. Xem kích thước, mức lượng tử hóa, dung lượng context, RAM / GPU VRAM được phát hiện và ước tính bộ nhớ theo phần cứng trước khi tải. Trên hệ thống llama.cpp đa GPU tương thích, tự động cân chỉnh bộ nhớ là mặc định và người dùng nâng cao có thể chia GPU thủ công. Mô hình công khai không cần API key; Hugging Face key tùy chọn cho phép truy cập gated model mà tài khoản của bạn được cấp quyền.
 
-Bật **Lý do chỉnh sửa** để biết vì sao một thay đổi được đề xuất. Gợi ý từ và phần giải thích mặc định đều tắt, nên bạn có thể chỉ bật những gì cần dùng. Trong cùng menu, bạn có thể áp dụng hoặc bỏ qua từng gợi ý hay tất cả, hoàn tác thay đổi đã áp dụng và bật hoặc tắt **Tự động kiểm tra**.
+<p align="center"><img src="assets/readme/feature-local-models.png" alt="Tìm kiếm mô hình cục bộ trong Vyact" width="100%" /></p>
 
-<p align="center">
-  <img src="assets/readme/feature-writing-assistant.png" alt="Tiện ích Chrome Vyact hiển thị lỗi ngữ pháp, gợi ý từ và nút áp dụng trong bản nháp trên Reddit" width="100%" />
-</p>
+#### Cách tăng tốc MLX hoạt động
+
+Trên Apple Silicon, mô hình MLX hỗ trợ văn bản và hình ảnh chạy qua một oMLX runtime duy nhất. Prefix KV Memory Cache được bật mặc định, lưu trạng thái prompt có thể tái sử dụng trong bộ nhớ và cache SSD phân trang. Khi có External MTP companion tương thích, Vyact tải xuống, xác thực cặp mô hình và dùng MTP để giải mã nhanh hơn. Khả năng này được đọc từ oMLX đã cài đặt nên bám theo phiên bản engine thay vì danh sách mô hình cố định. Speculative Prefill và native MTP nhúng hiện bị tắt; mô hình DFlash tương thích dùng đường tăng tốc riêng.
+
+### So sánh cài đặt trên phần cứng của bạn
+
+Mở **Cài đặt mô hình > Kiểm tra hiệu năng** để so sánh performance mode, KV cache quantization và MTP được hỗ trợ cho GGUF, hoặc MTP được hỗ trợ cho MLX. Mỗi tổ hợp chạy đầu vào ngắn, đầu vào dài và hội thoại tiếp nối; hiển thị thời gian đến token đầu tiên, tốc độ sinh, tổng thời gian phản hồi, prefix token tái sử dụng và số token vào/ra thực tế. Kết quả được xếp theo điểm tốc độ và có thể sao chép vào biểu mẫu cài đặt. Vyact khôi phục mô hình cùng cài đặt trước đó sau khi hoàn tất, hủy hoặc gặp lỗi.
+
+<p align="center"><img src="assets/readme/feature-model-benchmark.png" alt="Kết quả kiểm tra hiệu năng mô hình Vyact" width="100%" /></p>
+
+
+## Mô hình có thể thay đổi, nhưng ngữ cảnh của bạn nên được giữ lại
+
+Bạn không cần tìm lại tệp, sao chép email và giải thích bối cảnh từ đầu mỗi khi mở một cuộc trò chuyện AI. Vyact kết hợp AI chat, tài liệu, ghi chú và các công cụ quen thuộc trong một không gian làm việc. Bạn có thể kiểm tra nguồn của câu trả lời, biến ghi chú thành tri thức có thể tìm kiếm và sử dụng cùng ngữ cảnh với Gmail, Outlook, Google Drive, OneDrive, lịch và Chrome.
+
+Được xây dựng xoay quanh LLM cục bộ qua llama.cpp và MLX, Vyact giúp giữ hội thoại, tài liệu và ngữ cảnh làm việc trong môi trường của bạn. Khi cần, bạn vẫn có thể kết nối nhà cung cấp đám mây hoặc endpoint LLM tương thích OpenAI của riêng mình.
+
+<div align="center" markdown="1">
+
+[![Tải xuống](https://img.shields.io/badge/Download-GitHub%20Releases-7c3aed?style=for-the-badge&logo=github&logoColor=white)](https://github.com/vyact/vyact/releases)
+[![Ủng hộ Vyact](https://img.shields.io/badge/Support-Vyact-ff5e5b?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/vyact)
+
+</div>
 
 ## Mọi thứ bạn cần để duy trì ngữ cảnh
 
