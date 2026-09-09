@@ -9,6 +9,8 @@ import {toast} from '../common/ToastNotifications/ToastNotifications';
 // 훌쩍 넘기거나 여러 줄이므로 PASTE_MIN_LINES 조건으로도 충분히 걸러진다.)
 const PASTE_MIN_CHARS = 300;
 const PASTE_MIN_LINES = 6;
+const MAX_FILE_ATTACHMENTS = 10;
+const MAX_IMAGE_ATTACHMENTS = 5;
 
 export interface PastedText {
     id: string;
@@ -65,9 +67,9 @@ export function useAttachments(
             const imgs = supportedFiles.filter(f => f.type.startsWith('image/'));
             const files = supportedFiles.filter(f => !f.type.startsWith('image/'));
             if (imgs.length > 0) {
-                setImages(prev => [...prev, ...imgs].slice(0, 5));
+                setImages(prev => [...prev, ...imgs].slice(0, MAX_IMAGE_ATTACHMENTS));
             }
-            if (files.length > 0) setFileAttachments(prev => [...prev, ...files.map(f => ({ file: f }))].slice(0, 5));
+            if (files.length > 0) setFileAttachments(prev => [...prev, ...files.map(f => ({ file: f }))].slice(0, MAX_FILE_ATTACHMENTS));
             onExternalDropHandled?.();
         }
     }, [externalDropFiles, filterSupportedFiles, modelType, onExternalDropHandled]);
@@ -86,9 +88,9 @@ export function useAttachments(
         const imageFiles = files.filter(f => f.type.startsWith('image/'));
         const otherFiles = files.filter(f => !f.type.startsWith('image/'));
         if (imageFiles.length > 0) {
-            setImages(prev => [...prev, ...imageFiles].slice(0, 5));
+            setImages(prev => [...prev, ...imageFiles].slice(0, MAX_IMAGE_ATTACHMENTS));
         }
-        if (otherFiles.length > 0) setFileAttachments(prev => [...prev, ...otherFiles.map(f => ({ file: f }))].slice(0, 5));
+        if (otherFiles.length > 0) setFileAttachments(prev => [...prev, ...otherFiles.map(f => ({ file: f }))].slice(0, MAX_FILE_ATTACHMENTS));
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
@@ -104,7 +106,7 @@ export function useAttachments(
                 e.preventDefault();
                 const file = item.getAsFile();
                 if (file && filterSupportedFiles([file]).length > 0) {
-                    setImages(prev => [...prev, file].slice(0, 5));
+                    setImages(prev => [...prev, file].slice(0, MAX_IMAGE_ATTACHMENTS));
                 }
                 return;
             }

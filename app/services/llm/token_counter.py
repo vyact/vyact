@@ -9,6 +9,7 @@ import os
 from urllib.parse import quote
 
 import httpx
+from jinja2.exceptions import TemplateError
 
 from services.mlx_runtime import get_downloaded_mlx_model_path
 from config import INSTALL_DIR
@@ -58,8 +59,12 @@ async def count_local_message_tokens(
                 raise ValueError("MLX model path is unavailable")
             return await asyncio.to_thread(_count_mlx_tokens, model_path, messages, tools)
         return await _count_llama_tokens(messages, provider_config, tools)
-    except (ImportError, OSError, RuntimeError, TypeError, ValueError, httpx.HTTPError, KeyError):
+    except (ImportError, OSError, RuntimeError, TypeError, ValueError, httpx.HTTPError, KeyError, TemplateError):
         sanitized_messages, media_token_reserve = _messages_without_media_payloads(messages)
+        if tools:
+            sanitized_messages = [*sanitized_messages, {
+                "role": "system", "content": json.dumps({"tools": tools}, ensure_ascii=False),
+            }]
         return count_cloud_message_tokens(sanitized_messages) + media_token_reserve
 
 
@@ -204,7 +209,7 @@ def _count_mlx_tokens(
     sanitized_messages, media_token_reserve = _messages_without_media_payloads(messages)
     template_kwargs = {"tokenize": True, "add_generation_prompt": True}
     if tools:
-        template_kwargs["tools"] = [tool["function"] for tool in tools]
+        template_kwargs["tools"] = tools
     tokens = tokenizer.apply_chat_template(sanitized_messages, **template_kwargs)
     if isinstance(tokens, Mapping):
         tokens = tokens.get("input_ids", [])
