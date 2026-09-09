@@ -278,7 +278,7 @@ If Vyact saves you a little time, helps you think more clearly, or makes local A
 
 Code, documentation, translations, testing, ideas, bug reports, and workflow feedback are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before contributing.
 
-Project roles and public decision-making are described in [GOVERNANCE.md](GOVERNANCE.md). The planned discussion board, real-time chat, and searchable support knowledge are tracked in the [community roadmap](COMMUNITY_ROADMAP.md), with a corresponding [AWS infrastructure plan](docs/AWS_COMMUNITY_INFRASTRUCTURE.md).
+Project roles and public decision-making are described in [GOVERNANCE.md](GOVERNANCE.md). The planned discussion board, real-time chat, and searchable support knowledge are tracked in the [community roadmap](COMMUNITY_ROADMAP.md).
 
 For questions or setup help, open an issue with `[Question]` at the beginning of the title.
 

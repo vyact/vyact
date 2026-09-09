@@ -241,7 +241,7 @@ Vyact được phát triển độc lập và phát hành dưới dạng mã ngu
 
 Chúng tôi hoan nghênh mã nguồn, tài liệu, bản dịch, kiểm thử, ý tưởng, báo lỗi và phản hồi về quy trình. Vui lòng đọc [CONTRIBUTING.md](CONTRIBUTING.md) trước khi đóng góp. Với lỗ hổng bảo mật, đừng mở issue công khai; hãy làm theo [chính sách bảo mật](SECURITY.md).
 
-Vai trò project và việc ra quyết định công khai được mô tả trong [GOVERNANCE.md](GOVERNANCE.md). Kế hoạch discussion board, real-time chat và kho kiến thức hỗ trợ nằm trong [community roadmap](COMMUNITY_ROADMAP.md) cùng [AWS infrastructure plan](docs/AWS_COMMUNITY_INFRASTRUCTURE.md). Nếu cần trợ giúp, hãy mở issue với `[Question]` ở đầu tiêu đề.
+Vai trò project và việc ra quyết định công khai được mô tả trong [GOVERNANCE.md](GOVERNANCE.md). Kế hoạch discussion board, real-time chat và kho kiến thức hỗ trợ nằm trong [community roadmap](COMMUNITY_ROADMAP.md). Nếu cần trợ giúp, hãy mở issue với `[Question]` ở đầu tiêu đề.
 
 ## Giấy phép
 

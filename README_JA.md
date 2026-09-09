@@ -241,7 +241,7 @@ Vyact は独立して開発され、オープンソースとして公開され�
 
 コード、ドキュメント、翻訳、テスト、アイデア、バグ報告、ワークフローへのフィードバックを歓迎します。参加前に [CONTRIBUTING.md](CONTRIBUTING.md) をお読みください。セキュリティ上の脆弱性は公開 issue にせず、[セキュリティポリシー](SECURITY.md) に従ってください。
 
-project role と公開意思決定については [GOVERNANCE.md](GOVERNANCE.md) を参照してください。discussion board、real-time chat、検索可能な support knowledge の計画は [community roadmap](COMMUNITY_ROADMAP.md) と [AWS infrastructure plan](docs/AWS_COMMUNITY_INFRASTRUCTURE.md) に記載されています。質問や設定支援は title の先頭に `[Question]` を付けて issue を作成してください。
+project role と公開意思決定については [GOVERNANCE.md](GOVERNANCE.md) を参照してください。discussion board、real-time chat、検索可能な support knowledge の計画は [community roadmap](COMMUNITY_ROADMAP.md) に記載されています。質問や設定支援は title の先頭に `[Question]` を付けて issue を作成してください。
 
 ## ライセンス
 

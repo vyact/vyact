@@ -241,7 +241,7 @@ Vyact พัฒนาอย่างอิสระและเผยแพร�
 
 เรายินดีรับโค้ด เอกสาร งานแปล การทดสอบ ไอเดีย รายงานบั๊ก และข้อเสนอแนะเกี่ยวกับขั้นตอนการทำงาน โปรดอ่าน [CONTRIBUTING.md](CONTRIBUTING.md) ก่อนร่วมพัฒนา สำหรับช่องโหว่ด้านความปลอดภัย โปรดอย่าเปิด issue สาธารณะ และให้ปฏิบัติตาม [นโยบายความปลอดภัย](SECURITY.md)
 
-บทบาทของโปรเจกต์และการตัดสินใจสาธารณะอธิบายใน [GOVERNANCE.md](GOVERNANCE.md) แผน discussion board, real-time chat และฐานความรู้ support อยู่ใน [community roadmap](COMMUNITY_ROADMAP.md) และ [AWS infrastructure plan](docs/AWS_COMMUNITY_INFRASTRUCTURE.md) หากต้องการความช่วยเหลือ ให้เปิด issue โดยขึ้นต้นชื่อด้วย `[Question]`
+บทบาทของโปรเจกต์และการตัดสินใจสาธารณะอธิบายใน [GOVERNANCE.md](GOVERNANCE.md) แผน discussion board, real-time chat และฐานความรู้ support อยู่ใน [community roadmap](COMMUNITY_ROADMAP.md) หากต้องการความช่วยเหลือ ให้เปิด issue โดยขึ้นต้นชื่อด้วย `[Question]`
 
 ## ใบอนุญาต
 
