@@ -1257,6 +1257,7 @@
     "automaticSetupMlxTooltip": "Vyact 自动运行设置 (MLX)\nMetal 执行：由 MLX 运行时管理\n提示词缓存 (APC)：启用\n批处理、线程与内存管理：MLX 默认值",
     "context": "Context window",
     "contextTooltip": "模型一次可以参考的对话和文档最大长度。较大的值可能占用大量内存，导致电脑变慢。即使已设为模型的最大值，也请根据实际需要的对话和文档长度以及电脑的可用内存适当调低。",
+    "contextRangeError": "请输入 {{min}}–{{max}} 个令牌范围内的上下文窗口。",
     "maxOutput": "Max output tokens",
     "maxOutputTooltip": "留空表示自动。\n自动：将扣除必要输入后剩余空间的40%分配给输出。\n输入数字：设置输出上限，并根据剩余空间调整。",
     "historyTokenBudget": "对话历史令牌",

@@ -1256,6 +1256,7 @@
     "automaticSetupMlxTooltip": "Ajustes automáticos de Vyact (MLX)\nEjecución Metal: Gestionada por MLX\nCaché de prompts (APC): Activada\nLotes, hilos y memoria: Valores de MLX",
     "context": "Context window",
     "contextTooltip": "Cantidad máxima de conversación y documentos que el modelo puede considerar a la vez. Los valores altos pueden consumir mucha memoria y ralentizar el equipo. Aunque esté configurada al máximo del modelo, redúcela según la longitud de las conversaciones y documentos que necesites y la memoria disponible.",
+    "contextRangeError": "Introduce una ventana de contexto de entre {{min}} y {{max}} tokens.",
     "maxOutput": "Max output tokens",
     "maxOutputTooltip": "Déjalo vacío para Automático.\nAutomático: reserva para la respuesta el 40% del espacio restante tras la entrada necesaria.\nNúmero: fija un límite de respuesta, ajustado al espacio disponible.",
     "historyTokenBudget": "Historial de conversación",

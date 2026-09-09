@@ -1257,6 +1257,7 @@
     "automaticSetupMlxTooltip": "Vyact 自動実行設定 (MLX)\nMetal 実行：MLX ランタイムが管理\nプロンプトキャッシュ (APC)：有効\nバッチ・スレッド・メモリ管理：MLX の既定値",
     "context": "Context window",
     "contextTooltip": "モデルが一度に参照できる会話と文書の最大量です。値が大きいと多くのメモリを使用し、パソコンが遅くなることがあります。モデルの最大値に設定されていても、実際に必要な会話・文書の長さとパソコンのメモリの余裕に合わせて下げてください。",
+    "contextRangeError": "コンテキストウィンドウは{{min}}～{{max}}トークンの範囲で入力してください。",
     "maxOutput": "Max output tokens",
     "maxOutputTooltip": "空欄にすると自動です。\n自動：必須入力を除いた領域の40%を出力に割り当てます。\n数値入力：出力の上限を指定し、残りの領域に合わせて調整します。",
     "historyTokenBudget": "会話履歴トークン",

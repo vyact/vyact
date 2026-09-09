@@ -1257,6 +1257,7 @@
     "automaticSetupMlxTooltip": "Thiết lập tự động của Vyact (MLX)\nThực thi Metal: Do MLX quản lý\nBộ nhớ đệm prompt (APC): Bật\nBatch, luồng và bộ nhớ: Mặc định MLX",
     "context": "Context window",
     "contextTooltip": "Lượng hội thoại và tài liệu tối đa mà mô hình có thể xem xét cùng lúc. Giá trị lớn có thể dùng nhiều bộ nhớ và làm máy tính chậm đi. Dù được đặt ở mức tối đa của mô hình, hãy giảm giá trị cho phù hợp với độ dài hội thoại, tài liệu thực tế cần dùng và bộ nhớ còn trống trên máy tính.",
+    "contextRangeError": "Nhập cửa sổ ngữ cảnh từ {{min}} đến {{max}} token.",
     "maxOutput": "Max output tokens",
     "maxOutputTooltip": "Để trống để chọn Tự động.\nTự động: dành 40% dung lượng còn lại sau đầu vào bắt buộc cho đầu ra.\nNhập số: đặt giới hạn đầu ra, điều chỉnh theo dung lượng còn lại.",
     "historyTokenBudget": "Lịch sử hội thoại",

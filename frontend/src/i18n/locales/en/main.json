@@ -1256,6 +1256,7 @@
     "automaticSetupMlxTooltip": "Vyact automatic runtime settings (MLX)\nMetal execution: Managed by the MLX runtime\nPrompt cache (APC): Enabled\nBatch, threads, and memory management: MLX defaults",
     "context": "Context window",
     "contextTooltip": "The maximum amount of conversation and document text the model can consider at once. Large values can use substantial memory and slow down your computer. Even if set to the model’s maximum, lower it to suit the conversation and document length you need and the memory available on your computer.",
+    "contextRangeError": "Enter a context window between {{min}} and {{max}} tokens.",
     "maxOutput": "Max output tokens",
     "maxOutputTooltip": "Leave empty for Auto.\nAuto: reserves 40% of the space left after required input for output.\nNumber: sets an output cap, adjusted to fit the remaining space.",
     "historyTokenBudget": "Conversation history",
