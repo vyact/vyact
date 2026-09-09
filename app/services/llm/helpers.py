@@ -9,6 +9,7 @@ from pathlib import Path
 
 from .config import AUDIO_DIR, IMAGES_DIR
 from services.runtime_settings import get_runtime_settings
+from . import token_counter
 
 
 def _approx_tokens(text: str) -> int:
@@ -31,19 +32,21 @@ async def select_history_by_budget_for_provider(
         conversation_history: list, provider_config: dict, budget: int | None = None,
 ) -> tuple[list, bool]:
     """Select recent history using the local model tokenizer or o200k_base."""
-    from .token_counter import count_cloud_message_tokens, count_local_message_tokens
-
     budget = get_runtime_settings()["history_token_budget"] if budget is None else budget
     valid = _valid_history(conversation_history)
     if not valid:
         return [], False
+    if budget is None:
+        budget = get_runtime_settings().get("llm_num_ctx") or 32768
     if budget <= 0:
         return [], True
 
     async def count(candidate: list) -> int:
         if provider_config.get("is_local"):
-            return await count_local_message_tokens(candidate, provider_config, None)
-        return count_cloud_message_tokens(candidate)
+            return await token_counter.count_local_message_tokens(
+                history_for_openai(candidate, candidate), provider_config, None,
+            )
+        return token_counter.count_cloud_message_tokens(candidate)
 
     if await count(valid) <= budget:
         return valid, False
@@ -56,7 +59,10 @@ async def select_history_by_budget_for_provider(
             high = middle
         else:
             low = middle + 1
-    return valid[low:], low > 0
+    selected = valid[low:]
+    if await count(selected) > budget:
+        return [], True
+    return selected, low > 0
 
 
 def select_history_by_budget_with_status(
@@ -77,6 +83,8 @@ def select_history_by_budget_with_status(
     오래된 메시지가 제외됐는지를 나타낸다.
     """
     budget = get_runtime_settings()["history_token_budget"] if budget is None else budget
+    if budget is None:
+        budget = get_runtime_settings().get("llm_num_ctx") or 32768
     valid = _valid_history(conversation_history)
 
     selected: list = []
@@ -147,7 +155,6 @@ def mime_type(filename: str) -> str:
 def history_for_openai(history_messages: list, valid_history: list) -> list:
     """OpenAI용 history: user 메시지에 image_url content blocks 포함"""
     result = []
-    hi = 0
     pending_tool_calls: list[tuple[str, str]] = []
     for message_index, msg in enumerate(history_messages):
         # 저장 히스토리는 provider-agnostic {name, args} 형식이므로 OpenAI의
@@ -173,8 +180,8 @@ def history_for_openai(history_messages: list, valid_history: list) -> list:
                 pending_tool_calls.append((call_id, name))
             result.append({"role": "assistant", "content": msg.get("content", ""), "tool_calls": tool_calls})
             continue
-        if msg["role"] == "user" and hi < len(valid_history):
-            atts = valid_history[hi].get("attachments", [])
+        if msg["role"] == "user" and message_index < len(valid_history):
+            atts = valid_history[message_index].get("attachments", [])
             image_urls = load_image_data_urls(atts)
             audio_blocks = load_audio_content_blocks(atts)
             text = msg["content"]
@@ -184,9 +191,7 @@ def history_for_openai(history_messages: list, valid_history: list) -> list:
                     content.append({"type": "image_url", "image_url": {"url": image_url}})
                 content.extend(audio_blocks)
                 result.append({"role": "user", "content": content})
-                hi += 1
                 continue
-            hi += 1
             result.append({"role": "user", "content": text})
             continue
         result.append({"role": msg["role"], "content": msg["content"]})

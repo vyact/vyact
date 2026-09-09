@@ -10,8 +10,6 @@ from services.db import MODEL_RUNTIME_PROFILES_INDEX, get_es
 from services.hardware_info import GPU_SPLIT_DECIMAL_PLACES, recommend_gpu_split_percentages, validate_gpu_split_percentages
 
 DEFAULT_CONTEXT_SIZE = 32768
-DEFAULT_MAX_OUTPUT_TOKENS = 2048
-DEFAULT_HISTORY_TOKEN_BUDGET = 16384
 MINIMUM_CONTEXT_RESERVE_TOKENS = 1024
 MINIMUM_CONTEXT_SIZE = 4096
 MINIMUM_OUTPUT_TOKENS = 256
@@ -28,7 +26,7 @@ def build_model_profile_id(model_path: str) -> str:
 
 
 def normalize_model_profile(profile: dict, limits: dict | None = None, *, initial_defaults: bool = False) -> dict:
-    """Keep persisted generation settings inside the model's context window."""
+    """Normalize model settings while preserving automatic or explicit token caps."""
     normalized = dict(profile)
     limits = limits or profile.get("limits") or {}
     performance_mode = str(normalized.get("performance_mode") or "auto")
@@ -83,16 +81,10 @@ def normalize_model_profile(profile: dict, limits: dict | None = None, *, initia
     if maximum_context:
         safe_context = min(safe_context, maximum_context)
     normalized["context_size"] = safe_context
-    normalized["max_output_tokens"] = max(1, int(normalized.get("max_output_tokens") or DEFAULT_MAX_OUTPUT_TOKENS))
-    normalized["history_token_budget"] = max(0, int(normalized.get("history_token_budget", DEFAULT_HISTORY_TOKEN_BUDGET)))
-    if initial_defaults:
-        reserve = min(MINIMUM_CONTEXT_RESERVE_TOKENS, safe_context // 2)
-        output_max = min(limits.get("output_max") or safe_context, safe_context - reserve)
-        output_min = min(MINIMUM_OUTPUT_TOKENS, output_max)
-        normalized["max_output_tokens"] = max(output_min, min(normalized["max_output_tokens"], output_max))
-        normalized["history_token_budget"] = min(
-            normalized["history_token_budget"], safe_context - normalized["max_output_tokens"] - reserve,
-        )
+    # None is automatic; explicit numbers remain user caps even after context changes.
+    for key, minimum in (("max_output_tokens", 1), ("history_token_budget", 0)):
+        value = normalized.get(key)
+        normalized[key] = None if value is None else max(minimum, int(value))
     for key, default, maximum, integer in (
         ("temperature", 0.2, None, False), ("top_k", None, None, True),
         ("top_p", None, 1, False), ("seed", None, MAXIMUM_SEED, True),
@@ -148,16 +140,13 @@ def recommended_model_profile(
     safe_context = max(limits.get("context_min", MINIMUM_CONTEXT_SIZE), int(context_size or DEFAULT_CONTEXT_SIZE))
     if limits.get("context_max"):
         safe_context = min(safe_context, limits["context_max"])
-    available_tokens = safe_context - min(MINIMUM_CONTEXT_RESERVE_TOKENS, safe_context // 2)
-    recommended_output = available_tokens // 2
-    recommended_history = available_tokens - recommended_output
     return normalize_model_profile({
         "model_path": model_path,
         "runtime": runtime,
         "repository": repository,
         "context_size": safe_context,
-        "max_output_tokens": recommended_output,
-        "history_token_budget": recommended_history,
+        "max_output_tokens": None,
+        "history_token_budget": None,
         "temperature": 0.2,
         "top_k": None,
         "top_p": None,

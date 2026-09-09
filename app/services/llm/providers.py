@@ -22,7 +22,9 @@ from .helpers import (
     image_attachment_path, load_audio_content_blocks, load_image_data_urls, mime_type,
     history_for_openai, history_for_gemini, history_for_claude,
 )
-from .context_window import calculate_output_token_limit
+from .context_window import calculate_output_token_limit, LOCAL_CONTEXT_RESERVE_TOKENS
+from . import token_counter
+from .errors import context_budget_error
 from .tools import (
     build_approval_rejection_instruction, build_tool_directive,
     to_openai_tools, to_gemini_tools, to_claude_tools, tool_result_failed,
@@ -174,20 +176,24 @@ def _mark_llm_call_started(usage: dict | None) -> None:
 
 async def _local_max_tokens(
         messages: list[dict], provider_config: dict, tools: list[dict] | None = None,
+        output_token_limit: int | None = None,
 ) -> int:
     """Fit local output inside the model's shared input/output KV cache."""
     runtime = get_runtime_settings()
-    from .token_counter import count_local_message_tokens
-    input_tokens = await count_local_message_tokens(
+    input_tokens = await token_counter.count_local_message_tokens(
         messages, provider_config, tools,
     )
-    return calculate_output_token_limit(
+    if input_tokens + LOCAL_CONTEXT_RESERVE_TOKENS >= int(provider_config.get("context_size") or 32768):
+        raise await context_budget_error()
+    resolved_output = calculate_output_token_limit(
         messages,
         int(provider_config.get("context_size") or 32768),
         2.0,
-        runtime["llm_num_predict"],
+        output_token_limit if output_token_limit is not None else runtime["llm_num_predict"],
         input_tokens=input_tokens,
     )
+    model_limit = provider_config.get("output_token_limit")
+    return min(resolved_output, max(1, int(model_limit))) if model_limit is not None else resolved_output
 
 
 async def _apply_local_specprefill_control(
@@ -281,7 +287,7 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
                         timeout, use_tools=True, on_event=None, usage: dict | None = None,
                         call_reason: str = "unspecified", reasoning: bool | None = None,
                         post_tool_docs=None, post_tool_prompt=None,
-                        structured_output_schema: dict | None = None):
+                        structured_output_schema: dict | None = None, output_token_limit: int | None = None):
     """OpenAI: tool 루프(있으면) 후 최종 답변 SSE 스트리밍.
 
     usage(dict)를 넘기면 최종 청크의 토큰 사용량(prompt_tokens/completion_tokens)을
@@ -339,7 +345,7 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
             body = {"model": model, "temperature": temperature,
                     "stream": True, "messages": messages, "tools": oa_tools}
             if provider_config.get("is_local"):
-                body["max_tokens"] = await _local_max_tokens(messages, provider_config, unified)
+                body["max_tokens"] = await _local_max_tokens(messages, provider_config, unified, output_token_limit)
                 _apply_local_reasoning_control(body, provider_config, reasoning)
                 _apply_local_prefix_cache_control(body, provider_config)
                 _apply_local_sampling(body, provider_config)
@@ -483,7 +489,9 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
     if post_tool_docs is not None:
         extra_docs = await post_tool_docs(tool_sources_found, completed_tool_names) or []
         if extra_docs and post_tool_prompt is not None:
-            updated_prompt = post_tool_prompt(extra_docs)
+            updated_prompt = await post_tool_prompt(
+                extra_docs, [message for index, message in enumerate(messages) if index != user_message_index], unified,
+            )
             if isinstance(messages[user_message_index].get("content"), list):
                 messages[user_message_index]["content"][0] = {"type": "text", "text": updated_prompt}
             else:
@@ -505,7 +513,7 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
     # ── 최종 답변 스트리밍 ──
     body = {"model": model, "temperature": temperature, "stream": True, "messages": messages}
     if provider_config.get("is_local"):
-        body["max_tokens"] = await _local_max_tokens(messages, provider_config, unified)
+        body["max_tokens"] = await _local_max_tokens(messages, provider_config, unified, output_token_limit)
         _apply_local_reasoning_control(body, provider_config, reasoning)
         _apply_local_prefix_cache_control(body, provider_config)
         _apply_local_sampling(body, provider_config)

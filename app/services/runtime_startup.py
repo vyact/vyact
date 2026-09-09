@@ -216,7 +216,7 @@ async def load_configured_vyact_model(config: dict | None = None) -> tuple[str, 
         if any(profile.get(key) != value for key, value in migrated_profile.items()):
             profile = await save_model_profile(migrated_profile)
     vyact_config.update({key: profile.get(key) for key in (
-        "context_size", "max_output_tokens", "temperature", "top_k", "top_p", "cache_quantization",
+        "context_size", "limits", "max_output_tokens", "temperature", "top_k", "top_p", "cache_quantization",
         "mtp_enabled", "kv_cache_precision", "performance_mode", "cpu_threads", "seed", "history_token_budget",
         "gpu_split_percentages",
         "gpu_manual_split_enabled",

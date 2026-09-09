@@ -127,7 +127,7 @@ def _profile_runtime_settings(profile: dict) -> dict:
         "llm_temperature": profile.get("temperature", 0.2),
         "top_k": profile.get("top_k"), "top_p": profile.get("top_p"),
         "seed": profile.get("seed"),
-        "history_token_budget": 16384 if history_token_budget is None else history_token_budget,
+        "history_token_budget": history_token_budget,
     }
 
 router = APIRouter()
@@ -190,8 +190,8 @@ class VyactModelActivateRequest(BaseModel):
     context_size: int = Field(default=32768, ge=512, le=MAXIMUM_PROFILE_TOKENS)
     runtime: str = Field(default="gguf", pattern="^(gguf|mlx)$")
     repository: str | None = Field(default=None, min_length=3, max_length=256)
-    max_output_tokens: int = Field(default=4096, ge=1, le=MAXIMUM_PROFILE_TOKENS)
-    history_token_budget: int = Field(default=16384, ge=0, le=MAXIMUM_PROFILE_TOKENS)
+    max_output_tokens: int | None = Field(default=None, ge=1, le=MAXIMUM_PROFILE_TOKENS)
+    history_token_budget: int | None = Field(default=None, ge=0, le=MAXIMUM_PROFILE_TOKENS)
     temperature: float = Field(default=0.2, ge=0, le=MAXIMUM_PROFILE_TEMPERATURE, allow_inf_nan=False)
     top_k: int | None = Field(default=None, ge=0, le=MAXIMUM_PROFILE_TOP_K)
     top_p: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
@@ -212,8 +212,8 @@ class VyactModelProfileRequest(BaseModel):
     runtime: str = Field(default="gguf", pattern="^(gguf|mlx)$")
     repository: str | None = Field(default=None, max_length=256)
     context_size: int = Field(default=32768, ge=512, le=MAXIMUM_PROFILE_TOKENS)
-    max_output_tokens: int = Field(default=4096, ge=1, le=MAXIMUM_PROFILE_TOKENS)
-    history_token_budget: int = Field(default=16384, ge=0, le=MAXIMUM_PROFILE_TOKENS)
+    max_output_tokens: int | None = Field(default=None, ge=1, le=MAXIMUM_PROFILE_TOKENS)
+    history_token_budget: int | None = Field(default=None, ge=0, le=MAXIMUM_PROFILE_TOKENS)
     temperature: float = Field(default=0.2, ge=0, le=MAXIMUM_PROFILE_TEMPERATURE, allow_inf_nan=False)
     top_k: int | None = Field(default=None, ge=0, le=MAXIMUM_PROFILE_TOP_K)
     top_p: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
@@ -1306,6 +1306,7 @@ async def activate_vyact_model(req: VyactModelActivateRequest):
                 "model": model_id,
                 "model_path": req.model_path,
                 "context_size": req.context_size,
+                "limits": model_info["limits"],
                 "runtime": runtime,
                 "repository": repository,
                 "cache_quantization": req.cache_quantization,

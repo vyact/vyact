@@ -22,7 +22,7 @@ def test_recommended_profile_preserves_model_context_and_scales_output_limit():
     profile = recommended_model_profile("mlx/owner/model", "mlx", "owner/model", 262144)
 
     assert profile["context_size"] == 262144
-    assert profile["max_output_tokens"] == 130560
+    assert profile["max_output_tokens"] is None
     assert profile["cache_quantization"] is False
     assert profile["kv_cache_precision"] == "none"
 

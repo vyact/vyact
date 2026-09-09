@@ -108,6 +108,8 @@ async def limit_direct_document_contexts(docs: list[dict]) -> list[dict]:
         return docs
 
     provider_config = await get_provider_config()
+    if provider_config.get("is_local"):
+        return docs
     context_size = max(int(provider_config.get("context_size") or LLM_NUM_CTX), 1)
     token_budget = max(int(context_size * DIRECT_DOCUMENT_CONTEXT_RATIO), 1)
     contents = [str(docs[index].get("content", "")) for index in document_indexes]

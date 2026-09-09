@@ -106,13 +106,13 @@ async def test_prepare_limits_history_to_remaining_context_space():
     provider_config = {
         "is_local": True,
         "runtime": "gguf",
-        "context_size": 520,
+        "context_size": 530,
     }
     with (
         patch("services.llm.config.get_provider_config", AsyncMock(return_value=provider_config)),
         patch("routers.deps.load_ui_language_async", AsyncMock(return_value="ko")),
         patch("services.llm.prepare.get_runtime_settings", return_value=runtime_settings),
-        patch("services.llm.prepare.count_local_message_tokens", AsyncMock(return_value=10)),
+        patch("services.llm.request_budget.count_local_message_tokens", AsyncMock(return_value=10)),
     ):
         _, _, _, history_messages, valid_slice = await prepare_request(
             "current", [], "system", [], history, None,

@@ -4,6 +4,7 @@ services/llm/errors.py — provider HTTP 에러 메시지 변환
 import httpx
 
 from .messages import llm_message
+from services.tool_messages import get_tool_language
 
 
 HTTP_ERROR_BODY_LOG_LIMIT = 4_000
@@ -115,3 +116,11 @@ def gemini_err(e: httpx.HTTPStatusError, log_entry: dict, language: str = "en") 
 
 def claude_err(e: httpx.HTTPStatusError, log_entry: dict, language: str = "en") -> str:
     return _provider_error(e, log_entry, "Claude", language)
+
+
+class ContextBudgetExceeded(ValueError):
+    """Required request content cannot fit the selected local context."""
+
+
+async def context_budget_error() -> ContextBudgetExceeded:
+    return ContextBudgetExceeded(llm_message("context_length_exceeded", await get_tool_language()))

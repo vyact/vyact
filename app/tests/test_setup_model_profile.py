@@ -39,8 +39,8 @@ async def test_new_model_profile_uses_hardware_recommendation(monkeypatch):
     )
 
     assert profile["context_size"] == 65536
-    assert profile["history_token_budget"] == 32256
-    assert profile["max_output_tokens"] == 32256
+    assert profile["history_token_budget"] is None
+    assert profile["max_output_tokens"] is None
     save_profile.assert_awaited_once()
 
 
@@ -361,8 +361,8 @@ def test_model_sampling_defaults_are_accepted_by_save_and_activate(request_type)
 
 @pytest.mark.parametrize("field,value", [
     ("context_size", None), ("context_size", 0),
-    ("max_output_tokens", None), ("max_output_tokens", 0),
-    ("history_token_budget", None), ("history_token_budget", -1),
+    ("max_output_tokens", 0),
+    ("history_token_budget", -1),
     ("temperature", None), ("temperature", -1), ("temperature", 11),
     ("temperature", float("inf")), ("temperature", float("nan")),
     ("top_k", -1), ("top_k", 1048577), ("top_p", -1), ("top_p", 1.1),
@@ -402,3 +402,12 @@ async def test_legacy_automatic_profile_is_recalculated_once(monkeypatch, status
     monkeypatch.setattr(setup, "get_model_profile", AsyncMock(return_value=result))
     await setup._get_or_create_model_profile("model.gguf", "gguf", None, persist=True)
     recommend.assert_called_once()
+
+@pytest.mark.parametrize("request_type", [setup.VyactModelProfileRequest, setup.VyactModelActivateRequest])
+def test_model_token_caps_default_to_auto_and_preserve_explicit_zero_history(request_type):
+    automatic = request_type(model_path="owner/model.gguf")
+    assert automatic.max_output_tokens is automatic.history_token_budget is None
+    assert request_type(**automatic.model_dump()).max_output_tokens is None
+    explicit = request_type(model_path="owner/model.gguf", max_output_tokens=1536, history_token_budget=0)
+    assert explicit.max_output_tokens == 1536
+    assert explicit.history_token_budget == 0

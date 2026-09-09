@@ -157,13 +157,8 @@ def hardware_model_profile(model_path: str, runtime: str, repository: str | None
         value = generation.get(key)
         if isinstance(value, (int, float)) and math.isfinite(value):
             profile[key] = value
-    default_output = limits["output_max"] or _positive_integer(generation.get("max_new_tokens"))
-    if default_output:
-        profile["max_output_tokens"] = min(profile["max_output_tokens"], default_output)
     profile["limits"] = limits
     profile = normalize_model_profile(profile, limits, initial_defaults=True)
-    reserve = min(MINIMUM_CONTEXT_RESERVE_TOKENS, profile["context_size"] // 2)
-    profile["history_token_budget"] = max(0, profile["context_size"] - profile["max_output_tokens"] - reserve)
     profile["recommendation_basis"] = "hardware_capacity"
     profile["recommendation_status"] = "estimated" if fits else "insufficient" if known and budget is not None else "unavailable"
     return profile

@@ -19,7 +19,7 @@ from .helpers import (
     mime_type, history_for_gemini, history_for_claude,
 )
 from .errors import (
-    http_err_msg,
+    http_err_msg, ContextBudgetExceeded,
     is_insufficient_memory_error,
     is_model_image_unsupported_error,
     openai_err,
@@ -28,7 +28,8 @@ from .errors import (
 )
 from .providers import openai_stream, gemini_stream, claude_stream
 from .prepare import prepare_request
-from services.runtime_settings import get_runtime_settings
+from .request_budget import fit_local_request, request_output_limit
+from services.runtime_settings import get_runtime_settings, DEFAULT_RUNTIME_SETTINGS
 from services.tool_messages import get_tool_language
 from .messages import llm_message
 from services.local_model_errors import LocalModelNotDownloadedError
@@ -97,9 +98,20 @@ async def chat_stream_with_tools(
                 provider_type, model, conversation_summary, include_skills, isolated_system_prompt,
                 include_response_language,
                 reasoning,
+                use_tools=use_tools,
             )
             log_entry["system_message"] = sys_msg
             log_entry["user_prompt"] = usr_msg
+            output_token_limit = request_output_limit.get()
+
+            async def budget_post_tool_prompt(extra_docs, required_messages, tool_definitions):
+                updated_prompt, _, _ = await fit_local_request(
+                    question, [*context_docs, *extra_docs], attachments, model,
+                    required_messages[0]["content"], [], provider_config,
+                    output_token_limit, 0, tools=tool_definitions,
+                    required_messages=required_messages[1:],
+                )
+                return updated_prompt
 
             streamer = _STREAMERS.get(provider_type)
             if streamer is None:
@@ -131,9 +143,8 @@ async def chat_stream_with_tools(
                                call_reason=call_reason, reasoning=reasoning,
                                **({
                                    "post_tool_docs": post_tool_docs,
-                                   "post_tool_prompt": lambda extra_docs: build_user_prompt(
-                                       question, [*context_docs, *extra_docs], attachments, model,
-                                   ),
+                                   "post_tool_prompt": budget_post_tool_prompt,
+                                   "output_token_limit": output_token_limit,
                                } if provider_config.get("selection_type") == "vyact" else {}))
 
                 # streamer는 async generator. tool 루프는 첫 토큰 전에 끝나고,
@@ -196,6 +207,9 @@ async def chat_stream_with_tools(
                 yield {"type": "stats", **stats}
             if usage.get("finish_reason"):
                 yield {"type": "finish", "reason": usage["finish_reason"]}
+        except ContextBudgetExceeded as e:
+            log_entry["error"] = "context_length_exceeded"
+            yield {"type": "error", "code": "context_length_exceeded", "message": str(e)}
         except LocalModelNotDownloadedError as e:
             logger.warning("[chat_stream_with_tools] 선택한 로컬 모델 없음: %s", e)
             log_entry["error"] = "local_model_not_downloaded"
@@ -330,6 +344,7 @@ async def query_llm(
         provider_type, model, conversation_summary, include_skills,
         include_response_language=include_response_language,
         reasoning=reasoning,
+        use_tools=use_tools,
     )
     log_entry["system_message"] = system_message
     log_entry["user_prompt"] = user_prompt
@@ -344,7 +359,8 @@ async def query_llm(
                             client, model, api_key, system_message, user_prompt,
                             history_messages, valid_slice, attachments, timeout,
                             use_tools=use_tools, usage=usage, call_reason=call_reason,
-                            reasoning=reasoning, structured_output_schema=structured_output_schema):
+                            reasoning=reasoning, structured_output_schema=structured_output_schema,
+                            output_token_limit=request_output_limit.get()):
                         pieces.append(piece)
                     if stats_out is not None:
                         stats_out.update({
@@ -389,7 +405,7 @@ async def query_llm(
 
             elif provider_type == "claude":
                 temperature = runtime["llm_temperature"]
-                max_tokens = runtime["llm_max_tokens"]
+                max_tokens = provider_config.get("max_output_tokens") or runtime["llm_max_tokens"] or DEFAULT_RUNTIME_SETTINGS["llm_max_tokens"]
                 blocks: list = [{"type": "text", "text": user_prompt}]
                 for att in attachments:
                     if att.get("type") == "image":

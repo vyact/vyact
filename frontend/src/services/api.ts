@@ -241,8 +241,8 @@ export interface VyactModelProfile {
     runtime: 'gguf' | 'mlx';
     repository?: string | null;
     context_size: number;
-    max_output_tokens: number;
-    history_token_budget: number;
+    max_output_tokens: number | null;
+    history_token_budget: number | null;
     temperature: number;
     top_k: number | null;
     top_p: number | null;

@@ -7,6 +7,17 @@ from config.models import LLM_INITIAL_NUM_CTX, LLM_NUM_CTX
 from services.runtime_settings import MINIMUM_CONTEXT_SIZE
 
 LOCAL_CONTEXT_RESERVE_TOKENS = 512
+AUTO_OUTPUT_NUMERATOR = 2
+AUTO_OUTPUT_DENOMINATOR = 5
+
+
+def reserve_output_tokens(available: int, configured_output: int | None) -> int:
+    """Resolve Auto or a user cap without allocating beyond the available space."""
+    available = max(0, available)
+    requested = (available * AUTO_OUTPUT_NUMERATOR // AUTO_OUTPUT_DENOMINATOR
+                 if configured_output is None else int(configured_output))
+    return min(available, max(1, requested))
+
 
 def clamp_context_limit(value: int | float | None) -> int:
     """Return a supported context upper bound, never below the initial floor."""
@@ -25,7 +36,7 @@ def estimate_message_tokens(messages: list[dict], chars_per_token: float) -> int
 
 
 def calculate_output_token_limit(messages: list[dict], context_size: int,
-                                 chars_per_token: float, configured_output: int,
+                                 chars_per_token: float, configured_output: int | None,
                                  input_tokens: int | None = None) -> int:
     """Honor the configured model output limit within the actual remaining context."""
     normalized_context_size = max(int(context_size), 1)
@@ -34,24 +45,19 @@ def calculate_output_token_limit(messages: list[dict], context_size: int,
         normalized_context_size - input_tokens - LOCAL_CONTEXT_RESERVE_TOKENS,
         1,
     )
-    return min(
-        max(int(configured_output), 1),
-        available_output,
-    )
+    return reserve_output_tokens(available_output, configured_output)
 
 
 def calculate_history_token_limit(
-        configured_history: int, context_size: int, base_input_tokens: int,
-        configured_output: int,
+        configured_history: int | None, context_size: int, base_input_tokens: int,
+        configured_output: int | None,
 ) -> int:
     """Fit optional conversation history around required request content."""
     normalized_context_size = max(int(context_size), 1)
-    output_reserve = max(int(configured_output), 1)
-    available_history = max(
-        normalized_context_size - base_input_tokens - output_reserve - LOCAL_CONTEXT_RESERVE_TOKENS,
-        0,
-    )
-    return min(max(int(configured_history), 0), available_history)
+    available = max(0, normalized_context_size - base_input_tokens - LOCAL_CONTEXT_RESERVE_TOKENS)
+    available_history = available - reserve_output_tokens(available, configured_output)
+    return available_history if configured_history is None else min(max(int(configured_history), 0), available_history)
+
 
 
 def select_context_window(messages: list[dict], max_context: int | float | None,

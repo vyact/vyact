@@ -42,7 +42,7 @@ def recommendation(monkeypatch, tmp_path):
 def test_context_and_cache_are_selected_together(recommendation, monkeypatch):
     monkeypatch.setattr(defaults, "profile_memory_bytes", lambda info, runtime, context, precision: context * (2 if precision == "none" else 1))
     result = defaults.hardware_model_profile("model.gguf", "gguf", None, 32768)
-    assert (result["context_size"], result["kv_cache_precision"], result["mtp_enabled"], result["max_output_tokens"]) == (8192, "q8", False, 512)
+    assert (result["context_size"], result["kv_cache_precision"], result["mtp_enabled"], result["max_output_tokens"]) == (8192, "q8", False, None)
     assert result["recommendation_status"] == "estimated"
 
 
@@ -89,8 +89,8 @@ def test_sufficient_memory_uses_half_metadata_maximum(monkeypatch, tmp_path, mod
     result = defaults.hardware_model_profile("mlx/model", "mlx", None, 32768)
     assert result["context_size"] == model_limit // 2
     assert result["limits"]["context_max"] == model_limit
-    assert result["max_output_tokens"] == (model_limit // 2 - 1024) // 2
-    assert result["history_token_budget"] == model_limit // 2 - result["max_output_tokens"] - 1024
+    assert result["max_output_tokens"] is None
+    assert result["history_token_budget"] is None
     assert result["temperature"] == 1.5
     assert result["top_k"] == 200
 
@@ -105,7 +105,7 @@ def test_missing_output_metadata_uses_context_budget_without_fixed_caps(monkeypa
     monkeypatch.setattr(defaults, "get_mlx_memory_companions", lambda _: [])
     result = defaults.hardware_model_profile("mlx/model", "mlx", None, 32768)
     assert result["context_size"] == max(min(4096, context), context // 2)
-    assert result["max_output_tokens"] == result["history_token_budget"] == expected_budget
+    assert result["max_output_tokens"] is result["history_token_budget"] is None
 
 
 def test_memory_constrained_model_can_still_select_above_32k(recommendation, monkeypatch):

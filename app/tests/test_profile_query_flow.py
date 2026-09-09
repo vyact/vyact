@@ -1,3 +1,4 @@
+from services.llm import prepare, request_budget
 """Exercise persisted profile -> runtime settings -> production HTTP request body."""
 import json
 from unittest.mock import AsyncMock
@@ -114,3 +115,54 @@ async def test_restart_uses_runtime_reduced_context_for_next_query(monkeypatch):
     assert result == ["ok"]
     # Preserve user settings, but enforce the reduced context on the actual request.
     assert bodies[0]["max_tokens"] == 8192 - 1000 - 512
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("output,history", [(None, None), (1536, 1536), (None, 0)])
+async def test_prepared_ten_file_budget_reaches_local_request(monkeypatch, output, history):
+    profile = recommended_model_profile("owner/model.gguf", "gguf", None, 4096)
+    profile.update(max_output_tokens=output, history_token_budget=history)
+    config = {"type": "vyact", "model": "test-model", "vyact_config": profile}
+    monkeypatch.setattr(deps, "load_config_async", AsyncMock(return_value=config))
+    monkeypatch.setattr(deps, "load_ui_language_async", AsyncMock(return_value="en"))
+    monkeypatch.setattr(runtime_settings, "_settings", dict(runtime_settings.DEFAULT_RUNTIME_SETTINGS))
+    runtime_settings.apply_runtime_settings(setup._profile_runtime_settings(profile))
+
+    async def count(messages, config, tools):
+        return sum(len(m.get("content", "")) + 4 for m in messages)
+
+    async def tokenize(text, config):
+        return list(text), None
+
+    async def decode(tokens, tokenizer, config):
+        return "".join(tokens)
+
+    monkeypatch.setattr(token_counter, "count_local_message_tokens", count)
+    monkeypatch.setattr(request_budget, "count_local_message_tokens", count)
+    monkeypatch.setattr(request_budget, "tokenize_text_for_provider", tokenize)
+    monkeypatch.setattr(request_budget, "decode_provider_tokens", decode)
+    docs = [{"source": "file", "title": str(i), "content": chr(0x410 + i) * 30000} for i in range(10)]
+    api_key, system, question, messages, valid = await prepare.prepare_request(
+        "question", docs, "system", [], [], "", False, "openai", include_skills=False,
+        isolated_system_prompt=True, include_response_language=False,
+    )
+    prepared_output = request_budget.request_output_limit.get()
+    bodies = []
+
+    def respond(request):
+        bodies.append(json.loads(request.content))
+        return httpx.Response(200, text='data: {"choices":[{"delta":{"content":"ok"}}]}\n\ndata: [DONE]\n\n',
+                              headers={"content-type": "text/event-stream"})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:
+        result = [part async for part in providers.openai_stream(
+            client, "test-model", api_key, system, question, messages, valid, [], 30,
+            use_tools=False, reasoning=False, output_token_limit=prepared_output,
+        )]
+    assert result == ["ok"]
+    body = bodies[0]
+    assert body["max_tokens"] == prepared_output
+    assert await count(body["messages"], {}, []) + body["max_tokens"] + 512 <= 4096
+    assert all(body["messages"][-1]["content"].count(chr(0x410 + i)) > 0 for i in range(10))
+    assert runtime_settings.get_runtime_settings()["llm_num_predict"] == output
+    assert runtime_settings.get_runtime_settings()["history_token_budget"] == history

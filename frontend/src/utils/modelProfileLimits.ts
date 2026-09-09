@@ -19,7 +19,7 @@ export const getModelProfileLimits = (profile: VyactModelProfile) => {
         contextMax: limits?.context_max ?? undefined,
         outputMin: Math.min(limits?.output_min ?? 256, outputMax),
         outputMax,
-        historyMax: Math.max(0, profile.context_size - profile.max_output_tokens - reserve),
+        historyMax: Math.max(0, profile.context_size - (profile.max_output_tokens ?? 0) - reserve),
         cpuThreadsMax: limits?.cpu_threads_max ?? 1,
     };
 };
@@ -28,23 +28,4 @@ export const normalizeModelContext = (profile: VyactModelProfile): VyactModelPro
     const {contextMin, contextMax} = getModelProfileLimits(profile);
     const value = Number.isFinite(profile.context_size) ? Math.trunc(profile.context_size) : contextMin;
     return {...profile, context_size: Math.min(contextMax ?? MODEL_SETTING_INPUT_MAX.tokens, Math.max(contextMin, value))};
-};
-
-export const adjustModelContextBudgets = (profile: VyactModelProfile): VyactModelProfile => {
-    const normalized = normalizeModelContext(profile);
-    const limits = getModelProfileLimits(normalized);
-    const availableBudget = getModelProfileLimits({...normalized, max_output_tokens: 0}).historyMax;
-    const totalBudget = normalized.max_output_tokens + normalized.history_token_budget;
-    const scale = totalBudget > availableBudget ? availableBudget / totalBudget : 1;
-    const historyMinimum = normalized.history_token_budget > 0 ? 1 : 0;
-    const max_output_tokens = Math.min(
-        limits.outputMax,
-        availableBudget - historyMinimum,
-        Math.max(1, Math.floor(normalized.max_output_tokens * scale)),
-    );
-    const history_token_budget = Math.min(
-        availableBudget - max_output_tokens,
-        Math.max(historyMinimum, Math.floor(normalized.history_token_budget * scale)),
-    );
-    return {...normalized, max_output_tokens, history_token_budget};
 };
