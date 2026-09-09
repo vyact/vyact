@@ -1229,6 +1229,8 @@
   "modelSettings": {
     "autoAdjust": "Tự động điều chỉnh",
     "tokenBudgetExceeded": "Tổng đầu ra và lịch sử hội thoại không được vượt quá {{total}} token sau khi dành chỗ cho đầu vào. Đầu ra cũng không được vượt giới hạn {{output}} token theo mô hình.",
+    "tokenBudgetOverage": "Giới hạn tổng: {{limit}} token · Hiện tại: {{current}} token\nGiảm đầu ra hoặc lịch sử đi {{excess}} token.",
+    "outputBudgetOverage": "Giới hạn đầu ra: {{limit}} token · Hiện tại: {{current}} token\nGiảm đầu ra tối đa đi {{excess}} token.",
     "modelFileSizeTooltip": "Kích thước tệp mô hình",
     "initialSettingsTitle": "Cách chọn thiết lập ban đầu",
     "allowedTokenRange": "Phạm vi: {{min}}–{{max}} token",

@@ -15,6 +15,7 @@ export const getModelProfileLimits = (profile: VyactModelProfile) => {
     const reserve = Math.min(limits?.context_reserve ?? 1024, Math.floor(profile.context_size / 2));
     const outputMax = Math.max(1, Math.min(limits?.output_max ?? profile.context_size, profile.context_size - reserve));
     return {
+        tokenBudget: Math.max(0, profile.context_size - reserve),
         contextMin,
         contextMax: limits?.context_max ?? undefined,
         outputMin: Math.min(limits?.output_min ?? 256, outputMax),
@@ -29,3 +30,18 @@ export const normalizeModelContext = (profile: VyactModelProfile): VyactModelPro
     const value = Number.isFinite(profile.context_size) ? Math.trunc(profile.context_size) : contextMin;
     return {...profile, context_size: Math.min(contextMax ?? MODEL_SETTING_INPUT_MAX.tokens, Math.max(contextMin, value))};
 };
+
+export const getModelTokenBudgetStatus = (profile: VyactModelProfile) => {
+    const {tokenBudget, outputMax} = getModelProfileLimits(profile);
+    const output = profile.max_output_tokens ?? 1;
+    const history = profile.history_token_budget ?? 0;
+    const total = output + history;
+    return {
+        total, limit: tokenBudget, excess: Math.max(0, total - tokenBudget),
+        output, outputLimit: outputMax, outputExcess: Math.max(0, output - outputMax),
+        valid: Number.isInteger(output) && output >= 1 && output <= outputMax
+            && Number.isInteger(history) && history >= 0 && total <= tokenBudget,
+    };
+};
+
+export const isModelTokenBudgetValid = (profile: VyactModelProfile): boolean => getModelTokenBudgetStatus(profile).valid;

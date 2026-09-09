@@ -1229,6 +1229,8 @@
   "modelSettings": {
     "autoAdjust": "ปรับอัตโนมัติ",
     "tokenBudgetExceeded": "ผลรวมของผลลัพธ์และประวัติการสนทนาต้องไม่เกิน {{total}} โทเค็นหลังจากสำรองพื้นที่สำหรับข้อมูลเข้า ผลลัพธ์ต้องไม่เกินขีดจำกัด {{output}} โทเค็นตามโมเดลด้วย",
+    "tokenBudgetOverage": "ขีดจำกัดรวม {{limit}} โทเค็น · ปัจจุบัน {{current}} โทเค็น\nลดผลลัพธ์หรือประวัติลง {{excess}} โทเค็น",
+    "outputBudgetOverage": "ขีดจำกัดผลลัพธ์ {{limit}} โทเค็น · ปัจจุบัน {{current}} โทเค็น\nลดผลลัพธ์สูงสุดลง {{excess}} โทเค็น",
     "modelFileSizeTooltip": "ขนาดไฟล์โมเดล",
     "initialSettingsTitle": "หลักการตั้งค่าเริ่มต้น",
     "allowedTokenRange": "ช่วงที่อนุญาต: {{min}}–{{max}} โทเคน",

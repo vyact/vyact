@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest';
 import type {VyactModelProfile} from '../services/api';
-import {getModelProfileLimits, normalizeModelContext} from './modelProfileLimits';
+import {getModelProfileLimits, normalizeModelContext, isModelTokenBudgetValid, getModelTokenBudgetStatus} from './modelProfileLimits';
 const profile = (value: Partial<VyactModelProfile>) => value as VyactModelProfile;
 describe('model profile field limits', () => {
     it('reserves input and output before allowing history', () => {
@@ -40,4 +40,34 @@ it('accepts automatic token caps without changing them', () => {
     const original = profile({context_size: 4096, max_output_tokens: null, history_token_budget: null});
     expect(normalizeModelContext(original)).toEqual(original);
     expect(getModelProfileLimits(original).historyMax).toBe(3072);
+});
+
+describe('manual token budget validation', () => {
+    it.each([
+        [32768, 2000, false], [null, null, true], [128, null, true],
+        [null, 2000, true], [30720, 1024, true], [30720, 1025, false],
+        [null, 31744, false], [null, 31743, true], [128, 0, true],
+    ])('validates output %s and history %s', (output, history, valid) => {
+        expect(isModelTokenBudgetValid(profile({context_size: 32768,
+            max_output_tokens: output, history_token_budget: history}))).toBe(valid);
+    });
+    it('revalidates after context is reduced', () => {
+        expect(isModelTokenBudgetValid(profile({context_size: 4096,
+            max_output_tokens: 2048, history_token_budget: 2048}))).toBe(false);
+    });
+    it('honors the model output limit', () => {
+        expect(isModelTokenBudgetValid(profile({context_size: 32768,
+            max_output_tokens: 1025, history_token_budget: 0,
+            limits: {output_max: 1024} as VyactModelProfile['limits']}))).toBe(false);
+    });
+});
+
+it('reports the exact reduction for the displayed overflowing history', () => {
+    expect(getModelTokenBudgetStatus(profile({context_size: 32768, max_output_tokens: 1000,
+        history_token_budget: 259768}))).toMatchObject({limit: 31744, total: 260768, excess: 229024, outputExcess: 0});
+});
+it('reports an output-only overflow independently of the combined budget', () => {
+    expect(getModelTokenBudgetStatus(profile({context_size: 32768, max_output_tokens: 2000,
+        history_token_budget: 0, limits: {output_max: 1024} as VyactModelProfile['limits']})))
+        .toMatchObject({excess: 0, outputExcess: 976});
 });

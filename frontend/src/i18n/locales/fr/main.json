@@ -1229,6 +1229,8 @@
   "modelSettings": {
     "autoAdjust": "Ajuster automatiquement",
     "tokenBudgetExceeded": "La sortie et l’historique réunis ne doivent pas dépasser {{total}} tokens après réservation de l’espace d’entrée. La sortie doit aussi respecter la limite de {{output}} tokens tenant compte du modèle.",
+    "tokenBudgetOverage": "Limite totale : {{limit}} tokens · Actuel : {{current}} tokens\nRéduisez la sortie ou l’historique de {{excess}} tokens.",
+    "outputBudgetOverage": "Limite de sortie : {{limit}} tokens · Actuel : {{current}} tokens\nRéduisez la sortie maximale de {{excess}} tokens.",
     "modelFileSizeTooltip": "Taille du fichier du modèle",
     "initialSettingsTitle": "Choix des réglages initiaux",
     "allowedTokenRange": "Plage autorisée : {{min}}–{{max}} tokens",

@@ -8,7 +8,7 @@ import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import SettingLabel from '../common/SettingLabel/SettingLabel';
 import {Tooltip} from '../common/Tooltip/Tooltip';
-import {getModelProfileLimits, MODEL_SETTING_INPUT_MAX} from '../../utils/modelProfileLimits';
+import {getModelProfileLimits, getModelTokenBudgetStatus, MODEL_SETTING_INPUT_MAX} from '../../utils/modelProfileLimits';
 import {formatModelBytes} from '../../utils/vyactModelDisplay';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
 import ModelSettingsHelp from './ModelSettingsHelp';
@@ -37,7 +37,7 @@ const GPU_SPLIT_INPUT_MAX_LENGTH = 6;
 const formatGpuSplitPercentage = (value: number) => String(Number(value.toFixed(GPU_SPLIT_DECIMAL_PLACES)));
 
 export default function ModelSettingsModal({modelPath, runtime, repository, recommendedContext = 32768, activateOnApply = false, forceActivateOnApply = false, mtpSupported = false, dflash2Supported = false, onClose, onApplied}: Props) {
-    const {t} = useTranslation('main');
+    const {t, i18n} = useTranslation('main');
     const modelHelp = <ModelSettingsHelp title={t('modelSettings.initialSettingsTitle')} description={t('modelSettings.initialSettingsEstimate')}/>;
     const [profile, setProfile] = useState<VyactModelProfile | null>(null);
     const [benchmarkOpen, setBenchmarkOpen] = useState(false);
@@ -55,7 +55,7 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
     const benchmarkFieldChanged = (key: keyof VyactModelProfile) => benchmarkSelected && benchmarkBeforeRef.current?.[key] !== profile?.[key];
     const formRef = useRef<HTMLFormElement | null>(null);
     const validateBenchmark = () => {
-        if (formRef.current?.checkValidity()) return true;
+        if (tokenBudgetIsValid && formRef.current?.checkValidity()) return true;
         setBenchmarkOpen(false);
         setAdvancedOpen(true);
         setTimeout(() => formRef.current?.reportValidity(), 0);
@@ -107,7 +107,7 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
         if (Number.isFinite(Number(value))) setProfile({...profile, [key]: Number(value)});
     };
     const apply = async () => {
-        if (!profile || interactionLocked || !formRef.current?.reportValidity()) return;
+        if (!profile || interactionLocked || !tokenBudgetIsValid || !formRef.current?.reportValidity()) return;
         if (profile.gpu_manual_split_enabled && !gpuSplitIsValid) {
             setError(t('modelSettings.gpuSplitInvalid'));
             return;
@@ -163,6 +163,9 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
         && Math.abs(gpuSplitTotal - 100) <= GPU_SPLIT_SUM_TOLERANCE
     );
     const limits = profile ? getModelProfileLimits(profile) : null;
+    const tokenBudgetStatus = profile ? getModelTokenBudgetStatus(profile) : null;
+    const tokenBudgetIsValid = tokenBudgetStatus?.valid ?? false;
+    const tokenNumber = (value: number) => new Intl.NumberFormat(i18n.resolvedLanguage || 'en').format(value);
     const memoryEstimateIsCurrent = profile && initialProfileRef.current
         && profile.context_size === initialProfileRef.current.context_size
         && profile.kv_cache_precision === initialProfileRef.current.kv_cache_precision
@@ -209,12 +212,17 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
         <form ref={formRef} className="model-settings-modal" onInvalidCapture={() => setAdvancedOpen(true)} onSubmit={event => {event.preventDefault(); void apply();}}>
             <header><div><h2>{t('modelSettings.title')}</h2><div className="model-settings-model"><Tooltip hoverOnly content={modelHelp} multiline size="medium"><button type="button" className="model-settings-model-help" aria-label={t('modelSettings.initialSettingsTitle')}><CircleQuestionMark size={14}/></button></Tooltip><span className="model-settings-model-name">{modelPath.split('/').pop()}</span>{profile?.model_file_bytes != null && profile.model_file_bytes > 0 && <Tooltip content={t('modelSettings.modelFileSizeTooltip')} multiline size="medium"><span className="model-settings-file-size"><HardDrive size={13} aria-hidden="true"/>{formatModelBytes(profile.model_file_bytes)}</span></Tooltip>}</div></div><button type="button" onClick={onClose} disabled={interactionLocked} aria-label={t('modelSettings.close')}><X size={20}/></button></header>
             {profile && <nav className="model-settings-tabs" aria-label={t('modelSettings.title')}><ModalTabs tabs={[{key: 'settings', label: <><SlidersHorizontal size={15}/>{t('modelSettings.title')}</>}, {key: 'benchmark', label: <><Activity size={15}/>{t('modelBenchmark.title')}</>}]} activeKey={benchmarkOpen ? 'benchmark' : 'settings'} disabled={interactionLocked} onChange={key => setBenchmarkOpen(key === 'benchmark')}/></nav>}
-            {profile && <ModelBenchmarkPanel dflashEnabled={dflash2Supported} canTestMtp={mtpSupported && !dflash2Supported && !profile.mtp_failure_code} profile={profile} visible={benchmarkOpen} disabled={saving || !gpuSplitIsValid} validate={validateBenchmark} onBusy={setBenchmarkBusy} onSelect={value => {benchmarkBeforeRef.current = profile; setProfile(selectBenchmarkSettings(profile, value)); setNumberInputs({}); setBenchmarkSelected(true); setAdvancedOpen(true); setBenchmarkOpen(false);}}/>}
+            {profile && <ModelBenchmarkPanel dflashEnabled={dflash2Supported} canTestMtp={mtpSupported && !dflash2Supported && !profile.mtp_failure_code} profile={profile} visible={benchmarkOpen} disabled={saving || !gpuSplitIsValid || !tokenBudgetIsValid} validate={validateBenchmark} onBusy={setBenchmarkBusy} onSelect={value => {benchmarkBeforeRef.current = profile; setProfile(selectBenchmarkSettings(profile, value)); setNumberInputs({}); setBenchmarkSelected(true); setAdvancedOpen(true); setBenchmarkOpen(false);}}/>}
             {!profile ? <div className="model-settings-loading">{error || t('modelSettings.loading')}</div> : <div className="model-settings-body" hidden={benchmarkOpen}>
                 {benchmarkSelected && <p className="model-settings-selection-notice" role="status">{t('modelBenchmark.selected')}</p>}
                 <label><SettingLabel helpHoverOnly label={t('modelSettings.context')} help={<ModelSettingsHelp title={t('modelSettings.context')} description={t('modelSettings.contextTooltip')}/>}/><input className="model-settings-input" type="number" required min={limits!.contextMin} max={limits!.contextMax ?? MODEL_SETTING_INPUT_MAX.tokens} value={numberInputs.context_size ?? profile.context_size} onChange={e => updateNumber('context_size', e.target.value)}/></label>
                 <label><SettingLabel helpHoverOnly label={t('modelSettings.maxOutput')} help={<ModelSettingsHelp title={t('modelSettings.maxOutput')} description={t('modelSettings.maxOutputTooltip')}/>}/><input className="model-settings-input" type="number" min="1" max={MODEL_SETTING_INPUT_MAX.tokens} placeholder={t('modelSettings.auto')} value={numberInputs.max_output_tokens ?? profile.max_output_tokens ?? ''} onChange={e => updateNumber('max_output_tokens', e.target.value, true)}/></label>
                 <label><SettingLabel helpHoverOnly label={t('modelSettings.historyTokenBudget')} help={<ModelSettingsHelp title={t('modelSettings.historyTokenBudget')} description={t('modelSettings.historyTokenBudgetTooltip')}/>}/><input className="model-settings-input" type="number" min="0" max={MODEL_SETTING_INPUT_MAX.tokens} placeholder={t('modelSettings.auto')} value={numberInputs.history_token_budget ?? profile.history_token_budget ?? ''} onChange={e => updateNumber('history_token_budget', e.target.value, true)}/></label>
+                {!tokenBudgetIsValid && limits && <div className="model-settings-budget-warning" role="alert"><p className="model-settings-error">{tokenBudgetStatus && [
+                    tokenBudgetStatus.excess > 0 && t('modelSettings.tokenBudgetOverage', {limit: tokenNumber(tokenBudgetStatus.limit), current: tokenNumber(tokenBudgetStatus.total), excess: tokenNumber(tokenBudgetStatus.excess)}),
+                    tokenBudgetStatus.outputExcess > 0 && t('modelSettings.outputBudgetOverage', {limit: tokenNumber(tokenBudgetStatus.outputLimit), current: tokenNumber(tokenBudgetStatus.output), excess: tokenNumber(tokenBudgetStatus.outputExcess)}),
+                    tokenBudgetStatus.excess === 0 && tokenBudgetStatus.outputExcess === 0 && t('modelSettings.tokenBudgetExceeded', {total: tokenNumber(limits.tokenBudget), output: tokenNumber(limits.outputMax)}),
+                ].filter(Boolean).join('\n')}</p></div>}
                 <label><SettingLabel helpHoverOnly label={t('modelSettings.temperature')} help={<ModelSettingsHelp title={t('modelSettings.temperature')} description={t('modelSettings.temperatureTooltip')}/>}/><input className="model-settings-input" type="number" required min="0" max={MODEL_SETTING_INPUT_MAX.temperature} step="any" value={numberInputs.temperature ?? profile.temperature} onChange={e => updateNumber('temperature', e.target.value)}/></label>
                 <label><SettingLabel helpHoverOnly label={t('modelSettings.topK')} help={<ModelSettingsHelp title={t('modelSettings.topK')} description={t('modelSettings.topKTooltip')}/>}/><input className="model-settings-input" type="number" min="0" max={MODEL_SETTING_INPUT_MAX.topK} value={numberInputs.top_k ?? profile.top_k ?? ''} placeholder={t('modelSettings.modelDefault')} onChange={e => updateNumber('top_k', e.target.value, true)}/></label>
                 <label><SettingLabel helpHoverOnly label={t('modelSettings.topP')} help={<ModelSettingsHelp title={t('modelSettings.topP')} description={t('modelSettings.topPTooltip')}/>}/><input className="model-settings-input" type="number" min="0" max="1" step="any" value={numberInputs.top_p ?? profile.top_p ?? ''} placeholder={t('modelSettings.modelDefault')} onChange={e => updateNumber('top_p', e.target.value, true)}/></label>
@@ -238,7 +246,7 @@ export default function ModelSettingsModal({modelPath, runtime, repository, reco
                 </section>
                 {error && <div className="model-settings-error">{error}</div>}
             </div>}
-            <footer><button className="model-settings-cancel" type="button" onClick={onClose} disabled={interactionLocked}>{t('modelSettings.cancel')}</button><button className="primary" type="submit" disabled={!profile || saving || benchmarkBusy || !gpuSplitIsValid}>{saving ? t('modelSettings.applying') : t('modelSettings.apply')}</button></footer>
+            <footer><button className="model-settings-cancel" type="button" onClick={onClose} disabled={interactionLocked}>{t('modelSettings.cancel')}</button><button className="primary" type="submit" disabled={!profile || saving || benchmarkBusy || !gpuSplitIsValid || !tokenBudgetIsValid}>{saving ? t('modelSettings.applying') : t('modelSettings.apply')}</button></footer>
         </form>
     </ModalOverlay>;
 }
