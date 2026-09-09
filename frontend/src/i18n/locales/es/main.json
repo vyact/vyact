@@ -1230,6 +1230,7 @@
     "tokenBudgetExceeded": "La salida y el historial juntos no deben superar {{total}} tokens tras reservar espacio de entrada. La salida también debe respetar el límite de {{output}} tokens según el modelo.",
     "tokenBudgetOverage": "Límite total: {{limit}} tokens · Actual: {{current}} tokens\nReduce la salida o el historial en {{excess}} tokens.",
     "outputBudgetOverage": "Límite de salida: {{limit}} tokens · Actual: {{current}} tokens\nReduce la salida máxima en {{excess}} tokens.",
+    "combinedBudgetOverage": "Límite total: {{limit}} tokens · Actual: {{current}} tokens\nReduce el total en {{excess}} tokens, incluidos al menos {{outputExcess}} de la salida.",
     "modelFileSizeTooltip": "Tamaño del archivo del modelo",
     "initialSettingsTitle": "Cómo se eligen los ajustes iniciales",
     "allowedTokenRange": "Rango permitido: {{min}}–{{max}} tokens",

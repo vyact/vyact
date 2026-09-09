@@ -1231,6 +1231,7 @@
     "tokenBudgetExceeded": "出力と会話履歴の合計は、入力用の余裕を除いた{{total}}トークン以下にしてください。出力はモデルの制限を反映した{{output}}トークンも超えられません。",
     "tokenBudgetOverage": "合計上限 {{limit}}トークン · 現在 {{current}}トークン\n出力または会話履歴を{{excess}}トークン減らしてください。",
     "outputBudgetOverage": "出力上限 {{limit}}トークン · 現在 {{current}}トークン\n最大出力を{{excess}}トークン減らしてください。",
+    "combinedBudgetOverage": "合計上限 {{limit}}トークン · 現在 {{current}}トークン\n合計で{{excess}}トークン減らしてください。そのうち出力を少なくとも{{outputExcess}}トークン減らす必要があります。",
     "modelFileSizeTooltip": "モデルファイルサイズ",
     "initialSettingsTitle": "初期設定の決め方",
     "allowedTokenRange": "入力範囲：{{min}}–{{max}} トークン",

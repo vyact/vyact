@@ -1231,6 +1231,7 @@
     "tokenBudgetExceeded": "输出与对话历史的总和不得超过预留输入空间后的 {{total}} 个令牌。输出也不得超过根据模型限制计算的 {{output}} 个令牌。",
     "tokenBudgetOverage": "合计上限 {{limit}} 个令牌 · 当前 {{current}} 个令牌\n请将输出或对话历史减少 {{excess}} 个令牌。",
     "outputBudgetOverage": "输出上限 {{limit}} 个令牌 · 当前 {{current}} 个令牌\n请将最大输出减少 {{excess}} 个令牌。",
+    "combinedBudgetOverage": "合计上限 {{limit}} 个令牌 · 当前 {{current}} 个令牌\n请总共减少 {{excess}} 个令牌，其中输出至少减少 {{outputExcess}} 个令牌。",
     "modelFileSizeTooltip": "模型文件大小",
     "initialSettingsTitle": "初始设置依据",
     "allowedTokenRange": "输入范围：{{min}}–{{max}} 个令牌",

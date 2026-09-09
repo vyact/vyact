@@ -1230,6 +1230,7 @@
     "tokenBudgetExceeded": "Output and conversation history combined must not exceed {{total}} tokens after reserving input space. Output must also stay within the model-based limit of {{output}} tokens.",
     "tokenBudgetOverage": "Combined limit: {{limit}} tokens · Current: {{current}} tokens\nReduce output or history by {{excess}} tokens.",
     "outputBudgetOverage": "Output limit: {{limit}} tokens · Current: {{current}} tokens\nReduce maximum output by {{excess}} tokens.",
+    "combinedBudgetOverage": "Combined limit: {{limit}} tokens · Current: {{current}} tokens\nReduce the total by {{excess}} tokens, including at least {{outputExcess}} from output.",
     "modelFileSizeTooltip": "Model file size",
     "initialSettingsTitle": "How initial settings are chosen",
     "allowedTokenRange": "Allowed range: {{min}}–{{max}} tokens",
