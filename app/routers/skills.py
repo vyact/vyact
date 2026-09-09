@@ -58,7 +58,7 @@ async def ensure_skills_index():
                     },
                 }},
             )
-            logger.info("skills 인덱스 생성 완료")
+            logger.info("skills index created")
 
         # 기본 스킬 등록 (최초 1회 — 인덱스에 문서가 없을 때만)
         count = (await es.count(index=SKILLS_INDEX)).get("count", 0)
@@ -82,7 +82,7 @@ async def ensure_skills_index():
                     logger.warning("[skills] 기본 스킬 임베딩 실패: %s", skill["name"])
                 await es.index(index=SKILLS_INDEX, document=doc, refresh=True)
                 registered += 1
-            logger.info("기본 스킬 %d개 등록 완료", registered)
+            logger.info("%d default skills registered", registered)
     finally:
         await es.close()
 

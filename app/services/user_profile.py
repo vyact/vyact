@@ -53,7 +53,7 @@ async def ensure_user_profile_index():
                     }
                 }
             })
-            logger.info("user_profile 인덱스 생성 완료")
+            logger.info("user_profile index created")
     finally:
         await es.close()
 

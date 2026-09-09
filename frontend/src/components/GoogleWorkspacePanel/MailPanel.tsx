@@ -324,7 +324,7 @@ const getPlainTextFromHtml = (html: string) => {
     return document.body.textContent?.trim() || '';
 };
 
-const createEmailDocument = (body: string, scrollable = false) => `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src http: https: data: blob: cid:; style-src 'unsafe-inline';"><base target="_blank"><meta name="viewport" content="width=device-width, initial-scale=1"><style>:root { color-scheme: light !important; } html, body { min-height: 100%; max-width: 100%; margin: 0; overflow-x: hidden; overflow-y: ${scrollable ? 'auto' : 'hidden'}; background: #fff; } body { box-sizing: border-box; padding: 24px; overflow-wrap: anywhere; word-break: break-word; font-family: Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; font-size: 14px; line-height: 1.5; } body * { box-sizing: border-box; max-width: 100%; } pre { white-space: pre-wrap; overflow-wrap: anywhere; } table { max-width: 100% !important; } td, th { overflow-wrap: normal; word-break: normal; } img { max-width: 100% !important; height: auto !important; }</style></head><body>${body}</body></html>`;
+const createEmailDocument = (body: string, scrollable = false) => `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src http: https: data: blob: cid:; style-src 'unsafe-inline';"><base target="_blank"><meta name="viewport" content="width=device-width, initial-scale=1"><style>:root { color-scheme: light !important; } html, body { min-height: ${scrollable ? '100%' : '0'}; max-width: 100%; margin: 0; overflow-x: hidden; overflow-y: ${scrollable ? 'auto' : 'hidden'}; background: #fff; } body { box-sizing: border-box; padding: 24px; overflow-wrap: anywhere; word-break: break-word; font-family: Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; font-size: 14px; line-height: 1.5; } body * { box-sizing: border-box; max-width: 100%; } pre { white-space: pre-wrap; overflow-wrap: anywhere; } table { max-width: 100% !important; } td, th { overflow-wrap: normal; word-break: normal; } img { max-width: 100% !important; height: auto !important; }</style></head><body>${body}</body></html>`;
 
 type QuotedReplyLabels = {show: string; hide: string};
 
@@ -416,10 +416,9 @@ const EmailBody = memo(function EmailBody({mail, fillAvailableSpace = false}: {
         if (!iframe || fillAvailableSpace) return;
         const document = iframe.contentDocument;
         if (!document) return;
-        // The document uses a minimum height of 100%. If we measure it while
-        // the iframe still has its expanded height, that height becomes the
-        // next measurement and leaves blank space after a quoted reply closes.
-        iframe.style.height = '0px';
+        // Auto-sized documents have no viewport minimum height, so the body
+        // can shrink naturally without collapsing the iframe and moving the
+        // parent scroll position during measurement.
         iframe.style.height = `${Math.max(document.body.scrollHeight, document.body.offsetHeight)}px`;
     }, [fillAvailableSpace]);
 
@@ -458,6 +457,9 @@ const EmailBody = memo(function EmailBody({mail, fillAvailableSpace = false}: {
                 show: t('googleWorkspace.showQuotedReply'),
                 hide: t('googleWorkspace.hideQuotedReply'),
             }, resizeToContent);
+            // Native details toggles do not bubble. Capture them so expanding
+            // embedded logs also updates the otherwise non-scrolling iframe.
+            document?.addEventListener('toggle', resizeToContent, true);
             resizeToContent();
             iframe.contentDocument?.querySelectorAll('img').forEach(image => {
                 if (!image.complete) image.addEventListener('load', resizeToContent, {once: true});

@@ -207,7 +207,7 @@ async def ensure_index():
                     "is_favorite": {"type": "boolean"},
                 }},
             )
-            logger.info("rag_history 인덱스 생성 완료")
+            logger.info("rag_history index created")
 
         # ── system_prompts ─────────────────────────────────────────
         if not await es.indices.exists(index=PROMPTS_INDEX):
@@ -220,7 +220,7 @@ async def ensure_index():
                     "content": {"type": "text"},
                 }},
             )
-            logger.info("system_prompts 인덱스 생성 완료")
+            logger.info("system_prompts index created")
 
         # ── notifications ──────────────────────────────────────────
         if not await es.indices.exists(index=NOTIFICATIONS_INDEX):
@@ -238,7 +238,7 @@ async def ensure_index():
                     "important": {"type": "boolean"},
                 }},
             )
-            logger.info("notifications 인덱스 생성 완료")
+            logger.info("notifications index created")
         else:
             await es.indices.put_mapping(
                 index=NOTIFICATIONS_INDEX,
@@ -266,7 +266,7 @@ async def ensure_index():
                     "saved_at": {"type": "date"},
                 }},
             )
-            logger.info("saved_sentences 인덱스 생성 완료")
+            logger.info("saved_sentences index created")
 
         # ── system_settings ────────────────────────────────────────
         if not await es.indices.exists(index=SETTINGS_INDEX):
@@ -278,7 +278,7 @@ async def ensure_index():
                     "value": {"type": "object", "enabled": False},
                 }},
             )
-            logger.info("system_settings 인덱스 생성 완료")
+            logger.info("system_settings index created")
 
         separated_settings_indices = {
             INTEGRATION_SETTINGS_INDEX: {},
@@ -379,7 +379,7 @@ async def ensure_index():
                     }
                 },
             )
-            logger.info("chat_file_chunks 인덱스 생성 완료")
+            logger.info("chat_file_chunks index created")
 
         # ── rag_files ──────────────────────────────────────────────
         if not await es.indices.exists(index=FILES_INDEX):
@@ -397,7 +397,7 @@ async def ensure_index():
                     "content_hash": {"type": "keyword"},
                 }},
             )
-            logger.info("rag_files 인덱스 생성 완료")
+            logger.info("rag_files index created")
 
         # ── document_originals ─────────────────────────────────────
         # 언어별 청크는 검색(RAG) 전용이며, 사용자가 문서를 채팅에 직접 첨부할 때는
@@ -418,7 +418,7 @@ async def ensure_index():
                     "updated_at": {"type": "date"},
                 }},
             )
-            logger.info("document_originals 인덱스 생성 완료")
+            logger.info("document_originals index created")
 
         # ── web_documents ─────────────────────────────────────────
         # 파일 메타데이터(rag_files)와 분리해 URL 기반 갱신과 원문 열기를 안전하게 지원한다.
@@ -439,7 +439,7 @@ async def ensure_index():
                     "source_type": {"type": "keyword"},
                 }},
             )
-            logger.info("web_documents 인덱스 생성 완료")
+            logger.info("web_documents index created")
 
         # ── knowledge_collections ──────────────────────────────────
         if not await es.indices.exists(index=KNOWLEDGE_COLLECTIONS_INDEX):
@@ -460,7 +460,7 @@ async def ensure_index():
                     "sort_order": {"type": "integer"},
                 }},
             )
-            logger.info("knowledge_collections 인덱스 생성 완료")
+            logger.info("knowledge_collections index created")
 
         # ── user_profile ────────────────────────────────────────────
         if not await es.indices.exists(index=USER_PROFILE_INDEX):
@@ -474,7 +474,7 @@ async def ensure_index():
                     }
                 }
             })
-            logger.info("user_profile 인덱스 생성 완료")
+            logger.info("user_profile index created")
 
         # ── vocab_words ───────────────────────────────────────────
         # 단어 1개 = 문서 1개. 같은 단어를 다시 만나면 sentences 배열에 예문 누적(upsert).
@@ -504,7 +504,7 @@ async def ensure_index():
                     "last_added_at": {"type": "date"},
                 }},
             )
-            logger.info("vocab_words 인덱스 생성 완료")
+            logger.info("vocab_words index created")
         else:
             # 기존 설치본에도 원문 언어를 keyword로 추가한다.
             await es.indices.put_mapping(
