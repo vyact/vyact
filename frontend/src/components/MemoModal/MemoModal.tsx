@@ -221,9 +221,7 @@ const MemoEditor: React.FC<{
         }
     }, [editor, onEnsureMemoId, t]);
 
-    const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>, isImage: boolean) => {
-        const files = Array.from(event.target.files || []);
-        event.target.value = '';
+    const uploadFiles = useCallback((files: File[], isImage?: boolean) => {
         if (files.length === 0) return;
         void (async () => {
             // 새 메모는 첨부 전에 서버 초안을 만들어야 한다. 이 준비 시간도 업로드 진행
@@ -231,12 +229,32 @@ const MemoEditor: React.FC<{
             setUploadCount(count => count + 1);
             try {
                 const memoId = await onEnsureMemoId();
-                for (const file of files) await uploadAttachment(file, isImage, memoId);
+                for (const file of files) {
+                    await uploadAttachment(file, isImage ?? file.type.startsWith('image/'), memoId);
+                }
+            } catch (error) {
+                setUploadError(error instanceof Error ? error.message : t('uiAuditSecond.attachmentUploadFailed'));
             } finally {
                 setUploadCount(count => Math.max(0, count - 1));
             }
         })();
-    }, [onEnsureMemoId, uploadAttachment]);
+    }, [onEnsureMemoId, uploadAttachment, t]);
+
+    const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>, isImage: boolean) => {
+        const files = Array.from(event.target.files || []);
+        event.target.value = '';
+        uploadFiles(files, isImage);
+    }, [uploadFiles]);
+
+    const handleFileDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+        const files = Array.from(event.dataTransfer.files);
+        if (!editor || files.length === 0) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const dropPosition = editor.view.posAtCoords({ left: event.clientX, top: event.clientY });
+        if (dropPosition) editor.commands.setTextSelection(dropPosition.pos);
+        uploadFiles(files);
+    }, [editor, uploadFiles]);
 
     const openLinkDialog = useCallback(() => {
         if (!editor) return;
@@ -720,7 +738,12 @@ const MemoEditor: React.FC<{
                 <button onClick={triggerUndo} title={t('memoModal.toolbar.undo')}>↩</button>
                 <button onClick={triggerRedo} title={t('memoModal.toolbar.redo')}>↪</button>
             </div>
-            <EditorContent editor={editor} className="memo-editor-content" onPasteCapture={handleEditorPaste} onContextMenuCapture={openTableContextMenu} onMouseDownCapture={event => {
+            <EditorContent editor={editor} className="memo-editor-content" onDropCapture={handleFileDrop} onDragOverCapture={event => {
+                if (!Array.from(event.dataTransfer.types).includes('Files')) return;
+                event.preventDefault();
+                event.stopPropagation();
+                event.dataTransfer.dropEffect = 'copy';
+            }} onPasteCapture={handleEditorPaste} onContextMenuCapture={openTableContextMenu} onMouseDownCapture={event => {
                 if (!(event.target as HTMLElement).closest('table')) {
                     setSelectedTablePosition(null);
                 }
