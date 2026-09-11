@@ -81,7 +81,7 @@ jobs:
         run: npm run build
 
       - name: Upload built frontend for Linux packaging
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: frontend-dist
           path: app/static
@@ -189,16 +189,10 @@ jobs:
           TEST_BUNDLED_PYTHON="$extraction_dir/squashfs-root/resources/python/bin/python3" node --test electron/tests/python-runtime.test.js
 
       - name: Verify clean Ubuntu installation and native dependencies
-        run: |
-          for image in ubuntu:22.04 ubuntu:24.04; do
-            docker run --rm \
-              -v "$PWD/electron/dist:/packages:ro" \
-              -v "$PWD/scripts/check_linux_package.sh:/check.sh:ro" \
-              "$image" bash /check.sh
-          done
+        run: bash scripts/check_linux_packages.sh
 
       - name: Upload Linux packages
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: vyact-linux-x64
           if-no-files-found: error
