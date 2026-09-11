@@ -58,6 +58,24 @@ For maintainers who need a Windows build from macOS, use:
 
 This script temporarily applies the Windows-specific Electron and Docker configuration, restores the original files when it exits, and writes the resulting installer to `dist/`.
 
+## Build all release packages
+
+On macOS, commit and push the release changes, then run:
+
+```bash
+./release_all.sh
+```
+
+The script requires a clean working tree and a branch matching its origin commit.
+It starts a dedicated CI run with Linux packaging enabled, builds macOS and Windows
+locally, then downloads the Linux AppImage, deb, and updater metadata from that
+exact run into `dist/`.
+
+Normal pushes and pull requests run backend core checks, frontend tests/build,
+and Windows static checks. Linux packaging and clean Ubuntu installation checks
+run only when the `build_linux` workflow input is enabled, as the release script
+does automatically. Maintainers can also enable it manually in GitHub Actions.
+
 ## Build the frontend only
 
 For frontend development or validation:

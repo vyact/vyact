@@ -1,8 +1,17 @@
 name: CI
+run-name: ${{ inputs.release_id || github.event.head_commit.message || github.workflow }}
 
 on:
   workflow_dispatch:
     inputs:
+      build_linux:
+        description: Build and validate Linux release packages
+        type: boolean
+        default: false
+      release_id:
+        description: Release invocation identifier (set by release_all.sh)
+        type: string
+        default: ''
       full_checks:
         description: Run all backend tests and frontend lint
         type: boolean
@@ -81,6 +90,7 @@ jobs:
         run: npm run build
 
       - name: Upload built frontend for Linux packaging
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_linux }}
         uses: actions/upload-artifact@v6
         with:
           name: frontend-dist
@@ -125,6 +135,7 @@ jobs:
           if (Test-Path win/electron/main.js) { throw "Platform-specific main.js must not be reintroduced" }
 
   linux-desktop:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_linux }}
     needs: frontend
     name: Linux desktop package
     runs-on: ubuntu-22.04

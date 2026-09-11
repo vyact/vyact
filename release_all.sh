@@ -11,7 +11,7 @@ if [ "$(uname -s)" != "Darwin" ]; then
   exit 1
 fi
 
-for COMMAND in git gh node npm; do
+for COMMAND in git gh node npm uuidgen; do
   if ! command -v "$COMMAND" >/dev/null 2>&1; then
     echo "Required command not found: $COMMAND" >&2
     exit 1
@@ -82,17 +82,41 @@ if ! gh auth status >/dev/null 2>&1; then
   exit 1
 fi
 
-echo "Locating the GitHub Actions run for commit $COMMIT_SHA..."
-RUN_ID="$(gh run list \
-  --workflow "$WORKFLOW_FILE" \
-  --commit "$COMMIT_SHA" \
-  --limit 1 \
-  --json databaseId \
-  --jq '.[0].databaseId // empty')"
+# Dispatch on the current branch, then match both its exact commit and invocation.
+# This prevents downloading artifacts from a normal push or a concurrent release.
+RELEASE_REF="$(git symbolic-ref --quiet --short HEAD)" || {
+  echo "Check out a pushed branch before building a release." >&2
+  exit 1
+}
+REMOTE_SHA="$(git ls-remote origin "refs/heads/$RELEASE_REF" | awk '{print $1}')"
+if [ "$REMOTE_SHA" != "$COMMIT_SHA" ]; then
+  echo "The origin branch must point to $COMMIT_SHA. Push or sync it before releasing." >&2
+  exit 1
+fi
+
+RELEASE_ID="release-$(uuidgen)"
+echo "Starting Linux release packaging for commit $COMMIT_SHA..."
+gh workflow run "$WORKFLOW_FILE" --ref "$RELEASE_REF" \
+  -f build_linux=true -f release_id="$RELEASE_ID"
+
+RUN_ID=""
+for ((ATTEMPT = 0; ATTEMPT < 30; ATTEMPT++)); do
+  RUN_ID="$(gh run list \
+    --workflow "$WORKFLOW_FILE" \
+    --event workflow_dispatch \
+    --commit "$COMMIT_SHA" \
+    --limit 50 \
+    --json databaseId,displayTitle \
+    --jq ".[] | select(.displayTitle == \"$RELEASE_ID\") | .databaseId")"
+  if [ -n "$RUN_ID" ]; then
+    break
+  fi
+  sleep 2
+done
 
 if [ -z "$RUN_ID" ]; then
-  echo "No GitHub Actions run was found for commit $COMMIT_SHA." >&2
-  echo "Push the commit and wait for the CI workflow to start." >&2
+  echo "Could not locate release run $RELEASE_ID for commit $COMMIT_SHA." >&2
+  echo "Check GitHub Actions before retrying; the dispatched run may still be queued." >&2
   exit 1
 fi
 
