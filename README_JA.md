@@ -22,7 +22,7 @@
 
 ---
 
-[![30秒のデモを見る](assets/readme/demo-local-document.jpg)](https://youtu.be/6_6ChdrW8lY)
+[![30秒のデモを見る](assets/readme/demo-local-document-dark.png)](https://youtu.be/6_6ChdrW8lY)
 
 ローカルの9Bモデルがサンプル文書からリリースのリスク、担当者、代替案を整理し、原文を確認するデモです。Qwen3.5-9B Q4_K_Mを使用した実際のVyactの録画です。架空の資料を使用し、待ち時間を編集しています。生成シーンは2倍速です。
 

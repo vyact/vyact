@@ -23,7 +23,7 @@ Open source. Run models on your computer, with optional cloud providers.
 
 ---
 
-[![Watch the 30-second demo](assets/readme/demo-local-document.jpg)](https://youtu.be/6_6ChdrW8lY)
+[![Watch the 30-second demo](assets/readme/demo-local-document-dark.png)](https://youtu.be/6_6ChdrW8lY)
 
 A local 9B model finds launch risks, owners, and fallbacks in a sample document, then shows the original source. Actual Vyact recording with Qwen3.5-9B Q4_K_M; fictional sample data, edited for length, with generation shown at 2× speed.
 

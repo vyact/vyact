@@ -22,7 +22,7 @@ Mã nguồn mở. Chạy mô hình trên máy tính của bạn, với tùy ch�
 
 ---
 
-[![Xem demo 30 giây](assets/readme/demo-local-document.jpg)](https://youtu.be/6_6ChdrW8lY)
+[![Xem demo 30 giây](assets/readme/demo-local-document-dark.png)](https://youtu.be/6_6ChdrW8lY)
 
 Mô hình 9B chạy trên máy tìm rủi ro, người phụ trách và phương án dự phòng trong tài liệu mẫu, sau đó mở nguồn gốc để kiểm tra. Video quay trực tiếp Vyact với Qwen3.5-9B Q4_K_M và dữ liệu giả định; đã cắt bớt thời gian chờ, đoạn tạo câu trả lời được phát nhanh 2 lần.
 
