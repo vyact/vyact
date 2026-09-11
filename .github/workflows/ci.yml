@@ -81,7 +81,7 @@ jobs:
         run: npm run build
 
       - name: Upload built frontend for Linux packaging
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: frontend-dist
           path: app/static
@@ -142,7 +142,7 @@ jobs:
             electron/package-lock.json
 
       - name: Download validated frontend build
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: frontend-dist
           path: app/static
@@ -154,7 +154,7 @@ jobs:
 
       - name: Restore bundled Linux model runtime
         id: linux-runtime-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: electron/linux-runtime
           key: linux-runtime-ubuntu-22.04-x64-${{ hashFiles('scripts/prepare_linux_runtime.sh') }}
@@ -192,7 +192,7 @@ jobs:
         run: bash scripts/check_linux_packages.sh
 
       - name: Upload Linux packages
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: vyact-linux-x64
           if-no-files-found: error
