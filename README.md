@@ -11,7 +11,7 @@ Use local AI with your documents, email, and browser—from finding answers in y
 
 Open source. Run models on your computer, with optional cloud providers.
 
-[**Download Vyact**](https://github.com/vyact/vyact/releases/latest) · [**Watch the 30-second demo**](https://youtu.be/6_6ChdrW8lY)
+[**Download Vyact**](https://github.com/vyact/vyact/releases/latest) · [**Watch the workflow demo**](https://youtu.be/5EdlX2hIB-c)
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-7c3aed.svg?style=flat-square)](LICENSE)
   [![Chrome Extension](https://img.shields.io/badge/browser-Chrome%20Extension-4285f4.svg?style=flat-square)](https://chromewebstore.google.com/detail/vyact/opfbakfhoojmdkbbhcglolkpgmenjbib)
@@ -23,9 +23,9 @@ Open source. Run models on your computer, with optional cloud providers.
 
 ---
 
-[![Watch the 30-second demo](assets/readme/demo-local-document-dark.png)](https://youtu.be/6_6ChdrW8lY)
+[![Watch the workflow demo](assets/readme/demo-local-document-dark.png)](https://youtu.be/5EdlX2hIB-c)
 
-A local 9B model finds launch risks, owners, and fallbacks in a sample document, then shows the original source. Actual Vyact recording with Qwen3.5-9B Q4_K_M; fictional sample data, edited for length, with generation shown at 2× speed.
+A 1-minute 53-second tour of local AI for everyday work: document Q&A with source verification, email signatures and AI replies, and browser writing corrections. Actual Vyact recordings with fictional demo data; waiting time is trimmed and document generation includes 2× footage.
 
 ## One workspace for everyday work
 

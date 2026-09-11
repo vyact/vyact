@@ -11,7 +11,7 @@
 
 โอเพนซอร์ส รันโมเดลบนคอมพิวเตอร์ของคุณ และเลือกใช้ผู้ให้บริการ AI บนคลาวด์ได้เมื่อจำเป็น
 
-[**ดาวน์โหลด Vyact**](https://github.com/vyact/vyact/releases/latest) · [**ชมเดโม 30 วินาที**](https://youtu.be/6_6ChdrW8lY)
+[**ดาวน์โหลด Vyact**](https://github.com/vyact/vyact/releases/latest) · [**ชมเดโมการใช้งาน**](https://youtu.be/5EdlX2hIB-c)
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-7c3aed.svg?style=flat-square)](LICENSE)
 [![Chrome Extension](https://img.shields.io/badge/browser-Chrome%20Extension-4285f4.svg?style=flat-square)](https://chromewebstore.google.com/detail/vyact/opfbakfhoojmdkbbhcglolkpgmenjbib)
@@ -22,9 +22,9 @@
 
 ---
 
-[![ชมเดโม 30 วินาที](assets/readme/demo-local-document-dark.png)](https://youtu.be/6_6ChdrW8lY)
+[![ชมเดโมการใช้งาน](assets/readme/demo-local-document-dark.png)](https://youtu.be/5EdlX2hIB-c)
 
-โมเดล 9B บนเครื่องค้นหาความเสี่ยง ผู้รับผิดชอบ และแผนสำรองจากเอกสารตัวอย่าง แล้วเปิดดูต้นฉบับ เป็นการบันทึกหน้าจอ Vyact จริงโดยใช้ Qwen3.5-9B Q4_K_M กับข้อมูลสมมติ ตัดช่วงรอให้กระชับ และแสดงช่วงสร้างคำตอบด้วยความเร็ว 2 เท่า
+เดโมความยาว 1 นาที 53 วินาที แสดงการถามตอบเอกสารพร้อมตรวจสอบแหล่งข้อมูล การสร้างลายเซ็นและร่างอีเมลตอบกลับด้วย AI และการแก้ไขข้อความในเบราว์เซอร์ เป็นการบันทึกหน้าจอ Vyact จริงโดยใช้ข้อมูลสมมติ ตัดช่วงรอออก และมีช่วงสร้างคำตอบจากเอกสารที่เร่งความเร็ว 2 เท่า
 
 ## พื้นที่ทำงานเดียวสำหรับงานประจำวัน
 

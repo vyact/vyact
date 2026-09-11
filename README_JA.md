@@ -11,7 +11,7 @@
 
 オープンソース。モデルを自分のコンピューターで実行でき、必要に応じてクラウドのAIも選べます。
 
-[**Vyactをダウンロード**](https://github.com/vyact/vyact/releases/latest) · [**30秒のデモを見る**](https://youtu.be/6_6ChdrW8lY)
+[**Vyactをダウンロード**](https://github.com/vyact/vyact/releases/latest) · [**ワークフローのデモを見る**](https://youtu.be/5EdlX2hIB-c)
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-7c3aed.svg?style=flat-square)](LICENSE)
 [![Chrome Extension](https://img.shields.io/badge/browser-Chrome%20Extension-4285f4.svg?style=flat-square)](https://chromewebstore.google.com/detail/vyact/opfbakfhoojmdkbbhcglolkpgmenjbib)
@@ -22,9 +22,9 @@
 
 ---
 
-[![30秒のデモを見る](assets/readme/demo-local-document-dark.png)](https://youtu.be/6_6ChdrW8lY)
+[![ワークフローのデモを見る](assets/readme/demo-local-document-dark.png)](https://youtu.be/5EdlX2hIB-c)
 
-ローカルの9Bモデルがサンプル文書からリリースのリスク、担当者、代替案を整理し、原文を確認するデモです。Qwen3.5-9B Q4_K_Mを使用した実際のVyactの録画です。架空の資料を使用し、待ち時間を編集しています。生成シーンは2倍速です。
+1分53秒のデモで、文書への質問と出典確認、メール署名とAI返信の作成、ブラウザーでの文章校正を紹介します。架空のデータを使用した実際のVyactの録画です。待ち時間を編集し、文書の回答生成には2倍速の場面が含まれます。
 
 ## 日々の作業をひとつのワークスペースで
 
