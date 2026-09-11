@@ -1,5 +1,5 @@
 import {notifyWorkspaceError} from '../../utils/workspaceError';
-import {lazy, Suspense, useCallback, useEffect, useState, useMemo} from 'react';
+import {lazy, Suspense, useCallback, useEffect, useState, useMemo, useRef} from 'react';
 import {useTranslation} from 'react-i18next';
 import {api as googleApi, createWorkspaceApi} from '../../services/api';
 import {microsoftRequest, MICROSOFT_WORKSPACE_CHANGED} from '../../services/microsoftWorkspace';
@@ -74,6 +74,11 @@ export default function GoogleWorkspacePanel({provider = 'google', requestedAcco
             window.removeEventListener('vyact:google-workspace-status-changed', refresh);
         };
     }, [provider]);
+    const mailNavigationGuardRef = useRef<((navigate: () => void) => void) | null>(null);
+    const navigateFromMail = (navigate: () => void) => {
+        if (mailNavigationGuardRef.current) mailNavigationGuardRef.current(navigate);
+        else navigate();
+    };
     const [activeAccountId, setActiveAccountId] = useState(requestedAccountId || '');
     const [dismissedDriveRequestId, setDismissedDriveRequestId] = useState<number | null>(null);
     const activeDriveSelection = selectedDriveFolder?.requestId === dismissedDriveRequestId
@@ -147,7 +152,11 @@ export default function GoogleWorkspacePanel({provider = 'google', requestedAcco
         };
         return priority(a) - priority(b);
     });
-    const selectWorkspaceAccount = async (value: string) => {
+    const selectWorkspaceAccount = (value: string) => {
+        if (value === `${provider}:${activeAccountId}`) return;
+        navigateFromMail(() => { void switchWorkspaceAccount(value); });
+    };
+    const switchWorkspaceAccount = async (value: string) => {
         const target = accountOptions.find(account => `${account.provider}:${account.id}` === value);
         if (!target || switchingAccount) return;
         setSwitchingAccount(true);
@@ -223,15 +232,15 @@ export default function GoogleWorkspacePanel({provider = 'google', requestedAcco
                     disabled={switchingAccount}
                     onChange={value => void selectWorkspaceAccount(value)}
                     renderTrigger={(label, open) => <>{renderAccountLabel(`${provider}:${activeAccountId}`, label)}<span className="custom-select-arrow">{open ? '▲' : '▼'}</span></>}
-                    renderOption={(option, selected) => <>{renderAccountLabel(option.value, option.label)}{selected && <span className="custom-select-check">✓</span>}</>}
+                    renderOption={(option, selected) => <>{renderAccountLabel(option.value, option.label)}<span className={`custom-select-check${selected ? '' : ' gwp-account-check-hidden'}`} aria-hidden="true">✓</span></>}
                 />
             </div>}
             <div className="gwp-tabs">
                 <button className={tab === 'mail' ? 'active' : ''} onClick={() => setTab('mail')}>{t('googleWorkspace.mail')}</button>
-                <button className={tab === 'drive' ? 'active' : ''} onClick={openDriveRoot}>{provider === 'microsoft' ? t('settings:microsoft.drive') : t('googleWorkspace.drive')}</button>
-                <button className={tab === 'calendar' ? 'active' : ''} onClick={() => setTab('calendar')}>{t('googleWorkspace.calendar.title')}</button>
+                <button className={tab === 'drive' ? 'active' : ''} onClick={() => navigateFromMail(openDriveRoot)}>{provider === 'microsoft' ? t('settings:microsoft.drive') : t('googleWorkspace.drive')}</button>
+                <button className={tab === 'calendar' ? 'active' : ''} onClick={() => navigateFromMail(() => setTab('calendar'))}>{t('googleWorkspace.calendar.title')}</button>
             </div>
-            <button className="gwp-header-close" aria-label={t(provider === 'microsoft' ? 'settings:microsoft.closePanel' : 'googleWorkspace.closePanel')} onClick={onClose}>
+            <button className="gwp-header-close" aria-label={t(provider === 'microsoft' ? 'settings:microsoft.closePanel' : 'googleWorkspace.closePanel')} onClick={() => navigateFromMail(onClose)}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                     <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
@@ -239,7 +248,7 @@ export default function GoogleWorkspacePanel({provider = 'google', requestedAcco
         </header>
         <div key={activeAccountId} className="gwp-account-content">
         <Suspense fallback={null}>
-            {activeAccountId && (!activeDriveSelection?.accountId || activeDriveSelection.accountId === activeAccountId) && (tab === 'mail' ? <MailPanel accountId={activeAccountId} selectedMessageId={selectedMessageId} onAttachFilesToChat={onAttachMailFilesToChat}/> : tab === 'drive' ? <DrivePanel key={activeDriveSelection?.requestId ?? 'drive'} initialFolder={activeDriveSelection ? {id: activeDriveSelection.folderId, name: activeDriveSelection.folderName} : undefined} onAttachToChat={onAttachDriveFileToChat} onIndexDocument={onIndexDriveDocument}/> : (
+            {activeAccountId && (!activeDriveSelection?.accountId || activeDriveSelection.accountId === activeAccountId) && (tab === 'mail' ? <MailPanel navigationGuardRef={mailNavigationGuardRef} accountId={activeAccountId} selectedMessageId={selectedMessageId} onAttachFilesToChat={onAttachMailFilesToChat}/> : tab === 'drive' ? <DrivePanel key={activeDriveSelection?.requestId ?? 'drive'} initialFolder={activeDriveSelection ? {id: activeDriveSelection.folderId, name: activeDriveSelection.folderName} : undefined} onAttachToChat={onAttachDriveFileToChat} onIndexDocument={onIndexDriveDocument}/> : (
                 <CalendarPanel
                     selectedEvent={pendingCalendarEvent}
                     onSelectedEventHandled={requestId => {

@@ -8,6 +8,7 @@ interface ModalOverlayProps extends HTMLAttributes<HTMLDivElement> {
     onClose?: () => void;
     closeOnBackdrop?: boolean;
     closeOnEscape?: boolean;
+    captureEscape?: boolean;
     dimOpacity?: number;
     blur?: number;
 }
@@ -22,6 +23,7 @@ const ModalOverlay = ({
     onClose,
     closeOnBackdrop = false,
     closeOnEscape = true,
+    captureEscape = false,
     dimOpacity = 0.6,
     blur = 0,
     onClick,
@@ -41,9 +43,9 @@ const ModalOverlay = ({
             onClose();
         };
 
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [closeOnEscape, onClose]);
+        window.addEventListener('keydown', handleKeyDown, captureEscape);
+        return () => window.removeEventListener('keydown', handleKeyDown, captureEscape);
+    }, [closeOnEscape, captureEscape, onClose]);
 
     const handleClick: HTMLAttributes<HTMLDivElement>['onClick'] = (event) => {
         onClick?.(event);

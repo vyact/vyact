@@ -20,6 +20,8 @@ from typing import Annotated, Literal
 from urllib.parse import quote
 from pathlib import Path, PurePosixPath
 
+from services.mail_recipient_groups import RecipientGroupsRequest, read_groups, save_groups
+
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response
 from googleapiclient.errors import HttpError
@@ -1881,3 +1883,15 @@ async def list_calendars():
     service = await _build_service("calendar", "v3")
     results = service.calendarList().list().execute()
     return {"calendars": results.get("items", [])}
+
+
+@router.get("/google-workspace/accounts/{account_id}/mail/recipient-groups")
+async def get_recipient_groups(account_id: str):
+    key = (await _mail_signature_document_id(account_id)).replace('google_mail_signature:', 'google_recipient_groups:')
+    return await read_groups(key)
+
+
+@router.put("/google-workspace/accounts/{account_id}/mail/recipient-groups")
+async def put_recipient_groups(account_id: str, request: RecipientGroupsRequest):
+    key = (await _mail_signature_document_id(account_id)).replace('google_mail_signature:', 'google_recipient_groups:')
+    return await save_groups(key, request)

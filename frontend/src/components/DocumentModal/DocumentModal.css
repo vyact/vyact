@@ -1,3 +1,4 @@
+@import "../common/ModalOverlay/ModalActions.css";
 .dm-overlay {
     position: fixed;
     inset: 0;
@@ -437,60 +438,6 @@
 .dm-btn-secondary:hover { background: var(--surface); color: var(--text); border-color: var(--text-secondary); }
 
 /* 푸터 */
-.dm-footer {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 10px;
-    padding: 14px 20px;
-    border-top: 1px solid var(--border);
-    flex-shrink: 0;
-}
-
-.dm-btn-cancel {
-    padding: 9px 18px;
-    background: transparent;
-    border: 1px solid color-mix(in srgb, var(--text-secondary) 35%, var(--border));
-    border-radius: 8px;
-    color: var(--text);
-    font-size: var(--modal-btn);
-    font-weight: 500;
-    font-family: inherit;
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s, border-color 0.15s;
-}
-.dm-btn-cancel:hover {
-    background: color-mix(in srgb, var(--accent) 6%, transparent);
-    border-color: var(--accent);
-    color: var(--accent);
-}
-.dm-btn-cancel:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-.dm-btn-cancel:disabled:hover {
-    background: transparent;
-    border-color: color-mix(in srgb, var(--text-secondary) 35%, var(--border));
-    color: var(--text);
-}
-
-.dm-btn-submit {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 9px 20px;
-    background: var(--accent);
-    border: none;
-    border-radius: 8px;
-    color: var(--on-accent);
-    font-size: var(--modal-btn);
-    font-weight: 600;
-    font-family: inherit;
-    transition: background 0.15s;
-}
-.dm-btn-submit:hover:not(:disabled) { background: var(--button-primary-hover); }
-.dm-btn-submit:disabled { opacity: 0.4; cursor: not-allowed; }
-
 /* 드롭존 compact (파일 있을 때) */
 
 /* 파일 목록 */

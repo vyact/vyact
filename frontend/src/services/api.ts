@@ -899,6 +899,12 @@ export const createWorkspaceApi = (workspace = 'google-workspace', accountId = '
         return response.json();
     },
     async indexGoogleMailThreadForKnowledge(threadId: string, accountId: string, threadMessages?: Array<{id: string; from_: string; to: string; cc: string; date: string; subject: string; body: string; html_body: string; attachments: Array<{id: string; filename: string; mime_type: string; size: number}>}>) { return fetchJson<{source_id: string; thread_id: string; message_count: number; updated: boolean}>(`${API_BASE}/${workspace}/mail/threads/${encodeURIComponent(threadId)}/knowledge-index`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({account_id: accountId, thread_messages: threadMessages || []})}); },
+    async getMailRecipientGroups(id: string): Promise<{groups: Array<{id: string; name: string; emails: string[]}>}> {
+        return fetchJson(`${API_BASE}/${workspace}/accounts/${encodeURIComponent(id)}/mail/recipient-groups`);
+    },
+    async saveMailRecipientGroups(id: string, groups: Array<{id: string; name: string; emails: string[]}>): Promise<{groups: Array<{id: string; name: string; emails: string[]}>}> {
+        return fetchJson(`${API_BASE}/${workspace}/accounts/${encodeURIComponent(id)}/mail/recipient-groups`, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({groups})});
+    },
     async getGoogleMailSignature(accountId: string): Promise<{signature_html: string; enabled: boolean; macros: Array<{id: string; title: string; content_html: string}>}> {
         const response = await fetch(`${API_BASE}/${workspace}/accounts/${encodeURIComponent(accountId)}/mail/signature`, undefined, 'background');
         await assertOk(response);

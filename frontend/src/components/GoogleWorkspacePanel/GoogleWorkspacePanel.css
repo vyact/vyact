@@ -757,11 +757,15 @@
 .gwp-signature-preview h3 { margin: .7em 0 .35em; font-size: 1.15em; }
 .gwp-signature-preview ul, .gwp-signature-preview ol { margin: .3em 0; padding-left: 1.4em; }
 .gwp-signature-preview.empty { display: grid; place-items: center; color: var(--muted); font-size: 13px; }
-.gwp-signature-editor { margin-top: 16px; }
-.gwp-signature-editor .email-editor-wrap { height: 300px; }
-.gwp-signature-editor footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; }
+.gwp-signature-settings-content[data-section="signature"]:has(.gwp-signature-editor) { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.gwp-signature-settings-content[data-section="signature"]:has(.gwp-signature-editor) > .gwp-signature-settings-intro { flex-shrink: 0; }
+.gwp-signature-preview-section:has(.gwp-signature-editor) { display: flex; flex: 1; flex-direction: column; min-height: 0; }
+.gwp-signature-preview-section:has(.gwp-signature-editor) > .gwp-signature-preview-heading { flex-shrink: 0; }
+.gwp-signature-editor { display: flex; flex: 1; flex-direction: column; min-height: 0; margin-top: 16px; }
+.gwp-signature-editor .email-editor-wrap { flex: 1; height: auto; min-height: 0; }
+.gwp-signature-editor > footer { flex-shrink: 0; }
+.gwp-signature-editor footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; padding-top: 2px; }
 .gwp-signature-editor footer > div { display: flex; gap: 8px; }
-.gwp-signature-editor footer button { display: inline-flex; box-sizing: border-box; height: 42px; align-items: center; justify-content: center; padding: 0 17px !important; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 650; }
 .gwp-signature-cancel { border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary); }
 .gwp-signature-cancel:hover { border-color: var(--accent); color: var(--accent); }
 .gwp-signature-save { border: 0; background: var(--accent); color: var(--on-accent); }
@@ -770,7 +774,7 @@
 .gwp-drive-dialog-primary:hover:not(:disabled),
 .gwp-drive-invite button:hover:not(:disabled) { border-color: var(--button-primary-hover); background: var(--button-primary-hover); }
 .gwp-signature-template-select { width: min(210px, 44%); }
-.gwp-signature-template-select .custom-select-trigger { box-sizing: border-box; height: 42px; padding: 0 12px; border-radius: 8px; background: var(--surface); font-size: 14px; font-weight: 650; }
+.gwp-signature-template-select .custom-select-trigger { box-sizing: border-box; height: 36px; min-height: 36px; padding: 0 12px; border-radius: 7px; background: var(--surface); font-size: 13px; font-weight: 400; }
 .gwp-signature-template-select .custom-select-dropdown { top: auto; bottom: calc(100% + 5px); background: var(--surface); }
 .gwp-signature-template-select .custom-select-item { min-height: 42px; padding: 8px 10px; }
 .gwp-mail-macros-section { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
@@ -795,7 +799,9 @@
 .gwp-mail-macros-section.editing .gwp-mail-macro-editor .email-editor-wrap { height: auto; min-height: 0; }
 .gwp-mail-macro-editor footer { display: flex; justify-content: flex-end; gap: 8px; }
 .gwp-mail-macros-section.editing .gwp-mail-macro-editor footer { padding-top: 2px; }
-.gwp-mail-macro-editor footer button { height: 36px; padding: 0 13px !important; border-radius: 7px; cursor: pointer; }
+.gwp-signature-editor footer > div button,
+.gwp-mail-macro-editor footer button,
+.gwp-recipient-group-form > footer button { display: inline-flex; box-sizing: border-box; align-items: center; justify-content: center; height: 36px; min-height: 36px; padding: 0 13px !important; border-radius: 7px; font-size: 13px; font-weight: 400; cursor: pointer; }
 .gwp-signature-template-option { display: flex; align-items: center; gap: 9px; }
 .gwp-signature-template-option > i { display: block; width: 24px; height: 18px; border: 1px solid var(--border); border-radius: 4px; background: linear-gradient(90deg, #d9d9d9 0 34%, #cc785c 34% 39%, var(--surface2) 39%); }
 .gwp-signature-template-option > i.is-modern { background: linear-gradient(90deg, #d9d9d9 0 32%, #5b89b8 32% 38%, var(--surface2) 38%); }
@@ -1012,6 +1018,68 @@
     white-space: nowrap;
 }
 
-.gwp-account-dropdown { min-width: min(320px, calc(100vw - 32px)); }
+.gwp-account-dropdown { width: max-content; min-width: 0; max-width: calc(100vw - 32px); right: auto; }
+.gwp-account-dropdown .custom-select-item { gap: 20px; padding-right: 18px; }
+.gwp-account-dropdown .gwp-account-check-hidden { visibility: hidden; }
+.gwp-account-dropdown .custom-select-item.selected { background: transparent; }
+.gwp-account-dropdown .custom-select-item.selected:hover { background: var(--interactive-hover); }
+.gwp-account-dropdown .custom-select-item.selected:active { background: var(--interactive-active); }
 
 .gwp-recipient-name:empty { display: none; }
+.gwp-signature-settings-content[data-section="groups"] > :not(.gwp-recipient-groups-section) { display: none; }
+.gwp-recipient-group-form, .gwp-recipient-group-form label { display: flex; flex-direction: column; gap: 10px; }
+.gwp-recipient-group-form { flex: 1; min-height: 0; margin-top: 20px; gap: 18px; }
+.gwp-signature-settings-content[data-section="groups"], .gwp-recipient-groups-section, .gwp-recipient-groups { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.gwp-recipient-groups-section, .gwp-recipient-groups { flex: 1; }
+.gwp-recipient-groups > .gwp-signature-preview-heading, .gwp-recipient-group-form > label, .gwp-group-address-entry { flex-shrink: 0; }
+.gwp-recipient-group-form input, .gwp-recipient-group-form textarea { padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; }
+.gwp-recipient-group-form textarea { resize: vertical; }
+.gwp-recipient-group-form .gwp-group-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 38px; padding: 8px 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; cursor: pointer; }
+.gwp-recipient-group-form .gwp-group-secondary:hover { background: var(--surface2); border-color: var(--accent); }
+.gwp-group-address-entry { display: flex; flex-direction: column; gap: 10px; }
+.gwp-group-address-input { display: flex; align-items: stretch; gap: 8px; }
+.gwp-group-address-input input { flex: 1; min-width: 0; }
+.gwp-group-address-input button { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.gwp-group-address-error { margin: 0; color: var(--danger); font-size: 13px; }
+.gwp-group-address-list { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.gwp-group-address-list li { display: flex; flex-shrink: 0; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); }
+.gwp-group-address-list li.editing { border-color: var(--accent); }
+.gwp-group-address-list li > svg { flex-shrink: 0; color: var(--muted); }
+.gwp-group-address-list li > span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.gwp-group-address-list .gwp-mail-macro-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.gwp-recipient-group-form button:disabled { opacity: .5; cursor: not-allowed; }
+.gwp-recipient-groups .gwp-mail-macro-actions button { transition: border-color .15s, color .15s; }
+
+.gwp-recipient-group-list { display: flex; flex-direction: column; gap: 12px; min-height: 0; margin-top: 20px; overflow-y: auto; }
+.gwp-recipient-group-card { padding: 14px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--modal-bg); }
+.gwp-recipient-group-heading { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.gwp-recipient-group-icon { display: grid; place-items: center; width: 32px; height: 32px; flex-shrink: 0; border-radius: 9px; background: var(--modal-inset); color: var(--accent); }
+.gwp-recipient-group-heading > strong { min-width: 0; overflow-wrap: anywhere; font-size: 14px; font-weight: 600; }
+.gwp-recipient-group-count { padding: 2px 7px; border-radius: 6px; background: var(--modal-inset); color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.gwp-recipient-group-actions { display: flex; gap: 4px; margin-left: auto; flex-shrink: 0; }
+.gwp-recipient-group-actions button { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer; }
+.gwp-recipient-group-actions button:hover { background: var(--modal-inset-hover); color: var(--accent); }
+.gwp-recipient-group-actions button.delete:hover { background: var(--del-bg-hover); color: var(--del-fg); }
+.gwp-recipient-group-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; max-height: 130px; overflow-y: auto; }
+.gwp-recipient-group-chips > span { max-width: 100%; padding: 4px 9px; border-radius: 6px; background: var(--modal-inset); color: var(--text-secondary); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.gwp-recipient-group-list > p { color: var(--muted); font-size: 13px; }
+
+.gwp-recipient-group-form > .modal-action-footer { margin: auto 0 0; padding: 2px 0 0; gap: 8px; border-top: 0; background: var(--modal-bg); }
+
+.gwp-unsaved-settings-dialog { box-sizing: border-box; width: 460px; padding: 24px; border-radius: 14px; box-shadow: 0 16px 48px rgba(0, 0, 0, .2); }
+.gwp-unsaved-settings-dialog .confirm-modal-title { margin-bottom: 8px; }
+.gwp-unsaved-settings-dialog .confirm-modal-desc { margin-bottom: 24px; }
+.gwp-unsaved-settings-dialog .confirm-modal-actions { align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
+.gwp-unsaved-settings-dialog .confirm-modal-actions .confirm-modal-btn { flex: 0 1 auto; width: auto; min-height: 36px; padding: 8px 12px; font-size: 13px; transition: color .15s, border-color .15s; white-space: normal; }
+.gwp-unsaved-settings-dialog .confirm-modal-btn:first-child { margin-right: auto; padding-left: 0; border-color: transparent; background: transparent; color: var(--text-secondary); }
+
+.gwp-recipient-actions .gwp-recipient-group-picker { flex: 0 0 auto; }
+.gwp-recipient-group-picker .custom-select-trigger { display: inline-flex; align-items: center; gap: 5px; height: 28px; min-height: 28px; padding: 0 7px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-size: 12px; font-weight: 500; }
+.gwp-recipient-group-picker .custom-select-trigger:hover, .gwp-recipient-group-picker .custom-select-trigger.open { background: var(--modal-inset-hover); color: var(--text); }
+.gwp-recipient-group-picker .custom-select-dropdown { width: min(210px, calc(100vw - 48px)); padding: 4px; }
+.gwp-recipient-group-picker .gwp-recipient-group-manage { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; margin: 0; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }
+.gwp-recipient-group-picker .gwp-recipient-group-manage:hover { background: var(--modal-inset-hover); color: var(--accent); }
+
+.gwp-recipient-group-menu-heading { display: flex; align-items: center; justify-content: space-between; padding: 2px 6px 5px 9px; margin-bottom: 3px; border-bottom: 1px solid var(--border); }
+.gwp-recipient-group-menu-heading > span { color: var(--muted); font-size: 11px; font-weight: 500; }
+.gwp-recipient-group-picker .custom-select-item { min-height: 32px; padding: 7px 9px; border-radius: 6px; font-size: 13px; }

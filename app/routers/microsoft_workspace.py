@@ -13,6 +13,8 @@ from datetime import datetime, timedelta, timezone
 from email.utils import getaddresses
 from urllib.parse import quote
 
+from services.mail_recipient_groups import RecipientGroupsRequest, read_groups, save_groups
+
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, Response
 from pydantic import BaseModel, Field
@@ -754,3 +756,17 @@ async def cancel_job(job_id: str, account_id: str = ""):
     job["task"].cancel()
     _download_jobs.pop(job_id, None)
     return {"ok": True}
+
+
+@router.get("/accounts/{account_id}/mail/recipient-groups")
+async def get_recipient_groups(account_id: str):
+    await auth.account(account_id)
+    key = f'microsoft_recipient_groups:{account_id}'
+    return await read_groups(key)
+
+
+@router.put("/accounts/{account_id}/mail/recipient-groups")
+async def put_recipient_groups(account_id: str, request: RecipientGroupsRequest):
+    await auth.account(account_id)
+    key = f'microsoft_recipient_groups:{account_id}'
+    return await save_groups(key, request)

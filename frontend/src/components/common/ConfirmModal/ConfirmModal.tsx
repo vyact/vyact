@@ -10,6 +10,7 @@ interface ConfirmModalOption {
 }
 
 interface ConfirmModalProps {
+    className?: string;
     title: string;
     description?: string;
     details?: string[];
@@ -28,13 +29,13 @@ interface ConfirmModalProps {
  * 삭제 확인처럼 단순 예/아니오 뿐 아니라, 여러 선택지 중 하나를 고르는 용도(예: zip 파일 개수 제한 확인)로도 사용.
  */
 const ConfirmModal: React.FC<ConfirmModalProps> = ({
-    title, description, details, options, onSelect, onClose, actionLayout = 'vertical',
+    className = '', title, description, details, options, onSelect, onClose, actionLayout = 'vertical',
     loading = false, loadingValue, loadingLabel, loadingProgress,
 }) => {
     return (
         <ModalOverlay className="confirm-modal-overlay" onClose={loading ? () => undefined : onClose}
-                      closeOnBackdrop={!loading}>
-            <div className="confirm-modal" onClick={e => e.stopPropagation()}>
+                      closeOnBackdrop={!loading} captureEscape>
+            <div className={`confirm-modal ${className}`.trim()} onClick={e => e.stopPropagation()}>
                 <div className="confirm-modal-title">{title}</div>
                 {description && <div className="confirm-modal-desc">{description}</div>}
                 {!!details?.length && <ul className="confirm-modal-details">
