@@ -1002,3 +1002,14 @@ details:not([open]) > .details-content-nodeview {
     text-decoration: line-through;
     opacity: 0.6;
 }
+.memo-row-actions { display: inline-flex; align-items: center; gap: 0; }
+.memo-row-edit { opacity: 0; }
+.memo-row-edit svg { width: 14px; height: 14px; stroke-width: 1.75; }
+.memo-item:hover .memo-row-edit, .memo-item:focus-within .memo-row-edit { opacity: 1; }
+.memo-row-edit:disabled { cursor: default; opacity: .35; }
+
+.memo-unsaved-dialog { box-sizing: border-box; width: 460px; padding: 24px; border-radius: 14px; }
+.memo-unsaved-dialog .confirm-modal-desc { margin-bottom: 24px; }
+.memo-unsaved-dialog .confirm-modal-actions { flex-wrap: wrap; justify-content: flex-end; }
+.memo-unsaved-dialog .confirm-modal-actions .confirm-modal-btn { flex: 0 1 auto; width: auto; min-height: 36px; padding: 8px 12px; font-size: 13px; white-space: normal; }
+.memo-unsaved-dialog .confirm-modal-btn:first-child { margin-right: auto; border-color: transparent; background: transparent; color: var(--text-secondary); }

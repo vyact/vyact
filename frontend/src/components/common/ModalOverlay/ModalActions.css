@@ -1,0 +1,53 @@
+:is(.dm-footer, .modal-action-footer) {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+:is(.dm-btn-cancel, .modal-action-cancel) {
+    padding: 9px 18px;
+    background: transparent;
+    border: 1px solid color-mix(in srgb, var(--text-secondary) 35%, var(--border));
+    border-radius: 8px;
+    color: var(--text);
+    font-size: var(--modal-btn);
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+}
+:is(.dm-btn-cancel, .modal-action-cancel):hover {
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+:is(.dm-btn-cancel, .modal-action-cancel):disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+:is(.dm-btn-cancel, .modal-action-cancel):disabled:hover {
+    background: transparent;
+    border-color: color-mix(in srgb, var(--text-secondary) 35%, var(--border));
+    color: var(--text);
+}
+
+:is(.dm-btn-submit, .modal-action-submit) {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 20px;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: var(--on-accent);
+    font-size: var(--modal-btn);
+    font-weight: 600;
+    font-family: inherit;
+}
+:is(.dm-btn-submit, .modal-action-submit):hover:not(:disabled) { background: var(--button-primary-hover); }
+:is(.dm-btn-submit, .modal-action-submit):disabled { opacity: 0.4; cursor: not-allowed; }
+

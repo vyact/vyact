@@ -17,6 +17,8 @@ import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import { AlignCenter, AlignLeft, AlignRight, Ellipsis, FileText, ImagePlus, Link as LinkIcon, LoaderCircle, Paperclip, Pencil, Search, Table2, Trash2, X } from 'lucide-react';
 
+import {getTopmostModalOverlay} from '../common/ModalOverlay/modalStack';
+import {toast} from '../common/ToastNotifications/ToastNotifications';
 import { api } from '../../services/api';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
@@ -40,12 +42,16 @@ interface MemoModalProps {
     initialMemoId?: string;
 }
 
+type MemoEditorState = {html: () => string; dirty: () => boolean; busy: () => boolean};
+
 const MemoEditor: React.FC<{
+    stateRef: React.MutableRefObject<MemoEditorState | null>;
     initialHtml: string;
     onSave: (html: string) => void | Promise<void>;
     onCancel: () => void;
     onEnsureMemoId: () => Promise<string>;
-}> = ({ initialHtml, onSave, onCancel, onEnsureMemoId }) => {
+}> = ({ initialHtml, onSave, onCancel, onEnsureMemoId, stateRef }) => {
+    const baselineHtml = React.useRef('');
     const { t } = useTranslation('main');
     const slashItems = [
         { label: t('memoModal.slash.heading1'), desc: 'H1', action: (e: any) => e.chain().focus().toggleHeading({ level: 1 }).run() },
@@ -149,7 +155,14 @@ const MemoEditor: React.FC<{
                 .setContent(initialHtml, { emitUpdate: false })
                 .run();
         }
+        if (editor) baselineHtml.current = editor.getHTML();
     }, [editor, initialHtml]);
+
+    React.useImperativeHandle(stateRef, () => ({
+        html: () => editor?.getHTML() || '',
+        dirty: () => Boolean(editor && editor.getHTML() !== baselineHtml.current),
+        busy: () => isSavingRef.current || uploadCount > 0,
+    }), [editor, uploadCount]);
 
     const insertDetailsAndFocus = useCallback(() => {
         if (!editor) return;
@@ -809,6 +822,10 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
     const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; title: string } | null>(null);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [memoActionsId, setMemoActionsId] = useState<string | null>(null);
+    const memoEditorState = React.useRef<MemoEditorState | null>(null);
+    const [pendingNavigation, setPendingNavigation] = useState<(() => void | Promise<void>) | null>(null);
+    const navigationBusyRef = React.useRef(false);
+    const [navigationBusy, setNavigationBusy] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null); // null = 새 메모
     const [editingHtml, setEditingHtml] = useState('');
     const [isEditing, setIsEditing] = useState(false);
@@ -857,6 +874,7 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
             if (e.key !== 'Escape') return;
+            if (getTopmostModalOverlay()?.classList.contains('confirm-modal-overlay')) return;
             if (deleteConfirm) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
@@ -955,10 +973,33 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
         await loadMemos(false);
     }, [editingHtml, loadMemos, selectedId]);
 
-    const closeMemoModal = useCallback(async () => {
-        if (isEditing) await handleCancelEdit();
-        onClose();
-    }, [handleCancelEdit, isEditing, onClose]);
+    const requestMemoNavigation = (navigate: () => void | Promise<void>) => {
+        if (navigationBusyRef.current || memoEditorState.current?.busy()) return;
+        if (isEditing && memoEditorState.current?.dirty()) {
+            setPendingNavigation(() => navigate);
+            return;
+        }
+        void finishMemoNavigation(navigate, false);
+    };
+    const finishMemoNavigation = async (navigate: () => void | Promise<void>, save: boolean) => {
+        if (navigationBusyRef.current || memoEditorState.current?.busy()) return;
+        navigationBusyRef.current = true;
+        setNavigationBusy(true);
+        try {
+            if (isEditing) {
+                if (save) {
+                    const html = memoEditorState.current?.html() || '';
+                    if (!html || html === '<p></p>') { setPendingNavigation(null); return; }
+                    await handleSave(html);
+                } else await handleCancelEdit();
+            }
+            await navigate();
+            setPendingNavigation(null);
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : t('localOperationErrors.memoPrepareFailed'));
+        } finally { navigationBusyRef.current = false; setNavigationBusy(false); }
+    };
+    const closeMemoModal = () => requestMemoNavigation(onClose);
 
     const handleDelete = (id: string, title: string, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -997,6 +1038,14 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
                         </div>
                     </div>
                 )}
+                {pendingNavigation && <ConfirmModal className="memo-unsaved-dialog" actionLayout="horizontal" title={t('googleWorkspace.unsavedSettings')} description={t('googleWorkspace.unsavedSettingsDescription')} options={[
+                    {label: t('googleWorkspace.keepEditing'), value: 'stay'},
+                    {label: t('googleWorkspace.discardAndLeave'), value: 'discard'},
+                    {label: t('googleWorkspace.saveAndLeave'), value: 'save', variant: 'primary'},
+                ]} loading={navigationBusy} loadingValue="save" onClose={() => { if (!navigationBusy) setPendingNavigation(null); }} onSelect={value => {
+                    if (value === 'stay') setPendingNavigation(null);
+                    else void finishMemoNavigation(pendingNavigation, value === 'save');
+                }}/>}
                 {deleteConfirm && (
                     <ConfirmModal
                         title={deleteConfirm.title || t('memoModal.untitled')}
@@ -1028,7 +1077,7 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
                 <div className="memo-modal-body">
                     {/* 사이드바 - 목록 */}
                     <div className="memo-sidebar">
-                        <button className="memo-new-btn" onClick={handleNew}>{t('memoModal.newMemo')}</button>
+                        <button className="memo-new-btn" onClick={() => requestMemoNavigation(handleNew)}>{t('memoModal.newMemo')}</button>
                         <div className="memo-search-wrap">
                             <Search className="memo-search-icon" aria-hidden="true" />
                             <input
@@ -1050,26 +1099,25 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
                         {filteredMemos.map(memo => (
                             <div
                                 key={memo.id}
-                                className={`memo-item ${((isEditing ? editingId : selectedId) === memo.id) ? 'selected' : ''} ${isEditing && editingId === memo.id ? 'editing' : ''} ${isEditing && editingId !== memo.id ? 'locked' : ''}`}
+                                className={`memo-item ${((isEditing ? editingId : selectedId) === memo.id) ? 'selected' : ''} ${isEditing && editingId === memo.id ? 'editing' : ''}`}
                                 onClick={() => {
-                                    if (!isEditing) {
-                                        setSelectedId(memo.id);
-                                        setMemoActionsId(null);
-                                    }
+                                    if (isEditing && editingId === memo.id) return;
+                                    requestMemoNavigation(() => { setSelectedId(memo.id); setMemoActionsId(null); });
                                 }}
                                 onDoubleClick={() => {
-                                    if (!isEditing) void handleEdit(memo.id);
+                                    if (editingId !== memo.id || !isEditing) requestMemoNavigation(() => handleEdit(memo.id));
                                 }}
-                                aria-disabled={isEditing && editingId !== memo.id}
                             >
                                 <div className="memo-item-title">{memo.title || t('memoModal.untitled')}</div>
                                 <div className="memo-item-meta">
                                     <span>{formatDate(memo.updated_at)}</span>
+                                    <span className="memo-row-actions" onClick={event => event.stopPropagation()} onDoubleClick={event => event.stopPropagation()}>
+                                    <button type="button" className="memo-more-btn memo-row-edit" aria-label={t('memoModal.edit')} disabled={navigationBusy || (isEditing && editingId === memo.id)} onClick={() => requestMemoNavigation(() => handleEdit(memo.id))}><Pencil aria-hidden="true"/></button>
                                     <ActionMenu className="memo-actions-menu" isOpen={memoActionsId === memo.id} onOpenChange={open => setMemoActionsId(open ? memo.id : null)} disabled={isEditing} ariaLabel={t('common:more')} triggerClassName="memo-more-btn" menuClassName="memo-actions-popup" trigger={<Ellipsis aria-hidden="true" />}>
-                                        <button className="memo-action-menu-item" onClick={() => { setMemoActionsId(null); if (!isEditing) void handleEdit(memo.id); }}><Pencil aria-hidden="true" />{t('memoModal.edit')}</button>
                                         <KnowledgeCollectionAttachSelect source={{source_type: 'memo', source_id: memo.id}} onCreateCollection={onClose} onSelectionComplete={() => setMemoActionsId(null)} menuItem/>
                                         <button className="memo-action-menu-item memo-action-menu-item--danger" onClick={(e) => { setMemoActionsId(null); if (!isEditing) handleDelete(memo.id, memo.title, e); }}><Trash2 aria-hidden="true" />{t('memoModal.delete')}</button>
                                     </ActionMenu>
+                                    </span>
                                 </div>
                             </div>
                         ))}
@@ -1079,6 +1127,7 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
                     <div className="memo-main">
                         {isEditing ? (
                             <MemoEditor
+                                stateRef={memoEditorState}
                                 initialHtml={editingHtml}
                                 onSave={handleSave}
                                 onCancel={() => { void handleCancelEdit(); }}
