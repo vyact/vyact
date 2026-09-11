@@ -11,7 +11,7 @@ Use local AI with your documents, email, and browser—from finding answers in y
 
 Open source. Run models on your computer, with optional cloud providers.
 
-[**Download Vyact**](https://github.com/vyact/vyact/releases/latest) · [**Watch the 28-second demo**](https://youtu.be/k3awr5jAdMk)
+[**Download Vyact**](https://github.com/vyact/vyact/releases/latest) · [**Watch the 30-second demo**](https://youtu.be/6_6ChdrW8lY)
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-7c3aed.svg?style=flat-square)](LICENSE)
   [![Chrome Extension](https://img.shields.io/badge/browser-Chrome%20Extension-4285f4.svg?style=flat-square)](https://chromewebstore.google.com/detail/vyact/opfbakfhoojmdkbbhcglolkpgmenjbib)
@@ -23,7 +23,7 @@ Open source. Run models on your computer, with optional cloud providers.
 
 ---
 
-[![Watch the 28-second demo](assets/readme/demo-local-document.jpg)](https://youtu.be/k3awr5jAdMk)
+[![Watch the 30-second demo](assets/readme/demo-local-document.jpg)](https://youtu.be/6_6ChdrW8lY)
 
 A local 9B model finds launch risks, owners, and fallbacks in a sample document, then shows the original source. Actual Vyact recording with Qwen3.5-9B Q4_K_M; fictional sample data, edited for length, with generation shown at 2× speed.
 

@@ -11,7 +11,7 @@ Dùng AI trên máy với tài liệu, email và trình duyệt: tìm câu trả
 
 Mã nguồn mở. Chạy mô hình trên máy tính của bạn, với tùy chọn dùng nhà cung cấp AI đám mây.
 
-[**Tải Vyact**](https://github.com/vyact/vyact/releases/latest) · [**Xem demo 28 giây**](https://youtu.be/k3awr5jAdMk)
+[**Tải Vyact**](https://github.com/vyact/vyact/releases/latest) · [**Xem demo 30 giây**](https://youtu.be/6_6ChdrW8lY)
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-7c3aed.svg?style=flat-square)](LICENSE)
 [![Chrome Extension](https://img.shields.io/badge/browser-Chrome%20Extension-4285f4.svg?style=flat-square)](https://chromewebstore.google.com/detail/vyact/opfbakfhoojmdkbbhcglolkpgmenjbib)
@@ -22,7 +22,7 @@ Mã nguồn mở. Chạy mô hình trên máy tính của bạn, với tùy ch�
 
 ---
 
-[![Xem demo 28 giây](assets/readme/demo-local-document.jpg)](https://youtu.be/k3awr5jAdMk)
+[![Xem demo 30 giây](assets/readme/demo-local-document.jpg)](https://youtu.be/6_6ChdrW8lY)
 
 Mô hình 9B chạy trên máy tìm rủi ro, người phụ trách và phương án dự phòng trong tài liệu mẫu, sau đó mở nguồn gốc để kiểm tra. Video quay trực tiếp Vyact với Qwen3.5-9B Q4_K_M và dữ liệu giả định; đã cắt bớt thời gian chờ, đoạn tạo câu trả lời được phát nhanh 2 lần.
 

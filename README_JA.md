@@ -11,7 +11,7 @@
 
 オープンソース。モデルを自分のコンピューターで実行でき、必要に応じてクラウドのAIも選べます。
 
-[**Vyactをダウンロード**](https://github.com/vyact/vyact/releases/latest) · [**28秒のデモを見る**](https://youtu.be/k3awr5jAdMk)
+[**Vyactをダウンロード**](https://github.com/vyact/vyact/releases/latest) · [**30秒のデモを見る**](https://youtu.be/6_6ChdrW8lY)
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-7c3aed.svg?style=flat-square)](LICENSE)
 [![Chrome Extension](https://img.shields.io/badge/browser-Chrome%20Extension-4285f4.svg?style=flat-square)](https://chromewebstore.google.com/detail/vyact/opfbakfhoojmdkbbhcglolkpgmenjbib)
@@ -22,7 +22,7 @@
 
 ---
 
-[![28秒のデモを見る](assets/readme/demo-local-document.jpg)](https://youtu.be/k3awr5jAdMk)
+[![30秒のデモを見る](assets/readme/demo-local-document.jpg)](https://youtu.be/6_6ChdrW8lY)
 
 ローカルの9Bモデルがサンプル文書からリリースのリスク、担当者、代替案を整理し、原文を確認するデモです。Qwen3.5-9B Q4_K_Mを使用した実際のVyactの録画です。架空の資料を使用し、待ち時間を編集しています。生成シーンは2倍速です。
 
