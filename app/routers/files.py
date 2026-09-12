@@ -10,6 +10,7 @@ import zipfile
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi.responses import FileResponse
 
 from config import INSTALL_DIR
 from logger import get_logger
@@ -21,6 +22,8 @@ router = APIRouter()
 
 FILES_DIR = INSTALL_DIR / "uploads" / "files"
 FILES_DIR.mkdir(parents=True, exist_ok=True)
+
+DOCUMENT_PREVIEW_EXTENSIONS = {".pdf", ".docx", ".xlsx", ".pptx", ".txt", ".html", ".htm", ".md"}
 
 # 텍스트 추출 가능한 확장자 (zip 내부 포함)
 TEXT_EXTS = set(PARSERS.keys()) | {
@@ -218,3 +221,12 @@ async def confirm_zip_upload(saved_name: str, original_name: str, max_files: int
         return _build_zip_response(save_path, original_name, saved_name, selected)
     finally:
         save_path.unlink(missing_ok=True)
+
+@router.get("/files/preview/{saved_name}")
+async def preview_uploaded_document(saved_name: str):
+    path = (FILES_DIR / saved_name).resolve()
+    if path.parent != FILES_DIR.resolve() or path.suffix.lower() not in DOCUMENT_PREVIEW_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="Unsupported document")
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Document not found")
+    return FileResponse(path, filename=path.name)

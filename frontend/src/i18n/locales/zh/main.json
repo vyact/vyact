@@ -1401,5 +1401,11 @@
     "comparisonFields": "比较项：{{fields}}。其他设置保持不变，重新加载模型可能需要时间。",
     "currentOnly": "只有一种配置，因此测量该配置的性能。",
     "dflashNotice": "DFlash2会自动应用于兼容模型，测试期间保持启用，不进行开关对比。"
+  },
+  "documentPreview": {
+    "close": "关闭",
+    "loading": "正在加载文档…",
+    "error": "无法预览此文档。",
+    "extracted": "提取的文本"
   }
 }

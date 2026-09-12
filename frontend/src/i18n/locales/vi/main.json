@@ -1401,5 +1401,11 @@
     "comparisonFields": "Thiết lập so sánh: {{fields}}. Các thiết lập khác giữ nguyên; tải lại mô hình có thể mất thời gian.",
     "currentOnly": "Chỉ có một cấu hình, nên sẽ đo hiệu năng của cấu hình đó.",
     "dflashNotice": "DFlash2 tự áp dụng cho mô hình tương thích và duy trì trong thử nghiệm. Không so sánh bật/tắt."
+  },
+  "documentPreview": {
+    "close": "Đóng",
+    "loading": "Đang tải tài liệu…",
+    "error": "Không thể xem trước tài liệu này.",
+    "extracted": "Văn bản được trích xuất"
   }
 }

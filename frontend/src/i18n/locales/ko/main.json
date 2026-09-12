@@ -1411,5 +1411,11 @@
     "comparisonFields": "비교 항목: {{fields}}. 나머지 설정은 유지하며, 모델 재로딩으로 시간이 걸릴 수 있습니다.",
     "currentOnly": "비교할 설정 조합이 하나이므로 현재 조합의 성능을 측정합니다.",
     "dflashNotice": "DFlash2는 호환 모델에 자동 적용됩니다. 테스트 중에도 유지하며, 켜짐/꺼짐 비교는 하지 않습니다."
+  },
+  "documentPreview": {
+    "close": "닫기",
+    "loading": "문서를 불러오는 중…",
+    "error": "문서를 미리 볼 수 없습니다.",
+    "extracted": "추출된 텍스트"
   }
 }

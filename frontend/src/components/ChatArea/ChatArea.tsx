@@ -1,3 +1,4 @@
+import DocumentPreviewPanel from '../DocumentPreviewPanel/DocumentPreviewPanel';
 import React, {useRef, useEffect, useCallback, useMemo, useState} from 'react';
 import Message from '../Message';
 import LoadingIndicator from '../LoadingIndicator';
@@ -240,6 +241,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             && last.followups && last.followups.length > 0;
         return visible ? {id: last.id || last.timestamp || '', followups: last.followups!} : null;
     }, [isLoading, messages, streamingMessageId]);
+
+    useEffect(() => { panels.close('document-preview'); }, [convId, panels.close]);
 
     // 새 대화 또는 대화 전환 시 패널 닫기
     useEffect(() => {
@@ -558,6 +561,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                     <CodePanel style={{width: `${panelWidth}%`}}/>
                 </React.Suspense>
             )}
+            {panels.activePanel === 'document-preview' && <DocumentPreviewPanel style={{width: `${panelWidth}%`}}/>}
             <BrowserPanel style={{width: `${panelWidth}%`}}/>
             {sidePanels
                 .filter(item => item.id === panels.activePanel || panels.minimizedPanels.includes(item.id))

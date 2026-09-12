@@ -1,3 +1,4 @@
+import DocumentAttachmentCard from '../DocumentPreviewPanel/DocumentAttachmentCard';
 import {formatLocalizedNumber} from '../../utils/localizedNumber';
 import {useAutoReadMessage} from '../../services/tts/autoReadState';
 import React, {useMemo, useRef, useState} from 'react';
@@ -310,37 +311,23 @@ const Message: React.FC<MessageProps> = ({
                     {fileAttachments.length > 0 && (
                         <div className="user-file-list">
                             {fileAttachments.map((att, idx) => (
-                                <div className="user-file-card" key={`${att.saved_name || att.filename}-${idx}`}>
-                                    <span className="user-file-card__icon" aria-hidden="true">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                             stroke="currentColor" strokeWidth="1.8">
-                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                            <polyline points="14 2 14 8 20 8"/>
-                                        </svg>
-                                    </span>
-                                    <span className="user-file-card__name">
-                                        {att.original_name || att.saved_name || att.filename || t('uiAuditExtra.file')}
-                                    </span>
-                                    {att.type === 'zip' && att.file_count != null && (
-                                        <span className="user-file-card__meta">{t('uiAuditFinal.itemCount', {count: att.file_count})}</span>
-                                    )}
-                                </div>
+                                <DocumentAttachmentCard
+                                    key={`${att.saved_name || att.filename}-${idx}`}
+                                    name={att.original_name || att.saved_name || att.filename || t('uiAuditExtra.file')}
+                                    url={att.type === 'file' && att.saved_name ? `/api/files/preview/${encodeURIComponent(att.saved_name)}` : undefined}
+                                    meta={att.type === 'zip' && att.file_count != null ? t('uiAuditFinal.itemCount', {count: att.file_count}) : undefined}
+                                />
                             ))}
                         </div>
                     )}
                     {savedDocumentAttachments.length > 0 && (
                         <div className="user-file-list">
                             {savedDocumentAttachments.map((article, idx) => (
-                                <div className="user-file-card" key={`${article.file_id || article.url}-${idx}`}>
-                                    <span className="user-file-card__icon" aria-hidden="true">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                             stroke="currentColor" strokeWidth="1.8">
-                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                            <polyline points="14 2 14 8 20 8"/>
-                                        </svg>
-                                    </span>
-                                    <span className="user-file-card__name">{article.title}</span>
-                                </div>
+                                <DocumentAttachmentCard
+                                    key={`${article.file_id || article.url}-${idx}`}
+                                    name={article.title}
+                                    url={article.file_id ? `/api/document/files/${encodeURIComponent(article.file_id)}` : undefined}
+                                />
                             ))}
                         </div>
                     )}

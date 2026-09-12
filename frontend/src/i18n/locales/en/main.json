@@ -1400,5 +1400,11 @@
     "comparisonFields": "Compared settings: {{fields}}. Other settings stay fixed; model reloading may take time.",
     "currentOnly": "Only one configuration is available, so this measures its performance.",
     "dflashNotice": "DFlash2 is applied automatically to compatible models and stays enabled during testing. On/off comparison is not performed."
+  },
+  "documentPreview": {
+    "close": "Close",
+    "loading": "Loading document…",
+    "error": "Unable to preview this document.",
+    "extracted": "Extracted text"
   }
 }

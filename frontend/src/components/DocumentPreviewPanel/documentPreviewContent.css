@@ -1,0 +1,9 @@
+html, body { background: var(--surface) !important; color: var(--text) !important; }
+body { font: 14px/1.7 system-ui; padding: 20px; overflow-wrap: anywhere; }
+body * { color: inherit !important; background-color: transparent !important; border-color: var(--border) !important; }
+a, a * { color: var(--info) !important; }
+table { border-collapse: collapse; }
+td, th { border: 1px solid var(--border); padding: 6px; }
+pre { white-space: pre-wrap; }
+pre, code { background-color: var(--surface2) !important; }
+img { max-width: 100%; }

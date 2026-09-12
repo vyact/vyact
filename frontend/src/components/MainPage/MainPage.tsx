@@ -1,3 +1,4 @@
+import {DocumentPreviewProvider} from '../../contexts/DocumentPreviewContext';
 import {getGoogleWorkspaceStatus} from '../../services/googleWorkspaceStatus';
 import {createWorkspaceApi} from '../../services/api';
 import {microsoftRequest, OPEN_MICROSOFT_WORKSPACE} from '../../services/microsoftWorkspace';
@@ -656,7 +657,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
     return (
         <PanelManagerProvider>
             <PluginProviders>
-            <CodePanelProvider>
+            <DocumentPreviewProvider><CodePanelProvider>
                 <PluginPanelCoordinator/>
                 <div className="main-page-wrapper">
                     <TitleBar
@@ -1116,7 +1117,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                         )}
                     </div>
                 </div>
-            </CodePanelProvider>
+            </CodePanelProvider></DocumentPreviewProvider>
             </PluginProviders>
         </PanelManagerProvider>
     );

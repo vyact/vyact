@@ -1400,5 +1400,11 @@
     "comparisonFields": "Ajustes comparados: {{fields}}. Los demás permanecen fijos; recargar el modelo puede tardar.",
     "currentOnly": "Solo hay una configuración disponible; se mide su rendimiento.",
     "dflashNotice": "DFlash2 se aplica automáticamente a los modelos compatibles y se mantiene durante la prueba. No se compara activado y desactivado."
+  },
+  "documentPreview": {
+    "close": "Cerrar",
+    "loading": "Cargando documento…",
+    "error": "No se puede previsualizar este documento.",
+    "extracted": "Texto extraído"
   }
 }
