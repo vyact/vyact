@@ -1,0 +1,12 @@
+.request-log-entry { border-bottom: 1px solid var(--border); }
+.request-log-entry > summary { display: flex; align-items: center; gap: 8px; padding: 10px 12px; cursor: pointer; -webkit-user-select: none; user-select: none; list-style: none; font: 12px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace; }
+.request-log-entry > summary::-webkit-details-marker { display: none; }
+.request-log-entry > summary:hover { background: var(--button-neutral-hover); }
+.request-log-entry > summary > svg { flex-shrink: 0; color: var(--text-secondary); }
+.request-log-entry[open] > summary > svg { transform: rotate(90deg); }
+.request-log-entry > summary > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.request-log-body { padding: 4px 12px 12px 34px; font: 12px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace; }
+.request-log-fields { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.request-log-field { display: grid; grid-template-columns: minmax(80px, 24%) minmax(0, 1fr); gap: 12px; }
+.request-log-key { color: var(--accent); overflow-wrap: anywhere; }
+.request-log-value { white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; }

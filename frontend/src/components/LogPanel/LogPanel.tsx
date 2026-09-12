@@ -1,3 +1,5 @@
+import TextLogEntries from './TextLogEntries';
+import RequestLogEntries from './RequestLogEntries';
 import ToggleSwitch from '../common/ToggleSwitch/ToggleSwitch';
 import {useEffect, useRef, useState, useLayoutEffect, type CSSProperties} from 'react';
 import {useTranslation} from 'react-i18next';
@@ -92,7 +94,9 @@ export default function LogPanel({model, style}: {model: string; style: CSSPrope
             {kind === 'model' && files.length === 0 && <pre>{t('logViewer.empty')}</pre>}
             {files.map(file => <section key={file.path}>
                 <div className="log-panel-path">{file.path}</div>
-                <pre>{file.content || t('logViewer.empty')}</pre>
+                {kind === 'llm' && file.content
+                    ? <RequestLogEntries content={file.content} onInspect={() => {followTail.current = false; setPaused(true);}}/>
+                    : file.content ? <TextLogEntries content={file.content}/> : <pre>{t('logViewer.empty')}</pre>}
             </section>)}
         </div>
         {paused && <button type="button" className="log-panel-resume" onClick={resumeTail}><ArrowDown size={14}/>{t('logViewer.latest')}</button>}

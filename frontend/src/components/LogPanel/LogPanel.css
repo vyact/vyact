@@ -13,5 +13,23 @@
 .log-panel-content pre { margin: 0; padding: 12px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace; }
 .log-panel-status { padding: 12px; color: var(--text-secondary); }
 
-.log-panel-resume { display: flex; justify-content: center; align-items: center; gap: 6px; padding: 8px; border: 0; border-top: 1px solid var(--border); background: var(--surface2); color: var(--text); cursor: pointer; font: inherit; }
-.log-panel-resume:hover { background: var(--button-neutral-hover); }
+.log-panel-resume {
+    display: flex;
+    flex-shrink: 0;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 10px 14px;
+    border: 0;
+    border-top: 2px solid var(--accent);
+    background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+    color: var(--accent);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+}
+.log-panel-resume:hover { background: color-mix(in srgb, var(--accent) 24%, var(--surface)); }
+.log-panel-resume:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
+
+.log-copy-button { flex-shrink: 0; align-self: start; width: 26px; height: 26px; color: var(--text-secondary); }
