@@ -579,7 +579,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                 ))}
             {panels.activePanel === 'google-workspace' && googleWorkspaceOpen && (
                 <React.Suspense fallback={null}>
-                    <GoogleWorkspacePanel onAccountSwitch={onWorkspaceAccountSwitch} key={`${workspaceProvider}:${workspaceProvider === 'microsoft' ? `${workspaceAccountId}:${workspaceRequestId}` : ''}`} requestedAccountId={workspaceProvider === 'microsoft' ? workspaceAccountId : undefined} provider={workspaceProvider} embedded selectedMessageId={selectedGoogleMailId}
+                    <GoogleWorkspacePanel onAccountSwitch={onWorkspaceAccountSwitch} key={`${workspaceProvider}:${workspaceAccountId}:${workspaceRequestId}`} requestedAccountId={workspaceAccountId} provider={workspaceProvider} embedded selectedMessageId={selectedGoogleMailId}
                         selectedCalendarEvent={selectedGoogleCalendarEvent}
                         selectedDriveFolder={selectedGoogleDriveFolder}
                         onClose={onGoogleWorkspaceClose || (() => {})} style={{width: `${workspacePanelWidth}%`}}

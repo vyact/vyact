@@ -269,7 +269,8 @@ export default function NotificationCenter({open, onOpenChange}: NotificationCen
             onOpenChange(false);
             return;
         }
-        if (item.account_id && (item.type === 'google_mail' || item.type === 'google_calendar')) {
+        let notificationAccountId: string | undefined;
+        if ((item.account_id || item.account_email) && (item.type === 'google_mail' || item.type === 'google_calendar')) {
             // 연결 직후에는 캐시가 이전 슬롯 ID를 유지할 수 있어 매번 최신 상태를
             // 확인한다. 특히 계정 삭제 후 같은 Google 계정을 다시 추가한 경우다.
             const googleStatus = await refreshGoogleWorkspaceStatus();
@@ -292,13 +293,14 @@ export default function NotificationCenter({open, onOpenChange}: NotificationCen
                 onOpenChange(false);
                 return;
             }
+            notificationAccountId = accountId;
             window.dispatchEvent(new CustomEvent('vyact:google-account-changed', {
                 detail: {accountId},
             }));
         }
         if (item.type === 'google_mail') {
             window.dispatchEvent(new CustomEvent('vyact:notification-selected', {
-                detail: {type: item.type, sourceId: item.source_id},
+                detail: {type: item.type, sourceId: item.source_id, accountId: notificationAccountId},
             }));
         } else if (item.type === 'google_calendar') {
             const sourceMatch = item.source_id.match(/^primary:([^:]+):(.+):\d+$/);
@@ -306,6 +308,7 @@ export default function NotificationCenter({open, onOpenChange}: NotificationCen
                 window.dispatchEvent(new CustomEvent('vyact:notification-selected', {
                     detail: {
                         type: item.type,
+                        accountId: notificationAccountId,
                         eventId: sourceMatch[1],
                         startAt: sourceMatch[2],
                         requestId: Date.now(),

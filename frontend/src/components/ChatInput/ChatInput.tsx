@@ -80,7 +80,7 @@ interface ChatInputProps {
     onOpenSupport?: () => void;
     onOpenMemo?: () => void;
     onOpenQuickMemo?: () => void;
-    onOpenGoogleWorkspace?: (messageId?: string, calendarSelection?: GoogleCalendarSelection) => void;
+    onOpenGoogleWorkspace?: (messageId?: string, calendarSelection?: GoogleCalendarSelection, accountId?: string) => void;
     onToggleGoogleWorkspace?: () => void;
     googleWorkspaceOpen?: boolean;
     activePromptTitle?: string | null;
@@ -196,13 +196,13 @@ const ChatInput: React.FC<ChatInputProps> = ({
         const openNotificationItem = (event: Event) => {
             const detail = (event as CustomEvent).detail;
             if (detail?.type === 'google_mail') {
-                onOpenGoogleWorkspace?.(detail.sourceId);
+                onOpenGoogleWorkspace?.(detail.sourceId, undefined, detail.accountId);
             } else if (detail?.type === 'google_calendar') {
                 onOpenGoogleWorkspace?.(undefined, {
                     eventId: detail.eventId,
                     startAt: detail.startAt,
                     requestId: detail.requestId,
-                });
+                }, detail.accountId);
             }
         };
         window.addEventListener('vyact:notification-selected', openNotificationItem);

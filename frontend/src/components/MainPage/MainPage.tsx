@@ -349,7 +349,10 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
     const [selectedGoogleMailId, setSelectedGoogleMailId] = useState<string | null>(null);
     const [selectedGoogleCalendarEvent, setSelectedGoogleCalendarEvent] = useState<GoogleCalendarSelection | null>(null);
     const [selectedGoogleDriveFolder, setSelectedGoogleDriveFolder] = useState<GoogleDriveSelection | null>(null);
-    const openGoogleWorkspacePanel = (messageId?: string, calendarSelection?: GoogleCalendarSelection) => {
+    const openGoogleWorkspacePanel = (messageId?: string, calendarSelection?: GoogleCalendarSelection, accountId?: string) => {
+        setWorkspaceAccountId(accountId || '');
+        setWorkspaceRequestId(requestId => requestId + 1);
+        setSelectedGoogleDriveFolder(null);
         setWorkspaceProvider('google');
         setSelectedGoogleMailId(messageId || null);
         setSelectedGoogleCalendarEvent(calendarSelection || null);

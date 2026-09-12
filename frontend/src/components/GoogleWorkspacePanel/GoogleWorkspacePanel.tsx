@@ -104,8 +104,9 @@ export default function GoogleWorkspacePanel({provider = 'google', requestedAcco
         const configuredActiveAccountId = typeof server?.config?.active_account_id === 'string'
             ? server.config.active_account_id
             : '';
-        const activeAccountId = connectedAccounts.some(account => account.id === configuredActiveAccountId)
-            ? configuredActiveAccountId
+        const preferredAccountId = requestedAccountId || configuredActiveAccountId;
+        const activeAccountId = connectedAccounts.some(account => account.id === preferredAccountId)
+            ? preferredAccountId
             : connectedAccounts[0]?.id || '';
 
         setAccounts(connectedAccounts);
@@ -116,7 +117,7 @@ export default function GoogleWorkspacePanel({provider = 'google', requestedAcco
         if (activeAccountId && activeAccountId !== configuredActiveAccountId) {
             await api.activateGoogleAccount(activeAccountId);
         }
-    }, [provider]);
+    }, [provider, requestedAccountId]);
 
     useEffect(() => {
         void loadAccounts().catch(notifyWorkspaceError);
