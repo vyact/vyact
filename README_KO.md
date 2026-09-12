@@ -8,7 +8,7 @@ Vyact는 내 컴퓨터의 AI를 문서·메일·코드와 연결하고, 크롬�
 
 **Apple Silicon Mac(M1 이상) · Windows · Linux x64 | 오픈소스 | 로컬 모델 또는 외부 AI 선택**
 
-[English](README.md) · [한국어](README_KO.md) · [日本語](README_JA.md) · [ไทย](README_TH.md) · [Tiếng Việt](README_VI.md)
+[English](README.md) · [한국어](README_KO.md) · [日本語](README_JA.md) · [简体中文](README_ZH.md) · [ไทย](README_TH.md) · [Tiếng Việt](README_VI.md)
 
 [해결하려는 문제](#해결하려는-문제) · [데모와 첫 체험](#데모와-첫-체험) · [주요 활용](#주요-활용) · [전체 기능](#데스크톱에서-할-수-있는-일) · [AI 활용 방식](#ai를-어떻게-활용하나요) · [설치 안내](#설치-안내)
 
