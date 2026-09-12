@@ -3,7 +3,7 @@
 
 # Vyact
 
-[English](README.md) · [한국어](README_KO.md) · [日本語](README_JA.md) · [简体中文](README_ZH.md) · [ไทย](README_TH.md) · [Tiếng Việt](README_VI.md)
+[English](README.md) · [한국어](README_KO.md) · [简体中文](README_ZH.md) · [日本語](README_JA.md) · [ไทย](README_TH.md) · [Tiếng Việt](README_VI.md)
 
 ### 让本地大语言模型，真正帮你做事。
 
