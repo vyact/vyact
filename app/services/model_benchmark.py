@@ -165,8 +165,11 @@ def metrics(usage, timings, ttft, total, runtime="gguf"):
 
 
 async def _stream_sample(client, model, profile, messages):
+    configured_output = profile["max_output_tokens"]
+    # Auto keeps the benchmark's fixed cap; explicit smaller caps still apply.
+    output_limit = OUTPUT_TOKENS if configured_output is None else min(OUTPUT_TOKENS, configured_output)
     body = {"model": model, "messages": messages, "stream": True,
-            "stream_options": {"include_usage": True}, "max_tokens": min(OUTPUT_TOKENS, profile["max_output_tokens"]),
+            "stream_options": {"include_usage": True}, "max_tokens": output_limit,
             "temperature": profile["temperature"]}
     for key in ("top_k", "top_p", "seed"):
         if profile.get(key) is not None:

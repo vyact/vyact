@@ -1,9 +1,11 @@
 import asyncio
 import copy
+import json
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+import httpx
 
 from services import hardware_info
 from services import model_benchmark as bench
@@ -19,6 +21,30 @@ def mock_delete(monkeypatch):
 def profile(runtime="gguf"):
     value = recommended_model_profile("test/model", runtime, None, 32768)
     return {**value, "cpu_threads": 3, "gpu_split_percentages": [60, 40], "gpu_manual_split_enabled": True, "seed": 42}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("runtime", ["gguf", "mlx"])
+@pytest.mark.parametrize("output,expected", [(None, 256), (1024, 256), (128, 128)])
+async def test_sample_resolves_auto_and_explicit_output_caps(monkeypatch, runtime, output, expected):
+    original = {**profile(runtime), "max_output_tokens": output}
+    snapshot = copy.deepcopy(original)
+    monkeypatch.setattr(bench, "_stop", asyncio.Event())
+    bodies = []
+
+    def respond(request):
+        bodies.append(json.loads(request.content))
+        return httpx.Response(200, text=(
+            'data: {"choices":[{"delta":{"content":"ok"},"finish_reason":"stop"}]}\n\n'
+            'data: [DONE]\n\n'
+        ))
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:
+        result = await bench.request_sample(client, "test-model", original,
+                                            [{"role": "user", "content": "Hello"}])
+    assert bodies[0]["max_tokens"] == expected
+    assert result["finish_reason"] == "stop"
+    assert original == snapshot
 
 
 def test_only_visible_controls_change_and_candidates_are_deduplicated():
