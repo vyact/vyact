@@ -1,3 +1,4 @@
+import LogPanel from '../LogPanel/LogPanel';
 import DocumentPreviewPanel from '../DocumentPreviewPanel/DocumentPreviewPanel';
 import React, {useRef, useEffect, useCallback, useMemo, useState} from 'react';
 import Message from '../Message';
@@ -100,6 +101,7 @@ const WelcomeGreeting: React.FC<{projectName?: string}> = ({projectName}) => {
 };
 
 interface ChatAreaProps {
+    selectedModel?: string;
     messages: MessageType[];
     isLoading: boolean;
     isEmpty: boolean;
@@ -138,7 +140,7 @@ interface ChatAreaProps {
     followupComposedRef?: React.MutableRefObject<string>;
 }
 
-const ChatArea: React.FC<ChatAreaProps> = ({
+const ChatArea: React.FC<ChatAreaProps> = ({selectedModel = '',
                                                messages,
                                                isLoading,
                                                isEmpty,
@@ -561,6 +563,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                     <CodePanel style={{width: `${panelWidth}%`}}/>
                 </React.Suspense>
             )}
+            {panels.activePanel === 'logs' && <LogPanel model={selectedModel} style={{width: `${panelWidth}%`}}/>}
             {panels.activePanel === 'document-preview' && <DocumentPreviewPanel style={{width: `${panelWidth}%`}}/>}
             <BrowserPanel style={{width: `${panelWidth}%`}}/>
             {sidePanels

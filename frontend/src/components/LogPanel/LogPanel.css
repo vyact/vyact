@@ -1,0 +1,17 @@
+.log-panel { display: flex; flex-direction: column; min-width: 0; min-height: 0; flex-shrink: 0; background: var(--surface); color: var(--text); overflow: hidden; }
+.log-panel-header { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid var(--border); }
+.log-panel-header > span { flex: 1; }
+.log-panel-tabs { display: flex; border-bottom: 1px solid var(--border); }
+.log-panel-tabs button { flex: 1; padding: 10px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--text-secondary); cursor: pointer; font: inherit; }
+.log-panel-tabs button:hover { background: var(--button-neutral-hover); }
+.log-panel-tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
+.log-panel-toolbar { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.log-panel-toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; }
+.log-panel-toggle input { accent-color: var(--accent); }
+.log-panel-content { flex: 1; min-height: 0; overflow: auto; overflow-wrap: anywhere; }
+.log-panel-path { padding: 8px 12px; background: var(--surface2); color: var(--text-secondary); font-size: 11px; }
+.log-panel-content pre { margin: 0; padding: 12px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace; }
+.log-panel-status { padding: 12px; color: var(--text-secondary); }
+
+.log-panel-resume { display: flex; justify-content: center; align-items: center; gap: 6px; padding: 8px; border: 0; border-top: 1px solid var(--border); background: var(--surface2); color: var(--text); cursor: pointer; font: inherit; }
+.log-panel-resume:hover { background: var(--button-neutral-hover); }

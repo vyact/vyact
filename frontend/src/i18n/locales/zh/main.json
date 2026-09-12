@@ -1,4 +1,5 @@
 {
+  "logViewer": {"latest": "跳转到最新日志", "title": "查看日志", "llm": "LLM 日志", "app": "Vyact 日志", "empty": "暂无日志。", "error": "无法加载日志或保存设置。"},
   "emptyResponse": "未生成回答内容，请重试。",
   "greeting": {
     "morning": "早上好",

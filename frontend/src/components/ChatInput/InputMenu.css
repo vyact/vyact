@@ -38,5 +38,3 @@
 .input-menu-item:hover { background: var(--button-neutral-hover); }
 .input-menu-item:disabled { color: var(--muted); cursor: not-allowed; opacity: .4; }
 .input-menu-divider { height: 1px; margin: 0 10px; background: var(--border); }
-.input-menu-google-icon { color: #62b5f6; font-weight: 800; }
-.input-menu-google-warning { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border: 1px solid #f2c14e; border-radius: 50%; color: #f2c14e; font-size: 12px; font-weight: 800; }

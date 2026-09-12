@@ -1,6 +1,6 @@
 import {microsoftRequest, MICROSOFT_WORKSPACE_CHANGED, OPEN_MICROSOFT_WORKSPACE} from '../../services/microsoftWorkspace';
 import React, {useRef, useEffect} from 'react';
-import {Lightbulb} from 'lucide-react';
+import {Lightbulb, PanelsTopLeft, ScrollText} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {VYACT_ICON_URL} from '../../constants/assets';
 import {
@@ -21,6 +21,7 @@ import {
 } from '../../utils/reasoning';
 import {api} from '../../services/api';
 import './InputMenu.css';
+import {usePanelManager} from '../../contexts/PanelManagerContext';
 import {usePluginExtensions} from '../../plugins/usePluginExtensions';
 import {openPluginModal, openPluginPanel} from '../../plugins/registry';
 
@@ -63,6 +64,7 @@ const InputMenu: React.FC<InputMenuProps> = ({
                                                  onOpenGoogleWorkspace,
                                              }) => {
     const {t} = useTranslation('main');
+    const panels = usePanelManager();
     const [reasoningValue] = useReasoning();
     const reasoningEnabled = isReasoningActive(reasoningValue);
     const [reasoningCapability, setReasoningCapability] = React.useState<ReasoningCapability>({
@@ -215,25 +217,20 @@ const InputMenu: React.FC<InputMenuProps> = ({
                         () => fileInputRef.current?.click(),
                         modelType === 'image_gen',
                     )}
-                    {google.registered && <>
+                    {(google.connected || microsoftConnected) && <>
                         {divider}
                         {menuItem(
-                            google.connected
-                                ? <span className="input-menu-google-icon">G</span>
-                                : <span className="input-menu-google-warning" title={t('inputMenu.googleConnectionRequired')}>!</span>,
-                            <span>{t('inputMenu.googleWorkspace')}</span>,
+                            <PanelsTopLeft size={16}/>,
+                            [
+                                google.connected && t('settings:tabs.google'),
+                                microsoftConnected && t('settings:microsoft.title'),
+                            ].filter(Boolean).join(' / '),
                             () => {
-                                if (google.connected) { onOpenGoogleWorkspace(); return; }
-                                window.dispatchEvent(new CustomEvent('vyact:open-settings', {
-                                    detail: {tab: 'api'},
-                                }));
+                                if (google.connected) onOpenGoogleWorkspace();
+                                else window.dispatchEvent(new Event(OPEN_MICROSOFT_WORKSPACE));
                             },
-                            false
                         )}
                     </>}
-                    {microsoftConnected && menuItem(<span className="input-menu-google-icon">M</span>,
-                        t('settings:microsoft.title'),
-                        () => window.dispatchEvent(new Event(OPEN_MICROSOFT_WORKSPACE)), false)}
                     {divider}
                     {menuItem(
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -298,6 +295,8 @@ const InputMenu: React.FC<InputMenuProps> = ({
                         <img src={VYACT_ICON_URL} width="16" height="16" alt="" aria-hidden="true"/>,
                         t('inputMenu.supportVyact'), onOpenSupport
                     )}
+                    {divider}
+                    {menuItem(<ScrollText size={16}/>, t('logViewer.title'), () => panels.open('logs'))}
                     {divider}
                     {reasoningCapability.control !== 'none' && <div className="input-menu-reasoning">
                         <ReasoningToggle capability={reasoningCapability}/>

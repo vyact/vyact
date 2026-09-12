@@ -2,6 +2,7 @@
 routers/setup.py – 설치 / 모델 / Provider / 상태
 """
 from services.model_storage import download_operation, get_models_dir
+from services.log_viewer import stream_logs
 from services import model_benchmark
 from services.mlx_runtime import list_mtp_supported_mlx_models, list_dflash2_supported_mlx_models
 from services.vyact_runtime import list_mtp_supported_models, list_dflash2_supported_models
@@ -1697,6 +1698,12 @@ async def select_provider(req: ProviderSelectRequest):
 # ─────────────────────────────
 # LLM 로깅 설정
 # ─────────────────────────────
+@router.get("/logs/stream")
+async def get_logs(kind: str = Query("app", pattern="^(app|llm)$"), model: str = ""):
+    return StreamingResponse(stream_logs(kind, model), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
 @router.get("/settings/llm-logging")
 async def get_llm_logging():
     cfg = await load_config_async()

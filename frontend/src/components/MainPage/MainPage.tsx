@@ -748,6 +748,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
 
                         <div className="chat-main">
                             <ChatArea
+                                selectedModel={models.selectedModel}
                                 messages={conv.messages}
                                 isLoading={chat.isLoading}
                                 streamingMessageId={chat.streamingMessageId}

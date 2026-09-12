@@ -16,6 +16,7 @@ import i18n from '../i18n';
 import {microsoftFetch} from './microsoftFetch';
 import type {MicrosoftErrorFeedback} from '../utils/microsoftErrorToast';
 
+export const LLM_LOGGING_CHANGED = 'vyact:llm-logging-changed';
 const API_BASE = '/api';
 const EXTERNAL_DATA_BOOTSTRAP_CACHE_MS = 10_000;
 
@@ -1404,6 +1405,7 @@ export const createWorkspaceApi = (workspace = 'google-workspace', accountId = '
 
     async getLlmLogging(): Promise<{ llm_logging: boolean }> {
         const res = await fetch(`${API_BASE}/settings/llm-logging`);
+        await assertOk(res);
         return res.json();
     },
 
@@ -1413,7 +1415,10 @@ export const createWorkspaceApi = (workspace = 'google-workspace', accountId = '
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({enabled})
         });
-        return res.json();
+        await assertOk(res);
+        const result = await res.json();
+        window.dispatchEvent(new CustomEvent(LLM_LOGGING_CHANGED, {detail: result.llm_logging}));
+        return result;
     },
 
     async getToolLogging(): Promise<{ tool_logging: boolean }> {

@@ -7,7 +7,7 @@ import MicrosoftWorkspaceSection from './MicrosoftWorkspaceSection';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Cloud, Server} from 'lucide-react';
-import {api} from '../../services/api';
+import {api, LLM_LOGGING_CHANGED} from '../../services/api';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
 import {fetchTtsSettings, updateTtsCache, DEFAULT_TTS_SETTINGS, loadTtsSettings, TTS_SETTINGS_CHANGED, TTS_RATE_OPTIONS} from '../../services/tts/ttsSettings';
 import type {TtsSettings} from '../../services/tts/ttsSettings';
@@ -255,6 +255,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
 
     // 일반 설정 탭
     const [llmLogging, setLlmLogging] = useState(false);
+    useEffect(() => {
+        const syncLogging = (event: Event) => setLlmLogging((event as CustomEvent<boolean>).detail);
+        window.addEventListener(LLM_LOGGING_CHANGED, syncLogging);
+        return () => window.removeEventListener(LLM_LOGGING_CHANGED, syncLogging);
+    }, []);
     const [theme, setTheme] = useState<AppTheme>(getStoredTheme);
     const [toolLogging, setToolLogging] = useState(false);
     const [debugLogging, setDebugLogging] = useState(false);

@@ -1,4 +1,5 @@
 {
+  "logViewer": {"latest": "Aller aux derniers journaux", "title": "Voir les journaux", "llm": "Journaux LLM", "app": "Journaux Vyact", "empty": "Aucun journal pour le moment.", "error": "Impossible de charger les journaux ou d’enregistrer les paramètres."},
   "emptyResponse": "Aucun contenu de réponse n’a été généré. Réessayez.",
   "greeting": {
     "morning": "Bonjour",
