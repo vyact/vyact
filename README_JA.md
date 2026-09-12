@@ -7,7 +7,9 @@
 
 ### ローカルLLMを、毎日の仕事に。
 
-文書、メール、ブラウザでローカルAIを活用。ファイルから答えを見つけ、返信を下書きし、文章を推敲できます。
+Vyact はローカル AI を使うためのデスクトップワークスペースです。選んだモデルで文書から答えを探し、メールの返信を下書きし、ブラウザー上の文章を整えられます。
+
+**Apple Silicon Mac · Windows · Linux x64**
 
 オープンソース。モデルを自分のコンピューターで実行でき、必要に応じてクラウドのAIも選べます。
 
@@ -17,7 +19,7 @@
 [![Chrome Extension](https://img.shields.io/badge/browser-Chrome%20Extension-4285f4.svg?style=flat-square)](https://chromewebstore.google.com/detail/vyact/opfbakfhoojmdkbbhcglolkpgmenjbib)
 [![Latest release](https://img.shields.io/github/v/release/vyact/vyact?style=flat-square&label=release)](https://github.com/vyact/vyact/releases/latest)
 
-[はじめる](#はじめる) · [ワークフロー](#日々の作業をひとつのワークスペースで) · [機能](#コンテキストを保つために必要なすべて) · [Vyact を支援](#vyact-を支援) · [コントリビューション](CONTRIBUTING.md)
+[はじめる](#まずは文書をひとつ試す) · [ワークフロー](#日々の作業をひとつのワークスペースで) · [機能](#コンテキストを保つために必要なすべて) · [Vyact を支援](#vyact-を支援) · [コントリビューション](CONTRIBUTING.md)
 </div>
 
 ---
@@ -28,17 +30,19 @@
 
 ## 日々の作業をひとつのワークスペースで
 
-### 文書をナレッジベースに
+### 文書から答えを見つけ、根拠を確かめる
 
-文書を一度アップロードして索引化すると、通常のチャット中に質問と関連する箇所が自動取得されます。文書、メモ、索引化したメールスレッドを知識コレクションにまとめ、RAG の対象を限定できます。必要なときは取得されたソースを確認できます。
+PDF をチャットに添付して、重要な決定、未解決の疑問、次の作業を質問できます。回答の出典を開けば、原文と照合できます。よく使う文書は索引化しておくと、毎回添付し直さずに質問できます。
 
-<p align="center"><img src="assets/readme/feature-document-rag.png" alt="Vyact の文書管理と RAG" width="100%" /></p>
+**試してみる:** 「この文書の主なリスクを3つ挙げ、根拠となる箇所も示してください。」
 
-### AI チャット、ファイル、Google、Microsoft をひとつに
+### 受け取ったメールから、使える返信の下書きへ
 
-PDF や文書を添付して質問し、回答の根拠までたどれます。複数の Google・Microsoft アカウントを接続し、Gmail・Outlook のメールと添付ファイル、Google Drive・OneDrive のファイルを会話に直接追加できます。同じコンテキストから返信メールの下書きも作成できます。
+会話の横で Gmail や Outlook のスレッドを読み、関連ファイルを追加して、AI に返信の作成を依頼できます。生成された下書きを確認してメールエディターに挿入し、最後に編集してから送信します。
 
-<p align="center"><img src="assets/readme/feature-ai-workspace.png" alt="ドキュメントと Google Workspace を利用する Vyact AI チャット" width="100%" /></p>
+**試してみる:** 「次の作業を確認し、期限について尋ねる短い返信を作成してください。」
+
+Google・Microsoft 連携は任意で、OAuth アプリの事前設定が必要です。まずはアカウント連携なしで、手元の文書から試せます。
 
 ### ページを離れず文章を改善
 
@@ -50,114 +54,25 @@ Chrome 拡張機能で、投稿やメール、コメントを書きながらス�
   <img src="assets/readme/feature-writing-assistant.png" alt="Reddit の下書きで文法の修正候補、単語の提案、適用ボタンを表示する Vyact Chrome 拡張機能" width="100%" />
 </p>
 
-### アイデア、計画、決定を記録して RAG で検索
+**Chrome 拡張機能と、起動中の Vyact デスクトップアプリが必要です。** 対応する Web エディターでは、適用する修正を自分で選べます。適用するまで原文は変更されません。
 
-見出し、引用、リスト、コードブロックに対応したリッチテキストメモを作成できます。メモもナレッジベースに索引化され、通常の会話から自動的に検索されます。
+## まずは文書をひとつ試す
 
-<p align="center"><img src="assets/readme/feature-memo.png" alt="Vyact リッチテキストメモ" width="100%" /></p>
+1. [Vyact をダウンロード](https://github.com/vyact/vyact/releases/latest)し、インストールして起動します。
+2. ローカルモデルを使う場合は **Vyact** を選びます。メモリの見積もりと自分のコンピューターのメモリを比較してモデルをダウンロードし、ランタイムの準備が完了するまで待ちます。利用中の AI プロバイダーも選べます。
+3. PDF をチャットに添付し、**「要点を3つにまとめ、根拠となる箇所も示してください」**と質問します。
+4. 回答の出典を開き、原文と照合します。
 
-### 音声モードで回答を聞く
+初回のダウンロードと準備には時間とインターネット接続が必要です。応答速度はハードウェアとモデルによって異なります。この体験にはメール連携や Chrome 拡張機能は不要です。
 
-画面上の文字を読むのが難しい方や、耳で聞く方を好む方のために、自動読み上げを任意で有効にできます。回答の生成中に完了した文を読み上げ、速度は 1×〜2× で調整できます。設定は記憶され、回答の停止ボタンからいつでも読み上げを止められます。
+[インストール要件とプラットフォーム別の手順](#はじめる)
 
-### 話しながら言語を学ぶ
-
-対象言語で自然な音声会話を練習できます。Vyact に話しかけて回答を聞き、単独のフレーズ暗記ではなく、実際の表現と反復会話で自信を身につけられます。
-
-<p align="center"><img src="assets/readme/feature-voice-chat.png" alt="Vyact 音声会話" width="100%" /></p>
-
-### Chrome 拡張機能で Netflix とあらゆるページから言語を学ぶ
-
-Netflix の二重字幕、字幕移動、リピート再生、自動停止を利用できます。苦手な言語領域を選ぶと、視聴中の字幕についてその弱点に焦点を当てた短い AI 解説が表示されます。外国語ページの翻訳や、現在のページ・選択テキストのチャット送信にも対応します。
-
-<p align="center"><img src="assets/readme/feature-plugin.png" alt="Vyact Chrome 拡張機能" width="100%" /></p>
-
-### ハードウェアに合うローカルモデルを探す
-
-Vyact 内で GGUF / MLX モデルを検索・比較できます。モデルサイズ、量子化、コンテキスト長、検出された RAM / GPU VRAM、ハードウェアに応じたメモリ見積もりを確認してからダウンロードできます。対応するマルチ GPU llama.cpp 環境では自動メモリ調整が既定で、上級者向けに手動 GPU 分割も用意されています。公開モデルは API キー不要で、Hugging Face キーを追加すると許可された gated model にアクセスできます。
-
-<p align="center"><img src="assets/readme/feature-local-models.png" alt="Vyact のローカルモデル検索" width="100%" /></p>
-
-#### MLX アクセラレーション
-
-Apple Silicon では、テキストおよび画像対応 MLX モデルを単一の oMLX ランタイムで実行します。Prefix KV Memory Cache は既定で有効で、再利用可能なプロンプト状態をメモリとページ化 SSD キャッシュに保持します。互換性のある External MTP companion が存在する場合はモデルと共に取得・検証し、高速なデコードに利用します。機能情報はインストール済み oMLX から読み取られるため、固定されたモデル一覧ではなくエンジンのバージョンに追従します。現在、Speculative Prefill と組み込み native MTP は無効です。対応 DFlash モデルは専用の高速化経路を使用します。
-
-### 自分のハードウェアで設定を比較
-
-**モデル設定 > パフォーマンステスト** で、GGUF の performance mode、KV cache quantization、対応 MTP、または MLX の対応 MTP を比較できます。短い入力、長い入力、フォローアップ会話を実行し、最初のトークンまでの時間、生成速度、総応答時間、再利用された prefix token、実際の入出力 token 数を表示します。結果は速度スコア順に並び、選択した結果を設定フォームに反映できます。テストの完了・中止・失敗後には以前のモデルと設定が復元されます。
-
-<p align="center"><img src="assets/readme/feature-model-benchmark.png" alt="Vyact モデル性能テスト" width="100%" /></p>
-
-
-## モデルは変わっても、あなたのコンテキストは残るべきです
-
-AI チャットを使うたびに、ファイルを探し、メールをコピーし、背景を説明し直す必要はありません。Vyact は AI チャット、ドキュメント、メモ、普段使うツールをひとつのワークスペースにまとめます。回答の根拠を確認し、メモを検索可能な知識に変え、Gmail、Outlook、Google Drive、OneDrive、カレンダー、Chrome の情報を同じ会話で利用できます。
-
-llama.cpp と MLX によるローカル LLM を中心に設計されているため、会話、文書、作業コンテキストを自分の環境に保持できます。必要に応じて、ホステッドプロバイダーや独自の OpenAI 互換 LLM エンドポイントにも接続できます。
-
-<div align="center" markdown="1">
-
-[![ダウンロード](https://img.shields.io/badge/Download-GitHub%20Releases-7c3aed?style=for-the-badge&logo=github&logoColor=white)](https://github.com/vyact/vyact/releases)
-[![Vyact を支援](https://img.shields.io/badge/Support-Vyact-ff5e5b?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/vyact)
-
-</div>
-
-## コンテキストを保つために必要なすべて
-
-| | 機能 | メリット |
-| --- | --- | --- |
-| 💬 | ストリーミング AI チャット | ローカル・ホステッドモデルのどちらでも高速に会話できます。 |
-| 📚 | 添付、知識コレクション、RAG | 文書、メモ、メールを適切なコンテキストとして利用できます。 |
-| ⚡ | ローカルモデル性能テスト | 実機で設定、時間、token 数を比較できます。 |
-| 🔎 | ソース付き回答 | 回答に使われた箇所と文書を確認できます。 |
-| 📝 | リッチテキストメモ | 会話中に RAG で再利用できる構造化メモを残せます。 |
-| 🗂️ | Google・Microsoft 連携 | Gmail、Outlook、Google Drive、OneDrive、カレンダーを利用できます。 |
-| ↗️ | ローカル OpenAI 互換 API | 有効なローカルモデルを他のアプリから利用できます。 |
-| 🎙️ | 音声語学学習 | 音声入力と AI 応答で会話練習ができます。 |
-| 🌐 | Chrome 拡張機能 | Netflix や Web ページを使って学習・質問できます。 |
-| ✍️ | ブラウザ文章支援 | 文法や文体を修正し、元の文と比較できます。 |
-| 🧩 | MCP ツール接続 | 普段使うツールを Vyact に接続できます。 |
-| 🌍 | 多言語 UI | 韓国語、英語、日本語、中国語、タイ語、ベトナム語、スペイン語、フランス語に対応します。 |
-
-### コンテキストを何度も作り直さずに作業する
-
-- **プロジェクトと会話履歴** — チャットをプロジェクト単位でまとめ、プロジェクト固有の作業指示を設定し、会話の名前変更・export を行い、再開時に同じスレッドへ戻れます。
-- **使い続けられるファイル** — 一度だけ添付することも、長期知識として索引化することもできます。文書、メモ、メールスレッドを知識コレクションにまとめ、RAG の対象を絞れます。
-- **チャットに埋もれないメモ** — rich text memo、簡単な todo、決定事項を整理し、後で RAG から利用できます。
-- **AI を自分で制御** — llama.cpp / MLX、OpenAI、Gemini、Claude、または OpenAI 互換 LLM を選び、context、output、sampling、embedding、chunking を調整できます。
-
-### 仕事を接続し、その場で操作する
-
-- **Gmail** — メールの検索・閲覧、label 操作、メールと添付の chat 追加、AI による返信作成、署名管理、送信に対応します。
-- **Google Drive** — 閲覧、検索、upload、download、rename、copy、share を行い、ファイルを会話や knowledge base に追加できます。
-- **Google Calendar** — 現在の作業から離れず event の表示、作成、更新、削除ができます。
-- **組み込み Google Workspace 接続** — **設定 > Google** で OAuth credentials JSON を upload し、複数アカウントを接続できます。外部 MCP server を介さず Google API を直接呼び出し、OAuth token は backup export に含まれません。
-- **Microsoft 連携** — **設定 > Microsoft** で Microsoft Entra に登録したアプリの Client ID を入力し、設定画面のガイドに従ってログインすると、Outlook のメール、OneDrive のファイル、Microsoft のカレンダーを利用できます。
-- **アカウント切替** — 接続済みの Google・Microsoft アカウントを切り替えられます。macOS は **Cmd+Shift+G**、Windows/Linux は **Ctrl+Shift+G** で メール・ファイル・カレンダーパネルを開閉できます。
-- **MCP と再利用可能な skill** — **設定 > AI Tools** で filesystem、GitHub、custom MCP server を追加し、**設定 > Skills** で再利用可能な指示を管理できます。
-
-### ワークスペースの所有権を保つ
-
-- **ローカルファースト** — llama.cpp、Apple Silicon の MLX、ローカル embedding を中心に設計されています。
-- **プロバイダーを選択** — ローカルモデル、OpenAI、Gemini、Claude、独自 OpenAI 互換 endpoint を選べます。
-- **別のアプリから利用** — **設定 > API Server** で endpoint、model ID、OpenClaw 設定、curl テストをコピーできます。任意の Bearer token 認証に対応します。
-- **データ送信を把握** — メールやクラウドファイルを外部 AI provider の会話コンテキストに使うと、その内容が provider に送信される場合があります。Vyact 管理のローカルモデルでは外部 AI provider に送信されません。
-- **バックアップ** — 会話、文書、ファイル、メモ、prompt、設定、接続、project、語彙を export / restore できます。Google Drive または OneDrive にも保存できます。
-- **オープンソース** — AGPL-3.0 の下で公開されています。
-
-## 今日から始められること
-
-| やりたいこと | Vyact で試す方法 |
-| --- | --- |
-| レポートをすばやく理解する | PDF を添付し、簡潔な briefing を依頼して、取得された source を確認します。 |
-| 難しいメールに返信する | メールスレッドと Drive file を添付し、自分の文体で下書きを作り、Gmail から送信します。 |
-| 個人用の仕事の記憶を作る | よく使う文書を索引化し、決定を memo に保存して、後から RAG で取得します。 |
-| 文脈を失わず project を計画する | project と作業指示を作成し、discussion をまとめ、必要に応じて会話を export します。 |
-| 毎日新しい言語を練習する | voice chat、または二重字幕と弱点別解説を備えた Netflix 学習を利用します。 |
-| ローカルモデル設定を比較する | モデル設定の performance test で組合せを比較し、好みの設定を適用します。 |
-| browsing 中に調査する | Chrome から選択テキストや現在の page を Vyact に送り、page context と共に会話します。 |
+Vyact 管理のローカルモデルでは、AI チャットのコンテキストを自分のコンピューターで処理します。クラウド AI を選ぶとリクエストに必要な内容がそのプロバイダーに送信され、メールやファイルの連携は各サービスと通信します。
 
 ## はじめる
+
+<details>
+<summary>インストールと接続の詳細</summary>
 
 ### デスクトップアプリをインストール
 
@@ -190,14 +105,6 @@ Vyact は Python 3.12 を内蔵し、ローカルモデルランタイムを管�
 
 macOS、Windows、Linux では対応する native Elasticsearch distribution を download / run できるため Docker は不要です。package manager は選択機能に必要な system binary がない場合の自動設定にのみ必要です。初回起動時、選択した構成に必要な component が準備されます。
 
-### 最初の 5 分
-
-1. Vyact を起動し、provider と model を選びます。ローカル GGUF / MLX model を検索するには **Vyact** を選択します。
-2. 文書をドロップするか **文書管理** で索引化し、必要に応じて知識コレクションを作成します。
-3. チャットで質問し、正確性が重要な場合は取得されたコンテキストを確認します。
-4. **設定 > Google** または **設定 > Microsoft** でアカウントを接続するか、Chrome 拡張機能をインストールします。
-5. 繰り返す作業のためにメモ、project、再利用可能な skill を作成します。
-
 ### カスタム LLM provider
 
 OpenAI 互換 `/chat/completions` API に接続できます。初期設定では **Custom LLM** を選び、インストール後は sidebar の provider controls から追加・編集します。
@@ -223,6 +130,132 @@ custom 接続設定は backup / restore に含まれます。streaming、tool ca
 1. [Chrome ウェブストアから Vyact をインストール](https://chromewebstore.google.com/detail/vyact/opfbakfhoojmdkbbhcglolkpgmenjbib)します。
 2. Vyact デスクトップアプリを起動します。
 3. ツールバーに固定し、任意のページでサイドパネルを開きます。
+
+</details>
+
+## 作業の続きを、同じ場所で
+
+### アイデア、計画、決定を記録して RAG で検索
+
+見出し、引用、リスト、コードブロックに対応したリッチテキストメモを作成できます。メモもナレッジベースに索引化され、通常の会話から自動的に検索されます。
+
+<p align="center"><img src="assets/readme/feature-memo.png" alt="Vyact リッチテキストメモ" width="100%" /></p>
+
+### 音声モードで回答を聞く
+
+画面上の文字を読むのが難しい方や、耳で聞く方を好む方のために、自動読み上げを任意で有効にできます。回答の生成中に完了した文を読み上げ、速度は 1×〜2× で調整できます。設定は記憶され、回答の停止ボタンからいつでも読み上げを止められます。
+
+### 話しながら言語を学ぶ
+
+対象言語で自然な音声会話を練習できます。Vyact に話しかけて回答を聞き、単独のフレーズ暗記ではなく、実際の表現と反復会話で自信を身につけられます。
+
+<p align="center"><img src="assets/readme/feature-voice-chat.png" alt="Vyact 音声会話" width="100%" /></p>
+
+### Chrome 拡張機能で Netflix とあらゆるページから言語を学ぶ
+
+Netflix の二重字幕、字幕移動、リピート再生、自動停止を利用できます。苦手な言語領域を選ぶと、視聴中の字幕についてその弱点に焦点を当てた短い AI 解説が表示されます。外国語ページの翻訳や、現在のページ・選択テキストのチャット送信にも対応します。
+
+<p align="center"><img src="assets/readme/feature-plugin.png" alt="Vyact Chrome 拡張機能" width="100%" /></p>
+
+## ローカルモデルを選び、調整する
+
+### ハードウェアに合うローカルモデルを探す
+
+Vyact 内で GGUF / MLX モデルを検索・比較できます。モデルサイズ、量子化、コンテキスト長、検出された RAM / GPU VRAM、ハードウェアに応じたメモリ見積もりを確認してからダウンロードできます。対応するマルチ GPU llama.cpp 環境では自動メモリ調整が既定で、上級者向けに手動 GPU 分割も用意されています。公開モデルは API キー不要で、Hugging Face キーを追加すると許可された gated model にアクセスできます。
+
+<p align="center"><img src="assets/readme/feature-local-models.png" alt="Vyact のローカルモデル検索" width="100%" /></p>
+
+<details>
+<summary>MLX 高速化の詳細</summary>
+
+#### MLX アクセラレーション
+
+Apple Silicon では、テキストおよび画像対応 MLX モデルを単一の oMLX ランタイムで実行します。Prefix KV Memory Cache は既定で有効で、再利用可能なプロンプト状態をメモリとページ化 SSD キャッシュに保持します。互換性のある External MTP companion が存在する場合はモデルと共に取得・検証し、高速なデコードに利用します。機能情報はインストール済み oMLX から読み取られるため、固定されたモデル一覧ではなくエンジンのバージョンに追従します。現在、Speculative Prefill と組み込み native MTP は無効です。対応 DFlash モデルは専用の高速化経路を使用します。
+
+</details>
+
+<details>
+<summary>パフォーマンステストの詳細</summary>
+
+### 自分のハードウェアで設定を比較
+
+**モデル設定 > パフォーマンステスト** で、GGUF の performance mode、KV cache quantization、対応 MTP、または MLX の対応 MTP を比較できます。短い入力、長い入力、フォローアップ会話を実行し、最初のトークンまでの時間、生成速度、総応答時間、再利用された prefix token、実際の入出力 token 数を表示します。結果は速度スコア順に並び、選択した結果を設定フォームに反映できます。テストの完了・中止・失敗後には以前のモデルと設定が復元されます。
+
+<p align="center"><img src="assets/readme/feature-model-benchmark.png" alt="Vyact モデル性能テスト" width="100%" /></p>
+
+</details>
+
+## コンテキストを保つために必要なすべて
+
+<details>
+<summary>すべての機能と連携を見る</summary>
+
+| | 機能 | メリット |
+| --- | --- | --- |
+| 💬 | ストリーミング AI チャット | ローカル・ホステッドモデルのどちらでも高速に会話できます。 |
+| 📚 | 添付、知識コレクション、RAG | 文書、メモ、メールを適切なコンテキストとして利用できます。 |
+| ⚡ | ローカルモデル性能テスト | 実機で設定、時間、token 数を比較できます。 |
+| 🔎 | ソース付き回答 | 回答に使われた箇所と文書を確認できます。 |
+| 📝 | リッチテキストメモ | 会話中に RAG で再利用できる構造化メモを残せます。 |
+| 🗂️ | Google・Microsoft 連携 | Gmail、Outlook、Google Drive、OneDrive、カレンダーを利用できます。 |
+| ↗️ | ローカル OpenAI 互換 API | 有効なローカルモデルを他のアプリから利用できます。 |
+| 🎙️ | 音声語学学習 | 音声入力と AI 応答で会話練習ができます。 |
+| 🌐 | Chrome 拡張機能 | Netflix や Web ページを使って学習・質問できます。 |
+| ✍️ | ブラウザー文章支援 | 下線の修正候補を確認して個別・一括で適用または無視できます。全文の書き直しも比較してから適用・コピーできます。 |
+| 🧩 | MCP ツール接続 | 普段使うツールを Vyact に接続できます。 |
+| 🌍 | 多言語 UI | 韓国語、英語、日本語、中国語、タイ語、ベトナム語、スペイン語、フランス語に対応します。 |
+
+### コンテキストを何度も作り直さずに作業する
+
+- **プロジェクトと会話履歴** — チャットをプロジェクト単位でまとめ、プロジェクト固有の作業指示を設定し、会話の名前変更・export を行い、再開時に同じスレッドへ戻れます。
+- **使い続けられるファイル** — 一度だけ添付することも、長期知識として索引化することもできます。文書、メモ、メールスレッドを知識コレクションにまとめ、RAG の対象を絞れます。
+- **チャットに埋もれないメモ** — rich text memo、簡単な todo、決定事項を整理し、後で RAG から利用できます。
+- **AI を自分で制御** — llama.cpp / MLX、OpenAI、Gemini、Claude、または OpenAI 互換 LLM を選び、context、output、sampling、embedding、chunking を調整できます。
+
+### 仕事を接続し、その場で操作する
+
+- **Gmail** — メールの検索・閲覧、label 操作、メールと添付の chat 追加、AI による返信作成、署名管理、送信に対応します。
+- **Google Drive** — 閲覧、検索、upload、download、rename、copy、share を行い、ファイルを会話や knowledge base に追加できます。
+- **Google Calendar** — 現在の作業から離れず event の表示、作成、更新、削除ができます。
+- **組み込み Google Workspace 接続** — **設定 > Google** で OAuth credentials JSON を upload し、複数アカウントを接続できます。外部 MCP server を介さず Google API を直接呼び出し、OAuth token は backup export に含まれません。
+- **Microsoft 連携** — **設定 > Microsoft** で Microsoft Entra に登録したアプリの Client ID を入力し、設定画面のガイドに従ってログインすると、Outlook のメール、OneDrive のファイル、Microsoft のカレンダーを利用できます。
+- **アカウント切替** — 接続済みの Google・Microsoft アカウントを切り替えられます。macOS は **Cmd+Shift+G**、Windows/Linux は **Ctrl+Shift+G** で メール・ファイル・カレンダーパネルを開閉できます。
+- **MCP と再利用可能な skill** — **設定 > AI Tools** で filesystem、GitHub、custom MCP server を追加し、**設定 > Skills** で再利用可能な指示を管理できます。
+
+### ワークスペースの所有権を保つ
+
+- **ローカルファースト** — llama.cpp、Apple Silicon の MLX、ローカル embedding を中心に設計されています。
+- **プロバイダーを選択** — ローカルモデル、OpenAI、Gemini、Claude、独自 OpenAI 互換 endpoint を選べます。
+- **別のアプリから利用** — **設定 > API Server** で endpoint、model ID、OpenClaw 設定、curl テストをコピーできます。任意の Bearer token 認証に対応します。
+- **データ送信を把握** — メールやクラウドファイルを外部 AI provider の会話コンテキストに使うと、その内容が provider に送信される場合があります。Vyact 管理のローカルモデルでは外部 AI provider に送信されません。
+- **バックアップ** — 会話、文書、ファイル、メモ、prompt、設定、接続、project、語彙を export / restore できます。Google Drive または OneDrive にも保存できます。
+- **オープンソース** — AGPL-3.0 の下で公開されています。
+
+### 文書をナレッジベースに
+
+文書を一度アップロードして索引化すると、通常のチャット中に質問と関連する箇所が自動取得されます。文書、メモ、索引化したメールスレッドを知識コレクションにまとめ、RAG の対象を限定できます。必要なときは取得されたソースを確認できます。
+
+<p align="center"><img src="assets/readme/feature-document-rag.png" alt="Vyact の文書管理と RAG" width="100%" /></p>
+
+### AI チャット、ファイル、Google、Microsoft をひとつに
+
+PDF や文書を添付して質問し、回答の根拠までたどれます。複数の Google・Microsoft アカウントを接続し、Gmail・Outlook のメールと添付ファイル、Google Drive・OneDrive のファイルを会話に直接追加できます。同じコンテキストから返信メールの下書きも作成できます。
+
+<p align="center"><img src="assets/readme/feature-ai-workspace.png" alt="ドキュメントと Google Workspace を利用する Vyact AI チャット" width="100%" /></p>
+
+### 今日から始められること
+
+| やりたいこと | Vyact で試す方法 |
+| --- | --- |
+| レポートをすばやく理解する | PDF を添付し、簡潔な briefing を依頼して、取得された source を確認します。 |
+| 難しいメールに返信する | メールスレッドと Drive file を添付し、自分の文体で下書きを作り、Gmail から送信します。 |
+| 個人用の仕事の記憶を作る | よく使う文書を索引化し、決定を memo に保存して、後から RAG で取得します。 |
+| 文脈を失わず project を計画する | project と作業指示を作成し、discussion をまとめ、必要に応じて会話を export します。 |
+| 毎日新しい言語を練習する | voice chat、または二重字幕と弱点別解説を備えた Netflix 学習を利用します。 |
+| ローカルモデル設定を比較する | モデル設定の performance test で組合せを比較し、好みの設定を適用します。 |
+| browsing 中に調査する | Chrome から選択テキストや現在の page を Vyact に送り、page context と共に会話します。 |
+
+</details>
 
 ## Vyact を支援
 

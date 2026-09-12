@@ -7,7 +7,9 @@
 
 ### Put your local LLM to work.
 
-Use local AI with your documents, email, and browser—from finding answers in your files to drafting replies and improving your writing.
+Vyact is a desktop workspace for local AI. Find answers in your documents, draft email replies, and improve your writing in the browser—with the model you choose.
+
+**Apple Silicon Mac · Windows · Linux x64**
 
 Open source. Run models on your computer, with optional cloud providers.
 
@@ -18,7 +20,7 @@ Open source. Run models on your computer, with optional cloud providers.
   <a href="https://github.com/vyact/vyact/releases/latest"><img alt="Supported platforms: macOS, Windows, and Linux" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-475569.svg?style=flat-square"></a>
   [![Latest release](https://img.shields.io/github/v/release/vyact/vyact?style=flat-square&label=release)](https://github.com/vyact/vyact/releases/latest)
 
-  [Get started](#get-started) · [Workflows](#one-workspace-for-everyday-work) · [Features](#everything-you-need-to-stay-in-context) · [Support Vyact](#support-vyact) · [Contributing](CONTRIBUTING.md)
+  [Get started](#start-with-one-document) · [Workflows](#one-workspace-for-everyday-work) · [Features](#everything-you-need-to-stay-in-context) · [Support Vyact](#support-vyact) · [Contributing](CONTRIBUTING.md)
 </div>
 
 ---
@@ -29,21 +31,19 @@ A 1-minute 53-second tour of local AI for everyday work: document Q&A with sourc
 
 ## One workspace for everyday work
 
-### Turn documents into a knowledge base
+### Find the answer—and check the source
 
-Upload and index your documents once. During a normal chat, Vyact retrieves the passages most relevant to your question and adds them to the model's context automatically—so answers are grounded in your knowledge base without manually attaching the same files every time. Create knowledge collections to group related documents, memos, and indexed email threads, then select a collection in chat when you want RAG to stay within that specific context. Inspect the retrieved sources when you need to verify an answer.
+Drop a PDF into chat and ask what matters: the key decisions, open questions, or next steps. Open the sources behind the answer to check it against the original. Index documents you use often so you can ask about them again without attaching the same files each time.
 
-<p align="center">
-  <img src="assets/readme/feature-document-rag.png" alt="Vyact document management and RAG knowledge base" width="100%" />
-</p>
+**Try it:** “What are the three main risks in this document? Include the supporting passages.”
 
-### One workspace for AI chat, files, Google, and Microsoft
+### Turn an email into a reply you can use
 
-Ask questions with PDFs and documents attached, then trace answers back to their supporting context. Connect multiple Google and Microsoft accounts and switch between them in a shared account list. Bring Gmail or Outlook messages, email attachments, and Google Drive or OneDrive files directly into the conversation when your next action depends on real work—not copied-and-pasted fragments. When it is time to reply, Vyact can help draft an email from the same context.
+Read a Gmail or Outlook thread alongside your conversation, bring in relevant files, and ask AI to help with the reply. Preview the generated draft, insert it into the email editor, and make your final edits before sending.
 
-<p align="center">
-  <img src="assets/readme/feature-ai-workspace.png" alt="Vyact AI chat with document context and Google Workspace panels" width="100%" />
-</p>
+**Try it:** “Draft a short reply confirming the next steps and asking about the deadline.”
+
+Google and Microsoft connections are optional and require OAuth app setup. Start with a local document if you want to try Vyact before connecting an account.
 
 ### Improve your writing without leaving the page
 
@@ -55,134 +55,25 @@ Turn on **Reasons for changes** to see why an edit is suggested. Word suggestion
   <img src="assets/readme/feature-writing-assistant.png" alt="Vyact Chrome extension showing inline grammar corrections, word suggestions, and an Apply button in a Reddit draft" width="100%" />
 </p>
 
-### Keep ideas, plans, and decisions—and find them with RAG
+**Requires the Chrome extension and the running Vyact desktop app.** In supported web editors, you choose which corrections to apply; suggestions do not change your text until you apply them.
 
-Create structured notes for ideas, launch plans, decisions, and next actions. Vyact's rich-text memo workspace supports headings, quotes, lists, and code blocks, so the context around your work stays organized instead of disappearing into a chat history. Memos are also indexed as part of your knowledge base, letting RAG retrieve relevant notes automatically during a normal conversation.
+## Start with one document
 
-<p align="center">
-  <img src="assets/readme/feature-memo.png" alt="Vyact rich-text memo workspace" width="100%" />
-</p>
+1. [Download Vyact](https://github.com/vyact/vyact/releases/latest), install it, and launch the app.
+2. Choose **Vyact** for a local model. Compare its estimated memory use with your computer’s memory, download it, and let the runtime finish preparing. You can also choose a provider you already use.
+3. Attach a PDF in chat and ask: **“Summarize the three main points and show the supporting passages.”**
+4. Open the answer’s sources and compare them with the original document.
 
-### Listen to responses in voice mode
+Initial downloads and setup take time and need an internet connection; response speed depends on your hardware and model. Email connections and the Chrome extension are optional for this first task.
 
-For people who find on-screen text difficult to read, or simply prefer listening, voice mode offers optional automatic read-aloud. Vyact reads completed sentences as the response is generated, with adjustable playback speed from 1× to 2×. Automatic read-aloud is off by default, and your on/off and speed preferences are remembered. Use the response's stop button to stop reading at any time.
+[Installation requirements and platform instructions](#get-started)
 
-### Learn a language by speaking
-
-Practice in your target language through natural, voice-based conversations. Speak to Vyact, hear its response, and build confidence with real expressions and repeated conversation practice instead of studying isolated phrases.
-
-<p align="center">
-  <img src="assets/readme/feature-voice-chat.png" alt="Vyact voice conversation and speaking practice" width="100%" />
-</p>
-
-### Learn languages from Netflix and every page with the Chrome extension
-
-Learn from Netflix with dual subtitles, subtitle navigation, repeat playback, and automatic pause controls. Choose the language areas you find difficult, then get short AI explanations that focus on those weaknesses in the subtitle you are watching. You can also translate foreign-language pages and send the current page or selected text into chat as context without copying it by hand.
-
-<p align="center">
-  <img src="assets/readme/feature-plugin.png" alt="Vyact Chrome extension side panel" width="100%" />
-</p>
-
-### Find a local model that fits your hardware
-
-Search and compare local GGUF and MLX models without leaving Vyact. See detected system RAM and GPU VRAM alongside model size, quantization, context capacity, and hardware-aware memory estimates before downloading, then let Vyact install the selected model and prepare the matching local runtime. For compatible multi-GPU llama.cpp systems, automatic memory fitting is the default, with an optional manual GPU split for advanced setups. Public models work without an API key, while an optional Hugging Face key enables access to gated models your account is authorized to use.
-
-<p align="center">
-  <img src="assets/readme/feature-local-models.png" alt="Vyact local model search with detected system RAM, GPU VRAM, and hardware-aware memory estimates" width="100%" />
-</p>
-
-#### How MLX acceleration works
-
-On Apple Silicon, Vyact runs both text and vision-capable MLX models through a single oMLX runtime. Prefix KV Memory Cache is enabled by default, keeping reusable prompt state in memory and a paged SSD cache, with cache limits selected for your system memory. Repeated system prompts and conversation prefixes can therefore skip work already completed by the model; a first request may report `cached_tokens: 0`, while a matching follow-up reports the number of prefix tokens actually reused.
-
-When a compatible External MTP companion is available for a newly downloaded model, Vyact downloads it with the target model, validates the pairing, and lets oMLX use MTP for faster decoding while Memory Cache remains enabled. Vyact reads External MTP capabilities from the installed oMLX runtime at app startup and refreshes them after a managed runtime update, so compatibility follows the engine version instead of a fixed model list. Speculative Prefill and embedded native MTP are disabled in the current integration. Compatible DFlash models use their dedicated acceleration path.
-
-### Compare model settings on your own hardware
-
-Open **Model settings > Performance test** to compare settings before choosing them. Preview the combinations and run all of them or select only the ones you want: performance mode, KV cache quantization, and supported MTP for GGUF, or supported MTP for MLX. Context, output limits, and sampling settings stay fixed across combinations.
-
-Each combination runs a short input, a long input, and a follow-up conversation. Compare time to first token, generation speed, total response time, reused prefix tokens, and actual input/output token counts in one view. Prefill time and speed are shown when the engine reports them separately; unavailable metrics stay marked as unavailable. Follow-up requests intentionally test conversation cache reuse.
-
-Completed results are sorted by a speed score combining time to first token and generation time normalized to 256 output tokens across the three workloads. The best tested combination is highlighted; this is a speed comparison, not a measure of answer quality or memory savings. Choose **Use these settings** to copy a result into the form, then **Apply** to activate the model with those settings.
-
-Measurements are saved as they finish. You can stop a test and keep completed measurements; Vyact restores the previous model and settings after completion, cancellation, or failure, and reports any restoration error. Starting another test replaces the previous results for that model.
-
-<p align="center">
-  <img src="assets/readme/feature-model-benchmark.png" alt="Vyact model performance test results ranked by speed, with a recommended configuration and per-workload timings and token counts" width="100%" />
-</p>
-
-
-## Models may change. Your context should remain.
-
-Most AI chats begin with the same tedious ritual: find a file, copy an email, explain the background again, and hope the answer has not lost the plot. Vyact keeps the useful parts of your work together so you can ask better questions with less setup.
-
-It brings AI chat, document intelligence, notes, and the tools you already use into one focused workspace. Attach a document, inspect the source behind an answer, turn a note into searchable knowledge, or carry the same context into Gmail, Outlook, Google Drive, OneDrive, calendars, and Chrome.
-
-Built around local LLMs through llama.cpp and MLX, Vyact helps you keep your conversations, documents, and working context in your own environment. Use a local model as a practical workspace—not just another chatbot tab—and connect hosted providers or your own OpenAI-compatible LLM endpoint when a task calls for them.
-
-<div align="center" markdown="1">
-
-[![Download for macOS%2C%20Windows%2C%20and%20Linux](https://img.shields.io/badge/Download-GitHub%20Releases-7c3aed?style=for-the-badge&logo=github&logoColor=white)](https://github.com/vyact/vyact/releases)
-[![Support Vyact](https://img.shields.io/badge/Support-Vyact-ff5e5b?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/vyact)
-
-</div>
-
-## Everything you need to stay in context
-
-| | Capability | Why it matters |
-| --- | --- | --- |
-| 💬 | AI chat with streaming responses | Keep conversations fast and useful, whether you use a local or hosted model. |
-| 📚 | File attachments, knowledge collections, and RAG | Group documents, memos, and indexed email threads into focused collections, then ask questions with the right context. |
-| ⚡ | Local model performance tests | Compare settings on your hardware, inspect timings and token counts, and apply the best tested configuration. |
-| 🔎 | Source-aware answers | Review the passages and documents that informed an answer. |
-| 📝 | Rich-text memos | Organize ideas and plans in structured notes that RAG can retrieve during a conversation. |
-| 🗂️ | Google and Microsoft integration | Switch accounts and work with Gmail, Outlook, Google Drive, OneDrive, and calendars alongside your AI conversation. |
-| ↗️ | Local OpenAI-compatible API server | Use the active Vyact local model from OpenClaw or another app on your network, with optional Bearer-token authentication and ready-to-copy configuration. |
-| 🎙️ | Voice-based language learning | Practice speaking through natural conversations with speech input and AI responses. |
-| 🌐 | Chrome extension for Netflix and web language learning | Study Netflix with dual subtitles and level-aware explanations, translate pages, and ask questions with selected text or the current page as context. |
-| ✍️ | Browser writing assistant | Correct grammar, adjust tone, or shorten a draft, then compare the original and revised text before copying the result. |
-| 🧩 | MCP tool connections | Connect the tools you use to tailor Vyact to the way you work. |
-| 🌍 | Multilingual interface | Available in Korean, English, Japanese, Chinese, Thai, Vietnamese, Spanish, and French. |
-
-### Work without constantly rebuilding context
-
-- **Projects and conversation history** — Group chats by project, give a project its own working instructions, rename or export conversations, and return to the exact thread when work resumes.
-- **Files that stay useful** — Attach a file for one conversation or index it as long-term knowledge. Group documents, memos, and indexed email threads into knowledge collections to narrow RAG to the context for the task at hand. Inspect chunks, manage saved files, and remove data you no longer need.
-- **Notes that do not disappear into chat** — Keep rich-text memos, quick todos, and decisions in an organized workspace. They remain available to RAG when they matter again.
-- **Control over the AI** — Choose a local llama.cpp or MLX model, OpenAI, Gemini, Claude, or a custom OpenAI-compatible LLM; tune context, output, sampling, embedding, and chunking settings for your machine and work style.
-
-### Connect work, then act on it
-
-- **Gmail** — Search and read mail, work with labels, attach an email and its files to chat, compose replies with AI, manage signatures, and send from the connected account.
-- **Google Drive** — Browse, search, upload, download, rename, copy, share, and attach Drive files directly to a conversation or knowledge base.
-- **Google Calendar** — View, create, update, and remove events without switching away from your current task.
-- **Built-in Google Workspace connection** — In **Settings > Google**, upload the OAuth credentials JSON and connect one or more accounts. Vyact's built-in tools call Gmail, Drive, and Calendar Google APIs directly with OAuth permissions; no separate external MCP server process sits in the request path. OAuth tokens are not included in exported backups.
-- **Microsoft integration** — Connect accounts in **Settings > Microsoft** using the Client ID of an app registered in Microsoft Entra. Follow the setup guide in settings to sign in and use Outlook mail, OneDrive files, and Microsoft calendars.
-- **Account switching** — Switch between connected Google and Microsoft accounts. **Cmd+Shift+G** on macOS, or **Ctrl+Shift+G** on Windows/Linux, opens or closes the mail, files, and calendar panel.
-- **MCP and reusable skills** — In **Settings > AI Tools**, add filesystem access, GitHub, or a custom local/remote MCP server. Manage reusable instructions separately in **Settings > Skills** so recurring work gets the right guidance automatically.
-
-### Keep ownership of your workspace
-
-- **Local-first by default** — Vyact is designed around native llama.cpp, MLX on Apple Silicon, and local embedding so your core working context can stay on your machine.
-- **Choose your provider** — Use local models for private everyday work, connect OpenAI, Gemini, or Claude, or add an OpenAI-compatible endpoint operated by your organization or another service.
-- **Use your local model from another app** — Open **Settings > API Server** to copy the network endpoint, active model ID, OpenClaw configuration, or a curl test. Optional token authentication applies consistently to both local and remote requests through Vyact's gateway.
-- **Know when data leaves your machine** — When connected email or cloud-file content is used as AI chat context, it may be sent to the selected AI provider. With a Vyact-managed local model, that chat context is not sent to an external AI provider.
-- **Back up what matters** — Export and restore conversations, documents, files, memos, prompts, settings, provider connections, projects, and vocabulary. Cloud backups can be saved to Google Drive or OneDrive using the selected account.
-- **Open source** — Vyact is released under AGPL-3.0. You can inspect, adapt, and contribute to the workspace you rely on.
-
-## A few ways to start today
-
-| If you want to… | Try this in Vyact |
-| --- | --- |
-| Understand a report quickly | Attach the PDF, ask for a concise briefing, then open the retrieved sources to check the answer. |
-| Reply to a difficult email | Attach the email thread and relevant Drive files, ask for a draft in your voice, then edit and send it from Gmail. |
-| Build a personal work memory | Index frequently used documents and save decisions as memos; ask a normal question later and let RAG find the context. |
-| Plan a project without losing the thread | Create a project, add working instructions, keep discussions together, and export the conversation when you need a record. |
-| Practice a new language every day | Open voice chat, or learn from Netflix with dual subtitles and explanations focused on your selected weak areas. |
-| Compare local model settings | Open Model settings > Performance test, select combinations, compare results, then apply your preferred settings. |
-| Research while browsing | Send selected text or the current page from Chrome directly to Vyact and continue the conversation with page context. |
+With a Vyact-managed local model, your AI chat context is processed on your computer. Cloud AI providers receive the context needed for their requests; connected mail and file services communicate with their own services.
 
 ## Get started
+
+<details>
+<summary>Detailed installation and connections</summary>
 
 ### Install the desktop app
 
@@ -217,14 +108,6 @@ Vyact includes its own Python 3.12 runtime and manages its local model runtime f
 
 On macOS, Windows, and Linux, Vyact can download and run its supported native Elasticsearch distribution, so Docker is not required. Package managers are the recommended path for automatic setup; they are required only when a selected feature needs a system binary that is not already installed. On first launch, Vyact prepares the components required by the selected configuration.
 
-### Your first five minutes
-
-1. Launch Vyact and choose a provider and model. Select **Vyact** to search for and download a local GGUF or MLX model, or add a custom LLM endpoint if you already operate one.
-2. Drop in a document or open **Document management** to index files you will use repeatedly. Create a knowledge collection when you want to limit RAG to a particular set of documents, memos, or email threads.
-3. Ask a question in chat and inspect the retrieved context when accuracy matters.
-4. Optionally connect Google or Microsoft from **Settings > Google** or **Settings > Microsoft** or install the Chrome extension to bring live work into the same flow.
-5. Create a memo, project, or reusable skill once you find a workflow you repeat.
-
 ### Connect a custom LLM provider
 
 Vyact can connect to an API server that implements the OpenAI-compatible `/chat/completions` API. During initial setup, select **Custom LLM**. After installation, you can add or edit connections from the provider controls in the sidebar.
@@ -258,6 +141,154 @@ Custom connection settings are included in Vyact backup and restore. Streaming, 
 Use dual subtitles and playback controls to study with Netflix, select the language areas you find difficult, and receive concise explanations focused on those weaknesses. You can also translate pages or ask about the current page without copying its content into chat.
 
 When writing a post, email, or comment, open **Improve writing** to refine your text, choose a style and output language, and compare the result with your original draft.
+
+</details>
+
+## Keep building on your work
+
+### Keep ideas, plans, and decisions—and find them with RAG
+
+Create structured notes for ideas, launch plans, decisions, and next actions. Vyact's rich-text memo workspace supports headings, quotes, lists, and code blocks, so the context around your work stays organized instead of disappearing into a chat history. Memos are also indexed as part of your knowledge base, letting RAG retrieve relevant notes automatically during a normal conversation.
+
+<p align="center">
+  <img src="assets/readme/feature-memo.png" alt="Vyact rich-text memo workspace" width="100%" />
+</p>
+
+### Listen to responses in voice mode
+
+For people who find on-screen text difficult to read, or simply prefer listening, voice mode offers optional automatic read-aloud. Vyact reads completed sentences as the response is generated, with adjustable playback speed from 1× to 2×. Automatic read-aloud is off by default, and your on/off and speed preferences are remembered. Use the response's stop button to stop reading at any time.
+
+### Learn a language by speaking
+
+Practice in your target language through natural, voice-based conversations. Speak to Vyact, hear its response, and build confidence with real expressions and repeated conversation practice instead of studying isolated phrases.
+
+<p align="center">
+  <img src="assets/readme/feature-voice-chat.png" alt="Vyact voice conversation and speaking practice" width="100%" />
+</p>
+
+### Learn languages from Netflix and every page with the Chrome extension
+
+Learn from Netflix with dual subtitles, subtitle navigation, repeat playback, and automatic pause controls. Choose the language areas you find difficult, then get short AI explanations that focus on those weaknesses in the subtitle you are watching. You can also translate foreign-language pages and send the current page or selected text into chat as context without copying it by hand.
+
+<p align="center">
+  <img src="assets/readme/feature-plugin.png" alt="Vyact Chrome extension side panel" width="100%" />
+</p>
+
+## Choose and tune your local model
+
+### Find a local model that fits your hardware
+
+Search and compare local GGUF and MLX models without leaving Vyact. See detected system RAM and GPU VRAM alongside model size, quantization, context capacity, and hardware-aware memory estimates before downloading, then let Vyact install the selected model and prepare the matching local runtime. For compatible multi-GPU llama.cpp systems, automatic memory fitting is the default, with an optional manual GPU split for advanced setups. Public models work without an API key, while an optional Hugging Face key enables access to gated models your account is authorized to use.
+
+<p align="center">
+  <img src="assets/readme/feature-local-models.png" alt="Vyact local model search with detected system RAM, GPU VRAM, and hardware-aware memory estimates" width="100%" />
+</p>
+
+<details>
+<summary>MLX acceleration details</summary>
+
+#### How MLX acceleration works
+
+On Apple Silicon, Vyact runs both text and vision-capable MLX models through a single oMLX runtime. Prefix KV Memory Cache is enabled by default, keeping reusable prompt state in memory and a paged SSD cache, with cache limits selected for your system memory. Repeated system prompts and conversation prefixes can therefore skip work already completed by the model; a first request may report `cached_tokens: 0`, while a matching follow-up reports the number of prefix tokens actually reused.
+
+When a compatible External MTP companion is available for a newly downloaded model, Vyact downloads it with the target model, validates the pairing, and lets oMLX use MTP for faster decoding while Memory Cache remains enabled. Vyact reads External MTP capabilities from the installed oMLX runtime at app startup and refreshes them after a managed runtime update, so compatibility follows the engine version instead of a fixed model list. Speculative Prefill and embedded native MTP are disabled in the current integration. Compatible DFlash models use their dedicated acceleration path.
+
+</details>
+
+<details>
+<summary>Performance test details</summary>
+
+### Compare model settings on your own hardware
+
+Open **Model settings > Performance test** to compare settings before choosing them. Preview the combinations and run all of them or select only the ones you want: performance mode, KV cache quantization, and supported MTP for GGUF, or supported MTP for MLX. Context, output limits, and sampling settings stay fixed across combinations.
+
+Each combination runs a short input, a long input, and a follow-up conversation. Compare time to first token, generation speed, total response time, reused prefix tokens, and actual input/output token counts in one view. Prefill time and speed are shown when the engine reports them separately; unavailable metrics stay marked as unavailable. Follow-up requests intentionally test conversation cache reuse.
+
+Completed results are sorted by a speed score combining time to first token and generation time normalized to 256 output tokens across the three workloads. The best tested combination is highlighted; this is a speed comparison, not a measure of answer quality or memory savings. Choose **Use these settings** to copy a result into the form, then **Apply** to activate the model with those settings.
+
+Measurements are saved as they finish. You can stop a test and keep completed measurements; Vyact restores the previous model and settings after completion, cancellation, or failure, and reports any restoration error. Starting another test replaces the previous results for that model.
+
+<p align="center">
+  <img src="assets/readme/feature-model-benchmark.png" alt="Vyact model performance test results ranked by speed, with a recommended configuration and per-workload timings and token counts" width="100%" />
+</p>
+
+</details>
+
+## Everything you need to stay in context
+
+<details>
+<summary>Explore all features and integrations</summary>
+
+| | Capability | Why it matters |
+| --- | --- | --- |
+| 💬 | AI chat with streaming responses | Keep conversations fast and useful, whether you use a local or hosted model. |
+| 📚 | File attachments, knowledge collections, and RAG | Group documents, memos, and indexed email threads into focused collections, then ask questions with the right context. |
+| ⚡ | Local model performance tests | Compare settings on your hardware, inspect timings and token counts, and apply the best tested configuration. |
+| 🔎 | Source-aware answers | Review the passages and documents that informed an answer. |
+| 📝 | Rich-text memos | Organize ideas and plans in structured notes that RAG can retrieve during a conversation. |
+| 🗂️ | Google and Microsoft integration | Switch accounts and work with Gmail, Outlook, Google Drive, OneDrive, and calendars alongside your AI conversation. |
+| ↗️ | Local OpenAI-compatible API server | Use the active Vyact local model from OpenClaw or another app on your network, with optional Bearer-token authentication and ready-to-copy configuration. |
+| 🎙️ | Voice-based language learning | Practice speaking through natural conversations with speech input and AI responses. |
+| 🌐 | Chrome extension for Netflix and web language learning | Study Netflix with dual subtitles and level-aware explanations, translate pages, and ask questions with selected text or the current page as context. |
+| ✍️ | Browser writing assistant | Preview inline grammar corrections and apply or dismiss them individually or together; compare full rewrites before applying or copying. |
+| 🧩 | MCP tool connections | Connect the tools you use to tailor Vyact to the way you work. |
+| 🌍 | Multilingual interface | Available in Korean, English, Japanese, Chinese, Thai, Vietnamese, Spanish, and French. |
+
+### Work without constantly rebuilding context
+
+- **Projects and conversation history** — Group chats by project, give a project its own working instructions, rename or export conversations, and return to the exact thread when work resumes.
+- **Files that stay useful** — Attach a file for one conversation or index it as long-term knowledge. Group documents, memos, and indexed email threads into knowledge collections to narrow RAG to the context for the task at hand. Inspect chunks, manage saved files, and remove data you no longer need.
+- **Notes that do not disappear into chat** — Keep rich-text memos, quick todos, and decisions in an organized workspace. They remain available to RAG when they matter again.
+- **Control over the AI** — Choose a local llama.cpp or MLX model, OpenAI, Gemini, Claude, or a custom OpenAI-compatible LLM; tune context, output, sampling, embedding, and chunking settings for your machine and work style.
+
+### Connect work, then act on it
+
+- **Gmail** — Search and read mail, work with labels, attach an email and its files to chat, compose replies with AI, manage signatures, and send from the connected account.
+- **Google Drive** — Browse, search, upload, download, rename, copy, share, and attach Drive files directly to a conversation or knowledge base.
+- **Google Calendar** — View, create, update, and remove events without switching away from your current task.
+- **Built-in Google Workspace connection** — In **Settings > Google**, upload the OAuth credentials JSON and connect one or more accounts. Vyact's built-in tools call Gmail, Drive, and Calendar Google APIs directly with OAuth permissions; no separate external MCP server process sits in the request path. OAuth tokens are not included in exported backups.
+- **Microsoft integration** — Connect accounts in **Settings > Microsoft** using the Client ID of an app registered in Microsoft Entra. Follow the setup guide in settings to sign in and use Outlook mail, OneDrive files, and Microsoft calendars.
+- **Account switching** — Switch between connected Google and Microsoft accounts. **Cmd+Shift+G** on macOS, or **Ctrl+Shift+G** on Windows/Linux, opens or closes the mail, files, and calendar panel.
+- **MCP and reusable skills** — In **Settings > AI Tools**, add filesystem access, GitHub, or a custom local/remote MCP server. Manage reusable instructions separately in **Settings > Skills** so recurring work gets the right guidance automatically.
+
+### Keep ownership of your workspace
+
+- **Local-first by default** — Vyact is designed around native llama.cpp, MLX on Apple Silicon, and local embedding so your core working context can stay on your machine.
+- **Choose your provider** — Use local models for private everyday work, connect OpenAI, Gemini, or Claude, or add an OpenAI-compatible endpoint operated by your organization or another service.
+- **Use your local model from another app** — Open **Settings > API Server** to copy the network endpoint, active model ID, OpenClaw configuration, or a curl test. Optional token authentication applies consistently to both local and remote requests through Vyact's gateway.
+- **Know when data leaves your machine** — When connected email or cloud-file content is used as AI chat context, it may be sent to the selected AI provider. With a Vyact-managed local model, that chat context is not sent to an external AI provider.
+- **Back up what matters** — Export and restore conversations, documents, files, memos, prompts, settings, provider connections, projects, and vocabulary. Cloud backups can be saved to Google Drive or OneDrive using the selected account.
+- **Open source** — Vyact is released under AGPL-3.0. You can inspect, adapt, and contribute to the workspace you rely on.
+
+### Turn documents into a knowledge base
+
+Upload and index your documents once. During a normal chat, Vyact retrieves the passages most relevant to your question and adds them to the model's context automatically—so answers are grounded in your knowledge base without manually attaching the same files every time. Create knowledge collections to group related documents, memos, and indexed email threads, then select a collection in chat when you want RAG to stay within that specific context. Inspect the retrieved sources when you need to verify an answer.
+
+<p align="center">
+  <img src="assets/readme/feature-document-rag.png" alt="Vyact document management and RAG knowledge base" width="100%" />
+</p>
+
+### One workspace for AI chat, files, Google, and Microsoft
+
+Ask questions with PDFs and documents attached, then trace answers back to their supporting context. Connect multiple Google and Microsoft accounts and switch between them in a shared account list. Bring Gmail or Outlook messages, email attachments, and Google Drive or OneDrive files directly into the conversation when your next action depends on real work—not copied-and-pasted fragments. When it is time to reply, Vyact can help draft an email from the same context.
+
+<p align="center">
+  <img src="assets/readme/feature-ai-workspace.png" alt="Vyact AI chat with document context and Google Workspace panels" width="100%" />
+</p>
+
+### A few ways to start today
+
+| If you want to… | Try this in Vyact |
+| --- | --- |
+| Understand a report quickly | Attach the PDF, ask for a concise briefing, then open the retrieved sources to check the answer. |
+| Reply to a difficult email | Attach the email thread and relevant Drive files, ask for a draft in your voice, then edit and send it from Gmail. |
+| Build a personal work memory | Index frequently used documents and save decisions as memos; ask a normal question later and let RAG find the context. |
+| Plan a project without losing the thread | Create a project, add working instructions, keep discussions together, and export the conversation when you need a record. |
+| Practice a new language every day | Open voice chat, or learn from Netflix with dual subtitles and explanations focused on your selected weak areas. |
+| Compare local model settings | Open Model settings > Performance test, select combinations, compare results, then apply your preferred settings. |
+| Research while browsing | Send selected text or the current page from Chrome directly to Vyact and continue the conversation with page context. |
+
+</details>
 
 ## Support Vyact
 

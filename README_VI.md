@@ -7,7 +7,9 @@
 
 ### Đưa LLM chạy trên máy vào công việc thực tế.
 
-Dùng AI trên máy với tài liệu, email và trình duyệt: tìm câu trả lời trong tệp, soạn bản nháp trả lời và cải thiện bài viết.
+Vyact là không gian làm việc trên máy tính dành cho AI cục bộ. Tìm câu trả lời trong tài liệu, soạn email trả lời và chỉnh sửa bài viết ngay trong trình duyệt bằng mô hình bạn chọn.
+
+**Apple Silicon Mac · Windows · Linux x64**
 
 Mã nguồn mở. Chạy mô hình trên máy tính của bạn, với tùy chọn dùng nhà cung cấp AI đám mây.
 
@@ -17,7 +19,7 @@ Mã nguồn mở. Chạy mô hình trên máy tính của bạn, với tùy ch�
 [![Chrome Extension](https://img.shields.io/badge/browser-Chrome%20Extension-4285f4.svg?style=flat-square)](https://chromewebstore.google.com/detail/vyact/opfbakfhoojmdkbbhcglolkpgmenjbib)
 [![Latest release](https://img.shields.io/github/v/release/vyact/vyact?style=flat-square&label=release)](https://github.com/vyact/vyact/releases/latest)
 
-[Bắt đầu](#bắt-đầu) · [Quy trình](#một-không-gian-cho-công-việc-hằng-ngày) · [Tính năng](#mọi-thứ-bạn-cần-để-duy-trì-ngữ-cảnh) · [Ủng hộ Vyact](#ủng-hộ-vyact) · [Đóng góp](CONTRIBUTING.md)
+[Bắt đầu](#bắt-đầu-với-một-tài-liệu) · [Quy trình](#một-không-gian-cho-công-việc-hằng-ngày) · [Tính năng](#mọi-thứ-bạn-cần-để-duy-trì-ngữ-cảnh) · [Ủng hộ Vyact](#ủng-hộ-vyact) · [Đóng góp](CONTRIBUTING.md)
 </div>
 
 ---
@@ -28,17 +30,19 @@ Video dài 1 phút 53 giây giới thiệu hỏi đáp tài liệu và kiểm tr
 
 ## Một không gian cho công việc hằng ngày
 
-### Biến tài liệu thành cơ sở tri thức
+### Tìm câu trả lời và kiểm tra nguồn
 
-Tải lên và lập chỉ mục tài liệu một lần. Trong hội thoại bình thường, Vyact tự động truy xuất đoạn liên quan nhất rồi thêm vào context. Nhóm tài liệu, ghi chú và chuỗi email đã lập chỉ mục thành bộ sưu tập tri thức để giới hạn phạm vi RAG, đồng thời kiểm tra nguồn đã truy xuất khi cần.
+Đính kèm PDF vào chat rồi hỏi về những quyết định quan trọng, vấn đề còn bỏ ngỏ hoặc bước tiếp theo. Mở nguồn của câu trả lời để đối chiếu với bản gốc. Lập chỉ mục tài liệu thường dùng để có thể hỏi lại mà không phải đính kèm cùng một tệp mỗi lần.
 
-<p align="center"><img src="assets/readme/feature-document-rag.png" alt="Quản lý tài liệu và RAG trong Vyact" width="100%" /></p>
+**Thử ngay:** “Ba rủi ro chính trong tài liệu này là gì? Hãy kèm các đoạn văn làm căn cứ.”
 
-### AI chat, tệp, Google và Microsoft trong cùng một nơi
+### Từ email nhận được đến bản nháp trả lời hữu ích
 
-Đính kèm PDF hoặc tài liệu để đặt câu hỏi rồi truy ngược đến nguồn hỗ trợ câu trả lời. Kết nối nhiều tài khoản Google và Microsoft; đưa thư và tệp đính kèm từ Gmail hoặc Outlook, cũng như tệp Google Drive hoặc OneDrive, trực tiếp vào cuộc trò chuyện. Vyact cũng có thể giúp soạn email trả lời từ chính ngữ cảnh đó.
+Đọc chuỗi thư Gmail hoặc Outlook bên cạnh cuộc trò chuyện, thêm tệp liên quan và nhờ AI soạn thư trả lời. Xem trước bản nháp, chèn vào trình soạn email rồi chỉnh sửa trước khi gửi.
 
-<p align="center"><img src="assets/readme/feature-ai-workspace.png" alt="AI chat Vyact với ngữ cảnh tài liệu và Google Workspace" width="100%" /></p>
+**Thử ngay:** “Soạn thư trả lời ngắn để xác nhận các bước tiếp theo và hỏi về thời hạn.”
+
+Kết nối Google và Microsoft là tùy chọn và cần thiết lập ứng dụng OAuth trước. Bạn có thể bắt đầu bằng tài liệu trên máy để thử Vyact mà chưa cần kết nối tài khoản.
 
 ### Cải thiện bài viết mà không rời trang
 
@@ -50,114 +54,25 @@ Bật **Lý do chỉnh sửa** để biết vì sao một thay đổi được �
   <img src="assets/readme/feature-writing-assistant.png" alt="Tiện ích Chrome Vyact hiển thị lỗi ngữ pháp, gợi ý từ và nút áp dụng trong bản nháp trên Reddit" width="100%" />
 </p>
 
-### Lưu ý tưởng, kế hoạch, quyết định và tìm lại bằng RAG
+**Cần cài tiện ích Chrome và giữ ứng dụng Vyact trên máy tính đang chạy.** Trong trình soạn thảo web được hỗ trợ, bạn chọn những sửa đổi muốn áp dụng. Văn bản gốc chỉ thay đổi khi bạn áp dụng gợi ý.
 
-Tạo ghi chú rich text với tiêu đề, trích dẫn, danh sách và code block. Ghi chú cũng được lập chỉ mục trong cơ sở tri thức để RAG tự động truy xuất trong hội thoại.
+## Bắt đầu với một tài liệu
 
-<p align="center"><img src="assets/readme/feature-memo.png" alt="Không gian ghi chú rich text của Vyact" width="100%" /></p>
+1. [Tải Vyact](https://github.com/vyact/vyact/releases/latest), cài đặt rồi mở ứng dụng.
+2. Chọn **Vyact** để dùng mô hình cục bộ. So sánh mức bộ nhớ ước tính với bộ nhớ máy tính, tải mô hình và đợi hoàn tất chuẩn bị môi trường chạy. Bạn cũng có thể chọn nhà cung cấp AI đang dùng.
+3. Đính kèm PDF vào chat và hỏi: **“Tóm tắt ba ý chính và chỉ ra các đoạn văn làm căn cứ.”**
+4. Mở nguồn của câu trả lời và đối chiếu với tài liệu gốc.
 
-### Nghe câu trả lời trong chế độ giọng nói
+Lần tải xuống và thiết lập đầu tiên cần thời gian và kết nối internet; tốc độ trả lời tùy thuộc phần cứng và mô hình. Tác vụ đầu tiên này không cần kết nối email hay cài tiện ích Chrome.
 
-Tùy chọn đọc tự động phát các câu đã hoàn tất trong lúc câu trả lời được tạo, với tốc độ từ 1× đến 2×. Trạng thái bật/tắt và tốc độ được ghi nhớ; bạn có thể dừng đọc bất cứ lúc nào bằng nút dừng của câu trả lời.
+[Yêu cầu và hướng dẫn cài đặt theo nền tảng](#bắt-đầu)
 
-### Học ngôn ngữ bằng cách nói
-
-Luyện tập bằng hội thoại giọng nói tự nhiên trong ngôn ngữ mục tiêu. Nói với Vyact, nghe câu trả lời và xây dựng sự tự tin bằng cách dùng biểu đạt thực tế và luyện hội thoại lặp lại.
-
-<p align="center"><img src="assets/readme/feature-voice-chat.png" alt="Hội thoại giọng nói Vyact" width="100%" /></p>
-
-### Học ngôn ngữ từ Netflix và mọi trang web bằng tiện ích Chrome
-
-Học với phụ đề song ngữ, điều hướng phụ đề, phát lặp và tự động tạm dừng. Chọn những điểm ngôn ngữ bạn thấy khó để nhận giải thích AI ngắn tập trung vào điểm yếu đó. Bạn cũng có thể dịch trang hoặc gửi trang hiện tại hay đoạn văn đã chọn vào chat.
-
-<p align="center"><img src="assets/readme/feature-plugin.png" alt="Tiện ích Chrome Vyact" width="100%" /></p>
-
-### Tìm mô hình cục bộ phù hợp với phần cứng
-
-Tìm kiếm và so sánh mô hình GGUF và MLX ngay trong Vyact. Xem kích thước, mức lượng tử hóa, dung lượng context, RAM / GPU VRAM được phát hiện và ước tính bộ nhớ theo phần cứng trước khi tải. Trên hệ thống llama.cpp đa GPU tương thích, tự động cân chỉnh bộ nhớ là mặc định và người dùng nâng cao có thể chia GPU thủ công. Mô hình công khai không cần API key; Hugging Face key tùy chọn cho phép truy cập gated model mà tài khoản của bạn được cấp quyền.
-
-<p align="center"><img src="assets/readme/feature-local-models.png" alt="Tìm kiếm mô hình cục bộ trong Vyact" width="100%" /></p>
-
-#### Cách tăng tốc MLX hoạt động
-
-Trên Apple Silicon, mô hình MLX hỗ trợ văn bản và hình ảnh chạy qua một oMLX runtime duy nhất. Prefix KV Memory Cache được bật mặc định, lưu trạng thái prompt có thể tái sử dụng trong bộ nhớ và cache SSD phân trang. Khi có External MTP companion tương thích, Vyact tải xuống, xác thực cặp mô hình và dùng MTP để giải mã nhanh hơn. Khả năng này được đọc từ oMLX đã cài đặt nên bám theo phiên bản engine thay vì danh sách mô hình cố định. Speculative Prefill và native MTP nhúng hiện bị tắt; mô hình DFlash tương thích dùng đường tăng tốc riêng.
-
-### So sánh cài đặt trên phần cứng của bạn
-
-Mở **Cài đặt mô hình > Kiểm tra hiệu năng** để so sánh performance mode, KV cache quantization và MTP được hỗ trợ cho GGUF, hoặc MTP được hỗ trợ cho MLX. Mỗi tổ hợp chạy đầu vào ngắn, đầu vào dài và hội thoại tiếp nối; hiển thị thời gian đến token đầu tiên, tốc độ sinh, tổng thời gian phản hồi, prefix token tái sử dụng và số token vào/ra thực tế. Kết quả được xếp theo điểm tốc độ và có thể sao chép vào biểu mẫu cài đặt. Vyact khôi phục mô hình cùng cài đặt trước đó sau khi hoàn tất, hủy hoặc gặp lỗi.
-
-<p align="center"><img src="assets/readme/feature-model-benchmark.png" alt="Kết quả kiểm tra hiệu năng mô hình Vyact" width="100%" /></p>
-
-
-## Mô hình có thể thay đổi, nhưng ngữ cảnh của bạn nên được giữ lại
-
-Bạn không cần tìm lại tệp, sao chép email và giải thích bối cảnh từ đầu mỗi khi mở một cuộc trò chuyện AI. Vyact kết hợp AI chat, tài liệu, ghi chú và các công cụ quen thuộc trong một không gian làm việc. Bạn có thể kiểm tra nguồn của câu trả lời, biến ghi chú thành tri thức có thể tìm kiếm và sử dụng cùng ngữ cảnh với Gmail, Outlook, Google Drive, OneDrive, lịch và Chrome.
-
-Được xây dựng xoay quanh LLM cục bộ qua llama.cpp và MLX, Vyact giúp giữ hội thoại, tài liệu và ngữ cảnh làm việc trong môi trường của bạn. Khi cần, bạn vẫn có thể kết nối nhà cung cấp đám mây hoặc endpoint LLM tương thích OpenAI của riêng mình.
-
-<div align="center" markdown="1">
-
-[![Tải xuống](https://img.shields.io/badge/Download-GitHub%20Releases-7c3aed?style=for-the-badge&logo=github&logoColor=white)](https://github.com/vyact/vyact/releases)
-[![Ủng hộ Vyact](https://img.shields.io/badge/Support-Vyact-ff5e5b?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/vyact)
-
-</div>
-
-## Mọi thứ bạn cần để duy trì ngữ cảnh
-
-| | Khả năng | Lợi ích |
-| --- | --- | --- |
-| 💬 | AI chat streaming | Hội thoại nhanh với cả mô hình cục bộ và đám mây. |
-| 📚 | Tệp, bộ sưu tập tri thức và RAG | Dùng tài liệu, ghi chú và email làm đúng ngữ cảnh cho công việc. |
-| ⚡ | Kiểm tra hiệu năng mô hình | So sánh cài đặt, thời gian và số token trên máy của bạn. |
-| 🔎 | Câu trả lời có nguồn | Kiểm tra đoạn văn và tài liệu đã cung cấp thông tin cho câu trả lời. |
-| 📝 | Ghi chú rich text | Sắp xếp ý tưởng để RAG có thể tìm lại khi trò chuyện. |
-| 🗂️ | Tích hợp Google và Microsoft | Làm việc với Gmail, Outlook, Google Drive, OneDrive và lịch. |
-| ↗️ | API cục bộ tương thích OpenAI | Dùng mô hình Vyact từ OpenClaw hoặc ứng dụng khác trong mạng. |
-| 🎙️ | Học ngôn ngữ bằng giọng nói | Luyện nói với đầu vào giọng nói và phản hồi AI. |
-| 🌐 | Tiện ích Chrome | Học từ Netflix, dịch trang và hỏi từ nội dung web. |
-| ✍️ | Trợ lý viết trên trình duyệt | Sửa ngữ pháp, đổi giọng văn và so sánh bản gốc với bản sửa. |
-| 🧩 | Kết nối công cụ MCP | Kết nối các công cụ bạn dùng với Vyact. |
-| 🌍 | Giao diện đa ngôn ngữ | Có tiếng Hàn, Anh, Nhật, Trung, Thái, Việt, Tây Ban Nha và Pháp. |
-
-### Làm việc mà không phải dựng lại ngữ cảnh
-
-- **Project và lịch sử hội thoại** — Nhóm chat theo project, đặt chỉ dẫn riêng, đổi tên hoặc export và quay lại đúng thread khi tiếp tục.
-- **Tệp tiếp tục hữu ích** — Đính kèm một lần hoặc lập chỉ mục thành tri thức lâu dài. Nhóm tài liệu, ghi chú và email thành bộ sưu tập để thu hẹp RAG.
-- **Ghi chú không biến mất trong chat** — Lưu memo rich text, todo và quyết định để RAG dùng lại khi cần.
-- **Kiểm soát AI** — Chọn llama.cpp, MLX, OpenAI, Gemini, Claude hoặc LLM tương thích OpenAI; điều chỉnh context, output, sampling, embedding và chunking.
-
-### Kết nối công việc rồi hành động
-
-- **Gmail** — Tìm, đọc, đính kèm thư và tệp, soạn trả lời bằng AI, quản lý chữ ký, thư mục và gửi thư.
-- **Google Drive** — Duyệt, tìm, upload, download, đổi tên, sao chép, chia sẻ và đính kèm tệp vào hội thoại hoặc cơ sở tri thức.
-- **Google Calendar** — Xem, tạo, cập nhật và xóa sự kiện.
-- **Kết nối Google tích hợp** — Trong **Cài đặt > Google**, tải OAuth credentials JSON lên và kết nối nhiều tài khoản. Vyact gọi trực tiếp Google API, không qua MCP server bên ngoài; OAuth token không có trong backup export.
-- **Tích hợp Microsoft** — Trong **Cài đặt > Microsoft**, nhập Client ID của ứng dụng đã đăng ký trong Microsoft Entra và làm theo hướng dẫn thiết lập để đăng nhập, sử dụng thư Outlook, tệp OneDrive và lịch Microsoft.
-- **Chuyển tài khoản** — Chuyển giữa các tài khoản Google và Microsoft đã kết nối. Dùng **Cmd+Shift+G** trên macOS hoặc **Ctrl+Shift+G** trên Windows/Linux để mở hoặc đóng bảng thư, tệp và lịch.
-- **MCP và skill tái sử dụng** — Thêm filesystem, GitHub hoặc custom MCP server trong **Cài đặt > AI Tools**; quản lý chỉ dẫn tái sử dụng trong **Cài đặt > Skills**.
-
-### Giữ quyền sở hữu không gian làm việc
-
-- **Ưu tiên cục bộ** — Thiết kế xoay quanh llama.cpp, MLX trên Apple Silicon và embedding cục bộ.
-- **Tự chọn nhà cung cấp** — Dùng mô hình cục bộ, OpenAI, Gemini, Claude hoặc endpoint tương thích OpenAI.
-- **Dùng mô hình từ ứng dụng khác** — Mở **Cài đặt > API Server** để sao chép endpoint, model ID, cấu hình OpenClaw hoặc lệnh curl. Hỗ trợ Bearer token tùy chọn.
-- **Biết khi nào dữ liệu rời máy** — Nội dung email hoặc tệp đám mây dùng với nhà cung cấp AI bên ngoài có thể được gửi đến nhà cung cấp đó. Với mô hình cục bộ do Vyact quản lý, context chat không được gửi đến nhà cung cấp AI bên ngoài.
-- **Sao lưu dữ liệu quan trọng** — Export và restore hội thoại, tài liệu, tệp, ghi chú, prompt, cài đặt, kết nối, project và từ vựng; có thể lưu lên Google Drive hoặc OneDrive.
-- **Mã nguồn mở** — Phát hành theo AGPL-3.0.
-
-## Một vài cách bắt đầu ngay hôm nay
-
-| Nếu bạn muốn… | Hãy thử cách này trong Vyact |
-| --- | --- |
-| Hiểu nhanh một báo cáo | Đính kèm PDF, yêu cầu briefing ngắn rồi mở các source được truy xuất để kiểm tra. |
-| Trả lời email khó | Đính kèm thread và tệp Drive, yêu cầu bản nháp theo giọng văn của bạn rồi sửa và gửi từ Gmail. |
-| Xây dựng trí nhớ công việc cá nhân | Lập chỉ mục tài liệu thường dùng và lưu quyết định thành memo để RAG tìm lại sau. |
-| Lập kế hoạch project mà không mất mạch | Tạo project, thêm chỉ dẫn, giữ thảo luận cùng nhau và export khi cần bản ghi. |
-| Luyện ngôn ngữ mới mỗi ngày | Mở voice chat hoặc học từ Netflix với phụ đề song ngữ và giải thích theo điểm yếu. |
-| So sánh cài đặt mô hình cục bộ | Mở kiểm tra hiệu năng, chọn tổ hợp, so sánh rồi áp dụng cài đặt mong muốn. |
-| Nghiên cứu trong khi duyệt web | Gửi đoạn văn đã chọn hoặc trang hiện tại từ Chrome sang Vyact. |
+Với mô hình cục bộ do Vyact quản lý, ngữ cảnh chat AI được xử lý trên máy tính của bạn. Nếu chọn AI đám mây, nội dung cần cho yêu cầu sẽ được gửi đến nhà cung cấp đó; dịch vụ email và tệp được kết nối sẽ giao tiếp với dịch vụ tương ứng.
 
 ## Bắt đầu
+
+<details>
+<summary>Chi tiết cài đặt và kết nối</summary>
 
 ### Cài đặt ứng dụng desktop
 
@@ -190,14 +105,6 @@ Vyact tích hợp Python 3.12 và quản lý local model runtime. GGUF chạy qu
 
 Trên macOS, Windows và Linux, Vyact có thể tải và chạy native Elasticsearch được hỗ trợ nên không bắt buộc Docker. Package manager chỉ cần khi tính năng đã chọn cần system binary chưa được cài. Trong lần chạy đầu, Vyact chuẩn bị các component theo cấu hình đã chọn.
 
-### Năm phút đầu tiên
-
-1. Khởi động Vyact rồi chọn provider và model. Chọn **Vyact** để tìm và tải mô hình GGUF / MLX cục bộ.
-2. Thả tài liệu vào hoặc mở **Quản lý tài liệu** để lập chỉ mục; tạo bộ sưu tập tri thức khi cần giới hạn RAG.
-3. Đặt câu hỏi trong chat và kiểm tra context được truy xuất khi độ chính xác quan trọng.
-4. Kết nối Google hoặc Microsoft từ **Cài đặt > Google** hoặc **Cài đặt > Microsoft** hoặc cài tiện ích Chrome.
-5. Tạo ghi chú, project hoặc skill tái sử dụng cho quy trình lặp lại.
-
 ### Kết nối nhà cung cấp LLM tùy chỉnh
 
 Vyact kết nối được với API triển khai `/chat/completions` tương thích OpenAI. Chọn **Custom LLM** trong thiết lập ban đầu hoặc thêm sau từ provider controls.
@@ -223,6 +130,132 @@ Cài đặt kết nối tùy chỉnh được đưa vào backup / restore. Strea
 1. [Cài Vyact từ Chrome Web Store](https://chromewebstore.google.com/detail/vyact/opfbakfhoojmdkbbhcglolkpgmenjbib).
 2. Khởi động ứng dụng desktop Vyact.
 3. Ghim Vyact vào thanh công cụ và mở side panel trên bất kỳ trang nào.
+
+</details>
+
+## Tiếp tục công việc trong cùng một nơi
+
+### Lưu ý tưởng, kế hoạch, quyết định và tìm lại bằng RAG
+
+Tạo ghi chú rich text với tiêu đề, trích dẫn, danh sách và code block. Ghi chú cũng được lập chỉ mục trong cơ sở tri thức để RAG tự động truy xuất trong hội thoại.
+
+<p align="center"><img src="assets/readme/feature-memo.png" alt="Không gian ghi chú rich text của Vyact" width="100%" /></p>
+
+### Nghe câu trả lời trong chế độ giọng nói
+
+Tùy chọn đọc tự động phát các câu đã hoàn tất trong lúc câu trả lời được tạo, với tốc độ từ 1× đến 2×. Trạng thái bật/tắt và tốc độ được ghi nhớ; bạn có thể dừng đọc bất cứ lúc nào bằng nút dừng của câu trả lời.
+
+### Học ngôn ngữ bằng cách nói
+
+Luyện tập bằng hội thoại giọng nói tự nhiên trong ngôn ngữ mục tiêu. Nói với Vyact, nghe câu trả lời và xây dựng sự tự tin bằng cách dùng biểu đạt thực tế và luyện hội thoại lặp lại.
+
+<p align="center"><img src="assets/readme/feature-voice-chat.png" alt="Hội thoại giọng nói Vyact" width="100%" /></p>
+
+### Học ngôn ngữ từ Netflix và mọi trang web bằng tiện ích Chrome
+
+Học với phụ đề song ngữ, điều hướng phụ đề, phát lặp và tự động tạm dừng. Chọn những điểm ngôn ngữ bạn thấy khó để nhận giải thích AI ngắn tập trung vào điểm yếu đó. Bạn cũng có thể dịch trang hoặc gửi trang hiện tại hay đoạn văn đã chọn vào chat.
+
+<p align="center"><img src="assets/readme/feature-plugin.png" alt="Tiện ích Chrome Vyact" width="100%" /></p>
+
+## Chọn và tinh chỉnh mô hình cục bộ
+
+### Tìm mô hình cục bộ phù hợp với phần cứng
+
+Tìm kiếm và so sánh mô hình GGUF và MLX ngay trong Vyact. Xem kích thước, mức lượng tử hóa, dung lượng context, RAM / GPU VRAM được phát hiện và ước tính bộ nhớ theo phần cứng trước khi tải. Trên hệ thống llama.cpp đa GPU tương thích, tự động cân chỉnh bộ nhớ là mặc định và người dùng nâng cao có thể chia GPU thủ công. Mô hình công khai không cần API key; Hugging Face key tùy chọn cho phép truy cập gated model mà tài khoản của bạn được cấp quyền.
+
+<p align="center"><img src="assets/readme/feature-local-models.png" alt="Tìm kiếm mô hình cục bộ trong Vyact" width="100%" /></p>
+
+<details>
+<summary>Chi tiết tăng tốc MLX</summary>
+
+#### Cách tăng tốc MLX hoạt động
+
+Trên Apple Silicon, mô hình MLX hỗ trợ văn bản và hình ảnh chạy qua một oMLX runtime duy nhất. Prefix KV Memory Cache được bật mặc định, lưu trạng thái prompt có thể tái sử dụng trong bộ nhớ và cache SSD phân trang. Khi có External MTP companion tương thích, Vyact tải xuống, xác thực cặp mô hình và dùng MTP để giải mã nhanh hơn. Khả năng này được đọc từ oMLX đã cài đặt nên bám theo phiên bản engine thay vì danh sách mô hình cố định. Speculative Prefill và native MTP nhúng hiện bị tắt; mô hình DFlash tương thích dùng đường tăng tốc riêng.
+
+</details>
+
+<details>
+<summary>Chi tiết kiểm tra hiệu năng</summary>
+
+### So sánh cài đặt trên phần cứng của bạn
+
+Mở **Cài đặt mô hình > Kiểm tra hiệu năng** để so sánh performance mode, KV cache quantization và MTP được hỗ trợ cho GGUF, hoặc MTP được hỗ trợ cho MLX. Mỗi tổ hợp chạy đầu vào ngắn, đầu vào dài và hội thoại tiếp nối; hiển thị thời gian đến token đầu tiên, tốc độ sinh, tổng thời gian phản hồi, prefix token tái sử dụng và số token vào/ra thực tế. Kết quả được xếp theo điểm tốc độ và có thể sao chép vào biểu mẫu cài đặt. Vyact khôi phục mô hình cùng cài đặt trước đó sau khi hoàn tất, hủy hoặc gặp lỗi.
+
+<p align="center"><img src="assets/readme/feature-model-benchmark.png" alt="Kết quả kiểm tra hiệu năng mô hình Vyact" width="100%" /></p>
+
+</details>
+
+## Mọi thứ bạn cần để duy trì ngữ cảnh
+
+<details>
+<summary>Xem tất cả tính năng và kết nối</summary>
+
+| | Khả năng | Lợi ích |
+| --- | --- | --- |
+| 💬 | AI chat streaming | Hội thoại nhanh với cả mô hình cục bộ và đám mây. |
+| 📚 | Tệp, bộ sưu tập tri thức và RAG | Dùng tài liệu, ghi chú và email làm đúng ngữ cảnh cho công việc. |
+| ⚡ | Kiểm tra hiệu năng mô hình | So sánh cài đặt, thời gian và số token trên máy của bạn. |
+| 🔎 | Câu trả lời có nguồn | Kiểm tra đoạn văn và tài liệu đã cung cấp thông tin cho câu trả lời. |
+| 📝 | Ghi chú rich text | Sắp xếp ý tưởng để RAG có thể tìm lại khi trò chuyện. |
+| 🗂️ | Tích hợp Google và Microsoft | Làm việc với Gmail, Outlook, Google Drive, OneDrive và lịch. |
+| ↗️ | API cục bộ tương thích OpenAI | Dùng mô hình Vyact từ OpenClaw hoặc ứng dụng khác trong mạng. |
+| 🎙️ | Học ngôn ngữ bằng giọng nói | Luyện nói với đầu vào giọng nói và phản hồi AI. |
+| 🌐 | Tiện ích Chrome | Học từ Netflix, dịch trang và hỏi từ nội dung web. |
+| ✍️ | Trợ lý viết trên trình duyệt | Xem gợi ý được gạch chân rồi áp dụng hoặc bỏ qua từng mục hay tất cả; so sánh bản viết lại trước khi áp dụng hoặc sao chép. |
+| 🧩 | Kết nối công cụ MCP | Kết nối các công cụ bạn dùng với Vyact. |
+| 🌍 | Giao diện đa ngôn ngữ | Có tiếng Hàn, Anh, Nhật, Trung, Thái, Việt, Tây Ban Nha và Pháp. |
+
+### Làm việc mà không phải dựng lại ngữ cảnh
+
+- **Project và lịch sử hội thoại** — Nhóm chat theo project, đặt chỉ dẫn riêng, đổi tên hoặc export và quay lại đúng thread khi tiếp tục.
+- **Tệp tiếp tục hữu ích** — Đính kèm một lần hoặc lập chỉ mục thành tri thức lâu dài. Nhóm tài liệu, ghi chú và email thành bộ sưu tập để thu hẹp RAG.
+- **Ghi chú không biến mất trong chat** — Lưu memo rich text, todo và quyết định để RAG dùng lại khi cần.
+- **Kiểm soát AI** — Chọn llama.cpp, MLX, OpenAI, Gemini, Claude hoặc LLM tương thích OpenAI; điều chỉnh context, output, sampling, embedding và chunking.
+
+### Kết nối công việc rồi hành động
+
+- **Gmail** — Tìm, đọc, đính kèm thư và tệp, soạn trả lời bằng AI, quản lý chữ ký, thư mục và gửi thư.
+- **Google Drive** — Duyệt, tìm, upload, download, đổi tên, sao chép, chia sẻ và đính kèm tệp vào hội thoại hoặc cơ sở tri thức.
+- **Google Calendar** — Xem, tạo, cập nhật và xóa sự kiện.
+- **Kết nối Google tích hợp** — Trong **Cài đặt > Google**, tải OAuth credentials JSON lên và kết nối nhiều tài khoản. Vyact gọi trực tiếp Google API, không qua MCP server bên ngoài; OAuth token không có trong backup export.
+- **Tích hợp Microsoft** — Trong **Cài đặt > Microsoft**, nhập Client ID của ứng dụng đã đăng ký trong Microsoft Entra và làm theo hướng dẫn thiết lập để đăng nhập, sử dụng thư Outlook, tệp OneDrive và lịch Microsoft.
+- **Chuyển tài khoản** — Chuyển giữa các tài khoản Google và Microsoft đã kết nối. Dùng **Cmd+Shift+G** trên macOS hoặc **Ctrl+Shift+G** trên Windows/Linux để mở hoặc đóng bảng thư, tệp và lịch.
+- **MCP và skill tái sử dụng** — Thêm filesystem, GitHub hoặc custom MCP server trong **Cài đặt > AI Tools**; quản lý chỉ dẫn tái sử dụng trong **Cài đặt > Skills**.
+
+### Giữ quyền sở hữu không gian làm việc
+
+- **Ưu tiên cục bộ** — Thiết kế xoay quanh llama.cpp, MLX trên Apple Silicon và embedding cục bộ.
+- **Tự chọn nhà cung cấp** — Dùng mô hình cục bộ, OpenAI, Gemini, Claude hoặc endpoint tương thích OpenAI.
+- **Dùng mô hình từ ứng dụng khác** — Mở **Cài đặt > API Server** để sao chép endpoint, model ID, cấu hình OpenClaw hoặc lệnh curl. Hỗ trợ Bearer token tùy chọn.
+- **Biết khi nào dữ liệu rời máy** — Nội dung email hoặc tệp đám mây dùng với nhà cung cấp AI bên ngoài có thể được gửi đến nhà cung cấp đó. Với mô hình cục bộ do Vyact quản lý, context chat không được gửi đến nhà cung cấp AI bên ngoài.
+- **Sao lưu dữ liệu quan trọng** — Export và restore hội thoại, tài liệu, tệp, ghi chú, prompt, cài đặt, kết nối, project và từ vựng; có thể lưu lên Google Drive hoặc OneDrive.
+- **Mã nguồn mở** — Phát hành theo AGPL-3.0.
+
+### Biến tài liệu thành cơ sở tri thức
+
+Tải lên và lập chỉ mục tài liệu một lần. Trong hội thoại bình thường, Vyact tự động truy xuất đoạn liên quan nhất rồi thêm vào context. Nhóm tài liệu, ghi chú và chuỗi email đã lập chỉ mục thành bộ sưu tập tri thức để giới hạn phạm vi RAG, đồng thời kiểm tra nguồn đã truy xuất khi cần.
+
+<p align="center"><img src="assets/readme/feature-document-rag.png" alt="Quản lý tài liệu và RAG trong Vyact" width="100%" /></p>
+
+### AI chat, tệp, Google và Microsoft trong cùng một nơi
+
+Đính kèm PDF hoặc tài liệu để đặt câu hỏi rồi truy ngược đến nguồn hỗ trợ câu trả lời. Kết nối nhiều tài khoản Google và Microsoft; đưa thư và tệp đính kèm từ Gmail hoặc Outlook, cũng như tệp Google Drive hoặc OneDrive, trực tiếp vào cuộc trò chuyện. Vyact cũng có thể giúp soạn email trả lời từ chính ngữ cảnh đó.
+
+<p align="center"><img src="assets/readme/feature-ai-workspace.png" alt="AI chat Vyact với ngữ cảnh tài liệu và Google Workspace" width="100%" /></p>
+
+### Một vài cách bắt đầu ngay hôm nay
+
+| Nếu bạn muốn… | Hãy thử cách này trong Vyact |
+| --- | --- |
+| Hiểu nhanh một báo cáo | Đính kèm PDF, yêu cầu briefing ngắn rồi mở các source được truy xuất để kiểm tra. |
+| Trả lời email khó | Đính kèm thread và tệp Drive, yêu cầu bản nháp theo giọng văn của bạn rồi sửa và gửi từ Gmail. |
+| Xây dựng trí nhớ công việc cá nhân | Lập chỉ mục tài liệu thường dùng và lưu quyết định thành memo để RAG tìm lại sau. |
+| Lập kế hoạch project mà không mất mạch | Tạo project, thêm chỉ dẫn, giữ thảo luận cùng nhau và export khi cần bản ghi. |
+| Luyện ngôn ngữ mới mỗi ngày | Mở voice chat hoặc học từ Netflix với phụ đề song ngữ và giải thích theo điểm yếu. |
+| So sánh cài đặt mô hình cục bộ | Mở kiểm tra hiệu năng, chọn tổ hợp, so sánh rồi áp dụng cài đặt mong muốn. |
+| Nghiên cứu trong khi duyệt web | Gửi đoạn văn đã chọn hoặc trang hiện tại từ Chrome sang Vyact. |
+
+</details>
 
 ## Ủng hộ Vyact
 
