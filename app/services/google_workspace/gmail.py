@@ -11,6 +11,8 @@ from email import encoders
 from email.utils import parseaddr
 from pathlib import Path
 
+from googleapiclient.errors import HttpError
+
 from config import INSTALL_DIR
 from logger import get_logger
 from .auth import _build_service, _get_google_config_async
@@ -114,22 +116,35 @@ def list_mail_messages_sync(
         maxResults=max_results,
         **({"pageToken": page_token} if page_token else {}),
     ).execute()
-    summaries = result.get("messages", [])
+    return {
+        "messages": get_mail_message_metadata_sync(
+            service, [message["id"] for message in result.get("messages", [])],
+        ),
+        "nextPageToken": result.get("nextPageToken"),
+    }
+
+
+def get_mail_message_metadata_sync(service, message_ids: list[str]) -> list[dict]:
+    """Fetch and format metadata only for the requested Gmail message IDs."""
     metadata_by_id: dict[str, dict] = {}
+    batch_errors: list[Exception] = []
 
     def collect_metadata(
         request_id: str,
         response: dict | None,
         exception: Exception | None,
     ) -> None:
+        if exception is not None:
+            if not isinstance(exception, HttpError) or exception.resp.status != 404:
+                batch_errors.append(exception)
+            return
         if exception is None and response:
             metadata_by_id[request_id] = response
 
-    if summaries:
+    if message_ids:
         try:
             batch = service.new_batch_http_request(callback=collect_metadata)
-            for summary in summaries:
-                message_id = summary["id"]
+            for message_id in message_ids:
                 batch.add(
                     service.users().messages().get(
                         userId="me",
@@ -141,18 +156,20 @@ def list_mail_messages_sync(
                 )
             batch.execute()
         except Exception:
-            for summary in summaries:
-                message_id = summary["id"]
+            for message_id in message_ids:
                 metadata_by_id[message_id] = service.users().messages().get(
                     userId="me",
                     id=message_id,
                     format="metadata",
                     metadataHeaders=["Subject", "From", "Date"],
                 ).execute()
+        else:
+            if batch_errors:
+                raise batch_errors[0]
 
     messages = []
-    for summary in summaries:
-        message = metadata_by_id.get(summary["id"])
+    for message_id in message_ids:
+        message = metadata_by_id.get(message_id)
         if not message:
             continue
         headers = _metadata_headers(message)
@@ -176,10 +193,7 @@ def list_mail_messages_sync(
             "isStarred": "STARRED" in message.get("labelIds", []),
         })
 
-    return {
-        "messages": messages,
-        "nextPageToken": result.get("nextPageToken"),
-    }
+    return messages
 
 
 def _format_mail_threads(
@@ -288,12 +302,16 @@ def list_mail_threads_sync(
     summaries = result.get("threads", [])
     threads_by_id: dict[str, dict] = {}
     profile: dict = {}
+    batch_errors: list[Exception] = []
 
     def collect_thread(
         request_id: str,
         response: dict | None,
         exception: Exception | None,
     ) -> None:
+        if exception is not None:
+            batch_errors.append(exception)
+            return
         if exception is None and response and request_id == "profile":
             profile.update(response)
         elif exception is None and response:
@@ -315,6 +333,9 @@ def list_mail_threads_sync(
             thread_id = summary["id"]
             threads_by_id[thread_id] = _get_mail_thread_summary(service, thread_id).execute()
         profile.update(service.users().getProfile(userId="me").execute())
+    else:
+        if batch_errors:
+            raise batch_errors[0]
 
     account_email = (
         profile.get("emailAddress", "")
@@ -334,13 +355,17 @@ def load_mail_workspace_sync(
     effective_query = query.strip()
     labels: list[dict] = []
     thread_result: dict = {}
+    batch_errors: list[Exception] = []
 
     def collect_list(
         request_id: str,
         response: dict | None,
         exception: Exception | None,
     ) -> None:
-        if exception is not None or not response:
+        if exception is not None:
+            batch_errors.append(exception)
+            return
+        if not response:
             return
         if request_id == "labels":
             labels.extend(response.get("labels", []))
@@ -371,6 +396,13 @@ def load_mail_workspace_sync(
             q=effective_query or None,
             maxResults=max_results,
         ).execute())
+    else:
+        # Batch HTTP success does not imply that its individual requests succeeded.
+        # Surface failures instead of returning an empty mailbox or retrying quota errors.
+        if batch_errors:
+            raise batch_errors[0]
+
+    batch_errors.clear()
 
     summaries = thread_result.get("threads", [])
     unread_label_ids = {
@@ -387,7 +419,10 @@ def load_mail_workspace_sync(
         response: dict | None,
         exception: Exception | None,
     ) -> None:
-        if exception is not None or not response:
+        if exception is not None:
+            batch_errors.append(exception)
+            return
+        if not response:
             return
         request_type, _, resource_id = request_id.partition(":")
         if request_type == "thread":
@@ -423,6 +458,9 @@ def load_mail_workspace_sync(
             label_detail = service.users().labels().get(userId="me", id=label_id).execute()
             unread_counts[label_id] = label_detail.get("messagesUnread", 0)
         profile.update(service.users().getProfile(userId="me").execute())
+    else:
+        if batch_errors:
+            raise batch_errors[0]
 
     mail_result = _format_mail_threads(
         thread_result,

@@ -11,7 +11,7 @@ from services.google_workspace.auth import (
     _build_service,
     get_auth_status,
 )
-from services.google_workspace.gmail import list_mail_messages_sync
+from services.google_workspace.gmail import get_mail_message_metadata_sync
 from services.mcp_config import list_servers
 from services.microsoft_workspace.notifications import collect_microsoft_notifications
 from services.microsoft_workspace.calendar_notifications import collect_microsoft_calendar_notifications
@@ -107,9 +107,14 @@ async def collect_google_mail_notifications() -> None:
 
 async def _collect_google_mail_notifications_for_account(account: dict) -> None:
     account_id = account["id"]
+    known_ids = _known_gmail_message_ids.get(account_id, set())
+    if account_id not in _gmail_initialized_accounts:
+        has_existing_mail_notifications = await has_notification_type("google_mail", account_id)
+        # The first connection establishes a baseline without notifying old mail.
+        known_ids = set() if has_existing_mail_notifications else None
     service = await _build_service("gmail", "v1", account_id=account_id)
     try:
-        result = await _list_latest_gmail_messages(service)
+        result = await _list_latest_gmail_messages(service, known_ids)
     except HttpError as error:
         if error.resp.status != 401:
             raise
@@ -118,19 +123,13 @@ async def _collect_google_mail_notifications_for_account(account: dict) -> None:
             _notification_account_log_label(account),
         )
         service = await _build_service("gmail", "v1", force_refresh=True, account_id=account_id)
-        result = await _list_latest_gmail_messages(service)
+        result = await _list_latest_gmail_messages(service, known_ids)
     messages = result["messages"]
-    current_ids = {message["id"] for message in messages}
-
-    if account_id not in _gmail_initialized_accounts:
-        has_existing_mail_notifications = await has_notification_type("google_mail", account_id)
-        _known_gmail_message_ids[account_id] = set() if has_existing_mail_notifications else current_ids
-        _gmail_initialized_accounts.add(account_id)
+    current_ids = result["message_ids"]
 
     new_messages = [
         message for message in messages
         if message.get("isUnread")
-        and message["id"] not in _known_gmail_message_ids.get(account_id, set())
     ]
     saved_count = 0
     for message in new_messages:
@@ -147,6 +146,7 @@ async def _collect_google_mail_notifications_for_account(account: dict) -> None:
             saved_count += 1
 
     _known_gmail_message_ids[account_id] = current_ids
+    _gmail_initialized_accounts.add(account_id)
     if saved_count:
         logger.info(
             "[notifications] Gmail notifications saved: account=%s, saved=%d",
@@ -155,15 +155,23 @@ async def _collect_google_mail_notifications_for_account(account: dict) -> None:
         )
 
 
-async def _list_latest_gmail_messages(service) -> dict:
-    return await asyncio.to_thread(
-        list_mail_messages_sync,
-        service,
-        "INBOX",
-        "",
-        "",
-        GMAIL_PAGE_SIZE,
+def _list_latest_gmail_messages_sync(service, known_ids: set[str] | None) -> dict:
+    result = service.users().messages().list(
+        userId="me", labelIds=["INBOX"], maxResults=GMAIL_PAGE_SIZE,
+    ).execute()
+    message_ids = [message["id"] for message in result.get("messages", [])]
+    new_ids = (
+        [message_id for message_id in message_ids if message_id not in known_ids]
+        if known_ids is not None else []
     )
+    return {
+        "message_ids": set(message_ids),
+        "messages": get_mail_message_metadata_sync(service, new_ids),
+    }
+
+
+async def _list_latest_gmail_messages(service, known_ids: set[str] | None) -> dict:
+    return await asyncio.to_thread(_list_latest_gmail_messages_sync, service, known_ids)
 
 
 def _parse_calendar_start(event: dict, calendar_timezone: str) -> datetime | None:
