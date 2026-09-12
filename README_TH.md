@@ -13,7 +13,7 @@ Vyact นำ AI บนเครื่องมาใช้กับงานป�
 
 โอเพนซอร์ส รันโมเดลบนคอมพิวเตอร์ของคุณ และเลือกใช้ผู้ให้บริการ AI บนคลาวด์ได้เมื่อจำเป็น
 
-[**ดาวน์โหลด Vyact**](https://github.com/vyact/vyact/releases/latest) · [**ชมเดโมการใช้งาน**](https://youtu.be/5EdlX2hIB-c)
+[**ดาวน์โหลด Vyact**](https://github.com/vyact/vyact/releases/latest) · [**ชมเดโมการใช้งาน**](https://youtu.be/V3NTHU94lP8)
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-7c3aed.svg?style=flat-square)](LICENSE)
 [![Chrome Extension](https://img.shields.io/badge/browser-Chrome%20Extension-4285f4.svg?style=flat-square)](https://chromewebstore.google.com/detail/vyact/opfbakfhoojmdkbbhcglolkpgmenjbib)
@@ -24,9 +24,9 @@ Vyact นำ AI บนเครื่องมาใช้กับงานป�
 
 ---
 
-[![ชมเดโมการใช้งาน](assets/readme/demo-local-document-dark.png)](https://youtu.be/5EdlX2hIB-c)
+[![ชมเดโมการใช้งาน](assets/readme/demo-complete-showcase.png)](https://youtu.be/V3NTHU94lP8)
 
-เดโมความยาว 1 นาที 53 วินาที แสดงการถามตอบเอกสารพร้อมตรวจสอบแหล่งข้อมูล การสร้างลายเซ็นและร่างอีเมลตอบกลับด้วย AI และการแก้ไขข้อความในเบราว์เซอร์ เป็นการบันทึกหน้าจอ Vyact จริงโดยใช้ข้อมูลสมมติ ตัดช่วงรอออก และมีช่วงสร้างคำตอบจากเอกสารที่เร่งความเร็ว 2 เท่า
+เดโมรวมความยาว 3 นาที 29 วินาที แสดงการเลือกโมเดลและทดสอบประสิทธิภาพ การถามตอบเอกสารพร้อมตรวจสอบแหล่งข้อมูล การสร้างลายเซ็นและร่างอีเมลตอบกลับด้วย AI และการแก้ไขข้อความในเบราว์เซอร์ เป็นการบันทึกหน้าจอ Vyact จริงโดยใช้ข้อมูลสมมติ ตัดช่วงรอออก และมีช่วงสร้างคำตอบจากเอกสารที่เร่งความเร็ว 2 เท่า MLX ใช้ได้บน Mac ที่ใช้ Apple Silicon ผลการทดสอบขึ้นอยู่กับฮาร์ดแวร์ โมเดล และการตั้งค่า
 
 ## พื้นที่ทำงานเดียวสำหรับงานประจำวัน
 

@@ -4,7 +4,7 @@
 
 Vyact는 내 컴퓨터의 AI를 문서·메일·코드와 연결하고, 크롬에서 글쓰기·웹 탐색·언어 학습에 활용하는 데스크톱 앱입니다. 자료를 매번 복사해 설명하는 수고를 줄이고, 답변의 근거와 수정 결과를 확인하며 다음 작업으로 이어갈 수 있습니다.
 
-[**데스크톱 앱 다운로드**](https://github.com/vyact/vyact/releases/latest) · [**크롬 확장 설치**](https://chromewebstore.google.com/detail/vyact/opfbakfhoojmdkbbhcglolkpgmenjbib) · [**1분 53초 데모**](https://youtu.be/5EdlX2hIB-c)
+[**데스크톱 앱 다운로드**](https://github.com/vyact/vyact/releases/latest) · [**크롬 확장 설치**](https://chromewebstore.google.com/detail/vyact/opfbakfhoojmdkbbhcglolkpgmenjbib) · [**3분 29초 데모**](https://youtu.be/V3NTHU94lP8)
 
 **Apple Silicon Mac(M1 이상) · Windows · Linux x64 | 오픈소스 | 로컬 모델 또는 외부 AI 선택**
 
@@ -31,9 +31,9 @@ Vyact는 **모델 실행 → 필요한 자료 연결 → AI 작업 → 근거와
 
 ## 데모와 첫 체험
 
-[![문서 질문·메일 답장·브라우저 교정 실제 데모](assets/readme/demo-local-document-dark.png)](https://youtu.be/5EdlX2hIB-c)
+[![모델 성능 테스트·문서 질문·메일 답장·브라우저 교정 통합 데모](assets/readme/demo-complete-showcase.png)](https://youtu.be/V3NTHU94lP8)
 
-**1분 53초 데모**에서 문서 질의응답과 원문 근거 확인, 이메일 서명과 AI 답장 작성, 브라우저 교정 제안의 적용을 볼 수 있습니다. 가상의 자료를 사용한 실제 앱 녹화이며, 대기 구간을 편집했고 문서 답변 생성 일부는 2배속입니다.
+**3분 29초 통합 데모**에서 모델 선택과 성능 테스트, 문서 질의응답과 원문 근거 확인, 이메일 서명과 AI 답장 작성, 브라우저 교정 제안의 적용을 볼 수 있습니다. 가상의 자료를 사용한 실제 앱 녹화이며, 대기 구간을 편집했고 문서 답변 생성 일부는 2배속입니다. MLX는 Apple Silicon Mac에서 사용할 수 있으며, 성능 테스트 결과는 하드웨어·모델·설정에 따라 달라집니다.
 
 직접 사용하려면 [앱을 설치](#설치-안내)하고 모델 준비가 끝난 뒤, 아래 중 한 가지부터 시작하세요. 메일 계정 연결 없이도 문서 질문과 크롬 기능을 체험할 수 있습니다.
 

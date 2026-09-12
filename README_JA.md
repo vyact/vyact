@@ -13,7 +13,7 @@ Vyact はローカル AI を日々の作業につなぐデスクトップワー�
 
 オープンソース。モデルを自分のコンピューターで実行でき、必要に応じてクラウドのAIも選べます。
 
-[**Vyactをダウンロード**](https://github.com/vyact/vyact/releases/latest) · [**ワークフローのデモを見る**](https://youtu.be/5EdlX2hIB-c)
+[**Vyactをダウンロード**](https://github.com/vyact/vyact/releases/latest) · [**ワークフローのデモを見る**](https://youtu.be/V3NTHU94lP8)
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-7c3aed.svg?style=flat-square)](LICENSE)
 [![Chrome Extension](https://img.shields.io/badge/browser-Chrome%20Extension-4285f4.svg?style=flat-square)](https://chromewebstore.google.com/detail/vyact/opfbakfhoojmdkbbhcglolkpgmenjbib)
@@ -24,9 +24,9 @@ Vyact はローカル AI を日々の作業につなぐデスクトップワー�
 
 ---
 
-[![ワークフローのデモを見る](assets/readme/demo-local-document-dark.png)](https://youtu.be/5EdlX2hIB-c)
+[![ワークフローのデモを見る](assets/readme/demo-complete-showcase.png)](https://youtu.be/V3NTHU94lP8)
 
-1分53秒のデモで、文書への質問と出典確認、メール署名とAI返信の作成、ブラウザーでの文章校正を紹介します。架空のデータを使用した実際のVyactの録画です。待ち時間を編集し、文書の回答生成には2倍速の場面が含まれます。
+3分29秒の統合デモで、モデル選択と性能テスト、文書への質問と出典確認、メール署名とAI返信の作成、ブラウザーでの文章校正を紹介します。架空のデータを使用した実際のVyactの録画です。待ち時間を編集し、文書の回答生成には2倍速の場面が含まれます。MLXはApple Silicon Macで利用できます。性能テスト結果はハードウェア、モデル、設定によって異なります。
 
 ## 日々の作業をひとつのワークスペースで
 

@@ -13,7 +13,7 @@ Vyact brings local AI into your everyday work. Ask questions about your files, r
 
 Open source. Run models on your computer, with optional cloud providers.
 
-[**Download Vyact**](https://github.com/vyact/vyact/releases/latest) · [**Watch the workflow demo**](https://youtu.be/5EdlX2hIB-c)
+[**Download Vyact**](https://github.com/vyact/vyact/releases/latest) · [**Watch the workflow demo**](https://youtu.be/V3NTHU94lP8)
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-7c3aed.svg?style=flat-square)](LICENSE)
   [![Chrome Extension](https://img.shields.io/badge/browser-Chrome%20Extension-4285f4.svg?style=flat-square)](https://chromewebstore.google.com/detail/vyact/opfbakfhoojmdkbbhcglolkpgmenjbib)
@@ -24,9 +24,9 @@ Open source. Run models on your computer, with optional cloud providers.
 
 ---
 
-[![Watch the workflow demo](assets/readme/demo-local-document-dark.png)](https://youtu.be/5EdlX2hIB-c)
+[![Watch the workflow demo](assets/readme/demo-complete-showcase.png)](https://youtu.be/V3NTHU94lP8)
 
-A 1-minute 53-second tour of local AI for everyday work: document Q&A with source verification, email signatures and AI replies, and browser writing corrections. Actual Vyact recordings with fictional demo data; waiting time is trimmed and parts of the document Q&A run at 2× speed.
+A 3-minute 29-second tour of local AI for everyday work: model selection and performance testing, document Q&A with source verification, email signatures and AI replies, and browser writing corrections. Actual Vyact recordings with fictional demo data; waiting time is trimmed and parts of the document Q&A run at 2× speed. MLX is available on Apple Silicon Macs; benchmark results vary by hardware, model, and settings.
 
 ## One workspace for everyday work
 

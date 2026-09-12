@@ -13,7 +13,7 @@ Vyact đưa AI cục bộ vào công việc hằng ngày. Hỏi về tài liệu
 
 Mã nguồn mở. Chạy mô hình trên máy tính của bạn, với tùy chọn dùng nhà cung cấp AI đám mây.
 
-[**Tải Vyact**](https://github.com/vyact/vyact/releases/latest) · [**Xem demo quy trình làm việc**](https://youtu.be/5EdlX2hIB-c)
+[**Tải Vyact**](https://github.com/vyact/vyact/releases/latest) · [**Xem demo quy trình làm việc**](https://youtu.be/V3NTHU94lP8)
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-7c3aed.svg?style=flat-square)](LICENSE)
 [![Chrome Extension](https://img.shields.io/badge/browser-Chrome%20Extension-4285f4.svg?style=flat-square)](https://chromewebstore.google.com/detail/vyact/opfbakfhoojmdkbbhcglolkpgmenjbib)
@@ -24,9 +24,9 @@ Mã nguồn mở. Chạy mô hình trên máy tính của bạn, với tùy ch�
 
 ---
 
-[![Xem demo quy trình làm việc](assets/readme/demo-local-document-dark.png)](https://youtu.be/5EdlX2hIB-c)
+[![Xem demo quy trình làm việc](assets/readme/demo-complete-showcase.png)](https://youtu.be/V3NTHU94lP8)
 
-Video dài 1 phút 53 giây giới thiệu hỏi đáp tài liệu và kiểm tra nguồn, chữ ký email và soạn thư trả lời bằng AI, cùng sửa lỗi văn bản trong trình duyệt. Đây là bản quay trực tiếp Vyact với dữ liệu giả định; thời gian chờ đã được cắt bớt và một số đoạn tạo câu trả lời từ tài liệu được phát nhanh 2 lần.
+Video tổng hợp dài 3 phút 29 giây giới thiệu cách chọn và kiểm tra hiệu năng mô hình, hỏi đáp tài liệu và kiểm tra nguồn, chữ ký email và soạn thư trả lời bằng AI, cùng sửa lỗi văn bản trong trình duyệt. Đây là bản quay trực tiếp Vyact với dữ liệu giả định; thời gian chờ đã được cắt bớt và một số đoạn tạo câu trả lời từ tài liệu được phát nhanh 2 lần. MLX khả dụng trên máy Mac dùng Apple Silicon; kết quả hiệu năng thay đổi theo phần cứng, mô hình và thiết lập.
 
 ## Một không gian cho công việc hằng ngày
 
