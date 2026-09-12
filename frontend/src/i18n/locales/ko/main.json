@@ -1,5 +1,5 @@
 {
-  "logViewer": {"latest": "최신 로그로 이동", "title": "로그 보기", "llm": "LLM 로그", "app": "Vyact 로그", "empty": "아직 로그가 없습니다.", "error": "로그를 불러오거나 설정을 저장하지 못했습니다."},
+  "logViewer": {"model": "모델 로그", "latest": "최신 로그로 이동", "title": "로그 보기", "llm": "요청·응답 로그", "app": "Vyact 로그", "empty": "아직 로그가 없습니다.", "error": "로그를 불러오거나 설정을 저장하지 못했습니다."},
   "emptyResponse": "답변 본문이 생성되지 않았습니다. 다시 시도해 주세요.",
   "greeting": {
     "morning": "좋은 아침이에요",

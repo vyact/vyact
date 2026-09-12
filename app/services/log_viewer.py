@@ -15,12 +15,14 @@ HEARTBEAT_INTERVAL = 15
 def log_names(kind: str, model: str) -> list[str]:
     if kind == 'app':
         return ['app']
-    names = ['llm']
-    if model.startswith('mlx/'):
-        names.append('omlx')
-    elif model.lower().endswith('.gguf'):
-        names.append('llama-swap')
-    return names
+    if kind == 'llm':
+        return ['llm']
+    if kind == 'model':
+        if model.startswith('mlx/'):
+            return ['omlx']
+        if model.lower().endswith('.gguf'):
+            return ['llama-swap']
+    return []
 
 
 @dataclass

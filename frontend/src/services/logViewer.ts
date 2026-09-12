@@ -1,3 +1,4 @@
+export type LogKind = 'app' | 'model' | 'llm';
 export interface LogUpdate {name: string; path: string; reset: boolean; content: string}
 export interface LogFile {name: string; path: string; content: string}
 const MAX_LOG_CHARACTERS = 256 * 1024;
@@ -14,7 +15,7 @@ export function applyLogUpdates(files: LogFile[], updates: LogUpdate[]): LogFile
     return [...next.values()];
 }
 
-export function subscribeLogs(kind: 'app' | 'llm', model: string,
+export function subscribeLogs(kind: LogKind, model: string,
     onUpdate: (updates: LogUpdate[]) => void, onError: (failed: boolean) => void): () => void {
     const source = new EventSource(`/api/logs/stream?${new URLSearchParams({kind, model})}`);
     source.onmessage = event => {

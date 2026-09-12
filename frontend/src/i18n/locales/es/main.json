@@ -1,5 +1,5 @@
 {
-  "logViewer": {"latest": "Ir a los registros más recientes", "title": "Ver registros", "llm": "Registros LLM", "app": "Registros de Vyact", "empty": "Aún no hay registros.", "error": "No se pudieron cargar los registros o guardar la configuración."},
+  "logViewer": {"model": "Registros del modelo", "latest": "Ir a los registros más recientes", "title": "Ver registros", "llm": "Registros de solicitudes y respuestas", "app": "Registros de Vyact", "empty": "Aún no hay registros.", "error": "No se pudieron cargar los registros o guardar la configuración."},
   "emptyResponse": "No se generó contenido de respuesta. Inténtalo de nuevo.",
   "greeting": {
     "morning": "Buenos días",

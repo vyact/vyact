@@ -72,10 +72,13 @@ class LogViewerTests(unittest.TestCase):
         self.assertEqual(len(cursor.read()['content']), log_viewer.MAX_LOG_BYTES)
         self.assertEqual(cursor.read()['content'], 'yyyyy')
 
-    def test_model_routing_never_uses_client_paths(self):
-        self.assertEqual(log_viewer.log_names('llm', 'mlx/org/model'), ['llm', 'omlx'])
-        self.assertEqual(log_viewer.log_names('llm', 'org/model.gguf'), ['llm', 'llama-swap'])
-        self.assertEqual(log_viewer.log_names('llm', '../../secret'), ['llm'])
+    def test_tabs_have_separate_log_sources(self):
+        for model in ['mlx/org/model', 'org/model.gguf', '../../secret']:
+            self.assertEqual(log_viewer.log_names('app', model), ['app'])
+            self.assertEqual(log_viewer.log_names('llm', model), ['llm'])
+        self.assertEqual(log_viewer.log_names('model', 'mlx/org/model'), ['omlx'])
+        self.assertEqual(log_viewer.log_names('model', 'org/model.gguf'), ['llama-swap'])
+        self.assertEqual(log_viewer.log_names('model', '../../secret'), [])
 
     def test_stream_can_be_closed_after_initial_event(self):
         async def check():

@@ -1,6 +1,6 @@
 import {microsoftRequest, MICROSOFT_WORKSPACE_CHANGED, OPEN_MICROSOFT_WORKSPACE} from '../../services/microsoftWorkspace';
 import React, {useRef, useEffect} from 'react';
-import {Lightbulb, PanelsTopLeft, ScrollText} from 'lucide-react';
+import {Lightbulb, ScrollText} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {VYACT_ICON_URL} from '../../constants/assets';
 import {
@@ -220,7 +220,12 @@ const InputMenu: React.FC<InputMenuProps> = ({
                     {(google.connected || microsoftConnected) && <>
                         {divider}
                         {menuItem(
-                            <PanelsTopLeft size={16}/>,
+                            <span
+                                className={`input-menu-provider-icon${google.connected && microsoftConnected ? ' input-menu-provider-icon--combined' : ''}`}
+                                aria-hidden="true"
+                            >
+                                {google.connected && 'G'}{microsoftConnected && 'M'}
+                            </span>,
                             [
                                 google.connected && t('settings:tabs.google'),
                                 microsoftConnected && t('settings:microsoft.title'),

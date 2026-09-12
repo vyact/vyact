@@ -2,12 +2,11 @@ import ToggleSwitch from '../common/ToggleSwitch/ToggleSwitch';
 import {useEffect, useRef, useState, useLayoutEffect, type CSSProperties} from 'react';
 import {useTranslation} from 'react-i18next';
 import {X, ArrowDown} from 'lucide-react';
-import {applyLogUpdates, subscribeLogs, type LogFile} from '../../services/logViewer';
+import {applyLogUpdates, subscribeLogs, type LogFile, type LogKind} from '../../services/logViewer';
 import {api, LLM_LOGGING_CHANGED} from '../../services/api';
 import {usePanelManager} from '../../contexts/PanelManagerContext';
 import './LogPanel.css';
 
-type LogKind = 'app' | 'llm';
 
 export default function LogPanel({model, style}: {model: string; style: CSSProperties}) {
     const {t} = useTranslation('main');
@@ -75,7 +74,7 @@ export default function LogPanel({model, style}: {model: string; style: CSSPrope
             <button type="button" className="icon-btn" aria-label={t('documentPreview.close')} onClick={() => panels.close('logs')}><X size={18}/></button>
         </div>
         <div className="log-panel-tabs" role="tablist" aria-label={t('logViewer.title')}>
-            {(['llm', 'app'] as const).map(tab => <button key={tab} type="button" role="tab" id={`log-tab-${tab}`} aria-controls="log-content" aria-selected={kind === tab} className={kind === tab ? 'active' : ''} onClick={() => setKind(tab)}>{t(`logViewer.${tab}`)}</button>)}
+            {(['app', 'model', 'llm'] as const).map(tab => <button key={tab} type="button" role="tab" id={`log-tab-${tab}`} aria-controls="log-content" aria-selected={kind === tab} className={kind === tab ? 'active' : ''} onClick={() => setKind(tab)}>{t(`logViewer.${tab}`)}</button>)}
         </div>
         {kind === 'llm' && <div className="log-panel-toolbar">
             <div className="log-panel-toggle">
@@ -90,6 +89,7 @@ export default function LogPanel({model, style}: {model: string; style: CSSPrope
             if (atBottom && !followTail.current) resumeTail();
             else if (!atBottom) {followTail.current = false; setPaused(true);}
         }}>
+            {kind === 'model' && files.length === 0 && <pre>{t('logViewer.empty')}</pre>}
             {files.map(file => <section key={file.path}>
                 <div className="log-panel-path">{file.path}</div>
                 <pre>{file.content || t('logViewer.empty')}</pre>

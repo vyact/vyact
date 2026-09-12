@@ -38,3 +38,15 @@
 .input-menu-item:hover { background: var(--button-neutral-hover); }
 .input-menu-item:disabled { color: var(--muted); cursor: not-allowed; opacity: .4; }
 .input-menu-divider { height: 1px; margin: 0 10px; background: var(--border); }
+
+.input-menu-provider-icon {
+    color: #62b5f6;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.input-menu-provider-icon--combined {
+    font-size: 10px;
+    letter-spacing: -0.5px;
+}

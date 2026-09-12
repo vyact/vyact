@@ -1,5 +1,5 @@
 {
-  "logViewer": {"latest": "Jump to latest logs", "title": "View logs", "llm": "LLM logs", "app": "Vyact logs", "empty": "No logs yet.", "error": "Unable to load logs or save settings."},
+  "logViewer": {"model": "Model logs", "latest": "Jump to latest logs", "title": "View logs", "llm": "Request/response logs", "app": "Vyact logs", "empty": "No logs yet.", "error": "Unable to load logs or save settings."},
   "emptyResponse": "No response content was generated. Please try again.",
   "greeting": {
     "morning": "Good morning",
