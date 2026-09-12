@@ -100,7 +100,7 @@ Dùng AI ngay trên trang đang đọc hoặc viết. **Cài tiện ích Chrome 
 | **Dịch và chế độ đọc** | Dịch nhanh văn bản đã chọn hoặc mở bản dịch chi tiết. Dịch đoạn văn trên trang hay vùng được chọn trong chế độ đọc và nghe văn bản được chọn. |
 | **Kiểm tra bài viết ngay khi nhập** | Xem gợi ý chính tả và ngữ pháp qua gạch chân. Xem trước, áp dụng hoặc bỏ qua từng mục hay tất cả, rồi hoàn tác nếu cần. |
 | **Viết lại toàn bộ bản nháp** | Làm văn bản tự nhiên, lịch sự, ngắn gọn hoặc hài hước hơn, hay sửa ngữ pháp. Chọn ngôn ngữ đầu ra, thêm hướng dẫn và so sánh trước khi áp dụng hoặc sao chép. |
-| **Tùy chỉnh hỗ trợ viết** | Bật hoặc tắt kiểm tra tự động. Bật gợi ý từ và lý do chỉnh sửa khi cần; cả hai mặc định đều tắt. Tùy chỉnh công cụ viết và công cụ văn bản đã chọn theo trang. |
+| **Tùy chỉnh hỗ trợ viết** | Bật hoặc tắt kiểm tra tự động trong phần cài đặt kiểm tra; thiết lập này áp dụng chung cho mọi trang web. Nút nguồn trên thanh công cụ là thiết lập riêng, dùng để tắt toàn bộ công cụ viết trên một trang web cụ thể. Gợi ý từ và lý do chỉnh sửa có thể bật khi cần; cả hai mặc định đều tắt. |
 | **Từ vựng và câu đã lưu** | Tra nghĩa và phát âm, lưu từ cùng câu ví dụ, lưu câu hữu ích với bản dịch và liên kết nguồn. Tìm kiếm, nghe hoặc xóa mục đã lưu. |
 | **Luyện nghe qua Netflix** | Học với hai luồng phụ đề, chuyển câu, nghe lại, lặp và tự động tạm dừng. Mở toàn bộ kịch bản phụ đề để chuyển tới một câu. |
 | **Giải thích Netflix theo nhu cầu** | Hỏi về phụ đề hiện tại hoặc biểu đạt được chọn. Chọn điểm cần luyện theo ngôn ngữ như thành ngữ, nối âm, ngữ pháp, sắc thái và lưu câu hữu ích. |

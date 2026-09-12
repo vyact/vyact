@@ -100,7 +100,7 @@ Use AI on the page you are already reading or writing. **Install the Chrome exte
 | **Translation and reading mode** | Translate selected text quickly or open a detailed translation. Translate page paragraphs or a selected section in reading mode, and listen to selected text. |
 | **Inline writing checks** | See spelling and grammar suggestions as underlines. Preview, apply, or dismiss individual changes or all suggestions; undo applied changes. |
 | **Full-draft rewrites** | Make a draft more natural, polite, concise, or humorous, or correct its grammar. Choose an output language and add instructions, then compare before applying or copying. |
-| **Writing controls** | Turn automatic checks on or off. Enable word suggestions and explanations when you want them; both are off by default. Toggle writing and selected-text tools to suit the page. |
+| **Writing controls** | Turn automatic checks on or off in check settings; this setting applies across sites. Separately, use the toolbar’s power button to disable writing tools on a specific site. Word suggestions and explanations are optional and off by default. |
 | **Vocabulary and saved sentences** | Look up meanings and pronunciation, keep words with their example sentences, and save useful sentences with translations and source links. Search, listen, or remove saved items. |
 | **Netflix playback practice** | Study with two subtitle tracks, move between lines, replay or repeat a line, and pause automatically. Open the full subtitle script and jump to a sentence. |
 | **Netflix explanations that fit your needs** | Ask about the current subtitle or a selected expression. Choose language-specific focus areas such as idioms, connected speech, grammar, or nuance, and save useful lines. |
