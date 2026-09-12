@@ -1277,7 +1277,7 @@ async def move_mail_threads(request: MailBulkMoveRequest):
 
         if request.source_label_id == GMAIL_TRASH_LABEL_ID:
             service.users().threads().untrash(userId="me", id=thread_id).execute()
-        remove_label_ids = ["SPAM"]
+        remove_label_ids = [] if target_label_id == "SPAM" else ["SPAM"]
         if target_label_id != "INBOX":
             remove_label_ids.append("INBOX")
         if request.source_is_user_label and request.source_label_id != target_label_id:
