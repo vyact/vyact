@@ -52,3 +52,23 @@ describe('log viewer API', () => {
         expect(visible[0].content).toBe('reading');
     });
 });
+
+describe('log retention', () => {
+    it('retains 1000 JSON records and preserves the next append boundary', () => {
+        const content = Array.from({length: 1005}, (_, id) => JSON.stringify({id})).join('\n') + '\n';
+        const files = applyLogUpdates([], [{name: 'llm', path: '/llm.log', reset: true, content}]);
+        expect(files[0].content.trim().split('\n')).toHaveLength(1000);
+        expect(JSON.parse(files[0].content.split('\n')[0]).id).toBe(5);
+        const appended = applyLogUpdates(files, [{name: 'llm', path: '/llm.log', reset: false, content: '{"id":1005}\n'}]);
+        expect(appended[0].content.trim().split('\n')).toHaveLength(1000);
+        expect(appended[0].content).toContain('{"id":1004}\n{"id":1005}\n');
+        expect(files[0].content).not.toContain('{"id":1005}');
+    });
+    it('counts a multiline traceback as one record', () => {
+        const content = Array.from({length: 1001}, (_, id) => `[2026-09-12T22:18:22] ERROR app: ${id}\nTraceback (most recent call last):\n  File "app.py", line 1\nValueError: bad`).join('\n');
+        const files = applyLogUpdates([], [{name: 'app', path: '/app.log', reset: true, content}]);
+        expect(files[0].content.match(/ERROR app:/g)).toHaveLength(1000);
+        expect(files[0].content).toContain('ERROR app: 1\nTraceback');
+        expect(files[0].content).toContain('  File "app.py", line 1\nValueError: bad');
+    });
+});
