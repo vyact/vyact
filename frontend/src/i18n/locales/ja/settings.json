@@ -151,7 +151,7 @@
     "vyactRestarted": "Vyactモデルを再起動しました。",
     "vyactRestartFailed": "Vyactモデルを再起動できませんでした。",
     "ttsTitle": "TTS音声設定",
-    "kokoroActive": "Kokoro-82M 有効",
+    "kokoroActive": "Kokoro 有効",
     "webSpeechMode": "Web Speechモード",
     "kokoroVoice": "Kokoro音声",
     "kokoroHint": "* 韓国語: Web Speech(ユナ) 自動フォールバック",

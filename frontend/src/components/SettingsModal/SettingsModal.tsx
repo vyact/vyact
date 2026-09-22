@@ -1,4 +1,4 @@
-import {getKokoroVoiceLanguage} from '../../services/tts/kokoroVoice';
+import {getKokoroVoiceLanguage, KOKORO_LANGUAGE_DEFAULTS, resolveConfiguredKokoroVoice} from '../../services/tts/kokoroVoice';
 import {ensureJapaneseTtsDictionary, JapaneseTtsDictionaryCancelledError} from '../../services/tts/japaneseTtsDictionary';
 import {formatLocalizedNumber} from '../../utils/localizedNumber';
 import {getVoicePreviewText} from '../../services/tts/voicePreview';
@@ -6,7 +6,7 @@ import {microsoftRequest} from '../../services/microsoftWorkspace';
 import MicrosoftWorkspaceSection from './MicrosoftWorkspaceSection';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {Cloud, Server} from 'lucide-react';
+import {Cloud, Server, Volume2, Square} from 'lucide-react';
 import {api, LLM_LOGGING_CHANGED} from '../../services/api';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
 import {fetchTtsSettings, updateTtsCache, DEFAULT_TTS_SETTINGS, loadTtsSettings, TTS_SETTINGS_CHANGED, TTS_RATE_OPTIONS} from '../../services/tts/ttsSettings';
@@ -315,6 +315,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
         });
     }, [isElectron, isOpen]);
 
+    const [ttsLanguage, setTtsLanguage] = useState('en');
+    const ttsLanguageNames = new Intl.DisplayNames([i18n.language], {type: 'language'});
+    const ttsLanguageOptions = Object.keys(KOKORO_LANGUAGE_DEFAULTS).map(value => ({
+        value, label: ttsLanguageNames.of(value === 'pt' ? 'pt-BR' : value) ?? value,
+    }));
     // TTS 설정
     const [ttsDraft, setTtsDraft] = useState<TtsSettings>(DEFAULT_TTS_SETTINGS);
 
@@ -661,41 +666,55 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
     };
 
     const previewPlayingRef = React.useRef(false);
+    const previewRequestRef = useRef(0);
+    const previewVoiceRef = useRef<string | null>(null);
+    const [previewVoice, setPreviewVoice] = useState<string | null>(null);
 
-    const handleTtsPreview = async () => {
-        if (previewPlayingRef.current) {
-            // 중지
-            if (previewSourceRef.current) {
-                try {
-                    previewSourceRef.current.stop();
-                } catch { /* ignore */
-                }
-                previewSourceRef.current = null;
-            }
-            window.speechSynthesis?.cancel();
-            previewPlayingRef.current = false;
-            setTtsPreviewPlaying(false);
-            return;
+    const stopTtsPreview = () => {
+        previewRequestRef.current += 1;
+        if (previewSourceRef.current) {
+            previewSourceRef.current.onended = null;
+            try { previewSourceRef.current.stop(); } catch { /* Already stopped. */ }
+            previewSourceRef.current = null;
         }
+        window.speechSynthesis?.cancel();
+        previewPlayingRef.current = false;
+        previewVoiceRef.current = null;
+        setPreviewVoice(null);
+        setTtsPreviewPlaying(false);
+    };
 
+    useEffect(() => {
+        if (!isOpen) stopTtsPreview();
+        return () => stopTtsPreview();
+    }, [isOpen]);
+
+    const handleTtsPreview = async (voice?: string) => {
+        const shouldStop = previewPlayingRef.current && (!voice || previewVoiceRef.current === voice);
+        stopTtsPreview();
+        if (shouldStop) return;
+        const requestId = previewRequestRef.current;
+        const selectedKokoroVoice = voice || resolveConfiguredKokoroVoice(ttsDraft, ttsLanguage) || KOKORO_LANGUAGE_DEFAULTS[ttsLanguage];
         previewPlayingRef.current = true;
+        previewVoiceRef.current = selectedKokoroVoice;
+        setPreviewVoice(selectedKokoroVoice);
         setTtsPreviewPlaying(true);
 
-        if (kokoroAvailable && ttsDraft.kokoroVoice) {
+        if (kokoroAvailable) {
             // Kokoro 미리 듣기
             try {
-                const language = getKokoroVoiceLanguage(ttsDraft.kokoroVoice);
+                const language = getKokoroVoiceLanguage(selectedKokoroVoice);
                 if (language.startsWith('ja') && !await ensureJapaneseTtsDictionary()) {
                     throw new JapaneseTtsDictionaryCancelledError();
                 }
-                if (!previewPlayingRef.current) return;
+                if (requestId !== previewRequestRef.current) return;
                 const res = await fetch('/api/tts/kokoro/synthesize', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
                         text: getVoicePreviewText(language),
                         lang: language,
-                        voice: ttsDraft.kokoroVoice,
+                        voice: selectedKokoroVoice,
                         speed: ttsDraft.rate,
                     }),
                 });
@@ -703,6 +722,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                 const buf = await res.arrayBuffer();
                 if (!previewAudioRef.current) previewAudioRef.current = new AudioContext();
                 const audioBuffer = await previewAudioRef.current.decodeAudioData(buf);
+                if (requestId !== previewRequestRef.current) return;
                 const source = previewAudioRef.current.createBufferSource();
                 source.buffer = audioBuffer;
                 const gain = previewAudioRef.current.createGain();
@@ -711,12 +731,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                 gain.connect(previewAudioRef.current.destination);
                 previewSourceRef.current = source;
                 source.onended = () => {
+                    if (requestId !== previewRequestRef.current) return;
                     previewPlayingRef.current = false;
                     previewSourceRef.current = null;
                     setTtsPreviewPlaying(false);
                 };
                 source.start();
             } catch {
+                if (requestId !== previewRequestRef.current) return;
                 previewPlayingRef.current = false;
                 setTtsPreviewPlaying(false);
             }
@@ -1329,48 +1351,63 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
 
                                             {kokoroAvailable ? (
                                                 <>
-                                                    {/* Kokoro 음성 선택 */}
-                                                    <label className="settings-tts-label settings-tts-label--block">
-                                                        {t('general.kokoroVoice')}
-                                                    </label>
-                                                    <div className="settings-tts-custom-select">
-                                                        <div className="settings-tts-custom-options">
-                                                            {KOKORO_VOICES.map(({value, name, lang}) => {
-                                                                const prefix = value.slice(0, 2);
-                                                                const descKey = KOKORO_PREFIX_DESC[prefix] || prefix;
-                                                                const voiceLabel = `${name} — ${t(`general.voiceDesc.${descKey}`)}`;
-                                                                const isSelected = ttsDraft.kokoroVoice === value
-                                                                    || (!ttsDraft.kokoroVoice && value === 'af_heart');
-                                                                return (
-                                                                    <div
-                                                                        key={value}
-                                                                        className={`settings-tts-custom-option${isSelected ? ' selected' : ''}`}
-                                                                        onClick={() => {
-                                                                            if (previewPlayingRef.current) {
-                                                                                if (previewSourceRef.current) {
-                                                                                    try {
-                                                                                        previewSourceRef.current.stop();
-                                                                                    } catch { /* */
-                                                                                    }
-                                                                                    previewSourceRef.current = null;
-                                                                                }
-                                                                                previewPlayingRef.current = false;
-                                                                                setTtsPreviewPlaying(false);
-                                                                            }
-                                                                            applyTts({...ttsDraft, kokoroVoice: value});
-                                                                        }}
-                                                                    >
-                                                                        <span>{lang} {voiceLabel}</span>
-                                                                        {isSelected && <span
-                                                                            className="settings-tts-check">✓</span>}
-                                                                    </div>
-                                                                );
-                                                            })}
+                                                    <div className="settings-tts-selectors">
+                                                        <div className="settings-tts-language-field">
+                                                            <label className="settings-tts-label settings-tts-label--block">
+                                                                {t('general.language')}
+                                                            </label>
+                                                            <CustomSelect
+                                                                portal
+                                                                ariaLabel={t('general.language')}
+                                                                options={ttsLanguageOptions}
+                                                                value={ttsLanguage}
+                                                                onChange={language => {
+                                                                    if (previewPlayingRef.current) void handleTtsPreview();
+                                                                    setTtsLanguage(language);
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <div className="settings-tts-voice-field">
+                                                            <label className="settings-tts-label settings-tts-label--block">
+                                                                {t('general.kokoroVoice')}
+                                                            </label>
+                                                            <CustomSelect
+                                                                portal
+                                                                searchable
+                                                                ariaLabel={t('general.kokoroVoice')}
+                                                                options={KOKORO_VOICES
+                                                                    .filter(voice => getKokoroVoiceLanguage(voice.value).split('-')[0] === ttsLanguage)
+                                                                    .map(({value, name, lang}) => ({
+                                                                        value,
+                                                                        label: `${lang} ${name} — ${t(`general.voiceDesc.${KOKORO_PREFIX_DESC[value.slice(0, 2)]}`)}`,
+                                                                    }))}
+                                                                renderOption={(option, selected) => (
+                                                                    <>
+                                                                        <span className="custom-select-item-copy">{option.label}</span>
+                                                                        {selected && <span className="custom-select-check">✓</span>}
+                                                                        <button
+                                                                            type="button"
+                                                                            className={`settings-tts-option-preview${ttsPreviewPlaying && previewVoice === option.value ? ' is-playing' : ''}`}
+                                                                            aria-label={`${t(ttsPreviewPlaying && previewVoice === option.value ? 'general.stop' : 'general.preview')}: ${option.label}`}
+                                                                            onClick={event => {
+                                                                                event.stopPropagation();
+                                                                                void handleTtsPreview(option.value);
+                                                                            }}
+                                                                        >
+                                                                            {ttsPreviewPlaying && previewVoice === option.value
+                                                                                ? <Square size={12} fill="currentColor" strokeWidth={0} aria-hidden="true"/>
+                                                                                : <Volume2 size={15} aria-hidden="true"/>}
+                                                                        </button>
+                                                                    </>
+                                                                )}
+                                                                value={resolveConfiguredKokoroVoice(ttsDraft, ttsLanguage) || KOKORO_LANGUAGE_DEFAULTS[ttsLanguage]}
+                                                                onChange={value => {
+                                                                    if (previewPlayingRef.current) void handleTtsPreview();
+                                                                    applyTts({...ttsDraft, kokoroVoices: {...ttsDraft.kokoroVoices, [ttsLanguage]: value}});
+                                                                }}
+                                                            />
                                                         </div>
                                                     </div>
-                                                    <p className="settings-hint settings-hint--spaced">
-                                                        {t('general.kokoroHint')}
-                                                    </p>
                                                 </>
                                             ) : (
                                                 <>
@@ -1479,7 +1516,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                             </div>
 
                                             {/* 미리보기 */}
-                                            <button className="settings-tts-preview-btn" onClick={handleTtsPreview}>
+                                            {!kokoroAvailable && <button className="settings-tts-preview-btn" onClick={() => void handleTtsPreview()}>
                                                 {ttsPreviewPlaying ? (
                                                     <>
                                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
@@ -1499,7 +1536,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                                         {t('general.preview')}
                                                     </>
                                                 )}
-                                            </button>
+                                            </button>}
                                         </div>
                                     </div>
                                 </div>

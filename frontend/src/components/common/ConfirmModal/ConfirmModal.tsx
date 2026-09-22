@@ -1,5 +1,6 @@
 import React from 'react';
 import {LoaderCircle} from 'lucide-react';
+import {formatLocalizedNumber} from '../../../utils/localizedNumber';
 import ModalOverlay from '../ModalOverlay/ModalOverlay';
 import './ConfirmModal.css';
 
@@ -42,9 +43,12 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                     {details.map(detail => <li key={detail}>{detail}</li>)}
                 </ul>}
                 {loading && loadingProgress !== undefined && <div className="confirm-modal-progress">
-                    <div className="confirm-modal-progress-track">
+                    <div className="confirm-modal-progress-track" role="progressbar"
+                         aria-label={loadingLabel || title} aria-valuemin={0} aria-valuemax={100}
+                         aria-valuenow={loadingProgress}>
                         <div className="confirm-modal-progress-value" style={{width: `${loadingProgress}%`}}/>
                     </div>
+                    <span className="confirm-modal-progress-label">{formatLocalizedNumber(loadingProgress, 0)}%</span>
                 </div>}
                 <div className={`confirm-modal-actions ${actionLayout}`}>
                     {options.map(opt => {

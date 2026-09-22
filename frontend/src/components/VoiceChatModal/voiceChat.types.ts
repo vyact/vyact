@@ -1,5 +1,5 @@
 import {SUPPORTED_LANGUAGES} from '../../i18n/languages';
-import {resolveKokoroVoice} from '../../services/tts/kokoroVoice';
+import {resolveConfiguredKokoroVoice} from '../../services/tts/kokoroVoice';
 import {getKokoroAvailability} from '../../services/tts/kokoroStatus';
 
 // ── 공통 상수 ─────────────────────────────────────────────
@@ -242,7 +242,7 @@ export async function isKokoroAvailable(): Promise<boolean> {
 export async function speakWithKokoroOrFallback(
     text: string,
     lang: string,
-    settings: { rate: number; volume: number; enVoiceURI: string; kokoroVoice: string },
+    settings: { rate: number; volume: number; enVoiceURI: string; kokoroVoice: string; kokoroVoices?: Record<string, string> },
     abortSignal?: { cancelled: boolean },
     useRequestedRate = false,
 ): Promise<void> {
@@ -258,7 +258,7 @@ export async function speakWithKokoroOrFallback(
                 body: JSON.stringify({
                     text,
                     lang,
-                    voice: resolveKokoroVoice(settings.kokoroVoice, lang),
+                    voice: resolveConfiguredKokoroVoice(settings, lang),
                     speed: settings.rate,
                 }),
             });

@@ -1,4 +1,4 @@
-import {resolveKokoroVoice} from './kokoroVoice';
+import {resolveConfiguredKokoroVoice} from './kokoroVoice';
 import type { ITtsProvider } from './ITtsProvider';
 import { WebSpeechTtsProvider } from './WebSpeechTtsProvider';
 import { loadTtsSettings } from './ttsSettings';
@@ -130,7 +130,7 @@ export class KokoroTtsProvider implements ITtsProvider {
             body: JSON.stringify({
                 text,
                 lang,
-                voice: resolveKokoroVoice(settings.kokoroVoice, lang),
+                voice: resolveConfiguredKokoroVoice(settings, lang),
                 speed: settings.rate,
             }),
         });

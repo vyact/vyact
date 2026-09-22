@@ -151,7 +151,7 @@
     "vyactRestarted": "Vyact 模型已重启。",
     "vyactRestartFailed": "无法重启 Vyact 模型。",
     "ttsTitle": "TTS 语音设置",
-    "kokoroActive": "Kokoro-82M 已启用",
+    "kokoroActive": "Kokoro 已启用",
     "webSpeechMode": "Web Speech 模式",
     "kokoroVoice": "Kokoro 语音",
     "kokoroHint": "* 韩语: Web Speech(Yuna) 自动回退",

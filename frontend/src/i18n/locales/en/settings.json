@@ -177,7 +177,7 @@
     "vyactRestarted": "The Vyact model has restarted.",
     "vyactRestartFailed": "Could not restart the Vyact model.",
     "ttsTitle": "TTS Voice Settings",
-    "kokoroActive": "Kokoro-82M Active",
+    "kokoroActive": "Kokoro Active",
     "webSpeechMode": "Web Speech Mode",
     "kokoroVoice": "Kokoro Voice",
     "kokoroHint": "* Korean: Web Speech (Yuna) auto-fallback",

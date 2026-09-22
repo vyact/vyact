@@ -48,10 +48,15 @@
 }
 
 .confirm-modal-progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     margin: -4px 0 16px;
 }
 
 .confirm-modal-progress-track {
+    flex: 1;
+    min-width: 0;
     height: 6px;
     overflow: hidden;
     border-radius: 999px;
@@ -145,4 +150,13 @@
 
 @keyframes confirm-modal-spin {
     to { transform: rotate(360deg); }
+}
+
+.confirm-modal-progress-label {
+    flex: 0 0 5ch;
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    font-size: var(--modal-sub);
+    color: var(--text-secondary);
 }

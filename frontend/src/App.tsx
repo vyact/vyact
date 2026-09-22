@@ -202,7 +202,7 @@ const App: React.FC = () => {
                 ]}
                 loading={isInstallingDictionary}
                 loadingValue="download"
-                loadingLabel={`${t('general.japaneseTtsDictionaryDownloading')} ${dictionaryProgress}%`}
+                loadingLabel={t('general.japaneseTtsDictionaryDownloading')}
                 loadingProgress={dictionaryProgress}
                 actionLayout="horizontal"
                 onSelect={choice => void handleDictionaryChoice(choice)}

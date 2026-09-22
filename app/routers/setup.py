@@ -1834,6 +1834,7 @@ async def get_tts_settings():
         "volume": cfg.get("tts_volume", 1.0),
         "enVoiceURI": cfg.get("tts_en_voice_uri", ""),
         "kokoroVoice": cfg.get("tts_kokoro_voice", "af_heart"),
+        "kokoroVoices": cfg.get("tts_kokoro_voices", {}),
     }
 
 
@@ -1844,8 +1845,15 @@ async def set_tts_settings(body: dict):
     cfg["tts_volume"] = float(body.get("volume", 1.0))
     cfg["tts_en_voice_uri"] = str(body.get("enVoiceURI", ""))
     cfg["tts_kokoro_voice"] = str(body.get("kokoroVoice", ""))
+    if isinstance(body.get("kokoroVoices"), dict):
+        cfg["tts_kokoro_voices"] = {
+            language: voice for language, voice in body["kokoroVoices"].items()
+            if language in {"en", "ja", "zh", "es", "fr", "hi", "it", "pt"}
+            and isinstance(voice, str)
+        }
     await save_config_async(cfg)
     return {
+        "kokoroVoices": cfg.get("tts_kokoro_voices", {}),
         "rate": cfg["tts_rate"], "volume": cfg["tts_volume"],
         "enVoiceURI": cfg["tts_en_voice_uri"], "kokoroVoice": cfg["tts_kokoro_voice"],
     }
