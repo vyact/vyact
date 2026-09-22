@@ -71,21 +71,29 @@ Keep your documents, conversations, and tools together. Start with one task, the
 
 | Capability | What you can do |
 | --- | --- |
-| **AI chat and conversation history** | Chat with local or cloud models, attach files and supported images, revisit or favorite conversations, inspect response statistics, and export conversations. |
-| **Documents and source verification** | Ask about PDF, Word, spreadsheet, presentation, Markdown, and text files. Index frequently used documents, inspect retrieved passages, and manage saved files. |
-| **Knowledge collections** | Group documents, memos, and indexed email threads. Give a collection its own instructions and select it to focus your questions on the right material. |
-| **Projects and project memory** | Group conversations, set working instructions, and connect code folders. Review and manage the project summary, decisions, and action items extracted from conversations. |
-| **Memos and quick todos** | Write rich-text notes with tables, lists, images, and code blocks. Find notes through RAG and keep quick todos with completion tracking. |
-| **Email you can act on** | Read, search, reply, and forward in Gmail or Outlook. Preview AI drafts, manage attachments, use signatures and reusable email text, and organize recipient groups. |
-| **Cloud files and calendars** | Work with Google Drive, OneDrive, and Google or Microsoft calendars. Upload, download, organize, and share files; attach them to chat or index them; create and update events. |
-| **Google Docs, Sheets, Slides, and Forms** | Ask AI to create or update connected Google documents, read and edit spreadsheet cells, change slides, or create forms and read their responses. |
-| **Code work and review** | Connect a project folder, ask AI to search and edit files, run available project checks, and inspect Git changes. Review file diffs, copy or download results, and undo tracked edits. |
-| **Browser tasks** | Ask AI to search the web, read pages, and interact with visible page controls. Continue from search results to the pages and actions your task needs. |
-| **Voice and conversation practice** | Speak with AI, listen to responses, and adjust voice playback. Create or edit practice scripts, choose a role, listen to the partner, and practice your lines. |
-| **Personal preferences and prompts** | Choose a response style, review an AI-generated personal profile before applying it, and save system prompts and reusable skills. |
-| **Models that fit your computer** | Find and download GGUF or Apple Silicon MLX models, compare memory estimates, choose a storage location, and benchmark supported settings on your own hardware. |
-| **MCP tools and local API** | Connect local or remote MCP tools, select tools for a request, and control execution approvals. Use your active local model from another app through an OpenAI-compatible API. |
-| **Backup and everyday controls** | Back up and restore selected workspace data locally or through Drive or OneDrive. Use account switching, notifications, keyboard shortcuts, light/dark themes, and eight interface languages. |
+| **AI chat** | Chat with local or cloud models, attach files and supported images, and return to past conversations. |
+| **Documents and knowledge** | Ask about your files, check the supporting passages, and organize frequently used material into knowledge collections. |
+| **Email, cloud files, and calendars** | Work with Gmail, Outlook, Drive, OneDrive, and calendars. Draft replies, bring files into chat, and manage events. |
+| **Code work and review** | Connect a project folder, search and edit files with AI, run project checks, and review or undo tracked changes. |
+| **Local model selection** | Find GGUF or Apple Silicon MLX models, compare memory estimates, and benchmark supported settings on your computer. |
+
+<details>
+<summary><strong>Explore more desktop features</strong></summary>
+
+| Capability | What you can do |
+| --- | --- |
+| **Projects and project memory** | Group conversations, set working instructions, and review the project summary, decisions, and action items extracted from conversations. |
+| **Memos and quick todos** | Write rich-text notes with tables, lists, images, and code blocks. Find notes through knowledge search and track completed todos. |
+| **Google Docs, Sheets, Slides, and Forms** | Create or update connected documents, read and edit spreadsheet cells, change slides, and create forms or read their responses. |
+| **Browser tasks** | Search the web, read pages, and interact with visible page controls to carry out a task. |
+| **Voice and conversation practice** | Speak with AI, listen to responses, and adjust playback. Create practice scripts, choose a role, and practice your lines. |
+| **Personal preferences, prompts, and skills** | Choose a response style, review an AI-generated personal profile before applying it, and save system prompts and reusable skills. |
+| **MCP tools and local API** | Connect local or remote MCP tools, select tools for a request, and control execution approvals. Use your active local model through an OpenAI-compatible API. |
+| **Backup and everyday controls** | Back up and restore selected data locally or through Drive or OneDrive. Use account switching, notifications, keyboard shortcuts, themes, and eight interface languages. |
+
+**More control over your work:** Favorite or export conversations and inspect response statistics. Give knowledge collections their own instructions and include documents, memos, or indexed email threads. Manage email attachments, signatures, reusable text, and recipient groups; organize and share cloud files. Choose where downloaded models are stored.
+
+</details>
 
 Google and Microsoft integrations require account setup and permissions. Available AI actions depend on the model’s tool support and the connected service; Google and Microsoft do not expose identical tools.
 
@@ -95,17 +103,25 @@ Use AI on the page you are already reading or writing. **Install the Chrome exte
 
 | Capability | What you can do |
 | --- | --- |
-| **Chat beside any supported page** | Ask follow-up questions in the side panel, add images or files, choose a saved prompt, and return to conversation history. |
-| **Page questions, summaries, and saved knowledge** | Add the current page or selected text to chat, summarize the page, or save it to Vyact for later knowledge search. |
-| **Translation and reading mode** | Translate selected text quickly or open a detailed translation. Translate page paragraphs or a selected section in reading mode, and listen to selected text. |
-| **Inline writing checks** | See spelling and grammar suggestions as underlines. Preview, apply, or dismiss individual changes or all suggestions; undo applied changes. |
-| **Full-draft rewrites** | Make a draft more natural, polite, concise, or humorous, or correct its grammar. Choose an output language and add instructions, then compare before applying or copying. |
-| **Writing controls** | Turn automatic checks on or off in check settings; this setting applies across sites. Separately, use the toolbar’s power button to disable writing tools on a specific site. Word suggestions and explanations are optional and off by default. |
-| **Vocabulary and saved sentences** | Look up meanings and pronunciation, keep words with their example sentences, and save useful sentences with translations and source links. Search, listen, or remove saved items. |
-| **Netflix playback practice** | Study with two subtitle tracks, move between lines, replay or repeat a line, and pause automatically. Open the full subtitle script and jump to a sentence. |
-| **Netflix explanations that fit your needs** | Ask about the current subtitle or a selected expression. Choose language-specific focus areas such as idioms, connected speech, grammar, or nuance, and save useful lines. |
+| **Chat and page questions** | Chat in the side panel, ask about the current page or selected text, and summarize what you are reading. |
+| **Writing checks and rewrites** | Preview spelling and grammar corrections or a full-draft rewrite, compare changes, and choose what to apply. |
+| **Translation and reading** | Translate selected text or page paragraphs, open reading mode, and listen to selected text. |
+| **Vocabulary and saved sentences** | Look up meanings and pronunciation. Save words with examples and useful sentences with translations and source links. |
+| **Netflix learning** | Study with two subtitle tracks, replay or repeat lines, navigate the full script, and ask about subtitles or expressions. |
+
+<details>
+<summary><strong>Explore more Chrome features</strong></summary>
+
+| Capability | What you can do |
+| --- | --- |
+| **Saved pages and flexible chat** | Save a page to Vyact for later knowledge search. Add images or files to side-panel chat, choose a saved prompt, and revisit conversations. |
+| **Writing controls** | Turn automatic checks on or off across sites, or disable writing tools on a specific site with the toolbar’s power button. Word suggestions and explanations are optional and off by default. |
+| **Rewrite options** | Make a draft more natural, polite, concise, or humorous. Choose an output language, add instructions, and compare before applying or copying. Apply or dismiss individual corrections or all suggestions, and undo applied changes. |
+| **Learning controls** | Search, listen to, or remove saved vocabulary and sentences. In Netflix, pause automatically, choose language-specific explanation focus areas such as grammar or nuance, and save useful lines. |
 | **Find a Netflix title with AI** | Describe a story or what you want to watch, review suggested titles and reasons, and open a Netflix search for a candidate. |
-| **A browser connection for desktop AI** | Let Vyact carry out browser tasks through Chrome, with visible page interaction and a way to pause for sign-in or other steps you need to complete yourself. |
+| **A browser connection for desktop AI** | Let Vyact carry out browser tasks through Chrome, with visible page interaction and a way to pause for sign-in or steps you need to complete yourself. |
+
+</details>
 
 Writing tools work in supported web editors. Netflix learning depends on the subtitle tracks available and loaded for the title; AI title suggestions are not a guarantee of regional catalog availability.
 
@@ -159,6 +175,10 @@ Results compare speed, not answer quality. Completed measurements are kept if yo
 </details>
 
 ## Installation and connections
+
+**Before you download a local model**
+
+Memory and storage needs depend on the model you choose and its context settings. Check the model’s download size and estimated memory use in Vyact before downloading. Leave additional disk space for model runtimes and your documents and search indexes. If running a local model is too demanding for your computer, you can connect an external AI provider instead.
 
 <details>
 <summary>Installation requirements and platform instructions</summary>
