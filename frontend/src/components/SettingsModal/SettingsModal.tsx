@@ -4,9 +4,9 @@ import {formatLocalizedNumber} from '../../utils/localizedNumber';
 import {getVoicePreviewText} from '../../services/tts/voicePreview';
 import {microsoftRequest} from '../../services/microsoftWorkspace';
 import MicrosoftWorkspaceSection from './MicrosoftWorkspaceSection';
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useId, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {Cloud, Server, Volume2, Square} from 'lucide-react';
+import {Cloud, Server, Volume2, Square, Pencil} from 'lucide-react';
 import {api, LLM_LOGGING_CHANGED} from '../../services/api';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
 import {fetchTtsSettings, updateTtsCache, DEFAULT_TTS_SETTINGS, loadTtsSettings, TTS_SETTINGS_CHANGED, TTS_RATE_OPTIONS} from '../../services/tts/ttsSettings';
@@ -174,6 +174,7 @@ const KOKORO_VOICES: { value: string; name: string; lang: string }[] = [
 
 const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTab, initialMcpServerId}) => {
     const {t, i18n} = useTranslation('settings');
+    const toggleIdPrefix = useId();
     const isKoreanLanguage = (i18n.resolvedLanguage || i18n.language).split('-')[0] === 'ko';
     const getBackupIndexHelp = (indexName: string) => {
         const baseIndexName = indexName
@@ -362,6 +363,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
     const [profileResponseStyle, setProfileResponseStyle] = useState('default');
     const [profileStyleSaving, setProfileStyleSaving] = useState(false);
     const [nicknameEdit, setNicknameEdit] = useState('');
+    const [nicknameEditing, setNicknameEditing] = useState(false);
+    const [nicknameSaving, setNicknameSaving] = useState(false);
+
+    useEffect(() => { setNicknameEditing(false); }, [isOpen]);
     const [profileLoading, setProfileLoading] = useState(true);
     const [profileMode, setProfileMode] = useState<'view' | 'edit' | 'analyze'>('view');
     const [profileEditText, setProfileEditText] = useState('');
@@ -780,8 +785,22 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
 
     const profileEnterEdit = () => {
         setProfileEditText((existingProfile || '').slice(0, profileMaxLengthLimit));
-        setNicknameEdit(existingNickname);
         setProfileMode('edit');
+    };
+
+    const saveNickname = async (event: React.FormEvent) => {
+        event.preventDefault();
+        if (nicknameSaving) return;
+        setNicknameSaving(true);
+        try {
+            const saved = await updateUserProfile({nickname: nicknameEdit.trim()});
+            setExistingNickname(saved.nickname);
+            setNicknameEditing(false);
+        } catch {
+            toast.error(t('profile.nicknameSaveFailed'));
+        } finally {
+            setNicknameSaving(false);
+        }
     };
 
     const profileHandleSave = async () => {
@@ -789,11 +808,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
         try {
             await updateUserProfile({
                 profile: profileEditText,
-                nickname: nicknameEdit,
                 max_length: profileMaxLengthLimit,
             });
             setExistingProfile(profileEditText);
-            setExistingNickname(nicknameEdit);
             setProfileMode('view');
         } catch (e) {
             console.error(e);
@@ -979,20 +996,20 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                     <nav className="settings-sidebar">
                         {([
                             {key: 'general' as Tab, icon: '⚙️', label: t('tabs.general')},
+                            {key: 'profile' as Tab, icon: '👤', label: t('tabs.profile')},
                             {key: 'runtime' as Tab, icon: '🧠', label: t('tabs.runtime')},
-                            {key: 'apiServer' as Tab, icon: <Server size={16} strokeWidth={1.8}/>, label: t('tabs.apiServer')},
-                            {key: 'backup' as Tab, icon: '💾', label: t('tabs.backup')},
-                            {key: 'google' as Tab, icon: 'G', label: t('tabs.google')},
-                            {key: 'microsoft' as Tab, icon: 'M', label: t('microsoft.title')},
                             {key: 'api' as Tab, icon: '🔑', label: t('tabs.api')},
-                            ...(isKoreanLanguage
-                                ? [{key: 'externalData' as Tab, icon: '🌐', label: t('tabs.externalData')}]
-                                : []),
                             {key: 'skills' as Tab, icon: '🧩', label: t('tabs.skills')},
                             ...(isPluginTabVisible
                                 ? [{key: 'plugins' as Tab, icon: '🔌', label: t('tabs.plugins')}]
                                 : []),
-                            {key: 'profile' as Tab, icon: '👤', label: t('tabs.profile')},
+                            ...(isKoreanLanguage
+                                ? [{key: 'externalData' as Tab, icon: '🌐', label: t('tabs.externalData')}]
+                                : []),
+                            {key: 'google' as Tab, icon: 'G', label: t('tabs.google')},
+                            {key: 'microsoft' as Tab, icon: 'M', label: t('microsoft.title')},
+                            {key: 'apiServer' as Tab, icon: <Server size={16} strokeWidth={1.8}/>, label: t('tabs.apiServer')},
+                            {key: 'backup' as Tab, icon: '💾', label: t('tabs.backup')},
                         ]).map(item => (
                             <button
                                 key={item.key}
@@ -1222,16 +1239,35 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                     </div>
                                 </div>
 
+                                <div className="settings-general-section">
+                                    <div className="settings-toggle-row settings-language-row">
+                                        <div>
+                                            <div className="settings-toggle-title">{t('profile.responseStyle')}</div>
+                                        </div>
+                                        <div className="settings-select-field">
+                                            <CustomSelect
+                                                options={PROFILE_RESPONSE_STYLE_OPTIONS}
+                                                value={profileResponseStyle}
+                                                disabled={profileStyleSaving}
+                                                onChange={value => void handleProfileResponseStyleChange(value)}
+                                                dropdownClassName="settings-profile-style-dropdown"
+                                                portal
+                                                triggerStyle={{fontSize: '13px', padding: '5px 10px', width: '100%'}}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
                                 {/* ── 부팅 시 자동 시작 ── */}
                                 {isElectron && (
                                     <div className="settings-general-section">
-                                        <div className="settings-toggle-row">
-                                            <div>
-                                                <div className="settings-toggle-title">{t('general.autoStart')}</div>
-                                                <div className="settings-toggle-desc">{t('general.autoStartDesc')}</div>
-                                            </div>
-                                            <label className="settings-switch">
-                                                <input type="checkbox" checked={autoStart}
+                                        <label className="settings-toggle-row settings-toggle-row--clickable">
+                                            <span className="settings-toggle-copy">
+                                                <span className="settings-toggle-title">{t('general.autoStart')}</span>
+                                                <span className="settings-toggle-desc">{t('general.autoStartDesc')}</span>
+                                            </span>
+                                            <span className="settings-switch">
+                                                <input id={`${toggleIdPrefix}-autoStart`} type="checkbox" checked={autoStart}
                                                        onChange={async e => {
                                                            const v = e.target.checked;
                                                            setAutoStart(v);
@@ -1242,20 +1278,20 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                                            }  // 실패 시 롤백
                                                        }}/>
                                                 <span className="settings-switch-slider"/>
-                                            </label>
-                                        </div>
+                                            </span>
+                                        </label>
                                     </div>
                                 )}
 
                                 {/* ── LLM 로그 ── */}
                                 <div className="settings-general-section">
-                                    <div className="settings-toggle-row">
-                                        <div>
-                                            <div className="settings-toggle-title">{t('general.llmLog')}</div>
-                                            <div className="settings-toggle-desc">{t('general.llmLogDesc')}</div>
-                                        </div>
-                                        <label className="settings-switch">
-                                            <input type="checkbox" checked={llmLogging}
+                                    <label className="settings-toggle-row settings-toggle-row--clickable">
+                                        <span className="settings-toggle-copy">
+                                            <span className="settings-toggle-title">{t('general.llmLog')}</span>
+                                            <span className="settings-toggle-desc">{t('general.llmLogDesc')}</span>
+                                        </span>
+                                        <span className="settings-switch">
+                                            <input id={`${toggleIdPrefix}-llmLog`} type="checkbox" checked={llmLogging}
                                                    onChange={async e => {
                                                        const v = e.target.checked;
                                                        setLlmLogging(v);
@@ -1266,19 +1302,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                                        }  // 실패 시 롤백
                                                    }}/>
                                             <span className="settings-switch-slider"/>
-                                        </label>
-                                    </div>
+                                        </span>
+                                    </label>
                                 </div>
 
                                 {/* ── Tool 로그 ── */}
                                 <div className="settings-general-section">
-                                    <div className="settings-toggle-row">
-                                        <div>
-                                            <div className="settings-toggle-title">{t('general.toolLog')}</div>
-                                            <div className="settings-toggle-desc">{t('general.toolLogDesc')}</div>
-                                        </div>
-                                        <label className="settings-switch">
-                                            <input type="checkbox" checked={toolLogging}
+                                    <label className="settings-toggle-row settings-toggle-row--clickable">
+                                        <span className="settings-toggle-copy">
+                                            <span className="settings-toggle-title">{t('general.toolLog')}</span>
+                                            <span className="settings-toggle-desc">{t('general.toolLogDesc')}</span>
+                                        </span>
+                                        <span className="settings-switch">
+                                            <input id={`${toggleIdPrefix}-toolLog`} type="checkbox" checked={toolLogging}
                                                    onChange={async e => {
                                                        const v = e.target.checked;
                                                        setToolLogging(v);
@@ -1289,19 +1325,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                                        }
                                                    }}/>
                                             <span className="settings-switch-slider"/>
-                                        </label>
-                                    </div>
+                                        </span>
+                                    </label>
                                 </div>
 
                                 {/* ── Debug 모드 ── */}
                                 <div className="settings-general-section">
-                                    <div className="settings-toggle-row">
-                                        <div>
-                                            <div className="settings-toggle-title">{t('general.debugLog')}</div>
-                                            <div className="settings-toggle-desc">{t('general.debugLogDesc')}</div>
-                                        </div>
-                                        <label className="settings-switch">
-                                            <input type="checkbox" checked={debugLogging}
+                                    <label className="settings-toggle-row settings-toggle-row--clickable">
+                                        <span className="settings-toggle-copy">
+                                            <span className="settings-toggle-title">{t('general.debugLog')}</span>
+                                            <span className="settings-toggle-desc">{t('general.debugLogDesc')}</span>
+                                        </span>
+                                        <span className="settings-switch">
+                                            <input id={`${toggleIdPrefix}-debugLog`} type="checkbox" checked={debugLogging}
                                                    disabled={debugLoggingRestarting}
                                                    onChange={async e => {
                                                        const v = e.target.checked;
@@ -1327,8 +1363,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                                        }
                                                    }}/>
                                             <span className="settings-switch-slider"/>
-                                        </label>
-                                    </div>
+                                        </span>
+                                    </label>
                                 </div>
 
                                 {/* 모델 설정은 별도 탭에서 관리 */}
@@ -1662,22 +1698,49 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
 
                         {tab === 'profile' && (
                             <div className="settings-general">
+                                <div className="settings-profile-name-row">
+                                    <label className="settings-profile-name-label" htmlFor={`${toggleIdPrefix}-nickname`}>
+                                        {t('profile.nickname')}
+                                    </label>
+                                    {nicknameEditing ? (
+                                        <form className="settings-profile-name-editor" onSubmit={saveNickname}>
+                                            <input
+                                                id={`${toggleIdPrefix}-nickname`}
+                                                className="settings-profile-name-input"
+                                                value={nicknameEdit}
+                                                onChange={event => setNicknameEdit(event.target.value)}
+                                                placeholder={t('profile.nicknamePlaceholder')}
+                                                disabled={nicknameSaving}
+                                                autoFocus
+                                                onKeyDown={event => {
+                                                    if (event.key === 'Escape') {
+                                                        event.stopPropagation();
+                                                        if (!nicknameSaving) setNicknameEditing(false);
+                                                    }
+                                                }}
+                                            />
+                                            <button type="button" className="remember-cancel-btn"
+                                                    disabled={nicknameSaving} onClick={() => setNicknameEditing(false)}>
+                                                {t('common:cancel')}
+                                            </button>
+                                            <button type="submit" className="remember-start-btn" disabled={nicknameSaving}>
+                                                {t(nicknameSaving ? 'common:saving' : 'common:save')}
+                                            </button>
+                                        </form>
+                                    ) : (
+                                        <div className="settings-profile-name-display">
+                                            <span>{existingNickname || t('common:notSet')}</span>
+                                            <button type="button" className="settings-profile-name-edit" disabled={profileLoading}
+                                                    aria-label={`${t('profile.nickname')} ${t('common:edit')}`}
+                                                    onClick={() => { setNicknameEdit(existingNickname); setNicknameEditing(true); }}>
+                                                <Pencil size={16} aria-hidden="true"/>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                                 {/* 최대 글자 수 — 보기/편집 공통 */}
                                 {(profileMode === 'view' || profileMode === 'edit') && (
                                     <div className="settings-general-section settings-profile-preferences-card">
-                                        <div className="remember-setup-row">
-                                            <span className="settings-profile-preference-copy"><span>{t('profile.responseStyle')}</span><small>{t('profile.responseStyleDescription')}</small></span>
-                                            <CustomSelect
-                                                options={PROFILE_RESPONSE_STYLE_OPTIONS}
-                                                value={profileResponseStyle}
-                                                disabled={profileStyleSaving}
-                                                onChange={value => void handleProfileResponseStyleChange(value)}
-                                                className="settings-profile-style-select"
-                                                dropdownClassName="settings-profile-style-dropdown"
-                                                portal
-                                                triggerStyle={{fontSize: '13px', padding: '8px 10px'}}
-                                            />
-                                        </div>
                                         <div className="remember-setup-row">
                                             <span className="settings-profile-preference-copy"><span>{t('profile.maxLength')}</span><small>{t('profile.maxLengthDescription')}</small></span>
                                             <CustomSelect
@@ -1694,17 +1757,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                 {profileMode === 'view' && (
                                     <>
                                         <div className="settings-profile-summary-card">
-                                            <div className="settings-profile-summary-header">
-                                                <div className="settings-profile-avatar" aria-hidden="true">
-                                                    {existingNickname?.trim().charAt(0).toUpperCase() || 'AI'}
-                                                </div>
-                                                <div className="settings-profile-identity">
-                                                    <span>{t('profile.nickname')}</span>
-                                                </div>
-                                                <span className={`settings-profile-status${existingNickname ? ' is-ready' : ''}`}>
-                                                    {existingNickname || t('common:notSet')}
-                                                </span>
-                                            </div>
                                             <div className={`settings-profile-content settings-profile-summary-content${!profileLoading && !existingProfile ? ' is-empty' : ''}`}>
                                                 {profileLoading ? (
                                                     <div className="remember-profile-loading">{t('profile.checking')}</div>
@@ -1718,7 +1770,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                         <div className="settings-profile-actions settings-profile-summary-actions">
                                             <button className="remember-edit-btn" onClick={profileEnterEdit}
                                                     disabled={profileLoading}>
-                                                {t('common:edit')}
+                                                {t(existingProfile ? 'common:edit' : 'profile.writeProfile')}
                                             </button>
                                             <button className="remember-start-btn" onClick={profileStartAnalyze}>
                                                 {t('profile.aiAnalyze')}
@@ -1728,27 +1780,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                 )}
                                 {profileMode === 'edit' && (
                                     <>
-                                        <div className="settings-general-section">
-                                            <div className="remember-setup-row">
-                                                <span className="remember-setup-label">{t('profile.nickname')}</span>
-                                                <input
-                                                    type="text"
-                                                    value={nicknameEdit}
-                                                    onChange={e => setNicknameEdit(e.target.value)}
-                                                    placeholder={t('profile.nicknamePlaceholder')}
-                                                    style={{
-                                                        flex: 1,
-                                                        background: 'var(--surface2)',
-                                                        border: '1px solid var(--border)',
-                                                        borderRadius: '6px',
-                                                        padding: '6px 10px',
-                                                        color: 'var(--text)',
-                                                        fontSize: '13px',
-                                                        outline: 'none',
-                                                    }}
-                                                />
-                                            </div>
-                                        </div>
                                         <div className="settings-general-section settings-profile-content">
                                             <div className="settings-profile-label">{t('profile.editProfile')}</div>
                                             <textarea

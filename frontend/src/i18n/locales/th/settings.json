@@ -46,7 +46,7 @@
     "api": "เครื่องมือ AI",
     "externalData": "ข้อมูลภายนอก",
     "skills": "สกิล",
-    "profile": "โปรไฟล์ AI",
+    "profile": "การตั้งค่าโปรไฟล์",
     "plugins": "Plugins"
   },
   "apiServer": {"title":"เซิร์ฟเวอร์ API ภายในเครื่อง","description":"ใช้โมเดลภายในเครื่องของ Vyact ปัจจุบันจากแอปภายนอก เช่น OpenClaw ผ่าน API ที่เข้ากันได้กับ OpenAI","checking":"กำลังตรวจสอบสถานะเซิร์ฟเวอร์","online":"พร้อมใช้งาน","offline":"ไม่พร้อมใช้งาน","onlineDescription":"เซิร์ฟเวอร์โมเดลภายในเครื่องพร้อมรับคำขอ","offlineDescription":"เลือกและเรียกใช้โมเดลภายในเครื่องของ Vyact เพื่อเปิดใช้งานเซิร์ฟเวอร์ API","endpoint":"ปลายทาง","modelId":"รหัสโมเดล","modelUnavailable":"ไม่มีโมเดลที่กำลังทำงาน","copy":"คัดลอก","copied":"คัดลอกไปยังคลิปบอร์ดแล้ว","copyFailed":"ไม่สามารถคัดลอกได้","localOnly":"ที่อยู่นี้เข้าถึงได้จากคอมพิวเตอร์เครื่องนี้เท่านั้น Vyact ต้องทำงานพร้อมโมเดลภายในเครื่องที่เปิดใช้งาน","openClawTitle":"การตั้งค่า OpenClaw","openClawDescription":"ใช้ข้อมูลต่อไปนี้เป็นผู้ให้บริการแบบกำหนดเองที่เข้ากันได้กับ OpenAI ใน OpenClaw","copyConfig":"คัดลอกการตั้งค่า OpenClaw"},
@@ -314,8 +314,10 @@
   },
   "api": {},
   "profile": {
-    "maxLength": "จำนวนอักขระสูงสุด", "maxLengthDescription": "ระดับรายละเอียดที่ AI เก็บไว้ในโปรไฟล์",
+    "maxLength": "ความยาวโปรไฟล์สูงสุด",
+    "writeProfile": "เขียนโปรไฟล์เอง", "maxLengthDescription": "ระดับรายละเอียดที่ AI เก็บไว้ในโปรไฟล์",
     "nickname": "ชื่อผู้ใช้",
+    "nicknameSaveFailed": "บันทึกชื่อไม่สำเร็จ โปรดลองอีกครั้ง",
     "nicknamePlaceholder": "ชื่อหรือชื่อเล่น",
     "responseStyle": "รูปแบบและน้ำเสียงเริ่มต้น", "responseStyleDescription": "วิธีที่ AI ตอบในการสนทนาทั่วไป",
     "responseStyleDefault": "ค่าเริ่มต้น", "responseStyleDefaultDescription": "รูปแบบและน้ำเสียงปัจจุบัน",

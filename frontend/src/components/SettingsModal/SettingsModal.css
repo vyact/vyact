@@ -1347,16 +1347,13 @@
 .settings-profile-preferences-card {
     display: grid;
     gap: 0;
-    padding: 6px 16px;
-    margin-bottom: 18px;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    background: var(--surface);
+    padding: 0;
+    margin-bottom: 0;
 }
 
 .settings-profile-preferences-card .remember-setup-row {
-    min-height: 66px;
-    padding: 10px 0;
+    min-height: 0;
+    padding: 6px 0 0;
 }
 
 .settings-profile-preferences-card .remember-setup-row + .remember-setup-row {
@@ -1430,7 +1427,7 @@
 .settings-profile-summary-card {
     display: flex;
     flex: 1;
-    min-height: 280px;
+    min-height: 120px;
     flex-direction: column;
     overflow: hidden;
     border: 1px solid var(--border);
@@ -1516,6 +1513,7 @@
 }
 
 .settings-profile-summary-actions {
+    flex-shrink: 0;
     padding: 12px 0 0;
 }
 
@@ -1619,4 +1617,123 @@
 .settings-tts-option-preview:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
+}
+
+.settings-toggle-row--clickable {
+    cursor: pointer;
+}
+
+.settings-toggle-row--clickable .settings-toggle-title,
+.settings-toggle-row--clickable .settings-toggle-desc {
+    display: block;
+}
+
+.settings-toggle-row--clickable:has(input:disabled) {
+    cursor: default;
+}
+
+.settings-profile-summary-actions .remember-edit-btn {
+    color: var(--info);
+    border-color: color-mix(in srgb, var(--info) 40%, var(--border));
+    background: color-mix(in srgb, var(--info) 8%, var(--surface));
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.settings-profile-summary-actions .remember-edit-btn:hover:not(:disabled) {
+    border-color: var(--info);
+    background: color-mix(in srgb, var(--info) 14%, var(--surface));
+}
+
+.settings-profile-summary-actions .remember-edit-btn:focus-visible {
+    outline: 2px solid var(--info);
+    outline-offset: 2px;
+}
+
+.settings-profile-name-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    flex-shrink: 0;
+}
+
+.settings-profile-name-display,
+.settings-profile-name-editor {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.settings-profile-name-label,
+.settings-profile-preference-copy > span {
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 20px;
+}
+
+.settings-profile-name-display > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 24px;
+}
+
+.settings-profile-name-editor {
+    flex: 1 1 280px;
+    flex-wrap: wrap;
+}
+
+.settings-profile-name-input {
+    flex: 1 1 140px;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface2);
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+}
+
+.settings-profile-name-input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.settings-profile-name-edit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 30px;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+}
+
+.settings-profile-name-edit:hover:not(:disabled) {
+    background: var(--surface2);
+    color: var(--accent);
+}
+
+.settings-profile-name-edit:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.settings-profile-name-edit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }

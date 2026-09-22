@@ -47,7 +47,7 @@
     "externalData": "External data",
     "plugins": "Plugins",
     "skills": "Skills",
-    "profile": "AI Profile Analysis"
+    "profile": "Profile settings"
   },
   "apiServer": {"title":"Local API Server","description":"Use the current Vyact local model from external apps such as OpenClaw through an OpenAI-compatible API.","checking":"Checking server status","online":"Available","offline":"Unavailable","onlineDescription":"The local model server is ready to receive requests.","offlineDescription":"Select and run a Vyact local model to activate the API server.","endpoint":"Endpoint","modelId":"Model ID","modelUnavailable":"No running model","copy":"Copy","copied":"Copied to clipboard.","copyFailed":"Could not copy.","localOnly":"This address is accessible only from this computer. Vyact must be running with a local model active.","openClawTitle":"OpenClaw configuration","openClawDescription":"Use the following as a custom OpenAI-compatible provider in OpenClaw.","copyConfig":"Copy OpenClaw configuration"},
   "apiServerCurl": {"title":"Test with curl","description":"Run this command in a terminal to verify that the current model responds.","prompt":"Reply with connection successful in one sentence.","copy":"Copy curl command"},
@@ -340,9 +340,11 @@
   },
   "api": {},
   "profile": {
-    "maxLength": "Maximum characters",
+    "maxLength": "Maximum profile length",
+    "writeProfile": "Write profile",
     "maxLengthDescription": "How much detail the AI keeps in your profile",
     "nickname": "User name",
+    "nicknameSaveFailed": "Could not save your name. Please try again.",
     "nicknamePlaceholder": "Name or nickname",
     "responseStyle": "Default style and tone",
     "responseStyleDescription": "How the AI responds in regular conversations",

@@ -46,7 +46,7 @@
     "api": "AIツール",
     "externalData": "外部データ",
     "skills": "スキル",
-    "profile": "AIプロフィール分析",
+    "profile": "プロフィール設定",
     "plugins": "Plugins"
   },
   "apiServer": {"title":"ローカルAPIサーバー","description":"OpenClawなどの外部アプリから、現在のVyactローカルモデルをOpenAI互換APIで利用できます。","checking":"サーバー状態を確認中","online":"利用可能","offline":"利用不可","onlineDescription":"ローカルモデルサーバーはリクエストを受信できます。","offlineDescription":"Vyactローカルモデルを選択して実行するとAPIサーバーが有効になります。","endpoint":"エンドポイント","modelId":"モデルID","modelUnavailable":"実行中のモデルなし","copy":"コピー","copied":"クリップボードにコピーしました。","copyFailed":"コピーできませんでした。","localOnly":"このアドレスには同じコンピューターからのみアクセスできます。Vyactを起動し、ローカルモデルを有効にしてください。","openClawTitle":"OpenClaw設定","openClawDescription":"以下をOpenClawのカスタムOpenAI互換プロバイダー設定として使用してください。","copyConfig":"OpenClaw設定をコピー"},
@@ -314,8 +314,10 @@
   },
   "api": {},
   "profile": {
-    "maxLength": "最大文字数", "maxLengthDescription": "AIがプロフィールに保持する詳細度",
+    "maxLength": "プロフィールの最大文字数",
+    "writeProfile": "自分で作成", "maxLengthDescription": "AIがプロフィールに保持する詳細度",
     "nickname": "ユーザー名",
+    "nicknameSaveFailed": "名前を保存できませんでした。もう一度お試しください。",
     "nicknamePlaceholder": "名前またはニックネーム",
     "responseStyle": "基本スタイルと口調", "responseStyleDescription": "通常の会話でAIが回答する方法",
     "responseStyleDefault": "デフォルト", "responseStyleDefaultDescription": "現在の標準スタイルと口調",

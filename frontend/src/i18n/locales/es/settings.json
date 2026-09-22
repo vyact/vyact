@@ -46,7 +46,7 @@
     "api": "Herramientas de IA",
     "externalData": "Datos externos",
     "skills": "Habilidades",
-    "profile": "Perfil IA",
+    "profile": "Configuración del perfil",
     "plugins": "Plugins"
   },
   "apiServer": {"title":"Servidor API local","description":"Usa el modelo local actual de Vyact desde aplicaciones externas como OpenClaw mediante una API compatible con OpenAI.","checking":"Comprobando el servidor","online":"Disponible","offline":"No disponible","onlineDescription":"El servidor del modelo local está listo para recibir solicitudes.","offlineDescription":"Selecciona y ejecuta un modelo local de Vyact para activar el servidor API.","endpoint":"Endpoint","modelId":"ID del modelo","modelUnavailable":"No hay ningún modelo en ejecución","copy":"Copiar","copied":"Copiado al portapapeles.","copyFailed":"No se pudo copiar.","localOnly":"Esta dirección solo es accesible desde este equipo. Vyact debe estar en ejecución con un modelo local activo.","openClawTitle":"Configuración de OpenClaw","openClawDescription":"Usa lo siguiente como proveedor personalizado compatible con OpenAI en OpenClaw.","copyConfig":"Copiar configuración de OpenClaw"},
@@ -314,8 +314,10 @@
   },
   "api": {},
   "profile": {
-    "maxLength": "Máximo de caracteres", "maxLengthDescription": "Nivel de detalle que la IA conserva en tu perfil",
+    "maxLength": "Longitud máxima del perfil",
+    "writeProfile": "Escribir perfil", "maxLengthDescription": "Nivel de detalle que la IA conserva en tu perfil",
     "nickname": "Nombre de usuario",
+    "nicknameSaveFailed": "No se pudo guardar el nombre. Inténtalo de nuevo.",
     "nicknamePlaceholder": "Nombre o apodo",
     "responseStyle": "Estilo y tono predeterminados", "responseStyleDescription": "Cómo responde la IA en conversaciones normales",
     "responseStyleDefault": "Predeterminado", "responseStyleDefaultDescription": "Estilo y tono actuales",

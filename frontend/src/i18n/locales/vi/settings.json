@@ -46,7 +46,7 @@
     "api": "Công cụ AI",
     "externalData": "Dữ liệu ngoài",
     "skills": "Kỹ năng",
-    "profile": "Hồ sơ AI",
+    "profile": "Cài đặt hồ sơ",
     "plugins": "Plugins"
   },
   "apiServer": {"title":"Máy chủ API cục bộ","description":"Sử dụng mô hình Vyact cục bộ hiện tại từ các ứng dụng bên ngoài như OpenClaw qua API tương thích OpenAI.","checking":"Đang kiểm tra trạng thái máy chủ","online":"Khả dụng","offline":"Không khả dụng","onlineDescription":"Máy chủ mô hình cục bộ đã sẵn sàng nhận yêu cầu.","offlineDescription":"Chọn và chạy mô hình Vyact cục bộ để kích hoạt máy chủ API.","endpoint":"Điểm cuối","modelId":"ID mô hình","modelUnavailable":"Không có mô hình đang chạy","copy":"Sao chép","copied":"Đã sao chép vào bảng nhớ tạm.","copyFailed":"Không thể sao chép.","localOnly":"Địa chỉ này chỉ có thể truy cập từ máy tính này. Vyact phải đang chạy với mô hình cục bộ được kích hoạt.","openClawTitle":"Cấu hình OpenClaw","openClawDescription":"Sử dụng nội dung sau làm nhà cung cấp tùy chỉnh tương thích OpenAI trong OpenClaw.","copyConfig":"Sao chép cấu hình OpenClaw"},
@@ -314,8 +314,10 @@
   },
   "api": {},
   "profile": {
-    "maxLength": "Số ký tự tối đa", "maxLengthDescription": "Mức chi tiết AI lưu trong hồ sơ của bạn",
+    "maxLength": "Độ dài hồ sơ tối đa",
+    "writeProfile": "Tự viết hồ sơ", "maxLengthDescription": "Mức chi tiết AI lưu trong hồ sơ của bạn",
     "nickname": "Tên người dùng",
+    "nicknameSaveFailed": "Không thể lưu tên. Vui lòng thử lại.",
     "nicknamePlaceholder": "Tên hoặc biệt danh",
     "responseStyle": "Phong cách và giọng điệu mặc định", "responseStyleDescription": "Cách AI trả lời trong hội thoại thông thường",
     "responseStyleDefault": "Mặc định", "responseStyleDefaultDescription": "Phong cách và giọng điệu hiện tại",
