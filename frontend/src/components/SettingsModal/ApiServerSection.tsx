@@ -1,6 +1,6 @@
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {Eye, EyeOff} from 'lucide-react';
+import {Check, Copy, Eye, EyeOff} from 'lucide-react';
 import {api} from '../../services/api';
 import type {VyactExternalApiStatus} from '../../services/api';
 import {copyToClipboard} from '../../utils/helpers';
@@ -9,6 +9,33 @@ import {toast} from '../common/ToastNotifications/ToastNotifications';
 const LOCAL_API_KEY_MARKER = 'vyact-local';
 const MASKED_API_TOKEN = '•'.repeat(24);
 const shellQuote = (value: string) => `'${value.replace(/'/g, `'"'"'`)}'`;
+
+const COPY_FEEDBACK_DURATION_MS = 1500;
+
+function ApiCopyButton({value, label, className = 'settings-api-server-copy-icon', disabled = false}: {
+    value: string;
+    label?: string;
+    className?: string;
+    disabled?: boolean;
+}) {
+    const {t} = useTranslation('settings');
+    const [copyVersion, setCopyVersion] = useState(0);
+    const copied = copyVersion > 0;
+    useEffect(() => {
+        if (!copied) return;
+        const timer = setTimeout(() => setCopyVersion(0), COPY_FEEDBACK_DURATION_MS);
+        return () => clearTimeout(timer);
+    }, [copyVersion, copied]);
+
+    return <button type="button" className={`${className}${copied ? ' settings-api-server-copy--copied' : ''}`} disabled={disabled}
+                   aria-label={copied ? t('apiServer.copied') : label ?? t('apiServer.copy')}
+                   onClick={async () => {
+                       if (await copyToClipboard(value)) setCopyVersion(current => current + 1);
+                       else toast.error(t('apiServer.copyFailed'));
+                   }}>
+        {copied ? <Check size={16} aria-hidden="true"/> : <Copy size={16} aria-hidden="true"/>}
+    </button>;
+}
 
 export default function ApiServerSection() {
     const {t} = useTranslation('settings');
@@ -73,14 +100,6 @@ export default function ApiServerSection() {
         ].join('\n');
     }, [modelId, publicEndpoint, status?.api_token, status?.auth_enabled, t]);
 
-    const copy = async (value: string) => {
-        if (await copyToClipboard(value)) {
-            toast.success(t('apiServer.copied'));
-        } else {
-            toast.error(t('apiServer.copyFailed'));
-        }
-    };
-
     const updateAuth = async (enabled: boolean) => {
         setAuthUpdating(true);
         setTokenVisible(false);
@@ -129,13 +148,13 @@ export default function ApiServerSection() {
                 <div className="settings-api-server-field">
                     <label>{t('apiServerAuth.networkEndpoint')}</label>
                     <div><code>{publicEndpoint}</code>
-                        <button onClick={() => void copy(publicEndpoint)}>{t('apiServer.copy')}</button>
+                        <ApiCopyButton value={publicEndpoint}/>
                     </div>
                 </div>
                 <div className="settings-api-server-field">
                     <label>{t('apiServer.modelId')}</label>
                     <div><code>{modelId}</code>
-                        <button disabled={!status?.model_id} onClick={() => void copy(modelId)}>{t('apiServer.copy')}</button>
+                        <ApiCopyButton value={modelId} disabled={!status?.model_id}/>
                     </div>
                 </div>
             </div>
@@ -164,7 +183,7 @@ export default function ApiServerSection() {
                                     aria-label={t(tokenVisible ? 'apiServerAuth.hideToken' : 'apiServerAuth.showToken')}>
                                 {tokenVisible ? <EyeOff size={15}/> : <Eye size={15}/>}
                             </button>
-                            <button onClick={() => void copy(status.api_token!)}>{t('apiServer.copy')}</button>
+                            <ApiCopyButton value={status.api_token}/>
                             <button disabled={authUpdating} onClick={() => void regenerateToken()}>{t('apiServerAuth.regenerate')}</button>
                         </div>
                     </div>
@@ -177,8 +196,8 @@ export default function ApiServerSection() {
                     <p>{t('apiServerCurl.description')}</p>
                 </div>
                 <pre><code>{curlCommand}</code></pre>
-                <button className="settings-api-server-copy-config" disabled={!status?.model_id}
-                        onClick={() => void copy(curlCommand)}>{t('apiServerCurl.copy')}</button>
+                <ApiCopyButton className="settings-api-server-copy-config" disabled={!status?.model_id}
+                               value={curlCommand} label={t('apiServerCurl.copy')}/>
             </section>
 
             <section className="settings-api-server-config settings-api-server-config--openclaw">
@@ -187,8 +206,8 @@ export default function ApiServerSection() {
                     <p>{t('apiServer.openClawDescription')}</p>
                 </div>
                 <pre><code>{displayedOpenClawConfig}</code></pre>
-                <button className="settings-api-server-copy-config" disabled={!status?.model_id}
-                        onClick={() => void copy(openClawConfig)}>{t('apiServer.copyConfig')}</button>
+                <ApiCopyButton className="settings-api-server-copy-config" disabled={!status?.model_id}
+                               value={openClawConfig} label={t('apiServer.copyConfig')}/>
             </section>
         </div>
     );

@@ -26,6 +26,7 @@ from logger import get_logger
 from services.db import INTEGRATION_SETTINGS_INDEX, get_es
 from services.tool_messages import get_tool_language
 from services.web_search_prompts import get_web_search_prompt
+from services.workspace_prompts import get_workspace_prompt
 
 logger = get_logger(__name__)
 
@@ -190,7 +191,7 @@ MCP_CATALOG: dict[str, dict] = {
             "단순 사실 질문, 짧은 답변, 단일 조회로 끝나는 요청에는 사용하지 않습니다."
         ),
     },
-    "microsoft_workspace": {"label": "Microsoft 365", "singleton": True, "kind": "internal", "fields": [], "default_prompt": "Use Microsoft tools only as requested. Verify recipients and content before sending mail."},
+    "microsoft_workspace": {"label": "Microsoft 365", "singleton": True, "kind": "internal", "fields": [], "default_prompt": get_workspace_prompt("microsoft_workspace", "en")},
     "google_workspace": {
         "label": "Google Workspace",
         "singleton": True,
@@ -198,96 +199,7 @@ MCP_CATALOG: dict[str, dict] = {
         # Google Workspace는 프론트의 계정 카드 UI에서 accounts[]로 관리한다.
         "fields": [],
         "default_prompt": (
-            "## Google Workspace 사용 규칙\n"
-            "Gmail, Google Calendar, Google Drive, Google Docs 도구를 사용할 수 있다.\n"
-            "사용 가능한 모든 도구는 사용자의 요청에 따라 적극적으로 활용한다.\n\n"
-
-            "## 1. Gmail (이메일)\n"
-            "- 이메일 검색은 search_emails를 사용한다.\n"
-            "- 이메일 상세 내용 확인은 get_email을 사용한다.\n"
-            "- 이메일 초안 작성은 create_email_draft를 사용한다.\n"
-            "- 이메일 전송은 send_email을 사용한다.\n"
-            "- 이메일 답장은 reply_email을 사용한다.\n"
-            "- 이메일 삭제는 trash_email을 사용한다.\n"
-            "- 여러 이메일 삭제는 batch_trash_emails를 사용한다.\n"
-            "- 이메일 관련 작업 시 대상 이메일, 수신자, 제목, 내용을 정확히 확인한다.\n"
-            "- 사용자의 요청 목적에 맞는 이메일 작업을 수행하며 필요한 경우 관련 이메일을 먼저 검색한다.\n\n"
-
-            "## 2. Google Calendar (일정)\n"
-            "- 다가오는 일정 확인은 list_upcoming_events를 사용한다.\n"
-            "- 특정 일정 검색은 search_calendar_events를 사용한다.\n"
-            "- 캘린더 목록 확인은 list_calendars를 사용한다.\n"
-            "- 사용자의 빈 시간 확인은 check_free_busy를 사용한다.\n"
-            "- 특정 일정 상세 확인은 get_calendar_event를 사용한다.\n"
-            "- 새로운 일정 생성은 create_calendar_event를 사용한다.\n"
-            "- 기존 일정 수정은 update_calendar_event를 사용한다.\n"
-            "- 일정 삭제는 delete_calendar_event를 사용한다.\n"
-            "- 일정 관련 작업 시 제목, 날짜, 시간, 참석자, 위치, 설명 정보를 정확히 처리한다.\n\n"
-
-            "### 캘린더 날짜 및 시간 처리 규칙\n"
-            "- 날짜와 시간은 ISO 8601 형식으로 처리한다.\n"
-            "- 사용자가 입력한 timezone을 유지한다.\n"
-            "- Google Calendar API 요청 시 timezone 정보를 함께 전달한다.\n"
-            "- 예: 서울 시간 오후 3시는 '2026-07-20T15:00:00+09:00' 형태로 처리한다.\n"
-            "- 내부적으로 UTC 변환이 필요한 경우에도 사용자에게 표시하는 시간은 원래 timezone 기준으로 유지한다.\n"
-            "- timezone 정보가 명확하지 않은 경우 사용자의 기본 timezone을 사용한다.\n"
-            "- 여러 timezone이 관련된 경우 가장 적절한 timezone을 판단하거나 필요한 경우 확인한다.\n"
-            "- 날짜만 입력된 경우 종일 일정(all-day event)으로 처리한다.\n"
-            "- 일정 시간이 불명확한 경우 임의로 시간을 생성하지 않는다.\n\n"
-
-            "## 3. Google Drive (파일 관리)\n"
-            "- 파일 검색은 search_files를 사용한다.\n"
-            "- 파일 상세 정보 조회는 get_drive_file을 사용한다.\n"
-            "- 문서 내용 확인은 read_document_content를 사용한다.\n"
-            "- 폴더 내부 목록 확인은 list_drive_folder_items를 사용한다.\n"
-            "- 로컬 파일을 Drive에 업로드는 upload_drive_file을 사용한다.\n"
-            "- Drive 파일 다운로드는 download_drive_file을 사용한다. 사용자의 ~/Downloads 폴더에 저장된다.\n"
-            "- 텍스트 파일 생성은 create_drive_file을 사용한다.\n"
-            "- 파일 수정은 update_drive_file을 사용한다.\n"
-            "- 파일 삭제는 delete_drive_file을 사용한다.\n"
-            "- 파일 이동은 move_drive_file을 사용한다.\n"
-            "- 폴더 생성은 create_drive_folder를 사용한다.\n"
-            "- Drive 작업 시 파일명, 위치, 대상 파일을 정확히 확인한다.\n"
-            "- 문서를 수정/재작성 요청 시 반드시 create_google_doc 또는 update_google_doc을 호출하여 실제로 저장한다. 텍스트로만 답변하지 않는다.\n\n"
-
-            "## 4. Google Docs (문서 관리)\n"
-            "- Google 문서 생성은 create_google_doc을 사용한다.\n"
-            "- Google 문서 조회는 get_google_doc을 사용한다.\n"
-            "- 문서 마지막에 내용 추가는 append_to_google_doc을 사용한다.\n"
-            "- 문서 내용 수정은 update_google_doc을 사용한다.\n"
-            "- 문서 수정 시 기존 내용을 보호하고 요청된 범위만 변경한다.\n\n"
-
-            "## 5. Google Sheets (스프레드시트)\n"
-            "- 스프레드시트 생성은 create_google_sheet을 사용한다.\n"
-            "- 스프레드시트 정보/데이터 조회는 get_google_sheet을 사용한다.\n"
-            "- 셀 데이터 수정은 update_google_sheet을 사용한다.\n"
-            "- 행 추가는 append_to_google_sheet을 사용한다.\n"
-            "- 데이터 삭제는 clear_google_sheet을 사용한다.\n"
-            "- values 파라미터는 JSON 2차원 배열 문자열로 전달한다.\n\n"
-
-            "## 6. Google Slides (프레젠테이션)\n"
-            "- 프레젠테이션 생성은 create_google_slides를 사용한다.\n"
-            "- 프레젠테이션 정보 조회는 get_google_slides를 사용한다.\n"
-            "- 슬라이드 추가는 add_slide를 사용한다.\n"
-            "- 텍스트 수정은 update_slide_text를 사용한다.\n"
-            "- 슬라이드 삭제는 delete_slide를 사용한다.\n"
-            "- 슬라이드 추가 시 layout으로 BLANK, TITLE, TITLE_AND_BODY 등을 지정할 수 있다.\n\n"
-
-            "## 7. Google Forms (설문지)\n"
-            "- 설문지 생성은 create_google_form을 사용한다.\n"
-            "- 설문지 정보 조회는 get_google_form을 사용한다.\n"
-            "- 질문 추가는 add_form_question을 사용한다.\n"
-            "- 응답 조회는 get_form_responses를 사용한다.\n"
-            "- 설문지 제목/설명 수정은 update_form_info를 사용한다.\n"
-            "- 질문 유형: TEXT, PARAGRAPH, RADIO, CHECKBOX, DROP_DOWN, SCALE\n\n"
-
-            "## 작업 처리 원칙\n"
-            "- 사용자의 요청 의도를 정확히 파악하고 적절한 Google Workspace 도구를 선택한다.\n"
-            "- 여러 단계가 필요한 작업은 필요한 순서대로 도구를 호출한다.\n"
-            "- 검색이 필요한 작업은 먼저 관련 데이터를 조회한 후 작업한다.\n"
-            "- 대상이 불명확하거나 여러 개 존재하는 경우 가장 가능성 높은 대상을 선택하지 말고 확인한다.\n"
-            "- 중요한 데이터 변경 작업은 변경 범위를 정확히 파악한 후 수행한다.\n"
-            "- 작업 결과를 사용자에게 명확하게 요약한다."
+            get_workspace_prompt("google_workspace", "en")
         ),
     },
     "custom": {
@@ -524,8 +436,13 @@ async def get_active_mcp_prompt(selected_server_ids: set[str] | None = None) -> 
         p = (s.get("prompt") or "").strip()
         if not p:
             cat = MCP_CATALOG.get(s.get("type", ""), {})
-            p = (get_web_search_prompt(await get_tool_language())
-                 if s.get("type") == "web_search" else cat.get("default_prompt", ""))
+            server_type = s.get("type")
+            if server_type == "web_search":
+                p = get_web_search_prompt(await get_tool_language())
+            elif server_type in {"google_workspace", "microsoft_workspace"}:
+                p = get_workspace_prompt(server_type, await get_tool_language())
+            else:
+                p = cat.get("default_prompt", "")
         if p:
             parts.append(p)
     return "\n\n".join(parts)

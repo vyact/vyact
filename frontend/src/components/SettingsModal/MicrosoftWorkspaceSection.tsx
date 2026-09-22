@@ -1,3 +1,4 @@
+import McpPromptField from './McpPromptField';
 import SettingsSaveButton from './SettingsSaveButton';
 import {useSettingsSaveFeedback} from './useSettingsSaveFeedback';
 import {notifyWorkspaceError} from '../../utils/workspaceError';
@@ -117,7 +118,13 @@ export default function MicrosoftWorkspaceSection() {
                 return persist({...config, accounts: [...config.accounts, account], active_account_id: config.active_account_id || account.id});
             })}>{t('microsoft.addAccount')}</button>
             </div>
-            <label className="mcp-field mcp-prompt-section"><span className="mcp-field-label">{t('mcp.promptLabel')}</span><textarea className="mcp-input mcp-prompt-textarea" value={config.prompt || ''} onChange={event => { resetSaveFeedback(); setConfig({...config, prompt: event.target.value}); }} disabled={busy}/></label>
+            <McpPromptField
+                value={config.prompt || ''}
+                defaultValue={t('microsoft.defaultPrompt')}
+                separated
+                disabled={busy}
+                onChange={prompt => { resetSaveFeedback(); setConfig({...config, prompt}); }}
+            />
             <div className="mcp-form-actions"><SettingsSaveButton state={saveState} disabled={busy} onClick={() => void perform(() => saveWithFeedback(() => persist(config)))}/></div>
             {error && <div className="mcp-err" role="alert">{error}</div>}
         </div></div></div>

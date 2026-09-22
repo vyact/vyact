@@ -1737,3 +1737,8 @@
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+.settings-api-server-copy-config, .settings-api-server-copy-icon { display: inline-flex; align-items: center; justify-content: center; min-width: 36px; }
+
+button.settings-api-server-copy--copied { color: var(--success); }
+button.settings-api-server-copy--copied:hover:not(:disabled) { background: color-mix(in srgb, var(--success) 9%, transparent); }
