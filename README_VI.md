@@ -71,21 +71,29 @@ Giữ tài liệu, hội thoại và công cụ trong cùng một nơi. Bắt đ
 
 | Tính năng | Bạn có thể làm gì |
 | --- | --- |
-| **AI chat và lịch sử hội thoại** | Trò chuyện với mô hình cục bộ hoặc đám mây, đính kèm tệp và hình ảnh được hỗ trợ, xem lại hay đánh dấu hội thoại yêu thích, xem thống kê phản hồi và xuất hội thoại. |
-| **Tài liệu và kiểm tra nguồn** | Hỏi về PDF, Word, bảng tính, bài trình chiếu, Markdown và tệp văn bản. Lập chỉ mục tài liệu thường dùng, kiểm tra các đoạn được truy xuất và quản lý tệp đã lưu. |
-| **Bộ sưu tập tri thức** | Nhóm tài liệu, ghi chú và chuỗi email đã lập chỉ mục. Đặt hướng dẫn riêng cho bộ sưu tập và chọn bộ phù hợp để giới hạn phạm vi câu hỏi. |
+| **AI chat** | Trò chuyện với mô hình cục bộ hoặc đám mây, đính kèm tệp và hình ảnh được hỗ trợ, rồi xem lại hội thoại cũ. |
+| **Tài liệu và tri thức** | Hỏi về tệp, kiểm tra đoạn gốc làm căn cứ và nhóm tài liệu thường dùng thành bộ sưu tập tri thức. |
+| **Email, tệp đám mây và lịch** | Kết nối Gmail, Outlook, Drive, OneDrive và lịch để soạn bản nháp trả lời, đưa tệp vào chat và quản lý sự kiện. |
+| **Mã nguồn và xem xét thay đổi** | Kết nối thư mục dự án để AI tìm và sửa tệp, chạy kiểm tra, xem xét hoặc hoàn tác các chỉnh sửa được theo dõi. |
+| **Chọn mô hình cục bộ** | Tìm mô hình GGUF hoặc MLX cho Apple Silicon, so sánh bộ nhớ ước tính và kiểm tra hiệu năng các cài đặt được hỗ trợ trên máy của bạn. |
+
+<details>
+<summary><strong>Xem thêm tính năng trên máy tính</strong></summary>
+
+| Tính năng | Bạn có thể làm gì |
+| --- | --- |
 | **Dự án và bộ nhớ dự án** | Nhóm hội thoại, đặt hướng dẫn làm việc và kết nối thư mục mã nguồn. Xem và quản lý tóm tắt, quyết định và việc cần làm được trích xuất từ hội thoại. |
 | **Ghi chú và việc cần làm** | Viết ghi chú có bảng, danh sách, hình ảnh và khối mã. Tìm lại ghi chú bằng RAG và theo dõi trạng thái hoàn thành của việc cần làm nhanh. |
-| **Công việc email** | Đọc, tìm kiếm, trả lời và chuyển tiếp trong Gmail hoặc Outlook. Xem trước bản nháp AI, quản lý tệp đính kèm, chữ ký, nội dung mẫu và nhóm người nhận. |
-| **Tệp đám mây và lịch** | Tải lên, tải xuống, sắp xếp và chia sẻ tệp Google Drive hoặc OneDrive; đính kèm vào chat hay lập chỉ mục. Tạo và cập nhật sự kiện Google hoặc Microsoft. |
-| **Google Docs, Sheets, Slides và Forms** | Nhờ AI tạo hoặc cập nhật tài liệu Google, đọc và sửa ô bảng tính, thay đổi trang chiếu, tạo biểu mẫu và đọc phản hồi. |
-| **Mã nguồn và xem xét thay đổi** | Kết nối thư mục dự án để AI tìm và sửa tệp, chạy các bước kiểm tra có sẵn và xem thay đổi Git. Xem phần khác biệt, sao chép hoặc tải kết quả và hoàn tác chỉnh sửa được theo dõi. |
+| **Google Docs, Sheets, Slides và Forms** | Nhờ AI tạo tài liệu Docs, thêm văn bản vào cuối hoặc tìm và thay thế văn bản; đọc và sửa ô Sheets; thêm trang chiếu hoặc tìm và thay thế văn bản trong Slides; tạo biểu mẫu Forms, thêm câu hỏi hoặc đọc câu trả lời. |
 | **Tác vụ trình duyệt** | Nhờ AI tìm kiếm web, đọc trang và thao tác với các điều khiển hiển thị. Tiếp tục từ kết quả tìm kiếm đến các trang và thao tác cần cho tác vụ. |
 | **Giọng nói và luyện hội thoại** | Nói chuyện với AI, nghe câu trả lời và điều chỉnh phát giọng nói. Tạo hoặc sửa kịch bản luyện tập, chọn vai, nghe lời đối tác và luyện lời thoại của mình. |
 | **Cá nhân hóa và prompt** | Chọn phong cách trả lời, xem hồ sơ cá nhân do AI tạo trước khi áp dụng, lưu prompt hệ thống và kỹ năng dùng lại. |
-| **Mô hình phù hợp với máy** | Tìm và tải mô hình GGUF hoặc MLX cho Apple Silicon, so sánh bộ nhớ ước tính, chọn nơi lưu và kiểm tra hiệu năng các cài đặt được hỗ trợ trên máy của bạn. |
 | **Công cụ MCP và API cục bộ** | Kết nối MCP cục bộ hoặc từ xa, chọn công cụ cho từng yêu cầu và quản lý phê duyệt thực thi. Dùng mô hình cục bộ đang hoạt động từ ứng dụng khác qua API tương thích OpenAI. |
 | **Sao lưu và tiện ích hằng ngày** | Sao lưu, khôi phục dữ liệu đã chọn trên máy hoặc qua Drive và OneDrive. Chuyển tài khoản, xem thông báo, dùng phím tắt, giao diện sáng/tối và tám ngôn ngữ. |
+
+**Thêm tùy chọn quản lý:** Đánh dấu hội thoại yêu thích hoặc xuất hội thoại, xem lượng token sử dụng và tốc độ xử lý của từng phản hồi. Đặt hướng dẫn riêng cho bộ sưu tập tri thức và thêm tài liệu, ghi chú hoặc chuỗi email đã lập chỉ mục. Quản lý tệp đính kèm, chữ ký, nội dung mẫu và nhóm người nhận; sắp xếp, chia sẻ tệp đám mây và chọn nơi lưu mô hình tải về.
+
+</details>
 
 Kết nối Google và Microsoft cần thiết lập tài khoản và quyền truy cập. Thao tác AI thực hiện được tùy thuộc khả năng gọi công cụ của mô hình và dịch vụ; hai bên không cung cấp bộ công cụ giống nhau.
 
@@ -95,17 +103,26 @@ Dùng AI ngay trên trang đang đọc hoặc viết. **Cài tiện ích Chrome 
 
 | Tính năng | Bạn có thể làm gì |
 | --- | --- |
-| **Chat bên cạnh trang được hỗ trợ** | Hỏi tiếp trong bảng bên, thêm hình ảnh hoặc tệp, chọn prompt đã lưu và quay lại lịch sử hội thoại. |
+| **Chat và hỏi về trang** | Trò chuyện trong bảng bên, hỏi về trang hiện tại hoặc văn bản đã chọn và tóm tắt nội dung đang đọc. |
+| **Kiểm tra và viết lại** | Xem trước gợi ý sửa chính tả, ngữ pháp hoặc bản viết lại toàn bộ, so sánh thay đổi và chọn nội dung cần áp dụng. |
+| **Dịch, tra từ và nghe** | Chọn văn bản trên trang để mở thanh công cụ, rồi chọn **Dịch chi tiết**, **Tra từ**, **Nghe** hoặc **Dịch** để xem bản dịch chi tiết, tra nghĩa, nghe văn bản đã chọn hoặc hiển thị bản dịch ngay trên trang. |
+| **Từ vựng và câu đã lưu** | Tra nghĩa và phát âm, lưu từ cùng ví dụ và lưu câu hữu ích kèm bản dịch và liên kết nguồn. |
+| **Học qua Netflix** | Học với hai luồng phụ đề, nghe lại hoặc lặp câu, xem toàn bộ kịch bản và hỏi về phụ đề hay cách diễn đạt. |
+
+<details>
+<summary><strong>Xem thêm tính năng Chrome</strong></summary>
+
+| Tính năng | Bạn có thể làm gì |
+| --- | --- |
 | **Hỏi, tóm tắt và lưu trang** | Thêm trang hiện tại hoặc văn bản đã chọn vào chat, tóm tắt trang hoặc lưu vào Vyact để tìm kiếm kiến thức sau này. |
-| **Dịch và chế độ đọc** | Dịch nhanh văn bản đã chọn hoặc mở bản dịch chi tiết. Dịch đoạn văn trên trang hay vùng được chọn trong chế độ đọc và nghe văn bản được chọn. |
-| **Kiểm tra bài viết ngay khi nhập** | Xem gợi ý chính tả và ngữ pháp qua gạch chân. Xem trước, áp dụng hoặc bỏ qua từng mục hay tất cả, rồi hoàn tác nếu cần. |
-| **Viết lại toàn bộ bản nháp** | Làm văn bản tự nhiên, lịch sự, ngắn gọn hoặc hài hước hơn, hay sửa ngữ pháp. Chọn ngôn ngữ đầu ra, thêm hướng dẫn và so sánh trước khi áp dụng hoặc sao chép. |
 | **Tùy chỉnh hỗ trợ viết** | Bật hoặc tắt kiểm tra tự động trong phần cài đặt kiểm tra; thiết lập này áp dụng chung cho mọi trang web. Nút nguồn trên thanh công cụ là thiết lập riêng, dùng để tắt toàn bộ công cụ viết trên một trang web cụ thể. Gợi ý từ và lý do chỉnh sửa có thể bật khi cần; cả hai mặc định đều tắt. |
-| **Từ vựng và câu đã lưu** | Tra nghĩa và phát âm, lưu từ cùng câu ví dụ, lưu câu hữu ích với bản dịch và liên kết nguồn. Tìm kiếm, nghe hoặc xóa mục đã lưu. |
+| **Viết lại toàn bộ bản nháp** | Làm văn bản tự nhiên, lịch sự, ngắn gọn hoặc hài hước hơn, hay sửa ngữ pháp. Chọn ngôn ngữ đầu ra, thêm hướng dẫn và so sánh trước khi áp dụng hoặc sao chép. |
 | **Luyện nghe qua Netflix** | Học với hai luồng phụ đề, chuyển câu, nghe lại, lặp và tự động tạm dừng. Mở toàn bộ kịch bản phụ đề để chuyển tới một câu. |
 | **Giải thích Netflix theo nhu cầu** | Hỏi về phụ đề hiện tại hoặc biểu đạt được chọn. Chọn điểm cần luyện theo ngôn ngữ như thành ngữ, nối âm, ngữ pháp, sắc thái và lưu câu hữu ích. |
 | **Tìm phim Netflix bằng AI** | Mô tả câu chuyện hoặc nội dung muốn xem, xem tên phim được gợi ý cùng lý do rồi mở tìm kiếm Netflix cho một ứng viên. |
-| **Kết nối trình duyệt với AI trên máy** | Cho Vyact thực hiện tác vụ trình duyệt qua Chrome, với thao tác hiển thị trên trang và khả năng tạm dừng để bạn đăng nhập hoặc hoàn thành bước cần tự làm. |
+| **Tác vụ Chrome từ chat trên máy tính** | Yêu cầu tác vụ trình duyệt trong chat của ứng dụng Vyact trên máy tính. Tiện ích đã kết nối sẽ đọc trang, nhấp và nhập trong Chrome, đồng thời có thể tạm dừng để bạn đăng nhập hoặc thực hiện bước cần tự làm. |
+
+</details>
 
 Công cụ viết hoạt động trong trình soạn thảo web được hỗ trợ. Học Netflix phụ thuộc vào các luồng phụ đề có sẵn và đã tải của tác phẩm; gợi ý AI không bảo đảm phim có trong danh mục tại khu vực của bạn.
 
@@ -159,6 +176,10 @@ Kết quả so sánh tốc độ, không đánh giá chất lượng câu trả 
 </details>
 
 ## Cài đặt và kết nối
+
+**Trước khi tải mô hình cục bộ**
+
+Nhu cầu bộ nhớ và dung lượng lưu trữ phụ thuộc vào mô hình và cài đặt ngữ cảnh. Hãy kiểm tra kích thước tải xuống và bộ nhớ ước tính hiển thị trong Vyact trước khi tải. Chừa thêm dung lượng cho môi trường chạy mô hình, tài liệu và chỉ mục tìm kiếm. Nếu máy khó chạy mô hình cục bộ, bạn có thể kết nối nhà cung cấp AI bên ngoài.
 
 <details>
 <summary>Yêu cầu và hướng dẫn cài đặt theo nền tảng</summary>

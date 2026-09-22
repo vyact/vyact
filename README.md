@@ -84,14 +84,14 @@ Keep your documents, conversations, and tools together. Start with one task, the
 | --- | --- |
 | **Projects and project memory** | Group conversations, set working instructions, and review the project summary, decisions, and action items extracted from conversations. |
 | **Memos and quick todos** | Write rich-text notes with tables, lists, images, and code blocks. Find notes through knowledge search and track completed todos. |
-| **Google Docs, Sheets, Slides, and Forms** | Create or update connected documents, read and edit spreadsheet cells, change slides, and create forms or read their responses. |
+| **Google Docs, Sheets, Slides, and Forms** | Ask AI to create Docs documents, append text, or find and replace text; read and edit Sheets cells; add slides or find and replace text in Slides; and create Forms surveys, add questions, or read responses. |
 | **Browser tasks** | Search the web, read pages, and interact with visible page controls to carry out a task. |
 | **Voice and conversation practice** | Speak with AI, listen to responses, and adjust playback. Create practice scripts, choose a role, and practice your lines. |
 | **Personal preferences, prompts, and skills** | Choose a response style, review an AI-generated personal profile before applying it, and save system prompts and reusable skills. |
 | **MCP tools and local API** | Connect local or remote MCP tools, select tools for a request, and control execution approvals. Use your active local model through an OpenAI-compatible API. |
 | **Backup and everyday controls** | Back up and restore selected data locally or through Drive or OneDrive. Use account switching, notifications, keyboard shortcuts, themes, and eight interface languages. |
 
-**More control over your work:** Favorite or export conversations and inspect response statistics. Give knowledge collections their own instructions and include documents, memos, or indexed email threads. Manage email attachments, signatures, reusable text, and recipient groups; organize and share cloud files. Choose where downloaded models are stored.
+**More control over your work:** Favorite or export conversations and check token usage and processing speed for each response. Give knowledge collections their own instructions and include documents, memos, or indexed email threads. Manage email attachments, signatures, reusable text, and recipient groups; organize and share cloud files. Choose where downloaded models are stored.
 
 </details>
 
@@ -105,7 +105,7 @@ Use AI on the page you are already reading or writing. **Install the Chrome exte
 | --- | --- |
 | **Chat and page questions** | Chat in the side panel, ask about the current page or selected text, and summarize what you are reading. |
 | **Writing checks and rewrites** | Preview spelling and grammar corrections or a full-draft rewrite, compare changes, and choose what to apply. |
-| **Translation and reading** | Translate selected text or page paragraphs, open reading mode, and listen to selected text. |
+| **Translate, define, and listen** | Select text on a webpage to open the toolbar, then choose **Detailed**, **Define**, **Listen**, or **Translate** to view a detailed translation, look up a word, hear the selected text, or translate it directly on the page. |
 | **Vocabulary and saved sentences** | Look up meanings and pronunciation. Save words with examples and useful sentences with translations and source links. |
 | **Netflix learning** | Study with two subtitle tracks, replay or repeat lines, navigate the full script, and ask about subtitles or expressions. |
 
@@ -119,7 +119,7 @@ Use AI on the page you are already reading or writing. **Install the Chrome exte
 | **Rewrite options** | Make a draft more natural, polite, concise, or humorous. Choose an output language, add instructions, and compare before applying or copying. Apply or dismiss individual corrections or all suggestions, and undo applied changes. |
 | **Learning controls** | Search, listen to, or remove saved vocabulary and sentences. In Netflix, pause automatically, choose language-specific explanation focus areas such as grammar or nuance, and save useful lines. |
 | **Find a Netflix title with AI** | Describe a story or what you want to watch, review suggested titles and reasons, and open a Netflix search for a candidate. |
-| **A browser connection for desktop AI** | Let Vyact carry out browser tasks through Chrome, with visible page interaction and a way to pause for sign-in or steps you need to complete yourself. |
+| **Chrome tasks from desktop chat** | Request browser tasks in Vyact desktop chat. The connected extension carries out page reading, clicks, and typing in Chrome, with a way to pause for sign-in or steps you need to complete yourself. |
 
 </details>
 
