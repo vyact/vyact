@@ -607,7 +607,7 @@
   },
   "shortcutModal": {
     "title": "Raccourcis",
-    "hint": "Appuyez sur ⌘+/ ou Ctrl+/ pour voir les raccourcis",
+    "hint": "Appuyez sur ⌘ + / ou Ctrl + / pour voir les raccourcis",
     "toggleSidebar": "Barre latérale",
     "quickLaunch": "Lancement rapide",
     "newChat": "Nouveau chat",

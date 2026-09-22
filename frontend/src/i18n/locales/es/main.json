@@ -606,7 +606,7 @@
   },
   "shortcutModal": {
     "title": "Atajos",
-    "hint": "Pulsa ⌘+/ o Ctrl+/ para ver los atajos",
+    "hint": "Pulsa ⌘ + / o Ctrl + / para ver los atajos",
     "toggleSidebar": "Barra lateral",
     "quickLaunch": "Inicio rápido",
     "newChat": "Chat nuevo",

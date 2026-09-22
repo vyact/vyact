@@ -606,7 +606,7 @@
   },
   "shortcutModal": {
     "title": "단축키",
-    "hint": "⌘+/ 또는 Ctrl+/로 단축키 보기",
+    "hint": "⌘ + / 또는 Ctrl + /로 단축키 보기",
     "toggleSidebar": "사이드바 열기/닫기",
     "quickLaunch": "빠른 실행",
     "newChat": "새 대화 시작",

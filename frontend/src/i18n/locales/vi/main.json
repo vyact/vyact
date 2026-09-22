@@ -607,7 +607,7 @@
   },
   "shortcutModal": {
     "title": "Phím tắt",
-    "hint": "กด ⌘+/ หรือ Ctrl+/ เพื่อดูแป้นลัด",
+    "hint": "กด ⌘ + / หรือ Ctrl + / เพื่อดูแป้นลัด",
     "toggleSidebar": "Thanh bên",
     "quickLaunch": "Mở nhanh",
     "newChat": "Chat mới",

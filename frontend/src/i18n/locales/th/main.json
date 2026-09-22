@@ -607,7 +607,7 @@
   },
   "shortcutModal": {
     "title": "คีย์ลัด",
-    "hint": "按 ⌘+/ 或 Ctrl+/ 查看快捷键",
+    "hint": "按 ⌘ + / 或 Ctrl + / 查看快捷键",
     "toggleSidebar": "แถบข้าง",
     "quickLaunch": "เปิดด่วน",
     "newChat": "แชตใหม่",

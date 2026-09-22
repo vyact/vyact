@@ -607,7 +607,7 @@
   },
   "shortcutModal": {
     "title": "快捷键",
-    "hint": "Nhấn ⌘+/ hoặc Ctrl+/ để xem phím tắt",
+    "hint": "Nhấn ⌘ + / hoặc Ctrl + / để xem phím tắt",
     "toggleSidebar": "切换侧边栏",
     "quickLaunch": "快速启动",
     "newChat": "开始新对话",

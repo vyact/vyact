@@ -607,7 +607,7 @@
   },
   "shortcutModal": {
     "title": "ショートカット",
-    "hint": "⌘+/ または Ctrl+/ でショートカットを表示",
+    "hint": "⌘ + / または Ctrl + / でショートカットを表示",
     "toggleSidebar": "サイドバー開閉",
     "quickLaunch": "クイック起動",
     "newChat": "新規チャット開始",

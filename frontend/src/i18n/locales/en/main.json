@@ -606,7 +606,7 @@
   },
   "shortcutModal": {
     "title": "Shortcuts",
-    "hint": "Press ⌘+/ or Ctrl+/ to view shortcuts",
+    "hint": "Press ⌘ + / or Ctrl + / to view shortcuts",
     "toggleSidebar": "Toggle sidebar",
     "quickLaunch": "Quick launch",
     "newChat": "Start new chat",
