@@ -354,6 +354,7 @@
       "memo_documents": "메모 · 노트 데이터",
       "quick_notes": "빠른 메모(TODO) 데이터",
       "user_profile": "사용자 프로필 정보",
+      "user_memories": "일반 대화에서 저장한 개인 장기 기억과 검색 벡터입니다.",
       "vocab_words": "단어장 · 학습 어휘 데이터",
       "knowledge_collections": "문서·메모·메일을 묶어 RAG 범위를 제한하는 지식 컬렉션 정의",
       "knowledge_email_threads": "지식 컬렉션에 첨부한 메일 스레드와 본문 인라인 이미지 참조",
@@ -368,6 +369,7 @@
     }
   },
   "api": {},
+  "memory": {"title": "장기 기억","description": "일반 대화에서 오래 사용할 정보를 저장하고 관련 질문에만 참고합니다.","enabled": "장기 기억 사용","analyze": "기억 저장","add": "기억 추가","empty": "저장된 기억이 없습니다.","loadFailed": "기억을 불러오지 못했습니다.","actionFailed": "기억 작업을 완료하지 못했습니다.","working": "분석 중...","analysisComplete": "{{count}}개 기억을 반영했습니다.","noNewConversations": "새로 분석할 일반 대화가 없습니다.","moreConversations": "처리할 대화가 더 있습니다. 다시 눌러 이어서 저장하세요.","saved": "기억을 저장했습니다.","deleted": "기억을 삭제했습니다.","deleteAll": "전체 삭제","deleteAllConfirm": "저장된 기억을 모두 삭제할까요?","type": "종류","category": "주제","content": "내용","types": {"PROFILE": "프로필","PREFERENCE": "선호","PROJECT": "진행 중인 작업","LEARNING": "학습","DECISION": "결정","WORKFLOW": "작업 방식","LONG_TERM_GOAL": "장기 목표"}},
   "profile": {
     "maxLength": "프로필 최대 길이",
     "writeProfile": "직접 작성",

@@ -24,6 +24,7 @@ import SkillsSection from './SkillsSection';
 import PluginsSection from './PluginsSection';
 import ExternalDataSection from './ExternalDataSection';
 import ApiServerSection from './ApiServerSection';
+import UserMemorySection from './UserMemorySection';
 import {refreshSkills} from '../../services/skills';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import {refreshGoogleWorkspaceStatus} from '../../services/googleWorkspaceStatus';
@@ -1697,7 +1698,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                         )}
 
                         {tab === 'profile' && (
-                            <div className="settings-general">
+                            <div className={`settings-general settings-general--profile${profileMode === 'view' ? ' has-user-memory' : ''}`}>
                                 <div className="settings-profile-name-row">
                                     <label className="settings-profile-name-label" htmlFor={`${toggleIdPrefix}-nickname`}>
                                         {t('profile.nickname')}
@@ -1776,6 +1777,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                                 {t('profile.aiAnalyze')}
                                             </button>
                                         </div>
+                                        <UserMemorySection/>
                                     </>
                                 )}
                                 {profileMode === 'edit' && (

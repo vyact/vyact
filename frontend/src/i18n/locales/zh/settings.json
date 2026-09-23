@@ -299,6 +299,7 @@
       "memo_documents": "备忘录和笔记数据",
       "quick_notes": "快捷备忘（TODO）数据",
       "user_profile": "用户资料信息",
+      "user_memories": "从普通对话中保存的个人长期记忆及其搜索向量。",
       "vocab_words": "词汇本和学习词汇数据",
       "knowledge_collections": "将文档、备忘和邮件组合以限制 RAG 上下文范围的知识集合定义",
       "knowledge_email_threads": "附加到知识集合的邮件线程及正文内嵌图片引用",
@@ -313,6 +314,7 @@
     }
   },
   "api": {},
+  "memory": {"title": "长期记忆","description": "保存普通对话中长期有用的信息，仅在相关问题中使用。","enabled": "使用长期记忆","analyze": "保存记忆","add": "添加记忆","empty": "尚无已保存的记忆。","loadFailed": "无法加载记忆。","actionFailed": "无法完成记忆操作。","working": "分析中...","analysisComplete": "已更新 {{count}} 条记忆。","noNewConversations": "没有新的普通对话可供分析。","moreConversations": "还有更多对话，请再次运行以继续。","saved": "记忆已保存。","deleted": "记忆已删除。","deleteAll": "全部删除","deleteAllConfirm": "删除所有已保存的记忆？","type": "类型","category": "主题","content": "内容","types": {"PROFILE": "个人资料","PREFERENCE": "偏好","PROJECT": "进行中的项目","LEARNING": "学习","DECISION": "决定","WORKFLOW": "工作流程","LONG_TERM_GOAL": "长期目标"}},
   "profile": {
     "maxLength": "个人资料最大长度",
     "writeProfile": "手动编写", "maxLengthDescription": "AI在用户资料中保留的详细程度",

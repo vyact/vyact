@@ -1,0 +1,39 @@
+.user-memory-section {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 28px;
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+}
+
+.user-memory-heading, .user-memory-actions, .user-memory-item-header,
+.user-memory-item-actions, .user-memory-delete-all {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-memory-heading { justify-content: space-between; }
+.user-memory-heading h3 { margin: 0 0 5px; font-size: 16px; }
+.user-memory-heading p, .user-memory-list > p { margin: 0; color: var(--muted); font-size: 13px; }
+.user-memory-actions, .user-memory-item-actions, .user-memory-delete-all { justify-content: flex-end; }
+.user-memory-list { display: grid; gap: 8px; max-height: 340px; overflow: auto; }
+.user-memory-item { padding: 12px; border: 1px solid var(--border); border-radius: 10px; }
+.user-memory-item-header { color: var(--muted); font-size: 12px; }
+.user-memory-item p { margin: 8px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.user-memory-item-actions button, .user-memory-delete-all button {
+    border: 0; background: none; color: var(--accent); cursor: pointer; font: inherit;
+}
+.user-memory-item-actions button:last-child, .user-memory-delete-all button:last-child { color: var(--danger); }
+.user-memory-item-actions button:disabled, .user-memory-delete-all button:disabled { opacity: .5; cursor: default; }
+.user-memory-editor { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--border); border-radius: 10px; }
+.user-memory-editor label, .user-memory-type-field { display: grid; gap: 6px; color: var(--muted); font-size: 13px; }
+.user-memory-editor input, .user-memory-editor textarea {
+    box-sizing: border-box; width: 100%; padding: 9px 10px; border: 1px solid var(--border);
+    border-radius: 8px; background: var(--surface2); color: var(--text); font: inherit;
+}
+.user-memory-editor textarea { min-height: 85px; resize: vertical; }
+.user-memory-delete-all { flex-wrap: wrap; color: var(--muted); font-size: 13px; }

@@ -41,6 +41,7 @@ QUICKNOTE_INDEX = "quick_notes_all"   # 빠른 메모(todo형) — 메모 RAG �
 KNOWLEDGE_COLLECTIONS_INDEX = "knowledge_collections"
 EMAIL_THREADS_INDEX = "knowledge_email_threads_all"
 USER_PROFILE_INDEX = "user_profile"
+USER_MEMORIES_INDEX = "user_memories"
 VOCAB_INDEX = "vocab_words"
 SAVED_SENTENCES_INDEX = "saved_sentences"
 NOTIFICATIONS_INDEX = "notifications"
@@ -461,6 +462,25 @@ async def ensure_index():
                 }},
             )
             logger.info("knowledge_collections index created")
+
+        # ── user_memories ───────────────────────────────────────────
+        if not await es.indices.exists(index=USER_MEMORIES_INDEX):
+            await es.indices.create(
+                index=USER_MEMORIES_INDEX,
+                settings={"number_of_shards": 1, "number_of_replicas": 0},
+                mappings={"properties": {
+                    "record_type": {"type": "keyword"},
+                    "memory_type": {"type": "keyword"},
+                    "category": {"type": "keyword"},
+                    "content": {"type": "text"},
+                    "embedding": _vector_mapping(),
+                    "created_at": {"type": "date"},
+                    "updated_at": {"type": "date"},
+                    "source_conv_id": {"type": "keyword"},
+                    "last_processed_at": {"type": "date"},
+                }},
+            )
+            logger.info("user_memories index created")
 
         # ── user_profile ────────────────────────────────────────────
         if not await es.indices.exists(index=USER_PROFILE_INDEX):

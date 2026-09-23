@@ -299,6 +299,7 @@
       "memo_documents": "Datos de memos y notas",
       "quick_notes": "Datos de notas rápidas (TODO)",
       "user_profile": "Información del perfil de usuario",
+      "user_memories": "Recuerdos personales a largo plazo de chats normales y sus vectores de búsqueda.",
       "vocab_words": "Datos de vocabulario y palabras de aprendizaje",
       "knowledge_collections": "Definiciones de colecciones de conocimiento que agrupan documentos, notas y correo para limitar el contexto de RAG",
       "knowledge_email_threads": "Hilos de correo adjuntos a colecciones de conocimiento, incluidas referencias a imágenes incrustadas en el mensaje",
@@ -313,6 +314,7 @@
     }
   },
   "api": {},
+  "memory": {"title": "Memoria a largo plazo","description": "Guarda datos útiles de chats normales y usa solo los pertinentes a cada pregunta.","enabled": "Usar memoria a largo plazo","analyze": "Guardar recuerdos","add": "Añadir recuerdo","empty": "No hay recuerdos guardados.","loadFailed": "No se pudieron cargar los recuerdos.","actionFailed": "No se pudo completar la acción.","working": "Analizando...","analysisComplete": "Se actualizaron {{count}} recuerdos.","noNewConversations": "No hay chats nuevos para analizar.","moreConversations": "Quedan más chats. Vuelve a ejecutar para continuar.","saved": "Recuerdo guardado.","deleted": "Recuerdo eliminado.","deleteAll": "Eliminar todo","deleteAllConfirm": "¿Eliminar todos los recuerdos guardados?","type": "Tipo","category": "Tema","content": "Contenido","types": {"PROFILE": "Perfil","PREFERENCE": "Preferencia","PROJECT": "Proyecto en curso","LEARNING": "Aprendizaje","DECISION": "Decisión","WORKFLOW": "Flujo de trabajo","LONG_TERM_GOAL": "Objetivo a largo plazo"}},
   "profile": {
     "maxLength": "Longitud máxima del perfil",
     "writeProfile": "Escribir perfil", "maxLengthDescription": "Nivel de detalle que la IA conserva en tu perfil",

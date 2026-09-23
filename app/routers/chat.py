@@ -562,6 +562,11 @@ async def _query_response(req: QueryRequest):
     if project_memory and any(project_memory.get(key) for key in ("summary", "decisions", "action_items")):
         memory_context = json.dumps(project_memory_prompt_view(project_memory), ensure_ascii=False)
         system_prompt = f"{system_prompt}\n\n[Project memory]\n{memory_context}" if system_prompt else f"[Project memory]\n{memory_context}"
+    if not req.project_id and not req.minimal_prompt:
+        from services.user_memory import memory_context as build_user_memory_context
+        personal_memory = await build_user_memory_context(clean_question)
+        if personal_memory:
+            system_prompt = f"{system_prompt}\n\n{personal_memory}" if system_prompt else personal_memory
     request_folder_paths = await _get_request_folder_paths(req.folder_path, req.project_id)
     project_folder_context = await _build_project_folder_context(request_folder_paths)
     if project_folder_context:
@@ -905,6 +910,11 @@ async def query_stream(req: QueryRequest):
                 if project_memory and any(project_memory.get(key) for key in ("summary", "decisions", "action_items")):
                     memory_context = json.dumps(project_memory_prompt_view(project_memory), ensure_ascii=False)
                     system_prompt = f"{system_prompt}\n\n[Project memory]\n{memory_context}" if system_prompt else f"[Project memory]\n{memory_context}"
+                if not req.project_id and not req.minimal_prompt:
+                    from services.user_memory import memory_context as build_user_memory_context
+                    personal_memory = await build_user_memory_context(clean_question)
+                    if personal_memory:
+                        system_prompt = f"{system_prompt}\n\n{personal_memory}" if system_prompt else personal_memory
                 request_folder_paths = await _get_request_folder_paths(req.folder_path, req.project_id)
                 project_folder_context = await _build_project_folder_context(request_folder_paths)
                 if project_folder_context:

@@ -589,6 +589,7 @@ from routers.google_workspace_browser import router as google_workspace_browser_
 trace_startup("import:routers.google_workspace_browser", "end")
 trace_startup("import:routers.remember", "begin")
 from routers.remember import router as remember_router
+from routers.user_memory import router as user_memory_router
 trace_startup("import:routers.remember", "end")
 trace_startup("import:routers.vocab", "begin")
 from routers.vocab import router as vocab_router
@@ -633,6 +634,7 @@ app.include_router(mcp_router, prefix="/api")
 app.include_router(google_workspace_browser_router, prefix="/api")
 app.include_router(microsoft_workspace_router, prefix="/api")
 app.include_router(remember_router, prefix="/api")
+app.include_router(user_memory_router, prefix="/api")
 app.include_router(vocab_router, prefix="/api")
 app.include_router(skills_router)
 app.include_router(notifications_router, prefix="/api")

@@ -299,6 +299,7 @@
       "memo_documents": "メモ・ノートデータ",
       "quick_notes": "クイックメモ（TODO）データ",
       "user_profile": "ユーザープロフィール情報",
+      "user_memories": "通常の会話から保存した個人の長期記憶と検索用ベクトルです。",
       "vocab_words": "単語帳・学習語彙データ",
       "knowledge_collections": "文書・メモ・メールをまとめてRAGのコンテキスト範囲を限定するナレッジコレクション定義",
       "knowledge_email_threads": "ナレッジコレクションに添付したメールスレッドと本文内インライン画像の参照",
@@ -313,6 +314,7 @@
     }
   },
   "api": {},
+  "memory": {"title": "長期記憶","description": "通常の会話から長く役立つ情報を保存し、関連する質問でのみ参照します。","enabled": "長期記憶を使用","analyze": "記憶を保存","add": "記憶を追加","empty": "保存された記憶はありません。","loadFailed": "記憶を読み込めませんでした。","actionFailed": "記憶の操作に失敗しました。","working": "分析中...","analysisComplete": "{{count}}件の記憶を更新しました。","noNewConversations": "分析する新しい通常会話はありません。","moreConversations": "残りの会話があります。もう一度実行してください。","saved": "記憶を保存しました。","deleted": "記憶を削除しました。","deleteAll": "すべて削除","deleteAllConfirm": "保存された記憶をすべて削除しますか？","type": "種類","category": "トピック","content": "内容","types": {"PROFILE": "プロフィール","PREFERENCE": "好み","PROJECT": "進行中の作業","LEARNING": "学習","DECISION": "決定","WORKFLOW": "作業方法","LONG_TERM_GOAL": "長期目標"}},
   "profile": {
     "maxLength": "プロフィールの最大文字数",
     "writeProfile": "自分で作成", "maxLengthDescription": "AIがプロフィールに保持する詳細度",
