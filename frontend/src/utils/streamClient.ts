@@ -17,7 +17,7 @@ export interface StreamHandlers {
     onReset?: (data: {content?: string}) => void;
     onTool?: (data: { phase?: string; name?: string; args?: Record<string, unknown>; round?: number; result?: string; approval_id?: string; risk?: string; conversation_id?: string; project_id?: string }) => void;
     onIndexProgress?: (data: { source_name?: string; done?: number; total?: number }) => void;
-    onDone?: (data: { conv_id?: string; answer?: string; stats?: Record<string, number | null>; truncated?: boolean; code_changes?: import('../types').CodeChanges; conversation_title?: string }) => void;
+    onDone?: (data: { conv_id?: string; answer?: string; stats?: Record<string, number | null>; truncated?: boolean; code_changes?: import('../types').CodeChanges; memory_updates?: import('../types').MemoryUpdate[]; conversation_title?: string }) => void;
     onError?: (error: { code?: string; model?: string; message?: string }) => void;
 }
 

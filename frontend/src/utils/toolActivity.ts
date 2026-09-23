@@ -272,6 +272,8 @@ export function getToolActivityLabel(
         browser_inspect: 'browserInspecting', browser_type: 'browserTyping',
         browser_click: 'browserClicking', browser_scroll: 'browserScrolling',
         browser_wait_for_user: 'waitingBrowserUser',
+        user_memory_list: 'memoryListing', user_memory_save: 'memorySaving',
+        user_memory_update: 'memoryUpdating', user_memory_delete: 'memoryDeleting',
     };
     if (!server && tool === 'search_files') {
         return t('toolActivity.serviceAction', {
@@ -316,6 +318,11 @@ export function getToolActivityDisplayLabel(
     }
     if (phase === 'completed') {
         const tool = name ? splitToolName(name).tool : '';
+        const memoryCompletionKeys: Record<string, string> = {
+            user_memory_list: 'memoryListCompleted', user_memory_save: 'memorySaveCompleted',
+            user_memory_update: 'memoryUpdateCompleted', user_memory_delete: 'memoryDeleteCompleted',
+        };
+        if (memoryCompletionKeys[tool]) return t(`toolActivity.${memoryCompletionKeys[tool]}`);
         if (['code_read_file', 'code_read_files'].includes(tool)) return t('toolActivity.readCompleted');
         if (['code_grep_search', 'code_find_files', 'code_list_directory'].includes(tool)) return t('toolActivity.searchCompleted');
         if (['code_edit_file', 'code_apply_patch', 'code_create_file', 'code_move_file', 'code_delete_file'].includes(tool)) {

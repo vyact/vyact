@@ -567,6 +567,10 @@ async def _query_response(req: QueryRequest):
         personal_memory = await build_user_memory_context(clean_question)
         if personal_memory:
             system_prompt = f"{system_prompt}\n\n{personal_memory}" if system_prompt else personal_memory
+        if req.use_tools:
+            from services.user_memory_tools import AUTO_MEMORY_INSTRUCTION, user_memory_tools_available
+            if await user_memory_tools_available():
+                system_prompt = f"{system_prompt}\n\n{AUTO_MEMORY_INSTRUCTION}" if system_prompt else AUTO_MEMORY_INSTRUCTION
     request_folder_paths = await _get_request_folder_paths(req.folder_path, req.project_id)
     project_folder_context = await _build_project_folder_context(request_folder_paths)
     if project_folder_context:
@@ -840,6 +844,21 @@ def _tool_result_activity_presentation(result: object, arguments: dict) -> dict:
     }
 
 
+def _saved_memory_from_tool_result(name: str, result: object) -> dict | None:
+    if name not in {"user_memory_save", "user_memory_update"} or not isinstance(result, str):
+        return None
+    try:
+        payload = json.loads(result)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(payload, dict) or payload.get("ok") is not True or payload.get("unchanged"):
+        return None
+    memory = payload.get("memory")
+    if not isinstance(memory, dict) or not isinstance(memory.get("content"), str):
+        return None
+    return {key: memory.get(key, "") for key in ("id", "memory_type", "category", "content")}
+
+
 @router.post("/query/stream")
 async def query_stream(req: QueryRequest):
     """채팅 토큰 SSE 스트리밍 엔드포인트.
@@ -915,6 +934,10 @@ async def query_stream(req: QueryRequest):
                     personal_memory = await build_user_memory_context(clean_question)
                     if personal_memory:
                         system_prompt = f"{system_prompt}\n\n{personal_memory}" if system_prompt else personal_memory
+                    if req.use_tools:
+                        from services.user_memory_tools import AUTO_MEMORY_INSTRUCTION, user_memory_tools_available
+                        if await user_memory_tools_available():
+                            system_prompt = f"{system_prompt}\n\n{AUTO_MEMORY_INSTRUCTION}" if system_prompt else AUTO_MEMORY_INSTRUCTION
                 request_folder_paths = await _get_request_folder_paths(req.folder_path, req.project_id)
                 project_folder_context = await _build_project_folder_context(request_folder_paths)
                 if project_folder_context:
@@ -1075,6 +1098,7 @@ async def query_stream(req: QueryRequest):
                 from services.conv_summary import HiddenMetadataStreamFilter
                 metadata_stream_filter = HiddenMetadataStreamFilter()
                 _tool_messages: list[dict] = []  # tool call/result 메시지 수집
+                memory_updates: list[dict] = []
                 _activity_log: list[dict] = []
                 visible_emitted = ""
                 project_tool_first = bool(request_folder_paths)
@@ -1150,6 +1174,18 @@ async def query_stream(req: QueryRequest):
                                 "tool_calls": [{"name": ev["name"], "args": ev.get("args", {})}],
                             })
                         elif ev.get("phase") == "end" and ev.get("name") and ev.get("result") is not None:
+                            saved_memory = _saved_memory_from_tool_result(ev["name"], ev["result"])
+                            if saved_memory:
+                                memory_updates = [item for item in memory_updates if item["id"] != saved_memory["id"]]
+                                memory_updates.append(saved_memory)
+                            elif ev["name"] == "user_memory_delete":
+                                try:
+                                    delete_result = json.loads(ev["result"])
+                                except (TypeError, json.JSONDecodeError):
+                                    delete_result = {}
+                                if delete_result.get("ok") is True:
+                                    memory_updates = [item for item in memory_updates
+                                                      if item["id"] != delete_result.get("deleted_id")]
                             # tool 결과가 너무 크면 히스토리 저장용으로 잘라냄
                             _result = ev["result"]
                             if len(_result) > 8000:
@@ -1212,6 +1248,8 @@ async def query_stream(req: QueryRequest):
                     truncated=response_truncated,
                     error_code=assistant_error_code,
                 )
+                if memory_updates:
+                    assistant_msg["memory_updates"] = memory_updates
 
                 # 여기까진 전부 순수 계산(빠름). ES 저장(save_conversation의 refresh=True 등)과
                 # 첨부파일 임베딩 인덱싱은 실제 I/O라 응답을 막지는 않는다. 단, 브라우저가 done을
@@ -1257,6 +1295,7 @@ async def query_stream(req: QueryRequest):
 
                 yield _sse("done", {"conv_id": conv_id, "answer": answer, "stats": gen_stats,
                                     "truncated": response_truncated, "code_changes": code_changes,
+                                    "memory_updates": memory_updates,
                                     "conversation_title": conversation_title if not req.messages else None})
                 _saved = True
                 return

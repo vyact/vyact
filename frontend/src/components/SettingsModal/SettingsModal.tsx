@@ -85,7 +85,7 @@ interface SettingsModalProps {
     initialMcpServerId?: string;
 }
 
-type Tab = 'backup' | 'general' | 'runtime' | 'apiServer' | 'google' | 'microsoft' | 'api' | 'externalData' | 'plugins' | 'skills' | 'profile';
+type Tab = 'backup' | 'general' | 'runtime' | 'apiServer' | 'google' | 'microsoft' | 'api' | 'externalData' | 'plugins' | 'skills' | 'profile' | 'memory';
 
 type RuntimeSettings = Record<string, number | null>;
 const DEFAULT_SETTINGS_TAB: Tab = 'general';
@@ -998,6 +998,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                         {([
                             {key: 'general' as Tab, icon: '⚙️', label: t('tabs.general')},
                             {key: 'profile' as Tab, icon: '👤', label: t('tabs.profile')},
+                            {key: 'memory' as Tab, icon: '🗃️', label: t('tabs.memory')},
                             {key: 'runtime' as Tab, icon: '🧠', label: t('tabs.runtime')},
                             {key: 'api' as Tab, icon: '🔑', label: t('tabs.api')},
                             {key: 'skills' as Tab, icon: '🧩', label: t('tabs.skills')},
@@ -1697,8 +1698,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                             </div>
                         )}
 
+                        {tab === 'memory' && (
+                            <div className="settings-general settings-general--memory">
+                                <UserMemorySection/>
+                            </div>
+                        )}
+
                         {tab === 'profile' && (
-                            <div className={`settings-general settings-general--profile${profileMode === 'view' ? ' has-user-memory' : ''}`}>
+                            <div className="settings-general">
                                 <div className="settings-profile-name-row">
                                     <label className="settings-profile-name-label" htmlFor={`${toggleIdPrefix}-nickname`}>
                                         {t('profile.nickname')}
@@ -1777,7 +1784,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({isOpen, onClose, initialTa
                                                 {t('profile.aiAnalyze')}
                                             </button>
                                         </div>
-                                        <UserMemorySection/>
                                     </>
                                 )}
                                 {profileMode === 'edit' && (

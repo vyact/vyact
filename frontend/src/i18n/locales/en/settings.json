@@ -47,7 +47,8 @@
     "externalData": "External data",
     "plugins": "Plugins",
     "skills": "Skills",
-    "profile": "Profile settings"
+    "profile": "Profile settings",
+    "memory": "Long-term memory"
   },
   "apiServer": {"title":"Local API Server","description":"Use the current Vyact local model from external apps such as OpenClaw through an OpenAI-compatible API.","checking":"Checking server status","online":"Available","offline":"Unavailable","onlineDescription":"The local model server is ready to receive requests.","offlineDescription":"Select and run a Vyact local model to activate the API server.","endpoint":"Endpoint","modelId":"Model ID","modelUnavailable":"No running model","copy":"Copy","copied":"Copied to clipboard.","copyFailed":"Could not copy.","localOnly":"This address is accessible only from this computer. Vyact must be running with a local model active.","openClawTitle":"OpenClaw configuration","openClawDescription":"Use the following as a custom OpenAI-compatible provider in OpenClaw.","copyConfig":"Copy OpenClaw configuration"},
   "apiServerCurl": {"title":"Test with curl","description":"Run this command in a terminal to verify that the current model responds.","prompt":"Reply with connection successful in one sentence.","copy":"Copy curl command"},
@@ -340,7 +341,7 @@
     }
   },
   "api": {},
-  "memory": {"title": "Long-term memory","description": "Save lasting details from ordinary chats and use only those relevant to a question.","enabled": "Use long-term memory","analyze": "Save memories","add": "Add memory","empty": "No memories saved.","loadFailed": "Could not load memories.","actionFailed": "Could not complete the memory action.","working": "Analyzing...","analysisComplete": "Updated {{count}} memories.","noNewConversations": "No new ordinary chats to analyze.","moreConversations": "More chats remain. Run again to continue.","saved": "Memory saved.","deleted": "Memory deleted.","deleteAll": "Delete all","deleteAllConfirm": "Delete all saved memories?","type": "Type","category": "Topic","content": "Content","types": {"PROFILE": "Profile","PREFERENCE": "Preference","PROJECT": "Ongoing project","LEARNING": "Learning","DECISION": "Decision","WORKFLOW": "Workflow","LONG_TERM_GOAL": "Long-term goal"}},
+  "memory": {"title": "Long-term memory","description": "Save lasting details from ordinary chats and use only those relevant to a question.","enabled": "Use long-term memory","analyze": "Analyze past chats","empty": "No memories saved.","loadFailed": "Could not load memories.","actionFailed": "Could not complete the memory action.","working": "Analyzing...","analysisComplete": "Updated {{count}} memories.","noNewConversations": "No new ordinary chats to analyze.","saved": "Memory saved.","deleted": "Memory deleted.","deleteAll": "Delete all","deleteAllConfirm": "Delete all saved memories?","type": "Type","category": "Topic","content": "Content","types": {"PROFILE": "Profile","PREFERENCE": "Preference","PROJECT": "Ongoing project","LEARNING": "Learning","DECISION": "Decision","WORKFLOW": "Workflow","LONG_TERM_GOAL": "Long-term goal"},"preparing": "Finding chats to analyze...","progress": "Analyzed {{processed}} of {{total}} chats","currentConversation": "Analyzing: {{title}}","alreadyRunning": "Memory analysis is already running.","disabledError": "Turn on long-term memory before analyzing."},
   "profile": {
     "maxLength": "Maximum profile length",
     "writeProfile": "Write profile",

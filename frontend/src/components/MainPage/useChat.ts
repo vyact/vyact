@@ -768,6 +768,7 @@ export function useChat(deps: UseChatDeps) {
                                     stats: data.stats || m.stats,
                                     truncated: data.truncated || undefined,
                                     codeChanges: data.code_changes || m.codeChanges,
+                                    memoryUpdates: data.memory_updates?.length ? data.memory_updates : undefined,
                                 };
                             }));
                             if (showVoiceChatModalRef.current && data.answer)

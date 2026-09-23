@@ -1,39 +1,64 @@
 .user-memory-section {
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    margin-top: 28px;
-    padding: 18px;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    background: var(--surface);
+    gap: 0;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
 }
 
-.user-memory-heading, .user-memory-actions, .user-memory-item-header,
-.user-memory-item-actions, .user-memory-delete-all {
+.settings-general.settings-general--memory {
+    flex: 1;
+    min-height: 0;
+}
+
+.user-memory-heading, .user-memory-toolbar, .user-memory-item-top, .user-memory-item-header,
+.user-memory-item-actions {
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
-.user-memory-heading { justify-content: space-between; }
+.user-memory-heading { justify-content: space-between; gap: 16px; padding: 2px 0 14px; }
+.user-memory-heading-copy { min-width: 0; }
 .user-memory-heading h3 { margin: 0 0 5px; font-size: 16px; }
-.user-memory-heading p, .user-memory-list > p { margin: 0; color: var(--muted); font-size: 13px; }
-.user-memory-actions, .user-memory-item-actions, .user-memory-delete-all { justify-content: flex-end; }
-.user-memory-list { display: grid; gap: 8px; max-height: 340px; overflow: auto; }
-.user-memory-item { padding: 12px; border: 1px solid var(--border); border-radius: 10px; }
-.user-memory-item-header { color: var(--muted); font-size: 12px; }
-.user-memory-item p { margin: 8px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
-.user-memory-item-actions button, .user-memory-delete-all button {
-    border: 0; background: none; color: var(--accent); cursor: pointer; font: inherit;
+.user-memory-heading p, .user-memory-list > p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.user-memory-toolbar { justify-content: flex-end; gap: 8px; margin-bottom: 14px; }
+.user-memory-toolbar button { box-sizing: border-box; height: 36px; white-space: nowrap; }
+.user-memory-toolbar .remember-start-btn { padding: 0 20px; }
+.user-memory-delete-all-button { padding: 0 14px; border: 1px solid var(--del-border); border-radius: 8px; background: color-mix(in srgb, var(--action-delete) 8%, transparent); color: var(--del-fg-soft); cursor: pointer; font: inherit; font-size: var(--modal-btn); font-weight: 600; }
+.user-memory-delete-all-button:hover:not(:disabled) { border-color: var(--del-border-hover); background: color-mix(in srgb, var(--action-delete) 18%, transparent); color: var(--del-fg); }
+.user-memory-delete-all-button:disabled { opacity: .5; cursor: default; }
+.user-memory-item-actions { justify-content: flex-end; }
+.user-memory-list { flex: 1; min-width: 0; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 1px 4px 1px 1px; }
+.user-memory-list > p { padding: 14px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); }
+.user-memory-list.is-empty { display: grid; place-items: center; padding: 18px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.user-memory-list.is-empty > p { padding: 0; border: 0; background: transparent; text-align: center; }
+.user-memory-progress { padding: 12px; border: 1px solid var(--border); border-radius: 10px; }
+.user-memory-progress .remember-cur-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-memory-item { flex: 0 0 auto; padding: 11px 14px 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); }
+.user-memory-item-top { justify-content: space-between; min-width: 0; }
+.user-memory-item-header { min-width: 0; gap: 8px; color: var(--muted); font-size: 12px; }
+.user-memory-item-header span:first-child { flex: 0 0 auto; padding: 3px 7px; border-radius: 5px; background: var(--surface2); font-weight: 600; color: var(--text-secondary); }
+.user-memory-item-header span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-memory-item p { margin: 7px 0 0; color: var(--text); font-size: 13px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.user-memory-item-actions { gap: 6px; }
+.user-memory-item-actions .user-memory-icon-button {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; padding: 0; border: 0; border-radius: 7px;
+    background: transparent; color: var(--muted); cursor: pointer;
 }
-.user-memory-item-actions button:last-child, .user-memory-delete-all button:last-child { color: var(--danger); }
-.user-memory-item-actions button:disabled, .user-memory-delete-all button:disabled { opacity: .5; cursor: default; }
-.user-memory-editor { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--border); border-radius: 10px; }
-.user-memory-editor label, .user-memory-type-field { display: grid; gap: 6px; color: var(--muted); font-size: 13px; }
-.user-memory-editor input, .user-memory-editor textarea {
-    box-sizing: border-box; width: 100%; padding: 9px 10px; border: 1px solid var(--border);
-    border-radius: 8px; background: var(--surface2); color: var(--text); font: inherit;
+.user-memory-item-actions .user-memory-icon-button:hover:not(:disabled) { background: var(--surface2); color: var(--accent); }
+.user-memory-item-actions .user-memory-icon-button.is-danger:hover:not(:disabled) { color: var(--del-fg); }
+.user-memory-icon-button:focus-visible, .user-memory-delete-all-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.user-memory-item-actions button:disabled { opacity: .5; cursor: default; }
+.user-memory-delete-dialog .confirm-modal-btn:not(.danger):hover:not(:disabled) {
+    background: var(--surface2);
+    border-color: var(--border);
+    color: var(--text);
 }
-.user-memory-editor textarea { min-height: 85px; resize: vertical; }
-.user-memory-delete-all { flex-wrap: wrap; color: var(--muted); font-size: 13px; }
+@media (max-width: 640px) {
+    .user-memory-heading { align-items: flex-start; flex-wrap: wrap; }
+    .user-memory-toolbar { justify-content: flex-start; flex-wrap: wrap; }
+}

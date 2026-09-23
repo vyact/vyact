@@ -33,6 +33,7 @@ from .tools import (
 from services.runtime_settings import get_runtime_settings
 from services.tool_approval import await_tool_approval
 from services.tool_messages import get_tool_language, tool_error, tool_message
+from services.user_memory_tools import MEMORY_WRITE_INSTRUCTION, MEMORY_WRITE_TOOLS, memory_write_stage
 
 
 _REPEATED_TOOL_CALL_RESULT = (
@@ -294,6 +295,7 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
     usage(dict)를 넘기면 최종 청크의 토큰 사용량(prompt_tokens/completion_tokens)을
     그 안에 채워 넣는다 (호출자가 스트리밍 종료 후 읽어간다).
     """
+    memory_write_stage.set(False)
     provider_config = await get_provider_config()
     temperature = provider_config.get("temperature", get_runtime_settings()["llm_temperature"])
     image_urls = load_image_data_urls(attachments)
@@ -340,9 +342,17 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
     consecutive_tool_failures = 0
     tool_failures_exhausted = False
     executed_tool_calls: set[str] = set()
+    memory_instruction_added = False
     if unified:
         oa_tools = to_openai_tools(unified)
         for _round in range(_tool_call_max_rounds(provider_config)):
+            if memory_write_stage.get():
+                if not memory_instruction_added:
+                    messages[0]["content"] += MEMORY_WRITE_INSTRUCTION
+                    memory_instruction_added = True
+                unified, _ = await _get_unified_tools(use_tools)
+                allowed_tool_names = frozenset(tool["function"]["name"] for tool in unified)
+                oa_tools = to_openai_tools(unified)
             body = {"model": model, "temperature": temperature,
                     "stream": True, "messages": messages, "tools": oa_tools}
             if provider_config.get("is_local"):
@@ -418,7 +428,7 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
             for tc in tool_calls:
                 fn = tc.get("function", {}) or {}
                 name = fn.get("name", "")
-                if name not in allowed_tool_names:
+                if name not in allowed_tool_names or (memory_write_stage.get() and name not in MEMORY_WRITE_TOOLS):
                     messages.append({
                         "role": "tool", "tool_call_id": tc.get("id", ""),
                         "content": await _unoffered_tool_result(name),
@@ -596,6 +606,7 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
     usage(dict)를 넘기면 매 청크의 usageMetadata(누적치)로 계속 덮어써서,
     스트림이 끝났을 때 최종 토큰 사용량이 남도록 한다.
     """
+    memory_write_stage.set(False)
     provider_config = await get_provider_config()
     temperature = provider_config.get("temperature", get_runtime_settings()["llm_temperature"])
     max_output_tokens = provider_config.get("max_output_tokens", 2048)
@@ -631,9 +642,17 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
     tool_failures_exhausted = False
     tool_round_limit_reached = False
     executed_tool_calls: set[str] = set()
+    memory_instruction_added = False
     if unified:
         gm_tools = to_gemini_tools(unified)
         for _round in range(_tool_call_max_rounds(provider_config)):
+            if memory_write_stage.get():
+                if not memory_instruction_added:
+                    sys_text += MEMORY_WRITE_INSTRUCTION
+                    memory_instruction_added = True
+                unified, _ = await _get_unified_tools(use_tools)
+                allowed_tool_names = frozenset(tool["function"]["name"] for tool in unified)
+                gm_tools = to_gemini_tools(unified)
             body = {
                 "systemInstruction": {"parts": [{"text": sys_text}]},
                 "contents": contents,
@@ -659,7 +678,7 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
             resp_parts = []
             for fc in fcalls:
                 name = fc.get("name", "")
-                if name not in allowed_tool_names:
+                if name not in allowed_tool_names or (memory_write_stage.get() and name not in MEMORY_WRITE_TOOLS):
                     resp_parts.append({"functionResponse": {
                         "name": name, "response": {"result": await _unoffered_tool_result(name)},
                     }})
@@ -778,6 +797,7 @@ async def claude_stream(client, model, api_key, system_message, user_prompt,
     usage(dict)를 넘기면 message_start의 input_tokens, message_delta의
     output_tokens(누적치)를 채워 넣는다.
     """
+    memory_write_stage.set(False)
     runtime = get_runtime_settings()
     provider_config = await get_provider_config()
     temperature = provider_config.get("temperature", runtime["llm_temperature"])
@@ -810,9 +830,17 @@ async def claude_stream(client, model, api_key, system_message, user_prompt,
     tool_failures_exhausted = False
     tool_round_limit_reached = False
     executed_tool_calls: set[str] = set()
+    memory_instruction_added = False
     if unified:
         cl_tools = to_claude_tools(unified)
         for _round in range(_tool_call_max_rounds(provider_config)):
+            if memory_write_stage.get():
+                if not memory_instruction_added:
+                    system_text += MEMORY_WRITE_INSTRUCTION
+                    memory_instruction_added = True
+                unified, _ = await _get_unified_tools(use_tools)
+                allowed_tool_names = frozenset(tool["function"]["name"] for tool in unified)
+                cl_tools = to_claude_tools(unified)
             body = {"model": model, "max_tokens": max_tokens, "temperature": temperature,
                     "system": system_text, "messages": messages, "tools": cl_tools}
             log_llm_call(call_reason, "claude", model, streaming=False, reasoning=reasoning,
@@ -831,7 +859,7 @@ async def claude_stream(client, model, api_key, system_message, user_prompt,
             result_blocks = []
             for tu in tool_uses:
                 name = tu.get("name", "")
-                if name not in allowed_tool_names:
+                if name not in allowed_tool_names or (memory_write_stage.get() and name not in MEMORY_WRITE_TOOLS):
                     result_blocks.append({
                         "type": "tool_result", "tool_use_id": tu.get("id", ""),
                         "content": await _unoffered_tool_result(name), "is_error": True,

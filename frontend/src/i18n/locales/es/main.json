@@ -1037,6 +1037,8 @@
     }
   },
   "toolActivity": {
+    "memoryListing": "Consultando recuerdos", "memorySaving": "Guardando un recuerdo", "memoryUpdating": "Actualizando un recuerdo", "memoryDeleting": "Eliminando un recuerdo",
+    "memoryListCompleted": "Recuerdos consultados", "memorySaveCompleted": "Recuerdo guardado", "memoryUpdateCompleted": "Recuerdo actualizado", "memoryUpdated": "Memoria actualizada", "memoryDeleteCompleted": "Recuerdo eliminado",
     "queued": "Esperando a que termine otra respuesta…",
     "ariaLabel": "Actividad de herramientas",
     "working": "Trabajando…",

@@ -460,7 +460,16 @@ class MCPManager:
                         "parameters": schema,
                     },
                 })
+        from services.user_memory_tools import (
+            MEMORY_WRITE_TOOLS, TOOL_NAMES, memory_write_stage, user_memory_tools_available,
+        )
+        if memory_write_stage.get():
+            # After the memory list has been returned, offer only memory writes.
+            out = []
+        memory_tools_available = None
         for name, spec in self._internal_tools.items():
+            if memory_write_stage.get() and name not in MEMORY_WRITE_TOOLS:
+                continue
             stype = spec.get("server_type")
             if _client_scope.get() and (stype is None or stype not in (selected_server_types or frozenset())):
                 continue
@@ -475,6 +484,13 @@ class MCPManager:
                 continue
             if stype is not None and stype not in enabled_types:
                 continue
+            if name in TOOL_NAMES:
+                if not memory_write_stage.get() and name != "user_memory_list":
+                    continue
+                if memory_tools_available is None:
+                    memory_tools_available = await user_memory_tools_available()
+                if not memory_tools_available:
+                    continue
             # google_workspace: 인증 안 됐으면 tool 노출 안 함
             if stype == "google_workspace" and not self._google_authenticated:
                 continue

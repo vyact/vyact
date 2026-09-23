@@ -525,6 +525,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({selectedModel = '',
                                 requestStartedAt={msg.id === streamingMessageId ? responseStartedAt : null}
                                 toolStatus={msg.toolStatus}
                                 activityLog={msg.activityLog}
+                                memoryUpdates={msg.memoryUpdates}
                                 progressMessages={msg.progressMessages}
                                 codeChanges={msg.codeChanges}
                                 stats={msg.role === 'user' ? messages[idx + 1]?.stats : msg.stats}

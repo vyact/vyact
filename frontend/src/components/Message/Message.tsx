@@ -3,7 +3,7 @@ import {formatLocalizedNumber} from '../../utils/localizedNumber';
 import {useAutoReadMessage} from '../../services/tts/autoReadState';
 import React, {useMemo, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {Braces, CircleAlert, RotateCcw, CircleStop} from 'lucide-react';
+import {BookOpenCheck, Braces, ChevronDown, CircleAlert, RotateCcw, CircleStop} from 'lucide-react';
 import 'katex/dist/katex.min.css';
 import {escapeHtml, nl2br, unwrapPastedText} from '../../utils/helpers';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
@@ -77,7 +77,7 @@ const Message: React.FC<MessageProps> = ({
                                              messageId, role, content, timestamp, sources, model, attachments,
                                              isError, errorTitle, onRetry, retryDisabled = false, isGeneratedImage, articleSources,
                                              pdfFile, pdfParams, onPdfEdit, injectedContext, onShowInjectedContext, onOpenMemo, onOpenQuickMemo,
-                                             isStreaming = false, conversationId, requestStartedAt, toolStatus, activityLog, progressMessages, stats,
+                                             isStreaming = false, conversationId, requestStartedAt, toolStatus, activityLog, memoryUpdates, progressMessages, stats,
                                              truncated,
                                              codeChanges,
                                          }) => {
@@ -118,6 +118,7 @@ const Message: React.FC<MessageProps> = ({
         [role, normalizedContent]
     );
     const [copied, setCopied] = React.useState(false);
+    const [memoryDetailsOpen, setMemoryDetailsOpen] = React.useState(false);
     const [speaking, setSpeaking] = React.useState(false);
     const [requestElapsedSeconds, setRequestElapsedSeconds] = React.useState(0);
     const speakingRef = useRef(false);
@@ -410,6 +411,23 @@ const Message: React.FC<MessageProps> = ({
                                         />
                                     )
                                 ))}
+                            </div>
+                        )}
+                        {role === 'assistant' && !!memoryUpdates?.length && (
+                            <div className="msg-memory-update">
+                                <button type="button" className="msg-memory-update-toggle"
+                                        aria-expanded={memoryDetailsOpen}
+                                        onClick={() => setMemoryDetailsOpen(open => !open)}>
+                                    <BookOpenCheck size={17} aria-hidden="true"/>
+                                    <span>{t('toolActivity.memoryUpdated')}</span>
+                                    <ChevronDown size={15} aria-hidden="true"/>
+                                </button>
+                                {memoryDetailsOpen && <div className="msg-memory-update-details">
+                                    {memoryUpdates.map((memory, index) => <p key={`${memory.id}-${index}`}>
+                                        {memory.category && <strong>{memory.category}</strong>}
+                                        <span>{memory.content}</span>
+                                    </p>)}
+                                </div>}
                             </div>
                         )}
                         {role === 'assistant' && hasResponseProcess && (

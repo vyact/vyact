@@ -5,6 +5,8 @@ from unittest.mock import AsyncMock, patch
 from services.code_tools import current_code_folder
 from services.mcp_config import build_servers_config
 from services.mcp_client import MCPManager, _Server, _cfg_key
+from services.tool_approval import ApprovalContext, current_approval_context
+from services.user_memory_tools import _list_memories, memory_write_stage
 from mcp.types import Tool, ToolAnnotations
 
 
@@ -17,6 +19,51 @@ def _tool(name: str):
 
 
 class McpToolFilteringTests(unittest.IsolatedAsyncioTestCase):
+    async def test_personal_memory_tools_are_hidden_in_projects_or_when_disabled(self):
+        manager = MCPManager()
+        manager.register_internal_tool("user_memory_list", "memory", {}, _handler)
+        manager.register_internal_tool("user_memory_save", "memory", {}, _handler)
+        manager.register_internal_tool("user_memory_update", "memory", {}, _handler)
+        manager.register_internal_tool("unrelated_tool", "other", {}, _handler)
+        servers = AsyncMock(return_value=[])
+        memory_state = AsyncMock(return_value={"enabled": True})
+        with patch("services.mcp_config.list_servers", servers), \
+                patch("services.user_memory_tools.get_memory_state", memory_state):
+            self.assertEqual([tool["function"]["name"] for tool in await manager.get_tools()],
+                             ["user_memory_list", "unrelated_tool"])
+            stage_token = memory_write_stage.set(True)
+            try:
+                self.assertEqual([tool["function"]["name"] for tool in await manager.get_tools()],
+                                 ["user_memory_save", "user_memory_update"])
+            finally:
+                memory_write_stage.reset(stage_token)
+            token = current_approval_context.set(ApprovalContext(project_id="project"))
+            try:
+                self.assertEqual([tool["function"]["name"] for tool in await manager.get_tools()],
+                                 ["unrelated_tool"])
+            finally:
+                current_approval_context.reset(token)
+            memory_state.return_value = {"enabled": False}
+            self.assertEqual([tool["function"]["name"] for tool in await manager.get_tools()],
+                             ["unrelated_tool"])
+
+    async def test_memory_list_execution_opens_write_stage_in_same_request(self):
+        manager = MCPManager()
+        manager.register_internal_tool("user_memory_list", "memory", {}, _list_memories)
+        manager.register_internal_tool("user_memory_save", "memory", {}, _handler)
+        manager.register_internal_tool("unrelated_tool", "other", {}, _handler)
+        with patch("services.mcp_config.list_servers", AsyncMock(return_value=[])), \
+                patch("services.user_memory_tools.get_memory_state", AsyncMock(return_value={"enabled": True})), \
+                patch("services.user_memory_tools.list_memories", AsyncMock(return_value=[{"id": "one"}])):
+            token = memory_write_stage.set(False)
+            try:
+                result = await manager.call_tool("user_memory_list", {})
+                self.assertIn('"id": "one"', result)
+                self.assertEqual([tool["function"]["name"] for tool in await manager.get_tools()],
+                                 ["user_memory_save"])
+            finally:
+                memory_write_stage.reset(token)
+
     def test_approval_metadata_comes_from_matching_server_and_explicit_hints(self):
         manager = MCPManager()
         manager._workers["Docs"] = SimpleNamespace(

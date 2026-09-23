@@ -47,6 +47,7 @@
     "externalData": "外部数据",
     "skills": "技能",
     "profile": "个人资料设置",
+    "memory": "长期记忆",
     "plugins": "Plugins"
   },
   "apiServer": {"title":"本地 API 服务器","description":"通过 OpenAI 兼容 API，在 OpenClaw 等外部应用中使用当前 Vyact 本地模型。","checking":"正在检查服务器状态","online":"可用","offline":"不可用","onlineDescription":"本地模型服务器已可接收请求。","offlineDescription":"选择并运行 Vyact 本地模型即可启用 API 服务器。","endpoint":"端点","modelId":"模型 ID","modelUnavailable":"没有正在运行的模型","copy":"复制","copied":"已复制到剪贴板。","copyFailed":"无法复制。","localOnly":"此地址只能从本机访问。Vyact 必须保持运行并启用本地模型。","openClawTitle":"OpenClaw 配置","openClawDescription":"请将以下内容用作 OpenClaw 的自定义 OpenAI 兼容提供商设置。","copyConfig":"复制 OpenClaw 配置"},
@@ -314,7 +315,7 @@
     }
   },
   "api": {},
-  "memory": {"title": "长期记忆","description": "保存普通对话中长期有用的信息，仅在相关问题中使用。","enabled": "使用长期记忆","analyze": "保存记忆","add": "添加记忆","empty": "尚无已保存的记忆。","loadFailed": "无法加载记忆。","actionFailed": "无法完成记忆操作。","working": "分析中...","analysisComplete": "已更新 {{count}} 条记忆。","noNewConversations": "没有新的普通对话可供分析。","moreConversations": "还有更多对话，请再次运行以继续。","saved": "记忆已保存。","deleted": "记忆已删除。","deleteAll": "全部删除","deleteAllConfirm": "删除所有已保存的记忆？","type": "类型","category": "主题","content": "内容","types": {"PROFILE": "个人资料","PREFERENCE": "偏好","PROJECT": "进行中的项目","LEARNING": "学习","DECISION": "决定","WORKFLOW": "工作流程","LONG_TERM_GOAL": "长期目标"}},
+  "memory": {"title": "长期记忆","description": "保存普通对话中长期有用的信息，仅在相关问题中使用。","enabled": "使用长期记忆","analyze": "分析以往对话","empty": "尚无已保存的记忆。","loadFailed": "无法加载记忆。","actionFailed": "无法完成记忆操作。","working": "分析中...","analysisComplete": "已更新 {{count}} 条记忆。","noNewConversations": "没有新的普通对话可供分析。","saved": "记忆已保存。","deleted": "记忆已删除。","deleteAll": "全部删除","deleteAllConfirm": "删除所有已保存的记忆？","type": "类型","category": "主题","content": "内容","types": {"PROFILE": "个人资料","PREFERENCE": "偏好","PROJECT": "进行中的项目","LEARNING": "学习","DECISION": "决定","WORKFLOW": "工作流程","LONG_TERM_GOAL": "长期目标"},"preparing": "正在查找待分析的对话...","progress": "已分析 {{processed}} / {{total}} 个对话","currentConversation": "正在分析：{{title}}","alreadyRunning": "记忆分析已在进行中。","disabledError": "请先开启长期记忆再分析。"},
   "profile": {
     "maxLength": "个人资料最大长度",
     "writeProfile": "手动编写", "maxLengthDescription": "AI在用户资料中保留的详细程度",

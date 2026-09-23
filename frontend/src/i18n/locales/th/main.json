@@ -1038,6 +1038,8 @@
     }
   },
   "toolActivity": {
+    "memoryListing": "กำลังตรวจสอบความจำระยะยาว", "memorySaving": "กำลังบันทึกความจำระยะยาว", "memoryUpdating": "กำลังแก้ไขความจำระยะยาว", "memoryDeleting": "กำลังลบความจำระยะยาว",
+    "memoryListCompleted": "ตรวจสอบความจำระยะยาวแล้ว", "memorySaveCompleted": "บันทึกความจำระยะยาวแล้ว", "memoryUpdateCompleted": "แก้ไขความจำระยะยาวแล้ว", "memoryUpdated": "อัปเดตความจำแล้ว", "memoryDeleteCompleted": "ลบความจำระยะยาวแล้ว",
     "queued": "กำลังรอให้คำตอบอื่นเสร็จสิ้น…",
     "ariaLabel": "กิจกรรมของเครื่องมือ",
     "working": "กำลังทำงาน…",

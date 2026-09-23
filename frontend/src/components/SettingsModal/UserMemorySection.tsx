@@ -1,20 +1,15 @@
 import {useEffect, useState} from 'react';
 import {useTranslation} from 'react-i18next';
+import {Trash2} from 'lucide-react';
+import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
 import ToggleSwitch from '../common/ToggleSwitch/ToggleSwitch';
-import CustomSelect from '../CustomSelect/CustomSelect';
 import {
-    createUserMemory, deleteAllUserMemories, deleteUserMemory, getUserMemories,
-    refreshUserMemories, setUserMemoryEnabled, updateUserMemory,
+    deleteAllUserMemories, deleteUserMemory, getUserMemories,
+    refreshUserMemories, setUserMemoryEnabled,
 } from '../../services/userMemory';
-import type {UserMemory, UserMemoryInput} from '../../services/userMemory';
+import type {UserMemory, UserMemoryProgress} from '../../services/userMemory';
 import './UserMemorySection.css';
-
-const MEMORY_TYPES = [
-    'PROFILE', 'PREFERENCE', 'PROJECT', 'LEARNING', 'DECISION', 'WORKFLOW', 'LONG_TERM_GOAL',
-] as const;
-
-const EMPTY_DRAFT: UserMemoryInput = {memory_type: 'PREFERENCE', category: '', content: ''};
 
 export default function UserMemorySection() {
     const {t} = useTranslation('settings');
@@ -22,8 +17,8 @@ export default function UserMemorySection() {
     const [enabled, setEnabled] = useState(true);
     const [loading, setLoading] = useState(true);
     const [busy, setBusy] = useState(false);
-    const [editingId, setEditingId] = useState<string | null>(null);
-    const [draft, setDraft] = useState<UserMemoryInput>(EMPTY_DRAFT);
+    const [analyzing, setAnalyzing] = useState(false);
+    const [analysisProgress, setAnalysisProgress] = useState<UserMemoryProgress | null>(null);
     const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
 
     useEffect(() => {
@@ -59,92 +54,91 @@ export default function UserMemorySection() {
         }
     };
 
-    const beginEdit = (memory?: UserMemory) => {
-        setEditingId(memory?.id ?? 'new');
-        setDraft(memory ? {
-            memory_type: memory.memory_type,
-            category: memory.category,
-            content: memory.content,
-        } : {...EMPTY_DRAFT});
+    const analyze = async () => {
+        if (busy) return;
+        setBusy(true);
+        setAnalyzing(true);
+        setAnalysisProgress({processed: 0, total: 0, title: ''});
+        try {
+            const result = await refreshUserMemories(setAnalysisProgress);
+            await reload();
+            toast.success(result.processed
+                ? t('memory.analysisComplete', {count: result.changed})
+                : t('memory.noNewConversations'));
+        } catch (error) {
+            const code = error instanceof Error ? error.message : '';
+            toast.error(t(code === 'busy' ? 'memory.alreadyRunning'
+                : code === 'disabled' ? 'memory.disabledError' : 'memory.actionFailed'));
+        } finally {
+            setBusy(false);
+            setAnalyzing(false);
+            setAnalysisProgress(null);
+        }
     };
-
-    const saveDraft = () => void run(async () => {
-        if (editingId === 'new') await createUserMemory(draft);
-        else if (editingId) await updateUserMemory(editingId, draft);
-        setEditingId(null);
-    }, 'memory.saved');
-
-    const analyze = () => void run(async () => {
-        const result = await refreshUserMemories();
-        toast.success(result.processed
-            ? t('memory.analysisComplete', {count: result.changed})
-            : t('memory.noNewConversations'));
-    });
 
     return <section className="user-memory-section" aria-label={t('memory.title')}>
         <div className="user-memory-heading">
-            <div>
+            <div className="user-memory-heading-copy">
                 <h3>{t('memory.title')}</h3>
                 <p>{t('memory.description')}</p>
             </div>
             <ToggleSwitch checked={enabled} disabled={busy || loading} label={t('memory.enabled')}
                           onChange={checked => void run(async () => { await setUserMemoryEnabled(checked); })}/>
         </div>
-        <div className="user-memory-actions">
-            <button type="button" className="remember-edit-btn" disabled={busy || loading}
-                    onClick={() => beginEdit()}>{t('memory.add')}</button>
+        <div className="user-memory-toolbar">
+            {memories.length > 0 && <button type="button" className="user-memory-delete-all-button"
+                                             disabled={busy || loading} onClick={() => setConfirmDeleteAll(true)}>
+                {t('memory.deleteAll')}
+            </button>}
             <button type="button" className="remember-start-btn" disabled={busy || loading || !enabled}
-                    onClick={analyze}>{busy ? t('memory.working') : t('memory.analyze')}</button>
+                    onClick={() => void analyze()}>{analyzing ? t('memory.working') : t('memory.analyze')}</button>
         </div>
-        {editingId && <div className="user-memory-editor">
-            <div className="user-memory-type-field"><span>{t('memory.type')}</span>
-                <CustomSelect value={draft.memory_type} disabled={busy}
-                              options={MEMORY_TYPES.map(type => ({value: type, label: t(`memory.types.${type}`)}))}
-                              onChange={value => setDraft({...draft, memory_type: value})}/>
+        {analyzing && analysisProgress && <div className="remember-progress user-memory-progress" aria-live="polite">
+            <div className="remember-status">
+                {analysisProgress.total > 0
+                    ? t('memory.progress', {processed: analysisProgress.processed, total: analysisProgress.total})
+                    : t('memory.preparing')}
             </div>
-            <label>{t('memory.category')}
-                <input value={draft.category} maxLength={80} disabled={busy}
-                       onChange={event => setDraft({...draft, category: event.target.value})}/>
-            </label>
-            <label>{t('memory.content')}
-                <textarea value={draft.content} maxLength={500} disabled={busy}
-                          onChange={event => setDraft({...draft, content: event.target.value})}/>
-            </label>
-            <div className="user-memory-item-actions">
-                <button type="button" className="remember-cancel-btn" disabled={busy}
-                        onClick={() => setEditingId(null)}>{t('common:cancel')}</button>
-                <button type="button" className="remember-start-btn" disabled={busy || !draft.content.trim()}
-                        onClick={saveDraft}>{t('common:save')}</button>
-            </div>
+            {analysisProgress.total > 0 && <div className="remember-bar-wrap" role="progressbar"
+                                                   aria-valuemin={0} aria-valuemax={analysisProgress.total}
+                                                   aria-valuenow={analysisProgress.processed}>
+                <div className="remember-bar" style={{width: `${Math.min(100, analysisProgress.processed / analysisProgress.total * 100)}%`}}/>
+            </div>}
+            {analysisProgress.title && <div className="remember-count remember-cur-title">
+                {t('memory.currentConversation', {title: analysisProgress.title})}
+            </div>}
+            <div className="remember-spinner"/>
         </div>}
-        <div className="user-memory-list">
+        <div className={`user-memory-list${!loading && memories.length === 0 ? ' is-empty' : ''}`}>
             {loading ? <p>{t('profile.checking')}</p> : memories.length === 0
                 ? <p>{t('memory.empty')}</p>
                 : memories.map(memory => <div className="user-memory-item" key={memory.id}>
-                    <div className="user-memory-item-header">
-                        <span>{t(`memory.types.${memory.memory_type}`)}</span>
-                        {memory.category && <span>{memory.category}</span>}
+                    <div className="user-memory-item-top">
+                        <div className="user-memory-item-header">
+                            <span>{t(`memory.types.${memory.memory_type}`)}</span>
+                            {memory.category && <span>{memory.category}</span>}
+                        </div>
+                        <div className="user-memory-item-actions">
+                            <button type="button" className="user-memory-icon-button is-danger" disabled={busy}
+                                    aria-label={t('common:delete')}
+                                    onClick={() => void run(async () => {
+                                await deleteUserMemory(memory.id);
+                            }, 'memory.deleted')}><Trash2 size={16} aria-hidden="true"/></button>
+                        </div>
                     </div>
                     <p>{memory.content}</p>
-                    <div className="user-memory-item-actions">
-                        <button type="button" disabled={busy} onClick={() => beginEdit(memory)}>{t('common:edit')}</button>
-                        <button type="button" disabled={busy} onClick={() => void run(async () => {
-                            await deleteUserMemory(memory.id);
-                        }, 'memory.deleted')}>{t('common:delete')}</button>
-                    </div>
                 </div>)}
         </div>
-        {memories.length > 0 && <div className="user-memory-delete-all">
-            {confirmDeleteAll ? <>
-                <span>{t('memory.deleteAllConfirm')}</span>
-                <button type="button" disabled={busy} onClick={() => setConfirmDeleteAll(false)}>{t('common:cancel')}</button>
-                <button type="button" disabled={busy} onClick={() => void run(async () => {
-                    await deleteAllUserMemories();
-                    setConfirmDeleteAll(false);
-                }, 'memory.deleted')}>{t('memory.deleteAll')}</button>
-            </> : <button type="button" disabled={busy} onClick={() => setConfirmDeleteAll(true)}>
-                {t('memory.deleteAll')}
-            </button>}
-        </div>}
+        {confirmDeleteAll && <ConfirmModal className="user-memory-delete-dialog" title={t('memory.deleteAll')}
+                                           description={t('memory.deleteAllConfirm')}
+                                           options={[
+                                               {label: t('common:cancel'), value: 'cancel'},
+                                               {label: t('memory.deleteAll'), value: 'delete', variant: 'danger'},
+                                           ]} actionLayout="horizontal"
+                                           onClose={() => setConfirmDeleteAll(false)}
+                                           onSelect={value => {
+                                               setConfirmDeleteAll(false);
+                                               if (value === 'delete') void run(async () => { await deleteAllUserMemories(); }, 'memory.deleted');
+                                           }}/>}
     </section>;
 }

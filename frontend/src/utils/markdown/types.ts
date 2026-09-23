@@ -27,6 +27,7 @@ export interface MessageProps {
     requestStartedAt?: number | null;
     toolStatus?: ToolActivity;
     activityLog?: ToolActivity[];
+    memoryUpdates?: Message['memoryUpdates'];
     progressMessages?: ResponseProgressMessage[];
     codeChanges?: CodeChanges;
     truncated?: boolean;

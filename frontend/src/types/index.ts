@@ -133,6 +133,13 @@ export interface ToolActivity {
     completedAt?: number;
 }
 
+export interface MemoryUpdate {
+    id: string;
+    memory_type: string;
+    category: string;
+    content: string;
+}
+
 export interface ResponseProgressMessage {
     id?: string;
     content: string;
@@ -168,6 +175,7 @@ export interface Message {
     errorCode?: 'model_no_response' | 'tool_call_failed' | 'reasoning_token_limit';
     toolStatus?: ToolActivity;  // MCP/code tool 실행 진행표시
     activityLog?: ToolActivity[]; // 도구·LLM 실행 흐름 누적 표시
+    memoryUpdates?: MemoryUpdate[]; // 이 응답에서 실제로 저장하거나 갱신한 기억
     progressMessages?: ResponseProgressMessage[]; // tool 호출 전 모델이 설명한 진행 과정
     followups?: string[];  // 응답 말미 <followups> 블록에서 파싱한 후속 질문 목록
     isGeneratedImage?: boolean;
