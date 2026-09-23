@@ -4,12 +4,17 @@ import {ChevronDown, Trash2} from 'lucide-react';
 import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
 import ToggleSwitch from '../common/ToggleSwitch/ToggleSwitch';
+import CustomSelect from '../CustomSelect/CustomSelect';
 import {
     deleteAllUserMemories, deleteUserMemory, getUserMemories,
     refreshUserMemories, setUserMemoryEnabled,
 } from '../../services/userMemory';
 import type {UserMemory, UserMemoryProgress} from '../../services/userMemory';
 import './UserMemorySection.css';
+
+const MEMORY_TYPE_ORDER = [
+    'PROFILE', 'PREFERENCE', 'PROJECT', 'LEARNING', 'DECISION', 'WORKFLOW', 'LONG_TERM_GOAL',
+] as const;
 
 function UserMemoryItem({memory, busy, onDelete}: {
     memory: UserMemory;
@@ -35,7 +40,9 @@ function UserMemoryItem({memory, busy, onDelete}: {
                 onClick={() => { if (hasOverflow) setExpanded(value => !value); }}>
         <div className="user-memory-item-top">
             <div className="user-memory-item-header">
-                <span>{t(`memory.types.${memory.memory_type}`)}</span>
+                <span className="user-memory-type-badge" data-memory-type={memory.memory_type}>
+                    {t(`memory.types.${memory.memory_type}`)}
+                </span>
                 {memory.category && <span>{memory.category}</span>}
             </div>
             <div className="user-memory-item-actions">
@@ -69,6 +76,16 @@ export default function UserMemorySection() {
     const [analyzing, setAnalyzing] = useState(false);
     const [analysisProgress, setAnalysisProgress] = useState<UserMemoryProgress | null>(null);
     const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
+    const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+
+    const availableTypes = new Set(memories.map(memory => memory.memory_type));
+    const typeOptions = MEMORY_TYPE_ORDER.filter(type => availableTypes.has(type)).map(type => ({
+        value: type,
+        label: t(`memory.types.${type}`),
+    }));
+    const activeTypes = selectedTypes.filter(type => availableTypes.has(type));
+    const visibleMemories = activeTypes.length === 0
+        ? memories : memories.filter(memory => activeTypes.includes(memory.memory_type));
 
     useEffect(() => {
         let active = true;
@@ -86,6 +103,8 @@ export default function UserMemorySection() {
     const reload = async () => {
         const result = await getUserMemories();
         setMemories(result.memories);
+        const currentTypes = new Set(result.memories.map(memory => memory.memory_type));
+        setSelectedTypes(current => current.filter(type => currentTypes.has(type)));
         setEnabled(result.enabled);
     };
 
@@ -135,6 +154,23 @@ export default function UserMemorySection() {
                           onChange={checked => void run(async () => { await setUserMemoryEnabled(checked); })}/>
         </div>
         <div className="user-memory-toolbar">
+            {typeOptions.length > 0 && <CustomSelect className="user-memory-type-filter"
+                options={typeOptions} value="" selectedValues={activeTypes} closeOnSelect={false}
+                ariaLabel={t('memory.type')} onChange={type => setSelectedTypes(current => {
+                    const available = current.filter(value => availableTypes.has(value));
+                    return available.includes(type)
+                        ? available.filter(value => value !== type) : [...available, type];
+                })}
+                clearable onClear={() => setSelectedTypes([])}
+                renderTrigger={(_, open) => <>
+                    <span className="custom-select-trigger-label">
+                        {t('memory.type')}: {activeTypes.length
+                            ? typeOptions.filter(option => activeTypes.includes(option.value))
+                                .map(option => option.label).join(', ')
+                            : t('memory.filterAll')}
+                    </span>
+                    <span className={`custom-select-arrow${open ? ' open' : ''}`}>▼</span>
+                </>}/>}
             {memories.length > 0 && <button type="button" className="user-memory-delete-all-button"
                                              disabled={busy || loading} onClick={() => setConfirmDeleteAll(true)}>
                 {t('memory.deleteAll')}
@@ -163,7 +199,7 @@ export default function UserMemorySection() {
         <div className={`user-memory-list${!loading && memories.length === 0 ? ' is-empty' : ''}`}>
             {loading ? <p>{t('profile.checking')}</p> : memories.length === 0
                 ? <p>{t('memory.empty')}</p>
-                : memories.map(memory => <UserMemoryItem key={memory.id} memory={memory} busy={busy}
+                : visibleMemories.map(memory => <UserMemoryItem key={memory.id} memory={memory} busy={busy}
                     onDelete={() => void run(async () => {
                         await deleteUserMemory(memory.id);
                     }, 'memory.deleted')}/>)}
