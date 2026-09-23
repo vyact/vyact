@@ -96,6 +96,25 @@ async def test_updating_memory_without_category_keeps_existing_category(monkeypa
 
 
 @pytest.mark.asyncio
+async def test_updating_memory_preserves_last_presented_at(monkeypatch):
+    class FakeEs:
+        get = AsyncMock(return_value={"_source": {
+            "record_type": "memory", "category": "English study", "created_at": "old",
+            "last_presented_at": "2026-09-20T10:00:00+00:00",
+        }})
+        index = AsyncMock()
+        close = AsyncMock()
+
+    es = FakeEs()
+    monkeypatch.setattr(user_memory, "get_es", lambda: es)
+    monkeypatch.setattr(user_memory, "get_embedding", AsyncMock(return_value=[0.1]))
+
+    saved = await user_memory.save_memory("Past perfect", "LEARNING", "", memory_id="study")
+    assert saved["last_presented_at"] == "2026-09-20T10:00:00+00:00"
+    assert es.index.await_args.kwargs["document"]["last_presented_at"] == saved["last_presented_at"]
+
+
+@pytest.mark.asyncio
 async def test_delete_all_resets_past_chat_analysis_cursor(monkeypatch):
     class FakeEs:
         delete_by_query = AsyncMock()
@@ -226,6 +245,90 @@ async def test_past_analysis_updates_existing_id_without_deleting_memory(monkeyp
 
 
 @pytest.mark.asyncio
+async def test_past_analysis_deletes_only_verified_full_forget(monkeypatch):
+    evidence = "이전에 기억한 영어 공부 진도를 전부 잊어 줘."
+    existing = [{"id": "study", "content": "Studying past perfect."}]
+    deleted = AsyncMock()
+    verify = AsyncMock(return_value=True)
+    monkeypatch.setattr(user_memory, "delete_memory", deleted)
+    monkeypatch.setattr(user_memory, "_verify_historical_delete", verify)
+
+    operation = {"action": "delete", "id": "study", "source_id": "chat", "evidence": evidence}
+    assert await user_memory._apply_operations([operation], existing, "", {"chat"},
+                                               {"chat": evidence}) == 1
+    deleted.assert_awaited_once_with("study")
+    verify.assert_awaited_once_with(existing[0], evidence)
+
+    deleted.reset_mock()
+    verify.reset_mock()
+    assert await user_memory._apply_operations([operation], existing, "", {"chat"},
+                                               {"chat": "다른 발언"}) == 0
+    deleted.assert_not_awaited()
+    verify.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_past_analysis_keeps_memory_when_forget_is_only_partial(monkeypatch):
+    evidence = "점검 중이라는 내용만 빼고 Vyact 개발 사실은 유지해 줘."
+    existing = [{"id": "project", "content": "Vyact 개발 중이며 지금 점검 중."}]
+    deleted = AsyncMock()
+    monkeypatch.setattr(user_memory, "delete_memory", deleted)
+    monkeypatch.setattr(user_memory, "_verify_historical_delete", AsyncMock(return_value=False))
+
+    assert await user_memory._apply_operations(
+        [{"action": "delete", "id": "project", "evidence": evidence}],
+        existing, "chat", source_texts={"chat": evidence},
+    ) == 0
+    deleted.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_historical_forget_verifier_rejects_invalid_decision(monkeypatch):
+    from services.llm import core
+
+    query = AsyncMock(return_value='{"forget_entire_memory":false}')
+    monkeypatch.setattr(core, "query_llm", query)
+    assert not await user_memory._verify_historical_delete(
+        {"content": "Builds Vyact"}, "Keep building Vyact, remove only testing status",
+    )
+    query.return_value = '```json\n{"forget_entire_memory":true}\n```'
+    assert await user_memory._verify_historical_delete(
+        {"content": "Builds Vyact"}, "Forget that I build Vyact",
+    )
+    query.return_value = '{"forget_entire_memory":"true"}'
+    with pytest.raises(ValueError):
+        await user_memory._verify_historical_delete(
+            {"content": "Builds Vyact"}, "Forget that I build Vyact",
+        )
+
+
+@pytest.mark.asyncio
+async def test_past_analysis_does_not_duplicate_existing_topic(monkeypatch):
+    save = AsyncMock()
+    monkeypatch.setattr(user_memory, "save_memory", save)
+    existing = [{"id": "project", "memory_type": "PROJECT", "category": "Vyact",
+                 "content": "Develops the Vyact app."}]
+    operations = [{"action": "add", "memory_type": "PROJECT", "category": "Vyact",
+                   "content": "Building the Vyact desktop app."}]
+
+    assert await user_memory._apply_operations(operations, existing, "chat") == 0
+    save.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_past_analysis_can_add_final_fact_when_model_invents_update_id(monkeypatch):
+    save = AsyncMock(return_value={"id": "new", "memory_type": "PROJECT", "category": "Vyact",
+                                  "content": "Develops Vyact."})
+    monkeypatch.setattr(user_memory, "save_memory", save)
+    operation = {"action": "update", "id": "invented", "source_id": "chat",
+                 "memory_type": "PROJECT", "category": "Vyact", "content": "Develops Vyact."}
+
+    assert await user_memory._apply_operations([operation], [], "", {"chat"}) == 1
+    save.assert_awaited_once_with("Develops Vyact.", "PROJECT", "Vyact",
+                                  memory_id=None, source_conv_id="chat")
+
+
+@pytest.mark.asyncio
 async def test_changed_memory_does_not_block_readding_previous_fact(monkeypatch):
     saved = []
 
@@ -262,6 +365,28 @@ async def test_batched_memory_operations_keep_valid_source_conversation(monkeypa
 
 
 @pytest.mark.asyncio
+async def test_batched_memory_operations_follow_conversation_order(monkeypatch):
+    saved = []
+
+    async def fake_save(content, memory_type, category, **kwargs):
+        saved.append(kwargs["source_conv_id"])
+        return {"id": str(len(saved)), "content": content,
+                "memory_type": memory_type, "category": category}
+
+    monkeypatch.setattr(user_memory, "save_memory", fake_save)
+    operations = [
+        {"action": "add", "source_id": "new", "content": "Studies English",
+         "memory_type": "LEARNING", "category": "English"},
+        {"action": "add", "source_id": "old", "content": "Builds Vyact",
+         "memory_type": "PROJECT", "category": "Vyact"},
+    ]
+    assert await user_memory._apply_operations(
+        operations, [], "", {"old", "new"}, {"old": "Builds Vyact", "new": "Studies English"},
+    ) == 2
+    assert saved == ["old", "new"]
+
+
+@pytest.mark.asyncio
 async def test_retrieval_excludes_weak_matches_and_respects_off_switch(monkeypatch):
     class FakeEs:
         count = AsyncMock(return_value={"count": 2})
@@ -282,6 +407,34 @@ async def test_retrieval_excludes_weak_matches_and_respects_off_switch(monkeypat
     monkeypatch.setattr(user_memory, "get_memory_state", AsyncMock(return_value={"enabled": False}))
     assert await user_memory.retrieve_memories("Continue English study") == []
     assert fake_es.count.await_count == 1
+
+
+@pytest.mark.asyncio
+async def test_only_memories_added_to_chat_context_are_marked_presented(monkeypatch):
+    class FakeEs:
+        count = AsyncMock(return_value={"count": 2})
+        search = AsyncMock(return_value={"hits": {"hits": [
+            {"_id": "study", "_score": 0.81, "_source": {
+                "memory_type": "LEARNING", "category": "English", "content": "Study past perfect"}},
+            {"_id": "stocks", "_score": 0.61, "_source": {
+                "memory_type": "PROJECT", "category": "Stocks", "content": "Build a trading app"}},
+        ]}})
+        update = AsyncMock()
+        close = AsyncMock()
+
+    es = FakeEs()
+    monkeypatch.setattr(user_memory, "get_es", lambda: es)
+    monkeypatch.setattr(user_memory, "get_embedding", AsyncMock(return_value=[0.1] * 1024))
+    monkeypatch.setattr(user_memory, "get_memory_state", AsyncMock(return_value={"enabled": True}))
+    monkeypatch.setattr(user_memory, "_now", lambda: "2026-09-23T10:00:00+00:00")
+
+    context = await user_memory.memory_context("Continue English study")
+    assert "Study past perfect" in context
+    assert "Build a trading app" not in context
+    es.update.assert_awaited_once_with(
+        index=user_memory.USER_MEMORIES_INDEX, id="study",
+        doc={"last_presented_at": "2026-09-23T10:00:00+00:00"},
+    )
 
 
 @pytest.mark.asyncio

@@ -1,6 +1,6 @@
-import {useEffect, useState} from 'react';
+import {useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {Trash2} from 'lucide-react';
+import {ChevronDown, Trash2} from 'lucide-react';
 import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
 import ToggleSwitch from '../common/ToggleSwitch/ToggleSwitch';
@@ -10,6 +10,55 @@ import {
 } from '../../services/userMemory';
 import type {UserMemory, UserMemoryProgress} from '../../services/userMemory';
 import './UserMemorySection.css';
+
+function UserMemoryItem({memory, busy, onDelete}: {
+    memory: UserMemory;
+    busy: boolean;
+    onDelete: () => void;
+}) {
+    const {t} = useTranslation('settings');
+    const contentRef = useRef<HTMLParagraphElement>(null);
+    const [expanded, setExpanded] = useState(false);
+    const [hasOverflow, setHasOverflow] = useState(false);
+
+    useLayoutEffect(() => {
+        const content = contentRef.current;
+        if (!content || expanded) return;
+        const measure = () => setHasOverflow(content.scrollWidth > content.clientWidth + 1);
+        measure();
+        const observer = new ResizeObserver(measure);
+        observer.observe(content);
+        return () => observer.disconnect();
+    }, [expanded, memory.content]);
+
+    return <div className={`user-memory-item${hasOverflow ? ' is-expandable' : ''}`}
+                onClick={() => { if (hasOverflow) setExpanded(value => !value); }}>
+        <div className="user-memory-item-top">
+            <div className="user-memory-item-header">
+                <span>{t(`memory.types.${memory.memory_type}`)}</span>
+                {memory.category && <span>{memory.category}</span>}
+            </div>
+            <div className="user-memory-item-actions">
+                <button type="button" className="user-memory-icon-button is-danger" disabled={busy}
+                        aria-label={t('common:delete')} onClick={event => {
+                            event.stopPropagation();
+                            onDelete();
+                        }}>
+                    <Trash2 size={16} aria-hidden="true"/>
+                </button>
+            </div>
+        </div>
+        <div className="user-memory-content-row">
+            <p ref={contentRef} className={expanded ? 'is-expanded' : ''} id={`user-memory-content-${memory.id}`}>
+                {memory.content}
+            </p>
+            {hasOverflow && <span className={`user-memory-expand-icon${expanded ? ' is-expanded' : ''}`}
+                                  aria-hidden="true">
+                <ChevronDown size={16} aria-hidden="true"/>
+            </span>}
+        </div>
+    </div>;
+}
 
 export default function UserMemorySection() {
     const {t} = useTranslation('settings');
@@ -114,22 +163,10 @@ export default function UserMemorySection() {
         <div className={`user-memory-list${!loading && memories.length === 0 ? ' is-empty' : ''}`}>
             {loading ? <p>{t('profile.checking')}</p> : memories.length === 0
                 ? <p>{t('memory.empty')}</p>
-                : memories.map(memory => <div className="user-memory-item" key={memory.id}>
-                    <div className="user-memory-item-top">
-                        <div className="user-memory-item-header">
-                            <span>{t(`memory.types.${memory.memory_type}`)}</span>
-                            {memory.category && <span>{memory.category}</span>}
-                        </div>
-                        <div className="user-memory-item-actions">
-                            <button type="button" className="user-memory-icon-button is-danger" disabled={busy}
-                                    aria-label={t('common:delete')}
-                                    onClick={() => void run(async () => {
-                                await deleteUserMemory(memory.id);
-                            }, 'memory.deleted')}><Trash2 size={16} aria-hidden="true"/></button>
-                        </div>
-                    </div>
-                    <p>{memory.content}</p>
-                </div>)}
+                : memories.map(memory => <UserMemoryItem key={memory.id} memory={memory} busy={busy}
+                    onDelete={() => void run(async () => {
+                        await deleteUserMemory(memory.id);
+                    }, 'memory.deleted')}/>)}
         </div>
         {confirmDeleteAll && <ConfirmModal className="user-memory-delete-dialog" title={t('memory.deleteAll')}
                                            description={t('memory.deleteAllConfirm')}

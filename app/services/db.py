@@ -476,11 +476,17 @@ async def ensure_index():
                     "embedding": _vector_mapping(),
                     "created_at": {"type": "date"},
                     "updated_at": {"type": "date"},
+                    "last_presented_at": {"type": "date"},
                     "source_conv_id": {"type": "keyword"},
                     "last_processed_at": {"type": "date"},
                 }},
             )
             logger.info("user_memories index created")
+        else:
+            await es.indices.put_mapping(
+                index=USER_MEMORIES_INDEX,
+                properties={"last_presented_at": {"type": "date"}},
+            )
 
         # ── user_profile ────────────────────────────────────────────
         if not await es.indices.exists(index=USER_PROFILE_INDEX):
