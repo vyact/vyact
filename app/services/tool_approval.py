@@ -21,6 +21,7 @@ READ_ONLY_TOOLS = {
 }
 READ_ONLY_TOOLS.update({"microsoft_search_emails", "microsoft_get_email", "microsoft_list_calendar_events", "microsoft_search_files"})
 READ_ONLY_TOOLS.add("web_search")
+READ_ONLY_TOOLS.add("user_memory_list")
 SENSITIVE_TOOLS = {
     "microsoft_send_email", "microsoft_create_calendar_event",
     "send_email", "reply_email", "create_calendar_event", "update_calendar_event",
@@ -29,6 +30,7 @@ SENSITIVE_TOOLS = {
     "browser_ask_user",
 }
 DESTRUCTIVE_TOOLS = {
+    "user_memory_delete",
     "code_move_file", "code_delete_file", "trash_email", "batch_trash_emails",
     "delete_calendar_event", "delete_drive_file", "clear_google_sheet", "delete_slide",
 }
@@ -118,6 +120,10 @@ def get_tool_risk(tool_name: str, annotations: dict | None = None,
 
 def requires_approval(tool_name: str, mode: str, annotations: dict | None = None,
                       annotations_trusted: bool = False) -> bool:
+    # A memory deletion follows the user's explicit forget request and exact-ID review.
+    # Do not interrupt that conversation with a second tool approval prompt.
+    if tool_name == "user_memory_delete":
+        return False
     if _base_tool_name(tool_name) in {"browser_wait_for_user", "browser_ask_user"}:
         return True
     risk = get_tool_risk(tool_name, annotations, annotations_trusted)

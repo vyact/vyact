@@ -23,7 +23,7 @@ from .helpers import (
     image_attachment_path, load_audio_content_blocks, load_image_data_urls, mime_type,
     history_for_openai, history_for_gemini, history_for_claude,
 )
-from .context_window import calculate_output_token_limit, LOCAL_CONTEXT_RESERVE_TOKENS
+from .context_window import calculate_output_token_limit, reserve_output_tokens, LOCAL_CONTEXT_RESERVE_TOKENS
 from . import token_counter
 from .errors import context_budget_error
 from .tools import (
@@ -33,7 +33,11 @@ from .tools import (
 from services.runtime_settings import get_runtime_settings
 from services.tool_approval import await_tool_approval
 from services.tool_messages import get_tool_language, tool_error, tool_message
-from services.user_memory_tools import MEMORY_WRITE_INSTRUCTION, MEMORY_WRITE_TOOLS, memory_write_stage
+from services.user_memory_tools import (
+    MEMORY_DELETE_INSTRUCTION, MEMORY_WRITE_INSTRUCTION, active_memory_stage_tools,
+    memory_delete_stage, memory_list_provider_config, memory_list_token_budget,
+    reset_memory_stages,
+)
 
 
 _REPEATED_TOOL_CALL_RESULT = (
@@ -85,6 +89,30 @@ def _tool_call_fingerprint(name: str, args: object) -> str:
     except (TypeError, ValueError):
         encoded_args = str(args)
     return f"{name}:{encoded_args}"
+
+
+def _tool_offered_in_current_stage(name: str, allowed_tool_names: frozenset[str]) -> bool:
+    stage_tools = active_memory_stage_tools()
+    return name in allowed_tool_names and (not stage_tools or name in stage_tools)
+
+
+async def _budget_memory_list_result(name: str, messages: list[dict], provider_config: dict,
+                                     output_limit: int | None = None) -> None:
+    if name != "user_memory_list":
+        return
+    context_size = int(provider_config.get("context_size") or 32768)
+    if provider_config.get("is_local"):
+        input_tokens = await token_counter.count_local_message_tokens(messages, provider_config, None)
+        configured_output = output_limit if output_limit is not None else get_runtime_settings()["llm_num_predict"]
+    else:
+        input_tokens = token_counter.count_cloud_message_tokens([{
+            "role": "system", "content": json.dumps(messages, ensure_ascii=False),
+        }])
+        configured_output = provider_config.get("max_output_tokens", 2048)
+    available = max(0, context_size - LOCAL_CONTEXT_RESERVE_TOKENS - input_tokens)
+    output_reserve = reserve_output_tokens(available, configured_output)
+    memory_list_token_budget.set(max(0, available - output_reserve - 768))
+    memory_list_provider_config.set(provider_config)
 
 
 def _accumulate_llm_timing(usage: dict | None, timings: dict | None) -> None:
@@ -295,7 +323,7 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
     usage(dict)를 넘기면 최종 청크의 토큰 사용량(prompt_tokens/completion_tokens)을
     그 안에 채워 넣는다 (호출자가 스트리밍 종료 후 읽어간다).
     """
-    memory_write_stage.set(False)
+    reset_memory_stages()
     provider_config = await get_provider_config()
     temperature = provider_config.get("temperature", get_runtime_settings()["llm_temperature"])
     image_urls = load_image_data_urls(attachments)
@@ -346,12 +374,17 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
     if unified:
         oa_tools = to_openai_tools(unified)
         for _round in range(_tool_call_max_rounds(provider_config)):
-            if memory_write_stage.get():
+            stage_tools = active_memory_stage_tools()
+            if stage_tools:
                 if not memory_instruction_added:
-                    messages[0]["content"] += MEMORY_WRITE_INSTRUCTION
+                    messages[0]["content"] += (
+                        MEMORY_DELETE_INSTRUCTION if memory_delete_stage.get() else MEMORY_WRITE_INSTRUCTION
+                    )
                     memory_instruction_added = True
                 unified, _ = await _get_unified_tools(use_tools)
                 allowed_tool_names = frozenset(tool["function"]["name"] for tool in unified)
+                if not unified:
+                    break
                 oa_tools = to_openai_tools(unified)
             body = {"model": model, "temperature": temperature,
                     "stream": True, "messages": messages, "tools": oa_tools}
@@ -428,7 +461,7 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
             for tc in tool_calls:
                 fn = tc.get("function", {}) or {}
                 name = fn.get("name", "")
-                if name not in allowed_tool_names or (memory_write_stage.get() and name not in MEMORY_WRITE_TOOLS):
+                if not _tool_offered_in_current_stage(name, allowed_tool_names):
                     messages.append({
                         "role": "tool", "tool_call_id": tc.get("id", ""),
                         "content": await _unoffered_tool_result(name),
@@ -478,6 +511,7 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
                     continue
                 await _emit(on_event, {"phase": "start", "name": name, "args": args})
                 executed_tool_calls.add(fingerprint)
+                await _budget_memory_list_result(name, messages, provider_config, output_token_limit)
                 result_text = await mcp_manager.call_tool(name, args)
                 consecutive_tool_failures = _next_consecutive_tool_failures(
                     consecutive_tool_failures, result_text,
@@ -606,7 +640,7 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
     usage(dict)를 넘기면 매 청크의 usageMetadata(누적치)로 계속 덮어써서,
     스트림이 끝났을 때 최종 토큰 사용량이 남도록 한다.
     """
-    memory_write_stage.set(False)
+    reset_memory_stages()
     provider_config = await get_provider_config()
     temperature = provider_config.get("temperature", get_runtime_settings()["llm_temperature"])
     max_output_tokens = provider_config.get("max_output_tokens", 2048)
@@ -646,12 +680,15 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
     if unified:
         gm_tools = to_gemini_tools(unified)
         for _round in range(_tool_call_max_rounds(provider_config)):
-            if memory_write_stage.get():
+            stage_tools = active_memory_stage_tools()
+            if stage_tools:
                 if not memory_instruction_added:
-                    sys_text += MEMORY_WRITE_INSTRUCTION
+                    sys_text += MEMORY_DELETE_INSTRUCTION if memory_delete_stage.get() else MEMORY_WRITE_INSTRUCTION
                     memory_instruction_added = True
                 unified, _ = await _get_unified_tools(use_tools)
                 allowed_tool_names = frozenset(tool["function"]["name"] for tool in unified)
+                if not unified:
+                    break
                 gm_tools = to_gemini_tools(unified)
             body = {
                 "systemInstruction": {"parts": [{"text": sys_text}]},
@@ -678,7 +715,7 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
             resp_parts = []
             for fc in fcalls:
                 name = fc.get("name", "")
-                if name not in allowed_tool_names or (memory_write_stage.get() and name not in MEMORY_WRITE_TOOLS):
+                if not _tool_offered_in_current_stage(name, allowed_tool_names):
                     resp_parts.append({"functionResponse": {
                         "name": name, "response": {"result": await _unoffered_tool_result(name)},
                     }})
@@ -722,6 +759,7 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
                     continue
                 await _emit(on_event, {"phase": "start", "name": name, "args": args})
                 executed_tool_calls.add(fingerprint)
+                await _budget_memory_list_result(name, contents, provider_config)
                 result_text = await mcp_manager.call_tool(name, args)
                 consecutive_tool_failures = _next_consecutive_tool_failures(
                     consecutive_tool_failures, result_text,
@@ -749,14 +787,6 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
         "contents": contents,
         "generationConfig": gen_cfg,
     }
-    if (
-        unified
-        and not approval_rejected
-        and not repeated_tool_call
-        and not tool_failures_exhausted
-        and not tool_round_limit_reached
-    ):
-        body["tools"] = to_gemini_tools(unified)
     log_llm_call(call_reason, "gemini", model, streaming=True, reasoning=reasoning)
     record_tool_context("gemini", body)
     async with client.stream("POST", stream_url, json=body) as resp:
@@ -797,7 +827,7 @@ async def claude_stream(client, model, api_key, system_message, user_prompt,
     usage(dict)를 넘기면 message_start의 input_tokens, message_delta의
     output_tokens(누적치)를 채워 넣는다.
     """
-    memory_write_stage.set(False)
+    reset_memory_stages()
     runtime = get_runtime_settings()
     provider_config = await get_provider_config()
     temperature = provider_config.get("temperature", runtime["llm_temperature"])
@@ -834,12 +864,15 @@ async def claude_stream(client, model, api_key, system_message, user_prompt,
     if unified:
         cl_tools = to_claude_tools(unified)
         for _round in range(_tool_call_max_rounds(provider_config)):
-            if memory_write_stage.get():
+            stage_tools = active_memory_stage_tools()
+            if stage_tools:
                 if not memory_instruction_added:
-                    system_text += MEMORY_WRITE_INSTRUCTION
+                    system_text += MEMORY_DELETE_INSTRUCTION if memory_delete_stage.get() else MEMORY_WRITE_INSTRUCTION
                     memory_instruction_added = True
                 unified, _ = await _get_unified_tools(use_tools)
                 allowed_tool_names = frozenset(tool["function"]["name"] for tool in unified)
+                if not unified:
+                    break
                 cl_tools = to_claude_tools(unified)
             body = {"model": model, "max_tokens": max_tokens, "temperature": temperature,
                     "system": system_text, "messages": messages, "tools": cl_tools}
@@ -859,7 +892,7 @@ async def claude_stream(client, model, api_key, system_message, user_prompt,
             result_blocks = []
             for tu in tool_uses:
                 name = tu.get("name", "")
-                if name not in allowed_tool_names or (memory_write_stage.get() and name not in MEMORY_WRITE_TOOLS):
+                if not _tool_offered_in_current_stage(name, allowed_tool_names):
                     result_blocks.append({
                         "type": "tool_result", "tool_use_id": tu.get("id", ""),
                         "content": await _unoffered_tool_result(name), "is_error": True,
@@ -905,6 +938,7 @@ async def claude_stream(client, model, api_key, system_message, user_prompt,
                     continue
                 await _emit(on_event, {"phase": "start", "name": name, "args": args})
                 executed_tool_calls.add(fingerprint)
+                await _budget_memory_list_result(name, messages, provider_config)
                 result_text = await mcp_manager.call_tool(name, args)
                 consecutive_tool_failures = _next_consecutive_tool_failures(
                     consecutive_tool_failures, result_text,
@@ -930,14 +964,6 @@ async def claude_stream(client, model, api_key, system_message, user_prompt,
     # ── 최종 답변 스트리밍 ──
     body = {"model": model, "max_tokens": max_tokens, "temperature": temperature,
             "system": system_text, "stream": True, "messages": messages}
-    if (
-        unified
-        and not approval_rejected
-        and not repeated_tool_call
-        and not tool_failures_exhausted
-        and not tool_round_limit_reached
-    ):
-        body["tools"] = to_claude_tools(unified)
     log_llm_call(call_reason, "claude", model, streaming=True, reasoning=reasoning)
     record_tool_context("claude", body)
     async with client.stream("POST", base_url, headers=headers, json=body) as resp:

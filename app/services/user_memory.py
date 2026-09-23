@@ -3,6 +3,7 @@ import asyncio
 import json
 import re
 import uuid
+from contextvars import ContextVar
 from datetime import datetime, timezone
 from typing import Awaitable, Callable
 
@@ -24,6 +25,20 @@ ANALYSIS_CONVERSATION_LIMIT = 50
 ANALYSIS_TEXT_LIMIT = 6000
 _analysis_lock = asyncio.Lock()
 MemoryProgress = Callable[[dict], Awaitable[None]]
+memory_enabled_for_turn: ContextVar[bool | None] = ContextVar("memory_enabled_for_turn", default=None)
+
+
+async def capture_memory_enabled_for_turn() -> bool:
+    try:
+        return (await get_memory_state()).get("enabled", True)
+    except Exception as exc:
+        logger.warning("User memory setting unavailable for this turn: %s", exc)
+        return False
+
+
+async def is_memory_enabled_for_turn() -> bool:
+    snapshot = memory_enabled_for_turn.get()
+    return snapshot if snapshot is not None else (await get_memory_state()).get("enabled", True)
 
 
 def _now() -> str:
@@ -83,9 +98,6 @@ async def save_memory(content: str, memory_type: str, category: str, *,
     category = _clean_content(category)[:80]
     if not content or memory_type not in MEMORY_TYPES:
         raise ValueError("Invalid memory content or type")
-    embedding = await get_embedding(f"{category}\n{content}")
-    if embedding is None:
-        raise RuntimeError("Memory embedding could not be generated")
     es = get_es()
     try:
         old = None
@@ -97,6 +109,11 @@ async def save_memory(content: str, memory_type: str, category: str, *,
             old = result["_source"]
             if old.get("record_type") != "memory":
                 raise ValueError("Invalid memory id")
+            if not category:
+                category = old.get("category", "")
+        embedding = await get_embedding(f"{category}\n{content}")
+        if embedding is None:
+            raise RuntimeError("Memory embedding could not be generated")
         memory_id = memory_id or str(uuid.uuid4())
         document = {
             "record_type": "memory", "memory_type": memory_type,
@@ -140,7 +157,7 @@ async def delete_all_memories() -> None:
 
 
 async def retrieve_memories(question: str) -> list[dict]:
-    if not question.strip() or not (await get_memory_state()).get("enabled", True):
+    if not question.strip() or not await is_memory_enabled_for_turn():
         return []
     es = get_es()
     try:

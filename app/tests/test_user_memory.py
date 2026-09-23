@@ -56,6 +56,25 @@ async def test_disabled_memory_is_not_added_to_chat_context(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_updating_memory_without_category_keeps_existing_category(monkeypatch):
+    class FakeEs:
+        get = AsyncMock(return_value={"_source": {
+            "record_type": "memory", "category": "English study", "created_at": "old",
+        }})
+        index = AsyncMock()
+        close = AsyncMock()
+
+    fake_es = FakeEs()
+    embedding = AsyncMock(return_value=[0.1])
+    monkeypatch.setattr(user_memory, "get_es", lambda: fake_es)
+    monkeypatch.setattr(user_memory, "get_embedding", embedding)
+
+    saved = await user_memory.save_memory("Past perfect", "LEARNING", "", memory_id="study")
+    assert saved["category"] == "English study"
+    embedding.assert_awaited_once_with("English study\nPast perfect")
+
+
+@pytest.mark.asyncio
 async def test_delete_all_resets_past_chat_analysis_cursor(monkeypatch):
     class FakeEs:
         delete_by_query = AsyncMock()

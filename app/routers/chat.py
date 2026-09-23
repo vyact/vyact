@@ -6,6 +6,7 @@ import re
 import asyncio
 from contextlib import aclosing
 from services.chat_queue import chat_request_lock
+from services.user_memory import capture_memory_enabled_for_turn, memory_enabled_for_turn
 from datetime import datetime, timezone
 from urllib.parse import parse_qsl, urlencode, urlparse
 
@@ -527,7 +528,11 @@ async def _query_serialized(req: QueryRequest):
         project_id=req.project_id, interactive=False,
     ))
     scope_token = None
+    memory_token = None
     try:
+        memory_token = memory_enabled_for_turn.set(
+            await capture_memory_enabled_for_turn() if not req.project_id and not req.minimal_prompt else False
+        )
         if req.use_tools and (req.client_tool_ids is not None or req.selected_mcp_ids):
             scope_token = await mcp_manager.enable_request_scope(
                 req.selected_mcp_ids or req.client_tool_ids or [],
@@ -535,6 +540,8 @@ async def _query_serialized(req: QueryRequest):
             )
         return await _query_response(req)
     finally:
+        if memory_token is not None:
+            memory_enabled_for_turn.reset(memory_token)
         current_approval_context.reset(token)
         if scope_token is not None:
             mcp_manager.reset_request_scope(scope_token)
@@ -892,6 +899,7 @@ async def query_stream(req: QueryRequest):
         begin_chat_activity()
         mcp_scope_token = None
         approval_context_token = None
+        memory_token = None
         _saved = False
         conv_id = req.conv_id or str(uuid.uuid4())
         user_ts = req.user_timestamp or datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
@@ -902,6 +910,9 @@ async def query_stream(req: QueryRequest):
                 mode=req.approval_mode, conversation_id=req.conv_id, project_id=req.project_id,
                 interactive=True,
             ))
+            memory_token = memory_enabled_for_turn.set(
+                await capture_memory_enabled_for_turn() if not req.project_id and not req.minimal_prompt else False
+            )
             if req.use_tools and (req.client_tool_ids is not None or req.selected_mcp_ids):
                 selected_ids = req.selected_mcp_ids or req.client_tool_ids or []
                 mcp_scope_token = await mcp_manager.enable_request_scope(
@@ -1396,6 +1407,8 @@ async def query_stream(req: QueryRequest):
             logger.info("[query_stream] 클라이언트 연결 종료 — 스트림 중단")
         finally:
             end_chat_activity()
+            if memory_token is not None:
+                memory_enabled_for_turn.reset(memory_token)
             if approval_context_token is not None:
                 current_approval_context.reset(approval_context_token)
             if mcp_scope_token is not None:

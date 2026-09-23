@@ -36,6 +36,7 @@ from services.runtime_settings import get_runtime_settings, DEFAULT_RUNTIME_SETT
 from services.tool_messages import get_tool_language
 from .messages import llm_message
 from services.local_model_errors import LocalModelNotDownloadedError
+from services.user_memory_tools import reset_memory_stages
 
 _STREAMERS = {"openai": openai_stream, "gemini": gemini_stream, "claude": claude_stream}
 _PROVIDER_LABEL = {"openai": "OpenAI", "gemini": "Gemini", "claude": "Claude"}
@@ -77,6 +78,7 @@ async def chat_stream_with_tools(
           - tool_got_sources=False → 메모 + ES(RAG) 뉴스를 병행 조회해서 보충
         (tool을 안 썼거나, 썼는데도 결과가 없을 때 모두 False로 들어온다.)
     """
+    reset_memory_stages()
     attachments = attachments or []
     conversation_history = conversation_history or []
     provider_config = await get_provider_config()
@@ -327,6 +329,7 @@ async def query_llm(
     include_response_language=False이면 사용자 UI 언어 응답 규칙만 제외한다.
     기본값은 True이므로 기존 호출의 응답 언어 동작은 유지된다.
     """
+    reset_memory_stages()
     attachments = attachments or []
     conversation_history = conversation_history or []
     request_id = str(uuid.uuid4())

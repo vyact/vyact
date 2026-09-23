@@ -24,8 +24,12 @@ class ApprovalGateTests(unittest.IsolatedAsyncioTestCase):
             ('trusted', 'send_email', True),
             ('trusted', 'code_edit_file', True),
             ('trusted', 'code_delete_file', False),
+            ('risky_only', 'user_memory_delete', True),
+            ('always_confirm', 'user_memory_delete', True),
+            ('trusted', 'user_memory_delete', True),
             ('trusted', 'browser_ask_user', False),
             ('risky_only', 'code_read_file', True),
+            ('always_confirm', 'user_memory_list', True),
             ('risky_only', 'code_edit_file', True),
         ]:
             with self.subTest(mode=mode, tool=tool):
