@@ -84,7 +84,8 @@ AUTO_MEMORY_INSTRUCTION = (
 async def user_memory_tools_available() -> bool:
     if current_approval_context.get().project_id:
         return False
-    if mcp_manager.get_request_scope_server_ids() is not None:
+    if (mcp_manager.get_request_scope_server_ids() is not None
+            and not mcp_manager.client_memory_scope_enabled()):
         return False
     try:
         return await is_memory_enabled_for_turn()

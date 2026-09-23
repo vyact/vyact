@@ -32,6 +32,7 @@ logger = get_logger(__name__)
 # tool 이름 prefix 구분자 (서버명과 tool명 사이)
 _SEP = "__"
 _client_scope: ContextVar[bool] = ContextVar("client_tool_scope", default=False)
+_client_memory_scope: ContextVar[bool] = ContextVar("client_memory_scope", default=False)
 _explicit_scope: ContextVar[bool] = ContextVar("explicit_tool_scope", default=True)
 _request_server_ids: ContextVar[frozenset[str] | None] = ContextVar("request_mcp_server_ids", default=None)
 _request_server_types: ContextVar[frozenset[str] | None] = ContextVar("request_mcp_server_types", default=None)
@@ -229,7 +230,8 @@ class MCPManager:
         self._pending_sources = []
         return out
 
-    async def enable_request_scope(self, server_ids: list[str], *, client_scope: bool = False, explicit: bool = True):
+    async def enable_request_scope(self, server_ids: list[str], *, client_scope: bool = False,
+                                   explicit: bool = True, allow_memory_tools: bool = False):
         from services.mcp_config import build_servers_config, list_servers
         requested_ids = set(server_ids)
         selected = [server for server in await list_servers() if server.get("id") in requested_ids]
@@ -245,7 +247,8 @@ class MCPManager:
             raise
         return (_request_server_ids.set(frozenset(selected_ids)),
                 _request_server_types.set(frozenset(server.get("type") for server in selected)),
-                _client_scope.set(client_scope), _explicit_scope.set(explicit), selected_ids)
+                _client_scope.set(client_scope), _explicit_scope.set(explicit), selected_ids,
+                _client_memory_scope.set(client_scope and allow_memory_tools))
 
     def _release_scope_refs(self, server_ids):
         for server_id in server_ids:
@@ -262,6 +265,10 @@ class MCPManager:
             _client_scope.reset(tokens[2])
             _explicit_scope.reset(tokens[3])
             self._release_scope_refs(tokens[4])
+            _client_memory_scope.reset(tokens[5])
+
+    def client_memory_scope_enabled(self) -> bool:
+        return _client_scope.get() and _client_memory_scope.get()
 
     def has_request_scope(self) -> bool:
         """현재 요청이 @로 MCP 하나를 명시 선택했는지 반환한다."""
@@ -472,7 +479,8 @@ class MCPManager:
             if stage_tools and name not in stage_tools:
                 continue
             stype = spec.get("server_type")
-            if _client_scope.get() and (stype is None or stype not in (selected_server_types or frozenset())):
+            if (_client_scope.get() and (name not in TOOL_NAMES or not _client_memory_scope.get())
+                    and (stype is None or stype not in (selected_server_types or frozenset()))):
                 continue
             # 프로젝트 폴더가 연결된 요청에서는 code_tools가 기본 작업 수단이다.
             # @GitHub처럼 MCP를 명시 선택해도 선택 도구에 code_tools를 더해야 하며,
@@ -481,6 +489,7 @@ class MCPManager:
                 selected_server_ids
                 and stype != "code_tools"
                 and stype not in (selected_server_types or frozenset())
+                and (name not in TOOL_NAMES or not _client_memory_scope.get())
             ):
                 continue
             if stype is not None and stype not in enabled_types:

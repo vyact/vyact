@@ -8,6 +8,7 @@ from routers import browser_extension
 
 from services import extension_tools, mcp_config
 from services.mcp_client import MCPManager
+from services.user_memory import memory_enabled_for_turn
 
 
 @pytest.fixture
@@ -60,6 +61,28 @@ async def test_empty_or_removed_client_selection_does_not_fall_back(scope_setup,
         assert await scope_setup.get_tools() == []
     finally:
         scope_setup.reset_request_scope(token)
+
+
+@pytest.mark.asyncio
+async def test_ordinary_extension_chat_exposes_only_memory_without_selected_tools(scope_setup, monkeypatch):
+    manager = scope_setup
+    manager.register_internal_tool('user_memory_list', '', {}, AsyncMock(return_value='memory'))
+    monkeypatch.setattr('services.user_memory_tools.mcp_manager', manager)
+    enabled_token = memory_enabled_for_turn.set(True)
+    try:
+        token = await manager.enable_request_scope([], client_scope=True, allow_memory_tools=True)
+        try:
+            assert manager.client_memory_scope_enabled()
+            assert {tool['function']['name'] for tool in await manager.get_tools()} == {'user_memory_list'}
+        finally:
+            manager.reset_request_scope(token)
+        token = await manager.enable_request_scope([], client_scope=True)
+        try:
+            assert await manager.get_tools() == []
+        finally:
+            manager.reset_request_scope(token)
+    finally:
+        memory_enabled_for_turn.reset(enabled_token)
 
 
 @pytest.mark.asyncio

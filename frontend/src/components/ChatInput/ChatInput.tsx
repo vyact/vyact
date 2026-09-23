@@ -565,6 +565,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                     variant="inline"
                                     inputValue={value}
                                     deferListening={disabled}
+                                    onStop={onStop}
                                     onClose={() => onCloseVoiceAssistant?.()}
                                     onSend={async (message) => {
                                         const typedPrefix = value.trim();

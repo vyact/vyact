@@ -949,5 +949,33 @@
     color: var(--accent);
 }
 
+.chat-btn-row .voice-assistant-inline__button--stop,
+:root[data-theme='light'] .chat-btn-row .voice-assistant-inline__button--stop {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, var(--control-bg));
+    color: var(--accent);
+    box-shadow: none;
+}
+
+.chat-btn-row .voice-assistant-inline__button--stop:hover:not(:disabled),
+:root[data-theme='light'] .chat-btn-row .voice-assistant-inline__button--stop:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 18%, var(--control-bg));
+}
+
+.chat-btn-row .voice-assistant-inline__button--close,
+:root[data-theme='light'] .chat-btn-row .voice-assistant-inline__button--close {
+    border-color: transparent;
+    background: transparent;
+    color: var(--muted);
+    box-shadow: none;
+}
+
+.chat-btn-row .voice-assistant-inline__button--close:hover:not(:disabled),
+:root[data-theme='light'] .chat-btn-row .voice-assistant-inline__button--close:hover:not(:disabled) {
+    border-color: transparent;
+    background: var(--control-bg);
+    color: var(--text);
+}
+
 .voice-auto-read-rate-menu { min-width: 88px; }
 .voice-auto-read-rate-menu .custom-select-item { font-size: 11px; }

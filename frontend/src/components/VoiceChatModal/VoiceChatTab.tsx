@@ -2,7 +2,7 @@ import CustomSelect from '../CustomSelect/CustomSelect';
 import {useStreamingReadAloud} from './useStreamingReadAloud';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
 import React, {useState, useRef, useEffect, useCallback} from 'react';
-import {ArrowUp, Mic, Square} from 'lucide-react';
+import {ArrowUp, Mic, Square, X} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {loadTtsSettings, updateTtsCache, TTS_SETTINGS_CHANGED, TTS_RATE_OPTIONS, normalizeTtsRate} from '../../services/tts/ttsSettings';
 import {api} from '../../services/api';
@@ -19,10 +19,11 @@ interface VoiceChatTabProps {
     variant?: 'panel' | 'inline';
     inputValue?: string;
     deferListening?: boolean;
+    onStop?: () => void;
 }
 
 const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
-    onSend, onClose, mode = 'practice', variant = 'panel', inputValue = '', deferListening = false,
+    onSend, onClose, mode = 'practice', variant = 'panel', inputValue = '', deferListening = false, onStop,
 }) => {
     const {t, i18n} = useTranslation('main');
     const isAssistantMode = mode === 'assistant';
@@ -101,6 +102,7 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
     const animFrameRef = useRef<number | null>(null);
     const startListeningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const submitRequestedRef = useRef(false);
+    const recognitionAbortRef = useRef<AbortController | null>(null);
     const inputValueRef = useRef(inputValue);
     const startListeningRef = useRef<() => void>(() => {
     });
@@ -153,6 +155,8 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
         isActiveRef.current = false;
         isSpeakingRef.current = false;
         isWaitingRef.current = false;
+        recognitionAbortRef.current?.abort();
+        recognitionAbortRef.current = null;
         stopRecording();
         readAloud.cancel();
         speakAbortRef.current.cancelled = true;
@@ -284,9 +288,13 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
                     const ext = mimeType.includes('ogg') ? '.ogg' : '.webm';
                     formData.append('audio', blob, `audio${ext}`);
                     formData.append('lang', isAssistantMode ? 'auto' : selectedLangRef.current);
-                    const res = await fetch('/api/stt', {method: 'POST', body: formData});
+                    const recognitionAbort = new AbortController();
+                    recognitionAbortRef.current = recognitionAbort;
+                    const res = await fetch('/api/stt', {method: 'POST', body: formData, signal: recognitionAbort.signal});
                     if (!res.ok) throw new Error(`STT request failed: ${res.status}`);
                     const data = await res.json();
+                    if (recognitionAbort.signal.aborted || !isActiveRef.current) return;
+                    recognitionAbortRef.current = null;
                     const spoken = (data.text || '').trim();
                     if (!spoken) {
                         if (submitRequested && inputValueRef.current.trim()) {
@@ -316,6 +324,8 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
                         onSendRef.current(spoken, systemPrompt, true);
                     }
                 } catch {
+                    if (recognitionAbortRef.current?.signal.aborted) return;
+                    recognitionAbortRef.current = null;
                     isWaitingRef.current = false;
                     setIsWaiting(false);
                     setStatusText(t('voiceChat.retrying'));
@@ -440,6 +450,20 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
     }, [isAssistantMode, speakAndListen, autoRead]);
 
     if (variant === 'inline') {
+        const cancelCurrentTurn = () => {
+            submitRequestedRef.current = false;
+            recognitionAbortRef.current?.abort();
+            if (mediaRecorderRef.current?.state === 'recording') {
+                mediaRecorderRef.current.onstop = null;
+                stopRecording();
+            }
+            readAloud.cancel();
+            onStop?.();
+            isWaitingRef.current = false;
+            setIsWaiting(false);
+            setStatusText(t('voiceChat.speakNow'));
+            if (!deferListeningRef.current) setTimeout(() => startListeningRef.current(), 300);
+        };
         const submitImmediately = () => {
             if (isListening && mediaRecorderRef.current?.state === 'recording') {
                 submitRequestedRef.current = true;
@@ -478,10 +502,16 @@ const VoiceChatTab: React.FC<VoiceChatTabProps> = ({
                             return <span key={index} style={{height: `${height}px`}}/>;
                         })}
                     </div>
-                    <button type="button" className="voice-assistant-inline__button"
+                    {(deferListening || isWaiting || readAloud.speaking) && (
+                        <button type="button" className="voice-assistant-inline__button voice-assistant-inline__button--stop"
+                                onClick={cancelCurrentTurn} aria-label={t('voiceChat.cancel')}>
+                            <Square size={11} fill="currentColor"/>
+                        </button>
+                    )}
+                    <button type="button" className="voice-assistant-inline__button voice-assistant-inline__button--close"
                             onClick={() => { stopAll(); onClose(); }}
                             aria-label={t('voiceChat.end')}>
-                        <Square size={12} fill="currentColor"/>
+                        <X size={17} strokeWidth={2}/>
                     </button>
                     <button type="button" className="voice-assistant-inline__button voice-assistant-inline__button--send"
                             onClick={submitImmediately} disabled={deferListening || (!isListening && !inputValue.trim())}

@@ -359,6 +359,8 @@ class QueryRequest(BaseModel):
     minimal_prompt: bool = False  # True면 응답 언어 규칙 외에는 클라이언트 system_prompt만 사용하고 컨텍스트·도구·RAG 주입을 제외.
     client_tool_ids: list[str] | None = None  # None: desktop defaults; []: no client tools.
     tools_enabled: bool = True  # 확장 프로그램 등 답변 전용 클라이언트는 False로 요청.
+    personal_memory: bool = False  # 확장 일반 채팅에서 client tool scope 안의 기억 도구 허용.
+    personal_memory_disabled: bool = False  # 페이지 요약 등 특수 작업은 기억 조회도 제외.
     selected_mcp_ids: list[str] = []  # @로 선택한 MCP들은 enabled 여부와 무관하게 이번 요청에만 사용.
     approval_mode: str = "risky_only"
 
@@ -531,12 +533,13 @@ async def _query_serialized(req: QueryRequest):
     memory_token = None
     try:
         memory_token = memory_enabled_for_turn.set(
-            await capture_memory_enabled_for_turn() if not req.project_id and not req.minimal_prompt else False
+            await capture_memory_enabled_for_turn() if not req.project_id and not req.minimal_prompt and not req.personal_memory_disabled else False
         )
         if req.use_tools and (req.client_tool_ids is not None or req.selected_mcp_ids):
             scope_token = await mcp_manager.enable_request_scope(
                 req.selected_mcp_ids or req.client_tool_ids or [],
                 client_scope=req.client_tool_ids is not None, explicit=bool(req.selected_mcp_ids),
+                allow_memory_tools=req.personal_memory,
             )
         return await _query_response(req)
     finally:
@@ -569,7 +572,7 @@ async def _query_response(req: QueryRequest):
     if project_memory and any(project_memory.get(key) for key in ("summary", "decisions", "action_items")):
         memory_context = json.dumps(project_memory_prompt_view(project_memory), ensure_ascii=False)
         system_prompt = f"{system_prompt}\n\n[Project memory]\n{memory_context}" if system_prompt else f"[Project memory]\n{memory_context}"
-    if (not req.project_id and not req.minimal_prompt
+    if (not req.project_id and not req.minimal_prompt and not req.personal_memory_disabled
             and cfg.get("model_type") not in ("image_gen", "image_edit")
             and current_model not in IMAGE_MODEL_IDS):
         from services.user_memory import memory_context as build_user_memory_context
@@ -913,13 +916,13 @@ async def query_stream(req: QueryRequest):
                 interactive=True,
             ))
             memory_token = memory_enabled_for_turn.set(
-                await capture_memory_enabled_for_turn() if not req.project_id and not req.minimal_prompt else False
+                await capture_memory_enabled_for_turn() if not req.project_id and not req.minimal_prompt and not req.personal_memory_disabled else False
             )
             if req.use_tools and (req.client_tool_ids is not None or req.selected_mcp_ids):
                 selected_ids = req.selected_mcp_ids or req.client_tool_ids or []
                 mcp_scope_token = await mcp_manager.enable_request_scope(
                     selected_ids, client_scope=req.client_tool_ids is not None,
-                    explicit=bool(req.selected_mcp_ids),
+                    explicit=bool(req.selected_mcp_ids), allow_memory_tools=req.personal_memory,
                 )
             # 1) 붙여넣기 UI 마커 제거 (본문은 사용자 질문으로 유지)
             clean_question = unwrap_pasted_text(req.question)
@@ -942,7 +945,7 @@ async def query_stream(req: QueryRequest):
                 if project_memory and any(project_memory.get(key) for key in ("summary", "decisions", "action_items")):
                     memory_context = json.dumps(project_memory_prompt_view(project_memory), ensure_ascii=False)
                     system_prompt = f"{system_prompt}\n\n[Project memory]\n{memory_context}" if system_prompt else f"[Project memory]\n{memory_context}"
-                if (not req.project_id and not req.minimal_prompt
+                if (not req.project_id and not req.minimal_prompt and not req.personal_memory_disabled
                         and cfg.get("model_type") not in ("image_gen", "image_edit")
                         and current_model not in IMAGE_MODEL_IDS):
                     from services.user_memory import memory_context as build_user_memory_context
