@@ -85,6 +85,7 @@ if [ -z "${CSC_LINK:-}" ]; then
     export CSC_IDENTITY_AUTO_DISCOVERY=false
 fi
 npm run build   # package.json에 "build": "electron-builder --win" 으로 교체됐으므로 그대로 실행
+node -e 'const asar = require("@electron/asar"); const files = asar.listPackage("dist/win-unpacked/resources/app.asar"); if (!files.includes("/elasticsearch-startup.js")) { console.error("[FAIL] Packaged Elasticsearch startup module is missing"); process.exit(1); }'
 if [ ! -f "dist/win-unpacked/resources/locales/en/settings.json" ]; then
     echo "[FAIL] Packaged locale resource is missing: locales/en/settings.json"
     exit 1

@@ -118,6 +118,7 @@ jobs:
           node --check electron/preload.js
           node -e "JSON.parse(require('fs').readFileSync('win/electron/package.json', 'utf8'))"
           node -e "const p=require('./electron/platform'); if(!p.isWindows || !p.bundledPython('C:/resources', true).endsWith('python.exe') || !p.installDir.startsWith(process.env.LOCALAPPDATA)) process.exit(1)"
+          node electron/tests/package-files.test.js
 
       - name: Validate locale JSON and Windows Python path contract
         shell: pwsh
