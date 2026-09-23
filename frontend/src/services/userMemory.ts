@@ -22,6 +22,7 @@ export interface UserMemoryProgress {
     processed: number;
     total: number;
     title: string;
+    batch_size?: number;
 }
 
 export interface UserMemoryRefreshResult {

@@ -105,7 +105,9 @@ export default function UserMemorySection() {
                 <div className="remember-bar" style={{width: `${Math.min(100, analysisProgress.processed / analysisProgress.total * 100)}%`}}/>
             </div>}
             {analysisProgress.title && <div className="remember-count remember-cur-title">
-                {t('memory.currentConversation', {title: analysisProgress.title})}
+                {analysisProgress.batch_size && analysisProgress.batch_size > 1
+                    ? t('memory.currentBatch', {title: analysisProgress.title, count: analysisProgress.batch_size - 1})
+                    : t('memory.currentConversation', {title: analysisProgress.title})}
             </div>}
             <div className="remember-spinner"/>
         </div>}

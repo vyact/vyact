@@ -82,17 +82,55 @@ async def test_memory_list_prioritizes_related_items_within_token_budget(monkeyp
         return list(range(len(text))), None
 
     monkeypatch.setattr(user_memory_tools, "tokenize_text_for_provider", fake_tokenize)
+    similar = AsyncMock(return_value=[])
+    monkeypatch.setattr(user_memory_tools, "find_similar_memories", similar)
     budget_token = user_memory_tools.memory_list_token_budget.set(900)
     try:
         result = json.loads(await user_memory_tools._list_memories(candidate="English study progress"))
         assert result["total_count"] == 2
         assert result["omitted_count"] == 1
         assert [item["id"] for item in result["memories"]] == ["study"]
+        similar.assert_awaited_once_with("English study progress")
         user_memory_tools.reset_memory_stages()
         user_memory_tools.memory_list_token_budget.set(550)
         too_small = json.loads(await user_memory_tools._list_memories(candidate="English study progress"))
         assert too_small["ok"] is False
         assert not user_memory_tools.active_memory_stage_tools()
+    finally:
+        user_memory_tools.memory_list_token_budget.reset(budget_token)
+        user_memory_tools.reset_memory_stages()
+
+
+@pytest.mark.asyncio
+async def test_memory_list_uses_semantic_matches_only_when_full_list_will_not_fit(monkeypatch):
+    monkeypatch.setattr(user_memory_tools, "is_memory_enabled_for_turn", AsyncMock(return_value=True))
+    recent = [
+        {"id": "recent", "category": "Cooking", "content": "New recipe " * 30},
+        {"id": "older", "category": "Study", "content": "Learn grammar " * 30},
+    ]
+    monkeypatch.setattr(user_memory_tools, "list_memories", AsyncMock(return_value=recent))
+    similar = AsyncMock(return_value=[
+        {"id": "semantic", "category": "Language", "content": "Past perfect " * 30},
+    ])
+    monkeypatch.setattr(user_memory_tools, "find_similar_memories", similar)
+
+    async def fake_tokenize(text, _config):
+        return list(range(len(text))), None
+
+    monkeypatch.setattr(user_memory_tools, "tokenize_text_for_provider", fake_tokenize)
+    budget_token = user_memory_tools.memory_list_token_budget.set(3000)
+    try:
+        full = json.loads(await user_memory_tools._list_memories(candidate="English study"))
+        assert full["omitted_count"] == 0
+        similar.assert_not_awaited()
+        user_memory_tools.reset_memory_stages()
+
+        user_memory_tools.memory_list_token_budget.set(800)
+        partial = json.loads(await user_memory_tools._list_memories(candidate="English study"))
+        assert partial["ok"] is True
+        assert partial["memories"][0]["id"] == "semantic"
+        assert partial["total_count"] == 3
+        similar.assert_awaited_once_with("English study")
     finally:
         user_memory_tools.memory_list_token_budget.reset(budget_token)
         user_memory_tools.reset_memory_stages()

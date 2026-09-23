@@ -34,6 +34,27 @@ def test_memory_fingerprint_ignores_spacing_variants():
            user_memory._memory_fingerprint("Vyact라는 앱을 개발 중")
 
 
+@pytest.mark.asyncio
+async def test_similar_memory_lookup_uses_stored_vectors_and_closes_es(monkeypatch):
+    class FakeEs:
+        search = AsyncMock(return_value={"hits": {"hits": [{
+            "_id": "study", "_source": {"memory_type": "LEARNING", "category": "English",
+                                       "content": "Continue grammar"},
+        }]}})
+        close = AsyncMock()
+
+    es = FakeEs()
+    monkeypatch.setattr(user_memory, "get_es", lambda: es)
+    embedding = AsyncMock(return_value=[0.1, 0.2])
+    monkeypatch.setattr(user_memory, "get_embedding", embedding)
+    memories = await user_memory.find_similar_memories("study progress", limit=8)
+    assert [item["id"] for item in memories] == ["study"]
+    embedding.assert_awaited_once_with("study progress")
+    assert es.search.await_args.kwargs["knn"]["k"] == 8
+    assert es.search.await_args.kwargs["knn"]["filter"] == {"term": {"record_type": "memory"}}
+    es.close.assert_awaited_once()
+
+
 def test_memory_update_notice_requires_actual_success():
     from routers.chat import _saved_memory_from_tool_result
 
@@ -108,6 +129,61 @@ async def test_analysis_retries_invalid_model_response(monkeypatch):
     assert calls == ["user_memory_analysis", "user_memory_analysis_retry"]
 
 
+@pytest.mark.asyncio
+async def test_analysis_existing_memory_uses_token_budget_instead_of_character_cutoff(monkeypatch):
+    from services.llm import core
+
+    content = "longword " * 50
+    prompts = []
+
+    async def fake_query(prompt, _docs, **_kwargs):
+        prompts.append(prompt)
+        return '{"operations":[]}'
+
+    async def fake_tokenize(text, _config):
+        return text.split(), None
+
+    monkeypatch.setattr(core, "query_llm", fake_query)
+    monkeypatch.setattr(user_memory, "get_provider_config", AsyncMock(return_value={"context_size": 4096}))
+    monkeypatch.setattr(user_memory, "tokenize_text_for_provider", fake_tokenize)
+    await user_memory._analyze_user_text("I study English", [{
+        "id": "study", "memory_type": "LEARNING", "category": "English", "content": content,
+    }])
+    assert len(content) > 300
+    assert "longword " * 40 in prompts[0]
+
+
+@pytest.mark.asyncio
+async def test_analysis_batches_split_long_text_without_losing_conversation_order(monkeypatch):
+    async def fake_tokenize(text, _config):
+        return list(text), None
+
+    monkeypatch.setattr(user_memory, "tokenize_text_for_provider", fake_tokenize)
+    conversations = [
+        ({"conv_id": "one", "messages": [{"role": "user", "content": "A" * 1600}]}, 1),
+        ({"conv_id": "two", "messages": [{"role": "user", "content": "B" * 300}]}, 2),
+    ]
+    batches = await user_memory._analysis_batches(conversations, {"context_size": 4096})
+    entries = [entry for batch in batches for entry in batch]
+    assert "".join(entry["text"] for entry in entries if entry["conversation"]["conv_id"] == "one").strip() == "A" * 1600
+    assert "".join(entry["text"] for entry in entries if entry["conversation"]["conv_id"] == "two").strip() == "B" * 300
+    assert [entry["conversation"]["conv_id"] for entry in entries if entry["last"]] == ["one", "two"]
+    for batch in batches:
+        tokens, _ = await fake_tokenize(user_memory._analysis_batch_text(batch), {})
+        assert len(tokens) <= 1304
+
+
+def test_batched_analysis_uses_each_conversation_as_a_related_memory_query():
+    payload = json.dumps([
+        {"source_id": "one", "text": "English progress"},
+        {"source_id": "two", "text": "Project progress"},
+        {"source_id": "one", "text": "Next grammar lesson"},
+    ])
+    assert user_memory._analysis_related_queries(payload) == [
+        "English progress\nNext grammar lesson", "Project progress",
+    ]
+
+
 def test_long_conversation_is_processed_without_dropping_earlier_user_text():
     first = "first fact " * 1500
     last = "last fact"
@@ -121,7 +197,7 @@ def test_long_conversation_is_processed_without_dropping_earlier_user_text():
 
 
 @pytest.mark.asyncio
-async def test_merge_updates_existing_id_and_ignores_unknown_delete(monkeypatch):
+async def test_past_analysis_updates_existing_id_without_deleting_memory(monkeypatch):
     saved = []
     deleted = []
 
@@ -137,6 +213,7 @@ async def test_merge_updates_existing_id_and_ignores_unknown_delete(monkeypatch)
     existing = [{"id": "study", "content": "Studying present perfect."}]
     operations = [
         {"action": "delete", "id": "unknown"},
+        {"action": "delete", "id": "study"},
         {"action": "add", "content": "Studying present perfect.", "memory_type": "LEARNING"},
         {"action": "update", "id": "study", "content": "Studying past perfect.",
          "memory_type": "LEARNING", "category": "English"},
@@ -163,6 +240,25 @@ async def test_changed_memory_does_not_block_readding_previous_fact(monkeypatch)
     ]
     assert await user_memory._apply_operations(operations, [{"id": "one", "content": "Old fact"}], "chat") == 2
     assert saved == ["New fact", "Old fact"]
+
+
+@pytest.mark.asyncio
+async def test_batched_memory_operations_keep_valid_source_conversation(monkeypatch):
+    saved = []
+
+    async def fake_save(content, memory_type, category, **kwargs):
+        saved.append((content, kwargs["source_conv_id"]))
+        return {"id": str(len(saved)), "content": content}
+
+    monkeypatch.setattr(user_memory, "save_memory", fake_save)
+    operations = [
+        {"action": "add", "source_id": "two", "content": "Studies English",
+         "memory_type": "LEARNING", "category": "English"},
+        {"action": "add", "source_id": "invented", "content": "Other fact",
+         "memory_type": "PROFILE", "category": "Other"},
+    ]
+    assert await user_memory._apply_operations(operations, [], "", {"one", "two"}) == 1
+    assert saved == [("Studies English", "two")]
 
 
 @pytest.mark.asyncio
@@ -216,11 +312,47 @@ async def test_refresh_reports_each_conversation_progress(monkeypatch):
     assert result == {"processed": 2, "changed": 0}
     assert reports == [
         {"processed": 0, "total": 2, "title": ""},
-        {"processed": 0, "total": 2, "title": "English"},
-        {"processed": 1, "total": 2, "title": ""},
-        {"processed": 1, "total": 2, "title": "Work"},
+        {"processed": 0, "total": 2, "title": "English", "batch_size": 2},
         {"processed": 2, "total": 2, "title": ""},
     ]
+    user_memory._analyze_user_text.assert_awaited_once()
+    batch_text = user_memory._analyze_user_text.await_args.args[0]
+    assert [entry["source_id"] for entry in json.loads(batch_text)] == ["one", "two"]
+
+
+@pytest.mark.asyncio
+async def test_batch_with_missing_source_ids_retries_each_conversation(monkeypatch):
+    class FakeEs:
+        count = AsyncMock(return_value={"count": 2})
+        search = AsyncMock(return_value={"hits": {"hits": [
+            {"_source": {"conv_id": "one", "title": "English", "updated_at": "2026-09-20T10:00:00Z",
+                         "messages": [{"role": "user", "content": "I study English"}]}, "sort": [1000, "one"]},
+            {"_source": {"conv_id": "two", "title": "Work", "updated_at": "2026-09-21T10:00:00Z",
+                         "messages": [{"role": "user", "content": "I build Vyact"}]}, "sort": [2000, "two"]},
+        ]}})
+        update = AsyncMock()
+        close = AsyncMock()
+
+    saved = []
+
+    async def fake_save(content, memory_type, category, **kwargs):
+        saved.append((content, kwargs["source_conv_id"]))
+        return {"id": str(len(saved)), "content": content}
+
+    analyze = AsyncMock(side_effect=[
+        [{"action": "add", "content": "Ambiguous", "memory_type": "PROFILE"}],
+        [{"action": "add", "content": "Studies English", "memory_type": "LEARNING"}],
+        [{"action": "add", "content": "Builds Vyact", "memory_type": "PROJECT"}],
+    ])
+    monkeypatch.setattr(user_memory, "get_es", lambda: FakeEs())
+    monkeypatch.setattr(user_memory, "get_memory_state", AsyncMock(return_value={"enabled": True}))
+    monkeypatch.setattr(user_memory, "_existing_for_analysis", AsyncMock(return_value=[]))
+    monkeypatch.setattr(user_memory, "_analyze_user_text", analyze)
+    monkeypatch.setattr(user_memory, "save_memory", fake_save)
+    result = await user_memory.refresh_memories()
+    assert result == {"processed": 2, "changed": 2}
+    assert saved == [("Studies English", "one"), ("Builds Vyact", "two")]
+    assert analyze.await_count == 3
 
 
 @pytest.mark.asyncio
