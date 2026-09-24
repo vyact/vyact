@@ -66,7 +66,7 @@ echo "[OK] 윈도우 파일 적용 완료"
 echo ""
 echo "[3/5] Frontend build..."
 cd frontend
-npm install
+npm ci
 npm run build
 cd ..
 echo "[OK] Frontend build 완료"
