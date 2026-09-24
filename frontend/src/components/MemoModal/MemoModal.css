@@ -321,6 +321,9 @@
 }
 
 .memo-editor-toolbar button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     background: none;
     border: none;
     color: var(--muted);
@@ -329,15 +332,17 @@
     border-radius: 4px;
     font-size: 14px;
     font-weight: 600;
+    line-height: 1;
     transition: all 0.1s;
     min-width: 28px;
+    height: 28px;
 }
 
 .memo-editor-toolbar button:hover { background: var(--button-neutral-hover); color: var(--text); }
 .memo-editor-toolbar button.active { background: rgba(255,255,255,0.12); color: var(--accent); }
 .memo-text-color-picker { position: relative; display: inline-flex; align-items: center; justify-content: center; }
-.memo-text-color-picker > button { width: 28px; height: 26px; padding: 4px; font-size: 15px; font-weight: 700; }
-.memo-text-color-picker span { border-bottom: 3px solid currentColor; line-height: 1.1; }
+.memo-text-color-picker > button { width: 28px; padding: 4px; font-size: 14px; font-weight: 700; }
+.memo-text-color-picker > button span { border-bottom: 2px solid currentColor; line-height: 1; }
 .memo-text-color-popover { position: absolute; z-index: 9300; top: calc(100% + 6px); left: 0; width: 220px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--modal-bg); box-shadow: 0 10px 24px rgba(0,0,0,.35); }
 .memo-custom-color-input { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-bottom: 9px; margin-bottom: 9px; border-bottom: 1px solid var(--border); color: var(--text-secondary); font-size: 12px; }
 .memo-custom-color-input input { width: 28px; height: 25px; padding: 0; border: 0; background: transparent; cursor: pointer; }

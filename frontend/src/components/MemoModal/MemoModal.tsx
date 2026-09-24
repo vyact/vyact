@@ -15,7 +15,7 @@ import { Details, DetailsSummary, DetailsContent } from '@tiptap/extension-detai
 import { Table, TableRow, TableHeader, TableCell } from '@tiptap/extension-table';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
-import { AlignCenter, AlignLeft, AlignRight, Ellipsis, FileText, ImagePlus, Link as LinkIcon, LoaderCircle, Paperclip, Pencil, Search, Table2, Trash2, X } from 'lucide-react';
+import { AlignCenter, AlignLeft, AlignRight, Ellipsis, FileText, ImagePlus, Link as LinkIcon, ListCollapse, LoaderCircle, Paperclip, Pencil, Redo2, Search, Table2, Trash2, Undo2, X } from 'lucide-react';
 
 import {getTopmostModalOverlay} from '../common/ModalOverlay/modalStack';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
@@ -734,7 +734,7 @@ const MemoEditor: React.FC<{
                     )}
                 </div>
                 <button onClick={insertDetailsAndFocus}
-                        className={editor?.isActive('details') ? 'active' : ''} title={t('memoModal.toolbar.toggleDetails')}>▶</button>
+                        className={editor?.isActive('details') ? 'active' : ''} title={t('memoModal.toolbar.toggleDetails')} aria-label={t('memoModal.toolbar.toggleDetails')}><ListCollapse size={17} aria-hidden="true" /></button>
                 <button onClick={() => (editor?.chain() as any)?.focus().insertTable({rows: 3, cols: 3, withHeaderRow: true}).run()}
                         title={t('memoModal.toolbar.addTable')} aria-label={t('memoModal.toolbar.addTable')}><Table2 size={17} aria-hidden="true" /></button>
                 <span className="toolbar-sep"/>
@@ -748,8 +748,8 @@ const MemoEditor: React.FC<{
                 <button onClick={() => fileInputRef.current?.click()} title={t('memoModal.toolbar.addFile')} aria-label={t('memoModal.toolbar.addFile')}><Paperclip size={17} aria-hidden="true" /></button>
                 <button onClick={openLinkDialog} title={t('memoModal.toolbar.addLink')} aria-label={t('memoModal.toolbar.addLink')}><LinkIcon size={17} aria-hidden="true" /></button>
                 <span className="toolbar-sep"/>
-                <button onClick={triggerUndo} title={t('memoModal.toolbar.undo')}>↩</button>
-                <button onClick={triggerRedo} title={t('memoModal.toolbar.redo')}>↪</button>
+                <button onClick={triggerUndo} title={t('memoModal.toolbar.undo')} aria-label={t('memoModal.toolbar.undo')}><Undo2 size={17} aria-hidden="true" /></button>
+                <button onClick={triggerRedo} title={t('memoModal.toolbar.redo')} aria-label={t('memoModal.toolbar.redo')}><Redo2 size={17} aria-hidden="true" /></button>
             </div>
             <EditorContent editor={editor} className="memo-editor-content" onDropCapture={handleFileDrop} onDragOverCapture={event => {
                 if (!Array.from(event.dataTransfer.types).includes('Files')) return;
