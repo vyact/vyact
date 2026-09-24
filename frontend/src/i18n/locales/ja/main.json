@@ -1234,6 +1234,7 @@
   "uiAuditFinal": {"attachments":"添付ファイル {{count}}件","removeAll":"すべて削除","characterCount":"{{count}}文字","itemCount":"{{count}}件","download":"ダウンロード","fileCount":"{{count}}ファイル","zipDownload":"ZIPをダウンロード","errorDetail":"❌ エラー: {{message}}"},
   "networkError": {"requestFailed":"リクエスト失敗","serverError":"サーバーエラー","streamFailed":"ストリーミングリクエストに失敗しました","clientErrorDetail":"リクエストエラー（{{status}}）：{{detail}}","serverErrorDetail":"サーバーエラー（{{status}}）：{{detail}} — しばらくしてからもう一度お試しください。","genericDetail":"エラー：{{detail}}"},
   "backendErrors": {
+    "google_rate_limited": "Google サービスのリクエスト回数の上限に達しました。しばらくしてから再試行してください。",
     "context_length_exceeded": "必須入力がコンテキストウィンドウを超えています。質問やシステム指示を短くするか、添付・ツールを減らすか、コンテキストウィンドウを拡大してください。",
     "gmail_filter_reconnect_required": "$t(main:googleWorkspace.spamFilterReconnect)",
     "microsoft_drive_upload_too_large": "「{{name}}」はOneDriveの1ファイルあたり{{limit}}MiBのアップロード制限を超えています。ファイルとフォルダーはアップロードされていません。このファイルを除いて再試行してください。",

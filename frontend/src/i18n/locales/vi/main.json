@@ -1234,6 +1234,7 @@
   "uiAuditFinal": {"attachments":"{{count}} tệp đính kèm","removeAll":"Xóa tất cả","characterCount":"{{count}} ký tự","itemCount":"{{count}} mục","download":"Tải xuống","fileCount":"{{count}} tệp","zipDownload":"Tải ZIP xuống","errorDetail":"❌ Lỗi: {{message}}"},
   "networkError": {"requestFailed":"Yêu cầu thất bại","serverError":"Lỗi máy chủ","streamFailed":"Yêu cầu phát trực tiếp thất bại","clientErrorDetail":"Lỗi yêu cầu ({{status}}): {{detail}}","serverErrorDetail":"Lỗi máy chủ ({{status}}): {{detail}} — Vui lòng thử lại sau ít phút.","genericDetail":"Lỗi: {{detail}}"},
   "backendErrors": {
+    "google_rate_limited": "Google Workspace đã tạm thời vượt quá giới hạn số lần gọi. Vui lòng đợi một lát rồi thử lại.",
     "context_length_exceeded": "Đầu vào bắt buộc vượt quá cửa sổ ngữ cảnh. Hãy rút ngắn câu hỏi hoặc chỉ dẫn hệ thống, giảm tệp đính kèm hay công cụ, hoặc tăng cửa sổ ngữ cảnh.",
     "gmail_filter_reconnect_required": "$t(main:googleWorkspace.spamFilterReconnect)",
     "microsoft_drive_upload_too_large": "“{{name}}” vượt quá giới hạn tải lên OneDrive là {{limit}} MiB mỗi tệp. Chưa có tệp hoặc thư mục nào được tải lên. Vui lòng bỏ tệp này và thử lại.",

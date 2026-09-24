@@ -1233,6 +1233,7 @@
   "uiAuditFinal": {"attachments":"{{count}} attachments","removeAll":"Remove all","characterCount":"{{count}} characters","itemCount":"{{count}} items","download":"Download","fileCount":"{{count}} files","zipDownload":"Download ZIP","errorDetail":"❌ Error: {{message}}"},
   "networkError": {"requestFailed":"Request failed","serverError":"Server error","streamFailed":"Streaming request failed","clientErrorDetail":"Request error ({{status}}): {{detail}}","serverErrorDetail":"Server error ({{status}}): {{detail}} — Please try again shortly.","genericDetail":"Error: {{detail}}"},
   "backendErrors": {
+    "google_rate_limited": "Google Workspace has temporarily exceeded its request limit. Please wait a moment and try again.",
     "context_length_exceeded": "The required input exceeds the context window. Shorten the question or system instructions, reduce attachments or tools, or increase the context window.",
     "gmail_filter_reconnect_required": "$t(main:googleWorkspace.spamFilterReconnect)",
     "microsoft_drive_upload_too_large": "“{{name}}” exceeds the OneDrive upload limit of {{limit}} MiB per file. No files or folders were uploaded. Please remove this file and try again.",

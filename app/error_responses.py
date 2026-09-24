@@ -9,8 +9,10 @@ from fastapi import Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException
+from googleapiclient.errors import HttpError
 
 from logger import get_logger
+from services.google_workspace.errors import is_google_rate_limited
 
 logger = get_logger(__name__)
 
@@ -86,6 +88,23 @@ async def validation_exception_handler(request: Request, error: RequestValidatio
     return JSONResponse(
         status_code=422,
         content=public_error_payload("validation_failed", request_id=request_id),
+        headers={"X-Request-ID": request_id},
+    )
+
+
+async def google_http_error_handler(request: Request, error: HttpError) -> JSONResponse:
+    request_id = request_id_for(request)
+    status = error.resp.status
+    if is_google_rate_limited(error):
+        response_status, code = 429, "google_rate_limited"
+    elif status in {401, 403, 404, 429, 503}:
+        response_status, code = status, _STATUS_CODES[status]
+    else:
+        response_status, code = 502, "upstream_error"
+    logger.warning("Google API error request=%s upstream_status=%s code=%s", request_id, status, code)
+    return JSONResponse(
+        status_code=response_status,
+        content=public_error_payload(code, request_id=request_id),
         headers={"X-Request-ID": request_id},
     )
 

@@ -98,6 +98,31 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+  code-tools-portability:
+    name: Project file tools (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: app/requirements-test.txt
+
+      - name: Install backend test dependencies
+        run: python -m pip install -r app/requirements-test.txt
+
+      - name: Test project file tools
+        env:
+          PYTHONPATH: app
+        run: python -m pytest app/tests/test_code_file_inventory.py app/tests/test_code_directory_access.py app/tests/test_code_search_boundary.py app/tests/test_code_apply_patch_paths.py app/tests/test_code_install_dependencies.py -q
+
   windows-desktop:
     name: Windows desktop static checks
     runs-on: windows-latest

@@ -10,7 +10,7 @@ ApprovalEmitter = Callable[[dict], Awaitable[None]]
 APPROVAL_MODES = {"always_confirm", "risky_only", "trusted"}
 
 READ_ONLY_TOOLS = {
-    "code_list_directory", "code_read_file", "code_read_files", "code_find_files",
+    "code_list_directory", "code_read_file", "code_read_files", "code_find_files", "code_file_inventory",
     "code_grep_search", "code_list_tasks", "code_git_status", "code_git_diff",
     "get_email", "list_upcoming_events", "search_calendar_events", "list_calendars",
     "check_free_busy", "get_calendar_event", "search_files", "get_drive_file",
@@ -23,6 +23,7 @@ READ_ONLY_TOOLS.update({"microsoft_search_emails", "microsoft_get_email", "micro
 READ_ONLY_TOOLS.add("web_search")
 READ_ONLY_TOOLS.add("user_memory_list")
 SENSITIVE_TOOLS = {
+    "code_install_dependencies",
     "microsoft_send_email", "microsoft_create_calendar_event",
     "send_email", "reply_email", "create_calendar_event", "update_calendar_event",
     "upload_drive_file", "download_drive_file", "move_drive_file",

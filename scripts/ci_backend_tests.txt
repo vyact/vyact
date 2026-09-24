@@ -5,3 +5,10 @@ app/tests/test_vyact_runtime.py
 app/tests/test_runtime_error_details.py
 app/tests/test_llm_errors.py
 app/tests/test_error_responses.py
+app/tests/test_code_file_inventory.py
+app/tests/test_code_directory_access.py
+app/tests/test_code_search_boundary.py
+app/tests/test_code_apply_patch_paths.py
+app/tests/test_code_install_dependencies.py
+app/tests/test_builtin_tool_prompts.py
+app/tests/test_google_quota_errors.py

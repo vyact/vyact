@@ -1234,6 +1234,7 @@
   "uiAuditFinal": {"attachments":"{{count}} 个附件","removeAll":"全部删除","characterCount":"{{count}} 个字符","itemCount":"{{count}} 项","download":"下载","fileCount":"{{count}} 个文件","zipDownload":"下载 ZIP","errorDetail":"❌ 错误：{{message}}"},
   "networkError": {"requestFailed":"请求失败","serverError":"服务器错误","streamFailed":"流式请求失败","clientErrorDetail":"请求错误（{{status}}）：{{detail}}","serverErrorDetail":"服务器错误（{{status}}）：{{detail}} — 请稍后重试。","genericDetail":"错误：{{detail}}"},
   "backendErrors": {
+    "google_rate_limited": "Google 服务请求次数已达到上限。请稍后重试。",
     "context_length_exceeded": "必要输入超出了上下文窗口。请缩短问题或系统指令、减少附件或工具，或增大上下文窗口。",
     "gmail_filter_reconnect_required": "$t(main:googleWorkspace.spamFilterReconnect)",
     "microsoft_drive_upload_too_large": "“{{name}}”超过了 OneDrive 每个文件 {{limit}} MiB 的上传限制。未上传任何文件或文件夹。请移除此文件后重试。",

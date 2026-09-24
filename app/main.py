@@ -40,6 +40,7 @@ from fastapi.staticfiles import StaticFiles
 trace_startup("import:fastapi.staticfiles", "end")
 trace_startup("import:starlette.exceptions", "begin")
 from starlette.exceptions import HTTPException
+from googleapiclient.errors import HttpError
 trace_startup("import:starlette.exceptions", "end")
 
 trace_startup("import:config", "begin")
@@ -72,6 +73,7 @@ trace_startup("import:routers.deps", "end")
 trace_startup("import:error_responses", "begin")
 from error_responses import (
     bind_request_id,
+    google_http_error_handler,
     http_exception_handler,
     request_id_for,
     reset_request_id,
@@ -480,6 +482,7 @@ async def shutdown_admission(request: Request, call_next):
 app.add_middleware(BenchmarkGuard)
 app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(HttpError, google_http_error_handler)
 app.add_exception_handler(Exception, unhandled_exception_handler)
 
 app.add_middleware(

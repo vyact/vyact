@@ -4,7 +4,7 @@ services/code_tools.py — 코드 분석 tool (폴더 첨부 시 활성화)
 사용자가 채팅에 폴더를 첨부하면, LLM이 해당 폴더 내 파일을 탐색·읽기·수정·검색할 수 있도록
 내부 tool을 등록한다. 폴더 경로는 요청별 ContextVar로 관리된다.
 """
-from services.shutdown_guard import protected
+import asyncio
 import fnmatch
 import difflib
 import json
@@ -17,10 +17,12 @@ import time
 import uuid
 from collections import Counter
 from contextvars import ContextVar
-from pathlib import Path
+from datetime import datetime, timezone
+from pathlib import Path, PureWindowsPath
 
 from logger import get_logger
 from services.code_messages import code_message, code_error, localized_code_tool
+from services.shutdown_guard import protected
 
 logger = get_logger(__name__)
 
@@ -40,6 +42,8 @@ MAX_UNDO_REGISTRY_ENTRIES = 100
 MAX_READ_BYTES = 100_000  # 100KB
 MAX_GREP_RESULTS = 50
 MAX_FIND_RESULTS = 300
+MAX_FILE_INVENTORY_ENTRIES = 100_000
+MAX_FILE_INVENTORY_RESULTS = 100
 MAX_MULTI_READ_FILES = 10
 MAX_PATCH_BYTES = 100_000
 MAX_TASK_CONFIG_DEPTH = 4
@@ -55,6 +59,16 @@ IGNORE_DIRS = {
     ".next", ".nuxt", ".cache", ".idea", ".vscode", "coverage", ".pytest_cache",
     "egg-info", ".tox", ".mypy_cache",
 }
+
+NODE_LOCKFILE_MANAGERS = {
+    "package-lock.json": "npm",
+    "npm-shrinkwrap.json": "npm",
+    "pnpm-lock.yaml": "pnpm",
+    "yarn.lock": "yarn",
+    "bun.lock": "bun",
+    "bun.lockb": "bun",
+}
+NODE_PACKAGE_MANAGERS = frozenset(NODE_LOCKFILE_MANAGERS.values())
 
 
 def build_code_folder_map(folder_paths: list[str]) -> dict[str, str]:
@@ -296,11 +310,12 @@ def get_code_changes_undo_status(undo_token: str) -> dict:
 
 def _safe_path(folder: str, rel: str) -> Path | None:
     """폴더 밖으로 나가지 않도록 경로 검증."""
-    base = Path(folder).resolve()
-    target = (base / rel).resolve()
-    if not target.is_relative_to(base):
+    try:
+        base = Path(folder).resolve()
+        target = (base / rel).resolve()
+    except (OSError, RuntimeError):
         return None
-    return target
+    return target if target.is_relative_to(base) else None
 
 
 def _resolve_folder(folder_id: str) -> tuple[str | None, str | None]:
@@ -308,6 +323,16 @@ def _resolve_folder(folder_id: str) -> tuple[str | None, str | None]:
     if not folder:
         return None, code_error("invalid_folder", value=folder_id)
     return folder, None
+
+
+def _walk_error_callback(unavailable: list[str], fallback_path: str):
+    def on_error(error: OSError) -> None:
+        if len(unavailable) < MAX_FIND_RESULTS:
+            unavailable.append(code_message("directory_unavailable", value=error.filename or fallback_path))
+        elif len(unavailable) == MAX_FIND_RESULTS:
+            unavailable.append(code_message("truncated"))
+
+    return on_error
 
 
 def _confirmation_received(action: str, *paths: str) -> bool:
@@ -337,6 +362,8 @@ def _run_command(command: list[str], folder: str, timeout: int = 60) -> str:
         return code_error("timeout", value=timeout)
     except FileNotFoundError:
         return code_error("not_found", value=command[0])
+    except OSError as error:
+        return code_error("command_failed", value=error)
     output = (result.stdout + result.stderr).strip()
     if len(output) > 12_000:
         output = output[:12_000] + "\n" + code_message("truncated")
@@ -355,28 +382,53 @@ async def _list_directory(folder_id: str, path: str = ".", max_depth: int = 3) -
         return code_error("not_found", value=path)
 
     lines = []
+    truncated = False
     base = Path(folder).resolve()
 
-    def _walk(p: Path, depth: int, prefix: str = ""):
-        if depth > max_depth:
+    def _walk(p: Path, depth: int, prefix: str = "", ancestors: frozenset[Path] = frozenset()):
+        nonlocal truncated
+        if depth > max_depth or len(lines) >= 500:
+            truncated = True
             return
         try:
+            resolved = p.resolve(strict=True)
+            if not resolved.is_relative_to(base) or resolved in ancestors:
+                lines.append(f"{prefix}{code_message('symlink_skipped')}")
+                return
             entries = sorted(p.iterdir(), key=lambda entry: entry.name.casefold())
-        except OSError as error:
+        except (OSError, RuntimeError) as error:
             logger.warning("[code_list_directory] Cannot list directory %s: %s", p, error)
             lines.append(f"{prefix}{code_message('directory_unavailable', value=p.relative_to(base).as_posix())}")
             return
+        next_ancestors = ancestors | {resolved}
 
         for entry in entries:
+            if len(lines) >= 500:
+                truncated = True
+                break
             try:
                 if entry.name == ".git":
                     continue
+                is_link = entry.is_symlink()
+                if is_link:
+                    try:
+                        link_target = entry.resolve(strict=True)
+                    except (OSError, RuntimeError):
+                        lines.append(f"{prefix}{entry.name} ({code_message('symlink_skipped')})")
+                        continue
+                    if not link_target.is_relative_to(base):
+                        lines.append(f"{prefix}{entry.name} ({code_message('symlink_skipped')})")
+                        continue
                 is_directory = entry.is_dir()
                 if is_directory and entry.name in IGNORE_DIRS:
                     continue
                 if is_directory:
-                    lines.append(f"{prefix}📁 {entry.name}/")
-                    _walk(entry, depth + 1, prefix + "  ")
+                    link_label = f" ({code_message('symlink')})" if is_link else ""
+                    lines.append(f"{prefix}📁 {entry.name}/{link_label}")
+                    if depth < max_depth:
+                        _walk(entry, depth + 1, prefix + "  ", next_ancestors)
+                    else:
+                        truncated = True
                 else:
                     size = entry.stat().st_size
                     if size < 1024:
@@ -385,15 +437,16 @@ async def _list_directory(folder_id: str, path: str = ".", max_depth: int = 3) -
                         size_str = f"{size // 1024}KB"
                     else:
                         size_str = f"{size // (1024 * 1024)}MB"
-                    lines.append(f"{prefix}📄 {entry.name} ({size_str})")
-            except OSError as error:
+                    link_label = f" ({code_message('symlink')})" if is_link else ""
+                    lines.append(f"{prefix}📄 {entry.name} ({size_str}){link_label}")
+            except (OSError, RuntimeError) as error:
                 logger.warning("[code_list_directory] Cannot inspect entry %s: %s", entry, error)
                 lines.append(f"{prefix}{code_message('directory_unavailable', value=entry.relative_to(base).as_posix())}")
 
     _walk(target, 0)
     if not lines:
         return code_message("empty_directory", value=path)
-    return "\n".join(lines[:500])
+    return "\n".join(lines) + ("\n" + code_message("truncated") if truncated else "")
 
 
 @localized_code_tool
@@ -446,7 +499,9 @@ async def _find_files(folder_id: str, pattern: str = "*", path: str = ".") -> st
         return code_error("not_found", value=path)
     base = Path(folder).resolve()
     matches: list[str] = []
-    for root, directory_names, file_names in os.walk(target):
+    unavailable: list[str] = []
+
+    for root, directory_names, file_names in os.walk(target, onerror=_walk_error_callback(unavailable, path)):
         directory_names[:] = sorted(name for name in directory_names if name not in IGNORE_DIRS)
         root_path = Path(root)
         for file_name in sorted(file_names):
@@ -454,8 +509,98 @@ async def _find_files(folder_id: str, pattern: str = "*", path: str = ".") -> st
             if fnmatch.fnmatch(file_name, pattern) or fnmatch.fnmatch(relative_path, pattern):
                 matches.append(relative_path)
                 if len(matches) >= MAX_FIND_RESULTS:
-                    return "\n".join(matches) + "\n... " + code_message("top_results", value=MAX_FIND_RESULTS)
-    return "\n".join(matches) if matches else code_message("no_matches", value=pattern)
+                    return "\n".join(matches) + "\n... " + code_message("top_results", value=MAX_FIND_RESULTS) + ("\n" + "\n".join(unavailable) if unavailable else "")
+    result = "\n".join(matches) if matches else code_message("no_matches", value=pattern)
+    return result + ("\n" + "\n".join(unavailable) if unavailable else "")
+
+
+@localized_code_tool
+async def _file_inventory(
+    folder_id: str,
+    path: str = ".",
+    pattern: str = "*",
+    sort_by: str = "size",
+    descending: bool = True,
+    limit: int = 20,
+    min_size_bytes: int = 0,
+    max_size_bytes: int | None = None,
+) -> str:
+    """Inspect file metadata without relying on platform-specific shell commands."""
+    folder, error = _resolve_folder(folder_id)
+    if error:
+        return error
+    target = _safe_path(folder, path)
+    if not target or not target.exists():
+        return code_error("not_found", value=path)
+    if (sort_by not in {"size", "modified", "name"}
+            or not 1 <= limit <= MAX_FILE_INVENTORY_RESULTS
+            or min_size_bytes < 0
+            or (max_size_bytes is not None and max_size_bytes < min_size_bytes)):
+        return code_error("invalid_inventory_options")
+
+    base = Path(folder).resolve()
+    files: list[dict] = []
+    unique_files: set[Path] = set()
+    skipped_paths: list[str] = []
+    scanned = 0
+    truncated = False
+    pending: list[tuple[Path, frozenset[Path], bool]] = [(target, frozenset(), False)]
+    while pending:
+        current, ancestors, via_symlink = pending.pop()
+        try:
+            resolved = current.resolve(strict=True)
+            if not resolved.is_relative_to(base):
+                skipped_paths.append(current.relative_to(base).as_posix())
+                continue
+            if current.is_dir():
+                if resolved in ancestors:
+                    skipped_paths.append(current.relative_to(base).as_posix())
+                    continue
+                next_ancestors = ancestors | {resolved}
+                with os.scandir(current) as entries:
+                    pending.extend((Path(entry.path), next_ancestors, via_symlink or current.is_symlink()) for entry in entries)
+                continue
+            if not current.is_file():
+                continue
+            scanned += 1
+            if scanned > MAX_FILE_INVENTORY_ENTRIES:
+                truncated = True
+                break
+            relative_path = current.relative_to(base).as_posix()
+            if fnmatch.fnmatch(current.name, pattern) or fnmatch.fnmatch(relative_path, pattern):
+                stat = current.stat()
+                if stat.st_size < min_size_bytes or (max_size_bytes is not None and stat.st_size > max_size_bytes):
+                    continue
+                unique_files.add(resolved)
+                files.append({
+                    "path": relative_path,
+                    "size_bytes": stat.st_size,
+                    "modified_utc": datetime.fromtimestamp(stat.st_mtime, timezone.utc).isoformat(),
+                    "modified_timestamp": stat.st_mtime,
+                    "via_symlink": via_symlink or current.is_symlink(),
+                })
+        except (OSError, RuntimeError) as exc:
+            logger.warning("[code_file_inventory] Cannot inspect %s: %s", current, exc)
+            skipped_paths.append(current.relative_to(base).as_posix())
+
+    sort_key = {
+        "size": lambda item: (item["size_bytes"], item["path"]),
+        "modified": lambda item: (item["modified_timestamp"], item["path"]),
+        "name": lambda item: item["path"].casefold(),
+    }[sort_by]
+    files.sort(key=sort_key, reverse=descending)
+    for item in files:
+        del item["modified_timestamp"]
+    return json.dumps({
+        "files": files[:limit],
+        "matched_files": len(files),
+        "unique_files": len(unique_files),
+        "scanned_files": min(scanned, MAX_FILE_INVENTORY_ENTRIES),
+        "complete": not truncated and not skipped_paths,
+        "truncated": truncated,
+        "skipped_paths": skipped_paths[:MAX_FILE_INVENTORY_RESULTS],
+        "skipped_paths_truncated": len(skipped_paths) > MAX_FILE_INVENTORY_RESULTS,
+    }, ensure_ascii=False)
 
 
 def _try_indent_correction(
@@ -622,8 +767,8 @@ async def _apply_patch(folder_id: str, patch: str) -> str:
         return code_error("patch_size", value=MAX_PATCH_BYTES)
 
     base = Path(folder).resolve()
-    old_paths = re.findall(r"^---\s+([^\t\n ]+)", patch, re.MULTILINE)
-    new_paths = re.findall(r"^\+\+\+\s+([^\t\n ]+)", patch, re.MULTILINE)
+    old_paths = re.findall(r"^---[ \t]+([^\t\n]+)", patch, re.MULTILINE)
+    new_paths = re.findall(r"^\+\+\+[ \t]+([^\t\n]+)", patch, re.MULTILINE)
     if not new_paths or len(old_paths) != len(new_paths):
         return code_error("patch_header")
     for old_path, new_path in zip(old_paths, new_paths):
@@ -632,7 +777,9 @@ async def _apply_patch(folder_id: str, patch: str) -> str:
         for candidate in (old_path, new_path):
             if candidate == "/dev/null":
                 continue
-            if candidate.startswith(("/", "a/", "b/")) or ".." in Path(candidate).parts:
+            if (candidate.startswith(("a/", "b/")) or Path(candidate).is_absolute()
+                    or PureWindowsPath(candidate).drive
+                    or ".." in Path(candidate).parts or ".." in PureWindowsPath(candidate).parts):
                 return code_error("patch_path")
             target = (base / candidate).resolve()
             if not target.is_relative_to(base):
@@ -695,10 +842,12 @@ async def _grep_search(folder_id: str, pattern: str, path: str = ".", include: s
 
     base = Path(folder).resolve()
     search_targets: list[Path] = []
+    unavailable: list[str] = []
+
     if target.is_file():
         search_targets.append(target)
     elif target.is_dir():
-        for root, directory_names, file_names in os.walk(target):
+        for root, directory_names, file_names in os.walk(target, onerror=_walk_error_callback(unavailable, path)):
             directory_names[:] = sorted(name for name in directory_names if name not in IGNORE_DIRS)
             root_path = Path(root)
             for file_name in sorted(file_names):
@@ -718,10 +867,13 @@ async def _grep_search(folder_id: str, pattern: str, path: str = ".", include: s
             resolved_path = _safe_path(folder, str(file_path))
             if resolved_path is None or not resolved_path.is_file():
                 continue
-            if resolved_path.stat().st_size > MAX_READ_BYTES * 10:
+            file_size = resolved_path.stat().st_size
+            if file_size > MAX_READ_BYTES * 10:
+                unavailable.append(f"{file_path.relative_to(base).as_posix()}: {code_message('large_file', value=file_size)}")
                 continue
             content = resolved_path.read_text(encoding="utf-8", errors="replace")
         except (OSError, UnicodeError, RuntimeError):
+            unavailable.append(code_message("directory_unavailable", value=file_path.relative_to(base).as_posix()))
             continue
         relative_path = file_path.relative_to(base).as_posix()
         for line_number, line in enumerate(content.splitlines(), 1):
@@ -732,19 +884,22 @@ async def _grep_search(folder_id: str, pattern: str, path: str = ".", include: s
                 matches.append(f"{relative_path}:{line_number}:{line}")
 
     if not matches:
-        return code_message("no_matches", value=pattern)
+        result = code_message("no_matches", value=pattern)
+        return result + ("\n" + "\n".join(unavailable[:MAX_FIND_RESULTS]) if unavailable else "")
 
     header = code_message("matches", pattern=pattern, count=total_matches)
     if total_matches > MAX_GREP_RESULTS:
         header += ", " + code_message("top_results", value=MAX_GREP_RESULTS)
     header += ")"
-    return header + "\n" + "\n".join(matches)
+    return header + "\n" + "\n".join(matches) + ("\n" + "\n".join(unavailable[:MAX_FIND_RESULTS]) if unavailable else "")
 
 
-def _discover_project_tasks(folder: str) -> list[dict[str, str]]:
+def _discover_project_tasks(folder: str, unavailable: list[str] | None = None) -> list[dict[str, str]]:
     base = Path(folder).resolve()
     tasks: list[dict[str, str]] = []
-    for root, directory_names, file_names in os.walk(base):
+
+    walk_errors = unavailable if unavailable is not None else []
+    for root, directory_names, file_names in os.walk(base, onerror=_walk_error_callback(walk_errors, folder)):
         root_path = Path(root)
         try:
             depth = len(root_path.relative_to(base).parts)
@@ -766,14 +921,17 @@ def _discover_project_tasks(folder: str) -> list[dict[str, str]]:
                     "task": str(name),
                     "command": f"npm run {name}",
                 } for name in sorted(scripts))
-        has_python_config = "pyproject.toml" in file_names or "pytest.ini" in file_names
+        has_python_config = (
+            "pyproject.toml" in file_names or "pytest.ini" in file_names
+            or any(name.startswith("requirements") and name.endswith(".txt") for name in file_names)
+        )
         if has_python_config:
             tasks.append({"working_directory": working_directory, "task": "python:test", "command": "pytest"})
+            tasks.append({"working_directory": working_directory, "task": "python:compile", "command": "python -m compileall -q ."})
             if "pyproject.toml" in file_names:
                 tasks.extend([
                     {"working_directory": working_directory, "task": "python:lint", "command": "ruff check ."},
                     {"working_directory": working_directory, "task": "python:typecheck", "command": "mypy ."},
-                    {"working_directory": working_directory, "task": "python:compile", "command": "python -m compileall -q ."},
                 ])
     return tasks
 
@@ -783,13 +941,16 @@ async def _list_tasks(folder_id: str) -> str:
     folder, error = _resolve_folder(folder_id)
     if error:
         return error
-    tasks = _discover_project_tasks(folder)
+    unavailable: list[str] = []
+    tasks = _discover_project_tasks(folder, unavailable)
     if not tasks:
-        return code_message("no_tasks")
-    return "\n".join(
+        result = code_message("no_tasks")
+        return result + ("\n" + "\n".join(unavailable[:MAX_FIND_RESULTS]) if unavailable else "")
+    result = "\n".join(
         f"- working_directory={task['working_directory']} | task={task['task']} | {task['command']}"
         for task in tasks
     )
+    return result + ("\n" + "\n".join(unavailable[:MAX_FIND_RESULTS]) if unavailable else "")
 
 
 @localized_code_tool
@@ -807,16 +968,102 @@ async def _run_task(folder_id: str, working_directory: str, task: str) -> str:
     if not selected:
         return code_error("task_missing")
     if task.startswith("python:"):
+        environment = target / ".venv"
+        python = _project_venv_python(environment)
+        if environment.exists() or environment.is_symlink():
+            if environment.is_symlink() or not (environment / "pyvenv.cfg").is_file() or not python.is_file():
+                return code_error("not_found", value=str(python))
+            python_executable = str(python)
+        else:
+            python_executable = sys.executable
         commands = {
-            "python:test": [sys.executable, "-m", "pytest"],
-            "python:lint": [sys.executable, "-m", "ruff", "check", "."],
-            "python:typecheck": [sys.executable, "-m", "mypy", "."],
-            "python:compile": [sys.executable, "-m", "compileall", "-q", "."],
+            "python:test": [python_executable, "-m", "pytest"],
+            "python:lint": [python_executable, "-m", "ruff", "check", "."],
+            "python:typecheck": [python_executable, "-m", "mypy", "."],
+            "python:compile": [python_executable, "-m", "compileall", "-q", "."],
         }
         command = commands[task]
     else:
         command = ["npm", "run", task]
     return _run_command(command, str(target), timeout=120)
+
+
+def _node_package_manager(directory: Path) -> tuple[str | None, str | None]:
+    manifest = _safe_path(str(directory), "package.json")
+    if not manifest:
+        return None, code_error("invalid_path", value="package.json")
+    if not manifest.is_file():
+        return None, code_error("not_found", value="package.json")
+    try:
+        package_data = json.loads(manifest.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        return None, code_error("read_failed", value=f"package.json: {error}")
+    if not isinstance(package_data, dict):
+        return None, code_error("read_failed", value="package.json")
+
+    declared = package_data.get("packageManager", "")
+    declared_manager = declared.split("@", 1)[0] if isinstance(declared, str) else ""
+    if declared and declared_manager not in NODE_PACKAGE_MANAGERS:
+        return None, code_error("node_manager_unsupported", value=declared)
+
+    found_managers = {
+        manager for lockfile, manager in NODE_LOCKFILE_MANAGERS.items()
+        if (directory / lockfile).is_file()
+    }
+    if len(found_managers) > 1 or (declared_manager and found_managers and declared_manager not in found_managers):
+        return None, code_error("node_manager_conflict")
+    return declared_manager or next(iter(found_managers), "npm"), None
+
+
+def _project_venv_python(environment: Path, platform_name: str | None = None) -> Path:
+    platform_name = platform_name or os.name
+    return environment / ("Scripts/python.exe" if platform_name == "nt" else "bin/python")
+
+
+@localized_code_tool
+@protected("installation")
+async def _install_dependencies(folder_id: str, working_directory: str = ".", dependency_file: str = "") -> str:
+    folder, error = _resolve_folder(folder_id)
+    if error:
+        return error
+    target = _safe_path(folder, working_directory)
+    if not target or not target.is_dir():
+        return code_error("not_found", value=working_directory)
+    selected_file = dependency_file.strip()
+    has_node = (target / "package.json").is_file()
+    has_python = (target / "requirements.txt").is_file()
+    if not selected_file:
+        if has_node and has_python:
+            return code_error("dependency_file_ambiguous")
+        if not has_node and not has_python:
+            return code_error("not_found", value="package.json or requirements.txt")
+        selected_file = "package.json" if has_node else "requirements.txt"
+    if selected_file == "package.json":
+        manager, error = _node_package_manager(target)
+        if error:
+            return error
+        command = [manager, "install"]
+        if manager in {"pnpm", "yarn"} and not shutil.which(manager) and shutil.which("corepack"):
+            command = ["corepack", manager, "install"]
+        return await asyncio.to_thread(_run_command, command, str(target), 300)
+
+    requirements = _safe_path(str(target), selected_file)
+    if not requirements or not requirements.name.startswith("requirements") or requirements.suffix != ".txt":
+        return code_error("invalid_path", value=selected_file)
+    if not requirements.is_file():
+        return code_error("not_found", value=selected_file)
+    environment = target / ".venv"
+    if environment.is_symlink():
+        return code_error("invalid_path", value=str(environment))
+    python = _project_venv_python(environment)
+    if not environment.exists():
+        created = await asyncio.to_thread(_run_command, [sys.executable, "-m", "venv", str(environment)], str(target), 300)
+        if not created.startswith("✅ "):
+            return created
+    if not (environment / "pyvenv.cfg").is_file() or not python.is_file():
+        return code_error("not_found", value=str(python))
+    command = [str(python), "-m", "pip", "install", "-r", str(requirements)]
+    return await asyncio.to_thread(_run_command, command, str(target), 300)
 
 
 @localized_code_tool
@@ -914,7 +1161,7 @@ def register_code_tools():
 
     mcp_manager.register_internal_tool(
         name="code_list_directory",
-        description="코드 폴더 내 디렉토리 구조를 조회한다. path는 첨부된 폴더 기준 상대경로.",
+        description="코드 폴더 내 디렉토리 구조와 각 파일의 크기를 조회한다. path는 첨부된 폴더 기준 상대경로. 탐색 깊이와 출력 개수 제한이 있으므로 폴더 전체 결과라고 가정하지 않는다.",
         parameters={
             "type": "object",
             "properties": {
@@ -926,8 +1173,10 @@ def register_code_tools():
                 },
                 "max_depth": {
                     "type": "integer",
-                    "description": "탐색 깊이 (기본: 3)",
+                    "description": "탐색 깊이 (기본: 3, 최대: 10)",
                     "default": 3,
+                    "minimum": 0,
+                    "maximum": 10,
                 },
             }, "required": ["folder_id"],
         },
@@ -984,6 +1233,22 @@ def register_code_tools():
             "path": {"type": "string", "default": ".", "description": "검색 시작 디렉토리"},
         }, "required": ["folder_id", "pattern"]},
         handler=_find_files,
+        server_type="code_tools",
+    )
+    mcp_manager.register_internal_tool(
+        name="code_file_inventory",
+        description="등록 폴더의 파일을 재귀 탐색하여 정확한 바이트 크기와 UTC 수정 시각을 조회한다. 이름 glob·크기 범위 필터와 크기·수정 시각·경로 정렬을 지원한다. 내부 심볼릭 링크는 탐색하고 via_symlink로 표시한다. matched_files는 경로 수, unique_files는 실제 파일 수다. 외부·깨진·순환 링크는 건너뛰며 complete=false이면 전체 결과라고 단정하지 않는다.",
+        parameters={"type": "object", "properties": {
+            "folder_id": FOLDER_ID_PROPERTY,
+            "path": {"type": "string", "default": ".", "description": "등록 폴더 기준 상대경로"},
+            "pattern": {"type": "string", "default": "*", "description": "파일명 또는 상대경로 glob"},
+            "sort_by": {"type": "string", "enum": ["size", "modified", "name"], "default": "size"},
+            "descending": {"type": "boolean", "default": True},
+            "limit": {"type": "integer", "minimum": 1, "maximum": MAX_FILE_INVENTORY_RESULTS, "default": 20},
+            "min_size_bytes": {"type": "integer", "minimum": 0, "default": 0},
+            "max_size_bytes": {"type": "integer", "minimum": 0, "description": "포함할 최대 바이트 크기. 생략하면 상한 없음"},
+        }, "required": ["folder_id"]},
+        handler=_file_inventory,
         server_type="code_tools",
     )
 
@@ -1104,13 +1369,24 @@ def register_code_tools():
     )
     mcp_manager.register_internal_tool(
         name="code_run_task",
-        description="code_list_tasks가 발견한 package script 또는 Python 검사 작업만 해당 하위 프로젝트에서 실행한다.",
+        description="code_list_tasks 결과에 실제로 나열된 package script 또는 Python 검사 작업만 실행한다. 운영체제의 임의 명령은 실행할 수 없다. 목록에 없는 작업을 추측해서 호출하지 않는다.",
         parameters={"type": "object", "properties": {
             "folder_id": FOLDER_ID_PROPERTY,
             "working_directory": {"type": "string", "description": "code_list_tasks 결과의 상대 작업 디렉토리"},
             "task": {"type": "string", "description": "code_list_tasks 결과의 task 값"},
         }, "required": ["folder_id", "working_directory", "task"]},
         handler=_run_task,
+        server_type="code_tools",
+    )
+    mcp_manager.register_internal_tool(
+        name="code_install_dependencies",
+        description="package.json의 Node 의존성 또는 requirements*.txt의 Python 의존성을 설치한다. Python은 프로젝트의 .venv를 사용한다. 두 설정이 함께 있으면 dependency_file을 지정한다. 패키지명·임의 명령은 받지 않지만 설치 중 패키지 스크립트나 빌드 코드가 실행될 수 있다.",
+        parameters={"type": "object", "properties": {
+            "folder_id": FOLDER_ID_PROPERTY,
+            "working_directory": {"type": "string", "default": ".", "description": "등록 폴더 내부의 상대 작업 디렉토리"},
+            "dependency_file": {"type": "string", "default": "", "description": "선택적: package.json 또는 작업 디렉토리 안의 requirements*.txt 상대경로. 두 종류가 공존하면 필수"},
+        }, "required": ["folder_id"]},
+        handler=_install_dependencies,
         server_type="code_tools",
     )
     mcp_manager.register_internal_tool(
@@ -1142,4 +1418,4 @@ def register_code_tools():
         server_type="code_tools",
     )
 
-    logger.info("[code_tools] 15 code analysis tools registered")
+    logger.info("[code_tools] 17 code analysis tools registered")

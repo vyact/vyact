@@ -19,3 +19,23 @@ describe('Gmail filter permission feedback', () => {
         expect(showError).toHaveBeenCalledExactlyOnceWith(main.googleWorkspace.spamFilterReconnect);
     });
 });
+
+describe('Gmail request limit feedback', () => {
+    it('shows the request limit message for the backend quota code', async () => {
+        await i18n.init({lng: 'ko', resources: {ko: {main}}});
+        const showError = vi.spyOn(toast, 'error').mockImplementation(() => 'test');
+        const error = await assertOk(new Response(JSON.stringify({code: 'google_rate_limited'}), {status: 429})).catch(error => error);
+        expect(error).toBeInstanceOf(ApiError);
+        notifyWorkspaceError(error);
+        expect(showError).toHaveBeenCalledExactlyOnceWith(main.backendErrors.google_rate_limited);
+    });
+
+    it('does not describe an ordinary 403 permission failure as a request limit', async () => {
+        await i18n.init({lng: 'ko', resources: {ko: {main}}});
+        const showError = vi.spyOn(toast, 'error').mockImplementation(() => 'test');
+        const error = await assertOk(new Response(JSON.stringify({code: 'permission_denied'}), {status: 403})).catch(error => error);
+        notifyWorkspaceError(error);
+        expect(showError).toHaveBeenCalledOnce();
+        expect(showError.mock.calls[0][0]).not.toContain(main.backendErrors.google_rate_limited);
+    });
+});

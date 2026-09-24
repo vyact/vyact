@@ -279,6 +279,10 @@ class MCPManager:
         selected_ids = _request_server_ids.get()
         return set(selected_ids) if selected_ids is not None else None
 
+    def get_request_scope_server_types(self) -> set[str] | None:
+        selected_types = _request_server_types.get()
+        return set(selected_types) if selected_types is not None else None
+
     async def refresh_google_auth(self) -> bool:
         """Google Workspace 인증 상태를 갱신하고 결과를 반환한다."""
         try:
@@ -401,6 +405,22 @@ class MCPManager:
                 "annotations_trusted": worker.cfg.get("trust_tool_annotations") is True,
             }
         return {}
+
+    def exposed_server_scopes(self, tool_names: list[str]) -> tuple[set[str], set[str]]:
+        """Identify the configured servers that actually contributed offered tools."""
+        names = set(tool_names)
+        server_ids: set[str] = set()
+        server_types: set[str] = set()
+        for worker in self._workers.values():
+            server = worker.server
+            if server and any(name.startswith(f"{server.name}{_SEP}") for name in names):
+                if worker.cfg.get("_server_id"):
+                    server_ids.add(worker.cfg["_server_id"])
+        for name in names:
+            spec = self._internal_tools.get(name)
+            if spec and spec.get("server_type"):
+                server_types.add(spec["server_type"])
+        return server_ids, server_types
 
     async def get_tools(self, *, log_exposure: bool = True) -> list[dict]:
         """연결된 모든 서버의 tool을 OpenAI-compatible 'tools' 스키마로 변환.

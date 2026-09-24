@@ -1244,6 +1244,7 @@
   "uiAuditFinal": {"attachments":"첨부 {{count}}개","removeAll":"전체 삭제","characterCount":"{{count}}자","itemCount":"{{count}}개","download":"다운로드","fileCount":"{{count}}개 파일","zipDownload":"ZIP 다운로드","errorDetail":"❌ 오류: {{message}}"},
   "networkError": {"requestFailed":"요청 실패","serverError":"서버 오류","streamFailed":"스트리밍 요청 실패","clientErrorDetail":"요청 오류 ({{status}}): {{detail}}","serverErrorDetail":"서버 오류 ({{status}}): {{detail}} — 잠시 후 다시 시도해주세요.","genericDetail":"오류: {{detail}}"},
   "backendErrors": {
+    "google_rate_limited": "Google 서비스 호출 횟수 한도를 초과했습니다. 잠시 후 다시 시도해 주세요.",
     "context_length_exceeded": "필수 입력이 컨텍스트 윈도우를 초과했습니다. 질문이나 시스템 지침을 줄이거나, 첨부·도구를 줄이거나, 컨텍스트 윈도우를 늘려 주세요.",
     "gmail_filter_reconnect_required": "$t(main:googleWorkspace.spamFilterReconnect)",
     "microsoft_drive_upload_too_large": "“{{name}}” 파일이 OneDrive 업로드 제한인 파일당 {{limit}}MiB를 초과합니다. 파일과 폴더를 업로드하지 않았습니다. 해당 파일을 제외하고 다시 시도해 주세요.",

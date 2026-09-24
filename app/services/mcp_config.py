@@ -16,6 +16,7 @@ services/mcp_config.py — MCP 서버 설정 저장/로드 (ES 기반)
 ES에 저장하므로 기존 백업/복원(전 인덱스 백업)에 자동 포함된다.
 연결에 필요한 stdio config 변환은 build_servers_config()가 담당한다.
 """
+import hashlib
 import re
 import shutil
 import uuid
@@ -25,6 +26,7 @@ from typing import Any
 from logger import get_logger
 from services.db import INTEGRATION_SETTINGS_INDEX, get_es
 from services.tool_messages import get_tool_language
+from services.filesystem_prompts import get_filesystem_prompt
 from services.web_search_prompts import get_web_search_prompt
 from services.workspace_prompts import get_workspace_prompt
 
@@ -32,6 +34,35 @@ logger = get_logger(__name__)
 
 _MCP_DOC_ID = "mcp"
 _BUILTIN_MIGRATION_TYPES = ("browser", "web_search")
+
+# Earlier settings screens saved their displayed stock prompt as if it were a
+# user edit. Match only those exact released defaults when upgrading the two
+# prompts below; genuinely edited instructions must remain untouched.
+_LEGACY_DEFAULT_PROMPT_HASHES = {
+    "github": frozenset({
+        "0987ec0847d02aa6", "d53c976daad913e0", "da5e23cf0be5c6c3",
+        "01aa2c5349d4ec7c", "9b9e5b28c625fe27", "66cea7c0e48c9675",
+        "7d5df05730bf3754", "858c765be1c79ca1", "9412980b07125c42",
+    }),
+    "sequential_thinking": frozenset({
+        "62130635b3ee2cdd", "d62659c9ba43b76d", "c8e1817e6f4cb4db",
+        "1e7779244a5cc52c", "3a4e096c6b7a78d8", "77c0b3db65b07f1f",
+        "36f81986c25a471c", "8a4936779fe879ac", "633a55bc65bdc49a",
+    }),
+}
+
+
+def _clear_legacy_default_prompts(cfg: dict) -> bool:
+    changed = False
+    for server in cfg.get("servers", []):
+        prompt = (server.get("prompt") or "").strip()
+        if not prompt:
+            continue
+        fingerprint = hashlib.sha256(prompt.encode()).hexdigest()[:16]
+        if fingerprint in _LEGACY_DEFAULT_PROMPT_HASHES.get(server.get("type"), ()):
+            server["prompt"] = ""
+            changed = True
+    return changed
 
 # 서버 타입별 노출 tool 화이트리스트.
 # 작은 모델(gemma4:e4b 등)은 tool이 많으면 선택 정확도가 급락하므로,
@@ -130,6 +161,7 @@ MCP_CATALOG: dict[str, dict] = {
         "singleton": True,
         "kind": "stdio_npx",
         "package": "@modelcontextprotocol/server-filesystem",
+        "default_prompt": get_filesystem_prompt("en"),
         "fields": [
             {"key": "directories", "label": "허용 폴더", "type": "dir_list", "required": True},
         ],
@@ -155,25 +187,10 @@ MCP_CATALOG: dict[str, dict] = {
             {"key": "token", "label": "Personal Access Token", "type": "secret", "required": True},
         ],
         "default_prompt": (
-            "## GitHub 코드 수정 및 PR 생성 규칙\n"
-            "사용자가 GitHub 저장소의 코드를 수정하거나 PR을 요청하면 아래 순서를 따른다.\n\n"
-            "1. **코드 확인**: get_file_contents로 대상 파일의 현재 내용과 SHA를 조회한다.\n"
-            "2. **브랜치 생성**: create_branch로 작업 브랜치를 생성한다.\n"
-            "   - 브랜치명은 작업 내용을 반영한다 (예: fix/typo-in-readme, feat/add-login-api).\n"
-            "   - from_ref는 기본 브랜치(main 또는 master)를 사용한다.\n"
-            "3. **파일 수정**: create_or_update_file로 변경된 내용을 커밋한다.\n"
-            "   - 반드시 1단계에서 조회한 SHA를 전달해야 한다 (충돌 방지).\n"
-            "   - 커밋 메시지는 변경 내용을 명확히 기술한다.\n"
-            "   - 여러 파일을 수정할 때는 push_files를 사용하면 한 번에 커밋할 수 있다.\n"
-            "4. **PR 생성**: create_pull_request로 PR을 생성한다.\n"
-            "   - title: 변경 요약 (한국어 가능)\n"
-            "   - body: 무엇을 왜 바꿨는지 설명\n"
-            "   - head: 2단계의 작업 브랜치, base: 기본 브랜치\n\n"
-            "주의사항:\n"
-            "- 파일을 수정하기 전에 반드시 현재 내용을 먼저 조회해라.\n"
-            "- 수정 내용을 사용자에게 먼저 보여주고, 확인 후 커밋해라.\n"
-            "- 기본 브랜치를 모르면 list_branches로 확인해라.\n"
-            "- '코드 리뷰해줘'는 get_file_contents로 읽어서 리뷰만 하면 된다 (수정 불필요)."
+            "GitHub 작업에는 실제 제공된 도구만 사용합니다. 수정 전 대상 파일·현재 SHA와 기본 브랜치를 확인하고, "
+            "별도 작업 브랜치에서 요청 범위만 변경합니다. 여러 파일 변경은 가능한 도구의 원자적 커밋을 사용합니다. "
+            "PR은 요청받았을 때 만들고 변경 이유를 설명합니다. 리뷰 요청은 읽기만 수행합니다. "
+            "도구 결과로 확인되지 않은 커밋·PR을 완료로 보고하지 않습니다."
         ),
     },
     "sequential_thinking": {
@@ -183,12 +200,8 @@ MCP_CATALOG: dict[str, dict] = {
         "package": "@modelcontextprotocol/server-sequential-thinking",
         "fields": [],  # 별도 입력값 없음 — 켜기만 하면 동작
         "default_prompt": (
-            "## 순차적 사고(Sequential Thinking) 사용 규칙\n"
-            "디버깅, 아키텍처 설계, 근본 원인 분석, 투자 판단, 복잡한 비교·의사결정처럼\n"
-            "여러 단계의 추론이 필요한 작업에서는 sequential thinking tool을 사용해\n"
-            "사고를 단계별로 나누어 진행합니다. 각 단계에서 이전 결론을 검토하고 필요하면\n"
-            "수정하며 최종 답에 도달합니다.\n"
-            "단순 사실 질문, 짧은 답변, 단일 조회로 끝나는 요청에는 사용하지 않습니다."
+            "여러 단계의 분석·설계·디버깅이 필요한 경우에만 제공된 sequential thinking 도구로 "
+            "근거와 결론을 단계별로 검토합니다. 단순 조회나 짧은 답변에는 사용하지 않습니다."
         ),
     },
     "microsoft_workspace": {"label": "Microsoft 365", "singleton": True, "kind": "internal", "fields": [], "default_prompt": get_workspace_prompt("microsoft_workspace", "en")},
@@ -268,6 +281,7 @@ async def load_mcp_config() -> dict:
                 value = res["_source"].get("value")
                 if value and isinstance(value.get("servers"), list):
                     value, changed = _ensure_builtin_servers(value)
+                    changed = _clear_legacy_default_prompts(value) or changed
                     if changed:
                         # Persist generated IDs before exposing them to callers; otherwise
                         # the next read creates different IDs and deletion cannot match.
@@ -309,6 +323,7 @@ async def ensure_mcp_config() -> dict:
             if not isinstance(value, dict):
                 return {"servers": []}
             value, changed = _ensure_builtin_servers(value)
+            changed = _clear_legacy_default_prompts(value) or changed
             if changed:
                 await es.index(
                     index=INTEGRATION_SETTINGS_INDEX, id=_MCP_DOC_ID,
@@ -416,11 +431,12 @@ async def disable_server_by_type(type_: str) -> None:
 
 
 # ── 켜진 MCP 서버들의 사용자 지정 프롬프트 취합 ───────────────────────────────
-# 예전엔 "context7이 켜져 있으면 이 문구를, sequential thinking이 켜져 있으면
-# 저 문구를 붙인다"처럼 서버 타입별로 주입할 프롬프트가 코드에 하드코딩돼 있었다.
-# 이제는 서버 등록/편집 시 사용자가 직접 입력한 prompt 필드를 그대로 사용하고,
-# enabled인 서버 중 prompt가 비어있지 않은 것만 모아 이어붙인다. 비어있으면 아무것도 추가하지 않는다.
-async def get_active_mcp_prompt(selected_server_ids: set[str] | None = None) -> str:
+# 사용자가 저장한 prompt를 우선 사용하고, 비어 있으면 카탈로그 기본값을 쓴다.
+# 도구 목록을 받으면 실제 노출된 서버의 프롬프트만 모델에 전달한다.
+async def get_active_mcp_prompt(
+    selected_server_ids: set[str] | None = None,
+    available_tool_names: list[str] | None = None,
+) -> str:
     """서버들의 prompt를 등록 순서대로 이어붙여 반환. 없으면 빈 문자열.
 
     selected_server_ids가 주어지면 enabled 여부와 관계없이 해당 서버만 포함한다.
@@ -428,16 +444,29 @@ async def get_active_mcp_prompt(selected_server_ids: set[str] | None = None) -> 
     사용자가 프롬프트를 비워뒀으면 카탈로그의 default_prompt를 사용한다.
     """
     parts = []
+    exposed_ids: set[str] = set()
+    exposed_types: set[str] = set()
+    if available_tool_names is not None:
+        from services.mcp_client import mcp_manager
+        exposed_ids, exposed_types = mcp_manager.exposed_server_scopes(available_tool_names)
     for s in await list_servers():
         if selected_server_ids is None and not s.get("enabled"):
             continue
         if selected_server_ids is not None and s.get("id") not in selected_server_ids:
             continue
+        if available_tool_names is not None:
+            kind = MCP_CATALOG.get(s.get("type", ""), {}).get("kind")
+            if kind == "internal" and s.get("type") not in exposed_types:
+                continue
+            if kind != "internal" and s.get("id") not in exposed_ids:
+                continue
         p = (s.get("prompt") or "").strip()
         if not p:
             cat = MCP_CATALOG.get(s.get("type", ""), {})
             server_type = s.get("type")
-            if server_type == "web_search":
+            if server_type == "filesystem":
+                p = get_filesystem_prompt(await get_tool_language())
+            elif server_type == "web_search":
                 p = get_web_search_prompt(await get_tool_language())
             elif server_type in {"google_workspace", "microsoft_workspace"}:
                 p = get_workspace_prompt(server_type, await get_tool_language())

@@ -734,7 +734,7 @@ function ServerForm({
     const handleSave = async () => {
         try {
             await saveWithFeedback(() => onSave(serverType === 'web_search' ? initial : values,
-                serverType === 'web_search' && prompt === defaultPrompt ? '' : prompt));
+                prompt === defaultPrompt ? '' : prompt));
         } catch { /* Save failure is displayed by the shared button. */ }
     };
 
@@ -877,7 +877,7 @@ function AddServerForm({catalog, servers, fixedType, err, onErr, onAdd, onCancel
                 <button className="mcp-btn-primary" disabled={registeringWebSearch}
                         onClick={() => isGoogle
                             ? registerGoogle(values)
-                            : onAdd(type, values, type === 'web_search' && prompt === getLocalizedDefaultPrompt(t, type, cat?.default_prompt) ? '' : prompt)}>
+                            : onAdd(type, values, prompt === getLocalizedDefaultPrompt(t, type, cat?.default_prompt) ? '' : prompt)}>
                     {isGoogle ? t('mcp.save') : t('mcp.add')}
                 </button>
             </div>

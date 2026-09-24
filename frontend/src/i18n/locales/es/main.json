@@ -1233,6 +1233,7 @@
   "uiAuditFinal": {"attachments":"{{count}} archivos adjuntos","removeAll":"Eliminar todo","characterCount":"{{count}} caracteres","itemCount":"{{count}} elementos","download":"Descargar","fileCount":"{{count}} archivos","zipDownload":"Descargar ZIP","errorDetail":"❌ Error: {{message}}"},
   "networkError": {"requestFailed":"Solicitud fallida","serverError":"Error del servidor","streamFailed":"Falló la solicitud de transmisión","clientErrorDetail":"Error de solicitud ({{status}}): {{detail}}","serverErrorDetail":"Error del servidor ({{status}}): {{detail}} — Inténtalo de nuevo en breve.","genericDetail":"Error: {{detail}}"},
   "backendErrors": {
+    "google_rate_limited": "Google Workspace ha superado temporalmente el límite de solicitudes. Espera un momento y vuelve a intentarlo.",
     "context_length_exceeded": "La entrada necesaria supera la ventana de contexto. Acorta la pregunta o las instrucciones del sistema, reduce los adjuntos o las herramientas, o amplía la ventana de contexto.",
     "gmail_filter_reconnect_required": "$t(main:googleWorkspace.spamFilterReconnect)",
     "microsoft_drive_upload_too_large": "«{{name}}» supera el límite de carga de OneDrive de {{limit}} MiB por archivo. No se ha subido ningún archivo ni carpeta. Excluye este archivo y vuelve a intentarlo.",

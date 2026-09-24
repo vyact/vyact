@@ -1234,6 +1234,7 @@
   "uiAuditFinal": {"attachments":"{{count}} pièces jointes","removeAll":"Tout supprimer","characterCount":"{{count}} caractères","itemCount":"{{count}} éléments","download":"Télécharger","fileCount":"{{count}} fichiers","zipDownload":"Télécharger le ZIP","errorDetail":"❌ Erreur : {{message}}"},
   "networkError": {"requestFailed":"Échec de la requête","serverError":"Erreur du serveur","streamFailed":"Échec de la requête en streaming","clientErrorDetail":"Erreur de requête ({{status}}) : {{detail}}","serverErrorDetail":"Erreur du serveur ({{status}}) : {{detail}} — Veuillez réessayer dans quelques instants.","genericDetail":"Erreur : {{detail}}"},
   "backendErrors": {
+    "google_rate_limited": "Google Workspace a temporairement dépassé sa limite de requêtes. Patientez un instant, puis réessayez.",
     "context_length_exceeded": "Le contenu requis dépasse la fenêtre de contexte. Raccourcissez la question ou les instructions système, réduisez les pièces jointes ou les outils, ou agrandissez la fenêtre de contexte.",
     "gmail_filter_reconnect_required": "$t(main:googleWorkspace.spamFilterReconnect)",
     "microsoft_drive_upload_too_large": "« {{name}} » dépasse la limite de téléversement OneDrive de {{limit}} Mio par fichier. Aucun fichier ni dossier n’a été téléversé. Excluez ce fichier et réessayez.",

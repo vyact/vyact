@@ -1234,6 +1234,7 @@
   "uiAuditFinal": {"attachments":"ไฟล์แนบ {{count}} รายการ","removeAll":"ลบทั้งหมด","characterCount":"{{count}} อักขระ","itemCount":"{{count}} รายการ","download":"ดาวน์โหลด","fileCount":"{{count}} ไฟล์","zipDownload":"ดาวน์โหลด ZIP","errorDetail":"❌ ข้อผิดพลาด: {{message}}"},
   "networkError": {"requestFailed":"คำขอล้มเหลว","serverError":"เซิร์ฟเวอร์ผิดพลาด","streamFailed":"คำขอสตรีมล้มเหลว","clientErrorDetail":"คำขอผิดพลาด ({{status}}): {{detail}}","serverErrorDetail":"เซิร์ฟเวอร์ผิดพลาด ({{status}}): {{detail}} — โปรดลองอีกครั้งในภายหลัง","genericDetail":"ข้อผิดพลาด: {{detail}}"},
   "backendErrors": {
+    "google_rate_limited": "คำขอ Google Workspace เกินขีดจำกัดชั่วคราว โปรดรอสักครู่แล้วลองอีกครั้ง",
     "context_length_exceeded": "ข้อมูลนำเข้าที่จำเป็นเกินหน้าต่างบริบท โปรดย่อคำถามหรือคำสั่งระบบ ลดไฟล์แนบหรือเครื่องมือ หรือเพิ่มขนาดหน้าต่างบริบท",
     "gmail_filter_reconnect_required": "$t(main:googleWorkspace.spamFilterReconnect)",
     "microsoft_drive_upload_too_large": "ไฟล์ “{{name}}” เกินขีดจำกัดการอัปโหลด OneDrive ที่ {{limit}} MiB ต่อไฟล์ ยังไม่มีการอัปโหลดไฟล์หรือโฟลเดอร์ใด โปรดนำไฟล์นี้ออกแล้วลองอีกครั้ง",

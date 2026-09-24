@@ -44,6 +44,7 @@ from services.google_workspace.gmail import (
     list_mail_threads_sync,
     visible_mail_thread_messages,
 )
+from services.google_workspace.errors import is_google_rate_limited
 from services.llm.core import query_llm
 from services.db import EMAIL_THREADS_INDEX, GOOGLE_WORKSPACE_SETTINGS_INDEX, find_document_index, get_es, get_language_index
 from services.language_detection import detect_language
@@ -1202,15 +1203,18 @@ async def trash_mail_messages(request: MailBulkDeleteRequest):
 def _execute_gmail_thread_batch(service, thread_ids: list[str], action: str) -> None:
     """Run a Gmail thread action in HTTP batches and surface partial failures."""
     failed_thread_ids: list[str] = []
+    rate_limited = False
 
     def collect_result(
         request_id: str,
         _response: dict | None,
         exception: Exception | None,
     ) -> None:
+        nonlocal rate_limited
         if exception is not None:
             logger.warning("[gmail] batch thread %s failed for %s: %s", action, request_id, exception)
             failed_thread_ids.append(request_id)
+            rate_limited = rate_limited or is_google_rate_limited(exception)
 
     for start in range(0, len(thread_ids), GMAIL_BATCH_SIZE):
         batch = service.new_batch_http_request(callback=collect_result)
@@ -1222,8 +1226,8 @@ def _execute_gmail_thread_batch(service, thread_ids: list[str], action: str) -> 
 
     if failed_thread_ids:
         raise HTTPException(
-            status_code=502,
-            detail=f"{len(failed_thread_ids)} Gmail thread request(s) failed.",
+            status_code=429 if rate_limited else 502,
+            detail="google_rate_limited" if rate_limited else "upstream_error",
         )
 
 
