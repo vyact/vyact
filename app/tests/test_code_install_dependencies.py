@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from services.code_tools import _install_dependencies, _list_tasks, _node_package_manager, _project_venv_python, _run_command, _run_task, current_code_folders
+from services.code_tools import _git_diff, _install_dependencies, _list_tasks, _node_package_manager, _project_venv_python, _run_command, _run_task, current_code_folders
 from services.tool_approval import get_tool_risk, requires_approval
 
 
@@ -18,6 +18,35 @@ class CodeInstallDependenciesTests(unittest.IsolatedAsyncioTestCase):
             result = _run_command([sys.executable, "-c", "print('installed')"], str(project))
             self.assertIn("installed", result)
             self.assertIn("Success", result)
+
+    async def test_failed_command_is_reported_as_tool_failure(self):
+        with tempfile.TemporaryDirectory() as directory:
+            result = _run_command([sys.executable, "-c", "import sys; print('check failed'); sys.exit(2)"], directory)
+            payload = json.loads(result)
+            self.assertIs(payload["ok"], False)
+            self.assertIn("check failed", payload["error"])
+
+    async def test_git_diff_preserves_first_command_failure(self):
+        with tempfile.TemporaryDirectory() as directory:
+            token = current_code_folders.set({"project": directory})
+            try:
+                with patch("services.code_tools._run_command", return_value=json.dumps({"ok": False, "error": "git failed"})) as run:
+                    result = await _git_diff.__wrapped__("project")
+            finally:
+                current_code_folders.reset(token)
+            self.assertEqual(json.loads(result)["error"], "git failed")
+            run.assert_called_once()
+
+    async def test_git_diff_preserves_second_command_failure(self):
+        with tempfile.TemporaryDirectory() as directory:
+            token = current_code_folders.set({"project": directory})
+            try:
+                with patch("services.code_tools._run_command", side_effect=["✅ Success: git diff --stat", json.dumps({"ok": False, "error": "diff failed"})]) as run:
+                    result = await _git_diff.__wrapped__("project")
+            finally:
+                current_code_folders.reset(token)
+            self.assertEqual(json.loads(result)["error"], "diff failed")
+            self.assertEqual(run.call_count, 2)
 
     async def test_detects_lockfile_manager_and_uses_fixed_install_arguments(self):
         with tempfile.TemporaryDirectory() as directory:

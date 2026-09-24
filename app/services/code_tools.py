@@ -23,6 +23,7 @@ from pathlib import Path, PureWindowsPath
 from logger import get_logger
 from services.code_messages import code_message, code_error, localized_code_tool
 from services.shutdown_guard import protected
+from services.tool_messages import tool_error
 
 logger = get_logger(__name__)
 
@@ -367,8 +368,18 @@ def _run_command(command: list[str], folder: str, timeout: int = 60) -> str:
     output = (result.stdout + result.stderr).strip()
     if len(output) > 12_000:
         output = output[:12_000] + "\n" + code_message("truncated")
-    prefix = "✅ " + code_message("success") if result.returncode == 0 else "❌ " + code_message("failed", value=result.returncode)
-    return f"{prefix}: {' '.join(command)}\n{output or code_message('no_output')}"
+    command_result = f"{' '.join(command)}\n{output or code_message('no_output')}"
+    if result.returncode != 0:
+        return tool_error(f"{code_message('failed', value=result.returncode)}: {command_result}")
+    return f"✅ {code_message('success')}: {command_result}"
+
+
+def _command_result_failed(result: str) -> bool:
+    try:
+        payload = json.loads(result)
+    except (TypeError, ValueError):
+        return False
+    return isinstance(payload, dict) and payload.get("ok") is False
 
 
 @localized_code_tool
@@ -1107,8 +1118,11 @@ async def _git_diff(folder_id: str, path: str = "") -> str:
         return error
     command = ["git", "diff", "--stat", "--", path] if path else ["git", "diff", "--stat"]
     stat = _run_command(command, folder, timeout=15)
+    if _command_result_failed(stat):
+        return stat
     detail_command = ["git", "diff", "--", path] if path else ["git", "diff"]
-    return stat + "\n\n" + _run_command(detail_command, folder, timeout=15)
+    detail = _run_command(detail_command, folder, timeout=15)
+    return detail if _command_result_failed(detail) else stat + "\n\n" + detail
 
 
 @localized_code_tool

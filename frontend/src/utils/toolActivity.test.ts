@@ -11,6 +11,7 @@ import {
 
 const translations: Record<string, string> = {
     'toolActivity.actions.searching': '검색하고 있어요',
+    'toolActivity.actions.reading': '내용을 확인하고 있어요',
     'toolActivity.actions.creating': '새 항목을 만들고 있어요',
     'toolActivity.actions.sending': '전송하고 있어요',
     'toolActivity.completedActions.searching': '검색 완료',
@@ -20,6 +21,15 @@ const translations: Record<string, string> = {
     'toolActivity.serviceAction': '{{service}} · {{action}}',
     'toolActivity.browserBatchReading': '여러 원문을 확인하고 있어요',
     'toolActivity.browserClickCompleted': '페이지 요소 클릭 완료',
+    'toolActivity.browserWaiting': '페이지 로딩을 기다리고 있어요',
+    'toolActivity.browserGoingBack': '이전 페이지로 돌아가고 있어요',
+    'toolActivity.browserCheckingStatus': '페이지 상태를 확인하고 있어요',
+    'toolActivity.browserClosing': '페이지를 닫고 있어요',
+    'toolActivity.codeFileInventory': '프로젝트 파일 크기를 확인하고 있어요',
+    'toolActivity.codeInstallDependencies': '프로젝트 의존성을 설치하고 있어요',
+    'toolActivity.codeFileInventoryCompleted': '프로젝트 파일 크기 확인 완료',
+    'toolActivity.codeInstallDependenciesCompleted': '프로젝트 의존성 설치 완료',
+    'toolActivity.searchCompleted': '검색 완료',
 };
 
 const translate = (key: string, options?: Record<string, unknown>): string => {
@@ -43,6 +53,40 @@ describe('tool activity presentation', () => {
     it('keeps the MCP server visible for unknown external tools', () => {
         expect(getToolActivityLabel('notion__search_pages', translate))
             .toBe('notion · 검색하고 있어요');
+        expect(getToolActivityLabel('notion__search_files', translate))
+            .toBe('notion · 검색하고 있어요');
+        expect(getToolActivityLabel('notion__search_code', translate))
+            .toBe('notion · 검색하고 있어요');
+    });
+
+    it('uses the registered service for Microsoft and Google Workspace tools', () => {
+        expect(getToolActivityLabel('microsoft_search_files', translate))
+            .toBe('OneDrive · 검색하고 있어요');
+        expect(getToolActivityLabel('microsoft_get_email', translate))
+            .toBe('Outlook · 내용을 확인하고 있어요');
+        expect(getToolActivityLabel('microsoft_create_calendar_event', translate))
+            .toBe('Outlook Calendar · 새 항목을 만들고 있어요');
+        expect(getToolActivityLabel('read_document_content', translate))
+            .toBe('Google Drive · 내용을 확인하고 있어요');
+        expect(getToolActivityDisplayLabel('microsoft_search_files', '', translate, 'completed', 'success'))
+            .toBe('OneDrive · 검색 완료');
+        expect(getToolActivityDisplayLabel('microsoft_search_files', 'Google Drive · 검색하고 있어요', translate, 'running'))
+            .toBe('OneDrive · 검색하고 있어요');
+    });
+
+    it('identifies project inventory without calling it Google Drive', () => {
+        expect(getToolActivityLabel('code_file_inventory', translate))
+            .toBe('프로젝트 파일 크기를 확인하고 있어요');
+        expect(getToolActivityDisplayLabel('code_file_inventory', '', translate, 'completed', 'success'))
+            .toBe('프로젝트 파일 크기 확인 완료');
+        expect(getToolActivityDisplayLabel('code_file_inventory', 'Google Drive · code file inventory', translate, 'running'))
+            .toBe('프로젝트 파일 크기를 확인하고 있어요');
+        expect(getToolActivityDisplayLabel('code_file_inventory', '승인 대기 · 프로젝트 파일 크기 확인', translate, 'running', undefined, true))
+            .toBe('승인 대기 · 프로젝트 파일 크기 확인');
+        expect(getToolActivityLabel('code_install_dependencies', translate))
+            .toBe('프로젝트 의존성을 설치하고 있어요');
+        expect(getToolActivityDisplayLabel('code_install_dependencies', '', translate, 'completed', 'success'))
+            .toBe('프로젝트 의존성 설치 완료');
     });
 
     it('shows safe identifying details without exposing message content', () => {
@@ -68,6 +112,13 @@ describe('tool activity presentation', () => {
         expect(getToolActivityDetail({
             urls: ['https://news.example.com/a?secret=1', 'https://docs.example.org/b'],
         })).toBe('news.example.com, docs.example.org');
+    });
+
+    it('shows localized labels for the remaining browser actions', () => {
+        expect(getToolActivityLabel('browser_wait', translate)).toBe('페이지 로딩을 기다리고 있어요');
+        expect(getToolActivityLabel('browser_back', translate)).toBe('이전 페이지로 돌아가고 있어요');
+        expect(getToolActivityLabel('browser_status', translate)).toBe('페이지 상태를 확인하고 있어요');
+        expect(getToolActivityLabel('browser_close', translate)).toBe('페이지를 닫고 있어요');
     });
 
     it('shows the concrete completed browser action instead of a generic completion', () => {

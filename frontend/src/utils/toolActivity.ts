@@ -27,13 +27,23 @@ const TOOL_ACTION_KEYS: Record<string, string> = {
     batch: 'deleting', clear: 'clearing', push: 'uploadingAction',
 };
 
-const GOOGLE_TOOL_SERVICES: Record<string, string> = {
-    email: 'Gmail', emails: 'Gmail', draft: 'Gmail',
-    event: 'Google Calendar', events: 'Google Calendar', calendars: 'Google Calendar', calendar: 'Google Calendar', busy: 'Google Calendar',
-    drive: 'Google Drive', file: 'Google Drive', files: 'Google Drive', folder: 'Google Drive',
-    doc: 'Google Docs', document: 'Google Docs',
-    sheet: 'Google Sheets', slides: 'Google Slides', slide: 'Google Slides',
-    form: 'Google Forms', responses: 'Google Forms', question: 'Google Forms',
+const GOOGLE_WORKSPACE_SERVICES: Record<string, string> = Object.fromEntries(
+    Object.entries({
+        Gmail: ['search_emails', 'get_email', 'create_email_draft', 'send_email', 'reply_email', 'trash_email', 'batch_trash_emails'],
+        'Google Calendar': ['list_upcoming_events', 'search_calendar_events', 'list_calendars', 'check_free_busy', 'get_calendar_event', 'create_calendar_event', 'update_calendar_event', 'delete_calendar_event'],
+        'Google Drive': ['search_files', 'get_drive_file', 'read_document_content', 'list_drive_folder_items', 'upload_drive_file', 'download_drive_file', 'create_drive_file', 'update_drive_file', 'delete_drive_file', 'move_drive_file', 'create_drive_folder'],
+        'Google Docs': ['create_google_doc', 'get_google_doc', 'append_to_google_doc', 'update_google_doc'],
+        'Google Sheets': ['create_google_sheet', 'get_google_sheet', 'update_google_sheet', 'append_to_google_sheet', 'clear_google_sheet'],
+        'Google Slides': ['create_google_slides', 'get_google_slides', 'add_slide', 'update_slide_text', 'delete_slide'],
+        'Google Forms': ['create_google_form', 'get_google_form', 'add_form_question', 'get_form_responses', 'update_form_info'],
+    }).flatMap(([service, tools]) => tools.map(tool => [tool, service])),
+);
+
+const MICROSOFT_TOOL_SERVICES: Record<string, string> = {
+    microsoft_search_emails: 'Outlook', microsoft_get_email: 'Outlook',
+    microsoft_send_email: 'Outlook', microsoft_create_email_draft: 'Outlook',
+    microsoft_list_calendar_events: 'Outlook Calendar', microsoft_create_calendar_event: 'Outlook Calendar',
+    microsoft_search_files: 'OneDrive',
 };
 
 const GITHUB_TOOLS = new Set([
@@ -49,16 +59,14 @@ function splitToolName(name: string): {server?: string; tool: string} {
 }
 
 function toolService(tool: string, server?: string): string | undefined {
-    if (GITHUB_TOOLS.has(tool) || server?.toLowerCase().includes('github')) return 'GitHub';
-    const tokens = tool.split('_');
-    for (const token of tokens) {
-        if (GOOGLE_TOOL_SERVICES[token]) return GOOGLE_TOOL_SERVICES[token];
-    }
-    return server?.replace(/[_-]+/g, ' ');
+    if (server) return /^github(?:_|$)/i.test(server) ? 'GitHub' : server.replace(/[_-]+/g, ' ');
+    if (tool.startsWith('code_')) return undefined;
+    if (GITHUB_TOOLS.has(tool)) return 'GitHub';
+    return MICROSOFT_TOOL_SERVICES[tool] ?? GOOGLE_WORKSPACE_SERVICES[tool];
 }
 
 function toolActionKey(tool: string): string | undefined {
-    const action = tool.split('_')[0];
+    const action = tool.replace(/^microsoft_/, '').split('_')[0];
     return TOOL_ACTION_KEYS[action];
 }
 
@@ -261,6 +269,7 @@ export function getToolActivityLabel(
         search_knowledge_collection: 'searchKnowledgeCollection',
         code_list_directory: 'codeListDirectory', code_read_file: 'codeReadFile', code_edit_file: 'codeEditFile',
         code_read_files: 'codeReadFiles', code_find_files: 'codeFindFiles',
+        code_file_inventory: 'codeFileInventory', code_install_dependencies: 'codeInstallDependencies',
         code_create_file: 'codeCreateFile', code_grep_search: 'codeSearch', code_apply_patch: 'codeApplyPatch',
         code_list_tasks: 'codeListTasks', code_run_task: 'codeRunTask', code_run_check: 'codeRunCheck',
         code_git_status: 'codeGitStatus', code_git_diff: 'codeGitDiff',
@@ -271,10 +280,19 @@ export function getToolActivityLabel(
         browser_read: 'browserReading', browser_read_urls: 'browserBatchReading',
         browser_inspect: 'browserInspecting', browser_type: 'browserTyping',
         browser_click: 'browserClicking', browser_scroll: 'browserScrolling',
-        browser_wait_for_user: 'waitingBrowserUser',
+        browser_wait: 'browserWaiting', browser_back: 'browserGoingBack',
+        browser_status: 'browserCheckingStatus', browser_close: 'browserClosing',
+        browser_wait_for_user: 'waitingBrowserUser', browser_ask_user: 'waitingBrowserUser',
         user_memory_list: 'memoryListing', user_memory_save: 'memorySaving',
         user_memory_update: 'memoryUpdating', user_memory_delete: 'memoryDeleting',
     };
+    if (server && !/^filesystem(?:_|$)/i.test(server) && !/^github(?:_|$)/i.test(server)) {
+        const actionKey = toolActionKey(tool);
+        return t('toolActivity.serviceAction', {
+            service: toolService(tool, server),
+            action: actionKey ? t(`toolActivity.actions.${actionKey}`) : tool.replace(/[_-]+/g, ' '),
+        });
+    }
     if (!server && tool === 'search_files') {
         return t('toolActivity.serviceAction', {
             service: 'Google Drive',
@@ -303,7 +321,9 @@ export function getToolActivityDisplayLabel(
     t: ToolActivityTranslator,
     phase?: 'judging' | 'running' | 'completed',
     outcome?: 'success' | 'rejected' | 'failed',
+    awaitingApproval?: boolean,
 ): string {
+    if (awaitingApproval) return label;
     if (outcome === 'rejected') return t('toolActivity.approvalRejected');
     if (outcome === 'failed') {
         const {server, tool} = name ? splitToolName(name) : {tool: ''};
@@ -317,18 +337,20 @@ export function getToolActivityDisplayLabel(
             : t('toolActivity.failed');
     }
     if (phase === 'completed') {
-        const tool = name ? splitToolName(name).tool : '';
+        const {server, tool} = name ? splitToolName(name) : {tool: ''};
         const memoryCompletionKeys: Record<string, string> = {
             user_memory_list: 'memoryListCompleted', user_memory_save: 'memorySaveCompleted',
             user_memory_update: 'memoryUpdateCompleted', user_memory_delete: 'memoryDeleteCompleted',
         };
-        if (memoryCompletionKeys[tool]) return t(`toolActivity.${memoryCompletionKeys[tool]}`);
-        if (['code_read_file', 'code_read_files'].includes(tool)) return t('toolActivity.readCompleted');
-        if (['code_grep_search', 'code_find_files', 'code_list_directory'].includes(tool)) return t('toolActivity.searchCompleted');
-        if (['code_edit_file', 'code_apply_patch', 'code_create_file', 'code_move_file', 'code_delete_file'].includes(tool)) {
+        if (!server && memoryCompletionKeys[tool]) return t(`toolActivity.${memoryCompletionKeys[tool]}`);
+        if (!server && tool === 'code_file_inventory') return t('toolActivity.codeFileInventoryCompleted');
+        if (!server && tool === 'code_install_dependencies') return t('toolActivity.codeInstallDependenciesCompleted');
+        if (!server && ['code_read_file', 'code_read_files'].includes(tool)) return t('toolActivity.readCompleted');
+        if (!server && ['code_grep_search', 'code_find_files', 'code_list_directory'].includes(tool)) return t('toolActivity.searchCompleted');
+        if (!server && ['code_edit_file', 'code_apply_patch', 'code_create_file', 'code_move_file', 'code_delete_file'].includes(tool)) {
             return t('toolActivity.editCompleted');
         }
-        if (['code_run_check', 'code_run_task', 'code_list_tasks', 'code_git_status', 'code_git_diff'].includes(tool)) {
+        if (!server && ['code_run_check', 'code_run_task', 'code_list_tasks', 'code_git_status', 'code_git_diff'].includes(tool)) {
             return t('toolActivity.checkCompleted');
         }
         const browserCompletionKeys: Record<string, string> = {
@@ -347,8 +369,7 @@ export function getToolActivityDisplayLabel(
             browser_wait_for_user: 'browserUserActionCompleted',
             browser_ask_user: 'browserUserActionCompleted',
         };
-        if (browserCompletionKeys[tool]) return t(`toolActivity.${browserCompletionKeys[tool]}`);
-        const {server} = name ? splitToolName(name) : {};
+        if (!server && browserCompletionKeys[tool]) return t(`toolActivity.${browserCompletionKeys[tool]}`);
         const service = toolService(tool, server);
         const actionKey = toolActionKey(tool);
         if (service && actionKey) {
@@ -358,6 +379,12 @@ export function getToolActivityDisplayLabel(
             });
         }
         return t('toolActivity.completed');
+    }
+    if (name) {
+        const {server, tool} = splitToolName(name);
+        if (!server && (tool.startsWith('code_') || MICROSOFT_TOOL_SERVICES[tool] || GOOGLE_WORKSPACE_SERVICES[tool])) {
+            return getToolActivityLabel(name, t);
+        }
     }
     return label && label !== name ? label : getToolActivityLabel(name, t);
 }

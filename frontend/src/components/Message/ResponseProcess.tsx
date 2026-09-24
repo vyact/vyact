@@ -78,7 +78,7 @@ export default function ResponseProcess({
                 return <div key={activity.id ?? `tool-${item.timestamp}-${index}`} className={`msg-process-tool ${activity.phase}${outcomeClass}`}>
                     <div className="msg-process-tool-header">
                         {icon}
-                        <span>{getToolActivityDisplayLabel(activity.name, activity.label, t, activity.phase, activity.outcome)}</span>
+                        <span>{getToolActivityDisplayLabel(activity.name, activity.label, t, activity.phase, activity.outcome, activity.awaitingApproval)}</span>
                     </div>
                     {detail && <code>{detail}</code>}
                 </div>
