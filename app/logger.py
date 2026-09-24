@@ -20,7 +20,26 @@ import unicodedata
 from contextvars import ContextVar
 from pathlib import Path
 
+from config import get_log_file
+
 _initialized = False
+
+
+class DailyFileHandler(logging.FileHandler):
+    """Switch to today's file on the first log record after midnight."""
+
+    def __init__(self, name: str):
+        self.log_name = name
+        super().__init__(get_log_file(name), encoding="utf-8")
+
+    def emit(self, record: logging.LogRecord) -> None:
+        current_path = os.path.abspath(get_log_file(self.log_name))
+        if self.baseFilename != current_path:
+            if self.stream is not None:
+                self.stream.close()
+                self.stream = None
+            self.baseFilename = current_path
+        super().emit(record)
 
 
 class ToolLogSettings:
@@ -192,7 +211,6 @@ def setup_logging() -> None:
         return
     _initialized = True
 
-    from config import get_log_file
     log_file = get_log_file("app")
 
     fmt = logging.Formatter(
@@ -208,15 +226,14 @@ def setup_logging() -> None:
     root.setLevel(logging.INFO)
 
     target_log_path = Path(log_file).resolve()
-    has_target_file_handler = any(
-        isinstance(handler, logging.FileHandler)
-        and Path(handler.baseFilename).resolve() == target_log_path
-        for handler in root.handlers
-    )
-    if not has_target_file_handler:
-        fh = logging.FileHandler(log_file, encoding="utf-8")
-        fh.setFormatter(fmt)
-        root.addHandler(fh)
+    # Replace an early launcher handler so it also follows the date after midnight.
+    for handler in list(root.handlers):
+        if isinstance(handler, logging.FileHandler) and Path(handler.baseFilename).resolve() == target_log_path:
+            root.removeHandler(handler)
+            handler.close()
+    fh = DailyFileHandler("app")
+    fh.setFormatter(fmt)
+    root.addHandler(fh)
 
     # A launcher may have installed the target FileHandler before this module is
     # initialized. Apply security filters to existing handlers as well as handlers
@@ -265,7 +282,7 @@ def setup_logging() -> None:
     uve = logging.getLogger("uvicorn.error")
     uve.propagate = False
     for h, fmt_ in [
-        (logging.FileHandler(log_file, encoding="utf-8"), fmt_uvi),
+        (DailyFileHandler("app"), fmt_uvi),
         (logging.StreamHandler(sys.stdout), fmt_uvi),
     ]:
         h.setFormatter(fmt_)

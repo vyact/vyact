@@ -33,6 +33,7 @@ from services.local_model_errors import LocalModelNotDownloadedError
 from services.model_runtime_profiles import normalize_gpu_split_for_hardware
 from services.multimodal_capabilities import get_projector_modalities
 from services.runtime_error_details import classify_runtime_load_failure, runtime_startup_error
+from services.runtime_log import start_logged_process, wait_for_process_log
 
 logger = get_logger(__name__)
 
@@ -548,14 +549,11 @@ def start_single_model(
             gpu_split_percentages=gpu_split_percentages,
         )
         VYACT_RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
-        with log_path.open("ab") as log_file:
-            process = subprocess.Popen(
-                [str(paths.llama_swap), "--config", str(VYACT_SWAP_CONFIG), "--listen", f"127.0.0.1:{get_runtime_port()}"],
-                stdout=log_file,
-                stderr=subprocess.STDOUT,
-                start_new_session=True,
-                env=runtime_environment(paths.llama_server or paths.llama_swap),
-            )
+        process = start_logged_process(
+            [str(paths.llama_swap), "--config", str(VYACT_SWAP_CONFIG), "--listen", f"127.0.0.1:{get_runtime_port()}"],
+            "llama-swap", start_new_session=True,
+            env=runtime_environment(paths.llama_server or paths.llama_swap),
+        )
         _runtime_process = process
         VYACT_RUNTIME_PID_FILE.write_text(str(process.pid), encoding="utf-8")
         return model_key, process
@@ -565,6 +563,7 @@ def start_single_model(
         health_url = f"http://127.0.0.1:{get_runtime_port()}/upstream/{model_key}/health"
         while time.monotonic() < deadline:
             if process.poll() is not None:
+                wait_for_process_log(process)
                 raise runtime_startup_error("llama-swap stopped while loading the model", log_path, since=log_start)
             try:
                 with urllib.request.urlopen(health_url, timeout=2) as response:

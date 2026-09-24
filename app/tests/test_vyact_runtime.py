@@ -186,7 +186,7 @@ class VyactRuntimeTests(unittest.TestCase):
                  patch("services.mlx_runtime.stop_mlx_runtime"), \
                  patch("services.vyact_runtime.stop_runtime"), \
                  patch("services.vyact_runtime.write_single_model_config", return_value="vyact-model") as write_config, \
-                 patch("services.vyact_runtime.subprocess.Popen") as popen, \
+                 patch("services.vyact_runtime.start_logged_process") as popen, \
                  patch("services.vyact_runtime.get_cached_mtp_sidecar", return_value=None), \
                  patch("services.vyact_runtime.get_cached_dflash2_model", return_value=None), \
                  patch("services.vyact_runtime.get_cached_vision_projector", return_value=None), \
@@ -207,7 +207,7 @@ class VyactRuntimeTests(unittest.TestCase):
                 cpu_threads=None, gpu_split_percentages=None,
             )
             self.assertIn("llama-swap", str(popen.call_args.args[0][0]))
-            self.assertEqual(Path(popen.call_args.kwargs["stdout"].name).name, "llama-swap_20260825.log")
+            self.assertEqual(popen.call_args.args[1], "llama-swap")
 
     def test_mtp_load_failure_records_status_before_plain_fallback(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -224,7 +224,7 @@ class VyactRuntimeTests(unittest.TestCase):
                  patch("services.mlx_runtime.stop_mlx_runtime"), \
                  patch("services.vyact_runtime.stop_runtime"), \
                  patch("services.vyact_runtime.write_single_model_config", return_value="vyact-model"), \
-                 patch("services.vyact_runtime.subprocess.Popen", side_effect=[failed_process, fallback_process]), \
+                 patch("services.vyact_runtime.start_logged_process", side_effect=[failed_process, fallback_process]), \
                  patch("services.vyact_runtime.get_cached_mtp_sidecar", return_value=None), \
                  patch("services.vyact_runtime.get_cached_dflash2_model", return_value=None), \
                  patch("services.vyact_runtime.get_cached_vision_projector", return_value=None), \

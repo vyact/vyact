@@ -34,6 +34,7 @@ from services.omlx_policy import (
     recommend_omlx_cache_sizes, recommend_omlx_memory_guard,
 )
 from services.runtime_error_details import classify_runtime_load_failure, runtime_startup_error
+from services.runtime_log import start_logged_process, wait_for_process_log
 from services.runtime_ports import get_runtime_port, is_port_conflict, with_runtime_ports
 
 MLX_RUNTIME_DIR = INSTALL_DIR / "runtime"
@@ -837,14 +838,7 @@ def start_mlx_model(
         )
         logger.info("[omlx] loading model=%s context=%s speculative_mode=%s", model_path, context_size, speculative_mode)
         model_id = model_path.relative_to(get_mlx_models_dir()).as_posix()
-        with log_path.open("ab") as log_file:
-            process = subprocess.Popen(
-                command,
-                stdout=log_file,
-                stderr=subprocess.STDOUT,
-                start_new_session=True,
-                env=environment,
-            )
+        process = start_logged_process(command, "omlx", start_new_session=True, env=environment)
         _mlx_runtime_process = process
         MLX_RUNTIME_PID_FILE.write_text(str(process.pid), encoding="utf-8")
     deadline = time.monotonic() + 180
@@ -852,6 +846,7 @@ def start_mlx_model(
     try:
         while time.monotonic() < deadline:
             if process.poll() is not None:
+                wait_for_process_log(process)
                 raise runtime_startup_error("oMLX stopped while loading the model", log_path, since=log_start)
             try:
                 with urllib.request.urlopen(health_url, timeout=2) as response:

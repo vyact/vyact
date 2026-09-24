@@ -391,7 +391,7 @@ class MlxRuntimeTests(unittest.TestCase):
                  patch("services.mlx_runtime.stop_mlx_runtime"), \
                  patch("services.mlx_runtime._build_omlx_server_command", side_effect=[
                      (["omlx"], {}, "external_mtp"), (["omlx"], {}, "none"),
-                 ]), patch("services.mlx_runtime.subprocess.Popen", side_effect=[failed_process, fallback_process]), \
+                 ]), patch("services.mlx_runtime.start_logged_process", side_effect=[failed_process, fallback_process]), \
                  patch("services.mlx_runtime.urllib.request.urlopen") as urlopen, \
                  patch("services.mlx_runtime.json.load", return_value={"data": [{"id": "target"}]}), \
                  patch("services.mlx_runtime.get_log_file", return_value=base / "omlx.log"), \
