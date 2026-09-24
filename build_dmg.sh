@@ -54,7 +54,7 @@ step "Building React Frontend"
 if [ -d "$FRONTEND_DIR" ]; then
   cd "$FRONTEND_DIR"
   log "  Installing frontend packages..."
-  npm ci
+  npm install
 
   log "  Running npm run build..."
   npm run build
