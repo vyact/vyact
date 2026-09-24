@@ -4,6 +4,7 @@ aiofiles==25.1.0
 beautifulsoup4==4.15.0
 elasticsearch==9.5.1
 fastapi==0.141.1
+google-api-python-client==2.200.0
 httpx==0.28.1
 lingua-language-detector==2.2.0
 mcp>=1.30,<2
