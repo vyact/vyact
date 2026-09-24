@@ -9,6 +9,9 @@
 .log-panel-toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; }
 .log-panel-toggle input { accent-color: var(--accent); }
 .log-panel-content { flex: 1; min-height: 0; overflow: auto; overflow-wrap: anywhere; }
+.log-panel-content-empty { display: flex; flex-direction: column; }
+.log-panel-empty-state { flex: 1; min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; color: var(--text-secondary); text-align: center; font-size: 14px; }
+.log-panel-empty-state svg { color: var(--accent); opacity: .75; }
 .log-panel-path { padding: 8px 12px; background: var(--surface2); color: var(--text-secondary); font-size: 11px; }
 .log-panel-content pre { margin: 0; padding: 12px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace; }
 .log-panel-status { padding: 12px; color: var(--text-secondary); }

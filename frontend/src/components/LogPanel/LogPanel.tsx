@@ -3,7 +3,7 @@ import RequestLogEntries from './RequestLogEntries';
 import ToggleSwitch from '../common/ToggleSwitch/ToggleSwitch';
 import {useEffect, useRef, useState, useLayoutEffect, type CSSProperties} from 'react';
 import {useTranslation} from 'react-i18next';
-import {X, ArrowDown} from 'lucide-react';
+import {X, ArrowDown, FileText} from 'lucide-react';
 import {applyLogUpdates, subscribeLogs, type LogFile, type LogKind} from '../../services/logViewer';
 import {api, LLM_LOGGING_CHANGED} from '../../services/api';
 import {usePanelManager} from '../../contexts/PanelManagerContext';
@@ -24,6 +24,7 @@ export default function LogPanel({model, style}: {model: string; style: CSSPrope
     const followTail = useRef(true);
     const latestFiles = useRef<LogFile[]>([]);
     const [paused, setPaused] = useState(false);
+    const hasLogs = files.some(file => file.content.length > 0);
 
     useEffect(() => {
         let active = true;
@@ -85,19 +86,19 @@ export default function LogPanel({model, style}: {model: string; style: CSSPrope
             </div>
         </div>}
         {(failed || saveFailed) && <div className="log-panel-status" role="alert">{t('logViewer.error')}</div>}
-        <div id="log-content" role="tabpanel" aria-labelledby={`log-tab-${kind}`} className="log-panel-content" ref={contentRef} onScroll={event => {
+        <div id="log-content" role="tabpanel" aria-labelledby={`log-tab-${kind}`} className={`log-panel-content${hasLogs ? '' : ' log-panel-content-empty'}`} ref={contentRef} onScroll={event => {
             const element = event.currentTarget;
             const atBottom = element.scrollHeight - element.scrollTop - element.clientHeight < 24;
             if (atBottom && !followTail.current) resumeTail();
             else if (!atBottom) {followTail.current = false; setPaused(true);}
         }}>
-            {kind === 'model' && files.length === 0 && <pre>{t('logViewer.empty')}</pre>}
             {files.map(file => <section key={file.path}>
                 <div className="log-panel-path">{file.path}</div>
                 {kind === 'llm' && file.content
                     ? <RequestLogEntries content={file.content} onInspect={() => {followTail.current = false; setPaused(true);}}/>
-                    : file.content ? <TextLogEntries content={file.content}/> : <pre>{t('logViewer.empty')}</pre>}
+                    : file.content ? <TextLogEntries content={file.content}/> : null}
             </section>)}
+            {!hasLogs && <div className="log-panel-empty-state"><FileText size={28} strokeWidth={1.5} aria-hidden="true"/><span>{t('logViewer.empty')}</span></div>}
         </div>
         {paused && <button type="button" className="log-panel-resume" onClick={resumeTail}><ArrowDown size={14}/>{t('logViewer.latest')}</button>}
     </aside>;
