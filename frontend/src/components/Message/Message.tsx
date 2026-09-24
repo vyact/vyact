@@ -3,7 +3,7 @@ import {formatLocalizedNumber} from '../../utils/localizedNumber';
 import {useAutoReadMessage} from '../../services/tts/autoReadState';
 import React, {useMemo, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {BookOpenCheck, Braces, ChevronDown, CircleAlert, RotateCcw, CircleStop} from 'lucide-react';
+import {BookOpenCheck, Braces, ChevronDown, CircleAlert, RotateCcw, CircleStop, Settings} from 'lucide-react';
 import 'katex/dist/katex.min.css';
 import {escapeHtml, nl2br, unwrapPastedText} from '../../utils/helpers';
 import {toast} from '../common/ToastNotifications/ToastNotifications';
@@ -75,7 +75,7 @@ const StreamingTextGroup: React.FC<{
 
 const Message: React.FC<MessageProps> = ({
                                              messageId, role, content, timestamp, sources, model, attachments,
-                                             isError, errorTitle, onRetry, retryDisabled = false, isGeneratedImage, articleSources,
+                                             isError, errorTitle, errorCode, onRetry, onOpenModelSettings, retryDisabled = false, isGeneratedImage, articleSources,
                                              pdfFile, pdfParams, onPdfEdit, injectedContext, onShowInjectedContext, onOpenMemo, onOpenQuickMemo,
                                              isStreaming = false, conversationId, requestStartedAt, toolStatus, activityLog, memoryUpdates, progressMessages, stats,
                                              truncated,
@@ -349,12 +349,15 @@ const Message: React.FC<MessageProps> = ({
                             <strong>{errorTitle || t('message.requestFailed')}</strong>
                             <span>{errorDetail || t('message.unknownError')}</span>
                         </div>
-                        {onRetry && (
-                            <button type="button" onClick={onRetry} disabled={retryDisabled} className="message-retry">
-                                <RotateCcw size={14}/>
-                                {t('message.retry')}
-                            </button>
-                        )}
+                        {(onOpenModelSettings || onRetry) && <div className="message-error-actions">
+                            {errorCode === 'context_length_exceeded' && onOpenModelSettings &&
+                                <button type="button" onClick={onOpenModelSettings} className="message-retry">
+                                    <Settings size={14}/>{t('message.changeModelSettings')}
+                                </button>}
+                            {onRetry && <button type="button" onClick={onRetry} disabled={retryDisabled} className="message-retry">
+                                <RotateCcw size={14}/>{t('message.retry')}
+                            </button>}
+                        </div>}
                     </div>
                 ) : isGeneratedImage && attachments && attachments.length > 0 ? (
                     <div>

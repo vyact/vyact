@@ -11,7 +11,9 @@ export interface MessageProps {
     attachments?: Array<{ type: 'image' | 'zip' | 'file'; filename?: string; original_name?: string; saved_name?: string; path?: string; url?: string; file_count?: number; files?: unknown[]; content?: string }>;
     isError?: boolean;
     errorTitle?: string;
+    errorCode?: Message['errorCode'];
     onRetry?: () => void;
+    onOpenModelSettings?: () => void;
     retryDisabled?: boolean;
     isGeneratedImage?: boolean;
     articleSources?: ArticleAttachment[];

@@ -590,6 +590,20 @@ class MCPManager:
 
         self._pending_sources.extend(extract_mcp_sources(result))
         result_text = self._result_to_text(result, language)
+        if (worker.cfg.get("_server_type") == "filesystem" and tool_name == "directory_tree"
+                and getattr(result, "isError", False) and isinstance((arguments or {}).get("path"), str)):
+            from services.filesystem_tree_fallback import recover_directory_tree
+
+            try:
+                recovered = await recover_directory_tree(
+                    worker.server.session,
+                    arguments["path"],
+                    arguments.get("excludePatterns") or [],
+                )
+                if recovered is not None:
+                    result_text = recovered
+            except Exception as error:
+                logger.warning("[filesystem] Partial tree recovery failed: %s", error)
         DebugLogSettings.log(
             "tool_execution_end", tool=prefixed_name,
             elapsed_ms=round((time.monotonic() - started_at) * 1000, 1),

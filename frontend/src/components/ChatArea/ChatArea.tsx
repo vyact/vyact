@@ -108,6 +108,7 @@ interface ChatAreaProps {
     isEmpty: boolean;
     projectName?: string;
     onRetry?: () => void;
+    onOpenModelSettings?: () => void;
     retryDisabled?: boolean;
     imageGenProgress?: number;
     imageGenMessage?: string;
@@ -148,6 +149,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({selectedModel = '',
                                                isEmpty,
                                                projectName,
                                                onRetry,
+                                               onOpenModelSettings,
                                                retryDisabled = false,
                                                imageGenProgress = 0,
                                                imageGenMessage = '',
@@ -506,6 +508,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({selectedModel = '',
                                 attachments={msg.attachments}
                                 isError={msg.isError}
                                 errorTitle={msg.errorTitle}
+                                errorCode={msg.errorCode}
+                                onOpenModelSettings={msg.isError && msg.errorCode === 'context_length_exceeded' && selectedModel ? onOpenModelSettings : undefined}
                                 retryDisabled={retryDisabled}
                                 onRetry={!isLoading && (
                                     (msg.isError && idx === messages.length - 1)

@@ -172,7 +172,7 @@ export interface Message {
     isError?: boolean;
     isStopped?: boolean;
     errorTitle?: string;
-    errorCode?: 'model_no_response' | 'tool_call_failed' | 'reasoning_token_limit';
+    errorCode?: 'model_no_response' | 'tool_call_failed' | 'reasoning_token_limit' | 'context_length_exceeded';
     toolStatus?: ToolActivity;  // MCP/code tool 실행 진행표시
     activityLog?: ToolActivity[]; // 도구·LLM 실행 흐름 누적 표시
     memoryUpdates?: MemoryUpdate[]; // 이 응답에서 실제로 저장하거나 갱신한 기억

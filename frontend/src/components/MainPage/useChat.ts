@@ -789,6 +789,7 @@ export function useChat(deps: UseChatDeps) {
                                 m.id === streamId ? {
                                     ...m,
                                     content: message,
+                                    errorCode: error.code === 'context_length_exceeded' ? error.code : undefined,
                                     errorTitle: isImageUnsupported
                                         ? t('message.modelImageUnsupportedTitle')
                                         : isInsufficientMemory

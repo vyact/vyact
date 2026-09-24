@@ -1123,7 +1123,7 @@
     "codeGenerating": "⌨️ กำลังเขียนโค้ด…"
   },
   "message": {
-    "requestFailed": "ดำเนินการตามคำขอไม่สำเร็จ", "unknownError": "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ", "retry": "ส่งอีกครั้ง",
+    "requestFailed": "ดำเนินการตามคำขอไม่สำเร็จ", "unknownError": "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ", "retry": "ส่งอีกครั้ง", "changeModelSettings": "เปลี่ยนการตั้งค่าโมเดล",
     "codeChangesReview": "ตรวจสอบ",
     "codeReviewFileList": "ไฟล์ที่เปลี่ยนแปลง", "codeReviewSearchFiles": "ค้นหาเส้นทางไฟล์", "codeReviewPreviousFile": "ไฟล์ก่อนหน้า", "codeReviewNextFile": "ไฟล์ถัดไป", "codeReviewNoFiles": "ไม่พบไฟล์ที่ตรงกัน", "codeReviewCopy": "คัดลอก", "codeReviewCopied": "คัดลอกแล้ว", "codeReviewDownload": "ดาวน์โหลด", "codeReviewClosePanel": "ปิดแผง",
     "codeChangesTitle": "แก้ไขไฟล์ {{count}} ไฟล์แล้ว", "codeChangesUndo": "เลิกทำ", "codeChangesUndoing": "กำลังเลิกทำ…", "codeChangesUndone": "เลิกทำการเปลี่ยนแปลงแล้ว", "codeChangesUndoFailed": "ไม่สามารถเลิกทำการเปลี่ยนแปลงได้", "codeChangesUndoConflict": "ไฟล์ถูกแก้ไขภายหลัง จึงไม่สามารถเลิกทำอย่างปลอดภัยได้", "codeChangesMore": "แสดงอีก {{count}} ไฟล์", "codeChangesCollapse": "ยุบ", "codeChangesPreview": "ตัวอย่างการเปลี่ยนแปลงของ {{path}}",

@@ -110,8 +110,11 @@ def build_project_manifest(folder_paths: list[str]) -> str:
         if depth > PROJECT_MANIFEST_MAX_DEPTH or truncated:
             return
         try:
-            entries = sorted(directory.iterdir(), key=lambda entry: (not entry.is_dir(), entry.name.casefold()))
-        except (OSError, PermissionError):
+            entries = sorted(directory.iterdir(), key=lambda entry: entry.name.casefold())
+        except OSError as error:
+            logger.warning("[project_manifest] Cannot list directory %s: %s", directory, error)
+            if directory != root_directory:
+                lines.append(f"{prefix}(unavailable)")
             return
         for entry in entries:
             if entry_count >= PROJECT_MANIFEST_MAX_ENTRIES:
@@ -119,7 +122,9 @@ def build_project_manifest(folder_paths: list[str]) -> str:
                 return
             try:
                 is_directory = entry.is_dir()
-            except OSError:
+            except OSError as error:
+                logger.warning("[project_manifest] Cannot inspect entry %s: %s", entry, error)
+                lines.append(f"{prefix}{entry.name} (unavailable)")
                 continue
             if is_directory and entry.name in IGNORE_DIRS:
                 continue
@@ -356,29 +361,34 @@ async def _list_directory(folder_id: str, path: str = ".", max_depth: int = 3) -
         if depth > max_depth:
             return
         try:
-            entries = sorted(p.iterdir(), key=lambda e: (not e.is_dir(), e.name.lower()))
-        except PermissionError:
+            entries = sorted(p.iterdir(), key=lambda entry: entry.name.casefold())
+        except OSError as error:
+            logger.warning("[code_list_directory] Cannot list directory %s: %s", p, error)
+            lines.append(f"{prefix}{code_message('directory_unavailable', value=p.relative_to(base).as_posix())}")
             return
 
         for entry in entries:
-            if entry.name.startswith(".") and entry.name in (".git",):
-                continue
-            if entry.is_dir() and entry.name in IGNORE_DIRS:
-                continue
-
-            rel = entry.relative_to(base)
-            if entry.is_dir():
-                lines.append(f"{prefix}📁 {entry.name}/")
-                _walk(entry, depth + 1, prefix + "  ")
-            else:
-                size = entry.stat().st_size
-                if size < 1024:
-                    size_str = f"{size}B"
-                elif size < 1024 * 1024:
-                    size_str = f"{size // 1024}KB"
+            try:
+                if entry.name == ".git":
+                    continue
+                is_directory = entry.is_dir()
+                if is_directory and entry.name in IGNORE_DIRS:
+                    continue
+                if is_directory:
+                    lines.append(f"{prefix}📁 {entry.name}/")
+                    _walk(entry, depth + 1, prefix + "  ")
                 else:
-                    size_str = f"{size // (1024 * 1024)}MB"
-                lines.append(f"{prefix}📄 {entry.name} ({size_str})")
+                    size = entry.stat().st_size
+                    if size < 1024:
+                        size_str = f"{size}B"
+                    elif size < 1024 * 1024:
+                        size_str = f"{size // 1024}KB"
+                    else:
+                        size_str = f"{size // (1024 * 1024)}MB"
+                    lines.append(f"{prefix}📄 {entry.name} ({size_str})")
+            except OSError as error:
+                logger.warning("[code_list_directory] Cannot inspect entry %s: %s", entry, error)
+                lines.append(f"{prefix}{code_message('directory_unavailable', value=entry.relative_to(base).as_posix())}")
 
     _walk(target, 0)
     if not lines:

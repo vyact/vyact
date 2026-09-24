@@ -35,6 +35,7 @@ interface SidebarProps {
     visionSupported: string[];
     audioSupported: string[];
     selectedModel: string;
+    openModelSettingsRequest?: number;
     isModelLoading?: boolean;
     isChatBusy?: boolean;
     onModelLoadingChange?: (loading: boolean, model?: string) => void;
@@ -248,7 +249,7 @@ blockquote{border-left:3px solid var(--accent);padding:8px 14px;margin:10px 0;co
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
-                                             installed, mtpSupported, mtpActive, dflash2Supported, dflash2Active, visionSupported, audioSupported, selectedModel, isModelLoading = false, isChatBusy = false, onModelLoadingChange, onModelChange, onProviderChange,
+                                             installed, mtpSupported, mtpActive, dflash2Supported, dflash2Active, visionSupported, audioSupported, selectedModel, openModelSettingsRequest = 0, isModelLoading = false, isChatBusy = false, onModelLoadingChange, onModelChange, onProviderChange,
                                              onBeforeModelContextChange,
                                              conversations, favoriteConversations = [], activeConvId, activeConversationIds = [], onConversationSelect, onConversationDelete,
                                              historyTotal = 0, onLoadMoreHistory, onRefreshHistory,
@@ -436,6 +437,14 @@ const Sidebar: React.FC<SidebarProps> = ({
     const [providerToDelete, setProviderToDelete] = useState<CustomProviderSettings | null>(null);
     const [isVyactModalOpen, setIsVyactModalOpen] = useState(false);
     const [modelSettingsPath, setModelSettingsPath] = useState<string | null>(null);
+    const handledModelSettingsRequestRef = useRef(0);
+    useEffect(() => {
+        if (openModelSettingsRequest === handledModelSettingsRequestRef.current) return;
+        handledModelSettingsRequestRef.current = openModelSettingsRequest;
+        if (currentProvider === 'vyact' && selectedModel) {
+            setModelSettingsPath(selectedModel);
+        }
+    }, [openModelSettingsRequest, currentProvider, selectedModel]);
     const modelContextSelectionDisabled = isModelLoading || isChatBusy;
 
 

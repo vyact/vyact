@@ -229,6 +229,7 @@ const handleScreenshot = async () => {
 
 const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
     const [activeProjectName, setActiveProjectName] = useState('');
+    const [openModelSettingsRequest, setOpenModelSettingsRequest] = useState(0);
     const {t} = useTranslation('main');
     // ── UI 상태 ──────────────────────────────────────────────────────
     const [sidebarCollapsed, setSidebarCollapsed] = useState(getStoredSidebarCollapsed);
@@ -713,6 +714,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                             visionSupported={models.visionSupported}
                             audioSupported={models.audioSupported}
                             selectedModel={models.selectedModel}
+                            openModelSettingsRequest={openModelSettingsRequest}
                             isModelLoading={models.isModelLoading}
                             isChatBusy={isChatBusy}
                             onModelLoadingChange={models.setModelLoading}
@@ -769,6 +771,9 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                                 isEmpty={conv.messages.length === 0}
                                 projectName={activeProjectName}
                                 onRetry={handleRetry}
+                                onOpenModelSettings={models.installed.includes(models.selectedModel)
+                                    ? () => setOpenModelSettingsRequest(request => request + 1)
+                                    : undefined}
                                 retryDisabled={chat.hasActiveRequests || models.isModelLoading}
                                 imageGenProgress={chat.imageGenProgress}
                                 imageGenMessage={chat.imageGenMessage}

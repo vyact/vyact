@@ -78,7 +78,7 @@ async def get_granted_scopes():
 
 
 router = APIRouter(dependencies=[Depends(_bind_request_account)])
-MAIL_PAGE_SIZE = 30
+MAIL_PAGE_SIZE = 15
 MAX_MAIL_ATTACHMENT_BYTES = 25 * 1024 * 1024
 MAX_AI_THREAD_MESSAGES = 10
 MAX_AI_MESSAGE_BODY_CHARS = 20_000
