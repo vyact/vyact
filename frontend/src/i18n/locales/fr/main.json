@@ -1038,8 +1038,8 @@
     }
   },
   "toolActivity": {
-    "memoryListing": "Consultation des souvenirs", "memorySaving": "Enregistrement d’un souvenir", "memoryUpdating": "Mise à jour d’un souvenir", "memoryDeleting": "Suppression d’un souvenir",
-    "memoryListCompleted": "Souvenirs consultés", "memorySaveCompleted": "Souvenir enregistré", "memoryUpdateCompleted": "Souvenir mis à jour", "memoryUpdated": "Mémoire mise à jour", "memoryDeleteCompleted": "Souvenir supprimé",
+    "memoryListing": "Consultation des souvenirs enregistrés", "memorySaving": "Enregistrement d’un souvenir", "memoryUpdating": "Mise à jour d’un souvenir", "memoryDeleting": "Suppression d’un souvenir",
+    "memoryListCompleted": "Souvenirs enregistrés consultés", "memorySaveCompleted": "Souvenir enregistré", "memoryUpdateCompleted": "Souvenir mis à jour", "memoryUpdated": "Mémoire mise à jour", "memoryDeleteCompleted": "Souvenir supprimé",
     "queued": "En attente de la fin d’une autre réponse…",
     "ariaLabel": "Activité des outils",
     "working": "En cours…",

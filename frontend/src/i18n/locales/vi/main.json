@@ -1038,8 +1038,8 @@
     }
   },
   "toolActivity": {
-    "memoryListing": "Đang xem trí nhớ dài hạn", "memorySaving": "Đang lưu trí nhớ dài hạn", "memoryUpdating": "Đang cập nhật trí nhớ dài hạn", "memoryDeleting": "Đang xóa trí nhớ dài hạn",
-    "memoryListCompleted": "Đã xem trí nhớ dài hạn", "memorySaveCompleted": "Đã lưu trí nhớ dài hạn", "memoryUpdateCompleted": "Đã cập nhật trí nhớ dài hạn", "memoryUpdated": "Đã cập nhật bộ nhớ", "memoryDeleteCompleted": "Đã xóa trí nhớ dài hạn",
+    "memoryListing": "Đang truy xuất ký ức đã lưu", "memorySaving": "Đang lưu trí nhớ dài hạn", "memoryUpdating": "Đang cập nhật trí nhớ dài hạn", "memoryDeleting": "Đang xóa trí nhớ dài hạn",
+    "memoryListCompleted": "Đã truy xuất ký ức đã lưu", "memorySaveCompleted": "Đã lưu trí nhớ dài hạn", "memoryUpdateCompleted": "Đã cập nhật trí nhớ dài hạn", "memoryUpdated": "Đã cập nhật bộ nhớ", "memoryDeleteCompleted": "Đã xóa trí nhớ dài hạn",
     "queued": "Đang chờ phản hồi khác hoàn tất…",
     "ariaLabel": "Hoạt động công cụ",
     "working": "Đang xử lý…",

@@ -1038,8 +1038,8 @@
     }
   },
   "toolActivity": {
-    "memoryListing": "長期記憶を確認しています", "memorySaving": "長期記憶を保存しています", "memoryUpdating": "長期記憶を更新しています", "memoryDeleting": "長期記憶を削除しています",
-    "memoryListCompleted": "長期記憶を確認しました", "memorySaveCompleted": "長期記憶を保存しました", "memoryUpdateCompleted": "長期記憶を更新しました", "memoryUpdated": "メモリを更新しました", "memoryDeleteCompleted": "長期記憶を削除しました",
+    "memoryListing": "保存済みの記憶を取得中", "memorySaving": "長期記憶を保存しています", "memoryUpdating": "長期記憶を更新しています", "memoryDeleting": "長期記憶を削除しています",
+    "memoryListCompleted": "保存済みの記憶を取得しました", "memorySaveCompleted": "長期記憶を保存しました", "memoryUpdateCompleted": "長期記憶を更新しました", "memoryUpdated": "メモリを更新しました", "memoryDeleteCompleted": "長期記憶を削除しました",
     "queued": "別の応答が完了するまで待機中…",
     "ariaLabel": "ツールの進行状況",
     "working": "処理中…",

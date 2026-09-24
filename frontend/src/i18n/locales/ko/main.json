@@ -1037,8 +1037,8 @@
     }
   },
   "toolActivity": {
-    "memoryListing": "장기 기억을 확인하고 있어요", "memorySaving": "장기 기억을 저장하고 있어요", "memoryUpdating": "장기 기억을 수정하고 있어요", "memoryDeleting": "장기 기억을 삭제하고 있어요",
-    "memoryListCompleted": "장기 기억 확인 완료", "memorySaveCompleted": "장기 기억 저장 완료", "memoryUpdateCompleted": "장기 기억 수정 완료", "memoryUpdated": "메모리 업데이트됨", "memoryDeleteCompleted": "장기 기억 삭제 완료",
+    "memoryListing": "저장된 기억 조회 중", "memorySaving": "장기 기억을 저장하고 있어요", "memoryUpdating": "장기 기억을 수정하고 있어요", "memoryDeleting": "장기 기억을 삭제하고 있어요",
+    "memoryListCompleted": "저장된 기억 조회 완료", "memorySaveCompleted": "장기 기억 저장 완료", "memoryUpdateCompleted": "장기 기억 수정 완료", "memoryUpdated": "메모리 업데이트됨", "memoryDeleteCompleted": "장기 기억 삭제 완료",
     "queued": "다른 응답이 끝나기를 기다리는 중…",
     "ariaLabel": "도구 작업 진행 상황",
     "working": "작업 처리 중…",

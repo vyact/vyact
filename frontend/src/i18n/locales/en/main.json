@@ -1037,8 +1037,8 @@
     }
   },
   "toolActivity": {
-    "memoryListing": "Checking saved memories", "memorySaving": "Saving a memory", "memoryUpdating": "Updating a memory", "memoryDeleting": "Deleting a memory",
-    "memoryListCompleted": "Memories checked", "memorySaveCompleted": "Memory saved", "memoryUpdateCompleted": "Memory updated", "memoryUpdated": "Memory updated", "memoryDeleteCompleted": "Memory deleted",
+    "memoryListing": "Retrieving saved memories", "memorySaving": "Saving a memory", "memoryUpdating": "Updating a memory", "memoryDeleting": "Deleting a memory",
+    "memoryListCompleted": "Saved memories retrieved", "memorySaveCompleted": "Memory saved", "memoryUpdateCompleted": "Memory updated", "memoryUpdated": "Memory updated", "memoryDeleteCompleted": "Memory deleted",
     "queued": "Waiting for another response to finish…",
     "ariaLabel": "Tool activity",
     "working": "Working…",

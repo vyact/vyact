@@ -1038,8 +1038,8 @@
     }
   },
   "toolActivity": {
-    "memoryListing": "正在查看长期记忆", "memorySaving": "正在保存长期记忆", "memoryUpdating": "正在更新长期记忆", "memoryDeleting": "正在删除长期记忆",
-    "memoryListCompleted": "已查看长期记忆", "memorySaveCompleted": "已保存长期记忆", "memoryUpdateCompleted": "已更新长期记忆", "memoryUpdated": "记忆已更新", "memoryDeleteCompleted": "已删除长期记忆",
+    "memoryListing": "正在读取已保存的记忆", "memorySaving": "正在保存长期记忆", "memoryUpdating": "正在更新长期记忆", "memoryDeleting": "正在删除长期记忆",
+    "memoryListCompleted": "已读取已保存的记忆", "memorySaveCompleted": "已保存长期记忆", "memoryUpdateCompleted": "已更新长期记忆", "memoryUpdated": "记忆已更新", "memoryDeleteCompleted": "已删除长期记忆",
     "queued": "正在等待其他回复完成…",
     "ariaLabel": "工具执行进度",
     "working": "正在处理…",
