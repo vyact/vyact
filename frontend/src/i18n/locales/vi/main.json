@@ -1278,7 +1278,7 @@
       "failed": "Áp dụng và khôi phục mô hình trước đó đều thất bại. Vui lòng chọn lại mô hình.",
       "unknown": "Không thể xác nhận hoàn tất. Hãy kiểm tra trạng thái mô hình trước khi thử lại."
     },
-    "title": "Model settings",
+    "title": "Cài đặt mô hình",
     "close": "Close",
     "loading": "Loading model settings...",
     "description": "Recommended values are based on this model and system memory. Review them before applying.",

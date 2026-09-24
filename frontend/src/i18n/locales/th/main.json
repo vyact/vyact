@@ -1278,7 +1278,7 @@
       "failed": "ใช้การตั้งค่าและกู้คืนโมเดลเดิมไม่สำเร็จ โปรดเลือกโมเดลอีกครั้ง",
       "unknown": "ไม่สามารถยืนยันว่าเสร็จสมบูรณ์ โปรดตรวจสอบสถานะโมเดลก่อนลองอีกครั้ง"
     },
-    "title": "Model settings",
+    "title": "การตั้งค่าโมเดล",
     "close": "Close",
     "loading": "Loading model settings...",
     "description": "Recommended values are based on this model and system memory. Review them before applying.",

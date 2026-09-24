@@ -150,6 +150,8 @@ export function useConversation() {
             } else if (errorCode === 'reasoning_token_limit') {
                 content = t('message.reasoningTokenLimitDescription');
                 errorTitle = t('message.reasoningTokenLimitTitle');
+            } else if (errorCode === 'context_length_exceeded') {
+                content = t('backendErrors.context_length_exceeded');
             } else {
                 content = t('message.modelNoResponse');
             }

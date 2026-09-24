@@ -1278,7 +1278,7 @@
       "failed": "应用和恢复之前的模型均失败。请重新选择模型。",
       "unknown": "无法确认是否完成。请检查模型状态后重试。"
     },
-    "title": "Model settings",
+    "title": "模型设置",
     "close": "Close",
     "loading": "Loading model settings...",
     "description": "Recommended values are based on this model and system memory. Review them before applying.",

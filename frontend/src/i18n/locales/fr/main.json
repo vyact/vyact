@@ -1278,7 +1278,7 @@
       "failed": "L’application et la restauration ont échoué. Veuillez sélectionner à nouveau un modèle.",
       "unknown": "Impossible de confirmer la fin de l’opération. Vérifiez l’état du modèle avant de réessayer."
     },
-    "title": "Model settings",
+    "title": "Paramètres du modèle",
     "close": "Close",
     "loading": "Loading model settings...",
     "description": "Recommended values are based on this model and system memory. Review them before applying.",

@@ -346,16 +346,23 @@ const Message: React.FC<MessageProps> = ({
                     <div className="message-error-card" role="alert">
                         <span className="message-error-icon" aria-hidden="true"><CircleAlert size={18}/></span>
                         <div className="message-error-copy">
-                            <strong>{errorTitle || t('message.requestFailed')}</strong>
-                            <span>{errorDetail || t('message.unknownError')}</span>
+                            {errorCode !== 'context_length_exceeded' &&
+                                <strong>{errorTitle || t('message.requestFailed')}</strong>}
+                            <span>{errorCode === 'context_length_exceeded'
+                                ? t('backendErrors.context_length_exceeded')
+                                : errorDetail || t('message.unknownError')}</span>
                         </div>
                         {(onOpenModelSettings || onRetry) && <div className="message-error-actions">
                             {errorCode === 'context_length_exceeded' && onOpenModelSettings &&
-                                <button type="button" onClick={onOpenModelSettings} className="message-retry">
-                                    <Settings size={14}/>{t('message.changeModelSettings')}
-                                </button>}
-                            {onRetry && <button type="button" onClick={onRetry} disabled={retryDisabled} className="message-retry">
-                                <RotateCcw size={14}/>{t('message.retry')}
+                                <Tooltip content={t('message.changeModelSettings')}>
+                                    <button type="button" onClick={onOpenModelSettings} className="message-error-settings"
+                                            aria-label={t('message.changeModelSettings')}>
+                                        <Settings size={16} aria-hidden="true"/>
+                                    </button>
+                                </Tooltip>}
+                            {onRetry && <button type="button" onClick={onRetry} disabled={retryDisabled}
+                                                className="message-retry" aria-label={t('message.retry')} title={t('message.retry')}>
+                                <RotateCcw size={16} aria-hidden="true"/>
                             </button>}
                         </div>}
                     </div>

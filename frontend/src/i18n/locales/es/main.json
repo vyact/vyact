@@ -1277,7 +1277,7 @@
       "failed": "Fallaron la aplicación y la restauración del modelo anterior. Selecciona un modelo de nuevo.",
       "unknown": "No se pudo confirmar la finalización. Comprueba el estado del modelo antes de reintentar."
     },
-    "title": "Model settings",
+    "title": "Configuración del modelo",
     "close": "Close",
     "loading": "Loading model settings...",
     "description": "Recommended values are based on this model and system memory. Review them before applying.",

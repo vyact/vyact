@@ -1278,7 +1278,7 @@
       "failed": "適用と以前のモデルの復元に失敗しました。モデルを再選択してください。",
       "unknown": "適用の完了を確認できませんでした。モデルの状態を確認してから再試行してください。"
     },
-    "title": "Model settings",
+    "title": "モデル設定",
     "close": "Close",
     "loading": "Loading model settings...",
     "description": "Recommended values are based on this model and system memory. Review them before applying.",

@@ -781,8 +781,12 @@
 .message-error-copy { display:flex; flex-direction:column; gap:2px; min-width:0; line-height:1.4; }
 .message-error-copy strong { color:var(--text); font-size:13px; font-weight:600; }
 .message-error-copy span { color:var(--text-secondary); font-size:12px; white-space:normal; }
-.message-error-actions { display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-wrap:wrap; }
-.message-retry { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:34px; padding:0 12px; border:1px solid color-mix(in srgb, var(--danger) 55%, var(--border)); border-radius:9px; background:color-mix(in srgb, var(--danger) 10%, var(--surface2)); color:var(--danger); cursor:pointer; font-size:12px; font-weight:600; white-space:nowrap; transition:border-color .15s ease, background .15s ease, color .15s ease; }
+.message-error-actions { display:flex; align-items:center; justify-content:flex-end; gap:6px; flex-wrap:wrap; }
+.message-error-settings, .message-retry { display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; min-height:30px; border-radius:8px; cursor:pointer; font-size:12px; font-weight:600; white-space:nowrap; transition:border-color .15s ease, background .15s ease, color .15s ease; }
+.message-error-settings { width:30px; padding:0; border:1px solid var(--border); background:var(--surface2); color:var(--text-secondary); }
+.message-error-settings:hover { border-color:var(--text-secondary); color:var(--text); }
+.message-error-settings:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.message-retry { width:30px; padding:0; border:1px solid color-mix(in srgb, var(--danger) 55%, var(--border)); background:color-mix(in srgb, var(--danger) 10%, var(--surface2)); color:var(--danger); }
 .message-retry:hover { border-color:var(--danger); background:color-mix(in srgb, var(--danger) 16%, var(--surface2)); color:var(--button-danger-hover); }
 .message-retry:focus-visible { outline:2px solid color-mix(in srgb, var(--danger) 55%, transparent); outline-offset:2px; }
 :root:not([data-theme]) .message-retry,
