@@ -5,14 +5,22 @@ from collections.abc import AsyncIterator
 _subscribers: set[asyncio.Queue] = set()
 
 
-def request_tool_settings(server_id: str) -> bool:
+def _publish_settings_event(event: dict) -> bool:
     if not _subscribers:
         return False
     for queue in tuple(_subscribers):
         if queue.full():
             queue.get_nowait()
-        queue.put_nowait({"tab": "api", "mcpServerId": server_id})
+        queue.put_nowait(event)
     return True
+
+
+def request_tool_settings(server_id: str) -> bool:
+    return _publish_settings_event({"tab": "api", "mcpServerId": server_id})
+
+
+def request_model_settings() -> bool:
+    return _publish_settings_event({"target": "model_settings"})
 
 
 async def settings_events() -> AsyncIterator[dict | None]:

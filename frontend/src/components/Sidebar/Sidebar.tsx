@@ -440,11 +440,19 @@ const Sidebar: React.FC<SidebarProps> = ({
     const handledModelSettingsRequestRef = useRef(0);
     useEffect(() => {
         if (openModelSettingsRequest === handledModelSettingsRequestRef.current) return;
-        handledModelSettingsRequestRef.current = openModelSettingsRequest;
         if (currentProvider === 'vyact' && selectedModel) {
             setModelSettingsPath(selectedModel);
+        } else if (isApiProvider(currentProvider)) {
+            setIsProviderSettingsOpen(true);
+        } else if (currentProvider.startsWith('custom:')) {
+            const connection = customProviders.find(provider => `custom:${provider.id}` === currentProvider);
+            if (!connection) return;
+            setCustomProviderEditor(connection);
+        } else {
+            return;
         }
-    }, [openModelSettingsRequest, currentProvider, selectedModel]);
+        handledModelSettingsRequestRef.current = openModelSettingsRequest;
+    }, [openModelSettingsRequest, currentProvider, selectedModel, customProviders]);
     const modelContextSelectionDisabled = isModelLoading || isChatBusy;
 
 

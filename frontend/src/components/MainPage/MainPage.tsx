@@ -440,6 +440,11 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
         const settingsEvents = new EventSource('/api/browser-extension/settings-events');
         settingsEvents.onmessage = event => {
             const detail = JSON.parse(event.data);
+            if (detail.target === 'model_settings') {
+                setOpenModelSettingsRequest(request => request + 1);
+                void window.ragAPI?.focusWindow?.();
+                return;
+            }
             if (detail.tab !== 'api' || typeof detail.mcpServerId !== 'string') return;
             window.dispatchEvent(new CustomEvent('vyact:open-settings', {detail}));
             void window.ragAPI?.focusWindow?.();

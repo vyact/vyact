@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from services.extension_browser import extension_browser
 from services.extension_tools import extension_tool_catalog
-from services.extension_settings import request_tool_settings, settings_events
+from services.extension_settings import request_model_settings, request_tool_settings, settings_events
 
 
 router = APIRouter(prefix="/browser-extension", tags=["browser-extension"])
@@ -118,5 +118,13 @@ async def open_tool_settings(server_id: str, request: Request):
     if server is None:
         raise HTTPException(status_code=404, detail="Tool not found")
     if not request_tool_settings(server_id):
+        raise HTTPException(status_code=503, detail="Desktop UI is not connected")
+    return {"ok": True}
+
+
+@router.post("/model-settings")
+async def open_model_settings(request: Request):
+    _require_local(request)
+    if not request_model_settings():
         raise HTTPException(status_code=503, detail="Desktop UI is not connected")
     return {"ok": True}
