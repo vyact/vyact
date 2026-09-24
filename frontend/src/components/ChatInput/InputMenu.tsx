@@ -38,7 +38,7 @@ interface InputMenuProps {
     selectedModel: string;
     isLocalModel: boolean;
     modelType: 'chat' | 'image_gen' | 'image_edit';
-    fileInputRef: React.RefObject<HTMLInputElement>;
+    fileInputRef: React.RefObject<HTMLInputElement | null>;
     onFileSelect: React.ChangeEventHandler<HTMLInputElement>;
     onOpenDocumentModal: () => void;
     onOpenCommandModal: () => void;

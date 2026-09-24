@@ -9,11 +9,11 @@ export default defineConfig({
   resolve: {
     // Official plugin sources live outside frontend/, so pin shared runtime deps.
     alias: {
-      react: resolve(__dirname, 'node_modules/react'),
-      'react/jsx-runtime': resolve(__dirname, 'node_modules/react/jsx-runtime.js'),
-      'lucide-react': resolve(__dirname, 'node_modules/lucide-react'),
-      'react-i18next': resolve(__dirname, 'node_modules/react-i18next'),
-      'react-player': resolve(__dirname, 'node_modules/react-player'),
+      react: resolve(import.meta.dirname, 'node_modules/react'),
+      'react/jsx-runtime': resolve(import.meta.dirname, 'node_modules/react/jsx-runtime.js'),
+      'lucide-react': resolve(import.meta.dirname, 'node_modules/lucide-react'),
+      'react-i18next': resolve(import.meta.dirname, 'node_modules/react-i18next'),
+      'react-player': resolve(import.meta.dirname, 'node_modules/react-player'),
     },
   },
   build: {

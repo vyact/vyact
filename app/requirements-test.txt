@@ -2,11 +2,11 @@
 # Keep shared package versions aligned with requirements.txt.
 aiofiles==25.1.0
 beautifulsoup4==4.15.0
-elasticsearch==9.5.0
+elasticsearch==9.5.1
 fastapi==0.141.1
 httpx==0.28.1
 lingua-language-detector==2.2.0
-mcp>=1.27,<2
+mcp>=1.30,<2
 Pillow==12.3.0
 pydantic==2.13.5
 pypdfium2==5.13.0
@@ -14,8 +14,8 @@ python-multipart==0.0.32
 pytest==9.1.1
 pytest-asyncio==1.4.0
 psutil==7.2.2
-tqdm==4.70.0
-huggingface_hub==1.29.0
+tqdm==4.70.1
+huggingface_hub==1.32.0
 
 # Direct dependency for M4A decoding (also used by faster-whisper).
 av==18.1.0
