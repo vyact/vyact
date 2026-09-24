@@ -402,7 +402,7 @@ class MCPManager:
             }
         return {}
 
-    async def get_tools(self) -> list[dict]:
+    async def get_tools(self, *, log_exposure: bool = True) -> list[dict]:
         """연결된 모든 서버의 tool을 OpenAI-compatible 'tools' 스키마로 변환.
 
         내부 tool은 server_type이 지정된 경우 해당 타입 서버가 enabled일 때만 노출한다.
@@ -512,12 +512,13 @@ class MCPManager:
                     "parameters": spec["parameters"],
                 },
             })
-        exposed_names = [tool["function"]["name"] for tool in out]
-        logger.info(
-            "[mcp] LLM tool exposure: count=%d enabled_types=%s selected_ids=%s tools=%s",
-            len(out), sorted(value for value in enabled_types if value),
-            sorted(selected_server_ids) if selected_server_ids else [], exposed_names,
-        )
+        if log_exposure:
+            exposed_names = [tool["function"]["name"] for tool in out]
+            logger.info(
+                "[mcp] LLM tool exposure: count=%d enabled_types=%s selected_ids=%s tools=%s",
+                len(out), sorted(value for value in enabled_types if value),
+                sorted(selected_server_ids) if selected_server_ids else [], exposed_names,
+            )
         return out
 
     def has_tools(self) -> bool:

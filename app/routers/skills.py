@@ -8,8 +8,8 @@ from pydantic import BaseModel
 
 from services.db import get_es, KOREAN_ANALYSIS
 from services.indexer import get_embedding
-from services.skill_routing import route_local_skills, calculation_context, MAX_CANDIDATES
 from services.default_skills import SKILLS_INDEX, sync_default_skills, is_builtin_skill
+from services.skill_routing import calculation_context
 from logger import get_logger
 
 logger = get_logger(__name__)
@@ -17,7 +17,7 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/api/skills", tags=["skills"])
 
 MATCH_THRESHOLD = 0.85   # Elasticsearch kNN _score 기준 (raw cosine similarity가 아님)
-MATCH_GAP = 0.02         # top1-top2 차이가 이 이하면 둘 다 반환
+MAX_SELECTED_SKILLS = 1
 
 
 # ── 인덱스 생성 ──────────────────────────────────────────────────
@@ -202,36 +202,11 @@ async def delete_skill(skill_id: str):
         await es.close()
 
 
-# ── 요청 의도 및 벡터 유사도 매칭 ─────────────────────────────────────────────
+# ── 벡터 유사도 매칭 ─────────────────────────────────────────────
 async def match_skills(query: str) -> list[dict]:
-    """Local intent routing; conservative vector fallback when routing is unavailable."""
+    """Return at most one relevant skill without a separate LLM request."""
     es = get_es()
     try:
-        catalog = await es.search(index=SKILLS_INDEX, query={"term": {"enabled": True}},
-            size=MAX_CANDIDATES + 1, _source=["name", "description", "instructions"], ignore_unavailable=True)
-        candidates = []
-        seen = set()
-        for hit in catalog.get("hits", {}).get("hits", []):
-            source = hit["_source"]
-            key = (source["name"], source["instructions"])
-            if key in seen:
-                continue
-            seen.add(key)
-            candidates.append({"id": hit["_id"], **source})
-        # A truncated catalog must not hide skills merely because earlier entries duplicated.
-        catalog_complete = len(catalog.get("hits", {}).get("hits", [])) <= MAX_CANDIDATES
-        routing = await route_local_skills(query, candidates) if catalog_complete else None
-        if routing is not None:
-            by_id = {candidate["id"]: candidate for candidate in candidates}
-            result = []
-            for identifier in routing["skills"]:
-                candidate = by_id[identifier]
-                item = {"name": candidate["name"], "instructions": candidate["instructions"], "score": None}
-                if candidate["name"] == "data-validation":
-                    item["instructions"] += "\n\n" + calculation_context(query, routing.get("calculations"))
-                result.append(item)
-            logger.info("[skills] Intent selection: %s", [item["name"] for item in result])
-            return result
         query_vec = await get_embedding(query, is_query=True)
         if not query_vec:
             return []
@@ -240,11 +215,11 @@ async def match_skills(query: str) -> list[dict]:
             knn={
                 "field": "embedding",
                 "query_vector": query_vec,
-                "k": 2,
+                "k": MAX_SELECTED_SKILLS,
                 "num_candidates": 20,
                 "filter": {"term": {"enabled": True}},
             },
-            size=2,
+            size=MAX_SELECTED_SKILLS,
             _source=["name", "instructions"],
             ignore_unavailable=True,
         )
@@ -260,22 +235,11 @@ async def match_skills(query: str) -> list[dict]:
             logger.info("[skills] 매칭 스킵: top1=%s (score=%.4f < %.2f)", top1["_source"]["name"], score1, MATCH_THRESHOLD)
             return []
 
-        result = [{"name": top1["_source"]["name"], "instructions": top1["_source"]["instructions"], "score": score1}]
-
-        if len(hits) >= 2:
-            top2 = hits[1]
-            score2 = top2["_score"]
-            same_content = all(top2["_source"][key] == top1["_source"][key]
-                               for key in ("name", "instructions"))
-            if not same_content and score2 >= MATCH_THRESHOLD and score1 - score2 <= MATCH_GAP:
-                result.append({"name": top2["_source"]["name"], "instructions": top2["_source"]["instructions"], "score": score2})
-
-        names = ", ".join(f"{r['name']}({r['score']:.4f})" for r in result)
-        logger.info("[skills] 매칭 적용: %s", names)
-        for item in result:
-            if item["name"] == "data-validation":
-                item["instructions"] += "\n\n" + calculation_context(query, None)
-        return result
+        item = {"name": top1["_source"]["name"], "instructions": top1["_source"]["instructions"], "score": score1}
+        if item["name"] == "data-validation":
+            item["instructions"] += "\n\n" + calculation_context(query, None)
+        logger.info("[skills] 매칭 적용: %s(%.4f)", item["name"], score1)
+        return [item]
     except Exception as e:
         logger.warning("[skills] 매칭 실패: %s", e)
         return []

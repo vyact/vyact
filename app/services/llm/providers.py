@@ -280,7 +280,7 @@ def _apply_local_sampling(body: dict, provider_config: dict) -> None:
             body[key] = runtime[key]
 
 
-async def _get_unified_tools(use_tools: bool):
+async def _get_unified_tools(use_tools: bool, *, log_exposure: bool = True):
     """MCP tool(통일형)과 tool 이름 목록을 반환. tool이 없으면 ([], [])."""
     if not use_tools:
         return [], []
@@ -288,9 +288,10 @@ async def _get_unified_tools(use_tools: bool):
         from services.mcp_client import mcp_manager
         if not mcp_manager.connected or not mcp_manager.has_tools():
             return [], []
-        unified = await mcp_manager.get_tools()
+        unified = await mcp_manager.get_tools(log_exposure=log_exposure)
         names = [t["function"]["name"] for t in unified]
-        await log_tool_names(names, reason="provider")
+        if log_exposure:
+            await log_tool_names(names, reason="provider")
         return unified, names
     except Exception as e:
         logger.warning("[providers] tool 목록 조회 실패: %s", e)

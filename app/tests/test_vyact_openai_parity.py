@@ -1,6 +1,6 @@
 import json
 import unittest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from services.llm.providers import (
     _accumulate_llm_timing,
@@ -12,6 +12,7 @@ from services.llm.providers import (
     _next_consecutive_tool_failures,
     _tool_call_fingerprint,
     _tool_call_max_rounds,
+    _get_unified_tools,
     openai_stream,
 )
 
@@ -46,6 +47,18 @@ class _Client:
 
 
 class VyactOpenAiParityTests(unittest.IsolatedAsyncioTestCase):
+    async def test_tool_budget_lookup_does_not_log_exposure(self):
+        manager = MagicMock(connected=True)
+        manager.has_tools.return_value = True
+        manager.get_tools = AsyncMock(return_value=[{"function": {"name": "user_memory_list"}}])
+        with patch("services.mcp_client.mcp_manager", manager), \
+             patch("services.llm.providers.log_tool_names", new_callable=AsyncMock) as log_names:
+            tools, names = await _get_unified_tools(True, log_exposure=False)
+        self.assertEqual(names, ["user_memory_list"])
+        self.assertEqual(len(tools), 1)
+        manager.get_tools.assert_awaited_once_with(log_exposure=False)
+        log_names.assert_not_awaited()
+
     def test_accumulates_omlx_extended_usage_statistics(self):
         usage = {"_llm_call_count": 1}
         _accumulate_openai_usage(usage, {

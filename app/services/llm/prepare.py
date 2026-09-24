@@ -78,7 +78,7 @@ async def prepare_request(
         else provider_config.get("max_output_tokens") or runtime_settings["llm_max_tokens"] or DEFAULT_RUNTIME_SETTINGS["llm_max_tokens"]
     )
 
-    unified_tools, tool_names = await _get_unified_tools(use_tools) if provider_config.get("is_local") else ([], [])
+    unified_tools, tool_names = await _get_unified_tools(use_tools, log_exposure=False) if provider_config.get("is_local") else ([], [])
     tool_directive = await build_tool_directive(tool_names) if tool_names else ""
 
     def request_system_message(summary: str) -> str:
