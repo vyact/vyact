@@ -47,11 +47,31 @@
     padding-left: 24px !important;
 }
 
-.markdown-table-scroll {
+.markdown-table-frame {
     max-width: 100%;
+    min-width: 0;
     margin: 16px 0;
-    overflow-x: auto;
+    border: 1px solid var(--border);
     border-radius: 8px;
+    overflow: hidden;
+}
+
+.markdown-table-scroll {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.markdown-table-scroll table :is(th, td) {
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+}
+
+.markdown-table-scroll table tr > :last-child {
+    border-right: 0;
+}
+
+.markdown-table-scroll table tr:last-child > * {
+    border-bottom: 0;
 }
 
 .markdown-table-scroll table th {

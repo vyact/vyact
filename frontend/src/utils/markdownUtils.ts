@@ -545,7 +545,18 @@ export const renderMarkdown = (text: string): string => {
     let tableRows: string[] = [];
     let tableHeaders: string[] = [];
     let tableAligns: string[] = [];  // 컬럼별 정렬 ('left'|'center'|'right'|'')
+    let tableColumnMinimumWidths: number[] = [];
     let isInsideTable = false;
+
+    const isCompactTableValue = (value: string) => /^[+-]?[\d,./:-]+(?:\s*[A-Za-z%]+)?$/.test(value.trim());
+    const tableCellMinimumWidth = (cell: string, isHeader: boolean) => {
+        const plainText = cell.replace(/!?(?:\[([^\]]*)\]\([^)]*\)|[`*_]|&lt;br\s*\/?&gt;|&amp;nbsp;)/gi, '$1').trim();
+        const textWidth = Array.from(plainText).reduce((width, character) =>
+            width + (/[^\u0000-\u00ff]/.test(character) ? 1.6 : 1), 0);
+        return !isHeader && isCompactTableValue(plainText)
+            ? Math.max(50, plainText.length * 10 + 20)
+            : Math.max(50, Math.min(240, textWidth * 8 + 20));
+    };
 
     const isTableRow = (value: string) => {
         const trimmed = value.trim();
@@ -571,14 +582,15 @@ export const renderMarkdown = (text: string): string => {
         // 쇼핑 테이블과 다열 일반 테이블은 최소 폭을 확보한 뒤 가로 스크롤한다.
         // 컬럼 수가 많을 때 모든 열을 컨테이너 안에 억지로 압축하면 마지막 헤더가
         // 글자 단위로 갈라지면서 헤더 행 전체가 비정상적으로 높아진다.
-        const minimumTableWidth = Math.max(560, tableHeaders.length * 140);
+        const minimumTableWidth = Math.ceil(tableColumnMinimumWidths.reduce((sum, width) => sum + width, 0));
         const tableStyle = isShopTable
             ? 'width:max-content; min-width:100%; table-layout:auto;'
-            : `width:100%; min-width:${minimumTableWidth}px; table-layout:fixed;`;
-        result.push(`<div class="markdown-table-scroll"><table style="${tableStyle} border-collapse:collapse; background:var(--surface); border:none;"><tbody>${tableRows.join('')}</tbody></table></div>`);
+            : `width:100%; min-width:${minimumTableWidth}px; table-layout:auto;`;
+        result.push(`<div class="markdown-table-frame"><div class="markdown-table-scroll"><table style="${tableStyle} border-collapse:separate; border-spacing:0; background:var(--surface); border:none;"><tbody>${tableRows.join('')}</tbody></table></div></div>`);
         tableRows = [];
         tableHeaders = [];
         tableAligns = [];
+        tableColumnMinimumWidths = [];
         isInsideTable = false;
     };
 
@@ -615,6 +627,11 @@ export const renderMarkdown = (text: string): string => {
             if (isHeader) {
                 tableHeaders = cells.map(c => c.trim());
             }
+            // Expand only when the sum of readable column widths exceeds the available space.
+            cells.forEach((cell, columnIndex) => {
+                tableColumnMinimumWidths[columnIndex] = Math.max(tableColumnMinimumWidths[columnIndex] || 0,
+                    tableCellMinimumWidth(cell, isHeader));
+            });
             const colOrder: string[] = tableHeaders;
             const isShopTable = tableHeaders.includes('제품명') || tableHeaders.includes('이미지');
 
@@ -652,10 +669,10 @@ export const renderMarkdown = (text: string): string => {
                 // 구분선에서 파싱한 정렬이 있으면 우선. 없으면 헤더=center, 본문=left 기본.
                 const parsedAlign = tableAligns[ci];
                 const align = parsedAlign || (isHeader ? 'center' : 'left');
-                const wrappingStyle = isHeader
-                    ? 'word-break:keep-all; overflow-wrap:normal;'
-                    : 'word-break:keep-all; overflow-wrap:anywhere;';
-                const baseStyle = `border:1px solid var(--border); padding:10px; background:${isHeader ? 'var(--surface2)' : 'transparent'}; text-align:${align}; font-size:14px; vertical-align:top; ${wrappingStyle}`;
+                const compactCell = !isHeader && isCompactTableValue(cell);
+                const wrappingStyle = compactCell ? 'white-space:nowrap;' : 'word-break:keep-all; overflow-wrap:anywhere;';
+                const minimumWidth = isShopTable ? '' : `min-width:${tableCellMinimumWidth(cell, isHeader)}px;`;
+                const baseStyle = `padding:10px; background:${isHeader ? 'var(--surface2)' : 'transparent'}; text-align:${align}; font-size:14px; vertical-align:${isHeader ? 'middle' : 'top'}; ${minimumWidth}${wrappingStyle}`;
                 let cellContent = cell;
                 if (!isHeader && colName === '리뷰수') {
                     const nums = cell.trim().replace(/[^0-9,]/g, '');

@@ -20,6 +20,16 @@ done
 
 cd "$ROOT_DIR"
 
+LINUX_DOWNLOAD_DIR=""
+cleanup() {
+  if [ -n "$LINUX_DOWNLOAD_DIR" ]; then
+    rm -rf "$LINUX_DOWNLOAD_DIR"
+  fi
+  git restore --source=HEAD --staged --worktree -- frontend/package-lock.json
+}
+trap cleanup EXIT
+git restore --source=HEAD --staged --worktree -- frontend/package-lock.json
+
 ELECTRON_VERSION="$(node -p "require('./electron/package.json').version")"
 ELECTRON_LOCK_VERSION="$(node -p "require('./electron/package-lock.json').version")"
 WINDOWS_VERSION="$(node -p "require('./win/electron/package.json').version")"
@@ -140,10 +150,6 @@ if ! gh run watch "$RUN_ID" --exit-status; then
 fi
 
 LINUX_DOWNLOAD_DIR="$(mktemp -d)"
-cleanup() {
-  rm -rf "$LINUX_DOWNLOAD_DIR"
-}
-trap cleanup EXIT
 
 echo "Downloading Linux packages from artifact $LINUX_ARTIFACT_NAME..."
 if ! gh run download "$RUN_ID" \
