@@ -336,9 +336,13 @@
     line-height: 1.5;
 }
 
-/* 긴 번호 단계의 경계만 드러내고 불릿과 하위 목록의 간격은 유지한다. */
+/* 긴 목록 항목은 줄바꿈된 본문과 다음 항목의 경계를 분명히 한다. */
+.msg.bot .msg-bubble > .msg-markdown > ul.markdown-list > li + li {
+    margin-top: 10px !important;
+}
+
 .msg.bot .msg-bubble > .msg-markdown > ol.markdown-list > li + li {
-    margin-top: 8px !important;
+    margin-top: 10px !important;
 }
 
 .msg-bubble .markdown-task-item {
