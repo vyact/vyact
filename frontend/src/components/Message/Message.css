@@ -228,6 +228,11 @@
     padding-top: 1px;
 }
 
+.msg.user .code-block { min-width:min(320px, calc(100vw - 64px)); max-width:100%; margin:6px 0; }
+.msg.user .code-body { max-height:360px; }
+.msg.user .code-body::-webkit-scrollbar-corner { background:#0d1117; }
+.msg.user .code-line .line-number { display:none; }
+
 .msg.bot .msg-bubble {
     background: transparent;
     color: var(--text);

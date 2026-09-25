@@ -13,6 +13,8 @@ import {useSlashCommand} from './useSlashCommand';
 import AttachmentPreview from './AttachmentPreview';
 import ArticleList from './ArticleList';
 import InputMenu from './InputMenu';
+import CodeInputBlock, {formatCodeInput, parseFencedCodeInput, removeCodeBlockTrigger} from './CodeInputBlock';
+import type {CodeInputValue} from './CodeInputBlock';
 import McpMenu from './McpMenu';
 import McpMentionMenu, {MentionMcpServer} from './McpMentionMenu';
 import CustomSelect from '../CustomSelect/CustomSelect';
@@ -130,6 +132,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
     const panels = usePanelManager();
     const {sidePanels} = usePluginExtensions();
     const [value, setValue] = useState('');
+    const [codeInput, setCodeInput] = useState<CodeInputValue | null>(null);
     const [showCommandModal, setShowCommandModal] = useState(false);
     const [previewIndex, setPreviewIndex] = useState<number | null>(null);
     const promptSuggestionsRef = useRef<HTMLDivElement | null>(null);
@@ -276,6 +279,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
         if (resetTrigger > 0) {
             void Promise.resolve().then(() => {
                 setValue('');
+                setCodeInput(null);
                 clearSuggestions();
                 if (textareaRef.current) textareaRef.current.style.height = 'auto';
             });
@@ -370,13 +374,16 @@ const ChatInput: React.FC<ChatInputProps> = ({
         const pastedAppend = attach.pastedTexts.length > 0
             ? '\n\n' + attach.pastedTexts.map(p => `«PASTE:${p.label}»\n${p.content.replaceAll('«/PASTE»', '«\\/PASTE»')}«/PASTE»`).join('\n\n')
             : '';
-        const fullMessage = trimmed + pastedAppend;
+        const codeAppend = codeInput?.code.trim() ? `${trimmed ? '\n\n' : ''}${formatCodeInput(codeInput)}` : '';
+        const fullMessage = trimmed + codeAppend + pastedAppend;
         if ((fullMessage.trim() || attach.images.length > 0 || attach.fileAttachments.length > 0 || articles.length > 0) && !disabled) {
             const prevValue = value;
+            const prevCodeInput = codeInput;
             const prevImages = [...attach.images];
             const prevFiles = [...attach.fileAttachments];
             const prevPastedTexts = [...attach.pastedTexts];
             setValue('');
+            setCodeInput(null);
             attach.clearAll();
             slash.clearSuggestions();
             if (textareaRef.current) textareaRef.current.style.height = 'auto';
@@ -388,6 +395,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 const sent = await result;
                 if (sent === false) {
                     setValue(prevValue);
+                    setCodeInput(prevCodeInput);
                     attach.setImages(prevImages);
                     attach.setFileAttachments(prevFiles);
                     attach.setPastedTexts(prevPastedTexts);
@@ -499,6 +507,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
                         onImageClick={setPreviewIndex}
                     />
 
+                    {codeInput && <CodeInputBlock value={codeInput} onChange={setCodeInput} onRemove={() => setCodeInput(null)} onSend={handleSend} disabled={disabled}/>}
+
                     {/* textarea 행 */}
                     {(selectedMcps.length > 0 || selectedExternalDocuments.length > 0) && <div className="selected-mcp-chips">
                         {isKoreanLanguage && selectedExternalDocuments.map(document => <div className="selected-mcp-chip knowledge-source-chip is-external" key={`${document.source_id}:${document.document_id}`}>
@@ -533,6 +543,17 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                 readOnly={isModelLoading}
                                 onChange={e => {
                                     if (isModelLoading) return;
+                                    const prose = e.target.selectionStart === e.target.value.length && modelType === 'chat' && !codeInput?.code.trim()
+                                        ? removeCodeBlockTrigger(e.target.value)
+                                        : null;
+                                    if (prose !== null) {
+                                        setValue(prose);
+                                        setCodeInput(current => current ?? {language: '', code: ''});
+                                        setMcpMentionQuery(null);
+                                        slash.clearSuggestions();
+                                        requestAnimationFrame(() => document.querySelector<HTMLTextAreaElement>('.code-input-block__editor')?.focus());
+                                        return;
+                                    }
                                     const cursor = e.target.selectionStart;
                                     const token = e.target.value.slice(0, cursor).match(/[@/][^\s@/]*$/);
                                     autocompleteRange.current = token ? {start: token.index!, end: cursor} : null;
@@ -548,7 +569,16 @@ const ChatInput: React.FC<ChatInputProps> = ({
                                     autoResize();
                                 }}
                                 onKeyDown={handleKeyDown}
-                                onPaste={e => attach.handlePaste(e)}
+                                onPaste={e => {
+                                    const parsed = parseFencedCodeInput(e.clipboardData.getData('text'));
+                                    if (parsed && !codeInput?.code.trim()) {
+                                        e.preventDefault();
+                                        setCodeInput(parsed);
+                                        requestAnimationFrame(() => document.querySelector<HTMLTextAreaElement>('.code-input-block__editor')?.focus());
+                                        return;
+                                    }
+                                    attach.handlePaste(e);
+                                }}
                                 rows={1}
                                 style={{width: '100%'}}
                             />
@@ -769,7 +799,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                             <button
                                 className={`send-btn${isImageMode ? ' image-mode-send' : ''}${disabled && onStop ? ' stop-mode' : ''}`}
                                 onClick={disabled && onStop ? onStop : handleSend}
-                                disabled={!disabled && !onStop && (!value.trim() && attach.images.length === 0 && attach.fileAttachments.length === 0 && attach.pastedTexts.length === 0)}
+                                disabled={!disabled && !onStop && (!value.trim() && !codeInput?.code.trim() && attach.images.length === 0 && attach.fileAttachments.length === 0 && attach.pastedTexts.length === 0)}
                                 aria-label={disabled && onStop ? t('chatInput.stop') : disabled ? t('chatInput.waiting') : isImageMode ? t('chatInput.imageGen') : t('chatInput.send')}
                             >
                                 {disabled && onStop ? (

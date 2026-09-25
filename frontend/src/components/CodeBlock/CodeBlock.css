@@ -26,12 +26,13 @@
 .copy-btn {
     display: flex;
     align-items: center;
-    gap: 4px;
-    font-size: 11px;
-    color: var(--muted);
-    background: transparent;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    color: var(--text);
+    background: var(--bg);
     border: 1px solid var(--border);
-    padding: 3px 8px;
+    padding: 0;
     border-radius: 5px;
     cursor: pointer;
     transition: all 0.15s;
@@ -39,7 +40,8 @@
 
 .copy-btn:hover {
     color: var(--text);
-    border-color: var(--accent2);
+    background: var(--surface2);
+    border-color: var(--text-secondary);
 }
 
 .copy-btn.copied {

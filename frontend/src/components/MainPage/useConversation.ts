@@ -4,6 +4,7 @@ import {useTranslation} from 'react-i18next';
 import { api } from '../../services/api';
 import { generateUUID, unwrapPastedText } from '../../utils/helpers';
 import { parseFollowups } from '../../utils/markdownUtils';
+import {readableConversationTitle} from '../../utils/conversationTitle';
 import type { Conversation, Message, ArticleAttachment } from '../../types';
 
 type StoredConversationMessage = Message & {
@@ -40,7 +41,7 @@ export function useConversation() {
     const loadMoreHistoryRequestRef = React.useRef<Promise<void> | null>(null);
     const [pendingArticles, setPendingArticles] = useState<ArticleAttachment[]>([]);
     const normalizeConversationTitle = (title: string): string => {
-        const normalized = unwrapPastedText(title).replace(/\s+/g, ' ').trim();
+        const normalized = readableConversationTitle(unwrapPastedText(title)).replace(/\s+/g, ' ').trim();
         return normalized || t('commandPalette.newChat');
     };
     const normalizeConversation = (conversation: Conversation): Conversation => ({

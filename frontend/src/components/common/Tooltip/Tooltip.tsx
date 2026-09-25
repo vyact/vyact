@@ -58,6 +58,12 @@ export function TooltipProvider({children}: {children: ReactNode}) {
             records.forEach(record => {
                 if (record.type === 'attributes') {
                     adoptNativeTitle(record.target as Element);
+                    if (record.target === activeTargetRef.current) {
+                        const label = activeTargetRef.current.dataset.instantTooltip
+                            ?? activeTargetRef.current.dataset.vyactTooltipTitle;
+                        if (label) setTooltip(current => current && current.content !== label
+                            ? {...current, content: label} : current);
+                    }
                     return;
                 }
                 record.addedNodes.forEach(node => {
@@ -65,7 +71,7 @@ export function TooltipProvider({children}: {children: ReactNode}) {
                 });
             });
         });
-        observer.observe(document.body, {subtree: true, childList: true, attributes: true, attributeFilter: ['title']});
+        observer.observe(document.body, {subtree: true, childList: true, attributes: true, attributeFilter: ['title', 'data-instant-tooltip']});
         return () => observer.disconnect();
     }, []);
 
@@ -102,14 +108,17 @@ export function TooltipProvider({children}: {children: ReactNode}) {
         window.addEventListener('scroll', hideTooltip, true);
         window.addEventListener('resize', hideTooltip);
         window.addEventListener('keydown', closeOnEscape, true);
-        window.addEventListener('pointerdown', hideTooltip, true);
-        window.addEventListener('click', hideTooltip, true);
+        const hideOnOutsideClick = (event: PointerEvent | MouseEvent) => {
+            if (!activeTargetRef.current?.contains(event.target as Node)) hideTooltip();
+        };
+        window.addEventListener('pointerdown', hideOnOutsideClick, true);
+        window.addEventListener('click', hideOnOutsideClick, true);
         return () => {
             window.removeEventListener('scroll', hideTooltip, true);
             window.removeEventListener('resize', hideTooltip);
             window.removeEventListener('keydown', closeOnEscape, true);
-            window.removeEventListener('pointerdown', hideTooltip, true);
-            window.removeEventListener('click', hideTooltip, true);
+            window.removeEventListener('pointerdown', hideOnOutsideClick, true);
+            window.removeEventListener('click', hideOnOutsideClick, true);
         };
     }, []);
 
@@ -124,6 +133,11 @@ export function TooltipProvider({children}: {children: ReactNode}) {
         const size = target.dataset.instantTooltipSize === 'medium' ? 'medium' : 'small';
         const x = rect.left + rect.width / 2;
         if (content) {
+            if (activeTargetRef.current === target) {
+                setTooltip(current => current && current.content !== content
+                    ? {...current, content} : current);
+                return;
+            }
             activeTargetRef.current = target;
             setTooltip({
                 content,

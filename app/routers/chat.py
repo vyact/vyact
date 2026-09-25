@@ -67,6 +67,7 @@ from services.external_data.settings import load_external_data_connections
 from services.external_data.selected_documents import load_selected_external_documents, merge_external_context_documents
 from services.external_data.messages import get_all_searches_failed_message
 from services.user_profile import get_response_style_instruction
+from services.conversation_title import readable_conversation_title
 
 logger = get_logger(__name__)
 
@@ -222,10 +223,12 @@ def _new_conversation_title(
     fallback = re.sub(r"\s+", " ", unwrap_pasted_text(fallback_question)).strip()
     generated_title = re.sub(r"\s+", " ", conv_title or "").strip().strip(".。!? ")
     if generated_title:
+        generated_title = readable_conversation_title(generated_title)
         return generated_title[:36] + ("..." if len(generated_title) > 36 else "")
     summary = re.sub(r"\s+", " ", conv_summary or "").strip()
     if not summary:
-        return fallback[:30] + ("..." if len(fallback) > 30 else "")
+        fallback_title = readable_conversation_title(unwrap_pasted_text(fallback_question))
+        return fallback_title[:30] + ("..." if len(fallback_title) > 30 else "")
 
     first_sentence = re.split(r"(?<=[.!?])\s+", summary, maxsplit=1)[0].strip()
     title = first_sentence.rstrip(".。!? ")

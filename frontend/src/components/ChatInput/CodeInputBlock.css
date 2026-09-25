@@ -1,0 +1,9 @@
+.code-input-block { overflow:hidden; margin:4px 0 6px; border:1px solid var(--border); border-radius:10px; background:var(--bg); }
+.code-input-block__header { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:5px 8px; }
+.code-input-block__language { width:auto; min-width:0; }
+.code-input-block__language .custom-select-trigger { width:auto; padding:4px 6px; border:0; background:transparent; }
+.code-input-block__language-menu { min-width:220px; }
+.code-input-block__remove { display:grid; width:26px; height:26px; flex:0 0 26px; place-items:center; border:0; border-radius:6px; background:transparent; color:var(--muted); cursor:pointer; }
+.code-input-block__remove:hover { background:var(--surface2); color:var(--text); }
+.code-input-block__editor { display:block; box-sizing:border-box; width:100%; min-height:96px; max-height:240px; resize:none; overflow-y:auto; padding:8px 12px 12px; border:0; outline:0; background:transparent; color:var(--text); font:12px/1.55 Menlo,Consolas,Monaco,monospace; tab-size:4; }
+.code-input-block__editor::placeholder { color:var(--muted); }

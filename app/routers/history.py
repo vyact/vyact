@@ -7,6 +7,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from agent import list_conversations, get_conversation, delete_conversation, rename_conversation
 from services.history import list_favorite_conversations, set_conversation_favorite
+from services.conversation_title import readable_conversation_title
 
 router = APIRouter()
 
@@ -30,6 +31,10 @@ async def get_history(
         result["favorite_conversations"] = favorite_conversations
     else:
         result = await history_request
+    for conversation in result.get("conversations", []):
+        conversation["title"] = readable_conversation_title(conversation.get("title", ""))
+    for conversation in result.get("favorite_conversations", []):
+        conversation["title"] = readable_conversation_title(conversation.get("title", ""))
     return result
 
 

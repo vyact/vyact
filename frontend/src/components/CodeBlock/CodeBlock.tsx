@@ -15,7 +15,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({code, language = 'code'}) => {
     const [copied, setCopied] = useState(false);
 
     const highlighted = useMemo(() => {
-        const trimmed = code.trim();
+        const trimmed = code.trimEnd();
         let html: string;
         let lang: string;
 
@@ -53,14 +53,15 @@ const CodeBlock: React.FC<CodeBlockProps> = ({code, language = 'code'}) => {
         <div className="code-block">
             <div className="code-block-header">
                 <span className="code-lang">{highlighted.lang}</span>
-                <button className={`copy-btn${copied ? ' copied' : ''}`} onClick={handleCopy}>
+                <button className={`copy-btn${copied ? ' copied' : ''}`} onClick={handleCopy}
+                        aria-label={t(copied ? 'codeFileViewer.copied' : 'codeFileViewer.copy')}
+                        data-instant-tooltip={t(copied ? 'codeFileViewer.copied' : 'codeFileViewer.copy')}>
                     {copied ? (
                         <>
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                  strokeWidth="2">
                                 <polyline points="20 6 9 17 4 12"/>
                             </svg>
-                            {t('codeFileViewer.copied')}
                         </>
                     ) : (
                         <>
@@ -69,7 +70,6 @@ const CodeBlock: React.FC<CodeBlockProps> = ({code, language = 'code'}) => {
                                 <rect x="9" y="9" width="13" height="13" rx="2"/>
                                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                             </svg>
-                            {t('codeFileViewer.copy')}
                         </>
                     )}
                 </button>

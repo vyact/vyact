@@ -18,6 +18,7 @@ import {useCodePanel} from '../../contexts/CodePanelContext';
 import './Message.css';
 import {ttsService} from '../../services/tts/ttsService';
 import {getLocalizedSourceLabel} from '../../utils/sourceLabels';
+import {splitUserMessageCode} from '../../utils/userMessageCode';
 import {
     formatTimestamp,
     groupContentParts,
@@ -243,6 +244,10 @@ const Message: React.FC<MessageProps> = ({
         () => userPastedChips ? content.replace(/«PASTE:[\s\S]*?«\/PASTE»/g, '').trim() : content,
         [content, userPastedChips]
     );
+    const userMessageParts = useMemo(
+        () => role === 'user' ? splitUserMessageCode(contentWithoutPaste) : [],
+        [role, contentWithoutPaste]
+    );
     const renderGroups = useMemo(
         () => groupContentParts(contentParts),
         [contentParts]
@@ -337,10 +342,13 @@ const Message: React.FC<MessageProps> = ({
             <div className={`msg-bubble${isUserBubbleEmpty ? ' msg-bubble--empty' : ''}`}>
                 {role === 'user' ? (
                     <>
-                        <span
-                            className={hasUserAttachments ? 'user-message-text user-message-text--with-attachments' : 'user-message-text'}
-                            dangerouslySetInnerHTML={{__html: linkify(nl2br(escapeHtml(contentWithoutPaste)))}}
-                        />
+                        {userMessageParts.map((part, index) => part.type === 'code'
+                            ? <CodeBlock key={index} code={part.value} language={part.language}/>
+                            : part.value && <span
+                                key={index}
+                                className={hasUserAttachments ? 'user-message-text user-message-text--with-attachments' : 'user-message-text'}
+                                dangerouslySetInnerHTML={{__html: linkify(nl2br(escapeHtml(part.value)))}}
+                            />)}
                     </>
                 ) : isError ? (
                     <div className="message-error-card" role="alert">

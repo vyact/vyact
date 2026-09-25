@@ -106,12 +106,20 @@ const extractFilenameHint = (text: string, lang: string, code: string = ''): str
 const isDirectoryTree = (code: string): boolean =>
     code.split('\n').filter(line => /^\s*(?:[│|]\s*)*[├└][─-]+\s+\S/.test(line)).length >= 2;
 
+const removeCommonCodeIndent = (code: string): string => {
+    const lines = code.split('\n');
+    const indents = lines.filter(line => line.trim()).map(line => line.match(/^[\t ]*/)?.[0].length ?? 0);
+    const commonIndent = indents.length > 1 ? Math.min(...indents) : 0;
+    return commonIndent ? lines.map(line => line.trim() ? line.slice(commonIndent) : line).join('\n') : code;
+};
+
 const createCodeFile = (part: ContentPart, precedingText: string): CodeFile => {
-    if (isDirectoryTree(part.value)) {
-        return {name: 'project-structure.txt', lang: 'text', code: part.value};
+    const code = removeCommonCodeIndent(part.value);
+    if (isDirectoryTree(code)) {
+        return {name: 'project-structure.txt', lang: 'text', code};
     }
     const lang = part.lang ?? 'txt';
-    return {name: extractFilenameHint(precedingText, lang, part.value), lang, code: part.value};
+    return {name: extractFilenameHint(precedingText, lang, code), lang, code};
 };
 
 const renderListBlocks = (html: string): string => {

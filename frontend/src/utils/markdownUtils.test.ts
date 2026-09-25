@@ -100,4 +100,26 @@ describe('code file labels', () => {
 
         expect(files.map(file => file.name)).toEqual(['DemoApplication.java', 'application.properties']);
     });
+
+    it('removes shared fence indentation without changing relative code indentation', () => {
+        const response = [
+            'application.properties',
+            '```properties',
+            '   spring.application.name=DemoApplication',
+            '   server.port=8080',
+            '```',
+            'DemoApplication.java',
+            '```java',
+            '   class DemoApplication {',
+            '       void run() {}',
+            '   }',
+            '```',
+        ].join('\n');
+        const files = groupContentParts(parseContent(response))
+            .filter(group => group.type === 'codefiles')
+            .flatMap(group => group.files ?? []);
+
+        expect(files[0].code.trimEnd()).toBe('spring.application.name=DemoApplication\nserver.port=8080');
+        expect(files[1].code.trimEnd()).toBe('class DemoApplication {\n    void run() {}\n}');
+    });
 });
