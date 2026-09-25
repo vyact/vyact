@@ -433,6 +433,8 @@
     "addFailed": "Failed to add",
     "uploaded": "✓ Uploaded (click to change)",
     "selectJsonFile": "Select JSON file",
+    "selectFolders": "Select folders",
+    "removeFolder": "Remove folder {{path}}",
     "oauthMissing": "No OAuth credentials. Please upload a JSON file in edit.",
     "oauthFileMissing": "Please upload the OAuth credentials file first.",
     "authTimeout": "Authentication timed out. Please try again.",

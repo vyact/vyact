@@ -397,6 +397,8 @@
     "addFailed": "追加失敗",
     "uploaded": "✓ アップロード済み（クリックで変更）",
     "selectJsonFile": "JSONファイルを選択",
+    "selectFolders": "フォルダーを選択",
+    "removeFolder": "フォルダーを削除: {{path}}",
     "oauthMissing": "OAuth認証情報がありません。編集でJSONファイルをアップロードしてください。",
     "oauthFileMissing": "OAuth認証情報ファイルを先にアップロードしてください。",
     "authTimeout": "認証がタイムアウトしました。再試行してください。",

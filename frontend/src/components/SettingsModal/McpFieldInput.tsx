@@ -1,6 +1,6 @@
 import {useEffect, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {X} from 'lucide-react';
+import {Folder, FolderOpen, X} from 'lucide-react';
 import CustomSelect from '../CustomSelect/CustomSelect';
 
 export interface McpField {
@@ -23,21 +23,34 @@ function DirectoryListInput({field, value, onChange}: McpFieldInputProps) {
     const directories = Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
     const addDirectory = () => {
         if (!draft.trim()) return;
-        onChange([...directories, draft.trim()]);
+        onChange([...new Set([...directories, draft.trim()])]);
         setDraft('');
+    };
+    const selectDirectories = async () => {
+        const selectedPaths = await window.ragAPI?.selectFolders?.(t('mcp.selectFolders'));
+        if (selectedPaths?.length) onChange([...new Set([...directories, ...selectedPaths])]);
     };
 
     return <div className="mcp-field">
         <label className="mcp-field-label">{t(`mcpCatalog.fields.${field.key}`, {defaultValue: field.label})}</label>
-        <div className="mcp-dir-list">
-            {directories.map((directory, index) => <div key={index} className="mcp-dir-chip">
-                <span>{directory}</span>
-                <button onClick={() => onChange(directories.filter((_, itemIndex) => itemIndex !== index))}>✕</button>
-            </div>)}
-        </div>
+        {directories.length > 0 && <ul className="mcp-dir-list">
+            {directories.map((directory, index) => <li key={`${directory}-${index}`} className="mcp-dir-item">
+                <Folder className="mcp-dir-item-icon" size={17} aria-hidden="true"/>
+                <span className="mcp-dir-item-path">{directory}</span>
+                <button type="button" className="mcp-dir-remove"
+                        aria-label={t('mcp.removeFolder', {path: directory})}
+                        onClick={() => onChange(directories.filter((_, itemIndex) => itemIndex !== index))}>
+                    <X size={16} aria-hidden="true"/>
+                </button>
+            </li>)}
+        </ul>}
         <div className="mcp-dir-add">
             <input className="mcp-input" value={draft} onChange={event => setDraft(event.target.value)}
                    placeholder="/Users/alex/work" onKeyDown={event => event.key === 'Enter' && addDirectory()}/>
+            {window.ragAPI?.selectFolders && <button type="button" className="mcp-btn-ghost mcp-dir-picker"
+                    onClick={() => void selectDirectories()} aria-label={t('mcp.selectFolders')}>
+                <FolderOpen size={18} aria-hidden="true"/>
+            </button>}
             <button className="mcp-btn-primary" onClick={addDirectory}>{t('mcp.add')}</button>
         </div>
     </div>;

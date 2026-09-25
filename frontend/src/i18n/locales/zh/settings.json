@@ -397,6 +397,8 @@
     "addFailed": "添加失败",
     "uploaded": "✓ 已上传（点击更换）",
     "selectJsonFile": "选择 JSON 文件",
+    "selectFolders": "选择文件夹",
+    "removeFolder": "移除文件夹：{{path}}",
     "oauthMissing": "缺少 OAuth 凭证。请在编辑中上传 JSON 文件。",
     "oauthFileMissing": "请先上传 OAuth 凭证文件。",
     "authTimeout": "认证超时。请重试。",

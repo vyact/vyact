@@ -397,6 +397,8 @@
     "addFailed": "เพิ่มไม่สำเร็จ",
     "uploaded": "✓ อัปโหลดแล้ว (กดเพื่อเปลี่ยน)",
     "selectJsonFile": "เลือกไฟล์ JSON",
+    "selectFolders": "เลือกโฟลเดอร์",
+    "removeFolder": "ลบโฟลเดอร์ {{path}}",
     "oauthMissing": "ไม่มี OAuth กรุณาอัปโหลด JSON",
     "oauthFileMissing": "กรุณาอัปโหลด OAuth ก่อน",
     "authTimeout": "หมดเวลายืนยันตัวตน",

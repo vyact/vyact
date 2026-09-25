@@ -397,6 +397,8 @@
     "addFailed": "Échec de l'ajout",
     "uploaded": "✓ Téléversé (cliquez pour changer)",
     "selectJsonFile": "Choisir un JSON",
+    "selectFolders": "Choisir des dossiers",
+    "removeFolder": "Retirer le dossier {{path}}",
     "oauthMissing": "OAuth manquant. Téléversez le JSON",
     "oauthFileMissing": "Téléversez d'abord le fichier OAuth",
     "authTimeout": "Délai d'accès dépassé",

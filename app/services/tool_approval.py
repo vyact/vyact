@@ -12,6 +12,8 @@ APPROVAL_MODES = {"always_confirm", "risky_only", "trusted"}
 READ_ONLY_TOOLS = {
     "code_list_directory", "code_read_file", "code_read_files", "code_find_files", "code_file_inventory",
     "code_grep_search", "code_list_tasks", "code_git_status", "code_git_diff",
+    "filesystem_list_directory", "filesystem_read_file", "filesystem_read_files",
+    "filesystem_find_files", "filesystem_file_inventory", "filesystem_grep_search",
     "get_email", "list_upcoming_events", "search_calendar_events", "list_calendars",
     "check_free_busy", "get_calendar_event", "search_files", "get_drive_file",
     "read_document_content", "list_drive_folder_items", "get_google_doc",

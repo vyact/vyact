@@ -397,6 +397,8 @@
     "addFailed": "Thêm thất bại",
     "uploaded": "✓ Đã tải lên (bấm để đổi)",
     "selectJsonFile": "Chọn tệp JSON",
+    "selectFolders": "Chọn thư mục",
+    "removeFolder": "Xóa thư mục {{path}}",
     "oauthMissing": "Chưa có OAuth. Hãy tải JSON lên",
     "oauthFileMissing": "Hãy tải tệp OAuth trước",
     "authTimeout": "Hết thời gian xác thực",

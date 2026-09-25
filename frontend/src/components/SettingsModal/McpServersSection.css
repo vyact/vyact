@@ -105,19 +105,18 @@
     padding-top: 8px;
 }
 
-.mcp-dir-list { display: flex; flex-direction: column; gap: 4px; }
-.mcp-dir-chip {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 5px 8px; border-radius: 6px; background: rgba(255,255,255,0.04);
-    font-size: 14px; font-family: monospace; color: var(--text);
-}
-.mcp-dir-chip button {
-    border: none; background: transparent; color: var(--muted, #999);
-    cursor: pointer; font-size: 15px;
-}
+.mcp-dir-list { margin: 0; padding: 0; list-style: none; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.mcp-dir-item { display: flex; align-items: center; gap: 10px; min-height: 42px; padding: 5px 8px 5px 12px; background: var(--surface); }
+.mcp-dir-item + .mcp-dir-item { border-top: 1px solid var(--border); }
+.mcp-dir-item-icon { flex: none; color: var(--muted); }
+.mcp-dir-item-path { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); font: 13px/1.4 monospace; }
+.mcp-dir-remove { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 30px; height: 30px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer; }
+.mcp-dir-remove:hover { background: color-mix(in srgb, var(--action-delete) 10%, transparent); color: var(--action-delete); }
+.mcp-dir-remove:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .mcp-dir-add { display: flex; gap: 6px; align-items: stretch; }
 .mcp-dir-add .mcp-input { flex: 1; min-width: 0; }
 .mcp-dir-add .mcp-btn-primary { flex-shrink: 0; white-space: nowrap; }
+.mcp-dir-add .mcp-dir-picker { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
 .mcp-form-actions { display: flex; justify-content: flex-end; align-items: center; gap: 6px; }
 .mcp-form-actions .mcp-btn-ghost,

@@ -366,6 +366,11 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.warning("[mcp] Code analysis tool registration failed: %s", e)
         try:
+            from services.filesystem_tools import register_filesystem_tools
+            register_filesystem_tools()
+        except Exception as e:
+            logger.warning("[mcp] Filesystem tool registration failed: %s", e)
+        try:
             from services.browser_tools import register_browser_tools
             register_browser_tools()
         except Exception as e:

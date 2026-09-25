@@ -462,6 +462,8 @@
     "addFailed": "추가 실패",
     "uploaded": "✓ 업로드됨 (변경하려면 클릭)",
     "selectJsonFile": "JSON 파일 선택",
+    "selectFolders": "폴더 선택",
+    "removeFolder": "폴더 제거: {{path}}",
     "oauthMissing": "OAuth 자격증명이 없습니다. 편집에서 JSON 파일을 업로드해주세요.",
     "oauthFileMissing": "OAuth 자격증명 파일을 먼저 업로드해주세요.",
     "authTimeout": "인증 시간이 초과되었습니다. 다시 시도해주세요.",

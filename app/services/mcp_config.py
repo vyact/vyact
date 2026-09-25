@@ -69,14 +69,6 @@ def _clear_legacy_default_prompts(cfg: dict) -> bool:
 # tool이 많은 서버는 자주 쓰는 조회 위주 tool만 LLM에 노출한다.
 # (빈 리스트/미정의면 전체 노출)
 TOOL_WHITELIST: dict[str, list[str]] = {
-    "filesystem": [
-        "read_text_file",  # 파일 읽기
-        "write_file",  # 파일 쓰기
-        "edit_file",  # 파일 수정
-        "list_directory",  # 폴더 목록
-        "directory_tree",  # 폴더 구조
-        "search_files",  # 파일 검색
-    ],
     "github": [
         "search_repositories",  # 저장소 검색 (public)
         "list_user_repositories",  # 사용자 저장소 목록 (private 포함)
@@ -159,8 +151,7 @@ MCP_CATALOG: dict[str, dict] = {
     "filesystem": {
         "label": "파일 시스템",
         "singleton": True,
-        "kind": "stdio_npx",
-        "package": "@modelcontextprotocol/server-filesystem",
+        "kind": "internal",
         "default_prompt": get_filesystem_prompt("en"),
         "fields": [
             {"key": "directories", "label": "허용 폴더", "type": "dir_list", "required": True},
@@ -473,6 +464,12 @@ async def get_active_mcp_prompt(
             else:
                 p = cat.get("default_prompt", "")
         if p:
+            if s.get("type") == "filesystem":
+                from services.filesystem_tools import allowed_filesystem_folders
+                folders = await allowed_filesystem_folders()
+                if folders:
+                    folder_list = ", ".join(f"{folder_id} ({path})" for folder_id, path in folders.items())
+                    p += f"\nAllowed folder IDs: {folder_list}. Pass a folder_id and a path relative to that folder to filesystem_* tools."
             parts.append(p)
     return "\n\n".join(parts)
 
@@ -558,12 +555,7 @@ async def build_servers_config(include_server_ids: set[str] | None = None) -> di
             if not npx:
                 logger.warning("[mcp_config] npx not found — skipping %s", type_)
                 continue
-            if type_ == "filesystem":
-                dirs = [d for d in conf.get("directories", []) if Path(d).is_dir()]
-                if not dirs:
-                    continue
-                servers[key] = {"command": npx, "args": ["-y", cat["package"], *dirs], "env": {}}
-            elif type_ == "github":
+            if type_ == "github":
                 # github은 이제 remote kind — stdio_npx에서는 스킵
                 continue
             elif cat.get("package"):

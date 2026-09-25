@@ -397,6 +397,8 @@
     "addFailed": "Error al añadir",
     "uploaded": "✓ Subido (clic para cambiar)",
     "selectJsonFile": "Elegir JSON",
+    "selectFolders": "Seleccionar carpetas",
+    "removeFolder": "Quitar carpeta {{path}}",
     "oauthMissing": "Falta OAuth. Sube el JSON",
     "oauthFileMissing": "Sube primero el archivo OAuth",
     "authTimeout": "Tiempo de acceso agotado",

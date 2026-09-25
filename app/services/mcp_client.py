@@ -442,6 +442,10 @@ class MCPManager:
                     if not await web_search_available((s.get("config") or {}).get("api_key", "")):
                         continue
                 if s.get("enabled") or (selected_server_ids and s.get("id") in selected_server_ids):
+                    if s.get("type") == "filesystem":
+                        from services.filesystem_tools import allowed_filesystem_folders
+                        if not await allowed_filesystem_folders():
+                            continue
                     enabled_types.add(s.get("type"))
                     if s.get("id"):
                         enabled_server_ids.add(s["id"])
@@ -610,20 +614,6 @@ class MCPManager:
 
         self._pending_sources.extend(extract_mcp_sources(result))
         result_text = self._result_to_text(result, language)
-        if (worker.cfg.get("_server_type") == "filesystem" and tool_name == "directory_tree"
-                and getattr(result, "isError", False) and isinstance((arguments or {}).get("path"), str)):
-            from services.filesystem_tree_fallback import recover_directory_tree
-
-            try:
-                recovered = await recover_directory_tree(
-                    worker.server.session,
-                    arguments["path"],
-                    arguments.get("excludePatterns") or [],
-                )
-                if recovered is not None:
-                    result_text = recovered
-            except Exception as error:
-                logger.warning("[filesystem] Partial tree recovery failed: %s", error)
         DebugLogSettings.log(
             "tool_execution_end", tool=prefixed_name,
             elapsed_ms=round((time.monotonic() - started_at) * 1000, 1),

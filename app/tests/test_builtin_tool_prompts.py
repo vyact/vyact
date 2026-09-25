@@ -53,19 +53,20 @@ def test_old_stock_prompts_upgrade_without_overwriting_user_edits():
 @pytest.mark.asyncio
 async def test_only_exposed_server_prompts_are_injected(monkeypatch):
     servers = [
-        {"id": "files", "type": "filesystem", "enabled": True, "prompt": ""},
+        {"id": "files", "type": "filesystem", "enabled": True, "config": {"directories": ["/tmp"]}, "prompt": ""},
         {"id": "web", "type": "web_search", "enabled": True, "prompt": "Custom search rule"},
     ]
     monkeypatch.setattr(mcp_config, "list_servers", AsyncMock(return_value=servers))
     monkeypatch.setattr(mcp_config, "get_tool_language", AsyncMock(return_value="ko-KR"))
     monkeypatch.setattr(mcp_manager, "exposed_server_scopes", lambda names: (
-        {"files"} if "Files__read_text_file" in names else set(), set(),
+        set(), {"filesystem"} if "filesystem_read_file" in names else set(),
     ))
-    prompt = await mcp_config.get_active_mcp_prompt(available_tool_names=["Files__read_text_file"])
-    assert prompt == get_filesystem_prompt("ko")
+    prompt = await mcp_config.get_active_mcp_prompt(available_tool_names=["filesystem_read_file"])
+    assert prompt.startswith(get_filesystem_prompt("ko"))
+    assert f"tmp ({Path('/tmp').resolve()})" in prompt
     assert await mcp_config.get_active_mcp_prompt(available_tool_names=["code_read_file"]) == ""
     servers[0]["prompt"] = "Custom filesystem rule"
-    assert await mcp_config.get_active_mcp_prompt(available_tool_names=["Files__read_text_file"]) == "Custom filesystem rule"
+    assert (await mcp_config.get_active_mcp_prompt(available_tool_names=["filesystem_read_file"])).startswith("Custom filesystem rule")
 
 
 @pytest.mark.asyncio
