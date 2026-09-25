@@ -213,7 +213,7 @@ const App: React.FC = () => {
                 description={t('general.browserExtensionRequiredDescription')}
                 options={[
                     {value: 'cancel', label: t('general.browserExtensionCancel')},
-                    {value: 'install', label: t('general.browserExtensionInstall')},
+                    {value: 'install', label: t('general.browserExtensionInstall'), variant: 'primary'},
                 ]}
                 actionLayout="horizontal"
                 onSelect={choice => void handleBrowserExtensionChoice(choice)}
