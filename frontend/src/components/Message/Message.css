@@ -234,16 +234,18 @@
     border-bottom-left-radius: 4px;
     padding-bottom: 4px;
     white-space: normal;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
     font-weight: 400;
     max-width: min(920px, 100%);
 }
 
 /* 응답 마지막 요소의 문단/카드 여백이 메타 정보 간격과 중복되지 않게 한다. */
-.msg.bot .msg-bubble > :last-child {
+.msg.bot .msg-bubble > .msg-markdown:last-child > :last-child {
     margin-bottom: 0 !important;
 }
 
-.msg.bot .msg-bubble > .para-break:last-child {
+.msg.bot .msg-bubble > .msg-markdown:last-child > .para-break:last-child {
     display: none;
 }
 
@@ -301,11 +303,11 @@
 
 /* 설명 문단에 딸린 목록은 같은 내용 묶음으로 보이게 가깝게 둔다. */
 .msg-bubble .para-break:has(+ :is(ul, ol)) {
-    height: 10px;
+    height: 6px;
 }
 
 .msg-bubble :is(ul, ol) + .para-break {
-    height: 22px;
+    height: 12px;
 }
 
 .msg-bubble :is(ul, ol) + .para-break + :is(h1, h2, h3, h4) {
@@ -317,8 +319,30 @@
 }
 
 .msg-bubble li {
-    margin-top: 6px !important;
-    margin-bottom: 6px !important;
+    margin-top: 3px !important;
+    margin-bottom: 3px !important;
+}
+
+.msg-bubble .markdown-list {
+    margin: 6px 0 !important;
+}
+
+.msg-bubble .markdown-list .markdown-list {
+    margin: 4px 0 0 !important;
+    padding-left: 20px !important;
+}
+
+.msg.bot .msg-bubble .markdown-list > li {
+    line-height: 1.5;
+}
+
+/* 긴 단계 목록은 항목 경계를 드러내되, 하위 목록은 촘촘하게 유지한다. */
+.msg.bot .msg-bubble > .msg-markdown .markdown-list > li + li {
+    margin-top: 8px !important;
+}
+
+.msg.bot .msg-bubble > .msg-markdown .markdown-list .markdown-list > li + li {
+    margin-top: 3px !important;
 }
 
 .msg-meta {

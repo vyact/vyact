@@ -70,7 +70,7 @@ const StreamingTextGroup: React.FC<{
 }> = ({value, onClick, renderFn}) => (
     // Markdown 문맥은 문단 경계를 넘어 이어진다. 문단별 렌더링은 순서 목록과
     // 제목 구조를 끊으므로 스트리밍 중에도 안전 구간 전체를 함께 렌더한다.
-    <span dangerouslySetInnerHTML={{__html: renderFn(value)}} onClick={onClick}/>
+    <div className="msg-markdown" dangerouslySetInnerHTML={{__html: renderFn(value)}} onClick={onClick}/>
 );
 
 const Message: React.FC<MessageProps> = ({

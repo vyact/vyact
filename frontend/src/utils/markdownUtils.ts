@@ -102,6 +102,52 @@ const extractFilenameHint = (text: string, lang: string, code: string = ''): str
     return `file.${LANG_TO_EXT[lang.toLowerCase()] ?? lang.toLowerCase()}`;
 };
 
+const renderListBlocks = (html: string): string => {
+    const output: string[] = [];
+    const openLists: Array<'ul' | 'ol'> = [];
+    const closeList = () => {
+        const type = openLists.pop();
+        if (type) output.push(`</li></${type}>`);
+    };
+
+    for (const line of html.split('\n')) {
+        const match = line.match(/^([ ]*)(?:(\d+)\. +(.+)|([-*])(?: \[([ xX])\])? +(.+))$/);
+        if (!match) {
+            while (openLists.length) closeList();
+            output.push(line);
+            continue;
+        }
+
+        const [, indent, number, numberedContent, , checked, bulletContent] = match;
+        const type: 'ul' | 'ol' = number ? 'ol' : 'ul';
+        const depth = Math.min(Math.floor(indent.length / 2), openLists.length);
+        while (openLists.length > depth + 1) closeList();
+        if (openLists.length === depth + 1) {
+            if (openLists[depth] === type) {
+                output.push('</li>');
+            } else {
+                closeList();
+            }
+        }
+        if (openLists.length <= depth) {
+            openLists.push(type);
+            output.push(`<${type} class="markdown-list" style="margin:10px 0;padding-left:22px;">`);
+        }
+
+        const content = (numberedContent ?? bulletContent).trim();
+        if (number) {
+            output.push(`<li value="${number}" style="margin:9px 0;list-style-position:outside;list-style-type:decimal;">${content}`);
+        } else if (checked !== undefined) {
+            const done = checked.toLowerCase() === 'x';
+            output.push(`<li style="margin:9px 0;list-style:none;display:flex;gap:7px;align-items:flex-start;"><input type="checkbox" disabled ${done ? 'checked' : ''} style="margin-top:4px;accent-color:var(--accent);"/><span${done ? ' style="text-decoration:line-through;opacity:.65;"' : ''}>${content}</span>`);
+        } else {
+            output.push(`<li style="margin:9px 0;list-style-position:outside;list-style-type:${depth > 0 ? 'circle' : 'disc'};">${content}`);
+        }
+    }
+    while (openLists.length) closeList();
+    return output.join('\n');
+};
+
 export const groupContentParts = (parts: ContentPart[]): RenderGroup[] => {
     const groups: RenderGroup[] = [];
     let i = 0;
@@ -718,41 +764,12 @@ export const renderMarkdown = (text: string): string => {
         flushBq();
     }
 
-    let html = bqMerged.join('\n')
+    let html = renderListBlocks(bqMerged.join('\n'))
             .replace(/^(?:---|[*]{3}|___)$/gm, '<hr style="border:none;border-top:1px solid var(--border);margin:20px 0;"/>')
             .replace(/^#### (.+)$/gm, '<h4 style="font-size:0.95em;font-weight:700;margin:10px 0;">$1</h4>')
             .replace(/^### (.+)$/gm, '<h3 style="font-size:1.05em;font-weight:700;margin:12px 0;">$1</h3>')
             .replace(/^## (.+)$/gm, '<h2 style="font-size:1.15em;font-weight:700;margin:14px 0;">$1</h2>')
             .replace(/^# (.+)$/gm, '<h1 style="font-size:1.25em;font-weight:700;margin:16px 0;">$1</h1>')
-            // ── ul (bullet)
-            // ── 리스트: <li> 생성을 먼저 모두 끝낸 뒤에 wrap한다.
-            //    (wrap 정규식이 <li> 뒤 개행을 소비하면, 다음 줄의 ^기반 항목 매칭이
-            //     깨져 번호 항목이 <li>로 변환되지 않는 문제가 있어 순서를 분리한다.)
-            // ol 항목 (원본 숫자를 value로 보존 → 하위 불릿이 껴서 <ol>이 조각나도 번호 유지)
-            .replace(/^([ ]*)(\d+)\. +(.+)$/gm, (_, indent, num, content) => {
-                const ml = Math.floor(indent.length / 2) * 16;
-                return `<li data-ol value="${num}" style="margin:9px 0;list-style-position:outside;margin-left:${ml}px;list-style-type:decimal;">${content.trim()}</li>`;
-            })
-            // task list: 사용자 입력과 LLM 응답 모두에서 자주 쓰이는 GFM 체크리스트
-            .replace(/^([ ]*)[*-] \[([ xX])\] (.+)$/gm, (_, indent, checked, content) => {
-                const ml = Math.floor(indent.length / 2) * 16;
-                const done = checked.toLowerCase() === 'x';
-                return `<li data-ul style="margin:9px 0;margin-left:${ml}px;list-style:none;display:flex;gap:7px;align-items:flex-start;"><input type="checkbox" disabled ${done ? 'checked' : ''} style="margin-top:4px;accent-color:var(--accent);"/><span${done ? ' style="text-decoration:line-through;opacity:.65;"' : ''}>${content.trim()}</span></li>`;
-            })
-            // ul 항목
-            .replace(/^([ ]*)([*-]) (.+)$/gm, (_, indent, _b, content) => {
-                const depth = Math.floor(indent.length / 2);
-                const ml = depth * 16;
-                const marker = depth > 0 ? 'circle' : 'disc';
-                return `<li data-ul style="margin:9px 0;list-style-position:outside;margin-left:${ml}px;list-style-type:${marker};">${content.trim()}</li>`;
-            })
-            // 연속된 같은 종류 <li>를 <ul>/<ol>로 감싼다.
-            .replace(/(<li data-ul[^>]*>.*?<\/li>\n?)+/g, m =>
-                `<ul style="margin:10px 0;padding-left:22px;">${m.replace(/ data-ul/g, '').replace(/\n/g, '')}</ul>`
-            )
-            .replace(/(<li data-ol[^>]*>.*?<\/li>\n?)+/g, m =>
-                `<ol style="margin:10px 0;padding-left:22px;">${m.replace(/ data-ol/g, '').replace(/\n/g, '')}</ol>`
-            )
         // ── inline
         // 링크/이미지/인라인코드를 먼저 플레이스홀더로 빼서 보호한다.
         // (URL 안의 _ 나 * 가 em/strong 치환에 걸려 깨지는 것 방지)
@@ -802,7 +819,7 @@ export const renderMarkdown = (text: string): string => {
     }
     let finalHtml = html.split('\n').map(line => {
         const l = line.trim();
-        if (/^<(h[1-4]|div|table|tbody|tr|td|th|ul|ol|li|hr|br|blockquote)/i.test(l)) return line;
+        if (/^<\/?(h[1-4]|div|table|tbody|tr|td|th|ul|ol|li|hr|br|blockquote)/i.test(l)) return line;
         return l === '' ? '<div class="para-break"></div>' : line + '<br/>';
     }).join('')
         .replace(/<\/(h[1-4]|ul|ol|li|hr|blockquote)><br\/>/g, '</$1>')
