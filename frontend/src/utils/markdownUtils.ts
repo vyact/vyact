@@ -13,7 +13,7 @@ export type {ContentPart, FollowupsResult, MessageProps, RenderGroup, StreamSafe
 // 예: "`ProviderSettingsModal.tsx`" 또는 "**ProviderSettingsModal.tsx**" 등
 // 텍스트에서 파일명 힌트 추출 — 코드블록 바로 위 줄 우선
 // 경로 포함(src/components/Button/Button.tsx)도 처리, 마지막 세그먼트만 반환
-const FILE_EXT_RE = /(?:^|[\s`*_'"])([^\s`*_'"\x2f\\]+\.(?:tsx?|jsx?|css|scss|py|java|go|rs|html|json|md|yaml|yml|sh|sql))(?:[\s`*_'"]|$)/i;
+const FILE_EXT_RE = /(?:^|[\s`*_'"])([^\s`*_'"\x2f\\]+\.(?:tsx?|jsx?|css|scss|py|java|go|rs|html|json|md|yaml|yml|sh|sql|properties))(?:[\s`*_'"]|$)/i;
 
 // 언어별 확장자 매핑
 const LANG_TO_EXT: Record<string, string> = {
@@ -29,6 +29,7 @@ const LANG_TO_EXT: Record<string, string> = {
     yaml: 'yml', yml: 'yml',
     bash: 'sh', sh: 'sh', shell: 'sh',
     sql: 'sql', kotlin: 'kt', swift: 'swift', cpp: 'cpp', c: 'c',
+    properties: 'properties',
 };
 
 const MARKDOWN_PROTECTED_TOKEN_PREFIX = `${String.fromCharCode(0)}P`;
@@ -102,16 +103,38 @@ const extractFilenameHint = (text: string, lang: string, code: string = ''): str
     return `file.${LANG_TO_EXT[lang.toLowerCase()] ?? lang.toLowerCase()}`;
 };
 
+const isDirectoryTree = (code: string): boolean =>
+    code.split('\n').filter(line => /^\s*(?:[│|]\s*)*[├└][─-]+\s+\S/.test(line)).length >= 2;
+
+const createCodeFile = (part: ContentPart, precedingText: string): CodeFile => {
+    if (isDirectoryTree(part.value)) {
+        return {name: 'project-structure.txt', lang: 'text', code: part.value};
+    }
+    const lang = part.lang ?? 'txt';
+    return {name: extractFilenameHint(precedingText, lang, part.value), lang, code: part.value};
+};
+
 const renderListBlocks = (html: string): string => {
     const output: string[] = [];
     const openLists: Array<'ul' | 'ol'> = [];
+    const lines = html.split('\n');
+    const listItemPattern = /^([ ]*)(?:(\d+)\. +(.+)|([-*])(?: \[([ xX])\])? +(.+))$/;
     const closeList = () => {
         const type = openLists.pop();
         if (type) output.push(`</li></${type}>`);
     };
 
-    for (const line of html.split('\n')) {
-        const match = line.match(/^([ ]*)(?:(\d+)\. +(.+)|([-*])(?: \[([ xX])\])? +(.+))$/);
+    for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+        const line = lines[lineIndex];
+        if (!line.trim() && openLists.length) {
+            const nextLine = lines.slice(lineIndex + 1).find(candidate => candidate.trim());
+            const nextItem = nextLine?.match(listItemPattern);
+            if (nextItem) {
+                const nextDepth = Math.min(Math.floor(nextItem[1].length / 2), openLists.length);
+                if (nextDepth === openLists.length || openLists[nextDepth] === (nextItem[2] ? 'ol' : 'ul')) continue;
+            }
+        }
+        const match = line.match(listItemPattern);
         if (!match) {
             while (openLists.length) closeList();
             output.push(line);
@@ -139,7 +162,7 @@ const renderListBlocks = (html: string): string => {
             output.push(`<li value="${number}" style="margin:9px 0;list-style-position:outside;list-style-type:decimal;">${content}`);
         } else if (checked !== undefined) {
             const done = checked.toLowerCase() === 'x';
-            output.push(`<li style="margin:9px 0;list-style:none;display:flex;gap:7px;align-items:flex-start;"><input type="checkbox" disabled ${done ? 'checked' : ''} style="margin-top:4px;accent-color:var(--accent);"/><span${done ? ' style="text-decoration:line-through;opacity:.65;"' : ''}>${content}</span>`);
+            output.push(`<li class="markdown-task-item"><span class="markdown-task-line"><input type="checkbox" disabled ${done ? 'checked' : ''}/><span class="markdown-task-label${done ? ' markdown-task-label--done' : ''}">${content}</span></span>`);
         } else {
             output.push(`<li style="margin:9px 0;list-style-position:outside;list-style-type:${depth > 0 ? 'circle' : 'disc'};">${content}`);
         }
@@ -160,14 +183,11 @@ export const groupContentParts = (parts: ContentPart[]): RenderGroup[] => {
             // 직전 텍스트에서 파일명 추출
             const prevText = groups.length > 0 && groups[groups.length - 1].type === 'text'
                 ? (groups[groups.length - 1].value ?? '') : '';
-            const name = extractFilenameHint(prevText, part.lang ?? 'txt', part.value);
-
             // 다음 코드블록이 바로 이어지고 같은 언어면 묶기
-            const codeFiles: CodeFile[] = [{name, lang: part.lang ?? 'txt', code: part.value}];
+            const codeFiles: CodeFile[] = [createCodeFile(part, prevText)];
             let j = i + 1;
             while (j < parts.length && parts[j].type === 'code' && parts[j].lang === part.lang) {
-                const nextName = extractFilenameHint('', parts[j].lang ?? 'txt', parts[j].value);
-                codeFiles.push({name: nextName, lang: parts[j].lang ?? 'txt', code: parts[j].value});
+                codeFiles.push(createCodeFile(parts[j], ''));
                 j++;
             }
 
@@ -786,7 +806,7 @@ export const renderMarkdown = (text: string): string => {
             // 이미지
             .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_m, alt, src) =>
                 isSafeUrl(src, true)
-                    ? protect(`<img src="${src}" alt="${alt}" style="max-width:100%;border-radius:8px;margin:8px 0;display:block;cursor:pointer;" />`)
+                    ? protect(`<img class="markdown-image" src="${src}" alt="${alt}" />`)
                     : alt
             )
             // 링크
@@ -819,7 +839,7 @@ export const renderMarkdown = (text: string): string => {
     }
     let finalHtml = html.split('\n').map(line => {
         const l = line.trim();
-        if (/^<\/?(h[1-4]|div|table|tbody|tr|td|th|ul|ol|li|hr|br|blockquote)/i.test(l)) return line;
+        if (/^<\/?(h[1-4]|div|table|tbody|tr|td|th|ul|ol|li|hr|br|blockquote|img)/i.test(l)) return line;
         return l === '' ? '<div class="para-break"></div>' : line + '<br/>';
     }).join('')
         .replace(/<\/(h[1-4]|ul|ol|li|hr|blockquote)><br\/>/g, '</$1>')

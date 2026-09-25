@@ -141,6 +141,12 @@
     box-shadow:0 1px 3px rgba(48, 68, 92, .07);
 }
 
+:root[data-theme='light'] .cfv-copy-btn:hover {
+    border-color:var(--text-secondary);
+    background:var(--surface2);
+    color:var(--text);
+}
+
 :root[data-theme='light'] .cfv-copy-btn--copied {
     border-color:#159447 !important;
     background:#159447 !important;
@@ -153,9 +159,9 @@
     padding: 5px 12px;
     font-size: 12px;
     font-weight: 500;
-    color: var(--text);
-    background: var(--bg);
-    border: 1px solid var(--border);
+    color: var(--action-download);
+    background: var(--action-download-bg-hover);
+    border: 1px solid var(--action-download-border-hover);
     border-radius: 7px;
     cursor: pointer;
     white-space: nowrap;
@@ -165,8 +171,19 @@
 
 .cfv-dl-btn:hover {
     color: var(--action-download);
-    background: var(--action-download-bg-hover);
+    background: color-mix(in srgb, var(--action-download) 18%, transparent);
+    border-color: var(--action-download);
+}
+
+:root[data-theme='light'] .cfv-dl-btn {
     border-color: var(--action-download-border-hover);
+    background: var(--action-download-bg-hover);
+    color: var(--action-download);
+}
+
+:root[data-theme='light'] .cfv-dl-btn:hover {
+    border-color: var(--action-download);
+    background: color-mix(in srgb, var(--action-download) 18%, transparent);
 }
 
 .cfv-all-btn {

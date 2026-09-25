@@ -579,7 +579,9 @@ const Message: React.FC<MessageProps> = ({
                                     const target = e.target as HTMLElement;
                                     if (target.tagName === 'IMG') {
                                         const container = e.currentTarget as HTMLElement;
-                                        const imgs = Array.from(container.querySelectorAll('td img')) as HTMLImageElement[];
+                                        const imageSelector = target.closest('td') ? 'td img' : 'img.markdown-image';
+                                        const imgs = Array.from(container.querySelectorAll(imageSelector)) as HTMLImageElement[];
+                                        if (!imgs.length) return;
                                         const clickedSrc = (target as HTMLImageElement).src;
                                         const index = imgs.findIndex(img => img.src === clickedSrc);
                                         setTableImgViewer({

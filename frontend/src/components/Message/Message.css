@@ -336,13 +336,46 @@
     line-height: 1.5;
 }
 
-/* 긴 단계 목록은 항목 경계를 드러내되, 하위 목록은 촘촘하게 유지한다. */
-.msg.bot .msg-bubble > .msg-markdown .markdown-list > li + li {
+/* 긴 번호 단계의 경계만 드러내고 불릿과 하위 목록의 간격은 유지한다. */
+.msg.bot .msg-bubble > .msg-markdown > ol.markdown-list > li + li {
     margin-top: 8px !important;
 }
 
-.msg.bot .msg-bubble > .msg-markdown .markdown-list .markdown-list > li + li {
-    margin-top: 3px !important;
+.msg-bubble .markdown-task-item {
+    list-style: none;
+}
+
+.msg-bubble .markdown-task-line {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+}
+
+.msg-bubble .markdown-task-line input {
+    margin-top: 4px;
+    accent-color: var(--accent);
+}
+
+.msg-bubble .markdown-task-label--done {
+    text-decoration: line-through;
+    opacity: .65;
+}
+
+.msg-bubble .markdown-image {
+    display: block;
+    max-width: 100%;
+    max-height: 240px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    margin: 8px 0;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.msg-bubble .para-break:has(+ .markdown-image),
+.msg-bubble .markdown-image + .para-break {
+    height: 10px;
 }
 
 .msg-meta {
