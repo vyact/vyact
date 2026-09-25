@@ -842,7 +842,8 @@ const Message: React.FC<MessageProps> = ({
                 <div className={`msg-meta ${role === 'user' ? 'user' : 'bot'}`}>
                     {role === 'user' ? (
                         <>
-                            <button className="msg-copy-btn" onClick={handleCopy} aria-label={t(copied ? 'uiAudit.copied' : 'uiAudit.copy')}>
+                            <button className="msg-copy-btn" onClick={handleCopy} aria-label={t(copied ? 'uiAudit.copied' : 'uiAudit.copy')}
+                                    data-instant-tooltip={t(copied ? 'uiAudit.copied' : 'uiAudit.copy')}>
                                 {copied ? (
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                          strokeWidth="2">
@@ -867,7 +868,8 @@ const Message: React.FC<MessageProps> = ({
                     ) : (
                         <>
                             <span className="msg-time">{formatTimestamp(timestamp)}{model && ` · ${formatModelDisplayName(model)}`}</span>
-                            <button className="msg-copy-btn" onClick={handleCopy} aria-label={t(copied ? 'uiAudit.copied' : 'uiAudit.copy')}>
+                            <button className="msg-copy-btn" onClick={handleCopy} aria-label={t(copied ? 'uiAudit.copied' : 'uiAudit.copy')}
+                                    data-instant-tooltip={t(copied ? 'uiAudit.copied' : 'uiAudit.copy')}>
                                 {copied ? (
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                          strokeWidth="2">

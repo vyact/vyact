@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {useTranslation} from 'react-i18next';
 import { useCodePanel } from '../../contexts/CodePanelContext';
+import {showCopiedTooltip} from '../common/Tooltip/Tooltip';
 import './CodeFileViewer.css';
 
 export interface CodeFile {
@@ -71,6 +72,7 @@ const CodeFileViewer: React.FC<CodeFileViewerProps> = ({ files }) => {
                             <button
                                 className={`cfv-copy-btn${copiedIdx === i ? ' cfv-copy-btn--copied' : ''}`}
                                 aria-label={t(copiedIdx === i ? 'codeFileViewer.copied' : 'codeFileViewer.copy')}
+                                data-tooltip-show-on-change={copiedIdx === i ? '' : undefined}
                                 data-instant-tooltip={t(copiedIdx === i ? 'codeFileViewer.copied' : 'codeFileViewer.copy')}
                                 onClick={e => {
                                     e.stopPropagation();
@@ -91,12 +93,13 @@ const CodeFileViewer: React.FC<CodeFileViewerProps> = ({ files }) => {
                                         document.execCommand('copy'); document.body.removeChild(ta);
                                     }
                                     setCopiedIdx(i);
+                                    showCopiedTooltip(e.currentTarget, t('codeFileViewer.copied'));
                                     setTimeout(() => setCopiedIdx(null), 1800);
                                 }}
                             >
                                 {copiedIdx === i ? (
                                     <>
-                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
                                              stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
                                             <polyline points="20 6 9 17 4 12"/>
                                         </svg>

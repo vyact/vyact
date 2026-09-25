@@ -48,11 +48,16 @@ interface CodeInputBlockProps {
 export default function CodeInputBlock({value, onChange, onRemove, onSend, disabled}: CodeInputBlockProps) {
     const {t} = useTranslation('main');
     const editorRef = useRef<HTMLTextAreaElement>(null);
+    const scrollAfterLineBreak = useRef(false);
     useLayoutEffect(() => {
         const editor = editorRef.current;
         if (!editor) return;
         editor.style.height = 'auto';
         editor.style.height = `${Math.min(editor.scrollHeight, 240)}px`;
+        if (scrollAfterLineBreak.current) {
+            scrollAfterLineBreak.current = false;
+            requestAnimationFrame(() => { editor.scrollTop = editor.scrollHeight; });
+        }
     }, [value.code]);
     const languageOptions = [
         {value: '', label: t('chatInput.codeAutoDetect')},
@@ -86,7 +91,11 @@ export default function CodeInputBlock({value, onChange, onRemove, onSend, disab
             onChange={event => onChange({...value, code: event.target.value})}
             onKeyDown={event => {
                 event.stopPropagation();
-                if (event.nativeEvent.isComposing || event.key !== 'Enter' || event.shiftKey) return;
+                if (event.nativeEvent.isComposing || event.key !== 'Enter') return;
+                if (event.shiftKey) {
+                    scrollAfterLineBreak.current = event.currentTarget.selectionStart === event.currentTarget.value.length;
+                    return;
+                }
                 event.preventDefault();
                 if (!event.repeat && !disabled) onSend();
             }}

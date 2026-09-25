@@ -3,6 +3,7 @@ import {useTranslation} from 'react-i18next';
 import hljs from '../../utils/syntaxHighlighter';
 import 'highlight.js/styles/github-dark.css';
 import {copyToClipboard} from '../../utils/helpers';
+import {showCopiedTooltip} from '../common/Tooltip/Tooltip';
 import './CodeBlock.css';
 
 interface CodeBlockProps {
@@ -41,10 +42,12 @@ const CodeBlock: React.FC<CodeBlockProps> = ({code, language = 'code'}) => {
         return {lines, lang};
     }, [code, language]);
 
-    const handleCopy = async () => {
+    const handleCopy = async (event: React.MouseEvent<HTMLButtonElement>) => {
+        const button = event.currentTarget;
         const success = await copyToClipboard(code);
         if (success) {
             setCopied(true);
+            showCopiedTooltip(button, t('codeFileViewer.copied'));
             setTimeout(() => setCopied(false), 2000);
         }
     };
@@ -55,17 +58,18 @@ const CodeBlock: React.FC<CodeBlockProps> = ({code, language = 'code'}) => {
                 <span className="code-lang">{highlighted.lang}</span>
                 <button className={`copy-btn${copied ? ' copied' : ''}`} onClick={handleCopy}
                         aria-label={t(copied ? 'codeFileViewer.copied' : 'codeFileViewer.copy')}
+                        data-tooltip-show-on-change={copied ? '' : undefined}
                         data-instant-tooltip={t(copied ? 'codeFileViewer.copied' : 'codeFileViewer.copy')}>
                     {copied ? (
                         <>
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                  strokeWidth="2">
                                 <polyline points="20 6 9 17 4 12"/>
                             </svg>
                         </>
                     ) : (
                         <>
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                  strokeWidth="2">
                                 <rect x="9" y="9" width="13" height="13" rx="2"/>
                                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>

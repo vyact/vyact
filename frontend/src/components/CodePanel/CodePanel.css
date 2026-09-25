@@ -81,7 +81,7 @@
 
 .cp-btn {
     display: flex;
-    min-height: 28px;
+    min-height: 26px;
     align-items: center;
     gap: 5px;
     padding: 5px 9px;
@@ -94,11 +94,11 @@
     transition: color 0.15s, border-color 0.15s, background 0.15s, transform 0.15s;
 }
 
-.cp-actions > .cp-btn { width: 30px; justify-content: center; padding: 0; }
+.cp-actions > .cp-btn { width: 26px; justify-content: center; padding: 0; }
 
 .cp-btn:hover { color: var(--text); background: var(--surface2); border-color: var(--text-secondary, #b4b4b4); }
 .cp-btn--download { color: var(--action-download); background: var(--action-download-bg-hover); border-color: var(--action-download-border-hover); }
-.cp-btn--download { width: 30px; justify-content: center; padding: 0; }
+.cp-btn--download { width: 26px; justify-content: center; padding: 0; }
 .cp-btn--download:hover { color: var(--action-download); background: color-mix(in srgb, var(--action-download) 18%, transparent); border-color: var(--action-download); }
 .cp-btn--copied { color: #67d495 !important; border-color: rgba(103,212,149,0.42) !important; }
 
@@ -151,7 +151,7 @@
 :root[data-theme='light'] .cp-actions { gap:8px; }
 
 :root[data-theme='light'] .cp-btn {
-    min-height:32px;
+    min-height:26px;
     padding:6px 11px;
     border-color:color-mix(in srgb, var(--text-secondary) 30%, var(--border));
     border-radius:8px;
@@ -160,7 +160,7 @@
     box-shadow:0 1px 3px rgba(48, 68, 92, .07);
 }
 
-:root[data-theme='light'] .cp-actions > .cp-btn { width: 32px; padding: 0; justify-content: center; }
+:root[data-theme='light'] .cp-actions > .cp-btn { width: 26px; padding: 0; justify-content: center; }
 
 :root[data-theme='light'] .cp-btn:hover {
     border-color:var(--text-secondary);
@@ -298,5 +298,5 @@
     .cp-header { min-height: 48px; padding: 8px 10px; }
     .cp-file-icon { width: 26px; height: 28px; }
     .cp-meta, .cp-btn-label { display: none; }
-    .cp-btn { width: 29px; justify-content: center; padding: 5px; }
+    .cp-btn { width: 26px; justify-content: center; padding: 0; }
 }

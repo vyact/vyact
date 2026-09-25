@@ -85,8 +85,8 @@
 }
 
 .cfv-copy-btn {
-    min-height: 30px;
-    width: 30px;
+    min-height: 26px;
+    width: 26px;
     display: grid;
     place-items: center;
     padding: 0;
@@ -158,8 +158,8 @@
 }
 
 .cfv-dl-btn {
-    min-height: 30px;
-    width: 30px;
+    min-height: 26px;
+    width: 26px;
     display: grid;
     place-items: center;
     padding: 0;

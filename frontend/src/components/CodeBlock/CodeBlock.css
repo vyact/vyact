@@ -27,8 +27,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
     color: var(--text);
     background: var(--bg);
     border: 1px solid var(--border);

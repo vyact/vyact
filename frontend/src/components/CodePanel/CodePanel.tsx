@@ -5,6 +5,7 @@ import hljs from '../../utils/syntaxHighlighter';
 import 'highlight.js/styles/github-dark.css';
 import { useCodePanel } from '../../contexts/CodePanelContext';
 import type { CodeFile } from '../CodeFileViewer/CodeFileViewer';
+import {showCopiedTooltip} from '../common/Tooltip/Tooltip';
 import './CodePanel.css';
 
 const EXT_LABEL: Record<string, string> = {
@@ -95,7 +96,7 @@ const CodePanel: React.FC<{ style?: React.CSSProperties }> = ({ style }) => {
     const fileAccent = FILE_ACCENT[activeFile.lang.toLowerCase()] ?? 'gray';
     const lineCount = lines.length;
 
-    const handleCopy = () => {
+    const handleCopy = (event: React.MouseEvent<HTMLButtonElement>) => {
         const text = activeFile.code;
         if (window.ragAPI?.copyToClipboard) {
             window.ragAPI.copyToClipboard(text);
@@ -105,6 +106,7 @@ const CodePanel: React.FC<{ style?: React.CSSProperties }> = ({ style }) => {
             fallbackCopy(text);
         }
         setCopiedPanel(panel);
+        showCopiedTooltip(event.currentTarget, t('message.codeReviewCopied'));
         setTimeout(() => setCopiedPanel(null), 1800);
     };
 
@@ -143,18 +145,19 @@ const CodePanel: React.FC<{ style?: React.CSSProperties }> = ({ style }) => {
                         className={`cp-btn${copied ? ' cp-btn--copied' : ''}`}
                         onClick={handleCopy}
                         aria-label={t(copied ? 'message.codeReviewCopied' : 'message.codeReviewCopy')}
+                        data-tooltip-show-on-change={copied ? '' : undefined}
                         data-instant-tooltip={t(copied ? 'message.codeReviewCopied' : 'message.codeReviewCopy')}
                     >
                         {copied ? (
                             <>
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
                                      stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
                                     <polyline points="20 6 9 17 4 12"/>
                                 </svg>
                             </>
                         ) : (
                             <>
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
                                      stroke="currentColor" strokeWidth="2" aria-hidden="true">
                                     <rect x="9" y="9" width="13" height="13" rx="2"/>
                                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
@@ -168,7 +171,7 @@ const CodePanel: React.FC<{ style?: React.CSSProperties }> = ({ style }) => {
                         aria-label={t('message.codeReviewDownload')}
                         data-instant-tooltip={t('message.codeReviewDownload')}
                     >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
                              stroke="currentColor" strokeWidth="2" aria-hidden="true">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                             <polyline points="7 10 12 15 17 10"/>
