@@ -1,5 +1,5 @@
 {
-  "logViewer": {"decision": "判断模型日志","model": "模型日志", "latest": "跳转到最新日志", "title": "查看日志", "llm": "请求与响应日志", "app": "Vyact 日志", "empty": "暂无日志。", "error": "无法加载日志或保存设置。"},
+  "logViewer": {"save": "保存日志", "decision": "判断模型日志","model": "模型日志", "latest": "跳转到最新日志", "file": "日志文件", "title": "查看日志", "llm": "请求与响应日志", "app": "Vyact 日志", "empty": "暂无日志。", "error": "无法加载日志或保存设置。"},
   "emptyResponse": "未生成回答内容，请重试。",
   "greeting": {
     "morning": "早上好",
@@ -461,8 +461,7 @@
     }
   },
   "mcpMenu": {
-    "scopeHelp": "这些工具开关仅适用于 Vyact 应用，\n与 Chrome 扩展程序的设置相互独立。",
-    "title": "AI 工具",
+    "scopeHelp": "这些工具开关仅适用于 Vyact 应用，\n与 Chrome 扩展程序的设置相互独立。", "title": "AI 工具",
     "loading": "加载中...",
     "empty": "没有已注册的 AI 工具。",
     "emptyHint": "请在设置中添加 AI 工具。",
@@ -657,8 +656,7 @@
     "voiceMode": "语音模式"
   },
   "reasoning": {
-    "label": "推理模式",
-    "title": "推理(Thinking)",
+    "label": "推理模式", "title": "推理(Thinking)",
     "intro": "模型在回答前进行逐步思考的功能。",
     "warning": "响应可能更慢并使用更多输出令牌。推理过长时，可能没有足够空间生成最终回答。",
     "effortLabel": "推理强度",
@@ -790,8 +788,7 @@
     "autoReadSpeed": "自动朗读速度",
     "speedMultiplier": "{{rate}}×",
     "autoRead": "自动朗读",
-    "autoReadSaveFailed": "无法保存自动朗读设置。",
-    "title": "语音模式",
+    "autoReadSaveFailed": "无法保存自动朗读设置。", "title": "语音模式",
     "conversation": "语音对话",
     "scriptPractice": "脚本练习",
     "languageSelect": "选择对话语言",
@@ -873,8 +870,7 @@
   "titleBar": {"update": "更新", "updateAvailable": "版本 {{version}} 可供下载"},
   "systemPromptModal": {
     "clearSelection": "清除系统提示词选择",
-    "eyebrow": "提示词库",
-    "title": "系统提示词",
+    "eyebrow": "提示词库", "title": "系统提示词",
     "subtitle": "添加现成提示词，或创建自己的提示词。",
     "close": "关闭",
     "templatesTitle": "推荐提示词",
@@ -1200,8 +1196,7 @@
     "savedTitle": "已保存的集合",
     "none": "全部知识",
     "select": "知识集合",
-    "search": "搜索集合...",
-    "title": "知识集合",
+    "search": "搜索集合...", "title": "知识集合",
     "subtitle": "将文档和笔记分组以限制 RAG 上下文。",
     "close": "关闭",
     "empty": "尚无知识集合。",
@@ -1299,8 +1294,7 @@
       "restored": "应用失败，已恢复之前的模型和运行设置。",
       "failed": "应用和恢复之前的模型均失败。请重新选择模型。",
       "unknown": "无法确认是否完成。请检查模型状态后重试。"
-    },
-    "title": "模型设置",
+    }, "title": "模型设置",
     "close": "Close",
     "loading": "Loading model settings...",
     "description": "Recommended values are based on this model and system memory. Review them before applying.",

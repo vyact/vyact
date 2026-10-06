@@ -1,10 +1,11 @@
 import TextLogEntries from './TextLogEntries';
 import RequestLogEntries from './RequestLogEntries';
+import CustomSelect from '../CustomSelect/CustomSelect';
 import ToggleSwitch from '../common/ToggleSwitch/ToggleSwitch';
 import {useEffect, useRef, useState, useLayoutEffect, type CSSProperties} from 'react';
 import {useTranslation} from 'react-i18next';
 import {X, ArrowDown, FileText} from 'lucide-react';
-import {applyLogUpdates, subscribeLogs, type LogFile, type LogKind} from '../../services/logViewer';
+import {applyLogUpdates, subscribeLogs, type AvailableLogFile, type LogFile, type LogKind} from '../../services/logViewer';
 import {api, LLM_LOGGING_CHANGED} from '../../services/api';
 import {usePanelManager} from '../../contexts/PanelManagerContext';
 import './LogPanel.css';
@@ -15,6 +16,11 @@ export default function LogPanel({model, style}: {model: string; style: CSSPrope
     const panels = usePanelManager();
     const [kind, setKind] = useState<LogKind>('app');
     const [files, setFiles] = useState<LogFile[]>([]);
+    const [available, setAvailable] = useState<AvailableLogFile[]>([]);
+    const [selectedFilenames, setSelectedFilenames] = useState<Partial<Record<LogKind, string>>>({});
+    const filename = selectedFilenames[kind] || '';
+    const selectFile = (value: string) => setSelectedFilenames(previous => ({...previous, [kind]: value}));
+    const [selectedPath, setSelectedPath] = useState('');
     const [enabled, setEnabled] = useState(false);
     const [ready, setReady] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -44,14 +50,25 @@ export default function LogPanel({model, style}: {model: string; style: CSSPrope
     useEffect(() => {
         latestFiles.current = [];
         setFiles([]);
+        setAvailable([]);
+        setSelectedPath('');
         setFailed(false);
         followTail.current = true;
         setPaused(false);
         return subscribeLogs(kind, model, updates => {
             latestFiles.current = applyLogUpdates(latestFiles.current, updates);
             if (followTail.current) setFiles(latestFiles.current);
-        }, setFailed);
-    }, [kind, model]);
+        }, setFailed, filename, snapshot => {
+            setAvailable(snapshot.available);
+            setSelectedPath(snapshot.selected);
+            if (snapshot.replace) {
+                followTail.current = true;
+                setPaused(false);
+                latestFiles.current = [];
+                setFiles([]);
+            }
+        });
+    }, [kind, model, filename]);
 
     useLayoutEffect(() => {
         if (followTail.current && contentRef.current) contentRef.current.scrollTop = contentRef.current.scrollHeight;
@@ -79,11 +96,15 @@ export default function LogPanel({model, style}: {model: string; style: CSSPrope
         <div className="log-panel-tabs" role="tablist" aria-label={t('logViewer.title')}>
             {(['app', 'model', 'decision', 'llm'] as const).map(tab => <button key={tab} type="button" role="tab" id={`log-tab-${tab}`} aria-controls="log-content" aria-selected={kind === tab} className={kind === tab ? 'active' : ''} onClick={() => setKind(tab)}>{t(`logViewer.${tab}`)}</button>)}
         </div>
-        {kind === 'llm' && <div className="log-panel-toolbar">
-            <div className="log-panel-toggle">
-                <span>{t('settings:general.llmLog')}</span>
-                <ToggleSwitch label={t('settings:general.llmLog')} checked={enabled} disabled={!ready || saving} onChange={() => void toggleLogging()}/>
-            </div>
+        {(available.length > 0 || kind === 'llm') && <div className="log-panel-toolbar">
+            {available.length > 0 && <CustomSelect className="log-panel-file-select" ariaLabel={t('logViewer.file')}
+                options={available.map(file => ({value: file.filename, label: file.filename}))}
+                value={available.find(file => file.path === selectedPath)?.filename || ''}
+                onChange={selectFile} portal/>}
+            {kind === 'llm' && <div className="log-panel-toggle">
+                <span>{t('logViewer.save')}</span>
+                <ToggleSwitch label={t('logViewer.save')} checked={enabled} disabled={!ready || saving} onChange={() => void toggleLogging()}/>
+            </div>}
         </div>}
         {(failed || saveFailed) && <div className="log-panel-status" role="alert">{t('logViewer.error')}</div>}
         <div id="log-content" role="tabpanel" aria-labelledby={`log-tab-${kind}`} className={`log-panel-content${hasLogs ? '' : ' log-panel-content-empty'}`} ref={contentRef} onScroll={event => {
@@ -93,7 +114,6 @@ export default function LogPanel({model, style}: {model: string; style: CSSPrope
             else if (!atBottom) {followTail.current = false; setPaused(true);}
         }}>
             {files.map(file => <section key={file.path}>
-                <div className="log-panel-path">{file.path}</div>
                 {kind === 'llm' && file.content
                     ? <RequestLogEntries content={file.content} onInspect={() => {followTail.current = false; setPaused(true);}}/>
                     : file.content ? <TextLogEntries content={file.content}/> : null}

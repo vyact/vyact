@@ -1,5 +1,5 @@
 {
-  "logViewer": {"decision": "판단 모델 로그","model": "모델 로그", "latest": "최신 로그로 이동", "title": "로그 보기", "llm": "요청·응답 로그", "app": "Vyact 로그", "empty": "아직 로그가 없습니다.", "error": "로그를 불러오거나 설정을 저장하지 못했습니다."},
+  "logViewer": {"save": "로그 저장", "decision": "판단 모델 로그","model": "모델 로그", "latest": "최신 로그로 이동", "file": "로그 파일", "title": "로그 보기", "llm": "요청·응답 로그", "app": "Vyact 로그", "empty": "아직 로그가 없습니다.", "error": "로그를 불러오거나 설정을 저장하지 못했습니다."},
   "emptyResponse": "답변 본문이 생성되지 않았습니다. 다시 시도해 주세요.",
   "greeting": {
     "morning": "좋은 아침이에요",
@@ -461,8 +461,7 @@
     }
   },
   "mcpMenu": {
-    "scopeHelp": "이 도구의 ON/OFF는 Vyact 앱에만 적용됩니다.\n크롬 확장 프로그램의 설정과는 별도로 관리됩니다.",
-    "title": "AI 도구",
+    "scopeHelp": "이 도구의 ON/OFF는 Vyact 앱에만 적용됩니다.\n크롬 확장 프로그램의 설정과는 별도로 관리됩니다.", "title": "AI 도구",
     "loading": "불러오는 중...",
     "empty": "등록된 AI 도구가 없습니다.",
     "emptyHint": "설정에서 AI 도구를 추가하세요.",
@@ -656,8 +655,7 @@
     "voiceMode": "음성 모드"
   },
   "reasoning": {
-    "label": "추론 모드",
-    "title": "추론(Thinking)",
+    "label": "추론 모드", "title": "추론(Thinking)",
     "intro": "답변 전에 모델이 단계적으로 생각하는 기능입니다.",
     "warning": "응답이 느려지고 출력 토큰을 더 사용할 수 있습니다. 추론이 길어지면 최종 답변이 생성되지 않을 수 있습니다.",
     "effortLabel": "추론 강도",
@@ -789,8 +787,7 @@
     "autoReadSpeed": "자동 읽기 배속",
     "speedMultiplier": "{{rate}}×",
     "autoRead": "자동 읽기",
-    "autoReadSaveFailed": "자동 읽기 설정을 저장하지 못했습니다.",
-    "title": "음성 모드",
+    "autoReadSaveFailed": "자동 읽기 설정을 저장하지 못했습니다.", "title": "음성 모드",
     "conversation": "음성 대화",
     "scriptPractice": "스크립트 연습",
     "languageSelect": "대화 언어 선택",
@@ -872,8 +869,7 @@
   "titleBar": {"update": "업데이트", "updateAvailable": "새 버전 {{version}}을 다운로드할 수 있습니다"},
   "systemPromptModal": {
     "clearSelection": "시스템 프롬프트 선택 해제",
-    "eyebrow": "프롬프트 라이브러리",
-    "title": "시스템 프롬프트",
+    "eyebrow": "프롬프트 라이브러리", "title": "시스템 프롬프트",
     "subtitle": "준비된 프롬프트를 추가하거나 직접 만들어 보세요.",
     "close": "닫기",
     "templatesTitle": "추천 프롬프트",
@@ -1199,8 +1195,7 @@
     "savedTitle": "저장된 컬렉션",
     "none": "전체 지식",
     "select": "지식 컬렉션",
-    "search": "컬렉션 검색...",
-    "title": "지식 컬렉션",
+    "search": "컬렉션 검색...", "title": "지식 컬렉션",
     "subtitle": "문서와 메모를 묶어 RAG 문맥 범위를 제한합니다.",
     "close": "닫기",
     "empty": "아직 지식 컬렉션이 없습니다.",
@@ -1309,8 +1304,7 @@
       "restored": "적용에 실패하여 이전 모델과 실행 설정을 복구했습니다.",
       "failed": "적용 및 이전 모델 복구에 실패했습니다. 모델을 다시 선택해 주세요.",
       "unknown": "적용 완료 여부를 확인하지 못했습니다. 모델 상태를 확인한 후 다시 시도해 주세요."
-    },
-    "title": "모델 설정",
+    }, "title": "모델 설정",
     "close": "닫기",
     "loading": "모델 설정을 불러오는 중...",
     "description": "이 모델과 시스템 메모리를 기준으로 권장값을 설정했습니다. 적용 전에 확인하세요.",

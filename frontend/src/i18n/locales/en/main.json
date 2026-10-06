@@ -1,5 +1,5 @@
 {
-  "logViewer": {"decision": "Decision model logs","model": "Model logs", "latest": "Jump to latest logs", "title": "View logs", "llm": "Request/response logs", "app": "Vyact logs", "empty": "No logs yet.", "error": "Unable to load logs or save settings."},
+  "logViewer": {"save": "Save logs", "decision": "Decision model logs","model": "Model logs", "latest": "Jump to latest logs", "file": "Log file", "title": "View logs", "llm": "Request/response logs", "app": "Vyact logs", "empty": "No logs yet.", "error": "Unable to load logs or save settings."},
   "emptyResponse": "No response content was generated. Please try again.",
   "greeting": {
     "morning": "Good morning",
@@ -461,8 +461,7 @@
     }
   },
   "mcpMenu": {
-    "scopeHelp": "These tool switches apply only to the Vyact app,\nindependently of the Chrome extension.",
-    "title": "AI Tools",
+    "scopeHelp": "These tool switches apply only to the Vyact app,\nindependently of the Chrome extension.", "title": "AI Tools",
     "loading": "Loading...",
     "empty": "No AI tools registered.",
     "emptyHint": "Add AI tools in settings.",
@@ -656,8 +655,7 @@
     "voiceMode": "Voice Mode"
   },
   "reasoning": {
-    "label": "Reasoning mode",
-    "title": "Reasoning (Thinking)",
+    "label": "Reasoning mode", "title": "Reasoning (Thinking)",
     "intro": "The model thinks step-by-step before answering.",
     "warning": "Responses may be slower and use more output tokens. Long reasoning may leave no room for a final answer.",
     "effortLabel": "Reasoning effort",
@@ -789,8 +787,7 @@
     "autoReadSpeed": "Read-aloud speed",
     "speedMultiplier": "{{rate}}×",
     "autoRead": "Read aloud",
-    "autoReadSaveFailed": "Could not save the read-aloud setting.",
-    "title": "Voice Mode",
+    "autoReadSaveFailed": "Could not save the read-aloud setting.", "title": "Voice Mode",
     "conversation": "Voice Chat",
     "scriptPractice": "Script Practice",
     "languageSelect": "Select conversation language",
@@ -872,8 +869,7 @@
   "titleBar": {"update": "Update", "updateAvailable": "Version {{version}} is available to download"},
   "systemPromptModal": {
     "clearSelection": "Clear system prompt selection",
-    "eyebrow": "Prompt library",
-    "title": "System prompts",
+    "eyebrow": "Prompt library", "title": "System prompts",
     "subtitle": "Add a ready-made prompt or create your own.",
     "close": "Close",
     "templatesTitle": "Suggested prompts",
@@ -1199,8 +1195,7 @@
     "savedTitle": "Saved collections",
     "none": "All knowledge",
     "select": "Knowledge collection",
-    "search": "Search collections...",
-    "title": "Knowledge collections",
+    "search": "Search collections...", "title": "Knowledge collections",
     "subtitle": "Group documents and notes to limit RAG context.",
     "close": "Close",
     "empty": "No knowledge collections yet.",
@@ -1298,8 +1293,7 @@
       "restored": "Applying settings failed. The previous model and runtime settings were restored.",
       "failed": "Applying settings and restoring the previous model failed. Please select a model again.",
       "unknown": "Could not confirm completion. Check the model status before trying again."
-    },
-    "title": "Model settings",
+    }, "title": "Model settings",
     "close": "Close",
     "loading": "Loading model settings...",
     "description": "Recommended values are based on this model and system memory. Review them before applying.",

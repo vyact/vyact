@@ -12,7 +12,7 @@ class LogViewerTests(unittest.TestCase):
     def setUp(self):
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
-        self.path = Path(directory.name) / 'app.log'
+        self.path = Path(directory.name) / 'app_20261006.log'
         patcher = patch.object(log_viewer, 'get_log_file', return_value=self.path)
         patcher.start()
         self.addCleanup(patcher.stop)
@@ -82,6 +82,37 @@ class LogViewerTests(unittest.TestCase):
         self.assertEqual(log_viewer.log_names('model', 'mlx/org/model'), ['omlx'])
         self.assertEqual(log_viewer.log_names('model', 'org/model.gguf'), ['llama-swap'])
         self.assertEqual(log_viewer.log_names('model', '../../secret'), [])
+
+    def test_available_files_are_sorted_and_exclude_other_sources(self):
+        for filename in ['app_20261004.log', 'app_20261005.log', 'llm_20261006.log', 'app_invalid.log']:
+            self.path.with_name(filename).write_text('test')
+        self.assertEqual([file['filename'] for file in log_viewer.available_log_files('app', '')],
+                         ['app_20261005.log', 'app_20261004.log'])
+
+    def test_selected_history_and_untrusted_paths(self):
+        async def check():
+            self.path.write_text('today')
+            history = self.path.with_name('app_20261005.log')
+            history.write_text('history')
+            stream = log_viewer.stream_logs('app', '', history.name)
+            payload = json.loads((await anext(stream)).removeprefix('data: '))
+            self.assertEqual(payload['files'][0]['content'], 'history')
+            await stream.aclose()
+            stream = log_viewer.stream_logs('app', '', '../app_20261005.log')
+            payload = json.loads((await anext(stream)).removeprefix('data: '))
+            self.assertEqual(payload['files'], [])
+            self.assertEqual(payload['selected'], '')
+            await stream.aclose()
+        asyncio.run(check())
+
+    def test_missing_files_emit_empty_inventory_without_a_path(self):
+        async def check():
+            stream = log_viewer.stream_logs('app', '')
+            payload = json.loads((await anext(stream)).removeprefix('data: '))
+            self.assertEqual(payload['files'], [])
+            self.assertEqual(payload['available'], [])
+            await stream.aclose()
+        asyncio.run(check())
 
     def test_stream_can_be_closed_after_initial_event(self):
         async def check():

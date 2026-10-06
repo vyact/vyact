@@ -1,5 +1,5 @@
 {
-  "logViewer": {"decision": "Journaux du modèle de décision","model": "Journaux du modèle", "latest": "Aller aux derniers journaux", "title": "Voir les journaux", "llm": "Journaux des requêtes et réponses", "app": "Journaux Vyact", "empty": "Aucun journal pour le moment.", "error": "Impossible de charger les journaux ou d’enregistrer les paramètres."},
+  "logViewer": {"save": "Enregistrer les logs", "decision": "Journaux du modèle de décision","model": "Journaux du modèle", "latest": "Aller aux derniers journaux", "file": "Fichier journal", "title": "Voir les journaux", "llm": "Journaux des requêtes et réponses", "app": "Journaux Vyact", "empty": "Aucun journal pour le moment.", "error": "Impossible de charger les journaux ou d’enregistrer les paramètres."},
   "emptyResponse": "Aucun contenu de réponse n’a été généré. Réessayez.",
   "greeting": {
     "morning": "Bonjour",
@@ -461,8 +461,7 @@
     }
   },
   "mcpMenu": {
-    "scopeHelp": "Ces interrupteurs s’appliquent uniquement à l’application Vyact,\nindépendamment de l’extension Chrome.",
-    "title": "Outils d’IA",
+    "scopeHelp": "Ces interrupteurs s’appliquent uniquement à l’application Vyact,\nindépendamment de l’extension Chrome.", "title": "Outils d’IA",
     "loading": "Chargement...",
     "empty": "Aucun outil d’IA",
     "emptyHint": "Ajoutez des outils d’IA dans les paramètres",
@@ -657,8 +656,7 @@
     "voiceMode": "Mode vocal"
   },
   "reasoning": {
-    "label": "Mode de raisonnement",
-    "title": "Raisonnement",
+    "label": "Mode de raisonnement", "title": "Raisonnement",
     "intro": "Le modèle réfléchit avant de répondre.",
     "warning": "Les réponses peuvent être plus lentes et utiliser davantage de jetons de sortie. Un raisonnement trop long peut ne laisser aucune place à la réponse finale.",
     "effortLabel": "Niveau de raisonnement",
@@ -790,8 +788,7 @@
     "autoReadSpeed": "Vitesse de lecture automatique",
     "speedMultiplier": "{{rate}}×",
     "autoRead": "Lecture auto",
-    "autoReadSaveFailed": "Impossible d’enregistrer le réglage de lecture automatique.",
-    "title": "Mode vocal",
+    "autoReadSaveFailed": "Impossible d’enregistrer le réglage de lecture automatique.", "title": "Mode vocal",
     "conversation": "Chat vocal",
     "scriptPractice": "Pratique de script",
     "languageSelect": "Choisissez la langue de conversation",
@@ -873,8 +870,7 @@
   "titleBar": {"update": "Mettre à jour", "updateAvailable": "La version {{version}} est disponible au téléchargement"},
   "systemPromptModal": {
     "clearSelection": "Effacer la sélection du prompt système",
-    "eyebrow": "Bibliothèque de prompts",
-    "title": "Prompts système",
+    "eyebrow": "Bibliothèque de prompts", "title": "Prompts système",
     "subtitle": "Ajoutez un prompt prédéfini ou créez le vôtre.",
     "close": "Fermer",
     "templatesTitle": "Prompts suggérés",
@@ -1200,8 +1196,7 @@
     "savedTitle": "Collections enregistrées",
     "none": "Toutes les connaissances",
     "select": "Collection de connaissances",
-    "search": "Rechercher des collections...",
-    "title": "Collections de connaissances",
+    "search": "Rechercher des collections...", "title": "Collections de connaissances",
     "subtitle": "Regroupez les documents et notes pour limiter le contexte RAG.",
     "close": "Fermer",
     "empty": "Aucune collection de connaissances.",
@@ -1299,8 +1294,7 @@
       "restored": "L’application a échoué. Le modèle et les paramètres précédents ont été restaurés.",
       "failed": "L’application et la restauration ont échoué. Veuillez sélectionner à nouveau un modèle.",
       "unknown": "Impossible de confirmer la fin de l’opération. Vérifiez l’état du modèle avant de réessayer."
-    },
-    "title": "Paramètres du modèle",
+    }, "title": "Paramètres du modèle",
     "close": "Close",
     "loading": "Loading model settings...",
     "description": "Recommended values are based on this model and system memory. Review them before applying.",

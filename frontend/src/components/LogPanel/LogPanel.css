@@ -5,14 +5,13 @@
 .log-panel-tabs button { flex: 1; padding: 10px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--text-secondary); cursor: pointer; font: inherit; }
 .log-panel-tabs button:hover { background: var(--button-neutral-hover); }
 .log-panel-tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
-.log-panel-toolbar { padding: 10px 12px; border-bottom: 1px solid var(--border); }
-.log-panel-toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; }
+.log-panel-toolbar { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.log-panel-toggle { display: flex; align-items: center; flex-shrink: 0; margin-left: auto; gap: 8px; white-space: nowrap; }
 .log-panel-toggle input { accent-color: var(--accent); }
 .log-panel-content { flex: 1; min-height: 0; overflow: auto; overflow-wrap: anywhere; }
 .log-panel-content-empty { display: flex; flex-direction: column; }
 .log-panel-empty-state { flex: 1; min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; color: var(--text-secondary); text-align: center; font-size: 14px; }
 .log-panel-empty-state svg { color: var(--accent); opacity: .75; }
-.log-panel-path { padding: 8px 12px; background: var(--surface2); color: var(--text-secondary); font-size: 11px; }
 .log-panel-content pre { margin: 0; padding: 12px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace; }
 .log-panel-status { padding: 12px; color: var(--text-secondary); }
 
@@ -38,3 +37,5 @@
 .log-copy-button { flex-shrink: 0; align-self: start; width: 26px; height: 26px; color: var(--text-secondary); }
 
 :root[data-theme='light'] .log-panel { border-left-color: color-mix(in srgb, var(--text-secondary) 30%, var(--border)); }
+
+.log-panel-file-select { flex: 1; min-width: 0; }

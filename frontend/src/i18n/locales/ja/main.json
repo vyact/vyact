@@ -1,5 +1,5 @@
 {
-  "logViewer": {"decision": "判断モデルログ","model": "モデルログ", "latest": "最新のログへ移動", "title": "ログを表示", "llm": "リクエスト・応答ログ", "app": "Vyactログ", "empty": "ログはまだありません。", "error": "ログの読み込みまたは設定の保存に失敗しました。"},
+  "logViewer": {"save": "ログ保存", "decision": "判断モデルログ","model": "モデルログ", "latest": "最新のログへ移動", "file": "ログファイル", "title": "ログを表示", "llm": "リクエスト・応答ログ", "app": "Vyactログ", "empty": "ログはまだありません。", "error": "ログの読み込みまたは設定の保存に失敗しました。"},
   "emptyResponse": "回答本文が生成されませんでした。もう一度お試しください。",
   "greeting": {
     "morning": "おはようございます",
@@ -461,8 +461,7 @@
     }
   },
   "mcpMenu": {
-    "scopeHelp": "このツールのオン／オフはVyactアプリにのみ適用されます。\nChrome拡張機能とは別に管理されます。",
-    "title": "AIツール",
+    "scopeHelp": "このツールのオン／オフはVyactアプリにのみ適用されます。\nChrome拡張機能とは別に管理されます。", "title": "AIツール",
     "loading": "読み込み中...",
     "empty": "登録されたAIツールがありません。",
     "emptyHint": "設定からAIツールを追加してください。",
@@ -657,8 +656,7 @@
     "voiceMode": "音声モード"
   },
   "reasoning": {
-    "label": "推論モード",
-    "title": "推論(Thinking)",
+    "label": "推論モード", "title": "推論(Thinking)",
     "intro": "回答前にモデルが段階的に考える機能です。",
     "warning": "応答が遅くなり、出力トークンの使用量が増える場合があります。推論が長すぎると最終回答を生成できないことがあります。",
     "effortLabel": "推論強度",
@@ -790,8 +788,7 @@
     "autoReadSpeed": "自動読み上げ速度",
     "speedMultiplier": "{{rate}}×",
     "autoRead": "自動読み上げ",
-    "autoReadSaveFailed": "自動読み上げ設定を保存できませんでした。",
-    "title": "音声モード",
+    "autoReadSaveFailed": "自動読み上げ設定を保存できませんでした。", "title": "音声モード",
     "conversation": "音声会話",
     "scriptPractice": "スクリプト練習",
     "languageSelect": "会話言語を選択",
@@ -873,8 +870,7 @@
   "titleBar": {"update": "アップデート", "updateAvailable": "バージョン{{version}}をダウンロードできます"},
   "systemPromptModal": {
     "clearSelection": "システムプロンプトの選択を解除",
-    "eyebrow": "プロンプトライブラリ",
-    "title": "システムプロンプト",
+    "eyebrow": "プロンプトライブラリ", "title": "システムプロンプト",
     "subtitle": "用意されたプロンプトを追加するか、自分で作成できます。",
     "close": "閉じる",
     "templatesTitle": "おすすめのプロンプト",
@@ -1200,8 +1196,7 @@
     "savedTitle": "保存済みコレクション",
     "none": "すべての知識",
     "select": "知識コレクション",
-    "search": "コレクションを検索...",
-    "title": "知識コレクション",
+    "search": "コレクションを検索...", "title": "知識コレクション",
     "subtitle": "ドキュメントとメモをまとめて RAG の範囲を絞ります。",
     "close": "閉じる",
     "empty": "知識コレクションはまだありません。",
@@ -1299,8 +1294,7 @@
       "restored": "適用に失敗したため、以前のモデルと実行設定を復元しました。",
       "failed": "適用と以前のモデルの復元に失敗しました。モデルを再選択してください。",
       "unknown": "適用の完了を確認できませんでした。モデルの状態を確認してから再試行してください。"
-    },
-    "title": "モデル設定",
+    }, "title": "モデル設定",
     "close": "Close",
     "loading": "Loading model settings...",
     "description": "Recommended values are based on this model and system memory. Review them before applying.",

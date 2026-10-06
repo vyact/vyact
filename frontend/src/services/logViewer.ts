@@ -1,6 +1,8 @@
 import {parseTextLogs} from './textLogParser';
 export type LogKind = 'app' | 'model' | 'decision' | 'llm';
 export interface LogUpdate {name: string; path: string; reset: boolean; content: string}
+export interface AvailableLogFile {name: string; filename: string; path: string}
+export interface LogSnapshot {available: AvailableLogFile[]; selected: string; replace: boolean}
 export interface LogFile {name: string; path: string; content: string}
 const MAX_LOG_CHARACTERS = 256 * 1024;
 const MAX_LOG_ENTRIES = 1000;
@@ -26,11 +28,12 @@ export function applyLogUpdates(files: LogFile[], updates: LogUpdate[]): LogFile
 }
 
 export function subscribeLogs(kind: LogKind, model: string,
-    onUpdate: (updates: LogUpdate[]) => void, onError: (failed: boolean) => void): () => void {
-    const source = new EventSource(`/api/logs/stream?${new URLSearchParams({kind, model})}`);
+    onUpdate: (updates: LogUpdate[]) => void, onError: (failed: boolean) => void, filename = '', onSnapshot?: (snapshot: LogSnapshot) => void): () => void {
+    const source = new EventSource(`/api/logs/stream?${new URLSearchParams({kind, model, filename})}`);
     source.onmessage = event => {
         try {
-            const payload = JSON.parse(event.data) as {files: LogUpdate[]};
+            const payload = JSON.parse(event.data) as LogSnapshot & {files: LogUpdate[]};
+            onSnapshot?.(payload);
             onUpdate(payload.files);
             onError(false);
         } catch {onError(true);}

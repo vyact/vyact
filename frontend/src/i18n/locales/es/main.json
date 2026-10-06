@@ -1,5 +1,5 @@
 {
-  "logViewer": {"decision": "Registros del modelo de decisión","model": "Registros del modelo", "latest": "Ir a los registros más recientes", "title": "Ver registros", "llm": "Registros de solicitudes y respuestas", "app": "Registros de Vyact", "empty": "Aún no hay registros.", "error": "No se pudieron cargar los registros o guardar la configuración."},
+  "logViewer": {"save": "Guardar registros", "decision": "Registros del modelo de decisión","model": "Registros del modelo", "latest": "Ir a los registros más recientes", "file": "Archivo de registro", "title": "Ver registros", "llm": "Registros de solicitudes y respuestas", "app": "Registros de Vyact", "empty": "Aún no hay registros.", "error": "No se pudieron cargar los registros o guardar la configuración."},
   "emptyResponse": "No se generó contenido de respuesta. Inténtalo de nuevo.",
   "greeting": {
     "morning": "Buenos días",
@@ -461,8 +461,7 @@
     }
   },
   "mcpMenu": {
-    "scopeHelp": "Estos interruptores solo se aplican a la aplicación Vyact,\nindependientemente de la extensión de Chrome.",
-    "title": "Herramientas de IA",
+    "scopeHelp": "Estos interruptores solo se aplican a la aplicación Vyact,\nindependientemente de la extensión de Chrome.", "title": "Herramientas de IA",
     "loading": "Cargando...",
     "empty": "No hay herramientas de IA",
     "emptyHint": "Añade herramientas de IA en Ajustes",
@@ -656,8 +655,7 @@
     "voiceMode": "Modo voz"
   },
   "reasoning": {
-    "label": "Modo de razonamiento",
-    "title": "Razonamiento",
+    "label": "Modo de razonamiento", "title": "Razonamiento",
     "intro": "El modelo piensa antes de responder.",
     "warning": "Las respuestas pueden tardar más y usar más tokens de salida. Un razonamiento largo puede no dejar espacio para la respuesta final.",
     "effortLabel": "Nivel de razonamiento",
@@ -789,8 +787,7 @@
     "autoReadSpeed": "Velocidad de lectura automática",
     "speedMultiplier": "{{rate}}×",
     "autoRead": "Lectura automática",
-    "autoReadSaveFailed": "No se pudo guardar la opción de lectura automática.",
-    "title": "Modo voz",
+    "autoReadSaveFailed": "No se pudo guardar la opción de lectura automática.", "title": "Modo voz",
     "conversation": "Chat de voz",
     "scriptPractice": "Práctica de guion",
     "languageSelect": "Elige el idioma de conversación",
@@ -872,8 +869,7 @@
   "titleBar": {"update": "Actualizar", "updateAvailable": "La versión {{version}} está disponible para descargar"},
   "systemPromptModal": {
     "clearSelection": "Quitar la selección del prompt del sistema",
-    "eyebrow": "Biblioteca de prompts",
-    "title": "Prompts de sistema",
+    "eyebrow": "Biblioteca de prompts", "title": "Prompts de sistema",
     "subtitle": "Añade un prompt prediseñado o crea el tuyo.",
     "close": "Cerrar",
     "templatesTitle": "Prompts sugeridos",
@@ -1199,8 +1195,7 @@
     "savedTitle": "Colecciones guardadas",
     "none": "Todo el conocimiento",
     "select": "Colección de conocimiento",
-    "search": "Buscar colecciones...",
-    "title": "Colecciones de conocimiento",
+    "search": "Buscar colecciones...", "title": "Colecciones de conocimiento",
     "subtitle": "Agrupa documentos y notas para limitar el contexto de RAG.",
     "close": "Cerrar",
     "empty": "Aún no hay colecciones de conocimiento.",
@@ -1298,8 +1293,7 @@
       "restored": "No se pudieron aplicar los ajustes. Se restauraron el modelo y los ajustes anteriores.",
       "failed": "Fallaron la aplicación y la restauración del modelo anterior. Selecciona un modelo de nuevo.",
       "unknown": "No se pudo confirmar la finalización. Comprueba el estado del modelo antes de reintentar."
-    },
-    "title": "Configuración del modelo",
+    }, "title": "Configuración del modelo",
     "close": "Close",
     "loading": "Loading model settings...",
     "description": "Recommended values are based on this model and system memory. Review them before applying.",
