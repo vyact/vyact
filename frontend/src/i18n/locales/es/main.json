@@ -1,5 +1,5 @@
 {
-  "logViewer": {"save": "Guardar registros", "decision": "Registros del modelo de decisión","model": "Registros del modelo", "latest": "Ir a los registros más recientes", "file": "Archivo de registro", "title": "Ver registros", "llm": "Registros de solicitudes y respuestas", "app": "Registros de Vyact", "empty": "Aún no hay registros.", "error": "No se pudieron cargar los registros o guardar la configuración."},
+  "logViewer": {"save": "Guardar registros", "decision": "Logs de decisión","model": "Logs de modelo", "latest": "Ir a los registros más recientes", "file": "Archivo de registro", "title": "Ver registros", "llm": "Logs de IA", "app": "Logs Vyact", "empty": "Aún no hay registros.", "error": "No se pudieron cargar los registros o guardar la configuración."},
   "emptyResponse": "No se generó contenido de respuesta. Inténtalo de nuevo.",
   "greeting": {
     "morning": "Buenos días",

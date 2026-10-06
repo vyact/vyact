@@ -1,5 +1,5 @@
 {
-  "logViewer": {"save": "Save logs", "decision": "Decision model logs","model": "Model logs", "latest": "Jump to latest logs", "file": "Log file", "title": "View logs", "llm": "Request/response logs", "app": "Vyact logs", "empty": "No logs yet.", "error": "Unable to load logs or save settings."},
+  "logViewer": {"save": "Save logs", "decision": "Decision logs","model": "Model logs", "latest": "Jump to latest logs", "file": "Log file", "title": "View logs", "llm": "AI logs", "app": "Vyact logs", "empty": "No logs yet.", "error": "Unable to load logs or save settings."},
   "emptyResponse": "No response content was generated. Please try again.",
   "greeting": {
     "morning": "Good morning",

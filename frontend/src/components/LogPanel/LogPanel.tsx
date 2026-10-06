@@ -94,7 +94,7 @@ export default function LogPanel({model, style}: {model: string; style: CSSPrope
             <button type="button" className="icon-btn" aria-label={t('documentPreview.close')} onClick={() => panels.close('logs')}><X size={18}/></button>
         </div>
         <div className="log-panel-tabs" role="tablist" aria-label={t('logViewer.title')}>
-            {(['app', 'model', 'decision', 'llm'] as const).map(tab => <button key={tab} type="button" role="tab" id={`log-tab-${tab}`} aria-controls="log-content" aria-selected={kind === tab} className={kind === tab ? 'active' : ''} onClick={() => setKind(tab)}>{t(`logViewer.${tab}`)}</button>)}
+            {(['app', 'model', 'decision', 'llm'] as const).map(tab => <button key={tab} type="button" role="tab" id={`log-tab-${tab}`} aria-controls="log-content" aria-selected={kind === tab} className={kind === tab ? 'active' : ''} onClick={() => setKind(tab)}>{tab === 'llm' ? t('settings:general.llmLog') : t(`logViewer.${tab}`)}</button>)}
         </div>
         {(available.length > 0 || kind === 'llm') && <div className="log-panel-toolbar">
             {available.length > 0 && <CustomSelect className="log-panel-file-select" ariaLabel={t('logViewer.file')}

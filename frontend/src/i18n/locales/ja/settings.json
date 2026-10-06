@@ -142,7 +142,7 @@
     "runtimeModelLoadFailedDescription": "モデルの準備確認を完了できませんでした。ランタイムログを確認して、モデルを再度読み込んでください。",
     "runtimeModelInsufficientMemoryDescription": "現在利用可能なメモリでは選択したモデルを読み込めませんでした。他のアプリを閉じるか、より小さいモデルを選択して再試行してください。",
     "confirm": "確認",
-    "llmLog": "リクエスト・応答ログを保存",
+    "llmLog": "AIログ",
     "llmLogDesc": "AIに送信したリクエストと応答を保存します。",
     "toolLog": "Tool呼び出しログ",
     "toolLogDesc": "LLM呼び出し時に渡されたtool名をアプリログに記録します。",

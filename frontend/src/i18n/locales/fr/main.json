@@ -1,5 +1,5 @@
 {
-  "logViewer": {"save": "Enregistrer les logs", "decision": "Journaux du modèle de décision","model": "Journaux du modèle", "latest": "Aller aux derniers journaux", "file": "Fichier journal", "title": "Voir les journaux", "llm": "Journaux des requêtes et réponses", "app": "Journaux Vyact", "empty": "Aucun journal pour le moment.", "error": "Impossible de charger les journaux ou d’enregistrer les paramètres."},
+  "logViewer": {"save": "Enregistrer les logs", "decision": "Logs de décision","model": "Logs du modèle", "latest": "Aller aux derniers journaux", "file": "Fichier journal", "title": "Voir les journaux", "llm": "Logs IA", "app": "Logs Vyact", "empty": "Aucun journal pour le moment.", "error": "Impossible de charger les journaux ou d’enregistrer les paramètres."},
   "emptyResponse": "Aucun contenu de réponse n’a été généré. Réessayez.",
   "greeting": {
     "morning": "Bonjour",

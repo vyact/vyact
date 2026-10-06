@@ -1,5 +1,5 @@
 {
-  "logViewer": {"save": "ログ保存", "decision": "判断モデルログ","model": "モデルログ", "latest": "最新のログへ移動", "file": "ログファイル", "title": "ログを表示", "llm": "リクエスト・応答ログ", "app": "Vyactログ", "empty": "ログはまだありません。", "error": "ログの読み込みまたは設定の保存に失敗しました。"},
+  "logViewer": {"save": "ログ保存", "decision": "判断ログ","model": "モデルログ", "latest": "最新のログへ移動", "file": "ログファイル", "title": "ログを表示", "llm": "AIログ", "app": "Vyactログ", "empty": "ログはまだありません。", "error": "ログの読み込みまたは設定の保存に失敗しました。"},
   "emptyResponse": "回答本文が生成されませんでした。もう一度お試しください。",
   "greeting": {
     "morning": "おはようございます",
