@@ -1173,7 +1173,7 @@
     "externalDataTitle": "外部データ",
     "count": "{{count}}件",
     "inputTokens": "入力トークン",
-    "cacheHitTokens": "キャッシュヒット {{count}}トークン",
+    "cacheHitTokens": "キャッシュヒット {{count}}",
     "cacheMiss": "キャッシュミス",
     "inputProcessing": "入力処理",
     "inputProcessingTime": "入力時間",

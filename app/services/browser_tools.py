@@ -309,6 +309,7 @@ async def _browser_inspect() -> str:
     if not isinstance(result, list):
         return _as_text(result)
     compact_elements: list[dict] = []
+    seen_elements: set[str] = set()
     for raw_element in result:
         if not isinstance(raw_element, dict):
             continue
@@ -323,8 +324,17 @@ async def _browser_inspect() -> str:
                 "context": str(raw_element.get("context") or "")[:120],
             }.items() if value not in (None, "")
         }
+        # Keep distinct controls even when they have the same label or destination.
+        # Drop only redundant attributes and byte-identical records.
+        if "role" in element and element["role"] == element.get("tag"):
+            element.pop("role")
+        if "context" in element and element["context"] == element.get("name"):
+            element.pop("context")
         if element.get("id") and (element.get("name") or element.get("type") or element.get("href")):
-            compact_elements.append(element)
+            fingerprint = _as_text(element)
+            if fingerprint not in seen_elements:
+                seen_elements.add(fingerprint)
+                compact_elements.append(element)
     _inspected_element_ids.set(frozenset(
         str(element["id"]) for element in compact_elements if element.get("id")
     ))

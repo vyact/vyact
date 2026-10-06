@@ -224,10 +224,10 @@ def _accumulate_llm_timing(usage: dict | None, timings: dict | None) -> None:
         return
 
     usage["_timed_llm_call_count"] = usage.get("_timed_llm_call_count", 0) + 1
-    usage["prompt_tokens"] = usage.get("_timing_prompt_tokens", 0) + max(0, round(prompt_tokens))
-    usage["completion_tokens"] = usage.get("_timing_completion_tokens", 0) + max(0, round(completion_tokens))
-    usage["_timing_prompt_tokens"] = usage["prompt_tokens"]
-    usage["_timing_completion_tokens"] = usage["completion_tokens"]
+    usage["prompt_tokens"] = usage.get("prompt_tokens", 0) + max(0, round(prompt_tokens))
+    usage["completion_tokens"] = usage.get("completion_tokens", 0) + max(0, round(completion_tokens))
+    usage["_timing_prompt_tokens"] = usage.get("_timing_prompt_tokens", 0) + max(0, round(prompt_tokens))
+    usage["_timing_completion_tokens"] = usage.get("_timing_completion_tokens", 0) + max(0, round(completion_tokens))
     usage["prompt_eval_duration"] = usage.get("prompt_eval_duration", 0) + prompt_duration
     usage["eval_duration"] = usage.get("eval_duration", 0) + eval_duration
     call_duration = sum(
@@ -240,10 +240,10 @@ def _accumulate_llm_timing(usage: dict | None, timings: dict | None) -> None:
     prompt_seconds = usage["prompt_eval_duration"] / 1_000_000_000
     eval_seconds = usage["eval_duration"] / 1_000_000_000
     usage["prompt_tokens_per_second"] = (
-        usage["prompt_tokens"] / prompt_seconds if prompt_seconds > 0 else None
+        usage["_timing_prompt_tokens"] / prompt_seconds if prompt_seconds > 0 else None
     )
     usage["completion_tokens_per_second"] = (
-        usage["completion_tokens"] / eval_seconds if eval_seconds > 0 else None
+        usage["_timing_completion_tokens"] / eval_seconds if eval_seconds > 0 else None
     )
 
 
@@ -265,17 +265,18 @@ def _accumulate_openai_usage(usage: dict | None, provider_usage: dict | None) ->
     prompt_duration = _seconds_to_nanoseconds(provider_usage.get("prompt_eval_duration"))
     eval_duration = _seconds_to_nanoseconds(provider_usage.get("generation_duration"))
     if prompt_duration is None or eval_duration is None:
-        usage["prompt_tokens"] = prompt_tokens
-        usage["completion_tokens"] = completion_tokens
+        for key, count in (("prompt_tokens", prompt_tokens), ("completion_tokens", completion_tokens)):
+            if isinstance(count, (int, float)):
+                usage[key] = usage.get(key, 0) + max(0, round(count))
         return
     if not isinstance(prompt_tokens, (int, float)) or not isinstance(completion_tokens, (int, float)):
         return
 
     usage["_timed_llm_call_count"] = usage.get("_timed_llm_call_count", 0) + 1
-    usage["prompt_tokens"] = usage.get("_timing_prompt_tokens", 0) + max(0, round(prompt_tokens))
-    usage["completion_tokens"] = usage.get("_timing_completion_tokens", 0) + max(0, round(completion_tokens))
-    usage["_timing_prompt_tokens"] = usage["prompt_tokens"]
-    usage["_timing_completion_tokens"] = usage["completion_tokens"]
+    usage["prompt_tokens"] = usage.get("prompt_tokens", 0) + max(0, round(prompt_tokens))
+    usage["completion_tokens"] = usage.get("completion_tokens", 0) + max(0, round(completion_tokens))
+    usage["_timing_prompt_tokens"] = usage.get("_timing_prompt_tokens", 0) + max(0, round(prompt_tokens))
+    usage["_timing_completion_tokens"] = usage.get("_timing_completion_tokens", 0) + max(0, round(completion_tokens))
     usage["prompt_eval_duration"] = usage.get("prompt_eval_duration", 0) + prompt_duration
     usage["eval_duration"] = usage.get("eval_duration", 0) + eval_duration
     total_duration = _seconds_to_nanoseconds(provider_usage.get("total_time"))
@@ -284,8 +285,8 @@ def _accumulate_openai_usage(usage: dict | None, provider_usage: dict | None) ->
     )
     prompt_seconds = usage["prompt_eval_duration"] / 1_000_000_000
     eval_seconds = usage["eval_duration"] / 1_000_000_000
-    usage["prompt_tokens_per_second"] = usage["prompt_tokens"] / prompt_seconds if prompt_seconds > 0 else None
-    usage["completion_tokens_per_second"] = usage["completion_tokens"] / eval_seconds if eval_seconds > 0 else None
+    usage["prompt_tokens_per_second"] = usage["_timing_prompt_tokens"] / prompt_seconds if prompt_seconds > 0 else None
+    usage["completion_tokens_per_second"] = usage["_timing_completion_tokens"] / eval_seconds if eval_seconds > 0 else None
 
 
 def _mark_llm_call_started(usage: dict | None) -> None:

@@ -909,9 +909,12 @@ const Message: React.FC<MessageProps> = ({
             {/* 토큰수/처리시간 통계 — provider가 제공할 때 표시. user 버블엔 입력(prompt) 쪽,
                 assistant 버블엔 생성(eval)+전체 소요시간 쪽을 보여준다. */}
             {!(isStreaming && role === 'assistant') && stats && (() => {
+                const tokenNumberFormatter = new Intl.NumberFormat(i18n.resolvedLanguage || i18n.language);
+                const formatTokenCount = (count: number | null | undefined) => count == null
+                    ? null : tokenNumberFormatter.format(count);
                 if (role === 'user') {
                     const line = formatStats([
-                        [t('message.inputTokens'), stats.prompt_eval_count],
+                        [t('message.inputTokens'), formatTokenCount(stats.prompt_eval_count)],
                         [t('message.inputProcessing'), formatNs(stats.prompt_eval_duration)],
                     ]);
                     if (!line) return null;
@@ -922,7 +925,7 @@ const Message: React.FC<MessageProps> = ({
                 const cachedTokens = stats.cached_tokens;
                 const cacheSummary = cachedTokens != null && cachedTokens > 0
                     ? t('message.cacheHitTokens', {
-                        count: new Intl.NumberFormat(i18n.resolvedLanguage || i18n.language).format(cachedTokens),
+                        count: formatTokenCount(cachedTokens),
                     })
                     : null;
 
@@ -932,7 +935,7 @@ const Message: React.FC<MessageProps> = ({
                     [t('message.generationSpeed'), formatTokensPerSecond(stats.completion_tokens_per_second)],
                 ]);
 
-                const outputTokens = formatStats([[t('message.outputTokens'), stats.eval_count]]);
+                const outputTokens = formatStats([[t('message.outputTokens'), formatTokenCount(stats.eval_count)]]);
                 const generationTiming = formatStats([
                     [t('message.generationTime'), formatNs(stats.eval_duration)],
                     [t('message.llmTotal'), formatNs(llmTotal)],

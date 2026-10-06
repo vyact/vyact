@@ -148,3 +148,30 @@ def test_http_log_filter_masks_oauth_query_tokens() -> None:
 
     assert _SensitiveLogDataFilter().filter(record) is True
     assert record.getMessage().endswith("access_token=[REDACTED]")
+
+
+def test_inspect_compacts_only_redundancy_and_preserves_distinct_controls(monkeypatch):
+    elements = [
+        {'id': 'one', 'tag': 'button', 'role': 'button', 'name': 'Add', 'context': 'Add'},
+        {'id': 'one', 'tag': 'button', 'role': 'button', 'name': 'Add', 'context': 'Add'},
+        {'id': 'two', 'tag': 'button', 'role': 'button', 'name': 'Add', 'context': 'Second product'},
+        {'id': 'three', 'tag': 'a', 'role': 'button', 'name': 'Option', 'href': 'https://example.com/?itemId=123&vendorItemId=456'},
+    ]
+    monkeypatch.setattr(browser_tools, '_command', AsyncMock(return_value=elements))
+    result = json.loads(asyncio.run(browser_tools._browser_inspect()))
+    assert len(result) == 3
+    assert result[0] == {'id': 'one', 'name': 'Add', 'tag': 'button'}
+    assert result[1]['context'] == 'Second product'
+    assert result[2]['role'] == 'button'
+    assert result[2]['href'] == elements[-1]['href']
+
+
+def test_inspect_handles_unnamed_links_and_missing_optional_attributes(monkeypatch):
+    elements = [
+        {'id': 'vyact-1', 'tag': 'a', 'href': 'https://example.com/product'},
+        {'id': 'vyact-2', 'tag': 'input', 'type': 'text'},
+        {'id': 'vyact-3'},
+    ]
+    monkeypatch.setattr(browser_tools, '_command', AsyncMock(return_value=elements))
+    result = json.loads(asyncio.run(browser_tools._browser_inspect()))
+    assert result == elements[:2]

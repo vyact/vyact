@@ -1173,7 +1173,7 @@
     "externalDataTitle": "Données externes",
     "count": "{{count}}",
     "inputTokens": "Tokens d'entrée",
-    "cacheHitTokens": "Cache réutilisé {{count}} tokens",
+    "cacheHitTokens": "Cache réutilisé {{count}}",
     "cacheMiss": "Cache non réutilisé",
     "inputProcessing": "Traitement d'entrée",
     "inputProcessingTime": "Temps d'entrée",

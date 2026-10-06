@@ -1172,7 +1172,7 @@
     "externalDataTitle": "External data",
     "count": "{{count}}",
     "inputTokens": "Input tokens",
-    "cacheHitTokens": "Cache hit {{count}} tokens",
+    "cacheHitTokens": "Cache hit {{count}}",
     "cacheMiss": "Cache miss",
     "inputProcessing": "Input processing",
     "inputProcessingTime": "Input time",
