@@ -4,6 +4,6 @@ export function formatLocalizedNumber(value: number, fractionDigits: number): st
     return new Intl.NumberFormat(i18n.resolvedLanguage || i18n.language || 'en', {
         minimumFractionDigits: fractionDigits,
         maximumFractionDigits: fractionDigits,
-        useGrouping: false,
+        useGrouping: true,
     }).format(value);
 }
