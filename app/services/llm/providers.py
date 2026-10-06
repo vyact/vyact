@@ -106,6 +106,62 @@ def _tool_call_max_rounds(provider_config: dict) -> int:
     )
 
 
+_BROWSER_PROGRESS_TOOLS = frozenset({
+    "browser_search", "browser_open", "browser_read_urls", "browser_click",
+    "browser_type", "browser_scroll", "browser_back", "browser_wait_for_user", "browser_close",
+})
+_BROWSER_POLL_TOOLS = frozenset({"browser_wait", "browser_status"})
+_BROWSER_MAX_UNCHANGED_POLLS = 3
+
+
+class _ToolCallGuard:
+    """Scope browser observations to successful page actions; bound unchanged polling."""
+
+    def __init__(self):
+        self.executed = set()
+        self.browser_revision = 0
+        self.poll_counts = {}
+        self.poll_results = {}
+        self.last_browser_action = None
+
+    def fingerprint(self, name, args):
+        fingerprint = _tool_call_fingerprint(name, args)
+        if name.startswith("browser_"):
+            fingerprint = f"{self.browser_revision}:{fingerprint}"
+        return fingerprint
+
+    def repeated(self, name, fingerprint):
+        if name in _BROWSER_PROGRESS_TOOLS - {"browser_scroll", "browser_back"}:
+            if fingerprint.split(":", 1)[1] == self.last_browser_action:
+                return True
+        if name in _BROWSER_POLL_TOOLS:
+            return self.poll_counts.get(fingerprint, 0) >= _BROWSER_MAX_UNCHANGED_POLLS
+        return fingerprint in self.executed
+
+    def record(self, name, fingerprint, result):
+        self.executed.add(fingerprint)
+        if _is_tool_failure(result):
+            return
+        if name in _BROWSER_PROGRESS_TOOLS:
+            self.last_browser_action = fingerprint.split(":", 1)[1]
+            self.browser_revision += 1
+        elif name.startswith("browser_") and name not in _BROWSER_POLL_TOOLS:
+            self.last_browser_action = None
+        elif name in _BROWSER_POLL_TOOLS:
+            # A changed status permits another observation of dynamically loaded content.
+            if self.poll_results.get(name) != result:
+                self.browser_revision += 1
+                self.poll_results[name] = result
+                self.poll_counts.clear()
+            current = f"{self.browser_revision}:" + fingerprint.split(":", 1)[1]
+            self.poll_counts[current] = self.poll_counts.get(current, 0) + 1
+
+
+async def _emit_tool_stop(on_event, reason, name=None):
+    logger.warning("[tool_stop] reason=%s tool=%s", reason, name or "")
+    await _emit(on_event, {"phase": "stopped", "reason": reason, "name": name or ""})
+
+
 def _is_tool_failure(result_text: object) -> bool:
     return tool_result_failed(str(result_text))
 
@@ -403,7 +459,7 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
     repeated_tool_call = False
     consecutive_tool_failures = 0
     tool_failures_exhausted = False
-    executed_tool_calls: set[str] = set()
+    tool_guard = _ToolCallGuard()
     memory_instruction_added = False
     if unified:
         oa_tools = to_openai_tools(unified)
@@ -511,13 +567,14 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
                     args = json.loads(raw_args) if isinstance(raw_args, str) else raw_args
                 except json.JSONDecodeError:
                     args = {}
-                fingerprint = _tool_call_fingerprint(name, args)
-                if fingerprint in executed_tool_calls:
+                fingerprint = tool_guard.fingerprint(name, args)
+                if tool_guard.repeated(name, fingerprint):
                     messages.append({
                         "role": "tool", "tool_call_id": tc.get("id", ""),
                         "content": _REPEATED_TOOL_CALL_RESULT,
                     })
                     repeated_tool_call = True
+                    await _emit_tool_stop(on_event, "tool_repeat_blocked", name)
                     continue
                 if repeated_tool_call:
                     messages.append({
@@ -549,14 +606,15 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
                     approval_rejected = True
                     continue
                 await _emit(on_event, {"phase": "start", "name": name, "args": args})
-                executed_tool_calls.add(fingerprint)
                 await _budget_memory_list_result(name, messages, provider_config, output_token_limit)
                 result_text = await mcp_manager.call_tool(name, args)
+                tool_guard.record(name, fingerprint, result_text)
                 consecutive_tool_failures = _next_consecutive_tool_failures(
                     consecutive_tool_failures, result_text,
                 )
                 if consecutive_tool_failures >= TOOL_CALL_MAX_CONSECUTIVE_FAILURES:
                     tool_failures_exhausted = True
+                    await _emit_tool_stop(on_event, "tool_failures_exhausted", name)
                 tool_sources = mcp_manager.drain_tool_sources()
                 if not _is_tool_failure(result_text):
                     completed_tool_names.add(name)
@@ -571,6 +629,7 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
                     messages[0]["content"] += _FAILED_TOOL_FINAL_INSTRUCTION
                 break
         else:
+            await _emit_tool_stop(on_event, "tool_round_limit")
             messages[0]["content"] += _TOOL_ROUND_LIMIT_FINAL_INSTRUCTION
 
     post_tool_docs_applied = False
@@ -719,7 +778,7 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
     consecutive_tool_failures = 0
     tool_failures_exhausted = False
     tool_round_limit_reached = False
-    executed_tool_calls: set[str] = set()
+    tool_guard = _ToolCallGuard()
     memory_instruction_added = False
     if unified:
         gm_tools = to_gemini_tools(unified)
@@ -766,12 +825,13 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
                     }})
                     continue
                 args = fc.get("args", {}) or {}
-                fingerprint = _tool_call_fingerprint(name, args)
-                if fingerprint in executed_tool_calls:
+                fingerprint = tool_guard.fingerprint(name, args)
+                if tool_guard.repeated(name, fingerprint):
                     resp_parts.append({"functionResponse": {
                         "name": name, "response": {"result": _REPEATED_TOOL_CALL_RESULT},
                     }})
                     repeated_tool_call = True
+                    await _emit_tool_stop(on_event, "tool_repeat_blocked", name)
                     continue
                 if repeated_tool_call:
                     resp_parts.append({"functionResponse": {
@@ -803,14 +863,15 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
                     approval_rejected = True
                     continue
                 await _emit(on_event, {"phase": "start", "name": name, "args": args})
-                executed_tool_calls.add(fingerprint)
                 await _budget_memory_list_result(name, contents, provider_config)
                 result_text = await mcp_manager.call_tool(name, args)
+                tool_guard.record(name, fingerprint, result_text)
                 consecutive_tool_failures = _next_consecutive_tool_failures(
                     consecutive_tool_failures, result_text,
                 )
                 if consecutive_tool_failures >= TOOL_CALL_MAX_CONSECUTIVE_FAILURES:
                     tool_failures_exhausted = True
+                    await _emit_tool_stop(on_event, "tool_failures_exhausted", name)
                 tool_sources = mcp_manager.drain_tool_sources()
                 await _emit(on_event, {"phase": "end", "name": name, "args": args, "result": result_text, "sources": tool_sources})
                 resp_parts.append({"functionResponse": {
@@ -824,6 +885,7 @@ async def gemini_stream(client, model, api_key, system_message, user_prompt,
                 break
         else:
             tool_round_limit_reached = True
+            await _emit_tool_stop(on_event, "tool_round_limit")
             sys_text += _TOOL_ROUND_LIMIT_FINAL_INSTRUCTION
 
     # ── 최종 답변 스트리밍 ──
@@ -905,7 +967,7 @@ async def claude_stream(client, model, api_key, system_message, user_prompt,
     consecutive_tool_failures = 0
     tool_failures_exhausted = False
     tool_round_limit_reached = False
-    executed_tool_calls: set[str] = set()
+    tool_guard = _ToolCallGuard()
     memory_instruction_added = False
     if unified:
         cl_tools = to_claude_tools(unified)
@@ -946,13 +1008,14 @@ async def claude_stream(client, model, api_key, system_message, user_prompt,
                     })
                     continue
                 args = tu.get("input", {}) or {}
-                fingerprint = _tool_call_fingerprint(name, args)
-                if fingerprint in executed_tool_calls:
+                fingerprint = tool_guard.fingerprint(name, args)
+                if tool_guard.repeated(name, fingerprint):
                     result_blocks.append({
                         "type": "tool_result", "tool_use_id": tu.get("id", ""),
                         "content": _REPEATED_TOOL_CALL_RESULT,
                     })
                     repeated_tool_call = True
+                    await _emit_tool_stop(on_event, "tool_repeat_blocked", name)
                     continue
                 if repeated_tool_call:
                     result_blocks.append({
@@ -984,14 +1047,15 @@ async def claude_stream(client, model, api_key, system_message, user_prompt,
                     approval_rejected = True
                     continue
                 await _emit(on_event, {"phase": "start", "name": name, "args": args})
-                executed_tool_calls.add(fingerprint)
                 await _budget_memory_list_result(name, messages, provider_config)
                 result_text = await mcp_manager.call_tool(name, args)
+                tool_guard.record(name, fingerprint, result_text)
                 consecutive_tool_failures = _next_consecutive_tool_failures(
                     consecutive_tool_failures, result_text,
                 )
                 if consecutive_tool_failures >= TOOL_CALL_MAX_CONSECUTIVE_FAILURES:
                     tool_failures_exhausted = True
+                    await _emit_tool_stop(on_event, "tool_failures_exhausted", name)
                 tool_sources = mcp_manager.drain_tool_sources()
                 await _emit(on_event, {"phase": "end", "name": name, "args": args, "result": result_text, "sources": tool_sources})
                 result_blocks.append({"type": "tool_result",
@@ -1006,6 +1070,7 @@ async def claude_stream(client, model, api_key, system_message, user_prompt,
                 break
         else:
             tool_round_limit_reached = True
+            await _emit_tool_stop(on_event, "tool_round_limit")
             system_text += _TOOL_ROUND_LIMIT_FINAL_INSTRUCTION
 
     # ── 최종 답변 스트리밍 ──

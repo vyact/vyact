@@ -32,9 +32,9 @@ def redact(value):
 
 def record_tool_event(event: dict):
     trace = tool_trace.get()
-    if trace is None or event.get("phase") not in {"start", "end", "approval_rejected"}:
+    if trace is None or event.get("phase") not in {"start", "end", "approval_rejected", "stopped"}:
         return
-    entry = {key: event[key] for key in ("phase", "name", "args", "result") if key in event}
+    entry = {key: event[key] for key in ("phase", "name", "args", "result", "reason") if key in event}
     if "result" in entry:
         entry["status"] = ("rejected" if event["phase"] == "approval_rejected"
                            else "error" if tool_result_failed(str(entry["result"])) else "success")

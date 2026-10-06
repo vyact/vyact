@@ -1121,6 +1121,7 @@ async def query_stream(req: QueryRequest):
                 _tool_messages: list[dict] = []  # tool call/result 메시지 수집
                 memory_updates: list[dict] = []
                 _activity_log: list[dict] = []
+                tool_stop_reason = None
                 visible_emitted = ""
                 project_tool_first = bool(request_folder_paths)
                 logger.info(
@@ -1161,6 +1162,8 @@ async def query_stream(req: QueryRequest):
                     elif ev["type"] == "tool":
                         _phase = ev.get("phase")
                         _tool_name = ev.get("name", "")
+                        if _phase == "stopped":
+                            tool_stop_reason = ev.get("reason")
                         if _phase in {"start", "approval_required"} and _tool_name:
                             started_at = int(datetime.now(timezone.utc).timestamp() * 1000)
                             if (_phase == "start" and _activity_log
@@ -1259,8 +1262,8 @@ async def query_stream(req: QueryRequest):
                 user_message = build_user_message(original_question, user_ts, req.attachments)
                 # "참고" 표시용 — url이 있는 소스만
                 article_sources = [s for s in gen_sources if s.get("url") and s.get("source") != "붙여넣기"]
-                assistant_error_code = None
-                if not answer:
+                assistant_error_code = tool_stop_reason
+                if not answer and not assistant_error_code:
                     if response_truncated and req.reasoning not in (None, False, "none"):
                         assistant_error_code = "reasoning_token_limit"
                     elif any(activity.get("outcome") == "failed" for activity in _activity_log):
@@ -1319,7 +1322,7 @@ async def query_stream(req: QueryRequest):
                     _run_in_background(_save_history_bg())
 
                 yield _sse("done", {"conv_id": conv_id, "answer": answer, "stats": gen_stats,
-                                    "truncated": response_truncated, "code_changes": code_changes,
+                                    "truncated": response_truncated, "error_code": assistant_error_code, "code_changes": code_changes,
                                     "memory_updates": memory_updates,
                                     "conversation_title": conversation_title if not req.messages else None})
                 _saved = True

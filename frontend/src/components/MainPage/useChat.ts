@@ -1,3 +1,4 @@
+import {getToolStopMessage} from './toolStop';
 import {getUnansweredQuestionIndex, markResponseStopped, prepareRetryTurn} from './chatRetry';
 import {isAudioChatFile} from '../../utils/fileValidation';
 import React from 'react';
@@ -728,11 +729,21 @@ export function useChat(deps: UseChatDeps) {
                             const reasoningTokenLimitReached = reasoningEnabledForRequest
                                 && Boolean(data.truncated)
                                 && !hasVisibleAnswer;
-                            if (followupsOnly || (!fuBody?.trim() && !streamedResponseText.trim())) {
+                            if (getToolStopMessage(data.error_code, t) || followupsOnly || (!fuBody?.trim() && !streamedResponseText.trim())) {
                                 setLastFailedQuery(failedRequest);
                             }
                             setMessagesForConversation(requestConvId, prev => prev.map(m => {
                                 if (m.id !== streamId) return m;
+                                const toolStop = getToolStopMessage(data.error_code, t);
+                                if (toolStop) {
+                                    return {
+                                        ...m, content: [toolStop.description, fuBody?.trim()].filter(Boolean).join('\n\n'),
+                                        model: streamModel || m.model, timestamp: new Date().toISOString(),
+                                        errorTitle: toolStop.title, errorCode: data.error_code, isError: true,
+                                        toolStatus: undefined, activityLog: undefined, progressMessages: undefined,
+                                        stats: data.stats || m.stats,
+                                    };
+                                }
                                 const toolCallFailed = m.activityLog?.some(activity => activity.outcome === 'failed') ?? false;
                                 // follow-up 블록만 생성된 경우에는 스트리밍 원문을 본문으로
                                 // 되돌리지 않는다. 모델의 빈 본문을 안내하되 후속 질문은 유지한다.

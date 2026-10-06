@@ -1,3 +1,4 @@
+import {getToolStopMessage} from './toolStop';
 import { useState } from 'react';
 import React from 'react';
 import {useTranslation} from 'react-i18next';
@@ -145,7 +146,11 @@ export function useConversation() {
         const errorCode = msg.error_code || msg.errorCode;
         let errorTitle = msg.errorTitle;
         if (msg.role === 'assistant' && errorCode) {
-            if (errorCode === 'tool_call_failed') {
+            const toolStop = getToolStopMessage(errorCode, t);
+            if (toolStop) {
+                content = [toolStop.description, msg.content?.trim()].filter(Boolean).join('\n\n');
+                errorTitle = toolStop.title;
+            } else if (errorCode === 'tool_call_failed') {
                 content = t('message.toolCallFailedDescription');
                 errorTitle = t('message.toolCallFailedTitle');
             } else if (errorCode === 'reasoning_token_limit') {
