@@ -386,7 +386,14 @@ class ConnectionReasoningRequest(BaseModel):
         return self
 
 
+class ConnectionTemperatureRequest(BaseModel):
+    enabled: bool = False
+    parameter: str = Field(default="temperature", pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")
+    value: float = Field(default=0.2, ge=0, le=2, allow_inf_nan=False)
+
+
 class CustomProviderRequest(BaseModel):
+    temperature: ConnectionTemperatureRequest | None = None
     max_output_tokens: int | None = Field(default=None, ge=1, strict=True)
     output_token_parameter: str = Field(default="", pattern=r"^(?:[A-Za-z_][A-Za-z0-9_]*)?$")
     history_token_budget: int | None = Field(default=None, ge=0, strict=True)
@@ -400,6 +407,14 @@ class CustomProviderRequest(BaseModel):
             raise ValueError("Use an output token parameter, not a reserved request field")
         if self.reasoning and self.reasoning.enabled and self.reasoning.parameter == self.output_token_parameter:
             raise ValueError("Output and reasoning parameters must differ")
+        if self.temperature and self.temperature.enabled:
+            parameter = self.temperature.parameter
+            if parameter in (reserved - {"temperature"}) | {"max_tokens", "max_completion_tokens"}:
+                raise ValueError("Use a temperature parameter, not a reserved request field")
+            if parameter == self.output_token_parameter or (self.reasoning and self.reasoning.enabled and parameter == self.reasoning.parameter):
+                raise ValueError("Temperature, output and reasoning parameters must differ")
+            if urlparse(self.base_url).hostname and urlparse(self.base_url).hostname.endswith(".aliyuncs.com") and self.temperature.value == 2:
+                raise ValueError("Alibaba temperature must be less than 2")
         return self
 
     copy_from_id: str | None = None
@@ -1674,6 +1689,7 @@ async def get_providers():
                 "model": item.get("model"),
                 "has_key": bool(item.get("api_key")),
                 "reasoning": item.get("reasoning"),
+                "temperature": item.get("temperature"),
                 "max_output_tokens": item.get("max_output_tokens"),
                 "output_token_parameter": item.get("output_token_parameter", ""),
                 "history_token_budget": item.get("history_token_budget"),
@@ -1708,6 +1724,7 @@ async def create_custom_provider(req: CustomProviderRequest):
         "model": model,
         "headers": _normalize_custom_headers(req.headers, (source or {}).get("headers")),
         "reasoning": req.reasoning.model_dump() if req.reasoning else None,
+        "temperature": req.temperature.model_dump() if req.temperature else None,
         "max_output_tokens": req.max_output_tokens,
         "output_token_parameter": req.output_token_parameter,
         "history_token_budget": req.history_token_budget,
@@ -1735,6 +1752,7 @@ async def update_custom_provider(connection_id: str, req: CustomProviderRequest)
         "model": model,
         "headers": _normalize_custom_headers(req.headers, connection.get("headers")),
         "reasoning": req.reasoning.model_dump() if req.reasoning else None,
+        "temperature": req.temperature.model_dump() if req.temperature else None,
         "max_output_tokens": req.max_output_tokens,
         "output_token_parameter": req.output_token_parameter,
         "history_token_budget": req.history_token_budget,

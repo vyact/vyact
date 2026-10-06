@@ -46,6 +46,9 @@ def _apply_custom_generation_settings(body: dict, provider_config: dict) -> None
     if not str(provider_config.get("selection_type", "")).startswith("custom:"):
         return
     body.pop("temperature", None)
+    temperature = provider_config.get("temperature") or {}
+    if temperature.get("enabled") and temperature.get("parameter"):
+        body[temperature["parameter"]] = temperature["value"]
     output_limit = provider_config.get("max_output_tokens")
     output_parameter = provider_config.get("output_token_parameter")
     if output_limit is not None and output_parameter:

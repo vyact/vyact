@@ -133,9 +133,16 @@ export interface ConnectionReasoningSettings {
     stages: Array<{label: string; value: string}>;
 }
 
+export interface ConnectionTemperatureSettings {
+    enabled: boolean;
+    parameter: string;
+    value: number;
+}
+
 export interface CustomProviderSettings {
     max_output_tokens?: number | null;
     output_token_parameter?: string;
+    temperature?: ConnectionTemperatureSettings | null;
     history_token_budget?: number | null;
     reasoning?: ConnectionReasoningSettings | null;
     id: string;
@@ -150,6 +157,7 @@ export interface CustomProviderSettings {
 export interface CustomProviderPayload {
     max_output_tokens?: number | null;
     output_token_parameter?: string;
+    temperature?: ConnectionTemperatureSettings | null;
     history_token_budget?: number | null;
     copy_from_id?: string;
     reasoning?: ConnectionReasoningSettings | null;

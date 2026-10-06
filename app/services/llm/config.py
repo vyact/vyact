@@ -96,6 +96,7 @@ async def get_provider_config() -> dict:
                         "selection_type": selected_type,
                         "connection_name": connection.get("name", selected_type),
                         "reasoning": connection.get("reasoning"),
+                        "temperature": connection.get("temperature"),
                         "max_output_tokens": connection.get("max_output_tokens"),
                         "output_token_parameter": connection.get("output_token_parameter", ""),
                         "history_token_budget": connection.get("history_token_budget"),

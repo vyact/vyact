@@ -68,3 +68,9 @@
 
 .custom-provider-editor .setting-label-help { display: grid; place-items: center; flex: 0 0 18px; width: 18px; height: 18px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: help; }
 .custom-provider-editor .setting-label-help:hover, .custom-provider-editor .setting-label-help:focus-visible { outline: none; box-shadow: none; background: transparent; color: var(--accent); }
+
+.connection-temperature-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+
+.custom-provider-editor .connection-temperature-field { display: flex; flex-direction: row; align-items: center; gap: 12px; }
+.connection-temperature-field > span { flex-shrink: 0; }
+.connection-temperature-field > input { min-width: 0; flex: 1; }

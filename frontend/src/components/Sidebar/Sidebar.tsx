@@ -538,8 +538,8 @@ const Sidebar: React.FC<SidebarProps> = ({
         if (!providerToDelete) return;
         try {
             await api.deleteCustomProvider(providerToDelete.id);
-            await api.selectProvider('vyact');
-            setCurrentProvider('vyact');
+            setCustomProviders(current => current.filter(item => item.id !== providerToDelete.id));
+            setProviderToDelete(null);
             await loadCurrentProvider();
             await onProviderChange();
         } catch (e) {
