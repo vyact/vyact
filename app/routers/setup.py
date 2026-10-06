@@ -388,8 +388,14 @@ class ConnectionReasoningRequest(BaseModel):
 
 class ConnectionTemperatureRequest(BaseModel):
     enabled: bool = False
-    parameter: str = Field(default="temperature", pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")
-    value: float = Field(default=0.2, ge=0, le=2, allow_inf_nan=False)
+    parameter: str = Field(default="", pattern=r"^(?:[A-Za-z_][A-Za-z0-9_]*)?$")
+    value: float | None = Field(default=None, ge=0, le=2, allow_inf_nan=False)
+
+    @model_validator(mode="after")
+    def validate_temperature_settings(self):
+        if self.enabled and (not self.parameter or self.value is None):
+            raise ValueError("A temperature parameter and value are required when enabled")
+        return self
 
 
 class CustomProviderRequest(BaseModel):

@@ -136,7 +136,7 @@ export interface ConnectionReasoningSettings {
 export interface ConnectionTemperatureSettings {
     enabled: boolean;
     parameter: string;
-    value: number;
+    value: number | null;
 }
 
 export interface CustomProviderSettings {

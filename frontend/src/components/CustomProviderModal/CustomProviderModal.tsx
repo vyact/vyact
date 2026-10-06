@@ -52,8 +52,8 @@ const CustomProviderEditor: React.FC<CustomProviderModalProps> = ({connection, d
         isValueVisible: false,
     })));
     const [temperatureEnabled, setTemperatureEnabled] = useState(initialConnection?.temperature?.enabled ?? false);
-    const [temperatureParameter, setTemperatureParameter] = useState(initialConnection?.temperature?.parameter ?? 'temperature');
-    const [temperatureValue, setTemperatureValue] = useState(String(initialConnection?.temperature?.value ?? 0.2));
+    const [temperatureParameter, setTemperatureParameter] = useState(initialConnection?.temperature?.parameter ?? '');
+    const [temperatureValue, setTemperatureValue] = useState(String(initialConnection?.temperature?.value ?? ''));
     const [reasoningEnabled, setReasoningEnabled] = useState(Boolean(initialConnection?.reasoning && initialConnection.reasoning.enabled !== false));
     const [reasoning, setReasoning] = useState(initialConnection?.reasoning ?? {parameter: '', control: 'toggle' as 'toggle' | 'effort', stages: [] as Array<{label: string; value: string}>});
     const [draggedStageIndex, setDraggedStageIndex] = useState<number | null>(null);
@@ -136,7 +136,7 @@ const CustomProviderEditor: React.FC<CustomProviderModalProps> = ({connection, d
                 max_output_tokens: maxOutputTokens === '' ? null : Number(maxOutputTokens),
                 output_token_parameter: outputTokenParameter.trim(),
                 history_token_budget: historyTokenBudget === '' ? null : Number(historyTokenBudget),
-                temperature: {enabled: temperatureEnabled, parameter: temperatureParameterName, value: temperatureValue.trim() !== '' && Number.isFinite(temperatureNumber) ? temperatureNumber : 0.2},
+                temperature: {enabled: temperatureEnabled, parameter: temperatureParameterName, value: temperatureValue.trim() !== '' && Number.isFinite(temperatureNumber) ? temperatureNumber : null},
                 reasoning: {...reasoning, enabled: reasoningEnabled, parameter: reasoning.parameter.trim()},
                 headers: headers.map(header => ({name: header.name.trim(), value: header.value.trim()})),
             };
@@ -216,8 +216,8 @@ const CustomProviderEditor: React.FC<CustomProviderModalProps> = ({connection, d
                 <section className="provider-editor-section connection-temperature-section">
                     <div className="connection-reasoning-heading"><strong>{t('customProvider.temperature')}</strong><ToggleSwitch checked={temperatureEnabled} label={t('customProvider.temperature')} onChange={setTemperatureEnabled}/></div>
                     <div className="connection-temperature-fields">
-                        <label className="provider-editor-field connection-temperature-field"><span>{t('customProvider.parameter')}</span><input aria-label={t('customProvider.parameter')} placeholder={t('customProvider.parameter')} value={temperatureParameter} onChange={event => setTemperatureParameter(event.target.value)}/></label>
-                        <label className="provider-editor-field connection-temperature-field"><span>{t('customProvider.stageValue')}</span><input type="number" min="0" max="2" step="0.1" aria-label={t('customProvider.stageValue')} placeholder={t('customProvider.stageValue')} value={temperatureValue} onChange={event => setTemperatureValue(event.target.value)}/></label>
+                        <label className="provider-editor-field"><input aria-label={t('customProvider.parameter')} placeholder={t('customProvider.parameter')} value={temperatureParameter} onChange={event => setTemperatureParameter(event.target.value)}/></label>
+                        <label className="provider-editor-field"><input type="number" min="0" max="2" step="0.1" aria-label={t('customProvider.stageValue')} placeholder={t('customProvider.stageValue')} value={temperatureValue} onChange={event => setTemperatureValue(event.target.value)}/></label>
                     </div>
                 </section>
                 <section className="provider-editor-section provider-headers-section">
