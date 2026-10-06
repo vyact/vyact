@@ -155,7 +155,7 @@
 .email-editor-content .tiptap h1 { font-size: 1.45em; font-weight: 700; margin: 0.8em 0 0.4em; }
 .email-editor-content .tiptap h2 { font-size: 1.23em; font-weight: 700; margin: 0.7em 0 0.3em; }
 .email-editor-content .tiptap h3 { font-size: 1.15em; font-weight: 700; margin: 0.7em 0 0.35em; }
-.email-editor-content .tiptap p { margin: 0.3em 0; }
+.email-editor-content .tiptap p { margin: 0; }
 .email-editor-content .tiptap ul, .email-editor-content .tiptap ol { padding-left: 1.4em; margin: 0.3em 0; }
 .email-editor-content .tiptap li { margin: 0.2em 0; }
 .email-editor-content .tiptap blockquote {

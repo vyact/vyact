@@ -2,7 +2,7 @@ import {forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useStat
 import {useTranslation} from 'react-i18next';
 import {getMarkRange, mergeAttributes, Node as TiptapNode} from '@tiptap/core';
 import {useEditor, EditorContent, Editor} from '@tiptap/react';
-import {Node as ProseMirrorNode} from '@tiptap/pm/model';
+import {Fragment, Node as ProseMirrorNode, Slice} from '@tiptap/pm/model';
 import {NodeSelection, Plugin, TextSelection} from '@tiptap/pm/state';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -254,7 +254,7 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
 
     const editor = useEditor({
         extensions: [
-            StarterKit.configure({codeBlock: false}),
+            StarterKit.configure({codeBlock: false, link: false}),
             Placeholder.configure({placeholder: placeholder || ''}),
             Link.configure({openOnClick: false, autolink: true}),
             Table.configure({resizable: false, HTMLAttributes: {style: 'border-collapse: collapse; border: 0;'}}),
@@ -275,6 +275,19 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
         ],
         content,
         autofocus: autoFocus ? 'end' : false,
+        editorProps: {
+            clipboardTextParser: (text, context, _plainText, view) => {
+                // ProseMirror's default parser collapses consecutive newlines.
+                // Preserve each source line, including empty ones. Paragraphs
+                // have no extra margin, so the pasted layout matches plain text.
+                const {schema} = view.state;
+                const paragraphs = text.split(/\r\n?|\n/).map(line => schema.nodes.paragraph.create(
+                    null,
+                    line ? schema.text(line, context.marks()) : undefined,
+                ));
+                return Slice.maxOpen(Fragment.fromArray(paragraphs));
+            },
+        },
         onUpdate: ({editor: e}) => {
             // React state updates during IME composition can cancel Korean/Japanese input.
             if (isComposingRef.current || e.view.composing) return;
@@ -326,10 +339,11 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
         }
         const updatePosition = () => {
             const body = editorBodyRef.current;
-            const signature = editor.view.dom.querySelector<HTMLElement>('[data-mail-signature]');
-            if (!body) return;
+            const editorDom = body?.querySelector<HTMLElement>('.tiptap');
+            if (!body || !editorDom) return;
+            const signature = editorDom.querySelector<HTMLElement>('[data-mail-signature]');
             const bodyBounds = body.getBoundingClientRect();
-            const anchor = signature || editor.view.dom;
+            const anchor = signature || editorDom;
             const visibleNodes = Array.from(anchor.querySelectorAll<HTMLElement>(
                 'img, p, h1, h2, h3, li, blockquote, pre',
             )).filter(node => node.tagName === 'IMG' || Boolean(node.textContent?.trim()));
@@ -342,17 +356,23 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
             const preferredTop = visibleBottom - bodyBounds.top + body.scrollTop + 6;
             setOriginalExpandTop(Math.max(8, preferredTop));
         };
-        const frame = requestAnimationFrame(updatePosition);
         const observer = new ResizeObserver(updatePosition);
-        observer.observe(editor.view.dom);
-        if (editorBodyRef.current) observer.observe(editorBodyRef.current);
-        editorBodyRef.current?.addEventListener('scroll', updatePosition, {passive: true});
-        const images = Array.from(editor.view.dom.querySelectorAll('img'));
-        images.forEach(image => image.addEventListener('load', updatePosition));
+        const body = editorBodyRef.current;
+        let images: HTMLImageElement[] = [];
+        const frame = requestAnimationFrame(() => {
+            const editorDom = body?.querySelector<HTMLElement>('.tiptap');
+            if (!body || !editorDom) return;
+            observer.observe(editorDom);
+            observer.observe(body);
+            images = Array.from(editorDom.querySelectorAll('img'));
+            images.forEach(image => image.addEventListener('load', updatePosition));
+            updatePosition();
+        });
+        body?.addEventListener('scroll', updatePosition, {passive: true});
         return () => {
             cancelAnimationFrame(frame);
             observer.disconnect();
-            editorBodyRef.current?.removeEventListener('scroll', updatePosition);
+            body?.removeEventListener('scroll', updatePosition);
             images.forEach(image => image.removeEventListener('load', updatePosition));
         };
     }, [editor, isOriginalExpanded, originalHtmlSrcDoc, content]);
@@ -447,6 +467,12 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
 
     const focusBodyEnd = useCallback(() => {
         if (!editor) return;
+        // A drag can finish over editor padding and trigger the container click.
+        // Leave the browser's selection intact instead of moving it to the end.
+        const browserSelection = editor.view.dom.ownerDocument.getSelection();
+        if (browserSelection && !browserSelection.isCollapsed
+            && (editor.view.dom.contains(browserSelection.anchorNode)
+                || editor.view.dom.contains(browserSelection.focusNode))) return;
         let signaturePosition: number | null = null;
         let lastTextPosition: number | null = null;
         editor.state.doc.descendants((node, position) => {
@@ -514,7 +540,7 @@ const EmailEditor = forwardRef<EmailEditorHandle, EmailEditorProps>(({content, o
             if (event.target === event.currentTarget) focusBodyEnd();
         }}>
             <div className="email-editor-content" style={isOriginalExpanded && expandedBodyHeight !== null ? {minHeight: expandedBodyHeight} : undefined} onClick={event => {
-                if (event.target === event.currentTarget || event.target === editor.view.dom) focusBodyEnd();
+                if (event.target === event.currentTarget) focusBodyEnd();
             }}>
                 <EditorContent
                     editor={editor}
