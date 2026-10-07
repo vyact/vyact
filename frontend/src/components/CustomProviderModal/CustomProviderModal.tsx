@@ -214,7 +214,7 @@ const CustomProviderEditor: React.FC<CustomProviderModalProps> = ({connection, d
                     </fieldset>
                 </section>
                 <section className="provider-editor-section connection-temperature-section">
-                    <div className="connection-reasoning-heading"><strong>{t('customProvider.temperature')}</strong><ToggleSwitch checked={temperatureEnabled} label={t('customProvider.temperature')} onChange={setTemperatureEnabled}/></div>
+                    <div className="connection-reasoning-heading"><SettingLabel helpHoverOnly helpPlacement="below" label={t('customProvider.temperature')} help={<HelpCard title={t('customProvider.temperature')} items={[t('customProvider.temperatureHelp'), t('customProvider.temperatureBehavior')]} note={t('customProvider.temperatureNote')}/>}/><ToggleSwitch checked={temperatureEnabled} label={t('customProvider.temperature')} onChange={setTemperatureEnabled}/></div>
                     <div className="connection-temperature-fields">
                         <label className="provider-editor-field"><input aria-label={t('customProvider.parameter')} placeholder={t('customProvider.parameter')} value={temperatureParameter} onChange={event => setTemperatureParameter(event.target.value)}/></label>
                         <label className="provider-editor-field"><input type="number" min="0" max="2" step="0.1" aria-label={t('customProvider.stageValue')} placeholder={t('customProvider.stageValue')} value={temperatureValue} onChange={event => setTemperatureValue(event.target.value)}/></label>
