@@ -73,8 +73,8 @@
 
 .attachment-preview-list {
     display:flex;
-    gap:8px;
-    padding:8px 2px 2px;
+    gap:12px;
+    padding:8px 6px 2px;
     flex-wrap:wrap;
     align-items:center;
 }
@@ -99,10 +99,28 @@
 .pasted-text-preview__remove { position:absolute; top:7px; right:8px; display:grid; place-items:center; width:16px; height:16px; border:1px solid var(--border); border-radius:50%; background:var(--control-bg); color:var(--text-secondary); cursor:pointer; }
 .pasted-text-preview__remove:hover { background:var(--control-hover); color:var(--text); }
 .image-attachment-preview { position:relative; display:inline-flex; flex-direction:column; align-items:center; gap:4px; }
-.attachment-remove-btn { display:grid; place-items:center; border:1px solid var(--border); border-radius:50%; background:var(--control-bg); color:var(--text-secondary); cursor:pointer; box-shadow:var(--shadow-sm); }
-.attachment-remove-btn:hover { background:var(--control-hover); color:var(--text); }
-.attachment-remove-btn--image { position:absolute; top:4px; right:4px; width:16px; height:16px; }
-.attachment-remove-btn--file { position:absolute; top:6px; right:6px; width:16px; height:16px; }
+.attachment-remove-btn {
+    position:absolute;
+    top:-4px;
+    right:-4px;
+    z-index:1;
+    display:grid;
+    place-items:center;
+    width:20px;
+    height:20px;
+    padding:0;
+    box-sizing:border-box;
+    border:2px solid var(--surface);
+    border-radius:50%;
+    background:var(--text);
+    color:var(--surface);
+    cursor:pointer;
+    box-shadow:var(--shadow-sm);
+    transition:background .15s;
+}
+.attachment-remove-btn:hover { background:var(--text-secondary); }
+.attachment-remove-btn:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+
 
 .file-attachment-preview {
     position:relative;
@@ -140,13 +158,6 @@
 :root[data-theme='light'] .file-attachment-preview__icon {
     background: color-mix(in srgb, var(--accent) 10%, var(--surface));
     color: var(--accent);
-}
-
-:root[data-theme='light'] .attachment-remove-btn--file {
-    border-color: color-mix(in srgb, var(--text-secondary) 16%, var(--border));
-    background: var(--surface);
-    color: var(--text-secondary);
-    box-shadow: 0 2px 6px rgba(42, 61, 84, .12);
 }
 
 :root[data-theme='light'] .file-attachment-preview__name { color: var(--text); }
