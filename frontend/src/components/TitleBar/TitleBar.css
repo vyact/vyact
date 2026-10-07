@@ -60,6 +60,7 @@
     -webkit-app-region: drag;
 }
 .titlebar-tools { display: flex; align-items: center; gap: 4px; margin-right: 16px; -webkit-app-region: no-drag; }
+.titlebar-drag--interactive { -webkit-app-region: no-drag; }
 
 .titlebar-aspect-ratio-select {
     width: 68px;

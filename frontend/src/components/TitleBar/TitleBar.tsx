@@ -22,6 +22,21 @@ const TitleBar: React.FC<TitleBarProps> = ({sidebarCollapsed, onToggleSidebar, o
     const [maximized, setMaximized] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [screenshotAspectRatio, setScreenshotAspectRatio] = useState('');
+    const [aspectRatioVisible, setAspectRatioVisible] = useState(false);
+    const [commandPressed, setCommandPressed] = useState(false);
+
+    useEffect(() => {
+        const handleModifierChange = (event: KeyboardEvent) => setCommandPressed(event.metaKey);
+        const resetModifier = () => setCommandPressed(false);
+        window.addEventListener('keydown', handleModifierChange);
+        window.addEventListener('keyup', handleModifierChange);
+        window.addEventListener('blur', resetModifier);
+        return () => {
+            window.removeEventListener('keydown', handleModifierChange);
+            window.removeEventListener('keyup', handleModifierChange);
+            window.removeEventListener('blur', resetModifier);
+        };
+    }, []);
 
     useEffect(() => {
         const {ragAPI} = window;
@@ -67,10 +82,13 @@ const TitleBar: React.FC<TitleBarProps> = ({sidebarCollapsed, onToggleSidebar, o
             </div>
 
             {/* 중앙: 드래그 영역 */}
-            <div className="titlebar-drag" />
+            <div className={`titlebar-drag${commandPressed ? ' titlebar-drag--interactive' : ''}`}
+                 onDoubleClick={event => {
+                     if (event.metaKey) setAspectRatioVisible(visible => !visible);
+                 }}/>
 
             <div className="titlebar-tools">
-                <CustomSelect
+                {aspectRatioVisible && <CustomSelect
                     className="titlebar-aspect-ratio-select"
                     options={SCREENSHOT_ASPECT_RATIOS.map(value => ({value, label: value}))}
                     value={screenshotAspectRatio}
@@ -78,7 +96,7 @@ const TitleBar: React.FC<TitleBarProps> = ({sidebarCollapsed, onToggleSidebar, o
                     placeholder={t('screenshot.aspectRatio')}
                     alignRight
                     ariaLabel={t('screenshot.aspectRatio')}
-                />
+                />}
                 <button className="titlebar-btn" onClick={onScreenshot} aria-label={t('screenshot.captureCurrent')}>
                     <Camera size={15} />
                 </button>
