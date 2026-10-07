@@ -244,8 +244,10 @@ async def test_paste_markers_are_removed_before_choices_and_prompt(monkeypatch):
 async def test_cloud_provider_preserves_installed_and_selected_decision_model(monkeypatch):
     from routers import setup
     model = 'mlx/togethercomputer/Tev1-0.8B-experimental'
+    cloud_model = 'cloud/test/Jev'
     monkeypatch.setattr(setup, 'load_config_async', AsyncMock(return_value={
         'type': 'custom:groq', 'model': 'cloud-qwen', 'decision_config': {'model_path': model},
+        'decision_connections': [{'model_path': cloud_model}],
     }))
     monkeypatch.setattr(setup, 'is_apple_silicon', lambda: True)
     monkeypatch.setattr(setup, 'list_selectable_models', lambda: [])
@@ -253,7 +255,7 @@ async def test_cloud_provider_preserves_installed_and_selected_decision_model(mo
     result = await setup.get_models()
     assert result['current'] == 'cloud-qwen'
     assert result['decision_current'] == model
-    assert result['decision_installed'] == [model]
+    assert result['decision_installed'] == [model, cloud_model]
     assert result['installed'] == [model]
 
 

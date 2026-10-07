@@ -840,8 +840,9 @@ async def get_models():
     cfg = await load_config_async()
     mlx_available = is_apple_silicon()
     installed_models = [*list_selectable_models(), *(list_downloaded_mlx_models() if mlx_available else [])]
+    installed_decision_models = [model for model in installed_models if is_decision_model(model)]
     decision_fields = {
-        "decision_installed": [model for model in installed_models if is_decision_model(model)] + [item["model_path"] for item in cfg.get("decision_connections", [])],
+        "decision_installed": installed_decision_models + [item["model_path"] for item in cfg.get("decision_connections", [])],
         "decision_current": cfg.get("decision_config", {}).get("model_path", ""),
     }
     if cfg.get("type") == "vyact":
@@ -884,7 +885,7 @@ async def get_models():
     return {
         "models": [[cfg.get("model")]] if cfg.get("model") else [],
         "current": cfg.get("model", ""),
-        "installed": decision_fields["decision_installed"],
+        "installed": installed_decision_models,
         **decision_fields,
         "model_type": cfg.get("model_type", "chat"),
     }
