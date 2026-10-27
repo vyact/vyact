@@ -202,3 +202,28 @@
 .novel-query-heading {display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px;}
 .novel-query-heading h4 {margin: 0;}
 .novel-query-copy {flex-shrink: 0;}
+.novel-task-guidance {flex-shrink: 0; margin-bottom: 14px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface);}
+.novel-task-guidance-heading {display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12px; color: var(--text-secondary);}
+.novel-assistant .novel-task-guidance-editor {min-height: 130px; height: 150px; max-height: 300px; margin: 10px 0 0; padding: 8px; background: var(--bg-secondary); font-size: 12px;}
+.novel-task-guidance-editor:disabled {opacity: .45;}
+.novel-studio .workspace-layout-inspector {overflow: hidden;}
+.novel-assistant {min-height: 0; height: 100%; overflow: hidden; padding: 18px 16px;}
+.novel-request-controls {min-height: 0; gap: 0;}
+.novel-request-controls #novel-instruction {min-height: 64px; resize: none; overflow: auto;}
+.novel-task-guidance {margin-bottom: 12px; padding: 10px;}
+.novel-assistant .novel-task-guidance-editor {min-height: 48px; height: clamp(60px, 12vh, 140px); max-height: none; resize: none; overflow: auto; margin-top: 8px;}
+.novel-assistant-description {margin: 8px 0; line-height: 1.6;}
+.novel-context {padding-bottom: 12px;}
+.novel-prompts.settings-actions {margin-bottom: 14px;}
+@media (max-height: 850px) {.novel-assistant-description {display: none;} .novel-assistant-heading {margin-bottom: 10px;} .novel-assistant .novel-task-guidance-editor {height: 76px;} .novel-prompts.settings-actions button {padding-top: 8px; padding-bottom: 8px;}}
+@media (max-height: 600px) {.novel-assistant {padding: 10px 12px;} .novel-context {padding-bottom: 7px;} .novel-prompts.settings-actions {gap: 5px; margin-bottom: 8px;} .novel-prompts.settings-actions button {padding: 5px;} .novel-assistant .novel-task-guidance-editor {height: 48px;} .novel-task-guidance {margin-bottom: 8px; padding: 7px;} .novel-request-controls #novel-instruction {min-height: 48px; margin: 5px 0 8px;}}
+
+.novel-candidate-select {display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; cursor: pointer; user-select: none; -webkit-user-select: none;}
+.novel-candidate-select>input {flex-shrink: 0;}
+.novel-candidate-select>span {font-size: 14px; line-height: 1.6; overflow-wrap: anywhere;}
+.novel-candidate-select:has(input:disabled) {cursor: not-allowed;}
+
+.novel-assistant-heading {margin-bottom: 0;}
+.novel-assistant-heading:has(+ .novel-request-controls),
+.novel-assistant-heading:has(+ .novel-response-save) {margin-bottom: 18px;}
+@media (max-height: 850px) {.novel-assistant-heading:has(+ .novel-assistant-description) {margin-bottom: 18px;}}

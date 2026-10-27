@@ -1767,6 +1767,20 @@
     "viewShort": "查看",
     "backToList": "返回列表",
     "savedCandidate": "已保存候选",
-    "missingGenerationQuery": "无已保存提问"
+    "missingGenerationQuery": "无已保存提问",
+    "taskGuidance": "附加指令",
+    "includeTaskGuidance": "包含附加指令",
+    "createDirectionPlaceholder": "例：成人悬疑、安静紧张的氛围、30章连载",
+    "createPremisePlaceholder": "例：借出记忆的管理员追寻自己的过去",
+    "createCharactersPlaceholder": "例：谨慎的管理员与隐藏秘密的访客",
+    "createWorldPlaceholder": "例：现代首尔、午夜图书馆、记忆交易规则",
+    "createPlotPlaceholder": "例：开头失踪、中段背叛、开放式结局",
+    "createStylePlaceholder": "例：第三人称限知、短句、以描写为主",
+    "startPlaceholder": "例：雨夜在图书馆发现神秘的书",
+    "continuePlaceholder": "例：续写门外陌生人开口说话的场景",
+    "outlinePlaceholder": "例：本章围绕发现线索和追逐展开",
+    "reviewPlaceholder": "例：检查人物动机和时间线矛盾",
+    "synthesisPlaceholder": "例：重点整理人物动机，保留未定部分",
+    "manuscriptApplyHelp": "保存后将追加到当前章节末尾。"
   }
 }

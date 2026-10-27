@@ -1768,6 +1768,20 @@
     "viewShort": "View",
     "backToList": "Back to list",
     "savedCandidate": "Saved candidate",
-    "missingGenerationQuery": "No saved question"
+    "missingGenerationQuery": "No saved question",
+    "taskGuidance": "Additional task guidance",
+    "includeTaskGuidance": "Include task guidance",
+    "createDirectionPlaceholder": "e.g. Adult mystery, quiet suspense, 30 chapters",
+    "createPremisePlaceholder": "e.g. A librarian who lends memories investigates her own past",
+    "createCharactersPlaceholder": "e.g. A cautious librarian and a visitor hiding a secret",
+    "createWorldPlaceholder": "e.g. Modern Seoul, a midnight library, rules of memory trading",
+    "createPlotPlaceholder": "e.g. A disappearance, a betrayal, then an open ending",
+    "createStylePlaceholder": "e.g. Third-person limited, short sentences, descriptive prose",
+    "startPlaceholder": "e.g. Discovering a mysterious book on a rainy night",
+    "continuePlaceholder": "e.g. Continue with a stranger speaking from outside the door",
+    "outlinePlaceholder": "e.g. Build this chapter around a clue and a chase",
+    "reviewPlaceholder": "e.g. Check character motivation and timeline contradictions",
+    "synthesisPlaceholder": "e.g. Focus on motivations and leave unresolved details open",
+    "manuscriptApplyHelp": "Saving appends this text to the end of the current chapter."
   }
 }

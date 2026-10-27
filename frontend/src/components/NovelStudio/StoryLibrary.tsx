@@ -43,7 +43,7 @@ export default function StoryLibrary({stories, activeId, disabled, onSelect, onR
                 <button className="hist-menu-item danger" onClick={() => {setMenuId(null); setDeleting(story);}}><Trash2 size={14}/>{t('novelStudio.delete')}</button>
             </ActionMenu>
         </div>)}
-        {deleting && <ConfirmModal title={t('novelStudio.deleteTitle')} description={t('novelStudio.deleteDescription', {title: deleting.title})}
+        {deleting && <ConfirmModal actionLayout="horizontal" title={t('novelStudio.deleteTitle')} description={t('novelStudio.deleteDescription', {title: deleting.title})}
             options={[{label: t('novelStudio.keep'), value: 'cancel'}, {label: t('novelStudio.delete'), value: 'delete', variant: 'danger'}]}
             onClose={() => setDeleting(null)} onSelect={value => {if (value === 'delete') onDelete(deleting.id); setDeleting(null);}}/>}
     </div>;

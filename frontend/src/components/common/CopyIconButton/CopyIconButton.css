@@ -1,0 +1,2 @@
+button.copy-icon-button.copy-icon-button--copied {color: var(--success);}
+button.copy-icon-button.copy-icon-button--copied:hover {color: var(--success); background: color-mix(in srgb, var(--success) 9%, transparent);}

@@ -1769,6 +1769,20 @@
     "viewShort": "Voir",
     "backToList": "Retour à la liste",
     "savedCandidate": "Proposition enregistrée",
-    "missingGenerationQuery": "Aucune question enregistrée"
+    "missingGenerationQuery": "Aucune question enregistrée",
+    "taskGuidance": "Consignes supplémentaires",
+    "includeTaskGuidance": "Inclure les consignes",
+    "createDirectionPlaceholder": "Ex. Mystère adulte, tension discrète, 30 chapitres",
+    "createPremisePlaceholder": "Ex. Une bibliothécaire prête des souvenirs et enquête sur son passé",
+    "createCharactersPlaceholder": "Ex. Une bibliothécaire prudente et un visiteur mystérieux",
+    "createWorldPlaceholder": "Ex. Séoul moderne, bibliothèque de minuit, commerce des souvenirs",
+    "createPlotPlaceholder": "Ex. Disparition, trahison, puis fin ouverte",
+    "createStylePlaceholder": "Ex. Troisième personne limitée, phrases courtes, descriptions",
+    "startPlaceholder": "Ex. Découverte d’un livre mystérieux par une nuit pluvieuse",
+    "continuePlaceholder": "Ex. Un inconnu prend la parole derrière la porte",
+    "outlinePlaceholder": "Ex. Un indice et une poursuite structurent ce chapitre",
+    "reviewPlaceholder": "Ex. Vérifier les motivations et la chronologie",
+    "synthesisPlaceholder": "Ex. Privilégier les motivations et garder les points indécis",
+    "manuscriptApplyHelp": "L’enregistrement ajoute ce texte à la fin du chapitre actuel."
   }
 }

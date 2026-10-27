@@ -1767,6 +1767,20 @@
     "viewShort": "表示",
     "backToList": "一覧に戻る",
     "savedCandidate": "保存した候補",
-    "missingGenerationQuery": "保存された質問なし"
+    "missingGenerationQuery": "保存された質問なし",
+    "taskGuidance": "追加の指示",
+    "includeTaskGuidance": "追加の指示を含める",
+    "createDirectionPlaceholder": "例：大人向けミステリー、静かな緊張感、全30章",
+    "createPremisePlaceholder": "例：記憶を貸す司書が自分の過去を追う物語",
+    "createCharactersPlaceholder": "例：慎重な司書と秘密を隠す訪問者",
+    "createWorldPlaceholder": "例：現代ソウル、真夜中の図書館、記憶取引のルール",
+    "createPlotPlaceholder": "例：失踪事件、裏切り、余韻のある結末",
+    "createStylePlaceholder": "例：三人称限定、短い文、描写中心",
+    "startPlaceholder": "例：雨の夜、不思議な本を発見する場面",
+    "continuePlaceholder": "例：扉の外の見知らぬ人物が話しかける展開",
+    "outlinePlaceholder": "例：手がかりの発見と追跡で構成して",
+    "reviewPlaceholder": "例：人物の動機と時系列の矛盾を確認して",
+    "synthesisPlaceholder": "例：動機を中心に整理し、未定部分は残して",
+    "manuscriptApplyHelp": "保存すると現在の章の末尾に追加されます。"
   }
 }

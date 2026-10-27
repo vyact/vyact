@@ -36,6 +36,7 @@ class SettingCandidate(SelectedSetting):
 
 class NovelGenerationRequest(BaseModel):
     title: str = Field(max_length=200)
+    chapter_title: str = Field(default="", max_length=200)
     bible: str = Field(max_length=20000)
     previous: str = Field(max_length=30000)
     manuscript: str = Field(max_length=30000)
@@ -53,7 +54,7 @@ class NovelGenerationRequest(BaseModel):
         return notes
 
 
-def parse_candidate_response(result: str) -> dict[str, str]:
+def parse_writing_response(result: str) -> dict[str, str]:
     text = result.strip()
     payload = re.sub(r"^```(?:json)?\s*\n|\n```$", "", text, flags=re.IGNORECASE).strip()
     try:
@@ -83,7 +84,7 @@ async def generate_novel(body: NovelGenerationRequest):
         f"[{note.category}] {note.title}\n{note.content}" for note in body.selected_settings
     )
     prompt = (
-        f"Output language: {body.language}\nTitle: {body.title}\n"
+        f"Output language: {body.language}\nWork title: {body.title}\nCurrent chapter title: {body.chapter_title}\n"
         f"Story bible (established facts):\n{body.bible}\n"
         f"Earlier chapters:\n{body.previous}\nCurrent manuscript:\n{body.manuscript}\n"
         f"Selected setting candidates:\n{selected_context}\n"
@@ -111,6 +112,14 @@ async def generate_novel(body: NovelGenerationRequest):
         'Markdown proposal. Do not wrap the JSON in code fences or add commentary. '
         if is_candidate else "Return only the requested prose or planning text, without a preamble. "
     )
+    if body.target == "text":
+        output_instruction = (
+            'Return exactly one JSON object with keys "title" and "text". '
+            'The title must be a concise, meaningful title for the CURRENT CHAPTER in the output language, '
+            'not a work title or a generic label such as Chapter 1. Base it on the chapter manuscript '
+            'and the requested scene. The text must contain the full requested prose or planning response. '
+            'Do not put the title inside the prose. Do not wrap the JSON in code fences or add commentary. '
+        )
     result = await query_llm(
         prompt, [],
         task + "You are a fiction writing partner. Follow the author's request and preserve established "
@@ -121,7 +130,7 @@ async def generate_novel(body: NovelGenerationRequest):
         [], [], timeout=180.0, format_instruction_override="", inject_user_profile=False,
         use_tools=False, reasoning=False, call_reason="novel_studio:generate",
     )
-    return parse_candidate_response(result) if is_candidate else {"text": result.strip()}
+    return parse_writing_response(result) if is_candidate or body.target == "text" else {"text": result.strip()}
 
 
 class NovelChapter(BaseModel):

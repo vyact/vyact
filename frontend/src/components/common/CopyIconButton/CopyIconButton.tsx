@@ -1,4 +1,5 @@
 import {useEffect, useState} from 'react';
+import './CopyIconButton.css';
 import {Check, Copy} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {copyToClipboard} from '../../../utils/helpers';
@@ -11,7 +12,7 @@ export default function CopyIconButton({text, className = 'icon-btn'}: {text: st
         const timer = setTimeout(() => setCopied(false), 1500);
         return () => clearTimeout(timer);
     }, [copied]);
-    return <button type="button" className={className} data-tooltip-disabled="" aria-label={t(copied ? 'codeFileViewer.copied' : 'codeFileViewer.copy')}
+    return <button type="button" className={`copy-icon-button ${className}${copied ? ' copy-icon-button--copied' : ''}`} data-tooltip-disabled="" aria-label={t(copied ? 'codeFileViewer.copied' : 'codeFileViewer.copy')}
         onClick={async event => {
             event.preventDefault();
             event.stopPropagation();

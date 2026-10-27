@@ -1768,6 +1768,20 @@
     "viewShort": "Ver",
     "backToList": "Volver a la lista",
     "savedCandidate": "Propuesta guardada",
-    "missingGenerationQuery": "Sin consulta guardada"
+    "missingGenerationQuery": "Sin consulta guardada",
+    "taskGuidance": "Instrucciones adicionales",
+    "includeTaskGuidance": "Incluir instrucciones",
+    "createDirectionPlaceholder": "Ej.: misterio adulto, tensión tranquila, 30 capítulos",
+    "createPremisePlaceholder": "Ej.: una bibliotecaria presta recuerdos e investiga su pasado",
+    "createCharactersPlaceholder": "Ej.: bibliotecaria cauta y visitante con un secreto",
+    "createWorldPlaceholder": "Ej.: Seúl actual, biblioteca a medianoche, comercio de recuerdos",
+    "createPlotPlaceholder": "Ej.: desaparición, traición y final abierto",
+    "createStylePlaceholder": "Ej.: tercera persona limitada, frases cortas y descripción",
+    "startPlaceholder": "Ej.: descubrir un libro misterioso una noche lluviosa",
+    "continuePlaceholder": "Ej.: un desconocido habla desde fuera de la puerta",
+    "outlinePlaceholder": "Ej.: organizar el capítulo con una pista y una persecución",
+    "reviewPlaceholder": "Ej.: comprobar motivaciones y contradicciones temporales",
+    "synthesisPlaceholder": "Ej.: centrarse en motivaciones y mantener lo no decidido",
+    "manuscriptApplyHelp": "Al guardar, el texto se añade al final del capítulo actual."
   }
 }

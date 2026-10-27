@@ -1767,6 +1767,20 @@
     "viewShort": "Xem",
     "backToList": "Về danh sách",
     "savedCandidate": "Phương án đã lưu",
-    "missingGenerationQuery": "Chưa lưu câu hỏi"
+    "missingGenerationQuery": "Chưa lưu câu hỏi",
+    "taskGuidance": "Hướng dẫn bổ sung",
+    "includeTaskGuidance": "Gửi hướng dẫn bổ sung",
+    "createDirectionPlaceholder": "Ví dụ: bí ẩn cho người lớn, không khí trầm, 30 chương",
+    "createPremisePlaceholder": "Ví dụ: thủ thư cho mượn ký ức tìm lại quá khứ của mình",
+    "createCharactersPlaceholder": "Ví dụ: thủ thư thận trọng và vị khách giấu bí mật",
+    "createWorldPlaceholder": "Ví dụ: Seoul hiện đại, thư viện nửa đêm, luật trao đổi ký ức",
+    "createPlotPlaceholder": "Ví dụ: mất tích, phản bội, rồi kết thúc mở",
+    "createStylePlaceholder": "Ví dụ: ngôi ba hạn tri, câu ngắn, thiên về miêu tả",
+    "startPlaceholder": "Ví dụ: phát hiện cuốn sách bí ẩn trong đêm mưa",
+    "continuePlaceholder": "Ví dụ: người lạ ngoài cửa bắt đầu lên tiếng",
+    "outlinePlaceholder": "Ví dụ: chương này gồm tìm manh mối và truy đuổi",
+    "reviewPlaceholder": "Ví dụ: kiểm tra động cơ và mâu thuẫn thời gian",
+    "synthesisPlaceholder": "Ví dụ: tập trung động cơ, giữ nguyên phần chưa quyết định",
+    "manuscriptApplyHelp": "Khi lưu, nội dung sẽ được thêm vào cuối chương hiện tại."
   }
 }

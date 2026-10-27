@@ -1767,6 +1767,20 @@
     "viewShort": "ดู",
     "backToList": "กลับไปที่รายการ",
     "savedCandidate": "ตัวเลือกที่บันทึก",
-    "missingGenerationQuery": "ไม่มีคำถามที่บันทึกไว้"
+    "missingGenerationQuery": "ไม่มีคำถามที่บันทึกไว้",
+    "taskGuidance": "คำสั่งเพิ่มเติม",
+    "includeTaskGuidance": "รวมคำสั่งเพิ่มเติม",
+    "createDirectionPlaceholder": "เช่น เรื่องลึกลับสำหรับผู้ใหญ่ บรรยากาศสงบ 30 บท",
+    "createPremisePlaceholder": "เช่น บรรณารักษ์ที่ให้ยืมความทรงจำสืบหาอดีตของตน",
+    "createCharactersPlaceholder": "เช่น บรรณารักษ์รอบคอบกับผู้มาเยือนที่มีความลับ",
+    "createWorldPlaceholder": "เช่น โซลยุคปัจจุบัน ห้องสมุดเที่ยงคืน กฎแลกความทรงจำ",
+    "createPlotPlaceholder": "เช่น คนหาย การทรยศ และตอนจบแบบเปิด",
+    "createStylePlaceholder": "เช่น บุคคลที่สามแบบจำกัด ประโยคสั้น เน้นบรรยาย",
+    "startPlaceholder": "เช่น พบหนังสือลึกลับในคืนฝนตก",
+    "continuePlaceholder": "เช่น คนแปลกหน้านอกประตูเริ่มพูด",
+    "outlinePlaceholder": "เช่น บทนี้มีการพบเบาะแสและไล่ตาม",
+    "reviewPlaceholder": "เช่น ตรวจแรงจูงใจและความขัดแย้งของลำดับเวลา",
+    "synthesisPlaceholder": "เช่น เน้นแรงจูงใจและคงส่วนที่ยังไม่ตัดสินใจ",
+    "manuscriptApplyHelp": "เมื่อบันทึก ข้อความจะถูกเพิ่มที่ท้ายบทปัจจุบัน"
   }
 }

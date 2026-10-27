@@ -1,7 +1,8 @@
+import ToggleSwitch from '../common/ToggleSwitch/ToggleSwitch';
 import {buildWritingInstruction} from './writingInstruction';
 import {downloadNovel, type NovelExportFormat} from './storyExport';
 import {useEffect, useRef, useState} from 'react';
-import {Plus, Feather, Sparkles, Check, LoaderCircle, ArrowRight, ArrowLeft, Undo2, MoreHorizontal, Download} from 'lucide-react';
+import {Plus, Feather, Sparkles, LoaderCircle, ArrowRight, ArrowLeft, Undo2, MoreHorizontal, Download} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import CandidateReader from './CandidateReader';
 import ProposalReader from './ProposalReader';
@@ -26,6 +27,8 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
     const [chapterMenuId, setChapterMenuId] = useState<string | null>(null);
     const instructionRef = useRef<HTMLTextAreaElement>(null);
     const [instruction, setInstruction] = useState('');
+    const [includeTaskGuidance, setIncludeTaskGuidance] = useState(true);
+    const [taskGuidanceEdits, setTaskGuidanceEdits] = useState<Record<string, string>>({});
     const [proposal, setProposal] = useState('');
     const [responseVisible, setResponseVisible] = useState(false);
     const [selectedAction, setSelectedAction] = useState('customRequest');
@@ -65,12 +68,18 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
             const selected = (story.settingsCandidates ?? []).filter(candidate => candidate.selected).map(({category, title, content}) => ({category, title, content}));
             if (tab === 'bible' && selected.reduce((sum, candidate) => sum + candidate.content.length + candidate.title.length, 0) > 50000) throw new Error('settings-context-limit');
             const position = story.chapters.findIndex(item => item.id === chapter.id);
-            const response = await fetch('/api/novel-studio/generate', {method: 'POST', signal: controller.current.signal, headers: {'Content-Type': 'application/json'}, body: JSON.stringify({title: story.title.slice(0, 200), bible: story.bible.slice(0, 20000), previous: story.chapters.slice(0, position).map(item => `${item.title}\n${item.text}`).join('\n\n').slice(-30000), manuscript: chapter.text.slice(-30000), instruction: request, target: tab, ...(tab === 'bible' ? {settings_stage: action, selected_settings: selected} : {}), language: i18n.resolvedLanguage || i18n.language})});
+            const response = await fetch('/api/novel-studio/generate', {method: 'POST', signal: controller.current.signal, headers: {'Content-Type': 'application/json'}, body: JSON.stringify({title: story.title.slice(0, 200), chapter_title: chapter.title.slice(0, 200), bible: story.bible.slice(0, 20000), previous: story.chapters.slice(0, position).map(item => `${item.title}\n${item.text}`).join('\n\n').slice(-30000), manuscript: chapter.text.slice(-30000), instruction: request, target: tab, ...(tab === 'bible' ? {settings_stage: action, selected_settings: selected} : {}), language: i18n.resolvedLanguage || i18n.language})});
             if (!response.ok) throw new Error('Generation failed');
             const data = await response.json();
             if (typeof data.text !== 'string' || !data.text.trim()) throw new Error('Empty generation');
             setProposal(data.text);
-            if (typeof data.title === 'string') setCandidateTitle(data.title.trim().slice(0, 200));
+            if (typeof data.title === 'string' && data.title.trim()) {
+                const generatedTitle = data.title.trim().slice(0, 200);
+                setCandidateTitle(generatedTitle);
+                if (tab === 'text' && action !== 'review') {
+                    setStories(items => items.map(item => item.id === story.id ? {...item, chapters: item.chapters.map(current => current.id === chapter.id ? {...current, title: generatedTitle} : current)} : item));
+                }
+            }
         } catch (failure) {setResponseVisible(false); if (!(failure instanceof DOMException && failure.name === 'AbortError')) setError(tr(failure instanceof Error && failure.message === 'settings-context-limit' ? 'selectionLimit' : 'generationError'));}
         finally {setBusy(false); controller.current = null;}
     };
@@ -104,8 +113,8 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
         setTab('text'); setProposal(''); setResponseVisible(false);
 
     };
-    const taskGuidance = selectedAction === 'customRequest' ? '' : tr(`${selectedAction}Prompt`);
-    const writingRequest = buildWritingInstruction(taskGuidance, instruction);
+    const taskGuidance = selectedAction === 'customRequest' ? '' : taskGuidanceEdits[selectedAction] ?? tr(`${selectedAction}Prompt`);
+    const writingRequest = buildWritingInstruction(includeTaskGuidance ? taskGuidance : '', instruction);
     const header = <>
         <div className="novel-brand"><Feather size={19}/><h1>{tr('title')}</h1></div>
         {story && <input className="novel-story-title" aria-label={tr('storyTitle')} maxLength={200} value={story.title} onChange={event => updateStory({title: event.target.value})}/>}
@@ -133,12 +142,15 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
 
                 </nav>) : null}
         inspector={story ? (
-                <aside className="novel-assistant"><div className="novel-assistant-heading"><Sparkles size={18}/><h2>{tr('assistant')}</h2></div><p className="novel-assistant-description">{tr(tab === 'bible' ? 'settingsWorkflowHelp' : 'assistantHelp')}</p><div className="novel-context"><Check size={13}/>{tr('context')}</div>
-                    {responseVisible && !busy ? (<div className="novel-response-save"><div className="novel-section-heading">{tr('proposal')}</div><p className="novel-response-save-help">{tr(proposalTarget === 'text' ? 'assistantHelp' : proposalAction === 'synthesis' ? 'finalSettingsHelp' : 'responseSaveHelp')}</p>{proposalTarget === 'bible' && <div className="novel-response-save-target">{tr(proposalAction)}</div>}
+                <aside className="novel-assistant"><div className="novel-assistant-heading"><Sparkles size={18}/><h2>{tr('assistant')}</h2></div>{tab === 'bible' && <p className="novel-assistant-description">{tr('settingsWorkflowHelp')}</p>}
+                    {responseVisible && !busy ? (<div className="novel-response-save"><div className="novel-section-heading">{tr('proposal')}</div><p className="novel-response-save-help">{tr(proposalTarget === 'text' ? 'manuscriptApplyHelp' : proposalAction === 'synthesis' ? 'finalSettingsHelp' : 'responseSaveHelp')}</p>{proposalTarget === 'bible' && <div className="novel-response-save-target">{tr(proposalAction)}</div>}
                         {proposalTarget === 'bible' && proposalAction !== 'synthesis' && <input className="novel-candidate-name" aria-label={tr('candidateTitle')} placeholder={tr('candidateTitle')} maxLength={200} value={candidateTitle} onChange={event => setCandidateTitle(event.target.value)}/>}
                         <div className="novel-response-actions"><button className="modal-action-cancel" onClick={() => {setProposal(''); setResponseVisible(false);}}>{tr('discardShort')}</button>                        <button className="modal-action-submit" disabled={!proposal.trim()} onClick={() => {if (proposalTarget !== 'bible') appendProposal(); else if (proposalAction !== 'synthesis') saveCandidate(); else if (story.bible.trim()) setConfirmFinal(true); else applyFinalSettings();}}><Plus size={15}/>{tr('saveShort')}</button></div></div>) : <div className="novel-request-controls"><div className={`novel-prompts${tab === 'bible' ? ' settings-actions' : ''}`}>{(tab === 'bible' ? [...SETTING_CATEGORIES] : [chapter.text.trim() ? 'continue' : 'start', 'outline', 'review']).map(key => <button key={key} aria-pressed={selectedAction === key} disabled={busy || (key === 'review' && !chapter.text.trim())} title={key === 'review' && !chapter.text.trim() ? tr('reviewNeedsText') : undefined} onClick={() => {chooseAction(key);}}>{tr(key)}<ArrowRight size={14}/></button>)}</div>
-                    <p className="novel-prompt-help">{tr('promptHelp')}</p>
-                    <label className="novel-instruction-label" htmlFor="novel-instruction">{tr('instruction')}<span className="novel-action-badge">{tr(selectedAction)}</span></label><textarea ref={instructionRef} id="novel-instruction" maxLength={3000} value={instruction} onChange={event => setInstruction(event.target.value)} placeholder={taskGuidance || tr('instructionPlaceholder')}/>
+                    {selectedAction !== 'customRequest' && <div className="novel-task-guidance">
+                        <div className="novel-task-guidance-heading"><label htmlFor="novel-task-guidance">{tr('taskGuidance')}</label><ToggleSwitch checked={includeTaskGuidance} disabled={busy} label={tr('includeTaskGuidance')} onChange={setIncludeTaskGuidance}/></div>
+                        {includeTaskGuidance && <textarea id="novel-task-guidance" className="novel-task-guidance-editor" maxLength={2500} disabled={busy || !includeTaskGuidance} value={taskGuidance} onChange={event => setTaskGuidanceEdits(previous => ({...previous, [selectedAction]: event.target.value}))}/>}
+                    </div>}
+                    <label className="novel-instruction-label" htmlFor="novel-instruction">{tr('instruction')}<span className="novel-action-badge">{tr(selectedAction)}</span></label><textarea ref={instructionRef} id="novel-instruction" maxLength={3000} value={instruction} onChange={event => setInstruction(event.target.value)} placeholder={tr(selectedAction === 'customRequest' ? 'instructionPlaceholder' : `${selectedAction}Placeholder`)}/>
                     {busy ? <button className="modal-action-cancel" onClick={() => controller.current?.abort()}><LoaderCircle className="novel-spinner" size={15}/>{tr('cancel')}</button> : <button className="modal-action-submit" disabled={!writingRequest || (tab === 'bible' && selectedAction === 'synthesis' && !(story.settingsCandidates ?? []).some(candidate => candidate.selected))} onClick={() => void generate(writingRequest)}><Sparkles size={15}/>{tr('generate')}</button>}
 </div>}
 

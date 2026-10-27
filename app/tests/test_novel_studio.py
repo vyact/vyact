@@ -148,3 +148,14 @@ async def test_candidate_generation_returns_a_suggested_title_and_full_content()
     assert response == {"title": "기억을 빌리는 미스터리", "text": "# 작품 방향\n\n전체 제안 내용"}
     assert 'keys "title" and "text"' in model.call_args.args[2]
     model.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_manuscript_generation_returns_chapter_title_with_prose():
+    request = NovelGenerationRequest(title="The library", chapter_title="Chapter 2", bible="", previous="", manuscript="", instruction="Write the opening", target="text")
+    with patch("routers.novel_studio.query_llm", new=AsyncMock(return_value='{"title":"The door at midnight","text":"The last light went out."}')) as model:
+        response = await generate_novel(request)
+    assert response == {"title": "The door at midnight", "text": "The last light went out."}
+    assert "Current chapter title: Chapter 2" in model.call_args.args[0]
+    assert "CURRENT CHAPTER" in model.call_args.args[2]
+    model.assert_awaited_once()

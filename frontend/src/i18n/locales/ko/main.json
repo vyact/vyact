@@ -1777,6 +1777,20 @@
     "viewShort": "보기",
     "backToList": "목록으로",
     "savedCandidate": "저장한 후보",
-    "missingGenerationQuery": "저장된 질문 없음"
+    "missingGenerationQuery": "저장된 질문 없음",
+    "taskGuidance": "자동 추가 지시",
+    "includeTaskGuidance": "자동 추가 지시 포함",
+    "createDirectionPlaceholder": "예: 성인 독자를 위한 미스터리, 잔잔한 분위기, 30화 연재",
+    "createPremisePlaceholder": "예: 기억을 빌리는 사서가 자신의 과거를 추적하는 이야기",
+    "createCharactersPlaceholder": "예: 주인공은 신중한 사서, 조력자는 비밀을 숨긴 방문객",
+    "createWorldPlaceholder": "예: 현대 서울, 자정에만 열리는 도서관, 기억 거래의 규칙",
+    "createPlotPlaceholder": "예: 초반은 실종 사건, 중반은 배신, 결말은 열린 결말",
+    "createStylePlaceholder": "예: 3인칭 제한 시점, 짧은 문장, 대사보다 묘사 중심",
+    "startPlaceholder": "예: 비 오는 밤 도서관에서 의문의 책을 발견하는 장면",
+    "continuePlaceholder": "예: 문밖의 낯선 인물이 말을 거는 장면으로 이어줘",
+    "outlinePlaceholder": "예: 이번 회차는 단서 발견과 추격 장면으로 구성해줘",
+    "reviewPlaceholder": "예: 주인공의 행동 동기와 시간 순서의 모순을 확인해줘",
+    "synthesisPlaceholder": "예: 인물의 동기를 중심으로 정리하고 미정인 부분은 남겨줘",
+    "manuscriptApplyHelp": "저장하면 현재 회차 원고 끝에 추가됩니다."
   }
 }

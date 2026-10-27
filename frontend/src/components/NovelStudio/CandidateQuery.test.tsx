@@ -10,3 +10,15 @@ describe('candidate question visibility', () => {
         expect(html).toContain('novelStudio.missingGenerationQuery');
     });
 });
+
+
+describe('full generation request disclosure', () => {
+    it.each([
+        ['Same question', 'Same question', false],
+        ['  Same question\nNext line  ', 'Same question\r\nNext line', false],
+        ['My question', 'Additional guidance\n\nMy question', true],
+    ])('shows full request only when it adds information', (authorDirection, generationInstruction, expected) => {
+        const html = renderToStaticMarkup(createElement(CandidateQuery, {candidate: {id: 'candidate', category: 'createDirection', title: 'Title', content: 'Response', selected: true, authorDirection, generationInstruction}}));
+        expect(html.includes('novelStudio.fullGenerationQuery')).toBe(expected);
+    });
+});
