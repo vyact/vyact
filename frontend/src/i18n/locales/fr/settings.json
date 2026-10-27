@@ -293,6 +293,7 @@
     "indexSettingsBehavior": "La sauvegarde peut inclure les paramètres de l'application et de connexion. La restauration peut remplacer les documents de paramètres par ceux de la sauvegarde ; laissez donc cet élément décoché pour conserver les paramètres actuels. Les paramètres Google Workspace existants sont conservés et les jetons de connexion Google ne sont pas restaurés.",
     "indexHelp": {
       "rag_documents": "Documents collectés par exploration web et RSS (cible de recherche RAG)",
+      "novel_stories": "Romans, paramètres du récit et manuscrits des chapitres",
       "rag_history": "Historique de chat et journaux de conversation",
       "doc_chunks": "Sections de texte interrogeables extraites des documents importés (PDF, texte, etc.) afin que l’IA retrouve les passages pertinents.",
       "chat_file_chunks": "Sections interrogeables des pièces jointes. Elles restent consultables dans la conversation sans nouveau téléversement et sont supprimées avec celle-ci.",

@@ -293,6 +293,7 @@
     "indexSettingsBehavior": "Bản sao lưu có thể bao gồm cài đặt ứng dụng và kết nối. Việc khôi phục có thể thay thế tài liệu cài đặt bằng bản sao lưu, vì vậy hãy để mục này không được chọn để giữ cài đặt hiện tại. Cài đặt Google Workspace hiện có được giữ lại và mã thông báo kết nối Google không được khôi phục.",
     "indexHelp": {
       "rag_documents": "Tài liệu thu thập qua crawl web và RSS (đối tượng tìm kiếm RAG)",
+      "novel_stories": "Tiểu thuyết, thiết lập truyện và bản thảo chương",
       "rag_history": "Lịch sử trò chuyện và nhật ký hội thoại",
       "doc_chunks": "Các phần văn bản có thể tìm kiếm được trích từ tài liệu đã tải lên (PDF, văn bản, v.v.), giúp AI tìm nội dung liên quan.",
       "chat_file_chunks": "Các phần văn bản có thể tìm kiếm từ tệp đính kèm. Có thể dùng lại trong cùng hội thoại mà không cần đính kèm lại và sẽ bị xóa cùng hội thoại.",

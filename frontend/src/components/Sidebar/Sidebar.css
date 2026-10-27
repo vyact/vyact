@@ -620,61 +620,10 @@
     color: var(--accent);
 }
 
-.hist-menu-popup {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 4px;
-    min-width: 150px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-}
-
 /* 대화 맥락 요약은 자동 갱신 전용이다. 수동 조회 메뉴는 노출하지 않는다. */
 .hist-menu-popup > .hist-menu-item:first-child:has(svg[data-lucide="notebook-text"]),
 .project-menu-popup > .hist-menu-item:first-child:has(svg[data-lucide="notebook-text"]) {
     display: none;
-}
-
-.hist-menu-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    background: none;
-    border: none;
-    color: var(--text);
-    font-size: 13px;
-    padding: 7px 10px;
-    text-align: left;
-    cursor: pointer;
-    border-radius: 5px;
-    transition: background 0.15s, color 0.15s;
-    white-space: nowrap;
-}
-
-.hist-menu-item:hover {
-    background: color-mix(in srgb, var(--accent) 8%, var(--surface2));
-    color: var(--accent);
-}
-
-.hist-menu-item.danger {
-    color: var(--del-fg-soft);
-}
-
-.hist-menu-item.danger:hover {
-    background: var(--del-bg-hover);
-    border-color: var(--del-border-hover);
-    color: var(--del-fg);
-}
-
-:root[data-theme='light'] .hist-menu-item.danger {
-    color: var(--action-delete);
-    font-weight: 550;
-}
-
-:root[data-theme='light'] .hist-menu-item.danger:hover {
-    background: color-mix(in srgb, var(--action-delete) 12%, var(--surface));
-    color: var(--action-delete);
 }
 
 .hist-rename-input {

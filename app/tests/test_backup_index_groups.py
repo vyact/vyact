@@ -67,3 +67,8 @@ def test_restore_drops_backup_model_selection_when_current_config_has_no_field()
     assert "type" not in restored
     assert "model" not in restored
     assert "vyact_config" not in restored
+
+
+def test_novel_stories_are_available_for_backup_and_restore():
+    assert "novel_stories" not in _BACKUP_EXCLUDED_INDICES
+    assert _expand_selected_indices(["novel_stories"], ["novel_stories", "system_settings"]) == ["novel_stories"]

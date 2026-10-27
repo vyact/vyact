@@ -1,0 +1,9 @@
+.workspace-layout {display: flex; flex-direction: column; flex: 1; width: 100%; height: 100%; min-width: 0; min-height: 0; color: var(--text); background: var(--bg); overflow: hidden;}
+.workspace-layout-header {display: flex; align-items: center; gap: 20px; height: 52px; flex-shrink: 0; padding: 0 20px; border-bottom: 1px solid var(--border);}
+.workspace-layout-body {display: grid; grid-template-columns: var(--workspace-sidebar-width, 220px) minmax(0, 1fr); flex: 1; min-height: 0;}
+.workspace-layout.has-inspector .workspace-layout-body {grid-template-columns: var(--workspace-sidebar-width, 220px) minmax(280px, 1fr) var(--workspace-inspector-width, 300px);}
+.workspace-layout-sidebar {display: flex; flex-direction: column; min-height: 0; overflow: auto; border-right: 1px solid var(--border); background: var(--bg-secondary);}
+.workspace-layout-content {display: flex; min-width: 0; min-height: 0; overflow: hidden;}
+.workspace-layout-inspector {display: flex; flex-direction: column; overflow: auto; min-height: 0; border-left: 1px solid var(--border); background: var(--bg-secondary);}
+@media (max-width: 1000px) {.workspace-layout {--workspace-sidebar-width: 175px; --workspace-inspector-width: 260px;}}
+@media (max-width: 760px) {.workspace-layout.has-inspector .workspace-layout-body {grid-template-columns: 145px minmax(0, 1fr); overflow: auto;} .workspace-layout-inspector {grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--border); overflow: visible;} .workspace-layout-content {min-height: 480px;} .workspace-layout-header {gap: 12px; padding: 0 12px;}}

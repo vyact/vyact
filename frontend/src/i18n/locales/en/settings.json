@@ -319,6 +319,7 @@
     "indexSettingsBehavior": "The backup may include app and connection settings. Restoring can replace setting documents with the backup, so leave this unselected to keep current settings. Existing Google Workspace settings are retained and Google connection tokens are not restored.",
     "indexHelp": {
       "rag_documents": "Documents collected via web crawling and RSS (RAG search target)",
+      "novel_stories": "Novel stories, story settings and chapter manuscripts",
       "rag_history": "Chat history and conversation logs",
       "doc_chunks": "Search-ready text sections extracted from uploaded documents (PDF, text, etc.). These let the AI find relevant passages.",
       "chat_file_chunks": "Search-ready text sections from chat attachments. They remain available in that conversation without reattaching the file and are removed with the conversation.",

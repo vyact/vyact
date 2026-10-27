@@ -588,6 +588,7 @@ trace_startup("import:routers.system", "begin")
 from routers.system import router as system_router
 from routers.vyvow import router as vyvow_router
 from routers.wealth_lab import router as wealth_lab_router
+from routers.novel_studio import router as novel_studio_router
 from routers.prompt_processing import router as prompt_processing_router
 trace_startup("import:routers.system", "end")
 trace_startup("import:routers.mcp", "begin")
@@ -646,6 +647,7 @@ app.include_router(project_router, prefix="/api")
 app.include_router(files_router, prefix="/api")
 app.include_router(prompt_processing_router, prefix="/api")
 app.include_router(wealth_lab_router, prefix="/api")
+app.include_router(novel_studio_router, prefix="/api")
 app.include_router(system_router, prefix="/api")
 app.include_router(vyvow_router, prefix="/api")
 app.include_router(mcp_router, prefix="/api")

@@ -1,6 +1,7 @@
+import {NOVEL_STUDIO_PANEL_ID} from '../NovelStudio/storyStorage';
 import {RETURN_CALCULATOR_PANEL_ID, TRAVEL_CALCULATOR_PANEL_ID} from '../QuickCalculators/QuickCalculators';
 import {useEffect, useRef, useState} from 'react';
-import {CalendarDays, Percent, ChartNoAxesCombined, LayoutGrid, PiggyBank} from 'lucide-react';
+import {Feather, CalendarDays, Percent, ChartNoAxesCombined, LayoutGrid, PiggyBank} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {usePanelManager} from '../../contexts/PanelManagerContext';
 import {WEALTH_LAB_PANEL_ID} from '../CalcStudio/chatExport';
@@ -74,6 +75,7 @@ export default function QuickMenu({onOpen}: {onOpen: () => void}) {
                 {id: RETURN_CALCULATOR_PANEL_ID, icon: Percent, title: 'quickCalculators.returnTitle', description: 'quickCalculators.returnDescription'},
                 ...(hasVyvowToken ? [{id: HOUSEHOLD_LEDGER_PANEL_ID, icon: PiggyBank, title: 'vyvowLedger.title', description: 'vyvowLedger.description'}] : []),
                 {id: TRAVEL_CALCULATOR_PANEL_ID, icon: CalendarDays, title: 'quickCalculators.travelTitle', description: 'quickCalculators.travelDescription'},
+                {id: NOVEL_STUDIO_PANEL_ID, icon: Feather, title: 'novelStudio.title', description: 'novelStudio.subtitle'},
             ].map(({id, icon: Icon, title, description}) => <button key={id} className="quick-menu-item" onClick={() => {
                 setOpen(false); triggerRef.current?.focus(); panels.open(id);
             }}><Icon size={20} aria-hidden="true"/><span>{t(title)}<small>{t(description)}</small></span></button>)}

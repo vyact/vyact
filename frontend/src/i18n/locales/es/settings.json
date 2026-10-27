@@ -293,6 +293,7 @@
     "indexSettingsBehavior": "La copia de seguridad puede incluir ajustes de la aplicación y de conexión. La restauración puede reemplazar los documentos de configuración con los de la copia, así que déjelo sin seleccionar para conservar los ajustes actuales. Se conservan los ajustes existentes de Google Workspace y no se restauran los tokens de conexión de Google.",
     "indexHelp": {
       "rag_documents": "Documentos recopilados por web crawling y RSS (objetivo de búsqueda RAG)",
+      "novel_stories": "Novelas, configuración y manuscritos de capítulos",
       "rag_history": "Historial de chat y registros de conversación",
       "doc_chunks": "Secciones de texto buscables extraídas de documentos subidos (PDF, texto, etc.) que permiten a la IA encontrar pasajes relevantes.",
       "chat_file_chunks": "Secciones buscables de los archivos adjuntos. Permiten consultarlos en la misma conversación sin volver a adjuntarlos y se eliminan con ella.",

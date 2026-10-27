@@ -293,6 +293,7 @@
     "indexSettingsBehavior": "备份可能包含应用和连接设置。恢复可能会用备份中的内容替换设置文档；如需保留当前设置，请不要选择此项。现有 Google Workspace 设置会保留，Google 连接令牌不会被恢复。",
     "indexHelp": {
       "rag_documents": "通过网页爬取和RSS收集的文档（RAG搜索目标）",
+      "novel_stories": "小说作品、故事设定与章节原稿",
       "rag_history": "聊天记录和对话日志",
       "doc_chunks": "从上传文档（PDF、文本等）提取的可搜索正文片段，供 AI 查找与问题相关的内容。",
       "chat_file_chunks": "从聊天附件提取的可搜索正文片段，无需再次上传即可在该对话中搜索；删除对话时会一并删除。",

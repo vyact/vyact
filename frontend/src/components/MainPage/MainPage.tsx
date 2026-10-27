@@ -1,3 +1,4 @@
+import MainWorkspace from './MainWorkspace';
 import {DocumentPreviewProvider} from '../../contexts/DocumentPreviewContext';
 import {getGoogleWorkspaceStatus} from '../../services/googleWorkspaceStatus';
 import {createWorkspaceApi} from '../../services/api';
@@ -692,7 +693,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                         onDragOver={e => e.preventDefault()}
                         onDragEnter={e => {
                             e.preventDefault();
-                            if (!models.isImageMode) setGlobalDragging(true);
+                            if (!(e.target as HTMLElement).closest('.workspace-layout') && !models.isImageMode) setGlobalDragging(true);
                         }}
                         onDragLeave={e => {
                             const related = e.relatedTarget as HTMLElement | null;
@@ -703,6 +704,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                         onDrop={e => {
                             e.preventDefault();
                             setGlobalDragging(false);
+                            if ((e.target as HTMLElement).closest('.workspace-layout')) return;
                             const files = Array.from(e.dataTransfer.files);
                             if (files.length > 0) {
                                 if (showDocumentModal) setDocumentModalDropFiles(files);
@@ -710,6 +712,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                             }
                         }}
                     >
+                        <MainWorkspace>
                         <Sidebar
                             decisionInstalled={models.decisionInstalled}
                             decisionModel={models.decisionModel}
@@ -882,6 +885,8 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                                 />
                             </ChatArea>
                         </div>
+
+                        </MainWorkspace>
 
                         {/* ── Modals ─────────────────────────────────────────────── */}
                         {showSystemPromptModal && <React.Suspense fallback={null}>
