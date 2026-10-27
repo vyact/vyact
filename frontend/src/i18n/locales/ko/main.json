@@ -1768,6 +1768,15 @@
     "downloadArchive": "{{format}} ZIP",
     "downloadFormat": "{{format}}",
     "exporting": "파일을 만드는 중…",
-    "exportError": "다운로드 파일을 만들지 못했어요. 다시 시도해주세요."
+    "exportError": "다운로드 파일을 만들지 못했어요. 다시 시도해주세요.",
+    "saveShort": "저장",
+    "discardShort": "버리기",
+    "generationQuery": "생성에 사용한 질문",
+    "authorConditions": "직접 입력한 조건",
+    "fullGenerationQuery": "전체 생성 요청 보기",
+    "viewShort": "보기",
+    "backToList": "목록으로",
+    "savedCandidate": "저장한 후보",
+    "missingGenerationQuery": "저장된 질문 없음"
   }
 }

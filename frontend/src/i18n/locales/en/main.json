@@ -1759,6 +1759,15 @@
     "downloadArchive": "{{format}} ZIP",
     "downloadFormat": "{{format}}",
     "exporting": "Preparing download…",
-    "exportError": "Could not prepare the download. Please retry."
+    "exportError": "Could not prepare the download. Please retry.",
+    "saveShort": "Save",
+    "discardShort": "Discard",
+    "generationQuery": "Generation query",
+    "authorConditions": "Your conditions",
+    "fullGenerationQuery": "View full generation request",
+    "viewShort": "View",
+    "backToList": "Back to list",
+    "savedCandidate": "Saved candidate",
+    "missingGenerationQuery": "No saved question"
   }
 }

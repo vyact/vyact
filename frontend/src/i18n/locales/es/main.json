@@ -1759,6 +1759,15 @@
     "downloadArchive": "{{format}} ZIP",
     "downloadFormat": "{{format}}",
     "exporting": "Preparando descarga…",
-    "exportError": "No se pudo preparar la descarga. Inténtalo de nuevo."
+    "exportError": "No se pudo preparar la descarga. Inténtalo de nuevo.",
+    "saveShort": "Guardar",
+    "discardShort": "Descartar",
+    "generationQuery": "Consulta de generación",
+    "authorConditions": "Tus condiciones",
+    "fullGenerationQuery": "Ver solicitud completa",
+    "viewShort": "Ver",
+    "backToList": "Volver a la lista",
+    "savedCandidate": "Propuesta guardada",
+    "missingGenerationQuery": "Sin consulta guardada"
   }
 }

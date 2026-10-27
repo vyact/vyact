@@ -1758,6 +1758,15 @@
     "downloadArchive": "{{format}} ZIP",
     "downloadFormat": "{{format}}",
     "exporting": "Đang tạo tệp…",
-    "exportError": "Không tạo được tệp tải xuống. Hãy thử lại."
+    "exportError": "Không tạo được tệp tải xuống. Hãy thử lại.",
+    "saveShort": "Lưu",
+    "discardShort": "Bỏ qua",
+    "generationQuery": "Câu hỏi tạo nội dung",
+    "authorConditions": "Điều kiện đã nhập",
+    "fullGenerationQuery": "Xem yêu cầu đầy đủ",
+    "viewShort": "Xem",
+    "backToList": "Về danh sách",
+    "savedCandidate": "Phương án đã lưu",
+    "missingGenerationQuery": "Chưa lưu câu hỏi"
   }
 }

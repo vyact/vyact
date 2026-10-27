@@ -141,3 +141,64 @@
 .novel-request-controls #novel-instruction {flex: 1; min-height: 200px; resize: vertical;}
 .novel-request-controls>button {width: 100%;}
 .novel-request-controls #novel-instruction::placeholder {color: var(--muted); opacity: .85;}
+.novel-response-title {display: flex; align-items: center; gap: 12px; min-width: 0;}
+.novel-response-title h2 {margin: 0; font-size: 19px;}
+.novel-response-title .novel-response-eyebrow {white-space: nowrap;}
+.novel-response-reader>header {padding: 15px 30px;}
+.novel-response-actions {display: grid; grid-template-columns: 1fr 1fr; gap: 8px;}
+.novel-response-actions button {min-width: 0; padding-left: 8px; padding-right: 8px;}
+.novel-assistant h2 {font-size: 15px;}
+.novel-assistant-description,.novel-response-save-help {font-size: 13px;}
+.novel-assistant .novel-context {font-size: 11px;}
+.novel-assistant .novel-prompts button {font-size: 13px;}
+.novel-assistant .novel-prompts.settings-actions button {font-size: 12px;}
+.novel-assistant .novel-prompt-help,.novel-assistant .novel-instruction-label {font-size: 12px;}
+.novel-assistant textarea,.novel-assistant .novel-candidate-name {font-size: 13px;}
+.novel-response-save .novel-section-heading {font-size: 14px;}
+.novel-response-save-target {font-size: 12px;}
+.novel-assistant .novel-action-badge {font-size: 11px;}
+.novel-candidate-query {margin: 12px 0; padding: 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-secondary);}
+.novel-candidate-query h4 {margin: 0 0 8px; color: var(--text-secondary); font-size: 12px;}
+.novel-candidate-query>span {font-size: 11px; color: var(--muted);}
+.novel-candidate-query p {white-space: pre-wrap; overflow-wrap: anywhere; margin: 6px 0; font-size: 12px; color: var(--text-secondary);}
+.novel-candidate-query details {margin: 10px 0 0;}
+.novel-response-eyebrow {font-size: 12px;}
+.novel-settings-planner {font-size: 14px;}
+.novel-settings-intro h2 {font-size: 20px;}
+.novel-settings-intro p {font-size: 14px;}
+.novel-group-label h3 {font-size: 15px;}
+.novel-group-label>span {font-size: 13px;}
+.novel-category-order,.novel-group-count {font-size: 12px;}
+.novel-candidate-title input:not([type=checkbox]) {font-size: 14px;}
+.novel-candidate-empty {font-size: 13px;}
+.novel-synthesis-bar>div {font-size: 13px;}
+.novel-final-settings {font-size: 15px;}
+.novel-group-toggle {user-select: none; -webkit-user-select: none;}
+.novel-candidate-view {background: transparent; border: none; color: var(--accent); font-size: 13px; margin: 9px 0 0 22px; padding: 5px 0; user-select: none;}
+.novel-studio .novel-candidate-title .novel-candidate-delete {color: var(--muted); background: transparent; border: 0; border-radius: 6px; width: 28px; height: 28px; flex-shrink: 0;}
+.novel-studio .novel-candidate-title .novel-candidate-delete:hover:not(:disabled) {color: var(--action-delete); background: var(--action-delete-bg-hover);}
+.novel-reader-query {margin: 0 0 24px;}
+.novel-reader-query summary {font-size: 14px; cursor: pointer; user-select: none; color: var(--text-secondary);}
+.novel-reader-query p {font-size: 14px; line-height: 1.8;}
+.novel-response-title {min-width: 0;}
+.novel-response-title h2 {overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+
+.novel-candidate-open {color: var(--muted); width: 28px; height: 28px; flex-shrink: 0;}
+.novel-candidate-open:hover {color: var(--accent); background: var(--interactive-hover);}
+.novel-candidate-preview summary {font-size: 13px; user-select: none; color: var(--muted); cursor: pointer; padding: 4px 0;}
+.novel-candidate-preview-content {font-size: 14px; line-height: 1.9; overflow-wrap: anywhere; padding: 12px 4px;}
+.novel-candidate-preview-content .para-break {height: 12px;}
+.novel-candidate-preview-content h1,.novel-candidate-preview-content h2,.novel-candidate-preview-content h3 {line-height: 1.5;}
+
+.novel-synthesis-bar>.novel-synthesis-selection {display: flex; flex-direction: column; align-items: stretch; gap: 12px; flex: 1; min-width: 0;}
+.novel-synthesis-count {display: flex; align-items: center; gap: 7px;}
+.novel-selected-candidates {list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px;}
+.novel-selected-candidates li {display: flex; align-items: baseline; gap: 10px; font-size: 13px; line-height: 1.6;}
+.novel-selected-candidates li>span:first-child {flex-shrink: 0; padding: 2px 7px; border-radius: 5px; background: rgba(var(--accent-rgb), .1); color: var(--accent); font-size: 12px;}
+.novel-selected-candidates li>span:last-child {color: var(--text-secondary); overflow-wrap: anywhere; min-width: 0;}
+
+.novel-candidate-query .novel-query-empty {font-size: 12px; line-height: 1.6; color: var(--muted); margin: 4px 0 0;}
+
+.novel-query-heading {display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px;}
+.novel-query-heading h4 {margin: 0;}
+.novel-query-copy {flex-shrink: 0;}

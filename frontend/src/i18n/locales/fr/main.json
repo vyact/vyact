@@ -1760,6 +1760,15 @@
     "downloadArchive": "{{format}} ZIP",
     "downloadFormat": "{{format}}",
     "exporting": "Préparation du téléchargement…",
-    "exportError": "Impossible de préparer le téléchargement. Réessayez."
+    "exportError": "Impossible de préparer le téléchargement. Réessayez.",
+    "saveShort": "Enregistrer",
+    "discardShort": "Écarter",
+    "generationQuery": "Question de génération",
+    "authorConditions": "Vos conditions",
+    "fullGenerationQuery": "Voir la requête complète",
+    "viewShort": "Voir",
+    "backToList": "Retour à la liste",
+    "savedCandidate": "Proposition enregistrée",
+    "missingGenerationQuery": "Aucune question enregistrée"
   }
 }

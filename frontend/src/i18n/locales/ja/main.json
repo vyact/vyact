@@ -1758,6 +1758,15 @@
     "downloadArchive": "{{format}} ZIP",
     "downloadFormat": "{{format}}",
     "exporting": "ファイルを作成中…",
-    "exportError": "ファイルを作成できません。再試行してください。"
+    "exportError": "ファイルを作成できません。再試行してください。",
+    "saveShort": "保存",
+    "discardShort": "破棄",
+    "generationQuery": "生成に使用した質問",
+    "authorConditions": "入力した条件",
+    "fullGenerationQuery": "生成リクエスト全体を見る",
+    "viewShort": "表示",
+    "backToList": "一覧に戻る",
+    "savedCandidate": "保存した候補",
+    "missingGenerationQuery": "保存された質問なし"
   }
 }

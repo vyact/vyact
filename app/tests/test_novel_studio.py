@@ -123,11 +123,13 @@ async def test_synthesis_requires_a_selection_before_calling_model():
 
 
 def test_saved_candidate_selection_and_content_survive_story_validation():
-    story = NovelStory(id=uuid4(), title="Library", bible="Final", chapters=[NovelChapter(id=uuid4(), title="One", text="Prose")], settingsCandidates=[{"id": uuid4(), "category": "createStyle", "title": "Quiet suspense", "content": "Third person, restrained", "selected": True}])
+    story = NovelStory(id=uuid4(), title="Library", bible="Final", chapters=[NovelChapter(id=uuid4(), title="One", text="Prose")], settingsCandidates=[{"id": uuid4(), "category": "createStyle", "title": "Quiet suspense", "content": "Third person, restrained", "selected": True, "generationInstruction": "Choose a restrained voice.\n\nUse third person.", "authorDirection": "Use third person."}])
     restored = NovelStory.model_validate(story.model_dump(mode="json"))
     assert restored.settingsCandidates[0].selected is True
     assert restored.settingsCandidates[0].content == "Third person, restrained"
     assert restored.bible == "Final"
+    assert restored.settingsCandidates[0].generationInstruction == "Choose a restrained voice.\n\nUse third person."
+    assert restored.settingsCandidates[0].authorDirection == "Use third person."
 
 
 @pytest.mark.parametrize("category", ["createDirection", "createPremise", "createCharacters", "createWorld", "createPlot", "createStyle"])
@@ -136,3 +138,13 @@ def test_six_recommended_categories_support_saved_candidates_and_generation(cate
     assert request.settings_stage == category
     story = NovelStory(id=uuid4(), title="Library", bible="", chapters=[NovelChapter(id=uuid4(), title="One", text="")], settingsCandidates=[{"id": uuid4(), "category": category, "title": "Idea", "content": "Notes", "selected": True}])
     assert story.settingsCandidates[0].category == category
+
+
+@pytest.mark.asyncio
+async def test_candidate_generation_returns_a_suggested_title_and_full_content():
+    request = NovelGenerationRequest(title="Library", bible="", previous="", manuscript="", instruction="Develop direction", target="bible", settings_stage="createDirection")
+    with patch("routers.novel_studio.query_llm", new=AsyncMock(return_value='{"title":" 기억을 빌리는 미스터리 ","text":"# 작품 방향\\n\\n전체 제안 내용"}')) as model:
+        response = await generate_novel(request)
+    assert response == {"title": "기억을 빌리는 미스터리", "text": "# 작품 방향\n\n전체 제안 내용"}
+    assert 'keys "title" and "text"' in model.call_args.args[2]
+    model.assert_awaited_once()

@@ -1758,6 +1758,15 @@
     "downloadArchive": "{{format}} ZIP",
     "downloadFormat": "{{format}}",
     "exporting": "正在生成文件…",
-    "exportError": "无法生成下载文件，请重试。"
+    "exportError": "无法生成下载文件，请重试。",
+    "saveShort": "保存",
+    "discardShort": "丢弃",
+    "generationQuery": "生成时使用的提问",
+    "authorConditions": "输入的条件",
+    "fullGenerationQuery": "查看完整生成请求",
+    "viewShort": "查看",
+    "backToList": "返回列表",
+    "savedCandidate": "已保存候选",
+    "missingGenerationQuery": "无已保存提问"
   }
 }

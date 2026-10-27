@@ -1758,6 +1758,15 @@
     "downloadArchive": "{{format}} ZIP",
     "downloadFormat": "{{format}}",
     "exporting": "กำลังสร้างไฟล์…",
-    "exportError": "สร้างไฟล์ดาวน์โหลดไม่ได้ โปรดลองอีกครั้ง"
+    "exportError": "สร้างไฟล์ดาวน์โหลดไม่ได้ โปรดลองอีกครั้ง",
+    "saveShort": "บันทึก",
+    "discardShort": "ทิ้ง",
+    "generationQuery": "คำถามที่ใช้สร้าง",
+    "authorConditions": "เงื่อนไขที่ป้อน",
+    "fullGenerationQuery": "ดูคำขอทั้งหมด",
+    "viewShort": "ดู",
+    "backToList": "กลับไปที่รายการ",
+    "savedCandidate": "ตัวเลือกที่บันทึก",
+    "missingGenerationQuery": "ไม่มีคำถามที่บันทึกไว้"
   }
 }

@@ -3,6 +3,7 @@ import {downloadNovel, type NovelExportFormat} from './storyExport';
 import {useEffect, useRef, useState} from 'react';
 import {Plus, Feather, Sparkles, Check, LoaderCircle, ArrowRight, ArrowLeft, Undo2, MoreHorizontal, Download} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
+import CandidateReader from './CandidateReader';
 import ProposalReader from './ProposalReader';
 import SettingsPlanner from './SettingsPlanner';
 import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
@@ -29,6 +30,8 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
     const [responseVisible, setResponseVisible] = useState(false);
     const [selectedAction, setSelectedAction] = useState('customRequest');
     const [proposalAction, setProposalAction] = useState('customRequest');
+    const [proposalQuery, setProposalQuery] = useState({instruction: '', authorDirection: ''});
+    const [viewingCandidateId, setViewingCandidateId] = useState<string | null>(null);
     const [candidateTitle, setCandidateTitle] = useState('');
     const [confirmFinal, setConfirmFinal] = useState(false);
     const [proposalTarget, setProposalTarget] = useState<'text' | 'bible'>('text');
@@ -38,13 +41,14 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
     const [undo, setUndo] = useState<{chapterId: string; target: 'text' | 'bible'; text: string} | null>(null);
     const controller = useRef<AbortController | null>(null);
     const story = stories.find(item => item.id === storyId) ?? stories[0];
+    const viewingCandidate = story?.settingsCandidates?.find(candidate => candidate.id === viewingCandidateId);
     const chapter = story?.chapters.find(item => item.id === chapterId) ?? story?.chapters[0];
     useEffect(() => () => controller.current?.abort(), []);
     const updateStory = (patch: Partial<Story>) => setStories(items => items.map(item => item.id === story?.id ? {...item, ...patch} : item));
     const updateChapter = (patch: Partial<NonNullable<typeof chapter>>) => {
         if (story) updateStory({chapters: story.chapters.map(item => item.id === chapter?.id ? {...item, ...patch} : item)});
     };
-    const resetAssistant = () => {setProposal(''); setResponseVisible(false); setError(''); setUndo(null); setInstruction(''); setSelectedAction('customRequest');};
+    const resetAssistant = () => {setViewingCandidateId(null);setProposal(''); setResponseVisible(false); setError(''); setUndo(null); setInstruction(''); setSelectedAction('customRequest');};
     const addStory = () => {
         const next = createStory(tr('untitled'), t('novelStudio.chapterNumber', {number: 1}));
         setStories(items => [...items, next]); setStoryId(next.id); setChapterId(next.chapters[0].id); setTab('text'); resetAssistant();
@@ -53,6 +57,8 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
         if (!story || !chapter || !request.trim() || busy) return;
         const action = tab === 'bible' && selectedAction !== 'synthesis' && !SETTING_CATEGORIES.includes(selectedAction as SettingCategory) ? 'createDirection' : selectedAction;
         setSelectedAction(action);
+        setViewingCandidateId(null);
+        setProposalQuery({instruction: request, authorDirection: instruction.trim()});
         setBusy(true); setError(''); setProposal(''); setResponseVisible(false); setProposalTarget(tab); setProposalAction(action); setCandidateTitle(''); setResponseVisible(true);
         controller.current = new AbortController();
         try {
@@ -64,6 +70,7 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
             const data = await response.json();
             if (typeof data.text !== 'string' || !data.text.trim()) throw new Error('Empty generation');
             setProposal(data.text);
+            if (typeof data.title === 'string') setCandidateTitle(data.title.trim().slice(0, 200));
         } catch (failure) {setResponseVisible(false); if (!(failure instanceof DOMException && failure.name === 'AbortError')) setError(tr(failure instanceof Error && failure.message === 'settings-context-limit' ? 'selectionLimit' : 'generationError'));}
         finally {setBusy(false); controller.current = null;}
     };
@@ -87,7 +94,7 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
         if (!story || !proposal.trim()) return;
         const candidates = story.settingsCandidates ?? [];
         if (candidates.length >= 100 || proposal.length > 20000) {setError(tr('candidateLimit')); return;}
-        updateStory({settingsCandidates: [...candidates, {id: crypto.randomUUID(), category: proposalAction as SettingCategory, title: candidateTitle.trim() || `${tr(proposalAction)} ${candidates.filter(candidate => candidate.category === proposalAction).length + 1}`, content: proposal, selected: true}]});
+        updateStory({settingsCandidates: [...candidates, {id: crypto.randomUUID(), category: proposalAction as SettingCategory, title: candidateTitle.trim() || `${tr(proposalAction)} ${candidates.filter(candidate => candidate.category === proposalAction).length + 1}`, content: proposal, selected: true, generationInstruction: proposalQuery.instruction, authorDirection: proposalQuery.authorDirection}]});
         setProposal(''); setResponseVisible(false); setTab('bible');
     };
     const appendProposal = () => {
@@ -102,7 +109,7 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
     const header = <>
         <div className="novel-brand"><Feather size={19}/><h1>{tr('title')}</h1></div>
         {story && <input className="novel-story-title" aria-label={tr('storyTitle')} maxLength={200} value={story.title} onChange={event => updateStory({title: event.target.value})}/>}
-        <div className="novel-tabs">{(['text', 'bible'] as const).map(key => <button key={key} disabled={busy} aria-pressed={tab === key} onClick={() => {setTab(key); setInstruction(''); setSelectedAction(key === 'bible' ? 'createDirection' : 'customRequest');}}>{tr(key)}</button>)}</div>
+        <div className="novel-tabs">{(['text', 'bible'] as const).map(key => <button key={key} disabled={busy} aria-pressed={tab === key} onClick={() => {setTab(key); setViewingCandidateId(null); setInstruction(''); setSelectedAction(key === 'bible' ? 'createDirection' : 'customRequest');}}>{tr(key)}</button>)}</div>
         <button className="novel-return" onClick={() => {void flushStorySaves().then(onClose).catch(() => {});}}><ArrowLeft size={15}/>{tr('backToChat')}</button>
     </>;
     return <WorkspaceLayout className="novel-studio" label={tr('title')} header={header}
@@ -129,7 +136,7 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
                 <aside className="novel-assistant"><div className="novel-assistant-heading"><Sparkles size={18}/><h2>{tr('assistant')}</h2></div><p className="novel-assistant-description">{tr(tab === 'bible' ? 'settingsWorkflowHelp' : 'assistantHelp')}</p><div className="novel-context"><Check size={13}/>{tr('context')}</div>
                     {responseVisible && !busy ? (<div className="novel-response-save"><div className="novel-section-heading">{tr('proposal')}</div><p className="novel-response-save-help">{tr(proposalTarget === 'text' ? 'assistantHelp' : proposalAction === 'synthesis' ? 'finalSettingsHelp' : 'responseSaveHelp')}</p>{proposalTarget === 'bible' && <div className="novel-response-save-target">{tr(proposalAction)}</div>}
                         {proposalTarget === 'bible' && proposalAction !== 'synthesis' && <input className="novel-candidate-name" aria-label={tr('candidateTitle')} placeholder={tr('candidateTitle')} maxLength={200} value={candidateTitle} onChange={event => setCandidateTitle(event.target.value)}/>}
-                        <button className="modal-action-submit" disabled={!proposal.trim()} onClick={() => {if (proposalTarget !== 'bible') appendProposal(); else if (proposalAction !== 'synthesis') saveCandidate(); else if (story.bible.trim()) setConfirmFinal(true); else applyFinalSettings();}}><Plus size={15}/>{tr(proposalTarget !== 'bible' ? 'append' : proposalAction === 'synthesis' ? 'applyFinal' : 'saveCandidate')}</button><button className="modal-action-cancel" onClick={() => {setProposal(''); setResponseVisible(false);}}>{tr('discard')}</button></div>) : <div className="novel-request-controls"><div className={`novel-prompts${tab === 'bible' ? ' settings-actions' : ''}`}>{(tab === 'bible' ? [...SETTING_CATEGORIES] : [chapter.text.trim() ? 'continue' : 'start', 'outline', 'review']).map(key => <button key={key} aria-pressed={selectedAction === key} disabled={busy || (key === 'review' && !chapter.text.trim())} title={key === 'review' && !chapter.text.trim() ? tr('reviewNeedsText') : undefined} onClick={() => {chooseAction(key);}}>{tr(key)}<ArrowRight size={14}/></button>)}</div>
+                        <div className="novel-response-actions"><button className="modal-action-cancel" onClick={() => {setProposal(''); setResponseVisible(false);}}>{tr('discardShort')}</button>                        <button className="modal-action-submit" disabled={!proposal.trim()} onClick={() => {if (proposalTarget !== 'bible') appendProposal(); else if (proposalAction !== 'synthesis') saveCandidate(); else if (story.bible.trim()) setConfirmFinal(true); else applyFinalSettings();}}><Plus size={15}/>{tr('saveShort')}</button></div></div>) : <div className="novel-request-controls"><div className={`novel-prompts${tab === 'bible' ? ' settings-actions' : ''}`}>{(tab === 'bible' ? [...SETTING_CATEGORIES] : [chapter.text.trim() ? 'continue' : 'start', 'outline', 'review']).map(key => <button key={key} aria-pressed={selectedAction === key} disabled={busy || (key === 'review' && !chapter.text.trim())} title={key === 'review' && !chapter.text.trim() ? tr('reviewNeedsText') : undefined} onClick={() => {chooseAction(key);}}>{tr(key)}<ArrowRight size={14}/></button>)}</div>
                     <p className="novel-prompt-help">{tr('promptHelp')}</p>
                     <label className="novel-instruction-label" htmlFor="novel-instruction">{tr('instruction')}<span className="novel-action-badge">{tr(selectedAction)}</span></label><textarea ref={instructionRef} id="novel-instruction" maxLength={3000} value={instruction} onChange={event => setInstruction(event.target.value)} placeholder={taskGuidance || tr('instructionPlaceholder')}/>
                     {busy ? <button className="modal-action-cancel" onClick={() => controller.current?.abort()}><LoaderCircle className="novel-spinner" size={15}/>{tr('cancel')}</button> : <button className="modal-action-submit" disabled={!writingRequest || (tab === 'bible' && selectedAction === 'synthesis' && !(story.settingsCandidates ?? []).some(candidate => candidate.selected))} onClick={() => void generate(writingRequest)}><Sparkles size={15}/>{tr('generate')}</button>}
@@ -142,8 +149,8 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
         {(saveStatus === 'error' || loadFailed) && <div className="novel-storage-error" role="alert">{tr(loadFailed ? 'loadError' : 'saveError')} <button className="modal-action-cancel" onClick={() => {if (loadFailed) void reload(); else void flushStorySaves().catch(() => {});}}>{tr('retry')}</button></div>}
         {story && (
                 <main className="novel-writing">
-                    {responseVisible ? <ProposalReader key={`${proposalTarget}:${proposalAction}`} text={proposal} action={proposalAction} busy={busy} onChange={setProposal} onBack={() => {setProposal(''); setResponseVisible(false);}}/> : <>
-                    <div className="novel-paper">{tab === 'text' ? <><input className="novel-chapter-title" aria-label={tr('chapterTitle')} maxLength={200} value={chapter.title} onChange={event => updateChapter({title: event.target.value})}/><textarea className="novel-manuscript" aria-label={tr('text')} maxLength={1000000} placeholder={tr('manuscriptPlaceholder')} value={chapter.text} onChange={event => {updateChapter({text: event.target.value}); setUndo(null);}}/></> : <SettingsPlanner candidates={story.settingsCandidates ?? []} disabled={busy} onChange={settingsCandidates => updateStory({settingsCandidates})} onChoose={category => chooseAction(category)} activeCategory={SETTING_CATEGORIES.includes(selectedAction as SettingCategory) ? selectedAction as SettingCategory : undefined} onSynthesize={() => chooseAction('synthesis')}>
+                    {viewingCandidate ? <CandidateReader key={viewingCandidate.id} candidate={viewingCandidate} onBack={() => setViewingCandidateId(null)} onChange={content => updateStory({settingsCandidates: (story.settingsCandidates ?? []).map(candidate => candidate.id === viewingCandidate.id ? {...candidate, content} : candidate)})}/> : responseVisible ? <ProposalReader key={`${proposalTarget}:${proposalAction}`} text={proposal} action={proposalAction} busy={busy} onChange={setProposal}/> : <>
+                    <div className="novel-paper">{tab === 'text' ? <><input className="novel-chapter-title" aria-label={tr('chapterTitle')} maxLength={200} value={chapter.title} onChange={event => updateChapter({title: event.target.value})}/><textarea className="novel-manuscript" aria-label={tr('text')} maxLength={1000000} placeholder={tr('manuscriptPlaceholder')} value={chapter.text} onChange={event => {updateChapter({text: event.target.value}); setUndo(null);}}/></> : <SettingsPlanner onView={candidate => {setSelectedAction(candidate.category); setViewingCandidateId(candidate.id);}} candidates={story.settingsCandidates ?? []} disabled={busy} onChange={settingsCandidates => updateStory({settingsCandidates})} onChoose={category => chooseAction(category)} activeCategory={SETTING_CATEGORIES.includes(selectedAction as SettingCategory) ? selectedAction as SettingCategory : undefined} onSynthesize={() => chooseAction('synthesis')}>
                         <textarea className="novel-final-settings" aria-label={tr('bible')} placeholder={tr('finalSettingsPlaceholder')} maxLength={20000} value={story.bible} onChange={event => {updateStory({bible: event.target.value}); setUndo(null);}}/>
                     </SettingsPlanner>}</div>
                     <footer className="novel-writing-footer"><span>{t('novelStudio.characters', {count: Array.from(tab === 'bible' ? story.bible : chapter.text).length})}</span>{undo?.chapterId === chapter.id && undo.target === tab && <button onClick={() => {if (undo.target === 'bible') updateStory({bible: undo.text}); else updateChapter({text: undo.text}); setUndo(null);}}><Undo2 size={14}/>{tr('undo')}</button>}<span>{tr('draft')}</span></footer>

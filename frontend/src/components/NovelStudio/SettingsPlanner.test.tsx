@@ -12,7 +12,7 @@ describe('settings planning stages', () => {
             {id: 'one', category: 'createCharacters', title: 'The librarian', content: 'Character notes', selected: true},
             {id: 'two', category: 'createWorld', title: 'Moon library', content: 'World notes', selected: false},
         ];
-        const html = renderToStaticMarkup(createElement(SettingsPlanner, {candidates, disabled: false, onChange: vi.fn(), onChoose: vi.fn(), onSynthesize: vi.fn(), activeCategory: 'createCharacters', children: 'Final settings editor'}));
+        const html = renderToStaticMarkup(createElement(SettingsPlanner, {candidates, disabled: false, onChange: vi.fn(), onView: vi.fn(), onChoose: vi.fn(), onSynthesize: vi.fn(), activeCategory: 'createCharacters', children: 'Final settings editor'}));
         expect(html).toContain('The librarian');
         expect(html).not.toContain('Moon library');
         expect(html).toContain('novelStudio.createWorld');
@@ -23,7 +23,7 @@ describe('settings planning stages', () => {
         expect(html).toContain('Final settings editor');
     });
     it('disables synthesis until a saved candidate is selected', () => {
-        const html = renderToStaticMarkup(createElement(SettingsPlanner, {candidates: [], disabled: false, onChange: vi.fn(), onChoose: vi.fn(), onSynthesize: vi.fn(), children: null}));
+        const html = renderToStaticMarkup(createElement(SettingsPlanner, {candidates: [], disabled: false, onChange: vi.fn(), onView: vi.fn(), onChoose: vi.fn(), onSynthesize: vi.fn(), children: null}));
         expect(html).toContain('novelStudio.selectedCandidates:0');
         expect(html).toMatch(/disabled=""[^>]*>[\s\S]*?novelStudio.synthesize/);
     });
