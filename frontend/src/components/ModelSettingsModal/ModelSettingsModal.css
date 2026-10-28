@@ -1,4 +1,4 @@
-.model-settings-overlay { display: flex; align-items: center; justify-content: center; z-index: 10020; }
+.model-settings-overlay { display: flex; align-items: center; justify-content: center; z-index: var(--z-modal); }
 .model-settings-modal { display: flex; flex-direction: column; width: min(520px, calc(100vw - 32px)); max-height: min(860px, calc(100vh - 32px)); overflow: hidden; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); box-shadow: 0 24px 80px #0008; }
 .model-settings-modal header, .model-settings-modal footer { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--border); }
 .model-settings-modal header h2 { margin: 0; font-size: 18px; }

@@ -257,7 +257,7 @@
 
 /* Link dialog */
 .email-editor-link-picker { position: relative; display: inline-flex; }
-.email-editor-link-overlay { z-index: 9600; }
+.email-editor-link-overlay { z-index: var(--z-modal); }
 .email-editor-link-dialog {
     display: grid;
     width: min(520px, calc(100vw - 40px));

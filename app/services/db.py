@@ -188,7 +188,7 @@ async def wait_for_es(es, retries=30):
 
 async def ensure_novel_stories_index(es):
     if await es.indices.exists(index=NOVEL_STORIES_INDEX):
-        await es.indices.put_mapping(index=NOVEL_STORIES_INDEX, properties={"settingsCandidates": {"type": "object", "enabled": False}})
+        await es.indices.put_mapping(index=NOVEL_STORIES_INDEX, properties={"settingsCandidates": {"type": "object", "enabled": False}, "finalSettings": {"type": "object", "enabled": False}, "activeFinalSettingId": {"type": "keyword"}})
         return
     try:
         await es.indices.create(
@@ -197,7 +197,8 @@ async def ensure_novel_stories_index(es):
             mappings={"dynamic": "strict", "properties": {
                 "id": {"type": "keyword"},
                 "title": {"type": "text"},
-                "bible": {"type": "text"},
+                "finalSettings": {"type": "object", "enabled": False},
+                "activeFinalSettingId": {"type": "keyword"},
                 "settingsCandidates": {"type": "object", "enabled": False},
                 "chapters": {"type": "object", "properties": {
                     "id": {"type": "keyword"},

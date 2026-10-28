@@ -2,7 +2,7 @@
 import json
 import re
 from datetime import datetime, timezone
-from typing import Literal
+from typing import Literal, get_args
 from uuid import UUID
 from urllib.parse import quote
 
@@ -11,7 +11,7 @@ from elasticsearch import NotFoundError
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
 from services.novel_export import build_novel_export
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from services.db import NOVEL_STORIES_INDEX, ensure_novel_stories_index, get_es
 from services.llm.core import query_llm
 
@@ -44,6 +44,8 @@ class NovelGenerationRequest(BaseModel):
     target: Literal["text", "bible"] = "text"
     settings_stage: Literal["createDirection", "createPremise", "createCharacters", "createWorld", "createPlot", "createStyle", "synthesis"] | None = None
     selected_settings: list[SelectedSetting] = Field(default_factory=list, max_length=100)
+    proposal: str = Field(default="", max_length=100000)
+    original_instruction: str = Field(default="", max_length=6000)
     language: str = Field(default="en", max_length=30)
 
     @field_validator("selected_settings")
@@ -78,10 +80,15 @@ def parse_writing_response(result: str) -> dict[str, str]:
 async def generate_novel(body: NovelGenerationRequest):
     if not body.instruction.strip():
         raise HTTPException(400, "A writing instruction is required")
-    if body.settings_stage == "synthesis" and not body.selected_settings:
+    if body.settings_stage == "synthesis" and not body.selected_settings and not body.proposal.strip():
         raise HTTPException(400, "Select settings to synthesize")
+    selected_settings = body.selected_settings
+    category_order = list(get_args(SettingCategory))
+    if body.target == "bible" and body.settings_stage in category_order:
+        current_index = category_order.index(body.settings_stage)
+        selected_settings = [note for note in selected_settings if category_order.index(note.category) < current_index]
     selected_context = "\n\n".join(
-        f"[{note.category}] {note.title}\n{note.content}" for note in body.selected_settings
+        f"[{note.category}] {note.title}\n{note.content}" for note in selected_settings
     )
     prompt = (
         f"Output language: {body.language}\nWork title: {body.title}\nCurrent chapter title: {body.chapter_title}\n"
@@ -104,6 +111,9 @@ async def generate_novel(body: NovelGenerationRequest):
             "the conflict for the author instead of silently choosing. Existing settings are reference "
             "only; unselected ideas must not be incorporated. Return settings notes, not novel prose. "
         )
+    if body.proposal.strip():
+        prompt += f"\nOriginal request:\n{body.original_instruction}\nCurrent proposal to revise (source material):\n{body.proposal}"
+        task += "Revise the supplied current proposal according to the author's latest request. Return the complete revised proposal, not a change list. Preserve unaffected content. "
     is_candidate = body.target == "bible" and body.settings_stage != "synthesis"
     output_instruction = (
         'Return exactly one JSON object with keys "title" and "text". '
@@ -139,12 +149,28 @@ class NovelChapter(BaseModel):
     text: str = Field(max_length=1_000_000)
 
 
+class FinalSetting(BaseModel):
+    id: UUID
+    title: str = Field(max_length=200)
+    content: str = Field(min_length=1, max_length=20000)
+
+
 class NovelStory(BaseModel):
     id: UUID
     title: str = Field(max_length=200)
-    bible: str = Field(max_length=20000)
+    finalSettings: list[FinalSetting] = Field(default_factory=list, max_length=100)
+    activeFinalSettingId: UUID | None = None
     settingsCandidates: list[SettingCandidate] = Field(default_factory=list, max_length=100)
     chapters: list[NovelChapter] = Field(min_length=1, max_length=2000)
+
+    @model_validator(mode="after")
+    def valid_final_settings(self):
+        identifiers = {item.id for item in self.finalSettings}
+        if len(identifiers) != len(self.finalSettings):
+            raise ValueError("Final setting identifiers must be unique")
+        if self.activeFinalSettingId is not None and self.activeFinalSettingId not in identifiers:
+            raise ValueError("Active final setting must reference a saved version")
+        return self
 
     @field_validator("settingsCandidates")
     @classmethod

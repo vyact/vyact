@@ -127,7 +127,7 @@ def test_saved_candidate_selection_and_content_survive_story_validation():
     restored = NovelStory.model_validate(story.model_dump(mode="json"))
     assert restored.settingsCandidates[0].selected is True
     assert restored.settingsCandidates[0].content == "Third person, restrained"
-    assert restored.bible == "Final"
+    assert restored.finalSettings == []
     assert restored.settingsCandidates[0].generationInstruction == "Choose a restrained voice.\n\nUse third person."
     assert restored.settingsCandidates[0].authorDirection == "Use third person."
 
@@ -159,3 +159,52 @@ async def test_manuscript_generation_returns_chapter_title_with_prose():
     assert "Current chapter title: Chapter 2" in model.call_args.args[0]
     assert "CURRENT CHAPTER" in model.call_args.args[2]
     model.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("stage,expected", [("createDirection", []), ("createPremise", ["direction-note"]), ("createCharacters", ["direction-note", "premise-note"]), ("synthesis", ["direction-note", "premise-note", "character-note"])])
+async def test_candidate_context_only_includes_earlier_categories(stage, expected):
+    notes = [{"category": category, "title": title, "content": title} for category, title in [("createDirection", "direction-note"), ("createPremise", "premise-note"), ("createCharacters", "character-note")]]
+    body = NovelGenerationRequest(title="Story", bible="", previous="", manuscript="", instruction="Propose", target="bible", settings_stage=stage, selected_settings=notes)
+    with patch("routers.novel_studio.query_llm", new=AsyncMock(return_value="Proposal")) as model:
+        await generate_novel(body)
+    prompt = model.call_args.args[0]
+    for note in notes:
+        assert (note["title"] in prompt) == (note["title"] in expected)
+
+
+@pytest.mark.asyncio
+async def test_revision_includes_current_proposal_and_latest_instruction():
+    body = NovelGenerationRequest(title="Story", bible="", previous="", manuscript="", instruction="Change motivation", target="bible", settings_stage="createCharacters", proposal="Current character draft", original_instruction="Create a detective")
+    with patch("routers.novel_studio.query_llm", new=AsyncMock(return_value='{"title":"Revised detective","text":"Updated character"}')) as model:
+        assert await generate_novel(body) == {"title": "Revised detective", "text": "Updated character"}
+    assert "Current character draft" in model.call_args.args[0]
+    assert "Change motivation" in model.call_args.args[0]
+    assert "Create a detective" in model.call_args.args[0]
+    assert "complete revised proposal" in model.call_args.args[2]
+
+
+@pytest.mark.asyncio
+async def test_synthesis_revision_can_turn_off_all_additional_candidates():
+    body = NovelGenerationRequest(title="Story", bible="", previous="", manuscript="", instruction="Refine the tone", target="bible", settings_stage="synthesis", proposal="Existing synthesis", selected_settings=[])
+    with patch("routers.novel_studio.query_llm", new=AsyncMock(return_value="Revised synthesis")) as model:
+        assert await generate_novel(body) == {"text": "Revised synthesis"}
+    assert "Existing synthesis" in model.call_args.args[0]
+
+
+def test_multiple_final_settings_and_active_selection_survive_round_trip():
+    first, second = uuid4(), uuid4()
+    story = NovelStory(id=uuid4(), title="Story", chapters=[NovelChapter(id=uuid4(), title="One", text="")], finalSettings=[{"id": first, "title": "Version A", "content": "Quiet mystery"}, {"id": second, "title": "Version B", "content": "Fast thriller"}], activeFinalSettingId=second)
+    restored = NovelStory.model_validate(story.model_dump(mode="json"))
+    assert [item.content for item in restored.finalSettings] == ["Quiet mystery", "Fast thriller"]
+    assert restored.activeFinalSettingId == second
+
+
+def test_invalid_final_setting_selection_and_duplicate_versions_are_rejected():
+    identifier = uuid4()
+    base = {"id": uuid4(), "title": "Story", "chapters": [{"id": uuid4(), "title": "One", "text": ""}]}
+    with pytest.raises(ValidationError):
+        NovelStory(**base, activeFinalSettingId=identifier)
+    version = {"id": identifier, "title": "Version", "content": "Settings"}
+    with pytest.raises(ValidationError):
+        NovelStory(**base, finalSettings=[version, version])

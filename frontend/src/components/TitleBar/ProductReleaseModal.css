@@ -1,5 +1,5 @@
 .product-release-overlay {
-    z-index: 31000;
+    z-index: var(--z-modal);
 }
 
 .product-release-modal {

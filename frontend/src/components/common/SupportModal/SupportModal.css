@@ -1,5 +1,5 @@
 .support-modal-overlay {
-    z-index: 10000;
+    z-index: var(--z-modal);
 }
 
 .support-modal {

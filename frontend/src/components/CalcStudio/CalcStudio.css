@@ -199,7 +199,7 @@
 .wealth-plan-icon { display: grid; place-items: center; padding: 9px; flex-shrink: 0; }
 .wealth-result-actions { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 .wealth-save-button { display: inline-flex; align-items: center; gap: 6px; }
-.wealth-plan-overlay { z-index: 10000; }
+.wealth-plan-overlay { z-index: var(--z-modal); }
 .wealth-plan-dialog { --calc-control-height: 40px; width: min(440px, calc(100vw - 32px)); padding: 20px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text); box-shadow: 0 16px 60px #0005; }
 .wealth-plan-dialog header { display: flex; align-items: center; gap: 8px; }
 .wealth-plan-dialog header > svg { color: var(--accent); }

@@ -1,4 +1,4 @@
-.command-palette-overlay { position: fixed; inset: 0; z-index: 20000; display: flex; align-items: flex-start; justify-content: center; padding-top: 12vh; background: rgba(0, 0, 0, .55); }
+.command-palette-overlay { position: fixed; inset: 0; z-index: var(--z-modal); display: flex; align-items: flex-start; justify-content: center; padding-top: 12vh; background: rgba(0, 0, 0, .55); }
 .command-palette { width: 100%; max-width: 640px; margin: 0 20px; overflow: hidden; border: 1px solid var(--border); border-radius: 14px; background: var(--modal-bg); box-shadow: 0 24px 80px rgba(0, 0, 0, .6); }
 .command-palette-search { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--border); }
 .command-palette-input { flex: 1; border: 0; outline: 0; background: transparent; color: var(--text); font-size: var(--modal-text); }

@@ -136,34 +136,6 @@
 :root[data-theme='light'] .gwp-mail-toolbar { background: var(--gwp-content-surface); }
 .gwp-mail-toolbar > div { display: flex; align-items: center; gap: 4px; }
 .gwp-select-all { display: flex; align-items: center; gap: 8px; cursor: pointer; }
-.gwp-select-all input, .gwp-mail-row > input {
-    appearance: none;
-    inline-size: 16px;
-    block-size: 16px;
-    flex: 0 0 16px;
-    margin: 0;
-    border: 1px solid color-mix(in srgb, var(--muted) 72%, var(--border));
-    border-radius: 3px;
-    background: var(--surface2);
-    cursor: pointer;
-    transition: border-color .15s, background-color .15s, box-shadow .15s;
-}
-.gwp-select-all input:hover:not(:disabled), .gwp-mail-row > input:hover:not(:disabled) {
-    border-color: var(--accent);
-}
-.gwp-select-all input:focus-visible, .gwp-mail-row > input:focus-visible {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 28%, transparent);
-}
-.gwp-select-all input:checked, .gwp-mail-row > input:checked {
-    border-color: var(--accent);
-    background-color: var(--accent);
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m3.5 8 3 3 6-6'/%3E%3C/svg%3E");
-}
-.gwp-select-all input:disabled, .gwp-mail-row > input:disabled {
-    cursor: not-allowed;
-    opacity: .55;
-}
 .gwp-trash-selected { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 50% !important; color: var(--muted) !important; }
 .gwp-trash-selected:hover { color: var(--action-delete) !important; background: var(--action-delete-bg-hover) !important; }
 .gwp-move-selected-wrap { position: relative; }
@@ -390,7 +362,7 @@
 .gwp-mail-attachment-attach:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
 .gwp-mail-attachment-download:hover { color: var(--action-download); background: var(--action-download-bg-hover); }
 .gwp-mail-activity, .gwp-send-feedback { position: absolute; top: 50%; left: 50%; z-index: 12; display: flex; align-items: center; gap: 9px; padding: 13px 17px; border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border)); border-radius: 10px; transform: translate(-50%, -50%); background: color-mix(in srgb, var(--surface2) 92%, #000); box-shadow: 0 14px 34px rgba(0, 0, 0, .52); color: var(--text); font-size: 13px; font-weight: 750; }
-.gwp-attachment-preview-backdrop { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; background: rgba(0, 0, 0, .55); }
+.gwp-attachment-preview-backdrop { position: fixed; inset: 0; z-index: var(--z-modal); display: grid; place-items: center; background: rgba(0, 0, 0, .55); }
 .gwp-attachment-preview { display: flex; width: 80vw; height: 80vh; flex-direction: column; overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: 0 20px 50px rgba(0, 0, 0, .45); }
 .gwp-attachment-preview-close { position: absolute; top: calc(10vh + 12px); right: calc(10vw + 12px); z-index: 10001; display: grid; width: 40px; height: 40px; place-items: center; border: 1px solid rgba(255, 255, 255, .28); border-radius: 9px; background: rgba(20, 20, 20, .86); color: var(--on-accent); cursor: pointer; box-shadow: 0 4px 16px rgba(0, 0, 0, .42); }
 .gwp-attachment-preview-close:hover { background: var(--accent); border-color: var(--accent); }
@@ -527,7 +499,7 @@
 /* Drive share copied feedback */
 .gwp-drive-copied { display: inline-flex; align-items: center; gap: 4px; color: var(--accent); font-size: 12px; white-space: nowrap; animation: gwp-fade-in .2s ease; }
 
-.gwp-drive-modal-overlay { z-index: 1100; padding: 20px; }
+.gwp-drive-modal-overlay { z-index: var(--z-modal); padding: 20px; }
 .gwp-drive-dialog { width: min(520px, calc(100vw - 40px)); border: 1px solid var(--border); border-radius: 16px; background: var(--surface2); color: var(--text); box-shadow: 0 18px 60px rgba(0, 0, 0, .35); overflow: hidden; }
 .gwp-drive-dialog > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 22px 24px 16px; }
 .gwp-drive-dialog h2 { margin: 0; font-size: 20px; font-weight: 650; }
@@ -597,7 +569,7 @@
 .gwp-drive-general-role-select .custom-select-dropdown { top: auto; bottom: calc(100% + 4px); min-width: min(320px, calc(100vw - 96px)); }
 .gwp-drive-general-role-select .custom-select-item { padding: 11px 12px; font-size: 13px; }
 .gwp-drive-copy-link { display: inline-flex; align-items: center; gap: 7px; padding: 9px 14px; border: 1px solid var(--accent); border-radius: 8px; background: transparent; color: var(--accent); font-weight: 600; cursor: pointer; }
-.gwp-drive-download-overlay { z-index: 9600; }
+.gwp-drive-download-overlay { z-index: var(--z-modal); }
 .gwp-drive-download-dialog { width: min(520px, calc(100vw - 40px)); overflow: hidden; border: 1px solid var(--action-download); border-radius: 16px; background: var(--surface2); color: var(--text); box-shadow: 0 18px 60px rgba(0, 0, 0, .38); }
 .gwp-drive-download-dialog > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 20px 22px; border-bottom: 1px solid var(--border); }
 .gwp-drive-download-dialog h2 { margin: 0; font-size: 19px; font-weight: 650; }
@@ -714,7 +686,7 @@
 .gwp-ai-prompt-insert { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; box-sizing: border-box; height: 36px; min-width: 64px; padding: 0 13px !important; border: none !important; border-radius: 7px !important; background: var(--accent) !important; color: var(--on-accent) !important; font-size: 13px !important; font-weight: 400; }
 .gwp-ai-prompt-insert:hover:not(:disabled) { background: var(--button-primary-hover) !important; }
 .gwp-ai-prompt-insert:disabled { cursor: not-allowed; opacity: .45; }
-.gwp-signature-settings-overlay { z-index: 9200; }
+.gwp-signature-settings-overlay { z-index: var(--z-modal); }
 .gwp-signature-settings { display: flex; width: min(920px, calc(100vw - 40px)); height: min(620px, calc(100vh - 40px)); min-height: 440px; flex-direction: column; overflow: hidden; border: 1px solid var(--border); border-radius: 14px; background: var(--modal-bg); box-shadow: 0 22px 60px rgba(0, 0, 0, .5); }
 .gwp-signature-settings > header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px; border-bottom: 1px solid var(--border); }
 .gwp-signature-settings > header h3 { margin: 0; color: var(--text); font-size: var(--modal-title); }

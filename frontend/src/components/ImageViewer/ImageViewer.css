@@ -1,7 +1,7 @@
 .image-viewer {
     position:fixed;
     inset:0;
-    z-index:31000;
+    z-index: var(--z-modal);
     display:flex;
     align-items:center;
     justify-content:center;

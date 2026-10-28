@@ -1,8 +1,10 @@
 @import 'pretendard/dist/web/variable/pretendardvariable.css';
 @import './themes/dark.css';
 @import './themes/light.css';
+@import './components/common/Checkbox/Checkbox.css';
 
 :root {
+  --z-modal: 9000;
   --r: 12px;
 
   /* ── 의미 기반 액션 색상 ──

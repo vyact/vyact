@@ -351,7 +351,7 @@
 .memo-editor-toolbar .memo-color-preset:hover { outline: 2px solid var(--text); outline-offset: 1px; }
 .memo-editor-content a:not(.memo-attachment-link),
 .memo-viewer-content a:not(.memo-attachment-link) { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
-.memo-link-modal-overlay { z-index: 9100; }
+.memo-link-modal-overlay { z-index: var(--z-modal); }
 .memo-link-modal { width: min(560px, 100%); padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--modal-bg); color: var(--text); box-shadow: 0 18px 48px rgba(0, 0, 0, .45); }
 .memo-link-modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 .memo-link-modal-header h3 { margin: 0; font-size: var(--modal-title); }

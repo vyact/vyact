@@ -1,4 +1,4 @@
-.rag-context-overlay { z-index: 9000; }
+.rag-context-overlay { z-index: var(--z-modal); }
 .rag-context-modal { display: flex; flex-direction: column; width: 680px; max-width: 90vw; max-height: 80vh; overflow: hidden; border: 1px solid rgba(255, 255, 255, .12); border-radius: 14px; background: var(--bg-secondary, #1e1e1e); box-shadow: 0 24px 60px rgba(0, 0, 0, .5); }
 .rag-context-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid rgba(255, 255, 255, .08); }
 .rag-context-header-title { display: flex; align-items: center; gap: 8px; }

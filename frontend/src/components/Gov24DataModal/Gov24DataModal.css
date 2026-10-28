@@ -1,4 +1,4 @@
-.gov24-browser-overlay { z-index: 10050; }
+.gov24-browser-overlay { z-index: var(--z-modal); }
 .gov24-browser-modal { display:flex; flex-direction:column; width:min(1180px,96vw); height:min(780px,90vh); overflow:hidden; border:1px solid var(--border); border-radius:18px; background:var(--surface); color:var(--text); box-shadow:0 28px 80px rgba(0,0,0,.45); }
 .gov24-browser-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border); }
 .gov24-browser-header h2 { margin:0; font-size:var(--modal-title); font-weight:600; line-height:1.35; letter-spacing:-.01em; }

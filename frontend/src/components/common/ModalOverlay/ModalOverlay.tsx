@@ -1,7 +1,10 @@
-import {useEffect, useRef} from 'react';
+import {createPortal} from 'react-dom';
+import {createContext, useContext, useEffect, useRef} from 'react';
 import type {HTMLAttributes, ReactNode} from 'react';
 import {getTopmostModalOverlay} from './modalStack';
 import './ModalOverlay.css';
+
+const ModalParentContext = createContext(false);
 
 interface ModalOverlayProps extends HTMLAttributes<HTMLDivElement> {
     children: ReactNode;
@@ -15,7 +18,7 @@ interface ModalOverlayProps extends HTMLAttributes<HTMLDivElement> {
 
 /**
  * 앱 전체 모달의 공통 배경 레이어.
- * 개별 모달은 className과 일반 div 속성으로 크기, z-index, drag 동작 등을 확장한다.
+ * 개별 모달은 className과 일반 div 속성으로 크기, drag 동작 등을 확장한다.
  */
 const ModalOverlay = ({
     children,
@@ -30,6 +33,7 @@ const ModalOverlay = ({
     style,
     ...props
 }: ModalOverlayProps) => {
+    const hasParentModal = useContext(ModalParentContext);
     const overlayRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -52,8 +56,8 @@ const ModalOverlay = ({
         if (closeOnBackdrop && event.target === event.currentTarget) onClose?.();
     };
 
-    return (
-        <div
+    const overlay = (
+        <ModalParentContext.Provider value={true}><div
             ref={overlayRef}
             {...props}
             className={`app-modal-overlay ${className}`.trim()}
@@ -73,8 +77,11 @@ const ModalOverlay = ({
             style={{...style, background: `rgba(0, 0, 0, ${dimOpacity})`, backdropFilter: blur ? `blur(${blur}px)` : 'none'}}
         >
             {children}
-        </div>
+        </div></ModalParentContext.Provider>
     );
+
+    // Escape sidebar/workspace stacking contexts while preserving nested dialogs.
+    return hasParentModal || typeof document === 'undefined' ? overlay : createPortal(overlay, document.body);
 };
 
 export default ModalOverlay;

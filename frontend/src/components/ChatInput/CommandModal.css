@@ -1,4 +1,4 @@
-.command-modal-overlay { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(0, 0, 0, .6); }
+.command-modal-overlay { position: fixed; inset: 0; z-index: var(--z-modal); display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(0, 0, 0, .6); }
 .command-modal { display: flex; flex-direction: column; width: 100%; max-width: 520px; max-height: 50vh; overflow: hidden; border: 1px solid var(--border); border-radius: 14px; background: var(--modal-bg); box-shadow: 0 20px 60px rgba(0, 0, 0, .5); }
 .command-modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--border); }
 .command-modal-heading { display: flex; align-items: center; gap: 8px; color: var(--text); font-size: var(--modal-title); font-weight: 600; }
