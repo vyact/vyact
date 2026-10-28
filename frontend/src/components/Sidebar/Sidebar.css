@@ -475,24 +475,24 @@
 
 .hist-item:is(:hover, :active),
 .project-conversation:is(:hover, :active) {
-    background: color-mix(in srgb, var(--accent) 5%, transparent);
+    background: var(--sidebar-row-hover);
 }
 
 .hist-item.active,
 .project-conversation.active {
-    background: color-mix(in srgb, var(--accent) 9%, transparent);
+    background: var(--sidebar-row-selected);
     border-color: transparent;
     box-shadow: none;
 }
 
 :root[data-theme='light'] .hist-item:is(:hover, :active),
 :root[data-theme='light'] .project-conversation:is(:hover, :active) {
-    background: color-mix(in srgb, var(--text) 6%, transparent);
+    background: var(--sidebar-row-hover);
 }
 
 :root[data-theme='light'] .hist-item.active,
 :root[data-theme='light'] .project-conversation.active {
-    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    background: var(--sidebar-row-selected);
     border-color: transparent;
     box-shadow: none;
 }

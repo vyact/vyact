@@ -1,0 +1,42 @@
+.novel-title-modal {display: flex; flex-direction: column; width: min(620px, 100%); max-height: calc(100dvh - 48px); overflow: hidden; border: 1px solid var(--border); border-radius: 14px; background: var(--modal-bg); box-shadow: 0 20px 60px rgba(0,0,0,.4); color: var(--text);}
+.novel-title-modal>header {display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--border);}
+.novel-title-modal h2 {display: flex; align-items: center; gap: 8px; font-size: 16px; margin: 0;}
+.novel-title-modal h2 svg {color: var(--accent);}
+.novel-title-modal-body {padding: 18px 20px; overflow-y: auto; min-height: 0;}
+.novel-title-help,.novel-title-empty {color: var(--muted); font-size: 12px; line-height: 1.7; margin: 0 0 12px;}
+.novel-title-sources {display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;}
+.novel-title-sources>section {min-width: 0; padding: 12px; border: 1px solid var(--border); border-radius: 8px;}
+.novel-title-sources h3 {font-size: 13px; margin: 0 0 10px;}
+.novel-title-source {display: flex; align-items: center; gap: 10px; justify-content: space-between; padding: 7px 0; font-size: 12px;}
+.novel-title-source>span {min-width: 0; overflow-wrap: anywhere;}
+.novel-title-instruction {display: flex; flex-direction: column; gap: 7px; margin-top: 16px; font-size: 12px; color: var(--text-secondary);}
+.novel-title-instruction textarea {box-sizing: border-box; width: 100%; min-height: 76px; padding: 10px; resize: vertical; border: 1px solid var(--border); border-radius: 7px; color: var(--text); background: var(--surface); font: inherit; line-height: 1.6;}
+.novel-title-results {margin: 18px 0 0; padding: 0; border: 0;}
+.novel-title-results legend {font-size: 13px; margin-bottom: 8px;}
+.novel-title-results>label {display: flex; align-items: flex-start; gap: 10px; padding: 12px; margin-top: 7px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;}
+.novel-title-results>label.is-selected {border-color: var(--accent); background: color-mix(in srgb,var(--accent) 7%,transparent);}
+.novel-title-results input {accent-color: var(--accent); flex-shrink: 0; margin-top: 3px;}
+.novel-title-results strong {display: block; font-size: 14px; overflow-wrap: anywhere;}
+.novel-title-results small {display: block; margin-top: 5px; font-size: 12px; line-height: 1.6; color: var(--muted);}
+.novel-title-modal>footer {display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; padding: 14px 20px; border-top: 1px solid var(--border);}
+@media (max-width: 560px) {.novel-title-sources {grid-template-columns: 1fr;}}
+.novel-title-modal>footer button {display: inline-flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer;}
+.novel-title-modal>footer button:disabled {cursor: not-allowed;}
+
+.novel-title-modal {width: min(560px, 100%); border-radius: 11px;}
+.novel-title-modal>header {padding: 13px 16px;}
+.novel-title-modal h2 {font-size: 15px;}
+.novel-title-modal-body {padding: 12px 16px;}
+.novel-title-help {font-size: 11px; line-height: 1.6; margin-bottom: 10px;}
+.novel-title-sources {gap: 10px; align-items: start;}
+.novel-title-sources>section {padding: 9px 10px;}
+.novel-title-sources h3 {margin-bottom: 6px; font-size: 12px;}
+.novel-title-source-list {max-height: min(180px, 24dvh); overflow-y: auto; scrollbar-gutter: stable;}
+.novel-title-source {padding: 5px 0; gap: 8px; font-size: 12px;}
+.novel-title-source .settings-switch {width: 30px; height: 18px;}
+.novel-title-source .settings-switch-slider::before {width: 12px; height: 12px;}
+.novel-title-source .settings-switch input:checked + .settings-switch-slider::before {transform: translateX(12px);}
+.novel-title-instruction {margin-top: 12px; gap: 6px;}
+.novel-title-instruction textarea {min-height: 58px; max-height: 120px; padding: 8px;}
+.novel-title-modal>footer {padding: 10px 16px; gap: 7px;}
+.novel-title-modal>footer button {padding: 7px 11px; font-size: 12px;}

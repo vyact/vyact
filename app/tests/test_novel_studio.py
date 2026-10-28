@@ -1,3 +1,4 @@
+from routers.novel_studio import TitleSuggestionRequest, suggest_novel_titles
 from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 from elasticsearch import NotFoundError
@@ -208,3 +209,61 @@ def test_invalid_final_setting_selection_and_duplicate_versions_are_rejected():
     version = {"id": identifier, "title": "Version", "content": "Settings"}
     with pytest.raises(ValidationError):
         NovelStory(**base, finalSettings=[version, version])
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("revision", [False, True])
+async def test_final_synthesis_returns_generated_name_and_markdown(revision):
+    body = NovelGenerationRequest(title="Story", bible="", previous="", manuscript="", instruction="Refine" if revision else "Combine", target="bible", settings_stage="synthesis", proposal="Previous version" if revision else "", selected_settings=[{"category": "createDirection", "title": "Mystery", "content": "Financial investigation"}])
+    with patch("routers.novel_studio.query_llm", new=AsyncMock(return_value='{"title":"Market mystery — restrained suspense","text":"# Final settings\\nComplete content"}')) as model:
+        result = await generate_novel(body)
+    assert result["title"] == "Market mystery — restrained suspense"
+    assert result["text"] == "# Final settings\nComplete content"
+    assert 'keys "title" and "text"' in model.call_args.args[2]
+
+
+def test_chapter_planning_notes_round_trip_separately_from_manuscript():
+    chapter = NovelChapter(id=uuid4(), title="Chapter", text="Actual prose", workNotes=[{"id": uuid4(), "kind": "outline", "content": "# Planned scenes"}, {"id": uuid4(), "kind": "review", "content": "Improve pacing"}])
+    restored = NovelChapter.model_validate(chapter.model_dump(mode="json"))
+    assert restored.text == "Actual prose"
+    assert [note.kind for note in restored.workNotes] == ["outline", "review"]
+    assert restored.workNotes[0].content == "# Planned scenes"
+
+
+@pytest.mark.asyncio
+async def test_title_suggestions_use_explicit_sources_and_configured_model():
+    body = TitleSuggestionRequest(current_title="Work", sources=[{"title": "Chapter 2", "content": "Selected full prose"}], instruction="Short titles", language="ko")
+    with patch("routers.novel_studio.query_llm", new=AsyncMock(return_value='{"suggestions":[{"title":"  Market clues  ","reason":"Fits the mystery"}]}')) as model:
+        assert await suggest_novel_titles(body) == {"suggestions": [{"title": "Market clues", "reason": "Fits the mystery"}]}
+    assert "Selected full prose" in model.call_args.args[0]
+    assert "Short titles" in model.call_args.args[0]
+    assert model.call_args.kwargs["use_tools"] is False
+    assert model.call_args.kwargs["inject_user_profile"] is False
+
+
+def test_title_suggestion_context_requires_sources_and_preserves_long_content():
+    with pytest.raises(ValidationError):
+        TitleSuggestionRequest(current_title="Work", sources=[])
+    text = "x" * 150000
+    request = TitleSuggestionRequest(current_title="Work", sources=[{"title": "One", "content": text}])
+    assert request.sources[0].content == text
+
+
+@pytest.mark.asyncio
+async def test_invalid_title_response_returns_error_instead_of_applying_text():
+    body = TitleSuggestionRequest(current_title="Work", sources=[{"title": "One", "content": "Prose"}])
+    with patch("routers.novel_studio.query_llm", new=AsyncMock(return_value='{"suggestions":[{"title":"","reason":"Bad"}]}')):
+        with pytest.raises(HTTPException) as failure:
+            await suggest_novel_titles(body)
+    assert failure.value.status_code == 502
+
+
+@pytest.mark.asyncio
+async def test_manuscript_revision_sends_full_original_and_requests_full_replacement():
+    manuscript = "Opening passage\n" + "x" * 31000 + "\nClosing passage"
+    body = NovelGenerationRequest(title="Story", bible="", previous="", manuscript=manuscript, instruction="Change the closing scene", target="text")
+    with patch("routers.novel_studio.query_llm", new=AsyncMock(return_value='{"title":"Revised chapter","text":"Complete revised chapter"}')) as model:
+        assert await generate_novel(body) == {"title": "Revised chapter", "text": "Complete revised chapter"}
+    assert manuscript in model.call_args.args[0]
+    assert "COMPLETE updated manuscript" in model.call_args.args[2]
+    assert "only new prose" not in model.call_args.args[2]

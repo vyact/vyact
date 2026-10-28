@@ -1,5 +1,6 @@
+import TitleSuggestionModal from './TitleSuggestionModal';
 import {useRef, useState} from 'react';
-import {BookOpen, MoreHorizontal, Pencil, Trash2, Download} from 'lucide-react';
+import {BookOpen, MoreHorizontal, Pencil, Trash2, Download, Sparkles} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import ActionMenu from '../common/ActionMenu/ActionMenu';
 import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
@@ -21,6 +22,7 @@ export default function StoryLibrary({stories, activeId, disabled, onSelect, onR
     const [menuId, setMenuId] = useState<string | null>(null);
     const [renamingId, setRenamingId] = useState<string | null>(null);
     const [name, setName] = useState('');
+    const [recommending, setRecommending] = useState<Story | null>(null);
     const [deleting, setDeleting] = useState<Story | null>(null);
     const cancelled = useRef(false);
     const commitRename = () => {
@@ -37,12 +39,14 @@ export default function StoryLibrary({stories, activeId, disabled, onSelect, onR
                 }}/>
                 : <button className="novel-story" disabled={disabled} onClick={() => onSelect(story.id)}><BookOpen size={16}/><span>{story.title || t('novelStudio.untitled')}</span></button>}
             <ActionMenu isOpen={menuId === story.id} onOpenChange={open => setMenuId(open ? story.id : null)} disabled={disabled}
-                trigger={<MoreHorizontal size={15}/>} ariaLabel={t('novelStudio.storyActions', {title: story.title})} triggerClassName="titlebar-btn novel-story-menu" menuClassName="hist-menu-popup">
+                trigger={<MoreHorizontal size={15}/>} ariaLabel={t('novelStudio.storyActions', {title: story.title})} triggerClassName="hist-menu-btn novel-story-menu" menuClassName="hist-menu-popup">
                 <button className="hist-menu-item" onClick={() => {setMenuId(null); cancelled.current = false; setName(story.title); setRenamingId(story.id);}}><Pencil size={14}/>{t('novelStudio.rename')}</button>
+                <button className="hist-menu-item" onClick={() => {setMenuId(null); setRecommending(story);}}><Sparkles size={14}/>{t('novelStudio.titleSuggestions.title')}</button>
                 {(['pdf', 'md'] as const).map(format => <button key={format} className="hist-menu-item" onClick={() => {setMenuId(null); onExport(story, format);}}><Download size={14}/>{t('novelStudio.downloadArchive', {format: format.toUpperCase()})}</button>)}
                 <button className="hist-menu-item danger" onClick={() => {setMenuId(null); setDeleting(story);}}><Trash2 size={14}/>{t('novelStudio.delete')}</button>
             </ActionMenu>
         </div>)}
+        {recommending && <TitleSuggestionModal key={recommending.id} story={recommending} onClose={() => setRecommending(null)} onApply={title => onRename(recommending.id, title)}/>}
         {deleting && <ConfirmModal actionLayout="horizontal" title={t('novelStudio.deleteTitle')} description={t('novelStudio.deleteDescription', {title: deleting.title})}
             options={[{label: t('novelStudio.keep'), value: 'cancel'}, {label: t('novelStudio.delete'), value: 'delete', variant: 'danger'}]}
             onClose={() => setDeleting(null)} onSelect={value => {if (value === 'delete') onDelete(deleting.id); setDeleting(null);}}/>}

@@ -4,6 +4,8 @@
 @import './components/common/Checkbox/Checkbox.css';
 
 :root {
+  --sidebar-row-hover: color-mix(in srgb, var(--accent) 5%, transparent);
+  --sidebar-row-selected: color-mix(in srgb, var(--accent) 9%, transparent);
   --z-modal: 9000;
   --r: 12px;
 
@@ -150,4 +152,9 @@ select {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--muted);
+}
+
+:root[data-theme="light"] {
+  --sidebar-row-hover: color-mix(in srgb, var(--text) 6%, transparent);
+  --sidebar-row-selected: color-mix(in srgb, var(--accent) 10%, transparent);
 }

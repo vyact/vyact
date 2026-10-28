@@ -16,7 +16,8 @@ describe('settings planning stages', () => {
         expect(html).toContain('The librarian');
         expect(html).not.toContain('Moon library');
         expect(html).not.toContain('novel-category-candidates');
-        expect(html).toContain('novel-group-selection');
+        expect(html).toContain('novel-group-summary');
+        expect(html).not.toContain('novel-group-selection');
         expect(html).not.toContain('has-selection');
         expect(html).not.toContain('aria-expanded="true"');
         expect(html).not.toContain('novel-group-candidates');

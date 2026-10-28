@@ -1,0 +1,5 @@
+.inline-title-editor {display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0;}
+.inline-title-editor>span {color: var(--text); font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; min-width: 0;}
+.inline-title-editor>input {box-sizing: border-box; flex: 1; min-width: 0; padding: 5px 7px; border: 1px solid var(--border); border-radius: 5px; background: var(--bg); color: var(--text); font: inherit;}
+.inline-title-editor>button {display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 26px; height: 26px; padding: 0; border: none; border-radius: 5px; background: transparent; color: var(--muted); cursor: pointer;}
+.inline-title-editor>button:hover:not(:disabled) {color: var(--accent); background: var(--interactive-hover);}
