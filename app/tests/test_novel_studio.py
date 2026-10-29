@@ -222,14 +222,6 @@ async def test_final_synthesis_returns_generated_name_and_markdown(revision):
     assert 'keys "title" and "text"' in model.call_args.args[2]
 
 
-def test_chapter_planning_notes_round_trip_separately_from_manuscript():
-    chapter = NovelChapter(id=uuid4(), title="Chapter", text="Actual prose", workNotes=[{"id": uuid4(), "kind": "outline", "content": "# Planned scenes"}, {"id": uuid4(), "kind": "review", "content": "Improve pacing"}])
-    restored = NovelChapter.model_validate(chapter.model_dump(mode="json"))
-    assert restored.text == "Actual prose"
-    assert [note.kind for note in restored.workNotes] == ["outline", "review"]
-    assert restored.workNotes[0].content == "# Planned scenes"
-
-
 @pytest.mark.asyncio
 async def test_title_suggestions_use_explicit_sources_and_configured_model():
     body = TitleSuggestionRequest(current_title="Work", sources=[{"title": "Chapter 2", "content": "Selected full prose"}], instruction="Short titles", language="ko")

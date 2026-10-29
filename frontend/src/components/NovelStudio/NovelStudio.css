@@ -283,29 +283,7 @@
 .novel-candidate-title>.novel-candidate-select {flex: 0 0 auto;}
 .novel-response-title .novel-reader-title-editor {box-sizing: border-box; width: 100%; min-width: 0; margin-top: 4px; padding: 6px 8px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; font: inherit; font-size: 18px; font-weight: 600;}
 
-.novel-manuscript-actions {display: grid; gap: 7px; flex-shrink: 0; margin-bottom: 14px;}
-.novel-manuscript-action {display: flex; align-items: center; gap: 5px;}
-.novel-studio .novel-manuscript-action-select {flex: 1; min-width: 0; padding: 10px 12px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); color: var(--text-secondary); font-size: 13px; justify-content: flex-start;}
-.novel-studio .novel-manuscript-action-select[aria-pressed=true] {border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--surface));}
-.novel-studio .novel-manuscript-action-help {width: 28px; height: 28px; padding: 0; border: none; border-radius: 5px; background: transparent; color: var(--muted); flex-shrink: 0;}
-.novel-studio .novel-manuscript-action-help:hover {color: var(--text); background: var(--interactive-hover);}
-.novel-paper:has(.novel-chapter-notes) {overflow-y: auto;}
-.novel-chapter-notes {flex-shrink: 0; border-top: 1px solid var(--border); margin-top: 20px; padding-top: 12px;}
-.novel-chapter-notes h3 {font-size: 13px; color: var(--text-secondary); margin: 0 0 8px;}
-.novel-chapter-notes details {margin-top: 8px; border: 1px solid var(--border); border-radius: 7px; padding: 10px;}
-.novel-chapter-notes summary {cursor: pointer; font-size: 13px; color: var(--text-secondary);}
 
-.novel-manuscript-action {gap: 0; padding-left: 9px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface);}
-.novel-manuscript-action.is-active {border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--surface));}
-.novel-studio .novel-manuscript-action-select,.novel-studio .novel-manuscript-action-select[aria-pressed=true] {border: none; background: transparent; padding: 11px 10px 11px 5px;}
-.novel-manuscript-action.is-active .novel-manuscript-action-help {color: var(--accent);}
-.novel-action-help-content {display: flex; flex-direction: column; gap: 10px; white-space: normal; padding: 3px;}
-.novel-action-help-content>strong {font-size: 14px; line-height: 1.5; color: var(--text);}
-.novel-action-help-content p {margin: 0; color: var(--text-secondary); font-size: 12px; line-height: 1.7;}
-.novel-action-help-result {padding: 10px; border-radius: 7px; background: color-mix(in srgb, var(--accent) 8%, transparent);}
-.novel-action-help-result>span {display: flex; align-items: center; gap: 6px; margin-bottom: 5px; color: var(--accent); font-size: 12px;}
-.novel-action-help-result svg {flex-shrink: 0;}
-.novel-action-help-content>small {padding-top: 7px; border-top: 1px solid var(--border); color: var(--muted); font-size: 11px; line-height: 1.6;}
 
 .novel-previous-context {display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; flex-shrink: 0; font-size: 12px; color: var(--text-secondary);}
 

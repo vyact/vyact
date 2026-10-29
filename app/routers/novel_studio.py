@@ -142,17 +142,10 @@ async def generate_novel(body: NovelGenerationRequest):
     return parse_writing_response(result) if is_settings_proposal or body.target == "text" else {"text": result.strip()}
 
 
-class ChapterWorkNote(BaseModel):
-    id: UUID
-    kind: Literal["outline", "review"]
-    content: str = Field(min_length=1, max_length=20000)
-
-
 class NovelChapter(BaseModel):
     id: UUID
     title: str = Field(max_length=200)
     text: str = Field(max_length=1_000_000)
-    workNotes: list[ChapterWorkNote] = Field(default_factory=list, max_length=100)
 
 
 class FinalSetting(BaseModel):
