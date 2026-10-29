@@ -173,6 +173,14 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
     };
     const taskGuidance = selectedAction === 'customRequest' ? '' : taskGuidanceEdits[selectedAction] ?? tr(`${selectedAction}Prompt`);
     const writingRequest = buildWritingInstruction(includeTaskGuidance ? taskGuidance : '', instruction);
+    const deleteStories = (ids: string[]) => {
+        const deletedIds = new Set(ids);
+        const remaining = stories.filter(item => !deletedIds.has(item.id));
+        const next = remaining.length ? remaining : [createStory(tr('untitled'), t('novelStudio.chapterNumber', {number: 1}))];
+        setStories(() => next);
+        setContextExclusions(previous => Object.fromEntries(Object.entries(previous).filter(([key]) => !ids.some(id => key.startsWith(`${id}:`)))));
+        if (story && deletedIds.has(story.id)) {setStoryId(next[0].id); setChapterId(''); setTab('text'); resetAssistant();}
+    };
     const header = <>
         <div className="novel-brand"><Feather size={19}/><h1>{tr('title')}</h1></div>
         {story && <div className="novel-current-story"><span className="novel-current-story-name">{story.title}</span></div>}
@@ -180,17 +188,12 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
         <button data-tooltip-disabled="" aria-label={tr('backToChat')} className="novel-return" onClick={requestExit}><LogOut size={16} strokeWidth={1.8}/><span>{tr('exitStudio')}</span></button>
     </>;
     return <WorkspaceLayout className="novel-studio" label={tr('title')} header={header}
-        sidebar={story ? (                <nav className="novel-library" aria-label={tr('library')}><div className="novel-section-heading"><span>{tr('library')}</span><button className="titlebar-btn" disabled={busy || loadFailed} aria-label={tr('newStory')} onClick={addStory}><Plus size={16}/></button></div>
-                    <StoryLibrary stories={stories} activeId={story.id} disabled={busy || exporting} onSelect={id => {setStoryId(id); setChapterId(''); setTab('text'); resetAssistant();}}
+        sidebar={story ? (                <nav className="novel-library" aria-label={tr('library')}>
+                    <StoryLibrary stories={stories} activeId={story.id} disabled={busy || exporting || loadFailed} onSelect={id => {setStoryId(id); setChapterId(''); setTab('text'); resetAssistant();}}
                         onExport={(selectedStory, format) => {void exportManuscript(selectedStory, format);}}
                         onRename={(id, title) => setStories(items => items.map(item => item.id === id ? {...item, title} : item))}
-                        onDelete={id => {
-                            const remaining = stories.filter(item => item.id !== id);
-                            const next = remaining.length ? remaining : [createStory(tr('untitled'), t('novelStudio.chapterNumber', {number: 1}))];
-                            setStories(() => next);
-                            setContextExclusions(previous => Object.fromEntries(Object.entries(previous).filter(([key]) => !key.startsWith(`${id}:`))));
-                            if (id === story.id) {setStoryId(next[0].id); setChapterId(''); setTab('text'); resetAssistant();}
-                        }}/>
+                        onCreate={addStory} onDelete={id => deleteStories([id])} onDeleteMany={deleteStories}/>
+
                     <div className="novel-section-heading"><span>{tr('chapters')}</span><button className="titlebar-btn" disabled={busy} aria-label={tr('newChapter')} onClick={() => {const next = createChapter(t('novelStudio.chapterNumber', {number: story.chapters.length + 1})); updateStory({chapters: [...story.chapters, next]}); setChapterId(next.id); setTab('text'); resetAssistant();}}><Plus size={16}/></button></div>
                     {story.chapters.map((item, index) => <div key={item.id} className={`novel-story-row novel-chapter-row${chapter.id === item.id ? ' selected' : ''}`}>
                         <button className={`novel-chapter${chapter.id === item.id ? ' selected' : ''}`} disabled={busy} onClick={() => {setChapterId(item.id); setTab('text'); resetAssistant();}}><span>{String(index + 1).padStart(2, '0')}</span><span>{item.title}</span></button>

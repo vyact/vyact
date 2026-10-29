@@ -335,3 +335,15 @@
 .novel-manuscript-editor-container {position: relative;}
 .novel-image-loading {position: sticky; bottom: 24px; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 10px; width: fit-content; max-width: 100%; box-sizing: border-box; margin: 16px auto; padding: 12px 18px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); box-shadow: 0 4px 18px rgba(0,0,0,.18); font-size: 13px;}
 .novel-image-loading svg {color: var(--accent); flex-shrink: 0;}
+
+.novel-library-actions {display: flex; align-items: center; gap: 5px;}
+.novel-story-checkbox {flex-shrink: 0; margin: 0 0 0 8px; accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer;}
+.novel-bulk-done {display: inline-flex; align-items: center; gap: 4px; border: none; border-radius: 5px; padding: 5px 7px; color: var(--accent); background: var(--surface); font-size: 11px; cursor: pointer;}
+.novel-bulk-done:disabled {opacity: .4; cursor: not-allowed;}
+
+.novel-story-list {scrollbar-width: thin; scrollbar-color: transparent transparent; scrollbar-gutter: stable;}
+.novel-story-list.is-scrolling {scrollbar-color: var(--border) transparent;}
+.novel-story-list::-webkit-scrollbar {width: 6px; height: 6px;}
+.novel-story-list::-webkit-scrollbar-track {background: transparent;}
+.novel-story-list::-webkit-scrollbar-thumb {background: transparent; border-radius: 6px;}
+.novel-story-list.is-scrolling::-webkit-scrollbar-thumb {background: var(--border);}

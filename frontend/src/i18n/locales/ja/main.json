@@ -1645,6 +1645,7 @@
     "defaultQuestion": "添付のデータと結果を分析し、重要な点と注意点を説明してください。"
   },
   "novelStudio": {
+    "bulkDelete": {"select": "作品を選んで削除", "done": "完了 ({{count}})", "selectStory": "{{title}}を選択", "title": "選択した作品を削除", "description": "選択した{{count}}作品の全原稿と設定を削除します。元に戻せません。"},
     "cancelEdit": "キャンセル",
     "imageCleanupError": "画像を削除できませんでした。再試行してください。",
     "deleteChapterTitle": "この話を削除しますか？",

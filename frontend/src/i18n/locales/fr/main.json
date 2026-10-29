@@ -1647,6 +1647,7 @@
     "defaultQuestion": "Analysez les données et résultats joints. Expliquez les points clés et les éléments à prendre en compte."
   },
   "novelStudio": {
+    "bulkDelete": {"select": "Sélectionner des œuvres à supprimer", "done": "Terminer ({{count}})", "selectStory": "Sélectionner {{title}}", "title": "Supprimer les œuvres sélectionnées", "description": "Supprimer {{count}} œuvres sélectionnées, avec tous leurs chapitres et paramètres. Cette action est irréversible."},
     "cancelEdit": "Annuler",
     "imageCleanupError": "Impossible de supprimer les images. Réessayez.",
     "deleteChapterTitle": "Supprimer ce chapitre ?",

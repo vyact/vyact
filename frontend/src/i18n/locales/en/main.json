@@ -1646,6 +1646,7 @@
     "defaultQuestion": "Analyze the attached data and results. Explain the key findings and points to consider."
   },
   "novelStudio": {
+    "bulkDelete": {"select": "Select works to delete", "done": "Done ({{count}})", "selectStory": "Select {{title}}", "title": "Delete selected works", "description": "Delete {{count}} selected works, including all chapter manuscripts and settings. This cannot be undone."},
     "cancelEdit": "Cancel",
     "imageCleanupError": "Could not clean up images. Please try again.",
     "deleteChapterTitle": "Delete this chapter?",

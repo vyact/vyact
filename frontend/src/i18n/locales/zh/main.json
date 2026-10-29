@@ -1645,6 +1645,7 @@
     "defaultQuestion": "请分析附件中的数据和结果，说明关键发现与注意事项。"
   },
   "novelStudio": {
+    "bulkDelete": {"select": "选择作品删除", "done": "完成 ({{count}})", "selectStory": "选择{{title}}", "title": "删除所选作品", "description": "删除所选{{count}}部作品的所有章节原稿和设定。此操作无法撤销。"},
     "cancelEdit": "取消",
     "imageCleanupError": "无法清理图片，请重试。",
     "deleteChapterTitle": "删除本章？",

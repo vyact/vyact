@@ -1655,6 +1655,7 @@
     "defaultQuestion": "첨부한 데이터와 결과를 분석하고, 핵심 내용과 유의할 점을 설명해 주세요."
   },
   "novelStudio": {
+    "bulkDelete": {"select": "작품 선택 삭제", "done": "완료 ({{count}})", "selectStory": "{{title}} 선택", "title": "선택한 작품 삭제", "description": "선택한 작품 {{count}}개와 모든 회차 원고·원고 설정을 삭제합니다. 이 작업은 되돌릴 수 없습니다."},
     "cancelEdit": "취소",
     "imageCleanupError": "이미지를 정리하지 못했습니다. 다시 시도해주세요.",
     "deleteChapterTitle": "회차를 삭제할까요?",
