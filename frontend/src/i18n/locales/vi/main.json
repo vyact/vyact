@@ -1645,11 +1645,14 @@
     "defaultQuestion": "Phân tích dữ liệu và kết quả đính kèm. Giải thích các điểm chính và những điều cần lưu ý."
   },
   "novelStudio": {
+    "cancelEdit": "Hủy",
+    "imageCleanupError": "Không thể xóa ảnh. Vui lòng thử lại.",
     "deleteChapterTitle": "Xóa chương này?",
     "deleteChapterDescription": "Xóa toàn bộ bản thảo của “{{title}}”. Giữ các chương và thiết lập khác. Không thể hoàn tác.",
     "exitGeneration": {"title": "Dừng tạo và thoát?", "description": "Yêu cầu đang chạy sẽ bị hủy. Kết quả chưa áp dụng sẽ không được lưu. Bản thảo và thiết lập đã lưu được giữ nguyên.", "stay": "Tiếp tục làm việc", "leave": "Dừng và thoát"},
     "editManuscript": "Chỉnh sửa",
-    "finishManuscriptEdit": "Hoàn tất",
+    "finishManuscriptEdit": "Lưu",
+    "imageUploadError": "Không thể thêm ảnh. Dùng tệp PNG, JPEG, GIF hoặc WebP tối đa 10 MB.",
     "titleSuggestions": {"title": "AI gợi ý tiêu đề", "help": "Chọn bản thảo chương và thiết lập bản thảo để tham khảo. Chỉ gửi toàn bộ nội dung của các mục được bật.", "chapters": "Bản thảo chương", "settings": "Thiết lập bản thảo", "empty": "Chưa có nội dung tham khảo.", "includeSource": "Tham khảo {{title}}", "direction": "Mong muốn về tiêu đề (tùy chọn)", "placeholder": "Ví dụ: Ngắn, ấn tượng, mang sắc thái trinh thám tài chính.", "error": "Không nhận được gợi ý. Vui lòng thử lại.", "results": "Tiêu đề gợi ý", "close": "Đóng", "cancel": "Hủy yêu cầu", "generate": "Gợi ý tiêu đề", "apply": "Áp dụng tiêu đề"},
     "title": "Xưởng tiểu thuyết",
     "subtitle": "Nơi câu chuyện tiếp theo bắt đầu",

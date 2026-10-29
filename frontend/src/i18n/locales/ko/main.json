@@ -1655,11 +1655,14 @@
     "defaultQuestion": "첨부한 데이터와 결과를 분석하고, 핵심 내용과 유의할 점을 설명해 주세요."
   },
   "novelStudio": {
+    "cancelEdit": "취소",
+    "imageCleanupError": "이미지를 정리하지 못했습니다. 다시 시도해주세요.",
     "deleteChapterTitle": "회차를 삭제할까요?",
     "deleteChapterDescription": "‘{{title}}’의 원고를 모두 삭제합니다. 다른 회차와 이야기 설정은 유지됩니다. 이 작업은 되돌릴 수 없습니다.",
     "exitGeneration": {"title": "생성을 중단하고 나갈까요?", "description": "진행 중인 응답 요청을 취소합니다. 아직 적용하지 않은 생성 결과는 저장되지 않으며 기존에 저장된 원고와 설정은 유지됩니다.", "stay": "계속 작업", "leave": "중단하고 나가기"},
     "editManuscript": "수정하기",
-    "finishManuscriptEdit": "수정 완료",
+    "finishManuscriptEdit": "저장",
+    "imageUploadError": "이미지를 추가하지 못했습니다. PNG, JPEG, GIF, WebP 형식의 10MB 이하 파일을 사용해주세요.",
     "titleSuggestions": {"title": "AI 제목 추천", "help": "제목 추천에 참고할 회차 원고와 원고 설정을 선택하세요. 켠 항목의 전체 본문만 전달합니다.", "chapters": "회차 원고", "settings": "원고 설정", "empty": "참고할 내용이 없습니다.", "includeSource": "{{title}} 참고", "direction": "원하는 제목 방향 (선택)", "placeholder": "예: 짧고 강렬하게, 금융 추리극 분위기로", "error": "제목을 추천받지 못했습니다. 다시 시도해주세요.", "results": "추천 제목", "close": "닫기", "cancel": "요청 취소", "generate": "제목 추천받기", "apply": "제목 적용"},
     "title": "소설 작업실",
     "subtitle": "당신의 다음 이야기가 시작되는 곳",

@@ -1646,11 +1646,14 @@
     "defaultQuestion": "Analyze the attached data and results. Explain the key findings and points to consider."
   },
   "novelStudio": {
+    "cancelEdit": "Cancel",
+    "imageCleanupError": "Could not clean up images. Please try again.",
     "deleteChapterTitle": "Delete this chapter?",
     "deleteChapterDescription": "All manuscript text for “{{title}}” will be deleted. Other chapters and story settings are preserved. This cannot be undone.",
     "exitGeneration": {"title": "Stop generation and leave?", "description": "The active response request will be cancelled. Unapplied results will not be saved. Saved manuscripts and settings are preserved.", "stay": "Keep working", "leave": "Stop and leave"},
     "editManuscript": "Edit",
-    "finishManuscriptEdit": "Done editing",
+    "finishManuscriptEdit": "Save",
+    "imageUploadError": "Could not add image. Use a PNG, JPEG, GIF or WebP file up to 10 MB.",
     "titleSuggestions": {"title": "AI title suggestions", "help": "Choose chapter manuscripts and manuscript settings to reference. Only enabled items are sent, with their full text.", "chapters": "Chapter manuscripts", "settings": "Manuscript settings", "empty": "No source content available.", "includeSource": "Reference {{title}}", "direction": "Title preferences (optional)", "placeholder": "Example: Short, striking, with a financial mystery tone.", "error": "Could not get suggestions. Please try again.", "results": "Suggested titles", "close": "Close", "cancel": "Cancel request", "generate": "Suggest titles", "apply": "Apply title"},
     "title": "Novel Studio",
     "subtitle": "A space for your next story",

@@ -1645,11 +1645,14 @@
     "defaultQuestion": "请分析附件中的数据和结果，说明关键发现与注意事项。"
   },
   "novelStudio": {
+    "cancelEdit": "取消",
+    "imageCleanupError": "无法清理图片，请重试。",
     "deleteChapterTitle": "删除本章？",
     "deleteChapterDescription": "将删除“{{title}}”的正文。保留其他章节和故事设定。此操作无法撤销。",
     "exitGeneration": {"title": "停止生成并离开？", "description": "将取消当前响应请求。未应用的生成结果不会保存，已保存的原稿和设定会保留。", "stay": "继续工作", "leave": "停止并离开"},
     "editManuscript": "编辑",
-    "finishManuscriptEdit": "完成编辑",
+    "finishManuscriptEdit": "保存",
+    "imageUploadError": "无法添加图片。请使用不超过10MB的PNG、JPEG、GIF或WebP文件。",
     "titleSuggestions": {"title": "AI标题推荐", "help": "选择参考章节原稿和原稿设定。仅发送已开启项目的完整正文。", "chapters": "章节原稿", "settings": "原稿设定", "empty": "暂无参考内容。", "includeSource": "参考{{title}}", "direction": "标题偏好（可选）", "placeholder": "例如：简短有力，金融悬疑风格", "error": "未能获取推荐，请重试。", "results": "推荐标题", "close": "关闭", "cancel": "取消请求", "generate": "推荐标题", "apply": "应用标题"},
     "title": "小说工作室",
     "subtitle": "下一段故事从这里开始",

@@ -9,6 +9,7 @@ import asyncio
 import copy
 import io
 import json
+import re
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -42,6 +43,7 @@ from services.google_workspace.auth import revoke_all_tokens
 from services.prompts import load_prompts_cache
 from services.default_skills import SKILLS_INDEX
 from services.skill_restore import filter_restored_skills, filter_skill_backup_documents
+from services.novel_images import NOVEL_IMAGES_DIR
 from logger import get_logger
 
 logger = get_logger(__name__)
@@ -257,7 +259,13 @@ class ExportRequest(BaseModel):
     provider: Literal["google", "microsoft"] = "google"
 
 
-async def _read_backup(file: UploadFile) -> tuple[dict, dict[str, bytes], dict[str, bytes], dict[str, bytes]]:
+def _write_novel_images(archive: zipfile.ZipFile) -> None:
+    for image in NOVEL_IMAGES_DIR.iterdir():
+        if image.is_file() and re.fullmatch(r"[a-f0-9]{32}\.(png|jpg|gif|webp)", image.name):
+            archive.write(image, f"novel_images/{image.name}")
+
+
+async def _read_backup(file: UploadFile) -> tuple[dict, dict[str, bytes], dict[str, bytes], dict[str, bytes], dict[str, bytes]]:
     """업로드한 JSON/ZIP 백업을 읽어 백업 데이터와 원본 파일을 반환한다."""
     filename = file.filename or ""
     if not (filename.endswith(".json") or filename.endswith(".zip")):
@@ -267,6 +275,7 @@ async def _read_backup(file: UploadFile) -> tuple[dict, dict[str, bytes], dict[s
     doc_files: dict[str, bytes] = {}
     memo_files: dict[str, bytes] = {}
     knowledge_mail_image_files: dict[str, bytes] = {}
+    novel_image_files: dict[str, bytes] = {}
     if filename.endswith(".zip"):
         try:
             with zipfile.ZipFile(io.BytesIO(raw)) as zf:
@@ -274,6 +283,10 @@ async def _read_backup(file: UploadFile) -> tuple[dict, dict[str, bytes], dict[s
                     raise HTTPException(400, "올바른 Vyact 백업 ZIP이 아닙니다.")
                 backup = json.loads(zf.read("backup.json"))
                 for name in zf.namelist():
+                    if name.startswith("novel_images/"):
+                        image_name = name.removeprefix("novel_images/")
+                        if re.fullmatch(r"[a-f0-9]{32}\.(png|jpg|gif|webp)", image_name):
+                            novel_image_files[image_name] = zf.read(name)
                     if name.startswith("documents/") and name != "documents/":
                         doc_files[Path(name).name] = zf.read(name)
                     if name.startswith("memo_attachments/") and not name.endswith("/"):
@@ -300,13 +313,13 @@ async def _read_backup(file: UploadFile) -> tuple[dict, dict[str, bytes], dict[s
         raise HTTPException(400, "올바른 Vyact 백업 파일이 아닙니다.")
     for excluded_index in _BACKUP_EXCLUDED_INDICES:
         backup["indices"].pop(excluded_index, None)
-    return backup, doc_files, memo_files, knowledge_mail_image_files
+    return backup, doc_files, memo_files, knowledge_mail_image_files, novel_image_files
 
 
 @router.post("/backup/preview")
 async def preview_backup(file: UploadFile = File(...)):
     """복원 전에 백업에 포함된 인덱스와 원본 파일을 확인한다."""
-    backup, doc_files, memo_files, knowledge_mail_image_files = await _read_backup(file)
+    backup, doc_files, memo_files, knowledge_mail_image_files, novel_image_files = await _read_backup(file)
     grouped_counts = {}
     for name, payload in backup["indices"].items():
         docs = filter_skill_backup_documents(name, payload.get("docs", []))
@@ -325,7 +338,7 @@ async def preview_backup(file: UploadFile = File(...)):
     ]
     return {
         "indices": indices,
-        "file_count": len(doc_files) + len(memo_files) + len(knowledge_mail_image_files),
+        "file_count": len(doc_files) + len(memo_files) + len(knowledge_mail_image_files) + len(novel_image_files),
         "plugins": plugins,
     }
 
@@ -364,7 +377,8 @@ async def export_backup(req: ExportRequest = None):
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
 
         include_knowledge_mail_images = bool(EMAIL_THREAD_INDICES.intersection(index_names))
-        if include_files and (
+        include_novel_images = "novel_stories" in index_names and NOVEL_IMAGES_DIR.exists()
+        if include_novel_images or include_files and (
             DOCS_DIR.exists()
             or MEMO_ATTACHMENTS_DIR.exists()
             or (include_knowledge_mail_images and KNOWLEDGE_MAIL_IMAGES_DIR.exists())
@@ -373,17 +387,19 @@ async def export_backup(req: ExportRequest = None):
             zip_buf = io.BytesIO()
             with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
                 zf.writestr("backup.json", json_bytes)
-                if DOCS_DIR.exists():
+                if include_novel_images:
+                    _write_novel_images(zf)
+                if include_files and DOCS_DIR.exists():
                     for f in DOCS_DIR.iterdir():
                         if f.is_file():
                             zf.write(f, f"documents/{f.name}")
                             logger.info("[backup] 파일 포함: %s", f.name)
-                if MEMO_ATTACHMENTS_DIR.exists():
+                if include_files and MEMO_ATTACHMENTS_DIR.exists():
                     for f in MEMO_ATTACHMENTS_DIR.rglob("*"):
                         if f.is_file():
                             zf.write(f, f"memo_attachments/{f.relative_to(MEMO_ATTACHMENTS_DIR)}")
                             logger.info("[backup] 메모 첨부 포함: %s", f.name)
-                if include_knowledge_mail_images and KNOWLEDGE_MAIL_IMAGES_DIR.exists():
+                if include_files and include_knowledge_mail_images and KNOWLEDGE_MAIL_IMAGES_DIR.exists():
                     for f in KNOWLEDGE_MAIL_IMAGES_DIR.rglob("*"):
                         if f.is_file():
                             zf.write(f, f"knowledge_mail_images/{f.relative_to(KNOWLEDGE_MAIL_IMAGES_DIR)}")
@@ -414,7 +430,7 @@ async def import_backup(
     restore_files: bool = Form(True),
 ):
     """JSON 또는 ZIP 백업 → ES 복원 + 원본 파일 복구"""
-    backup, doc_files, memo_files, knowledge_mail_image_files = await _read_backup(file)
+    backup, doc_files, memo_files, knowledge_mail_image_files, novel_image_files = await _read_backup(file)
     backup_plugins = [
         plugin for plugin in backup.get("plugins", [])
         if isinstance(plugin, dict)
@@ -480,6 +496,16 @@ async def import_backup(
                 continue
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_bytes(fbytes)
+            files_restored += 1
+
+    if "novel_stories" in backup["indices"] and novel_image_files:
+        NOVEL_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+        for image_name, content in novel_image_files.items():
+            destination = NOVEL_IMAGES_DIR / image_name
+            if destination.exists():
+                files_skipped += 1
+                continue
+            destination.write_bytes(content)
             files_restored += 1
 
     # ES 복원
@@ -666,15 +692,18 @@ async def export_backup_to_drive(req: ExportRequest = None):
         json_bytes = json.dumps(backup, ensure_ascii=False, indent=2).encode("utf-8")
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-        if include_files and (DOCS_DIR.exists() or MEMO_ATTACHMENTS_DIR.exists()):
+        include_novel_images = "novel_stories" in index_names and NOVEL_IMAGES_DIR.exists()
+        if include_novel_images or include_files and (DOCS_DIR.exists() or MEMO_ATTACHMENTS_DIR.exists()):
             zip_buf = io.BytesIO()
             with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
                 zf.writestr("backup.json", json_bytes)
-                if DOCS_DIR.exists():
+                if include_novel_images:
+                    _write_novel_images(zf)
+                if include_files and DOCS_DIR.exists():
                     for f in DOCS_DIR.iterdir():
                         if f.is_file():
                             zf.write(f, f"documents/{f.name}")
-                if MEMO_ATTACHMENTS_DIR.exists():
+                if include_files and MEMO_ATTACHMENTS_DIR.exists():
                     for f in MEMO_ATTACHMENTS_DIR.rglob("*"):
                         if f.is_file():
                             zf.write(f, f"memo_attachments/{f.relative_to(MEMO_ATTACHMENTS_DIR)}")

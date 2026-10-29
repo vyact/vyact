@@ -58,3 +58,41 @@ async def test_export_route_returns_download_headers_and_rejects_unknown_chapter
     with pytest.raises(HTTPException) as error:
         await export_novel(body)
     assert error.value.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_markdown_images_are_packaged_with_relative_paths_and_deduplicated(tmp_path, monkeypatch):
+    monkeypatch.setattr('services.novel_export.NOVEL_IMAGES_DIR', tmp_path)
+    filename = 'a' * 32 + '.png'
+    (tmp_path / filename).write_bytes(b'image-content')
+    story = sample_story()
+    story['chapters'][0]['text'] = f'Before\n![scene](/api/novel-studio/images/{filename})\n![](/api/novel-studio/images/{filename})\nAfter'
+    content, name, media_type = await build_novel_export(story, 'md', story['chapters'][0]['id'])
+    assert name.endswith('_md.zip')
+    assert media_type == 'application/zip'
+    with zipfile.ZipFile(io.BytesIO(content)) as archive:
+        assert len(archive.namelist()) == 2
+        assert archive.read(f'images/{filename}') == b'image-content'
+        text = archive.read(archive.namelist()[0]).decode()
+        assert f'![scene](images/{filename})' in text
+        assert '/api/' not in text
+        assert text.endswith('After')
+
+
+def test_pdf_embeds_only_local_manuscript_images_without_loading_external_urls(tmp_path, monkeypatch):
+    monkeypatch.setattr('services.novel_export.NOVEL_IMAGES_DIR', tmp_path)
+    filename = 'b' * 32 + '.png'
+    (tmp_path / filename).write_bytes(b'image-content')
+    html = chapter_html('Story', {'title': 'Chapter', 'text': f'Before\n![scene](/api/novel-studio/images/{filename})\nAfter\n![](https://example.com/image.png)\n<script>bad</script>'})
+    assert '<img src="data:image/png;base64,' in html
+    assert 'Before' in html and 'After' in html
+    assert '<script>' not in html
+    assert '<img src="https:' not in html
+
+
+@pytest.mark.asyncio
+async def test_export_reports_missing_image_instead_of_silently_omitting_it():
+    story = sample_story()
+    story['chapters'][0]['text'] = '![](/api/novel-studio/images/' + '0' * 32 + '.png)'
+    with pytest.raises(ValueError, match='image not found'):
+        await build_novel_export(story, 'md')

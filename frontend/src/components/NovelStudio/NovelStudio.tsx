@@ -175,7 +175,7 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
     const writingRequest = buildWritingInstruction(includeTaskGuidance ? taskGuidance : '', instruction);
     const header = <>
         <div className="novel-brand"><Feather size={19}/><h1>{tr('title')}</h1></div>
-        {story && <input className="novel-story-title" aria-label={tr('storyTitle')} maxLength={200} value={story.title} onChange={event => updateStory({title: event.target.value})}/>}
+        {story && <div className="novel-current-story"><span className="novel-current-story-name">{story.title}</span></div>}
         <div className="novel-tabs">{(['text', 'bible'] as const).map(key => <button key={key} disabled={busy} aria-pressed={tab === key} onClick={() => {setTab(key); setViewingCandidateId(null); setViewingFinalId(null); setInstruction(''); setSelectedAction(key === 'bible' ? 'createDirection' : 'write');}}>{tr(key)}</button>)}</div>
         <button data-tooltip-disabled="" aria-label={tr('backToChat')} className="novel-return" onClick={requestExit}><LogOut size={16} strokeWidth={1.8}/><span>{tr('exitStudio')}</span></button>
     </>;

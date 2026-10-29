@@ -8,14 +8,36 @@ from urllib.parse import quote
 
 from elasticsearch import NotFoundError
 
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import Response
+from fastapi import APIRouter, HTTPException, UploadFile, File, Header
+from fastapi.responses import Response, FileResponse
 from services.novel_export import build_novel_export
 from pydantic import BaseModel, Field, field_validator, model_validator
 from services.db import NOVEL_STORIES_INDEX, ensure_novel_stories_index, get_es
 from services.llm.core import query_llm
 
+from services.novel_images import NOVEL_IMAGES_DIR, save_manuscript_image, delete_manuscript_image
+
 router = APIRouter()
+
+
+@router.post("/novel-studio/images")
+async def upload_manuscript_image(file: UploadFile = File(...)):
+    return await save_manuscript_image(file)
+
+
+@router.delete("/novel-studio/images/{filename}", status_code=204)
+async def remove_manuscript_image(filename: str, x_image_delete_token: str = Header(...)):
+    delete_manuscript_image(filename, x_image_delete_token)
+
+
+@router.get("/novel-studio/images/{filename}")
+async def get_manuscript_image(filename: str):
+    if not re.fullmatch(r"[a-f0-9]{32}\.(png|jpg|gif|webp)", filename):
+        raise HTTPException(status_code=404, detail="Image not found")
+    path = NOVEL_IMAGES_DIR / filename
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Image not found")
+    return FileResponse(path)
 
 
 SettingCategory = Literal["createDirection", "createPremise", "createCharacters", "createWorld", "createPlot", "createStyle"]

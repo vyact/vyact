@@ -1645,11 +1645,14 @@
     "defaultQuestion": "添付のデータと結果を分析し、重要な点と注意点を説明してください。"
   },
   "novelStudio": {
+    "cancelEdit": "キャンセル",
+    "imageCleanupError": "画像を削除できませんでした。再試行してください。",
     "deleteChapterTitle": "この話を削除しますか？",
     "deleteChapterDescription": "「{{title}}」の原稿を削除します。他の話と設定は維持されます。元に戻せません。",
     "exitGeneration": {"title": "生成を中断して閉じますか？", "description": "進行中の応答リクエストをキャンセルします。未適用の生成結果は保存されません。保存済みの原稿と設定は維持されます。", "stay": "作業を続ける", "leave": "中断して閉じる"},
     "editManuscript": "編集",
-    "finishManuscriptEdit": "編集完了",
+    "finishManuscriptEdit": "保存",
+    "imageUploadError": "画像を追加できませんでした。10MB以下のPNG、JPEG、GIF、WebPを使用してください。",
     "titleSuggestions": {"title": "AIタイトル提案", "help": "参考にする各話の原稿と原稿設定を選択してください。オンの項目の全文のみ送信します。", "chapters": "各話の原稿", "settings": "原稿設定", "empty": "参考資料がありません。", "includeSource": "{{title}}を参考にする", "direction": "タイトルの希望（任意）", "placeholder": "例：短く印象的な金融ミステリー風", "error": "提案を取得できませんでした。再試行してください。", "results": "タイトル候補", "close": "閉じる", "cancel": "依頼をキャンセル", "generate": "タイトルを提案", "apply": "タイトルを適用"},
     "title": "小説スタジオ",
     "subtitle": "次の物語が始まる場所",

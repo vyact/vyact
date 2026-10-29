@@ -1646,11 +1646,14 @@
     "defaultQuestion": "Analiza los datos y resultados adjuntos. Explica los puntos clave y los aspectos a tener en cuenta."
   },
   "novelStudio": {
+    "cancelEdit": "Cancelar",
+    "imageCleanupError": "No se pudieron eliminar las imágenes. Inténtalo de nuevo.",
     "deleteChapterTitle": "¿Eliminar capítulo?",
     "deleteChapterDescription": "Se eliminará el texto de «{{title}}». Se conservarán los demás capítulos y ajustes. No se puede deshacer.",
     "exitGeneration": {"title": "¿Detener la generación y salir?", "description": "Se cancelará la solicitud actual. Los resultados sin aplicar no se guardarán. Se conservarán los manuscritos y ajustes guardados.", "stay": "Seguir trabajando", "leave": "Detener y salir"},
     "editManuscript": "Editar",
-    "finishManuscriptEdit": "Terminar edición",
+    "finishManuscriptEdit": "Guardar",
+    "imageUploadError": "No se pudo añadir la imagen. Usa un archivo PNG, JPEG, GIF o WebP de hasta 10 MB.",
     "titleSuggestions": {"title": "Títulos con IA", "help": "Elige los capítulos y la configuración del manuscrito como referencia. Solo se envía el texto completo de los elementos activados.", "chapters": "Capítulos", "settings": "Configuración del manuscrito", "empty": "No hay contenido disponible.", "includeSource": "Usar {{title}}", "direction": "Preferencias (opcional)", "placeholder": "Ejemplo: Breve e impactante, con tono de misterio financiero.", "error": "No se pudieron obtener títulos. Inténtalo de nuevo.", "results": "Títulos sugeridos", "close": "Cerrar", "cancel": "Cancelar solicitud", "generate": "Sugerir títulos", "apply": "Aplicar título"},
     "title": "Estudio de novelas",
     "subtitle": "Aquí empieza tu próxima historia",
