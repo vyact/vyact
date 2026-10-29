@@ -1,4 +1,6 @@
 .email-editor-wrap {
+    --email-selection-bg: #245ea8;
+    --email-selection-text: #fff;
     display: flex;
     flex-direction: column;
     border: 1px solid var(--border);
@@ -69,6 +71,14 @@
     color: #222;
     font-size: 14px;
     line-height: 1.6;
+}
+
+/* The mail canvas stays white in both themes, so selection needs its own contrast. */
+.email-editor-content .tiptap::selection,
+.email-editor-content .tiptap *::selection {
+    background: var(--email-selection-bg);
+    color: var(--email-selection-text);
+    text-shadow: none;
 }
 
 .email-editor-wrap.is-signature-locked .email-editor-content {
