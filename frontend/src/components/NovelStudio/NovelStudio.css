@@ -1,7 +1,7 @@
 .novel-studio button {cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px;}
 .novel-studio button:disabled {opacity: .45; cursor: not-allowed;}
 .novel-studio :is(button,input,textarea):focus-visible {outline: 2px solid var(--accent); outline-offset: 3px;}
-.novel-library {flex: 1;padding: 18px 12px;  background: var(--bg-secondary); overflow: auto; display: flex; flex-direction: column; gap: 5px;}
+.novel-library {flex: 1;padding: 18px 12px;  background: var(--bg-secondary); min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 5px;}
 .novel-section-heading {font-size: 11px; font-weight: 600; letter-spacing: .06em; color: var(--muted); display: flex; align-items: center; justify-content: space-between; padding: 6px 8px;}
 .novel-story-list {max-height: 30%; overflow: auto; margin-bottom: 20px; flex-shrink: 0;}
 .novel-story,.novel-chapter {width: 100%; border: none; color: var(--text-secondary); background: transparent; padding: 11px 9px; border-radius: 7px; text-align: left; font-size: 12px; justify-content: flex-start !important;}
@@ -338,12 +338,34 @@
 
 .novel-library-actions {display: flex; align-items: center; gap: 5px;}
 .novel-story-checkbox {flex-shrink: 0; margin: 0 0 0 8px; accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer;}
-.novel-bulk-done {display: inline-flex; align-items: center; gap: 4px; border: none; border-radius: 5px; padding: 5px 7px; color: var(--accent); background: var(--surface); font-size: 11px; cursor: pointer;}
-.novel-bulk-done:disabled {opacity: .4; cursor: not-allowed;}
 
-.novel-story-list {scrollbar-width: thin; scrollbar-color: transparent transparent; scrollbar-gutter: stable;}
-.novel-story-list.is-scrolling {scrollbar-color: var(--border) transparent;}
-.novel-story-list::-webkit-scrollbar {width: 6px; height: 6px;}
-.novel-story-list::-webkit-scrollbar-track {background: transparent;}
-.novel-story-list::-webkit-scrollbar-thumb {background: transparent; border-radius: 6px;}
-.novel-story-list.is-scrolling::-webkit-scrollbar-thumb {background: var(--border);}
+:is(.novel-story-list, .novel-chapter-list) {scrollbar-width: thin; scrollbar-color: transparent transparent; scrollbar-gutter: stable;}
+:is(.novel-story-list, .novel-chapter-list).is-scrolling {scrollbar-color: var(--border) transparent;}
+:is(.novel-story-list, .novel-chapter-list)::-webkit-scrollbar {width: 6px; height: 6px;}
+:is(.novel-story-list, .novel-chapter-list)::-webkit-scrollbar-track {background: transparent;}
+:is(.novel-story-list, .novel-chapter-list)::-webkit-scrollbar-thumb {background: transparent; border-radius: 6px;}
+:is(.novel-story-list, .novel-chapter-list).is-scrolling::-webkit-scrollbar-thumb {background: var(--border);}
+
+.novel-library .novel-section-heading .titlebar-btn {width: 28px; height: 28px; padding: 0; flex-shrink: 0; border: none; border-radius: 6px; background: transparent; color: var(--muted);}
+.novel-library .novel-section-heading .titlebar-btn:hover:not(:disabled) {background: transparent; color: var(--text);}
+.novel-library .novel-section-heading .titlebar-btn svg {width: 16px; height: 16px; stroke-width: 1.8;}
+
+.novel-library-delete {display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0; border: none; border-radius: 6px; background: transparent; color: var(--del-fg-soft); transition: color .15s;}
+.novel-library-delete:hover:not(:disabled) {background: transparent; color: var(--del-fg);}
+.novel-library-delete svg {stroke-width: 1.8;}
+
+.novel-library>.novel-section-heading {flex-shrink: 0;}
+.novel-chapter-list {flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;}
+
+.novel-bulk-delete {display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 4px 8px; border: 1px solid var(--del-border); border-radius: 7px; background: color-mix(in srgb, var(--action-delete) 6%, transparent); color: var(--del-fg-soft); font-size: 11px; font-weight: 600; line-height: 1.4; cursor: pointer; transition: background-color .15s, border-color .15s, color .15s;}
+.novel-bulk-delete:hover:not(:disabled) {background: var(--del-bg-hover); border-color: var(--del-border-hover); color: var(--del-fg);}
+.novel-bulk-delete:disabled {opacity: .4; cursor: not-allowed;}
+.novel-bulk-delete-count {display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box; border-radius: 5px; background: color-mix(in srgb, var(--action-delete) 12%, transparent); font-size: 10px; font-variant-numeric: tabular-nums;}
+
+.novel-story .novel-work-icon {color: var(--muted); transition: color .15s;}
+.novel-story-row.selected .novel-story .novel-work-icon {color: var(--accent);}
+
+.novel-story-pin {display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 24px; height: 28px; padding: 0; border: none; border-radius: 5px; background: transparent; color: var(--muted); opacity: 0; cursor: pointer; transition: color .15s, opacity .15s;}
+.novel-story-row:hover .novel-story-pin, .novel-story-pin:focus-visible, .novel-story-pin.is-pinned {opacity: 1;}
+.novel-story-pin.is-pinned, .novel-story-pin:hover:not(:disabled) {color: var(--accent);}
+@media (hover: none) {.novel-story-pin {opacity: 1;}}

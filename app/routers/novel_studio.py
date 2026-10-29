@@ -177,6 +177,7 @@ class FinalSetting(BaseModel):
 
 
 class NovelStory(BaseModel):
+    pinnedAt: int | None = Field(default=None, ge=0)
     id: UUID
     title: str = Field(max_length=200)
     finalSettings: list[FinalSetting] = Field(default_factory=list, max_length=100)

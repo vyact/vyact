@@ -1,7 +1,9 @@
+import useSelectedItemVisibility from '../common/hooks/useSelectedItemVisibility';
+import LibrarySelectionActions from './LibrarySelectionActions';
 import useScrollActivity from '../common/hooks/useScrollActivity';
 import TitleSuggestionModal from './TitleSuggestionModal';
 import {useRef, useState} from 'react';
-import {BookOpen, MoreHorizontal, Pencil, Trash2, Download, Sparkles, Plus, Check, X} from 'lucide-react';
+import {Feather, MoreHorizontal, Pencil, Trash2, Download, Sparkles, Pin} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import ActionMenu from '../common/ActionMenu/ActionMenu';
 import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
@@ -17,11 +19,13 @@ interface StoryLibraryProps {
     onDelete: (id: string) => void;
     onDeleteMany: (ids: string[]) => void;
     onCreate: () => void;
+    onTogglePin: (id: string) => void;
     onExport: (story: Story, format: NovelExportFormat) => void;
 }
 
-export default function StoryLibrary({stories, activeId, disabled, onSelect, onRename, onDelete, onExport, onDeleteMany, onCreate}: StoryLibraryProps) {
+export default function StoryLibrary({stories, activeId, disabled, onSelect, onRename, onDelete, onExport, onDeleteMany, onCreate, onTogglePin}: StoryLibraryProps) {
     const {t} = useTranslation('main');
+    const {containerRef, selectedItemRef} = useSelectedItemVisibility(activeId, stories.length);
     const {scrolling, onScroll} = useScrollActivity();
     const [menuId, setMenuId] = useState<string | null>(null);
     const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -31,6 +35,7 @@ export default function StoryLibrary({stories, activeId, disabled, onSelect, onR
     const [selecting, setSelecting] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+    const orderedStories = [...stories].sort((left, right) => (right.pinnedAt ?? 0) - (left.pinnedAt ?? 0));
     const selectedStories = stories.filter(story => selectedIds.has(story.id));
     const toggleSelected = (id: string) => setSelectedIds(previous => {const next = new Set(previous); if (next.has(id)) next.delete(id); else next.add(id); return next;});
     const cancelled = useRef(false);
@@ -38,11 +43,8 @@ export default function StoryLibrary({stories, activeId, disabled, onSelect, onR
         if (!cancelled.current && renamingId && name.trim()) onRename(renamingId, name.trim());
         setRenamingId(null);
     };
-    return <><div className="novel-section-heading"><span>{t('novelStudio.library')}</span><div className="novel-library-actions">{selecting ? <>
-        <button type="button" className="titlebar-btn" disabled={disabled} aria-label={t('novelStudio.cancelEdit')} onClick={() => {setSelecting(false); setSelectedIds(new Set());}}><X size={16}/></button>
-        <button type="button" className="novel-bulk-done" disabled={disabled || !selectedStories.length} onClick={() => setConfirmBulkDelete(true)}><Check size={14}/>{t('novelStudio.bulkDelete.done', {count: selectedStories.length})}</button>
-    </> : <><button type="button" className="titlebar-btn" disabled={disabled || !stories.length} aria-label={t('novelStudio.bulkDelete.select')} onClick={() => {setMenuId(null); setRenamingId(null); setSelectedIds(new Set()); setSelecting(true);}}><Trash2 size={16}/></button><button type="button" className="titlebar-btn" disabled={disabled} aria-label={t('novelStudio.newStory')} onClick={onCreate}><Plus size={16}/></button></>}</div></div><div className={`novel-story-list${scrolling ? ' is-scrolling' : ''}`} onScroll={onScroll}>
-        {stories.map(story => <div className={`novel-story-row${story.id === activeId ? ' selected' : ''}`} key={story.id}>
+    return <><div className="novel-section-heading"><span>{t('novelStudio.library')}</span><LibrarySelectionActions selecting={selecting} count={selectedStories.length} disabled={disabled} selectLabel={t('novelStudio.bulkDelete.select')} createLabel={t('novelStudio.newStory')} onCreate={onCreate} onStart={() => {setMenuId(null); setRenamingId(null); setSelectedIds(new Set()); setSelecting(true);}} onCancel={() => {setSelecting(false); setSelectedIds(new Set());}} onDone={() => setConfirmBulkDelete(true)}/></div><div ref={containerRef} className={`novel-story-list${scrolling ? ' is-scrolling' : ''}`} onScroll={onScroll}>
+        {orderedStories.map(story => <div ref={story.id === activeId ? selectedItemRef : undefined} className={`novel-story-row${story.id === activeId ? ' selected' : ''}`} key={story.id}>
             {selecting && <input type="checkbox" className="novel-story-checkbox" disabled={disabled} aria-label={t('novelStudio.bulkDelete.selectStory', {title: story.title})} checked={selectedIds.has(story.id)} onChange={() => toggleSelected(story.id)}/>}
             {renamingId === story.id ? <input className="novel-rename-input" aria-label={t('novelStudio.storyTitle')} autoFocus maxLength={200} value={name}
                 onFocus={event => event.target.select()} onChange={event => setName(event.target.value)} onBlur={commitRename}
@@ -50,7 +52,8 @@ export default function StoryLibrary({stories, activeId, disabled, onSelect, onR
                     if (event.key === 'Enter') {event.preventDefault(); event.currentTarget.blur();}
                     if (event.key === 'Escape') {event.preventDefault(); event.stopPropagation(); cancelled.current = true; setRenamingId(null);}
                 }}/>
-                : <button className="novel-story" disabled={disabled} onClick={() => selecting ? toggleSelected(story.id) : onSelect(story.id)}><BookOpen size={16}/><span>{story.title || t('novelStudio.untitled')}</span></button>}
+                : <button className="novel-story" disabled={disabled} onClick={() => selecting ? toggleSelected(story.id) : onSelect(story.id)}><Feather className="novel-work-icon" size={17} strokeWidth={1.6} aria-hidden="true"/><span>{story.title || t('novelStudio.untitled')}</span></button>}
+            {!selecting && <button type="button" className={`novel-story-pin${story.pinnedAt ? ' is-pinned' : ''}`} disabled={disabled} aria-pressed={!!story.pinnedAt} aria-label={t(story.pinnedAt ? 'novelStudio.unpinStory' : 'novelStudio.pinStory')} onClick={() => onTogglePin(story.id)}><Pin size={14}/></button>}
             {!selecting && <ActionMenu isOpen={menuId === story.id} onOpenChange={open => setMenuId(open ? story.id : null)} disabled={disabled}
                 trigger={<MoreHorizontal size={15}/>} ariaLabel={t('novelStudio.storyActions', {title: story.title})} triggerClassName="hist-menu-btn novel-story-menu" menuClassName="hist-menu-popup">
                 <button className="hist-menu-item" onClick={() => {setMenuId(null); cancelled.current = false; setName(story.title); setRenamingId(story.id);}}><Pencil size={14}/>{t('novelStudio.rename')}</button>

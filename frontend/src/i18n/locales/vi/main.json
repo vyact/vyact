@@ -1645,6 +1645,9 @@
     "defaultQuestion": "Phân tích dữ liệu và kết quả đính kèm. Giải thích các điểm chính và những điều cần lưu ý."
   },
   "novelStudio": {
+    "pinStory": "Ghim tác phẩm",
+    "unpinStory": "Bỏ ghim tác phẩm",
+    "bulkDeleteChapters": {"select": "Chọn chương để xóa", "selectChapter": "Chọn {{title}}", "title": "Xóa các chương đã chọn", "description": "Xóa {{count}} chương đã chọn và bản thảo. Giữ nguyên thiết lập. Không thể hoàn tác."},
     "bulkDelete": {"select": "Chọn tác phẩm để xóa", "done": "Xong ({{count}})", "selectStory": "Chọn {{title}}", "title": "Xóa tác phẩm đã chọn", "description": "Xóa {{count}} tác phẩm đã chọn cùng toàn bộ bản thảo chương và thiết lập. Không thể hoàn tác."},
     "cancelEdit": "Hủy",
     "imageCleanupError": "Không thể xóa ảnh. Vui lòng thử lại.",

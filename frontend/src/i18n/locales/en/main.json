@@ -1646,6 +1646,9 @@
     "defaultQuestion": "Analyze the attached data and results. Explain the key findings and points to consider."
   },
   "novelStudio": {
+    "pinStory": "Pin work",
+    "unpinStory": "Unpin work",
+    "bulkDeleteChapters": {"select": "Select chapters to delete", "selectChapter": "Select {{title}}", "title": "Delete selected chapters", "description": "Delete {{count}} selected chapters and their manuscripts. Settings are preserved. This cannot be undone."},
     "bulkDelete": {"select": "Select works to delete", "done": "Done ({{count}})", "selectStory": "Select {{title}}", "title": "Delete selected works", "description": "Delete {{count}} selected works, including all chapter manuscripts and settings. This cannot be undone."},
     "cancelEdit": "Cancel",
     "imageCleanupError": "Could not clean up images. Please try again.",

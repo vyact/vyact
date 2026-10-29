@@ -96,3 +96,12 @@ async def test_export_reports_missing_image_instead_of_silently_omitting_it():
     story['chapters'][0]['text'] = '![](/api/novel-studio/images/' + '0' * 32 + '.png)'
     with pytest.raises(ValueError, match='image not found'):
         await build_novel_export(story, 'md')
+
+
+def test_story_pin_timestamp_survives_serialization_and_unpinning():
+    source = sample_story()
+    source['pinnedAt'] = 1793270000000
+    story = NovelStory.model_validate(source)
+    assert NovelStory.model_validate(story.model_dump(mode='json')).pinnedAt == source['pinnedAt']
+    story.pinnedAt = None
+    assert story.model_dump(mode='json')['pinnedAt'] is None

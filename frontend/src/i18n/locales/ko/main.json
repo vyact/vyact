@@ -1655,6 +1655,9 @@
     "defaultQuestion": "첨부한 데이터와 결과를 분석하고, 핵심 내용과 유의할 점을 설명해 주세요."
   },
   "novelStudio": {
+    "pinStory": "작품 고정",
+    "unpinStory": "작품 고정 해제",
+    "bulkDeleteChapters": {"select": "회차 선택 삭제", "selectChapter": "{{title}} 선택", "title": "선택한 회차 삭제", "description": "선택한 회차 {{count}}개와 원고를 삭제합니다. 원고 설정은 유지됩니다. 이 작업은 되돌릴 수 없습니다."},
     "bulkDelete": {"select": "작품 선택 삭제", "done": "완료 ({{count}})", "selectStory": "{{title}} 선택", "title": "선택한 작품 삭제", "description": "선택한 작품 {{count}}개와 모든 회차 원고·원고 설정을 삭제합니다. 이 작업은 되돌릴 수 없습니다."},
     "cancelEdit": "취소",
     "imageCleanupError": "이미지를 정리하지 못했습니다. 다시 시도해주세요.",

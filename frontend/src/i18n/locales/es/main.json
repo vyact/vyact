@@ -1646,6 +1646,9 @@
     "defaultQuestion": "Analiza los datos y resultados adjuntos. Explica los puntos clave y los aspectos a tener en cuenta."
   },
   "novelStudio": {
+    "pinStory": "Fijar obra",
+    "unpinStory": "Desfijar obra",
+    "bulkDeleteChapters": {"select": "Seleccionar capítulos para eliminar", "selectChapter": "Seleccionar {{title}}", "title": "Eliminar capítulos seleccionados", "description": "Se eliminarán {{count}} capítulos y sus manuscritos. Se conservarán los ajustes. No se puede deshacer."},
     "bulkDelete": {"select": "Seleccionar obras para eliminar", "done": "Listo ({{count}})", "selectStory": "Seleccionar {{title}}", "title": "Eliminar obras seleccionadas", "description": "Se eliminarán {{count}} obras seleccionadas con todos sus capítulos y ajustes. No se puede deshacer."},
     "cancelEdit": "Cancelar",
     "imageCleanupError": "No se pudieron eliminar las imágenes. Inténtalo de nuevo.",

@@ -1,3 +1,6 @@
+import useScrollActivity from '../common/hooks/useScrollActivity';
+import useSelectedItemVisibility from '../common/hooks/useSelectedItemVisibility';
+import LibrarySelectionActions from './LibrarySelectionActions';
 import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
 import useGenerationExitConfirmation from './useGenerationExitConfirmation';
 import {buildChapterContext, getEarlierChapters} from './chapterContext';
@@ -33,6 +36,11 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
     const [chapterId, setChapterId] = useState('');
     const [tab, setTab] = useState<'text' | 'bible'>('text');
     const [deletingChapterId, setDeletingChapterId] = useState<string | null>(null);
+    const [selectingChapters, setSelectingChapters] = useState(false);
+    const [selectedChapterIds, setSelectedChapterIds] = useState<Set<string>>(new Set());
+    const [confirmChapterBulkDelete, setConfirmChapterBulkDelete] = useState(false);
+    useEffect(() => {setSelectingChapters(false); setSelectedChapterIds(new Set()); setConfirmChapterBulkDelete(false);}, [storyId]);
+    const toggleChapterSelection = (id: string) => setSelectedChapterIds(previous => {const next = new Set(previous); if (next.has(id)) next.delete(id); else next.add(id); return next;});
     const [chapterMenuId, setChapterMenuId] = useState<string | null>(null);
     const instructionRef = useRef<HTMLTextAreaElement>(null);
     const [instruction, setInstruction] = useState('');
@@ -173,6 +181,15 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
     };
     const taskGuidance = selectedAction === 'customRequest' ? '' : taskGuidanceEdits[selectedAction] ?? tr(`${selectedAction}Prompt`);
     const writingRequest = buildWritingInstruction(includeTaskGuidance ? taskGuidance : '', instruction);
+    const {scrolling: chaptersScrolling, onScroll: onChaptersScroll} = useScrollActivity();
+    const {containerRef: chapterScrollRef, selectedItemRef: selectedChapterRef} = useSelectedItemVisibility(chapter?.id ?? '', story?.chapters.length ?? 0);
+    const deleteChapters = (ids: string[]) => {
+        if (!story) return;
+        const remaining = story.chapters.filter(item => !ids.includes(item.id));
+        const chapters = remaining.length ? remaining : [createChapter(t('novelStudio.chapterNumber', {number: 1}))];
+        updateStory({chapters});
+        if (ids.includes(chapter.id)) {setChapterId(chapters[0].id); setTab('text'); resetAssistant();}
+    };
     const deleteStories = (ids: string[]) => {
         const deletedIds = new Set(ids);
         const remaining = stories.filter(item => !deletedIds.has(item.id));
@@ -192,16 +209,20 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
                     <StoryLibrary stories={stories} activeId={story.id} disabled={busy || exporting || loadFailed} onSelect={id => {setStoryId(id); setChapterId(''); setTab('text'); resetAssistant();}}
                         onExport={(selectedStory, format) => {void exportManuscript(selectedStory, format);}}
                         onRename={(id, title) => setStories(items => items.map(item => item.id === id ? {...item, title} : item))}
+                        onTogglePin={id => setStories(items => {const pinnedAt = Math.max(Date.now(), ...items.map(item => (item.pinnedAt ?? 0) + 1)); return items.map(item => item.id === id ? {...item, pinnedAt: item.pinnedAt ? null : pinnedAt} : item);})}
                         onCreate={addStory} onDelete={id => deleteStories([id])} onDeleteMany={deleteStories}/>
 
-                    <div className="novel-section-heading"><span>{tr('chapters')}</span><button className="titlebar-btn" disabled={busy} aria-label={tr('newChapter')} onClick={() => {const next = createChapter(t('novelStudio.chapterNumber', {number: story.chapters.length + 1})); updateStory({chapters: [...story.chapters, next]}); setChapterId(next.id); setTab('text'); resetAssistant();}}><Plus size={16}/></button></div>
-                    {story.chapters.map((item, index) => <div key={item.id} className={`novel-story-row novel-chapter-row${chapter.id === item.id ? ' selected' : ''}`}>
-                        <button className={`novel-chapter${chapter.id === item.id ? ' selected' : ''}`} disabled={busy} onClick={() => {setChapterId(item.id); setTab('text'); resetAssistant();}}><span>{String(index + 1).padStart(2, '0')}</span><span>{item.title}</span></button>
-                        <ActionMenu disabled={busy || exporting} isOpen={chapterMenuId === item.id} onOpenChange={open => setChapterMenuId(open ? item.id : null)} trigger={<MoreHorizontal size={15}/>} ariaLabel={t('novelStudio.chapterActions', {title: item.title})} triggerClassName="hist-menu-btn novel-story-menu" menuClassName="hist-menu-popup">
+                    <div className="novel-section-heading"><span>{tr('chapters')}</span><LibrarySelectionActions selecting={selectingChapters} count={story.chapters.filter(item => selectedChapterIds.has(item.id)).length} disabled={busy || exporting || loadFailed} selectLabel={tr('bulkDeleteChapters.select')} createLabel={tr('newChapter')} onStart={() => {setChapterMenuId(null); setSelectedChapterIds(new Set()); setSelectingChapters(true);}} onCancel={() => {setSelectingChapters(false); setSelectedChapterIds(new Set());}} onDone={() => setConfirmChapterBulkDelete(true)} onCreate={() => {const next = createChapter(t('novelStudio.chapterNumber', {number: story.chapters.length + 1})); updateStory({chapters: [...story.chapters, next]}); setChapterId(next.id); setTab('text'); resetAssistant();}}/></div>
+                    <div ref={chapterScrollRef} className={`novel-chapter-list${chaptersScrolling ? ' is-scrolling' : ''}`} onScroll={onChaptersScroll}>
+                    {story.chapters.map((item, index) => <div ref={chapter.id === item.id ? selectedChapterRef : undefined} key={item.id} className={`novel-story-row novel-chapter-row${chapter.id === item.id ? ' selected' : ''}`}>
+                        {selectingChapters && <input type="checkbox" className="novel-story-checkbox" disabled={busy || exporting} aria-label={t('novelStudio.bulkDeleteChapters.selectChapter', {title: item.title})} checked={selectedChapterIds.has(item.id)} onChange={() => toggleChapterSelection(item.id)}/>}
+                        <button className={`novel-chapter${chapter.id === item.id ? ' selected' : ''}`} disabled={busy} onClick={() => {if (selectingChapters) {toggleChapterSelection(item.id); return;} setChapterId(item.id); setTab('text'); resetAssistant();}}><span>{String(index + 1).padStart(2, '0')}</span><span>{item.title}</span></button>
+                        {!selectingChapters && <ActionMenu disabled={busy || exporting} isOpen={chapterMenuId === item.id} onOpenChange={open => setChapterMenuId(open ? item.id : null)} trigger={<MoreHorizontal size={15}/>} ariaLabel={t('novelStudio.chapterActions', {title: item.title})} triggerClassName="hist-menu-btn novel-story-menu" menuClassName="hist-menu-popup">
                             {(['pdf', 'md'] as const).map(format => <button key={format} className="hist-menu-item" onClick={() => {setChapterMenuId(null); void exportManuscript(story, format, item.id);}}><Download size={14}/>{t('novelStudio.downloadFormat', {format: format.toUpperCase()})}</button>)}
                             <button className="hist-menu-item danger" onClick={() => {setChapterMenuId(null); setDeletingChapterId(item.id);}}><Trash2 size={14}/>{tr('delete')}</button>
-                        </ActionMenu>
+                        </ActionMenu>}
                     </div>)}
+                    </div>
 
                 </nav>) : null}
         inspector={story ? (
@@ -238,13 +259,11 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
 
         {deletingChapterId && story && <ConfirmModal actionLayout="horizontal" title={tr('deleteChapterTitle')} description={t('novelStudio.deleteChapterDescription', {title: story.chapters.find(item => item.id === deletingChapterId)?.title ?? ''})} options={[{label: tr('keep'), value: 'cancel'}, {label: tr('delete'), value: 'delete', variant: 'danger'}]} onClose={() => setDeletingChapterId(null)} onSelect={value => {
             if (value === 'delete' && !busy) {
-                const remaining = story.chapters.filter(item => item.id !== deletingChapterId);
-                const chapters = remaining.length ? remaining : [createChapter(t('novelStudio.chapterNumber', {number: 1}))];
-                updateStory({chapters});
-                if (chapter.id === deletingChapterId) {setChapterId(chapters[0].id); setTab('text'); resetAssistant();}
+                deleteChapters([deletingChapterId]);
             }
             setDeletingChapterId(null);
         }}/>}
+        {confirmChapterBulkDelete && story && <ConfirmModal actionLayout="horizontal" title={tr('bulkDeleteChapters.title')} description={t('novelStudio.bulkDeleteChapters.description', {count: story.chapters.filter(item => selectedChapterIds.has(item.id)).length})} options={[{label: tr('keep'), value: 'cancel'}, {label: tr('delete'), value: 'delete', variant: 'danger'}]} onClose={() => setConfirmChapterBulkDelete(false)} onSelect={value => {if (value === 'delete' && !busy && !exporting) {deleteChapters([...selectedChapterIds]); setSelectedChapterIds(new Set()); setSelectingChapters(false);} setConfirmChapterBulkDelete(false);}}/>}
         {exitConfirmation}
     </WorkspaceLayout>;
 }
