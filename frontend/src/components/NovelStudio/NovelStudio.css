@@ -331,3 +331,11 @@
 .novel-story-list .novel-story-row.selected {background: color-mix(in srgb, var(--project-neutral) 7%, transparent); box-shadow: none; border-left: none;}
 :root[data-theme='light'] .novel-story-list .novel-story-row:not(.selected):is(:hover, :active) {background: color-mix(in srgb, var(--accent) 4%, var(--surface));}
 :root[data-theme='light'] .novel-story-list .novel-story-row.selected {background: color-mix(in srgb, var(--project-neutral) 12%, transparent);}
+
+.novel-manuscript-heading {display: flex; align-items: flex-start; gap: 14px; margin-bottom: 22px; padding-bottom: 14px; border-bottom: 1px solid var(--border);}
+.novel-manuscript-heading h2 {flex: 1; min-width: 0; margin: 0; font-size: 24px; line-height: 1.5; font-weight: 650; letter-spacing: -.02em; overflow-wrap: anywhere;}
+.novel-manuscript-heading .novel-chapter-title {flex: 1; min-width: 0; width: auto; margin: 0; padding: 0; border: none;}
+.novel-manuscript-heading>button {display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex-shrink: 0; padding: 7px 10px; font-size: 12px;}
+.novel-manuscript-reading {font-family: inherit; font-size: 15px; line-height: 1.9; color: var(--text); overflow-wrap: anywhere;}
+.novel-manuscript-reading p {font-size: inherit; line-height: inherit; color: inherit; margin: 0 0 1em;}
+.novel-manuscript-reading .para-break {height: 1em;}

@@ -1080,7 +1080,7 @@ export const createWorkspaceApi = (workspace = 'google-workspace', accountId = '
         });
         await assertOk(response);
         const payload = await response.json();
-        return payload as {body: string};
+        return payload as {subject?: string; body: string};
     },
     async getGoogleMailDraft(messageId: string) {
         return fetchJson(`${API_BASE}/${workspace}/mail/drafts/by-message/${encodeURIComponent(messageId)}`);

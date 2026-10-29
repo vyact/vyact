@@ -670,15 +670,15 @@
 .gwp-ai-write-btn { display: inline-flex; align-items: center; gap: 6px; min-width: 96px; min-height: 40px; padding: 9px 20px; border: 1px solid var(--border) !important; border-radius: 8px !important; background: var(--surface) !important; color: var(--accent) !important; font-size: var(--modal-btn, 14px); font-weight: 600; white-space: nowrap; justify-content: center; }
 .gwp-ai-write-btn:hover { border-color: var(--accent) !important; background: color-mix(in srgb, var(--accent) 12%, transparent) !important; }
 .gwp-ai-write-btn:disabled { opacity: .5; cursor: not-allowed; }
-.gwp-ai-prompt-popover { box-sizing: border-box; position: absolute; bottom: calc(100% + 8px); right: 0; z-index: 10; width: 100%; max-height: min(560px, calc(100vh - 120px)); overflow-y: auto; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--modal-bg); box-shadow: 0 8px 24px rgba(0, 0, 0, .2); }
-.gwp-ai-prompt-popover textarea { display: block; box-sizing: border-box; width: 100%; min-height: 84px; max-height: 180px; padding: 8px 10px; border: 0; border-radius: 6px; background: transparent; color: var(--text); font: inherit; font-size: 13px; line-height: 1.6; resize: none; overflow-y: auto; outline: none; }
+.gwp-ai-prompt-popover { box-sizing: border-box; position: absolute; bottom: calc(100% + 8px); right: 0; z-index: 10; width: 100%; display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 16px; height: min(320px, calc(100dvh - 160px)); overflow: hidden; padding: 16px; border: 1px solid var(--border); border-radius: 16px; background: var(--modal-bg); box-shadow: 0 16px 48px rgba(0, 0, 0, .28); }
+.gwp-ai-prompt-popover textarea { display: block; box-sizing: border-box; width: 100%; height: 100%; min-height: 0; min-width: 0; padding: 18px 16px 36px; scroll-padding-block: 18px 36px; border: 1px solid var(--border); border-radius: 10px; background: var(--modal-inset); color: var(--text); font: inherit; font-size: 13px; line-height: 1.6; resize: none; overflow-y: auto; overscroll-behavior: contain; outline: none; }
 .gwp-ai-prompt-popover textarea:focus-visible { box-shadow: inset 0 0 0 1px var(--border); }
-.gwp-ai-prompt-popover:has(.gwp-ai-generated-preview) textarea { min-height: 56px; }
-.gwp-ai-generated-preview { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 9px; max-height: 330px; margin-bottom: 8px; padding: 12px; overflow: hidden; border: 1px solid var(--border); border-radius: 10px; background: var(--modal-inset); }
+.gwp-ai-prompt-popover:has(.gwp-ai-generated-preview) { height: min(560px, calc(100dvh - 160px)); grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) auto; }
+.gwp-ai-generated-preview { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 9px; min-height: 0; min-width: 0; padding: 12px; overflow: hidden; border: 1px solid var(--border); border-radius: 10px; background: var(--modal-inset); }
 .gwp-ai-generated-preview-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .gwp-ai-generated-preview strong { color: var(--text); font-size: 14px; font-weight: 600; }
-.gwp-ai-generated-preview pre { min-height: 0; margin: 0; overflow: auto; color: var(--text); font: inherit; font-size: 13px; line-height: 1.55; white-space: pre-wrap; }
-.gwp-ai-prompt-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+.gwp-ai-generated-preview pre { min-height: 0; margin: 0; overflow: auto; overscroll-behavior: contain; overflow-wrap: anywhere; color: var(--text); font: inherit; font-size: 13px; line-height: 1.55; white-space: pre-wrap; }
+.gwp-ai-prompt-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding-top: 10px; border-top: 1px solid var(--border); }
 .gwp-ai-prompt-cancel { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; height: 36px; padding: 0 13px; border: 1px solid var(--border) !important; border-radius: 7px !important; background: transparent !important; color: var(--text-secondary) !important; font-size: 13px; font-weight: 400; }
 .gwp-ai-prompt-cancel:hover:not(:disabled) { border-color: var(--text-secondary) !important; color: var(--text) !important; }
 .gwp-ai-prompt-cancel:disabled { cursor: not-allowed; opacity: .45; }
@@ -1064,3 +1064,7 @@
 .gwp-draft-actions button:hover, .gwp-compose .gwp-draft-delete:hover { background: var(--action-delete-bg-hover); color: var(--action-delete); }
 .gwp-draft-actions button:disabled, .gwp-compose .gwp-draft-delete:disabled { opacity: .5; cursor: default; }
 .gwp-compose .gwp-draft-delete { display: inline-flex; align-items: center; justify-content: center; padding: 8px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer; }
+
+.gwp-ai-generated-preview:has(.gwp-ai-generated-subject) { grid-template-rows: auto auto minmax(0, 1fr); }
+.gwp-ai-generated-subject { min-width: 0; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+.gwp-ai-generated-subject p { margin: 8px 0 0; max-height: 3.3em; overflow-y: auto; overflow-wrap: anywhere; color: var(--text); font-size: 13px; line-height: 1.65; }

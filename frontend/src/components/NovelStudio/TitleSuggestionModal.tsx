@@ -1,3 +1,4 @@
+import useGenerationExitConfirmation from './useGenerationExitConfirmation';
 import {useEffect, useRef, useState} from 'react';
 import {LoaderCircle, Sparkles, X} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
@@ -20,6 +21,7 @@ export default function TitleSuggestionModal({story, onClose, onApply}: {story: 
     const [error, setError] = useState('');
     const controller = useRef<AbortController | null>(null);
     useEffect(() => () => controller.current?.abort(), []);
+    const {requestExit, confirmation: exitConfirmation} = useGenerationExitConfirmation(busy, () => {controller.current?.abort(); onClose();});
     const selected = selectTitleSources([...groups.chapters, ...groups.settings], excluded);
     const recommend = async () => {
         if (busy || !selected.length) return;
@@ -33,13 +35,14 @@ export default function TitleSuggestionModal({story, onClose, onApply}: {story: 
         } catch (failure) {if (!(failure instanceof DOMException && failure.name === 'AbortError')) setError(tr('error'));}
         finally {setBusy(false); controller.current = null;}
     };
-    return <ModalOverlay onClose={onClose} closeOnBackdrop className="novel-title-overlay" aria-labelledby="novel-title-modal-heading">
-        <section className="novel-title-modal"><header><h2 id="novel-title-modal-heading"><Sparkles size={18}/>{tr('title')}</h2><button type="button" className="titlebar-btn" aria-label={tr('close')} onClick={onClose}><X size={18}/></button></header>
+    return <ModalOverlay onClose={requestExit} closeOnBackdrop className="novel-title-overlay" aria-labelledby="novel-title-modal-heading">
+        <section className="novel-title-modal"><header><h2 id="novel-title-modal-heading"><Sparkles size={18}/>{tr('title')}</h2><button type="button" className="titlebar-btn" aria-label={tr('close')} onClick={requestExit}><X size={18}/></button></header>
             <div className="novel-title-modal-body"><p className="novel-title-help">{tr('help')}</p><div className="novel-title-sources">{(['chapters', 'settings'] as const).map(group => <section key={group}><h3>{tr(group)}</h3><div className="novel-title-source-list">{!groups[group].length && <p className="novel-title-empty">{tr('empty')}</p>}{groups[group].map(source => <div className="novel-title-source" key={source.id}><span>{source.title}</span><ToggleSwitch checked={!excluded.has(source.id)} disabled={busy} label={t('novelStudio.titleSuggestions.includeSource', {title: source.title})} onChange={included => {setExcluded(previous => {const next = new Set(previous); if (included) next.delete(source.id); else next.add(source.id); return next;}); setSuggestions([]); setSelectedTitle('');}}/></div>)}</div></section>)}</div>
                 <label className="novel-title-instruction">{tr('direction')}<textarea value={instruction} maxLength={1000} disabled={busy} placeholder={tr('placeholder')} onChange={event => setInstruction(event.target.value)}/></label>
                 {error && <p role="alert" className="novel-error">{error}</p>}
                 {suggestions.length > 0 && <fieldset className="novel-title-results"><legend>{tr('results')}</legend>{suggestions.map(item => <label className={selectedTitle === item.title ? 'is-selected' : ''} key={item.title}><input type="radio" name="novel-suggested-title" checked={selectedTitle === item.title} onChange={() => setSelectedTitle(item.title)}/><span><strong>{item.title}</strong><small>{item.reason}</small></span></label>)}</fieldset>}
-            </div><footer><button className="modal-action-cancel" onClick={onClose}>{tr('close')}</button>{busy ? <button className="modal-action-cancel" onClick={() => controller.current?.abort()}><LoaderCircle className="novel-spinner" size={15}/>{tr('cancel')}</button> : <button className="modal-action-cancel" disabled={!selected.length} onClick={() => void recommend()}><Sparkles size={15}/>{tr('generate')}</button>}<button className="modal-action-submit" disabled={busy || !selectedTitle} onClick={() => {onApply(selectedTitle); onClose();}}>{tr('apply')}</button></footer>
+            </div><footer><button className="modal-action-cancel" onClick={requestExit}>{tr('close')}</button>{busy ? <button className="modal-action-cancel" onClick={() => controller.current?.abort()}><LoaderCircle className="novel-spinner" size={15}/>{tr('cancel')}</button> : <button className="modal-action-cancel" disabled={!selected.length} onClick={() => void recommend()}><Sparkles size={15}/>{tr('generate')}</button>}<button className="modal-action-submit" disabled={busy || !selectedTitle} onClick={() => {onApply(selectedTitle); onClose();}}>{tr('apply')}</button></footer>
         </section>
+        {exitConfirmation}
     </ModalOverlay>;
 }

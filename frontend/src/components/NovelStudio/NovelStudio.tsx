@@ -1,3 +1,5 @@
+import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
+import useGenerationExitConfirmation from './useGenerationExitConfirmation';
 import {buildChapterContext, getEarlierChapters} from './chapterContext';
 import ManuscriptEditor from './ManuscriptEditor';
 import {reviseSavedProposal, type SavedProposalSource} from './savedProposal';
@@ -9,7 +11,7 @@ import ToggleSwitch from '../common/ToggleSwitch/ToggleSwitch';
 import {buildWritingInstruction} from './writingInstruction';
 import {downloadNovel, type NovelExportFormat} from './storyExport';
 import {useEffect, useRef, useState} from 'react';
-import {Plus, Feather, Sparkles, LoaderCircle, Undo2, MoreHorizontal, Download, Info, LogOut} from 'lucide-react';
+import {Plus, Feather, Sparkles, LoaderCircle, Undo2, MoreHorizontal, Download, Info, LogOut, Trash2} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import CandidateReader from './CandidateReader';
 import ProposalReader from './ProposalReader';
@@ -30,6 +32,7 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
     const [storyId, setStoryId] = useState('');
     const [chapterId, setChapterId] = useState('');
     const [tab, setTab] = useState<'text' | 'bible'>('text');
+    const [deletingChapterId, setDeletingChapterId] = useState<string | null>(null);
     const [chapterMenuId, setChapterMenuId] = useState<string | null>(null);
     const instructionRef = useRef<HTMLTextAreaElement>(null);
     const [instruction, setInstruction] = useState('');
@@ -70,6 +73,11 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
     const updateChapter = (patch: Partial<NonNullable<typeof chapter>>) => {
         if (story) updateStory({chapters: story.chapters.map(item => item.id === chapter?.id ? {...item, ...patch} : item)});
     };
+    const {requestExit, confirmation: exitConfirmation} = useGenerationExitConfirmation(busy, async () => {
+        controller.current?.abort();
+        try {await flushStorySaves(); onClose();}
+        catch {setError(tr('saveError'));}
+    });
     const resetAssistant = () => {setRevisionSource(null);setRevisionRequest('');setViewingFinalId(null);setViewingCandidateId(null);setProposal(''); setResponseVisible(false); setError(''); setUndo(null); setInstruction(''); setSelectedAction('write');};
     const addStory = () => {
         const next = createStory(tr('untitled'), t('novelStudio.chapterNumber', {number: 1}));
@@ -175,7 +183,7 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
         <div className="novel-brand"><Feather size={19}/><h1>{tr('title')}</h1></div>
         {story && <input className="novel-story-title" aria-label={tr('storyTitle')} maxLength={200} value={story.title} onChange={event => updateStory({title: event.target.value})}/>}
         <div className="novel-tabs">{(['text', 'bible'] as const).map(key => <button key={key} disabled={busy} aria-pressed={tab === key} onClick={() => {setTab(key); setViewingCandidateId(null); setViewingFinalId(null); setInstruction(''); setSelectedAction(key === 'bible' ? 'createDirection' : 'write');}}>{tr(key)}</button>)}</div>
-        <button data-tooltip-disabled="" aria-label={tr('backToChat')} className="novel-return" onClick={() => {void flushStorySaves().then(onClose).catch(() => {});}}><LogOut size={16} strokeWidth={1.8}/><span>{tr('exitStudio')}</span></button>
+        <button data-tooltip-disabled="" aria-label={tr('backToChat')} className="novel-return" onClick={requestExit}><LogOut size={16} strokeWidth={1.8}/><span>{tr('exitStudio')}</span></button>
     </>;
     return <WorkspaceLayout className="novel-studio" label={tr('title')} header={header}
         sidebar={story ? (                <nav className="novel-library" aria-label={tr('library')}><div className="novel-section-heading"><span>{tr('library')}</span><button className="titlebar-btn" disabled={busy || loadFailed} aria-label={tr('newStory')} onClick={addStory}><Plus size={16}/></button></div>
@@ -186,13 +194,15 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
                             const remaining = stories.filter(item => item.id !== id);
                             const next = remaining.length ? remaining : [createStory(tr('untitled'), t('novelStudio.chapterNumber', {number: 1}))];
                             setStories(() => next);
+                            setContextExclusions(previous => Object.fromEntries(Object.entries(previous).filter(([key]) => !key.startsWith(`${id}:`))));
                             if (id === story.id) {setStoryId(next[0].id); setChapterId(''); setTab('text'); resetAssistant();}
                         }}/>
                     <div className="novel-section-heading"><span>{tr('chapters')}</span><button className="titlebar-btn" disabled={busy} aria-label={tr('newChapter')} onClick={() => {const next = createChapter(t('novelStudio.chapterNumber', {number: story.chapters.length + 1})); updateStory({chapters: [...story.chapters, next]}); setChapterId(next.id); setTab('text'); resetAssistant();}}><Plus size={16}/></button></div>
                     {story.chapters.map((item, index) => <div key={item.id} className={`novel-story-row novel-chapter-row${chapter.id === item.id ? ' selected' : ''}`}>
                         <button className={`novel-chapter${chapter.id === item.id ? ' selected' : ''}`} disabled={busy} onClick={() => {setChapterId(item.id); setTab('text'); resetAssistant();}}><span>{String(index + 1).padStart(2, '0')}</span><span>{item.title}</span></button>
-                        <ActionMenu disabled={exporting} isOpen={chapterMenuId === item.id} onOpenChange={open => setChapterMenuId(open ? item.id : null)} trigger={<MoreHorizontal size={15}/>} ariaLabel={t('novelStudio.chapterActions', {title: item.title})} triggerClassName="hist-menu-btn novel-story-menu" menuClassName="hist-menu-popup">
+                        <ActionMenu disabled={busy || exporting} isOpen={chapterMenuId === item.id} onOpenChange={open => setChapterMenuId(open ? item.id : null)} trigger={<MoreHorizontal size={15}/>} ariaLabel={t('novelStudio.chapterActions', {title: item.title})} triggerClassName="hist-menu-btn novel-story-menu" menuClassName="hist-menu-popup">
                             {(['pdf', 'md'] as const).map(format => <button key={format} className="hist-menu-item" onClick={() => {setChapterMenuId(null); void exportManuscript(story, format, item.id);}}><Download size={14}/>{t('novelStudio.downloadFormat', {format: format.toUpperCase()})}</button>)}
+                            <button className="hist-menu-item danger" onClick={() => {setChapterMenuId(null); setDeletingChapterId(item.id);}}><Trash2 size={14}/>{tr('delete')}</button>
                         </ActionMenu>
                     </div>)}
 
@@ -221,7 +231,7 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
         {story && (
                 <main className="novel-writing">
                     {viewingFinal ? <ProposalReader key={viewingFinal.id} text={viewingFinal.content} title={viewingFinal.title} onTitleChange={title => updateStory({finalSettings: finalSettings.map(item => item.id === viewingFinal.id ? {...item, title} : item)})} action="synthesis" busy={busy} maxLength={20000} onReturn={() => setViewingFinalId(null)} onChange={content => updateStory({finalSettings: finalSettings.map(item => item.id === viewingFinal.id ? {...item, content} : item)})}/> : viewingCandidate ? <CandidateReader key={viewingCandidate.id} candidate={viewingCandidate} onTitleChange={title => updateStory({settingsCandidates: (story.settingsCandidates ?? []).map(item => item.id === viewingCandidate.id ? {...item, title} : item)})} onBack={() => setViewingCandidateId(null)} onChange={content => updateStory({settingsCandidates: (story.settingsCandidates ?? []).map(candidate => candidate.id === viewingCandidate.id ? {...candidate, content} : candidate)})}/> : responseVisible ? <ProposalReader key={`${proposalTarget}:${proposalAction}`} text={proposal} action={proposalAction} busy={busy} onChange={setProposal}/> : <>
-                    <div className={`novel-paper${tab === 'text' ? ' novel-paper--manuscript' : ''}`}>{tab === 'text' ? <ManuscriptEditor chapter={chapter} onChange={patch => {updateChapter(patch); setUndo(null);}}/> : <SettingsPlanner onView={candidate => {setSelectedAction(candidate.category); setViewingCandidateId(candidate.id); setViewingFinalId(null); setRevisionRequest(''); setError('');}} candidates={story.settingsCandidates ?? []} disabled={busy} onChange={settingsCandidates => updateStory({settingsCandidates})} onChoose={category => chooseAction(category)} onSynthesize={() => chooseAction('synthesis')}>
+                    <div className={`novel-paper${tab === 'text' ? ' novel-paper--manuscript' : ''}`}>{tab === 'text' ? <ManuscriptEditor key={chapter.id} chapter={chapter} onChange={patch => {updateChapter(patch); setUndo(null);}}/> : <SettingsPlanner onView={candidate => {setSelectedAction(candidate.category); setViewingCandidateId(candidate.id); setViewingFinalId(null); setRevisionRequest(''); setError('');}} candidates={story.settingsCandidates ?? []} disabled={busy} onChange={settingsCandidates => updateStory({settingsCandidates})} onChoose={category => chooseAction(category)} onSynthesize={() => chooseAction('synthesis')}>
                         <FinalSettingsLibrary items={finalSettings} activeId={story.activeFinalSettingId ?? null} disabled={busy} onSelect={id => updateStory({activeFinalSettingId: id})} onView={id => {setViewingFinalId(id); setViewingCandidateId(null); setRevisionRequest(''); setError('');}} onChange={items => updateStory({finalSettings: items, activeFinalSettingId: items.some(item => item.id === story.activeFinalSettingId) ? story.activeFinalSettingId : null})}/>
 
                     </SettingsPlanner>}</div>
@@ -229,5 +239,15 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
                     </>}
                 </main>)}
 
+        {deletingChapterId && story && <ConfirmModal actionLayout="horizontal" title={tr('deleteChapterTitle')} description={t('novelStudio.deleteChapterDescription', {title: story.chapters.find(item => item.id === deletingChapterId)?.title ?? ''})} options={[{label: tr('keep'), value: 'cancel'}, {label: tr('delete'), value: 'delete', variant: 'danger'}]} onClose={() => setDeletingChapterId(null)} onSelect={value => {
+            if (value === 'delete' && !busy) {
+                const remaining = story.chapters.filter(item => item.id !== deletingChapterId);
+                const chapters = remaining.length ? remaining : [createChapter(t('novelStudio.chapterNumber', {number: 1}))];
+                updateStory({chapters});
+                if (chapter.id === deletingChapterId) {setChapterId(chapters[0].id); setTab('text'); resetAssistant();}
+            }
+            setDeletingChapterId(null);
+        }}/>}
+        {exitConfirmation}
     </WorkspaceLayout>;
 }
