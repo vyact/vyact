@@ -8,6 +8,7 @@ interface KeyboardHandlers {
     onOpenSettings: () => void;
     onNewConversation: () => void;
     onOpenMemo: () => void;
+    onOpenNovelStudio: () => void;
     onOpenQuickMemo: () => void;
     onOpenKnowledgeCollections: () => void;
     onOpenChatSummary: () => void;
@@ -34,7 +35,10 @@ export function useGlobalKeyboard(handlers: KeyboardHandlers, isMemoOpen = false
             }
             const meta = e.metaKey || e.ctrlKey;
 
-            if (meta && e.shiftKey && (e.key === 'S' || e.key === 's')) {
+            if (meta && e.shiftKey && !e.altKey && !e.repeat && !e.isComposing && (e.code === 'KeyB' || e.key.toLowerCase() === 'b')) {
+                e.preventDefault();
+                handlers.onOpenNovelStudio();
+            } else if (meta && e.shiftKey && (e.key === 'S' || e.key === 's')) {
                 e.preventDefault();
                 handlers.onToggleSidebar();
             } else if (meta && e.key === 'k') {

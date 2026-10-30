@@ -21,6 +21,32 @@ def safe_export_name(title: str) -> str:
 
 MANUSCRIPT_IMAGE = re.compile(r'!\[([^\]]*)\]\((/api/novel-studio/images/([a-f0-9]{32}\.(?:png|jpg|gif|webp)))(?:\?width=(\d+))?\)')
 IMAGE_MIME_TYPES = {'png': 'image/png', 'jpg': 'image/jpeg', 'gif': 'image/gif', 'webp': 'image/webp'}
+BACKTICK_RUN = re.compile(r'`+')
+
+
+def manuscript_text_html(text: str) -> str:
+    """Render code spans while keeping all manuscript HTML escaped."""
+    fragments = []
+    position = 0
+    runs = list(BACKTICK_RUN.finditer(text))
+    index = 0
+    while index < len(runs):
+        opening = runs[index]
+        closing_index = next((candidate for candidate in range(index + 1, len(runs))
+                              if runs[candidate].group() == opening.group()), None)
+        if closing_index is None:
+            index += 1
+            continue
+        closing = runs[closing_index]
+        content = text[opening.end():closing.start()].replace('\n', ' ')
+        if content.startswith(' ') and content.endswith(' ') and content.strip(' '):
+            content = content[1:-1]
+        fragments.append(escape(text[position:opening.start()]))
+        fragments.append(f'<code>{escape(content)}</code>')
+        position = closing.end()
+        index = closing_index + 1
+    fragments.append(escape(text[position:]))
+    return ''.join(fragments)
 
 
 def read_export_image(filename: str) -> bytes:
@@ -34,14 +60,14 @@ def manuscript_html(text: str) -> str:
     fragments = []
     position = 0
     for match in MANUSCRIPT_IMAGE.finditer(text):
-        fragments.append(escape(text[position:match.start()]))
+        fragments.append(manuscript_text_html(text[position:match.start()]))
         filename = match.group(3)
         data = base64.b64encode(read_export_image(filename)).decode('ascii')
         mime = IMAGE_MIME_TYPES[filename.rsplit('.', 1)[1]]
         width = f' width="{int(match.group(4))}"' if match.group(4) else ''
         fragments.append(f'<img{width} src="data:{mime};base64,{data}" alt="{escape(match.group(1), quote=True)}">')
         position = match.end()
-    fragments.append(escape(text[position:]))
+    fragments.append(manuscript_text_html(text[position:]))
     return ''.join(fragments)
 
 
@@ -58,6 +84,7 @@ def chapter_html(story_title: str, chapter: dict) -> str:
     h1{{font-size:22pt;line-height:1.45;margin:0 0 12mm;overflow-wrap:anywhere}}
     .manuscript{{white-space:pre-wrap;overflow-wrap:anywhere;orphans:3;widows:3}}
     .manuscript img{{display:block;max-width:100%;max-height:230mm;object-fit:contain;margin:5mm auto;break-inside:avoid}}
+    .manuscript code{{font-family:inherit;font-size:.95em;color:#285578;background:#f2f4f6;border:1px solid #d5d9dd;border-radius:3px;padding:1px 4px;box-decoration-break:clone;-webkit-box-decoration-break:clone}}
     </style></head><body><p class="story-title">{escape(story_title)}</p><h1>{escape(chapter['title'])}</h1><div class="manuscript">{manuscript_html(chapter['text'])}</div></body></html>"""
 
 

@@ -1,5 +1,22 @@
 import {describe, expect, it} from 'vitest';
-import {documentToManuscript, manuscriptToDocument} from './manuscriptDocument';
+import {countManuscriptCharacters, documentToManuscript, manuscriptToDocument} from './manuscriptDocument';
+
+it('excludes image paths, alt text, and resize metadata from character counts', () => {
+    const image = '![장면 설명](/api/novel-studio/images/abc.png?width=320)';
+    expect(countManuscriptCharacters(image)).toBe(0);
+    expect(countManuscriptCharacters(`앞😀${image}뒤`)).toBe(3);
+    expect(countManuscriptCharacters(`${image}${image}`)).toBe(0);
+    expect(countManuscriptCharacters('문장\n 공백')).toBe(6);
+});
+
+it('counts rendered Markdown text without formatting delimiters or link URLs', () => {
+    expect(countManuscriptCharacters('`코드`')).toBe(2);
+    expect(countManuscriptCharacters('**강조** *기울임* ~~취소~~')).toBe(9);
+    expect(countManuscriptCharacters('[링크](https://example.com)')).toBe(2);
+    expect(countManuscriptCharacters('# 제목')).toBe(2);
+    expect(countManuscriptCharacters('`a < b && c`')).toBe(10);
+    expect(countManuscriptCharacters('미완성 `')).toBe(5);
+});
 
 describe('manuscript visual document', () => {
     it('preserves paragraphs, empty lines, and literal Markdown', () => {

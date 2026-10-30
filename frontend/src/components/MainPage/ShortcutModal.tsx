@@ -16,6 +16,7 @@ const ShortcutModal: React.FC<ShortcutModalProps> = ({onClose}) => {
         {keys: ['Cmd', 'Shift', 'G'], desc: t('shortcutModal.googleWorkspace')},
         {keys: ['Cmd', 'Shift', 'M'], desc: t('shortcutModal.quickMemo')},
         {keys: ['Cmd', 'Shift', 'N'], desc: t('shortcutModal.memo')},
+        {keys: ['Cmd', 'Shift', 'B'], desc: t('novelStudio.title')},
         {keys: ['Cmd', 'Shift', 'D'], desc: t('shortcutModal.documents')},
         {keys: ['Cmd', 'Shift', 'L'], desc: t('knowledgeCollections.title')},
         {keys: ['Cmd', 'Shift', 'A'], desc: t('shortcutModal.notifications')},

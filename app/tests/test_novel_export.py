@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
 import pytest
-from services.novel_export import build_novel_export, chapter_html, safe_export_name
+from services.novel_export import build_novel_export, chapter_html, manuscript_text_html, safe_export_name
 from routers.novel_studio import NovelExportRequest, NovelStory, NovelChapter, export_novel
 from fastapi import HTTPException
 
@@ -14,6 +14,19 @@ def sample_story():
         {'id': str(uuid4()), 'title': '같은 제목', 'text': '첫 번째 회차\n\n본문을 보존합니다.'},
         {'id': str(uuid4()), 'title': '같은 제목', 'text': '두 번째 회차'},
     ]}
+
+
+def test_pdf_renders_inline_code_instead_of_literal_backticks():
+    html = chapter_html('Story', {'title': 'Chapter', 'text': '메모\n\n`외인 3일 연속 순매수 / 프로그램 비중 3.2배`\n\n`가설: 확인 필요.`'})
+    assert '<code>외인 3일 연속 순매수 / 프로그램 비중 3.2배</code>' in html
+    assert '<code>가설: 확인 필요.</code>' in html
+    assert '`' not in html
+
+
+def test_pdf_code_spans_escape_html_and_preserve_literal_backticks():
+    assert manuscript_text_html('`<script> & text`') == '<code>&lt;script&gt; &amp; text</code>'
+    assert manuscript_text_html('`` a ` b ``') == '<code>a ` b</code>'
+    assert manuscript_text_html('unmatched ` text') == 'unmatched ` text'
 
 
 @pytest.mark.asyncio

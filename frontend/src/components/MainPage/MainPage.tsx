@@ -23,6 +23,7 @@ import {useModels} from './useModels';
 import {useConversation} from './useConversation';
 import {useChat} from './useChat';
 import {useGlobalKeyboard} from './useGlobalKeyboard';
+import {TOGGLE_NOVEL_STUDIO_EVENT} from '../NovelStudio/workspaceEvents';
 import TitleBar from '../TitleBar/TitleBar';
 import './MainPage.css';
 import {usePluginExtensions} from '../../plugins/usePluginExtensions';
@@ -647,6 +648,10 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
         onOpenMemo: () => {
             closeAllModals();
             setShowMemoModal(true);
+        },
+        onOpenNovelStudio: () => {
+            closeAllModals();
+            window.dispatchEvent(new Event(TOGGLE_NOVEL_STUDIO_EVENT));
         },
         onOpenQuickMemo: () => {
             closeAllModals();

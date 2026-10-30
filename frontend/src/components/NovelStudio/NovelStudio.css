@@ -318,7 +318,7 @@
 .novel-manuscript-reading .para-break {height: 1em;}
 
 .novel-image-input {display: none;}
-.novel-manuscript-reading img {display: block; max-width: 100%; height: auto; margin: 16px auto;}
+.novel-manuscript-reading img {display: block; max-width: 100%; height: auto; margin: 16px auto; cursor: pointer;}
 
 .novel-manuscript-edit-actions {display: flex; gap: 8px; flex-shrink: 0;}
 
@@ -376,4 +376,5 @@
 .novel-manuscript-visual .memo-image-resize-handle {position: absolute; right: 5px; bottom: 5px; width: 14px; height: 14px; padding: 0; border: 2px solid var(--surface); border-radius: 3px; background: var(--accent); cursor: nwse-resize;}
 .novel-manuscript-visual .memo-image-resize-handle:hover {background: var(--text);}
 
-.novel-manuscript-visual .memo-image-wrapper.ProseMirror-selectednode .memo-image-editable-frame {border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);}
+.novel-manuscript-visual .memo-image-wrapper.ProseMirror-selectednode .memo-image-editable-frame,
+.novel-manuscript-visual .memo-image-wrapper.novel-image-range-selected .memo-image-editable-frame {border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);}

@@ -1,6 +1,23 @@
 import type {JSONContent} from '@tiptap/core';
+import {renderMarkdown} from '../../utils/markdownUtils';
 
 const IMAGE_PATTERN = /!\[([^\]]*)\]\(([^)\s]+)\)/g;
+
+export function countManuscriptCharacters(text: string): number {
+    const textWithoutImages = text.replace(IMAGE_PATTERN, '');
+    if (!textWithoutImages) return 0;
+    const renderedText = renderMarkdown(textWithoutImages)
+        .replace(/<br\s*\/?\s*>/gi, '\n')
+        .replace(/<div class="para-break"><\/div>/g, '\n')
+        .replace(/<[^>]*>/g, '')
+        .replace(/&(amp|lt|gt|quot|apos|nbsp|#\d+|#x[\da-f]+);/gi, (entity, value: string) => {
+            const namedEntities: Record<string, string> = {amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: '\u00a0'};
+            if (!value.startsWith('#')) return namedEntities[value.toLowerCase()] ?? entity;
+            const codePoint = value[1].toLowerCase() === 'x' ? parseInt(value.slice(2), 16) : Number(value.slice(1));
+            return codePoint >= 0 && codePoint <= 0x10ffff ? String.fromCodePoint(codePoint) : entity;
+        });
+    return Array.from(renderedText).length;
+}
 
 export function manuscriptToDocument(text: string): JSONContent {
     const content: JSONContent[] = [];

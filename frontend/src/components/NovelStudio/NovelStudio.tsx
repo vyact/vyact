@@ -3,8 +3,10 @@ import useSelectedItemVisibility from '../common/hooks/useSelectedItemVisibility
 import LibrarySelectionActions from './LibrarySelectionActions';
 import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
 import useGenerationExitConfirmation from './useGenerationExitConfirmation';
+import {EXIT_NOVEL_STUDIO_EVENT} from './workspaceEvents';
 import {buildChapterContext, getEarlierChapters} from './chapterContext';
 import ManuscriptEditor from './ManuscriptEditor';
+import {countManuscriptCharacters} from './manuscriptDocument';
 import {reviseSavedProposal, type SavedProposalSource} from './savedProposal';
 import FinalSettingsLibrary from './FinalSettingsLibrary';
 import CustomSelect from '../CustomSelect/CustomSelect';
@@ -13,7 +15,7 @@ import {getSettingsContext} from './settingsContext';
 import ToggleSwitch from '../common/ToggleSwitch/ToggleSwitch';
 import {buildWritingInstruction} from './writingInstruction';
 import {downloadNovel, type NovelExportFormat} from './storyExport';
-import {useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {Plus, Feather, Sparkles, LoaderCircle, Undo2, MoreHorizontal, Download, Info, LogOut, Trash2} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import CandidateReader from './CandidateReader';
@@ -76,6 +78,11 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
     const selectedSettings = getSettingsContext(story?.settingsCandidates ?? [], contextAction, excludedContextCategories);
     const selectedSettingCategories = SETTING_CATEGORIES.filter(category => availableContext.some(candidate => candidate.category === category));
     const chapter = story?.chapters.find(item => item.id === chapterId) ?? story?.chapters[0];
+    const [manuscriptDraft, setManuscriptDraft] = useState<{chapterId: string; text: string} | null>(null);
+    const handleDraftTextChange = useCallback((chapterId: string, text: string | null) => {
+        setManuscriptDraft(previous => text === null ? (previous?.chapterId === chapterId ? null : previous) : {chapterId, text});
+    }, []);
+    const characterCount = countManuscriptCharacters(tab === 'bible' ? activeFinal?.content ?? '' : manuscriptDraft?.chapterId === chapter?.id ? manuscriptDraft?.text ?? '' : chapter?.text ?? '');
     useEffect(() => () => controller.current?.abort(), []);
     const updateStory = (patch: Partial<Story>) => setStories(items => items.map(item => item.id === story?.id ? {...item, ...patch} : item));
     const updateChapter = (patch: Partial<NonNullable<typeof chapter>>) => {
@@ -86,6 +93,10 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
         try {await flushStorySaves(); onClose();}
         catch {setError(tr('saveError'));}
     });
+    useEffect(() => {
+        window.addEventListener(EXIT_NOVEL_STUDIO_EVENT, requestExit);
+        return () => window.removeEventListener(EXIT_NOVEL_STUDIO_EVENT, requestExit);
+    }, [requestExit]);
     const resetAssistant = () => {setRevisionSource(null);setRevisionRequest('');setViewingFinalId(null);setViewingCandidateId(null);setProposal(''); setResponseVisible(false); setError(''); setUndo(null); setInstruction(''); setSelectedAction('write');};
     const addStory = () => {
         const next = createStory(tr('untitled'), t('novelStudio.chapterNumber', {number: 1}));
@@ -249,11 +260,11 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
         {story && (
                 <main className="novel-writing">
                     {viewingFinal ? <ProposalReader key={viewingFinal.id} text={viewingFinal.content} title={viewingFinal.title} onTitleChange={title => updateStory({finalSettings: finalSettings.map(item => item.id === viewingFinal.id ? {...item, title} : item)})} action="synthesis" busy={busy} maxLength={20000} onReturn={() => setViewingFinalId(null)} onChange={content => updateStory({finalSettings: finalSettings.map(item => item.id === viewingFinal.id ? {...item, content} : item)})}/> : viewingCandidate ? <CandidateReader key={viewingCandidate.id} candidate={viewingCandidate} onTitleChange={title => updateStory({settingsCandidates: (story.settingsCandidates ?? []).map(item => item.id === viewingCandidate.id ? {...item, title} : item)})} onBack={() => setViewingCandidateId(null)} onChange={content => updateStory({settingsCandidates: (story.settingsCandidates ?? []).map(candidate => candidate.id === viewingCandidate.id ? {...candidate, content} : candidate)})}/> : responseVisible ? <ProposalReader key={`${proposalTarget}:${proposalAction}`} text={proposal} action={proposalAction} busy={busy} onChange={setProposal}/> : <>
-                    <div className={`novel-paper${tab === 'text' ? ' novel-paper--manuscript' : ''}`}>{tab === 'text' ? <ManuscriptEditor key={chapter.id} chapter={chapter} onChange={patch => {updateChapter(patch); setUndo(null);}}/> : <SettingsPlanner onView={candidate => {setSelectedAction(candidate.category); setViewingCandidateId(candidate.id); setViewingFinalId(null); setRevisionRequest(''); setError('');}} candidates={story.settingsCandidates ?? []} disabled={busy} onChange={settingsCandidates => updateStory({settingsCandidates})} onChoose={category => chooseAction(category)} onSynthesize={() => chooseAction('synthesis')}>
+                    <div className={`novel-paper${tab === 'text' ? ' novel-paper--manuscript' : ''}`}>{tab === 'text' ? <ManuscriptEditor key={chapter.id} chapter={chapter} onDraftTextChange={handleDraftTextChange} onChange={patch => {updateChapter(patch); setUndo(null);}}/> : <SettingsPlanner onView={candidate => {setSelectedAction(candidate.category); setViewingCandidateId(candidate.id); setViewingFinalId(null); setRevisionRequest(''); setError('');}} candidates={story.settingsCandidates ?? []} disabled={busy} onChange={settingsCandidates => updateStory({settingsCandidates})} onChoose={category => chooseAction(category)} onSynthesize={() => chooseAction('synthesis')}>
                         <FinalSettingsLibrary items={finalSettings} activeId={story.activeFinalSettingId ?? null} disabled={busy} onSelect={id => updateStory({activeFinalSettingId: id})} onView={id => {setViewingFinalId(id); setViewingCandidateId(null); setRevisionRequest(''); setError('');}} onChange={items => updateStory({finalSettings: items, activeFinalSettingId: items.some(item => item.id === story.activeFinalSettingId) ? story.activeFinalSettingId : null})}/>
 
                     </SettingsPlanner>}</div>
-                    <footer className="novel-writing-footer"><span>{t('novelStudio.characters', {count: Array.from(tab === 'bible' ? activeFinal?.content ?? '' : chapter.text).length, formattedCount: new Intl.NumberFormat(i18n.resolvedLanguage || i18n.language).format(Array.from(tab === 'bible' ? activeFinal?.content ?? '' : chapter.text).length)})}</span>{undo?.chapterId === chapter.id && undo.target === tab && <button onClick={() => {updateChapter({text: undo.text, title: undo.title}); setUndo(null);}}><Undo2 size={14}/>{tr('undo')}</button>}<span role="status">{tr(`saveState.${saveStatus}`)}</span></footer>
+                    <footer className="novel-writing-footer"><span>{t('novelStudio.characters', {count: characterCount, formattedCount: new Intl.NumberFormat(i18n.resolvedLanguage || i18n.language).format(characterCount)})}</span>{undo?.chapterId === chapter.id && undo.target === tab && <button onClick={() => {updateChapter({text: undo.text, title: undo.title}); setUndo(null);}}><Undo2 size={14}/>{tr('undo')}</button>}<span role="status">{tr(`saveState.${saveStatus}`)}</span></footer>
                     </>}
                 </main>)}
 

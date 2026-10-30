@@ -1,4 +1,5 @@
 import ManuscriptReadingContent from './ManuscriptReadingContent';
+import ImageViewer from '../ImageViewer/ImageViewer';
 import {retainManuscriptImages} from './manuscriptImageCache';
 import {Pencil, Check, ImagePlus, LoaderCircle} from 'lucide-react';
 import {renderMarkdown} from '../../utils/markdownUtils';
@@ -10,24 +11,36 @@ import {NodeSelection, TextSelection} from '@tiptap/pm/state';
 import {RichTextImage} from '../common/RichTextImage/RichTextImage';
 import {applyManuscriptImageWidths, documentToManuscript, manuscriptToDocument} from './manuscriptDocument';
 import type {Chapter} from './storyStorage';
+import {manuscriptImageSelectionPlugin} from './manuscriptImageSelection';
 
-interface ManuscriptEditorProps {chapter: Chapter; onChange: (patch: Partial<Chapter>) => void}
+interface ManuscriptEditorProps {chapter: Chapter; onChange: (patch: Partial<Chapter>) => void; onDraftTextChange?: (chapterId: string, text: string | null) => void}
 
-export default function ManuscriptEditor({chapter, onChange}: ManuscriptEditorProps) {
+export default function ManuscriptEditor({chapter, onChange, onDraftTextChange}: ManuscriptEditorProps) {
     const {t} = useTranslation('main');
     const [editing, setEditing] = useState(!chapter.text.trim());
+    const [imageViewer, setImageViewer] = useState<{images: {src: string; alt: string}[]; index: number} | null>(null);
     const readingRef = useRef<HTMLElement>(null);
     const html = useMemo(() => applyManuscriptImageWidths(renderMarkdown(chapter.text)), [chapter.text]);
     useLayoutEffect(() => {if (!editing && readingRef.current) retainManuscriptImages(readingRef.current);}, [html, editing]);
-    if (editing) return <ManuscriptEditingSession chapter={chapter} onChange={onChange} onFinish={() => setEditing(false)}/>;
-    return <div className="novel-manuscript-page"><header className="novel-manuscript-heading"><h2>{chapter.title}</h2><button type="button" className="modal-action-cancel" data-tooltip-disabled="" onClick={() => setEditing(true)}><Pencil size={15}/><span>{t('novelStudio.editManuscript')}</span></button></header><article ref={readingRef} className="novel-manuscript-reading" ><ManuscriptReadingContent html={html}/></article></div>;
+    if (editing) return <ManuscriptEditingSession chapter={chapter} onChange={onChange} onDraftTextChange={onDraftTextChange} onFinish={() => setEditing(false)}/>;
+    return <div className="novel-manuscript-page"><header className="novel-manuscript-heading"><h2>{chapter.title}</h2><button type="button" className="modal-action-cancel" data-tooltip-disabled="" onClick={() => setEditing(true)}><Pencil size={15}/><span>{t('novelStudio.editManuscript')}</span></button></header><article ref={readingRef} className="novel-manuscript-reading" onClick={event => {
+        const image = (event.target as HTMLElement).closest('img');
+        if (!image) return;
+        const images = Array.from(event.currentTarget.querySelectorAll('img')).filter(item => item.getAttribute('src'));
+        const index = images.indexOf(image);
+        if (index < 0) return;
+        event.preventDefault();
+        setImageViewer({images: images.map(item => ({src: item.src, alt: item.alt})), index});
+    }}><ManuscriptReadingContent html={html}/></article>{imageViewer && <ImageViewer images={imageViewer.images} currentIndex={imageViewer.index} onClose={() => setImageViewer(null)} onIndexChange={index => setImageViewer(previous => previous ? {...previous, index} : null)}/>}</div>;
 }
 
-function ManuscriptEditingSession({chapter, onChange, onFinish}: ManuscriptEditorProps & {onFinish: () => void}) {
+function ManuscriptEditingSession({chapter, onChange, onFinish, onDraftTextChange}: ManuscriptEditorProps & {onFinish: () => void}) {
     const {t} = useTranslation('main');
     const editing = true;
     const setEditing = (_value: boolean) => onFinish();
     const [draft, setDraft] = useState({title: chapter.title, text: chapter.text});
+    useEffect(() => {onDraftTextChange?.(chapter.id, draft.text);}, [chapter.id, draft.text, onDraftTextChange]);
+    useEffect(() => () => onDraftTextChange?.(chapter.id, null), [chapter.id, onDraftTextChange]);
     const uploadedImages = useRef<{url: string; deleteToken: string}[]>([]);
     const deleteImage = async (image: {url: string; deleteToken: string}) => {
         const response = await fetch(image.url, {method: 'DELETE', headers: {'X-Image-Delete-Token': image.deleteToken}, keepalive: true});
@@ -61,6 +74,9 @@ function ManuscriptEditingSession({chapter, onChange, onFinish}: ManuscriptEdito
     const [imageError, setImageError] = useState('');
     const editor = useEditor({
         extensions: [StarterKit.configure({heading: false, bold: false, italic: false, strike: false, code: false, codeBlock: false, blockquote: false, bulletList: false, orderedList: false, horizontalRule: false, link: false, underline: false}), RichTextImage.extend({
+            addProseMirrorPlugins() {
+                return [...(this.parent?.() ?? []), manuscriptImageSelectionPlugin()];
+            },
             addNodeView() {
                 const parent = this.parent?.();
                 if (!parent) throw new Error('Missing image node view');
