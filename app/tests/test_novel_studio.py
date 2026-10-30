@@ -112,9 +112,16 @@ async def test_novel_index_schema_is_created_explicitly():
     properties = call["mappings"]["properties"]
     assert properties["chapters"]["properties"]["text"]["type"] == "text"
     assert properties["updated_at"]["type"] == "date"
+    assert properties["taskGuidance"] == {"type": "object", "enabled": False}
+    assert properties["includeTaskGuidance"] == {"type": "boolean"}
     es.indices.exists.return_value = True
     await ensure_novel_stories_index(es)
     assert es.indices.create.await_count == 1
+    migrated = es.indices.put_mapping.call_args.kwargs
+    assert migrated['index'] == NOVEL_STORIES_INDEX
+    assert migrated['properties']['taskGuidance'] == properties['taskGuidance']
+    assert migrated['properties']['includeTaskGuidance'] == properties['includeTaskGuidance']
+    es.indices.delete.assert_not_awaited()
 
 
 @pytest.mark.asyncio

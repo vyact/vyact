@@ -29,7 +29,7 @@ export default function TaskGuidanceEditor({value, savedValue, customized, enabl
         <div className="novel-task-guidance-heading"><label htmlFor="novel-task-guidance">{t('novelStudio.compactLabels.taskGuidance')}</label><ToggleSwitch checked={enabled} disabled={disabled || saving} label={t('novelStudio.includeTaskGuidance')} onChange={onEnabledChange}/></div>
         {enabled && <>
             <textarea id="novel-task-guidance" className="novel-task-guidance-editor" maxLength={2500} disabled={disabled || saving} value={value} onChange={event => onChange(event.target.value)}/>
-            <div className="novel-guidance-actions"><span className={dirty ? 'novel-guidance-dirty' : ''} role="status">{t(`novelStudio.${saving ? 'saveState.saving' : failed ? 'saveState.error' : dirty ? 'changes.unsaved' : customized ? 'guidance.savedForStory' : 'guidance.default'}`)}</span>
+            <div className="novel-guidance-actions">{(saving || failed || dirty) && <span className={dirty ? 'novel-guidance-dirty' : ''} role="status">{t(`novelStudio.${saving ? 'saveState.saving' : failed ? 'saveState.error' : 'changes.unsaved'}`)}</span>}
                 <button type="button" className="modal-action-cancel novel-editor-action" disabled={disabled || saving || (!customized && !dirty && !failed)} onClick={() => void run(onRestore)}>{t('novelStudio.guidance.restore')}</button>
                 <button type="button" className="modal-action-submit novel-editor-action" disabled={disabled || saving || (!dirty && !failed)} onClick={() => void run(onSave)}>{saving && <LoaderCircle size={13} className="novel-spinner" aria-hidden="true"/>} {t('novelStudio.guidance.save')}</button>
             </div>

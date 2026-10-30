@@ -186,9 +186,19 @@ async def wait_for_es(es, retries=30):
     return False
 
 
+NOVEL_STORY_OPTIONAL_PROPERTIES = {
+    "pinnedAt": {"type": "long"},
+    "settingsCandidates": {"type": "object", "enabled": False},
+    "finalSettings": {"type": "object", "enabled": False},
+    "activeFinalSettingId": {"type": "keyword"},
+    "taskGuidance": {"type": "object", "enabled": False},
+    "includeTaskGuidance": {"type": "boolean"},
+}
+
+
 async def ensure_novel_stories_index(es):
     if await es.indices.exists(index=NOVEL_STORIES_INDEX):
-        await es.indices.put_mapping(index=NOVEL_STORIES_INDEX, properties={"pinnedAt": {"type": "long"}, "settingsCandidates": {"type": "object", "enabled": False}, "finalSettings": {"type": "object", "enabled": False}, "activeFinalSettingId": {"type": "keyword"}})
+        await es.indices.put_mapping(index=NOVEL_STORIES_INDEX, properties=NOVEL_STORY_OPTIONAL_PROPERTIES)
         return
     try:
         await es.indices.create(
@@ -197,10 +207,7 @@ async def ensure_novel_stories_index(es):
             mappings={"dynamic": "strict", "properties": {
                 "id": {"type": "keyword"},
                 "title": {"type": "text"},
-                "finalSettings": {"type": "object", "enabled": False},
-                "activeFinalSettingId": {"type": "keyword"},
-                "pinnedAt": {"type": "long"},
-                "settingsCandidates": {"type": "object", "enabled": False},
+                **NOVEL_STORY_OPTIONAL_PROPERTIES,
                 "chapters": {"type": "object", "properties": {
                     "id": {"type": "keyword"},
                     "title": {"type": "text"},
@@ -213,6 +220,7 @@ async def ensure_novel_stories_index(es):
     except BadRequestError as error:
         if error.error != "resource_already_exists_exception":
             raise
+        await es.indices.put_mapping(index=NOVEL_STORIES_INDEX, properties=NOVEL_STORY_OPTIONAL_PROPERTIES)
 
 
 async def ensure_index():
