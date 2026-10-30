@@ -1646,6 +1646,7 @@
     "defaultQuestion": "Analiza los datos y resultados adjuntos. Explica los puntos clave y los aspectos a tener en cuenta."
   },
   "novelStudio": {
+    "guidance": {"save": "Guardar", "restore": "Restaurar original", "savedForStory": "Guardado para esta obra", "default": "Usando predeterminado"},
     "proposalState": {"generating": "Generando…", "unapplied": "Sin aplicar"},
     "changes": {"cancel": "Seguir editando", "title": "Cambios sin guardar", "description": "¿Guardar los cambios?", "proposalTitle": "Propuesta de IA sin aplicar", "proposalDescription": "Esta propuesta aún no se ha aplicado. ¿Descartarla?", "saveContinue": "Guardar", "discardContinue": "Descartar cambios", "unsaved": "Sin guardar", "emptySetting": "La configuración no puede estar vacía. Introduce contenido o descarta los cambios."},
     "pinStory": "Fijar obra",

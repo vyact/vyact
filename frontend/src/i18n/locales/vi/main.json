@@ -1645,6 +1645,7 @@
     "defaultQuestion": "Phân tích dữ liệu và kết quả đính kèm. Giải thích các điểm chính và những điều cần lưu ý."
   },
   "novelStudio": {
+    "guidance": {"save": "Lưu", "restore": "Khôi phục mặc định", "savedForStory": "Đã lưu cho tác phẩm", "default": "Đang dùng mặc định"},
     "proposalState": {"generating": "Đang tạo…", "unapplied": "Chưa áp dụng"},
     "changes": {"cancel": "Tiếp tục chỉnh sửa", "title": "Thay đổi chưa lưu", "description": "Lưu thay đổi?", "proposalTitle": "Đề xuất AI chưa áp dụng", "proposalDescription": "Đề xuất này chưa được áp dụng. Bỏ đề xuất?", "saveContinue": "Lưu", "discardContinue": "Bỏ thay đổi", "unsaved": "Chưa lưu", "emptySetting": "Thiết lập không được để trống. Nhập nội dung hoặc bỏ thay đổi."},
     "pinStory": "Ghim tác phẩm",

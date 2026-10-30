@@ -11,6 +11,20 @@ from pydantic import ValidationError
 from routers.novel_studio import NovelGenerationRequest, generate_novel
 
 
+def test_story_preserves_per_action_guidance_and_legacy_defaults():
+    source = {'id': str(uuid4()), 'title': 'Story', 'chapters': [{'id': str(uuid4()), 'title': 'One', 'text': ''}]}
+    legacy = NovelStory.model_validate(source)
+    assert legacy.taskGuidance == {}
+    assert legacy.includeTaskGuidance is True
+    source.update(taskGuidance={'write': 'My writing instruction', 'createPlot': 'My plot instruction'}, includeTaskGuidance=False)
+    restored = NovelStory.model_validate(NovelStory.model_validate(source).model_dump(mode='json'))
+    assert restored.taskGuidance == source['taskGuidance']
+    assert restored.includeTaskGuidance is False
+    source['taskGuidance'] = {'write': 'x' * 2501}
+    with pytest.raises(ValidationError):
+        NovelStory.model_validate(source)
+
+
 @pytest.mark.asyncio
 async def test_generation_includes_continuity_and_uses_configured_model_without_tools():
     body = NovelGenerationRequest(title="Library", bible="Seo is the librarian", previous="The door closed", manuscript="A knock", instruction="Continue", language="ko")

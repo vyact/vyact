@@ -7,8 +7,10 @@ import useWorkspaceChanges from './useWorkspaceChanges';
 import useGenerationExitConfirmation from './useGenerationExitConfirmation';
 import {EXIT_NOVEL_STUDIO_EVENT} from './workspaceEvents';
 import {buildChapterContext, getEarlierChapters} from './chapterContext';
+import TaskGuidanceEditor from './TaskGuidanceEditor';
 import ManuscriptEditor from './ManuscriptEditor';
 import NovelSaveStatus from './NovelSaveStatus';
+import {toast} from '../common/ToastNotifications/ToastNotifications';
 import {countManuscriptCharacters} from './manuscriptDocument';
 import {reviseSavedProposal, type SavedProposalSource} from './savedProposal';
 import FinalSettingsLibrary from './FinalSettingsLibrary';
@@ -37,6 +39,11 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
     const {t, i18n} = useTranslation('main');
     const tr = (key: string) => t(`novelStudio.${key}`);
     const {stories, getStories, setStories, loading, loadFailed, saveStatus, reload} = useStoryLibrary(tr('untitled'), t('novelStudio.chapterNumber', {number: 1}));
+    useEffect(() => {
+        if (!loadFailed && saveStatus !== 'error') return;
+        const id = toast.error(t(`novelStudio.${loadFailed ? 'loadError' : 'saveError'}`));
+        return () => toast.dismiss(id);
+    }, [loadFailed, saveStatus, t]);
     const [storyId, setStoryId] = useState('');
     const [chapterId, setChapterId] = useState('');
     const [tab, setTab] = useState<'text' | 'bible'>('text');
@@ -50,7 +57,6 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
     const instructionRef = useRef<HTMLTextAreaElement>(null);
     const [instruction, setInstruction] = useState('');
     const [includePreviousChapters, setIncludePreviousChapters] = useState(true);
-    const [includeTaskGuidance, setIncludeTaskGuidance] = useState(true);
     const [taskGuidanceEdits, setTaskGuidanceEdits] = useState<Record<string, string>>({});
     const [revisionRequest, setRevisionRequest] = useState('');
     const [revisionSource, setRevisionSource] = useState<SavedProposalSource | null>(null);
@@ -71,6 +77,7 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
     const [titleGeneration, setTitleGeneration] = useState<{abort: () => void} | null>(null);
     const exitDestination = useRef(onClose);
     const [error, setError] = useState('');
+    useEffect(() => {if (error && error !== t('novelStudio.saveError')) toast.error(error);}, [error, t]);
     const [undo, setUndo] = useState<{chapterId: string; target: 'text' | 'bible'; text: string; title: string} | null>(null);
     const controller = useRef<AbortController | null>(null);
     const story = stories.find(item => item.id === storyId) ?? stories[0];
@@ -218,7 +225,21 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
         setTab('text'); finishProposalReview();
 
     };
-    const taskGuidance = selectedAction === 'customRequest' ? '' : taskGuidanceEdits[selectedAction] ?? tr(`${selectedAction}Prompt`);
+    const guidanceKey = `${story?.id}:${selectedAction}`;
+    const includeTaskGuidance = story?.includeTaskGuidance ?? true;
+    const defaultTaskGuidance = selectedAction === 'customRequest' ? '' : tr(`${selectedAction}Prompt`);
+    const savedTaskGuidance = story?.taskGuidance?.[selectedAction] ?? defaultTaskGuidance;
+    const taskGuidance = taskGuidanceEdits[guidanceKey] ?? savedTaskGuidance;
+    const saveTaskGuidance = async (restore = false) => {
+        if (!story) return;
+        const current = getStories().find(item => item.id === story.id) ?? story;
+        const taskGuidanceOverrides = {...current.taskGuidance};
+        if (restore) delete taskGuidanceOverrides[selectedAction];
+        else taskGuidanceOverrides[selectedAction] = taskGuidance;
+        updateStory({taskGuidance: taskGuidanceOverrides});
+        await flushStorySaves();
+        setTaskGuidanceEdits(previous => {const next = {...previous}; delete next[guidanceKey]; return next;});
+    };
     const writingRequest = buildWritingInstruction(includeTaskGuidance ? taskGuidance : '', instruction);
     const {scrolling: chaptersScrolling, onScroll: onChaptersScroll} = useScrollActivity();
     const {containerRef: chapterScrollRef, selectedItemRef: selectedChapterRef} = useSelectedItemVisibility(chapter?.id ?? '', story?.chapters.length ?? 0);
@@ -270,20 +291,16 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
                         <div className="novel-response-actions"><button className="modal-action-cancel" disabled={busy} onClick={finishProposalReview}>{tr('discardShort')}</button>                        <button className="modal-action-submit" disabled={busy || !proposal.trim()} onClick={saveReviewedProposal}><Plus size={15}/>{tr(proposalTarget === 'text' ? 'addToManuscript' : 'saveShort')}</button></div>{revisionControls}</div>) : <div className="novel-request-controls">{tab === 'bible' && <div className="novel-prompts settings-actions">{SETTING_CATEGORIES.map(key => <button key={key} data-tooltip-disabled="" aria-label={tr(key)} aria-pressed={selectedAction === key} disabled={busy} onClick={() => chooseAction(key)}><span>{tr(`compactLabels.${key}`)}</span></button>)}</div>}
                     {tab === 'text' && <div className="novel-writing-setting"><label>{tr('writingSettings')}</label><CustomSelect ariaLabel={tr('writingSettings')} value={story.activeFinalSettingId ?? ''} disabled={busy} portal options={[{value: '', label: tr('noFinalSetting')}, ...finalSettings.map(item => ({value: item.id, label: item.title}))]} onChange={id => updateStory({activeFinalSettingId: id || null})}/></div>}
                     {tab === 'text' && getEarlierChapters(story.chapters, chapter.id).length > 0 && <div className="novel-previous-context"><span>{t('novelStudio.previousChapterContext', {count: getEarlierChapters(story.chapters, chapter.id).length})}</span><ToggleSwitch checked={includePreviousChapters} disabled={busy} label={tr('includePreviousChapters')} onChange={setIncludePreviousChapters}/></div>}
-                    {selectedAction !== 'customRequest' && <div className="novel-task-guidance">
-                        <div className="novel-task-guidance-heading"><label htmlFor="novel-task-guidance" data-tooltip-disabled="">{tr('compactLabels.taskGuidance')}</label><ToggleSwitch checked={includeTaskGuidance} disabled={busy} label={tr('includeTaskGuidance')} onChange={setIncludeTaskGuidance}/></div>
-                        {includeTaskGuidance && <textarea id="novel-task-guidance" className="novel-task-guidance-editor" maxLength={2500} disabled={busy || !includeTaskGuidance} value={taskGuidance} onChange={event => setTaskGuidanceEdits(previous => ({...previous, [selectedAction]: event.target.value}))}/>}
-                    </div>}
+                    {selectedAction !== 'customRequest' && <TaskGuidanceEditor key={guidanceKey} value={taskGuidance} savedValue={savedTaskGuidance} customized={story.taskGuidance?.[selectedAction] !== undefined} enabled={includeTaskGuidance} disabled={busy || loadFailed} onChange={value => setTaskGuidanceEdits(previous => ({...previous, [guidanceKey]: value}))} onEnabledChange={enabled => updateStory({includeTaskGuidance: enabled})} onSave={() => saveTaskGuidance()} onRestore={() => saveTaskGuidance(true)}/>}
                     <label className="novel-instruction-label" htmlFor="novel-instruction">{tr('instruction')}{tab === 'bible' && <span className="novel-action-badge">{tr(selectedAction)}</span>}</label><textarea ref={instructionRef} id="novel-instruction" maxLength={3000} value={instruction} onChange={event => setInstruction(event.target.value)} placeholder={tr(selectedAction === 'customRequest' ? 'instructionPlaceholder' : `${selectedAction}Placeholder`)}/>
                     {tab === 'bible' && contextControls}
                     {busy ? <button className="modal-action-cancel" onClick={() => controller.current?.abort()}><LoaderCircle className="novel-spinner" size={15}/>{tr('cancel')}</button> : <button className="modal-action-submit" disabled={changes.pending || !writingRequest || (tab === 'bible' && selectedAction === 'synthesis' && !selectedSettings.length)} onClick={() => void generate(writingRequest)}><Sparkles size={15}/>{tr('generate')}</button>}
 </div>}
 
-                    {error && <p role="alert" className="novel-error">{error}</p>}
                 </aside>) : null}>
         {exportDetails && <ProcessingModal title={tr('exporting')} detail={`${exportDetails.title} · ${exportDetails.format.toUpperCase()}`}/>}
-        {loading && <p className="novel-storage-error" role="status">{tr('loadingStories')}</p>}
-        {(saveStatus === 'error' || loadFailed) && <div className="novel-storage-error" role="alert">{tr(loadFailed ? 'loadError' : 'saveError')} <button className="modal-action-cancel" onClick={() => {if (loadFailed) void reload(); else void flushStorySaves().catch(() => {});}}>{tr('retry')}</button></div>}
+        {loading && <div className="novel-library-state" role="status"><LoaderCircle size={24} className="novel-spinner" aria-hidden="true"/><span>{tr('loadingStories')}</span></div>}
+        {loadFailed && !story && <div className="novel-library-state"><button className="modal-action-cancel" onClick={() => void reload()}>{tr('retry')}</button></div>}
         {story && (
                 <main className="novel-writing">
                     {viewingFinal ? <ProposalReader onSave={(content, title) => updateStory({finalSettings: finalSettings.map(item => item.id === viewingFinal.id ? {...item, content, title} : item)})} onSessionChange={changes.registerSession} key={viewingFinal.id} text={viewingFinal.content} title={viewingFinal.title} onTitleChange={title => updateStory({finalSettings: finalSettings.map(item => item.id === viewingFinal.id ? {...item, title} : item)})} action="synthesis" busy={busy} maxLength={20000} onReturn={() => changes.requestAction(() => setViewingFinalId(null))} onChange={content => updateStory({finalSettings: finalSettings.map(item => item.id === viewingFinal.id ? {...item, content} : item)})}/> : viewingCandidate ? <CandidateReader onSave={(content, title) => updateStory({settingsCandidates: (story.settingsCandidates ?? []).map(item => item.id === viewingCandidate.id ? {...item, content, title} : item)})} onSessionChange={changes.registerSession} key={viewingCandidate.id} candidate={viewingCandidate} onTitleChange={title => updateStory({settingsCandidates: (story.settingsCandidates ?? []).map(item => item.id === viewingCandidate.id ? {...item, title} : item)})} onBack={() => changes.requestAction(() => setViewingCandidateId(null))} onChange={content => updateStory({settingsCandidates: (story.settingsCandidates ?? []).map(candidate => candidate.id === viewingCandidate.id ? {...candidate, content} : candidate)})}/> : responseVisible ? <ProposalReader key={`${proposalTarget}:${proposalAction}`} text={proposal} action={proposalAction} busy={busy} onChange={setProposal}/> : <>

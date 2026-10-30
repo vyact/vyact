@@ -2,7 +2,7 @@
 import json
 import re
 from datetime import datetime, timezone
-from typing import Literal, get_args
+from typing import Annotated, Literal, get_args
 from uuid import UUID
 from urllib.parse import quote
 
@@ -180,6 +180,8 @@ class NovelStory(BaseModel):
     pinnedAt: int | None = Field(default=None, ge=0)
     id: UUID
     title: str = Field(max_length=200)
+    taskGuidance: dict[Literal['write', 'createDirection', 'createPremise', 'createCharacters', 'createWorld', 'createPlot', 'createStyle', 'synthesis'], Annotated[str, Field(max_length=2500)]] = Field(default_factory=dict, max_length=8)
+    includeTaskGuidance: bool = True
     finalSettings: list[FinalSetting] = Field(default_factory=list, max_length=100)
     activeFinalSettingId: UUID | None = None
     settingsCandidates: list[SettingCandidate] = Field(default_factory=list, max_length=100)
