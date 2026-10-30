@@ -47,13 +47,13 @@
 .novel-prompt-help {font-size: 11px; line-height: 1.7; color: var(--muted); margin: -12px 0 20px;}
 
 .novel-brand {display: flex; align-items: center; gap: 9px; flex-shrink: 0;}
-.novel-brand>svg {color: var(--accent);}
+.novel-brand-icon {display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, transparent);}
 .novel-brand h1 {font-size: 14px; margin: 0; white-space: nowrap;}
 .novel-tabs {height: 100%; align-items: stretch; margin-left: auto;}
 .novel-studio .workspace-layout-content {flex-direction: column;}
 .novel-storage-error {margin: 0; padding: 8px 20px; color: var(--danger); background: var(--surface); font-size: 12px;}
 .novel-story-row .novel-chapter {min-width: 0; flex: 1;}
-@media (max-width: 760px) {.novel-brand h1 {display: none;} .novel-current-story {max-width: 200px;} .novel-tabs {gap: 12px;} .novel-return {font-size: 11px; padding: 5px;} .novel-paper {padding: 25px;}}
+@media (max-width: 760px) {.novel-brand h1 {display: none;} .novel-tabs {gap: 12px;} .novel-return {font-size: 11px; padding: 5px;} .novel-paper {padding: 25px;}}
 .novel-prompts button[aria-pressed=true] {color: var(--accent); border-color: var(--accent); background: rgba(var(--accent-rgb), .08);}
 .novel-instruction-label {display: flex; align-items: center; flex-wrap: wrap; gap: 7px;}
 .novel-action-badge,.novel-proposal-target {color: var(--accent); background: rgba(var(--accent-rgb), .1); border: 1px solid rgba(var(--accent-rgb), .18); border-radius: 5px; font-size: 10px; padding: 3px 6px;}
@@ -328,9 +328,7 @@
 .novel-manuscript-visual img {max-width: 100%; height: auto;}
 .novel-manuscript-edit-actions {flex-wrap: wrap; justify-content: flex-end;}
 
-.novel-current-story {display: flex; align-items: center; flex: 1; min-width: 0; max-width: 420px; padding-left: 20px; border-left: 1px solid var(--border);}
-.novel-current-story-name {min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--accent); font-size: 13px; font-weight: 500; line-height: 1.6;}
-@media (max-width: 760px) {.novel-current-story {max-width: 200px; padding-left: 12px;}}
+.novel-tabs {flex-shrink: 0;}
 
 .novel-manuscript-editor-container {position: relative;}
 .novel-image-loading {position: sticky; bottom: 24px; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 10px; width: fit-content; max-width: 100%; box-sizing: border-box; margin: 16px auto; padding: 12px 18px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); box-shadow: 0 4px 18px rgba(0,0,0,.18); font-size: 13px;}

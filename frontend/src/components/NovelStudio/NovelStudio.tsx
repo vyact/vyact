@@ -210,8 +210,7 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
         if (story && deletedIds.has(story.id)) {setStoryId(next[0].id); setChapterId(''); setTab('text'); resetAssistant();}
     };
     const header = <>
-        <div className="novel-brand"><Feather size={19}/><h1>{tr('title')}</h1></div>
-        {story && <div className="novel-current-story"><span className="novel-current-story-name">{story.title}</span></div>}
+        <div className="novel-brand"><span className="novel-brand-icon"><Feather size={18} aria-hidden="true"/></span><h1>{tr('title')}</h1></div>
         <div className="novel-tabs">{(['text', 'bible'] as const).map(key => <button key={key} disabled={busy} aria-pressed={tab === key} onClick={() => {setTab(key); setViewingCandidateId(null); setViewingFinalId(null); setInstruction(''); setSelectedAction(key === 'bible' ? 'createDirection' : 'write');}}>{tr(key)}</button>)}</div>
         <button data-tooltip-disabled="" aria-label={tr('backToChat')} className="novel-return" onClick={requestExit}><LogOut size={16} strokeWidth={1.8}/><span>{tr('exitStudio')}</span></button>
     </>;
