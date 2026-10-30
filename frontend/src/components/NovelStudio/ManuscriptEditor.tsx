@@ -1,3 +1,4 @@
+import {queueManuscriptImageCleanup} from './manuscriptImageCleanup';
 import ManuscriptReadingContent from './ManuscriptReadingContent';
 import ImageViewer from '../ImageViewer/ImageViewer';
 import {retainManuscriptImages} from './manuscriptImageCache';
@@ -11,7 +12,7 @@ import {NodeSelection, TextSelection} from '@tiptap/pm/state';
 import {RichTextImage} from '../common/RichTextImage/RichTextImage';
 import {applyManuscriptImageWidths, documentToManuscript, manuscriptToDocument} from './manuscriptDocument';
 import type {Chapter} from './storyStorage';
-import type {WorkspaceEditSession} from './useWorkspaceChanges';
+import type {WorkspaceEditSession} from './workspaceEditSession';
 import {manuscriptImageSelectionPlugin} from './manuscriptImageSelection';
 
 interface ManuscriptEditorProps {chapter: Chapter; onChange: (patch: Partial<Chapter>) => void; onSessionChange?: (session: WorkspaceEditSession | null) => void; onDraftTextChange?: (chapterId: string, text: string | null) => void}
@@ -43,27 +44,26 @@ function ManuscriptEditingSession({chapter, onChange, onFinish, onDraftTextChang
     useEffect(() => {onDraftTextChange?.(chapter.id, draft.text);}, [chapter.id, draft.text, onDraftTextChange]);
     useEffect(() => () => onDraftTextChange?.(chapter.id, null), [chapter.id, onDraftTextChange]);
     const uploadedImages = useRef<{url: string; deleteToken: string}[]>([]);
-    const deleteImage = async (image: {url: string; deleteToken: string}) => {
-        const response = await fetch(image.url, {method: 'DELETE', headers: {'X-Image-Delete-Token': image.deleteToken}, keepalive: true});
-        if (!response.ok && response.status !== 404) throw new Error('Image cleanup failed');
-    };
-    useEffect(() => () => {for (const image of uploadedImages.current) void deleteImage(image).catch(() => {});}, []);
+    useEffect(() => () => {
+        const images = uploadedImages.current;
+        uploadedImages.current = [];
+        queueManuscriptImageCleanup(images);
+    }, []);
     const cancelEditing = async () => {
-        setUploading(true); setImageError('');
-        try {
-            await Promise.all(uploadedImages.current.map(deleteImage));
-            uploadedImages.current = [];
-            setDraft({title: chapter.title, text: chapter.text}); setEditing(false); return true;
-        } catch {setImageError(t('novelStudio.imageCleanupError')); return false;}
-        finally {setUploading(false);}
+        const images = uploadedImages.current;
+        uploadedImages.current = [];
+        setDraft({title: chapter.title, text: chapter.text});
+        setEditing(false);
+        queueManuscriptImageCleanup(images);
+        return true;
     };
     const saveEditing = async () => {
-        setUploading(true); setImageError('');
-        try {
-            await Promise.all(uploadedImages.current.filter(image => !draft.text.includes(image.url)).map(deleteImage));
-            onChange(draft); uploadedImages.current = []; setEditing(false); return true;
-        } catch {setImageError(t('novelStudio.imageCleanupError')); return false;}
-        finally {setUploading(false);}
+        const unusedImages = uploadedImages.current.filter(image => !draft.text.includes(image.url));
+        onChange(draft);
+        uploadedImages.current = [];
+        setEditing(false);
+        queueManuscriptImageCleanup(unusedImages);
+        return true;
     };
     const html = useMemo(() => editing ? '' : applyManuscriptImageWidths(renderMarkdown(chapter.text)), [chapter.text, editing]);
     const readingRef = useRef<HTMLElement>(null);
@@ -129,7 +129,7 @@ function ManuscriptEditingSession({chapter, onChange, onFinish, onDraftTextChang
     useEffect(() => {editor?.setEditable(!uploading);}, [editor, uploading]);
     useLayoutEffect(() => {
         onSessionChange?.({dirty: draft.text !== chapter.text || draft.title !== chapter.title, pending: uploading,
-            save: saveEditing, discard: cancelEditing});
+            characterText: draft.text, save: saveEditing, discard: cancelEditing});
     });
     useLayoutEffect(() => () => onSessionChange?.(null), [onSessionChange]);
     const mounted = useRef(true);
@@ -144,7 +144,7 @@ function ManuscriptEditingSession({chapter, onChange, onFinish, onDraftTextChang
             const response = await fetch('/api/novel-studio/images', {method: 'POST', body});
             if (!response.ok) throw new Error('Image upload failed');
             const result = await response.json();
-            if (!mounted.current) {await deleteImage(result); return;}
+            if (!mounted.current) {queueManuscriptImageCleanup([result]); return;}
             uploadedImages.current.push(result);
             editor.setEditable(true);
             editor.chain().focus().insertContentAt(position, [{type: 'memoImage', attrs: {src: result.url, alt: ''}}, {type: 'paragraph'}]).run();

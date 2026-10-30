@@ -1,4 +1,4 @@
-import type {WorkspaceEditSession} from './useWorkspaceChanges';
+import type {WorkspaceEditSession} from './workspaceEditSession';
 import {useEffect, useLayoutEffect, useMemo, useState, type ReactNode} from 'react';
 import {FileText, LoaderCircle, Pencil, ArrowLeft} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
@@ -20,7 +20,7 @@ export default function ProposalReader({text, action, busy, onChange, title, onR
     };
     const discard = async () => {setDraft(text); setDraftTitle(title ?? ''); setEditing(false); setInvalid(false); return true;};
     useLayoutEffect(() => {
-        if (onReturn) onSessionChange?.({dirty: editing && (draft !== text || draftTitle !== (title ?? '')), pending: busy, validationError: !draft.trim() ? t('novelStudio.changes.emptySetting') : undefined, save, discard});
+        if (onReturn) onSessionChange?.({dirty: editing && (draft !== text || draftTitle !== (title ?? '')), pending: busy, characterText: editing ? draft : text, validationError: !draft.trim() ? t('novelStudio.changes.emptySetting') : undefined, save, discard});
     });
     useLayoutEffect(() => () => onSessionChange?.(null), [onSessionChange]);
     const html = useMemo(() => renderMarkdown(text), [text]);

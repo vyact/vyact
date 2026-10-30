@@ -1,4 +1,4 @@
-import type {WorkspaceEditSession} from './useWorkspaceChanges';
+import type {WorkspaceEditSession} from './workspaceEditSession';
 import CandidateQuery from './CandidateQuery';
 import ProposalReader from './ProposalReader';
 import type {SettingCandidate} from './storyStorage';

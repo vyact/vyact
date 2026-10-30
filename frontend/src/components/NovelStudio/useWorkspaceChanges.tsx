@@ -1,20 +1,14 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
-
-export interface WorkspaceEditSession {
-    dirty: boolean;
-    pending: boolean;
-    validationError?: string;
-    save: () => Promise<boolean>;
-    discard: () => Promise<boolean>;
-}
+import type {WorkspaceEditSession} from './workspaceEditSession';
 
 export default function useWorkspaceChanges(hasProposal: boolean, saving = false) {
     const {t} = useTranslation('main');
     const session = useRef<WorkspaceEditSession | null>(null);
     const [dirty, setDirty] = useState(false);
     const [pending, setPending] = useState(false);
+    const [characterText, setCharacterText] = useState<string | undefined>();
     const [action, setAction] = useState<(() => void) | null>(null);
     const [resolving, setResolving] = useState(false);
     const [failed, setFailed] = useState(false);
@@ -22,6 +16,7 @@ export default function useWorkspaceChanges(hasProposal: boolean, saving = false
         session.current = value;
         setDirty(value?.dirty ?? false);
         setPending(value?.pending ?? false);
+        setCharacterText(value?.characterText);
     }, []);
     const requestAction = (next: () => void) => {
         if (pending || resolving) return;
@@ -55,5 +50,5 @@ export default function useWorkspaceChanges(hasProposal: boolean, saving = false
                 } finally {setResolving(false);}
             })();
         }}/> : null;
-    return {session, dirty, pending, registerSession, requestAction, confirmation};
+    return {session, dirty, pending, characterText, registerSession, requestAction, confirmation};
 }

@@ -89,7 +89,8 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
         setManuscriptDraft(previous => text === null ? (previous?.chapterId === chapterId ? null : previous) : {chapterId, text});
     }, []);
     const changes = useWorkspaceChanges(!busy && responseVisible && !!proposal.trim(), saveStatus === 'saving');
-    const characterCount = countManuscriptCharacters(tab === 'bible' ? activeFinal?.content ?? '' : manuscriptDraft?.chapterId === chapter?.id ? manuscriptDraft?.text ?? '' : chapter?.text ?? '');
+    const displayedText = viewingFinal?.content ?? viewingCandidate?.content ?? (responseVisible ? proposal : tab === 'bible' ? activeFinal?.content ?? '' : manuscriptDraft?.chapterId === chapter?.id ? manuscriptDraft?.text ?? '' : chapter?.text ?? '');
+    const characterCount = countManuscriptCharacters(changes.characterText ?? displayedText);
     useEffect(() => () => controller.current?.abort(), []);
     const updateStory = (patch: Partial<Story>) => setStories(items => items.map(item => {
         if (item.id !== story?.id) return item;
@@ -289,8 +290,9 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
                         <FinalSettingsLibrary items={finalSettings} activeId={story.activeFinalSettingId ?? null} disabled={busy} onSelect={id => updateStory({activeFinalSettingId: id})} onView={id => {setViewingFinalId(id); setViewingCandidateId(null); setRevisionRequest(''); setError('');}} onChange={items => updateStory({finalSettings: items, activeFinalSettingId: items.some(item => item.id === story.activeFinalSettingId) ? story.activeFinalSettingId : null})}/>
 
                     </SettingsPlanner>}</div>
-                    <footer className="novel-writing-footer"><span>{t('novelStudio.characters', {count: characterCount, formattedCount: new Intl.NumberFormat(i18n.resolvedLanguage || i18n.language).format(characterCount)})}</span>{undo?.chapterId === chapter.id && undo.target === tab && <button onClick={() => {updateChapter({text: undo.text, title: undo.title}); setUndo(null);}}><Undo2 size={14}/>{tr('undo')}</button>}<span role="status" className={`novel-save-status${changes.dirty ? ' is-unsaved' : ''}`}>{changes.dirty ? tr('changes.unsaved') : tr(`saveState.${saveStatus}`)}</span></footer>
+
                     </>}
+                    <footer className="novel-writing-footer"><span>{t('novelStudio.characters', {count: characterCount, formattedCount: new Intl.NumberFormat(i18n.resolvedLanguage || i18n.language).format(characterCount)})}</span>{!responseVisible && !viewingFinal && !viewingCandidate && undo?.chapterId === chapter.id && undo.target === tab && <button onClick={() => {updateChapter({text: undo.text, title: undo.title}); setUndo(null);}}><Undo2 size={14}/>{tr('undo')}</button>}<span role="status" className={`novel-save-status${changes.dirty ? ' is-unsaved' : ''}`}>{changes.dirty ? tr('changes.unsaved') : tr(`saveState.${saveStatus}`)}</span></footer>
                 </main>)}
 
         {deletingChapterId && story && <ConfirmModal actionLayout="horizontal" title={tr('deleteChapterTitle')} description={t('novelStudio.deleteChapterDescription', {title: story.chapters.find(item => item.id === deletingChapterId)?.title ?? ''})} options={[{label: tr('keep'), value: 'cancel'}, {label: tr('delete'), value: 'delete', variant: 'danger'}]} onClose={() => setDeletingChapterId(null)} onSelect={value => {
