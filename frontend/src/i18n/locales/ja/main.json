@@ -1645,6 +1645,7 @@
     "defaultQuestion": "添付のデータと結果を分析し、重要な点と注意点を説明してください。"
   },
   "novelStudio": {
+    "changes": {"cancel": "編集を続ける", "title": "未保存の変更", "description": "変更を保存しますか？", "proposalTitle": "未適用のAI提案", "proposalDescription": "この提案はまだ適用されていません。破棄しますか？", "saveContinue": "保存", "discardContinue": "変更を破棄", "unsaved": "未保存", "emptySetting": "設定内容は空にできません。内容を入力するか変更を破棄してください。"},
     "pinStory": "作品を固定",
     "unpinStory": "作品の固定を解除",
     "bulkDeleteChapters": {"select": "話を選んで削除", "selectChapter": "{{title}}を選択", "title": "選択した話を削除", "description": "選択した{{count}}話と原稿を削除します。設定は維持されます。元に戻せません。"},

@@ -6,6 +6,7 @@ import zipfile
 from html import escape
 from pathlib import Path
 
+from markdown_it import MarkdownIt
 from playwright.async_api import async_playwright
 
 from services.novel_images import NOVEL_IMAGES_DIR
@@ -21,32 +22,12 @@ def safe_export_name(title: str) -> str:
 
 MANUSCRIPT_IMAGE = re.compile(r'!\[([^\]]*)\]\((/api/novel-studio/images/([a-f0-9]{32}\.(?:png|jpg|gif|webp)))(?:\?width=(\d+))?\)')
 IMAGE_MIME_TYPES = {'png': 'image/png', 'jpg': 'image/jpeg', 'gif': 'image/gif', 'webp': 'image/webp'}
-BACKTICK_RUN = re.compile(r'`+')
+EXPORT_MARKDOWN = MarkdownIt('commonmark', {'html': False, 'breaks': True}).enable(['table', 'strikethrough'])
+LOCAL_IMAGE_SOURCE = re.compile(r'/api/novel-studio/images/([a-f0-9]{32}\.(?:png|jpg|gif|webp))(?:\?width=(\d+))?')
 
 
 def manuscript_text_html(text: str) -> str:
-    """Render code spans while keeping all manuscript HTML escaped."""
-    fragments = []
-    position = 0
-    runs = list(BACKTICK_RUN.finditer(text))
-    index = 0
-    while index < len(runs):
-        opening = runs[index]
-        closing_index = next((candidate for candidate in range(index + 1, len(runs))
-                              if runs[candidate].group() == opening.group()), None)
-        if closing_index is None:
-            index += 1
-            continue
-        closing = runs[closing_index]
-        content = text[opening.end():closing.start()].replace('\n', ' ')
-        if content.startswith(' ') and content.endswith(' ') and content.strip(' '):
-            content = content[1:-1]
-        fragments.append(escape(text[position:opening.start()]))
-        fragments.append(f'<code>{escape(content)}</code>')
-        position = closing.end()
-        index = closing_index + 1
-    fragments.append(escape(text[position:]))
-    return ''.join(fragments)
+    return EXPORT_MARKDOWN.renderInline(text)
 
 
 def read_export_image(filename: str) -> bytes:
@@ -56,19 +37,26 @@ def read_export_image(filename: str) -> bytes:
     return path.read_bytes()
 
 
+def render_export_image(tokens, index, options, env):
+    token = tokens[index]
+    source = token.attrGet('src') or ''
+    match = LOCAL_IMAGE_SOURCE.fullmatch(source)
+    alt = token.content
+    if not match:
+        # Preserve external image notation as text without fetching untrusted URLs.
+        return escape(f'![{alt}]({source})')
+    filename, requested_width = match.groups()
+    data = base64.b64encode(read_export_image(filename)).decode('ascii')
+    mime = IMAGE_MIME_TYPES[filename.rsplit('.', 1)[1]]
+    width = f' width="{int(requested_width)}"' if requested_width else ''
+    return f'<img{width} src="data:{mime};base64,{data}" alt="{escape(alt, quote=True)}">'
+
+
+EXPORT_MARKDOWN.renderer.rules['image'] = render_export_image
+
+
 def manuscript_html(text: str) -> str:
-    fragments = []
-    position = 0
-    for match in MANUSCRIPT_IMAGE.finditer(text):
-        fragments.append(manuscript_text_html(text[position:match.start()]))
-        filename = match.group(3)
-        data = base64.b64encode(read_export_image(filename)).decode('ascii')
-        mime = IMAGE_MIME_TYPES[filename.rsplit('.', 1)[1]]
-        width = f' width="{int(match.group(4))}"' if match.group(4) else ''
-        fragments.append(f'<img{width} src="data:{mime};base64,{data}" alt="{escape(match.group(1), quote=True)}">')
-        position = match.end()
-    fragments.append(manuscript_text_html(text[position:]))
-    return ''.join(fragments)
+    return EXPORT_MARKDOWN.render(text)
 
 
 def chapter_html(story_title: str, chapter: dict) -> str:
@@ -82,9 +70,16 @@ def chapter_html(story_title: str, chapter: dict) -> str:
     body{{font-family:NovelExport,'Noto Sans CJK KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif;color:#202020;font-size:11pt;line-height:1.9}}
     .story-title{{font-size:9pt;color:#777;margin:0 0 10mm}}
     h1{{font-size:22pt;line-height:1.45;margin:0 0 12mm;overflow-wrap:anywhere}}
-    .manuscript{{white-space:pre-wrap;overflow-wrap:anywhere;orphans:3;widows:3}}
+    .manuscript{{white-space:normal;overflow-wrap:anywhere;orphans:3;widows:3}}
     .manuscript img{{display:block;max-width:100%;max-height:230mm;object-fit:contain;margin:5mm auto;break-inside:avoid}}
+    .manuscript p{{margin:0 0 1.2em}}
+    .manuscript :is(h1,h2,h3,h4){{line-height:1.5;margin:1.4em 0 .6em;break-after:avoid}}
+    .manuscript h1{{font-size:18pt}} .manuscript h2{{font-size:16pt}} .manuscript h3{{font-size:14pt}}
+    .manuscript blockquote{{border-left:3px solid #d5d9dd;padding-left:12px;margin:1em 0;color:#555}}
+    .manuscript pre{{white-space:pre-wrap;overflow-wrap:anywhere;background:#f2f4f6;border:1px solid #d5d9dd;border-radius:5px;padding:12px}}
+    .manuscript table{{border-collapse:collapse;width:100%;margin:1em 0}} .manuscript :is(th,td){{border:1px solid #d5d9dd;padding:6px 9px;text-align:left}}
     .manuscript code{{font-family:inherit;font-size:.95em;color:#285578;background:#f2f4f6;border:1px solid #d5d9dd;border-radius:3px;padding:1px 4px;box-decoration-break:clone;-webkit-box-decoration-break:clone}}
+    .manuscript pre code{{padding:0;border:0;background:transparent;color:inherit}}
     </style></head><body><p class="story-title">{escape(story_title)}</p><h1>{escape(chapter['title'])}</h1><div class="manuscript">{manuscript_html(chapter['text'])}</div></body></html>"""
 
 

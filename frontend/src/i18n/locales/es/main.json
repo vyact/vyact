@@ -1646,6 +1646,7 @@
     "defaultQuestion": "Analiza los datos y resultados adjuntos. Explica los puntos clave y los aspectos a tener en cuenta."
   },
   "novelStudio": {
+    "changes": {"cancel": "Seguir editando", "title": "Cambios sin guardar", "description": "¿Guardar los cambios?", "proposalTitle": "Propuesta de IA sin aplicar", "proposalDescription": "Esta propuesta aún no se ha aplicado. ¿Descartarla?", "saveContinue": "Guardar", "discardContinue": "Descartar cambios", "unsaved": "Sin guardar", "emptySetting": "La configuración no puede estar vacía. Introduce contenido o descarta los cambios."},
     "pinStory": "Fijar obra",
     "unpinStory": "Desfijar obra",
     "bulkDeleteChapters": {"select": "Seleccionar capítulos para eliminar", "selectChapter": "Seleccionar {{title}}", "title": "Eliminar capítulos seleccionados", "description": "Se eliminarán {{count}} capítulos y sus manuscritos. Se conservarán los ajustes. No se puede deshacer."},

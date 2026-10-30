@@ -11,18 +11,19 @@ import {NodeSelection, TextSelection} from '@tiptap/pm/state';
 import {RichTextImage} from '../common/RichTextImage/RichTextImage';
 import {applyManuscriptImageWidths, documentToManuscript, manuscriptToDocument} from './manuscriptDocument';
 import type {Chapter} from './storyStorage';
+import type {WorkspaceEditSession} from './useWorkspaceChanges';
 import {manuscriptImageSelectionPlugin} from './manuscriptImageSelection';
 
-interface ManuscriptEditorProps {chapter: Chapter; onChange: (patch: Partial<Chapter>) => void; onDraftTextChange?: (chapterId: string, text: string | null) => void}
+interface ManuscriptEditorProps {chapter: Chapter; onChange: (patch: Partial<Chapter>) => void; onSessionChange?: (session: WorkspaceEditSession | null) => void; onDraftTextChange?: (chapterId: string, text: string | null) => void}
 
-export default function ManuscriptEditor({chapter, onChange, onDraftTextChange}: ManuscriptEditorProps) {
+export default function ManuscriptEditor({chapter, onChange, onDraftTextChange, onSessionChange}: ManuscriptEditorProps) {
     const {t} = useTranslation('main');
     const [editing, setEditing] = useState(!chapter.text.trim());
     const [imageViewer, setImageViewer] = useState<{images: {src: string; alt: string}[]; index: number} | null>(null);
     const readingRef = useRef<HTMLElement>(null);
     const html = useMemo(() => applyManuscriptImageWidths(renderMarkdown(chapter.text)), [chapter.text]);
     useLayoutEffect(() => {if (!editing && readingRef.current) retainManuscriptImages(readingRef.current);}, [html, editing]);
-    if (editing) return <ManuscriptEditingSession chapter={chapter} onChange={onChange} onDraftTextChange={onDraftTextChange} onFinish={() => setEditing(false)}/>;
+    if (editing) return <ManuscriptEditingSession chapter={chapter} onChange={onChange} onDraftTextChange={onDraftTextChange} onSessionChange={onSessionChange} onFinish={() => setEditing(false)}/>;
     return <div className="novel-manuscript-page"><header className="novel-manuscript-heading"><h2>{chapter.title}</h2><button type="button" className="modal-action-cancel" data-tooltip-disabled="" onClick={() => setEditing(true)}><Pencil size={15}/><span>{t('novelStudio.editManuscript')}</span></button></header><article ref={readingRef} className="novel-manuscript-reading" onClick={event => {
         const image = (event.target as HTMLElement).closest('img');
         if (!image) return;
@@ -34,7 +35,7 @@ export default function ManuscriptEditor({chapter, onChange, onDraftTextChange}:
     }}><ManuscriptReadingContent html={html}/></article>{imageViewer && <ImageViewer images={imageViewer.images} currentIndex={imageViewer.index} onClose={() => setImageViewer(null)} onIndexChange={index => setImageViewer(previous => previous ? {...previous, index} : null)}/>}</div>;
 }
 
-function ManuscriptEditingSession({chapter, onChange, onFinish, onDraftTextChange}: ManuscriptEditorProps & {onFinish: () => void}) {
+function ManuscriptEditingSession({chapter, onChange, onFinish, onDraftTextChange, onSessionChange}: ManuscriptEditorProps & {onFinish: () => void}) {
     const {t} = useTranslation('main');
     const editing = true;
     const setEditing = (_value: boolean) => onFinish();
@@ -52,16 +53,16 @@ function ManuscriptEditingSession({chapter, onChange, onFinish, onDraftTextChang
         try {
             await Promise.all(uploadedImages.current.map(deleteImage));
             uploadedImages.current = [];
-            setDraft({title: chapter.title, text: chapter.text}); setEditing(false); editor?.commands.setContent(manuscriptToDocument(''), {emitUpdate: false});
-        } catch {setImageError(t('novelStudio.imageCleanupError'));}
+            setDraft({title: chapter.title, text: chapter.text}); setEditing(false); return true;
+        } catch {setImageError(t('novelStudio.imageCleanupError')); return false;}
         finally {setUploading(false);}
     };
     const saveEditing = async () => {
         setUploading(true); setImageError('');
         try {
             await Promise.all(uploadedImages.current.filter(image => !draft.text.includes(image.url)).map(deleteImage));
-            onChange(draft); uploadedImages.current = []; setEditing(false); editor?.commands.setContent(manuscriptToDocument(''), {emitUpdate: false});
-        } catch {setImageError(t('novelStudio.imageCleanupError'));}
+            onChange(draft); uploadedImages.current = []; setEditing(false); return true;
+        } catch {setImageError(t('novelStudio.imageCleanupError')); return false;}
         finally {setUploading(false);}
     };
     const html = useMemo(() => editing ? '' : applyManuscriptImageWidths(renderMarkdown(chapter.text)), [chapter.text, editing]);
@@ -126,6 +127,11 @@ function ManuscriptEditingSession({chapter, onChange, onFinish, onDraftTextChang
         onUpdate: ({editor: current}) => setDraft(previous => ({...previous, text: documentToManuscript(current.getJSON())})),
     });
     useEffect(() => {editor?.setEditable(!uploading);}, [editor, uploading]);
+    useLayoutEffect(() => {
+        onSessionChange?.({dirty: draft.text !== chapter.text || draft.title !== chapter.title, pending: uploading,
+            save: saveEditing, discard: cancelEditing});
+    });
+    useLayoutEffect(() => () => onSessionChange?.(null), [onSessionChange]);
     const mounted = useRef(true);
     useEffect(() => {mounted.current = true; return () => {mounted.current = false;};}, []);
     const insertImage = async (file: File, insertionPosition?: number) => {

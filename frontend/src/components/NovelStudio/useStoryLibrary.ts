@@ -36,5 +36,5 @@ export default function useStoryLibrary(defaultTitle: string, defaultChapter: st
         queueStoryChanges(previous, next);
     };
     const reload = () => {setLoading(true); setLoadFailed(false); return load();};
-    return {stories, setStories, loading, loadFailed, saveStatus, reload};
+    return {stories, getStories: () => storyRef.current, setStories, loading, loadFailed, saveStatus, reload};
 }

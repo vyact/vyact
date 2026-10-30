@@ -3,6 +3,7 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import {createElement} from 'react';
 import NovelStudio from './NovelStudio';
 
+vi.mock('../../i18n', () => ({default: {t: (key: string) => key, on: vi.fn(), off: vi.fn()}}));
 vi.mock('react-i18next', () => ({useTranslation: () => ({t: (key: string) => key, i18n: {language: 'ko'}})}));
 afterEach(() => vi.unstubAllGlobals());
 

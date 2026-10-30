@@ -1655,6 +1655,7 @@
     "defaultQuestion": "첨부한 데이터와 결과를 분석하고, 핵심 내용과 유의할 점을 설명해 주세요."
   },
   "novelStudio": {
+    "changes": {"cancel": "계속 편집", "title": "저장하지 않은 변경 사항", "description": "변경사항을 저장할까요?", "proposalTitle": "적용하지 않은 AI 제안", "proposalDescription": "이 제안은 아직 적용되지 않았습니다. 제안을 버릴까요?", "saveContinue": "저장", "discardContinue": "변경 버리기", "unsaved": "저장하지 않음", "emptySetting": "설정 내용은 비워 둘 수 없습니다. 내용을 입력하거나 변경을 취소해 주세요."},
     "pinStory": "작품 고정",
     "unpinStory": "작품 고정 해제",
     "bulkDeleteChapters": {"select": "회차 선택 삭제", "selectChapter": "{{title}} 선택", "title": "선택한 회차 삭제", "description": "선택한 회차 {{count}}개와 원고를 삭제합니다. 원고 설정은 유지됩니다. 이 작업은 되돌릴 수 없습니다."},

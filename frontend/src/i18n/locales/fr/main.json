@@ -1647,6 +1647,7 @@
     "defaultQuestion": "Analysez les données et résultats joints. Expliquez les points clés et les éléments à prendre en compte."
   },
   "novelStudio": {
+    "changes": {"cancel": "Continuer la modification", "title": "Modifications non enregistrées", "description": "Enregistrer les modifications ?", "proposalTitle": "Proposition IA non appliquée", "proposalDescription": "Cette proposition n’a pas encore été appliquée. La supprimer ?", "saveContinue": "Enregistrer", "discardContinue": "Ignorer les modifications", "unsaved": "Non enregistré", "emptySetting": "Le contenu ne peut pas être vide. Saisissez du contenu ou annulez les modifications."},
     "pinStory": "Épingler l’œuvre",
     "unpinStory": "Détacher l’œuvre",
     "bulkDeleteChapters": {"select": "Sélectionner les chapitres à supprimer", "selectChapter": "Sélectionner {{title}}", "title": "Supprimer les chapitres sélectionnés", "description": "Supprimer {{count}} chapitres et leurs manuscrits. Les paramètres sont conservés. Cette action est irréversible."},

@@ -47,15 +47,21 @@ export function flushStorySaves(): Promise<void> {
     notify('saving');
     inFlight = (async () => {
         try {
+            const failed = new Set<string>();
             while (pending.size) {
-                const [id, write] = pending.entries().next().value!;
-                const response = await fetch(`${STORIES_ENDPOINT}/${encodeURIComponent(id)}`, {
+                const next = [...pending.entries()].find(([id]) => !failed.has(id));
+                if (!next) break;
+                const [id, write] = next;
+                try {
+                    const response = await fetch(`${STORIES_ENDPOINT}/${encodeURIComponent(id)}`, {
                     method: write.story ? 'PUT' : 'DELETE',
                     ...(write.story ? {headers: {'Content-Type': 'application/json'}, body: JSON.stringify(write.story)} : {}),
                 });
-                if (!response.ok) throw new Error('Story save failed');
-                if (pending.get(id)?.version === write.version) pending.delete(id);
+                    if (!response.ok) throw new Error('Story save failed');
+                    if (pending.get(id)?.version === write.version) pending.delete(id);
+                } catch {failed.add(id);}
             }
+            if (pending.size) throw new Error('Story save failed');
             notify('saved');
         } catch (error) {notify('error'); throw error;}
         finally {inFlight = null;}

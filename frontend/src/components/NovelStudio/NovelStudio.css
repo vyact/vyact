@@ -21,6 +21,9 @@
 .novel-manuscript::placeholder {color: var(--muted); opacity: .65;}
 .novel-writing-footer {padding: 12px 25px; display: flex; justify-content: space-between; gap: 12px; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted);}
 .novel-writing-footer button {border: none; color: var(--accent); background: transparent; font-size: 11px;}
+.novel-save-status {display: inline-flex; align-items: center; gap: 6px;}
+.novel-save-status.is-unsaved {color: var(--accent); font-weight: 600;}
+.novel-save-status.is-unsaved::before {content: ''; width: 6px; height: 6px; flex-shrink: 0; border-radius: 50%; background: currentColor;}
 .novel-assistant {flex: 1; background: var(--bg-secondary); padding: 23px 20px; overflow: auto;}
 .novel-assistant-heading {display: flex; align-items: center; gap: 8px; color: var(--accent);}
 .novel-assistant h2 {font-size: 14px; margin: 0; color: var(--text);}

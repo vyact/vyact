@@ -29,6 +29,24 @@ def test_pdf_code_spans_escape_html_and_preserve_literal_backticks():
     assert manuscript_text_html('unmatched ` text') == 'unmatched ` text'
 
 
+def test_pdf_formats_markdown_and_preserves_code_block_line_breaks():
+    html = chapter_html('Story', {'title': 'Chapter', 'text': '# 제목\n\n**강조**와 *기울임* ~~삭제~~\n\n- 항목\n\n> 인용\n\n```python\nfirst = 1\nsecond = 2\n```'})
+    assert '<h1>제목</h1>' in html
+    assert '<strong>강조</strong>' in html
+    assert '<em>기울임</em>' in html
+    assert '<s>삭제</s>' in html
+    assert '<li>항목</li>' in html
+    assert '<blockquote>' in html
+    assert 'first = 1\nsecond = 2\n</code></pre>' in html
+
+
+def test_pdf_does_not_embed_images_inside_code_or_enable_unsafe_links():
+    html = chapter_html('Story', {'title': 'Chapter', 'text': '`![](/api/novel-studio/images/' + '0' * 32 + '.png)`\n\n[x](javascript:alert(1))\n\n<img src="https://example.com/x">'})
+    assert '<img ' not in html
+    assert 'href="javascript:' not in html
+    assert '&lt;img' in html
+
+
 @pytest.mark.asyncio
 async def test_whole_story_is_a_zip_with_one_file_per_chapter_in_order():
     story = sample_story()

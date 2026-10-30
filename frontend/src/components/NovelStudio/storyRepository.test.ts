@@ -5,6 +5,21 @@ beforeEach(() => {vi.resetModules(); vi.useFakeTimers();});
 afterEach(() => {vi.useRealTimers(); vi.unstubAllGlobals();});
 
 describe('ES-backed story persistence', () => {
+    it('saves other stories even when one story fails validation', async () => {
+        const invalid = createStory('Invalid', 'One');
+        const valid = createStory('Valid', 'Two');
+        const fetcher = vi.fn().mockResolvedValueOnce(new Response('', {status: 422})).mockResolvedValue(new Response('{}'));
+        vi.stubGlobal('fetch', fetcher);
+        const repository = await import('./storyRepository');
+        repository.queueStoryChanges([], [invalid, valid]);
+        await expect(repository.flushStorySaves()).rejects.toThrow();
+        expect(fetcher.mock.calls.map(call => call[0])).toEqual([
+            `/api/novel-studio/stories/${invalid.id}`, `/api/novel-studio/stories/${valid.id}`,
+        ]);
+        await repository.flushStorySaves();
+        expect(fetcher.mock.calls[2][0]).toContain(invalid.id);
+        expect(fetcher).toHaveBeenCalledTimes(3);
+    });
     it('loads server stories and rejects unavailable storage rather than returning an empty library', async () => {
         const fetcher = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({stories: [{id: 'server-story'}]}))).mockResolvedValueOnce(new Response('', {status: 503}));
         vi.stubGlobal('fetch', fetcher);
