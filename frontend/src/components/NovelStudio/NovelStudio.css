@@ -310,9 +310,9 @@
 :root[data-theme='light'] .novel-story-list .novel-story-row:not(.selected):is(:hover, :active) {background: color-mix(in srgb, var(--accent) 4%, var(--surface));}
 :root[data-theme='light'] .novel-story-list .novel-story-row.selected {background: color-mix(in srgb, var(--project-neutral) 12%, transparent);}
 
-.novel-manuscript-heading {display: flex; align-items: flex-start; gap: 14px; margin-bottom: 22px; padding-bottom: 14px; border-bottom: 1px solid var(--border);}
+.novel-manuscript-heading {display: flex; flex-wrap: wrap; align-items: flex-start; gap: 14px; margin-bottom: 22px; padding-bottom: 14px; border-bottom: 1px solid var(--border);}
 .novel-manuscript-heading h2 {flex: 1; min-width: 0; margin: 0; font-size: 24px; line-height: 1.5; font-weight: 650; letter-spacing: -.02em; overflow-wrap: anywhere;}
-.novel-manuscript-heading .novel-chapter-title {flex: 1; min-width: 0; width: auto; margin: 0; padding: 0; border: none;}
+.novel-manuscript-heading .novel-chapter-title {flex: 1 1 180px; min-width: 0; width: auto; margin: 0; padding: 0; border: none;}
 .novel-manuscript-heading>button {display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex-shrink: 0; padding: 7px 10px; font-size: 12px;}
 .novel-manuscript-page :is(.novel-manuscript-reading, .novel-manuscript-visual) {font-family: inherit; font-size: 15px; font-weight: 400; line-height: 1.9; letter-spacing: .005em; color: var(--text); overflow-wrap: anywhere;}
 .novel-manuscript-page :is(.novel-manuscript-reading, .novel-manuscript-visual) p {font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; letter-spacing: inherit; color: inherit;}
@@ -328,7 +328,8 @@
 .novel-manuscript-visual {min-height: 55vh; outline: none; white-space: pre-wrap;}
 .novel-manuscript-visual p {margin: 0; min-height: 1.9em;}
 .novel-manuscript-visual img {max-width: 100%; height: auto;}
-.novel-manuscript-edit-actions {flex-wrap: wrap; justify-content: flex-end;}
+.novel-manuscript-edit-actions {flex-wrap: wrap; justify-content: flex-end; max-width: 100%; margin-left: auto;}
+@media (max-width: 1000px) {.novel-manuscript-edit-actions .modal-action-cancel {padding: 7px 9px; gap: 6px; font-size: 12px;}}
 
 .novel-tabs {flex-shrink: 0;}
 

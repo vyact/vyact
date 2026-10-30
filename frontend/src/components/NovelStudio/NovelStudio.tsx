@@ -8,6 +8,7 @@ import useGenerationExitConfirmation from './useGenerationExitConfirmation';
 import {EXIT_NOVEL_STUDIO_EVENT} from './workspaceEvents';
 import {buildChapterContext, getEarlierChapters} from './chapterContext';
 import ManuscriptEditor from './ManuscriptEditor';
+import NovelSaveStatus from './NovelSaveStatus';
 import {countManuscriptCharacters} from './manuscriptDocument';
 import {reviseSavedProposal, type SavedProposalSource} from './savedProposal';
 import FinalSettingsLibrary from './FinalSettingsLibrary';
@@ -292,7 +293,7 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
                     </SettingsPlanner>}</div>
 
                     </>}
-                    <footer className="novel-writing-footer"><span>{t('novelStudio.characters', {count: characterCount, formattedCount: new Intl.NumberFormat(i18n.resolvedLanguage || i18n.language).format(characterCount)})}</span>{!responseVisible && !viewingFinal && !viewingCandidate && undo?.chapterId === chapter.id && undo.target === tab && <button onClick={() => {updateChapter({text: undo.text, title: undo.title}); setUndo(null);}}><Undo2 size={14}/>{tr('undo')}</button>}<span role="status" className={`novel-save-status${changes.dirty ? ' is-unsaved' : ''}`}>{changes.dirty ? tr('changes.unsaved') : tr(`saveState.${saveStatus}`)}</span></footer>
+                    <footer className="novel-writing-footer"><span>{t('novelStudio.characters', {count: characterCount, formattedCount: new Intl.NumberFormat(i18n.resolvedLanguage || i18n.language).format(characterCount)})}</span>{!responseVisible && !viewingFinal && !viewingCandidate && undo?.chapterId === chapter.id && undo.target === tab && <button onClick={() => {updateChapter({text: undo.text, title: undo.title}); setUndo(null);}}><Undo2 size={14}/>{tr('undo')}</button>}<NovelSaveStatus generating={busy} unapplied={responseVisible} dirty={changes.dirty} saveStatus={saveStatus}/></footer>
                 </main>)}
 
         {deletingChapterId && story && <ConfirmModal actionLayout="horizontal" title={tr('deleteChapterTitle')} description={t('novelStudio.deleteChapterDescription', {title: story.chapters.find(item => item.id === deletingChapterId)?.title ?? ''})} options={[{label: tr('keep'), value: 'cancel'}, {label: tr('delete'), value: 'delete', variant: 'danger'}]} onClose={() => setDeletingChapterId(null)} onSelect={value => {
