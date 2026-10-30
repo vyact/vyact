@@ -7,6 +7,9 @@ import {NOVEL_STUDIO_PANEL_ID} from '../NovelStudio/storyStorage';
 
 export default function MainWorkspace({children}: {children: ReactNode}) {
     const panels = usePanelManager();
+    useEffect(() => panels.registerLeaveGuard(NOVEL_STUDIO_PANEL_ID, proceed => {
+        window.dispatchEvent(new CustomEvent(EXIT_NOVEL_STUDIO_EVENT, {detail: {proceed}}));
+    }), [panels.registerLeaveGuard]);
     useEffect(() => {
         const toggleStudio = () => {
             if (panels.activePanel === NOVEL_STUDIO_PANEL_ID) {
@@ -19,5 +22,5 @@ export default function MainWorkspace({children}: {children: ReactNode}) {
         return () => window.removeEventListener(TOGGLE_NOVEL_STUDIO_EVENT, toggleStudio);
     }, [panels.activePanel, panels.open]);
     return <WorkspaceHost workspace={panels.activePanel === NOVEL_STUDIO_PANEL_ID
-        ? <NovelStudio onClose={() => panels.close(NOVEL_STUDIO_PANEL_ID)}/> : undefined}>{children}</WorkspaceHost>;
+        ? <NovelStudio onClose={() => panels.close(NOVEL_STUDIO_PANEL_ID, {skipLeaveConfirmation: true})}/> : undefined}>{children}</WorkspaceHost>;
 }

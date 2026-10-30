@@ -1,0 +1,12 @@
+.processing-modal {box-sizing: border-box; width: 380px; max-width: 100%; padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--modal-bg); box-shadow: 0 20px 60px rgba(0, 0, 0, .2); outline: none;}
+.processing-modal-heading {display: flex; align-items: center; gap: 14px;}
+.processing-modal-icon {display: grid; place-items: center; flex-shrink: 0; width: 44px; height: 44px; border-radius: 12px; color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent);}
+.processing-modal-icon svg {animation: processing-modal-spin 1s linear infinite;}
+.processing-modal-heading>div {min-width: 0;}
+.processing-modal h2 {margin: 0; color: var(--text); font-size: var(--modal-title); font-weight: 600; line-height: 1.5;}
+.processing-modal p {margin: 4px 0 0; color: var(--text-secondary); font-size: var(--modal-sub); line-height: 1.5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.processing-modal-track {height: 4px; overflow: hidden; margin-top: 22px; border-radius: 999px; background: var(--modal-inset);}
+.processing-modal-track span {display: block; width: 35%; height: 100%; border-radius: inherit; background: var(--accent); animation: processing-modal-progress 1.4s ease-in-out infinite;}
+@keyframes processing-modal-spin {to {transform: rotate(360deg);}}
+@keyframes processing-modal-progress {from {transform: translateX(-100%);} to {transform: translateX(290%);}}
+@media (prefers-reduced-motion: reduce) {.processing-modal-icon svg, .processing-modal-track span {animation: none;} .processing-modal-track span {width: 100%; opacity: .6;}}

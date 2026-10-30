@@ -2,6 +2,7 @@ import useScrollActivity from '../common/hooks/useScrollActivity';
 import useSelectedItemVisibility from '../common/hooks/useSelectedItemVisibility';
 import LibrarySelectionActions from './LibrarySelectionActions';
 import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
+import ProcessingModal from '../common/ProcessingModal/ProcessingModal';
 import useWorkspaceChanges from './useWorkspaceChanges';
 import useGenerationExitConfirmation from './useGenerationExitConfirmation';
 import {EXIT_NOVEL_STUDIO_EVENT} from './workspaceEvents';
@@ -62,8 +63,12 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
     const [candidateTitle, setCandidateTitle] = useState('');
     const [viewingFinalId, setViewingFinalId] = useState<string | null>(null);
     const [proposalTarget, setProposalTarget] = useState<'text' | 'bible'>('text');
-    const [exporting, setExporting] = useState(false);
+    const [exportDetails, setExportDetails] = useState<{title: string; format: NovelExportFormat} | null>(null);
+    const exporting = exportDetails !== null;
+    const exportInFlight = useRef(false);
     const [busy, setBusy] = useState(false);
+    const [titleGeneration, setTitleGeneration] = useState<{abort: () => void} | null>(null);
+    const exitDestination = useRef(onClose);
     const [error, setError] = useState('');
     const [undo, setUndo] = useState<{chapterId: string; target: 'text' | 'bible'; text: string; title: string} | null>(null);
     const controller = useRef<AbortController | null>(null);
@@ -95,15 +100,17 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
     const updateChapter = (patch: Partial<NonNullable<typeof chapter>>) => {
         if (story) updateStory({chapters: story.chapters.map(item => item.id === chapter?.id ? {...item, ...patch} : item)});
     };
-    const {requestExit: requestGenerationExit, confirmation: exitConfirmation} = useGenerationExitConfirmation(busy, async () => {
+    const {requestExit: requestGenerationExit, confirmation: exitConfirmation} = useGenerationExitConfirmation(busy || titleGeneration !== null, async () => {
         controller.current?.abort();
-        try {await flushStorySaves(); onClose();}
+        titleGeneration?.abort();
+        try {await flushStorySaves(); exitDestination.current();}
         catch {setError(tr('saveError'));}
     });
-    const requestExit = () => changes.requestAction(requestGenerationExit);
+    const requestExit = (proceed = onClose) => {if (!exportInFlight.current) {exitDestination.current = proceed; changes.requestAction(requestGenerationExit);}};
     useEffect(() => {
-        window.addEventListener(EXIT_NOVEL_STUDIO_EVENT, requestExit);
-        return () => window.removeEventListener(EXIT_NOVEL_STUDIO_EVENT, requestExit);
+        const handleExit = (event: Event) => requestExit((event as CustomEvent<{proceed?: () => void}>).detail?.proceed);
+        window.addEventListener(EXIT_NOVEL_STUDIO_EVENT, handleExit);
+        return () => window.removeEventListener(EXIT_NOVEL_STUDIO_EVENT, handleExit);
     }, [requestExit]);
     const resetAssistant = () => {setRevisionSource(null);setRevisionRequest('');setViewingFinalId(null);setViewingCandidateId(null);setProposal(''); setResponseVisible(false); setError(''); setUndo(null); setInstruction(''); setSelectedAction('write');};
     const addStory = () => {
@@ -154,14 +161,17 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
     const contextControls = <div className="novel-request-context"><div className="novel-request-context-heading"><p>{t('novelStudio.proposalContext', {count: selectedSettings.length})}</p><Tooltip content={tr('proposalContextHelp')} multiline size="medium" placement="above"><button type="button" className="titlebar-btn" aria-label={tr('proposalContextHelp')}><Info size={14} aria-hidden="true"/></button></Tooltip></div>{selectedSettingCategories.length > 0 && <ul>{selectedSettingCategories.map(category => <li key={category}><span>{tr(category)} · {availableContext.filter(candidate => candidate.category === category).length}</span><ToggleSwitch checked={!excludedContextCategories.includes(category)} disabled={busy} label={t('novelStudio.includeContextCategory', {category: tr(category)})} onChange={included => setContextExclusions(previous => ({...previous, [contextKey]: included ? (previous[contextKey] ?? []).filter(item => item !== category) : [...(previous[contextKey] ?? []), category]}))}/></li>)}</ul>}</div>;
     const revisionControls = <div className="novel-revision-controls"><label htmlFor="novel-revision-request">{tr('reviseProposal')}</label><textarea id="novel-revision-request" maxLength={3000} disabled={busy} value={revisionRequest} placeholder={tr('revisionPlaceholder')} onChange={event => setRevisionRequest(event.target.value)}/><p className="novel-revision-context-help">{tr('revisionContextHelp')}</p>{tab === 'bible' && contextControls}{busy ? <button className="modal-action-cancel" onClick={() => controller.current?.abort()}><LoaderCircle className="novel-spinner" size={15}/>{tr('cancel')}</button> : <button className="modal-action-submit" disabled={changes.pending || !revisionRequest.trim() || !(viewingCandidate?.content ?? viewingFinal?.content ?? proposal).trim()} onClick={() => void generate(revisionRequest.trim(), true)}><Sparkles size={15}/>{tr('requestRevision')}</button>}</div>;
     const exportManuscript = async (selectedStory: Story, format: NovelExportFormat, chapterId?: string) => {
-        if (exporting) return;
+        if (exportInFlight.current) return;
         const editor = changes.session.current;
         if (editor?.pending) return;
-        if (editor?.dirty && !await editor.save()) return;
-        setExporting(true); setError('');
-        try {await downloadNovel(getStories().find(item => item.id === selectedStory.id) ?? selectedStory, format, chapterId);}
+        exportInFlight.current = true;
+        setExportDetails({title: selectedStory.chapters.find(item => item.id === chapterId)?.title ?? selectedStory.title, format}); setError('');
+        try {
+            if (editor?.dirty && !await editor.save()) return;
+            await downloadNovel(getStories().find(item => item.id === selectedStory.id) ?? selectedStory, format, chapterId);
+        }
         catch {setError(tr('exportError'));}
-        finally {setExporting(false);}
+        finally {exportInFlight.current = false; setExportDetails(null);}
     };
     const chooseAction = (action: string) => {
         setSelectedAction(action); instructionRef.current?.focus();
@@ -228,11 +238,11 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
     const header = <>
         <div className="novel-brand"><span className="novel-brand-icon"><Feather size={18} aria-hidden="true"/></span><h1>{tr('title')}</h1></div>
         <div className="novel-tabs">{(['text', 'bible'] as const).map(key => <button key={key} disabled={busy || changes.pending} aria-pressed={tab === key} onClick={() => changes.requestAction(() => {setTab(key); resetAssistant(); setSelectedAction(key === 'bible' ? 'createDirection' : 'write');})}>{tr(key)}</button>)}</div>
-        <button data-tooltip-disabled="" aria-label={tr('backToChat')} className="novel-return" disabled={changes.pending} onClick={requestExit}><LogOut size={16} strokeWidth={1.8}/><span>{tr('exitStudio')}</span></button>
+        <button data-tooltip-disabled="" aria-label={tr('backToChat')} className="novel-return" disabled={changes.pending} onClick={() => requestExit()}><LogOut size={16} strokeWidth={1.8}/><span>{tr('exitStudio')}</span></button>
     </>;
     return <WorkspaceLayout className="novel-studio" label={tr('title')} header={header}
         sidebar={story ? (                <nav className="novel-library" aria-label={tr('library')}>
-                    <StoryLibrary stories={stories} activeId={story.id} disabled={busy || exporting || loadFailed || changes.pending} onSelect={id => changes.requestAction(() => {setStoryId(id); setChapterId(''); setTab('text'); resetAssistant();})}
+                    <StoryLibrary onTitleGenerationChange={setTitleGeneration} stories={stories} activeId={story.id} disabled={busy || exporting || loadFailed || changes.pending} onSelect={id => changes.requestAction(() => {setStoryId(id); setChapterId(''); setTab('text'); resetAssistant();})}
                         onExport={(selectedStory, format) => {void exportManuscript(selectedStory, format);}}
                         onRename={(id, title) => setStories(items => items.map(item => item.id === id ? {...item, title} : item))}
                         onTogglePin={id => setStories(items => {const pinnedAt = Math.max(Date.now(), ...items.map(item => (item.pinnedAt ?? 0) + 1)); return items.map(item => item.id === id ? {...item, pinnedAt: item.pinnedAt ? null : pinnedAt} : item);})}
@@ -269,12 +279,12 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
 
                     {error && <p role="alert" className="novel-error">{error}</p>}
                 </aside>) : null}>
-        {exporting && <p className="novel-export-status" role="status">{tr('exporting')}</p>}
+        {exportDetails && <ProcessingModal title={tr('exporting')} detail={`${exportDetails.title} · ${exportDetails.format.toUpperCase()}`}/>}
         {loading && <p className="novel-storage-error" role="status">{tr('loadingStories')}</p>}
         {(saveStatus === 'error' || loadFailed) && <div className="novel-storage-error" role="alert">{tr(loadFailed ? 'loadError' : 'saveError')} <button className="modal-action-cancel" onClick={() => {if (loadFailed) void reload(); else void flushStorySaves().catch(() => {});}}>{tr('retry')}</button></div>}
         {story && (
                 <main className="novel-writing">
-                    {viewingFinal ? <ProposalReader onSessionChange={changes.registerSession} key={viewingFinal.id} text={viewingFinal.content} title={viewingFinal.title} onTitleChange={title => updateStory({finalSettings: finalSettings.map(item => item.id === viewingFinal.id ? {...item, title} : item)})} action="synthesis" busy={busy} maxLength={20000} onReturn={() => changes.requestAction(() => setViewingFinalId(null))} onChange={content => updateStory({finalSettings: finalSettings.map(item => item.id === viewingFinal.id ? {...item, content} : item)})}/> : viewingCandidate ? <CandidateReader onSessionChange={changes.registerSession} key={viewingCandidate.id} candidate={viewingCandidate} onTitleChange={title => updateStory({settingsCandidates: (story.settingsCandidates ?? []).map(item => item.id === viewingCandidate.id ? {...item, title} : item)})} onBack={() => changes.requestAction(() => setViewingCandidateId(null))} onChange={content => updateStory({settingsCandidates: (story.settingsCandidates ?? []).map(candidate => candidate.id === viewingCandidate.id ? {...candidate, content} : candidate)})}/> : responseVisible ? <ProposalReader key={`${proposalTarget}:${proposalAction}`} text={proposal} action={proposalAction} busy={busy} onChange={setProposal}/> : <>
+                    {viewingFinal ? <ProposalReader onSave={(content, title) => updateStory({finalSettings: finalSettings.map(item => item.id === viewingFinal.id ? {...item, content, title} : item)})} onSessionChange={changes.registerSession} key={viewingFinal.id} text={viewingFinal.content} title={viewingFinal.title} onTitleChange={title => updateStory({finalSettings: finalSettings.map(item => item.id === viewingFinal.id ? {...item, title} : item)})} action="synthesis" busy={busy} maxLength={20000} onReturn={() => changes.requestAction(() => setViewingFinalId(null))} onChange={content => updateStory({finalSettings: finalSettings.map(item => item.id === viewingFinal.id ? {...item, content} : item)})}/> : viewingCandidate ? <CandidateReader onSave={(content, title) => updateStory({settingsCandidates: (story.settingsCandidates ?? []).map(item => item.id === viewingCandidate.id ? {...item, content, title} : item)})} onSessionChange={changes.registerSession} key={viewingCandidate.id} candidate={viewingCandidate} onTitleChange={title => updateStory({settingsCandidates: (story.settingsCandidates ?? []).map(item => item.id === viewingCandidate.id ? {...item, title} : item)})} onBack={() => changes.requestAction(() => setViewingCandidateId(null))} onChange={content => updateStory({settingsCandidates: (story.settingsCandidates ?? []).map(candidate => candidate.id === viewingCandidate.id ? {...candidate, content} : candidate)})}/> : responseVisible ? <ProposalReader key={`${proposalTarget}:${proposalAction}`} text={proposal} action={proposalAction} busy={busy} onChange={setProposal}/> : <>
                     <div className={`novel-paper${tab === 'text' ? ' novel-paper--manuscript' : ''}`}>{tab === 'text' ? <ManuscriptEditor key={chapter.id} chapter={chapter} onDraftTextChange={handleDraftTextChange} onSessionChange={changes.registerSession} onChange={patch => {updateChapter(patch); setUndo(null);}}/> : <SettingsPlanner onView={candidate => {setSelectedAction(candidate.category); setViewingCandidateId(candidate.id); setViewingFinalId(null); setRevisionRequest(''); setError('');}} candidates={story.settingsCandidates ?? []} disabled={busy} onChange={settingsCandidates => updateStory({settingsCandidates})} onChoose={category => chooseAction(category)} onSynthesize={() => chooseAction('synthesis')}>
                         <FinalSettingsLibrary items={finalSettings} activeId={story.activeFinalSettingId ?? null} disabled={busy} onSelect={id => updateStory({activeFinalSettingId: id})} onView={id => {setViewingFinalId(id); setViewingCandidateId(null); setRevisionRequest(''); setError('');}} onChange={items => updateStory({finalSettings: items, activeFinalSettingId: items.some(item => item.id === story.activeFinalSettingId) ? story.activeFinalSettingId : null})}/>
 

@@ -124,7 +124,6 @@
 .novel-prompts.settings-actions {grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; margin-bottom: 20px;}
 .novel-prompts.settings-actions button {min-width: 0; font-size: 11px; padding: 10px 8px; gap: 5px; line-height: 1.5;}
 .novel-prompts.settings-actions svg {flex-shrink: 0;}
-.novel-export-status {margin: 0; padding: 9px 20px; color: var(--muted); background: var(--surface); border-bottom: 1px solid var(--border); font-size: 12px;}
 
 .novel-chapter-row.selected .novel-chapter {background: transparent;}
 .novel-assistant {display: flex; flex-direction: column; box-sizing: border-box; min-height: 100%;}

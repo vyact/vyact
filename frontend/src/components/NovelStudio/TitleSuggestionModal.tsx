@@ -1,5 +1,5 @@
 import useGenerationExitConfirmation from './useGenerationExitConfirmation';
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {LoaderCircle, Sparkles, X} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
@@ -9,7 +9,7 @@ import type {Story} from './storyStorage';
 import './TitleSuggestionModal.css';
 
 interface Suggestion {title: string; reason: string}
-export default function TitleSuggestionModal({story, onClose, onApply}: {story: Story; onClose: () => void; onApply: (title: string) => void}) {
+export default function TitleSuggestionModal({story, onClose, onApply, onGenerationChange}: {story: Story; onClose: () => void; onApply: (title: string) => void; onGenerationChange?: (activity: {abort: () => void} | null) => void}) {
     const {t, i18n} = useTranslation('main');
     const tr = (key: string) => t(`novelStudio.titleSuggestions.${key}`);
     const groups = getTitleSources(story);
@@ -22,6 +22,10 @@ export default function TitleSuggestionModal({story, onClose, onApply}: {story: 
     const controller = useRef<AbortController | null>(null);
     useEffect(() => () => controller.current?.abort(), []);
     const {requestExit, confirmation: exitConfirmation} = useGenerationExitConfirmation(busy, () => {controller.current?.abort(); onClose();});
+    useLayoutEffect(() => {
+        onGenerationChange?.(busy ? {abort: () => controller.current?.abort()} : null);
+        return () => onGenerationChange?.(null);
+    }, [busy, onGenerationChange]);
     const selected = selectTitleSources([...groups.chapters, ...groups.settings], excluded);
     const recommend = async () => {
         if (busy || !selected.length) return;

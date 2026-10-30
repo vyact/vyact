@@ -14,6 +14,7 @@ interface StoryLibraryProps {
     stories: Story[];
     activeId: string;
     disabled: boolean;
+    onTitleGenerationChange?: (activity: {abort: () => void} | null) => void;
     onSelect: (id: string) => void;
     onRename: (id: string, title: string) => void;
     onDelete: (id: string) => void;
@@ -23,7 +24,7 @@ interface StoryLibraryProps {
     onExport: (story: Story, format: NovelExportFormat) => void;
 }
 
-export default function StoryLibrary({stories, activeId, disabled, onSelect, onRename, onDelete, onExport, onDeleteMany, onCreate, onTogglePin}: StoryLibraryProps) {
+export default function StoryLibrary({stories, activeId, disabled, onTitleGenerationChange, onSelect, onRename, onDelete, onExport, onDeleteMany, onCreate, onTogglePin}: StoryLibraryProps) {
     const {t} = useTranslation('main');
     const {containerRef, selectedItemRef} = useSelectedItemVisibility(activeId, stories.length);
     const {scrolling, onScroll} = useScrollActivity();
@@ -62,7 +63,7 @@ export default function StoryLibrary({stories, activeId, disabled, onSelect, onR
                 <button className="hist-menu-item danger" onClick={() => {setMenuId(null); setDeleting(story);}}><Trash2 size={14}/>{t('novelStudio.delete')}</button>
             </ActionMenu>}
         </div>)}
-        {recommending && <TitleSuggestionModal key={recommending.id} story={recommending} onClose={() => setRecommending(null)} onApply={title => onRename(recommending.id, title)}/>}
+        {recommending && <TitleSuggestionModal onGenerationChange={onTitleGenerationChange} key={recommending.id} story={recommending} onClose={() => setRecommending(null)} onApply={title => onRename(recommending.id, title)}/>}
         {deleting && <ConfirmModal actionLayout="horizontal" title={t('novelStudio.deleteTitle')} description={t('novelStudio.deleteDescription', {title: deleting.title})}
             options={[{label: t('novelStudio.keep'), value: 'cancel'}, {label: t('novelStudio.delete'), value: 'delete', variant: 'danger'}]}
             onClose={() => setDeleting(null)} onSelect={value => {if (value === 'delete') onDelete(deleting.id); setDeleting(null);}}/>}
