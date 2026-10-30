@@ -369,3 +369,11 @@
 .novel-story-row:hover .novel-story-pin, .novel-story-pin:focus-visible, .novel-story-pin.is-pinned {opacity: 1;}
 .novel-story-pin.is-pinned, .novel-story-pin:hover:not(:disabled) {color: var(--accent);}
 @media (hover: none) {.novel-story-pin {opacity: 1;}}
+
+.novel-manuscript-visual .memo-image-wrapper {display: block; max-width: 100%; margin-block: 12px;}
+.novel-manuscript-visual .memo-image-editable-frame {display: block; position: relative; max-width: 100%; min-width: 80px; width: fit-content; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;}
+.novel-manuscript-visual .memo-image-editable-frame img {display: block; max-width: 100%; height: auto;}
+.novel-manuscript-visual .memo-image-resize-handle {position: absolute; right: 5px; bottom: 5px; width: 14px; height: 14px; padding: 0; border: 2px solid var(--surface); border-radius: 3px; background: var(--accent); cursor: nwse-resize;}
+.novel-manuscript-visual .memo-image-resize-handle:hover {background: var(--text);}
+
+.novel-manuscript-visual .memo-image-wrapper.ProseMirror-selectednode .memo-image-editable-frame {border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);}

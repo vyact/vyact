@@ -37,7 +37,7 @@ async def get_manuscript_image(filename: str):
     path = NOVEL_IMAGES_DIR / filename
     if not path.is_file():
         raise HTTPException(status_code=404, detail="Image not found")
-    return FileResponse(path)
+    return FileResponse(path, headers={"Cache-Control": "private, max-age=31536000, immutable"})
 
 
 SettingCategory = Literal["createDirection", "createPremise", "createCharacters", "createWorld", "createPlot", "createStyle"]

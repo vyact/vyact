@@ -105,3 +105,11 @@ def test_story_pin_timestamp_survives_serialization_and_unpinning():
     assert NovelStory.model_validate(story.model_dump(mode='json')).pinnedAt == source['pinnedAt']
     story.pinnedAt = None
     assert story.model_dump(mode='json')['pinnedAt'] is None
+
+
+def test_pdf_preserves_resized_image_width(tmp_path, monkeypatch):
+    monkeypatch.setattr('services.novel_export.NOVEL_IMAGES_DIR', tmp_path)
+    filename = 'd' * 32 + '.png'
+    (tmp_path / filename).write_bytes(b'image')
+    html = chapter_html('Story', {'title': 'Chapter', 'text': f'![](/api/novel-studio/images/{filename}?width=320)'})
+    assert '<img width="320" src="data:image/png;base64,' in html

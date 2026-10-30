@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, Download, X } from 'lucide-react';
 import {useTranslation} from 'react-i18next';
+import {getTopmostModalOverlay} from '../common/ModalOverlay/modalStack';
 import './ImageViewer.css';
 
 interface ImageItem {
@@ -18,12 +19,14 @@ interface ImageViewerProps {
 
 const ImageViewer: React.FC<ImageViewerProps> = ({ images, currentIndex, onClose, onIndexChange }) => {
     const {t} = useTranslation('main');
+    const overlayRef = useRef<HTMLDivElement>(null);
     const total = images.length;
 
     useEffect(() => {
         window.dispatchEvent(new CustomEvent('vyact:native-overlay-open'));
         const handleKey = (e: globalThis.KeyboardEvent) => {
-            if (e.key === 'Escape') { e.stopPropagation(); onClose(); }
+            if (getTopmostModalOverlay() !== overlayRef.current) return;
+            if (e.key === 'Escape') {e.preventDefault(); e.stopImmediatePropagation(); onClose(); return;}
             if (e.key === 'ArrowLeft' && total > 1) onIndexChange((currentIndex - 1 + total) % total);
             if (e.key === 'ArrowRight' && total > 1) onIndexChange((currentIndex + 1) % total);
         };
@@ -66,7 +69,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ images, currentIndex, onClose
     };
 
     return createPortal(
-        <div className="image-viewer">
+        <div ref={overlayRef} className="image-viewer app-modal-overlay" role="dialog" aria-modal="true" aria-label={t('imageViewer.image')}>
             <div className="image-viewer__actions">
                 <button
                     className="image-viewer__action"

@@ -18,3 +18,11 @@ describe('manuscript visual document', () => {
         expect(documentToManuscript(document)).toBe('앞\n뒤');
     });
 });
+
+it('preserves resized image width when reopening the manuscript', () => {
+    const document = manuscriptToDocument('![](/api/novel-studio/images/abc.png)');
+    document.content![0].attrs!.width = 320;
+    const stored = documentToManuscript(document);
+    expect(stored).toContain('?width=320');
+    expect(manuscriptToDocument(stored).content![0].attrs!.width).toBe(320);
+});

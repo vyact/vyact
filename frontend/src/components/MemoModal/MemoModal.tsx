@@ -874,7 +874,8 @@ const MemoModal: React.FC<MemoModalProps> = ({ onClose, initialMemoId }) => {
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
             if (e.key !== 'Escape') return;
-            if (getTopmostModalOverlay()?.classList.contains('confirm-modal-overlay')) return;
+            const topmost = getTopmostModalOverlay();
+            if (topmost && !topmost.classList.contains('memo-modal-overlay')) return;
             if (deleteConfirm) {
                 e.preventDefault();
                 e.stopImmediatePropagation();

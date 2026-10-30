@@ -19,7 +19,7 @@ def safe_export_name(title: str) -> str:
     return name or "chapter"
 
 
-MANUSCRIPT_IMAGE = re.compile(r'!\[([^\]]*)\]\((/api/novel-studio/images/([a-f0-9]{32}\.(?:png|jpg|gif|webp)))\)')
+MANUSCRIPT_IMAGE = re.compile(r'!\[([^\]]*)\]\((/api/novel-studio/images/([a-f0-9]{32}\.(?:png|jpg|gif|webp)))(?:\?width=(\d+))?\)')
 IMAGE_MIME_TYPES = {'png': 'image/png', 'jpg': 'image/jpeg', 'gif': 'image/gif', 'webp': 'image/webp'}
 
 
@@ -38,7 +38,8 @@ def manuscript_html(text: str) -> str:
         filename = match.group(3)
         data = base64.b64encode(read_export_image(filename)).decode('ascii')
         mime = IMAGE_MIME_TYPES[filename.rsplit('.', 1)[1]]
-        fragments.append(f'<img src="data:{mime};base64,{data}" alt="{escape(match.group(1), quote=True)}">')
+        width = f' width="{int(match.group(4))}"' if match.group(4) else ''
+        fragments.append(f'<img{width} src="data:{mime};base64,{data}" alt="{escape(match.group(1), quote=True)}">')
         position = match.end()
     fragments.append(escape(text[position:]))
     return ''.join(fragments)
@@ -73,6 +74,8 @@ async def build_novel_export(story: dict, format: str, chapter_id: str | None = 
                 archive_path = f'images/{filename}'
                 if archive_path not in images:
                     images[archive_path] = read_export_image(filename)
+                if match.group(4):
+                    return f'<img src="{archive_path}" alt="{escape(match.group(1), quote=True)}" width="{int(match.group(4))}">'
                 return f'![{match.group(1)}]({archive_path})'
             text = MANUSCRIPT_IMAGE.sub(package_image, chapter['text'])
             files.append((f"{index:03d}_{safe_export_name(chapter['title'])}.md", f"# {chapter['title']}\n\n{text}".encode("utf-8")))

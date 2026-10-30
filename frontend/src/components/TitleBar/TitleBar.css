@@ -2,7 +2,7 @@
 .titlebar {
     display: flex;
     align-items: center;
-    height: 40px;
+    height: var(--app-titlebar-height);
     flex-shrink: 0;
     background: var(--surface);
     border-bottom: 1px solid var(--border);

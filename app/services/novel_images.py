@@ -6,6 +6,7 @@ from uuid import uuid4
 
 from fastapi import HTTPException, UploadFile
 from PIL import Image, UnidentifiedImageError
+from starlette.concurrency import run_in_threadpool
 
 from config import INSTALL_DIR
 
@@ -18,6 +19,10 @@ async def save_manuscript_image(file: UploadFile) -> dict:
     content = await file.read(MAX_IMAGE_BYTES + 1)
     if not content or len(content) > MAX_IMAGE_BYTES:
         raise HTTPException(status_code=400, detail='Invalid image size')
+    return await run_in_threadpool(_store_manuscript_image, content)
+
+
+def _store_manuscript_image(content: bytes) -> dict:
     try:
         with Image.open(BytesIO(content)) as image:
             extension = IMAGE_FORMATS.get(image.format)
