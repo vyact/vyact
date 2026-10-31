@@ -18,7 +18,7 @@ import CustomSelect from '../CustomSelect/CustomSelect';
 import {Tooltip} from '../common/Tooltip/Tooltip';
 import {getSettingsContext} from './settingsContext';
 import ToggleSwitch from '../common/ToggleSwitch/ToggleSwitch';
-import {buildWritingInstruction} from './writingInstruction';
+import {AUTHOR_DIRECTION_MAX_LENGTH, buildWritingInstruction} from './writingInstruction';
 import {downloadNovel, type NovelExportFormat} from './storyExport';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {Plus, Feather, Sparkles, LoaderCircle, Undo2, MoreHorizontal, Download, Info, LogOut, Trash2} from 'lucide-react';
@@ -292,7 +292,7 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
                     {tab === 'text' && <div className="novel-writing-setting"><label>{tr('writingSettings')}</label><CustomSelect ariaLabel={tr('writingSettings')} value={story.activeFinalSettingId ?? ''} disabled={busy} portal options={[{value: '', label: tr('noFinalSetting')}, ...finalSettings.map(item => ({value: item.id, label: item.title}))]} onChange={id => updateStory({activeFinalSettingId: id || null})}/></div>}
                     {tab === 'text' && getEarlierChapters(story.chapters, chapter.id).length > 0 && <div className="novel-previous-context"><span>{t('novelStudio.previousChapterContext', {count: getEarlierChapters(story.chapters, chapter.id).length})}</span><ToggleSwitch checked={includePreviousChapters} disabled={busy} label={tr('includePreviousChapters')} onChange={setIncludePreviousChapters}/></div>}
                     {selectedAction !== 'customRequest' && <TaskGuidanceEditor key={guidanceKey} value={taskGuidance} savedValue={savedTaskGuidance} customized={story.taskGuidance?.[selectedAction] !== undefined} enabled={includeTaskGuidance} disabled={busy || loadFailed} onChange={value => setTaskGuidanceEdits(previous => ({...previous, [guidanceKey]: value}))} onEnabledChange={enabled => updateStory({includeTaskGuidance: enabled})} onSave={() => saveTaskGuidance()} onRestore={() => saveTaskGuidance(true)}/>}
-                    <label className="novel-instruction-label" htmlFor="novel-instruction">{tr('instruction')}{tab === 'bible' && <span className="novel-action-badge">{tr(selectedAction)}</span>}</label><textarea ref={instructionRef} id="novel-instruction" maxLength={3000} value={instruction} onChange={event => setInstruction(event.target.value)} placeholder={tr(selectedAction === 'customRequest' ? 'instructionPlaceholder' : `${selectedAction}Placeholder`)}/>
+                    <label className="novel-instruction-label" htmlFor="novel-instruction">{tr('instruction')}{tab === 'bible' && <span className="novel-action-badge">{tr(selectedAction)}</span>}</label><textarea ref={instructionRef} id="novel-instruction" maxLength={AUTHOR_DIRECTION_MAX_LENGTH} value={instruction} onChange={event => setInstruction(event.target.value)} placeholder={tr(selectedAction === 'customRequest' ? 'instructionPlaceholder' : `${selectedAction}Placeholder`)}/>
                     {tab === 'bible' && contextControls}
                     {busy ? <button className="modal-action-cancel" onClick={() => controller.current?.abort()}><LoaderCircle className="novel-spinner" size={15}/>{tr('cancel')}</button> : <button className="modal-action-submit" disabled={changes.pending || !writingRequest || (tab === 'bible' && selectedAction === 'synthesis' && !selectedSettings.length)} onClick={() => void generate(writingRequest)}><Sparkles size={15}/>{tr('generate')}</button>}
 </div>}

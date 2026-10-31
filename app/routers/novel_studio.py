@@ -43,6 +43,11 @@ async def get_manuscript_image(filename: str):
 SettingCategory = Literal["createDirection", "createPremise", "createCharacters", "createWorld", "createPlot", "createStyle"]
 
 
+AUTHOR_DIRECTION_MAX_LENGTH = 30_000
+TASK_GUIDANCE_MAX_LENGTH = 2_500
+COMBINED_INSTRUCTION_MAX_LENGTH = AUTHOR_DIRECTION_MAX_LENGTH + TASK_GUIDANCE_MAX_LENGTH + 2
+
+
 class SelectedSetting(BaseModel):
     category: SettingCategory
     title: str = Field(max_length=200)
@@ -50,8 +55,8 @@ class SelectedSetting(BaseModel):
 
 
 class SettingCandidate(SelectedSetting):
-    generationInstruction: str = Field(default="", max_length=6000)
-    authorDirection: str = Field(default="", max_length=3000)
+    generationInstruction: str = Field(default="", max_length=COMBINED_INSTRUCTION_MAX_LENGTH)
+    authorDirection: str = Field(default="", max_length=AUTHOR_DIRECTION_MAX_LENGTH)
     id: UUID
     selected: bool = False
 
@@ -62,12 +67,12 @@ class NovelGenerationRequest(BaseModel):
     bible: str = Field(max_length=20000)
     previous: str = Field(max_length=30000)
     manuscript: str = Field(max_length=1_000_000)
-    instruction: str = Field(min_length=1, max_length=6000)
+    instruction: str = Field(min_length=1, max_length=COMBINED_INSTRUCTION_MAX_LENGTH)
     target: Literal["text", "bible"] = "text"
     settings_stage: Literal["createDirection", "createPremise", "createCharacters", "createWorld", "createPlot", "createStyle", "synthesis"] | None = None
     selected_settings: list[SelectedSetting] = Field(default_factory=list, max_length=100)
     proposal: str = Field(default="", max_length=1_000_000)
-    original_instruction: str = Field(default="", max_length=6000)
+    original_instruction: str = Field(default="", max_length=COMBINED_INSTRUCTION_MAX_LENGTH)
     language: str = Field(default="en", max_length=30)
 
     @field_validator("selected_settings")
@@ -180,7 +185,7 @@ class NovelStory(BaseModel):
     pinnedAt: int | None = Field(default=None, ge=0)
     id: UUID
     title: str = Field(max_length=200)
-    taskGuidance: dict[Literal['write', 'createDirection', 'createPremise', 'createCharacters', 'createWorld', 'createPlot', 'createStyle', 'synthesis'], Annotated[str, Field(max_length=2500)]] = Field(default_factory=dict, max_length=8)
+    taskGuidance: dict[Literal['write', 'createDirection', 'createPremise', 'createCharacters', 'createWorld', 'createPlot', 'createStyle', 'synthesis'], Annotated[str, Field(max_length=TASK_GUIDANCE_MAX_LENGTH)]] = Field(default_factory=dict, max_length=8)
     includeTaskGuidance: bool = True
     finalSettings: list[FinalSetting] = Field(default_factory=list, max_length=100)
     activeFinalSettingId: UUID | None = None

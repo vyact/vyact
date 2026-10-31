@@ -11,6 +11,24 @@ from pydantic import ValidationError
 from routers.novel_studio import NovelGenerationRequest, generate_novel
 
 
+@pytest.mark.asyncio
+async def test_long_issue_material_survives_generation_revision_and_candidate_storage():
+    direction = '참' * 29998 + '끝!'
+    instruction = '지' * 2500 + '\n\n' + direction
+    request = NovelGenerationRequest(title='Omnibus', bible='', previous='', manuscript='', instruction=instruction, original_instruction=instruction, proposal='Previous draft')
+    with patch('routers.novel_studio.query_llm', new=AsyncMock(return_value='{"text":"Updated chapter"}')) as model:
+        await generate_novel(request)
+    prompt = model.call_args.args[0]
+    assert instruction in prompt
+    assert 'Original request:\n' + instruction in prompt
+    story = NovelStory(id=uuid4(), title='Omnibus', chapters=[NovelChapter(id=uuid4(), title='One', text='')], settingsCandidates=[{'id': uuid4(), 'category': 'createPlot', 'title': 'Plot', 'content': 'Draft', 'generationInstruction': instruction, 'authorDirection': direction}])
+    restored = NovelStory.model_validate(story.model_dump(mode='json'))
+    assert restored.settingsCandidates[0].generationInstruction == instruction
+    assert restored.settingsCandidates[0].authorDirection == direction
+    with pytest.raises(ValidationError):
+        NovelGenerationRequest(title='', bible='', previous='', manuscript='', instruction=instruction + 'x')
+
+
 def test_story_preserves_per_action_guidance_and_legacy_defaults():
     source = {'id': str(uuid4()), 'title': 'Story', 'chapters': [{'id': str(uuid4()), 'title': 'One', 'text': ''}]}
     legacy = NovelStory.model_validate(source)
