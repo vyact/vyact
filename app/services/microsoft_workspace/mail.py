@@ -139,6 +139,14 @@ async def message(message_id: str, account_id: str = "") -> dict:
     _, item = await account(account_id)
     token = await read_token(item["id"])
     result = normalize_message(value, token.get("email", ""))
+    _, cache_key = await _folder_context(item["id"])
+    cached_at, known = _folder_ids.get(cache_key, (0, {}))
+    if not known or time.monotonic() - cached_at >= _FOLDER_CACHE_SECONDS:
+        await _load_workspace(None, item["id"])
+        _, known = _folder_ids[cache_key]
+    parent_folder_id = value.get("parentFolderId", "")
+    result["locationLabel"] = next((key for key, folder_id in known.items()
+                                    if folder_id == parent_folder_id), parent_folder_id)
     attachments = await graph(f"/me/messages/{resource_id(message_id)}/attachments", account_id=account_id,
                               params={"$top": "100"})
     for inline in attachments.get("value", []):

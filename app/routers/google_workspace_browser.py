@@ -1003,6 +1003,11 @@ async def get_mail_message(message_id: str, label: str = "INBOX"):
         if error.resp.status == 404:
             raise HTTPException(status_code=404, detail="Mail not found.") from None
         raise
+    message_labels = message.get("labelIds", [])
+    location_label = next((folder for folder in ("TRASH", "SPAM", "INBOX", "DRAFT", "SENT")
+                           if folder in message_labels), "ALL_MAIL")
+    if label == "AUTO":
+        label = location_label
     account_email = service.users().getProfile(userId="me").execute().get("emailAddress", "")
     headers = _headers(message)
     plain_body, html_body = _email_bodies(message.get("payload", {}))
@@ -1027,6 +1032,7 @@ async def get_mail_message(message_id: str, label: str = "INBOX"):
     return {
         "id": message["id"],
         "threadId": thread_id,
+        "locationLabel": location_label,
         "labelIds": thread_label_ids or message.get("labelIds", []),
         "from": headers.get("From", ""),
         "to": _email_addresses(headers.get("To", "")),

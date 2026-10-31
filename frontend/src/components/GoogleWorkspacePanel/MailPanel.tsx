@@ -28,7 +28,7 @@ type MailParticipant = MailAddress & {isMe: boolean};
 type MailItem = {id: string; threadId?: string; labelIds?: string[]; from: string; participants?: MailParticipant[]; messageCount?: number; subject: string; date: string; snippet: string; isUnread: boolean; isStarred: boolean; hasAttachments?: boolean};
 type MailAddress = {name: string; email: string};
 type MailThreadMessage = {id: string; labelIds?: string[]; from: string; to: string; cc: string; bcc?: string; toAddresses?: MailAddress[]; ccAddresses?: MailAddress[]; bccAddresses?: MailAddress[]; subject: string; date: string; body: string; htmlBody?: string; attachments?: MailAttachment[]};
-type MailDetail = {id: string; threadId?: string; labelIds?: string[]; from: string; to: MailAddress[]; cc: MailAddress[]; bcc: MailAddress[]; accountEmail: string; subject: string; date: string; body: string; htmlBody?: string; attachments: MailAttachment[]; threadMessages?: MailThreadMessage[]};
+type MailDetail = {locationLabel?: string; id: string; threadId?: string; labelIds?: string[]; from: string; to: MailAddress[]; cc: MailAddress[]; bcc: MailAddress[]; accountEmail: string; subject: string; date: string; body: string; htmlBody?: string; attachments: MailAttachment[]; threadMessages?: MailThreadMessage[]};
 type MailAttachment = {id: string; filename: string; mimeType: string; size: number};
 type MailLabel = {id: string; name: string; type: 'system' | 'user'; unreadCount: number};
 type ComposeFields = {to: string[]; cc: string[]; bcc: string[]; subject: string; body: string};
@@ -612,6 +612,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat, navigatio
     const [mailLoadError, setMailLoadError] = useState('');
     const mailListRequestIdRef = useRef(0);
     const [label, setLabel] = useState('INBOX');
+    const notificationLocationRef = useRef<string | null>(null);
     const [showAllSystemLabels, setShowAllSystemLabels] = useState(false);
     const [isLabelCreateOpen, setIsLabelCreateOpen] = useState(false);
     const [newLabelName, setNewLabelName] = useState('');
@@ -909,7 +910,9 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat, navigatio
 
     useEffect(() => {
         setMails([]);
-        setSelected(null);
+        // Opening a notification can change folders and select its message in the same render.
+        if (notificationLocationRef.current !== label) setSelected(null);
+        notificationLocationRef.current = null;
         setNextMailPageToken(null);
         if (accountId) void loadMails();
         return () => { mailListRequestIdRef.current += 1; };
@@ -917,8 +920,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat, navigatio
     useEffect(() => {
         if (!selectedMessageId || !accountId) return;
         let cancelled = false;
-        setLabel('INBOX');
-        void openMail(selectedMessageId, true, 'INBOX').finally(() => {
+        void openMail(selectedMessageId, true, 'AUTO').finally(() => {
             if (!cancelled) setHandledNotificationMessageId(selectedMessageId);
         });
         return () => { cancelled = true; };
@@ -930,6 +932,13 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat, navigatio
         try {
             const message = await api.getGoogleMailMessage(id, mailLabel);
             if (requestId !== mailOpenRequestIdRef.current) return;
+            if (mailLabel === 'AUTO' && message.locationLabel) {
+                if (message.locationLabel !== label) {
+                    notificationLocationRef.current = message.locationLabel;
+                    setLabel(message.locationLabel);
+                }
+                if (COLLAPSIBLE_SYSTEM_LABEL_IDS.includes(message.locationLabel)) setShowAllSystemLabels(true);
+            }
             setSelected(message);
             const messageRecipients = [
                 parseMailAddress(message.from),
