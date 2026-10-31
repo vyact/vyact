@@ -813,10 +813,20 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat, navigatio
     const trashingMailsRef = useRef(false);
     const hasPendingMailReads = () => [...mailReadUpdatesRef.current.values()].some(update => update.pending);
 
-    const loadMailLabels = async () => {
+    const loadMailLabels = async (includeFolderMetadata = false) => {
         const requestId = ++mailLabelsRequestIdRef.current;
         const data = await api.getGoogleMailLabels();
-        if (requestId === mailLabelsRequestIdRef.current && !hasPendingMailReads()) setLabels(data.labels || []);
+        const canUpdateUnreadCounts = requestId === mailLabelsRequestIdRef.current && !hasPendingMailReads();
+        if (canUpdateUnreadCounts) setLabels(data.labels || []);
+        else if (includeFolderMetadata) {
+            // Folder names can appear immediately without overwriting newer read counts.
+            setLabels(current => {
+                const currentById = new Map(current.map(item => [item.id, item]));
+                return (data.labels || []).map((item: MailLabel) => ({
+                    ...item, unreadCount: currentById.get(item.id)?.unreadCount ?? 0,
+                }));
+            });
+        }
     };
     const createMailLabel = async () => {
         const name = newLabelName.trim();
@@ -909,6 +919,11 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat, navigatio
     };
 
     useEffect(() => {
+        // Resolve notification location before requesting any folder's message list.
+        if (isOpeningNotification) {
+            mailListRequestIdRef.current += 1;
+            return;
+        }
         setMails([]);
         // Opening a notification can change folders and select its message in the same render.
         if (notificationLocationRef.current !== label) setSelected(null);
@@ -916,10 +931,11 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat, navigatio
         setNextMailPageToken(null);
         if (accountId) void loadMails();
         return () => { mailListRequestIdRef.current += 1; };
-    }, [accountId, label]);
+    }, [accountId, label, isOpeningNotification]);
     useEffect(() => {
         if (!selectedMessageId || !accountId) return;
         let cancelled = false;
+        void loadMailLabels(true).catch(notifyWorkspaceError);
         void openMail(selectedMessageId, true, 'AUTO').finally(() => {
             if (!cancelled) setHandledNotificationMessageId(selectedMessageId);
         });
@@ -933,8 +949,8 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat, navigatio
             const message = await api.getGoogleMailMessage(id, mailLabel);
             if (requestId !== mailOpenRequestIdRef.current) return;
             if (mailLabel === 'AUTO' && message.locationLabel) {
+                notificationLocationRef.current = message.locationLabel;
                 if (message.locationLabel !== label) {
-                    notificationLocationRef.current = message.locationLabel;
                     setLabel(message.locationLabel);
                 }
                 if (COLLAPSIBLE_SYSTEM_LABEL_IDS.includes(message.locationLabel)) setShowAllSystemLabels(true);
@@ -2374,16 +2390,16 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat, navigatio
                     return rank(a.id) - rank(b.id);
                 }).map(item => {
                     const Icon = item.id === 'ARCHIVE' ? Archive : item.id in SYSTEM_LABELS ? SYSTEM_LABELS[item.id as keyof typeof SYSTEM_LABELS].icon : Folder;
-                    return <button key={item.id} className={label === item.id ? 'active' : ''} onClick={() => selectLabel(item.id)}>
+                    return <button key={item.id} className={!isOpeningNotification && label === item.id ? 'active' : ''} onClick={() => selectLabel(item.id)}>
                         <Icon aria-hidden="true" size={18}/><span>{item.name}</span>
                         {item.unreadCount > 0 && <strong className="gwp-label-unread-count" aria-label={String(item.unreadCount)}>{item.unreadCount}</strong>}
                     </button>;
                 }) : <>
-                <SystemLabelButton id="ALL_MAIL" active={label === 'ALL_MAIL'} onClick={() => selectLabel('ALL_MAIL')}/>
+                <SystemLabelButton id="ALL_MAIL" active={!isOpeningNotification && label === 'ALL_MAIL'} onClick={() => selectLabel('ALL_MAIL')}/>
                 <div className="gwp-mail-nav-separator" aria-hidden="true"/>
-                {primarySystemLabels.map(id => <SystemLabelButton key={id} id={id as keyof typeof SYSTEM_LABELS} active={label === id} onClick={() => selectLabel(id)}/>) }
+                {primarySystemLabels.map(id => <SystemLabelButton key={id} id={id as keyof typeof SYSTEM_LABELS} active={!isOpeningNotification && label === id} onClick={() => selectLabel(id)}/>) }
                 {collapsibleSystemLabels.length > 0 && <button className="gwp-more-labels" onClick={() => setShowAllSystemLabels(current => !current)}>{showAllSystemLabels ? <ChevronUp size={18}/> : <ChevronDown size={18}/>}<span>{t(showAllSystemLabels ? 'googleWorkspace.less' : 'googleWorkspace.more')}</span></button>}
-                {showAllSystemLabels && collapsibleSystemLabels.map(id => <SystemLabelButton key={id} id={id as keyof typeof SYSTEM_LABELS} active={label === id} onClick={() => selectLabel(id)}/>) }
+                {showAllSystemLabels && collapsibleSystemLabels.map(id => <SystemLabelButton key={id} id={id as keyof typeof SYSTEM_LABELS} active={!isOpeningNotification && label === id} onClick={() => selectLabel(id)}/>) }
                 </>}
                 <div className="gwp-user-labels">
                     <div className="gwp-label-section-header">
@@ -2391,7 +2407,7 @@ function MailPanel({accountId, selectedMessageId, onAttachFilesToChat, navigatio
                         <button className="gwp-label-add-button" aria-label={t(provider === 'microsoft' ? 'settings:microsoft.newFolder' : 'googleWorkspace.addLabel')} onClick={() => setIsLabelCreateOpen(true)}><Plus aria-hidden="true" size={18}/></button>
                     </div>
                     {userLabels.map(item => <div className="gwp-user-label-row" key={item.id}>
-                        <button className={`gwp-user-label-select${label === item.id ? ' active' : ''}`} onClick={() => selectLabel(item.id)}><>{provider === 'microsoft' ? <Folder aria-hidden="true" size={18}/> : <Tag aria-hidden="true" size={18}/>}</><span>{item.name}</span>{item.unreadCount > 0 && <strong className="gwp-label-unread-count" aria-label={String(item.unreadCount)}>{item.unreadCount}</strong>}</button>
+                        <button className={`gwp-user-label-select${!isOpeningNotification && label === item.id ? ' active' : ''}`} onClick={() => selectLabel(item.id)}><>{provider === 'microsoft' ? <Folder aria-hidden="true" size={18}/> : <Tag aria-hidden="true" size={18}/>}</><span>{item.name}</span>{item.unreadCount > 0 && <strong className="gwp-label-unread-count" aria-label={String(item.unreadCount)}>{item.unreadCount}</strong>}</button>
                         <div className="gwp-label-menu" ref={labelMenuId === item.id ? labelMenuRef : undefined}>
                             <button className="gwp-label-menu-button" aria-label={t(provider === 'microsoft' ? 'settings:microsoft.folderActions' : 'googleWorkspace.labelActions', {name: item.name})} aria-expanded={labelMenuId === item.id} onClick={() => setLabelMenuId(current => current === item.id ? null : item.id)}><MoreVertical aria-hidden="true" size={17}/></button>
                             {labelMenuId === item.id && <div className="gwp-label-menu-popover" role="menu">
