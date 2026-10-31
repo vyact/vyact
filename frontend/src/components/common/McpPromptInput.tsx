@@ -1,5 +1,4 @@
-import type {Ref, TextareaHTMLAttributes} from 'react';
-import {useTranslation} from 'react-i18next';
+import type {ReactNode, Ref, TextareaHTMLAttributes} from 'react';
 import McpMenu from '../ChatInput/McpMenu';
 import type {McpServer} from '../../types';
 import './McpPromptInput.css';
@@ -10,16 +9,18 @@ interface Props extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'value
     selectedServers: McpServer[];
     onSelectedServersChange: (servers: McpServer[]) => void;
     scopeHelp: string;
+    actions?: ReactNode;
+    context?: ReactNode;
     textareaRef?: Ref<HTMLTextAreaElement>;
 }
 
-export default function McpPromptInput({value, onChange, selectedServers, onSelectedServersChange, scopeHelp, textareaRef, ...props}: Props) {
-    const {t} = useTranslation('main');
+export default function McpPromptInput({value, onChange, selectedServers, onSelectedServersChange, scopeHelp, textareaRef, actions, context, ...props}: Props) {
     return <div className="mcp-prompt-input">
         <textarea {...props} value={value} ref={textareaRef} onChange={event => onChange(event.target.value)}/>
+        {context}
         <div className="mcp-prompt-toolbar">
             <McpMenu disabled={props.disabled} selection={{servers: selectedServers, onChange: onSelectedServersChange, scopeHelp}}/>
-            <span className="mcp-prompt-scope">{t('mcpMenu.title')}</span>
+            {actions}
         </div>
     </div>;
 }

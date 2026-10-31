@@ -1,5 +1,5 @@
+import useNovelTools from './useNovelTools';
 import McpPromptInput from '../common/McpPromptInput';
-import type {McpServer} from '../../types';
 import useScrollActivity from '../common/hooks/useScrollActivity';
 import useSelectedItemVisibility from '../common/hooks/useSelectedItemVisibility';
 import LibrarySelectionActions from './LibrarySelectionActions';
@@ -46,7 +46,6 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
         const id = toast.error(t(`novelStudio.${loadFailed ? 'loadError' : 'saveError'}`));
         return () => toast.dismiss(id);
     }, [loadFailed, saveStatus, t]);
-    const [selectedMcpServers, setSelectedMcpServers] = useState<McpServer[]>([]);
     const [storyId, setStoryId] = useState('');
     const [chapterId, setChapterId] = useState('');
     const [tab, setTab] = useState<'text' | 'bible'>('text');
@@ -84,6 +83,7 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
     const [undo, setUndo] = useState<{chapterId: string; target: 'text' | 'bible'; text: string; title: string} | null>(null);
     const controller = useRef<AbortController | null>(null);
     const story = stories.find(item => item.id === storyId) ?? stories[0];
+    const {selectedServers: selectedMcpServers, setSelectedServers: setSelectedMcpServers} = useNovelTools();
     const finalSettings = story?.finalSettings ?? [];
     const activeFinal = finalSettings.find(item => item.id === story?.activeFinalSettingId);
     const viewingFinal = finalSettings.find(item => item.id === viewingFinalId);
@@ -171,7 +171,7 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
         finally {setBusy(false); controller.current = null;}
     };
     const contextControls = <div className="novel-request-context"><div className="novel-request-context-heading"><p>{t('novelStudio.proposalContext', {count: selectedSettings.length})}</p><Tooltip content={tr('proposalContextHelp')} multiline size="medium" placement="above"><button type="button" className="titlebar-btn" aria-label={tr('proposalContextHelp')}><Info size={14} aria-hidden="true"/></button></Tooltip></div>{selectedSettingCategories.length > 0 && <ul>{selectedSettingCategories.map(category => <li key={category}><span>{tr(category)} · {availableContext.filter(candidate => candidate.category === category).length}</span><ToggleSwitch checked={!excludedContextCategories.includes(category)} disabled={busy} label={t('novelStudio.includeContextCategory', {category: tr(category)})} onChange={included => setContextExclusions(previous => ({...previous, [contextKey]: included ? (previous[contextKey] ?? []).filter(item => item !== category) : [...(previous[contextKey] ?? []), category]}))}/></li>)}</ul>}</div>;
-    const revisionControls = <div className="novel-revision-controls"><label htmlFor="novel-revision-request">{tr('reviseProposal')}</label><McpPromptInput scopeHelp={tr('toolScopeHelp')} selectedServers={selectedMcpServers} onSelectedServersChange={setSelectedMcpServers} id="novel-revision-request" maxLength={3000} disabled={busy} value={revisionRequest} placeholder={tr('revisionPlaceholder')} onChange={setRevisionRequest}/><p className="novel-revision-context-help">{tr('revisionContextHelp')}</p>{tab === 'bible' && contextControls}{busy ? <button className="modal-action-cancel" onClick={() => controller.current?.abort()}><LoaderCircle className="novel-spinner" size={15}/>{tr('cancel')}</button> : <button className="modal-action-submit" disabled={changes.pending || !revisionRequest.trim() || !(viewingCandidate?.content ?? viewingFinal?.content ?? proposal).trim()} onClick={() => void generate(revisionRequest.trim(), true)}><Sparkles size={15}/>{tr('requestRevision')}</button>}</div>;
+    const revisionControls = <div className="novel-revision-controls"><label htmlFor="novel-revision-request">{tr('reviseProposal')}</label><McpPromptInput scopeHelp={tr('toolScopeHelp')} selectedServers={selectedMcpServers} onSelectedServersChange={setSelectedMcpServers} id="novel-revision-request" maxLength={3000} disabled={busy} value={revisionRequest} placeholder={tr('revisionPlaceholder')} onChange={setRevisionRequest} actions={busy ? <button className="modal-action-cancel" onClick={() => controller.current?.abort()}><LoaderCircle className="novel-spinner" size={15}/>{tr('cancel')}</button> : <button className="modal-action-submit" disabled={changes.pending || !revisionRequest.trim() || !(viewingCandidate?.content ?? viewingFinal?.content ?? proposal).trim()} onClick={() => void generate(revisionRequest.trim(), true)}><Sparkles size={15}/>{tr('requestRevision')}</button>} context={<><p className="novel-revision-context-help">{tr('revisionContextHelp')}</p>{tab === 'bible' && contextControls}</>}/></div>;
     const exportManuscript = async (selectedStory: Story, format: NovelExportFormat, chapterId?: string) => {
         if (exportInFlight.current) return;
         const editor = changes.session.current;
@@ -295,9 +295,8 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
                     {tab === 'text' && <div className="novel-writing-setting"><label>{tr('writingSettings')}</label><CustomSelect ariaLabel={tr('writingSettings')} value={story.activeFinalSettingId ?? ''} disabled={busy} portal options={[{value: '', label: tr('noFinalSetting')}, ...finalSettings.map(item => ({value: item.id, label: item.title}))]} onChange={id => updateStory({activeFinalSettingId: id || null})}/></div>}
                     {tab === 'text' && getEarlierChapters(story.chapters, chapter.id).length > 0 && <div className="novel-previous-context"><span>{t('novelStudio.previousChapterContext', {count: getEarlierChapters(story.chapters, chapter.id).length})}</span><ToggleSwitch checked={includePreviousChapters} disabled={busy} label={tr('includePreviousChapters')} onChange={setIncludePreviousChapters}/></div>}
                     {selectedAction !== 'customRequest' && <TaskGuidanceEditor key={guidanceKey} value={taskGuidance} savedValue={savedTaskGuidance} customized={story.taskGuidance?.[selectedAction] !== undefined} enabled={includeTaskGuidance} disabled={busy || loadFailed} onChange={value => setTaskGuidanceEdits(previous => ({...previous, [guidanceKey]: value}))} onEnabledChange={enabled => updateStory({includeTaskGuidance: enabled})} onSave={() => saveTaskGuidance()} onRestore={() => saveTaskGuidance(true)}/>}
-                    <label className="novel-instruction-label" htmlFor="novel-instruction">{tr('instruction')}{tab === 'bible' && <span className="novel-action-badge">{tr(selectedAction)}</span>}</label><McpPromptInput scopeHelp={tr('toolScopeHelp')} selectedServers={selectedMcpServers} onSelectedServersChange={setSelectedMcpServers} textareaRef={instructionRef} disabled={busy} id="novel-instruction" maxLength={AUTHOR_DIRECTION_MAX_LENGTH} value={instruction} onChange={setInstruction} placeholder={tr(selectedAction === 'customRequest' ? 'instructionPlaceholder' : `${selectedAction}Placeholder`)}/>
-                    {tab === 'bible' && contextControls}
-                    {busy ? <button className="modal-action-cancel" onClick={() => controller.current?.abort()}><LoaderCircle className="novel-spinner" size={15}/>{tr('cancel')}</button> : <button className="modal-action-submit" disabled={changes.pending || !writingRequest || (tab === 'bible' && selectedAction === 'synthesis' && !selectedSettings.length)} onClick={() => void generate(writingRequest)}><Sparkles size={15}/>{tr('generate')}</button>}
+                    <label className="novel-instruction-label" htmlFor="novel-instruction">{tr('instruction')}{tab === 'bible' && <span className="novel-action-badge">{tr(selectedAction)}</span>}</label><McpPromptInput scopeHelp={tr('toolScopeHelp')} selectedServers={selectedMcpServers} onSelectedServersChange={setSelectedMcpServers} textareaRef={instructionRef} disabled={busy} id="novel-instruction" maxLength={AUTHOR_DIRECTION_MAX_LENGTH} value={instruction} onChange={setInstruction} placeholder={tr(selectedAction === 'customRequest' ? 'instructionPlaceholder' : `${selectedAction}Placeholder`)} context={tab === 'bible' && contextControls} actions={busy ? <button className="modal-action-cancel" onClick={() => controller.current?.abort()}><LoaderCircle className="novel-spinner" size={15}/>{tr('cancel')}</button> : <button className="modal-action-submit" disabled={changes.pending || !writingRequest || (tab === 'bible' && selectedAction === 'synthesis' && !selectedSettings.length)} onClick={() => void generate(writingRequest)}><Sparkles size={15}/>{tr('generate')}</button>}/>
+
 </div>}
 
                 </aside>) : null}>

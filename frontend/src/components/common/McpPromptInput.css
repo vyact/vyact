@@ -1,5 +1,5 @@
 .mcp-prompt-input {display: flex; flex-direction: column; min-height: 0; gap: 6px;}
 .mcp-prompt-input textarea {flex: 1;}
-.mcp-prompt-toolbar {display: flex; align-items: center; gap: 8px; flex-shrink: 0; padding-bottom: 8px;}
-.mcp-prompt-scope {color: var(--muted); font-size: 12px;}
+.mcp-prompt-toolbar {display: flex; align-items: center; gap: 14px; flex-shrink: 0;}
+.mcp-prompt-toolbar > button {flex: 1; min-width: 0;}
 .mcp-prompt-toolbar .mcp-menu-popover {max-width: min(320px, calc(100vw - 48px));}
