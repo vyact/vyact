@@ -298,3 +298,25 @@ async def test_manuscript_revision_sends_full_original_and_requests_full_replace
     assert manuscript in model.call_args.args[0]
     assert "COMPLETE updated manuscript" in model.call_args.args[2]
     assert "only new prose" not in model.call_args.args[2]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('model_fails', [False, True])
+async def test_selected_research_tools_are_scoped_and_released(model_fails):
+    body = NovelGenerationRequest(title='Story', bible='', previous='', manuscript='', instruction='Research recent news and write a scene', selected_mcp_ids=['news'])
+    scope = object()
+    with patch('routers.novel_studio.mcp_manager.enable_request_scope', new=AsyncMock(return_value=scope)) as enable, \
+         patch('routers.novel_studio.mcp_manager.reset_request_scope') as reset, \
+         patch('routers.novel_studio.mcp_manager.connect_all', new=AsyncMock()) as reconnect, \
+         patch('routers.novel_studio.build_servers_config', new=AsyncMock(return_value={})) as config, \
+         patch('routers.novel_studio.query_llm', new=AsyncMock(return_value='{"text":"Scene"}', side_effect=RuntimeError('failed') if model_fails else None)) as model:
+        if model_fails:
+            with pytest.raises(RuntimeError):
+                await generate_novel(body)
+        else:
+            assert await generate_novel(body) == {'text': 'Scene'}
+        enable.assert_awaited_once_with(['news'], client_scope=True, explicit=True)
+        assert model.call_args.kwargs['use_tools'] is True
+        reset.assert_called_once_with(scope)
+        config.assert_awaited_once()
+        reconnect.assert_awaited_once_with({})

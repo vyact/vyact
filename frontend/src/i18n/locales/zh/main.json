@@ -1645,6 +1645,7 @@
     "defaultQuestion": "请分析附件中的数据和结果，说明关键发现与注意事项。"
   },
   "novelStudio": {
+    "toolScopeHelp": "此处选择的 AI 工具仅用于小说提案的生成和修改，与普通聊天的工具开关相互独立。",
     "guidance": {"save": "保存", "restore": "恢复默认", "savedForStory": "已保存到作品", "default": "使用默认指令"},
     "proposalState": {"generating": "生成中…", "unapplied": "尚未应用"},
     "changes": {"cancel": "继续编辑", "title": "未保存的更改", "description": "保存更改？", "proposalTitle": "未应用的 AI 建议", "proposalDescription": "此建议尚未应用。是否丢弃？", "saveContinue": "保存", "discardContinue": "放弃更改", "unsaved": "未保存", "emptySetting": "设定内容不能为空。请输入内容或放弃更改。"},

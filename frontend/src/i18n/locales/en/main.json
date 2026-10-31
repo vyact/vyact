@@ -1646,6 +1646,7 @@
     "defaultQuestion": "Analyze the attached data and results. Explain the key findings and points to consider."
   },
   "novelStudio": {
+    "toolScopeHelp": "Only tools selected here are available when generating or revising novel proposals. This selection is independent of the tool switches in chat.",
     "guidance": {"save": "Save", "restore": "Restore default", "savedForStory": "Saved for this story", "default": "Using default"},
     "proposalState": {"generating": "Generating…", "unapplied": "Not applied"},
     "changes": {"cancel": "Keep editing", "title": "Unsaved changes", "description": "Save your changes?", "proposalTitle": "Unapplied AI proposal", "proposalDescription": "This proposal has not been applied. Discard it?", "saveContinue": "Save", "discardContinue": "Discard changes", "unsaved": "Unsaved", "emptySetting": "Settings cannot be empty. Enter content or discard your changes."},

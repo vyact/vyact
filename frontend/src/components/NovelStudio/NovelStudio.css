@@ -387,3 +387,6 @@
 
 .novel-manuscript-visual .memo-image-wrapper.ProseMirror-selectednode .memo-image-editable-frame,
 .novel-manuscript-visual .memo-image-wrapper.novel-image-range-selected .memo-image-editable-frame {border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);}
+
+.novel-request-controls > .mcp-prompt-input {flex: 1; min-height: 100px;}
+.novel-saved-revision .novel-revision-controls > .mcp-prompt-input {flex: 1;}

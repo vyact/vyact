@@ -1645,6 +1645,7 @@
     "defaultQuestion": "添付のデータと結果を分析し、重要な点と注意点を説明してください。"
   },
   "novelStudio": {
+    "toolScopeHelp": "ここで選択したAIツールのみ、小説の提案生成・修正に使用できます。通常のチャットのツール設定とは別に管理されます。",
     "guidance": {"save": "保存", "restore": "既定値に戻す", "savedForStory": "作品に保存済み", "default": "既定の指示を使用中"},
     "proposalState": {"generating": "生成中…", "unapplied": "未適用"},
     "changes": {"cancel": "編集を続ける", "title": "未保存の変更", "description": "変更を保存しますか？", "proposalTitle": "未適用のAI提案", "proposalDescription": "この提案はまだ適用されていません。破棄しますか？", "saveContinue": "保存", "discardContinue": "変更を破棄", "unsaved": "未保存", "emptySetting": "設定内容は空にできません。内容を入力するか変更を破棄してください。"},

@@ -1655,6 +1655,7 @@
     "defaultQuestion": "첨부한 데이터와 결과를 분석하고, 핵심 내용과 유의할 점을 설명해 주세요."
   },
   "novelStudio": {
+    "toolScopeHelp": "여기서 선택한 AI 도구만 소설의 제안 생성·수정에 사용합니다. 일반 채팅의 도구 ON/OFF와 별도로 관리됩니다.",
     "guidance": {"save": "저장", "restore": "기본값으로 복원", "savedForStory": "작품에 저장됨", "default": "기본 지시 사용 중"},
     "proposalState": {"generating": "생성 중…", "unapplied": "적용 전"},
     "changes": {"cancel": "계속 편집", "title": "저장하지 않은 변경 사항", "description": "변경사항을 저장할까요?", "proposalTitle": "적용하지 않은 AI 제안", "proposalDescription": "이 제안은 아직 적용되지 않았습니다. 제안을 버릴까요?", "saveContinue": "저장", "discardContinue": "변경 버리기", "unsaved": "저장하지 않음", "emptySetting": "설정 내용은 비워 둘 수 없습니다. 내용을 입력하거나 변경을 취소해 주세요."},

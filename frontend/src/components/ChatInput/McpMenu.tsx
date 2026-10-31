@@ -17,9 +17,14 @@ import './McpMenu.css';
 
 interface McpMenuProps {
     disabled?: boolean;
+    selection?: {
+        servers: McpServer[];
+        onChange: (servers: McpServer[]) => void;
+        scopeHelp: string;
+    };
 }
 
-const McpMenu: React.FC<McpMenuProps> = ({disabled = false}) => {
+const McpMenu: React.FC<McpMenuProps> = ({disabled = false, selection}) => {
     const [open, setOpen] = useState(false);
     const [servers, setServers] = useState<McpServer[]>([]);
     const [labels, setLabels] = useState<Record<string, string>>({});
@@ -106,7 +111,13 @@ const McpMenu: React.FC<McpMenuProps> = ({disabled = false}) => {
     }, [open]);
 
     const toggle = async (srv: McpServer) => {
-        if (busyId) return;
+        if (disabled || busyId) return;
+        if (selection) {
+            selection.onChange(selection.servers.some(server => server.id === srv.id)
+                ? selection.servers.filter(server => server.id !== srv.id)
+                : [...selection.servers, srv]);
+            return;
+        }
         const next = !srv.enabled;
         const apiKey = srv.config?.api_key;
         if (next && srv.type === 'web_search' && !(typeof apiKey === 'string' && apiKey.trim())) {
@@ -142,11 +153,17 @@ const McpMenu: React.FC<McpMenuProps> = ({disabled = false}) => {
     const visibleServers = orderMcpServersForDisplay(servers).filter(
         server => server.type !== 'google_workspace' || googleConnected === true,
     );
-    const enabledCount = visibleServers.filter(server => server.enabled).length;
+    const isSelected = (server: McpServer) => selection
+        ? selection.servers.some(selected => selected.id === server.id)
+        : server.enabled;
+    const enabledCount = visibleServers.filter(isSelected).length;
+    const scopeHelp = selection?.scopeHelp ?? t('mcpMenu.scopeHelp');
 
     return (
         <div className="mcp-menu" ref={menuRef}>
             <button
+                type="button"
+                aria-expanded={open}
                 className={`mcp-menu-trigger${enabledCount > 0 ? ' active' : ''}`}
                 onClick={() => setOpen(v => !v)}
                 disabled={disabled}
@@ -158,11 +175,11 @@ const McpMenu: React.FC<McpMenuProps> = ({disabled = false}) => {
                 )}
             </button>
 
-            {open && (
+            {open && !disabled && (
                 <div className="mcp-menu-popover">
                     <div className="mcp-menu-header">
-                        <Tooltip content={t('mcpMenu.scopeHelp')} multiline>
-                            <button type="button" className="help-icon-button" aria-label={t('mcpMenu.scopeHelp')}>?</button>
+                        <Tooltip content={scopeHelp} multiline>
+                            <button type="button" className="help-icon-button" aria-label={scopeHelp}>?</button>
                         </Tooltip>
                         <span>{t('mcpMenu.title')}</span>
                     </div>
@@ -181,7 +198,17 @@ const McpMenu: React.FC<McpMenuProps> = ({disabled = false}) => {
                         {visibleServers.map(srv => (
                             <div
                                 key={srv.id}
-                                onClick={() => toggle(srv)}
+                                role="switch"
+                                aria-checked={isSelected(srv)}
+                                aria-label={serverName(srv)}
+                                tabIndex={0}
+                                onKeyDown={event => {
+                                    if (event.key === 'Enter' || event.key === ' ') {
+                                        event.preventDefault();
+                                        void toggle(srv);
+                                    }
+                                }}
+                                onClick={() => void toggle(srv)}
                                 className={`mcp-menu-server${busyId ? ' busy' : ''}`}
                             >
                                 <div className="mcp-menu-server-info">
@@ -189,7 +216,7 @@ const McpMenu: React.FC<McpMenuProps> = ({disabled = false}) => {
                                 </div>
 
                                 {/* switch */}
-                                <div className={`mcp-menu-switch${srv.enabled ? ' enabled' : ''}${busyId === srv.id ? ' busy' : ''}`}>
+                                <div className={`mcp-menu-switch${isSelected(srv) ? ' enabled' : ''}${busyId === srv.id ? ' busy' : ''}`}>
                                     <div className="mcp-menu-switch-knob"/>
                                 </div>
                             </div>
