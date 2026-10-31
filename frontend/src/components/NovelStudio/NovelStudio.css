@@ -390,3 +390,25 @@
 
 .novel-request-controls > .mcp-prompt-input {flex: 1; min-height: 100px;}
 .novel-saved-revision .novel-revision-controls > .mcp-prompt-input {flex: 1;}
+
+.novel-manuscript-reading .novel-body-copy {
+    float: right;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    margin: 0 0 8px 16px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: var(--surface);
+    color: var(--muted);
+    cursor: pointer;
+    transition: color .15s, background .15s, border-color .15s;
+}
+.novel-manuscript-reading .novel-body-copy:hover {
+    color: var(--text);
+    background: var(--surface2);
+    border-color: color-mix(in srgb, var(--text) 25%, var(--border));
+}

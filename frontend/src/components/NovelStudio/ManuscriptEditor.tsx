@@ -1,3 +1,4 @@
+import CopyIconButton from '../common/CopyIconButton/CopyIconButton';
 import {queueManuscriptImageCleanup} from './manuscriptImageCleanup';
 import ManuscriptReadingContent from './ManuscriptReadingContent';
 import ImageViewer from '../ImageViewer/ImageViewer';
@@ -33,7 +34,7 @@ export default function ManuscriptEditor({chapter, onChange, onDraftTextChange, 
         if (index < 0) return;
         event.preventDefault();
         setImageViewer({images: images.map(item => ({src: item.src, alt: item.alt})), index});
-    }}><ManuscriptReadingContent html={html}/></article>{imageViewer && <ImageViewer images={imageViewer.images} currentIndex={imageViewer.index} onClose={() => setImageViewer(null)} onIndexChange={index => setImageViewer(previous => previous ? {...previous, index} : null)}/>}</div>;
+    }}><CopyIconButton text={chapter.text} className="novel-body-copy"/><ManuscriptReadingContent html={html}/></article>{imageViewer && <ImageViewer images={imageViewer.images} currentIndex={imageViewer.index} onClose={() => setImageViewer(null)} onIndexChange={index => setImageViewer(previous => previous ? {...previous, index} : null)}/>}</div>;
 }
 
 function ManuscriptEditingSession({chapter, onChange, onFinish, onDraftTextChange, onSessionChange}: ManuscriptEditorProps & {onFinish: () => void}) {
