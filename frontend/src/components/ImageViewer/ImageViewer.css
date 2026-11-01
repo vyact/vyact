@@ -149,6 +149,20 @@
     box-shadow:0 6px 20px rgba(20,24,32,.3);
 }
 
+.image-viewer__action--close:is(:hover, :focus-visible),
+:root[data-theme='light'] .image-viewer__action--close:is(:hover, :focus-visible) {
+    border-color:var(--border);
+    background:var(--surface2);
+    color:var(--text);
+}
+
+.image-viewer__action--download:is(:hover, :focus-visible),
+:root[data-theme='light'] .image-viewer__action--download:is(:hover, :focus-visible) {
+    border-color:var(--action-download-border-hover);
+    background:var(--action-download-bg-hover);
+    color:var(--action-download);
+}
+
 :root[data-theme='light'] .image-viewer__thumbnails {
     border-color:rgba(20,24,32,.1);
     background:rgba(255,255,255,.9);

@@ -72,7 +72,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ images, currentIndex, onClose
         <div ref={overlayRef} className="image-viewer app-modal-overlay" role="dialog" aria-modal="true" aria-label={t('imageViewer.image')}>
             <div className="image-viewer__actions">
                 <button
-                    className="image-viewer__action"
+                    className="image-viewer__action image-viewer__action--download"
                     onClick={(event) => {
                         event.stopPropagation();
                         void downloadCurrentImage();
