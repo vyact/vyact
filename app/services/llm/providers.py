@@ -113,6 +113,7 @@ _BROWSER_PROGRESS_TOOLS = frozenset({
 })
 _BROWSER_POLL_TOOLS = frozenset({"browser_wait", "browser_status"})
 _BROWSER_MAX_UNCHANGED_POLLS = 3
+_NOVEL_STUDIO_TOOL_CALL_LIMIT = 5
 
 
 class _ToolCallGuard:
@@ -459,6 +460,8 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
     emitted_text = False
     last_round_had_tools = False
     repeated_tool_call = False
+    tool_call_limit_reached = False
+    executed_tool_calls = 0
     consecutive_tool_failures = 0
     tool_failures_exhausted = False
     tool_guard = _ToolCallGuard()
@@ -590,6 +593,13 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
                         "content": "[취소] 같은 응답의 앞선 도구 실행을 사용자가 거부하여 실행하지 않았습니다.",
                     })
                     continue
+                if call_reason == "novel_studio:generate" and executed_tool_calls >= _NOVEL_STUDIO_TOOL_CALL_LIMIT:
+                    messages.append({
+                        "role": "tool", "tool_call_id": tc.get("id", ""),
+                        "content": "[도구 사용 한도 도달] 이번 집필 요청에서 도구를 최대 5회 사용했습니다. 지금까지 받은 결과만 바탕으로 최종 답변을 작성하세요.",
+                    })
+                    tool_call_limit_reached = True
+                    continue
                 if tool_failures_exhausted:
                     messages.append({
                         "role": "tool", "tool_call_id": tc.get("id", ""),
@@ -610,6 +620,8 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
                 await _emit(on_event, {"phase": "start", "name": name, "args": args})
                 await _budget_memory_list_result(name, messages, provider_config, output_token_limit)
                 result_text = await mcp_manager.call_tool(name, args)
+                if call_reason == "novel_studio:generate":
+                    executed_tool_calls += 1
                 tool_guard.record(name, fingerprint, result_text)
                 consecutive_tool_failures = _next_consecutive_tool_failures(
                     consecutive_tool_failures, result_text,
@@ -624,7 +636,7 @@ async def openai_stream(client, model, api_key, system_message, user_prompt,
                 await _emit(on_event, {"phase": "end", "name": name, "args": args, "result": result_text, "sources": tool_sources})
                 messages.append({"role": "tool", "tool_call_id": tc.get("id", ""),
                                  "content": result_text})
-            if approval_rejected or repeated_tool_call or tool_failures_exhausted:
+            if approval_rejected or repeated_tool_call or tool_failures_exhausted or tool_call_limit_reached:
                 if repeated_tool_call:
                     messages[0]["content"] += _REPEATED_TOOL_FINAL_INSTRUCTION
                 if tool_failures_exhausted:
