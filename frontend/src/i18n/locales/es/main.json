@@ -1647,6 +1647,7 @@
   },
   "novelStudio": {
     "toolScopeHelp": "Solo las herramientas seleccionadas aquí estarán disponibles al generar o revisar propuestas de novela. Esta selección es independiente de los interruptores del chat.",
+    "references": "Referencias", "noReferences": "No se devolvieron referencias.",
     "guidance": {"save": "Guardar", "restore": "Restaurar original", "savedForStory": "Guardado para esta obra", "default": "Usando predeterminado"},
     "proposalState": {"generating": "Generando…", "unapplied": "Sin aplicar"},
     "changes": {"cancel": "Seguir editando", "title": "Cambios sin guardar", "description": "¿Guardar los cambios?", "proposalTitle": "Propuesta de IA sin aplicar", "proposalDescription": "Esta propuesta aún no se ha aplicado. ¿Descartarla?", "saveContinue": "Guardar", "discardContinue": "Descartar cambios", "unsaved": "Sin guardar", "emptySetting": "La configuración no puede estar vacía. Introduce contenido o descarta los cambios."},

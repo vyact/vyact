@@ -65,6 +65,7 @@ class SettingCandidate(SelectedSetting):
 
 class NovelGenerationRequest(BaseModel):
     selected_mcp_ids: list[str] = Field(default_factory=list, max_length=100)
+    reasoning: bool | str = False
     title: str = Field(max_length=200)
     chapter_title: str = Field(default="", max_length=200)
     bible: str = Field(max_length=20000)
@@ -166,6 +167,7 @@ async def generate_novel(body: NovelGenerationRequest):
             scope_token = await mcp_manager.enable_request_scope(
                 body.selected_mcp_ids, client_scope=True, explicit=True,
             )
+        sources: list[dict] = []
         result = await query_llm(
             prompt, [],
             task + "You are a fiction writing partner. Follow the author's request and preserve established "
@@ -177,13 +179,16 @@ async def generate_novel(body: NovelGenerationRequest):
             ) + output_instruction +
             ("Return the entire updated chapter without truncating unchanged content. " if body.target == "text" else "Keep your response within approximately 1200 words."),
             [], [], timeout=180.0, format_instruction_override="", inject_user_profile=False,
-            use_tools=bool(body.selected_mcp_ids), reasoning=False, call_reason="novel_studio:generate",
+            use_tools=bool(body.selected_mcp_ids), reasoning=body.reasoning, call_reason="novel_studio:generate",
+            sources_out=sources,
         )
     finally:
         if scope_token is not None:
             mcp_manager.reset_request_scope(scope_token)
             await mcp_manager.connect_all(await build_servers_config())
-    return parse_writing_response(result) if is_settings_proposal or body.target == "text" else {"text": result.strip()}
+    response = parse_writing_response(result) if is_settings_proposal or body.target == "text" else {"text": result.strip()}
+    response["sources"] = sources
+    return response
 
 
 class NovelChapter(BaseModel):

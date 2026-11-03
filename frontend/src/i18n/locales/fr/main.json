@@ -1648,6 +1648,7 @@
   },
   "novelStudio": {
     "toolScopeHelp": "Seuls les outils sélectionnés ici sont disponibles pour générer ou réviser les propositions du roman. Cette sélection est indépendante des outils activés dans le chat.",
+    "references": "Références", "noReferences": "Aucune référence n’a été renvoyée.",
     "guidance": {"save": "Enregistrer", "restore": "Rétablir par défaut", "savedForStory": "Enregistré pour cette œuvre", "default": "Instruction par défaut"},
     "proposalState": {"generating": "Génération…", "unapplied": "Non appliqué"},
     "changes": {"cancel": "Continuer la modification", "title": "Modifications non enregistrées", "description": "Enregistrer les modifications ?", "proposalTitle": "Proposition IA non appliquée", "proposalDescription": "Cette proposition n’a pas encore été appliquée. La supprimer ?", "saveContinue": "Enregistrer", "discardContinue": "Ignorer les modifications", "unsaved": "Non enregistré", "emptySetting": "Le contenu ne peut pas être vide. Saisissez du contenu ou annulez les modifications."},

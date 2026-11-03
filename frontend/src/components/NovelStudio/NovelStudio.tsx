@@ -22,6 +22,7 @@ import {getSettingsContext} from './settingsContext';
 import ToggleSwitch from '../common/ToggleSwitch/ToggleSwitch';
 import {AUTHOR_DIRECTION_MAX_LENGTH, buildWritingInstruction} from './writingInstruction';
 import {downloadNovel, type NovelExportFormat} from './storyExport';
+import {getReasoningRequestValue} from '../../utils/reasoning';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {Plus, Feather, Sparkles, LoaderCircle, Undo2, MoreHorizontal, Download, Info, LogOut, Trash2} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
@@ -70,6 +71,7 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
     const [proposalQuery, setProposalQuery] = useState({instruction: '', authorDirection: ''});
     const [viewingCandidateId, setViewingCandidateId] = useState<string | null>(null);
     const [candidateTitle, setCandidateTitle] = useState('');
+    const [proposalSources, setProposalSources] = useState<Array<{title?: string; url?: string; source?: string}>>([]);
     const [viewingFinalId, setViewingFinalId] = useState<string | null>(null);
     const [proposalTarget, setProposalTarget] = useState<'text' | 'bible'>('text');
     const [exportDetails, setExportDetails] = useState<{title: string; format: NovelExportFormat} | null>(null);
@@ -149,18 +151,23 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
         if (!revision) {
             setRevisionSource(null);
             setProposalQuery({instruction: request, authorDirection: instruction.trim()});
-            setProposal(''); setProposalTarget(tab); setProposalAction(action); setCandidateTitle(''); setRevisionRequest('');
+            setProposal(''); setProposalSources([]); setProposalTarget(tab); setProposalAction(action); setCandidateTitle(''); setRevisionRequest('');
         }
         setBusy(true); setError(''); setResponseVisible(true);
         controller.current = new AbortController();
         try {
             const selected = getSettingsContext(currentStory.settingsCandidates ?? [], action, contextExclusions[`${story.id}:${action}`] ?? []).map(({category, title, content}) => ({category, title, content}));
             if (tab === 'bible' && selected.reduce((sum, candidate) => sum + candidate.content.length + candidate.title.length, 0) > 50000) throw new Error('settings-context-limit');
-            const response = await fetch('/api/novel-studio/generate', {method: 'POST', signal: controller.current.signal, headers: {'Content-Type': 'application/json'}, body: JSON.stringify({selected_mcp_ids: selectedMcpServers.map(server => server.id), title: story.title.slice(0, 200), chapter_title: currentChapter.title.slice(0, 200), bible: currentStory.finalSettings?.find(item => item.id === currentStory.activeFinalSettingId)?.content ?? '', previous: buildChapterContext(currentStory.chapters, chapter.id, tab === 'bible' || includePreviousChapters), manuscript: currentChapter.text, instruction: request, ...(revision ? {proposal: revisionText, original_instruction: originalInstruction} : {}), target: tab, ...(tab === 'bible' ? {settings_stage: action, selected_settings: selected} : {}), language: i18n.resolvedLanguage || i18n.language})});
+            const response = await fetch('/api/novel-studio/generate', {method: 'POST', signal: controller.current.signal, headers: {'Content-Type': 'application/json'}, body: JSON.stringify({selected_mcp_ids: selectedMcpServers.map(server => server.id), reasoning: getReasoningRequestValue(), title: story.title.slice(0, 200), chapter_title: currentChapter.title.slice(0, 200), bible: currentStory.finalSettings?.find(item => item.id === currentStory.activeFinalSettingId)?.content ?? '', previous: buildChapterContext(currentStory.chapters, chapter.id, tab === 'bible' || includePreviousChapters), manuscript: currentChapter.text, instruction: request, ...(revision ? {proposal: revisionText, original_instruction: originalInstruction} : {}), target: tab, ...(tab === 'bible' ? {settings_stage: action, selected_settings: selected} : {}), language: i18n.resolvedLanguage || i18n.language})});
             if (!response.ok) throw new Error('Generation failed');
             const data = await response.json();
             if (typeof data.text !== 'string' || !data.text.trim()) throw new Error('Empty generation');
             setProposal(data.text);
+            setProposalSources(Array.isArray(data.sources) ? data.sources.filter((source: unknown): source is {title?: string; url: string; source?: string} => {
+                if (!source || typeof source !== 'object' || typeof (source as {url?: unknown}).url !== 'string') return false;
+                const url = (source as {url: string}).url;
+                return url.startsWith('https://') || url.startsWith('http://');
+            }) : []);
             if (revision) {setRevisionRequest(''); setProposalQuery({instruction: request, authorDirection: revisionRequest.trim()});}
             if (typeof data.title === 'string' && data.title.trim()) {
                 const generatedTitle = data.title.trim().slice(0, 200);
@@ -298,6 +305,7 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
                     <label className="novel-instruction-label" htmlFor="novel-instruction">{tr('instruction')}{tab === 'bible' && <span className="novel-action-badge">{tr(selectedAction)}</span>}</label><McpPromptInput scopeHelp={tr('toolScopeHelp')} selectedServers={selectedMcpServers} onSelectedServersChange={setSelectedMcpServers} textareaRef={instructionRef} disabled={busy} id="novel-instruction" maxLength={AUTHOR_DIRECTION_MAX_LENGTH} value={instruction} onChange={setInstruction} placeholder={tr(selectedAction === 'customRequest' ? 'instructionPlaceholder' : `${selectedAction}Placeholder`)} context={tab === 'bible' && contextControls} actions={busy ? <button className="modal-action-cancel" onClick={() => controller.current?.abort()}><LoaderCircle className="novel-spinner" size={15}/>{tr('cancel')}</button> : <button className="modal-action-submit" disabled={changes.pending || !writingRequest || (tab === 'bible' && selectedAction === 'synthesis' && !selectedSettings.length)} onClick={() => void generate(writingRequest)}><Sparkles size={15}/>{tr('generate')}</button>}/>
 
 </div>}
+                    {responseVisible && !busy && <section className="novel-reference-panel" aria-label={tr('references')}><h3><span>{tr('references')}</span>{proposalSources.length > 0 && <small>{proposalSources.length}</small>}</h3>{proposalSources.length ? <div className="novel-reference-list">{proposalSources.map((source, index) => {const title = source.title || source.url; return <a key={`${source.url}:${index}`} href={source.url} target="_blank" rel="noreferrer"><span>{title}</span></a>;})}</div> : <p>{tr('noReferences')}</p>}</section>}
 
                 </aside>) : null}>
         {exportDetails && <ProcessingModal title={tr('exporting')} detail={`${exportDetails.title} · ${exportDetails.format.toUpperCase()}`}/>}

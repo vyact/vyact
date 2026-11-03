@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {CopyPlus, Cpu, Eye, EyeOff, ExternalLink, GripVertical, Link2, Pencil, Plus, Trash2} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import type {CustomProviderPayload, CustomProviderSettings} from '../../services/api';
@@ -251,6 +251,9 @@ const CustomProviderModal: React.FC<CustomProviderModalProps> = ({connection, co
     const {t} = useTranslation('main');
     const [duplicateSource, setDuplicateSource] = useState<CustomProviderSettings>();
     const [editor, setEditor] = useState<CustomProviderSettings | 'new' | null>(connection ?? (connections.length ? null : 'new'));
+    useEffect(() => {
+        if (!connection && editor && editor !== 'new' && !connections.some(item => item.id === editor.id)) setEditor(null);
+    }, [connection, connections, editor]);
     if (editor) return <CustomProviderEditor
         key={editor === 'new' ? duplicateSource?.id ?? 'new' : editor.id}
         connection={editor === 'new' ? undefined : editor}
@@ -258,7 +261,7 @@ const CustomProviderModal: React.FC<CustomProviderModalProps> = ({connection, co
         selectedProvider={selectedProvider}
         onClose={() => !connection && connections.length ? setEditor(null) : onClose()}
         onSave={async selectionType => { await onSave(selectionType); onClose(); }}
-        onDelete={onDelete}
+        onDelete={async selectionType => { await onDelete?.(selectionType); }}
     />;
     return <ModalOverlay className="provider-editor-overlay" onClose={onClose} closeOnBackdrop={false}>
         <section className="provider-editor provider-connection-manager" role="dialog" aria-modal="true" aria-labelledby="provider-connections-title">

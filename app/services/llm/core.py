@@ -353,6 +353,7 @@ async def query_llm(
         include_skills: bool = True,
         structured_output_schema: dict | None = None,
         include_response_language: bool = True,
+        sources_out: list | None = None,
 ) -> str:
     """논스트리밍 단발 응답 (모든 provider).
 
@@ -413,10 +414,14 @@ async def query_llm(
                 try:
                     usage: dict = {}
                     pieces = []
+                    async def collect_tool_event(event):
+                        if sources_out is not None and event.get("phase") == "end":
+                            sources_out.extend(event.get("sources") or [])
                     async for piece in openai_stream(
                             client, model, api_key, system_message, user_prompt,
                             history_messages, valid_slice, attachments, timeout,
                             use_tools=use_tools, usage=usage, call_reason=call_reason,
+                            on_event=collect_tool_event if sources_out is not None else None,
                             reasoning=reasoning, structured_output_schema=structured_output_schema,
                             output_token_limit=request_output_limit.get()):
                         pieces.append(piece)

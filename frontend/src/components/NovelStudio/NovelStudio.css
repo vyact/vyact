@@ -203,6 +203,16 @@
 .novel-task-guidance-editor:disabled {opacity: .45;}
 .novel-studio .workspace-layout-inspector {overflow: hidden;}
 .novel-assistant {min-height: 0; height: 100%; overflow: hidden; padding: 18px 16px;}
+.novel-reference-panel {display: flex; flex-direction: column; flex: 1 1 0; min-height: 0; margin-top: 16px; padding: 12px; border: 1px solid var(--border); border-radius: 9px; background: color-mix(in srgb, var(--surface) 45%, transparent);}
+.novel-response-save {flex: 0 0 auto;}
+.novel-reference-panel h3 {display: flex; align-items: center; gap: 7px; flex: 0 0 auto; margin: 0 0 8px; font-size: 12px;}
+.novel-reference-panel h3 small {display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); font-size: 10px; font-weight: 600;}
+.novel-reference-panel>p {margin: 0; color: var(--muted); font-size: 11px;}
+.novel-reference-list {min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable;}
+.novel-reference-list a {display: flex; align-items: center; min-width: 0; padding: 9px 3px; border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent); color: var(--text-secondary); text-decoration: none; transition: color .15s;}
+.novel-reference-list a:last-child {border-bottom: 0;}
+.novel-reference-list a span {flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 11px; line-height: 1.5;}
+.novel-reference-list a:hover {color: var(--accent);}
 .novel-request-controls {min-height: 0; gap: 0;}
 .novel-request-controls #novel-instruction {min-height: 64px; resize: none; overflow: auto;}
 .novel-task-guidance {margin-bottom: 12px; padding: 10px;}

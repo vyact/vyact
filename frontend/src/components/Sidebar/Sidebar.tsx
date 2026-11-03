@@ -444,6 +444,12 @@ const Sidebar: React.FC<SidebarProps> = ({
     const [customProviders, setCustomProviders] = useState<CustomProviderSettings[]>([]);
     const [customProviderEditor, setCustomProviderEditor] = useState<CustomProviderSettings | 'new' | null>(null);
     const [providerToDelete, setProviderToDelete] = useState<CustomProviderSettings | null>(null);
+    useEffect(() => {
+        if (customProviderEditor && customProviderEditor !== 'new'
+            && !customProviders.some(provider => provider.id === customProviderEditor.id)) {
+            setCustomProviderEditor(null);
+        }
+    }, [customProviderEditor, customProviders]);
     const [isVyactModalOpen, setIsVyactModalOpen] = useState(false);
     const [downloadModelRole, setDownloadModelRole] = useState<ModelRole>('llm');
     const [decisionSettingsPath, setDecisionSettingsPath] = useState<string | null>(null);
@@ -1019,7 +1025,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                 onClose={() => setCustomProviderEditor(null)}
                 onDelete={async selectionType => {
                     await handleProviderDelete(selectionType);
-                    setCustomProviderEditor(null);
                 }}
                 onSave={async selectionType => {
                     if (selectionType !== currentProvider) onBeforeModelContextChange?.();
