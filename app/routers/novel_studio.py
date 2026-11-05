@@ -227,6 +227,7 @@ class FinalSetting(BaseModel):
 
 
 class NovelStory(BaseModel):
+    selectedMcpIds: list[Annotated[str, Field(min_length=1, max_length=200)]] = Field(default_factory=list, max_length=100)
     pinnedAt: int | None = Field(default=None, ge=0)
     id: UUID
     title: str = Field(max_length=200)

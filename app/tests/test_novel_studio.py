@@ -337,3 +337,32 @@ async def test_initial_settings_generation_ignores_enabled_tools(stage):
     enable.assert_not_awaited()
     assert model.call_args.kwargs['use_tools'] is False
     assert 'Use the selected tools to research' not in model.call_args.args[2]
+
+
+def test_tool_selection_is_saved_per_story_and_defaults_to_disabled():
+    first = NovelStory(id=uuid4(), title='First', chapters=[NovelChapter(id=uuid4(), title='One', text='')], selectedMcpIds=['news'])
+    second = NovelStory(id=uuid4(), title='Second', chapters=[NovelChapter(id=uuid4(), title='One', text='')])
+    restored = NovelStory.model_validate(first.model_dump(mode='json'))
+    assert restored.selectedMcpIds == ['news']
+    assert second.selectedMcpIds == []
+    first.selectedMcpIds.clear()
+    assert restored.selectedMcpIds == ['news']
+
+
+@pytest.mark.asyncio
+async def test_existing_story_index_adds_tool_selection_mapping_without_reset():
+    es = AsyncMock()
+    es.indices.exists.return_value = True
+    await ensure_novel_stories_index(es)
+    assert es.indices.put_mapping.call_args.kwargs['properties']['selectedMcpIds'] == {'type': 'keyword'}
+    es.indices.create.assert_not_awaited()
+    es.indices.delete.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_story_save_persists_selected_tools():
+    story = NovelStory(id=uuid4(), title='Story', chapters=[NovelChapter(id=uuid4(), title='One', text='')], selectedMcpIds=['news', 'browser'])
+    es = AsyncMock()
+    with patch('routers.novel_studio.get_es', return_value=es), patch('routers.novel_studio.ensure_novel_stories_index', new=AsyncMock()):
+        await save_novel_story(story.id, story)
+    assert es.update.call_args.kwargs['script']['params']['story']['selectedMcpIds'] == ['news', 'browser']

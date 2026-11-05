@@ -85,7 +85,7 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
     const [undo, setUndo] = useState<{chapterId: string; target: 'text' | 'bible'; text: string; title: string} | null>(null);
     const controller = useRef<AbortController | null>(null);
     const story = stories.find(item => item.id === storyId) ?? stories[0];
-    const {selectedServers: selectedMcpServers, setSelectedServers: setSelectedMcpServers} = useNovelTools();
+    const {selectedServers: selectedMcpServers, setSelectedServers: setSelectedMcpServers} = useNovelTools(story?.selectedMcpIds ?? [], selectedMcpIds => updateStory({selectedMcpIds}));
     const finalSettings = story?.finalSettings ?? [];
     const activeFinal = finalSettings.find(item => item.id === story?.activeFinalSettingId);
     const viewingFinal = finalSettings.find(item => item.id === viewingFinalId);

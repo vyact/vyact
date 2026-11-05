@@ -187,6 +187,7 @@ async def wait_for_es(es, retries=30):
 
 
 NOVEL_STORY_OPTIONAL_PROPERTIES = {
+    "selectedMcpIds": {"type": "keyword"},
     "pinnedAt": {"type": "long"},
     "settingsCandidates": {"type": "object", "enabled": False},
     "finalSettings": {"type": "object", "enabled": False},
