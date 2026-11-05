@@ -320,3 +320,20 @@ async def test_selected_research_tools_are_scoped_and_released(model_fails):
         reset.assert_called_once_with(scope)
         config.assert_awaited_once()
         reconnect.assert_awaited_once_with({})
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('stage', ['createDirection', 'createPremise', 'createCharacters', 'createWorld', 'createPlot', 'createStyle', 'synthesis'])
+async def test_initial_settings_generation_ignores_enabled_tools(stage):
+    body = NovelGenerationRequest(
+        title='Story', bible='', previous='', manuscript='', instruction='Develop settings',
+        target='bible', settings_stage=stage, selected_mcp_ids=['news'],
+        selected_settings=[{'category': 'createDirection', 'title': 'Direction', 'content': 'Mystery'}],
+    )
+    with patch('routers.novel_studio.mcp_manager.enable_request_scope', new=AsyncMock()) as enable, \
+         patch('routers.novel_studio.query_llm', new=AsyncMock(return_value='{"title":"Idea","text":"Notes"}')) as model:
+        result = await generate_novel(body)
+    assert result['text'] == 'Notes'
+    enable.assert_not_awaited()
+    assert model.call_args.kwargs['use_tools'] is False
+    assert 'Use the selected tools to research' not in model.call_args.args[2]
