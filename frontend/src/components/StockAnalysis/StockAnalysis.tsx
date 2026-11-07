@@ -6,28 +6,18 @@ import WorkspaceExitButton from '../common/WorkspaceLayout/WorkspaceExitButton';
 import WorkspaceLayout from '../common/WorkspaceLayout/WorkspaceLayout';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import StockLoadingIndicator from './StockLoadingIndicator';
+import {getInitialMarket, saveMarketPreference} from './marketPreference';
 import StockSectorMap from './StockSectorMap';
 import StockPriceChart from './StockPriceChart';
 import './StockAnalysis.css';
 
 const MARKETS: StockMarket[] = ['KR', 'US'];
 const VISIBLE_SYMBOLS = 100;
-const MARKET_STORAGE_KEY = 'vyact:stock-analysis:market';
-
-function getInitialMarket(language: string | undefined): StockMarket {
-    try {
-        const saved = localStorage.getItem(MARKET_STORAGE_KEY);
-        if (saved === 'KR' || saved === 'US') return saved;
-    } catch {
-        // The language default still works when browser storage is unavailable.
-    }
-    return language?.toLowerCase().split('-')[0] === 'ko' ? 'KR' : 'US';
-}
-
 export default function StockAnalysis({onClose}: {onClose: () => void}) {
     const {t, i18n} = useTranslation('main');
     const tr = (key: string, options?: Record<string, unknown>) => t(`stockAnalysis.${key}`, options);
     const [market, setMarket] = useState<StockMarket>(() => getInitialMarket(i18n.resolvedLanguage ?? i18n.language));
+    useEffect(() => {saveMarketPreference(market);}, [market]);
     const [symbols, setSymbols] = useState<StockSymbol[]>([]);
     const [query, setQuery] = useState('');
     const [active, setActive] = useState<StockSymbol | null>(null);
@@ -74,11 +64,7 @@ export default function StockAnalysis({onClose}: {onClose: () => void}) {
         if (value === market) return;
         if (value !== 'KR' && value !== 'US') return;
         setMarket(value);
-        try {
-            localStorage.setItem(MARKET_STORAGE_KEY, value);
-        } catch {
-            // Keep the selection for this session when storage is unavailable.
-        }
+        saveMarketPreference(value);
         setSymbols([]);
         setDirectoryState('loading');
         setQuery('');

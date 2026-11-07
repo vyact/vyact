@@ -8,7 +8,11 @@ from zoneinfo import ZoneInfo
 
 from yfinance.data import YfData
 
-INDEX_SYMBOLS = ("^GSPC", "^IXIC", "^RUT")
+MARKET_INDEX_SYMBOLS = {"US": ("^GSPC", "^IXIC", "^RUT"), "KR": ("^KS11", "^KQ11")}
+INDEX_SYMBOLS = tuple(symbol for symbols in MARKET_INDEX_SYMBOLS.values() for symbol in symbols)
+
+def index_timezone(symbol: str) -> ZoneInfo:
+    return ZoneInfo("Asia/Seoul" if symbol in MARKET_INDEX_SYMBOLS["KR"] else "America/New_York")
 INDEX_CACHE_SECONDS = 10
 CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/"
 NEW_YORK = ZoneInfo("America/New_York")
@@ -29,10 +33,10 @@ def _fetch_index(symbol: str) -> dict:
     timestamp = meta.get("regularMarketTime")
     if not _positive(price) or not _positive(previous) or not timestamp:
         raise ValueError(f"Missing index quote: {symbol}")
-    day = datetime.fromtimestamp(timestamp, NEW_YORK).date().isoformat()
+    day = datetime.fromtimestamp(timestamp, index_timezone(symbol)).date().isoformat()
     bars = result["indicators"]["quote"][0]["close"]
     closes = [close for stamp, close in zip(result.get("timestamp", []), bars)
-              if _positive(close) and datetime.fromtimestamp(stamp, NEW_YORK).date().isoformat() == day]
+              if _positive(close) and datetime.fromtimestamp(stamp, index_timezone(symbol)).date().isoformat() == day]
     return {"symbol": symbol, "price": price, "change": price - previous,
             "changePercent": (price / previous - 1) * 100, "date": day, "closes": closes}
 
@@ -47,10 +51,11 @@ def _safe_fetch_index(symbol: str) -> dict:
 
 
 @lru_cache(maxsize=2)
-def _load_indices(cache_window: int) -> list[dict]:
-    with ThreadPoolExecutor(max_workers=len(INDEX_SYMBOLS)) as executor:
-        return list(executor.map(_safe_fetch_index, INDEX_SYMBOLS))
+def _load_indices(cache_window: int, market: str) -> list[dict]:
+    symbols = MARKET_INDEX_SYMBOLS[market]
+    with ThreadPoolExecutor(max_workers=len(symbols)) as executor:
+        return list(executor.map(_safe_fetch_index, symbols))
 
 
-def get_market_indices() -> list[dict]:
-    return _load_indices(int(monotonic() // INDEX_CACHE_SECONDS))
+def get_market_indices(market: str = "US") -> list[dict]:
+    return _load_indices(int(monotonic() // INDEX_CACHE_SECONDS), market)

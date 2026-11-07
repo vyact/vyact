@@ -63,7 +63,7 @@ function SectorPreview({sector, focused, market, day}: {sector: MarketSector; fo
             </div>
             <span className="stock-sector-preview-selected-name">{market === 'US' ? focused.name : focused.symbol}</span>
         </div>}
-        <ul>
+        <ul style={{gridTemplateRows: `repeat(${PREVIEW_LIMIT}, minmax(0, 1fr))`}}>
             {entries.map(stock => <li key={stock.symbol} className={stock.symbol === focused?.symbol ? 'focused' : undefined}>
                 <span className="stock-sector-preview-symbol">{market === 'US' ? stock.symbol : stock.name}</span>
                 <StockSparkline closes={histories[stock.symbol]} change={stock.change}/>
@@ -199,7 +199,7 @@ export default function StockSectorMap({market, onOpen}: {market: StockMarket; o
             </div>
             </div>
         </header>
-        {market === 'US' && <MarketIndexSummary refreshSeconds={refreshSeconds} onOpen={onOpen}/>}
+        <MarketIndexSummary key={market} market={market} refreshSeconds={refreshSeconds} onOpen={onOpen}/>
         <div className="stock-sector-map-surface" ref={surface} onMouseLeave={() => {clearTimeout(previewTimer.current); setPreview(undefined);}}
              onKeyDown={event => {if (event.key === 'Escape' && preview) {event.stopPropagation(); setPreview(undefined);}}}
              aria-busy={!snapshot && !failed}>

@@ -17,7 +17,7 @@ from services.stock_analysis.sector_map import get_sector_map
 
 router = APIRouter(prefix="/stock-analysis")
 logger = get_logger(__name__)
-Symbol = Annotated[str, Path(pattern=r"^(?:[A-Z0-9][A-Z0-9.-]{0,15}|\^(?:GSPC|IXIC|RUT))$")]
+Symbol = Annotated[str, Path(pattern=r"^(?:[A-Z0-9][A-Z0-9.-]{0,15}|\^(?:GSPC|IXIC|RUT|KS11|KQ11))$")]
 
 
 @router.get("/symbols/{market}")
@@ -30,9 +30,9 @@ def list_symbols(market: Market):
 
 
 @router.get("/market-indices")
-def market_indices(response: Response):
+def market_indices(response: Response, market: Market = "US"):
     response.headers["Cache-Control"] = "no-store"
-    return get_market_indices()
+    return get_market_indices(market)
 
 
 @router.get("/sector-map/{market}")

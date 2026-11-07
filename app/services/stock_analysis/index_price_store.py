@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 from elasticsearch import NotFoundError
 
 from services.db import MARKET_INDEX_PRICES_INDEX, ensure_market_index_prices_index, get_es
-from services.stock_analysis.market_indices import INDEX_SYMBOLS
+from services.stock_analysis.market_indices import INDEX_SYMBOLS, MARKET_INDEX_SYMBOLS, index_timezone
 from services.stock_analysis.prices import fetch_prices
 
 PAGE_SIZE = 2000
@@ -42,13 +42,14 @@ async def _read_state(es, symbol: str) -> dict:
         return {}
 
 
-def _needs_sync(state: dict, now: datetime) -> bool:
+def _needs_sync(state: dict, now: datetime, symbol: str = "^GSPC") -> bool:
     if not state.get("initialized") or not state.get("synced_at"):
         return True
     synced = datetime.fromisoformat(state["synced_at"])
-    local = now.astimezone(NEW_YORK)
+    local = now.astimezone(index_timezone(symbol))
     if local.weekday() >= 5:
-        friday_close = (local - timedelta(days=local.weekday() - 4)).replace(hour=16, minute=0, second=0, microsecond=0)
+        close_hour, close_minute = (15, 30) if symbol in MARKET_INDEX_SYMBOLS["KR"] else (16, 0)
+        friday_close = (local - timedelta(days=local.weekday() - 4)).replace(hour=close_hour, minute=close_minute, second=0, microsecond=0)
         if synced >= friday_close:
             return False
     return (now - synced).total_seconds() >= SYNC_INTERVAL_SECONDS
@@ -94,7 +95,7 @@ async def get_index_prices(symbol: str) -> list[dict]:
     rows = await _read_rows(es, symbol)
     state = await _read_state(es, symbol)
     task = _sync_tasks.get(symbol)
-    if (not rows or _needs_sync(state, datetime.now(timezone.utc))) and (task is None or task.done()):
+    if (not rows or _needs_sync(state, datetime.now(timezone.utc), symbol)) and (task is None or task.done()):
         task = asyncio.create_task(_sync(symbol, es, rows, state))
         _sync_tasks[symbol] = task
         task.add_done_callback(_consume_result)

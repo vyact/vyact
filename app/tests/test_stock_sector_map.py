@@ -53,3 +53,17 @@ class StockSectorMapTests(unittest.TestCase):
         _, quote = sector_map._us_daily_quote("AAPL")
         self.assertEqual(quote[:2], ("2026-11-06", 342.37))
         self.assertEqual(round(quote[2], 2), -0.52)
+
+    @patch.object(sector_map, 'korea_symbols', return_value={'005930.KS': 'Samsung', '000660.KS': 'SK hynix'})
+    @patch.object(sector_map, 'get_korea_sector_members', return_value={'Technology': ['005930.KS', '000660.KS']})
+    @patch.object(sector_map, '_us_quotes', return_value={
+        '005930.KS': ('2026-11-06', 188700, -6.35, 1200000),
+        '000660.KS': ('2026-11-06', 1132000, -10.44, 800000),
+    })
+    def test_korean_map_uses_yahoo_quotes_and_sector_groups(self, quotes, members, names):
+        client = Mock()
+        result = sector_map._korea_map(client)
+        client.get.assert_not_called()
+        self.assertEqual(result['quoteDate'], '2026-11-06')
+        self.assertEqual(result['sectors'][0]['name'], 'Technology')
+        self.assertEqual(result['sectors'][0]['stocks'][0]['price'], 188700)

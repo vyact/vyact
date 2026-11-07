@@ -10,7 +10,7 @@ class StockPriceHistoryRangeTests(unittest.TestCase):
     @patch('services.stock_analysis.prices.yf.Ticker')
     def test_market_indices_request_full_history(self, ticker):
         ticker.return_value.history.return_value = pd.DataFrame()
-        for symbol in ('^GSPC', '^IXIC', '^RUT'):
+        for symbol in ('^GSPC', '^IXIC', '^RUT', '^KS11', '^KQ11'):
             with self.subTest(symbol=symbol):
                 fetch_prices(symbol)
                 self.assertEqual(ticker.return_value.history.call_args.kwargs['period'], 'max')

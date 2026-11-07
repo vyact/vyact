@@ -90,3 +90,8 @@ class IndexStoreTests(unittest.IsolatedAsyncioTestCase):
                 now = datetime.fromisoformat(current)
                 self.assertTrue(store._needs_sync({'initialized': True, 'synced_at': before}, now))
                 self.assertFalse(store._needs_sync({'initialized': True, 'synced_at': after}, now))
+
+    def test_korean_weekend_uses_seoul_friday_close(self):
+        now = datetime(2026, 11, 7, 1, tzinfo=timezone.utc)
+        self.assertTrue(store._needs_sync({'initialized': True, 'synced_at': '2026-11-06T06:29:00+00:00'}, now, '^KS11'))
+        self.assertFalse(store._needs_sync({'initialized': True, 'synced_at': '2026-11-06T06:31:00+00:00'}, now, '^KS11'))

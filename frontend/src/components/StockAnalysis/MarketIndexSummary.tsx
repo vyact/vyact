@@ -1,33 +1,34 @@
 import {useEffect, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {stockAnalysis, type MarketIndex, type StockSymbol} from '../../services/stockAnalysis';
+import {stockAnalysis, type MarketIndex, type StockSymbol, type StockMarket} from '../../services/stockAnalysis';
 import {stockSnapshotCache} from '../../services/stockSnapshotCache';
 import StockSparkline from './StockSparkline';
 import {isMarketWeekend} from './marketRefresh';
 
-const INDEX_LABELS = [
+const INDEX_LABELS = {US: [
     {symbol: '^GSPC', key: 'indexSp500'},
     {symbol: '^IXIC', key: 'indexNasdaq'},
     {symbol: '^RUT', key: 'indexRussell2000'},
-] as const;
+], KR: [{symbol: '^KS11', key: 'indexKospi'}, {symbol: '^KQ11', key: 'indexKosdaq'}]} as const;
 
-export default function MarketIndexSummary({refreshSeconds, onOpen}: {refreshSeconds: number; onOpen: (item: StockSymbol) => void}) {
+export default function MarketIndexSummary({market, refreshSeconds, onOpen}: {market: StockMarket; refreshSeconds: number; onOpen: (item: StockSymbol) => void}) {
+    const labels = INDEX_LABELS[market];
     const {t, i18n} = useTranslation('main');
-    const [indices, setIndices] = useState<MarketIndex[]>(() => stockSnapshotCache.readIndices() ?? []);
+    const [indices, setIndices] = useState<MarketIndex[]>(() => stockSnapshotCache.readIndices()?.filter(index => labels.some(label => label.symbol === index.symbol)) ?? []);
     const loaded = useRef(indices.some(index => index.price != null));
     useEffect(() => {
         const controller = new AbortController();
         let pending = false;
         const refresh = async () => {
-            if (pending || (loaded.current && isMarketWeekend('US'))) return;
+            if (pending || (loaded.current && isMarketWeekend(market))) return;
             pending = true;
             try {
-                const result = await stockAnalysis.marketIndices(controller.signal);
+                const result = await stockAnalysis.marketIndices(controller.signal, market);
                 if (!controller.signal.aborted) {
                     const valid = result.filter(index => index.price != null);
                     if (valid.length) {
                         stockSnapshotCache.writeIndices(valid);
-                        setIndices(current => INDEX_LABELS.map(({symbol}) =>
+                        setIndices(current => labels.map(({symbol}) =>
                             valid.find(index => index.symbol === symbol) ?? current.find(index => index.symbol === symbol)
                         ).filter((index): index is MarketIndex => Boolean(index)));
                         loaded.current = true;
@@ -42,11 +43,11 @@ export default function MarketIndexSummary({refreshSeconds, onOpen}: {refreshSec
         void refresh();
         const timer = window.setInterval(() => {void refresh();}, refreshSeconds * 1000);
         return () => {controller.abort(); window.clearInterval(timer);};
-    }, [refreshSeconds]);
+    }, [refreshSeconds, market, labels]);
     const price = new Intl.NumberFormat(i18n.resolvedLanguage, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     const signed = new Intl.NumberFormat(i18n.resolvedLanguage, {minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: 'exceptZero'});
-    return <div className="stock-market-indices" aria-label={t('stockAnalysis.marketIndices')}>
-        {INDEX_LABELS.map(({symbol, key}) => {
+    return <div className="stock-market-indices" data-market={market} aria-label={t('stockAnalysis.marketIndices')}>
+        {labels.map(({symbol, key}) => {
             const index = indices.find(item => item.symbol === symbol);
             const direction = !index?.change ? 'flat' : index.change > 0 ? 'up' : 'down';
             return <button type="button" className="stock-market-index" key={symbol} data-direction={direction}

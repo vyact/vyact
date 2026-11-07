@@ -8,14 +8,13 @@ from time import monotonic, time
 import httpx
 from yfinance.data import YfData
 
-from services.stock_analysis.catalog import Market, get_korea_listings
+from services.stock_analysis.catalog import Market
+from services.stock_analysis.korea_yahoo import get_korea_sector_members, korea_symbols
 
 IVV_HOLDINGS_URL = "https://www.ishares.com/us/products/239726/ishares-core-s-p-500-etf/latest-holdings.csv"
 YAHOO_QUOTE_URL = "https://query1.finance.yahoo.com/v7/finance/quote"
 QUOTE_BATCH_SIZE = 100
 CACHE_SECONDS = 10
-NAVER_MARKET_URL = "https://m.stock.naver.com/api/stocks/marketValue"
-KOREA_MARKET_LIMIT = 100
 SECTOR_STOCK_LIMIT = 15
 CHART_WORKERS = 8
 YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/"
@@ -46,34 +45,23 @@ def _sectors(groups: dict[str, list[dict]]) -> list[dict]:
 
 
 def _korea_map(client: httpx.Client) -> dict:
-    listings = get_korea_listings()
-    quotes = []
-    for exchange, suffix in (("KOSPI", "KS"), ("KOSDAQ", "KQ")):
-        response = client.get(
-            f"{NAVER_MARKET_URL}/{exchange}", params={"page": 1, "pageSize": KOREA_MARKET_LIMIT},
-        )
-        response.raise_for_status()
-        market_quotes = response.json()["stocks"]
-        if not market_quotes:
-            raise ValueError(f"Empty {exchange} market data")
-        for quote in market_quotes:
-            symbol = f'{quote["itemCode"]}.{suffix}'
-            listing = listings.get(symbol)
-            weight = _number(quote.get("marketValue"))
-            traded_at = quote.get("localTradedAt")
-            if listing and listing[1] and weight is not None and weight > 0 and traded_at:
-                name, sector = listing
-                day = datetime.fromisoformat(traded_at).date().isoformat()
-                quotes.append((day, sector, {
-                    "symbol": symbol, "name": name, "weight": weight,
-                    "change": _number(quote.get("fluctuationsRatio")), "price": _number(quote.get("closePrice")),
-                }))
-
-    date = max(day for day, _, _ in quotes)
-    groups: dict[str, list[dict]] = {}
-    for day, sector, quote in quotes:
-        if day == date:
-            groups.setdefault(sector, []).append(quote)
+    members = get_korea_sector_members()
+    names = korea_symbols(int(monotonic() // 3600))
+    quotes = _us_quotes(list(dict.fromkeys(symbol for symbols in members.values() for symbol in symbols)))
+    date = max((quote[0] for quote in quotes.values()), default=None)
+    if date is None:
+        raise ValueError("Yahoo returned no dated Korean quotes")
+    groups = {}
+    for sector, symbols in members.items():
+        stocks = []
+        for symbol in symbols:
+            quote = quotes.get(symbol)
+            if quote and quote[0] == date:
+                _, price, change, market_cap = quote
+                stocks.append({"symbol": symbol, "name": names.get(symbol, symbol),
+                               "weight": market_cap, "price": price, "change": change})
+        if stocks:
+            groups[sector] = stocks
     return {"date": date, "quoteDate": date, "sectors": _sectors(groups)}
 
 

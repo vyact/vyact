@@ -51,7 +51,7 @@ export const stockAnalysis = {
     saveMemo: (symbol: string, day: string, draft: StockMemoDraft) => request<StockMemo>(`memos/${encodeURIComponent(symbol)}/${day}`, undefined, {
         method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(draft),
     }),
-    marketIndices: (signal: AbortSignal) => request<MarketIndex[]>('market-indices', signal),
+    marketIndices: (signal: AbortSignal, market: StockMarket = 'US') => request<MarketIndex[]>(`market-indices?market=${market}`, signal),
     sparkline: (symbol: string, signal: AbortSignal) => request<number[]>(`sparkline/${encodeURIComponent(symbol)}`, signal),
     sectorMap: (market: StockMarket, signal: AbortSignal) => request<MarketSectorMap>(`sector-map/${market}`, signal),
     symbols: (market: StockMarket, signal: AbortSignal) => request<StockSymbol[]>(`symbols/${market}`, signal),
