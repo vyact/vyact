@@ -209,7 +209,7 @@ export default function StockPriceChart({symbol, name, rows, market, label}: Pro
         if (!memoDialog) return;
         const memo = await stockAnalysis.saveMemo(symbol, memoDialog.day, draft);
         setMemos(previous => [...previous.filter(entry => entry.day !== memo.day), memo].sort((a, b) => a.day.localeCompare(b.day)));
-        setMemoDialog({day: memo.day, editing: false});
+        setMemoDialog(selectedMemo ? {day: memo.day, editing: false} : undefined);
     };
 
     const saveMovingAverages = (values: MovingAverage[], mode: QuoteDisplayMode) => {
@@ -280,6 +280,12 @@ export default function StockPriceChart({symbol, name, rows, market, label}: Pro
         </div>
         {memoDialog && <StockMemoDialog key={`${memoDialog.day}:${memoDialog.editing}`} name={name} day={memoDialog.day}
             memo={selectedMemo} editing={memoDialog.editing} onSave={saveMemo}
+            onDelete={async () => {
+                const day = memoDialog.day;
+                await stockAnalysis.deleteMemo(symbol, day);
+                setMemos(previous => previous.filter(memo => memo.day !== day));
+                setMemoDialog(undefined);
+            }}
             onClose={() => setMemoDialog(undefined)} onEdit={() => setMemoDialog({...memoDialog, editing: true})}/>}
         {settingsOpen && <ChartSettings averages={movingAverages} quoteMode={quoteMode} onSave={saveMovingAverages} onClose={() => setSettingsOpen(false)}/>}
     </section>;

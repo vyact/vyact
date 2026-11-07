@@ -48,6 +48,7 @@ async function request<T>(path: string, signal?: AbortSignal, options?: RequestI
 
 export const stockAnalysis = {
     memos: (symbol: string, signal: AbortSignal) => request<StockMemo[]>(`memos/${encodeURIComponent(symbol)}`, signal),
+    deleteMemo: (symbol: string, day: string) => request<{deleted: boolean}>(`memos/${encodeURIComponent(symbol)}/${day}`, undefined, {method: 'DELETE'}),
     saveMemo: (symbol: string, day: string, draft: StockMemoDraft) => request<StockMemo>(`memos/${encodeURIComponent(symbol)}/${day}`, undefined, {
         method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(draft),
     }),

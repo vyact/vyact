@@ -1,0 +1,22 @@
+.app-modal-close {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    width: 32px;
+    height: 32px;
+    min-height: 32px;
+    padding: 0;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+.app-modal-close:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    color: var(--accent);
+}
+.app-modal-close:focus-visible {outline: 2px solid var(--accent); outline-offset: 2px;}
+.app-modal-close:disabled {cursor: not-allowed; opacity: .4;}

@@ -5,6 +5,7 @@ import {stockSnapshotCache} from '../../services/stockSnapshotCache';
 import {stockAnalysis, type DailyPrice, type StockMarket, type StockSymbol} from '../../services/stockAnalysis';
 import WorkspaceExitButton from '../common/WorkspaceLayout/WorkspaceExitButton';
 import WorkspaceLayout from '../common/WorkspaceLayout/WorkspaceLayout';
+import {Tooltip} from '../common/Tooltip/Tooltip';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import StockLoadingIndicator from './StockLoadingIndicator';
 import {getInitialMarket, saveMarketPreference} from './marketPreference';
@@ -117,7 +118,14 @@ export default function StockAnalysis({onClose}: {onClose: () => void}) {
             <ul className="stock-analysis-symbols">
                 {filtered.slice(0, VISIBLE_SYMBOLS).map(item => <li key={item.symbol}>
                     <button aria-pressed={item.symbol === activeSymbol} onClick={() => openSymbol(item)}>
-                        <strong>{item.symbol}</strong><span>{item.name}{item.preferred && <small className="stock-symbol-preferred">{tr('preferredShare')}</small>}</span>
+                        <strong className="stock-symbol-code">{item.symbol}
+                            {market === 'KR' && /\.(KS|KQ)$/.test(item.symbol) && <Tooltip content={tr(item.symbol.endsWith('.KS') ? 'indexKospi' : 'indexKosdaq')}>
+                                <small className="stock-symbol-exchange" data-exchange={item.symbol.endsWith('.KS') ? 'kospi' : 'kosdaq'}
+                                    aria-label={tr(item.symbol.endsWith('.KS') ? 'indexKospi' : 'indexKosdaq')}>
+                                    {tr(item.symbol.endsWith('.KS') ? 'exchangeBadgeKospi' : 'exchangeBadgeKosdaq')}
+                                </small>
+                            </Tooltip>}
+                        </strong><span>{item.name}{item.preferred && <small className="stock-symbol-preferred">{tr('preferredShare')}</small>}</span>
                     </button>
                 </li>)}
             </ul>

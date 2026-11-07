@@ -105,3 +105,12 @@ async def save_stock_memo(symbol: Symbol, day: date, draft: StockMemoDraft):
     memo = {"symbol": symbol, "day": day.isoformat(), **draft.model_dump()}
     await es.index(index=STOCK_CHART_MEMOS_INDEX, id=f"{symbol}:{day.isoformat()}", document=memo, refresh="wait_for")
     return memo
+
+
+@router.delete("/memos/{symbol}/{day}")
+async def delete_stock_memo(symbol: Symbol, day: date):
+    try:
+        await get_es().delete(index=STOCK_CHART_MEMOS_INDEX, id=f"{symbol}:{day.isoformat()}", refresh="wait_for")
+    except NotFoundError:
+        pass
+    return {"deleted": True}
