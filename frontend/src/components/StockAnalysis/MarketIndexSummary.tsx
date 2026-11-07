@@ -5,14 +5,10 @@ import {stockSnapshotCache} from '../../services/stockSnapshotCache';
 import StockSparkline from './StockSparkline';
 import {isMarketWeekend} from './marketRefresh';
 
-const INDEX_LABELS = {US: [
-    {symbol: '^GSPC', key: 'indexSp500'},
-    {symbol: '^IXIC', key: 'indexNasdaq'},
-    {symbol: '^RUT', key: 'indexRussell2000'},
-], KR: [{symbol: '^KS11', key: 'indexKospi'}, {symbol: '^KQ11', key: 'indexKosdaq'}]} as const;
+import {MARKET_INDEX_LABELS} from './marketIndexLabels';
 
 export default function MarketIndexSummary({market, refreshSeconds, onOpen}: {market: StockMarket; refreshSeconds: number; onOpen: (item: StockSymbol) => void}) {
-    const labels = INDEX_LABELS[market];
+    const labels = MARKET_INDEX_LABELS[market];
     const {t, i18n} = useTranslation('main');
     const [indices, setIndices] = useState<MarketIndex[]>(() => stockSnapshotCache.readIndices()?.filter(index => labels.some(label => label.symbol === index.symbol)) ?? []);
     const loaded = useRef(indices.some(index => index.price != null));

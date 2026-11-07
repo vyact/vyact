@@ -1,0 +1,71 @@
+.stock-indicator-settings {display: flex; flex-direction: column; gap: 12px; box-sizing: border-box; width: min(400px, 100%); max-height: calc(100dvh - 40px); padding: 18px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface2); color: var(--text); box-shadow: var(--shadow-md);}
+.stock-indicator-settings header {display: flex; justify-content: space-between; align-items: center;}
+.stock-indicator-settings h2 {margin: 0; font-size: 16px;}
+.stock-indicator-settings-body {min-height: 0; overflow-y: auto; display: grid; gap: 6px; overscroll-behavior: contain;}
+.stock-indicator-accordion {border: 1px solid transparent; border-radius: 8px; overflow: hidden;}
+.stock-indicator-accordion:has(button[aria-expanded="true"]) {border-color: var(--border); background: color-mix(in srgb, var(--accent) 3%, transparent);}
+.stock-indicator-accordion h3 {margin: 0;}
+.stock-indicator-accordion h3 button {display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 32px; padding: 6px 10px; border: 0; background: transparent; color: var(--text); text-align: start; font: inherit; font-size: 13px; line-height: 1.4; font-weight: 600; cursor: pointer;}
+.stock-indicator-accordion h3 button {transition: background .15s, color .15s;}
+.stock-indicator-accordion h3 button:hover {background: color-mix(in srgb, var(--accent) 8%, transparent); color: var(--accent);}
+.stock-indicator-accordion h3 button[aria-expanded="true"] {color: var(--accent);}
+.stock-indicator-accordion h3 button svg {flex-shrink: 0; color: var(--text-muted); transition: transform .15s;}
+.stock-indicator-accordion h3 button:focus-visible {outline: 2px solid var(--accent); outline-offset: -2px;}
+.stock-indicator-accordion h3 button[aria-expanded="true"] svg {transform: rotate(180deg);}
+.stock-indicator-panel {display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .22s ease, opacity .18s ease;}
+.stock-indicator-panel[data-expanded="true"] {grid-template-rows: 1fr; opacity: 1;}
+.stock-indicator-panel-inner {min-height: 0; overflow: hidden;}
+.stock-indicator-panel-content {padding: 8px 12px 12px;}
+.stock-indicator-accordion {transition: border-color .2s ease, background .2s ease;}
+.stock-indicator-fields {display: grid; gap: 10px;}
+.stock-indicator-accordion .stock-indicator-restore {display: inline-flex; align-items: center; gap: 5px; margin-top: 14px; padding: 4px 0; border: 0; background: transparent; color: var(--text-muted); font-size: 11px;}
+.stock-indicator-accordion .stock-indicator-restore:hover {background: transparent; color: var(--accent);}
+.stock-indicator-settings label {display: grid; grid-template-columns: minmax(0, 1fr) 88px; align-items: center; gap: 12px; font-size: 12px; color: var(--text-muted);}
+.stock-indicator-settings input {box-sizing: border-box; width: 100%; min-width: 0; padding: 6px 9px; border: 1px solid var(--border); border-radius: 6px; background: color-mix(in srgb, var(--bg) 50%, var(--surface2)); color: var(--text); font: inherit; text-align: end; font-variant-numeric: tabular-nums;}
+.stock-indicator-settings input:hover {border-color: color-mix(in srgb, var(--accent) 40%, var(--border));}
+.stock-indicator-settings input:focus-visible {outline: 2px solid var(--accent); outline-offset: 1px;}
+.stock-indicator-settings p {grid-column: 1 / -1; margin: 0; font-size: 12px; line-height: 1.6; color: var(--text-muted);}
+.stock-indicator-settings [role="alert"] {color: var(--action-delete);}
+.stock-indicator-settings footer {display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; border-top: 1px solid var(--border); padding-top: 10px;}
+.stock-indicator-settings footer button {padding: 7px 10px; font-size: 12px;}
+.stock-indicator-panel-content > .stock-indicator-restore {display: flex; width: fit-content; margin-inline-start: auto; margin-inline-end: 0;}
+.stock-indicator-settings-group {display: grid; gap: 1px;}
+.stock-indicator-settings-group + .stock-indicator-settings-group {margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--border);}
+.stock-indicator-settings-group > .stock-indicator-group-title {padding: 0 10px 3px; color: var(--accent); font-size: 11px; font-weight: 600;}
+.stock-indicator-menu-actions {display: flex; justify-content: flex-end; gap: 4px; padding: 3px 8px; border-top: 1px solid var(--border);}
+.stock-indicator-dropdown {padding-bottom: 0;}
+.stock-indicator-dropdown .custom-select-list {max-height: min(380px, 55dvh);}
+.stock-indicator-dropdown .custom-select-group-label {color: var(--accent); padding-top: 10px;}
+.stock-indicator-dropdown .custom-select-item {padding-block: 7px;}
+.stock-indicator-dropdown .custom-select-group-label:not(:first-child) {border-top: 1px solid var(--border); margin-top: 5px;}
+.stock-indicator-menu-actions .modal-action-cancel {
+    display: inline-flex; align-items: center; justify-content: center;
+    flex: 0 0 28px; width: 28px; height: 28px; min-height: 28px; margin: 0; padding: 0;
+    border: 0; border-radius: 6px; background: transparent; color: var(--text-muted);
+}
+.stock-indicator-menu-actions .modal-action-cancel:hover:not(:disabled) {background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent);}
+.stock-indicator-menu-actions .modal-action-cancel:focus-visible {outline: 2px solid var(--accent); outline-offset: 2px;}
+.stock-indicator-menu-actions .modal-action-cancel:disabled {background: transparent; opacity: .35;}
+.stock-indicator-legend {position: absolute; top: 6px; left: 10px; right: 8px; z-index: 3; display: flex; align-items: center; flex-wrap: nowrap; gap: 10px; width: fit-content; max-width: calc(100% - 18px); padding: 4px 7px; border-radius: 5px; background: color-mix(in srgb, var(--bg) 90%, transparent); color: var(--text); font-size: 11px; line-height: 1.5; pointer-events: auto; white-space: nowrap; overflow-x: auto; scrollbar-width: thin;}
+.stock-indicator-legend strong {font-weight: 600;}
+.stock-indicator-legend span {font-variant-numeric: tabular-nums;}
+
+.stock-indicator-legend > * {flex-shrink: 0;}
+.stock-indicator-help-button {display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--info); cursor: help;}
+.stock-indicator-help-button:hover {background: color-mix(in srgb, var(--info) 14%, transparent);}
+.stock-indicator-help-button:focus-visible {outline: 2px solid var(--accent); outline-offset: 2px;}
+.stock-indicator-help p {margin: 0; white-space: normal;}
+.stock-indicator-help-heading {color: var(--accent); font-size: 12px;}
+.stock-indicator-help-list {display: grid; gap: 8px; margin: 0; padding-inline-start: 16px; color: var(--text-secondary); font-size: 12px; line-height: 1.6; white-space: normal;}
+.instant-tooltip.multiline.size-medium:has(.stock-indicator-help) {
+    width: min(420px, calc(100vw - 24px));
+    max-width: min(420px, calc(100vw - 24px));
+}
+.rich-tooltip-content.stock-indicator-help {width: 100%;}
+
+.stock-indicator-accordion-heading {display: flex; align-items: center; gap: 4px; padding-inline-start: 8px;}
+.stock-indicator-accordion-heading h3 {flex: 1; min-width: 0;}
+.stock-indicator-accordion-heading > .stock-indicator-help-button {flex-shrink: 0;}
+@media (prefers-reduced-motion: reduce) {
+    .stock-indicator-panel, .stock-indicator-accordion, .stock-indicator-accordion h3 button svg {transition: none;}
+}

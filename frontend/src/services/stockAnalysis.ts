@@ -1,4 +1,5 @@
 import {assertOk} from '../utils/apiError';
+import {localizeStockName} from '../utils/stockDisplayName';
 
 export const STOCK_ANALYSIS_PANEL_ID = 'stock-analysis';
 export const TOGGLE_STOCK_ANALYSIS_EVENT = 'vyact:toggle-stock-analysis';
@@ -55,7 +56,10 @@ export const stockAnalysis = {
     marketIndices: (signal: AbortSignal, market: StockMarket = 'US') => request<MarketIndex[]>(`market-indices?market=${market}`, signal),
     sparkline: (symbol: string, signal: AbortSignal) => request<number[]>(`sparkline/${encodeURIComponent(symbol)}`, signal),
     sectorMap: (market: StockMarket, signal: AbortSignal, language = 'en') => request<MarketSectorMap>(`sector-map/${market}?language=${encodeURIComponent(language)}`, signal),
-    symbols: (market: StockMarket, signal: AbortSignal, language = 'en') => request<StockSymbol[]>(`symbols/${market}?language=${encodeURIComponent(language)}`, signal),
+    async symbols(market: StockMarket, signal: AbortSignal, language = 'en'): Promise<StockSymbol[]> {
+        const symbols = await request<StockSymbol[]>(`symbols/${market}?language=${encodeURIComponent(language)}`, signal);
+        return symbols.map(item => ({...item, name: localizeStockName(item.name, language)}));
+    },
     async prices(symbol: string, signal: AbortSignal, refresh: boolean): Promise<DailyPrice[]> {
         const cached = readPriceCache().find(item => item.symbol === symbol);
         if (!refresh && cached && !symbol.startsWith('^')) return cached.rows;

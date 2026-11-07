@@ -1,8 +1,16 @@
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {attachBandFill} from './chartBandFill';
+import {OVERLAY_INDICATORS, type OverlayIndicator} from './overlayIndicators';
+import IndicatorSettingsDialog from './IndicatorSettingsDialog';
+import IndicatorLegends from './IndicatorLegends';
+import {readIndicatorSettings, INDICATOR_SETTINGS_KEY} from './indicatorSettings';
+import {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {CandlestickSeries, createChart, HistogramSeries, LineSeries, type IChartApi, type ISeriesApi} from 'lightweight-charts';
-import {Eraser, Pencil, Ruler, Settings, Trash2} from 'lucide-react';
+import {Eraser, ListX, Pencil, Ruler, Settings, Trash2} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
-import {stockAnalysis, type DailyPrice, type StockMarket, type StockMemo, type StockMemoDraft} from '../../services/stockAnalysis';
+import {stockAnalysis, type DailyPrice, type StockMarket, type StockMemo, type StockMemoDraft, type StockSymbol} from '../../services/stockAnalysis';
+import StockComparison from './StockComparison';
+import CustomSelect from '../CustomSelect/CustomSelect';
+import {calculateIndicator, INDICATORS, type Indicator} from './technicalIndicators';
 
 import {Tooltip} from '../common/Tooltip/Tooltip';
 import StockMemoDialog from './StockMemoDialog';
@@ -18,11 +26,14 @@ interface Props {
     rows: DailyPrice[];
     market: StockMarket;
     label: string;
+    directory: StockSymbol[];
+    comparisonTarget: HTMLDivElement | null;
 }
 
 const MARKET_COLORS = {KR: {rise: '#e64c52', fall: '#2878da'}, US: {rise: '#30ad69', fall: '#e64c52'}};
 const QUOTE_MODE_STORAGE_KEY = 'vyact:stock-analysis:quote-mode';
 const MA_STORAGE_KEY = 'vyact:stock-analysis:ma-periods';
+const INDICATOR_STORAGE_KEY = 'vyact:stock-analysis:indicators';
 const MA_ENABLED_STORAGE_KEY = 'vyact:stock-analysis:ma-enabled';
 
 function readMovingAverages(): MovingAverage[] {
@@ -41,19 +52,40 @@ function readMovingAverages(): MovingAverage[] {
     return DEFAULT_MOVING_AVERAGES;
 }
 
-export default function StockPriceChart({symbol, name, rows, market, label}: Props) {
+export default function StockPriceChart({symbol, name, rows, market, label, directory, comparisonTarget}: Props) {
     const {t, i18n} = useTranslation('main');
     const container = useRef<HTMLDivElement>(null);
     const ruler = useRef<ReturnType<typeof attachChartRuler> | null>(null);
     const chart = useRef<IChartApi | null>(null);
+    const [comparisonQuoteTarget, setComparisonQuoteTarget] = useState<HTMLDivElement | null>(null);
+    const [chartInstance, setChartInstance] = useState<IChartApi | null>(null);
     const candleSeries = useRef<ISeriesApi<'Candlestick'> | null>(null);
     const averages = useRef<ISeriesApi<'Line'>[]>([]);
+    const savedRange = useRef<{from: number; to: number} | null>(null);
+    const [indicators, setIndicators] = useState<Indicator[]>(() => {
+        try {
+            const saved: unknown = JSON.parse(localStorage.getItem(INDICATOR_STORAGE_KEY) ?? '[]');
+            return Array.isArray(saved) ? INDICATORS.filter(value => saved.includes(value)) : [];
+        } catch {return [];}
+    });
+    const [indicatorSettings, setIndicatorSettings] = useState(readIndicatorSettings);
+    const [indicatorSettingsOpen, setIndicatorSettingsOpen] = useState(false);
     const [interval, setInterval] = useState<ChartInterval>('day');
     const [quoteMode, setQuoteMode] = useState<QuoteDisplayMode>(() => {
         try {return localStorage.getItem(QUOTE_MODE_STORAGE_KEY) === 'header' ? 'header' : 'tooltip';} catch {return 'tooltip';}
     });
-    const [hoverPoint, setHoverPoint] = useState<{x: number; y: number}>();
+    const [hoverPoint, setHoverPoint] = useState<{x: number; y: number; chartHeight: number}>();
     const [hoveredDay, setHoveredDay] = useState<string>();
+    const [quoteTooltipHeight, setQuoteTooltipHeight] = useState(240);
+    useLayoutEffect(() => {
+        const tooltip = comparisonQuoteTarget?.parentElement;
+        if (quoteMode !== 'tooltip' || !tooltip) return;
+        const position = () => setQuoteTooltipHeight(tooltip.offsetHeight);
+        position();
+        const observer = new ResizeObserver(position);
+        observer.observe(tooltip);
+        return () => observer.disconnect();
+    }, [comparisonQuoteTarget, quoteMode]);
     const [movingAverages, setMovingAverages] = useState(readMovingAverages);
     const [maEnabled, setMaEnabled] = useState(() => {
         try {return localStorage.getItem(MA_ENABLED_STORAGE_KEY) === 'true';} catch {return false;}
@@ -71,7 +103,7 @@ export default function StockPriceChart({symbol, name, rows, market, label}: Pro
     const locale = i18n.resolvedLanguage;
     const {rise, fall} = MARKET_COLORS[market];
     const bars = useMemo(() => aggregatePrices(rows, interval), [rows, interval]);
-    const chartRevision = useMemo(() => ({locale, market, t}), [locale, market, t]);
+    const chartRevision = useMemo(() => ({locale, market, t, indicators, indicatorSettings}), [locale, market, t, indicators, indicatorSettings]);
     const hoveredIndex = bars.findIndex(row => row.day === hoveredDay);
     const quoteIndex = hoveredIndex < 0 ? bars.length - 1 : hoveredIndex;
     const quote = bars[quoteIndex];
@@ -87,6 +119,7 @@ export default function StockPriceChart({symbol, name, rows, market, label}: Pro
             timeScale: {rightOffset: 0, fixLeftEdge: true, fixRightEdge: true},
         });
         chart.current = instance;
+        setChartInstance(instance);
         const candles = instance.addSeries(CandlestickSeries, {
             upColor: rise, downColor: fall,
             borderVisible: false, wickUpColor: rise, wickDownColor: fall,
@@ -106,6 +139,65 @@ export default function StockPriceChart({symbol, name, rows, market, label}: Pro
             volumePane.setStretchFactor(1);
         }
         candles.setData(bars.map(({day, open, high, low, close}) => ({time: day, open, high, low, close})));
+        let nextIndicatorPane = hasVolume ? 2 : 1;
+        indicators.forEach(kind => {
+            const overlay = OVERLAY_INDICATORS.includes(kind as OverlayIndicator);
+            const pane = overlay ? 0 : nextIndicatorPane++;
+            const lines = calculateIndicator(kind, bars, indicatorSettings);
+                const times = bars.map(row => row.day);
+                while (times.length < Math.max(...lines.map(line => line.values.length)) && times.length) {
+                    const date = new Date(times[times.length - 1]);
+                    if (interval === 'month') date.setUTCMonth(date.getUTCMonth() + 1, 1);
+                    else if (interval === 'year') date.setUTCFullYear(date.getUTCFullYear() + 1, 0, 1);
+                    else {
+                        date.setUTCDate(date.getUTCDate() + (interval === 'week' ? 7 : 1));
+                        if (interval === 'day') while ([0, 6].includes(date.getUTCDay())) date.setUTCDate(date.getUTCDate() + 1);
+                    }
+                    times.push(date.toISOString().slice(0, 10));
+                }
+            lines.forEach(definition => {
+                const options = {
+                    color: definition.color, priceLineVisible: false, lastValueVisible: false,
+                    title: '',
+                    crosshairMarkerVisible: !overlay,
+                    priceFormat: {type: 'custom' as const, minMove: .01, formatter: (value: number) => new Intl.NumberFormat(locale, {notation: 'compact', maximumFractionDigits: 2}).format(value)},
+                };
+                const data = times.map((time, index) => definition.values[index] == null ? {time} : {
+                    time, value: definition.values[index]!,
+                    ...(definition.histogram ? {color: definition.values[index]! >= 0 ? rise : fall} : {}),
+                });
+                if (definition.histogram) instance.addSeries(HistogramSeries, options, pane).setData(data);
+                else {
+                    const line = instance.addSeries(LineSeries, {...options, lineWidth: 1, ...(kind === 'bollinger' && definition === lines[0] ? {lineStyle: 2} : {}), ...(kind === 'sar' ? {lineVisible: false, pointMarkersVisible: true, pointMarkersRadius: 2} : {})}, pane);
+                    line.setData(data);
+                    const settings = indicatorSettings[kind];
+                    const levels = kind === 'rsi' || kind.includes('Stochastic') ? [settings.lower, settings.upper] : kind === 'adx' ? [settings.threshold] : [];
+                    if (!overlay) line.priceScale().applyOptions({scaleMargins: {top: .25, bottom: .1}});
+                    if (definition === lines[0]) levels.forEach(price => line.createPriceLine({price, color: '#88888880', lineWidth: 1, lineStyle: 2, axisLabelVisible: false}));
+                }
+            });
+            if (kind === 'bollinger' || kind === 'ichimoku') {
+                const upper = lines[kind === 'bollinger' ? 1 : 2].values;
+                const lower = lines[kind === 'bollinger' ? 2 : 3].values;
+                attachBandFill(instance, candles, times.map((time, index) => ({time, upper: upper[index] ?? null, lower: lower[index] ?? null})),
+                    kind === 'bollinger' ? {positive: 'rgba(125,159,230,.10)', negative: 'rgba(125,159,230,.10)'} :
+                        {positive: 'rgba(69,181,142,.14)', negative: 'rgba(215,121,146,.14)'});
+            }
+            if (!overlay) instance.panes()[pane]?.setStretchFactor(1);
+            const element = instance.panes()[pane]?.getHTMLElement();
+            if (element) element.style.position = 'relative';
+        });
+        instance.panes()[0].setStretchFactor(4);
+        const initialPaneFactors = instance.panes().map(pane => pane.getStretchFactor());
+        const resetPaneHeights = (event: MouseEvent) => {
+            if (!(event.target instanceof Element)) return;
+            const separator = event.target.closest('td[colspan="3"] [style*="cursor: row-resize"]');
+            if (!separator || !node.contains(separator)) return;
+            event.preventDefault();
+            event.stopPropagation();
+            instance.panes().forEach((pane, index) => pane.setStretchFactor(initialPaneFactors[index]));
+        };
+        node.addEventListener('dblclick', resetPaneHeights, true);
         instance.subscribeCrosshairMove(({time, point}) => {
             const inside = point && time && point.x >= 0 && point.y >= 0
                 && point.x < node.clientWidth && point.y < node.clientHeight;
@@ -113,6 +205,7 @@ export default function StockPriceChart({symbol, name, rows, market, label}: Pro
             setHoverPoint(inside ? {
                 x: Math.max(8, Math.min(point.x + 18, node.clientWidth - 280)),
                 y: Math.max(8, Math.min(point.y + 18, node.clientHeight - 240)),
+                chartHeight: node.clientHeight,
             } : undefined);
         });
         const percent = new Intl.NumberFormat(locale, {style: 'percent', maximumFractionDigits: 2});
@@ -122,7 +215,10 @@ export default function StockPriceChart({symbol, name, rows, market, label}: Pro
             return text;
         }, {rise, fall});
         ruler.current = measurement;
-        if (interval === 'day' && bars.length > 1) {
+        if (savedRange.current) {
+            instance.timeScale().setVisibleLogicalRange(savedRange.current);
+            savedRange.current = null;
+        } else if (interval === 'day' && bars.length > 1) {
             const cutoff = new Date(bars[bars.length - 1].day);
             cutoff.setUTCFullYear(cutoff.getUTCFullYear() - 1);
             const cutoffDay = cutoff.toISOString().slice(0, 10);
@@ -147,6 +243,7 @@ export default function StockPriceChart({symbol, name, rows, market, label}: Pro
         const themeObserver = new MutationObserver(applyTheme);
         themeObserver.observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
         return () => {
+            node.removeEventListener('dblclick', resetPaneHeights, true);
             themeObserver.disconnect();
             measurement.dispose();
             instance.remove();
@@ -155,7 +252,7 @@ export default function StockPriceChart({symbol, name, rows, market, label}: Pro
             candleSeries.current = null;
             averages.current = [];
         };
-    }, [bars, interval, market, locale, t, rise, fall]);
+    }, [bars, interval, market, locale, t, rise, fall, indicators, indicatorSettings]);
 
     useEffect(() => {
         const instance = chart.current;
@@ -169,11 +266,11 @@ export default function StockPriceChart({symbol, name, rows, market, label}: Pro
             series.applyOptions({color});
             series.setData(maEnabled ? movingAverage(bars, period) : []);
         });
-    }, [bars, interval, market, locale, t, maEnabled, movingAverages]);
+    }, [bars, interval, market, locale, t, maEnabled, movingAverages, indicators, indicatorSettings]);
 
     useEffect(() => {
-        ruler.current?.setEnabled(measuring && !settingsOpen && !memoDialog);
-    }, [bars, interval, market, locale, t, measuring, settingsOpen, memoDialog]);
+        ruler.current?.setEnabled(measuring && !settingsOpen && !indicatorSettingsOpen && !memoDialog);
+    }, [bars, interval, market, locale, t, measuring, settingsOpen, memoDialog, indicators, indicatorSettings, indicatorSettingsOpen]);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -190,7 +287,7 @@ export default function StockPriceChart({symbol, name, rows, market, label}: Pro
 
     useEffect(() => {
         const instance = chart.current;
-        if (!instance || !memosReady || measuring || settingsOpen || memoDialog) return;
+        if (!instance || !memosReady || measuring || settingsOpen || indicatorSettingsOpen || memoDialog) return;
         const days = new Set(bars.map(bar => bar.day));
         const openMemo: Parameters<IChartApi['subscribeDblClick']>[0] = ({time, paneIndex}) => {
             const day = chartDay(time);
@@ -200,7 +297,7 @@ export default function StockPriceChart({symbol, name, rows, market, label}: Pro
         return () => {
             if (chart.current === instance) instance.unsubscribeDblClick(openMemo);
         };
-    }, [bars, chartRevision, memosReady, measuring, settingsOpen, memoDialog]);
+    }, [bars, chartRevision, memosReady, measuring, settingsOpen, memoDialog, indicators, indicatorSettings, indicatorSettingsOpen]);
 
     const markers = useStockMemoMarkers(chart, candleSeries, bars, interval, memos, chartRevision);
     const selectedMemo = memos.find(memo => memo.day === memoDialog?.day);
@@ -225,7 +322,8 @@ export default function StockPriceChart({symbol, name, rows, market, label}: Pro
     };
 
     return <section className="stock-price-chart" aria-label={label}>
-        <div className="stock-price-chart-toolbar">
+        <StockComparison quoteMode={quoteMode} market={market} chart={chart} bars={bars} interval={interval} revision={chartInstance} directory={directory} hoveredDay={hoveredDay} actionTarget={comparisonTarget} quoteTarget={comparisonQuoteTarget}
+            onLayoutChange={() => {setHoveredDay(undefined); setHoverPoint(undefined);}}>
             <button type="button" className="modal-action-cancel" aria-pressed={maEnabled}
                     onClick={() => setMaEnabled(value => !value)}>{t('stockAnalysis.movingAverage')}</button>
             {maEnabled && <span className="stock-chart-ma-legend">{movingAverages.map(({period, color}, index) => <span key={index} style={{color}}>{period}</span>)}</span>}
@@ -250,9 +348,29 @@ export default function StockPriceChart({symbol, name, rows, market, label}: Pro
                     title={t('stockAnalysis.undoMeasure')} onClick={() => {ruler.current?.undo();}}><Eraser size={17}/></button>
             <button type="button" className="modal-action-cancel stock-chart-tool stock-chart-tool-clear" aria-label={t('stockAnalysis.clearMeasures')}
                     title={t('stockAnalysis.clearMeasures')} onClick={() => {ruler.current?.clear();}}><Trash2 size={17}/></button>
+            <CustomSelect showGroupLabels dropdownClassName="stock-indicator-dropdown" className="stock-indicator-select" value="" selectedValues={indicators}
+                placeholder={t('stockAnalysis.indicatorSelect', {count: indicators.length})}
+                ariaLabel={t('stockAnalysis.indicatorSelect', {count: indicators.length})}
+                options={[...OVERLAY_INDICATORS, ...INDICATORS.filter(value => !OVERLAY_INDICATORS.includes(value as OverlayIndicator))].map(value => ({value, label: t(`stockAnalysis.indicators.${value}`), group: t(OVERLAY_INDICATORS.includes(value as OverlayIndicator) ? 'stockAnalysis.overlayGroup' : 'stockAnalysis.panelGroup')}))}
+                footer={closeDropdown => <div className="stock-indicator-menu-actions">
+                    <button type="button" className="modal-action-cancel" aria-label={t('stockAnalysis.indicatorClearAll')} disabled={!indicators.length} onClick={() => {
+                        closeDropdown();
+                        savedRange.current = chart.current?.timeScale().getVisibleLogicalRange() ?? null;
+                        setIndicators([]);
+                        try {localStorage.setItem(INDICATOR_STORAGE_KEY, '[]');} catch { /* Retain session selection. */ }
+                    }}><ListX size={16} aria-hidden="true"/></button>
+                    <button type="button" className="modal-action-cancel" aria-label={t('stockAnalysis.indicatorSettings')} onClick={() => {closeDropdown(); setIndicatorSettingsOpen(true);}}><Settings size={16} aria-hidden="true"/></button>
+                </div>}
+                closeOnSelect={false} portal onChange={value => {
+                    if (!INDICATORS.includes(value as Indicator)) return;
+                    savedRange.current = chart.current?.timeScale().getVisibleLogicalRange() ?? null;
+                    const next = indicators.includes(value as Indicator) ? indicators.filter(item => item !== value) : [...indicators, value as Indicator];
+                    setIndicators(next);
+                    try {localStorage.setItem(INDICATOR_STORAGE_KEY, JSON.stringify(next));} catch { /* Retain session selection. */ }
+                }}/>
             <button type="button" className="modal-action-cancel stock-chart-settings-button"
                     onClick={() => setSettingsOpen(true)}><Settings size={16}/>{t('stockAnalysis.chartSettings')}</button>
-        </div>
+        </StockComparison>
         {quoteMode === 'header' && <ChartQuoteDetails quote={quote} previous={previousQuote} market={market}/>}
         {memoLoadFailed && <div className="stock-memo-error" role="alert">
             {t('stockAnalysis.memoLoadError')}
@@ -264,9 +382,10 @@ export default function StockPriceChart({symbol, name, rows, market, label}: Pro
         <div className="stock-chart-plot">
             <div ref={container} className="stock-price-chart-canvas"/>
             {quoteMode === 'tooltip' && hoverPoint && hoveredIndex >= 0 && !settingsOpen && !memoDialog && <div
-                className="stock-chart-quote-tooltip" style={{left: hoverPoint.x, top: hoverPoint.y}}>
+                className="stock-chart-quote-tooltip stock-chart-quote-tooltip-with-comparisons" style={{left: hoverPoint.x, top: Math.max(8, Math.min(hoverPoint.y, hoverPoint.chartHeight - quoteTooltipHeight - 8))}}>
                 <strong>{name}</strong>
                 <ChartQuoteDetails quote={quote} previous={previousQuote} market={market} detailed/>
+                <div ref={setComparisonQuoteTarget}/>
             </div>}
             <div className="stock-memo-markers">
                 {markers.map(({memo, x, y}) => <Tooltip key={memo.day} multiline hoverOnly content={
@@ -287,6 +406,13 @@ export default function StockPriceChart({symbol, name, rows, market, label}: Pro
                 setMemoDialog(undefined);
             }}
             onClose={() => setMemoDialog(undefined)} onEdit={() => setMemoDialog({...memoDialog, editing: true})}/>}
+        <IndicatorLegends chart={chartInstance} indicators={indicators} settings={indicatorSettings} bars={bars} hoveredDay={hoveredDay}/>
+        {indicatorSettingsOpen && <IndicatorSettingsDialog settings={indicatorSettings} onClose={() => setIndicatorSettingsOpen(false)} onSave={settings => {
+            savedRange.current = chart.current?.timeScale().getVisibleLogicalRange() ?? null;
+            setIndicatorSettings(settings);
+            setIndicatorSettingsOpen(false);
+            try {localStorage.setItem(INDICATOR_SETTINGS_KEY, JSON.stringify(settings));} catch { /* Retain session settings. */ }
+        }}/>}
         {settingsOpen && <ChartSettings averages={movingAverages} quoteMode={quoteMode} onSave={saveMovingAverages} onClose={() => setSettingsOpen(false)}/>}
     </section>;
 }

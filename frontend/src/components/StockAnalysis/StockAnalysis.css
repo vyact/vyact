@@ -32,6 +32,11 @@
     display: flex; align-items: center; gap: 8px;
 }
 .stock-analysis-heading {justify-content: space-between;}
+.stock-analysis-header-actions {display: flex; align-items: center; gap: 8px; margin-inline-start: auto; flex-shrink: 0;}
+.stock-analysis-comparison-action {display: flex;}
+.stock-analysis-header-actions button {white-space: nowrap;}
+.stock-analysis-header-actions .stock-analysis-refresh {width: 28px; height: 28px; padding: 0; justify-content: center;}
+.stock-analysis-heading {flex-wrap: wrap;}
 .stock-analysis-heading h1 {margin: 0 0 2px; font-size: 1.125rem; line-height: 1.3; overflow-wrap: anywhere;}
 .stock-analysis-heading p {font-size: .78rem;}
 .stock-analysis-heading button {display: inline-flex; align-items: center; gap: 6px;}
@@ -51,7 +56,17 @@
 @media (max-width: 760px) {
     .stock-analysis {--workspace-sidebar-width: 145px;}
 }
-.stock-price-chart-toolbar {flex-wrap: wrap; gap: 5px;}
+.stock-price-chart-toolbar {flex-wrap: nowrap; gap: 5px; overflow-x: auto; padding-bottom: 4px;}
+.stock-price-chart-toolbar > * {flex-shrink: 0; white-space: nowrap;}
+.stock-price-chart-toolbar .stock-indicator-select {width: 140px;}
+.stock-indicator-select .custom-select-trigger {min-height: 28px; padding: 4px 8px; font-size: 12px;}
+.stock-analysis-heading .stock-analysis-back {
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+    width: 28px; height: 28px; padding: 0; border: 0; border-radius: 7px;
+    background: transparent; color: var(--text-muted); cursor: pointer;
+}
+.stock-analysis-heading .stock-analysis-back:hover {background: var(--surface2); color: var(--text);}
+.stock-analysis-back:focus-visible {outline: 2px solid var(--accent); outline-offset: 2px;}
 .stock-price-chart-toolbar button, .stock-analysis-heading button {padding: 4px 8px; min-height: 28px; font-size: .75rem; line-height: 1.3;}
 .stock-price-chart-toolbar button svg, .stock-analysis-heading button svg {width: 14px; height: 14px;}
 .stock-chart-settings-button {display: inline-flex; align-items: center; gap: 6px; margin-inline-start: auto;}
@@ -141,17 +156,17 @@
 .stock-chart-quote-mode .custom-select-trigger-label {white-space: normal; overflow-wrap: anywhere; text-overflow: clip;}
 
 .stock-quote-change {margin-inline-start: 6px; font-size: .9em; font-weight: 650; white-space: nowrap;}
-.stock-price-chart-quote[data-market="US"] [data-direction="up"] {color: #30ad69;}
-.stock-price-chart-quote[data-market="US"] [data-direction="down"] {color: #e64c52;}
-.stock-price-chart-quote[data-market="KR"] [data-direction="up"] {color: #e64c52;}
-.stock-price-chart-quote[data-market="KR"] [data-direction="down"] {color: #2878da;}
+:is(.stock-price-chart-quote, .stock-comparison-quote)[data-market="US"] [data-direction="up"] {color: #30ad69;}
+:is(.stock-price-chart-quote, .stock-comparison-quote)[data-market="US"] [data-direction="down"] {color: #e64c52;}
+:is(.stock-price-chart-quote, .stock-comparison-quote)[data-market="KR"] [data-direction="up"] {color: #e64c52;}
+:is(.stock-price-chart-quote, .stock-comparison-quote)[data-market="KR"] [data-direction="down"] {color: #2878da;}
 .stock-chart-quote-tooltip {
     position: absolute; z-index: 4; pointer-events: none; box-sizing: border-box;
-    width: min(272px, calc(100% - 16px)); padding: 12px; border: 1px solid var(--border); border-radius: 9px;
+    width: min(272px, calc(100% - 16px)); padding: 10px; border: 1px solid var(--border); border-radius: 9px;
     background: var(--surface2); color: var(--text); box-shadow: var(--shadow-md);
 }
-.stock-chart-quote-tooltip > strong {display: block; margin-bottom: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px;}
-.stock-price-chart-quote-detailed {display: grid; gap: 6px; font-size: 12px;}
+.stock-chart-quote-tooltip > strong {display: block; margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px;}
+.stock-price-chart-quote-detailed {display: grid; gap: 4px; font-size: 12px;}
 .stock-price-chart-quote-detailed > div {display: flex; justify-content: space-between; gap: 8px;}
 .stock-price-chart-quote-detailed dd {text-align: end;}
 

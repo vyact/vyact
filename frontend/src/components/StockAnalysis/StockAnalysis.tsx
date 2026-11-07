@@ -1,4 +1,5 @@
 import {useEffect, useState} from 'react';
+import {localizeStockName} from '../../utils/stockDisplayName';
 import {ArrowLeft, ChartCandlestick, RefreshCw, Search, Star} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {stockSnapshotCache} from '../../services/stockSnapshotCache';
@@ -24,6 +25,7 @@ export default function StockAnalysis({onClose}: {onClose: () => void}) {
     useEffect(() => {saveMarketPreference(market);}, [market]);
     const [symbols, setSymbols] = useState<StockSymbol[]>(() => stockSnapshotCache.readSymbols(market, i18n.resolvedLanguage) ?? []);
     const [query, setQuery] = useState('');
+    const [comparisonTarget, setComparisonTarget] = useState<HTMLDivElement | null>(null);
     const [watchlistOnly, setWatchlistOnly] = useState(false);
     const watchlist = useStockWatchlist();
     const [active, setActive] = useState<StockSymbol | null>(null);
@@ -89,7 +91,8 @@ export default function StockAnalysis({onClose}: {onClose: () => void}) {
 
     const openSymbol = (item: StockSymbol) => {
         if (item.symbol === activeSymbol) return;
-        setActive({...item, name: item.preferred ? `${item.name} · ${tr('preferredShare')}` : item.name});
+        const name = localizeStockName(item.name, i18n.resolvedLanguage ?? i18n.language);
+        setActive({...item, name: item.preferred ? `${name} · ${tr('preferredShare')}` : name});
         setRows(null);
         setPriceError(false);
         setLoading(true);
@@ -156,25 +159,28 @@ export default function StockAnalysis({onClose}: {onClose: () => void}) {
         <main className="stock-analysis-content">
             {!active && <StockSectorMap key={`${market}:${i18n.resolvedLanguage}`} market={market} onOpen={openSymbol} directory={symbols}/>}
             {active && <div className="stock-analysis-heading">
-                <div className="stock-analysis-chart-title"><button type="button" className="modal-action-cancel" onClick={() => {
+                <div className="stock-analysis-chart-title"><button type="button" className="stock-analysis-back" aria-label={tr('sectorMap')} onClick={() => {
                     setActive(null);
                     setRows(null);
                     setLoading(false);
                     setPriceError(false);
                     setRefreshVersion(0);
-                }}><ArrowLeft size={14} aria-hidden="true"/>{tr('sectorMap')}</button>
+                }}><ArrowLeft size={16} aria-hidden="true"/></button>
                     <h1>{active.name}</h1><p>{active.symbol}</p></div>
-                {active && <button type="button" className="modal-action-cancel" disabled={loading} onClick={() => {
+                <div className="stock-analysis-header-actions">
+                <div className="stock-analysis-comparison-action" ref={setComparisonTarget}/>
+                {active && <button type="button" className="modal-action-cancel stock-analysis-refresh" aria-label={tr('refresh')} disabled={loading} onClick={() => {
                     setLoading(true);
                     setPriceError(false);
                     setRefreshVersion(value => value + 1);
-                }}><RefreshCw size={16} aria-hidden="true"/>{tr('refresh')}</button>}
+                }}><RefreshCw size={16} aria-hidden="true"/></button>}
+                </div>
             </div>}
             {active && <div className="stock-analysis-chart-stage" aria-busy={loading}>
             {loading && <StockLoadingIndicator title={active.name} overlay={!!rows?.length} iconOnly/>}
             {priceError && <p role="alert">{tr('historyError')}</p>}
             {rows?.length === 0 && !loading && !priceError && <p>{tr('noPrices')}</p>}
-            {active && !!rows?.length && <StockPriceChart key={active.symbol} symbol={active.symbol} name={active.name} rows={rows} market={market} label={tr('dailyPrices')}/>}
+            {active && !!rows?.length && <StockPriceChart key={active.symbol} symbol={active.symbol} name={active.name} rows={rows} market={market} directory={symbols} comparisonTarget={comparisonTarget} label={tr('dailyPrices')}/>}
             </div>}
             {active && <footer className="stock-chart-attribution stock-analysis-caption">
                 <span>{tr('source')}</span>

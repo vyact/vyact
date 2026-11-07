@@ -1,4 +1,5 @@
 import type {MarketIndex, MarketSectorMap, StockMarket, StockSymbol} from './stockAnalysis';
+import {localizeStockName} from '../utils/stockDisplayName';
 
 type CachedSnapshot<T> = {savedAt: number; data: T};
 const CACHE_PREFIX = 'vyact:stock-snapshot:v1:';
@@ -26,7 +27,8 @@ function writeSnapshot<T>(key: string, data: T) {
 export const stockSnapshotCache = {
     readSymbols: (market: StockMarket, language = 'en') => readSnapshot<StockSymbol[]>(`symbols:${market}:${language}`,
         (data): data is StockSymbol[] => Array.isArray(data) && data.length > 0
-            && data.every(item => typeof item?.symbol === 'string' && typeof item.name === 'string')),
+            && data.every(item => typeof item?.symbol === 'string' && typeof item.name === 'string'))
+        ?.map(item => ({...item, name: localizeStockName(item.name, language)})),
     writeSymbols: (market: StockMarket, symbols: StockSymbol[], language = 'en') => writeSnapshot(`symbols:${market}:${language}`, symbols),
     readMap: (market: StockMarket, language = 'en') => readSnapshot<MarketSectorMap>(`map-v2:${market}:${language}`, (value): value is MarketSectorMap => {
         const map = value as MarketSectorMap | null;

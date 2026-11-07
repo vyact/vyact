@@ -243,6 +243,13 @@
     overflow-y: auto;
     overflow-x: hidden;
 }
+.custom-select-group-label {
+    padding: 9px 12px 5px;
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .03em;
+}
 
 .custom-select-item {
     padding: 9px 12px;

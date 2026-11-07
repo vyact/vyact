@@ -162,7 +162,16 @@ export function TooltipProvider({children}: {children: ReactNode}) {
                 ? viewportMargin - rect.left
                 : 0;
 
-        const placement = tooltip.placement === 'above' && rect.top < viewportMargin ? 'below' : tooltip.placement;
+        const above = Math.max(0, tooltip.targetTop - viewportMargin - 10);
+        const below = Math.max(0, window.innerHeight - tooltip.targetBottom - viewportMargin - 10);
+        const preferredSpace = tooltip.placement === 'above' ? above : below;
+        const otherSpace = tooltip.placement === 'above' ? below : above;
+        const placement = rect.height > preferredSpace && otherSpace > preferredSpace
+            ? tooltip.placement === 'above' ? 'below' : 'above'
+            : tooltip.placement;
+        const available = placement === 'above' ? above : below;
+        tooltipRef.current.style.maxHeight = `${Math.min(available, tooltip.size === 'medium' ? 360 : window.innerHeight - 24)}px`;
+        tooltipRef.current.style.overflowY = 'auto';
         if (horizontalOffset || placement !== tooltip.placement) {
             setTooltip(current => current && current.x === tooltip.x
                 ? {...current, x: current.x + horizontalOffset, placement, y: placement === 'above' ? current.targetTop : current.targetBottom}
@@ -175,7 +184,8 @@ export function TooltipProvider({children}: {children: ReactNode}) {
             activeTargetRef.current = null;
             setTooltip(null);
         };
-        const hideOnScroll = () => {
+        const hideOnScroll = (event: Event) => {
+            if (tooltipRef.current?.contains(event.target as Node)) return;
             const target = activeTargetRef.current;
             if (target?.isConnected && (target.hasAttribute('data-tooltip-show-on-change') || clickedTargetRef.current === target)) show(target);
             else hideTooltip();
@@ -187,7 +197,7 @@ export function TooltipProvider({children}: {children: ReactNode}) {
         window.addEventListener('resize', hideTooltip);
         window.addEventListener('keydown', closeOnEscape, true);
         const hideOnOutsideClick = (event: PointerEvent | MouseEvent) => {
-            if (!activeTargetRef.current?.contains(event.target as Node)) {
+            if (!activeTargetRef.current?.contains(event.target as Node) && !tooltipRef.current?.contains(event.target as Node)) {
                 clickedTargetRef.current = null;
                 hideTooltip();
             }
@@ -207,10 +217,15 @@ export function TooltipProvider({children}: {children: ReactNode}) {
         <div onPointerOver={event => { const target = getTooltipTarget(event.target); if (target) show(target); }}
              onPointerDownCapture={event => { const target = getTooltipTarget(event.target); if (target) { clickedTargetRef.current = target; show(target); } }}
              onClickCapture={event => { const target = getTooltipTarget(event.target); if (target) { clickedTargetRef.current = target; show(target); } }}
-             onPointerOut={event => { const target = getTooltipTarget(event.target); if (target && target === activeTargetRef.current && !target.hasAttribute('data-tooltip-show-on-change') && !target.contains(event.relatedTarget as Node) && !target.matches(':hover')) {
-                 activeTargetRef.current = null;
-                 if (clickedTargetRef.current === target) clickedTargetRef.current = null;
-                 setTooltip(null);
+             onPointerOut={event => { const target = getTooltipTarget(event.target); if (target && target === activeTargetRef.current && !target.hasAttribute('data-tooltip-show-on-change') && !target.contains(event.relatedTarget as Node) && !tooltipRef.current?.contains(event.relatedTarget as Node) && !target.matches(':hover')) {
+                 const hide = () => {
+                     if (activeTargetRef.current !== target || target.matches(':hover') || tooltipRef.current?.matches(':hover')) return;
+                     activeTargetRef.current = null;
+                     if (clickedTargetRef.current === target) clickedTargetRef.current = null;
+                     setTooltip(null);
+                 };
+                 if (target.dataset.instantTooltipSize === 'medium') window.setTimeout(hide, 150);
+                 else hide();
              } }}
              onFocusCapture={event => { const target = getTooltipTarget(event.target); if (target && !target.hasAttribute('data-instant-tooltip-hover-only')) show(target); }}
              onBlurCapture={event => {
@@ -224,6 +239,7 @@ export function TooltipProvider({children}: {children: ReactNode}) {
         {tooltip && createPortal(
             tooltip.multiline
                 ? <div ref={tooltipRef} className={`instant-tooltip ${tooltip.placement} multiline size-${tooltip.size}`} role="tooltip" style={{left: tooltip.x, top: tooltip.y}}
+                    onPointerLeave={() => {if (!activeTargetRef.current?.matches(':hover') && document.activeElement !== activeTargetRef.current) {activeTargetRef.current = null; setTooltip(null);}}}
                 >{tooltip.content}</div>
                 : <div ref={tooltipRef} className={`instant-tooltip ${tooltip.placement} size-${tooltip.size}`} role="tooltip" style={{left: tooltip.x, top: tooltip.y}}>{tooltip.content}</div>,
             document.body,

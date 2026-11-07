@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import React, { Fragment, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import {createPortal} from 'react-dom';
 import {Search, X} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
@@ -43,6 +43,7 @@ interface CustomSelectProps {
     header?: React.ReactNode;
     afterSearch?: React.ReactNode;
     closeOnSelect?: boolean;
+    showGroupLabels?: boolean;
 }
 
 const CustomSelect: React.FC<CustomSelectProps> = ({
@@ -75,6 +76,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                                                        header,
                                                        afterSearch,
                                                        closeOnSelect = true,
+                                                       showGroupLabels = false,
                                                    }) => {
     const {t} = useTranslation('common');
     const resolvedPlaceholder = placeholder ?? t('select');
@@ -257,6 +259,9 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
             <div className="custom-select-list" id={listId} role="listbox" aria-multiselectable={selectedValues ? true : undefined}>
                 {filtered.length > 0 ? (
                     filtered.map((opt, index) => (
+                        <Fragment key={opt.value}>
+                        {showGroupLabels && opt.group && (index === 0 || opt.group !== filtered[index - 1].group) &&
+                            <div className="custom-select-group-label" role="presentation">{opt.group}</div>}
                         <div
                             key={opt.value}
                             id={`${listId}-${index}`}
@@ -264,7 +269,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                             aria-selected={isSelected(opt.value)}
                             data-option-index={index}
                             onMouseMove={() => {if (!opt.disabled) setActiveIndex(index);}}
-                            className={`custom-select-item${index > 0 && opt.group !== filtered[index - 1].group ? ' group-start' : ''}${isSelected(opt.value) ? ' selected' : ''}${opt.disabled ? ' disabled' : ''}${index === activeIndex && !opt.disabled ? ' keyboard-active' : ''}`}
+                            className={`custom-select-item${!showGroupLabels && index > 0 && opt.group !== filtered[index - 1].group ? ' group-start' : ''}${isSelected(opt.value) ? ' selected' : ''}${opt.disabled ? ' disabled' : ''}${index === activeIndex && !opt.disabled ? ' keyboard-active' : ''}`}
                             aria-disabled={opt.disabled || undefined}
                             onClick={event => {
                                 event.stopPropagation();
@@ -286,6 +291,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                                 </>
                             )}
                         </div>
+                        </Fragment>
                     ))
                 ) : (
                     emptyState || <div className="custom-select-empty">{t(search ? 'noSearchResults' : 'noItems')}</div>
