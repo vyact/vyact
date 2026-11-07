@@ -1831,6 +1831,16 @@
     "manuscriptApplyHelp": "適用すると現在の話のタイトルと本文をこの結果で置き換えます。"
   },
   "stockAnalysis": {
+    "listView": "銘柄リスト表示",
+    "allStocks": "すべて",
+    "watchlist": "ウォッチリスト",
+    "addToRadar": "{{name}}をウォッチリストに追加",
+    "removeFromRadar": "{{name}}をウォッチリストから削除",
+    "radarEmpty": "気になる銘柄を登録しましょう",
+    "radarEmptyHint": "一覧の星を押すとここに表示されます。",
+    "radarNoResults": "検索結果がありません",
+    "radarSearchHint": "別のキーワードで検索してください。",
+
     "title": "株式分析",
     "symbols": "銘柄",
     "market": "市場",

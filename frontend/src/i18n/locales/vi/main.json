@@ -1831,6 +1831,16 @@
     "manuscriptApplyHelp": "Áp dụng sẽ thay thế tiêu đề và nội dung chương hiện tại."
   },
   "stockAnalysis": {
+    "listView": "Chế độ danh sách",
+    "allStocks": "Tất cả",
+    "watchlist": "Theo dõi",
+    "addToRadar": "Theo dõi {{name}}",
+    "removeFromRadar": "Bỏ theo dõi {{name}}",
+    "radarEmpty": "Lưu cổ phiếu bạn quan tâm",
+    "radarEmptyHint": "Nhấn ngôi sao trong danh sách để xem tại đây.",
+    "radarNoResults": "Không có kết quả",
+    "radarSearchHint": "Hãy thử từ khóa khác.",
+
     "title": "Phân tích chứng khoán",
     "symbols": "Mã chứng khoán",
     "market": "Thị trường",

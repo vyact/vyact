@@ -18,7 +18,7 @@
 .stock-analysis-search input {width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: inherit;}
 .stock-analysis-symbols {list-style: none; margin: 0; padding: 0;}
 .stock-analysis-symbols li {display: flex; align-items: center; gap: 8px; border-radius: 8px; padding: 2px 8px;}
-.stock-analysis-symbols li:has(button[aria-pressed="true"]), .stock-analysis-symbols li:hover {background: var(--surface2);}
+.stock-analysis-symbols li:has(> button:first-child[aria-pressed="true"]), .stock-analysis-symbols li:hover {background: var(--surface2);}
 .stock-analysis-symbols button {
     text-align: start; background: transparent; color: inherit; border: 0;
     cursor: pointer; flex: 1; min-width: 0; padding: 8px 0;

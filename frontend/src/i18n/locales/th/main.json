@@ -1831,6 +1831,16 @@
     "manuscriptApplyHelp": "เมื่อใช้ผลลัพธ์นี้จะแทนที่ชื่อและเนื้อหาตอนปัจจุบัน"
   },
   "stockAnalysis": {
+    "listView": "มุมมองรายการหุ้น",
+    "allStocks": "ทั้งหมด",
+    "watchlist": "หุ้นที่ติดตาม",
+    "addToRadar": "ติดตาม {{name}}",
+    "removeFromRadar": "เลิกติดตาม {{name}}",
+    "radarEmpty": "เก็บหุ้นที่คุณสนใจ",
+    "radarEmptyHint": "กดดาวในรายการเพื่อรวมหุ้นไว้ที่นี่",
+    "radarNoResults": "ไม่พบหุ้นที่ตรงกัน",
+    "radarSearchHint": "ลองค้นหาด้วยคำอื่น",
+
     "title": "วิเคราะห์หุ้น",
     "symbols": "หลักทรัพย์",
     "market": "ตลาด",

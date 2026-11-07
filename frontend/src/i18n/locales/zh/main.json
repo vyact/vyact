@@ -1831,6 +1831,16 @@
     "manuscriptApplyHelp": "应用后将用此结果替换当前章节标题和正文。"
   },
   "stockAnalysis": {
+    "listView": "股票列表视图",
+    "allStocks": "全部",
+    "watchlist": "自选股",
+    "addToRadar": "将{{name}}加入自选",
+    "removeFromRadar": "将{{name}}移出自选",
+    "radarEmpty": "收藏值得关注的股票",
+    "radarEmptyHint": "点击列表中的星标，即可在此查看。",
+    "radarNoResults": "没有匹配的股票",
+    "radarSearchHint": "请尝试其他搜索词。",
+
     "title": "证券分析",
     "symbols": "股票",
     "market": "市场",

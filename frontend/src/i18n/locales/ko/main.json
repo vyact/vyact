@@ -1841,6 +1841,16 @@
     "manuscriptApplyHelp": "적용하면 현재 회차의 제목과 본문을 이 결과로 교체합니다."
   },
   "stockAnalysis": {
+    "listView": "종목 목록 보기",
+    "allStocks": "전체",
+    "watchlist": "관심종목",
+    "addToRadar": "{{name}} 관심종목 추가",
+    "removeFromRadar": "{{name}} 관심종목 해제",
+    "radarEmpty": "눈여겨볼 종목을 담아보세요",
+    "radarEmptyHint": "전체 목록에서 별을 누르면 이곳에 모입니다.",
+    "radarNoResults": "검색 결과가 없습니다",
+    "radarSearchHint": "검색어를 바꿔 관심종목을 찾아보세요.",
+
     "title": "증권 분석",
     "symbols": "종목",
     "market": "시장",

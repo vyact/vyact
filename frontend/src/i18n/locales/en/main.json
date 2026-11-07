@@ -1832,6 +1832,16 @@
     "manuscriptApplyHelp": "Applying replaces the current chapter title and manuscript with this result."
   },
   "stockAnalysis": {
+    "listView": "Stock list view",
+    "allStocks": "All",
+    "watchlist": "Watchlist",
+    "addToRadar": "Add {{name}} to watchlist",
+    "removeFromRadar": "Remove {{name}} from watchlist",
+    "radarEmpty": "Keep an eye on your picks",
+    "radarEmptyHint": "Tap a star in the full list to collect stocks here.",
+    "radarNoResults": "No matching stocks",
+    "radarSearchHint": "Try another search in your watchlist.",
+
     "title": "Stock Analysis",
     "symbols": "Symbols",
     "market": "Market",

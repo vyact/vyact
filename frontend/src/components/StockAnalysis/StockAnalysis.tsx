@@ -1,5 +1,5 @@
 import {useEffect, useState} from 'react';
-import {ArrowLeft, ChartCandlestick, RefreshCw, Search} from 'lucide-react';
+import {ArrowLeft, ChartCandlestick, RefreshCw, Search, Star} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {stockSnapshotCache} from '../../services/stockSnapshotCache';
 import {stockAnalysis, type DailyPrice, type StockMarket, type StockSymbol} from '../../services/stockAnalysis';
@@ -11,7 +11,9 @@ import StockLoadingIndicator from './StockLoadingIndicator';
 import {getInitialMarket, saveMarketPreference} from './marketPreference';
 import StockSectorMap from './StockSectorMap';
 import StockPriceChart from './StockPriceChart';
+import useStockWatchlist from './useStockWatchlist';
 import './StockAnalysis.css';
+import './StockWatchlist.css';
 
 const MARKETS: StockMarket[] = ['KR', 'US'];
 const VISIBLE_SYMBOLS = 100;
@@ -22,6 +24,8 @@ export default function StockAnalysis({onClose}: {onClose: () => void}) {
     useEffect(() => {saveMarketPreference(market);}, [market]);
     const [symbols, setSymbols] = useState<StockSymbol[]>(() => stockSnapshotCache.readSymbols(market, i18n.resolvedLanguage) ?? []);
     const [query, setQuery] = useState('');
+    const [watchlistOnly, setWatchlistOnly] = useState(false);
+    const watchlist = useStockWatchlist();
     const [active, setActive] = useState<StockSymbol | null>(null);
     const [rows, setRows] = useState<DailyPrice[] | null>(null);
     const [directoryState, setDirectoryState] = useState<'loading' | 'ready' | 'error'>(() => symbols.length ? 'ready' : 'loading');
@@ -30,7 +34,9 @@ export default function StockAnalysis({onClose}: {onClose: () => void}) {
     const [loading, setLoading] = useState(false);
     const [refreshVersion, setRefreshVersion] = useState(0);
     const activeSymbol = active?.symbol;
-    const filtered = symbols.filter(({symbol, name}) => `${symbol} ${name}`.toLowerCase().includes(query.trim().toLowerCase()));
+    const watchlistCount = symbols.filter(item => watchlist.contains(market, item.symbol)).length;
+    const filtered = symbols.filter(({symbol, name}) => (!watchlistOnly || watchlist.contains(market, symbol))
+        && `${symbol} ${name}`.toLowerCase().includes(query.trim().toLowerCase()));
 
     useEffect(() => {
         const controller = new AbortController();
@@ -100,6 +106,12 @@ export default function StockAnalysis({onClose}: {onClose: () => void}) {
         <CustomSelect options={MARKETS.map(value => ({value, label: tr(value)}))} value={market}
                       onChange={changeMarket} ariaLabel={tr('market')} portal/>
         </section>
+        <div className="stock-watchlist-switch" role="group" aria-label={tr('listView')}>
+            <button type="button" aria-pressed={!watchlistOnly} onClick={() => setWatchlistOnly(false)}><span className="stock-watchlist-label">{tr('allStocks')}</span></button>
+            <button type="button" aria-pressed={watchlistOnly} onClick={() => setWatchlistOnly(true)}>
+                <span className="stock-watchlist-label">{tr('watchlist')}</span><span className="stock-watchlist-count">{new Intl.NumberFormat(i18n.resolvedLanguage).format(watchlistCount)}</span>
+            </button>
+        </div>
         <label className="stock-analysis-search">
             <Search size={16} aria-hidden="true"/>
             <input type="search" aria-label={tr('search')} placeholder={tr('search')} value={query}
@@ -127,8 +139,16 @@ export default function StockAnalysis({onClose}: {onClose: () => void}) {
                             </Tooltip>}
                         </strong><span>{item.name}{item.preferred && <small className="stock-symbol-preferred">{tr('preferredShare')}</small>}</span>
                     </button>
+                    <button type="button" className="stock-watchlist-star" aria-pressed={watchlist.contains(market, item.symbol)}
+                        aria-label={tr(watchlist.contains(market, item.symbol) ? 'removeFromRadar' : 'addToRadar', {name: item.name})}
+                        onClick={() => watchlist.toggle(market, item.symbol)}><Star size={15} strokeWidth={1.5} aria-hidden="true"/></button>
                 </li>)}
             </ul>
+            {watchlistOnly && !filtered.length && <div className="stock-watchlist-empty">
+                <Star size={24} strokeWidth={1.5} aria-hidden="true"/>
+                <strong>{tr(watchlistCount ? 'radarNoResults' : 'radarEmpty')}</strong>
+                <p>{tr(watchlistCount ? 'radarSearchHint' : 'radarEmptyHint')}</p>
+            </div>}
         </>}
     </div>;
 

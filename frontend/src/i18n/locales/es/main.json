@@ -1832,6 +1832,16 @@
     "manuscriptApplyHelp": "Al aplicar, se sustituyen el título y el texto del capítulo actual."
   },
   "stockAnalysis": {
+    "listView": "Vista de acciones",
+    "allStocks": "Todas",
+    "watchlist": "Seguimiento",
+    "addToRadar": "Añadir {{name}} al seguimiento",
+    "removeFromRadar": "Quitar {{name}} del seguimiento",
+    "radarEmpty": "Sigue tus acciones favoritas",
+    "radarEmptyHint": "Pulsa una estrella en la lista para verlas aquí.",
+    "radarNoResults": "No hay coincidencias",
+    "radarSearchHint": "Prueba otra búsqueda.",
+
     "title": "Análisis bursátil",
     "symbols": "Símbolos",
     "market": "Mercado",
