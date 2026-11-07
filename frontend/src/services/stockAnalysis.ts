@@ -4,7 +4,7 @@ export const STOCK_ANALYSIS_PANEL_ID = 'stock-analysis';
 export const TOGGLE_STOCK_ANALYSIS_EVENT = 'vyact:toggle-stock-analysis';
 export const STOCK_ANALYSIS_SHORTCUT_KEY = 'U';
 export type StockMarket = 'KR' | 'US';
-export interface StockSymbol {symbol: string; name: string}
+export interface StockSymbol {symbol: string; name: string; preferred?: boolean}
 export interface SectorStock extends StockSymbol {weight: number; change: number | null; price: number | null}
 export interface MarketSector {name: string; weight: number; change: number | null; stocks: SectorStock[]}
 export interface MarketIndex {symbol: string; price: number | null; change: number | null; changePercent: number | null; date: string | null; closes: number[]}

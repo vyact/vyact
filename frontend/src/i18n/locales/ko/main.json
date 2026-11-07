@@ -1899,6 +1899,8 @@
     "indexIntraday": "최근 정규장 장중 흐름",
     "quoteDisplayMode": "봉 정보 표시",
     "quoteDisplay": {"header": "상단 표시", "tooltip": "마우스 옆 툴팁"},
+    "preferredShare": "우선주",
+    "sectorNames": {"Technology": "정보기술", "Financial Services": "금융", "Consumer Cyclical": "경기소비재", "Communication Services": "통신서비스", "Healthcare": "헬스케어", "Consumer Defensive": "필수소비재", "Industrials": "산업재", "Energy": "에너지", "Basic Materials": "기초소재", "Utilities": "유틸리티", "Real Estate": "부동산"},
     "mapTrendDays": "최근 {{count}}거래일 흐름",
     "mapRefreshInterval": "갱신 주기",
     "mapRefreshSeconds": "{{count}}초",

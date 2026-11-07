@@ -135,3 +135,7 @@ button.stock-market-index:focus-visible {outline: 2px solid var(--accent); outli
 .stock-market-indices[data-market="KR"] .stock-sparkline[data-direction="up"] {color: #e64c52;}
 .stock-market-indices[data-market="KR"] .stock-market-index[data-direction="down"] .stock-market-index-change,
 .stock-market-indices[data-market="KR"] .stock-sparkline[data-direction="down"] {color: #2878da;}
+
+.stock-sector-preview li {overflow: hidden;}
+.stock-sector-preview li .stock-sparkline {height: calc(100% - 8px); max-height: 20px; min-height: 0; align-self: center; overflow: hidden;}
+.stock-sector-preview-selected-symbol {white-space: nowrap; min-width: 0;}

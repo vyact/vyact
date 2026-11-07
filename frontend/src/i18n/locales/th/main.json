@@ -1889,6 +1889,8 @@
     "indexIntraday": "แนวโน้มระหว่างวันของช่วงซื้อขายปกติล่าสุด",
     "quoteDisplayMode": "ข้อมูลแท่งเทียน",
     "quoteDisplay": {"header": "ด้านบนกราฟ", "tooltip": "คำแนะนำข้างเคอร์เซอร์"},
+    "preferredShare": "หุ้นบุริมสิทธิ",
+    "sectorNames": {"Technology": "เทคโนโลยี", "Financial Services": "การเงิน", "Consumer Cyclical": "สินค้าฟุ่มเฟือย", "Communication Services": "บริการสื่อสาร", "Healthcare": "สุขภาพ", "Consumer Defensive": "สินค้าอุปโภคบริโภค", "Industrials": "อุตสาหกรรม", "Energy": "พลังงาน", "Basic Materials": "วัสดุพื้นฐาน", "Utilities": "สาธารณูปโภค", "Real Estate": "อสังหาริมทรัพย์"},
     "mapTrendDays": "แนวโน้ม {{count}} วันซื้อขายล่าสุด",
     "mapRefreshInterval": "ช่วงเวลารีเฟรช",
     "mapRefreshSeconds": "{{count}} วินาที",

@@ -1890,6 +1890,8 @@
     "indexIntraday": "Evolución intradía de la última sesión regular",
     "quoteDisplayMode": "Información de velas",
     "quoteDisplay": {"header": "Encabezado del gráfico", "tooltip": "Información junto al cursor"},
+    "preferredShare": "Preferente",
+    "sectorNames": {"Technology": "Tecnología", "Financial Services": "Finanzas", "Consumer Cyclical": "Consumo cíclico", "Communication Services": "Comunicaciones", "Healthcare": "Salud", "Consumer Defensive": "Consumo básico", "Industrials": "Industria", "Energy": "Energía", "Basic Materials": "Materiales", "Utilities": "Servicios públicos", "Real Estate": "Inmobiliario"},
     "mapTrendDays": "Últimas {{count}} sesiones",
     "mapRefreshInterval": "Actualización",
     "mapRefreshSeconds": "{{count}} s",

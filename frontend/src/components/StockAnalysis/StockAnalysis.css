@@ -186,3 +186,5 @@
 .stock-analysis-symbols span {font-size: 12px; line-height: 1.4;}
 
 .stock-analysis-market-section .custom-select-wrap .custom-select-trigger {padding-block: 5px; min-height: 28px;}
+
+.stock-symbol-preferred {display: inline-block; margin-inline-start: 6px; padding: 1px 4px; border-radius: 4px; background: color-mix(in srgb, var(--info) 12%, var(--surface)); color: var(--info); font-size: 10px;}

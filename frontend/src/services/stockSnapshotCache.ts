@@ -1,4 +1,4 @@
-import type {MarketIndex, MarketSectorMap, StockMarket} from './stockAnalysis';
+import type {MarketIndex, MarketSectorMap, StockMarket, StockSymbol} from './stockAnalysis';
 
 type CachedSnapshot<T> = {savedAt: number; data: T};
 const CACHE_PREFIX = 'vyact:stock-snapshot:v1:';
@@ -24,13 +24,17 @@ function writeSnapshot<T>(key: string, data: T) {
 }
 
 export const stockSnapshotCache = {
-    readMap: (market: StockMarket, language = 'en') => readSnapshot<MarketSectorMap>(`${market}:${language}`, (value): value is MarketSectorMap => {
+    readSymbols: (market: StockMarket, language = 'en') => readSnapshot<StockSymbol[]>(`symbols:${market}:${language}`,
+        (data): data is StockSymbol[] => Array.isArray(data) && data.length > 0
+            && data.every(item => typeof item?.symbol === 'string' && typeof item.name === 'string')),
+    writeSymbols: (market: StockMarket, symbols: StockSymbol[], language = 'en') => writeSnapshot(`symbols:${market}:${language}`, symbols),
+    readMap: (market: StockMarket, language = 'en') => readSnapshot<MarketSectorMap>(`map-v2:${market}:${language}`, (value): value is MarketSectorMap => {
         const map = value as MarketSectorMap | null;
         return Boolean(map && typeof map.date === 'string' && typeof map.quoteDate === 'string'
             && Array.isArray(map.sectors) && map.sectors.length
             && map.sectors.every(sector => typeof sector.name === 'string' && Array.isArray(sector.stocks)));
     }),
-    writeMap: (market: StockMarket, snapshot: MarketSectorMap, language = 'en') => writeSnapshot(`${market}:${language}`, snapshot),
+    writeMap: (market: StockMarket, snapshot: MarketSectorMap, language = 'en') => writeSnapshot(`map-v2:${market}:${language}`, snapshot),
     readIndices: () => readSnapshot<MarketIndex[]>('indices', (value): value is MarketIndex[] =>
         Array.isArray(value) && value.length > 0 && value.every(index => typeof index?.symbol === 'string'
             && Array.isArray(index.closes) && typeof index.price === 'number')),

@@ -1890,6 +1890,8 @@
     "indexIntraday": "Latest regular-session intraday trend",
     "quoteDisplayMode": "Candle details",
     "quoteDisplay": {"header": "Chart header", "tooltip": "Cursor tooltip"},
+    "preferredShare": "Preferred",
+    "sectorNames": {"Technology": "Technology", "Financial Services": "Financial Services", "Consumer Cyclical": "Consumer Cyclical", "Communication Services": "Communication Services", "Healthcare": "Healthcare", "Consumer Defensive": "Consumer Defensive", "Industrials": "Industrials", "Energy": "Energy", "Basic Materials": "Basic Materials", "Utilities": "Utilities", "Real Estate": "Real Estate"},
     "mapTrendDays": "Last {{count}} trading days",
     "mapRefreshInterval": "Refresh interval",
     "mapRefreshSeconds": "{{count}} sec",

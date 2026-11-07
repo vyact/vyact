@@ -1889,6 +1889,8 @@
     "indexIntraday": "最近常规交易时段走势",
     "quoteDisplayMode": "K线信息显示",
     "quoteDisplay": {"header": "顶部显示", "tooltip": "鼠标旁提示"},
+    "preferredShare": "优先股",
+    "sectorNames": {"Technology": "信息技术", "Financial Services": "金融", "Consumer Cyclical": "可选消费", "Communication Services": "通信服务", "Healthcare": "医疗保健", "Consumer Defensive": "必需消费", "Industrials": "工业", "Energy": "能源", "Basic Materials": "基础材料", "Utilities": "公用事业", "Real Estate": "房地产"},
     "mapTrendDays": "最近{{count}}个交易日走势",
     "mapRefreshInterval": "刷新间隔",
     "mapRefreshSeconds": "{{count}}秒",

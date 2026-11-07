@@ -51,7 +51,7 @@ function SectorPreview({sector, focused, market, day}: {sector: MarketSector; fo
     const sorted = [...sector.stocks].sort((a, b) => b.weight - a.weight);
     const entries = sorted.slice(0, PREVIEW_LIMIT);
     return <div className="stock-sector-preview" data-market={market}>
-        <strong className="stock-sector-preview-title">{sector.name}</strong>
+        <strong className="stock-sector-preview-title">{t(`stockAnalysis.sectorNames.${sector.name}`, {defaultValue: sector.name})}</strong>
         <small className="stock-sector-preview-period">{t('stockAnalysis.mapTrendDays', {count: SPARKLINE_TRADING_DAYS})}</small>
         {focused && <div className="stock-sector-preview-selected">
             <div className="stock-sector-preview-selected-quote">
@@ -76,7 +76,7 @@ function SectorPreview({sector, focused, market, day}: {sector: MarketSector; fo
     </div>;
 }
 
-export default function StockSectorMap({market, onOpen}: {market: StockMarket; onOpen: (item: StockSymbol) => void}) {
+export default function StockSectorMap({market, onOpen, directory = []}: {market: StockMarket; onOpen: (item: StockSymbol) => void; directory?: StockSymbol[]}) {
     const {t, i18n} = useTranslation('main');
     const [snapshot, setSnapshot] = useState<MarketSectorMap | undefined>(() => stockSnapshotCache.readMap(market, i18n.resolvedLanguage));
     const [failed, setFailed] = useState(false);
@@ -142,18 +142,24 @@ export default function StockSectorMap({market, onOpen}: {market: StockMarket; o
         return () => observer.disconnect();
     }, []);
 
+    const localizedSectors = useMemo(() => {
+        const names = new Map(directory.map(item => [item.symbol, item.name]));
+        return snapshot?.sectors.map(sector => ({...sector, stocks: sector.stocks.map(stock =>
+            ({...stock, name: names.get(stock.symbol) ?? stock.name}))}));
+    }, [snapshot, directory]);
+    const sectorName = (name: string) => t(`stockAnalysis.sectorNames.${name}`, {defaultValue: name});
     const layout = useMemo(() => {
         if (!snapshot || width <= 0 || height <= 0) return;
-        const stockNodes = (sector: MarketSector): MapNode[] => sector.stocks.map(stock => ({stock, weight: stock.weight}));
-        const children = selectedSector ? stockNodes(selectedSector) : snapshot.sectors.map((sector): MapNode =>
+        const stockNodes = (sector: MarketSector): MapNode[] => (localizedSectors?.find(item => item.name === sector.name) ?? sector).stocks.map(stock => ({stock, weight: stock.weight}));
+        const children = selectedSector ? stockNodes(selectedSector) : (localizedSectors ?? snapshot.sectors).map((sector): MapNode =>
             ({sector, children: stockNodes(sector)}));
         const root = hierarchy<MapNode>({children}).sum(node => node.weight ?? 0)
             .sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
         return treemap<MapNode>().size([width, height]).round(true).paddingInner(2)
             .paddingTop(node => !selectedSector && node.depth === 1 ? SECTOR_HEADER_HEIGHT : 0)(root);
-    }, [snapshot, selectedSector, width, height]);
+    }, [snapshot, localizedSectors, selectedSector, width, height]);
 
-    const previewSector = snapshot?.sectors.find(sector => sector.name === preview?.sectorName);
+    const previewSector = localizedSectors?.find(sector => sector.name === preview?.sectorName);
     const previewStock = previewSector?.stocks.find(stock => stock.symbol === preview?.symbol);
     const showPreview = (sector: MarketSector, stock?: SectorStock) => {
         clearTimeout(previewTimer.current);
@@ -175,7 +181,7 @@ export default function StockSectorMap({market, onOpen}: {market: StockMarket; o
     const previewLeft = Math.max(PREVIEW_PANEL_MARGIN,
         Math.min(preferredLeft, width - previewWidth - PREVIEW_PANEL_MARGIN));
 
-    const title = selectedSector?.name ?? t(market === 'KR' ? 'stockAnalysis.mapKorea' : 'stockAnalysis.mapUs');
+    const title = selectedSector ? sectorName(selectedSector.name) : t(market === 'KR' ? 'stockAnalysis.mapKorea' : 'stockAnalysis.mapUs');
     const dateFormat = new Intl.DateTimeFormat(i18n.resolvedLanguage, {dateStyle: 'medium', timeZone: 'UTC'});
     const formatDay = (day: string) => dateFormat.format(new Date(day));
 
@@ -219,7 +225,7 @@ export default function StockSectorMap({market, onOpen}: {market: StockMarket; o
                             onMouseEnter={() => showPreview(sector)}
                             onFocus={() => showPreview(sector)}
                             onBlur={() => {clearTimeout(previewTimer.current); setPreview(undefined);}}
-                            onClick={() => {clearTimeout(previewTimer.current); setPreview(undefined); setSelectedSector(sector);}}>{sector.name}</button>;
+                            onClick={() => {clearTimeout(previewTimer.current); setPreview(undefined); setSelectedSector(sector);}}>{sectorName(sector.name)}</button>;
             })}
             {layout?.leaves().map(node => {
                 const {sector, stock} = node.data;

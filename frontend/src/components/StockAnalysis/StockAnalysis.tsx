@@ -1,6 +1,7 @@
 import {useEffect, useState} from 'react';
 import {ArrowLeft, ChartCandlestick, RefreshCw, Search} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
+import {stockSnapshotCache} from '../../services/stockSnapshotCache';
 import {stockAnalysis, type DailyPrice, type StockMarket, type StockSymbol} from '../../services/stockAnalysis';
 import WorkspaceExitButton from '../common/WorkspaceLayout/WorkspaceExitButton';
 import WorkspaceLayout from '../common/WorkspaceLayout/WorkspaceLayout';
@@ -18,11 +19,11 @@ export default function StockAnalysis({onClose}: {onClose: () => void}) {
     const tr = (key: string, options?: Record<string, unknown>) => t(`stockAnalysis.${key}`, options);
     const [market, setMarket] = useState<StockMarket>(() => getInitialMarket(i18n.resolvedLanguage ?? i18n.language));
     useEffect(() => {saveMarketPreference(market);}, [market]);
-    const [symbols, setSymbols] = useState<StockSymbol[]>([]);
+    const [symbols, setSymbols] = useState<StockSymbol[]>(() => stockSnapshotCache.readSymbols(market, i18n.resolvedLanguage) ?? []);
     const [query, setQuery] = useState('');
     const [active, setActive] = useState<StockSymbol | null>(null);
     const [rows, setRows] = useState<DailyPrice[] | null>(null);
-    const [directoryState, setDirectoryState] = useState<'loading' | 'ready' | 'error'>('loading');
+    const [directoryState, setDirectoryState] = useState<'loading' | 'ready' | 'error'>(() => symbols.length ? 'ready' : 'loading');
     const [directoryVersion, setDirectoryVersion] = useState(0);
     const [priceError, setPriceError] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -32,12 +33,16 @@ export default function StockAnalysis({onClose}: {onClose: () => void}) {
 
     useEffect(() => {
         const controller = new AbortController();
+        const cached = stockSnapshotCache.readSymbols(market, i18n.resolvedLanguage);
+        setSymbols(cached ?? []);
+        setDirectoryState(cached ? 'ready' : 'loading');
         stockAnalysis.symbols(market, controller.signal, i18n.resolvedLanguage ?? i18n.language).then(result => {
             if (controller.signal.aborted) return;
+            stockSnapshotCache.writeSymbols(market, result, i18n.resolvedLanguage);
             setSymbols(result);
             setDirectoryState('ready');
         }).catch(() => {
-            if (!controller.signal.aborted) setDirectoryState('error');
+            if (!controller.signal.aborted && !cached) setDirectoryState('error');
         });
         return () => controller.abort();
     }, [market, directoryVersion, i18n.resolvedLanguage, i18n.language]);
@@ -77,7 +82,7 @@ export default function StockAnalysis({onClose}: {onClose: () => void}) {
 
     const openSymbol = (item: StockSymbol) => {
         if (item.symbol === activeSymbol) return;
-        setActive(item);
+        setActive({...item, name: item.preferred ? `${item.name} · ${tr('preferredShare')}` : item.name});
         setRows(null);
         setPriceError(false);
         setLoading(true);
@@ -112,7 +117,7 @@ export default function StockAnalysis({onClose}: {onClose: () => void}) {
             <ul className="stock-analysis-symbols">
                 {filtered.slice(0, VISIBLE_SYMBOLS).map(item => <li key={item.symbol}>
                     <button aria-pressed={item.symbol === activeSymbol} onClick={() => openSymbol(item)}>
-                        <strong>{item.symbol}</strong><span>{item.name}</span>
+                        <strong>{item.symbol}</strong><span>{item.name}{item.preferred && <small className="stock-symbol-preferred">{tr('preferredShare')}</small>}</span>
                     </button>
                 </li>)}
             </ul>
@@ -121,7 +126,7 @@ export default function StockAnalysis({onClose}: {onClose: () => void}) {
 
     return <WorkspaceLayout className="stock-analysis" label={tr('title')} header={header} sidebar={sidebar}>
         <main className="stock-analysis-content">
-            {!active && <StockSectorMap key={`${market}:${i18n.resolvedLanguage}`} market={market} onOpen={openSymbol}/>}
+            {!active && <StockSectorMap key={`${market}:${i18n.resolvedLanguage}`} market={market} onOpen={openSymbol} directory={symbols}/>}
             {active && <div className="stock-analysis-heading">
                 <div className="stock-analysis-chart-title"><button type="button" className="modal-action-cancel" onClick={() => {
                     setActive(null);

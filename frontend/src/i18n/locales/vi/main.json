@@ -1889,6 +1889,8 @@
     "indexIntraday": "Diễn biến trong phiên chính gần nhất",
     "quoteDisplayMode": "Thông tin nến",
     "quoteDisplay": {"header": "Phía trên biểu đồ", "tooltip": "Chú giải cạnh con trỏ"},
+    "preferredShare": "Cổ phiếu ưu đãi",
+    "sectorNames": {"Technology": "Công nghệ", "Financial Services": "Tài chính", "Consumer Cyclical": "Tiêu dùng không thiết yếu", "Communication Services": "Dịch vụ truyền thông", "Healthcare": "Y tế", "Consumer Defensive": "Tiêu dùng thiết yếu", "Industrials": "Công nghiệp", "Energy": "Năng lượng", "Basic Materials": "Vật liệu cơ bản", "Utilities": "Tiện ích", "Real Estate": "Bất động sản"},
     "mapTrendDays": "{{count}} phiên giao dịch gần nhất",
     "mapRefreshInterval": "Chu kỳ làm mới",
     "mapRefreshSeconds": "{{count}} giây",

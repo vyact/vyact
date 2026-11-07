@@ -1891,6 +1891,8 @@
     "indexIntraday": "Évolution intrajournalière de la dernière séance",
     "quoteDisplayMode": "Détails des bougies",
     "quoteDisplay": {"header": "En haut du graphique", "tooltip": "Infobulle du curseur"},
+    "preferredShare": "Action préférentielle",
+    "sectorNames": {"Technology": "Technologie", "Financial Services": "Finance", "Consumer Cyclical": "Consommation cyclique", "Communication Services": "Communication", "Healthcare": "Santé", "Consumer Defensive": "Consommation de base", "Industrials": "Industrie", "Energy": "Énergie", "Basic Materials": "Matériaux", "Utilities": "Services publics", "Real Estate": "Immobilier"},
     "mapTrendDays": "{{count}} dernières séances",
     "mapRefreshInterval": "Actualisation",
     "mapRefreshSeconds": "{{count}} s",

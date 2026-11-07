@@ -12,6 +12,7 @@ from services.db import STOCK_CHART_MEMOS_INDEX, ensure_stock_chart_memos_index,
 from services.stock_analysis.catalog import Market, get_symbols
 from services.stock_analysis.market_indices import INDEX_SYMBOLS, get_market_indices
 from services.stock_analysis.index_price_store import get_index_prices
+from services.stock_analysis.korea_yahoo import korea_preferred_symbols
 from services.stock_analysis.prices import fetch_prices, fetch_sparkline
 from services.stock_analysis.sector_map import get_sector_map
 
@@ -23,7 +24,9 @@ Symbol = Annotated[str, Path(pattern=r"^(?:[A-Z0-9][A-Z0-9.-]{0,15}|\^(?:GSPC|IX
 @router.get("/symbols/{market}")
 def list_symbols(market: Market, language: str = "en"):
     try:
-        return [{"symbol": symbol, "name": name} for symbol, name in get_symbols(market, language).items()]
+        names = get_symbols(market, language)
+        preferred = korea_preferred_symbols(language) if market == "KR" else set()
+        return [{"symbol": symbol, "name": name, "preferred": symbol in preferred} for symbol, name in names.items()]
     except Exception as exc:
         logger.warning("Stock directory unavailable for %s: %s", market, exc)
         raise HTTPException(502, "directory_unavailable") from exc
