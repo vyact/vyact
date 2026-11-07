@@ -21,9 +21,9 @@ Symbol = Annotated[str, Path(pattern=r"^(?:[A-Z0-9][A-Z0-9.-]{0,15}|\^(?:GSPC|IX
 
 
 @router.get("/symbols/{market}")
-def list_symbols(market: Market):
+def list_symbols(market: Market, language: str = "en"):
     try:
-        return [{"symbol": symbol, "name": name} for symbol, name in get_symbols(market).items()]
+        return [{"symbol": symbol, "name": name} for symbol, name in get_symbols(market, language).items()]
     except Exception as exc:
         logger.warning("Stock directory unavailable for %s: %s", market, exc)
         raise HTTPException(502, "directory_unavailable") from exc
@@ -36,9 +36,9 @@ def market_indices(response: Response, market: Market = "US"):
 
 
 @router.get("/sector-map/{market}")
-def sector_map(market: Market):
+def sector_map(market: Market, language: str = "en"):
     try:
-        return get_sector_map(market)
+        return get_sector_map(market, language)
     except Exception as exc:
         logger.warning("Sector map unavailable for %s: %s", market, exc)
         raise HTTPException(502, "sector_map_unavailable") from exc

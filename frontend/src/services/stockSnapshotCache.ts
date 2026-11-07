@@ -24,13 +24,13 @@ function writeSnapshot<T>(key: string, data: T) {
 }
 
 export const stockSnapshotCache = {
-    readMap: (market: StockMarket) => readSnapshot<MarketSectorMap>(market, (value): value is MarketSectorMap => {
+    readMap: (market: StockMarket, language = 'en') => readSnapshot<MarketSectorMap>(`${market}:${language}`, (value): value is MarketSectorMap => {
         const map = value as MarketSectorMap | null;
         return Boolean(map && typeof map.date === 'string' && typeof map.quoteDate === 'string'
             && Array.isArray(map.sectors) && map.sectors.length
             && map.sectors.every(sector => typeof sector.name === 'string' && Array.isArray(sector.stocks)));
     }),
-    writeMap: (market: StockMarket, snapshot: MarketSectorMap) => writeSnapshot(market, snapshot),
+    writeMap: (market: StockMarket, snapshot: MarketSectorMap, language = 'en') => writeSnapshot(`${market}:${language}`, snapshot),
     readIndices: () => readSnapshot<MarketIndex[]>('indices', (value): value is MarketIndex[] =>
         Array.isArray(value) && value.length > 0 && value.every(index => typeof index?.symbol === 'string'
             && Array.isArray(index.closes) && typeof index.price === 'number')),

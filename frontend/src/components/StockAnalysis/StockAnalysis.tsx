@@ -32,7 +32,7 @@ export default function StockAnalysis({onClose}: {onClose: () => void}) {
 
     useEffect(() => {
         const controller = new AbortController();
-        stockAnalysis.symbols(market, controller.signal).then(result => {
+        stockAnalysis.symbols(market, controller.signal, i18n.resolvedLanguage ?? i18n.language).then(result => {
             if (controller.signal.aborted) return;
             setSymbols(result);
             setDirectoryState('ready');
@@ -40,7 +40,7 @@ export default function StockAnalysis({onClose}: {onClose: () => void}) {
             if (!controller.signal.aborted) setDirectoryState('error');
         });
         return () => controller.abort();
-    }, [market, directoryVersion]);
+    }, [market, directoryVersion, i18n.resolvedLanguage, i18n.language]);
 
     useEffect(() => {
         if (!activeSymbol) return;
@@ -90,9 +90,10 @@ export default function StockAnalysis({onClose}: {onClose: () => void}) {
     </>;
 
     const sidebar = <div className="stock-analysis-sidebar">
-        <h2>{tr('symbols')}</h2>
+        <section className="stock-analysis-market-section" aria-label={tr('market')}>
         <CustomSelect options={MARKETS.map(value => ({value, label: tr(value)}))} value={market}
                       onChange={changeMarket} ariaLabel={tr('market')} portal/>
+        </section>
         <label className="stock-analysis-search">
             <Search size={16} aria-hidden="true"/>
             <input type="search" aria-label={tr('search')} placeholder={tr('search')} value={query}
@@ -107,7 +108,7 @@ export default function StockAnalysis({onClose}: {onClose: () => void}) {
             }}>{tr('retry')}</button>
         </>}
         {directoryState === 'ready' && <>
-            <p className="stock-analysis-caption">{tr('results', {shown: Math.min(filtered.length, VISIBLE_SYMBOLS), total: filtered.length})}</p>
+            <p className="stock-analysis-caption">{tr('results', {shown: new Intl.NumberFormat(i18n.resolvedLanguage).format(Math.min(filtered.length, VISIBLE_SYMBOLS)), total: new Intl.NumberFormat(i18n.resolvedLanguage).format(filtered.length)})}</p>
             <ul className="stock-analysis-symbols">
                 {filtered.slice(0, VISIBLE_SYMBOLS).map(item => <li key={item.symbol}>
                     <button aria-pressed={item.symbol === activeSymbol} onClick={() => openSymbol(item)}>
@@ -120,7 +121,7 @@ export default function StockAnalysis({onClose}: {onClose: () => void}) {
 
     return <WorkspaceLayout className="stock-analysis" label={tr('title')} header={header} sidebar={sidebar}>
         <main className="stock-analysis-content">
-            {!active && <StockSectorMap key={market} market={market} onOpen={openSymbol}/>}
+            {!active && <StockSectorMap key={`${market}:${i18n.resolvedLanguage}`} market={market} onOpen={openSymbol}/>}
             {active && <div className="stock-analysis-heading">
                 <div className="stock-analysis-chart-title"><button type="button" className="modal-action-cancel" onClick={() => {
                     setActive(null);

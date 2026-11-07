@@ -9,7 +9,7 @@ import httpx
 from yfinance.data import YfData
 
 from services.stock_analysis.catalog import Market
-from services.stock_analysis.korea_yahoo import get_korea_sector_members, korea_symbols
+from services.stock_analysis.korea_yahoo import get_korea_sector_members, korea_symbols, korea_display_names
 
 IVV_HOLDINGS_URL = "https://www.ishares.com/us/products/239726/ishares-core-s-p-500-etf/latest-holdings.csv"
 YAHOO_QUOTE_URL = "https://query1.finance.yahoo.com/v7/finance/quote"
@@ -44,9 +44,9 @@ def _sectors(groups: dict[str, list[dict]]) -> list[dict]:
     return sectors
 
 
-def _korea_map(client: httpx.Client) -> dict:
+def _korea_map(client: httpx.Client, language: str = "en") -> dict:
     members = get_korea_sector_members()
-    names = korea_symbols(int(monotonic() // 3600))
+    names = korea_display_names(language) if language == "ko" else korea_symbols(int(monotonic() // 3600))
     quotes = _us_quotes(list(dict.fromkeys(symbol for symbols in members.values() for symbol in symbols)))
     date = max((quote[0] for quote in quotes.values()), default=None)
     if date is None:
@@ -155,13 +155,13 @@ def _us_daily_quote(symbol: str) -> tuple[str, tuple[str, float, float] | None]:
 
 
 @lru_cache(maxsize=4)
-def _load_map(market: Market, cache_window: int) -> dict:
+def _load_map(market: Market, cache_window: int, language: str = "en") -> dict:
     with httpx.Client(timeout=15, follow_redirects=True) as client:
-        snapshot = _korea_map(client) if market == "KR" else _us_map(client)
+        snapshot = _korea_map(client, language) if market == "KR" else _us_map(client)
     if not snapshot["sectors"]:
         raise ValueError("Empty sector map")
     return snapshot
 
 
-def get_sector_map(market: Market) -> dict:
-    return _load_map(market, int(monotonic() // CACHE_SECONDS))
+def get_sector_map(market: Market, language: str = "en") -> dict:
+    return _load_map(market, int(monotonic() // CACHE_SECONDS), "ko" if language.lower().split("-")[0] == "ko" else "en")

@@ -78,7 +78,7 @@ function SectorPreview({sector, focused, market, day}: {sector: MarketSector; fo
 
 export default function StockSectorMap({market, onOpen}: {market: StockMarket; onOpen: (item: StockSymbol) => void}) {
     const {t, i18n} = useTranslation('main');
-    const [snapshot, setSnapshot] = useState<MarketSectorMap | undefined>(() => stockSnapshotCache.readMap(market));
+    const [snapshot, setSnapshot] = useState<MarketSectorMap | undefined>(() => stockSnapshotCache.readMap(market, i18n.resolvedLanguage));
     const [failed, setFailed] = useState(false);
     const [attempt, setAttempt] = useState(0);
     const [refreshSeconds, setRefreshSeconds] = useState<number>(DEFAULT_REFRESH_SECONDS);
@@ -97,12 +97,12 @@ export default function StockSectorMap({market, onOpen}: {market: StockMarket; o
 
     useEffect(() => {
         setPreview(undefined);
-        const cached = stockSnapshotCache.readMap(market);
+        const cached = stockSnapshotCache.readMap(market, i18n.resolvedLanguage);
         loadedMarket.current = cached ? market : undefined;
         setSnapshot(cached);
         setSelectedSector(undefined);
         setFailed(false);
-    }, [market, attempt]);
+    }, [market, attempt, i18n.resolvedLanguage]);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -111,9 +111,9 @@ export default function StockSectorMap({market, onOpen}: {market: StockMarket; o
             if (isMarketWeekend(market) && (!initial || loadedMarket.current === market)) return;
             if (refreshing) return;
             refreshing = true;
-            return stockAnalysis.sectorMap(market, controller.signal).then(result => {
+            return stockAnalysis.sectorMap(market, controller.signal, i18n.resolvedLanguage ?? i18n.language).then(result => {
             if (!controller.signal.aborted) {
-                stockSnapshotCache.writeMap(market, result);
+                stockSnapshotCache.writeMap(market, result, i18n.resolvedLanguage);
                 loadedMarket.current = market;
                 setSnapshot(result);
                 setSelectedSector(current => current ? result.sectors.find(sector => sector.name === current.name) : undefined);
@@ -129,7 +129,7 @@ export default function StockSectorMap({market, onOpen}: {market: StockMarket; o
             controller.abort();
             window.clearInterval(interval);
         };
-    }, [market, attempt, refreshSeconds]);
+    }, [market, attempt, refreshSeconds, i18n.resolvedLanguage, i18n.language]);
 
     useEffect(() => {
         const node = surface.current;
