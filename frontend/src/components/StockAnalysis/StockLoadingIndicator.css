@@ -1,0 +1,25 @@
+.stock-loading {
+    position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; padding: 24px;
+    background: radial-gradient(ellipse at center, color-mix(in srgb, var(--accent) 5%, var(--bg-secondary)), var(--bg-secondary) 70%);
+}
+.stock-loading-card {display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;}
+.stock-loading-icon {
+    display: grid; place-items: center; width: 64px; height: 64px; margin-bottom: 6px;
+    border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border)); border-radius: 20px;
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface2)); color: var(--accent);
+}
+.stock-loading-icon svg {animation: stock-loading-spin 1.2s linear infinite;}
+.stock-loading-card strong {font-size: 15px; font-weight: 650; color: var(--text);}
+.stock-loading-card p {font-size: 13px; color: var(--text-muted);}
+@keyframes stock-loading-spin {to {transform: rotate(360deg);}}
+@media (prefers-reduced-motion: reduce) {.stock-loading-icon svg {animation: none;}}
+
+.stock-loading-overlay {background: color-mix(in srgb, var(--bg-secondary) 65%, transparent); backdrop-filter: blur(2px); border-radius: 8px;}
+.stock-loading-overlay .stock-loading-card {padding: 20px 28px; background: var(--surface2); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 8px 24px rgba(0, 0, 0, .18);}
+
+.stock-loading-icon-only .stock-loading-card {padding: 0; background: none; border: 0; box-shadow: none;}
+.stock-loading-icon-only .stock-loading-icon {
+    width: 58px; height: 58px; margin: 0; border-radius: 50%; border: 0;
+    background: var(--surface2); color: var(--accent); box-shadow: var(--shadow-md);
+}
+.stock-loading-icon-only .stock-loading-icon svg {width: 32px; height: 32px;}

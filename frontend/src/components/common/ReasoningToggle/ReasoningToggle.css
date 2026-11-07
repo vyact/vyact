@@ -97,35 +97,6 @@
     color: var(--text);
 }
 
-.reasoning-tooltip-content {
-    width: 280px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    font-weight: 400;
-}
-
-.reasoning-tooltip-title {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--text);
-}
-
-.reasoning-tooltip-intro {
-    font-size: 12px;
-    line-height: 1.5;
-    color: var(--text-secondary);
-}
-
-.reasoning-tooltip-warning {
-    padding: 7px 9px;
-    border-radius: 6px;
-    background: color-mix(in srgb, var(--accent) 10%, transparent);
-    color: var(--text-secondary);
-    font-size: 11px;
-    line-height: 1.45;
-}
-
 .reasoning-tooltip-section {
     display: flex;
     flex-direction: column;

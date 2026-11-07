@@ -1,3 +1,4 @@
+import {STOCK_ANALYSIS_PANEL_ID} from '../../services/stockAnalysis';
 import {NOVEL_STUDIO_PANEL_ID} from '../NovelStudio/storyStorage';
 import QuickCalculators, {RETURN_CALCULATOR_PANEL_ID, TRAVEL_CALCULATOR_PANEL_ID} from '../QuickCalculators/QuickCalculators';
 import HouseholdLedger from '../HouseholdLedger/HouseholdLedger';
@@ -573,7 +574,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({selectedModel = '',
             </div>
 
             {/* 리사이저 + 오른쪽 패널 */}
-            {panels.activePanel && panels.activePanel !== NOVEL_STUDIO_PANEL_ID && (
+            {panels.activePanel && panels.activePanel !== NOVEL_STUDIO_PANEL_ID && panels.activePanel !== STOCK_ANALYSIS_PANEL_ID && (
                 <PanelResizer onWidthChange={googleWorkspaceOpen ? handleWorkspacePanelResize : handlePanelResize} onReset={googleWorkspaceOpen ? resetWorkspacePanelWidth : undefined}/>
             )}
             {panels.activePanel === 'code' && panel && (

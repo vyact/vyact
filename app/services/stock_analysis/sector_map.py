@@ -1,0 +1,179 @@
+import csv
+import math
+from datetime import datetime, timedelta, timezone
+from concurrent.futures import ThreadPoolExecutor
+from functools import lru_cache
+from time import monotonic, time
+
+import httpx
+from yfinance.data import YfData
+
+from services.stock_analysis.catalog import Market, get_korea_listings
+
+IVV_HOLDINGS_URL = "https://www.ishares.com/us/products/239726/ishares-core-s-p-500-etf/latest-holdings.csv"
+YAHOO_QUOTE_URL = "https://query1.finance.yahoo.com/v7/finance/quote"
+QUOTE_BATCH_SIZE = 100
+CACHE_SECONDS = 10
+NAVER_MARKET_URL = "https://m.stock.naver.com/api/stocks/marketValue"
+KOREA_MARKET_LIMIT = 100
+SECTOR_STOCK_LIMIT = 15
+CHART_WORKERS = 8
+YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/"
+
+
+def _number(value: str | None) -> float | None:
+    if not value:
+        return None
+    try:
+        number = float(value.strip().replace(",", "").removesuffix("%").removeprefix("$"))
+    except (ValueError, AttributeError):
+        return None
+    return number if math.isfinite(number) else None
+
+
+def _sectors(groups: dict[str, list[dict]]) -> list[dict]:
+    sectors = []
+    for name, stocks in groups.items():
+        stocks = sorted(stocks, key=lambda stock: stock["weight"], reverse=True)[:SECTOR_STOCK_LIMIT]
+        quoted = [stock for stock in stocks if stock["change"] is not None]
+        total = sum(stock["weight"] for stock in quoted)
+        sectors.append({
+            "name": name, "weight": sum(stock["weight"] for stock in stocks),
+            "change": sum(stock["weight"] * stock["change"] for stock in quoted) / total if total else None,
+            "stocks": stocks,
+        })
+    return sectors
+
+
+def _korea_map(client: httpx.Client) -> dict:
+    listings = get_korea_listings()
+    quotes = []
+    for exchange, suffix in (("KOSPI", "KS"), ("KOSDAQ", "KQ")):
+        response = client.get(
+            f"{NAVER_MARKET_URL}/{exchange}", params={"page": 1, "pageSize": KOREA_MARKET_LIMIT},
+        )
+        response.raise_for_status()
+        market_quotes = response.json()["stocks"]
+        if not market_quotes:
+            raise ValueError(f"Empty {exchange} market data")
+        for quote in market_quotes:
+            symbol = f'{quote["itemCode"]}.{suffix}'
+            listing = listings.get(symbol)
+            weight = _number(quote.get("marketValue"))
+            traded_at = quote.get("localTradedAt")
+            if listing and listing[1] and weight is not None and weight > 0 and traded_at:
+                name, sector = listing
+                day = datetime.fromisoformat(traded_at).date().isoformat()
+                quotes.append((day, sector, {
+                    "symbol": symbol, "name": name, "weight": weight,
+                    "change": _number(quote.get("fluctuationsRatio")), "price": _number(quote.get("closePrice")),
+                }))
+
+    date = max(day for day, _, _ in quotes)
+    groups: dict[str, list[dict]] = {}
+    for day, sector, quote in quotes:
+        if day == date:
+            groups.setdefault(sector, []).append(quote)
+    return {"date": date, "quoteDate": date, "sectors": _sectors(groups)}
+
+
+def _us_map(client: httpx.Client) -> dict:
+    holdings = client.get(IVV_HOLDINGS_URL, params={"_": int(time())})
+    holdings.raise_for_status()
+    lines = holdings.text.lstrip("\ufeff").splitlines()
+    header = next(index for index, line in enumerate(lines) if line.startswith("Ticker,"))
+    date_label = next(row[1] for row in csv.reader(lines[:header]) if row and row[0] == "Fund Holdings as of")
+    date = datetime.strptime(date_label, "%b %d, %Y").date().isoformat()
+
+    groups: dict[str, list[dict]] = {}
+    for row in csv.DictReader(lines[header:]):
+        if row.get("Asset Class") != "Equity" or not row.get("Sector") or not row.get("Ticker"):
+            continue
+        symbol = row["Ticker"].strip().replace(".", "-").replace("/", "-").replace(" ", "-")
+        weight = _number(row.get("Market Value"))
+        if weight is None or weight <= 0:
+            continue
+        groups.setdefault(row["Sector"], []).append({
+            "symbol": symbol, "name": row["Name"], "weight": weight, "change": None, "price": None,
+        })
+
+    stocks = [stock for group in groups.values() for stock in group]
+    symbols = list(dict.fromkeys(stock["symbol"] for stock in stocks))
+    quotes = _us_quotes(symbols)
+    # Holdings describe membership only; company market caps determine tile sizes.
+    for sector_stocks in groups.values():
+        for stock in sector_stocks:
+            quote = quotes.get(stock["symbol"])
+            stock["weight"] = quote[3] if quote else 0
+        sector_stocks[:] = sorted(
+            (stock for stock in sector_stocks if stock["weight"] > 0),
+            key=lambda stock: stock["weight"], reverse=True,
+        )[:SECTOR_STOCK_LIMIT]
+    groups = {name: entries for name, entries in groups.items() if entries}
+    stocks = [stock for group in groups.values() for stock in group]
+    # Verify the latest session independently; use charts only for stale quotes.
+    _, benchmark = _us_daily_quote("^GSPC")
+    quote_date = max([quote[0] for quote in quotes.values()] + ([benchmark[0]] if benchmark else []), default=None)
+    daily_quotes = {stock["symbol"]: quotes[stock["symbol"]][:3] for stock in stocks}
+    stale_symbols = [symbol for symbol, quote in daily_quotes.items() if quote[0] != quote_date]
+    if stale_symbols:
+        with ThreadPoolExecutor(max_workers=CHART_WORKERS) as executor:
+            daily_quotes.update(executor.map(_us_daily_quote, stale_symbols))
+    if quote_date is None:
+        raise ValueError("Yahoo returned no dated quotes for IVV holdings")
+    for stock in stocks:
+        quote = daily_quotes.get(stock["symbol"])
+        if quote and quote[0] == quote_date:
+            _, stock["price"], stock["change"] = quote
+    return {"date": date, "quoteDate": quote_date, "sectors": _sectors(groups)}
+
+
+def _us_quotes(symbols: list[str]) -> dict[str, tuple[str, float, float, float]]:
+    client = YfData()
+    quotes = {}
+    for start in range(0, len(symbols), QUOTE_BATCH_SIZE):
+        result = client.get_raw_json(YAHOO_QUOTE_URL, params={
+            "symbols": ",".join(symbols[start:start + QUOTE_BATCH_SIZE]), "formatted": "false", "_": int(time()),
+        }, timeout=12)
+        for quote in result["quoteResponse"]["result"]:
+            timestamp = quote.get("regularMarketTime")
+            price = quote.get("regularMarketPrice")
+            change = quote.get("regularMarketChangePercent")
+            if not timestamp or not isinstance(price, (int, float)) or not isinstance(change, (int, float)):
+                continue
+            if not math.isfinite(price) or price <= 0 or not math.isfinite(change):
+                continue
+            exchange_zone = timezone(timedelta(milliseconds=quote.get("gmtOffSetMilliseconds") or 0))
+            day = datetime.fromtimestamp(timestamp, tz=exchange_zone).date().isoformat()
+            market_cap = quote.get("marketCap")
+            if isinstance(market_cap, (int, float)) and math.isfinite(market_cap) and market_cap > 0:
+                quotes[quote["symbol"]] = (day, price, change, market_cap)
+    return quotes
+
+
+def _us_daily_quote(symbol: str) -> tuple[str, tuple[str, float, float] | None]:
+    result = YfData().get_raw_json(f"{YAHOO_CHART_URL}{symbol}", params={
+        "range": "5d", "interval": "1d", "_": int(time()),
+    }, timeout=12)["chart"]["result"][0]
+    closes = result["indicators"]["quote"][0]["close"]
+    bars = [(stamp, close) for stamp, close in zip(result.get("timestamp", []), closes)
+            if isinstance(close, (int, float)) and math.isfinite(close) and close > 0]
+    if len(bars) < 2:
+        return symbol, None
+    timestamp, price = bars[-1]
+    exchange_zone = timezone(timedelta(seconds=result["meta"].get("gmtoffset", 0)))
+    day = datetime.fromtimestamp(timestamp, tz=exchange_zone).date().isoformat()
+    return symbol, (day, price, (price / bars[-2][1] - 1) * 100)
+
+
+@lru_cache(maxsize=4)
+def _load_map(market: Market, cache_window: int) -> dict:
+    with httpx.Client(timeout=15, follow_redirects=True) as client:
+        snapshot = _korea_map(client) if market == "KR" else _us_map(client)
+    if not snapshot["sectors"]:
+        raise ValueError("Empty sector map")
+    return snapshot
+
+
+def get_sector_map(market: Market) -> dict:
+    return _load_map(market, int(monotonic() // CACHE_SECONDS))

@@ -43,6 +43,8 @@ EMAIL_THREADS_INDEX = "knowledge_email_threads_all"
 USER_PROFILE_INDEX = "user_profile"
 USER_MEMORIES_INDEX = "user_memories"
 NOVEL_STORIES_INDEX = "novel_stories"
+STOCK_CHART_MEMOS_INDEX = "stock_chart_memos"
+MARKET_INDEX_PRICES_INDEX = "market_index_prices"
 VOCAB_INDEX = "vocab_words"
 SAVED_SENTENCES_INDEX = "saved_sentences"
 NOTIFICATIONS_INDEX = "notifications"
@@ -224,6 +226,45 @@ async def ensure_novel_stories_index(es):
         await es.indices.put_mapping(index=NOVEL_STORIES_INDEX, properties=NOVEL_STORY_OPTIONAL_PROPERTIES)
 
 
+async def ensure_stock_chart_memos_index(es) -> None:
+    if await es.indices.exists(index=STOCK_CHART_MEMOS_INDEX):
+        return
+    try:
+        await es.indices.create(
+            index=STOCK_CHART_MEMOS_INDEX,
+            settings={"number_of_shards": 1, "number_of_replicas": 0},
+            mappings={"dynamic": "strict", "properties": {
+                "symbol": {"type": "keyword"},
+                "day": {"type": "date", "format": "strict_date"},
+                "title": {"type": "text", "index": False},
+                "content": {"type": "text", "index": False},
+            }},
+        )
+    except BadRequestError as error:
+        if error.error != "resource_already_exists_exception":
+            raise
+
+
+async def ensure_market_index_prices_index(es) -> None:
+    if await es.indices.exists(index=MARKET_INDEX_PRICES_INDEX):
+        return
+    try:
+        await es.indices.create(
+            index=MARKET_INDEX_PRICES_INDEX,
+            settings={"number_of_shards": 1, "number_of_replicas": 0},
+            mappings={"dynamic": "strict", "properties": {
+                "symbol": {"type": "keyword"}, "kind": {"type": "keyword"},
+                "day": {"type": "date", "format": "strict_date"},
+                **{field: {"type": "double", "index": False} for field in ("open", "high", "low", "close")},
+                "volume": {"type": "long", "index": False},
+                "synced_at": {"type": "date"}, "initialized": {"type": "boolean"},
+            }},
+        )
+    except BadRequestError as error:
+        if error.error != "resource_already_exists_exception":
+            raise
+
+
 async def ensure_index():
     """현재 지원하는 ES 인덱스를 생성한다 (ES 9.x 최적화)."""
     es = get_es()
@@ -233,6 +274,7 @@ async def ensure_index():
         logger.info("✅ Connected to ES")
         await ensure_language_indices(es)
         await ensure_novel_stories_index(es)
+        await ensure_stock_chart_memos_index(es)
 
         # ── rag_history ────────────────────────────────────────────
         if not await es.indices.exists(index=HIST_INDEX):

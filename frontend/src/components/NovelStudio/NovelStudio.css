@@ -56,7 +56,7 @@
 .novel-studio .workspace-layout-content {flex-direction: column;}
 .novel-library-state {display: flex; flex: 1; min-height: 180px; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--text-secondary); font-size: 12px;}
 .novel-story-row .novel-chapter {min-width: 0; flex: 1;}
-@media (max-width: 760px) {.novel-brand h1 {display: none;} .novel-tabs {gap: 12px;} .novel-return {font-size: 11px; padding: 5px;} .novel-paper {padding: 25px;}}
+@media (max-width: 760px) {.novel-brand h1 {display: none;} .novel-tabs {gap: 12px;} .novel-paper {padding: 25px;}}
 .novel-prompts button[aria-pressed=true] {color: var(--accent); border-color: var(--accent); background: rgba(var(--accent-rgb), .08);}
 .novel-instruction-label {display: flex; align-items: center; flex-wrap: wrap; gap: 7px;}
 .novel-action-badge,.novel-proposal-target {color: var(--accent); background: rgba(var(--accent-rgb), .1); border: 1px solid rgba(var(--accent-rgb), .18); border-radius: 5px; font-size: 10px; padding: 3px 6px;}
@@ -274,15 +274,11 @@
 .novel-writing-setting {display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; margin-bottom: 12px;}
 .novel-writing-setting>label {font-size: 12px; color: var(--text-secondary);}
 
-.novel-studio .novel-return {display: inline-flex; align-items: center; gap: 7px; padding: 8px 11px; border: none; border-radius: 7px; background: color-mix(in srgb, var(--action-delete) 8%, transparent); color: var(--action-delete); font-size: 12px; font-weight: 500; line-height: 1.4; white-space: nowrap; flex-shrink: 0; transition: background-color .15s, color .15s;}
-.novel-studio .novel-return:hover {background: var(--action-delete-bg-hover); color: var(--action-delete);}
-.novel-return svg {flex-shrink: 0;}
 .novel-saved-revision {display: flex; flex-direction: column; flex: 1; min-height: 0;}
 .novel-saved-revision h3 {margin: 10px 0 0; color: var(--text); font-size: 14px; line-height: 1.6; overflow-wrap: anywhere;}
 .novel-saved-revision .novel-revision-controls {flex: 1; min-height: 0;}
 .novel-saved-revision .novel-revision-controls textarea {flex: 1; min-height: 70px; max-height: none; resize: none;}
 .novel-saved-revision .novel-revision-controls>button {flex-shrink: 0;}
-@media (max-width: 760px) {.novel-return>span {display: none;} .novel-studio .novel-return {padding: 7px;}}
 
 /* Compact category rows and aligned synthesis columns across all locales. */
 .novel-candidate-groups {gap: 8px;}

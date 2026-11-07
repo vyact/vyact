@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import {STOCK_ANALYSIS_SHORTCUT_KEY} from '../../services/stockAnalysis';
 
 interface KeyboardHandlers {
     onToggleSidebar: () => void;
@@ -9,6 +10,7 @@ interface KeyboardHandlers {
     onNewConversation: () => void;
     onOpenMemo: () => void;
     onOpenNovelStudio: () => void;
+    onToggleStockAnalysis: () => void;
     onOpenQuickMemo: () => void;
     onOpenKnowledgeCollections: () => void;
     onOpenChatSummary: () => void;
@@ -26,6 +28,7 @@ export function useGlobalKeyboard(handlers: KeyboardHandlers, isMemoOpen = false
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.defaultPrevented) return;
             const handlers = handlersRef.current;
             // 메모 모달 열려있고 에디터에 포커스 있으면 단축키 차단
             if (isMemoOpen) {
@@ -35,7 +38,11 @@ export function useGlobalKeyboard(handlers: KeyboardHandlers, isMemoOpen = false
             }
             const meta = e.metaKey || e.ctrlKey;
 
-            if (meta && e.shiftKey && !e.altKey && !e.repeat && !e.isComposing && (e.code === 'KeyB' || e.key.toLowerCase() === 'b')) {
+            const workspaceShortcut = meta && e.shiftKey && !e.altKey && !e.repeat && !e.isComposing;
+            if (workspaceShortcut && (e.code === `Key${STOCK_ANALYSIS_SHORTCUT_KEY}` || e.key.toUpperCase() === STOCK_ANALYSIS_SHORTCUT_KEY)) {
+                e.preventDefault();
+                handlers.onToggleStockAnalysis();
+            } else if (workspaceShortcut && (e.code === 'KeyB' || e.key.toLowerCase() === 'b')) {
                 e.preventDefault();
                 handlers.onOpenNovelStudio();
             } else if (meta && e.shiftKey && (e.key === 'S' || e.key === 's')) {

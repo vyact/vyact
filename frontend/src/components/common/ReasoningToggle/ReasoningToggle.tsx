@@ -36,10 +36,10 @@ const ReasoningToggle: React.FC<ReasoningToggleProps> = ({disabled, capability})
         if (!disabled) setValue(enabled ? 'off' : 'on');
     };
 
-    const tooltipContent = <span className="reasoning-tooltip-content">
-        <span className="reasoning-tooltip-title">{t('reasoning.title')}</span>
-        <span className="reasoning-tooltip-intro">{t('reasoning.intro')}</span>
-        <span className="reasoning-tooltip-warning">{t('reasoning.warning')}</span>
+    const tooltipContent = <span className="rich-tooltip-content">
+        <span className="rich-tooltip-title">{t('reasoning.title')}</span>
+        <span className="rich-tooltip-description">{t('reasoning.intro')}</span>
+        <span className="rich-tooltip-callout">{t('reasoning.warning')}</span>
         <span className="reasoning-tooltip-section">
             <span className="reasoning-tooltip-label on">{t('reasoning.onLabel')}</span>
             <ul className="reasoning-tooltip-list">

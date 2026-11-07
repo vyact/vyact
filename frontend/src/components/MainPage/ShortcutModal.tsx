@@ -1,5 +1,6 @@
 import React from 'react';
 import {useTranslation} from 'react-i18next';
+import {STOCK_ANALYSIS_SHORTCUT_KEY} from '../../services/stockAnalysis';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import './ShortcutModal.css';
 
@@ -17,6 +18,7 @@ const ShortcutModal: React.FC<ShortcutModalProps> = ({onClose}) => {
         {keys: ['Cmd', 'Shift', 'M'], desc: t('shortcutModal.quickMemo')},
         {keys: ['Cmd', 'Shift', 'N'], desc: t('shortcutModal.memo')},
         {keys: ['Cmd', 'Shift', 'B'], desc: t('novelStudio.title')},
+        {keys: ['Cmd', 'Shift', STOCK_ANALYSIS_SHORTCUT_KEY], desc: t('stockAnalysis.title')},
         {keys: ['Cmd', 'Shift', 'D'], desc: t('shortcutModal.documents')},
         {keys: ['Cmd', 'Shift', 'L'], desc: t('knowledgeCollections.title')},
         {keys: ['Cmd', 'Shift', 'A'], desc: t('shortcutModal.notifications')},

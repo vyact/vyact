@@ -3,3 +3,32 @@
 /* Keep wrapping help text independent of the space to the trigger’s right. */
 .instant-tooltip.multiline {box-sizing: border-box; width: min(280px, calc(100vw - 24px));}
 .instant-tooltip.multiline.size-medium {width: min(340px, calc(100vw - 24px));}
+
+.rich-tooltip-content {
+    width: min(280px, 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-weight: 400;
+}
+
+.rich-tooltip-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.rich-tooltip-description {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+.rich-tooltip-callout {
+    padding: 7px 9px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    color: var(--text-secondary);
+    font-size: 11px;
+    line-height: 1.45;
+}

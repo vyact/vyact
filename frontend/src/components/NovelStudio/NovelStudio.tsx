@@ -24,12 +24,13 @@ import {AUTHOR_DIRECTION_MAX_LENGTH, buildWritingInstruction} from './writingIns
 import {downloadNovel, type NovelExportFormat} from './storyExport';
 import {getReasoningRequestValue} from '../../utils/reasoning';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {Plus, Feather, Sparkles, LoaderCircle, Undo2, MoreHorizontal, Download, Info, LogOut, Trash2} from 'lucide-react';
+import {Plus, Feather, Sparkles, LoaderCircle, Undo2, MoreHorizontal, Download, Info, Trash2} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import CandidateReader from './CandidateReader';
 import ProposalReader from './ProposalReader';
 import SettingsPlanner from './SettingsPlanner';
 import StoryLibrary from './StoryLibrary';
+import WorkspaceExitButton from '../common/WorkspaceLayout/WorkspaceExitButton';
 import WorkspaceLayout from '../common/WorkspaceLayout/WorkspaceLayout';
 import ActionMenu from '../common/ActionMenu/ActionMenu';
 import useStoryLibrary from './useStoryLibrary';
@@ -271,7 +272,7 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
     const header = <>
         <div className="novel-brand"><span className="novel-brand-icon"><Feather size={18} aria-hidden="true"/></span><h1>{tr('title')}</h1></div>
         <div className="novel-tabs">{(['text', 'bible'] as const).map(key => <button key={key} disabled={busy || changes.pending} aria-pressed={tab === key} onClick={() => changes.requestAction(() => {setTab(key); resetAssistant(); setSelectedAction(key === 'bible' ? 'createDirection' : 'write');})}>{tr(key)}</button>)}</div>
-        <button data-tooltip-disabled="" aria-label={tr('backToChat')} className="novel-return" disabled={changes.pending} onClick={() => requestExit()}><LogOut size={16} strokeWidth={1.8}/><span>{tr('exitStudio')}</span></button>
+        <WorkspaceExitButton disabled={changes.pending} onClick={() => requestExit()}/>
     </>;
     return <WorkspaceLayout className="novel-studio" label={tr('title')} header={header}
         sidebar={story ? (                <nav className="novel-library" aria-label={tr('library')}>

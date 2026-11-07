@@ -23,6 +23,7 @@ import {useModels} from './useModels';
 import {useConversation} from './useConversation';
 import {useChat} from './useChat';
 import {useGlobalKeyboard} from './useGlobalKeyboard';
+import {TOGGLE_STOCK_ANALYSIS_EVENT} from '../../services/stockAnalysis';
 import {TOGGLE_NOVEL_STUDIO_EVENT} from '../NovelStudio/workspaceEvents';
 import TitleBar from '../TitleBar/TitleBar';
 import './MainPage.css';
@@ -652,6 +653,10 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
         onOpenNovelStudio: () => {
             closeAllModals();
             window.dispatchEvent(new Event(TOGGLE_NOVEL_STUDIO_EVENT));
+        },
+        onToggleStockAnalysis: () => {
+            closeAllModals();
+            window.dispatchEvent(new Event(TOGGLE_STOCK_ANALYSIS_EVENT));
         },
         onOpenQuickMemo: () => {
             closeAllModals();

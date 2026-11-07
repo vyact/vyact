@@ -1,0 +1,4 @@
+.workspace-exit-button {display: inline-flex; align-items: center; gap: 7px; padding: 8px 11px; border: none; border-radius: 7px; background: color-mix(in srgb, var(--action-delete) 8%, transparent); color: var(--action-delete); font-size: 12px; font-weight: 500; line-height: 1.4; white-space: nowrap; flex-shrink: 0; transition: background-color .15s, color .15s;}
+.workspace-exit-button:hover {background: var(--action-delete-bg-hover); color: var(--action-delete);}
+.workspace-exit-button svg {flex-shrink: 0;}
+@media (max-width: 760px) {.workspace-exit-button>span {display: none;} .workspace-exit-button {padding: 7px;}}
