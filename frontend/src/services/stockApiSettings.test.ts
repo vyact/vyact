@@ -81,3 +81,15 @@ describe('draft stock API validation request', () => {
         expect(payload.language).toBe('ko');
     });
 });
+
+
+describe('stock quote API examples', () => {
+    it('shows a batch quote contract with market caps for either market', () => {
+        for (const market of ['KR', 'US'] as const) {
+            const example = stockApiExamples(market, 'quotes');
+            expect(example.actualBody).toEqual({symbols: market === 'KR' ? ['005930', '000660'] : ['AAPL', 'MSFT'], market});
+            expect(example.response).toEqual([expect.objectContaining({marketCap: expect.any(Number), change: 3})]);
+            expect(example.actualUrl).toContain('symbols=');
+        }
+    });
+});

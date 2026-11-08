@@ -14,7 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError,
 from services.db import SETTINGS_INDEX, get_es
 from services.stock_analysis.symbols import is_market_index, normalize_market_indices, normalize_stock, normalize_sector_map, public_symbol, symbol_market
 
-EndpointKind = Literal['symbols', 'prices', 'sparkline', 'marketIndices', 'sectorMap']
+EndpointKind = Literal['symbols', 'prices', 'sparkline', 'marketIndices', 'sectorMap', 'quotes']
 STOCK_SYMBOL_PATTERN = r'^(?:[A-Z0-9][A-Z0-9.-]{0,15}|\^(?:GSPC|IXIC|RUT|KS11|KQ11))$'
 TOKEN_PATTERN = re.compile(r'\{(symbols|symbol|market|language|period|interval)\}')
 
@@ -98,6 +98,15 @@ class PriceResponse(BaseModel):
     investors: dict[InvestorGroup, InvestorTradeResponse] | None = None
 
 
+class StockQuoteResponse(BaseModel):
+    model_config = ConfigDict(allow_inf_nan=False)
+    symbol: str = Field(pattern=STOCK_SYMBOL_PATTERN)
+    date: date
+    price: float = Field(gt=0)
+    change: float
+    marketCap: float = Field(gt=0)
+
+
 class IndexResponse(BaseModel):
     model_config = ConfigDict(allow_inf_nan=False)
     symbol: str = Field(pattern=STOCK_SYMBOL_PATTERN)
@@ -130,6 +139,7 @@ class SectorMapResponse(BaseModel):
 
 
 RESPONSE_ADAPTERS = {
+    'quotes': TypeAdapter(list[StockQuoteResponse]),
     'symbols': TypeAdapter(list[StockSymbolResponse]),
     'prices': TypeAdapter(list[PriceResponse]),
     'sparkline': TypeAdapter(Annotated[list[Annotated[float, Field(gt=0)]], Field(max_length=20)], config=ConfigDict(allow_inf_nan=False)),
@@ -178,6 +188,18 @@ async def save_api_settings(market: str, settings: MarketApiSettings) -> dict:
     return public_settings(settings)
 
 
+async def delete_api_key(market: str) -> dict:
+    es = get_es()
+    try:
+        # Update only the saved key; preserve endpoints, headers and other settings.
+        await es.update(index=SETTINGS_INDEX, id=f'stock_api:{market}', doc={'value': {'apiKey': ''}}, refresh='wait_for')
+    except NotFoundError:
+        pass
+    finally:
+        await es.close()
+    return public_settings(await load_api_settings(market))
+
+
 def render_template(value, tokens: dict, *, url: bool = False):
     if isinstance(value, str):
         return TOKEN_PATTERN.sub(lambda match: quote(tokens[match[1]], safe='') if url else tokens[match[1]], value)
@@ -190,6 +212,8 @@ def render_template(value, tokens: dict, *, url: bool = False):
 
 def build_api_request(endpoint: ApiEndpoint, kind: EndpointKind, tokens: dict[str, str]) -> tuple[str, dict]:
     keys = ('symbol', 'period', 'interval') if kind in ('prices', 'sparkline') else ('market', 'language')
+    if kind == 'quotes':
+        keys = ('symbols', 'market')
     if kind == 'sparkline' and tokens.get('symbols'):
         keys = ('symbols', 'period', 'interval')
     parts = urlsplit(render_template(endpoint.url, tokens, url=True))
@@ -273,6 +297,11 @@ async def execute_api_request(settings: MarketApiSettings, market: str, kind: En
         normalized = {public_symbol(key): value for key, value in normalized.items()}
         if set(normalized) != expected:
             raise ApiValidationFailure('invalid_schema', response.status_code, ['symbols'])
+    if kind == 'quotes':
+        normalized = [normalize_stock(quote) for quote in normalized]
+        codes = [quote['symbol'] for quote in normalized]
+        if len(codes) != len(set(codes)) or not set(codes).issubset(set(symbols or [])):
+            raise ApiValidationFailure('invalid_schema', response.status_code, ['symbol'])
     if kind == 'symbols':
         normalized = [normalize_stock(stock) for stock in normalized]
         symbols = [stock['symbol'] for stock in normalized]
@@ -316,7 +345,7 @@ async def validate_api_settings(market: str, kind: EndpointKind, draft: ApiValid
     settings = resolve_api_secrets(draft.settings, await load_api_settings(market))
     symbol = draft.symbol or ('005930' if market == 'KR' else 'AAPL')
     try:
-        result = await execute_api_request(settings, market, kind, symbol=symbol, language=draft.language, period=draft.period, interval=draft.interval, symbols=draft.symbols)
+        result = await execute_api_request(settings, market, kind, symbol=symbol, language=draft.language, period=draft.period, interval=draft.interval, symbols=draft.symbols or ([symbol] if kind == 'quotes' else None))
     except ApiValidationFailure as exc:
         return {'ok': False, 'code': exc.code, 'status': exc.status, 'fields': exc.fields}
     if kind == 'sectorMap':

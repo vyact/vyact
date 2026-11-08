@@ -99,3 +99,8 @@
 
 .stock-api-response-fields {width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 12px;}
 .stock-api-response-fields th, .stock-api-response-fields td {padding: 6px 10px; text-align: start; border-bottom: 1px solid var(--border);}
+
+.stock-api-key-field {display: grid; gap: 8px;}
+.stock-api-key-actions {display: flex; align-items: center; flex-wrap: wrap; gap: 8px;}
+.stock-api-delete-key {display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border: 1px solid var(--border); border-radius: 7px; background: transparent; color: var(--action-delete); cursor: pointer; font-size: 12px;}
+.stock-api-delete-key:hover {border-color: var(--action-delete); background: color-mix(in srgb, var(--action-delete) 10%, transparent);}

@@ -66,5 +66,17 @@ export default function useStockApiDrafts(onSaved: () => void) {
             onSaved();
         } finally {setSaving(false);}
     };
-    return {drafts, errors, saving, updateDraft, save, retryLoad: () => {setErrors({}); setRetry(value => value + 1);}};
+    const deleteKey = async (market: StockMarket): Promise<boolean> => {
+        if (saving) return false;
+        setSaving(true);
+        try {
+            await stockApiSettings.deleteKey(market);
+            updateDraft(market, draft => ({...draft, settings: {...draft.settings, hasApiKey: false, clearApiKey: false}}));
+            return true;
+        } catch {
+            setErrors(previous => ({...previous, [market]: 'deleteKeyError'}));
+            return false;
+        } finally {setSaving(false);}
+    };
+    return {drafts, errors, saving, updateDraft, save, deleteKey, retryLoad: () => {setErrors({}); setRetry(value => value + 1);}};
 }

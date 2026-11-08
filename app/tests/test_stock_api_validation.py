@@ -10,6 +10,43 @@ from services.stock_analysis import api_settings as api
 
 
 class StockApiValidationTests(unittest.IsolatedAsyncioTestCase):
+    async def test_delete_saved_key_updates_only_the_key(self):
+        es = AsyncMock()
+        settings = api.MarketApiSettings(endpoints={'quotes': api.ApiEndpoint(url='https://example.com/quotes')})
+        with patch.object(api, 'get_es', return_value=es), patch.object(api, 'load_api_settings', AsyncMock(return_value=settings)):
+            result = await api.delete_api_key('KR')
+        es.update.assert_awaited_once_with(index=api.SETTINGS_INDEX, id='stock_api:KR', doc={'value': {'apiKey': ''}}, refresh='wait_for')
+        es.close.assert_awaited_once()
+        self.assertFalse(result['hasApiKey'])
+        self.assertNotIn('apiKey', result)
+        self.assertEqual(result['endpoints']['quotes']['url'], 'https://example.com/quotes')
+
+    async def test_quote_request_and_market_cap_response_contract(self):
+        payload = [{'symbol': '005930', 'date': '2026-11-06', 'price': 188700, 'change': -6.35, 'marketCap': 1103000000000000}]
+        for method in ('GET', 'POST'):
+            settings = api.MarketApiSettings(endpoints={'quotes': api.ApiEndpoint(url='https://example.com/quotes', method=method)})
+            client = AsyncMock()
+            client.request.return_value = httpx.Response(200, json=payload, request=httpx.Request(method, 'https://example.com/quotes'))
+            with patch.object(api.httpx, 'AsyncClient') as factory:
+                factory.return_value.__aenter__.return_value = client
+                result = await api.execute_api_request(settings, 'KR', 'quotes', symbols=['005930', '000660'])
+                self.assertEqual(result.data, payload)
+                if method == 'POST':
+                    self.assertEqual(client.request.call_args.kwargs['json'], {'symbols': ['005930', '000660'], 'market': 'KR'})
+                else:
+                    self.assertIn('symbols=005930%2C000660', client.request.call_args.args[1])
+
+    async def test_quotes_reject_invalid_market_caps_and_unrequested_symbols(self):
+        settings = api.MarketApiSettings(endpoints={'quotes': api.ApiEndpoint(url='https://example.com/quotes')})
+        quote = {'symbol': '005930', 'date': '2026-11-06', 'price': 188700, 'change': -6.35, 'marketCap': 1}
+        for payload in [[{**quote, 'marketCap': 0}], [{**quote, 'symbol': '000660'}], [quote, quote]]:
+            client = AsyncMock()
+            client.request.return_value = httpx.Response(200, json=payload, request=httpx.Request('GET', 'https://example.com/quotes'))
+            with patch.object(api.httpx, 'AsyncClient') as factory:
+                factory.return_value.__aenter__.return_value = client
+                with self.assertRaises(api.ApiValidationFailure):
+                    await api.execute_api_request(settings, 'KR', 'quotes', symbols=['005930'])
+
     async def test_batch_sparkline_request_and_response_contract(self):
         payload = {'005930': [100, 101], '000660': []}
         for method in ('GET', 'POST'):

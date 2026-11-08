@@ -1832,6 +1832,27 @@
     "manuscriptApplyHelp": "Al aplicar, se sustituyen el título y el texto del capítulo actual."
   },
   "stockAnalysis": {
+    "groups": {
+      "deleteDescription": "Al eliminar el grupo también se quitan todas las acciones incluidas en él.",
+      "noResults": "No hay acciones coincidentes.",
+      "missingCaps": "{{count}} acciones sin capitalización se excluyen del mapa.",
+      "duplicateName": "Este nombre de grupo ya está en uso.",
+      "tab": "Grupos",
+      "create": "Crear grupo",
+      "edit": "Editar grupo",
+      "name": "Nombre del grupo",
+      "stocks": "{{count}} acciones",
+      "selectStocks": "Elegir acciones",
+      "limit": "Máximo {{count}} acciones",
+      "removeStock": "Quitar {{name}}",
+      "all": "Todos los grupos",
+      "editNamed": "Editar {{name}}",
+      "deleteNamed": "Eliminar {{name}}",
+      "mapTitle": "Mapa de mis grupos",
+      "mapHint": "Área según capitalización · Color según variación",
+      "empty": "No hay acciones en los grupos",
+      "emptyHint": "Cree un grupo y añada acciones."
+    },
     "history": {
       "allInvestors": "Todos los inversores",
       "aggregatePeriod": "Período",
@@ -1923,7 +1944,13 @@
       "boardHint": "Un espacio para compartir análisis y opiniones sobre esta acción."
     },
     "api": {
+      "deleteKey": "Eliminar clave",
+      "deleteKeyTitle": "Eliminar clave API",
+      "deleteKeyDescription": "¿Eliminar ahora la clave API guardada? Los demás cambios no se guardarán.",
+      "deleteKeyError": "No se pudo eliminar la clave API.",
+      "quotes": "Cotizaciones y capitalización",
       "responseFields": {
+        "marketCap": "Capitalización (moneda del mercado)",
         "symbol": "Código de acción/índice",
         "name": "Nombre de acción",
         "preferred": "Acción preferente (boolean)",

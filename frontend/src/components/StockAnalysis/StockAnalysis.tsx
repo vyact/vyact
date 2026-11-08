@@ -1,6 +1,6 @@
 import {useEffect, useState} from 'react';
 import {localizeStockName} from '../../utils/stockDisplayName';
-import {ArrowLeft, ChartCandlestick, RefreshCw, Search, Settings, Star} from 'lucide-react';
+import {ArrowLeft, ChartCandlestick, RefreshCw, Search, Settings, Star, Plus, Pencil, Trash2, LayoutGrid, FolderOpen, ChevronDown} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {stockSnapshotCache} from '../../services/stockSnapshotCache';
 import {stockAnalysis, type DailyPrice, type StockMarket, type StockSymbol} from '../../services/stockAnalysis';
@@ -15,6 +15,11 @@ import StockPriceChart from './StockPriceChart';
 import StockHistory from './StockHistory';
 import ModalTabs from '../common/ModalTabs/ModalTabs';
 import StockDiscussionPanel from './StockDiscussionPanel';
+import useStockGroupDrag from './useStockGroupDrag';
+import useStockGroups, {type StockGroup} from './useStockGroups';
+import StockGroupDialog from './StockGroupDialog';
+import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
+import './StockGroups.css';
 import useStockWatchlist from './useStockWatchlist';
 import '../common/SettingsIconButton/SettingsIconButton.css';
 import './StockAnalysis.css';
@@ -40,7 +45,22 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
     const [symbols, setSymbols] = useState<StockSymbol[]>(() => stockSnapshotCache.readSymbols(market, i18n.resolvedLanguage) ?? []);
     const [query, setQuery] = useState('');
     const [comparisonTarget, setComparisonTarget] = useState<HTMLDivElement | null>(null);
-    const [watchlistOnly, setWatchlistOnly] = useState(false);
+    const [listView, setListView] = useState<'all' | 'watchlist' | 'groups'>('all');
+    const stockGroups = useStockGroups();
+    const [selectedGroupId, setSelectedGroupId] = useState<string>('');
+    const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+    const [editingGroup, setEditingGroup] = useState<StockGroup | 'new' | null>(null);
+    const [deletingGroup, setDeletingGroup] = useState<StockGroup | null>(null);
+    const marketGroups = stockGroups.groups.filter(group => group.market === market);
+    const selectedGroup = marketGroups.find(group => group.id === selectedGroupId) ?? marketGroups[0];
+    const displayedGroups = selectedGroup ? [selectedGroup] : [];
+    const groupSymbols = new Set(displayedGroups.flatMap(group => group.symbols));
+    const dragProps = useStockGroupDrag((source, target) => {
+        if (source.symbol && target.symbol) stockGroups.reorderStock(source.groupId, source.symbol, target.symbol, target.after);
+        else stockGroups.reorder(market, source.groupId, target.groupId, target.after);
+    });
+    const watchlistOnly = listView === 'watchlist';
+    const changeListView = (view: typeof listView) => {setListView(view); setActive(null);};
     const watchlist = useStockWatchlist();
     const [active, setActive] = useState<StockSymbol | null>(null);
     const [rows, setRows] = useState<DailyPrice[] | null>(null);
@@ -91,6 +111,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
     const changeMarket = (value: string) => {
         if (value === market) return;
         if (value !== 'KR' && value !== 'US') return;
+        setSelectedGroupId('');
         setMarket(value);
         saveMarketPreference(value);
         setSymbols([]);
@@ -125,17 +146,51 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                       onChange={changeMarket} ariaLabel={tr('market')} portal/>
         <button type="button" className="settings-icon-button" aria-label={tr('api.title')} onClick={() => setApiSettingsOpen(true)}><Settings size={16} aria-hidden="true"/></button>
         </section>
-        <div className="stock-watchlist-switch" role="group" aria-label={tr('listView')}>
-            <button type="button" aria-pressed={!watchlistOnly} onClick={() => setWatchlistOnly(false)}><span className="stock-watchlist-label">{tr('allStocks')}</span></button>
-            <button type="button" aria-pressed={watchlistOnly} onClick={() => setWatchlistOnly(true)}>
-                <span className="stock-watchlist-label">{tr('watchlist')}</span><span className="stock-watchlist-count">{new Intl.NumberFormat(i18n.resolvedLanguage).format(watchlistCount)}</span>
+        <div className="stock-watchlist-switch stock-list-tabs" role="group" aria-label={tr('listView')}>
+            <button type="button" aria-label={tr('allStocks')} title={tr('allStocks')} aria-pressed={listView === 'all'} onClick={() => changeListView('all')}><LayoutGrid size={17} aria-hidden="true"/></button>
+            <button type="button" aria-label={tr('watchlist')} title={tr('watchlist')} aria-pressed={watchlistOnly} onClick={() => changeListView('watchlist')}>
+                <Star size={17} aria-hidden="true"/><span className="stock-watchlist-count">{new Intl.NumberFormat(i18n.resolvedLanguage).format(watchlistCount)}</span>
             </button>
+            <button type="button" aria-label={tr('groups.tab')} title={tr('groups.tab')} aria-pressed={listView === 'groups'} onClick={() => changeListView('groups')}><FolderOpen size={17} aria-hidden="true"/></button>
         </div>
-        <label className="stock-analysis-search">
+        {listView === 'groups' && <div className="stock-group-list">
+            <button type="button" className="modal-action-cancel stock-group-create" onClick={() => setEditingGroup('new')}><Plus size={14} aria-hidden="true"/>{tr('groups.create')}</button>
+            {marketGroups.map(group => <div className="stock-group-entry" key={group.id}>
+                <div className="stock-group-list-row" data-selected={selectedGroup?.id === group.id} {...dragProps({groupId: group.id})}>
+                    <button type="button" className="stock-group-toggle" aria-pressed={selectedGroup?.id === group.id}
+                        aria-expanded={selectedGroup?.id === group.id && !collapsedGroups[group.id]} aria-controls={`stock-group-members-${group.id}`}
+                        onClick={() => {
+                            setCollapsedGroups(current => ({...current, [group.id]: selectedGroup?.id === group.id ? !current[group.id] : false}));
+                            setSelectedGroupId(group.id);
+                            setActive(null);
+                        }}><ChevronDown size={14} aria-hidden="true"/><span>{group.name}</span></button>
+                    <button type="button" aria-label={tr('groups.editNamed', {name: group.name})} onClick={() => setEditingGroup(group)}><Pencil size={13}/></button>
+                    <button type="button" aria-label={tr('groups.deleteNamed', {name: group.name})} onClick={() => setDeletingGroup(group)}><Trash2 size={13}/></button>
+                </div>
+                <div className="stock-group-members-collapse" data-expanded={selectedGroup?.id === group.id && !collapsedGroups[group.id]}
+                    inert={selectedGroup?.id !== group.id || !!collapsedGroups[group.id]} aria-hidden={selectedGroup?.id !== group.id || !!collapsedGroups[group.id]}
+                    id={`stock-group-members-${group.id}`}>
+                    <div className="stock-group-members-clip"><ul className="stock-group-members">
+                    {group.symbols.map(symbol => {
+                        const stock = symbols.find(item => item.symbol === symbol) ?? {symbol, name: symbol};
+                        return <li key={symbol} data-selected={activeSymbol === symbol} {...dragProps({groupId: group.id, symbol})}>
+                            <button type="button" className="stock-group-member-open" aria-pressed={activeSymbol === symbol} onClick={() => openSymbol(stock)}>
+                                <strong>{stock.name}</strong><small>{symbol}</small>
+                            </button>
+                            <button type="button" className="stock-group-member-remove" aria-label={tr('groups.removeStock', {name: stock.name})}
+                                onClick={() => stockGroups.removeStock(group.id, symbol)}><Trash2 size={13} aria-hidden="true"/></button>
+                        </li>;
+                    })}
+                    {!group.symbols.length && <li className="stock-group-members-empty">{tr('groups.stocks', {count: 0})}</li>}
+                    </ul></div>
+                </div>
+            </div>)}
+        </div>}
+        {listView !== 'groups' && <label className="stock-analysis-search">
             <Search size={16} aria-hidden="true"/>
             <input type="search" aria-label={tr('search')} placeholder={tr('search')} value={query}
                    onChange={event => setQuery(event.target.value)}/>
-        </label>
+        </label>}
         {directoryState === 'loading' && <p role="status">{tr('loading')}</p>}
         {directoryState === 'error' && <>
             <p role="alert">{tr('directoryError')}</p>
@@ -144,7 +199,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                 setDirectoryVersion(value => value + 1);
             }}>{tr('retry')}</button>
         </>}
-        {directoryState === 'ready' && <>
+        {listView !== 'groups' && directoryState === 'ready' && <>
             <p className="stock-analysis-caption">{tr('results', {shown: new Intl.NumberFormat(i18n.resolvedLanguage).format(Math.min(filtered.length, VISIBLE_SYMBOLS)), total: new Intl.NumberFormat(i18n.resolvedLanguage).format(filtered.length)})}</p>
             <ul className="stock-analysis-symbols">
                 {filtered.slice(0, VISIBLE_SYMBOLS).map(item => <li key={item.symbol}>
@@ -170,10 +225,22 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
     </div>;
 
     return <>
+    {editingGroup && <StockGroupDialog group={editingGroup === 'new' ? undefined : editingGroup} market={market} directory={symbols} existingGroups={marketGroups}
+        onClose={() => setEditingGroup(null)} onSave={group => {stockGroups.save(group); setSelectedGroupId(group.id); setActive(null);}}/>}
+    {deletingGroup && <ConfirmModal title={tr('groups.deleteNamed', {name: deletingGroup.name})}
+        description={tr('groups.deleteDescription')} actionLayout="horizontal"
+        options={[{value: 'cancel', label: t('common:cancel')}, {value: 'delete', label: t('common:delete'), variant: 'danger'}]}
+        onClose={() => setDeletingGroup(null)} onSelect={value => {
+            if (value === 'delete') {stockGroups.remove(deletingGroup.id); if (selectedGroupId === deletingGroup.id) setSelectedGroupId('');}
+            setDeletingGroup(null);
+        }}/>}
     {apiSettingsOpen && <StockApiSettings market={market} onClose={() => setApiSettingsOpen(false)} onSaved={onApiSaved}/>}
     <WorkspaceLayout className="stock-analysis" label={tr('title')} header={header} sidebar={sidebar}>
         <div className={`stock-analysis-inner${active ? " has-discussion" : ""}`}><main className="stock-analysis-content">
-            {!active && <StockSectorMap key={`${market}:${i18n.resolvedLanguage}`} market={market} onOpen={openSymbol} directory={symbols}/>}
+            {!active && (listView === 'groups' && !groupSymbols.size
+                ? <div className="stock-watchlist-empty"><strong>{tr('groups.empty')}</strong><p>{tr('groups.emptyHint')}</p>
+                    <button type="button" className="modal-action-cancel" onClick={() => setEditingGroup(displayedGroups.length === 1 ? displayedGroups[0] : 'new')}>{tr(displayedGroups.length === 1 ? 'groups.edit' : 'groups.create')}</button></div>
+                : <StockSectorMap key={`${market}:${i18n.resolvedLanguage}:${listView === 'groups' ? selectedGroup?.id : 'market'}`} market={market} onOpen={openSymbol} directory={symbols} stockGroups={listView === 'groups' ? displayedGroups : undefined} groupTitle={selectedGroup?.name}/>)}
             {active && <div className="stock-analysis-heading">
                 <div className="stock-analysis-chart-title"><button type="button" className="stock-analysis-back" aria-label={tr('sectorMap')} onClick={() => {
                     setActive(null);

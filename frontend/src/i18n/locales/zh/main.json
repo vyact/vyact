@@ -1831,6 +1831,27 @@
     "manuscriptApplyHelp": "应用后将用此结果替换当前章节标题和正文。"
   },
   "stockAnalysis": {
+    "groups": {
+      "deleteDescription": "删除分组时，该分组内的所有股票成员记录也会移除。",
+      "noResults": "未找到匹配的股票。",
+      "missingCaps": "缺少市值的{{count}}只股票不显示在图中。",
+      "duplicateName": "该分组名称已被使用。",
+      "tab": "分组",
+      "create": "创建分组",
+      "edit": "编辑分组",
+      "name": "分组名称",
+      "stocks": "{{count}}只股票",
+      "selectStocks": "选择股票",
+      "limit": "最多{{count}}只股票",
+      "removeStock": "移除{{name}}",
+      "all": "全部分组",
+      "editNamed": "编辑分组{{name}}",
+      "deleteNamed": "删除分组{{name}}",
+      "mapTitle": "我的分组热力图",
+      "mapHint": "面积按市值比例 · 颜色表示涨跌幅",
+      "empty": "分组中没有股票",
+      "emptyHint": "创建分组并添加股票。"
+    },
     "history": {
       "allInvestors": "全部投资者",
       "aggregatePeriod": "合计期间",
@@ -1922,7 +1943,13 @@
       "boardHint": "分享这只股票的分析和观点。"
     },
     "api": {
+      "deleteKey": "删除密钥",
+      "deleteKeyTitle": "删除API密钥",
+      "deleteKeyDescription": "立即删除已保存的API密钥？其他更改不会保存。",
+      "deleteKeyError": "无法删除API密钥。",
+      "quotes": "股票行情与市值",
       "responseFields": {
+        "marketCap": "市值（市场货币）",
         "symbol": "股票／指数代码",
         "name": "股票名称",
         "preferred": "优先股标志 (boolean)",

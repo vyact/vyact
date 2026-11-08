@@ -1841,6 +1841,27 @@
     "manuscriptApplyHelp": "적용하면 현재 회차의 제목과 본문을 이 결과로 교체합니다."
   },
   "stockAnalysis": {
+    "groups": {
+      "deleteDescription": "그룹을 삭제하면 그룹에 포함된 종목 목록도 모두 제거됩니다.",
+      "noResults": "검색 결과가 없습니다.",
+      "missingCaps": "시가총액이 없는 {{count}}개 종목은 지도에서 제외됩니다.",
+      "duplicateName": "이미 사용 중인 그룹명입니다.",
+      "tab": "그룹",
+      "create": "그룹 만들기",
+      "edit": "그룹 편집",
+      "name": "그룹명",
+      "stocks": "종목 {{count}}개",
+      "selectStocks": "종목 선택",
+      "limit": "최대 {{count}}개 종목",
+      "removeStock": "{{name}} 제거",
+      "all": "전체 그룹",
+      "editNamed": "{{name}} 그룹 편집",
+      "deleteNamed": "{{name}} 그룹 삭제",
+      "mapTitle": "내 그룹 히트맵",
+      "mapHint": "면적은 시가총액 비례 · 색상은 등락률",
+      "empty": "그룹에 종목이 없습니다",
+      "emptyHint": "그룹을 만들고 종목을 추가하세요."
+    },
     "history": {
       "allInvestors": "전체 투자자",
       "aggregatePeriod": "합산 기간",
@@ -1932,7 +1953,13 @@
       "boardHint": "이 종목의 분석과 의견을 나눌 공간입니다."
     },
     "api": {
+      "deleteKey": "키 삭제",
+      "deleteKeyTitle": "API 키 삭제",
+      "deleteKeyDescription": "저장된 API 키를 바로 삭제할까요? 다른 변경사항은 저장되지 않습니다.",
+      "deleteKeyError": "API 키를 삭제하지 못했습니다.",
+      "quotes": "종목 시세·시가총액",
       "responseFields": {
+        "marketCap": "시가총액 (시장 통화)",
         "symbol": "종목·지수 코드",
         "name": "종목명",
         "preferred": "우선주 여부 (boolean)",

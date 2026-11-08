@@ -12,13 +12,13 @@ from services.llm.core import query_llm
 from services.mcp_client import mcp_manager
 from services.mcp_config import build_servers_config
 from services.db import STOCK_CHART_MEMOS_INDEX, ensure_stock_chart_memos_index, get_es
-from services.stock_analysis.api_settings import (ApiValidationRequest, EndpointKind, MarketApiSettings, STOCK_SYMBOL_PATTERN, validate_api_settings, custom_data, load_api_settings, public_settings, save_api_settings, symbol_market)
+from services.stock_analysis.api_settings import (ApiValidationRequest, EndpointKind, MarketApiSettings, STOCK_SYMBOL_PATTERN, validate_api_settings, custom_data, load_api_settings, public_settings, save_api_settings, delete_api_key, symbol_market)
 from services.stock_analysis.catalog import Market, get_symbols
 from services.stock_analysis.market_indices import get_market_indices
 from services.stock_analysis.index_price_store import get_index_prices
 from services.stock_analysis.korea_yahoo import korea_preferred_symbols
 from services.stock_analysis.prices import fetch_prices, fetch_sparkline
-from services.stock_analysis.sector_map import get_sector_map
+from services.stock_analysis.sector_map import get_sector_map, get_stock_quotes
 from services.stock_analysis.symbols import is_market_index, memo_symbol_aliases, normalize_market_indices, normalize_stock, normalize_sector_map, public_symbol
 
 router = APIRouter(prefix="/stock-analysis")
@@ -34,6 +34,11 @@ async def get_market_api_settings(market: Market):
 @router.put("/api-settings/{market}")
 async def put_market_api_settings(market: Market, settings: MarketApiSettings):
     return await save_api_settings(market, settings)
+
+
+@router.delete("/api-settings/{market}/key")
+async def delete_market_api_key(market: Market):
+    return await delete_api_key(market)
 
 
 @router.post("/api-settings/{market}/validate/{kind}")
@@ -77,6 +82,28 @@ async def sector_map(market: Market, language: str = "en"):
 
 class SparklineBatchRequest(BaseModel):
     symbols: list[Annotated[str, StringConstraints(pattern=STOCK_SYMBOL_PATTERN)]] = Field(min_length=1, max_length=100)
+
+
+@router.post("/group-quotes")
+async def group_quotes(draft: SparklineBatchRequest):
+    symbols = list(dict.fromkeys(public_symbol(item) for item in draft.symbols))
+    if any(is_market_index(symbol) for symbol in symbols):
+        raise HTTPException(422, "stock_symbols_required")
+    result = []
+    grouped = {}
+    for symbol in symbols:
+        grouped.setdefault(symbol_market(symbol), []).append(symbol)
+    for market, requested in grouped.items():
+        custom = await custom_data(market, 'quotes', symbols=requested)
+        if custom is not None:
+            result.extend(custom)
+            continue
+        try:
+            result.extend(await asyncio.to_thread(get_stock_quotes, requested))
+        except Exception as exc:
+            logger.warning("Group stock quotes unavailable: %s", exc)
+            raise HTTPException(502, "stock_quotes_unavailable") from exc
+    return result
 
 
 @router.post("/sparklines")

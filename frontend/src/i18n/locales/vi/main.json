@@ -1831,6 +1831,27 @@
     "manuscriptApplyHelp": "Áp dụng sẽ thay thế tiêu đề và nội dung chương hiện tại."
   },
   "stockAnalysis": {
+    "groups": {
+      "deleteDescription": "Xóa nhóm cũng sẽ xóa toàn bộ danh sách cổ phiếu trong nhóm.",
+      "noResults": "Không tìm thấy cổ phiếu.",
+      "missingCaps": "{{count}} cổ phiếu thiếu vốn hóa không được hiển thị trên bản đồ.",
+      "duplicateName": "Tên nhóm này đã được sử dụng.",
+      "tab": "Nhóm",
+      "create": "Tạo nhóm",
+      "edit": "Sửa nhóm",
+      "name": "Tên nhóm",
+      "stocks": "{{count}} cổ phiếu",
+      "selectStocks": "Chọn cổ phiếu",
+      "limit": "Tối đa {{count}} cổ phiếu",
+      "removeStock": "Xóa {{name}}",
+      "all": "Tất cả nhóm",
+      "editNamed": "Sửa nhóm {{name}}",
+      "deleteNamed": "Xóa nhóm {{name}}",
+      "mapTitle": "Bản đồ nhiệt nhóm của tôi",
+      "mapHint": "Diện tích theo vốn hóa · Màu theo biến động",
+      "empty": "Nhóm chưa có cổ phiếu",
+      "emptyHint": "Tạo nhóm và thêm cổ phiếu."
+    },
     "history": {
       "allInvestors": "Tất cả nhà đầu tư",
       "aggregatePeriod": "Kỳ tổng hợp",
@@ -1922,7 +1943,13 @@
       "boardHint": "Nơi chia sẻ phân tích và ý kiến về cổ phiếu này."
     },
     "api": {
+      "deleteKey": "Xóa khóa",
+      "deleteKeyTitle": "Xóa khóa API",
+      "deleteKeyDescription": "Xóa ngay khóa API đã lưu? Các thay đổi khác chưa được lưu.",
+      "deleteKeyError": "Không thể xóa khóa API.",
+      "quotes": "Giá và vốn hóa cổ phiếu",
       "responseFields": {
+        "marketCap": "Vốn hóa (tiền thị trường)",
         "symbol": "Mã cổ phiếu/chỉ số",
         "name": "Tên cổ phiếu",
         "preferred": "Cổ phiếu ưu đãi (boolean)",

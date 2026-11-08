@@ -9,6 +9,9 @@ import StockLoadingIndicator from './StockLoadingIndicator';
 import MarketIndexSummary from './MarketIndexSummary';
 import StockSparkline, {SPARKLINE_TRADING_DAYS, useSectorSparklines} from './StockSparkline';
 import {isMarketWeekend} from './marketRefresh';
+import type {StockGroup} from './useStockGroups';
+import useStockGroupQuotes from './useStockGroupQuotes';
+import {buildGroupSectors} from './groupMapData';
 import './StockSectorMap.css';
 
 type MapNode = {
@@ -38,7 +41,7 @@ const PREVIEW_PANEL_GAP = 12;
 const REFRESH_INTERVALS = [10, 30, 60, 300] as const;
 const DEFAULT_REFRESH_SECONDS = 30;
 
-function SectorPreview({sector, focused, market, day}: {sector: MarketSector; focused?: SectorStock; market: StockMarket; day: string}) {
+function SectorPreview({sector, focused, market, day, customName = false}: {sector: MarketSector; focused?: SectorStock; market: StockMarket; day: string; customName?: boolean}) {
     const {t, i18n} = useTranslation('main');
     const histories = useSectorSparklines(sector.stocks.map(stock => stock.symbol), day);
     const percent = new Intl.NumberFormat(i18n.resolvedLanguage, {
@@ -51,7 +54,7 @@ function SectorPreview({sector, focused, market, day}: {sector: MarketSector; fo
     const sorted = [...sector.stocks].sort((a, b) => b.weight - a.weight);
     const entries = sorted.slice(0, PREVIEW_LIMIT);
     return <div className="stock-sector-preview" data-market={market}>
-        <strong className="stock-sector-preview-title">{t(`stockAnalysis.sectorNames.${sector.name}`, {defaultValue: sector.name})}</strong>
+        <strong className="stock-sector-preview-title">{customName ? sector.name : t(`stockAnalysis.sectorNames.${sector.name}`, {defaultValue: sector.name})}</strong>
         <small className="stock-sector-preview-period">{t('stockAnalysis.mapTrendDays', {count: SPARKLINE_TRADING_DAYS})}</small>
         {focused && <div className="stock-sector-preview-selected">
             <div className="stock-sector-preview-selected-quote">
@@ -76,7 +79,7 @@ function SectorPreview({sector, focused, market, day}: {sector: MarketSector; fo
     </div>;
 }
 
-export default function StockSectorMap({market, onOpen, directory = []}: {market: StockMarket; onOpen: (item: StockSymbol) => void; directory?: StockSymbol[]}) {
+export default function StockSectorMap({market, onOpen, directory = [], stockGroups, groupTitle}: {market: StockMarket; onOpen: (item: StockSymbol) => void; directory?: StockSymbol[]; stockGroups?: StockGroup[]; groupTitle?: string}) {
     const {t, i18n} = useTranslation('main');
     const [snapshot, setSnapshot] = useState<MarketSectorMap | undefined>(() => stockSnapshotCache.readMap(market, i18n.resolvedLanguage));
     const [failed, setFailed] = useState(false);
@@ -142,22 +145,26 @@ export default function StockSectorMap({market, onOpen, directory = []}: {market
         return () => observer.disconnect();
     }, []);
 
+    const groupSymbols = [...new Set(stockGroups?.flatMap(group => group.symbols) ?? [])];
+    const groupQuoteState = useStockGroupQuotes(groupSymbols, refreshSeconds);
+    const missingGroupQuotes = groupSymbols.filter(symbol => !groupQuoteState.quotes.some(quote => quote.symbol === symbol && quote.marketCap > 0));
     const localizedSectors = useMemo(() => {
         const names = new Map(directory.map(item => [item.symbol, item.name]));
+        if (stockGroups) return buildGroupSectors(stockGroups, groupQuoteState.quotes, directory);
         return snapshot?.sectors.map(sector => ({...sector, stocks: sector.stocks.map(stock =>
             ({...stock, name: names.get(stock.symbol) ?? stock.name}))}));
-    }, [snapshot, directory]);
-    const sectorName = (name: string) => t(`stockAnalysis.sectorNames.${name}`, {defaultValue: name});
+    }, [snapshot, directory, stockGroups, groupQuoteState.quotes]);
+    const sectorName = (name: string) => stockGroups ? name : t(`stockAnalysis.sectorNames.${name}`, {defaultValue: name});
     const layout = useMemo(() => {
-        if (!snapshot || width <= 0 || height <= 0) return;
+        if (!localizedSectors || width <= 0 || height <= 0) return;
         const stockNodes = (sector: MarketSector): MapNode[] => (localizedSectors?.find(item => item.name === sector.name) ?? sector).stocks.map(stock => ({stock, weight: stock.weight}));
-        const children = selectedSector ? stockNodes(selectedSector) : (localizedSectors ?? snapshot.sectors).map((sector): MapNode =>
+        const children = selectedSector ? stockNodes(selectedSector) : localizedSectors.map((sector): MapNode =>
             ({sector, children: stockNodes(sector)}));
         const root = hierarchy<MapNode>({children}).sum(node => node.weight ?? 0)
             .sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
         return treemap<MapNode>().size([width, height]).round(true).paddingInner(2)
             .paddingTop(node => !selectedSector && node.depth === 1 ? SECTOR_HEADER_HEIGHT : 0)(root);
-    }, [snapshot, localizedSectors, selectedSector, width, height]);
+    }, [localizedSectors, selectedSector, width, height]);
 
     const previewSector = localizedSectors?.find(sector => sector.name === preview?.sectorName);
     const previewStock = previewSector?.stocks.find(stock => stock.symbol === preview?.symbol);
@@ -181,19 +188,19 @@ export default function StockSectorMap({market, onOpen, directory = []}: {market
     const previewLeft = Math.max(PREVIEW_PANEL_MARGIN,
         Math.min(preferredLeft, width - previewWidth - PREVIEW_PANEL_MARGIN));
 
-    const title = selectedSector ? sectorName(selectedSector.name) : t(market === 'KR' ? 'stockAnalysis.mapKorea' : 'stockAnalysis.mapUs');
+    const title = selectedSector ? sectorName(selectedSector.name) : stockGroups ? groupTitle ?? t('stockAnalysis.groups.all') : t(market === 'KR' ? 'stockAnalysis.mapKorea' : 'stockAnalysis.mapUs');
     const dateFormat = new Intl.DateTimeFormat(i18n.resolvedLanguage, {dateStyle: 'medium', timeZone: 'UTC'});
     const formatDay = (day: string) => dateFormat.format(new Date(day));
 
     return <section className="stock-sector-map" data-market={market} aria-label={title}>
         <header className="stock-sector-map-heading">
             {selectedSector && <button type="button" className="modal-action-cancel" onClick={() => setSelectedSector(undefined)}>
-                <ArrowLeft size={14} aria-hidden="true"/>{t('stockAnalysis.sectorMap')}
+                <ArrowLeft size={14} aria-hidden="true"/>{t(stockGroups ? 'stockAnalysis.groups.tab' : 'stockAnalysis.sectorMap')}
             </button>}
             <h1>{title}</h1>
             <div className="stock-sector-map-controls">
-            {snapshot && <div className="stock-sector-map-dates">
-                <span>{t('stockAnalysis.mapQuoteDate', {date: formatDay(snapshot.quoteDate ?? snapshot.date)})}</span>
+            {(stockGroups ? !!groupQuoteState.quotes.length : !!snapshot) && <div className="stock-sector-map-dates">
+                <span>{t('stockAnalysis.mapQuoteDate', {date: formatDay(stockGroups ? groupQuoteState.quotes.map(quote => quote.date).sort().slice(-1)[0] : snapshot!.quoteDate ?? snapshot!.date)})}</span>
             </div>}
             <div className="stock-sector-map-refresh">
                 <span>{t('stockAnalysis.mapRefreshInterval')}</span>
@@ -205,12 +212,15 @@ export default function StockSectorMap({market, onOpen, directory = []}: {market
             </div>
             </div>
         </header>
-        <MarketIndexSummary key={market} market={market} refreshSeconds={refreshSeconds} onOpen={onOpen}/>
+        {!stockGroups && <MarketIndexSummary key={market} market={market} refreshSeconds={refreshSeconds} onOpen={onOpen}/>}
+        {stockGroups && !groupQuoteState.loading && missingGroupQuotes.length > 0 && <p className="stock-analysis-caption" role="status">{t('stockAnalysis.groups.missingCaps', {count: missingGroupQuotes.length})}</p>}
         <div className="stock-sector-map-surface" ref={surface} onMouseLeave={() => {clearTimeout(previewTimer.current); setPreview(undefined);}}
              onKeyDown={event => {if (event.key === 'Escape' && preview) {event.stopPropagation(); setPreview(undefined);}}}
-             aria-busy={!snapshot && !failed}>
-            {!snapshot && !failed && <StockLoadingIndicator title={title}/>}
-            {failed && !snapshot && <div className="stock-sector-map-error" role="alert">
+             aria-busy={stockGroups ? groupQuoteState.loading : !snapshot && !failed}>
+            {stockGroups && groupQuoteState.loading && <StockLoadingIndicator title={title}/>}
+            {stockGroups && groupQuoteState.failed && <div className="stock-sector-map-error" role="alert"><p>{t('stockAnalysis.mapError')}</p></div>}
+            {!stockGroups && !snapshot && !failed && <StockLoadingIndicator title={title}/>}
+            {!stockGroups && failed && !snapshot && <div className="stock-sector-map-error" role="alert">
                 <p>{t('stockAnalysis.mapError')}</p>
                 <button type="button" className="modal-action-cancel" onClick={() => {
                     setFailed(false);
@@ -251,7 +261,7 @@ export default function StockSectorMap({market, onOpen, directory = []}: {market
             </div>
             {previewSector && preview && <aside className="stock-sector-map-preview-panel" style={{left: previewLeft, width: previewWidth}}
                 aria-label={previewSector.name}>
-                <SectorPreview sector={previewSector} focused={previewStock} market={market} day={snapshot?.quoteDate ?? snapshot?.date ?? ''}/>
+                <SectorPreview customName={!!stockGroups} sector={previewSector} focused={previewStock} market={market} day={snapshot?.quoteDate ?? snapshot?.date ?? ''}/>
             </aside>}
         </div>
     </section>;

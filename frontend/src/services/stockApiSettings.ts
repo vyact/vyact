@@ -2,7 +2,7 @@ import {stockSymbolCode} from '../utils/stockSymbols';
 import {assertOk} from '../utils/apiError';
 import type {DailyPrice, StockMarket} from './stockAnalysis';
 
-export const STOCK_API_KINDS = ['symbols', 'prices', 'sparkline', 'marketIndices', 'sectorMap'] as const;
+export const STOCK_API_KINDS = ['symbols', 'quotes', 'prices', 'sparkline', 'marketIndices', 'sectorMap'] as const;
 export type StockApiKind = typeof STOCK_API_KINDS[number];
 export type StockApiEndpoint = {url: string; method: 'GET' | 'POST'; body: Record<string, unknown>};
 export const STOCK_API_MARKETS: StockMarket[] = ['KR', 'US'];
@@ -40,12 +40,17 @@ async function settingsRequest(market: StockMarket, signal?: AbortSignal, settin
     return response.json();
 }
 export const stockApiSettings = {
+    async deleteKey(market: StockMarket): Promise<StockApiSettings> {
+        const response = await fetch(`/api/stock-analysis/api-settings/${market}/key`, {method: 'DELETE'});
+        await assertOk(response);
+        return response.json();
+    },
     load: (market: StockMarket, signal: AbortSignal) => settingsRequest(market, signal),
     save: (market: StockMarket, settings: StockApiSettings) => settingsRequest(market, undefined, settings),
     async validate(market: StockMarket, kind: StockApiKind, settings: StockApiSettings, symbol: string, language: string, signal: AbortSignal, testParameters?: {period?: string; interval?: string}): Promise<StockApiValidationResult> {
         const response = await fetch(`/api/stock-analysis/api-settings/${market}/validate/${kind}`, {
             method: 'POST', signal, headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({settings: settingsPayload(settings), ...(kind === 'sparkline' ? {symbols: symbol.split(',').map(value => stockSymbolCode(value.trim()))} : {symbol: stockSymbolCode(symbol)}), language, ...testParameters}),
+            body: JSON.stringify({settings: settingsPayload(settings), ...((kind === 'sparkline' || kind === 'quotes') ? {symbols: symbol.split(',').map(value => stockSymbolCode(value.trim()))} : {symbol: stockSymbolCode(symbol)}), language, ...testParameters}),
         });
         if (response.status === 422) return {ok: false, code: 'invalid_config', status: 422, fields: []};
         await assertOk(response);
@@ -67,13 +72,14 @@ export function stockApiExamples(market: StockMarket, kind: StockApiKind, langua
     } satisfies DailyPrice;
     const stock = {symbol, ...(market === 'KR' ? {exchange: 'KOSPI'} : {}), name: market === 'KR' ? 'Samsung Electronics' : 'Apple', weight: 10, change: 1.2, price: 103};
     const responses = {
+        quotes: [{symbol, date: '2026-11-06', price: 103, change: 3, marketCap: 500000000000}],
         symbols: [{symbol, name: stock.name, preferred: false, ...(market === 'KR' ? {exchange: 'KOSPI'} : {})}],
         prices: [price], sparkline: {[symbol]: [100, 101, 99, 103], [market === 'KR' ? '000660' : 'MSFT']: [98, 100, 102, 104]},
         marketIndices: [{symbol: indexSymbol, price: 103, change: 3, changePercent: 3, date: '2026-11-06', closes: [100, 101, 103]}],
         sectorMap: {date: '2026-11-06', quoteDate: '2026-11-06', sectors: [{name: 'Technology', weight: 10, change: 1.2, stocks: [stock]}]},
     };
-    const query = kind === 'sparkline' ? 'symbols={symbols}&period={period}&interval={interval}' : kind === 'prices' ? 'symbol={symbol}&period={period}&interval={interval}' : 'market={market}&language={language}';
-    const body = kind === 'sparkline' ? {symbols: '{symbols}', period: '{period}', interval: '{interval}'} : kind === 'prices'
+    const query = kind === 'quotes' ? 'symbols={symbols}&market={market}' : kind === 'sparkline' ? 'symbols={symbols}&period={period}&interval={interval}' : kind === 'prices' ? 'symbol={symbol}&period={period}&interval={interval}' : 'market={market}&language={language}';
+    const body = kind === 'quotes' ? {symbols: '{symbols}', market: '{market}'} : kind === 'sparkline' ? {symbols: '{symbols}', period: '{period}', interval: '{interval}'} : kind === 'prices'
         ? {symbol: '{symbol}', period: '{period}', interval: '{interval}'} : {market: '{market}', language: '{language}'};
     const values: Record<string, string> = {symbol, symbols: `${symbol},${market === 'KR' ? '000660' : 'MSFT'}`, market, language: kind === 'marketIndices' ? 'en' : language, period: kind === 'sparkline' ? '3mo' : '10y', interval: '1d'};
     const actualBody = Object.fromEntries(Object.entries(body).map(([key]) => [key, key === 'symbols' ? values[key].split(',') : values[key]]));

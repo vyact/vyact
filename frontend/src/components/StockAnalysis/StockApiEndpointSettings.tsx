@@ -10,6 +10,7 @@ const PRICE_RESPONSE_FIELDS = ['day', 'open', 'high', 'low', 'close', 'volume', 
 
 const RESPONSE_FIELDS: Record<StockApiKind, {field: string; label: string}[]> = {
     prices: PRICE_RESPONSE_FIELDS.map(field => ({field, label: field})),
+    quotes: ['symbol', 'date', 'price', 'changePercent', 'marketCap'].map(field => ({field: field === 'changePercent' ? 'change' : field, label: field})),
     symbols: ['symbol', 'name', 'preferred', 'exchange'].map(field => ({field, label: field})),
     sparkline: [{field: '{symbol}', label: 'sparklineValues'}],
     marketIndices: ['symbol', 'price', 'change', 'changePercent', 'date', 'closes'].map(field => ({field, label: field})),
@@ -36,7 +37,7 @@ export default function StockApiEndpointSettings({market, kind, endpoint, body, 
     const errorKey = result && VALIDATION_FAILURE_CODES.has(result.code) ? result.code : 'request_failed';
     const tokens = Object.keys(examples.body);
     const requestExampleBody = Object.fromEntries(tokens.map(token => [token, testValues[token].trim()]));
-    const postExampleBody = {...requestExampleBody, ...(kind === 'sparkline' ? {symbols: testValues.symbols.split(',').map(value => value.trim())} : {})};
+    const postExampleBody = {...requestExampleBody, ...((kind === 'sparkline' || kind === 'quotes') ? {symbols: testValues.symbols.split(',').map(value => value.trim())} : {})};
     const requestExampleUrl = `${examples.url}?${new URLSearchParams(requestExampleBody).toString()}`;
     const id = `stock-api-${market}-${kind}`;
     const configured = Boolean(endpoint?.url.trim());
@@ -66,7 +67,7 @@ export default function StockApiEndpointSettings({market, kind, endpoint, body, 
                 <div><strong>{result.ok ? result.code === 'empty' ? tr('validationEmpty') : t('stockAnalysis.api.validationSuccess', {count: result.count, status: result.status}) : tr(`validation_${errorKey}`)}</strong>
                     {!result.ok && result.status !== null && <span>{t('stockAnalysis.api.validationHttp', {status: result.status})}</span>}
                     {!!result.fields.length && <span>{t('stockAnalysis.api.validationFields', {fields: result.fields.join(', ')})}</span>}
-                    {(kind === 'prices' || kind === 'sparkline') && <span>{t('stockAnalysis.api.validationSample', {symbol: kind === 'sparkline' ? testValues.symbols : testValues.symbol})}</span>}
+                    {(kind === 'prices' || kind === 'sparkline' || kind === 'quotes') && <span>{t('stockAnalysis.api.validationSample', {symbol: kind === 'sparkline' || kind === 'quotes' ? testValues.symbols : testValues.symbol})}</span>}
                 </div>
             </div>}
             {endpoint?.method === 'POST' && <label>{tr('body')}<textarea spellCheck={false} rows={5} value={body} onChange={event => onBodyChange(event.target.value)}/></label>}

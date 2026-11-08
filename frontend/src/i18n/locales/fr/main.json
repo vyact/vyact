@@ -1833,6 +1833,27 @@
     "manuscriptApplyHelp": "L’application remplace le titre et le texte du chapitre actuel."
   },
   "stockAnalysis": {
+    "groups": {
+      "deleteDescription": "La suppression du groupe retire aussi toutes les actions de ce groupe.",
+      "noResults": "Aucune action correspondante.",
+      "missingCaps": "{{count}} actions sans capitalisation sont exclues de la carte.",
+      "duplicateName": "Ce nom de groupe est déjà utilisé.",
+      "tab": "Groupes",
+      "create": "Créer un groupe",
+      "edit": "Modifier le groupe",
+      "name": "Nom du groupe",
+      "stocks": "{{count}} actions",
+      "selectStocks": "Choisir des actions",
+      "limit": "{{count}} actions maximum",
+      "removeStock": "Retirer {{name}}",
+      "all": "Tous les groupes",
+      "editNamed": "Modifier {{name}}",
+      "deleteNamed": "Supprimer {{name}}",
+      "mapTitle": "Carte de mes groupes",
+      "mapHint": "Surface selon la capitalisation · Couleur selon la variation",
+      "empty": "Aucune action dans les groupes",
+      "emptyHint": "Créez un groupe et ajoutez des actions."
+    },
     "history": {
       "allInvestors": "Tous les investisseurs",
       "aggregatePeriod": "Période",
@@ -1924,7 +1945,13 @@
       "boardHint": "Un espace pour partager analyses et avis sur ce titre."
     },
     "api": {
+      "deleteKey": "Supprimer la clé",
+      "deleteKeyTitle": "Supprimer la clé API",
+      "deleteKeyDescription": "Supprimer la clé API enregistrée maintenant ? Les autres modifications ne seront pas enregistrées.",
+      "deleteKeyError": "Impossible de supprimer la clé API.",
+      "quotes": "Cours et capitalisations",
       "responseFields": {
+        "marketCap": "Capitalisation (devise du marché)",
         "symbol": "Code action/indice",
         "name": "Nom de l’action",
         "preferred": "Action privilégiée (boolean)",

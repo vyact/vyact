@@ -1832,6 +1832,27 @@
     "manuscriptApplyHelp": "Applying replaces the current chapter title and manuscript with this result."
   },
   "stockAnalysis": {
+    "groups": {
+      "deleteDescription": "Deleting the group also removes all stock memberships in this group.",
+      "noResults": "No matching stocks.",
+      "missingCaps": "{{count}} stocks without market-cap data are excluded from the map.",
+      "duplicateName": "This group name is already in use.",
+      "tab": "Groups",
+      "create": "Create group",
+      "edit": "Edit group",
+      "name": "Group name",
+      "stocks": "{{count}} stocks",
+      "selectStocks": "Select stocks",
+      "limit": "Up to {{count}} stocks",
+      "removeStock": "Remove {{name}}",
+      "all": "All groups",
+      "editNamed": "Edit group {{name}}",
+      "deleteNamed": "Delete group {{name}}",
+      "mapTitle": "My groups heatmap",
+      "mapHint": "Area follows market cap · Color shows price change",
+      "empty": "No stocks in these groups",
+      "emptyHint": "Create a group and add stocks."
+    },
     "history": {
       "allInvestors": "All investors",
       "aggregatePeriod": "Period",
@@ -1923,7 +1944,13 @@
       "boardHint": "A space to share analysis and opinions about this stock."
     },
     "api": {
+      "deleteKey": "Delete key",
+      "deleteKeyTitle": "Delete API key",
+      "deleteKeyDescription": "Delete the saved API key now? Other edits will remain unsaved.",
+      "deleteKeyError": "Could not delete the API key.",
+      "quotes": "Stock quotes & market caps",
       "responseFields": {
+        "marketCap": "Market capitalization (market currency)",
         "symbol": "Stock/index code",
         "name": "Stock name",
         "preferred": "Preferred share (boolean)",

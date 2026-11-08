@@ -1,0 +1,41 @@
+import {useEffect, useState} from 'react';
+import {reorderGroups, reorderItems} from './groupOrdering';
+import type {StockMarket} from '../../services/stockAnalysis';
+
+export type StockGroup = {id: string; market: StockMarket; name: string; symbols: string[]};
+export const STOCK_GROUP_NAME_LIMIT = 60;
+export const STOCK_GROUP_SIZE_LIMIT = 100;
+const STORAGE_KEY = 'vyact:stock-analysis:groups:v1';
+
+export function normalizeStockGroups(value: unknown): StockGroup[] {
+    if (!Array.isArray(value)) return [];
+    const ids = new Set<string>();
+    return value.flatMap(item => {
+        if (!item || typeof item.id !== 'string' || ids.has(item.id) || !['KR', 'US'].includes(item.market)
+            || typeof item.name !== 'string' || !item.name.trim() || !Array.isArray(item.symbols)) return [];
+        ids.add(item.id);
+        return [{id: item.id, market: item.market as StockMarket, name: item.name.trim().slice(0, STOCK_GROUP_NAME_LIMIT),
+            symbols: [...new Set<string>(item.symbols.filter((symbol: unknown): symbol is string =>
+                typeof symbol === 'string' && /^[A-Z0-9][A-Z0-9.-]{0,15}$/.test(symbol)))].slice(0, STOCK_GROUP_SIZE_LIMIT)}];
+    });
+}
+function readGroups() {
+    try {return normalizeStockGroups(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]'));} catch {return [];}
+}
+
+export default function useStockGroups() {
+    const [groups, setGroups] = useState(readGroups);
+    useEffect(() => {
+        try {localStorage.setItem(STORAGE_KEY, JSON.stringify(groups));} catch { /* Keep session edits usable. */ }
+    }, [groups]);
+    return {groups,
+        reorder: (market: StockMarket, source: string, target: string, after: boolean) => setGroups(current => reorderGroups(current, market, source, target, after)),
+        reorderStock: (groupId: string, source: string, target: string, after: boolean) => setGroups(current => current.map(group => group.id === groupId
+            ? {...group, symbols: reorderItems(group.symbols, source, target, after)} : group)),
+        save: (group: StockGroup) => setGroups(current => normalizeStockGroups(current.some(item => item.id === group.id)
+            ? current.map(item => item.id === group.id ? group : item) : [...current, group])),
+        removeStock: (id: string, symbol: string) => setGroups(current => current.map(group => group.id === id
+            ? {...group, symbols: group.symbols.filter(value => value !== symbol)} : group)),
+        remove: (id: string) => setGroups(current => current.filter(item => item.id !== id)),
+    };
+}

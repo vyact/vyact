@@ -8,6 +8,7 @@ from time import monotonic, time
 import httpx
 from yfinance.data import YfData
 
+from services.stock_analysis.symbols import yahoo_symbol
 from services.stock_analysis.catalog import Market
 from services.stock_analysis.korea_yahoo import get_korea_sector_members, korea_symbols, korea_display_names
 
@@ -165,3 +166,20 @@ def _load_map(market: Market, cache_window: int, language: str = "en") -> dict:
 
 def get_sector_map(market: Market, language: str = "en") -> dict:
     return _load_map(market, int(monotonic() // CACHE_SECONDS), "ko" if language.lower().split("-")[0] == "ko" else "en")
+
+
+@lru_cache(maxsize=128)
+def _load_stock_quotes(symbols: tuple[str, ...], cache_window: int) -> list[dict]:
+    providers = {}
+    for symbol in symbols:
+        try:
+            providers[symbol] = yahoo_symbol(symbol)
+        except ValueError:
+            continue
+    quotes = _us_quotes(list(providers.values())) if providers else {}
+    return [{"symbol": symbol, "date": quote[0], "price": quote[1], "change": quote[2], "marketCap": quote[3]}
+            for symbol, provider in providers.items() if (quote := quotes.get(provider)) is not None]
+
+
+def get_stock_quotes(symbols: list[str]) -> list[dict]:
+    return _load_stock_quotes(tuple(sorted(set(symbols))), int(monotonic() // CACHE_SECONDS))

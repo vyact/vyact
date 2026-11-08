@@ -18,9 +18,10 @@ export default function StockApiSettings({market, onClose, onSaved}: {market: St
     const {t} = useTranslation(['main', 'common', 'settings']);
     const tr = (key: string) => t(`main:stockAnalysis.api.${key}`);
     const [confirmClose, setConfirmClose] = useState(false);
+    const [deleteKeyMarket, setDeleteKeyMarket] = useState<StockMarket | null>(null);
     const [activeMarket, setActiveMarket] = useState(market);
     const [expandedEndpoints, setExpandedEndpoints] = useState<Partial<Record<StockMarket, StockApiKind | null>>>({});
-    const {drafts, errors, saving, updateDraft, save, retryLoad} = useStockApiDrafts(onSaved);
+    const {drafts, errors, saving, updateDraft, save, deleteKey, retryLoad} = useStockApiDrafts(onSaved);
     const requestClose = () => {
         if (saving) return;
         if (STOCK_API_MARKETS.some(key => drafts[key]?.dirty)) setConfirmClose(true);
@@ -60,20 +61,26 @@ export default function StockApiSettings({market, onClose, onSaved}: {market: St
                 {!draft && !error && <p role="status">{t('main:stockAnalysis.loading')}</p>}
                 {settings && draft && <fieldset disabled={saving} key={activeMarket}>
                     <section className="provider-editor-section stock-api-auth">
-                        <label><span className="stock-api-key-label-row"><span>{tr('apiKey')}</span>
-                            {keyStatus && <span className="stock-api-key-status" data-pending={keyStatus !== 'keyConfigured'} role="status">
-                                {keyStatus === 'keyConfigured' ? <Check size={14} aria-hidden="true"/> : <Clock3 size={14} aria-hidden="true"/>}{tr(keyStatus)}
-                            </span>}
-                        </span><input type="password" autoComplete="new-password" value={settings.apiKey ?? ''}
-                            placeholder={settings.hasApiKey ? t('settings:externalData.serviceKeySavedPlaceholder') : tr('optional')}
-                            onChange={event => updateSettings(previous => ({...previous, apiKey: event.target.value || undefined, clearApiKey: false}))}/></label>
+                        <div className="stock-api-key-field">
+                            <div className="stock-api-key-label-row"><label htmlFor="stock-api-key">{tr('apiKey')}</label>
+                                <div className="stock-api-key-actions">
+                                    {keyStatus && <span className="stock-api-key-status" data-pending={keyStatus !== 'keyConfigured'} role="status">
+                                        {keyStatus === 'keyConfigured' ? <Check size={14} aria-hidden="true"/> : <Clock3 size={14} aria-hidden="true"/>}{tr(keyStatus)}
+                                    </span>}
+                                    {settings.hasApiKey && <button type="button" className="stock-api-delete-key" onClick={() => setDeleteKeyMarket(activeMarket)}>
+                                        <Trash2 size={14} aria-hidden="true"/>{tr('deleteKey')}
+                                    </button>}
+                                </div>
+                            </div>
+                            <input id="stock-api-key" type="password" autoComplete="new-password" value={settings.apiKey ?? ''}
+                                placeholder={settings.hasApiKey ? t('settings:externalData.serviceKeySavedPlaceholder') : tr('optional')}
+                                onChange={event => updateSettings(previous => ({...previous, apiKey: event.target.value || undefined, clearApiKey: false}))}/>
+                        </div>
                         <details className="stock-api-auth-options"><summary>{tr('authOptions')}</summary>
                             <div className="stock-api-auth-fields">
                                 <label>{tr('headerName')}<input value={settings.headerName} onChange={event => updateSettings(previous => ({...previous, headerName: event.target.value}))}/></label>
                                 <label>{tr('keyPrefix')}<input value={settings.keyPrefix} onChange={event => updateSettings(previous => ({...previous, keyPrefix: event.target.value}))}/></label>
                             </div>
-                            {settings.hasApiKey && <label className="stock-api-checkbox"><input type="checkbox" checked={settings.clearApiKey ?? false}
-                                onChange={event => updateSettings(previous => ({...previous, clearApiKey: event.target.checked, apiKey: undefined}))}/>{tr('clearKey')}</label>}
                         </details>
                     </section>
                     <div className="stock-api-endpoints">
@@ -105,6 +112,15 @@ export default function StockApiSettings({market, onClose, onSaved}: {market: St
             <footer><button type="button" className="modal-action-cancel" disabled={saving} onClick={onClose}>{t('common:cancel')}</button>
                 <button type="button" className="modal-action-submit" disabled={saving || !draft} onClick={() => void save(setActiveMarket)}>{tr(saving ? 'saving' : 'saveAll')}</button></footer>
         </div>
+        {deleteKeyMarket && <ConfirmModal title={tr('deleteKeyTitle')} description={tr('deleteKeyDescription')} actionLayout="horizontal"
+            loading={saving} loadingValue="delete"
+            options={[{value: 'cancel', label: t('common:cancel')}, {value: 'delete', label: tr('deleteKey'), variant: 'danger'}]}
+            onClose={() => {if (!saving) setDeleteKeyMarket(null);}}
+            onSelect={value => {
+                if (saving) return;
+                if (value === 'cancel') setDeleteKeyMarket(null);
+                else void deleteKey(deleteKeyMarket).then(() => setDeleteKeyMarket(null));
+            }}/>}
         {confirmClose && <ConfirmModal title={tr('closeTitle')} description={tr('closeDescription')} actionLayout="horizontal"
             options={[{value: 'continue', label: tr('keepEditing'), variant: 'primary'}, {value: 'discard', label: tr('discardClose'), variant: 'danger'}]}
             onClose={() => setConfirmClose(false)} onSelect={value => {if (value === 'discard') onClose(); else setConfirmClose(false);}}/>}

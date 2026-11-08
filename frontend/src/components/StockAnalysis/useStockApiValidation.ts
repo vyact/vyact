@@ -35,7 +35,7 @@ export default function useStockApiValidation(market: StockMarket, kind: StockAp
         pending.current = {signature, controller};
         setState({signature, running: true});
         try {
-            const result = await stockApiSettings.validate(market, kind, prepared, (kind === 'sparkline' ? testValues.symbols : testValues.symbol).trim(), testValues.language.trim(), controller.signal,
+            const result = await stockApiSettings.validate(market, kind, prepared, (kind === 'sparkline' || kind === 'quotes' ? testValues.symbols : testValues.symbol).trim(), testValues.language.trim(), controller.signal,
                 kind === 'prices' || kind === 'sparkline' ? {period: testValues.period.trim(), interval: testValues.interval.trim()} : undefined);
             if (!controller.signal.aborted) setState({signature, running: false, result});
         } catch {

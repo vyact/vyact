@@ -1831,6 +1831,27 @@
     "manuscriptApplyHelp": "適用すると現在の話のタイトルと本文をこの結果で置き換えます。"
   },
   "stockAnalysis": {
+    "groups": {
+      "deleteDescription": "グループを削除すると、このグループの登録銘柄もすべて解除されます。",
+      "noResults": "該当する銘柄がありません。",
+      "missingCaps": "時価総額のない{{count}}銘柄はマップから除外されます。",
+      "duplicateName": "このグループ名は使用中です。",
+      "tab": "グループ",
+      "create": "グループ作成",
+      "edit": "グループ編集",
+      "name": "グループ名",
+      "stocks": "{{count}}銘柄",
+      "selectStocks": "銘柄を選択",
+      "limit": "最大{{count}}銘柄",
+      "removeStock": "{{name}}を削除",
+      "all": "全グループ",
+      "editNamed": "{{name}}を編集",
+      "deleteNamed": "{{name}}を削除",
+      "mapTitle": "マイグループのヒートマップ",
+      "mapHint": "面積は時価総額に比例・色は騰落率",
+      "empty": "グループに銘柄がありません",
+      "emptyHint": "グループを作成して銘柄を追加してください。"
+    },
     "history": {
       "allInvestors": "すべての投資家",
       "aggregatePeriod": "集計期間",
@@ -1922,7 +1943,13 @@
       "boardHint": "この銘柄の分析や意見を共有する場所です。"
     },
     "api": {
+      "deleteKey": "キー削除",
+      "deleteKeyTitle": "APIキー削除",
+      "deleteKeyDescription": "保存済みAPIキーを今すぐ削除しますか？他の変更は保存されません。",
+      "deleteKeyError": "APIキーを削除できませんでした。",
+      "quotes": "銘柄株価・時価総額",
       "responseFields": {
+        "marketCap": "時価総額（市場通貨）",
         "symbol": "銘柄・指数コード",
         "name": "銘柄名",
         "preferred": "優先株 (boolean)",
