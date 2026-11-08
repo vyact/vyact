@@ -1,3 +1,5 @@
+import asyncio
+import json
 import math
 from functools import lru_cache
 from time import time
@@ -46,3 +48,22 @@ def fetch_financials(symbol, frequency):
     if is_market_index(symbol):
         return {'currency': None, 'statements': {key: [] for key in STATEMENT_METRICS}}
     return _fetch_financials(symbol, frequency, int(time() // FINANCIAL_CACHE_SECONDS))
+
+
+async def build_financial_chat_context(symbol):
+    if is_market_index(symbol):
+        return ""
+    results = await asyncio.gather(
+        *(asyncio.to_thread(fetch_financials, symbol, frequency) for frequency in ('yearly', 'quarterly')),
+        return_exceptions=True,
+    )
+    context = []
+    for frequency, result in zip(('yearly', 'quarterly'), results):
+        if isinstance(result, BaseException):
+            context.append(f"Financial statements for {symbol} ({frequency}): unavailable.")
+            continue
+        statements = {key: rows[:5] for key, rows in result['statements'].items()}
+        context.append(f"Financial statements for {symbol} ({frequency}), source: Yahoo Finance, "
+                       f"amounts in base currency units, EPS per share: "
+                       + json.dumps({'currency': result['currency'], 'statements': statements}, ensure_ascii=False, allow_nan=False))
+    return "\n".join(context)

@@ -1950,6 +1950,7 @@
       }
     },
     "discussion": {
+      "includeFinancials": "Tài chính",
       "collapse": "Thu gọn phân tích AI",
       "expand": "Mở phân tích AI",
       "references": "Cổ phiếu tham khảo",

@@ -1950,6 +1950,7 @@
       }
     },
     "discussion": {
+      "includeFinancials": "财务数据",
       "collapse": "收起AI分析",
       "expand": "展开AI分析",
       "references": "参考股票",

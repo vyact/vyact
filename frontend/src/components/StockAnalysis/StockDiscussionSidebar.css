@@ -34,9 +34,9 @@
 .stock-discussion-composer .mcp-prompt-input textarea:focus-visible {outline: none;}
 .stock-discussion-composer textarea::placeholder {color: var(--text-muted);}
 .stock-discussion-composer .mcp-prompt-toolbar {gap: 8px;}
-.stock-discussion-composer .mcp-prompt-toolbar > .stock-discussion-send {display: grid; place-items: center; flex: 0 0 34px; width: 34px; height: 34px; min-height: 0; margin-inline-start: 8px; padding: 0; border: 0; border-radius: 50%; background: var(--accent); color: var(--on-accent); cursor: pointer;}
+.stock-discussion-composer .mcp-prompt-toolbar > .stock-discussion-send {display: grid; place-items: center; flex: 0 0 34px; width: 34px; height: 34px; min-height: 0; margin-inline-start: auto; padding: 0; border: 0; border-radius: 50%; background: var(--accent); color: var(--on-accent); cursor: pointer;}
 .stock-discussion-composer .stock-discussion-send:disabled {background: var(--surface2); color: var(--text-muted); cursor: default;}
-.stock-discussion-period {display: flex; align-items: center; gap: 6px; min-width: 0; margin-inline-start: auto; color: var(--text-muted); font-size: 11px;}
+.stock-discussion-period {display: flex; align-items: center; gap: 6px; min-width: 0; margin-inline-start: 0; color: var(--muted); font-size: 11px;}
 .stock-discussion-period span {white-space: nowrap;}
 .stock-discussion-period input {box-sizing: border-box; width: 44px; height: 28px; padding: 3px 4px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--text); font: inherit; font-weight: 600; font-variant-numeric: tabular-nums;}
 .stock-discussion-period input {transition: border-color .15s;}
@@ -88,3 +88,13 @@
 
 .stock-discussion-container.is-collapsed .stock-discussion-toggle {inset-inline-end: 10px; top: 12px; width: 28px; height: 28px; border-color: transparent; background: transparent;}
 .stock-discussion-container.is-collapsed .stock-discussion-toggle:hover {background: var(--surface2); color: var(--accent); border-color: var(--border);}
+
+.stock-discussion-financials-option {display: flex; align-items: center; gap: 6px; margin-inline-start: 0; color: var(--muted); font-size: 11px; white-space: nowrap;}
+.stock-discussion-financials-label {display: inline-flex; align-items: center; gap: 6px;}
+.stock-discussion-financials-option:has(input:checked) .stock-discussion-financials-label {color: var(--text);}
+.stock-discussion-financials-option .settings-switch {width: 30px; height: 18px;}
+.stock-discussion-financials-option .settings-switch-slider::before {width: 12px; height: 12px;}
+.stock-discussion-financials-option .settings-switch input:checked + .settings-switch-slider::before {transform: translateX(12px);}
+
+.stock-discussion-context-settings {display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap; gap: 8px 20px; padding: 0 4px 10px;}
+.stock-discussion-context-settings > * {flex-shrink: 0;}

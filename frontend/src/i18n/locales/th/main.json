@@ -1950,6 +1950,7 @@
       }
     },
     "discussion": {
+      "includeFinancials": "การเงิน",
       "collapse": "ยุบการวิเคราะห์ AI",
       "expand": "ขยายการวิเคราะห์ AI",
       "references": "หุ้นอ้างอิง",

@@ -1952,6 +1952,7 @@
       }
     },
     "discussion": {
+      "includeFinancials": "Finances",
       "collapse": "Replier l’analyse IA",
       "expand": "Déplier l’analyse IA",
       "references": "Titres de référence",

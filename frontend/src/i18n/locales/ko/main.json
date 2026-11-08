@@ -1960,6 +1960,7 @@
       }
     },
     "discussion": {
+      "includeFinancials": "재무정보",
       "collapse": "AI 분석 접기",
       "expand": "AI 분석 펼치기",
       "references": "참고 종목",

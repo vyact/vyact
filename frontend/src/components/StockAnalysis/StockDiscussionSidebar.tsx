@@ -5,6 +5,7 @@ import type {StockMarket, StockSymbol} from '../../services/stockAnalysis';
 import {assertOk} from '../../utils/apiError';
 import {Tooltip} from '../common/Tooltip/Tooltip';
 import ModalTabs from '../common/ModalTabs/ModalTabs';
+import ToggleSwitch from '../common/ToggleSwitch/ToggleSwitch';
 import {MARKET_INDEX_LABELS} from './marketIndexLabels';
 import useStockDirectory from './useStockDirectory';
 import CustomSelect from '../CustomSelect/CustomSelect';
@@ -19,12 +20,12 @@ const HISTORY_LIMIT = 20;
 const DEFAULT_CONTEXT_DAYS = 60;
 const MAX_CONTEXT_DAYS = 500;
 const PREFERENCES_KEY = 'vyact:stock-discussion:preferences';
-function readPreferences(): {days: number; toolIds: string[]} {
+function readPreferences(): {days: number; toolIds: string[]; includeFinancials: boolean} {
     try {
         const value = JSON.parse(localStorage.getItem(PREFERENCES_KEY) ?? '{}');
-        return {days: Number.isInteger(value.days) && value.days >= 1 && value.days <= MAX_CONTEXT_DAYS ? value.days : DEFAULT_CONTEXT_DAYS,
+        return {includeFinancials: value.includeFinancials === true, days: Number.isInteger(value.days) && value.days >= 1 && value.days <= MAX_CONTEXT_DAYS ? value.days : DEFAULT_CONTEXT_DAYS,
             toolIds: Array.isArray(value.toolIds) ? value.toolIds.filter((id: unknown): id is string => typeof id === 'string') : []};
-    } catch {return {days: DEFAULT_CONTEXT_DAYS, toolIds: []};}
+    } catch {return {days: DEFAULT_CONTEXT_DAYS, toolIds: [], includeFinancials: false};}
 }
 
 function readMessages(key: string): ChatMessage[] {
@@ -83,7 +84,7 @@ export default function StockDiscussionSidebar({stock, market, directory}: {stoc
                 method: 'POST', signal: request.signal, headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({symbol: stock.symbol, name: stock.name, market,
                     reference_stocks: referenceStocks.map(item => ({symbol: item.symbol, name: item.name})),
-                    context_days: preferences.days, selected_mcp_ids: selectedServers.map(server => server.id),
+                    context_days: preferences.days, include_financials: preferences.includeFinancials, selected_mcp_ids: selectedServers.map(server => server.id),
                     language: i18n.resolvedLanguage ?? i18n.language, question: text, messages: messages.slice(-HISTORY_LIMIT)}),
             });
             await assertOk(response);
@@ -132,16 +133,12 @@ export default function StockDiscussionSidebar({stock, market, directory}: {stoc
                 </div>
                 {error && <p className="stock-discussion-error" role="alert">{tr('error')}</p>}
                 <form className="stock-discussion-composer" onSubmit={event => {event.preventDefault(); void send();}}>
-                    <McpPromptInput id={`${id}-input`} aria-label={tr('placeholder')} placeholder={tr('placeholder')}
-                        value={question} onChange={setQuestion} maxLength={4000} disabled={busy} rows={1} textareaRef={textarea}
-                        selectedServers={selectedServers} onSelectedServersChange={setSelectedServers}
-                        scopeHelp={tr('toolScopeHelp')}
-                        onKeyDown={event => {
-                            if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
-                                event.preventDefault(); void send();
-                            }
-                        }}
-                        actions={<>
+                    <div className="stock-discussion-context-settings">
+        <div className="stock-discussion-financials-option">
+            <span className="stock-discussion-financials-label">{tr('includeFinancials')}</span>
+            <ToggleSwitch label={tr('includeFinancials')} checked={preferences.includeFinancials} disabled={busy}
+                onChange={includeFinancials => setPreferences(current => ({...current, includeFinancials}))}/>
+        </div>
                             <label className="stock-discussion-period" htmlFor={`${id}-days`}>
                                 <span>{tr('contextDays')}</span>
                                 <input id={`${id}-days`} type="text" inputMode="numeric" pattern="[0-9]*" maxLength={String(MAX_CONTEXT_DAYS).length}
@@ -156,6 +153,18 @@ export default function StockDiscussionSidebar({stock, market, directory}: {stoc
                                         if (Number.isInteger(days) && days >= 1 && days <= MAX_CONTEXT_DAYS) setPreferences(current => ({...current, days}));
                                     }}/>
                             </label>
+                    </div>
+                    <McpPromptInput id={`${id}-input`} aria-label={tr('placeholder')} placeholder={tr('placeholder')}
+                        value={question} onChange={setQuestion} maxLength={4000} disabled={busy} rows={1} textareaRef={textarea}
+                        selectedServers={selectedServers} onSelectedServersChange={setSelectedServers}
+                        scopeHelp={tr('toolScopeHelp')}
+                        onKeyDown={event => {
+                            if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+                                event.preventDefault(); void send();
+                            }
+                        }}
+                        actions={<>
+
                             {busy ? <button className="stock-discussion-send" type="button" aria-label={tr('stop')} title={tr('stop')}
                                 onClick={() => {controller.current?.abort(); controller.current = null; setBusy(false);}}><Square size={17}/></button>
                                 : <button className="stock-discussion-send" type="submit" disabled={!question.trim()} aria-label={tr('send')} title={tr('send')}><ArrowUp size={20}/></button>}

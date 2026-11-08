@@ -1950,6 +1950,7 @@
       }
     },
     "discussion": {
+      "includeFinancials": "財務情報",
       "collapse": "AI分析を折りたたむ",
       "expand": "AI分析を展開",
       "references": "参考銘柄",
