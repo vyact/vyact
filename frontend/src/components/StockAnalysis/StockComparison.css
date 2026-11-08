@@ -2,7 +2,8 @@
 .stock-price-chart-toolbar > button {display: inline-flex; align-items: center; justify-content: center; gap: 5px;}
 .stock-comparison small {color: var(--text-muted); font-size: 11px;}
 .stock-comparison-row {display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); font-size: 12px;}
-.stock-comparison-dot {width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;}
+.stock-comparison-name {color: var(--stock-comparison-color);}
+.stock-comparison-dot {background: var(--stock-comparison-color); width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;}
 .stock-comparison-row > strong {max-width: 180px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;}
 .stock-comparison-row button {display: inline-flex; align-items: center; justify-content: center; min-height: 26px; padding: 4px; border: 0; border-radius: 5px; background: transparent; color: var(--text-muted); cursor: pointer; font: inherit;}
 .stock-comparison-row button:hover:not(:disabled) {background: var(--bg); color: var(--accent);}

@@ -1,4 +1,5 @@
 :root[data-theme='light'] {
+  --stock-comparison-color: #0f766e;
   color-scheme: light;
   --bg: #f8fafc;
   --surface: #ffffff;

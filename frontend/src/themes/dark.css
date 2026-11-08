@@ -1,5 +1,6 @@
 :root:not([data-theme]),
 :root[data-theme='dark'] {
+  --stock-comparison-color: #2dd4bf;
   color-scheme: dark;
   --bg: #171717;
   --surface: #212121;

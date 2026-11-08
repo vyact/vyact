@@ -14,8 +14,9 @@ import {comparisonDailyChange, comparisonPoints} from './comparisonData';
 import type {ChartInterval} from './chartData';
 import './StockComparison.css';
 
-const COMPARISON_COLOR = '#e85e97';
-type Comparison = {symbol: string; name: string; rows: DailyPrice[]; shift: number; color: string};
+const comparisonColor = () => getComputedStyle(document.documentElement).getPropertyValue('--stock-comparison-color').trim();
+
+type Comparison = {symbol: string; name: string; rows: DailyPrice[]; shift: number};
 
 export default function StockComparison({chart, bars, interval, revision, directory, hoveredDay, children, actionTarget, quoteTarget, market, onLayoutChange, quoteMode}: {
     onLayoutChange: () => void;
@@ -63,20 +64,32 @@ export default function StockComparison({chart, bars, interval, revision, direct
         const instance = chart.current;
         if (!instance) return;
         const range = instance.timeScale().getVisibleRange();
+        let latestDay = bars[bars.length - 1]?.day;
         const series = items.map(item => {
             const line = instance.addSeries(LineSeries, {
-                priceScaleId: 'left', color: item.color, lineWidth: 1,
+                priceScaleId: 'left', color: comparisonColor(), lineWidth: 2,
                 priceLineVisible: false, lastValueVisible: false,
             });
-            line.setData(comparisonPoints(bars, item.rows, interval, item.shift));
+            const points = comparisonPoints(bars, item.rows, interval, item.shift);
+            const lastDay = points[points.length - 1]?.time;
+            if (lastDay && (!latestDay || lastDay > latestDay)) latestDay = lastDay;
+            line.setData(points);
             return line;
         });
+        const themeObserver = new MutationObserver(() => {
+            const color = comparisonColor();
+            series.forEach(line => line.applyOptions({color}));
+        });
+        themeObserver.observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
         // Axis visibility is a chart-wide layout option. Updating only pane 0's
         // scale leaves volume/indicator axis widgets missing during resize.
         instance.applyOptions({leftPriceScale: {visible: items.length > 0, borderVisible: false}});
         const restoreRange = () => {
             if (chart.current !== instance) return;
-            if (range) instance.timeScale().setVisibleRange(range);
+            if (range) instance.timeScale().setVisibleRange({
+                from: range.from,
+                to: latestDay && String(range.to) >= bars[bars.length - 1]?.day && latestDay > String(range.to) ? latestDay : range.to,
+            });
             instance.clearCrosshairPosition();
         };
         restoreRange();
@@ -85,6 +98,7 @@ export default function StockComparison({chart, bars, interval, revision, direct
         const restoreFrame = requestAnimationFrame(restoreRange);
         return () => {
             cancelAnimationFrame(restoreFrame);
+            themeObserver.disconnect();
             // The parent disposes and replaces this chart when its interval changes.
             // Only remove series while their owning chart is still alive.
             // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -102,7 +116,7 @@ export default function StockComparison({chart, bars, interval, revision, direct
             const rows = await stockAnalysis.prices(symbol.symbol, controller.signal, false);
             if (controller.signal.aborted) return;
             if (!rows.length) {setError(true); return;}
-            setItems([{...symbol, rows, shift: 0, color: COMPARISON_COLOR}]);
+            setItems([{...symbol, rows, shift: 0}]);
             onLayoutChange();
             setDraftShifts({});
             setOpen(false);
@@ -132,7 +146,7 @@ export default function StockComparison({chart, bars, interval, revision, direct
                 const point = comparisonPoints(bars, item.rows, interval, item.shift).find(point => point.time === day);
                 const change = point ? comparisonDailyChange(item.rows, point.sourceDay) : null;
                 return <div className={`stock-comparison-quote${inline ? ' stock-comparison-quote-inline' : ''}`} data-market={market} key={item.symbol}>
-                    {!inline && <strong style={{color: item.color}}>{item.name}</strong>}
+                    {!inline && <strong className="stock-comparison-name">{item.name}</strong>}
                     {point ? <><time dateTime={point.sourceDay}>{date.format(new Date(point.sourceDay))}</time><span>{number.format(point.value)}
                         {change !== null && <span className="stock-quote-change" data-direction={change > 0 ? 'up' : change < 0 ? 'down' : 'flat'}>({percent.format(change)}%)</span>}
                     </span></> : <span>{tr('compareNoPoint')}</span>}
@@ -159,7 +173,7 @@ export default function StockComparison({chart, bars, interval, revision, direct
                 </div>}>
                     <button type="button" className="stock-comparison-help-button" aria-label={tr('compareHelpTitle')}><CircleHelp size={14} aria-hidden="true"/></button>
                 </Tooltip>
-                <span className="stock-comparison-dot" style={{background: item.color}}/>
+                <span className="stock-comparison-dot"/>
                 <strong>{item.name}</strong>
                 <span className="stock-comparison-shift">
                     <button type="button" aria-label={tr('compareEarlier')} disabled={valid && value <= 1 - bars.length}
