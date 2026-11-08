@@ -1,6 +1,6 @@
 import asyncio
 import json
-from datetime import date
+from datetime import date, datetime, timezone
 from typing import Annotated, Literal
 from uuid import UUID
 
@@ -11,6 +11,7 @@ from pydantic import BaseModel, StringConstraints, Field
 from yfinance.exceptions import YFPricesMissingError, YFRateLimitError, YFTzMissingError
 
 from logger import get_logger
+from services.llm.config import get_provider_config
 from services.llm.core import chat_stream_with_tools, query_llm
 from services.mcp_client import mcp_manager
 from services.mcp_config import build_servers_config
@@ -318,8 +319,14 @@ async def stock_chat(body: StockChatRequest):
 async def stream_stock_answer(body, prompt, system_prompt):
     scope_token = None
     answer_parts = []
+    response_stats = None
+    response_model = None
+    question_timestamp = datetime.now(timezone.utc).isoformat()
     try:
         scope_token = await mcp_manager.enable_request_scope(body.selected_mcp_ids, client_scope=True, explicit=True)
+        provider = await get_provider_config()
+        response_model = provider.get("model")
+        yield json.dumps({"type": "model", "model": response_model}) + "\n"
         async for event in chat_stream_with_tools(
             prompt, [], system_prompt, [], [message.model_dump() for message in body.messages],
             timeout=180.0, format_instruction_override="", inject_user_profile=False,
@@ -328,11 +335,15 @@ async def stream_stock_answer(body, prompt, system_prompt):
         ):
             if event.get("type") == "token":
                 answer_parts.append(event.get("text", ""))
+            elif event.get("type") == "stats":
+                response_stats = {key: value for key, value in event.items() if key != "type"}
+            elif event.get("type") == "model":
+                response_model = event.get("model")
             elif event.get("type") == "reset":
                 answer_parts.clear()
             yield json.dumps(event, ensure_ascii=False) + "\n"
         if body.conversation_id:
-            await append_stock_conversation(body.symbol, str(body.conversation_id), body.question, "".join(answer_parts))
+            await append_stock_conversation(body.symbol, str(body.conversation_id), body.question, "".join(answer_parts), question_timestamp, response_stats, response_model)
         yield json.dumps({"type": "done"}) + "\n"
     except Exception:
         logger.exception("Stock chat stream failed")

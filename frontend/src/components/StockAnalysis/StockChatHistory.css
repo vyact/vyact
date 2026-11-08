@@ -6,4 +6,10 @@
 .stock-chat-history li button:hover {background: var(--surface2);}
 .stock-chat-history li span {flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;}
 .stock-chat-history time, .stock-chat-history > p {color: var(--muted); font-size: 12px;}
-.stock-chat-history-new {display: inline-flex; align-items: center; gap: 6px; margin-top: 14px;}
+
+.stock-chat-history-state {display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; min-height: 180px; padding: 24px 12px; color: var(--muted); text-align: center;}
+.stock-chat-history-state p {margin: 0; font-size: 13px; line-height: 1.6;}
+.stock-chat-history-state > svg {opacity: .6;}
+.stock-chat-history-spinner {animation: stock-chat-history-spin 1.2s linear infinite;}
+@keyframes stock-chat-history-spin {to {transform: rotate(360deg);}}
+@media (prefers-reduced-motion: reduce) {.stock-chat-history-spinner {animation: none;}}

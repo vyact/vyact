@@ -1,6 +1,6 @@
 import {useEffect, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {Plus} from 'lucide-react';
+import {History, LoaderCircle, CircleAlert} from 'lucide-react';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import ModalCloseButton from '../common/ModalOverlay/ModalCloseButton';
 import {assertOk} from '../../utils/apiError';
@@ -8,8 +8,8 @@ import type {Message} from '../../types';
 import './StockChatHistory.css';
 
 interface Conversation {id: string; title: string; updated_at: string; messages?: Message[]}
-export default function StockChatHistory({symbol, onClose, onSelect, onNew}: {
-    symbol: string; onClose: () => void; onSelect: (id: string, messages: Message[]) => void; onNew: () => void;
+export default function StockChatHistory({symbol, onClose, onSelect}: {
+    symbol: string; onClose: () => void; onSelect: (id: string, messages: Message[]) => void;
 }) {
     const {t, i18n} = useTranslation('main');
     const tr = (key: string) => t(`stockAnalysis.discussion.${key}`);
@@ -38,10 +38,9 @@ export default function StockChatHistory({symbol, onClose, onSelect, onNew}: {
     return <ModalOverlay onClose={selecting ? undefined : onClose} closeOnBackdrop captureEscape aria-labelledby="stock-chat-history-title">
         <section className="stock-chat-history">
             <header><h2 id="stock-chat-history-title">{tr('historyTitle')}</h2><ModalCloseButton onClick={onClose} disabled={selecting}/></header>
-            <button type="button" className="modal-action-cancel stock-chat-history-new" disabled={selecting} onClick={onNew}><Plus size={15}/>{tr('newConversation')}</button>
-            {loading && <p role="status">{t('stockAnalysis.loading')}</p>}
-            {error && <p role="alert">{tr('historyError')}</p>}
-            {!loading && !error && !rows.length && <p>{tr('historyEmpty')}</p>}
+            {loading && <div className="stock-chat-history-state" role="status"><LoaderCircle size={22} className="stock-chat-history-spinner" aria-hidden="true"/><p>{t('stockAnalysis.loading')}</p></div>}
+            {error && <div className="stock-chat-history-state" role="alert"><CircleAlert size={28} aria-hidden="true"/><p>{tr('historyError')}</p></div>}
+            {!loading && !error && !rows.length && <div className="stock-chat-history-state"><History size={32} strokeWidth={1.5} aria-hidden="true"/><p>{tr('historyEmpty')}</p></div>}
             <ul>{rows.map(row => <li key={row.id}><button type="button" disabled={selecting} onClick={() => void select(row.id)}>
                 <span>{row.title}</span><time dateTime={row.updated_at}>{new Intl.DateTimeFormat(i18n.resolvedLanguage ?? i18n.language, {month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'}).format(new Date(row.updated_at))}</time>
             </button></li>)}</ul>

@@ -75,7 +75,7 @@ const StreamingTextGroup: React.FC<{
 );
 
 const Message: React.FC<MessageProps> = ({
-                                             messageId, role, content, timestamp, sources, model, attachments,
+                                             messageId, role, content, timestamp, sources, model, attachments, disableActionTooltips = false,
                                              isError, errorTitle, errorCode, onRetry, onOpenModelSettings, retryDisabled = false, isGeneratedImage, articleSources,
                                              pdfFile, pdfParams, onPdfEdit, injectedContext, onShowInjectedContext, onOpenMemo, onOpenQuickMemo,
                                              isStreaming = false, conversationId, requestStartedAt, toolStatus, activityLog, memoryUpdates, progressMessages, stats,
@@ -843,7 +843,7 @@ const Message: React.FC<MessageProps> = ({
                     {role === 'user' ? (
                         <>
                             <button className="msg-copy-btn" onClick={handleCopy} aria-label={t(copied ? 'uiAudit.copied' : 'uiAudit.copy')}
-                                    data-instant-tooltip={t(copied ? 'uiAudit.copied' : 'uiAudit.copy')}>
+                                    data-instant-tooltip={disableActionTooltips ? undefined : t(copied ? 'uiAudit.copied' : 'uiAudit.copy')}>
                                 {copied ? (
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                          strokeWidth="2">
@@ -869,7 +869,7 @@ const Message: React.FC<MessageProps> = ({
                         <>
                             <span className="msg-time">{formatTimestamp(timestamp)}{model && ` · ${formatModelDisplayName(model)}`}</span>
                             <button className="msg-copy-btn" onClick={handleCopy} aria-label={t(copied ? 'uiAudit.copied' : 'uiAudit.copy')}
-                                    data-instant-tooltip={t(copied ? 'uiAudit.copied' : 'uiAudit.copy')}>
+                                    data-instant-tooltip={disableActionTooltips ? undefined : t(copied ? 'uiAudit.copied' : 'uiAudit.copy')}>
                                 {copied ? (
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                          strokeWidth="2">

@@ -29,7 +29,8 @@ class StockChatHistoryTests(unittest.IsolatedAsyncioTestCase):
             await append_stock_conversation('005930.KS', 'chat', 'Question', 'Answer')
         request = es.update.call_args.kwargs
         self.assertEqual(request['upsert']['symbol'], '005930')
-        self.assertEqual(request['script']['params']['messages'], [
+        self.assertTrue(all(message['timestamp'] for message in request['script']['params']['messages']))
+        self.assertEqual([{key: message[key] for key in ('role', 'content')} for message in request['script']['params']['messages']], [
             {'role': 'user', 'content': 'Question'}, {'role': 'assistant', 'content': 'Answer'},
         ])
         self.assertIn('addAll', request['script']['source'])

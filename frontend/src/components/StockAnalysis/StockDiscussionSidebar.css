@@ -32,15 +32,15 @@
 .stock-discussion-composer .mcp-prompt-input:focus-within {border-color: color-mix(in srgb, var(--accent) 55%, var(--border));}
 .stock-discussion-composer .mcp-prompt-input textarea {display: block; flex: none; width: 100%; min-height: 62px; max-height: 180px; padding: 0 3px; border: 0; border-radius: 0; outline: none; resize: none; background: transparent; box-shadow: none; font-size: 13px; line-height: 1.65;}
 .stock-discussion-composer .mcp-prompt-input textarea:focus-visible {outline: none;}
-.stock-discussion-composer textarea::placeholder {color: var(--text-muted);}
+.stock-discussion-composer textarea::placeholder {color: var(--muted); opacity: .75;}
 .stock-discussion-composer .mcp-prompt-toolbar {gap: 8px;}
-.stock-discussion-composer .mcp-prompt-toolbar > .stock-discussion-send {display: grid; place-items: center; flex: 0 0 34px; width: 34px; height: 34px; min-height: 0; margin-inline-start: auto; padding: 0; border: 0; border-radius: 50%; background: var(--accent); color: var(--on-accent); cursor: pointer;}
+.stock-discussion-composer .mcp-prompt-toolbar > .stock-discussion-send {display: grid; place-items: center; flex: 0 0 30px; width: 30px; height: 30px; min-height: 0; margin-inline-start: auto; padding: 0; border: 0; border-radius: 50%; background: var(--accent); color: var(--on-accent); cursor: pointer;}
 .stock-discussion-composer .stock-discussion-send:disabled {background: var(--surface2); color: var(--text-muted); cursor: default;}
 .stock-discussion-period {display: flex; align-items: center; gap: 6px; min-width: 0; margin-inline-start: 0; color: var(--muted); font-size: 11px;}
 .stock-discussion-period span {white-space: nowrap;}
 .stock-discussion-period input {box-sizing: border-box; width: 44px; height: 28px; padding: 3px 4px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--text); font: inherit; font-weight: 600; font-variant-numeric: tabular-nums;}
 .stock-discussion-period input {transition: border-color .15s;}
-.stock-discussion-period input:hover:not(:disabled) {border-bottom-color: var(--text-muted);}
+.stock-discussion-period input:hover:not(:disabled) {border-bottom-color: var(--muted);}
 .stock-discussion-period input:focus {outline: none; border-bottom-color: var(--accent);}
 .stock-discussion-title {display: flex; align-items: center; gap: 8px; padding: 17px 16px; color: var(--accent); border-bottom: 1px solid var(--border);}
 .stock-discussion-title h2 {font-size: 13px; font-weight: 650;}
@@ -91,7 +91,6 @@
 
 .stock-discussion-financials-option {display: flex; align-items: center; gap: 6px; margin-inline-start: 0; color: var(--muted); font-size: 11px; white-space: nowrap;}
 .stock-discussion-financials-label {display: inline-flex; align-items: center; gap: 6px;}
-.stock-discussion-financials-option:has(input:checked) .stock-discussion-financials-label {color: var(--text);}
 .stock-discussion-financials-option .settings-switch {width: 30px; height: 18px;}
 .stock-discussion-financials-option .settings-switch-slider::before {width: 12px; height: 12px;}
 .stock-discussion-financials-option .settings-switch input:checked + .settings-switch-slider::before {transform: translateX(12px);}
@@ -103,7 +102,6 @@
 .stock-discussion-message-row.user {justify-content: flex-end;}
 .stock-discussion-message-row.assistant {justify-content: flex-start;}
 .stock-discussion-message-row .msg {max-width: 100%;}
-.stock-discussion-message-row .msg-bubble {font-size: 13px;}
 .stock-discussion-composer .mcp-prompt-toolbar > .stock-discussion-stop {background: var(--surface2); border: 1px solid var(--border); color: var(--text);}
 .stock-discussion-composer .mcp-prompt-toolbar > .stock-discussion-stop:hover {background: var(--surface);}
 
@@ -122,7 +120,9 @@
 .stock-discussion-header .stock-discussion-instrument strong {font-size: 14px; font-weight: 600;}
 .stock-discussion-header .stock-discussion-instrument span {color: var(--muted); font-size: 11px;}
 .stock-discussion-new-button {position: absolute; top: 10px; inset-inline-end: 48px; display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); color: var(--muted); cursor: pointer;}
-.stock-discussion-new-button:hover:not(:disabled) {color: var(--text); border-color: var(--accent);}
+.stock-discussion-new-button:hover:not(:disabled) {color: var(--accent); border-color: var(--border); background: var(--surface2);}
 .stock-discussion-new-button:disabled {opacity: .4; cursor: default;}
 .stock-discussion-new-button:focus-visible {outline: 2px solid var(--accent); outline-offset: 2px;}
 .stock-discussion-references {padding: 12px 16px;}
+
+.stock-discussion-financials-label, .stock-discussion-period > span {color: var(--muted); font-size: 11px; font-weight: 500; line-height: 1.5;}

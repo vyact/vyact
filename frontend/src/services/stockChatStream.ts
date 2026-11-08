@@ -1,4 +1,7 @@
-export interface StockChatEvent {
+import type {MessageStats} from '../types';
+
+export interface StockChatEvent extends MessageStats {
+    model?: string;
     type: string;
     text?: string;
     phase?: string;

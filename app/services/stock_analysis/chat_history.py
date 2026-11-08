@@ -12,7 +12,7 @@ async def ensure_chat_index(es):
     if await es.indices.exists(index=STOCK_CONVERSATIONS_INDEX):
         return
     try:
-        await es.indices.create(index=STOCK_CONVERSATIONS_INDEX, mappings={'dynamic': 'strict', 'properties': {
+        await es.indices.create(index=STOCK_CONVERSATIONS_INDEX, settings={'number_of_shards': 1, 'number_of_replicas': 0}, mappings={'dynamic': 'strict', 'properties': {
             'symbol': {'type': 'keyword'}, 'title': {'type': 'text', 'index': False},
             'updated_at': {'type': 'date'}, 'messages': {'type': 'object', 'enabled': False},
         }})
@@ -38,12 +38,18 @@ async def get_stock_conversation(symbol, conversation_id):
     return {'id': result['_id'], **result['_source']}
 
 
-async def append_stock_conversation(symbol, conversation_id, question, answer):
+async def append_stock_conversation(symbol, conversation_id, question, answer, question_timestamp=None, stats=None, model=None):
     es = get_es()
     await ensure_chat_index(es)
     symbol = public_symbol(symbol)
-    messages = [{'role': 'user', 'content': question}, {'role': 'assistant', 'content': answer}]
     now = datetime.now(timezone.utc).isoformat()
+    messages = [{'role': 'user', 'content': question, 'timestamp': question_timestamp or now},
+                {'role': 'assistant', 'content': answer, 'timestamp': now}]
+    if stats is not None:
+        for message in messages:
+            message['stats'] = stats
+    if model:
+        messages[-1]['model'] = model
     await es.update(index=STOCK_CONVERSATIONS_INDEX, id=conversation_id, refresh='wait_for', retry_on_conflict=3,
                     script={'lang': 'painless', 'source': '''
                         if (ctx._source.symbol != params.symbol) { throw new IllegalArgumentException('symbol_mismatch'); }

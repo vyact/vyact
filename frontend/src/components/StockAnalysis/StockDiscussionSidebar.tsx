@@ -1,5 +1,5 @@
 import {useEffect, useRef, useState} from 'react';
-import {ChartNoAxesCombined, ArrowUp, Square, X, History, MessageSquarePlus} from 'lucide-react';
+import {ChartNoAxesCombined, ArrowUp, Square, X, History} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import StockChatHistory from './StockChatHistory';
 import Message from '../Message/Message';
@@ -57,7 +57,9 @@ export default function StockDiscussionSidebar({stock, market, directory}: {stoc
         input.style.height = `${Math.min(input.scrollHeight, 180)}px`;
     }, [question]);
     const controller = useRef<AbortController | null>(null);
-    const end = useRef<HTMLDivElement>(null);
+    const messageList = useRef<HTMLDivElement>(null);
+    const followLatest = useRef(true);
+    const previousScrollTop = useRef(0);
     const id = `stock-discussion-${market}-${stock.symbol}`;
 
     useEffect(() => () => controller.current?.abort(), []);
@@ -65,7 +67,11 @@ export default function StockDiscussionSidebar({stock, market, directory}: {stoc
         try {localStorage.setItem(PREFERENCES_KEY, JSON.stringify(preferences));} catch { /* Optional preferences. */ }
     }, [preferences]);
     useEffect(() => {
-        end.current?.scrollIntoView({block: 'nearest'});
+        const frame = requestAnimationFrame(() => {
+            const list = messageList.current;
+            if (list && followLatest.current) {list.scrollTop = list.scrollHeight; previousScrollTop.current = list.scrollTop;}
+        });
+        return () => cancelAnimationFrame(frame);
     }, [messages, busy]);
 
     const send = async () => {
@@ -75,9 +81,11 @@ export default function StockDiscussionSidebar({stock, market, directory}: {stoc
         controller.current = request;
         setBusy(true);
         setError(false);
+        followLatest.current = true;
+        const userId = crypto.randomUUID();
         const assistantId = crypto.randomUUID();
         const startedAt = Date.now();
-        setMessages(previous => [...previous, {id: crypto.randomUUID(), role: 'user', content: text},
+        setMessages(previous => [...previous, {id: userId, role: 'user', content: text, timestamp: new Date(startedAt).toISOString()},
             {id: assistantId, role: 'assistant', content: ''}].slice(-HISTORY_LIMIT) as ChatMessage[]);
         setQuestion('');
         const updateAssistant = (update: (message: ChatMessage) => ChatMessage) => {
@@ -94,6 +102,11 @@ export default function StockDiscussionSidebar({stock, market, directory}: {stoc
             });
             await assertOk(response);
             await readStockChatStream(response, event => {
+                if (event.type === 'model') updateAssistant(message => ({...message, model: event.model}));
+                if (event.type === 'stats' && !request.signal.aborted) {
+                    const {type: _type, ...stats} = event;
+                    setMessages(previous => previous.map(message => message.id === userId || message.id === assistantId ? {...message, stats} : message));
+                }
                 if (event.type === 'reset') updateAssistant(message => ({...message, content: ''}));
                 if (event.type === 'token' && event.text) updateAssistant(message => ({...message, content: message.content + event.text}));
                 if (event.type === 'tool') {
@@ -119,7 +132,7 @@ export default function StockDiscussionSidebar({stock, market, directory}: {stoc
                     });
                 }
             });
-            updateAssistant(message => ({...message, timestamp: new Date(startedAt).toISOString()}));
+            updateAssistant(message => ({...message, timestamp: new Date().toISOString()}));
         } catch {
             if (!request.signal.aborted) setError(true);
         } finally {
@@ -135,7 +148,7 @@ export default function StockDiscussionSidebar({stock, market, directory}: {stoc
     return <aside className="stock-discussion" aria-label={tr('title')}>
         <header className="stock-discussion-header">
             <div className="stock-discussion-title"><ChartNoAxesCombined size={16} aria-hidden="true"/><h2>{tr('ai')}</h2></div>
-            <button type="button" className="stock-discussion-new-button" disabled={busy} aria-label={tr('newConversation')} title={tr('newConversation')} onClick={startNewConversation}><MessageSquarePlus size={17} aria-hidden="true"/></button>
+            <button type="button" className="stock-discussion-new-button" disabled={busy} aria-label={tr('newConversation')} onClick={startNewConversation}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h7"/><path d="M19 2v6M16 5h6"/></svg></button>
             <div className="stock-discussion-instrument"><strong>{stock.name}</strong><span>{stock.symbol}</span></div>
         </header>
         <section className="stock-discussion-references" aria-label={tr('references')}>
@@ -160,14 +173,21 @@ export default function StockDiscussionSidebar({stock, market, directory}: {stoc
             </li>)}</ul>}
         </section>
         <div className="stock-discussion-panel">
-                <div className="stock-discussion-messages" role="log" aria-label={tr('ai')} aria-busy={busy}>
+                <div className="stock-discussion-messages" ref={messageList} tabIndex={0}
+                    onWheel={event => {if (event.deltaY < 0) followLatest.current = false;}}
+                    onKeyDown={event => {if (['PageUp', 'ArrowUp', 'Home'].includes(event.key)) followLatest.current = false;}}
+                    onScroll={event => {
+                        const list = event.currentTarget;
+                        if (list.scrollTop < previousScrollTop.current) followLatest.current = false;
+                        if (list.scrollHeight - list.scrollTop - list.clientHeight <= 8) followLatest.current = true;
+                        previousScrollTop.current = list.scrollTop;
+                    }} role="log" aria-label={tr('ai')} aria-busy={busy}>
                     {!messages.length && !busy && <div className="stock-discussion-empty"><h2>{tr('welcome')}</h2><p>{tr('hint')}</p></div>}
                     {messages.map((message, index) => <div key={message.id ?? index} className={`stock-discussion-message-row ${message.role}`}>
-                        <Message role={message.role} content={message.content} timestamp={message.timestamp ?? ''}
+                        <Message disableActionTooltips role={message.role} content={message.content} timestamp={message.timestamp ?? ''}
                             isStreaming={busy && index === messages.length - 1 && message.role === 'assistant'}
-                            activityLog={message.activityLog} toolStatus={message.toolStatus}/>
+                            model={message.model} stats={message.stats} activityLog={message.activityLog} toolStatus={message.toolStatus}/>
                     </div>)}
-                    <div ref={end}/>
                 </div>
                 {error && <p className="stock-discussion-error" role="alert">{tr('error')}</p>}
                 <form className="stock-discussion-composer" onSubmit={event => {event.preventDefault(); void send();}}>
@@ -205,9 +225,9 @@ export default function StockDiscussionSidebar({stock, market, directory}: {stoc
                             <button type="button" className="stock-discussion-history-button" aria-label={tr('historyTitle')} title={tr('historyTitle')} disabled={busy}
                                 onClick={() => setHistoryOpen(true)}><History size={18} aria-hidden="true"/></button>
 
-                            {busy ? <button className="stock-discussion-send stock-discussion-stop" type="button" aria-label={tr('stop')} title={tr('stop')}
-                                onClick={() => {controller.current?.abort(); controller.current = null; setBusy(false);}}><Square size={14} fill="currentColor" strokeWidth={0} aria-hidden="true"/></button>
-                                : <button className="stock-discussion-send" type="submit" disabled={!question.trim()} aria-label={tr('send')} title={tr('send')}><ArrowUp size={20}/></button>}
+                            {busy ? <button className="stock-discussion-send stock-discussion-stop" type="button" aria-label={tr('stop')}
+                                onClick={() => {controller.current?.abort(); controller.current = null; setBusy(false);}}><Square size={12} fill="currentColor" strokeWidth={0} aria-hidden="true"/></button>
+                                : <button className="stock-discussion-send" type="submit" disabled={!question.trim()} aria-label={tr('send')}><ArrowUp size={18}/></button>}
                         </>}/>
 
                 </form>
@@ -215,6 +235,6 @@ export default function StockDiscussionSidebar({stock, market, directory}: {stoc
         </div>
         {historyOpen && <StockChatHistory symbol={stock.symbol} onClose={() => setHistoryOpen(false)}
             onSelect={(id, restoredMessages) => {setConversationId(id); setMessages(restoredMessages); setQuestion(''); setError(false); setHistoryOpen(false);}}
-            onNew={startNewConversation}/>}
+/>}
     </aside>;
 }
