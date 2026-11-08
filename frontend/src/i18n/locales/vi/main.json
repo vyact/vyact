@@ -1950,6 +1950,10 @@
       }
     },
     "discussion": {
+      "historyTitle": "Lịch sử trò chuyện",
+      "newConversation": "Cuộc trò chuyện mới",
+      "historyEmpty": "Chưa có cuộc trò chuyện đã lưu.",
+      "historyError": "Không thể tải lịch sử trò chuyện.",
       "includeFinancials": "Tài chính",
       "collapse": "Thu gọn phân tích AI",
       "expand": "Mở phân tích AI",

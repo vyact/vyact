@@ -1951,6 +1951,10 @@
       }
     },
     "discussion": {
+      "historyTitle": "Conversation history",
+      "newConversation": "New conversation",
+      "historyEmpty": "No saved conversations.",
+      "historyError": "Unable to load conversation history.",
       "includeFinancials": "Financials",
       "collapse": "Collapse AI analysis",
       "expand": "Expand AI analysis",

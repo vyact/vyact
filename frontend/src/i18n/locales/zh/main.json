@@ -1950,6 +1950,10 @@
       }
     },
     "discussion": {
+      "historyTitle": "对话历史",
+      "newConversation": "新对话",
+      "historyEmpty": "暂无已保存的对话。",
+      "historyError": "无法加载对话历史。",
       "includeFinancials": "财务数据",
       "collapse": "收起AI分析",
       "expand": "展开AI分析",

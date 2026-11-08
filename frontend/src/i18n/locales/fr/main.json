@@ -1952,6 +1952,10 @@
       }
     },
     "discussion": {
+      "historyTitle": "Historique des conversations",
+      "newConversation": "Nouvelle conversation",
+      "historyEmpty": "Aucune conversation enregistrée.",
+      "historyError": "Impossible de charger l’historique.",
       "includeFinancials": "Finances",
       "collapse": "Replier l’analyse IA",
       "expand": "Déplier l’analyse IA",

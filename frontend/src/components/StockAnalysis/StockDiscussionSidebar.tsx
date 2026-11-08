@@ -1,6 +1,11 @@
 import {useEffect, useRef, useState} from 'react';
-import {ChartNoAxesCombined, ArrowUp, Square, X} from 'lucide-react';
+import {ChartNoAxesCombined, ArrowUp, Square, X, History, MessageSquarePlus} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
+import StockChatHistory from './StockChatHistory';
+import Message from '../Message/Message';
+import type {Message as ChatMessage, ToolActivity} from '../../types';
+import {readStockChatStream} from '../../services/stockChatStream';
+import {getToolActivityLabel, getToolActivityDetail, isToolActivityResultFailed} from '../../utils/toolActivity';
 import type {StockMarket, StockSymbol} from '../../services/stockAnalysis';
 import {assertOk} from '../../utils/apiError';
 import {Tooltip} from '../common/Tooltip/Tooltip';
@@ -14,7 +19,6 @@ import useSelectedMcpTools from '../common/useSelectedMcpTools';
 import '../common/HelpIcon.css';
 import './StockDiscussionSidebar.css';
 
-type ChatMessage = {role: 'user' | 'assistant'; content: string};
 const MAX_REFERENCE_STOCKS = 5;
 const HISTORY_LIMIT = 20;
 const DEFAULT_CONTEXT_DAYS = 60;
@@ -28,23 +32,16 @@ function readPreferences(): {days: number; toolIds: string[]; includeFinancials:
     } catch {return {days: DEFAULT_CONTEXT_DAYS, toolIds: [], includeFinancials: false};}
 }
 
-function readMessages(key: string): ChatMessage[] {
-    try {
-        const value: unknown = JSON.parse(sessionStorage.getItem(key) ?? '[]');
-        return Array.isArray(value) ? value.filter((item): item is ChatMessage =>
-            item && (item.role === 'user' || item.role === 'assistant') && typeof item.content === 'string').slice(-HISTORY_LIMIT) : [];
-    } catch {return [];}
-}
-
 export default function StockDiscussionSidebar({stock, market, directory}: {stock: StockSymbol; market: StockMarket; directory: StockSymbol[]}) {
     const {t, i18n} = useTranslation('main');
     const tr = (key: string) => t(`stockAnalysis.discussion.${key}`);
-    const storageKey = `vyact:stock-discussion:${market}:${stock.symbol}`;
     const [preferences, setPreferences] = useState(readPreferences);
     const [contextDaysInput, setContextDaysInput] = useState(() => String(preferences.days));
     const {selectedServers, setSelectedServers} = useSelectedMcpTools(preferences.toolIds, toolIds => setPreferences(current => ({...current, toolIds})));
     const [referenceStocks, setReferenceStocks] = useState<StockSymbol[]>([]);
-    const [messages, setMessages] = useState<ChatMessage[]>(() => readMessages(storageKey));
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [conversationId, setConversationId] = useState<string>(() => crypto.randomUUID());
+    const [historyOpen, setHistoryOpen] = useState(false);
     const [question, setQuestion] = useState('');
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState(false);
@@ -68,9 +65,8 @@ export default function StockDiscussionSidebar({stock, market, directory}: {stoc
         try {localStorage.setItem(PREFERENCES_KEY, JSON.stringify(preferences));} catch { /* Optional preferences. */ }
     }, [preferences]);
     useEffect(() => {
-        try {sessionStorage.setItem(storageKey, JSON.stringify(messages.slice(-HISTORY_LIMIT)));} catch { /* Storage may be unavailable. */ }
         end.current?.scrollIntoView({block: 'nearest'});
-    }, [messages, busy, storageKey]);
+    }, [messages, busy]);
 
     const send = async () => {
         const text = question.trim();
@@ -79,19 +75,51 @@ export default function StockDiscussionSidebar({stock, market, directory}: {stoc
         controller.current = request;
         setBusy(true);
         setError(false);
+        const assistantId = crypto.randomUUID();
+        const startedAt = Date.now();
+        setMessages(previous => [...previous, {id: crypto.randomUUID(), role: 'user', content: text},
+            {id: assistantId, role: 'assistant', content: ''}].slice(-HISTORY_LIMIT) as ChatMessage[]);
+        setQuestion('');
+        const updateAssistant = (update: (message: ChatMessage) => ChatMessage) => {
+            if (request.signal.aborted) return;
+            setMessages(previous => previous.map(message => message.id === assistantId ? update(message) : message));
+        };
         try {
             const response = await fetch('/api/stock-analysis/chat', {
                 method: 'POST', signal: request.signal, headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({symbol: stock.symbol, name: stock.name, market,
+                body: JSON.stringify({stream: true, conversation_id: conversationId, symbol: stock.symbol, name: stock.name, market,
                     reference_stocks: referenceStocks.map(item => ({symbol: item.symbol, name: item.name})),
                     context_days: preferences.days, include_financials: preferences.includeFinancials, selected_mcp_ids: selectedServers.map(server => server.id),
-                    language: i18n.resolvedLanguage ?? i18n.language, question: text, messages: messages.slice(-HISTORY_LIMIT)}),
+                    language: i18n.resolvedLanguage ?? i18n.language, question: text, messages: messages.slice(-HISTORY_LIMIT).map(({role, content}) => ({role, content})).filter(message => message.content.trim())}),
             });
             await assertOk(response);
-            const result = await response.json();
-            if (typeof result.answer !== 'string' || !result.answer.trim()) throw new Error('empty_response');
-            setMessages(previous => [...previous, {role: 'user', content: text}, {role: 'assistant', content: result.answer}].slice(-HISTORY_LIMIT) as ChatMessage[]);
-            setQuestion('');
+            await readStockChatStream(response, event => {
+                if (event.type === 'reset') updateAssistant(message => ({...message, content: ''}));
+                if (event.type === 'token' && event.text) updateAssistant(message => ({...message, content: message.content + event.text}));
+                if (event.type === 'tool') {
+                    const completed = event.phase === 'end';
+                    updateAssistant(message => {
+                        const log = [...(message.activityLog ?? [])];
+                        let existing = -1;
+                        if (completed) {
+                            for (let index = log.length - 1; index >= 0; index--) {
+                                if (log[index].name === event.name && log[index].phase === 'running') {existing = index; break;}
+                            }
+                        }
+                        const activity: ToolActivity = {
+                            id: existing >= 0 ? log[existing].id : crypto.randomUUID(), name: event.name,
+                            phase: completed ? 'completed' : 'running', group: 'tool',
+                            label: getToolActivityLabel(event.name, (key, options) => t(key, options)),
+                            detail: getToolActivityDetail(event.args), startedAt: existing >= 0 ? log[existing].startedAt : Date.now(),
+                            ...(completed ? {completedAt: Date.now(), outcome: isToolActivityResultFailed(event.result) ? 'failed' as const : 'success' as const} : {}),
+                        };
+                        if (existing >= 0) log[existing] = activity;
+                        else log.push(activity);
+                        return {...message, activityLog: log, toolStatus: activity};
+                    });
+                }
+            });
+            updateAssistant(message => ({...message, timestamp: new Date(startedAt).toISOString()}));
         } catch {
             if (!request.signal.aborted) setError(true);
         } finally {
@@ -100,9 +128,16 @@ export default function StockDiscussionSidebar({stock, market, directory}: {stoc
         }
     };
 
+    const startNewConversation = () => {
+        setConversationId(crypto.randomUUID()); setMessages([]); setQuestion(''); setError(false); setHistoryOpen(false);
+    };
+
     return <aside className="stock-discussion" aria-label={tr('title')}>
-        <div className="stock-discussion-title"><ChartNoAxesCombined size={17} aria-hidden="true"/><h2>{tr('ai')}</h2></div>
-        <div className="stock-discussion-instrument"><strong>{stock.name}</strong><span>{stock.symbol}</span></div>
+        <header className="stock-discussion-header">
+            <div className="stock-discussion-title"><ChartNoAxesCombined size={16} aria-hidden="true"/><h2>{tr('ai')}</h2></div>
+            <button type="button" className="stock-discussion-new-button" disabled={busy} aria-label={tr('newConversation')} title={tr('newConversation')} onClick={startNewConversation}><MessageSquarePlus size={17} aria-hidden="true"/></button>
+            <div className="stock-discussion-instrument"><strong>{stock.name}</strong><span>{stock.symbol}</span></div>
+        </header>
         <section className="stock-discussion-references" aria-label={tr('references')}>
             <div className="stock-discussion-reference-picker">
             <Tooltip content={tr('referenceHint')} multiline><button type="button" className="help-icon-button" aria-label={tr('referenceHint')}>?</button></Tooltip>
@@ -126,9 +161,12 @@ export default function StockDiscussionSidebar({stock, market, directory}: {stoc
         </section>
         <div className="stock-discussion-panel">
                 <div className="stock-discussion-messages" role="log" aria-label={tr('ai')} aria-busy={busy}>
-                    {!messages.length && <div className="stock-discussion-empty"><h2>{tr('welcome')}</h2><p>{tr('hint')}</p></div>}
-                    {messages.map((message, index) => <article key={index} className={`stock-discussion-message ${message.role}`}><strong>{tr(message.role)}</strong><div>{message.content}</div></article>)}
-                    {busy && <p role="status">{tr('thinking')}</p>}
+                    {!messages.length && !busy && <div className="stock-discussion-empty"><h2>{tr('welcome')}</h2><p>{tr('hint')}</p></div>}
+                    {messages.map((message, index) => <div key={message.id ?? index} className={`stock-discussion-message-row ${message.role}`}>
+                        <Message role={message.role} content={message.content} timestamp={message.timestamp ?? ''}
+                            isStreaming={busy && index === messages.length - 1 && message.role === 'assistant'}
+                            activityLog={message.activityLog} toolStatus={message.toolStatus}/>
+                    </div>)}
                     <div ref={end}/>
                 </div>
                 {error && <p className="stock-discussion-error" role="alert">{tr('error')}</p>}
@@ -164,14 +202,19 @@ export default function StockDiscussionSidebar({stock, market, directory}: {stoc
                             }
                         }}
                         actions={<>
+                            <button type="button" className="stock-discussion-history-button" aria-label={tr('historyTitle')} title={tr('historyTitle')} disabled={busy}
+                                onClick={() => setHistoryOpen(true)}><History size={18} aria-hidden="true"/></button>
 
-                            {busy ? <button className="stock-discussion-send" type="button" aria-label={tr('stop')} title={tr('stop')}
-                                onClick={() => {controller.current?.abort(); controller.current = null; setBusy(false);}}><Square size={17}/></button>
+                            {busy ? <button className="stock-discussion-send stock-discussion-stop" type="button" aria-label={tr('stop')} title={tr('stop')}
+                                onClick={() => {controller.current?.abort(); controller.current = null; setBusy(false);}}><Square size={14} fill="currentColor" strokeWidth={0} aria-hidden="true"/></button>
                                 : <button className="stock-discussion-send" type="submit" disabled={!question.trim()} aria-label={tr('send')} title={tr('send')}><ArrowUp size={20}/></button>}
                         </>}/>
 
                 </form>
 
         </div>
+        {historyOpen && <StockChatHistory symbol={stock.symbol} onClose={() => setHistoryOpen(false)}
+            onSelect={(id, restoredMessages) => {setConversationId(id); setMessages(restoredMessages); setQuestion(''); setError(false); setHistoryOpen(false);}}
+            onNew={startNewConversation}/>}
     </aside>;
 }

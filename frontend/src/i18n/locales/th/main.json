@@ -1950,6 +1950,10 @@
       }
     },
     "discussion": {
+      "historyTitle": "ประวัติการสนทนา",
+      "newConversation": "การสนทนาใหม่",
+      "historyEmpty": "ไม่มีการสนทนาที่บันทึกไว้",
+      "historyError": "โหลดประวัติการสนทนาไม่ได้",
       "includeFinancials": "การเงิน",
       "collapse": "ยุบการวิเคราะห์ AI",
       "expand": "ขยายการวิเคราะห์ AI",

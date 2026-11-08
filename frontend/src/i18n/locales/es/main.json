@@ -1951,6 +1951,10 @@
       }
     },
     "discussion": {
+      "historyTitle": "Historial de conversaciones",
+      "newConversation": "Nueva conversación",
+      "historyEmpty": "No hay conversaciones guardadas.",
+      "historyError": "No se pudo cargar el historial.",
       "includeFinancials": "Finanzas",
       "collapse": "Contraer análisis de IA",
       "expand": "Expandir análisis de IA",

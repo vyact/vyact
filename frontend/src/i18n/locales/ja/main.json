@@ -1950,6 +1950,10 @@
       }
     },
     "discussion": {
+      "historyTitle": "会話履歴",
+      "newConversation": "新しい会話",
+      "historyEmpty": "保存された会話はありません。",
+      "historyError": "会話履歴を読み込めませんでした。",
       "includeFinancials": "財務情報",
       "collapse": "AI分析を折りたたむ",
       "expand": "AI分析を展開",
