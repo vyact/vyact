@@ -23,7 +23,6 @@ export default function StockHistory({rows, market}: {rows: DailyPrice[]; market
     };
     const [closeOnly, setCloseOnly] = useState(true);
     const sorted = useMemo(() => [...rows].sort((a, b) => a.day.localeCompare(b.day)), [rows]);
-    const recent = useMemo(() => sorted.slice(-period), [sorted, period]);
     const groups = useMemo(() => availableInvestorGroups(sorted), [sorted]);
     const hasInvestors = groups.length > 0;
     const priceFields = hasInvestors
@@ -40,13 +39,12 @@ export default function StockHistory({rows, market}: {rows: DailyPrice[]; market
     const summaryPeriods = INVESTOR_SUMMARY_PERIODS.filter(value => value <= period && value <= sorted.length);
     const direction = (value: number | null) => value === null || value === 0 ? undefined : value > 0 ? 'up' : 'down';
     return <section className={`stock-history${hasInvestors ? '' : ' stock-history-prices-only'}`} aria-label={tr('tab')} data-market={market}>
-        {hasInvestors && <header className="stock-history-heading">
-            <div><h2>{tr('title')}</h2><p>{recent.length ? `${date(recent[0].day)} – ${date(recent[recent.length - 1].day)}` : tr('noData')}</p></div>
-            <label><span>{tr('period')}</span><CustomSelect portal value={String(period)} options={HISTORY_PERIODS.map(value => ({value: String(value), label: tr('days', {count: value})}))}
-                ariaLabel={tr('period')} onChange={value => updatePreferences({...preferences, period: Number(value)})}/></label>
-        </header>}
+
         {!!groups.length && <section className="stock-history-summary" aria-label={tr('statistics')}>
             <div className="stock-history-controls"><h2>{tr('statistics')}</h2>
+                <div className="stock-history-summary-filters">
+            <label className="stock-history-period-picker"><span>{tr('period')}</span><CustomSelect portal value={String(period)} options={HISTORY_PERIODS.map(value => ({value: String(value), label: tr('days', {count: value})}))}
+                ariaLabel={tr('period')} onChange={value => updatePreferences({...preferences, period: Number(value)})}/></label>
                 <CustomSelect portal value="" selectedValues={investors === 'all' ? ['all', ...INVESTOR_GROUPS] : investors}
                     closeOnSelect={false} ariaLabel={tr('investor')} options={[
                         {value: 'all', label: tr('allInvestors')},
@@ -62,7 +60,7 @@ export default function StockHistory({rows, market}: {rows: DailyPrice[]; market
                         const next = INVESTOR_GROUPS.filter(group => group === value ? !selected.includes(group) : selected.includes(group));
                         updatePreferences({...preferences, investors: next.length === INVESTOR_GROUPS.length ? 'all' : next});
                     }}/>
-
+                </div>
             </div>
             {!summaryGroups.length && <p>{tr('noData')}</p>}
             <div className="stock-investor-summary-scroll" tabIndex={0} role="region" aria-label={tr('statistics')}>
