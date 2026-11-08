@@ -1831,6 +1831,31 @@
     "manuscriptApplyHelp": "应用后将用此结果替换当前章节标题和正文。"
   },
   "stockAnalysis": {
+    "discussion": {
+      "references": "参考股票",
+      "addReference": "添加参考股票",
+      "removeReference": "移除{{name}}",
+      "referenceHint": "最多5只 · 所有股票使用相同的最近交易日数。",
+      "contextDays": "最近交易日",
+      "toolScopeHelp": "此股票讨论仅使用所选工具。查询最新新闻时请选择新闻或网页搜索工具。",
+      "title": "股票讨论",
+      "ai": "AI分析",
+      "chat": "聊天",
+      "board": "论坛",
+      "welcome": "您想了解什么？",
+      "hint": "可以询问价格走势、成交量或相关新闻。",
+      "placeholder": "询问这只股票",
+      "user": "你",
+      "assistant": "AI",
+      "thinking": "正在生成回答…",
+      "error": "无法获取回答，请重新发送。",
+      "send": "发送",
+      "stop": "停止",
+      "chatTitle": "股票聊天即将推出",
+      "chatHint": "与关注这只股票的人交流。",
+      "boardTitle": "股票论坛即将推出",
+      "boardHint": "分享这只股票的分析和观点。"
+    },
     "api": {
       "testValue": "验证输入值",
       "testParameter": "{{parameter}} 验证值",

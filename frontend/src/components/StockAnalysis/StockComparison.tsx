@@ -1,6 +1,6 @@
 import {Tooltip} from '../common/Tooltip/Tooltip';
 import ModalTabs from '../common/ModalTabs/ModalTabs';
-import {stockSnapshotCache} from '../../services/stockSnapshotCache';
+import useStockDirectory from './useStockDirectory';
 import {MARKET_INDEX_LABELS} from './marketIndexLabels';
 import {useEffect, useRef, useState, type ReactNode, type RefObject} from 'react';
 import {LineSeries, type IChartApi} from 'lightweight-charts';
@@ -38,23 +38,8 @@ export default function StockComparison({chart, bars, interval, revision, direct
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState('');
     const [searchMarket, setSearchMarket] = useState<StockMarket>(market);
-    const [remoteDirectory, setRemoteDirectory] = useState<{market: StockMarket; language: string; rows: StockSymbol[]}>();
-    const [directoryError, setDirectoryError] = useState(false);
-    const [directoryRetry, setDirectoryRetry] = useState(0);
     const language = i18n.resolvedLanguage ?? i18n.language;
-    const cachedDirectory = stockSnapshotCache.readSymbols(searchMarket, language);
-    const searchDirectory = searchMarket === market ? directory : remoteDirectory?.market === searchMarket && remoteDirectory.language === language ? remoteDirectory.rows : cachedDirectory;
-    useEffect(() => {
-        if (!open || searchMarket === market) return;
-        const controller = new AbortController();
-        stockAnalysis.symbols(searchMarket, controller.signal, language).then(rows => {
-            if (controller.signal.aborted) return;
-            stockSnapshotCache.writeSymbols(searchMarket, rows, language);
-            setRemoteDirectory({market: searchMarket, language, rows});
-            setDirectoryError(false);
-        }).catch(() => {if (!controller.signal.aborted) setDirectoryError(true);});
-        return () => controller.abort();
-    }, [open, searchMarket, market, language, directoryRetry]);
+    const {rows: searchDirectory, error: directoryError, reload: retryDirectory} = useStockDirectory(searchMarket, language, open, market, directory);
     const [draftShifts, setDraftShifts] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(false);
@@ -199,7 +184,7 @@ export default function StockComparison({chart, bars, interval, revision, direct
             <div className="stock-comparison-dialog">
                 <header><h2 id="stock-comparison-title">{tr('compareAdd')}</h2><ModalCloseButton disabled={loading} onClick={() => setOpen(false)}/></header>
                 <ModalTabs tabs={(['KR', 'US'] as const).map(key => ({key, label: tr(key)}))} activeKey={searchMarket}
-                    disabled={loading} onChange={value => {setSearchMarket(value); setQuery(''); setDirectoryError(false);}}/>
+                    disabled={loading} onChange={value => {setSearchMarket(value); setQuery('');}}/>
                 <input type="search" aria-label={tr('search')} placeholder={tr('search')} value={query} disabled={loading}
                     onChange={event => setQuery(event.target.value)}/>
                 <div className="stock-comparison-results">
@@ -210,7 +195,7 @@ export default function StockComparison({chart, bars, interval, revision, direct
                 </div>
                 <div className="stock-comparison-status">
                     {(loading || (!searchDirectory && !directoryError)) && <p role="status">{tr('loading')}</p>}
-                    {directoryError && <div className="stock-comparison-directory-error"><p role="alert">{tr('directoryError')}</p><button type="button" className="modal-action-cancel" onClick={() => {setDirectoryError(false); setDirectoryRetry(value => value + 1);}}>{tr('retry')}</button></div>}
+                    {directoryError && <div className="stock-comparison-directory-error"><p role="alert">{tr('directoryError')}</p><button type="button" className="modal-action-cancel" onClick={() => {retryDirectory();}}>{tr('retry')}</button></div>}
                     {error && <p role="alert">{tr('historyError')}</p>}
                 </div>
             </div>

@@ -1833,6 +1833,31 @@
     "manuscriptApplyHelp": "L’application remplace le titre et le texte du chapitre actuel."
   },
   "stockAnalysis": {
+    "discussion": {
+      "references": "Titres de référence",
+      "addReference": "Ajouter un titre",
+      "removeReference": "Retirer {{name}}",
+      "referenceHint": "5 maximum · Même nombre de séances récentes pour chaque titre.",
+      "contextDays": "Séances récentes",
+      "toolScopeHelp": "Seuls les outils sélectionnés sont utilisés ici. Sélectionnez une recherche web ou actualités pour consulter les nouvelles récentes.",
+      "title": "Discussion du titre",
+      "ai": "Analyse IA",
+      "chat": "Chat",
+      "board": "Forum",
+      "welcome": "Que souhaitez-vous savoir ?",
+      "hint": "Posez une question sur les cours, les volumes ou les actualités du titre.",
+      "placeholder": "Question sur ce titre",
+      "user": "Vous",
+      "assistant": "IA",
+      "thinking": "Préparation de la réponse…",
+      "error": "Réponse indisponible. Veuillez renvoyer.",
+      "send": "Envoyer",
+      "stop": "Arrêter",
+      "chatTitle": "Chat du titre à venir",
+      "chatHint": "Un espace pour discuter avec les personnes qui suivent ce titre.",
+      "boardTitle": "Forum du titre à venir",
+      "boardHint": "Un espace pour partager analyses et avis sur ce titre."
+    },
     "api": {
       "testValue": "Valeur de test",
       "testParameter": "Valeur de test pour {{parameter}}",

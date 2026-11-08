@@ -1832,6 +1832,31 @@
     "manuscriptApplyHelp": "Al aplicar, se sustituyen el título y el texto del capítulo actual."
   },
   "stockAnalysis": {
+    "discussion": {
+      "references": "Acciones de referencia",
+      "addReference": "Añadir acción",
+      "removeReference": "Quitar {{name}}",
+      "referenceHint": "Hasta 5 · Mismo número de sesiones recientes para cada acción.",
+      "contextDays": "Sesiones recientes",
+      "toolScopeHelp": "Solo se usan las herramientas seleccionadas. Selecciona búsqueda web o de noticias para consultar noticias recientes.",
+      "title": "Conversación bursátil",
+      "ai": "Análisis IA",
+      "chat": "Chat",
+      "board": "Foro",
+      "welcome": "¿Qué te gustaría saber?",
+      "hint": "Pregunta por la evolución del precio, el volumen o las noticias relacionadas.",
+      "placeholder": "Pregunta sobre esta acción",
+      "user": "Tú",
+      "assistant": "IA",
+      "thinking": "Preparando respuesta…",
+      "error": "No se pudo obtener una respuesta. Vuelve a enviar.",
+      "send": "Enviar",
+      "stop": "Detener",
+      "chatTitle": "Chat de la acción próximamente",
+      "chatHint": "Un espacio para conversar con quienes siguen esta acción.",
+      "boardTitle": "Foro de la acción próximamente",
+      "boardHint": "Un espacio para compartir análisis y opiniones sobre esta acción."
+    },
     "api": {
       "testValue": "Valor de prueba",
       "testParameter": "Valor de prueba de {{parameter}}",

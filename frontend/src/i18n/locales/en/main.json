@@ -1832,6 +1832,31 @@
     "manuscriptApplyHelp": "Applying replaces the current chapter title and manuscript with this result."
   },
   "stockAnalysis": {
+    "discussion": {
+      "references": "Reference stocks",
+      "addReference": "Add reference stock",
+      "removeReference": "Remove {{name}}",
+      "referenceHint": "Up to 5 · Same recent trading-day count for every stock.",
+      "contextDays": "Trading days",
+      "toolScopeHelp": "Only selected tools are used in this stock discussion. Select news or web search tools to research current news.",
+      "title": "Stock discussion",
+      "ai": "AI analysis",
+      "chat": "Chat",
+      "board": "Board",
+      "welcome": "What would you like to know?",
+      "hint": "Ask about price trends, volume, or related news.",
+      "placeholder": "Ask about this stock",
+      "user": "You",
+      "assistant": "AI",
+      "thinking": "Preparing an answer…",
+      "error": "Unable to get an answer. Please send again.",
+      "send": "Send",
+      "stop": "Stop",
+      "chatTitle": "Stock chat coming soon",
+      "chatHint": "A space to chat with people following this stock.",
+      "boardTitle": "Stock board coming soon",
+      "boardHint": "A space to share analysis and opinions about this stock."
+    },
     "api": {
       "testValue": "Test value",
       "testParameter": "Test value for {{parameter}}",

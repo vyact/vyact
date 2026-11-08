@@ -1831,6 +1831,31 @@
     "manuscriptApplyHelp": "Áp dụng sẽ thay thế tiêu đề và nội dung chương hiện tại."
   },
   "stockAnalysis": {
+    "discussion": {
+      "references": "Cổ phiếu tham khảo",
+      "addReference": "Thêm cổ phiếu tham khảo",
+      "removeReference": "Xóa {{name}}",
+      "referenceHint": "Tối đa 5 · Áp dụng cùng số phiên gần nhất cho mọi cổ phiếu.",
+      "contextDays": "Phiên gần đây",
+      "toolScopeHelp": "Chỉ dùng công cụ đã chọn trong cuộc trò chuyện này. Chọn công cụ tìm tin tức hoặc web để tìm tin mới.",
+      "title": "Thảo luận cổ phiếu",
+      "ai": "Phân tích AI",
+      "chat": "Trò chuyện",
+      "board": "Diễn đàn",
+      "welcome": "Bạn muốn tìm hiểu điều gì?",
+      "hint": "Hỏi về xu hướng giá, khối lượng hoặc tin tức liên quan.",
+      "placeholder": "Hỏi về cổ phiếu này",
+      "user": "Bạn",
+      "assistant": "AI",
+      "thinking": "Đang soạn câu trả lời…",
+      "error": "Không thể lấy câu trả lời. Vui lòng gửi lại.",
+      "send": "Gửi",
+      "stop": "Dừng",
+      "chatTitle": "Trò chuyện cổ phiếu sắp ra mắt",
+      "chatHint": "Nơi trò chuyện với những người theo dõi cổ phiếu này.",
+      "boardTitle": "Diễn đàn cổ phiếu sắp ra mắt",
+      "boardHint": "Nơi chia sẻ phân tích và ý kiến về cổ phiếu này."
+    },
     "api": {
       "testValue": "Giá trị kiểm tra",
       "testParameter": "Giá trị kiểm tra {{parameter}}",

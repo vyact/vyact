@@ -13,6 +13,7 @@ import StockLoadingIndicator from './StockLoadingIndicator';
 import {getInitialMarket, saveMarketPreference} from './marketPreference';
 import StockSectorMap from './StockSectorMap';
 import StockPriceChart from './StockPriceChart';
+import StockDiscussionSidebar from './StockDiscussionSidebar';
 import useStockWatchlist from './useStockWatchlist';
 import '../common/SettingsIconButton/SettingsIconButton.css';
 import './StockAnalysis.css';
@@ -170,7 +171,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
     return <>
     {apiSettingsOpen && <StockApiSettings market={market} onClose={() => setApiSettingsOpen(false)} onSaved={onApiSaved}/>}
     <WorkspaceLayout className="stock-analysis" label={tr('title')} header={header} sidebar={sidebar}>
-        <main className="stock-analysis-content">
+        <div className={`stock-analysis-inner${active ? " has-discussion" : ""}`}><main className="stock-analysis-content">
             {!active && <StockSectorMap key={`${market}:${i18n.resolvedLanguage}`} market={market} onOpen={openSymbol} directory={symbols}/>}
             {active && <div className="stock-analysis-heading">
                 <div className="stock-analysis-chart-title"><button type="button" className="stock-analysis-back" aria-label={tr('sectorMap')} onClick={() => {
@@ -201,5 +202,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                 <a href="https://www.tradingview.com/" target="_blank" rel="noreferrer">TradingView Lightweight Charts™ · © 2025 TradingView, Inc.</a>
             </footer>}
         </main>
+        {active && <StockDiscussionSidebar key={`${market}:${active.symbol}`} stock={active} market={market} directory={symbols}/>}
+        </div>
     </WorkspaceLayout></>;
 }

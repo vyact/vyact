@@ -1,0 +1,59 @@
+.stock-analysis-inner {display: flex; flex: 1; min-width: 0; min-height: 0; overflow: hidden;}
+.stock-discussion {display: flex; flex-direction: column; width: clamp(280px, 24vw, 380px); flex-shrink: 0; min-height: 0; border-inline-start: 1px solid var(--border); background: var(--bg-secondary);}
+.stock-discussion-tabs {display: flex; gap: 4px; padding: 10px; border-bottom: 1px solid var(--border);}
+.stock-discussion-tabs button {display: flex; align-items: center; justify-content: center; gap: 6px; flex: 1; padding: 9px 4px; border: 0; border-radius: 7px; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 12px;}
+.stock-discussion-tabs button[aria-selected="true"] {background: var(--surface2); color: var(--accent);}
+.stock-discussion button:focus-visible, .stock-discussion textarea:focus-visible {outline: 2px solid var(--accent); outline-offset: 2px;}
+.stock-discussion-instrument {display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 14px; border-bottom: 1px solid var(--border); font-size: 13px;}
+.stock-discussion-instrument span {color: var(--text-muted); font-size: 11px;}
+.stock-discussion-panel {display: flex; flex-direction: column; flex: 1; min-height: 0;}
+.stock-discussion-messages {flex: 1; min-height: 0; overflow-y: auto; padding: 14px;}
+.stock-discussion-empty {display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 36px 20px; text-align: center; color: var(--text-muted); margin-block: auto;}
+.stock-discussion-empty h2 {color: var(--text); font-size: 14px;}
+.stock-discussion-empty p {font-size: 12px; line-height: 1.7;}
+.stock-discussion-message {margin-bottom: 16px; padding: 12px; border-radius: 10px; font-size: 13px; line-height: 1.7; overflow-wrap: anywhere;}
+.stock-discussion-message.user {background: var(--surface2);}
+.stock-discussion-message strong {display: block; margin-bottom: 6px; color: var(--accent); font-size: 11px;}
+.stock-discussion-message div {white-space: pre-wrap;}
+.stock-discussion-composer {padding: 12px; border-top: 1px solid var(--border);}
+.stock-discussion-composer textarea {box-sizing: border-box; width: 100%; resize: vertical; min-height: 76px; max-height: 180px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font: inherit; font-size: 13px;}
+.stock-discussion-actions {display: flex; justify-content: flex-end; margin-top: 8px;}
+.stock-discussion-actions button {display: flex; align-items: center; gap: 6px;}
+.stock-discussion-error {padding: 10px 14px; font-size: 12px;}
+@media (max-width: 1100px) {
+    .stock-analysis-inner.has-discussion {overflow-y: auto; flex-direction: column;}
+    .stock-analysis-inner.has-discussion > .stock-analysis-content {flex: 0 0 auto; min-height: 520px; overflow: visible;}
+    .stock-discussion {width: auto; min-height: 440px; max-height: 600px; flex: 1 0 440px; border-inline-start: 0; border-top: 1px solid var(--border);}
+}
+
+/* A single rounded composer, matching the main chat input. */
+.stock-discussion-composer {padding: 12px; border-top: 0;}
+.stock-discussion-composer .mcp-prompt-input {gap: 10px; padding: 14px 12px 10px; border: 1px solid var(--border); border-radius: 20px; background: var(--surface); transition: border-color .15s;}
+.stock-discussion-composer .mcp-prompt-input:focus-within {border-color: color-mix(in srgb, var(--accent) 55%, var(--border));}
+.stock-discussion-composer .mcp-prompt-input textarea {display: block; flex: none; width: 100%; min-height: 62px; max-height: 180px; padding: 0 3px; border: 0; border-radius: 0; outline: none; resize: none; background: transparent; box-shadow: none; font-size: 13px; line-height: 1.65;}
+.stock-discussion-composer .mcp-prompt-input textarea:focus-visible {outline: none;}
+.stock-discussion-composer textarea::placeholder {color: var(--text-muted);}
+.stock-discussion-composer .mcp-prompt-toolbar {gap: 8px;}
+.stock-discussion-composer .mcp-prompt-toolbar > .stock-discussion-send {display: grid; place-items: center; flex: 0 0 34px; width: 34px; height: 34px; min-height: 0; margin-inline-start: auto; padding: 0; border: 0; border-radius: 50%; background: var(--accent); color: var(--on-accent); cursor: pointer;}
+.stock-discussion-composer .stock-discussion-send:disabled {background: var(--surface2); color: var(--text-muted); cursor: default;}
+.stock-discussion-period {display: flex; align-items: center; gap: 5px; min-width: 0; color: var(--text-muted); font-size: 11px;}
+.stock-discussion-period input {box-sizing: border-box; width: 53px; height: 28px; padding: 3px 5px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface2); color: var(--text); font: inherit; font-variant-numeric: tabular-nums;}
+.stock-discussion-period input:focus-visible {outline: 2px solid var(--accent); outline-offset: 2px;}
+.stock-discussion-title {display: flex; align-items: center; gap: 8px; padding: 17px 16px; color: var(--accent); border-bottom: 1px solid var(--border);}
+.stock-discussion-title h2 {font-size: 13px; font-weight: 650;}
+.stock-discussion-references {display: grid; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--border);}
+.stock-discussion-references > .custom-select-wrap {width: 100%; min-width: 0;}
+.stock-discussion-references .custom-select-trigger {font-size: 12px; min-height: 32px;}
+.stock-discussion-references > p {font-size: 11px; line-height: 1.5;}
+.stock-discussion-references ul {display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: 0; list-style: none;}
+.stock-discussion-references li {display: flex; align-items: center; gap: 5px; min-width: 0; padding: 5px 7px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); font-size: 11px;}
+.stock-discussion-references li span {overflow-wrap: anywhere;}
+.stock-discussion-references small {color: var(--text-muted);}
+.stock-discussion-references li button {display: grid; place-items: center; padding: 2px; border: 0; background: transparent; color: var(--text-muted); cursor: pointer;}
+.stock-discussion-reference-picker {display: flex; align-items: center; gap: 8px; min-width: 0;}
+.stock-discussion-reference-picker > .custom-select-wrap {flex: 1; width: auto; min-width: 0;}
+.stock-discussion-composer .mcp-prompt-input textarea {min-height: 24px; overflow-y: auto;}
+
+.stock-discussion-messages > .stock-discussion-empty {align-items: flex-start; gap: 8px; padding: 28px 8px; text-align: start;}
+.stock-discussion-messages > .stock-discussion-empty h2 {font-size: 14px; font-weight: 600; line-height: 1.5;}
+.stock-discussion-messages > .stock-discussion-empty p {font-size: 12px; line-height: 1.65; color: var(--text-muted);}

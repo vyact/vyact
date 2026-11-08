@@ -1831,6 +1831,31 @@
     "manuscriptApplyHelp": "適用すると現在の話のタイトルと本文をこの結果で置き換えます。"
   },
   "stockAnalysis": {
+    "discussion": {
+      "references": "参考銘柄",
+      "addReference": "参考銘柄を追加",
+      "removeReference": "{{name}}を削除",
+      "referenceHint": "最大5銘柄 · 全銘柄に同じ直近取引日数を適用します。",
+      "contextDays": "直近の取引日数",
+      "toolScopeHelp": "この銘柄の対話では選択したツールのみ使用します。最新ニュースにはニュース・ウェブ検索を選択してください。",
+      "title": "銘柄の対話",
+      "ai": "AI分析",
+      "chat": "チャット",
+      "board": "掲示板",
+      "welcome": "何が気になりますか？",
+      "hint": "値動き、出来高、関連ニュースについて質問してください。",
+      "placeholder": "この銘柄について質問",
+      "user": "あなた",
+      "assistant": "AI",
+      "thinking": "回答を作成中…",
+      "error": "回答を取得できませんでした。再送信してください。",
+      "send": "送信",
+      "stop": "停止",
+      "chatTitle": "銘柄チャットは準備中",
+      "chatHint": "この銘柄に注目する人と話す場所です。",
+      "boardTitle": "銘柄掲示板は準備中",
+      "boardHint": "この銘柄の分析や意見を共有する場所です。"
+    },
     "api": {
       "testValue": "検証値",
       "testParameter": "{{parameter}} の検証値",

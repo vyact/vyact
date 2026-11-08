@@ -1841,6 +1841,31 @@
     "manuscriptApplyHelp": "적용하면 현재 회차의 제목과 본문을 이 결과로 교체합니다."
   },
   "stockAnalysis": {
+    "discussion": {
+      "references": "참고 종목",
+      "addReference": "참고 종목 추가",
+      "removeReference": "{{name}} 참고 종목 제거",
+      "referenceHint": "최대 5개 · 모든 종목에 같은 최근 거래일 수를 적용합니다.",
+      "contextDays": "최근 거래일",
+      "toolScopeHelp": "선택한 도구만 이 종목 대화에서 사용합니다. 최신 뉴스는 뉴스·웹 검색 도구를 선택해 요청하세요.",
+      "title": "종목 대화",
+      "ai": "AI 분석",
+      "chat": "채팅",
+      "board": "게시판",
+      "welcome": "어떤 점이 궁금하신가요?",
+      "hint": "가격 흐름, 거래량, 관련 뉴스를 질문해 보세요.",
+      "placeholder": "이 종목에 대해 질문하세요",
+      "user": "나",
+      "assistant": "AI",
+      "thinking": "답변을 작성하고 있습니다…",
+      "error": "답변을 가져오지 못했습니다. 다시 전송해 주세요.",
+      "send": "전송",
+      "stop": "중지",
+      "chatTitle": "종목 채팅 준비 중",
+      "chatHint": "이 종목에 관심 있는 사람들과 대화할 공간입니다.",
+      "boardTitle": "종목 게시판 준비 중",
+      "boardHint": "이 종목의 분석과 의견을 나눌 공간입니다."
+    },
     "api": {
       "testValue": "검증 입력값",
       "testParameter": "{{parameter}} 검증 입력값",
