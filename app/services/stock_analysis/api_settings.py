@@ -93,6 +93,8 @@ class PriceResponse(BaseModel):
     low: float = Field(gt=0)
     close: float = Field(gt=0)
     volume: float | None = Field(default=None, ge=0)
+    tradingValue: float | None = Field(default=None, ge=0)
+    changePercent: float | None = None
     investors: dict[InvestorGroup, InvestorTradeResponse] | None = None
 
 

@@ -26,7 +26,7 @@
 .stock-analysis-symbols span {display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted);}
 .stock-analysis-content {
     display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 0;
-    overflow: auto; padding: clamp(10px, 1.4vw, 18px);
+    overflow-y: auto; overflow-x: hidden; padding: clamp(10px, 1.4vw, 18px);
 }
 .stock-analysis-heading, .stock-price-chart-toolbar {
     display: flex; align-items: center; gap: 8px;

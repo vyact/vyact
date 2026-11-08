@@ -30,6 +30,8 @@ export interface DailyPrice {
     low: number;
     close: number;
     volume: number | null;
+    tradingValue?: number | null;
+    changePercent?: number | null;
     investors?: Partial<Record<StockInvestorGroup, StockInvestorTrade>>;
 }
 
@@ -37,7 +39,7 @@ export type StockMemoDraft = {title: string; content: string};
 export type StockMemo = StockMemoDraft & {symbol: string; day: string};
 
 type PriceSnapshot = {symbol: string; fetchedAt: number; rows: DailyPrice[]};
-const PRICE_CACHE_KEY = 'vyact:stock-prices:v3';
+const PRICE_CACHE_KEY = 'vyact:stock-prices:v4';
 const PRICE_CACHE_TTL = 15 * 60 * 1000;
 const PRICE_CACHE_LIMIT = 8;
 

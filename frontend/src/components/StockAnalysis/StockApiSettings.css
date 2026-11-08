@@ -95,3 +95,7 @@
 .stock-api-settings .stock-api-test-input {min-height: 32px; padding: 6px 8px; font-family: monospace; font-size: 11px;}
 .stock-api-settings .stock-api-test-input:read-only {background: var(--surface2); color: var(--muted);}
 .stock-api-settings-content .stock-api-index-code-help {margin: 0; padding: 8px 12px; border-top: 1px solid var(--border); font-size: 11px;}
+
+
+.stock-api-response-fields {width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 12px;}
+.stock-api-response-fields th, .stock-api-response-fields td {padding: 6px 10px; text-align: start; border-bottom: 1px solid var(--border);}

@@ -1,0 +1,78 @@
+.stock-analysis-detail-tabs {min-width: 0;}
+.stock-analysis-detail-tabs .modal-tabs-bar {gap: 8px;}
+.stock-analysis-detail-tabs .modal-tab {display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 7px; padding: 12px 16px; font-size: 13px; color: var(--text-muted);}
+.stock-analysis-detail-tabs .modal-tab.active {color: var(--accent);}
+.stock-analysis-detail-tabs .modal-tab:hover:not(:disabled) {background: transparent; color: var(--text);}
+.stock-analysis-detail-tabs .modal-tab.active:hover:not(:disabled) {color: var(--accent);}
+.stock-analysis-detail-tabs .modal-tab:focus-visible {outline: 2px solid var(--accent); outline-offset: -3px; border-radius: 5px;}
+.stock-analysis-detail-panel {display: flex; flex-direction: column; flex: 1; min-height: 0; min-width: 0; gap: 8px;}
+.stock-analysis-detail-panel[hidden], .stock-analysis-comparison-action[hidden] {display: none;}
+.stock-history {display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; min-width: 0;}
+.stock-history-heading, .stock-history-controls {display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;}
+.stock-history-heading > div {display: grid; gap: 6px;}
+.stock-history-heading p, .stock-history-note, .stock-history-unit {font-size: 12px; line-height: 1.6;}
+.stock-history-heading label {display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-muted);}
+.stock-history .custom-select-wrap {width: 180px;}
+.stock-history-summary {display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; gap: 12px; padding: 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface);}
+.stock-history[data-market="KR"] [data-direction="up"], .stock-history[data-market="US"] [data-direction="down"] {color: #e64c52; fill: #e64c52;}
+.stock-history[data-market="KR"] [data-direction="down"] {color: #2878da; fill: #2878da;}
+.stock-history[data-market="US"] [data-direction="up"] {color: #30ad69; fill: #30ad69;}
+.stock-history-empty {display: grid; gap: 8px; padding: 18px; border: 1px dashed var(--border); border-radius: 10px;}
+.stock-history-empty p {font-size: 12px;}
+.stock-history-table-scroll {min-width: 0; max-width: 100%; overflow: auto; max-height: 65vh; border: 1px solid var(--border); border-radius: 10px;}
+.stock-history-table {width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap;}
+.stock-history-table th, .stock-history-table td {text-align: end; padding: 11px 12px; border-bottom: 1px solid var(--border);}
+.stock-history-table thead th {position: sticky; top: 0; z-index: 2; background: var(--surface2); color: var(--text-muted); font-weight: 550;}
+.stock-history-table tr > :first-child {position: sticky; left: 0; background: var(--surface); text-align: start; z-index: 1;}
+.stock-history-table thead tr > :first-child {z-index: 3; background: var(--surface2);}
+.stock-history-table tbody tr:hover > * {background: var(--surface2);}
+@media (max-width: 760px) {
+    .stock-history-summary {padding: 12px;}
+}
+
+.stock-history-table th, .stock-history-table td {min-width: 100px;}
+.stock-history-table th:first-child {min-width: 115px;}
+.stock-history-pair {display: grid; gap: 0;}
+.stock-history-pair > span {display: block; padding-block: 6px;}
+.stock-history-pair > span + span {border-top: 1px solid var(--border);}
+.stock-history-table thead .stock-history-pair {text-align: center;}
+
+.stock-history-display-option {display: flex; align-items: center; gap: 8px; font-size: 12px;}
+
+.stock-investor-summary-scroll {min-width: 0; max-width: 100%; overflow: auto; max-height: 560px; border: 1px solid var(--border); border-radius: 10px;}
+.stock-investor-summary-table {width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap;}
+.stock-investor-summary-table th, .stock-investor-summary-table td {padding: 12px 14px; border-bottom: 1px solid var(--border); border-inline-end: 1px solid var(--border);}
+.stock-investor-summary-table thead th {position: sticky; top: 0; z-index: 2; background: var(--surface2); text-align: center;}
+.stock-investor-summary-table tbody th {text-align: start; font-weight: 550;}
+.stock-investor-summary-table tbody td {text-align: end; font-weight: 650;}
+.stock-investor-summary-table tbody[data-alternate="true"] {background: var(--surface2);}
+.stock-investor-summary-table .stock-investor-summary-period {text-align: center; vertical-align: middle;}
+.stock-investor-summary-table tr > :last-child {border-inline-end: 0;}
+
+.stock-history-heading {flex-wrap: nowrap;}
+.stock-history-heading > div {display: flex; align-items: center; gap: 16px; min-width: 0;}
+.stock-history-heading h2, .stock-history-heading p, .stock-history-heading label > span {white-space: nowrap;}
+.stock-history-heading label {flex-shrink: 0;}
+.stock-history-heading > div p {overflow: hidden; text-overflow: ellipsis;}
+
+.stock-history-heading > div {flex: 1; overflow: hidden;}
+.stock-history-heading h2 {overflow: hidden; text-overflow: ellipsis; min-width: 0;}
+.stock-history-heading > div p {flex-shrink: 1; min-width: 0;}
+.stock-history-controls {min-width: 0;}
+
+.stock-history-table thead th,
+.stock-history-table thead tr > :first-child {text-align: center;}
+.stock-history-prices-only {flex: 1; min-height: 0; grid-template-rows: minmax(0, 1fr);}
+.stock-history-prices-only > .stock-history-table-scroll {max-height: none; min-height: 0;}
+
+.stock-history-daily-controls {justify-content: flex-end;}
+
+/* Continue the header background through the native scrollbar gutter. */
+.stock-history-table-scroll, .stock-investor-summary-scroll {background: var(--surface2);}
+.stock-history-table tbody {background: var(--bg);}
+.stock-investor-summary-table tbody {background: var(--surface);}
+.stock-investor-summary-table tbody[data-alternate="true"] {background: var(--surface2);}
+.stock-history-table-scroll::-webkit-scrollbar-track,
+.stock-investor-summary-scroll::-webkit-scrollbar-track,
+.stock-history-table-scroll::-webkit-scrollbar-corner,
+.stock-investor-summary-scroll::-webkit-scrollbar-corner {background: transparent;}

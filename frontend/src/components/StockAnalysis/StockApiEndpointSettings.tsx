@@ -4,6 +4,23 @@ import CustomSelect from '../CustomSelect/CustomSelect';
 import {stockApiExamples, type StockApiEndpoint, type StockApiKind, type StockApiSettings} from '../../services/stockApiSettings';
 import type {StockMarket} from '../../services/stockAnalysis';
 import useStockApiValidation from './useStockApiValidation';
+import {INVESTOR_GROUPS} from './historyData';
+
+const PRICE_RESPONSE_FIELDS = ['day', 'open', 'high', 'low', 'close', 'volume', 'tradingValue', 'changePercent', 'investors', 'buyVolume', 'buyAmount', 'sellVolume', 'sellAmount', 'netVolume', 'netAmount'] as const;
+
+const RESPONSE_FIELDS: Record<StockApiKind, {field: string; label: string}[]> = {
+    prices: PRICE_RESPONSE_FIELDS.map(field => ({field, label: field})),
+    symbols: ['symbol', 'name', 'preferred', 'exchange'].map(field => ({field, label: field})),
+    sparkline: [{field: '{symbol}', label: 'sparklineValues'}],
+    marketIndices: ['symbol', 'price', 'change', 'changePercent', 'date', 'closes'].map(field => ({field, label: field})),
+    sectorMap: [
+        {field: 'date', label: 'date'}, {field: 'quoteDate', label: 'quoteDate'}, {field: 'sectors', label: 'sectors'},
+        {field: 'sectors[].name', label: 'sectorName'}, {field: 'sectors[].weight', label: 'sectorWeight'},
+        {field: 'sectors[].change', label: 'changePercent'}, {field: 'sectors[].stocks', label: 'stocks'},
+        ...['symbol', 'name', 'preferred', 'exchange', 'price'].map(field => ({field: `sectors[].stocks[].${field}`, label: field})),
+        {field: 'sectors[].stocks[].weight', label: 'stockWeight'}, {field: 'sectors[].stocks[].change', label: 'changePercent'},
+    ],
+};
 
 const VALIDATION_FAILURE_CODES = new Set(['url_required', 'timeout', 'http_error', 'connection_error', 'invalid_json', 'invalid_schema', 'invalid_dates', 'invalid_config', 'request_failed']);
 
@@ -71,6 +88,14 @@ export default function StockApiEndpointSettings({market, kind, endpoint, body, 
             <details className="stock-api-examples"><summary>{tr('examples')}</summary>
                 <p>{tr('requestExample')}</p><pre>{`GET ${requestExampleUrl}\n\nPOST ${examples.url.split('?')[0]}\nContent-Type: application/json\n\n${JSON.stringify(postExampleBody, null, 2)}`}</pre>
                 <p>{tr('responseExample')}</p><pre>{JSON.stringify(examples.response, null, 2)}</pre>
+                <table className="stock-api-response-fields">
+                    <thead><tr><th scope="col">{tr('variable')}</th><th scope="col">{tr('meaning')}</th></tr></thead>
+                    <tbody>{RESPONSE_FIELDS[kind].map(({field, label}) => <tr key={field}>
+                        <th scope="row"><code>{field}</code></th><td>{tr(`responseFields.${label}`)}</td>
+                    </tr>)}{kind === 'prices' && INVESTOR_GROUPS.map(group => <tr key={group}>
+                        <th scope="row"><code>{`investors.${group}`}</code></th><td>{t(`stockAnalysis.history.groups.${group}`)}</td>
+                    </tr>)}</tbody>
+                </table>
                 {market === 'KR' && (kind === 'symbols' || kind === 'sectorMap') && <p>{tr('koreanSymbols')}</p>}
             </details>
         </div>

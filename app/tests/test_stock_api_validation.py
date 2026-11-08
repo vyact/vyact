@@ -128,12 +128,14 @@ class StockApiValidationTests(unittest.IsolatedAsyncioTestCase):
         settings = api.MarketApiSettings(endpoints={'prices': api.ApiEndpoint(url='https://example.com/prices')})
         client = AsyncMock()
         # Use distinct dates; only investor fields differ in the payload contract.
-        payload = [{**row, 'day': '2026-11-05', 'investors': investors}, row]
+        payload = [{**row, 'day': '2026-11-05', 'investors': investors, 'tradingValue': 123456789, 'changePercent': -6.35}, row]
         client.request.return_value = httpx.Response(200, json=payload, request=httpx.Request('GET', 'https://example.com/prices'))
         with patch.object(api, 'load_api_settings', AsyncMock(return_value=settings)), patch.object(api.httpx, 'AsyncClient') as factory:
             factory.return_value.__aenter__.return_value = client
             result = await api.custom_data('KR', 'prices', symbol='005930')
             self.assertEqual(result[0]['investors'], investors)
+            self.assertEqual(result[0]['tradingValue'], 123456789)
+            self.assertEqual(result[0]['changePercent'], -6.35)
             self.assertNotIn('investors', result[1])
 
     async def test_canonical_index_code_is_sent_with_full_history_period(self):

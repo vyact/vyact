@@ -1,6 +1,6 @@
 import {stockSymbolCode} from '../utils/stockSymbols';
 import {assertOk} from '../utils/apiError';
-import type {StockMarket} from './stockAnalysis';
+import type {DailyPrice, StockMarket} from './stockAnalysis';
 
 export const STOCK_API_KINDS = ['symbols', 'prices', 'sparkline', 'marketIndices', 'sectorMap'] as const;
 export type StockApiKind = typeof STOCK_API_KINDS[number];
@@ -56,7 +56,15 @@ export const stockApiSettings = {
 export function stockApiExamples(market: StockMarket, kind: StockApiKind, language = 'en') {
     const symbol = market === 'KR' ? '005930' : 'AAPL';
     const indexSymbol = market === 'KR' ? 'KS11' : 'GSPC';
-    const price = {day: '2026-11-06', open: 100, high: 105, low: 98, close: 103, volume: 1000000};
+    const price = {
+        day: '2026-11-06', open: 100, high: 105, low: 98, close: 103,
+        volume: 1000000, tradingValue: 102500000, changePercent: 3,
+        investors: {
+            ind: {buyVolume: 400000, buyAmount: 41000000, sellVolume: -300000, sellAmount: -30750000, netVolume: 100000, netAmount: 10250000},
+            for: {netVolume: -60000, netAmount: -6150000},
+            ins: {netVolume: -40000, netAmount: -4100000},
+        },
+    } satisfies DailyPrice;
     const stock = {symbol, ...(market === 'KR' ? {exchange: 'KOSPI'} : {}), name: market === 'KR' ? 'Samsung Electronics' : 'Apple', weight: 10, change: 1.2, price: 103};
     const responses = {
         symbols: [{symbol, name: stock.name, preferred: false, ...(market === 'KR' ? {exchange: 'KOSPI'} : {})}],

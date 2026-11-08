@@ -6,14 +6,15 @@ import {stockSnapshotCache} from '../../services/stockSnapshotCache';
 import {stockAnalysis, type DailyPrice, type StockMarket, type StockSymbol} from '../../services/stockAnalysis';
 import WorkspaceExitButton from '../common/WorkspaceLayout/WorkspaceExitButton';
 import WorkspaceLayout from '../common/WorkspaceLayout/WorkspaceLayout';
-import {Tooltip} from '../common/Tooltip/Tooltip';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import StockApiSettings from './StockApiSettings';
 import StockLoadingIndicator from './StockLoadingIndicator';
 import {getInitialMarket, saveMarketPreference} from './marketPreference';
 import StockSectorMap from './StockSectorMap';
 import StockPriceChart from './StockPriceChart';
-import StockDiscussionSidebar from './StockDiscussionSidebar';
+import StockHistory from './StockHistory';
+import ModalTabs from '../common/ModalTabs/ModalTabs';
+import StockDiscussionPanel from './StockDiscussionPanel';
 import useStockWatchlist from './useStockWatchlist';
 import '../common/SettingsIconButton/SettingsIconButton.css';
 import './StockAnalysis.css';
@@ -32,6 +33,7 @@ export default function StockAnalysis({onClose}: {onClose: () => void}) {
 function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApiSaved: () => void}) {
     const {t, i18n} = useTranslation('main');
     const tr = (key: string, options?: Record<string, unknown>) => t(`stockAnalysis.${key}`, options);
+    const [detailTab, setDetailTab] = useState<'chart' | 'history'>('chart');
     const [apiSettingsOpen, setApiSettingsOpen] = useState(false);
     const [market, setMarket] = useState<StockMarket>(() => getInitialMarket(i18n.resolvedLanguage ?? i18n.language));
     useEffect(() => {saveMarketPreference(market);}, [market]);
@@ -104,6 +106,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
     const openSymbol = (item: StockSymbol) => {
         if (item.symbol === activeSymbol) return;
         const name = localizeStockName(item.name, i18n.resolvedLanguage ?? i18n.language);
+        setDetailTab('chart');
         setActive({...item, name: item.preferred ? `${name} · ${tr('preferredShare')}` : name});
         setRows(null);
         setPriceError(false);
@@ -147,12 +150,10 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                 {filtered.slice(0, VISIBLE_SYMBOLS).map(item => <li key={item.symbol}>
                     <button aria-pressed={item.symbol === activeSymbol} onClick={() => openSymbol(item)}>
                         <strong className="stock-symbol-code">{item.symbol}
-                            {market === 'KR' && item.exchange && <Tooltip content={tr(item.exchange === 'KOSPI' ? 'indexKospi' : 'indexKosdaq')}>
-                                <small className="stock-symbol-exchange" data-exchange={item.exchange === 'KOSPI' ? 'kospi' : 'kosdaq'}
+                            {market === 'KR' && item.exchange && <small className="stock-symbol-exchange" data-exchange={item.exchange === 'KOSPI' ? 'kospi' : 'kosdaq'}
                                     aria-label={tr(item.exchange === 'KOSPI' ? 'indexKospi' : 'indexKosdaq')}>
                                     {tr(item.exchange === 'KOSPI' ? 'exchangeBadgeKospi' : 'exchangeBadgeKosdaq')}
-                                </small>
-                            </Tooltip>}
+                                </small>}
                         </strong><span>{item.name}{item.preferred && <small className="stock-symbol-preferred">{tr('preferredShare')}</small>}</span>
                     </button>
                     <button type="button" className="stock-watchlist-star" aria-pressed={watchlist.contains(market, item.symbol)}
@@ -183,7 +184,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                 }}><ArrowLeft size={16} aria-hidden="true"/></button>
                     <h1>{active.name}</h1><p>{active.symbol}</p></div>
                 <div className="stock-analysis-header-actions">
-                <div className="stock-analysis-comparison-action" ref={setComparisonTarget}/>
+                <div className="stock-analysis-comparison-action" hidden={detailTab !== 'chart'} ref={setComparisonTarget}/>
                 {active && <button type="button" className="modal-action-cancel stock-analysis-refresh" aria-label={tr('refresh')} disabled={loading} onClick={() => {
                     setLoading(true);
                     setPriceError(false);
@@ -191,18 +192,28 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                 }}><RefreshCw size={16} aria-hidden="true"/></button>}
                 </div>
             </div>}
-            {active && <div className="stock-analysis-chart-stage" aria-busy={loading}>
+            {active && <div className="stock-analysis-detail-tabs"><ModalTabs
+                tabs={[{key: 'chart', label: tr('history.chart')}, {key: 'history', label: tr('history.tab')}]}
+                activeKey={detailTab} onChange={setDetailTab}/></div>}
+            {active && <div className="stock-analysis-detail-panel" hidden={detailTab !== 'chart'}>
+            <div className="stock-analysis-chart-stage" aria-busy={loading}>
             {loading && <StockLoadingIndicator title={active.name} overlay={!!rows?.length} iconOnly/>}
             {priceError && <p role="alert">{tr('historyError')}</p>}
             {rows?.length === 0 && !loading && !priceError && <p>{tr('noPrices')}</p>}
             {active && !!rows?.length && <StockPriceChart key={active.symbol} symbol={active.symbol} name={active.name} rows={rows} market={market} directory={symbols} comparisonTarget={comparisonTarget} label={tr('dailyPrices')}/>}
-            </div>}
-            {active && <footer className="stock-chart-attribution stock-analysis-caption">
+            </div>
+            <footer className="stock-chart-attribution stock-analysis-caption">
                 <span>{tr('source')}</span>
                 <a href="https://www.tradingview.com/" target="_blank" rel="noreferrer">TradingView Lightweight Charts™ · © 2025 TradingView, Inc.</a>
-            </footer>}
+            </footer></div>}
+            {active && <div className="stock-analysis-detail-panel" hidden={detailTab !== 'history'} aria-busy={loading}>
+                {loading && <StockLoadingIndicator title={active.name} iconOnly/>}
+                {priceError && <p role="alert">{tr('historyError')}</p>}
+                {rows?.length === 0 && !loading && !priceError && <p>{tr('noPrices')}</p>}
+                {!!rows?.length && <StockHistory key={active.symbol} rows={rows} market={market}/>}
+            </div>}
         </main>
-        {active && <StockDiscussionSidebar key={`${market}:${active.symbol}`} stock={active} market={market} directory={symbols}/>}
+        {active && <StockDiscussionPanel key={`${market}:${active.symbol}`} stock={active} market={market} directory={symbols}/>}
         </div>
     </WorkspaceLayout></>;
 }
