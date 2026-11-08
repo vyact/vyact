@@ -17,6 +17,7 @@ from services.stock_analysis.catalog import Market, get_symbols
 from services.stock_analysis.market_indices import get_market_indices
 from services.stock_analysis.index_price_store import get_index_prices
 from services.stock_analysis.korea_yahoo import korea_preferred_symbols
+from services.stock_analysis.financials import fetch_financials
 from services.stock_analysis.prices import fetch_prices, fetch_sparkline
 from services.stock_analysis.sector_map import get_sector_map, get_stock_quotes
 from services.stock_analysis.symbols import is_market_index, memo_symbol_aliases, normalize_market_indices, normalize_stock, normalize_sector_map, public_symbol
@@ -291,3 +292,14 @@ async def stock_chat(body: StockChatRequest):
             mcp_manager.reset_request_scope(scope_token)
             await mcp_manager.connect_all(await build_servers_config())
     return {"answer": answer}
+
+
+@router.get("/financials/{symbol}")
+async def stock_financials(symbol: Symbol, frequency: Literal["yearly", "quarterly"] = "yearly"):
+    try:
+        return await asyncio.to_thread(fetch_financials, symbol, frequency)
+    except YFRateLimitError as exc:
+        raise HTTPException(429, "financials_rate_limited") from exc
+    except Exception as exc:
+        logger.exception("Financial statements unavailable for %s", symbol)
+        raise HTTPException(502, "financials_unavailable") from exc

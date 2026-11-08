@@ -1,0 +1,33 @@
+.stock-financials {padding: 16px; min-width: 0; color: var(--text);}
+.stock-financials-controls {display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;}
+.stock-financials-table-wrap {overflow-x: auto; border: 1px solid var(--border); border-radius: 10px;}
+.stock-financials table {width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap;}
+.stock-financials th, .stock-financials td {padding: 14px 16px; text-align: end; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums;}
+.stock-financials th:first-child {text-align: start; position: sticky; inset-inline-start: 0; background: var(--bg-secondary);}
+.stock-financials thead {background: var(--surface2);}
+.stock-financials tbody th {font-weight: 500;}
+.stock-financials tr:last-child > * {border-bottom: 0;}
+.stock-financials-note {color: var(--muted); font-size: 12px; line-height: 1.7; margin-block: 12px;}
+
+.stock-financials-loading {position: relative; isolation: isolate; min-height: 240px;}
+
+.stock-financials .modal-tab:hover:not(:disabled) {background: transparent; color: var(--text);}
+.stock-financials .modal-tab.active:hover:not(:disabled) {color: var(--accent);}
+
+.stock-financials-controls {justify-content: flex-end; margin-bottom: 12px;}
+.stock-financials-statement {margin-bottom: 28px;}
+.stock-financials-statement h3 {margin: 0 0 12px; font-size: 14px; font-weight: 600;}
+.stock-financials-value {display: block; font-weight: 550;}
+.stock-financials-currency {display: block; margin-top: 4px; color: var(--muted); font-size: 10px; font-weight: 400;}
+.stock-financials-changes:empty {display: none;}
+.stock-financials-changes {display: flex; flex-direction: column; align-items: flex-end; gap: 4px; margin-top: 8px;}
+.stock-financials-change {display: flex; align-items: center; gap: 8px; font-size: 10px; line-height: 1.5; color: var(--muted);}
+.stock-financials-change > span:first-child {color: inherit;}
+.stock-financials[data-market="KR"] .stock-financials-change[data-direction="increase"],
+.stock-financials[data-market="US"] .stock-financials-change[data-direction="decrease"] {color: #e64c52;}
+.stock-financials[data-market="KR"] .stock-financials-change[data-direction="decrease"] {color: #2878da;}
+.stock-financials[data-market="US"] .stock-financials-change[data-direction="increase"] {color: #30ad69;}
+.stock-financials table {table-layout: fixed; min-width: 760px;}
+.stock-financials th:first-child {width: 160px; white-space: normal;}
+
+.stock-financials thead th, .stock-financials thead th:first-child {text-align: center;}

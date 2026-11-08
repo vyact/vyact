@@ -13,6 +13,7 @@ import {getInitialMarket, saveMarketPreference} from './marketPreference';
 import StockSectorMap from './StockSectorMap';
 import StockPriceChart from './StockPriceChart';
 import StockHistory from './StockHistory';
+import StockFinancials from './StockFinancials';
 import ModalTabs from '../common/ModalTabs/ModalTabs';
 import StockDiscussionPanel from './StockDiscussionPanel';
 import useStockGroupDrag from './useStockGroupDrag';
@@ -38,7 +39,7 @@ export default function StockAnalysis({onClose}: {onClose: () => void}) {
 function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApiSaved: () => void}) {
     const {t, i18n} = useTranslation('main');
     const tr = (key: string, options?: Record<string, unknown>) => t(`stockAnalysis.${key}`, options);
-    const [detailTab, setDetailTab] = useState<'chart' | 'history'>('chart');
+    const [detailTab, setDetailTab] = useState<'chart' | 'history' | 'financials'>('chart');
     const [apiSettingsOpen, setApiSettingsOpen] = useState(false);
     const [market, setMarket] = useState<StockMarket>(() => getInitialMarket(i18n.resolvedLanguage ?? i18n.language));
     useEffect(() => {saveMarketPreference(market);}, [market]);
@@ -260,7 +261,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                 </div>
             </div>}
             {active && <div className="stock-analysis-detail-tabs"><ModalTabs
-                tabs={[{key: 'chart', label: tr('history.chart')}, {key: 'history', label: tr('history.tab')}]}
+                tabs={[{key: 'chart', label: tr('history.chart')}, {key: 'history', label: tr('history.tab')}, {key: 'financials', label: tr('financials.tab')}]}
                 activeKey={detailTab} onChange={setDetailTab}/></div>}
             {active && <div className="stock-analysis-detail-panel" hidden={detailTab !== 'chart'}>
             <div className="stock-analysis-chart-stage" aria-busy={loading}>
@@ -278,6 +279,9 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                 {priceError && <p role="alert">{tr('historyError')}</p>}
                 {rows?.length === 0 && !loading && !priceError && <p>{tr('noPrices')}</p>}
                 {!!rows?.length && <StockHistory key={active.symbol} rows={rows} market={market}/>}
+            </div>}
+            {active && detailTab === 'financials' && <div className="stock-analysis-detail-panel">
+                <StockFinancials key={`${active.symbol}:${refreshVersion}`} symbol={active.symbol} market={market}/>
             </div>}
         </main>
         {active && <StockDiscussionPanel key={`${market}:${active.symbol}`} stock={active} market={market} directory={symbols}/>}

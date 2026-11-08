@@ -40,6 +40,7 @@ export default function StockDiscussionSidebar({stock, market, directory}: {stoc
     const tr = (key: string) => t(`stockAnalysis.discussion.${key}`);
     const storageKey = `vyact:stock-discussion:${market}:${stock.symbol}`;
     const [preferences, setPreferences] = useState(readPreferences);
+    const [contextDaysInput, setContextDaysInput] = useState(() => String(preferences.days));
     const {selectedServers, setSelectedServers} = useSelectedMcpTools(preferences.toolIds, toolIds => setPreferences(current => ({...current, toolIds})));
     const [referenceStocks, setReferenceStocks] = useState<StockSymbol[]>([]);
     const [messages, setMessages] = useState<ChatMessage[]>(() => readMessages(storageKey));
@@ -143,10 +144,15 @@ export default function StockDiscussionSidebar({stock, market, directory}: {stoc
                         actions={<>
                             <label className="stock-discussion-period" htmlFor={`${id}-days`}>
                                 <span>{tr('contextDays')}</span>
-                                <input id={`${id}-days`} type="number" min={1} max={MAX_CONTEXT_DAYS} step={1}
-                                    value={preferences.days} disabled={busy}
+                                <input id={`${id}-days`} type="text" inputMode="numeric" pattern="[0-9]*" maxLength={String(MAX_CONTEXT_DAYS).length}
+                                    value={contextDaysInput} disabled={busy}
+                                    onBlur={() => setContextDaysInput(String(preferences.days))}
                                     onChange={event => {
-                                        const days = Number(event.target.value);
+                                        const value = event.target.value;
+                                        if (!/^[0-9]*$/.test(value)) return;
+                                        const days = Number(value);
+                                        if (value !== '' && (days < 1 || days > MAX_CONTEXT_DAYS)) return;
+                                        setContextDaysInput(value);
                                         if (Number.isInteger(days) && days >= 1 && days <= MAX_CONTEXT_DAYS) setPreferences(current => ({...current, days}));
                                     }}/>
                             </label>

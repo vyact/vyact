@@ -1,6 +1,6 @@
 .stock-analysis-detail-tabs {min-width: 0;}
 .stock-analysis-detail-tabs .modal-tabs-bar {gap: 8px;}
-.stock-analysis-detail-tabs .modal-tab {display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 7px; padding: 12px 16px; font-size: 13px; color: var(--text-muted);}
+.stock-analysis-detail-tabs .modal-tab {display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 7px; padding: 12px 16px; font-size: 13px; color: var(--muted);}
 .stock-analysis-detail-tabs .modal-tab.active {color: var(--accent);}
 .stock-analysis-detail-tabs .modal-tab:hover:not(:disabled) {background: transparent; color: var(--text);}
 .stock-analysis-detail-tabs .modal-tab.active:hover:not(:disabled) {color: var(--accent);}
