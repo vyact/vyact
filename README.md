@@ -76,6 +76,8 @@ Keep your documents, conversations, and tools together. Start with one task, the
 | **Email, cloud files, and calendars** | Work with Gmail, Outlook, Drive, OneDrive, and calendars. Draft replies, bring files into chat, and manage events. |
 | **Code work and review** | Connect a project folder, search and edit files with AI, run project checks, and review or undo tracked changes. |
 | **Local model selection** | Find GGUF or Apple Silicon MLX models, compare memory estimates, and benchmark supported settings on your computer. |
+| **Novel Studio** | Plan stories, develop characters and worldbuilding, write and revise chapters with AI, and export your work. |
+| **Stock analysis** | Explore Korean and US markets, compare charts and financial statements, and research stocks with AI. |
 
 <details>
 <summary><strong>Explore more desktop features</strong></summary>
@@ -96,6 +98,23 @@ Keep your documents, conversations, and tools together. Start with one task, the
 </details>
 
 Google and Microsoft integrations require account setup and permissions. Available AI actions depend on the model’s tool support and the connected service; Google and Microsoft do not expose identical tools.
+
+## Novel Studio
+
+Develop a story from its initial idea to a chapter manuscript in a dedicated writing workspace.
+
+- Explore setting proposals, organize characters and worldbuilding in a story bible, and use reference material to guide your writing.
+- Draft, continue, and revise chapters with AI while keeping writing instructions and tool selections specific to each story.
+- Manage stories and chapters in a library and export your work as PDF or Markdown.
+
+## Stock analysis
+
+Explore Korean and US stocks with charts, financial statements, and an AI research panel.
+
+- Browse sector heatmaps and major indices, organize watchlists and groups, and compare instruments with technical indicators and date-specific chart notes.
+- View annual and quarterly income statements, balance sheets, and cash flow statements together, with localized amounts and available QoQ/YoY comparisons.
+- Ask AI about recent price and volume data, add reference instruments, and optionally include company financials. Selected search tools can research recent news, with streamed answers and tool activity shown in the conversation.
+- Save analysis conversations by instrument and reopen them from the history button, separately from regular chat history.
 
 ## More than a chat sidebar: Vyact for Chrome
 

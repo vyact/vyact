@@ -76,6 +76,8 @@ Giữ tài liệu, hội thoại và công cụ trong cùng một nơi. Bắt đ
 | **Email, tệp đám mây và lịch** | Kết nối Gmail, Outlook, Drive, OneDrive và lịch để soạn bản nháp trả lời, đưa tệp vào chat và quản lý sự kiện. |
 | **Mã nguồn và xem xét thay đổi** | Kết nối thư mục dự án để AI tìm và sửa tệp, chạy kiểm tra, xem xét hoặc hoàn tác các chỉnh sửa được theo dõi. |
 | **Chọn mô hình cục bộ** | Tìm mô hình GGUF hoặc MLX cho Apple Silicon, so sánh bộ nhớ ước tính và kiểm tra hiệu năng các cài đặt được hỗ trợ trên máy của bạn. |
+| **Xưởng tiểu thuyết** | Xây dựng bối cảnh, nhân vật và thế giới, viết và chỉnh sửa chương với AI, rồi xuất tác phẩm. |
+| **Phân tích chứng khoán** | Khám phá thị trường Hàn Quốc và Mỹ, so sánh biểu đồ và báo cáo tài chính, nghiên cứu cổ phiếu với AI. |
 
 <details>
 <summary><strong>Xem thêm tính năng trên máy tính</strong></summary>
@@ -96,6 +98,23 @@ Giữ tài liệu, hội thoại và công cụ trong cùng một nơi. Bắt đ
 </details>
 
 Kết nối Google và Microsoft cần thiết lập tài khoản và quyền truy cập. Thao tác AI thực hiện được tùy thuộc khả năng gọi công cụ của mô hình và dịch vụ; hai bên không cung cấp bộ công cụ giống nhau.
+
+## Xưởng tiểu thuyết
+
+Phát triển ý tưởng thành bản thảo từng chương trong không gian viết riêng.
+
+- So sánh các đề xuất bối cảnh, tổ chức nhân vật và thế giới trong hồ sơ thiết lập tác phẩm, đồng thời sử dụng tài liệu tham khảo.
+- Viết, viết tiếp và chỉnh sửa chương với AI, giữ riêng hướng dẫn viết và lựa chọn công cụ cho từng tác phẩm.
+- Quản lý tác phẩm và chương trong thư viện, xuất ra PDF hoặc Markdown.
+
+## Phân tích chứng khoán
+
+Nghiên cứu cổ phiếu Hàn Quốc và Mỹ bằng biểu đồ, báo cáo tài chính và bảng phân tích AI.
+
+- Xem bản đồ nhiệt ngành và chỉ số chính, quản lý danh sách theo dõi và nhóm, so sánh mã, sử dụng chỉ báo kỹ thuật và ghi chú biểu đồ theo ngày.
+- Xem báo cáo kết quả kinh doanh, bảng cân đối kế toán và lưu chuyển tiền tệ theo năm hoặc quý trên cùng một màn hình, với định dạng số theo ngôn ngữ và mức thay đổi theo quý, cùng kỳ khi có dữ liệu.
+- Hỏi AI dựa trên giá và khối lượng gần đây, thêm mã tham chiếu và tùy chọn kèm dữ liệu tài chính doanh nghiệp. Dùng công cụ tìm kiếm đã chọn để tra cứu tin mới, theo dõi câu trả lời và hoạt động công cụ theo thời gian thực.
+- Lưu cuộc trò chuyện phân tích theo từng mã, tách khỏi lịch sử chat thông thường, và mở lại bằng nút lịch sử.
 
 ## Vyact cho Chrome: không chỉ là khung chat
 
