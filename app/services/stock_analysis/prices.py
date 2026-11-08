@@ -5,6 +5,7 @@ from time import time
 import yfinance as yf
 
 from services.stock_analysis.market_indices import INDEX_SYMBOLS
+from services.stock_analysis.symbols import yahoo_symbol
 
 MAX_OVERNIGHT_PRICE_RATIO = 4
 PRICE_HISTORY_PERIOD = "10y"
@@ -12,6 +13,7 @@ INDEX_HISTORY_PERIOD = "max"
 
 
 def fetch_prices(symbol: str, *, start: str | None = None) -> list[dict]:
+    symbol = yahoo_symbol(symbol)
     history_range = {"start": start} if start else {"period": INDEX_HISTORY_PERIOD if symbol in INDEX_SYMBOLS else PRICE_HISTORY_PERIOD}
     history = yf.Ticker(symbol).history(
         **history_range, interval="1d", auto_adjust=False, actions=False,
@@ -41,7 +43,7 @@ SPARKLINE_CACHE_SECONDS = 3600
 
 @lru_cache(maxsize=1024)
 def _fetch_sparkline(symbol: str, cache_window: int) -> tuple[float, ...]:
-    history = yf.Ticker(symbol).history(
+    history = yf.Ticker(yahoo_symbol(symbol)).history(
         period="3mo", interval="1d", auto_adjust=True, actions=False,
         raise_errors=True, timeout=15,
     )

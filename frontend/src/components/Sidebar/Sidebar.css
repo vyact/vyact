@@ -714,41 +714,6 @@
     opacity: 0.72;
 }
 
-/* 헤더 설정 버튼 — 둥근 사각형 배경 */
-.sidebar-header-settings {
-    width: 34px;
-    height: 34px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    color: var(--muted);
-    cursor: pointer;
-    transition: color 0.15s, border-color 0.15s, background 0.15s;
-    flex-shrink: 0;
-}
-
-.sidebar-header-settings:hover {
-    color: var(--accent);
-    border-color: var(--accent);
-    background: rgba(var(--accent-rgb), 0.08);
-}
-
-:root[data-theme='light'] .sidebar-header-settings {
-    border-color: color-mix(in srgb, var(--text-secondary) 22%, var(--border));
-    background: color-mix(in srgb, var(--surface2) 82%, var(--surface));
-    color: var(--muted);
-    box-shadow: none;
-}
-
-:root[data-theme='light'] .sidebar-header-settings:hover {
-    border-color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 9%, var(--surface));
-    color: var(--accent);
-}
-
 .btn-delete-all:focus-visible,
 .btn-refresh-history:focus-visible,
 .btn-new:focus-visible,

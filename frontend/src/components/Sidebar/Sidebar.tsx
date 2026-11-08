@@ -16,6 +16,7 @@ import type {CustomProviderSettings} from '../../services/api';
 import type {Conversation, Project} from '../../types';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
+import '../common/SettingsIconButton/SettingsIconButton.css';
 import './Sidebar.css';
 import ProjectHistoryRow from './ProjectHistoryRow';
 import SidebarOverflowMenu from './SidebarOverflowMenu';
@@ -629,7 +630,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                             ...customProviders.map(provider => ({value: `custom:${provider.id}`, label: provider.name})),
                             {value: '__add_custom__', label: t('customProvider.addConnection')},
                         ]} value={currentProvider} onChange={handleProviderChange} disabled={modelContextSelectionDisabled} className="header-provider-select" /></div>
-                        <button className="sidebar-header-settings" onClick={() => {
+                        <button className="sidebar-header-settings settings-icon-button" onClick={() => {
                             if (isApiProvider(currentProvider)) setIsProviderSettingsOpen(true);
                             else setIsSettingsOpen(true);
                         }} aria-label={t('modelSelector.settingsManage')}>

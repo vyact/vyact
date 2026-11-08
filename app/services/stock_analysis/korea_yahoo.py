@@ -15,6 +15,8 @@ DIRECTORY_PAGE_SIZE = 250
 DIRECTORY_CACHE_SECONDS = 3600
 SECTOR_STOCK_LIMIT = 15
 SCREENER_URL = 'https://query1.finance.yahoo.com/v1/finance/screener'
+_provider_symbols: dict[str, str] = {}
+_provider_symbols_loaded_at = 0.0
 
 
 def _screen(sector: str | None = None, offset: int = 0, size: int = DIRECTORY_PAGE_SIZE, language: str = 'en') -> dict:
@@ -38,6 +40,7 @@ def _directory_page(arguments: tuple[int, str]) -> list[dict]:
 
 @lru_cache(maxsize=4)
 def _directory(cache_hour: int, language: str) -> dict[str, dict]:
+    global _provider_symbols, _provider_symbols_loaded_at
     first = _screen(language=language)
     quotes = list(first.get('quotes', []))
     offsets = range(DIRECTORY_PAGE_SIZE, first.get('total', len(quotes)), DIRECTORY_PAGE_SIZE)
@@ -47,7 +50,15 @@ def _directory(cache_hour: int, language: str) -> dict[str, dict]:
     records = {quote['symbol']: quote for quote in quotes if quote.get('symbol', '').endswith(('.KS', '.KQ'))}
     if not records:
         raise ValueError('Yahoo returned no Korean listings')
+    _provider_symbols = {symbol.rsplit('.', 1)[0]: symbol for symbol in records}
+    _provider_symbols_loaded_at = monotonic()
     return records
+
+
+def cached_korea_provider_symbol(code: str) -> str | None:
+    if monotonic() - _provider_symbols_loaded_at < DIRECTORY_CACHE_SECONDS:
+        return _provider_symbols.get(code)
+    return None
 
 
 def _names(records: dict[str, dict]) -> dict[str, str]:

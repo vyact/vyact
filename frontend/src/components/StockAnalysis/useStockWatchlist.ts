@@ -1,14 +1,18 @@
+import {stockWatchlistKey} from '../../utils/stockSymbols';
 import {useEffect, useState} from 'react';
 import type {StockMarket} from '../../services/stockAnalysis';
 
 const WATCHLIST_STORAGE_KEY = 'vyact:stock-analysis:watchlist:v1';
-const watchlistKey = (market: StockMarket, symbol: string) => `${market}:${symbol}`;
+const watchlistKey = stockWatchlistKey;
 
 function readWatchlist(): string[] {
     try {
         const saved: unknown = JSON.parse(localStorage.getItem(WATCHLIST_STORAGE_KEY) ?? '[]');
         return Array.isArray(saved) ? [...new Set(saved.filter((value): value is string =>
-            typeof value === 'string' && /^(KR|US):[A-Z0-9][A-Z0-9.-]{0,15}$/.test(value)))] : [];
+            typeof value === 'string' && /^(KR|US):[A-Z0-9][A-Z0-9.-]{0,15}$/.test(value)).map(value => {
+                const [market, symbol] = value.split(':');
+                return watchlistKey(market, symbol);
+            }))] : [];
     } catch {return [];}
 }
 

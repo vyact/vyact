@@ -1,6 +1,6 @@
 import {useEffect, useState} from 'react';
 import {localizeStockName} from '../../utils/stockDisplayName';
-import {ArrowLeft, ChartCandlestick, RefreshCw, Search, Star} from 'lucide-react';
+import {ArrowLeft, ChartCandlestick, RefreshCw, Search, Settings, Star} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {stockSnapshotCache} from '../../services/stockSnapshotCache';
 import {stockAnalysis, type DailyPrice, type StockMarket, type StockSymbol} from '../../services/stockAnalysis';
@@ -8,19 +8,30 @@ import WorkspaceExitButton from '../common/WorkspaceLayout/WorkspaceExitButton';
 import WorkspaceLayout from '../common/WorkspaceLayout/WorkspaceLayout';
 import {Tooltip} from '../common/Tooltip/Tooltip';
 import CustomSelect from '../CustomSelect/CustomSelect';
+import StockApiSettings from './StockApiSettings';
 import StockLoadingIndicator from './StockLoadingIndicator';
 import {getInitialMarket, saveMarketPreference} from './marketPreference';
 import StockSectorMap from './StockSectorMap';
 import StockPriceChart from './StockPriceChart';
 import useStockWatchlist from './useStockWatchlist';
+import '../common/SettingsIconButton/SettingsIconButton.css';
 import './StockAnalysis.css';
 import './StockWatchlist.css';
 
 const MARKETS: StockMarket[] = ['KR', 'US'];
 const VISIBLE_SYMBOLS = 100;
 export default function StockAnalysis({onClose}: {onClose: () => void}) {
+    const [apiVersion, setApiVersion] = useState(0);
+    return <StockAnalysisContent key={apiVersion} onClose={onClose} onApiSaved={() => {
+        stockSnapshotCache.clear();
+        setApiVersion(version => version + 1);
+    }}/>;
+}
+
+function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApiSaved: () => void}) {
     const {t, i18n} = useTranslation('main');
     const tr = (key: string, options?: Record<string, unknown>) => t(`stockAnalysis.${key}`, options);
+    const [apiSettingsOpen, setApiSettingsOpen] = useState(false);
     const [market, setMarket] = useState<StockMarket>(() => getInitialMarket(i18n.resolvedLanguage ?? i18n.language));
     useEffect(() => {saveMarketPreference(market);}, [market]);
     const [symbols, setSymbols] = useState<StockSymbol[]>(() => stockSnapshotCache.readSymbols(market, i18n.resolvedLanguage) ?? []);
@@ -108,6 +119,7 @@ export default function StockAnalysis({onClose}: {onClose: () => void}) {
         <section className="stock-analysis-market-section" aria-label={tr('market')}>
         <CustomSelect options={MARKETS.map(value => ({value, label: tr(value)}))} value={market}
                       onChange={changeMarket} ariaLabel={tr('market')} portal/>
+        <button type="button" className="settings-icon-button" aria-label={tr('api.title')} onClick={() => setApiSettingsOpen(true)}><Settings size={16} aria-hidden="true"/></button>
         </section>
         <div className="stock-watchlist-switch" role="group" aria-label={tr('listView')}>
             <button type="button" aria-pressed={!watchlistOnly} onClick={() => setWatchlistOnly(false)}><span className="stock-watchlist-label">{tr('allStocks')}</span></button>
@@ -134,10 +146,10 @@ export default function StockAnalysis({onClose}: {onClose: () => void}) {
                 {filtered.slice(0, VISIBLE_SYMBOLS).map(item => <li key={item.symbol}>
                     <button aria-pressed={item.symbol === activeSymbol} onClick={() => openSymbol(item)}>
                         <strong className="stock-symbol-code">{item.symbol}
-                            {market === 'KR' && /\.(KS|KQ)$/.test(item.symbol) && <Tooltip content={tr(item.symbol.endsWith('.KS') ? 'indexKospi' : 'indexKosdaq')}>
-                                <small className="stock-symbol-exchange" data-exchange={item.symbol.endsWith('.KS') ? 'kospi' : 'kosdaq'}
-                                    aria-label={tr(item.symbol.endsWith('.KS') ? 'indexKospi' : 'indexKosdaq')}>
-                                    {tr(item.symbol.endsWith('.KS') ? 'exchangeBadgeKospi' : 'exchangeBadgeKosdaq')}
+                            {market === 'KR' && item.exchange && <Tooltip content={tr(item.exchange === 'KOSPI' ? 'indexKospi' : 'indexKosdaq')}>
+                                <small className="stock-symbol-exchange" data-exchange={item.exchange === 'KOSPI' ? 'kospi' : 'kosdaq'}
+                                    aria-label={tr(item.exchange === 'KOSPI' ? 'indexKospi' : 'indexKosdaq')}>
+                                    {tr(item.exchange === 'KOSPI' ? 'exchangeBadgeKospi' : 'exchangeBadgeKosdaq')}
                                 </small>
                             </Tooltip>}
                         </strong><span>{item.name}{item.preferred && <small className="stock-symbol-preferred">{tr('preferredShare')}</small>}</span>
@@ -155,7 +167,9 @@ export default function StockAnalysis({onClose}: {onClose: () => void}) {
         </>}
     </div>;
 
-    return <WorkspaceLayout className="stock-analysis" label={tr('title')} header={header} sidebar={sidebar}>
+    return <>
+    {apiSettingsOpen && <StockApiSettings market={market} onClose={() => setApiSettingsOpen(false)} onSaved={onApiSaved}/>}
+    <WorkspaceLayout className="stock-analysis" label={tr('title')} header={header} sidebar={sidebar}>
         <main className="stock-analysis-content">
             {!active && <StockSectorMap key={`${market}:${i18n.resolvedLanguage}`} market={market} onOpen={openSymbol} directory={symbols}/>}
             {active && <div className="stock-analysis-heading">
@@ -187,5 +201,5 @@ export default function StockAnalysis({onClose}: {onClose: () => void}) {
                 <a href="https://www.tradingview.com/" target="_blank" rel="noreferrer">TradingView Lightweight Charts™ · © 2025 TradingView, Inc.</a>
             </footer>}
         </main>
-    </WorkspaceLayout>;
+    </WorkspaceLayout></>;
 }

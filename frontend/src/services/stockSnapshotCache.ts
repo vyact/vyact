@@ -1,4 +1,5 @@
 import type {MarketIndex, MarketSectorMap, StockMarket, StockSymbol} from './stockAnalysis';
+import {normalizeStockSectorMap, normalizeStockSymbol} from '../utils/stockSymbols';
 import {localizeStockName} from '../utils/stockDisplayName';
 
 type CachedSnapshot<T> = {savedAt: number; data: T};
@@ -25,23 +26,33 @@ function writeSnapshot<T>(key: string, data: T) {
 }
 
 export const stockSnapshotCache = {
+    clear: () => {
+        memory.clear();
+        try {
+            const keys = Object.keys(localStorage).filter(key => key.startsWith(CACHE_PREFIX) || key.startsWith('vyact:stock-prices:'));
+            keys.forEach(key => localStorage.removeItem(key));
+        } catch { /* In-memory snapshots have still been invalidated. */ }
+    },
     readSymbols: (market: StockMarket, language = 'en') => readSnapshot<StockSymbol[]>(`symbols:${market}:${language}`,
         (data): data is StockSymbol[] => Array.isArray(data) && data.length > 0
             && data.every(item => typeof item?.symbol === 'string' && typeof item.name === 'string'))
-        ?.map(item => ({...item, name: localizeStockName(item.name, language)})),
+        ?.map(item => ({...normalizeStockSymbol(item), name: localizeStockName(item.name, language)})),
     writeSymbols: (market: StockMarket, symbols: StockSymbol[], language = 'en') => writeSnapshot(`symbols:${market}:${language}`, symbols),
-    readMap: (market: StockMarket, language = 'en') => readSnapshot<MarketSectorMap>(`map-v2:${market}:${language}`, (value): value is MarketSectorMap => {
-        const map = value as MarketSectorMap | null;
-        return Boolean(map && typeof map.date === 'string' && typeof map.quoteDate === 'string'
-            && Array.isArray(map.sectors) && map.sectors.length
-            && map.sectors.every(sector => typeof sector.name === 'string' && Array.isArray(sector.stocks)));
-    }),
+    readMap: (market: StockMarket, language = 'en') => {
+        const snapshot = readSnapshot<MarketSectorMap>(`map-v2:${market}:${language}`, (value): value is MarketSectorMap => {
+            const map = value as MarketSectorMap | null;
+            return Boolean(map && typeof map.date === 'string' && typeof map.quoteDate === 'string'
+                && Array.isArray(map.sectors) && map.sectors.length
+                && map.sectors.every(sector => typeof sector.name === 'string' && Array.isArray(sector.stocks)));
+        });
+        return snapshot ? normalizeStockSectorMap(snapshot) : undefined;
+    },
     writeMap: (market: StockMarket, snapshot: MarketSectorMap, language = 'en') => writeSnapshot(`map-v2:${market}:${language}`, snapshot),
     readIndices: () => readSnapshot<MarketIndex[]>('indices', (value): value is MarketIndex[] =>
         Array.isArray(value) && value.length > 0 && value.every(index => typeof index?.symbol === 'string'
-            && Array.isArray(index.closes) && typeof index.price === 'number')),
+            && Array.isArray(index.closes) && typeof index.price === 'number'))?.map(normalizeStockSymbol),
     writeIndices: (indices: MarketIndex[]) => {
-        const valid = indices.filter(index => index.price != null);
+        const valid = indices.map(normalizeStockSymbol).filter(index => index.price != null);
         if (valid.length) {
             const previous = stockSnapshotCache.readIndices() ?? [];
             writeSnapshot('indices', [...valid, ...previous.filter(index => !valid.some(item => item.symbol === index.symbol))]);

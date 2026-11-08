@@ -5,31 +5,35 @@ export const SPARKLINE_TRADING_DAYS = 20;
 const historyCache = new Map<string, {day: string; closes: number[]}>();
 
 export function useSectorSparklines(symbols: string[], day: string) {
-    const [histories, setHistories] = useState<Record<string, number[]>>({});
+    const [histories, setHistories] = useState<{day: string; values: Record<string, number[]>}>({day, values: {}});
     const symbolsKey = symbols.join(',');
     useEffect(() => {
         const controller = new AbortController();
-        const queue = symbolsKey.split(',').filter(Boolean);
+        const requested = symbolsKey.split(',').filter(Boolean);
+        const cached = Object.fromEntries(requested.filter(symbol => historyCache.get(symbol)?.day === day)
+            .map(symbol => [symbol, historyCache.get(symbol)!.closes]));
+        const missing = requested.filter(symbol => !(symbol in cached));
         const run = async () => {
-            while (queue.length && !controller.signal.aborted) {
-                const symbol = queue.shift()!;
-                let cached = historyCache.get(symbol);
-                if (cached?.day !== day) {
-                    try {
-                        const closes = await stockAnalysis.sparkline(symbol, controller.signal);
-                        cached = {day, closes};
-                        historyCache.set(symbol, cached);
-                    } catch {
-                        continue;
-                    }
+            const batchSize = 50;
+            for (let start = 0; start < missing.length && !controller.signal.aborted; start += batchSize) {
+                try {
+                    const batch = await stockAnalysis.sparklines(missing.slice(start, start + batchSize), controller.signal);
+                    if (controller.signal.aborted) return;
+                    Object.entries(batch).forEach(([symbol, closes]) => historyCache.set(symbol, {day, closes}));
+                    setHistories(current => ({day, values: {...(current.day === day ? current.values : {}), ...batch}}));
+                } catch {
+                    // Keep available mini charts when a batch cannot be loaded.
                 }
-                if (!controller.signal.aborted) setHistories(current => ({...current, [symbol]: cached.closes}));
             }
         };
-        void Promise.all(Array.from({length: 4}, run));
+        void run();
         return () => controller.abort();
     }, [symbolsKey, day]);
-    return histories;
+    return Object.fromEntries(symbols.flatMap(symbol => {
+        const cached = historyCache.get(symbol);
+        const closes = cached?.day === day ? cached.closes : histories.day === day ? histories.values[symbol] : undefined;
+        return closes ? [[symbol, closes]] : [];
+    }));
 }
 
 export default function StockSparkline({closes, change}: {closes?: number[]; change?: number | null}) {

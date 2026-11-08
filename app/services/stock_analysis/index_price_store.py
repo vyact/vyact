@@ -6,8 +6,9 @@ from zoneinfo import ZoneInfo
 from elasticsearch import NotFoundError
 
 from services.db import MARKET_INDEX_PRICES_INDEX, ensure_market_index_prices_index, get_es
-from services.stock_analysis.market_indices import INDEX_SYMBOLS, MARKET_INDEX_SYMBOLS, index_timezone
+from services.stock_analysis.market_indices import MARKET_INDEX_SYMBOLS, index_timezone
 from services.stock_analysis.prices import fetch_prices
+from services.stock_analysis.symbols import is_market_index, yahoo_symbol
 
 PAGE_SIZE = 2000
 BULK_SIZE = 1000
@@ -88,8 +89,9 @@ def _consume_result(task: asyncio.Task) -> None:
 
 
 async def get_index_prices(symbol: str) -> list[dict]:
-    if symbol not in INDEX_SYMBOLS:
+    if not is_market_index(symbol):
         raise ValueError("Only market indices may use the history store")
+    symbol = yahoo_symbol(symbol)
     es = get_es()
     await ensure_market_index_prices_index(es)
     rows = await _read_rows(es, symbol)

@@ -178,7 +178,7 @@
 
 .stock-chart-settings footer > button {display: inline-flex; align-items: center; justify-content: center; text-align: center;}
 
-.stock-analysis-market-section {display: flex; align-items: center; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--border);}
+.stock-analysis-market-section {display: flex; align-items: center; gap: 6px; padding-bottom: 16px; border-bottom: 1px solid var(--border);}
 .stock-analysis-market-section > .custom-select-wrap {flex: 1; min-width: 0; width: auto;}
 .stock-analysis-sidebar > .stock-analysis-caption {font-size: 11px; color: var(--text-muted);}
 .stock-analysis-symbols {display: grid; gap: 3px;}
@@ -186,7 +186,7 @@
 .stock-analysis-symbols strong {font-size: 13px; font-weight: 650;}
 .stock-analysis-symbols span {font-size: 12px; line-height: 1.4;}
 
-.stock-analysis-market-section .custom-select-wrap .custom-select-trigger {padding-block: 5px; min-height: 28px;}
+.stock-analysis-market-section .custom-select-wrap .custom-select-trigger {padding-block: 5px; min-height: 34px;}
 
 .stock-symbol-preferred {display: inline-block; margin-inline-start: 6px; padding: 1px 4px; border-radius: 4px; background: color-mix(in srgb, var(--info) 12%, var(--surface)); color: var(--info); font-size: 10px;}
 
