@@ -80,9 +80,6 @@
 .stock-sector-preview [data-direction="up"] {color: var(--map-preview-up);}
 .stock-sector-preview [data-direction="down"] {color: var(--map-preview-down);}
 
-.stock-sector-map-refresh {display: flex; align-items: center; gap: 8px; flex-shrink: 0; padding-inline-start: 12px; border-inline-start: 1px solid var(--border);}
-.stock-sector-map-refresh .custom-select-wrap {width: 90px; min-width: 90px;}
-.stock-sector-map-refresh .custom-select-wrap .custom-select-trigger {width: 100%; justify-content: space-between; padding-block: 5px; min-height: 28px;}
 .stock-analysis-content:has(> .stock-sector-map) {min-height: 0; overflow: hidden;}
 
 .stock-sector-map-preview-panel {transition: left 180ms ease-out; animation: stock-sector-preview-enter 140ms ease-out;}

@@ -2154,7 +2154,7 @@
     "loading": "กำลังโหลด…",
     "directoryError": "โหลดรายชื่อหลักทรัพย์ไม่ได้",
     "retry": "ลองอีกครั้ง",
-    "results": "แสดง {{shown}} จาก {{total}}",
+    "results": "แสดง <shown>{{shown}}</shown> จาก <total>{{total}}</total>",
     "dailyPrices": "ราคารายวัน",
     "day": "วันที่",
     "open": "เปิด",

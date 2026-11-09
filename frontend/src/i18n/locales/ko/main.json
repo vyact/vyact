@@ -2164,7 +2164,7 @@
     "loading": "불러오는 중…",
     "directoryError": "종목 목록을 불러오지 못했습니다.",
     "retry": "다시 시도",
-    "results": "{{total}}개 중 {{shown}}개 표시",
+    "results": "<total>{{total}}</total>개 중 <shown>{{shown}}</shown>개 표시",
     "dailyPrices": "일봉",
     "day": "날짜",
     "open": "시가",

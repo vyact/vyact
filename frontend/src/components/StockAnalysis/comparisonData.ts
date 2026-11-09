@@ -1,10 +1,12 @@
 import type {DailyPrice} from '../../services/stockAnalysis';
 import {aggregatePrices, periodKey, type ChartInterval} from './chartData';
 
-export function comparisonDailyChange(rows: DailyPrice[], sourceDay: string): number | null {
-    const index = rows.findIndex(row => row.day === sourceDay);
-    const previous = rows[index - 1]?.close;
-    return index < 1 || previous == null || previous <= 0 ? null : (rows[index].close / previous - 1) * 100;
+export function comparisonPeriodChange(rows: DailyPrice[], sourceDay: string, interval: ChartInterval = 'day'): number | null {
+    const periods = aggregatePrices(rows, interval);
+    const key = periodKey(sourceDay, interval);
+    const index = periods.findIndex(row => periodKey(row.day, interval) === key);
+    const previous = periods[index - 1]?.close;
+    return index < 1 || previous == null || previous <= 0 ? null : (periods[index].close / previous - 1) * 100;
 }
 
 export function comparisonPoints(base: DailyPrice[], rows: DailyPrice[], interval: ChartInterval, shift: number) {

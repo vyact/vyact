@@ -39,4 +39,5 @@ export function attachBandFill(chart: IChartApi, series: ISeriesApi<'Candlestick
     };
     const primitive: ISeriesPrimitive = {paneViews: () => [view]};
     series.attachPrimitive(primitive);
+    return (nextPoints: BandPoint[]) => {points = nextPoints;};
 }

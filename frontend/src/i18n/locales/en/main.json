@@ -2155,7 +2155,7 @@
     "loading": "Loading…",
     "directoryError": "Could not load the symbol directory.",
     "retry": "Try again",
-    "results": "Showing {{shown}} of {{total}}",
+    "results": "Showing <shown>{{shown}}</shown> of <total>{{total}}</total>",
     "dailyPrices": "Daily prices",
     "day": "Date",
     "open": "Open",

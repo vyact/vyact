@@ -22,6 +22,8 @@ def index_timezone(symbol: str) -> ZoneInfo:
         return ZoneInfo("Asia/Tokyo")
     return ZoneInfo("Asia/Seoul" if symbol in MARKET_INDEX_SYMBOLS["KR"] else "America/New_York")
 INDEX_CACHE_SECONDS = 10
+INDEX_CHART_TRADING_DAYS = 20
+INDEX_FETCH_ATTEMPTS = 2
 CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/"
 MAX_FUTURES_QUOTE_AGE_SECONDS = 30 * 60
 logger = logging.getLogger(__name__)
@@ -33,30 +35,37 @@ def _positive(value) -> bool:
 
 def _fetch_index(symbol: str) -> dict:
     result = YfData().get_raw_json(f"{CHART_URL}{symbol}", params={
-        "range": "1d", "interval": "5m", "includePrePost": "false",
+        "range": "3mo", "interval": "1d", "includePrePost": "false",
     }, timeout=12)["chart"]["result"][0]
     meta = result["meta"]
     price = meta.get("regularMarketPrice")
-    previous = meta.get("chartPreviousClose") or meta.get("previousClose")
+    # chartPreviousClose is the close before the entire requested range.
+    previous = meta.get("previousClose")
     timestamp = meta.get("regularMarketTime")
-    if not _positive(price) or not _positive(previous) or not timestamp:
+    if not _positive(price) or not timestamp:
         raise ValueError(f"Missing index quote: {symbol}")
     day = datetime.fromtimestamp(timestamp, index_timezone(symbol)).date().isoformat()
-    bars = result["indicators"]["quote"][0]["close"]
-    closes = [close for stamp, close in zip(result.get("timestamp", []), bars)
-              if _positive(close) and (symbol in INDEX_FUTURE_SYMBOLS
-                  or datetime.fromtimestamp(stamp, index_timezone(symbol)).date().isoformat() == day)]
-    return {"symbol": symbol, "price": price, "change": price - previous,
-            "changePercent": (price / previous - 1) * 100, "date": day, "closes": closes, "quoteTime": timestamp}
+    quotes = result.get("indicators", {}).get("quote") or [{}]
+    bars = quotes[0].get("close") or []
+    daily_bars = [(datetime.fromtimestamp(stamp, index_timezone(symbol)).date().isoformat(), close)
+                  for stamp, close in zip(result.get("timestamp", []), bars) if _positive(close)]
+    if not _positive(previous):
+        previous = next((close for bar_day, close in reversed(daily_bars) if bar_day < day), None)
+    change = price - previous if _positive(previous) else None
+    closes = [close for bar_day, close in daily_bars if bar_day <= day][-INDEX_CHART_TRADING_DAYS:]
+    return {"symbol": symbol, "price": price, "change": change,
+            "changePercent": (price / previous - 1) * 100 if change is not None else None,
+            "date": day, "closes": closes, "quoteTime": timestamp}
 
 
 def _safe_fetch_index(symbol: str) -> dict:
-    try:
-        return _fetch_index(symbol)
-    except Exception as exc:
-        logger.warning("Market index unavailable for %s: %s", symbol, exc)
-        return {"symbol": symbol, "price": None, "change": None, "changePercent": None,
-                "date": None, "closes": []}
+    for attempt in range(INDEX_FETCH_ATTEMPTS):
+        try:
+            return _fetch_index(symbol)
+        except Exception as exc:
+            logger.warning("Market index unavailable for %s (attempt %s): %s", symbol, attempt + 1, exc)
+    return {"symbol": symbol, "price": None, "change": None, "changePercent": None,
+            "date": None, "closes": []}
 
 
 @lru_cache(maxsize=3)

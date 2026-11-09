@@ -3,13 +3,14 @@ import {hierarchy, treemap, type HierarchyRectangularNode} from 'd3-hierarchy';
 import {ArrowLeft} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {stockSnapshotCache} from '../../services/stockSnapshotCache';
-import CustomSelect from '../CustomSelect/CustomSelect';
 import {stockAnalysis, type MarketSector, type MarketSectorMap, type SectorStock, type StockMarket, type StockSymbol} from '../../services/stockAnalysis';
 import StockLoadingIndicator from './StockLoadingIndicator';
 import MarketIndexSummary from './MarketIndexSummary';
 import MarketOpenCountdown from './MarketOpenCountdown';
 import StockSparkline, {SPARKLINE_TRADING_DAYS, useSectorSparklines} from './StockSparkline';
 import {isMarketWeekend} from './marketRefresh';
+import StockRefreshInterval from './StockRefreshInterval';
+import {DEFAULT_REFRESH_SECONDS} from './chartRefreshPreference';
 import type {StockGroup} from './useStockGroups';
 import useStockGroupQuotes from './useStockGroupQuotes';
 import {buildGroupSectors, groupMapSymbols} from './groupMapData';
@@ -39,8 +40,6 @@ const SECTOR_HEADER_HEIGHT = 24;
 const PREVIEW_PANEL_WIDTH = 440;
 const PREVIEW_PANEL_MARGIN = 8;
 const PREVIEW_PANEL_GAP = 12;
-const REFRESH_INTERVALS = [10, 30, 60, 300] as const;
-const DEFAULT_REFRESH_SECONDS = 30;
 
 function SectorPreview({sector, focused, market, day, customName = false}: {sector: MarketSector; focused?: SectorStock; market: StockMarket; day: string; customName?: boolean}) {
     const {t, i18n} = useTranslation('main');
@@ -55,7 +54,7 @@ function SectorPreview({sector, focused, market, day, customName = false}: {sect
     const sorted = [...sector.stocks].sort((a, b) => b.weight - a.weight);
     const entries = sorted.slice(0, PREVIEW_LIMIT);
     return <div className="stock-sector-preview" data-market={market}>
-        <strong className="stock-sector-preview-title">{customName ? sector.name : t(`stockAnalysis.sectorNames.${sector.name}`, {defaultValue: sector.name})}</strong>
+        <strong className="stock-sector-preview-title">{customName ? sector.name : t(`stockAnalysis.sectorNames.${sector.name}`, {defaultValue: sector.name, ...(market === 'US' ? {lng: 'en'} : {})})}</strong>
         <small className="stock-sector-preview-period">{t('stockAnalysis.mapTrendDays', {count: SPARKLINE_TRADING_DAYS})}</small>
         {focused && <div className="stock-sector-preview-selected">
             <div className="stock-sector-preview-selected-quote">
@@ -156,7 +155,7 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
         return snapshot?.sectors.map(sector => ({...sector, stocks: sector.stocks.map(stock =>
             ({...stock, name: names.get(stock.symbol) ?? stock.name}))}));
     }, [snapshot, directory, stockGroups, groupQuoteState.quotes]);
-    const sectorName = (name: string) => stockGroups ? name : t(`stockAnalysis.sectorNames.${name}`, {defaultValue: name});
+    const sectorName = (name: string) => stockGroups ? name : t(`stockAnalysis.sectorNames.${name}`, {defaultValue: name, ...(market === 'US' ? {lng: 'en'} : {})});
     const layout = useMemo(() => {
         if (!localizedSectors || width <= 0 || height <= 0) return;
         const stockNodes = (sector: MarketSector): MapNode[] => (localizedSectors?.find(item => item.name === sector.name) ?? sector).stocks.map(stock => ({stock, weight: stock.weight}));
@@ -205,14 +204,7 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
             {(stockGroups ? !!groupQuoteState.quotes.length : !!snapshot) && <div className="stock-sector-map-dates">
                 <span>{t(stockGroups ? 'stockAnalysis.mapQuoteDate' : 'stockAnalysis.sectorMapQuoteDate', {date: formatDay(stockGroups ? groupQuoteState.quotes.map(quote => quote.date).sort().slice(-1)[0] : snapshot!.quoteDate ?? snapshot!.date)})}</span>
             </div>}
-            <div className="stock-sector-map-refresh">
-                <span>{t('stockAnalysis.mapRefreshInterval')}</span>
-                <CustomSelect value={String(refreshSeconds)} onChange={value => setRefreshSeconds(Number(value))}
-                    options={REFRESH_INTERVALS.map(seconds => ({value: String(seconds), label: t(
-                        seconds < 60 ? 'stockAnalysis.mapRefreshSeconds' : 'stockAnalysis.mapRefreshMinutes',
-                        {count: seconds < 60 ? seconds : seconds / 60},
-                    )}))} ariaLabel={t('stockAnalysis.mapRefreshInterval')} portal alignRight/>
-            </div>
+            <StockRefreshInterval seconds={refreshSeconds} onChange={setRefreshSeconds}/>
             </div>
         </header>
         {!stockGroups && <MarketIndexSummary key={market} market={market} refreshSeconds={refreshSeconds} onOpen={onOpen} onOpeningChange={setNextRegularOpen}/>}

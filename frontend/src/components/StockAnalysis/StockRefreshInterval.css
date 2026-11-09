@@ -1,0 +1,5 @@
+.stock-refresh-interval {display: flex; align-items: center; gap: 8px; flex-shrink: 0; padding-inline-start: 12px; border-inline-start: 1px solid var(--border);}
+.stock-refresh-interval .custom-select-wrap {width: 90px; min-width: 90px;}
+.stock-refresh-interval .custom-select-wrap .custom-select-trigger {width: 100%; justify-content: space-between; padding-block: 5px; min-height: 28px;}
+
+.stock-analysis-header-actions .stock-refresh-interval {font-size: .75rem;}

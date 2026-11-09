@@ -101,9 +101,15 @@ async def get_index_prices(symbol: str) -> list[dict]:
         task = asyncio.create_task(_sync(symbol, es, rows, state))
         _sync_tasks[symbol] = task
         task.add_done_callback(_consume_result)
-    if rows:
-        return rows
-    if task is not None:
-        # Request cancellation must not interrupt a shared initial import.
-        await asyncio.shield(task)
-    return await _read_rows(es, symbol)
+    if task is not None and (not task.done() or not rows):
+        # Return refreshed bars on this request, rather than leaving the chart
+        # on the previous trading day until another manual reload.
+        # Request cancellation must not interrupt a shared synchronization.
+        try:
+            await asyncio.shield(task)
+        except Exception:
+            if rows:
+                return rows
+            raise
+        return await _read_rows(es, symbol)
+    return rows

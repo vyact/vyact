@@ -24,7 +24,7 @@ describe('provider-independent stock codes', () => {
         const fetch = vi.fn(async () => new Response('[]', {status: 200}));
         vi.stubGlobal('fetch', fetch);
         const signal = new AbortController().signal;
-        await stockAnalysis.prices('005930.KS', signal, true);
+        await stockAnalysis.prices('005930.KS', signal);
         await stockAnalysis.sparkline('0001A0.KQ', signal);
         await stockAnalysis.memos('005930.KS', signal);
         expect(fetch.mock.calls.map(call => (call as unknown[])[0])).toEqual([

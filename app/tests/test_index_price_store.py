@@ -40,22 +40,38 @@ class IndexStoreTests(unittest.IsolatedAsyncioTestCase):
             await store._sync('^GSPC', self.es, [bar('2026-11-05')], {})
         self.assertIsNone(fetch.call_args.kwargs['start'])
 
-    async def test_cached_response_is_immediate_and_sync_is_shared(self):
+    async def test_stale_response_waits_for_shared_sync_and_returns_latest_day(self):
         gate = asyncio.Event()
         async def blocked_sync(*args):
             await gate.wait()
         with patch.object(store, 'get_es', return_value=self.es), \
              patch.object(store, 'ensure_market_index_prices_index', new=AsyncMock()), \
-             patch.object(store, '_read_rows', new=AsyncMock(return_value=[bar('2026-11-06')])), \
+             patch.object(store, '_read_rows', new=AsyncMock(side_effect=[
+                 [bar('2026-11-06')], [bar('2026-11-06')],
+                 [bar('2026-11-06'), bar('2026-11-09')],
+                 [bar('2026-11-06'), bar('2026-11-09')],
+             ])), \
              patch.object(store, '_read_state', new=AsyncMock(return_value={})), \
              patch.object(store, '_sync', side_effect=blocked_sync) as sync:
-            first = await store.get_index_prices('^GSPC')
-            await store.get_index_prices('^GSPC')
+            first = asyncio.create_task(store.get_index_prices('^GSPC'))
+            second = asyncio.create_task(store.get_index_prices('^GSPC'))
             await asyncio.sleep(0)
-            self.assertEqual(first[0]['day'], '2026-11-06')
+            await asyncio.sleep(0)
+            self.assertFalse(first.done())
+            self.assertFalse(second.done())
             self.assertEqual(sync.call_count, 1)
             gate.set()
-            await store._sync_tasks['^GSPC']
+            responses = await asyncio.gather(first, second)
+            self.assertTrue(all(rows[-1]['day'] == '2026-11-09' for rows in responses))
+
+    async def test_failed_refresh_preserves_existing_history(self):
+        rows = [bar('2026-11-06')]
+        with patch.object(store, 'get_es', return_value=self.es), \
+             patch.object(store, 'ensure_market_index_prices_index', new=AsyncMock()), \
+             patch.object(store, '_read_rows', new=AsyncMock(return_value=rows)), \
+             patch.object(store, '_read_state', new=AsyncMock(return_value={})), \
+             patch.object(store, '_sync', new=AsyncMock(side_effect=ValueError('unavailable'))):
+            self.assertEqual(await store.get_index_prices('^IXIC'), rows)
 
     async def test_pagination_reads_more_than_es_result_window(self):
         hits = [{'_source': bar(f'2026-11-0{day}'), 'sort': [day]} for day in (1, 2, 3)]

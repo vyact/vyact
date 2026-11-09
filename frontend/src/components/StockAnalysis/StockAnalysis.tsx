@@ -1,7 +1,7 @@
 import {useEffect, useState} from 'react';
 import {localizeStockName} from '../../utils/stockDisplayName';
 import {ArrowLeft, ChartCandlestick, RefreshCw, Search, Settings, Star, Plus, Pencil, Trash2, LayoutGrid, FolderOpen, ChevronDown} from 'lucide-react';
-import {useTranslation} from 'react-i18next';
+import {Trans, useTranslation} from 'react-i18next';
 import {stockSnapshotCache} from '../../services/stockSnapshotCache';
 import {STOCK_MARKETS, stockAnalysis, type DailyPrice, type StockMarket, type StockSymbol} from '../../services/stockAnalysis';
 import WorkspaceExitButton from '../common/WorkspaceLayout/WorkspaceExitButton';
@@ -12,6 +12,7 @@ import StockLoadingIndicator from './StockLoadingIndicator';
 import {getInitialMarket, saveMarketPreference} from './marketPreference';
 import StockSectorMap from './StockSectorMap';
 import StockPriceChart from './StockPriceChart';
+import useStockPriceRefresh from './useStockPriceRefresh';
 import StockHistory from './StockHistory';
 import StockFinancials from './StockFinancials';
 import ModalTabs from '../common/ModalTabs/ModalTabs';
@@ -20,6 +21,8 @@ import useStockGroupDrag from './useStockGroupDrag';
 import useStockGroups, {type StockGroup} from './useStockGroups';
 import StockGroupDialog from './StockGroupDialog';
 import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
+import StockRefreshInterval from './StockRefreshInterval';
+import {readChartRefreshSeconds, saveChartRefreshSeconds} from './chartRefreshPreference';
 import './StockGroups.css';
 import useStockWatchlist from './useStockWatchlist';
 import '../common/SettingsIconButton/SettingsIconButton.css';
@@ -68,6 +71,12 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
     const [priceError, setPriceError] = useState(false);
     const [loading, setLoading] = useState(false);
     const [refreshVersion, setRefreshVersion] = useState(0);
+    const [chartRefreshSeconds, setChartRefreshSeconds] = useState(readChartRefreshSeconds);
+    const changeChartRefreshSeconds = (seconds: number) => {
+        setChartRefreshSeconds(seconds);
+        saveChartRefreshSeconds(seconds);
+    };
+    const chartVisible = detailTab === 'chart';
     const activeSymbol = active?.symbol;
     const watchlistCount = symbols.filter(item => watchlist.contains(market, item.symbol)).length;
     const filtered = symbols.filter(({symbol, name}) => (!watchlistOnly || watchlist.contains(market, symbol))
@@ -92,20 +101,30 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
     useEffect(() => {
         if (!activeSymbol) return;
         const controller = new AbortController();
-        stockAnalysis.prices(activeSymbol, controller.signal, refreshVersion > 0).then(result => {
-            if (controller.signal.aborted) return;
-            if (!result.length && refreshVersion > 0) {
-                setPriceError(true);
-                return;
+        let pending = false;
+        const refresh = async () => {
+            if (pending) return;
+            pending = true;
+            try {
+                const result = await stockAnalysis.prices(activeSymbol, controller.signal);
+                if (controller.signal.aborted) return;
+                if (!result.length) {setPriceError(true); return;}
+                setRows(result);
+                setPriceError(false);
+            } catch {
+                if (!controller.signal.aborted) setPriceError(true);
+            } finally {
+                pending = false;
+                if (!controller.signal.aborted) setLoading(false);
             }
-            setRows(result);
-        }).catch(() => {
-            if (!controller.signal.aborted) setPriceError(true);
-        }).finally(() => {
-            if (!controller.signal.aborted) setLoading(false);
-        });
-        return () => controller.abort();
+        };
+        void refresh();
+        return () => {controller.abort();};
     }, [activeSymbol, refreshVersion]);
+    useStockPriceRefresh(activeSymbol, chartRefreshSeconds, chartVisible && !loading, result => {
+        setRows(result);
+        setPriceError(false);
+    });
 
     const changeMarket = (value: string) => {
         if (value === market) return;
@@ -199,7 +218,12 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
             }}>{tr('retry')}</button>
         </>}
         {listView !== 'groups' && directoryState === 'ready' && <>
-            <p className="stock-analysis-caption">{tr('results', {shown: new Intl.NumberFormat(i18n.resolvedLanguage).format(Math.min(filtered.length, VISIBLE_SYMBOLS)), total: new Intl.NumberFormat(i18n.resolvedLanguage).format(filtered.length)})}</p>
+            <p className="stock-analysis-results" role="status">
+                <Trans t={t} i18nKey="stockAnalysis.results" values={{
+                    shown: new Intl.NumberFormat(i18n.resolvedLanguage).format(Math.min(filtered.length, VISIBLE_SYMBOLS)),
+                    total: new Intl.NumberFormat(i18n.resolvedLanguage).format(filtered.length),
+                }} components={{total: <strong className="stock-analysis-result-total"/>, shown: <strong className="stock-analysis-result-shown"/>}}/>
+            </p>
             <ul className="stock-analysis-symbols">
                 {filtered.slice(0, VISIBLE_SYMBOLS).map(item => <li key={item.symbol}>
                     <button aria-pressed={item.symbol === activeSymbol} onClick={() => openSymbol(item)}>
@@ -251,6 +275,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                     <h1>{active.name}</h1><p>{active.symbol}</p></div>
                 <div className="stock-analysis-header-actions">
                 <div className="stock-analysis-comparison-action" hidden={detailTab !== 'chart'} ref={setComparisonTarget}/>
+                {detailTab === 'chart' && <StockRefreshInterval seconds={chartRefreshSeconds} onChange={changeChartRefreshSeconds}/>}
                 {active && <button type="button" className="modal-action-cancel stock-analysis-refresh" aria-label={tr('refresh')} disabled={loading} onClick={() => {
                     setLoading(true);
                     setPriceError(false);
@@ -266,7 +291,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
             {loading && <StockLoadingIndicator title={active.name} overlay={!!rows?.length} iconOnly/>}
             {priceError && <p role="alert">{tr('historyError')}</p>}
             {rows?.length === 0 && !loading && !priceError && <p>{tr('noPrices')}</p>}
-            {active && !!rows?.length && <StockPriceChart key={active.symbol} symbol={active.symbol} name={active.name} rows={rows} market={market} directory={symbols} comparisonTarget={comparisonTarget} label={tr('dailyPrices')}/>}
+            {active && !!rows?.length && <StockPriceChart key={active.symbol} symbol={active.symbol} name={active.name} rows={rows} market={market} directory={symbols} comparisonTarget={comparisonTarget} autoRefreshEnabled={chartVisible && !loading} refreshSeconds={chartRefreshSeconds} manualRefreshVersion={refreshVersion} label={tr('dailyPrices')}/>}
             </div>
             <footer className="stock-chart-attribution stock-analysis-caption">
                 <span>{tr('source')}</span>

@@ -4,11 +4,12 @@ import IndicatorSettingsDialog from './IndicatorSettingsDialog';
 import IndicatorLegends from './IndicatorLegends';
 import {readIndicatorSettings, INDICATOR_SETTINGS_KEY} from './indicatorSettings';
 import {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
-import {CandlestickSeries, createChart, HistogramSeries, LineSeries, type IChartApi, type ISeriesApi} from 'lightweight-charts';
+import {CandlestickSeries, createChart, HistogramSeries, LineSeries, type IChartApi, type ISeriesApi, type MouseEventParams} from 'lightweight-charts';
 import {Eraser, ListX, Pencil, Ruler, Settings, Trash2} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {stockAnalysis, type DailyPrice, type StockMarket, type StockMemo, type StockMemoDraft, type StockSymbol} from '../../services/stockAnalysis';
 import StockComparison from './StockComparison';
+import {chartPriceFormat} from './chartPriceFormat';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import {calculateIndicator, INDICATORS, type Indicator} from './technicalIndicators';
 
@@ -21,6 +22,9 @@ import {aggregatePrices, DEFAULT_MOVING_AVERAGES, INTERVALS, MAX_MA_PERIOD, movi
 import {attachChartRuler, chartDay} from './chartRuler';
 
 interface Props {
+    autoRefreshEnabled: boolean;
+    refreshSeconds: number;
+    manualRefreshVersion: number;
     symbol: string;
     name: string;
     rows: DailyPrice[];
@@ -52,7 +56,7 @@ function readMovingAverages(): MovingAverage[] {
     return DEFAULT_MOVING_AVERAGES;
 }
 
-export default function StockPriceChart({symbol, name, rows, market, label, directory, comparisonTarget}: Props) {
+export default function StockPriceChart({symbol, name, rows, market, label, directory, comparisonTarget, refreshSeconds, manualRefreshVersion, autoRefreshEnabled}: Props) {
     const {t, i18n} = useTranslation('main');
     const container = useRef<HTMLDivElement>(null);
     const ruler = useRef<ReturnType<typeof attachChartRuler> | null>(null);
@@ -62,6 +66,8 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
     const candleSeries = useRef<ISeriesApi<'Candlestick'> | null>(null);
     const averages = useRef<ISeriesApi<'Line'>[]>([]);
     const savedRange = useRef<{from: number; to: number} | null>(null);
+    const savedRangeInterval = useRef<ChartInterval>('day');
+    const crosshairPosition = useRef<{day: string; price: number} | null>(null);
     const [indicators, setIndicators] = useState<Indicator[]>(() => {
         try {
             const saved: unknown = JSON.parse(localStorage.getItem(INDICATOR_STORAGE_KEY) ?? '[]');
@@ -104,6 +110,9 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
     const {rise, fall} = MARKET_COLORS[market];
     const bars = useMemo(() => aggregatePrices(rows, interval), [rows, interval]);
     const chartRevision = useMemo(() => ({locale, market, t, indicators, indicatorSettings}), [locale, market, t, indicators, indicatorSettings]);
+    const latestBars = useRef(bars);
+    latestBars.current = bars;
+    const updateChartData = useRef<((rows: DailyPrice[]) => void) | null>(null);
     const hoveredIndex = bars.findIndex(row => row.day === hoveredDay);
     const quoteIndex = hoveredIndex < 0 ? bars.length - 1 : hoveredIndex;
     const quote = bars[quoteIndex];
@@ -112,6 +121,12 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
     useEffect(() => {
         const node = container.current;
         if (!node) return;
+        const bars = latestBars.current;
+        const dataUpdates: ((rows: DailyPrice[]) => void)[] = [];
+        const sameInterval = savedRangeInterval.current === interval;
+        const previousCrosshair = sameInterval ? crosshairPosition.current : null;
+        if (!sameInterval) crosshairPosition.current = null;
+        let restoringCrosshair = true;
         const instance = createChart(node, {
             autoSize: true,
             layout: {attributionLogo: false},
@@ -123,7 +138,7 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
         const candles = instance.addSeries(CandlestickSeries, {
             upColor: rise, downColor: fall,
             borderVisible: false, wickUpColor: rise, wickDownColor: fall,
-            priceFormat: market === 'KR' ? {type: 'price', precision: 0, minMove: 1} : undefined,
+            priceFormat: chartPriceFormat(locale, market === 'KR' ? 0 : 2),
         });
         candleSeries.current = candles;
         const hasVolume = bars.some(row => row.volume !== null);
@@ -131,58 +146,77 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
             const volumes = instance.addSeries(HistogramSeries, {
                 priceFormat: {type: 'volume'}, priceLineVisible: false, lastValueVisible: false,
             }, 1);
-            volumes.setData(bars.map(row => row.volume === null ? {time: row.day} : {
+            const updateVolumes = (rows: DailyPrice[]) => volumes.setData(rows.map(row => row.volume === null ? {time: row.day} : {
                 time: row.day, value: row.volume, color: row.close >= row.open ? rise : fall,
             }));
+            updateVolumes(bars);
+            dataUpdates.push(updateVolumes);
             const [pricePane, volumePane] = instance.panes();
             pricePane.setStretchFactor(4);
             volumePane.setStretchFactor(1);
         }
-        candles.setData(bars.map(({day, open, high, low, close}) => ({time: day, open, high, low, close})));
+        const updateCandles = (rows: DailyPrice[]) => candles.setData(rows.map(({day, open, high, low, close}) => ({time: day, open, high, low, close})));
+        updateCandles(bars);
+        dataUpdates.push(updateCandles);
         let nextIndicatorPane = hasVolume ? 2 : 1;
         indicators.forEach(kind => {
             const overlay = OVERLAY_INDICATORS.includes(kind as OverlayIndicator);
             const pane = overlay ? 0 : nextIndicatorPane++;
-            const lines = calculateIndicator(kind, bars, indicatorSettings);
-                const times = bars.map(row => row.day);
-                while (times.length < Math.max(...lines.map(line => line.values.length)) && times.length) {
-                    const date = new Date(times[times.length - 1]);
-                    if (interval === 'month') date.setUTCMonth(date.getUTCMonth() + 1, 1);
-                    else if (interval === 'year') date.setUTCFullYear(date.getUTCFullYear() + 1, 0, 1);
-                    else {
-                        date.setUTCDate(date.getUTCDate() + (interval === 'week' ? 7 : 1));
-                        if (interval === 'day') while ([0, 6].includes(date.getUTCDay())) date.setUTCDate(date.getUTCDate() + 1);
+            const indicatorSeries: (ISeriesApi<'Line'> | ISeriesApi<'Histogram'>)[] = [];
+            let updateBand: ReturnType<typeof attachBandFill> | undefined;
+            const updateIndicator = (bars: DailyPrice[]) => {
+                const lines = calculateIndicator(kind, bars, indicatorSettings);
+                    const times = bars.map(row => row.day);
+                    while (times.length < Math.max(...lines.map(line => line.values.length)) && times.length) {
+                        const date = new Date(times[times.length - 1]);
+                        if (interval === 'month') date.setUTCMonth(date.getUTCMonth() + 1, 1);
+                        else if (interval === 'year') date.setUTCFullYear(date.getUTCFullYear() + 1, 0, 1);
+                        else {
+                            date.setUTCDate(date.getUTCDate() + (interval === 'week' ? 7 : 1));
+                            if (interval === 'day') while ([0, 6].includes(date.getUTCDay())) date.setUTCDate(date.getUTCDate() + 1);
+                        }
+                        times.push(date.toISOString().slice(0, 10));
                     }
-                    times.push(date.toISOString().slice(0, 10));
-                }
-            lines.forEach(definition => {
-                const options = {
-                    color: definition.color, priceLineVisible: false, lastValueVisible: false,
-                    title: '',
-                    crosshairMarkerVisible: !overlay,
-                    priceFormat: {type: 'custom' as const, minMove: .01, formatter: (value: number) => new Intl.NumberFormat(locale, {notation: 'compact', maximumFractionDigits: 2}).format(value)},
-                };
-                const data = times.map((time, index) => definition.values[index] == null ? {time} : {
-                    time, value: definition.values[index]!,
-                    ...(definition.histogram ? {color: definition.values[index]! >= 0 ? rise : fall} : {}),
+                lines.forEach((definition, definitionIndex) => {
+                    const options = {
+                        color: definition.color, priceLineVisible: false, lastValueVisible: false,
+                        title: '',
+                        crosshairMarkerVisible: !overlay,
+                        priceFormat: {type: 'custom' as const, minMove: .01, formatter: (value: number) => new Intl.NumberFormat(locale, {notation: 'compact', maximumFractionDigits: 2}).format(value)},
+                    };
+                    const data = times.map((time, index) => definition.values[index] == null ? {time} : {
+                        time, value: definition.values[index]!,
+                        ...(definition.histogram ? {color: definition.values[index]! >= 0 ? rise : fall} : {}),
+                    });
+                    const existing = indicatorSeries[definitionIndex];
+                    if (existing) {existing.setData(data); return;}
+                    if (definition.histogram) {
+                        const histogram = instance.addSeries(HistogramSeries, options, pane);
+                        histogram.setData(data);
+                        indicatorSeries.push(histogram);
+                    }
+                    else {
+                        const line = instance.addSeries(LineSeries, {...options, lineWidth: 1, ...(kind === 'bollinger' && definition === lines[0] ? {lineStyle: 2} : {}), ...(kind === 'sar' ? {lineVisible: false, pointMarkersVisible: true, pointMarkersRadius: 2} : {})}, pane);
+                        line.setData(data);
+                        indicatorSeries.push(line);
+                        const settings = indicatorSettings[kind];
+                        const levels = kind === 'rsi' || kind.includes('Stochastic') ? [settings.lower, settings.upper] : kind === 'adx' ? [settings.threshold] : [];
+                        if (!overlay) line.priceScale().applyOptions({scaleMargins: {top: .25, bottom: .1}});
+                        if (definition === lines[0]) levels.forEach(price => line.createPriceLine({price, color: '#88888880', lineWidth: 1, lineStyle: 2, axisLabelVisible: false}));
+                    }
                 });
-                if (definition.histogram) instance.addSeries(HistogramSeries, options, pane).setData(data);
-                else {
-                    const line = instance.addSeries(LineSeries, {...options, lineWidth: 1, ...(kind === 'bollinger' && definition === lines[0] ? {lineStyle: 2} : {}), ...(kind === 'sar' ? {lineVisible: false, pointMarkersVisible: true, pointMarkersRadius: 2} : {})}, pane);
-                    line.setData(data);
-                    const settings = indicatorSettings[kind];
-                    const levels = kind === 'rsi' || kind.includes('Stochastic') ? [settings.lower, settings.upper] : kind === 'adx' ? [settings.threshold] : [];
-                    if (!overlay) line.priceScale().applyOptions({scaleMargins: {top: .25, bottom: .1}});
-                    if (definition === lines[0]) levels.forEach(price => line.createPriceLine({price, color: '#88888880', lineWidth: 1, lineStyle: 2, axisLabelVisible: false}));
+                if (kind === 'bollinger' || kind === 'ichimoku') {
+                    const upper = lines[kind === 'bollinger' ? 1 : 2].values;
+                    const lower = lines[kind === 'bollinger' ? 2 : 3].values;
+                    const points = times.map((time, index) => ({time, upper: upper[index] ?? null, lower: lower[index] ?? null}));
+                    if (updateBand) updateBand(points);
+                    else updateBand = attachBandFill(instance, candles, points,
+                        kind === 'bollinger' ? {positive: 'rgba(125,159,230,.10)', negative: 'rgba(125,159,230,.10)'} :
+                            {positive: 'rgba(69,181,142,.14)', negative: 'rgba(215,121,146,.14)'});
                 }
-            });
-            if (kind === 'bollinger' || kind === 'ichimoku') {
-                const upper = lines[kind === 'bollinger' ? 1 : 2].values;
-                const lower = lines[kind === 'bollinger' ? 2 : 3].values;
-                attachBandFill(instance, candles, times.map((time, index) => ({time, upper: upper[index] ?? null, lower: lower[index] ?? null})),
-                    kind === 'bollinger' ? {positive: 'rgba(125,159,230,.10)', negative: 'rgba(125,159,230,.10)'} :
-                        {positive: 'rgba(69,181,142,.14)', negative: 'rgba(215,121,146,.14)'});
-            }
+            };
+            updateIndicator(bars);
+            dataUpdates.push(updateIndicator);
             if (!overlay) instance.panes()[pane]?.setStretchFactor(1);
             const element = instance.panes()[pane]?.getHTMLElement();
             if (element) element.style.position = 'relative';
@@ -198,16 +232,21 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
             instance.panes().forEach((pane, index) => pane.setStretchFactor(initialPaneFactors[index]));
         };
         node.addEventListener('dblclick', resetPaneHeights, true);
-        instance.subscribeCrosshairMove(({time, point}) => {
+        const onCrosshairMove = ({time, point}: MouseEventParams) => {
+            if (restoringCrosshair) return;
             const inside = point && time && point.x >= 0 && point.y >= 0
                 && point.x < node.clientWidth && point.y < node.clientHeight;
+            const day = inside ? chartDay(time) : undefined;
+            const price = inside ? candles.coordinateToPrice(point.y) : null;
+            crosshairPosition.current = day && price !== null ? {day, price} : null;
             setHoveredDay(inside ? chartDay(time) : undefined);
             setHoverPoint(inside ? {
                 x: Math.max(8, Math.min(point.x + 18, node.clientWidth - 280)),
                 y: Math.max(8, Math.min(point.y + 18, node.clientHeight - 240)),
                 chartHeight: node.clientHeight,
             } : undefined);
-        });
+        };
+        instance.subscribeCrosshairMove(onCrosshairMove);
         const percent = new Intl.NumberFormat(locale, {style: 'percent', maximumFractionDigits: 2});
         const number = new Intl.NumberFormat(locale);
         const measurement = attachChartRuler(instance, candles, bars, (change, periods) => {
@@ -215,7 +254,16 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
             return text;
         }, {rise, fall});
         ruler.current = measurement;
-        if (savedRange.current) {
+        updateChartData.current = rows => {
+            const position = crosshairPosition.current;
+            restoringCrosshair = true;
+            try {
+                dataUpdates.forEach(update => update(rows));
+                measurement.setRows(rows);
+            } finally {restoringCrosshair = false;}
+            if (position) instance.setCrosshairPosition(position.price, position.day, candles);
+        };
+        if (sameInterval && savedRange.current) {
             instance.timeScale().setVisibleLogicalRange(savedRange.current);
             savedRange.current = null;
         } else if (interval === 'day' && bars.length > 1) {
@@ -227,6 +275,7 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
         } else {
             instance.timeScale().fitContent();
         }
+        savedRange.current = null;
         const applyTheme = () => {
             const style = getComputedStyle(node);
             const color = (name: string) => style.getPropertyValue(name).trim();
@@ -240,19 +289,32 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
             });
         };
         applyTheme();
+        const restoreCrosshairFrame = requestAnimationFrame(() => {
+            restoringCrosshair = false;
+            if (previousCrosshair && crosshairPosition.current === previousCrosshair) {
+                instance.setCrosshairPosition(previousCrosshair.price, previousCrosshair.day, candles);
+            }
+        });
         const themeObserver = new MutationObserver(applyTheme);
         themeObserver.observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
         return () => {
+            cancelAnimationFrame(restoreCrosshairFrame);
+            instance.unsubscribeCrosshairMove(onCrosshairMove);
             node.removeEventListener('dblclick', resetPaneHeights, true);
             themeObserver.disconnect();
             measurement.dispose();
+            savedRange.current = instance.timeScale().getVisibleLogicalRange();
+            savedRangeInterval.current = interval;
             instance.remove();
+            updateChartData.current = null;
             ruler.current = null;
             chart.current = null;
             candleSeries.current = null;
             averages.current = [];
         };
-    }, [bars, interval, market, locale, t, rise, fall, indicators, indicatorSettings]);
+    }, [interval, market, locale, t, rise, fall, indicators, indicatorSettings]);
+
+    useEffect(() => {updateChartData.current?.(bars);}, [bars]);
 
     useEffect(() => {
         const instance = chart.current;
@@ -322,7 +384,7 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
     };
 
     return <section className="stock-price-chart" aria-label={label}>
-        <StockComparison quoteMode={quoteMode} market={market} chart={chart} bars={bars} interval={interval} revision={chartInstance} directory={directory} hoveredDay={hoveredDay} actionTarget={comparisonTarget} quoteTarget={comparisonQuoteTarget}
+        <StockComparison manualRefreshVersion={manualRefreshVersion} refreshSeconds={refreshSeconds} autoRefreshEnabled={autoRefreshEnabled} quoteMode={quoteMode} market={market} chart={chart} bars={bars} interval={interval} revision={chartInstance} directory={directory} hoveredDay={hoveredDay} actionTarget={comparisonTarget} quoteTarget={comparisonQuoteTarget}
             onLayoutChange={() => {setHoveredDay(undefined); setHoverPoint(undefined);}}>
             <button type="button" className="modal-action-cancel" aria-pressed={maEnabled}
                     onClick={() => setMaEnabled(value => !value)}>{t('stockAnalysis.movingAverage')}</button>

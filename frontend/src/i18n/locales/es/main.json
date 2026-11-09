@@ -2155,7 +2155,7 @@
     "loading": "Cargando…",
     "directoryError": "No se pudo cargar el directorio.",
     "retry": "Reintentar",
-    "results": "Se muestran {{shown}} de {{total}}",
+    "results": "Se muestran <shown>{{shown}}</shown> de <total>{{total}}</total>",
     "dailyPrices": "Precios diarios",
     "day": "Fecha",
     "open": "Apertura",

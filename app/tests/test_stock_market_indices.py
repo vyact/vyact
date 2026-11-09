@@ -7,18 +7,49 @@ from services.stock_analysis import market_indices
 
 class MarketIndexTests(unittest.TestCase):
     @patch.object(market_indices, 'YfData')
-    def test_index_changes_use_previous_close_and_chart_uses_same_session(self, data):
+    def test_index_changes_use_previous_close_and_chart_keeps_daily_history(self, data):
         timestamp = int(datetime(2026, 11, 6, 21, tzinfo=timezone.utc).timestamp())
         data.return_value.get_raw_json.return_value = {'chart': {'result': [{
-            'meta': {'regularMarketPrice': 110, 'chartPreviousClose': 100, 'regularMarketTime': timestamp},
-            'timestamp': [timestamp - 86400, timestamp - 300, timestamp],
+            'meta': {'regularMarketPrice': 110, 'chartPreviousClose': 80, 'previousClose': 100, 'regularMarketTime': timestamp},
+            'timestamp': [timestamp - 172800, timestamp - 86400, timestamp],
             'indicators': {'quote': [{'close': [95, 108, 110]}]},
         }]}}
         quote = market_indices._fetch_index('^GSPC')
         self.assertEqual(quote['date'], '2026-11-06')
         self.assertEqual(quote['change'], 10)
         self.assertAlmostEqual(quote['changePercent'], 10)
-        self.assertEqual(quote['closes'], [108, 110])
+        self.assertEqual(quote['closes'], [95, 108, 110])
+        self.assertEqual(data.return_value.get_raw_json.call_args.kwargs['params'],
+                         {'range': '3mo', 'interval': '1d', 'includePrePost': 'false'})
+
+    @patch.object(market_indices, 'YfData')
+    def test_opening_quote_keeps_twenty_daily_points(self, data):
+        timestamp = int(datetime(2026, 11, 6, 14, 31, tzinfo=timezone.utc).timestamp())
+        data.return_value.get_raw_json.return_value = {'chart': {'result': [{
+            'meta': {'regularMarketPrice': 130, 'chartPreviousClose': 80, 'regularMarketTime': timestamp},
+            'timestamp': [timestamp - (24 - index) * 86400 for index in range(25)],
+            'indicators': {'quote': [{'close': list(range(100, 125))}]},
+        }]}}
+        quote = market_indices._fetch_index('^GSPC')
+        self.assertEqual(quote['closes'], list(range(105, 125)))
+        self.assertEqual(quote['change'], 7)
+
+    @patch.object(market_indices, 'YfData')
+    def test_missing_history_does_not_discard_russell_quote(self, data):
+        data.return_value.get_raw_json.return_value = {'chart': {'result': [{
+            'meta': {'regularMarketPrice': 2800, 'previousClose': 2750, 'regularMarketTime': 1794236380},
+        }]}}
+        quote = market_indices._fetch_index('^RUT')
+        self.assertEqual(quote['price'], 2800)
+        self.assertEqual(quote['change'], 50)
+        self.assertEqual(quote['closes'], [])
+
+    @patch.object(market_indices, '_fetch_index')
+    def test_transient_russell_failure_retries(self, fetch):
+        fetch.side_effect = [ValueError('temporary failure'), {'symbol': '^RUT', 'price': 2800}]
+        with self.assertLogs(market_indices.logger, level='WARNING'):
+            self.assertEqual(market_indices._safe_fetch_index('^RUT')['price'], 2800)
+        self.assertEqual(fetch.call_count, 2)
 
     @patch.object(market_indices, '_fetch_index', side_effect=ValueError('missing data'))
     def test_unavailable_index_returns_placeholder(self, fetch):

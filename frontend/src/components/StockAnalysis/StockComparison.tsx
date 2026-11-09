@@ -11,15 +11,20 @@ import {useTranslation} from 'react-i18next';
 import {stockAnalysis, type DailyPrice, type StockSymbol, type StockMarket} from '../../services/stockAnalysis';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import ModalCloseButton from '../common/ModalOverlay/ModalCloseButton';
-import {comparisonDailyChange, comparisonPoints} from './comparisonData';
+import {comparisonPeriodChange, comparisonPoints} from './comparisonData';
 import type {ChartInterval} from './chartData';
 import './StockComparison.css';
+import {chartPriceFormat} from './chartPriceFormat';
+import useStockPriceRefresh from './useStockPriceRefresh';
 
 const comparisonColor = () => getComputedStyle(document.documentElement).getPropertyValue('--stock-comparison-color').trim();
 
 type Comparison = {symbol: string; name: string; rows: DailyPrice[]; shift: number};
 
-export default function StockComparison({chart, bars, interval, revision, directory, hoveredDay, children, actionTarget, quoteTarget, market, onLayoutChange, quoteMode}: {
+export default function StockComparison({chart, bars, interval, revision, directory, hoveredDay, children, actionTarget, quoteTarget, market, onLayoutChange, quoteMode, refreshSeconds, autoRefreshEnabled, manualRefreshVersion}: {
+    manualRefreshVersion: number;
+    refreshSeconds: number;
+    autoRefreshEnabled: boolean;
     onLayoutChange: () => void;
     quoteMode: 'header' | 'tooltip';
     market: StockMarket;
@@ -54,6 +59,7 @@ export default function StockComparison({chart, bars, interval, revision, direct
         const series = items.map(item => {
             const line = instance.addSeries(LineSeries, {
                 priceScaleId: 'left', color: comparisonColor(), lineWidth: 2,
+                priceFormat: chartPriceFormat(language),
                 priceLineVisible: false, lastValueVisible: false,
             });
             const points = comparisonPoints(bars, item.rows, interval, item.shift);
@@ -76,7 +82,6 @@ export default function StockComparison({chart, bars, interval, revision, direct
                 from: range.from,
                 to: latestDay && String(range.to) >= bars[bars.length - 1]?.day && latestDay > String(range.to) ? latestDay : range.to,
             });
-            instance.clearCrosshairPosition();
         };
         restoreRange();
         // Showing the left axis changes the plot width on the next layout pass.
@@ -90,7 +95,7 @@ export default function StockComparison({chart, bars, interval, revision, direct
             // eslint-disable-next-line react-hooks/exhaustive-deps
             if (chart.current === instance) series.forEach(line => instance.removeSeries(line));
         };
-    }, [chart, bars, interval, revision, items]);
+    }, [chart, bars, interval, revision, items, language]);
 
     const add = async (symbol: StockSymbol) => {
         if (loading || items.some(item => item.symbol === symbol.symbol)) return;
@@ -99,7 +104,7 @@ export default function StockComparison({chart, bars, interval, revision, direct
         setLoading(true);
         setError(false);
         try {
-            const rows = await stockAnalysis.prices(symbol.symbol, controller.signal, false);
+            const rows = await stockAnalysis.prices(symbol.symbol, controller.signal);
             if (controller.signal.aborted) return;
             if (!rows.length) {setError(true); return;}
             setItems([{...symbol, rows, shift: 0}]);
@@ -130,7 +135,7 @@ export default function StockComparison({chart, bars, interval, revision, direct
     const renderComparisonQuote = (item: Comparison, inline = false) => {
                 const day = hoveredDay ?? bars[bars.length - 1]?.day;
                 const point = comparisonPoints(bars, item.rows, interval, item.shift).find(point => point.time === day);
-                const change = point ? comparisonDailyChange(item.rows, point.sourceDay) : null;
+                const change = point ? comparisonPeriodChange(item.rows, point.sourceDay, interval) : null;
                 return <div className={`stock-comparison-quote${inline ? ' stock-comparison-quote-inline' : ''}`} data-market={market} key={item.symbol}>
                     {!inline && <strong className="stock-comparison-name">{item.name}</strong>}
                     {point ? <><time dateTime={point.sourceDay}>{date.format(new Date(point.sourceDay))}</time><span>{number.format(point.value)}
@@ -140,6 +145,9 @@ export default function StockComparison({chart, bars, interval, revision, direct
     };
 
     return <>
+        {items.map(item => <ComparisonRefresh key={item.symbol} symbol={item.symbol} seconds={refreshSeconds}
+            enabled={autoRefreshEnabled} manualRefreshVersion={manualRefreshVersion} onRows={rows => setItems(current => current.map(value =>
+                value.symbol === item.symbol ? {...value, rows} : value))}/>)}
         <div className="stock-price-chart-toolbar">
             {children}
         </div>
@@ -202,4 +210,12 @@ export default function StockComparison({chart, bars, interval, revision, direct
             </div>
         </ModalOverlay>}
     </>;
+}
+
+function ComparisonRefresh({symbol, seconds, enabled, onRows, manualRefreshVersion}: {
+    manualRefreshVersion: number;
+    symbol: string; seconds: number; enabled: boolean; onRows: (rows: DailyPrice[]) => void;
+}) {
+    useStockPriceRefresh(symbol, seconds, enabled, onRows, manualRefreshVersion);
+    return null;
 }

@@ -1,18 +1,30 @@
 import {describe, expect, it} from 'vitest';
 import type {DailyPrice} from '../../services/stockAnalysis';
-import {comparisonDailyChange, comparisonPoints} from './comparisonData';
+import {comparisonPeriodChange, comparisonPoints} from './comparisonData';
 
 const price = (day: string, close: number): DailyPrice => ({day, open: close, high: close, low: close, close, volume: null});
 const base = [price('2026-11-02', 1), price('2026-11-03', 2), price('2026-11-04', 3)];
 
 describe('comparisonPoints', () => {
+    it.each([
+        ['week', '2026-06-05', '2026-06-08', '2026-06-12'],
+        ['month', '2026-05-29', '2026-06-01', '2026-06-30'],
+        ['year', '2025-12-31', '2026-01-02', '2026-11-09'],
+    ] as const)('uses the previous %s close rather than the previous day', (interval, prior, first, last) => {
+        const rows = [price(prior, 100), price(first, 150), price(last, 120)];
+        expect(comparisonPeriodChange(rows, last, interval)).toBeCloseTo(20);
+        expect(comparisonPeriodChange(rows, last, 'day')).toBeCloseTo(-20);
+        expect(comparisonPeriodChange(rows, prior, interval)).toBeNull();
+        const shifted = comparisonPoints(rows.filter(row => row.day !== last), rows, interval, 1);
+        expect(comparisonPeriodChange(rows, shifted[shifted.length - 1].sourceDay, interval)).toBeCloseTo(20);
+    });
     it('uses the source trading day before a shifted point, not the displayed day', () => {
         const rows = [price('2026-10-30', 100), price('2026-11-02', 110), price('2026-11-03', 99)];
         const point = comparisonPoints(base, rows, 'day', 1)[0];
         expect(point.time).toBe('2026-11-03');
-        expect(comparisonDailyChange(rows, point.sourceDay)).toBeCloseTo(10);
-        expect(comparisonDailyChange(rows, '2026-11-03')).toBeCloseTo(-10);
-        expect(comparisonDailyChange(rows, '2026-10-30')).toBeNull();
+        expect(comparisonPeriodChange(rows, point.sourceDay)).toBeCloseTo(10);
+        expect(comparisonPeriodChange(rows, '2026-11-03')).toBeCloseTo(-10);
+        expect(comparisonPeriodChange(rows, '2026-10-30')).toBeNull();
     });
     it('aligns by date instead of array index when a comparison session is missing', () => {
         expect(comparisonPoints(base, [price('2026-11-03', 20)], 'day', 0)).toEqual([

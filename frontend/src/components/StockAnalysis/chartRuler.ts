@@ -137,6 +137,10 @@ export function attachChartRuler(
     window.addEventListener('blur', resetKey);
 
     return {
+        setRows(nextRows: DailyPrice[]) {
+            byDay.clear();
+            nextRows.forEach((row, index) => byDay.set(row.day, {row, index}));
+        },
         setEnabled(value: boolean) {
             enabled = value;
             if (!value) {

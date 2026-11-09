@@ -2154,7 +2154,7 @@
     "loading": "正在加载…",
     "directoryError": "无法加载股票列表。",
     "retry": "重试",
-    "results": "显示 {{total}} 项中的 {{shown}} 项",
+    "results": "显示 <total>{{total}}</total> 项中的 <shown>{{shown}}</shown> 项",
     "dailyPrices": "日线行情",
     "day": "日期",
     "open": "开盘",

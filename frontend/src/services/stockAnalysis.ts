@@ -1,4 +1,4 @@
-import {isMarketIndexSymbol, normalizeStockSectorMap, normalizeStockSymbol, stockSymbolCode} from '../utils/stockSymbols';
+import {normalizeStockSectorMap, normalizeStockSymbol, stockSymbolCode} from '../utils/stockSymbols';
 import {assertOk} from '../utils/apiError';
 import {localizeStockName} from '../utils/stockDisplayName';
 
@@ -40,25 +40,6 @@ export interface DailyPrice {
 export type StockMemoDraft = {title: string; content: string};
 export type StockMemo = StockMemoDraft & {symbol: string; day: string};
 
-type PriceSnapshot = {symbol: string; fetchedAt: number; rows: DailyPrice[]};
-const PRICE_CACHE_KEY = 'vyact:stock-prices:v4';
-const PRICE_CACHE_TTL = 15 * 60 * 1000;
-const PRICE_CACHE_LIMIT = 8;
-
-function readPriceCache(): PriceSnapshot[] {
-    try {
-        const snapshots: unknown = JSON.parse(localStorage.getItem(PRICE_CACHE_KEY) ?? '[]');
-        if (!Array.isArray(snapshots)) return [];
-        const now = Date.now();
-        return snapshots.filter((item): item is PriceSnapshot => item && typeof item.symbol === 'string'
-            && typeof item.fetchedAt === 'number' && item.fetchedAt <= now
-            && now - item.fetchedAt < PRICE_CACHE_TTL && Array.isArray(item.rows) && item.rows.length > 0)
-            .map(item => ({...item, symbol: stockSymbolCode(item.symbol)}));
-    } catch {
-        return [];
-    }
-}
-
 async function request<T>(path: string, signal?: AbortSignal, options?: RequestInit): Promise<T> {
     const response = await fetch(`/api/stock-analysis/${path}`, {...options, signal});
     await assertOk(response);
@@ -66,6 +47,9 @@ async function request<T>(path: string, signal?: AbortSignal, options?: RequestI
 }
 
 export const stockAnalysis = {
+    tradingStatus: (symbol: string, signal: AbortSignal) => request<{open: boolean}>(
+        `trading-status/${encodeURIComponent(stockSymbolCode(symbol))}`, signal, {cache: 'no-store'},
+    ),
     groupQuotes: (symbols: string[], signal: AbortSignal) => request<StockQuote[]>('group-quotes', signal, {
         method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({symbols: symbols.map(stockSymbolCode)}),
     }),
@@ -84,20 +68,7 @@ export const stockAnalysis = {
         const symbols = await request<StockSymbol[]>(`symbols/${market}?language=${encodeURIComponent(language)}`, signal);
         return symbols.map(item => ({...normalizeStockSymbol(item), name: localizeStockName(item.name, language)}));
     },
-    async prices(symbol: string, signal: AbortSignal, refresh: boolean): Promise<DailyPrice[]> {
-        symbol = stockSymbolCode(symbol);
-        const cached = readPriceCache().find(item => item.symbol === symbol);
-        if (!refresh && cached && !isMarketIndexSymbol(symbol)) return cached.rows;
-        const rows = await request<DailyPrice[]>(`prices/${encodeURIComponent(stockSymbolCode(symbol))}`, signal);
-        if (rows.length && !isMarketIndexSymbol(symbol)) {
-            try {
-                const snapshots = readPriceCache().filter(item => item.symbol !== symbol);
-                snapshots.unshift({symbol, fetchedAt: Date.now(), rows});
-                localStorage.setItem(PRICE_CACHE_KEY, JSON.stringify(snapshots.slice(0, PRICE_CACHE_LIMIT)));
-            } catch {
-                // The chart still works when browser storage is unavailable or full.
-            }
-        }
-        return rows;
-    },
+    prices: (symbol: string, signal: AbortSignal) => request<DailyPrice[]>(
+        `prices/${encodeURIComponent(stockSymbolCode(symbol))}`, signal, {cache: 'no-store'},
+    ),
 };

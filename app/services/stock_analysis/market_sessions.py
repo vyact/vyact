@@ -11,7 +11,13 @@ JAPAN_CASH_CALENDAR = "JPX"
 
 @lru_cache(maxsize=8)
 def _calendar(calendar_name: str):
-    return market_calendars.get_calendar(calendar_name)
+    calendar = market_calendars.get_calendar(calendar_name)
+    if calendar_name == "XKRX":
+        # Korean equities no longer have the historical lunch break.
+        for market_time in ("break_start", "break_end"):
+            if market_time in calendar.regular_market_times:
+                calendar.remove_time(market_time)
+    return calendar
 
 
 def _local_day(calendar_name: str, now: float) -> str:

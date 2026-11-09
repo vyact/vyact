@@ -2154,7 +2154,7 @@
     "loading": "Đang tải…",
     "directoryError": "Không thể tải danh sách mã.",
     "retry": "Thử lại",
-    "results": "Hiển thị {{shown}} trên {{total}}",
+    "results": "Hiển thị <shown>{{shown}}</shown> trên <total>{{total}}</total>",
     "dailyPrices": "Giá hằng ngày",
     "day": "Ngày",
     "open": "Mở cửa",

@@ -2156,7 +2156,7 @@
     "loading": "Chargement…",
     "directoryError": "Impossible de charger le répertoire.",
     "retry": "Réessayer",
-    "results": "{{shown}} sur {{total}} affichés",
+    "results": "<shown>{{shown}}</shown> sur <total>{{total}}</total> affichés",
     "dailyPrices": "Cours quotidiens",
     "day": "Date",
     "open": "Ouverture",

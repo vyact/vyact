@@ -9,6 +9,14 @@ def stamp(value):
     return datetime.fromisoformat(value).timestamp()
 
 
+def test_korean_and_us_comparison_refreshes_only_open_market():
+    now = stamp('2026-11-09T10:00:00-05:00')
+    assert active_session(CASH_CALENDAR, now)
+    assert active_session('XKRX', now) is None
+    assert active_session('XKRX', stamp('2026-11-09T12:00:00+09:00'))
+    assert active_session('XKRX', stamp('2026-11-09T15:30:00+09:00')) is None
+
+
 @pytest.mark.parametrize('value,cash,futures', [
     ('2026-11-09T09:29:00-05:00', False, True),
     ('2026-11-09T09:30:00-05:00', True, True),
