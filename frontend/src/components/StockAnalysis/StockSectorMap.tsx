@@ -12,7 +12,7 @@ import StockSparkline, {SPARKLINE_TRADING_DAYS, useSectorSparklines} from './Sto
 import {isMarketWeekend} from './marketRefresh';
 import type {StockGroup} from './useStockGroups';
 import useStockGroupQuotes from './useStockGroupQuotes';
-import {buildGroupSectors} from './groupMapData';
+import {buildGroupSectors, groupMapSymbols} from './groupMapData';
 import './StockSectorMap.css';
 
 type MapNode = {
@@ -80,7 +80,7 @@ function SectorPreview({sector, focused, market, day, customName = false}: {sect
     </div>;
 }
 
-export default function StockSectorMap({market, onOpen, directory = [], stockGroups, groupTitle}: {market: StockMarket; onOpen: (item: StockSymbol) => void; directory?: StockSymbol[]; stockGroups?: StockGroup[]; groupTitle?: string}) {
+export default function StockSectorMap({market, onOpen, directory = [], stockGroups}: {market: StockMarket; onOpen: (item: StockSymbol) => void; directory?: StockSymbol[]; stockGroups?: StockGroup[]}) {
     const {t, i18n} = useTranslation('main');
     const [snapshot, setSnapshot] = useState<MarketSectorMap | undefined>(() => stockSnapshotCache.readMap(market, i18n.resolvedLanguage));
     const [failed, setFailed] = useState(false);
@@ -147,7 +147,7 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
         return () => observer.disconnect();
     }, []);
 
-    const groupSymbols = [...new Set(stockGroups?.flatMap(group => group.symbols) ?? [])];
+    const groupSymbols = [...new Set(stockGroups?.flatMap(group => groupMapSymbols(group)) ?? [])];
     const groupQuoteState = useStockGroupQuotes(groupSymbols, refreshSeconds);
     const missingGroupQuotes = groupSymbols.filter(symbol => !groupQuoteState.quotes.some(quote => quote.symbol === symbol && quote.marketCap > 0));
     const localizedSectors = useMemo(() => {
@@ -190,7 +190,7 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
     const previewLeft = Math.max(PREVIEW_PANEL_MARGIN,
         Math.min(preferredLeft, width - previewWidth - PREVIEW_PANEL_MARGIN));
 
-    const title = selectedSector ? sectorName(selectedSector.name) : stockGroups ? groupTitle ?? t('stockAnalysis.groups.all') : t({KR: 'stockAnalysis.mapKorea', US: 'stockAnalysis.mapUs', JP: 'stockAnalysis.mapJapan'}[market]);
+    const title = selectedSector ? sectorName(selectedSector.name) : stockGroups ? t('stockAnalysis.groups.all') : t({KR: 'stockAnalysis.mapKorea', US: 'stockAnalysis.mapUs', JP: 'stockAnalysis.mapJapan'}[market]);
     const dateFormat = new Intl.DateTimeFormat(i18n.resolvedLanguage, {dateStyle: 'medium', timeZone: 'UTC'});
     const formatDay = (day: string) => dateFormat.format(new Date(day));
 
@@ -238,7 +238,7 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
                             onMouseEnter={() => showPreview(sector)}
                             onFocus={() => showPreview(sector)}
                             onBlur={() => {clearTimeout(previewTimer.current); setPreview(undefined);}}
-                            onClick={() => {clearTimeout(previewTimer.current); setPreview(undefined); setSelectedSector(sector);}}>{sectorName(sector.name)}</button>;
+                            onClick={() => {clearTimeout(previewTimer.current); setPreview(undefined); if (!stockGroups) setSelectedSector(sector);}}>{sectorName(sector.name)}</button>;
             })}
             {layout?.leaves().map(node => {
                 const {sector, stock} = node.data;
@@ -256,7 +256,7 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
                             onMouseEnter={() => {if (previewSector) showPreview(previewSector, stock);}}
                             onFocus={() => {if (previewSector) showPreview(previewSector, stock);}}
                             onBlur={() => {clearTimeout(previewTimer.current); setPreview(undefined);}}
-                            onClick={() => {clearTimeout(previewTimer.current); setPreview(undefined); if (stock) onOpen(stock); else if (sector) setSelectedSector(sector);}}>
+                            onClick={() => {clearTimeout(previewTimer.current); setPreview(undefined); if (stock) onOpen(stock); else if (sector && !stockGroups) setSelectedSector(sector);}}>
                         {tileWidth >= 37 && tileHeight >= 17 && <strong>{label}</strong>}
                         {tileWidth >= 47 && tileHeight >= 34 && <span>{detail}</span>}
                     </button>;

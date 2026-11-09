@@ -25,3 +25,22 @@ describe('group heatmap market caps', () => {
         expect(result.map(item => item.weight)).toEqual([400, 100]);
     });
 });
+
+it('shows the first 15 in user order rather than the 15 largest market caps', () => {
+    const symbols = Array.from({length: 16}, (_, i) => `S${i}`);
+    const allQuotes = symbols.map((symbol, i) => ({symbol, marketCap: i + 1, price: 100, change: 1, date: '2026-11-09'}));
+    const first = buildGroupSectors([{...group, symbols}], allQuotes, [])[0];
+    expect(first.stocks.map(stock => stock.symbol)).toEqual(symbols.slice(0, 15));
+    const reordered = [symbols[15], ...symbols.slice(0, 15)];
+    const second = buildGroupSectors([{...group, symbols: reordered}], allQuotes, [])[0];
+    expect(second.stocks.map(stock => stock.symbol)).toEqual(reordered.slice(0, 15));
+});
+
+it('keeps every group and applies the 15-stock limit independently', () => {
+    const symbols = Array.from({length: 20}, (_, i) => `S${i}`);
+    const allQuotes = symbols.map(symbol => ({symbol, marketCap: 100, price: 100, change: 1, date: '2026-11-09'}));
+    const result = buildGroupSectors([{...group, symbols}, {...group, id: 'other', name: 'Other', symbols: [...symbols].reverse()}], allQuotes, []);
+    expect(result.map(item => item.stocks.length)).toEqual([15, 15]);
+    expect(result[0].stocks[0].symbol).toBe('S0');
+    expect(result[1].stocks[0].symbol).toBe('S19');
+});

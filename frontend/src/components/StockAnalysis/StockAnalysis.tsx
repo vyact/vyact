@@ -53,8 +53,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
     const [deletingGroup, setDeletingGroup] = useState<StockGroup | null>(null);
     const marketGroups = stockGroups.groups.filter(group => group.market === market);
     const selectedGroup = marketGroups.find(group => group.id === selectedGroupId) ?? marketGroups[0];
-    const displayedGroups = selectedGroup ? [selectedGroup] : [];
-    const groupSymbols = new Set(displayedGroups.flatMap(group => group.symbols));
+    const groupSymbols = new Set(marketGroups.flatMap(group => group.symbols));
     const dragProps = useStockGroupDrag((source, target) => {
         if (source.symbol && target.symbol) stockGroups.reorderStock(source.groupId, source.symbol, target.symbol, target.after);
         else stockGroups.reorder(market, source.groupId, target.groupId, target.after);
@@ -147,11 +146,11 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
         <button type="button" className="settings-icon-button" aria-label={tr('api.title')} onClick={() => setApiSettingsOpen(true)}><Settings size={16} aria-hidden="true"/></button>
         </section>
         <div className="stock-watchlist-switch stock-list-tabs" role="group" aria-label={tr('listView')}>
-            <button type="button" aria-label={tr('allStocks')} title={tr('allStocks')} aria-pressed={listView === 'all'} onClick={() => changeListView('all')}><LayoutGrid size={17} aria-hidden="true"/></button>
-            <button type="button" aria-label={tr('watchlist')} title={tr('watchlist')} aria-pressed={watchlistOnly} onClick={() => changeListView('watchlist')}>
+            <button type="button" aria-label={tr('allStocks')} aria-pressed={listView === 'all'} onClick={() => changeListView('all')}><LayoutGrid size={17} aria-hidden="true"/></button>
+            <button type="button" aria-label={tr('watchlist')} aria-pressed={watchlistOnly} onClick={() => changeListView('watchlist')}>
                 <Star size={17} aria-hidden="true"/><span className="stock-watchlist-count">{new Intl.NumberFormat(i18n.resolvedLanguage).format(watchlistCount)}</span>
             </button>
-            <button type="button" aria-label={tr('groups.tab')} title={tr('groups.tab')} aria-pressed={listView === 'groups'} onClick={() => changeListView('groups')}><FolderOpen size={17} aria-hidden="true"/></button>
+            <button type="button" aria-label={tr('groups.tab')} aria-pressed={listView === 'groups'} onClick={() => changeListView('groups')}><FolderOpen size={17} aria-hidden="true"/></button>
         </div>
         {listView === 'groups' && <div className="stock-group-list">
             <button type="button" className="modal-action-cancel stock-group-create" onClick={() => setEditingGroup('new')}><Plus size={14} aria-hidden="true"/>{tr('groups.create')}</button>
@@ -165,7 +164,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                             setActive(null);
                         }}><ChevronDown size={14} aria-hidden="true"/><span>{group.name}</span></button>
                     <button type="button" aria-label={tr('groups.editNamed', {name: group.name})} onClick={() => setEditingGroup(group)}><Pencil size={13}/></button>
-                    <button type="button" aria-label={tr('groups.deleteNamed', {name: group.name})} onClick={() => setDeletingGroup(group)}><Trash2 size={13}/></button>
+                    <button type="button" className="stock-group-delete" aria-label={tr('groups.deleteNamed', {name: group.name})} onClick={() => setDeletingGroup(group)}><Trash2 size={13}/></button>
                 </div>
                 <div className="stock-group-members-collapse" data-expanded={selectedGroup?.id === group.id && !collapsedGroups[group.id]}
                     inert={selectedGroup?.id !== group.id || !!collapsedGroups[group.id]} aria-hidden={selectedGroup?.id !== group.id || !!collapsedGroups[group.id]}
@@ -239,8 +238,8 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
         <div className={`stock-analysis-inner${active ? " has-discussion" : ""}`}><main className="stock-analysis-content">
             {!active && (listView === 'groups' && !groupSymbols.size
                 ? <div className="stock-watchlist-empty"><strong>{tr('groups.empty')}</strong><p>{tr('groups.emptyHint')}</p>
-                    <button type="button" className="modal-action-cancel" onClick={() => setEditingGroup(displayedGroups.length === 1 ? displayedGroups[0] : 'new')}>{tr(displayedGroups.length === 1 ? 'groups.edit' : 'groups.create')}</button></div>
-                : <StockSectorMap key={`${market}:${i18n.resolvedLanguage}:${listView === 'groups' ? selectedGroup?.id : 'market'}`} market={market} onOpen={openSymbol} directory={symbols} stockGroups={listView === 'groups' ? displayedGroups : undefined} groupTitle={selectedGroup?.name}/>)}
+                    <button type="button" className="modal-action-cancel" onClick={() => setEditingGroup(marketGroups.length === 1 ? marketGroups[0] : 'new')}>{tr(marketGroups.length === 1 ? 'groups.edit' : 'groups.create')}</button></div>
+                : <StockSectorMap key={`${market}:${i18n.resolvedLanguage}:${listView === 'groups' ? 'groups' : 'market'}`} market={market} onOpen={openSymbol} directory={symbols} stockGroups={listView === 'groups' ? marketGroups : undefined}/>)}
             {active && <div className="stock-analysis-heading">
                 <div className="stock-analysis-chart-title"><button type="button" className="stock-analysis-back" aria-label={tr('sectorMap')} onClick={() => {
                     setActive(null);

@@ -1,10 +1,10 @@
 .stock-watchlist-switch.stock-list-tabs {grid-template-columns: repeat(3, minmax(0, 1fr));}
 .stock-group-list {display: grid; gap: 5px; padding-block: 4px;}
-.stock-group-list-row {display: flex; min-width: 0; align-items: center; gap: 4px;}
+.stock-group-list-row {display: flex; min-width: 0; align-items: center; gap: 0;}
 .stock-group-list-row > button:first-child {flex: 1; min-width: 0; text-align: start; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 8px;}
 .stock-group-list-row > button {border: 0; border-radius: 7px; background: transparent; color: var(--text-muted); cursor: pointer;}
 .stock-group-list-row > button[aria-pressed="true"], .stock-group-list-row > button:hover {background: var(--surface2); color: var(--text);}
-.stock-group-list-row > button:not(:first-child) {display: grid; place-items: center; width: 26px; height: 26px; padding: 4px;}
+.stock-group-list-row > button:not(:first-child) {display: grid; place-items: center; flex: 0 0 22px; width: 22px; height: 26px; padding: 2px;}
 .stock-group-create {display: flex; align-items: center; justify-content: center; gap: 6px;}
 .stock-group-dialog {display: flex; flex-direction: column; gap: 12px; width: min(460px, calc(100vw - 32px)); max-height: 85vh; overflow: auto; padding: 20px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); color: var(--text);}
 .stock-group-dialog header, .stock-group-dialog footer {display: flex; align-items: center; gap: 8px; justify-content: space-between;}
@@ -24,7 +24,9 @@
 .stock-group-search-results button {display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; text-align: start; padding: 8px 10px; border: 0; border-radius: 6px; background: transparent; color: var(--text); cursor: pointer;}
 .stock-group-search-results button:hover, .stock-group-search-results button[aria-pressed="true"] {background: var(--surface2);}
 .stock-group-search-results button[aria-pressed="true"] > svg {color: var(--accent);}
-.stock-group-search-results button > span {display: grid; gap: 3px;}
+.stock-group-search-results button > span {display: grid; gap: 3px; flex: 1; min-width: 0;}
+.stock-group-search-results button > span > strong {overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.stock-group-search-results button > svg {flex: 0 0 16px; width: 16px; height: 16px;}
 .stock-group-search-results small {color: var(--text-muted);}
 .stock-group-search-results button:disabled {opacity: .45; cursor: default;}
 .stock-group-no-results {padding: 12px; color: var(--text-muted); font-size: 12px;}
@@ -33,8 +35,8 @@
 .stock-group-dialog-title small {font-size: 11px; color: var(--text-muted); font-weight: 400;}
 
 .stock-group-members {list-style: none; display: grid; gap: 2px; margin: 4px 0 8px 8px; padding: 0;}
-.stock-group-members > li {display: flex; align-items: center; gap: 4px; min-width: 0;}
-.stock-group-member-open {display: grid; gap: 3px; flex: 1; min-width: 0; text-align: start; padding: 8px 6px; border: 0; border-radius: 6px; background: transparent; color: var(--text); cursor: pointer;}
+.stock-group-members > li {display: flex; align-items: center; gap: 0; min-width: 0;}
+.stock-group-member-open {display: grid; gap: 3px; flex: 1; min-width: 0; text-align: start; padding: 8px 0 8px 6px; border: 0; border-radius: 6px; background: transparent; color: var(--text); cursor: pointer;}
 .stock-group-member-open strong {overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 550;}
 .stock-group-member-open small {font-size: 11px; color: var(--text-muted);}
 .stock-group-member-open:hover, .stock-group-member-open[aria-pressed="true"] {background: var(--surface2);}
@@ -73,6 +75,8 @@
 
 .stock-group-list-row > button:not(:first-child):hover,
 .stock-group-member-remove:hover {background: transparent; color: var(--accent);}
+.stock-group-list-row > .stock-group-delete:hover,
+.stock-group-member-remove:hover {color: var(--action-delete);}
 
 .stock-group-list-row[draggable="true"], .stock-group-members > li[draggable="true"] {cursor: grab;}
 .stock-group-list-row[data-dragging="true"], .stock-group-members > li[data-dragging="true"] {opacity: .45;}
