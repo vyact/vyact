@@ -139,3 +139,5 @@ button.stock-market-index:focus-visible {outline: 2px solid var(--accent); outli
 .stock-sector-preview li {overflow: hidden;}
 .stock-sector-preview li .stock-sparkline {height: calc(100% - 8px); max-height: 20px; min-height: 0; align-self: center; overflow: hidden;}
 .stock-sector-preview-selected-symbol {white-space: nowrap; min-width: 0;}
+
+.stock-market-open-countdown {grid-column: 1 / -1; text-align: right; color: var(--text-secondary); font-size: 12px; font-variant-numeric: tabular-nums;}

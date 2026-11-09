@@ -1,9 +1,14 @@
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
+
+from mcp.types import Tool, ToolAnnotations
 
 import pytest
 
 from services import mcp_config
 from routers.mcp import _mask
+from services.mcp_client import MCPManager
+from services.tool_approval import requires_approval
 
 
 def test_keenable_default_and_migration_preserve_user_choices():
@@ -27,6 +32,21 @@ async def test_keenable_remote_config_and_secret_masking(api_key):
         config = next(iter((await mcp_config.build_servers_config()).values()))
     assert config["url"] == mcp_config.KEENABLE_MCP_URL
     assert config["transport"] == "streamable_http"
+    assert config["trust_tool_annotations"] is True
+    assert config["tool_whitelist"] == ["search_web_pages", "fetch_page_content"]
+    manager = MCPManager()
+    manager._workers["keenable_keen"] = SimpleNamespace(cfg=config, server=SimpleNamespace(tools=[
+        Tool(name=name, inputSchema={}, annotations=ToolAnnotations(readOnlyHint=True, destructiveHint=False))
+        for name in config["tool_whitelist"]
+    ]))
+    for name in config["tool_whitelist"]:
+        full_name = f"keenable_keen__{name}"
+        metadata = manager.get_tool_approval_metadata(full_name)
+        for mode in ("risky_only", "always_confirm"):
+            assert not requires_approval(full_name, mode, **metadata)
+    # Unrecognized or destructive metadata never inherits a blanket exemption.
+    assert requires_approval("keenable_keen__unknown", "risky_only", annotations_trusted=True)
+    assert requires_approval("keenable_keen__delete_file", "risky_only", {"readOnlyHint": True}, True)
     assert config["headers"]["X-Keenable-Title"] == "Vyact"
     assert config["headers"].get("X-API-Key", "") == api_key
     if api_key:

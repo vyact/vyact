@@ -3,20 +3,21 @@ import {useTranslation} from 'react-i18next';
 import {stockAnalysis, type MarketIndex, type StockSymbol, type StockMarket} from '../../services/stockAnalysis';
 import {stockSnapshotCache} from '../../services/stockSnapshotCache';
 import StockSparkline from './StockSparkline';
+import MarketOpenCountdown from './MarketOpenCountdown';
 import {isMarketWeekend} from './marketRefresh';
 
-import {MARKET_INDEX_LABELS} from './marketIndexLabels';
+import {MARKET_INDEX_LABELS, US_INDEX_FUTURE_LABELS} from './marketIndexLabels';
 
 export default function MarketIndexSummary({market, refreshSeconds, onOpen}: {market: StockMarket; refreshSeconds: number; onOpen: (item: StockSymbol) => void}) {
     const labels = MARKET_INDEX_LABELS[market];
     const {t, i18n} = useTranslation('main');
-    const [indices, setIndices] = useState<MarketIndex[]>(() => stockSnapshotCache.readIndices()?.filter(index => labels.some(label => label.symbol === index.symbol)) ?? []);
+    const [indices, setIndices] = useState<MarketIndex[]>(() => stockSnapshotCache.readIndices()?.filter(index => labels.some(label => label.symbol === (index.indexSymbol ?? index.symbol))) ?? []);
     const loaded = useRef(indices.some(index => index.price != null));
     useEffect(() => {
         const controller = new AbortController();
         let pending = false;
         const refresh = async () => {
-            if (pending || (loaded.current && isMarketWeekend(market))) return;
+            if (pending || (loaded.current && market === 'KR' && isMarketWeekend(market))) return;
             pending = true;
             try {
                 const result = await stockAnalysis.marketIndices(controller.signal, market);
@@ -24,9 +25,7 @@ export default function MarketIndexSummary({market, refreshSeconds, onOpen}: {ma
                     const valid = result.filter(index => index.price != null);
                     if (valid.length) {
                         stockSnapshotCache.writeIndices(valid);
-                        setIndices(current => labels.map(({symbol}) =>
-                            valid.find(index => index.symbol === symbol) ?? current.find(index => index.symbol === symbol)
-                        ).filter((index): index is MarketIndex => Boolean(index)));
+                        setIndices(result);
                         loaded.current = true;
                     }
                 }
@@ -43,13 +42,16 @@ export default function MarketIndexSummary({market, refreshSeconds, onOpen}: {ma
     const price = new Intl.NumberFormat(i18n.resolvedLanguage, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     const signed = new Intl.NumberFormat(i18n.resolvedLanguage, {minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: 'exceptZero'});
     return <div className="stock-market-indices" data-market={market} aria-label={t('stockAnalysis.marketIndices')}>
+        {market === 'US' && <MarketOpenCountdown opening={indices.find(index => US_INDEX_FUTURE_LABELS[index.symbol])?.nextRegularOpen}/> }
         {labels.map(({symbol, key}) => {
-            const index = indices.find(item => item.symbol === symbol);
+            const index = indices.find(item => (item.indexSymbol ?? item.symbol) === symbol);
+            const displaySymbol = index?.symbol ?? symbol;
+            const displayKey = US_INDEX_FUTURE_LABELS[displaySymbol] ?? key;
             const direction = !index?.change ? 'flat' : index.change > 0 ? 'up' : 'down';
             return <button type="button" className="stock-market-index" key={symbol} data-direction={direction}
-                onClick={() => onOpen({symbol, name: t(`stockAnalysis.${key}`)})}>
+                onClick={() => onOpen({symbol: displaySymbol, name: t(`stockAnalysis.${displayKey}`)})}>
                 <span className="stock-market-index-values">
-                    <strong className="stock-market-index-name">{t(`stockAnalysis.${key}`)}</strong>
+                    <strong className="stock-market-index-name">{t(`stockAnalysis.${displayKey}`)}</strong>
                     <span className="stock-market-index-price">{index?.price == null ? '—' : price.format(index.price)}</span>
                     <span className="stock-market-index-change">
                         {index?.change == null ? '—' : signed.format(index.change)}

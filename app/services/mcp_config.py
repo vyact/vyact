@@ -70,6 +70,7 @@ def _clear_legacy_default_prompts(cfg: dict) -> bool:
 # tool이 많은 서버는 자주 쓰는 조회 위주 tool만 LLM에 노출한다.
 # (빈 리스트/미정의면 전체 노출)
 TOOL_WHITELIST: dict[str, list[str]] = {
+    "keenable": ["search_web_pages", "fetch_page_content"],
     "github": [
         "search_repositories",  # 저장소 검색 (public)
         "list_user_repositories",  # 사용자 저장소 목록 (private 포함)
@@ -613,7 +614,7 @@ async def build_servers_config(include_server_ids: set[str] | None = None) -> di
         if key in servers:
             servers[key]["_server_id"] = s.get("id")
             servers[key]["_server_type"] = type_
-            servers[key]["trust_tool_annotations"] = conf.get("trust_tool_annotations") is True
+            servers[key]["trust_tool_annotations"] = type_ == "keenable" or conf.get("trust_tool_annotations") is True
         if key in servers and type_ in TOOL_WHITELIST:
             servers[key]["tool_whitelist"] = TOOL_WHITELIST[type_]
 

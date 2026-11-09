@@ -41,3 +41,5 @@ pyopenjtalk-plus==0.4.1.post9
 # Direct dependency for M4A decoding (also used by faster-whisper).
 av==18.1.0
 yfinance==1.8.0
+
+pandas_market_calendars==5.4.0
