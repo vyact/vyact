@@ -741,6 +741,7 @@ function ServerForm({
     return (
         <div className="mcp-form">
             {serverType === 'web_search' && <WebSearchSetupGuide/>}
+            {serverType === 'keenable' && <p className="mcp-desc">{t('mcpCatalog.keenableGuide')}</p>}
             {isGoogle && <GoogleWorkspaceGuide/>}
             {isGoogle && <GoogleAccountsEditor value={values} onChange={handleValuesChange}
                                                 onPersist={onGoogleConfigSave}
@@ -843,6 +844,7 @@ function AddServerForm({catalog, servers, fixedType, err, onErr, onAdd, onCancel
                 />
             </div>}
             {type === 'web_search' && <WebSearchSetupGuide/>}
+            {type === 'keenable' && <p className="mcp-desc">{t('mcpCatalog.keenableGuide')}</p>}
             {isGoogle && <GoogleWorkspaceGuide/>}
             {isGoogle && <GoogleAccountsEditor value={values} onChange={setValues}
                                                 onCredentialUpload={registerGoogle}/>}

@@ -33,7 +33,8 @@ from services.workspace_prompts import get_workspace_prompt
 logger = get_logger(__name__)
 
 _MCP_DOC_ID = "mcp"
-_BUILTIN_MIGRATION_TYPES = ("browser", "web_search")
+_BUILTIN_MIGRATION_TYPES = ("browser", "web_search", "keenable")
+KEENABLE_MCP_URL = "https://api.keenable.ai/mcp-public"
 
 # Earlier settings screens saved their displayed stock prompt as if it were a
 # user edit. Match only those exact released defaults when upgrading the two
@@ -170,6 +171,12 @@ MCP_CATALOG: dict[str, dict] = {
         "fields": [{"key": "api_key", "label": "API Key", "type": "secret", "required": True}],
         "default_prompt": get_web_search_prompt("en"),
     },
+    "keenable": {
+        "label": "Web Search (Keenable)",
+        "singleton": True,
+        "kind": "remote",
+        "fields": [{"key": "api_key", "label": "API Key", "type": "secret", "required": False}],
+    },
     "github": {
         "label": "GitHub",
         "singleton": True,
@@ -235,8 +242,13 @@ MCP_CATALOG: dict[str, dict] = {
 }
 
 
+def _builtin_server(type_: str) -> dict:
+    return {"id": uuid.uuid4().hex[:8], "type": type_,
+            "enabled": type_ == "keenable", "config": {}}
+
+
 def _default_config() -> dict:
-    """기본값: 비활성 filesystem·browser·web_search 도구."""
+    """기본 도구 설정. Keenable은 키 없이 활성화한다."""
     return {"servers": [
         {
             "id": uuid.uuid4().hex[:8],
@@ -246,11 +258,12 @@ def _default_config() -> dict:
         },
         {"id": uuid.uuid4().hex[:8], "type": "browser", "enabled": False, "config": {}},
         {"id": uuid.uuid4().hex[:8], "type": "web_search", "enabled": False, "config": {}},
+        _builtin_server("keenable"),
     ]}
 
 
 def _ensure_builtin_servers(cfg: dict) -> tuple[dict, bool]:
-    """기존 설치에도 비활성 기본 internal 도구를 안전하게 추가한다."""
+    """기존 설치에 기본 도구를 추가하되 비활성화·삭제 선택을 유지한다."""
     servers = cfg.setdefault("servers", [])
     existing_types = {server.get("type") for server in servers}
     removed_types = set(cfg.get("removed_builtin_server_types", []))
@@ -259,7 +272,7 @@ def _ensure_builtin_servers(cfg: dict) -> tuple[dict, bool]:
         if type_ not in existing_types and type_ not in removed_types
     ]
     for type_ in missing_types:
-        servers.append({"id": uuid.uuid4().hex[:8], "type": type_, "enabled": False, "config": {}})
+        servers.append(_builtin_server(type_))
     return cfg, bool(missing_types)
 
 
@@ -570,8 +583,15 @@ async def build_servers_config(include_server_ids: set[str] | None = None) -> di
                             "args": conf.get("args", []) or [],
                             "env": conf.get("env", {}) or {}}
         elif kind in ("sse", "streamable_http", "remote"):
+            if type_ == "keenable":
+                headers = {"X-Keenable-Title": "Vyact"}
+                api_key = (conf.get("api_key") or "").strip()
+                if api_key:
+                    headers["X-API-Key"] = api_key
+                servers[key] = {"transport": "streamable_http",
+                                "url": KEENABLE_MCP_URL, "headers": headers}
             # GitHub 프리셋: PAT → Authorization 헤더로 변환
-            if type_ == "github":
+            elif type_ == "github":
                 token = conf.get("token", "")
                 if not token:
                     continue

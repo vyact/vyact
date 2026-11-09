@@ -545,10 +545,12 @@
     "getKey": "Get an API key"
   },
   "mcpCatalog": {
+    "keenableGuide": "Without a key: 10/sec · 1,000/hour per IP (shared). With an API key: 100,000 free requests/month per organization.",
     "servers": {
       "microsoft_workspace": "Microsoft",
       "filesystem": "File System",
       "browser": "Browser",
+      "keenable": "Web Search (Keenable)",
       "web_search": "Web Search (Tavily)",
       "github": "GitHub",
       "sequential_thinking": "Sequential Thinking",

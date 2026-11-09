@@ -509,10 +509,12 @@
     "getKey": "获取 API 密钥"
   },
   "mcpCatalog": {
+    "keenableGuide": "无密钥：每个 IP 每秒 10 次 · 每小时 1,000 次（共享限额）。添加 API 密钥：每个组织每月免费 100,000 次。",
     "servers": {
       "microsoft_workspace": "Microsoft",
       "filesystem": "文件系统",
       "browser": "浏览器",
+      "keenable": "网页搜索 (Keenable)",
       "web_search": "网页搜索 (Tavily)",
       "github": "GitHub",
       "sequential_thinking": "顺序思考 (Sequential Thinking)",

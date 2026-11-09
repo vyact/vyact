@@ -574,10 +574,12 @@
     "getKey": "API 키 발급"
   },
   "mcpCatalog": {
+    "keenableGuide": "키 없이: IP당 초당 10회 · 시간당 1,000회(공유 한도). API 키 등록 시: 조직당 월 100,000회 무료.",
     "servers": {
       "microsoft_workspace": "Microsoft",
       "filesystem": "파일 시스템",
       "browser": "브라우저",
+      "keenable": "웹 검색 (Keenable)",
       "web_search": "웹 검색 (Tavily)",
       "github": "GitHub",
       "sequential_thinking": "순차적 사고 (Sequential Thinking)",

@@ -123,7 +123,7 @@ def test_defaults_and_existing_config_migration():
     config, changed = mcp_config._ensure_builtin_servers({'servers': [existing]})
     assert changed
     assert config['servers'][0] == existing
-    assert len(config['servers']) == 2
+    assert len(config['servers']) == 3
     web = config['servers'][1]
     web.update(enabled=True, config={'api_key': 'keep-me'})
     again, changed = mcp_config._ensure_builtin_servers(config)
@@ -132,7 +132,7 @@ def test_defaults_and_existing_config_migration():
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('server_type', ['filesystem', 'web_search', 'browser'])
+@pytest.mark.parametrize('server_type', ['filesystem', 'web_search', 'browser', 'keenable'])
 @pytest.mark.parametrize('legacy_config', [False, True])
 async def test_deleted_builtin_stays_removed_after_reload_and_startup(monkeypatch, server_type, legacy_config):
     stored = deepcopy(mcp_config._default_config())

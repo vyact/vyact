@@ -509,10 +509,12 @@
     "getKey": "Obtener clave API"
   },
   "mcpCatalog": {
+    "keenableGuide": "Sin clave: 10/s · 1.000/h por IP (límite compartido). Con clave API: 100.000 solicitudes gratis/mes por organización.",
     "servers": {
       "microsoft_workspace": "Microsoft",
       "filesystem": "Sistema de archivos",
       "browser": "Navegador",
+      "keenable": "Búsqueda web (Keenable)",
       "web_search": "Búsqueda web (Tavily)",
       "github": "GitHub",
       "sequential_thinking": "Sequential Thinking",

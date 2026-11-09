@@ -509,10 +509,12 @@
     "getKey": "รับคีย์ API"
   },
   "mcpCatalog": {
+    "keenableGuide": "ไม่มีคีย์: 10 ครั้ง/วินาที · 1,000 ครั้ง/ชั่วโมงต่อ IP (โควตาร่วม) มีคีย์ API: ฟรี 100,000 คำขอ/เดือนต่อองค์กร",
     "servers": {
       "microsoft_workspace": "Microsoft",
       "filesystem": "ระบบไฟล์",
       "browser": "เบราว์เซอร์",
+      "keenable": "ค้นหาเว็บ (Keenable)",
       "web_search": "ค้นหาเว็บ (Tavily)",
       "github": "GitHub",
       "sequential_thinking": "Sequential Thinking",

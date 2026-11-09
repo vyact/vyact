@@ -509,10 +509,12 @@
     "getKey": "Lấy khóa API"
   },
   "mcpCatalog": {
+    "keenableGuide": "Không có khóa: 10 lần/giây · 1.000 lần/giờ mỗi IP (hạn mức dùng chung). Có khóa API: miễn phí 100.000 yêu cầu/tháng mỗi tổ chức.",
     "servers": {
       "microsoft_workspace": "Microsoft",
       "filesystem": "Hệ thống tệp",
       "browser": "Trình duyệt",
+      "keenable": "Tìm kiếm web (Keenable)",
       "web_search": "Tìm kiếm web (Tavily)",
       "github": "GitHub",
       "sequential_thinking": "Sequential Thinking",

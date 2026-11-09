@@ -17,7 +17,7 @@ def stored_config():
             {'id': 'b', 'type': 'browser', 'enabled': False, 'config': {}, 'prompt': 'keep'},
             {'id': 'w', 'type': 'web_search', 'config': {'api_key': 'test-secret'}},
         ],
-        'removed_builtin_server_types': [],
+        'removed_builtin_server_types': ['keenable'],
     }
 
 
@@ -33,7 +33,7 @@ async def test_reorder_legacy_backup_preserves_records_and_hidden_slots(stored_c
     assert {s['id']: s for s in result} == {s['id']: s for s in stored_config['servers']}
     saved = es.index.call_args.kwargs
     assert saved['if_seq_no'] == 7 and saved['if_primary_term'] == 2
-    assert saved['document']['value']['removed_builtin_server_types'] == []
+    assert saved['document']['value']['removed_builtin_server_types'] == ['keenable']
     # A subsequent load (including a JSON backup round trip) retains the saved order.
     es.get.return_value = {'found': True, '_source': json.loads(json.dumps(saved['document']))}
     with patch.object(mcp_config, 'get_es', return_value=es):
@@ -66,7 +66,7 @@ def test_legacy_builtin_migration_keeps_existing_order():
     result, changed = mcp_config._ensure_builtin_servers(cfg)
     assert changed
     assert result['servers'][0] == {'id': 'old', 'type': 'custom', 'config': {'token': 'keep'}}
-    assert [s['type'] for s in result['servers'][1:]] == ['browser', 'web_search']
+    assert [s['type'] for s in result['servers'][1:]] == ['browser', 'web_search', 'keenable']
 
 
 @pytest.mark.asyncio

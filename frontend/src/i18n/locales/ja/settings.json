@@ -509,10 +509,12 @@
     "getKey": "APIキーを取得"
   },
   "mcpCatalog": {
+    "keenableGuide": "キーなし：IPごとに毎秒10回・毎時1,000回（共有枠）。APIキー登録時：組織ごとに月100,000回無料。",
     "servers": {
       "microsoft_workspace": "Microsoft",
       "filesystem": "ファイルシステム",
       "browser": "ブラウザ",
+      "keenable": "ウェブ検索 (Keenable)",
       "web_search": "ウェブ検索 (Tavily)",
       "github": "GitHub",
       "sequential_thinking": "逐次思考 (Sequential Thinking)",
