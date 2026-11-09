@@ -7,6 +7,7 @@ import CustomSelect from '../CustomSelect/CustomSelect';
 import {stockAnalysis, type MarketSector, type MarketSectorMap, type SectorStock, type StockMarket, type StockSymbol} from '../../services/stockAnalysis';
 import StockLoadingIndicator from './StockLoadingIndicator';
 import MarketIndexSummary from './MarketIndexSummary';
+import MarketOpenCountdown from './MarketOpenCountdown';
 import StockSparkline, {SPARKLINE_TRADING_DAYS, useSectorSparklines} from './StockSparkline';
 import {isMarketWeekend} from './marketRefresh';
 import type {StockGroup} from './useStockGroups';
@@ -84,6 +85,7 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
     const [snapshot, setSnapshot] = useState<MarketSectorMap | undefined>(() => stockSnapshotCache.readMap(market, i18n.resolvedLanguage));
     const [failed, setFailed] = useState(false);
     const [attempt, setAttempt] = useState(0);
+    const [nextRegularOpen, setNextRegularOpen] = useState<number>();
     const [refreshSeconds, setRefreshSeconds] = useState<number>(DEFAULT_REFRESH_SECONDS);
     const [selectedSector, setSelectedSector] = useState<MarketSector>();
     const [preview, setPreview] = useState<{sectorName: string; symbol?: string}>();
@@ -198,9 +200,10 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
                 <ArrowLeft size={14} aria-hidden="true"/>{t(stockGroups ? 'stockAnalysis.groups.tab' : 'stockAnalysis.sectorMap')}
             </button>}
             <h1>{title}</h1>
+            {!stockGroups && market === 'US' && <MarketOpenCountdown opening={nextRegularOpen}/>}
             <div className="stock-sector-map-controls">
             {(stockGroups ? !!groupQuoteState.quotes.length : !!snapshot) && <div className="stock-sector-map-dates">
-                <span>{t('stockAnalysis.mapQuoteDate', {date: formatDay(stockGroups ? groupQuoteState.quotes.map(quote => quote.date).sort().slice(-1)[0] : snapshot!.quoteDate ?? snapshot!.date)})}</span>
+                <span>{t(stockGroups ? 'stockAnalysis.mapQuoteDate' : 'stockAnalysis.sectorMapQuoteDate', {date: formatDay(stockGroups ? groupQuoteState.quotes.map(quote => quote.date).sort().slice(-1)[0] : snapshot!.quoteDate ?? snapshot!.date)})}</span>
             </div>}
             <div className="stock-sector-map-refresh">
                 <span>{t('stockAnalysis.mapRefreshInterval')}</span>
@@ -212,7 +215,7 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
             </div>
             </div>
         </header>
-        {!stockGroups && <MarketIndexSummary key={market} market={market} refreshSeconds={refreshSeconds} onOpen={onOpen}/>}
+        {!stockGroups && <MarketIndexSummary key={market} market={market} refreshSeconds={refreshSeconds} onOpen={onOpen} onOpeningChange={setNextRegularOpen}/>}
         {stockGroups && !groupQuoteState.loading && missingGroupQuotes.length > 0 && <p className="stock-analysis-caption" role="status">{t('stockAnalysis.groups.missingCaps', {count: missingGroupQuotes.length})}</p>}
         <div className="stock-sector-map-surface" ref={surface} onMouseLeave={() => {clearTimeout(previewTimer.current); setPreview(undefined);}}
              onKeyDown={event => {if (event.key === 'Escape' && preview) {event.stopPropagation(); setPreview(undefined);}}}

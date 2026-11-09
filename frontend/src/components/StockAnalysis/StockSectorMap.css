@@ -140,4 +140,26 @@ button.stock-market-index:focus-visible {outline: 2px solid var(--accent); outli
 .stock-sector-preview li .stock-sparkline {height: calc(100% - 8px); max-height: 20px; min-height: 0; align-self: center; overflow: hidden;}
 .stock-sector-preview-selected-symbol {white-space: nowrap; min-width: 0;}
 
-.stock-market-open-countdown {grid-column: 1 / -1; text-align: right; color: var(--text-secondary); font-size: 12px; font-variant-numeric: tabular-nums;}
+.stock-market-open-countdown {
+    display: inline-flex; align-items: center; gap: 4px; padding: 3px 6px;
+    border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); border-radius: 5px;
+    background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent);
+    font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.stock-market-open-countdown svg {flex-shrink: 0;}
+
+.stock-market-index-card {position: relative; min-width: 0;}
+.stock-market-index-card > .stock-market-index {width: 100%; height: 100%;}
+.stock-market-index-cash {
+    position: absolute; top: 7px; right: 10px;
+    display: inline-flex; align-items: center; gap: 4px; padding: 3px 6px;
+    border: 1px solid color-mix(in srgb, var(--info) 35%, var(--border)); border-radius: 5px;
+    background: color-mix(in srgb, var(--info) 10%, var(--bg-secondary)); color: var(--info);
+    font: inherit; font-size: 10px; font-weight: 500; line-height: 1.2; cursor: pointer;
+    transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease;
+}
+.stock-market-index-cash:hover {
+    color: var(--info); border-color: var(--info);
+    background: color-mix(in srgb, var(--info) 28%, var(--bg-secondary));
+}
+.stock-market-index-cash:focus-visible {outline: 2px solid var(--info); outline-offset: 2px;}

@@ -9,3 +9,9 @@ export const US_INDEX_FUTURE_LABELS: Record<string, string> = {
     'NQ=F': 'indexNasdaq100Futures',
     'RTY=F': 'indexRussell2000Futures',
 };
+
+export const CASH_INDEX_CHART_LABELS: Record<string, string> = {
+    GSPC: 'indexSp500Chart',
+    IXIC: 'indexNasdaqCompositeChart',
+    RUT: 'indexRussell2000Chart',
+};

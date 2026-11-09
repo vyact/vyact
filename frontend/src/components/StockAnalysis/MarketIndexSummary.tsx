@@ -3,15 +3,16 @@ import {useTranslation} from 'react-i18next';
 import {stockAnalysis, type MarketIndex, type StockSymbol, type StockMarket} from '../../services/stockAnalysis';
 import {stockSnapshotCache} from '../../services/stockSnapshotCache';
 import StockSparkline from './StockSparkline';
-import MarketOpenCountdown from './MarketOpenCountdown';
 import {isMarketWeekend} from './marketRefresh';
 
-import {MARKET_INDEX_LABELS, US_INDEX_FUTURE_LABELS} from './marketIndexLabels';
+import {MARKET_INDEX_LABELS, US_INDEX_FUTURE_LABELS, CASH_INDEX_CHART_LABELS} from './marketIndexLabels';
 
-export default function MarketIndexSummary({market, refreshSeconds, onOpen}: {market: StockMarket; refreshSeconds: number; onOpen: (item: StockSymbol) => void}) {
+export default function MarketIndexSummary({market, refreshSeconds, onOpen, onOpeningChange}: {onOpeningChange?: (opening: number | undefined) => void; market: StockMarket; refreshSeconds: number; onOpen: (item: StockSymbol) => void}) {
     const labels = MARKET_INDEX_LABELS[market];
     const {t, i18n} = useTranslation('main');
     const [indices, setIndices] = useState<MarketIndex[]>(() => stockSnapshotCache.readIndices()?.filter(index => labels.some(label => label.symbol === (index.indexSymbol ?? index.symbol))) ?? []);
+    const nextOpening = market === 'US' ? indices.find(index => US_INDEX_FUTURE_LABELS[index.symbol])?.nextRegularOpen : undefined;
+    useEffect(() => {onOpeningChange?.(nextOpening);}, [nextOpening, onOpeningChange]);
     const loaded = useRef(indices.some(index => index.price != null));
     useEffect(() => {
         const controller = new AbortController();
@@ -42,13 +43,13 @@ export default function MarketIndexSummary({market, refreshSeconds, onOpen}: {ma
     const price = new Intl.NumberFormat(i18n.resolvedLanguage, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     const signed = new Intl.NumberFormat(i18n.resolvedLanguage, {minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: 'exceptZero'});
     return <div className="stock-market-indices" data-market={market} aria-label={t('stockAnalysis.marketIndices')}>
-        {market === 'US' && <MarketOpenCountdown opening={indices.find(index => US_INDEX_FUTURE_LABELS[index.symbol])?.nextRegularOpen}/> }
         {labels.map(({symbol, key}) => {
             const index = indices.find(item => (item.indexSymbol ?? item.symbol) === symbol);
             const displaySymbol = index?.symbol ?? symbol;
             const displayKey = US_INDEX_FUTURE_LABELS[displaySymbol] ?? key;
             const direction = !index?.change ? 'flat' : index.change > 0 ? 'up' : 'down';
-            return <button type="button" className="stock-market-index" key={symbol} data-direction={direction}
+            return <div className="stock-market-index-card" key={symbol}>
+                <button type="button" className="stock-market-index" data-direction={direction}
                 onClick={() => onOpen({symbol: displaySymbol, name: t(`stockAnalysis.${displayKey}`)})}>
                 <span className="stock-market-index-values">
                     <strong className="stock-market-index-name">{t(`stockAnalysis.${displayKey}`)}</strong>
@@ -62,7 +63,13 @@ export default function MarketIndexSummary({market, refreshSeconds, onOpen}: {ma
                 <span className="stock-market-index-chart">
                     <StockSparkline closes={index?.closes} change={index?.change}/>
                 </span>
-            </button>;
+                </button>
+                {US_INDEX_FUTURE_LABELS[displaySymbol] && <button type="button" className="stock-market-index-cash"
+                    aria-label={t('stockAnalysis.openIndexChart', {name: t(`stockAnalysis.${key}`)})}
+                    onClick={() => onOpen({symbol, name: t(`stockAnalysis.${key}`)})}>
+                    {t(`stockAnalysis.${CASH_INDEX_CHART_LABELS[symbol]}`)}
+                </button>}
+            </div>;
         })}
     </div>;
 }
