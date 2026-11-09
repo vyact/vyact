@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from services.stock_analysis import korea_yahoo
+from services.stock_analysis import regional_yahoo as korea_yahoo
 
 
 class KoreaYahooDirectoryTests(unittest.TestCase):

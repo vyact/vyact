@@ -10,11 +10,13 @@ from yfinance.data import YfData
 
 from services.stock_analysis.market_sessions import CASH_CALENDAR, FUTURES_CALENDAR, active_session, next_regular_open
 
-MARKET_INDEX_SYMBOLS = {"US": ("^GSPC", "^IXIC", "^RUT"), "KR": ("^KS11", "^KQ11")}
+MARKET_INDEX_SYMBOLS = {"US": ("^GSPC", "^IXIC", "^RUT"), "KR": ("^KS11", "^KQ11"), "JP": ("^N225",)}
 US_INDEX_FUTURES = {"^GSPC": "ES=F", "^IXIC": "NQ=F", "^RUT": "RTY=F"}
 INDEX_SYMBOLS = tuple(symbol for symbols in MARKET_INDEX_SYMBOLS.values() for symbol in symbols)
 
 def index_timezone(symbol: str) -> ZoneInfo:
+    if symbol in MARKET_INDEX_SYMBOLS["JP"]:
+        return ZoneInfo("Asia/Tokyo")
     return ZoneInfo("Asia/Seoul" if symbol in MARKET_INDEX_SYMBOLS["KR"] else "America/New_York")
 INDEX_CACHE_SECONDS = 10
 CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/"
@@ -54,7 +56,7 @@ def _safe_fetch_index(symbol: str) -> dict:
                 "date": None, "closes": []}
 
 
-@lru_cache(maxsize=2)
+@lru_cache(maxsize=3)
 def _load_indices(cache_window: int, market: str) -> list[dict]:
     symbols = MARKET_INDEX_SYMBOLS[market]
     with ThreadPoolExecutor(max_workers=len(symbols)) as executor:

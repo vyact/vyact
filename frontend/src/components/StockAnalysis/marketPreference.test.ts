@@ -28,3 +28,12 @@ it('keeps the selection during the session when storage is blocked', async () =>
     saveMarketPreference('US');
     expect(getInitialMarket('ko')).toBe('US');
 });
+
+it('defaults Japanese users to Japan and restores their saved market', async () => {
+    const {getInitialMarket, saveMarketPreference} = await import('./marketPreference');
+    expect(getInitialMarket('ja-JP')).toBe('JP');
+    saveMarketPreference('JP');
+    vi.resetModules();
+    const restored = await import('./marketPreference');
+    expect(restored.getInitialMarket('en')).toBe('JP');
+});

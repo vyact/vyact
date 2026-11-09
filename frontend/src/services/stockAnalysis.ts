@@ -5,7 +5,8 @@ import {localizeStockName} from '../utils/stockDisplayName';
 export const STOCK_ANALYSIS_PANEL_ID = 'stock-analysis';
 export const TOGGLE_STOCK_ANALYSIS_EVENT = 'vyact:toggle-stock-analysis';
 export const STOCK_ANALYSIS_SHORTCUT_KEY = 'U';
-export type StockMarket = 'KR' | 'US';
+export const STOCK_MARKETS = ['KR', 'US', 'JP'] as const;
+export type StockMarket = typeof STOCK_MARKETS[number];
 export interface StockSymbol {symbol: string; name: string; preferred?: boolean; exchange?: 'KOSPI' | 'KOSDAQ'}
 export interface SectorStock extends StockSymbol {weight: number; change: number | null; price: number | null}
 export interface MarketSector {name: string; weight: number; change: number | null; stocks: SectorStock[]}

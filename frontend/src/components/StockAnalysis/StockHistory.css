@@ -80,3 +80,6 @@
 .stock-history-summary-filters {display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 10px; min-width: 0; margin-inline-start: auto;}
 .stock-history-period-picker {display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted);}
 .stock-history-period-picker > span {white-space: nowrap;}
+
+.stock-history[data-market="JP"] [data-direction="up"] {color: #e64c52; fill: #e64c52;}
+.stock-history[data-market="JP"] [data-direction="down"] {color: #30ad69; fill: #30ad69;}

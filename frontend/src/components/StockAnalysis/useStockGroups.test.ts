@@ -22,3 +22,8 @@ describe('stock group persistence', () => {
         expect(groups[1].symbols).toEqual([]);
     });
 });
+
+it('preserves Japanese groups and alphanumeric Tokyo symbols', () => {
+    expect(normalizeStockGroups([{id: 'jp', market: 'JP', name: 'Japan', symbols: ['7203.T', '130A.T']}]))
+        .toEqual([{id: 'jp', market: 'JP', name: 'Japan', symbols: ['7203.T', '130A.T']}]);
+});

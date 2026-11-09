@@ -20,7 +20,7 @@ from services.stock_analysis.api_settings import (ApiValidationRequest, Endpoint
 from services.stock_analysis.catalog import Market, get_symbols
 from services.stock_analysis.market_indices import get_market_indices
 from services.stock_analysis.index_price_store import get_index_prices
-from services.stock_analysis.korea_yahoo import korea_preferred_symbols
+from services.stock_analysis.regional_yahoo import korea_preferred_symbols
 from services.stock_analysis.chat_history import append_stock_conversation, list_stock_conversations, get_stock_conversation
 from services.stock_analysis.financials import build_financial_chat_context, fetch_financials
 from services.stock_analysis.prices import fetch_prices, fetch_sparkline

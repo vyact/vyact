@@ -1831,6 +1831,10 @@
     "manuscriptApplyHelp": "Áp dụng sẽ thay thế tiêu đề và nội dung chương hiện tại."
   },
   "stockAnalysis": {
+    "JP": "Chứng khoán Nhật Bản",
+    "mapJapan": "Bản đồ ngành thị trường Nhật Bản",
+    "indexNikkei225": "Nikkei 225",
+
     "financials": {
       "qoq": "So với quý trước",
       "yoy": "So với cùng kỳ",

@@ -1,14 +1,16 @@
-"""Provider-independent Korean stock codes and Yahoo symbol conversion."""
+"""Market detection and Yahoo symbol conversion for supported stock markets."""
 import re
 from time import monotonic
 
 from services.stock_analysis.market_indices import INDEX_SYMBOLS, MARKET_INDEX_SYMBOLS
-from services.stock_analysis.korea_yahoo import DIRECTORY_CACHE_SECONDS, cached_korea_provider_symbol, korea_symbols
+from services.stock_analysis.regional_yahoo import DIRECTORY_CACHE_SECONDS, cached_korea_provider_symbol, korea_symbols
 
 KOREAN_CODE_PATTERN = re.compile(r'^[0-9][A-Z0-9]{5}$')
 KOREAN_YAHOO_PATTERN = re.compile(r'^([0-9][A-Z0-9]{5})\.(KS|KQ)$')
 YAHOO_EXCHANGES = {'KS': 'KOSPI', 'KQ': 'KOSDAQ'}
 PUBLIC_INDEX_CODES = frozenset(symbol.removeprefix('^') for symbol in INDEX_SYMBOLS)
+JAPANESE_CODE_PATTERN = re.compile(r'^[0-9][A-Z0-9]{3}\.T$')
+JAPANESE_INDEX_CODES = frozenset(symbol.removeprefix('^') for symbol in MARKET_INDEX_SYMBOLS['JP'])
 KOREAN_INDEX_CODES = frozenset(symbol.removeprefix('^') for symbol in MARKET_INDEX_SYMBOLS['KR'])
 
 
@@ -21,6 +23,8 @@ def public_symbol(symbol: str) -> str:
 
 def symbol_market(symbol: str) -> str:
     code = public_symbol(symbol)
+    if JAPANESE_CODE_PATTERN.fullmatch(code) or code in JAPANESE_INDEX_CODES:
+        return 'JP'
     return 'KR' if KOREAN_CODE_PATTERN.fullmatch(code) or code in KOREAN_INDEX_CODES else 'US'
 
 

@@ -1831,6 +1831,10 @@
     "manuscriptApplyHelp": "应用后将用此结果替换当前章节标题和正文。"
   },
   "stockAnalysis": {
+    "JP": "日本股市",
+    "mapJapan": "日本市场板块图",
+    "indexNikkei225": "日经225",
+
     "financials": {
       "qoq": "环比",
       "yoy": "同比",

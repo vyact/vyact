@@ -1,3 +1,4 @@
+import {STOCK_MARKETS} from '../../services/stockAnalysis';
 import {useEffect, useRef, useState} from 'react';
 import {ChartNoAxesCombined, ArrowUp, Square, X, History} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
@@ -156,7 +157,7 @@ export default function StockDiscussionSidebar({stock, market, directory}: {stoc
             <Tooltip content={tr('referenceHint')} multiline><button type="button" className="help-icon-button" aria-label={tr('referenceHint')}>?</button></Tooltip>
             <CustomSelect value="" searchable portal disabled={busy || referenceStocks.length >= MAX_REFERENCE_STOCKS}
                 ariaLabel={tr('addReference')} placeholder={tr('addReference')}
-                header={<ModalTabs tabs={(['KR', 'US'] as const).map(key => ({key, label: t(`stockAnalysis.${key}`)}))}
+                header={<ModalTabs tabs={STOCK_MARKETS.map(key => ({key, label: t(`stockAnalysis.${key}`)}))}
                     activeKey={referenceMarket} onChange={setReferenceMarket}/>}
                 options={referenceCandidates.filter(item => item.symbol !== stock.symbol && !referenceStocks.some(reference => reference.symbol === item.symbol))
                     .map(item => ({value: item.symbol, label: `${item.name} · ${item.symbol}`}))}

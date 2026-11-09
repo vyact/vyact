@@ -36,4 +36,13 @@ describe('market summary instrument labels', () => {
         expect(html).not.toContain('indexSp500Futures');
         expect(html.match(/class="stock-market-index"/g)).toHaveLength(2);
     });
+    it('shows the Nikkei 225 in a Japanese market card', () => {
+        state.indices = [{symbol: 'N225', price: 58775.5, change: 1340.73, changePercent: 2.33, date: '2026-11-09', closes: [58000, 58775.5]}];
+        const html = renderToStaticMarkup(<MarketIndexSummary market="JP" refreshSeconds={30} onOpen={vi.fn()}/>);
+        expect(html).toContain('stockAnalysis.indexNikkei225');
+        expect(html).toContain('58,775.50');
+        expect(html.match(/class="stock-market-index"/g)).toHaveLength(1);
+        expect(html).not.toContain('stock-market-index-cash');
+    });
+
 });

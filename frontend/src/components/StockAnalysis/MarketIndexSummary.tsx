@@ -18,7 +18,7 @@ export default function MarketIndexSummary({market, refreshSeconds, onOpen, onOp
         const controller = new AbortController();
         let pending = false;
         const refresh = async () => {
-            if (pending || (loaded.current && market === 'KR' && isMarketWeekend(market))) return;
+            if (pending || (loaded.current && market !== 'US' && isMarketWeekend(market))) return;
             pending = true;
             try {
                 const result = await stockAnalysis.marketIndices(controller.signal, market);

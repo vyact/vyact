@@ -84,6 +84,7 @@ export default function StockApiEndpointSettings({market, kind, endpoint, body, 
                 </table>
                 {(tokens.includes('symbol') || tokens.includes('symbols')) && <p className="stock-api-index-code-help">{tr('indexCodeLabel')} · {market === 'KR'
                     ? <><code>KS11</code> = {t('stockAnalysis.indexKospi')} · <code>KQ11</code> = {t('stockAnalysis.indexKosdaq')}</>
+                    : market === 'JP' ? <><code>N225</code> = {t('stockAnalysis.indexNikkei225')}</>
                     : <><code>GSPC</code> = {t('stockAnalysis.indexSp500')} · <code>IXIC</code> = {t('stockAnalysis.indexNasdaq')}</>}</p>}
             </div>
             <details className="stock-api-examples"><summary>{tr('examples')}</summary>

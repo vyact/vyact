@@ -3,7 +3,7 @@ import {localizeStockName} from '../../utils/stockDisplayName';
 import {ArrowLeft, ChartCandlestick, RefreshCw, Search, Settings, Star, Plus, Pencil, Trash2, LayoutGrid, FolderOpen, ChevronDown} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import {stockSnapshotCache} from '../../services/stockSnapshotCache';
-import {stockAnalysis, type DailyPrice, type StockMarket, type StockSymbol} from '../../services/stockAnalysis';
+import {STOCK_MARKETS, stockAnalysis, type DailyPrice, type StockMarket, type StockSymbol} from '../../services/stockAnalysis';
 import WorkspaceExitButton from '../common/WorkspaceLayout/WorkspaceExitButton';
 import WorkspaceLayout from '../common/WorkspaceLayout/WorkspaceLayout';
 import CustomSelect from '../CustomSelect/CustomSelect';
@@ -26,7 +26,6 @@ import '../common/SettingsIconButton/SettingsIconButton.css';
 import './StockAnalysis.css';
 import './StockWatchlist.css';
 
-const MARKETS: StockMarket[] = ['KR', 'US'];
 const VISIBLE_SYMBOLS = 100;
 export default function StockAnalysis({onClose}: {onClose: () => void}) {
     const [apiVersion, setApiVersion] = useState(0);
@@ -111,7 +110,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
 
     const changeMarket = (value: string) => {
         if (value === market) return;
-        if (value !== 'KR' && value !== 'US') return;
+        if (value !== 'KR' && value !== 'US' && value !== 'JP') return;
         setSelectedGroupId('');
         setMarket(value);
         saveMarketPreference(value);
@@ -143,7 +142,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
 
     const sidebar = <div className="stock-analysis-sidebar">
         <section className="stock-analysis-market-section" aria-label={tr('market')}>
-        <CustomSelect options={MARKETS.map(value => ({value, label: tr(value)}))} value={market}
+        <CustomSelect options={STOCK_MARKETS.map(value => ({value, label: tr(value)}))} value={market}
                       onChange={changeMarket} ariaLabel={tr('market')} portal/>
         <button type="button" className="settings-icon-button" aria-label={tr('api.title')} onClick={() => setApiSettingsOpen(true)}><Settings size={16} aria-hidden="true"/></button>
         </section>

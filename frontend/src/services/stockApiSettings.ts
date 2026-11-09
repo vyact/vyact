@@ -1,11 +1,11 @@
 import {stockSymbolCode} from '../utils/stockSymbols';
 import {assertOk} from '../utils/apiError';
-import type {DailyPrice, StockMarket} from './stockAnalysis';
+import {STOCK_MARKETS, type DailyPrice, type StockMarket} from './stockAnalysis';
 
 export const STOCK_API_KINDS = ['symbols', 'quotes', 'prices', 'sparkline', 'marketIndices', 'sectorMap'] as const;
 export type StockApiKind = typeof STOCK_API_KINDS[number];
 export type StockApiEndpoint = {url: string; method: 'GET' | 'POST'; body: Record<string, unknown>};
-export const STOCK_API_MARKETS: StockMarket[] = ['KR', 'US'];
+export const STOCK_API_MARKETS = STOCK_MARKETS;
 export type StockApiHeader = {name: string; value?: string; hasValue?: boolean};
 export type StockApiSettings = {
     headers?: StockApiHeader[];
@@ -59,8 +59,9 @@ export const stockApiSettings = {
 };
 
 export function stockApiExamples(market: StockMarket, kind: StockApiKind, language = 'en') {
-    const symbol = market === 'KR' ? '005930' : 'AAPL';
-    const indexSymbol = market === 'KR' ? 'KS11' : 'GSPC';
+    const symbol = {KR: '005930', US: 'AAPL', JP: '7203.T'}[market];
+    const secondSymbol = {KR: '000660', US: 'MSFT', JP: '6758.T'}[market];
+    const indexSymbol = {KR: 'KS11', US: 'GSPC', JP: 'N225'}[market];
     const price = {
         day: '2026-11-06', open: 100, high: 105, low: 98, close: 103,
         volume: 1000000, tradingValue: 102500000, changePercent: 3,
@@ -70,18 +71,18 @@ export function stockApiExamples(market: StockMarket, kind: StockApiKind, langua
             ins: {netVolume: -40000, netAmount: -4100000},
         },
     } satisfies DailyPrice;
-    const stock = {symbol, ...(market === 'KR' ? {exchange: 'KOSPI'} : {}), name: market === 'KR' ? 'Samsung Electronics' : 'Apple', weight: 10, change: 1.2, price: 103};
+    const stock = {symbol, ...(market === 'KR' ? {exchange: 'KOSPI'} : {}), name: {KR: 'Samsung Electronics', US: 'Apple', JP: 'Toyota Motor'}[market], weight: 10, change: 1.2, price: 103};
     const responses = {
         quotes: [{symbol, date: '2026-11-06', price: 103, change: 3, marketCap: 500000000000}],
         symbols: [{symbol, name: stock.name, preferred: false, ...(market === 'KR' ? {exchange: 'KOSPI'} : {})}],
-        prices: [price], sparkline: {[symbol]: [100, 101, 99, 103], [market === 'KR' ? '000660' : 'MSFT']: [98, 100, 102, 104]},
+        prices: [price], sparkline: {[symbol]: [100, 101, 99, 103], [secondSymbol]: [98, 100, 102, 104]},
         marketIndices: [{symbol: indexSymbol, price: 103, change: 3, changePercent: 3, date: '2026-11-06', closes: [100, 101, 103]}],
         sectorMap: {date: '2026-11-06', quoteDate: '2026-11-06', sectors: [{name: 'Technology', weight: 10, change: 1.2, stocks: [stock]}]},
     };
     const query = kind === 'quotes' ? 'symbols={symbols}&market={market}' : kind === 'sparkline' ? 'symbols={symbols}&period={period}&interval={interval}' : kind === 'prices' ? 'symbol={symbol}&period={period}&interval={interval}' : 'market={market}&language={language}';
     const body = kind === 'quotes' ? {symbols: '{symbols}', market: '{market}'} : kind === 'sparkline' ? {symbols: '{symbols}', period: '{period}', interval: '{interval}'} : kind === 'prices'
         ? {symbol: '{symbol}', period: '{period}', interval: '{interval}'} : {market: '{market}', language: '{language}'};
-    const values: Record<string, string> = {symbol, symbols: `${symbol},${market === 'KR' ? '000660' : 'MSFT'}`, market, language: kind === 'marketIndices' ? 'en' : language, period: kind === 'sparkline' ? '3mo' : '10y', interval: '1d'};
+    const values: Record<string, string> = {symbol, symbols: `${symbol},${secondSymbol}`, market, language: kind === 'marketIndices' ? 'en' : language, period: kind === 'sparkline' ? '3mo' : '10y', interval: '1d'};
     const actualBody = Object.fromEntries(Object.entries(body).map(([key]) => [key, key === 'symbols' ? values[key].split(',') : values[key]]));
     const url = `https://api.example.com/${kind}`;
     const actualUrl = `${url}?${query}`.replace(/\{(\w+)\}/g, (_, key: string) => encodeURIComponent(values[key]));

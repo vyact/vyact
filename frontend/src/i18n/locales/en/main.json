@@ -1832,6 +1832,10 @@
     "manuscriptApplyHelp": "Applying replaces the current chapter title and manuscript with this result."
   },
   "stockAnalysis": {
+    "JP": "Japanese stocks",
+    "mapJapan": "Japanese market sectors",
+    "indexNikkei225": "Nikkei 225",
+
     "financials": {
       "qoq": "QoQ",
       "yoy": "YoY",

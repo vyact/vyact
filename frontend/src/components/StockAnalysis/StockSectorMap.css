@@ -163,3 +163,10 @@ button.stock-market-index:focus-visible {outline: 2px solid var(--accent); outli
     background: color-mix(in srgb, var(--info) 28%, var(--bg-secondary));
 }
 .stock-market-index-cash:focus-visible {outline: 2px solid var(--info); outline-offset: 2px;}
+
+.stock-sector-map[data-market="JP"] {--stock-map-up: #ab2537; --stock-map-down: #15683e;}
+.stock-market-indices[data-market="JP"] {grid-template-columns: minmax(0, 1fr);}
+.stock-market-indices[data-market="JP"] .stock-market-index[data-direction="up"] .stock-market-index-change,
+.stock-market-indices[data-market="JP"] .stock-sparkline[data-direction="up"] {color: #e64c52;}
+.stock-market-indices[data-market="JP"] .stock-market-index[data-direction="down"] .stock-market-index-change,
+.stock-market-indices[data-market="JP"] .stock-sparkline[data-direction="down"] {color: #30ad69;}

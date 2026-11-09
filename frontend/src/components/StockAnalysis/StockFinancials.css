@@ -31,3 +31,6 @@
 .stock-financials th:first-child {width: 160px; white-space: normal;}
 
 .stock-financials thead th, .stock-financials thead th:first-child {text-align: center;}
+
+.stock-financials[data-market="JP"] .stock-financials-change[data-direction="increase"] {color: #e64c52;}
+.stock-financials[data-market="JP"] .stock-financials-change[data-direction="decrease"] {color: #30ad69;}

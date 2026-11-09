@@ -1,6 +1,6 @@
 import type {StockMarket} from '../../services/stockAnalysis';
 
-const MARKET_TIME_ZONES: Record<StockMarket, string> = {KR: 'Asia/Seoul', US: 'America/New_York'};
+const MARKET_TIME_ZONES: Record<StockMarket, string> = {KR: 'Asia/Seoul', US: 'America/New_York', JP: 'Asia/Tokyo'};
 
 export function isMarketWeekend(market: StockMarket, now = new Date()): boolean {
     const weekday = new Intl.DateTimeFormat('en-US', {

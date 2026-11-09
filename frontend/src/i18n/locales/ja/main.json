@@ -1831,6 +1831,10 @@
     "manuscriptApplyHelp": "適用すると現在の話のタイトルと本文をこの結果で置き換えます。"
   },
   "stockAnalysis": {
+    "JP": "日本株式市場",
+    "mapJapan": "日本市場セクターマップ",
+    "indexNikkei225": "日経平均株価",
+
     "financials": {
       "qoq": "前四半期比",
       "yoy": "前年同期比",

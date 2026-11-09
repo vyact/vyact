@@ -17,3 +17,8 @@ describe('market-local weekends', () => {
         expect(isMarketWeekend('US', new Date('2026-07-04T04:00:00Z'))).toBe(true);
     });
 });
+
+it('uses Tokyo time for Japanese weekends', () => {
+    expect(isMarketWeekend('JP', new Date('2026-11-08T15:00:00Z'))).toBe(false);
+    expect(isMarketWeekend('JP', new Date('2026-11-06T15:00:00Z'))).toBe(true);
+});

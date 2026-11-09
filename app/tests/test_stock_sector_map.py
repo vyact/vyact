@@ -62,7 +62,7 @@ class StockSectorMapTests(unittest.TestCase):
     })
     def test_korean_map_uses_yahoo_quotes_and_sector_groups(self, quotes, members, names):
         client = Mock()
-        result = sector_map._korea_map(client)
+        result = sector_map._regional_map("KR")
         client.get.assert_not_called()
         self.assertEqual(result['quoteDate'], '2026-11-06')
         self.assertEqual(result['sectors'][0]['name'], 'Technology')

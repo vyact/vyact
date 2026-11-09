@@ -15,7 +15,7 @@ from services.db import SETTINGS_INDEX, get_es
 from services.stock_analysis.symbols import is_market_index, normalize_market_indices, normalize_stock, normalize_sector_map, public_symbol, symbol_market
 
 EndpointKind = Literal['symbols', 'prices', 'sparkline', 'marketIndices', 'sectorMap', 'quotes']
-STOCK_SYMBOL_PATTERN = r'^(?:[A-Z0-9][A-Z0-9.-]{0,15}|\^(?:GSPC|IXIC|RUT|KS11|KQ11)|(?:ES|NQ|RTY)=F)$'
+STOCK_SYMBOL_PATTERN = r'^(?:[A-Z0-9][A-Z0-9.-]{0,15}|\^(?:GSPC|IXIC|RUT|KS11|KQ11|N225)|(?:ES|NQ|RTY)=F)$'
 TOKEN_PATTERN = re.compile(r'\{(symbols|symbol|market|language|period|interval)\}')
 
 
@@ -343,7 +343,7 @@ async def validate_api_settings(market: str, kind: EndpointKind, draft: ApiValid
     if endpoint is None or not endpoint.url.strip():
         return {'ok': False, 'code': 'url_required', 'status': None, 'fields': []}
     settings = resolve_api_secrets(draft.settings, await load_api_settings(market))
-    symbol = draft.symbol or ('005930' if market == 'KR' else 'AAPL')
+    symbol = draft.symbol or ({'KR': '005930', 'JP': '7203.T'}.get(market, 'AAPL'))
     try:
         result = await execute_api_request(settings, market, kind, symbol=symbol, language=draft.language, period=draft.period, interval=draft.interval, symbols=draft.symbols or ([symbol] if kind == 'quotes' else None))
     except ApiValidationFailure as exc:

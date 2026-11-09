@@ -1832,6 +1832,10 @@
     "manuscriptApplyHelp": "Al aplicar, se sustituyen el título y el texto del capítulo actual."
   },
   "stockAnalysis": {
+    "JP": "Acciones japonesas",
+    "mapJapan": "Sectores del mercado japonés",
+    "indexNikkei225": "Nikkei 225",
+
     "financials": {
       "qoq": "Intertrimestral",
       "yoy": "Interanual",

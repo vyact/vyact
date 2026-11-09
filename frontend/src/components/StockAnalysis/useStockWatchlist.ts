@@ -9,7 +9,7 @@ function readWatchlist(): string[] {
     try {
         const saved: unknown = JSON.parse(localStorage.getItem(WATCHLIST_STORAGE_KEY) ?? '[]');
         return Array.isArray(saved) ? [...new Set(saved.filter((value): value is string =>
-            typeof value === 'string' && /^(KR|US):[A-Z0-9][A-Z0-9.-]{0,15}$/.test(value)).map(value => {
+            typeof value === 'string' && /^(KR|US|JP):[A-Z0-9][A-Z0-9.-]{0,15}$/.test(value)).map(value => {
                 const [market, symbol] = value.split(':');
                 return watchlistKey(market, symbol);
             }))] : [];

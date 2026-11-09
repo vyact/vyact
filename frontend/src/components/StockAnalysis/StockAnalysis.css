@@ -199,3 +199,6 @@
     color: var(--exchange-color); font-size: 10px; font-weight: 650; line-height: 1;
 }
 .stock-symbol-exchange[data-exchange="kosdaq"] {--exchange-color: var(--success);}
+
+:is(.stock-price-chart-quote, .stock-comparison-quote)[data-market="JP"] [data-direction="up"] {color: #e64c52; fill: #e64c52;}
+:is(.stock-price-chart-quote, .stock-comparison-quote)[data-market="JP"] [data-direction="down"] {color: #30ad69; fill: #30ad69;}
