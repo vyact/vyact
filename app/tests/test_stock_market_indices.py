@@ -67,3 +67,36 @@ class FuturesSelectionTests(unittest.TestCase):
         for kwargs in [{'futures_age': 1900}, {'futures_age': 7200}, {'missing': True}]:
             market_indices._load_indices.cache_clear()
             self.assertEqual([q['symbol'] for q in self.load(False, True, **kwargs)], ['^GSPC', '^IXIC', '^RUT'])
+
+
+class JapaneseFuturesSelectionTests(unittest.TestCase):
+    def setUp(self):
+        market_indices._load_indices.cache_clear()
+
+    def tearDown(self):
+        market_indices._load_indices.cache_clear()
+
+    def load(self, instant, fresh=True):
+        now = datetime.fromisoformat(instant).timestamp()
+
+        def quote(symbol):
+            return {'symbol': symbol, 'price': 59000, 'quoteTime': now - (60 if fresh else 7200), 'closes': [58000, 59000]}
+
+        with patch.object(market_indices, 'time', return_value=now), patch.object(market_indices, '_safe_fetch_index', side_effect=quote):
+            return market_indices._load_indices(1, 'JP')[0]
+
+    def test_japanese_regular_session_and_lunch_keep_cash(self):
+        for instant in ['2026-11-09T10:00:00+09:00', '2026-11-09T11:45:00+09:00', '2026-11-09T12:30:00+09:00']:
+            market_indices._load_indices.cache_clear()
+            self.assertEqual(self.load(instant)['symbol'], '^N225')
+
+    def test_japanese_overnight_uses_yen_cme_futures(self):
+        quote = self.load('2026-11-09T20:00:00+09:00')
+        self.assertEqual(quote['symbol'], 'NIY=F')
+        self.assertEqual(quote['indexSymbol'], 'N225')
+        self.assertEqual(quote['nextRegularOpen'], datetime.fromisoformat('2026-11-10T09:00:00+09:00').timestamp())
+
+    def test_closed_or_stale_cme_quotes_keep_japanese_cash(self):
+        self.assertEqual(self.load('2026-11-09T20:00:00+09:00', fresh=False)['symbol'], '^N225')
+        market_indices._load_indices.cache_clear()
+        self.assertEqual(self.load('2026-11-10T07:30:00+09:00')['symbol'], '^N225')

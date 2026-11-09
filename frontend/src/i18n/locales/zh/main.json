@@ -1833,6 +1833,7 @@
   "stockAnalysis": {
     "JP": "日本股市",
     "mapJapan": "日本市场板块图",
+    "indexNikkei225Futures": "日经225期货（CME·日元）",
     "indexNikkei225": "日经225",
 
     "financials": {

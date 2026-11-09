@@ -1,20 +1,32 @@
 """Exchange session windows, including holidays, breaks and daylight saving time."""
 from datetime import datetime, timedelta
 from functools import lru_cache
-from zoneinfo import ZoneInfo
 
 import pandas_market_calendars as market_calendars
 
-EXCHANGE_TIMEZONE = ZoneInfo("America/New_York")
 CASH_CALENDAR = "NYSE"
 FUTURES_CALENDAR = "CME Globex Equity"
+JAPAN_CASH_CALENDAR = "JPX"
+
+
+@lru_cache(maxsize=8)
+def _calendar(calendar_name: str):
+    return market_calendars.get_calendar(calendar_name)
+
+
+def _local_day(calendar_name: str, now: float) -> str:
+    return datetime.fromtimestamp(now, _calendar(calendar_name).tz).date().isoformat()
+
+
+@lru_cache(maxsize=8)
+def _daily_schedule(calendar_name: str, local_day: str):
+    day = datetime.fromisoformat(local_day).date()
+    return _calendar(calendar_name).schedule(start_date=day - timedelta(days=1), end_date=day + timedelta(days=1))
 
 
 @lru_cache(maxsize=8)
 def _session_windows(calendar_name: str, local_day: str) -> tuple[tuple[float, float], ...]:
-    day = datetime.fromisoformat(local_day).date()
-    calendar = market_calendars.get_calendar(calendar_name)
-    schedule = calendar.schedule(start_date=day - timedelta(days=1), end_date=day + timedelta(days=1))
+    schedule = _daily_schedule(calendar_name, local_day)
     windows = []
     for _, row in schedule.iterrows():
         start, end = row["market_open"].timestamp(), row["market_close"].timestamp()
@@ -26,20 +38,28 @@ def _session_windows(calendar_name: str, local_day: str) -> tuple[tuple[float, f
 
 
 def active_session(calendar_name: str, now: float) -> tuple[float, float] | None:
-    local_day = datetime.fromtimestamp(now, EXCHANGE_TIMEZONE).date().isoformat()
+    local_day = _local_day(calendar_name, now)
     return next(((start, end) for start, end in _session_windows(calendar_name, local_day)
                  if start <= now < end), None)
 
 
 @lru_cache(maxsize=4)
-def _cash_openings(local_day: str) -> tuple[float, ...]:
+def _cash_openings(local_day: str, calendar_name: str = CASH_CALENDAR) -> tuple[float, ...]:
     day = datetime.fromisoformat(local_day).date()
-    schedule = market_calendars.get_calendar(CASH_CALENDAR).schedule(
+    schedule = _calendar(calendar_name).schedule(
         start_date=day, end_date=day + timedelta(days=14),
     )
     return tuple(value.timestamp() for value in schedule["market_open"])
 
 
-def next_regular_open(now: float) -> float | None:
-    local_day = datetime.fromtimestamp(now, EXCHANGE_TIMEZONE).date().isoformat()
-    return next((opening for opening in _cash_openings(local_day) if opening > now), None)
+def next_regular_open(now: float, calendar_name: str = CASH_CALENDAR) -> float | None:
+    local_day = _local_day(calendar_name, now)
+    return next((opening for opening in _cash_openings(local_day, calendar_name) if opening > now), None)
+
+
+def is_session_break(calendar_name: str, now: float) -> bool:
+    schedule = _daily_schedule(calendar_name, _local_day(calendar_name, now))
+    if "break_start" not in schedule or "break_end" not in schedule:
+        return False
+    return any(row["break_start"].timestamp() <= now < row["break_end"].timestamp()
+               for _, row in schedule.iterrows())

@@ -1833,6 +1833,7 @@
   "stockAnalysis": {
     "JP": "Chứng khoán Nhật Bản",
     "mapJapan": "Bản đồ ngành thị trường Nhật Bản",
+    "indexNikkei225Futures": "Hợp đồng tương lai Nikkei 225 (CME · JPY)",
     "indexNikkei225": "Nikkei 225",
 
     "financials": {

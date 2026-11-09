@@ -1843,6 +1843,7 @@
   "stockAnalysis": {
     "JP": "일본 증시",
     "mapJapan": "일본 증시 섹터맵",
+    "indexNikkei225Futures": "닛케이 225 선물 (CME·엔화)",
     "indexNikkei225": "닛케이 225",
 
     "financials": {

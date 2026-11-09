@@ -200,7 +200,7 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
                 <ArrowLeft size={14} aria-hidden="true"/>{t(stockGroups ? 'stockAnalysis.groups.tab' : 'stockAnalysis.sectorMap')}
             </button>}
             <h1>{title}</h1>
-            {!stockGroups && market === 'US' && <MarketOpenCountdown opening={nextRegularOpen}/>}
+            {!stockGroups && <MarketOpenCountdown opening={nextRegularOpen}/>}
             <div className="stock-sector-map-controls">
             {(stockGroups ? !!groupQuoteState.quotes.length : !!snapshot) && <div className="stock-sector-map-dates">
                 <span>{t(stockGroups ? 'stockAnalysis.mapQuoteDate' : 'stockAnalysis.sectorMapQuoteDate', {date: formatDay(stockGroups ? groupQuoteState.quotes.map(quote => quote.date).sort().slice(-1)[0] : snapshot!.quoteDate ?? snapshot!.date)})}</span>

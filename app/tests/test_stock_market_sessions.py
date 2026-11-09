@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from services.stock_analysis.market_sessions import CASH_CALENDAR, FUTURES_CALENDAR, active_session, next_regular_open
+from services.stock_analysis.market_sessions import CASH_CALENDAR, FUTURES_CALENDAR, active_session, next_regular_open, JAPAN_CASH_CALENDAR, is_session_break
 
 
 def stamp(value):
@@ -43,3 +43,12 @@ def test_exchange_sessions(value, cash, futures):
 ])
 def test_next_regular_open_skips_closed_days_and_handles_dst(now, expected):
     assert next_regular_open(stamp(now)) == stamp(expected)
+
+
+def test_japan_lunch_break_and_next_open():
+    assert active_session(JAPAN_CASH_CALENDAR, stamp('2026-11-09T11:29:00+09:00'))
+    assert is_session_break(JAPAN_CASH_CALENDAR, stamp('2026-11-09T11:30:00+09:00'))
+    assert is_session_break(JAPAN_CASH_CALENDAR, stamp('2026-11-09T12:29:00+09:00'))
+    assert not is_session_break(JAPAN_CASH_CALENDAR, stamp('2026-11-09T12:30:00+09:00'))
+    assert next_regular_open(stamp('2026-11-09T18:00:00+09:00'), JAPAN_CASH_CALENDAR) == stamp('2026-11-10T09:00:00+09:00')
+    assert next_regular_open(stamp('2026-11-20T18:00:00+09:00'), JAPAN_CASH_CALENDAR) == stamp('2026-11-24T09:00:00+09:00')

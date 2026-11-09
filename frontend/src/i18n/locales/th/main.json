@@ -1833,6 +1833,7 @@
   "stockAnalysis": {
     "JP": "หุ้นญี่ปุ่น",
     "mapJapan": "แผนที่กลุ่มอุตสาหกรรมตลาดญี่ปุ่น",
+    "indexNikkei225Futures": "ฟิวเจอร์ส Nikkei 225 (CME · JPY)",
     "indexNikkei225": "Nikkei 225",
 
     "financials": {

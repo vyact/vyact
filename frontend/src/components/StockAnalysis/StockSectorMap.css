@@ -103,7 +103,10 @@
 .stock-sector-preview li.focused {background: color-mix(in srgb, var(--accent) 15%, var(--surface2));}
 .stock-sector-preview-selected-quote .stock-sparkline {height: 34px;}
 
-.stock-market-indices {display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; flex-shrink: 0;}
+.stock-market-indices {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 10px; flex-shrink: 0;
+}
 .stock-market-index {
     display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0;
     padding: 12px 16px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg-secondary);
@@ -130,7 +133,6 @@ button.stock-market-index {font: inherit; text-align: start; color: inherit; cur
 button.stock-market-index:hover {border-color: var(--accent); background: color-mix(in srgb, var(--accent) 5%, var(--bg-secondary));}
 button.stock-market-index:focus-visible {outline: 2px solid var(--accent); outline-offset: 2px;}
 
-.stock-market-indices[data-market="KR"] {grid-template-columns: repeat(2, minmax(0, 1fr));}
 .stock-market-indices[data-market="KR"] .stock-market-index[data-direction="up"] .stock-market-index-change,
 .stock-market-indices[data-market="KR"] .stock-sparkline[data-direction="up"] {color: #e64c52;}
 .stock-market-indices[data-market="KR"] .stock-market-index[data-direction="down"] .stock-market-index-change,
@@ -165,7 +167,6 @@ button.stock-market-index:focus-visible {outline: 2px solid var(--accent); outli
 .stock-market-index-cash:focus-visible {outline: 2px solid var(--info); outline-offset: 2px;}
 
 .stock-sector-map[data-market="JP"] {--stock-map-up: #ab2537; --stock-map-down: #15683e;}
-.stock-market-indices[data-market="JP"] {grid-template-columns: minmax(0, 1fr);}
 .stock-market-indices[data-market="JP"] .stock-market-index[data-direction="up"] .stock-market-index-change,
 .stock-market-indices[data-market="JP"] .stock-sparkline[data-direction="up"] {color: #e64c52;}
 .stock-market-indices[data-market="JP"] .stock-market-index[data-direction="down"] .stock-market-index-change,

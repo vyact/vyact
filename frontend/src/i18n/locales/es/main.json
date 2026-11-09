@@ -1834,6 +1834,7 @@
   "stockAnalysis": {
     "JP": "Acciones japonesas",
     "mapJapan": "Sectores del mercado japonés",
+    "indexNikkei225Futures": "Futuros Nikkei 225 (CME · JPY)",
     "indexNikkei225": "Nikkei 225",
 
     "financials": {

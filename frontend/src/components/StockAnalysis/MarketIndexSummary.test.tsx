@@ -45,4 +45,14 @@ describe('market summary instrument labels', () => {
         expect(html).not.toContain('stock-market-index-cash');
     });
 
+    it('labels the CME yen Nikkei futures and keeps the cash-index chart accessible', () => {
+        state.indices = [{symbol: 'NIY=F', indexSymbol: 'N225', price: 59025, change: 790, changePercent: 1.36,
+            date: '2026-11-09', closes: [58235, 59025]}];
+        const html = renderToStaticMarkup(<MarketIndexSummary market="JP" refreshSeconds={30} onOpen={vi.fn()}/>);
+        expect(html).toContain('stockAnalysis.indexNikkei225Futures');
+        expect(html).toContain('stock-market-index-cash');
+        expect(html).toContain('stockAnalysis.indexNikkei225');
+        expect(html).toContain('59,025.00');
+    });
+
 });

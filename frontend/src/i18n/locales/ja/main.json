@@ -1833,6 +1833,7 @@
   "stockAnalysis": {
     "JP": "日本株式市場",
     "mapJapan": "日本市場セクターマップ",
+    "indexNikkei225Futures": "日経225先物（CME・円建て）",
     "indexNikkei225": "日経平均株価",
 
     "financials": {

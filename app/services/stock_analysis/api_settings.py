@@ -15,7 +15,7 @@ from services.db import SETTINGS_INDEX, get_es
 from services.stock_analysis.symbols import is_market_index, normalize_market_indices, normalize_stock, normalize_sector_map, public_symbol, symbol_market
 
 EndpointKind = Literal['symbols', 'prices', 'sparkline', 'marketIndices', 'sectorMap', 'quotes']
-STOCK_SYMBOL_PATTERN = r'^(?:[A-Z0-9][A-Z0-9.-]{0,15}|\^(?:GSPC|IXIC|RUT|KS11|KQ11|N225)|(?:ES|NQ|RTY)=F)$'
+STOCK_SYMBOL_PATTERN = r'^(?:[A-Z0-9][A-Z0-9.-]{0,15}|\^(?:GSPC|IXIC|RUT|KS11|KQ11|N225)|(?:ES|NQ|RTY|NIY)=F)$'
 TOKEN_PATTERN = re.compile(r'\{(symbols|symbol|market|language|period|interval)\}')
 
 
