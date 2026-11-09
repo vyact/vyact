@@ -13,7 +13,6 @@ export default function useStockDirectory(market: StockMarket, language: string,
         setError(false);
         stockAnalysis.symbols(market, controller.signal, language).then(result => {
             if (controller.signal.aborted) return;
-            stockSnapshotCache.writeSymbols(market, result, language);
             setRemote({market, language, rows: result});
         }).catch(() => {if (!controller.signal.aborted) setError(true);});
         return () => controller.abort();

@@ -1,5 +1,6 @@
 import {formatLocalizedNumber} from '../../utils/localizedNumber';
 import React from 'react';
+import ImageAttachmentPreview from '../common/ImageAttachmentPreview/ImageAttachmentPreview';
 import { Braces, FileText, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useCodePanel } from '../../contexts/CodePanelContext';
@@ -61,19 +62,8 @@ const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({
                     </button>
                 </div>
             ))}
-            {images.map((img, idx) => (
-                <div key={`img-${idx}`} className="image-attachment-preview">
-                    <img
-                        src={URL.createObjectURL(img)}
-                        alt={`preview-${idx}`}
-                        onClick={() => onImageClick(idx)}
-                        className="image-attachment-preview__image"
-                    />
-                    <button className="attachment-remove-btn attachment-remove-btn--image" onClick={() => onRemoveImage(idx)} aria-label={t('sidebar.delete')}>
-                        <X size={10}/>
-                    </button>
-                </div>
-            ))}
+            {images.map((img, idx) => <ImageAttachmentPreview key={`img-${idx}`} file={img} alt={img.name}
+                onOpen={() => onImageClick(idx)} onRemove={() => onRemoveImage(idx)}/>)}
             {fileAttachments.map((fa, idx) => (
                 <div key={`file-${idx}`} className="file-attachment-preview">
                     <span className="file-attachment-preview__icon" aria-hidden="true">

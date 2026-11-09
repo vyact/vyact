@@ -11,7 +11,7 @@
 .novel-local-note {margin: auto 8px 0; padding-top: 32px; font-size: 11px; line-height: 1.7; color: var(--muted);}
 .novel-writing {flex: 1; width: 100%;min-width: 0; min-height: 0; display: flex; flex-direction: column;}
 .novel-tabs {display: flex; gap: 24px;}
-.novel-tabs button {padding: 10px 0; border: none; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font-size: 12px;}
+.novel-tabs button {padding: 10px 0; border: none; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font-size: 14px; font-weight: 500;}
 .novel-tabs button[aria-pressed=true] {color: var(--accent); border-color: var(--accent);}
 .novel-paper {padding: 36px clamp(24px, 5vw, 78px); display: flex; flex-direction: column; flex: 1; min-height: 0;}
 .novel-paper h2 {font-size: 23px; margin: 0 0 15px;}
@@ -52,7 +52,11 @@
 .novel-brand {display: flex; align-items: center; gap: 9px; flex-shrink: 0;}
 .novel-brand-icon {display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, transparent);}
 .novel-brand h1 {font-size: 14px; margin: 0; white-space: nowrap;}
-.novel-tabs {height: 100%; align-items: stretch; margin-left: auto;}
+.novel-tabs {height: 100%; align-items: stretch; flex-shrink: 0;}
+.novel-studio > .workspace-layout-header {padding-inline-end: 12px;}
+.novel-header-inspector-actions {display: flex; align-items: center; gap: 16px; align-self: stretch; width: calc(var(--workspace-inspector-width, 300px) - 12px); flex-shrink: 0; box-sizing: border-box; padding-inline-start: 16px; margin-inline-start: auto;}
+.novel-header-inspector-actions > .workspace-exit-button {margin-inline-start: auto;}
+@media (max-width: 760px) {.novel-header-inspector-actions {width: auto; padding-inline-start: 0; gap: 12px;}}
 .novel-studio .workspace-layout-content {flex-direction: column;}
 .novel-library-state {display: flex; flex: 1; min-height: 180px; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--text-secondary); font-size: 12px;}
 .novel-story-row .novel-chapter {min-width: 0; flex: 1;}
@@ -351,7 +355,7 @@
 .novel-image-loading {position: sticky; bottom: 24px; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 10px; width: fit-content; max-width: 100%; box-sizing: border-box; margin: 16px auto; padding: 12px 18px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); box-shadow: 0 4px 18px rgba(0,0,0,.18); font-size: 13px;}
 .novel-image-loading svg {color: var(--accent); flex-shrink: 0;}
 
-.novel-library-actions {display: flex; align-items: center; gap: 5px;}
+.novel-library-actions {display: flex; align-items: center; gap: 0;}
 .novel-story-checkbox {flex-shrink: 0; margin: 0 0 0 8px; accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer;}
 
 :is(.novel-story-list, .novel-chapter-list) {scrollbar-width: thin; scrollbar-color: transparent transparent; scrollbar-gutter: stable;}
@@ -361,11 +365,11 @@
 :is(.novel-story-list, .novel-chapter-list)::-webkit-scrollbar-thumb {background: transparent; border-radius: 6px;}
 :is(.novel-story-list, .novel-chapter-list).is-scrolling::-webkit-scrollbar-thumb {background: var(--border);}
 
-.novel-library .novel-section-heading .titlebar-btn {width: 28px; height: 28px; padding: 0; flex-shrink: 0; border: none; border-radius: 6px; background: transparent; color: var(--muted);}
+.novel-library .novel-section-heading .titlebar-btn {width: 24px; height: 28px; padding: 0; flex-shrink: 0; border: none; border-radius: 6px; background: transparent; color: var(--muted);}
 .novel-library .novel-section-heading .titlebar-btn:hover:not(:disabled) {background: transparent; color: var(--text);}
 .novel-library .novel-section-heading .titlebar-btn svg {width: 16px; height: 16px; stroke-width: 1.8;}
 
-.novel-library-delete {display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0; border: none; border-radius: 6px; background: transparent; color: var(--del-fg-soft); transition: color .15s;}
+.novel-library-delete {display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 28px; padding: 0; border: none; border-radius: 6px; background: transparent; color: var(--del-fg-soft); transition: color .15s;}
 .novel-library-delete:hover:not(:disabled) {background: transparent; color: var(--del-fg);}
 .novel-library-delete svg {stroke-width: 1.8;}
 

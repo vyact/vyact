@@ -11,12 +11,14 @@ interface Props extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'value
     scopeHelp: string;
     actions?: ReactNode;
     context?: ReactNode;
+    preview?: ReactNode;
     textareaRef?: Ref<HTMLTextAreaElement>;
     showTools?: boolean;
 }
 
-export default function McpPromptInput({value, onChange, selectedServers, onSelectedServersChange, scopeHelp, textareaRef, actions, context, showTools = true, ...props}: Props) {
+export default function McpPromptInput({value, onChange, selectedServers, onSelectedServersChange, scopeHelp, textareaRef, actions, context, preview, showTools = true, ...props}: Props) {
     return <div className="mcp-prompt-input">
+        {preview}
         <textarea {...props} value={value} ref={textareaRef} onChange={event => onChange(event.target.value)}/>
         {context}
         <div className="mcp-prompt-toolbar">

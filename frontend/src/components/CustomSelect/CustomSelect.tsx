@@ -14,6 +14,7 @@ export interface SelectOption {
 
 interface CustomSelectProps {
     options: SelectOption[];
+    optionsPageSize?: number;
     value: string;
     selectedValues?: string[];
     onChange: (value: string) => void;
@@ -48,6 +49,7 @@ interface CustomSelectProps {
 
 const CustomSelect: React.FC<CustomSelectProps> = ({
                                                        options,
+                                                       optionsPageSize,
                                                        value,
                                                        selectedValues,
                                                        onChange,
@@ -83,6 +85,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
     const resolvedClearLabel = clearLabel ?? t('clearSelection');
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
+    const [renderedPage, setRenderedPage] = useState({key: '', count: 0});
     const [activeIndex, setActiveIndex] = useState(-1);
     const listId = useId();
     const triggerRef = useRef<HTMLButtonElement>(null);
@@ -105,6 +108,10 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
         : matchingOptions;
 
     const optionKey = filtered.map(option => `${option.value}:${!!option.disabled}`).join('|');
+    const pageKey = `${search}:${optionKey}`;
+    const visibleCount = optionsPageSize ? Math.max(
+        optionsPageSize, renderedPage.key === pageKey ? renderedPage.count : 0, activeIndex + 1,
+    ) : filtered.length;
     useEffect(() => {
         if (!open) return;
         const selectedIndex = search ? -1 : filtered.findIndex(option => option.value === value && !option.disabled);
@@ -256,9 +263,16 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
             )}
             {afterSearch}
 
-            <div className="custom-select-list" id={listId} role="listbox" aria-multiselectable={selectedValues ? true : undefined}>
+            <div className="custom-select-list" id={listId} role="listbox" aria-multiselectable={selectedValues ? true : undefined}
+                onScroll={event => {
+                    if (!optionsPageSize) return;
+                    const list = event.currentTarget;
+                    if (list.scrollHeight - list.scrollTop - list.clientHeight < 100) {
+                        setRenderedPage({key: pageKey, count: Math.min(filtered.length, visibleCount + optionsPageSize)});
+                    }
+                }}>
                 {filtered.length > 0 ? (
-                    filtered.map((opt, index) => (
+                    filtered.slice(0, visibleCount).map((opt, index) => (
                         <Fragment key={opt.value}>
                         {showGroupLabels && opt.group && (index === 0 || opt.group !== filtered[index - 1].group) &&
                             <div className="custom-select-group-label" role="presentation">{opt.group}</div>}

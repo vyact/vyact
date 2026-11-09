@@ -1831,6 +1831,7 @@
     "manuscriptApplyHelp": "เมื่อใช้ผลลัพธ์นี้จะแทนที่ชื่อและเนื้อหาตอนปัจจุบัน"
   },
   "stockAnalysis": {
+    "collapseSidebar": "ยุบรายการหุ้น", "expandSidebar": "ขยายรายการหุ้น",
     "JP": "หุ้นญี่ปุ่น",
     "mapJapan": "แผนที่กลุ่มอุตสาหกรรมตลาดญี่ปุ่น",
     "indexNikkei225Futures": "ฟิวเจอร์ส Nikkei 225 (CME · JPY)",
@@ -1955,6 +1956,7 @@
       }
     },
     "discussion": {
+      "attachChart": "แนบกราฟปัจจุบัน", "chartAttached": "แนบภาพกราฟแล้ว", "removeChart": "นำกราฟออก", "chartAttachError": "ไม่สามารถแนบกราฟได้ โปรดลองอีกครั้ง",
       "historyTitle": "ประวัติการสนทนา",
       "newConversation": "การสนทนาใหม่",
       "historyEmpty": "ไม่มีการสนทนาที่บันทึกไว้",

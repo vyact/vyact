@@ -26,6 +26,10 @@ function writeSnapshot<T>(key: string, data: T) {
 }
 
 export const stockSnapshotCache = {
+    symbolsFetchedAt: (market: StockMarket, language = 'en') => {
+        readSnapshot<StockSymbol[]>(`symbols:${market}:${language}`, (value): value is StockSymbol[] => Array.isArray(value));
+        return memory.get(`symbols:${market}:${language}`)?.savedAt ?? 0;
+    },
     clear: () => {
         memory.clear();
         try {

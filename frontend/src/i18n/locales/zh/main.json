@@ -1831,6 +1831,7 @@
     "manuscriptApplyHelp": "应用后将用此结果替换当前章节标题和正文。"
   },
   "stockAnalysis": {
+    "collapseSidebar": "收起股票列表", "expandSidebar": "展开股票列表",
     "JP": "日本股市",
     "mapJapan": "日本市场板块图",
     "indexNikkei225Futures": "日经225期货（CME·日元）",
@@ -1955,6 +1956,7 @@
       }
     },
     "discussion": {
+      "attachChart": "附加当前图表", "chartAttached": "已附加图表快照", "removeChart": "移除图表", "chartAttachError": "无法附加图表，请重试。",
       "historyTitle": "对话历史",
       "newConversation": "新对话",
       "historyEmpty": "暂无已保存的对话。",

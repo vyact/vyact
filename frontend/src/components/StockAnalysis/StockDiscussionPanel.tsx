@@ -37,7 +37,7 @@ export default function StockDiscussionPanel(props: ComponentProps<typeof StockD
             onClick={() => updateLayout({...layout, collapsed: !layout.collapsed})}>
             {layout.collapsed ? <ChevronLeft size={17} aria-hidden="true"/> : <ChevronRight size={17} aria-hidden="true"/>}
         </button>
-        <div className="stock-discussion-body" hidden={layout.collapsed}>
+        <div className="stock-discussion-body" inert={layout.collapsed} aria-hidden={layout.collapsed}>
             <StockDiscussionSidebar {...props}/>
         </div>
     </div>;

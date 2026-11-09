@@ -38,13 +38,15 @@ async def get_stock_conversation(symbol, conversation_id):
     return {'id': result['_id'], **result['_source']}
 
 
-async def append_stock_conversation(symbol, conversation_id, question, answer, question_timestamp=None, stats=None, model=None):
+async def append_stock_conversation(symbol, conversation_id, question, answer, question_timestamp=None, stats=None, model=None, attachments=None):
     es = get_es()
     await ensure_chat_index(es)
     symbol = public_symbol(symbol)
     now = datetime.now(timezone.utc).isoformat()
     messages = [{'role': 'user', 'content': question, 'timestamp': question_timestamp or now},
                 {'role': 'assistant', 'content': answer, 'timestamp': now}]
+    if attachments:
+        messages[0]['attachments'] = attachments
     if stats is not None:
         for message in messages:
             message['stats'] = stats

@@ -1831,6 +1831,7 @@
     "manuscriptApplyHelp": "適用すると現在の話のタイトルと本文をこの結果で置き換えます。"
   },
   "stockAnalysis": {
+    "collapseSidebar": "銘柄一覧を折りたたむ", "expandSidebar": "銘柄一覧を展開",
     "JP": "日本株式市場",
     "mapJapan": "日本市場セクターマップ",
     "indexNikkei225Futures": "日経225先物（CME・円建て）",
@@ -1955,6 +1956,7 @@
       }
     },
     "discussion": {
+      "attachChart": "現在のチャートを添付", "chartAttached": "チャート画像を添付済み", "removeChart": "チャートを削除", "chartAttachError": "チャートを添付できませんでした。もう一度お試しください。",
       "historyTitle": "会話履歴",
       "newConversation": "新しい会話",
       "historyEmpty": "保存された会話はありません。",

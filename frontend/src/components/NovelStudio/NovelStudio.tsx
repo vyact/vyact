@@ -271,8 +271,10 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
     };
     const header = <>
         <div className="novel-brand"><span className="novel-brand-icon"><Feather size={18} aria-hidden="true"/></span><h1>{tr('title')}</h1></div>
-        <div className="novel-tabs">{(['text', 'bible'] as const).map(key => <button key={key} disabled={busy || changes.pending} aria-pressed={tab === key} onClick={() => changes.requestAction(() => {setTab(key); resetAssistant(); setSelectedAction(key === 'bible' ? 'createDirection' : 'write');})}>{tr(key)}</button>)}</div>
-        <WorkspaceExitButton disabled={changes.pending} onClick={() => requestExit()}/>
+
+        <div className="novel-header-inspector-actions"><div className="novel-tabs">{(['text', 'bible'] as const).map(key => <button key={key} disabled={busy || changes.pending} aria-pressed={tab === key} onClick={() => changes.requestAction(() => {setTab(key); resetAssistant(); setSelectedAction(key === 'bible' ? 'createDirection' : 'write');})}>{tr(key)}</button>)}</div>
+            <WorkspaceExitButton disabled={changes.pending} onClick={() => requestExit()}/>
+        </div>
     </>;
     return <WorkspaceLayout className="novel-studio" label={tr('title')} header={header}
         sidebar={story ? (                <nav className="novel-library" aria-label={tr('library')}>

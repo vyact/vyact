@@ -1832,6 +1832,7 @@
     "manuscriptApplyHelp": "Applying replaces the current chapter title and manuscript with this result."
   },
   "stockAnalysis": {
+    "collapseSidebar": "Collapse stock list", "expandSidebar": "Expand stock list",
     "JP": "Japanese stocks",
     "mapJapan": "Japanese market sectors",
     "indexNikkei225Futures": "Nikkei 225 Futures (CME · JPY)",
@@ -1956,6 +1957,7 @@
       }
     },
     "discussion": {
+      "attachChart": "Attach current chart", "chartAttached": "Chart snapshot attached", "removeChart": "Remove chart", "chartAttachError": "Could not attach the chart. Please try again.",
       "historyTitle": "Conversation history",
       "newConversation": "New conversation",
       "historyEmpty": "No saved conversations.",

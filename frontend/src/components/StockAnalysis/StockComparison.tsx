@@ -1,3 +1,4 @@
+import type {ChartSnapshotContext} from './chartSnapshot';
 import {STOCK_MARKETS} from '../../services/stockAnalysis';
 import {Tooltip} from '../common/Tooltip/Tooltip';
 import ModalTabs from '../common/ModalTabs/ModalTabs';
@@ -21,7 +22,8 @@ const comparisonColor = () => getComputedStyle(document.documentElement).getProp
 
 type Comparison = {symbol: string; name: string; rows: DailyPrice[]; shift: number};
 
-export default function StockComparison({chart, bars, interval, revision, directory, hoveredDay, children, actionTarget, quoteTarget, market, onLayoutChange, quoteMode, refreshSeconds, autoRefreshEnabled, manualRefreshVersion}: {
+export default function StockComparison({chart, bars, interval, revision, directory, hoveredDay, children, actionTarget, quoteTarget, market, onLayoutChange, quoteMode, refreshSeconds, autoRefreshEnabled, manualRefreshVersion, snapshotComparisons}: {
+    snapshotComparisons: RefObject<ChartSnapshotContext['comparisons']>;
     manualRefreshVersion: number;
     refreshSeconds: number;
     autoRefreshEnabled: boolean;
@@ -41,6 +43,7 @@ export default function StockComparison({chart, bars, interval, revision, direct
     const {t, i18n} = useTranslation(['main', 'common']);
     const tr = (key: string) => t(`stockAnalysis.${key}`);
     const [items, setItems] = useState<Comparison[]>([]);
+    useEffect(() => {snapshotComparisons.current = items.map(({symbol, name, shift}) => ({symbol, name, shift}));}, [items, snapshotComparisons]);
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState('');
     const [searchMarket, setSearchMarket] = useState<StockMarket>(market);

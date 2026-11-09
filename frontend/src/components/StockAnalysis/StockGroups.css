@@ -5,7 +5,10 @@
 .stock-group-list-row > button {border: 0; border-radius: 7px; background: transparent; color: var(--text-muted); cursor: pointer;}
 .stock-group-list-row > button[aria-pressed="true"], .stock-group-list-row > button:hover {background: var(--surface2); color: var(--text);}
 .stock-group-list-row > button:not(:first-child) {display: grid; place-items: center; flex: 0 0 22px; width: 22px; height: 26px; padding: 2px;}
-.stock-group-create {display: flex; align-items: center; justify-content: center; gap: 6px;}
+.stock-group-list > .stock-group-create {display: inline-flex; align-items: center; justify-content: center; justify-self: stretch; gap: 5px; width: 100%; box-sizing: border-box; min-height: 34px; padding: 5px 9px; border: 0; border-radius: 6px; background: transparent; color: var(--text-muted); font-size: 13px; font-weight: 500; line-height: 1.4; cursor: pointer; transition: color .15s ease, background .15s ease;}
+.stock-group-list > .stock-group-create svg {width: 12px; height: 12px; flex-shrink: 0; color: currentColor; stroke-width: 1.75;}
+.stock-group-list > .stock-group-create:hover {background: var(--surface2); color: var(--text);}
+.stock-group-list > .stock-group-create:focus-visible {outline: 2px solid var(--accent); outline-offset: 2px;}
 .stock-group-dialog {display: flex; flex-direction: column; gap: 12px; width: min(460px, calc(100vw - 32px)); max-height: 85vh; overflow: auto; padding: 20px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); color: var(--text);}
 .stock-group-dialog header, .stock-group-dialog footer {display: flex; align-items: center; gap: 8px; justify-content: space-between;}
 .stock-group-dialog h2 {margin: 0; font-size: 16px;}
@@ -17,7 +20,8 @@
 
 .stock-list-tabs > button {position: relative; min-height: 36px;}
 .stock-list-tabs > button[aria-pressed="true"] {color: var(--accent);}
-.stock-list-tabs .stock-watchlist-count {position: absolute; top: 1px; inset-inline-end: 1px; min-width: 12px; padding: 0 3px; font-size: 9px; line-height: 14px;}
+.stock-watchlist-tab-icon {position: relative; display: inline-flex; align-items: center; justify-content: center; width: 17px; height: 17px; flex-shrink: 0;}
+.stock-list-tabs .stock-watchlist-count {position: absolute; top: -7px; inset-inline-start: 15px; display: inline-flex; align-items: center; justify-content: center; min-width: 14px; padding: 0 3px; box-sizing: border-box; font-size: 9px; line-height: 14px; white-space: nowrap;}
 
 .stock-group-search {flex-shrink: 0;}
 .stock-group-search-results {list-style: none; margin: 0; padding: 4px; display: grid; gap: 3px; height: min(260px, 34vh); align-content: start; overflow-y: auto; border: 1px solid var(--border); border-radius: 9px; flex-shrink: 0;}
@@ -82,3 +86,4 @@
 .stock-group-list-row[data-dragging="true"], .stock-group-members > li[data-dragging="true"] {opacity: .45;}
 .stock-group-list-row[data-drop="before"], .stock-group-members > li[data-drop="before"] {box-shadow: 0 -2px 0 var(--accent);}
 .stock-group-list-row[data-drop="after"], .stock-group-members > li[data-drop="after"] {box-shadow: 0 2px 0 var(--accent);}
+.stock-group-list > .stock-group-create {margin-bottom: 10px;}

@@ -1841,6 +1841,7 @@
     "manuscriptApplyHelp": "적용하면 현재 회차의 제목과 본문을 이 결과로 교체합니다."
   },
   "stockAnalysis": {
+    "collapseSidebar": "종목 목록 접기", "expandSidebar": "종목 목록 펼치기",
     "JP": "일본 증시",
     "mapJapan": "일본 증시 섹터맵",
     "indexNikkei225Futures": "닛케이 225 선물 (CME·엔화)",
@@ -1965,6 +1966,7 @@
       }
     },
     "discussion": {
+      "attachChart": "현재 차트 첨부", "chartAttached": "차트 스냅샷 첨부됨", "removeChart": "차트 제거", "chartAttachError": "차트를 첨부하지 못했습니다. 다시 시도해주세요.",
       "historyTitle": "대화 히스토리",
       "newConversation": "새 대화",
       "historyEmpty": "저장된 대화가 없습니다.",

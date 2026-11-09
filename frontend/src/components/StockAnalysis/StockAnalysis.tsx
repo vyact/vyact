@@ -1,11 +1,14 @@
-import {useEffect, useState} from 'react';
+import './StockSymbolLabel.css';
+import type {ChartSnapshot} from './chartSnapshot';
+import {useEffect, useRef, useState} from 'react';
 import {localizeStockName} from '../../utils/stockDisplayName';
-import {ArrowLeft, ChartCandlestick, RefreshCw, Search, Settings, Star, Plus, Pencil, Trash2, LayoutGrid, FolderOpen, ChevronDown} from 'lucide-react';
+import {ArrowLeft, ChartCandlestick, RefreshCw, Search, Settings, Star, Plus, Pencil, Trash2, LayoutGrid, FolderOpen, ChevronDown, ChevronLeft, ChevronRight} from 'lucide-react';
 import {Trans, useTranslation} from 'react-i18next';
 import {stockSnapshotCache} from '../../services/stockSnapshotCache';
 import {STOCK_MARKETS, stockAnalysis, type DailyPrice, type StockMarket, type StockSymbol} from '../../services/stockAnalysis';
 import WorkspaceExitButton from '../common/WorkspaceLayout/WorkspaceExitButton';
 import WorkspaceLayout from '../common/WorkspaceLayout/WorkspaceLayout';
+import PanelResizer from '../common/PanelResizer/PanelResizer';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import StockApiSettings from './StockApiSettings';
 import StockLoadingIndicator from './StockLoadingIndicator';
@@ -30,6 +33,22 @@ import './StockAnalysis.css';
 import './StockWatchlist.css';
 
 const VISIBLE_SYMBOLS = 100;
+const SIDEBAR_WIDTH_KEY = 'vyact:stock-analysis:sidebar-width';
+const DEFAULT_SIDEBAR_WIDTH = 248;
+const MIN_SIDEBAR_WIDTH = 180;
+const MAX_SIDEBAR_WIDTH = DEFAULT_SIDEBAR_WIDTH * 2;
+const MIN_CHART_WIDTH = 320;
+function readSidebarWidth(): number {
+    try {
+        const value = Number(localStorage.getItem(SIDEBAR_WIDTH_KEY));
+        if (Number.isFinite(value) && value >= MIN_SIDEBAR_WIDTH && value <= MAX_SIDEBAR_WIDTH) return value;
+    } catch { /* Use the default width. */ }
+    return DEFAULT_SIDEBAR_WIDTH;
+}
+const SIDEBAR_COLLAPSED_KEY = 'vyact:stock-analysis:sidebar-collapsed';
+function readSidebarCollapsed(): boolean {
+    try {return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true';} catch {return false;}
+}
 export default function StockAnalysis({onClose}: {onClose: () => void}) {
     const [apiVersion, setApiVersion] = useState(0);
     return <StockAnalysisContent key={apiVersion} onClose={onClose} onApiSaved={() => {
@@ -41,12 +60,24 @@ export default function StockAnalysis({onClose}: {onClose: () => void}) {
 function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApiSaved: () => void}) {
     const {t, i18n} = useTranslation('main');
     const tr = (key: string, options?: Record<string, unknown>) => t(`stockAnalysis.${key}`, options);
+    const [sidebarWidth, setSidebarWidth] = useState(readSidebarWidth);
+    const updateSidebarWidth = (width: number) => {
+        setSidebarWidth(width);
+        try {localStorage.setItem(SIDEBAR_WIDTH_KEY, String(width));} catch { /* Keep session state. */ }
+    };
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(readSidebarCollapsed);
+    const toggleSidebar = () => {
+        const next = !sidebarCollapsed;
+        setSidebarCollapsed(next);
+        try {localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(next));} catch { /* Keep session state. */ }
+    };
     const [detailTab, setDetailTab] = useState<'chart' | 'history' | 'financials'>('chart');
     const [apiSettingsOpen, setApiSettingsOpen] = useState(false);
     const [market, setMarket] = useState<StockMarket>(() => getInitialMarket(i18n.resolvedLanguage ?? i18n.language));
     useEffect(() => {saveMarketPreference(market);}, [market]);
     const [symbols, setSymbols] = useState<StockSymbol[]>(() => stockSnapshotCache.readSymbols(market, i18n.resolvedLanguage) ?? []);
     const [query, setQuery] = useState('');
+    const captureChart = useRef<(() => ChartSnapshot) | null>(null);
     const [comparisonTarget, setComparisonTarget] = useState<HTMLDivElement | null>(null);
     const [listView, setListView] = useState<'all' | 'watchlist' | 'groups'>('all');
     const stockGroups = useStockGroups();
@@ -89,7 +120,6 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
         setDirectoryState(cached ? 'ready' : 'loading');
         stockAnalysis.symbols(market, controller.signal, i18n.resolvedLanguage ?? i18n.language).then(result => {
             if (controller.signal.aborted) return;
-            stockSnapshotCache.writeSymbols(market, result, i18n.resolvedLanguage);
             setSymbols(result);
             setDirectoryState('ready');
         }).catch(() => {
@@ -153,7 +183,23 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
         setRefreshVersion(0);
     };
 
+    const sidebarToggle = <>
+        {!sidebarCollapsed && <PanelResizer className="stock-analysis-sidebar-resizer" onWidthChange={updateSidebarWidth}
+            onReset={() => updateSidebarWidth(DEFAULT_SIDEBAR_WIDTH)} getWidth={(event, resizer) => {
+                const layout = resizer.closest('.workspace-layout-body')!;
+                const bounds = layout.getBoundingClientRect();
+                const discussionWidth = layout.querySelector('.stock-discussion-container')?.getBoundingClientRect().width ?? 0;
+                const maximum = Math.max(MIN_SIDEBAR_WIDTH, Math.min(MAX_SIDEBAR_WIDTH, bounds.width - discussionWidth - MIN_CHART_WIDTH));
+                return Math.max(MIN_SIDEBAR_WIDTH, Math.min(maximum, event.clientX - bounds.left));
+            }}/>}
+        <button type="button" className="stock-analysis-sidebar-toggle" onClick={toggleSidebar}
+            aria-expanded={!sidebarCollapsed} aria-label={tr(sidebarCollapsed ? 'expandSidebar' : 'collapseSidebar')}
+            data-tooltip-disabled="">
+            {sidebarCollapsed ? <ChevronRight size={17}/> : <ChevronLeft size={17}/>}
+        </button>
+    </>;
     const header = <>
+
         <div className="stock-analysis-title"><ChartCandlestick size={20} aria-hidden="true"/><strong>{tr('title')}</strong></div>
         <WorkspaceExitButton className="stock-analysis-exit" onClick={onClose}/>
     </>;
@@ -167,7 +213,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
         <div className="stock-watchlist-switch stock-list-tabs" role="group" aria-label={tr('listView')}>
             <button type="button" aria-label={tr('allStocks')} aria-pressed={listView === 'all'} onClick={() => changeListView('all')}><LayoutGrid size={17} aria-hidden="true"/></button>
             <button type="button" aria-label={tr('watchlist')} aria-pressed={watchlistOnly} onClick={() => changeListView('watchlist')}>
-                <Star size={17} aria-hidden="true"/><span className="stock-watchlist-count">{new Intl.NumberFormat(i18n.resolvedLanguage).format(watchlistCount)}</span>
+                <span className="stock-watchlist-tab-icon"><Star size={17} aria-hidden="true"/><span className="stock-watchlist-count">{new Intl.NumberFormat(i18n.resolvedLanguage).format(watchlistCount)}</span></span>
             </button>
             <button type="button" aria-label={tr('groups.tab')} aria-pressed={listView === 'groups'} onClick={() => changeListView('groups')}><FolderOpen size={17} aria-hidden="true"/></button>
         </div>
@@ -195,6 +241,9 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                             <button type="button" className="stock-group-member-open" aria-pressed={activeSymbol === symbol} onClick={() => openSymbol(stock)}>
                                 <strong>{stock.name}</strong><small>{symbol}</small>
                             </button>
+                            <button type="button" className="stock-watchlist-star" aria-pressed={watchlist.contains(market, symbol)}
+                                aria-label={tr(watchlist.contains(market, symbol) ? 'removeFromRadar' : 'addToRadar', {name: stock.name})}
+                                onClick={() => watchlist.toggle(market, symbol)}><Star size={15} strokeWidth={1.5} aria-hidden="true"/></button>
                             <button type="button" className="stock-group-member-remove" aria-label={tr('groups.removeStock', {name: stock.name})}
                                 onClick={() => stockGroups.removeStock(group.id, symbol)}><Trash2 size={13} aria-hidden="true"/></button>
                         </li>;
@@ -258,7 +307,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
             setDeletingGroup(null);
         }}/>}
     {apiSettingsOpen && <StockApiSettings market={market} onClose={() => setApiSettingsOpen(false)} onSaved={onApiSaved}/>}
-    <WorkspaceLayout className="stock-analysis" label={tr('title')} header={header} sidebar={sidebar}>
+    <WorkspaceLayout sidebarWidth={sidebarWidth} sidebarToggle={sidebarToggle} sidebarCollapsed={sidebarCollapsed} className="stock-analysis" label={tr('title')} header={header} sidebar={sidebar}>
         <div className={`stock-analysis-inner${active ? " has-discussion" : ""}`}><main className="stock-analysis-content">
             {!active && (listView === 'groups' && !groupSymbols.size
                 ? <div className="stock-watchlist-empty"><strong>{tr('groups.empty')}</strong><p>{tr('groups.emptyHint')}</p>
@@ -272,7 +321,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                     setPriceError(false);
                     setRefreshVersion(0);
                 }}><ArrowLeft size={16} aria-hidden="true"/></button>
-                    <h1>{active.name}</h1><p>{active.symbol}</p></div>
+                    <h1>{active.name}</h1><p className="stock-symbol-label">{active.symbol}</p></div>
                 <div className="stock-analysis-header-actions">
                 <div className="stock-analysis-comparison-action" hidden={detailTab !== 'chart'} ref={setComparisonTarget}/>
                 {detailTab === 'chart' && <StockRefreshInterval seconds={chartRefreshSeconds} onChange={changeChartRefreshSeconds}/>}
@@ -291,7 +340,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
             {loading && <StockLoadingIndicator title={active.name} overlay={!!rows?.length} iconOnly/>}
             {priceError && <p role="alert">{tr('historyError')}</p>}
             {rows?.length === 0 && !loading && !priceError && <p>{tr('noPrices')}</p>}
-            {active && !!rows?.length && <StockPriceChart key={active.symbol} symbol={active.symbol} name={active.name} rows={rows} market={market} directory={symbols} comparisonTarget={comparisonTarget} autoRefreshEnabled={chartVisible && !loading} refreshSeconds={chartRefreshSeconds} manualRefreshVersion={refreshVersion} label={tr('dailyPrices')}/>}
+            {active && !!rows?.length && <StockPriceChart captureChart={captureChart} key={active.symbol} symbol={active.symbol} name={active.name} rows={rows} market={market} directory={symbols} comparisonTarget={comparisonTarget} autoRefreshEnabled={chartVisible && !loading} refreshSeconds={chartRefreshSeconds} manualRefreshVersion={refreshVersion} label={tr('dailyPrices')}/>}
             </div>
             <footer className="stock-chart-attribution stock-analysis-caption">
                 <span>{tr('source')}</span>
@@ -307,7 +356,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                 <StockFinancials key={`${active.symbol}:${refreshVersion}`} symbol={active.symbol} market={market}/>
             </div>}
         </main>
-        {active && <StockDiscussionPanel key={`${market}:${active.symbol}`} stock={active} market={market} directory={symbols}/>}
+        {active && <StockDiscussionPanel captureChart={detailTab === 'chart' ? captureChart : undefined} key={`${market}:${active.symbol}`} stock={active} market={market} directory={symbols}/>}
         </div>
     </WorkspaceLayout></>;
 }

@@ -1831,6 +1831,7 @@
     "manuscriptApplyHelp": "Áp dụng sẽ thay thế tiêu đề và nội dung chương hiện tại."
   },
   "stockAnalysis": {
+    "collapseSidebar": "Thu gọn danh sách cổ phiếu", "expandSidebar": "Mở rộng danh sách cổ phiếu",
     "JP": "Chứng khoán Nhật Bản",
     "mapJapan": "Bản đồ ngành thị trường Nhật Bản",
     "indexNikkei225Futures": "Hợp đồng tương lai Nikkei 225 (CME · JPY)",
@@ -1955,6 +1956,7 @@
       }
     },
     "discussion": {
+      "attachChart": "Đính kèm biểu đồ hiện tại", "chartAttached": "Đã đính kèm ảnh biểu đồ", "removeChart": "Xóa biểu đồ", "chartAttachError": "Không thể đính kèm biểu đồ. Vui lòng thử lại.",
       "historyTitle": "Lịch sử trò chuyện",
       "newConversation": "Cuộc trò chuyện mới",
       "historyEmpty": "Chưa có cuộc trò chuyện đã lưu.",

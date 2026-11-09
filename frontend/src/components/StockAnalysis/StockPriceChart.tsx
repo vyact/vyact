@@ -1,9 +1,10 @@
+import type {ChartSnapshotContext, ChartSnapshot} from './chartSnapshot';
 import {attachBandFill} from './chartBandFill';
 import {OVERLAY_INDICATORS, type OverlayIndicator} from './overlayIndicators';
 import IndicatorSettingsDialog from './IndicatorSettingsDialog';
 import IndicatorLegends from './IndicatorLegends';
 import {readIndicatorSettings, INDICATOR_SETTINGS_KEY} from './indicatorSettings';
-import {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import {useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject} from 'react';
 import {CandlestickSeries, createChart, HistogramSeries, LineSeries, type IChartApi, type ISeriesApi, type MouseEventParams} from 'lightweight-charts';
 import {Eraser, ListX, Pencil, Ruler, Settings, Trash2} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
@@ -22,6 +23,7 @@ import {aggregatePrices, DEFAULT_MOVING_AVERAGES, INTERVALS, MAX_MA_PERIOD, movi
 import {attachChartRuler, chartDay} from './chartRuler';
 
 interface Props {
+    captureChart: RefObject<(() => ChartSnapshot) | null>;
     autoRefreshEnabled: boolean;
     refreshSeconds: number;
     manualRefreshVersion: number;
@@ -56,7 +58,7 @@ function readMovingAverages(): MovingAverage[] {
     return DEFAULT_MOVING_AVERAGES;
 }
 
-export default function StockPriceChart({symbol, name, rows, market, label, directory, comparisonTarget, refreshSeconds, manualRefreshVersion, autoRefreshEnabled}: Props) {
+export default function StockPriceChart({symbol, name, rows, market, label, directory, comparisonTarget, refreshSeconds, manualRefreshVersion, autoRefreshEnabled, captureChart}: Props) {
     const {t, i18n} = useTranslation('main');
     const container = useRef<HTMLDivElement>(null);
     const ruler = useRef<ReturnType<typeof attachChartRuler> | null>(null);
@@ -110,6 +112,9 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
     const {rise, fall} = MARKET_COLORS[market];
     const bars = useMemo(() => aggregatePrices(rows, interval), [rows, interval]);
     const chartRevision = useMemo(() => ({locale, market, t, indicators, indicatorSettings}), [locale, market, t, indicators, indicatorSettings]);
+    const comparisonSnapshot = useRef<ChartSnapshotContext['comparisons']>([]);
+    const snapshotSettings = useRef({symbol, name, interval, maEnabled, movingAverages, indicators, indicatorSettings});
+    snapshotSettings.current = {symbol, name, interval, maEnabled, movingAverages, indicators, indicatorSettings};
     const latestBars = useRef(bars);
     latestBars.current = bars;
     const updateChartData = useRef<((rows: DailyPrice[]) => void) | null>(null);
@@ -134,6 +139,19 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
             timeScale: {rightOffset: 0, fixLeftEdge: true, fixRightEdge: true},
         });
         chart.current = instance;
+        captureChart.current = () => {
+            const settings = snapshotSettings.current;
+            const visible = instance.timeScale().getVisibleRange();
+            return {canvas: instance.takeScreenshot(true, false), context: {
+                symbol: settings.symbol, name: settings.name, interval: settings.interval,
+                captured_at: new Date().toISOString(),
+                visible_from: visible ? chartDay(visible.from) ?? null : null,
+                visible_to: visible ? chartDay(visible.to) ?? null : null,
+                moving_averages: settings.maEnabled ? settings.movingAverages.map(value => ({...value})) : [],
+                indicators: settings.indicators.map(value => ({name: value, settings: {...settings.indicatorSettings[value]}})),
+                comparisons: comparisonSnapshot.current.map(value => ({...value})),
+            }};
+        };
         setChartInstance(instance);
         const candles = instance.addSeries(CandlestickSeries, {
             upColor: rise, downColor: fall,
@@ -309,10 +327,11 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
             updateChartData.current = null;
             ruler.current = null;
             chart.current = null;
+            captureChart.current = null;
             candleSeries.current = null;
             averages.current = [];
         };
-    }, [interval, market, locale, t, rise, fall, indicators, indicatorSettings]);
+    }, [interval, market, locale, t, rise, fall, indicators, indicatorSettings, captureChart]);
 
     useEffect(() => {updateChartData.current?.(bars);}, [bars]);
 
@@ -384,7 +403,7 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
     };
 
     return <section className="stock-price-chart" aria-label={label}>
-        <StockComparison manualRefreshVersion={manualRefreshVersion} refreshSeconds={refreshSeconds} autoRefreshEnabled={autoRefreshEnabled} quoteMode={quoteMode} market={market} chart={chart} bars={bars} interval={interval} revision={chartInstance} directory={directory} hoveredDay={hoveredDay} actionTarget={comparisonTarget} quoteTarget={comparisonQuoteTarget}
+        <StockComparison snapshotComparisons={comparisonSnapshot} manualRefreshVersion={manualRefreshVersion} refreshSeconds={refreshSeconds} autoRefreshEnabled={autoRefreshEnabled} quoteMode={quoteMode} market={market} chart={chart} bars={bars} interval={interval} revision={chartInstance} directory={directory} hoveredDay={hoveredDay} actionTarget={comparisonTarget} quoteTarget={comparisonQuoteTarget}
             onLayoutChange={() => {setHoveredDay(undefined); setHoverPoint(undefined);}}>
             <button type="button" className="modal-action-cancel" aria-pressed={maEnabled}
                     onClick={() => setMaEnabled(value => !value)}>{t('stockAnalysis.movingAverage')}</button>

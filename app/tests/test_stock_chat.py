@@ -2,7 +2,72 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from pydantic import ValidationError
-from routers.stock_analysis import StockChatRequest, stock_chat
+from routers.stock_analysis import StockChatRequest, stock_chat, stream_stock_answer
+
+
+@pytest.mark.asyncio
+async def test_chart_attachment_reaches_model_with_conversation_images():
+    attachment = {'type': 'image', 'filename': '12345678_NVDA-chart.png'}
+    body = StockChatRequest(symbol='NVDA', name='NVIDIA', market='US', question='Analyze this chart',
+                            attachments=[attachment], messages=[{'role': 'user', 'content': 'Earlier chart', 'attachments': [attachment]}])
+    with patch('routers.stock_analysis.mcp_manager.enable_request_scope', new=AsyncMock(return_value=None)), \
+            patch('routers.stock_analysis.daily_prices', new=AsyncMock(return_value=[])), \
+            patch('routers.stock_analysis.query_llm', new=AsyncMock(return_value='Analysis')) as model:
+        await stock_chat(body)
+    assert model.call_args.args[3] == [attachment]
+    assert model.call_args.args[4][0]['attachments'] == [attachment]
+
+
+@pytest.mark.parametrize('filename', ['../../secret.png', '/tmp/image.png', 'image.svg', 'dir\\image.png'])
+def test_chart_attachment_cannot_reference_arbitrary_paths(filename):
+    with pytest.raises(ValidationError):
+        StockChatRequest(symbol='NVDA', name='NVIDIA', market='US', question='Analyze',
+                         attachments=[{'type': 'image', 'filename': filename}])
+
+
+@pytest.mark.asyncio
+async def test_streamed_chart_attachment_is_forwarded_and_saved():
+    attachment = {'type': 'image', 'filename': '12345678_NVDA-chart.png'}
+    body = StockChatRequest(symbol='NVDA', name='NVIDIA', market='US', question='Analyze',
+                            attachments=[attachment], conversation_id='00000000-0000-0000-0000-000000000001')
+
+    async def events(*args, **kwargs):
+        yield {'type': 'token', 'text': 'Analysis'}
+
+    with patch('routers.stock_analysis.mcp_manager.enable_request_scope', new=AsyncMock(return_value=None)), \
+            patch('routers.stock_analysis.get_provider_config', new=AsyncMock(return_value={'model': 'vision'})), \
+            patch('routers.stock_analysis.chat_stream_with_tools', side_effect=events) as model, \
+            patch('routers.stock_analysis.append_stock_conversation', new=AsyncMock()) as save:
+        result = [event async for event in stream_stock_answer(body, 'prompt', 'system')]
+    assert model.call_args.args[3] == [attachment]
+    assert save.call_args.kwargs['attachments'] == [attachment]
+    assert 'done' in result[-1]
+
+
+@pytest.mark.asyncio
+async def test_chart_configuration_is_included_in_current_and_historical_prompts():
+    context = {
+        'symbol': 'NVDA', 'name': 'NVIDIA', 'interval': 'month',
+        'captured_at': '2026-11-09T16:00:00Z',
+        'visible_from': '2025-01-02', 'visible_to': '2026-11-02',
+        'moving_averages': [{'period': 20, 'color': '#45a65a'}],
+        'indicators': [{'name': 'bollinger', 'settings': {'period': 20, 'deviation': 2}}],
+        'comparisons': [{'symbol': 'KS11', 'name': 'KOSPI', 'shift': 3}],
+    }
+    attachment = {'type': 'image', 'filename': '12345678_NVDA-chart.png', 'chart_context': context}
+    body = StockChatRequest(symbol='NVDA', name='NVIDIA', market='US', question='Analyze', attachments=[attachment],
+                            messages=[{'role': 'user', 'content': 'Earlier chart', 'attachments': [attachment]}])
+    with patch('routers.stock_analysis.mcp_manager.enable_request_scope', new=AsyncMock(return_value=None)), \
+            patch('routers.stock_analysis.daily_prices', new=AsyncMock(return_value=[])), \
+            patch('routers.stock_analysis.query_llm', new=AsyncMock(return_value='Analysis')) as model:
+        await stock_chat(body)
+    for prompt in [model.call_args.args[0], model.call_args.args[4][0]['content']]:
+        assert '"interval": "month"' in prompt
+        assert '2025-01-02' in prompt
+        assert 'bollinger' in prompt
+        assert '"shift": 3' in prompt
+        assert 'untrusted reference data' in prompt
+    assert model.call_args.args[3][0]['chart_context']['comparisons'][0]['symbol'] == 'KS11'
 
 
 @pytest.mark.asyncio

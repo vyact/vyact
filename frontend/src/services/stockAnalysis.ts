@@ -1,6 +1,9 @@
 import {normalizeStockSectorMap, normalizeStockSymbol, stockSymbolCode} from '../utils/stockSymbols';
 import {assertOk} from '../utils/apiError';
 import {localizeStockName} from '../utils/stockDisplayName';
+import {stockSnapshotCache} from './stockSnapshotCache';
+
+const SYMBOL_DIRECTORY_CACHE_MS = 24 * 60 * 60 * 1000;
 
 export const STOCK_ANALYSIS_PANEL_ID = 'stock-analysis';
 export const TOGGLE_STOCK_ANALYSIS_EVENT = 'vyact:toggle-stock-analysis';
@@ -65,8 +68,12 @@ export const stockAnalysis = {
     }),
     sectorMap: async (market: StockMarket, signal: AbortSignal, language = 'en') => normalizeStockSectorMap(await request<MarketSectorMap>(`sector-map/${market}?language=${encodeURIComponent(language)}`, signal)),
     async symbols(market: StockMarket, signal: AbortSignal, language = 'en'): Promise<StockSymbol[]> {
+        const cached = stockSnapshotCache.readSymbols(market, language);
+        if (cached && Date.now() - stockSnapshotCache.symbolsFetchedAt(market, language) < SYMBOL_DIRECTORY_CACHE_MS) return cached;
         const symbols = await request<StockSymbol[]>(`symbols/${market}?language=${encodeURIComponent(language)}`, signal);
-        return symbols.map(item => ({...normalizeStockSymbol(item), name: localizeStockName(item.name, language)}));
+        const rows = symbols.map(item => ({...normalizeStockSymbol(item), name: localizeStockName(item.name, language)}));
+        if (rows.length) stockSnapshotCache.writeSymbols(market, rows, language);
+        return rows;
     },
     prices: (symbol: string, signal: AbortSignal) => request<DailyPrice[]>(
         `prices/${encodeURIComponent(stockSymbolCode(symbol))}`, signal, {cache: 'no-store'},

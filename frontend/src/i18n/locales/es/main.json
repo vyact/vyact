@@ -1832,6 +1832,7 @@
     "manuscriptApplyHelp": "Al aplicar, se sustituyen el título y el texto del capítulo actual."
   },
   "stockAnalysis": {
+    "collapseSidebar": "Contraer lista de acciones", "expandSidebar": "Expandir lista de acciones",
     "JP": "Acciones japonesas",
     "mapJapan": "Sectores del mercado japonés",
     "indexNikkei225Futures": "Futuros Nikkei 225 (CME · JPY)",
@@ -1956,6 +1957,7 @@
       }
     },
     "discussion": {
+      "attachChart": "Adjuntar gráfico actual", "chartAttached": "Captura del gráfico adjunta", "removeChart": "Quitar gráfico", "chartAttachError": "No se pudo adjuntar el gráfico. Inténtalo de nuevo.",
       "historyTitle": "Historial de conversaciones",
       "newConversation": "Nueva conversación",
       "historyEmpty": "No hay conversaciones guardadas.",
