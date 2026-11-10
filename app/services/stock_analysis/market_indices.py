@@ -3,7 +3,7 @@ import math
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from functools import lru_cache
-from time import monotonic, time
+from time import time
 from zoneinfo import ZoneInfo
 
 from yfinance.data import YfData
@@ -93,4 +93,4 @@ def _load_indices(cache_window: int, market: str) -> list[dict]:
 
 
 def get_market_indices(market: str = "US") -> list[dict]:
-    return _load_indices(int(monotonic() // INDEX_CACHE_SECONDS), market)
+    return _load_indices(int(time() // INDEX_CACHE_SECONDS), market)

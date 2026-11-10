@@ -2,14 +2,14 @@ import math
 from datetime import datetime, timedelta, timezone
 from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
-from time import monotonic, time
+from time import time
 
 import httpx
 from yfinance.data import YfData
 
 from services.stock_analysis.symbols import yahoo_symbol
 from services.stock_analysis.catalog import Market
-from services.stock_analysis.market_group_cache import get_us_market_groups
+from services.stock_analysis.market_group_cache import get_us_market_groups, freeze_us_layout_weights
 from services.stock_analysis.market_sessions import us_premarket_window
 from services.stock_analysis.regional_yahoo import get_korea_sector_members, korea_symbols, korea_display_names, japan_display_names, get_japan_sector_members
 
@@ -38,7 +38,7 @@ def _sectors(groups: dict[str, list[dict]], *, limit: int | None = SECTOR_STOCK_
 def _regional_map(market: Market, language: str = "en") -> dict:
     members = get_japan_sector_members() if market == "JP" else get_korea_sector_members()
     names = (japan_display_names(language) if market == "JP" else
-             korea_display_names(language) if language == "ko" else korea_symbols(int(monotonic() // 3600)))
+             korea_display_names(language) if language == "ko" else korea_symbols(int(time() // 3600)))
     quotes = _us_quotes(list(dict.fromkeys(symbol for symbols in members.values() for symbol in symbols)))
     date = max((quote[0] for quote in quotes.values()), default=None)
     if date is None:
@@ -67,11 +67,11 @@ def _us_map(client: httpx.Client) -> dict:
     symbols = list(dict.fromkeys(stock["symbol"] for stock in stocks))
     quote_details = {}
     quotes = _us_quotes(symbols, details=quote_details)
-    # Holdings describe membership only; company market caps determine tile sizes.
+    weights = freeze_us_layout_weights(membership, {symbol: quote[3] for symbol, quote in quotes.items()})
+    # Freeze company market caps daily; prices and percentage changes remain live.
     for sector_stocks in groups.values():
         for stock in sector_stocks:
-            quote = quotes.get(stock["symbol"])
-            stock["weight"] = quote[3] if quote else 0
+            stock["weight"] = weights.get(stock["symbol"], 0)
         sector_stocks[:] = sorted(
             (stock for stock in sector_stocks if stock["weight"] > 0),
             key=lambda stock: stock["weight"], reverse=True,
@@ -81,7 +81,7 @@ def _us_map(client: httpx.Client) -> dict:
     # Verify the latest session independently; use charts only for stale quotes.
     _, benchmark = _us_daily_quote("^GSPC")
     quote_date = max([quote[0] for quote in quotes.values()] + ([benchmark[0]] if benchmark else []), default=None)
-    daily_quotes = {stock["symbol"]: quotes[stock["symbol"]][:3] for stock in stocks}
+    daily_quotes = {stock["symbol"]: quotes[stock["symbol"]][:3] for stock in stocks if stock["symbol"] in quotes}
     stale_symbols = [symbol for symbol, quote in daily_quotes.items() if quote[0] != quote_date]
     if stale_symbols:
         with ThreadPoolExecutor(max_workers=CHART_WORKERS) as executor:
@@ -176,7 +176,7 @@ def _load_map(market: Market, cache_window: int, language: str = "en") -> dict:
 
 
 def get_sector_map(market: Market, language: str = "en") -> dict:
-    return _load_map(market, int(monotonic() // CACHE_SECONDS), language.lower().split("-")[0] if language.lower().split("-")[0] in ("ko", "ja") else "en")
+    return _load_map(market, int(time() // CACHE_SECONDS), language.lower().split("-")[0] if language.lower().split("-")[0] in ("ko", "ja") else "en")
 
 
 @lru_cache(maxsize=128)
@@ -193,4 +193,4 @@ def _load_stock_quotes(symbols: tuple[str, ...], cache_window: int) -> list[dict
 
 
 def get_stock_quotes(symbols: list[str]) -> list[dict]:
-    return _load_stock_quotes(tuple(sorted(set(symbols))), int(monotonic() // CACHE_SECONDS))
+    return _load_stock_quotes(tuple(sorted(set(symbols))), int(time() // CACHE_SECONDS))

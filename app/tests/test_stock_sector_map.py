@@ -11,6 +11,9 @@ class StockSectorMapTests(unittest.TestCase):
         self.session_patch = patch.object(sector_map, 'us_premarket_window', return_value=None)
         self.session_patch.start()
         self.addCleanup(self.session_patch.stop)
+        self.weights_patch = patch('services.stock_analysis.market_group_cache._save')
+        self.weights_patch.start()
+        self.addCleanup(self.weights_patch.stop)
         self.industries = {}
         self.industry_patch = patch.object(sector_map, 'get_us_market_groups', side_effect=lambda client: parse_us_holdings(client.get.return_value.text, self.industries))
         self.industry_patch.start()
@@ -152,3 +155,20 @@ class StockSectorMapTests(unittest.TestCase):
         self.assertEqual(len(stocks), 20)
         self.assertEqual(next(stock for stock in stocks if stock['symbol'] == 'T0')['industry'], 'Small industry')
         self.assertIsNone(next(stock for stock in stocks if stock['symbol'] == 'T1')['industry'])
+
+
+class FrozenMapLayoutTests(unittest.TestCase):
+    def test_live_prices_change_without_reordering_or_removing_missing_caps(self):
+        membership = {'date': '2026-11-10', 'groups': {'Technology': [
+            {'symbol': 'AAA', 'name': 'Alpha'}, {'symbol': 'BBB', 'name': 'Beta'}]}}
+        with patch.object(sector_map, 'get_us_market_groups', return_value=membership), patch('services.stock_analysis.market_group_cache._save'), patch.object(sector_map, 'us_premarket_window', return_value=None), patch.object(sector_map, '_us_daily_quote', return_value=('^GSPC', ('2026-11-10', 100, 1))), patch.object(sector_map, '_us_quotes') as quotes:
+            quotes.return_value = {'AAA': ('2026-11-10', 10, 1, 2000), 'BBB': ('2026-11-10', 20, 2, 1000)}
+            first = sector_map._us_map(Mock())['sectors'][0]['stocks']
+            quotes.return_value = {'AAA': ('2026-11-10', 11, 10, 100), 'BBB': ('2026-11-10', 22, 10, 9000)}
+            updated = sector_map._us_map(Mock())['sectors'][0]['stocks']
+            self.assertEqual([stock['weight'] for stock in first], [stock['weight'] for stock in updated])
+            self.assertEqual([stock['price'] for stock in updated], [11, 22])
+            quotes.return_value = {'AAA': ('2026-11-10', 12, 20, 100)}
+            missing = sector_map._us_map(Mock())['sectors'][0]['stocks']
+            self.assertEqual([stock['symbol'] for stock in missing], ['AAA', 'BBB'])
+            self.assertEqual(missing[1]['weight'], 1000)

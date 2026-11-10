@@ -107,3 +107,23 @@ class IndustryClassificationTests(unittest.TestCase):
         client.get.return_value.text = 'Symbol,GICS Sub-Industry\n'
         with self.assertRaises(ValueError):
             classification.fetch_us_industries(client)
+
+
+class DailyLayoutWeightsTests(unittest.TestCase):
+    def test_weights_stay_fixed_until_next_day_and_survive_restart(self):
+        membership = cache.parse_us_holdings(HOLDINGS, {})
+        with tempfile.TemporaryDirectory() as directory, patch.object(cache, 'GROUP_CACHE_FILE', Path(directory) / 'groups.json'), patch.object(cache, '_today', return_value='2026-11-10') as today:
+            first = cache.freeze_us_layout_weights(membership, {'AAPL': 1000, 'SNDK': 200})
+            self.assertEqual(first, {'AAPL': 1000, 'SNDK': 200})
+            self.assertEqual(cache.freeze_us_layout_weights(membership, {'AAPL': 500, 'SNDK': 900}), first)
+            restored = json.loads(cache.GROUP_CACHE_FILE.read_text())
+            self.assertEqual(cache.freeze_us_layout_weights(restored, {}), first)
+            today.return_value = '2026-11-11'
+            self.assertEqual(cache.freeze_us_layout_weights(restored, {'AAPL': 1100}), {'AAPL': 1100, 'SNDK': 200})
+
+    def test_empty_initial_response_does_not_freeze_an_empty_day(self):
+        membership = cache.parse_us_holdings(HOLDINGS, {})
+        with patch.object(cache, '_save'):
+            self.assertEqual(cache.freeze_us_layout_weights(membership, {}), {})
+            self.assertNotIn('layoutDate', membership)
+            self.assertEqual(cache.freeze_us_layout_weights(membership, {'AAPL': 1000}), {'AAPL': 1000})

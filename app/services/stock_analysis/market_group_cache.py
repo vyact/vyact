@@ -2,6 +2,7 @@
 import csv
 import json
 import logging
+import math
 import os
 import tempfile
 import threading
@@ -102,6 +103,9 @@ def get_us_market_groups(client: httpx.Client):
             fresh = parse_us_holdings(holdings.text, industries)
             if not _valid(fresh):
                 raise ValueError('Incomplete US market groups')
+            if _cached:
+                fresh['layoutDate'] = _cached.get('layoutDate')
+                fresh['layoutWeights'] = _cached.get('layoutWeights', {})
             try:
                 _save(fresh)
             except OSError:
@@ -114,3 +118,29 @@ def get_us_market_groups(client: httpx.Client):
             if not _cached:
                 raise
         return _cached
+
+
+def freeze_us_layout_weights(membership, market_caps):
+    """Keep one persisted set of layout weights per New York calendar day."""
+    with _group_lock:
+        today = _today()
+        previous = membership.get('layoutWeights', {})
+        if membership.get('layoutDate') == today and previous:
+            return previous
+        symbols = {stock['symbol'] for entries in membership['groups'].values() for stock in entries}
+        weights = {}
+        for symbol in symbols:
+            cap = market_caps.get(symbol)
+            if not isinstance(cap, (int, float)) or not math.isfinite(cap) or cap <= 0:
+                cap = previous.get(symbol)
+            if isinstance(cap, (int, float)) and math.isfinite(cap) and cap > 0:
+                weights[symbol] = cap
+        if not weights:
+            return previous
+        membership['layoutDate'] = today
+        membership['layoutWeights'] = weights
+        try:
+            _save(membership)
+        except OSError:
+            logger.warning('Unable to persist daily map weights; using the in-memory snapshot')
+        return weights

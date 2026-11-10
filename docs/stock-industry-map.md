@@ -17,3 +17,5 @@
 구성 캐시는 `app/services/stock_analysis/market_group_cache.py`, 분류 파서는 `app/services/stock_analysis/industry_classification.py`, 계층 구성은 `frontend/src/components/StockAnalysis/sectorMapLayout.ts`에 있다. 사용자 지정 섹터맵 API는 종목별 선택 필드 `industry`를 제공하면 같은 방식으로 표시된다.
 
 팝업은 최대 15종목 중 실제 표시하는 행 수에 맞춰 높이를 정한다. 전체 높이는 지도 영역 내로 제한하며, 마우스 오른쪽에 여유가 있으면 오른쪽에, 부족하면 왼쪽에 80px 간격을 두고 표시한다. 좌우 전환은 즉시 적용해 팝업이 커서를 가로질러 이동하지 않게 하며, 세로 위치는 마우스 높이에 맞추고 아래 공간이 부족하면 위로 조정한다. 팝업 크기가 바뀌어도 지도 경계를 벗어나지 않으며 좁은 지도에서는 지도 안쪽 여백에 맞춰 제한한다. 마우스 이동은 팝업의 CSS 위치만 갱신하므로 전체 타일을 매번 다시 렌더링하지 않는다.
+
+US layout weights are persisted once per New York calendar day alongside membership. Intraday refreshes update prices and percentage changes without changing tile weights. Missing market caps retain the previous daily weight; restarting the app preserves the daily layout.

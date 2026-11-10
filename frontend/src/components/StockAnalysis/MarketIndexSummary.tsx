@@ -7,7 +7,7 @@ import {isMarketWeekend} from './marketRefresh';
 
 import {MARKET_INDEX_LABELS, INDEX_FUTURE_LABELS, CASH_INDEX_CHART_LABELS} from './marketIndexLabels';
 
-export default function MarketIndexSummary({market, refreshSeconds, onOpen, onOpeningChange}: {onOpeningChange?: (opening: number | undefined) => void; market: StockMarket; refreshSeconds: number; onOpen: (item: StockSymbol) => void}) {
+export default function MarketIndexSummary({market, refreshSeconds, onOpen, onOpeningChange, refreshVersion = 0}: {refreshVersion?: number; onOpeningChange?: (opening: number | undefined) => void; market: StockMarket; refreshSeconds: number; onOpen: (item: StockSymbol) => void}) {
     const labels = MARKET_INDEX_LABELS[market];
     const {t, i18n} = useTranslation('main');
     const [indices, setIndices] = useState<MarketIndex[]>(() => stockSnapshotCache.readIndices()?.filter(index => labels.some(label => label.symbol === (index.indexSymbol ?? index.symbol))) ?? []);
@@ -39,7 +39,7 @@ export default function MarketIndexSummary({market, refreshSeconds, onOpen, onOp
         void refresh();
         const timer = window.setInterval(() => {void refresh();}, refreshSeconds * 1000);
         return () => {controller.abort(); window.clearInterval(timer);};
-    }, [refreshSeconds, market, labels]);
+    }, [refreshSeconds, market, labels, refreshVersion]);
     const price = new Intl.NumberFormat(i18n.resolvedLanguage, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     const signed = new Intl.NumberFormat(i18n.resolvedLanguage, {minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: 'exceptZero'});
     return <div className="stock-market-indices" data-market={market} aria-label={t('stockAnalysis.marketIndices')}>

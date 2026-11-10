@@ -21,6 +21,7 @@ import {formatPremarketQuoteDate} from './premarketDisplay';
 import useSectorPreviewPosition, {PREVIEW_POINTER_GAP} from './useSectorPreviewPosition';
 import {sortPreviewStocks} from './sectorPreviewSort';
 import usePreviewSortModifier from './usePreviewSortModifier';
+import useMarketOpeningRefresh from './useMarketOpeningRefresh';
 import './StockSectorMap.css';
 
 function tileStyle(node: HierarchyRectangularNode<MapNode>, width: number, height: number) {
@@ -101,6 +102,7 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
     const [failed, setFailed] = useState(false);
     const [attempt, setAttempt] = useState(0);
     const [nextRegularOpen, setNextRegularOpen] = useState<number>();
+    const openingRefreshVersion = useMarketOpeningRefresh(nextRegularOpen, market);
     const [refreshSeconds, setRefreshSeconds] = useState<number>(DEFAULT_REFRESH_SECONDS);
     const [selectedSector, setSelectedSector] = useState<MarketSector>();
     const {sortByChange, trackSortModifier} = usePreviewSortModifier();
@@ -151,7 +153,7 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
             controller.abort();
             window.clearInterval(interval);
         };
-    }, [market, attempt, refreshSeconds, i18n.resolvedLanguage, i18n.language]);
+    }, [market, attempt, refreshSeconds, openingRefreshVersion, i18n.resolvedLanguage, i18n.language]);
 
     useEffect(() => {
         const node = surface.current;
@@ -241,7 +243,7 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
             <StockRefreshInterval seconds={refreshSeconds} onChange={setRefreshSeconds}/>
             </div>
         </header>
-        {!stockGroups && <MarketIndexSummary key={market} market={market} refreshSeconds={refreshSeconds} onOpen={onOpen} onOpeningChange={setNextRegularOpen}/>}
+        {!stockGroups && <MarketIndexSummary key={market} refreshVersion={openingRefreshVersion} market={market} refreshSeconds={refreshSeconds} onOpen={onOpen} onOpeningChange={setNextRegularOpen}/>}
         {stockGroups && !groupQuoteState.loading && missingGroupQuotes.length > 0 && <p className="stock-analysis-caption" role="status">{t('stockAnalysis.groups.missingCaps', {count: missingGroupQuotes.length})}</p>}
         <div className="stock-sector-map-surface" ref={surface} {...pointerPosition} onMouseMove={event => {pointerPosition.onMouseMove(event); trackSortModifier(event);}} onMouseLeave={() => {clearTimeout(previewTimer.current); setPreview(undefined);}}
              onKeyDown={event => {if (event.key === 'Escape' && preview) {event.stopPropagation(); setPreview(undefined);}}}
