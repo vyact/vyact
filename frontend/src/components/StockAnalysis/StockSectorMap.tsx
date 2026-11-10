@@ -1,4 +1,4 @@
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {useEffect, useMemo, useRef, useState, type CSSProperties} from 'react';
 import {hierarchy, treemap, type HierarchyRectangularNode} from 'd3-hierarchy';
 import {ArrowLeft} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
@@ -7,22 +7,21 @@ import {stockAnalysis, type MarketSector, type MarketSectorMap, type SectorStock
 import StockLoadingIndicator from './StockLoadingIndicator';
 import MarketIndexSummary from './MarketIndexSummary';
 import MarketOpenCountdown from './MarketOpenCountdown';
-import StockSparkline, {SPARKLINE_TRADING_DAYS, useSectorSparklines} from './StockSparkline';
+import StockSparkline from './StockSparkline';
+import useSectorSparklines, {usePrefetchSectorSparklines} from './useSectorSparklines';
+import {SPARKLINE_TRADING_DAYS} from '../../services/stockSparklineCache';
 import {isMarketWeekend} from './marketRefresh';
 import StockRefreshInterval from './StockRefreshInterval';
 import {DEFAULT_REFRESH_SECONDS} from './chartRefreshPreference';
 import type {StockGroup} from './useStockGroups';
 import useStockGroupQuotes from './useStockGroupQuotes';
 import {buildGroupSectors, groupMapSymbols} from './groupMapData';
+import {buildSectorMapTree, stockIndustry, UNCLASSIFIED_INDUSTRY, SECTOR_HEADER_HEIGHT, INDUSTRY_HEADER_HEIGHT, mapHeaderHeight, type MapNode} from './sectorMapLayout';
 import {formatPremarketQuoteDate} from './premarketDisplay';
+import useSectorPreviewPosition, {PREVIEW_POINTER_GAP} from './useSectorPreviewPosition';
+import {sortPreviewStocks} from './sectorPreviewSort';
+import usePreviewSortModifier from './usePreviewSortModifier';
 import './StockSectorMap.css';
-
-type MapNode = {
-    sector?: MarketSector;
-    stock?: SectorStock;
-    weight?: number;
-    children?: MapNode[];
-};
 
 function tileStyle(node: HierarchyRectangularNode<MapNode>, width: number, height: number) {
     return {left: `${node.x0 / width * 100}%`, top: `${node.y0 / height * 100}%`,
@@ -37,14 +36,13 @@ function tileColor(change: number | null, market: StockMarket) {
 }
 
 const PREVIEW_LIMIT = 15;
-const SECTOR_HEADER_HEIGHT = 24;
 const PREVIEW_PANEL_WIDTH = 440;
 const PREVIEW_PANEL_MARGIN = 8;
-const PREVIEW_PANEL_GAP = 12;
 
-export function SectorPreview({sector, focused, market, day, premarket = false, customName = false}: {sector: MarketSector; focused?: SectorStock; market: StockMarket; day: string; premarket?: boolean; customName?: boolean}) {
+export function SectorPreview({sector, focused, market, day, premarket = false, customName = false, sortByChange = false}: {sortByChange?: boolean; sector: MarketSector; focused?: SectorStock; market: StockMarket; day: string; premarket?: boolean; customName?: boolean}) {
     const {t, i18n} = useTranslation('main');
-    const histories = useSectorSparklines(sector.stocks.map(stock => stock.symbol), day);
+    const entries = sortPreviewStocks(sector.stocks, sortByChange, PREVIEW_LIMIT);
+    const histories = useSectorSparklines([...new Set([...entries.map(stock => stock.symbol), ...(focused ? [focused.symbol] : [])])], day);
     const percent = new Intl.NumberFormat(i18n.resolvedLanguage, {
         style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: 'exceptZero',
     });
@@ -52,8 +50,9 @@ export function SectorPreview({sector, focused, market, day, premarket = false, 
         style: 'currency', currency: {US: 'USD', KR: 'KRW', JP: 'JPY'}[market], currencyDisplay: 'narrowSymbol',
         minimumFractionDigits: market === 'US' ? 2 : 0, maximumFractionDigits: market === 'KR' ? 0 : 2,
     });
-    const sorted = [...sector.stocks].sort((a, b) => b.weight - a.weight);
-    const entries = sorted.slice(0, PREVIEW_LIMIT);
+    const focusedChange = focused && <strong data-direction={focused.change == null || focused.change === 0 ? 'flat' : focused.change > 0 ? 'up' : 'down'}>
+        {focused.change == null ? '—' : percent.format(focused.change / 100)}
+    </strong>;
     return <div className="stock-sector-preview" data-market={market}>
         <div className="stock-sector-preview-heading">
             {premarket && <span className="stock-sector-preview-session">{t('stockAnalysis.premarket.label')}</span>}
@@ -63,23 +62,27 @@ export function SectorPreview({sector, focused, market, day, premarket = false, 
         {focused && <div className="stock-sector-preview-selected">
             <div className="stock-sector-preview-selected-quote">
                 <strong className="stock-sector-preview-selected-symbol">{market === 'US' ? focused.symbol : focused.name}</strong>
-                <StockSparkline closes={histories[focused.symbol]} change={premarket ? focused.regularChange : focused.change}/><span>{focused.price == null ? '—' : price.format(focused.price)}</span>
-                <strong data-direction={focused.change == null || focused.change === 0 ? 'flat' : focused.change > 0 ? 'up' : 'down'}>
-                    {focused.change == null ? '—' : percent.format(focused.change / 100)}
-                </strong>
-                {premarket && <>
-                    <small className="stock-sector-preview-regular-price" aria-label={t('stockAnalysis.premarket.regularClose')} data-tooltip-disabled="">
-                        {focused.regularPrice == null ? '—' : price.format(focused.regularPrice)}
-                    </small>
-                    <small className="stock-sector-preview-regular-change" aria-label={t('stockAnalysis.premarket.regularChange')} data-tooltip-disabled="">
-                        {focused.regularChange == null ? '—' : percent.format(focused.regularChange / 100)}
-                    </small>
-                </>}
+                <StockSparkline closes={histories[focused.symbol]} change={premarket ? focused.regularChange : focused.change}/>
+                {premarket ? <>
+                    <div className="stock-sector-preview-quote-stack">
+                        <span>{focused.price == null ? '—' : price.format(focused.price)}</span>
+                        <small className="stock-sector-preview-regular-price" aria-label={t('stockAnalysis.premarket.regularClose')} data-tooltip-disabled="">
+                            {focused.regularPrice == null ? '—' : price.format(focused.regularPrice)}
+                        </small>
+                    </div>
+                    <div className="stock-sector-preview-quote-stack">
+                        {focusedChange}
+                        <small className="stock-sector-preview-regular-change" aria-label={t('stockAnalysis.premarket.regularChange')} data-tooltip-disabled="">
+                            {focused.regularChange == null ? '—' : percent.format(focused.regularChange / 100)}
+                        </small>
+                    </div>
+                </> : <><span>{focused.price == null ? '—' : price.format(focused.price)}</span>{focusedChange}</>}
+
             </div>
             <span className="stock-sector-preview-selected-name">{market === 'US' ? focused.name : focused.symbol}</span>
 
         </div>}
-        <ul style={{gridTemplateRows: `repeat(${PREVIEW_LIMIT}, minmax(0, 1fr))`}}>
+        <ul style={{'--stock-preview-row-count': entries.length} as CSSProperties}>
             {entries.map(stock => <li key={stock.symbol} className={stock.symbol === focused?.symbol ? 'focused' : undefined}>
                 <span className="stock-sector-preview-symbol">{market === 'US' ? stock.symbol : stock.name}</span>
                 <StockSparkline closes={histories[stock.symbol]} change={premarket ? stock.regularChange : stock.change}/>
@@ -100,9 +103,11 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
     const [nextRegularOpen, setNextRegularOpen] = useState<number>();
     const [refreshSeconds, setRefreshSeconds] = useState<number>(DEFAULT_REFRESH_SECONDS);
     const [selectedSector, setSelectedSector] = useState<MarketSector>();
-    const [preview, setPreview] = useState<{sectorName: string; symbol?: string}>();
+    const {sortByChange, trackSortModifier} = usePreviewSortModifier();
+    const [preview, setPreview] = useState<{sectorName: string; industryName?: string; remainder?: boolean; symbol?: string}>();
     const [size, setSize] = useState({width: 0, height: 0});
     const surface = useRef<HTMLDivElement>(null);
+    const previewPanel = useRef<HTMLElement>(null);
     const loadedMarket = useRef<StockMarket | undefined>(undefined);
     const previewTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
     useEffect(() => () => clearTimeout(previewTimer.current), []);
@@ -171,37 +176,52 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
     const sectorName = (name: string) => stockGroups ? name : t(`stockAnalysis.sectorNames.${name}`, {defaultValue: name, ...(market === 'US' ? {lng: 'en'} : {})});
     const layout = useMemo(() => {
         if (!localizedSectors || width <= 0 || height <= 0) return;
-        const stockNodes = (sector: MarketSector): MapNode[] => (localizedSectors?.find(item => item.name === sector.name) ?? sector).stocks.map(stock => ({stock, weight: stock.weight}));
-        const children = selectedSector ? stockNodes(selectedSector) : localizedSectors.map((sector): MapNode =>
-            ({sector, children: stockNodes(sector)}));
-        const root = hierarchy<MapNode>({children}).sum(node => node.weight ?? 0)
-            .sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
+        const root = hierarchy<MapNode>(buildSectorMapTree(localizedSectors, selectedSector, market === 'US' && !stockGroups, {width, height}))
+            .sum(node => node.weight ?? 0).sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
         return treemap<MapNode>().size([width, height]).round(true).paddingInner(2)
-            .paddingTop(node => !selectedSector && node.depth === 1 ? SECTOR_HEADER_HEIGHT : 0)(root);
-    }, [localizedSectors, selectedSector, width, height]);
+            .paddingTop(mapHeaderHeight)(root);
+    }, [localizedSectors, selectedSector, width, height, market, stockGroups]);
+
+    const historyDay = stockGroups ? groupQuoteState.quotes.map(quote => quote.date).sort().slice(-1)[0] ?? '' : snapshot?.quoteDate ?? snapshot?.date ?? '';
+    const prefetchSymbols = useMemo(() => [...new Set((layout?.children ?? []).flatMap(group => group.leaves()
+        .map(node => node.data.stock).filter((stock): stock is SectorStock => !!stock)
+        .sort((a, b) => b.weight - a.weight).slice(0, PREVIEW_LIMIT).map(stock => stock.symbol)))], [layout]);
+    usePrefetchSectorSparklines(prefetchSymbols, historyDay);
+
+    const industryName = (name: string) => name === UNCLASSIFIED_INDUSTRY ? t('stockAnalysis.industryUnclassified') : name;
 
     const previewSector = localizedSectors?.find(sector => sector.name === preview?.sectorName);
     const previewStock = previewSector?.stocks.find(stock => stock.symbol === preview?.symbol);
-    const showPreview = (sector: MarketSector, stock?: SectorStock) => {
+    const showPreview = (sector: MarketSector, stock?: SectorStock, industryName?: string, remainder = false) => {
         clearTimeout(previewTimer.current);
         previewTimer.current = setTimeout(() => {
-            setPreview({sectorName: sector.name, symbol: stock?.symbol});
+            setPreview({sectorName: sector.name, industryName, remainder, symbol: stock?.symbol});
         }, 70);
     };
-    const previewAnchor = selectedSector
+    const industryAnchor = preview?.industryName ? layout?.descendants().find(node => node.data.industry?.name === preview.industryName && node.data.industry?.sector.name === preview.sectorName) : undefined;
+    const remainderAnchor = preview?.remainder ? layout?.children?.find(node => node.data.remainder && node.data.sector?.name === preview.sectorName) : undefined;
+    const previewAnchor = industryAnchor ?? remainderAnchor ?? (selectedSector
         ? layout?.leaves().find(node => node.data.stock?.symbol === preview?.symbol)
-        : layout?.children?.find(node => node.data.sector?.name === preview?.sectorName);
+        : layout?.children?.find(node => node.data.sector?.name === preview?.sectorName));
     const previewWidth = Math.max(0, Math.min(PREVIEW_PANEL_WIDTH, width - PREVIEW_PANEL_MARGIN * 2));
     const rightSpace = width - (previewAnchor?.x1 ?? width);
     const leftSpace = previewAnchor?.x0 ?? 0;
-    const placeOnRight = rightSpace >= previewWidth + PREVIEW_PANEL_GAP
-        || (leftSpace < previewWidth + PREVIEW_PANEL_GAP && rightSpace >= leftSpace);
+    const placeOnRight = rightSpace >= previewWidth + PREVIEW_POINTER_GAP
+        || (leftSpace < previewWidth + PREVIEW_POINTER_GAP && rightSpace >= leftSpace);
     const preferredLeft = placeOnRight
-        ? (previewAnchor?.x1 ?? 0) + PREVIEW_PANEL_GAP
-        : (previewAnchor?.x0 ?? width) - previewWidth - PREVIEW_PANEL_GAP;
+        ? (previewAnchor?.x1 ?? 0) + PREVIEW_POINTER_GAP
+        : (previewAnchor?.x0 ?? width) - previewWidth - PREVIEW_POINTER_GAP;
     const previewLeft = Math.max(PREVIEW_PANEL_MARGIN,
         Math.min(preferredLeft, width - previewWidth - PREVIEW_PANEL_MARGIN));
 
+    const pointerPosition = useSectorPreviewPosition(surface, previewPanel, width, height, previewWidth,
+        preview ? `${preview.sectorName}:${preview.industryName ?? ''}:${preview.symbol ?? ''}:${preview.remainder}` : undefined);
+    const previewContent = preview?.remainder && remainderAnchor?.data.sector ? {...remainderAnchor.data.sector,
+        name: sectorName(preview.sectorName),
+    } : previewSector && preview?.industryName ? {...previewSector,
+        name: industryName(preview.industryName),
+        stocks: previewSector.stocks.filter(stock => stockIndustry(stock) === preview.industryName),
+    } : previewSector;
     const premarket = market === 'US' && !stockGroups && snapshot?.session === 'premarket';
     const title = selectedSector ? sectorName(selectedSector.name) : stockGroups ? t('stockAnalysis.groups.all') : t({KR: 'stockAnalysis.mapKorea', US: 'stockAnalysis.mapUs', JP: 'stockAnalysis.mapJapan'}[market]);
     const dateFormat = new Intl.DateTimeFormat(i18n.resolvedLanguage, {dateStyle: 'medium', timeZone: 'UTC'});
@@ -223,7 +243,7 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
         </header>
         {!stockGroups && <MarketIndexSummary key={market} market={market} refreshSeconds={refreshSeconds} onOpen={onOpen} onOpeningChange={setNextRegularOpen}/>}
         {stockGroups && !groupQuoteState.loading && missingGroupQuotes.length > 0 && <p className="stock-analysis-caption" role="status">{t('stockAnalysis.groups.missingCaps', {count: missingGroupQuotes.length})}</p>}
-        <div className="stock-sector-map-surface" ref={surface} onMouseLeave={() => {clearTimeout(previewTimer.current); setPreview(undefined);}}
+        <div className="stock-sector-map-surface" ref={surface} {...pointerPosition} onMouseMove={event => {pointerPosition.onMouseMove(event); trackSortModifier(event);}} onMouseLeave={() => {clearTimeout(previewTimer.current); setPreview(undefined);}}
              onKeyDown={event => {if (event.key === 'Escape' && preview) {event.stopPropagation(); setPreview(undefined);}}}
              aria-busy={stockGroups ? groupQuoteState.loading : !snapshot && !failed}>
             {stockGroups && groupQuoteState.loading && <StockLoadingIndicator title={title}/>}
@@ -237,14 +257,27 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
                 }}>{t('stockAnalysis.retry')}</button>
             </div>}
             <div className="stock-sector-map-tiles">
-            {!selectedSector && layout?.children?.map(node => {
+            {layout?.children?.map(node => {
                 const sector = node.data.sector;
                 if (!sector || node.y1 - node.y0 < 34) return null;
                 return <button key={sector.name} type="button" className="stock-sector-map-group" style={{...tileStyle(node, width, height), height: SECTOR_HEADER_HEIGHT}}
-                            onMouseEnter={() => showPreview(sector)}
-                            onFocus={() => showPreview(sector)}
+                            onMouseEnter={() => showPreview(sector, undefined, undefined, node.data.remainder)}
+                            onFocus={() => showPreview(sector, undefined, undefined, node.data.remainder)}
                             onBlur={() => {clearTimeout(previewTimer.current); setPreview(undefined);}}
                             onClick={() => {clearTimeout(previewTimer.current); setPreview(undefined); if (!stockGroups) setSelectedSector(sector);}}>{sectorName(sector.name)}</button>;
+            })}
+            {layout?.descendants().filter(node => node.data.industry).map(node => {
+                const industry = node.data.industry!;
+                if (!mapHeaderHeight(node)) return null;
+                return <button key={`${industry.sector.name}:${industry.name}`} type="button" className="stock-sector-map-industry"
+                    style={{...tileStyle(node, width, height), height: INDUSTRY_HEADER_HEIGHT}}
+                    aria-label={industryName(industry.name)} data-tooltip-disabled=""
+                    onMouseEnter={() => showPreview(industry.sector, undefined, industry.name)}
+                    onFocus={() => showPreview(industry.sector, undefined, industry.name)}
+                    onBlur={() => {clearTimeout(previewTimer.current); setPreview(undefined);}}
+                    onClick={() => {clearTimeout(previewTimer.current); setPreview(undefined); setSelectedSector(industry.sector);}}>
+                    {industryName(industry.name)}
+                </button>;
             })}
             {layout?.leaves().map(node => {
                 const {sector, stock} = node.data;
@@ -254,23 +287,26 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
                 const tileHeight = node.y1 - node.y0;
                 const label = market === 'US' && stock ? stock.symbol : item.name;
                 const detail = changeText(item.change);
-                const key = stock ? `${node.parent?.data.sector?.name ?? ''}:${stock.symbol}` : item.name;
-                const previewSector = sector ?? selectedSector ?? node.parent?.data.sector;
+                const minimumLabelWidth = market === 'US' && stock ? Math.max(26, stock.symbol.length * 6 + 4) : 37;
+                const industry = node.ancestors().find(parent => parent.data.industry)?.data.industry;
+                const sectorGroup = node.ancestors().find(parent => parent.data.sector)?.data;
+                const previewSector = sector ?? industry?.sector ?? selectedSector ?? node.parent?.data.sector;
+                const key = stock ? `${previewSector?.name ?? ''}:${stock.symbol}` : item.name;
                 return <button key={key} type="button" className="stock-sector-map-tile" aria-label={`${item.name} · ${detail}`}
                             style={{...tileStyle(node, width, height), background: tileColor(item.change, market),
                                 fontSize: Math.min(23, Math.max(10, Math.min(tileWidth / 7, tileHeight / 3.5)))}}
-                            onMouseEnter={() => {if (previewSector) showPreview(previewSector, stock);}}
-                            onFocus={() => {if (previewSector) showPreview(previewSector, stock);}}
+                            onMouseEnter={() => {if (previewSector) showPreview(previewSector, stock, industry?.name, sectorGroup?.remainder);}}
+                            onFocus={() => {if (previewSector) showPreview(previewSector, stock, industry?.name, sectorGroup?.remainder);}}
                             onBlur={() => {clearTimeout(previewTimer.current); setPreview(undefined);}}
                             onClick={() => {clearTimeout(previewTimer.current); setPreview(undefined); if (stock) onOpen(stock); else if (sector && !stockGroups) setSelectedSector(sector);}}>
-                        {tileWidth >= 37 && tileHeight >= 17 && <strong>{label}</strong>}
+                        {tileWidth >= minimumLabelWidth && tileHeight >= 17 && <strong>{label}</strong>}
                         {tileWidth >= 47 && tileHeight >= 34 && <span>{detail}</span>}
                     </button>;
             })}
             </div>
-            {previewSector && preview && <aside className="stock-sector-map-preview-panel" style={{left: previewLeft, width: previewWidth}}
-                aria-label={previewSector.name}>
-                <SectorPreview premarket={premarket} customName={!!stockGroups} sector={previewSector} focused={previewStock} market={market} day={snapshot?.quoteDate ?? snapshot?.date ?? ''}/>
+            {previewContent && preview && <aside ref={previewPanel} className="stock-sector-map-preview-panel" style={{left: `var(--stock-preview-left, ${previewLeft}px)`, width: previewWidth}}
+                aria-label={previewContent.name}>
+                <SectorPreview sortByChange={sortByChange} premarket={premarket} customName={!!stockGroups || !!preview.industryName || !!preview.remainder} sector={previewContent} focused={previewStock} market={market} day={historyDay}/>
             </aside>}
         </div>
     </section>;

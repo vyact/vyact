@@ -1831,6 +1831,7 @@
     "manuscriptApplyHelp": "適用すると現在の話のタイトルと本文をこの結果で置き換えます。"
   },
   "stockAnalysis": {
+    "industryUnclassified": "未分類",
     "premarket": {
       "label": "プレマーケット",
       "comparison": "直近の通常取引終値比",

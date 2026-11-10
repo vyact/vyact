@@ -1832,6 +1832,7 @@
     "manuscriptApplyHelp": "Al aplicar, se sustituyen el título y el texto del capítulo actual."
   },
   "stockAnalysis": {
+    "industryUnclassified": "Sin clasificar",
     "premarket": {
       "label": "Preapertura",
       "comparison": "frente al último cierre regular",

@@ -1831,6 +1831,7 @@
     "manuscriptApplyHelp": "เมื่อใช้ผลลัพธ์นี้จะแทนที่ชื่อและเนื้อหาตอนปัจจุบัน"
   },
   "stockAnalysis": {
+    "industryUnclassified": "ยังไม่จัดประเภท",
     "premarket": {
       "label": "ก่อนเปิดตลาด",
       "comparison": "เทียบราคาปิดภาคปกติล่าสุด",

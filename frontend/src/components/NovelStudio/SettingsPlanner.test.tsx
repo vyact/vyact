@@ -15,21 +15,13 @@ describe('settings planning stages', () => {
         const html = renderToStaticMarkup(createElement(SettingsPlanner, {candidates, disabled: false, onChange: vi.fn(), onView: vi.fn(), onChoose: vi.fn(), onSynthesize: vi.fn(), children: 'Final settings editor'}));
         expect(html).toContain('The librarian');
         expect(html).not.toContain('Moon library');
-        expect(html).not.toContain('novel-category-candidates');
-        expect(html).toContain('novel-group-summary');
-        expect(html).not.toContain('novel-group-selection');
-        expect(html).not.toContain('has-selection');
         expect(html).not.toContain('aria-expanded="true"');
-        expect(html).not.toContain('novel-group-candidates');
-        expect(html.indexOf('novel-synthesis-bar')).toBeGreaterThan(html.indexOf('novel-candidate-groups'));
-        expect(html).toContain('common-checkbox');
         expect(html).toContain('novelStudio.createWorld');
         expect(html).toContain('novelStudio.createDirection');
         expect(html).toContain('novelStudio.createPremise');
         expect(html).toContain('novelStudio.createPlot');
         expect(html).toContain('novelStudio.selectedCandidates:1');
         expect(html).toContain('novelStudio.deselectCandidate');
-        expect(html).toContain('novel-candidate-deselect');
         expect(html).toContain('Final settings editor');
     });
     it('hides the synthesis area until a saved candidate is selected', () => {

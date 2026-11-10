@@ -1831,6 +1831,7 @@
     "manuscriptApplyHelp": "应用后将用此结果替换当前章节标题和正文。"
   },
   "stockAnalysis": {
+    "industryUnclassified": "未分类",
     "premarket": {
       "label": "盘前交易",
       "comparison": "较最近常规收盘价",

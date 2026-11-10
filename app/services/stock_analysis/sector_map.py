@@ -1,4 +1,3 @@
-import csv
 import math
 from datetime import datetime, timedelta, timezone
 from concurrent.futures import ThreadPoolExecutor
@@ -10,10 +9,10 @@ from yfinance.data import YfData
 
 from services.stock_analysis.symbols import yahoo_symbol
 from services.stock_analysis.catalog import Market
+from services.stock_analysis.market_group_cache import get_us_market_groups
 from services.stock_analysis.market_sessions import us_premarket_window
 from services.stock_analysis.regional_yahoo import get_korea_sector_members, korea_symbols, korea_display_names, japan_display_names, get_japan_sector_members
 
-IVV_HOLDINGS_URL = "https://www.ishares.com/us/products/239726/ishares-core-s-p-500-etf/latest-holdings.csv"
 YAHOO_QUOTE_URL = "https://query1.finance.yahoo.com/v7/finance/quote"
 QUOTE_BATCH_SIZE = 100
 CACHE_SECONDS = 10
@@ -22,20 +21,10 @@ CHART_WORKERS = 8
 YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/"
 
 
-def _number(value: str | None) -> float | None:
-    if not value:
-        return None
-    try:
-        number = float(value.strip().replace(",", "").removesuffix("%").removeprefix("$"))
-    except (ValueError, AttributeError):
-        return None
-    return number if math.isfinite(number) else None
-
-
-def _sectors(groups: dict[str, list[dict]]) -> list[dict]:
+def _sectors(groups: dict[str, list[dict]], *, limit: int | None = SECTOR_STOCK_LIMIT) -> list[dict]:
     sectors = []
     for name, stocks in groups.items():
-        stocks = sorted(stocks, key=lambda stock: stock["weight"], reverse=True)[:SECTOR_STOCK_LIMIT]
+        stocks = sorted(stocks, key=lambda stock: stock["weight"], reverse=True)[:limit]
         quoted = [stock for stock in stocks if stock["change"] is not None]
         total = sum(stock["weight"] for stock in quoted)
         sectors.append({
@@ -69,24 +58,10 @@ def _regional_map(market: Market, language: str = "en") -> dict:
 
 
 def _us_map(client: httpx.Client) -> dict:
-    holdings = client.get(IVV_HOLDINGS_URL, params={"_": int(time())})
-    holdings.raise_for_status()
-    lines = holdings.text.lstrip("\ufeff").splitlines()
-    header = next(index for index, line in enumerate(lines) if line.startswith("Ticker,"))
-    date_label = next(row[1] for row in csv.reader(lines[:header]) if row and row[0] == "Fund Holdings as of")
-    date = datetime.strptime(date_label, "%b %d, %Y").date().isoformat()
-
-    groups: dict[str, list[dict]] = {}
-    for row in csv.DictReader(lines[header:]):
-        if row.get("Asset Class") != "Equity" or not row.get("Sector") or not row.get("Ticker"):
-            continue
-        symbol = row["Ticker"].strip().replace(".", "-").replace("/", "-").replace(" ", "-")
-        weight = _number(row.get("Market Value"))
-        if weight is None or weight <= 0:
-            continue
-        groups.setdefault(row["Sector"], []).append({
-            "symbol": symbol, "name": row["Name"], "weight": weight, "change": None, "price": None,
-        })
+    membership = get_us_market_groups(client)
+    date = membership['date']
+    groups = {name: [{**stock, 'weight': 0, 'price': None, 'change': None} for stock in entries]
+              for name, entries in membership['groups'].items()}
 
     stocks = [stock for group in groups.values() for stock in group]
     symbols = list(dict.fromkeys(stock["symbol"] for stock in stocks))
@@ -100,7 +75,7 @@ def _us_map(client: httpx.Client) -> dict:
         sector_stocks[:] = sorted(
             (stock for stock in sector_stocks if stock["weight"] > 0),
             key=lambda stock: stock["weight"], reverse=True,
-        )[:SECTOR_STOCK_LIMIT]
+        )
     groups = {name: entries for name, entries in groups.items() if entries}
     stocks = [stock for group in groups.values() for stock in group]
     # Verify the latest session independently; use charts only for stale quotes.
@@ -127,7 +102,10 @@ def _us_map(client: httpx.Client) -> dict:
             if premarket:
                 stock.update(premarket)
     quote_time = max((stock.get('quoteTime', '') for stock in stocks), default='') or None
-    return {"date": date, "quoteDate": quote_date, "sectors": _sectors(groups),
+    sectors = _sectors(groups, limit=None)
+    for sector in sectors:
+        sector['stockCount'] = len(membership['groups'][sector['name']])
+    return {"date": date, "quoteDate": quote_date, "sectors": sectors,
             'session': 'premarket' if window else 'regular', 'quoteTime': quote_time}
 
 

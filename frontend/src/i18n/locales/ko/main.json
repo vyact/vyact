@@ -1841,6 +1841,7 @@
     "manuscriptApplyHelp": "적용하면 현재 회차의 제목과 본문을 이 결과로 교체합니다."
   },
   "stockAnalysis": {
+    "industryUnclassified": "미분류",
     "premarket": {
       "label": "프리마켓",
       "comparison": "직전 정규장 종가 대비",

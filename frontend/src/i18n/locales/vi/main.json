@@ -1831,6 +1831,7 @@
     "manuscriptApplyHelp": "Áp dụng sẽ thay thế tiêu đề và nội dung chương hiện tại."
   },
   "stockAnalysis": {
+    "industryUnclassified": "Chưa phân loại",
     "premarket": {
       "label": "Trước giờ mở cửa",
       "comparison": "so với giá đóng cửa phiên chính gần nhất",

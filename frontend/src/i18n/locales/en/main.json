@@ -1832,6 +1832,7 @@
     "manuscriptApplyHelp": "Applying replaces the current chapter title and manuscript with this result."
   },
   "stockAnalysis": {
+    "industryUnclassified": "Unclassified",
     "premarket": {
       "label": "Pre-market",
       "comparison": "vs. last regular close",

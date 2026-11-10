@@ -36,9 +36,9 @@
 .stock-sector-map-error {position: absolute; inset: 0; z-index: 4; background: var(--surface2); align-content: start;}
 
 .stock-sector-map-group {border: 0; text-align: start; cursor: pointer;}
-/* Map details use the full map height, independent of the hovered tile size. */
+/* Size details to their actual rows, within the map bounds. */
 .stock-sector-map-preview-panel {
-    position: absolute; z-index: 3; inset-block: 8px; width: min(440px, calc(100% - 16px));
+    position: absolute; z-index: 3; inset-block-start: var(--stock-preview-top, 8px); max-height: calc(100% - 16px); display: flex; width: min(440px, calc(100% - 16px));
     box-sizing: border-box; padding: clamp(8px, 1.4vh, 16px); overflow: hidden;
     background-color: var(--surface2); color: var(--text); border: 1px solid var(--border);
     isolation: isolate;
@@ -46,48 +46,52 @@
 }
 .stock-sector-preview {
     --map-preview-up: #ff737b; --map-preview-down: #74b3ff;
-    height: 100%; min-height: 0; display: flex; flex-direction: column; gap: clamp(4px, 1vh, 12px);
+    height: auto; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: clamp(4px, 1vh, 12px);
+    --stock-preview-chart-width: 64px;
+    --stock-preview-column-gap: 12px;
+    --stock-preview-inline-padding: 8px;
+    --stock-preview-columns: minmax(0, 1fr) var(--stock-preview-chart-width) 90px 74px;
+    --stock-preview-row-height: 28px; --stock-preview-row-gap: clamp(2px, .6vh, 7px);
     white-space: normal; font-variant-numeric: tabular-nums;
 }
 .stock-sector-preview[data-market="US"] {--map-preview-up: #65d694; --map-preview-down: #ff818a;}
 .stock-sector-preview-title {display: block; flex-shrink: 0; font-size: 15px; line-height: 1.3;}
 .stock-sector-preview-selected {
     display: grid; gap: 8px; padding-block: 10px; border-block: 1px solid var(--border);
-    font-size: 14px; min-height: 0;
+    font-size: 14px; min-height: 0; flex-shrink: 0;
 }
 .stock-sector-preview-selected-quote {
-    display: grid; grid-template-columns: 74px minmax(55px, 1fr) auto 74px; align-items: center; gap: 10px;
+    display: grid; grid-template-columns: var(--stock-preview-columns); align-items: center; gap: 10px var(--stock-preview-column-gap); padding-inline: var(--stock-preview-inline-padding);
 }
 .stock-sector-preview-selected-symbol {font-size: 21px; letter-spacing: -.02em; overflow: hidden; text-overflow: ellipsis;}
-.stock-sector-preview-selected-name {font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.stock-sector-preview-selected-name {padding-inline: var(--stock-preview-inline-padding); font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
 .stock-sector-preview-selected-quote > span, .stock-sector-preview-selected-quote > strong[data-direction] {text-align: end;}
-.stock-sector-preview[data-market="KR"] .stock-sector-preview-selected-quote {grid-template-columns: 105px minmax(40px, 1fr) auto 74px;}
 
 .stock-sector-preview ul {
-    flex: 1; min-height: 0; list-style: none; margin: 0; padding: 0;
-    display: grid; gap: clamp(2px, .6vh, 7px);
+    flex: 0 1 auto; min-height: 0; list-style: none; margin: 0; padding: 0;
+    height: calc(var(--stock-preview-row-count) * var(--stock-preview-row-height) + (var(--stock-preview-row-count) - 1) * var(--stock-preview-row-gap));
+    grid-template-rows: repeat(var(--stock-preview-row-count), minmax(0, 1fr));
+    display: grid; gap: var(--stock-preview-row-gap);
 }
 .stock-sector-preview li {
-    display: grid; align-items: center; grid-template-columns: 74px minmax(55px, 1fr) auto 74px;
-    gap: 6px 12px; padding: 0 8px; min-height: 0; border-radius: 4px;
+    display: grid; align-items: center; grid-template-columns: var(--stock-preview-columns);
+    gap: 6px var(--stock-preview-column-gap); padding: 0 var(--stock-preview-inline-padding); min-height: 0; border-radius: 4px;
     font-size: clamp(11px, 1.8vh, 14px); line-height: 1.25;
     background: color-mix(in srgb, var(--text) 5%, transparent);
 }
 .stock-sector-preview li.focused {background: color-mix(in srgb, var(--accent) 15%, var(--surface2)); box-shadow: inset 3px 0 var(--accent);}
 .stock-sector-preview-symbol {font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
 .stock-sector-preview li > span:not(.stock-sector-preview-symbol), .stock-sector-preview li strong {text-align: end;}
-.stock-sector-preview[data-market="KR"] li {grid-template-columns: 105px minmax(40px, 1fr) auto 74px;}
 .stock-sector-preview [data-direction="up"] {color: var(--map-preview-up);}
 .stock-sector-preview [data-direction="down"] {color: var(--map-preview-down);}
 
 .stock-analysis-content:has(> .stock-sector-map) {min-height: 0; overflow: hidden;}
 
-.stock-sector-map-preview-panel {transition: left 180ms ease-out; animation: stock-sector-preview-enter 140ms ease-out;}
+.stock-sector-map-preview-panel {animation: stock-sector-preview-enter 140ms ease-out;}
 .stock-sector-map-tile {transition: left 220ms ease, top 220ms ease, width 220ms ease, height 220ms ease, background 180ms ease;}
 .stock-sector-preview li {transition: background-color 140ms ease, box-shadow 140ms ease;}
-.stock-sector-preview-period {color: var(--text-muted); font-size: 11px;}
+.stock-sector-preview-period {flex-shrink: 0; color: var(--text-muted); font-size: 11px;}
 .stock-sparkline {display: block; width: 100%; height: 28px; color: var(--text-muted); flex-shrink: 0;}
-.stock-sparkline-empty {display: block; width: 100%; text-align: center; color: var(--text-muted);}
 .stock-sector-preview-selected > div {align-items: center;}
 @keyframes stock-sector-preview-enter {from {opacity: 0; transform: translateY(3px);} to {opacity: 1; transform: translateY(0);}}
 @media (prefers-reduced-motion: reduce) {
@@ -171,11 +175,15 @@ button.stock-market-index:focus-visible {outline: 2px solid var(--accent); outli
 .stock-market-indices[data-market="JP"] .stock-sparkline[data-direction="down"] {color: #30ad69;}
 
 .stock-sector-preview-session {display: inline-flex; align-items: center; align-self: flex-start; padding: 3px 7px; border: 1px solid color-mix(in srgb, var(--info) 25%, var(--border)); border-radius: 5px; background: color-mix(in srgb, var(--info) 8%, var(--surface2)); color: var(--info); font-size: 11px; font-weight: 500; line-height: 1.4;}
-.stock-sector-preview-regular-price, .stock-sector-preview-regular-change {grid-row: 2; align-self: start; color: var(--text-muted); text-align: end; font-size: 10px; font-weight: 400; line-height: 1.4; white-space: nowrap;}
-.stock-sector-preview-regular-price {grid-column: 3;}
-.stock-sector-preview-regular-change {grid-column: 4;}
-.stock-sector-preview-selected-quote:has(> .stock-sector-preview-regular-price) {row-gap: 2px;}
+.stock-sector-preview-regular-price, .stock-sector-preview-regular-change {color: var(--text-muted); text-align: end; font-size: 10px; font-weight: 400; line-height: 1.4; white-space: nowrap;}
 
 .stock-sector-preview-heading {display: flex; align-items: center; gap: 8px; flex-shrink: 0; min-width: 0;}
 .stock-sector-preview-heading .stock-sector-preview-session {align-self: center; flex-shrink: 0; white-space: nowrap; font-size: 10px;}
 .stock-sector-preview-heading .stock-sector-preview-title {min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+
+.stock-sector-map-industry {position: absolute; z-index: 1; box-sizing: border-box; overflow: hidden; padding: 0 4px; border: 0; border-inline-start: 2px solid color-mix(in srgb, var(--text-muted) 40%, transparent); background: color-mix(in srgb, var(--text) 6%, var(--bg-secondary)); color: var(--text-secondary); font-family: inherit; font-size: 11px; font-weight: 600; line-height: 24px; text-align: start; white-space: nowrap; text-overflow: ellipsis; cursor: pointer;}
+.stock-sector-map-industry:hover {background: var(--surface2); color: var(--text);}
+.stock-sector-map-industry:focus-visible {outline: 2px solid var(--accent); outline-offset: -2px;}
+
+.stock-sector-preview:is([data-market="KR"], [data-market="JP"]) .stock-sector-preview-selected-symbol {font-size: 18px;}
+.stock-sector-preview-quote-stack {display: grid; gap: 2px; align-self: center; text-align: end; line-height: 1.35;}

@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from unittest.mock import Mock, patch
 
 from services.stock_analysis import sector_map
+from services.stock_analysis.market_group_cache import parse_us_holdings
 
 
 class StockSectorMapTests(unittest.TestCase):
@@ -10,6 +11,10 @@ class StockSectorMapTests(unittest.TestCase):
         self.session_patch = patch.object(sector_map, 'us_premarket_window', return_value=None)
         self.session_patch.start()
         self.addCleanup(self.session_patch.stop)
+        self.industries = {}
+        self.industry_patch = patch.object(sector_map, 'get_us_market_groups', side_effect=lambda client: parse_us_holdings(client.get.return_value.text, self.industries))
+        self.industry_patch.start()
+        self.addCleanup(self.industry_patch.stop)
 
     def test_sector_limits_use_largest_market_caps_and_matching_aggregate(self):
         stocks = [dict(symbol=str(index), weight=index, change=index) for index in range(1, 21)]
@@ -123,3 +128,27 @@ class StockSectorMapTests(unittest.TestCase):
         self.assertEqual(details['NVDA']['preMarketPrice'], 179.38)
         self.assertEqual(regular['NVDA'][1], 178.67)
         data.return_value.get_raw_json.assert_called_once()
+
+    def test_unlimited_sectors_retain_smaller_industries_and_market_cap_totals(self):
+        stocks = [dict(symbol=str(index), weight=index, change=1, industry='Small' if index < 3 else 'Large') for index in range(1, 21)]
+        sector = sector_map._sectors({'Technology': stocks}, limit=None)[0]
+        self.assertEqual(len(sector['stocks']), 20)
+        self.assertEqual(sector['weight'], sum(range(1, 21)))
+        self.assertTrue(any(stock['industry'] == 'Small' for stock in sector['stocks']))
+
+    @patch.object(sector_map, '_us_daily_quote', return_value=('^GSPC', ('2026-11-09', 100, 1)))
+    @patch.object(sector_map, '_us_quotes')
+    def test_us_map_preserves_all_holdings_and_matches_industries(self, quotes, daily):
+        response = Mock()
+        response.text = ('Fund Holdings as of,"Nov 09, 2026"\n'
+                         'Ticker,Name,Sector,Asset Class,Market Value\n'
+                         + ''.join(f'T{index},Name{index},Technology,Equity,999\n' for index in range(20)))
+        client = Mock()
+        client.get.return_value = response
+        quotes.return_value = {f'T{index}': ('2026-11-09', 100, 1, index + 1) for index in range(20)}
+        with patch.dict(self.industries, {'T0': 'Small industry'}):
+            result = sector_map._us_map(client)
+        stocks = result['sectors'][0]['stocks']
+        self.assertEqual(len(stocks), 20)
+        self.assertEqual(next(stock for stock in stocks if stock['symbol'] == 'T0')['industry'], 'Small industry')
+        self.assertIsNone(next(stock for stock in stocks if stock['symbol'] == 'T1')['industry'])

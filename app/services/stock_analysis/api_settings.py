@@ -118,6 +118,7 @@ class IndexResponse(BaseModel):
 
 
 class SectorStockResponse(StockSymbolResponse):
+    industry: str | None = None
     regularPrice: float | None = Field(default=None, gt=0)
     regularChange: float | None = None
     quoteTime: str | None = None
@@ -128,6 +129,7 @@ class SectorStockResponse(StockSymbolResponse):
 
 
 class SectorResponse(BaseModel):
+    stockCount: int | None = Field(default=None, ge=0)
     model_config = ConfigDict(allow_inf_nan=False)
     name: str
     weight: float = Field(ge=0)
