@@ -1,8 +1,12 @@
 from datetime import datetime
+from unittest.mock import patch
+import warnings
+
+import pandas_market_calendars as market_calendars
 
 import pytest
 
-from services.stock_analysis.market_sessions import CASH_CALENDAR, FUTURES_CALENDAR, active_session, next_regular_open, JAPAN_CASH_CALENDAR, is_session_break
+from services.stock_analysis.market_sessions import CASH_CALENDAR, FUTURES_CALENDAR, active_session, next_regular_open, JAPAN_CASH_CALENDAR, is_session_break, _calendar
 
 
 def stamp(value):
@@ -60,3 +64,24 @@ def test_japan_lunch_break_and_next_open():
     assert not is_session_break(JAPAN_CASH_CALENDAR, stamp('2026-11-09T12:30:00+09:00'))
     assert next_regular_open(stamp('2026-11-09T18:00:00+09:00'), JAPAN_CASH_CALENDAR) == stamp('2026-11-10T09:00:00+09:00')
     assert next_regular_open(stamp('2026-11-20T18:00:00+09:00'), JAPAN_CASH_CALENDAR) == stamp('2026-11-24T09:00:00+09:00')
+
+
+def test_korean_calendar_suppresses_only_handled_discontinued_break_warning():
+    with warnings.catch_warnings(record=True) as captured:
+        warnings.simplefilter('always')
+        calendar = _calendar.__wrapped__('XKRX')
+    assert not any('are discontinued' in str(item.message) for item in captured)
+    assert 'break_start' not in calendar.regular_market_times
+    assert 'break_end' not in calendar.regular_market_times
+
+
+def test_korean_calendar_preserves_unrelated_warnings():
+    original_get = market_calendars.get_calendar
+
+    def get_with_unrelated_warning(name):
+        warnings.warn('unrelated calendar warning', UserWarning)
+        return original_get(name)
+
+    with patch.object(market_calendars, 'get_calendar', side_effect=get_with_unrelated_warning):
+        with pytest.warns(UserWarning, match='unrelated calendar warning'):
+            _calendar.__wrapped__('XKRX')

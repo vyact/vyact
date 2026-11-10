@@ -3,7 +3,7 @@
     display: flex; align-items: center; gap: 8px;
 }
 .stock-analysis-title svg {color: var(--accent);}
-.stock-analysis-exit {margin-inline-start: auto;}
+.stock-analysis-header-actions {display: flex; align-items: center; gap: 12px; margin-inline-start: auto; min-width: 0;}
 .stock-analysis-sidebar {
     display: flex; flex-direction: column; gap: 12px; padding: 16px 8px; min-width: 0;
 }

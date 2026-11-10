@@ -34,3 +34,6 @@
 
 .stock-financials[data-market="JP"] .stock-financials-change[data-direction="increase"] {color: #e64c52;}
 .stock-financials[data-market="JP"] .stock-financials-change[data-direction="decrease"] {color: #30ad69;}
+
+.stock-financials-status {display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-inline-end: auto; color: var(--text-muted); font-size: 11px;}
+.stock-financials-status button {display: flex; padding: 5px;}

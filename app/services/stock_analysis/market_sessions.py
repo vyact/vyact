@@ -1,6 +1,7 @@
 """Exchange session windows, including holidays, breaks and daylight saving time."""
 from datetime import datetime, timedelta
 from functools import lru_cache
+import warnings
 
 import pandas_market_calendars as market_calendars
 
@@ -11,13 +12,22 @@ JAPAN_CASH_CALENDAR = "JPX"
 
 @lru_cache(maxsize=8)
 def _calendar(calendar_name: str):
-    calendar = market_calendars.get_calendar(calendar_name)
     if calendar_name == "XKRX":
+        # Construction warns before we can remove the obsolete break times.
+        # Suppress only this known warning, only while building this calendar.
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", category=UserWarning,
+                message=r"\['break_start', 'break_end'\] are discontinued,.*",
+                module=r"pandas_market_calendars\.market_calendar",
+            )
+            calendar = market_calendars.get_calendar(calendar_name)
         # Korean equities no longer have the historical lunch break.
         for market_time in ("break_start", "break_end"):
             if market_time in calendar.regular_market_times:
                 calendar.remove_time(market_time)
-    return calendar
+        return calendar
+    return market_calendars.get_calendar(calendar_name)
 
 
 def _local_day(calendar_name: str, now: float) -> str:

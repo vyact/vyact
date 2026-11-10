@@ -56,6 +56,7 @@ from services.external_data.scheduler import (
     stop_external_data_scheduler,
 )
 trace_startup("import:services.external_data.scheduler", "end")
+from services.stock_analysis.financial_collection import start_scheduler as start_financial_scheduler, stop_scheduler as stop_financial_scheduler
 trace_startup("import:services.model_benchmark", "begin")
 from services.model_benchmark import BenchmarkGuard, shutdown as shutdown_model_benchmark
 trace_startup("import:services.model_benchmark", "end")
@@ -420,8 +421,10 @@ async def lifespan(app: FastAPI):
     ))
     external_api_task = asyncio.create_task(external_api_server.serve())
 
+    start_financial_scheduler()
     trace_startup("application.lifespan", "end")
     yield
+    await stop_financial_scheduler()
     await shutdown_model_benchmark()
     await asyncio.to_thread(stop_decision_runtime)
 

@@ -1841,6 +1841,30 @@
     "manuscriptApplyHelp": "적용하면 현재 회차의 제목과 본문을 이 결과로 교체합니다."
   },
   "stockAnalysis": {
+    "countries": {
+      "US": "미국",
+      "KR": "한국",
+      "JP": "일본"
+    },
+    "collection": {
+      "title": "재무정보 수집",
+      "auto": "매주 자동 업데이트",
+      "hintScope": "이 시장 전체 종목의 연간·분기 재무정보를 수집합니다.",
+      "hintResume": "앱 실행 중 수집하며, 재시작하면 이어서 진행합니다.",
+      "hintPause": "일시정지하면 자동 업데이트도 재개할 때까지 멈춥니다.",
+      "idle": "시작 전",
+      "running": "수집 중",
+      "paused": "일시정지",
+      "completed": "완료",
+      "progress": "수집 진행상황",
+      "failed": "실패",
+      "empty": "응답 데이터 없음",
+      "pause": "일시정지",
+      "resume": "이어서 수집",
+      "start": "전체 종목 업데이트",
+      "retry": "실패 종목 재시도",
+      "error": "수집 상태를 업데이트하지 못했습니다."
+    },
     "collapseSidebar": "종목 목록 접기", "expandSidebar": "종목 목록 펼치기",
     "JP": "일본 증시",
     "mapJapan": "일본 증시 섹터맵",
@@ -1848,6 +1872,11 @@
     "indexNikkei225": "닛케이 225",
 
     "financials": {
+      "olderPeriods": "이전 기간 더 보기",
+      "checkedAt": "마지막 확인",
+      "refreshing": "업데이트 중…",
+      "refreshFailed": "업데이트 실패 · 저장된 데이터를 표시합니다.",
+      "refresh": "재무정보 새로고침",
       "qoq": "전분기",
       "yoy": "전년 동기",
       "increase": "증가",

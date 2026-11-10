@@ -3,7 +3,8 @@ from unittest.mock import patch
 
 import pandas as pd
 
-from services.stock_analysis.financials import _fetch_financials, fetch_financials, serialize_statement, build_financial_chat_context
+from services.stock_analysis.financials import _fetch_financials, fetch_financials, serialize_statement
+from services.stock_analysis.financial_context import build_financial_chat_context
 
 
 class StockFinancialTests(unittest.TestCase):
@@ -41,13 +42,13 @@ class StockFinancialTests(unittest.TestCase):
 
 class FinancialChatContextTests(unittest.IsolatedAsyncioTestCase):
     async def test_indices_never_fetch_financials(self):
-        with patch('services.stock_analysis.financials.fetch_financials') as fetch:
+        with patch('services.stock_analysis.financial_context.get_financials') as fetch:
             self.assertEqual(await build_financial_chat_context('KS11'), '')
             fetch.assert_not_called()
 
     async def test_includes_both_frequencies_and_preserves_partial_success(self):
         data = {'currency': 'KRW', 'statements': {'income': [{'period': '2025-12-31', 'values': {'revenue': 123}}]}}
-        with patch('services.stock_analysis.financials.fetch_financials', side_effect=[data, RuntimeError('unavailable')]):
+        with patch('services.stock_analysis.financial_context.get_financials', side_effect=[data, RuntimeError('unavailable')]):
             context = await build_financial_chat_context('005930')
         self.assertIn('yearly', context)
         self.assertIn('"revenue": 123', context)

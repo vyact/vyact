@@ -1833,6 +1833,30 @@
     "manuscriptApplyHelp": "L’application remplace le titre et le texte du chapitre actuel."
   },
   "stockAnalysis": {
+    "countries": {
+      "US": "États-Unis",
+      "KR": "Corée du Sud",
+      "JP": "Japon"
+    },
+    "collection": {
+      "title": "Collecte financière",
+      "auto": "Mise à jour automatique hebdomadaire",
+      "hintScope": "Collecte les états annuels et trimestriels de toutes les actions du marché.",
+      "hintResume": "La collecte fonctionne lorsque l’application est ouverte et reprend après redémarrage.",
+      "hintPause": "La pause suspend aussi les mises à jour automatiques jusqu’à la reprise.",
+      "idle": "Non démarré",
+      "running": "Collecte en cours",
+      "paused": "En pause",
+      "completed": "Terminé",
+      "progress": "Progression de la collecte",
+      "failed": "Échecs",
+      "empty": "Aucune donnée reçue",
+      "pause": "Mettre en pause",
+      "resume": "Reprendre",
+      "start": "Mettre à jour toutes les actions",
+      "retry": "Réessayer les actions en échec",
+      "error": "Impossible de mettre à jour le statut."
+    },
     "collapseSidebar": "Réduire la liste des titres", "expandSidebar": "Développer la liste des titres",
     "JP": "Actions japonaises",
     "mapJapan": "Secteurs du marché japonais",
@@ -1840,6 +1864,11 @@
     "indexNikkei225": "Nikkei 225",
 
     "financials": {
+      "olderPeriods": "Afficher les périodes antérieures",
+      "checkedAt": "Dernière vérification",
+      "refreshing": "Mise à jour…",
+      "refreshFailed": "Échec de la mise à jour. Affichage des données enregistrées.",
+      "refresh": "Actualiser les données financières",
       "qoq": "T/T",
       "yoy": "A/A",
       "increase": "Hausse",

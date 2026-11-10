@@ -1831,6 +1831,30 @@
     "manuscriptApplyHelp": "应用后将用此结果替换当前章节标题和正文。"
   },
   "stockAnalysis": {
+    "countries": {
+      "US": "美国",
+      "KR": "韩国",
+      "JP": "日本"
+    },
+    "collection": {
+      "title": "财务信息采集",
+      "auto": "每周自动更新",
+      "hintScope": "采集该市场所有股票的年度和季度财务信息。",
+      "hintResume": "应用运行时进行采集，重启后继续。",
+      "hintPause": "暂停后自动更新也会停止，直到恢复。",
+      "idle": "未开始",
+      "running": "采集中",
+      "paused": "已暂停",
+      "completed": "已完成",
+      "progress": "采集进度",
+      "failed": "失败",
+      "empty": "未返回数据",
+      "pause": "暂停",
+      "resume": "继续采集",
+      "start": "更新所有股票",
+      "retry": "重试失败股票",
+      "error": "无法更新采集状态。"
+    },
     "collapseSidebar": "收起股票列表", "expandSidebar": "展开股票列表",
     "JP": "日本股市",
     "mapJapan": "日本市场板块图",
@@ -1838,6 +1862,11 @@
     "indexNikkei225": "日经225",
 
     "financials": {
+      "olderPeriods": "显示更早期间",
+      "checkedAt": "最后检查",
+      "refreshing": "正在更新…",
+      "refreshFailed": "更新失败，正在显示已保存数据。",
+      "refresh": "刷新财务信息",
       "qoq": "环比",
       "yoy": "同比",
       "increase": "增加",

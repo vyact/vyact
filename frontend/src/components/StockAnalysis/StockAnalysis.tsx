@@ -5,11 +5,12 @@ import {localizeStockName} from '../../utils/stockDisplayName';
 import {ArrowLeft, ChartCandlestick, RefreshCw, Search, Settings, Star, Plus, Pencil, Trash2, LayoutGrid, FolderOpen, ChevronDown, ChevronLeft, ChevronRight} from 'lucide-react';
 import {Trans, useTranslation} from 'react-i18next';
 import {stockSnapshotCache} from '../../services/stockSnapshotCache';
-import {STOCK_MARKETS, stockAnalysis, type DailyPrice, type StockMarket, type StockSymbol} from '../../services/stockAnalysis';
+import {stockAnalysis, type DailyPrice, type StockMarket, type StockSymbol} from '../../services/stockAnalysis';
 import WorkspaceExitButton from '../common/WorkspaceLayout/WorkspaceExitButton';
 import WorkspaceLayout from '../common/WorkspaceLayout/WorkspaceLayout';
 import PanelResizer from '../common/PanelResizer/PanelResizer';
-import CustomSelect from '../CustomSelect/CustomSelect';
+import StockMarketSelect from './StockMarketSelect';
+import StockFinancialCollection from './StockFinancialCollection';
 import StockApiSettings from './StockApiSettings';
 import StockLoadingIndicator from './StockLoadingIndicator';
 import {getInitialMarket, saveMarketPreference} from './marketPreference';
@@ -201,13 +202,15 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
     const header = <>
 
         <div className="stock-analysis-title"><ChartCandlestick size={20} aria-hidden="true"/><strong>{tr('title')}</strong></div>
-        <WorkspaceExitButton className="stock-analysis-exit" onClick={onClose}/>
+        <div className="stock-analysis-header-actions">
+            <StockFinancialCollection market={market} directory={symbols}/>
+            <WorkspaceExitButton className="stock-analysis-exit" onClick={onClose}/>
+        </div>
     </>;
 
     const sidebar = <div className="stock-analysis-sidebar">
         <section className="stock-analysis-market-section" aria-label={tr('market')}>
-        <CustomSelect options={STOCK_MARKETS.map(value => ({value, label: tr(value)}))} value={market}
-                      onChange={changeMarket} ariaLabel={tr('market')} portal/>
+        <StockMarketSelect value={market} onChange={changeMarket}/>
         <button type="button" className="settings-icon-button" aria-label={tr('api.title')} onClick={() => setApiSettingsOpen(true)}><Settings size={16} aria-hidden="true"/></button>
         </section>
         <div className="stock-watchlist-switch stock-list-tabs" role="group" aria-label={tr('listView')}>

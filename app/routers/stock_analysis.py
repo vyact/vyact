@@ -23,7 +23,9 @@ from services.stock_analysis.market_sessions import active_session, CASH_CALENDA
 from services.stock_analysis.index_price_store import get_index_prices
 from services.stock_analysis.regional_yahoo import korea_preferred_symbols
 from services.stock_analysis.chat_history import append_stock_conversation, list_stock_conversations, get_stock_conversation
-from services.stock_analysis.financials import build_financial_chat_context, fetch_financials
+from services.stock_analysis.financial_context import build_financial_chat_context
+from services.stock_analysis.financial_store import get_financials
+from services.stock_analysis.financial_collection import (FinancialCollectionSettings, collection_status, save_settings, start_collection, stop_collection, resume_collection)
 from services.stock_analysis.prices import fetch_prices, fetch_sparkline
 from services.stock_analysis.sector_map import get_sector_map, get_stock_quotes
 from services.stock_analysis.symbols import is_market_index, memo_symbol_aliases, normalize_market_indices, normalize_stock, normalize_sector_map, public_symbol
@@ -428,10 +430,34 @@ async def stream_stock_answer(body, prompt, system_prompt):
             await mcp_manager.connect_all(await build_servers_config())
 
 
-@router.get("/financials/{symbol}")
-async def stock_financials(symbol: Symbol, frequency: Literal["yearly", "quarterly"] = "yearly"):
+@router.get("/financial-collection/{market}")
+async def financial_collection_status(market: Market, response: Response):
+    response.headers['Cache-Control'] = 'no-store'
+    return await collection_status(market)
+
+
+@router.put("/financial-collection/{market}/settings")
+async def financial_collection_settings(market: Market, settings: FinancialCollectionSettings):
+    return await save_settings(market, settings)
+
+
+@router.post("/financial-collection/{market}/{action}")
+async def financial_collection_action(market: Market, action: Literal['start', 'pause', 'resume', 'retry']):
     try:
-        return await asyncio.to_thread(fetch_financials, symbol, frequency)
+        if action == 'pause':
+            return await stop_collection(market)
+        if action == 'resume':
+            return await resume_collection(market)
+        return await start_collection(market, failed_only=action == 'retry')
+    except ValueError as exc:
+        raise HTTPException(422, 'financial_collection_no_targets') from exc
+
+
+@router.get("/financials/{symbol}")
+async def stock_financials(symbol: Symbol, response: Response, frequency: Literal["yearly", "quarterly"] = "yearly", force: bool = False):
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        return await get_financials(symbol, frequency, force=force)
     except YFRateLimitError as exc:
         raise HTTPException(429, "financials_rate_limited") from exc
     except Exception as exc:

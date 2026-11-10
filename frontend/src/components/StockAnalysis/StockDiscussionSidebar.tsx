@@ -1,6 +1,5 @@
 import './StockSymbolLabel.css';
 import type {ChartSnapshotContext, ChartSnapshot} from './chartSnapshot';
-import {STOCK_MARKETS} from '../../services/stockAnalysis';
 import {useEffect, useRef, useState, type RefObject} from 'react';
 import {ChartNoAxesCombined, ArrowUp, Square, X, History, Camera} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
@@ -14,7 +13,7 @@ import {getToolActivityLabel, getToolActivityDetail, isToolActivityResultFailed}
 import type {StockMarket, StockSymbol} from '../../services/stockAnalysis';
 import {assertOk} from '../../utils/apiError';
 import {Tooltip} from '../common/Tooltip/Tooltip';
-import ModalTabs from '../common/ModalTabs/ModalTabs';
+import StockMarketSelect from './StockMarketSelect';
 import ToggleSwitch from '../common/ToggleSwitch/ToggleSwitch';
 import {MARKET_INDEX_LABELS} from './marketIndexLabels';
 import useStockDirectory from './useStockDirectory';
@@ -183,8 +182,7 @@ export default function StockDiscussionSidebar({stock, market, directory, captur
             <Tooltip content={tr('referenceHint')} multiline><button type="button" className="help-icon-button" aria-label={tr('referenceHint')}>?</button></Tooltip>
             <CustomSelect optionsPageSize={100} value="" searchable portal disabled={busy || referenceStocks.length >= MAX_REFERENCE_STOCKS}
                 ariaLabel={tr('addReference')} placeholder={tr('addReference')}
-                header={<ModalTabs tabs={STOCK_MARKETS.map(key => ({key, label: t(`stockAnalysis.${key}`)}))}
-                    activeKey={referenceMarket} onChange={setReferenceMarket}/>}
+                header={<div className="stock-reference-market"><StockMarketSelect value={referenceMarket} onChange={setReferenceMarket} compact portal={false}/></div>}
                 options={referenceCandidates.filter(item => item.symbol !== stock.symbol && !referenceStocks.some(reference => reference.symbol === item.symbol))
                     .map(item => ({value: item.symbol, label: `${item.name} · ${item.symbol}`}))}
                 onChange={symbol => {

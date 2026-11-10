@@ -1831,6 +1831,30 @@
     "manuscriptApplyHelp": "Áp dụng sẽ thay thế tiêu đề và nội dung chương hiện tại."
   },
   "stockAnalysis": {
+    "countries": {
+      "US": "Hoa Kỳ",
+      "KR": "Hàn Quốc",
+      "JP": "Nhật Bản"
+    },
+    "collection": {
+      "title": "Thu thập tài chính",
+      "auto": "Tự động cập nhật hằng tuần",
+      "hintScope": "Thu thập báo cáo năm và quý của mọi cổ phiếu trong thị trường này.",
+      "hintResume": "Thu thập khi ứng dụng đang chạy và tiếp tục sau khi khởi động lại.",
+      "hintPause": "Tạm dừng cũng ngừng cập nhật tự động cho đến khi tiếp tục.",
+      "idle": "Chưa bắt đầu",
+      "running": "Đang thu thập",
+      "paused": "Đã tạm dừng",
+      "completed": "Hoàn tất",
+      "progress": "Tiến độ thu thập",
+      "failed": "Thất bại",
+      "empty": "Không có dữ liệu trả về",
+      "pause": "Tạm dừng",
+      "resume": "Tiếp tục",
+      "start": "Cập nhật mọi cổ phiếu",
+      "retry": "Thử lại cổ phiếu lỗi",
+      "error": "Không thể cập nhật trạng thái thu thập."
+    },
     "collapseSidebar": "Thu gọn danh sách cổ phiếu", "expandSidebar": "Mở rộng danh sách cổ phiếu",
     "JP": "Chứng khoán Nhật Bản",
     "mapJapan": "Bản đồ ngành thị trường Nhật Bản",
@@ -1838,6 +1862,11 @@
     "indexNikkei225": "Nikkei 225",
 
     "financials": {
+      "olderPeriods": "Hiển thị các kỳ trước",
+      "checkedAt": "Kiểm tra lần cuối",
+      "refreshing": "Đang cập nhật…",
+      "refreshFailed": "Cập nhật thất bại. Đang hiển thị dữ liệu đã lưu.",
+      "refresh": "Làm mới dữ liệu tài chính",
       "qoq": "So với quý trước",
       "yoy": "So với cùng kỳ",
       "increase": "Tăng",

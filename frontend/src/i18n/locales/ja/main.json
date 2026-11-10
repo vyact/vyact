@@ -1831,6 +1831,30 @@
     "manuscriptApplyHelp": "適用すると現在の話のタイトルと本文をこの結果で置き換えます。"
   },
   "stockAnalysis": {
+    "countries": {
+      "US": "米国",
+      "KR": "韓国",
+      "JP": "日本"
+    },
+    "collection": {
+      "title": "財務情報の収集",
+      "auto": "毎週自動更新",
+      "hintScope": "この市場の全銘柄の年次・四半期財務情報を収集します。",
+      "hintResume": "アプリ起動中に収集し、再起動後も続行します。",
+      "hintPause": "一時停止中は自動更新も再開するまで停止します。",
+      "idle": "未開始",
+      "running": "収集中",
+      "paused": "一時停止中",
+      "completed": "完了",
+      "progress": "収集の進捗",
+      "failed": "失敗",
+      "empty": "応答データなし",
+      "pause": "一時停止",
+      "resume": "再開",
+      "start": "全銘柄を更新",
+      "retry": "失敗した銘柄を再試行",
+      "error": "収集状況を更新できませんでした。"
+    },
     "collapseSidebar": "銘柄一覧を折りたたむ", "expandSidebar": "銘柄一覧を展開",
     "JP": "日本株式市場",
     "mapJapan": "日本市場セクターマップ",
@@ -1838,6 +1862,11 @@
     "indexNikkei225": "日経平均株価",
 
     "financials": {
+      "olderPeriods": "過去の期間をさらに表示",
+      "checkedAt": "最終確認",
+      "refreshing": "更新中…",
+      "refreshFailed": "更新に失敗しました。保存済みデータを表示しています。",
+      "refresh": "財務情報を更新",
       "qoq": "前四半期比",
       "yoy": "前年同期比",
       "increase": "増加",

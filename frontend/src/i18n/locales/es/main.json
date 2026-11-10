@@ -1832,6 +1832,30 @@
     "manuscriptApplyHelp": "Al aplicar, se sustituyen el título y el texto del capítulo actual."
   },
   "stockAnalysis": {
+    "countries": {
+      "US": "Estados Unidos",
+      "KR": "Corea del Sur",
+      "JP": "Japón"
+    },
+    "collection": {
+      "title": "Recopilación financiera",
+      "auto": "Actualización semanal automática",
+      "hintScope": "Recopila estados anuales y trimestrales de todas las acciones del mercado.",
+      "hintResume": "La recopilación funciona con la aplicación abierta y continúa tras reiniciar.",
+      "hintPause": "La pausa también suspende las actualizaciones automáticas hasta reanudar.",
+      "idle": "Sin iniciar",
+      "running": "Recopilando",
+      "paused": "En pausa",
+      "completed": "Completado",
+      "progress": "Progreso de recopilación",
+      "failed": "Fallos",
+      "empty": "Sin datos recibidos",
+      "pause": "Pausar",
+      "resume": "Reanudar",
+      "start": "Actualizar todas las acciones",
+      "retry": "Reintentar acciones fallidas",
+      "error": "No se pudo actualizar el estado."
+    },
     "collapseSidebar": "Contraer lista de acciones", "expandSidebar": "Expandir lista de acciones",
     "JP": "Acciones japonesas",
     "mapJapan": "Sectores del mercado japonés",
@@ -1839,6 +1863,11 @@
     "indexNikkei225": "Nikkei 225",
 
     "financials": {
+      "olderPeriods": "Mostrar períodos anteriores",
+      "checkedAt": "Última revisión",
+      "refreshing": "Actualizando…",
+      "refreshFailed": "Error al actualizar. Se muestran los datos guardados.",
+      "refresh": "Actualizar datos financieros",
       "qoq": "Intertrimestral",
       "yoy": "Interanual",
       "increase": "Aumento",

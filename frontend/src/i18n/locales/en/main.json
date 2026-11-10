@@ -1832,6 +1832,30 @@
     "manuscriptApplyHelp": "Applying replaces the current chapter title and manuscript with this result."
   },
   "stockAnalysis": {
+    "countries": {
+      "US": "United States",
+      "KR": "South Korea",
+      "JP": "Japan"
+    },
+    "collection": {
+      "title": "Financial collection",
+      "auto": "Automatic weekly update",
+      "hintScope": "Collect annual and quarterly financials for all stocks in this market.",
+      "hintResume": "Collection runs while the app is open and resumes after restart.",
+      "hintPause": "Pausing also suspends automatic updates until you resume.",
+      "idle": "Not started",
+      "running": "Collecting",
+      "paused": "Paused",
+      "completed": "Completed",
+      "progress": "Collection progress",
+      "failed": "Failed",
+      "empty": "No data returned",
+      "pause": "Pause",
+      "resume": "Resume",
+      "start": "Update all stocks",
+      "retry": "Retry failed stocks",
+      "error": "Unable to update collection status."
+    },
     "collapseSidebar": "Collapse stock list", "expandSidebar": "Expand stock list",
     "JP": "Japanese stocks",
     "mapJapan": "Japanese market sectors",
@@ -1839,6 +1863,11 @@
     "indexNikkei225": "Nikkei 225",
 
     "financials": {
+      "olderPeriods": "Show older periods",
+      "checkedAt": "Last checked",
+      "refreshing": "Updating…",
+      "refreshFailed": "Update failed. Showing saved data.",
+      "refresh": "Refresh financials",
       "qoq": "QoQ",
       "yoy": "YoY",
       "increase": "Increase",
