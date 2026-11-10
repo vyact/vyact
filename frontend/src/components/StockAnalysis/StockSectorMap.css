@@ -60,7 +60,7 @@
 }
 .stock-sector-preview-selected-symbol {font-size: 21px; letter-spacing: -.02em; overflow: hidden; text-overflow: ellipsis;}
 .stock-sector-preview-selected-name {font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
-.stock-sector-preview-selected-quote > span, .stock-sector-preview-selected-quote > strong:last-child {text-align: end;}
+.stock-sector-preview-selected-quote > span, .stock-sector-preview-selected-quote > strong[data-direction] {text-align: end;}
 .stock-sector-preview[data-market="KR"] .stock-sector-preview-selected-quote {grid-template-columns: 105px minmax(40px, 1fr) auto 74px;}
 
 .stock-sector-preview ul {
@@ -168,3 +168,13 @@ button.stock-market-index:focus-visible {outline: 2px solid var(--accent); outli
 .stock-market-indices[data-market="JP"] .stock-sparkline[data-direction="up"] {color: #e64c52;}
 .stock-market-indices[data-market="JP"] .stock-market-index[data-direction="down"] .stock-market-index-change,
 .stock-market-indices[data-market="JP"] .stock-sparkline[data-direction="down"] {color: #30ad69;}
+
+.stock-sector-preview-session {display: inline-flex; align-items: center; align-self: flex-start; padding: 3px 7px; border: 1px solid color-mix(in srgb, var(--info) 25%, var(--border)); border-radius: 5px; background: color-mix(in srgb, var(--info) 8%, var(--surface2)); color: var(--info); font-size: 11px; font-weight: 500; line-height: 1.4;}
+.stock-sector-preview-regular-price, .stock-sector-preview-regular-change {grid-row: 2; align-self: start; color: var(--text-muted); text-align: end; font-size: 10px; font-weight: 400; line-height: 1.4; white-space: nowrap;}
+.stock-sector-preview-regular-price {grid-column: 3;}
+.stock-sector-preview-regular-change {grid-column: 4;}
+.stock-sector-preview-selected-quote:has(> .stock-sector-preview-regular-price) {row-gap: 2px;}
+
+.stock-sector-preview-heading {display: flex; align-items: center; gap: 8px; flex-shrink: 0; min-width: 0;}
+.stock-sector-preview-heading .stock-sector-preview-session {align-self: center; flex-shrink: 0; white-space: nowrap; font-size: 10px;}
+.stock-sector-preview-heading .stock-sector-preview-title {min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}

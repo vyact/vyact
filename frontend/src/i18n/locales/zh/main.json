@@ -1831,6 +1831,19 @@
     "manuscriptApplyHelp": "应用后将用此结果替换当前章节标题和正文。"
   },
   "stockAnalysis": {
+    "premarket": {
+      "label": "盘前交易",
+      "comparison": "较最近常规收盘价",
+      "history": "最近{{count}}个交易日 · 常规收盘价",
+      "regularClose": "最近常规收盘价",
+      "regularChange": "常规交易涨跌幅",
+      "asOf": "盘前行情截至 {{date}}",
+      "unavailable": "暂无盘前行情",
+      "symbol": "股票",
+      "trend": "常规走势",
+      "price": "盘前价格",
+      "comparisonShort": "较收盘价"
+    },
     "countries": {
       "US": "美国",
       "KR": "韩国",

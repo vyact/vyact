@@ -10,6 +10,7 @@ from yfinance.data import YfData
 
 from services.stock_analysis.symbols import yahoo_symbol
 from services.stock_analysis.catalog import Market
+from services.stock_analysis.market_sessions import us_premarket_window
 from services.stock_analysis.regional_yahoo import get_korea_sector_members, korea_symbols, korea_display_names, japan_display_names, get_japan_sector_members
 
 IVV_HOLDINGS_URL = "https://www.ishares.com/us/products/239726/ishares-core-s-p-500-etf/latest-holdings.csv"
@@ -89,7 +90,8 @@ def _us_map(client: httpx.Client) -> dict:
 
     stocks = [stock for group in groups.values() for stock in group]
     symbols = list(dict.fromkeys(stock["symbol"] for stock in stocks))
-    quotes = _us_quotes(symbols)
+    quote_details = {}
+    quotes = _us_quotes(symbols, details=quote_details)
     # Holdings describe membership only; company market caps determine tile sizes.
     for sector_stocks in groups.values():
         for stock in sector_stocks:
@@ -115,10 +117,38 @@ def _us_map(client: httpx.Client) -> dict:
         quote = daily_quotes.get(stock["symbol"])
         if quote and quote[0] == quote_date:
             _, stock["price"], stock["change"] = quote
-    return {"date": date, "quoteDate": quote_date, "sectors": _sectors(groups)}
+    now = time()
+    window = us_premarket_window(now)
+    if window:
+        for stock in stocks:
+            stock['regularPrice'], stock['regularChange'] = stock['price'], stock['change']
+            stock['price'], stock['change'] = None, None
+            premarket = _premarket_quote(quote_details.get(stock['symbol'], {}), window, now, stock['regularPrice'])
+            if premarket:
+                stock.update(premarket)
+    quote_time = max((stock.get('quoteTime', '') for stock in stocks), default='') or None
+    return {"date": date, "quoteDate": quote_date, "sectors": _sectors(groups),
+            'session': 'premarket' if window else 'regular', 'quoteTime': quote_time}
 
 
-def _us_quotes(symbols: list[str]) -> dict[str, tuple[str, float, float, float]]:
+def _premarket_quote(quote: dict, window: tuple[float, float], now: float, regular_price: float | None) -> dict | None:
+    stamp, price = quote.get('preMarketTime'), quote.get('preMarketPrice')
+    if not all(isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+               for value in (stamp, price, regular_price)):
+        return None
+    if not (window[0] <= stamp < window[1] and stamp <= now + 60) or price <= 0 or regular_price <= 0:
+        return None
+    # The denominator must be the latest completed regular session, never an older close.
+    regular_stamp = quote.get('regularMarketTime')
+    if not isinstance(regular_stamp, (int, float)) or not math.isfinite(regular_stamp) or regular_stamp >= window[0]:
+        return None
+    if quote.get('regularMarketPrice') != regular_price:
+        return None
+    return {'price': price, 'change': (price / regular_price - 1) * 100,
+            'quoteTime': datetime.fromtimestamp(stamp, timezone.utc).isoformat()}
+
+
+def _us_quotes(symbols: list[str], *, details: dict | None = None) -> dict[str, tuple[str, float, float, float]]:
     client = YfData()
     quotes = {}
     for start in range(0, len(symbols), QUOTE_BATCH_SIZE):
@@ -126,6 +156,8 @@ def _us_quotes(symbols: list[str]) -> dict[str, tuple[str, float, float, float]]
             "symbols": ",".join(symbols[start:start + QUOTE_BATCH_SIZE]), "formatted": "false", "_": int(time()),
         }, timeout=12)
         for quote in result["quoteResponse"]["result"]:
+            if details is not None:
+                details[quote['symbol']] = quote
             timestamp = quote.get("regularMarketTime")
             price = quote.get("regularMarketPrice")
             change = quote.get("regularMarketChangePercent")

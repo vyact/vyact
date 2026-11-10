@@ -1831,6 +1831,19 @@
     "manuscriptApplyHelp": "適用すると現在の話のタイトルと本文をこの結果で置き換えます。"
   },
   "stockAnalysis": {
+    "premarket": {
+      "label": "プレマーケット",
+      "comparison": "直近の通常取引終値比",
+      "history": "直近{{count}}営業日 · 通常取引終値",
+      "regularClose": "直近の通常取引終値",
+      "regularChange": "通常取引の騰落率",
+      "asOf": "プレマーケット時点 {{date}}",
+      "unavailable": "プレマーケットの株価なし",
+      "symbol": "銘柄",
+      "trend": "通常取引の推移",
+      "price": "プレマーケット価格",
+      "comparisonShort": "終値比"
+    },
     "countries": {
       "US": "米国",
       "KR": "韓国",

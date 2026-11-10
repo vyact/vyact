@@ -1,10 +1,11 @@
 import {useEffect, useState} from 'react';
-import {Database, Pause, Play, RefreshCw, ChevronDown, CircleAlert} from 'lucide-react';
+import {Pause, Play, RefreshCw, ChevronDown, CircleAlert} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import ActionMenu from '../common/ActionMenu/ActionMenu';
 import ToggleSwitch from '../common/ToggleSwitch/ToggleSwitch';
 import {financialCollectionRequest, type FinancialCollectionStatus} from '../../services/stockFinancialCollection';
 import type {StockMarket, StockSymbol} from '../../services/stockAnalysis';
+import StockMarketFlag from './StockMarketFlag';
 import './StockFinancialCollection.css';
 
 const STATUS_POLL_MS = 4000;
@@ -47,14 +48,14 @@ function CollectionControl({market, directory}: CollectionProps) {
         <ActionMenu isOpen={open} onOpenChange={setOpen} ariaLabel={error ? `${tr('title')} · ${tr('error')}` : tr('title')}
             triggerClassName="stock-collection-trigger" menuClassName="hist-menu-popup stock-collection-popup"
             trigger={<>
-                {error ? <CircleAlert size={15} aria-hidden="true"/> : running ? <RefreshCw size={15} className="stock-collection-sync-icon" aria-hidden="true"/> : <Database size={15} aria-hidden="true"/>}
-                <span className="stock-collection-label">{tr('title')}</span>
+                {error ? <CircleAlert size={15} aria-hidden="true"/> : running ? <RefreshCw size={15} className="stock-collection-sync-icon" aria-hidden="true"/> : null}
+                <StockMarketFlag market={market}/><span className="stock-collection-label">{tr('title')}</span>
                 {(running || paused) && job && <span className="stock-collection-count">{number(job.processed)}<span>/ {number(job.total)}</span></span>}
                 <ChevronDown size={12} className="stock-collection-chevron" aria-hidden="true"/>
 
             </>}
             ><div className="stock-collection-menu" role="group" aria-label={tr('title')}>
-                <strong>{t(`stockAnalysis.${market}`)} · {tr('title')}</strong>
+                <strong className="stock-collection-menu-title"><StockMarketFlag market={market}/>{t(`stockAnalysis.${market}`)} · {tr('title')}</strong>
                 <div className="stock-collection-auto"><span>{tr('auto')}</span><ToggleSwitch checked={status?.settings.autoUpdate ?? false}
                     disabled={busy || !status} label={tr('auto')} onChange={checked => void update(undefined, checked)}/></div>
                 <ul className="stock-collection-guide">{['hintScope', 'hintResume', 'hintPause'].map(key => <li key={key}>{tr(key)}</li>)}</ul>

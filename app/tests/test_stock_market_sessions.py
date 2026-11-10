@@ -6,7 +6,7 @@ import pandas_market_calendars as market_calendars
 
 import pytest
 
-from services.stock_analysis.market_sessions import CASH_CALENDAR, FUTURES_CALENDAR, active_session, next_regular_open, JAPAN_CASH_CALENDAR, is_session_break, _calendar
+from services.stock_analysis.market_sessions import CASH_CALENDAR, FUTURES_CALENDAR, active_session, next_regular_open, JAPAN_CASH_CALENDAR, is_session_break, _calendar, us_premarket_window
 
 
 def stamp(value):
@@ -85,3 +85,19 @@ def test_korean_calendar_preserves_unrelated_warnings():
     with patch.object(market_calendars, 'get_calendar', side_effect=get_with_unrelated_warning):
         with pytest.warns(UserWarning, match='unrelated calendar warning'):
             _calendar.__wrapped__('XKRX')
+
+
+@pytest.mark.parametrize('value,expected', [
+    ('2026-11-10T03:59:00-05:00', False),
+    ('2026-11-10T04:00:00-05:00', True),
+    ('2026-11-10T06:40:00-05:00', True),
+    ('2026-11-10T09:29:59-05:00', True),
+    ('2026-11-10T09:30:00-05:00', False),
+    ('2026-11-10T17:00:00-05:00', False),
+    ('2026-11-08T06:00:00-05:00', False),
+    ('2026-12-25T06:00:00-05:00', False),
+    ('2026-07-06T04:00:00-04:00', True),
+    ('2026-07-06T09:30:00-04:00', False),
+])
+def test_us_premarket_respects_session_date_dst_and_holidays(value, expected):
+    assert (us_premarket_window(stamp(value)) is not None) is expected

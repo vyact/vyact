@@ -40,6 +40,17 @@ def _daily_schedule(calendar_name: str, local_day: str):
     return _calendar(calendar_name).schedule(start_date=day - timedelta(days=1), end_date=day + timedelta(days=1))
 
 
+def us_premarket_window(now: float) -> tuple[float, float] | None:
+    """NYSE trading-day premarket window; excludes holidays and respects DST."""
+    calendar = _calendar(CASH_CALENDAR)
+    local = datetime.fromtimestamp(now, calendar.tz)
+    start = local.replace(hour=4, minute=0, second=0, microsecond=0).timestamp()
+    for opening in _daily_schedule(CASH_CALENDAR, local.date().isoformat())['market_open']:
+        if opening.tz_convert(calendar.tz).date() == local.date() and start <= now < opening.timestamp():
+            return start, opening.timestamp()
+    return None
+
+
 @lru_cache(maxsize=8)
 def _session_windows(calendar_name: str, local_day: str) -> tuple[tuple[float, float], ...]:
     schedule = _daily_schedule(calendar_name, local_day)

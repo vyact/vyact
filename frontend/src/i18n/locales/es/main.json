@@ -1832,6 +1832,19 @@
     "manuscriptApplyHelp": "Al aplicar, se sustituyen el título y el texto del capítulo actual."
   },
   "stockAnalysis": {
+    "premarket": {
+      "label": "Preapertura",
+      "comparison": "frente al último cierre regular",
+      "history": "Últimas {{count}} sesiones · cierres regulares",
+      "regularClose": "Último cierre regular",
+      "regularChange": "Variación de sesión regular",
+      "asOf": "Cotizaciones de preapertura a {{date}}",
+      "unavailable": "Sin cotizaciones de preapertura",
+      "symbol": "Símbolo",
+      "trend": "Tendencia regular",
+      "price": "Precio preapertura",
+      "comparisonShort": "Frente al cierre"
+    },
     "countries": {
       "US": "Estados Unidos",
       "KR": "Corea del Sur",

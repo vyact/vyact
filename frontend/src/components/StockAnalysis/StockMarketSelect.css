@@ -1,7 +1,6 @@
 .stock-market-select {min-width: 0;}
 .stock-market-label {display: flex; align-items: center; gap: 8px; min-width: 0; text-align: start;}
 .stock-market-label > span:last-child {overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
-.stock-market-flag {flex-shrink: 0; font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif; font-size: 18px; line-height: 1;}
 .stock-market-select .custom-select-trigger {gap: 8px; justify-content: space-between;}
 .stock-market-select .custom-select-trigger > svg {flex-shrink: 0; transition: transform .15s;}
 .stock-market-chevron-open {transform: rotate(180deg);}

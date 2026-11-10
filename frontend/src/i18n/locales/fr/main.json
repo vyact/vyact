@@ -1833,6 +1833,19 @@
     "manuscriptApplyHelp": "L’application remplace le titre et le texte du chapitre actuel."
   },
   "stockAnalysis": {
+    "premarket": {
+      "label": "Préouverture",
+      "comparison": "par rapport à la dernière clôture régulière",
+      "history": "{{count}} dernières séances · clôtures régulières",
+      "regularClose": "Dernière clôture régulière",
+      "regularChange": "Variation de séance régulière",
+      "asOf": "Cours de préouverture au {{date}}",
+      "unavailable": "Cours de préouverture indisponibles",
+      "symbol": "Symbole",
+      "trend": "Tendance régulière",
+      "price": "Prix préouverture",
+      "comparisonShort": "Face à la clôture"
+    },
     "countries": {
       "US": "États-Unis",
       "KR": "Corée du Sud",

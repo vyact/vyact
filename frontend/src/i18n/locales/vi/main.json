@@ -1831,6 +1831,19 @@
     "manuscriptApplyHelp": "Áp dụng sẽ thay thế tiêu đề và nội dung chương hiện tại."
   },
   "stockAnalysis": {
+    "premarket": {
+      "label": "Trước giờ mở cửa",
+      "comparison": "so với giá đóng cửa phiên chính gần nhất",
+      "history": "{{count}} phiên gần nhất · giá đóng cửa phiên chính",
+      "regularClose": "Giá đóng cửa phiên chính gần nhất",
+      "regularChange": "Biến động phiên chính",
+      "asOf": "Giá trước giờ mở cửa lúc {{date}}",
+      "unavailable": "Không có giá trước giờ mở cửa",
+      "symbol": "Mã",
+      "trend": "Xu hướng phiên chính",
+      "price": "Giá trước mở cửa",
+      "comparisonShort": "So với đóng cửa"
+    },
     "countries": {
       "US": "Hoa Kỳ",
       "KR": "Hàn Quốc",

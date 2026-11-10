@@ -14,6 +14,7 @@ import {DEFAULT_REFRESH_SECONDS} from './chartRefreshPreference';
 import type {StockGroup} from './useStockGroups';
 import useStockGroupQuotes from './useStockGroupQuotes';
 import {buildGroupSectors, groupMapSymbols} from './groupMapData';
+import {formatPremarketQuoteDate} from './premarketDisplay';
 import './StockSectorMap.css';
 
 type MapNode = {
@@ -41,7 +42,7 @@ const PREVIEW_PANEL_WIDTH = 440;
 const PREVIEW_PANEL_MARGIN = 8;
 const PREVIEW_PANEL_GAP = 12;
 
-function SectorPreview({sector, focused, market, day, customName = false}: {sector: MarketSector; focused?: SectorStock; market: StockMarket; day: string; customName?: boolean}) {
+export function SectorPreview({sector, focused, market, day, premarket = false, customName = false}: {sector: MarketSector; focused?: SectorStock; market: StockMarket; day: string; premarket?: boolean; customName?: boolean}) {
     const {t, i18n} = useTranslation('main');
     const histories = useSectorSparklines(sector.stocks.map(stock => stock.symbol), day);
     const percent = new Intl.NumberFormat(i18n.resolvedLanguage, {
@@ -54,22 +55,34 @@ function SectorPreview({sector, focused, market, day, customName = false}: {sect
     const sorted = [...sector.stocks].sort((a, b) => b.weight - a.weight);
     const entries = sorted.slice(0, PREVIEW_LIMIT);
     return <div className="stock-sector-preview" data-market={market}>
-        <strong className="stock-sector-preview-title">{customName ? sector.name : t(`stockAnalysis.sectorNames.${sector.name}`, {defaultValue: sector.name, ...(market === 'US' ? {lng: 'en'} : {})})}</strong>
+        <div className="stock-sector-preview-heading">
+            {premarket && <span className="stock-sector-preview-session">{t('stockAnalysis.premarket.label')}</span>}
+            <strong className="stock-sector-preview-title">{customName ? sector.name : t(`stockAnalysis.sectorNames.${sector.name}`, {defaultValue: sector.name, ...(market === 'US' ? {lng: 'en'} : {})})}</strong>
+        </div>
         <small className="stock-sector-preview-period">{t('stockAnalysis.mapTrendDays', {count: SPARKLINE_TRADING_DAYS})}</small>
         {focused && <div className="stock-sector-preview-selected">
             <div className="stock-sector-preview-selected-quote">
                 <strong className="stock-sector-preview-selected-symbol">{market === 'US' ? focused.symbol : focused.name}</strong>
-                <StockSparkline closes={histories[focused.symbol]} change={focused.change}/><span>{focused.price == null ? '—' : price.format(focused.price)}</span>
+                <StockSparkline closes={histories[focused.symbol]} change={premarket ? focused.regularChange : focused.change}/><span>{focused.price == null ? '—' : price.format(focused.price)}</span>
                 <strong data-direction={focused.change == null || focused.change === 0 ? 'flat' : focused.change > 0 ? 'up' : 'down'}>
                     {focused.change == null ? '—' : percent.format(focused.change / 100)}
                 </strong>
+                {premarket && <>
+                    <small className="stock-sector-preview-regular-price" aria-label={t('stockAnalysis.premarket.regularClose')} data-tooltip-disabled="">
+                        {focused.regularPrice == null ? '—' : price.format(focused.regularPrice)}
+                    </small>
+                    <small className="stock-sector-preview-regular-change" aria-label={t('stockAnalysis.premarket.regularChange')} data-tooltip-disabled="">
+                        {focused.regularChange == null ? '—' : percent.format(focused.regularChange / 100)}
+                    </small>
+                </>}
             </div>
             <span className="stock-sector-preview-selected-name">{market === 'US' ? focused.name : focused.symbol}</span>
+
         </div>}
         <ul style={{gridTemplateRows: `repeat(${PREVIEW_LIMIT}, minmax(0, 1fr))`}}>
             {entries.map(stock => <li key={stock.symbol} className={stock.symbol === focused?.symbol ? 'focused' : undefined}>
                 <span className="stock-sector-preview-symbol">{market === 'US' ? stock.symbol : stock.name}</span>
-                <StockSparkline closes={histories[stock.symbol]} change={stock.change}/>
+                <StockSparkline closes={histories[stock.symbol]} change={premarket ? stock.regularChange : stock.change}/>
                 <span>{stock.price == null ? '—' : price.format(stock.price)}</span>
                 <strong data-direction={stock.change == null || stock.change === 0 ? 'flat' : stock.change > 0 ? 'up' : 'down'}>
                     {stock.change == null ? '—' : percent.format(stock.change / 100)}
@@ -189,6 +202,7 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
     const previewLeft = Math.max(PREVIEW_PANEL_MARGIN,
         Math.min(preferredLeft, width - previewWidth - PREVIEW_PANEL_MARGIN));
 
+    const premarket = market === 'US' && !stockGroups && snapshot?.session === 'premarket';
     const title = selectedSector ? sectorName(selectedSector.name) : stockGroups ? t('stockAnalysis.groups.all') : t({KR: 'stockAnalysis.mapKorea', US: 'stockAnalysis.mapUs', JP: 'stockAnalysis.mapJapan'}[market]);
     const dateFormat = new Intl.DateTimeFormat(i18n.resolvedLanguage, {dateStyle: 'medium', timeZone: 'UTC'});
     const formatDay = (day: string) => dateFormat.format(new Date(day));
@@ -202,7 +216,7 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
             {!stockGroups && <MarketOpenCountdown opening={nextRegularOpen}/>}
             <div className="stock-sector-map-controls">
             {(stockGroups ? !!groupQuoteState.quotes.length : !!snapshot) && <div className="stock-sector-map-dates">
-                <span>{t(stockGroups ? 'stockAnalysis.mapQuoteDate' : 'stockAnalysis.sectorMapQuoteDate', {date: formatDay(stockGroups ? groupQuoteState.quotes.map(quote => quote.date).sort().slice(-1)[0] : snapshot!.quoteDate ?? snapshot!.date)})}</span>
+                <span>{premarket ? snapshot?.quoteTime ? t('stockAnalysis.premarket.asOf', {date: formatPremarketQuoteDate(snapshot.quoteTime, i18n.resolvedLanguage)}) : t('stockAnalysis.premarket.unavailable') : t(stockGroups ? 'stockAnalysis.mapQuoteDate' : 'stockAnalysis.sectorMapQuoteDate', {date: formatDay(stockGroups ? groupQuoteState.quotes.map(quote => quote.date).sort().slice(-1)[0] : snapshot!.quoteDate ?? snapshot!.date)})}</span>
             </div>}
             <StockRefreshInterval seconds={refreshSeconds} onChange={setRefreshSeconds}/>
             </div>
@@ -256,7 +270,7 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
             </div>
             {previewSector && preview && <aside className="stock-sector-map-preview-panel" style={{left: previewLeft, width: previewWidth}}
                 aria-label={previewSector.name}>
-                <SectorPreview customName={!!stockGroups} sector={previewSector} focused={previewStock} market={market} day={snapshot?.quoteDate ?? snapshot?.date ?? ''}/>
+                <SectorPreview premarket={premarket} customName={!!stockGroups} sector={previewSector} focused={previewStock} market={market} day={snapshot?.quoteDate ?? snapshot?.date ?? ''}/>
             </aside>}
         </div>
     </section>;

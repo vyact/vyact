@@ -118,6 +118,9 @@ class IndexResponse(BaseModel):
 
 
 class SectorStockResponse(StockSymbolResponse):
+    regularPrice: float | None = Field(default=None, gt=0)
+    regularChange: float | None = None
+    quoteTime: str | None = None
     model_config = ConfigDict(allow_inf_nan=False)
     weight: float = Field(ge=0)
     change: float | None
@@ -133,6 +136,8 @@ class SectorResponse(BaseModel):
 
 
 class SectorMapResponse(BaseModel):
+    session: Literal['regular', 'premarket'] | None = None
+    quoteTime: str | None = None
     date: date
     quoteDate: date
     sectors: list[SectorResponse]

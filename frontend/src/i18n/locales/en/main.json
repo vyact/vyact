@@ -1832,6 +1832,19 @@
     "manuscriptApplyHelp": "Applying replaces the current chapter title and manuscript with this result."
   },
   "stockAnalysis": {
+    "premarket": {
+      "label": "Pre-market",
+      "comparison": "vs. last regular close",
+      "history": "Last {{count}} trading days · regular closes",
+      "regularClose": "Last regular close",
+      "regularChange": "Regular-session change",
+      "asOf": "Pre-market quotes as of {{date}}",
+      "unavailable": "Pre-market quotes unavailable",
+      "symbol": "Symbol",
+      "trend": "Regular trend",
+      "price": "Pre-market price",
+      "comparisonShort": "vs. close"
+    },
     "countries": {
       "US": "United States",
       "KR": "South Korea",

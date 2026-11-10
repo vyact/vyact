@@ -43,3 +43,6 @@
 .stock-collection-progress-summary {display: flex; align-items: center; justify-content: flex-end; gap: 10px; font-size: 12px; font-weight: 400; font-variant-numeric: tabular-nums; white-space: nowrap;}
 .stock-collection-percent {padding-inline-start: 10px; border-inline-start: 1px solid var(--border); color: color-mix(in srgb, var(--info) 70%, var(--text-muted)); font-size: inherit; font-weight: inherit;}
 .stock-collection-processed {color: var(--text-muted);}
+
+.stock-collection-menu-title {display: flex; align-items: center; gap: 8px;}
+.stock-collection-trigger .stock-market-flag {font-size: 15px;}

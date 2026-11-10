@@ -1841,6 +1841,19 @@
     "manuscriptApplyHelp": "적용하면 현재 회차의 제목과 본문을 이 결과로 교체합니다."
   },
   "stockAnalysis": {
+    "premarket": {
+      "label": "프리마켓",
+      "comparison": "직전 정규장 종가 대비",
+      "history": "최근 {{count}}거래일 · 정규장 종가",
+      "regularClose": "직전 정규장 종가",
+      "regularChange": "정규장 등락률",
+      "asOf": "프리마켓 시세 기준 {{date}}",
+      "unavailable": "프리마켓 시세 없음",
+      "symbol": "종목",
+      "trend": "정규장 흐름",
+      "price": "프리마켓 가격",
+      "comparisonShort": "종가 대비"
+    },
     "countries": {
       "US": "미국",
       "KR": "한국",
