@@ -149,6 +149,7 @@ button.stock-market-index:focus-visible {outline: 2px solid var(--accent); outli
 
 .stock-market-index-card {position: relative; min-width: 0;}
 .stock-market-index-card > .stock-market-index {width: 100%; height: 100%;}
+.stock-market-index-card:has(> .stock-market-index-cash) .stock-market-index-chart {align-self: flex-end;}
 .stock-market-index-cash {
     position: absolute; top: 7px; right: 10px;
     display: inline-flex; align-items: center; gap: 4px; padding: 3px 6px;
