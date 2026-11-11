@@ -1,0 +1,22 @@
+.stock-pinned-indices {display: flex; align-items: center; gap: 6px; flex: 1; min-width: 60px; min-height: 36px; overflow-x: auto; scrollbar-width: thin; border: 1px dashed transparent; border-radius: 7px; padding: 2px 4px;}
+.stock-pinned-indices[data-drag-active="true"] {border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); outline: 1px dashed var(--accent); outline-offset: 1px;}
+.stock-pinned-index {position: relative; flex-shrink: 0; border: 1px solid var(--border); border-radius: 6px; background: var(--surface2); cursor: grab;}
+.stock-pinned-index-open {display: grid; grid-template-columns: auto auto; gap: 1px 6px; padding: 3px 19px 3px 8px; background: transparent; border: 0; color: var(--text); cursor: pointer; font: inherit; text-align: start; font-variant-numeric: tabular-nums;}
+.stock-pinned-index-open > span {grid-column: 1 / -1; font-size: 9px; color: var(--text-muted); white-space: nowrap;}
+.stock-pinned-index-open > strong, .stock-pinned-index-open > small {font-size: 11px; white-space: nowrap;}
+.stock-pinned-index-remove {position: absolute; inset-inline-end: 2px; top: 2px; display: grid; place-items: center; padding: 1px; border: 0; background: transparent; color: var(--text-muted); cursor: pointer;}
+.stock-pinned-index-remove:hover {color: var(--text);}
+.stock-pinned-index:is([data-market="US"], [data-market="HK"])[data-direction="up"] small,
+.stock-pinned-index:not([data-market="US"]):not([data-market="HK"])[data-direction="down"] small {color: #30ad69;}
+.stock-pinned-index:is([data-market="US"], [data-market="HK"])[data-direction="down"] small,
+.stock-pinned-index:not([data-market="US"]):not([data-market="HK"])[data-direction="up"] small {color: #e64c52;}
+.stock-pinned-index[data-market="KR"][data-direction="down"] small {color: #2878da;}
+.stock-pinned-index[data-drop="before"] {border-inline-start: 2px solid var(--accent);}
+.stock-pinned-index[data-drop="after"] {border-inline-end: 2px solid var(--accent);}
+.stock-pinned-indices-hint {font-size: 11px; color: var(--accent); white-space: nowrap; padding: 0 6px;}
+.stock-pinned-index button:focus-visible {outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 4px;}
+
+.stock-pinned-indices[data-drag-over="true"] {background: color-mix(in srgb, var(--accent) 18%, transparent); border-style: solid;}
+.stock-pinned-indices[data-drag-active="true"] .stock-pinned-indices-hint {flex: 1; text-align: center; min-width: 140px;}
+
+.stock-pinned-indices-retry {flex-shrink: 0; padding: 4px 6px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface2); color: var(--accent); font: inherit; font-size: 11px; cursor: pointer;}

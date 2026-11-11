@@ -1831,6 +1831,7 @@
     "manuscriptApplyHelp": "Áp dụng sẽ thay thế tiêu đề và nội dung chương hiện tại."
   },
   "stockAnalysis": {
+    "pinnedIndices": {"syncFailed": "Đồng bộ thất bại · Thử lại", "label": "Chỉ số đã ghim", "remove": "Bỏ ghim {{name}}", "dropHint": "Thả vào đây để ghim chỉ số"},
     "TW": "Chứng khoán Đài Loan",
     "HK": "Chứng khoán Hồng Kông",
     "CN": "Chứng khoán Trung Quốc đại lục",

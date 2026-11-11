@@ -1832,6 +1832,7 @@
     "manuscriptApplyHelp": "Al aplicar, se sustituyen el título y el texto del capítulo actual."
   },
   "stockAnalysis": {
+    "pinnedIndices": {"syncFailed": "Error de sincronización · Reintentar", "label": "Índices fijados", "remove": "Desfijar {{name}}", "dropHint": "Suelta aquí para fijar un índice"},
     "TW": "Bolsa de Taiwán",
     "HK": "Bolsa de Hong Kong",
     "CN": "Bolsa de China continental",

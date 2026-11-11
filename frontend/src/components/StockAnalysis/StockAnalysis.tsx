@@ -1,3 +1,4 @@
+import PinnedIndexBar from './PinnedIndexBar';
 import useStockMarketShortcuts from './useStockMarketShortcuts';
 import '../common/WorkspaceLayout/WorkspaceBrand.css';
 import useSidebarHover from '../common/WorkspaceLayout/useSidebarHover';
@@ -210,6 +211,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
     const header = <>
 
         <div className="stock-analysis-title"><span className="workspace-brand-icon"><ChartLine size={18} aria-hidden="true"/></span><strong>{tr('title')}</strong></div>
+        <PinnedIndexBar onOpen={(targetMarket, item) => {changeMarket(targetMarket); openSymbol(item);}}/>
         <div className="stock-analysis-header-actions">
             <StockFinancialCollection market={market} directory={symbols}/>
             <WorkspaceExitButton className="stock-analysis-exit" onClick={onClose}/>

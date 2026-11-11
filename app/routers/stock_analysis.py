@@ -7,7 +7,7 @@ from uuid import UUID
 from fastapi.responses import StreamingResponse
 from fastapi import APIRouter, HTTPException, Path, Response
 from elasticsearch import NotFoundError
-from pydantic import BaseModel, StringConstraints, Field
+from pydantic import BaseModel, StringConstraints, Field, model_validator
 from yfinance.exceptions import YFPricesMissingError, YFRateLimitError, YFTzMissingError
 
 from logger import get_logger
@@ -15,10 +15,10 @@ from services.llm.config import get_provider_config
 from services.llm.core import chat_stream_with_tools, query_llm
 from services.mcp_client import mcp_manager
 from services.mcp_config import build_servers_config
-from services.db import STOCK_CHART_MEMOS_INDEX, ensure_stock_chart_memos_index, get_es
+from services.db import SETTINGS_INDEX, STOCK_CHART_MEMOS_INDEX, ensure_stock_chart_memos_index, get_es
 from services.stock_analysis.api_settings import (ApiValidationRequest, EndpointKind, MarketApiSettings, STOCK_SYMBOL_PATTERN, validate_api_settings, custom_data, load_api_settings, public_settings, save_api_settings, delete_api_key, symbol_market)
 from services.stock_analysis.catalog import Market, get_symbols
-from services.stock_analysis.market_indices import get_market_indices
+from services.stock_analysis.market_indices import MARKET_INDEX_SYMBOLS, get_market_indices
 from services.stock_analysis.market_sessions import active_session, FUTURES_CALENDAR, MARKET_CASH_CALENDARS
 from services.stock_analysis.index_price_store import get_index_prices
 from services.stock_analysis.regional_yahoo import korea_preferred_symbols
@@ -33,6 +33,55 @@ from services.stock_analysis.symbols import is_market_index, memo_symbol_aliases
 router = APIRouter(prefix="/stock-analysis")
 logger = get_logger(__name__)
 Symbol = Annotated[str, Path(pattern=STOCK_SYMBOL_PATTERN)]
+
+
+PINNED_INDICES_DOCUMENT_ID = 'stock_analysis_pinned_indices'
+
+
+class PinnedIndexPreference(BaseModel):
+    market: Market
+    symbol: str = Field(max_length=16)
+
+    @model_validator(mode='after')
+    def validate_index(self):
+        from_symbols = MARKET_INDEX_SYMBOLS[self.market]
+        if self.symbol not in {symbol.removeprefix('^') for symbol in from_symbols}:
+            raise ValueError('Index does not belong to the selected market')
+        return self
+
+
+class PinnedIndexPreferences(BaseModel):
+    items: list[PinnedIndexPreference] = Field(max_length=20)
+
+    @model_validator(mode='after')
+    def validate_unique(self):
+        if len({(item.market, item.symbol) for item in self.items}) != len(self.items):
+            raise ValueError('Duplicate pinned index')
+        return self
+
+
+@router.get('/pinned-indices')
+async def get_pinned_indices():
+    es = get_es()
+    try:
+        try:
+            result = await es.get(index=SETTINGS_INDEX, id=PINNED_INDICES_DOCUMENT_ID)
+        except NotFoundError:
+            return {'items': None}
+        return PinnedIndexPreferences.model_validate(result['_source']['value']).model_dump()
+    finally:
+        await es.close()
+
+
+@router.put('/pinned-indices')
+async def save_pinned_indices(body: PinnedIndexPreferences):
+    es = get_es()
+    try:
+        await es.index(index=SETTINGS_INDEX, id=PINNED_INDICES_DOCUMENT_ID,
+                       document={'key': PINNED_INDICES_DOCUMENT_ID, 'value': body.model_dump()}, refresh='wait_for')
+        return {'ok': True}
+    finally:
+        await es.close()
 
 
 @router.get("/trading-status/{symbol}")

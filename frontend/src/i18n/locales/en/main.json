@@ -1832,6 +1832,7 @@
     "manuscriptApplyHelp": "Applying replaces the current chapter title and manuscript with this result."
   },
   "stockAnalysis": {
+    "pinnedIndices": {"syncFailed": "Settings sync failed · Retry", "label": "Pinned indices", "remove": "Unpin {{name}}", "dropHint": "Drop here to pin an index"},
     "TW": "Taiwan stocks",
     "HK": "Hong Kong stocks",
     "CN": "Mainland China stocks",

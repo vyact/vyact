@@ -1831,6 +1831,7 @@
     "manuscriptApplyHelp": "適用すると現在の話のタイトルと本文をこの結果で置き換えます。"
   },
   "stockAnalysis": {
+    "pinnedIndices": {"syncFailed": "設定の同期に失敗 · 再試行", "label": "固定した指数", "remove": "{{name}}の固定を解除", "dropHint": "ここにドロップして指数を固定"},
     "TW": "台湾株式市場",
     "HK": "香港株式市場",
     "CN": "中国本土株式市場",

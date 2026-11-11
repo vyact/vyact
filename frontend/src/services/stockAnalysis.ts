@@ -10,6 +10,7 @@ export const TOGGLE_STOCK_ANALYSIS_EVENT = 'vyact:toggle-stock-analysis';
 export const STOCK_ANALYSIS_SHORTCUT_KEY = 'U';
 export const STOCK_MARKETS = ['US', 'KR', 'JP', 'TW', 'HK', 'CN'] as const;
 export type StockMarket = typeof STOCK_MARKETS[number];
+export type PinnedMarketIndex = {market: StockMarket; symbol: string};
 export interface StockSymbol {symbol: string; name: string; preferred?: boolean; exchange?: 'KOSPI' | 'KOSDAQ'}
 export interface SectorStock extends StockSymbol {industry?: string | null; weight: number; change: number | null; price: number | null; regularPrice?: number | null; regularChange?: number | null; quoteTime?: string | null}
 export interface MarketSector {stockCount?: number | null; name: string; weight: number; change: number | null; stocks: SectorStock[]}
@@ -50,6 +51,10 @@ async function request<T>(path: string, signal?: AbortSignal, options?: RequestI
 }
 
 export const stockAnalysis = {
+    pinnedIndices: (signal: AbortSignal) => request<{items: PinnedMarketIndex[] | null}>('pinned-indices', signal, {cache: 'no-store'}),
+    savePinnedIndices: (items: PinnedMarketIndex[]) => request<{ok: boolean}>('pinned-indices', undefined, {
+        method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({items}),
+    }),
     tradingStatus: (symbol: string, signal: AbortSignal) => request<{open: boolean}>(
         `trading-status/${encodeURIComponent(stockSymbolCode(symbol))}`, signal, {cache: 'no-store'},
     ),

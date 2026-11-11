@@ -1,45 +1,18 @@
-import {useEffect, useRef, useState} from 'react';
+import {useEffect} from 'react';
 import {useTranslation} from 'react-i18next';
-import {stockAnalysis, type MarketIndex, type StockSymbol, type StockMarket} from '../../services/stockAnalysis';
-import {stockSnapshotCache} from '../../services/stockSnapshotCache';
+import {type StockSymbol, type StockMarket} from '../../services/stockAnalysis';
+import useMarketIndexQuotes from './useMarketIndexQuotes';
+import {INDEX_DRAG_TYPE} from './pinnedIndexPreferences';
 import StockSparkline from './StockSparkline';
-import {isMarketWeekend} from './marketRefresh';
 
 import {MARKET_INDEX_LABELS, INDEX_FUTURE_LABELS, CASH_INDEX_CHART_LABELS} from './marketIndexLabels';
 
 export default function MarketIndexSummary({market, refreshSeconds, onOpen, onOpeningChange, refreshVersion = 0}: {refreshVersion?: number; onOpeningChange?: (opening: number | undefined) => void; market: StockMarket; refreshSeconds: number; onOpen: (item: StockSymbol) => void}) {
     const labels = MARKET_INDEX_LABELS[market];
     const {t, i18n} = useTranslation('main');
-    const [indices, setIndices] = useState<MarketIndex[]>(() => stockSnapshotCache.readIndices()?.filter(index => labels.some(label => label.symbol === (index.indexSymbol ?? index.symbol))) ?? []);
+    const indices = useMarketIndexQuotes([market], refreshSeconds, refreshVersion);
     const nextOpening = indices.find(index => INDEX_FUTURE_LABELS[index.symbol])?.nextRegularOpen;
     useEffect(() => {onOpeningChange?.(nextOpening);}, [nextOpening, onOpeningChange]);
-    const loaded = useRef(indices.some(index => index.price != null));
-    useEffect(() => {
-        const controller = new AbortController();
-        let pending = false;
-        const refresh = async () => {
-            if (pending || (loaded.current && market === 'KR' && isMarketWeekend(market))) return;
-            pending = true;
-            try {
-                const result = await stockAnalysis.marketIndices(controller.signal, market);
-                if (!controller.signal.aborted) {
-                    const valid = result.filter(index => index.price != null);
-                    if (valid.length) {
-                        stockSnapshotCache.writeIndices(valid);
-                        setIndices(result);
-                        loaded.current = true;
-                    }
-                }
-            } catch {
-                // Keep the last valid index snapshot when a refresh fails.
-            } finally {
-                pending = false;
-            }
-        };
-        void refresh();
-        const timer = window.setInterval(() => {void refresh();}, refreshSeconds * 1000);
-        return () => {controller.abort(); window.clearInterval(timer);};
-    }, [refreshSeconds, market, labels, refreshVersion]);
     const price = new Intl.NumberFormat(i18n.resolvedLanguage, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     const signed = new Intl.NumberFormat(i18n.resolvedLanguage, {minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: 'exceptZero'});
     return <div className="stock-market-indices" data-market={market} aria-label={t('stockAnalysis.marketIndices')}>
@@ -48,7 +21,11 @@ export default function MarketIndexSummary({market, refreshSeconds, onOpen, onOp
             const displaySymbol = index?.symbol ?? symbol;
             const displayKey = INDEX_FUTURE_LABELS[displaySymbol] ?? key;
             const direction = !index?.change ? 'flat' : index.change > 0 ? 'up' : 'down';
-            return <div className="stock-market-index-card" key={symbol}>
+            return <div className="stock-market-index-card" key={symbol} draggable
+                onDragStart={event => {
+                    event.dataTransfer.effectAllowed = 'copyMove';
+                    event.dataTransfer.setData(INDEX_DRAG_TYPE, JSON.stringify({market, symbol}));
+                }}>
                 <button type="button" className="stock-market-index" data-direction={direction}
                 onClick={() => onOpen({symbol: displaySymbol, name: t(`stockAnalysis.${displayKey}`)})}>
                 <span className="stock-market-index-values">

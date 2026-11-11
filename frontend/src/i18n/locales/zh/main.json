@@ -1831,6 +1831,7 @@
     "manuscriptApplyHelp": "应用后将用此结果替换当前章节标题和正文。"
   },
   "stockAnalysis": {
+    "pinnedIndices": {"syncFailed": "设置同步失败 · 重试", "label": "固定指数", "remove": "取消固定{{name}}", "dropHint": "拖到此处固定指数"},
     "TW": "台湾股市",
     "HK": "香港股市",
     "CN": "中国内地股市",
