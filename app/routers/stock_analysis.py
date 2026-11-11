@@ -19,7 +19,7 @@ from services.db import STOCK_CHART_MEMOS_INDEX, ensure_stock_chart_memos_index,
 from services.stock_analysis.api_settings import (ApiValidationRequest, EndpointKind, MarketApiSettings, STOCK_SYMBOL_PATTERN, validate_api_settings, custom_data, load_api_settings, public_settings, save_api_settings, delete_api_key, symbol_market)
 from services.stock_analysis.catalog import Market, get_symbols
 from services.stock_analysis.market_indices import get_market_indices
-from services.stock_analysis.market_sessions import active_session, CASH_CALENDAR, FUTURES_CALENDAR, JAPAN_CASH_CALENDAR
+from services.stock_analysis.market_sessions import active_session, FUTURES_CALENDAR, MARKET_CASH_CALENDARS
 from services.stock_analysis.index_price_store import get_index_prices
 from services.stock_analysis.regional_yahoo import korea_preferred_symbols
 from services.stock_analysis.chat_history import append_stock_conversation, list_stock_conversations, get_stock_conversation
@@ -38,9 +38,7 @@ Symbol = Annotated[str, Path(pattern=STOCK_SYMBOL_PATTERN)]
 @router.get("/trading-status/{symbol}")
 async def trading_status(symbol: Symbol, response: Response):
     response.headers["Cache-Control"] = "no-store"
-    calendar = FUTURES_CALENDAR if symbol.endswith("=F") else {
-        "US": CASH_CALENDAR, "KR": "XKRX", "JP": JAPAN_CASH_CALENDAR,
-    }[symbol_market(symbol)]
+    calendar = FUTURES_CALENDAR if symbol.endswith("=F") else MARKET_CASH_CALENDARS[symbol_market(symbol)]
     opened = await asyncio.to_thread(active_session, calendar, datetime.now(timezone.utc).timestamp())
     return {"open": opened is not None}
 

@@ -1,3 +1,4 @@
+import {MARKET_INDEX_LABELS} from './marketIndexLabels';
 import {useTranslation} from 'react-i18next';
 import {CheckCircle2, ChevronDown, LoaderCircle, ShieldCheck, TriangleAlert} from 'lucide-react';
 import CustomSelect from '../CustomSelect/CustomSelect';
@@ -82,10 +83,9 @@ export default function StockApiEndpointSettings({market, kind, endpoint, body, 
                             onChange={event => setTestValue(token, token === 'symbol' || token === 'symbols' ? event.target.value.replace(/^\^/, '') : event.target.value)}/></td>
                     </tr>)}</tbody>
                 </table>
-                {(tokens.includes('symbol') || tokens.includes('symbols')) && <p className="stock-api-index-code-help">{tr('indexCodeLabel')} · {market === 'KR'
-                    ? <><code>KS11</code> = {t('stockAnalysis.indexKospi')} · <code>KQ11</code> = {t('stockAnalysis.indexKosdaq')}</>
-                    : market === 'JP' ? <><code>N225</code> = {t('stockAnalysis.indexNikkei225')}</>
-                    : <><code>GSPC</code> = {t('stockAnalysis.indexSp500')} · <code>IXIC</code> = {t('stockAnalysis.indexNasdaq')}</>}</p>}
+                {(tokens.includes('symbol') || tokens.includes('symbols')) && <p className="stock-api-index-code-help">{tr('indexCodeLabel')} · {MARKET_INDEX_LABELS[market].map(({symbol, key}, index) => <span key={symbol}>
+                    {index > 0 && ' · '}<code>{symbol}</code> = {t(`stockAnalysis.${key}`)}
+                </span>)}</p>}
             </div>
             <details className="stock-api-examples"><summary>{tr('examples')}</summary>
                 <p>{tr('requestExample')}</p><pre>{`GET ${requestExampleUrl}\n\nPOST ${examples.url.split('?')[0]}\nContent-Type: application/json\n\n${JSON.stringify(postExampleBody, null, 2)}`}</pre>

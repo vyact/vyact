@@ -159,8 +159,8 @@
 .stock-chart-quote-mode .custom-select-trigger-label {white-space: normal; overflow-wrap: anywhere; text-overflow: clip;}
 
 .stock-quote-change {margin-inline-start: 6px; font-size: .9em; font-weight: 650; white-space: nowrap;}
-:is(.stock-price-chart-quote, .stock-comparison-quote)[data-market="US"] [data-direction="up"] {color: #30ad69;}
-:is(.stock-price-chart-quote, .stock-comparison-quote)[data-market="US"] [data-direction="down"] {color: #e64c52;}
+:is(.stock-price-chart-quote, .stock-comparison-quote):is([data-market="US"], [data-market="HK"]) [data-direction="up"] {color: #30ad69;}
+:is(.stock-price-chart-quote, .stock-comparison-quote):is([data-market="US"], [data-market="HK"]) [data-direction="down"] {color: #e64c52;}
 :is(.stock-price-chart-quote, .stock-comparison-quote)[data-market="KR"] [data-direction="up"] {color: #e64c52;}
 :is(.stock-price-chart-quote, .stock-comparison-quote)[data-market="KR"] [data-direction="down"] {color: #2878da;}
 .stock-chart-quote-tooltip {
@@ -207,8 +207,8 @@
 }
 .stock-symbol-exchange[data-exchange="kosdaq"] {--exchange-color: var(--success);}
 
-:is(.stock-price-chart-quote, .stock-comparison-quote)[data-market="JP"] [data-direction="up"] {color: #e64c52; fill: #e64c52;}
-:is(.stock-price-chart-quote, .stock-comparison-quote)[data-market="JP"] [data-direction="down"] {color: #30ad69; fill: #30ad69;}
+:is(.stock-price-chart-quote, .stock-comparison-quote):is([data-market="JP"], [data-market="TW"], [data-market="CN"]) [data-direction="up"] {color: #e64c52; fill: #e64c52;}
+:is(.stock-price-chart-quote, .stock-comparison-quote):is([data-market="JP"], [data-market="TW"], [data-market="CN"]) [data-direction="down"] {color: #30ad69; fill: #30ad69;}
 
 .stock-analysis > .workspace-layout-header {padding-inline-end: 12px; gap: 12px;}
 .stock-analysis > .workspace-layout-body {transition: grid-template-columns .24s ease;}

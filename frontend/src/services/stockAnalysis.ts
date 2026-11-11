@@ -8,7 +8,7 @@ const SYMBOL_DIRECTORY_CACHE_MS = 24 * 60 * 60 * 1000;
 export const STOCK_ANALYSIS_PANEL_ID = 'stock-analysis';
 export const TOGGLE_STOCK_ANALYSIS_EVENT = 'vyact:toggle-stock-analysis';
 export const STOCK_ANALYSIS_SHORTCUT_KEY = 'U';
-export const STOCK_MARKETS = ['US', 'KR', 'JP'] as const;
+export const STOCK_MARKETS = ['US', 'KR', 'JP', 'TW', 'HK', 'CN'] as const;
 export type StockMarket = typeof STOCK_MARKETS[number];
 export interface StockSymbol {symbol: string; name: string; preferred?: boolean; exchange?: 'KOSPI' | 'KOSDAQ'}
 export interface SectorStock extends StockSymbol {industry?: string | null; weight: number; change: number | null; price: number | null; regularPrice?: number | null; regularChange?: number | null; quoteTime?: string | null}

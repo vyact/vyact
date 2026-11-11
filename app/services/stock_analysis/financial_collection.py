@@ -11,7 +11,7 @@ from services.stock_analysis.catalog import get_symbols
 from services.stock_analysis.financial_store import get_financials, read_document, write_document, utc_now, stop_refreshes
 from services.stock_analysis.symbols import is_market_index, public_symbol, symbol_market
 
-MARKETS = ('US', 'KR', 'JP')
+MARKETS = ('US', 'KR', 'JP', 'TW', 'HK', 'CN')
 WEEK = timedelta(days=7)
 POLL_SECONDS = 60
 RATE_LIMIT_BACKOFF_SECONDS = 120

@@ -1832,6 +1832,16 @@
     "manuscriptApplyHelp": "Applying replaces the current chapter title and manuscript with this result."
   },
   "stockAnalysis": {
+    "TW": "Taiwan stocks",
+    "HK": "Hong Kong stocks",
+    "CN": "Mainland China stocks",
+    "mapTaiwan": "Taiwan sector map",
+    "mapHongKong": "Hong Kong sector map",
+    "mapChina": "Mainland China sector map",
+    "indexTaiex": "TAIEX",
+    "indexHangSeng": "Hang Seng",
+    "indexShanghai": "Shanghai Composite",
+    "indexShenzhen": "Shenzhen Component",
     "industryUnclassified": "Unclassified",
     "premarket": {
       "label": "Pre-market",
@@ -1847,6 +1857,9 @@
       "comparisonShort": "vs. close"
     },
     "countries": {
+      "TW": "Taiwan",
+      "HK": "Hong Kong",
+      "CN": "Mainland China",
       "US": "United States",
       "KR": "South Korea",
       "JP": "Japan"

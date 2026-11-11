@@ -1833,6 +1833,16 @@
     "manuscriptApplyHelp": "L’application remplace le titre et le texte du chapitre actuel."
   },
   "stockAnalysis": {
+    "TW": "Actions de Taïwan",
+    "HK": "Actions de Hong Kong",
+    "CN": "Actions de Chine continentale",
+    "mapTaiwan": "Carte sectorielle de Taïwan",
+    "mapHongKong": "Carte sectorielle de Hong Kong",
+    "mapChina": "Carte sectorielle de Chine continentale",
+    "indexTaiex": "TAIEX",
+    "indexHangSeng": "Hang Seng",
+    "indexShanghai": "Shanghai Composite",
+    "indexShenzhen": "Shenzhen Component",
     "industryUnclassified": "Non classé",
     "premarket": {
       "label": "Préouverture",
@@ -1848,6 +1858,9 @@
       "comparisonShort": "Face à la clôture"
     },
     "countries": {
+      "TW": "Taïwan",
+      "HK": "Hong Kong",
+      "CN": "Chine continentale",
       "US": "États-Unis",
       "KR": "Corée du Sud",
       "JP": "Japon"

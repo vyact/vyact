@@ -59,9 +59,9 @@ export const stockApiSettings = {
 };
 
 export function stockApiExamples(market: StockMarket, kind: StockApiKind, language = 'en') {
-    const symbol = {KR: '005930', US: 'AAPL', JP: '7203.T'}[market];
-    const secondSymbol = {KR: '000660', US: 'MSFT', JP: '6758.T'}[market];
-    const indexSymbol = {KR: 'KS11', US: 'GSPC', JP: 'N225'}[market];
+    const symbol = {KR: '005930', US: 'AAPL', JP: '7203.T', TW: '2330.TW', HK: '0700.HK', CN: '600519.SS'}[market];
+    const secondSymbol = {KR: '000660', US: 'MSFT', JP: '6758.T', TW: '2454.TW', HK: '9988.HK', CN: '300750.SZ'}[market];
+    const indexSymbol = {KR: 'KS11', US: 'GSPC', JP: 'N225', TW: 'TWII', HK: 'HSI', CN: '000001.SS'}[market];
     const price = {
         day: '2026-11-06', open: 100, high: 105, low: 98, close: 103,
         volume: 1000000, tradingValue: 102500000, changePercent: 3,
@@ -71,7 +71,7 @@ export function stockApiExamples(market: StockMarket, kind: StockApiKind, langua
             ins: {netVolume: -40000, netAmount: -4100000},
         },
     } satisfies DailyPrice;
-    const stock = {symbol, ...(market === 'KR' ? {exchange: 'KOSPI'} : {}), name: {KR: 'Samsung Electronics', US: 'Apple', JP: 'Toyota Motor'}[market], weight: 10, change: 1.2, price: 103};
+    const stock = {symbol, ...(market === 'KR' ? {exchange: 'KOSPI'} : {}), name: {KR: 'Samsung Electronics', US: 'Apple', JP: 'Toyota Motor', TW: 'TSMC', HK: 'Tencent', CN: 'Kweichow Moutai'}[market], weight: 10, change: 1.2, price: 103};
     const responses = {
         quotes: [{symbol, date: '2026-11-06', price: 103, change: 3, marketCap: 500000000000}],
         symbols: [{symbol, name: stock.name, preferred: false, ...(market === 'KR' ? {exchange: 'KOSPI'} : {})}],

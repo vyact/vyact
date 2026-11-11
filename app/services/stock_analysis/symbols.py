@@ -23,6 +23,9 @@ def public_symbol(symbol: str) -> str:
 
 def symbol_market(symbol: str) -> str:
     code = public_symbol(symbol)
+    for market, suffixes in {'TW': ('.TW', '.TWO'), 'HK': ('.HK',), 'CN': ('.SS', '.SZ')}.items():
+        if code.endswith(suffixes) or code in {item.removeprefix('^') for item in MARKET_INDEX_SYMBOLS[market]}:
+            return market
     if JAPANESE_CODE_PATTERN.fullmatch(code) or code in JAPANESE_INDEX_CODES:
         return 'JP'
     return 'KR' if KOREAN_CODE_PATTERN.fullmatch(code) or code in KOREAN_INDEX_CODES else 'US'
@@ -55,7 +58,7 @@ def normalize_sector_map(snapshot: dict) -> dict:
 
 def yahoo_symbol(symbol: str) -> str:
     if is_market_index(symbol):
-        return f'^{public_symbol(symbol)}'
+        return next(item for item in INDEX_SYMBOLS if item.removeprefix('^') == public_symbol(symbol))
     if not KOREAN_CODE_PATTERN.fullmatch(symbol):
         return symbol
     cached = cached_korea_provider_symbol(symbol)

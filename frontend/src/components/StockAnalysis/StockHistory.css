@@ -14,9 +14,9 @@
 .stock-history-heading label {display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-muted);}
 .stock-history .custom-select-wrap {width: 180px;}
 .stock-history-summary {display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; gap: 12px; padding: 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface);}
-.stock-history[data-market="KR"] [data-direction="up"], .stock-history[data-market="US"] [data-direction="down"] {color: #e64c52; fill: #e64c52;}
+.stock-history[data-market="KR"] [data-direction="up"], .stock-history:is([data-market="US"], [data-market="HK"]) [data-direction="down"] {color: #e64c52; fill: #e64c52;}
 .stock-history[data-market="KR"] [data-direction="down"] {color: #2878da; fill: #2878da;}
-.stock-history[data-market="US"] [data-direction="up"] {color: #30ad69; fill: #30ad69;}
+.stock-history:is([data-market="US"], [data-market="HK"]) [data-direction="up"] {color: #30ad69; fill: #30ad69;}
 .stock-history-empty {display: grid; gap: 8px; padding: 18px; border: 1px dashed var(--border); border-radius: 10px;}
 .stock-history-empty p {font-size: 12px;}
 .stock-history-table-scroll {min-width: 0; max-width: 100%; overflow: auto; max-height: 65vh; border: 1px solid var(--border); border-radius: 10px;}
@@ -81,5 +81,5 @@
 .stock-history-period-picker {display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted);}
 .stock-history-period-picker > span {white-space: nowrap;}
 
-.stock-history[data-market="JP"] [data-direction="up"] {color: #e64c52; fill: #e64c52;}
-.stock-history[data-market="JP"] [data-direction="down"] {color: #30ad69; fill: #30ad69;}
+.stock-history:is([data-market="JP"], [data-market="TW"], [data-market="CN"]) [data-direction="up"] {color: #e64c52; fill: #e64c52;}
+.stock-history:is([data-market="JP"], [data-market="TW"], [data-market="CN"]) [data-direction="down"] {color: #30ad69; fill: #30ad69;}

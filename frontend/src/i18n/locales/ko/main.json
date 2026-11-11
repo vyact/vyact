@@ -1841,6 +1841,16 @@
     "manuscriptApplyHelp": "적용하면 현재 회차의 제목과 본문을 이 결과로 교체합니다."
   },
   "stockAnalysis": {
+    "TW": "대만 증시",
+    "HK": "홍콩 증시",
+    "CN": "중국 본토 증시",
+    "mapTaiwan": "대만 증시 섹터맵",
+    "mapHongKong": "홍콩 증시 섹터맵",
+    "mapChina": "중국 본토 증시 섹터맵",
+    "indexTaiex": "대만 가권지수",
+    "indexHangSeng": "항셍 지수",
+    "indexShanghai": "상하이 종합지수",
+    "indexShenzhen": "선전 성분지수",
     "industryUnclassified": "미분류",
     "premarket": {
       "label": "프리마켓",
@@ -1856,6 +1866,9 @@
       "comparisonShort": "종가 대비"
     },
     "countries": {
+      "TW": "대만",
+      "HK": "홍콩",
+      "CN": "중국 본토",
       "US": "미국",
       "KR": "한국",
       "JP": "일본"

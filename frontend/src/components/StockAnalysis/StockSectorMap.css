@@ -56,7 +56,7 @@
     --stock-preview-row-height: 28px; --stock-preview-row-gap: clamp(2px, .6vh, 7px);
     white-space: normal; font-variant-numeric: tabular-nums;
 }
-.stock-sector-preview[data-market="US"] {--map-preview-up: #65d694; --map-preview-down: #ff818a;}
+.stock-sector-preview:is([data-market="US"], [data-market="HK"]) {--map-preview-up: #65d694; --map-preview-down: #ff818a;}
 .stock-sector-preview-title {display: block; flex-shrink: 0; font-size: 15px; line-height: 1.3;}
 .stock-sector-preview-selected {
     display: grid; gap: 8px; padding-block: 10px; border-block: 1px solid var(--border);
@@ -177,10 +177,10 @@ button.stock-market-index:focus-visible {outline: 2px solid var(--accent); outli
 .stock-market-index-cash:focus-visible {outline: 2px solid var(--info); outline-offset: 2px;}
 
 .stock-sector-map[data-market="JP"] {--stock-map-up: #ab2537; --stock-map-down: #15683e;}
-.stock-market-indices[data-market="JP"] .stock-market-index[data-direction="up"] .stock-market-index-change,
-.stock-market-indices[data-market="JP"] .stock-sparkline[data-direction="up"] {color: #e64c52;}
-.stock-market-indices[data-market="JP"] .stock-market-index[data-direction="down"] .stock-market-index-change,
-.stock-market-indices[data-market="JP"] .stock-sparkline[data-direction="down"] {color: #30ad69;}
+.stock-market-indices:is([data-market="JP"], [data-market="TW"], [data-market="CN"]) .stock-market-index[data-direction="up"] .stock-market-index-change,
+.stock-market-indices:is([data-market="JP"], [data-market="TW"], [data-market="CN"]) .stock-sparkline[data-direction="up"] {color: #e64c52;}
+.stock-market-indices:is([data-market="JP"], [data-market="TW"], [data-market="CN"]) .stock-market-index[data-direction="down"] .stock-market-index-change,
+.stock-market-indices:is([data-market="JP"], [data-market="TW"], [data-market="CN"]) .stock-sparkline[data-direction="down"] {color: #30ad69;}
 
 .stock-sector-preview-session {display: inline-flex; align-items: center; align-self: flex-start; padding: 3px 7px; border: 1px solid color-mix(in srgb, var(--info) 25%, var(--border)); border-radius: 5px; background: color-mix(in srgb, var(--info) 8%, var(--surface2)); color: var(--info); font-size: 11px; font-weight: 500; line-height: 1.4;}
 .stock-sector-preview-regular-price, .stock-sector-preview-regular-change {color: var(--text-muted); text-align: end; font-size: 10px; font-weight: 400; line-height: 1.4; white-space: nowrap;}
@@ -195,3 +195,8 @@ button.stock-market-index:focus-visible {outline: 2px solid var(--accent); outli
 
 .stock-sector-preview:is([data-market="KR"], [data-market="JP"]) .stock-sector-preview-selected-symbol {font-size: 18px;}
 .stock-sector-preview-quote-stack {display: grid; gap: 2px; align-self: center; text-align: end; line-height: 1.35;}
+
+.stock-sector-map:is([data-market="TW"], [data-market="CN"]) {--stock-map-up: #ab2537; --stock-map-down: #15683e;}
+.stock-sector-map[data-market="HK"] {--stock-map-up: #15683e; --stock-map-down: #ab2537;}
+
+.stock-sector-preview:is([data-market="JP"], [data-market="TW"], [data-market="CN"]) {--map-preview-down: #65d694;}

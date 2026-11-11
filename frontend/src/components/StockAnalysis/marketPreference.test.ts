@@ -37,3 +37,11 @@ it('defaults Japanese users to Japan and restores their saved market', async () 
     const restored = await import('./marketPreference');
     expect(restored.getInitialMarket('en')).toBe('JP');
 });
+
+it.each(['TW', 'HK', 'CN'] as const)('restores the added %s market', async market => {
+    const {saveMarketPreference} = await import('./marketPreference');
+    saveMarketPreference(market);
+    vi.resetModules();
+    const {getInitialMarket} = await import('./marketPreference');
+    expect(getInitialMarket('ko')).toBe(market);
+});

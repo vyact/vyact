@@ -11,7 +11,7 @@ from services.stock_analysis.symbols import yahoo_symbol, symbol_market
 from services.stock_analysis.catalog import Market
 from services.stock_analysis.market_group_cache import get_us_market_groups, freeze_us_layout_weights
 from services.stock_analysis.market_sessions import us_premarket_window
-from services.stock_analysis.regional_yahoo import get_korea_sector_members, korea_symbols, korea_display_names, japan_display_names, get_japan_sector_members
+from services.stock_analysis.regional_yahoo import get_korea_sector_members, korea_symbols, korea_display_names, japan_display_names, get_japan_sector_members, regional_display_names, regional_sector_members
 
 YAHOO_QUOTE_URL = "https://query1.finance.yahoo.com/v7/finance/quote"
 QUOTE_BATCH_SIZE = 100
@@ -36,8 +36,9 @@ def _sectors(groups: dict[str, list[dict]], *, limit: int | None = SECTOR_STOCK_
 
 
 def _regional_map(market: Market, language: str = "en") -> dict:
-    members = get_japan_sector_members() if market == "JP" else get_korea_sector_members()
-    names = (japan_display_names(language) if market == "JP" else
+    members = (regional_sector_members(market) if market in ("TW", "HK", "CN") else
+               get_japan_sector_members() if market == "JP" else get_korea_sector_members())
+    names = (regional_display_names(market, language) if market in ("TW", "HK", "CN") else japan_display_names(language) if market == "JP" else
              korea_display_names(language) if language == "ko" else korea_symbols(int(time() // 3600)))
     quotes = _us_quotes(list(dict.fromkeys(symbol for symbols in members.values() for symbol in symbols)))
     date = max((quote[0] for quote in quotes.values()), default=None)
@@ -170,17 +171,17 @@ def _us_daily_quote(symbol: str) -> tuple[str, tuple[str, float, float] | None]:
     return symbol, (day, price, (price / bars[-2][1] - 1) * 100)
 
 
-@lru_cache(maxsize=4)
+@lru_cache(maxsize=8)
 def _load_map(market: Market, cache_window: int, language: str = "en") -> dict:
     with httpx.Client(timeout=15, follow_redirects=True) as client:
-        snapshot = _regional_map(market, language) if market in ("KR", "JP") else _us_map(client)
+        snapshot = _regional_map(market, language) if market != "US" else _us_map(client)
     if not snapshot["sectors"]:
         raise ValueError("Empty sector map")
     return snapshot
 
 
 def get_sector_map(market: Market, language: str = "en") -> dict:
-    return _load_map(market, int(time() // CACHE_SECONDS), language.lower().split("-")[0] if language.lower().split("-")[0] in ("ko", "ja") else "en")
+    return _load_map(market, int(time() // CACHE_SECONDS), language.lower().split("-")[0] if language.lower().split("-")[0] in ("ko", "ja", "zh") else "en")
 
 
 @lru_cache(maxsize=128)

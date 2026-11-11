@@ -2,7 +2,7 @@ export const MARKET_INDEX_LABELS = {US: [
     {symbol: 'GSPC', key: 'indexSp500'},
     {symbol: 'IXIC', key: 'indexNasdaq'},
     {symbol: 'RUT', key: 'indexRussell2000'},
-], JP: [{symbol: 'N225', key: 'indexNikkei225'}], KR: [{symbol: 'KS11', key: 'indexKospi'}, {symbol: 'KQ11', key: 'indexKosdaq'}]} as const;
+], TW: [{symbol: 'TWII', key: 'indexTaiex'}], HK: [{symbol: 'HSI', key: 'indexHangSeng'}], CN: [{symbol: '000001.SS', key: 'indexShanghai'}, {symbol: '399001.SZ', key: 'indexShenzhen'}], JP: [{symbol: 'N225', key: 'indexNikkei225'}], KR: [{symbol: 'KS11', key: 'indexKospi'}, {symbol: 'KQ11', key: 'indexKosdaq'}]} as const;
 
 export const INDEX_FUTURE_LABELS: Record<string, string> = {
     'NIY=F': 'indexNikkei225Futures',

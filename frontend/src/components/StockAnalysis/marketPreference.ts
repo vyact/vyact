@@ -1,4 +1,4 @@
-import type {StockMarket} from '../../services/stockAnalysis';
+import {STOCK_MARKETS, type StockMarket} from '../../services/stockAnalysis';
 
 const MARKET_STORAGE_KEY = 'vyact:stock-analysis:market';
 let sessionMarket: StockMarket | undefined;
@@ -6,7 +6,7 @@ let sessionMarket: StockMarket | undefined;
 export function getInitialMarket(language: string | undefined): StockMarket {
     try {
         const saved = localStorage.getItem(MARKET_STORAGE_KEY);
-        if (saved === 'KR' || saved === 'US' || saved === 'JP') return saved;
+        if (STOCK_MARKETS.includes(saved as StockMarket)) return saved as StockMarket;
     } catch {
         // Keep the last selection for this session when storage is unavailable.
     }

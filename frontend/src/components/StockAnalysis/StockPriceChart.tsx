@@ -36,7 +36,7 @@ interface Props {
     comparisonTarget: HTMLDivElement | null;
 }
 
-const MARKET_COLORS = {KR: {rise: '#e64c52', fall: '#2878da'}, US: {rise: '#30ad69', fall: '#e64c52'}, JP: {rise: '#e64c52', fall: '#30ad69'}};
+const MARKET_COLORS = {KR: {rise: '#e64c52', fall: '#2878da'}, US: {rise: '#30ad69', fall: '#e64c52'}, JP: {rise: '#e64c52', fall: '#30ad69'}, TW: {rise: '#e64c52', fall: '#30ad69'}, HK: {rise: '#30ad69', fall: '#e64c52'}, CN: {rise: '#e64c52', fall: '#30ad69'}};
 const QUOTE_MODE_STORAGE_KEY = 'vyact:stock-analysis:quote-mode';
 const MA_STORAGE_KEY = 'vyact:stock-analysis:ma-periods';
 const INDICATOR_STORAGE_KEY = 'vyact:stock-analysis:indicators';

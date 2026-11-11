@@ -49,7 +49,8 @@ def _needs_sync(state: dict, now: datetime, symbol: str = "^GSPC") -> bool:
     synced = datetime.fromisoformat(state["synced_at"])
     local = now.astimezone(index_timezone(symbol))
     if local.weekday() >= 5:
-        close_hour, close_minute = (15, 30) if symbol in (*MARKET_INDEX_SYMBOLS["KR"], *MARKET_INDEX_SYMBOLS["JP"]) else (16, 0)
+        close_hour, close_minute = next((close for market, close in {"KR": (15, 30), "JP": (15, 30), "TW": (13, 30), "CN": (15, 0)}.items()
+                                       if symbol in MARKET_INDEX_SYMBOLS[market]), (16, 0))
         friday_close = (local - timedelta(days=local.weekday() - 4)).replace(hour=close_hour, minute=close_minute, second=0, microsecond=0)
         if synced >= friday_close:
             return False

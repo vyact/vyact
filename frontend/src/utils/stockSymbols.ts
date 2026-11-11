@@ -1,6 +1,6 @@
 import type {MarketSectorMap} from '../services/stockAnalysis';
 
-export const MARKET_INDEX_CODES = ['KS11', 'KQ11', 'GSPC', 'IXIC', 'RUT', 'N225'] as const;
+export const MARKET_INDEX_CODES = ['KS11', 'KQ11', 'GSPC', 'IXIC', 'RUT', 'N225', 'TWII', 'HSI', '000001.SS', '399001.SZ'] as const;
 
 export function isMarketIndexSymbol(symbol: string): boolean {
     return MARKET_INDEX_CODES.some(code => code === stockSymbolCode(symbol));

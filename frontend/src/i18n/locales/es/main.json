@@ -1832,6 +1832,16 @@
     "manuscriptApplyHelp": "Al aplicar, se sustituyen el título y el texto del capítulo actual."
   },
   "stockAnalysis": {
+    "TW": "Bolsa de Taiwán",
+    "HK": "Bolsa de Hong Kong",
+    "CN": "Bolsa de China continental",
+    "mapTaiwan": "Mapa sectorial de Taiwán",
+    "mapHongKong": "Mapa sectorial de Hong Kong",
+    "mapChina": "Mapa sectorial de China continental",
+    "indexTaiex": "TAIEX",
+    "indexHangSeng": "Hang Seng",
+    "indexShanghai": "Compuesto de Shanghái",
+    "indexShenzhen": "Componente de Shenzhen",
     "industryUnclassified": "Sin clasificar",
     "premarket": {
       "label": "Preapertura",
@@ -1847,6 +1857,9 @@
       "comparisonShort": "Frente al cierre"
     },
     "countries": {
+      "TW": "Taiwán",
+      "HK": "Hong Kong",
+      "CN": "China continental",
       "US": "Estados Unidos",
       "KR": "Corea del Sur",
       "JP": "Japón"

@@ -8,6 +8,8 @@ import pandas_market_calendars as market_calendars
 CASH_CALENDAR = "NYSE"
 FUTURES_CALENDAR = "CME Globex Equity"
 JAPAN_CASH_CALENDAR = "JPX"
+MARKET_CASH_CALENDARS = {"US": CASH_CALENDAR, "KR": "XKRX", "JP": JAPAN_CASH_CALENDAR,
+                         "TW": "XTAI", "HK": "HKEX", "CN": "SSE"}
 
 
 @lru_cache(maxsize=8)

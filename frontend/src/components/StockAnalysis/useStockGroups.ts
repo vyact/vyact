@@ -1,6 +1,6 @@
 import {useEffect, useState} from 'react';
 import {reorderGroups, reorderItems} from './groupOrdering';
-import type {StockMarket} from '../../services/stockAnalysis';
+import {STOCK_MARKETS, type StockMarket} from '../../services/stockAnalysis';
 
 export type StockGroup = {id: string; market: StockMarket; name: string; symbols: string[]};
 export const STOCK_GROUP_NAME_LIMIT = 60;
@@ -11,7 +11,7 @@ export function normalizeStockGroups(value: unknown): StockGroup[] {
     if (!Array.isArray(value)) return [];
     const ids = new Set<string>();
     return value.flatMap(item => {
-        if (!item || typeof item.id !== 'string' || ids.has(item.id) || !['KR', 'US', 'JP'].includes(item.market)
+        if (!item || typeof item.id !== 'string' || ids.has(item.id) || !STOCK_MARKETS.includes(item.market)
             || typeof item.name !== 'string' || !item.name.trim() || !Array.isArray(item.symbols)) return [];
         ids.add(item.id);
         return [{id: item.id, market: item.market as StockMarket, name: item.name.trim().slice(0, STOCK_GROUP_NAME_LIMIT),

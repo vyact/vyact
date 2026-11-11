@@ -1831,6 +1831,16 @@
     "manuscriptApplyHelp": "適用すると現在の話のタイトルと本文をこの結果で置き換えます。"
   },
   "stockAnalysis": {
+    "TW": "台湾株式市場",
+    "HK": "香港株式市場",
+    "CN": "中国本土株式市場",
+    "mapTaiwan": "台湾株式セクターマップ",
+    "mapHongKong": "香港株式セクターマップ",
+    "mapChina": "中国本土株式セクターマップ",
+    "indexTaiex": "台湾加権指数",
+    "indexHangSeng": "ハンセン指数",
+    "indexShanghai": "上海総合指数",
+    "indexShenzhen": "深圳成分指数",
     "industryUnclassified": "未分類",
     "premarket": {
       "label": "プレマーケット",
@@ -1846,6 +1856,9 @@
       "comparisonShort": "終値比"
     },
     "countries": {
+      "TW": "台湾",
+      "HK": "香港",
+      "CN": "中国本土",
       "US": "米国",
       "KR": "韓国",
       "JP": "日本"

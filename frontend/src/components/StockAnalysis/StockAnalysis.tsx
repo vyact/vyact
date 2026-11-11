@@ -8,7 +8,7 @@ import {localizeStockName} from '../../utils/stockDisplayName';
 import {ArrowLeft, ChartLine, RefreshCw, Search, Settings, Star, Plus, Pencil, Trash2, LayoutGrid, Folders, ChevronDown} from 'lucide-react';
 import {Trans, useTranslation} from 'react-i18next';
 import {stockSnapshotCache} from '../../services/stockSnapshotCache';
-import {stockAnalysis, type DailyPrice, type StockMarket, type StockSymbol} from '../../services/stockAnalysis';
+import {stockAnalysis, STOCK_MARKETS, type DailyPrice, type StockMarket, type StockSymbol} from '../../services/stockAnalysis';
 import WorkspaceExitButton from '../common/WorkspaceLayout/WorkspaceExitButton';
 import WorkspaceLayout from '../common/WorkspaceLayout/WorkspaceLayout';
 import PanelResizer from '../common/PanelResizer/PanelResizer';
@@ -169,10 +169,10 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
 
     const changeMarket = (value: string) => {
         if (value === market) return;
-        if (value !== 'KR' && value !== 'US' && value !== 'JP') return;
+        if (!STOCK_MARKETS.includes(value as StockMarket)) return;
         setSelectedGroupId('');
-        setMarket(value);
-        saveMarketPreference(value);
+        setMarket(value as StockMarket);
+        saveMarketPreference(value as StockMarket);
         setSymbols([]);
         setDirectoryState('loading');
         setQuery('');

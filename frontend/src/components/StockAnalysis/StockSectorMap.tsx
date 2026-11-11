@@ -49,7 +49,7 @@ export function SectorPreview({sector, focused, market, day, premarket = false, 
         style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: 'exceptZero',
     });
     const price = new Intl.NumberFormat(i18n.resolvedLanguage, {
-        style: 'currency', currency: {US: 'USD', KR: 'KRW', JP: 'JPY'}[market], currencyDisplay: 'narrowSymbol',
+        style: 'currency', currency: {US: 'USD', KR: 'KRW', JP: 'JPY', TW: 'TWD', HK: 'HKD', CN: 'CNY'}[market], currencyDisplay: 'narrowSymbol',
         minimumFractionDigits: market === 'US' ? 2 : 0, maximumFractionDigits: market === 'KR' ? 0 : 2,
     });
     const focusedChange = focused && <strong data-direction={focused.change == null || focused.change === 0 ? 'flat' : focused.change > 0 ? 'up' : 'down'}>
@@ -227,7 +227,7 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
     } : previewSector;
     const premarket = market === 'US' && (stockGroups ? groupQuoteState.quotes.some(quote => quote.session === 'premarket') : snapshot?.session === 'premarket');
     const quoteTime = stockGroups ? groupQuoteState.quotes.map(quote => quote.quoteTime ?? '').sort().slice(-1)[0] : snapshot?.quoteTime;
-    const title = selectedSector ? sectorName(selectedSector.name) : stockGroups ? t('stockAnalysis.groups.all') : t({KR: 'stockAnalysis.mapKorea', US: 'stockAnalysis.mapUs', JP: 'stockAnalysis.mapJapan'}[market]);
+    const title = selectedSector ? sectorName(selectedSector.name) : stockGroups ? t('stockAnalysis.groups.all') : t({KR: 'stockAnalysis.mapKorea', US: 'stockAnalysis.mapUs', JP: 'stockAnalysis.mapJapan', TW: 'stockAnalysis.mapTaiwan', HK: 'stockAnalysis.mapHongKong', CN: 'stockAnalysis.mapChina'}[market]);
     const dateFormat = new Intl.DateTimeFormat(i18n.resolvedLanguage, {dateStyle: 'medium', timeZone: 'UTC'});
     const formatDay = (day: string) => dateFormat.format(new Date(day));
 

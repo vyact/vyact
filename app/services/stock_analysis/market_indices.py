@@ -10,7 +10,8 @@ from yfinance.data import YfData
 
 from services.stock_analysis.market_sessions import CASH_CALENDAR, FUTURES_CALENDAR, active_session, next_regular_open, JAPAN_CASH_CALENDAR, is_session_break
 
-MARKET_INDEX_SYMBOLS = {"US": ("^GSPC", "^IXIC", "^RUT"), "KR": ("^KS11", "^KQ11"), "JP": ("^N225",)}
+MARKET_INDEX_SYMBOLS = {"US": ("^GSPC", "^IXIC", "^RUT"), "KR": ("^KS11", "^KQ11"), "JP": ("^N225",), "TW": ("^TWII",), "HK": ("^HSI",),
+                        "CN": ("000001.SS", "399001.SZ",)}
 US_INDEX_FUTURES = {"^GSPC": "ES=F", "^IXIC": "NQ=F", "^RUT": "RTY=F"}
 MARKET_INDEX_FUTURES = {"US": US_INDEX_FUTURES, "JP": {"^N225": "NIY=F"}}
 INDEX_FUTURE_SYMBOLS = frozenset(symbol for mapping in MARKET_INDEX_FUTURES.values() for symbol in mapping.values())
@@ -18,6 +19,9 @@ CASH_CALENDARS = {"US": CASH_CALENDAR, "JP": JAPAN_CASH_CALENDAR}
 INDEX_SYMBOLS = tuple(symbol for symbols in MARKET_INDEX_SYMBOLS.values() for symbol in symbols)
 
 def index_timezone(symbol: str) -> ZoneInfo:
+    for market, zone in {"TW": "Asia/Taipei", "HK": "Asia/Hong_Kong", "CN": "Asia/Shanghai"}.items():
+        if symbol in MARKET_INDEX_SYMBOLS[market]:
+            return ZoneInfo(zone)
     if symbol in MARKET_INDEX_SYMBOLS["JP"]:
         return ZoneInfo("Asia/Tokyo")
     return ZoneInfo("Asia/Seoul" if symbol in MARKET_INDEX_SYMBOLS["KR"] else "America/New_York")
@@ -68,7 +72,7 @@ def _safe_fetch_index(symbol: str) -> dict:
             "date": None, "closes": []}
 
 
-@lru_cache(maxsize=3)
+@lru_cache(maxsize=8)
 def _load_indices(cache_window: int, market: str) -> list[dict]:
     symbols = MARKET_INDEX_SYMBOLS[market]
     with ThreadPoolExecutor(max_workers=len(symbols)) as executor:

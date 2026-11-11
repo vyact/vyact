@@ -7,6 +7,11 @@ const CACHE_PREFIX = 'vyact:stock-snapshot:v1:';
 const MAX_CACHE_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const memory = new Map<string, CachedSnapshot<unknown>>();
 
+function symbolSnapshotKey(market: StockMarket, language: string): string {
+    const localizedChinese = ['TW', 'HK', 'CN'].includes(market) && language.toLowerCase().startsWith('zh');
+    return `symbols:${market}:${language}${localizedChinese ? ':names-v2' : ''}`;
+}
+
 function readSnapshot<T>(key: string, validate: (data: unknown) => data is T): T | undefined {
     try {
         const entry = memory.get(key) ?? JSON.parse(localStorage.getItem(CACHE_PREFIX + key) ?? 'null');
@@ -27,8 +32,8 @@ function writeSnapshot<T>(key: string, data: T) {
 
 export const stockSnapshotCache = {
     symbolsFetchedAt: (market: StockMarket, language = 'en') => {
-        readSnapshot<StockSymbol[]>(`symbols:${market}:${language}`, (value): value is StockSymbol[] => Array.isArray(value));
-        return memory.get(`symbols:${market}:${language}`)?.savedAt ?? 0;
+        readSnapshot<StockSymbol[]>(symbolSnapshotKey(market, language), (value): value is StockSymbol[] => Array.isArray(value));
+        return memory.get(symbolSnapshotKey(market, language))?.savedAt ?? 0;
     },
     clear: () => {
         memory.clear();
@@ -37,11 +42,11 @@ export const stockSnapshotCache = {
             keys.forEach(key => localStorage.removeItem(key));
         } catch { /* In-memory snapshots have still been invalidated. */ }
     },
-    readSymbols: (market: StockMarket, language = 'en') => readSnapshot<StockSymbol[]>(`symbols:${market}:${language}`,
+    readSymbols: (market: StockMarket, language = 'en') => readSnapshot<StockSymbol[]>(symbolSnapshotKey(market, language),
         (data): data is StockSymbol[] => Array.isArray(data) && data.length > 0
             && data.every(item => typeof item?.symbol === 'string' && typeof item.name === 'string'))
         ?.map(item => ({...normalizeStockSymbol(item), name: localizeStockName(item.name, language)})),
-    writeSymbols: (market: StockMarket, symbols: StockSymbol[], language = 'en') => writeSnapshot(`symbols:${market}:${language}`, symbols),
+    writeSymbols: (market: StockMarket, symbols: StockSymbol[], language = 'en') => writeSnapshot(symbolSnapshotKey(market, language), symbols),
     readMap: (market: StockMarket, language = 'en') => {
         const snapshot = readSnapshot<MarketSectorMap>(`map-v2:${market}:${language}`, (value): value is MarketSectorMap => {
             const map = value as MarketSectorMap | null;

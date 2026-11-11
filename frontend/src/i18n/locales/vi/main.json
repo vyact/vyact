@@ -1831,6 +1831,16 @@
     "manuscriptApplyHelp": "Áp dụng sẽ thay thế tiêu đề và nội dung chương hiện tại."
   },
   "stockAnalysis": {
+    "TW": "Chứng khoán Đài Loan",
+    "HK": "Chứng khoán Hồng Kông",
+    "CN": "Chứng khoán Trung Quốc đại lục",
+    "mapTaiwan": "Bản đồ ngành Đài Loan",
+    "mapHongKong": "Bản đồ ngành Hồng Kông",
+    "mapChina": "Bản đồ ngành Trung Quốc đại lục",
+    "indexTaiex": "TAIEX",
+    "indexHangSeng": "Hang Seng",
+    "indexShanghai": "Shanghai Composite",
+    "indexShenzhen": "Shenzhen Component",
     "industryUnclassified": "Chưa phân loại",
     "premarket": {
       "label": "Trước giờ mở cửa",
@@ -1846,6 +1856,9 @@
       "comparisonShort": "So với đóng cửa"
     },
     "countries": {
+      "TW": "Đài Loan",
+      "HK": "Hồng Kông",
+      "CN": "Trung Quốc đại lục",
       "US": "Hoa Kỳ",
       "KR": "Hàn Quốc",
       "JP": "Nhật Bản"

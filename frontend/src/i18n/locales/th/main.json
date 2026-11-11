@@ -1831,6 +1831,16 @@
     "manuscriptApplyHelp": "เมื่อใช้ผลลัพธ์นี้จะแทนที่ชื่อและเนื้อหาตอนปัจจุบัน"
   },
   "stockAnalysis": {
+    "TW": "ตลาดหุ้นไต้หวัน",
+    "HK": "ตลาดหุ้นฮ่องกง",
+    "CN": "ตลาดหุ้นจีนแผ่นดินใหญ่",
+    "mapTaiwan": "แผนผังกลุ่มอุตสาหกรรมไต้หวัน",
+    "mapHongKong": "แผนผังกลุ่มอุตสาหกรรมฮ่องกง",
+    "mapChina": "แผนผังกลุ่มอุตสาหกรรมจีนแผ่นดินใหญ่",
+    "indexTaiex": "TAIEX",
+    "indexHangSeng": "Hang Seng",
+    "indexShanghai": "Shanghai Composite",
+    "indexShenzhen": "Shenzhen Component",
     "industryUnclassified": "ยังไม่จัดประเภท",
     "premarket": {
       "label": "ก่อนเปิดตลาด",
@@ -1846,6 +1856,9 @@
       "comparisonShort": "เทียบราคาปิด"
     },
     "countries": {
+      "TW": "ไต้หวัน",
+      "HK": "ฮ่องกง",
+      "CN": "จีนแผ่นดินใหญ่",
       "US": "สหรัฐฯ",
       "KR": "เกาหลีใต้",
       "JP": "ญี่ปุ่น"

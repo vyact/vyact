@@ -1,5 +1,5 @@
 import {afterEach, describe, expect, it, vi} from 'vitest';
-import {normalizeStockSymbol, stockSymbolCode, stockWatchlistKey} from './stockSymbols';
+import {isMarketIndexSymbol, normalizeStockSymbol, stockSymbolCode, stockWatchlistKey} from './stockSymbols';
 import {stockAnalysis} from '../services/stockAnalysis';
 
 afterEach(() => vi.unstubAllGlobals());
@@ -31,4 +31,14 @@ describe('provider-independent stock codes', () => {
             '/api/stock-analysis/prices/005930', '/api/stock-analysis/sparkline/0001A0', '/api/stock-analysis/memos/005930',
         ]);
     });
+});
+
+it('recognizes Asian indices without treating mainland stock symbols as indices', () => {
+    for (const symbol of ['TWII', '^TWII', 'HSI', '^HSI', '000001.SS', '399001.SZ']) {
+        expect(isMarketIndexSymbol(symbol)).toBe(true);
+    }
+    for (const symbol of ['2330.TW', '3293.TWO', '0700.HK', '600519.SS', '300750.SZ']) {
+        expect(isMarketIndexSymbol(symbol)).toBe(false);
+        expect(stockSymbolCode(symbol)).toBe(symbol);
+    }
 });

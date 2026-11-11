@@ -1831,6 +1831,16 @@
     "manuscriptApplyHelp": "应用后将用此结果替换当前章节标题和正文。"
   },
   "stockAnalysis": {
+    "TW": "台湾股市",
+    "HK": "香港股市",
+    "CN": "中国内地股市",
+    "mapTaiwan": "台湾股市板块图",
+    "mapHongKong": "香港股市板块图",
+    "mapChina": "中国内地股市板块图",
+    "indexTaiex": "台湾加权指数",
+    "indexHangSeng": "恒生指数",
+    "indexShanghai": "上证综合指数",
+    "indexShenzhen": "深证成份指数",
     "industryUnclassified": "未分类",
     "premarket": {
       "label": "盘前交易",
@@ -1846,6 +1856,9 @@
       "comparisonShort": "较收盘价"
     },
     "countries": {
+      "TW": "台湾",
+      "HK": "香港",
+      "CN": "中国内地",
       "US": "美国",
       "KR": "韩国",
       "JP": "日本"

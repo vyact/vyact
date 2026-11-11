@@ -5,13 +5,15 @@ from time import monotonic
 from typing import Literal
 
 import httpx
-from services.stock_analysis.regional_yahoo import korea_display_names, korea_symbols, japan_display_names
+from services.stock_analysis.regional_yahoo import korea_display_names, korea_symbols, japan_display_names, regional_display_names
 
-Market = Literal["KR", "US", "JP"]
+Market = Literal["KR", "US", "JP", "TW", "HK", "CN"]
 NASDAQ_DIRECTORY = "https://www.nasdaqtrader.com/dynamic/SymDir/"
 
 
 def get_symbols(market: Market, language: str = "en") -> dict[str, str]:
+    if market in ("TW", "HK", "CN"):
+        return dict(sorted(regional_display_names(market, language).items()))
     if market == "JP":
         return dict(sorted(japan_display_names(language).items()))
     if market == "KR":
