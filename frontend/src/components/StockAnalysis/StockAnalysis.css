@@ -211,16 +211,11 @@
 :is(.stock-price-chart-quote, .stock-comparison-quote)[data-market="JP"] [data-direction="down"] {color: #30ad69; fill: #30ad69;}
 
 .stock-analysis > .workspace-layout-header {padding-inline-end: 12px; gap: 12px;}
-.stock-analysis-sidebar-toggle {position: absolute; top: 19px; inset-inline-start: 10px; z-index: 2; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; flex-shrink: 0; padding: 0; border: 1px solid var(--border); border-radius: 7px; background: var(--surface2); color: var(--text-muted); cursor: pointer;}
-.stock-analysis-sidebar-toggle:hover {color: var(--accent); border-color: var(--accent);}
-.stock-analysis-sidebar-toggle:focus-visible {outline: 2px solid var(--accent); outline-offset: 2px;}
 .stock-analysis > .workspace-layout-body {transition: grid-template-columns .24s ease;}
-.stock-analysis.is-sidebar-collapsed > .workspace-layout-body {grid-template-columns: 48px minmax(0, 1fr);}
+.stock-analysis.is-sidebar-collapsed > .workspace-layout-body {grid-template-columns: 0 minmax(0, 1fr);}
 .stock-analysis .workspace-layout-sidebar {position: relative; min-width: 0; overflow: hidden;}
 .stock-analysis .workspace-layout-sidebar-content {min-width: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden; transition: opacity .18s ease, visibility .18s ease;}
-.stock-analysis .stock-analysis-market-section {padding-inline-start: 36px;}
 .stock-analysis.is-sidebar-collapsed .workspace-layout-sidebar-content {opacity: 0; visibility: hidden; pointer-events: none;}
-.stock-analysis.is-sidebar-collapsed .stock-analysis-sidebar-toggle {border-color: transparent; background: transparent;}
 .stock-analysis-sidebar {width: 100%; height: 100%; flex: 1; min-width: 0; min-height: 0; box-sizing: border-box; overflow: hidden;}
 @media (prefers-reduced-motion: reduce) {
     .stock-analysis > .workspace-layout-body, .stock-analysis .workspace-layout-sidebar-content {transition: none;}
@@ -251,3 +246,30 @@
 .stock-analysis-sidebar-resizer.panel-resizer--active .panel-resizer-line {background: transparent;}
 .stock-analysis-sidebar-resizer .panel-resizer-handle {width: 3px; height: 78px; box-shadow: none;}
 .stock-analysis-sidebar-resizer .panel-resizer-hint {left: auto; right: 12px; width: min(240px, calc(var(--workspace-sidebar-width) - 24px)); box-sizing: border-box;}
+
+.stock-analysis > .workspace-layout-body {position: relative;}
+/* Keep the collapsed panel mounted so both opening and closing can animate. */
+.stock-analysis.is-sidebar-collapsed .workspace-layout-sidebar {
+    position: absolute; inset-block: 0; inset-inline-start: 0;
+    width: 0; z-index: 10; pointer-events: none;
+    border-inline-end: 0 solid var(--border); border-radius: 0 10px 10px 0;
+    transition: width 180ms cubic-bezier(0.22, 0.8, 0.25, 1), box-shadow 140ms ease;
+}
+.stock-analysis.is-sidebar-collapsed .workspace-layout-sidebar-content {
+    min-width: var(--workspace-sidebar-width, 220px);
+    transition: opacity 110ms ease, visibility 0s linear 180ms;
+}
+.stock-analysis.is-sidebar-overlay .workspace-layout-sidebar {
+    width: var(--workspace-sidebar-width, 220px); pointer-events: auto;
+    border-inline-end-width: 1px;
+    box-shadow: 8px 0 24px rgba(0, 0, 0, .25);
+}
+.stock-analysis.is-sidebar-overlay .workspace-layout-sidebar-content {
+    opacity: 1; visibility: visible; pointer-events: auto;
+    transition: opacity 110ms ease 45ms, visibility 0s;
+}
+.stock-analysis.is-sidebar-collapsed .workspace-layout-content {grid-column: 2;}
+@media (prefers-reduced-motion: reduce) {
+    .stock-analysis.is-sidebar-collapsed .workspace-layout-sidebar,
+    .stock-analysis.is-sidebar-collapsed .workspace-layout-sidebar-content {transition: none;}
+}

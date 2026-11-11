@@ -1,8 +1,11 @@
+import '../common/WorkspaceLayout/WorkspaceBrand.css';
+import useSidebarHover from '../common/WorkspaceLayout/useSidebarHover';
+import {WorkspaceSidebarContext} from '../../contexts/WorkspaceSidebarContext';
 import './StockSymbolLabel.css';
 import type {ChartSnapshot} from './chartSnapshot';
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback, useContext, useEffect, useRef, useState} from 'react';
 import {localizeStockName} from '../../utils/stockDisplayName';
-import {ArrowLeft, ChartCandlestick, RefreshCw, Search, Settings, Star, Plus, Pencil, Trash2, LayoutGrid, Folders, ChevronDown, ChevronLeft, ChevronRight} from 'lucide-react';
+import {ArrowLeft, ChartLine, RefreshCw, Search, Settings, Star, Plus, Pencil, Trash2, LayoutGrid, Folders, ChevronDown} from 'lucide-react';
 import {Trans, useTranslation} from 'react-i18next';
 import {stockSnapshotCache} from '../../services/stockSnapshotCache';
 import {stockAnalysis, type DailyPrice, type StockMarket, type StockSymbol} from '../../services/stockAnalysis';
@@ -67,23 +70,18 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
         try {localStorage.setItem(SIDEBAR_WIDTH_KEY, String(width));} catch { /* Keep session state. */ }
     };
     const [sidebarCollapsed, setSidebarCollapsed] = useState(readSidebarCollapsed);
+    const {visible: sidebarHover, onEnter: onSidebarHoverEnter, onLeave: onSidebarHoverLeave, dismiss: dismissSidebarHover} = useSidebarHover(sidebarCollapsed);
     const toggleSidebar = useCallback(() => {
+        dismissSidebarHover();
         const next = !sidebarCollapsed;
         setSidebarCollapsed(next);
         try {localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(next));} catch { /* Keep session state. */ }
-    }, [sidebarCollapsed]);
+    }, [sidebarCollapsed, dismissSidebarHover]);
+    const registerSidebar = useContext(WorkspaceSidebarContext);
     useEffect(() => {
-        const handleSidebarShortcut = (event: KeyboardEvent) => {
-            if (event.defaultPrevented || event.isComposing || event.altKey
-                || !(event.metaKey || event.ctrlKey) || !event.shiftKey
-                || (event.code !== 'KeyS' && event.key.toLowerCase() !== 's')) return;
-            event.preventDefault();
-            if (!event.repeat) toggleSidebar();
-        };
-        // Handle the active workspace before the chat's global shortcut listener.
-        window.addEventListener('keydown', handleSidebarShortcut, true);
-        return () => window.removeEventListener('keydown', handleSidebarShortcut, true);
-    }, [toggleSidebar]);
+        registerSidebar({collapsed: sidebarCollapsed, toggle: toggleSidebar, onHoverEnter: onSidebarHoverEnter, onHoverLeave: onSidebarHoverLeave});
+        return () => registerSidebar(null);
+    }, [registerSidebar, sidebarCollapsed, toggleSidebar, onSidebarHoverEnter, onSidebarHoverLeave]);
     const [detailTab, setDetailTab] = useState<'chart' | 'history' | 'financials'>('chart');
     const [apiSettingsOpen, setApiSettingsOpen] = useState(false);
     const [market, setMarket] = useState<StockMarket>(() => getInitialMarket(i18n.resolvedLanguage ?? i18n.language));
@@ -205,15 +203,10 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                 const maximum = Math.max(MIN_SIDEBAR_WIDTH, Math.min(MAX_SIDEBAR_WIDTH, bounds.width - discussionWidth - MIN_CHART_WIDTH));
                 return Math.max(MIN_SIDEBAR_WIDTH, Math.min(maximum, event.clientX - bounds.left));
             }}/>}
-        <button type="button" className="stock-analysis-sidebar-toggle" onClick={toggleSidebar}
-            aria-expanded={!sidebarCollapsed} aria-label={tr(sidebarCollapsed ? 'expandSidebar' : 'collapseSidebar')}
-            data-tooltip-disabled="">
-            {sidebarCollapsed ? <ChevronRight size={17}/> : <ChevronLeft size={17}/>}
-        </button>
     </>;
     const header = <>
 
-        <div className="stock-analysis-title"><ChartCandlestick size={20} aria-hidden="true"/><strong>{tr('title')}</strong></div>
+        <div className="stock-analysis-title"><span className="workspace-brand-icon"><ChartLine size={18} aria-hidden="true"/></span><strong>{tr('title')}</strong></div>
         <div className="stock-analysis-header-actions">
             <StockFinancialCollection market={market} directory={symbols}/>
             <WorkspaceExitButton className="stock-analysis-exit" onClick={onClose}/>
@@ -324,7 +317,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
             setDeletingGroup(null);
         }}/>}
     {apiSettingsOpen && <StockApiSettings market={market} onClose={() => setApiSettingsOpen(false)} onSaved={onApiSaved}/>}
-    <WorkspaceLayout sidebarWidth={sidebarWidth} sidebarToggle={sidebarToggle} sidebarCollapsed={sidebarCollapsed} className="stock-analysis" label={tr('title')} header={header} sidebar={sidebar}>
+    <WorkspaceLayout sidebarWidth={sidebarWidth} sidebarToggle={sidebarToggle} sidebarCollapsed={sidebarCollapsed} sidebarOverlay={sidebarHover} onSidebarMouseEnter={onSidebarHoverEnter} onSidebarMouseLeave={onSidebarHoverLeave} className="stock-analysis" label={tr('title')} header={header} sidebar={sidebar}>
         <div className={`stock-analysis-inner${active ? " has-discussion" : ""}`}><main className="stock-analysis-content">
             {!active && (listView === 'groups' && !groupSymbols.size
                 ? <div className="stock-watchlist-empty"><strong>{tr('groups.empty')}</strong><p>{tr('groups.emptyHint')}</p>

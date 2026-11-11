@@ -1,3 +1,4 @@
+import {WorkspaceSidebarContext, type WorkspaceSidebarControl} from '../../contexts/WorkspaceSidebarContext';
 import MainWorkspace from './MainWorkspace';
 import {DocumentPreviewProvider} from '../../contexts/DocumentPreviewContext';
 import {getGoogleWorkspaceStatus} from '../../services/googleWorkspaceStatus';
@@ -235,6 +236,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
     const [openModelSettingsRequest, setOpenModelSettingsRequest] = useState(0);
     const {t} = useTranslation('main');
     // ── UI 상태 ──────────────────────────────────────────────────────
+    const [workspaceSidebar, setWorkspaceSidebar] = useState<WorkspaceSidebarControl | null>(null);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(getStoredSidebarCollapsed);
     const [sidebarHover, setSidebarHover] = useState(false);
     const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -619,7 +621,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
     }, []);
 
     useGlobalKeyboard({
-        onToggleSidebar: toggleSidebar,
+        onToggleSidebar: workspaceSidebar?.toggle ?? toggleSidebar,
         onToggleCommandPalette: () => {
             const next = !showCommandPalette;
             closeAllModals();
@@ -685,16 +687,17 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
     // ── RENDER ────────────────────────────────────────────────────────
     return (
         <PanelManagerProvider>
+            <WorkspaceSidebarContext.Provider value={setWorkspaceSidebar}>
             <PluginProviders>
             <DocumentPreviewProvider><CodePanelProvider>
                 <PluginPanelCoordinator/>
                 <div className="main-page-wrapper">
                     <TitleBar
-                        sidebarCollapsed={sidebarCollapsed}
-                        onToggleSidebar={toggleSidebar}
+                        sidebarCollapsed={workspaceSidebar?.collapsed ?? sidebarCollapsed}
+                        onToggleSidebar={workspaceSidebar?.toggle ?? toggleSidebar}
                         onScreenshot={handleScreenshot}
-                        onSidebarHoverEnter={handleSidebarHoverEnter}
-                        onSidebarHoverLeave={handleSidebarHoverLeave}
+                        onSidebarHoverEnter={workspaceSidebar?.onHoverEnter ?? handleSidebarHoverEnter}
+                        onSidebarHoverLeave={workspaceSidebar?.onHoverLeave ?? handleSidebarHoverLeave}
                         notificationCenterOpen={notificationCenterOpen}
                         onNotificationCenterOpenChange={setNotificationCenterOpen}
                     />
@@ -1163,6 +1166,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                 </div>
             </CodePanelProvider></DocumentPreviewProvider>
             </PluginProviders>
+        </WorkspaceSidebarContext.Provider>
         </PanelManagerProvider>
     );
 };

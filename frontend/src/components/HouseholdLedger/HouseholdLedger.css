@@ -1,6 +1,5 @@
 .household-ledger { height: 100%; min-width: 0; flex-shrink: 0; display: flex; flex-direction: column; background: var(--surface); color: var(--text); border-left: 1px solid var(--border); box-sizing: border-box; overflow: hidden; container-type: inline-size; }
 .ledger-header { display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-bottom: 1px solid var(--border); }
-.ledger-header > svg { color: var(--accent); }
 .ledger-header h2 { flex: 1; margin: 0; font-size: 16px; }
 .ledger-add-button { display: inline-flex; align-items: center; gap: 5px; padding: 7px 10px; background: var(--accent); color: var(--on-accent); border: 0; border-radius: 7px; font: inherit; font-size: 12px; cursor: pointer; }
 .ledger-add-button:disabled { opacity: .4; cursor: default; }

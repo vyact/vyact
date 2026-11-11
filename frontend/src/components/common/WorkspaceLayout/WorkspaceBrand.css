@@ -1,0 +1,1 @@
+.workspace-brand-icon {display: grid; place-items: center; flex-shrink: 0; width: 30px; height: 30px; border-radius: 9px; color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, transparent);}

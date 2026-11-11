@@ -1,3 +1,4 @@
+import '../common/WorkspaceLayout/WorkspaceBrand.css';
 import IncomeSources from './IncomeSources';
 import SavedPlanDialog from './SavedPlanDialog';
 import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
@@ -100,7 +101,7 @@ export default function CalcStudio({onClose, style}: {onClose: () => void; style
     return (
             <aside className="calc-studio" ref={panelRef} style={style} aria-labelledby="calc-studio-title">
                 <header className="calc-studio-header">
-                    <ChartNoAxesCombined size={20} aria-hidden="true"/><h2 id="calc-studio-title">{t('calcStudio.title')}</h2>
+                    <span className="workspace-brand-icon"><ChartNoAxesCombined size={18} aria-hidden="true"/></span><h2 id="calc-studio-title">{t('calcStudio.title')}</h2>
                     <button className="titlebar-btn" onClick={onClose} aria-label={t('windowControls.close')}><X size={18}/></button>
                 </header>
                 <div className={`calc-studio-body${results ? ' calc-studio-body--results' : ''}`} ref={bodyRef}>

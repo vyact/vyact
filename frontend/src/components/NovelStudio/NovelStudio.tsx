@@ -1,3 +1,4 @@
+import '../common/WorkspaceLayout/WorkspaceBrand.css';
 import useNovelTools from './useNovelTools';
 import McpPromptInput from '../common/McpPromptInput';
 import useScrollActivity from '../common/hooks/useScrollActivity';
@@ -270,7 +271,7 @@ export default function NovelStudio({onClose}: {onClose: () => void}) {
         if (story && deletedIds.has(story.id)) {setStoryId(next[0].id); setChapterId(''); setTab('text'); resetAssistant();}
     };
     const header = <>
-        <div className="novel-brand"><span className="novel-brand-icon"><Feather size={18} aria-hidden="true"/></span><h1>{tr('title')}</h1></div>
+        <div className="novel-brand"><span className="workspace-brand-icon"><Feather size={18} aria-hidden="true"/></span><h1>{tr('title')}</h1></div>
 
         <div className="novel-header-inspector-actions"><div className="novel-tabs">{(['text', 'bible'] as const).map(key => <button key={key} disabled={busy || changes.pending} aria-pressed={tab === key} onClick={() => changes.requestAction(() => {setTab(key); resetAssistant(); setSelectedAction(key === 'bible' ? 'createDirection' : 'write');})}>{tr(key)}</button>)}</div>
             <WorkspaceExitButton disabled={changes.pending} onClick={() => requestExit()}/>

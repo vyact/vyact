@@ -1,3 +1,4 @@
+import '../common/WorkspaceLayout/WorkspaceBrand.css';
 import ChatAttachButton from '../common/ChatAttachButton/ChatAttachButton';
 import {addToChat} from '../../utils/chatDraft';
 import {useEffect, useMemo, useRef, useState, type CSSProperties} from 'react';
@@ -83,7 +84,7 @@ export default function HouseholdLedger({onClose, style}: {onClose: () => void; 
         addToChat({title, text: `## ${title}\n\n` + JSON.stringify(snapshot, null, 2)});
     };
     return <aside className="household-ledger" style={style} aria-labelledby="household-ledger-title">
-        <header className="ledger-header"><PiggyBank size={21} aria-hidden="true"/><h2 id="household-ledger-title">{t('vyvowLedger.title')}</h2>
+        <header className="ledger-header"><span className="workspace-brand-icon"><PiggyBank size={18} aria-hidden="true"/></span><h2 id="household-ledger-title">{t('vyvowLedger.title')}</h2>
             <ChatAttachButton disabled={loading || !!error || !data || !visibleEntries.length || editing !== undefined} onClick={exportToChat}/>
             <button className="ledger-add-button" disabled={loading || !!error || editing !== undefined} onClick={() => setEditing(null)}><Plus size={15}/>{t('vyvowLedger.add')}</button>
             <button className="titlebar-btn" onClick={onClose} aria-label={t('windowControls.close')}><X size={18}/></button></header>

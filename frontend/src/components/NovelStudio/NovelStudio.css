@@ -50,7 +50,6 @@
 .novel-prompt-help {font-size: 11px; line-height: 1.7; color: var(--muted); margin: -12px 0 20px;}
 
 .novel-brand {display: flex; align-items: center; gap: 9px; flex-shrink: 0;}
-.novel-brand-icon {display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, transparent);}
 .novel-brand h1 {font-size: 14px; margin: 0; white-space: nowrap;}
 .novel-tabs {height: 100%; align-items: stretch; flex-shrink: 0;}
 .novel-studio > .workspace-layout-header {padding-inline-end: 12px;}

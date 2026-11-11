@@ -1,3 +1,4 @@
+import '../common/WorkspaceLayout/WorkspaceBrand.css';
 import DateInput from '../common/DateInput/DateInput';
 import ChatAttachButton from '../common/ChatAttachButton/ChatAttachButton';
 import {addToChat} from '../../utils/chatDraft';
@@ -60,7 +61,7 @@ export default function QuickCalculators({kind, onClose, style}: {kind: 'returns
     };
     return <aside className="calc-studio quick-calculator" style={style} aria-labelledby="quick-calculator-title">
         <header className="calc-studio-header">
-            {travel ? <CalendarDays size={20}/> : <Percent size={20}/>}
+            <span className="workspace-brand-icon">{travel ? <CalendarDays size={18} aria-hidden="true"/> : <Percent size={18} aria-hidden="true"/>}</span>
             <h2 id="quick-calculator-title">{title}</h2>
             <button className="titlebar-btn" onClick={onClose} aria-label={t('windowControls.close')}><X size={18}/></button>
         </header>
