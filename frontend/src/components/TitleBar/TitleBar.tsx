@@ -71,13 +71,17 @@ const TitleBar: React.FC<TitleBarProps> = ({sidebarCollapsed, onToggleSidebar, o
                 <button
                     className="titlebar-btn"
                     onClick={onToggleSidebar}
+                    aria-label={t('shortcutModal.toggleSidebar')}
+                    aria-expanded={!sidebarCollapsed}
                     onMouseEnter={sidebarCollapsed ? onSidebarHoverEnter : undefined}
                     onMouseLeave={sidebarCollapsed ? onSidebarHoverLeave : undefined}
                 >
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                         strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                         strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                         <rect x="3" y="3" width="18" height="18" rx="2" />
-                        <line x1="9" y1="3" x2="9" y2="21" />
+                        {sidebarCollapsed
+                            ? <line x1="7" y1="8" x2="7" y2="16" />
+                            : <line x1="9" y1="3" x2="9" y2="21" />}
                     </svg>
                 </button>
             </div>

@@ -1,8 +1,8 @@
 import './StockSymbolLabel.css';
 import type {ChartSnapshot} from './chartSnapshot';
-import {useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {localizeStockName} from '../../utils/stockDisplayName';
-import {ArrowLeft, ChartCandlestick, RefreshCw, Search, Settings, Star, Plus, Pencil, Trash2, LayoutGrid, FolderOpen, ChevronDown, ChevronLeft, ChevronRight} from 'lucide-react';
+import {ArrowLeft, ChartCandlestick, RefreshCw, Search, Settings, Star, Plus, Pencil, Trash2, LayoutGrid, Folders, ChevronDown, ChevronLeft, ChevronRight} from 'lucide-react';
 import {Trans, useTranslation} from 'react-i18next';
 import {stockSnapshotCache} from '../../services/stockSnapshotCache';
 import {stockAnalysis, type DailyPrice, type StockMarket, type StockSymbol} from '../../services/stockAnalysis';
@@ -67,11 +67,23 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
         try {localStorage.setItem(SIDEBAR_WIDTH_KEY, String(width));} catch { /* Keep session state. */ }
     };
     const [sidebarCollapsed, setSidebarCollapsed] = useState(readSidebarCollapsed);
-    const toggleSidebar = () => {
+    const toggleSidebar = useCallback(() => {
         const next = !sidebarCollapsed;
         setSidebarCollapsed(next);
         try {localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(next));} catch { /* Keep session state. */ }
-    };
+    }, [sidebarCollapsed]);
+    useEffect(() => {
+        const handleSidebarShortcut = (event: KeyboardEvent) => {
+            if (event.defaultPrevented || event.isComposing || event.altKey
+                || !(event.metaKey || event.ctrlKey) || !event.shiftKey
+                || (event.code !== 'KeyS' && event.key.toLowerCase() !== 's')) return;
+            event.preventDefault();
+            if (!event.repeat) toggleSidebar();
+        };
+        // Handle the active workspace before the chat's global shortcut listener.
+        window.addEventListener('keydown', handleSidebarShortcut, true);
+        return () => window.removeEventListener('keydown', handleSidebarShortcut, true);
+    }, [toggleSidebar]);
     const [detailTab, setDetailTab] = useState<'chart' | 'history' | 'financials'>('chart');
     const [apiSettingsOpen, setApiSettingsOpen] = useState(false);
     const [market, setMarket] = useState<StockMarket>(() => getInitialMarket(i18n.resolvedLanguage ?? i18n.language));
@@ -219,7 +231,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                 <span className="stock-watchlist-tab-icon"><Star size={17} aria-hidden="true"/><span className="stock-watchlist-count">{new Intl.NumberFormat(i18n.resolvedLanguage).format(watchlistCount)}</span></span>
             </button>
             <button type="button" aria-label={tr('groups.tab')} aria-pressed={listView === 'groups'} onClick={() => changeListView('groups')}>
-                <span className="stock-watchlist-tab-icon"><FolderOpen size={17} aria-hidden="true"/><span className="stock-watchlist-count">{new Intl.NumberFormat(i18n.resolvedLanguage).format(marketGroups.length)}</span></span>
+                <span className="stock-watchlist-tab-icon"><Folders size={17} aria-hidden="true"/><span className="stock-watchlist-count">{new Intl.NumberFormat(i18n.resolvedLanguage).format(marketGroups.length)}</span></span>
             </button>
         </div>
         {listView === 'groups' && <div className="stock-group-list">
