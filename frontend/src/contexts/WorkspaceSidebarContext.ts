@@ -1,6 +1,7 @@
 import {createContext} from 'react';
 
 export interface WorkspaceSidebarControl {
+    shortcutScope?: 'stock-analysis';
     collapsed: boolean;
     toggle: () => void;
     onHoverEnter: () => void;

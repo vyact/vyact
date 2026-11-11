@@ -1154,7 +1154,7 @@ const MainPage: React.FC<MainPageProps> = ({onModelChange}) => {
                         {/* ── Shortcut Modal ──────────────────────────────────────── */}
                         {showShortcutModal && (
                             <React.Suspense fallback={null}>
-                                <ShortcutModal onClose={() => setShowShortcutModal(false)}/>
+                                <ShortcutModal scope={workspaceSidebar?.shortcutScope} onClose={() => setShowShortcutModal(false)}/>
                             </React.Suspense>
                         )}
                         {showSupportModal && (

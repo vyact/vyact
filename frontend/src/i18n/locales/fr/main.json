@@ -1833,7 +1833,9 @@
     "manuscriptApplyHelp": "L’application remplace le titre et le texte du chapitre actuel."
   },
   "stockAnalysis": {
-    "pinnedIndices": {"syncFailed": "Échec de synchronisation · Réessayer", "label": "Indices épinglés", "remove": "Détacher {{name}}", "dropHint": "Déposer ici pour épingler un indice"},
+    "indexNasdaq100": "Nasdaq 100",
+    "shortcuts": {"sortPreview": "Maintenir pour trier les aperçus par variation en pourcentage"},
+    "pinnedIndices": {"limitHint": "Vous pouvez épingler jusqu’à {{count}} indices", "syncFailed": "Échec de synchronisation · Réessayer", "label": "Indices épinglés", "remove": "Détacher {{name}}", "dropHint": "Déposer ici pour épingler un indice"},
     "TW": "Actions de Taïwan",
     "HK": "Actions de Hong Kong",
     "CN": "Actions de Chine continentale",

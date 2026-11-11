@@ -4,6 +4,7 @@ import httpx
 import pytest
 from elasticsearch import NotFoundError
 from fastapi import FastAPI
+from pydantic import ValidationError
 
 from routers import stock_analysis as router
 from services.db import SETTINGS_INDEX
@@ -61,3 +62,10 @@ def test_settings_backup_restore_retains_pinned_order():
     _preserve_machine_local_config(backup, {})
     restored = backup['indices'][SETTINGS_INDEX]['docs'][0]['_source']['value']
     assert router.PinnedIndexPreferences.model_validate(restored).model_dump() == {'items': ITEMS}
+
+
+def test_rejects_more_than_six_pinned_indices():
+    items = [{'market': market, 'symbol': symbol} for market, symbol in
+             [('US', 'GSPC'), ('US', 'IXIC'), ('US', 'RUT'), ('KR', 'KS11'), ('KR', 'KQ11'), ('TW', 'TWII'), ('HK', 'HSI')]]
+    with pytest.raises(ValidationError):
+        router.PinnedIndexPreferences(items=items)

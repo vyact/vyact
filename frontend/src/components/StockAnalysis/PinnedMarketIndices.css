@@ -1,22 +1,41 @@
-.stock-pinned-indices {display: flex; align-items: center; gap: 6px; flex: 1; min-width: 60px; min-height: 36px; overflow-x: auto; scrollbar-width: thin; border: 1px dashed transparent; border-radius: 7px; padding: 2px 4px;}
-.stock-pinned-indices[data-drag-active="true"] {border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); outline: 1px dashed var(--accent); outline-offset: 1px;}
-.stock-pinned-index {position: relative; flex-shrink: 0; border: 1px solid var(--border); border-radius: 6px; background: var(--surface2); cursor: grab;}
-.stock-pinned-index-open {display: grid; grid-template-columns: auto auto; gap: 1px 6px; padding: 3px 19px 3px 8px; background: transparent; border: 0; color: var(--text); cursor: pointer; font: inherit; text-align: start; font-variant-numeric: tabular-nums;}
-.stock-pinned-index-open > span {grid-column: 1 / -1; font-size: 9px; color: var(--text-muted); white-space: nowrap;}
+.stock-pinned-indices {position: relative; display: flex; align-items: center; gap: 6px; flex: 1; min-width: 60px; min-height: 36px; overflow: hidden; border: 1px dashed transparent; border-radius: 7px; padding: 2px 4px;}
+.stock-pinned-indices[data-drag-active="true"] {border-color: var(--info); background: transparent; outline: 1px dashed var(--info); outline-offset: 1px;}
+.stock-pinned-index {position: relative; box-sizing: border-box; width: 136px; flex: 0 0 136px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface2); cursor: grab;}
+.stock-pinned-index-open {display: grid; grid-template-columns: minmax(0, 1fr) 7ch; width: 100%; box-sizing: border-box; font-size: 10px; gap: 1px 4px; padding: 2px 6px; background: transparent; border: 0; color: var(--text); cursor: pointer; font-family: inherit; text-align: start; font-variant-numeric: tabular-nums;}
+.stock-pinned-index-open > span {grid-column: 1 / -1; font-size: 10px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
 .stock-pinned-index-open > strong, .stock-pinned-index-open > small {font-size: 11px; white-space: nowrap;}
-.stock-pinned-index-remove {position: absolute; inset-inline-end: 2px; top: 2px; display: grid; place-items: center; padding: 1px; border: 0; background: transparent; color: var(--text-muted); cursor: pointer;}
-.stock-pinned-index-remove:hover {color: var(--text);}
+.stock-pinned-index .stock-pinned-index-remove {position: absolute; inset-inline-end: 6px; top: 2px; bottom: auto; width: 12px; height: 12px; min-height: 12px;}
+.stock-pinned-index .stock-pinned-index-remove svg {width: 8px; height: 8px; stroke-width: 1.8;}
 .stock-pinned-index:is([data-market="US"], [data-market="HK"])[data-direction="up"] small,
 .stock-pinned-index:not([data-market="US"]):not([data-market="HK"])[data-direction="down"] small {color: #30ad69;}
 .stock-pinned-index:is([data-market="US"], [data-market="HK"])[data-direction="down"] small,
 .stock-pinned-index:not([data-market="US"]):not([data-market="HK"])[data-direction="up"] small {color: #e64c52;}
 .stock-pinned-index[data-market="KR"][data-direction="down"] small {color: #2878da;}
-.stock-pinned-index[data-drop="before"] {border-inline-start: 2px solid var(--accent);}
-.stock-pinned-index[data-drop="after"] {border-inline-end: 2px solid var(--accent);}
-.stock-pinned-indices-hint {font-size: 11px; color: var(--accent); white-space: nowrap; padding: 0 6px;}
-.stock-pinned-index button:focus-visible {outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 4px;}
+.stock-pinned-index[data-drop="before"] {border-color: var(--info); box-shadow: inset 0 0 0 1px var(--info);}
+.stock-pinned-indices-track {display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: thin;}
+.stock-pinned-indices-hint {position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2; max-width: calc(100% - 16px); box-sizing: border-box; padding: 4px 10px; border-radius: 5px; background: var(--surface); font-size: 11px; color: var(--info); text-align: center; pointer-events: none;}
+.stock-pinned-index button:focus-visible {outline: 2px solid var(--info); outline-offset: 1px; border-radius: 4px;}
 
-.stock-pinned-indices[data-drag-over="true"] {background: color-mix(in srgb, var(--accent) 18%, transparent); border-style: solid;}
-.stock-pinned-indices[data-drag-active="true"] .stock-pinned-indices-hint {flex: 1; text-align: center; min-width: 140px;}
+.stock-pinned-indices[data-drag-over="true"] {background: color-mix(in srgb, var(--info) 20%, transparent);}
 
-.stock-pinned-indices-retry {flex-shrink: 0; padding: 4px 6px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface2); color: var(--accent); font: inherit; font-size: 11px; cursor: pointer;}
+.stock-pinned-indices-retry {flex-shrink: 0; padding: 4px 6px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface2); color: var(--info); font: inherit; font-size: 11px; cursor: pointer;}
+
+.stock-pinned-index-open > strong {min-width: 0;}
+.stock-pinned-index-open > small {text-align: end;}
+
+.stock-pinned-index-label {padding-inline-end: 14px; display: flex; align-items: center; gap: 4px; min-width: 0;}
+.stock-pinned-index-name {overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.stock-pinned-index-session {display: inline-flex; flex-shrink: 0; color: var(--info);}
+
+.stock-pinned-index .stock-pinned-index-remove {
+    opacity: 0; pointer-events: none;
+    transition: opacity .15s ease, background .15s ease, color .15s ease;
+}
+.stock-pinned-index:hover .stock-pinned-index-remove,
+.stock-pinned-index:focus-within .stock-pinned-index-remove {opacity: 1; pointer-events: auto;}
+@media (hover: none) {
+    .stock-pinned-index .stock-pinned-index-remove {opacity: 1; pointer-events: auto;}
+}
+@media (prefers-reduced-motion: reduce) {
+    .stock-pinned-index .stock-pinned-index-remove {transition: none;}
+}

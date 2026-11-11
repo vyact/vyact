@@ -35,6 +35,7 @@ logger = get_logger(__name__)
 Symbol = Annotated[str, Path(pattern=STOCK_SYMBOL_PATTERN)]
 
 
+MAX_PINNED_INDICES = 6
 PINNED_INDICES_DOCUMENT_ID = 'stock_analysis_pinned_indices'
 
 
@@ -51,7 +52,7 @@ class PinnedIndexPreference(BaseModel):
 
 
 class PinnedIndexPreferences(BaseModel):
-    items: list[PinnedIndexPreference] = Field(max_length=20)
+    items: list[PinnedIndexPreference] = Field(max_length=MAX_PINNED_INDICES)
 
     @model_validator(mode='after')
     def validate_unique(self):
@@ -68,7 +69,7 @@ async def get_pinned_indices():
             result = await es.get(index=SETTINGS_INDEX, id=PINNED_INDICES_DOCUMENT_ID)
         except NotFoundError:
             return {'items': None}
-        return PinnedIndexPreferences.model_validate(result['_source']['value']).model_dump()
+        return PinnedIndexPreferences(items=result['_source']['value']['items'][:MAX_PINNED_INDICES]).model_dump()
     finally:
         await es.close()
 

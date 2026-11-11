@@ -210,7 +210,13 @@
 :is(.stock-price-chart-quote, .stock-comparison-quote):is([data-market="JP"], [data-market="TW"], [data-market="CN"]) [data-direction="up"] {color: #e64c52; fill: #e64c52;}
 :is(.stock-price-chart-quote, .stock-comparison-quote):is([data-market="JP"], [data-market="TW"], [data-market="CN"]) [data-direction="down"] {color: #30ad69; fill: #30ad69;}
 
-.stock-analysis > .workspace-layout-header {padding-inline-end: 12px; gap: 12px;}
+.stock-analysis > .workspace-layout-header {
+    display: grid;
+    grid-template-columns: minmax(max-content, calc(var(--workspace-sidebar-width) - 32px)) minmax(60px, 1fr) auto;
+    padding-inline: 20px 12px; gap: 12px;
+}
+.stock-analysis-title {white-space: nowrap;}
+
 .stock-analysis > .workspace-layout-body {transition: grid-template-columns .24s ease;}
 .stock-analysis.is-sidebar-collapsed > .workspace-layout-body {grid-template-columns: 0 minmax(0, 1fr);}
 .stock-analysis .workspace-layout-sidebar {position: relative; min-width: 0; overflow: hidden;}

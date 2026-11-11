@@ -1841,7 +1841,9 @@
     "manuscriptApplyHelp": "적용하면 현재 회차의 제목과 본문을 이 결과로 교체합니다."
   },
   "stockAnalysis": {
-    "pinnedIndices": {"syncFailed": "설정 동기화 실패 · 재시도", "label": "고정한 지수", "remove": "{{name}} 고정 해제", "dropHint": "여기에 놓아 지수 고정"},
+    "indexNasdaq100": "나스닥 100",
+    "shortcuts": {"sortPreview": "누른 채 종목 미리보기 등락률순 정렬"},
+    "pinnedIndices": {"limitHint": "최대 {{count}}개까지 고정할 수 있어요", "syncFailed": "설정 동기화 실패 · 재시도", "label": "고정한 지수", "remove": "{{name}} 고정 해제", "dropHint": "여기에 놓아 지수 고정"},
     "TW": "대만 증시",
     "HK": "홍콩 증시",
     "CN": "중국 본토 증시",

@@ -1831,7 +1831,9 @@
     "manuscriptApplyHelp": "Áp dụng sẽ thay thế tiêu đề và nội dung chương hiện tại."
   },
   "stockAnalysis": {
-    "pinnedIndices": {"syncFailed": "Đồng bộ thất bại · Thử lại", "label": "Chỉ số đã ghim", "remove": "Bỏ ghim {{name}}", "dropHint": "Thả vào đây để ghim chỉ số"},
+    "indexNasdaq100": "Nasdaq 100",
+    "shortcuts": {"sortPreview": "Giữ để sắp xếp cổ phiếu xem trước theo phần trăm thay đổi"},
+    "pinnedIndices": {"limitHint": "Bạn có thể ghim tối đa {{count}} chỉ số", "syncFailed": "Đồng bộ thất bại · Thử lại", "label": "Chỉ số đã ghim", "remove": "Bỏ ghim {{name}}", "dropHint": "Thả vào đây để ghim chỉ số"},
     "TW": "Chứng khoán Đài Loan",
     "HK": "Chứng khoán Hồng Kông",
     "CN": "Chứng khoán Trung Quốc đại lục",

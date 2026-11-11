@@ -81,7 +81,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
     }, [sidebarCollapsed, dismissSidebarHover]);
     const registerSidebar = useContext(WorkspaceSidebarContext);
     useEffect(() => {
-        registerSidebar({collapsed: sidebarCollapsed, toggle: toggleSidebar, onHoverEnter: onSidebarHoverEnter, onHoverLeave: onSidebarHoverLeave});
+        registerSidebar({shortcutScope: 'stock-analysis', collapsed: sidebarCollapsed, toggle: toggleSidebar, onHoverEnter: onSidebarHoverEnter, onHoverLeave: onSidebarHoverLeave});
         return () => registerSidebar(null);
     }, [registerSidebar, sidebarCollapsed, toggleSidebar, onSidebarHoverEnter, onSidebarHoverLeave]);
     const [detailTab, setDetailTab] = useState<'chart' | 'history' | 'financials'>('chart');
