@@ -22,7 +22,7 @@
 }
 .stock-sector-map-tile {
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
-    border: 0; border-radius: 2px; color: #fff; padding: 1px; line-height: 1.15;
+    border: 0; border-radius: 2px; color: #fff; padding: 1px clamp(2px, .5em, 12px); line-height: 1.15;
     font-variant-numeric: tabular-nums; cursor: pointer;
 }
 .stock-sector-map-tile strong {max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}

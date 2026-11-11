@@ -1,3 +1,4 @@
+import useStockMarketShortcuts from './useStockMarketShortcuts';
 import '../common/WorkspaceLayout/WorkspaceBrand.css';
 import useSidebarHover from '../common/WorkspaceLayout/useSidebarHover';
 import {WorkspaceSidebarContext} from '../../contexts/WorkspaceSidebarContext';
@@ -182,6 +183,8 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
         setLoading(false);
         setRefreshVersion(0);
     };
+
+    useStockMarketShortcuts(changeMarket);
 
     const openSymbol = (item: StockSymbol) => {
         if (item.symbol === activeSymbol) return;
