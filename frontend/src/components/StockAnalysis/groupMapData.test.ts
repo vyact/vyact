@@ -44,3 +44,16 @@ it('keeps every group and applies the 15-stock limit independently', () => {
     expect(result[0].stocks[0].symbol).toBe('S0');
     expect(result[1].stocks[0].symbol).toBe('S19');
 });
+
+it('keeps premarket details and excludes unquoted stocks from group performance', () => {
+    const result = buildGroupSectors([group], [
+        {...quotes[0], price: 103, change: 3, regularPrice: 100, regularChange: -2, quoteTime: '2026-11-11T10:00:00Z'},
+        {...quotes[1], price: null, change: null, regularPrice: 200, regularChange: -4},
+    ], [])[0];
+    expect(result.weight).toBe(400);
+    expect(result.change).toBe(3);
+    expect(result.stocks[0].regularPrice).toBe(100);
+    expect(result.stocks[0].quoteTime).toBe('2026-11-11T10:00:00Z');
+    expect(result.stocks[1].change).toBeNull();
+    expect(buildGroupSectors([group], quotes.map(quote => ({...quote, change: null})), [])[0].change).toBeNull();
+});

@@ -7,7 +7,7 @@ from time import time
 import httpx
 from yfinance.data import YfData
 
-from services.stock_analysis.symbols import yahoo_symbol
+from services.stock_analysis.symbols import yahoo_symbol, symbol_market
 from services.stock_analysis.catalog import Market
 from services.stock_analysis.market_group_cache import get_us_market_groups, freeze_us_layout_weights
 from services.stock_analysis.market_sessions import us_premarket_window
@@ -96,11 +96,7 @@ def _us_map(client: httpx.Client) -> dict:
     window = us_premarket_window(now)
     if window:
         for stock in stocks:
-            stock['regularPrice'], stock['regularChange'] = stock['price'], stock['change']
-            stock['price'], stock['change'] = None, None
-            premarket = _premarket_quote(quote_details.get(stock['symbol'], {}), window, now, stock['regularPrice'])
-            if premarket:
-                stock.update(premarket)
+            _apply_premarket_quote(stock, quote_details.get(stock['symbol'], {}), window, now)
     quote_time = max((stock.get('quoteTime', '') for stock in stocks), default='') or None
     sectors = _sectors(groups, limit=None)
     for sector in sectors:
@@ -124,6 +120,14 @@ def _premarket_quote(quote: dict, window: tuple[float, float], now: float, regul
         return None
     return {'price': price, 'change': (price / regular_price - 1) * 100,
             'quoteTime': datetime.fromtimestamp(stamp, timezone.utc).isoformat()}
+
+
+def _apply_premarket_quote(stock: dict, details: dict, window: tuple[float, float], now: float) -> None:
+    stock['regularPrice'], stock['regularChange'] = stock['price'], stock['change']
+    stock['price'], stock['change'] = None, None
+    premarket = _premarket_quote(details, window, now, stock['regularPrice'])
+    if premarket:
+        stock.update(premarket)
 
 
 def _us_quotes(symbols: list[str], *, details: dict | None = None) -> dict[str, tuple[str, float, float, float]]:
@@ -187,9 +191,21 @@ def _load_stock_quotes(symbols: tuple[str, ...], cache_window: int) -> list[dict
             providers[symbol] = yahoo_symbol(symbol)
         except ValueError:
             continue
-    quotes = _us_quotes(list(providers.values())) if providers else {}
-    return [{"symbol": symbol, "date": quote[0], "price": quote[1], "change": quote[2], "marketCap": quote[3]}
-            for symbol, provider in providers.items() if (quote := quotes.get(provider)) is not None]
+    details = {}
+    quotes = _us_quotes(list(providers.values()), details=details) if providers else {}
+    now = time()
+    window = us_premarket_window(now)
+    result = []
+    for symbol, provider in providers.items():
+        quote = quotes.get(provider)
+        if quote is None:
+            continue
+        stock = {"symbol": symbol, "date": quote[0], "price": quote[1], "change": quote[2], "marketCap": quote[3]}
+        if window and symbol_market(symbol) == 'US':
+            stock['session'] = 'premarket'
+            _apply_premarket_quote(stock, details.get(provider, {}), window, now)
+        result.append(stock)
+    return result
 
 
 def get_stock_quotes(symbols: list[str]) -> list[dict]:

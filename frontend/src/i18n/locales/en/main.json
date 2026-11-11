@@ -2245,6 +2245,7 @@
     "marketIndices": "Major market indices",
     "indexKospi": "KOSPI",
     "indexKosdaq": "KOSDAQ",
+    "newYorkTime": "New York {{time}}",
     "regularMarketOpensIn": "Regular market opens in {{time}}",
     "indexSp500Chart": "S&P 500 Index",
     "indexNasdaqCompositeChart": "Nasdaq Composite",

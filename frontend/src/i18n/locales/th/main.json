@@ -2244,6 +2244,7 @@
     "marketIndices": "ดัชนีตลาดหลัก",
     "indexKospi": "KOSPI",
     "indexKosdaq": "KOSDAQ",
+    "newYorkTime": "นิวยอร์ก {{time}}",
     "regularMarketOpensIn": "ตลาดภาคปกติเปิดในอีก {{time}}",
     "indexSp500Chart": "ดัชนี S&P 500",
     "indexNasdaqCompositeChart": "ดัชนี Nasdaq Composite",

@@ -2254,6 +2254,7 @@
     "marketIndices": "주요 시장 지수",
     "indexKospi": "코스피",
     "indexKosdaq": "코스닥",
+    "newYorkTime": "뉴욕 {{time}}",
     "regularMarketOpensIn": "정규장 개장까지 {{time}}",
     "indexSp500Chart": "S&P 500 지수",
     "indexNasdaqCompositeChart": "나스닥 종합지수",

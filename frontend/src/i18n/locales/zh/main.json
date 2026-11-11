@@ -2244,6 +2244,7 @@
     "marketIndices": "主要市场指数",
     "indexKospi": "KOSPI",
     "indexKosdaq": "KOSDAQ",
+    "newYorkTime": "纽约 {{time}}",
     "regularMarketOpensIn": "距常规交易开盘 {{time}}",
     "indexSp500Chart": "标普500指数",
     "indexNasdaqCompositeChart": "纳斯达克综合指数",

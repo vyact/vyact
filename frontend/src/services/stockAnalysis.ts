@@ -13,7 +13,7 @@ export type StockMarket = typeof STOCK_MARKETS[number];
 export interface StockSymbol {symbol: string; name: string; preferred?: boolean; exchange?: 'KOSPI' | 'KOSDAQ'}
 export interface SectorStock extends StockSymbol {industry?: string | null; weight: number; change: number | null; price: number | null; regularPrice?: number | null; regularChange?: number | null; quoteTime?: string | null}
 export interface MarketSector {stockCount?: number | null; name: string; weight: number; change: number | null; stocks: SectorStock[]}
-export interface StockQuote {symbol: string; date: string; price: number; change: number; marketCap: number}
+export interface StockQuote {symbol: string; date: string; price: number | null; change: number | null; marketCap: number; session?: 'regular' | 'premarket'; regularPrice?: number | null; regularChange?: number | null; quoteTime?: string | null}
 export interface MarketIndex {symbol: string; indexSymbol?: string; quoteTime?: number; nextRegularOpen?: number; price: number | null; change: number | null; changePercent: number | null; date: string | null; closes: number[]}
 export interface MarketSectorMap {date: string; quoteDate: string; sectors: MarketSector[]; session?: 'regular' | 'premarket' | null; quoteTime?: string | null}
 

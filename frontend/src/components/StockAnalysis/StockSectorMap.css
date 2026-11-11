@@ -31,6 +31,8 @@
     z-index: 1; outline: 2px solid var(--accent); outline-offset: -2px;
 }
 .stock-sector-map-controls {display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin-inline-start: auto;}
+.stock-sector-map-session {display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px;}
+.stock-market-clock {font-variant-numeric: tabular-nums; white-space: nowrap;}
 .stock-sector-map-dates {display: flex; align-items: center; font-variant-numeric: tabular-nums;}
 .stock-sector-map-tiles {position: absolute; inset: 0; z-index: 0; isolation: isolate;}
 .stock-sector-map-error {position: absolute; inset: 0; z-index: 4; background: var(--surface2); align-content: start;}
@@ -143,11 +145,17 @@ button.stock-market-index:focus-visible {outline: 2px solid var(--accent); outli
 .stock-sector-preview li .stock-sparkline {height: calc(100% - 8px); max-height: 20px; min-height: 0; align-self: center; overflow: hidden;}
 .stock-sector-preview-selected-symbol {white-space: nowrap; min-width: 0;}
 
-.stock-market-open-countdown {
-    display: inline-flex; align-items: center; gap: 4px; padding: 3px 6px;
+.stock-sector-map-session:has(> .stock-market-open-countdown, > .stock-market-clock) {
+    display: inline-flex; align-items: center; gap: 8px 12px; padding: 3px 6px;
     border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); border-radius: 5px;
     background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent);
     font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.stock-market-open-countdown {display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;}
+.stock-sector-map-session > .stock-market-clock {font-size: inherit; color: inherit;}
+.stock-market-open-countdown + .stock-market-clock {
+    border-inline-start: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+    padding-inline-start: 12px;
 }
 .stock-market-open-countdown svg {flex-shrink: 0;}
 

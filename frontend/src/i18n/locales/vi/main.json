@@ -2244,6 +2244,7 @@
     "marketIndices": "Chỉ số thị trường chính",
     "indexKospi": "KOSPI",
     "indexKosdaq": "KOSDAQ",
+    "newYorkTime": "New York {{time}}",
     "regularMarketOpensIn": "Phiên chính mở cửa sau {{time}}",
     "indexSp500Chart": "Chỉ số S&P 500",
     "indexNasdaqCompositeChart": "Nasdaq Composite",

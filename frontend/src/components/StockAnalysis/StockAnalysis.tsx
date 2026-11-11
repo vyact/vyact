@@ -218,7 +218,9 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
             <button type="button" aria-label={tr('watchlist')} aria-pressed={watchlistOnly} onClick={() => changeListView('watchlist')}>
                 <span className="stock-watchlist-tab-icon"><Star size={17} aria-hidden="true"/><span className="stock-watchlist-count">{new Intl.NumberFormat(i18n.resolvedLanguage).format(watchlistCount)}</span></span>
             </button>
-            <button type="button" aria-label={tr('groups.tab')} aria-pressed={listView === 'groups'} onClick={() => changeListView('groups')}><FolderOpen size={17} aria-hidden="true"/></button>
+            <button type="button" aria-label={tr('groups.tab')} aria-pressed={listView === 'groups'} onClick={() => changeListView('groups')}>
+                <span className="stock-watchlist-tab-icon"><FolderOpen size={17} aria-hidden="true"/><span className="stock-watchlist-count">{new Intl.NumberFormat(i18n.resolvedLanguage).format(marketGroups.length)}</span></span>
+            </button>
         </div>
         {listView === 'groups' && <div className="stock-group-list">
             <button type="button" className="modal-action-cancel stock-group-create" onClick={() => setEditingGroup('new')}><Plus size={14} aria-hidden="true"/>{tr('groups.create')}</button>

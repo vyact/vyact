@@ -13,9 +13,11 @@ export function buildGroupSectors(groups: StockGroup[], quotes: StockQuote[], di
     return groups.flatMap(group => {
         const stocks = groupMapSymbols(group).flatMap(symbol => {
             const quote = bySymbol.get(symbol);
-            return quote ? [{symbol, name: names.get(symbol) ?? symbol, weight: quote.marketCap, price: quote.price, change: quote.change}] : [];
+            return quote ? [{symbol, name: names.get(symbol) ?? symbol, weight: quote.marketCap, price: quote.price, change: quote.change, regularPrice: quote.regularPrice, regularChange: quote.regularChange, quoteTime: quote.quoteTime}] : [];
         });
         const weight = stocks.reduce((sum, stock) => sum + stock.weight, 0);
-        return weight ? [{name: group.name, weight, stocks, change: stocks.reduce((sum, stock) => sum + stock.weight * stock.change, 0) / weight}] : [];
+        const quoted = stocks.filter(stock => stock.change != null);
+        const quotedWeight = quoted.reduce((sum, stock) => sum + stock.weight, 0);
+        return weight ? [{name: group.name, weight, stocks, change: quotedWeight ? quoted.reduce((sum, stock) => sum + stock.weight * stock.change!, 0) / quotedWeight : null}] : [];
     });
 }

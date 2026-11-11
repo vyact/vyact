@@ -7,6 +7,7 @@ import {stockAnalysis, type MarketSector, type MarketSectorMap, type SectorStock
 import StockLoadingIndicator from './StockLoadingIndicator';
 import MarketIndexSummary from './MarketIndexSummary';
 import MarketOpenCountdown from './MarketOpenCountdown';
+import NewYorkClock from './NewYorkClock';
 import StockSparkline from './StockSparkline';
 import useSectorSparklines, {usePrefetchSectorSparklines} from './useSectorSparklines';
 import {SPARKLINE_TRADING_DAYS} from '../../services/stockSparklineCache';
@@ -224,7 +225,8 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
         name: industryName(preview.industryName),
         stocks: previewSector.stocks.filter(stock => stockIndustry(stock) === preview.industryName),
     } : previewSector;
-    const premarket = market === 'US' && !stockGroups && snapshot?.session === 'premarket';
+    const premarket = market === 'US' && (stockGroups ? groupQuoteState.quotes.some(quote => quote.session === 'premarket') : snapshot?.session === 'premarket');
+    const quoteTime = stockGroups ? groupQuoteState.quotes.map(quote => quote.quoteTime ?? '').sort().slice(-1)[0] : snapshot?.quoteTime;
     const title = selectedSector ? sectorName(selectedSector.name) : stockGroups ? t('stockAnalysis.groups.all') : t({KR: 'stockAnalysis.mapKorea', US: 'stockAnalysis.mapUs', JP: 'stockAnalysis.mapJapan'}[market]);
     const dateFormat = new Intl.DateTimeFormat(i18n.resolvedLanguage, {dateStyle: 'medium', timeZone: 'UTC'});
     const formatDay = (day: string) => dateFormat.format(new Date(day));
@@ -235,15 +237,18 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
                 <ArrowLeft size={14} aria-hidden="true"/>{t(stockGroups ? 'stockAnalysis.groups.tab' : 'stockAnalysis.sectorMap')}
             </button>}
             <h1>{title}</h1>
-            {!stockGroups && <MarketOpenCountdown opening={nextRegularOpen}/>}
+            <div className="stock-sector-map-session">
+                <MarketOpenCountdown opening={nextRegularOpen}/>
+                {market === 'US' && <NewYorkClock/>}
+            </div>
             <div className="stock-sector-map-controls">
             {(stockGroups ? !!groupQuoteState.quotes.length : !!snapshot) && <div className="stock-sector-map-dates">
-                <span>{premarket ? snapshot?.quoteTime ? t('stockAnalysis.premarket.asOf', {date: formatPremarketQuoteDate(snapshot.quoteTime, i18n.resolvedLanguage)}) : t('stockAnalysis.premarket.unavailable') : t(stockGroups ? 'stockAnalysis.mapQuoteDate' : 'stockAnalysis.sectorMapQuoteDate', {date: formatDay(stockGroups ? groupQuoteState.quotes.map(quote => quote.date).sort().slice(-1)[0] : snapshot!.quoteDate ?? snapshot!.date)})}</span>
+                <span>{premarket ? quoteTime ? t('stockAnalysis.premarket.asOf', {date: formatPremarketQuoteDate(quoteTime, i18n.resolvedLanguage)}) : t('stockAnalysis.premarket.unavailable') : t(stockGroups ? 'stockAnalysis.mapQuoteDate' : 'stockAnalysis.sectorMapQuoteDate', {date: formatDay(stockGroups ? groupQuoteState.quotes.map(quote => quote.date).sort().slice(-1)[0] : snapshot!.quoteDate ?? snapshot!.date)})}</span>
             </div>}
             <StockRefreshInterval seconds={refreshSeconds} onChange={setRefreshSeconds}/>
             </div>
         </header>
-        {!stockGroups && <MarketIndexSummary key={market} refreshVersion={openingRefreshVersion} market={market} refreshSeconds={refreshSeconds} onOpen={onOpen} onOpeningChange={setNextRegularOpen}/>}
+        <MarketIndexSummary key={market} refreshVersion={openingRefreshVersion} market={market} refreshSeconds={refreshSeconds} onOpen={onOpen} onOpeningChange={setNextRegularOpen}/>
         {stockGroups && !groupQuoteState.loading && missingGroupQuotes.length > 0 && <p className="stock-analysis-caption" role="status">{t('stockAnalysis.groups.missingCaps', {count: missingGroupQuotes.length})}</p>}
         <div className="stock-sector-map-surface" ref={surface} {...pointerPosition} onMouseMove={event => {pointerPosition.onMouseMove(event); trackSortModifier(event);}} onMouseLeave={() => {clearTimeout(previewTimer.current); setPreview(undefined);}}
              onKeyDown={event => {if (event.key === 'Escape' && preview) {event.stopPropagation(); setPreview(undefined);}}}
