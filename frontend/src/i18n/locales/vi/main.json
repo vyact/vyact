@@ -1831,6 +1831,20 @@
     "manuscriptApplyHelp": "Áp dụng sẽ thay thế tiêu đề và nội dung chương hiện tại."
   },
   "stockAnalysis": {
+    "savedQuestions": {
+      "reorder": "Kéo để đổi thứ tự · Alt+Lên/Xuống",
+      "saveQuestion": "Lưu câu hỏi",
+      "title": "Câu hỏi đã lưu",
+      "stockScope": "Dùng lại cho mọi cổ phiếu riêng lẻ",
+      "groupScope": "Dùng lại cho phân tích nhóm ở mọi thị trường",
+      "name": "Tiêu đề",
+      "question": "Nội dung câu hỏi",
+      "saveCurrent": "Lưu câu hỏi hiện tại",
+      "add": "Thêm câu hỏi",
+      "empty": "Chưa có câu hỏi đã lưu. Hãy thêm câu hỏi thường dùng.",
+      "error": "Không thể tải hoặc lưu câu hỏi.",
+      "deleteConfirm": "Xóa câu hỏi đã lưu này?"
+    },
     "premarketOpensIn": "Tiền thị trường mở sau {{time}}",
     "premarketRegularOpensIn": "Tiền thị trường · Phiên chính sau {{time}}",
     "preferencesSyncFailed": "Đồng bộ nhóm hoặc danh sách theo dõi thất bại · Thử lại",

@@ -1831,6 +1831,20 @@
     "manuscriptApplyHelp": "適用すると現在の話のタイトルと本文をこの結果で置き換えます。"
   },
   "stockAnalysis": {
+    "savedQuestions": {
+      "reorder": "ドラッグで並べ替え · Alt+上下キー",
+      "saveQuestion": "質問を保存",
+      "title": "質問一覧",
+      "stockScope": "すべての個別銘柄で再利用する質問",
+      "groupScope": "すべての市場のグループ分析で再利用する質問",
+      "name": "質問タイトル",
+      "question": "質問内容",
+      "saveCurrent": "現在の質問を保存",
+      "add": "質問を追加",
+      "empty": "保存した質問はありません。よく使う質問を追加してください。",
+      "error": "質問の読み込みまたは保存に失敗しました。",
+      "deleteConfirm": "保存した質問を削除しますか？"
+    },
     "premarketOpensIn": "プレマーケット開始まで {{time}}",
     "premarketRegularOpensIn": "プレマーケット · 通常取引開始まで {{time}}",
     "preferencesSyncFailed": "グループ・お気に入りの同期に失敗 · 再試行",

@@ -2,8 +2,9 @@ import './StockSymbolLabel.css';
 import type {StockGroup} from './useStockGroups';
 import type {ChartSnapshotContext, ChartSnapshot} from './chartSnapshot';
 import {useEffect, useRef, useState, type RefObject, type ReactNode} from 'react';
-import {ChartNoAxesCombined, ArrowUp, Square, X, History, Camera} from 'lucide-react';
+import {ChartNoAxesCombined, ArrowUp, Square, X, History, Camera, Bookmark} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
+import StockSavedQuestionsDialog from './StockSavedQuestionsDialog';
 import StockChatPreparation, {type StockPreparationProgress} from './StockChatPreparation';
 import useStockHistoryShortcut from './useStockHistoryShortcut';
 import StockChatHistory from './StockChatHistory';
@@ -50,6 +51,8 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [conversationId, setConversationId] = useState<string>(() => crypto.randomUUID());
     const [historyOpen, setHistoryOpen] = useState(false);
+    const [savedQuestionsOpen, setSavedQuestionsOpen] = useState(false);
+    const [savedQuestionDraft, setSavedQuestionDraft] = useState<string | null>(null);
     const [chartAttachment, setChartAttachment] = useState<(MessageAttachment & {chart_context: ChartSnapshotContext}) | null>(null);
     const [chartViewerOpen, setChartViewerOpen] = useState(false);
     const [attachingChart, setAttachingChart] = useState(false);
@@ -98,7 +101,7 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
         controller.current = null;
         setBusy(false); setPreparation(null); setError(false);
         setConversationId(crypto.randomUUID()); setMessages([]); setQuestion('');
-        setChartAttachment(null); setChartError(false); setChartViewerOpen(false); setHistoryOpen(false);
+        setChartAttachment(null); setChartError(false); setChartViewerOpen(false); setHistoryOpen(false); setSavedQuestionsOpen(false);
         followLatest.current = true;
     }, [id]);
     useEffect(() => {
@@ -233,7 +236,11 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
                         ? <StockChatPreparation key={message.id ?? index} {...preparation}/> : <div key={message.id ?? index} className={`stock-discussion-message-row ${message.role}`}>
                         <Message disableActionTooltips role={message.role} content={message.content} timestamp={message.timestamp ?? ''}
                             isStreaming={busy && index === messages.length - 1 && message.role === 'assistant'}
-                            attachments={message.attachments} model={message.model} stats={message.stats} activityLog={message.activityLog} toolStatus={message.toolStatus}/>
+                            attachments={message.attachments} model={message.model} stats={message.stats} activityLog={message.activityLog} toolStatus={message.toolStatus}
+                            userFooterAction={message.role === 'user' && message.content.trim() && <button type="button" className="stock-discussion-save-question"
+                            onClick={() => {setSavedQuestionDraft(message.content); setSavedQuestionsOpen(true);}}>
+                            <Bookmark size={12} aria-hidden="true"/>{t('stockAnalysis.savedQuestions.saveQuestion')}</button>}/>
+
                     </div>)}
                 </div>
                 {error && <p className="stock-discussion-error" role="alert">{tr('error')}</p>}
@@ -258,6 +265,8 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
                                         if (Number.isInteger(days) && days >= 1 && days <= MAX_CONTEXT_DAYS) setPreferences(current => ({...current, days}));
                                     }}/>
                             </label>
+                        <button type="button" className="stock-saved-questions-button" disabled={busy} onClick={() => {setSavedQuestionDraft(null); setSavedQuestionsOpen(true);}}>
+                            <Bookmark size={13} aria-hidden="true"/>{t('stockAnalysis.savedQuestions.title')}</button>
                     </div>
                     {chartError && <p role="alert" className="stock-discussion-error">{tr('chartAttachError')}</p>}
                     <McpPromptInput preview={chartAttachment && <div className="attachment-preview-list">
@@ -290,6 +299,11 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
         {chartViewerOpen && chartAttachment && <ImageViewer
             images={[{src: `/api/images/${encodeURIComponent(chartAttachment.filename!)}`, alt: chartAttachment.original_name}]}
             currentIndex={0} onIndexChange={() => {}} onClose={() => setChartViewerOpen(false)}/>}
+        {savedQuestionsOpen && <StockSavedQuestionsDialog scope={groups ? 'groups' : 'stock'} draft={savedQuestionDraft ?? question} createOnOpen={savedQuestionDraft !== null}
+            onClose={() => setSavedQuestionsOpen(false)} onSelect={value => {
+                setQuestion(value); setSavedQuestionsOpen(false);
+                requestAnimationFrame(() => textarea.current?.focus());
+            }}/>}
         {historyOpen && <StockChatHistory symbol={stock.symbol} onClose={() => setHistoryOpen(false)}
             onSelect={(id, restoredMessages) => {setChartAttachment(null); setChartError(false); setConversationId(id); setMessages(restoredMessages); setQuestion(''); setError(false); setHistoryOpen(false);}}
 />}

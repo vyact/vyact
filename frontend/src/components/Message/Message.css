@@ -888,3 +888,6 @@
 
 .msg .msg-retry-btn:disabled { opacity: .35; cursor: default; color: var(--muted); transform: none; }
 .msg .message-retry:disabled { opacity: .35; cursor: default; pointer-events: none; }
+
+.msg-stats.user.has-footer-action {display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; opacity: 1;}
+.msg-footer-divider {align-self: center; width: 1px; height: 11px; background: var(--border); flex-shrink: 0;}

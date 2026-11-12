@@ -13,6 +13,8 @@ from services.db import SETTINGS_INDEX
 @pytest.mark.parametrize('endpoint,items,key', [
     ('groups', [{'id': 'kr-theme', 'market': 'KR', 'name': '반도체', 'symbols': ['005930', '000660']}], 'stock_analysis_groups'),
     ('watchlist', ['KR:005930', 'US:NVDA', 'JP:7203.T'], 'stock_analysis_watchlist'),
+    ('saved-questions/stock', [{'id': 'one', 'title': 'Review', 'question': 'Review this stock'}], 'stock_analysis_questions_stock'),
+    ('saved-questions/groups', [{'id': 'one', 'title': 'Compare', 'question': 'Compare these groups'}], 'stock_analysis_questions_groups'),
 ])
 async def test_preferences_roundtrip_and_empty_list(endpoint, items, key):
     es = AsyncMock()
@@ -51,6 +53,8 @@ async def test_only_a_missing_document_allows_cache_migration():
     ('groups', [{'id': 'a', 'market': 'KR', 'name': ' ', 'symbols': []}]),
     ('groups', [{'id': 'a', 'market': 'KR', 'name': 'Theme', 'symbols': ['../../bad']}]),
     ('watchlist', ['invalid']),
+    ('saved-questions/stock', [{'id': 'one', 'title': ' ', 'question': 'Review'}]),
+    ('saved-questions/groups', [{'id': 'one', 'title': 'Review', 'question': 'x' * 4001}]),
 ])
 async def test_invalid_preferences_do_not_reach_es(endpoint, items):
     app = FastAPI()

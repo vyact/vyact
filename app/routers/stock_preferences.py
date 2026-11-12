@@ -1,5 +1,5 @@
 """Elasticsearch-backed stock groups and watchlist settings."""
-from typing import Annotated
+from typing import Annotated, Literal
 
 from elasticsearch import NotFoundError
 from fastapi import APIRouter, Response
@@ -86,3 +86,30 @@ async def get_watchlist(response: Response):
 @router.put('/watchlist')
 async def put_watchlist(body: StockWatchlistPreferences):
     return await store_preferences('stock_analysis_watchlist', body)
+
+
+class SavedStockQuestion(BaseModel):
+    id: str = Field(min_length=1, max_length=64)
+    title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=80)]
+    question: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=4000)]
+
+
+class SavedStockQuestions(BaseModel):
+    items: list[SavedStockQuestion] = Field(max_length=200)
+
+    @model_validator(mode='after')
+    def unique_ids(self):
+        if len({item.id for item in self.items}) != len(self.items):
+            raise ValueError('Duplicate question id')
+        return self
+
+
+@router.get('/saved-questions/{scope}')
+async def get_saved_questions(scope: Literal['stock', 'groups'], response: Response):
+    response.headers['Cache-Control'] = 'no-store'
+    return await load_preferences(f'stock_analysis_questions_{scope}', SavedStockQuestions)
+
+
+@router.put('/saved-questions/{scope}')
+async def put_saved_questions(scope: Literal['stock', 'groups'], body: SavedStockQuestions):
+    return await store_preferences(f'stock_analysis_questions_{scope}', body)

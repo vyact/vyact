@@ -135,3 +135,7 @@
 }
 
 .stock-discussion-container.is-resizing {transition: none;}
+
+.stock-discussion-message-row.user {flex-direction: column; align-items: flex-end; gap: 6px;}
+.stock-discussion-save-question {display: inline-flex; align-items: center; gap: 5px; padding: 4px 6px; border: 0; border-radius: 6px; background: transparent; color: var(--text-muted); font: inherit; font-size: 11px; cursor: pointer;}
+.stock-discussion-save-question:hover {color: var(--accent); background: var(--surface2);}

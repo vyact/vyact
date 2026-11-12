@@ -1832,6 +1832,20 @@
     "manuscriptApplyHelp": "Applying replaces the current chapter title and manuscript with this result."
   },
   "stockAnalysis": {
+    "savedQuestions": {
+      "reorder": "Drag to reorder · Alt+Up/Down",
+      "saveQuestion": "Save question",
+      "title": "Saved questions",
+      "stockScope": "Reusable across all individual stocks",
+      "groupScope": "Reusable across group analysis in all markets",
+      "name": "Question title",
+      "question": "Question text",
+      "saveCurrent": "Save current question",
+      "add": "Add question",
+      "empty": "No saved questions. Add a question you use often.",
+      "error": "Could not load or save questions.",
+      "deleteConfirm": "Delete this saved question?"
+    },
     "premarketOpensIn": "Premarket opens in {{time}}",
     "premarketRegularOpensIn": "Premarket · Regular open in {{time}}",
     "preferencesSyncFailed": "Groups or watchlist sync failed · Retry",

@@ -1,7 +1,9 @@
+import type {ReactNode} from 'react';
 import type {ArticleAttachment, CodeChanges, Message, ResponseProgressMessage, Source, ToolActivity} from '../../types';
 import type {CodeFile} from '../../components/CodeFileViewer/CodeFileViewer';
 
 export interface MessageProps {
+    userFooterAction?: ReactNode;
     disableActionTooltips?: boolean;
     messageId?: string;
     role: 'user' | 'assistant';

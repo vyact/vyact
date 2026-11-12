@@ -1,13 +1,13 @@
-.stock-chat-history {box-sizing: border-box; width: min(520px, calc(100vw - 32px)); max-height: 80vh; overflow-y: auto; padding: 20px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); color: var(--text); box-shadow: var(--shadow-md);}
-.stock-chat-history header {display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--border);}
+.stock-chat-history {box-sizing: border-box; width: min(520px, calc(100vw - 32px)); height: min(560px, 80vh); max-height: 80vh; display: flex; flex-direction: column; overflow: hidden; padding: 20px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); color: var(--text); box-shadow: var(--shadow-md);}
+.stock-chat-history header {display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-shrink: 0; padding-bottom: 14px; border-bottom: 1px solid var(--border);}
 .stock-chat-history h2 {margin: 0; font-size: 16px;}
-.stock-chat-history ul {list-style: none; margin: 8px 0 0; padding: 0;}
+.stock-chat-history ul {flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; list-style: none; margin: 8px 0 0; padding: 0;}
 .stock-chat-history li button {display: flex; align-items: center; gap: 16px; width: 100%; padding: 14px 8px; border: 0; border-radius: 8px; background: transparent; color: var(--text); text-align: start; cursor: pointer;}
 .stock-chat-history li button:hover {background: var(--surface2);}
 .stock-chat-history li span {flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;}
 .stock-chat-history time, .stock-chat-history > p {color: var(--muted); font-size: 12px;}
 
-.stock-chat-history-state {display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; min-height: 180px; padding: 24px 12px; color: var(--muted); text-align: center;}
+.stock-chat-history-state {display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; flex: 1; min-height: 0; padding: 24px 12px; color: var(--muted); text-align: center;}
 .stock-chat-history-state p {margin: 0; font-size: 13px; line-height: 1.6;}
 .stock-chat-history-state > svg {opacity: .6;}
 .stock-chat-history-spinner {animation: stock-chat-history-spin 1.2s linear infinite;}

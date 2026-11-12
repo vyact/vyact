@@ -41,9 +41,9 @@ export default function StockChatHistory({symbol, onClose, onSelect}: {
             {loading && <div className="stock-chat-history-state" role="status"><LoaderCircle size={22} className="stock-chat-history-spinner" aria-hidden="true"/><p>{t('stockAnalysis.loading')}</p></div>}
             {error && <div className="stock-chat-history-state" role="alert"><CircleAlert size={28} aria-hidden="true"/><p>{tr('historyError')}</p></div>}
             {!loading && !error && !rows.length && <div className="stock-chat-history-state"><History size={32} strokeWidth={1.5} aria-hidden="true"/><p>{tr('historyEmpty')}</p></div>}
-            <ul>{rows.map(row => <li key={row.id}><button type="button" disabled={selecting} onClick={() => void select(row.id)}>
+            {!loading && !error && rows.length > 0 && <ul>{rows.map(row => <li key={row.id}><button type="button" disabled={selecting} onClick={() => void select(row.id)}>
                 <span>{row.title}</span><time dateTime={row.updated_at}>{new Intl.DateTimeFormat(i18n.resolvedLanguage ?? i18n.language, {month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'}).format(new Date(row.updated_at))}</time>
-            </button></li>)}</ul>
+            </button></li>)}</ul>}
         </section>
     </ModalOverlay>;
 }

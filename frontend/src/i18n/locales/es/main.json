@@ -1832,6 +1832,20 @@
     "manuscriptApplyHelp": "Al aplicar, se sustituyen el título y el texto del capítulo actual."
   },
   "stockAnalysis": {
+    "savedQuestions": {
+      "reorder": "Arrastrar para ordenar · Alt+Arriba/Abajo",
+      "saveQuestion": "Guardar pregunta",
+      "title": "Preguntas guardadas",
+      "stockScope": "Reutilizables en todas las acciones individuales",
+      "groupScope": "Reutilizables en grupos de todos los mercados",
+      "name": "Título",
+      "question": "Pregunta",
+      "saveCurrent": "Guardar pregunta actual",
+      "add": "Añadir pregunta",
+      "empty": "No hay preguntas guardadas. Añade una pregunta frecuente.",
+      "error": "No se pudieron cargar o guardar las preguntas.",
+      "deleteConfirm": "¿Eliminar esta pregunta?"
+    },
     "premarketOpensIn": "Premercado en {{time}}",
     "premarketRegularOpensIn": "Premercado · Apertura regular en {{time}}",
     "preferencesSyncFailed": "Error al sincronizar grupos o favoritos · Reintentar",

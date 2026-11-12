@@ -1841,6 +1841,20 @@
     "manuscriptApplyHelp": "적용하면 현재 회차의 제목과 본문을 이 결과로 교체합니다."
   },
   "stockAnalysis": {
+    "savedQuestions": {
+      "reorder": "드래그로 순서 변경 · Alt+위/아래 화살표",
+      "saveQuestion": "질문 저장",
+      "title": "질문 목록",
+      "stockScope": "모든 종목에서 재사용하는 질문",
+      "groupScope": "모든 시장의 그룹 분석에서 재사용하는 질문",
+      "name": "질문 제목",
+      "question": "질문 내용",
+      "saveCurrent": "현재 질문 저장",
+      "add": "질문 추가",
+      "empty": "저장된 질문이 없습니다. 자주 쓰는 질문을 추가해 보세요.",
+      "error": "질문 목록을 불러오거나 저장하지 못했습니다.",
+      "deleteConfirm": "저장된 질문을 삭제할까요?"
+    },
     "premarketOpensIn": "프리마켓 개장까지 {{time}}",
     "premarketRegularOpensIn": "프리마켓 · 정규장까지 {{time}}",
     "preferencesSyncFailed": "그룹·관심종목 동기화 실패 · 재시도",

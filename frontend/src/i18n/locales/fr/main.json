@@ -1833,6 +1833,20 @@
     "manuscriptApplyHelp": "L’application remplace le titre et le texte du chapitre actuel."
   },
   "stockAnalysis": {
+    "savedQuestions": {
+      "reorder": "Glisser pour réordonner · Alt+Haut/Bas",
+      "saveQuestion": "Enregistrer la question",
+      "title": "Questions enregistrées",
+      "stockScope": "Réutilisables pour toutes les actions individuelles",
+      "groupScope": "Réutilisables pour les groupes de tous les marchés",
+      "name": "Titre",
+      "question": "Question",
+      "saveCurrent": "Enregistrer la question actuelle",
+      "add": "Ajouter une question",
+      "empty": "Aucune question enregistrée. Ajoutez une question fréquente.",
+      "error": "Impossible de charger ou enregistrer les questions.",
+      "deleteConfirm": "Supprimer cette question ?"
+    },
     "premarketOpensIn": "Préouverture dans {{time}}",
     "premarketRegularOpensIn": "Préouverture · Séance normale dans {{time}}",
     "preferencesSyncFailed": "Échec de synchronisation des groupes ou favoris · Réessayer",

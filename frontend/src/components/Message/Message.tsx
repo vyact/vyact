@@ -75,7 +75,7 @@ const StreamingTextGroup: React.FC<{
 );
 
 const Message: React.FC<MessageProps> = ({
-                                             messageId, role, content, timestamp, sources, model, attachments, disableActionTooltips = false,
+                                             messageId, role, content, timestamp, sources, model, attachments, userFooterAction, disableActionTooltips = false,
                                              isError, errorTitle, errorCode, onRetry, onOpenModelSettings, retryDisabled = false, isGeneratedImage, articleSources,
                                              pdfFile, pdfParams, onPdfEdit, injectedContext, onShowInjectedContext, onOpenMemo, onOpenQuickMemo,
                                              isStreaming = false, conversationId, requestStartedAt, toolStatus, activityLog, memoryUpdates, progressMessages, stats,
@@ -917,8 +917,12 @@ const Message: React.FC<MessageProps> = ({
                         [t('message.inputTokens'), formatTokenCount(stats.prompt_eval_count)],
                         [t('message.inputProcessing'), formatNs(stats.prompt_eval_duration)],
                     ]);
-                    if (!line) return null;
-                    return <div className={`msg-stats user`}>{line}</div>;
+                    if (!line && !userFooterAction) return null;
+                    return <div className={`msg-stats user${userFooterAction ? ' has-footer-action' : ''}`}>
+                        {line && <span>{line}</span>}
+                        {line && userFooterAction && <span className="msg-footer-divider" aria-hidden="true"/>}
+                        {userFooterAction}
+                    </div>;
                 }
                 // assistant: 모델 응답 생성 통계. tool 통계는 바로 아래 활동 요약에서 제공한다.
                 const llmTotal = stats.llm_total_duration || stats.total_duration;
@@ -954,6 +958,7 @@ const Message: React.FC<MessageProps> = ({
                 );
             })()}
 
+            {role === 'user' && !stats && userFooterAction && <div className="msg-stats user has-footer-action">{userFooterAction}</div>}
             {viewerIndex !== null && viewerImages.length > 0 && (
                 <ImageViewer
                     images={viewerImages}
