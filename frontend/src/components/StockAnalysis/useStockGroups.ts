@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import useCachedStockPreferences from './useCachedStockPreferences';
 import {reorderGroups, reorderItems} from './groupOrdering';
 import {STOCK_MARKETS, type StockMarket} from '../../services/stockAnalysis';
 
@@ -19,16 +19,9 @@ export function normalizeStockGroups(value: unknown): StockGroup[] {
                 typeof symbol === 'string' && /^[A-Z0-9][A-Z0-9.-]{0,15}$/.test(symbol)))].slice(0, STOCK_GROUP_SIZE_LIMIT)}];
     });
 }
-function readGroups() {
-    try {return normalizeStockGroups(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]'));} catch {return [];}
-}
-
 export default function useStockGroups() {
-    const [groups, setGroups] = useState(readGroups);
-    useEffect(() => {
-        try {localStorage.setItem(STORAGE_KEY, JSON.stringify(groups));} catch { /* Keep session edits usable. */ }
-    }, [groups]);
-    return {groups,
+    const {items: groups, setItems: setGroups, failed, retry} = useCachedStockPreferences('groups', STORAGE_KEY, normalizeStockGroups);
+    return {groups, failed, retry,
         reorder: (market: StockMarket, source: string, target: string, after: boolean) => setGroups(current => reorderGroups(current, market, source, target, after)),
         reorderStock: (groupId: string, source: string, target: string, after: boolean) => setGroups(current => current.map(group => group.id === groupId
             ? {...group, symbols: reorderItems(group.symbols, source, target, after)} : group)),

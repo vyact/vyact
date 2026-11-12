@@ -1831,6 +1831,7 @@
     "manuscriptApplyHelp": "Áp dụng sẽ thay thế tiêu đề và nội dung chương hiện tại."
   },
   "stockAnalysis": {
+    "preferencesSyncFailed": "Đồng bộ nhóm hoặc danh sách theo dõi thất bại · Thử lại",
     "indexNasdaq100": "Nasdaq 100",
     "shortcuts": {"sortPreview": "Giữ để sắp xếp cổ phiếu xem trước theo phần trăm thay đổi"},
     "pinnedIndices": {"limitHint": "Bạn có thể ghim tối đa {{count}} chỉ số", "syncFailed": "Đồng bộ thất bại · Thử lại", "label": "Chỉ số đã ghim", "remove": "Bỏ ghim {{name}}", "dropHint": "Thả vào đây để ghim chỉ số"},
@@ -2015,6 +2016,9 @@
       }
     },
     "discussion": {
+      "selectGroup": "Chọn nhóm để phân tích",
+      "groupHint": "So sánh các nhóm hoặc hỏi về cổ phiếu trong nhóm.",
+      "groupPlaceholder": "Hỏi về nhóm đã chọn hoặc các cổ phiếu trong nhóm",
       "attachChart": "Đính kèm biểu đồ hiện tại", "chartAttached": "Đã đính kèm ảnh biểu đồ", "removeChart": "Xóa biểu đồ", "chartAttachError": "Không thể đính kèm biểu đồ. Vui lòng thử lại.",
       "historyTitle": "Lịch sử trò chuyện",
       "newConversation": "Cuộc trò chuyện mới",

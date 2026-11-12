@@ -1831,6 +1831,7 @@
     "manuscriptApplyHelp": "应用后将用此结果替换当前章节标题和正文。"
   },
   "stockAnalysis": {
+    "preferencesSyncFailed": "分组或自选股同步失败 · 重试",
     "indexNasdaq100": "纳斯达克100",
     "shortcuts": {"sortPreview": "按住以按涨跌幅排序股票预览"},
     "pinnedIndices": {"limitHint": "最多可固定{{count}}个指数", "syncFailed": "设置同步失败 · 重试", "label": "固定指数", "remove": "取消固定{{name}}", "dropHint": "拖到此处固定指数"},
@@ -2015,6 +2016,9 @@
       }
     },
     "discussion": {
+      "selectGroup": "选择分析组",
+      "groupHint": "比较各组走势，或询问组内股票。",
+      "groupPlaceholder": "询问所选组或组内股票",
       "attachChart": "附加当前图表", "chartAttached": "已附加图表快照", "removeChart": "移除图表", "chartAttachError": "无法附加图表，请重试。",
       "historyTitle": "对话历史",
       "newConversation": "新对话",

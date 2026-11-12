@@ -1832,6 +1832,7 @@
     "manuscriptApplyHelp": "Applying replaces the current chapter title and manuscript with this result."
   },
   "stockAnalysis": {
+    "preferencesSyncFailed": "Groups or watchlist sync failed · Retry",
     "indexNasdaq100": "Nasdaq 100",
     "shortcuts": {"sortPreview": "Hold to sort preview stocks by percentage change"},
     "pinnedIndices": {"limitHint": "You can pin up to {{count}} indices", "syncFailed": "Settings sync failed · Retry", "label": "Pinned indices", "remove": "Unpin {{name}}", "dropHint": "Drop here to pin an index"},
@@ -2016,6 +2017,9 @@
       }
     },
     "discussion": {
+      "selectGroup": "Select groups to analyze",
+      "groupHint": "Compare groups or ask about the stocks in a group.",
+      "groupPlaceholder": "Ask about the selected groups or their stocks",
       "attachChart": "Attach current chart", "chartAttached": "Chart snapshot attached", "removeChart": "Remove chart", "chartAttachError": "Could not attach the chart. Please try again.",
       "historyTitle": "Conversation history",
       "newConversation": "New conversation",

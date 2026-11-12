@@ -1833,6 +1833,7 @@
     "manuscriptApplyHelp": "L’application remplace le titre et le texte du chapitre actuel."
   },
   "stockAnalysis": {
+    "preferencesSyncFailed": "Échec de synchronisation des groupes ou favoris · Réessayer",
     "indexNasdaq100": "Nasdaq 100",
     "shortcuts": {"sortPreview": "Maintenir pour trier les aperçus par variation en pourcentage"},
     "pinnedIndices": {"limitHint": "Vous pouvez épingler jusqu’à {{count}} indices", "syncFailed": "Échec de synchronisation · Réessayer", "label": "Indices épinglés", "remove": "Détacher {{name}}", "dropHint": "Déposer ici pour épingler un indice"},
@@ -2017,6 +2018,9 @@
       }
     },
     "discussion": {
+      "selectGroup": "Sélectionner un groupe à analyser",
+      "groupHint": "Comparez les groupes ou posez des questions sur leurs actions.",
+      "groupPlaceholder": "Posez une question sur les groupes sélectionnés ou leurs actions",
       "attachChart": "Joindre le graphique actuel", "chartAttached": "Capture du graphique jointe", "removeChart": "Retirer le graphique", "chartAttachError": "Impossible de joindre le graphique. Réessayez.",
       "historyTitle": "Historique des conversations",
       "newConversation": "Nouvelle conversation",

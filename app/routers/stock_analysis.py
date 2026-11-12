@@ -10,6 +10,7 @@ from elasticsearch import NotFoundError
 from pydantic import BaseModel, StringConstraints, Field, model_validator
 from yfinance.exceptions import YFPricesMissingError, YFRateLimitError, YFTzMissingError
 
+from routers.stock_preferences import router as stock_preferences_router
 from logger import get_logger
 from services.llm.config import get_provider_config
 from services.llm.core import chat_stream_with_tools, query_llm
@@ -23,6 +24,7 @@ from services.stock_analysis.market_sessions import active_session, FUTURES_CALE
 from services.stock_analysis.index_price_store import get_index_prices
 from services.stock_analysis.regional_yahoo import korea_preferred_symbols
 from services.stock_analysis.chat_history import append_stock_conversation, list_stock_conversations, get_stock_conversation
+from services.stock_analysis.group_chat_context import build_group_chat_context
 from services.stock_analysis.financial_context import build_financial_chat_context
 from services.stock_analysis.financial_store import get_financials
 from services.stock_analysis.financial_collection import (FinancialCollectionSettings, collection_status, save_settings, start_collection, stop_collection, resume_collection)
@@ -31,6 +33,7 @@ from services.stock_analysis.sector_map import get_sector_map, get_stock_quotes
 from services.stock_analysis.symbols import is_market_index, memo_symbol_aliases, normalize_market_indices, normalize_stock, normalize_sector_map, public_symbol
 
 router = APIRouter(prefix="/stock-analysis")
+router.include_router(stock_preferences_router)
 logger = get_logger(__name__)
 Symbol = Annotated[str, Path(pattern=STOCK_SYMBOL_PATTERN)]
 
@@ -330,7 +333,14 @@ class StockChatReference(BaseModel):
     name: str = Field(max_length=200)
 
 
+class StockChatGroup(BaseModel):
+    name: str = Field(min_length=1, max_length=60)
+    stocks: list[StockChatReference] = Field(default_factory=list, max_length=100)
+
+
 class StockChatRequest(BaseModel):
+    groups: list[StockChatGroup] | None = Field(default=None, max_length=100)
+
     attachments: list[StockChartAttachment] = Field(default_factory=list, max_length=1)
     conversation_id: UUID | None = None
     stream: bool = False
@@ -374,11 +384,11 @@ def stock_chat_history(messages) -> list[dict]:
 @router.post("/chat")
 async def stock_chat(body: StockChatRequest):
     # Resolve price context on the server; client messages are conversation data only.
-    prices = await daily_prices(body.symbol, Response())
+    prices = await daily_prices(body.symbol, Response()) if body.groups is None else []
     reference_context = []
     financial_symbols = [body.symbol]
     seen_symbols = {public_symbol(body.symbol)}
-    for reference in body.reference_stocks:
+    for reference in body.reference_stocks if body.groups is None else []:
         symbol = public_symbol(reference.symbol)
         if symbol in seen_symbols:
             continue
@@ -390,15 +400,21 @@ async def stock_chat(body: StockChatRequest):
             f"Recent daily OHLCV (same {body.context_days} trading-observation limit): "
             f"{reference_prices[-body.context_days:]}"
         )
+    group_context = ""
+    if body.groups is not None:
+        async def load_group_prices(symbol):
+            return await daily_prices(symbol, Response())
+        group_context, financial_symbols = await build_group_chat_context(body.groups, body.context_days, load_group_prices)
     financial_context = ""
     if body.include_financials:
         contexts = await asyncio.gather(*(build_financial_chat_context(symbol) for symbol in financial_symbols))
         financial_context = "\n".join(context for context in contexts if context) + "\n"
     prompt = (
         f"Response language: {body.language}\n"
-        f"Selected instrument: {body.name} ({body.symbol}), market: {body.market}\n"
-        f"Recent daily OHLCV (dated observations, not live quotes): {prices[-body.context_days:]}\n"
+        + (f"Selected group scope: {body.name}, market: {body.market}\n" if body.groups is not None else f"Selected instrument: {body.name} ({body.symbol}), market: {body.market}\n")
+        + f"Recent daily OHLCV (dated observations, not live quotes): {prices[-body.context_days:]}\n"
         + "\n".join(reference_context) + "\n"
+        + group_context
         + financial_context
         + stock_chart_prompt(body.attachments)
         + f"User question: {body.question}"

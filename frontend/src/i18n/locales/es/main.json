@@ -1832,6 +1832,7 @@
     "manuscriptApplyHelp": "Al aplicar, se sustituyen el título y el texto del capítulo actual."
   },
   "stockAnalysis": {
+    "preferencesSyncFailed": "Error al sincronizar grupos o favoritos · Reintentar",
     "indexNasdaq100": "Nasdaq 100",
     "shortcuts": {"sortPreview": "Mantén pulsado para ordenar la vista previa por variación porcentual"},
     "pinnedIndices": {"limitHint": "Puedes fijar hasta {{count}} índices", "syncFailed": "Error de sincronización · Reintentar", "label": "Índices fijados", "remove": "Desfijar {{name}}", "dropHint": "Suelta aquí para fijar un índice"},
@@ -2016,6 +2017,9 @@
       }
     },
     "discussion": {
+      "selectGroup": "Seleccionar grupo para analizar",
+      "groupHint": "Compara grupos o pregunta por sus acciones.",
+      "groupPlaceholder": "Pregunta sobre los grupos seleccionados o sus acciones",
       "attachChart": "Adjuntar gráfico actual", "chartAttached": "Captura del gráfico adjunta", "removeChart": "Quitar gráfico", "chartAttachError": "No se pudo adjuntar el gráfico. Inténtalo de nuevo.",
       "historyTitle": "Historial de conversaciones",
       "newConversation": "Nueva conversación",

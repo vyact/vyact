@@ -26,6 +26,7 @@ import StockHistory from './StockHistory';
 import StockFinancials from './StockFinancials';
 import ModalTabs from '../common/ModalTabs/ModalTabs';
 import StockDiscussionPanel from './StockDiscussionPanel';
+import StockGroupDiscussionPanel from './StockGroupDiscussionPanel';
 import useStockGroupDrag from './useStockGroupDrag';
 import useStockGroups, {type StockGroup} from './useStockGroups';
 import StockGroupDialog from './StockGroupDialog';
@@ -232,6 +233,8 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                 <span className="stock-watchlist-tab-icon"><Folders size={17} aria-hidden="true"/><span className="stock-watchlist-count">{new Intl.NumberFormat(i18n.resolvedLanguage).format(marketGroups.length)}</span></span>
             </button>
         </div>
+        {(stockGroups.failed || watchlist.failed) && <button type="button" className="modal-action-cancel" role="status"
+            onClick={() => {if (stockGroups.failed) stockGroups.retry(); if (watchlist.failed) watchlist.retry();}}>{tr('preferencesSyncFailed')}</button>}
         {listView === 'groups' && <div className="stock-group-list">
             <button type="button" className="modal-action-cancel stock-group-create" onClick={() => setEditingGroup('new')}><Plus size={14} aria-hidden="true"/>{tr('groups.create')}</button>
             {marketGroups.map(group => <div className="stock-group-entry" key={group.id}>
@@ -323,7 +326,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
         }}/>}
     {apiSettingsOpen && <StockApiSettings market={market} onClose={() => setApiSettingsOpen(false)} onSaved={onApiSaved}/>}
     <WorkspaceLayout sidebarWidth={sidebarWidth} sidebarToggle={sidebarToggle} sidebarCollapsed={sidebarCollapsed} sidebarOverlay={sidebarHover} onSidebarMouseEnter={onSidebarHoverEnter} onSidebarMouseLeave={onSidebarHoverLeave} className="stock-analysis" label={tr('title')} header={header} sidebar={sidebar}>
-        <div className={`stock-analysis-inner${active ? " has-discussion" : ""}`}><main className="stock-analysis-content">
+        <div className={`stock-analysis-inner${active || listView === 'groups' ? " has-discussion" : ""}`}><main className="stock-analysis-content">
             {!active && (listView === 'groups' && !groupSymbols.size
                 ? <div className="stock-watchlist-empty"><strong>{tr('groups.empty')}</strong><p>{tr('groups.emptyHint')}</p>
                     <button type="button" className="modal-action-cancel" onClick={() => setEditingGroup(marketGroups.length === 1 ? marketGroups[0] : 'new')}>{tr(marketGroups.length === 1 ? 'groups.edit' : 'groups.create')}</button></div>
@@ -371,6 +374,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                 <StockFinancials key={`${active.symbol}:${refreshVersion}`} symbol={active.symbol} market={market}/>
             </div>}
         </main>
+        {!active && listView === 'groups' && <StockGroupDiscussionPanel groups={marketGroups} market={market} directory={symbols}/>}
         {active && <StockDiscussionPanel captureChart={detailTab === 'chart' ? captureChart : undefined} key={`${market}:${active.symbol}`} stock={active} market={market} directory={symbols}/>}
         </div>
     </WorkspaceLayout></>;

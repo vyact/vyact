@@ -1841,6 +1841,7 @@
     "manuscriptApplyHelp": "적용하면 현재 회차의 제목과 본문을 이 결과로 교체합니다."
   },
   "stockAnalysis": {
+    "preferencesSyncFailed": "그룹·관심종목 동기화 실패 · 재시도",
     "indexNasdaq100": "나스닥 100",
     "shortcuts": {"sortPreview": "누른 채 종목 미리보기 등락률순 정렬"},
     "pinnedIndices": {"limitHint": "최대 {{count}}개까지 고정할 수 있어요", "syncFailed": "설정 동기화 실패 · 재시도", "label": "고정한 지수", "remove": "{{name}} 고정 해제", "dropHint": "여기에 놓아 지수 고정"},
@@ -2025,6 +2026,9 @@
       }
     },
     "discussion": {
+      "selectGroup": "분석할 그룹 선택",
+      "groupHint": "그룹 간 흐름을 비교하거나 그룹에 속한 종목에 대해 질문해 보세요.",
+      "groupPlaceholder": "선택한 그룹이나 소속 종목에 대해 질문하세요",
       "attachChart": "현재 차트 첨부", "chartAttached": "차트 스냅샷 첨부됨", "removeChart": "차트 제거", "chartAttachError": "차트를 첨부하지 못했습니다. 다시 시도해주세요.",
       "historyTitle": "대화 히스토리",
       "newConversation": "새 대화",

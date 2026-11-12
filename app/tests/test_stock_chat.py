@@ -143,3 +143,19 @@ def test_reference_stocks_are_bounded():
     with pytest.raises(ValidationError):
         StockChatRequest(symbol='000020', name='Main', market='KR', question='Compare',
                          reference_stocks=[{'symbol': '005930', 'name': 'Reference'}] * 6)
+
+
+@pytest.mark.asyncio
+async def test_group_chat_uses_membership_without_loading_synthetic_scope_symbol():
+    body = StockChatRequest(symbol='G-KR-ALL', name='All groups', market='KR', question='Compare the themes',
+                            groups=[{'name': 'AI', 'stocks': [{'symbol': '005930', 'name': 'Samsung'}]},
+                                    {'name': 'Chips', 'stocks': [{'symbol': '005930', 'name': 'Samsung'}]}])
+    with patch('routers.stock_analysis.mcp_manager.enable_request_scope', new=AsyncMock(return_value=None)), \
+            patch('routers.stock_analysis.daily_prices', new=AsyncMock(return_value=[{'day': '2026-11-11', 'close': 100}])) as prices, \
+            patch('routers.stock_analysis.query_llm', new=AsyncMock(return_value='Analysis')) as model:
+        await stock_chat(body)
+    assert prices.await_count == 1
+    assert prices.call_args.args[0] == '005930'
+    prompt = model.call_args.args[0]
+    assert 'AI' in prompt and 'Chips' in prompt and 'Samsung' in prompt
+    assert 'Selected group scope' in prompt

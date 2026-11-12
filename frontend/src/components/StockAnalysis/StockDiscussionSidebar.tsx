@@ -1,6 +1,7 @@
 import './StockSymbolLabel.css';
+import type {StockGroup} from './useStockGroups';
 import type {ChartSnapshotContext, ChartSnapshot} from './chartSnapshot';
-import {useEffect, useRef, useState, type RefObject} from 'react';
+import {useEffect, useRef, useState, type RefObject, type ReactNode} from 'react';
 import {ChartNoAxesCombined, ArrowUp, Square, X, History, Camera} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import StockChatHistory from './StockChatHistory';
@@ -20,6 +21,7 @@ import useStockDirectory from './useStockDirectory';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import McpPromptInput from '../common/McpPromptInput';
 import useSelectedMcpTools from '../common/useSelectedMcpTools';
+import useAutoSizeTextarea from '../common/useAutoSizeTextarea';
 import '../common/HelpIcon.css';
 import './StockDiscussionSidebar.css';
 
@@ -36,7 +38,7 @@ function readPreferences(): {days: number; toolIds: string[]; includeFinancials:
     } catch {return {days: DEFAULT_CONTEXT_DAYS, toolIds: [], includeFinancials: false};}
 }
 
-export default function StockDiscussionSidebar({stock, market, directory, captureChart}: {captureChart?: RefObject<(() => ChartSnapshot) | null>; stock: StockSymbol; market: StockMarket; directory: StockSymbol[]}) {
+export default function StockDiscussionSidebar({stock, groups, groupPicker, market, directory, captureChart}: {captureChart?: RefObject<(() => ChartSnapshot) | null>; stock: StockSymbol; groups?: StockGroup[]; groupPicker?: ReactNode; market: StockMarket; directory: StockSymbol[]}) {
     const {t, i18n} = useTranslation('main');
     const tr = (key: string) => t(`stockAnalysis.discussion.${key}`);
     const [preferences, setPreferences] = useState(readPreferences);
@@ -67,20 +69,16 @@ export default function StockDiscussionSidebar({stock, market, directory, captur
             setChartAttachment({chart_context: snapshot.context, type: 'image', filename: uploaded.filename, original_name: uploaded.original_name});
         } catch {setChartError(true);} finally {setAttachingChart(false);}
     };
+    const emptyGroupScope = groups !== undefined && !groups.some(group => group.symbols.length > 0);
     const [question, setQuestion] = useState('');
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState(false);
     const [referenceMarket, setReferenceMarket] = useState<StockMarket>(market);
     const language = i18n.resolvedLanguage ?? i18n.language;
-    const {rows: referenceDirectory, error: directoryError, reload} = useStockDirectory(referenceMarket, language, true, market, directory);
+    const {rows: referenceDirectory, error: directoryError, reload} = useStockDirectory(referenceMarket, language, !groups, market, directory);
     const referenceCandidates = [...MARKET_INDEX_LABELS[referenceMarket].map(item => ({symbol: item.symbol, name: t(`stockAnalysis.${item.key}`)})), ...(referenceDirectory ?? [])];
     const textarea = useRef<HTMLTextAreaElement>(null);
-    useEffect(() => {
-        const input = textarea.current;
-        if (!input) return;
-        input.style.height = 'auto';
-        input.style.height = `${Math.min(input.scrollHeight, 180)}px`;
-    }, [question]);
+    useAutoSizeTextarea(textarea, question, 180);
     const controller = useRef<AbortController | null>(null);
     const messageList = useRef<HTMLDivElement>(null);
     const followLatest = useRef(true);
@@ -101,7 +99,7 @@ export default function StockDiscussionSidebar({stock, market, directory, captur
 
     const send = async () => {
         const text = question.trim();
-        if (!text || busy || attachingChart || controller.current) return;
+        if (!text || emptyGroupScope || busy || attachingChart || controller.current) return;
         const request = new AbortController();
         controller.current = request;
         setBusy(true);
@@ -122,6 +120,7 @@ export default function StockDiscussionSidebar({stock, market, directory, captur
             const response = await fetch('/api/stock-analysis/chat', {
                 method: 'POST', signal: request.signal, headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({attachments: chartAttachment ? [chartAttachment] : [], stream: true, conversation_id: conversationId, symbol: stock.symbol, name: stock.name, market,
+                    groups: groups?.map(group => ({name: group.name, stocks: group.symbols.map(symbol => ({symbol, name: directory.find(item => item.symbol === symbol)?.name ?? symbol}))})),
                     reference_stocks: referenceStocks.map(item => ({symbol: item.symbol, name: item.name})),
                     context_days: preferences.days, include_financials: preferences.includeFinancials, selected_mcp_ids: selectedServers.map(server => server.id),
                     language: i18n.resolvedLanguage ?? i18n.language, question: text, messages: messages.slice(-HISTORY_LIMIT).map(({role, content, attachments}) => ({role, content, attachments})).filter(message => message.content.trim())}),
@@ -175,9 +174,10 @@ export default function StockDiscussionSidebar({stock, market, directory, captur
         <header className="stock-discussion-header">
             <div className="stock-discussion-title"><ChartNoAxesCombined size={16} aria-hidden="true"/><h2>{tr('ai')}</h2></div>
             <button type="button" className="stock-discussion-new-button" disabled={busy} aria-label={tr('newConversation')} onClick={startNewConversation}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h7"/><path d="M19 2v6M16 5h6"/></svg></button>
-            <div className="stock-discussion-instrument"><strong>{stock.name}</strong><span className="stock-symbol-label">{stock.symbol}</span></div>
+            <div className="stock-discussion-instrument"><strong>{stock.name}</strong>{!groups && <span className="stock-symbol-label">{stock.symbol}</span>}</div>
         </header>
-        <section className="stock-discussion-references" aria-label={tr('references')}>
+        {groupPicker}
+        {!groups && <section className="stock-discussion-references" aria-label={tr('references')}>
             <div className="stock-discussion-reference-picker">
             <Tooltip content={tr('referenceHint')} multiline><button type="button" className="help-icon-button" aria-label={tr('referenceHint')}>?</button></Tooltip>
             <CustomSelect optionsPageSize={100} value="" searchable portal disabled={busy || referenceStocks.length >= MAX_REFERENCE_STOCKS}
@@ -196,7 +196,7 @@ export default function StockDiscussionSidebar({stock, market, directory, captur
                 <button type="button" disabled={busy} aria-label={t('stockAnalysis.discussion.removeReference', {name: item.name})}
                     onClick={() => setReferenceStocks(current => current.filter(reference => reference.symbol !== item.symbol))}><X size={13}/></button>
             </li>)}</ul>}
-        </section>
+        </section>}
         <div className="stock-discussion-panel">
                 <div className="stock-discussion-messages" ref={messageList} tabIndex={0}
                     onWheel={event => {if (event.deltaY < 0) followLatest.current = false;}}
@@ -207,7 +207,7 @@ export default function StockDiscussionSidebar({stock, market, directory, captur
                         if (list.scrollHeight - list.scrollTop - list.clientHeight <= 8) followLatest.current = true;
                         previousScrollTop.current = list.scrollTop;
                     }} role="log" aria-label={tr('ai')} aria-busy={busy}>
-                    {!messages.length && !busy && <div className="stock-discussion-empty"><h2>{tr('welcome')}</h2><p>{tr('hint')}</p></div>}
+                    {!messages.length && !busy && <div className="stock-discussion-empty"><h2>{tr('welcome')}</h2><p>{emptyGroupScope ? t('stockAnalysis.groups.emptyHint') : tr(groups ? 'groupHint' : 'hint')}</p></div>}
                     {messages.map((message, index) => <div key={message.id ?? index} className={`stock-discussion-message-row ${message.role}`}>
                         <Message disableActionTooltips role={message.role} content={message.content} timestamp={message.timestamp ?? ''}
                             isStreaming={busy && index === messages.length - 1 && message.role === 'assistant'}
@@ -242,7 +242,7 @@ export default function StockDiscussionSidebar({stock, market, directory, captur
                         <ImageAttachmentPreview src={`/api/images/${encodeURIComponent(chartAttachment.filename!)}`}
                             alt={chartAttachment.original_name ?? stock.symbol} disabled={busy}
                             onOpen={() => setChartViewerOpen(true)} onRemove={() => {setChartAttachment(null); setChartViewerOpen(false);}}/>
-                    </div>} id={`${id}-input`} aria-label={tr('placeholder')} placeholder={tr('placeholder')}
+                    </div>} id={`${id}-input`} aria-label={tr(groups ? 'groupPlaceholder' : 'placeholder')} placeholder={tr(groups ? 'groupPlaceholder' : 'placeholder')}
                         value={question} onChange={setQuestion} maxLength={4000} disabled={busy} rows={1} textareaRef={textarea}
                         selectedServers={selectedServers} onSelectedServersChange={setSelectedServers}
                         scopeHelp={tr('toolScopeHelp')}
@@ -252,14 +252,14 @@ export default function StockDiscussionSidebar({stock, market, directory, captur
                             }
                         }}
                         actions={<>
-                            <button type="button" className="stock-discussion-history-button" aria-label={tr('attachChart')} title={tr('attachChart')}
-                                disabled={busy || attachingChart || !captureChart} onClick={() => {void attachChart();}}><Camera size={18}/></button>
+                            {!groups && <button type="button" className="stock-discussion-history-button" aria-label={tr('attachChart')} title={tr('attachChart')}
+                                disabled={busy || attachingChart || !captureChart} onClick={() => {void attachChart();}}><Camera size={18}/></button>}
                             <button type="button" className="stock-discussion-history-button" aria-label={tr('historyTitle')} title={tr('historyTitle')} disabled={busy}
                                 onClick={() => setHistoryOpen(true)}><History size={18} aria-hidden="true"/></button>
 
                             {busy ? <button className="stock-discussion-send stock-discussion-stop" type="button" aria-label={tr('stop')}
                                 onClick={() => {controller.current?.abort(); controller.current = null; setBusy(false);}}><Square size={12} fill="currentColor" strokeWidth={0} aria-hidden="true"/></button>
-                                : <button className="stock-discussion-send" type="submit" disabled={!question.trim() || attachingChart} aria-label={tr('send')}><ArrowUp size={18}/></button>}
+                                : <button className="stock-discussion-send" type="submit" disabled={!question.trim() || emptyGroupScope || attachingChart} aria-label={tr('send')}><ArrowUp size={18}/></button>}
                         </>}/>
 
                 </form>

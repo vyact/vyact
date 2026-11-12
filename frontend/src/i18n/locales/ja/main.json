@@ -1831,6 +1831,7 @@
     "manuscriptApplyHelp": "適用すると現在の話のタイトルと本文をこの結果で置き換えます。"
   },
   "stockAnalysis": {
+    "preferencesSyncFailed": "グループ・お気に入りの同期に失敗 · 再試行",
     "indexNasdaq100": "ナスダック100",
     "shortcuts": {"sortPreview": "押しながら銘柄プレビューを騰落率順に並べ替え"},
     "pinnedIndices": {"limitHint": "指数は最大{{count}}個まで固定できます", "syncFailed": "設定の同期に失敗 · 再試行", "label": "固定した指数", "remove": "{{name}}の固定を解除", "dropHint": "ここにドロップして指数を固定"},
@@ -2015,6 +2016,9 @@
       }
     },
     "discussion": {
+      "selectGroup": "分析するグループを選択",
+      "groupHint": "グループ間の動向を比較したり、構成銘柄について質問できます。",
+      "groupPlaceholder": "選択したグループや構成銘柄について質問してください",
       "attachChart": "現在のチャートを添付", "chartAttached": "チャート画像を添付済み", "removeChart": "チャートを削除", "chartAttachError": "チャートを添付できませんでした。もう一度お試しください。",
       "historyTitle": "会話履歴",
       "newConversation": "新しい会話",
