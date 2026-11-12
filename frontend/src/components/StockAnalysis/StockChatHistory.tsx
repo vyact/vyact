@@ -35,7 +35,7 @@ export default function StockChatHistory({symbol, onClose, onSelect}: {
             onSelect(id, data.messages ?? []);
         } catch {setError(true); setSelecting(false);}
     };
-    return <ModalOverlay onClose={selecting ? undefined : onClose} closeOnBackdrop captureEscape aria-labelledby="stock-chat-history-title">
+    return <ModalOverlay className="stock-chat-history-overlay" onClose={selecting ? undefined : onClose} closeOnBackdrop captureEscape aria-labelledby="stock-chat-history-title">
         <section className="stock-chat-history">
             <header><h2 id="stock-chat-history-title">{tr('historyTitle')}</h2><ModalCloseButton onClick={onClose} disabled={selecting}/></header>
             {loading && <div className="stock-chat-history-state" role="status"><LoaderCircle size={22} className="stock-chat-history-spinner" aria-hidden="true"/><p>{t('stockAnalysis.loading')}</p></div>}

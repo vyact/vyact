@@ -523,7 +523,7 @@ async def stream_stock_answer(body, prompt, system_prompt):
                 answer_parts.clear()
             yield json.dumps(event, ensure_ascii=False) + "\n"
         if body.conversation_id:
-            await append_stock_conversation(body.symbol, str(body.conversation_id), body.question, "".join(answer_parts), question_timestamp, response_stats, response_model,
+            await append_stock_conversation(f'MARKET-{body.market}' if body.groups is not None else body.symbol, str(body.conversation_id), body.question, "".join(answer_parts), question_timestamp, response_stats, response_model,
                                             attachments=[attachment.model_dump(mode="json", exclude_none=True) for attachment in body.attachments])
         yield json.dumps({"type": "done"}) + "\n"
     except Exception:

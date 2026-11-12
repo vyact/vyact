@@ -7,36 +7,36 @@ import StockDiscussionPanel from './StockDiscussionPanel';
 import type {StockGroup} from './useStockGroups';
 import type {StockMarket, StockSymbol} from '../../services/stockAnalysis';
 
-function conversationSymbol(market: StockMarket, groupId: string) {
-    let hash = 2166136261;
-    for (const character of groupId) hash = Math.imul(hash ^ character.charCodeAt(0), 16777619);
-    return `G-${market}-${(hash >>> 0).toString(16)}`;
-}
-
 export default function StockGroupDiscussionPanel({groups, market, directory}: {
     groups: StockGroup[]; market: StockMarket; directory: StockSymbol[];
 }) {
     const {t} = useTranslation('main');
-    const [selectedId, setSelectedId] = useState('');
-    const selectedGroup = groups.find(group => group.id === selectedId);
-    const selectedGroups = selectedGroup ? [selectedGroup] : groups;
-    const name = selectedGroup?.name ?? t('stockAnalysis.groups.all');
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const selectedGroups = groups.filter(group => selectedIds.includes(group.id));
+    const allSelected = selectedGroups.length === 0;
+    const scopeGroups = allSelected ? groups : selectedGroups;
+    const name = allSelected ? t('stockAnalysis.groups.all') : selectedGroups.map(group => group.name).join(', ');
+    const toggleGroup = (id: string) => setSelectedIds(current => {
+        if (!id) return [];
+        if (!current.includes(id)) return [...current, id];
+        return current.length > 1 ? current.filter(value => value !== id) : current;
+    });
     const countLabel = (symbols: string[]) => t('stockAnalysis.groups.stocks', {count: new Set(symbols).size});
     const options = [{value: '', label: t('stockAnalysis.groups.all'), description: countLabel(groups.flatMap(group => group.symbols))},
         ...groups.map(group => ({value: group.id, label: group.name, description: countLabel(group.symbols)}))];
-    const selectedOption = options.find(option => option.value === (selectedGroup?.id ?? ''))!;
+    const scopeCount = countLabel(scopeGroups.flatMap(group => group.symbols));
     const renderLabel = (label: string, count: string) => <span className="stock-group-select-label">
         <span className="stock-group-select-name">{label}</span><span className="stock-group-select-count">{count}</span>
     </span>;
-    const symbol = conversationSymbol(market, selectedGroup?.id ?? 'all');
-    return <StockDiscussionPanel key={`${market}:${selectedGroup?.id ?? 'all'}`} market={market} directory={directory}
-        stock={{symbol, name}} groups={selectedGroups}
+    const symbol = `MARKET-${market}`;
+    return <StockDiscussionPanel market={market} directory={directory}
+        stock={{symbol, name}} groups={scopeGroups}
         groupPicker={<section className="stock-discussion-references">
-            <CustomSelect dropdownClassName="stock-group-select-dropdown" value={selectedGroup?.id ?? ''} ariaLabel={t('stockAnalysis.discussion.selectGroup')}
+            <CustomSelect dropdownClassName="stock-group-select-dropdown" value="" selectedValues={allSelected ? [''] : selectedGroups.map(group => group.id)} closeOnSelect={false} ariaLabel={t('stockAnalysis.discussion.selectGroup')}
                 options={options}
-                renderTrigger={(_label, open) => <>{renderLabel(selectedOption.label, selectedOption.description)}
+                renderTrigger={(_label, open) => <>{renderLabel(name, scopeCount)}
                     <ChevronDown size={14} className={`stock-group-select-chevron${open ? ' is-open' : ''}`} aria-hidden="true"/></>}
                 renderOption={option => renderLabel(option.label, option.description ?? '')}
-                onChange={setSelectedId} portal/>
+                onChange={toggleGroup} portal/>
         </section>}/>;
 }

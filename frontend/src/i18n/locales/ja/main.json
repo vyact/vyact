@@ -2016,6 +2016,7 @@
       }
     },
     "discussion": {
+      "togglePanel": "AI分析パネルの開閉",
       "preparingTitle": "分析データを準備中",
       "preparingCount": "{{completed}} / {{total}} 銘柄の確認完了",
       "preparingUnavailable": "{{count}}銘柄の一部データを取得できませんでした。取得済みデータで分析します。",

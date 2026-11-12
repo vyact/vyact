@@ -2017,6 +2017,7 @@
       }
     },
     "discussion": {
+      "togglePanel": "Toggle AI analysis panel",
       "preparingTitle": "Preparing analysis data",
       "preparingCount": "{{completed}} / {{total}} stocks checked",
       "preparingUnavailable": "Some data is unavailable for {{count}} stocks. Analysis will use available data.",

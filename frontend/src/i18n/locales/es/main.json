@@ -2017,6 +2017,7 @@
       }
     },
     "discussion": {
+      "togglePanel": "Mostrar u ocultar el panel de análisis de IA",
       "preparingTitle": "Preparando datos de análisis",
       "preparingCount": "{{completed}} / {{total}} acciones comprobadas",
       "preparingUnavailable": "Faltan algunos datos de {{count}} acciones. Se analizarán los datos disponibles.",

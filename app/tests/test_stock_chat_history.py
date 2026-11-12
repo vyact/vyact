@@ -34,3 +34,29 @@ class StockChatHistoryTests(unittest.IsolatedAsyncioTestCase):
             {'role': 'user', 'content': 'Question'}, {'role': 'assistant', 'content': 'Answer'},
         ])
         self.assertIn('addAll', request['script']['source'])
+
+    async def test_market_history_includes_legacy_group_scopes(self):
+        es = AsyncMock()
+        es.indices.exists.return_value = True
+        es.search.return_value = {'hits': {'hits': []}}
+        with patch('services.stock_analysis.chat_history.get_es', return_value=es):
+            await list_stock_conversations('MARKET-KR')
+        self.assertEqual(es.search.call_args.kwargs['query'], {'bool': {'should': [
+            {'term': {'symbol': 'MARKET-KR'}}, {'prefix': {'symbol': 'G-KR-'}}], 'minimum_should_match': 1}})
+
+    async def test_legacy_group_history_can_be_opened_only_in_same_market(self):
+        es = AsyncMock()
+        es.indices.exists.return_value = True
+        es.get.return_value = {'_id': 'chat', '_source': {'symbol': 'G-KR-abc123', 'messages': []}}
+        with patch('services.stock_analysis.chat_history.get_es', return_value=es):
+            self.assertIsNotNone(await get_stock_conversation('MARKET-KR', 'chat'))
+            self.assertIsNone(await get_stock_conversation('MARKET-US', 'chat'))
+
+    async def test_appending_legacy_group_history_uses_market_scope(self):
+        es = AsyncMock()
+        es.indices.exists.return_value = True
+        with patch('services.stock_analysis.chat_history.get_es', return_value=es):
+            await append_stock_conversation('G-KR-abc123', 'chat', 'Question', 'Answer')
+        request = es.update.call_args.kwargs
+        self.assertEqual(request['upsert']['symbol'], 'MARKET-KR')
+        self.assertEqual(request['script']['params']['legacy_prefix'], 'G-KR-')

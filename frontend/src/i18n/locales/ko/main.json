@@ -2026,6 +2026,7 @@
       }
     },
     "discussion": {
+      "togglePanel": "AI 분석 패널 열기/닫기",
       "preparingTitle": "분석 자료 준비 중",
       "preparingCount": "{{completed}} / {{total}} 종목 확인 완료",
       "preparingUnavailable": "{{count}}개 종목의 일부 자료를 조회하지 못했습니다. 확보된 자료로 분석합니다.",

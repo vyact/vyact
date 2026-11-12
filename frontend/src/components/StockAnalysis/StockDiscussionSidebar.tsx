@@ -5,6 +5,7 @@ import {useEffect, useRef, useState, type RefObject, type ReactNode} from 'react
 import {ChartNoAxesCombined, ArrowUp, Square, X, History, Camera} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import StockChatPreparation, {type StockPreparationProgress} from './StockChatPreparation';
+import useStockHistoryShortcut from './useStockHistoryShortcut';
 import StockChatHistory from './StockChatHistory';
 import ImageAttachmentPreview from '../common/ImageAttachmentPreview/ImageAttachmentPreview';
 import ImageViewer from '../ImageViewer/ImageViewer';
@@ -31,20 +32,20 @@ const HISTORY_LIMIT = 20;
 const DEFAULT_CONTEXT_DAYS = 60;
 const MAX_CONTEXT_DAYS = 500;
 const PREFERENCES_KEY = 'vyact:stock-discussion:preferences';
-function readPreferences(): {days: number; toolIds: string[]; includeFinancials: boolean} {
+function readPreferences(): {days: number; toolIds: string[] | undefined; includeFinancials: boolean} {
     try {
         const value = JSON.parse(localStorage.getItem(PREFERENCES_KEY) ?? '{}');
         return {includeFinancials: value.includeFinancials === true, days: Number.isInteger(value.days) && value.days >= 1 && value.days <= MAX_CONTEXT_DAYS ? value.days : DEFAULT_CONTEXT_DAYS,
-            toolIds: Array.isArray(value.toolIds) ? value.toolIds.filter((id: unknown): id is string => typeof id === 'string') : []};
-    } catch {return {days: DEFAULT_CONTEXT_DAYS, toolIds: [], includeFinancials: false};}
+            toolIds: Array.isArray(value.toolIds) ? value.toolIds.filter((id: unknown): id is string => typeof id === 'string') : undefined};
+    } catch {return {days: DEFAULT_CONTEXT_DAYS, toolIds: undefined, includeFinancials: false};}
 }
 
-export default function StockDiscussionSidebar({stock, groups, groupPicker, market, directory, captureChart}: {captureChart?: RefObject<(() => ChartSnapshot) | null>; stock: StockSymbol; groups?: StockGroup[]; groupPicker?: ReactNode; market: StockMarket; directory: StockSymbol[]}) {
+export default function StockDiscussionSidebar({stock, groups, groupPicker, market, directory, captureChart, onReveal}: {captureChart?: RefObject<(() => ChartSnapshot) | null>; stock: StockSymbol; groups?: StockGroup[]; groupPicker?: ReactNode; onReveal?: () => void; market: StockMarket; directory: StockSymbol[]}) {
     const {t, i18n} = useTranslation('main');
     const tr = (key: string) => t(`stockAnalysis.discussion.${key}`);
     const [preferences, setPreferences] = useState(readPreferences);
     const [contextDaysInput, setContextDaysInput] = useState(() => String(preferences.days));
-    const {selectedServers, setSelectedServers} = useSelectedMcpTools(preferences.toolIds, toolIds => setPreferences(current => ({...current, toolIds})));
+    const {selectedServers, setSelectedServers} = useSelectedMcpTools(preferences.toolIds, toolIds => setPreferences(current => ({...current, toolIds})), 'keenable');
     const [referenceStocks, setReferenceStocks] = useState<StockSymbol[]>([]);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [conversationId, setConversationId] = useState<string>(() => crypto.randomUUID());
@@ -73,6 +74,7 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
     const emptyGroupScope = groups !== undefined && !groups.some(group => group.symbols.length > 0);
     const [question, setQuestion] = useState('');
     const [busy, setBusy] = useState(false);
+    useStockHistoryShortcut(() => {if (!historyOpen) onReveal?.(); setHistoryOpen(open => !open);}, busy, historyOpen);
     const [preparation, setPreparation] = useState<StockPreparationProgress | null>(null);
     const [error, setError] = useState(false);
     const [referenceMarket, setReferenceMarket] = useState<StockMarket>(market);
@@ -88,6 +90,17 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
     const id = `stock-discussion-${market}-${stock.symbol}`;
 
     useEffect(() => () => controller.current?.abort(), []);
+    const previousScope = useRef(id);
+    useEffect(() => {
+        if (previousScope.current === id) return;
+        previousScope.current = id;
+        controller.current?.abort();
+        controller.current = null;
+        setBusy(false); setPreparation(null); setError(false);
+        setConversationId(crypto.randomUUID()); setMessages([]); setQuestion('');
+        setChartAttachment(null); setChartError(false); setChartViewerOpen(false); setHistoryOpen(false);
+        followLatest.current = true;
+    }, [id]);
     useEffect(() => {
         try {localStorage.setItem(PREFERENCES_KEY, JSON.stringify(preferences));} catch { /* Optional preferences. */ }
     }, [preferences]);
@@ -182,7 +195,7 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
         <header className="stock-discussion-header">
             <div className="stock-discussion-title"><ChartNoAxesCombined size={16} aria-hidden="true"/><h2>{tr('ai')}</h2></div>
             <button type="button" className="stock-discussion-new-button" disabled={busy} aria-label={tr('newConversation')} onClick={startNewConversation}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h7"/><path d="M19 2v6M16 5h6"/></svg></button>
-            <div className="stock-discussion-instrument"><strong>{stock.name}</strong>{!groups && <span className="stock-symbol-label">{stock.symbol}</span>}</div>
+            {!groups && <div className="stock-discussion-instrument"><strong>{stock.name}</strong><span className="stock-symbol-label">{stock.symbol}</span></div>}
         </header>
         {groupPicker}
         {!groups && <section className="stock-discussion-references" aria-label={tr('references')}>

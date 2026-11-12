@@ -43,12 +43,16 @@ interface Props {
      */
     getWidth?: (event: MouseEvent, resizer: HTMLDivElement) => number;
     onReset?: () => void;
+    onResizeStart?: () => void;
+    onResizeEnd?: (width: number | undefined) => void;
     className?: string;
     title?: string;
 }
 
-const PanelResizer: React.FC<Props> = ({onWidthChange, getWidth, onReset, className = '', title}) => {
+const PanelResizer: React.FC<Props> = ({onWidthChange, getWidth, onReset, onResizeStart, onResizeEnd, className = '', title}) => {
     const {t} = useTranslation('main');
+    const callbacks = useRef({onWidthChange, getWidth, onResizeStart, onResizeEnd});
+    callbacks.current = {onWidthChange, getWidth, onResizeStart, onResizeEnd};
     const dragging = useRef(false);
     const [active, setActive] = useState(false);
 
@@ -60,6 +64,7 @@ const PanelResizer: React.FC<Props> = ({onWidthChange, getWidth, onReset, classN
 
         dragging.current = true;
         setActive(true);
+        callbacks.current.onResizeStart?.();
 
         document.body.style.cursor = 'col-resize';
         document.body.style.userSelect = 'none';
@@ -84,22 +89,39 @@ const PanelResizer: React.FC<Props> = ({onWidthChange, getWidth, onReset, classN
     }, []);
 
     useEffect(() => {
-        const onMove = (e: MouseEvent) => {
-            if (!dragging.current) return;
-            if (getWidth && resizerRef.current) {
-                onWidthChange(getWidth(e, resizerRef.current));
-                return;
+        let frame = 0;
+        let pendingEvent: MouseEvent | null = null;
+        let lastWidth: number | undefined;
+        const applyWidth = () => {
+            frame = 0;
+            const event = pendingEvent;
+            pendingEvent = null;
+            if (!event || !dragging.current) return;
+            const current = callbacks.current;
+            let width: number;
+            if (current.getWidth && resizerRef.current) {
+                width = current.getWidth(event, resizerRef.current);
+            } else {
+                const wrap = document.querySelector('.chat-area-wrap') as HTMLElement;
+                if (!wrap) return;
+                const rect = wrap.getBoundingClientRect();
+                width = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, ((rect.right - event.clientX) / rect.width) * 100));
             }
-            const wrap = document.querySelector('.chat-area-wrap') as HTMLElement;
-            if (!wrap) return;
-            const rect = wrap.getBoundingClientRect();
-            const rightPct = ((rect.right - e.clientX) / rect.width) * 100;
-            const clamped = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, rightPct));
-            onWidthChange(clamped);
+            lastWidth = width;
+            current.onWidthChange(width);
+        };
+        const onMove = (event: MouseEvent) => {
+            if (!dragging.current) return;
+            pendingEvent = event;
+            if (!frame) frame = requestAnimationFrame(applyWidth);
         };
         const onUp = () => {
             if (!dragging.current) return;
+            if (frame) cancelAnimationFrame(frame);
+            applyWidth();
             dragging.current = false;
+            callbacks.current.onResizeEnd?.(lastWidth);
+            lastWidth = undefined;
             setActive(false);
             document.body.style.cursor = '';
             document.body.style.userSelect = '';
@@ -109,10 +131,18 @@ const PanelResizer: React.FC<Props> = ({onWidthChange, getWidth, onReset, classN
         window.addEventListener('mousemove', onMove);
         window.addEventListener('mouseup', onUp);
         return () => {
+            if (frame) cancelAnimationFrame(frame);
+            if (dragging.current) {
+                dragging.current = false;
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+                overlayRef.current?.remove();
+                overlayRef.current = null;
+            }
             window.removeEventListener('mousemove', onMove);
             window.removeEventListener('mouseup', onUp);
         };
-    }, [getWidth, onWidthChange]);
+    }, []);
 
     const onDoubleClick = useCallback(() => {
         if (onReset) {

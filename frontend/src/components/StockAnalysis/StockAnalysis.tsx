@@ -68,6 +68,10 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
     const {t, i18n} = useTranslation('main');
     const tr = (key: string, options?: Record<string, unknown>) => t(`stockAnalysis.${key}`, options);
     const [sidebarWidth, setSidebarWidth] = useState(readSidebarWidth);
+    const sidebarLayout = useRef<HTMLElement | null>(null);
+    const previewSidebarWidth = useCallback((width: number) => {
+        sidebarLayout.current?.style.setProperty('--workspace-sidebar-width', `${width}px`);
+    }, []);
     const updateSidebarWidth = (width: number) => {
         setSidebarWidth(width);
         try {localStorage.setItem(SIDEBAR_WIDTH_KEY, String(width));} catch { /* Keep session state. */ }
@@ -200,8 +204,10 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
     };
 
     const sidebarToggle = <>
-        {!sidebarCollapsed && <PanelResizer className="stock-analysis-sidebar-resizer" onWidthChange={updateSidebarWidth}
+        {!sidebarCollapsed && <PanelResizer className="stock-analysis-sidebar-resizer" onWidthChange={previewSidebarWidth}
+            onResizeEnd={width => {if (width !== undefined) updateSidebarWidth(width);}}
             onReset={() => updateSidebarWidth(DEFAULT_SIDEBAR_WIDTH)} getWidth={(event, resizer) => {
+                sidebarLayout.current = resizer.closest<HTMLElement>('.workspace-layout');
                 const layout = resizer.closest('.workspace-layout-body')!;
                 const bounds = layout.getBoundingClientRect();
                 const discussionWidth = layout.querySelector('.stock-discussion-container')?.getBoundingClientRect().width ?? 0;

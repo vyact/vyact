@@ -13,7 +13,9 @@ const ShortcutModal: React.FC<ShortcutModalProps> = ({onClose, scope}) => {
     const {t} = useTranslation('main');
     const SHORTCUTS = scope === 'stock-analysis' ? [
         ...STOCK_MARKETS.map((market, index) => ({keys: ['Cmd', String(index + 1)], desc: t(`stockAnalysis.${market}`)})),
+        {keys: ['Cmd', 'Shift', 'I'], desc: t('stockAnalysis.discussion.togglePanel')},
         {keys: ['Cmd', 'Shift', 'S'], desc: t('shortcutModal.toggleSidebar')},
+        {keys: ['Cmd', 'Shift', 'H'], desc: t('stockAnalysis.discussion.historyTitle')},
         {keys: ['Cmd', '/'], desc: t('shortcutModal.showShortcuts')},
         {keys: ['Cmd', 'Shift', STOCK_ANALYSIS_SHORTCUT_KEY], desc: t('stockAnalysis.title')},
         {keys: ['Cmd'], desc: t('stockAnalysis.shortcuts.sortPreview')},

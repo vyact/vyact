@@ -2016,6 +2016,7 @@
       }
     },
     "discussion": {
+      "togglePanel": "展开/收起 AI 分析面板",
       "preparingTitle": "正在准备分析数据",
       "preparingCount": "已检查 {{completed}} / {{total}} 只股票",
       "preparingUnavailable": "{{count}} 只股票的部分数据不可用，将使用已有数据分析。",

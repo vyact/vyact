@@ -2016,6 +2016,7 @@
       }
     },
     "discussion": {
+      "togglePanel": "Mở/đóng bảng phân tích AI",
       "preparingTitle": "Đang chuẩn bị dữ liệu phân tích",
       "preparingCount": "Đã kiểm tra {{completed}} / {{total}} cổ phiếu",
       "preparingUnavailable": "Thiếu một số dữ liệu của {{count}} cổ phiếu. Sẽ phân tích với dữ liệu hiện có.",
