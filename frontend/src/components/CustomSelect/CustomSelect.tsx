@@ -47,6 +47,16 @@ interface CustomSelectProps {
     showGroupLabels?: boolean;
 }
 
+function revealOption(dropdown: HTMLDivElement | null, index: number) {
+    const list = dropdown?.querySelector<HTMLElement>('.custom-select-list');
+    const option = list?.querySelector<HTMLElement>(`[data-option-index="${index}"]`);
+    if (!list || !option) return;
+    const listBounds = list.getBoundingClientRect();
+    const optionBounds = option.getBoundingClientRect();
+    if (optionBounds.top < listBounds.top) list.scrollTop -= listBounds.top - optionBounds.top;
+    else if (optionBounds.bottom > listBounds.bottom) list.scrollTop += optionBounds.bottom - listBounds.bottom;
+}
+
 const CustomSelect: React.FC<CustomSelectProps> = ({
                                                        options,
                                                        optionsPageSize,
@@ -87,6 +97,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
     const [search, setSearch] = useState('');
     const [renderedPage, setRenderedPage] = useState({key: '', count: 0});
     const [activeIndex, setActiveIndex] = useState(-1);
+    const [keyboardNavigation, setKeyboardNavigation] = useState(false);
     const listId = useId();
     const triggerRef = useRef<HTMLButtonElement>(null);
     const [dropdownPlacement, setDropdownPlacement] = useState<'up' | 'down'>('down');
@@ -113,14 +124,18 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
         optionsPageSize, renderedPage.key === pageKey ? renderedPage.count : 0, activeIndex + 1,
     ) : filtered.length;
     useEffect(() => {
-        if (!open) return;
+        if (!open) {setKeyboardNavigation(false); return;}
         const selectedIndex = search ? -1 : filtered.findIndex(option => option.value === value && !option.disabled);
-        setActiveIndex(selectedIndex >= 0 ? selectedIndex : filtered.findIndex(option => !option.disabled));
+        const nextIndex = selectedIndex >= 0 ? selectedIndex : filtered.findIndex(option => !option.disabled);
+        setActiveIndex(nextIndex);
+        const list = dropdownRef.current?.querySelector<HTMLElement>('.custom-select-list');
+        if (list) list.scrollTop = 0;
+        revealOption(dropdownRef.current, nextIndex);
     }, [open, search, optionKey, value]);
 
     useEffect(() => {
-        if (open && activeIndex >= 0) dropdownRef.current?.querySelector<HTMLElement>(`[data-option-index="${activeIndex}"]`)?.scrollIntoView({block: 'nearest'});
-    }, [open, activeIndex]);
+        if (open && keyboardNavigation && activeIndex >= 0) revealOption(dropdownRef.current, activeIndex);
+    }, [open, activeIndex, keyboardNavigation]);
 
     useEffect(() => {
         const handler = (e: PointerEvent) => {
@@ -200,12 +215,13 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
         if (!open) {
             if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
                 event.preventDefault(); event.stopPropagation();
-                onOpen?.(); setOpen(true);
+                onOpen?.(); setKeyboardNavigation(true); setOpen(true);
             }
             return;
         }
         if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
             event.preventDefault(); event.stopPropagation();
+            setKeyboardNavigation(true);
             const direction = event.key === 'ArrowDown' ? 1 : -1;
             let next = activeIndex;
             for (let step = 0; step < filtered.length; step++) {
@@ -282,8 +298,8 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                             role="option"
                             aria-selected={isSelected(opt.value)}
                             data-option-index={index}
-                            onMouseMove={() => {if (!opt.disabled) setActiveIndex(index);}}
-                            className={`custom-select-item${!showGroupLabels && index > 0 && opt.group !== filtered[index - 1].group ? ' group-start' : ''}${isSelected(opt.value) ? ' selected' : ''}${opt.disabled ? ' disabled' : ''}${index === activeIndex && !opt.disabled ? ' keyboard-active' : ''}`}
+                            onMouseMove={() => {setKeyboardNavigation(false); if (!opt.disabled) setActiveIndex(index);}}
+                            className={`custom-select-item${!showGroupLabels && index > 0 && opt.group !== filtered[index - 1].group ? ' group-start' : ''}${isSelected(opt.value) ? ' selected' : ''}${opt.disabled ? ' disabled' : ''}${keyboardNavigation && index === activeIndex && !opt.disabled ? ' keyboard-active' : ''}`}
                             aria-disabled={opt.disabled || undefined}
                             onClick={event => {
                                 event.stopPropagation();
