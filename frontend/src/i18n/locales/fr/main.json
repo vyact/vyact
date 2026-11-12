@@ -2018,6 +2018,9 @@
       }
     },
     "discussion": {
+      "preparingTitle": "Préparation des données",
+      "preparingCount": "{{completed}} / {{total}} actions vérifiées",
+      "preparingUnavailable": "Certaines données manquent pour {{count}} actions. L’analyse utilisera les données disponibles.",
       "selectGroup": "Sélectionner un groupe à analyser",
       "groupHint": "Comparez les groupes ou posez des questions sur leurs actions.",
       "groupPlaceholder": "Posez une question sur les groupes sélectionnés ou leurs actions",

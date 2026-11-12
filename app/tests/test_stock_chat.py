@@ -1,3 +1,4 @@
+import json
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -159,3 +160,28 @@ async def test_group_chat_uses_membership_without_loading_synthetic_scope_symbol
     prompt = model.call_args.args[0]
     assert 'AI' in prompt and 'Chips' in prompt and 'Samsung' in prompt
     assert 'Selected group scope' in prompt
+
+
+@pytest.mark.asyncio
+async def test_stream_returns_progress_before_fetching_and_prepares_each_stock_once():
+    body = StockChatRequest(symbol='G-KR-ALL', name='All groups', market='KR', question='Compare', stream=True,
+                            include_financials=True,
+                            groups=[{'name': 'AI', 'stocks': [{'symbol': '005930', 'name': 'Samsung'}]}])
+
+    async def answer(*args):
+        yield '{"type":"model","model":"test"}\n'
+        yield '{"type":"done"}\n'
+
+    with patch('routers.stock_analysis.daily_prices', new=AsyncMock(return_value=[{'day': '2026-11-12', 'close': 100}])) as prices, \
+            patch('routers.stock_analysis.build_financial_chat_context', new=AsyncMock(return_value=('Financial context', True))) as financials, \
+            patch('routers.stock_analysis.stream_stock_answer', side_effect=answer):
+        response = await stock_chat(body)
+        prices.assert_not_awaited()
+        stream = response.body_iterator
+        first = json.loads(await anext(stream))
+        assert first == {'type': 'preparation', 'completed': 0, 'total': 1, 'failed': 0}
+        events = [json.loads(event) async for event in stream]
+    assert [event['type'] for event in events] == ['preparation', 'model', 'done']
+    assert events[0]['completed'] == 1
+    prices.assert_awaited_once()
+    financials.assert_awaited_once_with('005930', with_status=True)

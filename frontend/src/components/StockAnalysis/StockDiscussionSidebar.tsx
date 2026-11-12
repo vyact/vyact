@@ -4,6 +4,7 @@ import type {ChartSnapshotContext, ChartSnapshot} from './chartSnapshot';
 import {useEffect, useRef, useState, type RefObject, type ReactNode} from 'react';
 import {ChartNoAxesCombined, ArrowUp, Square, X, History, Camera} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
+import StockChatPreparation, {type StockPreparationProgress} from './StockChatPreparation';
 import StockChatHistory from './StockChatHistory';
 import ImageAttachmentPreview from '../common/ImageAttachmentPreview/ImageAttachmentPreview';
 import ImageViewer from '../ImageViewer/ImageViewer';
@@ -72,6 +73,7 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
     const emptyGroupScope = groups !== undefined && !groups.some(group => group.symbols.length > 0);
     const [question, setQuestion] = useState('');
     const [busy, setBusy] = useState(false);
+    const [preparation, setPreparation] = useState<StockPreparationProgress | null>(null);
     const [error, setError] = useState(false);
     const [referenceMarket, setReferenceMarket] = useState<StockMarket>(market);
     const language = i18n.resolvedLanguage ?? i18n.language;
@@ -95,7 +97,7 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
             if (list && followLatest.current) {list.scrollTop = list.scrollHeight; previousScrollTop.current = list.scrollTop;}
         });
         return () => cancelAnimationFrame(frame);
-    }, [messages, busy]);
+    }, [messages, busy, preparation]);
 
     const send = async () => {
         const text = question.trim();
@@ -103,6 +105,7 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
         const request = new AbortController();
         controller.current = request;
         setBusy(true);
+        setPreparation({completed: 0, total: new Set(groups ? groups.flatMap(group => group.symbols) : [stock.symbol, ...referenceStocks.map(item => item.symbol)]).size, failed: 0});
         setError(false);
         followLatest.current = true;
         const userId = crypto.randomUUID();
@@ -127,6 +130,11 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
             });
             await assertOk(response);
             await readStockChatStream(response, event => {
+                if (request.signal.aborted) return;
+                if (event.type === 'preparation' && event.completed !== undefined && event.total !== undefined && event.failed !== undefined) {
+                    setPreparation({completed: event.completed, total: event.total, failed: event.failed});
+                }
+                if (['model', 'token', 'tool', 'reset'].includes(event.type)) setPreparation(null);
                 if (event.type === 'model') updateAssistant(message => ({...message, model: event.model}));
                 if (event.type === 'stats' && !request.signal.aborted) {
                     const {type: _type, ...stats} = event;
@@ -162,7 +170,7 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
             if (!request.signal.aborted) setError(true);
         } finally {
             if (controller.current === request) controller.current = null;
-            if (!request.signal.aborted) setBusy(false);
+            if (!request.signal.aborted) {setBusy(false); setPreparation(null);}
         }
     };
 
@@ -208,7 +216,8 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
                         previousScrollTop.current = list.scrollTop;
                     }} role="log" aria-label={tr('ai')} aria-busy={busy}>
                     {!messages.length && !busy && <div className="stock-discussion-empty"><h2>{tr('welcome')}</h2><p>{emptyGroupScope ? t('stockAnalysis.groups.emptyHint') : tr(groups ? 'groupHint' : 'hint')}</p></div>}
-                    {messages.map((message, index) => <div key={message.id ?? index} className={`stock-discussion-message-row ${message.role}`}>
+                    {messages.map((message, index) => preparation && busy && index === messages.length - 1 && message.role === 'assistant'
+                        ? <StockChatPreparation key={message.id ?? index} {...preparation}/> : <div key={message.id ?? index} className={`stock-discussion-message-row ${message.role}`}>
                         <Message disableActionTooltips role={message.role} content={message.content} timestamp={message.timestamp ?? ''}
                             isStreaming={busy && index === messages.length - 1 && message.role === 'assistant'}
                             attachments={message.attachments} model={message.model} stats={message.stats} activityLog={message.activityLog} toolStatus={message.toolStatus}/>
@@ -258,7 +267,7 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
                                 onClick={() => setHistoryOpen(true)}><History size={18} aria-hidden="true"/></button>
 
                             {busy ? <button className="stock-discussion-send stock-discussion-stop" type="button" aria-label={tr('stop')}
-                                onClick={() => {controller.current?.abort(); controller.current = null; setBusy(false);}}><Square size={12} fill="currentColor" strokeWidth={0} aria-hidden="true"/></button>
+                                onClick={() => {controller.current?.abort(); controller.current = null; setBusy(false); setPreparation(null);}}><Square size={12} fill="currentColor" strokeWidth={0} aria-hidden="true"/></button>
                                 : <button className="stock-discussion-send" type="submit" disabled={!question.trim() || emptyGroupScope || attachingChart} aria-label={tr('send')}><ArrowUp size={18}/></button>}
                         </>}/>
 

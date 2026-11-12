@@ -2016,6 +2016,9 @@
       }
     },
     "discussion": {
+      "preparingTitle": "分析データを準備中",
+      "preparingCount": "{{completed}} / {{total}} 銘柄の確認完了",
+      "preparingUnavailable": "{{count}}銘柄の一部データを取得できませんでした。取得済みデータで分析します。",
       "selectGroup": "分析するグループを選択",
       "groupHint": "グループ間の動向を比較したり、構成銘柄について質問できます。",
       "groupPlaceholder": "選択したグループや構成銘柄について質問してください",

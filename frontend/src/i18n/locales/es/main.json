@@ -2017,6 +2017,9 @@
       }
     },
     "discussion": {
+      "preparingTitle": "Preparando datos de análisis",
+      "preparingCount": "{{completed}} / {{total}} acciones comprobadas",
+      "preparingUnavailable": "Faltan algunos datos de {{count}} acciones. Se analizarán los datos disponibles.",
       "selectGroup": "Seleccionar grupo para analizar",
       "groupHint": "Compara grupos o pregunta por sus acciones.",
       "groupPlaceholder": "Pregunta sobre los grupos seleccionados o sus acciones",

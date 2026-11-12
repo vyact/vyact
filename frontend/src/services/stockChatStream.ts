@@ -1,6 +1,9 @@
 import type {MessageStats} from '../types';
 
 export interface StockChatEvent extends MessageStats {
+    completed?: number;
+    total?: number;
+    failed?: number;
     model?: string;
     type: string;
     text?: string;

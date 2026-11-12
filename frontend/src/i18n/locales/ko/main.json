@@ -2026,6 +2026,9 @@
       }
     },
     "discussion": {
+      "preparingTitle": "분석 자료 준비 중",
+      "preparingCount": "{{completed}} / {{total}} 종목 확인 완료",
+      "preparingUnavailable": "{{count}}개 종목의 일부 자료를 조회하지 못했습니다. 확보된 자료로 분석합니다.",
       "selectGroup": "분석할 그룹 선택",
       "groupHint": "그룹 간 흐름을 비교하거나 그룹에 속한 종목에 대해 질문해 보세요.",
       "groupPlaceholder": "선택한 그룹이나 소속 종목에 대해 질문하세요",

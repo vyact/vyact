@@ -2016,6 +2016,9 @@
       }
     },
     "discussion": {
+      "preparingTitle": "Đang chuẩn bị dữ liệu phân tích",
+      "preparingCount": "Đã kiểm tra {{completed}} / {{total}} cổ phiếu",
+      "preparingUnavailable": "Thiếu một số dữ liệu của {{count}} cổ phiếu. Sẽ phân tích với dữ liệu hiện có.",
       "selectGroup": "Chọn nhóm để phân tích",
       "groupHint": "So sánh các nhóm hoặc hỏi về cổ phiếu trong nhóm.",
       "groupPlaceholder": "Hỏi về nhóm đã chọn hoặc các cổ phiếu trong nhóm",

@@ -2017,6 +2017,9 @@
       }
     },
     "discussion": {
+      "preparingTitle": "Preparing analysis data",
+      "preparingCount": "{{completed}} / {{total}} stocks checked",
+      "preparingUnavailable": "Some data is unavailable for {{count}} stocks. Analysis will use available data.",
       "selectGroup": "Select groups to analyze",
       "groupHint": "Compare groups or ask about the stocks in a group.",
       "groupPlaceholder": "Ask about the selected groups or their stocks",
