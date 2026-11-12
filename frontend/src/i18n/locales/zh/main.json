@@ -1831,6 +1831,8 @@
     "manuscriptApplyHelp": "应用后将用此结果替换当前章节标题和正文。"
   },
   "stockAnalysis": {
+    "premarketOpensIn": "盘前交易还有 {{time}} 开始",
+    "premarketRegularOpensIn": "盘前交易中 · 距正常开盘 {{time}}",
     "preferencesSyncFailed": "分组或自选股同步失败 · 重试",
     "indexNasdaq100": "纳斯达克100",
     "shortcuts": {"sortPreview": "按住以按涨跌幅排序股票预览"},

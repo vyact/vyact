@@ -1832,6 +1832,8 @@
     "manuscriptApplyHelp": "Al aplicar, se sustituyen el título y el texto del capítulo actual."
   },
   "stockAnalysis": {
+    "premarketOpensIn": "Premercado en {{time}}",
+    "premarketRegularOpensIn": "Premercado · Apertura regular en {{time}}",
     "preferencesSyncFailed": "Error al sincronizar grupos o favoritos · Reintentar",
     "indexNasdaq100": "Nasdaq 100",
     "shortcuts": {"sortPreview": "Mantén pulsado para ordenar la vista previa por variación porcentual"},

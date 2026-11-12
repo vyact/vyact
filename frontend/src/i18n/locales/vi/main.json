@@ -1831,6 +1831,8 @@
     "manuscriptApplyHelp": "Áp dụng sẽ thay thế tiêu đề và nội dung chương hiện tại."
   },
   "stockAnalysis": {
+    "premarketOpensIn": "Tiền thị trường mở sau {{time}}",
+    "premarketRegularOpensIn": "Tiền thị trường · Phiên chính sau {{time}}",
     "preferencesSyncFailed": "Đồng bộ nhóm hoặc danh sách theo dõi thất bại · Thử lại",
     "indexNasdaq100": "Nasdaq 100",
     "shortcuts": {"sortPreview": "Giữ để sắp xếp cổ phiếu xem trước theo phần trăm thay đổi"},

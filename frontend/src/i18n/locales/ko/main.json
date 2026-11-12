@@ -1841,6 +1841,8 @@
     "manuscriptApplyHelp": "적용하면 현재 회차의 제목과 본문을 이 결과로 교체합니다."
   },
   "stockAnalysis": {
+    "premarketOpensIn": "프리마켓 개장까지 {{time}}",
+    "premarketRegularOpensIn": "프리마켓 · 정규장까지 {{time}}",
     "preferencesSyncFailed": "그룹·관심종목 동기화 실패 · 재시도",
     "indexNasdaq100": "나스닥 100",
     "shortcuts": {"sortPreview": "누른 채 종목 미리보기 등락률순 정렬"},

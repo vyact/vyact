@@ -1832,6 +1832,8 @@
     "manuscriptApplyHelp": "Applying replaces the current chapter title and manuscript with this result."
   },
   "stockAnalysis": {
+    "premarketOpensIn": "Premarket opens in {{time}}",
+    "premarketRegularOpensIn": "Premarket · Regular open in {{time}}",
     "preferencesSyncFailed": "Groups or watchlist sync failed · Retry",
     "indexNasdaq100": "Nasdaq 100",
     "shortcuts": {"sortPreview": "Hold to sort preview stocks by percentage change"},

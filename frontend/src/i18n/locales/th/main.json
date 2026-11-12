@@ -1831,6 +1831,8 @@
     "manuscriptApplyHelp": "เมื่อใช้ผลลัพธ์นี้จะแทนที่ชื่อและเนื้อหาตอนปัจจุบัน"
   },
   "stockAnalysis": {
+    "premarketOpensIn": "ก่อนเปิดตลาดใน {{time}}",
+    "premarketRegularOpensIn": "ช่วงก่อนเปิดตลาด · ตลาดปกติเปิดใน {{time}}",
     "preferencesSyncFailed": "ซิงค์กลุ่มหรือรายการโปรดไม่สำเร็จ · ลองอีกครั้ง",
     "indexNasdaq100": "Nasdaq 100",
     "shortcuts": {"sortPreview": "กดค้างเพื่อเรียงหุ้นในตัวอย่างตามเปอร์เซ็นต์การเปลี่ยนแปลง"},

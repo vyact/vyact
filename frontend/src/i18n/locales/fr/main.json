@@ -1833,6 +1833,8 @@
     "manuscriptApplyHelp": "L’application remplace le titre et le texte du chapitre actuel."
   },
   "stockAnalysis": {
+    "premarketOpensIn": "Préouverture dans {{time}}",
+    "premarketRegularOpensIn": "Préouverture · Séance normale dans {{time}}",
     "preferencesSyncFailed": "Échec de synchronisation des groupes ou favoris · Réessayer",
     "indexNasdaq100": "Nasdaq 100",
     "shortcuts": {"sortPreview": "Maintenir pour trier les aperçus par variation en pourcentage"},

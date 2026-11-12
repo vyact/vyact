@@ -1831,6 +1831,8 @@
     "manuscriptApplyHelp": "適用すると現在の話のタイトルと本文をこの結果で置き換えます。"
   },
   "stockAnalysis": {
+    "premarketOpensIn": "プレマーケット開始まで {{time}}",
+    "premarketRegularOpensIn": "プレマーケット · 通常取引開始まで {{time}}",
     "preferencesSyncFailed": "グループ・お気に入りの同期に失敗 · 再試行",
     "indexNasdaq100": "ナスダック100",
     "shortcuts": {"sortPreview": "押しながら銘柄プレビューを騰落率順に並べ替え"},

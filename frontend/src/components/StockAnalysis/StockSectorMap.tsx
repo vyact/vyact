@@ -6,6 +6,7 @@ import {stockSnapshotCache} from '../../services/stockSnapshotCache';
 import {stockAnalysis, type MarketSector, type MarketSectorMap, type SectorStock, type StockMarket, type StockSymbol} from '../../services/stockAnalysis';
 import StockLoadingIndicator from './StockLoadingIndicator';
 import MarketIndexSummary from './MarketIndexSummary';
+import {US_PREMARKET_LEAD_SECONDS} from './marketOpeningCountdown';
 import MarketOpenCountdown from './MarketOpenCountdown';
 import NewYorkClock from './NewYorkClock';
 import StockSparkline from './StockSparkline';
@@ -103,7 +104,10 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
     const [failed, setFailed] = useState(false);
     const [attempt, setAttempt] = useState(0);
     const [nextRegularOpen, setNextRegularOpen] = useState<number>();
-    const openingRefreshVersion = useMarketOpeningRefresh(nextRegularOpen, market);
+    const regularOpeningRefresh = useMarketOpeningRefresh(nextRegularOpen, market);
+    const premarketOpeningRefresh = useMarketOpeningRefresh(market === 'US' && nextRegularOpen
+        ? nextRegularOpen - US_PREMARKET_LEAD_SECONDS : undefined, market);
+    const openingRefreshVersion = regularOpeningRefresh + premarketOpeningRefresh;
     const [refreshSeconds, setRefreshSeconds] = useState<number>(DEFAULT_REFRESH_SECONDS);
     const [selectedSector, setSelectedSector] = useState<MarketSector>();
     const {sortByChange, trackSortModifier} = usePreviewSortModifier();
@@ -238,7 +242,7 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
             </button>}
             <h1>{title}</h1>
             <div className="stock-sector-map-session">
-                <MarketOpenCountdown opening={nextRegularOpen}/>
+                <MarketOpenCountdown opening={nextRegularOpen} includePremarket={market === 'US'}/>
                 {market === 'US' && <NewYorkClock/>}
             </div>
             <div className="stock-sector-map-controls">
