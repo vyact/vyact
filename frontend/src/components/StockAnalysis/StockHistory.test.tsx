@@ -11,6 +11,13 @@ const row: DailyPrice = {day: '2026-11-13', open: 100, high: 110, low: 90, close
 const render = (fields: Partial<DailyPrice>) => renderToStaticMarkup(<StockHistory market="KR" rows={[{...row, ...fields}]}/>);
 
 describe('optional history columns', () => {
+    it('places loan balances after all investor columns', () => {
+        const html = render({loanBalanceVolume: 568, loanBalanceAmount: 656000000, investors: {ind: {netVolume: 13}, eor: {netVolume: 17}}});
+        const header = html.slice(html.lastIndexOf('<thead>'), html.lastIndexOf('</thead>'));
+        expect(header.indexOf('stockAnalysis.history.loanBalanceVolume')).toBeGreaterThan(header.lastIndexOf('stockAnalysis.history.investorNetVolume'));
+        const dailyRows = html.slice(html.lastIndexOf('<tbody>'));
+        expect(dailyRows.indexOf('>568<')).toBeGreaterThan(dailyRows.indexOf('>17<'));
+    });
     it('hides absent or null market cap and loan balances', () => {
         for (const fields of [{}, {marketCap: null, loanBalanceVolume: null, loanBalanceAmount: null}]) {
             const html = render(fields);

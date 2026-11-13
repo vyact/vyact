@@ -19,13 +19,13 @@ export default function ChartQuoteDetails({quote, previous, market, detailed = f
         return rate == null ? null : <span className="stock-quote-change" data-direction={rate === 0 ? 'flat' : rate > 0 ? 'up' : 'down'}>({percent.format(rate)}%)</span>;
     };
     return <dl className={`stock-price-chart-quote${detailed ? ' stock-price-chart-quote-detailed' : ''}`} data-market={market}>
-        <div><dt>{t('stockAnalysis.day')}</dt><dd>{quote.day} ({weekday})</dd></div>
+        {!detailed && <div><dt>{t('stockAnalysis.day')}</dt><dd>{quote.day} ({weekday})</dd></div>}
         {(['open', 'high', 'low', 'close'] as const).map(key => <div key={key}>
             <dt>{t(`stockAnalysis.${key}`)}</dt><dd>{number.format(quote[key])}
                 {(detailed || key === 'close') && change(quote[key], previous?.close)}
             </dd>
         </div>)}
-        {quote.volume != null && <div><dt>{t('stockAnalysis.volume')}</dt><dd>
+        {quote.volume != null && (!detailed || quote.tradingValue == null) && <div><dt>{t('stockAnalysis.volume')}</dt><dd>
             {new Intl.NumberFormat(i18n.resolvedLanguage, {notation: detailed ? 'compact' : 'standard', maximumFractionDigits: 2}).format(quote.volume)}
             {detailed && change(quote.volume, previous?.volume)}
         </dd></div>}

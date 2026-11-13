@@ -96,10 +96,10 @@ export default function StockHistory({rows, market}: {rows: DailyPrice[]; market
             <table className="stock-history-table" aria-label={tr('daily')}><thead><tr>
                 <th scope="col">{t('stockAnalysis.day')}</th>{priceFields.map(field => <th scope="col" key={field}>{hasInvestors && (field === 'close' || field === 'volume') ? <span className="stock-history-pair"><span>{t(`stockAnalysis.${field}`)}</span><span>{tr(field === 'close' ? 'changePercent' : 'tradingValue')}</span></span> : field === 'changePercent' ? tr('changePercent') : t(`stockAnalysis.${field}`)}</th>)}
                 {hasMarketCap && <th scope="col">{tr('marketCap')}</th>}
-                {hasLoanBalance && <th scope="col"><span className="stock-history-pair"><span>{tr('loanBalanceVolume')}</span><span>{tr('loanBalanceAmount')}</span></span></th>}
                 {groups.map(group => <th scope="col" key={group}><span className="stock-history-pair">
                     <span>{tr('investorNetVolume', {name: tr(`groups.${group}`)})}</span><span>{tr('netAmount')}</span>
                 </span></th>)}
+                {hasLoanBalance && <th scope="col"><span className="stock-history-pair"><span>{tr('loanBalanceVolume')}</span><span>{tr('loanBalanceAmount')}</span></span></th>}
             </tr></thead><tbody>{visibleRows.map(row => <tr key={row.day}>
                 <th scope="row">{date(row.day)}</th>{priceFields.map(field => {
                     if (!hasInvestors) {
@@ -118,17 +118,18 @@ export default function StockHistory({rows, market}: {rows: DailyPrice[]; market
                     return <td key={field}>{format(row[field])}</td>;
                 })}
                 {hasMarketCap && <td>{formatQuantity(row.marketCap)}</td>}
-                {hasLoanBalance && <td><span className="stock-history-pair">
-                    <span>{formatQuantity(row.loanBalanceVolume)}{isFiniteValue(row.loanBalanceVolume) && isFiniteValue(row.sharesOutstanding) && row.sharesOutstanding > 0
-                        ? ` (${number.format(row.loanBalanceVolume / row.sharesOutstanding * 100)}%)` : ''}</span>
-                    <span>{formatQuantity(row.loanBalanceAmount)}</span>
-                </span></td>}
+
                 {groups.map(group => <td key={group}><span className="stock-history-pair">
                     {(['netVolume', 'netAmount'] as const).map(field => {
                         const value = tradeValue(row.investors?.[group], field);
                         return <span key={field} data-direction={value !== null && value !== 0 ? value > 0 ? 'up' : 'down' : undefined}>{formatQuantity(value)}</span>;
                     })}
                 </span></td>)}
+                {hasLoanBalance && <td><span className="stock-history-pair">
+                    <span>{formatQuantity(row.loanBalanceVolume)}{isFiniteValue(row.loanBalanceVolume) && isFiniteValue(row.sharesOutstanding) && row.sharesOutstanding > 0
+                        ? ` (${number.format(row.loanBalanceVolume / row.sharesOutstanding * 100)}%)` : ''}</span>
+                    <span>{formatQuantity(row.loanBalanceAmount)}</span>
+                </span></td>}
             </tr>)}</tbody></table>
         </div>
     </section>;

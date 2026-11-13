@@ -168,7 +168,9 @@
     width: min(272px, calc(100% - 16px)); padding: 10px; border: 1px solid var(--border); border-radius: 9px;
     background: var(--surface2); color: var(--text); box-shadow: var(--shadow-md);
 }
-.stock-chart-quote-tooltip > strong {display: block; margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px;}
+.stock-chart-quote-heading {display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 8px;}
+.stock-chart-quote-heading strong {min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px;}
+.stock-chart-quote-heading time {flex-shrink: 0; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums;}
 .stock-price-chart-quote-detailed {display: grid; gap: 4px; font-size: 12px;}
 .stock-price-chart-quote-detailed > div {display: flex; justify-content: space-between; gap: 8px;}
 .stock-price-chart-quote-detailed dd {text-align: end;}

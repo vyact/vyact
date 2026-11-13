@@ -82,13 +82,17 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
     const [quoteMode, setQuoteMode] = useState<QuoteDisplayMode>(() => {
         try {return localStorage.getItem(QUOTE_MODE_STORAGE_KEY) === 'header' ? 'header' : 'tooltip';} catch {return 'tooltip';}
     });
-    const [hoverPoint, setHoverPoint] = useState<{x: number; y: number; chartHeight: number}>();
+    const [hoverPoint, setHoverPoint] = useState<{x: number; y: number; chartWidth: number; chartHeight: number}>();
     const [hoveredDay, setHoveredDay] = useState<string>();
     const [quoteTooltipHeight, setQuoteTooltipHeight] = useState(240);
+    const [quoteTooltipWidth, setQuoteTooltipWidth] = useState(272);
     useLayoutEffect(() => {
         const tooltip = comparisonQuoteTarget?.parentElement;
         if (quoteMode !== 'tooltip' || !tooltip) return;
-        const position = () => setQuoteTooltipHeight(tooltip.offsetHeight);
+        const position = () => {
+            setQuoteTooltipHeight(tooltip.offsetHeight);
+            setQuoteTooltipWidth(tooltip.offsetWidth);
+        };
         position();
         const observer = new ResizeObserver(position);
         observer.observe(tooltip);
@@ -264,8 +268,9 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
             crosshairPosition.current = day && price !== null ? {day, price} : null;
             setHoveredDay(inside ? chartDay(time) : undefined);
             setHoverPoint(inside ? {
-                x: Math.max(8, Math.min(point.x + 18, node.clientWidth - 280)),
-                y: Math.max(8, Math.min(point.y + 18, node.clientHeight - 240)),
+                x: point.x,
+                y: point.y,
+                chartWidth: node.clientWidth,
                 chartHeight: node.clientHeight,
             } : undefined);
         };
@@ -468,8 +473,16 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
         <div className="stock-chart-plot">
             <div ref={container} className="stock-price-chart-canvas"/>
             {quoteMode === 'tooltip' && hoverPoint && hoveredIndex >= 0 && !settingsOpen && !memoDialog && <div
-                className="stock-chart-quote-tooltip stock-chart-quote-tooltip-with-comparisons" style={{left: hoverPoint.x, top: Math.max(8, Math.min(hoverPoint.y, hoverPoint.chartHeight - quoteTooltipHeight - 8))}}>
-                <strong>{name}</strong>
+                className="stock-chart-quote-tooltip stock-chart-quote-tooltip-with-comparisons" style={{left: Math.max(8,
+                    hoverPoint.x + 40 + quoteTooltipWidth <= hoverPoint.chartWidth - 8
+                        ? hoverPoint.x + 40 : hoverPoint.x - quoteTooltipWidth - 40,
+                ), top: Math.max(8, Math.min(
+                    (hoverPoint.y - quoteTooltipHeight - 18 >= 8 ? hoverPoint.y - quoteTooltipHeight - 18 : hoverPoint.y + 18) - 50,
+                    hoverPoint.chartHeight - quoteTooltipHeight - 8,
+                ))}}>
+                <div className="stock-chart-quote-heading">
+                    <strong>{name}</strong><time dateTime={quote.day}>{quote.day}</time>
+                </div>
                 <ChartQuoteDetails quote={quote} previous={previousQuote} market={market} detailed/>
                 <div ref={setComparisonQuoteTarget}/>
             </div>}
