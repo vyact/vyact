@@ -62,19 +62,22 @@ export function useAttachments(
         return selectedFiles.filter(file => isSupportedChatFile(file) && isMediaSupported(file));
     }, [t, isMediaSupported, warnUnsupportedMedia]);
 
-    // 외부 드롭 파일 처리
+    const addFiles = useCallback((selectedFiles: File[]) => {
+        if (modelType === 'image_gen') return;
+        const supportedFiles = filterSupportedFiles(selectedFiles);
+        const imageFiles = supportedFiles.filter(file => file.type.startsWith('image/'));
+        const otherFiles = supportedFiles.filter(file => !file.type.startsWith('image/'));
+        if (imageFiles.length > 0) setImages(previous => [...previous, ...imageFiles].slice(0, MAX_IMAGE_ATTACHMENTS));
+        if (otherFiles.length > 0) setFileAttachments(previous => [...previous, ...otherFiles.map(file => ({file}))].slice(0, MAX_FILE_ATTACHMENTS));
+    }, [filterSupportedFiles, modelType]);
+
+    // 파일 선택과 드롭에서 같은 검증 및 개수 제한을 적용한다.
     useEffect(() => {
         if (externalDropFiles.length > 0 && modelType !== 'image_gen') {
-            const supportedFiles = filterSupportedFiles(externalDropFiles);
-            const imgs = supportedFiles.filter(f => f.type.startsWith('image/'));
-            const files = supportedFiles.filter(f => !f.type.startsWith('image/'));
-            if (imgs.length > 0) {
-                setImages(prev => [...prev, ...imgs].slice(0, MAX_IMAGE_ATTACHMENTS));
-            }
-            if (files.length > 0) setFileAttachments(prev => [...prev, ...files.map(f => ({ file: f }))].slice(0, MAX_FILE_ATTACHMENTS));
+            addFiles(externalDropFiles);
             onExternalDropHandled?.();
         }
-    }, [externalDropFiles, filterSupportedFiles, modelType, onExternalDropHandled]);
+    }, [externalDropFiles, addFiles, modelType, onExternalDropHandled]);
 
     // 대화 전환 시 초기화
     useEffect(() => {
@@ -86,36 +89,29 @@ export function useAttachments(
     }, [resetTrigger]);
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = filterSupportedFiles(Array.from(e.target.files || []));
-        const imageFiles = files.filter(f => f.type.startsWith('image/'));
-        const otherFiles = files.filter(f => !f.type.startsWith('image/'));
-        if (imageFiles.length > 0) {
-            setImages(prev => [...prev, ...imageFiles].slice(0, MAX_IMAGE_ATTACHMENTS));
-        }
-        if (otherFiles.length > 0) setFileAttachments(prev => [...prev, ...otherFiles.map(f => ({ file: f }))].slice(0, MAX_FILE_ATTACHMENTS));
+        addFiles(Array.from(e.target.files || []));
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
-    const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const handlePaste = (e: Pick<React.ClipboardEvent<HTMLTextAreaElement>, 'clipboardData' | 'preventDefault'> | ClipboardEvent) => {
         if (modelType === 'image_gen') return;
-        const items = e.clipboardData?.items;
-        if (!items) return;
+        const clipboardData = e.clipboardData;
+        if (!clipboardData) return;
+        const items = clipboardData.items;
 
-        // 이미지 붙여넣기
-        for (let i = 0; i < items.length; i++) {
-            const item = items[i];
-            if (item.type.startsWith('image/')) {
-                e.preventDefault();
-                const file = item.getAsFile();
-                if (file && filterSupportedFiles([file]).length > 0) {
-                    setImages(prev => [...prev, file].slice(0, MAX_IMAGE_ATTACHMENTS));
-                }
-                return;
-            }
+        // 클립보드에 여러 이미지가 있으면 모두 추가한다.
+        const imageFiles = Array.from(items)
+            .filter(item => item.type.startsWith('image/'))
+            .map(item => item.getAsFile())
+            .filter((file): file is File => file !== null);
+        if (imageFiles.length > 0) {
+            e.preventDefault();
+            addFiles(imageFiles);
+            return;
         }
 
         // 텍스트 붙여넣기 — 긴 텍스트면 chip으로
-        const text = e.clipboardData.getData('text');
+        const text = clipboardData.getData('text');
         if (text && (text.length >= PASTE_MIN_CHARS || text.split('\n').length >= PASTE_MIN_LINES)) {
             e.preventDefault();
             addPastedText(text);
@@ -138,7 +134,7 @@ export function useAttachments(
     return {
         validateAttachments,
         images, fileAttachments, pastedTexts, fileInputRef, addPastedText,
-        handleFileSelect, handlePaste,
+        addFiles, handleFileSelect, handlePaste,
         removeImage, removeFileAttachment, removePastedText, clearAll,
         setImages, setFileAttachments, setPastedTexts,
     };

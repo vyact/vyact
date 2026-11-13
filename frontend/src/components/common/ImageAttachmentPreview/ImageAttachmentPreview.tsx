@@ -1,4 +1,4 @@
-import {useEffect, useMemo} from 'react';
+import useObjectUrl from '../useObjectUrl';
 import {X} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import './ImageAttachmentPreview.css';
@@ -7,8 +7,8 @@ export default function ImageAttachmentPreview({src, file, alt, disabled = false
     src?: string; file?: File; alt: string; disabled?: boolean; onOpen: () => void; onRemove: () => void;
 }) {
     const {t} = useTranslation('main');
-    const imageUrl = useMemo(() => file ? URL.createObjectURL(file) : src, [file, src]);
-    useEffect(() => () => {if (file && imageUrl) URL.revokeObjectURL(imageUrl);}, [file, imageUrl]);
+    const fileUrl = useObjectUrl(file);
+    const imageUrl = file ? fileUrl : src;
     return <div className="image-attachment-preview">
         <button type="button" className="image-attachment-preview__open" aria-label={alt} onClick={onOpen}>
             <img src={imageUrl} alt={alt} className="image-attachment-preview__image"/>

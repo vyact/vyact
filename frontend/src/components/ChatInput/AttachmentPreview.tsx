@@ -7,6 +7,7 @@ import { useCodePanel } from '../../contexts/CodePanelContext';
 import type { PastedText, FileAttachment } from './useAttachments';
 
 interface AttachmentPreviewProps {
+    disabled?: boolean;
     images: File[];
     fileAttachments: FileAttachment[];
     pastedTexts: PastedText[];
@@ -24,7 +25,7 @@ const formatFileSize = (size: number) => {
 };
 
 const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({
-                                                                 images, fileAttachments, pastedTexts, modelType,
+                                                                 disabled = false, images, fileAttachments, pastedTexts, modelType,
                                                                  onRemoveImage, onRemoveFile, onRemovePastedText, onImageClick,
                                                              }) => {
     const { openPanel } = useCodePanel();
@@ -57,13 +58,13 @@ const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({
                             <span className="pasted-text-preview__meta">{t('message.pastedText')} · {t('uiAuditFinal.characterCount', {count: p.content.length.toLocaleString(i18n.resolvedLanguage || i18n.language)})} · {t('attachmentPreview.analysis')}</span>
                         </div>
                     </div>
-                    <button className="attachment-remove-btn" onClick={e => { e.stopPropagation(); onRemovePastedText(p.id); }} aria-label={t('sidebar.delete')}>
+                    <button type="button" disabled={disabled} className="attachment-remove-btn" onClick={e => { e.stopPropagation(); onRemovePastedText(p.id); }} aria-label={t('sidebar.delete')}>
                         <X size={10}/>
                     </button>
                 </div>
             ))}
             {images.map((img, idx) => <ImageAttachmentPreview key={`img-${idx}`} file={img} alt={img.name}
-                onOpen={() => onImageClick(idx)} onRemove={() => onRemoveImage(idx)}/>)}
+                disabled={disabled} onOpen={() => onImageClick(idx)} onRemove={() => onRemoveImage(idx)}/>)}
             {fileAttachments.map((fa, idx) => (
                 <div key={`file-${idx}`} className="file-attachment-preview">
                     <span className="file-attachment-preview__icon" aria-hidden="true">
@@ -79,7 +80,7 @@ const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({
                             {formatFileSize(fa.file.size)}
                         </span>
                     </span>
-                    <button
+                    <button type="button" disabled={disabled}
                         className="attachment-remove-btn attachment-remove-btn--file"
                         onClick={() => onRemoveFile(idx)}
                         aria-label={t('sidebar.delete')}

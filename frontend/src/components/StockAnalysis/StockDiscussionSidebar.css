@@ -142,3 +142,6 @@
 .stock-discussion-message-row.user {flex-direction: column; align-items: flex-end; gap: 6px;}
 .stock-discussion-save-question {display: inline-flex; align-items: center; gap: 5px; padding: 4px 6px; border: 0; border-radius: 6px; background: transparent; color: var(--text-muted); font: inherit; font-size: 11px; cursor: pointer;}
 .stock-discussion-save-question:hover {color: var(--accent); background: var(--surface2);}
+
+.stock-discussion.is-dragging-files {position: relative; outline: 2px dashed var(--accent); outline-offset: -4px;}
+.stock-discussion-file-drop-hint {position: absolute; inset: 8px 8px auto; z-index: 10; padding: 16px; border: 1px dashed var(--accent); border-radius: 10px; background: var(--surface); color: var(--accent); text-align: center; pointer-events: none;}

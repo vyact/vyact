@@ -49,7 +49,7 @@ export default function StockDiscussionPanel(props: ComponentProps<typeof StockD
             {layout.collapsed ? <ChevronLeft size={17} aria-hidden="true"/> : <ChevronRight size={17} aria-hidden="true"/>}
         </button>
         <div className="stock-discussion-body" inert={layout.collapsed} aria-hidden={layout.collapsed}>
-            <StockDiscussionSidebar {...props} onReveal={() => {if (layout.collapsed) updateLayout({...layout, collapsed: false});}}/>
+            <StockDiscussionSidebar {...props} isVisible={!layout.collapsed} onReveal={() => {if (layout.collapsed) updateLayout({...layout, collapsed: false});}}/>
         </div>
     </div>;
 }

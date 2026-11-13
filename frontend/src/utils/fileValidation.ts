@@ -13,6 +13,8 @@ const SUPPORTED_CHAT_FILE_EXTENSION_LIST = [
 
 const SUPPORTED_CHAT_FILE_EXTENSIONS = new Set(SUPPORTED_CHAT_FILE_EXTENSION_LIST);
 
+export const DOCUMENT_FILE_ACCEPT = ['image/*', ...SUPPORTED_CHAT_FILE_EXTENSION_LIST.filter(extension => !/\.(mp3|wav|flac|m4a)$/.test(extension))].join(',');
+
 export const CHAT_FILE_ACCEPT = ['image/*', 'audio/mpeg', 'audio/wav', 'audio/flac', 'audio/mp4', 'audio/x-m4a', ...SUPPORTED_CHAT_FILE_EXTENSION_LIST].join(',');
 
 function getFileExtension(fileName: string): string {

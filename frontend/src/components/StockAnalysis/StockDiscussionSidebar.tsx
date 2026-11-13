@@ -2,14 +2,18 @@ import './StockSymbolLabel.css';
 import type {StockGroup} from './useStockGroups';
 import type {ChartSnapshotContext, ChartSnapshot} from './chartSnapshot';
 import {useEffect, useRef, useState, type RefObject, type ReactNode} from 'react';
-import {ChartNoAxesCombined, ChartColumnIncreasing, Plus, ArrowUp, Square, X, History, Bookmark} from 'lucide-react';
+import {ChartNoAxesCombined, ChartColumnIncreasing, Plus, Paperclip, ArrowUp, Square, X, History, Bookmark} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import StockSavedQuestionsDialog from './StockSavedQuestionsDialog';
 import StockChatPreparation, {type StockPreparationProgress} from './StockChatPreparation';
 import useStockHistoryShortcut from './useStockHistoryShortcut';
 import StockChatHistory from './StockChatHistory';
 import ImageAttachmentPreview from '../common/ImageAttachmentPreview/ImageAttachmentPreview';
-import ImageViewer from '../ImageViewer/ImageViewer';
+import AttachmentPreview from '../ChatInput/AttachmentPreview';
+import ConfirmModal from '../common/ConfirmModal/ConfirmModal';
+import {DOCUMENT_FILE_ACCEPT} from '../../utils/fileValidation';
+import AttachmentImageViewer from '../common/AttachmentImageViewer';
+import {useAttachments} from '../ChatInput/useAttachments';
 import Message from '../Message/Message';
 import type {Message as ChatMessage, ToolActivity, MessageAttachment} from '../../types';
 import {readStockChatStream} from '../../services/stockChatStream';
@@ -24,10 +28,12 @@ import useStockDirectory from './useStockDirectory';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import McpPromptInput from '../common/McpPromptInput';
 import useSelectedMcpTools from '../common/useSelectedMcpTools';
+import useImagePaste from '../common/useImagePaste';
 import useAutoSizeTextarea from '../common/useAutoSizeTextarea';
 import '../common/HelpIcon.css';
 import './StockDiscussionSidebar.css';
 
+const EMPTY_DROP_FILES: File[] = [];
 const MAX_REFERENCE_STOCKS = 5;
 const HISTORY_LIMIT = 20;
 const DEFAULT_CONTEXT_DAYS = 60;
@@ -41,7 +47,7 @@ function readPreferences(): {days: number; toolIds: string[] | undefined; includ
     } catch {return {days: DEFAULT_CONTEXT_DAYS, toolIds: undefined, includeFinancials: false};}
 }
 
-export default function StockDiscussionSidebar({stock, groups, groupPicker, market, directory, captureChart, onReveal}: {captureChart?: RefObject<(() => ChartSnapshot) | null>; stock: StockSymbol; groups?: StockGroup[]; groupPicker?: ReactNode; onReveal?: () => void; market: StockMarket; directory: StockSymbol[]}) {
+export default function StockDiscussionSidebar({stock, groups, groupPicker, market, directory, captureChart, onReveal, isVisible = true}: {isVisible?: boolean; captureChart?: RefObject<(() => ChartSnapshot) | null>; stock: StockSymbol; groups?: StockGroup[]; groupPicker?: ReactNode; onReveal?: () => void; market: StockMarket; directory: StockSymbol[]}) {
     const {t, i18n} = useTranslation('main');
     const tr = (key: string) => t(`stockAnalysis.discussion.${key}`);
     const [preferences, setPreferences] = useState(readPreferences);
@@ -50,11 +56,18 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
     const [referenceStocks, setReferenceStocks] = useState<StockSymbol[]>([]);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [conversationId, setConversationId] = useState<string>(() => crypto.randomUUID());
+    const [draggingFiles, setDraggingFiles] = useState(false);
+    const fileDragDepth = useRef(0);
     const [historyOpen, setHistoryOpen] = useState(false);
     const [savedQuestionsOpen, setSavedQuestionsOpen] = useState(false);
     const [savedQuestionDraft, setSavedQuestionDraft] = useState<string | null>(null);
     const [chartAttachment, setChartAttachment] = useState<(MessageAttachment & {chart_context: ChartSnapshotContext}) | null>(null);
-    const [chartViewerOpen, setChartViewerOpen] = useState(false);
+    const draftAttachments = useAttachments('chat', EMPTY_DROP_FILES, undefined, undefined, true, false);
+    const [zipConfirmation, setZipConfirmation] = useState<{original_name: string; total_eligible: number; default_limit: number} | null>(null);
+    const zipResolver = useRef<((limit: number | null) => void) | null>(null);
+    const resolveZip = (limit: number | null) => {zipResolver.current?.(limit); zipResolver.current = null; setZipConfirmation(null);};
+    useEffect(() => () => zipResolver.current?.(null), []);
+    const [previewIndex, setPreviewIndex] = useState<number | null>(null);
     const [attachingChart, setAttachingChart] = useState(false);
     const [chartError, setChartError] = useState(false);
     const attachChart = async () => {
@@ -70,13 +83,14 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
             const response = await fetch('/api/images/upload', {method: 'POST', body: data});
             await assertOk(response);
             const uploaded = await response.json();
-            setChartViewerOpen(false);
+            setPreviewIndex(null);
             setChartAttachment({chart_context: snapshot.context, type: 'image', filename: uploaded.filename, original_name: uploaded.original_name});
         } catch {setChartError(true);} finally {setAttachingChart(false);}
     };
     const emptyGroupScope = groups !== undefined && !groups.some(group => group.symbols.length > 0);
     const [question, setQuestion] = useState('');
     const [busy, setBusy] = useState(false);
+    useImagePaste(isVisible && !busy, draftAttachments.handlePaste);
     useStockHistoryShortcut(() => {if (!historyOpen) onReveal?.(); setHistoryOpen(open => !open);}, busy, historyOpen);
     const [preparation, setPreparation] = useState<StockPreparationProgress | null>(null);
     const [error, setError] = useState(false);
@@ -101,7 +115,7 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
         controller.current = null;
         setBusy(false); setPreparation(null); setError(false);
         setConversationId(crypto.randomUUID()); setMessages([]); setQuestion('');
-        setChartAttachment(null); setChartError(false); setChartViewerOpen(false); setHistoryOpen(false); setSavedQuestionsOpen(false);
+        draftAttachments.clearAll(); setPreviewIndex(null); setChartAttachment(null); setChartError(false); setHistoryOpen(false); setSavedQuestionsOpen(false);
         followLatest.current = true;
     }, [id]);
     useEffect(() => {
@@ -127,7 +141,46 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
         const userId = crypto.randomUUID();
         const assistantId = crypto.randomUUID();
         const startedAt = Date.now();
-        setMessages(previous => [...previous, {id: userId, role: 'user', content: text, attachments: chartAttachment ? [chartAttachment] : [], timestamp: new Date(startedAt).toISOString()},
+        const attachments: MessageAttachment[] = chartAttachment ? [chartAttachment] : [];
+        try {
+            for (const image of draftAttachments.images) {
+                const data = new FormData();
+                const extension = image.name.split('.').pop()?.toLowerCase();
+                const safeExtension = extension && /^[a-z0-9]+$/.test(extension) ? extension : 'png';
+                data.append('file', image, `${crypto.randomUUID()}.${safeExtension}`);
+                const response = await fetch('/api/images/upload', {method: 'POST', body: data, signal: request.signal});
+                await assertOk(response);
+                const uploaded = await response.json();
+                attachments.push({type: 'image', filename: uploaded.filename, original_name: image.name});
+            }
+            for (const {file} of draftAttachments.fileAttachments) {
+                const data = new FormData();
+                data.append('file', file);
+                const response = await fetch('/api/files/upload', {method: 'POST', body: data, signal: request.signal});
+                await assertOk(response);
+                let uploaded = await response.json();
+                if (uploaded.type === 'zip_confirm_needed') {
+                    const limit = await new Promise<number | null>(resolve => {
+                        zipResolver.current = resolve;
+                        setZipConfirmation(uploaded);
+                        request.signal.addEventListener('abort', () => resolveZip(null), {once: true});
+                    });
+                    if (limit === null || request.signal.aborted) throw new Error('upload_cancelled');
+                    const params = new URLSearchParams({saved_name: uploaded.saved_name, original_name: uploaded.original_name, max_files: String(limit)});
+                    const confirmed = await fetch(`/api/files/upload/zip-confirm?${params}`, {method: 'POST', signal: request.signal});
+                    await assertOk(confirmed);
+                    uploaded = await confirmed.json();
+                }
+                attachments.push(uploaded);
+            }
+        } catch {
+            if (!request.signal.aborted) {setError(true); setBusy(false); setPreparation(null);}
+            if (controller.current === request) controller.current = null;
+            return;
+        }
+        if (request.signal.aborted) return;
+        draftAttachments.clearAll(); setPreviewIndex(null);
+        setMessages(previous => [...previous, {id: userId, role: 'user', content: text, attachments, timestamp: new Date(startedAt).toISOString()},
             {id: assistantId, role: 'assistant', content: ''}].slice(-HISTORY_LIMIT) as ChatMessage[]);
         setQuestion('');
         setChartAttachment(null);
@@ -138,7 +191,7 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
         try {
             const response = await fetch('/api/stock-analysis/chat', {
                 method: 'POST', signal: request.signal, headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({attachments: chartAttachment ? [chartAttachment] : [], stream: true, conversation_id: conversationId, symbol: stock.symbol, name: stock.name, market,
+                body: JSON.stringify({attachments, stream: true, conversation_id: conversationId, symbol: stock.symbol, name: stock.name, market,
                     groups: groups?.map(group => ({name: group.name, stocks: group.symbols.map(symbol => ({symbol, name: directory.find(item => item.symbol === symbol)?.name ?? symbol}))})),
                     reference_stocks: referenceStocks.map(item => ({symbol: item.symbol, name: item.name})),
                     context_days: preferences.days, include_financials: preferences.includeFinancials, selected_mcp_ids: selectedServers.map(server => server.id),
@@ -191,10 +244,34 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
     };
 
     const startNewConversation = () => {
-        setChartAttachment(null); setChartError(false); setConversationId(crypto.randomUUID()); setMessages([]); setQuestion(''); setError(false); setHistoryOpen(false);
+        draftAttachments.clearAll(); setPreviewIndex(null); setChartAttachment(null); setChartError(false); setConversationId(crypto.randomUUID()); setMessages([]); setQuestion(''); setError(false); setHistoryOpen(false);
     };
 
-    return <aside className="stock-discussion" aria-label={tr('title')}>
+    return <aside className={`stock-discussion${draggingFiles ? ' is-dragging-files' : ''}`} aria-label={tr('title')}
+        onDragEnter={event => {
+            if (!event.dataTransfer.types.includes('Files')) return;
+            event.preventDefault(); event.stopPropagation();
+            fileDragDepth.current += 1;
+            if (!busy) setDraggingFiles(true);
+        }}
+        onDragOver={event => {
+            if (!event.dataTransfer.types.includes('Files')) return;
+            event.preventDefault(); event.stopPropagation();
+            event.dataTransfer.dropEffect = busy ? 'none' : 'copy';
+        }}
+        onDragLeave={event => {
+            if (!event.dataTransfer.types.includes('Files') && fileDragDepth.current === 0) return;
+            event.preventDefault(); event.stopPropagation();
+            fileDragDepth.current = Math.max(0, fileDragDepth.current - 1);
+            if (fileDragDepth.current === 0) setDraggingFiles(false);
+        }}
+        onDrop={event => {
+            if (!event.dataTransfer.types.includes('Files') && !event.dataTransfer.files.length) return;
+            event.preventDefault(); event.stopPropagation();
+            fileDragDepth.current = 0; setDraggingFiles(false);
+            if (!busy) draftAttachments.addFiles(Array.from(event.dataTransfer.files));
+        }}>
+        {draggingFiles && <div className="stock-discussion-file-drop-hint" role="status">{t('pdfModal.dropFiles')}</div>}
         <header className="stock-discussion-header">
             <div className="stock-discussion-title"><ChartNoAxesCombined size={16} aria-hidden="true"/><h2>{tr('ai')}</h2></div>
             <div className="stock-discussion-header-actions">
@@ -273,11 +350,17 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
                             <Bookmark size={13} aria-hidden="true"/>{t('stockAnalysis.savedQuestions.buttonLabel')}</button>
                     </div>
                     {chartError && <p role="alert" className="stock-discussion-error">{tr('chartAttachError')}</p>}
-                    <McpPromptInput preview={chartAttachment && <div className="attachment-preview-list">
+                    <input type="file" hidden accept={DOCUMENT_FILE_ACCEPT} multiple ref={draftAttachments.fileInputRef}
+                        disabled={busy} onChange={draftAttachments.handleFileSelect}/>
+                    <McpPromptInput preview={(chartAttachment || draftAttachments.images.length > 0 || draftAttachments.fileAttachments.length > 0) && <>
+                        <AttachmentPreview disabled={busy} images={draftAttachments.images} fileAttachments={draftAttachments.fileAttachments} pastedTexts={[]}
+                            modelType="chat" onRemoveImage={draftAttachments.removeImage} onRemoveFile={draftAttachments.removeFileAttachment}
+                            onRemovePastedText={() => {}} onImageClick={index => setPreviewIndex(index)}/>
+                        {chartAttachment && <div className="attachment-preview-list">
                         <ImageAttachmentPreview src={`/api/images/${encodeURIComponent(chartAttachment.filename!)}`}
                             alt={chartAttachment.original_name ?? stock.symbol} disabled={busy}
-                            onOpen={() => setChartViewerOpen(true)} onRemove={() => {setChartAttachment(null); setChartViewerOpen(false);}}/>
-                    </div>} id={`${id}-input`} aria-label={tr(groups ? 'groupPlaceholder' : 'placeholder')} placeholder={tr(groups ? 'groupPlaceholder' : 'placeholder')}
+                            onOpen={() => setPreviewIndex(draftAttachments.images.length)} onRemove={() => {setChartAttachment(null); setPreviewIndex(null);}}/></div>}
+                    </>} id={`${id}-input`} aria-label={tr(groups ? 'groupPlaceholder' : 'placeholder')} placeholder={tr(groups ? 'groupPlaceholder' : 'placeholder')}
                         value={question} onChange={setQuestion} maxLength={4000} disabled={busy} rows={1} textareaRef={textarea}
                         selectedServers={selectedServers} onSelectedServersChange={setSelectedServers}
                         scopeHelp={tr('toolScopeHelp')}
@@ -287,6 +370,10 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
                             }
                         }}
                         actions={<>
+                            <button type="button" className="stock-discussion-attach-button" aria-label={t('inputMenu.addFiles')}
+                                disabled={busy} onClick={() => draftAttachments.fileInputRef.current?.click()}>
+                                <Paperclip size={18} aria-hidden="true"/>
+                            </button>
                             {!groups && <button type="button" className="stock-discussion-attach-button" aria-label={tr('attachChart')} data-tooltip-disabled=""
                                 disabled={busy || attachingChart || !captureChart} onClick={() => {void attachChart();}}>
                                 <span className="stock-discussion-attach-icon" aria-hidden="true">
@@ -302,16 +389,22 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
                 </form>
 
         </div>
-        {chartViewerOpen && chartAttachment && <ImageViewer
-            images={[{src: `/api/images/${encodeURIComponent(chartAttachment.filename!)}`, alt: chartAttachment.original_name}]}
-            currentIndex={0} onIndexChange={() => {}} onClose={() => setChartViewerOpen(false)}/>}
+        {zipConfirmation && <ConfirmModal title={t('zipLimit.title')}
+            description={t('zipLimit.description', {name: zipConfirmation.original_name, total: zipConfirmation.total_eligible, limit: zipConfirmation.default_limit})}
+            options={[{label: t('zipLimit.useDefault', {count: zipConfirmation.default_limit}), value: 'default'},
+                {label: t('zipLimit.useAll', {count: zipConfirmation.total_eligible}), value: 'all'}]}
+            onSelect={value => resolveZip(value === 'all' ? zipConfirmation.total_eligible : zipConfirmation.default_limit)}
+            onClose={() => resolveZip(zipConfirmation.default_limit)}/>}
+        {previewIndex !== null && <AttachmentImageViewer files={draftAttachments.images}
+            additionalImages={chartAttachment ? [{src: `/api/images/${encodeURIComponent(chartAttachment.filename!)}`, alt: chartAttachment.original_name}] : []}
+            currentIndex={previewIndex} onIndexChange={setPreviewIndex} onClose={() => setPreviewIndex(null)}/>}
         {savedQuestionsOpen && <StockSavedQuestionsDialog scope={groups ? 'groups' : 'stock'} draft={savedQuestionDraft ?? question} createOnOpen={savedQuestionDraft !== null}
             onClose={() => setSavedQuestionsOpen(false)} onSelect={value => {
                 setQuestion(value); setSavedQuestionsOpen(false);
                 requestAnimationFrame(() => textarea.current?.focus());
             }}/>}
         {historyOpen && <StockChatHistory symbol={stock.symbol} onClose={() => setHistoryOpen(false)}
-            onSelect={(id, restoredMessages) => {setChartAttachment(null); setChartError(false); setConversationId(id); setMessages(restoredMessages); setQuestion(''); setError(false); setHistoryOpen(false);}}
+            onSelect={(id, restoredMessages) => {draftAttachments.clearAll(); setPreviewIndex(null); setChartAttachment(null); setChartError(false); setConversationId(id); setMessages(restoredMessages); setQuestion(''); setError(false); setHistoryOpen(false);}}
 />}
     </aside>;
 }
