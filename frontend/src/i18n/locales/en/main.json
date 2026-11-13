@@ -1836,6 +1836,7 @@
       "reorder": "Drag to reorder · Alt+Up/Down",
       "saveQuestion": "Save question",
       "title": "Saved questions",
+      "buttonLabel": "Saved",
       "stockScope": "Reusable across all individual stocks",
       "groupScope": "Reusable across group analysis in all markets",
       "name": "Question title",

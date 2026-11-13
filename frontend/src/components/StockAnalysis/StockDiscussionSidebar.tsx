@@ -2,7 +2,7 @@ import './StockSymbolLabel.css';
 import type {StockGroup} from './useStockGroups';
 import type {ChartSnapshotContext, ChartSnapshot} from './chartSnapshot';
 import {useEffect, useRef, useState, type RefObject, type ReactNode} from 'react';
-import {ChartNoAxesCombined, ArrowUp, Square, X, History, Camera, Bookmark} from 'lucide-react';
+import {ChartNoAxesCombined, ChartColumnIncreasing, Plus, ArrowUp, Square, X, History, Bookmark} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import StockSavedQuestionsDialog from './StockSavedQuestionsDialog';
 import StockChatPreparation, {type StockPreparationProgress} from './StockChatPreparation';
@@ -197,7 +197,11 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
     return <aside className="stock-discussion" aria-label={tr('title')}>
         <header className="stock-discussion-header">
             <div className="stock-discussion-title"><ChartNoAxesCombined size={16} aria-hidden="true"/><h2>{tr('ai')}</h2></div>
-            <button type="button" className="stock-discussion-new-button" disabled={busy} aria-label={tr('newConversation')} onClick={startNewConversation}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h7"/><path d="M19 2v6M16 5h6"/></svg></button>
+            <div className="stock-discussion-header-actions">
+                <button type="button" className="stock-discussion-header-action" aria-label={tr('historyTitle')} data-tooltip-disabled="" disabled={busy}
+                    onClick={() => setHistoryOpen(true)}><History size={18} aria-hidden="true"/></button>
+            <button type="button" className="stock-discussion-header-action" disabled={busy} aria-label={tr('newConversation')} onClick={startNewConversation}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h7"/><path d="M19 2v6M16 5h6"/></svg></button>
+            </div>
             {!groups && <div className="stock-discussion-instrument"><strong>{stock.name}</strong><span className="stock-symbol-label">{stock.symbol}</span></div>}
         </header>
         {groupPicker}
@@ -253,7 +257,7 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
         </div>
                             <label className="stock-discussion-period" htmlFor={`${id}-days`}>
                                 <span>{tr('contextDays')}</span>
-                                <input id={`${id}-days`} type="text" inputMode="numeric" pattern="[0-9]*" maxLength={String(MAX_CONTEXT_DAYS).length}
+                                <input id={`${id}-days`} aria-label={tr('contextDays')} type="text" inputMode="numeric" pattern="[0-9]*" maxLength={String(MAX_CONTEXT_DAYS).length}
                                     value={contextDaysInput} disabled={busy}
                                     onBlur={() => setContextDaysInput(String(preferences.days))}
                                     onChange={event => {
@@ -265,8 +269,8 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
                                         if (Number.isInteger(days) && days >= 1 && days <= MAX_CONTEXT_DAYS) setPreferences(current => ({...current, days}));
                                     }}/>
                             </label>
-                        <button type="button" className="stock-saved-questions-button" disabled={busy} onClick={() => {setSavedQuestionDraft(null); setSavedQuestionsOpen(true);}}>
-                            <Bookmark size={13} aria-hidden="true"/>{t('stockAnalysis.savedQuestions.title')}</button>
+                        <button type="button" className="stock-saved-questions-button" aria-label={t('stockAnalysis.savedQuestions.title')} data-tooltip-disabled="" disabled={busy} onClick={() => {setSavedQuestionDraft(null); setSavedQuestionsOpen(true);}}>
+                            <Bookmark size={13} aria-hidden="true"/>{t('stockAnalysis.savedQuestions.buttonLabel')}</button>
                     </div>
                     {chartError && <p role="alert" className="stock-discussion-error">{tr('chartAttachError')}</p>}
                     <McpPromptInput preview={chartAttachment && <div className="attachment-preview-list">
@@ -283,10 +287,12 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
                             }
                         }}
                         actions={<>
-                            {!groups && <button type="button" className="stock-discussion-history-button" aria-label={tr('attachChart')} title={tr('attachChart')}
-                                disabled={busy || attachingChart || !captureChart} onClick={() => {void attachChart();}}><Camera size={18}/></button>}
-                            <button type="button" className="stock-discussion-history-button" aria-label={tr('historyTitle')} title={tr('historyTitle')} disabled={busy}
-                                onClick={() => setHistoryOpen(true)}><History size={18} aria-hidden="true"/></button>
+                            {!groups && <button type="button" className="stock-discussion-attach-button" aria-label={tr('attachChart')} data-tooltip-disabled=""
+                                disabled={busy || attachingChart || !captureChart} onClick={() => {void attachChart();}}>
+                                <span className="stock-discussion-attach-icon" aria-hidden="true">
+                                    <ChartColumnIncreasing size={18}/><Plus className="stock-discussion-attach-plus" size={9} strokeWidth={2.5}/>
+                                </span>
+                            </button>}
 
                             {busy ? <button className="stock-discussion-send stock-discussion-stop" type="button" aria-label={tr('stop')}
                                 onClick={() => {controller.current?.abort(); controller.current = null; setBusy(false); setPreparation(null);}}><Square size={12} fill="currentColor" strokeWidth={0} aria-hidden="true"/></button>

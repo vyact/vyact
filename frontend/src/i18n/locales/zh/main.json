@@ -1835,6 +1835,7 @@
       "reorder": "拖动排序 · Alt+上/下键",
       "saveQuestion": "保存问题",
       "title": "问题列表",
+      "buttonLabel": "问题",
       "stockScope": "所有个股通用的问题",
       "groupScope": "所有市场分组分析通用的问题",
       "name": "问题标题",

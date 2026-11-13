@@ -1845,6 +1845,7 @@
       "reorder": "드래그로 순서 변경 · Alt+위/아래 화살표",
       "saveQuestion": "질문 저장",
       "title": "질문 목록",
+      "buttonLabel": "질문",
       "stockScope": "모든 종목에서 재사용하는 질문",
       "groupScope": "모든 시장의 그룹 분석에서 재사용하는 질문",
       "name": "질문 제목",

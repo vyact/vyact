@@ -1837,6 +1837,7 @@
       "reorder": "Glisser pour réordonner · Alt+Haut/Bas",
       "saveQuestion": "Enregistrer la question",
       "title": "Questions enregistrées",
+      "buttonLabel": "Favoris",
       "stockScope": "Réutilisables pour toutes les actions individuelles",
       "groupScope": "Réutilisables pour les groupes de tous les marchés",
       "name": "Titre",
