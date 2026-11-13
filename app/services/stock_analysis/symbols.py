@@ -4,6 +4,7 @@ from time import monotonic
 
 from services.stock_analysis.market_indices import INDEX_SYMBOLS, MARKET_INDEX_SYMBOLS
 from services.stock_analysis.regional_yahoo import DIRECTORY_CACHE_SECONDS, cached_korea_provider_symbol, korea_symbols
+from services.stock_analysis.us_symbols import us_yahoo_symbol
 
 KOREAN_CODE_PATTERN = re.compile(r'^[0-9][A-Z0-9]{5}$')
 KOREAN_YAHOO_PATTERN = re.compile(r'^([0-9][A-Z0-9]{5})\.(KS|KQ)$')
@@ -60,7 +61,7 @@ def yahoo_symbol(symbol: str) -> str:
     if is_market_index(symbol):
         return next(item for item in INDEX_SYMBOLS if item.removeprefix('^') == public_symbol(symbol))
     if not KOREAN_CODE_PATTERN.fullmatch(symbol):
-        return symbol
+        return us_yahoo_symbol(symbol) if symbol_market(symbol) == 'US' else symbol
     cached = cached_korea_provider_symbol(symbol)
     if cached:
         return cached

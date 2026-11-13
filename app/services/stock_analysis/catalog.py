@@ -1,11 +1,11 @@
 import csv
-import re
 from functools import lru_cache
 from time import monotonic
 from typing import Literal
 
 import httpx
 from services.stock_analysis.regional_yahoo import korea_display_names, korea_symbols, japan_display_names, regional_display_names
+from services.stock_analysis.us_symbols import US_SYMBOL_PATTERN, us_yahoo_symbol
 
 Market = Literal["KR", "US", "JP", "TW", "HK", "CN"]
 NASDAQ_DIRECTORY = "https://www.nasdaqtrader.com/dynamic/SymDir/"
@@ -34,8 +34,8 @@ def _load_symbols(market: Market, cache_hour: int) -> dict[str, str]:
             rows = {}
             for row in csv.DictReader(response.text.splitlines(), delimiter="|"):
                 ticker = row.get(ticker_column, "")
-                if row.get("Test Issue") == "N" and row.get("ETF") == "N" and re.fullmatch(r"[A-Z]+(?:[.-][A-Z])?", ticker):
-                    rows[ticker.replace(".", "-")] = row["Security Name"]
+                if row.get("Test Issue") == "N" and row.get("ETF") == "N" and US_SYMBOL_PATTERN.fullmatch(ticker):
+                    rows[us_yahoo_symbol(ticker)] = row["Security Name"]
             if not rows:
                 raise ValueError("Empty US directory")
             symbols.update(rows)

@@ -36,6 +36,11 @@ class StockSymbolTests(unittest.TestCase):
         self.assertEqual(symbols.yahoo_symbol('KS11'), '^KS11')
         self.assertEqual(symbols.yahoo_symbol('KQ11'), '^KQ11')
         self.assertEqual(symbols.yahoo_symbol('GSPC'), '^GSPC')
+        for source, expected in {'SOUL-U': 'SOUL-UN', 'AAC-W': 'AAC-WT',
+                                 'SOUL-R': 'SOUL-RI', 'NE-A': 'NE-WTA',
+                                 '7203.T': '7203.T', '0700.HK': '0700.HK',
+                                 '2330.TW': '2330.TW', '600519.SS': '600519.SS'}.items():
+            self.assertEqual(symbols.yahoo_symbol(source), expected)
         with self.assertRaises(ValueError):
             symbols.yahoo_symbol('999999')
 
