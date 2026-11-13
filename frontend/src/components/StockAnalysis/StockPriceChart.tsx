@@ -19,7 +19,7 @@ import StockMemoDialog from './StockMemoDialog';
 import useStockMemoMarkers from './useStockMemoMarkers';
 import ChartSettings from './ChartSettings';
 import ChartQuoteDetails, {type QuoteDisplayMode} from './ChartQuoteDetails';
-import {aggregatePrices, DEFAULT_MOVING_AVERAGES, INTERVALS, MAX_MA_PERIOD, movingAverage, type ChartInterval, type MovingAverage} from './chartData';
+import {aggregatePrices, chartActivityField, DEFAULT_MOVING_AVERAGES, INTERVALS, MAX_MA_PERIOD, movingAverage, type ChartInterval, type MovingAverage} from './chartData';
 import {attachChartRuler, chartDay} from './chartRuler';
 
 interface Props {
@@ -111,6 +111,8 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
     const locale = i18n.resolvedLanguage;
     const {rise, fall} = MARKET_COLORS[market];
     const bars = useMemo(() => aggregatePrices(rows, interval), [rows, interval]);
+    const activityField = chartActivityField(rows);
+    const hasActivity = rows.some(row => row[activityField] != null);
     const chartRevision = useMemo(() => ({locale, market, t, indicators, indicatorSettings}), [locale, market, t, indicators, indicatorSettings]);
     const comparisonSnapshot = useRef<ChartSnapshotContext['comparisons']>([]);
     const snapshotSettings = useRef({symbol, name, interval, maEnabled, movingAverages, indicators, indicatorSettings});
@@ -159,13 +161,16 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
             priceFormat: chartPriceFormat(locale, market === 'KR' ? 0 : 2),
         });
         candleSeries.current = candles;
-        const hasVolume = bars.some(row => row.volume !== null);
-        if (hasVolume) {
+        if (hasActivity) {
             const volumes = instance.addSeries(HistogramSeries, {
+                title: t(activityField === 'tradingValue' ? 'stockAnalysis.history.tradingValue' : 'stockAnalysis.volume'),
                 priceFormat: {type: 'volume'}, priceLineVisible: false, lastValueVisible: false,
             }, 1);
-            const updateVolumes = (rows: DailyPrice[]) => volumes.setData(rows.map(row => row.volume === null ? {time: row.day} : {
-                time: row.day, value: row.volume, color: row.close >= row.open ? rise : fall,
+            const updateVolumes = (rows: DailyPrice[]) => volumes.setData(rows.map(row => {
+                const value = row[activityField];
+                return value == null ? {time: row.day} : {
+                    time: row.day, value, color: row.close >= row.open ? rise : fall,
+                };
             }));
             updateVolumes(bars);
             dataUpdates.push(updateVolumes);
@@ -176,7 +181,7 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
         const updateCandles = (rows: DailyPrice[]) => candles.setData(rows.map(({day, open, high, low, close}) => ({time: day, open, high, low, close})));
         updateCandles(bars);
         dataUpdates.push(updateCandles);
-        let nextIndicatorPane = hasVolume ? 2 : 1;
+        let nextIndicatorPane = hasActivity ? 2 : 1;
         indicators.forEach(kind => {
             const overlay = OVERLAY_INDICATORS.includes(kind as OverlayIndicator);
             const pane = overlay ? 0 : nextIndicatorPane++;
@@ -331,7 +336,7 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
             candleSeries.current = null;
             averages.current = [];
         };
-    }, [interval, market, locale, t, rise, fall, indicators, indicatorSettings, captureChart]);
+    }, [interval, market, locale, t, rise, fall, indicators, indicatorSettings, captureChart, activityField, hasActivity]);
 
     useEffect(() => {updateChartData.current?.(bars);}, [bars]);
 

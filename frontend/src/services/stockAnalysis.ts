@@ -37,6 +37,10 @@ export interface DailyPrice {
     close: number;
     volume: number | null;
     tradingValue?: number | null;
+    sharesOutstanding?: number | null;
+    marketCap?: number | null;
+    loanBalanceVolume?: number | null;
+    loanBalanceAmount?: number | null;
     changePercent?: number | null;
     investors?: Partial<Record<StockInvestorGroup, StockInvestorTrade>>;
 }

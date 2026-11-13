@@ -94,6 +94,10 @@ class PriceResponse(BaseModel):
     close: float = Field(gt=0)
     volume: float | None = Field(default=None, ge=0)
     tradingValue: float | None = Field(default=None, ge=0)
+    sharesOutstanding: int | None = Field(default=None, gt=0)
+    marketCap: float | None = Field(default=None, ge=0)
+    loanBalanceVolume: int | None = Field(default=None, ge=0)
+    loanBalanceAmount: float | None = Field(default=None, ge=0)
     changePercent: float | None = None
     investors: dict[InvestorGroup, InvestorTradeResponse] | None = None
 

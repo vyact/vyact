@@ -29,5 +29,9 @@ export default function ChartQuoteDetails({quote, previous, market, detailed = f
             {new Intl.NumberFormat(i18n.resolvedLanguage, {notation: detailed ? 'compact' : 'standard', maximumFractionDigits: 2}).format(quote.volume)}
             {detailed && change(quote.volume, previous?.volume)}
         </dd></div>}
+        {quote.tradingValue != null && <div><dt>{t('stockAnalysis.history.tradingValue')}</dt><dd>
+            {new Intl.NumberFormat(i18n.resolvedLanguage, {notation: detailed ? 'compact' : 'standard', maximumFractionDigits: 2}).format(quote.tradingValue)}
+            {detailed && change(quote.tradingValue, previous?.tradingValue)}
+        </dd></div>}
     </dl>;
 }

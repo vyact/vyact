@@ -1980,6 +1980,9 @@
       "emptyHint": "그룹을 만들고 종목을 추가하세요."
     },
     "history": {
+      "marketCap": "시가총액",
+      "loanBalanceVolume": "대차 잔고수량",
+      "loanBalanceAmount": "대차 잔고금액",
       "allInvestors": "전체 투자자",
       "aggregatePeriod": "합산 기간",
       "investor": "투자자",
@@ -2089,6 +2092,9 @@
       "deleteKeyError": "API 키를 삭제하지 못했습니다.",
       "quotes": "종목 시세·시가총액",
       "responseFields": {
+        "sharesOutstanding": "상장 주식수",
+        "loanBalanceVolume": "대차 잔고수량",
+        "loanBalanceAmount": "대차 잔고금액",
         "marketCap": "시가총액 (시장 통화)",
         "symbol": "종목·지수 코드",
         "name": "종목명",

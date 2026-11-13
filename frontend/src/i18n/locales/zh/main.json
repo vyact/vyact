@@ -1970,6 +1970,9 @@
       "emptyHint": "创建分组并添加股票。"
     },
     "history": {
+      "marketCap": "市值",
+      "loanBalanceVolume": "借券余额（股数）",
+      "loanBalanceAmount": "借券余额（金额）",
       "allInvestors": "全部投资者",
       "aggregatePeriod": "合计期间",
       "investor": "投资者",
@@ -2079,6 +2082,9 @@
       "deleteKeyError": "无法删除API密钥。",
       "quotes": "股票行情与市值",
       "responseFields": {
+        "sharesOutstanding": "已发行股数",
+        "loanBalanceVolume": "借券余额（股数）",
+        "loanBalanceAmount": "借券余额（金额）",
         "marketCap": "市值（市场货币）",
         "symbol": "股票／指数代码",
         "name": "股票名称",

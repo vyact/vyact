@@ -65,6 +65,7 @@ export function stockApiExamples(market: StockMarket, kind: StockApiKind, langua
     const price = {
         day: '2026-11-06', open: 100, high: 105, low: 98, close: 103,
         volume: 1000000, tradingValue: 102500000, changePercent: 3,
+        sharesOutstanding: 10000000, marketCap: 1030000000, loanBalanceVolume: 300000, loanBalanceAmount: 30900000,
         investors: {
             ind: {buyVolume: 400000, buyAmount: 41000000, sellVolume: -300000, sellAmount: -30750000, netVolume: 100000, netAmount: 10250000},
             for: {netVolume: -60000, netAmount: -6150000},

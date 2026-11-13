@@ -1970,6 +1970,9 @@
       "emptyHint": "グループを作成して銘柄を追加してください。"
     },
     "history": {
+      "marketCap": "時価総額",
+      "loanBalanceVolume": "貸株残高（株数）",
+      "loanBalanceAmount": "貸株残高（金額）",
       "allInvestors": "すべての投資家",
       "aggregatePeriod": "集計期間",
       "investor": "投資家",
@@ -2079,6 +2082,9 @@
       "deleteKeyError": "APIキーを削除できませんでした。",
       "quotes": "銘柄株価・時価総額",
       "responseFields": {
+        "sharesOutstanding": "発行済株式数",
+        "loanBalanceVolume": "貸株残高（株数）",
+        "loanBalanceAmount": "貸株残高（金額）",
         "marketCap": "時価総額（市場通貨）",
         "symbol": "銘柄・指数コード",
         "name": "銘柄名",

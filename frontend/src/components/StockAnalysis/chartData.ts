@@ -10,6 +10,10 @@ export const DEFAULT_MOVING_AVERAGES: MovingAverage[] = [
 ];
 export const MAX_MA_PERIOD = 250;
 
+export function chartActivityField(rows: DailyPrice[]): 'volume' | 'tradingValue' {
+    return rows.some(row => row.tradingValue != null) ? 'tradingValue' : 'volume';
+}
+
 export function periodKey(day: string, interval: ChartInterval): string {
     if (interval === 'day') return day;
     if (interval === 'year') return day.slice(0, 4);
@@ -35,6 +39,11 @@ export function aggregatePrices(rows: DailyPrice[], interval: ChartInterval): Da
         current.low = Math.min(current.low, row.low);
         current.close = row.close;
         current.volume = current.volume === null || row.volume === null ? null : current.volume + row.volume;
+        current.tradingValue = current.tradingValue == null || row.tradingValue == null ? null : current.tradingValue + row.tradingValue;
+        current.sharesOutstanding = row.sharesOutstanding;
+        current.marketCap = row.marketCap;
+        current.loanBalanceVolume = row.loanBalanceVolume;
+        current.loanBalanceAmount = row.loanBalanceAmount;
     }
     return result;
 }

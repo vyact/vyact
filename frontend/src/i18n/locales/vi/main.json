@@ -1970,6 +1970,9 @@
       "emptyHint": "Tạo nhóm và thêm cổ phiếu."
     },
     "history": {
+      "marketCap": "Vốn hóa",
+      "loanBalanceVolume": "Dư nợ cho vay (cổ phiếu)",
+      "loanBalanceAmount": "Dư nợ cho vay (giá trị)",
       "allInvestors": "Tất cả nhà đầu tư",
       "aggregatePeriod": "Kỳ tổng hợp",
       "investor": "Nhà đầu tư",
@@ -2079,6 +2082,9 @@
       "deleteKeyError": "Không thể xóa khóa API.",
       "quotes": "Giá và vốn hóa cổ phiếu",
       "responseFields": {
+        "sharesOutstanding": "Cổ phiếu lưu hành",
+        "loanBalanceVolume": "Dư nợ cho vay (cổ phiếu)",
+        "loanBalanceAmount": "Dư nợ cho vay (giá trị)",
         "marketCap": "Vốn hóa (tiền thị trường)",
         "symbol": "Mã cổ phiếu/chỉ số",
         "name": "Tên cổ phiếu",

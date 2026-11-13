@@ -7,7 +7,7 @@ import type {StockMarket} from '../../services/stockAnalysis';
 import useStockApiValidation from './useStockApiValidation';
 import {INVESTOR_GROUPS} from './historyData';
 
-const PRICE_RESPONSE_FIELDS = ['day', 'open', 'high', 'low', 'close', 'volume', 'tradingValue', 'changePercent', 'investors', 'buyVolume', 'buyAmount', 'sellVolume', 'sellAmount', 'netVolume', 'netAmount'] as const;
+const PRICE_RESPONSE_FIELDS = ['day', 'open', 'high', 'low', 'close', 'volume', 'tradingValue', 'sharesOutstanding', 'marketCap', 'loanBalanceVolume', 'loanBalanceAmount', 'changePercent', 'investors', 'buyVolume', 'buyAmount', 'sellVolume', 'sellAmount', 'netVolume', 'netAmount'] as const;
 
 const RESPONSE_FIELDS: Record<StockApiKind, {field: string; label: string}[]> = {
     prices: PRICE_RESPONSE_FIELDS.map(field => ({field, label: field})),

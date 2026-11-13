@@ -1971,6 +1971,9 @@
       "emptyHint": "Create a group and add stocks."
     },
     "history": {
+      "marketCap": "Market cap",
+      "loanBalanceVolume": "Loan balance (shares)",
+      "loanBalanceAmount": "Loan balance (amount)",
       "allInvestors": "All investors",
       "aggregatePeriod": "Period",
       "investor": "Investor",
@@ -2080,6 +2083,9 @@
       "deleteKeyError": "Could not delete the API key.",
       "quotes": "Stock quotes & market caps",
       "responseFields": {
+        "sharesOutstanding": "Shares outstanding",
+        "loanBalanceVolume": "Loan balance (shares)",
+        "loanBalanceAmount": "Loan balance (amount)",
         "marketCap": "Market capitalization (market currency)",
         "symbol": "Stock/index code",
         "name": "Stock name",

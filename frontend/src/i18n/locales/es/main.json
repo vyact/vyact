@@ -1971,6 +1971,9 @@
       "emptyHint": "Cree un grupo y añada acciones."
     },
     "history": {
+      "marketCap": "Capitalización",
+      "loanBalanceVolume": "Saldo de préstamos (acciones)",
+      "loanBalanceAmount": "Saldo de préstamos (importe)",
       "allInvestors": "Todos los inversores",
       "aggregatePeriod": "Período",
       "investor": "Inversor",
@@ -2080,6 +2083,9 @@
       "deleteKeyError": "No se pudo eliminar la clave API.",
       "quotes": "Cotizaciones y capitalización",
       "responseFields": {
+        "sharesOutstanding": "Acciones en circulación",
+        "loanBalanceVolume": "Saldo de préstamos (acciones)",
+        "loanBalanceAmount": "Saldo de préstamos (importe)",
         "marketCap": "Capitalización (moneda del mercado)",
         "symbol": "Código de acción/índice",
         "name": "Nombre de acción",

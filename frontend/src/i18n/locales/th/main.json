@@ -1970,6 +1970,9 @@
       "emptyHint": "สร้างกลุ่มและเพิ่มหุ้น"
     },
     "history": {
+      "marketCap": "มูลค่าตลาด",
+      "loanBalanceVolume": "ยอดคงค้างยืมหุ้น (หุ้น)",
+      "loanBalanceAmount": "ยอดคงค้างยืมหุ้น (มูลค่า)",
       "allInvestors": "นักลงทุนทั้งหมด",
       "aggregatePeriod": "ช่วงรวม",
       "investor": "นักลงทุน",
@@ -2079,6 +2082,9 @@
       "deleteKeyError": "ลบคีย์ API ไม่สำเร็จ",
       "quotes": "ราคาหุ้นและมูลค่าตลาด",
       "responseFields": {
+        "sharesOutstanding": "จำนวนหุ้นที่ออก",
+        "loanBalanceVolume": "ยอดคงค้างยืมหุ้น (หุ้น)",
+        "loanBalanceAmount": "ยอดคงค้างยืมหุ้น (มูลค่า)",
         "marketCap": "มูลค่าตลาด (สกุลเงินตลาด)",
         "symbol": "รหัสหุ้น/ดัชนี",
         "name": "ชื่อหุ้น",
