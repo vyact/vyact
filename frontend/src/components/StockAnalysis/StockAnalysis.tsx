@@ -1,4 +1,5 @@
 import PinnedIndexBar from './PinnedIndexBar';
+import {withMarketIndices} from './stockDirectory';
 import useStockMarketShortcuts from './useStockMarketShortcuts';
 import '../common/WorkspaceLayout/WorkspaceBrand.css';
 import useSidebarHover from '../common/WorkspaceLayout/useSidebarHover';
@@ -127,8 +128,9 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
     };
     const chartVisible = detailTab === 'chart';
     const activeSymbol = active?.symbol;
-    const watchlistCount = symbols.filter(item => watchlist.contains(market, item.symbol)).length;
-    const filtered = symbols.filter(({symbol, name}) => (!watchlistOnly || watchlist.contains(market, symbol))
+    const directory = withMarketIndices(market, symbols, tr);
+    const watchlistCount = directory.filter(item => watchlist.contains(market, item.symbol)).length;
+    const filtered = directory.filter(({symbol, name}) => (!watchlistOnly || watchlist.contains(market, symbol))
         && `${symbol} ${name}`.toLowerCase().includes(query.trim().toLowerCase()));
 
     useEffect(() => {
@@ -260,7 +262,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                     id={`stock-group-members-${group.id}`}>
                     <div className="stock-group-members-clip"><ul className="stock-group-members">
                     {group.symbols.map(symbol => {
-                        const stock = symbols.find(item => item.symbol === symbol) ?? {symbol, name: symbol};
+                        const stock = directory.find(item => item.symbol === symbol) ?? {symbol, name: symbol};
                         return <li key={symbol} data-selected={activeSymbol === symbol} {...dragProps({groupId: group.id, symbol})}>
                             <button type="button" className="stock-group-member-open" aria-pressed={activeSymbol === symbol} onClick={() => openSymbol(stock)}>
                                 <strong>{stock.name}</strong><small>{symbol}</small>

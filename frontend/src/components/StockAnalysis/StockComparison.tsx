@@ -3,7 +3,7 @@ import {STOCK_MARKETS} from '../../services/stockAnalysis';
 import {Tooltip} from '../common/Tooltip/Tooltip';
 import ModalTabs from '../common/ModalTabs/ModalTabs';
 import useStockDirectory from './useStockDirectory';
-import {MARKET_INDEX_LABELS} from './marketIndexLabels';
+import {withMarketIndices} from './stockDirectory';
 import {useEffect, useRef, useState, type ReactNode, type RefObject} from 'react';
 import {LineSeries, type IChartApi} from 'lightweight-charts';
 import {createPortal} from 'react-dom';
@@ -127,8 +127,7 @@ export default function StockComparison({chart, bars, interval, revision, direct
             setItems(previous => previous.map(item => item.symbol === symbol ? {...item, shift} : item));
         }
     };
-    const indexSymbols = MARKET_INDEX_LABELS[searchMarket].map(item => ({symbol: item.symbol, name: tr(item.key)}));
-    const candidates = [...new Map([...indexSymbols, ...(searchDirectory ?? [])].map(item => [item.symbol, item])).values()];
+    const candidates = withMarketIndices(searchMarket, searchDirectory ?? [], tr);
     const matches = candidates.filter(item => !items.some(selected => selected.symbol === item.symbol)
         && `${item.symbol} ${item.name}`.toLowerCase().includes(query.trim().toLowerCase()));
     const number = new Intl.NumberFormat(i18n.resolvedLanguage, {maximumFractionDigits: 2});
