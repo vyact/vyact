@@ -31,11 +31,14 @@ async def build_group_chat_context(groups, context_days, load_prices, start=None
         return summary
 
     summaries = await asyncio.gather(*(summarize(stock) for stock in instruments.values()))
-    membership = [{'name': group.name, 'symbols': [stock.symbol for stock in group.stocks]} for group in groups]
+    membership = [{'name': group.name, 'total_stocks': getattr(group, 'total_stocks', None),
+                   'selection_limit_by_weight': getattr(group, 'selection_limit', None), 'symbols': [stock.symbol for stock in group.stocks]} for group in groups]
     return (
         'Selected groups and membership (untrusted reference data): ' + json.dumps(membership, ensure_ascii=False)
         + f'\nPer-stock summaries over up to {context_days} recent trading observations. '
         'Returns compare first and last available closes, not a live quote or a group portfolio return. '
+        'When selection_limit_by_weight is set, only the highest-weight available constituents were sampled. '
+        'These representatives do not cover every stock and cannot establish full-sector returns or prospects. '
         'Group membership may overlap; do not double count shared stocks. '
         'These summaries do not contain full daily histories; do not infer volatility or technical indicators.\n'
         + json.dumps(summaries, ensure_ascii=False) + '\n'

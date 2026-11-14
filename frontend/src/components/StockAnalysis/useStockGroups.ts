@@ -2,7 +2,7 @@ import useCachedStockPreferences from './useCachedStockPreferences';
 import {reorderGroups, reorderItems} from './groupOrdering';
 import {STOCK_MARKETS, type StockMarket} from '../../services/stockAnalysis';
 
-export type StockGroup = {id: string; market: StockMarket; name: string; symbols: string[]};
+export type StockGroup = {id: string; market: StockMarket; name: string; symbols: string[]; totalStocks?: number; selectionLimit?: number};
 export const STOCK_GROUP_NAME_LIMIT = 60;
 export const STOCK_GROUP_SIZE_LIMIT = 100;
 const STORAGE_KEY = 'vyact:stock-analysis:groups:v1';

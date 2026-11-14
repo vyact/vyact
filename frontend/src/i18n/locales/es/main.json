@@ -112,7 +112,8 @@
     "supportVyact": "Apoyar a Vyact"
   },
   "browser": {"title": "Navegador", "back": "Atrás", "forward": "Adelante", "reload": "Recargar", "close": "Cerrar", "float": "Cambiar a vista flotante", "dock": "Acoplar a la barra lateral derecha", "address": "Dirección o búsqueda", "addressPlaceholder": "Introduce una dirección o búsqueda"},
-  "panelResizer": {"label": "Cambiar tamaño del panel", "drag": "Arrastra para cambiar el tamaño", "reset": "Haz doble clic para restaurar el tamaño predeterminado"},
+  "panelResizer": {
+    "expandDouble": "Haz doble clic para duplicar el ancho predeterminado","label": "Cambiar tamaño del panel", "drag": "Arrastra para cambiar el tamaño", "reset": "Haz doble clic para restaurar el tamaño predeterminado"},
   "supportModal": {
     "title": "Apoyar a Vyact",
     "message": "¿Vyact te ha resultado útil?\nTu apoyo nos ayuda a seguir desarrollando y creando mejores funciones.",
@@ -1987,6 +1988,11 @@
       "source": "Fuente: Yahoo Finance"
     },
     "groups": {
+      "groupCount": "{{count}} grupos",
+      "topPerSector": "Acciones por sector",
+      "topPerGroup": "Acciones por grupo",
+      "sampleSummary": "Por peso · {{count}} acciones enviadas",
+
       "deleteDescription": "Al eliminar el grupo también se quitan todas las acciones incluidas en él.",
       "noResults": "No hay acciones coincidentes.",
       "missingCaps": "{{count}} acciones sin capitalización se excluyen del mapa.",

@@ -112,7 +112,8 @@
     "supportVyact": "Ủng hộ Vyact"
   },
   "browser": {"title": "Trình duyệt", "back": "Quay lại", "forward": "Tiếp", "reload": "Tải lại", "close": "Đóng", "float": "Chuyển sang chế độ nổi", "dock": "Gắn vào thanh bên phải", "address": "Địa chỉ hoặc tìm kiếm", "addressPlaceholder": "Nhập địa chỉ hoặc nội dung tìm kiếm"},
-  "panelResizer": {"label": "Đổi kích thước bảng", "drag": "Kéo để đổi kích thước", "reset": "Nhấp đúp để khôi phục kích thước mặc định"},
+  "panelResizer": {
+    "expandDouble": "Nhấp đúp để mở rộng gấp đôi chiều rộng mặc định","label": "Đổi kích thước bảng", "drag": "Kéo để đổi kích thước", "reset": "Nhấp đúp để khôi phục kích thước mặc định"},
   "supportModal": {
     "title": "Ủng hộ Vyact",
     "message": "Vyact có hữu ích với bạn không?\nSự ủng hộ của bạn giúp chúng tôi tiếp tục phát triển và xây dựng các tính năng tốt hơn.",
@@ -1986,6 +1987,11 @@
       "source": "Nguồn: Yahoo Finance"
     },
     "groups": {
+      "groupCount": "{{count}} nhóm",
+      "topPerSector": "Số cổ phiếu mỗi ngành",
+      "topPerGroup": "Số cổ phiếu mỗi nhóm",
+      "sampleSummary": "Theo trọng số · gửi {{count}} cổ phiếu",
+
       "deleteDescription": "Xóa nhóm cũng sẽ xóa toàn bộ danh sách cổ phiếu trong nhóm.",
       "noResults": "Không tìm thấy cổ phiếu.",
       "missingCaps": "{{count}} cổ phiếu thiếu vốn hóa không được hiển thị trên bản đồ.",

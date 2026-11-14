@@ -112,7 +112,8 @@
     "supportVyact": "支持 Vyact"
   },
   "browser": {"title": "浏览器", "back": "后退", "forward": "前进", "reload": "刷新", "close": "关闭", "float": "切换为浮动视图", "dock": "固定到右侧边栏", "address": "地址或搜索", "addressPlaceholder": "输入地址或搜索内容"},
-  "panelResizer": {"label": "调整面板大小", "drag": "拖动以调整大小", "reset": "双击恢复默认大小"},
+  "panelResizer": {
+    "expandDouble": "双击扩展至默认宽度的两倍","label": "调整面板大小", "drag": "拖动以调整大小", "reset": "双击恢复默认大小"},
   "supportModal": {
     "title": "支持 Vyact",
     "message": "Vyact 对您有帮助吗？\n您的支持将帮助我们持续开发并打造更好的功能。",
@@ -1986,6 +1987,11 @@
       "source": "来源：Yahoo Finance"
     },
     "groups": {
+      "groupCount": "{{count}}个分组",
+      "topPerSector": "每板块头部股票数",
+      "topPerGroup": "每组头部股票数",
+      "sampleSummary": "按权重 · 发送{{count}}只股票",
+
       "deleteDescription": "删除分组时，该分组内的所有股票成员记录也会移除。",
       "noResults": "未找到匹配的股票。",
       "missingCaps": "缺少市值的{{count}}只股票不显示在图中。",

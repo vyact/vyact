@@ -364,6 +364,8 @@ class StockChatReference(BaseModel):
 
 
 class StockChatGroup(BaseModel):
+    total_stocks: int | None = Field(default=None, ge=0, le=100000)
+    selection_limit: int | None = Field(default=None, ge=1, le=10)
     name: str = Field(min_length=1, max_length=60)
     stocks: list[StockChatReference] = Field(default_factory=list, max_length=1000)
 

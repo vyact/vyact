@@ -112,7 +112,8 @@
     "supportVyact": "Support Vyact"
   },
   "browser": {"title": "Browser", "back": "Back", "forward": "Forward", "reload": "Reload", "close": "Close", "float": "Switch to floating view", "dock": "Dock in right sidebar", "address": "Address or search", "addressPlaceholder": "Enter an address or search"},
-  "panelResizer": {"label": "Resize panel", "drag": "Drag to resize", "reset": "Double-click to restore default size"},
+  "panelResizer": {
+    "expandDouble": "Double-click to expand to twice the default width","label": "Resize panel", "drag": "Drag to resize", "reset": "Double-click to restore default size"},
   "supportModal": {
     "title": "Support Vyact",
     "message": "Has Vyact been helpful?\nYour support helps us continue development and build better features.",
@@ -1987,6 +1988,11 @@
       "source": "Source: Yahoo Finance"
     },
     "groups": {
+      "groupCount": "{{count}} groups",
+      "topPerSector": "Top stocks per sector",
+      "topPerGroup": "Top stocks per group",
+      "sampleSummary": "By weight · {{count}} stocks sent",
+
       "deleteDescription": "Deleting the group also removes all stock memberships in this group.",
       "noResults": "No matching stocks.",
       "missingCaps": "{{count}} stocks without market-cap data are excluded from the map.",

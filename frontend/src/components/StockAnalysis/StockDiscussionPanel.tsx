@@ -7,7 +7,7 @@ import StockDiscussionSidebar from './StockDiscussionSidebar';
 
 const STORAGE_KEY = 'vyact:stock-discussion:layout';
 const DEFAULT_WIDTH = 340;
-const MIN_WIDTH = 280;
+const MIN_WIDTH = DEFAULT_WIDTH;
 const MAX_WIDTH = 720;
 const MIN_CONTENT_WIDTH = 320;
 function readLayout(): {width: number; collapsed: boolean} {
@@ -29,6 +29,11 @@ export default function StockDiscussionPanel(props: ComponentProps<typeof StockD
         setLayout(next);
         try {localStorage.setItem(STORAGE_KEY, JSON.stringify(next));} catch { /* Optional layout preference. */ }
     };
+    const clampWidth = (width: number) => {
+        const bounds = panel.current?.closest('.stock-analysis-inner')?.getBoundingClientRect();
+        const maximum = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, bounds ? bounds.width - MIN_CONTENT_WIDTH : MAX_WIDTH));
+        return Math.max(MIN_WIDTH, Math.min(maximum, width));
+    };
     useStockAnalysisShortcut('I', () => updateLayout({...layout, collapsed: !layout.collapsed}));
     return <div ref={panel} className={`stock-discussion-container${layout.collapsed ? ' is-collapsed' : ''}`}
         style={{'--stock-discussion-width': `${layout.width}px`} as CSSProperties}>
@@ -38,11 +43,13 @@ export default function StockDiscussionPanel(props: ComponentProps<typeof StockD
                 if (width !== undefined) updateLayout({...layout, width});
                 panel.current?.classList.remove('is-resizing');
             }}
-            getWidth={(event, resizer) => {
-                const bounds = resizer.closest('.stock-analysis-inner')!.getBoundingClientRect();
-                const maximum = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, bounds.width - MIN_CONTENT_WIDTH));
-                return Math.max(MIN_WIDTH, Math.min(maximum, bounds.right - event.clientX));
-            }} onReset={() => updateLayout({...layout, width: DEFAULT_WIDTH})}/>}
+            doubleClickHint={layout.width === DEFAULT_WIDTH ? t('panelResizer.expandDouble') : undefined}
+            getWidth={event => {
+                const bounds = panel.current!.closest('.stock-analysis-inner')!.getBoundingClientRect();
+                return clampWidth(bounds.right - event.clientX);
+            }} onReset={() => updateLayout({...layout,
+                width: clampWidth(layout.width === DEFAULT_WIDTH ? DEFAULT_WIDTH * 2 : DEFAULT_WIDTH),
+            })}/>}
         <button type="button" className="stock-discussion-toggle" aria-expanded={!layout.collapsed}
             aria-label={t(`stockAnalysis.discussion.${layout.collapsed ? 'expand' : 'collapse'}`)}
             onClick={() => updateLayout({...layout, collapsed: !layout.collapsed})}>

@@ -100,6 +100,9 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
     const [sectorScope, setSectorScope] = useState<{market: StockMarket; sectors: MarketSector[]}>({market, sectors: []});
     const updateMarketSectors = useCallback((sectors: MarketSector[]) => setSectorScope({market, sectors}), [market]);
     const marketSectors = sectorScope.market === market ? sectorScope.sectors : [];
+    const [groupSectorScope, setGroupSectorScope] = useState<{market: StockMarket; sectors: MarketSector[]}>({market, sectors: []});
+    const updateGroupSectors = useCallback((sectors: MarketSector[]) => setGroupSectorScope({market, sectors}), [market]);
+    const groupSectors = groupSectorScope.market === market ? groupSectorScope.sectors : [];
     const [query, setQuery] = useState('');
     const captureChart = useRef<(() => ChartSnapshot) | null>(null);
     const [comparisonTarget, setComparisonTarget] = useState<HTMLDivElement | null>(null);
@@ -343,7 +346,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
             {!active && (listView === 'groups' && !groupSymbols.size
                 ? <div className="stock-watchlist-empty"><strong>{tr('groups.empty')}</strong><p>{tr('groups.emptyHint')}</p>
                     <button type="button" className="modal-action-cancel" onClick={() => setEditingGroup(marketGroups.length === 1 ? marketGroups[0] : 'new')}>{tr(marketGroups.length === 1 ? 'groups.edit' : 'groups.create')}</button></div>
-                : <StockSectorMap key={`${market}:${i18n.resolvedLanguage}:${listView === 'groups' ? 'groups' : 'market'}`} market={market} onOpen={openSymbol} directory={symbols} onSectorsChange={updateMarketSectors} stockGroups={listView === 'groups' ? marketGroups : undefined}/>)}
+                : <StockSectorMap key={`${market}:${i18n.resolvedLanguage}:${listView === 'groups' ? 'groups' : 'market'}`} market={market} onOpen={openSymbol} directory={symbols} onSectorsChange={listView === 'groups' ? updateGroupSectors : updateMarketSectors} stockGroups={listView === 'groups' ? marketGroups : undefined}/>)}
             {active && <div className="stock-analysis-heading">
                 <div className="stock-analysis-chart-title"><button type="button" className="stock-analysis-back" aria-label={tr('sectorMap')} onClick={() => {
                     setActive(null);
@@ -392,10 +395,12 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
             </div>}
         </main>
         {!active && listView !== 'groups' && <StockGroupDiscussionPanel key={`sectors:${market}:${i18n.resolvedLanguage}`} scopeType="sector" market={market} directory={symbols}
+            weights={Object.fromEntries(marketSectors.flatMap(sector => sector.stocks.map(stock => [stock.symbol, stock.weight])))}
             groups={marketSectors.map(sector => ({id: sector.name, market,
                 name: t(`stockAnalysis.sectorNames.${sector.name}`, {defaultValue: sector.name, ...(market === 'US' ? {lng: 'en'} : {})}),
                 symbols: sector.stocks.map(stock => stock.symbol)}))}/>}
-        {!active && listView === 'groups' && <StockGroupDiscussionPanel groups={marketGroups} market={market} directory={symbols}/>}
+        {!active && listView === 'groups' && <StockGroupDiscussionPanel key={`groups:${market}`} groups={marketGroups} market={market} directory={symbols}
+            weights={Object.fromEntries(groupSectors.flatMap(sector => sector.stocks.map(stock => [stock.symbol, stock.weight])))}/>}
         {active && <StockDiscussionPanel priceRows={rows ?? []} captureChart={detailTab === 'chart' ? captureChart : undefined} key={`${market}:${active.symbol}`} stock={active} market={market} directory={symbols}/>}
         </div>
     </WorkspaceLayout></>;

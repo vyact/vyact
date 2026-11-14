@@ -181,7 +181,7 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
             ({...stock, name: names.get(stock.symbol) ?? stock.name}))}));
     }, [snapshot, directory, stockGroups, groupQuoteState.quotes]);
     useEffect(() => {
-        if (!stockGroups) onSectorsChange?.(localizedSectors ?? []);
+        onSectorsChange?.(localizedSectors ?? []);
     }, [localizedSectors, stockGroups, onSectorsChange]);
     const sectorName = (name: string) => stockGroups ? name : t(`stockAnalysis.sectorNames.${name}`, {defaultValue: name, ...(market === 'US' ? {lng: 'en'} : {})});
     const layout = useMemo(() => {

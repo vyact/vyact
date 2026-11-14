@@ -47,9 +47,10 @@ interface Props {
     onResizeEnd?: (width: number | undefined) => void;
     className?: string;
     title?: string;
+    doubleClickHint?: string;
 }
 
-const PanelResizer: React.FC<Props> = ({onWidthChange, getWidth, onReset, onResizeStart, onResizeEnd, className = '', title}) => {
+const PanelResizer: React.FC<Props> = ({onWidthChange, getWidth, onReset, onResizeStart, onResizeEnd, className = '', title, doubleClickHint}) => {
     const {t} = useTranslation('main');
     const callbacks = useRef({onWidthChange, getWidth, onResizeStart, onResizeEnd});
     callbacks.current = {onWidthChange, getWidth, onResizeStart, onResizeEnd};
@@ -166,7 +167,7 @@ const PanelResizer: React.FC<Props> = ({onWidthChange, getWidth, onReset, onResi
             <div className="panel-resizer-handle" aria-hidden="true"/>
             <div className="panel-resizer-hint" aria-hidden="true">
                 <strong>{t('panelResizer.drag')}</strong>
-                <span>{t('panelResizer.reset')}</span>
+                <span>{doubleClickHint || t('panelResizer.reset')}</span>
             </div>
         </div>
     );
