@@ -7,14 +7,16 @@ from routers.stock_analysis import StockChatRequest, stock_chat, stream_stock_an
 
 
 @pytest.mark.asyncio
-async def test_chart_attachment_reaches_model_with_conversation_images():
+@pytest.mark.parametrize('reasoning', [False, 'low', 'high', 'custom-stage:1'])
+async def test_chart_attachment_reaches_model_with_conversation_images(reasoning):
     attachment = {'type': 'image', 'filename': '12345678_NVDA-chart.png'}
     body = StockChatRequest(symbol='NVDA', name='NVIDIA', market='US', question='Analyze this chart',
-                            attachments=[attachment], messages=[{'role': 'user', 'content': 'Earlier chart', 'attachments': [attachment]}])
+                            reasoning=reasoning, attachments=[attachment], messages=[{'role': 'user', 'content': 'Earlier chart', 'attachments': [attachment]}])
     with patch('routers.stock_analysis.mcp_manager.enable_request_scope', new=AsyncMock(return_value=None)), \
             patch('routers.stock_analysis.daily_prices', new=AsyncMock(return_value=[])), \
             patch('routers.stock_analysis.query_llm', new=AsyncMock(return_value='Analysis')) as model:
         await stock_chat(body)
+    assert model.call_args.kwargs['reasoning'] == reasoning
     assert model.call_args.args[3] == [attachment]
     assert model.call_args.args[4][0]['attachments'] == [attachment]
 
@@ -27,10 +29,11 @@ def test_chart_attachment_cannot_reference_arbitrary_paths(filename):
 
 
 @pytest.mark.asyncio
-async def test_streamed_chart_attachment_is_forwarded_and_saved():
+@pytest.mark.parametrize('reasoning', [False, 'low', 'high', 'custom-stage:1'])
+async def test_streamed_chart_attachment_is_forwarded_and_saved(reasoning):
     attachment = {'type': 'image', 'filename': '12345678_NVDA-chart.png'}
     body = StockChatRequest(symbol='NVDA', name='NVIDIA', market='US', question='Analyze',
-                            attachments=[attachment], conversation_id='00000000-0000-0000-0000-000000000001')
+                            reasoning=reasoning, attachments=[attachment], conversation_id='00000000-0000-0000-0000-000000000001')
 
     async def events(*args, **kwargs):
         yield {'type': 'token', 'text': 'Analysis'}
@@ -41,6 +44,7 @@ async def test_streamed_chart_attachment_is_forwarded_and_saved():
             patch('routers.stock_analysis.append_stock_conversation', new=AsyncMock()) as save:
         result = [event async for event in stream_stock_answer(body, 'prompt', 'system')]
     assert model.call_args.args[3] == [attachment]
+    assert model.call_args.kwargs['reasoning'] == reasoning
     assert save.call_args.kwargs['attachments'] == [attachment]
     assert 'done' in result[-1]
 

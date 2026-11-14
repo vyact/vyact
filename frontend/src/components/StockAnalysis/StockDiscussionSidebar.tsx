@@ -1,3 +1,4 @@
+import {getReasoningRequestValue} from '../../utils/reasoning';
 import StockContextPeriod from './StockContextPeriod';
 import {normalizeContextRange, type StockContextRange} from './stockContextRange';
 import './StockSymbolLabel.css';
@@ -199,7 +200,7 @@ export default function StockDiscussionSidebar({stock, priceRows = [], groups, s
                 body: JSON.stringify({attachments, stream: true, conversation_id: conversationId, symbol: stock.symbol, name: stock.name, market,
                     groups: groups?.map(group => ({name: group.name, stocks: group.symbols.map(symbol => ({symbol, name: directory.find(item => item.symbol === symbol)?.name ?? symbol}))})),
                     reference_stocks: referenceStocks.map(item => ({symbol: item.symbol, name: item.name})),
-                    context_days: contextRange ? MAX_CONTEXT_DAYS : preferences.days, context_start: contextRange?.start, context_end: contextRange?.end, include_financials: preferences.includeFinancials, selected_mcp_ids: selectedServers.map(server => server.id),
+                    reasoning: getReasoningRequestValue(), context_days: contextRange ? MAX_CONTEXT_DAYS : preferences.days, context_start: contextRange?.start, context_end: contextRange?.end, include_financials: preferences.includeFinancials, selected_mcp_ids: selectedServers.map(server => server.id),
                     language: i18n.resolvedLanguage ?? i18n.language, question: text, messages: messages.slice(-HISTORY_LIMIT).map(({role, content, attachments}) => ({role, content, attachments})).filter(message => message.content.trim())}),
             });
             await assertOk(response);

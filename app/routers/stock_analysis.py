@@ -368,6 +368,7 @@ class StockChatGroup(BaseModel):
 
 
 class StockChatRequest(StockChatAttachments):
+    reasoning: bool | str = False
     groups: list[StockChatGroup] | None = Field(default=None, max_length=100)
 
     conversation_id: UUID | None = None
@@ -531,7 +532,7 @@ async def answer_stock_chat(body, prompt, system_prompt):
             system_prompt,
             [attachment.model_dump(mode="json", exclude_none=True) for attachment in body.attachments if isinstance(attachment, StockChartAttachment)], stock_chat_history(body.messages),
             timeout=180.0, format_instruction_override="", inject_user_profile=False,
-            use_tools=use_tools, reasoning=False, include_skills=False,
+            use_tools=use_tools, reasoning=body.reasoning, include_skills=False,
             call_reason="stock_analysis:chat",
         )
     finally:
@@ -555,7 +556,7 @@ async def stream_stock_answer(body, prompt, system_prompt):
         async for event in chat_stream_with_tools(
             prompt, [], system_prompt, [attachment.model_dump(mode="json", exclude_none=True) for attachment in body.attachments if isinstance(attachment, StockChartAttachment)], stock_chat_history(body.messages),
             timeout=180.0, format_instruction_override="", inject_user_profile=False,
-            use_tools=bool(body.selected_mcp_ids), reasoning=False, include_skills=False,
+            use_tools=bool(body.selected_mcp_ids), reasoning=body.reasoning, include_skills=False,
             isolated_system_prompt=True, call_reason="stock_analysis:chat",
         ):
             if event.get("type") == "token":
