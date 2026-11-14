@@ -1,8 +1,10 @@
+import StockContextPeriod from './StockContextPeriod';
+import {normalizeContextRange, type StockContextRange} from './stockContextRange';
 import './StockSymbolLabel.css';
 import type {StockGroup} from './useStockGroups';
 import type {ChartSnapshotContext, ChartSnapshot} from './chartSnapshot';
-import {useEffect, useRef, useState, type RefObject, type ReactNode} from 'react';
-import {ChartNoAxesCombined, ChartColumnIncreasing, Plus, Paperclip, ArrowUp, Square, X, History, Bookmark} from 'lucide-react';
+import {useCallback, useEffect, useRef, useState, type RefObject, type ReactNode} from 'react';
+import {ChartNoAxesCombined, ChartColumnIncreasing, Plus, Paperclip, ArrowUp, Square, X, History, Bookmark, MessageSquareText} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import StockSavedQuestionsDialog from './StockSavedQuestionsDialog';
 import StockChatPreparation, {type StockPreparationProgress} from './StockChatPreparation';
@@ -18,7 +20,7 @@ import Message from '../Message/Message';
 import type {Message as ChatMessage, ToolActivity, MessageAttachment} from '../../types';
 import {readStockChatStream} from '../../services/stockChatStream';
 import {getToolActivityLabel, getToolActivityDetail, isToolActivityResultFailed} from '../../utils/toolActivity';
-import type {StockMarket, StockSymbol} from '../../services/stockAnalysis';
+import type {DailyPrice, StockMarket, StockSymbol} from '../../services/stockAnalysis';
 import {assertOk} from '../../utils/apiError';
 import {Tooltip} from '../common/Tooltip/Tooltip';
 import StockMarketSelect from './StockMarketSelect';
@@ -39,19 +41,22 @@ const HISTORY_LIMIT = 20;
 const DEFAULT_CONTEXT_DAYS = 60;
 const MAX_CONTEXT_DAYS = 500;
 const PREFERENCES_KEY = 'vyact:stock-discussion:preferences';
-function readPreferences(): {days: number; toolIds: string[] | undefined; includeFinancials: boolean} {
+function readPreferences(): {days: number; toolIds: string[] | undefined; includeFinancials: boolean; periodMode: 'recent' | 'range'; lastRange: StockContextRange} {
     try {
         const value = JSON.parse(localStorage.getItem(PREFERENCES_KEY) ?? '{}');
-        return {includeFinancials: value.includeFinancials === true, days: Number.isInteger(value.days) && value.days >= 1 && value.days <= MAX_CONTEXT_DAYS ? value.days : DEFAULT_CONTEXT_DAYS,
+        return {periodMode: value.periodMode === 'range' ? 'range' : 'recent', lastRange: normalizeContextRange(value.lastRange), includeFinancials: value.includeFinancials === true, days: Number.isInteger(value.days) && value.days >= 1 && value.days <= MAX_CONTEXT_DAYS ? value.days : DEFAULT_CONTEXT_DAYS,
             toolIds: Array.isArray(value.toolIds) ? value.toolIds.filter((id: unknown): id is string => typeof id === 'string') : undefined};
-    } catch {return {days: DEFAULT_CONTEXT_DAYS, toolIds: undefined, includeFinancials: false};}
+    } catch {return {days: DEFAULT_CONTEXT_DAYS, toolIds: undefined, includeFinancials: false, periodMode: 'recent', lastRange: null};}
 }
 
-export default function StockDiscussionSidebar({stock, groups, scopeType = 'group', groupPicker, market, directory, captureChart, onReveal, isVisible = true}: {isVisible?: boolean; captureChart?: RefObject<(() => ChartSnapshot) | null>; stock: StockSymbol; scopeType?: 'group' | 'sector'; groups?: StockGroup[]; groupPicker?: ReactNode; onReveal?: () => void; market: StockMarket; directory: StockSymbol[]}) {
+export default function StockDiscussionSidebar({stock, priceRows = [], groups, scopeType = 'group', groupPicker, market, directory, captureChart, onReveal, isVisible = true}: {isVisible?: boolean; captureChart?: RefObject<(() => ChartSnapshot) | null>; stock: StockSymbol; priceRows?: DailyPrice[]; scopeType?: 'group' | 'sector'; groups?: StockGroup[]; groupPicker?: ReactNode; onReveal?: () => void; market: StockMarket; directory: StockSymbol[]}) {
     const {t, i18n} = useTranslation('main');
     const tr = (key: string) => t(`stockAnalysis.discussion.${key}`);
     const [preferences, setPreferences] = useState(readPreferences);
-    const [contextDaysInput, setContextDaysInput] = useState(() => String(preferences.days));
+    const contextRange = preferences.periodMode === 'range' ? preferences.lastRange : null;
+    const setContextRange = useCallback((range: StockContextRange) => setPreferences(current => ({
+        ...current, periodMode: range ? 'range' : 'recent', lastRange: range ?? current.lastRange,
+    })), []);
     const {selectedServers, setSelectedServers} = useSelectedMcpTools(preferences.toolIds, toolIds => setPreferences(current => ({...current, toolIds})), 'keenable');
     const [referenceStocks, setReferenceStocks] = useState<StockSymbol[]>([]);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -194,7 +199,7 @@ export default function StockDiscussionSidebar({stock, groups, scopeType = 'grou
                 body: JSON.stringify({attachments, stream: true, conversation_id: conversationId, symbol: stock.symbol, name: stock.name, market,
                     groups: groups?.map(group => ({name: group.name, stocks: group.symbols.map(symbol => ({symbol, name: directory.find(item => item.symbol === symbol)?.name ?? symbol}))})),
                     reference_stocks: referenceStocks.map(item => ({symbol: item.symbol, name: item.name})),
-                    context_days: preferences.days, include_financials: preferences.includeFinancials, selected_mcp_ids: selectedServers.map(server => server.id),
+                    context_days: contextRange ? MAX_CONTEXT_DAYS : preferences.days, context_start: contextRange?.start, context_end: contextRange?.end, include_financials: preferences.includeFinancials, selected_mcp_ids: selectedServers.map(server => server.id),
                     language: i18n.resolvedLanguage ?? i18n.language, question: text, messages: messages.slice(-HISTORY_LIMIT).map(({role, content, attachments}) => ({role, content, attachments})).filter(message => message.content.trim())}),
             });
             await assertOk(response);
@@ -327,27 +332,11 @@ export default function StockDiscussionSidebar({stock, groups, scopeType = 'grou
                 {error && <p className="stock-discussion-error" role="alert">{tr('error')}</p>}
                 <form className="stock-discussion-composer" onSubmit={event => {event.preventDefault(); void send();}}>
                     <div className="stock-discussion-context-settings">
-        <div className="stock-discussion-financials-option">
-            <span className="stock-discussion-financials-label">{tr('includeFinancials')}</span>
-            <ToggleSwitch label={tr('includeFinancials')} checked={preferences.includeFinancials} disabled={busy}
-                onChange={includeFinancials => setPreferences(current => ({...current, includeFinancials}))}/>
-        </div>
-                            <label className="stock-discussion-period" htmlFor={`${id}-days`}>
-                                <span>{tr('contextDays')}</span>
-                                <input id={`${id}-days`} aria-label={tr('contextDays')} type="text" inputMode="numeric" pattern="[0-9]*" maxLength={String(MAX_CONTEXT_DAYS).length}
-                                    value={contextDaysInput} disabled={busy}
-                                    onBlur={() => setContextDaysInput(String(preferences.days))}
-                                    onChange={event => {
-                                        const value = event.target.value;
-                                        if (!/^[0-9]*$/.test(value)) return;
-                                        const days = Number(value);
-                                        if (value !== '' && (days < 1 || days > MAX_CONTEXT_DAYS)) return;
-                                        setContextDaysInput(value);
-                                        if (Number.isInteger(days) && days >= 1 && days <= MAX_CONTEXT_DAYS) setPreferences(current => ({...current, days}));
-                                    }}/>
-                            </label>
+                            <StockContextPeriod groupScope={groups !== undefined} market={market} rows={priceRows} days={preferences.days} range={contextRange} lastRange={preferences.lastRange} onRangeChange={setContextRange}
+                                onDaysChange={days => setPreferences(current => ({...current, days}))} disabled={busy}/>
+
                         <button type="button" className="stock-saved-questions-button" aria-label={t('stockAnalysis.savedQuestions.title')} data-tooltip-disabled="" disabled={busy} onClick={() => {setSavedQuestionDraft(null); setSavedQuestionsOpen(true);}}>
-                            <Bookmark size={13} aria-hidden="true"/>{t('stockAnalysis.savedQuestions.buttonLabel')}</button>
+                            <MessageSquareText size={16} aria-hidden="true"/></button>
                     </div>
                     {chartError && <p role="alert" className="stock-discussion-error">{tr('chartAttachError')}</p>}
                     <input type="file" hidden accept={DOCUMENT_FILE_ACCEPT} multiple ref={draftAttachments.fileInputRef}
@@ -380,6 +369,12 @@ export default function StockDiscussionSidebar({stock, groups, scopeType = 'grou
                                     <ChartColumnIncreasing size={18}/><Plus className="stock-discussion-attach-plus" size={9} strokeWidth={2.5}/>
                                 </span>
                             </button>}
+
+                            <div className="stock-discussion-financials-option">
+                                <span className="stock-discussion-financials-label">{tr('includeFinancials')}</span>
+                                <ToggleSwitch label={tr('includeFinancials')} checked={preferences.includeFinancials} disabled={busy}
+                                    onChange={includeFinancials => setPreferences(current => ({...current, includeFinancials}))}/>
+                            </div>
 
                             {busy ? <button className="stock-discussion-send stock-discussion-stop" type="button" aria-label={tr('stop')}
                                 onClick={() => {controller.current?.abort(); controller.current = null; setBusy(false); setPreparation(null);}}><Square size={12} fill="currentColor" strokeWidth={0} aria-hidden="true"/></button>

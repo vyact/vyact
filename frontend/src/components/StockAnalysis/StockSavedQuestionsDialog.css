@@ -6,8 +6,8 @@
 .stock-saved-questions-toolbar {display: flex; justify-content: flex-end;}
 .stock-saved-questions-toolbar button {display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; min-height: 28px; border-radius: 6px; font-size: 11px;}
 .stock-saved-questions ul {flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 8px; list-style: none; margin: 0; padding: 0;}
-.stock-saved-questions li {flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 4px 8px 4px 4px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface);}
-.stock-saved-question-select {flex: 1; min-width: 0; display: grid; gap: 6px; padding: 12px; border: 0; border-radius: 8px; background: transparent; color: inherit; text-align: start; cursor: pointer;}
+.stock-saved-questions li {flex-shrink: 0; display: flex; align-items: center; gap: 4px; padding: 4px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface);}
+.stock-saved-question-select {flex: 1; min-width: 0; display: grid; gap: 6px; padding: 12px 4px; border: 0; border-radius: 8px; background: transparent; color: inherit; text-align: start; cursor: pointer;}
 .stock-saved-questions li:hover, .stock-saved-questions li:focus-within {background: var(--interactive-hover);}
 .stock-saved-question-select strong {color: var(--accent); font-size: 13px; overflow-wrap: anywhere;}
 
@@ -39,7 +39,7 @@
 .stock-saved-questions ul::-webkit-scrollbar-track {background: transparent; border-radius: 999px;}
 .stock-saved-questions li {position: relative; transition: background .16s ease;}
 .stock-saved-question-preview {display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; line-height: 1.65; color: var(--text-muted);}
-.stock-saved-question-drag {display: grid; place-items: center; align-self: stretch; width: 18px; flex-shrink: 0; padding: 0; border: 0; border-radius: 5px; background: transparent; color: var(--text-muted); cursor: grab; opacity: 0;}
+.stock-saved-question-drag {display: grid; place-items: center; align-self: stretch; width: 16px; flex-shrink: 0; padding: 0; border: 0; border-radius: 5px; background: transparent; color: var(--text-muted); cursor: grab; opacity: 0;}
 .stock-saved-questions li:hover .stock-saved-question-drag, .stock-saved-questions li:focus-within .stock-saved-question-drag {opacity: .7;}
 .stock-saved-question-drag:active {cursor: grabbing;}
 .stock-saved-questions li.is-dragging {opacity: .4;}
@@ -47,3 +47,5 @@
 .stock-saved-questions li[draggable="true"] {cursor: grab;}
 @media (hover: none) {.stock-saved-question-drag {opacity: .7;}}
 @media (prefers-reduced-motion: reduce) {.stock-saved-questions li {transition: none;}}
+
+.stock-discussion-context-settings .stock-saved-questions-button {justify-content: center; box-sizing: border-box; width: 30px; height: 30px; padding: 0;}

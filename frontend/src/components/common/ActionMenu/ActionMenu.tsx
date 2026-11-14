@@ -39,9 +39,12 @@ const ActionMenu = ({isOpen, onOpenChange, trigger, children, ariaLabel, title, 
             setPosition({left, top});
         };
         updatePosition();
+        const resizeObserver = new ResizeObserver(updatePosition);
+        if (menuRef.current) resizeObserver.observe(menuRef.current);
+        if (anchorRef.current) resizeObserver.observe(anchorRef.current);
         window.addEventListener('resize', updatePosition);
         window.addEventListener('scroll', updatePosition, true);
-        return () => { window.removeEventListener('resize', updatePosition); window.removeEventListener('scroll', updatePosition, true); };
+        return () => { resizeObserver.disconnect(); window.removeEventListener('resize', updatePosition); window.removeEventListener('scroll', updatePosition, true); };
     }, [isOpen, preferredSide]);
     const cancelHoverClose = () => { if (hoverCloseTimerRef.current !== null) { clearTimeout(hoverCloseTimerRef.current); hoverCloseTimerRef.current = null; } };
     const scheduleHoverClose = () => { if (!openOnHover) return; cancelHoverClose(); hoverCloseTimerRef.current = setTimeout(() => onOpenChange(false), 120); };

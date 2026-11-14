@@ -2,8 +2,8 @@ import {CalendarDays} from 'lucide-react';
 import {useTranslation} from 'react-i18next';
 import './DateInput.css';
 
-export default function DateInput({label, value, min, required, onChange}: {
-    label: string; value: string; min?: string; required?: boolean; onChange: (value: string) => void;
+export default function DateInput({label, value, min, max, disabled, showIcon = true, required, onChange}: {
+    label: string; value: string; min?: string; max?: string; disabled?: boolean; showIcon?: boolean; required?: boolean; onChange: (value: string) => void;
 }) {
     const {i18n} = useTranslation('main');
     const timestamp = Date.parse(value);
@@ -12,8 +12,8 @@ export default function DateInput({label, value, min, required, onChange}: {
     }).format(timestamp) : '—';
     return <span className="date-input">
         <span aria-hidden="true">{formatted}</span>
-        <CalendarDays size={17} aria-hidden="true"/>
-        <input type="date" aria-label={label} value={value} min={min} required={required}
+        {showIcon && <CalendarDays size={17} aria-hidden="true"/>}
+        <input type="date" aria-label={label} value={value} min={min} max={max} disabled={disabled} required={required}
             onChange={event => onChange(event.target.value)}/>
     </span>;
 }

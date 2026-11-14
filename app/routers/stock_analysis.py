@@ -25,7 +25,7 @@ from services.stock_analysis.index_price_store import get_index_prices
 from services.stock_analysis.regional_yahoo import korea_preferred_symbols
 from services.stock_analysis.chat_history import append_stock_conversation, list_stock_conversations, get_stock_conversation
 from services.stock_analysis.chat_preparation import prepare_stock_chat
-from services.stock_analysis.group_chat_context import build_group_chat_context
+from services.stock_analysis.group_chat_context import build_group_chat_context, select_context_prices
 from services.stock_analysis.financial_context import build_financial_chat_context
 from services.stock_analysis.financial_store import get_financials
 from services.stock_analysis.financial_collection import (FinancialCollectionSettings, collection_status, save_settings, start_collection, stop_collection, resume_collection)
@@ -374,6 +374,8 @@ class StockChatRequest(StockChatAttachments):
     stream: bool = False
     include_financials: bool = False
     reference_stocks: list[StockChatReference] = Field(default_factory=list, max_length=5)
+    context_start: date | None = None
+    context_end: date | None = None
     context_days: int = Field(default=60, ge=1, le=500)
     selected_mcp_ids: list[str] = Field(default_factory=list, max_length=100)
     symbol: str = Field(pattern=STOCK_SYMBOL_PATTERN)
@@ -382,6 +384,14 @@ class StockChatRequest(StockChatAttachments):
     language: str = Field(default="en", max_length=30)
     question: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=4000)]
     messages: list[StockChatMessage] = Field(default_factory=list, max_length=20)
+
+    @model_validator(mode="after")
+    def validate_context_range(self):
+        if (self.context_start is None) != (self.context_end is None):
+            raise ValueError("Both context dates are required")
+        if self.context_start and self.context_start > self.context_end:
+            raise ValueError("Context start must not exceed end")
+        return self
 
 
 def stock_chart_prompt(attachments) -> str:
@@ -426,9 +436,10 @@ async def stock_chat(body: StockChatRequest):
 
 async def build_stock_chat_prompts(body, prepared=None):
     async def load_prices(symbol):
-        if prepared is not None:
-            return prepared['prices'].get(public_symbol(symbol), [])
-        return await daily_prices(symbol, Response())
+        rows = prepared['prices'].get(public_symbol(symbol), []) if prepared is not None else await daily_prices(symbol, Response())
+        return select_context_prices(rows, body.context_days,
+                                     body.context_start.isoformat() if body.context_start else None,
+                                     body.context_end.isoformat() if body.context_end else None)
 
     # Resolve price context on the server; client messages are conversation data only.
     prices = await load_prices(body.symbol) if body.groups is None else []
@@ -460,6 +471,7 @@ async def build_stock_chat_prompts(body, prepared=None):
     prompt = (
         f"Response language: {body.language}\n"
         + (f"Selected group scope: {body.name}, market: {body.market}\n" if body.groups is not None else f"Selected instrument: {body.name} ({body.symbol}), market: {body.market}\n")
+        + (f"Requested date range (inclusive): {body.context_start} to {body.context_end}; using at most {body.context_days} latest available observations per instrument within that range.\n" if body.context_start else "")
         + f"Recent daily OHLCV (dated observations, not live quotes): {prices[-body.context_days:]}\n"
         + "\n".join(reference_context) + "\n"
         + group_context

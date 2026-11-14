@@ -394,7 +394,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                 name: t(`stockAnalysis.sectorNames.${sector.name}`, {defaultValue: sector.name, ...(market === 'US' ? {lng: 'en'} : {})}),
                 symbols: sector.stocks.map(stock => stock.symbol)}))}/>}
         {!active && listView === 'groups' && <StockGroupDiscussionPanel groups={marketGroups} market={market} directory={symbols}/>}
-        {active && <StockDiscussionPanel captureChart={detailTab === 'chart' ? captureChart : undefined} key={`${market}:${active.symbol}`} stock={active} market={market} directory={symbols}/>}
+        {active && <StockDiscussionPanel priceRows={rows ?? []} captureChart={detailTab === 'chart' ? captureChart : undefined} key={`${market}:${active.symbol}`} stock={active} market={market} directory={symbols}/>}
         </div>
     </WorkspaceLayout></>;
 }

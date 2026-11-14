@@ -95,7 +95,7 @@
 .stock-discussion-financials-option .settings-switch-slider::before {width: 12px; height: 12px;}
 .stock-discussion-financials-option .settings-switch input:checked + .settings-switch-slider::before {transform: translateX(12px);}
 
-.stock-discussion-context-settings {display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap; gap: 8px 20px; padding: 0 4px 10px;}
+.stock-discussion-context-settings {display: flex; align-items: center; justify-content: flex-start; flex-wrap: nowrap; gap: 8px; padding: 0 4px 10px;}
 .stock-discussion-context-settings > * {flex-shrink: 0;}
 
 .stock-discussion-message-row {display: flex; min-width: 0; margin-bottom: 18px;}
@@ -145,3 +145,5 @@
 
 .stock-discussion.is-dragging-files {position: relative; outline: 2px dashed var(--accent); outline-offset: -4px;}
 .stock-discussion-file-drop-hint {position: absolute; inset: 8px 8px auto; z-index: 10; padding: 16px; border: 1px dashed var(--accent); border-radius: 10px; background: var(--surface); color: var(--accent); text-align: center; pointer-events: none;}
+
+.stock-discussion-context-settings > .stock-context-period {flex: 1; min-width: 0; flex-shrink: 1;}

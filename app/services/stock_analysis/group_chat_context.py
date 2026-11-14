@@ -5,14 +5,18 @@ import json
 GROUP_FETCH_CONCURRENCY = 6
 
 
-async def build_group_chat_context(groups, context_days, load_prices):
+def select_context_prices(rows, context_days, start=None, end=None):
+    return [row for row in rows if (start is None or row['day'] >= start) and (end is None or row['day'] <= end)][-context_days:]
+
+
+async def build_group_chat_context(groups, context_days, load_prices, start=None, end=None):
     instruments = {stock.symbol: stock for group in groups for stock in group.stocks}
     semaphore = asyncio.Semaphore(GROUP_FETCH_CONCURRENCY)
 
     async def summarize(stock):
         async with semaphore:
             try:
-                rows = (await load_prices(stock.symbol))[-context_days:]
+                rows = select_context_prices(await load_prices(stock.symbol), context_days, start, end)
             except Exception:
                 rows = []
         summary = {'symbol': stock.symbol, 'name': stock.name, 'observations': len(rows)}

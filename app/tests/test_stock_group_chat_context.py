@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from services.stock_analysis.group_chat_context import build_group_chat_context
+from services.stock_analysis.group_chat_context import build_group_chat_context, select_context_prices
 
 
 @pytest.mark.asyncio
@@ -31,3 +31,10 @@ async def test_missing_stock_data_does_not_prevent_group_analysis():
     assert symbols == ['005930', '000660']
     assert 'Price data unavailable' in context
     assert '2026-11-11' in context
+
+
+def test_date_range_filters_inclusively_before_applying_limit():
+    rows = [{'day': f'2026-11-{day:02}', 'close': day} for day in range(1, 11)]
+    assert [row['day'] for row in select_context_prices(rows, 2, '2026-11-03', '2026-11-06')] == ['2026-11-05', '2026-11-06']
+    assert select_context_prices(rows, 500, '2026-10-01', '2026-10-31') == []
+    assert select_context_prices(rows, 500, '2026-11-03', '2026-11-03') == [rows[2]]
