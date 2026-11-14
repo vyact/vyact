@@ -1831,6 +1831,21 @@
     "manuscriptApplyHelp": "適用すると現在の話のタイトルと本文をこの結果で置き換えます。"
   },
   "stockAnalysis": {
+    "chartActions": {
+      "comparisonMode": "比較表示",
+      "price": "価格",
+      "returns": "騰落率",
+      "returnBasis": "表示範囲の最初の共通取引日 = 0% · 青: 主銘柄",
+      "navigation": "チャート移動",
+      "latest": "最新へ移動",
+      "reset": "選択期間にリセット",
+      "export": "チャート画像",
+      "save": "PNGを保存",
+      "copy": "画像をコピー",
+      "copied": "画像をコピーしました。",
+      "saved": "画像を保存しました。",
+      "failed": "画像の処理に失敗しました。保存をお試しください。"
+    },
     "chartTools": {
       "period": "表示期間",
       "months": "{{count}}か月",

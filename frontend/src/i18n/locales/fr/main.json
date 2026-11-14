@@ -1833,6 +1833,21 @@
     "manuscriptApplyHelp": "L’application remplace le titre et le texte du chapitre actuel."
   },
   "stockAnalysis": {
+    "chartActions": {
+      "comparisonMode": "Mode de comparaison",
+      "price": "Prix",
+      "returns": "Rendement",
+      "returnBasis": "Première séance commune visible = 0 % · Bleu : titre principal",
+      "navigation": "Navigation",
+      "latest": "Aller au dernier cours",
+      "reset": "Réinitialiser la période choisie",
+      "export": "Image du graphique",
+      "save": "Enregistrer en PNG",
+      "copy": "Copier l’image",
+      "copied": "Image copiée.",
+      "saved": "Image enregistrée.",
+      "failed": "Échec de l’opération. Essayez d’enregistrer l’image."
+    },
     "chartTools": {
       "period": "Période",
       "months": "{{count}} mois",

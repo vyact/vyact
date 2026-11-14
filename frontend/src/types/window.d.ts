@@ -11,6 +11,7 @@ interface AppUpdateState {
 
 interface Window {
     ragAPI?: {
+        copyChartImage?: (bytes: Uint8Array) => Promise<boolean>;
         focusWindow?: () => Promise<void>;
         getShutdownNotice?: () => Promise<string[] | null>;
         dismissShutdownNotice?: () => Promise<void>;

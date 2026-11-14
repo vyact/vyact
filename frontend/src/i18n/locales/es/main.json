@@ -1832,6 +1832,21 @@
     "manuscriptApplyHelp": "Al aplicar, se sustituyen el título y el texto del capítulo actual."
   },
   "stockAnalysis": {
+    "chartActions": {
+      "comparisonMode": "Modo de comparación",
+      "price": "Precio",
+      "returns": "Rentabilidad",
+      "returnBasis": "Primera sesión común visible = 0% · Azul: símbolo principal",
+      "navigation": "Navegación",
+      "latest": "Ir al último dato",
+      "reset": "Restablecer al periodo elegido",
+      "export": "Imagen del gráfico",
+      "save": "Guardar PNG",
+      "copy": "Copiar imagen",
+      "copied": "Imagen copiada.",
+      "saved": "Imagen guardada.",
+      "failed": "Error al procesar la imagen. Intenta guardarla."
+    },
     "chartTools": {
       "period": "Periodo",
       "months": "{{count}} meses",

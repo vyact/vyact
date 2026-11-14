@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld("ragAPI", {
         ipcRenderer.on("shutdown-blocked", handler);
         return () => ipcRenderer.removeListener("shutdown-blocked", handler);
     },
+    copyChartImage: (bytes) => ipcRenderer.invoke("copy-chart-image", bytes),
     openExternal: (url) => ipcRenderer.invoke("open-external", url),
     checkAppUpdate: () => ipcRenderer.invoke("check-app-update"),
     downloadAppUpdate: () => ipcRenderer.invoke("download-app-update"),

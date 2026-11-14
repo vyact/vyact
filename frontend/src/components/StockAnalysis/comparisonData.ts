@@ -34,3 +34,15 @@ export function comparisonPoints(base: DailyPrice[], rows: DailyPrice[], interva
         return [{time: days[index + shift], value: row.close, sourceDay: closingDays.get(periodKey(row.day, interval))!}];
     });
 }
+
+/** Rebase both instruments on their first shared session at or after the visible start. */
+export function comparisonReturns(base: DailyPrice[], points: ReturnType<typeof comparisonPoints>, visibleFrom?: string) {
+    const byDay = new Map(base.map(row => [row.day, row.close]));
+    const anchor = points.find(point => (!visibleFrom || point.time >= visibleFrom) && point.value > 0 && (byDay.get(point.time) ?? 0) > 0);
+    if (!anchor) return {base: [], comparison: []};
+    const basePrice = byDay.get(anchor.time)!;
+    return {
+        base: base.filter(row => row.day >= anchor.time).map(row => ({time: row.day, value: (row.close / basePrice - 1) * 100})),
+        comparison: points.filter(point => point.time >= anchor.time).map(point => ({time: point.time, value: (point.value / anchor.value - 1) * 100})),
+    };
+}

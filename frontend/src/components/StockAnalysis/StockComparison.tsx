@@ -11,8 +11,9 @@ import {useTranslation} from 'react-i18next';
 import {stockAnalysis, type DailyPrice, type StockSymbol, type StockMarket} from '../../services/stockAnalysis';
 import ModalOverlay from '../common/ModalOverlay/ModalOverlay';
 import ModalCloseButton from '../common/ModalOverlay/ModalCloseButton';
-import {comparisonPeriodChange, comparisonPoints} from './comparisonData';
+import {comparisonPeriodChange, comparisonPoints, comparisonReturns} from './comparisonData';
 import type {ChartInterval} from './chartData';
+import {chartDay} from './chartRuler';
 import './StockComparison.css';
 import {chartPriceFormat} from './chartPriceFormat';
 import useStockPriceRefresh from './useStockPriceRefresh';
@@ -21,7 +22,9 @@ const comparisonColor = () => getComputedStyle(document.documentElement).getProp
 
 type Comparison = {symbol: string; name: string; rows: DailyPrice[]; shift: number};
 
-export default function StockComparison({chart, bars, interval, revision, directory, hoveredDay, children, actionTarget, quoteTarget, market, onLayoutChange, quoteMode, refreshSeconds, autoRefreshEnabled, manualRefreshVersion, snapshotComparisons}: {
+export default function StockComparison({chart, bars, interval, revision, directory, hoveredDay, children, actionTarget, quoteTarget, market, onLayoutChange, quoteMode, refreshSeconds, autoRefreshEnabled, manualRefreshVersion, snapshotComparisons, returnMode, onReturnModeChange}: {
+    returnMode: boolean;
+    onReturnModeChange: (enabled: boolean) => void;
     snapshotComparisons: RefObject<ChartSnapshotContext['comparisons']>;
     manualRefreshVersion: number;
     refreshSeconds: number;
@@ -58,21 +61,40 @@ export default function StockComparison({chart, bars, interval, revision, direct
         if (!instance) return;
         const range = instance.timeScale().getVisibleRange();
         let latestDay = bars[bars.length - 1]?.day;
+        const returnBase = returnMode && items.length ? instance.addSeries(LineSeries, {
+            priceScaleId: 'left', color: getComputedStyle(document.documentElement).getPropertyValue('--info').trim(),
+            lineWidth: 2, priceFormat: {type: 'custom', minMove: .01, formatter: (value: number) => `${value.toFixed(2)}%`},
+            lastValueVisible: false, priceLineVisible: false,
+        }) : null;
         const series = items.map(item => {
             const line = instance.addSeries(LineSeries, {
                 priceScaleId: 'left', color: comparisonColor(), lineWidth: 2,
-                priceFormat: chartPriceFormat(language),
+                priceFormat: returnMode ? {type: 'custom', minMove: .01, formatter: (value: number) => `${value.toFixed(2)}%`} : chartPriceFormat(language),
                 priceLineVisible: false, lastValueVisible: false,
             });
             const points = comparisonPoints(bars, item.rows, interval, item.shift);
             const lastDay = points[points.length - 1]?.time;
             if (lastDay && (!latestDay || lastDay > latestDay)) latestDay = lastDay;
-            line.setData(points);
+            if (!returnMode) line.setData(points);
             return line;
         });
+        let updatingReturns = false;
+        const updateReturns = () => {
+            if (!returnBase || updatingReturns || !items[0]) return;
+            updatingReturns = true;
+            try {
+                const visible = instance.timeScale().getVisibleRange();
+                const data = comparisonReturns(bars, comparisonPoints(bars, items[0].rows, interval, items[0].shift), visible ? chartDay(visible.from) : undefined);
+                returnBase.setData(data.base);
+                series[0].setData(data.comparison);
+            } finally {updatingReturns = false;}
+        };
+        updateReturns();
+        if (returnBase) instance.timeScale().subscribeVisibleTimeRangeChange(updateReturns);
         const themeObserver = new MutationObserver(() => {
             const color = comparisonColor();
             series.forEach(line => line.applyOptions({color}));
+            returnBase?.applyOptions({color: getComputedStyle(document.documentElement).getPropertyValue('--info').trim()});
         });
         themeObserver.observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
         // Axis visibility is a chart-wide layout option. Updating only pane 0's
@@ -92,12 +114,13 @@ export default function StockComparison({chart, bars, interval, revision, direct
         return () => {
             cancelAnimationFrame(restoreFrame);
             themeObserver.disconnect();
+            if (returnBase) instance.timeScale().unsubscribeVisibleTimeRangeChange(updateReturns);
             // The parent disposes and replaces this chart when its interval changes.
             // Only remove series while their owning chart is still alive.
             // eslint-disable-next-line react-hooks/exhaustive-deps
-            if (chart.current === instance) series.forEach(line => instance.removeSeries(line));
+            if (chart.current === instance) {series.forEach(line => instance.removeSeries(line)); if (returnBase) instance.removeSeries(returnBase);}
         };
-    }, [chart, bars, interval, revision, items, language]);
+    }, [chart, bars, interval, revision, items, language, returnMode]);
 
     const add = async (symbol: StockSymbol) => {
         if (loading || items.some(item => item.symbol === symbol.symbol)) return;
@@ -155,6 +178,11 @@ export default function StockComparison({chart, bars, interval, revision, direct
         {actionTarget && createPortal(<button type="button" className="modal-action-cancel" disabled={loading}
             onClick={() => {setError(false); setOpen(true);}}><Plus size={14} aria-hidden="true"/>{tr('compareAdd')}</button>, actionTarget)}
         {!!items.length && <div className="stock-comparison">
+        <div className="stock-comparison-mode" role="group" aria-label={tr('chartActions.comparisonMode')}>
+            {[false, true].map(enabled => <button type="button" className="modal-action-cancel" key={String(enabled)} aria-pressed={returnMode === enabled}
+                onClick={() => onReturnModeChange(enabled)}>{tr(`chartActions.${enabled ? 'returns' : 'price'}`)}</button>)}
+            {returnMode && <span>{tr('chartActions.returnBasis')}</span>}
+        </div>
         {items.map(item => {
             const draft = draftShifts[item.symbol] ?? String(item.shift);
             const value = Number(draft);
@@ -183,7 +211,7 @@ export default function StockComparison({chart, bars, interval, revision, direct
                 <button type="button" className="stock-comparison-reset" aria-label={tr('compareReset')} onClick={() => {changeShift(item.symbol, 0); setDraft('0');}}><RotateCcw size={14} aria-hidden="true"/></button>
                 {quoteMode === 'header' && renderComparisonQuote(item, true)}
                 <button type="button" className="stock-comparison-remove" aria-label={t('common:remove')}
-                    onClick={() => {setItems(previous => previous.filter(entry => entry.symbol !== item.symbol)); setDraftShifts(previous => {const next = {...previous}; delete next[item.symbol]; return next;});}}><X size={14}/></button>
+                    onClick={() => {onReturnModeChange(false); setItems(previous => previous.filter(entry => entry.symbol !== item.symbol)); setDraftShifts(previous => {const next = {...previous}; delete next[item.symbol]; return next;});}}><X size={14}/></button>
             </div>;
         })}
         </div>}

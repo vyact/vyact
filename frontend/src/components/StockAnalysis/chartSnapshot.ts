@@ -5,6 +5,7 @@ export interface ChartSnapshotContext {
     name: string;
     interval: ChartInterval;
     captured_at: string;
+    comparison_mode?: 'price' | 'return';
     visible_from: string | null;
     visible_to: string | null;
     moving_averages: {period: number; color: string}[];

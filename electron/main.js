@@ -1,4 +1,4 @@
-const {app, BrowserView, BrowserWindow, WebContentsView, dialog, ipcMain, session, shell, webFrameMain} = require("electron");
+const {app, BrowserView, BrowserWindow, WebContentsView, dialog, ipcMain, session, shell, webFrameMain, clipboard, nativeImage} = require("electron");
 const path = require("path");
 const {spawn, execSync, execFileSync, spawnSync} = require("child_process");
 const fs = require("fs");
@@ -1429,6 +1429,22 @@ ipcMain.handle("download-app-update", async () => {
 ipcMain.handle("install-app-update", async () => {
     if (isQuitting || !app.isPackaged || !APP_UPDATE_SUPPORTED || appUpdateState.status !== "downloaded") return false;
     return performShutdown(true);
+});
+ipcMain.handle("copy-chart-image", (event, bytes) => {
+    if (!mainWindow || event.sender !== mainWindow.webContents || event.senderFrame !== mainWindow.webContents.mainFrame) {
+        throw new Error("Invalid chart image sender");
+    }
+    const maxImageBytes = 32 * 1024 * 1024;
+    if (!(bytes instanceof Uint8Array) || bytes.byteLength === 0 || bytes.byteLength > maxImageBytes) {
+        throw new Error("Invalid chart image size");
+    }
+    const buffer = Buffer.from(bytes);
+    const pngSignature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+    if (!buffer.subarray(0, 8).equals(pngSignature)) throw new Error("Only PNG chart images are supported");
+    const image = nativeImage.createFromBuffer(buffer);
+    if (image.isEmpty()) throw new Error("Invalid chart image");
+    clipboard.writeImage(image);
+    return true;
 });
 ipcMain.handle("open-external", async (_event, rawUrl) => {
     const url = String(rawUrl || "").trim();

@@ -1832,6 +1832,21 @@
     "manuscriptApplyHelp": "Applying replaces the current chapter title and manuscript with this result."
   },
   "stockAnalysis": {
+    "chartActions": {
+      "comparisonMode": "Comparison mode",
+      "price": "Price",
+      "returns": "Return",
+      "returnBasis": "First shared visible session = 0% · Blue: main symbol",
+      "navigation": "Chart navigation",
+      "latest": "Go to latest",
+      "reset": "Reset to selected range",
+      "export": "Chart image",
+      "save": "Save PNG image",
+      "copy": "Copy image",
+      "copied": "Image copied.",
+      "saved": "Image saved.",
+      "failed": "Image operation failed. Try saving the image."
+    },
     "chartTools": {
       "period": "Range",
       "months": "{{count}}M",

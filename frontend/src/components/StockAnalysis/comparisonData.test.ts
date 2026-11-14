@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest';
 import type {DailyPrice} from '../../services/stockAnalysis';
-import {comparisonPeriodChange, comparisonPoints} from './comparisonData';
+import {comparisonPeriodChange, comparisonPoints, comparisonReturns} from './comparisonData';
 
 const price = (day: string, close: number): DailyPrice => ({day, open: close, high: close, low: close, close, volume: null});
 const base = [price('2026-11-02', 1), price('2026-11-03', 2), price('2026-11-04', 3)];
@@ -52,5 +52,23 @@ describe('comparisonPoints', () => {
             {time: '2026-11-09', value: 15, sourceDay: '2026-11-06'},
             {time: '2026-11-16', value: 20, sourceDay: '2026-11-10'},
         ]);
+    });
+});
+
+
+describe('comparisonReturns', () => {
+    it('rebases both symbols on a shared visible day with different prices', () => {
+        const rows = [price('2026-11-02', 100), price('2026-11-03', 110), price('2026-11-04', 121)];
+        const points = [{time: '2026-11-03', value: 200, sourceDay: '2026-11-03'}, {time: '2026-11-04', value: 180, sourceDay: '2026-11-04'}];
+        const result = comparisonReturns(rows, points, '2026-11-02');
+        expect(result.base[0]).toEqual({time: '2026-11-03', value: 0});
+        expect(result.comparison[0].value).toBe(0);
+        expect(result.base[1].value).toBeCloseTo(10);
+        expect(result.comparison[1].value).toBeCloseTo(-10);
+        expect(comparisonReturns(rows, points, '2026-11-04').base[0].value).toBe(0);
+    });
+    it('does not invent returns with missing sessions or zero baselines', () => {
+        expect(comparisonReturns(base, [{time: '2027-01-01', value: 10, sourceDay: '2027-01-01'}])).toEqual({base: [], comparison: []});
+        expect(comparisonReturns(base, [{time: base[0].day, value: 0, sourceDay: base[0].day}])).toEqual({base: [], comparison: []});
     });
 });

@@ -1831,6 +1831,21 @@
     "manuscriptApplyHelp": "Áp dụng sẽ thay thế tiêu đề và nội dung chương hiện tại."
   },
   "stockAnalysis": {
+    "chartActions": {
+      "comparisonMode": "Chế độ so sánh",
+      "price": "Giá",
+      "returns": "Lợi suất",
+      "returnBasis": "Phiên chung đầu tiên trong vùng hiển thị = 0% · Xanh: mã chính",
+      "navigation": "Điều hướng biểu đồ",
+      "latest": "Đến dữ liệu mới nhất",
+      "reset": "Đặt lại khoảng đã chọn",
+      "export": "Ảnh biểu đồ",
+      "save": "Lưu PNG",
+      "copy": "Sao chép ảnh",
+      "copied": "Đã sao chép ảnh.",
+      "saved": "Đã lưu ảnh.",
+      "failed": "Thao tác thất bại. Hãy thử lưu ảnh."
+    },
     "chartTools": {
       "period": "Khoảng thời gian",
       "months": "{{count}} tháng",
