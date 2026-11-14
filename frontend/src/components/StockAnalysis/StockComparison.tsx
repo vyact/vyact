@@ -1,6 +1,7 @@
 import type {ChartSnapshotContext} from './chartSnapshot';
 import {Tooltip} from '../common/Tooltip/Tooltip';
 import StockMarketSelect from './StockMarketSelect';
+import StockLoadingIndicator from './StockLoadingIndicator';
 import useStockDirectory from './useStockDirectory';
 import {withMarketIndices} from './stockDirectory';
 import {useEffect, useRef, useState, type ReactNode, type RefObject} from 'react';
@@ -22,7 +23,8 @@ const comparisonColor = () => getComputedStyle(document.documentElement).getProp
 
 type Comparison = {symbol: string; name: string; rows: DailyPrice[]; shift: number};
 
-export default function StockComparison({chart, bars, interval, revision, directory, hoveredDay, children, actionTarget, quoteTarget, market, onLayoutChange, quoteMode, refreshSeconds, autoRefreshEnabled, manualRefreshVersion, snapshotComparisons, returnMode, onReturnModeChange}: {
+export default function StockComparison({chart, bars, interval, revision, directory, hoveredDay, children, actionTarget, quoteTarget, market, onLayoutChange, quoteMode, refreshSeconds, autoRefreshEnabled, manualRefreshVersion, snapshotComparisons, returnMode, onReturnModeChange, mainName}: {
+    mainName: string;
     returnMode: boolean;
     onReturnModeChange: (enabled: boolean) => void;
     snapshotComparisons: RefObject<ChartSnapshotContext['comparisons']>;
@@ -158,6 +160,19 @@ export default function StockComparison({chart, bars, interval, revision, direct
 
     const renderComparisonQuote = (item: Comparison, inline = false) => {
                 const day = hoveredDay ?? bars[bars.length - 1]?.day;
+                if (returnMode) {
+                    const visible = chart.current?.timeScale().getVisibleRange();
+                    const data = comparisonReturns(bars, comparisonPoints(bars, item.rows, interval, item.shift), visible ? chartDay(visible.from) : undefined);
+                    const entries = [
+                        {name: mainName, color: 'stock-comparison-main-color', point: data.base.find(point => point.time === day)},
+                        {name: item.name, color: 'stock-comparison-name', point: data.comparison.find(point => point.time === day)},
+                    ];
+                    return <div className={`stock-comparison-returns${inline ? ' stock-comparison-returns-inline' : ''}`} key={item.symbol}>
+                        {day && <time dateTime={day}>{date.format(new Date(day))}</time>}
+                        {entries.map(entry => <div className={entry.color} key={entry.color}><strong>{entry.name}</strong>
+                            <span>{entry.point ? `${percent.format(entry.point.value)}%` : tr('compareNoPoint')}</span></div>)}
+                    </div>;
+                }
                 const point = comparisonPoints(bars, item.rows, interval, item.shift).find(point => point.time === day);
                 const change = point ? comparisonPeriodChange(item.rows, point.sourceDay, interval) : null;
                 return <div className={`stock-comparison-quote${inline ? ' stock-comparison-quote-inline' : ''}`} data-market={market} key={item.symbol}>
@@ -178,26 +193,37 @@ export default function StockComparison({chart, bars, interval, revision, direct
         {actionTarget && createPortal(<button type="button" className="modal-action-cancel" disabled={loading}
             onClick={() => {setError(false); setOpen(true);}}><Plus size={14} aria-hidden="true"/>{tr('compareAdd')}</button>, actionTarget)}
         {!!items.length && <div className="stock-comparison">
-        <div className="stock-comparison-mode" role="group" aria-label={tr('chartActions.comparisonMode')}>
-            {[false, true].map(enabled => <button type="button" className="modal-action-cancel" key={String(enabled)} aria-pressed={returnMode === enabled}
-                onClick={() => onReturnModeChange(enabled)}>{tr(`chartActions.${enabled ? 'returns' : 'price'}`)}</button>)}
-            {returnMode && <span>{tr('chartActions.returnBasis')}</span>}
-        </div>
         {items.map(item => {
             const draft = draftShifts[item.symbol] ?? String(item.shift);
             const value = Number(draft);
             const valid = draft.trim() !== '' && Number.isInteger(value) && Math.abs(value) < bars.length;
             const setDraft = (value: string) => setDraftShifts(previous => ({...previous, [item.symbol]: value}));
             return <div className="stock-comparison-row" key={item.symbol}>
-                <Tooltip multiline size="medium" content={<div className="rich-tooltip-content stock-comparison-help">
-                    <strong className="rich-tooltip-title">{tr('compareHelpTitle')}</strong>
-                    <p className="rich-tooltip-description">{tr('compareHelpChart')}</p>
-                    <ul>{['compareHelpShift', 'compareHelpPositive', 'compareHelpUnit'].map(key => <li key={key}>{tr(key)}</li>)}</ul>
+                <Tooltip multiline size="medium" hoverOnly content={<div className="rich-tooltip-content stock-comparison-help">
+                    <section className="stock-comparison-help-section">
+                    <strong className="rich-tooltip-title">{tr(returnMode ? 'chartActions.returns' : 'chartActions.price')}</strong>
+                    <p className="rich-tooltip-description">{tr(returnMode ? 'chartActions.returnBasis' : 'compareHelpChart')}</p>
+                    {returnMode ? <div className="stock-comparison-return-legend">
+                        <span className="stock-comparison-main-color">{tr('chartActions.mainSymbol')} · {mainName}</span>
+                        <span className="stock-comparison-name">{tr('chartActions.comparisonSymbol')} · {item.name}</span>
+                    </div> : <p>{tr('compareHelpUnit')}</p>}
+                    </section>
+                    <section className="stock-comparison-help-section">
+                        <strong className="rich-tooltip-title">{tr('compareShift')}</strong>
+                        <ul>{['compareHelpShift', 'compareHelpPositive'].map(key => <li key={key}>{tr(key)}</li>)}</ul>
+                    </section>
                 </div>}>
                     <button type="button" className="stock-comparison-help-button" aria-label={tr('compareHelpTitle')}><CircleHelp size={14} aria-hidden="true"/></button>
                 </Tooltip>
+                <div className="stock-comparison-mode" role="group" aria-label={tr('chartActions.comparisonMode')}>
+                    {[false, true].map(enabled => <button type="button" className="modal-action-cancel" key={String(enabled)} aria-pressed={returnMode === enabled}
+                        onClick={() => onReturnModeChange(enabled)}>{tr(`chartActions.${enabled ? 'returns' : 'price'}`)}</button>)}
+                </div>
+
+
                 <span className="stock-comparison-dot"/>
                 <strong>{item.name}</strong>
+
                 <span className="stock-comparison-shift">
                     <button type="button" aria-label={tr('compareEarlier')} disabled={valid && value <= 1 - bars.length}
                         onClick={() => setDraft(String((valid ? value : 0) - 1))}><ArrowLeft size={13}/></button>
@@ -219,7 +245,7 @@ export default function StockComparison({chart, bars, interval, revision, direct
             {items.map(item => renderComparisonQuote(item))}
         </div>, quoteTarget)}
         {open && <ModalOverlay onClose={loading ? undefined : () => setOpen(false)} closeOnBackdrop captureEscape aria-labelledby="stock-comparison-title">
-            <div className="stock-comparison-dialog">
+            <div className="stock-comparison-dialog" aria-busy={loading || (!searchDirectory && !directoryError)}>
                 <header><h2 id="stock-comparison-title">{tr('compareAdd')}</h2><ModalCloseButton disabled={loading} onClick={() => setOpen(false)}/></header>
                 <StockMarketSelect value={searchMarket} compact portal={false}
                     disabled={loading} onChange={value => {setSearchMarket(value); setQuery('');}}/>
@@ -229,10 +255,10 @@ export default function StockComparison({chart, bars, interval, revision, direct
                 <ul>{matches.slice(0, 50).map(item => <li key={item.symbol}>
                     <button type="button" disabled={loading} onClick={() => {void add(item);}}><strong>{item.name}</strong><span>{item.symbol}</span><Plus size={14}/></button>
                 </li>)}</ul>
-                {!matches.length && <p className="stock-comparison-empty">{searchDirectory || directoryError ? tr('radarNoResults') : tr('loading')}</p>}
+                {!matches.length && (searchDirectory || directoryError) && <p className="stock-comparison-empty">{tr('radarNoResults')}</p>}
                 </div>
+                {(loading || (!searchDirectory && !directoryError)) && <StockLoadingIndicator title={tr('compareAdd')} overlay iconOnly/>}
                 <div className="stock-comparison-status">
-                    {(loading || (!searchDirectory && !directoryError)) && <p role="status">{tr('loading')}</p>}
                     {directoryError && <div className="stock-comparison-directory-error"><p role="alert">{tr('directoryError')}</p><button type="button" className="modal-action-cancel" onClick={() => {retryDirectory();}}>{tr('retry')}</button></div>}
                     {error && <p role="alert">{tr('historyError')}</p>}
                 </div>

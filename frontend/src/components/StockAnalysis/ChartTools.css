@@ -19,3 +19,5 @@
 .stock-comparison-mode button {padding: 4px 9px; min-height: 28px; font-size: 12px;}
 .stock-comparison-mode button[aria-pressed="true"] {color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent);}
 .stock-comparison-mode > span {margin-inline-start: 6px; color: var(--text-muted); font-size: 11px;}
+
+.stock-chart-actions .modal-action-cancel[data-success="true"], .stock-chart-actions .modal-action-cancel[data-success="true"]:hover {color: var(--success); border-color: color-mix(in srgb, var(--success) 45%, var(--border)); background: color-mix(in srgb, var(--success) 12%, var(--surface));}

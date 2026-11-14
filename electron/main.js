@@ -1,4 +1,4 @@
-const {app, BrowserView, BrowserWindow, WebContentsView, dialog, ipcMain, session, shell, webFrameMain, clipboard, nativeImage} = require("electron");
+const {app, BrowserView, BrowserWindow, WebContentsView, dialog, ipcMain, session, shell, webFrameMain, clipboard, nativeImage, ClipboardItem} = require("electron");
 const path = require("path");
 const {spawn, execSync, execFileSync, spawnSync} = require("child_process");
 const fs = require("fs");
@@ -1430,7 +1430,7 @@ ipcMain.handle("install-app-update", async () => {
     if (isQuitting || !app.isPackaged || !APP_UPDATE_SUPPORTED || appUpdateState.status !== "downloaded") return false;
     return performShutdown(true);
 });
-ipcMain.handle("copy-chart-image", (event, bytes) => {
+ipcMain.handle("copy-chart-image", async (event, bytes) => {
     if (!mainWindow || event.sender !== mainWindow.webContents || event.senderFrame !== mainWindow.webContents.mainFrame) {
         throw new Error("Invalid chart image sender");
     }
@@ -1443,7 +1443,11 @@ ipcMain.handle("copy-chart-image", (event, bytes) => {
     if (!buffer.subarray(0, 8).equals(pngSignature)) throw new Error("Only PNG chart images are supported");
     const image = nativeImage.createFromBuffer(buffer);
     if (image.isEmpty()) throw new Error("Invalid chart image");
-    clipboard.writeImage(image);
+    if (typeof clipboard.writeImage === "function") {
+        clipboard.writeImage(image);
+    } else {
+        await clipboard.write([new ClipboardItem({"image/png": new Blob([buffer], {type: "image/png"})})]);
+    }
     return true;
 });
 ipcMain.handle("open-external", async (_event, rawUrl) => {

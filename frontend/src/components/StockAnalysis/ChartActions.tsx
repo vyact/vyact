@@ -1,10 +1,11 @@
 import {useEffect, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {Copy, Download, RotateCcw, StepForward} from 'lucide-react';
+import {Check, Copy, Download, RotateCcw, StepForward} from 'lucide-react';
 import type {IChartApi} from 'lightweight-charts';
 import {Tooltip} from '../common/Tooltip/Tooltip';
 
 const LATEST_SCROLL_DURATION_MS = 180;
+const SUCCESS_FEEDBACK_MS = 1500;
 
 async function chartImage(chart: IChartApi, title: string): Promise<Blob> {
     const source = chart.takeScreenshot(true, false);
@@ -57,6 +58,11 @@ export default function ChartActions({chart, symbol, name, onReset}: {chart: ICh
     };
     const [busy, setBusy] = useState(false);
     const [status, setStatus] = useState<'copied' | 'saved' | 'failed' | null>(null);
+    useEffect(() => {
+        if (status !== 'copied' && status !== 'saved') return;
+        const timeout = window.setTimeout(() => setStatus(null), SUCCESS_FEEDBACK_MS);
+        return () => window.clearTimeout(timeout);
+    }, [status]);
     const exportImage = async (copy: boolean) => {
         if (!chart || busy) return;
         setBusy(true); setStatus(null);
@@ -88,11 +94,11 @@ export default function ChartActions({chart, symbol, name, onReset}: {chart: ICh
                 onClick={() => {cancelScroll(); onReset();}}><RotateCcw size={15} aria-hidden="true"/></button></Tooltip>
         </div>
         <div role="group" aria-label={tr('export')}>
-            <Tooltip hoverOnly content={tr('save')}><button type="button" className="modal-action-cancel" disabled={!chart || busy} aria-label={tr('save')}
-                onClick={() => {void exportImage(false);}}><Download size={15} aria-hidden="true"/></button></Tooltip>
-            <Tooltip hoverOnly content={tr('copy')}><button type="button" className="modal-action-cancel" disabled={!chart || busy} aria-label={tr('copy')}
-                onClick={() => {void exportImage(true);}}><Copy size={15} aria-hidden="true"/></button></Tooltip>
+            <Tooltip hoverOnly content={tr('save')}><button type="button" className="modal-action-cancel" data-success={status === 'saved' || undefined} disabled={!chart} aria-busy={busy} aria-label={tr('save')}
+                onClick={() => {void exportImage(false);}}>{status === 'saved' ? <Check size={15} aria-hidden="true"/> : <Download size={15} aria-hidden="true"/>}</button></Tooltip>
+            <Tooltip hoverOnly content={tr('copy')}><button type="button" className="modal-action-cancel" data-success={status === 'copied' || undefined} disabled={!chart} aria-busy={busy} aria-label={tr('copy')}
+                onClick={() => {void exportImage(true);}}>{status === 'copied' ? <Check size={15} aria-hidden="true"/> : <Copy size={15} aria-hidden="true"/>}</button></Tooltip>
         </div>
-        {status && <span className="stock-chart-action-status" role={status === 'failed' ? 'alert' : 'status'}>{tr(status)}</span>}
+        {status === 'failed' && <span className="stock-chart-action-status" role="alert">{tr(status)}</span>}
     </div>;
 }

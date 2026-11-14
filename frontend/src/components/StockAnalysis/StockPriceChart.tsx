@@ -439,7 +439,7 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
     };
 
     return <section className="stock-price-chart" aria-label={label}>
-        <StockComparison returnMode={returnMode} onReturnModeChange={setReturnMode} snapshotComparisons={comparisonSnapshot} manualRefreshVersion={manualRefreshVersion} refreshSeconds={refreshSeconds} autoRefreshEnabled={autoRefreshEnabled} quoteMode={quoteMode} market={market} chart={chart} bars={bars} interval={interval} revision={chartInstance} directory={directory} hoveredDay={hoveredDay} actionTarget={comparisonTarget} quoteTarget={comparisonQuoteTarget}
+        <StockComparison mainName={name} returnMode={returnMode} onReturnModeChange={setReturnMode} snapshotComparisons={comparisonSnapshot} manualRefreshVersion={manualRefreshVersion} refreshSeconds={refreshSeconds} autoRefreshEnabled={autoRefreshEnabled} quoteMode={quoteMode} market={market} chart={chart} bars={bars} interval={interval} revision={chartInstance} directory={directory} hoveredDay={hoveredDay} actionTarget={comparisonTarget} quoteTarget={comparisonQuoteTarget}
             onLayoutChange={() => {setHoveredDay(undefined); setHoverPoint(undefined);}}>
             <button type="button" className="modal-action-cancel" aria-pressed={maEnabled}
                     onClick={() => setMaEnabled(value => !value)}>{t('stockAnalysis.movingAverage')}</button>
@@ -503,7 +503,7 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
                 setResetVersion(value => value + 1);
             }}/>
         </div>
-        {quoteMode === 'header' && <ChartQuoteDetails quote={quote} previous={previousQuote} market={market}/>}
+        {quoteMode === 'header' && !returnMode && <ChartQuoteDetails quote={quote} previous={previousQuote} market={market}/>}
         {memoLoadFailed && <div className="stock-memo-error" role="alert">
             {t('stockAnalysis.memoLoadError')}
             <button type="button" className="modal-action-cancel" onClick={() => {
@@ -513,7 +513,7 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
         </div>}
         <div className="stock-chart-plot">
             <div ref={container} className="stock-price-chart-canvas"/>
-            {quoteMode === 'tooltip' && !returnMode && hoverPoint && hoveredIndex >= 0 && !drawingMode && !measuring && !settingsOpen && !memoDialog && <div
+            {quoteMode === 'tooltip' && hoverPoint && hoveredIndex >= 0 && (returnMode || (!drawingMode && !measuring)) && !settingsOpen && !memoDialog && <div
                 className="stock-chart-quote-tooltip stock-chart-quote-tooltip-with-comparisons" style={{left: Math.max(8,
                     hoverPoint.x + 40 + quoteTooltipWidth <= hoverPoint.chartWidth - 8
                         ? hoverPoint.x + 40 : hoverPoint.x - quoteTooltipWidth - 40,
@@ -521,10 +521,10 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
                     (hoverPoint.y - quoteTooltipHeight - 18 >= 8 ? hoverPoint.y - quoteTooltipHeight - 18 : hoverPoint.y + 18) - 50,
                     hoverPoint.chartHeight - quoteTooltipHeight - 8,
                 ))}}>
-                <div className="stock-chart-quote-heading">
+                {!returnMode && <div className="stock-chart-quote-heading">
                     <strong>{name}</strong><time dateTime={quote.day}>{quote.day}</time>
-                </div>
-                <ChartQuoteDetails quote={quote} previous={previousQuote} market={market} detailed/>
+                </div>}
+                {!returnMode && <ChartQuoteDetails quote={quote} previous={previousQuote} market={market} detailed/>}
                 <div ref={setComparisonQuoteTarget}/>
             </div>}
             <div className="stock-memo-markers">

@@ -52,6 +52,7 @@
 .stock-price-chart-quote div {display: flex; gap: 5px;}
 .stock-price-chart-quote dt {color: var(--text-muted);}
 .stock-price-chart-quote dd {margin: 0;}
+.stock-price-chart-quote:not(.stock-price-chart-quote-detailed) {font-size: .75rem; gap: 5px 14px;}
 .stock-price-chart-canvas {flex: 1; min-height: 0; min-width: 0; overflow: hidden;}
 @media (max-width: 760px) {
     .stock-analysis {--workspace-sidebar-width: 145px;}

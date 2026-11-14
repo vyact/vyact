@@ -1,7 +1,7 @@
 .stock-comparison {display: grid; gap: 6px;}
 .stock-price-chart-toolbar > button {display: inline-flex; align-items: center; justify-content: center; gap: 5px;}
 .stock-comparison small {color: var(--text-muted); font-size: 11px;}
-.stock-comparison-row {display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); font-size: 12px;}
+.stock-comparison-row {position: relative; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 8px 10px; padding-inline-end: 42px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); font-size: 12px;}
 .stock-comparison-name {color: var(--stock-comparison-color);}
 .stock-comparison-dot {background: var(--stock-comparison-color); width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;}
 .stock-comparison-row > strong {max-width: 180px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;}
@@ -10,8 +10,8 @@
 .stock-comparison-row button:disabled {opacity: .4; cursor: default;}
 .stock-comparison-shift {display: inline-flex; align-items: center; border: 1px solid var(--border); border-radius: 6px;}
 .stock-comparison-shift input {width: 52px; padding: 3px; border: 0; background: transparent; color: var(--text); text-align: center; font: inherit;}
-.stock-comparison-row .stock-comparison-remove {margin-inline-start: auto;}
-.stock-comparison-dialog {box-sizing: border-box; width: min(420px, 100%); max-height: min(600px, calc(100dvh - 40px)); display: flex; flex-direction: column; gap: 14px; padding: 20px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface2); color: var(--text); box-shadow: var(--shadow-md);}
+.stock-comparison-row .stock-comparison-remove {position: absolute; inset-inline-end: 8px; top: 9px; width: 26px; height: 26px; padding: 0;}
+.stock-comparison-dialog {position: relative; isolation: isolate; box-sizing: border-box; width: min(420px, 100%); max-height: min(600px, calc(100dvh - 40px)); display: flex; flex-direction: column; gap: 14px; padding: 20px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface2); color: var(--text); box-shadow: var(--shadow-md);}
 .stock-comparison-dialog header {display: flex; align-items: center; justify-content: space-between; gap: 12px;}
 .stock-comparison-dialog h2 {margin: 0; font-size: 16px;}
 .stock-comparison-dialog > input {box-sizing: border-box; width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: inherit; font: inherit; font-size: 13px;}
@@ -47,3 +47,22 @@
 .stock-comparison-help ul {display: grid; gap: 8px; margin: 0; padding-inline-start: 16px; color: var(--text-secondary); font-size: 12px; line-height: 1.6; white-space: normal;}
 .instant-tooltip.multiline.size-medium:has(.stock-comparison-help) {width: min(380px, calc(100vw - 24px)); max-width: min(380px, calc(100vw - 24px));}
 .rich-tooltip-content.stock-comparison-help {width: 100%;}
+.stock-comparison-row .stock-comparison-mode {flex: 0 0 auto; gap: 3px; padding-inline-end: 8px; border-inline-end: 1px solid var(--border);}
+.stock-comparison-row .stock-comparison-mode button {padding: 4px 9px; border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary); border-radius: 6px;}
+.stock-comparison-row .stock-comparison-mode button[aria-pressed="true"] {color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent);}
+.stock-comparison-main-color {color: var(--info);}
+.stock-comparison-return-legend {display: grid; gap: 7px; font-size: 12px; font-weight: 600;}
+.stock-comparison-returns {display: grid; gap: 6px; font-size: 12px; font-variant-numeric: tabular-nums;}
+.stock-comparison-returns > time {color: var(--text-muted); font-size: 11px;}
+.stock-comparison-returns > div {display: flex; align-items: baseline; justify-content: space-between; gap: 16px;}
+.stock-comparison-returns strong {min-width: 0; overflow-wrap: anywhere;}
+.stock-comparison-returns span {white-space: nowrap; font-weight: 600;}
+.stock-comparison-returns-inline {display: flex; flex: 1 0 100%; min-width: 0; box-sizing: border-box; flex-wrap: wrap; align-items: center; gap: 6px 18px; padding-top: 8px; border-top: 1px solid var(--border);}
+.stock-comparison-row > .stock-comparison-quote-inline {flex: 1 0 100%; min-width: 0; box-sizing: border-box; flex-wrap: wrap; white-space: normal; margin-inline-start: 0; padding-top: 8px; border-top: 1px solid var(--border);}
+.stock-comparison-row .stock-comparison-mode button,
+.stock-comparison-row .stock-comparison-mode button[aria-pressed="true"] {box-sizing: border-box; min-width: 56px; height: 28px; min-height: 28px; padding: 4px 10px; border-width: 1px; font-size: 12px; font-weight: 500; line-height: 18px; transform: none; box-shadow: none;}
+
+.stock-comparison-help-section {display: grid; gap: 10px;}
+.stock-comparison-help-section + .stock-comparison-help-section {padding-top: 12px; border-top: 1px solid var(--border);}
+
+.stock-comparison-dialog > .stock-loading {border-radius: inherit; pointer-events: none;}
