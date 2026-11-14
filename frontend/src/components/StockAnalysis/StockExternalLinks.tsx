@@ -18,7 +18,7 @@ export default function StockExternalLinks({market, symbol}: {market: StockMarke
     return <span className="stock-external-links">
         {STOCK_LINKS.map(link => <a key={link.key} className={`stock-external-link stock-external-link-${link.key}`}
             href={`${link.url}${encodeURIComponent(symbol)}`} target="_blank" rel="noopener noreferrer"
-            title={t(`stockAnalysis.externalLinks.${link.key}`)} aria-label={t(`stockAnalysis.externalLinks.${link.key}`)}>
+            aria-label={t(`stockAnalysis.externalLinks.${link.key}`)}>
             {link.letter}
         </a>)}
     </span>;
