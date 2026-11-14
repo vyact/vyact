@@ -1,0 +1,14 @@
+.stock-context-date-input {flex: 1; min-width: 0;}
+.stock-context-date-trigger {box-sizing: border-box; width: 100%; min-width: 0; min-height: 36px; padding: 8px 6px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); color: var(--text); font: inherit; font-size: 11px; font-variant-numeric: tabular-nums; cursor: pointer;}
+.stock-context-calendar {box-sizing: border-box; width: 300px; max-width: calc(100vw - 16px); max-height: calc(100vh - 16px); overflow-y: auto; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); box-shadow: 0 8px 24px #0004;}
+.stock-context-calendar-header {display: flex; align-items: center; gap: 4px; margin-bottom: 8px;}
+.stock-context-calendar-header .custom-select-wrap {flex: 1; min-width: 0;}
+.stock-context-calendar-header > button, .stock-context-calendar-grid button {display: grid; place-items: center; padding: 0; min-height: 32px; border: 0; border-radius: 6px; background: transparent; color: var(--text); font: inherit; font-size: 12px; cursor: pointer;}
+.stock-context-calendar-grid {display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px;}
+.stock-context-calendar-weekday {padding: 6px 0; color: var(--text-muted); font-size: 10px; text-align: center;}
+.stock-context-calendar-grid button[data-outside-month="true"] {color: var(--text-muted);}
+.stock-context-calendar button:disabled {opacity: .35; cursor: default;}
+.stock-context-calendar-grid button:hover:not(:disabled), .stock-context-calendar-header > button:hover:not(:disabled) {background: var(--interactive-hover);}
+.stock-context-calendar-grid button[aria-pressed="true"] {background: var(--accent); color: var(--bg);}
+.stock-context-calendar-latest {display: block; margin: 10px 0 0 auto; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface2); color: var(--accent); font: inherit; font-size: 12px; cursor: pointer;}
+.stock-context-date-trigger:focus-visible, .stock-context-calendar button:focus-visible {outline: 2px solid var(--accent); outline-offset: 2px;}

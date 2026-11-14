@@ -2,9 +2,8 @@
 .stock-context-period-trigger {display: flex; align-items: center; gap: 4px; width: 100%; min-width: 0; padding: 5px 0; border: 0; background: transparent; color: var(--text-muted); font: inherit; font-size: 11px; cursor: pointer;}
 .stock-context-period-trigger span {overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
 .stock-context-period-trigger svg {flex-shrink: 0;}
-.stock-context-period-popup {position: fixed; box-sizing: border-box; width: 300px; max-width: calc(100vw - 32px); display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); box-shadow: 0 8px 24px #0004; z-index: 2147483000;}
+.stock-context-period-popup {position: fixed; box-sizing: border-box; width: 260px; max-width: calc(100vw - 32px); display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); box-shadow: 0 8px 24px #0004; z-index: 2147483000;}
 .stock-context-period-dates {display: flex; align-items: center; gap: 4px;}
-.stock-context-period-dates .date-input {padding: 6px; font-size: 11px;}
 .stock-context-period-popup small {color: var(--text-muted); font-size: 11px;}
 .stock-discussion-context-settings {flex-wrap: nowrap; gap: 8px;}
 .stock-discussion-context-settings > .stock-context-period {flex-shrink: 1;}
@@ -12,7 +11,6 @@
 .stock-context-period-popup .stock-context-period-count {box-sizing: border-box; width: 100%; min-height: 38px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); color: var(--text); font: inherit; font-size: 13px; appearance: textfield;}
 .stock-context-period-count::-webkit-inner-spin-button, .stock-context-period-count::-webkit-outer-spin-button {appearance: none; margin: 0;}
 .stock-context-period-popup .stock-context-period-count:focus {outline: 2px solid var(--accent); outline-offset: 2px;}
-.stock-context-period-dates .date-input {min-height: 38px; padding: 8px; border-radius: 8px; font-variant-numeric: tabular-nums;}
 
 .stock-context-period-popup .stock-context-period-summary {color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums;}
 

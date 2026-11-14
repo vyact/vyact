@@ -1,6 +1,6 @@
 import {useEffect, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import DateInput from '../common/DateInput/DateInput';
+import StockContextDateInput from './StockContextDateInput';
 import CustomSelect from '../CustomSelect/CustomSelect';
 import ActionMenu from '../common/ActionMenu/ActionMenu';
 import {loadMarketContextDates} from './stockContextDates';
@@ -35,7 +35,7 @@ export default function StockContextPeriod({rows, groupScope, market, days, onDa
         const clamped = clampContextRange(range, min, max);
         if (clamped && range && (clamped.start !== range.start || clamped.end !== range.end)) onRangeChange(clamped);
     }, [range, min, max, disabled, onRangeChange]);
-    return <ActionMenu isOpen={open} onOpenChange={setOpen} preferredSide="top" disabled={disabled}
+    return <ActionMenu isOpen={open} onOpenChange={setOpen} preferredSide="top" align="start" disabled={disabled}
         className="stock-context-period" triggerClassName="stock-context-period-trigger"
         menuClassName="stock-context-period-popup" ariaLabel={tr('periodSettings')}
         trigger={<span>{range ? `${range.start} – ${range.end} · ${selectedCountLabel}` : `${tr('contextDays')} ${days}`}</span>}>
@@ -43,10 +43,10 @@ export default function StockContextPeriod({rows, groupScope, market, days, onDa
                 options={[{value: 'recent', label: tr('contextDays')}, {value: 'range', label: tr('dateRange'), disabled: !min}]}
                 onChange={mode => onRangeChange(mode === 'range' && min && max ? clampContextRange(lastRange ?? {start: dates[Math.max(0, dates.length - days)], end: max}, min, max) : null)}/>
             {range ? <div className="stock-context-period-dates">
-                <DateInput showIcon={false} label={tr('startDate')} value={range.start} min={min} max={range.end} disabled={disabled}
+                <StockContextDateInput label={tr('startDate')} value={range.start} min={min} max={range.end} disabled={disabled}
                     onChange={start => {if (start && min && start >= min && start <= range.end) onRangeChange({...range, start});}}/>
                 <span>–</span>
-                <DateInput showIcon={false} label={tr('endDate')} value={range.end} min={range.start} max={max} disabled={disabled}
+                <StockContextDateInput label={tr('endDate')} value={range.end} min={range.start} max={max} disabled={disabled}
                     onChange={end => {if (end && max && end >= range.start && end <= max) onRangeChange({...range, end});}}/>
             </div> : <input type="number" aria-label={tr('contextDays')} min={1} max={500} value={days} className="stock-context-period-count" disabled={disabled}
                 onChange={event => {const value = Number(event.target.value); if (Number.isInteger(value) && value >= 1 && value <= 500) onDaysChange(value);}}/>}
