@@ -1832,6 +1832,12 @@
     "manuscriptApplyHelp": "Al aplicar, se sustituyen el título y el texto del capítulo actual."
   },
   "stockAnalysis": {
+    "news": {
+      "tab": "Noticias",
+      "empty": "No hay noticias para este símbolo.",
+      "error": "No se pudieron cargar las noticias. Inténtalo de nuevo.",
+      "source": "Fuente: Yahoo Finance · Noticias y comunicados de prensa"
+    },
     "savedQuestions": {
       "reorder": "Arrastrar para ordenar · Alt+Arriba/Abajo",
       "saveQuestion": "Guardar pregunta",

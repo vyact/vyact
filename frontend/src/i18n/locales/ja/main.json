@@ -1831,6 +1831,12 @@
     "manuscriptApplyHelp": "適用すると現在の話のタイトルと本文をこの結果で置き換えます。"
   },
   "stockAnalysis": {
+    "news": {
+      "tab": "ニュース",
+      "empty": "この銘柄のニュースはありません。",
+      "error": "ニュースを取得できませんでした。もう一度お試しください。",
+      "source": "出典: Yahoo Finance · ニュース・プレスリリース"
+    },
     "savedQuestions": {
       "reorder": "ドラッグで並べ替え · Alt+上下キー",
       "saveQuestion": "質問を保存",

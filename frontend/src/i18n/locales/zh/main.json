@@ -1831,6 +1831,12 @@
     "manuscriptApplyHelp": "应用后将用此结果替换当前章节标题和正文。"
   },
   "stockAnalysis": {
+    "news": {
+      "tab": "新闻",
+      "empty": "暂无该证券的新闻。",
+      "error": "无法加载新闻，请重试。",
+      "source": "来源：Yahoo Finance · 新闻及新闻稿"
+    },
     "savedQuestions": {
       "reorder": "拖动排序 · Alt+上/下键",
       "saveQuestion": "保存问题",

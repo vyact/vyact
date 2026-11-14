@@ -1832,6 +1832,12 @@
     "manuscriptApplyHelp": "Applying replaces the current chapter title and manuscript with this result."
   },
   "stockAnalysis": {
+    "news": {
+      "tab": "News",
+      "empty": "No news is available for this symbol.",
+      "error": "Unable to load news. Please try again.",
+      "source": "Source: Yahoo Finance · News and press releases"
+    },
     "savedQuestions": {
       "reorder": "Drag to reorder · Alt+Up/Down",
       "saveQuestion": "Save question",

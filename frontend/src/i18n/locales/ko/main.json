@@ -1841,6 +1841,12 @@
     "manuscriptApplyHelp": "적용하면 현재 회차의 제목과 본문을 이 결과로 교체합니다."
   },
   "stockAnalysis": {
+    "news": {
+      "tab": "뉴스",
+      "empty": "이 종목의 뉴스가 없습니다.",
+      "error": "뉴스를 불러오지 못했습니다. 다시 시도해 주세요.",
+      "source": "출처: Yahoo Finance · 뉴스 및 보도자료"
+    },
     "savedQuestions": {
       "reorder": "드래그로 순서 변경 · Alt+위/아래 화살표",
       "saveQuestion": "질문 저장",

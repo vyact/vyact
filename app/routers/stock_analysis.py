@@ -29,6 +29,7 @@ from services.stock_analysis.group_chat_context import build_group_chat_context
 from services.stock_analysis.financial_context import build_financial_chat_context
 from services.stock_analysis.financial_store import get_financials
 from services.stock_analysis.financial_collection import (FinancialCollectionSettings, collection_status, save_settings, start_collection, stop_collection, resume_collection)
+from services.stock_analysis.news import fetch_news
 from services.stock_analysis.prices import fetch_prices, fetch_sparkline
 from services.stock_analysis.sector_map import get_sector_map, get_stock_quotes
 from services.stock_analysis.symbols import is_market_index, memo_symbol_aliases, normalize_market_indices, normalize_stock, normalize_sector_map, public_symbol
@@ -616,3 +617,14 @@ async def stock_conversation_detail(symbol: Symbol, conversation_id: UUID):
         return result
     except NotFoundError as exc:
         raise HTTPException(404, "conversation_not_found") from exc
+
+
+@router.get('/news/{symbol}')
+async def stock_news(symbol: Symbol):
+    try:
+        return await asyncio.to_thread(fetch_news, symbol)
+    except YFRateLimitError as exc:
+        raise HTTPException(429, 'news_rate_limited') from exc
+    except Exception as exc:
+        logger.exception('Failed to fetch stock news')
+        raise HTTPException(502, 'news_unavailable') from exc

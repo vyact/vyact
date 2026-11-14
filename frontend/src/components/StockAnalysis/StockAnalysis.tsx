@@ -25,6 +25,7 @@ import StockPriceChart from './StockPriceChart';
 import useStockPriceRefresh from './useStockPriceRefresh';
 import StockHistory from './StockHistory';
 import StockFinancials from './StockFinancials';
+import StockNews from './StockNews';
 import ModalTabs from '../common/ModalTabs/ModalTabs';
 import StockDiscussionPanel from './StockDiscussionPanel';
 import StockGroupDiscussionPanel from './StockGroupDiscussionPanel';
@@ -90,7 +91,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
         registerSidebar({shortcutScope: 'stock-analysis', collapsed: sidebarCollapsed, toggle: toggleSidebar, onHoverEnter: onSidebarHoverEnter, onHoverLeave: onSidebarHoverLeave});
         return () => registerSidebar(null);
     }, [registerSidebar, sidebarCollapsed, toggleSidebar, onSidebarHoverEnter, onSidebarHoverLeave]);
-    const [detailTab, setDetailTab] = useState<'chart' | 'history' | 'financials'>('chart');
+    const [detailTab, setDetailTab] = useState<'chart' | 'history' | 'financials' | 'news'>('chart');
     const [apiSettingsOpen, setApiSettingsOpen] = useState(false);
     const [market, setMarket] = useState<StockMarket>(() => getInitialMarket(i18n.resolvedLanguage ?? i18n.language));
     useEffect(() => {saveMarketPreference(market);}, [market]);
@@ -359,7 +360,7 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                 </div>
             </div>}
             {active && <div className="stock-analysis-detail-tabs"><ModalTabs
-                tabs={[{key: 'chart', label: tr('history.chart')}, {key: 'history', label: tr('history.tab')}, {key: 'financials', label: tr('financials.tab')}]}
+                tabs={[{key: 'chart', label: tr('history.chart')}, {key: 'history', label: tr('history.tab')}, {key: 'financials', label: tr('financials.tab')}, {key: 'news', label: tr('news.tab')}]}
                 activeKey={detailTab} onChange={setDetailTab}/></div>}
             {active && <div className="stock-analysis-detail-panel" hidden={detailTab !== 'chart'}>
             <div className="stock-analysis-chart-stage" aria-busy={loading}>
@@ -380,6 +381,9 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
             </div>}
             {active && detailTab === 'financials' && <div className="stock-analysis-detail-panel">
                 <StockFinancials key={`${active.symbol}:${refreshVersion}`} symbol={active.symbol} market={market}/>
+            </div>}
+            {active && detailTab === 'news' && <div className="stock-analysis-detail-panel">
+                <StockNews key={`${active.symbol}:${refreshVersion}`} symbol={active.symbol}/>
             </div>}
         </main>
         {!active && listView === 'groups' && <StockGroupDiscussionPanel groups={marketGroups} market={market} directory={symbols}/>}

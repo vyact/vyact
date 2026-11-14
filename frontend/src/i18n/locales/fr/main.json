@@ -1833,6 +1833,12 @@
     "manuscriptApplyHelp": "L’application remplace le titre et le texte du chapitre actuel."
   },
   "stockAnalysis": {
+    "news": {
+      "tab": "Actualités",
+      "empty": "Aucune actualité pour ce titre.",
+      "error": "Impossible de charger les actualités. Veuillez réessayer.",
+      "source": "Source : Yahoo Finance · Actualités et communiqués de presse"
+    },
     "savedQuestions": {
       "reorder": "Glisser pour réordonner · Alt+Haut/Bas",
       "saveQuestion": "Enregistrer la question",

@@ -1831,6 +1831,12 @@
     "manuscriptApplyHelp": "Áp dụng sẽ thay thế tiêu đề và nội dung chương hiện tại."
   },
   "stockAnalysis": {
+    "news": {
+      "tab": "Tin tức",
+      "empty": "Không có tin tức cho mã này.",
+      "error": "Không thể tải tin tức. Vui lòng thử lại.",
+      "source": "Nguồn: Yahoo Finance · Tin tức và thông cáo báo chí"
+    },
     "savedQuestions": {
       "reorder": "Kéo để đổi thứ tự · Alt+Lên/Xuống",
       "saveQuestion": "Lưu câu hỏi",

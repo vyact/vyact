@@ -1,0 +1,11 @@
+.stock-news {display: flex; flex-direction: column; flex: 1; min-height: 0; min-width: 0; gap: 8px;}
+.stock-news-body {gap: 14px;}
+.stock-news ul {list-style: none; margin: 0; padding: 0; display: grid; gap: 12px;}
+.stock-news li {padding: 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface2);}
+.stock-news li > a {color: var(--text); font-size: 15px; font-weight: 600; line-height: 1.5; text-decoration: none; overflow-wrap: anywhere;}
+.stock-news li > a:hover {color: var(--accent); text-decoration: underline;}
+.stock-news li > a:focus-visible {outline: 2px solid var(--accent); outline-offset: 3px;}
+.stock-news-meta {display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 8px; color: var(--text-muted); font-size: 12px;}
+.stock-news li > p {margin: 10px 0 0; color: var(--text-secondary); font-size: 13px; line-height: 1.6; overflow-wrap: anywhere;}
+.stock-news-note {margin: 0; color: var(--text-muted); font-size: 12px;}
+.stock-news-error {display: flex; align-items: center; gap: 12px;}
