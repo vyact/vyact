@@ -44,7 +44,8 @@
 .stock-group-member-open strong {overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 550;}
 .stock-group-member-open small {font-size: 11px; color: var(--text-muted);}
 .stock-group-member-open:hover, .stock-group-member-open[aria-pressed="true"] {background: var(--surface2);}
-.stock-group-member-remove {display: grid; place-items: center; flex: 0 0 26px; height: 26px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--text-muted); cursor: pointer;}
+.stock-group-member-remove {display: grid; place-items: center; flex: 0 0 22px; width: 22px; height: 26px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--text-muted); cursor: pointer;}
+.stock-group-members > li > .stock-watchlist-star {flex: 0 0 24px; width: 24px; height: 26px;}
 .stock-group-member-remove:hover {background: var(--surface2); color: var(--action-delete);}
 .stock-group-members-empty {padding: 8px 6px; font-size: 12px; color: var(--text-muted);}
 
@@ -77,10 +78,9 @@
 
 .stock-group-list-row > button:not(:first-child):focus-visible, .stock-group-member-remove:focus-visible {opacity: 1; pointer-events: auto; transform: none; outline: 2px solid var(--accent); outline-offset: 1px;}
 
-.stock-group-list-row > button:not(:first-child):hover,
-.stock-group-member-remove:hover {background: transparent; color: var(--accent);}
-.stock-group-list-row > .stock-group-delete:hover,
-.stock-group-member-remove:hover {color: var(--action-delete);}
+.stock-group-list-row > button.stock-group-edit:hover {background: color-mix(in srgb, var(--info) 12%, transparent); color: var(--info);}
+.stock-group-list-row > button.stock-group-delete:hover,
+.stock-group-member-remove:hover {background: color-mix(in srgb, var(--action-delete) 12%, transparent); color: var(--action-delete);}
 
 .stock-group-list-row[draggable="true"], .stock-group-members > li[draggable="true"] {cursor: grab;}
 .stock-group-list-row[data-dragging="true"], .stock-group-members > li[data-dragging="true"] {opacity: .45;}

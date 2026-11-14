@@ -254,8 +254,8 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                             setSelectedGroupId(group.id);
                             setActive(null);
                         }}><ChevronDown size={14} aria-hidden="true"/><span>{group.name}</span></button>
-                    <button type="button" aria-label={tr('groups.editNamed', {name: group.name})} onClick={() => setEditingGroup(group)}><Pencil size={13}/></button>
                     <button type="button" className="stock-group-delete" aria-label={tr('groups.deleteNamed', {name: group.name})} onClick={() => setDeletingGroup(group)}><Trash2 size={13}/></button>
+                    <button type="button" className="stock-group-edit" aria-label={tr('groups.editNamed', {name: group.name})} onClick={() => setEditingGroup(group)}><Pencil size={13}/></button>
                 </div>
                 <div className="stock-group-members-collapse" data-expanded={selectedGroup?.id === group.id && !collapsedGroups[group.id]}
                     inert={selectedGroup?.id !== group.id || !!collapsedGroups[group.id]} aria-hidden={selectedGroup?.id !== group.id || !!collapsedGroups[group.id]}
@@ -267,11 +267,11 @@ function StockAnalysisContent({onClose, onApiSaved}: {onClose: () => void; onApi
                             <button type="button" className="stock-group-member-open" aria-pressed={activeSymbol === symbol} onClick={() => openSymbol(stock)}>
                                 <strong>{stock.name}</strong><small>{symbol}</small>
                             </button>
+                            <button type="button" className="stock-group-member-remove" aria-label={tr('groups.removeStock', {name: stock.name})}
+                                onClick={() => stockGroups.removeStock(group.id, symbol)}><Trash2 size={13} aria-hidden="true"/></button>
                             <button type="button" className="stock-watchlist-star" aria-pressed={watchlist.contains(market, symbol)}
                                 aria-label={tr(watchlist.contains(market, symbol) ? 'removeFromRadar' : 'addToRadar', {name: stock.name})}
                                 onClick={() => watchlist.toggle(market, symbol)}><Star size={15} strokeWidth={1.5} aria-hidden="true"/></button>
-                            <button type="button" className="stock-group-member-remove" aria-label={tr('groups.removeStock', {name: stock.name})}
-                                onClick={() => stockGroups.removeStock(group.id, symbol)}><Trash2 size={13} aria-hidden="true"/></button>
                         </li>;
                     })}
                     {!group.symbols.length && <li className="stock-group-members-empty">{tr('groups.stocks', {count: 0})}</li>}
