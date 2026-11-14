@@ -25,8 +25,7 @@
 .stock-comparison-empty {padding: 20px 10px; text-align: center; color: var(--text-muted);}
 .stock-comparison-status {min-height: 18px; flex-shrink: 0;}
 .stock-comparison-status p {margin: 0;}
-.stock-comparison-dialog .modal-tabs-bar {flex-shrink: 0; margin: 0; padding: 0;}
-.stock-comparison-dialog .modal-tab {flex: 1; min-width: 0; padding: 8px 12px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+.stock-comparison-dialog > .stock-market-select {flex-shrink: 0;}
 .stock-comparison-directory-error {display: flex; align-items: center; gap: 8px;}
 .stock-comparison-directory-error button {padding: 2px 6px; font-size: 11px; flex-shrink: 0;}
 .stock-comparison-row .stock-comparison-apply {padding-inline: 9px; color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent);}

@@ -1,7 +1,6 @@
 import type {ChartSnapshotContext} from './chartSnapshot';
-import {STOCK_MARKETS} from '../../services/stockAnalysis';
 import {Tooltip} from '../common/Tooltip/Tooltip';
-import ModalTabs from '../common/ModalTabs/ModalTabs';
+import StockMarketSelect from './StockMarketSelect';
 import useStockDirectory from './useStockDirectory';
 import {withMarketIndices} from './stockDirectory';
 import {useEffect, useRef, useState, type ReactNode, type RefObject} from 'react';
@@ -194,7 +193,7 @@ export default function StockComparison({chart, bars, interval, revision, direct
         {open && <ModalOverlay onClose={loading ? undefined : () => setOpen(false)} closeOnBackdrop captureEscape aria-labelledby="stock-comparison-title">
             <div className="stock-comparison-dialog">
                 <header><h2 id="stock-comparison-title">{tr('compareAdd')}</h2><ModalCloseButton disabled={loading} onClick={() => setOpen(false)}/></header>
-                <ModalTabs tabs={STOCK_MARKETS.map(key => ({key, label: tr(key)}))} activeKey={searchMarket}
+                <StockMarketSelect value={searchMarket} compact portal={false}
                     disabled={loading} onChange={value => {setSearchMarket(value); setQuery('');}}/>
                 <input type="search" aria-label={tr('search')} placeholder={tr('search')} value={query} disabled={loading}
                     onChange={event => setQuery(event.target.value)}/>
