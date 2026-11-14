@@ -33,7 +33,7 @@ export default function StockGroupDiscussionPanel({groups, market, directory, sc
         stock={{symbol, name}} groups={scopeGroups} scopeType={scopeType}
         groupPicker={<section className="stock-discussion-references">
             <CustomSelect dropdownClassName="stock-group-select-dropdown" value="" selectedValues={allSelected ? [''] : selectedGroups.map(group => group.id)} closeOnSelect={false} ariaLabel={t(`stockAnalysis.discussion.${scopeType === 'sector' ? 'selectSector' : 'selectGroup'}`)}
-                options={options}
+                searchable options={options}
                 renderTrigger={(_label, open) => <>{renderLabel(name, scopeCount)}
                     <ChevronDown size={14} className={`stock-group-select-chevron${open ? ' is-open' : ''}`} aria-hidden="true"/></>}
                 renderOption={option => renderLabel(option.label, option.description ?? '')}
