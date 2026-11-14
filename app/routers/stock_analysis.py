@@ -364,7 +364,7 @@ class StockChatReference(BaseModel):
 
 class StockChatGroup(BaseModel):
     name: str = Field(min_length=1, max_length=60)
-    stocks: list[StockChatReference] = Field(default_factory=list, max_length=100)
+    stocks: list[StockChatReference] = Field(default_factory=list, max_length=1000)
 
 
 class StockChatRequest(StockChatAttachments):

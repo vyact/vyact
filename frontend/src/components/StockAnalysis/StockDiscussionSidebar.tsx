@@ -47,7 +47,7 @@ function readPreferences(): {days: number; toolIds: string[] | undefined; includ
     } catch {return {days: DEFAULT_CONTEXT_DAYS, toolIds: undefined, includeFinancials: false};}
 }
 
-export default function StockDiscussionSidebar({stock, groups, groupPicker, market, directory, captureChart, onReveal, isVisible = true}: {isVisible?: boolean; captureChart?: RefObject<(() => ChartSnapshot) | null>; stock: StockSymbol; groups?: StockGroup[]; groupPicker?: ReactNode; onReveal?: () => void; market: StockMarket; directory: StockSymbol[]}) {
+export default function StockDiscussionSidebar({stock, groups, scopeType = 'group', groupPicker, market, directory, captureChart, onReveal, isVisible = true}: {isVisible?: boolean; captureChart?: RefObject<(() => ChartSnapshot) | null>; stock: StockSymbol; scopeType?: 'group' | 'sector'; groups?: StockGroup[]; groupPicker?: ReactNode; onReveal?: () => void; market: StockMarket; directory: StockSymbol[]}) {
     const {t, i18n} = useTranslation('main');
     const tr = (key: string) => t(`stockAnalysis.discussion.${key}`);
     const [preferences, setPreferences] = useState(readPreferences);
@@ -312,7 +312,7 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
                         if (list.scrollHeight - list.scrollTop - list.clientHeight <= 8) followLatest.current = true;
                         previousScrollTop.current = list.scrollTop;
                     }} role="log" aria-label={tr('ai')} aria-busy={busy}>
-                    {!messages.length && !busy && <div className="stock-discussion-empty"><h2>{tr('welcome')}</h2><p>{emptyGroupScope ? t('stockAnalysis.groups.emptyHint') : tr(groups ? 'groupHint' : 'hint')}</p></div>}
+                    {!messages.length && !busy && <div className="stock-discussion-empty"><h2>{tr('welcome')}</h2><p>{emptyGroupScope ? t('stockAnalysis.groups.emptyHint') : tr(groups ? `${scopeType}Hint` : 'hint')}</p></div>}
                     {messages.map((message, index) => preparation && busy && index === messages.length - 1 && message.role === 'assistant'
                         ? <StockChatPreparation key={message.id ?? index} {...preparation}/> : <div key={message.id ?? index} className={`stock-discussion-message-row ${message.role}`}>
                         <Message disableActionTooltips role={message.role} content={message.content} timestamp={message.timestamp ?? ''}
@@ -360,7 +360,7 @@ export default function StockDiscussionSidebar({stock, groups, groupPicker, mark
                         <ImageAttachmentPreview src={`/api/images/${encodeURIComponent(chartAttachment.filename!)}`}
                             alt={chartAttachment.original_name ?? stock.symbol} disabled={busy}
                             onOpen={() => setPreviewIndex(draftAttachments.images.length)} onRemove={() => {setChartAttachment(null); setPreviewIndex(null);}}/></div>}
-                    </>} id={`${id}-input`} aria-label={tr(groups ? 'groupPlaceholder' : 'placeholder')} placeholder={tr(groups ? 'groupPlaceholder' : 'placeholder')}
+                    </>} id={`${id}-input`} aria-label={tr(groups ? `${scopeType}Placeholder` : 'placeholder')} placeholder={tr(groups ? `${scopeType}Placeholder` : 'placeholder')}
                         value={question} onChange={setQuestion} maxLength={4000} disabled={busy} rows={1} textareaRef={textarea}
                         selectedServers={selectedServers} onSelectedServersChange={setSelectedServers}
                         scopeHelp={tr('toolScopeHelp')}

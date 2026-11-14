@@ -98,7 +98,7 @@ export function SectorPreview({sector, focused, market, day, premarket = false, 
     </div>;
 }
 
-export default function StockSectorMap({market, onOpen, directory = [], stockGroups}: {market: StockMarket; onOpen: (item: StockSymbol) => void; directory?: StockSymbol[]; stockGroups?: StockGroup[]}) {
+export default function StockSectorMap({market, onOpen, directory = [], stockGroups, onSectorsChange}: {onSectorsChange?: (sectors: MarketSector[]) => void;market: StockMarket; onOpen: (item: StockSymbol) => void; directory?: StockSymbol[]; stockGroups?: StockGroup[]}) {
     const {t, i18n} = useTranslation('main');
     const [snapshot, setSnapshot] = useState<MarketSectorMap | undefined>(() => stockSnapshotCache.readMap(market, i18n.resolvedLanguage));
     const [failed, setFailed] = useState(false);
@@ -180,6 +180,9 @@ export default function StockSectorMap({market, onOpen, directory = [], stockGro
         return snapshot?.sectors.map(sector => ({...sector, stocks: sector.stocks.map(stock =>
             ({...stock, name: names.get(stock.symbol) ?? stock.name}))}));
     }, [snapshot, directory, stockGroups, groupQuoteState.quotes]);
+    useEffect(() => {
+        if (!stockGroups) onSectorsChange?.(localizedSectors ?? []);
+    }, [localizedSectors, stockGroups, onSectorsChange]);
     const sectorName = (name: string) => stockGroups ? name : t(`stockAnalysis.sectorNames.${name}`, {defaultValue: name, ...(market === 'US' ? {lng: 'en'} : {})});
     const layout = useMemo(() => {
         if (!localizedSectors || width <= 0 || height <= 0) return;

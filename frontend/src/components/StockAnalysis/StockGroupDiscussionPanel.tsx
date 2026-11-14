@@ -7,8 +7,8 @@ import StockDiscussionPanel from './StockDiscussionPanel';
 import type {StockGroup} from './useStockGroups';
 import type {StockMarket, StockSymbol} from '../../services/stockAnalysis';
 
-export default function StockGroupDiscussionPanel({groups, market, directory}: {
-    groups: StockGroup[]; market: StockMarket; directory: StockSymbol[];
+export default function StockGroupDiscussionPanel({groups, market, directory, scopeType = 'group'}: {
+    scopeType?: 'group' | 'sector'; groups: StockGroup[]; market: StockMarket; directory: StockSymbol[];
 }) {
     const {t} = useTranslation('main');
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -30,9 +30,9 @@ export default function StockGroupDiscussionPanel({groups, market, directory}: {
     </span>;
     const symbol = `MARKET-${market}`;
     return <StockDiscussionPanel market={market} directory={directory}
-        stock={{symbol, name}} groups={scopeGroups}
+        stock={{symbol, name}} groups={scopeGroups} scopeType={scopeType}
         groupPicker={<section className="stock-discussion-references">
-            <CustomSelect dropdownClassName="stock-group-select-dropdown" value="" selectedValues={allSelected ? [''] : selectedGroups.map(group => group.id)} closeOnSelect={false} ariaLabel={t('stockAnalysis.discussion.selectGroup')}
+            <CustomSelect dropdownClassName="stock-group-select-dropdown" value="" selectedValues={allSelected ? [''] : selectedGroups.map(group => group.id)} closeOnSelect={false} ariaLabel={t(`stockAnalysis.discussion.${scopeType === 'sector' ? 'selectSector' : 'selectGroup'}`)}
                 options={options}
                 renderTrigger={(_label, open) => <>{renderLabel(name, scopeCount)}
                     <ChevronDown size={14} className={`stock-group-select-chevron${open ? ' is-open' : ''}`} aria-hidden="true"/></>}
