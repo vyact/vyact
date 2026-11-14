@@ -167,15 +167,27 @@ export default function StockPriceChart({symbol, name, rows, market, label, dire
         candleSeries.current = candles;
         if (hasActivity) {
             const volumes = instance.addSeries(HistogramSeries, {
-                title: t(activityField === 'tradingValue' ? 'stockAnalysis.history.tradingValue' : 'stockAnalysis.volume'),
                 priceFormat: {type: 'volume'}, priceLineVisible: false, lastValueVisible: false,
             }, 1);
-            const updateVolumes = (rows: DailyPrice[]) => volumes.setData(rows.map(row => {
+            let latestActivity: {value: number; color: string} | undefined;
+            const activityLabel = t(activityField === 'tradingValue' ? 'stockAnalysis.history.tradingValue' : 'stockAnalysis.volume');
+            volumes.attachPrimitive({priceAxisViews: () => latestActivity ? [{
+                coordinate: () => volumes.priceToCoordinate(latestActivity!.value) ?? 0,
+                text: () => activityLabel,
+                textColor: () => '#ffffff',
+                backColor: () => latestActivity!.color,
+                tickVisible: () => false,
+            }] : []});
+            const updateVolumes = (rows: DailyPrice[]) => {
+                const latest = [...rows].reverse().find(row => row[activityField] != null);
+                latestActivity = latest ? {value: latest[activityField]!, color: latest.close >= latest.open ? rise : fall} : undefined;
+                volumes.setData(rows.map(row => {
                 const value = row[activityField];
                 return value == null ? {time: row.day} : {
                     time: row.day, value, color: row.close >= row.open ? rise : fall,
                 };
             }));
+            };
             updateVolumes(bars);
             dataUpdates.push(updateVolumes);
             const [pricePane, volumePane] = instance.panes();
